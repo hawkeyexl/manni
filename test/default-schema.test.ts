@@ -587,7 +587,7 @@ describe.skip("the default set (flips on registration)", () => {
   // is exactly when a "no compiled schema" error is most confusing. Three
   // families have moved to proposal.2 since these strings were written.
   const idFor = (family: string): string =>
-    `docmeta:${family}:${VERSIONS[family] ?? DRAFT_V}`;
+    `manni:${family}:${VERSIONS[family] ?? DRAFT_V}`;
   const CORE_ID = idFor("core");
   const FAMILY_IDS = [
     CORE_ID,

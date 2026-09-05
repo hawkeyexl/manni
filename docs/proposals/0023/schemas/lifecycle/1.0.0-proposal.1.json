@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "docmeta:lifecycle:1.0.0-proposal.1",
+  "$id": "manni:lifecycle:1.0.0-proposal.1",
   "title": "docmeta lifecycle vocabulary (1.0.0-proposal.1)",
   "description": "Where the page is in its life, and what a deprecation owes its readers: a successor, a removal date, or both. The `lifecycle` ladder is a closed enum, chosen deliberately over an open string — it catches `depreciated`-style typos and makes the deprecation rule airtight, at the cost that an org-specific ladder must override the key.",
   "type": "object",

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "docmeta:artifact-evals:1.0.0-proposal.2",
+  "$id": "manni:artifact-evals:1.0.0-proposal.2",
   "title": "docmeta artifact eval declarations (1.0.0-proposal.2)",
   "description": "Eval declarations for instruction artifacts - skills, agent definitions, and project-rules files: assertions about what must have held in an agent session that used the artifact. A docmeta common vocabulary sharing the entry shape of docmeta:evals. The page-side trio appears here one level down - `metadata.evals` (one assertion or the list), `metadata.eval-skip`, `metadata.eval-provenance` - because an artifact's top-level frontmatter is the host tool's contract and `metadata` is its sanctioned extension bag; there is no container object inside it - the list is the value. `metadata` stays open so other tools' members pass untouched, and the `eval-` prefix is reserved and enforced inside it: an unrecognized `eval-*` member is rejected, the same loud-typo guard as the page side. proposal.1 asked consumers to implement that themselves, which meant an artifact validated against the published bytes got no guard.",
   "type": "object",

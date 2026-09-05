@@ -51,29 +51,29 @@ Home — "What do you want to do?" router + 30-second proof
 | Page | CUJ | ★ | Notes |
 |---|---|---|---|
 | Landing / router page | All | ★ | Value prop, who it's for, 30-second quickstart. Links to each persona track. |
-| Install & first validation | M1 | ★ | `npx docmeta validate <file>`, read pass/fail output, Node 24+ requirement. |
+| Install & first validation | M1 | ★ | `npx manni meta validate <file>`, read pass/fail output, Node 24+ requirement. |
 
 ### Set up validation (Maya)
 
 | Page | CUJ | ★ | Notes |
 |---|---|---|---|
 | Stand up validation for your repo | M1 | ★ | Anchor guide threading install → config → schema → CI. |
-| Create your `docmeta.config.yaml` | M1 | ★ | paths, exclude, schemas, discovery keys with types and defaults. |
+| Create your `manni.config.yaml` | M1 | ★ | paths, exclude, schemas, discovery keys with types and defaults. |
 | Apply different schemas to different folders | M3 | ★ | Overrides, glob precedence, multi-schema per file. |
 | Roll out a new required field without breaking the build | M2 | | Tool-supported ratchet (0001): the field goes `required` immediately and `--write-baseline` records the backlog. Rewritten from the four-stage manual rollout, whose hand-maintained `overrides:` glob list the baseline replaces. Now also carries the DDL one-statement ratchet (0024) for fields whose backfill value is uniform. |
-| Retrofit docmeta into an existing docs repo | M1/M2/M4 | | Start lenient, tighten over time. Cross-cutting guide. Step 6 ratchets via the baseline, in step with the M2 page. Step 7 carries the M4 `fill` journey and hands off to the egress page below. There is deliberately no separate `fill` journey page, because splitting step 7 out would duplicate working content. |
+| Retrofit manni meta into an existing docs repo | M1/M2/M4 | | Start lenient, tighten over time. Cross-cutting guide. Step 6 ratchets via the baseline, in step with the M2 page. Step 7 carries the M4 `fill` journey and hands off to the egress page below. There is deliberately no separate `fill` journey page, because splitting step 7 out would duplicate working content. |
 | Run `fill` under a data-egress policy | M4, D1 | | The security-review answers for the step 7 `fill` pass. It covers what each inference call transmits. That is the path as matched, the whole metadata block, and the whole file including front matter. It is also each candidate's lifted subschema with its `description`, and every `$defs`/`definitions` block, referenced or not. It covers what the pre-gating cache retains, and the `--local` / `--offline` / `--max-turns` bounds. Consequences and decisions only, because the flag surface stays in the drift-checked CLI reference. Source of truth: `src/commands/fill-prompt.ts`, `src/commands/fill.ts`. |
 
 ### Run it in CI (Devin)
 
 | Page | CUJ | ★ | Notes |
 |---|---|---|---|
-| Add docmeta to CI with the GitHub Actions recipe | D1 | ★ | From `examples/`. |
+| Add manni meta to CI with the GitHub Actions recipe | D1 | ★ | From `examples/`. |
 | CI recipes: GitLab CI, Jenkins, pre-commit | D1 | ★ | Fills current GitHub-only gap. |
 | Exit codes & PR annotations contract | D1 | ★ | 0/1/2 semantics, `--format github` annotation output. |
 | Govern a shared schema across repos | D2 | | Vendoring (`schemas vendor`, integrity pins), and the URL form with its tradeoff: remote `$schema`, 10 s timeout, caching, versioning. |
 | Consume results programmatically | D3 | | `--format json`, `get` command, TypeScript API. |
-| Gate on rules that span files | D4 | | `docmeta query` and the one-row-per-file table it builds. Covers joins as `--check` CI gates, such as dangling refs and duplicate slugs. Covers `-f json` and the `--db` export. Names apply-by-default writes (`--dry-run` previews, `--check` never mutates) without manualing them. Doc-detective steps run the real gates over `test/fixtures/query/`. Source of truth: `src/commands/query.ts`, drift-checked via the CLI reference. |
+| Gate on rules that span files | D4 | | `manni meta query` and the one-row-per-file table it builds. Covers joins as `--check` CI gates, such as dangling refs and duplicate slugs. Covers `-f json` and the `--db` export. Names apply-by-default writes (`--dry-run` previews, `--check` never mutates) without manualing them. Doc-detective steps run the real gates over `test/fixtures/query/`. Source of truth: `src/commands/query.ts`, drift-checked via the CLI reference. |
 
 ### Define & evolve schemas (Sara)
 
@@ -88,7 +88,7 @@ Home — "What do you want to do?" router + 30-second proof
 | Built-in platform schemas | S1, M3 | | `astro:starlight:0.41`, `antora:page:3.1`, `sphinx:docinfo:9.1`, `myst:frontmatter:1.10`: the non-Docusaurus toolchain contracts. Carries the rule that a platform schema requires exactly what the generator refuses to build without. That is why Starlight and Antora demand `title` while Sphinx and MyST demand nothing. Also the AsciiDoc typing rules (attribute values are strings, bare attributes are `true`) and the pre-1.0 pin caveat for Starlight. |
 | Built-in metadata vocabularies | S1 | | `ogp:article:1.0`, `dcmi:elements:1.1`, `microsoft:learn:1.0`: how a page describes itself to something outside the docs site. Open Graph is the only built-in checking something no build tool checks. Covers the two `format` traps: `og:locale` uses underscores, and `ms.date` is MM/DD/YYYY rather than ISO. Also carries the standing rule on not enumerating a vocabulary whose published list is not authoritative. |
 | Element metadata in XML and HTML | S1, S2 | | The rule that the containing element is the namespace (`article.byline`, `prolog.author`, `head.title`). What each format lifts by convention, and what it declines. The `elements:` config path syntax (slash-separated, `@attr`), and the update-vs-create write boundary. The page the rule lives on; the DITA page links to it. |
-| Built-in Agent Skills schemas | S1 | | `agentskills:skill:1.0` and `anthropic:claude-skill:2.1`: the two `SKILL.md` front matter contracts. Carries the one place docmeta closes `additionalProperties`, and why. The packaging and upload path hard-errors on a key outside the standard's six. A permissive schema would therefore pass a file that cannot ship. Also the Claude Code extension set. It covers the three enumerated fields, and why `model` is not one of them. It covers the boolean-spelling trap in YAML 1.2 as well. |
+| Built-in Agent Skills schemas | S1 | | `agentskills:skill:1.0` and `anthropic:claude-skill:2.1`: the two `SKILL.md` front matter contracts. Carries the one place manni meta closes `additionalProperties`, and why. The packaging and upload path hard-errors on a key outside the standard's six. A permissive schema would therefore pass a file that cannot ship. Also the Claude Code extension set. It covers the three enumerated fields, and why `model` is not one of them. It covers the boolean-spelling trap in YAML 1.2 as well. |
 | Built-in Claude Code subagent schema | S1 | | `anthropic:claude-subagent:2.1`: the agent definition contract under `.claude/agents/`. Carries why this one requires `name` and `description` when the `SKILL.md` schema requires nothing. An agent file missing either does not load, and the `name` case is silent. Also the four fields that look like skill fields and are not. Those are `tools`/`disallowedTools` vs `allowed-tools`/`disallowed-tools`, and `background`, which takes two spellings here and six there. Then the five enumerated sets, and the two places the shipped loader is broader than the published docs (`isolation: remote`, `permissionMode: manual`). |
 | Built-in DITA schema | S1 | | `oasis:dita-metadata:1.3` and the ten prolog keys. Why a map spells five of them `topicmeta.*`, and why both metadata channels are validated. What `fill` creates, why `<vrm>` is keyed for itself, and what checks the written output. |
 
@@ -103,14 +103,14 @@ Home — "What do you want to do?" router + 30-second proof
 
 | Page | CUJ | ★ | Notes |
 |---|---|---|---|
-| Built-in schemas (registry) | S1, M1 | ★ | The hub for everything docmeta ships. One table of all twenty-three ids, with what each constrains, what it requires, and which two are on by default. Then the editorial-vs-platform distinction, and the three ways to turn one on. The OKF, taxonomy, Docusaurus, platform, vocabulary, DITA, Agent Skills, and Claude Code subagent pages are its detail pages. Source of truth: `src/core/schema-registry.ts`, `src/core/resolve-schema.ts`. |
+| Built-in schemas (registry) | S1, M1 | ★ | The hub for everything manni meta ships. One table of all twenty-three ids, with what each constrains, what it requires, and which two are on by default. Then the editorial-vs-platform distinction, and the three ways to turn one on. The OKF, taxonomy, Docusaurus, platform, vocabulary, DITA, Agent Skills, and Claude Code subagent pages are its detail pages. Source of truth: `src/core/schema-registry.ts`, `src/core/resolve-schema.ts`. |
 | CLI reference | All | ★ | `validate`/`get`/`query`/`fill`/`schemas`; every flag. The `query` section is the flag surface only. The command's contract lives on its own page below, so the two cannot drift. Source of truth: `src/cli.ts`, guarded by `npm run docs:check-cli`. |
 | `query` command reference | D4, D3, M2, S3 | | The lookup page for the largest module in the repo. Covers the `docs` table (system and data columns, value encoding, `lineFor`/`explicit_null`), and named collections as read-only views. Covers the vocabulary split, where DML edits the files and DDL edits the schema. Covers the DDL type bridge (formats as column types, `CHECK IN` as `enum`), which schema an `ALTER` edits, and every refusal it raises. Then `-s` as the DDL target, write-by-default with `--dry-run` as the preview, and rows as findings. Then bound parameters, the six output formats, the `--db` export, and the exit-code contract. Doc-detective steps run the whole surface over `test/fixtures/query/`, `collections/`, and `ddl-bridge/`. Source of truth: `src/commands/query.ts`, `src/core/{projection,collections,checks}.ts`, `src/reporters/query.ts`. |
-| Configuration reference | M1, D1 | ★ | Full `docmeta.config.yaml` keys, types, defaults, CLI-merge precedence. Source of truth: `src/core/config.ts`. |
+| Configuration reference | M1, D1 | ★ | Full `manni.config.yaml` keys, types, defaults, CLI-merge precedence. Source of truth: `src/core/config.ts`. |
 | Schema resolution reference | S2, D2 | ★ | Precedence chain + ref kinds + dialects. Source of truth: `resolve-schema.ts`, `schema-registry.ts`, `validator.ts`. |
 | Supported formats reference | All | ★ | Extractor/extension/metadata-model table: Markdown, MDX, AsciiDoc, RST, XML, HTML. Source of truth: `src/extractors/`. |
 | Output formats & exit codes | D1, D3 | ★ | `pretty`/`json`/`github` shapes; `NO_COLOR`/TTY behavior. Source of truth: `src/reporters/index.ts`. |
-| GitHub Action reference | D1 | ★ | Every input and output of `hawkeyexl/docmeta@v4`, with defaults, the one-item-per-line rule for multi-value inputs, and why globs reach docmeta unexpanded. Source of truth: `action.yml`, guarded by `npm run docs:check-action`. |
+| GitHub Action reference | D1 | ★ | Every input and output of `hawkeyexl/manni@v1`, with defaults, the one-item-per-line rule for multi-value inputs, and why globs reach manni meta unexpanded. Source of truth: `action.yml`, guarded by `npm run docs:check-action`. |
 | TypeScript API reference | D3 | | Every symbol the programmatic entry point publishes, with a purpose per export. That covers command cores, schema resolution, config, cache, reporters, extractors, and result types. Drift-checked against the built `dist/index.d.ts` by `npm run docs:check-api`, so a new export cannot ship undocumented. Source of truth: `src/index.ts`. |
 | Glossary | All | | frontmatter, extractor, schema set, dialect, `$schema`, OKF. |
 

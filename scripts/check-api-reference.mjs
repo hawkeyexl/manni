@@ -10,7 +10,7 @@
  * This reads the flattened `export { … };` statement at the end of the built
  * `dist/index.d.ts` — the real published surface, after the star re-export has
  * been resolved — and asserts that
- * docs/src/content/docs/reference/api.mdx documents exactly the same names.
+ * docs/src/content/docs/meta/reference/api.mdx documents exactly the same names.
  * Purposes stay hand-authored; only the machine-checkable surface is guarded.
  *
  * Names are read from inline code spans in the `Export` column of the page's
@@ -27,7 +27,7 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DOC_PATH =
-  process.argv[2] ?? path.join(ROOT, "docs/src/content/docs/reference/api.mdx");
+  process.argv[2] ?? path.join(ROOT, "docs/src/content/docs/meta/reference/api.mdx");
 const DTS_PATH = path.join(ROOT, "dist/index.d.ts");
 
 const fail = (msg) => {

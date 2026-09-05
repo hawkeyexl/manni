@@ -1,7 +1,7 @@
 # Design
 
 The docs site and the demo videos are the two things people see before they run
-`docmeta` once. This page is what they both follow.
+`manni meta` once. This page is what they both follow.
 
 ## Why this exists
 
@@ -21,7 +21,7 @@ only because every agent sampled it from the same VHS capture, rather than
 because anyone chose it.
 
 Two of those three accents were also **wrong**, in a way nobody caught. Nothing
-had written down that docmeta's own output already assigns meaning to colour.
+had written down that manni meta's own output already assigns meaning to colour.
 See [Reserved colours](#reserved-colours).
 
 Meanwhile the docs site is stock Starlight: no `customCss`, no tokens, no
@@ -29,10 +29,10 @@ relationship to any of it.
 
 ## Reserved colours
 
-`docmeta` is a CLI whose output is the thing being demonstrated. That output
+`manni meta` is a CLI whose output is the thing being demonstrated. That output
 already uses colour semantically, in `src/reporters/fill.ts`:
 
-| Colour | Means, in docmeta's own output |
+| Colour | Means, in manni meta's own output |
 |---|---|
 | red | a failure, `✗` |
 | green | a success, `✓` |
@@ -183,7 +183,7 @@ label someone wrote.
 Everything on screen is real execution. Staging the input is fine; faking the
 output is not.
 
-- A warm cache is disclosed or avoided. `docmeta` prints `· 3 cached` itself. If
+- A warm cache is disclosed or avoided. `manni meta` prints `· 3 cached` itself. If
   that undercuts the claim the video is making, re-shoot cold rather than hide
   it.
 - Latency is disclosed, not trimmed away.
@@ -199,8 +199,8 @@ pointing at a stylesheet that overrides Starlight's own custom properties:
 
 ```js
 starlight({
-  title: "docmeta",
-  customCss: ["./src/styles/docmeta.css"],
+  title: "manni meta",
+  customCss: ["./src/styles/manni.css"],
 })
 ```
 
@@ -235,7 +235,7 @@ Code is the site's primary content, so it carries the most weight:
 
 - A demo video embedded in a page is the **native or 16:9 cut**, not the 1:1
   social cut. The square exists for a feed; a docs page has width.
-- Alt text describes the outcome, not the chrome: "docmeta reports 3 files
+- Alt text describes the outcome, not the chrome: "manni meta reports 3 files
   failed", not "screenshot of a terminal".
 
 ## What must match, and what may not
@@ -268,7 +268,7 @@ Site:
 
 1. Contrast computed for every text/background pair, in both themes.
 2. Light and dark both defined; no token defined only inside a media query.
-3. `docmeta validate` passes on the changed pages. Editing frontmatter is a
+3. `manni meta validate` passes on the changed pages. Editing frontmatter is a
    validation change, not a prose change.
 
 ## Open

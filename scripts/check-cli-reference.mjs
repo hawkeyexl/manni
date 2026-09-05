@@ -2,7 +2,7 @@
  * Drift-check for the CLI reference docs.
  *
  * Introspects the real commander program (`buildProgram()` from the built CLI)
- * and asserts that docs/src/content/docs/reference/cli.mdx documents exactly the
+ * and asserts that docs/src/content/docs/meta/reference/cli.mdx documents exactly the
  * same commands, arguments, options, and value-defaults. Descriptions stay
  * hand-authored; this only guards the machine-checkable surface so the page
  * cannot silently drift from src/meta/cli.ts.
@@ -18,7 +18,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DOC_PATH =
-  process.argv[2] ?? path.join(ROOT, "docs/src/content/docs/reference/cli.mdx");
+  process.argv[2] ?? path.join(ROOT, "docs/src/content/docs/meta/reference/cli.mdx");
 
 let buildProgram;
 try {

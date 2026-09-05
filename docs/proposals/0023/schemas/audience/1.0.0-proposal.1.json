@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "docmeta:audience:1.0.0-proposal.1",
+  "$id": "manni:audience:1.0.0-proposal.1",
   "title": "docmeta audience vocabulary (1.0.0-proposal.1)",
   "description": "Who the page serves and who may see it. `audiences` works on day one in any repo; `personas` and `journeys` are the upgrade path once a content strategy exists to point into. `visibility` is the one enumerated ladder here, because something downstream switches on it and an unrecognized value would fail open — the deliberate asymmetry with `audiences`, whose taxonomy is the org's own. Reader expertise is deliberately absent: level belongs to the persona definitions a page points at, not to the page.",
   "type": "object",

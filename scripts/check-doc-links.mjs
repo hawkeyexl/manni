@@ -3,7 +3,7 @@
  *
  * Nothing in this repo caught an in-site link that pointed at a heading which
  * does not exist. `cli.mdx` carried two links to
- * `/docmeta/reference/output-and-exit-codes/#json` for months: the page renders
+ * `/manni/meta/reference/output-and-exit-codes/#json` for months: the page renders
  * no `id="json"` — its JSON content sits inside a Starlight `<Tabs>` block under
  * `## Output formats` — so both links silently landed at the top of the page.
  * Nothing failed. A reader following one just quietly did not arrive.
@@ -36,7 +36,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DIST = path.resolve(ROOT, process.argv[2] ?? "docs/dist");
 
 /** The site's base path, from docs/astro.config.mjs. */
-const BASE = "/docmeta";
+const BASE = "/manni";
 
 if (!existsSync(DIST) || !statSync(DIST).isDirectory()) {
   console.error(
@@ -89,7 +89,7 @@ for (const abs of pages) {
 
 /**
  * Map a site-absolute URL path to the file the server would return.
- * `/docmeta/reference/cli/` -> `reference/cli/index.html`.
+ * `/manni/meta/reference/cli/` -> `meta/reference/cli/index.html`.
  */
 function toRenderedPath(urlPath) {
   let p = urlPath;

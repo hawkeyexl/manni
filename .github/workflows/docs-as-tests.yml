@@ -61,7 +61,7 @@ jobs:
       # entry covers them.
       #
       # The key carries the alias the docs name, so `granite-4.1-3b-q2` greps to
-      # both here and the `--model` in docs/src/content/docs/reference/cli.mdx.
+      # both here and the `--model` in docs/src/content/docs/meta/reference/cli.mdx.
       # Change the model there and this key must change with it: an unchanged
       # key restores a cache that lacks the new blob, and because the key still
       # hits, the download is repeated on every run and never saved back.

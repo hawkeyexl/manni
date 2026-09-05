@@ -28,7 +28,7 @@ scoped publish credential, and mints provenance automatically.
 Configured on npmjs.com under the package's **Settings → Trusted Publisher**:
 
 - Provider: **GitHub Actions**
-- Repository: `hawkeyexl/docmeta`
+- Repository: `hawkeyexl/manni`
 - Workflow filename: **`release.yml`** (exact, case-sensitive)
 
 The workflow bakes in four requirements. It needs a GitHub-hosted runner, npm
@@ -40,7 +40,7 @@ and breaks the publish.
 
 ## The moving major tag
 
-`uses: hawkeyexl/docmeta@v4` works because the release job force-updates a `v4`
+`uses: hawkeyexl/manni@v1` works because the release job force-updates a `v4`
 tag on each stable release. semantic-release creates immutable `vX.Y.Z` tags and
 nothing else, so without that step the reference resolves to nothing.
 
@@ -74,7 +74,7 @@ a **GitHub App** that is the sole bypass actor on the ruleset.
 ### One-time setup
 
 1. **Create a GitHub App** (Settings → Developer settings → GitHub Apps → New).
-   - Name it something like `docmeta-release-bot`.
+   - Name it something like `manni-release-bot`.
    - Set the homepage URL to the repo URL (any valid URL works).
    - Uncheck **Webhook → Active**.
    - **Repository permissions:**
@@ -86,7 +86,7 @@ a **GitHub App** that is the sole bypass actor on the ruleset.
 2. **Generate a private key** for the App (App settings → Private keys →
    Generate) and note the **App ID** (shown at the top of the App settings).
 
-3. **Install the App** on the `hawkeyexl/docmeta` repository
+3. **Install the App** on the `hawkeyexl/manni` repository
    (App settings → Install App → choose the repo).
 
 4. **Add repository secrets** (repo Settings → Secrets and variables → Actions):
@@ -104,12 +104,12 @@ a **GitHub App** that is the sole bypass actor on the ruleset.
    ```bash
    # Find the current ruleset ID for `main` (don't hardcode it — it changes if
    # the ruleset is deleted and recreated):
-   RULESET_ID=$(gh api repos/hawkeyexl/docmeta/rulesets --jq '.[] | select(.name=="main") | .id')
+   RULESET_ID=$(gh api repos/hawkeyexl/manni/rulesets --jq '.[] | select(.name=="main") | .id')
 
-   gh api repos/hawkeyexl/docmeta/rulesets/$RULESET_ID > /tmp/rs.json
+   gh api repos/hawkeyexl/manni/rulesets/$RULESET_ID > /tmp/rs.json
    jq '.bypass_actors += [{"actor_id": <APP_ID>, "actor_type": "Integration", "bypass_mode": "always"}]' \
      /tmp/rs.json > /tmp/rs.new.json
-   gh api repos/hawkeyexl/docmeta/rulesets/$RULESET_ID --method PUT --input /tmp/rs.new.json
+   gh api repos/hawkeyexl/manni/rulesets/$RULESET_ID --method PUT --input /tmp/rs.new.json
    ```
 
    For an `"Integration"` bypass actor, `actor_id` is the **App ID** (the same

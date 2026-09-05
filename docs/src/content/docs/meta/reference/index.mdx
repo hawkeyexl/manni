@@ -1,0 +1,113 @@
+---
+title: Reference
+description: Complete lookup reference for the manni meta CLI, configuration file, schema resolution, supported formats, output modes, and every built-in schema.
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+Precise, lookup-oriented pages that the task-based guides link into. Each page
+is a flat reference for one part of manni: commands, config keys, resolution
+rules, formats, output, and the built-in schemas. Use the table of contents on
+each page to jump to the exact entry you need.
+
+Looking for what ships in the box? [**Built-in
+schemas**](/manni/meta/reference/built-in-schemas/) is the registry: all twenty-three in
+one table, with what each constrains and which two are on by default.
+
+<CardGrid>
+  <LinkCard
+    title="Built-in schemas"
+    href="/manni/meta/reference/built-in-schemas/"
+    description="The registry: every schema manni meta ships, what it constrains, what it requires, and how to turn one on."
+  />
+  <LinkCard
+    title="CLI reference"
+    href="/manni/meta/reference/cli/"
+    description="Every command, argument, and flag: validate, get, and schemas, plus the shared input model."
+  />
+  <LinkCard
+    title="query command reference"
+    href="/manni/meta/reference/query/"
+    description="The docs table, the DML and DDL vocabulary, collections as views, rows as findings, and every output format."
+  />
+  <LinkCard
+    title="Configuration reference"
+    href="/manni/meta/reference/configuration/"
+    description="manni.config.yaml keys, types, defaults, discovery rules, and how config merges with CLI flags."
+  />
+  <LinkCard
+    title="Schema resolution"
+    href="/manni/meta/reference/schema-resolution/"
+    description="The precedence chain, the three reference kinds, and the supported JSON Schema dialects."
+  />
+  <LinkCard
+    title="Supported formats"
+    href="/manni/meta/reference/formats/"
+    description="Extractors, file extensions, and how metadata is read from each input format."
+  />
+  <LinkCard
+    title="Output & exit codes"
+    href="/manni/meta/reference/output-and-exit-codes/"
+    description="The pretty, json, github, sarif, and junit output formats; exit codes; and color behavior."
+  />
+  <LinkCard
+    title="TypeScript API"
+    href="/manni/meta/reference/api/"
+    description="Every export of the programmatic entry point: the command cores, the validator, and the result types."
+  />
+  <LinkCard
+    title="GitHub Action"
+    href="/manni/meta/reference/action/"
+    description="Every input and output of hawkeyexl/manni, with defaults and the one-item-per-line rule for multi-value inputs."
+  />
+  <LinkCard
+    title="Built-in OKF schema"
+    href="/manni/meta/reference/okf-schema/"
+    description="The google:okf:0.1 schema shipped with manni: fields, formats, and dialect."
+  />
+  <LinkCard
+    title="Built-in taxonomy schemas"
+    href="/manni/meta/reference/taxonomy-schemas/"
+    description="The diataxis, tgdp, and seven-action vocabularies, their values, and which ones compose."
+  />
+  <LinkCard
+    title="Built-in Docusaurus schemas"
+    href="/manni/meta/reference/docusaurus-schemas/"
+    description="The docs, blog, and pages front matter contracts of Docusaurus 3.10, field by field."
+  />
+  <LinkCard
+    title="Built-in platform schemas"
+    href="/manni/meta/reference/platform-schemas/"
+    description="The Starlight, Antora, Sphinx, MyST, Hugo, Jekyll, and VitePress contracts, and what each requires."
+  />
+  <LinkCard
+    title="Element metadata in XML and HTML"
+    href="/manni/meta/reference/element-metadata/"
+    description="Reading metadata held in elements, the key-naming rule, the elements config key, and what a write does."
+  />
+  <LinkCard
+    title="Built-in DITA schema"
+    href="/manni/meta/reference/dita-schema/"
+    description="The oasis dita-metadata keys, why maps spell some differently, and what fill will create."
+  />
+  <LinkCard
+    title="Built-in metadata vocabularies"
+    href="/manni/meta/reference/metadata-vocabularies/"
+    description="The Open Graph, Dublin Core, Microsoft Learn, and X Cards schemas, their required fields and formats."
+  />
+  <LinkCard
+    title="Built-in Agent Skills schemas"
+    href="/manni/meta/reference/agent-skills-schemas/"
+    description="The two SKILL.md contracts — the portable Agent Skills standard and the Claude Code superset — and which to run when."
+  />
+  <LinkCard
+    title="Built-in Claude Code subagent schema"
+    href="/manni/meta/reference/claude-subagent-schema/"
+    description="The .claude/agents/ contract: every field, the enumerated sets, and where it differs from the SKILL.md schema it resembles."
+  />
+  <LinkCard
+    title="Glossary"
+    href="/manni/meta/reference/glossary/"
+    description="The terms manni meta uses: extractor, schema set, schema reference, dialect, JSON Pointer, override, and the rest."
+  />
+</CardGrid>

@@ -8,7 +8,7 @@
  * documented.
  *
  * This reads `action.yml` and asserts that
- * docs/src/content/docs/reference/action.mdx documents exactly the same inputs
+ * docs/src/content/docs/meta/reference/action.mdx documents exactly the same inputs
  * and outputs, with the same defaults. Descriptions stay hand-authored; only
  * the machine-checkable surface is guarded.
  *
@@ -24,7 +24,7 @@ import { parse as parseYaml } from "yaml";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DOC_PATH =
   process.argv[2] ??
-  path.join(ROOT, "docs/src/content/docs/reference/action.mdx");
+  path.join(ROOT, "docs/src/content/docs/meta/reference/action.mdx");
 const ACTION_PATH = path.join(ROOT, "action.yml");
 
 const fail = (msg) => {

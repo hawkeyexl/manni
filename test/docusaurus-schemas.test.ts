@@ -425,7 +425,7 @@ describe("the reference page matches the shipped schemas", () => {
   for (const id of [DOCS, BLOG, PAGES]) {
     it(`${id} field types agree with the reference page`, async () => {
       const page = await readFile(
-        resolve(root, "docs/src/content/docs/reference/docusaurus-schemas.mdx"),
+        resolve(root, "docs/src/content/docs/meta/reference/docusaurus-schemas.mdx"),
         "utf8",
       );
       const schema = (await loadSchema(id)) as {

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "docmeta:ai-context:1.0.0-proposal.1",
+  "$id": "manni:ai-context:1.0.0-proposal.1",
   "title": "docmeta AI-context vocabulary (1.0.0-proposal.1)",
   "description": "How machines made and may use this page: production provenance (`generated-by`, `provenance`) and consumption guidance (`risks`, `sample-questions`). The provenance pattern is the family's human-review loop — machines propose, entries retire as humans review — and `risks` uses the open-enum idiom: recommended flags anchored in published prior art, any string legal, unknown values read as caution rather than absence.",
   "type": "object",

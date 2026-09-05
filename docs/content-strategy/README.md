@@ -1,6 +1,6 @@
 # Content strategy
 
-This directory holds the durable content strategy for the docmeta documentation site. It is the reference every writing task should consult before drafting a page.
+This directory holds the durable content strategy for the manni meta documentation site. It is the reference every writing task should consult before drafting a page.
 
 These files live inside `docs/` but outside `docs/src/content/docs/**`, so they are not published as end-user pages. They are internal working documents for agents and contributors.
 
@@ -30,12 +30,12 @@ Before drafting or editing any user-facing documentation:
 
 6. **Frontmatter.** Every page in `docs/src/content/docs/**` must have `title` and `description` in its frontmatter. No exceptions.
 
-7. **Anything visual goes through `design.md`.** A page that adds a screenshot, a diagram, a code-block style, or a demo video is both a design change and a content one. The palette is not decorative. docmeta's own output already assigns meaning to red, green, yellow and cyan. Chrome that reuses one of them makes a reader see a relationship that is not there.
+7. **Anything visual goes through `design.md`.** A page that adds a screenshot, a diagram, a code-block style, or a demo video is both a design change and a content one. The palette is not decorative. manni meta's own output already assigns meaning to red, green, yellow and cyan. Chrome that reuses one of them makes a reader see a relationship that is not there.
 
 ## Verifying technical claims
 
-docmeta docs document a real CLI. Every flag, exit code, output string, and schema rule must match the code, never the writer's assumption.
+manni meta docs document a real CLI. Every flag, exit code, output string, and schema rule must match the code, never the writer's assumption.
 
 - **Source files are the contract for behavior** (`src/cli.ts` for flags, `src/core/` for config and schema resolution, `src/extractors/` for formats).
-- **The test suite is the contract for *exact emitted strings*.** Type definitions in `src/types.ts` describe the *shape* of output, but they over-promise. An optional field is declared once on the shape, and populated by only some of the paths that produce it. `col` is on every `FieldError`, but only the `html` and `xml` extractors supply one. Even they omit it for a `required` violation. So "the type has `col`" and "this annotation shows a column" are different claims, and only the second is what a reader will see. The same asymmetry runs the other way in SARIF, where the format defines `region.startColumn` and docmeta never emits it. Before documenting concrete output, verify the literal strings against the assertions in `test/*.test.ts`. That covers pretty lines, JSON values, and `github` annotations, and the files to start from are `test/reporters.test.ts`, `test/commands.test.ts`, and `test/cli.integration.test.ts`, among others. The tests encode what the tool actually prints.
+- **The test suite is the contract for *exact emitted strings*.** Type definitions in `src/types.ts` describe the *shape* of output, but they over-promise. An optional field is declared once on the shape, and populated by only some of the paths that produce it. `col` is on every `FieldError`, but only the `html` and `xml` extractors supply one. Even they omit it for a `required` violation. So "the type has `col`" and "this annotation shows a column" are different claims, and only the second is what a reader will see. The same asymmetry runs the other way in SARIF, where the format defines `region.startColumn` and manni meta never emits it. Before documenting concrete output, verify the literal strings against the assertions in `test/*.test.ts`. That covers pretty lines, JSON values, and `github` annotations, and the files to start from are `test/reporters.test.ts`, `test/commands.test.ts`, and `test/cli.integration.test.ts`, among others. The tests encode what the tool actually prints.
 - **To capture real sample output**, build once (`npm run build` at the repo root). Then run the built binary against a fixture, rather than hand-writing output. One example is `node dist/cli.js validate test/fixtures/missing-type.md`. Reuse `test/fixtures/` as worked examples so docs and CI stay in lockstep.

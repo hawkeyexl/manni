@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "docmeta:structure:1.0.0-proposal.1",
+  "$id": "manni:structure:1.0.0-proposal.1",
   "title": "docmeta structure vocabulary (1.0.0-proposal.1)",
   "description": "What the page connects to: products, concepts, and other pages. Relationships between pages — which no generator owns — never position in a navigation tree, which every generator does; there is deliberately no ordering, no parent, no nav title here. The applicability and concept fields are the harvest fallbacks of their deeper `kg` twins (docmeta:kg:1.0.0-proposal.1): where both are present, the deeper declaration wins.",
   "type": "object",

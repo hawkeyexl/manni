@@ -91,7 +91,7 @@ Every subcommand should expose a consistent surface. When one command gains an i
 
 Avoid introducing per-command input conventions (for example, an `--in` option on one command but positional paths on another).
 
-When you change the CLI surface, whether adding, renaming, or removing a command, argument, flag, or default, update the [CLI reference](docs/src/content/docs/reference/cli.mdx) to match. A drift check enforces this:
+When you change the CLI surface, whether adding, renaming, or removing a command, argument, flag, or default, update the [CLI reference](docs/src/content/docs/meta/reference/cli.mdx) to match. A drift check enforces this:
 
 ```bash
 npm run build         # the check reads the built CLI
