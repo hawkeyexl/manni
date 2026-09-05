@@ -55,7 +55,7 @@ export function applyHtml(
   const headStart = before.head?.sourceCodeLocation?.startTag;
   if (before.head === undefined || headStart == null) {
     throw new DocmetaError(
-      "This HTML document has no <head> element; docmeta fill writes metadata into <head>. Add one, or set the field manually.",
+      "This HTML document has no <head> element; manni meta fill writes metadata into <head>. Add one, or set the field manually.",
     );
   }
 

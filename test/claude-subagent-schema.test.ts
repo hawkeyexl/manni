@@ -71,6 +71,10 @@ describe("registration", () => {
   it("is published at a version-pinned URL", () => {
     const entry = publishedBuiltins().find((b) => b.id === AGENT);
     expect(entry?.url).toBe(
+      "https://hawkeyexl.github.io/manni/schemas/claude-subagent/2.1.json",
+    );
+    // The pre-rename URL is a promise (0009): still served, still resolved.
+    expect(entry?.legacyUrl).toBe(
       "https://hawkeyexl.github.io/docmeta/schemas/claude-subagent/2.1.json",
     );
   });

@@ -432,9 +432,9 @@ describe("reporters: sarif", () => {
 
   it("names the tool, its version, and where to read about it", () => {
     const driver = sarifRun(renderSarif(results)).tool.driver;
-    expect(driver.name).toBe("docmeta");
+    expect(driver.name).toBe("manni");
     expect(driver.version).toMatch(/^\d+\.\d+\.\d+/);
-    expect(driver.informationUri).toBe("https://hawkeyexl.github.io/docmeta/");
+    expect(driver.informationUri).toBe("https://hawkeyexl.github.io/manni/meta/");
   });
 
   it("builds every ruleId from the schema reference and the failing keyword", () => {
@@ -457,12 +457,12 @@ describe("reporters: sarif", () => {
   it("gives docmeta's own failures reserved rule ids instead of a garbage one", () => {
     const run = sarifRun(renderSarif(parseErrorResults));
     expect(run.results.map((r) => r.ruleId)).toEqual([
-      "docmeta/parse-error",
-      "docmeta/schema-error",
+      "manni/parse-error",
+      "manni/schema-error",
     ]);
     expect(run.tool.driver.rules.map((r) => r.id)).toEqual([
-      "docmeta/parse-error",
-      "docmeta/schema-error",
+      "manni/parse-error",
+      "manni/schema-error",
     ]);
     expect(JSON.stringify(run)).not.toContain("(parse)/");
   });
@@ -654,7 +654,7 @@ describe("reporters: junit", () => {
     const cases = doc.getElementsByTagName("testcase");
     expect(cases.length).toBe(2);
     expect(attr(cases[0], "name")).toBe("ok.md");
-    expect(attr(cases[0], "classname")).toBe("docmeta.validate");
+    expect(attr(cases[0], "classname")).toBe("manni.validate");
     expect(attr(cases[1], "name")).toBe("bad.md");
     expect(doc.getElementsByTagName("failure").length).toBe(2);
   });

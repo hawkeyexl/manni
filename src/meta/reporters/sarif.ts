@@ -35,12 +35,17 @@ import { STDIN_LABEL } from "../core/load-files.js";
 import { RESERVED_RULES, fieldLabel, ruleIdFor } from "./rule-id.js";
 
 /** Where a consumer is sent to read about docmeta itself. */
-const INFORMATION_URI = "https://hawkeyexl.github.io/docmeta/";
+const INFORMATION_URI = "https://hawkeyexl.github.io/manni/meta/";
 
 /** Where a consumer is sent to read about one finding. */
-const HELP_URI = "https://hawkeyexl.github.io/docmeta/fix/";
+const HELP_URI = "https://hawkeyexl.github.io/manni/meta/fix/";
 
-/** The property-bag key GitHub keys alert identity on. Versioned deliberately. */
+/**
+ * The property-bag key GitHub keys alert identity on. Versioned deliberately,
+ * and **not renamed with the tool**: the value is what lets an alert opened by
+ * a docmeta run stay the same alert under manni. A new key would re-open every
+ * finding once; that is what `/v2` is for, should the fingerprint ever change.
+ */
 const FINGERPRINT_KEY = "docmetaViolation/v1";
 
 /** Not a path anyone can resolve, so it can never be an artifact location. */
@@ -226,7 +231,7 @@ export function renderSarif(
         {
           tool: {
             driver: {
-              name: "docmeta",
+              name: "manni",
               version: pkg.version,
               informationUri: INFORMATION_URI,
               // Only rules this run actually hit. Enumerating every keyword of

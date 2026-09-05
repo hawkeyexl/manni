@@ -3,9 +3,11 @@
  * schema set per file, validates, and returns structured results. Kept free of
  * CLI/IO plumbing so it can be tested directly.
  */
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { resolve, extname } from "node:path";
 import pkg from "../../../package.json" with { type: "json" };
+import { warn } from "../../shared/warn.js";
 import {
   DocmetaError,
   type BaselineSummary,
@@ -15,6 +17,7 @@ import {
 } from "../types.js";
 import {
   DEFAULT_BASELINE_PATH,
+  LEGACY_BASELINE_PATH,
   type FingerprintContext,
   applyBaseline,
   buildBaseline,
@@ -191,8 +194,22 @@ function resolveBaselineRequest(
    * where the user is standing, which is what a shell argument should mean.
    */
   const implied = (): Omit<BaselineRequest, "write"> => {
-    const label = configured ?? DEFAULT_BASELINE_PATH;
-    return { absPath: resolve(configDir ?? cwd, label), label };
+    const base = configDir ?? cwd;
+    if (configured !== undefined) {
+      return { absPath: resolve(base, configured), label: configured };
+    }
+    // A baseline recorded before the rename is still the project's baseline.
+    // Only when the new name is absent, so a project that has moved is never
+    // pulled back by a stale file it forgot to delete.
+    const current = resolve(base, DEFAULT_BASELINE_PATH);
+    const legacy = resolve(base, LEGACY_BASELINE_PATH);
+    if (!existsSync(current) && existsSync(legacy)) {
+      warn(
+        `"${LEGACY_BASELINE_PATH}" is the pre-rename baseline file name. Rename it to "${DEFAULT_BASELINE_PATH}".`,
+      );
+      return { absPath: legacy, label: LEGACY_BASELINE_PATH };
+    }
+    return { absPath: current, label: DEFAULT_BASELINE_PATH };
   };
 
   const requested = (
@@ -534,7 +551,7 @@ async function settleBaseline(
 
   if (!previous) {
     throw new DocmetaError(
-      `Baseline "${request.label}" not found. Record one with \`docmeta validate --write-baseline\`, or drop --baseline.`,
+      `Baseline "${request.label}" not found. Record one with \`manni meta validate --write-baseline\`, or drop --baseline.`,
     );
   }
 

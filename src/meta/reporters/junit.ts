@@ -23,8 +23,8 @@ import type { ValidationResult } from "../types.js";
 import { fieldLabel, ruleIdFor } from "./rule-id.js";
 
 /** Suite and classname. One suite per run; nested suites are not portable. */
-const SUITE_NAME = "docmeta";
-const CLASS_NAME = "docmeta.validate";
+const SUITE_NAME = "manni";
+const CLASS_NAME = "manni.validate";
 
 const XML_ENTITIES: Record<string, string> = {
   "&": "&amp;",

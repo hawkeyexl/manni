@@ -626,7 +626,7 @@ async function runSql(
     // 0024: `SET k = NULL` is the removal spelling, so the literal `k: null`
     // gets a function instead — `explicit_null()` returns a per-run random
     // sentinel no real content can collide with and nothing can type.
-    const sentinel = `docmeta:null:${randomBytes(16).toString("hex")}`;
+    const sentinel = `manni:null:${randomBytes(16).toString("hex")}`;
     db.function("explicit_null", () => sentinel);
     // 0026: the statement may name the source line a key sits on.
     registerLineFor(db, entries);
@@ -947,7 +947,7 @@ function snapshotColumns(
   // a Node release renames a pragma column, instead of mistyping silently.
   if (rows.length > 0 && typeof rows[0]?.name !== "string") {
     throw new DocmetaError(
-      "PRAGMA table_info returned an unexpected row shape; this node:sqlite build is not one docmeta understands.",
+      "PRAGMA table_info returned an unexpected row shape; this node:sqlite build is not one manni understands.",
     );
   }
   return new Map(rows.map((r) => [r.name, { type: r.type, notnull: r.notnull }]));
@@ -1476,13 +1476,13 @@ async function loadSetMembers(
     const { kind } = classifyRef(ref);
     if (kind === "url" && !isPublishedBuiltinUrl(ref)) {
       throw new DocmetaError(
-        `"${ref}" in the resolved schema set is a URL — DDL edits local schemas only. Vendor it first (docmeta schemas vendor), then evolve the local copy.`,
+        `"${ref}" in the resolved schema set is a URL — DDL edits local schemas only. Vendor it first (manni meta schemas vendor), then evolve the local copy.`,
       );
     }
     if (kind === "builtin" || kind === "url") {
       const builtinId =
         kind === "url"
-          ? (publishedBuiltins().find((b) => b.url === ref)?.id ?? ref)
+          ? (publishedBuiltins().find((b) => b.url === ref || b.legacyUrl === ref)?.id ?? ref)
           : ref;
       if (seenBuiltins.has(builtinId)) continue;
       seenBuiltins.add(builtinId);
@@ -1793,7 +1793,7 @@ async function planSchemaMutation(
       const { kind } = classifyRef(r);
       if (kind === "builtin") return r;
       if (kind === "url" && isPublishedBuiltinUrl(r)) {
-        return publishedBuiltins().find((b) => b.url === r)?.id;
+        return publishedBuiltins().find((b) => b.url === r || b.legacyUrl === r)?.id;
       }
       return undefined;
     };

@@ -227,7 +227,7 @@ export async function runChecks(
         const message = (err as Error).message;
         throw new DocmetaError(
           message.includes("attempt to write a readonly database")
-            ? `check "${check.name}": ${message} — checks are read-only by design; a check is a SELECT over the projection. Edit the corpus with \`docmeta query\` instead.`
+            ? `check "${check.name}": ${message} — checks are read-only by design; a check is a SELECT over the projection. Edit the corpus with \`manni meta query\` instead.`
             : `check "${check.name}": ${message}`,
         );
       }

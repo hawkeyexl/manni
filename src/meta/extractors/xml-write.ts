@@ -182,7 +182,7 @@ function rootNameEnd(
  *
  * Values are escaped on the way in, so any value is writable; a *name* has no
  * such escape hatch. This covers the practical cases — a leading digit, a
- * space, a namespace prefix docmeta cannot declare, or an `xmlns:` that would
+ * space, a namespace prefix manni cannot declare, or an `xmlns:` that would
  * rewrite a namespace declaration — rather than the full XML Name production,
  * and errs toward refusing rather than emitting something the parser will
  * reject downstream.
@@ -196,7 +196,7 @@ function rootNameEnd(
 function assertWritableName(key: string): void {
   if (!/^[A-Za-z_][A-Za-z0-9._-]*$/.test(key)) {
     throw new DocmetaError(
-      `Refusing to write "${key}": it is not a valid XML attribute name, or uses a namespace prefix docmeta cannot declare. Writing it would produce a document that no longer parses. Rename the property, or set it manually.`,
+      `Refusing to write "${key}": it is not a valid XML attribute name, or uses a namespace prefix manni cannot declare. Writing it would produce a document that no longer parses. Rename the property, or set it manually.`,
     );
   }
 }
@@ -219,7 +219,7 @@ function assertNoElementCollision(key: string, root: XmlElement): void {
   const [head, ...rest] = key.split(".");
   if (rest.length === 0 || head !== root.nodeName.toLowerCase()) return;
   throw new DocmetaError(
-    `Refusing to create "${key}" as an attribute of <${root.nodeName}>: that name is how docmeta reads <${root.nodeName}><${rest.join(".")}>, so an attribute here would go unread as soon as the element exists. Add the element to the document and docmeta will update it in place.`,
+    `Refusing to create "${key}" as an attribute of <${root.nodeName}>: that name is how manni reads <${root.nodeName}><${rest.join(".")}>, so an attribute here would go unread as soon as the element exists. Add the element to the document and manni will update it in place.`,
   );
 }
 

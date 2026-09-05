@@ -120,8 +120,11 @@ function buildAjv(dialect: Dialect): InstanceType<AjvCtor> {
  * otherwise lose every `$ref` into a built-in.
  */
 function registerBuiltins(ajv: InstanceType<AjvCtor>, dialect: Dialect): void {
-  for (const { id, url, schema } of publishedBuiltins()) {
+  for (const { id, url, legacyUrl, schema } of publishedBuiltins()) {
     ajv.addSchema(schema, url, undefined, false);
+    // A user schema written before the rename `$ref`s the old URL. Same bytes,
+    // same object; only the key differs.
+    ajv.addSchema(schema, legacyUrl, undefined, false);
     // draft-04 predates `$id` — `ajv-draft-04` reads `id` instead — so the URL
     // key is the only registration the call above produces there, and the id
     // form has to be added explicitly. It does not throw as a duplicate for the

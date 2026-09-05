@@ -111,11 +111,20 @@ export function listBuiltins(): BuiltinInfo[] {
  * Where the docs site serves byte-identical copies of the built-ins (0009).
  *
  * The site's `site` is `https://hawkeyexl.github.io` and its `base` is
- * `/docmeta`, and Astro serves `docs/public/**` at the site root — so
+ * `/manni`, and Astro serves `docs/public/**` at the site root — so
  * `docs/public/schemas/okf/0.1.json` is reachable at
  * `<PUBLISHED_BASE>okf/0.1.json`.
  */
-export const PUBLISHED_BASE = "https://hawkeyexl.github.io/docmeta/schemas/";
+export const PUBLISHED_BASE = "https://hawkeyexl.github.io/manni/schemas/";
+
+/**
+ * Where the same bytes were served before the rename. Proposal 0009 promised
+ * those URLs stay byte-stable, and the old repository's Pages keeps serving
+ * them, so a `$schema` written against one keeps resolving to the bundle
+ * rather than becoming a network fetch of a stranger's copy.
+ */
+export const LEGACY_PUBLISHED_BASE =
+  "https://hawkeyexl.github.io/docmeta/schemas/";
 
 /**
  * Published URL → built-in id.
@@ -131,34 +140,44 @@ export const PUBLISHED_BASE = "https://hawkeyexl.github.io/docmeta/schemas/";
  * `.../schemas/okf/9.9.json`, which does not exist and must stay an ordinary
  * remote ref that fails with a 404 rather than resolving to something else.
  */
-const PUBLISHED_ALIAS: ReadonlyMap<string, string> = new Map([
-  [`${PUBLISHED_BASE}okf/0.1.json`, "google:okf:0.1"],
-  [`${PUBLISHED_BASE}diataxis/1.0.json`, "diataxis:diataxis:1.0"],
-  [`${PUBLISHED_BASE}seven-action/1.0.json`, "passo-uno:seven-action:1.0"],
-  [`${PUBLISHED_BASE}tgdp/1.0.json`, "tgdp:templates:1.0"],
-  [`${PUBLISHED_BASE}docusaurus-docs/3.10.json`, "docusaurus:docs:3.10"],
-  [`${PUBLISHED_BASE}docusaurus-blog/3.10.json`, "docusaurus:blog:3.10"],
-  [`${PUBLISHED_BASE}docusaurus-pages/3.10.json`, "docusaurus:pages:3.10"],
-  [`${PUBLISHED_BASE}starlight/0.41.json`, "astro:starlight:0.41"],
-  [`${PUBLISHED_BASE}antora/3.1.json`, "antora:page:3.1"],
-  [`${PUBLISHED_BASE}sphinx/9.1.json`, "sphinx:docinfo:9.1"],
-  [`${PUBLISHED_BASE}myst/1.10.json`, "myst:frontmatter:1.10"],
-  [`${PUBLISHED_BASE}ogp/1.0.json`, "ogp:article:1.0"],
-  [`${PUBLISHED_BASE}dcmi/1.1.json`, "dcmi:elements:1.1"],
-  [`${PUBLISHED_BASE}microsoft-learn/1.0.json`, "microsoft:learn:1.0"],
-  [`${PUBLISHED_BASE}dita/1.3.json`, "oasis:dita-metadata:1.3"],
-  [`${PUBLISHED_BASE}hugo/0.165.json`, "hugo:page:0.165"],
-  [`${PUBLISHED_BASE}jekyll/4.4.json`, "jekyll:page:4.4"],
-  [`${PUBLISHED_BASE}vitepress/1.6.json`, "vitepress:page:1.6"],
-  [`${PUBLISHED_BASE}x-cards/1.0.json`, "x:cards:1.0"],
-  [`${PUBLISHED_BASE}agent-skills/1.0.json`, "agentskills:skill:1.0"],
-  [`${PUBLISHED_BASE}claude-skill/2.1.json`, "anthropic:claude-skill:2.1"],
-  [`${PUBLISHED_BASE}mkdocs-material/9.7.json`, "mkdocs:material:9.7"],
-  [
-    `${PUBLISHED_BASE}claude-subagent/2.1.json`,
-    "anthropic:claude-subagent:2.1",
-  ],
-]);
+const PUBLISHED_PATHS: readonly (readonly [string, string])[] = [
+  ["okf/0.1.json", "google:okf:0.1"],
+  ["diataxis/1.0.json", "diataxis:diataxis:1.0"],
+  ["seven-action/1.0.json", "passo-uno:seven-action:1.0"],
+  ["tgdp/1.0.json", "tgdp:templates:1.0"],
+  ["docusaurus-docs/3.10.json", "docusaurus:docs:3.10"],
+  ["docusaurus-blog/3.10.json", "docusaurus:blog:3.10"],
+  ["docusaurus-pages/3.10.json", "docusaurus:pages:3.10"],
+  ["starlight/0.41.json", "astro:starlight:0.41"],
+  ["antora/3.1.json", "antora:page:3.1"],
+  ["sphinx/9.1.json", "sphinx:docinfo:9.1"],
+  ["myst/1.10.json", "myst:frontmatter:1.10"],
+  ["ogp/1.0.json", "ogp:article:1.0"],
+  ["dcmi/1.1.json", "dcmi:elements:1.1"],
+  ["microsoft-learn/1.0.json", "microsoft:learn:1.0"],
+  ["dita/1.3.json", "oasis:dita-metadata:1.3"],
+  ["hugo/0.165.json", "hugo:page:0.165"],
+  ["jekyll/4.4.json", "jekyll:page:4.4"],
+  ["vitepress/1.6.json", "vitepress:page:1.6"],
+  ["x-cards/1.0.json", "x:cards:1.0"],
+  ["agent-skills/1.0.json", "agentskills:skill:1.0"],
+  ["claude-skill/2.1.json", "anthropic:claude-skill:2.1"],
+  ["mkdocs-material/9.7.json", "mkdocs:material:9.7"],
+  ["claude-subagent/2.1.json", "anthropic:claude-subagent:2.1"],
+];
+
+/** Published URL → built-in id, under the current base. */
+const PUBLISHED_ALIAS: ReadonlyMap<string, string> = new Map(
+  PUBLISHED_PATHS.map(([path, id]) => [`${PUBLISHED_BASE}${path}`, id]),
+);
+
+/**
+ * The same table under the pre-rename base. Consulted for resolution only;
+ * `publishedBuiltins()` lists each built-in once, under the current URL.
+ */
+const LEGACY_PUBLISHED_ALIAS: ReadonlyMap<string, string> = new Map(
+  PUBLISHED_PATHS.map(([path, id]) => [`${LEGACY_PUBLISHED_BASE}${path}`, id]),
+);
 
 /**
  * The bundled object a published URL names, or `undefined`.
@@ -178,7 +197,7 @@ const PUBLISHED_ALIAS: ReadonlyMap<string, string> = new Map([
 function publishedBuiltinSchema(
   ref: string,
 ): Record<string, unknown> | undefined {
-  const id = PUBLISHED_ALIAS.get(ref);
+  const id = PUBLISHED_ALIAS.get(ref) ?? LEGACY_PUBLISHED_ALIAS.get(ref);
   return id === undefined ? undefined : BUILTINS.get(id);
 }
 
@@ -201,6 +220,8 @@ export interface PublishedBuiltin {
   id: string;
   /** The docs-site URL serving byte-identical content. */
   url: string;
+  /** The same content under the pre-rename base, still served and still honored. */
+  legacyUrl: string;
   /** The bundled object — the same reference `loadSchema(id)` returns. */
   schema: Record<string, unknown>;
 }
@@ -214,14 +235,16 @@ export interface PublishedBuiltin {
  */
 export function publishedBuiltins(): PublishedBuiltin[] {
   const out: PublishedBuiltin[] = [];
-  for (const [url, id] of PUBLISHED_ALIAS) {
+  for (const [path, id] of PUBLISHED_PATHS) {
+    const url = `${PUBLISHED_BASE}${path}`;
+    const legacyUrl = `${LEGACY_PUBLISHED_BASE}${path}`;
     const schema = publishedBuiltinSchema(url);
     // A URL whose id is not in `BUILTINS` is skipped rather than registered as
     // `undefined`. Unreachable while both tables are literals here, and the
     // coverage test is what keeps it that way: it compares this list against
     // `listBuiltins()`, so a typo shows up as a missing entry — which is
     // exactly what skipping produces.
-    if (schema) out.push({ id, url, schema });
+    if (schema) out.push({ id, url, legacyUrl, schema });
   }
   return out;
 }
@@ -892,8 +915,8 @@ export function schemaLoadOptions(args: {
  */
 function repinAdvice(ref: string, pin: SchemaPin): string {
   return pin.source !== undefined
-    ? `Re-download it with \`docmeta schemas vendor ${pin.source}\`, or update the recorded integrity if the change was intended.`
-    : `Restore the file from version control, or record the new bytes by re-running \`docmeta schemas vendor\` with the URL this copy came from. (No \`source:\` is recorded for "${ref}", so docmeta cannot say where that is.)`;
+    ? `Re-download it with \`manni meta schemas vendor ${pin.source}\`, or update the recorded integrity if the change was intended.`
+    : `Restore the file from version control, or record the new bytes by re-running \`manni meta schemas vendor\` with the URL this copy came from. (No \`source:\` is recorded for "${ref}", so manni cannot say where that is.)`;
 }
 
 /**
@@ -915,7 +938,7 @@ function assertIntegrity(
   // parser rejects a malformed pin at its source, where the line number is.
   if (!isIntegrity(integrity)) {
     throw new DocmetaError(
-      `Schema "${ref}" has an integrity pin docmeta cannot verify: "${integrity}". Expected "${INTEGRITY_SHAPE}".`,
+      `Schema "${ref}" has an integrity pin manni cannot verify: "${integrity}". Expected "${INTEGRITY_SHAPE}".`,
     );
   }
   const found = integrityOf(bytes);
@@ -950,7 +973,7 @@ export async function loadSchema(
   // with a better message; this catches a library caller.
   if (pin?.integrity !== undefined && kind !== "file") {
     throw new DocmetaError(
-      `Schema "${ref}" carries an integrity pin, but a pin can only be verified against a local file (this is a ${kind === "url" ? "URL" : "built-in id"}). Vendor it with \`docmeta schemas vendor\`, or drop the pin.`,
+      `Schema "${ref}" carries an integrity pin, but a pin can only be verified against a local file (this is a ${kind === "url" ? "URL" : "built-in id"}). Vendor it with \`manni meta schemas vendor\`, or drop the pin.`,
     );
   }
 
@@ -1053,7 +1076,7 @@ export async function loadSchema(
     // message uses for it.
     throw new DocmetaError(
       pin?.source !== undefined
-        ? `Schema file not found: "${ref}". It was vendored from ${pin.source}; commit the file, or re-download it with \`docmeta schemas vendor ${pin.source}\`.`
+        ? `Schema file not found: "${ref}". It was vendored from ${pin.source}; commit the file, or re-download it with \`manni meta schemas vendor ${pin.source}\`.`
         : `Schema file not found: "${ref}".`,
     );
   }

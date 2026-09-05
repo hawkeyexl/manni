@@ -65,7 +65,7 @@ export function valuesFor(
         count === 1 ? "" : "s"
       } for it and ${values.length} value${
         values.length === 1 ? "" : "s"
-      } was given. docmeta updates elements in place; adding or removing one ` +
+      } was given. manni updates elements in place; adding or removing one ` +
         "changes the document's shape, which it will not do on your behalf.",
     );
   }

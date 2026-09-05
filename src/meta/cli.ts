@@ -84,7 +84,7 @@ function resolveColor(program: Command): boolean {
  * declares one.
  *
  * commander lets an option declared on a parent be written anywhere in the
- * argv, so `docmeta schemas infer -f json` binds `json` to the `schemas`
+ * argv, so `manni meta schemas infer -f json` binds `json` to the `schemas`
  * command — `infer`'s own `--format` keeps its default and the run answers in
  * `pretty`. Silently. That is the same false green `schemas -f github` was
  * fixed for: a request docmeta could honor, answered in a format nobody asked
@@ -125,14 +125,14 @@ const STDIN = "-";
  * outright instead of reporting the paths that are left as missing.
  *
  * The four positive tests mirror `suggestCommand`'s, `existsSync` included —
- * that leg is the one that catches a bare directory name (`docmeta get docs`),
+ * that leg is the one that catches a bare directory name (`manni meta get docs`),
  * which has neither a dot, a separator, nor a glob character.
  *
  * `existsSync` alone is too eager for a token with **no path shape at all**,
  * though, because field names collide with directory names constantly: `tags`,
  * `docs`, `type`, `content`. In a site repo holding a `tags/` directory,
- * `docmeta get tags docs/a.md` was refused as a path, and the remedy it
- * suggested (`docmeta get title tags`) was nonsense. So a shapeless token is
+ * `manni meta get tags docs/a.md` was refused as a path, and the remedy it
+ * suggested (`manni meta get title tags`) was nonsense. So a shapeless token is
  * only read as a path when it is **alone** — nothing else was offered as one,
  * which is the shape of someone who forgot the field list. Give a path *and* a
  * bare name and the bare name is the field list: the only reading that makes
@@ -143,7 +143,7 @@ const STDIN = "-";
  *
  * - a **comma** makes it a list, and a path holding one is vanishingly rare;
  * - a **leading `/`** is a JSON Pointer, the documented way to address a nested
- *   or dotted key — `docmeta get /author/email page.md` is exactly the usage
+ *   or dotted key — `manni meta get /author/email page.md` is exactly the usage
  *   the separator test would otherwise refuse.
  *
  * They do not run *first*, though, and the distinction is worth stating because
@@ -177,7 +177,7 @@ function looksLikePath(token: string, cwd: string, alone: boolean): boolean {
  * `options.fields ?? fieldsArg` is `undefined` when neither was given, and
  * `String(undefined).split(",")` is `["undefined"]` — a field list of length
  * one, so `runGet`'s `fields.length === 0` guard never fires and a bare
- * `docmeta get` in a repo with config `paths:` prints `undefined=(unset)` per
+ * `manni meta get` in a repo with config `paths:` prints `undefined=(unset)` per
  * file and exits 0. A successful-looking report for a field nobody named is
  * worse than the error it replaced.
  *
@@ -199,12 +199,12 @@ export function resolveGetInputs(
     looksLikePath(fieldsArg, cwd, pathsArg.length === 0)
   ) {
     throw new DocmetaError(
-      `"${fieldsArg}" looks like a path, not a field list. Pass fields first (docmeta get title ${fieldsArg}) or use --fields.`,
+      `"${fieldsArg}" looks like a path, not a field list. Pass fields first (manni meta get title ${fieldsArg}) or use --fields.`,
     );
   }
 
   // `-` is stdin, never a field name. Letting it become one made
-  // `docmeta get - --as markdown` print `-=(unset)` for every file in the
+  // `manni meta get - --as markdown` print `-=(unset)` for every file in the
   // config's `paths:` and exit 0 — the piped document never read, the run
   // looking entirely successful. Dropping it here leaves `fields` empty, so
   // the missing-field-list error below fires instead.
@@ -212,7 +212,7 @@ export function resolveGetInputs(
   const fields = source === undefined ? [] : splitList(source);
   if (fields.length === 0) {
     throw new DocmetaError(
-      "Specify at least one field to get. Pass fields first (docmeta get title docs/a.md) or use --fields.",
+      "Specify at least one field to get. Pass fields first (manni meta get title docs/a.md) or use --fields.",
     );
   }
 
@@ -261,7 +261,7 @@ export function resolveQueryInputs(
   ) {
     if (sqlOptional) return { sql: "", paths: [sqlArg, ...pathsArg] };
     throw new DocmetaError(
-      `"${sqlArg}" looks like a path, not SQL. Pass the SQL first (docmeta query "SELECT _path FROM docs" ${sqlArg}) or use --query.`,
+      `"${sqlArg}" looks like a path, not SQL. Pass the SQL first (manni meta query "SELECT _path FROM docs" ${sqlArg}) or use --query.`,
     );
   }
 
@@ -269,7 +269,7 @@ export function resolveQueryInputs(
   const sql = source?.trim() ?? "";
   if (sql === "" && !sqlOptional) {
     throw new DocmetaError(
-      'Specify SQL to run. Pass it first (docmeta query "SELECT _path FROM docs" docs/) or use --query.',
+      'Specify SQL to run. Pass it first (manni meta query "SELECT _path FROM docs" docs/) or use --query.',
     );
   }
 
@@ -376,7 +376,7 @@ function renderQueryFindings(run: QueryRun, format: QueryFindingsFormat): void {
   };
   const text = render(format, results, summary, {
     frame: run.frame,
-    classname: "docmeta.query",
+    classname: "manni.query",
     onNotice: notice,
   });
   if (text.length > 0 || !OMITTED_WHEN_CLEAN.has(format)) {
@@ -742,13 +742,13 @@ export function buildProgram(): Command {
       [
         "",
         "Examples:",
-        "  docmeta validate docs/                       # walk a directory",
-        '  docmeta validate "**/*.md" -f github         # CI annotations',
-        '  docmeta validate "**/*.md" -f sarif > o.sarif # code scanning',
-        "  docmeta validate page.md -s google:okf:0.1 -s ./my.schema.json",
-        "  cat page.md | docmeta validate - --as markdown",
-        "  docmeta validate --write-baseline            # record today's backlog",
-        "  docmeta validate --baseline                  # fail only on new findings",
+        "  manni meta validate docs/                       # walk a directory",
+        '  manni meta validate "**/*.md" -f github         # CI annotations',
+        '  manni meta validate "**/*.md" -f sarif > o.sarif # code scanning',
+        "  manni meta validate page.md -s google:okf:0.1 -s ./my.schema.json",
+        "  cat page.md | manni meta validate - --as markdown",
+        "  manni meta validate --write-baseline            # record today's backlog",
+        "  manni meta validate --baseline                  # fail only on new findings",
       ].join("\n"),
     )
     .action(
@@ -865,11 +865,11 @@ export function buildProgram(): Command {
       [
         "",
         "Examples:",
-        "  docmeta get title,type docs/intro.md",
-        "  docmeta get --fields title,type docs/intro.md",
-        "  docmeta get author.name,/author/email docs/intro.md",
-        '  docmeta get type "**/*.md" -f json',
-        "  cat page.md | docmeta get title - --as markdown",
+        "  manni meta get title,type docs/intro.md",
+        "  manni meta get --fields title,type docs/intro.md",
+        "  manni meta get author.name,/author/email docs/intro.md",
+        '  manni meta get type "**/*.md" -f json',
+        "  cat page.md | manni meta get title - --as markdown",
       ].join("\n"),
     )
     .action(
@@ -1006,13 +1006,13 @@ export function buildProgram(): Command {
         "JSON, for json_each/->> reach into nested values).",
         "",
         "Examples:",
-        '  docmeta query "SELECT _path, title FROM docs WHERE draft = 1" docs/',
-        '  docmeta query "SELECT t.value tag, count(*) n FROM docs, json_each(docs.tags) t GROUP BY tag" docs/',
-        '  docmeta query --check "SELECT slug, count(*) n FROM docs GROUP BY slug HAVING n > 1" docs/',
-        '  docmeta query -f csv "SELECT _path, title, last_reviewed FROM docs" docs/ > stale.csv',
-        "  docmeta query --param author=\"O'Brien\" \"SELECT _path FROM docs WHERE author = \\$author\" docs/",
-        '  cat page.md | docmeta query "SELECT title FROM docs" - --as markdown',
-        "  docmeta query --db docs.db docs/       # export only; open with any SQLite UI",
+        '  manni meta query "SELECT _path, title FROM docs WHERE draft = 1" docs/',
+        '  manni meta query "SELECT t.value tag, count(*) n FROM docs, json_each(docs.tags) t GROUP BY tag" docs/',
+        '  manni meta query --check "SELECT slug, count(*) n FROM docs GROUP BY slug HAVING n > 1" docs/',
+        '  manni meta query -f csv "SELECT _path, title, last_reviewed FROM docs" docs/ > stale.csv',
+        "  manni meta query --param author=\"O'Brien\" \"SELECT _path FROM docs WHERE author = \\$author\" docs/",
+        '  cat page.md | manni meta query "SELECT title FROM docs" - --as markdown',
+        "  manni meta query --db docs.db docs/       # export only; open with any SQLite UI",
       ].join("\n"),
     )
     .action(
@@ -1247,11 +1247,11 @@ export function buildProgram(): Command {
       [
         "",
         "Examples:",
-        "  docmeta fill docs/ --dry-run                 # preview proposals",
-        "  docmeta fill docs/ --confidence 0.9          # only near-certain values",
-        "  docmeta fill page.md --fields description",
-        "  docmeta fill docs/ -f github                 # CI annotations",
-        "  cat page.md | docmeta fill - --as markdown   # filled doc to stdout",
+        "  manni meta fill docs/ --dry-run                 # preview proposals",
+        "  manni meta fill docs/ --confidence 0.9          # only near-certain values",
+        "  manni meta fill page.md --fields description",
+        "  manni meta fill docs/ -f github                 # CI annotations",
+        "  cat page.md | manni meta fill - --as markdown   # filled doc to stdout",
       ].join("\n"),
     )
     .action(async (paths: string[], options: FillCliOptions, command: Command) => {
@@ -1345,7 +1345,7 @@ export function buildProgram(): Command {
     });
 
   // `-f, --format` stays on the parent rather than moving to a `list`
-  // subcommand: bare `docmeta schemas` is a *default action*, not group help,
+  // subcommand: bare `manni meta schemas` is a *default action*, not group help,
   // and both are part of the documented surface.
   const schemas = program
     .command("schemas")
@@ -1433,10 +1433,10 @@ export function buildProgram(): Command {
       [
         "",
         "Examples:",
-        "  docmeta schemas infer docs/                  # what does this repo have?",
-        "  docmeta schemas infer docs/ --min-coverage 5 # drop the long tail",
-        "  docmeta schemas infer docs/ --out ./schemas/permissive.json",
-        "  docmeta schemas infer docs/ -f json",
+        "  manni meta schemas infer docs/                  # what does this repo have?",
+        "  manni meta schemas infer docs/ --min-coverage 5 # drop the long tail",
+        "  manni meta schemas infer docs/ --out ./schemas/permissive.json",
+        "  manni meta schemas infer docs/ -f json",
         "",
         "Purely statistical and offline: no provider, no network, no model. The",
         "draft never marks anything `required` — coverage is your decision to",
@@ -1506,8 +1506,8 @@ export function buildProgram(): Command {
       [
         "",
         "Examples:",
-        "  docmeta schemas vendor https://schemas.example.com/house/2.1.json",
-        "  docmeta schemas vendor https://schemas.example.com/house/2.1.json --dir ./contracts",
+        "  manni meta schemas vendor https://schemas.example.com/house/2.1.json",
+        "  manni meta schemas vendor https://schemas.example.com/house/2.1.json --dir ./contracts",
         "",
         "Commit both the downloaded file and the config change: the point of",
         "vendoring is that CI validates against a copy in your own history.",

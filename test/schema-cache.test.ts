@@ -1,5 +1,5 @@
 /**
- * The cross-run schema cache (`.docmeta/schema-cache/`).
+ * The cross-run schema cache (`.manni/meta/schema-cache/`).
  *
  * Every test gets its own temp directory: the cache writes real files, so a
  * shared directory would let one test read another's entry — and a cache that
@@ -209,13 +209,13 @@ describe("schema cache", () => {
     expect(await cache.read(URL_A)).toEqual(SCHEMA);
   });
 
-  it("puts the cache under .docmeta/schema-cache, beside fill's cache", () => {
-    // `.docmeta/` is gitignored wholesale, and `fill` uses `.docmeta/cache` —
+  it("puts the cache under .manni/meta/schema-cache, beside fill's cache", () => {
+    // `.manni/` is gitignored wholesale, and `fill` uses `.manni/meta/cache` —
     // a different directory, so the two never collide.
-    expect(SCHEMA_CACHE_DIR).toBe(".docmeta/schema-cache");
+    expect(SCHEMA_CACHE_DIR).toBe(".manni/meta/schema-cache");
     mkdirSync(join(dir, "root"), { recursive: true });
     expect(schemaCacheDir(join(dir, "root"))).toBe(
-      join(dir, "root", ".docmeta", "schema-cache"),
+      join(dir, "root", ".manni", "meta", "schema-cache"),
     );
   });
 });

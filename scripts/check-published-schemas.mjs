@@ -33,8 +33,16 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const MANIFEST = path.join(ROOT, "src", "meta", "schemas", "manifest.json");
 
 /** Where the docs site serves `docs/public/schemas/**`. */
-const DEFAULT_BASE = "https://hawkeyexl.github.io/docmeta/schemas/";
-const BASE = (process.argv[2] ?? DEFAULT_BASE).replace(/\/?$/, "/");
+// …and where it did before the rename. Both must keep answering with the same
+// bytes: the old base is what every `$schema` written before the rename names,
+// and the old repository's Pages keeps serving it for exactly that reason.
+const DEFAULT_BASES = [
+  "https://hawkeyexl.github.io/manni/schemas/",
+  "https://hawkeyexl.github.io/docmeta/schemas/",
+];
+const BASES = (process.argv[2] ? [process.argv[2]] : DEFAULT_BASES).map((b) =>
+  b.replace(/\/?$/, "/"),
+);
 
 /** Generous: this is a liveness check, not a latency budget. */
 const TIMEOUT_MS = 30_000;
@@ -120,6 +128,7 @@ async function fetchWithRetry(url) {
 const problems = [];
 let checked = 0;
 
+for (const BASE of BASES)
 for (const [key, expected] of entries) {
   const url = `${BASE}${key}`;
   const { res, err } = await fetchWithRetry(url);

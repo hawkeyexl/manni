@@ -306,7 +306,7 @@ function assertDocumentRefAllowed(
   if (kind === "url") {
     if (mode === "local") {
       throw new DocmetaError(
-        `Refusing the "${FILE_SCHEMA_KEY}" URL "${ref}": schemaTrust.documentRefs is "local", so a document may name a built-in id or a schema file inside the repository, but not a URL. Vendor it with \`docmeta schemas vendor ${ref}\` and reference the local copy, or put the URL in \`schemas:\` where an operator controls it.`,
+        `Refusing the "${FILE_SCHEMA_KEY}" URL "${ref}": schemaTrust.documentRefs is "local", so a document may name a built-in id or a schema file inside the repository, but not a URL. Vendor it with \`manni meta schemas vendor ${ref}\` and reference the local copy, or put the URL in \`schemas:\` where an operator controls it.`,
       );
     }
     const hosts = params.config?.schemaTrust?.hosts;

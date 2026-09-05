@@ -15,10 +15,10 @@ import { canonicalSchemaRef, type FingerprintContext } from "../core/baseline.js
 const SYNTHETIC_SCHEMA = "(parse)";
 
 /** A document whose metadata block could not be parsed. */
-export const PARSE_ERROR_RULE = "docmeta/parse-error";
+export const PARSE_ERROR_RULE = "manni/parse-error";
 
 /** A document no schema set could be resolved for. */
-export const SCHEMA_ERROR_RULE = "docmeta/schema-error";
+export const SCHEMA_ERROR_RULE = "manni/schema-error";
 
 /** What each reserved rule means, for the consumer's rule listing. */
 export const RESERVED_RULES: Record<string, string> = {

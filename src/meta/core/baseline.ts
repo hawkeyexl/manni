@@ -18,7 +18,14 @@ import { classifyRef } from "./schema-registry.js";
 import { writeFileAtomic } from "./write-file.js";
 
 /** Where `--baseline` / `--write-baseline` / `baseline:` point when unspecified. */
-export const DEFAULT_BASELINE_PATH = ".docmeta-baseline.json";
+export const DEFAULT_BASELINE_PATH = ".manni-baseline.json";
+
+/**
+ * The default before the rename. A baseline is committed, so an existing one
+ * is still read when the new name is absent — with a warning, because two
+ * defaults is one too many to keep.
+ */
+export const LEGACY_BASELINE_PATH = ".docmeta-baseline.json";
 
 /** The only file format this version understands. */
 export const BASELINE_VERSION = 1;
@@ -182,7 +189,7 @@ export function parseBaseline(text: string, source: string): Baseline {
   if (obj.version !== BASELINE_VERSION) {
     bad(
       source,
-      `unsupported version ${JSON.stringify(obj.version)} (this docmeta writes version ${BASELINE_VERSION}). Re-record it with \`docmeta validate --write-baseline\`.`,
+      `unsupported version ${JSON.stringify(obj.version)} (this manni writes version ${BASELINE_VERSION}). Re-record it with \`manni meta validate --write-baseline\`.`,
     );
   }
 
@@ -309,7 +316,7 @@ export interface AppliedBaseline {
  * Subtract a baseline from a run's results.
  *
  * `recorded` and `stale` count only the files this run actually checked. The
- * alternative — counting the whole file — would make `docmeta validate one.md
+ * alternative — counting the whole file — would make `manni meta validate one.md
  * --baseline` announce that hundreds of entries "no longer occur", and the
  * advice that follows (`--write-baseline` to prune) would then destroy them.
  */

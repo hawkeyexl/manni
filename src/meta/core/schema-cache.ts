@@ -2,9 +2,9 @@
  * The cross-run cache for schemas fetched over `http(s)`.
  *
  * The in-process `Map` in `schema-registry.ts` collapses N files into one
- * fetch and then dies with the process, so every `docmeta validate` in a
+ * fetch and then dies with the process, so every `manni meta validate` in a
  * developer's edit loop re-fetches the same remote contract. This is the piece
- * that survives the run: one file per URL under `.docmeta/schema-cache/`,
+ * that survives the run: one file per URL under `.manni/meta/schema-cache/`,
  * served while it is inside the TTL.
  *
  * **Its scope, stated honestly:** this is a local dev-loop and pre-commit win,
@@ -28,10 +28,10 @@ import { writeFileAtomic } from "./write-file.js";
 /**
  * Where the cache lives, relative to the project root.
  *
- * `.docmeta/` is already ignored wholesale, and `fill` writes its proposal
- * cache to `.docmeta/cache` — a different directory, so the two never collide.
+ * `.manni/` is already ignored wholesale, and `fill` writes its proposal
+ * cache to `.manni/meta/cache` — a different directory, so the two never collide.
  */
-export const SCHEMA_CACHE_DIR = ".docmeta/schema-cache";
+export const SCHEMA_CACHE_DIR = ".manni/meta/schema-cache";
 
 /** The only entry format this version understands. */
 export const SCHEMA_CACHE_VERSION = 1;

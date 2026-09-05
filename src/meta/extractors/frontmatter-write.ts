@@ -142,7 +142,7 @@ export function applyFencedOnly(
       );
     }
     throw new DocmetaError(
-      `This ${format} document has no fenced front matter block; docmeta can only write fenced front matter for ${format}. Add a fenced block, or set the field manually.`,
+      `This ${format} document has no fenced front matter block; manni can only write fenced front matter for ${format}. Add a fenced block, or set the field manually.`,
     );
   }
   if (

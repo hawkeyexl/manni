@@ -735,7 +735,7 @@ describe("runValidate with a baseline", () => {
   });
 
   it("resolves a configured baseline against the config file, not cwd", async () => {
-    // Run from the docs/ subdirectory: `.docmeta-baseline.json` sits next to
+    // Run from the docs/ subdirectory: `.manni-baseline.json` sits next to
     // the config one level up. Resolving against cwd would find nothing and
     // report the known violation as new.
     const fromSubdir = await runValidate({
@@ -830,7 +830,7 @@ describe("runValidate --write-baseline", () => {
       path: "recorded.json",
     });
     expect(existsSync(join(tmp, "recorded.json"))).toBe(true);
-    expect(existsSync(join(tmp, ".docmeta-baseline.json"))).toBe(false);
+    expect(existsSync(join(tmp, ".manni-baseline.json"))).toBe(false);
   });
 
   it("with the value omitted and no config, falls back to the default path", async () => {
@@ -841,8 +841,8 @@ describe("runValidate --write-baseline", () => {
       noConfig: true,
       writeBaseline: true,
     });
-    expect(summary.baseline?.path).toBe(".docmeta-baseline.json");
-    expect(existsSync(join(tmp, ".docmeta-baseline.json"))).toBe(true);
+    expect(summary.baseline?.path).toBe(".manni-baseline.json");
+    expect(existsSync(join(tmp, ".manni-baseline.json"))).toBe(true);
   });
 
   it("wins over --baseline, so recording never depends on the old file", async () => {

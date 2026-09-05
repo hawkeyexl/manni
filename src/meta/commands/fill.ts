@@ -97,11 +97,11 @@ const DEFAULT_CONCURRENCY = 4;
  * `auto` detects the highest-priority provider this machine can actually use —
  * an Anthropic key, then an OpenAI key, then the Claude CLI, then a local model
  * that needs no credentials at all. Defaulting to a named provider instead meant
- * `docmeta fill` failed outright for anyone who did not happen to hold that
+ * `manni meta fill` failed outright for anyone who did not happen to hold that
  * vendor's key.
  */
 const DEFAULT_PROVIDER = "auto";
-const CACHE_DIR = ".docmeta/cache";
+const CACHE_DIR = ".manni/meta/cache";
 
 /**
  * Whether a provider error reads like "the prompt did not fit".
@@ -348,7 +348,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   const cache =
     opts.cache === false
       ? undefined
-      : new JsonCache<CachedProposal>(join(cwd, CACHE_DIR), true, "docmeta");
+      : new JsonCache<CachedProposal>(join(cwd, CACHE_DIR), true, "manni");
   const pricing = pricingFor(identity.model);
 
   const validator = new Validator(schemaOptions);
@@ -386,7 +386,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       return errorResult(
         label,
         extractor.name,
-        `The "${extractor.name}" format is read-only; docmeta fill cannot write metadata back to it.`,
+        `The "${extractor.name}" format is read-only; manni meta fill cannot write metadata back to it.`,
       );
     }
 

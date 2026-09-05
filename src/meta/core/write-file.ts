@@ -13,6 +13,7 @@
  */
 import { writeFile, rename, rm, stat, chmod } from "node:fs/promises";
 import { dirname, join, basename } from "node:path";
+import { programName } from "../../shared/program-name.js";
 
 /** Windows returns these when an editor or scanner holds the target open. */
 const LOCKED = new Set(["EPERM", "EBUSY", "EACCES"]);
@@ -48,7 +49,7 @@ export async function writeFileAtomic(
 ): Promise<void> {
   const tmp = join(
     dirname(path),
-    `.${basename(path)}.docmeta-${process.pid}-${Math.random().toString(36).slice(2, 8)}.tmp`,
+    `.${basename(path)}.manni-${process.pid}-${Math.random().toString(36).slice(2, 8)}.tmp`,
   );
 
   try {
@@ -82,7 +83,7 @@ export async function writeFileAtomic(
     }
 
     process.stderr.write(
-      `docmeta: ${path} is locked by another process; writing in place (not atomically).\n`,
+      `${programName()}: ${path} is locked by another process; writing in place (not atomically).\n`,
     );
     try {
       await writeFile(path, contents);

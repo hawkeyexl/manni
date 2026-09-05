@@ -9,6 +9,7 @@ import {
   realpathSync,
   rmSync,
   writeFileSync,
+  renameSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -1355,9 +1356,9 @@ describe("docmeta CLI baseline flags (built bin)", () => {
     // rather than handing the core a bare `true`.
     const r = here(["validate", "--write-baseline"]);
     expect(r.status).toBe(0);
-    expect(r.stdout).toContain("Baseline written to .docmeta-baseline.json");
+    expect(r.stdout).toContain("Baseline written to .manni-baseline.json");
     expect(r.stdout).toContain("1 finding recorded (+1 new, -0 no longer occur)");
-    expect(existsSync(join(dir, ".docmeta-baseline.json"))).toBe(true);
+    expect(existsSync(join(dir, ".manni-baseline.json"))).toBe(true);
   });
 
   it("--baseline with the value omitted reads that same default path", () => {
@@ -1396,7 +1397,7 @@ describe("docmeta CLI baseline flags (built bin)", () => {
 
   it("a configured `baseline:` implies --baseline on every run", () => {
     here(["validate", "--write-baseline"]);
-    write("docmeta.config.yaml", `${CONFIG}baseline: .docmeta-baseline.json\n`);
+    write("docmeta.config.yaml", `${CONFIG}baseline: .manni-baseline.json\n`);
     const r = here(["validate"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toContain("1 baselined finding");
@@ -1404,7 +1405,7 @@ describe("docmeta CLI baseline flags (built bin)", () => {
 
   it("--no-baseline ignores a configured baseline for one run", () => {
     here(["validate", "--write-baseline"]);
-    write("docmeta.config.yaml", `${CONFIG}baseline: .docmeta-baseline.json\n`);
+    write("docmeta.config.yaml", `${CONFIG}baseline: .manni-baseline.json\n`);
     const r = here(["validate", "--no-baseline"]);
     expect(r.status).toBe(1);
     expect(r.stdout).not.toContain("baselined finding");
@@ -1412,7 +1413,7 @@ describe("docmeta CLI baseline flags (built bin)", () => {
 
   it("resolves a configured baseline against the config file, not the cwd", () => {
     here(["validate", "--write-baseline"]);
-    write("docmeta.config.yaml", `${CONFIG}baseline: .docmeta-baseline.json\n`);
+    write("docmeta.config.yaml", `${CONFIG}baseline: .manni-baseline.json\n`);
     const r = here(["validate"], join(dir, "docs"));
     expect(r.status).toBe(0);
     expect(r.stdout).toContain("1 baselined finding");
@@ -1428,9 +1429,28 @@ describe("docmeta CLI baseline flags (built bin)", () => {
     expect(r.status).toBe(0);
     expect(r.stdout).toContain("Baseline written to .meta/base.json");
     expect(existsSync(join(dir, ".meta", "base.json"))).toBe(true);
-    expect(existsSync(join(dir, ".docmeta-baseline.json"))).toBe(false);
+    expect(existsSync(join(dir, ".manni-baseline.json"))).toBe(false);
     // And the very next run reads that same file back.
     expect(here(["validate"]).status).toBe(0);
+  });
+
+  it("falls back to a pre-rename .docmeta-baseline.json, and says to rename it", () => {
+    expect(here(["validate", "--write-baseline"]).status).toBe(0);
+    renameSync(
+      join(dir, ".manni-baseline.json"),
+      join(dir, ".docmeta-baseline.json"),
+    );
+    // `run()` drops stderr on a successful exit; this run succeeds and the
+    // assertion is about stderr, so spawn it directly.
+    const r = spawnSync("node", [bin, "validate", "--baseline"], {
+      cwd: dir,
+      encoding: "utf8",
+    });
+    expect(r.status).toBe(0);
+    expect(r.stderr).toContain('".docmeta-baseline.json" is the pre-rename baseline');
+    expect(r.stderr).toContain('".manni-baseline.json"');
+    // Read, not migrated: the file is the user's to rename.
+    expect(existsSync(join(dir, ".manni-baseline.json"))).toBe(false);
   });
 
   it("exits 2 naming the remedy when the baseline is missing", () => {
@@ -1785,7 +1805,7 @@ describe("docmeta CLI: sarif and junit output (built bin)", () => {
       }[];
     };
     expect(log.version).toBe("2.1.0");
-    expect(log.runs[0]?.tool.driver.name).toBe("docmeta");
+    expect(log.runs[0]?.tool.driver.name).toBe("manni");
     expect(log.runs[0]?.results[0]?.ruleId).toContain("/required");
     expect(
       log.runs[0]?.results[0]?.locations[0]?.physicalLocation.artifactLocation
@@ -1810,7 +1830,7 @@ describe("docmeta CLI: sarif and junit output (built bin)", () => {
       "junit",
     ]);
     expect(r.status).toBe(1);
-    expect(r.stdout).toContain('<testsuites name="docmeta" tests="2" failures="1"');
+    expect(r.stdout).toContain('<testsuites name="manni" tests="2" failures="1"');
     expect(r.stdout).toContain('<testcase name="test/fixtures/valid.md"');
     expect(r.stdout).toContain("<failure ");
   });
@@ -2014,7 +2034,7 @@ describe("docmeta CLI: --offline and the cross-run schema cache (built bin)", ()
     );
     expect(first.status).toBe(0);
     expect(server.hits("/house.json")).toBe(1);
-    expect(existsSync(join(repo, ".docmeta", "schema-cache"))).toBe(true);
+    expect(existsSync(join(repo, ".manni", "meta", "schema-cache"))).toBe(true);
 
     await server.close();
 
@@ -3064,8 +3084,8 @@ describe("docmeta CLI: corpus checks (0026, built bin)", () => {
       queryDir,
     );
     expect(r.status).toBe(1);
-    expect(r.stdout).toContain('classname="docmeta.query"');
-    expect(r.stdout ?? "").not.toContain("docmeta.validate");
+    expect(r.stdout).toContain('classname="manni.query"');
+    expect(r.stdout ?? "").not.toContain("manni.validate");
   });
 
   it("a findings format without --check is a usage error", () => {

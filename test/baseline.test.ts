@@ -204,8 +204,8 @@ describe("baseline file", () => {
 
   it("rejects an unknown version and names the remedy", () => {
     const text = JSON.stringify({ version: 2, generatedWith: "9.0.0", entries: {} });
-    expect(() => parseBaseline(text, ".docmeta-baseline.json")).toThrow(DocmetaError);
-    expect(() => parseBaseline(text, ".docmeta-baseline.json")).toThrow(
+    expect(() => parseBaseline(text, ".manni-baseline.json")).toThrow(DocmetaError);
+    expect(() => parseBaseline(text, ".manni-baseline.json")).toThrow(
       /--write-baseline/,
     );
   });
@@ -220,7 +220,7 @@ describe("baseline file", () => {
       generatedWith: "3.4.2",
       entries: { "docs/a.md": "a1b2c3d4e5f60718" },
     });
-    expect(() => parseBaseline(text, ".docmeta-baseline.json")).toThrow(DocmetaError);
+    expect(() => parseBaseline(text, ".manni-baseline.json")).toThrow(DocmetaError);
   });
 });
 

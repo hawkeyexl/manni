@@ -120,7 +120,7 @@ export function ditaEdits(
         // value where the reader stops looking the moment a real `<vrm>`
         // appears. Refusing is the only honest option until it has a writer.
         throw new DocmetaError(
-          `docmeta fill cannot create "${key}": it names an attribute of an element the document does not have. Add the <${key.slice(0, key.indexOf("."))}> element, and docmeta will keep it up to date.`,
+          `manni meta fill cannot create "${key}": it names an attribute of an element the document does not have. Add the <${key.slice(0, key.indexOf("."))}> element, and manni will keep it up to date.`,
         );
       }
       const spec = ownLift(container, element);
