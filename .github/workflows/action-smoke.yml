@@ -33,7 +33,7 @@ jobs:
     steps:
       # Floating majors here, SHA pins in `action.yml` — and the difference is
       # the point rather than an oversight. That pin exists because a consumer
-      # writing `uses: hawkeyexl/docmeta@v4` inherits whatever the action
+      # writing `uses: hawkeyexl/manni@v1` inherits whatever the action
       # resolves to and cannot audit or override it. Nobody inherits this
       # workflow's dependencies, so it follows the convention every other
       # workflow here uses. (`release.yml` pins too, because it holds the App
@@ -48,7 +48,7 @@ jobs:
 
       # `npm pack` gives npx an installable spec, so the action exercises this
       # commit's CLI rather than the registry's. The path stays *relative*:
-      # `npx docmeta@<absolute path>` is rejected outright on Windows, where the
+      # `npx manni@<absolute path>` is rejected outright on Windows, where the
       # drive letter's colon collides with the `name@spec` separator, and a
       # relative path avoids the question on every platform. Composite `run:`
       # steps and `npm pack` both use the workspace root, so they agree.

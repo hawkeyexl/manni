@@ -33,7 +33,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Everything that can differ by platform or runtime. docmeta normalizes paths,
+  # Everything that can differ by platform or runtime. manni normalizes paths,
   # shells out to `git check-ignore`, resolves symlinks, and writes files
   # atomically — all of which behave differently across the three OSes, and none
   # of which was ever exercised anywhere but Linux until this matrix existed.
@@ -116,7 +116,7 @@ jobs:
       # fail the deploy after merge — which is exactly what happened in #52.
       #
       # Bare, with no paths and no `-s`: the targets and the schema both come
-      # from the repo's own docmeta.config.yaml, so this exercises config
+      # from the repo's own manni.config.yaml, so this exercises config
       # discovery — the path most users take — instead of stepping around it.
       - name: Validate docs frontmatter (dogfood)
-        run: node dist/cli.js validate --format github
+        run: node dist/cli.js meta validate --format github

@@ -34,7 +34,7 @@ const hooks = parse(
   readFileSync(join(repoRoot, ".pre-commit-hooks.yaml"), "utf8"),
 ) as Hook[];
 
-const docmetaHook = hooks.find((h) => h.id === "docmeta");
+const docmetaHook = hooks.find((h) => h.id === "manni-meta");
 
 describe("the published pre-commit hook", () => {
   it("declares a docmeta hook", () => {

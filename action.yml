@@ -1,16 +1,16 @@
-# The GitHub Action consumers reference as `uses: hawkeyexl/docmeta@v4`.
+# The GitHub Action consumers reference as `uses: hawkeyexl/manni@v1`.
 #
 # Composite rather than a bundled JS action, deliberately. A JS action ships
 # compiled JavaScript that GitHub runs directly, which means committing a built
 # `dist/` and keeping it in step with every release — a second build pipeline,
 # and the usual way an action ends up running last week's code. Shelling out to
-# `npx docmeta@<major>` keeps the npm package as the single artifact, so there
+# `npx manni@<major> meta` keeps the npm package as the single artifact, so there
 # is exactly one thing to version.
 #
 # Six inputs, and no more. Enumerating every CLI flag would create a second CLI
 # surface with nothing like `docs:check-cli` guarding it against drift; `args`
 # is the documented way to reach anything not listed here.
-name: docmeta
+name: manni
 description: Validate document metadata against JSON Schema
 author: hawkeyexl
 
@@ -29,7 +29,7 @@ inputs:
     description: Schema ref. One per line for several; each becomes its own `-s`.
     required: false
   config:
-    description: Path to a docmeta config file.
+    description: Path to a manni config file.
     required: false
   format:
     description: "Output format: pretty, json, github, sarif, or junit."
@@ -41,7 +41,7 @@ inputs:
       with. Also accepts a path or tarball, which is how the smoke test runs the
       action against a local build.
     required: false
-    default: "4"
+    default: "1"
   args:
     description: >-
       Extra arguments appended after everything else, for anything the inputs
@@ -49,55 +49,55 @@ inputs:
       interpreted, so a value containing a space needs its own line.
     required: false
   node-version:
-    description: Node version to set up. docmeta needs 24 or newer.
+    description: Node version to set up. manni needs 24 or newer.
     required: false
     default: "24"
 
 outputs:
   exit-code:
     description: >-
-      docmeta's exit code — 0 clean, 1 validation failures, 2 operational error.
+      manni's exit code — 0 clean, 1 validation failures, 2 operational error.
       Only useful with `continue-on-error: true`; otherwise a non-zero code has
       already failed the job.
-    value: ${{ steps.docmeta.outputs.exit-code }}
+    value: ${{ steps.manni.outputs.exit-code }}
 
 runs:
   using: composite
   steps:
     # Pinned to a SHA, not a floating major. `release.yml` already takes this
     # posture for the privileged job, and it matters more here: a consumer
-    # writing `uses: hawkeyexl/docmeta@v4` inherits whatever this line resolves
+    # writing `uses: hawkeyexl/manni@v1` inherits whatever this line resolves
     # to, with no way to audit or pin it from their side. Dependabot updates
     # composite actions, so the pin stays maintainable.
     - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
       with:
         node-version: ${{ inputs.node-version }}
 
-    - id: docmeta
+    - id: manni
       shell: bash
       env:
         # Through the environment rather than interpolated into the run script:
         # `${{ }}` is substituted before bash sees the line, so a path
         # containing a quote would otherwise be a shell injection.
-        DOCMETA_PATHS: ${{ inputs.paths }}
-        DOCMETA_SCHEMA: ${{ inputs.schema }}
-        DOCMETA_CONFIG: ${{ inputs.config }}
-        DOCMETA_FORMAT: ${{ inputs.format }}
-        DOCMETA_VERSION: ${{ inputs.version }}
-        DOCMETA_ARGS: ${{ inputs.args }}
+        MANNI_PATHS: ${{ inputs.paths }}
+        MANNI_SCHEMA: ${{ inputs.schema }}
+        MANNI_CONFIG: ${{ inputs.config }}
+        MANNI_FORMAT: ${{ inputs.format }}
+        MANNI_VERSION: ${{ inputs.version }}
+        MANNI_ARGS: ${{ inputs.args }}
       run: |
         # `+e`, deliberately. GitHub runs a composite `shell: bash` step as
         # `bash --noprofile --norc -eo pipefail`, and errexit makes the
-        # `code=$?` line below unreachable: a failing docmeta aborts the
+        # `code=$?` line below unreachable: a failing manni aborts the
         # script, `exit-code` is never written, and a consumer using
         # `continue-on-error: true` reads an empty string for the one result
         # they added it to see. The job still fails on a real failure — that is
         # what the explicit `exit "$code"` at the end is for.
         set +e -uo pipefail
         # Word-split the inputs below, but do NOT glob-expand them. A `paths:`
-        # of `docs/**/*.md` must reach docmeta as that string: docmeta applies
+        # of `docs/**/*.md` must reach manni as that string: manni applies
         # its own extension filtering and gitignore rules, and bash expanding it
-        # first would substitute the runner's view of the tree for docmeta's —
+        # first would substitute the runner's view of the tree for manni's —
         # silently, and differently depending on the working directory.
         set -f
 
@@ -120,8 +120,8 @@ runs:
               ;;
             *)
               # Word-split only. Quotes are NOT shell-processed, so a consumer
-              # writing `--exclude "*.draft.md"` hands docmeta a value with the
-              # quote characters still in it — and docmeta accepts it, excludes
+              # writing `--exclude "*.draft.md"` hands manni a value with the
+              # quote characters still in it — and manni accepts it, excludes
               # nothing, and exits 0. Measured: that turns "4 files checked"
               # into "5 files checked" with no diagnostic at all. Silence is the
               # whole problem, so say something.
@@ -151,28 +151,28 @@ runs:
         # empty, and to the properly-quoted elements otherwise, on every bash
         # from 3.2 up.
         # Paths are positional, matching the CLI.
-        split_input "$DOCMETA_PATHS" "paths"
+        split_input "$MANNI_PATHS" "paths"
         argv+=(${split_out[@]+"${split_out[@]}"})
         # One `-s` per line: a schema ref can contain spaces, so lines are the
         # only separator that cannot collide with a legitimate value.
-        if [ -n "$DOCMETA_SCHEMA" ]; then
+        if [ -n "$MANNI_SCHEMA" ]; then
           while IFS= read -r ref; do
             [ -n "$ref" ] && argv+=(-s "$ref")
-          done <<< "$DOCMETA_SCHEMA"
+          done <<< "$MANNI_SCHEMA"
         fi
-        [ -n "$DOCMETA_CONFIG" ] && argv+=(-c "$DOCMETA_CONFIG")
-        [ -n "$DOCMETA_FORMAT" ] && argv+=(--format "$DOCMETA_FORMAT")
-        split_input "$DOCMETA_ARGS" "args"
+        [ -n "$MANNI_CONFIG" ] && argv+=(-c "$MANNI_CONFIG")
+        [ -n "$MANNI_FORMAT" ] && argv+=(--format "$MANNI_FORMAT")
+        split_input "$MANNI_ARGS" "args"
         argv+=(${split_out[@]+"${split_out[@]}"})
 
         # `%q` per element, because the point of this line is to tell a
         # consumer what actually ran. Neither `${argv[*]}` nor `${argv[@]}`
         # would: echo rejoins on single spaces either way, so a path
         # containing a space logs identically to two separate paths.
-        printf 'docmeta validate'
+        printf 'manni meta validate'
         [ ${#argv[@]} -gt 0 ] && printf ' %q' ${argv[@]+"${argv[@]}"}
         echo
-        npx --yes "docmeta@${DOCMETA_VERSION}" validate ${argv[@]+"${argv[@]}"}
+        npx --yes "manni@${MANNI_VERSION}" meta validate ${argv[@]+"${argv[@]}"}
         code=$?
         echo "exit-code=${code}" >> "$GITHUB_OUTPUT"
         exit "$code"

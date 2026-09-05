@@ -5,7 +5,7 @@ name: Published schemas
 # the manifest agree with each other — and passes happily while the docs site
 # serves 404s, because it never leaves the disk.
 #
-# The people relying on those URLs are not necessarily running docmeta, so a
+# The people relying on those URLs are not necessarily running manni, so a
 # broken deploy reaches them as a failing build with no way to tell us. Hence a
 # schedule: nobody has to remember, and the blast radius of a bad Pages deploy
 # is a day rather than however long until someone happens to look.

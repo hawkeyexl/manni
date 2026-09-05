@@ -32,7 +32,7 @@ import { spawnText } from "./helpers/spawn.js";
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 /**
- * The `run:` block of the composite step with `id: docmeta`, as a runnable
+ * The `run:` block of the composite step with `id: manni`, as a runnable
  * script.
  *
  * Located by parsing the YAML and matching the step's `id`, not by scanning
@@ -45,9 +45,9 @@ function actionScript(): string {
   const doc = parseYaml(readFileSync(join(repoRoot, "action.yml"), "utf8")) as {
     runs?: { steps?: Array<{ id?: string; run?: string }> };
   };
-  const step = doc.runs?.steps?.find((s) => s.id === "docmeta");
+  const step = doc.runs?.steps?.find((s) => s.id === "manni");
   if (step?.run === undefined) {
-    throw new Error("action.yml has no step with `id: docmeta` and a `run:`");
+    throw new Error("action.yml has no step with `id: manni` and a `run:`");
   }
   return step.run;
 }
@@ -121,12 +121,12 @@ function runAction(env: Record<string, string>, npxExit = 0): RunResult {
           ...process.env,
           PATH: `${join(dir, "bin")}:${process.env.PATH ?? ""}`,
           GITHUB_OUTPUT: outFile,
-          DOCMETA_PATHS: "",
-          DOCMETA_SCHEMA: "",
-          DOCMETA_CONFIG: "",
-          DOCMETA_FORMAT: "",
-          DOCMETA_VERSION: "4",
-          DOCMETA_ARGS: "",
+          MANNI_PATHS: "",
+          MANNI_SCHEMA: "",
+          MANNI_CONFIG: "",
+          MANNI_FORMAT: "",
+          MANNI_VERSION: "1",
+          MANNI_ARGS: "",
           ...env,
         },
       },
@@ -166,20 +166,20 @@ describe.skipIf(!hasBash)("action.yml input wiring", () => {
     // runner's view of the tree substituted for docmeta's own expansion, which
     // applies extension filtering and gitignore rules the shell knows nothing
     // about. Caught here, not by review.
-    const argv = argvFor({ DOCMETA_PATHS: "docs/**/*.md" });
+    const argv = argvFor({ MANNI_PATHS: "docs/**/*.md" });
     expect(argv).toContain("validate docs/**/*.md");
     expect(argv).not.toContain(".mdx");
   });
 
   it("still splits several paths on whitespace", () => {
     // `set -f` must disable globbing without disabling word-splitting.
-    expect(argvFor({ DOCMETA_PATHS: "docs/ README.md" })).toContain(
+    expect(argvFor({ MANNI_PATHS: "docs/ README.md" })).toContain(
       "validate docs/ README.md",
     );
   });
 
   it("expands a multi-line schema input into one -s per ref", () => {
-    const argv = argvFor({ DOCMETA_SCHEMA: "google:okf:0.1\n./local.schema.json" });
+    const argv = argvFor({ MANNI_SCHEMA: "google:okf:0.1\n./local.schema.json" });
     expect(argv).toContain("-s google:okf:0.1");
     expect(argv).toContain("-s ./local.schema.json");
   });
@@ -187,14 +187,14 @@ describe.skipIf(!hasBash)("action.yml input wiring", () => {
   it("ignores blank lines in the schema input", () => {
     // A YAML block scalar routinely ends with a trailing newline; turning that
     // into a bare `-s` would make docmeta fail on an empty ref.
-    const argv = argvFor({ DOCMETA_SCHEMA: "google:okf:0.1\n\n" });
+    const argv = argvFor({ MANNI_SCHEMA: "google:okf:0.1\n\n" });
     expect(argv.match(/-s/g) ?? []).toHaveLength(1);
   });
 
   it("maps config and format to their flags", () => {
     const argv = argvFor({
-      DOCMETA_CONFIG: "docmeta.config.yaml",
-      DOCMETA_FORMAT: "sarif",
+      MANNI_CONFIG: "docmeta.config.yaml",
+      MANNI_FORMAT: "sarif",
     });
     expect(argv).toContain("-c docmeta.config.yaml");
     expect(argv).toContain("--format sarif");
@@ -202,15 +202,15 @@ describe.skipIf(!hasBash)("action.yml input wiring", () => {
 
   it("appends args verbatim, last", () => {
     const argv = argvFor({
-      DOCMETA_PATHS: "docs/",
-      DOCMETA_ARGS: "--allow-empty --no-gitignore",
+      MANNI_PATHS: "docs/",
+      MANNI_ARGS: "--allow-empty --no-gitignore",
     });
     expect(argv.endsWith("--allow-empty --no-gitignore")).toBe(true);
   });
 
   it("honours the version input, so the smoke test can point at a local build", () => {
-    expect(argvFor({ DOCMETA_VERSION: "./docmeta-4.0.0.tgz" })).toContain(
-      "docmeta@./docmeta-4.0.0.tgz",
+    expect(argvFor({ MANNI_VERSION: "./manni-1.0.0.tgz" })).toContain(
+      "manni@./manni-1.0.0.tgz",
     );
   });
 
@@ -218,7 +218,7 @@ describe.skipIf(!hasBash)("action.yml input wiring", () => {
     // The failure this prevents: `-c ""` or `--format ""`, which the CLI
     // rejects with exit 2 — an action that breaks when an optional input is
     // simply not set.
-    const argv = argvFor({ DOCMETA_PATHS: "docs/" });
+    const argv = argvFor({ MANNI_PATHS: "docs/" });
     expect(argv).not.toContain('-c ""');
     expect(argv).not.toMatch(/--format\s*$/);
   });
@@ -228,13 +228,13 @@ describe.skipIf(!hasBash)("action.yml input wiring", () => {
   // is unreachable once docmeta exits non-zero — so this asserted nothing at
   // all until the harness above started passing `-e`.
   it("reports a non-zero docmeta exit through the exit-code output", () => {
-    const res = runAction({ DOCMETA_PATHS: "docs/" }, 1);
+    const res = runAction({ MANNI_PATHS: "docs/" }, 1);
     expect(res.githubOutput).toContain("exit-code=1");
     expect(res.status).toBe(1);
   });
 
   it("reports a clean run as exit-code 0", () => {
-    const res = runAction({ DOCMETA_PATHS: "docs/" }, 0);
+    const res = runAction({ MANNI_PATHS: "docs/" }, 0);
     expect(res.githubOutput).toContain("exit-code=0");
     expect(res.status).toBe(0);
   });
@@ -243,10 +243,11 @@ describe.skipIf(!hasBash)("action.yml input wiring", () => {
     // `schema` already uses lines for exactly that reason. Without this,
     // `docs/my notes/*.md` silently becomes `docs/my` and `notes/*.md` — two
     // paths the consumer never named, neither of which exists.
-    const args = argsFor({ DOCMETA_PATHS: "docs/my notes/*.md\nREADME.md" });
+    const args = argsFor({ MANNI_PATHS: "docs/my notes/*.md\nREADME.md" });
     expect(args).toEqual([
       "--yes",
-      "docmeta@4",
+      "manni@1",
+      "meta",
       "validate",
       "docs/my notes/*.md",
       "README.md",
@@ -255,14 +256,14 @@ describe.skipIf(!hasBash)("action.yml input wiring", () => {
 
   it("takes a newline-separated args input one argument per line", () => {
     const args = argsFor({
-      DOCMETA_PATHS: "docs/",
-      DOCMETA_ARGS: "--exclude\n*.draft.md",
+      MANNI_PATHS: "docs/",
+      MANNI_ARGS: "--exclude\n*.draft.md",
     });
     expect(args.slice(-2)).toEqual(["--exclude", "*.draft.md"]);
   });
 
   it("still word-splits a single-line input, as the docs show", () => {
-    expect(argvFor({ DOCMETA_PATHS: "docs/ README.md" })).toContain(
+    expect(argvFor({ MANNI_PATHS: "docs/ README.md" })).toContain(
       "validate docs/ README.md",
     );
   });
@@ -274,8 +275,8 @@ describe.skipIf(!hasBash)("action.yml input wiring", () => {
     // accepts the quoted value, excludes nothing, and exits 0. Nothing can
     // recover the intent at this layer, so the least it can do is say so.
     const res = runAction({
-      DOCMETA_PATHS: "docs/",
-      DOCMETA_ARGS: '--exclude "*.draft.md"',
+      MANNI_PATHS: "docs/",
+      MANNI_ARGS: '--exclude "*.draft.md"',
     });
     expect(res.stderr).toContain("::warning::");
     expect(res.stderr).toContain("args contains a quote character");
@@ -283,8 +284,8 @@ describe.skipIf(!hasBash)("action.yml input wiring", () => {
 
   it("does not warn on an unquoted input", () => {
     const res = runAction({
-      DOCMETA_PATHS: "docs/",
-      DOCMETA_ARGS: "--exclude *.draft.md",
+      MANNI_PATHS: "docs/",
+      MANNI_ARGS: "--exclude *.draft.md",
     });
     expect(res.stderr).not.toContain("::warning::");
   });
@@ -295,7 +296,7 @@ describe.skipIf(!hasBash)("action.yml input wiring", () => {
     // array prints `''`, which reads as an empty positional argument being
     // passed — and this line exists to tell them what actually ran.
     const res = runAction({});
-    expect(res.stdout).toContain("docmeta validate\n");
+    expect(res.stdout).toContain("manni meta validate\n");
     expect(res.stdout).not.toContain("validate ''");
   });
 });

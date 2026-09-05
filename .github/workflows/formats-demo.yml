@@ -9,14 +9,14 @@
 # catches it, which is why this workflow exists.
 #
 # `test/fixtures/infer/` is excluded. Those files exist to be *counted* by
-# `docmeta schemas infer`, not validated, and one of them has no frontmatter at
+# `manni meta schemas infer`, not validated, and one of them has no frontmatter at
 # all — that is the whole point of it, since a coverage report has to say how
 # many files carry no metadata block. Validating it here would add a standing
-# code-scanning alert for a file that is doing its job, and fail the `docmeta`
+# code-scanning alert for a file that is doing its job, and fail the `manni`
 # check on every PR that touched it.
 #
 # `test/fixtures/query/` is excluded for the same reason. Those files exist to
-# be *queried* by `docmeta query` — one has no frontmatter at all so that
+# be *queried* by `manni meta query` — one has no frontmatter at all so that
 # `WHERE _present = 0` has something to find, and none carries a `type:`,
 # because the query fixtures exercise retrieval, not any schema.
 #
@@ -54,7 +54,7 @@
 # both at once, and eleven alerts arrived together.
 #
 # `test/fixtures/infer-parity/` is excluded for the reason `test/fixtures/infer/`
-# already is: those files exist to be *counted* by `docmeta schemas infer`, one
+# already is: those files exist to be *counted* by `manni meta schemas infer`, one
 # of them deliberately carrying a key the other does not.
 #
 # `test/fixtures/get-parse-error/` is deliberately NOT excluded. Its unparseable
@@ -105,7 +105,7 @@ jobs:
         id: sarif
         continue-on-error: true
         run: |
-          node dist/cli.js validate "test/fixtures/**/*.md" \
+          node dist/cli.js meta validate "test/fixtures/**/*.md" \
             --exclude "test/fixtures/infer/**" \
             --exclude "test/fixtures/default-schema/**" \
             --exclude "test/fixtures/query/**" \
@@ -117,32 +117,32 @@ jobs:
             --exclude "test/fixtures/collections/**" \
             --exclude "test/fixtures/platform/**" \
             --exclude "test/fixtures/infer-parity/**" \
-            --allow-empty -f sarif > docmeta.sarif
-          echo "results=$(jq '.runs[0].results | length' docmeta.sarif)" >> "$GITHUB_OUTPUT"
+            --allow-empty -f sarif > manni.sarif
+          echo "results=$(jq '.runs[0].results | length' manni.sarif)" >> "$GITHUB_OUTPUT"
 
-      # stdout must be pure JSON: docmeta sends diagnostics to stderr for every
+      # stdout must be pure JSON: manni sends diagnostics to stderr for every
       # machine format, and a single leaked line here would make the upload
       # below reject the file while this job stayed green.
       - name: Check the SARIF is well-formed before uploading
         run: |
-          jq -e '.version == "2.1.0" and (.runs | length) > 0' docmeta.sarif > /dev/null
+          jq -e '.version == "2.1.0" and (.runs | length) > 0' manni.sarif > /dev/null
           echo "SARIF is valid JSON with ${{ steps.sarif.outputs.results }} result(s)."
           echo "Artifact URIs (must be repository-root-relative, or code scanning silently drops them):"
-          jq -r '.runs[0].results[].locations[0].physicalLocation.artifactLocation.uri' docmeta.sarif | sort -u
+          jq -r '.runs[0].results[].locations[0].physicalLocation.artifactLocation.uri' manni.sarif | sort -u
 
       - name: Upload SARIF to code scanning
         if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: docmeta.sarif
+          sarif_file: manni.sarif
           # Namespaces these alerts so they are plainly a fixture demonstration
           # and cannot be mistaken for a scan of the shipped source.
-          category: docmeta-fixtures
+          category: manni-fixtures
 
       - name: Validate fixtures as JUnit
         continue-on-error: true
         run: |
-          node dist/cli.js validate "test/fixtures/**/*.md" \
+          node dist/cli.js meta validate "test/fixtures/**/*.md" \
             --exclude "test/fixtures/infer/**" \
             --exclude "test/fixtures/default-schema/**" \
             --exclude "test/fixtures/query/**" \
@@ -154,7 +154,7 @@ jobs:
             --exclude "test/fixtures/collections/**" \
             --exclude "test/fixtures/platform/**" \
             --exclude "test/fixtures/infer-parity/**" \
-            --allow-empty -f junit > docmeta-junit.xml
+            --allow-empty -f junit > manni-junit.xml
 
       # GitHub renders no JUnit natively. A third-party reporter action would be
       # prettier; a step summary costs no new supply-chain surface in a repo
@@ -163,12 +163,12 @@ jobs:
         if: always()
         run: |
           {
-            echo "## docmeta JUnit output"
+            echo "## manni JUnit output"
             echo
             echo "| Metric | Value |"
             echo "|---|---|"
             for k in tests failures errors; do
-              v=$(sed -n "s/.*<testsuites[^>]*$k=\"\([0-9]*\)\".*/\1/p" docmeta-junit.xml | head -1)
+              v=$(sed -n "s/.*<testsuites[^>]*$k=\"\([0-9]*\)\".*/\1/p" manni-junit.xml | head -1)
               echo "| $k | ${v:-0} |"
             done
             echo
@@ -178,7 +178,7 @@ jobs:
             # `|| true`: bash -e would fail the whole step on grep exit 1,
             # i.e. precisely when the fixtures are clean and there is nothing
             # to report. A clean run must still produce a summary.
-            grep -B 1 "<failure" docmeta-junit.xml | head -40 || true
+            grep -B 1 "<failure" manni-junit.xml | head -40 || true
             echo '```'
             echo
             echo "</details>"
@@ -188,7 +188,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: docmeta-formats
+          name: manni-formats
           path: |
-            docmeta.sarif
-            docmeta-junit.xml
+            manni.sarif
+            manni-junit.xml

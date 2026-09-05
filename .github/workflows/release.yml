@@ -113,7 +113,7 @@ jobs:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         run: npx semantic-release
 
-      # Action consumers write `uses: hawkeyexl/docmeta@v4` and expect it to
+      # Action consumers write `uses: hawkeyexl/manni@v1` and expect it to
       # track the newest 4.x. That only works because someone force-updates a
       # `v4` tag; semantic-release creates immutable `v4.0.0` tags and nothing
       # else, so without this step the reference resolves to nothing.

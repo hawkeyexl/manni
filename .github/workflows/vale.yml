@@ -35,7 +35,7 @@ jobs:
           fail_on_error: true
           # The fixture tree is test data, not prose. Two things follow from
           # that. Some fixtures carry deliberately broken frontmatter (that is
-          # what docmeta tests), which Vale cannot parse; it aborts the whole
+          # what manni tests), which Vale cannot parse; it aborts the whole
           # run on the first one (E201), and no level setting downgrades it.
           # The rest are sample documents whose bodies describe what they
           # exercise, and holding those to a house voice would gate the
