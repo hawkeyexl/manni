@@ -59,7 +59,7 @@ const codeCommands = new Map(); // qualified name -> { options:Set, args:[{name,
  * Walk the command tree, not just its first level.
  *
  * Iterating `program.commands` alone left every *sub*command silently
- * unverified — `docmeta schemas vendor` could gain, lose, or rename a flag and
+ * unverified — `manni meta schemas vendor` could gain, lose, or rename a flag and
  * this check would report the page as in sync. Commands are keyed by their
  * qualified name ("schemas vendor"), which is also how the page heads their
  * section.

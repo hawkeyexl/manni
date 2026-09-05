@@ -1,6 +1,6 @@
-# Contributing to docmeta
+# Contributing to manni
 
-Thanks for your interest in improving docmeta. This guide covers local setup, the development loop, and the conventions the project follows. Whether you're fixing a bug or adding support for a new input format, the steps below should get you productive quickly.
+Thanks for your interest in improving manni meta. This guide covers local setup, the development loop, and the conventions the project follows. Whether you're fixing a bug or adding support for a new input format, the steps below should get you productive quickly.
 
 Participation is governed by the [Code of Conduct](CODE_OF_CONDUCT.md).
 
@@ -12,8 +12,8 @@ Participation is governed by the [Code of Conduct](CODE_OF_CONDUCT.md).
 ## Setup
 
 ```bash
-git clone https://github.com/hawkeyexl/docmeta.git
-cd docmeta
+git clone https://github.com/hawkeyexl/manni.git
+cd manni
 npm install
 ```
 
@@ -77,7 +77,7 @@ Scope work where it helps readers. New input formats use the `extractors` scope:
 feat(extractors): add TOML frontmatter support
 ```
 
-docmeta is past 1.0 and published to npm, so a breaking change is not free. That is because semantic-release turns it into a major version and a release note. That is a cost worth paying when a change genuinely improves the tool, but not one to absorb by accident. Call breaking changes out with `feat!:` or a `BREAKING CHANGE:` footer, so the release tooling bumps the major version. Prefer making the change cleanly over softening it with a deprecated alias, which leaves a permanent second surface behind.
+manni meta is past 1.0 and published to npm, so a breaking change is not free. That is because semantic-release turns it into a major version and a release note. That is a cost worth paying when a change genuinely improves the tool, but not one to absorb by accident. Call breaking changes out with `feat!:` or a `BREAKING CHANGE:` footer, so the release tooling bumps the major version. Prefer making the change cleanly over softening it with a deprecated alias, which leaves a permanent second surface behind.
 
 ## Keeping commands consistent
 
@@ -85,7 +85,7 @@ Every subcommand should expose a consistent surface. When one command gains an i
 
 - Targets are positional `[paths...]`: files, directories, and globs.
 - `-` reads stdin (and requires `--as <format>` to pick an extractor). It is one more input, so it is processed *alongside* any named paths, never instead of them.
-- `paths:` from `docmeta.config.yaml` is the fallback when no positional paths are given.
+- `paths:` from `manni.config.yaml` is the fallback when no positional paths are given.
 - No inputs and no config is an operational error (exit 2), not silent empty output.
 - Shared flags use the same names and semantics: `--as`, `--ext`, `--exclude`, `-c/--config`, `-f/--format`.
 
@@ -113,7 +113,7 @@ The `MetadataExtractor` interface returns an `ExtractedMetadata` object. That ob
 ### Write support is optional
 
 `MetadataExtractor` also has an optional `apply(content, patch)`, which
-[`docmeta fill`](https://hawkeyexl.github.io/docmeta/reference/cli/#fill) uses to
+[`manni meta fill`](https://hawkeyexl.github.io/manni/meta/reference/cli/#meta-fill) uses to
 write metadata back. Leaving it off is a valid choice, and the absence is the
 capability check: `typeof extractor.apply === "function"`. TypeScript then makes
 every call site handle the read-only case.
@@ -133,7 +133,7 @@ file (`test/html-write.test.ts`).
 
 ## Reporting a security issue
 
-Not as a public issue. docmeta fetches schemas over the network and runs inside other people's CI pipelines. A public report is therefore a disclosure to every one of them, before there is a version to upgrade to. Use [private vulnerability reporting](https://github.com/hawkeyexl/docmeta/security/advisories/new) instead. [SECURITY.md](SECURITY.md) covers the supported versions, the trust boundaries, and what is already a documented decision rather than a bug.
+Not as a public issue. manni meta fetches schemas over the network and runs inside other people's CI pipelines. A public report is therefore a disclosure to every one of them, before there is a version to upgrade to. Use [private vulnerability reporting](https://github.com/hawkeyexl/manni/security/advisories/new) instead. [SECURITY.md](SECURITY.md) covers the supported versions, the trust boundaries, and what is already a documented decision rather than a bug.
 
 ## License
 

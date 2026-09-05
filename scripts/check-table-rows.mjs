@@ -5,7 +5,7 @@
  * start with `|` ends the table and begins a paragraph, so the cell it was
  * meant to continue renders cut off mid-sentence. In #154 a prose reflow broke
  * fifteen rows this way across nine files, and the Action reference shipped a
- * cell reading "docmeta's exit code. `0` clean, `1` validation failures, `2`"
+ * cell reading "manni's exit code. `0` clean, `1` validation failures, `2`"
  * and stopping there.
  *
  * Nothing caught it. `docs:check-links` passed with 4,348 links resolving and

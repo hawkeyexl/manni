@@ -2,24 +2,55 @@
 
 Guidance for agents working in this repository.
 
-## What docmeta is
+## What manni is
 
-A TypeScript CLI (published to npm) that validates the **presence and format**
-of document metadata (frontmatter / headers) against **JSON Schema**, built for
+One npm package and one bin, `manni`, with one subcommand per tool in the
+family. Today that is `manni meta`, the metadata tool, published as `docmeta`
+until 4.13.1. The other tools (docevals, lint, tracevals, kg) are folded in
+one at a time, each on its own branch, merged only when production-ready.
+Proposal 0033 is the record.
+
+`manni meta` is a TypeScript CLI that validates the **presence and format** of
+document metadata (frontmatter / headers) against **JSON Schema**, built for
 CI. The pipeline is: load files → extract metadata (format-specific) → resolve a
 schema set per file → validate → report. Everything after extraction operates on
 the generic `ExtractedMetadata` shape, so new input formats never touch
 validation, schema resolution, or reporting.
 
 Key layers:
-- `src/extractors/`: per-format metadata extraction behind the
-  `MetadataExtractor` interface (`src/types.ts`). New formats are an isolated
-  change to one file plus registration in `src/extractors/index.ts`.
-- `src/commands/`: command cores (`validate`, `get`, `fill`, `schemas`), kept free of
-  CLI/IO plumbing so they can be unit-tested directly.
-- `src/cli.ts`: thin commander wrapper over the command cores.
-- `src/core/`: shared file resolution, config, schema resolution, validation.
-- `src/reporters/`: output formatting (pretty / json / github).
+- `src/cli.ts`: the `manni` umbrella. Builds each tool's commander program and
+  mounts it under its name. Owns nothing else.
+- `src/docmeta.ts`: the `docmeta` bin. The metadata tool's program under its
+  old name, for scripts written before the rename.
+- `src/shared/`: what every tool uses. Family config discovery
+  (`config-file.ts`: one `manni.config.yaml`, one top-level key per tool),
+  `warn()` (stderr, said once), the `ToolError` base, the bin runner
+  (`run.ts`, which owns the exit-code contract) and the program name the
+  stderr prefix follows.
+- `src/meta/`: the metadata tool.
+  - `src/meta/extractors/`: per-format metadata extraction behind the
+    `MetadataExtractor` interface (`src/meta/types.ts`). New formats are an
+    isolated change to one file plus registration in `extractors/index.ts`.
+  - `src/meta/commands/`: command cores (`validate`, `get`, `query`, `fill`,
+    `schemas`), kept free of CLI/IO plumbing so they can be unit-tested directly.
+  - `src/meta/cli.ts`: thin commander wrapper over the command cores, exported
+    as `buildProgram()` and mounted by `src/cli.ts`. No entry point of its own.
+  - `src/meta/core/`: file resolution, config, schema resolution, validation.
+  - `src/meta/reporters/`: output formatting (pretty / json / github / sarif / junit).
+- `src/index.ts`: the programmatic API, re-exporting `src/meta/index.ts`.
+
+Tests stay flat under `test/`; a later tool adds `test/<tool>/`.
+
+### Folding a tool in
+
+Each tool lands on its own `tool/<name>` branch (never `feat/…`, which
+`.releaserc.json` treats as a prerelease channel and publishes on every push).
+Its sources go to `src/<tool>/`, importing the metadata library by relative
+path (`../meta/index.js`); its `cli.ts` exports `buildProgram()` and has no
+entry point; its error class extends `ToolError`; it reads its own key of
+`manni.config.yaml` through `src/shared/config-file.ts`; its stderr prefix
+comes from `programName()`. The umbrella mounts it with `addCommand`. The
+import commit cites the source repository and SHA.
 
 ## Working agreements
 
@@ -34,7 +65,7 @@ baseline shared by `validate`, `get`, and `fill`:
 - Targets are **positional** `[paths...]`: files, directories, and globs.
 - `-` reads **stdin** (requires `--as <format>` to pick an extractor). It is one
   more input, processed *alongside* any named paths, never instead of them.
-- `paths:` from `docmeta.config.yaml` is the **fallback** when no positional
+- `paths:` from `manni.config.yaml` is the **fallback** when no positional
   paths are given.
 - No inputs and no config is an **operational error** (`DocmetaError`, exit 2),
   not silent empty output.
@@ -47,7 +78,7 @@ difference, prefer changing how the *other* argument is supplied rather than
 breaking parity.
 
 Do not add a deprecated alias to soften a rename unless asked. Breakage is not
-free here. docmeta is past 1.0 and published to npm, and semantic-release turns
+free here. manni meta is past 1.0 and published to npm, and semantic-release turns
 a breaking change into a major release. That costs the version number and a
 release note. The objection to an alias is a different one. An alias is a
 permanent second surface for one command, which is what "commands must have
@@ -163,7 +194,7 @@ video shows. When it is genuinely unclear whether something is a feature or a
 fix, ask rather than guessing. The commit type is a release-visible decision
 anyway.
 
-**What it shows.** docmeta is a CLI, so the demo is a terminal session, not
+**What it shows.** manni meta is a CLI, so the demo is a terminal session, not
 slides:
 
 1. the problem, as a real document or repo that is missing something;
@@ -179,7 +210,7 @@ step rather than narration.
 **How it should look.** `docs/content-strategy/design.md` is the spec. It covers
 frame, capture geometry, bands, type, timing, and the palette. Read it before
 shooting. One rule is least obvious and most often broken. The accent colour may
-not be red, green, yellow or cyan, because docmeta's own output already uses all
+not be red, green, yellow or cyan, because manni meta's own output already uses all
 four to mean something. Two of the first three videos shipped with an accent
 that collided with the product output in the same frame.
 
@@ -291,13 +322,13 @@ npm run schemas:check-published  # ...and the live URLs still serve those bytes.
                         # Hits the network, so it runs on a daily schedule
                         # rather than in PR CI — see published-schemas.yml.
 
-# After editing anything under docs/, run the dogfood check too. docmeta
+# After editing anything under docs/, run the dogfood check too. manni meta
 # validates its own docs, and the Docs deploy is gated on it. No paths and no
-# -s: both come from the repo's own docmeta.config.yaml, so this exercises
+# -s: both come from the repo's own manni.config.yaml, so this exercises
 # config discovery rather than stepping around it. The override there carries
 # two schemas — the house rule (title + description) and the Starlight contract
 # this site runs on.
-node dist/cli.js validate
+node dist/cli.js meta validate
 ```
 
 Command cores are tested directly in `test/*.test.ts`; the full CLI is exercised

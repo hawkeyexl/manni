@@ -5,7 +5,7 @@
  *
  * 1. `docs/public/schemas/<dir>/<version>.json` — byte-identical copies. Astro
  *    serves `docs/public/**` at the site root and the site's `base` is
- *    `/docmeta`, so these land at
+ *    `/manni`, so these land at
  *    `https://hawkeyexl.github.io/manni/schemas/<dir>/<version>.json`.
  * 2. `src/meta/schemas/manifest.json` — `sha256-<hex>` over each file's exact bytes.
  *

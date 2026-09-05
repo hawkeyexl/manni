@@ -10,7 +10,7 @@
  *
  * That is reproduced, not theorised — it is what `npm install` from a git clone
  * did before this file existed, which is how anyone doing
- * `npm i github:hawkeyexl/docmeta` would have met it.
+ * `npm i github:hawkeyexl/manni` would have met it.
  *
  * The obvious fix, `"prepare": "husky || true"`, is the wrong one twice over: it
  * swallows a genuinely broken husky for contributors, and `release.yml` and

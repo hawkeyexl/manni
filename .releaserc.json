@@ -18,7 +18,10 @@
     "@semantic-release/release-notes-generator",
     [
       "@semantic-release/changelog",
-      { "changelogFile": "CHANGELOG.md" }
+      {
+        "changelogFile": "CHANGELOG.md",
+        "changelogTitle": "# Changelog\n\n`manni` continues the history of `docmeta`, which it was published as up to\n4.13.1. Entries below that version are docmeta releases; the repository\nhistory is the same one."
+      }
     ],
     "@semantic-release/npm",
     [

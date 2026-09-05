@@ -20,7 +20,7 @@ import tseslint from "typescript-eslint";
  * call sites. Applied to `src` and `test` alike.
  */
 const houseRules = {
-  // docmeta is a reporting CLI: "3 errors in 2 files", "exceeds the 1048576-byte
+  // manni is a reporting CLI: "3 errors in 2 files", "exceeds the 1048576-byte
   // limit", "line 12". Interpolating a `number` is its main idiom, and the
   // conversion is total and unsurprising.
   //
@@ -112,7 +112,7 @@ export default tseslint.config(
       // Four of the `no-unsafe-*` family, off for tests only.
       //
       // ~47 sites in `test/` do `JSON.parse(res.stdout)` and assert on the
-      // result: parsing docmeta's own `--format json` output is how the CLI
+      // result: parsing manni's own `--format json` output is how the CLI
       // integration suite checks it. `JSON.parse` returns `any` by contract, so
       // every one of those correct assertions trips this family. Typing each
       // payload would restate `src/`'s own types in the tests, which is how a

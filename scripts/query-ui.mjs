@@ -1,5 +1,5 @@
 /**
- * Serve a `docmeta query --db` export to Datasette Lite — a browsable SQL UI
+ * Serve a `manni meta query --db` export to Datasette Lite — a browsable SQL UI
  * over the corpus with no Python (or anything else) installed. Datasette Lite
  * is Datasette compiled to WebAssembly, running entirely in the browser.
  *
@@ -39,7 +39,7 @@ const corpus = {
 const args = (corpusAt === -1 ? argv : argv.slice(0, corpusAt)).filter(
   (a) => a !== "--no-open",
 );
-const db = resolve(args[0] ?? ".docmeta/query.db");
+const db = resolve(args[0] ?? ".manni/meta/query.db");
 const port = Number(args[1] ?? 8765);
 const token = randomBytes(16).toString("hex");
 statSync(db); // fail fast, with the path in the error, if the export is missing
@@ -48,7 +48,7 @@ const { runQuery } = await import(
   pathToFileURL(resolve("dist/index.js")).href
 );
 
-const PANEL = `<!doctype html><meta charset="utf-8"><title>docmeta write</title>
+const PANEL = `<!doctype html><meta charset="utf-8"><title>manni write</title>
 <style>
   body{font-family:ui-monospace,monospace;background:#171717;color:#fff;max-width:60rem;margin:2rem auto;padding:0 1rem}
   textarea{width:100%;height:7rem;background:#0d0d0d;color:#fff;border:1px solid #58a6ff;padding:.5rem;font:inherit}
@@ -56,9 +56,9 @@ const PANEL = `<!doctype html><meta charset="utf-8"><title>docmeta write</title>
   pre{background:#0d0d0d;padding:1rem;overflow-x:auto;white-space:pre-wrap}
   a{color:#58a6ff}
 </style>
-<h1>docmeta query — write</h1>
+<h1>manni meta query — write</h1>
 <p>One UPDATE against the <code>docs</code> table. Preview shows the per-file
-diff; Apply writes it through docmeta's verifying writers and refreshes the
+diff; Apply writes it through manni's verifying writers and refreshes the
 database for <a href="/?url=${basename(db)}">Datasette Lite</a>.</p>
 <textarea id="sql">UPDATE docs SET draft = 0 WHERE draft = 1</textarea>
 <p><button id="preview">Preview</button><button id="apply">Apply to files</button></p>
@@ -107,7 +107,7 @@ const server = createServer((req, res) => {
   }
 
   if (pathname === "/api/write" && req.method === "POST") {
-    if (req.headers["x-docmeta-token"] !== token) {
+    if (req.headers["x-manni-token"] !== token) {
       res.writeHead(403, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "bad token" }));
       return;

@@ -1,6 +1,6 @@
 # Security policy
 
-docmeta runs inside other people's CI pipelines and fetches JSON Schemas over
+manni meta runs inside other people's CI pipelines and fetches JSON Schemas over
 the network. Both of those make it worth reporting problems properly rather
 than publicly.
 
@@ -18,7 +18,7 @@ no backports to older majors.
 
 **Use GitHub private vulnerability reporting**, not a public issue:
 
-> [Security tab → Report a vulnerability](https://github.com/hawkeyexl/docmeta/security/advisories/new)
+> [Security tab → Report a vulnerability](https://github.com/hawkeyexl/manni/security/advisories/new)
 
 A public issue about a CI tool is a disclosure to everyone already running it.
 It lands days or weeks before there is a version to upgrade to. Private
@@ -27,13 +27,13 @@ reporting gives the same thread, the same maintainer, and a fix first.
 If GitHub's private reporting is unavailable to you, email
 **manuel.r.b.silva@gmail.com** with the same detail.
 
-A useful report includes the docmeta version, the command, a schema or document
+A useful report includes the manni meta version, the command, a schema or document
 that reproduces it, and what an attacker gets out of it. A reproduction against
 a supported version is what turns a report into a fix.
 
 ### What to expect
 
-docmeta is maintained by one person, so these are real numbers rather than
+manni meta is maintained by one person, so these are real numbers rather than
 aspirational ones:
 
 - **Acknowledgement** within 5 business days.
@@ -47,7 +47,7 @@ be credited in the advisory unless you would rather not be.
 
 ## Trust boundaries
 
-docmeta touches two things it did not write. Both have been reasoned about in
+manni meta touches two things it did not write. Both have been reasoned about in
 the open, and the reasoning is worth reading before filing. It will tell you
 whether you have found a bug or a documented decision.
 
@@ -59,7 +59,7 @@ requests, one line of frontmatter can otherwise choose the contract that
 document is judged against. That is what the `schemaTrust:` config key exists to
 close. See [proposal 0015](docs/proposals/0015-schema-trust-boundary.md) and
 [the configuration
-reference](https://hawkeyexl.github.io/docmeta/reference/configuration/#schema-trust).
+reference](https://hawkeyexl.github.io/manni/meta/reference/configuration/#schema-trust).
 
 The following are **known and accepted**, documented where the key is
 documented, and not vulnerabilities:
@@ -71,7 +71,7 @@ documented, and not vulnerabilities:
 - There is no private-range or link-local IP blocking. The test suite and
   ordinary local development both fetch schemas from `127.0.0.1`, and a
   blocklist would break both while `hosts:` already covers the case.
-- An older docmeta ignores `schemaTrust:` and fails open. That is inherent to
+- An older manni meta ignores `schemaTrust:` and fails open. That is inherent to
   shipping any new guard; the mitigation is a version floor in CI.
 
 The following **are** in scope:
@@ -85,12 +85,12 @@ The following **are** in scope:
   exhaustion.
 - An integrity pin verifying bytes it should not.
 
-### What `docmeta fill` sends
+### What `manni meta fill` sends
 
 `fill` sends document content to an LLM provider. **That** it does so is
 documented, intended, and not a report. [Proposal
 0017](docs/proposals/0017-fill-egress-and-bounds.md) and the [`fill`
-reference](https://hawkeyexl.github.io/docmeta/reference/cli/#fill) enumerate
+reference](https://hawkeyexl.github.io/manni/meta/reference/cli/#meta-fill) enumerate
 exactly what leaves the machine. That includes the file path and the full
 `$defs` of every resolved schema. They also cover what the on-disk cache
 retains, which is the proposal set *before* confidence gating.
@@ -108,7 +108,7 @@ In scope here:
 
 ### Generally out of scope
 
-- The contents of a schema you chose to point docmeta at. docmeta validates
+- The contents of a schema you chose to point manni meta at. manni meta validates
   against what you give it.
 - A permissive schema passing every document. That is what `schemaTrust:` is
   for.
@@ -121,13 +121,13 @@ for a solo author on a private repo. If your repo takes outside contributions:
 
 - Set `schemaTrust: { documentRefs: local }` so a contributed document cannot
   choose its own contract.
-- Vendor your schemas (`docmeta schemas vendor <url>`) and keep the integrity
+- Vendor your schemas (`manni meta schemas vendor <url>`) and keep the integrity
   pin, so CI validates against a copy in your own history.
-- Pin the action to a released tag, and pin a docmeta version floor so a new
+- Pin the action to a released tag, and pin a manni meta version floor so a new
   guard is actually present.
 - For `fill`, pin `--provider` or pass `--local`. Left to detect, a runner that
   loses its key falls back to a local model rather than failing.
 
-Never pass a credential as a docmeta flag. `fill` reads provider credentials
+Never pass a credential as a manni meta flag. `fill` reads provider credentials
 from the environment, which keeps them out of your shell history and out of CI
 logs.

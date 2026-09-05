@@ -1,11 +1,11 @@
 /**
  * Immutability check for the published built-in schemas.
  *
- * docmeta serves each built-in from the docs site at a version-pinned URL, and
+ * manni serves each built-in from the docs site at a version-pinned URL, and
  * the value of a pinned URL is that its content never changes. Nothing else
  * stops a PR editing `src/meta/schemas/okf/0.1.json`, which would silently change the
  * contract for every external consumer of that URL — including consumers who
- * never upgraded docmeta at all. This repo has already done that once
+ * never upgraded manni at all. This repo has already done that once
  * (`f7e611b fix(schemas): require type on the Diataxis vocabulary`), which was
  * defensible for a bundled schema and would not be for a published one.
  *
@@ -137,7 +137,7 @@ if (!publicKeys) {
     }
     if (!bytesOf(PUBLIC, key).equals(bytesOf(SRC, key))) {
       problems.push(
-        `published copies: \`${key}\` differs from src/meta/schemas — the site would serve a schema docmeta does not use`,
+        `published copies: \`${key}\` differs from src/meta/schemas — the site would serve a schema manni does not use`,
       );
     }
   }

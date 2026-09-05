@@ -809,12 +809,12 @@ describe("schemaTrustRoot", () => {
  * purpose: the thing under test is that the project dogfoods its own discovery
  * path, and a fixture copy would keep passing after the real file rotted.
  */
-describe("the repository's own docmeta.config.yaml", () => {
+describe("the repository's own manni.config.yaml", () => {
   const repoRoot = resolve(here, "..");
 
   it("is what discovery finds from the repo root, and names a schema that is there", async () => {
     const loaded = await loadConfig(undefined, repoRoot);
-    expect(loaded?.path).toBe(join(repoRoot, "docmeta.config.yaml"));
+    expect(loaded?.path).toBe(join(repoRoot, "manni.config.yaml"));
     expect(loaded?.dir).toBe(repoRoot);
     expect(loaded?.config.paths).toEqual([
       "docs/src/content/docs/**/*.{md,mdx}",
@@ -830,7 +830,7 @@ describe("the repository's own docmeta.config.yaml", () => {
 
   it("scopes the docs schema to the docs and leaves everything else on the defaults", async () => {
     // The reason the schema hangs off `overrides:` instead of top-level
-    // `schemas:`. A root config is discovered by every docmeta run beneath it,
+    // `schemas:`. A root config is discovered by every manni run beneath it,
     // this suite's included, and `schemas:` is the default set for *every*
     // validated file — so spelling it there would judge the fixtures under
     // `test/` against the docs frontmatter contract.

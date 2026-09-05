@@ -1,10 +1,11 @@
 {
-  "name": "docmeta",
+  "name": "manni",
   "version": "4.13.1",
-  "description": "Validate the presence and format of document metadata (Markdown frontmatter and more) against JSON Schema. CI-friendly.",
+  "description": "One command line for documentation that is meant to be checked. `manni meta` validates the presence and format of document metadata (Markdown frontmatter and more) against JSON Schema, built for CI. Formerly docmeta.",
   "type": "module",
   "bin": {
-    "docmeta": "dist/cli.js"
+    "manni": "dist/cli.js",
+    "docmeta": "dist/docmeta.js"
   },
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -21,11 +22,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hawkeyexl/docmeta.git"
+    "url": "git+https://github.com/hawkeyexl/manni.git"
   },
-  "homepage": "https://hawkeyexl.github.io/docmeta/",
+  "homepage": "https://hawkeyexl.github.io/manni/",
   "bugs": {
-    "url": "https://github.com/hawkeyexl/docmeta/issues"
+    "url": "https://github.com/hawkeyexl/manni/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -45,7 +46,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "check:deps": "node scripts/check-deps.mjs",
-    "query:ui": "npm run build && node dist/cli.js query --db .docmeta/query.db && node scripts/query-ui.mjs .docmeta/query.db",
+    "query:ui": "npm run build && node dist/cli.js meta query --db .manni/meta/query.db && node scripts/query-ui.mjs .manni/meta/query.db",
     "docs:check-cli": "node scripts/check-cli-reference.mjs",
     "docs:check-action": "node scripts/check-action-reference.mjs",
     "docs:check-api": "node scripts/check-api-reference.mjs",

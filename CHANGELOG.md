@@ -1,3 +1,9 @@
+# Changelog
+
+`manni` continues the history of `docmeta`, which it was published as up to
+4.13.1. Entries below that version are docmeta releases; the repository
+history is the same one.
+
 ## [4.13.1](https://github.com/hawkeyexl/docmeta/compare/v4.13.0...v4.13.1) (2026-09-04)
 
 

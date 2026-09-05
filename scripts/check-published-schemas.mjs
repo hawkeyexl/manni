@@ -6,10 +6,10 @@
  * `src/meta/schemas/manifest.json` all agree. Every one of its checks passes on a
  * repository whose docs site is 404ing, because none of them leaves the disk.
  *
- * That gap matters more here than it would elsewhere. docmeta tells people a
+ * That gap matters more here than it would elsewhere. manni tells people a
  * version-pinned schema URL never changes, and invites them to depend on it from
  * `$schema` in a document or from `schemas:` in a config. The people taking that
- * offer are not necessarily running docmeta at all, so if a Pages deploy drops a
+ * offer are not necessarily running manni at all, so if a Pages deploy drops a
  * file, changes the base path, or serves something stale, nothing in this repo
  * notices and nobody upstream can tell us — their build just starts failing on a
  * URL we published.
