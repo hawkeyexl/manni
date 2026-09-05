@@ -61,7 +61,7 @@ body:
     attributes:
       label: If this is a new input format
       description: |
-        Adding one is an isolated change — a new file under `src/extractors/`,
+        Adding one is an isolated change — a new file under `src/meta/extractors/`,
         one line of registration, and a fixture. It never touches validation,
         schema resolution, or reporting. The path is written up in
         [CONTRIBUTING.md](https://github.com/hawkeyexl/docmeta/blob/main/CONTRIBUTING.md#adding-a-new-input-format),

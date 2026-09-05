@@ -27,9 +27,9 @@ import {
   isPublishedBuiltinUrl,
   loadSchema,
   publishedBuiltins,
-} from "../src/core/schema-registry.js";
-import { SchemaCache } from "../src/core/schema-cache.js";
-import { DocmetaError } from "../src/types.js";
+} from "../src/meta/core/schema-registry.js";
+import { SchemaCache } from "../src/meta/core/schema-cache.js";
+import { DocmetaError } from "../src/meta/types.js";
 import { startSchemaServer, type SchemaServer } from "./helpers/schema-server.js";
 
 const here = dirname(fileURLToPath(import.meta.url));

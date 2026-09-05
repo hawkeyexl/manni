@@ -19,7 +19,7 @@ export default defineConfig({
       // JSON Schema documents, not code. They are `resolveJsonModule` imports
       // with no statements to cover, and counting them would move the number
       // without anyone having tested anything.
-      exclude: ["src/schemas/**"],
+      exclude: ["src/meta/schemas/**"],
       // No thresholds yet, on purpose. A gate invented before the first real
       // measurement either sits so low it never fires or so high it fails the
       // build on day one; the number this produces is what a later ratchet

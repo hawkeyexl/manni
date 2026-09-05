@@ -5,7 +5,7 @@
  * and asserts that docs/src/content/docs/reference/cli.mdx documents exactly the
  * same commands, arguments, options, and value-defaults. Descriptions stay
  * hand-authored; this only guards the machine-checkable surface so the page
- * cannot silently drift from src/cli.ts.
+ * cannot silently drift from src/meta/cli.ts.
  *
  * Usage:
  *   node scripts/check-cli-reference.mjs [path/to/cli.mdx]
@@ -260,10 +260,10 @@ for (const [name, code] of codeCommands) {
 // ---------------------------------------------------------------------------
 const rel = path.relative(ROOT, DOC_PATH).replace(/\\/g, "/");
 if (problems.length === 0) {
-  console.log(`docs:check-cli: ${rel} is in sync with src/cli.ts ✓`);
+  console.log(`docs:check-cli: ${rel} is in sync with src/meta/cli.ts ✓`);
   process.exit(0);
 }
-console.error(`docs:check-cli: ${rel} is out of sync with src/cli.ts:`);
+console.error(`docs:check-cli: ${rel} is out of sync with src/meta/cli.ts:`);
 for (const p of problems.sort()) console.error(`  - ${p}`);
 console.error(
   `\nUpdate the page (flags/args/defaults are the source of truth) and re-run \`npm run docs:check-cli\`.`,

@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtemp, rm, readdir, readFile, writeFile, stat, chmod } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { writeFileAtomic } from "../src/core/write-file.js";
+import { writeFileAtomic } from "../src/meta/core/write-file.js";
 
 let dir: string;
 

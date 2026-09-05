@@ -27,11 +27,11 @@ import { describe, it, expect } from "vitest";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, join } from "node:path";
 import { readFileSync } from "node:fs";
-import { xmlExtractor } from "../src/extractors/xml.js";
-import { runValidate } from "../src/commands/validate.js";
-import { loadSchema } from "../src/core/schema-registry.js";
-import { getSchemasInfo } from "../src/commands/schemas.js";
-import { DEFAULT_SCHEMAS } from "../src/core/resolve-schema.js";
+import { xmlExtractor } from "../src/meta/extractors/xml.js";
+import { runValidate } from "../src/meta/commands/validate.js";
+import { loadSchema } from "../src/meta/core/schema-registry.js";
+import { getSchemasInfo } from "../src/meta/commands/schemas.js";
+import { DEFAULT_SCHEMAS } from "../src/meta/core/resolve-schema.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 

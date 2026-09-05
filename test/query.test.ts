@@ -10,11 +10,11 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { runQuery, type QueryOptions } from "../src/commands/query.js";
-import { renderQuery, renderQueryCsv } from "../src/reporters/query.js";
-import { parseQueryParams, resolveQueryInputs } from "../src/cli.js";
-import { collectNamedParameters } from "../src/core/projection.js";
-import { DocmetaError } from "../src/types.js";
+import { runQuery, type QueryOptions } from "../src/meta/commands/query.js";
+import { renderQuery, renderQueryCsv } from "../src/meta/reporters/query.js";
+import { parseQueryParams, resolveQueryInputs } from "../src/meta/cli.js";
+import { collectNamedParameters } from "../src/meta/core/projection.js";
+import { DocmetaError } from "../src/meta/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const corpus = resolve(here, "fixtures", "query");

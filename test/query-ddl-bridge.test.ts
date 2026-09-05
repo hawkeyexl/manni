@@ -11,10 +11,10 @@ import {
   assertDefaultsMatchDeclaredTypes,
   runQuery,
   type QueryChange,
-} from "../src/commands/query.js";
-import { runValidate } from "../src/commands/validate.js";
-import { renderQuery } from "../src/reporters/query.js";
-import { loadSqlite } from "../src/core/projection.js";
+} from "../src/meta/commands/query.js";
+import { runValidate } from "../src/meta/commands/validate.js";
+import { renderQuery } from "../src/meta/reporters/query.js";
+import { loadSqlite } from "../src/meta/core/projection.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const temps: string[] = [];

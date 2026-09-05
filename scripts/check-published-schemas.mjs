@@ -2,8 +2,8 @@
  * Liveness check for the published built-in schemas.
  *
  * `check-builtin-schemas.mjs` is the *local* half of this promise: it asserts
- * that `src/schemas/**`, `docs/public/schemas/**`, and the hashes in
- * `src/schemas/manifest.json` all agree. Every one of its checks passes on a
+ * that `src/meta/schemas/**`, `docs/public/schemas/**`, and the hashes in
+ * `src/meta/schemas/manifest.json` all agree. Every one of its checks passes on a
  * repository whose docs site is 404ing, because none of them leaves the disk.
  *
  * That gap matters more here than it would elsewhere. docmeta tells people a
@@ -30,7 +30,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const MANIFEST = path.join(ROOT, "src", "schemas", "manifest.json");
+const MANIFEST = path.join(ROOT, "src", "meta", "schemas", "manifest.json");
 
 /** Where the docs site serves `docs/public/schemas/**`. */
 const DEFAULT_BASE = "https://hawkeyexl.github.io/docmeta/schemas/";
@@ -48,14 +48,14 @@ let manifest;
 try {
   manifest = JSON.parse(readFileSync(MANIFEST, "utf8"));
 } catch (err) {
-  setupError(`could not read src/schemas/manifest.json.\n${err.message}`);
+  setupError(`could not read src/meta/schemas/manifest.json.\n${err.message}`);
 }
 
 const entries = Object.entries(manifest?.schemas ?? {});
 if (entries.length === 0) {
   // Refusing to pass vacuously: an empty manifest means the check verified
   // nothing, and "0 URLs OK" reads exactly like success.
-  setupError("src/schemas/manifest.json records no schemas — nothing to check.");
+  setupError("src/meta/schemas/manifest.json records no schemas — nothing to check.");
 }
 
 const sha256 = (buf) => `sha256-${createHash("sha256").update(buf).digest("hex")}`;

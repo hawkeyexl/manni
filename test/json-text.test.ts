@@ -15,7 +15,7 @@
  * distinctions they preserve collapse. Nothing but a test notices.
  */
 import { describe, it, expect } from "vitest";
-import { stripBom, toJsonText } from "../src/core/json-text.js";
+import { stripBom, toJsonText } from "../src/meta/core/json-text.js";
 
 describe("toJsonText", () => {
   // The three the declared type denies. `String()` would return "undefined"

@@ -17,7 +17,7 @@ import { describe, it, expect } from "vitest";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, join } from "node:path";
 import { readFileSync } from "node:fs";
-import { xmlExtractor } from "../src/extractors/xml.js";
+import { xmlExtractor } from "../src/meta/extractors/xml.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const LF = String.fromCharCode(10);

@@ -21,11 +21,11 @@ import {
   collectCandidates,
   collectDefs,
   type FillOptions,
-} from "../src/commands/fill.js";
-import { buildEnvelopeSchema } from "../src/commands/fill-prompt.js";
-import { loadSchema } from "../src/core/schema-registry.js";
-import { compileWithFormats } from "../src/core/validator.js";
-import { DocmetaError } from "../src/types.js";
+} from "../src/meta/commands/fill.js";
+import { buildEnvelopeSchema } from "../src/meta/commands/fill-prompt.js";
+import { loadSchema } from "../src/meta/core/schema-registry.js";
+import { compileWithFormats } from "../src/meta/core/validator.js";
+import { DocmetaError } from "../src/meta/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name: string): string =>

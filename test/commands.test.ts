@@ -11,10 +11,10 @@ import {
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { dirname, join, relative, resolve } from "node:path";
-import { parseBaseline } from "../src/core/baseline.js";
-import { runValidate, type ValidateOptions } from "../src/commands/validate.js";
-import { runGet } from "../src/commands/get.js";
-import { runFill } from "../src/commands/fill.js";
+import { parseBaseline } from "../src/meta/core/baseline.js";
+import { runValidate, type ValidateOptions } from "../src/meta/commands/validate.js";
+import { runGet } from "../src/meta/commands/get.js";
+import { runFill } from "../src/meta/commands/fill.js";
 import { MockProvider } from "@hawkeyexl/inference";
 import {
   getSchemasInfo,
@@ -23,11 +23,11 @@ import {
   vendorFileName,
   type InferKeyReport,
   type InferResult,
-} from "../src/commands/schemas.js";
-import { DEFAULT_SCHEMAS } from "../src/core/resolve-schema.js";
-import { parseConfig } from "../src/core/config.js";
+} from "../src/meta/commands/schemas.js";
+import { DEFAULT_SCHEMAS } from "../src/meta/core/resolve-schema.js";
+import { parseConfig } from "../src/meta/core/config.js";
 import { makeTempRepo, removeTempRepo } from "./helpers/temp-repo.js";
-import { DocmetaError } from "../src/types.js";
+import { DocmetaError } from "../src/meta/types.js";
 import {
   startSchemaServer,
   type SchemaServer,

@@ -17,10 +17,10 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
-import { applyXml } from "../src/extractors/xml-write.js";
-import { lineStarts, offsetAt } from "../src/extractors/xml-locate.js";
-import { xmlExtractor } from "../src/extractors/xml.js";
-import { DocmetaError } from "../src/types.js";
+import { applyXml } from "../src/meta/extractors/xml-write.js";
+import { lineStarts, offsetAt } from "../src/meta/extractors/xml-locate.js";
+import { xmlExtractor } from "../src/meta/extractors/xml.js";
+import { DocmetaError } from "../src/meta/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fx = (name: string): string =>

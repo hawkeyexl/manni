@@ -3,7 +3,7 @@
  *
  * `action.yml` is a second public surface alongside the CLI, and it had no
  * guard. `docs:check-cli` exists because a hand-maintained flag table drifts
- * from `src/cli.ts` silently; the Action's input table drifts from `action.yml`
+ * from `src/meta/cli.ts` silently; the Action's input table drifts from `action.yml`
  * exactly the same way, and a consumer cannot discover an input that is not
  * documented.
  *

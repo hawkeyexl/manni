@@ -18,8 +18,8 @@ import {
   buildUserPrompt,
   mergeProposals,
   DEFAULT_CHUNK_CHARS,
-} from "../src/commands/fill-prompt.js";
-import type { ProposalSet } from "../src/commands/fill-types.js";
+} from "../src/meta/commands/fill-prompt.js";
+import type { ProposalSet } from "../src/meta/commands/fill-types.js";
 
 const candidate = {
   key: "description",

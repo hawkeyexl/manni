@@ -5,7 +5,7 @@
  */
 import { readFile } from "node:fs/promises";
 import { resolve, extname } from "node:path";
-import pkg from "../../package.json" with { type: "json" };
+import pkg from "../../../package.json" with { type: "json" };
 import {
   DocmetaError,
   type BaselineSummary,

@@ -3,19 +3,19 @@
  *
  * docmeta serves each built-in from the docs site at a version-pinned URL, and
  * the value of a pinned URL is that its content never changes. Nothing else
- * stops a PR editing `src/schemas/okf/0.1.json`, which would silently change the
+ * stops a PR editing `src/meta/schemas/okf/0.1.json`, which would silently change the
  * contract for every external consumer of that URL — including consumers who
  * never upgraded docmeta at all. This repo has already done that once
  * (`f7e611b fix(schemas): require type on the Diataxis vocabulary`), which was
  * defensible for a bundled schema and would not be for a published one.
  *
- * So: `src/schemas/manifest.json` records `sha256-<hex>` over each file's exact
+ * So: `src/meta/schemas/manifest.json` records `sha256-<hex>` over each file's exact
  * bytes, and this asserts that
  *
  *   - no **existing** entry's hash has changed;
  *   - no entry has lost its source file (a published URL must not start 404ing);
  *   - every source file is recorded (adding an entry is free — run the sync);
- *   - `docs/public/schemas/**` is byte-identical to `src/schemas/**`.
+ *   - `docs/public/schemas/**` is byte-identical to `src/meta/schemas/**`.
  *
  * Usage:
  *   node scripts/check-builtin-schemas.mjs
@@ -27,7 +27,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const SRC = path.join(ROOT, "src", "schemas");
+const SRC = path.join(ROOT, "src", "meta", "schemas");
 const PUBLIC = path.join(ROOT, "docs", "public", "schemas");
 const MANIFEST = path.join(SRC, "manifest.json");
 
@@ -67,7 +67,7 @@ try {
   manifest = JSON.parse(readFileSync(MANIFEST, "utf8"));
 } catch (err) {
   console.error(
-    `schemas:check: could not read src/schemas/manifest.json — run \`npm run schemas:sync\` to create it.\n${err.message}`,
+    `schemas:check: could not read src/meta/schemas/manifest.json — run \`npm run schemas:sync\` to create it.\n${err.message}`,
   );
   process.exit(2);
 }
@@ -79,7 +79,7 @@ if (
   Array.isArray(manifest.schemas)
 ) {
   console.error(
-    'schemas:check: src/schemas/manifest.json is malformed — expected {"version": 1, "schemas": {"<dir>/<version>.json": "sha256-<hex>"}}.',
+    'schemas:check: src/meta/schemas/manifest.json is malformed — expected {"version": 1, "schemas": {"<dir>/<version>.json": "sha256-<hex>"}}.',
   );
   process.exit(2);
 }
@@ -104,7 +104,7 @@ for (const key of recordedKeys) {
     bytes = bytesOf(SRC, key);
   } catch {
     problems.push(
-      `manifest: \`${key}\` is recorded but src/schemas no longer has it — its published URL would start 404ing`,
+      `manifest: \`${key}\` is recorded but src/meta/schemas no longer has it — its published URL would start 404ing`,
     );
     continue;
   }
@@ -137,14 +137,14 @@ if (!publicKeys) {
     }
     if (!bytesOf(PUBLIC, key).equals(bytesOf(SRC, key))) {
       problems.push(
-        `published copies: \`${key}\` differs from src/schemas — the site would serve a schema docmeta does not use`,
+        `published copies: \`${key}\` differs from src/meta/schemas — the site would serve a schema docmeta does not use`,
       );
     }
   }
   for (const key of publicKeys) {
     if (!sourceKeys.includes(key)) {
       problems.push(
-        `published copies: \`${key}\` is served but has no source in src/schemas`,
+        `published copies: \`${key}\` is served but has no source in src/meta/schemas`,
       );
     }
   }

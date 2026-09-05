@@ -15,8 +15,8 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
-import { xmlExtractor } from "../src/extractors/xml.js";
-import { DocmetaError } from "../src/types.js";
+import { xmlExtractor } from "../src/meta/extractors/xml.js";
+import { DocmetaError } from "../src/meta/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fx = (name: string): string =>

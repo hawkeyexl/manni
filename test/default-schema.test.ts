@@ -34,8 +34,8 @@
 import { describe, it, expect } from "vitest";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
-import { runValidate } from "../src/commands/validate.js";
-import { loadSchema } from "../src/core/schema-registry.js";
+import { runValidate } from "../src/meta/commands/validate.js";
+import { loadSchema } from "../src/meta/core/schema-registry.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
@@ -602,7 +602,7 @@ describe.skip("the default set (flips on registration)", () => {
   ];
 
   it("appends the whole family after the two existing members", async () => {
-    const { DEFAULT_SCHEMAS } = await import("../src/core/resolve-schema.js");
+    const { DEFAULT_SCHEMAS } = await import("../src/meta/core/resolve-schema.js");
     expect(DEFAULT_SCHEMAS).toEqual([
       "google:okf:0.1",
       "passo-uno:seven-action:1.0",

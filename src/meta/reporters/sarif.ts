@@ -19,7 +19,7 @@
  *   identity function, two consumers.
  */
 import { isAbsolute } from "node:path";
-import pkg from "../../package.json" with { type: "json" };
+import pkg from "../../../package.json" with { type: "json" };
 import type { FieldError, ValidationResult } from "../types.js";
 import {
   canonicalFilePath,

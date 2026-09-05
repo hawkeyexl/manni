@@ -12,7 +12,7 @@ import { dirname } from "node:path";
 import {
   locateFrontmatter,
   frontmatterInnerText,
-} from "../src/extractors/frontmatter.js";
+} from "../src/meta/extractors/frontmatter.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const readFixture = (name: string): string =>

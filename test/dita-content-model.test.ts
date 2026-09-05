@@ -14,7 +14,7 @@
  * and never reorders existing children.
  *
  * The models below are transcribed **from the OASIS specification**, by hand,
- * and deliberately **not** imported from `src/extractors/dita.ts`. Checking the
+ * and deliberately **not** imported from `src/meta/extractors/dita.ts`. Checking the
  * writer against the same table it writes from would prove only that the table
  * is self-consistent. This is the discipline `docusaurus-schemas.test.ts`
  * already applies to field sets: "kept here rather than derived from the schema
@@ -29,8 +29,8 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve, join } from "node:path";
 import { readFileSync, readdirSync } from "node:fs";
 import { DOMParser } from "@xmldom/xmldom";
-import { xmlExtractor } from "../src/extractors/xml.js";
-import type { XmlElement } from "../src/extractors/xml-read.js";
+import { xmlExtractor } from "../src/meta/extractors/xml.js";
+import type { XmlElement } from "../src/meta/extractors/xml-read.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DITA_DIR = join(root, "test", "fixtures", "dita");

@@ -13,10 +13,10 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { runQuery } from "../src/commands/query.js";
-import { runValidate } from "../src/commands/validate.js";
-import { integrityOf } from "../src/core/integrity.js";
-import { publishedBuiltins } from "../src/core/schema-registry.js";
+import { runQuery } from "../src/meta/commands/query.js";
+import { runValidate } from "../src/meta/commands/validate.js";
+import { integrityOf } from "../src/meta/core/integrity.js";
+import { publishedBuiltins } from "../src/meta/core/schema-registry.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const temps: string[] = [];

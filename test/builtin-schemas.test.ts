@@ -9,13 +9,13 @@ import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { Buffer } from "node:buffer";
 import { dirname, join, resolve } from "node:path";
-import { runValidate } from "../src/commands/validate.js";
-import { DEFAULT_SCHEMAS } from "../src/core/resolve-schema.js";
+import { runValidate } from "../src/meta/commands/validate.js";
+import { DEFAULT_SCHEMAS } from "../src/meta/core/resolve-schema.js";
 import {
   loadSchema,
   publishedBuiltins,
   PUBLISHED_BASE,
-} from "../src/core/schema-registry.js";
+} from "../src/meta/core/schema-registry.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
@@ -329,9 +329,9 @@ describe("the default schema set", () => {
 // 0009 — publishing the built-ins is a promise, so it needs enforcement
 // ---------------------------------------------------------------------------
 
-/** `<dir>/<version>.json` for every built-in, posix, relative to src/schemas. */
+/** `<dir>/<version>.json` for every built-in, posix, relative to src/meta/schemas. */
 function sourceFiles(): string[] {
-  const base = join(root, "src", "schemas");
+  const base = join(root, "src", "meta", "schemas");
   const out: string[] = [];
   for (const dir of readdirSync(base, { withFileTypes: true })) {
     if (!dir.isDirectory()) continue;
@@ -346,7 +346,7 @@ const sha256 = (bytes: Buffer): string =>
   `sha256-${createHash("sha256").update(bytes).digest("hex")}`;
 
 describe("0009 · the immutability manifest", () => {
-  const manifestPath = join(root, "src", "schemas", "manifest.json");
+  const manifestPath = join(root, "src", "meta", "schemas", "manifest.json");
 
   it("records a hash for every built-in file", () => {
     const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
@@ -364,7 +364,7 @@ describe("0009 · the immutability manifest", () => {
       schemas: Record<string, string>;
     };
     for (const [key, recorded] of Object.entries(manifest.schemas)) {
-      const bytes = readFileSync(join(root, "src", "schemas", ...key.split("/")));
+      const bytes = readFileSync(join(root, "src", "meta", "schemas", ...key.split("/")));
       expect(sha256(bytes), key).toBe(recorded);
     }
   });
@@ -380,7 +380,7 @@ describe("0009 · the immutability manifest", () => {
 });
 
 describe("0009 · the published copies under docs/public", () => {
-  it("exist for every built-in, byte-identical to src/schemas", () => {
+  it("exist for every built-in, byte-identical to src/meta/schemas", () => {
     // The two copies are what makes the URL work without coupling the docs
     // build to a path outside docs/. This runs in `npm test` rather than only
     // in the docs workflow, so a PR that touches neither still cannot drift
@@ -388,7 +388,7 @@ describe("0009 · the published copies under docs/public", () => {
     // that never sees the repo root's node_modules.
     for (const key of sourceFiles()) {
       const segments = key.split("/");
-      const src = readFileSync(join(root, "src", "schemas", ...segments));
+      const src = readFileSync(join(root, "src", "meta", "schemas", ...segments));
       const published = readFileSync(
         join(root, "docs", "public", "schemas", ...segments),
       );
@@ -396,7 +396,7 @@ describe("0009 · the published copies under docs/public", () => {
     }
   });
 
-  it("publishes nothing that src/schemas does not have", () => {
+  it("publishes nothing that src/meta/schemas does not have", () => {
     const base = join(root, "docs", "public", "schemas");
     const found: string[] = [];
     for (const dir of readdirSync(base, { withFileTypes: true })) {

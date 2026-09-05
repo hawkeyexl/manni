@@ -1,7 +1,7 @@
 name: Published schemas
 
 # The published built-in schemas are the one promise this repo makes that no
-# PR check can keep. `schemas:check` proves src/schemas, docs/public/schemas and
+# PR check can keep. `schemas:check` proves src/meta/schemas, docs/public/schemas and
 # the manifest agree with each other — and passes happily while the docs site
 # serves 404s, because it never leaves the disk.
 #

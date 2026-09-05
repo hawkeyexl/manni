@@ -101,7 +101,7 @@ jobs:
       # by the time the HTML exists the defect is invisible.
       - run: npm run docs:check-tables
       # A published schema URL is a promise: its content never changes. This
-      # fails if an already-published `src/schemas/<dir>/<version>.json` was
+      # fails if an already-published `src/meta/schemas/<dir>/<version>.json` was
       # edited in place, or if the copies the docs site serves have drifted
       # from it. A genuine fix ships as a new version file.
       - name: Check the published built-in schemas are immutable and in sync

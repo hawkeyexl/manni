@@ -3,9 +3,9 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:f
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { runQuery, type QueryOptions } from "../src/commands/query.js";
-import { runValidate } from "../src/commands/validate.js";
-import { loadSqlite } from "../src/core/projection.js";
+import { runQuery, type QueryOptions } from "../src/meta/commands/query.js";
+import { runValidate } from "../src/meta/commands/validate.js";
+import { loadSqlite } from "../src/meta/core/projection.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const corpus = resolve(here, "fixtures", "collections");

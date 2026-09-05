@@ -3,8 +3,8 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { Validator } from "../src/core/validator.js";
-import { PUBLISHED_BASE } from "../src/core/schema-registry.js";
+import { Validator } from "../src/meta/core/validator.js";
+import { PUBLISHED_BASE } from "../src/meta/core/schema-registry.js";
 import { startSchemaServer, type SchemaServer } from "./helpers/schema-server.js";
 
 const here = dirname(fileURLToPath(import.meta.url));

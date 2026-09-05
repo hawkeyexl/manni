@@ -2,7 +2,7 @@
  * Adversarial parity suite for the SQL micro-scanners (quote / bracket /
  * comment skipping). Written against the pre-consolidation behavior and kept
  * green across the refactor that rebuilt every consumer on the shared
- * primitives in src/core/projection.ts — the same inputs, one consumer per
+ * primitives in src/meta/core/projection.ts — the same inputs, one consumer per
  * describe block, so a divergence names the consumer that drifted.
  */
 import { describe, it, expect } from "vitest";
@@ -10,11 +10,11 @@ import {
   assertSingleStatement,
   collectNamedParameters,
   stripLeadingTrivia,
-} from "../src/core/projection.js";
+} from "../src/meta/core/projection.js";
 import {
   collectInsertTargets,
   collectSetTargets,
-} from "../src/commands/query.js";
+} from "../src/meta/commands/query.js";
 
 describe("SQL scanners: unterminated string literal at EOF", () => {
   const sql = "SELECT 'abc; $x";

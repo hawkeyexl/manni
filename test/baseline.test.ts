@@ -11,8 +11,8 @@ import {
   parseBaseline,
   serializeBaseline,
   writeBaselineFile,
-} from "../src/core/baseline.js";
-import { DocmetaError, type FieldError, type ValidationResult } from "../src/types.js";
+} from "../src/meta/core/baseline.js";
+import { DocmetaError, type FieldError, type ValidationResult } from "../src/meta/types.js";
 
 const err = (over: Partial<FieldError> = {}): FieldError => ({
   schema: "google:okf:0.1",

@@ -2,19 +2,19 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
-import { markdownExtractor } from "../src/extractors/markdown.js";
-import { mdxExtractor } from "../src/extractors/mdx.js";
-import { asciidocExtractor } from "../src/extractors/asciidoc.js";
-import { rstExtractor } from "../src/extractors/rst.js";
-import { xmlExtractor } from "../src/extractors/xml.js";
-import { htmlExtractor } from "../src/extractors/html.js";
+import { markdownExtractor } from "../src/meta/extractors/markdown.js";
+import { mdxExtractor } from "../src/meta/extractors/mdx.js";
+import { asciidocExtractor } from "../src/meta/extractors/asciidoc.js";
+import { rstExtractor } from "../src/meta/extractors/rst.js";
+import { xmlExtractor } from "../src/meta/extractors/xml.js";
+import { htmlExtractor } from "../src/meta/extractors/html.js";
 import {
   extractorForExtension,
   extractorByName,
   supportedExtensions,
   listFormats,
-} from "../src/extractors/index.js";
-import { DocmetaError } from "../src/types.js";
+} from "../src/meta/extractors/index.js";
+import { DocmetaError } from "../src/meta/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const readFixture = (name: string): string =>

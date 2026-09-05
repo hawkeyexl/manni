@@ -16,7 +16,7 @@ import {
   SCHEMA_CACHE_VERSION,
   SchemaCache,
   schemaCacheDir,
-} from "../src/core/schema-cache.js";
+} from "../src/meta/core/schema-cache.js";
 
 const URL_A = "https://schemas.example.com/house/2.1.json";
 const SCHEMA = {

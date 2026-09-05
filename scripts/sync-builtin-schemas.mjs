@@ -7,7 +7,7 @@
  *    serves `docs/public/**` at the site root and the site's `base` is
  *    `/docmeta`, so these land at
  *    `https://hawkeyexl.github.io/docmeta/schemas/<dir>/<version>.json`.
- * 2. `src/schemas/manifest.json` — `sha256-<hex>` over each file's exact bytes.
+ * 2. `src/meta/schemas/manifest.json` — `sha256-<hex>` over each file's exact bytes.
  *
  * They are committed rather than generated during the docs build because the
  * `build` job in `.github/workflows/docs.yml` is a separate checkout that runs
@@ -38,7 +38,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const SRC = path.join(ROOT, "src", "schemas");
+const SRC = path.join(ROOT, "src", "meta", "schemas");
 const PUBLIC = path.join(ROOT, "docs", "public", "schemas");
 const MANIFEST = path.join(SRC, "manifest.json");
 
@@ -74,7 +74,7 @@ if (keys.length === 0) {
 // ---------------------------------------------------------------------------
 // Rebuilt from scratch so a renamed or deleted source file does not leave an
 // orphan being served. Removing a published version is itself a promise broken,
-// and `schemas:check` reports it — but it reports it against `src/schemas`,
+// and `schemas:check` reports it — but it reports it against `src/meta/schemas`,
 // which is the copy that has to be restored.
 rmSync(PUBLIC, { recursive: true, force: true });
 for (const key of keys) {
@@ -150,4 +150,4 @@ if (orphans.length > 0) {
   );
   for (const key of orphans.sort()) console.log(`  ? ${key}`);
 }
-console.log("schemas:sync: commit both src/schemas/manifest.json and docs/public/schemas/");
+console.log("schemas:sync: commit both src/meta/schemas/manifest.json and docs/public/schemas/");

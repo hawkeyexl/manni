@@ -75,8 +75,8 @@ name: Formats demo
 on:
   pull_request:
     paths:
-      - "src/reporters/**"
-      - "src/core/baseline.ts"
+      - "src/meta/reporters/**"
+      - "src/meta/core/baseline.ts"
       - ".github/workflows/formats-demo.yml"
   workflow_dispatch:
 

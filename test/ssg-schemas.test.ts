@@ -16,10 +16,10 @@
 import { describe, it, expect } from "vitest";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
-import { runValidate } from "../src/commands/validate.js";
-import { DEFAULT_SCHEMAS } from "../src/core/resolve-schema.js";
-import { loadSchema } from "../src/core/schema-registry.js";
-import { getSchemasInfo } from "../src/commands/schemas.js";
+import { runValidate } from "../src/meta/commands/validate.js";
+import { DEFAULT_SCHEMAS } from "../src/meta/core/resolve-schema.js";
+import { loadSchema } from "../src/meta/core/schema-registry.js";
+import { getSchemasInfo } from "../src/meta/commands/schemas.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");

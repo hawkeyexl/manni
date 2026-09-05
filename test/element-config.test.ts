@@ -28,9 +28,9 @@ import { describe, it, expect } from "vitest";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { readFileSync } from "node:fs";
-import { xmlExtractor } from "../src/extractors/xml.js";
-import { htmlExtractor } from "../src/extractors/html.js";
-import { resolveElements } from "../src/core/resolve-schema.js";
+import { xmlExtractor } from "../src/meta/extractors/xml.js";
+import { htmlExtractor } from "../src/meta/extractors/html.js";
+import { resolveElements } from "../src/meta/core/resolve-schema.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ARTICLE = readFileSync(

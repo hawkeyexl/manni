@@ -11,10 +11,10 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
-import { applyFrontmatter } from "../src/extractors/frontmatter-write.js";
-import { markdownExtractor } from "../src/extractors/markdown.js";
-import { extractFrontmatter } from "../src/extractors/frontmatter.js";
-import { DocmetaError } from "../src/types.js";
+import { applyFrontmatter } from "../src/meta/extractors/frontmatter-write.js";
+import { markdownExtractor } from "../src/meta/extractors/markdown.js";
+import { extractFrontmatter } from "../src/meta/extractors/frontmatter.js";
+import { DocmetaError } from "../src/meta/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fx = (name: string): string =>

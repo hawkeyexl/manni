@@ -51,7 +51,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - name: Check CLI reference is in sync with src/cli.ts
+      - name: Check CLI reference is in sync with src/meta/cli.ts
         run: npm run docs:check-cli
       # Bare, with no paths and no `-s`: both come from the repo's own
       # docmeta.config.yaml, so the deploy gate exercises config discovery

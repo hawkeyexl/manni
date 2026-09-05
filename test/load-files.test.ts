@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { resolveTargetSet, resolveTargets } from "../src/core/load-files.js";
-import { DocmetaError } from "../src/types.js";
+import { resolveTargetSet, resolveTargets } from "../src/meta/core/load-files.js";
+import { DocmetaError } from "../src/meta/types.js";
 import { DOC, makeTempRepo, removeTempRepo } from "./helpers/temp-repo.js";
 
 const here = dirname(fileURLToPath(import.meta.url));

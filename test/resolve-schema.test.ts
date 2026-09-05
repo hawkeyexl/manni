@@ -6,8 +6,8 @@ import {
   resolveSchemaSet,
   resolveSchemaSetWithSource,
   DEFAULT_SCHEMAS,
-} from "../src/core/resolve-schema.js";
-import { publishedBuiltins } from "../src/core/schema-registry.js";
+} from "../src/meta/core/resolve-schema.js";
+import { publishedBuiltins } from "../src/meta/core/schema-registry.js";
 
 describe("resolveSchemaSet", () => {
   it("CLI override wins over everything", () => {

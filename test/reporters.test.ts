@@ -22,9 +22,9 @@ import {
   renderJunit,
   renderSarif,
   type ReportFormat,
-} from "../src/reporters/index.js";
-import { renderGet } from "../src/reporters/get.js";
-import { renderInfer } from "../src/reporters/infer.js";
+} from "../src/meta/reporters/index.js";
+import { renderGet } from "../src/meta/reporters/get.js";
+import { renderInfer } from "../src/meta/reporters/infer.js";
 import {
   FILL_FORMATS,
   FILL_FORMAT_LIST,
@@ -34,22 +34,22 @@ import {
   renderFillJson,
   renderFillPretty,
   type FillReportFormat,
-} from "../src/reporters/fill.js";
-import type { GetFileResult } from "../src/commands/get.js";
-import type { InferResult } from "../src/commands/schemas.js";
+} from "../src/meta/reporters/fill.js";
+import type { GetFileResult } from "../src/meta/commands/get.js";
+import type { InferResult } from "../src/meta/commands/schemas.js";
 import type {
   FillFileResult,
   FilledField,
   FillRun,
-} from "../src/commands/fill-types.js";
-import { fingerprint, type FingerprintContext } from "../src/core/baseline.js";
-import { runValidate } from "../src/commands/validate.js";
+} from "../src/meta/commands/fill-types.js";
+import { fingerprint, type FingerprintContext } from "../src/meta/core/baseline.js";
+import { runValidate } from "../src/meta/commands/validate.js";
 import { makeTempRepo, removeTempRepo } from "./helpers/temp-repo.js";
 import type {
   BaselineSummary,
   RunSummary,
   ValidationResult,
-} from "../src/types.js";
+} from "../src/meta/types.js";
 
 const ESC = String.fromCharCode(27);
 const here = dirname(fileURLToPath(import.meta.url));

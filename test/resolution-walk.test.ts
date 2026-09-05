@@ -17,9 +17,9 @@ import { fileURLToPath } from "node:url";
 
 const counter = vi.hoisted(() => ({ calls: 0 }));
 
-vi.mock("../src/core/resolve-schema.js", async (importOriginal) => {
+vi.mock("../src/meta/core/resolve-schema.js", async (importOriginal) => {
   const mod =
-    await importOriginal<typeof import("../src/core/resolve-schema.js")>();
+    await importOriginal<typeof import("../src/meta/core/resolve-schema.js")>();
   return {
     ...mod,
     resolveSchemaSetWithSource: (
@@ -31,8 +31,8 @@ vi.mock("../src/core/resolve-schema.js", async (importOriginal) => {
   };
 });
 
-import { runValidate } from "../src/commands/validate.js";
-import { runQuery } from "../src/commands/query.js";
+import { runValidate } from "../src/meta/commands/validate.js";
+import { runQuery } from "../src/meta/commands/query.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const corpus = resolve(here, "fixtures", "collections");

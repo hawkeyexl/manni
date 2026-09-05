@@ -19,7 +19,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { parse } from "yaml";
-import { supportedExtensions } from "../src/extractors/index.js";
+import { supportedExtensions } from "../src/meta/extractors/index.js";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 

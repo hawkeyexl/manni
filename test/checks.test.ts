@@ -3,21 +3,21 @@ import { cpSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseConfig } from "../src/core/config.js";
+import { parseConfig } from "../src/meta/core/config.js";
 import {
   assertPublishableBuiltinId,
   classifyRef,
   listBuiltins,
-} from "../src/core/schema-registry.js";
+} from "../src/meta/core/schema-registry.js";
 import {
   checkSchemaRef,
   rowsToFindings,
   runChecks,
   type CheckEntry,
-} from "../src/core/checks.js";
-import { runValidate } from "../src/commands/validate.js";
-import { runQuery } from "../src/commands/query.js";
-import { DocmetaError, type ExtractedMetadata } from "../src/types.js";
+} from "../src/meta/core/checks.js";
+import { runValidate } from "../src/meta/commands/validate.js";
+import { runQuery } from "../src/meta/commands/query.js";
+import { DocmetaError, type ExtractedMetadata } from "../src/meta/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const corpus = resolve(here, "fixtures", "checks");

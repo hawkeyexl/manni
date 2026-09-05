@@ -8,12 +8,12 @@ import {
   loadConfig,
   parseConfig,
   schemaTrustRoot,
-} from "../src/core/config.js";
+} from "../src/meta/core/config.js";
 import {
   DEFAULT_SCHEMAS,
   resolveSchemaSet,
-} from "../src/core/resolve-schema.js";
-import { DocmetaError } from "../src/types.js";
+} from "../src/meta/core/resolve-schema.js";
+import { DocmetaError } from "../src/meta/types.js";
 import { DOC, makeTempRepo, removeTempRepo } from "./helpers/temp-repo.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
