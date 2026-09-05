@@ -6,6 +6,7 @@
  * Everything after extraction operates only on `ExtractedMetadata`, so new
  * input formats never touch validation, resolution, or reporting.
  */
+import { ToolError } from "../shared/errors.js";
 
 /** Result of pulling a metadata block out of a single document. */
 export interface ExtractedMetadata {
@@ -232,7 +233,7 @@ export interface RunSummary {
 }
 
 /** An operational/usage failure that should map to exit code 2. */
-export class DocmetaError extends Error {
+export class DocmetaError extends ToolError {
   constructor(message: string) {
     super(message);
     this.name = "DocmetaError";

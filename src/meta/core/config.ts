@@ -1,13 +1,21 @@
 /**
- * Optional lightweight YAML config (`docmeta.config.yaml`). Supplies default
- * targets, excludes, the default schema set, and optional per-glob overrides,
- * so CI can run a bare `docmeta validate`.
+ * Optional lightweight YAML config: the `meta:` section of the family file
+ * (`manni.config.yaml`), or the whole of a pre-family `docmeta.config.yaml`.
+ * Supplies default targets, excludes, the default schema set, and optional
+ * per-glob overrides, so CI can run a bare `manni meta validate`.
+ *
+ * Finding the file is shared with every tool under the umbrella
+ * (src/shared/config-file.ts); what the section may contain is decided here.
  */
-import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
-import { dirname, join, relative, resolve } from "node:path";
+import { resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { DocmetaError } from "../types.js";
+import {
+  findConfigFile,
+  readConfigFile,
+  type ConfigFileOptions,
+} from "../../shared/config-file.js";
+import { findGitRoot } from "../../shared/git-root.js";
 import { rebaseConfigSchemaRefs } from "./resolve-schema.js";
 import { classifyRef } from "./schema-registry.js";
 import { INTEGRITY_SHAPE, isIntegrity } from "./integrity.js";
@@ -332,7 +340,23 @@ export interface DocmetaConfig {
   schemaTrust?: SchemaTrustConfig;
 }
 
-const CONFIG_NAMES = ["docmeta.config.yaml", "docmeta.config.yml"];
+/** The metadata tool's key in the family config file. */
+export const META_SECTION = "meta";
+
+/**
+ * The tool's own filenames from before the family file. Still discovered,
+ * with a deprecation warning; their whole document is the `meta:` section.
+ */
+export const LEGACY_CONFIG_NAMES: readonly string[] = [
+  "docmeta.config.yaml",
+  "docmeta.config.yml",
+];
+
+const CONFIG_FILE: ConfigFileOptions = {
+  section: META_SECTION,
+  legacyNames: LEGACY_CONFIG_NAMES,
+  toError: (message) => new DocmetaError(message),
+};
 
 function asStringList(value: unknown, field: string, source: string): string[] {
   if (!Array.isArray(value) || value.some((v) => typeof v !== "string")) {
@@ -466,7 +490,11 @@ function parseSchemaEntry(
   return parsed;
 }
 
-/** Parse and validate config YAML text. */
+/**
+ * Parse and validate config YAML text whose top level *is* the metadata
+ * tool's config — a pre-family `docmeta.config.yaml`, or a section already
+ * cut out of the family file.
+ */
 export function parseConfig(text: string, source: string): DocmetaConfig {
   let raw: unknown;
   try {
@@ -476,6 +504,53 @@ export function parseConfig(text: string, source: string): DocmetaConfig {
       `${source}: invalid YAML: ${(err as Error).message}`,
     );
   }
+  return parseConfigValue(raw, source);
+}
+
+/**
+ * Validate an already-parsed config value.
+ *
+ * `section` is the family-file key the value was cut from, when it was. The
+ * validator labels fields relative to the document it is handed — `"paths"`,
+ * `overrides[0]` — and the one place that knows those fields sit under
+ * `meta:` is here, so the label gains the section on the way out rather than
+ * every check learning to spell it.
+ */
+export function parseConfigValue(
+  raw: unknown,
+  source: string,
+  section?: string,
+): DocmetaConfig {
+  if (section === undefined) return parseConfigDocument(raw, source);
+  try {
+    return parseConfigDocument(raw, source);
+  } catch (err) {
+    if (err instanceof DocmetaError) {
+      throw new DocmetaError(withSection(err.message, source, section));
+    }
+    throw err;
+  }
+}
+
+/**
+ * Every message the validator produces opens with `${source}: ` and then
+ * names what is wrong in one of three shapes: a quoted key (`"paths"`,
+ * `"fill.model"`), an unquoted path (`overrides[0].files`, `checks[1]`,
+ * `elements — …`), or "the top level". Each gains the section.
+ */
+function withSection(message: string, source: string, section: string): string {
+  const head = `${source}: `;
+  if (!message.startsWith(head)) return message;
+  const rest = message.slice(head.length);
+  if (rest.startsWith("the top level ")) {
+    return `${head}\`${section}:\`${rest.slice("the top level".length)}`;
+  }
+  if (rest.startsWith('"')) return `${head}"${section}.${rest.slice(1)}`;
+  if (/^[a-zA-Z]+(\[|\.| —)/.test(rest)) return `${head}${section}.${rest}`;
+  return message;
+}
+
+function parseConfigDocument(raw: unknown, source: string): DocmetaConfig {
   if (raw == null) return {};
   if (typeof raw !== "object" || Array.isArray(raw)) {
     throw new DocmetaError(`${source}: top level must be a mapping.`);
@@ -834,34 +909,17 @@ export interface LoadedConfig {
    * this, not to the directory the command happened to be invoked from.
    */
   dir: string;
+  /**
+   * The family-file key the config was read from under (`"meta"`), when it
+   * was. Absent for a pre-family file, whose top level is the config. A
+   * command that writes the file back (`schemas vendor`) needs to know.
+   */
+  section?: string;
 }
 
-/**
- * The nearest **project boundary** at or above `cwd`: a directory holding
- * `.git`. Null when there is none.
- *
- * `existsSync` rather than `isDirectory()`, because a git *file* — what a
- * worktree or a submodule carries — bounds a project just as a directory does,
- * and this repo's own worktrees are exactly that case. `existsSync` never
- * dereferences the `gitdir:` target, so one line covers Windows, Linux,
- * submodules, and worktrees alike.
- *
- * The answer is returned as a *fact*, not as a search path, because two callers
- * need it for opposite reasons and only one of them wants a chain. Config
- * discovery walks the chain and stops here. The SARIF reporter needs the root
- * itself, and needs "there is no repository" to be distinguishable from "the
- * repository root is where you are standing" — a one-element chain conflates
- * the two, and getting that wrong means emitting paths GitHub silently drops.
- */
-export function findGitRoot(cwd: string): string | null {
-  let dir = resolve(cwd);
-  for (;;) {
-    if (existsSync(join(dir, ".git"))) return dir;
-    const parent = dirname(dir);
-    if (parent === dir) return null;
-    dir = parent;
-  }
-}
+// The project boundary lives with the family config discovery now; the SARIF
+// reporter still imports it from here.
+export { findGitRoot };
 
 /**
  * The directory a **document-supplied** local schema path must stay inside.
@@ -900,45 +958,17 @@ export function schemaTrustRoot(
 }
 
 /**
- * The directories a discovery walk may look in, nearest first.
- *
- * The walk stops at the project boundary `findGitRoot` reports, which is
- * included in the search. Only that one call touches the filesystem; the chain
- * itself is then assembled from path strings.
- *
- * With **no** boundary anywhere above cwd, only cwd is considered. A
- * project-scoped config has no meaning without a project, and walking on would
- * let a stray `docmeta.config.yaml` in a home or temp directory silently govern
- * unrelated runs — including this repo's own tests, which work in OS temp
- * directories under the user's home.
- */
-function searchPath(cwd: string): string[] {
-  const start = resolve(cwd);
-  const root = findGitRoot(start);
-  if (root === null) return [start];
-  const chain: string[] = [];
-  let dir = start;
-  for (;;) {
-    chain.push(dir);
-    if (dir === root) return chain;
-    const parent = dirname(dir);
-    // `root` is an ancestor of `start` by construction, so this is unreachable
-    // — but a filesystem race (the boundary removed mid-walk) must not loop.
-    if (parent === dir) return chain;
-    dir = parent;
-  }
-}
-
-/**
  * Load config from an explicit path (error if missing) or by discovery.
  *
  * Discovery checks cwd and then each ancestor up to and including the nearest
- * `.git` boundary (see `searchPath`). Within a directory the order is
- * `docmeta.config.yaml` then `docmeta.config.yml`. The **first file found
- * wins** and the walk stops there — ancestor configs are never merged, because
- * `schemas:` is a set a file must satisfy in full and `overrides:` is
- * first-match-wins ordered, so a partial merge would silently redefine what
- * "the contract" means.
+ * `.git` boundary. Within a directory the order is the family file
+ * (`manni.config.yaml`, then `.yml`, read at its `meta:` key), the pre-rename
+ * family file (`moose.config.yaml`), then `docmeta.config.yaml` and `.yml`
+ * whole. The **first file found wins** and the walk stops there — ancestor
+ * configs are never merged, because `schemas:` is a set a file must satisfy in
+ * full and `overrides:` is first-match-wins ordered, so a partial merge would
+ * silently redefine what "the contract" means. See src/shared/config-file.ts
+ * for the rest of the rules, the deprecation warnings included.
  *
  * Returns null when no config is found via discovery.
  */
@@ -946,41 +976,17 @@ export async function loadConfig(
   explicitPath?: string,
   cwd: string = process.cwd(),
 ): Promise<LoadedConfig | null> {
-  if (explicitPath) {
-    // An explicit path never falls back to discovery: a `-c` pointing at a
-    // file that is not there is a mistake worth failing on, not a reason to
-    // quietly validate against something else.
-    const abs = resolve(cwd, explicitPath);
-    let text: string;
-    try {
-      text = await readFile(abs, "utf8");
-    } catch {
-      // Report the spelling the user typed, not the resolved absolute path.
-      throw new DocmetaError(`Config file not found: "${explicitPath}".`);
-    }
-    return {
-      config: parseConfig(text, explicitPath),
-      path: abs,
-      dir: dirname(abs),
-    };
-  }
-
-  for (const dir of searchPath(cwd)) {
-    for (const name of CONFIG_NAMES) {
-      const p = join(dir, name);
-      let text: string;
-      try {
-        text = await readFile(p, "utf8");
-      } catch {
-        continue; // not here; try the next name, then the next directory
-      }
-      // Name the file the way the user would have to type it, so a parse
-      // error from an ancestor config says which one.
-      const source = relative(cwd, p).replace(/\\/g, "/");
-      return { config: parseConfig(text, source), path: p, dir };
-    }
-  }
-  return null;
+  const file = explicitPath
+    ? await readConfigFile(explicitPath, cwd, CONFIG_FILE)
+    : await findConfigFile(cwd, CONFIG_FILE);
+  if (file === null) return null;
+  const section = file.wrapped ? META_SECTION : undefined;
+  return {
+    config: parseConfigValue(file.value, file.source, section),
+    path: file.path,
+    dir: file.dir,
+    ...(section !== undefined ? { section } : {}),
+  };
 }
 
 /** Told to a caller once, when a run turns out to be governed by a config. */

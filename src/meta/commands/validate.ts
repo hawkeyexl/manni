@@ -231,7 +231,7 @@ export async function runValidate(
 
   if (inputs.length === 0) {
     throw new DocmetaError(
-      "No files to validate. Pass paths/globs, or add `paths:` to docmeta.config.yaml.",
+      "No files to validate. Pass paths/globs, or add `paths:` under `meta:` in manni.config.yaml.",
     );
   }
 

@@ -231,6 +231,68 @@ function gitAncestors(from: string): string[] {
   }
 }
 
+describe("config discovery reads the family file", () => {
+  let tmp: string | undefined;
+
+  afterEach(async () => {
+    if (tmp) await rm(tmp, { recursive: true, force: true });
+    tmp = undefined;
+  });
+
+  async function tree(spec: Record<string, string>): Promise<string> {
+    tmp = await realpath(await mkdtemp(join(tmpdir(), "docmeta-family-")));
+    for (const [rel, content] of Object.entries(spec)) {
+      const p = join(tmp, rel);
+      await mkdir(dirname(p), { recursive: true });
+      await writeFile(p, content, "utf8");
+    }
+    return tmp;
+  }
+
+  it("takes its keys from under meta: in manni.config.yaml", async () => {
+    const root = await tree({
+      "manni.config.yaml":
+        "meta:\n  schemas:\n    - google:okf:0.1\ndocevals:\n  version: 1\n",
+    });
+    const loaded = await loadConfig(undefined, root);
+    expect(loaded?.config.schemas).toEqual(["google:okf:0.1"]);
+    expect(loaded?.path).toBe(join(root, "manni.config.yaml"));
+    expect(loaded?.section).toBe("meta");
+  });
+
+  it("names the section in a validation error", async () => {
+    const root = await tree({
+      "manni.config.yaml": "meta:\n  schemas: not-a-list\n",
+    });
+    await expect(loadConfig(undefined, root)).rejects.toThrow(
+      /manni\.config\.yaml: "meta\.schemas" must be a list/,
+    );
+  });
+
+  it("still reads a top-level docmeta.config.yaml as the metadata tool's keys", async () => {
+    const root = await tree({
+      "docmeta.config.yaml": "schemas:\n  - google:okf:0.1\n",
+    });
+    const loaded = await loadConfig(undefined, root);
+    expect(loaded?.config.schemas).toEqual(["google:okf:0.1"]);
+    expect(loaded?.section).toBeUndefined();
+  });
+
+  it("a discovered file with a typo is an error, not a fall-through", async () => {
+    const root = await tree({
+      "docmeta.config.yaml": "schemas: not-a-list\n",
+    });
+    await expect(loadConfig(undefined, root)).rejects.toBeInstanceOf(DocmetaError);
+  });
+
+  it("an explicit path to a wrapped file unwraps it without filename sniffing", async () => {
+    const root = await tree({ "whatever.yml": "meta:\n  paths: [docs]\n" });
+    const loaded = await loadConfig("whatever.yml", root);
+    expect(loaded?.config.paths).toEqual(["docs"]);
+    expect(loaded?.section).toBe("meta");
+  });
+});
+
 describe("config discovery walks up (0004)", () => {
   let tmp: string | undefined;
 

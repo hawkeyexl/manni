@@ -6,7 +6,7 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile } from "node:fs/promises";
 import { dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { parseDocument, stringify } from "yaml";
+import { parseDocument, parse as parseYaml, stringify } from "yaml";
 import { resolveElements } from "../core/resolve-schema.js";
 import { DocmetaError } from "../types.js";
 import {
@@ -24,7 +24,9 @@ import { isoDateValue } from "../extractors/date-value.js";
 import { integrityOf } from "../core/integrity.js";
 import { gitIgnored } from "../core/gitignore.js";
 import {
+  META_SECTION,
   parseConfig,
+  parseConfigValue,
   loadConfig,
   resolveRunConfig,
   type ConfigNotice,
@@ -65,8 +67,11 @@ export function getSchemasInfo(): SchemasInfo {
  */
 export const DEFAULT_VENDOR_DIR = "./schema";
 
-/** The config file `vendor` creates when a repository has none. */
-export const DEFAULT_CONFIG_NAME = "docmeta.config.yaml";
+/**
+ * The config file `vendor` creates when a repository has none: the family
+ * file, with the entries under the metadata tool's own key.
+ */
+export const DEFAULT_CONFIG_NAME = "manni.config.yaml";
 
 export interface VendorOptions {
   /** The `http(s)` URL to download. */
@@ -281,13 +286,37 @@ function foldEntry(
  * is why an empty file is not special-cased here. Only `schemas:` is rewritten;
  * comments written *inside* the old `schemas:` list are the one thing that does
  * not survive, because the list itself is replaced.
+ *
+ * `section` is where the config sits in the file: under `meta:` in the family
+ * file, at the top level of a pre-family one. A new file is always the family
+ * shape.
  */
-function renderConfig(existing: string | null, entries: SchemaEntry[]): string {
+function renderConfig(
+  existing: string | null,
+  entries: SchemaEntry[],
+  section: string | undefined,
+): string {
   // No file at all is the one case with nothing to preserve.
-  if (existing === null) return stringify({ schemas: entries });
+  if (existing === null) {
+    return stringify({ [META_SECTION]: { schemas: entries } });
+  }
   const doc = parseDocument(existing);
-  doc.set("schemas", entries);
+  doc.setIn(section === undefined ? ["schemas"] : [section, "schemas"], entries);
   return doc.toString();
+}
+
+/**
+ * Read back what `renderConfig` produced, the way `loadConfig` would. A
+ * config the tool itself cannot read is worse than a failed vendor, and this
+ * is the last moment it can be caught before it reaches disk.
+ */
+function reparseConfig(text: string, source: string, section: string | undefined): void {
+  if (section === undefined) {
+    parseConfig(text, source);
+    return;
+  }
+  const doc = parseYaml(text) as Record<string, unknown>;
+  parseConfigValue(doc[section], source, section);
 }
 
 /**
@@ -364,11 +393,11 @@ export async function runVendorSchema(
   await writeFileAtomic(absFile, bytes);
 
   const existing = loaded ? await readFile(configPath, "utf8") : null;
-  const text = renderConfig(existing, folded.entries);
-  // Parse what is about to be written rather than trusting the serializer. A
-  // config docmeta itself cannot read is worse than a failed vendor, and this
-  // is the last moment it can be caught before it reaches disk.
-  parseConfig(text, posixRelative(cwd, configPath) || DEFAULT_CONFIG_NAME);
+  // A new file is the family shape, so its section is `meta:` too.
+  const section = loaded ? loaded.section : META_SECTION;
+  const text = renderConfig(existing, folded.entries, section);
+  // Parse what is about to be written rather than trusting the serializer.
+  reparseConfig(text, posixRelative(cwd, configPath) || DEFAULT_CONFIG_NAME, section);
   await writeFileAtomic(configPath, text);
 
   return {
@@ -741,7 +770,7 @@ export async function runInferSchema(
 
   if (inputs.length === 0) {
     throw new DocmetaError(
-      "No files to scan. Pass paths/globs, or add `paths:` to docmeta.config.yaml.",
+      "No files to scan. Pass paths/globs, or add `paths:` under `meta:` in manni.config.yaml.",
     );
   }
 

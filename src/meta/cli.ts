@@ -4,12 +4,13 @@
  * never when NO_COLOR/--no-color), meaningful exit codes (0 ok, 1 validation
  * failures, 2 operational/usage errors).
  */
-import { existsSync, realpathSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { basename, extname, relative, resolve as resolvePath } from "node:path";
-import { fileURLToPath } from "node:url";
-import { Command, CommanderError, Option } from "commander";
+import { Command, Option } from "commander";
 import picomatch from "picomatch";
 import pkg from "../../package.json" with { type: "json" };
+import { programName } from "../shared/program-name.js";
+import { fail } from "../shared/run.js";
 import {
   DocmetaError,
   type RunSummary,
@@ -65,15 +66,6 @@ async function readStdin(): Promise<string> {
   const chunks: Buffer[] = [];
   for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
   return Buffer.concat(chunks).toString("utf8");
-}
-
-function fail(err: unknown): never {
-  const msg =
-    err instanceof DocmetaError
-      ? err.message
-      : `Unexpected error: ${(err as Error).message}`;
-  process.stderr.write(`docmeta: ${msg}\n`);
-  process.exit(2);
 }
 
 function resolveColor(program: Command): boolean {
@@ -482,7 +474,7 @@ function reportConfig(
  * `github` output has to stay parseable, and a note is not the report.
  */
 function notice(message: string): void {
-  process.stderr.write(`docmeta: ${message}\n`);
+  process.stderr.write(`${programName()}: ${message}\n`);
 }
 
 /**
@@ -655,10 +647,14 @@ interface VendorCliOptions {
   config?: string;
 }
 
+/**
+ * The metadata tool's program. Named `meta` because that is where it is
+ * mounted (`manni meta …`); the `docmeta` bin renames it before running it.
+ */
 export function buildProgram(): Command {
   const program = new Command();
   program
-    .name("docmeta")
+    .name("meta")
     .description(
       "Validate the presence and format of document metadata against JSON Schema.",
     )
@@ -696,7 +692,7 @@ export function buildProgram(): Command {
       `output: ${REPORT_FORMATS.join(" | ")}`,
       "pretty",
     )
-    .option("-c, --config <path>", "path to a docmeta config file")
+    .option("-c, --config <path>", "path to a manni config file")
     .option("--no-config", "ignore any discovered config file")
     .option("-q, --quiet", "in pretty output, hide passing files")
     .option("--allow-empty", "treat zero matched files as success")
@@ -852,7 +848,7 @@ export function buildProgram(): Command {
       `output: ${COMMON_FORMATS.join(" | ")}`,
       "pretty",
     )
-    .option("-c, --config <path>", "path to a docmeta config file")
+    .option("-c, --config <path>", "path to a manni config file")
     .option("--no-config", "ignore any discovered config file")
     .option(
       "-q, --quiet",
@@ -993,7 +989,7 @@ export function buildProgram(): Command {
       `output: ${QUERY_FORMATS.join(" | ")} (github, sarif, junit need --check)`,
       "pretty",
     )
-    .option("-c, --config <path>", "path to a docmeta config file")
+    .option("-c, --config <path>", "path to a manni config file")
     .option("--no-config", "ignore any discovered config file")
     .option("--allow-empty", "treat zero matched files as success")
     .option("--no-gitignore", "load files .gitignore covers")
@@ -1234,7 +1230,7 @@ export function buildProgram(): Command {
       `output: ${FILL_FORMATS.join(" | ")}`,
       "pretty",
     )
-    .option("-c, --config <path>", "path to a docmeta config file")
+    .option("-c, --config <path>", "path to a manni config file")
     .option("--no-config", "ignore any discovered config file")
     .option(
       "-q, --quiet",
@@ -1424,7 +1420,7 @@ export function buildProgram(): Command {
       `output: ${COMMON_FORMATS.join(" | ")}`,
       "pretty",
     )
-    .option("-c, --config <path>", "path to a docmeta config file")
+    .option("-c, --config <path>", "path to a manni config file")
     .option("--no-config", "ignore any discovered config file")
     .option("--allow-empty", "treat zero matched files as success")
     .option("--no-gitignore", "scan files .gitignore covers")
@@ -1504,7 +1500,7 @@ export function buildProgram(): Command {
       "directory for the committed copy",
       DEFAULT_VENDOR_DIR,
     )
-    .option("-c, --config <path>", "path to a docmeta config file")
+    .option("-c, --config <path>", "path to a manni config file")
     .addHelpText(
       "after",
       [
@@ -1561,43 +1557,6 @@ export function buildProgram(): Command {
   return program;
 }
 
-export async function main(argv: string[] = process.argv): Promise<void> {
-  const program = buildProgram();
-  try {
-    await program.parseAsync(argv);
-  } catch (err) {
-    // `exitOverride()` makes commander throw on every terminating condition,
-    // including the successful ones. Branch on `err.exitCode`, not on a list of
-    // code strings: `--help` is `commander.helpDisplayed`, `-V` is
-    // `commander.version`, and `docmeta help get` is a third code,
-    // `commander.help` — all carrying exitCode 0, and a hand-written list would
-    // eventually miss one and turn a success into a usage error.
-    if (err instanceof CommanderError) {
-      // Say nothing. `Command.error()` has already written the message and the
-      // after-error hint; `fail()` would add "Unexpected error: …" on top,
-      // because a CommanderError is not a DocmetaError.
-      //
-      // `process.exitCode`, not `process.exit()`: Node does not flush queued
-      // async stderr writes on `process.exit`, which truncates the very message
-      // the user needs.
-      process.exitCode = err.exitCode === 0 ? 0 : 2;
-      return;
-    }
-    throw err;
-  }
-}
-
-/** Run only when executed directly (not when imported by tests). */
-function isMainModule(): boolean {
-  const entry = process.argv[1];
-  if (!entry) return false;
-  try {
-    return realpathSync(entry) === fileURLToPath(import.meta.url);
-  } catch {
-    return false;
-  }
-}
-
-if (isMainModule()) {
-  main().catch(fail);
-}
+// No entry point here. `src/cli.ts` mounts this program as `manni meta` and
+// `src/docmeta.ts` runs it under its old name; both go through `runProgram`
+// in src/shared/run.ts, which owns the exit-code contract.

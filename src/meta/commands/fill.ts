@@ -185,7 +185,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   const usingStdin = inputs.includes(STDIN_TOKEN);
   if (inputs.length === 0) {
     throw new DocmetaError(
-      "No files to fill. Pass paths/globs, or add `paths:` to docmeta.config.yaml.",
+      "No files to fill. Pass paths/globs, or add `paths:` under `meta:` in manni.config.yaml.",
     );
   }
 

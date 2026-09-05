@@ -25,7 +25,7 @@ import {
   type InferResult,
 } from "../src/meta/commands/schemas.js";
 import { DEFAULT_SCHEMAS } from "../src/meta/core/resolve-schema.js";
-import { parseConfig } from "../src/meta/core/config.js";
+import { loadConfig, parseConfig } from "../src/meta/core/config.js";
 import { makeTempRepo, removeTempRepo } from "./helpers/temp-repo.js";
 import { DocmetaError } from "../src/meta/types.js";
 import {
@@ -971,7 +971,10 @@ describe("runVendorSchema (0008)", () => {
     );
     expect(result.integrity).toMatch(/^sha256-[0-9a-f]{64}$/);
 
-    const written = await readFile(join(dir, "docmeta.config.yaml"), "utf8");
+    // A repository with no config gets the family file, with the entries under
+    // the metadata tool's own key.
+    const written = await readFile(join(dir, "manni.config.yaml"), "utf8");
+    expect(written).toMatch(/^meta:\n  schemas:\n/);
     expect(written).toContain("ref: ./schema/2.1.json");
     expect(written).toContain(`source: ${url()}`);
     expect(written).toContain(result.integrity);
@@ -1014,11 +1017,12 @@ describe("runVendorSchema (0008)", () => {
     const again = await runVendorSchema({ url: url(), cwd: dir });
     expect(again.replaced).toBe(true);
     expect(again.unchanged).toBe(true);
-    const cfg = parseConfig(
-      await readFile(join(dir, "docmeta.config.yaml"), "utf8"),
-      "docmeta.config.yaml",
-    );
-    expect(cfg.schemas).toHaveLength(1);
+    // The first run created the family file; the second must find it again
+    // and update it under `meta:` rather than starting a second file.
+    expect(existsSync(join(dir, "docmeta.config.yaml"))).toBe(false);
+    const loaded = await loadConfig(undefined, dir);
+    expect(loaded?.path).toBe(join(dir, "manni.config.yaml"));
+    expect(loaded?.config.schemas).toHaveLength(1);
   });
 
   it("appends beside unrelated entries", async () => {

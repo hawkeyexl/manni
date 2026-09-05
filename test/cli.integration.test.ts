@@ -19,7 +19,9 @@ import { spawnText } from "./helpers/spawn.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
-const bin = resolve(root, "dist", "cli.js");
+// The metadata tool under its own name. `manni meta …` is the same program
+// mounted under the umbrella; see manni.integration.test.ts for the mounting.
+const bin = resolve(root, "dist", "docmeta.js");
 
 /**
  * An empty inference runtime prefix, for the tests that need the local binding
@@ -2818,8 +2820,8 @@ describe("docmeta CLI: schemaTrust (built bin)", () => {
     // docs site.
     repo = makeTempRepo({
       files: {
-        "docmeta.config.yaml":
-          "schemas:\n  - diataxis:diataxis:1.0\nschemaTrust:\n  documentRefs: local\n  hosts:\n    - schemas.example.com\n",
+        "manni.config.yaml":
+          "meta:\n  schemas:\n    - diataxis:diataxis:1.0\n  schemaTrust:\n    documentRefs: local\n    hosts:\n      - schemas.example.com\n",
         "page.md":
           "---\ntitle: t\ntype: guide\n$schema: https://hawkeyexl.github.io/docmeta/schemas/okf/0.1.json\n---\n",
       },
