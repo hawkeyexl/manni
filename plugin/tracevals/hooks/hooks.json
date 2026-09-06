@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx --no @hawkeyexl/manni tracevals capture",
+            "timeout": 60,
+            "statusMessage": "Recording the session manifest…"
+          }
+        ]
+      }
+    ]
+  }
+}

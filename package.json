@@ -15,10 +15,18 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./package.json": "./package.json"
+    "./tracevals": {
+      "types": "./dist/tracevals.d.ts",
+      "import": "./dist/tracevals.js"
+    },
+    "./package.json": "./package.json",
+    "./schemas/tracevals/artifact-evals-1.0.0-proposal.2.json": "./schemas/tracevals/artifact-evals-1.0.0-proposal.2.json",
+    "./schemas/tracevals/artifact-evals-1.0.0-proposal.1.json": "./schemas/tracevals/artifact-evals-1.0.0-proposal.1.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "schemas",
+    "plugin"
   ],
   "repository": {
     "type": "git",
@@ -76,6 +84,7 @@
   },
   "dependencies": {
     "@hawkeyexl/inference": "^0.3.1",
+    "@inquirer/prompts": "^7.0.0",
     "@xmldom/xmldom": "^0.9.12",
     "ajv": "^8.17.1",
     "ajv-draft-04": "^1.0.0",
