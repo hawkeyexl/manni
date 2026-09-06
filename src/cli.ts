@@ -15,6 +15,7 @@ import { buildProgram as buildA11y } from "./a11y/cli.js";
 import { buildProgram as buildCite } from "./cite/cli.js";
 import { buildProgram as buildKey } from "./key/cli.js";
 import { buildProgram as buildMeta } from "./meta/cli.js";
+import { buildProgram as buildLint } from "./lint/cli.js";
 import { runIfMain } from "./shared/run.js";
 
 export function buildProgram(): Command {
@@ -65,6 +66,13 @@ export function buildProgram(): Command {
       .name("cite")
       .description(
         "Track citations from doc claims to source lines and check them for drift",
+      ),
+  );
+  program.addCommand(
+    buildLint()
+      .name("lint")
+      .description(
+        "Validate document structure against doctype templates, routed by a page's type",
       ),
   );
   // Not a tool but a family resource with verbs (proposal 0045).
