@@ -18,7 +18,7 @@ jobs:
       # Validate all Markdown. `--format github` turns failures into inline PR
       # annotations; the nonzero exit code fails the job.
       - name: Validate frontmatter
-        run: npx -y manni@1 meta validate "**/*.md" --format github
+        run: npx -y @hawkeyexl/manni@1 meta validate "**/*.md" --format github
 
       # Or, with a manni.config.yaml at the repo root, simply:
-      # - run: npx -y manni@1 meta validate --format github
+      # - run: npx -y @hawkeyexl/manni@1 meta validate --format github

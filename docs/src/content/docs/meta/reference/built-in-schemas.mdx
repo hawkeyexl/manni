@@ -362,26 +362,26 @@ built-in and editing it is usually faster than starting from nothing.
 </CardGrid>
 
 {/* Doc Detective inline tests: verify this page's documented manni meta behavior
-    against the local build, exposed as `manni meta` / `npx manni meta` via `npm link`
+    against the local build, exposed as `manni meta` / `npx @hawkeyexl/manni meta` via `npm link`
     (see .github/workflows/docs-as-tests.yml), over committed fixtures.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"built-in-schemas","description":"Every id in the registry table resolves, and the default set is the two this page names."} */}
-{/* step {"description":"The registry lists google:okf:0.1.","runShell":{"command":"npx manni meta schemas","exitCodes":[0],"stdio":"google:okf:0.1"}} */}
-{/* step {"description":"The registry lists passo-uno:seven-action:1.0.","runShell":{"command":"npx manni meta schemas","exitCodes":[0],"stdio":"passo-uno:seven-action:1.0"}} */}
-{/* step {"description":"The registry lists diataxis:diataxis:1.0.","runShell":{"command":"npx manni meta schemas","exitCodes":[0],"stdio":"diataxis:diataxis:1.0"}} */}
-{/* step {"description":"The registry lists tgdp:templates:1.0.","runShell":{"command":"npx manni meta schemas","exitCodes":[0],"stdio":"tgdp:templates:1.0"}} */}
-{/* step {"description":"The registry lists docusaurus:docs:3.10.","runShell":{"command":"npx manni meta schemas","exitCodes":[0],"stdio":"docusaurus:docs:3.10"}} */}
-{/* step {"description":"The registry lists docusaurus:blog:3.10.","runShell":{"command":"npx manni meta schemas","exitCodes":[0],"stdio":"docusaurus:blog:3.10"}} */}
-{/* step {"description":"The registry lists docusaurus:pages:3.10.","runShell":{"command":"npx manni meta schemas","exitCodes":[0],"stdio":"docusaurus:pages:3.10"}} */}
-{/* step {"description":"The registry lists hugo:page:0.165.","runShell":{"command":"npx manni meta schemas","exitCodes":[0],"stdio":"hugo:page:0.165"}} */}
-{/* step {"description":"The registry lists jekyll:page:4.4.","runShell":{"command":"npx manni meta schemas","exitCodes":[0],"stdio":"jekyll:page:4.4"}} */}
-{/* step {"description":"The registry lists vitepress:page:1.6.","runShell":{"command":"npx manni meta schemas","exitCodes":[0],"stdio":"vitepress:page:1.6"}} */}
-{/* step {"description":"The registry lists mkdocs:material:9.7.","runShell":{"command":"npx manni meta schemas","exitCodes":[0],"stdio":"mkdocs:material:9.7"}} */}
-{/* step {"description":"The registry lists x:cards:1.0.","runShell":{"command":"npx manni meta schemas","exitCodes":[0],"stdio":"x:cards:1.0"}} */}
-{/* step {"description":"A platform schema composes with an editorial one in a single run, as the page claims.","runShell":{"command":"npx manni meta validate test/fixtures/docusaurus/docs-unknown-key.md -s docusaurus:docs:3.10 -s diataxis:diataxis:1.0","exitCodes":[0],"stdio":"1 passed"}} */}
-{/* step {"description":"The default set applies when no flag is given, and does not include a Docusaurus schema.","runShell":{"command":"npx manni meta validate test/fixtures/valid.md","exitCodes":[0],"stdio":"1 passed"}} */}
-{/* step {"description":"The documented `tags` overlap: OKF allows string tags only, so a Docusaurus tag object fails against OKF.","runShell":{"command":"npx manni meta validate test/fixtures/docusaurus/docs-okf-tag-conflict.md -s google:okf:0.1 -s docusaurus:docs:3.10","exitCodes":[1],"stdio":"/tags/0  must be string"}} */}
-{/* step {"description":"Pairing the platform schema with a vocabulary instead of OKF avoids that overlap.","runShell":{"command":"npx manni meta validate test/fixtures/docusaurus/docs-okf-tag-conflict.md -s docusaurus:docs:3.10 -s diataxis:diataxis:1.0","exitCodes":[0],"stdio":"1 passed"}} */}
-{/* step {"description":"A document naming a built-in by its published URL validates with no network, as the published-URLs section claims.","runShell":{"command":"npx manni meta validate test/fixtures/published-url-schema.md --offline","exitCodes":[0],"stdio":"1 passed"}} */}
-{/* step {"description":"The published URL resolves to the real OKF schema, not a permissive stand-in: a document missing `type` still fails.","runShell":{"command":"npx manni meta validate test/fixtures/missing-type.md -s https://hawkeyexl.github.io/manni/schemas/okf/0.1.json --offline","exitCodes":[1],"stdio":"type"}} */}
+{/* step {"description":"The registry lists google:okf:0.1.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"google:okf:0.1"}} */}
+{/* step {"description":"The registry lists passo-uno:seven-action:1.0.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"passo-uno:seven-action:1.0"}} */}
+{/* step {"description":"The registry lists diataxis:diataxis:1.0.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"diataxis:diataxis:1.0"}} */}
+{/* step {"description":"The registry lists tgdp:templates:1.0.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"tgdp:templates:1.0"}} */}
+{/* step {"description":"The registry lists docusaurus:docs:3.10.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"docusaurus:docs:3.10"}} */}
+{/* step {"description":"The registry lists docusaurus:blog:3.10.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"docusaurus:blog:3.10"}} */}
+{/* step {"description":"The registry lists docusaurus:pages:3.10.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"docusaurus:pages:3.10"}} */}
+{/* step {"description":"The registry lists hugo:page:0.165.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"hugo:page:0.165"}} */}
+{/* step {"description":"The registry lists jekyll:page:4.4.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"jekyll:page:4.4"}} */}
+{/* step {"description":"The registry lists vitepress:page:1.6.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"vitepress:page:1.6"}} */}
+{/* step {"description":"The registry lists mkdocs:material:9.7.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"mkdocs:material:9.7"}} */}
+{/* step {"description":"The registry lists x:cards:1.0.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"x:cards:1.0"}} */}
+{/* step {"description":"A platform schema composes with an editorial one in a single run, as the page claims.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/docusaurus/docs-unknown-key.md -s docusaurus:docs:3.10 -s diataxis:diataxis:1.0","exitCodes":[0],"stdio":"1 passed"}} */}
+{/* step {"description":"The default set applies when no flag is given, and does not include a Docusaurus schema.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/valid.md","exitCodes":[0],"stdio":"1 passed"}} */}
+{/* step {"description":"The documented `tags` overlap: OKF allows string tags only, so a Docusaurus tag object fails against OKF.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/docusaurus/docs-okf-tag-conflict.md -s google:okf:0.1 -s docusaurus:docs:3.10","exitCodes":[1],"stdio":"/tags/0  must be string"}} */}
+{/* step {"description":"Pairing the platform schema with a vocabulary instead of OKF avoids that overlap.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/docusaurus/docs-okf-tag-conflict.md -s docusaurus:docs:3.10 -s diataxis:diataxis:1.0","exitCodes":[0],"stdio":"1 passed"}} */}
+{/* step {"description":"A document naming a built-in by its published URL validates with no network, as the published-URLs section claims.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/published-url-schema.md --offline","exitCodes":[0],"stdio":"1 passed"}} */}
+{/* step {"description":"The published URL resolves to the real OKF schema, not a permissive stand-in: a document missing `type` still fails.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/missing-type.md -s https://hawkeyexl.github.io/manni/schemas/okf/0.1.json --offline","exitCodes":[1],"stdio":"type"}} */}
 {/* test end */}

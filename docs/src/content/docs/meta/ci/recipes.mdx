@@ -58,7 +58,7 @@ jobs:
       - name: Validate metadata
         id: manni meta
         continue-on-error: true
-        run: npx -y manni meta validate "docs/**/*.md" -f sarif > manni meta.sarif
+        run: npx -y @hawkeyexl/manni meta validate "docs/**/*.md" -f sarif > manni meta.sarif
 
       # if: always() so the upload still runs when the step above reported
       # findings. Without both of these, nothing is ever uploaded.
@@ -110,7 +110,7 @@ validate-metadata:
   stage: test
   image: node:24
   script:
-    - npx -y manni meta validate "docs/**/*.md"
+    - npx -y @hawkeyexl/manni meta validate "docs/**/*.md"
 ```
 
 </TabItem>
@@ -122,15 +122,15 @@ validate-metadata:
   image: node:24
   # Targets come from paths: in manni.config.yaml at the repo root.
   script:
-    - npx -y manni meta validate
+    - npx -y @hawkeyexl/manni meta validate
 ```
 
 </TabItem>
 </Tabs>
 
 <Aside type="tip" title="Pin the version">
-`npx -y manni meta` resolves the latest published version on each run. Pin a
-major for reproducible pipelines: `npx -y manni@1 validate ...`.
+`npx -y @hawkeyexl/manni meta` resolves the latest published version on each run. Pin a
+major for reproducible pipelines: `npx -y @hawkeyexl/manni@1 validate ...`.
 </Aside>
 
 If you collect machine-readable reports, capture the JSON output as an artifact:
@@ -140,7 +140,7 @@ validate-metadata:
   stage: test
   image: node:24
   script:
-    - npx -y manni meta validate "docs/**/*.md" --format json | tee manni-report.json
+    - npx -y @hawkeyexl/manni meta validate "docs/**/*.md" --format json | tee manni-report.json
   artifacts:
     when: always
     paths:
@@ -159,7 +159,7 @@ validate-metadata:
   stage: test
   image: node:24
   script:
-    - npx -y manni meta validate "docs/**/*.md" --format junit | tee manni-junit.xml
+    - npx -y @hawkeyexl/manni meta validate "docs/**/*.md" --format junit | tee manni-junit.xml
   artifacts:
     when: always
     reports:
@@ -182,7 +182,7 @@ pipeline {
     stage('Validate metadata') {
       steps {
         // Requires Node.js 24+ on the agent (npx ships with npm).
-        sh 'npx -y manni meta validate "docs/**/*.md"'
+        sh 'npx -y @hawkeyexl/manni meta validate "docs/**/*.md"'
       }
     }
   }
@@ -202,7 +202,7 @@ pipeline {
   stages {
     stage('Validate metadata') {
       steps {
-        sh 'npx -y manni meta validate "docs/**/*.md"'
+        sh 'npx -y @hawkeyexl/manni meta validate "docs/**/*.md"'
       }
     }
   }
@@ -215,7 +215,7 @@ manni meta in a way that preserves its exit code:
 ```groovy title="Jenkinsfile"
 stage('Validate metadata') {
   steps {
-    sh 'npx -y manni meta validate "docs/**/*.md" --format json | tee manni-report.json'
+    sh 'npx -y @hawkeyexl/manni meta validate "docs/**/*.md" --format json | tee manni-report.json'
   }
   post {
     always {
@@ -231,7 +231,7 @@ and pass it to the `junit` step:
 ```groovy title="Jenkinsfile"
 stage('Validate metadata') {
   steps {
-    sh 'npx -y manni meta validate "docs/**/*.md" --format junit | tee manni-junit.xml'
+    sh 'npx -y @hawkeyexl/manni meta validate "docs/**/*.md" --format junit | tee manni-junit.xml'
   }
   post {
     always {
@@ -271,7 +271,7 @@ than it sounds. A hand-written one is easy to narrow to `\.md$` and then quietly
 stop checking the AsciiDoc and DITA in the same repo.
 
 <Aside type="note" title="It needs Node on the machine">
-The hook runs `npx manni meta`, so contributors need Node 24 or newer on their
+The hook runs `npx @hawkeyexl/manni meta`, so contributors need Node 24 or newer on their
 `PATH`. That is the same requirement as running manni meta anywhere else.
 pre-commit does not install Node for it.
 </Aside>
@@ -291,13 +291,13 @@ repos:
     hooks:
       - id: manni meta
         name: manni meta validate
-        entry: npx -y manni meta validate
+        entry: npx -y @hawkeyexl/manni meta validate
         language: system
         # Run only on Markdown; pre-commit appends the staged file paths.
         files: \.md$
 ```
 
-With `entry: npx -y manni meta validate` and no positional paths in the entry,
+With `entry: npx -y @hawkeyexl/manni meta validate` and no positional paths in the entry,
 pre-commit appends the list of staged, matched files as arguments. Each commit
 then validates exactly what changed. `language: system` tells pre-commit to use
 the `npx` already on your `PATH` rather than managing its own environment;
@@ -312,7 +312,7 @@ repos:
     hooks:
       - id: manni meta
         name: manni meta validate
-        entry: npx -y manni meta validate "docs/**/*.md"
+        entry: npx -y @hawkeyexl/manni meta validate "docs/**/*.md"
         language: system
         pass_filenames: false
         always_run: true
@@ -334,7 +334,7 @@ pre-commit run manni meta --all-files   # run it across the repo once
 
 <Aside type="tip" title="Prefer a documented one-liner?">
 If you do not use the pre-commit framework, a plain Git `pre-commit` hook script
-works too. Add `npx -y manni meta validate "docs/**/*.md"` to
+works too. Add `npx -y @hawkeyexl/manni meta validate "docs/**/*.md"` to
 `.git/hooks/pre-commit` (and `exit` on its status). The commit aborts when
 manni meta exits non-zero. This is a per-clone hook and is not shared through the
 repository, which is why the pre-commit framework above is usually preferable.
@@ -356,12 +356,12 @@ repository, which is why the pre-commit framework above is usually preferable.
 </CardGrid>
 
 {/* Doc Detective inline tests: verify this page's documented manni meta behavior
-    against the local build, exposed as `manni meta` / `npx manni meta` via `npm link`
+    against the local build, exposed as `manni meta` / `npx @hawkeyexl/manni meta` via `npm link`
     (see .github/workflows/docs-as-tests.yml), over committed fixtures.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"ci-recipes","description":"The stable contract every recipe depends on, run against the local CLI build."} */}
-{/* step {"description":"Exit 0 when all files are valid.","runShell":{"command":"npx manni meta validate test/fixtures/valid.md","exitCodes":[0]}} */}
-{/* step {"description":"Exit 1 when one or more files fail validation.","runShell":{"command":"npx manni meta validate test/fixtures/missing-type.md","exitCodes":[1]}} */}
-{/* step {"description":"Exit 2 on an operational or usage error.","runShell":{"command":"npx manni meta validate --no-config","exitCodes":[2],"stdio":"No files to validate"}} */}
-{/* step {"description":"`--format json` emits a machine-readable report for capture as a CI artifact.","runShell":{"command":"npx manni meta validate test/fixtures/valid.md --format json","exitCodes":[0],"stdio":"/\"summary\"/"}} */}
+{/* step {"description":"Exit 0 when all files are valid.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/valid.md","exitCodes":[0]}} */}
+{/* step {"description":"Exit 1 when one or more files fail validation.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/missing-type.md","exitCodes":[1]}} */}
+{/* step {"description":"Exit 2 on an operational or usage error.","runShell":{"command":"npx @hawkeyexl/manni meta validate --no-config","exitCodes":[2],"stdio":"No files to validate"}} */}
+{/* step {"description":"`--format json` emits a machine-readable report for capture as a CI artifact.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/valid.md --format json","exitCodes":[0],"stdio":"/\"summary\"/"}} */}
 {/* test end */}

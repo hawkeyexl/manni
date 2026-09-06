@@ -66,4 +66,4 @@ Theo is a developer or technical writer who opened a PR. The manni meta check is
 - He doesn't know which schema fired or why that rule exists.
 - He doesn't want to read the full documentation. He wants a targeted answer.
 
-**How he uses manni meta.** He follows the error link, or searches, to reach the fix-it page. He maps the error to a field and file location, then applies the fix. He runs `npx manni meta validate <file>` locally to confirm green, and he is done.
+**How he uses manni meta.** He follows the error link, or searches, to reach the fix-it page. He maps the error to a field and file location, then applies the fix. He runs `npx @hawkeyexl/manni meta validate <file>` locally to confirm green, and he is done.

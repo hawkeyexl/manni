@@ -5,10 +5,10 @@ validates the **presence and format** of document metadata against **JSON
 Schema**, built for CI. It was published as `docmeta` up to 4.13.1; see
 [Coming from docmeta](#coming-from-docmeta).
 
-[![npm](https://img.shields.io/npm/v/manni?color=cb3837&logo=npm&logoColor=white)](https://www.npmjs.com/package/manni)
+[![npm](https://img.shields.io/npm/v/@hawkeyexl/manni?color=cb3837&logo=npm&logoColor=white)](https://www.npmjs.com/package/@hawkeyexl/manni)
 [![CI](https://github.com/hawkeyexl/manni/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/hawkeyexl/manni/actions/workflows/ci.yml)
-[![node](https://img.shields.io/node/v/manni?color=5fa04e&logo=node.js&logoColor=white)](https://nodejs.org)
-[![license](https://img.shields.io/npm/l/manni?color=blue)](LICENSE)
+[![node](https://img.shields.io/node/v/@hawkeyexl/manni?color=5fa04e&logo=node.js&logoColor=white)](https://nodejs.org)
+[![license](https://img.shields.io/npm/l/@hawkeyexl/manni?color=blue)](LICENSE)
 
 `manni meta` checks the metadata in your documents (Markdown frontmatter and more)
 against one or more JSON Schemas. It verifies that required fields are present
@@ -31,9 +31,9 @@ It can also **fill in** the metadata that is missing, so adopting a standard on 
 ## Install
 
 ```bash
-npm install -g manni
+npm install -g @hawkeyexl/manni
 # or run it without installing:
-npx manni meta validate "**/*.md"
+npx @hawkeyexl/manni meta validate "**/*.md"
 ```
 
 Requires Node.js 24 or later.

@@ -121,7 +121,7 @@ collapse into one statement. `manni meta query` treats the resolved schema as th
 table definition, so `ALTER TABLE` edits it:
 
 ```bash
-npx manni meta query "ALTER TABLE docs
+npx @hawkeyexl/manni meta query "ALTER TABLE docs
   ADD COLUMN reviewed TEXT NOT NULL DEFAULT 'pending'" docs/
 ```
 
@@ -131,11 +131,11 @@ The constraints schema authors reach for first, `format` and `enum`, ride the sa
 
 ```bash
 # reviewed_on: { type: string, format: date }, required, every file backfilled
-npx manni meta query "ALTER TABLE docs
+npx @hawkeyexl/manni meta query "ALTER TABLE docs
   ADD COLUMN reviewed_on DATE NOT NULL DEFAULT '2026-08-26'" docs/
 
 # status: { type: string, enum: [draft, review, final] }
-npx manni meta query "ALTER TABLE docs
+npx @hawkeyexl/manni meta query "ALTER TABLE docs
   ADD COLUMN status TEXT CHECK (status IN ('draft','review','final'))" docs/
 ```
 

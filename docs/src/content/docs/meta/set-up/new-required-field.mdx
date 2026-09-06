@@ -40,7 +40,7 @@ Add the new field to your schema's `properties` **and** to `required`. No stagin
 Run a pass to see the size of the backlog you are about to record:
 
 ```bash
-npx manni meta validate
+npx @hawkeyexl/manni meta validate
 ```
 
 That run exits `1` and lists every doc missing `owner`. This is the wall of red the baseline exists to absorb. Read it once, so you know what you are agreeing to forgive.
@@ -48,7 +48,7 @@ That run exits `1` and lists every doc missing `owner`. This is the wall of red 
 ## Step 2: Record the backlog
 
 ```bash
-npx manni meta validate --write-baseline
+npx @hawkeyexl/manni meta validate --write-baseline
 ```
 
 ```
@@ -78,7 +78,7 @@ meta:
 ```
 
 ```bash
-npx manni meta validate
+npx @hawkeyexl/manni meta validate
 ```
 
 ```
@@ -110,7 +110,7 @@ Green build, live rule. Ship it.
 3. **Prune when the number gets noisy.** Re-record to drop the entries that no longer apply:
 
    ```bash
-   npx manni meta validate --write-baseline
+   npx @hawkeyexl/manni meta validate --write-baseline
    ```
 
    ```
@@ -140,7 +140,7 @@ A required-field rule flags **every** non-compliant file, including files with n
 A baseline exists because most required fields have **per-document values nobody can invent in bulk**. Every page's `owner` is a fact you have to go find. But some rollouts start from a uniform value that is simply true: `reviewed: pending`, `visibility: internal`, `language: en`. For those, carrying a backlog is the long way around. One `ALTER` statement adds the field to your schema as required **and** backfills every file, in the same write:
 
 ```bash
-npx manni meta query "ALTER TABLE docs
+npx @hawkeyexl/manni meta query "ALTER TABLE docs
   ADD COLUMN reviewed TEXT NOT NULL DEFAULT 'pending'" docs/
 ```
 
@@ -179,12 +179,12 @@ No parallel lenient schema, no hand-maintained list of which folders are clean, 
 </CardGrid>
 
 {/* Doc Detective inline tests: verify this page's documented manni meta behavior
-    against the local build, exposed as `manni meta` / `npx manni meta` via `npm link`
+    against the local build, exposed as `manni meta` / `npx @hawkeyexl/manni meta` via `npm link`
     (see .github/workflows/docs-as-tests.yml), over committed fixtures.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"new-required-field","description":"Required-from-day-one plus a baseline, demonstrated with the `owner` schema fixtures."} */}
-{/* step {"description":"Step 1 (make it required): a doc lacking `owner` fails once the field is in `required`.","runShell":{"command":"npx manni meta validate test/fixtures/valid.md -s ./test/fixtures/dd/owner-required.schema.json","exitCodes":[1],"stdio":"must have required property 'owner'"}} */}
-{/* step {"description":"Step 2 (record the backlog): --write-baseline records that finding and exits 0, reporting the additions.","runShell":{"command":"npx manni meta validate test/fixtures/valid.md -s ./test/fixtures/dd/owner-required.schema.json --write-baseline .dd-baseline.json","exitCodes":[0],"stdio":"1 finding recorded (+1 new, -0 no longer occur)"}} */}
-{/* step {"description":"Step 3 (turn it on): the same run now passes, with the forgiven finding still counted.","runShell":{"command":"npx manni meta validate test/fixtures/valid.md -s ./test/fixtures/dd/owner-required.schema.json --baseline .dd-baseline.json","exitCodes":[0],"stdio":"1 baselined finding"}} */}
-{/* step {"description":"Step 4 (new violations still fail): a second file's finding is not in the baseline, so the run exits 1.","runShell":{"command":"npx manni meta validate test/fixtures/missing-type.md -s ./test/fixtures/dd/owner-required.schema.json --baseline .dd-baseline.json","exitCodes":[1],"stdio":"must have required property 'owner'"}} */}
+{/* step {"description":"Step 1 (make it required): a doc lacking `owner` fails once the field is in `required`.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/valid.md -s ./test/fixtures/dd/owner-required.schema.json","exitCodes":[1],"stdio":"must have required property 'owner'"}} */}
+{/* step {"description":"Step 2 (record the backlog): --write-baseline records that finding and exits 0, reporting the additions.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/valid.md -s ./test/fixtures/dd/owner-required.schema.json --write-baseline .dd-baseline.json","exitCodes":[0],"stdio":"1 finding recorded (+1 new, -0 no longer occur)"}} */}
+{/* step {"description":"Step 3 (turn it on): the same run now passes, with the forgiven finding still counted.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/valid.md -s ./test/fixtures/dd/owner-required.schema.json --baseline .dd-baseline.json","exitCodes":[0],"stdio":"1 baselined finding"}} */}
+{/* step {"description":"Step 4 (new violations still fail): a second file's finding is not in the baseline, so the run exits 1.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/missing-type.md -s ./test/fixtures/dd/owner-required.schema.json --baseline .dd-baseline.json","exitCodes":[1],"stdio":"must have required property 'owner'"}} */}
 {/* test end */}

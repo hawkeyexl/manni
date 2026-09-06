@@ -138,7 +138,7 @@ meta:
 Run it from your repo root:
 
 ```bash
-npx manni meta validate
+npx @hawkeyexl/manni meta validate
 ```
 
 ## How CLI flags combine with the config
@@ -156,11 +156,11 @@ For the full flag list, see the [CLI reference](/manni/meta/reference/). For the
 </Aside>
 
 {/* Doc Detective inline tests: verify this page's documented manni meta behavior
-    against the local build, exposed as `manni meta` / `npx manni meta` via `npm link`
+    against the local build, exposed as `manni meta` / `npx @hawkeyexl/manni meta` via `npm link`
     (see .github/workflows/docs-as-tests.yml), over committed fixtures.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"set-up-config","description":"Config-handling claims that are deterministic from the repo root."} */}
-{/* step {"description":"Explicit `-c <path>` to a missing file errors out (exit 2) rather than falling back to discovery.","runShell":{"command":"npx manni meta validate -c does-not-exist.yaml test/fixtures/valid.md","exitCodes":[2],"stdio":"Config file not found"}} */}
-{/* step {"description":"No positional paths and no config found exits 2 with the documented message.","runShell":{"command":"npx manni meta validate --no-config","exitCodes":[2],"stdio":"No files to validate"}} */}
-{/* step {"description":"Explicit file arguments are validated regardless of config; a passing fixture exits 0.","runShell":{"command":"npx manni meta validate test/fixtures/valid.md","exitCodes":[0],"stdio":"1 passed"}} */}
+{/* step {"description":"Explicit `-c <path>` to a missing file errors out (exit 2) rather than falling back to discovery.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c does-not-exist.yaml test/fixtures/valid.md","exitCodes":[2],"stdio":"Config file not found"}} */}
+{/* step {"description":"No positional paths and no config found exits 2 with the documented message.","runShell":{"command":"npx @hawkeyexl/manni meta validate --no-config","exitCodes":[2],"stdio":"No files to validate"}} */}
+{/* step {"description":"Explicit file arguments are validated regardless of config; a passing fixture exits 0.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/valid.md","exitCodes":[0],"stdio":"1 passed"}} */}
 {/* test end */}

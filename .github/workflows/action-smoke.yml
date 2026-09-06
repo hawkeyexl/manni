@@ -48,7 +48,7 @@ jobs:
 
       # `npm pack` gives npx an installable spec, so the action exercises this
       # commit's CLI rather than the registry's. The path stays *relative*:
-      # `npx manni@<absolute path>` is rejected outright on Windows, where the
+      # `npx @hawkeyexl/manni@<absolute path>` is rejected outright on Windows, where the
       # drive letter's colon collides with the `name@spec` separator, and a
       # relative path avoids the question on every platform. Composite `run:`
       # steps and `npm pack` both use the workspace root, so they agree.

@@ -4,7 +4,7 @@
 # compiled JavaScript that GitHub runs directly, which means committing a built
 # `dist/` and keeping it in step with every release — a second build pipeline,
 # and the usual way an action ends up running last week's code. Shelling out to
-# `npx manni@<major> meta` keeps the npm package as the single artifact, so there
+# `npx @hawkeyexl/manni@<major> meta` keeps the npm package as the single artifact, so there
 # is exactly one thing to version.
 #
 # Six inputs, and no more. Enumerating every CLI flag would create a second CLI
@@ -172,7 +172,7 @@ runs:
         printf 'manni meta validate'
         [ ${#argv[@]} -gt 0 ] && printf ' %q' ${argv[@]+"${argv[@]}"}
         echo
-        npx --yes "manni@${MANNI_VERSION}" meta validate ${argv[@]+"${argv[@]}"}
+        npx --yes "@hawkeyexl/manni@${MANNI_VERSION}" meta validate ${argv[@]+"${argv[@]}"}
         code=$?
         echo "exit-code=${code}" >> "$GITHUB_OUTPUT"
         exit "$code"
