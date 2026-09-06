@@ -40,7 +40,7 @@ and breaks the publish.
 
 ## The moving major tag
 
-`uses: hawkeyexl/manni@v0` works because the release job force-updates a `v4`
+`uses: hawkeyexl/manni@v0` works because the release job force-updates a `v0`
 tag on each stable release. semantic-release creates immutable `vX.Y.Z` tags and
 nothing else, so without that step the reference resolves to nothing.
 
