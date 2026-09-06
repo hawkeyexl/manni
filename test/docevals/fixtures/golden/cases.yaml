@@ -1,0 +1,25 @@
+# Golden set for judge calibration over the fixture corpus.
+# Each case is a human-verified verdict: what a careful reviewer decided.
+#
+# `reviewed: true` is explicit on every case. Absent means false (ADR 01016),
+# and these were hand-authored rather than seeded, so they carry the bit.
+- file: test/docevals/fixtures/pages/docs/get-started/concepts.md
+  eval: defines-core-terms
+  expected: pass
+  rationale: Test specification, test, and step each have a heading and definition, with relationships stated.
+  reviewed: true
+- file: test/docevals/fixtures/pages/docs/get-started/installation.mdx
+  eval: install-command-accuracy
+  expected: pass
+  rationale: Shows `npm i -g doc-detective` and Node.js v22 or later.
+  reviewed: true
+- file: test/docevals/fixtures/pages/docs/get-started/installation.mdx
+  eval: no-future-promises
+  expected: pass
+  rationale: The @next dist-tag mention describes an available install path, not an unreleased promise.
+  reviewed: true
+- file: test/docevals/fixtures/pages/tutorials/capture-screenshot.mdx
+  eval: explains-why-before-how
+  expected: pass
+  rationale: Opens with what the tutorial accomplishes before the steps.
+  reviewed: true

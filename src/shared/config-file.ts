@@ -32,8 +32,13 @@
  * unwrapped when present, a document carrying a family key is a family file
  * with an empty section, and the whole document is taken otherwise, so a
  * `-c ./anything.yaml` needs no filename sniffing and no flag.
+ *
+ * The core is synchronous: some tools load config from synchronous library
+ * entry points, and one small file read is not worth an `await` through their
+ * public API. `findConfigFileSync` and `readConfigFileSync` expose it; the
+ * async spellings are wrappers over the same core for callers that await.
  */
-import { readFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { parseCollections, type CollectionConfig } from "./collections.js";
@@ -129,14 +134,14 @@ interface Document {
   doc: Record<string, unknown> | null;
 }
 
-async function readDocument(
+function readDocument(
   path: string,
   source: string,
   toError: ToError,
-): Promise<Document | null> {
+): Document | null {
   let text: string;
   try {
-    text = await readFile(path, "utf8");
+    text = readFileSync(path, "utf8");
   } catch {
     return null;
   }
@@ -278,17 +283,17 @@ const FAMILY_FILES: readonly {
 /**
  * Discover the tool's config from `cwd` upward. `null` when nothing exists.
  */
-export async function findConfigFile(
+export function findConfigFileSync(
   cwd: string,
   opts: ConfigFileOptions,
-): Promise<ConfigFile | null> {
+): ConfigFile | null {
   const start = resolve(cwd);
   for (const dir of searchPath(start)) {
     for (const { names, kind } of FAMILY_FILES) {
       for (const name of names) {
         const path = join(dir, name);
         const source = relativeSource(start, path);
-        const document = await readDocument(path, source, opts.toError);
+        const document = readDocument(path, source, opts.toError);
         if (document === null) continue;
         const found = slice(document, opts);
         // A family file without this tool's key belongs to a sibling. Keep
@@ -310,7 +315,7 @@ export async function findConfigFile(
     for (const name of opts.legacyNames) {
       const path = join(dir, name);
       const source = relativeSource(start, path);
-      const document = await readDocument(path, source, opts.toError);
+      const document = readDocument(path, source, opts.toError);
       if (document === null) continue;
       warn(
         `"${name}" is a deprecated config file name and will stop being read in a future major version. Move its keys under \`${opts.section}:\` in "${FAMILY_CONFIG_NAMES[0] ?? "manni.config.yaml"}", and its paths, exclude and sidecars keys to a top-level collections: list, where sidecars becomes externalMetadata.`,
@@ -335,14 +340,14 @@ export async function findConfigFile(
  * at a file that is not there is a mistake worth failing on, not a reason to
  * quietly run against something else.
  */
-export async function readConfigFile(
+export function readConfigFileSync(
   explicitPath: string,
   cwd: string,
   opts: ConfigFileOptions,
-): Promise<ConfigFile> {
+): ConfigFile {
   const path = resolve(cwd, explicitPath);
   // Report the spelling the user typed, not the resolved absolute path.
-  const document = await readDocument(path, explicitPath, opts.toError);
+  const document = readDocument(path, explicitPath, opts.toError);
   if (document === null) {
     throw opts.toError(`Config file not found: "${explicitPath}".`);
   }
@@ -364,6 +369,25 @@ export async function readConfigFile(
   };
 }
 
+/** `findConfigFileSync`, for callers that await. */
+export function findConfigFile(
+  cwd: string,
+  opts: ConfigFileOptions,
+): Promise<ConfigFile | null> {
+  return Promise.resolve().then(() => findConfigFileSync(cwd, opts));
+}
+
+/** `readConfigFileSync`, for callers that await. */
+export function readConfigFile(
+  explicitPath: string,
+  cwd: string,
+  opts: ConfigFileOptions,
+): Promise<ConfigFile> {
+  return Promise.resolve().then(() =>
+    readConfigFileSync(explicitPath, cwd, opts),
+  );
+}
+
 /**
  * The nearest family file from `cwd` upward, whatever it carries: any tool's
  * section, a family key, or nothing at all. For `manni key`, which writes the
@@ -375,17 +399,24 @@ export async function readConfigFile(
  * malformed key is not an error here, unlike in `findConfigFile`, because
  * replacing it is what the caller is for.
  */
-export async function findFamilyConfigFile(
+export function findFamilyConfigFile(
   cwd: string,
   toError: ToError,
 ): Promise<ConfigFile | null> {
+  return Promise.resolve().then(() => findFamilyConfigFileSync(cwd, toError));
+}
+
+function findFamilyConfigFileSync(
+  cwd: string,
+  toError: ToError,
+): ConfigFile | null {
   const start = resolve(cwd);
   for (const dir of searchPath(start)) {
     for (const { names, kind } of FAMILY_FILES) {
       for (const name of names) {
         const path = join(dir, name);
         const source = relativeSource(start, path);
-        const document = await readDocument(path, source, toError);
+        const document = readDocument(path, source, toError);
         if (document === null) continue;
         if (kind === "moose") warn(mooseWarning(name));
         return {
@@ -417,13 +448,23 @@ export async function findFamilyConfigFile(
  * is an error, as it is for `readConfigFile`. Keys are carried as
  * `findFamilyConfigFile` carries them.
  */
-export async function readFamilyConfigFile(
+export function readFamilyConfigFile(
   explicitPath: string,
   cwd: string,
   toError: ToError,
 ): Promise<ConfigFile> {
+  return Promise.resolve().then(() =>
+    readFamilyConfigFileSync(explicitPath, cwd, toError),
+  );
+}
+
+function readFamilyConfigFileSync(
+  explicitPath: string,
+  cwd: string,
+  toError: ToError,
+): ConfigFile {
   const path = resolve(cwd, explicitPath);
-  const document = await readDocument(path, explicitPath, toError);
+  const document = readDocument(path, explicitPath, toError);
   if (document === null) {
     throw toError(`Config file not found: "${explicitPath}".`);
   }

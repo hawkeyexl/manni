@@ -1,0 +1,15 @@
+[
+  {
+    "path": "docs\\broken.mdx",
+    "cwd": "C:\\Users\\hawkeyexl\\Documents\\Workspaces\\docevals\\.claude\\worktrees\\docevals-fill-subcommand-feea76\\.tmp\\probe",
+    "history": [
+      "docs\\broken.mdx"
+    ],
+    "messages": [
+      {
+        "fatal": true,
+        "reason": "Cannot process file"
+      }
+    ]
+  }
+]
