@@ -24,6 +24,6 @@
 - id: manni-meta
   name: manni meta validate
   description: Validate document metadata against JSON Schema
-  entry: npx --yes manni@1 meta validate
+  entry: npx --yes @hawkeyexl/manni@0 meta validate
   language: system
   files: '(?i)\.(adoc|asciidoc|dita|ditamap|htm|html|markdown|md|mdx|rst|xml)$'

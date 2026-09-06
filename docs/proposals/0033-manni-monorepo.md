@@ -138,6 +138,27 @@ production package; the rest live on their own branches until each is ready.
    when production-ready. Each import commit cites the source repository and
    SHA; the archived repositories keep the full history.
 
+## Postscript, 2026-09-05: the npm name is scoped
+
+`npm publish` refused the unscoped name with a 403: "package name too similar
+to existing package `vanli`". `npm view` cannot see that check. It fires only
+at publish time. `vanli` is an unrelated 2024 package by another author. The
+only route to the unscoped name is an npm support request, and support
+publishes no turnaround. So the package ships as **`@hawkeyexl/manni`**, and
+the request is filed in parallel.
+
+Nothing else in this record changes. The bin is still `manni`, so
+`manni meta validate` in a script is the same command. The repository, site,
+config file, Action reference and vocabulary ids keep the bare name. Only the
+install spelling carries the scope: `npm i -D @hawkeyexl/manni`, and
+`npx @hawkeyexl/manni meta …`. If npm grants the unscoped name later, it is
+published as a second package, and the scoped one is deprecated with a pointer.
+
+The version line starts at 0 rather than 1. `v0.0.0` is tagged on the seed
+commit, so the first release is 0.1.0. The Action reference is
+`hawkeyexl/manni@v0`. Reaching 1.0 is a decision for after the other tools
+have landed, not a side effect of the rename.
+
 ## Consequences
 
 - Every `hawkeyexl.github.io/docmeta/*` page that is not under `schemas/`

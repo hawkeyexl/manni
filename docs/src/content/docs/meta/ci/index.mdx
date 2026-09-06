@@ -20,7 +20,7 @@ defaults to inline PR annotations:
 
 ```yaml
 - uses: actions/checkout@v4
-- uses: hawkeyexl/manni@v1
+- uses: hawkeyexl/manni@v0
   with:
     paths: "docs/**/*.md"
 ```
@@ -31,7 +31,7 @@ is not interpreted, so `args: --exclude "*.draft.md"` would hand manni meta a
 pattern with the quote marks still in it:
 
 ```yaml
-- uses: hawkeyexl/manni@v1
+- uses: hawkeyexl/manni@v0
   with:
     paths: |
       docs/**/*.md
@@ -94,7 +94,7 @@ from [`examples/manni.yml`](https://github.com/hawkeyexl/manni/blob/main/example
          # Validate all Markdown. `--format github` turns failures into inline
          # PR annotations; the nonzero exit code fails the job.
          - name: Validate frontmatter
-           run: npx -y manni meta validate "**/*.md" --format github
+           run: npx -y @hawkeyexl/manni meta validate "**/*.md" --format github
    ```
 
 2. **Adapt the targets.** Replace `"**/*.md"` with the paths, directories, or
@@ -108,8 +108,8 @@ from [`examples/manni.yml`](https://github.com/hawkeyexl/manni/blob/main/example
 </Steps>
 
 <Aside type="note" title="Pin the version for reproducible runs">
-`npx -y manni meta` resolves the latest published version each run. To keep CI
-reproducible, pin the major, as in `npx -y manni@1 validate ...`, and bump it
+`npx -y @hawkeyexl/manni meta` resolves the latest published version each run. To keep CI
+reproducible, pin the major, as in `npx -y @hawkeyexl/manni@0 validate ...`, and bump it
 deliberately.
 </Aside>
 
@@ -122,7 +122,7 @@ drop the glob entirely:
 ```yaml title=".github/workflows/manni.yml" {3}
 - name: Validate frontmatter
   # Targets come from paths: in manni.config.yaml at the repo root.
-  run: npx -y manni meta validate --format github
+  run: npx -y @hawkeyexl/manni meta validate --format github
 ```
 
 Keeping the target list in `manni.config.yaml` means the same command works
@@ -150,7 +150,7 @@ jobs:
         with:
           node-version: 24
       - name: Validate frontmatter
-        run: npx -y manni meta validate "docs/**/*.md" --format github
+        run: npx -y @hawkeyexl/manni meta validate "docs/**/*.md" --format github
 ```
 
 </TabItem>
@@ -169,7 +169,7 @@ jobs:
       # ... your existing build/lint steps ...
 
       - name: Validate frontmatter
-        run: npx -y manni meta validate "docs/**/*.md" --format github
+        run: npx -y @hawkeyexl/manni meta validate "docs/**/*.md" --format github
 ```
 
 </TabItem>
@@ -196,7 +196,7 @@ your shell. Locally, `--format github` prints the raw `::error` lines; drop the
 flag to get the readable pretty report:
 
 ```sh
-npx -y manni meta validate "docs/**/*.md"
+npx -y @hawkeyexl/manni meta validate "docs/**/*.md"
 ```
 
 ## Next steps
@@ -215,11 +215,11 @@ npx -y manni meta validate "docs/**/*.md"
 </CardGrid>
 
 {/* Doc Detective inline tests: verify this page's documented manni meta behavior
-    against the local build, exposed as `manni meta` / `npx manni meta` via `npm link`
+    against the local build, exposed as `manni meta` / `npx @hawkeyexl/manni meta` via `npm link`
     (see .github/workflows/docs-as-tests.yml), over committed fixtures.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"ci-github","description":"The two properties the GitHub integration rests on, run against the local CLI build."} */}
-{/* step {"description":"Clean run exits 0 so the job stays green.","runShell":{"command":"npx manni meta validate test/fixtures/valid.md --format github","exitCodes":[0]}} */}
-{/* step {"description":"A failure exits 1 (fails the job) and emits a ::error workflow command pinned to file and line.","runShell":{"command":"npx manni meta validate test/fixtures/missing-type.md --format github","exitCodes":[1],"stdio":"/::error file=.*line=/"}} */}
-{/* step {"description":"An operational error (no inputs, no config) exits 2, distinct from a validation failure.","runShell":{"command":"npx manni meta validate --no-config","exitCodes":[2],"stdio":"No files to validate"}} */}
+{/* step {"description":"Clean run exits 0 so the job stays green.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/valid.md --format github","exitCodes":[0]}} */}
+{/* step {"description":"A failure exits 1 (fails the job) and emits a ::error workflow command pinned to file and line.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/missing-type.md --format github","exitCodes":[1],"stdio":"/::error file=.*line=/"}} */}
+{/* step {"description":"An operational error (no inputs, no config) exits 2, distinct from a validation failure.","runShell":{"command":"npx @hawkeyexl/manni meta validate --no-config","exitCodes":[2],"stdio":"No files to validate"}} */}
 {/* test end */}

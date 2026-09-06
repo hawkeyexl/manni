@@ -452,7 +452,7 @@ manni.config.yaml" notice that `pretty` prints to stdout goes to **stderr**
 instead, so the report stays parseable.
 
 {/* Doc Detective inline tests: verify this page's documented manni meta behavior
-    against the local build, exposed as `manni meta` / `npx manni meta` via `npm link`
+    against the local build, exposed as `manni meta` / `npx @hawkeyexl/manni meta` via `npm link`
     (see .github/workflows/docs-as-tests.yml), over committed fixtures.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"output-and-exit-codes","description":"The reference shapes, exercised against the local build."} */}
@@ -463,7 +463,7 @@ instead, so the report stays parseable.
 {/* step {"description":"--no-color is a global flag placed before the subcommand.","runShell":{"command":"manni meta --no-color validate test/fixtures/valid.md","exitCodes":[0],"stdio":"1 passed"}} */}
 {/* step {"description":"sarif emits a 2.1.0 envelope whose ruleId joins the schema ref to the keyword.","runShell":{"command":"manni meta validate test/fixtures/bad-timestamp.md --format sarif","exitCodes":[1],"stdio":"\"ruleId\": \"google:okf:0.1/format\""}} */}
 {/* step {"description":"A clean sarif run still prints the envelope rather than nothing.","runShell":{"command":"manni meta validate test/fixtures/valid.md --format sarif","exitCodes":[0],"stdio":"\"version\": \"2.1.0\""}} */}
-{/* step {"description":"junit counts one test per file, so the tab matches the summary.","runShell":{"command":"manni meta validate test/fixtures/valid.md test/fixtures/bad-timestamp.md --format junit","exitCodes":[1],"stdio":"/<testsuites name=\"manni meta\" tests=\"2\" failures=\"1\"/"}} */}
+{/* step {"description":"junit counts one test per file, so the tab matches the summary.","runShell":{"command":"manni meta validate test/fixtures/valid.md test/fixtures/bad-timestamp.md --format junit","exitCodes":[1],"stdio":"/<testsuites name=\"manni\" tests=\"2\" failures=\"1\"/"}} */}
 {/* step {"description":"github escapes the % a schema pattern puts in a message, so the annotation is not corrupted.","runShell":{"command":"manni meta validate test/fixtures/percent-hostile.md -s ./test/fixtures/percent-hostile.schema.json --format github","exitCodes":[1],"stdio":"%25$"}} */}
 {/* step {"description":"junit escapes the XML metacharacters a schema pattern puts in a message.","runShell":{"command":"manni meta validate test/fixtures/xml-hostile.md -s ./test/fixtures/xml-hostile.schema.json --format junit","exitCodes":[1],"stdio":"&lt;a href=&quot;x&quot;&gt;"}} */}
 {/* test end */}

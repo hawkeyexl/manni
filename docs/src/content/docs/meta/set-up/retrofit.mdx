@@ -18,7 +18,7 @@ A green build with a working gate beats a red build with a perfect standard. Onc
 Before you pick a schema, find out what the repo already has. [`manni meta schemas infer`](/manni/meta/reference/cli/#meta-schemas-infer) reads every metadata block in a docset and counts it. It is purely statistical, with no network, no model, and no credentials, so it is safe to run against anything, including in CI.
 
 ```sh
-npx manni meta schemas infer docs/
+npx @hawkeyexl/manni meta schemas infer docs/
 ```
 
 ```
@@ -50,7 +50,7 @@ The built-in [`google:okf:0.1`](/manni/meta/schemas/) schema requires a single f
 You do not have to write it by hand. `--out` turns the reading you just took into exactly that schema, with your repo's real properties in it:
 
 ```sh
-npx manni meta schemas infer docs/ --out ./schemas/permissive.json
+npx @hawkeyexl/manni meta schemas infer docs/ --out ./schemas/permissive.json
 ```
 
 What comes out looks like this, with nothing in `required` and a constraint only where one was observed:
@@ -84,7 +84,7 @@ meta:
 Run a full pass to confirm the repo is green as it stands:
 
 ```bash
-npx manni meta validate
+npx @hawkeyexl/manni meta validate
 ```
 
 If something still fails here, it is a genuine format problem (a malformed `timestamp`, an empty required-by-you field), not a missing-field avalanche. Fix those few, and your baseline is clean.
@@ -98,7 +98,7 @@ A file with no frontmatter block at all still gets validated. With a require-not
 With a green baseline committed, add the gate now, before the standard is perfect. manni meta exits `0` when everything passes and `1` when a file fails, so any CI system can use a bare `manni meta validate` as a pass/fail step. Wiring it early means the gate starts catching regressions immediately, even while the schema is still permissive.
 
 ```bash
-npx -y manni meta validate --format github
+npx -y @hawkeyexl/manni meta validate --format github
 ```
 
 The `--format github` flag turns failures into inline annotations on the pull-request diff. The full recipe (workflow file, the exit-code contract, and annotation behavior) lives in the CI track; copy it instead of assembling your own.
@@ -166,7 +166,7 @@ Files under `docs/guides/` are held to `guide.json` (which can require `type`, `
 The permissive schema was only ever a starting line. Once the gate is wired, tighten the standard. You do not have to wait for coverage before you do it. Add the field to `required`, record the existing violations once, and let manni meta fail only on new ones:
 
 ```bash
-npx manni meta validate --write-baseline
+npx @hawkeyexl/manni meta validate --write-baseline
 ```
 
 ```
@@ -258,11 +258,11 @@ You adopted manni meta without a flag day and without a backlog of red checks bl
 </CardGrid>
 
 {/* Doc Detective inline tests: verify this page's documented manni meta behavior
-    against the local build, exposed as `manni meta` / `npx manni meta` via `npm link`
+    against the local build, exposed as `manni meta` / `npx @hawkeyexl/manni meta` via `npm link`
     (see .github/workflows/docs-as-tests.yml), over committed fixtures.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"set-up-retrofit","description":"Start-permissive claim, demonstrated with a require-nothing schema fixture vs. OKF."} */}
-{/* step {"description":"The coverage probe reports what the docset has, and counts the files with no metadata block at all.","runShell":{"command":"npx manni meta schemas infer test/fixtures/infer --no-config","exitCodes":[0],"stdio":"with no metadata block"}} */}
-{/* step {"description":"A frontmatter-free file passes the permissive schema (nothing is required).","runShell":{"command":"npx manni meta validate test/fixtures/no-frontmatter.md -s ./test/fixtures/dd/permissive.schema.json","exitCodes":[0],"stdio":"1 passed"}} */}
-{/* step {"description":"The same file fails OKF, which requires `type` — the avalanche the permissive start avoids.","runShell":{"command":"npx manni meta validate test/fixtures/no-frontmatter.md -s google:okf:0.1","exitCodes":[1],"stdio":"must have required property 'type'"}} */}
+{/* step {"description":"The coverage probe reports what the docset has, and counts the files with no metadata block at all.","runShell":{"command":"npx @hawkeyexl/manni meta schemas infer test/fixtures/infer --no-config","exitCodes":[0],"stdio":"with no metadata block"}} */}
+{/* step {"description":"A frontmatter-free file passes the permissive schema (nothing is required).","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/no-frontmatter.md -s ./test/fixtures/dd/permissive.schema.json","exitCodes":[0],"stdio":"1 passed"}} */}
+{/* step {"description":"The same file fails OKF, which requires `type` — the avalanche the permissive start avoids.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/no-frontmatter.md -s google:okf:0.1","exitCodes":[1],"stdio":"must have required property 'type'"}} */}
 {/* test end */}

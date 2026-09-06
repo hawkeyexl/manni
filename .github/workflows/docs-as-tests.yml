@@ -2,7 +2,7 @@ name: Docs as tests
 
 # The docs-vs-CLI agreement gate: every documented procedure runs for real.
 # It builds the CLI from this checkout, links it onto PATH so the docs' own
-# spellings (`manni meta` / `npx manni meta`) resolve to the fresh build rather than
+# spellings (`manni meta` / `npx @hawkeyexl/manni meta`) resolve to the fresh build rather than
 # any published package, prefetches and caches a local model so even the
 # `fill` procedures execute end to end with no credentials, and then replays
 # the inline tests embedded in the docs (.mdx) under docs/src/content/docs/.
@@ -43,12 +43,12 @@ jobs:
       - run: npm ci
       # Build dist/, then expose it as the `manni` command the docs invoke.
       # `npm link` puts `manni` on PATH (for bare `manni meta ...`); `npm link
-      # manni` adds node_modules/.bin/manni so `npx manni meta ...` resolves the
+      # manni` adds node_modules/.bin/manni so `npx @hawkeyexl/manni meta ...` resolves the
       # local build rather than the registry's. A failed link errors loudly
       # rather than quietly testing the docs against a published version.
       - run: npm run build
       - run: npm link
-      - run: npm link manni
+      - run: npm link @hawkeyexl/manni
       # Some fill steps run a real local model, which is the only way to exercise
       # `fill` in CI at all: every other provider needs a credential, and secrets
       # are not available to this workflow. The runner has no API key and no

@@ -27,7 +27,7 @@ reference](/manni/meta/reference/query/#the-docs-table) has the full contract.
 Retrieval is plain SQL. A tag census over a corpus:
 
 ```bash
-npx manni meta query "SELECT t.value tag, count(*) n
+npx @hawkeyexl/manni meta query "SELECT t.value tag, count(*) n
   FROM docs, json_each(docs.tags) t
   GROUP BY tag ORDER BY n DESC, tag" docs/
 ```
@@ -61,7 +61,7 @@ meta:
 ```
 
 ```bash
-npx manni meta query --check "SELECT d._path, d.author
+npx @hawkeyexl/manni meta query --check "SELECT d._path, d.author
   FROM docs d
   LEFT JOIN authors a ON a.slug = d.author
   WHERE d.author IS NOT NULL AND a._path IS NULL"
@@ -80,7 +80,7 @@ the group, the same rule spells the author set inline as a path self-join over
 bare inputs:
 
 ```bash
-npx manni meta query --check "SELECT d._path, d.author
+npx @hawkeyexl/manni meta query --check "SELECT d._path, d.author
   FROM docs d
   LEFT JOIN docs a ON a.slug = d.author AND a._path LIKE '%authors%'
   WHERE d._path LIKE '%docs%' AND d.author IS NOT NULL
@@ -90,7 +90,7 @@ npx manni meta query --check "SELECT d._path, d.author
 Duplicate slugs, same shape:
 
 ```bash
-npx manni meta query --check "SELECT slug, count(*) n
+npx @hawkeyexl/manni meta query --check "SELECT slug, count(*) n
   FROM docs GROUP BY slug HAVING n > 1" docs/
 ```
 
@@ -102,7 +102,7 @@ contract](/manni/meta/reference/output-and-exit-codes/)):
 ```yaml title=".github/workflows/docs.yml"
 - name: Cross-file metadata rules
   run: |
-    npx -y manni meta query --check \
+    npx -y @hawkeyexl/manni meta query --check \
       "SELECT slug, count(*) n FROM docs GROUP BY slug HAVING n > 1" \
       "docs/**/*.md"
 ```
@@ -114,7 +114,7 @@ binds a named parameter the statement refers to as `:name`, or `$name`/`@name`.
 `:` is the shell-friendliest spelling:
 
 ```bash
-npx manni meta query --check --param author=ghost \
+npx @hawkeyexl/manni meta query --check --param author=ghost \
   "SELECT _path FROM docs WHERE author = :author" docs/
 ```
 
@@ -156,7 +156,7 @@ meta:
           (SELECT slug FROM docs GROUP BY slug HAVING count(*) > 1)
 ```
 
-and the CI step becomes the one you already have. A bare `npx manni meta validate`
+and the CI step becomes the one you already have. A bare `npx @hawkeyexl/manni meta validate`
 runs the checks after the per-file schemas. One command and one exit code cover
 both. Each row a check returns is now an ordinary finding. `path` names the
 file, `key` the field, and `lineFor(path, key)` the source line. So `-f github`
@@ -187,7 +187,7 @@ objects for an edit. It suits the same subprocess-and-parse pipelines that
 consume [validation results](/manni/meta/ci/consume-results/):
 
 ```bash
-npx manni meta query "SELECT _path, title FROM docs WHERE draft = 1" docs/ -f json
+npx @hawkeyexl/manni meta query "SELECT _path, title FROM docs WHERE draft = 1" docs/ -f json
 ```
 
 `--format csv` prints the same rows as CSV for the spreadsheet hop. "Which pages
@@ -198,7 +198,7 @@ details, including the deliberate LF-not-CRLF line endings, are in [the
 reference](/manni/meta/reference/query/#the-csv-dialect):
 
 ```bash
-npx manni meta query -f csv "SELECT _path, title, last_reviewed
+npx @hawkeyexl/manni meta query -f csv "SELECT _path, title, last_reviewed
   FROM docs WHERE _present = 1 ORDER BY _path" docs/ > stale.csv
 ```
 
@@ -209,7 +209,7 @@ the rows land in an artifact a reviewer can open.
 speaks SQLite can browse it: `sqlite3`, Datasette, DuckDB.
 
 ```bash
-npx manni meta query --db docs.db docs/    # export only; SQL is optional
+npx @hawkeyexl/manni meta query --db docs.db docs/    # export only; SQL is optional
 ```
 
 The export is a regenerated artifact of your corpus: rebuild it whenever you
@@ -229,7 +229,7 @@ pending changes as findings, which turns any backfill into a read-only drift
 gate:
 
 ```bash
-npx manni meta query --dry-run "UPDATE docs SET reviewed = 'todo'
+npx @hawkeyexl/manni meta query --dry-run "UPDATE docs SET reviewed = 'todo'
   WHERE reviewed IS NULL AND _present = 1" docs/
 ```
 
@@ -270,19 +270,19 @@ half of it (`ALTER`) is the one-statement ratchet covered in the journeys below.
 </CardGrid>
 
 {/* Doc Detective inline tests: verify this page's documented manni meta behavior
-    against the local build, exposed as `manni meta` / `npx manni meta` via `npm link`
+    against the local build, exposed as `manni meta` / `npx @hawkeyexl/manni meta` via `npm link`
     (see .github/workflows/docs-as-tests.yml), over committed fixtures.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"query-gates","description":"SQL over the metadata corpus: retrieval, --check gates, --dry-run previews, and the refusal posture."} */}
-{/* step {"description":"A tag census: json_each reaches into array values, plain SQL aggregates.","runShell":{"command":"npx manni meta query \"SELECT t.value tag, count(*) n FROM docs, json_each(docs.tags) t GROUP BY tag ORDER BY n DESC, tag\" test/fixtures/query/docs","exitCodes":[0],"stdio":"/guide  2[\\s\\S]*3 rows/"}} */}
-{/* step {"description":"With a named override, the dangling-author rule joins FROM authors, the view of the files the author schema judges, and --check turns the row into exit 1.","runShell":{"command":"npx manni meta query -c test/fixtures/collections/manni.config.yaml --check \"SELECT d._path, d.author FROM docs d LEFT JOIN authors a ON a.slug = d.author WHERE d.author IS NOT NULL AND a._path IS NULL\"","exitCodes":[1],"stdio":"/ghost[\\s\\S]*check failed/"}} */}
-{/* step {"description":"The no-config fallback: the same rule as a path self-join over bare inputs.","runShell":{"command":"npx manni meta query --check \"SELECT d._path, d.author FROM docs d LEFT JOIN docs a ON a.slug = d.author AND a._path LIKE '%authors%' WHERE d._path LIKE '%query/docs%' AND d.author IS NOT NULL AND a._path IS NULL\" test/fixtures/query/docs test/fixtures/query/authors","exitCodes":[1],"stdio":"/ghost[\\s\\S]*check failed/"}} */}
-{/* step {"description":"Duplicate slugs, the GROUP BY ... HAVING shape of the same gate.","runShell":{"command":"npx manni meta query --check \"SELECT slug, count(*) n FROM docs GROUP BY slug HAVING n > 1\" test/fixtures/query/docs","exitCodes":[1],"stdio":"/alpha  2[\\s\\S]*check failed/"}} */}
-{/* step {"description":"--dry-run previews a mutating statement: the exact diff, files untouched, exit 0.","runShell":{"command":"npx manni meta query --dry-run \"UPDATE docs SET reviewed = 'todo' WHERE reviewed IS NULL AND _present = 1\" test/fixtures/query/docs","exitCodes":[0],"stdio":"/reviewed: \\(unset\\) -> todo[\\s\\S]*dry run; run again without --dry-run to apply/"}} */}
-{/* step {"description":"DROP TABLE refuses by name and points at the statements that do the real jobs (exit 2).","runShell":{"command":"npx manni meta query \"DROP TABLE docs\" test/fixtures/query/docs","exitCodes":[2],"stdio":"DROP TABLE is refused"}} */}
-{/* step {"description":"A named check in config: a bare validate runs it, and -f github annotates the offending line of the offending file.","runShell":{"command":"npx manni meta validate -c test/fixtures/checks/manni.config.yaml -f github","exitCodes":[1],"stdio":"/::error file=docs\\/a\\.md,line=3::.*check:unique-slugs/"}} */}
-{/* step {"description":"A scoped run skips checks with one stderr notice, so a half-corpus never answers a corpus question.","runShell":{"command":"npx manni meta validate -c test/fixtures/checks/manni.config.yaml test/fixtures/checks/docs","exitCodes":[0],"stdio":"corpus checks skipped: run is scoped"}} */}
-{/* step {"description":"query --check -f github: the ad-hoc spelling of the same findings pipeline.","runShell":{"command":"npx manni meta query --check \"SELECT _path AS path, 'duplicate slug ' || slug AS message FROM docs WHERE slug IN (SELECT slug FROM docs GROUP BY slug HAVING count(*) > 1)\" test/fixtures/query/docs -f github","exitCodes":[1],"stdio":"/::error file=test\\/fixtures\\/query\\/docs\\/alpha\\.md::/"}} */}
-{/* step {"description":"--param binds a runtime value into the gate; the row comes back and --check exits 1.","runShell":{"command":"npx manni meta query --check --param author=ghost \"SELECT _path FROM docs WHERE author = :author\" test/fixtures/query/docs","exitCodes":[1],"stdio":"/gamma\\.md[\\s\\S]*check failed/"}} */}
-{/* step {"description":"-f csv prints result rows as CSV, header row first.","runShell":{"command":"npx manni meta query -f csv \"SELECT _path, title FROM docs WHERE _present = 1 ORDER BY _path\" test/fixtures/query/docs","exitCodes":[0],"stdio":"/_path,title\\n[\\s\\S]*alpha\\.md,Alpha/"}} */}
+{/* step {"description":"A tag census: json_each reaches into array values, plain SQL aggregates.","runShell":{"command":"npx @hawkeyexl/manni meta query \"SELECT t.value tag, count(*) n FROM docs, json_each(docs.tags) t GROUP BY tag ORDER BY n DESC, tag\" test/fixtures/query/docs","exitCodes":[0],"stdio":"/guide  2[\\s\\S]*3 rows/"}} */}
+{/* step {"description":"With a named override, the dangling-author rule joins FROM authors, the view of the files the author schema judges, and --check turns the row into exit 1.","runShell":{"command":"npx @hawkeyexl/manni meta query -c test/fixtures/collections/docmeta.config.yaml --check \"SELECT d._path, d.author FROM docs d LEFT JOIN authors a ON a.slug = d.author WHERE d.author IS NOT NULL AND a._path IS NULL\"","exitCodes":[1],"stdio":"/ghost[\\s\\S]*check failed/"}} */}
+{/* step {"description":"The no-config fallback: the same rule as a path self-join over bare inputs.","runShell":{"command":"npx @hawkeyexl/manni meta query --check \"SELECT d._path, d.author FROM docs d LEFT JOIN docs a ON a.slug = d.author AND a._path LIKE '%authors%' WHERE d._path LIKE '%query/docs%' AND d.author IS NOT NULL AND a._path IS NULL\" test/fixtures/query/docs test/fixtures/query/authors","exitCodes":[1],"stdio":"/ghost[\\s\\S]*check failed/"}} */}
+{/* step {"description":"Duplicate slugs, the GROUP BY ... HAVING shape of the same gate.","runShell":{"command":"npx @hawkeyexl/manni meta query --check \"SELECT slug, count(*) n FROM docs GROUP BY slug HAVING n > 1\" test/fixtures/query/docs","exitCodes":[1],"stdio":"/alpha  2[\\s\\S]*check failed/"}} */}
+{/* step {"description":"--dry-run previews a mutating statement: the exact diff, files untouched, exit 0.","runShell":{"command":"npx @hawkeyexl/manni meta query --dry-run \"UPDATE docs SET reviewed = 'todo' WHERE reviewed IS NULL AND _present = 1\" test/fixtures/query/docs","exitCodes":[0],"stdio":"/reviewed: \\(unset\\) -> todo[\\s\\S]*dry run; run again without --dry-run to apply/"}} */}
+{/* step {"description":"DROP TABLE refuses by name and points at the statements that do the real jobs (exit 2).","runShell":{"command":"npx @hawkeyexl/manni meta query \"DROP TABLE docs\" test/fixtures/query/docs","exitCodes":[2],"stdio":"DROP TABLE is refused"}} */}
+{/* step {"description":"A named check in config: a bare validate runs it, and -f github annotates the offending line of the offending file.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/checks/docmeta.config.yaml -f github","exitCodes":[1],"stdio":"/::error file=docs\\/a\\.md,line=3::.*check:unique-slugs/"}} */}
+{/* step {"description":"A scoped run skips checks with one stderr notice, so a half-corpus never answers a corpus question.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/checks/docmeta.config.yaml test/fixtures/checks/docs","exitCodes":[0],"stdio":"corpus checks skipped: run is scoped"}} */}
+{/* step {"description":"query --check -f github: the ad-hoc spelling of the same findings pipeline.","runShell":{"command":"npx @hawkeyexl/manni meta query --check \"SELECT _path AS path, 'duplicate slug ' || slug AS message FROM docs WHERE slug IN (SELECT slug FROM docs GROUP BY slug HAVING count(*) > 1)\" test/fixtures/query/docs -f github","exitCodes":[1],"stdio":"/::error file=test\\/fixtures\\/query\\/docs\\/alpha\\.md::/"}} */}
+{/* step {"description":"--param binds a runtime value into the gate; the row comes back and --check exits 1.","runShell":{"command":"npx @hawkeyexl/manni meta query --check --param author=ghost \"SELECT _path FROM docs WHERE author = :author\" test/fixtures/query/docs","exitCodes":[1],"stdio":"/gamma\\.md[\\s\\S]*check failed/"}} */}
+{/* step {"description":"-f csv prints result rows as CSV, header row first.","runShell":{"command":"npx @hawkeyexl/manni meta query -f csv \"SELECT _path, title FROM docs WHERE _present = 1 ORDER BY _path\" test/fixtures/query/docs","exitCodes":[0],"stdio":"/_path,title\\n[\\s\\S]*alpha\\.md,Alpha/"}} */}
 {/* test end */}

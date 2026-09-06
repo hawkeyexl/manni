@@ -247,7 +247,7 @@ report a key it does not know is missing.
 The mitigation is a version floor wherever the gate runs:
 
 ```sh
-npx -y manni@1 validate "docs/**/*.md"
+npx -y @hawkeyexl/manni@0 validate "docs/**/*.md"
 ```
 
 A *misspelled* key is no longer part of this. Since the [unknown-key
@@ -607,7 +607,7 @@ Use config `overrides` when different folders need different schemas.
 </Aside>
 
 {/* Doc Detective inline tests: verify this page's documented manni meta behavior
-    against the local build, exposed as `manni meta` / `npx manni meta` via `npm link`
+    against the local build, exposed as `manni meta` / `npx @hawkeyexl/manni meta` via `npm link`
     (see .github/workflows/docs-as-tests.yml), over committed fixtures.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"configuration-reference","description":"Config discovery, validation, and merge claims, exercised against the local build."} */}

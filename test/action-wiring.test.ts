@@ -125,7 +125,7 @@ function runAction(env: Record<string, string>, npxExit = 0): RunResult {
           MANNI_SCHEMA: "",
           MANNI_CONFIG: "",
           MANNI_FORMAT: "",
-          MANNI_VERSION: "1",
+          MANNI_VERSION: "0",
           MANNI_ARGS: "",
           ...env,
         },
@@ -209,8 +209,8 @@ describe.skipIf(!hasBash)("action.yml input wiring", () => {
   });
 
   it("honours the version input, so the smoke test can point at a local build", () => {
-    expect(argvFor({ MANNI_VERSION: "./manni-1.0.0.tgz" })).toContain(
-      "manni@./manni-1.0.0.tgz",
+    expect(argvFor({ MANNI_VERSION: "./hawkeyexl-manni-1.0.0.tgz" })).toContain(
+      "@hawkeyexl/manni@./hawkeyexl-manni-1.0.0.tgz",
     );
   });
 
@@ -246,7 +246,7 @@ describe.skipIf(!hasBash)("action.yml input wiring", () => {
     const args = argsFor({ MANNI_PATHS: "docs/my notes/*.md\nREADME.md" });
     expect(args).toEqual([
       "--yes",
-      "manni@1",
+      "@hawkeyexl/manni@0",
       "meta",
       "validate",
       "docs/my notes/*.md",

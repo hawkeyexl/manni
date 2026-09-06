@@ -987,7 +987,7 @@ with `No files matched` (exit 2), rather than reporting a green zero.
 </Aside>
 
 {/* Doc Detective inline tests: verify this page's documented manni meta behavior
-    against the local build, exposed as `manni meta` / `npx manni meta` via `npm link`
+    against the local build, exposed as `manni meta` / `npx @hawkeyexl/manni meta` via `npm link`
     (see .github/workflows/docs-as-tests.yml), over committed fixtures.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"cli-reference","description":"The documented command and flag surface, exercised against the local build."} */}
@@ -1006,7 +1006,7 @@ with `No files matched` (exit 2), rather than reporting a green zero.
 {/* step {"description":"schemas -f json prints { builtins, formats }.","runShell":{"command":"manni meta schemas -f json","exitCodes":[0],"stdio":"/\"builtins\"[\\s\\S]*\"formats\"/"}} */}
 {/* step {"description":"schemas reports per-format writability, which fill depends on.","runShell":{"command":"manni meta schemas -f json","exitCodes":[0],"stdio":"/\"name\": \"markdown\"[\\s\\S]*\"writable\": true/"}} */}
 {/* step {"description":"schemas rejects a validate-only format rather than silently printing pretty (exit 2).","runShell":{"command":"manni meta schemas -f github","exitCodes":[2],"stdio":"Unknown --format"}} */}
-{/* step {"description":"DDL type bridge (0028): a declared format type previews as the whole property the schema will gain — type, format, required. --dry-run keeps the step read-only.","runShell":{"command":"manni meta query --dry-run -c test/fixtures/ddl-bridge/manni.config.yaml \"ALTER TABLE docs ADD COLUMN reviewed_on DATE NOT NULL DEFAULT '2026-08-26'\" test/fixtures/ddl-bridge/docs","exitCodes":[0],"stdio":"+ reviewed_on (string, format date, required)"}} */}
+{/* step {"description":"DDL type bridge (0028): a declared format type previews as the whole property the schema will gain — type, format, required. --dry-run keeps the step read-only.","runShell":{"command":"manni meta query --dry-run -c test/fixtures/ddl-bridge/docmeta.config.yaml \"ALTER TABLE docs ADD COLUMN reviewed_on DATE NOT NULL DEFAULT '2026-08-26'\" test/fixtures/ddl-bridge/docs","exitCodes":[0],"stdio":"+ reviewed_on (string, format date, required)"}} */}
 {/* step {"description":"fill documents its confidence gate and provider flags in --help.","runShell":{"command":"manni meta fill --help","exitCodes":[0],"stdio":"--confidence"}} */}
 {/* step {"description":"fill follows the shared input model: no paths and no config is an operational error (exit 2).","runShell":{"command":"manni meta fill --no-config","exitCodes":[2],"stdio":"No files"}} */}
 {/* step {"description":"fill rejects a non-numeric --confidence before contacting a provider (exit 2).","runShell":{"command":"manni meta fill test/fixtures/valid.md --confidence abc","exitCodes":[2],"stdio":"--confidence"}} */}

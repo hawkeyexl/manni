@@ -4,7 +4,7 @@ Guidance for agents working in this repository.
 
 ## What manni is
 
-One npm package and one bin, `manni`, with one subcommand per tool in the
+One npm package, `@hawkeyexl/manni`, and one bin, `manni`, with one subcommand per tool in the
 family. Today that is `manni meta`, the metadata tool, published as `docmeta`
 until 4.13.1. The other tools (docevals, lint, tracevals, kg) are folded in
 one at a time, each on its own branch, merged only when production-ready.

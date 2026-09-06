@@ -47,8 +47,8 @@ body:
     attributes:
       label: How is manni installed?
       options:
-        - npm global (npm install -g manni)
-        - npx manni meta
+        - npm global (npm install -g @hawkeyexl/manni)
+        - npx @hawkeyexl/manni meta
         - GitHub Action (hawkeyexl/manni)
         - pre-commit hook
         - Other (say so below)

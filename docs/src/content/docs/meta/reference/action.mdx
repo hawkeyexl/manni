@@ -12,7 +12,7 @@ instead of being copy-pasted into every repository that wants it.
 
 ```yaml
 - uses: actions/checkout@v4
-- uses: hawkeyexl/manni@v1
+- uses: hawkeyexl/manni@v0
   with:
     paths: "docs/**/*.md"
 ```
@@ -28,7 +28,7 @@ line, and it does not become an empty flag.
 | `schema` | none | One `-s` per entry. |
 | `config` | none | `-c` |
 | `format` | `github` | `--format`. One of `pretty`, `json`, `github`, `sarif`, `junit`. |
-| `version` | `1` | The npm version range fetched, as `manni@<version>`. Also accepts a path or tarball. |
+| `version` | `0` | The npm version range fetched, as `@hawkeyexl/manni@<version>`. Also accepts a path or tarball. |
 | `args` | none | Appended verbatim after everything else, for anything the inputs above do not cover. |
 | `node-version` | `24` | Passed to `actions/setup-node`. manni meta needs 24 or newer. |
 
@@ -43,7 +43,7 @@ Use one item per line whenever a value contains a space. The Action emits a
 workflow warning if it sees a quote character in a single-line value.
 
 ```yaml
-- uses: hawkeyexl/manni@v1
+- uses: hawkeyexl/manni@v0
   with:
     paths: |
       docs/**/*.md
@@ -74,7 +74,7 @@ non-zero code has already failed the step, so there is nothing left to read:
 
 ```yaml
 - id: manni meta
-  uses: hawkeyexl/manni@v1
+  uses: hawkeyexl/manni@v0
   continue-on-error: true
   with:
     paths: "docs/**/*.md"
@@ -112,7 +112,7 @@ shows:
 - uses: actions/setup-node@v4
   with:
     node-version: 24
-- run: npx -y manni@1 validate "docs/**/*.md" --format github
+- run: npx -y @hawkeyexl/manni@0 validate "docs/**/*.md" --format github
 ```
 
 Use the hand-written form on a runner that cannot use a composite action, or

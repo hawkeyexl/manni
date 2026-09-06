@@ -27,13 +27,13 @@ manni meta validates the **presence and format** of your frontmatter against [JS
    Run manni meta against a directory with `npx`. No install, no config. This tells you where you stand today.
 
    ```bash
-   npx manni meta validate docs/
+   npx @hawkeyexl/manni meta validate docs/
    ```
 
    manni meta walks `docs/`, finds every supported file, and validates each one against the built-in [`google:okf:0.1`](/manni/meta/schemas/) schema, which requires a `type` field. You will see a pass/fail line per file and a summary. A nonzero exit code means at least one file failed.
 
    <Aside type="tip">
-   To check a single file instead, pass its path: `npx manni meta validate docs/intro.md`. Explicit file arguments are always validated, regardless of extension filters.
+   To check a single file instead, pass its path: `npx @hawkeyexl/manni meta validate docs/intro.md`. Explicit file arguments are always validated, regardless of extension filters.
    </Aside>
 
 2. **Add a `manni.config.yaml` at your repo root.**
@@ -64,7 +64,7 @@ manni meta validates the **presence and format** of your frontmatter against [JS
    With the config committed, you no longer pass paths or schemas. manni meta discovers `manni.config.yaml` in the current directory and uses its `paths` and `schemas`.
 
    ```bash
-   npx manni meta validate
+   npx @hawkeyexl/manni meta validate
    ```
 
    This is the exact command CI will run. Confirm it reports what you expect locally before you wire it up.
@@ -75,10 +75,10 @@ manni meta validates the **presence and format** of your frontmatter against [JS
 
 4. **Land the CI gate.**
 
-   The same `npx manni meta validate` command becomes a pull-request gate. manni meta exits `0` when everything passes and `1` when a file fails validation, so any CI system can use it as a pass/fail step. The `--format github` flag turns failures into inline annotations on the PR diff.
+   The same `npx @hawkeyexl/manni meta validate` command becomes a pull-request gate. manni meta exits `0` when everything passes and `1` when a file fails validation, so any CI system can use it as a pass/fail step. The `--format github` flag turns failures into inline annotations on the PR diff.
 
    ```bash
-   npx -y manni meta validate --format github
+   npx -y @hawkeyexl/manni meta validate --format github
    ```
 
    The full recipe (workflow file, exit-code contract, and annotation behavior) lives in the CI track. Copy the ready-made recipe there instead of assembling your own.
@@ -111,11 +111,11 @@ A committed `manni.config.yaml` that defines which files to check, and which sch
 </CardGrid>
 
 {/* Doc Detective inline tests: verify this page's documented manni meta behavior
-    against the local build, exposed as `manni meta` / `npx manni meta` via `npm link`
+    against the local build, exposed as `manni meta` / `npx @hawkeyexl/manni meta` via `npm link`
     (see .github/workflows/docs-as-tests.yml), over committed fixtures.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"set-up-overview","description":"Stand-it-up steps, mapped to the local CLI build over the fixtures directory."} */}
-{/* step {"description":"Validate a folder with no setup: walking a directory of mixed fixtures fails (exit 1). Excludes the dd/ support fixtures so the walk is deterministic regardless of what lands there.","runShell":{"command":"npx manni meta validate test/fixtures --exclude \"test/fixtures/dd/**\"","exitCodes":[1],"stdio":"files checked"}} */}
-{/* step {"description":"No positional paths and no config is an operational error: exit 2 with a clear message.","runShell":{"command":"npx manni meta validate --no-config","exitCodes":[2],"stdio":"No files to validate"}} */}
-{/* step {"description":"The CI command shape: `--format github` turns failures into inline annotations and still fails.","runShell":{"command":"npx manni meta validate test/fixtures/missing-type.md --format github","exitCodes":[1],"stdio":"::error file="}} */}
+{/* step {"description":"Validate a folder with no setup: walking a directory of mixed fixtures fails (exit 1). Excludes the dd/ support fixtures so the walk is deterministic regardless of what lands there.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures --exclude \"test/fixtures/dd/**\"","exitCodes":[1],"stdio":"files checked"}} */}
+{/* step {"description":"No positional paths and no config is an operational error: exit 2 with a clear message.","runShell":{"command":"npx @hawkeyexl/manni meta validate --no-config","exitCodes":[2],"stdio":"No files to validate"}} */}
+{/* step {"description":"The CI command shape: `--format github` turns failures into inline annotations and still fails.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/missing-type.md --format github","exitCodes":[1],"stdio":"::error file="}} */}
 {/* test end */}
