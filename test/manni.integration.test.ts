@@ -53,11 +53,40 @@ describe("manni (built bin)", () => {
     }
   }, 180000);
 
-  it("lists meta as a subcommand", () => {
+  it("lists meta and lint as subcommands", () => {
     const r = run(manni, ["--help"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^Usage: manni /m);
     expect(r.stdout).toMatch(/^\s+meta\b/m);
+    expect(r.stdout).toMatch(/^\s+lint\b/m);
+  });
+
+  it("runs lint under its name", () => {
+    expect(run(manni, ["lint", "--help"]).stdout).toMatch(/^Usage: manni lint /m);
+    // A built-in template lints the upstream document it was derived from
+    // clean: exit 0, and the run is counted.
+    const ok = run(manni, [
+      "lint",
+      "test/lint/fixtures/tgdp/template_how-to.md",
+      "-t",
+      "tgdp:how-to:1.6",
+    ]);
+    expect(ok.status).toBe(0);
+    expect(ok.stdout).toContain("1 passed");
+    // The other half of the exit-code contract: findings are 1, not 2.
+    const bad = run(manni, [
+      "lint",
+      "test/lint/fixtures/formats/how-to-broken.md",
+      "-t",
+      "tgdp:how-to:1.6",
+    ]);
+    expect(bad.status).toBe(1);
+  });
+
+  it("prefixes lint diagnostics with the bin that ran", () => {
+    const r = run(manni, ["lint", "-c", "does-not-exist.yaml"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/^manni: Config file not found/);
   });
 
   it("with no command is a usage error that points at the subcommands", () => {

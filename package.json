@@ -18,7 +18,9 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "schemas",
+    "templates"
   ],
   "repository": {
     "type": "git",
@@ -47,6 +49,8 @@
     "lint": "eslint .",
     "check:deps": "node scripts/check-deps.mjs",
     "query:ui": "npm run build && node dist/cli.js meta query --db .manni/meta/query.db && node scripts/query-ui.mjs .manni/meta/query.db",
+    "lint:check-tgdp-pin": "node scripts/lint-check-tgdp-pin.mjs",
+    "lint:smoke": "npm run build && node scripts/lint-smoke.mjs",
     "docs:check-cli": "node scripts/check-cli-reference.mjs",
     "docs:check-action": "node scripts/check-action-reference.mjs",
     "docs:check-api": "node scripts/check-api-reference.mjs",
@@ -75,17 +79,27 @@
     "esbuild": "^0.28.2"
   },
   "dependencies": {
+    "@apidevtools/json-schema-ref-parser": "^11.9.3",
     "@hawkeyexl/inference": "^0.3.1",
     "@xmldom/xmldom": "^0.9.12",
     "ajv": "^8.17.1",
     "ajv-draft-04": "^1.0.0",
     "ajv-formats": "^3.0.1",
+    "asciidoctor": "^3.0.4",
     "commander": "^15.0.0",
     "fast-glob": "^3.3.2",
+    "github-slugger": "^2.0.0",
+    "mdast-util-to-string": "^4.0.0",
     "parse5": "^8.0.1",
     "picocolors": "^1.1.1",
     "picomatch": "^4.0.7",
+    "remark-frontmatter": "^5.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-mdx": "^3.1.1",
+    "remark-parse": "^11.0.0",
     "smol-toml": "^1.8.0",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.1.0",
     "yaml": "^2.6.1"
   },
   "devDependencies": {
@@ -98,8 +112,10 @@
     "@semantic-release/github": "^12.0.8",
     "@semantic-release/npm": "^13.1.5",
     "@semantic-release/release-notes-generator": "^14.1.1",
+    "@types/mdast": "^4.0.4",
     "@types/node": "^26.3.0",
     "@types/picomatch": "^4.0.3",
+    "@types/unist": "^3.0.3",
     "@vitest/coverage-v8": "^4.1.11",
     "eslint": "^10.9.1",
     "globals": "^17.11.0",
