@@ -1,0 +1,158 @@
+---
+title: Choose a provider
+description: Three ways to reach a judge, including one that needs no API key and one that stays on your own infrastructure.
+---
+
+Four providers. The differences that matter are where your page content goes and what credential CI
+needs.
+
+| Provider | Credential | Content goes to |
+|---|---|---|
+| `anthropic` | `ANTHROPIC_API_KEY` | Anthropic's API |
+| `openai` | `OPENAI_API_KEY` | Whatever `base-url` points at, including your own server |
+| `claude-cli` | None; uses local CLI auth | Anthropic, via the local `claude` CLI |
+| `llama-cpp` | None | Nowhere. The model runs in-process on your machine. |
+
+## `anthropic` (default)
+
+```yaml
+docevals:
+  provider:
+    default: anthropic
+    anthropic:
+      model: claude-sonnet-4-5
+      api-key-env: ANTHROPIC_API_KEY
+```
+
+Structured output via forced tool use, so verdicts arrive as validated JSON rather than prose to
+parse.
+
+## `openai` and anything that speaks its API
+
+The `base-url` is the interesting field. It points at any OpenAI-compatible server: Ollama, vLLM,
+Azure, Groq, LM Studio, or an internal gateway.
+
+```yaml
+docevals:
+  provider:
+    default: openai
+    openai:
+      base-url: http://localhost:11434/v1   # Ollama
+      model: llama3.1:8b
+      api-key-env: OPENAI_API_KEY
+```
+
+```yaml
+    base-url: https://llm-gateway.internal.example.com/v1
+```
+
+Uses strict `json_schema` structured output where the endpoint supports it, falling back to
+`json_object` automatically where it does not, so smaller local models still work.
+
+**This is the answer to a security review.** If page content cannot leave your infrastructure, point
+`base-url` at a model that runs inside it. Nothing else about manni docevals changes.
+
+## `claude-cli` needs no API key
+
+```yaml
+docevals:
+  provider:
+    default: claude-cli
+    claude-cli:
+      model: claude-sonnet-4-5
+      command: claude
+```
+
+Shells out to the local `claude` CLI and uses its existing auth. Useful when:
+
+- You are evaluating manni docevals and do not want to provision a key.
+- Developers have CLI access but the team has no shared API key.
+- You would rather not put a long-lived key in CI.
+
+It depends on the CLI being installed and authenticated on the machine, which makes it better for
+local work than for a fresh CI runner.
+
+## `llama-cpp` keeps everything on the machine
+
+```yaml
+docevals:
+  provider:
+    default: llama-cpp
+    llama-cpp:
+      model: balanced       # auto | fast | balanced | quality, or a pinned reference
+      thought-tokens: 0
+```
+
+Runs GGUF weights in-process. No API key, no CLI, and, once the weights are on disk, no network
+at judge time at all. That is the one property the other three cannot offer. It makes judged evals
+reachable for a contributor with no credentials, or a corpus whose pages may not leave the building.
+
+The named tiers (`fast`, `balanced`, `quality`) are resolved against your machine's memory. Prefer
+a named tier to `auto` in a committed config, so two contributors reading it see the same intent.
+Note too that the library resolves a tier to a *concrete* model before building any cache key. Two
+machines never share a verdict under one tier name.
+
+`thought-tokens` defaults to `0`. A grammar constrains generation from the first token, so an
+unbudgeted thinking model starts reasoning and gets cut off mid-thought. Raise it only if you want
+reasoning before the JSON.
+
+Two costs to know about. It owns weights, which means gigabytes downloaded on first use and held in
+RAM once loaded. And it needs `node-llama-cpp`, a native module declared here as an **optional peer
+dependency**. Nobody who does not choose this provider pays the install cost or the toolchain risk.
+Install it alongside manni docevals when you want local judging:
+
+```bash
+npm i -D node-llama-cpp
+```
+
+:::note
+A smaller judge is not automatically a worse one. It is not automatically a good one either.
+[Calibrate](/manni/docevals/judge/calibrate/) it against your own golden set before trusting it.
+That is what the command is for, and it now refuses to certify on a one-sided set.
+:::
+
+## Pin the model. Always.
+
+```yaml
+    model: claude-sonnet-4-5     # not an alias that floats
+```
+
+A floating alias means your verdicts change when the alias moves, silently, with no commit to point
+at. That is the one thing guaranteed to destroy trust in the gate.
+
+Changing models deliberately invalidates every cached verdict, because the model is part of the
+cache key. It also invalidates your calibration. [Re-calibrate](/manni/docevals/judge/calibrate/)
+before trusting the new one.
+
+## There is no price table
+
+manni docevals reports token counts and inference calls. It never reports a dollar figure, and there
+is no pricing to configure for an unusual or self-hosted model. A bundled price table could not stay
+current, and `claude-cli` and self-hosted endpoints report no usage to price in the first place.
+
+Bound a run with `--max-turns` instead. It counts calls, so it behaves identically whoever runs the
+model. A model that is free to run simply makes the budget irrelevant rather than misreported.
+See [Caching and turn budgets](/manni/docevals/ci/cost-and-caching/).
+
+## Overriding per run
+
+```bash
+npx @hawkeyexl/manni docevals run --provider claude-cli
+npx @hawkeyexl/manni docevals run --provider openai --model llama3.1:8b
+npx @hawkeyexl/manni docevals run --provider llama-cpp --model quality
+```
+
+Handy for comparing a cheaper model against your golden set before committing to it:
+
+```bash
+npx @hawkeyexl/manni docevals calibrate --provider openai --model llama3.1:8b
+```
+
+## No provider at all
+
+`--deterministic-only` skips the judge entirely. Freshness, lint, structure, frontmatter validation,
+and generated checks all still run.
+
+This is the right configuration for fork pull requests, pre-commit hooks, and anyone evaluating
+manni docevals before deciding about model access. See
+[Untrusted pull requests](/manni/docevals/ci/untrusted-pull-requests/).

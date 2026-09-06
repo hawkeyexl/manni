@@ -1,0 +1,31 @@
+---
+title: Reference
+description: Lookup shelf for commands, config keys, frontmatter fields, graders, output formats, and state.
+---
+
+Exhaustive detail the journey sections link into. Everything here is verified against the source and
+the test suite rather than described from memory. Flag tables go against `src/cli.ts`, config keys
+against `src/core/config-schema.json`, and output samples are captured from real runs.
+
+| Page | Covers |
+|---|---|
+| [CLI](/manni/docevals/reference/cli/) | All eight commands, every flag, and the exit code each produces. |
+| [Configuration](/manni/docevals/reference/configuration/) | Every `manni.config.yaml` key, its type, and its default. |
+| [Frontmatter](/manni/docevals/reference/frontmatter/) | Every eval field, the three entry forms, and how page evals resolve against config evals and suites. |
+| [Graders](/manni/docevals/reference/graders/) | Every grader kind and its options, including the ones with sharp edges. |
+| [Output and exit codes](/manni/docevals/reference/output-and-exit-codes/) | The `human`, `json`, `markdown`, and `github` shapes; what `0`/`1`/`2` mean and who each routes to. |
+| [Files and state](/manni/docevals/reference/files-and-state/) | What manni docevals writes, where, and which of it belongs in version control. |
+| [Glossary](/manni/docevals/reference/glossary/) | The terms that recur across every section. |
+
+## If you are looking for
+
+- **why a build went red** → [Fix a failing eval](/manni/docevals/fix/)
+- **what a flag does** → [CLI](/manni/docevals/reference/cli/)
+- **what a config key defaults to** → [Configuration](/manni/docevals/reference/configuration/)
+- **which grader to reach for** → [Graders](/manni/docevals/reference/graders/), or
+  [Deterministic checks](/manni/docevals/evals/deterministic-checks/) for the reasoning
+- **whether to commit a file manni docevals wrote** → [Files and state](/manni/docevals/reference/files-and-state/)
+
+This shelf supports navigation; it does not drive it. If you are trying to accomplish something
+rather than look something up, start from a section in the sidebar. The journey pages explain the
+path and link here for detail.

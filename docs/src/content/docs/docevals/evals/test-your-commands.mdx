@@ -1,0 +1,129 @@
+---
+title: Test your commands
+description: Embed Doc Detective steps in a page so a documented command that drifts from the code fails the build.
+---
+
+A page that shows a command is making a claim. `tool:doc-detective` runs that command and checks the
+claim, so documentation drift becomes a build failure rather than a support ticket.
+
+This page describes the convention **this site runs on**. The commands you see throughout these docs
+are executed on every pull request.
+
+## Add the eval
+
+```yaml
+docevals:
+  evals:
+    commands-work:
+      assertion: Every command the page presents runs and produces the documented result.
+      grader: tool:doc-detective
+      severity: error
+```
+
+Then put it in the suite your doc pages use, or set `defaults.suite` so every page gets it.
+
+## Embed the steps
+
+Steps go at the foot of the `.mdx`, as MDX comments that are invisible to readers and visible to the grader:
+
+```mdx
+{/* STEP {"description":"Exit 0 when every eval passes.","runShell":{"command":"manni docevals run docs/intro.md --deterministic-only","exitCodes":[0]}} */}
+```
+
+:::note[Why this page writes `STEP` instead of `step`]
+Doc Detective extracts step comments from the **raw file**, including inside fenced code blocks. A
+page documenting the convention therefore executes its own examples. That is how the first draft of
+this page failed CI, trying to run a command against a file that does not exist.
+
+Write `step` in a real page. The examples here say `STEP` so they stay inert. If you are writing
+about the convention rather than using it, you will hit this too.
+:::
+
+| Key | Meaning |
+|---|---|
+| `description` | What the step proves. Appears in the finding when it fails, so write it for the person who has to fix it. |
+| `runShell.command` | The command, exactly as the page presents it. |
+| `runShell.exitCodes` | Accepted exit codes. |
+| `runShell.stdout` | Optional. A substring, or a `/regex/` to match. |
+
+Point them at **committed fixtures**, never at a scratch file or a network resource. A doc test that
+depends on the environment is a flaky doc test, and a flaky gate gets disabled.
+
+## Configure Doc Detective
+
+`.doc-detective.json` at the repo root:
+
+```json
+{
+  "input": "docs/src/content/docs",
+  "output": ".doc-detective/results",
+  "detectSteps": false
+}
+```
+
+`detectSteps: false` means explicit steps only, with no inference from prose. Add the output directory to
+`.gitignore`.
+
+## Two sharp edges
+
+### The `command` option is a partial override
+
+```yaml
+    options:
+      command: ["npx", "--no-install", "doc-detective", "--config", ".doc-detective.json"]
+```
+
+`--input <page>` and `--exit-on-fail` are appended to whatever you supply. `--exit-on-fail` is not
+optional and not yours to drop. **Doc Detective exits 0 even when steps fail**, and 4.x keeps its
+results JSON out of stdout. Without the flag a failing doc test is undetectable and passes
+silently. Your array is the prefix of the argv, not the whole of it.
+
+### It executes code from page bodies
+
+:::danger
+This grader needs its own grant: `execution.allow: [page-embedded-steps]`. Granting
+`frontmatter-commands` does **not** grant it, because trusting a repo's frontmatter is not the same
+as trusting arbitrary steps written in its prose. On a fork pull request, an attacker controls both.
+
+The only complete control is gating the job itself to same-repo pull requests. See
+[Untrusted pull requests](/manni/docevals/ci/untrusted-pull-requests/).
+:::
+
+## Make the commands runnable
+
+If your CLI is unpublished, or you want to test the build rather than the release, put the local
+build on `PATH` before running:
+
+```bash
+npm run build && npm link && npm link manni docevals
+```
+
+Otherwise `npx <your-cli>` in a documented command resolves to whatever is installed globally, or
+to nothing.
+
+## Verify the gate fails
+
+The single most important step, and the easiest to skip. A gate that has only ever been seen passing
+has not been shown to work.
+
+Add a step you know is wrong (writing `step`, not `STEP`):
+
+```mdx
+{/* STEP {"description":"PROBE.","runShell":{"command":"node -e \"process.exit(9)\"","exitCodes":[0]}} */}
+```
+
+Run `manni docevals run` over the page and confirm it exits 1 with the step named in the finding. Then
+remove it. Checking only the green direction is how a broken gate survives review.
+
+## What a failure looks like
+
+```text
+docs/reference/cli.mdx
+  FAIL commands-work
+       error [doc-detective/step] Failed Steps:
+1. windows/unknown - docs_reference_cli.mdx~b7ece155~sa4bacb43
+   Error: Returned exit code 9. Expected one of [0]
+```
+
+The `description` you wrote is what makes that line actionable. That is why it is worth writing
+properly.

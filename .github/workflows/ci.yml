@@ -120,3 +120,8 @@ jobs:
       # discovery — the path most users take — instead of stepping around it.
       - name: Validate docs frontmatter (dogfood)
         run: node dist/cli.js meta validate --format github
+      # The evals tool over its own docs section, through an explicit -c: the
+      # deterministic evals only, so no provider is involved. What it covers
+      # and what it deliberately leaves to docs-as-tests is in the file.
+      - name: Check the docevals docs section (dogfood)
+        run: npm run docs:check-docevals

@@ -1,0 +1,182 @@
+---
+title: Exit codes and annotations
+description: What 0, 1, and 2 mean, who each routes to, and how failures land on the right line.
+---
+
+Three exit codes, and the distinction between two of them is the difference between a check people
+trust and one they route around.
+
+## The contract
+
+| Code | Meaning | Whose problem |
+|---|---|---|
+| `0` | Everything passed | Nobody |
+| `1` | Findings, errors, or a suite below its target pass rate | The page author |
+| `2` | Operational or usage error, such as bad config, a missing provider, or a malformed flag | The pipeline owner |
+
+## Never collapse `1` and `2`
+
+A recipe like this is wrong:
+
+```yaml
+- run: npx @hawkeyexl/manni docevals run || echo "docs check failed"
+```
+
+So is anything that reports every non-zero exit as "the docs are bad". When the provider key is
+missing or the config has a typo, exit `2` fires. Blaming the author for it is precisely how a
+check earns a reputation for flakiness it does not deserve. Two or three of those and someone removes
+the step.
+
+Route them separately:
+
+```yaml
+      - id: manni docevals
+        id: manni docevals
+        continue-on-error: true
+        run: npx @hawkeyexl/manni docevals run --format github
+
+      - id: Fail the PR on findings
+        if: steps.manni/docevals.outcome == 'failure'
+        run: |
+          code=${{ steps.manni/docevals.outputs.exit-code || '1' }}
+          if [ "$code" = "2" ]; then
+            echo "::error::manni docevals could not run — this is a pipeline problem, not a docs problem."
+          fi
+          exit 1
+```
+
+The simplest correct version is to let the step fail naturally. Make sure whoever triages CI knows
+`2` means "look at the config, not the page".
+
+## A baselined finding does not affect the exit code
+
+If the repo has a [findings baseline](/manni/docevals/reference/files-and-state/#findings-baseline),
+a run subtracts it before deciding anything. A recorded finding is suppressed, the eval's outcome is
+recomputed without it, and the suite pass rate rises accordingly. A corpus with a full backlog on
+file therefore exits `0`, and only a *new* finding turns the job red.
+
+Two lines in the log carry that, and they are `dim`, so they are easy to scroll past:
+
+```console
+Baseline .manni-docevals-baseline.json: 412 finding(s) suppressed of 412 recorded.
+```
+
+```console
+Baseline .manni-docevals-baseline.json: recorded 411 finding(s) (+0, -1).
+```
+
+**The second form is the one to watch, and `removed` is the number.** A re-record rewrites the whole
+file from what that run covered. A narrowed glob, a mistyped `files.exclude`, or a job that ran
+from the wrong directory silently forgives everything it did not see. Nothing else in the log says
+so: the fingerprints are opaque hashes, and a diff that drops 200 of them reads as noise. A
+`removed` above zero prints a warning beneath the line; treat it as a review gate on the pull
+request, not a log entry.
+
+The corollary for a CI recipe: **`--write-baseline` does not belong in the gating job.** Record from
+a deliberate, human-run invocation over the full corpus and commit the result. A job that re-records
+on every run cannot fail.
+
+Two failures a baseline never suppresses, because neither produces a finding to record. One is an
+eval that **errored** (the check could not run). The other is a **suite below its target pass
+rate**. Both still exit `1`.
+A malformed baseline file is exit `2`, the pipeline owner's problem, with the offending entry named.
+
+## `--fail-on-review`
+
+By default, evals in the human-review zone do not fail the build. With `--fail-on-review`, they exit
+`1`.
+
+This is a genuine policy fork, not a best practice:
+
+| | Blocks on review | Doesn't block |
+|---|---|---|
+| The queue | Never ignored | Can rot |
+| Pull requests | Sometimes wait on a person | Keep moving |
+| Needs | Someone who owns the queue | Nobody |
+
+The deciding question is whether anyone owns the review queue. If nobody does, blocking on it just
+converts a rotting queue into blocked contributors. See
+[Human review](/manni/docevals/judge/human-review/).
+
+## Inline annotations
+
+`--format github` emits workflow commands before the markdown summary, so one invocation both
+annotates the diff and produces a job summary.
+
+```text
+::error file=docs/actions/goTo.mdx,line=4,title=manni docevals%3A fresh-enough::Page last reviewed 937 days ago (max 365)
+```
+
+Severity maps to the annotation level:
+
+| Finding severity | Annotation |
+|---|---|
+| `error` | `::error` |
+| `warning` | `::warning` |
+| `info` | `::notice` |
+
+Values are escaped per GitHub's rules. That covers `%`, CR and LF in data, plus `:` and `,` in
+properties, which is why the title renders as `manni docevals%3A fresh-enough`.
+
+### Judged failures annotate the file
+
+An ai eval has no line to point at, so it annotates the file with the mean confidence and the
+judge's reasoning:
+
+```text
+::error file=docs/tutorial.mdx,title=manni docevals%3A no-future-promises::AI judge: fail (confidence 0.93). <reasoning>
+```
+
+That reasoning is what a contributor acts on. It is only as good as the assertion behind it. See
+[Write good assertions](/manni/docevals/evals/write-good-assertions/).
+
+## Suites below target fail the run
+
+```console
+Suites
+  reference: 2/3 passed — 67% vs target 100% below target (1 skipped)
+```
+
+Exit `1`, even if no individual eval errored. A capability suite left at the default target of `1.0`
+is the most common cause of a surprising red build. See
+[Regression vs capability](/manni/docevals/evals/regression-vs-capability/).
+
+### A filtered run is not a gate
+
+`--eval` and `--suite` narrow a run to named evals. They are local debugging flags, and they are not
+a CI invocation: **while either is active, suite targets are reported but not enforced.**
+
+```console
+Suites
+  reference: 4/4 passed — 100% vs target 100% partial — filtered run, target not evaluated
+```
+
+That is deliberate. A run narrowed to one passing eval out of a suite of twelve would otherwise
+compute `1/1 = 100%`. That clears a target of `1.0` and exits `0` having checked almost nothing, a
+green check indistinguishable from a real one. So a job built around `manni docevals run --eval …`
+does not get a faster gate. It gives the gate up, on every suite line of its own report.
+
+A filter that matches nothing exits `2` rather than `0`, which is the right routing. An eval renamed
+out from under a pipeline is the pipeline owner's problem, and it stops the job instead of passing
+it.
+
+Full behavior in
+[Selecting evals suspends suite enforcement](/manni/docevals/reference/cli/#selecting-evals-suspends-suite-enforcement).
+
+## Job summary
+
+```yaml
+      - run: npx @hawkeyexl/manni docevals run --format github | tee "$GITHUB_STEP_SUMMARY"
+```
+
+{/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
+
+{/* step {"description":"Exit 0: every eval passes.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/find.mdx --deterministic-only --no-generate","exitCodes":[0]}} */}
+
+{/* step {"description":"Exit 1: a finding, or a suite below its target.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate","exitCodes":[1],"stdio":"below target"}} */}
+
+{/* step {"description":"Exit 2: an operational error, distinct from a finding.","runShell":{"command":"manni docevals run -c does-not-exist.yaml","exitCodes":[2]}} */}
+
+{/* step {"description":"github format emits an ::error with file and line for a finding with a known line.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate --format github","exitCodes":[1],"stdio":"/::error file=.*,line=4,/"}} */}
+
+{/* step {"description":"An eval renamed out from under a pipeline exits 2, so the job stops rather than passing over nothing.","runShell":{"command":"manni docevals run --deterministic-only --eval renamed-away","exitCodes":[2],"stdio":"matched no evals"}} */}

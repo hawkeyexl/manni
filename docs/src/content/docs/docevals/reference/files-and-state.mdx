@@ -1,0 +1,231 @@
+---
+title: Files and state
+description: What manni docevals writes, where, and which of it belongs in version control.
+---
+
+manni docevals writes to five places. Only one of them is source you review.
+
+| Path | Default | Commit it? |
+|---|---|---|
+| `{docDir}/manni-docevals/*.mjs` | generated check scripts | **Yes**, ordinary source |
+| `.manni-docevals-baseline.json` | recorded findings backlog | **Yes**, team state |
+| `.manni/docevals/cache/` | judge response cache | No |
+| `.manni/docevals/cache/fill/` | raw `fill` proposals | No |
+| `.manni/docevals/reviews.yaml` | human verdicts | **Yes**, team state |
+| `.manni/docevals/golden/*.yaml` | calibration golden set | **Yes**, team state |
+
+## Generated check scripts
+
+Written parallel to the doc, not into frontmatter, so they show up in pull requests and can be edited
+by hand.
+
+```text
+docs/
+├── installation.mdx
+└── manni-docevals/
+    └── installation.install-command-present.mjs
+```
+
+The path is `<scripts.dir>/<page-basename>.<eval-name>.mjs`, with `{docDir}` in `scripts.dir`
+expanding to the page's directory. When `scripts.dir` contains no `{docDir}`, scripts go to
+`scripts.config-dir` relative to the config file, named `<eval-name>.mjs`.
+
+Frontmatter records the reference and a hash of the assertion that produced it:
+
+```yaml
+    - id: install-command-present
+      assertion: The page contains a bash code block with `npm i -g doc-detective`.
+      grader: command
+      command: [node, manni-docevals/installation.install-command-present.mjs, "{file}"]
+      generated:
+        assertion-hash: aefaa89e…
+```
+
+Edit the assertion and the hash no longer matches, so the script is stale and regenerates rather
+than quietly checking the old thing.
+
+## Findings baseline
+
+Written only when `baseline:` is set or a `--baseline` / `--write-baseline` flag asks for it. Default
+path `.manni-docevals-baseline.json`, resolved **relative to the config file** so a run from a
+subdirectory reads the same one.
+
+```json
+{
+  "version": 1,
+  "generatedWith": "0.1.0",
+  "entries": {
+    "docs/actions/goTo.mdx": [
+      "2ff566d3f54a8167"
+    ]
+  }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `version` | File format. Only `1` is understood; anything else is exit 2 with the re-record command in the message. |
+| `generatedWith` | The manni docevals version that wrote the file. Diagnosis only; nothing reads it back. |
+| `entries` | File path → sorted list of finding fingerprints. Clean files get no entry. |
+
+Keys and fingerprint lists are sorted on write, so a re-record produces a reviewable diff rather than
+a reshuffle. Entry keys are always forward-slashed and always relative to the config's directory. That is what
+lets one committed file mean the same thing on every machine.
+
+A fingerprint is 16 hex characters of `sha256(eval name, rule id)`. The file path is already the
+key, and the **line number and message text are deliberately excluded**. The consequence is that
+identity is per rule per file, not per occurrence; the trade-off is explained on [Retrofit a legacy
+corpus](/manni/docevals/adopt/retrofit-a-legacy-corpus/#identity-is-per-rule-per-file-not-per-occurrence).
+
+### Commit it, and re-record deliberately
+
+It is team state. Committing it is what makes a change to the gate a reviewable change:
+
+```bash
+npx @hawkeyexl/manni docevals run --write-baseline
+git add .manni-docevals-baseline.json
+```
+
+Re-recording rewrites the whole file from the run's findings, so **it records only what that run
+covered**. Run it over the same scope your CI gate uses. The report names both halves of the diff,
+and `removed` is the one to read:
+
+```console
+Baseline .manni-docevals-baseline.json: recorded 1 finding(s) (+0, -1).
+  1 previously recorded finding(s) are no longer in the baseline. If this run covered less of the
+  corpus than the last one, they have just been forgiven.
+```
+
+The write is atomic. A truncated file would not merely lose work; it would stop every later run at
+exit 2 until someone re-recorded.
+
+### Don't hand-edit fingerprints
+
+Removing an entry by hand is fine, and it re-arms that finding. Typing one is not. A value that is
+not 16 lowercase hex characters can never match a real finding. The symptom would be "that finding
+came back" with nothing to explain it. The parser rejects it instead, naming the entry:
+
+```console
+manni docevals: Baseline ".manni-docevals-baseline.json": entries["docs/install.md"] contains
+"not-a-fingerprint", which is not a fingerprint (16 lowercase hex characters).
+```
+
+## Judge cache
+
+Content-addressed. The key is composed in `src/judge/cache.ts` from, among other things:
+
+- `PROMPT_VERSION`, the judge prompt revision
+- a hash of the page body
+- a hash of the eval fingerprint (assertion, evidence, examples, type)
+- the provider and model
+
+So an unchanged page with an unchanged assertion never re-judges, and **changing any of those
+invalidates the entry** rather than serving a stale verdict. That is what makes repeat runs
+approximately free. See [Caching and turn budgets](/manni/docevals/ci/cost-and-caching/).
+
+`fill` caches raw proposals in `fill.cache-dir` **before** the confidence gate is applied, keyed with
+`FILL_PROMPT_VERSION`. Re-running at a different `--confidence` therefore costs nothing.
+
+## `.manni/docevals/reviews.yaml`
+
+One entry per (file, eval) pair. Recording a verdict replaces any existing entry for that pair.
+
+```yaml
+- file: docs/install.md
+  evalName: explains-why-before-how
+  contentHash: 9f2b1c…
+  verdict: pass
+  reviewer: priya
+  date: 2026-08-03
+  note: The motivation is in the intro paragraph, not a heading.
+```
+
+`contentHash` is a sha256 of the **page body** at review time. A review applies only while that hash
+matches; when the page changes, the review is silently ignored and the eval returns to
+needs-review. That self-invalidation is what makes persistence safe rather than a way to accumulate
+stale approvals.
+
+## `.manni/docevals/golden/*.yaml`
+
+Human-verified cases for [calibration](/manni/docevals/judge/calibrate/). Every `*.yaml` and `*.yml`
+file in the directory is read and the cases are concatenated.
+
+```yaml
+- file: test/docevals/fixtures/pages/docs/get-started/concepts.md
+  eval: defines-core-terms
+  expected: pass
+  rationale: Test specification, test, and step each have a heading and definition.
+  reviewed: true
+  content-hash: 2a5b69…
+  source: manual
+  reviewed-by: priya
+```
+
+File keys are kebab-case; the TypeScript `GoldenCase` is camelCase.
+
+| Field | Required | Meaning |
+|---|---|---|
+| `file` | Yes | Page the case is about, relative to the working directory. |
+| `eval` | Yes | Name of an **ai-graded** eval that resolves on that page. Anything else reports `ai-graded eval "…" not resolvable on this page`. |
+| `expected` | Yes | `pass` or `fail`, the verdict a careful human reached. |
+| `rationale` | No | For the humans maintaining the set. **Not sent to the judge.** Printed beside a disagreement. |
+| `reviewed` | No | Whether a human has confirmed the case belongs in the golden set. **Absent means `false`**; see below. |
+| `content-hash` | No | sha256 of the **page body** when the verdict was formed. A mismatch reports the case as stale. Absent is not stale. |
+| `source` | No | `review` (written by `--seed`) or `manual` (hand-authored). |
+| `reviewed-by` | No | Who confirmed the case. Never written by `--seed`. |
+
+Any entry missing `file`, `eval`, or a `pass`/`fail` `expected` is a hard error naming the file:
+`Invalid golden case in …: needs file, eval, expected: pass|fail`. A missing directory, or one with
+no cases in it, is an error too, at exit 2.
+
+### `reviewed` defaults to `false`
+
+Not back-compatible, deliberately. A default of `true` would silently bless every case that already
+exists. An older hand-authored set is reported unreviewed until each case carries `reviewed: true`
+explicitly.
+
+Unreviewed and stale cases are still judged and still **counted** toward the agreement rate, the
+false-positive rate, and the threshold check. They are flagged `[unreviewed]` / `[stale]` per case,
+with a closing line naming both counts. The reasoning for counting rather than excluding is on
+[Calibrate the judge](/manni/docevals/judge/calibrate/).
+
+### `.manni/docevals/golden/from-reviews.yaml`
+
+The file `manni docevals calibrate --seed` writes. It turns each entry in `reviews.yaml` into a
+golden **candidate**:
+
+| Review field | Becomes |
+|---|---|
+| `file` | `file` |
+| `evalName` | `eval` |
+| `verdict` | `expected` |
+| `note` | `rationale` |
+| `contentHash` | `content-hash` |
+| (nothing) | `source: review`, `reviewed: false` |
+
+`reviewer` is **not** carried over to `reviewed-by`: recording a verdict and endorsing it as ground
+truth are separate acts.
+
+Seeding is idempotent on `(file, eval)`: re-running merges into the existing file rather than
+appending duplicates. `reviewed` and `reviewed-by` survive, so a confirmation you made by hand is
+never taken back. Everything else is re-derived from the review. That includes `expected`, which follows
+a later review that reversed the verdict, and `rationale`, which follows the review's `note`. Edit
+those two in the review, not here. Cases with no matching review are left untouched.
+
+Seeding judges nothing and constructs no provider, so it runs with no API key, including on a CI
+runner that has none. The fixed filename is what keeps a hand-authored set beside it from colliding.
+
+## Gitignore
+
+The caches are disposable; the reviews and golden set are not. A minimal `.gitignore`:
+
+```text
+.manni/docevals/cache/
+```
+
+Ignoring `.manni/docevals/` wholesale also discards `reviews.yaml` and the golden set, which are the two
+pieces of state your team actually built by hand.
+
+`.manni-docevals-baseline.json` sits outside that directory precisely so a broad ignore rule cannot
+take it with them. An ignored baseline is worse than none. CI reads no file, every recorded finding
+returns, and the gate that looked green locally is red for everyone else.

@@ -49,6 +49,42 @@ export default defineConfig({
             },
           ],
         },
+        // The evals tool. Section order and labels follow its CUJ-first IA
+        // (docs/content-strategy/docevals/information-architecture/proposed-ia.md).
+        {
+          label: "docevals",
+          items: [
+            { label: "Overview", link: "/docevals/" },
+            {
+              label: "Get started",
+              items: [{ autogenerate: { directory: "docevals/get-started" } }],
+            },
+            {
+              label: "Write evals",
+              items: [{ autogenerate: { directory: "docevals/evals" } }],
+            },
+            {
+              label: "Adopt at scale",
+              items: [{ autogenerate: { directory: "docevals/adopt" } }],
+            },
+            {
+              label: "Run it in CI",
+              items: [{ autogenerate: { directory: "docevals/ci" } }],
+            },
+            {
+              label: "Trust the judge",
+              items: [{ autogenerate: { directory: "docevals/judge" } }],
+            },
+            {
+              label: "Fix a failing eval",
+              items: [{ autogenerate: { directory: "docevals/fix" } }],
+            },
+            {
+              label: "Reference",
+              items: [{ autogenerate: { directory: "docevals/reference" } }],
+            },
+          ],
+        },
       ],
     }),
   ],

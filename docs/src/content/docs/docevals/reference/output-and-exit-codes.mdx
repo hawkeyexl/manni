@@ -1,0 +1,320 @@
+---
+title: Output and exit codes
+description: The human, json, markdown, github, sarif, junit, and html report shapes, and what each exit code means.
+---
+
+Verified against `src/reporters/` and `src/types.ts`, with samples captured from real runs against
+the fixture corpus.
+
+## Exit codes
+
+| Code | Meaning | Who acts |
+|---|---|---|
+| `0` | Everything passed. | Nobody. |
+| `1` | Failures, errors, or a suite below its target pass rate. | The page author. |
+| `2` | Operational or usage error, such as bad config, a missing provider, a malformed flag, or a run that would check nothing. | Whoever owns the pipeline. |
+
+**`1` and `2` route to different people**, which is the whole reason they are distinct. A CI recipe
+that treats any non-zero exit as "the docs are bad" blames authors for infrastructure problems. It
+also earns the check a reputation for flakiness it does not deserve.
+
+`--fail-on-review` additionally makes exit 1 cover evals sitting in the human-review zone.
+
+A run narrowed by `--eval` or `--suite` **cannot** exit `1` on a suite target: its suite summaries
+are marked [`partial`](#suites) and are not enforced. Exit `1` then comes only from the evals that
+actually ran, or from an `error`-level resolution problem.
+
+### A run that would check nothing is exit 2
+
+If **no page the run would check resolves a single eval**, `run` stops with exit `2` instead of
+reporting success over an empty report. Nothing is wired up: no `defaults.suite` in the config, and
+no `eval-suite` or `evals` key on any page. The message names how many pages were affected, the
+keys that would attach an eval, and `manni docevals list`, which prints the resolved plan.
+
+This is the same answer `--eval no-such-eval` already gave. Reaching "nothing would have been
+checked" through a config file rather than a flag does not make it a passing build.
+
+Two empty runs are **not** errors, because both are choices rather than misconfigurations:
+
+- Every page carrying `eval-skip`. Pages you skipped are not counted.
+- A `--since` scope that selects no pages (see [Scoping a run to what
+  changed](/manni/docevals/reference/cli/#scoping-a-run-to-what-changed)).
+
+Neither passes in silence. Whenever no eval reaches a verdict, the report carries a warning saying
+the run graded nothing and established nothing about the corpus. A green exit code is never the
+only thing you have to go on.
+
+## Which formats each command accepts
+
+`-f/--format` is not one shared set. `run` has four reporters; `list` and `fill` render only two.
+
+| Command | Accepted formats |
+|---|---|
+| `run` | `human`, `json`, `markdown`, `github`, `sarif`, `junit`, `html` |
+| `list` | `human`, `json` |
+| `fill` | `human`, `json` |
+
+Anything else is a **usage error**, giving **exit 2**, with the allowed set in the message. Matching
+is exact, so `JSON` and `Json` are rejected rather than folded, and a typo surfaces instead of being
+guessed at.
+Passing `run`'s `markdown` to `list` is rejected for the same reason.
+
+```console
+$ manni docevals list docs/ --format xml
+manni docevals: --format must be one of human | json, got "xml"
+$ echo $?
+2
+```
+
+That matters most in CI, where `--format json` is piped into a parser. Exit 2 stops the pipeline;
+silently falling back to the human report would hand `jq` ANSI colour codes and still exit 0.
+
+## `--format human`
+
+The default. Per page, one line per eval; then per-suite aggregates.
+
+```console
+$ manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate
+test/docevals/fixtures/pages/docs/actions/goTo.mdx
+  skip no-future-promises
+       judge skipped (--deterministic-only)
+  FAIL fresh-enough
+       error:4 [freshness/stale] Page last reviewed 937 days ago (max 365)
+  pass readable
+  pass frontmatter-valid
+
+Suites
+  reference: 2/3 passed — 67% vs target 100% below target (1 skipped)
+```
+
+The finding line is `severity:line [ruleId] message`. Colour is applied only on a TTY.
+
+A finding may also carry `"diagnostic": true`, which appears in `--format json` and `sarif`. It
+means the grader could not reach a verdict, because its tool was missing, timed out, or returned
+output it could not read. The eval fails whatever its severity says. Consumers that gate on
+severity alone will miss these; read the eval's `outcome` instead.
+
+Note the suite line: the skipped eval is excluded from the denominator, so the rate is 2/3 rather
+than 2/4.
+
+## `--format json`
+
+One object, for programmatic consumers.
+
+```json
+{
+  "pages": 1,
+  "evalResults": [
+    {
+      "evalName": "fresh-enough",
+      "type": "regression",
+      "grader": "tool:freshness",
+      "file": "test/docevals/fixtures/pages/docs/actions/goTo.mdx",
+      "outcome": "fail",
+      "findings": [
+        {
+          "evalName": "fresh-enough",
+          "file": "test/docevals/fixtures/pages/docs/actions/goTo.mdx",
+          "ruleId": "freshness/stale",
+          "message": "Page last reviewed 937 days ago (max 365)",
+          "severity": "error",
+          "line": 4
+        }
+      ],
+      "durationMs": 0
+    }
+  ],
+  "suites": [
+    {
+      "suite": "reference",
+      "total": 4,
+      "passed": 2,
+      "failed": 1,
+      "needsReview": 0,
+      "skipped": 1,
+      "errored": 0,
+      "passRate": 0.6666666666666666,
+      "targetPassRate": 1,
+      "meetsTarget": false
+    }
+  ],
+  "usage": { "totalTokens": 0, "cachedEvals": 0, "judgedEvals": 0 },
+  "generated": [],
+  "exitCode": 1
+}
+```
+
+### `evalResults[]`
+
+| Field | Notes |
+|---|---|
+| `outcome` | `pass`, `fail`, `needs-review`, `skipped`, or `error`. |
+| `consensus` | Present for ai-graded evals only. |
+| `findings` | Present for command/tool evals that produced findings. |
+| `generated` | True when this run generated the eval's check script. |
+| `via` | `"human-review"` when a persisted review resolved the outcome. |
+| `baselined` | Count of findings a [baseline](#baseline) suppressed on this eval. Present only when a baseline was in effect, so its absence means "no baseline", not "nothing was forgiven". |
+| `skipReason`, `durationMs` | |
+
+### `suites[]`
+
+`passRate` is `passed / (total - skipped)`, and `1` when nothing ran. `meetsTarget` compares it to
+the suite's `target-pass-rate` from the config.
+
+`partial` is present, and `true`, only when `--eval` or `--suite` filtered the run. It says the run
+measured part of the suite, so the summary carries numbers but no verdict:
+
+```json
+{
+  "suite": "reference",
+  "total": 5,
+  "passed": 4,
+  "failed": 0,
+  "needsReview": 0,
+  "skipped": 1,
+  "errored": 0,
+  "passRate": 1,
+  "targetPassRate": 1,
+  "meetsTarget": false,
+  "partial": true
+}
+```
+
+- `meetsTarget` is `false` on every partial summary, including this one, where `passRate` clears
+  the target. It is not a claim that the suite failed.
+- A partial suite neither passes nor fails the run, so it contributes nothing to the exit code.
+
+**Read `partial` first.** A consumer that reads `meetsTarget` on its own will read a filtered run as
+a failing suite. An unfiltered run omits the key entirely, so `partial !== true` is the test for
+"this verdict is real". See
+[Selecting evals suspends suite enforcement](/manni/docevals/reference/cli/#selecting-evals-suspends-suite-enforcement).
+
+### `baseline`
+
+Present only when a [findings baseline](/manni/docevals/reference/files-and-state/#findings-baseline)
+was read or written. Absent means no baseline applied.
+
+```json
+{
+  "path": ".manni-docevals-baseline.json",
+  "recorded": 412,
+  "suppressed": 340,
+  "stale": 72
+}
+```
+
+| Field | Notes |
+|---|---|
+| `path` | The baseline as the user spelled it, relative to the config file. |
+| `recorded` | Fingerprints the baseline holds **for the files this run checked**, not for the whole file. |
+| `suppressed` | Findings this run produced that the baseline already held. |
+| `stale` | Recorded fingerprints for checked files that no longer occur. This is the burndown number. |
+| `written` | Present only on `--write-baseline`: `{ added, removed, total }` against the previous file. |
+
+`recorded` and `stale` are scoped to the files the run touched on purpose. Counted over the whole
+file, a single-page run would announce that hundreds of entries no longer occur. Acting on that
+advice would destroy them.
+
+**`written.removed` is the field to alert on.** A re-record rewrites the file from what that run
+covered, so a narrowed scope silently forgives everything it did not see. See
+[A baselined finding does not affect the exit
+code](/manni/docevals/ci/exit-codes-and-annotations/#a-baselined-finding-does-not-affect-the-exit-code).
+
+:::note[JSON keys are camelCase]
+Every *file* key, in config and frontmatter alike, is kebab-case. The JSON report is not a file you write;
+it is the runtime shape, so `targetPassRate` here corresponds to `target-pass-rate` in the config.
+:::
+
+## `--format markdown`
+
+The suite table plus per-page findings, suitable for a PR comment or a job summary.
+
+## `--format github`
+
+Workflow commands for inline annotations, followed by the markdown summary. The same output
+both annotates the diff and works as `$GITHUB_STEP_SUMMARY`.
+
+## `--format html`
+
+One self-contained HTML file, with no CDN, no external stylesheet, no web font, and no script. It is
+the format for a person rather than a machine. It shows which pages failed, what the judge actually
+quoted, and whether each suite met its target.
+
+```bash
+npx @hawkeyexl/manni docevals run --format html > manni docevals.html
+```
+
+Self-containment is the point. The file is meant to survive being attached to a pull request,
+mailed, or opened from a CI artifact directory. All of those strip or block external requests, and
+any of them would otherwise render it unstyled. It follows the reader's `prefers-color-scheme`.
+
+It carries the judge's `observed` quotation alongside each verdict, because a verdict without the
+text it rests on is not reviewable. It also carries findings grouped by page, the weighted suite
+summary including criteria, and baseline and review state. A self-preference marker appears when the
+judging model also produced what it graded.
+
+## `--format sarif`
+
+A [SARIF 2.1.0](https://sarifweb.azurewebsites.net/) log, for a code-scanning dashboard.
+
+`github` annotates one pull request and scrolls away with it. SARIF is ingested and kept: which
+finding, on which line, first seen when, still open or not. Upload it with
+`github/codeql-action/upload-sarif`.
+
+```bash
+npx @hawkeyexl/manni docevals run --format sarif > manni docevals.sarif
+```
+
+Two properties are load-bearing, and both are asserted in CI:
+
+- **File URIs are repo-relative and forward-slashed.** An absolute or backslashed path uploads
+  successfully and then matches no file, so every finding lands on nothing.
+- **Every reported rule is declared** in `tool.driver.rules`, so the dashboard can name it instead
+  of showing a bare id.
+
+A failing ai-graded eval appears as a result too, with the judge's confidence and reasoning. It
+has no `Finding`, and omitting it would read as "the AI evals all passed".
+
+## `--format junit`
+
+JUnit XML, which every CI system already knows how to render as a test report.
+
+One `<testsuite>` per eval suite, one `<testcase>` per (page, eval) pair, with `classname` as the
+page and `name` as the eval. That is the grouping JUnit viewers offer, so you expand a file and see
+its checks.
+
+```bash
+npx @hawkeyexl/manni docevals run --format junit > manni docevals.junit.xml
+```
+
+| Outcome | Element |
+|---|---|
+| `pass` | (none) |
+| `fail` | `<failure>` with the findings, or the judge's reasoning |
+| `error` | `<error>` |
+| `skipped` | `<skipped>` with the skip reason |
+| `needs-review` | `<skipped message="needs human review">` |
+
+`needs-review` is a skip rather than a failure on purpose. JUnit has no third state, and reporting
+a human-review queue as a broken build is the wrong signal for the person reading it.
+
+```text
+::error file=test/docevals/fixtures/pages/docs/actions/goTo.mdx,line=4,title=manni docevals%3A fresh-enough::Page last reviewed 937 days ago (max 365)
+
+## manni docevals results
+
+| Suite | Passed | Failed | Review | Pass rate | Target | |
+|---|---|---|---|---|---|---|
+| reference | 2 | 1 | 0 | 67% | 100% | ❌ |
+```
+
+Severity maps to the annotation level: `error` → `::error`, `warning` → `::warning`, `info` →
+`::notice`. Values are escaped per GitHub's rules. That covers `%`, CR, and LF in data, plus `:` and
+`,` in properties, which is why the title reads `manni docevals%3A`.
+
+A failing **ai** eval annotates the file with the mean confidence and the judge's reasoning, since
+it has no line to point at:
+
+```text
+::error file=...,title=manni docevals%3A no-future-promises::AI judge: fail (confidence 0.93). <reasoning>
+```

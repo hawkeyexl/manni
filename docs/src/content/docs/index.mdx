@@ -1,6 +1,6 @@
 ---
 title: manni
-description: One command line for documentation that is meant to be checked. Today it validates document metadata against JSON Schema; more tools join it as subcommands.
+description: One command line for documentation that is meant to be checked. It validates document metadata against JSON Schema and runs evals over documentation pages; more tools join it as subcommands.
 template: splash
 hero:
   tagline: One command line for documentation that is meant to be checked.
@@ -24,6 +24,7 @@ file, `manni.config.yaml`. Install the package once and every tool is there.
 ```sh
 npm install -D @hawkeyexl/manni
 npx @hawkeyexl/manni meta validate docs/
+npx @hawkeyexl/manni docevals run docs/ --deterministic-only
 ```
 
 ## The tools
@@ -33,6 +34,11 @@ npx @hawkeyexl/manni meta validate docs/
     title="meta"
     href="/manni/meta/"
     description="Validate the presence and format of document metadata against JSON Schema, built for CI. Read, query and fill it too. Formerly published as docmeta."
+  />
+  <LinkCard
+    title="docevals"
+    href="/manni/docevals/"
+    description="Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter. Code first, an AI judge second, a human last."
   />
 </CardGrid>
 

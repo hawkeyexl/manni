@@ -1,0 +1,111 @@
+# manni docevals checking its own docs section.
+#
+# Separate from the repo-root manni.config.yaml on purpose. The `docevals:`
+# section there runs against test/docevals/fixtures/pages/, which deliberately
+# encodes failures so the CI gate is meaningful. This one runs against the
+# docevals pages of the site, which must be all-green.
+#
+# The name is not one discovery reads. A `manni.config.yaml` in docs/ would be
+# found by any docevals run started under docs/, and this file is one job's
+# input, not ambient policy for the directory. Reach it with `-c`:
+#
+#   npm run docs:check-docevals
+#
+# An explicit path is read with the same rule as a discovered one: the
+# `docevals:` key is unwrapped when present.
+#
+# Carried over from moose-docevals@670e62b (docs/moose.config.yaml), minus
+# three things that repo's docs config had:
+#
+# - `commands-work` (tool:doc-detective). The docs-as-tests workflow already
+#   runs Doc Detective over every page of this site, the docevals pages
+#   included, so grading them again here would run every inline step twice.
+# - `remark` (tool:remark). The remark-cli devDependencies did not come across
+#   with the import; the grader's own tests run from recorded output.
+# - The committed judge cache. It was empty at the import, so nothing was lost
+#   by not carrying the directory. The AI-graded evals stay defined below and
+#   out of the default suite, as they were, until a target for `docs-page-full`
+#   is decided and `manni docevals calibrate` has been run against it.
+docevals:
+  version: 1
+
+  files:
+    include:
+      - "docs/src/content/docs/docevals/**/*.{md,mdx}"
+    exclude:
+      - "**/node_modules/**"
+
+  defaults:
+    # Every docs page gets this suite without repeating it in frontmatter. Pages
+    # add an `evals:` block only when they need something page-specific.
+    suite: docs-page
+    fail-fast: false
+    concurrency: 4
+
+  provider:
+    default: anthropic
+    anthropic:
+      model: claude-sonnet-4-5
+      api-key-env: ANTHROPIC_API_KEY
+    claude-cli:
+      model: claude-sonnet-4-5
+
+  judge:
+    ensemble-runs: 3
+    temperature: 0
+    zones:
+      auto-pass: 0.8
+      auto-fail: 0.8
+    false-positive-alert: 0.15
+    # Below the family cache directory, which .gitignore excludes. Nothing in
+    # the default suite reaches the judge, so nothing lands here on a green
+    # run.
+    cache-dir: .manni/docevals/docs-cache
+    max-turns: 600
+
+  fill:
+    cache-dir: .manni/docevals/docs-cache/fill
+    max-turns: 200
+
+  scripts:
+    dir: "{docDir}/manni-docevals"
+    config-dir: manni-docevals-scripts
+    timeout-ms: 60000
+
+  evals:
+    # --- Deterministic. Runs offline with no provider. ---
+    frontmatter-valid:
+      assertion: Page frontmatter validates against the docevals frontmatter schema.
+      grader: tool:docmeta
+      options:
+        schemas: ["schemas/docevals/frontmatter-1.0.0.json"]
+      severity: error
+
+    # --- LLM-graded. Defined and named, but NOT in the docs-page suite. ---
+    no-future-promises:
+      type: regression
+      assertion: The page makes no claims about unreleased or future functionality.
+      grader: ai
+      evidence: All prose sections
+      examples:
+        pass: Describes only shipped behavior.
+        fail: Says "coming soon" or references an unreleased version.
+
+    serves-one-journey:
+      type: capability
+      assertion: >
+        The page states, near the top, what the reader will be able to do when
+        they finish it.
+      grader: ai
+      evidence: The first two paragraphs after the title
+      examples:
+        pass: Opens with the outcome the page delivers.
+        fail: Opens with background and never says what the reader gets.
+
+  suites:
+    docs-page:
+      target-pass-rate: 1.0
+      evals: [frontmatter-valid]
+    docs-page-full:
+      target-pass-rate: 1.0
+      evals: [frontmatter-valid, no-future-promises, serves-one-journey]
