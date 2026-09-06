@@ -4,7 +4,7 @@
  * them (with overrides) or define inline evals. Page entries win on id
  * collision.
  *
- * The page vocabulary is `docmeta:evals:1.0.0-proposal.2` — four flat
+ * The page vocabulary is `manni:evals:1.0.0-proposal.2` — four flat
  * page-level keys (`evals`, `eval-suite`, `eval-skip`, `eval-provenance`) and a
  * reserved `eval-` prefix, rather than the closed `evals:` object 0.1 used. The
  * whole frontmatter object is validated, not a synthetic `{evals}`: the prefix
