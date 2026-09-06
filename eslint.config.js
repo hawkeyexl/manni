@@ -141,6 +141,22 @@ export default tseslint.config(
   },
 
   {
+    // docevals came in from moose-docevals with its own house rules, and this
+    // block mirrors the two it kept. Non-null assertions are a warning there,
+    // not an error: the rule finds real cases, each one is a real change with
+    // regression risk, and a warning keeps them visible without blocking the
+    // import. `require-await` is off because its grader and judge interfaces
+    // are async by contract, and an implementation that happens not to await
+    // still has to return a promise. Working the backlog to the repo-wide
+    // rules is a follow-up, not part of folding the tool in.
+    files: ["src/docevals/**/*.ts", "test/docevals/**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-non-null-assertion": "warn",
+      "@typescript-eslint/require-await": "off",
+    },
+  },
+
+  {
     // Plain JavaScript, and *not* in tsconfig's `include` (`["src", "test"]`),
     // so type-aware linting cannot cover it — `disableTypeChecked` turns those
     // rules off rather than letting them fail on a file with no program.

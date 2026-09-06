@@ -1,0 +1,605 @@
+[
+  {
+    "path": "docs\\page.mdx",
+    "cwd": "C:\\Users\\hawkeyexl\\Documents\\Workspaces\\docevals\\.claude\\worktrees\\docevals-fill-subcommand-feea76\\.tmp\\probe",
+    "history": [
+      "docs\\page.mdx"
+    ],
+    "messages": [
+      {
+        "column": 21,
+        "fatal": false,
+        "line": 9,
+        "place": {
+          "line": 9,
+          "column": 21,
+          "offset": 96
+        },
+        "reason": "Unexpected missing final newline character, expected line feed (`\\n`) at end of file",
+        "ruleId": "final-newline",
+        "source": "remark-lint",
+        "url": "https://github.com/remarkjs/remark-lint/tree/main/packages/remark-lint-final-newline#readme"
+      },
+      {
+        "ancestors": [
+          {
+            "type": "root",
+            "children": [
+              {
+                "type": "yaml",
+                "value": "title: Probe",
+                "position": {
+                  "start": {
+                    "line": 1,
+                    "column": 1,
+                    "offset": 0
+                  },
+                  "end": {
+                    "line": 3,
+                    "column": 4,
+                    "offset": 20
+                  }
+                }
+              },
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Visit ",
+                    "position": {
+                      "start": {
+                        "line": 5,
+                        "column": 1,
+                        "offset": 22
+                      },
+                      "end": {
+                        "line": 5,
+                        "column": 7,
+                        "offset": 28
+                      }
+                    }
+                  },
+                  {
+                    "type": "link",
+                    "title": null,
+                    "url": "http://example.com",
+                    "children": [
+                      {
+                        "type": "text",
+                        "value": "http://example.com",
+                        "position": {
+                          "start": {
+                            "line": 5,
+                            "column": 7,
+                            "offset": 28
+                          },
+                          "end": {
+                            "line": 5,
+                            "column": 25,
+                            "offset": 46
+                          }
+                        }
+                      }
+                    ],
+                    "position": {
+                      "start": {
+                        "line": 5,
+                        "column": 7,
+                        "offset": 28
+                      },
+                      "end": {
+                        "line": 5,
+                        "column": 25,
+                        "offset": 46
+                      }
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "value": " for more.",
+                    "position": {
+                      "start": {
+                        "line": 5,
+                        "column": 25,
+                        "offset": 46
+                      },
+                      "end": {
+                        "line": 5,
+                        "column": 35,
+                        "offset": 56
+                      }
+                    }
+                  }
+                ],
+                "position": {
+                  "start": {
+                    "line": 5,
+                    "column": 1,
+                    "offset": 22
+                  },
+                  "end": {
+                    "line": 5,
+                    "column": 35,
+                    "offset": 56
+                  }
+                }
+              },
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "[dangling][nope]",
+                    "position": {
+                      "start": {
+                        "line": 7,
+                        "column": 1,
+                        "offset": 58
+                      },
+                      "end": {
+                        "line": 7,
+                        "column": 17,
+                        "offset": 74
+                      }
+                    }
+                  }
+                ],
+                "position": {
+                  "start": {
+                    "line": 7,
+                    "column": 1,
+                    "offset": 58
+                  },
+                  "end": {
+                    "line": 7,
+                    "column": 17,
+                    "offset": 74
+                  }
+                }
+              },
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "No trailing newline.",
+                    "position": {
+                      "start": {
+                        "line": 9,
+                        "column": 1,
+                        "offset": 76
+                      },
+                      "end": {
+                        "line": 9,
+                        "column": 21,
+                        "offset": 96
+                      }
+                    }
+                  }
+                ],
+                "position": {
+                  "start": {
+                    "line": 9,
+                    "column": 1,
+                    "offset": 76
+                  },
+                  "end": {
+                    "line": 9,
+                    "column": 21,
+                    "offset": 96
+                  }
+                }
+              }
+            ],
+            "position": {
+              "start": {
+                "line": 1,
+                "column": 1,
+                "offset": 0
+              },
+              "end": {
+                "line": 9,
+                "column": 21,
+                "offset": 96
+              }
+            }
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              {
+                "type": "text",
+                "value": "Visit ",
+                "position": {
+                  "start": {
+                    "line": 5,
+                    "column": 1,
+                    "offset": 22
+                  },
+                  "end": {
+                    "line": 5,
+                    "column": 7,
+                    "offset": 28
+                  }
+                }
+              },
+              {
+                "type": "link",
+                "title": null,
+                "url": "http://example.com",
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "http://example.com",
+                    "position": {
+                      "start": {
+                        "line": 5,
+                        "column": 7,
+                        "offset": 28
+                      },
+                      "end": {
+                        "line": 5,
+                        "column": 25,
+                        "offset": 46
+                      }
+                    }
+                  }
+                ],
+                "position": {
+                  "start": {
+                    "line": 5,
+                    "column": 7,
+                    "offset": 28
+                  },
+                  "end": {
+                    "line": 5,
+                    "column": 25,
+                    "offset": 46
+                  }
+                }
+              },
+              {
+                "type": "text",
+                "value": " for more.",
+                "position": {
+                  "start": {
+                    "line": 5,
+                    "column": 25,
+                    "offset": 46
+                  },
+                  "end": {
+                    "line": 5,
+                    "column": 35,
+                    "offset": 56
+                  }
+                }
+              }
+            ],
+            "position": {
+              "start": {
+                "line": 5,
+                "column": 1,
+                "offset": 22
+              },
+              "end": {
+                "line": 5,
+                "column": 35,
+                "offset": 56
+              }
+            }
+          },
+          {
+            "type": "link",
+            "title": null,
+            "url": "http://example.com",
+            "children": [
+              {
+                "type": "text",
+                "value": "http://example.com",
+                "position": {
+                  "start": {
+                    "line": 5,
+                    "column": 7,
+                    "offset": 28
+                  },
+                  "end": {
+                    "line": 5,
+                    "column": 25,
+                    "offset": 46
+                  }
+                }
+              }
+            ],
+            "position": {
+              "start": {
+                "line": 5,
+                "column": 7,
+                "offset": 28
+              },
+              "end": {
+                "line": 5,
+                "column": 25,
+                "offset": 46
+              }
+            }
+          }
+        ],
+        "column": 7,
+        "fatal": false,
+        "line": 5,
+        "place": {
+          "start": {
+            "line": 5,
+            "column": 7,
+            "offset": 28
+          },
+          "end": {
+            "line": 5,
+            "column": 25,
+            "offset": 46
+          }
+        },
+        "reason": "Unexpected GFM autolink literal, expected regular autolink, add `<` before and `>` after",
+        "ruleId": "no-literal-urls",
+        "source": "remark-lint",
+        "url": "https://github.com/remarkjs/remark-lint/tree/main/packages/remark-lint-no-literal-urls#readme"
+      },
+      {
+        "ancestors": [
+          {
+            "type": "root",
+            "children": [
+              {
+                "type": "yaml",
+                "value": "title: Probe",
+                "position": {
+                  "start": {
+                    "line": 1,
+                    "column": 1,
+                    "offset": 0
+                  },
+                  "end": {
+                    "line": 3,
+                    "column": 4,
+                    "offset": 20
+                  }
+                }
+              },
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Visit ",
+                    "position": {
+                      "start": {
+                        "line": 5,
+                        "column": 1,
+                        "offset": 22
+                      },
+                      "end": {
+                        "line": 5,
+                        "column": 7,
+                        "offset": 28
+                      }
+                    }
+                  },
+                  {
+                    "type": "link",
+                    "title": null,
+                    "url": "http://example.com",
+                    "children": [
+                      {
+                        "type": "text",
+                        "value": "http://example.com",
+                        "position": {
+                          "start": {
+                            "line": 5,
+                            "column": 7,
+                            "offset": 28
+                          },
+                          "end": {
+                            "line": 5,
+                            "column": 25,
+                            "offset": 46
+                          }
+                        }
+                      }
+                    ],
+                    "position": {
+                      "start": {
+                        "line": 5,
+                        "column": 7,
+                        "offset": 28
+                      },
+                      "end": {
+                        "line": 5,
+                        "column": 25,
+                        "offset": 46
+                      }
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "value": " for more.",
+                    "position": {
+                      "start": {
+                        "line": 5,
+                        "column": 25,
+                        "offset": 46
+                      },
+                      "end": {
+                        "line": 5,
+                        "column": 35,
+                        "offset": 56
+                      }
+                    }
+                  }
+                ],
+                "position": {
+                  "start": {
+                    "line": 5,
+                    "column": 1,
+                    "offset": 22
+                  },
+                  "end": {
+                    "line": 5,
+                    "column": 35,
+                    "offset": 56
+                  }
+                }
+              },
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "[dangling][nope]",
+                    "position": {
+                      "start": {
+                        "line": 7,
+                        "column": 1,
+                        "offset": 58
+                      },
+                      "end": {
+                        "line": 7,
+                        "column": 17,
+                        "offset": 74
+                      }
+                    }
+                  }
+                ],
+                "position": {
+                  "start": {
+                    "line": 7,
+                    "column": 1,
+                    "offset": 58
+                  },
+                  "end": {
+                    "line": 7,
+                    "column": 17,
+                    "offset": 74
+                  }
+                }
+              },
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "No trailing newline.",
+                    "position": {
+                      "start": {
+                        "line": 9,
+                        "column": 1,
+                        "offset": 76
+                      },
+                      "end": {
+                        "line": 9,
+                        "column": 21,
+                        "offset": 96
+                      }
+                    }
+                  }
+                ],
+                "position": {
+                  "start": {
+                    "line": 9,
+                    "column": 1,
+                    "offset": 76
+                  },
+                  "end": {
+                    "line": 9,
+                    "column": 21,
+                    "offset": 96
+                  }
+                }
+              }
+            ],
+            "position": {
+              "start": {
+                "line": 1,
+                "column": 1,
+                "offset": 0
+              },
+              "end": {
+                "line": 9,
+                "column": 21,
+                "offset": 96
+              }
+            }
+          },
+          {
+            "type": "paragraph",
+            "children": [
+              {
+                "type": "text",
+                "value": "[dangling][nope]",
+                "position": {
+                  "start": {
+                    "line": 7,
+                    "column": 1,
+                    "offset": 58
+                  },
+                  "end": {
+                    "line": 7,
+                    "column": 17,
+                    "offset": 74
+                  }
+                }
+              }
+            ],
+            "position": {
+              "start": {
+                "line": 7,
+                "column": 1,
+                "offset": 58
+              },
+              "end": {
+                "line": 7,
+                "column": 17,
+                "offset": 74
+              }
+            }
+          },
+          {
+            "type": "text",
+            "value": "[dangling][nope]",
+            "position": {
+              "start": {
+                "line": 7,
+                "column": 1,
+                "offset": 58
+              },
+              "end": {
+                "line": 7,
+                "column": 17,
+                "offset": 74
+              }
+            }
+          }
+        ],
+        "column": 1,
+        "fatal": false,
+        "line": 7,
+        "place": {
+          "start": {
+            "line": 7,
+            "column": 1,
+            "offset": 58
+          },
+          "end": {
+            "line": 7,
+            "column": 17,
+            "offset": 74
+          }
+        },
+        "reason": "Unexpected reference to undefined definition, expected corresponding definition (`nope`) for a link or escaped opening bracket (`\\[`) for regular text",
+        "ruleId": "no-undefined-references",
+        "source": "remark-lint",
+        "url": "https://github.com/remarkjs/remark-lint/tree/main/packages/remark-lint-no-undefined-references#readme"
+      }
+    ]
+  }
+]
