@@ -83,6 +83,9 @@ export default tseslint.config(
       // not covered by this repo's tsconfig and must not be by its lint either.
       "docs/",
       ".doc-detective/",
+      // Scratch output: the kg packaged test extracts the `npm pack` tarball
+      // here, and a built bundle is not source.
+      ".tmp/",
     ],
   },
 
@@ -137,6 +140,56 @@ export default tseslint.config(
       // has nothing to say about a `Record<string, string | undefined>` keyed by
       // a variable name.
       "@typescript-eslint/no-dynamic-delete": "off",
+    },
+  },
+
+  {
+    // kg came in from moose-kg (dockg), which linted at typescript-eslint's
+    // plain `recommended` rather than `strictTypeChecked`. This block relaxes
+    // only what the imported code trips at the stricter level, measured by
+    // linting it with an empty block; the one-off findings (a deprecated mdast
+    // type, a redundant union member, nine `string | undefined`
+    // interpolations) were fixed in place instead. What remains is the same
+    // shape throughout: a boundary the code has already checked by other
+    // means. Working the backlog to the repo-wide rules is a follow-up, not
+    // part of folding the tool in.
+    files: ["src/kg/**/*.ts", "test/kg/**/*.ts"],
+    rules: {
+      // The Ajv-validated config is read as `Record<string, any>` past the
+      // point Ajv has proven the shape (src/kg/core/config.ts says why), and
+      // the optional `@huggingface/transformers` peer is reached by a dynamic
+      // import that has no types to offer when the peer is absent. Those two
+      // files carry all of the `any` in src/kg; the tests parse the CLI's own
+      // JSON output, as the metadata tool's do.
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      // The one `@ts-ignore` in the tree is the dynamic import of that peer,
+      // which errors only when the peer is absent, so `@ts-expect-error`
+      // would fail the moment someone installs it (src/kg/embed/local.ts).
+      "@typescript-eslint/ban-ts-comment": [
+        "error",
+        { "ts-ignore": "allow-with-description" },
+      ],
+      // Defensive checks over loosely typed RDF libraries (n3,
+      // rdf-validate-shacl, the JSON-LD shapes) and over `spawnSync` results,
+      // where the declared type is narrower than what runtime has produced.
+      "@typescript-eslint/no-unnecessary-condition": "off",
+      // n3's `DataFactory` is a plain object of functions whose typings
+      // declare methods; destructuring `namedNode` and `literal` from it is the
+      // library's own documented usage and every kg module does it.
+      "@typescript-eslint/unbound-method": "off",
+      // `fill` removes frontmatter keys it proposed and the user rejected;
+      // `delete doc[key]` is the operation, and the keys are data.
+      "@typescript-eslint/no-dynamic-delete": "off",
+      // `runExport` is async by contract; the one format whose writer happens
+      // to be synchronous still has to return a promise.
+      "@typescript-eslint/require-await": "off",
+      // 184 sites, each one a real change with regression risk. A warning
+      // keeps them visible without blocking the import.
+      "@typescript-eslint/no-non-null-assertion": "warn",
     },
   },
 

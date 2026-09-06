@@ -40,3 +40,37 @@ meta:
         # `text`. Before it existed, every Starlight key on every page went
         # unchecked.
         - astro:starlight:0.41
+
+# The kg tool, pointed at its own fixture corpus (the dogfood for
+# `manni kg validate` and `manni kg build`). Its own key, its own settings; the
+# metadata tool above never reads them. Carried over from moose-kg's
+# `dockg.docs.yaml`, which pointed at that repository's docs site; those pages
+# are not in this repository yet, so the corpus under test/kg/fixtures stands
+# in until they land. Paths are relative to the repo root, because input globs
+# resolve against the working directory rather than this file's location.
+kg:
+  version: 1
+  baseIri: https://example.com/kg/
+
+  inputs:
+    - "test/kg/fixtures/corpus/docs/**/*.md"
+
+  # Under .manni/, which is gitignored: the graph is a gate, not an artifact
+  # this repository ships.
+  out: .manni/kg/graph.ttl
+
+  routes:
+    - root: test/kg/fixtures/corpus/docs
+      basePath: /
+    - root: test/kg/fixtures/corpus/docs/de
+      basePath: /de
+      language: de
+    - root: test/kg/fixtures/corpus/docs/fr
+      basePath: /fr
+      language: fr
+
+  provenance:
+    # Deriving committer history for a fixture corpus on every run buys
+    # nothing here, and the corpus's own config pins it off for the same
+    # reason (kg ADR 01010).
+    git: false

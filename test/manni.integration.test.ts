@@ -53,11 +53,29 @@ describe("manni (built bin)", () => {
     }
   }, 180000);
 
-  it("lists meta as a subcommand", () => {
+  it("lists meta and kg as subcommands", () => {
     const r = run(manni, ["--help"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^Usage: manni /m);
     expect(r.stdout).toMatch(/^\s+meta\b/m);
+    expect(r.stdout).toMatch(/^\s+kg\b/m);
+  });
+
+  it("runs kg under its name, reading its own key of the family config", () => {
+    expect(run(manni, ["kg", "--help"]).stdout).toMatch(/^Usage: manni kg /m);
+    expect(run(manni, ["kg", "--version"]).stdout.trim()).toBe(version);
+    // `validate` resolves its inputs from the repository's own manni.config.yaml
+    // (the `kg:` section, pointed at the tool's fixture corpus) and checks
+    // their frontmatter against the bundled vocabulary.
+    const r = run(manni, ["kg", "validate"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/files checked/);
+  });
+
+  it("prefixes kg diagnostics with the bin that ran", () => {
+    const r = run(manni, ["kg", "build", "-c", "does-not-exist.yaml"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/^manni: Config file not found/);
   });
 
   it("with no command is a usage error that points at the subcommands", () => {

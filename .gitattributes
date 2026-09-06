@@ -1,3 +1,12 @@
 # Normalize line endings to LF in the repo for cross-platform consistency.
 * text=auto eol=lf
 *.png binary
+
+# Exemptions below. ORDER MATTERS: in .gitattributes the LAST matching line
+# wins, so every `-text` override must stay beneath the `*` rule above.
+# `-text` disables conversion entirely and keeps bytes verbatim.
+
+# The kg tool's CRLF fixture must keep its line endings verbatim.
+test/kg/fixtures/corpus/docs/windows-notes.md -text
+# The kg golden output is byte-exact LF.
+test/kg/fixtures/golden/*.ttl -text

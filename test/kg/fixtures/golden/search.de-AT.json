@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "https://example.com/kg/concept/administration",
+      "type": "skos:Concept",
+      "title": "Administration",
+      "labels": "Administration"
+    },
+    {
+      "id": "https://example.com/kg/concept/configuration",
+      "type": "skos:Concept",
+      "title": "Configuration",
+      "labels": "Configuration config settings"
+    },
+    {
+      "id": "https://example.com/kg/concept/installation",
+      "type": "skos:Concept",
+      "title": "Installation",
+      "labels": "Installation"
+    },
+    {
+      "id": "https://example.com/kg/concept/reference",
+      "type": "skos:Concept",
+      "title": "reference",
+      "labels": "reference"
+    },
+    {
+      "id": "https://example.com/kg/concept/setup",
+      "type": "skos:Concept",
+      "title": "setup",
+      "labels": "setup"
+    },
+    {
+      "id": "https://example.com/kg/concept/upgrade",
+      "type": "skos:Concept",
+      "title": "upgrade",
+      "labels": "upgrade"
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/de/regional.md",
+      "type": "dockg:Document",
+      "title": "Regionale Hinweise"
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/de/regional.md#regionale-hinweise",
+      "type": "dockg:Section",
+      "title": "Regionale Hinweise",
+      "text": "# Regionale Hinweise\n\nDie Seite überschreibt die Sprache der Route (`de`) mit `de-AT`: der\nSeitenschlüssel gewinnt. Ihr `translation-of` zeigt auf eine Datei, die es\nnicht gibt, und wird deshalb zu `dockg:brokenLink` statt zu einer Kante."
+    }
+  ]
+}

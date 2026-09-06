@@ -1,0 +1,10 @@
+# A config whose inputs match nothing, so the docs can prove that "no input files
+# matched" is an operational error (exit 2) rather than an empty successful build.
+# This is the failure a reader hits when they run dockg from the wrong directory.
+version: 1
+baseIri: https://example.com/dd/
+inputs:
+  - "test/kg/fixtures/dd/docs/**/*.rst"
+out: .tmp/dd/nomatch.ttl
+provenance:
+  git: false
