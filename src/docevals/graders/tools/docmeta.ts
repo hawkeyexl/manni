@@ -39,7 +39,7 @@ async function gradeGroup(
       ruleId: "docmeta/no-schemas",
       message:
         "tool:docmeta needs options.schemas (builtin ids, file paths, or URLs) — " +
-        'e.g. schemas: ["node_modules/manni docevals/schemas/frontmatter-1.0.0.json"]',
+        'e.g. schemas: ["node_modules/@hawkeyexl/manni/schemas/docevals/frontmatter-1.0.0.json"]',
       severity: t.eval.severity,
       diagnostic: true,
       line: 1,

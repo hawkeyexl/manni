@@ -1,16 +1,16 @@
 /**
  * The published frontmatter schema — manni docevals' implementation of the
- * common vocabulary docmeta proposes as `docmeta:evals:1.0.0-proposal.2`
+ * common vocabulary docmeta proposes as `manni:evals:1.0.0-proposal.2`
  * (docmeta proposal 0023). docmeta publishes the vocabulary; this repo ships a
  * schema for it and implements the graders behind it. Consumers point their
  * validator at the shipped file (or import the object directly).
  *
- *   docmeta validate --schema node_modules/manni docevals/schemas/frontmatter-1.1.0.json docs/
+ *   manni meta validate --schema node_modules/@hawkeyexl/manni/schemas/docevals/frontmatter-1.1.0.json docs/
  *
  * In a manni docevals config, a `tool:docmeta` eval references it the same way:
  *
  *   options:
- *     schemas: ["node_modules/manni docevals/schemas/frontmatter-1.1.0.json"]
+ *     schemas: ["node_modules/@hawkeyexl/manni/schemas/docevals/frontmatter-1.1.0.json"]
  *
  * **1.0.0 still ships and is still byte-identical.** Its bytes are frozen once
  * published, so tracking proposal.2 — which added `weight`, `target`, `runs`

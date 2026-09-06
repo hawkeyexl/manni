@@ -26,7 +26,7 @@ export { sha256 };
  * outage: every future run replays it, the evals sit in human-review forever,
  * and the fixtures look valid the entire time. This was not hypothetical — a
  * local run at concurrency 4 exhausted VRAM and wrote 65 errored ensembles into
- * `docs/.manni/docevals-cache/` (ADR 01038).
+ * `docs/.manni-docevals-cache/` (ADR 01038).
  *
  * Subclassed rather than wrapped because `JsonCache` has private fields, so a
  * structurally-identical object does not satisfy its type.
