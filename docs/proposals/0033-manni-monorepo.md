@@ -154,8 +154,8 @@ install spelling carries the scope: `npm i -D @hawkeyexl/manni`, and
 `npx @hawkeyexl/manni meta …`. If npm grants the unscoped name later, it is
 published as a second package, and the scoped one is deprecated with a pointer.
 
-The version line starts at 0 rather than 1: `v0.0.0` is tagged on the seed
-commit, so the first release is 0.1.0 and the Action reference is
+The version line starts at 0 rather than 1. `v0.0.0` is tagged on the seed
+commit, so the first release is 0.1.0. The Action reference is
 `hawkeyexl/manni@v0`. Reaching 1.0 is a decision for after the other tools
 have landed, not a side effect of the rename.
 
