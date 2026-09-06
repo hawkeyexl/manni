@@ -130,7 +130,7 @@ validate-metadata:
 
 <Aside type="tip" title="Pin the version">
 `npx -y @hawkeyexl/manni meta` resolves the latest published version on each run. Pin a
-major for reproducible pipelines: `npx -y @hawkeyexl/manni@1 validate ...`.
+major for reproducible pipelines: `npx -y @hawkeyexl/manni@0 validate ...`.
 </Aside>
 
 If you collect machine-readable reports, capture the JSON output as an artifact:
@@ -259,7 +259,7 @@ repos:
 ```
 
 `rev` has to be a concrete tag, because pre-commit does not follow a floating
-major the way `uses: hawkeyexl/manni@v1` does. So this is one place a copied
+major the way `uses: hawkeyexl/manni@v0` does. So this is one place a copied
 snippet really will go stale. Take the tag from [the latest
 release](https://github.com/hawkeyexl/manni/releases/latest), and let
 `pre-commit autoupdate` move it for you afterwards.

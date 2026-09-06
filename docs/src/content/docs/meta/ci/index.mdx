@@ -20,7 +20,7 @@ defaults to inline PR annotations:
 
 ```yaml
 - uses: actions/checkout@v4
-- uses: hawkeyexl/manni@v1
+- uses: hawkeyexl/manni@v0
   with:
     paths: "docs/**/*.md"
 ```
@@ -31,7 +31,7 @@ is not interpreted, so `args: --exclude "*.draft.md"` would hand manni meta a
 pattern with the quote marks still in it:
 
 ```yaml
-- uses: hawkeyexl/manni@v1
+- uses: hawkeyexl/manni@v0
   with:
     paths: |
       docs/**/*.md
@@ -109,7 +109,7 @@ from [`examples/manni.yml`](https://github.com/hawkeyexl/manni/blob/main/example
 
 <Aside type="note" title="Pin the version for reproducible runs">
 `npx -y @hawkeyexl/manni meta` resolves the latest published version each run. To keep CI
-reproducible, pin the major, as in `npx -y @hawkeyexl/manni@1 validate ...`, and bump it
+reproducible, pin the major, as in `npx -y @hawkeyexl/manni@0 validate ...`, and bump it
 deliberately.
 </Aside>
 

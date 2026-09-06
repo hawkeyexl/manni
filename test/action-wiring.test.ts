@@ -125,7 +125,7 @@ function runAction(env: Record<string, string>, npxExit = 0): RunResult {
           MANNI_SCHEMA: "",
           MANNI_CONFIG: "",
           MANNI_FORMAT: "",
-          MANNI_VERSION: "1",
+          MANNI_VERSION: "0",
           MANNI_ARGS: "",
           ...env,
         },
@@ -246,7 +246,7 @@ describe.skipIf(!hasBash)("action.yml input wiring", () => {
     const args = argsFor({ MANNI_PATHS: "docs/my notes/*.md\nREADME.md" });
     expect(args).toEqual([
       "--yes",
-      "@hawkeyexl/manni@1",
+      "@hawkeyexl/manni@0",
       "meta",
       "validate",
       "docs/my notes/*.md",

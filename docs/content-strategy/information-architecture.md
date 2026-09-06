@@ -110,7 +110,7 @@ Home — "What do you want to do?" router + 30-second proof
 | Schema resolution reference | S2, D2 | ★ | Precedence chain + ref kinds + dialects. Source of truth: `resolve-schema.ts`, `schema-registry.ts`, `validator.ts`. |
 | Supported formats reference | All | ★ | Extractor/extension/metadata-model table: Markdown, MDX, AsciiDoc, RST, XML, HTML. Source of truth: `src/extractors/`. |
 | Output formats & exit codes | D1, D3 | ★ | `pretty`/`json`/`github` shapes; `NO_COLOR`/TTY behavior. Source of truth: `src/reporters/index.ts`. |
-| GitHub Action reference | D1 | ★ | Every input and output of `hawkeyexl/manni@v1`, with defaults, the one-item-per-line rule for multi-value inputs, and why globs reach manni meta unexpanded. Source of truth: `action.yml`, guarded by `npm run docs:check-action`. |
+| GitHub Action reference | D1 | ★ | Every input and output of `hawkeyexl/manni@v0`, with defaults, the one-item-per-line rule for multi-value inputs, and why globs reach manni meta unexpanded. Source of truth: `action.yml`, guarded by `npm run docs:check-action`. |
 | TypeScript API reference | D3 | | Every symbol the programmatic entry point publishes, with a purpose per export. That covers command cores, schema resolution, config, cache, reporters, extractors, and result types. Drift-checked against the built `dist/index.d.ts` by `npm run docs:check-api`, so a new export cannot ship undocumented. Source of truth: `src/index.ts`. |
 | Glossary | All | | frontmatter, extractor, schema set, dialect, `$schema`, OKF. |
 
