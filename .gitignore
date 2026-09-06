@@ -25,3 +25,6 @@ media/
 
 # Vale styles are fetched by `vale sync`, not committed
 .vale/styles/
+
+# Scratch directories the tracevals suite creates under the repo root.
+.tmp/

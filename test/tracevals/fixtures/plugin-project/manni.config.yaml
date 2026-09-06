@@ -1,0 +1,7 @@
+# Specifiers resolve against this file's directory, never the process cwd — a
+# config carrying `../plugins/…` has to mean the same thing from wherever the
+# CLI happens to be run. The suite loads this config with the repo root as cwd,
+# so the relative hop proves it.
+tracevals:
+  plugins:
+    - ../plugins/stayed-in-scope.mjs

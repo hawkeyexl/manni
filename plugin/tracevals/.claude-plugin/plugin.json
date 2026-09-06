@@ -1,0 +1,9 @@
+{
+  "name": "manni-tracevals-capture",
+  "description": "Records a session manifest at session start — sha256 of every instruction artifact plus the git SHA — so manni tracevals can tell exactly whether a skill or CLAUDE.md still says what the session followed.",
+  "version": "1.0.0",
+  "author": { "name": "hawkeyexl" },
+  "homepage": "https://hawkeyexl.github.io/manni/",
+  "repository": "https://github.com/hawkeyexl/manni",
+  "license": "MIT"
+}

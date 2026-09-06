@@ -48,26 +48,39 @@ try {
   process.exit(2);
 }
 
-// The bundler emits one flat `export { A, type B, … };` at the end of the file.
-// `[^{}]` keeps this from swallowing a preceding declaration body, and the
-// trailing `;` keeps it from matching a re-export (`export { X } from "y"`).
-const statements = [...dts.matchAll(/export\s*\{([^{}]+)\}\s*;/g)];
-const last = statements.at(-1);
-if (!last) {
+// The bundler emits one flat `export { A, type B, … };` at the end of the
+// file. Once a second typed entry (`dist/tracevals.d.ts`) shares declarations
+// with this one, the shared ones move to a chunk and come back as
+// `export { B as BaselineSummary } from './types-<hash>.js';` near the top.
+// Both forms are the published surface, so every top-level `export { … }` is
+// read and the names unioned. `[^{}]` keeps a match from swallowing a
+// preceding declaration body; the `^` anchor keeps it off indented re-exports
+// inside a declaration; an `as` alias exports its right-hand name.
+const statements = [
+  ...dts.matchAll(
+    /^export\s*\{([^{}]+)\}\s*(?:from\s*['"][^'"]+['"])?\s*;/gm,
+  ),
+];
+if (statements.length === 0) {
   // Passing here would be worse than having no guard at all: the page could
   // document nothing and still read as in sync.
   console.error(
-    "docs:check-api: no flat `export { … };` statement found in dist/index.d.ts.\n" +
+    "docs:check-api: no `export { … };` statement found in dist/index.d.ts.\n" +
       "The build output is stale or its shape changed — run `npm run build` and re-run.",
   );
   process.exit(2);
 }
 
-/** Bare export names, with the `type ` modifier stripped. */
+/** Bare export names, with the `type ` modifier and any `as` alias stripped. */
 const realExports = new Set(
-  last[1]
-    .split(",")
-    .map((n) => n.trim().replace(/^type\s+/, ""))
+  statements
+    .flatMap((m) => m[1].split(","))
+    .map((n) =>
+      n
+        .trim()
+        .replace(/^type\s+/, "")
+        .replace(/^\S+\s+as\s+/, ""),
+    )
     .filter(Boolean),
 );
 

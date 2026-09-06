@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "moose-tracevals:verdict:0.1",
+  "title": "manni tracevals judge verdict",
+  "type": "object",
+  "required": ["claim", "observed", "match", "confidence", "reasoning"],
+  "properties": {
+    "claim": {
+      "type": "string",
+      "description": "The specific instruction or assertion under evaluation."
+    },
+    "observed": {
+      "type": "string",
+      "description": "What actually happened in the session, citing specific messages, tool calls, or instructions followed/violated."
+    },
+    "match": {
+      "enum": ["pass", "fail", "partial"],
+      "description": "pass only if the session fully adhered; partial for partial adherence."
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Self-reported confidence in this verdict."
+    },
+    "reasoning": {
+      "type": "string",
+      "description": "Why this conclusion was reached."
+    }
+  },
+  "additionalProperties": false
+}

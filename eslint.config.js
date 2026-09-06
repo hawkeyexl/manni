@@ -141,6 +141,28 @@ export default tseslint.config(
   },
 
   {
+    // tracevals came in from moose-tracevals, which had no type-aware lint of
+    // its own, so three rules are retuned here rather than at ~120 sites.
+    // Non-null assertions are a warning, not an error: nearly all of them are
+    // in tests reaching into a parsed report, each is a real change with
+    // regression risk, and a warning keeps them visible without blocking the
+    // import. `no-unnecessary-condition` is off because the trace reader and
+    // the hook payload parser guard fields that the declared types say are
+    // always present; the input is JSON another program wrote to disk, and
+    // the guards are the point. `require-await` is off because its judge,
+    // grader and prompt seams are async by contract, and a test double that
+    // happens not to await still has to return a promise. Working the
+    // backlog to the repo-wide rules is a follow-up, not part of folding the
+    // tool in.
+    files: ["src/tracevals/**/*.ts", "test/tracevals/**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-non-null-assertion": "warn",
+      "@typescript-eslint/no-unnecessary-condition": "off",
+      "@typescript-eslint/require-await": "off",
+    },
+  },
+
+  {
     // Plain JavaScript, and *not* in tsconfig's `include` (`["src", "test"]`),
     // so type-aware linting cannot cover it — `disableTypeChecked` turns those
     // rules off rather than letting them fail on a file with no program.
