@@ -2,7 +2,7 @@
  * Live smoke test — runs one real eval and one real script generation via the
  * Claude CLI (local auth, no API key). Opt-in:
  *
- *   MOOSE_DOCEVALS_LIVE=1 npm test
+ *   MANNI_DOCEVALS_LIVE=1 npm test
  *
  * Asserts only shape and zone membership, never exact verdicts — live model
  * output is nondeterministic by nature.
@@ -18,7 +18,7 @@ import { makeGenerateScripts } from "../../../src/docevals/graders/scriptgen.js"
 import { ClaudeCliProvider } from "@hawkeyexl/inference";
 
 const ROOT = resolve(import.meta.dirname, "../../..");
-const LIVE = process.env.MOOSE_DOCEVALS_LIVE === "1";
+const LIVE = process.env.MANNI_DOCEVALS_LIVE === "1";
 
 describe.skipIf(!LIVE)("live smoke via Claude CLI", () => {
   const provider = new ClaudeCliProvider("claude-sonnet-4-5");
