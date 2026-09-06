@@ -1,0 +1,114 @@
+---
+title: Consume results programmatically
+description: JSON output and the TypeScript API, for dashboards and custom tooling.
+---
+
+Sometimes the report needs to feed something other than a human: a dashboard, a PR bot, a quality
+scorecard. Use `--format json` or the library directly.
+
+## `--format json`
+
+One object per run. Full field reference in
+[Output and exit codes](/manni/docevals/reference/output-and-exit-codes/).
+
+```bash
+npx @hawkeyexl/manni docevals run --format json > docevals.json
+```
+
+```json
+{
+  "pages": 1,
+  "evalResults": [ { "evalName": "fresh-enough", "outcome": "fail", "findings": [ … ] } ],
+  "suites": [ { "suite": "reference", "passRate": 0.666…, "targetPassRate": 1, "meetsTarget": false } ],
+  "usage": { "totalTokens": 0, "cachedEvals": 0, "judgedEvals": 0 },
+  "generated": [],
+  "exitCode": 1
+}
+```
+
+Primary output goes to stdout, so redirect it. Diagnostics go to stderr.
+
+## Useful queries
+
+Findings, flattened for a table:
+
+```bash
+npx @hawkeyexl/manni docevals run --format json \
+  | jq -r '.evalResults[] | select(.findings) | .findings[]
+           | [.file, .line // "-", .severity, .evalName, .message] | @tsv'
+```
+
+Suites missing their target:
+
+```bash
+npx @hawkeyexl/manni docevals run --format json \
+  | jq -r '.suites[] | select(.meetsTarget | not)
+           | "\(.suite): \(.passRate * 100 | floor)% vs \(.targetPassRate * 100)%"'
+```
+
+Cache effectiveness, the number that tells you whether your CI cache is working:
+
+```bash
+npx @hawkeyexl/manni docevals run --format json | jq '.usage | {cachedEvals, judgedEvals, totalTokens}'
+```
+
+Evals awaiting a person:
+
+```bash
+npx @hawkeyexl/manni docevals run --format json \
+  | jq -r '.evalResults[] | select(.outcome == "needs-review") | "\(.file) \(.evalName)"'
+```
+
+## Track quality over time
+
+`suites[].passRate` is the metric worth storing. Push it wherever your team already looks:
+
+```bash
+npx @hawkeyexl/manni docevals run --format json \
+  | jq -c '{ts: now, suites: [.suites[] | {suite, passRate, meetsTarget}]}' \
+  >> metrics/docs-quality.jsonl
+```
+
+Capability suites are the interesting series. A regression suite should sit flat at 1.0, while a
+capability suite's rate is the actual measure of a quality goal spreading. See
+[Regression vs capability](/manni/docevals/evals/regression-vs-capability/).
+
+## The TypeScript API
+
+The package exports the frontmatter schema for consumers that validate pages themselves:
+
+```js
+import { docevals } from "@hawkeyexl/manni";
+const { frontmatterSchema, frontmatterSchemaPath } = docevals;
+```
+
+`frontmatterSchema` is the parsed schema object; `frontmatterSchemaPath` is its resolved path on
+disk, for handing to another validator.
+
+## For a person rather than a pipeline
+
+`--format json` is for scripts. When the audience is a human who wants to see what the judge
+actually said, use `--format html`. It writes one self-contained file, with no CDN and no external
+stylesheet. That file survives being attached to a pull request or opened from an artifact
+directory:
+
+```bash
+npx @hawkeyexl/manni docevals run --format html > manni docevals.html
+```
+
+## Beware of parsing the human format
+
+`--format human` is for people, and its layout is not a contract. Colour depends on TTY detection,
+and the wording can change in any release. Parse `json`; it is the shape that is versioned.
+
+## Exit codes still apply
+
+The JSON carries `exitCode`, and the process exits with it. Scripts should branch on the process exit
+code rather than re-deriving pass/fail from the report. Keep `1` and `2` distinct. See
+[Exit codes and annotations](/manni/docevals/ci/exit-codes-and-annotations/).
+
+{/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
+
+{/* step {"description":"--format json emits a parseable object carrying summary counts and the exit code.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate --format json","exitCodes":[1],"stdio":"/\"exitCode\": 1/"}} */}
+
+{/* step {"description":"The documented import specifier resolves and exports both schema symbols.","runShell":{"command":"node --input-type=module -e \"import('manni docevals').then(m=>{if(!m.frontmatterSchema||!m.frontmatterSchemaPath)throw new Error('missing export');console.log('exports ok')}).catch(e=>{console.error(e);process.exit(2)})\"","exitCodes":[0],"stdio":"exports ok"}} */}

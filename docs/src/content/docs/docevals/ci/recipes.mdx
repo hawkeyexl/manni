@@ -1,0 +1,108 @@
+---
+title: CI recipes
+description: GitLab CI, Jenkins, and pre-commit, running the same gate on other platforms.
+---
+
+The shape is the same everywhere. Install, restore the cache, run, and route on the exit code. The
+GitHub Actions version and the reasoning behind each piece are in
+[Run it in CI](/manni/docevals/ci/).
+
+## GitLab CI
+
+```yaml
+docevals:
+  image: node:24
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes: ["docs/**/*", "manni.config.yaml"]
+  cache:
+    key:
+      files: [manni.config.yaml]
+    paths: [.manni/docevals/cache]
+  script:
+    - npm ci
+    - npx @hawkeyexl/manni docevals run --format json > docevals.json
+  artifacts:
+    when: always
+    paths: [docevals.json]
+  variables:
+    ANTHROPIC_API_KEY: $ANTHROPIC_API_KEY
+```
+
+GitLab has no equivalent of GitHub's inline annotations, so `--format json` as an artifact is the
+useful shape. Pair it with a merge-request comment bot if you want the findings visible in review.
+
+## Jenkins
+
+```groovy
+pipeline {
+  agent { docker { image 'node:24' } }
+  environment { ANTHROPIC_API_KEY = credentials('anthropic-api-key') }
+  stages {
+    stage('manni docevals') {
+      steps {
+        sh 'npm ci'
+        script {
+          def code = sh(script: 'npx @hawkeyexl/manni docevals run --format json > docevals.json', returnStatus: true)
+          if (code == 2) {
+            error('manni docevals could not run — pipeline problem, not a docs problem')
+          } else if (code == 1) {
+            unstable('Documentation evals failed')
+          }
+        }
+      }
+    }
+  }
+  post { always { archiveArtifacts artifacts: 'docevals.json' } }
+}
+```
+
+Note the explicit split: exit `2` is an `error` (the pipeline is broken), exit `1` is `unstable` (the
+docs are). Collapsing them is the mistake described in
+[Exit codes and annotations](/manni/docevals/ci/exit-codes-and-annotations/).
+
+## pre-commit
+
+Judged evals are too slow and too expensive for a commit hook. Run the deterministic ones only:
+
+```yaml
+repos:
+  - repo: local
+    hooks:
+      - id: manni docevals
+        name: manni docevals (deterministic)
+        entry: npx @hawkeyexl/manni docevals run --deterministic-only --no-generate
+        language: system
+        files: ^docs/.*\.(md|mdx)$
+        pass_filenames: true
+```
+
+`--no-generate` matters here: a commit hook should never quietly write new script files into the
+working tree.
+
+## Any CI system
+
+The minimum that works anywhere:
+
+```bash
+npm ci
+npx @hawkeyexl/manni docevals run --format json > docevals.json
+```
+
+Then branch on the exit code: `0` pass, `1` docs, `2` pipeline.
+
+## Cross-platform notes
+
+**Cache the directory in `judge.cache-dir`** (default `.manni/docevals/cache`) between runs, keyed on the
+config file. Without it, every run re-judges everything. See
+[Caching and turn budgets](/manni/docevals/ci/cost-and-caching/).
+
+**Forks and untrusted contributions** need a job that executes nothing. On any platform, that is a
+separate `--deterministic-only` job with no credentials. On GitHub, add a same-repo condition on the
+job that can execute page-embedded code. See
+[Untrusted pull requests](/manni/docevals/ci/untrusted-pull-requests/).
+
+**Windows runners** work; manni docevals resolves npm `.cmd` shims and handles CRLF frontmatter. If you
+support both, run the matrix, because the spawn path is genuinely platform-specific.
+
+**Node 24+** is required.

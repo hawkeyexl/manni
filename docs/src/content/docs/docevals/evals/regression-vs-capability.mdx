@@ -1,0 +1,81 @@
+---
+title: Regression vs capability
+description: Which type an eval should be, and why the default is regression.
+---
+
+Every eval has a `type`. It changes how strictly to phrase the assertion, what target pass rate the
+suite carries, and how you should read a failure.
+
+| | Regression | Capability |
+|---|---|---|
+| Guards | Behavior that must keep working | A quality goal spreading across a corpus |
+| Target pass rate | `1.0` | ~`0.7` |
+| A failure means | Something broke | This page has not got there yet |
+| Phrase it | Strictly | For the good case |
+| Example | "The install command matches the CLI." | "The page explains why before how." |
+
+`type` defaults to **`regression`**, because most evals guard something. Reach for `capability`
+deliberately.
+
+## Why the default is regression
+
+A regression eval is the docs equivalent of a failing test: it was true, now it is not, and someone
+should look. That is what most people want when they add a check. The install command matches the
+CLI, no promises are made about unreleased features, and frontmatter validates.
+
+Capability evals answer a different question: *how far has this quality goal spread?* "Do our
+tutorials explain why before how?" has a useful answer of 70%, and a useless answer of pass/fail.
+
+## Capability evals in a 1.0 suite are the trap
+
+An eval's `type` is documentation of intent. **The target that actually gates your build is the
+suite's.**
+
+```yaml
+docevals:
+  suites:
+    tutorial:
+      target-pass-rate: 0.7          # capability: measure reach
+      evals: [explains-why-before-how, no-future-promises]
+    reference:
+      target-pass-rate: 1.0          # regression: these must hold
+      evals: [no-future-promises, fresh-enough, frontmatter-valid]
+```
+
+Put a capability eval in a suite left at the default `1.0` and every page short of the goal fails the
+build. The usual response is to weaken the assertion until things go green. That permanently
+encodes the corpus's current state as the standard.
+
+Keep the assertion honest. Move the eval to a suite with an appropriate target, or lower the
+severity if it is deterministic. See
+[Retrofit a legacy corpus](/manni/docevals/adopt/retrofit-a-legacy-corpus/).
+
+## Reading a capability result
+
+```console
+Suites
+  tutorial: 7/10 passed — 70% vs target 70% ok
+```
+
+Three pages do not explain why before how. That is not a build break; it is a backlog with a number
+on it, and next quarter the number should be higher. Raising the target is how you ratchet.
+
+## Moving between types
+
+An eval can graduate. A capability goal that reaches 100% and should never regress becomes a
+regression eval in a 1.0 suite. That is the ratchet completing, and it is worth doing deliberately
+rather than leaving the corpus permanently "measured".
+
+Override the type per page when one page genuinely differs:
+
+```yaml
+evals:
+  - use: explains-why-before-how
+    type: regression
+```
+
+## Related
+
+- [Named evals and suites](/manni/docevals/evals/named-evals-and-suites/), where targets are set
+- [Write good assertions](/manni/docevals/evals/write-good-assertions/), phrasing for each type
+- [Severity and findings](/manni/docevals/evals/severity-and-findings/), the deterministic analog

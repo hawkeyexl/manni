@@ -1,0 +1,277 @@
+---
+title: Retrofit a legacy corpus
+description: Get thousands of unmeasured pages onto a ratchet without a day-one wall of red.
+---
+
+Point an honest quality bar at a corpus that has never been measured and nearly everything fails at
+once. The result is accurate and useless: unmergeable, untriageable, and it teaches your team that
+the tool is wrong rather than that the docs are.
+
+The instinct that follows is to soften the assertions until the build goes green. **That is the
+failure this page exists to prevent**, because it is irreversible in practice. An assertion weakened
+to accommodate the corpus permanently encodes the corpus as the standard, and nobody ever tightens it
+back.
+
+## The ratchet
+
+> Turn the check on at `error` **today**. Record what is already broken. Fail only on what is new.
+
+A **baseline** is a committed file listing the findings your corpus has right now. A run subtracts it
+before deciding anything, so pre-existing findings report as accepted and a fresh one fails the
+build. The standard tightens this Monday instead of after a cleanup nobody staffed.
+
+### 1. Point the config at a baseline file
+
+```yaml
+docevals:
+  version: 1
+  baseline: .manni-docevals-baseline.json
+```
+
+Do this **before** recording. `baseline:` is what makes an ordinary run read the file; without it a
+recording run writes a file nothing will ever load, and says so:
+
+```console
+warn .manni-docevals-baseline.json Recorded .manni-docevals-baseline.json, but no `baseline:` is set
+in /repo/manni.config.yaml. Until it is, an ordinary run ignores this file — add the key, or pass
+--baseline.
+```
+
+### 2. Record today's findings
+
+```bash
+npx @hawkeyexl/manni docevals run --write-baseline
+```
+
+A bare `--write-baseline` records into the **configured** path, not the default. That matters if you
+put the file somewhere other than the repo root. Without that rule, a repo pointing `baseline:` at
+`config/docs-baseline.json` would record into `.manni-docevals-baseline.json`. Nothing would read it,
+and the ratchet would do nothing while looking like it worked.
+
+```console
+Baseline .manni-docevals-baseline.json: recorded 412 finding(s) (+412, -0).
+```
+
+The recording run applies the baseline it just wrote, so it exits `0`. Recording a finding *is*
+declaring it accepted. You do not have to wrap the command in `|| true`, which is the reliable way to
+lose the exit code that matters on the next run.
+
+### 3. Commit the file
+
+```bash
+git add .manni-docevals-baseline.json
+```
+
+It is team state, not a cache. Sorted keys and sorted fingerprints mean it diffs and merges legibly,
+and every later change to it shows up in review, which is the point. Shape and re-record mechanics
+are in [Files and state](/manni/docevals/reference/files-and-state/#findings-baseline).
+
+### 4. Gate on new findings
+
+Nothing more to configure. An ordinary run now reports what it forgave and fails only on the rest:
+
+```console
+Baseline .manni-docevals-baseline.json: 412 finding(s) suppressed of 412 recorded.
+```
+
+Add a page with a fresh violation and that run exits `1`, with only the new finding in the report.
+Use `--no-baseline` to see the full backlog again for one run without touching the file.
+
+## What a baseline covers, and what it does not
+
+Read this before you rely on it. The gate a baseline gives you is real but weaker than it looks.
+
+### Identity is per rule per file, not per occurrence
+
+A finding's identity is `(file, eval name, rule id)`. The line number and the message text are
+deliberately excluded. A fingerprint that moved with the line would present a pure reordering as a
+wall of new findings. One that included the message would be invalidated for every consuming repo
+the next time markdownlint or Vale rewords a string.
+
+**The consequence: a file baselined for three `MD013` findings will not fail when a fourth
+appears.** That is not an oversight waiting on a fix. Per-occurrence identity needs a stable anchor,
+and prose has none. A text snippet churns on every edit, and an ordinal renumbers on every insertion.
+
+Plan around it. A baseline stops a *new kind* of problem entering a file; it does not stop more of a
+problem that file already has. Where you need the stricter guarantee, fix the file and drop its entry.
+
+### It covers findings, which means deterministic graders
+
+`command` and `tool:*` graders produce findings, so those are what a baseline records. An ai-graded
+eval's verdict carries no rule identity to fingerprint. Freezing a judge verdict in a backlog file
+is not what you want anyway. [Human review](/manni/docevals/judge/human-review/) is the mechanism
+for those.
+
+Two more things a baseline does not touch:
+
+- **An eval that errored.** `error` is "the check could not run", not "the page is bad", and there is
+  no finding to record. It still exits `1`.
+- **A suite below its `target-pass-rate`.** Suppressed findings do raise the pass rate, because
+  suppressing the last error-severity finding makes the eval pass. The target itself is a
+  separate lever. See [Set capability targets near
+  reality](#7-set-capability-targets-near-reality) below.
+
+### Renaming an eval invalidates its fingerprints
+
+The eval name is part of the identity, so the tool cannot tell `readable` and `reading-level` are the
+same check. Rename one and the next run reports that eval's whole backlog as fresh. The remedy is a
+re-record; the surprise is worth knowing before it happens in CI.
+
+## Watch the `removed` count
+
+Every re-record reports both halves of the diff:
+
+```console
+Baseline .manni-docevals-baseline.json: recorded 1 finding(s) (+0, -1).
+  1 previously recorded finding(s) are no longer in the baseline. If this run covered less of the
+  corpus than the last one, they have just been forgiven.
+```
+
+`removed` is the load-bearing number. A baseline's failure mode is over-forgiveness, and it is silent
+by construction. The whole job of the file is to make a red run green. An accidental
+`--write-baseline` over a narrowed glob, a mistyped `files.exclude`, a run from the wrong directory:
+each forgives everything it did not see. The fingerprints are opaque hashes, so a diff dropping
+200 of them reads as noise unless a number names it.
+
+Re-record deliberately, over the same scope as your gate, and read that line.
+
+A hand-broken baseline is rejected rather than silently ignored, for the same reason. A typed
+fingerprint can never match a real finding, so the symptom would otherwise be "that finding came
+back" with nothing to explain it:
+
+```console
+manni docevals: Baseline ".manni-docevals-baseline.json": entries["docs/install.md"] contains
+"not-a-fingerprint", which is not a fingerprint (16 lowercase hex characters).
+```
+
+Exit `2`, the pipeline owner's problem, not the author's.
+
+## The rest of the sequence
+
+The baseline is what makes day one mergeable. These steps are what make the following quarter
+converge.
+
+### 5. Decide what should not be evaluated at all
+
+Triage before you record. Deprecated sections, generated reference, and archives should be
+**excluded**, not baselined. A baseline entry is a promise to come back, and nobody is coming back
+for `docs/archive/`.
+
+```yaml
+docevals:
+  files:
+    include: ["docs/**/*.{md,mdx}"]
+    exclude:
+      - "**/node_modules/**"
+      - "docs/archive/**"
+      - "docs/api/generated/**"
+```
+
+Per page:
+
+```yaml
+---
+title: Deprecated integration guide
+eval-skip: true
+---
+```
+
+This is a legitimate first step, not giving up. A reader who feels that excluding is cheating will
+instead spend a week fixing content nobody reads.
+
+Do it **first**, because narrowing scope after a baseline exists is exactly the shape that produces a
+scary `removed` count on the next re-record.
+
+### 6. Propose evals one directory at a time
+
+```bash
+npx @hawkeyexl/manni docevals fill --dry-run --max-turns 40 docs/how-to/
+```
+
+Batching keeps the review reviewable and the work bounded. See
+[Bootstrap a corpus](/manni/docevals/adopt/).
+
+### 7. Set capability targets near reality
+
+A baseline forgives findings. Suites are the judged analog, and their lever is the target pass rate:
+
+```yaml
+docevals:
+  suites:
+    how-to-adopting:
+      target-pass-rate: 0.6      # where the corpus is today
+      evals: [explains-why-before-how, no-future-promises]
+```
+
+Set the target near the current rate, then raise it as pages improve. "60% of how-to pages explain
+why before how, and last quarter it was 45%" is a real report. See
+[Regression vs capability](/manni/docevals/evals/regression-vs-capability/).
+
+### 8. Burn down, and let the baseline shrink
+
+Pick the section that matters most, usually the one with the most traffic, not the most findings.
+Fix its pages, then re-record so the fixed findings leave the file. [Fix a failing
+eval](/manni/docevals/fix/) is the page to hand contributors.
+
+Findings you fix without re-recording still pass; they just linger in the file as entries that no
+longer occur, and a run says so:
+
+```console
+Baseline .manni-docevals-baseline.json: 340 finding(s) suppressed of 412 recorded, 72 no longer occur.
+```
+
+That number falling is the burndown. Re-record when it is worth the diff.
+
+### 9. Make the survivors cheap
+
+A retrofitted corpus is disproportionately ai-graded, because `fill` proposes ai evals by
+construction. Before the recurring cost becomes the story, push them down the hierarchy with
+[Promote to deterministic](/manni/docevals/adopt/promote-to-deterministic/).
+
+## When severity inversion is still the answer
+
+Dropping an eval to `severity: warning` reports everywhere and blocks nowhere. Before baselines it
+was the only lever, and this page used to lead with it. It is now the **narrower** tool, for one
+specific case:
+
+> A finding class you do not intend to fix, on pages you do not intend to exclude.
+
+Reading level on an API reference, line length in generated tables: these are checks worth *seeing*
+and not worth gating. Say that with severity, which is honest about the class, rather than with a baseline,
+which claims you will come back.
+
+| Situation | Reach for |
+|---|---|
+| Existing findings you intend to fix eventually | Baseline |
+| A whole finding class you will never gate on | `severity: warning` |
+| Content that should never have been in scope | `files.exclude` / `eval-skip` |
+| A judged eval the corpus does not meet yet | `target-pass-rate` below `1.0` |
+
+Severity still ratchets per page and per section while you work, which is the fine-grained companion
+to a corpus-wide baseline:
+
+```yaml
+evals:
+  - use: readable
+    severity: error          # this section is done; hold the line
+```
+
+## What good looks like at the end of a quarter
+
+- Every eval on at `error`, gating new work from day one.
+- A committed baseline whose recorded count is visibly falling.
+- Capability targets set near reality and rising.
+- **No assertion weakened to get there.**
+
+## The anti-pattern, stated plainly
+
+| Tempting | Do instead |
+|---|---|
+| Loosen the assertion until the build is green | Keep it; record a baseline and gate on new findings |
+| Turn every eval down to `warning` to adopt it | Reserve `warning` for classes you will never gate on |
+| Re-record the baseline whenever CI goes red | Read the `removed` count; a red run is usually a real new finding |
+| Set every suite target to what today's corpus scores | Set it slightly above, and raise it |
+| Run `fill` over everything and merge in one PR | Batch by directory |
+| Delete the check because it "doesn't fit our docs" | Ask whether the check is right and the docs are wrong |
+
+The first column produces a green build immediately and a meaningless standard permanently.

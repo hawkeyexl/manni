@@ -40,3 +40,139 @@ meta:
         # `text`. Before it existed, every Starlight key on every page went
         # unchecked.
         - astro:starlight:0.41
+
+# The docevals tool validating its own fixture corpus (the dogfood for
+# `manni docevals run`). Its own key, its own settings; the metadata tool
+# above never reads them. Carried over from moose-docevals with the fixture
+# paths moved under test/docevals/.
+docevals:
+  version: 1
+
+  files:
+    include:
+      - "test/docevals/fixtures/pages/**/*.{md,mdx}"
+    exclude:
+      - "**/node_modules/**"
+
+  defaults:
+    suite: null
+    fail-fast: false
+    concurrency: 4
+
+  provider:
+    default: anthropic
+    anthropic:
+      model: claude-sonnet-4-5
+      api-key-env: ANTHROPIC_API_KEY
+    claude-cli:
+      model: claude-sonnet-4-5
+
+  judge:
+    ensemble-runs: 3
+    temperature: 0
+    zones:
+      auto-pass: 0.8
+      auto-fail: 0.8
+    false-positive-alert: 0.15
+    cache-dir: .manni/docevals/cache
+
+  # The fixture corpus declares command evals in page frontmatter
+  # (installation.mdx, find.mdx), so this run grants that capability. It does
+  # NOT grant page-embedded-steps: nothing here runs doc-detective.
+  execution:
+    allow: [frontmatter-commands]
+
+  scripts:
+    dir: "{docDir}/manni-docevals"
+    config-dir: manni-docevals-scripts
+    timeout-ms: 30000
+
+  evals:
+    no-future-promises:
+      type: regression
+      assertion: The page makes no claims about unreleased or future functionality.
+      grader: ai
+      evidence: All prose sections
+      examples:
+        pass: Describes only shipped behavior.
+        fail: Says "coming soon" or references an unreleased version.
+    explains-why-before-how:
+      type: capability
+      assertion: >
+        The page explains why a reader would use the feature before explaining
+        how to use it.
+      grader: ai
+      evidence: Introduction and first section
+      examples:
+        pass: Opens with the problem the feature solves, then gives steps.
+        fail: Jumps straight into syntax with no motivation.
+    frontmatter-valid:
+      assertion: Page frontmatter validates against the docevals built-in schema.
+      grader: tool:docmeta
+      options:
+        schemas: ["schemas/docevals/frontmatter-1.0.0.json"]
+      severity: error
+    remark:
+      assertion: Page parses as MDX and passes remark lint rules.
+      grader: tool:remark
+      severity: warning
+    names-an-action:
+      # The cheap rung below the judge: a verifiable fact, matched rather than
+      # argued about three times.
+      assertion: The page documents at least one Doc Detective action.
+      grader: tool:regex
+      options:
+        pattern: "(goTo|find|click|checkLink|httpRequest)"
+      severity: warning
+      # Secondary to the judged assertions on the same page: it is a spec
+      # literal, so it reports without dominating the suite's rate.
+      weight: 0.5
+    ships-a-schema:
+      assertion: The actions corpus still ships the schema files it references.
+      grader: tool:file-exists
+      options:
+        path: "*.mdx"
+      severity: info
+    fresh-enough:
+      assertion: Page was reviewed within the last year.
+      grader: tool:freshness
+      options:
+        field: last-reviewed
+        max-age-days: 365
+      severity: warning
+    readable:
+      assertion: Page prose reads below grade 12.
+      grader: tool:reading-level
+      options:
+        max-grade: 12
+      severity: warning
+    distinct-action-pages:
+      assertion: >
+        Action reference pages describe behaviors unique to their action,
+        distinct from related actions.
+      grader: tool:differentiation
+      options:
+        scope: "test/docevals/fixtures/pages/docs/actions/**"
+        max-similarity: 0.85
+      severity: error
+
+  criteria:
+    # Two checks that only mean something together: a page claiming to
+    # document an action should both name it and be fresh enough to trust.
+    # Scored once, so the pair cannot outvote a standalone eval.
+    action-page-is-trustworthy:
+      evals: [names-an-action, fresh-enough]
+      combine: all
+      weight: 2
+
+  suites:
+    reference:
+      target-pass-rate: 1.0
+      evals: [no-future-promises, fresh-enough, readable, frontmatter-valid, names-an-action, ships-a-schema]
+      criteria: [action-page-is-trustworthy]
+    tutorial:
+      target-pass-rate: 0.7
+      evals: [explains-why-before-how, no-future-promises]
+    how-to:
+      target-pass-rate: 1.0
+      evals: [no-future-promises, readable]

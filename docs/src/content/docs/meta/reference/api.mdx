@@ -218,3 +218,13 @@ and reStructuredText.
 | Export | Purpose |
 |---|---|
 | `DocmetaError` | The operational/usage failure the CLI maps to exit code `2`. Catch it to distinguish "manni meta could not run" from "the documents did not pass". |
+
+## Sibling tools
+
+Each other tool in the family is one namespace export. Its API cannot collide
+with the flat surface above, and a consumer can see which tool a name belongs
+to. Each namespace is documented on its own tool's pages.
+
+| Export | Purpose |
+|---|---|
+| `docevals` | The evals tool's programmatic API. It carries `runRun`, `runList` and `loadConfig`, the judge and provider factories, the reporters, and the published frontmatter schema (`frontmatterSchema`, `frontmatterSchemaPath`). `import { docevals } from "@hawkeyexl/manni"`. See [the docevals reference](/manni/docevals/reference/). |

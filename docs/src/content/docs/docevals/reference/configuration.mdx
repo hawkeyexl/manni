@@ -1,0 +1,249 @@
+---
+title: Configuration reference
+description: Every manni.config.yaml key, its type, and its default.
+---
+
+Every key, verified against `src/core/config-schema.json` and the defaults applied in
+`src/core/config.ts`.
+
+## The `docevals` namespace
+
+`manni.config.yaml` is shared by every tool in the manni family. Each tool reads one top-level key,
+so **every setting on this page lives under `docevals:`**:
+
+```yaml
+docevals:
+  version: 1
+  judge:
+    ensemble-runs: 3
+```
+
+The key names in the tables below are written relative to that namespace: `files.include` means
+`docevals.files.include` in the file.
+
+Root keys manni docevals does not recognize belong to sibling tools and are ignored. Another
+tool's settings can sit beside yours in the same file. Inside `docevals:`, unknown keys are rejected
+at every level, so a typo there is a startup error rather than a silently ignored setting.
+
+One consequence is worth knowing. Because the root is permissive, misspelling the namespace itself
+(`docevlas:`) is not an error. manni docevals reads it as another tool's config and runs on pure
+defaults, with no named evals, no suites, and a passing exit code. `manni docevals init` writes the
+key correctly; if a run reports far fewer evals than you expect, check that spelling first.
+
+With no config file present, every default below applies and there are no named evals or suites. A
+file left over from before the rename, `docevals.config.yaml`, is not read. manni docevals stops
+and tells you to migrate rather than silently running on defaults.
+
+## `version`
+
+Required. Must be `1`.
+
+## `files`
+
+| Key | Type | Default |
+|---|---|---|
+| `files.include` | string[] | `["**/*.{md,mdx}"]` |
+| `files.exclude` | string[] | `["**/node_modules/**"]` |
+
+Positional globs on the CLI override `files.include` for that run.
+
+## `baseline`
+
+| Key | Type | Default |
+|---|---|---|
+| `baseline` | string \| null | `null` |
+
+Path to the findings baseline, **relative to the config file** rather than to the working
+directory. A run from a subdirectory therefore finds the same file. `null` means no baseline.
+
+```yaml
+docevals:
+  version: 1
+  baseline: .manni-docevals-baseline.json
+```
+
+Setting it makes every ordinary run subtract the file: pre-existing findings are suppressed and only
+new ones fail. `--baseline [path]` overrides it, `--no-baseline` suppresses it for one run, and a
+bare `--write-baseline` records into **this** path. A repo that points it somewhere custom cannot
+accidentally record into a file nothing reads.
+
+Leaving this unset while running `--write-baseline` is reported as a warning: the file is written and
+then ignored by every later run. Set the key first.
+
+The ratchet and its limits are on [Retrofit a legacy
+corpus](/manni/docevals/adopt/retrofit-a-legacy-corpus/#the-ratchet); the file's shape is in
+[Files and state](/manni/docevals/reference/files-and-state/#findings-baseline).
+
+## `defaults`
+
+| Key | Type | Default | Notes |
+|---|---|---|---|
+| `defaults.suite` | string \| null | `null` | Suite applied to pages that name none. Must be a defined suite or startup fails. |
+| `defaults.fail-fast` | boolean | `false` | |
+| `defaults.concurrency` | integer ≥ 1 | `4` | Bounded concurrency across targets. |
+
+## `provider`
+
+| Key | Type | Default |
+|---|---|---|
+| `provider.default` | `anthropic` \| `openai` \| `claude-cli` \| `llama-cpp` | `anthropic` |
+| `provider.anthropic.model` | string | `claude-sonnet-4-5` |
+| `provider.anthropic.api-key-env` | string | `ANTHROPIC_API_KEY` |
+| `provider.openai.base-url` | string | `https://api.openai.com/v1` |
+| `provider.openai.model` | string | `gpt-4o-mini` |
+| `provider.openai.api-key-env` | string | `OPENAI_API_KEY` |
+| `provider.claude-cli.model` | string | `claude-sonnet-4-5` |
+| `provider.claude-cli.command` | string | `claude` |
+| `provider.llama-cpp.model` | string | `balanced` |
+| `provider.llama-cpp.models-dir` | string \| null | `null` |
+| `provider.llama-cpp.thought-tokens` | integer ≥ 0 | `0` |
+
+Which of the three to pick, and what each one implies about where your pages go, is covered in
+[Choose a provider](/manni/docevals/judge/choose-a-provider/).
+
+## `judge`
+
+| Key | Type | Default | Notes |
+|---|---|---|---|
+| `judge.ensemble-runs` | integer ≥ 1 | `3` | Independent runs aggregated by consensus. |
+| `judge.temperature` | number ≥ 0 | `0` | |
+| `judge.zones.auto-pass` | number 0–1 | `0.8` | Confidence at or above which a passing consensus auto-passes. |
+| `judge.zones.auto-fail` | number 0–1 | `0.8` | Confidence at or above which a failing consensus auto-fails. |
+| `judge.false-positive-alert` | number 0–1 | `0.15` | Calibration alerts above this false-positive rate. |
+| `judge.cache-dir` | string | `.manni/docevals/cache` | |
+| `judge.concurrency` | integer ≥ 1 | `defaults.concurrency` | Pages judged in parallel. Separate from `defaults.concurrency` because a local `llama-cpp` model runs in-process against one GPU and serves one context at a time. Deterministic graders are happy at 4. |
+| `judge.max-turns` | integer ≥ 1 \| null | `null` | Stop judging after this many uncached inference calls. One ai eval spends `judge.ensemble-runs` turns; a cached ensemble spends none. `null` is unbounded. |
+| `judge.chunk-chars` | integer ≥ 1 | `12000` | Characters of page per judge call. A longer page is read in parts. Each part contributes the passages bearing on the assertion, and one judge then answers against the collected evidence. Content that fits is judged in a single call, exactly as before. |
+
+Anything between the two zone thresholds lands in human review. See
+[How judging works](/manni/docevals/judge/).
+
+## `scripts`
+
+| Key | Type | Default | Notes |
+|---|---|---|---|
+| `scripts.dir` | string | `{docDir}/manni docevals` | Where generated scripts go. `{docDir}` expands to the page's directory. |
+| `scripts.config-dir` | string | `manni-docevals-scripts` | Used when `scripts.dir` has no `{docDir}`; resolved relative to the config file. |
+| `scripts.timeout-ms` | integer ≥ 1 | `30000` | |
+
+## `execution` controls what content is allowed to run
+
+Two things in a content file can reach a shell: a `command` eval declared in page frontmatter, and
+`tool:doc-detective` running steps written in a page **body**. Both are code whoever edits the page
+controls, so both are **denied until you grant them**.
+
+| Key | Type | Default | Notes |
+|---|---|---|---|
+| `execution.allow` | list | `[]` | `frontmatter-commands`, `page-embedded-steps`, or both. |
+
+```yaml
+docevals:
+  execution:
+    allow: [frontmatter-commands]
+```
+
+Grant only what the corpus needs. Granting `frontmatter-commands` does not grant
+`page-embedded-steps`: trusting a repo's frontmatter is not the same as trusting arbitrary steps in
+its prose.
+
+`--allow-execution <kind...>` adds a grant for one run; `--no-execution` clears every grant for one
+run.
+
+:::caution
+A grant says *this corpus* is trusted to execute. A fork's pages are not this corpus, so no
+combination of grants makes a run over untrusted contributions safe. Restrict the job to same-repo
+pull requests instead. See [Untrusted pull requests](/manni/docevals/ci/untrusted-pull-requests/).
+:::
+
+## `fill`
+
+| Key | Type | Default |
+|---|---|---|
+| `fill.confidence-threshold` | number 0–1 | `0.7` |
+| `fill.max-evals-per-page` | integer ≥ 1 | `3` |
+| `fill.temperature` | number ≥ 0 | `0` |
+| `fill.cache-dir` | string | `.manni/docevals/cache/fill` |
+| `fill.max-turns` | integer ≥ 1 \| null | `null` |
+| `fill.chunk-chars` | integer ≥ 1 | `12000` | Characters of page per fill call. A longer page is proposed against in parts and the proposals merged by id, keeping the highest confidence. |
+
+## `evals`
+
+A map of eval id to definition. Ids match `^[a-z0-9][a-z0-9-]*$`.
+
+Every field an eval can carry is documented in
+[Frontmatter reference](/manni/docevals/reference/frontmatter/). The same shape applies whether the
+eval is defined here or inline on a page.
+
+```yaml
+docevals:
+  evals:
+    no-future-promises:
+      type: regression
+      assertion: The page makes no claims about unreleased or future functionality.
+      grader: ai
+      evidence: All prose sections
+      examples:
+        pass: Describes only shipped behavior.
+        fail: Says "coming soon" or references an unreleased version.
+```
+
+## `suites`
+
+A map of suite name to definition.
+
+| Key | Type | Default |
+|---|---|---|
+| `target-pass-rate` | number 0–1 | `1.0` |
+| `evals` | string[] | `[]` |
+| `criteria` | string[] | `[]` |
+
+```yaml
+docevals:
+  suites:
+    reference:
+      target-pass-rate: 1.0
+      evals: [no-future-promises, fresh-enough, readable, frontmatter-valid]
+    tutorial:
+      target-pass-rate: 0.7
+      evals: [explains-why-before-how, no-future-promises]
+```
+
+## `criteria`
+
+Several evals scored as **one** unit. A criterion contributes a single weighted outcome to its
+suite, and its members contribute none. Writing three checks as a group therefore cannot outvote
+three standalone evals just for being a group. Members keep their own results, so a report still says
+which one failed.
+
+| Key | Type | Default | Notes |
+|---|---|---|---|
+| `evals` | string[] | none | Required. The eval ids this criterion is made of. |
+| `combine` | `all` \| `any` | `all` | `all`: every member must pass. `any`: one passing member is enough. |
+| `weight` | number > 0 | `1` | The criterion's contribution to its suite's pass rate. |
+
+```yaml
+docevals:
+  criteria:
+    install-path-is-complete:
+      evals: [has-prereqs, has-verify-step]
+      combine: all
+      weight: 2
+  suites:
+    reference:
+      evals: [fresh-enough]
+      criteria: [install-path-is-complete]
+```
+
+A criterion whose members were not all graded in a run is **suspended** rather than failed. That
+covers a run where `--eval` selected only some of them, or where a member was skipped. A group
+measured in part has numbers but no verdict.
+
+## Referential integrity
+
+Four checks run at load time and fail the process with exit 2 rather than surfacing later as a
+confusing per-page problem:
+
+- A suite may only reference evals defined under `evals`.
+- A criterion may only reference evals defined under `evals`.
+- A suite may only reference criteria defined under `criteria`.
+- `defaults.suite` must name a defined suite.

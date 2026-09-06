@@ -119,3 +119,14 @@ npm ci && npm run build
 
 Then follow the transcript in the proposal. Sandboxes are disposable temp dirs;
 nothing in this repo is mutated.
+
+## Sibling tools' logs
+
+Each tool that joins the family brings its own ADR log. It lives in a
+subdirectory named for the tool, numbered as the tool numbered it. The files
+are the record as written in the source repository, cited by SHA in the import
+commit. The supersede-never-amend rule applies to them as it does here.
+
+| Directory | Source |
+|---|---|
+| [`docevals/`](docevals/) | moose-docevals at 670e62b (00001-00004 and 01000+). |

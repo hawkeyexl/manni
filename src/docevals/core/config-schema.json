@@ -1,0 +1,626 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "moose:config:0.1",
+  "title": "moose config",
+  "description": "Shared configuration for the moose family of documentation tools. Each tool reads its own top-level namespace; unknown keys belong to sibling tools and are ignored here. Every key is kebab-case — the same spelling the frontmatter vocabulary uses, so a field means one thing wherever it is written.",
+  "type": "object",
+  "properties": {
+    "docevals": {
+      "$ref": "#/$defs/docevalsConfig"
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "docevalsConfig": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "files": {
+          "type": "object",
+          "properties": {
+            "include": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "exclude": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "baseline": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Path to the findings baseline, relative to this config file. A baseline records today's findings so a run fails only on new ones (ADR 01017). Null (the default) means no baseline. `--baseline`/`--no-baseline` override this; a bare `--write-baseline` records into *this* path, so a repo that points it somewhere custom cannot accidentally record into a file nothing reads."
+        },
+        "defaults": {
+          "type": "object",
+          "properties": {
+            "suite": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "fail-fast": {
+              "type": "boolean"
+            },
+            "concurrency": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "provider": {
+          "type": "object",
+          "properties": {
+            "default": {
+              "enum": [
+                "anthropic",
+                "openai",
+                "claude-cli",
+                "llama-cpp"
+              ]
+            },
+            "anthropic": {
+              "type": "object",
+              "properties": {
+                "model": {
+                  "type": "string"
+                },
+                "api-key-env": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            "openai": {
+              "type": "object",
+              "properties": {
+                "base-url": {
+                  "type": "string"
+                },
+                "model": {
+                  "type": "string"
+                },
+                "api-key-env": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            "claude-cli": {
+              "type": "object",
+              "properties": {
+                "model": {
+                  "type": "string"
+                },
+                "command": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            "llama-cpp": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "model": {
+                  "type": "string",
+                  "description": "A tier the library resolves against this machine (auto | fast | balanced | quality), or a pinned model reference. A tier is convenient but is not a stable cache key on its own - the library resolves it to a concrete model before any key is built, so two machines never share a verdict under one tier name."
+                },
+                "models-dir": {
+                  "type": "string",
+                  "description": "Where GGUF weights are downloaded and looked for. Defaults to the inference library's own directory."
+                },
+                "thought-tokens": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "default": 0,
+                  "description": "Thinking budget before the JSON. Zero by default: a grammar constrains generation from the first token, so an unbudgeted thinking model starts reasoning and is cut off mid-thought."
+                }
+              },
+              "description": "Local inference over GGUF weights, in-process. No API key and no network at judge time once the weights are on disk - which is what lets a contributor without provider credentials regenerate the docs cache."
+            }
+          },
+          "additionalProperties": false
+        },
+        "judge": {
+          "type": "object",
+          "properties": {
+            "ensemble-runs": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "concurrency": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "temperature": {
+              "type": "number",
+              "minimum": 0
+            },
+            "zones": {
+              "type": "object",
+              "properties": {
+                "auto-pass": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "auto-fail": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "additionalProperties": false
+            },
+            "false-positive-alert": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "cache-dir": {
+              "type": "string"
+            },
+            "max-turns": {
+              "$ref": "#/$defs/maxTurns"
+            },
+            "chunk-chars": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 12000,
+              "description": "Characters of page content per judge call. A page longer than this is graded by gathering evidence from each part and judging the collected evidence once."
+            }
+          },
+          "additionalProperties": false
+        },
+        "scripts": {
+          "type": "object",
+          "properties": {
+            "dir": {
+              "type": "string"
+            },
+            "config-dir": {
+              "type": "string"
+            },
+            "timeout-ms": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "execution": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "allow": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "frontmatter-commands",
+                  "page-embedded-steps"
+                ]
+              },
+              "default": [],
+              "description": "Which content-authored code this corpus may execute. Default deny: frontmatter-commands covers `command` evals declared in page frontmatter; page-embedded-steps covers tool:doc-detective running steps written in page bodies. Both are code a page author controls, so the operator grants them explicitly. This is defense in depth, not a substitute for restricting untrusted pull requests."
+            }
+          },
+          "description": "Operator grant for executing content-authored code."
+        },
+        "fill": {
+          "type": "object",
+          "properties": {
+            "confidence-threshold": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "max-evals-per-page": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "temperature": {
+              "type": "number",
+              "minimum": 0
+            },
+            "cache-dir": {
+              "type": "string"
+            },
+            "max-turns": {
+              "$ref": "#/$defs/maxTurns"
+            },
+            "chunk-chars": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 12000,
+              "description": "Characters of page content per fill call. A longer page is proposed against in parts and the proposals merged by id, keeping the highest confidence."
+            }
+          },
+          "additionalProperties": false
+        },
+        "evals": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/evalDef"
+          },
+          "description": "The central library of named evals. The map key is the eval's id — the same id a page's `use:` reference names."
+        },
+        "criteria": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/criterionDef"
+          },
+          "description": "Named groups of evals scored as one unit. A criterion contributes a single weighted outcome to its suite and its members contribute none, so writing three checks as a group does not let them outvote three standalone evals."
+        },
+        "suites": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/suiteDef"
+          }
+        }
+      },
+      "required": [
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "maxTurns": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "description": "Stop after this many turns. Counts work, not pages. Under `judge` a turn is one ensemble run, so a judged eval spends `judge.ensemble-runs` of them; a run may make a second provider call when the first response fails schema validation, so this is a floor on calls rather than an exact count. Under `fill` a turn is exactly one call. A cached result spends none. Null (the default) is unbounded. Replaces the `max-cost-usd` ceiling, which could not be honored exactly under concurrency — see ADR 01019."
+    },
+    "evalDef": {
+      "type": "object",
+      "properties": {
+        "assertion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "enum": [
+            "capability",
+            "regression"
+          ]
+        },
+        "grader": {
+          "type": "string",
+          "pattern": "^(ai|command|human|tool:[a-z0-9][a-z0-9-]*)$"
+        },
+        "provider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Model judging this ai eval, within provider. A CLI --model still wins over it. Meaningful only on ai evals."
+        },
+        "runs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50,
+          "description": "Ensemble runs for this eval, overriding judge.ensemble-runs. A CLI --runs still wins over it. Capped because it multiplies judge cost directly. Meaningful only on ai evals."
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "oneOf": [
+            {
+              "enum": [
+                "body",
+                "raw",
+                "frontmatter"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "source",
+                "path"
+              ],
+              "properties": {
+                "source": {
+                  "const": "file"
+                },
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          ],
+          "default": "body",
+          "description": "Which bytes the grader receives: the page body with frontmatter stripped (body), the file verbatim (raw), the parsed frontmatter alone (frontmatter), or a companion file beside the page. Distinct from evidence, which hints where to look within what is graded."
+        },
+        "examples": {
+          "type": "object",
+          "properties": {
+            "pass": {
+              "$ref": "#/$defs/anchorList"
+            },
+            "fail": {
+              "$ref": "#/$defs/anchorList"
+            }
+          },
+          "additionalProperties": false
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "success-exit-codes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "integer"
+          }
+        },
+        "timeout-ms": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "generated-assertion-hash": {
+          "type": "string"
+        },
+        "options": {
+          "type": "object"
+        },
+        "severity": {
+          "enum": [
+            "error",
+            "warning",
+            "info"
+          ]
+        },
+        "weight": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 1,
+          "description": "Relative contribution to its suite's pass rate. Does not change this eval's own pass/fail: the eval still passes or fails on its own terms, and weight only decides how much that outcome moves the suite total against target-pass-rate. Zero is excluded deliberately - a weightless eval is a silent disable, and skip already means that, loudly."
+        },
+        "severity-map": {
+          "type": "object",
+          "additionalProperties": {
+            "enum": [
+              "error",
+              "warning",
+              "info"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false,
+      "dependentRequired": {
+        "generated-assertion-hash": [
+          "command"
+        ]
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "grader": {
+                "const": "ai"
+              }
+            },
+            "required": [
+              "grader"
+            ]
+          },
+          "then": {
+            "required": [
+              "assertion"
+            ]
+          }
+        },
+        {
+          "if": {
+            "not": {
+              "required": [
+                "grader"
+              ]
+            }
+          },
+          "then": {
+            "required": [
+              "assertion"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "grader": {
+                "const": "command"
+              }
+            },
+            "required": [
+              "grader"
+            ]
+          },
+          "then": {
+            "anyOf": [
+              {
+                "required": [
+                  "assertion"
+                ]
+              },
+              {
+                "required": [
+                  "command"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "grader": {
+                "const": "human"
+              }
+            },
+            "required": [
+              "grader"
+            ]
+          },
+          "then": {
+            "required": [
+              "assertion"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "command"
+            ]
+          },
+          "then": {
+            "properties": {
+              "grader": {
+                "const": "command"
+              }
+            },
+            "required": [
+              "grader"
+            ]
+          }
+        },
+        {
+          "if": {
+            "anyOf": [
+              {
+                "required": [
+                  "success-exit-codes"
+                ]
+              },
+              {
+                "required": [
+                  "timeout-ms"
+                ]
+              }
+            ]
+          },
+          "then": {
+            "properties": {
+              "grader": {
+                "const": "command"
+              }
+            },
+            "required": [
+              "grader"
+            ]
+          }
+        }
+      ]
+    },
+    "anchorList": {
+      "if": {
+        "type": "array"
+      },
+      "then": {
+        "type": "array",
+        "minItems": 1,
+        "uniqueItems": true,
+        "items": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "else": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "suiteDef": {
+      "type": "object",
+      "properties": {
+        "target-pass-rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "evals": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "criteria": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "description": "Criteria scored in this suite, alongside `evals`."
+        }
+      },
+      "additionalProperties": false
+    },
+    "criterionDef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evals"
+      ],
+      "properties": {
+        "evals": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "description": "Ids of the evals this criterion is made of."
+        },
+        "combine": {
+          "enum": [
+            "all",
+            "any"
+          ],
+          "default": "all",
+          "description": "all: every member must pass. any: one passing member is enough."
+        },
+        "weight": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 1,
+          "description": "The criterion's contribution to its suite's pass rate."
+        }
+      }
+    }
+  }
+}

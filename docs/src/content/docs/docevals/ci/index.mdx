@@ -1,0 +1,113 @@
+---
+title: Run it in CI
+description: Add the eval gate to GitHub Actions, with inline annotations and a bounded amount of model work.
+---
+
+A gate that is not in CI is a linter someone runs sometimes. This page is the GitHub Actions recipe;
+[other platforms](/manni/docevals/ci/recipes/) follow the same shape.
+
+## The recipe
+
+```yaml
+name: docs
+
+on:
+  pull_request:
+    paths: ["docs/**", "manni.config.yaml"]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  docevals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      # Persist the judge cache between runs — without it every push
+      # re-judges the whole corpus and the bill is the story.
+      - uses: actions/cache@v4
+        with:
+          path: .manni/docevals/cache
+          key: manni-docevals-${{ hashFiles('manni.config.yaml') }}-${{ github.sha }}
+          restore-keys: manni-docevals-${{ hashFiles('manni.config.yaml') }}-
+
+      - run: npx @hawkeyexl/manni docevals run --format github
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+```
+
+Three things are doing real work here.
+
+**`--format github`** emits workflow commands that annotate the offending line in the diff, followed
+by a markdown summary. A failure a contributor can see on the line they wrote gets fixed in minutes;
+the same failure in a job log gets ignored. See
+[Exit codes and annotations](/manni/docevals/ci/exit-codes-and-annotations/).
+
+**The cache step** is not an optimisation. The whole approach assumes unchanged pages never re-judge;
+a cold cache every run re-judges everything. The key includes the config hash because changing an
+assertion legitimately invalidates verdicts. See
+[Caching and turn budgets](/manni/docevals/ci/cost-and-caching/).
+
+**`paths:`** keeps the job off pull requests that cannot affect the docs.
+
+## Post the summary
+
+`--format github` output doubles as a job summary:
+
+```yaml
+      - run: npx @hawkeyexl/manni docevals run --format github | tee "$GITHUB_STEP_SUMMARY"
+```
+
+## Before you enable it on pull requests
+
+Two things will bite, and both have their own page:
+
+- **Fork pull requests can execute their author's code**, and the obvious-looking config flag does
+  not prevent it. Read [Untrusted pull requests](/manni/docevals/ci/untrusted-pull-requests/) before this
+  job runs on a public repo.
+- **Every uncached ai eval is live model calls**, `judge.ensemble-runs` of them. Bound a run with
+  `judge.max-turns` or `--max-turns`: evals past the budget are skipped and reported, and evals
+  served from cache never count against it. See
+  [Caching and turn budgets](/manni/docevals/ci/cost-and-caching/).
+
+## Start deterministic
+
+You do not need a provider to get value on day one:
+
+```yaml
+      - run: npx @hawkeyexl/manni docevals run --deterministic-only --format github
+```
+
+No secret, no cost, no model in the critical path. Freshness, structure, lint, and generated
+checks all still run. This is also the correct job for forks.
+
+## Exit codes route to different people
+
+| Code | Meaning | Whose problem |
+|---|---|---|
+| `0` | Pass | Nobody |
+| `1` | Findings, or a suite below target | The author |
+| `2` | Operational, such as bad config or a missing key | The pipeline owner |
+
+A recipe that treats any non-zero exit as "the docs are bad" blames authors for infrastructure
+problems. It also teaches the team the check is flaky. Do not collapse `1` and `2`.
+
+## Verify the gate can fail
+
+Before you trust it, make it fail once. Break a page deliberately, confirm the job goes red with an
+annotation on the right line, and revert. A gate that has only ever been seen passing has not been
+shown to work.
+
+{/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
+
+{/* step {"description":"A clean run exits 0 so the job stays green.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/find.mdx --deterministic-only --no-generate --format github","exitCodes":[0]}} */}
+
+{/* step {"description":"A failure exits 1 and emits an ::error workflow command pinned to file and line.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate --format github","exitCodes":[1],"stdio":"/::error file=.*line=/"}} */}

@@ -1,0 +1,162 @@
+---
+title: Caching and turn budgets
+description: What invalidates a cached verdict, why cache persistence is a correctness concern, and how to bound the inference calls a run makes.
+---
+
+Model calls are per-invocation, so the risk is not one large bill. The risk is an *unpredictable* amount
+of work. And unpredictable is what gets a check removed.
+
+Two mechanisms keep the steady state of a docs pull request near zero. The cache does almost all of
+it. The turn budget is the backstop for when the cache does not apply.
+
+## Bound the work with turns
+
+```yaml
+docevals:
+  judge:
+    max-turns: 60
+  fill:
+    max-turns: 40
+```
+
+```bash
+npx @hawkeyexl/manni docevals run --max-turns 60
+npx @hawkeyexl/manni docevals fill --max-turns 40
+```
+
+A **turn** is one unit of uncached inference work. Under `fill` that is exactly one call per page. Under `judge` it is one *ensemble run*, and a run may make a second call when the first response fails schema validation. The judge budget is therefore a floor on API calls, not an exact ceiling. Either way the budget counts work, not pages:
+
+- One ai-graded eval spends `judge.ensemble-runs` turns, three by default, because the ensemble is
+  three independent calls.
+- One page filled by `fill` spends one turn.
+- **A cache hit spends nothing.** A fully-cached run completes under `--max-turns 1`.
+
+Unset, which is the default, means unbounded.
+
+`judge.max-turns` bounds the judge stage and `fill.max-turns` bounds `fill`. Script generation calls
+the model too and is not counted against either; `run --no-generate` is what keeps it out of a run.
+
+### The budget is claimed, not tallied
+
+A target's whole ensemble is claimed *before* anything is dispatched. So an eval that does not fit in
+what is left is skipped outright rather than judged on a partial ensemble. Two runs out of three is
+a different verdict, not a cheaper one. Those evals report as `skipped` with the reason:
+
+```text
+judge turn budget exhausted (60)
+```
+
+`fill` does the same per page, and marks it `(turn budget exhausted)`.
+
+Claiming before dispatch is what makes the cap exact rather than approximate. Judging runs
+`defaults.concurrency` targets at once, four by default. The number of calls an eval will make
+is knowable before the provider is touched, because it *is* the ensemble size. There is no window
+between deciding to spend and spending, so concurrent workers cannot both clear an almost-exhausted
+budget and then both spend.
+
+### Why turns, and not dollars
+
+The tool used to take a dollar ceiling, `--max-cost`. It was removed, and so was every dollar figure
+it used to report. Two reasons, and the first is the one that decided it:
+
+- **A dollar ceiling could not be honored.** A call's cost is unknown until its response comes back,
+  so the ceiling was checked before dispatch and debited after. Under the worker pool, up to
+  `defaults.concurrency` evals, four at the default, cleared a ceiling that had already tripped,
+  and then spent. A cap that is approximate in the direction of spending *more* is not a cap.
+- **The dollars were not trustworthy anyway.** They came from a bundled price table that goes stale
+  on every provider price change. `claude-cli` and self-hosted OpenAI-compatible endpoints report
+  no usage at all. Those runs were priced at a confident `$0.0000`, which reads as "free" rather
+  than "unmeasured".
+
+Nothing reports a dollar amount now, and there is no price table to configure. Turns and tokens are
+what the tool can count honestly. Convert them to money with your provider's own billing, which is
+authoritative in a way a bundled table never was.
+
+Set a budget even when you are confident. The run you regret is the one you did not bound. That is a config
+mistake that widens `files.include`, or a prompt change that invalidates every cached verdict at
+once.
+
+## Content-addressed caching
+
+An unchanged page with an unchanged assertion never re-judges. The cache key is composed from,
+among other things:
+
+- `PROMPT_VERSION`, the judge prompt revision
+- a hash of the **page body**
+- a hash of the eval fingerprint (assertion, evidence, examples, type)
+- the provider and model
+
+So the cache invalidates exactly when a verdict could legitimately differ, and not otherwise. Edit
+prose and that page re-judges; edit an assertion and every page using it re-judges; pin a new model
+and everything re-judges.
+
+`fill` caches raw proposals **before** the confidence gate, keyed with `FILL_PROMPT_VERSION`. That
+is why re-running at a different `--confidence` spends no turns.
+
+| Path | Default | Commit? |
+|---|---|---|
+| `judge.cache-dir` | `.manni/docevals/cache` | No |
+| `fill.cache-dir` | `.manni/docevals/cache/fill` | No |
+
+## Cache persistence is a correctness concern
+
+Everything above assumes repeat runs are nearly free. A CI job that starts cold every time re-judges
+the entire corpus on every push. The resulting bill is what makes someone delete the step.
+
+```yaml
+      - uses: actions/cache@v4
+        with:
+          path: .manni/docevals/cache
+          key: manni-docevals-${{ hashFiles('manni.config.yaml') }}-${{ github.sha }}
+          restore-keys: manni-docevals-${{ hashFiles('manni.config.yaml') }}-
+```
+
+The config hash belongs in the key. Changing an assertion should invalidate verdicts, and this makes
+that visible rather than relying on the content hash alone. `restore-keys` lets a new commit start
+from the previous run's cache instead of nothing.
+
+## Read the usage block
+
+```json
+"usage": { "totalTokens": 18442, "cachedEvals": 214, "judgedEvals": 217 }
+```
+
+`judgedEvals` counts every ai-graded eval that produced a verdict; `cachedEvals` counts the subset
+that came entirely from cache. `--format human` prints the same three numbers on one line, and only
+when something was judged:
+
+```console
+Judged 217 evals (214 cached), 18,442 tokens
+```
+
+The **gap** between the two is the number to watch, because it is the work that actually reached a
+provider. On a healthy repo a docs pull request re-judges only the pages it touched, so the gap is
+small. If it is large on a small diff, something is invalidating the cache. The usual causes are a changed
+assertion, a model bump, or a cache that is not persisting.
+
+## Do less work, not just cap it
+
+**Push evals down the hierarchy.** The ratio of deterministic to judged evals decides whether the
+gate is affordable at ten times the corpus size. See
+[Promote to deterministic](/manni/docevals/adopt/promote-to-deterministic/).
+
+**Scope the trigger.** Only run on pull requests that touch docs:
+
+```yaml
+on:
+  pull_request:
+    paths: ["docs/**", "manni.config.yaml"]
+```
+
+**Run deterministic on every push, judged on pull requests.** `--deterministic-only` makes no
+inference calls at all and catches most regressions.
+
+**Lower `judge.ensemble-runs` deliberately, or not at all.** Three runs is the calibrated default.
+Dropping to one cuts each eval from three turns to one, and removes the consensus signal that makes
+the human-review zone meaningful. Measure with [calibrate](/manni/docevals/judge/calibrate/) before
+you decide that trade is worth it.
+
+## `--no-cache`
+
+Bypasses the cache for a run. Useful when you have changed a prompt or are debugging a verdict, and
+expensive by definition, because every eval becomes turns again. Not something to leave in a CI recipe.

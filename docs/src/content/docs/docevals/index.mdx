@@ -1,0 +1,95 @@
+---
+title: manni docevals
+description: Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter.
+template: splash
+hero:
+  tagline: Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter.
+  actions:
+    - text: Get started
+      link: /manni/docevals/get-started/
+      icon: right-arrow
+      variant: primary
+    - text: Fix a failing eval
+      link: /manni/docevals/fix/
+      icon: error
+      variant: minimal
+---
+
+Every quality check on a documentation page is an **eval**: a named, testable assertion with a
+**grader** that decides pass or fail. Graders run in preference order. Code first, an AI judge
+second, a human last.
+
+## The 60-second version
+
+Declare an assertion in a page's frontmatter:
+
+```yaml
+---
+title: Installation
+last-reviewed: 2026-06-01
+evals:
+  - use: no-future-promises
+  - id: install-command-present
+    assertion: The page contains a bash code block with `npm i -g doc-detective`.
+    grader: command
+---
+```
+
+Run it:
+
+```console
+$ npx @hawkeyexl/manni docevals run docs/ --deterministic-only
+docs/actions/goTo.mdx
+  FAIL fresh-enough
+       error:4 [freshness/stale] Page last reviewed 937 days ago (max 365)
+  pass readable
+  pass frontmatter-valid
+
+Suites
+  reference: 2/3 passed — 67% vs target 100% below target (1 skipped)
+```
+
+Exit `1`. That's a docs regression, caught the way a test would catch a code one. This run
+needed no API key.
+
+## What are you trying to do?
+
+| Goal | Start here |
+|---|---|
+| Stand up a first eval gate on my repo | [Get started](/manni/docevals/get-started/) |
+| Understand the model before I commit to it | [How manni docevals works](/manni/docevals/get-started/how-docevals-works/) |
+| Write evals my team can maintain | [Write evals](/manni/docevals/evals/) |
+| Cover a corpus I can't annotate by hand | [Adopt at scale](/manni/docevals/adopt/) |
+| Run the gate in CI safely and cheaply | [Run it in CI](/manni/docevals/ci/) |
+| Convince myself the judge is trustworthy | [Trust the judge](/manni/docevals/judge/) |
+| Unblock a pull request that just went red | [Fix a failing eval](/manni/docevals/fix/) |
+| Look up a flag, key, or grader | [Reference](/manni/docevals/reference/) |
+
+## What makes it different
+
+**It orchestrates; it doesn't reimplement.** remark, markdownlint, Vale, manni meta,
+doc-structure-lint, and Doc Detective keep doing their jobs. Their findings arrive as named evals
+with severities, in one report with one exit code. Three native checks fill gaps nothing else
+covers: freshness, reading level, and cross-page differentiation.
+
+**The judge is the last resort, not the pitch.** If a criterion can be expressed as code, it should be.
+`manni docevals promote` finds ai evals that could be deterministic, and `manni docevals generate` writes the
+scripts as reviewable files beside your docs, never inline in frontmatter.
+
+**The judge has safeguards, and you can audit them.** Temperature 0, pinned models, a 3-run ensemble,
+and confidence zones that route the uncertain cases to a person instead of guessing. `manni docevals
+calibrate` scores the judge against your own human-verified set, so "is this trustworthy?" has a
+number rather than an opinion.
+
+**Adoption is incremental.** `manni docevals fill` proposes evals for a whole corpus with a confidence
+gate. Severity levels and capability suites let you land an honest standard on a legacy corpus
+without a day-one wall of red.
+
+## Requirements
+
+Node.js 24+. No hosted service, no account. It runs in your existing pipeline.
+
+```bash
+npm i -D @hawkeyexl/manni
+npx @hawkeyexl/manni docevals init
+```

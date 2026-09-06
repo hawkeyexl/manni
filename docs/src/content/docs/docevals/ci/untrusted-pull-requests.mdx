@@ -1,0 +1,114 @@
+---
+title: Untrusted pull requests
+description: What a content file can cause to execute, why one flag is not enough, and how to gate the job.
+---
+
+manni docevals runs code that content files ask it to run. On a pull request from a fork, the person
+supplying those content files is a stranger.
+
+Read this before enabling the gate on a public repository.
+
+## Two paths from a content file to code on your runner
+
+They are gated differently, and conflating them is the trap.
+
+### 1. Commands declared in frontmatter
+
+```yaml
+evals:
+  - id: check
+    grader: command
+    command: [node, scripts/whatever.mjs, "{file}"]
+```
+
+Gated by `execution.allow: [frontmatter-commands]` (config) or `--allow-execution
+frontmatter-commands` (CLI). Denied unless you grant it. This is the one everybody finds.
+
+### 2. Steps embedded in page bodies
+
+```mdx
+{/* STEP {"runShell":{"command":"...","exitCodes":[0]}} */}
+```
+
+Executed by the `tool:doc-detective` grader, and gated **separately** by
+`execution.allow: [page-embedded-steps]`. Granting frontmatter commands does not grant this:
+trusting a repo's frontmatter is not the same as trusting arbitrary steps written in its prose.
+
+:::danger
+**No combination of grants makes a run over untrusted contributions safe.**
+
+A grant says *this corpus* is trusted to execute. A fork's pages are not this corpus. A fork
+rewrites the pages, and if the job runs with a grant, it runs the fork's code. Denying both grants
+does protect the runner. But a reader who grants either and concludes they are safe against a
+hostile fork is wrong, and confidently so.
+
+The control is the job trigger, not the flag. Restrict execution to same-repo pull requests.
+:::
+
+## The complete answer is to gate the job
+
+Flags are not sufficient. Restrict the job that can execute content-driven code to **same-repo**
+pull requests:
+
+```yaml
+jobs:
+  verify-docs:
+    runs-on: ubuntu-latest
+    # SECURITY GATE. Do not remove.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v5
+      # ... full run, with secrets available
+```
+
+Then give forks a separate job that executes nothing and needs no secret:
+
+```yaml
+  verify-docs-fork:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: npx @hawkeyexl/manni docevals run --deterministic-only --no-execution --format github
+```
+
+Fork contributors still get freshness, lint, structure, and frontmatter validation, which is most of
+the value, with nothing executed and no credential in reach.
+
+## Why `pull_request_target` is the wrong fix
+
+It runs with repository secrets **and** can be made to check out the fork's code. That combination is
+how tokens leak. If you are reaching for it to give forks a full run, stop: the deterministic job
+above is the safe version of what you want.
+
+## Secrets are unavailable on forks by design
+
+GitHub does not expose secrets to fork pull requests. That is a feature. It also means the fork path
+*must* work without a provider, which `--deterministic-only` does.
+
+If your gate is unusable without a key, fork contributors get no signal at all, and you will be
+tempted toward the unsafe workaround above.
+
+## A checklist before going public
+
+- [ ] The job that can execute content code is gated to same-repo pull requests.
+- [ ] Forks run a separate `--deterministic-only` job with no secrets.
+- [ ] `execution.allow` grants only what the corpus needs, and nothing on a fork-facing job.
+      That is defence in depth, not the defence.
+- [ ] Third-party actions pinned to a full commit SHA, not a tag.
+- [ ] `permissions:` set to least privilege (`contents: read` for a check job).
+- [ ] A spend ceiling set, so a malicious or accidental loop cannot run up a bill.
+
+## Reviewing changes to the gate itself
+
+A pull request that edits the workflow is asking for a change to what runs with your credentials.
+Review those with the same care as a change to authentication code. Remember too that a contributor
+who can add a `tool:doc-detective` eval to the config has changed the security posture of the whole
+job. That holds even if the workflow file is untouched.
