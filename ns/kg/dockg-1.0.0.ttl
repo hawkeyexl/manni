@@ -1,0 +1,236 @@
+@prefix dockg:   <https://hawkeyexl.github.io/dockg/ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema:  <https://schema.org/> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+<https://hawkeyexl.github.io/dockg/ns>
+    a owl:Ontology ;
+    dcterms:title "The dockg vocabulary" ;
+    dcterms:description """Terms dockg mints for facts no published vocabulary
+covers. Deliberately small: dcterms, SKOS, PROV-O, schema.org, foaf and iiRDS
+carry everything they can, and a term appears here only when none of them has
+one.
+
+This document says what each term MEANS. It does not say what a valid dockg
+graph looks like — that is the SHACL contract in shapes/, and the split is
+deliberate. RDFS here, SHACL there.
+
+Domain and range are stated with schema:domainIncludes and schema:rangeIncludes
+rather than rdfs:domain and rdfs:range. Those are documentation; rdfs:domain is
+an entailment rule, and a reasoner acting on it would type nodes dockg never
+claimed to type — which is the inference dockg's negative-scope decision exists
+to refuse.""" ;
+    dcterms:license <https://spdx.org/licenses/MIT.html> ;
+    dcterms:creator "hawkeyexl" ;
+    owl:versionInfo "1.0.0" ;
+    owl:versionIRI <https://hawkeyexl.github.io/dockg/ns/1.0.0> ;
+    vann:preferredNamespacePrefix "dockg" ;
+    vann:preferredNamespaceUri "https://hawkeyexl.github.io/dockg/ns#" ;
+    rdfs:seeAlso <https://hawkeyexl.github.io/dockg/reference/vocabulary/> .
+
+#
+# Classes
+#
+
+dockg:Document
+    a rdfs:Class ;
+    rdfs:label "Document" ;
+    rdfs:comment """One source file in the corpus. Also a prov:Entity, so
+provenance attaches without a second identity.
+
+A Document is an index entry, not the content: its prose is never in the graph.
+A consumer joins back to the file through dockg:path.""" ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/dockg/ns> .
+
+dockg:Section
+    a rdfs:Class ;
+    rdfs:label "Section" ;
+    rdfs:comment """A heading within a Document, identified by the GitHub-style
+slug that link anchors use. Sections nest through dcterms:hasPart and carry
+their own metadata explicitly — a Section inherits nothing from its
+Document.""" ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/dockg/ns> .
+
+#
+# Structure
+#
+
+dockg:path
+    a rdf:Property ;
+    rdfs:label "path" ;
+    rdfs:comment """Repo-relative path of the source file, forward slashes on
+every platform. This is the join key: the graph is an index, the files are the
+content, and this is what connects them.""" ;
+    schema:domainIncludes dockg:Document ;
+    schema:rangeIncludes xsd:string ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/dockg/ns> .
+
+dockg:order
+    a rdf:Property ;
+    rdfs:label "order" ;
+    rdfs:comment """Zero-based position of a Section among its siblings, in
+document order. Needed because RDF has no inherent ordering and a heading's
+position is a fact about the document.""" ;
+    schema:domainIncludes dockg:Section ;
+    schema:rangeIncludes xsd:integer ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/dockg/ns> .
+
+dockg:level
+    a rdf:Property ;
+    rdfs:label "heading level" ;
+    rdfs:comment "Markdown heading depth: 1 for an H1, 6 for an H6." ;
+    schema:domainIncludes dockg:Section ;
+    schema:rangeIncludes xsd:integer ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/dockg/ns> .
+
+dockg:codeLanguage
+    a rdf:Property ;
+    rdfs:label "code language" ;
+    rdfs:comment """A language tag on a fenced code block in this Document,
+verbatim as the author wrote it. One triple per distinct language, so a document
+using three is findable by any of them.""" ;
+    schema:domainIncludes dockg:Document ;
+    schema:rangeIncludes xsd:string ;
+    skos:example "bash" ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/dockg/ns> .
+
+#
+# Findings
+#
+# These record what dockg could not resolve. A finding is a statement about
+# this corpus at build time, never a claim about the world: dockg:brokenLink
+# does not assert that the target does not exist, only that nothing in the
+# corpus provided it.
+#
+
+dockg:brokenLink
+    a rdf:Property ;
+    rdfs:label "broken link" ;
+    rdfs:comment """A link target in this Document that resolved to no file in
+the corpus, as written. Reported by `dockg stats` and gated by
+`dockg stats --check`.
+
+Not a claim that the target does not exist — an external URL, a file outside the
+configured inputs, or a route dockg was not taught all produce this.""" ;
+    schema:domainIncludes dockg:Document ;
+    schema:rangeIncludes xsd:string ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/dockg/ns> .
+
+dockg:brokenSectionRef
+    a rdf:Property ;
+    rdfs:label "broken section reference" ;
+    rdfs:comment """A key in this Document's section-metadata block that matched
+no heading. The metadata was dropped rather than attached to nothing, and this
+records where it went — a heading rename is the usual cause.""" ;
+    schema:domainIncludes dockg:Document ;
+    schema:rangeIncludes xsd:string ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/dockg/ns> .
+
+#
+# Negative scope
+#
+# No published vocabulary has these. iiRDS is affirmative-only, and
+# schema.org's negativeNotes is review prose. They are plain triples rather
+# than owl:NegativePropertyAssertion because that idiom mandates a blank node,
+# which dockg never emits, and gives SHACL nothing to validate.
+#
+
+dockg:notApplicableToVariant
+    a rdf:Property ;
+    rdfs:label "not applicable to variant" ;
+    rdfs:comment """States that this node does NOT apply to a product variant.
+An explicit exclusion, and the only kind dockg recognizes: absence of
+iirds:relates-to-product-variant means unknown, never "does not apply".
+
+A retrieval interlock queries this predicate. It must not infer exclusion from a
+missing affirmative edge.""" ;
+    schema:domainIncludes dockg:Document, dockg:Section ;
+    schema:rangeIncludes <http://iirds.tekom.de/iirds#ProductVariant> ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/dockg/ns> .
+
+dockg:notSoftwareSubject
+    a rdf:Property ;
+    rdfs:label "not software subject" ;
+    rdfs:comment """States that this node is NOT about a software subject from
+the iiRDS Software domain. The same open-world reading as
+dockg:notApplicableToVariant: an absent affirmative edge means unknown.""" ;
+    schema:domainIncludes dockg:Document, dockg:Section ;
+    schema:rangeIncludes rdfs:Resource ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/dockg/ns> .
+
+#
+# Provenance
+#
+
+dockg:version
+    a rdf:Property ;
+    rdfs:label "version" ;
+    rdfs:comment """Version string of a software agent — the dockg release that
+built the graph, or a model that proposed metadata. Distinct from
+owl:versionInfo, which versions this vocabulary rather than an agent.""" ;
+    schema:domainIncludes prov:SoftwareAgent ;
+    schema:rangeIncludes xsd:string ;
+    skos:example "0.1.0" ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/dockg/ns> .
+
+dockg:filledFieldEntry
+    a rdf:Property ;
+    rdfs:label "filled field entry" ;
+    rdfs:comment """Links a fill activity to one reified record of a single
+field it wrote. Reified because each field carries its own confidence, and a
+plain literal list could not hold that pairing without blank nodes.""" ;
+    schema:domainIncludes prov:Activity ;
+    schema:rangeIncludes rdfs:Resource ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/dockg/ns> .
+
+dockg:filledField
+    a rdf:Property ;
+    rdfs:label "filled field" ;
+    rdfs:comment """The frontmatter field name a fill entry records, as written
+in the `kg` block.""" ;
+    schema:rangeIncludes xsd:string ;
+    skos:example "label" ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/dockg/ns> .
+
+dockg:confidence
+    a rdf:Property ;
+    rdfs:label "confidence" ;
+    rdfs:comment """The model's self-reported confidence in one filled field,
+0..1, rounded to two decimals so the literal is stable across runs.
+
+A model's estimate of its own reliability, not a measurement. It is what the
+confidence gate compares against, and what a human reviewing machine-written
+metadata should sort by.""" ;
+    schema:rangeIncludes xsd:decimal ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/dockg/ns> .
+
+#
+# Roles
+#
+# Individuals, not properties: objects of prov:hadRole on a qualified
+# attribution or association, naming what an agent did.
+#
+
+dockg:authorRole
+    a prov:Role ;
+    rdfs:label "author role" ;
+    rdfs:comment "The agent wrote the document." ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/dockg/ns> .
+
+dockg:generatorRole
+    a prov:Role ;
+    rdfs:label "generator role" ;
+    rdfs:comment "The agent generated content or metadata in the document." ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/dockg/ns> .
+
+dockg:toolRole
+    a prov:Role ;
+    rdfs:label "tool role" ;
+    rdfs:comment "The agent is the tool that performed the build — dockg itself." ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/dockg/ns> .

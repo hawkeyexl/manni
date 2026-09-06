@@ -1,0 +1,633 @@
+{
+  "@context": {
+    "dcterms": "http://purl.org/dc/terms/",
+    "dockg": "https://hawkeyexl.github.io/dockg/ns#",
+    "foaf": "http://xmlns.com/foaf/0.1/",
+    "iirds": "http://iirds.tekom.de/iirds#",
+    "iirdsSft": "http://iirds.tekom.de/iirds/domain/software#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "schema": "https://schema.org/",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "@graph": [
+    {
+      "@id": "https://example.com/kg/activity/build",
+      "@type": "prov:Activity",
+      "prov:qualifiedAssociation": {
+        "@id": "https://example.com/kg/activity/build.assoc.dockg"
+      },
+      "prov:used": [
+        {
+          "@id": "https://example.com/kg/doc/docs/configuration.md"
+        },
+        {
+          "@id": "https://example.com/kg/doc/docs/de/getting-started.md"
+        },
+        {
+          "@id": "https://example.com/kg/doc/docs/de/regional.md"
+        },
+        {
+          "@id": "https://example.com/kg/doc/docs/fr/getting-started.md"
+        },
+        {
+          "@id": "https://example.com/kg/doc/docs/getting-started.md"
+        },
+        {
+          "@id": "https://example.com/kg/doc/docs/harvest.md"
+        },
+        {
+          "@id": "https://example.com/kg/doc/docs/no-frontmatter.md"
+        },
+        {
+          "@id": "https://example.com/kg/doc/docs/windows-notes.md"
+        }
+      ],
+      "prov:wasAssociatedWith": {
+        "@id": "https://example.com/kg/agent/software/dockg"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/activity/build.assoc.dockg",
+      "@type": "prov:Association",
+      "prov:agent": {
+        "@id": "https://example.com/kg/agent/software/dockg"
+      },
+      "prov:hadRole": {
+        "@id": "https://hawkeyexl.github.io/dockg/ns#toolRole"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/agent/person/jane-doe",
+      "@type": "prov:Person",
+      "foaf:name": "Jane Doe"
+    },
+    {
+      "@id": "https://example.com/kg/agent/software/claude-sonnet-4-5",
+      "@type": "prov:SoftwareAgent",
+      "foaf:name": "claude-sonnet-4-5"
+    },
+    {
+      "@id": "https://example.com/kg/agent/software/dockg",
+      "@type": "prov:SoftwareAgent",
+      "foaf:name": "dockg",
+      "dockg:version": "0.1.0"
+    },
+    {
+      "@id": "https://example.com/kg/concept/administration",
+      "@type": "skos:Concept",
+      "skos:inScheme": {
+        "@id": "https://example.com/kg/scheme"
+      },
+      "skos:prefLabel": "Administration"
+    },
+    {
+      "@id": "https://example.com/kg/concept/configuration",
+      "@type": "skos:Concept",
+      "skos:altLabel": [
+        "config",
+        "settings"
+      ],
+      "skos:broader": {
+        "@id": "https://example.com/kg/concept/administration"
+      },
+      "skos:inScheme": {
+        "@id": "https://example.com/kg/scheme"
+      },
+      "skos:prefLabel": [
+        "Configuration",
+        "configuration"
+      ],
+      "skos:related": {
+        "@id": "https://example.com/kg/concept/installation"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/concept/installation",
+      "@type": "skos:Concept",
+      "skos:inScheme": {
+        "@id": "https://example.com/kg/scheme"
+      },
+      "skos:prefLabel": [
+        "Installation",
+        "installation"
+      ]
+    },
+    {
+      "@id": "https://example.com/kg/concept/reference",
+      "@type": "skos:Concept",
+      "skos:inScheme": {
+        "@id": "https://example.com/kg/scheme"
+      },
+      "skos:prefLabel": "reference"
+    },
+    {
+      "@id": "https://example.com/kg/concept/setup",
+      "@type": "skos:Concept",
+      "skos:inScheme": {
+        "@id": "https://example.com/kg/scheme"
+      },
+      "skos:prefLabel": "setup"
+    },
+    {
+      "@id": "https://example.com/kg/concept/upgrade",
+      "@type": "skos:Concept",
+      "skos:inScheme": {
+        "@id": "https://example.com/kg/scheme"
+      },
+      "skos:prefLabel": "upgrade"
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/configuration.md",
+      "@type": [
+        "dockg:Document",
+        "prov:Entity"
+      ],
+      "iirds:has-subject": {
+        "@id": "http://iirds.tekom.de/iirds/domain/software#Interface"
+      },
+      "iirds:has-topic-type": {
+        "@id": "http://iirds.tekom.de/iirds#GenericReference"
+      },
+      "iirds:relates-to-product-variant": [
+        {
+          "@id": "https://example.com/kg/product/sp-x100"
+        },
+        {
+          "@id": "https://example.com/kg/product/sp-x200"
+        }
+      ],
+      "dcterms:hasPart": {
+        "@id": "https://example.com/kg/doc/docs/configuration.md#configuration"
+      },
+      "dcterms:references": [
+        {
+          "@id": "https://example.com/kg/doc/docs/getting-started.md"
+        },
+        {
+          "@id": "https://example.com/kg/doc/docs/getting-started.md#install"
+        },
+        {
+          "@id": "https://json-schema.org/"
+        }
+      ],
+      "dcterms:subject": [
+        {
+          "@id": "https://example.com/kg/concept/configuration"
+        },
+        {
+          "@id": "https://example.com/kg/concept/reference"
+        }
+      ],
+      "dcterms:title": "Configuration Reference",
+      "foaf:primaryTopic": {
+        "@id": "https://example.com/kg/concept/configuration"
+      },
+      "dockg:contentHash": "e88c7b22551fb5d196119d7aac223763ad552a519a3d79343174612bdf3c2c4f",
+      "dockg:notApplicableToVariant": {
+        "@id": "https://example.com/kg/product/sp-x300"
+      },
+      "dockg:path": "docs/configuration.md"
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/configuration.md#advanced",
+      "@type": "dockg:Section",
+      "dcterms:title": "Advanced",
+      "dockg:level": {
+        "@value": "3",
+        "@type": "xsd:integer"
+      },
+      "dockg:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/configuration.md#configuration",
+      "@type": "dockg:Section",
+      "dcterms:hasPart": {
+        "@id": "https://example.com/kg/doc/docs/configuration.md#options"
+      },
+      "dcterms:title": "Configuration",
+      "dockg:level": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      },
+      "dockg:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/configuration.md#options",
+      "@type": "dockg:Section",
+      "dcterms:hasPart": {
+        "@id": "https://example.com/kg/doc/docs/configuration.md#advanced"
+      },
+      "dcterms:title": "Options",
+      "dockg:level": {
+        "@value": "2",
+        "@type": "xsd:integer"
+      },
+      "dockg:notSoftwareSubject": {
+        "@id": "http://iirds.tekom.de/iirds/domain/software#Architecture"
+      },
+      "dockg:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/de/getting-started.md",
+      "@type": [
+        "dockg:Document",
+        "prov:Entity"
+      ],
+      "dcterms:description": "Installieren und den ersten Graphen bauen.",
+      "dcterms:hasPart": {
+        "@id": "https://example.com/kg/doc/docs/de/getting-started.md#erste-schritte"
+      },
+      "dcterms:language": "de",
+      "dcterms:title": "Erste Schritte",
+      "dockg:contentHash": "ca7491427d71996b92cbbb13bff2e3af9bb5129547f2d20682fa160910138882",
+      "dockg:path": "docs/de/getting-started.md",
+      "schema:translationOfWork": {
+        "@id": "https://example.com/kg/doc/docs/getting-started.md"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/de/getting-started.md#erste-schritte",
+      "@type": "dockg:Section",
+      "dcterms:hasPart": {
+        "@id": "https://example.com/kg/doc/docs/de/getting-started.md#install"
+      },
+      "dcterms:title": "Erste Schritte",
+      "dockg:level": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      },
+      "dockg:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/de/getting-started.md#install",
+      "@type": "dockg:Section",
+      "dcterms:title": "Install",
+      "dockg:level": {
+        "@value": "2",
+        "@type": "xsd:integer"
+      },
+      "dockg:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/de/regional.md",
+      "@type": [
+        "dockg:Document",
+        "prov:Entity"
+      ],
+      "dcterms:hasPart": {
+        "@id": "https://example.com/kg/doc/docs/de/regional.md#regionale-hinweise"
+      },
+      "dcterms:language": "de-AT",
+      "dcterms:title": "Regionale Hinweise",
+      "dockg:brokenLink": "../missing.md",
+      "dockg:contentHash": "7d6d58187c3af0e2de0f61ea68d30ce5d282ee89240b9f3135747055bed50626",
+      "dockg:path": "docs/de/regional.md"
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/de/regional.md#regionale-hinweise",
+      "@type": "dockg:Section",
+      "dcterms:title": "Regionale Hinweise",
+      "dockg:level": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      },
+      "dockg:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/fr/getting-started.md",
+      "@type": [
+        "dockg:Document",
+        "prov:Entity"
+      ],
+      "dcterms:description": "Installer et construire le premier graphe.",
+      "dcterms:hasPart": {
+        "@id": "https://example.com/kg/doc/docs/fr/getting-started.md#premiers-pas"
+      },
+      "dcterms:language": "fr",
+      "dcterms:title": "Premiers pas",
+      "dockg:contentHash": "d32594ff753ed0821c0bb855d0c7007aa52d1b5f4dce1393566bd46ae8255743",
+      "dockg:path": "docs/fr/getting-started.md",
+      "schema:translationOfWork": {
+        "@id": "https://example.com/kg/doc/docs/getting-started.md"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/fr/getting-started.md#premiers-pas",
+      "@type": "dockg:Section",
+      "dcterms:title": "Premiers pas",
+      "dockg:level": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      },
+      "dockg:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/getting-started.md",
+      "@type": [
+        "dockg:Document",
+        "prov:Entity"
+      ],
+      "iirds:has-topic-type": {
+        "@id": "http://iirds.tekom.de/iirds#GenericTask"
+      },
+      "iirds:relates-to-product-lifecycle-phase": {
+        "@id": "http://iirds.tekom.de/iirds/domain/software#Deployment"
+      },
+      "dcterms:created": {
+        "@value": "2026-05-01",
+        "@type": "xsd:date"
+      },
+      "dcterms:creator": {
+        "@id": "https://example.com/kg/agent/person/jane-doe"
+      },
+      "dcterms:description": "Install and configure the tool.",
+      "dcterms:hasPart": {
+        "@id": "https://example.com/kg/doc/docs/getting-started.md#getting-started"
+      },
+      "dcterms:modified": {
+        "@value": "2026-07-01",
+        "@type": "xsd:date"
+      },
+      "dcterms:references": {
+        "@id": "https://example.com/kg/doc/docs/configuration.md"
+      },
+      "dcterms:subject": [
+        {
+          "@id": "https://example.com/kg/concept/installation"
+        },
+        {
+          "@id": "https://example.com/kg/concept/setup"
+        }
+      ],
+      "dcterms:title": "Getting Started",
+      "prov:generatedAtTime": {
+        "@value": "2026-05-01",
+        "@type": "xsd:date"
+      },
+      "prov:qualifiedAttribution": {
+        "@id": "https://example.com/kg/doc/docs/getting-started.md#prov.attribution.jane-doe"
+      },
+      "prov:wasAttributedTo": {
+        "@id": "https://example.com/kg/agent/person/jane-doe"
+      },
+      "dockg:brokenSectionRef": "missing-heading",
+      "dockg:codeLanguage": [
+        "bash",
+        "python"
+      ],
+      "dockg:contentHash": "ca0f8b746a617445b14578be774b5068419ac577cf2a4583b42fcc8c162ba67d",
+      "dockg:path": "docs/getting-started.md",
+      "schema:image": {
+        "@id": "https://example.com/kg/file/docs/img/arch.png"
+      },
+      "schema:workTranslation": [
+        {
+          "@id": "https://example.com/kg/doc/docs/de/getting-started.md"
+        },
+        {
+          "@id": "https://example.com/kg/doc/docs/fr/getting-started.md"
+        }
+      ]
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/getting-started.md#getting-started",
+      "@type": "dockg:Section",
+      "dcterms:hasPart": [
+        {
+          "@id": "https://example.com/kg/doc/docs/getting-started.md#install"
+        },
+        {
+          "@id": "https://example.com/kg/doc/docs/getting-started.md#install-1"
+        }
+      ],
+      "dcterms:title": "Getting Started",
+      "dockg:level": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      },
+      "dockg:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/getting-started.md#install",
+      "@type": "dockg:Section",
+      "iirds:has-topic-type": {
+        "@id": "http://iirds.tekom.de/iirds#GenericReference"
+      },
+      "iirds:relates-to-product-variant": {
+        "@id": "https://example.com/kg/product/sp-x200"
+      },
+      "dcterms:subject": {
+        "@id": "https://example.com/kg/concept/installation"
+      },
+      "dcterms:title": "Install",
+      "dockg:level": {
+        "@value": "2",
+        "@type": "xsd:integer"
+      },
+      "dockg:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/getting-started.md#install-1",
+      "@type": "dockg:Section",
+      "dcterms:title": "Install",
+      "dockg:level": {
+        "@value": "2",
+        "@type": "xsd:integer"
+      },
+      "dockg:order": {
+        "@value": "2",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/getting-started.md#prov.attribution.jane-doe",
+      "@type": "prov:Attribution",
+      "prov:agent": {
+        "@id": "https://example.com/kg/agent/person/jane-doe"
+      },
+      "prov:hadRole": {
+        "@id": "https://hawkeyexl.github.io/dockg/ns#authorRole"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/harvest.md",
+      "@type": [
+        "dockg:Document",
+        "prov:Entity"
+      ],
+      "iirds:has-topic-type": {
+        "@id": "http://iirds.tekom.de/iirds#GenericTask"
+      },
+      "iirds:relates-to-product-variant": {
+        "@id": "https://example.com/kg/product/sp-x100"
+      },
+      "dcterms:description": "Move an existing install to the current release.",
+      "dcterms:hasPart": {
+        "@id": "https://example.com/kg/doc/docs/harvest.md#upgrading"
+      },
+      "dcterms:references": {
+        "@id": "https://example.com/kg/doc/docs/getting-started.md"
+      },
+      "dcterms:subject": {
+        "@id": "https://example.com/kg/concept/upgrade"
+      },
+      "dcterms:title": "Upgrading",
+      "prov:wasGeneratedBy": {
+        "@id": "https://example.com/kg/doc/docs/harvest.md#prov.generation"
+      },
+      "prov:wasRevisionOf": {
+        "@id": "https://example.com/kg/doc/docs/getting-started.md"
+      },
+      "dockg:contentHash": "215c57cf8745e46a41b3c27fdbe76c92f665c67cdb972d6e394d3680fc00163d",
+      "dockg:path": "docs/harvest.md"
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/harvest.md#prov.generation",
+      "@type": "prov:Activity",
+      "prov:qualifiedAssociation": {
+        "@id": "https://example.com/kg/doc/docs/harvest.md#prov.generation.assoc.claude-sonnet-4-5"
+      },
+      "prov:wasAssociatedWith": {
+        "@id": "https://example.com/kg/agent/software/claude-sonnet-4-5"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/harvest.md#prov.generation.assoc.claude-sonnet-4-5",
+      "@type": "prov:Association",
+      "prov:agent": {
+        "@id": "https://example.com/kg/agent/software/claude-sonnet-4-5"
+      },
+      "prov:hadRole": {
+        "@id": "https://hawkeyexl.github.io/dockg/ns#generatorRole"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/harvest.md#upgrading",
+      "@type": "dockg:Section",
+      "dcterms:title": "Upgrading",
+      "dockg:level": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      },
+      "dockg:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/no-frontmatter.md",
+      "@type": [
+        "dockg:Document",
+        "prov:Entity"
+      ],
+      "dcterms:hasPart": {
+        "@id": "https://example.com/kg/doc/docs/no-frontmatter.md#loose-notes"
+      },
+      "dcterms:references": {
+        "@id": "https://example.org/page"
+      },
+      "dcterms:title": "Loose Notes",
+      "dockg:brokenLink": "missing.md",
+      "dockg:contentHash": "a1bed4d62ffe65581cb2d3465d701ee91a99640389f7564cca967f77f50a4d54",
+      "dockg:path": "docs/no-frontmatter.md"
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/no-frontmatter.md#loose-notes",
+      "@type": "dockg:Section",
+      "dcterms:title": "Loose Notes",
+      "dockg:level": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      },
+      "dockg:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/windows-notes.md",
+      "@type": [
+        "dockg:Document",
+        "prov:Entity"
+      ],
+      "dcterms:hasPart": {
+        "@id": "https://example.com/kg/doc/docs/windows-notes.md#windows-notes"
+      },
+      "dcterms:references": {
+        "@id": "https://example.com/kg/doc/docs/configuration.md"
+      },
+      "dcterms:title": "Windows Notes",
+      "dockg:contentHash": "fd055b64091ce95eaaa5db80b19880422694c677dc23dd8084336237c5647272",
+      "dockg:path": "docs/windows-notes.md"
+    },
+    {
+      "@id": "https://example.com/kg/doc/docs/windows-notes.md#windows-notes",
+      "@type": "dockg:Section",
+      "dcterms:title": "Windows Notes",
+      "dockg:level": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      },
+      "dockg:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/graph",
+      "@type": "prov:Entity",
+      "prov:wasGeneratedBy": {
+        "@id": "https://example.com/kg/activity/build"
+      }
+    },
+    {
+      "@id": "https://example.com/kg/product/sp-x100",
+      "@type": "iirds:ProductVariant",
+      "dcterms:title": "SP-X100"
+    },
+    {
+      "@id": "https://example.com/kg/product/sp-x200",
+      "@type": "iirds:ProductVariant",
+      "dcterms:title": "SP-X200"
+    },
+    {
+      "@id": "https://example.com/kg/product/sp-x300",
+      "@type": "iirds:ProductVariant",
+      "dcterms:title": "SP-X300"
+    },
+    {
+      "@id": "https://example.com/kg/scheme",
+      "@type": "skos:ConceptScheme",
+      "dcterms:title": "dockg concepts"
+    }
+  ]
+}

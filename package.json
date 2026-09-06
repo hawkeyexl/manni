@@ -15,10 +15,21 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./kg/runtime": {
+      "types": "./dist/kg/runtime.d.ts",
+      "import": "./dist/kg/runtime.js"
+    },
+    "./kg/embed": {
+      "types": "./dist/kg/embed.d.ts",
+      "import": "./dist/kg/embed.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "ns",
+    "schemas",
+    "shapes"
   ],
   "repository": {
     "type": "git",
@@ -36,8 +47,8 @@
   },
   "scripts": {
     "prebuild": "npm run check:deps",
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "node scripts/clean-dist.mjs && tsup",
+    "dev": "node scripts/clean-dist.mjs && tsup --watch",
     "pretest": "npm run check:deps",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -82,32 +93,59 @@
     "ajv-formats": "^3.0.1",
     "commander": "^15.0.0",
     "fast-glob": "^3.3.2",
+    "github-slugger": "^2.0.0",
+    "mdast-util-to-string": "^4.0.0",
+    "minisearch": "^7.2.0",
+    "n3": "^1.26.0",
     "parse5": "^8.0.1",
     "picocolors": "^1.1.1",
     "picomatch": "^4.0.7",
+    "rdf-validate-shacl": "^0.6.5",
+    "remark-frontmatter": "^5.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-mdx": "^3.1.1",
+    "remark-parse": "^11.0.0",
     "smol-toml": "^1.8.0",
+    "unified": "^11.0.5",
     "yaml": "^2.6.1"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.2",
+    "@comunica/query-sparql-rdfjs-lite": "^5.3.0",
     "@eslint/js": "^10.0.1",
+    "@rdfjs/types": "^2.0.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.1",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^12.0.8",
     "@semantic-release/npm": "^13.1.5",
     "@semantic-release/release-notes-generator": "^14.1.1",
+    "@types/jsonld": "^1.5.15",
+    "@types/mdast": "^4.0.4",
+    "@types/n3": "^1.26.3",
     "@types/node": "^26.3.0",
     "@types/picomatch": "^4.0.3",
+    "@types/yauzl": "^3.4.0",
     "@vitest/coverage-v8": "^4.1.11",
     "eslint": "^10.9.1",
     "globals": "^17.11.0",
     "husky": "^9.1.7",
+    "jsonld": "^9.0.0",
+    "rdfxml-streaming-parser": "^3.3.0",
     "semantic-release": "^25.0.9",
     "tsup": "^8.3.5",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.68.0",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "yauzl": "^3.4.0"
+  },
+  "peerDependencies": {
+    "@huggingface/transformers": ">=4"
+  },
+  "peerDependenciesMeta": {
+    "@huggingface/transformers": {
+      "optional": true
+    }
   }
 }

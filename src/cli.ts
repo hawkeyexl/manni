@@ -12,6 +12,7 @@
 import { Command } from "commander";
 import pkg from "../package.json" with { type: "json" };
 import { buildProgram as buildMeta } from "./meta/cli.js";
+import { buildProgram as buildKg } from "./kg/cli.js";
 import { runIfMain } from "./shared/run.js";
 
 export function buildProgram(): Command {
@@ -50,6 +51,13 @@ export function buildProgram(): Command {
     });
 
   program.addCommand(meta);
+  program.addCommand(
+    buildKg()
+      .name("kg")
+      .description(
+        "Deterministic knowledge graphs derived from documentation frontmatter and formatting",
+      ),
+  );
   return program;
 }
 

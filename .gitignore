@@ -12,8 +12,21 @@ coverage/
 
 # `docmeta fill` proposal cache — machine-local, safe to delete at any time.
 .docmeta/
-# The family cache directory: `.manni/meta/…` for the metadata tool. Same rule.
+# The family cache directory: `.manni/meta/…` for the metadata tool,
+# `.manni/kg/…` for the graph tool's proposal and vector caches. Same rule.
 .manni/
+
+# Scratch output. The kg packaged test (test/kg/integration/packaged.test.ts)
+# extracts the `npm pack` tarball here so Node resolves its dependencies from
+# this repo's node_modules.
+.tmp/
+
+# Derived, binary, and not CI-regenerable (model weights are a download).
+# `manni kg embed` writes one vector sidecar per language into the configured
+# `embed.out` directory, `kg/` by default. The goldens under
+# test/kg/fixtures/golden/ are mock-embedded and committed deliberately, and
+# are not under a `kg/` directory.
+**/kg/vectors.*.bin
 
 # Feature demo videos (see CLAUDE.md). Generated per feature, handed to the
 # user or attached to the PR — never committed, since binaries bloat history.

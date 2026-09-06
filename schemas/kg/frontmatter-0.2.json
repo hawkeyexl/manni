@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dockg.dev/schemas/frontmatter-0.2.json",
+  "title": "dockg knowledge-graph frontmatter (0.2)",
+  "description": "SKOS concept fields plus PROV-O provenance under the top-level `kg` key, consumed by dockg build and fill. Files without a `kg` key pass.",
+  "type": "object",
+  "properties": {
+    "kg": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "prefLabel": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Preferred label of the concept this document is primarily about."
+        },
+        "altLabels": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Alternative labels (synonyms, abbreviations) for the primary concept."
+        },
+        "broader": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Labels of broader (parent) concepts."
+        },
+        "narrower": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Labels of narrower (child) concepts."
+        },
+        "related": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Labels of associatively related concepts."
+        },
+        "subjects": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Subject labels for this document; behaves like tags."
+        },
+        "derivedFrom": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Repo-relative paths or URLs this document was derived from (prov:wasDerivedFrom)."
+        },
+        "generatedBy": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Model or tool that generated this document's content (prov:wasGeneratedBy)."
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["generatedBy"],
+          "properties": {
+            "generatedBy": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Model that proposed the machine-filled kg fields."
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "enum": ["prefLabel", "altLabels", "broader", "narrower", "related", "subjects"]
+              },
+              "uniqueItems": true,
+              "description": "Which kg fields were machine-proposed (written by dockg fill)."
+            }
+          },
+          "description": "Attribution for machine-proposed kg fields; humans delete entries they have reviewed."
+        }
+      },
+      "dependentRequired": {
+        "altLabels": ["prefLabel"],
+        "broader": ["prefLabel"],
+        "narrower": ["prefLabel"],
+        "related": ["prefLabel"]
+      }
+    }
+  }
+}
