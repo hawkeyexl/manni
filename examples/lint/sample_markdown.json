@@ -1,0 +1,2582 @@
+{
+  "frontmatter": [
+    {
+      "key": "title",
+      "value": "Sample"
+    },
+    {
+      "key": "description",
+      "value": "A sample file for testing purposes."
+    }
+  ],
+  "sections": [
+    {
+      "id": "47de07fa-1397-45bc-9e53-79d56b127273",
+      "position": {
+        "start": {
+          "line": 6,
+          "column": 1,
+          "offset": 77
+        },
+        "end": {
+          "line": 71,
+          "column": 40,
+          "offset": 1435
+        }
+      },
+      "content": [
+        {
+          "heading": {
+            "level": 1,
+            "position": {
+              "start": {
+                "line": 6,
+                "column": 1,
+                "offset": 77
+              },
+              "end": {
+                "line": 71,
+                "column": 40,
+                "offset": 1435
+              }
+            },
+            "content": "How to Use Our Amazing Product"
+          },
+          "position": {
+            "start": {
+              "line": 8,
+              "column": 1,
+              "offset": 113
+            },
+            "end": {
+              "line": 10,
+              "column": 28,
+              "offset": 230
+            }
+          },
+          "paragraphs": [
+            {
+              "content": "This guide will walk you through the process of using our amazing product effectively.",
+              "position": {
+                "start": {
+                  "line": 8,
+                  "column": 1,
+                  "offset": 113
+                },
+                "end": {
+                  "line": 10,
+                  "column": 28,
+                  "offset": 230
+                }
+              }
+            },
+            {
+              "content": "Follow along and be amazed!",
+              "position": {
+                "start": {
+                  "line": 10,
+                  "column": 1,
+                  "offset": 203
+                },
+                "end": {
+                  "line": 10,
+                  "column": 28,
+                  "offset": 230
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "rawContent": "# How to Use Our Amazing Product\nThis guide will walk you through the process of using our amazing product effectively.\nFollow along and be amazed!\n",
+      "heading": {
+        "level": 1,
+        "position": {
+          "start": {
+            "line": 6,
+            "column": 1,
+            "offset": 77
+          },
+          "end": {
+            "line": 71,
+            "column": 40,
+            "offset": 1435
+          }
+        },
+        "content": "How to Use Our Amazing Product"
+      },
+      "paragraphs": [
+        {
+          "content": "This guide will walk you through the process of using our amazing product effectively.",
+          "position": {
+            "start": {
+              "line": 8,
+              "column": 1,
+              "offset": 113
+            },
+            "end": {
+              "line": 10,
+              "column": 28,
+              "offset": 230
+            }
+          }
+        },
+        {
+          "content": "Follow along and be amazed!",
+          "position": {
+            "start": {
+              "line": 10,
+              "column": 1,
+              "offset": 203
+            },
+            "end": {
+              "line": 10,
+              "column": 28,
+              "offset": 230
+            }
+          }
+        }
+      ],
+      "codeBlocks": [],
+      "lists": [],
+      "sections": [
+        {
+          "id": "52c5a0fb-9f03-4d23-802c-0d7bd0f0fac0",
+          "position": {
+            "start": {
+              "line": 12,
+              "column": 1,
+              "offset": 234
+            },
+            "end": {
+              "line": 25,
+              "column": 9,
+              "offset": 393
+            }
+          },
+          "content": [
+            {
+              "heading": {
+                "level": 2,
+                "position": {
+                  "start": {
+                    "line": 12,
+                    "column": 1,
+                    "offset": 234
+                  },
+                  "end": {
+                    "line": 25,
+                    "column": 9,
+                    "offset": 393
+                  }
+                },
+                "content": "Prerequisites"
+              },
+              "position": {
+                "start": {
+                  "line": 14,
+                  "column": 1,
+                  "offset": 254
+                },
+                "end": {
+                  "line": 14,
+                  "column": 52,
+                  "offset": 305
+                }
+              },
+              "paragraphs": [
+                {
+                  "content": "Before you begin, make sure you have the following:",
+                  "position": {
+                    "start": {
+                      "line": 14,
+                      "column": 1,
+                      "offset": 254
+                    },
+                    "end": {
+                      "line": 14,
+                      "column": 52,
+                      "offset": 305
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "heading": {
+                "level": 2,
+                "position": {
+                  "start": {
+                    "line": 12,
+                    "column": 1,
+                    "offset": 234
+                  },
+                  "end": {
+                    "line": 25,
+                    "column": 9,
+                    "offset": 393
+                  }
+                },
+                "content": "Prerequisites"
+              },
+              "position": {
+                "start": {
+                  "line": 16,
+                  "column": 1,
+                  "offset": 309
+                },
+                "end": {
+                  "line": 23,
+                  "column": 4,
+                  "offset": 381
+                }
+              },
+              "lists": [
+                {
+                  "ordered": false,
+                  "items": [
+                    {
+                      "position": {
+                        "start": {
+                          "line": 16,
+                          "column": 1,
+                          "offset": 309
+                        },
+                        "end": {
+                          "line": 16,
+                          "column": 22,
+                          "offset": 330
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "A valid license key",
+                          "position": {
+                            "start": {
+                              "line": 16,
+                              "column": 3,
+                              "offset": 311
+                            },
+                            "end": {
+                              "line": 16,
+                              "column": 22,
+                              "offset": 330
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "position": {
+                        "start": {
+                          "line": 17,
+                          "column": 1,
+                          "offset": 332
+                        },
+                        "end": {
+                          "line": 17,
+                          "column": 22,
+                          "offset": 353
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "At least 4GB of RAM",
+                          "position": {
+                            "start": {
+                              "line": 17,
+                              "column": 3,
+                              "offset": 334
+                            },
+                            "end": {
+                              "line": 17,
+                              "column": 22,
+                              "offset": 353
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "position": {
+                        "start": {
+                          "line": 19,
+                          "column": 1,
+                          "offset": 357
+                        },
+                        "end": {
+                          "line": 19,
+                          "column": 6,
+                          "offset": 362
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "foo",
+                          "position": {
+                            "start": {
+                              "line": 19,
+                              "column": 3,
+                              "offset": 359
+                            },
+                            "end": {
+                              "line": 19,
+                              "column": 6,
+                              "offset": 362
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "position": {
+                        "start": {
+                          "line": 20,
+                          "column": 1,
+                          "offset": 364
+                        },
+                        "end": {
+                          "line": 20,
+                          "column": 6,
+                          "offset": 369
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "bar",
+                          "position": {
+                            "start": {
+                              "line": 20,
+                              "column": 3,
+                              "offset": 366
+                            },
+                            "end": {
+                              "line": 20,
+                              "column": 6,
+                              "offset": 369
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "position": {
+                        "start": {
+                          "line": 22,
+                          "column": 1,
+                          "offset": 373
+                        },
+                        "end": {
+                          "line": 22,
+                          "column": 4,
+                          "offset": 376
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "x",
+                          "position": {
+                            "start": {
+                              "line": 22,
+                              "column": 3,
+                              "offset": 375
+                            },
+                            "end": {
+                              "line": 22,
+                              "column": 4,
+                              "offset": 376
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "position": {
+                        "start": {
+                          "line": 23,
+                          "column": 1,
+                          "offset": 378
+                        },
+                        "end": {
+                          "line": 23,
+                          "column": 4,
+                          "offset": 381
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "y",
+                          "position": {
+                            "start": {
+                              "line": 23,
+                              "column": 3,
+                              "offset": 380
+                            },
+                            "end": {
+                              "line": 23,
+                              "column": 4,
+                              "offset": 381
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "position": {
+                    "start": {
+                      "line": 16,
+                      "column": 1,
+                      "offset": 309
+                    },
+                    "end": {
+                      "line": 23,
+                      "column": 4,
+                      "offset": 381
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "rawContent": "## Prerequisites\nBefore you begin, make sure you have the following:\n- A valid license key\n- At least 4GB of RAM\n- foo\n- bar\n- x\n- y\n",
+          "heading": {
+            "level": 2,
+            "position": {
+              "start": {
+                "line": 12,
+                "column": 1,
+                "offset": 234
+              },
+              "end": {
+                "line": 25,
+                "column": 9,
+                "offset": 393
+              }
+            },
+            "content": "Prerequisites"
+          },
+          "paragraphs": [
+            {
+              "content": "Before you begin, make sure you have the following:",
+              "position": {
+                "start": {
+                  "line": 14,
+                  "column": 1,
+                  "offset": 254
+                },
+                "end": {
+                  "line": 14,
+                  "column": 52,
+                  "offset": 305
+                }
+              }
+            }
+          ],
+          "codeBlocks": [],
+          "lists": [
+            {
+              "ordered": false,
+              "items": [
+                {
+                  "position": {
+                    "start": {
+                      "line": 16,
+                      "column": 1,
+                      "offset": 309
+                    },
+                    "end": {
+                      "line": 16,
+                      "column": 22,
+                      "offset": 330
+                    }
+                  },
+                  "content": [
+                    {
+                      "content": "A valid license key",
+                      "position": {
+                        "start": {
+                          "line": 16,
+                          "column": 3,
+                          "offset": 311
+                        },
+                        "end": {
+                          "line": 16,
+                          "column": 22,
+                          "offset": 330
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "position": {
+                    "start": {
+                      "line": 17,
+                      "column": 1,
+                      "offset": 332
+                    },
+                    "end": {
+                      "line": 17,
+                      "column": 22,
+                      "offset": 353
+                    }
+                  },
+                  "content": [
+                    {
+                      "content": "At least 4GB of RAM",
+                      "position": {
+                        "start": {
+                          "line": 17,
+                          "column": 3,
+                          "offset": 334
+                        },
+                        "end": {
+                          "line": 17,
+                          "column": 22,
+                          "offset": 353
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "position": {
+                    "start": {
+                      "line": 19,
+                      "column": 1,
+                      "offset": 357
+                    },
+                    "end": {
+                      "line": 19,
+                      "column": 6,
+                      "offset": 362
+                    }
+                  },
+                  "content": [
+                    {
+                      "content": "foo",
+                      "position": {
+                        "start": {
+                          "line": 19,
+                          "column": 3,
+                          "offset": 359
+                        },
+                        "end": {
+                          "line": 19,
+                          "column": 6,
+                          "offset": 362
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "position": {
+                    "start": {
+                      "line": 20,
+                      "column": 1,
+                      "offset": 364
+                    },
+                    "end": {
+                      "line": 20,
+                      "column": 6,
+                      "offset": 369
+                    }
+                  },
+                  "content": [
+                    {
+                      "content": "bar",
+                      "position": {
+                        "start": {
+                          "line": 20,
+                          "column": 3,
+                          "offset": 366
+                        },
+                        "end": {
+                          "line": 20,
+                          "column": 6,
+                          "offset": 369
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "position": {
+                    "start": {
+                      "line": 22,
+                      "column": 1,
+                      "offset": 373
+                    },
+                    "end": {
+                      "line": 22,
+                      "column": 4,
+                      "offset": 376
+                    }
+                  },
+                  "content": [
+                    {
+                      "content": "x",
+                      "position": {
+                        "start": {
+                          "line": 22,
+                          "column": 3,
+                          "offset": 375
+                        },
+                        "end": {
+                          "line": 22,
+                          "column": 4,
+                          "offset": 376
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "position": {
+                    "start": {
+                      "line": 23,
+                      "column": 1,
+                      "offset": 378
+                    },
+                    "end": {
+                      "line": 23,
+                      "column": 4,
+                      "offset": 381
+                    }
+                  },
+                  "content": [
+                    {
+                      "content": "y",
+                      "position": {
+                        "start": {
+                          "line": 23,
+                          "column": 3,
+                          "offset": 380
+                        },
+                        "end": {
+                          "line": 23,
+                          "column": 4,
+                          "offset": 381
+                        }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "position": {
+                "start": {
+                  "line": 16,
+                  "column": 1,
+                  "offset": 309
+                },
+                "end": {
+                  "line": 23,
+                  "column": 4,
+                  "offset": 381
+                }
+              }
+            }
+          ],
+          "sections": []
+        },
+        {
+          "id": "92a54ade-784d-4cd7-93f4-ebdfcb58b408",
+          "position": {
+            "start": {
+              "line": 25,
+              "column": 1,
+              "offset": 385
+            },
+            "end": {
+              "line": 34,
+              "column": 9,
+              "offset": 664
+            }
+          },
+          "content": [
+            {
+              "heading": {
+                "level": 2,
+                "position": {
+                  "start": {
+                    "line": 25,
+                    "column": 1,
+                    "offset": 385
+                  },
+                  "end": {
+                    "line": 34,
+                    "column": 9,
+                    "offset": 664
+                  }
+                },
+                "content": "Setup"
+              },
+              "position": {
+                "start": {
+                  "line": 27,
+                  "column": 1,
+                  "offset": 397
+                },
+                "end": {
+                  "line": 27,
+                  "column": 50,
+                  "offset": 446
+                }
+              },
+              "paragraphs": [
+                {
+                  "content": "Follow these steps to set up our amazing product:",
+                  "position": {
+                    "start": {
+                      "line": 27,
+                      "column": 1,
+                      "offset": 397
+                    },
+                    "end": {
+                      "line": 27,
+                      "column": 50,
+                      "offset": 446
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "heading": {
+                "level": 2,
+                "position": {
+                  "start": {
+                    "line": 25,
+                    "column": 1,
+                    "offset": 385
+                  },
+                  "end": {
+                    "line": 34,
+                    "column": 9,
+                    "offset": 664
+                  }
+                },
+                "content": "Setup"
+              },
+              "position": {
+                "start": {
+                  "line": 29,
+                  "column": 1,
+                  "offset": 450
+                },
+                "end": {
+                  "line": 32,
+                  "column": 55,
+                  "offset": 652
+                }
+              },
+              "lists": [
+                {
+                  "ordered": true,
+                  "items": [
+                    {
+                      "position": {
+                        "start": {
+                          "line": 29,
+                          "column": 1,
+                          "offset": 450
+                        },
+                        "end": {
+                          "line": 29,
+                          "column": 44,
+                          "offset": 493
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "Download the installer from our website.",
+                          "position": {
+                            "start": {
+                              "line": 29,
+                              "column": 4,
+                              "offset": 453
+                            },
+                            "end": {
+                              "line": 29,
+                              "column": 44,
+                              "offset": 493
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "position": {
+                        "start": {
+                          "line": 30,
+                          "column": 1,
+                          "offset": 495
+                        },
+                        "end": {
+                          "line": 30,
+                          "column": 60,
+                          "offset": 554
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "Run the installer and follow the on-screen instructions.",
+                          "position": {
+                            "start": {
+                              "line": 30,
+                              "column": 4,
+                              "offset": 498
+                            },
+                            "end": {
+                              "line": 30,
+                              "column": 60,
+                              "offset": 554
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "position": {
+                        "start": {
+                          "line": 31,
+                          "column": 1,
+                          "offset": 556
+                        },
+                        "end": {
+                          "line": 31,
+                          "column": 41,
+                          "offset": 596
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "Enter your license key when prompted.",
+                          "position": {
+                            "start": {
+                              "line": 31,
+                              "column": 4,
+                              "offset": 559
+                            },
+                            "end": {
+                              "line": 31,
+                              "column": 41,
+                              "offset": 596
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "position": {
+                        "start": {
+                          "line": 32,
+                          "column": 1,
+                          "offset": 598
+                        },
+                        "end": {
+                          "line": 32,
+                          "column": 55,
+                          "offset": 652
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "Restart your computer to complete the installation.",
+                          "position": {
+                            "start": {
+                              "line": 32,
+                              "column": 4,
+                              "offset": 601
+                            },
+                            "end": {
+                              "line": 32,
+                              "column": 55,
+                              "offset": 652
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "position": {
+                    "start": {
+                      "line": 29,
+                      "column": 1,
+                      "offset": 450
+                    },
+                    "end": {
+                      "line": 32,
+                      "column": 55,
+                      "offset": 652
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "rawContent": "## Setup\nFollow these steps to set up our amazing product:\n1. Download the installer from our website.\n2. Run the installer and follow the on-screen instructions.\n3. Enter your license key when prompted.\n4. Restart your computer to complete the installation.\n",
+          "heading": {
+            "level": 2,
+            "position": {
+              "start": {
+                "line": 25,
+                "column": 1,
+                "offset": 385
+              },
+              "end": {
+                "line": 34,
+                "column": 9,
+                "offset": 664
+              }
+            },
+            "content": "Setup"
+          },
+          "paragraphs": [
+            {
+              "content": "Follow these steps to set up our amazing product:",
+              "position": {
+                "start": {
+                  "line": 27,
+                  "column": 1,
+                  "offset": 397
+                },
+                "end": {
+                  "line": 27,
+                  "column": 50,
+                  "offset": 446
+                }
+              }
+            }
+          ],
+          "codeBlocks": [],
+          "lists": [
+            {
+              "ordered": true,
+              "items": [
+                {
+                  "position": {
+                    "start": {
+                      "line": 29,
+                      "column": 1,
+                      "offset": 450
+                    },
+                    "end": {
+                      "line": 29,
+                      "column": 44,
+                      "offset": 493
+                    }
+                  },
+                  "content": [
+                    {
+                      "content": "Download the installer from our website.",
+                      "position": {
+                        "start": {
+                          "line": 29,
+                          "column": 4,
+                          "offset": 453
+                        },
+                        "end": {
+                          "line": 29,
+                          "column": 44,
+                          "offset": 493
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "position": {
+                    "start": {
+                      "line": 30,
+                      "column": 1,
+                      "offset": 495
+                    },
+                    "end": {
+                      "line": 30,
+                      "column": 60,
+                      "offset": 554
+                    }
+                  },
+                  "content": [
+                    {
+                      "content": "Run the installer and follow the on-screen instructions.",
+                      "position": {
+                        "start": {
+                          "line": 30,
+                          "column": 4,
+                          "offset": 498
+                        },
+                        "end": {
+                          "line": 30,
+                          "column": 60,
+                          "offset": 554
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "position": {
+                    "start": {
+                      "line": 31,
+                      "column": 1,
+                      "offset": 556
+                    },
+                    "end": {
+                      "line": 31,
+                      "column": 41,
+                      "offset": 596
+                    }
+                  },
+                  "content": [
+                    {
+                      "content": "Enter your license key when prompted.",
+                      "position": {
+                        "start": {
+                          "line": 31,
+                          "column": 4,
+                          "offset": 559
+                        },
+                        "end": {
+                          "line": 31,
+                          "column": 41,
+                          "offset": 596
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "position": {
+                    "start": {
+                      "line": 32,
+                      "column": 1,
+                      "offset": 598
+                    },
+                    "end": {
+                      "line": 32,
+                      "column": 55,
+                      "offset": 652
+                    }
+                  },
+                  "content": [
+                    {
+                      "content": "Restart your computer to complete the installation.",
+                      "position": {
+                        "start": {
+                          "line": 32,
+                          "column": 4,
+                          "offset": 601
+                        },
+                        "end": {
+                          "line": 32,
+                          "column": 55,
+                          "offset": 652
+                        }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "position": {
+                "start": {
+                  "line": 29,
+                  "column": 1,
+                  "offset": 450
+                },
+                "end": {
+                  "line": 32,
+                  "column": 55,
+                  "offset": 652
+                }
+              }
+            }
+          ],
+          "sections": []
+        },
+        {
+          "id": "094b283e-d37d-4471-aebc-d01351e80ac2",
+          "position": {
+            "start": {
+              "line": 34,
+              "column": 1,
+              "offset": 656
+            },
+            "end": {
+              "line": 65,
+              "column": 14,
+              "offset": 1270
+            }
+          },
+          "content": [
+            {
+              "heading": {
+                "level": 2,
+                "position": {
+                  "start": {
+                    "line": 34,
+                    "column": 1,
+                    "offset": 656
+                  },
+                  "end": {
+                    "line": 65,
+                    "column": 14,
+                    "offset": 1270
+                  }
+                },
+                "content": "Usage"
+              },
+              "position": {
+                "start": {
+                  "line": 36,
+                  "column": 1,
+                  "offset": 668
+                },
+                "end": {
+                  "line": 36,
+                  "column": 48,
+                  "offset": 715
+                }
+              },
+              "paragraphs": [
+                {
+                  "content": "To start using the product, follow these steps:",
+                  "position": {
+                    "start": {
+                      "line": 36,
+                      "column": 1,
+                      "offset": 668
+                    },
+                    "end": {
+                      "line": 36,
+                      "column": 48,
+                      "offset": 715
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "heading": {
+                "level": 2,
+                "position": {
+                  "start": {
+                    "line": 34,
+                    "column": 1,
+                    "offset": 656
+                  },
+                  "end": {
+                    "line": 65,
+                    "column": 14,
+                    "offset": 1270
+                  }
+                },
+                "content": "Usage"
+              },
+              "position": {
+                "start": {
+                  "line": 38,
+                  "column": 1,
+                  "offset": 719
+                },
+                "end": {
+                  "line": 40,
+                  "column": 36,
+                  "offset": 819
+                }
+              },
+              "lists": [
+                {
+                  "ordered": true,
+                  "items": [
+                    {
+                      "position": {
+                        "start": {
+                          "line": 38,
+                          "column": 1,
+                          "offset": 719
+                        },
+                        "end": {
+                          "line": 38,
+                          "column": 25,
+                          "offset": 743
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "Open the application.",
+                          "position": {
+                            "start": {
+                              "line": 38,
+                              "column": 4,
+                              "offset": 722
+                            },
+                            "end": {
+                              "line": 38,
+                              "column": 25,
+                              "offset": 743
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "position": {
+                        "start": {
+                          "line": 39,
+                          "column": 1,
+                          "offset": 745
+                        },
+                        "end": {
+                          "line": 39,
+                          "column": 38,
+                          "offset": 782
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "Click on the \"New Project\" button.",
+                          "position": {
+                            "start": {
+                              "line": 39,
+                              "column": 4,
+                              "offset": 748
+                            },
+                            "end": {
+                              "line": 39,
+                              "column": 38,
+                              "offset": 782
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "position": {
+                        "start": {
+                          "line": 40,
+                          "column": 1,
+                          "offset": 784
+                        },
+                        "end": {
+                          "line": 40,
+                          "column": 36,
+                          "offset": 819
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "Choose a template from the list.",
+                          "position": {
+                            "start": {
+                              "line": 40,
+                              "column": 4,
+                              "offset": 787
+                            },
+                            "end": {
+                              "line": 40,
+                              "column": 36,
+                              "offset": 819
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "position": {
+                    "start": {
+                      "line": 38,
+                      "column": 1,
+                      "offset": 719
+                    },
+                    "end": {
+                      "line": 40,
+                      "column": 36,
+                      "offset": 819
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "heading": {
+                "level": 2,
+                "position": {
+                  "start": {
+                    "line": 34,
+                    "column": 1,
+                    "offset": 656
+                  },
+                  "end": {
+                    "line": 65,
+                    "column": 14,
+                    "offset": 1270
+                  }
+                },
+                "content": "Usage"
+              },
+              "position": {
+                "start": {
+                  "line": 42,
+                  "column": 1,
+                  "offset": 823
+                },
+                "end": {
+                  "line": 47,
+                  "column": 4,
+                  "offset": 940
+                }
+              },
+              "code_blocks": [
+                {
+                  "content": "```python\nimport amazing_product\r\n\r\nproject = amazing_product.create_project(\"My First Project\")\r\nproject.run()```",
+                  "position": {
+                    "start": {
+                      "line": 42,
+                      "column": 1,
+                      "offset": 823
+                    },
+                    "end": {
+                      "line": 47,
+                      "column": 4,
+                      "offset": 940
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "rawContent": "## Usage\nTo start using the product, follow these steps:\n1. Open the application.\n2. Click on the \"New Project\" button.\n3. Choose a template from the list.\n```python\nimport amazing_product\r\n\r\nproject = amazing_product.create_project(\"My First Project\")\r\nproject.run()\n```\n",
+          "heading": {
+            "level": 2,
+            "position": {
+              "start": {
+                "line": 34,
+                "column": 1,
+                "offset": 656
+              },
+              "end": {
+                "line": 65,
+                "column": 14,
+                "offset": 1270
+              }
+            },
+            "content": "Usage"
+          },
+          "paragraphs": [
+            {
+              "content": "To start using the product, follow these steps:",
+              "position": {
+                "start": {
+                  "line": 36,
+                  "column": 1,
+                  "offset": 668
+                },
+                "end": {
+                  "line": 36,
+                  "column": 48,
+                  "offset": 715
+                }
+              }
+            }
+          ],
+          "codeBlocks": [
+            {
+              "content": "```python\nimport amazing_product\r\n\r\nproject = amazing_product.create_project(\"My First Project\")\r\nproject.run()```",
+              "position": {
+                "start": {
+                  "line": 42,
+                  "column": 1,
+                  "offset": 823
+                },
+                "end": {
+                  "line": 47,
+                  "column": 4,
+                  "offset": 940
+                }
+              }
+            }
+          ],
+          "lists": [
+            {
+              "ordered": true,
+              "items": [
+                {
+                  "position": {
+                    "start": {
+                      "line": 38,
+                      "column": 1,
+                      "offset": 719
+                    },
+                    "end": {
+                      "line": 38,
+                      "column": 25,
+                      "offset": 743
+                    }
+                  },
+                  "content": [
+                    {
+                      "content": "Open the application.",
+                      "position": {
+                        "start": {
+                          "line": 38,
+                          "column": 4,
+                          "offset": 722
+                        },
+                        "end": {
+                          "line": 38,
+                          "column": 25,
+                          "offset": 743
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "position": {
+                    "start": {
+                      "line": 39,
+                      "column": 1,
+                      "offset": 745
+                    },
+                    "end": {
+                      "line": 39,
+                      "column": 38,
+                      "offset": 782
+                    }
+                  },
+                  "content": [
+                    {
+                      "content": "Click on the \"New Project\" button.",
+                      "position": {
+                        "start": {
+                          "line": 39,
+                          "column": 4,
+                          "offset": 748
+                        },
+                        "end": {
+                          "line": 39,
+                          "column": 38,
+                          "offset": 782
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "position": {
+                    "start": {
+                      "line": 40,
+                      "column": 1,
+                      "offset": 784
+                    },
+                    "end": {
+                      "line": 40,
+                      "column": 36,
+                      "offset": 819
+                    }
+                  },
+                  "content": [
+                    {
+                      "content": "Choose a template from the list.",
+                      "position": {
+                        "start": {
+                          "line": 40,
+                          "column": 4,
+                          "offset": 787
+                        },
+                        "end": {
+                          "line": 40,
+                          "column": 36,
+                          "offset": 819
+                        }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "position": {
+                "start": {
+                  "line": 38,
+                  "column": 1,
+                  "offset": 719
+                },
+                "end": {
+                  "line": 40,
+                  "column": 36,
+                  "offset": 819
+                }
+              }
+            }
+          ],
+          "sections": [
+            {
+              "id": "39c57cdf-e295-433b-9c0e-4ebc055f379f",
+              "position": {
+                "start": {
+                  "line": 49,
+                  "column": 1,
+                  "offset": 944
+                },
+                "end": {
+                  "line": 57,
+                  "column": 20,
+                  "offset": 1108
+                }
+              },
+              "content": [
+                {
+                  "heading": {
+                    "level": 3,
+                    "position": {
+                      "start": {
+                        "line": 49,
+                        "column": 1,
+                        "offset": 944
+                      },
+                      "end": {
+                        "line": 57,
+                        "column": 20,
+                        "offset": 1108
+                      }
+                    },
+                    "content": "Advanced Features"
+                  },
+                  "position": {
+                    "start": {
+                      "line": 51,
+                      "column": 1,
+                      "offset": 969
+                    },
+                    "end": {
+                      "line": 51,
+                      "column": 50,
+                      "offset": 1018
+                    }
+                  },
+                  "paragraphs": [
+                    {
+                      "content": "For advanced users, we offer additional features:",
+                      "position": {
+                        "start": {
+                          "line": 51,
+                          "column": 1,
+                          "offset": 969
+                        },
+                        "end": {
+                          "line": 51,
+                          "column": 50,
+                          "offset": 1018
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "heading": {
+                    "level": 3,
+                    "position": {
+                      "start": {
+                        "line": 49,
+                        "column": 1,
+                        "offset": 944
+                      },
+                      "end": {
+                        "line": 57,
+                        "column": 20,
+                        "offset": 1108
+                      }
+                    },
+                    "content": "Advanced Features"
+                  },
+                  "position": {
+                    "start": {
+                      "line": 53,
+                      "column": 1,
+                      "offset": 1022
+                    },
+                    "end": {
+                      "line": 55,
+                      "column": 23,
+                      "offset": 1085
+                    }
+                  },
+                  "lists": [
+                    {
+                      "ordered": true,
+                      "items": [
+                        {
+                          "position": {
+                            "start": {
+                              "line": 53,
+                              "column": 1,
+                              "offset": 1022
+                            },
+                            "end": {
+                              "line": 53,
+                              "column": 20,
+                              "offset": 1041
+                            }
+                          },
+                          "content": [
+                            {
+                              "content": "Custom scripting",
+                              "position": {
+                                "start": {
+                                  "line": 53,
+                                  "column": 4,
+                                  "offset": 1025
+                                },
+                                "end": {
+                                  "line": 53,
+                                  "column": 20,
+                                  "offset": 1041
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "position": {
+                            "start": {
+                              "line": 54,
+                              "column": 1,
+                              "offset": 1043
+                            },
+                            "end": {
+                              "line": 54,
+                              "column": 19,
+                              "offset": 1061
+                            }
+                          },
+                          "content": [
+                            {
+                              "content": "API integration",
+                              "position": {
+                                "start": {
+                                  "line": 54,
+                                  "column": 4,
+                                  "offset": 1046
+                                },
+                                "end": {
+                                  "line": 54,
+                                  "column": 19,
+                                  "offset": 1061
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "position": {
+                            "start": {
+                              "line": 55,
+                              "column": 1,
+                              "offset": 1063
+                            },
+                            "end": {
+                              "line": 55,
+                              "column": 23,
+                              "offset": 1085
+                            }
+                          },
+                          "content": [
+                            {
+                              "content": "Automated workflows",
+                              "position": {
+                                "start": {
+                                  "line": 55,
+                                  "column": 4,
+                                  "offset": 1066
+                                },
+                                "end": {
+                                  "line": 55,
+                                  "column": 23,
+                                  "offset": 1085
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ],
+                      "position": {
+                        "start": {
+                          "line": 53,
+                          "column": 1,
+                          "offset": 1022
+                        },
+                        "end": {
+                          "line": 55,
+                          "column": 23,
+                          "offset": 1085
+                        }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "rawContent": "### Advanced Features\nFor advanced users, we offer additional features:\n1. Custom scripting\n2. API integration\n3. Automated workflows\n",
+              "heading": {
+                "level": 3,
+                "position": {
+                  "start": {
+                    "line": 49,
+                    "column": 1,
+                    "offset": 944
+                  },
+                  "end": {
+                    "line": 57,
+                    "column": 20,
+                    "offset": 1108
+                  }
+                },
+                "content": "Advanced Features"
+              },
+              "paragraphs": [
+                {
+                  "content": "For advanced users, we offer additional features:",
+                  "position": {
+                    "start": {
+                      "line": 51,
+                      "column": 1,
+                      "offset": 969
+                    },
+                    "end": {
+                      "line": 51,
+                      "column": 50,
+                      "offset": 1018
+                    }
+                  }
+                }
+              ],
+              "codeBlocks": [],
+              "lists": [
+                {
+                  "ordered": true,
+                  "items": [
+                    {
+                      "position": {
+                        "start": {
+                          "line": 53,
+                          "column": 1,
+                          "offset": 1022
+                        },
+                        "end": {
+                          "line": 53,
+                          "column": 20,
+                          "offset": 1041
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "Custom scripting",
+                          "position": {
+                            "start": {
+                              "line": 53,
+                              "column": 4,
+                              "offset": 1025
+                            },
+                            "end": {
+                              "line": 53,
+                              "column": 20,
+                              "offset": 1041
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "position": {
+                        "start": {
+                          "line": 54,
+                          "column": 1,
+                          "offset": 1043
+                        },
+                        "end": {
+                          "line": 54,
+                          "column": 19,
+                          "offset": 1061
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "API integration",
+                          "position": {
+                            "start": {
+                              "line": 54,
+                              "column": 4,
+                              "offset": 1046
+                            },
+                            "end": {
+                              "line": 54,
+                              "column": 19,
+                              "offset": 1061
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "position": {
+                        "start": {
+                          "line": 55,
+                          "column": 1,
+                          "offset": 1063
+                        },
+                        "end": {
+                          "line": 55,
+                          "column": 23,
+                          "offset": 1085
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "Automated workflows",
+                          "position": {
+                            "start": {
+                              "line": 55,
+                              "column": 4,
+                              "offset": 1066
+                            },
+                            "end": {
+                              "line": 55,
+                              "column": 23,
+                              "offset": 1085
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "position": {
+                    "start": {
+                      "line": 53,
+                      "column": 1,
+                      "offset": 1022
+                    },
+                    "end": {
+                      "line": 55,
+                      "column": 23,
+                      "offset": 1085
+                    }
+                  }
+                }
+              ],
+              "sections": []
+            },
+            {
+              "id": "ae409cf6-5570-40a5-b695-fff6ec2afca4",
+              "position": {
+                "start": {
+                  "line": 57,
+                  "column": 1,
+                  "offset": 1089
+                },
+                "end": {
+                  "line": 65,
+                  "column": 14,
+                  "offset": 1270
+                }
+              },
+              "content": [
+                {
+                  "heading": {
+                    "level": 3,
+                    "position": {
+                      "start": {
+                        "line": 57,
+                        "column": 1,
+                        "offset": 1089
+                      },
+                      "end": {
+                        "line": 65,
+                        "column": 14,
+                        "offset": 1270
+                      }
+                    },
+                    "content": "Troubleshooting"
+                  },
+                  "position": {
+                    "start": {
+                      "line": 59,
+                      "column": 1,
+                      "offset": 1112
+                    },
+                    "end": {
+                      "line": 59,
+                      "column": 46,
+                      "offset": 1157
+                    }
+                  },
+                  "paragraphs": [
+                    {
+                      "content": "If you encounter any issues, try these steps:",
+                      "position": {
+                        "start": {
+                          "line": 59,
+                          "column": 1,
+                          "offset": 1112
+                        },
+                        "end": {
+                          "line": 59,
+                          "column": 46,
+                          "offset": 1157
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "heading": {
+                    "level": 3,
+                    "position": {
+                      "start": {
+                        "line": 57,
+                        "column": 1,
+                        "offset": 1089
+                      },
+                      "end": {
+                        "line": 65,
+                        "column": 14,
+                        "offset": 1270
+                      }
+                    },
+                    "content": "Troubleshooting"
+                  },
+                  "position": {
+                    "start": {
+                      "line": 61,
+                      "column": 1,
+                      "offset": 1161
+                    },
+                    "end": {
+                      "line": 63,
+                      "column": 28,
+                      "offset": 1253
+                    }
+                  },
+                  "lists": [
+                    {
+                      "ordered": true,
+                      "items": [
+                        {
+                          "position": {
+                            "start": {
+                              "line": 61,
+                              "column": 1,
+                              "offset": 1161
+                            },
+                            "end": {
+                              "line": 61,
+                              "column": 28,
+                              "offset": 1188
+                            }
+                          },
+                          "content": [
+                            {
+                              "content": "Restart the application.",
+                              "position": {
+                                "start": {
+                                  "line": 61,
+                                  "column": 4,
+                                  "offset": 1164
+                                },
+                                "end": {
+                                  "line": 61,
+                                  "column": 28,
+                                  "offset": 1188
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "position": {
+                            "start": {
+                              "line": 62,
+                              "column": 1,
+                              "offset": 1190
+                            },
+                            "end": {
+                              "line": 62,
+                              "column": 35,
+                              "offset": 1224
+                            }
+                          },
+                          "content": [
+                            {
+                              "content": "Check your internet connection.",
+                              "position": {
+                                "start": {
+                                  "line": 62,
+                                  "column": 4,
+                                  "offset": 1193
+                                },
+                                "end": {
+                                  "line": 62,
+                                  "column": 35,
+                                  "offset": 1224
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "position": {
+                            "start": {
+                              "line": 63,
+                              "column": 1,
+                              "offset": 1226
+                            },
+                            "end": {
+                              "line": 63,
+                              "column": 28,
+                              "offset": 1253
+                            }
+                          },
+                          "content": [
+                            {
+                              "content": "Verify your license key.",
+                              "position": {
+                                "start": {
+                                  "line": 63,
+                                  "column": 4,
+                                  "offset": 1229
+                                },
+                                "end": {
+                                  "line": 63,
+                                  "column": 28,
+                                  "offset": 1253
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ],
+                      "position": {
+                        "start": {
+                          "line": 61,
+                          "column": 1,
+                          "offset": 1161
+                        },
+                        "end": {
+                          "line": 63,
+                          "column": 28,
+                          "offset": 1253
+                        }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "rawContent": "### Troubleshooting\nIf you encounter any issues, try these steps:\n1. Restart the application.\n2. Check your internet connection.\n3. Verify your license key.\n",
+              "heading": {
+                "level": 3,
+                "position": {
+                  "start": {
+                    "line": 57,
+                    "column": 1,
+                    "offset": 1089
+                  },
+                  "end": {
+                    "line": 65,
+                    "column": 14,
+                    "offset": 1270
+                  }
+                },
+                "content": "Troubleshooting"
+              },
+              "paragraphs": [
+                {
+                  "content": "If you encounter any issues, try these steps:",
+                  "position": {
+                    "start": {
+                      "line": 59,
+                      "column": 1,
+                      "offset": 1112
+                    },
+                    "end": {
+                      "line": 59,
+                      "column": 46,
+                      "offset": 1157
+                    }
+                  }
+                }
+              ],
+              "codeBlocks": [],
+              "lists": [
+                {
+                  "ordered": true,
+                  "items": [
+                    {
+                      "position": {
+                        "start": {
+                          "line": 61,
+                          "column": 1,
+                          "offset": 1161
+                        },
+                        "end": {
+                          "line": 61,
+                          "column": 28,
+                          "offset": 1188
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "Restart the application.",
+                          "position": {
+                            "start": {
+                              "line": 61,
+                              "column": 4,
+                              "offset": 1164
+                            },
+                            "end": {
+                              "line": 61,
+                              "column": 28,
+                              "offset": 1188
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "position": {
+                        "start": {
+                          "line": 62,
+                          "column": 1,
+                          "offset": 1190
+                        },
+                        "end": {
+                          "line": 62,
+                          "column": 35,
+                          "offset": 1224
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "Check your internet connection.",
+                          "position": {
+                            "start": {
+                              "line": 62,
+                              "column": 4,
+                              "offset": 1193
+                            },
+                            "end": {
+                              "line": 62,
+                              "column": 35,
+                              "offset": 1224
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "position": {
+                        "start": {
+                          "line": 63,
+                          "column": 1,
+                          "offset": 1226
+                        },
+                        "end": {
+                          "line": 63,
+                          "column": 28,
+                          "offset": 1253
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "Verify your license key.",
+                          "position": {
+                            "start": {
+                              "line": 63,
+                              "column": 4,
+                              "offset": 1229
+                            },
+                            "end": {
+                              "line": 63,
+                              "column": 28,
+                              "offset": 1253
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "position": {
+                    "start": {
+                      "line": 61,
+                      "column": 1,
+                      "offset": 1161
+                    },
+                    "end": {
+                      "line": 63,
+                      "column": 28,
+                      "offset": 1253
+                    }
+                  }
+                }
+              ],
+              "sections": []
+            }
+          ]
+        },
+        {
+          "id": "c48f91e1-86e2-458e-88c1-62ae2978b1ce",
+          "position": {
+            "start": {
+              "line": 65,
+              "column": 1,
+              "offset": 1257
+            },
+            "end": {
+              "line": 71,
+              "column": 40,
+              "offset": 1435
+            }
+          },
+          "content": [
+            {
+              "heading": {
+                "level": 2,
+                "position": {
+                  "start": {
+                    "line": 65,
+                    "column": 1,
+                    "offset": 1257
+                  },
+                  "end": {
+                    "line": 71,
+                    "column": 40,
+                    "offset": 1435
+                  }
+                },
+                "content": "Next steps"
+              },
+              "position": {
+                "start": {
+                  "line": 67,
+                  "column": 1,
+                  "offset": 1274
+                },
+                "end": {
+                  "line": 67,
+                  "column": 54,
+                  "offset": 1327
+                }
+              },
+              "paragraphs": [
+                {
+                  "content": "To get the most out of our amazing product, consider:",
+                  "position": {
+                    "start": {
+                      "line": 67,
+                      "column": 1,
+                      "offset": 1274
+                    },
+                    "end": {
+                      "line": 67,
+                      "column": 54,
+                      "offset": 1327
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "heading": {
+                "level": 2,
+                "position": {
+                  "start": {
+                    "line": 65,
+                    "column": 1,
+                    "offset": 1257
+                  },
+                  "end": {
+                    "line": 71,
+                    "column": 40,
+                    "offset": 1435
+                  }
+                },
+                "content": "Next steps"
+              },
+              "position": {
+                "start": {
+                  "line": 69,
+                  "column": 1,
+                  "offset": 1331
+                },
+                "end": {
+                  "line": 71,
+                  "column": 40,
+                  "offset": 1435
+                }
+              },
+              "lists": [
+                {
+                  "ordered": false,
+                  "items": [
+                    {
+                      "position": {
+                        "start": {
+                          "line": 69,
+                          "column": 1,
+                          "offset": 1331
+                        },
+                        "end": {
+                          "line": 69,
+                          "column": 31,
+                          "offset": 1361
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "Joining our community forums",
+                          "position": {
+                            "start": {
+                              "line": 69,
+                              "column": 3,
+                              "offset": 1333
+                            },
+                            "end": {
+                              "line": 69,
+                              "column": 31,
+                              "offset": 1361
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "position": {
+                        "start": {
+                          "line": 70,
+                          "column": 1,
+                          "offset": 1363
+                        },
+                        "end": {
+                          "line": 70,
+                          "column": 32,
+                          "offset": 1394
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "Attending our weekly webinars",
+                          "position": {
+                            "start": {
+                              "line": 70,
+                              "column": 3,
+                              "offset": 1365
+                            },
+                            "end": {
+                              "line": 70,
+                              "column": 32,
+                              "offset": 1394
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "position": {
+                        "start": {
+                          "line": 71,
+                          "column": 1,
+                          "offset": 1396
+                        },
+                        "end": {
+                          "line": 71,
+                          "column": 40,
+                          "offset": 1435
+                        }
+                      },
+                      "content": [
+                        {
+                          "content": "Exploring our extensive documentation",
+                          "position": {
+                            "start": {
+                              "line": 71,
+                              "column": 3,
+                              "offset": 1398
+                            },
+                            "end": {
+                              "line": 71,
+                              "column": 40,
+                              "offset": 1435
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "position": {
+                    "start": {
+                      "line": 69,
+                      "column": 1,
+                      "offset": 1331
+                    },
+                    "end": {
+                      "line": 71,
+                      "column": 40,
+                      "offset": 1435
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "rawContent": "## Next steps\nTo get the most out of our amazing product, consider:\n- Joining our community forums\n- Attending our weekly webinars\n- Exploring our extensive documentation\n",
+          "heading": {
+            "level": 2,
+            "position": {
+              "start": {
+                "line": 65,
+                "column": 1,
+                "offset": 1257
+              },
+              "end": {
+                "line": 71,
+                "column": 40,
+                "offset": 1435
+              }
+            },
+            "content": "Next steps"
+          },
+          "paragraphs": [
+            {
+              "content": "To get the most out of our amazing product, consider:",
+              "position": {
+                "start": {
+                  "line": 67,
+                  "column": 1,
+                  "offset": 1274
+                },
+                "end": {
+                  "line": 67,
+                  "column": 54,
+                  "offset": 1327
+                }
+              }
+            }
+          ],
+          "codeBlocks": [],
+          "lists": [
+            {
+              "ordered": false,
+              "items": [
+                {
+                  "position": {
+                    "start": {
+                      "line": 69,
+                      "column": 1,
+                      "offset": 1331
+                    },
+                    "end": {
+                      "line": 69,
+                      "column": 31,
+                      "offset": 1361
+                    }
+                  },
+                  "content": [
+                    {
+                      "content": "Joining our community forums",
+                      "position": {
+                        "start": {
+                          "line": 69,
+                          "column": 3,
+                          "offset": 1333
+                        },
+                        "end": {
+                          "line": 69,
+                          "column": 31,
+                          "offset": 1361
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "position": {
+                    "start": {
+                      "line": 70,
+                      "column": 1,
+                      "offset": 1363
+                    },
+                    "end": {
+                      "line": 70,
+                      "column": 32,
+                      "offset": 1394
+                    }
+                  },
+                  "content": [
+                    {
+                      "content": "Attending our weekly webinars",
+                      "position": {
+                        "start": {
+                          "line": 70,
+                          "column": 3,
+                          "offset": 1365
+                        },
+                        "end": {
+                          "line": 70,
+                          "column": 32,
+                          "offset": 1394
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "position": {
+                    "start": {
+                      "line": 71,
+                      "column": 1,
+                      "offset": 1396
+                    },
+                    "end": {
+                      "line": 71,
+                      "column": 40,
+                      "offset": 1435
+                    }
+                  },
+                  "content": [
+                    {
+                      "content": "Exploring our extensive documentation",
+                      "position": {
+                        "start": {
+                          "line": 71,
+                          "column": 3,
+                          "offset": 1398
+                        },
+                        "end": {
+                          "line": 71,
+                          "column": 40,
+                          "offset": 1435
+                        }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "position": {
+                "start": {
+                  "line": 69,
+                  "column": 1,
+                  "offset": 1331
+                },
+                "end": {
+                  "line": 71,
+                  "column": 40,
+                  "offset": 1435
+                }
+              }
+            }
+          ],
+          "sections": []
+        }
+      ]
+    }
+  ]
+}

@@ -141,6 +141,23 @@ export default tseslint.config(
   },
 
   {
+    // lint came in from moose-lint, which ran no ESLint of its own, so this is
+    // the gap between its house style and `strictTypeChecked`. Non-null
+    // assertions are a warning there, not an error: the rule finds several
+    // hundred sites, mostly in parser tests indexing into trees they just
+    // built, and each one is a real change with regression risk. A warning
+    // keeps them visible without blocking the import. `require-await` is off
+    // because its config tests feed synchronous parsers to a helper that
+    // takes a promise-returning function. Working the backlog to the
+    // repo-wide rules is a follow-up, not part of folding the tool in.
+    files: ["src/lint/**/*.ts", "test/lint/**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-non-null-assertion": "warn",
+      "@typescript-eslint/require-await": "off",
+    },
+  },
+
+  {
     // Plain JavaScript, and *not* in tsconfig's `include` (`["src", "test"]`),
     // so type-aware linting cannot cover it — `disableTypeChecked` turns those
     // rules off rather than letting them fail on a file with no program.

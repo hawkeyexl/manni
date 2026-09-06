@@ -12,6 +12,7 @@
 import { Command } from "commander";
 import pkg from "../package.json" with { type: "json" };
 import { buildProgram as buildMeta } from "./meta/cli.js";
+import { buildProgram as buildLint } from "./lint/cli.js";
 import { runIfMain } from "./shared/run.js";
 
 export function buildProgram(): Command {
@@ -50,6 +51,13 @@ export function buildProgram(): Command {
     });
 
   program.addCommand(meta);
+  program.addCommand(
+    buildLint()
+      .name("lint")
+      .description(
+        "Validate document structure against doctype templates, routed by a page's type",
+      ),
+  );
   return program;
 }
 
