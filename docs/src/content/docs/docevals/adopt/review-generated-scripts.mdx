@@ -1,0 +1,82 @@
+---
+title: Review generated scripts
+description: Generated checks are ordinary source. Read them like it.
+---
+
+manni docevals writes check scripts to files beside your docs rather than embedding them in frontmatter.
+That design exists for exactly one reason. **They show up in pull requests, and someone reads
+them.**
+
+If nobody does, the design has bought you nothing. A generated script that passes for the wrong
+reason is worse than the ai eval it replaced, because it is now silent, fast, and free.
+
+## Where they land
+
+```text
+docs/
+├── installation.mdx
+└── manni-docevals/
+    └── installation.install-command-present.mjs
+```
+
+`<scripts.dir>/<page-basename>.<eval-name>.mjs`, with `{docDir}` expanding to the page's directory.
+They are ES modules using only Node built-ins, with no dependencies to audit.
+
+Frontmatter records the reference and the hash of the assertion that produced it:
+
+```yaml
+      command: [node, manni-docevals/installation.install-command-present.mjs, "{file}"]
+      generated:
+        assertion-hash: aefaa89e…
+```
+
+## What to look for
+
+**Does it check the assertion, or something adjacent?** The common failure is a script that tests a
+weaker condition than the words promise. Take "Contains a bash code block with `npm i -g
+doc-detective`", checked by searching the whole file for that substring. It will pass on a page
+that mentions it in prose and never shows the code block.
+
+**Does it pass for the wrong reason?** Try it against a page you know should fail:
+
+```bash
+node docs/manni-docevals/installation.install-command-present.mjs docs/some-other-page.mdx
+```
+
+If it exits 0 on a page that plainly does not satisfy the assertion, the script is wrong even though
+the eval is green.
+
+**Is it brittle in a way the assertion is not?** A script keyed to exact whitespace, heading depth, or
+the current wording of a sentence will fail on a legitimate edit. That produces a check the team
+learns to ignore.
+
+**Does it handle the empty and missing cases?** No frontmatter, no code blocks, an empty file. A
+script that throws reports as a failure, which looks like a docs problem and is not.
+
+## Edit them
+
+They are yours. Fix a bad regex, tighten a match, add a comment explaining a non-obvious rule. Hand
+edits survive. Regeneration only happens when the **assertion** changes, which is what
+`assertion-hash` tracks.
+
+If you change the assertion, the hash stops matching, the script is stale, and manni docevals regenerates
+it, discarding your edits. That is intended: the assertion is the contract, the script is an
+implementation of it. Change them together.
+
+## When to reject a promotion
+
+Not every `promotable` verdict should be taken. Push back when:
+
+- The script only approximates the assertion, and the gap matters.
+- The assertion was vague, and the script has now *silently made it precise* in a way nobody agreed
+  to. Fix the assertion first. See
+  [Write good assertions](/manni/docevals/evals/write-good-assertions/).
+- The check is cheap either way, and the AI-graded version copes better with legitimate rewording.
+
+Reverting is just deleting the script and setting `grader: ai` back.
+
+## Treat them like test code
+
+They are test code. Same standards: readable, minimal, and failing for the right reason. A repo where
+`manni-docevals/` directories are skipped in review has reintroduced the problem the file-based design
+was meant to solve.

@@ -1,0 +1,105 @@
+---
+title: FAQ
+description: Recurring questions from contributors who hit a manni docevals check.
+---
+
+Short answers for people who just want their pull request green. The triage table is on
+[Fix a failing eval](/manni/docevals/fix/).
+
+## Why did this fail when I only changed one sentence?
+
+An AI verdict is cached against the **page body**. Editing any part of the page invalidates that
+cache, so an eval that was passing gets judged again. A page that was borderline can land
+differently.
+
+If the verdict looks wrong rather than newly-true, say so in the pull request. A borderline case
+flipping is useful signal about the assertion.
+
+## The check passed yesterday and fails today, with no change from me
+
+Usually one of:
+
+- Someone edited the **assertion**, so every page using it was re-judged.
+- The **model was changed**, which invalidates every cached verdict.
+- A **freshness** check crossed its threshold. `max-age-days` is measured from the page's
+  `last-reviewed` date, so a page can go stale while nobody touches it.
+
+The last one is not a bug. It is the check doing its job.
+
+## Can I skip the check for my page?
+
+You can, and you should ask first. A page-level skip:
+
+```yaml
+---
+title: My page
+eval-skip: true
+---
+```
+
+Skipping is right for generated reference, archives, and deprecated content. It is not right for "the
+check is inconvenient", which is a conversation with whoever owns the eval.
+
+## Why does the message have no line number?
+
+AI verdicts are about the page, not a character position. Read the rationale alongside the eval's
+`assertion` and `examples.fail`. See
+[An AI verdict](/manni/docevals/fix/#an-ai-verdict).
+
+## What does `needs-review` mean and how do I clear it?
+
+The judge was not confident enough either way. **You cannot clear it.** Someone with standing runs
+`manni docevals review <file> <eval> pass|fail`. Ask whoever owns docs quality in your repo.
+
+## I ran it locally and got a different result
+
+Most likely you ran without a provider key, so AI-graded evals reported as `skipped` rather than running.
+That is expected. `--deterministic-only` is the local check for everything except judged evals.
+
+Also check you are running against the same config. CI may pass `-c` with a specific path.
+
+## It asked for an API key. Do I need one?
+
+No. Use:
+
+```bash
+npx @hawkeyexl/manni docevals run docs/your-page.mdx --deterministic-only
+```
+
+That skips the judge entirely and needs no credential.
+
+## The build is red but every eval says `pass`
+
+Look at the **Suites** section:
+
+```console
+Suites
+  tutorial: 7/10 passed — 70% vs target 100% below target
+```
+
+A suite below its target pass rate fails the run even when no individual eval errored. That usually
+means a capability suite is set to an unrealistic target, which is a config problem rather than a
+page problem.
+
+## What is the difference between `warning` and `error`?
+
+Only `error` fails the build. `warning` and `info` report and pass. If your finding says `warning`,
+something else turned the build red.
+
+## Exit code 1 vs 2?
+
+- **1** means findings. A docs problem; that is yours.
+- **2** means operational. Bad config, missing key, malformed flag. **Not yours**, so tell whoever
+  owns the pipeline.
+
+## The generated script looks wrong
+
+It might be. Generated scripts are ordinary committed source and can be edited by hand. If it checks
+something other than what the assertion says, that is worth raising. See
+[Review generated scripts](/manni/docevals/adopt/review-generated-scripts/).
+
+## Who owns this check?
+
+Whoever added it. `manni docevals list <your file>` shows each eval's source. `config` means it is defined
+centrally in `manni.config.yaml`, and `page` means it is inline in the page's frontmatter. `git blame`
+the definition from there.

@@ -1,0 +1,102 @@
+---
+title: Bootstrap a corpus with fill
+description: Propose evals for every page from its content, gated on confidence and bounded by a turn budget.
+---
+
+Ten minutes to write a good eval, times two hundred pages, is not a project anyone starts. `manni docevals
+fill` asks your configured LLM to propose evals for each page from its content, each with a
+self-reported 0–1 confidence.
+
+## Look before you leap
+
+Always `--dry-run` first:
+
+```bash
+npx @hawkeyexl/manni docevals fill --dry-run docs/
+```
+
+```console
+proposed docs/tests/overview.mdx  +3 evals (all-test-statuses-defined 0.90, test-hierarchy-explained 0.85, skip-conditions-enumerated 0.75) — dry run, not written
+proposed docs/tests/writing.mdx  +2 evals (steps-are-numbered 0.88, examples-are-runnable 0.71) — dry run, not written
+
+Threshold: 0.7 · inference calls: 2
+```
+
+Two reasons, and the second is the one people miss. You see every proposal before it touches the
+repo, **and the dry run is the pass**. One page costs one inference call, and its raw proposals are
+cached, so dropping `--dry-run` afterwards replays them and makes no further calls. Looking first is
+free.
+
+## Re-gating is free
+
+Raw proposals are cached **before** the confidence gate. Re-running at a different `--confidence`
+costs nothing:
+
+```bash
+npx @hawkeyexl/manni docevals fill --dry-run --confidence 0.85 docs/
+```
+
+Knowing this changes how you work. Without it, the threshold feels like a one-shot irreversible
+decision, so people agonise, pick wrong, and pay twice. Sweep it instead, across 0.6, 0.7, and 0.85, and look
+at what each admits.
+
+## Bound the work
+
+```bash
+npx @hawkeyexl/manni docevals fill --max-turns 40 docs/
+```
+
+`--max-turns` (and `fill.max-turns`) counts uncached inference calls, exactly one per page filled. Pages
+already in the cache do not count against it, and a page the budget cannot cover is reported as
+`skipped` with `(turn budget exhausted)` rather than silently dropped. Set it even when you are
+confident; the run you regret is the one you did not bound. See
+[Caching and turn budgets](/manni/docevals/ci/cost-and-caching/).
+
+## Write the proposals
+
+Drop `--dry-run`:
+
+```bash
+npx @hawkeyexl/manni docevals fill docs/
+```
+
+Only proposals at or above the threshold (default `0.7`, config `fill.confidence-threshold`) are
+appended to the page's frontmatter. The rest are reported so you can see what was nearly good enough.
+
+What `fill` will **not** do:
+
+- **Modify an existing eval.** Ever. It only appends.
+- **Create duplicates.** A proposal whose name collides with the page's resolved plan is dropped,
+  whether that plan is inline, referenced, or suite-expanded.
+- **Touch a skipped page.** `evals: {skip: true}` is respected.
+
+`fill.max-evals-per-page` (default 3) bounds how many it proposes per page.
+
+## Then review what landed
+
+`fill` proposes; it does not decide. This step is the job, not a formality.
+
+Proposals are **always ai-graded** with explicit `examples`. That is the right conservative
+default for a machine-written assertion, and it also means an unreviewed corpus is now an expensive
+corpus. Read them as assertions:
+
+- Is it judgeable, or is it a feeling? See
+  [Write good assertions](/manni/docevals/evals/write-good-assertions/).
+- Does it encode the page's *current* state as the standard? A proposal derived from the content will
+  happily assert what the page already does, which measures nothing.
+- Should it be code? Most "the page contains X" proposals should be, and
+  [promote](/manni/docevals/adopt/promote-to-deterministic/) finds them.
+
+Batch by directory so the review stays reviewable. Nobody can approve a 3,000-page pull request.
+
+## Where to go next
+
+| Situation | Page |
+|---|---|
+| The corpus has never been measured and an honest run would be all red | [Retrofit a legacy corpus](/manni/docevals/adopt/retrofit-a-legacy-corpus/) |
+| Everything is an ai eval and the bill scales with the corpus | [Promote to deterministic](/manni/docevals/adopt/promote-to-deterministic/) |
+| You want the generated scripts reviewed properly | [Review generated scripts](/manni/docevals/adopt/review-generated-scripts/) |
+
+{/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
+
+{/* step {"description":"--confidence must be between 0 and 1; above 1 is a usage error, not a silent clamp.","runShell":{"command":"manni docevals fill --confidence 5 --dry-run","exitCodes":[2]}} */}

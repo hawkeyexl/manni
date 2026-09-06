@@ -1,0 +1,126 @@
+---
+title: Human review
+description: Clear the review queue, make verdicts persist, and know when a repeat offender is telling you something.
+---
+
+The human-review zone is where the judge routes what it is not confident about. That is the design
+working, but only if someone clears the queue.
+
+A queue nobody knows how to clear becomes a queue nobody clears, and the team's response is to turn
+the zone off.
+
+## See what is waiting
+
+```bash
+npx @hawkeyexl/manni docevals review
+```
+
+With no arguments, `review` lists the evals awaiting a verdict. You do not need to hunt through a
+report. This surprises people, so it is worth knowing on day one.
+
+## Record a verdict
+
+```bash
+npx @hawkeyexl/manni docevals review docs/install.md explains-why-before-how pass \
+  --reviewer priya \
+  --note "Motivation is in the intro paragraph, not a heading."
+```
+
+Verdict is `pass` or `fail`. `--reviewer` and `--note` are optional and worth using. The note is
+what stops the next person re-litigating the same borderline case.
+
+## Verdicts persist, and expire on their own
+
+Reviews land in `.manni/docevals/reviews.yaml`:
+
+```yaml
+- file: docs/install.md
+  evalName: explains-why-before-how
+  contentHash: 9f2b1c…
+  verdict: pass
+  reviewer: priya
+  date: 2026-08-03
+  note: Motivation is in the intro paragraph, not a heading.
+```
+
+Two properties make this safe:
+
+**It persists.** An unchanged page stays resolved. Review is not a per-run tax.
+
+**It self-invalidates.** `contentHash` is a hash of the **page body** at review time. When the page
+changes, the review is silently ignored and the eval returns to needs-review.
+
+That second property is what makes the first one safe. Without it, persistence would be a way to
+accumulate stale approvals. A page reviewed once in 2024 would pass forever, regardless of what
+happened to it since.
+
+Commit `reviews.yaml`. It is team state, not a cache. See
+[Files and state](/manni/docevals/reference/files-and-state/).
+
+## Your verdicts build the golden set
+
+Clearing the queue is not just unblocking a build. Every verdict you record is a page, an eval, and a
+human's pass/fail. That is the exact shape of a calibration golden case, in a file the tool already
+owns.
+
+```bash
+npx @hawkeyexl/manni docevals calibrate --seed
+```
+
+That reads `reviews.yaml` and writes candidates to `.manni/docevals/golden/from-reviews.yaml`. It
+judges nothing and needs no provider. It carries each review's `contentHash` across, so a seeded
+case expires with its page the same way the review did.
+
+Candidates land `reviewed: false` and stay there until a human sets the bit. That is on purpose.
+Filing a verdict to clear a queue and endorsing that verdict as ground truth are different acts.
+The tool will not do the second one for you. Read them, then
+[calibrate](/manni/docevals/judge/calibrate/).
+
+The practical consequence for this page: **`--reviewer` and `--note` are worth more than they look.**
+The note becomes the case's `rationale`, which is what the next person reads when deciding whether
+the case belongs in the set at all.
+
+## Should review block the build?
+
+`--fail-on-review` makes evals in the review zone exit 1.
+
+| | With the flag | Without |
+|---|---|---|
+| The queue | Never ignored | Can rot |
+| Pull requests | Sometimes wait on a person | Keep moving |
+| Requires | Someone who owns the queue | Nobody |
+
+There is no universally right answer, and the deciding question is not about the docs. It is
+**whether anyone owns the queue**. If nobody does, blocking on it converts a rotting queue into
+blocked contributors, which is worse.
+
+A middle path works well. Don't block on pull requests, and run with `--fail-on-review` on a
+schedule so the queue is visible without holding anyone up.
+
+## Contributors cannot clear it themselves
+
+Someone whose pull request is blocked by a needs-review eval usually has no standing to resolve it.
+Escalating is the correct outcome for them. See [Fix a failing eval](/manni/docevals/fix/). Make sure your
+contributing guide names who to escalate to; "ask someone" is how these sit for a week.
+
+## A repeat offender is a diagnosis
+
+**An eval that lands in review on every single run is telling you its assertion is ambiguous.**
+
+Answering it faster forever is the wrong response. The repair is in
+[Write good assertions](/manni/docevals/evals/write-good-assertions/). Usually that means adding
+`evidence` to scope what the judge looks at, or an `examples.fail` that writes down the boundary
+being disputed.
+
+If you are unsure whether a rewrite helped, record your verdict, pull it into the golden set with
+`calibrate --seed`, confirm it, and [calibrate](/manni/docevals/judge/calibrate/). That converts "it
+feels better" into a measurement. Repeat offenders are exactly the cases worth having in the
+set, because they are where the assertion is ambiguous.
+
+## Tuning how much lands here
+
+`judge.zones.auto-pass` and `judge.zones.auto-fail` (both default `0.8`) control the width of the
+review band. Raising them sends more to people; lowering them sends more to automation.
+
+Change them with calibration data rather than by feel. A narrower band with a rising false-positive
+rate is a worse gate, not a faster one.

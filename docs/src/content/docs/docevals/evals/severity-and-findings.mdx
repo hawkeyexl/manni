@@ -1,0 +1,131 @@
+---
+title: Severity and findings
+description: What fails the build, what only reports, and how to ratchet a check up over time.
+---
+
+Deterministic graders produce **findings**. Severity decides which of them fail the build. It is
+the mechanism behind adopting a new check without breaking everyone.
+
+## Only `error` fails
+
+| Severity | Reported | Fails the eval |
+|---|---|---|
+| `error` | Yes | **Yes** |
+| `warning` | Yes | No |
+| `info` | Yes | No |
+
+An eval fails only if it produced at least one `error`-severity finding. `warning` and `info` show up
+in the report and in PR annotations, and pass.
+
+```yaml
+docevals:
+  evals:
+    markdownlint:
+      assertion: Page passes markdownlint rules.
+      grader: tool:markdownlint
+      severity: warning        # reports, does not block
+    frontmatter-valid:
+      assertion: Page frontmatter validates.
+      grader: tool:docmeta
+      severity: error          # blocks
+```
+
+`severity` defaults to `error`.
+
+## The ratchet
+
+This is what severity is *for*. Adding an honest check to an existing corpus fails a lot of pages at
+once, which is accurate and useless, since nobody can merge it.
+
+The move is **not** to weaken the assertion. It is to lower the severity:
+
+1. Add the check at `severity: warning`. It reports on every page; nothing blocks.
+2. Burn down the findings, section by section.
+3. Flip to `severity: error`. Now it holds.
+
+Weakening the assertion instead permanently encodes the corpus's current state as your standard, and
+nobody ever tightens it back.
+
+:::note
+On an existing corpus, prefer a **[findings
+baseline](/manni/docevals/adopt/retrofit-a-legacy-corpus/#the-ratchet)** to this sequence. It lets you
+turn the check on at `error` today and fail only on *new* findings. Nothing waits on a burndown
+somebody has to schedule. Severity is the right lever for a finding class you never intend to gate
+on. Reading level on generated reference and line length in machine-written tables are the examples.
+Full sequencing in
+[Retrofit a legacy corpus](/manni/docevals/adopt/retrofit-a-legacy-corpus/).
+:::
+
+You can ratchet per page while you work, using an override:
+
+```yaml
+evals:
+  - use: readable
+    severity: error          # this section is done; hold the line here
+```
+
+## Severity is not weight
+
+They answer different questions and it is worth keeping them apart.
+
+- **`severity`** decides whether a failure *fails the run*. Only `error` does.
+- **`weight`** decides how much an outcome moves its **suite's pass rate**. It never changes the
+  eval's own pass/fail.
+
+A check lifted from a style rule is usually both. Use `severity: warning` so it does not break the
+build, and a `weight` below 1 so it does not swing the rate either. Reaching for `severity` alone
+to say "this matters less" overstates the claim. It says the failure does not count at all.
+
+## Mapping a tool's own severities
+
+Tools have their own vocabulary. `severity-map` translates it:
+
+```yaml
+  style:
+    grader: tool:vale
+    severity-map:
+      error: error
+      warning: warning
+      suggestion: info       # Vale suggestions report but never block
+```
+
+Vale defaults to exactly that mapping. Any tool severity you do not map falls back to `warning`.
+
+## What a finding carries
+
+```console
+  FAIL fresh-enough
+       error:4 [freshness/stale] Page last reviewed 937 days ago (max 365)
+```
+
+`severity:line [ruleId] message`. In JSON:
+
+```json
+{
+  "evalName": "fresh-enough",
+  "file": "docs/actions/goTo.mdx",
+  "ruleId": "freshness/stale",
+  "message": "Page last reviewed 937 days ago (max 365)",
+  "severity": "error",
+  "line": 4
+}
+```
+
+`ruleId`, `line`, and `col` are present when the grader can supply them. Most tool graders can,
+which is what makes `--format github` able to annotate the exact line.
+
+Severity also maps onto annotation levels: `error` → `::error`, `warning` → `::warning`, `info` →
+`::notice`. See [Output and exit codes](/manni/docevals/reference/output-and-exit-codes/).
+
+## Severity is not the judge's
+
+Severity applies to deterministic graders. A judged eval's outcome comes from consensus and
+confidence zones instead. See [How judging works](/manni/docevals/judge/). The capability suite target is
+the judged analog of the ratchet; see
+[Regression vs capability](/manni/docevals/evals/regression-vs-capability/).
+
+{/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
+
+{/* step {"description":"A warning-severity finding reports without failing the page.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/get-started/concepts.md --deterministic-only --no-generate","exitCodes":[0]}} */}
+
+{/* step {"description":"The same check at error severity fails, and the finding carries severity, line, and rule id.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate","exitCodes":[1],"stdio":"[freshness/stale]"}} */}

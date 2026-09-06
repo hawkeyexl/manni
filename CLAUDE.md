@@ -455,6 +455,8 @@ npm run docs:sync-versions   # rewrite the stale ones; the release runs the same
 npm run docs:check-links  # every internal link and anchor in the built site
                         # resolves. Reads docs/dist, so it needs
                         # `cd docs && npm run build` first.
+npm run docs:check-docevals  # the evals tool over its own docs section,
+                        # deterministic evals only (docs/manni.docevals.yaml)
 npm run schemas:check   # published built-in schemas immutable and in sync (local)
 npm run schemas:check-published  # ...and the live URLs still serve those bytes.
                         # Hits the network, so it runs on a daily schedule

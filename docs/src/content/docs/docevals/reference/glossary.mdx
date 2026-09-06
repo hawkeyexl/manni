@@ -1,0 +1,74 @@
+---
+title: Glossary
+description: The ten terms that recur across every section of these docs.
+---
+
+**Assertion**
+: The claim an eval makes about a page, true or false, not an aspiration. "The page states its
+  prerequisites before the first command" is an assertion; "the page is well-written" is not. See
+  [Write good assertions](/manni/docevals/evals/write-good-assertions/).
+
+**Capability suite**
+: A suite that measures reach rather than correctness, so its `target-pass-rate` sits below 1.0
+  (~0.7 is typical). Contrast *regression suite*.
+
+**Confidence zone**
+: Which of three bands a judged eval lands in. At or above `judge.zones.auto-pass` a passing
+  consensus auto-passes; at or above `judge.zones.auto-fail` a failing one auto-fails; anything
+  between goes to human review. The judge is being asked to know when it is unsure, not to be right
+  every time.
+
+**Consensus**
+: How N independent judge runs become one verdict. A `partial` verdict counts as a **fail**, and an
+  errored run counts **against** consensus. Errors can only push an eval toward human review,
+  never toward a silent pass.
+
+**Ensemble**
+: The N independent judge runs themselves (`judge.ensemble-runs`, default 3). Each is a separate
+  request with no shared context, so they do not reinforce one another.
+
+**Eval**
+: The unit. A named, testable assertion plus a grader that decides pass or fail. There is one
+  concept, not a split between "runners" and "evals". What differs between checks is the *grader*.
+
+**Evidence**
+: The `evidence` field, naming what part of the page the judge should look at. Scoping it stops the judge
+  reasoning from sections the assertion was never about.
+
+**Finding**
+: A normalized result from a deterministic grader: eval name, file, message, severity, and usually a
+  rule id and line. Only `error`-severity findings fail the build.
+
+**Golden set**
+: 20–50 human-verified cases in `.manni/docevals/golden/*.yaml` that
+  [calibration](/manni/docevals/judge/calibrate/) scores the judge against. This is the artifact you hand a
+  skeptic.
+
+**Grader**
+: What decides an eval. `command` and `tool:*` are code, `ai` is the judge, `human` is a person.
+  They sit in that preference order. See [Graders](/manni/docevals/reference/graders/).
+
+**Grader hierarchy**
+: The rule that code beats judge beats human. If you can express the criterion as code, do. It is
+  cheaper, faster, and explicable in a review. `promote` and `generate` are how you keep moving evals
+  down it.
+
+**Human-review zone**
+: The band between the two confidence thresholds, where verdicts route to a person. It is not an
+  admission of failure. It is what makes a binary verdict acceptable.
+
+**Pass rate**
+: `passed / (total - skipped)` for a suite. Verdicts are binary; the nuance lives here, which is why
+  a suite carries a target and an individual eval does not.
+
+**Regression suite**
+: A suite guarding behavior that must keep working, so its `target-pass-rate` is 1.0. The default
+  eval `type` is `regression` because most evals guard something.
+
+**Severity**
+: `error`, `warning`, or `info` on a deterministic eval. Only `error` fails the build, which is
+  what lets you enter a new check at `warning` and ratchet it up. See
+  [Retrofit a legacy corpus](/manni/docevals/adopt/retrofit-a-legacy-corpus/).
+
+**Suite**
+: A named group of evals with a target pass rate, applied to a page by name.

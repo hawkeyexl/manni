@@ -39,3 +39,15 @@ manni meta docs document a real CLI. Every flag, exit code, output string, and s
 - **Source files are the contract for behavior** (`src/cli.ts` for flags, `src/core/` for config and schema resolution, `src/extractors/` for formats).
 - **The test suite is the contract for *exact emitted strings*.** Type definitions in `src/types.ts` describe the *shape* of output, but they over-promise. An optional field is declared once on the shape, and populated by only some of the paths that produce it. `col` is on every `FieldError`, but only the `html` and `xml` extractors supply one. Even they omit it for a `required` violation. So "the type has `col`" and "this annotation shows a column" are different claims, and only the second is what a reader will see. The same asymmetry runs the other way in SARIF, where the format defines `region.startColumn` and manni meta never emits it. Before documenting concrete output, verify the literal strings against the assertions in `test/*.test.ts`. That covers pretty lines, JSON values, and `github` annotations, and the files to start from are `test/reporters.test.ts`, `test/commands.test.ts`, and `test/cli.integration.test.ts`, among others. The tests encode what the tool actually prints.
 - **To capture real sample output**, build once (`npm run build` at the repo root). Then run the built binary against a fixture, rather than hand-writing output. One example is `node dist/cli.js validate test/fixtures/missing-type.md`. Reuse `test/fixtures/` as worked examples so docs and CI stay in lockstep.
+
+## Per-tool strategy
+
+The files above are the metadata tool's. Each sibling tool that joins the
+family brings its own audiences, personas, journeys and IA. They live in a
+subdirectory named for the tool, beside the pages they govern under
+`docs/src/content/docs/<tool>/`. `design.md` is shared: one site, one palette,
+one set of capture rules.
+
+| Directory | Tool |
+|---|---|
+| `docevals/` | `manni docevals`, carried over from moose-docevals with its ID-linked audience, persona and journey files. |

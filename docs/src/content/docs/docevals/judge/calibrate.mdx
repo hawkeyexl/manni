@@ -1,0 +1,285 @@
+---
+title: Calibrate the judge
+description: Seed a golden set from your own reviews, confirm it, and get an agreement rate you can defend to a skeptic.
+---
+
+Calibration turns "we think the judge is reasonable" into an agreement rate and a false-positive
+rate. That artifact is what ends the argument about whether a model should gate a build. The
+mechanics do not.
+
+The number is only worth as much as the cases behind it, so most of this page is about the cases.
+
+## The loop
+
+You do not hand-author a golden set from nothing. Every verdict you record while
+[clearing the review queue](/manni/docevals/judge/human-review/) is already a page, an eval, and a
+human's pass/fail. That is exactly what a golden case is:
+
+1. `manni docevals review …` records verdicts as you clear the queue. This is work you were doing
+   anyway.
+2. `manni docevals calibrate --seed` turns those verdicts into golden **candidates**.
+3. Read the candidates and set `reviewed: true` on the ones that belong.
+4. `manni docevals calibrate` measures.
+
+Step 3 is not a formality, and the tool will not do it for you. See
+[Why a human has to confirm each case](#why-a-human-has-to-confirm-each-case).
+
+## Seed candidates from your reviews
+
+```bash
+npx @hawkeyexl/manni docevals calibrate --seed
+```
+
+```console
+Wrote 12 golden candidate(s) to /home/priya/acme-docs/.manni/docevals/golden/from-reviews.yaml (12 new, 0 updated).
+12 case(s) are `reviewed: false`. Read them and set `reviewed: true` — a golden set assembled without a human is not one.
+```
+
+The path is printed absolute.
+
+With nothing recorded yet:
+
+```console
+No recorded reviews to seed from — run `manni docevals review <file> <eval> <pass|fail>` first.
+```
+
+Three properties are worth knowing before you wire this anywhere:
+
+**It judges nothing.** `--seed` reads `reviews.yaml` and writes YAML. It never constructs a provider,
+so it runs with no API key set. A CI runner that has none can run it.
+
+**It is idempotent on `(file, eval)`.** Re-run it as reviews accumulate. An existing case is updated
+in place rather than duplicated, and if a later review reversed the verdict, `expected` follows. The
+`added` / `updated` counts in the output tell you which happened.
+
+**It never un-reviews a case.** If you already set `reviewed: true`, re-seeding leaves it true.
+Confirming a case is a one-way act; the tool does not quietly take it back.
+
+Seeded cases land in `.manni/docevals/golden/from-reviews.yaml`. A hand-authored set beside it in the
+same directory is read too. The separate filename is what keeps the two from colliding.
+
+## What a case looks like
+
+```yaml
+- file: docs/install.md
+  eval: no-future-promises
+  expected: pass
+  rationale: Mentions only shipped features.
+  reviewed: false
+  content-hash: 2a5b69…
+  source: review
+  reviewed-by: priya
+```
+
+`file`, `eval` and `expected` are the claim. `rationale` is for the humans maintaining the set; it is
+not sent to the judge. Full field reference in
+[Files and state](/manni/docevals/reference/files-and-state/).
+
+Two of those fields are what make a golden set trustworthy over time.
+
+### The `reviewed` gate
+
+**Absent means `false`.** That is deliberate, and it is not backward-compatible. A default of `true`
+would silently bless every case that already exists, including the ones this gate exists to surface.
+An older hand-authored set therefore reports as unreviewed until you stamp it.
+
+Set it by hand, per case, after reading the case:
+
+```yaml
+  reviewed: true
+  reviewed-by: priya
+```
+
+`reviewed-by` is optional and records who confirmed it. Seeding deliberately does **not** copy it
+from the review's `reviewer`. Filing a verdict on a page and endorsing that verdict as ground truth
+are different acts, sometimes by different people. Pre-filling the field would record a
+confirmation nobody made.
+
+Nothing verifies that whoever set the bit actually read the case. It is a self-report, like a commit
+message: it records the claim, it cannot audit it.
+
+### How `content-hash` self-invalidates
+
+A hash of the **page body** when the verdict was formed. When the page no longer hashes to it, the
+case is reported **stale**: it describes a document that no longer exists.
+
+This is the same rule reviews have always applied to themselves. Without it, a case verified against
+one draft keeps certifying every rewrite of that page, silently, forever. That case is also the
+instrument that certifies your judge. Seeding copies the hash straight from the review, so seeded
+cases get this for free.
+
+A case with **no** `content-hash` is not stale. It never made a claim about the body, so there is
+nothing to have broken. It is simply unverifiable until you re-seed it or stamp one by hand.
+
+## Why a human has to confirm each case
+
+The golden set is the instrument that measures the judge. Whatever assembles it decides what
+"correct" means. That rules out the judge itself, and it rules out an agent. It is also why a
+`review` verdict is not promoted to a golden case on its own.
+
+A review is one person's call on one page in one moment, often made to clear a queue. A golden case
+is a claim about what correct looks like. Those are different claims. If the tool conflated them,
+the mistake would be invisible afterwards: nothing in the file would distinguish a considered case
+from a cleared one.
+
+The `reviewed` bit is how you answer "has anyone actually checked these?" by reading the file instead
+of by remembering.
+
+## Hand-author the hard cases too
+
+Seeding gives you the cases your reviewers happened to hit. It does not give you a balanced set.
+
+**Include the hard cases.** A golden set of obvious passes measures nothing. The value is in the
+borderline pages where two reviewers had to talk it through. Those are exactly where an ambiguous
+assertion shows up as disagreement.
+
+Aim for a realistic mix of `pass` and `fail`. **At least one of each is required**, not
+merely advisable. A set with no `expected: fail` case certifies a judge that answers "pass"
+unconditionally. Agreement reads 100%, false negatives 0, threshold met, and nothing in the set
+could ever have disagreed. `calibrate` refuses to certify such a run and names the missing class.
+
+A set that is 90% passes is legal but still reports flattering agreement, for the same reason in
+weaker form.
+
+Hand-authored cases go in any `*.yaml` file under the golden directory. Mark them `source: manual`
+and `reviewed: true`. You wrote them, so they are confirmed by construction.
+
+## Run it
+
+```bash
+npx @hawkeyexl/manni docevals calibrate
+```
+
+```bash
+npx @hawkeyexl/manni docevals calibrate --golden .manni/docevals/golden --runs 3 --max-turns 60
+```
+
+Every case is judged in a single batched call, so cases run concurrently under
+`defaults.concurrency`. `--max-turns` bounds the whole run in ensemble runs, the same unit and the
+same run-wide meaning it has on `run`. It is not a per-case budget, and a cached case spends none.
+See [Caching and turn budgets](/manni/docevals/ci/cost-and-caching/) and the full flag list in
+[the CLI reference](/manni/docevals/reference/cli/).
+
+**It exits 1 unless all three hold:** agreement is at or above 70%, every case reached a verdict,
+and both `expected` classes are represented. They are separate statements and are reported
+separately. The agreement rate stays a statement about agreement, and 100% agreement over one
+class genuinely *is* 100% agreement. What it is not, is a certification.
+
+## Read the report
+
+```console
+agree docs/install.md no-future-promises: judge=pass human=pass
+agree docs/roadmap.md no-future-promises: judge=fail human=fail
+agree docs/api.md explains-why-before-how [unreviewed]: judge=pass human=pass
+DISAGREE docs/cli.md explains-why-before-how [stale]: judge=fail human=pass — human: Motivation is in the intro paragraph.
+
+Agreement: 3/4 (75%) — threshold 70%
+False positives: 1 (33% of human-passes), false negatives: 0
+
+1 of 4 case(s) are unreviewed — they count toward the rate above, but no human has confirmed they belong in the golden set. Read them and set `reviewed: true`.
+
+1 case(s) are stale: the page changed since the verdict was recorded, so the case describes a document that no longer exists. Re-verify and update `content-hash`.
+```
+
+`[unreviewed]` and `[stale]` mark individual cases; the two closing lines count them.
+
+### Unreviewed and stale cases still count
+
+They are judged, and they are included in the agreement rate, the false-positive rate, and the
+threshold check. This is a deliberate trade, and you should know which way it cuts before you quote
+the number.
+
+**The argument against counting them** is the stronger-sounding one. The calibration report is the
+artifact you hand a skeptic. A rate padded with rows nobody checked is arguably worse than no
+rate at all.
+
+**It loses on what excluding them does to the first run.** With every seeded case excluded, the
+counted set is empty, agreement is 0%, and the very first `calibrate --seed` produces a red build.
+That lands at the moment someone is trying to get started, over cases the tool itself just wrote.
+A gate that fires before anyone has done anything wrong gets removed, and then it protects nothing.
+
+So the number is **loudly provisional** rather than quietly wrong. The warning appears on every run
+until the counts reach zero, and it names the exact figure a reader needs to discount it by. If you
+quote the rate, quote the counts with it.
+
+## What to do when it exits 1
+
+Refine the **assertions**, not the grader.
+
+Low agreement is nearly always evidence that assertions are ambiguous. If the judge cannot reproduce
+your reviewers, it is usually because they were relying on shared context the assertion
+does not state. Reaching for model tuning here wastes a week.
+
+The loop that works:
+
+1. Find the cases where judge and human disagree.
+2. Read the assertion for each, against the two-reviewer test in
+   [Write good assertions](/manni/docevals/evals/write-good-assertions/).
+3. Add or sharpen `evidence` and `examples.fail`.
+4. Re-run.
+
+`examples.fail` is usually the fix. A disagreement is two parties drawing the boundary in different
+places; the failing example is where you write the boundary down.
+
+Check the flags before you start rewriting, though. A `[stale]` disagreement may be the judge reading
+a page correctly that the case has not caught up with. An `[unreviewed]` disagreement may be a
+case that never belonged in the set.
+
+## False positives matter more than accuracy
+
+```yaml
+docevals:
+  judge:
+    false-positive-alert: 0.15
+```
+
+Calibration alerts when the false-positive rate exceeds this.
+
+The asymmetry is deliberate. A check that **fails good pages** gets disabled within a week. Every
+author who was blocked for no reason lobbies against it. A check that misses a few bad pages survives
+indefinitely. Optimise accordingly: when tuning zones or assertions, prefer the change that reduces
+false positives even at some cost to recall.
+
+## Recalibrate when anything upstream changes
+
+The golden set is a fixture, and fixtures go stale:
+
+- **Model or provider change.** Different model, different verdicts. Re-run before trusting the gate.
+- **Assertion changes.** The rewrite you made to fix agreement needs to be measured.
+- **Judge prompt revisions.** These invalidate cached verdicts by design.
+- **Corpus drift.** Pages your cases reference get rewritten. `content-hash` catches this for you
+  now. Those cases report `[stale]` instead of quietly certifying prose nobody verified. Re-read the
+  page, record a fresh review, and `--seed` again to pick up the new hash.
+
+Run `calibrate` in CI on a schedule and it catches drift before someone else notices it. Do not run
+it per pull request, where it is pure cost.
+
+## Use it to make decisions
+
+Calibration is also how you settle arguments that are otherwise vibes:
+
+- **"Can we drop to one ensemble run?"** Run `calibrate --runs 1` and compare. You will usually find
+  agreement falls and the review zone effectively disappears, which is the consensus signal doing its
+  job.
+- **"Can we widen the auto-pass zone?"** Adjust `judge.zones`, re-run, and look at the false-positive
+  rate rather than the pass count.
+- **"Is this cheaper model good enough?"** `--provider` / `--model`, then compare. Sometimes the
+  answer is yes, and calibration is how you find out safely.
+
+## The artifact
+
+Keep the report. Someone will ask why a model is allowed to fail the build. "88% agreement with our
+own reviewers on 40 human-verified cases, 6% false positives, re-measured on every model change" is
+an answer. Anything less is an opinion.
+
+Being able to defend it means being able to state its limits, unprompted:
+
+- **How many cases are unreviewed, and how many are stale.** The report tells you both. A skeptic who
+  works this out on their own has found a reason to distrust everything else you said.
+- **Who confirmed the cases.** `reviewed-by` records this, with the honest caveat that the bit is a
+  self-report.
+- **Whether the set contains hard cases.** A high rate on an easy set is the failure mode that looks
+  most like success.
+- **When it was last measured**, against which model.
+
+A number you can pick apart yourself is worth more than a higher one you cannot.

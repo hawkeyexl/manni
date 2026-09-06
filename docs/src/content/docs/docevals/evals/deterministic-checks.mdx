@@ -1,0 +1,137 @@
+---
+title: Deterministic checks
+description: Wrap the linters you already run, add the native checks, and let manni docevals write scripts for plain-language rules.
+---
+
+Deterministic graders are free, fast, and arguable in a pull request. Prefer them. This page covers
+folding in the tools you already run, the three native checks, and arbitrary `command` evals,
+including the ones manni docevals writes for you.
+
+## manni docevals orchestrates; it does not reimplement
+
+If you expect manni docevals to replace Vale, you will evaluate it against the wrong competitors. Vale
+keeps doing what Vale does. Its findings arrive as a named eval with a severity, alongside a
+freshness check and an AI verdict, in one report with one exit code.
+
+```yaml
+docevals:
+  evals:
+    style:
+      assertion: Page passes our Vale style rules.
+      grader: tool:vale
+      severity: warning
+    markdownlint:
+      assertion: Page passes markdownlint rules.
+      grader: tool:markdownlint
+      severity: warning
+    frontmatter-valid:
+      assertion: Page frontmatter validates against our schema.
+      grader: tool:docmeta
+      options:
+        schemas: ["schemas/docevals/frontmatter-1.0.0.json"]
+      severity: error
+    structure:
+      assertion: How-to pages follow the how-to template.
+      grader: tool:doc-structure-lint
+      options:
+        template: how-to
+```
+
+Five CI steps and five output formats become one. Full option tables in
+[Graders](/manni/docevals/reference/graders/).
+
+### Severity is what makes consolidation safe
+
+A newly wrapped linter enters at `severity: warning`, where it reports without failing, and gets
+promoted to `error` once its findings are clean. Only `error` findings fail the build.
+
+Vale's own severities map through `severity-map`, defaulting to `error`→`error`,
+`warning`→`warning`, `suggestion`→`info`.
+
+## The native checks
+
+Three checks exist natively because nothing else covers them. They are not the start of a homegrown
+linter.
+
+```yaml
+  fresh-enough:
+    assertion: Page was reviewed within the last year.
+    grader: tool:freshness
+    options: { field: last-reviewed, max-age-days: 365 }
+    severity: warning
+  readable:
+    assertion: Page prose reads below grade 12.
+    grader: tool:reading-level
+    options: { max-grade: 12 }
+    severity: warning
+  distinct-action-pages:
+    assertion: Action reference pages are distinct from one another.
+    grader: tool:differentiation
+    options:
+      scope: "docs/actions/**"
+      max-similarity: 0.85
+```
+
+**Freshness** is a frontmatter-driven staleness contract, and no linter reads your review dates.
+**Reading level** is Flesch–Kincaid over the prose with code and markup stripped (English only).
+**Differentiation** catches the copy-paste drift that makes per-endpoint reference pages 90%
+identical. That is the failure nobody notices, because each page looks fine alone.
+
+## Arbitrary `command` evals
+
+Any executable. `{file}` expands to the page's absolute path.
+
+```yaml
+- id: no-absolute-internal-links
+  assertion: The page uses relative links for internal docs.
+  grader: command
+  command: [node, scripts/check-links.mjs, "{file}"]
+  success-exit-codes: [0]
+```
+
+Exit code decides: `0` (or anything in `success-exit-codes`) passes; anything else fails with the
+output tail as the message. Timeouts are reported distinctly.
+
+## Plain-language checks manni docevals writes for you
+
+A `command` eval with an assertion and **no** `command` is a deterministic check you have described
+but not implemented. `manni docevals run`, or `manni docevals generate`, has your configured LLM write a small
+Node script for it. It saves the script beside the doc and records the command back into
+frontmatter:
+
+```yaml
+    - id: install-command-present
+      assertion: The page contains a bash code block with `npm i -g doc-detective`.
+      grader: command
+      command: [node, manni-docevals/installation.install-command-present.mjs, "{file}"]
+      generated:
+        assertion-hash: aefaa89e…
+```
+
+The model is used **once**, at generation time. After that the check is fully deterministic, with no model
+in the loop and no per-run cost.
+
+Three consequences worth internalising:
+
+- **The script is ordinary source.** It lands in the repo beside the page, shows up in pull requests,
+  and you can edit it by hand. Review it. A generated script that passes for the wrong reason is
+  worse than the ai eval it replaced, because it is now silent and cheap.
+- **`assertion-hash` keeps them honest.** Edit the assertion and the hash no longer matches, so the
+  script regenerates rather than quietly checking the old thing.
+- **`--no-generate` turns it off**, which is what you want in CI where generation should not happen
+  implicitly.
+
+Already have ai evals that should have been code? [`promote`](/manni/docevals/adopt/promote-to-deterministic/)
+finds them.
+
+## Test the commands your docs present
+
+`tool:doc-detective` runs procedure tests embedded in a page, so a documented command that drifts
+from the code fails the build. That is how this site checks itself. See
+[Test your commands](/manni/docevals/evals/test-your-commands/).
+
+{/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
+
+{/* step {"description":"A page with a pre-generated check script passes deterministically.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/find.mdx --deterministic-only --no-generate","exitCodes":[0]}} */}
+
+{/* step {"description":"A stale review date fails at error severity with a rule id and line.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate","exitCodes":[1],"stdio":"/freshness\\/stale/"}} */}

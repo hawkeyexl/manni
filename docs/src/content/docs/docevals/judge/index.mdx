@@ -1,0 +1,89 @@
+---
+title: Trust the judge
+description: What makes a verdict reproducible, how the ensemble reaches consensus, and where human review begins.
+---
+
+Sooner or later someone senior asks the real question: **why should a model be allowed to block our
+pipeline?**
+
+This section exists to answer it with mechanics and a number, not reassurance.
+
+## Reproducibility
+
+The sharpest form of the objection is "nondeterminism has no place in CI". Four things address it:
+
+- **Temperature 0.**
+- **Pinned models.** `provider.anthropic.model: claude-sonnet-4-5`, never a floating alias. A model
+  that changes under you is a verdict that changes under you.
+- **Structured verdicts.** The judge returns JSON against a fixed schema, not prose someone parses.
+- **Content-addressed caching.** The same page and the same assertion return the same verdict without
+  another call.
+
+Same inputs, same answer.
+
+## The ensemble
+
+Each ai eval runs **N times independently** (`judge.ensemble-runs`, default 3). Each run is a
+separate request with **no shared context**, so they cannot reinforce one another. That is three
+independent opinions, not one opinion repeated.
+
+Consensus aggregates them. Two rules are deliberate and worth stating:
+
+- **A `partial` verdict counts as a fail.** Partial credit on a binary contract is a fail.
+- **An errored run counts against consensus.** A timeout or a provider error is not a free pass.
+
+Both asymmetries point the same way. Errors and ambiguity can push an eval toward human review, and
+can **never** produce a silent pass. That is the safety property a skeptic is probing for.
+
+## Confidence zones
+
+Consensus plus mean confidence decides the zone:
+
+| Zone | Condition | Outcome |
+|---|---|---|
+| auto-pass | passing consensus, mean confidence ≥ `judge.zones.auto-pass` (default `0.8`) | `pass` |
+| auto-fail | failing consensus, mean confidence ≥ `judge.zones.auto-fail` (default `0.8`) | `fail` |
+| human review | anything between | `needs-review` |
+
+This is the reframe that makes the design make sense: **the judge is not being asked to be right
+every time. It is being asked to know when it is unsure.**
+
+Seen that way, the human-review zone stops looking like an admission of failure. It starts looking
+like what makes a binary verdict acceptable at all. Handling that queue is
+[Human review](/manni/docevals/judge/human-review/).
+
+Tightening the thresholds sends more to people; loosening sends more to automation. Do not tune them
+by feel. [Calibrate](/manni/docevals/judge/calibrate/) tells you what the trade actually costs.
+
+## Binary verdicts, non-binary quality
+
+Every eval is pass or fail. The nuance lives in the **suite pass rate**, where a regression suite
+targets 1.0 and a capability suite targets about 0.7 instead. That makes "70% of our tutorials
+explain why before how" expressible, without any eval returning a mushy score. See
+[Regression vs capability](/manni/docevals/evals/regression-vs-capability/).
+
+## When the judge looks wrong
+
+Nearly always, the assertion is. Before adjusting zones, ensemble size, or models, re-read the
+assertion against the two-reviewer test in
+[Write good assertions](/manni/docevals/evals/write-good-assertions/). An eval that keeps landing in
+review is telling you it is ambiguous.
+
+`calibrate` enforces this: below the agreement threshold it exits 1, and the correct response is to
+refine the assertions, not the grader.
+
+## What runs where
+
+- `--deterministic-only` skips the judge entirely. No provider, no cost, and the right default for
+  forks and pre-commit hooks.
+- `--ai-only` runs only judged evals.
+- `--runs <n>` overrides the ensemble size for a run.
+- `--no-cache` forces fresh judging.
+
+## The pages here
+
+| Page | Answers |
+|---|---|
+| [Calibrate](/manni/docevals/judge/calibrate/) | "Is the judge actually agreeing with us?", with a number |
+| [Human review](/manni/docevals/judge/human-review/) | "Who clears the queue, and does it persist?" |
+| [Choose a provider](/manni/docevals/judge/choose-a-provider/) | "Can we run this without sending pages to a vendor?" |

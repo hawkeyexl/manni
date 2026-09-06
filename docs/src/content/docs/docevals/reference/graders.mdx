@@ -1,0 +1,246 @@
+---
+title: Graders reference
+description: Every grader kind, its options, and what it reports.
+---
+
+A grader decides pass or fail for one eval on one page. Verified against `src/graders/registry.ts`
+and each adapter.
+
+Graders sit in a preference order. Code first, judge second, human last. Cheapest and most
+explicable wins; see [How manni docevals works](/manni/docevals/get-started/how-docevals-works/).
+
+| Kind | Runs | Needs a provider |
+|---|---|---|
+| `command` | Any CLI check you supply | No |
+| `tool:remark` · `tool:markdownlint` · `tool:vale` · `tool:docmeta` · `tool:doc-structure-lint` · `tool:doc-detective` | An existing tool | No |
+| `tool:freshness` · `tool:reading-level` · `tool:differentiation` | Native checks nothing else covers | No |
+| `ai` | The judge | Yes |
+| `human` | A person | No |
+
+Deterministic evals fail only on **`error`**-severity findings. Warnings and info report and pass.
+
+One exception. A finding marked **`diagnostic`** fails the eval at any severity. A grader emits one
+when it could not reach a verdict. The tool is missing, timed out, exited without readable output,
+or a required option is absent. There is nothing to be lenient about. It still *displays* at the
+eval's configured severity.
+
+## `command`
+
+Runs any executable. `{file}` in an argument expands to the page's absolute path.
+
+| Option | Default | Notes |
+|---|---|---|
+| `command` (eval field) | none | The argv array. |
+| `success-exit-codes` (eval field) | `[0]` | |
+| `timeout-ms` (eval field) | `scripts.timeout-ms` (`30000`) | |
+
+A `command` eval with an assertion and **no** command is a plain-language deterministic check, and
+manni docevals generates the script. See [Deterministic checks](/manni/docevals/evals/deterministic-checks/).
+
+## `tool:remark`
+
+Runs [remark](https://github.com/remarkjs/remark) once per eval-configuration group and reads its
+JSON report. Unlike markdownlint it parses **MDX**, so JSX expressions, `{/* comments */}`, and
+`import` lines are syntax rather than stray punctuation.
+
+| Option | Default |
+|---|---|
+| `command` | `["npx", "--no-install", "remark", "--no-stdout", "--quiet", "--report", "json"]` |
+
+Findings carry the rule id as `<source>/<rule>`, for example `remark-lint/no-undefined-references`,
+with line and column when the message has a position. Default timeout 120000 ms.
+
+:::caution[`command` is a *partial* override]
+The page list is appended to whatever you supply, and two of the default flags are load-bearing.
+`--no-stdout` stops remark printing the *reformatted document* where the report should be, and
+`--report json` produces what the adapter parses, on **stderr**, not stdout. `--frail` is
+deliberately absent, so a non-zero exit means something actually broke rather than "a rule matched".
+:::
+
+**Which rules run is remark's configuration, not manni docevals'.** remark loads `.remarkrc.json` from
+your project; this repo's enables `remark-mdx`, `remark-frontmatter`, `remark-gfm`,
+`remark-directive`, and `remark-preset-lint-recommended`. Every plugin it names has to be installed, because
+`--no-install` means npx will not fetch them for you.
+
+A page remark cannot parse at all becomes an ordinary finding pointing you at `npx remark <file>`,
+because the JSON report drops the underlying cause. Four other cases are `diagnostic` findings and
+fail the eval at any severity. Those are a missing binary, a timeout, an unreadable report, and
+findings for a path matching no page in the run.
+
+:::note[remark or markdownlint?]
+**remark for MDX, markdownlint for plain Markdown.** markdownlint has no MDX mode, so on `.mdx`
+pages it reports against syntax it cannot parse. MDX comments read as emphasis markers, for one,
+and those findings are not about the page. Both graders stay supported; this documentation site uses
+`tool:remark` because every page in it is MDX.
+:::
+
+## `tool:markdownlint`
+
+Runs `markdownlint-cli2` once per eval-configuration group and parses its text output.
+
+| Option | Default |
+|---|---|
+| `command` | `["npx", "--no-install", "markdownlint-cli2"]` |
+
+Findings carry the rule id (`MD013/line-length`), line, and column when present. Default timeout
+120000 ms. There is no MDX mode, so on an `.mdx` corpus use `tool:remark` above.
+
+## `tool:vale`
+
+Runs Vale with `--output=JSON` once per group.
+
+| Option | Default |
+|---|---|
+| `command` | `["vale", "--output=JSON"]` |
+
+Vale's own severities map through the eval's `severity-map`, defaulting to:
+
+| Vale | manni docevals |
+|---|---|
+| `error` | `error` |
+| `warning` | `warning` |
+| `suggestion` | `info` |
+
+## `tool:docmeta`
+
+Validates frontmatter against JSON Schema. Runs **in-process** via manni meta's programmatic API, with
+no subprocess, so behavior is identical to `manni meta validate`.
+
+| Option | Default | Notes |
+|---|---|---|
+| `schemas` | manni meta's default | Array of schema refs. Built-in ids, file paths, and URLs all work. |
+
+## `tool:doc-structure-lint`
+
+Validates page structure against a named YAML template.
+
+| Option | Default | Notes |
+|---|---|---|
+| `template` | none | **Required.** Missing it is a finding, not a crash. |
+| `template-path` | none | Path to `templates.yaml`. |
+| `command` | `["npx", "--no-install", "doc-structure-lint"]` | |
+
+## `tool:doc-detective`
+
+Runs the procedure tests embedded in a page and reports failed steps. This is how the docs you are
+reading test their own commands. See [Test your commands](/manni/docevals/evals/test-your-commands/).
+
+| Option | Default |
+|---|---|
+| `command` | `["npx", "--no-install", "doc-detective"]` |
+
+:::caution[`command` is a *partial* override]
+`--input <page>` and `--exit-on-fail` are appended to whatever you supply. `--exit-on-fail` is not
+optional. Doc Detective exits 0 even when steps fail, and 4.x keeps its results JSON out of stdout.
+Without the flag a failing doc test is undetectable and passes silently. Your array is the
+*prefix* of the argv, not the whole of it.
+:::
+
+A timeout is reported distinctly from a failure. Default timeout 600000 ms, since this grader may
+drive a browser.
+
+:::danger
+This grader executes shell commands embedded in page **bodies**, and needs its own grant:
+`execution.allow: [page-embedded-steps]`. Granting `frontmatter-commands` does not grant it. On
+untrusted pull requests the job itself must still be gated. A grant says *this corpus* is trusted,
+and a fork's pages are not this corpus. See
+[Untrusted pull requests](/manni/docevals/ci/untrusted-pull-requests/).
+:::
+
+## `tool:freshness`
+
+The page's review date must be within `max-age-days`. No external tool covers this frontmatter-driven
+staleness contract.
+
+| Option | Default |
+|---|---|
+| `field` | `last-reviewed` |
+| `max-age-days` | `365` |
+
+| Rule id | Meaning |
+|---|---|
+| `freshness/stale` | Older than `max-age-days`. Carries the page's date line. |
+| `freshness/missing` | The field is absent. |
+| `freshness/invalid` | The value did not parse as a date. |
+
+## `tool:reading-level`
+
+Flesch–Kincaid grade level of the page prose must not exceed `max-grade`. Code blocks, MDX
+comments, tags, and link URLs are stripped before scoring.
+
+| Option | Default |
+|---|---|
+| `max-grade` | `10` |
+
+Rule id `reading-level/grade`. **English-only**, which is a documented limitation rather than a bug. Prose shorter
+than the minimum sample is not scored.
+
+## `tool:differentiation`
+
+Related pages, such as per-endpoint or per-action reference docs, must be sufficiently distinct from
+each other. Similarity is cosine similarity over word frequencies of the cleaned prose; a page above
+the threshold against any sibling in scope fails.
+
+| Option | Default | Notes |
+|---|---|---|
+| `scope` | none | Glob selecting the sibling set to compare against. |
+| `max-similarity` | `0.85` | |
+
+## `tool:regex`
+
+A pattern must appear in whatever [`target`](/manni/docevals/reference/frontmatter/) selects. It can
+instead be required not to appear, or to appear exactly _n_ times. The cheapest grader that can
+express an assertion is the one to reach for; this is the rung below the AI judge.
+
+| Option | Default | Notes |
+|---|---|---|
+| `pattern` | none | Required. A JavaScript regular expression. |
+| `flags` | `""` | JS RegExp flags (`d g i m s u v y`). |
+| `match` | `contains` | `contains`, `not-contains`, or `count:N` for exactly _n_ matches. |
+
+```yaml
+- id: names-the-package
+  assertion: The install command names the current package.
+  grader: tool:regex
+  options:
+    pattern: "npm i -g manni docevals"
+```
+
+Rule ids `regex/not-found`, `regex/found`, `regex/count`. A pattern that does not compile is a
+**configuration** error, not a page failure. Blaming the page for the eval's own bug is how a
+corpus learns to ignore its findings.
+
+## `tool:file-exists`
+
+A file must exist beside the page, or must no longer exist. Documentation routinely promises
+companion artifacts (a sample project, a spec, an image), and nothing else could assert they still
+ship.
+
+| Option | Default | Notes |
+|---|---|---|
+| `path` | none | Required. A glob, relative to the page's directory. |
+| `exists` | `true` | Set `false` for a file the page should no longer ship. |
+
+```yaml
+- id: sample-still-ships
+  assertion: The quickstart's example project is still here.
+  grader: tool:file-exists
+  options:
+    path: examples/quickstart/*
+```
+
+Rule ids `file-exists/missing`, `file-exists/present`. A path that climbs out of the page's
+directory is refused. A page is content, and content naming an arbitrary path on the machine
+running the eval is the hazard the [execution grant](/manni/docevals/reference/configuration/)
+exists for.
+
+## `ai`
+
+The judge. Needs `assertion`, and works far better with `evidence` and `examples`. See
+[Write good assertions](/manni/docevals/evals/write-good-assertions/). Outcome is `pass`, `fail`, or
+`needs-review`; the mechanics are in [How judging works](/manni/docevals/judge/).
+
+## `human`
+
+Routes to a person. Verdicts persist in `.manni/docevals/reviews.yaml` and self-invalidate when the page
+changes. See [Human review](/manni/docevals/judge/human-review/).

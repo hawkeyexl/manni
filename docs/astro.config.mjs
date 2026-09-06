@@ -165,6 +165,50 @@ export default defineConfig({
             },
           ],
         },
+        // The evals tool. Section order and labels follow its CUJ-first IA
+        // (docs/content-strategy/docevals/information-architecture/proposed-ia.md).
+        {
+          label: "docevals",
+          collapsed: true,
+          items: [
+            { label: "Overview", link: "/docevals/" },
+            {
+              label: "Get started",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "docevals/get-started" } }],
+            },
+            {
+              label: "Write evals",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "docevals/evals" } }],
+            },
+            {
+              label: "Adopt at scale",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "docevals/adopt" } }],
+            },
+            {
+              label: "Run it in CI",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "docevals/ci" } }],
+            },
+            {
+              label: "Trust the judge",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "docevals/judge" } }],
+            },
+            {
+              label: "Fix a failing eval",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "docevals/fix" } }],
+            },
+            {
+              label: "Reference",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "docevals/reference" } }],
+            },
+          ],
+        },
         // `key` manages a family resource rather than documents: the one
         // encryption key every tool encrypts values with (proposal 0045). Two
         // verbs, so the same two-page shape as `a11y`.

@@ -1,0 +1,89 @@
+---
+title: Promote to deterministic
+description: Find ai evals that could be code, and convert them.
+---
+
+The grader hierarchy is a claim about preference, and preferences decay without a mechanism. `ai` is
+the default grader and `fill` proposes ai-graded evals by construction. "Left alone" therefore means
+"expensive", with run time and cost scaling with the corpus, forever.
+
+`promote` is the mechanism.
+
+## Find them
+
+```bash
+npx @hawkeyexl/manni docevals promote docs/
+```
+
+```console
+promotable install-command-present (page, docs/installation.mdx)
+  The assertion checks for a literal code block; a script can match it directly.
+keep-ai explains-why-before-how (config, docs/tutorial.mdx)
+  Requires judging whether motivation precedes mechanics — not expressible as a check.
+
+Re-run with --write to apply promotions.
+```
+
+Each eval is `promotable` or `keep-ai`, with a rationale. The test applied is the manuscript's:
+**if you can express the eval criterion as code, do it.**
+
+## Report-only by default
+
+`promote` does not change anything until you pass `--write`. That is deliberate: converting an
+assertion changes *what is being checked*, and that deserves a human decision rather than a flag
+someone set once and forgot.
+
+```bash
+npx @hawkeyexl/manni docevals promote --write docs/
+```
+
+This writes a check script per promoted eval and rewrites the eval to reference it.
+
+## What a promotion produces
+
+```yaml
+    - id: install-command-present
+      assertion: The page contains a bash code block with `npm i -g doc-detective`.
+      grader: command
+      command: [node, manni-docevals/installation.install-command-present.mjs, "{file}"]
+      generated:
+        assertion-hash: aefaa89e…
+```
+
+The assertion is unchanged, and that is the point. What changed is who decides it: a committed script
+instead of a model, at zero marginal cost and with no variance.
+
+`generate` does the same for `command` evals you wrote with an assertion and no command; `promote` is
+for evals that are currently `ai` and should not be. See
+[Deterministic checks](/manni/docevals/evals/deterministic-checks/).
+
+## Review the scripts
+
+The step people skip, and the one that decides whether this was worth doing. A generated script that
+passes for the wrong reason is **worse** than the ai eval it replaced, because it is now silent and
+free. See [Review generated scripts](/manni/docevals/adopt/review-generated-scripts/).
+
+## What should stay an ai eval
+
+Not everything should move. Keep the judge for criteria that genuinely need interpretation:
+
+| Stays | Why |
+|---|---|
+| "Explains why before how" | Requires reading for intent and order |
+| "Makes no claims about unreleased functionality" | Requires knowing what sounds like a promise |
+| "Defines every core concept it introduces" | Requires identifying what counts as a concept |
+
+A promotion that turns one of these into a keyword grep has not made the check cheaper. It has
+replaced it with a different, worse check that happens to be fast. `promote` reports these as
+`keep-ai`; trust that more than the urge to get the bill to zero.
+
+## Confirm the saving
+
+Run with `--format json` before and after and compare `usage.judgedEvals`. Fewer evals reaching the
+judge is the saving; the second run should also show more `cachedEvals`. See
+[Caching and turn budgets](/manni/docevals/ci/cost-and-caching/).
+
+## Make it a habit
+
+Run `promote` after every `fill` pass, and periodically thereafter. The ratio of deterministic to
+judged evals is the number that decides whether your gate is affordable at ten times the corpus size.

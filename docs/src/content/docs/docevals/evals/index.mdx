@@ -1,0 +1,145 @@
+---
+title: Write evals
+description: Declare evals in page frontmatter, covering the contract, the three entry forms, and what wins on collision.
+---
+
+Every eval declaration lives under the `evals` key in page frontmatter. This page is the contract;
+[Frontmatter reference](/manni/docevals/reference/frontmatter/) is the exhaustive field list.
+
+## The minimum
+
+The `evals` key is the list of checks for a page:
+
+```yaml
+---
+title: Concepts
+evals:
+  - use: no-future-promises
+  - id: defines-core-terms
+    assertion: The page defines every core concept it introduces.
+---
+```
+
+A suite assignment and a page-level skip are flat keys beside it, not an enclosing object. Every
+setting this vocabulary claims carries the reserved `eval-` prefix, so a typo like `eval-suit:` is
+an error rather than a key nobody reads:
+
+```yaml
+---
+title: Installation
+eval-suite: how-to
+evals:
+  - use: no-future-promises
+---
+```
+
+```yaml
+---
+title: Index
+eval-skip: true
+---
+```
+
+## Three ways to declare an eval
+
+**A bare string is an assertion**, judged by AI at error severity. It is the fastest way to guard
+something once:
+
+```yaml
+evals:
+  - The install command names the current package.
+```
+
+:::caution[This changed in 1.0.0]
+A bare string used to *reference* a config-defined eval. It is an assertion now, so `- fresh-enough`
+sends those two words to the judge instead of running the freshness grader. manni docevals warns
+when a string matches a defined eval id; write `use:` to reference one.
+:::
+
+**Reference a named eval** from `manni.config.yaml` with `use:`:
+
+```yaml
+evals:
+  - use: no-future-promises
+```
+
+**Reference with overrides**, to narrow it for this page only:
+
+```yaml
+evals:
+  - use: fresh-enough
+    severity: warning
+    options: { max-age-days: 180 }
+```
+
+`options` **merges** over the base rather than replacing it, so you can change one setting without
+restating the rest. `type`, `severity`, and `skip` replace.
+
+**Define one inline**, when it exists only on this page:
+
+```yaml
+evals:
+  - id: install-command-present
+    assertion: The page contains a bash code block with `npm i -g doc-detective`.
+    grader: command
+```
+
+Inline evals need an `id`, kebab-case and unique on the page. Everything else is optional: `grader`
+defaults to `ai` and `type` to `regression`. The id is required rather than derived from position,
+because a position-derived name orphans every cached verdict as soon as entries move.
+
+## Prefer named evals
+
+An assertion pasted into twelve pages drifts into twelve slightly different assertions, and nobody
+can then say what a how-to page is checked for. Move anything used more than once into the config and
+reference it. See [Named evals and suites](/manni/docevals/evals/named-evals-and-suites/).
+
+Inline is right for something genuinely specific to one page, like the exact install command above.
+
+## What wins
+
+The plan is built suite-first, then page entries in document order. **Page entries win on name
+collision**, so a local override beats the global default.
+
+That is the correct default and completely invisible until it surprises you, so check rather than
+guess:
+
+```bash
+npx @hawkeyexl/manni docevals list docs/installation.mdx
+```
+
+```console
+test/docevals/fixtures/pages/docs/actions/goTo.mdx (suite: reference)
+  - no-future-promises [ai, regression, config]
+  - fresh-enough [tool:freshness, regression, config]
+  - readable [tool:reading-level, regression, config]
+  - frontmatter-valid [tool:docmeta, regression, config]
+
+1 pages, 4 evals resolved
+```
+
+Each line is `name [grader, type, source]`. `source` tells you whether the definition came from the
+config or the page. That is exactly what you need when a page behaves differently from its
+neighbours.
+
+## Problems are reported, not thrown
+
+A malformed page does not stop the run. Unknown suite names, unknown eval references, and
+schema-invalid frontmatter are reported as page errors with a source line. Duplicate names and
+inline ai evals missing `examples` are warnings.
+
+Validate the declarations themselves as an eval, so bad frontmatter fails like any other check.
+See [Frontmatter reference](/manni/docevals/reference/frontmatter/#validating-the-frontmatter-itself).
+
+## Next
+
+- [Write good assertions](/manni/docevals/evals/write-good-assertions/), the wording that decides whether
+  an eval is worth having
+- [Deterministic checks](/manni/docevals/evals/deterministic-checks/), the graders to prefer
+- [Named evals and suites](/manni/docevals/evals/named-evals-and-suites/), turning this into a library
+
+{/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
+
+{/* step {"description":"`list` prints name, grader, type, and source for each resolved eval.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages/docs/actions/goTo.mdx","exitCodes":[0],"stdio":", regression, config]"}} */}
+
+{/* step {"description":"A page-level skip is honored.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/index.mdx --deterministic-only --no-generate","exitCodes":[0]}} */}

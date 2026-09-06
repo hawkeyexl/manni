@@ -1,0 +1,109 @@
+---
+title: How docevals works
+description: The eval, the grader hierarchy, and how a verdict is reached.
+---
+
+One concept, one preference order, one kind of verdict. Everything else in these docs is a
+consequence of the three ideas on this page.
+
+## One concept, the eval
+
+An **eval** is a named, testable assertion about a page, plus a **grader** that decides pass or
+fail.
+
+```yaml
+- id: install-command-present
+  assertion: The page contains a bash code block with `npm i -g doc-detective`.
+  grader: command
+```
+
+There is no separate notion of a "linter run" versus a "quality check". Wrapping Vale, running a
+generated Node script, asking a model whether a page over-promises, and routing something to a human
+are all *evals*. What differs is the grader.
+
+That matters practically. One config, one report, one exit code, and one place to look when
+something goes red.
+
+## The grader hierarchy
+
+Graders sit in a preference order, cheapest and most explicable first.
+
+**1. Code, via `command` and `tool:*`.** Deterministic, free, fast, and arguable in a pull request.
+`tool:*` wraps tools that already exist: remark, markdownlint, Vale, manni meta, doc-structure-lint,
+and Doc Detective. Three native checks cover the gaps nothing else does, namely freshness, reading
+level, and cross-page differentiation.
+
+manni docevals **orchestrates; it does not reimplement**. Vale keeps doing what Vale does, and its findings
+arrive as a named eval with a severity alongside everything else.
+
+**2. The AI judge, `ai`.** For assertions that need interpretation: "does this page explain why
+before how?" No linter expresses that. The judge does, with safeguards described below.
+
+**3. A human, via `human` and the review zone.** For what neither code nor judge should decide alone.
+
+The rule to carry is simple. **If you can express the criterion as code, do.** An ai eval is the
+choice of last resort, not the default. Left alone, everything drifts upward into the expensive
+tier, which is why [`promote` and `generate`](/manni/docevals/adopt/promote-to-deterministic/)
+exist.
+
+## How a verdict is reached
+
+**Deterministic graders** produce [findings](/manni/docevals/reference/output-and-exit-codes/) with a
+severity. An eval fails only on an `error`-severity finding; `warning` and `info` report and pass.
+That is the mechanism behind entering a new check at `warning` and
+[ratcheting it up](/manni/docevals/adopt/retrofit-a-legacy-corpus/).
+
+The one exception is a finding that says the grader never reached a verdict. Its tool is not
+installed, timed out, or returned output it could not read. Those are marked `diagnostic` and fail
+the eval at any severity. Passing is a claim about the page, and a broken tool makes no
+claim at all. Severity still controls how the finding is *displayed*.
+
+**The judge** runs the eval N times independently (default 3), each a separate request with no
+shared context so the runs cannot reinforce one another. Consensus aggregates them, then confidence
+decides the zone:
+
+| Zone | Condition | Outcome |
+|---|---|---|
+| auto-pass | passing consensus, mean confidence ≥ `judge.zones.auto-pass` | `pass` |
+| auto-fail | failing consensus, mean confidence ≥ `judge.zones.auto-fail` | `fail` |
+| human review | anything between | `needs-review` |
+
+Two asymmetries are deliberate. A `partial` verdict counts as a **fail**, and an errored run counts
+**against** consensus. Errors can push an eval toward human review; they can never produce a silent
+pass.
+
+Verdicts are cached by content, so an unchanged page with an unchanged assertion never re-judges.
+
+## Verdicts are binary; pass rates are not
+
+Every eval is pass or fail. That looks crude for prose until you see where the nuance lives: the
+**suite pass rate**.
+
+- A **regression** suite guards behavior that must keep working, at target 1.0.
+- A **capability** suite measures reach, at target ~0.7.
+
+So "70% of our how-to pages explain why before how" is expressible. No individual eval has to
+return a mushy 0.7. `type` defaults to `regression`, because most evals guard something. See
+[Regression vs capability](/manni/docevals/evals/regression-vs-capability/).
+
+## The pipeline
+
+```text
+discover pages
+  → resolve frontmatter against config (suites, named evals, inline evals)
+  → generation pass (write scripts for command evals that lack one)
+  → deterministic graders (cheap first)
+  → AI judge
+  → apply persisted human reviews
+  → aggregate per suite → exit code
+```
+
+Deterministic graders run before the judge on purpose: they are free, and a page that fails a cheap
+check rarely needs an expensive opinion.
+
+## Next
+
+- [Declare evals in frontmatter](/manni/docevals/evals/), the contract
+- [Write good assertions](/manni/docevals/evals/write-good-assertions/), the skill that decides whether
+  any of this works
+- [Trust the judge](/manni/docevals/judge/), the mechanics above, in full, plus how to prove them

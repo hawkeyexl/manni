@@ -1,0 +1,212 @@
+---
+title: Named evals and suites
+description: Turn per-page assertions into a shared library, and measure page types against a target pass rate.
+---
+
+The gate worked on one page, so it got copied. Now the same assertion exists in twelve pages with
+three slightly different wordings. Nobody can say what a how-to page is actually checked for.
+
+This is where manni docevals stops being a linter and becomes a standard.
+
+## Name the eval once
+
+Move it into `manni.config.yaml` under `evals`:
+
+```yaml
+docevals:
+  evals:
+    no-future-promises:
+      type: regression
+      assertion: The page makes no claims about unreleased or future functionality.
+      grader: ai
+      evidence: All prose sections
+      examples:
+        pass: Describes only shipped behavior.
+        fail: Says "coming soon" or references an unreleased version.
+```
+
+Pages reference it by name:
+
+```yaml
+evals:
+  - use: no-future-promises
+```
+
+Change the wording in one place and every page that uses it changes. Names match
+`^[a-z0-9][a-z0-9-]*$`.
+
+## Group them into suites
+
+A suite is a named group plus a target pass rate, the checks that apply to a *kind* of page.
+
+```yaml
+docevals:
+  suites:
+    reference:
+      target-pass-rate: 1.0
+      evals: [no-future-promises, fresh-enough, readable, frontmatter-valid]
+    tutorial:
+      target-pass-rate: 0.7
+      evals: [explains-why-before-how, no-future-promises]
+    how-to:
+      target-pass-rate: 1.0
+      evals: [no-future-promises, readable]
+```
+
+```yaml
+---
+title: Installation
+eval-suite: how-to
+---
+```
+
+Set `defaults.suite` to apply one to every page that names none, and pages only carry an `evals` key
+when they need something specific.
+
+## `target-pass-rate` is a suite property
+
+This is the piece people miss, and missing it makes manni docevals look far too strict.
+
+Individual verdicts are binary. The nuance lives in the **rate across a suite**:
+
+- **1.0** for a regression suite. These checks must all hold.
+- **~0.7** for a capability suite. This measures how far a quality goal has spread, and a corpus
+  partway there is the expected state, not a failure.
+
+```console
+Suites
+  reference: 2/3 passed — 67% vs target 100% below target (1 skipped)
+```
+
+A suite below target fails the run. Leaving a capability suite at the default 1.0 turns every
+capability finding into a build break. That is the most common way to conclude the tool is unusable.
+
+Skipped evals are excluded from the rate entirely, and so are evals awaiting human review. The
+rate is computed over the **graded** set, which is pass, fail, and error.
+
+### Not every eval has to count the same
+
+By default each eval contributes 1. `weight` changes how much an outcome moves the rate, and
+nothing else. The eval still passes or fails on its own terms, and the counts stay counts.
+
+```yaml
+docevals:
+  evals:
+    install-command-is-current:
+      assertion: The page shows the current global install command.
+    house-style-heading-case:
+      grader: tool:regex
+      options: { pattern: "^## [A-Z][a-z]" }
+      severity: warning
+      weight: 0.5      # secondary: it reports, it does not dominate
+```
+
+Zero is rejected. A weightless eval is a silent disable, and `eval-skip` already means that,
+loudly.
+
+### Several evals scored as one
+
+Sometimes two checks only mean something together. A `criterion` groups them and scores the group
+**once**, so writing three checks as a group cannot outvote three standalone evals:
+
+```yaml
+docevals:
+  criteria:
+    install-path-is-complete:
+      evals: [has-prereqs, has-verify-step]
+      combine: all      # or `any`
+      weight: 2
+  suites:
+    reference:
+      evals: [fresh-enough]
+      criteria: [install-path-is-complete]
+```
+
+Members keep their own results, so a report still says which one failed. A criterion whose members
+were not all graded, through a filtered run or a skipped member, is **suspended** rather than failed.
+A group measured in part has numbers but no verdict.
+
+## Run one suite
+
+`--suite <name>` narrows `run` and `list` to the evals a suite is composed of:
+
+```bash
+npx @hawkeyexl/manni docevals list --suite reference
+npx @hawkeyexl/manni docevals run --suite reference --deterministic-only
+```
+
+It selects the evals that **report under** that suite. That is the same suite you see in `list`
+output and in the summary. A page gets it from its own `eval-suite` or from `defaults.suite`. So `--suite
+reference` runs everything on the reference pages and nothing on a `how-to` page, even where the two
+suites are composed of overlapping evals.
+
+Two things it does *not* do. It does not redefine anything: `target-pass-rate` is untouched, and a
+page still reports under its own suite. And it does not measure a target. The run saw only part of
+the corpus, so the summary comes back `partial`, printing its numbers and withholding the verdict:
+
+```console
+Suites
+  reference: 14/15 passed — 93% vs target 100% partial — filtered run, target not evaluated (6 skipped)
+```
+
+That run still exits `1`, because one of the fifteen genuinely failed. Suspending the *target* does
+not suspend the findings. A filtered run stops claiming that the suite as a whole is in good
+standing. It does not stop reporting that something it looked at was wrong.
+
+Naming a suite the config does not define is exit 2, with the defined names in the message. Full
+behavior, including the per-eval `--eval` filter, in
+[Selecting evals suspends suite enforcement](/manni/docevals/reference/cli/#selecting-evals-suspends-suite-enforcement).
+
+## Referential integrity is checked at load
+
+Two mistakes fail immediately with exit 2 rather than surfacing later as a confusing per-page
+problem:
+
+- A suite referencing an eval that is not defined.
+- `defaults.suite` naming a suite that does not exist.
+
+## Narrow without forking
+
+When one page needs a variant, override at the reference rather than defining a near-duplicate:
+
+```yaml
+evals:
+  - use: fresh-enough
+    severity: warning
+    options: { max-age-days: 180 }
+```
+
+`options` merges over the base; `type`, `severity`, and `skip` replace. A second eval with the id
+`fresh-enough-but-stricter` is how a library rots.
+
+## Check what resolved
+
+Suites, references, and inline definitions can all contribute the same name, and **page entries win
+on collision**. Do not guess:
+
+```bash
+npx @hawkeyexl/manni docevals list docs/
+```
+
+```console
+test/docevals/fixtures/pages/docs/actions/goTo.mdx (suite: reference)
+  - no-future-promises [ai, regression, config]
+  - fresh-enough [tool:freshness, regression, config]
+  - readable [tool:reading-level, regression, config]
+  - frontmatter-valid [tool:docmeta, regression, config]
+
+1 pages, 4 evals resolved
+```
+
+`source`, the third item, is `config` or `page`, which is exactly what you need when one page
+behaves unlike its neighbours.
+
+{/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
+
+{/* step {"description":"`list` reports the suite a page resolved to and the source of each eval.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages/docs/actions/goTo.mdx","exitCodes":[0],"stdio":"/suite: reference/"}} */}
+
+{/* step {"description":"A suite below its target pass rate fails the run.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate","exitCodes":[1],"stdio":"below target"}} */}
+
+{/* step {"description":"--suite narrows `list` to the evals that suite is composed of.","runShell":{"command":"manni docevals list --suite reference","exitCodes":[0],"stdio":"evals resolved"}} */}
+
+{/* step {"description":"A --suite run reports the suite as partial rather than measuring its target, and a real failure inside the filter still exits 1.","runShell":{"command":"manni docevals run --deterministic-only --no-generate --suite reference","exitCodes":[1],"stdio":"filtered run, target not evaluated"}} */}
