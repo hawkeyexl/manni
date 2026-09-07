@@ -142,12 +142,14 @@ pattern.
 ### 4. Why not let `<list>` flags also repeat? (three places pay)
 
 `--ext md --ext mdx` parses fine and reads well, and the objection is not in the
-parser. The reference page has to document both spellings. The integration tests
-have to pin both, for the reason 0016 § stress test 4 gives. A behavior that can
-be reached two ways needs a test on each way, or the untested one drifts. And
+parser. Two earlier proposals carry it. [0005](0005-command-parity.md) § stress
+test 4 declined a repeatable `--fields`, and [0016](0016-flag-ownership.md) §
+stress test 4 is where the testing argument comes from. A behavior that can be
+reached two ways needs a test on each way, or the untested one drifts. With
+that lineage, three places pay for a second spelling. The reference page has to
+document both. The integration tests have to pin both, for 0016's reason. And
 the config key that mirrors the flag (`exclude:` is a YAML list) has to say
-which spelling it corresponds to. 0005 declined the same thing for `--fields`,
-and the reasoning has not changed.
+which spelling it corresponds to. The reasoning has not changed.
 
 ### 5. Does the third level cap the depth? (yes, at three)
 
