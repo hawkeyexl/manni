@@ -21,6 +21,8 @@ export interface FakePage {
   violations?: Violation[];
   passes?: number;
   incomplete?: number;
+  /** Where the browser landed, when the page redirects. Absent means it stayed put. */
+  finalUrl?: string;
 }
 
 export type FakeSite = Record<string, FakePage | Error>;
@@ -53,6 +55,7 @@ export function fakeAnalyzer(site: FakeSite): FakeAnalyzer {
         },
         links: page.links ?? [],
       };
+      if (page.finalUrl !== undefined) analyzed.finalUrl = page.finalUrl;
       return Promise.resolve(analyzed);
     },
     close() {

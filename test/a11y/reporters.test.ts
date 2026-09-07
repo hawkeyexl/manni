@@ -52,6 +52,7 @@ function summarize(
     discovered: results.length,
     checked: results.length,
     skipped: 0,
+    duplicates: 0,
     failed,
     violations,
     byImpact,
@@ -193,6 +194,18 @@ describe("render pretty", () => {
     expect(lines.at(-1)).toBe("3 violations on 2 of 3 pages; 2 skipped (--max-pages)");
     // A blank line separates the pages from the footer.
     expect(lines.at(-2)).toBe("");
+  });
+
+  it("names the duplicates dropped, only when there were any", () => {
+    const pages = [page({ url: `${S}/` }), page({ url: `${S}/old` })];
+    const none = render("pretty", checkRun(pages, { discovered: 3 }), off);
+    expect(none).not.toContain("duplicate");
+    const some = render("pretty", checkRun(pages, { discovered: 4, duplicates: 2 }), off);
+    expect(some.split("\n").at(-1)).toBe("0 violations on 0 of 2 pages; 2 duplicates dropped");
+    const one = render("pretty", checkRun(pages, { discovered: 5, skipped: 2, duplicates: 1 }), off);
+    expect(one.split("\n").at(-1)).toBe(
+      "0 violations on 0 of 2 pages; 2 skipped (--max-pages); 1 duplicate dropped",
+    );
   });
 
   it("uses the singular when there is one violation", () => {

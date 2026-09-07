@@ -335,6 +335,37 @@ most. The cost is a few extra 404s per run, each a small GET before the first
 page loads. Only on a site that has no sitemap at all does the walk run to the
 end.
 
+### 9. Are `/a` and `/a/` one page?
+
+For this crawl, yes. The first run against the docs site checked
+`https://hawkeyexl.github.io/manni/` twice: once as the seed, once as the
+sitemap's `/manni`. The URL parser keeps the path as written, and so did the
+frontier, because `/a` and `/a/` can be different resources. On a static site
+they never are. A file server answers `/a/` with `/a/index.html` and redirects
+`/a` to it, or serves both. So the run double-counted one page and loaded it
+twice.
+
+The rule is a dedupe key rather than a rewrite. `dedupeKey` is `normalizeUrl`
+with one trailing `/` dropped from the path, unless the path is exactly `/`.
+The query survives. The frontier is keyed by it, and the spelling that arrives
+first is the one fetched and reported. So seeds beat the sitemap and the sitemap
+beats links, as before. The URL the user typed is the URL in the report.
+
+Where the browser lands counts as visited too. The Playwright analyzer reports
+`finalUrl` from `page.url()` after `goto`, and the crawl marks its key seen. A
+spelling already queued is dropped when its turn comes, without loading, and
+counted as a `duplicate`. That is neither `checked` nor `skipped`. The footer
+says `; K duplicates dropped` only when K is not zero, and the JSON carries the
+count always.
+
+The risk is a site where `/a` and `/a/` are two pages. The run checks the one
+whose spelling came first and never loads the other. For an accessibility crawl
+that is the right trade. The two spellings of one page outnumber, by a wide
+margin, the sites that serve different documents at each. A missed page costs
+one page from the run. A doubled page costs a wrong `checked` count, a doubled
+violation total, and a slower run on every static site there is. Query strings
+stay distinct because they are the one place static sites do vary a page.
+
 ## Consequences
 
 - `manni --help` lists two domains. `manni a11y check <url>` is the first

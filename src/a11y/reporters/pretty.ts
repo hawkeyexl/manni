@@ -48,7 +48,10 @@ export function renderPretty(run: CheckRun, opts: RenderOptions): string {
   const failed = summary.failed;
   const footer =
     `${summary.violations} violation${summary.violations === 1 ? "" : "s"} on ${failed} of ${summary.checked} pages` +
-    (summary.skipped > 0 ? `; ${summary.skipped} skipped (--max-pages)` : "");
+    (summary.skipped > 0 ? `; ${summary.skipped} skipped (--max-pages)` : "") +
+    (summary.duplicates > 0
+      ? `; ${summary.duplicates} duplicate${summary.duplicates === 1 ? "" : "s"} dropped`
+      : "");
   lines.push("");
   lines.push(failed > 0 ? c.red(footer) : c.green(footer));
   return lines.join("\n");

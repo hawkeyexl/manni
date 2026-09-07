@@ -22,6 +22,12 @@ export interface AnalyzedPage {
   result: Omit<PageResult, "source" | "score">;
   /** Absolute `href` of every `a[href]` in the live DOM after load, unfiltered. */
   links: string[];
+  /**
+   * The browser's URL once navigation and any redirects settled. The crawl
+   * marks it visited so a later queued spelling of the same page is not
+   * loaded again. Absent when the analyzer does not know it.
+   */
+  finalUrl?: string;
 }
 
 export interface PageAnalyzer {
@@ -88,7 +94,7 @@ interface Session {
 /**
  * Playwright-backed analyzer. Lazy: the browser launches on the first
  * `analyze`, one context and one page are reused for every URL.
- * - `page.goto(url, { waitUntil: "load", timeout })`
+ * - `page.goto(url, { waitUntil: "load", timeout })`; `finalUrl` is `page.url()` after it
  * - links: every `a[href]`'s absolute `href` from the live DOM
  * - `new AxeBuilder({ page })`, `.withTags(tags)` only when `tags.length > 0`, `.analyze()`
  * - map axe `Result` → `Violation` (impact `null`/`undefined` → "minor"; node
@@ -136,6 +142,7 @@ export function createPlaywrightAnalyzer(): PageAnalyzer {
           incomplete: results.incomplete.length,
         },
         links,
+        finalUrl: page.url(),
       };
     },
 

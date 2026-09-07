@@ -112,10 +112,14 @@ The frontier is filled in this order:
    `.jpg`, `.svg`, `.css`, `.js`, `.json`, `.xml`, `.txt`, `.mp4`, `.woff2`,
    among others).
 
-Each normalized URL enters the frontier once. Pages are analyzed sequentially,
-in discovery order, and every result records its `source`: `seed`, `sitemap`,
-or `link`. The run stops when `--max-pages` pages have been checked; the
-frontier left behind is the `skipped` count.
+Each normalized URL enters the frontier once, and a trailing slash does not make
+a second page. `/install` and `/install/` are one entry, under whichever
+spelling arrived first. Where the browser lands after a redirect counts as
+visited too. A queued spelling of that page is then dropped without loading and
+reported as a `duplicate`. Pages are analyzed sequentially, in discovery order,
+and every result records its `source`: `seed`, `sitemap`, or `link`. The run
+stops when `--max-pages` pages have been checked; the frontier left behind is
+the `skipped` count.
 
 Failures split by where they happen. A seed that fails to load or analyze stops
 the run with exit `2`, because nothing was checked. A crawled page that fails is
@@ -166,8 +170,9 @@ carries the impact, the rule id, the node count, axe's short help text, and the
 rule's Deque University URL. Under it, the first three failing elements print as
 a selector and axe's failure summary, then `(+N more)` past three. A page that
 could not load prints `could not load: <reason>`. The footer adds
-`; K skipped (--max-pages)` when the cap was hit. `-q` hides pages with no
-remaining violations.
+`; K skipped (--max-pages)` when the cap was hit, and `; K duplicates dropped`
+when a redirect landed on a page that was also queued under another spelling.
+`-q` hides pages with no remaining violations.
 
 **`json`** prints one object, the whole run, for scripts:
 
@@ -202,6 +207,7 @@ remaining violations.
     "discovered": 42,
     "checked": 42,
     "skipped": 0,
+    "duplicates": 0,
     "failed": 2,
     "violations": 3,
     "byImpact": { "minor": 0, "moderate": 1, "serious": 2, "critical": 0 },
@@ -230,6 +236,7 @@ And `summary`:
 | `discovered` | integer | Distinct URLs that entered the frontier, whether seeds, sitemap entries, or links. |
 | `checked` | integer | Pages actually analyzed. |
 | `skipped` | integer | Discovered but not checked because `--max-pages` was reached. |
+| `duplicates` | integer | Discovered, then dropped without loading because a redirect had already landed on the same page under another spelling. `checked + skipped + duplicates` equals `discovered`. |
 | `failed` | integer | Pages with at least one remaining violation or an `error`. Drives exit `1`. |
 | `violations` | integer | Remaining violations across all pages, counted per rule rather than per node. |
 | `byImpact` | object | Violation counts keyed `minor`, `moderate`, `serious`, `critical`. All four keys are always present. |

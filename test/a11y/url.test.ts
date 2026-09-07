@@ -6,12 +6,45 @@
 import { describe, expect, it } from "vitest";
 import {
   ASSET_EXTENSIONS,
+  dedupeKey,
   isHttpUrl,
   isPageLink,
   normalizeUrl,
   sameHost,
 } from "../../src/a11y/core/url.js";
 import { A11yError } from "../../src/a11y/types.js";
+
+describe("dedupeKey", () => {
+  it("drops one trailing slash from the path", () => {
+    expect(dedupeKey("https://example.com/a/")).toBe("https://example.com/a");
+    expect(dedupeKey("https://example.com/a")).toBe("https://example.com/a");
+    expect(dedupeKey("https://example.com/docs/guide/")).toBe("https://example.com/docs/guide");
+  });
+
+  it("keeps the root path as /", () => {
+    expect(dedupeKey("https://example.com/")).toBe("https://example.com/");
+    expect(dedupeKey("https://example.com")).toBe("https://example.com/");
+  });
+
+  it("keeps the query string", () => {
+    expect(dedupeKey("https://example.com/a/?b=1&c=2")).toBe("https://example.com/a?b=1&c=2");
+    expect(dedupeKey("https://example.com/a?b=1")).toBe("https://example.com/a?b=1");
+    expect(dedupeKey("https://example.com/?b=1")).toBe("https://example.com/?b=1");
+  });
+
+  it("normalizes the fragment and the host case first", () => {
+    expect(dedupeKey("HTTPS://Example.COM/A/#top")).toBe("https://example.com/A");
+    expect(dedupeKey("http://example.com:80/a/")).toBe("http://example.com/a");
+  });
+
+  it("leaves a path that names a file alone", () => {
+    expect(dedupeKey("https://example.com/a.html")).toBe("https://example.com/a.html");
+  });
+
+  it("throws A11yError for an unparseable string", () => {
+    expect(() => dedupeKey("not a url")).toThrow(A11yError);
+  });
+});
 
 describe("normalizeUrl", () => {
   it("drops the fragment", () => {

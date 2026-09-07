@@ -24,6 +24,7 @@ export { loadA11yConfig, parseA11yConfig } from "./core/config.js";
 export type { A11yConfig, LoadedA11yConfig } from "./core/config.js";
 export {
   normalizeUrl,
+  dedupeKey,
   isHttpUrl,
   sameHost,
   isPageLink,

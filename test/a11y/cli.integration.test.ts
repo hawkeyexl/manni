@@ -89,7 +89,13 @@ async function serveSite(): Promise<SchemaServer> {
 
 interface JsonRun {
   results: { url: string; violations: { id: string }[]; score: number | null; error?: string }[];
-  summary: { checked: number; discovered: number; skipped: number; failed: number };
+  summary: {
+    checked: number;
+    discovered: number;
+    skipped: number;
+    duplicates: number;
+    failed: number;
+  };
 }
 
 describe("manni a11y check (usage errors, no browser needed)", () => {
@@ -176,6 +182,21 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
     }
     expect(r.stdout).toMatch(/score \d+/);
     expect(r.stdout).toMatch(/^Checked 3 of 3 pages/m);
+  }, 120_000);
+
+  it("treats the seed's spelling and the sitemap's as one page across a trailing slash", async () => {
+    // The fixture server answers `/index.html/` with a 404 page, which still
+    // loads. The sitemap lists `/index.html`, and that spelling must not be
+    // checked as a second page.
+    const r = await run(["check", `${server.url}/index.html/`, "-f", "json"]);
+    const json = JSON.parse(r.stdout) as JsonRun;
+    const urls = json.results.map((p) => p.url);
+    expect(urls[0]).toBe(`${server.url}/index.html/`);
+    expect(urls).not.toContain(`${server.url}/index.html`);
+    expect(urls).toContain(`${server.url}/about.html`);
+    expect(json.summary.checked).toBe(3);
+    expect(json.summary.discovered).toBe(3);
+    expect(json.summary.duplicates).toBe(0);
   }, 120_000);
 
   it("--no-crawl checks exactly the given page", async () => {

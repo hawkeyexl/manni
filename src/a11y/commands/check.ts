@@ -7,7 +7,7 @@
  * tested end to end with neither a browser nor a network.
  */
 import type { PageAnalyzer } from "../core/analyzer.js";
-import { crawl } from "../core/crawl.js";
+import { crawl, type CrawlOutcome } from "../core/crawl.js";
 import { discoverSitemap, type Fetcher, type SitemapDiscovery } from "../core/sitemap.js";
 import { isHttpUrl, normalizeUrl } from "../core/url.js";
 import {
@@ -97,7 +97,7 @@ export async function runCheck(opts: CheckOptions, deps: CheckDeps): Promise<Che
     const results = outcome.pages.map((page) => finishPage(page, opts.impact));
     return {
       results,
-      summary: summarize(results, outcome.discovered, outcome.skipped, sitemap.source, opts.crawl),
+      summary: summarize(results, outcome, sitemap.source, opts.crawl),
     };
   } finally {
     await analyzer.close();
@@ -115,8 +115,7 @@ function finishPage(page: Omit<PageResult, "score">, floor: Impact): PageResult 
 
 function summarize(
   results: PageResult[],
-  discovered: number,
-  skipped: number,
+  { discovered, skipped, duplicates }: CrawlOutcome,
   sitemap: string | null,
   crawl: boolean,
 ): CheckSummary {
@@ -134,6 +133,7 @@ function summarize(
     discovered,
     checked: results.length,
     skipped,
+    duplicates,
     failed,
     violations,
     byImpact,

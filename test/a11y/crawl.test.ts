@@ -212,6 +212,101 @@ describe("crawl", () => {
   });
 });
 
+describe("crawl and the trailing slash", () => {
+  it("treats a seed of /x/ and a sitemap entry of /x as one page", async () => {
+    const analyzer = fakeAnalyzer({ [`${S}/x/`]: {} });
+    const out = await crawl(options({ seeds: [`${S}/x/`], extra: [`${S}/x`] }), analyzer);
+    expect(analyzer.calls.map((c) => c.url)).toEqual([`${S}/x/`]);
+    expect(out.pages.map((p) => [p.url, p.source])).toEqual([[`${S}/x/`, "seed"]]);
+    expect(out).toMatchObject({ discovered: 1, skipped: 0, duplicates: 0 });
+  });
+
+  it("keeps the spelling that came first: the seed's, then the sitemap's", async () => {
+    const analyzer = fakeAnalyzer({ [`${S}/`]: { links: [`${S}/y/`] }, [`${S}/y`]: {} });
+    const out = await crawl(options({ extra: [`${S}/y`] }), analyzer);
+    expect(analyzer.calls.map((c) => c.url)).toEqual([`${S}/`, `${S}/y`]);
+    expect(out.pages.map((p) => p.source)).toEqual(["seed", "sitemap"]);
+  });
+
+  it("does not load a link to /y after /y/ was checked", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: { links: [`${S}/y/`] },
+      [`${S}/y/`]: { links: [`${S}/y`, `${S}/z`] },
+      [`${S}/z`]: { links: [`${S}/z/`, `${S}/`] },
+    };
+    const analyzer = fakeAnalyzer(site);
+    const out = await crawl(options({}), analyzer);
+    expect(analyzer.calls.map((c) => c.url)).toEqual([`${S}/`, `${S}/y/`, `${S}/z`]);
+    expect(out.discovered).toBe(3);
+  });
+
+  it("counts discovered by key, not by spelling", async () => {
+    const analyzer = fakeAnalyzer({ [`${S}/`]: { links: [`${S}/a`, `${S}/a/`, `${S}/b/`, `${S}/b`] } });
+    const out = await crawl(options({ maxPages: 1 }), analyzer);
+    expect(out).toMatchObject({ discovered: 3, skipped: 2, duplicates: 0 });
+  });
+});
+
+describe("crawl and redirects", () => {
+  it("drops a queued URL whose key the browser already landed on", async () => {
+    // /r redirects to /z/. /z was queued before /r was analyzed, so it is
+    // still in the frontier when its turn comes, and is dropped then.
+    const site: FakeSite = {
+      [`${S}/`]: { links: [`${S}/r`, `${S}/z`] },
+      [`${S}/r`]: { finalUrl: `${S}/z/` },
+      [`${S}/z`]: {},
+    };
+    const analyzer = fakeAnalyzer(site);
+    const out = await crawl(options({}), analyzer);
+    expect(analyzer.calls.map((c) => c.url)).toEqual([`${S}/`, `${S}/r`]);
+    expect(out.pages.map((p) => p.url)).toEqual([`${S}/`, `${S}/r`]);
+    expect(out).toMatchObject({ discovered: 3, skipped: 0, duplicates: 1 });
+  });
+
+  it("never queues a link to a redirect target learned earlier", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: { links: [`${S}/r`] },
+      [`${S}/r`]: { finalUrl: `${S}/z/`, links: [`${S}/z`] },
+      [`${S}/z`]: {},
+    };
+    const analyzer = fakeAnalyzer(site);
+    const out = await crawl(options({}), analyzer);
+    expect(analyzer.calls.map((c) => c.url)).toEqual([`${S}/`, `${S}/r`]);
+    expect(out).toMatchObject({ discovered: 2, skipped: 0, duplicates: 0 });
+  });
+
+  it("reports the page under the URL it was asked for, not where it landed", async () => {
+    const analyzer = fakeAnalyzer({ [`${S}/old`]: { finalUrl: `${S}/new/` } });
+    const out = await crawl(options({ seeds: [`${S}/old`] }), analyzer);
+    expect(out.pages[0]?.url).toBe(`${S}/old`);
+  });
+
+  it("a duplicate counts as neither checked nor skipped", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: { links: [`${S}/r`, `${S}/z`, `${S}/w`] },
+      [`${S}/r`]: { finalUrl: `${S}/z/` },
+      [`${S}/w`]: {},
+    };
+    const events: ProgressEvent[] = [];
+    const out = await crawl(options({ onProgress: (e) => events.push(e) }), fakeAnalyzer(site));
+    expect(out.pages.map((p) => p.url)).toEqual([`${S}/`, `${S}/r`, `${S}/w`]);
+    expect(out).toMatchObject({ discovered: 4, skipped: 0, duplicates: 1 });
+    // The page counter never names the dropped URL.
+    expect(events.filter((e) => e.kind === "page").map((e) => e.url)).toEqual([
+      `${S}/`,
+      `${S}/r`,
+      `${S}/w`,
+    ]);
+    expect(events.at(-1)).toEqual({ kind: "done", checked: 3, skipped: 0 });
+  });
+
+  it("ignores a final URL that does not parse", async () => {
+    const analyzer = fakeAnalyzer({ [`${S}/`]: { finalUrl: "not a url" } });
+    const out = await crawl(options({}), analyzer);
+    expect(out.pages).toHaveLength(1);
+  });
+});
+
 describe("crawl progress", () => {
   it("reports the browser, then each page before and after, then done", async () => {
     const site: FakeSite = {

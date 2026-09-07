@@ -203,6 +203,17 @@ describe("runCheck options through to the analyzer", () => {
     expect(run.results).toHaveLength(1);
     expect(run.summary).toMatchObject({ discovered: 3, checked: 1, skipped: 2 });
   });
+
+  it("counts the URLs dropped as duplicates in the summary", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: { links: [`${S}/r`, `${S}/z`] },
+      [`${S}/r`]: { finalUrl: `${S}/z/` },
+      [`${S}/z`]: {},
+    };
+    const run = await runCheck(opts({}), { analyzer: fakeAnalyzer(site), fetcher: noSitemap() });
+    expect(run.results.map((r) => r.url)).toEqual([`${S}/`, `${S}/r`]);
+    expect(run.summary).toMatchObject({ discovered: 3, checked: 2, skipped: 0, duplicates: 1 });
+  });
 });
 
 describe("runCheck and the sitemap", () => {
@@ -275,6 +286,7 @@ describe("runCheck summary", () => {
       discovered: 2,
       checked: 2,
       skipped: 0,
+      duplicates: 0,
       failed: 2,
       violations: 4,
       byImpact: { minor: 0, moderate: 1, serious: 1, critical: 2 },

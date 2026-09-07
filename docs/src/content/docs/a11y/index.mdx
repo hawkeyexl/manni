@@ -123,8 +123,9 @@ Pages come from two places, in this order:
    in its rendered DOM. Anchors, `mailto:`, `tel:`, and links to assets such as
    PDFs, images, and stylesheets are skipped.
 
-Pages are checked one at a time, in the order they were discovered, and each
-URL is checked once regardless of fragment or host casing. `--max-pages` (default
+Pages are checked one at a time, in the order they were discovered. Each URL is
+checked once regardless of fragment, host casing, or a trailing slash. A page
+the browser reached by redirect counts as checked too. `--max-pages` (default
 `100`) caps the run; anything still queued when the cap is hit is reported as
 `skipped`, not failed. `--no-crawl` checks exactly the URLs you named, with no
 sitemap lookup and no link following.

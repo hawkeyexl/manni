@@ -78,6 +78,12 @@ export interface CheckSummary {
   checked: number;
   /** Discovered but not checked because `maxPages` was reached. */
   skipped: number;
+  /**
+   * Discovered, then dropped unloaded because the browser had already landed
+   * on the same page under another spelling (a redirect target). Neither
+   * checked nor skipped: `checked + skipped + duplicates === discovered`.
+   */
+  duplicates: number;
   /** Pages with ≥1 remaining violation or an `error`. Drives exit 1. */
   failed: number;
   /** Total remaining violations across pages (rules, not nodes). */

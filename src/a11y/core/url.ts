@@ -20,6 +20,22 @@ export function normalizeUrl(url: string): string {
   return parsed.href;
 }
 
+/**
+ * The key two spellings of one page share: `normalizeUrl`, then one trailing
+ * `/` dropped from the path unless the path is exactly `/`. The query stays.
+ * `/a` and `/a/` can be different resources, but on a static site they are one
+ * page, and a crawl that checks both double-counts it. Only the seen set uses
+ * this; the URL fetched and reported keeps the spelling it was given. Throws
+ * `A11yError` for an unparseable string.
+ */
+export function dedupeKey(url: string): string {
+  const parsed = new URL(normalizeUrl(url));
+  if (parsed.pathname.length > 1 && parsed.pathname.endsWith("/")) {
+    parsed.pathname = parsed.pathname.slice(0, -1);
+  }
+  return parsed.href;
+}
+
 /** `http:` or `https:` and parseable. */
 export function isHttpUrl(url: string): boolean {
   const parsed = parse(url);
