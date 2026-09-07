@@ -1,0 +1,19 @@
+# Every `cite:` key, once, so a test can prove each one round-trips. The
+# sibling `meta:` section is here to show the tool reads its own key only.
+meta:
+  paths: ["docs/**/*.md"]
+cite:
+  paths: ["pages/**/*.md", "guides/*.mdx"]
+  exclude: ["**/drafts/**"]
+  allowEmpty: true
+  respectGitignore: false
+  root: ../src
+  baseline: .cite-baseline.json
+  git: false
+  sources: false
+  salt: fixture-salt
+  obfuscate: true
+  severity:
+    moved: error
+    changed: warning
+    current: off

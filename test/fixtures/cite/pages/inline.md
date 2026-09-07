@@ -1,0 +1,21 @@
+---
+title: Limits
+citations:
+  - id: fetch-timeout
+    src: src/limits.ts:2
+    integrity: sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f
+    claim: The fetch timeout is 10 seconds.
+  - id: retries
+    src: src/limits.ts:3
+    integrity: sha256-0000000000000000000000000000000000000000000000000000000000000003
+---
+# Limits
+
+<!-- cite fetch-timeout -->
+The fetch timeout is 10 seconds. It is
+not configurable.
+
+[comment]: # (cite retries)
+Retries default to 3.
+
+<!-- cite {"src": "src/limits.ts:1", "integrity": "sha256-0000000000000000000000000000000000000000000000000000000000000001", "claim": "MAX_FILES is ten thousand."} --> MAX_FILES is ten thousand.
