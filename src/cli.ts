@@ -11,6 +11,7 @@
  */
 import { Command } from "commander";
 import pkg from "../package.json" with { type: "json" };
+import { buildProgram as buildCite } from "./cite/cli.js";
 import { buildProgram as buildMeta } from "./meta/cli.js";
 import { runIfMain } from "./shared/run.js";
 
@@ -50,6 +51,13 @@ export function buildProgram(): Command {
     });
 
   program.addCommand(meta);
+  program.addCommand(
+    buildCite()
+      .name("cite")
+      .description(
+        "Track citations from doc claims to source lines and check them for drift",
+      ),
+  );
   return program;
 }
 

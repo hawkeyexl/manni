@@ -53,11 +53,25 @@ describe("manni (built bin)", () => {
     }
   }, 180000);
 
-  it("lists meta as a subcommand", () => {
+  it("lists meta and cite as subcommands", () => {
     const r = run(manni, ["--help"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^Usage: manni /m);
     expect(r.stdout).toMatch(/^\s+meta\b/m);
+    expect(r.stdout).toMatch(/^\s+cite\b/m);
+  });
+
+  it("mounts the citation tool under cite, with no default command", () => {
+    expect(run(manni, ["cite", "check", "--help"]).stdout).toMatch(
+      /^Usage: manni cite check /m,
+    );
+    // Proposal 0034: `cite` has verbs and nothing else, so a bare `manni cite`
+    // is a usage error that shows them.
+    const bare = run(manni, ["cite"]);
+    expect(bare.status).toBe(2);
+    expect(bare.stdout).toBe("");
+    expect(bare.stderr).toMatch(/^Usage: manni cite /m);
+    expect(bare.stderr).toMatch(/^\s+check\b/m);
   });
 
   it("with no command is a usage error that points at the subcommands", () => {

@@ -1,7 +1,216 @@
-/** `manni cite check`: resolve targets, check every page, settle the baseline. */
-import type { CheckOptions, CheckRun } from "../types.js";
-import { notImplemented } from "../core/not-implemented.js";
+/**
+ * `manni cite check`: resolve targets, check every page, settle the baseline.
+ *
+ * The run shape is meta's `validate`: `resolveCiteRun` → `resolveTargetSet` /
+ * `assertNonEmpty` → one `checkCitations` per page → `settleBaseline`. One git
+ * client and one source index are built for the run and handed to every page,
+ * so a thousand pages against one root cost one `git ls-files`. `prepareRun`
+ * is the shared front half; `update` runs the same one.
+ */
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
+import {
+  isErrorSeverity,
+  supportedExtensions,
+  type FieldError,
+  type FingerprintContext,
+  type MetadataExtractor,
+  type RunSummary,
+} from "../../meta/index.js";
+import {
+  assertNonEmpty,
+  extractorByName,
+  gitignoreOptions,
+  resolveBaselineRequest,
+  resolveTargetSet,
+  settleBaseline,
+  STDIN_LABEL,
+  STDIN_TOKEN,
+} from "../../meta/internal.js";
+import { toValidationResult } from "../core/adapt.js";
+import { checkCitations } from "../core/check-page.js";
+import { DEFAULT_CITE_BASELINE_PATH, resolveCiteRun } from "../core/config.js";
+import { gitClient, noGit } from "../core/git.js";
+import { buildSourceIndex } from "../core/sources.js";
+import { CiteError } from "../errors.js";
+import type {
+  CheckOptions,
+  CheckPageOptions,
+  CheckRun,
+  CiteRun,
+  GitClient,
+  PageCitationReport,
+  SourceIndex,
+} from "../types.js";
 
-export function runCheck(opts: CheckOptions): Promise<CheckRun> {
-  return notImplemented("runCheck", opts);
+/** What `check` and `update` settle before touching a page. */
+export interface PreparedRun {
+  cwd: string;
+  run: CiteRun;
+  /** Files to process, posix and relative to `run.base`. */
+  files: string[];
+  gitignoreSkipped: number;
+  usingStdin: boolean;
+  /** The `--as` extractor, validated. */
+  forced?: MetadataExtractor;
+  /** What every `checkCitations` call in the run shares: root, salt, table, client, index. */
+  pageOptions: CheckPageOptions;
+}
+
+function isEnoent(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
+}
+
+async function indexFor(root: string, salt: string, client: GitClient, git: boolean): Promise<SourceIndex> {
+  try {
+    return await buildSourceIndex(root, salt, { gitClient: client, git });
+  } catch (error) {
+    if (isEnoent(error)) throw new CiteError(`Root directory not found: ${root}.`);
+    throw error;
+  }
+}
+
+/**
+ * The front half of a run: which config governs it, which files it covers,
+ * and the clients every page shares. `action` is the past-tense verb the
+ * empty-set error uses ("checked"), `verb` the imperative one ("check").
+ */
+export async function prepareRun(
+  opts: CheckOptions,
+  action: string,
+  verb: string,
+  requireSources = false,
+): Promise<PreparedRun> {
+  const cwd = resolve(opts.cwd ?? process.cwd());
+  const run = await resolveCiteRun({
+    cwd,
+    configPath: opts.configPath,
+    noConfig: opts.noConfig,
+    inputs: opts.inputs,
+    root: opts.root,
+    onConfigLoaded: opts.onConfigLoaded,
+    onNotice: opts.onNotice,
+  });
+  const { config, inputs, base } = run;
+
+  const sources = opts.sources ?? config?.sources ?? true;
+  if (requireSources && !sources) {
+    throw new CiteError("update needs the sources: drop --no-sources (or `sources: false`).");
+  }
+  if (inputs.length === 0) {
+    throw new CiteError(
+      `No files to ${verb}. Pass paths/globs, or add \`paths:\` under \`cite:\` in manni.config.yaml.`,
+    );
+  }
+
+  const usingStdin = inputs.includes(STDIN_TOKEN);
+  const forced = opts.as === undefined ? undefined : extractorByName(opts.as);
+  if (opts.as !== undefined && forced?.implemented !== true) {
+    throw new CiteError(
+      `Unknown format "${opts.as}". Supported extensions: ${supportedExtensions().join(", ")}.`,
+    );
+  }
+  if (usingStdin && forced === undefined) {
+    throw new CiteError("Reading from stdin (`-`) requires --as <format> to choose an extractor.");
+  }
+
+  const exts = opts.exts ?? forced?.extensions;
+  const fileInputs = inputs.filter((input) => input !== STDIN_TOKEN);
+  const allowEmpty = opts.allowEmpty ?? config?.allowEmpty;
+  const exclude = [...(config?.exclude ?? []), ...(opts.exclude ?? [])];
+  const { files, gitignoreSkipped } = await resolveTargetSet({
+    inputs: fileInputs,
+    exts,
+    exclude,
+    cwd: base,
+    allowEmpty,
+    ...gitignoreOptions({
+      flag: opts.respectGitignore,
+      configured: config?.respectGitignore,
+      onNotice: opts.onNotice,
+    }),
+  });
+  assertNonEmpty({ files, inputs: fileInputs, usingStdin, allowEmpty, exclude, exts, gitignoreSkipped, action });
+
+  const git = opts.git ?? config?.git ?? true;
+  const client = git ? gitClient(run.root) : noGit();
+  const pageOptions: CheckPageOptions = {
+    root: run.root,
+    git,
+    sources,
+    salt: run.salt,
+    severity: config?.severity,
+    gitClient: client,
+  };
+  if (sources) pageOptions.sourceIndex = await indexFor(run.root, run.salt, client, git);
+
+  return { cwd, run, files, gitignoreSkipped, usingStdin, forced, pageOptions };
+}
+
+/** Read a resolved target, as the run labelled it. */
+export function readTarget(run: CiteRun, file: string): Promise<string> {
+  return readFile(resolve(run.base, file), "utf8");
+}
+
+/** Run-level notices are said once per run, however many pages raised them. */
+export function sayNotices(pages: readonly PageCitationReport[], onNotice: CheckOptions["onNotice"]): void {
+  const said = new Set<string>();
+  for (const page of pages) {
+    for (const notice of page.notices) {
+      if (said.has(notice)) continue;
+      said.add(notice);
+      onNotice?.(notice);
+    }
+  }
+}
+
+export async function runCheck(opts: CheckOptions): Promise<CheckRun> {
+  const { cwd, run, files, gitignoreSkipped, usingStdin, forced, pageOptions } = await prepareRun(
+    opts,
+    "checked",
+    "check",
+  );
+
+  const pages: PageCitationReport[] = [];
+  const checkOne = async (label: string, content: string): Promise<void> => {
+    pages.push(await checkCitations({ file: label, content, format: forced?.name }, pageOptions));
+  };
+  if (usingStdin) await checkOne(STDIN_LABEL, opts.stdinContent ?? "");
+  for (const file of files) await checkOne(file, await readTarget(run, file));
+  sayNotices(pages, opts.onNotice);
+
+  const results = pages.map(toValidationResult);
+  // Fingerprints must not depend on where the command was run from, so they
+  // are measured from the config's directory when one governs the run.
+  const frame: FingerprintContext = { cwd, base: run.configDir ?? cwd, runBase: run.base };
+  const request = resolveBaselineRequest(opts, run.config?.baseline, run.configDir, cwd, {
+    current: DEFAULT_CITE_BASELINE_PATH,
+  });
+  // The ratchet's own not-found error names `meta validate`; this tool's
+  // baseline is recorded by its own command, so the advice has to say so.
+  if (request !== null && !request.write && !existsSync(request.absPath)) {
+    throw new CiteError(
+      `Baseline "${request.label}" not found. Record one with \`manni cite check --write-baseline\`, or drop --baseline.`,
+    );
+  }
+  const { results: reported, baseline } = await settleBaseline(results, request, frame);
+
+  const failed = reported.filter((r) => !r.ok).length;
+  const count = (keep: (e: FieldError) => boolean): number =>
+    reported.reduce((n, r) => n + r.errors.filter(keep).length, 0);
+  const warnings = count((e) => !isErrorSeverity(e));
+  const summary: RunSummary = {
+    files: reported.length,
+    passed: reported.length - failed,
+    failed,
+    errors: count(isErrorSeverity),
+    // Omitted at zero, as meta's summary has them, so the JSON shape of a
+    // clean run is the one every consumer of `meta validate` already reads.
+    ...(warnings > 0 ? { warnings } : {}),
+    ...(gitignoreSkipped > 0 ? { gitignoreSkipped } : {}),
+    ...(baseline ? { baseline } : {}),
+  };
+
+  return { results: reported, summary, frame, pages, warnings };
 }
