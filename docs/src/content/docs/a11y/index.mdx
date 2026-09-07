@@ -1,0 +1,214 @@
+---
+title: manni a11y
+description: "Crawl a site and check every page for accessibility violations with axe-core, built for CI."
+template: splash
+hero:
+  tagline: Crawl a site and check every page for accessibility violations with axe-core, built for CI.
+  actions:
+    - text: CLI reference
+      link: /manni/a11y/reference/cli/
+      icon: right-arrow
+      variant: primary
+    - text: Install a browser
+      link: /manni/a11y/#a-browser
+      icon: setting
+      variant: minimal
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+`manni a11y check` takes a URL, crawls the site behind it, and runs
+[axe-core](https://github.com/dequelabs/axe-core) against every page it
+reaches. Each page gets a list of violations, with the rule that fired, the
+element it fired on, and axe's own statement of what to change. The run exits
+`1` when any page still has a violation, so the command you run locally is the
+same one that gates a pull request.
+
+It checks what axe can decide from a rendered page: missing alternate text,
+buttons and links with no accessible name, form fields without labels,
+contrast, document language, ARIA misuse. It does not test keyboard flows, read
+your source, or write anything back. See [fixing a finding](#fixing-a-finding)
+for what it hands the person who fixes the page.
+
+## A browser
+
+axe runs inside a real browser. Installing `@hawkeyexl/manni` does not download
+one, so that the metadata tool stays a small install. `manni a11y check` looks
+for, in order, Google Chrome, Microsoft Edge, and Playwright's own Chromium. If
+you have neither Chrome nor Edge, install the Chromium once:
+
+```sh
+npx playwright install chromium
+```
+
+Without any of the three the command stops before it loads a page:
+
+```
+manni: No browser found. Install one with `npx playwright install chromium`, or install Google Chrome or Microsoft Edge.
+```
+
+That is exit `2`, an operational error rather than a failed check. GitHub-hosted
+runners ship Chrome on every OS, so a CI step usually needs nothing beyond the
+package.
+
+## Quick start
+
+Point it at a site's front page. With no other flags it finds the sitemap if
+there is one, follows same-host links otherwise, checks up to 100 pages, and
+prints one line per page:
+
+```sh
+npx @hawkeyexl/manni a11y check https://docs.example.com/
+```
+
+```
+Checked 42 of 42 pages (sitemap: https://docs.example.com/sitemap.xml)
+✓ https://docs.example.com/            score 100
+✗ https://docs.example.com/install/    score 88   1 serious
+    serious  image-alt  2 nodes  Images must have alternate text  https://dequeuniversity.com/rules/axe/4.13/image-alt
+      img.hero  → Fix any of the following: Element does not have an alt attribute; …
+      img.step-2  → Fix any of the following: Element does not have an alt attribute; …
+…
+3 violations on 2 of 42 pages
+```
+
+Two pages had findings, so the exit code is `1`. `✓` and `✗` differ in glyph as
+well as colour, and colour is off when stdout is not a terminal or `NO_COLOR`
+is set.
+
+To check exactly one page, turn the crawl off:
+
+```sh
+npx @hawkeyexl/manni a11y check https://docs.example.com/install/ --no-crawl
+```
+
+Once the seeds live in `manni.config.yaml` (see [configuration](#configuration)),
+the command needs no arguments at all, which is the form a CI step uses:
+
+```sh
+npx @hawkeyexl/manni a11y check
+```
+
+With no URLs on the command line and no `a11y.urls` in config there is nothing
+to check, and that is an error rather than an empty green run:
+
+```
+manni: No URLs to check. Pass one or more, or set `a11y.urls` in manni.config.yaml.
+```
+
+Exit `2`. The [CLI reference](/manni/a11y/reference/cli/#examples) continues
+this ladder through several seeds, WCAG tag filters, GitHub annotations, and
+the JSON form.
+
+## How the crawl works
+
+The crawl stays on the host of the URL you gave it. `docs.example.com` and
+`example.com` are different hosts, and so is `www.example.com`; `http://` and
+`https://` of one host are the same site. Give several seeds and every seed's
+host is in scope.
+
+Pages come from two places, in this order:
+
+1. **The sitemap.** `manni a11y check` reads `robots.txt` at the first seed's
+   origin and follows its `Sitemap:` lines, in order. With none, it walks from
+   the seed's own directory up to the site root, nearest directory first, and
+   asks each directory for `sitemap.xml`, `sitemap-index.xml`, and
+   `sitemap_index.xml`. The first that answers and parses wins, so a project
+   site published under a path, such as `https://hawkeyexl.github.io/manni/`,
+   is found at `/manni/sitemap-index.xml` rather than missed at the origin. A
+   sitemap index is followed into its child sitemaps. Every same-host page URL
+   it lists is queued, which is how a page nothing links to still gets checked.
+2. **Links.** Every page that loads contributes the same-host `<a href>` links
+   in its rendered DOM. Anchors, `mailto:`, `tel:`, and links to assets such as
+   PDFs, images, and stylesheets are skipped.
+
+Pages are checked one at a time, in the order they were discovered, and each
+URL is checked once regardless of fragment or host casing. `--max-pages` (default
+`100`) caps the run; anything still queued when the cap is hit is reported as
+`skipped`, not failed. `--no-crawl` checks exactly the URLs you named, with no
+sitemap lookup and no link following.
+
+A seed that does not load is exit `2`, because nothing was checked. A crawled
+page that does not load is recorded against that page and the crawl continues;
+the page counts as failed, so the run exits `1`.
+
+## What the score means
+
+Each page reports a score from `0` to `100`. It is the share of axe rules that
+applied to the page and passed, after the `--impact` floor has dropped the
+violations you chose not to count:
+
+```
+score = round(100 × passes ÷ (passes + violations))
+```
+
+It is **not a Lighthouse score**. Lighthouse weights rules; this does not. A
+page with one `critical` finding and thirty passing rules scores `97`, and it
+still fails the run. Read the score as a trend across pages and across runs, and
+read the exit code as the verdict. A page that did not load, or where no rule
+applied, has no score.
+
+Rules axe could not decide (its `incomplete` results, such as contrast over a
+background image) are counted and reported but never treated as failures.
+
+## Configuration
+
+The `a11y:` key of `manni.config.yaml` sits beside `meta:` in the same file.
+Every key is optional; a flag on the command line wins over the same key in
+config, and config wins over the default.
+
+```yaml title="manni.config.yaml"
+a11y:
+  urls: ["https://docs.example.com/"]   # string[]  seeds; fallback for [urls...]
+  crawl: true                            # boolean   default true
+  maxPages: 100                          # integer ≥ 1
+  tags: ["wcag2a", "wcag2aa"]            # string[]
+  impact: serious                        # minor | moderate | serious | critical
+  timeout: 30000                         # integer ≥ 1, ms
+```
+
+`tags` restricts axe to rules carrying any of those tags, so a gate can be
+"WCAG 2.1 AA and nothing else". `impact` is the floor: findings below it are
+dropped before the score and the exit code are decided. The
+[configuration keys](/manni/a11y/reference/cli/#configuration) table has the
+types and defaults.
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Every page loaded and none has a violation at or above the impact floor. |
+| `1` | At least one page has a remaining violation, or a crawled page failed to load. |
+| `2` | The run could not happen: a bad flag, a URL that is not `http(s)`, no URLs and no config, a seed that would not load, or no browser. |
+
+Wire `1` to the gate and `2` to a loud failure, the same split
+[`manni meta validate`](/manni/meta/ci/exit-codes-and-annotations/) uses.
+
+## Fixing a finding
+
+For every violation the output carries four things: the axe **rule id**
+(`image-alt`), the **selector** of each element that failed (`img.hero`), axe's
+**failure summary** for that element ("Element does not have an alt
+attribute"), and the **help URL** to the rule's page on Deque University. The
+pretty format prints the first three elements per rule; `--format json` carries
+all of them, with each element's outer HTML; `--format github` turns each rule
+into a PR annotation.
+
+There is no `--fix`. `check` sees a rendered URL, never the Markdown, template,
+or component tree that produced it, so there is nothing at that level it could
+edit safely. What it can do deterministically is name the element and the
+condition that failed, which is what the node lines are. Fixing files is a
+separate command with a separate surface, and it is not part of `check`.
+
+<CardGrid>
+  <LinkCard
+    title="CLI reference"
+    href="/manni/a11y/reference/cli/"
+    description="Every argument and flag of manni a11y check, the crawl model, the score, the three output formats, exit codes, and the a11y config keys."
+  />
+  <LinkCard
+    title="manni meta"
+    href="/manni/meta/"
+    description="The metadata tool that shares the bin and the config file. Its CI recipes carry the exit-code wiring a11y follows."
+  />
+</CardGrid>

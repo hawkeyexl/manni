@@ -7,9 +7,9 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "manni",
-      // One top-level group per tool. `meta` is the metadata tool; the others
-      // arrive with their subcommands, each as a sibling group over its own
-      // directory under src/content/docs/.
+      // One top-level group per tool. `meta` is the metadata tool and `a11y`
+      // the accessibility tool; the others arrive with their subcommands, each
+      // as a sibling group over its own directory under src/content/docs/.
       sidebar: [
         {
           label: "meta",
@@ -46,6 +46,16 @@ export default defineConfig({
             {
               label: "Proposals",
               items: [{ autogenerate: { directory: "meta/proposals" } }],
+            },
+          ],
+        },
+        {
+          label: "a11y",
+          items: [
+            { label: "Overview", link: "/a11y/" },
+            {
+              label: "Reference",
+              items: [{ autogenerate: { directory: "a11y/reference" } }],
             },
           ],
         },

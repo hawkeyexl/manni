@@ -42,9 +42,19 @@ Key layers:
     as `buildProgram()` and mounted by `src/cli.ts`. No entry point of its own.
   - `src/meta/core/`: file resolution, config, schema resolution, validation.
   - `src/meta/reporters/`: output formatting (pretty / json / github / sarif / junit).
+- `src/a11y/`: the accessibility tool, `manni a11y check`.
+  - `src/a11y/core/`: URL normalization and host scope, sitemap discovery
+    (`robots.txt` `Sitemap:` lines, then `/sitemap.xml`), the same-host crawl,
+    the Playwright analyzer (the browser seam, behind `PageAnalyzer`), and the
+    `a11y:` config loader.
+  - `src/a11y/commands/`: the `check` command core, free of CLI/IO plumbing.
+  - `src/a11y/reporters/`: output formatting (pretty / json / github).
+  - `src/a11y/cli.ts`: thin commander wrapper exported as `buildProgram()` and
+    mounted by `src/cli.ts`. No entry point of its own.
 - `src/index.ts`: the programmatic API, re-exporting `src/meta/index.ts`.
 
-Tests stay flat under `test/`; a later tool adds `test/<tool>/`.
+The metadata tool's tests stay flat under `test/`; each later tool adds
+`test/<tool>/`, and `test/a11y/` is the first of those.
 
 ### Folding a tool in
 

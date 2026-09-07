@@ -1,0 +1,339 @@
+---
+title: CLI reference
+description: "Every manni a11y command, argument, and flag (check), with the crawl model, the score, the output formats, exit codes, and the a11y config keys."
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+{/* The command, argument, and option tables on this page are drift-checked
+    against src/a11y/cli.ts by scripts/check-cli-reference.mjs (npm run docs:check-cli),
+    enforced in CI. Keep flags, arguments, and defaults in sync with the code;
+    descriptions are free-form. */}
+
+manni a11y exposes one subcommand, [`check`](#a11y-check). It crawls a site
+from one or more seed URLs and runs axe-core against every page it reaches.
+There is no default subcommand: `manni a11y <url>` is a usage error, and the
+verb is always spelled.
+
+```sh
+manni a11y [options] check [urls...] [command options]
+```
+
+## Global options
+
+Global options are accepted before the subcommand.
+
+| Option | Description |
+|---|---|
+| `-V, --version` | Print the manni version and exit. |
+| `-h, --help` | Print help for the program or a subcommand. |
+
+## `a11y`
+
+The accessibility tool. `a11y` accepts its own `-V, --version` (the same
+version) and `-h, --help`. Run with no subcommand it prints a usage error and
+`(add --help for usage)`, exit `2`.
+
+```sh
+manni a11y [options] check [urls...] [command options]
+```
+
+### Options
+
+| Option | Description |
+|---|---|
+| `--no-color` | Disable colored output. Color is on only when stdout is a TTY, and never under `NO_COLOR`; the meanings match `manni meta`'s: `✓` green, `✗` red, impact from dim through yellow to red, URLs cyan. |
+
+## `a11y check`
+
+Crawl a site from the given seeds, or from `a11y.urls` in config, and run
+axe-core against every page. Exit `1` when any page keeps a violation at or
+above the impact floor.
+
+```sh
+manni a11y check [urls...] [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[urls...]` | Seed URLs, space-separated, each `http:` or `https:`. Every seed's host is in crawl scope. Optional, and falls back to config `a11y.urls`; neither is an error (exit 2). A seed that is not `http(s)` is rejected before any browser launches. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-f, --format` | `<pretty\|json\|github>` | `pretty` | [Output format](#output-formats). An unknown value is an error (exit 2). |
+| `--no-crawl` | n/a | on | Check exactly the given URLs: no sitemap lookup, no link following. Crawling is on by default. Overrides config `crawl:`. |
+| `--max-pages` | `<n>` | `100` | Stop after this many pages have been checked; whatever is still queued is reported as `skipped`. Must be an integer of 1 or more (exit 2 otherwise). Overrides config `maxPages:`. |
+| `--tags` | `<list>` | — | Comma-separated axe tags, given once; restrict axe to rules carrying any of them, for example `wcag2a,wcag2aa,wcag21aa,best-practice`. Whitespace around commas is trimmed and empty items are dropped. A second `--tags` replaces the first. Without it axe runs its default rule set. Overrides config `tags:`. |
+| `--impact` | `<level>` | `minor` | Minimum impact reported and counted: `minor`, `moderate`, `serious`, or `critical`. Violations below it are dropped before the [score](#the-score) and the exit code are decided. An unknown level is an error (exit 2). Overrides config `impact:`. |
+| `--timeout` | `<ms>` | `30000` | Per-page navigation timeout in milliseconds. Overrides config `timeout:`. |
+| `-q, --quiet` | n/a | off | In `pretty` output, hide pages with no remaining violations. Has no effect on `json` or `github`. |
+| `-c, --config` | `<path>` | discovered | Path to a [config file](#configuration). When set, the file must exist or the run exits 2. |
+| `--no-config` | n/a | off | Ignore any discovered config file. `-c` and `--no-config` set the same option, so the one written later on the command line wins. |
+
+<Aside type="note">
+`--tags` is a `<list>` option: one comma-separated value, given once. It does
+not accumulate across repeats, the way `manni meta`'s `--exclude <glob>` does.
+Positional seeds are space-separated, because that is what argv is.
+</Aside>
+
+### The crawl
+
+Scope is the host. Two URLs are on the same site when their hostnames match
+case-insensitively and their non-default ports match; `http://` and `https://`
+of one host are one site, and `www.example.com` is not `example.com`. Each seed
+adds its own host to the scope.
+
+The frontier is filled in this order:
+
+1. **Seeds**, as given, normalized (fragment dropped, hostname lowercased,
+   default port dropped, path and query kept as written).
+2. **The sitemap.** One lookup per run, from the first seed. The candidates,
+   in order: every `Sitemap:` line in `<origin>/robots.txt`, in the order the
+   file lists them; then, walking from the seed's own directory up to the site
+   root, nearest directory first and the root last, `sitemap.xml`,
+   `sitemap-index.xml`, and `sitemap_index.xml` in each directory. For a seed
+   of `https://example.com/a/b/page.html` that is `/a/b/`, then `/a/`, then
+   `/`, three names in each. The first candidate that returns `2xx` and parses
+   is used, and nothing after it is fetched. A `<sitemapindex>` is followed
+   into its child sitemaps (depth 3, 50 children at most); a `<urlset>`
+   contributes its `<loc>` values. Only same-host page URLs are kept. A
+   missing, failing, or unparseable sitemap means "no sitemap" and is never an
+   error. Gzipped sitemaps are not read.
+3. **Links.** After each page loads, the absolute `href` of every `a[href]` in
+   the rendered DOM is queued if it is same-host, `http(s)`, and looks like a
+   page. `mailto:`, `tel:`, `javascript:`, and `data:` are skipped, and so is a
+   path whose last segment ends in an asset extension (`.pdf`, `.zip`, `.png`,
+   `.jpg`, `.svg`, `.css`, `.js`, `.json`, `.xml`, `.txt`, `.mp4`, `.woff2`,
+   among others).
+
+Each normalized URL enters the frontier once. Pages are analyzed sequentially,
+in discovery order, and every result records its `source`: `seed`, `sitemap`,
+or `link`. The run stops when `--max-pages` pages have been checked; the
+frontier left behind is the `skipped` count.
+
+Failures split by where they happen. A seed that fails to load or analyze stops
+the run with exit `2`, because nothing was checked. A crawled page that fails is
+recorded with an `error` on that page, the crawl continues, and the page counts
+as failed for the exit code.
+
+### The score
+
+```
+score = round(100 × passes ÷ (passes + violations))
+```
+
+`passes` is the number of axe rules that ran and passed on the page;
+`violations` is the number of rules that failed at or above the `--impact`
+floor, counted per rule rather than per element. The result is the share of
+applicable rules that passed after impact filtering. It is not a Lighthouse
+score: nothing is weighted, and a page with one `critical` finding still fails
+the run whatever its score says. The score is `null` when the page did not load
+or when no rule applied.
+
+Rules axe could not decide are reported as `incomplete` and never counted as
+failures.
+
+### Output formats
+
+**`pretty`** (the default) is for people. It prints a header, one line per page,
+the violations under each failing page, and a footer:
+
+```
+Checked 3 of 3 pages (sitemap: http://localhost:8080/sitemap.xml)
+✓ http://localhost:8080/index.html   score 100
+✗ http://localhost:8080/about.html   score 71   2 serious, 1 minor
+    serious  image-alt  3 nodes  Images must have alternate text  https://dequeuniversity.com/rules/axe/4.13/image-alt
+      img.hero  → Fix any of the following: Element does not have an alt attribute; …
+      img.map  → Fix any of the following: Element does not have an alt attribute; …
+      img.logo  → Fix any of the following: Element does not have an alt attribute; …
+    serious  html-has-lang  1 node  <html> element must have a lang attribute  https://dequeuniversity.com/rules/axe/4.13/html-has-lang
+      html  → Fix any of the following: The <html> element does not have a lang attribute
+    minor  region  1 node  All page content should be contained by landmarks  https://dequeuniversity.com/rules/axe/4.13/region
+      p  → Fix any of the following: Some page content is not contained by landmarks
+✗ http://localhost:8080/orphan.html  could not load: net::ERR_CONNECTION_REFUSED
+4 violations on 2 of 3 pages
+```
+
+The header names the sitemap that supplied pages, or reads `(no sitemap;
+followed links)`. Each violation line carries the impact, the rule id, the node
+count, axe's short help text, and the rule's Deque University URL. Under it, the
+first three failing elements print as a selector and axe's failure summary,
+then `(+N more)` past three. A page that could not load prints
+`could not load: <reason>`. The footer adds `; K skipped (--max-pages)` when the
+cap was hit. `-q` hides pages with no remaining violations.
+
+**`json`** prints one object, the whole run, for scripts:
+
+```json
+{
+  "results": [
+    {
+      "url": "https://docs.example.com/install/",
+      "source": "sitemap",
+      "violations": [
+        {
+          "id": "image-alt",
+          "impact": "serious",
+          "help": "Images must have alternate text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/image-alt",
+          "tags": ["cat.text-alternatives", "wcag2a", "wcag111"],
+          "nodes": [
+            {
+              "target": "img.hero",
+              "html": "<img src=\"hero.png\" class=\"hero\">",
+              "summary": "Fix any of the following:\n  Element does not have an alt attribute"
+            }
+          ]
+        }
+      ],
+      "passes": 7,
+      "incomplete": 2,
+      "score": 88
+    }
+  ],
+  "summary": {
+    "discovered": 42,
+    "checked": 42,
+    "skipped": 0,
+    "failed": 2,
+    "violations": 3,
+    "byImpact": { "minor": 0, "moderate": 1, "serious": 2, "critical": 0 },
+    "sitemap": "https://docs.example.com/sitemap.xml"
+  }
+}
+```
+
+Each entry of `results[]`:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `url` | string | The normalized URL that was checked. |
+| `source` | `"seed"` \| `"sitemap"` \| `"link"` | How the URL entered the run. |
+| `violations` | array | Rules that failed at or above the impact floor. Each has `id`, `impact`, `help`, `helpUrl`, `tags`, and `nodes[]` with `target` (axe's CSS selector path), `html` (the element's outer HTML), and `summary` (axe's failure summary). Empty when `error` is set. |
+| `passes` | integer | Rules that passed on this page. |
+| `incomplete` | integer | Rules axe could not decide. Reported, never counted as failures. |
+| `score` | integer \| `null` | See [the score](#the-score). `null` when the page did not load or no rule applied. |
+| `error` | string, optional | Present when the page could not be loaded or analyzed. The page counts as failed. |
+
+And `summary`:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `discovered` | integer | Distinct URLs that entered the frontier: seeds, sitemap entries, and links. |
+| `checked` | integer | Pages actually analyzed. |
+| `skipped` | integer | Discovered but not checked because `--max-pages` was reached. |
+| `failed` | integer | Pages with at least one remaining violation or an `error`. Drives exit `1`. |
+| `violations` | integer | Remaining violations across all pages, counted per rule rather than per node. |
+| `byImpact` | object | Violation counts keyed `minor`, `moderate`, `serious`, `critical`. All four keys are always present. |
+| `sitemap` | string \| `null` | The sitemap URL that supplied pages, or `null` when none was used. |
+
+**`github`** prints one workflow command per finding, and nothing when the run
+is clean:
+
+```
+::error title=a11y/image-alt::Images must have alternate text — 2 node(s) on https://docs.example.com/install/ (https://dequeuniversity.com/rules/axe/4.13/image-alt)
+::error title=a11y/load::https://docs.example.com/old/: net::ERR_NAME_NOT_RESOLVED
+```
+
+GitHub renders each as an annotation on the workflow run. There is no file or
+line to anchor to, since the finding is about a URL.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Every page loaded and none has a violation at or above the impact floor. |
+| `1` | At least one page has a remaining violation, or a crawled page failed to load. `summary.failed` is greater than zero. |
+| `2` | Usage or operational error: an unknown flag value, a non-`http(s)` URL, no URLs and no config, a seed that could not be loaded, no browser found. One line on stderr prefixed `manni: `. |
+
+### Examples
+
+The [overview](/manni/a11y/#quick-start) covers the first three rungs: a bare
+crawl, `--no-crawl`, and the zero-argument config form. Continuing from there:
+
+```bash
+# Several seeds: each seed's host is in scope; one sitemap lookup, from the first seed.
+manni a11y check https://docs.example.com/ https://blog.example.com/
+
+# Gate only on what matters: WCAG 2.1 AA rules, serious and critical only,
+# hide clean pages. Exit 1 only if a serious or critical finding remains.
+manni a11y check https://docs.example.com/ --tags wcag2a,wcag2aa,wcag21aa --impact serious -q
+
+# CI: GitHub annotations, bounded run, explicit config, no color.
+manni a11y check https://docs.example.com/ -f github --max-pages 50 -c ci/manni.config.yaml --no-color
+
+# Scripts: the JSON envelope, piped to jq.
+manni a11y check https://docs.example.com/ -f json | jq '.summary'
+
+# Every option at once. Two seeds (space-separated); sitemap and links; cap
+# 250 pages; one comma-separated --tags list; moderate floor; 60 s per page;
+# quiet; ignore any discovered config; json; no color.
+manni a11y check https://docs.example.com/ https://www.example.com/ \
+  --max-pages 250 \
+  --tags wcag2a,wcag2aa,wcag21aa,best-practice \
+  --impact moderate \
+  --timeout 60000 \
+  --quiet \
+  --no-config \
+  --format json \
+  --no-color
+```
+
+Usage errors are one line on stderr, prefixed `manni: `, exit `2`:
+
+```bash
+manni a11y
+# usage error: no subcommand given; commander prints the problem and "(add --help for usage)"
+
+manni a11y check not-a-url
+# manni: Not an http(s) URL: "not-a-url".
+
+manni a11y check https://x.example/ --impact high
+# manni: Unknown --impact "high". Use minor | moderate | serious | critical.
+
+manni a11y check https://x.example/ --max-pages 0
+# manni: --max-pages must be an integer ≥ 1.
+
+manni a11y check https://x.example/ -f sarif
+# manni: Unknown --format "sarif". Use pretty | json | github.
+
+manni a11y check https://x.example/            # with no browser installed
+# manni: No browser found. Install one with `npx playwright install chromium`, or install Google Chrome or Microsoft Edge.
+```
+
+## Configuration
+
+`a11y` reads its own key of the shared `manni.config.yaml`, discovered the same
+way `meta` discovers it, walking up from the working directory. `-c <path>`
+names the file explicitly, and `--no-config` ignores any discovered one. A flag
+wins over the same key in config, and config wins over the default. Every key
+is optional, and an empty `a11y:` section is the same as none.
+
+```yaml title="manni.config.yaml"
+meta:
+  paths: ["docs/"]
+
+a11y:
+  urls: ["https://docs.example.com/"]
+  crawl: true
+  maxPages: 100
+  tags: ["wcag2a", "wcag2aa"]
+  impact: serious
+  timeout: 30000
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `urls` | `string[]` | none | Seed URLs, each `http:` or `https:`. The fallback for `[urls...]`; positional URLs win when both are present. |
+| `crawl` | boolean | `true` | Whether to discover pages from the sitemap and same-host links. `--no-crawl` sets it to `false` for one run. |
+| `maxPages` | integer ≥ 1 | `100` | Cap on pages checked per run. Mirrors `--max-pages`. |
+| `tags` | `string[]` | none | axe tags to restrict the rule set to. Mirrors `--tags`, one item per entry. |
+| `impact` | `minor` \| `moderate` \| `serious` \| `critical` | `minor` | Minimum impact reported and counted. Mirrors `--impact`. |
+| `timeout` | integer ≥ 1 | `30000` | Per-page navigation timeout in milliseconds. Mirrors `--timeout`. |
+
+An unknown key, a wrong type, an empty `urls` entry, or a `urls` entry that is
+not `http(s)` is an error naming the file and the key (exit 2).

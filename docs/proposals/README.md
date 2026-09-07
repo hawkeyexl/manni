@@ -51,6 +51,8 @@ These came out of a review of the shipped product against the intent recorded in
 | [0031](0031-input-formats-notebooks-and-markdoc.md) | The input-format gap: Jupyter notebooks and Markdoc in, standalone data files out | Maya · M1, M4 / Sara · S1, S2 | Proposed |
 | [0033](0033-manni-monorepo.md) | One package, one bin: docmeta becomes `manni meta`, in a new repository | Maya · M1, M2 / Devin · D1, D2 / Theo · T1 | Implemented |
 | [0034](0034-command-grammar.md) | The command grammar: `manni <domain> <subcommand> [<subcommand>] [<arguments>]`, one separator per list, and what a plan must show | all (CLI surface) | Accepted |
+| [0035](0035-a11y-domain.md) | The `a11y` domain: `manni a11y check` crawls a site and scores every page with axe-core, in a browser it finds rather than downloads | Devin · D1, D3 | Implemented |
+| [0036](0036-a11y-fix.md) | `manni a11y fix`: deterministic repairs to local HTML for the rules that need no human decision; the rest reported as manual | Theo · T1 / Maya · M1 | Proposed |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
