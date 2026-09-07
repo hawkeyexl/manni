@@ -125,7 +125,7 @@ describe("manni a11y check (usage errors, no browser needed)", () => {
   });
 
   it("rejects a --max-pages below 1 or not an integer", async () => {
-    for (const bad of ["0", "-3", "2.5", "many"]) {
+    for (const bad of ["0", "-3", "2.5", "many", "01"]) {
       const r = await run(["check", "https://x.example/", "--max-pages", bad]);
       expect(r.status).toBe(2);
       expect(r.stderr).toMatch(/^manni: --max-pages must be an integer >= 1\./);

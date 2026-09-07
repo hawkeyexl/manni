@@ -56,6 +56,7 @@ function summarize(
     violations,
     byImpact,
     sitemap: null,
+    crawl: true,
     ...over,
   };
 }
@@ -104,6 +105,14 @@ describe("render pretty", () => {
     const run = checkRun([page({ url: `${S}/` }), page({ url: `${S}/a`, source: "link" })]);
     const text = render("pretty", run, off);
     expect(text.split("\n")[0]).toBe("Checked 2 of 2 pages (no sitemap; followed links)");
+  });
+
+  it("says no crawl when only the seeds were checked", () => {
+    // `--no-crawl` never looks for a sitemap, so `sitemap` is null here too;
+    // the header must not claim links were followed.
+    const run = checkRun([page({ url: `${S}/` })], { crawl: false });
+    const text = render("pretty", run, off);
+    expect(text.split("\n")[0]).toBe("Checked 1 of 1 pages (no crawl)");
   });
 
   it("marks a clean page with its score", () => {

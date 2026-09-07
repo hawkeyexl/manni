@@ -88,7 +88,7 @@ export async function runCheck(opts: CheckOptions, deps: CheckDeps): Promise<Che
     const results = outcome.pages.map((page) => finishPage(page, opts.impact));
     return {
       results,
-      summary: summarize(results, outcome.discovered, outcome.skipped, sitemap.source),
+      summary: summarize(results, outcome.discovered, outcome.skipped, sitemap.source, opts.crawl),
     };
   } finally {
     await analyzer.close();
@@ -109,6 +109,7 @@ function summarize(
   discovered: number,
   skipped: number,
   sitemap: string | null,
+  crawl: boolean,
 ): CheckSummary {
   const byImpact: Record<Impact, number> = { minor: 0, moderate: 0, serious: 0, critical: 0 };
   let failed = 0;
@@ -128,5 +129,6 @@ function summarize(
     violations,
     byImpact,
     sitemap,
+    crawl,
   };
 }

@@ -8,7 +8,7 @@
 import {
   escapeWorkflowCommandMessage,
   escapeWorkflowCommandProperty,
-} from "../../meta/reporters/github.js";
+} from "../../shared/github.js";
 import type { CheckRun } from "../types.js";
 
 export function renderGithub(run: CheckRun): string {

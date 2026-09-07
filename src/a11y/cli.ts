@@ -33,9 +33,14 @@ function resolveColor(program: Command): boolean {
   return shouldColor({ noColor, isTTY: process.stdout.isTTY });
 }
 
-/** A positive integer flag. Anything else, `0` and `2.5` included, is a usage error. */
-function positiveInteger(value: string, flag: string): number {
-  if (!/^\d+$/.test(value) || Number(value) < 1) {
+/**
+ * A positive integer flag, in canonical form. Anything else is a usage error:
+ * `0`, `-3`, `2.5`, `many`, and `01`, since a leading zero is not how anyone
+ * writes a page count and would read as an octal literal elsewhere.
+ * Exported for its unit test only.
+ */
+export function positiveInteger(value: string, flag: string): number {
+  if (!/^[1-9]\d*$/.test(value)) {
     throw new A11yError(`${flag} must be an integer >= 1.`);
   }
   return Number(value);

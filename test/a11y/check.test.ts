@@ -242,6 +242,7 @@ describe("runCheck and the sitemap", () => {
       fetcher: noSitemap(),
     });
     expect(run.summary.sitemap).toBeNull();
+    expect(run.summary.crawl).toBe(true);
   });
 
   it("skips the sitemap lookup entirely with crawl false", async () => {
@@ -253,6 +254,8 @@ describe("runCheck and the sitemap", () => {
     expect(fetcher.calls).toEqual([]);
     expect(run.results).toHaveLength(1);
     expect(run.summary.sitemap).toBeNull();
+    // Reporters tell "no crawl" from "crawled, no sitemap" by this flag.
+    expect(run.summary.crawl).toBe(false);
   });
 });
 
@@ -276,6 +279,7 @@ describe("runCheck summary", () => {
       violations: 4,
       byImpact: { minor: 0, moderate: 1, serious: 1, critical: 2 },
       sitemap: null,
+      crawl: true,
     });
   });
 

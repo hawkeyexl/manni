@@ -86,6 +86,12 @@ export interface CheckSummary {
   byImpact: Record<Impact, number>;
   /** The sitemap URL that supplied pages, or `null` if none was used. */
   sitemap: string | null;
+  /**
+   * Whether the run discovered pages beyond the seeds (sitemap and same-host
+   * links). `false` under `--no-crawl`, where `sitemap` is always `null` and
+   * no link was followed.
+   */
+  crawl: boolean;
 }
 
 export interface CheckRun {

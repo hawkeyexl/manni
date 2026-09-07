@@ -28,11 +28,7 @@ export function renderPretty(run: CheckRun, opts: RenderOptions): string {
   const { summary } = run;
   const lines: string[] = [];
 
-  const where =
-    summary.sitemap === null
-      ? "no sitemap; followed links"
-      : `sitemap: ${c.cyan(summary.sitemap)}`;
-  lines.push(`Checked ${summary.checked} of ${summary.discovered} pages (${where})`);
+  lines.push(`Checked ${summary.checked} of ${summary.discovered} pages (${where(run, c)})`);
 
   for (const page of run.results) {
     if (page.error !== undefined) {
@@ -56,6 +52,17 @@ export function renderPretty(run: CheckRun, opts: RenderOptions): string {
   lines.push("");
   lines.push(failed > 0 ? c.red(footer) : c.green(footer));
   return lines.join("\n");
+}
+
+/**
+ * How the pages were found. `--no-crawl` never looks for a sitemap, so a null
+ * `sitemap` alone cannot tell "no crawl" from "crawled, found no sitemap".
+ */
+function where(run: CheckRun, c: Colors): string {
+  const { summary } = run;
+  if (!summary.crawl) return "no crawl";
+  if (summary.sitemap === null) return "no sitemap; followed links";
+  return `sitemap: ${c.cyan(summary.sitemap)}`;
 }
 
 function scoreText(page: PageResult): string {
