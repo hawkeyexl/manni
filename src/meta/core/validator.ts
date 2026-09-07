@@ -15,6 +15,7 @@ import type {
   ValidateFunction,
 } from "ajv/dist/2020.js";
 import { DocmetaError, type FieldError } from "../types.js";
+import type { SourceLocation } from "./sidecars.js";
 
 // ajv ships its meta-schema refs as JSON. A static JSON import survives
 // bundling as a bare ESM import without the required `type: json` attribute, so
@@ -322,6 +323,12 @@ export class Validator {
     refs: string[],
     lineFor: (pointer: string) => number | undefined,
     colFor?: (pointer: string) => number | undefined,
+    /**
+     * Where a merged value lives when it is not in the document (proposal
+     * 0034): a sidecar manifest's file and line. Consulted before `lineFor`,
+     * and additive in the way `colFor` was.
+     */
+    locate?: (pointer: string) => SourceLocation | undefined,
   ): Promise<FieldError[]> {
     // `$schema` is a docmeta directive, not part of the document's metadata —
     // strip it so schemas with additionalProperties:false don't flag it.
@@ -334,7 +341,7 @@ export class Validator {
       const ok = fn(subject);
       if (ok) continue;
       for (const e of fn.errors ?? []) {
-        errors.push(toFieldError(ref, e, lineFor, colFor));
+        errors.push(toFieldError(ref, e, lineFor, colFor, locate));
       }
     }
     return errors;
@@ -376,6 +383,7 @@ function toFieldError(
   e: ErrorObject,
   lineFor: (pointer: string) => number | undefined,
   colFor?: (pointer: string) => number | undefined,
+  locate?: (pointer: string) => SourceLocation | undefined,
 ): FieldError {
   // Ajv's documented way to narrow: every error it raises for a built-in
   // vocabulary is a member of `DefinedError`, but `ValidateFunction.errors` is
@@ -404,6 +412,28 @@ function toFieldError(
   } else if (defined.keyword === "additionalProperties") {
     message = `must NOT have additional property '${defined.params.additionalProperty}'`;
     wantsColumn = false;
+  }
+  // A value a sidecar supplied is not in the document, so `lineFor` has no
+  // answer for it; `locate` does. `additionalProperties` is the one keyword
+  // whose offending value sits at a *child* of `instancePath`, and when that
+  // child came from the manifest, the manifest line is where a reader should
+  // look — a public schema refusing a private key is exactly the case.
+  const located =
+    locate?.(instancePath) ??
+    (defined.keyword === "additionalProperties"
+      ? locate?.(`${instancePath}/${defined.params.additionalProperty.replace(/~/g, "~0").replace(/\//g, "~1")}`)
+      : undefined);
+  if (located) {
+    return {
+      schema,
+      instancePath,
+      message,
+      keyword: e.keyword,
+      ...(subject != null ? { subject } : {}),
+      file: located.file,
+      ...(located.line != null ? { line: located.line } : {}),
+      ...(wantsColumn && located.col != null ? { col: located.col } : {}),
+    };
   }
   const line = lineFor(instancePath);
   const col = wantsColumn ? colFor?.(instancePath) : undefined;

@@ -20,10 +20,19 @@ export const PARSE_ERROR_RULE = "manni/parse-error";
 /** A document no schema set could be resolved for. */
 export const SCHEMA_ERROR_RULE = "manni/schema-error";
 
+/**
+ * A document carrying a key a sidecar manifest owns (proposal 0034). Not a
+ * synthetic-schema special case: `sidecar:owned` is a builtin-shaped ref
+ * like `check:<name>`, so the ordinary join produces this id.
+ */
+export const SIDECAR_OWNED_RULE = "sidecar:owned/sidecar";
+
 /** What each reserved rule means, for the consumer's rule listing. */
 export const RESERVED_RULES: Record<string, string> = {
   [PARSE_ERROR_RULE]: "The document's metadata block could not be parsed.",
   [SCHEMA_ERROR_RULE]: "No schema set could be resolved for the document.",
+  [SIDECAR_OWNED_RULE]:
+    "The document carries a key a sidecar manifest owns; the manifest is the only place that key may be set.",
 };
 
 /**

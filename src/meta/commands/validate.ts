@@ -5,6 +5,15 @@
  */
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import {
+  loadSidecars,
+  mergeSidecars,
+  orphanEntries,
+  orphanError,
+  sidecarPointer,
+  SIDECAR_KEYWORD,
+  SIDECAR_OWNED_SCHEMA,
+} from "../core/sidecars.js";
 import { resolve, extname } from "node:path";
 import pkg from "../../../package.json" with { type: "json" };
 import { warn } from "../../shared/warn.js";
@@ -293,6 +302,13 @@ export async function runValidate(
   // every file in one run shares the same repository.
   const trustRoot = schemaTrustRoot(cwd, configDir);
 
+  // Sidecar manifests (0034), read once per run: a manifest the config names
+  // that cannot be read is the run's problem, not a document's.
+  const sidecars = await loadSidecars(config, {
+    configDir: configDir ?? cwd,
+    base,
+  });
+
   const validator = new Validator(
     schemaLoadOptions({
       // The config's directory when a config governs the run, so one project
@@ -328,6 +344,16 @@ export async function runValidate(
     opts.respectGitignore !== undefined ||
     (opts.cliSchemas?.length ?? 0) > 0;
   const configuredChecks = config?.checks ?? [];
+
+  // A manifest entry naming a document this run did not load (0034 rule 4):
+  // 0014's named-file-that-is-not-there, and 0026 §4's row outside the run.
+  // Only when the run is the config corpus — a positional path means the
+  // operator chose to look at part of it, and entries for the rest are
+  // expected rather than orphaned.
+  if (!scoped) {
+    const orphans = orphanEntries(sidecars, files, base);
+    if (orphans.length > 0) throw orphanError(orphans);
+  }
   const checksWillRun =
     configuredChecks.length > 0 && opts.checks !== false && !scoped;
   // Every successful extraction, kept for the corpus checks (0026): the
@@ -369,6 +395,11 @@ export async function runValidate(
       );
       return;
     }
+    // The sidecar merge sits between extraction and everything downstream,
+    // so schema resolution, validation, and the corpus checks all see the one
+    // object the document and its manifest entry make together.
+    const merged = mergeSidecars(label, extracted, sidecars, base);
+    extracted = merged.extracted;
     if (checksWillRun) checkEntries.push({ label, extracted });
 
     let resolved: ResolvedSchemaSet;
@@ -401,6 +432,7 @@ export async function runValidate(
         schemaSet,
         extracted.lineFor,
         extracted.colFor,
+        merged.locate,
       );
     } catch (err) {
       // A schema the *document* chose failing to load — unparseable, missing,
@@ -420,6 +452,20 @@ export async function runValidate(
         parseErrorResult(label, extractor.name, err.message, "schema"),
       );
       return;
+    }
+    // A document carrying a key a sidecar owns (0020 across files: neither
+    // channel wins, and the discarded value would be exactly the one nobody
+    // checked). Filed against the document at the key's own line.
+    for (const key of merged.collisions) {
+      const line = extracted.lineFor(key);
+      errors.push({
+        schema: SIDECAR_OWNED_SCHEMA,
+        keyword: SIDECAR_KEYWORD,
+        subject: key,
+        instancePath: sidecarPointer(key),
+        message: `"${key}" is owned by sidecar ${sidecars?.owners.get(key) ?? "manifest"}; remove it from the document`,
+        ...(line != null ? { line } : {}),
+      });
     }
     results.push({
       file: label,

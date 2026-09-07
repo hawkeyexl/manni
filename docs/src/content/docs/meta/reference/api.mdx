@@ -68,12 +68,36 @@ caller and a subprocess caller are reading the same data model.
 
 | Export | Purpose |
 |---|---|
-| `Validator` | The Ajv-backed engine. Validate already-extracted metadata against a schema set without going through the file pipeline. |
+| `Validator` | The Ajv-backed engine. Validate already-extracted metadata against a schema set without going through the file pipeline. `validate` takes the data, the schema refs, a `lineFor` callback, an optional `colFor`, and an optional fifth `locate` callback that says where a merged value lives when it is not in the document (a [sidecar](#sidecars) manifest's file and line). |
 | `ValidationResult` (type) | One file's outcome: the file label, `ok`, the schemas applied, the `errors`, and how many findings a baseline suppressed. |
-| `FieldError` (type) | One violation. The JSON Pointer, the message, the failing keyword, and the schema that produced it. |
+| `FieldError` (type) | One violation. The JSON Pointer, the message, the failing keyword, and the schema that produced it. An optional `file` names the file `line` and `col` refer to when it is not the result's own, which is set only for a value a sidecar manifest supplied. |
 | `RunSummary` (type) | Aggregate counts for a run. Files, passed, failed, errors, plus optional `gitignoreSkipped` and `baseline` blocks. |
 | `BaselineSummary` (type) | How a baseline shaped the run. Its path, whether it was written, and the recorded, suppressed, and stale counts. |
 | `FingerprintContext` (type) | The `frame` a `ValidateRun` returns: the working directory, the directory canonical paths are measured from, and the directory result labels are relative to. Pass it back into `render` for SARIF. |
+
+## Sidecars
+
+The private manifest joined to public documents. See
+[Sidecars](/manni/meta/reference/configuration/#sidecars) in the configuration
+reference for the rules. A caller building its own pipeline loads the index
+once per run, merges per document, validates the merged object with `locate`,
+and runs the orphan check when the run is the config corpus.
+
+| Export | Purpose |
+|---|---|
+| `loadSidecars` | Load every manifest the config declares into one `SidecarIndex`. Resolves to `null` when the config declares none. Throws `DocmetaError` for a manifest that is missing, unparseable, or misshapen, and for an entry setting a key the sidecar does not own. |
+| `LoadSidecarsOptions` (type) | Input to `loadSidecars`: `configDir`, which `file` and every manifest key resolve from, and `base`, the directory the run's file labels are relative to, so manifests are reported the same way. |
+| `SidecarIndex` (type) | Every sidecar of a run. `owners` maps each owned key to its manifest, `byPath` maps an absolute document path to its supplied values, and `entries` lists every manifest entry for the orphan check. |
+| `SidecarEntry` (type) | One manifest entry: the absolute document path it names, the key as spelled in the manifest, the manifest's reported path, and the entry's line when known. |
+| `SidecarValue` (type) | One supplied value, with the manifest's reported path and the key's line when known. |
+| `mergeSidecars` | Merge the index's values for one document into its `ExtractedMetadata`. Returns the merged object, the `collisions` (owned keys the document itself carried, which the caller files as findings), and a `locate` callback. Stdin never merges. |
+| `MergedMetadata` (type) | What `mergeSidecars` returns: `extracted`, `collisions`, and `locate`. |
+| `SourceLocation` (type) | What `locate` answers with: a `file`, and optionally `line` and `col`. |
+| `sidecarPointer` | The `/<key>` instance path for a collision finding, RFC 6901 escaped. |
+| `orphanEntries` | The manifest entries naming no loaded document, given the run's file labels. Empty when the index is `null`. |
+| `orphanError` | The `DocmetaError` an orphan check raises, naming the first orphan and counting the rest. |
+| `SIDECAR_OWNED_SCHEMA` | The `schema` ref a collision finding carries: `sidecar:owned`. |
+| `SIDECAR_KEYWORD` | The `keyword` a collision finding carries: `sidecar`. Joined, they are the rule id `sidecar:owned/sidecar`. |
 
 ## Schema resolution
 
@@ -129,7 +153,7 @@ reference](/manni/meta/reference/configuration/) for what each key means.
 | `loadConfig` | Discover (or take an explicit path to) a config file and parse it. Resolves to `null` when discovery finds none. |
 | `parseConfig` | Parse config text that you already have, with a source label for error messages. |
 | `LoadedConfig` (type) | A parsed config plus where it came from. |
-| `DocmetaConfig` (type) | The config document itself: `paths`, `exclude`, `schemas`, `overrides`, `fill`, `schemaTrust`, `schemaCache`, and the rest. |
+| `DocmetaConfig` (type) | The config document itself: `paths`, `exclude`, `schemas`, `overrides`, `checks`, `sidecars`, `fill`, `schemaTrust`, `schemaCache`, and the rest. |
 | `resolveRunConfig` | Merge config with the run's inputs and flags into the settings a core actually uses. This is the precedence chain, in one place. |
 | `RunConfigOptions` (type) | Input to `resolveRunConfig`: cwd, `configPath`, `noConfig`, the positional `inputs`, and a load callback. |
 | `RunConfig` (type) | The merged result. The rebased config, the effective inputs, and the resolved run settings. |
@@ -141,6 +165,7 @@ reference](/manni/meta/reference/configuration/) for what each key means.
 | `FillConfig` (type) | Config defaults for `fill`: provider, model, confidence threshold, cost ceiling, concurrency. |
 | `SchemaCacheConfig` (type) | Config for the remote-schema cache, currently `ttlHours`. |
 | `CheckConfig` (type) | One named [corpus check](/manni/meta/reference/configuration/#checks). Its `name` (the durable half of its findings' identity) and the SQL `query`. |
+| `SidecarConfig` (type) | One [sidecar](/manni/meta/reference/configuration/#sidecars) entry: the manifest `file`, relative to the config's directory, and the top-level `keys` it owns. The parser has already asserted the keys are non-empty, unique, disjoint across entries, and never `$schema`. |
 
 ## Reporters
 

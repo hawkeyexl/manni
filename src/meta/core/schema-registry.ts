@@ -89,9 +89,17 @@ const BUILTINS = new Map<string, Record<string, unknown>>([
  * one.
  */
 export function assertPublishableBuiltinId(id: string): void {
-  if (id.split(":")[0] === "check") {
+  const first = id.split(":")[0];
+  if (first === "check") {
     throw new Error(
       `Built-in id "${id}" is not publishable: the "check" first segment is reserved for corpus check identities (check:<name>, proposal 0026).`,
+    );
+  }
+  // `sidecar:owned` is the identity of a document carrying a key a sidecar
+  // manifest owns (proposal 0034), reserved for the same reason.
+  if (first === "sidecar") {
+    throw new Error(
+      `Built-in id "${id}" is not publishable: the "sidecar" first segment is reserved for sidecar finding identities (sidecar:owned, proposal 0034).`,
     );
   }
 }

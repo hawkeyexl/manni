@@ -1,0 +1,3 @@
+docs/auth.md:
+  jira: PLAT-1
+  $schema: ./private.schema.json

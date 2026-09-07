@@ -1,0 +1,6 @@
+meta:
+  paths:
+    - "docs/**/*.md"
+  sidecars:
+    - file: ./docs-meta.orphan.yaml
+      keys: [jira]

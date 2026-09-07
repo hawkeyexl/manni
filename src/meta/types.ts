@@ -174,6 +174,16 @@ export interface FieldError {
   line?: number;
   /** 1-based column, when known. */
   col?: number;
+  /**
+   * The file `line` and `col` refer to, when it is not the result's own file.
+   *
+   * Set only for a value a sidecar manifest supplied (proposal 0034), spelled
+   * the way the run spells file labels. Absent means the document itself,
+   * which is every violation that existed before sidecars. The finding's
+   * subject file stays `ValidationResult.file`: that is its baseline identity
+   * and its SARIF location, and this names where the *value* was written.
+   */
+  file?: string;
 }
 
 /** Validation outcome for a single file. */

@@ -5,6 +5,7 @@
  * identically.
  */
 import { readFile } from "node:fs/promises";
+import { loadSidecars, mergeSidecars } from "../core/sidecars.js";
 import { resolve, extname } from "node:path";
 import { resolveElements } from "../core/resolve-schema.js";
 import { DocmetaError } from "../types.js";
@@ -80,7 +81,7 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
 
   // Explicit CLI inputs win, else config `paths:`; `base` is whichever of the
   // two directories those inputs were written relative to.
-  const { config, inputs, base } = await resolveRunConfig({
+  const { config, inputs, base, configDir } = await resolveRunConfig({
     cwd,
     configPath: opts.configPath,
     noConfig: opts.noConfig,
@@ -130,6 +131,11 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
   });
 
   const out: GetFileResult[] = [];
+  // Sidecar manifests (0034), read once per run.
+  const sidecars = await loadSidecars(config, {
+    configDir: configDir ?? cwd,
+    base,
+  });
 
   const readOne = (label: string, content: string, extension: string): void => {
     const extractor = forced ?? extractorForExtension(extension);
@@ -140,9 +146,14 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
     }
     let extracted;
     try {
-      extracted = extractor.extract(content, label, {
-        elements: resolveElements(label, config),
-      });
+      extracted = mergeSidecars(
+        label,
+        extractor.extract(content, label, {
+          elements: resolveElements(label, config),
+        }),
+        sidecars,
+        base,
+      ).extracted;
     } catch (err) {
       // A `DocmetaError` is already operational and already carries a message
       // written for a person — rethrow it untouched, exactly as `validate`

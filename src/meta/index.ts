@@ -32,6 +32,7 @@ export {
 export { loadConfig, parseConfig, resolveRunConfig } from "./core/config.js";
 export type {
   CheckConfig,
+  SidecarConfig,
   ConfigNotice,
   DocmetaConfig,
   DocumentRefTrust,
@@ -57,6 +58,23 @@ export type {
   SchemaPin,
 } from "./core/schema-registry.js";
 export { integrityOf, isIntegrity, INTEGRITY_SHAPE } from "./core/integrity.js";
+export {
+  loadSidecars,
+  mergeSidecars,
+  orphanEntries,
+  orphanError,
+  sidecarPointer,
+  SIDECAR_OWNED_SCHEMA,
+  SIDECAR_KEYWORD,
+} from "./core/sidecars.js";
+export type {
+  SidecarIndex,
+  SidecarEntry,
+  SidecarValue,
+  MergedMetadata,
+  SourceLocation,
+  LoadSidecarsOptions,
+} from "./core/sidecars.js";
 export {
   SchemaCache,
   SCHEMA_CACHE_DIR,

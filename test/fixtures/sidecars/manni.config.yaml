@@ -1,0 +1,11 @@
+# Sidecar fixture (proposal 0034): the private half of a public docset.
+meta:
+  paths:
+    - "docs/**/*.md"
+  sidecars:
+    - file: ./docs-meta.yaml
+      keys: [source, jira]
+  overrides:
+    - files: "docs/**/*.md"
+      schemas:
+        - ./private.schema.json

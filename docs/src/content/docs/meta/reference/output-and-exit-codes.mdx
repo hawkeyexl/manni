@@ -36,6 +36,17 @@ Each error line has the form:
 - `(line N)` is omitted when no source line is known.
 - `[schema-id]` is the schema that produced the error.
 
+When the value at fault came from a [sidecar
+manifest](/manni/meta/reference/configuration/#sidecars) rather than the
+document, the location names the manifest instead, as `(docs-meta.yaml:6)`.
+The file line above it is still the document, because that is the finding's
+identity; the parenthesis is where the value was written.
+
+```
+✗ docs/billing.md
+    /jira  must match pattern "^PLAT-[0-9]+$"  (docs-meta.yaml:6)  [./private.schema.json]
+```
+
 The summary line is `N files checked, M passed, K failed, E errors`, where `E`
 is the total number of error lines across all files. Pass
 [`-q/--quiet`](/manni/meta/reference/cli/#options) to hide passing files and show only
@@ -109,6 +120,7 @@ Machine-readable. Prints a single JSON object with a run `summary` and a
 | `results[].errors[].subject` | string | The identifier within that keyword, which is the missing property, the additional property, the format name, or the expected type. Omitted for keywords whose parameter is a schema-authored *value*, such as `pattern`'s regex or `minLength`'s number. |
 | `results[].errors[].line` | number | 1-based source line. Omitted when unknown. |
 | `results[].errors[].col` | number | 1-based column. Supplied by the `html` and `xml` extractors, from the `content=` attribute of a `<meta>` tag or the value of an XML attribute. Omitted for every other format, and for a `required` violation in any format. That error reports the parent object, and a missing property has no column. |
+| `results[].errors[].file` | string | The file `line` and `col` refer to, when it is not `results[].file`. Set only for a value a [sidecar manifest](/manni/meta/reference/configuration/#sidecars) supplied, spelled the way the run spells file labels (`docs-meta.yaml`). Omitted for every violation whose value is in the document, which is every violation a run without `sidecars:` produces. The finding's subject file stays `results[].file`; this names where the value was written. |
 
 `keyword` and `subject` are the machine-stable half of a violation's identity.
 They are what a script should key on when it needs to recognize "the same
@@ -133,7 +145,14 @@ Each line has the form:
 
 `line` and `col` are included only when known. `col` today means an `html` or
 `xml` document and a violation other than `required`. `<field>` is the field
-path, or `(root)` for a whole-document error.
+path, or `(root)` for a whole-document error. For a value a [sidecar
+manifest](/manni/meta/reference/configuration/#sidecars) supplied, `file=` and
+`line=` name the manifest and its line, because that is the line the annotation
+should land on:
+
+```
+::error file=docs-meta.yaml,line=6::[./private.schema.json] /jira must match pattern "^PLAT-[0-9]+$"
+```
 
 The message is escaped the way GitHub's workflow-command protocol requires: `%`
 becomes `%25`, a carriage return becomes `%0D`, and a newline becomes `%0A`.
@@ -208,14 +227,22 @@ which `upload-sarif` rejects.
 | `results[].ruleId` | string | `<schema-ref>/<keyword>`, for example `google:okf:0.1/required`. Built from `keyword`, never from the message, so an Ajv rewording cannot close and reopen every historical alert. |
 | `results[].level` | string | Always `error`. See [severity](#severity-is-always-error) below. |
 | `results[].message.text` | string | The field path (or `(root)`) followed by the violation message. |
-| `results[].locations[].physicalLocation.artifactLocation.uri` | string | The file, **relative to the repository root**. See [paths](#sarif-paths-are-repository-root-relative). |
+| `results[].locations[].physicalLocation.artifactLocation.uri` | string | The file, **relative to the repository root**. See [paths](#sarif-paths-are-repository-root-relative). For a value a [sidecar manifest](/manni/meta/reference/configuration/#sidecars) supplied, this is the manifest, and each finding resolves its own URI, so a manifest inside the repository is kept even when the document is not, and the reverse. |
 | `results[].locations[].physicalLocation.region.startLine` | number | 1-based source line. The whole `region` is **omitted** when no line is known. SARIF requires `startLine >= 1`. A `0` would be invalid, and a `1` would silently mislocate the finding at the top of the file. A location with only an `artifactLocation` renders as a file-level alert, which is true. No `startColumn` is ever emitted, even for a finding whose JSON `col` is set. The SARIF region stays line-only for now. |
 | `results[].partialFingerprints` | object | `{"docmetaViolation/v1": "<fingerprint>"}`, the same fingerprint the [baseline](/manni/meta/reference/cli/#baselines) records. |
+
+#### Reserved rule ids
 
 manni meta's own failures do not get a rule id built from `(parse)`. A document
 whose metadata block could not be read reports `manni/parse-error`, and one
 whose schema set could not be resolved reports `manni/schema-error`. Each is a
-real entry in `rules[]`.
+real entry in `rules[]`. Two more ids are built by the ordinary join from a
+reserved first segment rather than a schema. A [corpus
+check](/manni/meta/reference/configuration/#checks) named `n` reports
+`check:n/check`. A document carrying a key a [sidecar
+manifest](/manni/meta/reference/configuration/#sidecars) owns reports
+`sidecar:owned/sidecar`, whose `rules[]` entry reads "The document carries a key
+a sidecar manifest owns; the manifest is the only place that key may be set."
 
 The `-` (stdin) input produces **no** SARIF result. `<stdin>` is not a path any
 consumer can resolve, and a location pointing at one would be dropped anyway.
@@ -293,7 +320,7 @@ JUnit XML, which Jenkins, GitLab, CircleCI, and Azure render natively in their
 | `name` | `testcase` | The file path, as manni meta reported it. Not rebased onto the repository root. Unlike SARIF, nothing resolves it. |
 | `classname` | `testcase` | Always `manni.validate`. |
 | `type` | `failure` | The same rule id SARIF uses: `<schema-ref>/<keyword>`. |
-| `message` | `failure` | The field path (or `(root)`), the violation message, and `(line N)` when the line is known. |
+| `message` | `failure` | The field path (or `(root)`), the violation message, and `(line N)` when the line is known. For a value a [sidecar manifest](/manni/meta/reference/configuration/#sidecars) supplied, the location is `(docs-meta.yaml:6)`, as in the pretty format. |
 
 One test per **file** is deliberate. The tab then reads "2 tests, 1 failed" and
 matches `2 files checked, 1 failed`. One test per *violation* would make the
@@ -404,13 +431,31 @@ are looking at your schema host or at a proxy in front of it. See [what manni me
 requires of a fetched
 schema](/manni/meta/reference/schema-resolution/#what-manni-meta-requires-of-a-fetched-schema).
 
+### Exit 2 from a sidecar manifest
+
+A [sidecar manifest](/manni/meta/reference/configuration/#sidecars) is a
+config-supplied input, so one that is wrong is the run's problem rather than a
+document's. These are exit 2, each naming the manifest and, where there is one,
+the entry's line:
+
+| Situation | Message |
+|---|---|
+| The manifest is missing, or not valid YAML. | `Sidecar manifest nope.yaml could not be read: ENOENT: …` |
+| The top level, or an entry, is not a mapping. | `Sidecar manifest bad-entry-scalar.yaml:1: "docs/auth.md" must be a mapping of owned keys to values.` |
+| An entry sets a key the sidecar does not own, or `$schema`. | `Sidecar manifest bad-unowned-key.yaml:1: "docs/auth.md" sets "team", which this sidecar does not own. Add it to the sidecar's "keys", or remove it from the entry.` |
+| An entry names a document the run did not load, on a config-corpus run. | `Sidecar manifest docs-meta.orphan.yaml:3 names "docs/gone.md", which this run did not load. Fix the entry, or remove it.` |
+| A `query` write would touch an owned key. | `"docs/auth.md": "jira" is owned by sidecar docs-meta.yaml; edit the sidecar file instead.` |
+
+A schema violation on a value the manifest supplied, and a document carrying a
+key the manifest owns, are exit 1. Both are verdicts about the documents.
+
 ### Per-command meaning of exit 1
 
 | Command | Exits 1 when |
 |---|---|
 | `validate` | One or more files failed validation. |
 | `get` | One or more files had a metadata block that could not be read. That means frontmatter that is not valid YAML, or that parses to something other than a mapping. A requested field that is merely *absent* is reported as unset and is **not** a failure. An absent **file** is different again: that is an operational error and exits 2. |
-| [`fill`](/manni/meta/reference/cli/#meta-fill) | A property the schema lists as `required` could not be filled confidently, or a file errored. Skipped **optional** properties leave the exit code at `0`. |
+| [`fill`](/manni/meta/reference/cli/#meta-fill) | A property the schema lists as `required` could not be filled confidently, or a file errored. Skipped **optional** properties leave the exit code at `0`. A file whose missing property a [sidecar](/manni/meta/reference/configuration/#sidecars) owns is refused as a per-file error, so it counts here. |
 | `schemas` | Never. |
 
 The rule behind `fill`'s version is the same as `validate`'s: exit 1 means the

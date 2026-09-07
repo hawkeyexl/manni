@@ -3202,3 +3202,67 @@ describe("an overrides entry may group several globs", () => {
     ]);
   });
 });
+
+/**
+ * Sidecar metadata (proposal 0034) through the built bin: the merged
+ * object is what gets validated, a sidecar-sourced violation names the
+ * manifest, a document carrying an owned key is a finding, and an orphaned
+ * manifest entry is exit 2.
+ */
+describe("cli sidecars (0034, built bin)", () => {
+  const corpus = resolve(root, "test", "fixtures", "sidecars");
+
+  it("validates the merged object and attributes a sidecar value to the manifest", () => {
+    const r = run(["validate", "--no-color"], undefined, undefined, corpus);
+    expect(r.status).toBe(1);
+    expect(r.stdout).toContain("✓ docs/auth.md");
+    expect(r.stdout).toMatch(/✗ docs\/billing\.md\n\s+\/jira\s+must match pattern.*\(docs-meta\.yaml:6\)/);
+    expect(r.stdout).toMatch(/✗ docs\/ops\.md\n\s+\/jira\s+"jira" is owned by sidecar docs-meta\.yaml.*\(line 3\)\s+\[sidecar:owned\]/);
+    expect(r.stdout).toMatch(/✗ docs\/new\.md\n\s+\(root\)\s+must have required property 'jira'/);
+  });
+
+  it("carries the manifest file on the error in JSON output", () => {
+    const r = run(["validate", "-f", "json"], undefined, undefined, corpus);
+    const parsed = JSON.parse(r.stdout) as {
+      results: { file: string; errors: { file?: string; line?: number }[] }[];
+    };
+    const billing = parsed.results.find((x) => x.file === "docs/billing.md");
+    expect(billing?.errors[0]).toMatchObject({ file: "docs-meta.yaml", line: 6 });
+  });
+
+  it("reads a sidecar key through get and query", () => {
+    const g = run(["get", "jira", "docs/auth.md"], undefined, undefined, corpus);
+    expect(g.status).toBe(0);
+    expect(g.stdout).toContain("PLAT-412");
+    const q = run(
+      ["query", "SELECT _path FROM docs WHERE jira = 'PLAT-412'", "-f", "csv"],
+      undefined,
+      undefined,
+      corpus,
+    );
+    expect(q.status).toBe(0);
+    expect(q.stdout).toContain("docs/auth.md");
+  });
+
+  it("refuses to write a sidecar-owned key, exit 2", () => {
+    const r = run(
+      ["query", "UPDATE docs SET jira = 'PLAT-1' WHERE _path = 'docs/auth.md'", "--dry-run"],
+      undefined,
+      undefined,
+      corpus,
+    );
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/"jira" is owned by sidecar docs-meta\.yaml; edit the sidecar file instead/);
+  });
+
+  it("exits 2 when a manifest entry names a document the corpus run did not load", () => {
+    const r = run(
+      ["validate", "-c", "manni.orphan.config.yaml"],
+      undefined,
+      undefined,
+      corpus,
+    );
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/docs-meta\.orphan\.yaml:3 names "docs\/gone\.md", which this run did not load/);
+  });
+});
