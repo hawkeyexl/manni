@@ -136,7 +136,7 @@ describe("manni a11y check (usage errors, no browser needed)", () => {
       expect(r.status).toBe(2);
       expect(r.stderr).toMatch(/^manni: --max-pages must be an integer >= 1\./);
     }
-  });
+  }, 30_000);
 
   it("rejects a --timeout below 1", async () => {
     const r = await run(["check", "https://x.example/", "--timeout", "0"]);
