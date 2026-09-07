@@ -1,4 +1,4 @@
-# Sidecar fixture (proposal 0034): the private half of a public docset.
+# Sidecar fixture (proposal 0035): the private half of a public docset.
 meta:
   paths:
     - "docs/**/*.md"

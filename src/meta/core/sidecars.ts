@@ -1,5 +1,5 @@
 /**
- * Sidecar metadata (proposal 0034): a private manifest joined to public
+ * Sidecar metadata (proposal 0035): a private manifest joined to public
  * documents.
  *
  * A sidecar is a YAML mapping from document path to a mapping of owned keys.

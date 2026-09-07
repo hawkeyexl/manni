@@ -370,7 +370,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   const turnsExhausted = (): boolean =>
     maxTurns != null && turnsUsed + inFlight >= maxTurns;
 
-  // Sidecar manifests (0034), read once per run. Merged so the schema sees
+  // Sidecar manifests (0035), read once per run. Merged so the schema sees
   // one object; an owned key is never a fill candidate, since the manifest
   // is the only place it may be written and fill does not write manifests.
   const sidecars = await loadSidecars(config, {
@@ -466,7 +466,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       existingErrors,
       only,
     );
-    // Readable, loudly unwritable (0034 rule 6): a candidate a sidecar owns
+    // Readable, loudly unwritable (0035 rule 6): a candidate a sidecar owns
     // could only be satisfied by editing the manifest, which fill does not
     // do — and writing it into the document would be the one thing 0018
     // forbids. Refused for the file rather than skipped, so a missing private

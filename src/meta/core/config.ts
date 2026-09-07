@@ -170,7 +170,7 @@ export interface CheckConfig {
 const CHECK_KEYS = ["name", "query"] as const;
 
 /**
- * One sidecar manifest (proposal 0034): a YAML file that supplies a fixed set
+ * One sidecar manifest (proposal 0035): a YAML file that supplies a fixed set
  * of top-level keys for named documents, merged into each document's metadata
  * before schema resolution. The private half of a public docset.
  */
@@ -576,7 +576,7 @@ function withSection(message: string, source: string, section: string): string {
 }
 
 /**
- * Parse `sidecars:` (proposal 0034).
+ * Parse `sidecars:` (proposal 0035).
  *
  * Every refusal here is a shape that would otherwise read as configured and
  * do nothing, or do something nobody can see: an entry with no keys owns

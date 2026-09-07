@@ -50,7 +50,8 @@ These came out of a review of the shipped product against the intent recorded in
 | [0030](0030-query-schema-flag.md) | `-s/--schema` on `query`: naming the contract DDL evolves | Sara · S1, S3 / Maya · M2, M3 | Implemented (#139) |
 | [0031](0031-input-formats-notebooks-and-markdoc.md) | The input-format gap: Jupyter notebooks and Markdoc in, standalone data files out | Maya · M1, M4 / Sara · S1, S2 | Proposed |
 | [0033](0033-manni-monorepo.md) | One package, one bin: docmeta becomes `manni meta`, in a new repository | Maya · M1, M2 / Devin · D1, D2 / Theo · T1 | Implemented |
-| [0034](0034-sidecar-metadata.md) | Sidecar metadata, a private manifest joined to public documents | Maya · M1, M2 / Devin · D1, D4 / Sara · S1 | Implemented |
+| [0034](0034-command-grammar.md) | The command grammar: `manni <domain> <subcommand> [<subcommand>] [<arguments>]`, one separator per list, and what a plan must show | all (CLI surface) | Accepted |
+| [0035](0035-sidecar-metadata.md) | Sidecar metadata, a private manifest joined to public documents | Maya · M1, M2 / Devin · D1, D4 / Sara · S1 | Implemented |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -94,7 +95,7 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
 0018 ──┤                 (write where you read — load-bearing once a format has two channels)
 0014 ──┘                 (why an unreadable corpus errors instead of passing green)
 
-0004, 0014, 0018, 0020, 0026 ──> 0034   (config-relative manifest keys; an orphan entry is
+0004, 0014, 0018, 0020, 0026 ──> 0035   (config-relative manifest keys; an orphan entry is
                                          a named input that is not there; owned keys refuse
                                          writes rather than land in the document; both
                                          channels validated, no tiebreak; the orphan check

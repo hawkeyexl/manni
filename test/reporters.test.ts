@@ -1235,7 +1235,7 @@ describe("reporters: the common format pair", () => {
 });
 
 /**
- * Per-error file attribution (proposal 0034). A violation on a value a
+ * Per-error file attribution (proposal 0035). A violation on a value a
  * sidecar manifest supplied names the manifest, while the finding stays
  * filed under the document. Every reporter prints the manifest; SARIF
  * resolves each finding's uri on its own, so a manifest inside the

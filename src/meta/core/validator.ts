@@ -326,7 +326,7 @@ export class Validator {
     colFor?: (pointer: string) => number | undefined,
     /**
      * Where a merged value lives when it is not in the document (proposal
-     * 0034): a sidecar manifest's file and line. Consulted before `lineFor`,
+     * 0035): a sidecar manifest's file and line. Consulted before `lineFor`,
      * and additive in the way `colFor` was.
      */
     locate?: (pointer: string) => SourceLocation | undefined,

@@ -1053,7 +1053,7 @@ describe("overrides[].files accepts a list of globs", () => {
 });
 
 /**
- * `sidecars:` (proposal 0034): manifests that supply a fixed set of top-level
+ * `sidecars:` (proposal 0035): manifests that supply a fixed set of top-level
  * keys for named documents. The parser's job is to refuse every shape that
  * would read as configured and be silent: an entry with no keys, two entries
  * claiming one key, and `$schema`, which no sidecar may own.

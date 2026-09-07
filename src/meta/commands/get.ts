@@ -131,7 +131,7 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
   });
 
   const out: GetFileResult[] = [];
-  // Sidecar manifests (0034), read once per run.
+  // Sidecar manifests (0035), read once per run.
   const sidecars = await loadSidecars(config, {
     configDir: configDir ?? cwd,
     base,

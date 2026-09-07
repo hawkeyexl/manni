@@ -96,10 +96,10 @@ export function assertPublishableBuiltinId(id: string): void {
     );
   }
   // `sidecar:owned` is the identity of a document carrying a key a sidecar
-  // manifest owns (proposal 0034), reserved for the same reason.
+  // manifest owns (proposal 0035), reserved for the same reason.
   if (first === "sidecar") {
     throw new Error(
-      `Built-in id "${id}" is not publishable: the "sidecar" first segment is reserved for sidecar finding identities (sidecar:owned, proposal 0034).`,
+      `Built-in id "${id}" is not publishable: the "sidecar" first segment is reserved for sidecar finding identities (sidecar:owned, proposal 0035).`,
     );
   }
 }

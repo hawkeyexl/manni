@@ -302,7 +302,7 @@ export async function runValidate(
   // every file in one run shares the same repository.
   const trustRoot = schemaTrustRoot(cwd, configDir);
 
-  // Sidecar manifests (0034), read once per run: a manifest the config names
+  // Sidecar manifests (0035), read once per run: a manifest the config names
   // that cannot be read is the run's problem, not a document's.
   const sidecars = await loadSidecars(config, {
     configDir: configDir ?? cwd,
@@ -345,7 +345,7 @@ export async function runValidate(
     (opts.cliSchemas?.length ?? 0) > 0;
   const configuredChecks = config?.checks ?? [];
 
-  // A manifest entry naming a document this run did not load (0034 rule 4):
+  // A manifest entry naming a document this run did not load (0035 rule 4):
   // 0014's named-file-that-is-not-there, and 0026 §4's row outside the run.
   // Only when the run is the config corpus — a positional path means the
   // operator chose to look at part of it, and entries for the rest are
