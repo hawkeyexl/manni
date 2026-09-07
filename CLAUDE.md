@@ -10,6 +10,11 @@ until 4.13.1. The other tools (docevals, lint, tracevals, kg) are folded in
 one at a time, each on its own branch, merged only when production-ready.
 Proposal 0033 is the record.
 
+Every command reads `manni <domain> <subcommand> [<subcommand>] [<arguments>]`.
+The domain is the tool: `manni meta validate docs/`, `manni meta schemas vendor`
+and, once it lands, `manni a11y check <url>`. Proposal 0034 states the grammar
+and what it rules out.
+
 `manni meta` is a TypeScript CLI that validates the **presence and format** of
 document metadata (frontmatter / headers) against **JSON Schema**, built for
 CI. The pipeline is: load files → extract metadata (format-specific) → resolve a
@@ -50,7 +55,10 @@ path (`../meta/index.js`); its `cli.ts` exports `buildProgram()` and has no
 entry point; its error class extends `ToolError`; it reads its own key of
 `manni.config.yaml` through `src/shared/config-file.ts`; its stderr prefix
 comes from `programName()`. The umbrella mounts it with `addCommand`. The
-import commit cites the source repository and SHA.
+import commit cites the source repository and SHA. A new domain also ships a
+`docs/src/content/docs/<domain>/` section with at least an overview page and a
+`reference/cli.mdx` page. `docs:check-cli` is extended to verify that reference
+page against the domain's commander program, as it already does for `meta`.
 
 ## Working agreements
 
@@ -84,6 +92,79 @@ release note. The objection to an alias is a different one. An alias is a
 permanent second surface for one command, which is what "commands must have
 parallel behaviors" exists to prevent. When a rename is right, make it and mark
 the commit `feat!:` / `BREAKING CHANGE:` so the release says so.
+
+### Every command lives under a domain
+
+The umbrella in `src/cli.ts` owns no verbs and no flags beyond `--version` and
+`--help`. A domain is a tool mounted with `addCommand`, and its verbs are
+subcommands of the domain. A third level groups related verbs under a noun, as
+`meta schemas vendor` does. There are no top-level verbs and no domain-less
+aliases. `manni validate` is not a shortcut for `manni meta validate`. When
+someone types it, the umbrella's only job is to say where the command went.
+
+One thing does not fit. `manni meta docs/` runs `validate`, because
+`docmeta docs/` did and the scripts written against it are honored. That
+default subcommand is grandfathered from docmeta and is not a pattern a new
+domain copies. A domain with one verb still spells the verb.
+
+The reason is that two more domains are about to land on their own branches.
+A grammar that lives only in `src/cli.ts` gets re-derived, slightly
+differently, by every branch that mounts one. Proposal 0034 is the record.
+
+### Plans show the full interface
+
+A plan for a code change spells out every exported type, every function
+signature, and every CLI argument and option. For an argument or option that
+means the name, type, default, required or optional, and what it does. It also
+spells out every config key and every output shape it adds or changes. "Add a
+flag for X" is a sentence, not a plan. The review happens on the plan, so
+anything the plan leaves to be invented during implementation is something the
+reviewer never saw. The first time anyone looks at it is in the diff.
+
+**CLI plans show examples from minimal to maximal.** A plan that adds or
+changes a command carries a ladder of invocations. The first rung is the bare
+minimum that does something useful. Then come the common variants (config
+fallback, the CI format, the scripting form) and one invocation that uses every
+option at once. The last rung is the usage errors with their exact stderr line
+and exit code. Each rung shows the command and what it prints. The option table
+says what each flag is; the ladder shows whether the flags compose into a
+command a person would type. It is where a missing default, an awkward pairing,
+or a parity break with `meta` gets caught before it ships.
+
+### One separator per list
+
+A list reaches a command in exactly one of three shapes, and a given flag uses
+exactly one of them:
+
+- A positional variadic (`[paths...]`) is space-separated, because that is
+  what argv is.
+- An option written `<list>` (`--ext`, `--fields`) is comma-separated and
+  given once. A second occurrence replaces the first.
+- A repeatable option (`--exclude <glob>`, `-s <ref>`) takes one value per
+  occurrence and never splits on commas.
+
+A flag that accepts both commas and repeats has two spellings for one thing.
+The docs, the tests and the config mapping all pay for the second one. The
+same rule applies to any interface a plan defines, CLI or not: pick one
+separator per list and name it. It is written down because a plan once mixed
+the two on one flag. The fix was cheaper before the flag existed than it would
+have been after.
+
+### Use subagents liberally to preserve context
+
+The main session is for decisions, review and the final report. Anything that
+produces long output or many file reads goes to a subagent that reports a
+conclusion, not a transcript. Concretely, exploration sweeps go to an Explore
+agent. Each independent implementation chunk of a plan goes to its own agent,
+with the plan section pasted in. Each runs its own red/green loop. Long
+verification runs (`npm test`, `npm run lint`, a docs build) go to an agent
+that reads the log and summarizes it back. And the demo-video pipeline goes to
+the producer agent. Do not delegate the things that need the whole picture: the
+plan itself, the interfaces between chunks, and the commit and PR text.
+
+A session that reads every test log and every file it edits runs out of room
+before the work is reviewed. That is the reason, and the review is the part
+that catches mistakes.
 
 ### Red/green TDD
 
