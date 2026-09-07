@@ -16,7 +16,7 @@ import { createPlaywrightAnalyzer } from "./core/analyzer.js";
 import { loadA11yConfig, type LoadedA11yConfig } from "./core/config.js";
 import { A11Y_FORMAT_LIST, isA11yFormat, render } from "./reporters/index.js";
 import { CLEAR_LINE, createProgressReporter } from "./reporters/progress.js";
-import { A11yError, IMPACTS, isImpact, type Impact, type ProgressListener } from "./types.js";
+import { A11yError, SEVERITIES, isSeverity, type Severity, type ProgressListener } from "./types.js";
 
 /** `--tags <list>`: commas separate, whitespace around them is trimmed, empty items are dropped. */
 function splitList(value: string): string[] {
@@ -86,9 +86,9 @@ export function positiveInteger(value: string, flag: string): number {
   return Number(value);
 }
 
-function assertImpact(value: string): Impact {
-  if (!isImpact(value)) {
-    throw new A11yError(`Unknown --impact "${value}". Use ${IMPACTS.join(" | ")}.`);
+function assertSeverity(value: string): Severity {
+  if (!isSeverity(value)) {
+    throw new A11yError(`Unknown --severity "${value}". Use ${SEVERITIES.join(" | ")}.`);
   }
   return value;
 }
@@ -102,8 +102,8 @@ interface CheckCliOptions {
   maxPages: string;
   /** `--tags <list>`, split on "," here (same helper shape as meta's --ext). */
   tags?: string;
-  /** `--impact <level>`. */
-  impact: string;
+  /** `--severity <level>`. */
+  severity: string;
   /** `--timeout <ms>`, parsed to int here. */
   timeout: string;
   /** `-q, --quiet`. */
@@ -147,9 +147,9 @@ export function buildProgram(): Command {
     )
     .option("--tags <list>", "comma-separated axe tags to restrict the rules to")
     .option(
-      "--impact <level>",
-      `minimum impact reported: ${IMPACTS.join(" | ")}`,
-      CHECK_DEFAULTS.impact,
+      "--severity <level>",
+      `minimum severity reported: ${SEVERITIES.join(" | ")}`,
+      CHECK_DEFAULTS.severity,
     )
     .option(
       "--timeout <ms>",
@@ -177,7 +177,7 @@ export function buildProgram(): Command {
         if (!isA11yFormat(format)) {
           throw new A11yError(`Unknown --format "${format}". Use ${A11Y_FORMAT_LIST}.`);
         }
-        const impact = assertImpact(options.impact);
+        const severity = assertSeverity(options.severity);
         const maxPages = positiveInteger(options.maxPages, "--max-pages");
         const timeout = positiveInteger(options.timeout, "--timeout");
 
@@ -200,7 +200,7 @@ export function buildProgram(): Command {
               options.tags !== undefined
                 ? splitList(options.tags)
                 : (cfg.tags ?? CHECK_DEFAULTS.tags),
-            impact: typed("impact") ? impact : (cfg.impact ?? CHECK_DEFAULTS.impact),
+            severity: typed("severity") ? severity : (cfg.severity ?? CHECK_DEFAULTS.severity),
             timeout: typed("timeout") ? timeout : (cfg.timeout ?? CHECK_DEFAULTS.timeout),
           },
           { analyzer: createPlaywrightAnalyzer(), onProgress: progress.listener },

@@ -23,7 +23,7 @@
   `manni a11y check [urls...]` crawls a site from its seeds and stays on their
   hosts. It uses the sitemap as the page list when there is one. It runs
   axe-core in a browser it finds rather than downloads. It scores every page,
-  and exits `1` when any page keeps a violation at or above the impact floor.
+  and exits `1` when any page keeps a violation at or above the severity floor.
 
 ## Problem
 
@@ -122,8 +122,8 @@ no links.
 
 Per page, `round(100 × passes ÷ (passes + violations))`. `passes` is the count
 of axe rules that ran and passed. `violations` is the count of rules that failed
-at or above the `--impact` floor. It is the share of applicable rules that
-passed after impact filtering, and the docs say so in those words. It is not a
+at or above the `--severity` floor. It is the share of applicable rules that
+passed after severity filtering, and the docs say so in those words. It is not a
 Lighthouse score, and the reason is in the stress test below. The score is
 `null` when a page did not load or no rule applied. axe's `incomplete` results
 are counted and reported and never fail a page.
@@ -145,12 +145,13 @@ a11y:
   crawl: true                            # boolean
   maxPages: 100                          # integer ≥ 1
   tags: ["wcag2a", "wcag2aa"]            # string[]
-  impact: serious                        # minor | moderate | serious | critical
+  severity: serious                      # minor | moderate | serious | critical
   timeout: 30000                         # integer ≥ 1, ms
 ```
 
 Read through the shared family loader with `section: "a11y"` and no legacy
-names, since nothing predates it. CLI flag > config key > default, the
+names, since nothing predates it. The level is `severity`, not axe's `impact`,
+so every tool in the family names it with one word. CLI flag > config key > default, the
 precedence 0005 fixed for meta. `urls` is the fallback for `[urls...]`, and
 neither is `A11yError`, exit `2`, the way an empty input set is for meta
 (0014). Unknown keys, wrong types, and non-`http(s)` URLs are errors naming
@@ -164,7 +165,7 @@ manni a11y check [urls...]
       --no-crawl           check exactly the given URLs
       --max-pages <n>      cap on pages checked            (100)
       --tags <list>        comma-separated axe tags, once
-      --impact <level>     minor | moderate | serious | critical  (minor)
+      --severity <level>   minor | moderate | serious | critical  (minor)
       --timeout <ms>       per-page navigation timeout    (30000)
   -q, --quiet              pretty: hide clean pages
       --progress           report progress on stderr    (only on a terminal)
@@ -185,20 +186,20 @@ The reference page carries the same ladder.
 
 Three formats. `pretty` prints a header naming the sitemap used (or
 `no sitemap; followed links`, or `no crawl` under `--no-crawl`). Then it prints
-one line per page with its score and impact counts. Under each failing page it
-prints one line per rule (impact, rule id, node count, help text, Deque
+one line per page with its score and severity counts. Under each failing page it
+prints one line per rule (severity, rule id, node count, help text, Deque
 University URL). Under that come the first three failing elements as a selector
 and axe's `failureSummary`. Last is a footer with totals and the `skipped`
 count. Those element lines are the deterministic remediation the tool can
 honestly offer: which element, which condition failed, in axe's own words.
 `json` is the whole `CheckRun`: `results[]` (`url`, `source`, `violations[]`,
 `passes`, `incomplete`, `score`, `error?`) and `summary` (`discovered`,
-`checked`, `skipped`, `failed`, `violations`, `byImpact`, `sitemap`, `crawl`).
+`checked`, `skipped`, `failed`, `violations`, `bySeverity`, `sitemap`, `crawl`).
 `github` is one `::error` workflow command per rule per page and per failed
 load, empty when clean.
 
 Colours keep meta's meanings, which `docs/content-strategy/design.md`
-reserves: `✓` green, `✗` red, impact from dim through yellow to red, URLs cyan.
+reserves: `✓` green, `✗` red, severity from dim through yellow to red, URLs cyan.
 
 ### Progress
 
@@ -285,7 +286,7 @@ judgment, they change between versions, and a weighted score invites the reading
 "92 is fine". This tool has an exit code for "fine", and the score is a per-page
 trend indicator, not the verdict. An unweighted share of passing rules has one
 property the weighted one lacks. A reader can recompute it from `passes` and
-`violations.length` in the JSON, and see exactly what `--impact` changed. The
+`violations.length` in the JSON, and see exactly what `--severity` changed. The
 reference page says "not a Lighthouse score" in those words, because the first
 question every reader will ask is why the numbers differ.
 

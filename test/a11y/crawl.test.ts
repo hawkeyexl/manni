@@ -323,7 +323,7 @@ describe("crawl progress", () => {
       { kind: "page", index: 1, queued: 1, url: `${S}/` },
       { kind: "checked", index: 1, url: `${S}/`, violations: 0 },
       { kind: "page", index: 2, queued: 2, url: `${S}/a` },
-      // Counted before the impact floor: both of /a's violations.
+      // Counted before the severity floor: both of /a's violations.
       { kind: "checked", index: 2, url: `${S}/a`, violations: 2 },
       { kind: "done", checked: 2, skipped: 0 },
     ]);

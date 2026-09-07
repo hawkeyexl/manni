@@ -40,9 +40,9 @@ export {
   isA11yFormat,
 } from "./reporters/index.js";
 export type { A11yFormat, RenderOptions } from "./reporters/index.js";
-export { A11yError, IMPACTS, isImpact, meetsImpact } from "./types.js";
+export { A11yError, SEVERITIES, isSeverity, meetsSeverity } from "./types.js";
 export type {
-  Impact,
+  Severity,
   ViolationNode,
   Violation,
   PageResult,

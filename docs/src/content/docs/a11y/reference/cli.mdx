@@ -42,13 +42,13 @@ manni a11y [options] check [urls...] [command options]
 
 | Option | Description |
 |---|---|
-| `--no-color` | Disable colored output. Color is on only when stdout is a TTY, and never under `NO_COLOR`. The meanings match `manni meta`'s: `✓` green, `✗` red, impact from dim through yellow to red, URLs cyan. |
+| `--no-color` | Disable colored output. Color is on only when stdout is a TTY, and never under `NO_COLOR`. The meanings match `manni meta`'s: `✓` green, `✗` red, severity from dim through yellow to red, URLs cyan. |
 
 ## `a11y check`
 
 Crawl a site from the given seeds, or from `a11y.urls` in config, and run
 axe-core against every page. Exit `1` when any page keeps a violation at or
-above the impact floor.
+above the severity floor.
 
 ```sh
 manni a11y check [urls...] [options]
@@ -68,7 +68,7 @@ manni a11y check [urls...] [options]
 | `--no-crawl` | n/a | on | Check exactly the given URLs, with no sitemap lookup and no link following. Crawling is on by default. Overrides config `crawl:`. |
 | `--max-pages` | `<n>` | `100` | Stop after this many pages have been checked; whatever is still queued is reported as `skipped`. Must be an integer of 1 or more (exit 2 otherwise). Overrides config `maxPages:`. |
 | `--tags` | `<list>` | | Comma-separated axe tags, given once; restrict axe to rules carrying any of them, for example `wcag2a,wcag2aa,wcag21aa,best-practice`. Whitespace around commas is trimmed and empty items are dropped. A second `--tags` replaces the first. Without it axe runs its default rule set. Overrides config `tags:`. |
-| `--impact` | `<level>` | `minor` | Minimum impact reported and counted: `minor`, `moderate`, `serious`, or `critical`. Violations below it are dropped before the [score](#the-score) and the exit code are decided. An unknown level is an error (exit 2). Overrides config `impact:`. |
+| `--severity` | `<level>` | `minor` | Minimum severity reported and counted: `minor`, `moderate`, `serious`, or `critical`. Violations below it are dropped before the [score](#the-score) and the exit code are decided. An unknown level is an error (exit 2). axe calls these levels impact, and manni says severity so every tool in the family uses one word. Overrides config `severity:`. |
 | `--timeout` | `<ms>` | `30000` | Per-page navigation timeout in milliseconds. Overrides config `timeout:`. |
 | `-q, --quiet` | n/a | off | In `pretty` output, hide pages with no remaining violations. Has no effect on `json` or `github`. |
 | `--progress` | n/a | `auto` | Report [progress](#progress) on stderr while the crawl runs. The default is on only when stderr is a terminal. Pass it to see each page in a CI log. |
@@ -133,9 +133,9 @@ score = round(100 × passes ÷ (passes + violations))
 ```
 
 `passes` is the number of axe rules that ran and passed on the page.
-`violations` is the number of rules that failed at or above the `--impact`
+`violations` is the number of rules that failed at or above the `--severity`
 floor, counted per rule rather than per element. The result is the share of
-applicable rules that passed after impact filtering. It is not a Lighthouse
+applicable rules that passed after severity filtering. It is not a Lighthouse
 score: nothing is weighted, and a page with one `critical` finding still fails
 the run whatever its score says. The score is `null` when the page did not load
 or when no rule applied.
@@ -166,7 +166,7 @@ Checked 3 of 3 pages (sitemap: http://localhost:8080/sitemap.xml)
 
 The header names the sitemap that supplied pages, or reads `(no sitemap;
 followed links)`. Under `--no-crawl` it reads `(no crawl)`. Each violation line
-carries the impact, the rule id, the node count, axe's short help text, and the
+carries the severity, the rule id, the node count, axe's short help text, and the
 rule's Deque University URL. Under it, the first three failing elements print as
 a selector and axe's failure summary, then `(+N more)` past three. A page that
 could not load prints `could not load: <reason>`. The footer adds
@@ -185,7 +185,7 @@ when a redirect landed on a page that was also queued under another spelling.
       "violations": [
         {
           "id": "image-alt",
-          "impact": "serious",
+          "severity": "serious",
           "help": "Images must have alternate text",
           "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/image-alt",
           "tags": ["cat.text-alternatives", "wcag2a", "wcag111"],
@@ -210,7 +210,7 @@ when a redirect landed on a page that was also queued under another spelling.
     "duplicates": 0,
     "failed": 2,
     "violations": 3,
-    "byImpact": { "minor": 0, "moderate": 1, "serious": 2, "critical": 0 },
+    "bySeverity": { "minor": 0, "moderate": 1, "serious": 2, "critical": 0 },
     "sitemap": "https://docs.example.com/sitemap.xml",
     "crawl": true
   }
@@ -223,7 +223,7 @@ Each entry of `results[]`:
 |---|---|---|
 | `url` | string | The normalized URL that was checked. |
 | `source` | `"seed"` \| `"sitemap"` \| `"link"` | How the URL entered the run. |
-| `violations` | array | Rules that failed at or above the impact floor. Each has `id`, `impact`, `help`, `helpUrl`, `tags`, and `nodes[]` with `target` (axe's CSS selector path), `html` (the element's outer HTML), and `summary` (axe's failure summary). Empty when `error` is set. |
+| `violations` | array | Rules that failed at or above the severity floor. Each has `id`, `severity`, `help`, `helpUrl`, `tags`, and `nodes[]` with `target` (axe's CSS selector path), `html` (the element's outer HTML), and `summary` (axe's failure summary). Empty when `error` is set. |
 | `passes` | integer | Rules that passed on this page. |
 | `incomplete` | integer | Rules axe could not decide. Reported, never counted as failures. |
 | `score` | integer \| `null` | See [the score](#the-score). `null` when the page did not load or no rule applied. |
@@ -239,7 +239,7 @@ And `summary`:
 | `duplicates` | integer | Discovered, then dropped without loading because a redirect had already landed on the same page under another spelling. `checked + skipped + duplicates` equals `discovered`. |
 | `failed` | integer | Pages with at least one remaining violation or an `error`. Drives exit `1`. |
 | `violations` | integer | Remaining violations across all pages, counted per rule rather than per node. |
-| `byImpact` | object | Violation counts keyed `minor`, `moderate`, `serious`, `critical`. All four keys are always present. |
+| `bySeverity` | object | Violation counts keyed `minor`, `moderate`, `serious`, `critical`. All four keys are always present. |
 | `sitemap` | string \| `null` | The sitemap URL that supplied pages, or `null` when none was used. |
 | `crawl` | boolean | Whether pages beyond the seeds were discovered. `false` under `--no-crawl`. |
 
@@ -272,7 +272,7 @@ to silence it. Either way stdout carries the report alone, so
 
 | Code | Meaning |
 |---|---|
-| `0` | Every page loaded and none has a violation at or above the impact floor. |
+| `0` | Every page loaded and none has a violation at or above the severity floor. |
 | `1` | At least one page has a remaining violation, or a crawled page failed to load. `summary.failed` is greater than zero. |
 | `2` | Usage or operational error. The causes are an unknown flag value, a non-`http(s)` URL, or no URLs and no config. They also include a seed that could not be loaded, or no browser found. One line on stderr prefixed `manni: `. |
 
@@ -287,7 +287,7 @@ manni a11y check https://docs.example.com/ https://blog.example.com/
 
 # Gate only on what matters: WCAG 2.1 AA rules, serious and critical only,
 # hide clean pages. Exit 1 only if a serious or critical finding remains.
-manni a11y check https://docs.example.com/ --tags wcag2a,wcag2aa,wcag21aa --impact serious -q
+manni a11y check https://docs.example.com/ --tags wcag2a,wcag2aa,wcag21aa --severity serious -q
 
 # CI: GitHub annotations, bounded run, explicit config, no color.
 manni a11y check https://docs.example.com/ -f github --max-pages 50 -c ci/manni.config.yaml --no-color
@@ -301,7 +301,7 @@ manni a11y check https://docs.example.com/ -f json | jq '.summary'
 manni a11y check https://docs.example.com/ https://www.example.com/ \
   --max-pages 250 \
   --tags wcag2a,wcag2aa,wcag21aa,best-practice \
-  --impact moderate \
+  --severity moderate \
   --timeout 60000 \
   --quiet \
   --no-config \
@@ -318,8 +318,8 @@ manni a11y
 manni a11y check not-a-url
 # manni: Not an http(s) URL: "not-a-url".
 
-manni a11y check https://x.example/ --impact high
-# manni: Unknown --impact "high". Use minor | moderate | serious | critical.
+manni a11y check https://x.example/ --severity high
+# manni: Unknown --severity "high". Use minor | moderate | serious | critical.
 
 manni a11y check https://x.example/ --max-pages 0
 # manni: --max-pages must be an integer ≥ 1.
@@ -348,7 +348,7 @@ a11y:
   crawl: true
   maxPages: 100
   tags: ["wcag2a", "wcag2aa"]
-  impact: serious
+  severity: serious
   timeout: 30000
 ```
 
@@ -358,7 +358,7 @@ a11y:
 | `crawl` | boolean | `true` | Whether to discover pages from the sitemap and same-host links. `--no-crawl` sets it to `false` for one run. |
 | `maxPages` | integer ≥ 1 | `100` | Cap on pages checked per run. Mirrors `--max-pages`. |
 | `tags` | `string[]` | none | axe tags to restrict the rule set to. Mirrors `--tags`, one item per entry. |
-| `impact` | `minor` \| `moderate` \| `serious` \| `critical` | `minor` | Minimum impact reported and counted. Mirrors `--impact`. |
+| `severity` | `minor` \| `moderate` \| `serious` \| `critical` | `minor` | Minimum severity reported and counted. Mirrors `--severity`. |
 | `timeout` | integer ≥ 1 | `30000` | Per-page navigation timeout in milliseconds. Mirrors `--timeout`. |
 
 An unknown key, a wrong type, an empty `urls` entry, or a `urls` entry that is

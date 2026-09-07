@@ -7,14 +7,14 @@
  * remediation: which rule, which selector, what to change.
  *
  * Colors carry the meanings meta already gave them: ✓ green, ✗ red, URLs
- * cyan, and impact from dim (minor) through yellow (moderate) to red
+ * cyan, and severity from dim (minor) through yellow (moderate) to red
  * (serious) and bold red (critical).
  */
 import { palette, type Colors } from "../../shared/color.js";
 import {
-  IMPACTS,
+  SEVERITIES,
   type CheckRun,
-  type Impact,
+  type Severity,
   type PageResult,
   type Violation,
 } from "../types.js";
@@ -40,7 +40,7 @@ export function renderPretty(run: CheckRun, opts: RenderOptions): string {
       continue;
     }
     lines.push(
-      `${c.red("✗")} ${c.cyan(page.url)}  score ${scoreText(page)}  ${impactCounts(page.violations, c)}`,
+      `${c.red("✗")} ${c.cyan(page.url)}  score ${scoreText(page)}  ${severityCounts(page.violations, c)}`,
     );
     for (const v of page.violations) lines.push(...violationLines(v, c));
   }
@@ -73,20 +73,20 @@ function scoreText(page: PageResult): string {
 }
 
 /** `2 serious, 1 minor`: most severe first, zeros omitted. */
-function impactCounts(violations: Violation[], c: Colors): string {
-  const counts: Record<Impact, number> = { minor: 0, moderate: 0, serious: 0, critical: 0 };
-  for (const v of violations) counts[v.impact] += 1;
-  return [...IMPACTS]
+function severityCounts(violations: Violation[], c: Colors): string {
+  const counts: Record<Severity, number> = { minor: 0, moderate: 0, serious: 0, critical: 0 };
+  for (const v of violations) counts[v.severity] += 1;
+  return [...SEVERITIES]
     .reverse()
-    .filter((impact) => counts[impact] > 0)
-    .map((impact) => paintImpact(`${counts[impact]} ${impact}`, impact, c))
+    .filter((severity) => counts[severity] > 0)
+    .map((severity) => paintSeverity(`${counts[severity]} ${severity}`, severity, c))
     .join(", ");
 }
 
 function violationLines(v: Violation, c: Colors): string[] {
   const n = v.nodes.length;
   const lines = [
-    `    ${paintImpact(v.impact, v.impact, c)}  ${v.id}  ${n} node${n === 1 ? "" : "s"}  ${v.help}  ${c.dim(v.helpUrl)}`,
+    `    ${paintSeverity(v.severity, v.severity, c)}  ${v.id}  ${n} node${n === 1 ? "" : "s"}  ${v.help}  ${c.dim(v.helpUrl)}`,
   ];
   for (const node of v.nodes.slice(0, MAX_NODES)) {
     lines.push(`      ${node.target}  → ${oneLine(node.summary)}`);
@@ -109,8 +109,8 @@ function oneLine(summary: string): string {
   return rest.length === 0 ? head : `${head} ${rest.join("; ")}`;
 }
 
-function paintImpact(text: string, impact: Impact, c: Colors): string {
-  switch (impact) {
+function paintSeverity(text: string, severity: Severity, c: Colors): string {
+  switch (severity) {
     case "minor":
       return c.dim(text);
     case "moderate":

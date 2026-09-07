@@ -13,7 +13,7 @@ import {
 import type {
   CheckRun,
   CheckSummary,
-  Impact,
+  Severity,
   PageResult,
   Violation,
 } from "../../src/a11y/types.js";
@@ -38,14 +38,14 @@ function summarize(
   results: PageResult[],
   over: Partial<CheckSummary> = {},
 ): CheckSummary {
-  const byImpact: Record<Impact, number> = { minor: 0, moderate: 0, serious: 0, critical: 0 };
+  const bySeverity: Record<Severity, number> = { minor: 0, moderate: 0, serious: 0, critical: 0 };
   let failed = 0;
   let violations = 0;
   for (const r of results) {
     if (r.error !== undefined || r.violations.length > 0) failed += 1;
     for (const v of r.violations) {
       violations += 1;
-      byImpact[v.impact] += 1;
+      bySeverity[v.severity] += 1;
     }
   }
   return {
@@ -55,7 +55,7 @@ function summarize(
     duplicates: 0,
     failed,
     violations,
-    byImpact,
+    bySeverity,
     sitemap: null,
     crawl: true,
     ...over,
@@ -68,7 +68,7 @@ function checkRun(results: PageResult[], over: Partial<CheckSummary> = {}): Chec
 
 const imageAlt: Violation = {
   id: "image-alt",
-  impact: "serious",
+  severity: "serious",
   help: "Images must have alternate text",
   helpUrl: "https://dequeuniversity.com/rules/axe/4.13/image-alt",
   tags: ["wcag2a"],
@@ -121,7 +121,7 @@ describe("render pretty", () => {
     expect(render("pretty", run, off)).toContain(`✓ ${S}/  score 100`);
   });
 
-  it("lists a failing page's violations, nodes and the impact counts", () => {
+  it("lists a failing page's violations, nodes and the severity counts", () => {
     const failing = page({
       url: `${S}/about`,
       violations: [imageAlt, violation("button-name", "serious"), violation("region", "minor")],

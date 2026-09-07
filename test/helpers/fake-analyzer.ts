@@ -17,7 +17,7 @@ import { A11yError, type Violation } from "../../src/a11y/types.js";
 export interface FakePage {
   /** Absolute hrefs the page links to, as the live DOM would report them. */
   links?: string[];
-  /** Violations of every impact; the check core filters. */
+  /** Violations of every severity; the check core filters. */
   violations?: Violation[];
   passes?: number;
   incomplete?: number;
@@ -66,11 +66,11 @@ export function fakeAnalyzer(site: FakeSite): FakeAnalyzer {
   return analyzer;
 }
 
-/** A violation of the given impact with one node, enough for counting. */
-export function violation(id: string, impact: Violation["impact"]): Violation {
+/** A violation of the given severity with one node, enough for counting. */
+export function violation(id: string, severity: Violation["severity"]): Violation {
   return {
     id,
-    impact,
+    severity,
     help: `Rule ${id}`,
     helpUrl: `https://dequeuniversity.com/rules/axe/4.13/${id}`,
     tags: ["wcag2a"],

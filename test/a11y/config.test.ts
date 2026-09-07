@@ -21,7 +21,7 @@ describe("parseA11yConfig", () => {
           crawl: false,
           maxPages: 25,
           tags: ["wcag2a", "wcag2aa"],
-          impact: "serious",
+          severity: "serious",
           timeout: 45000,
         },
         FILE,
@@ -31,7 +31,7 @@ describe("parseA11yConfig", () => {
       crawl: false,
       maxPages: 25,
       tags: ["wcag2a", "wcag2aa"],
-      impact: "serious",
+      severity: "serious",
       timeout: 45000,
     });
   });
@@ -53,7 +53,7 @@ describe("parseA11yConfig", () => {
 
   it("rejects an unknown key, naming the file, the key and the supported ones", () => {
     expect(() => parseA11yConfig({ url: ["https://x.example/"] }, FILE)).toThrow(
-      /^manni\.config\.yaml: `a11y:` has unknown key "url"\. Supported keys: urls, crawl, maxPages, tags, impact, timeout\.$/,
+      /^manni\.config\.yaml: `a11y:` has unknown key "url"\. Supported keys: urls, crawl, maxPages, tags, severity, timeout\.$/,
     );
   });
 
@@ -68,8 +68,8 @@ describe("parseA11yConfig", () => {
     [{ maxPages: 1.5 }, /"a11y\.maxPages" must be an integer >= 1/],
     [{ maxPages: "10" }, /"a11y\.maxPages" must be an integer >= 1/],
     [{ tags: "wcag2a" }, /"a11y\.tags" must be a list of strings/],
-    [{ impact: "high" }, /"a11y\.impact" must be one of minor, moderate, serious, critical/],
-    [{ impact: 2 }, /"a11y\.impact" must be one of minor, moderate, serious, critical/],
+    [{ severity: "high" }, /"a11y\.severity" must be one of minor, moderate, serious, critical/],
+    [{ severity: 2 }, /"a11y\.severity" must be one of minor, moderate, serious, critical/],
     [{ timeout: 0 }, /"a11y\.timeout" must be an integer >= 1/],
     [{ timeout: -5 }, /"a11y\.timeout" must be an integer >= 1/],
   ])("rejects %j", (value, pattern) => {
@@ -91,12 +91,12 @@ describe("loadA11yConfig", () => {
     repo = makeTempRepo({
       files: {
         [FILE]:
-          "meta:\n  paths: [docs]\na11y:\n  urls: [https://docs.example.com/]\n  impact: serious\n",
+          "meta:\n  paths: [docs]\na11y:\n  urls: [https://docs.example.com/]\n  severity: serious\n",
       },
     });
     const loaded = await loadA11yConfig(repo);
     expect(loaded).toEqual({
-      config: { urls: ["https://docs.example.com/"], impact: "serious" },
+      config: { urls: ["https://docs.example.com/"], severity: "serious" },
       source: FILE,
     });
   });

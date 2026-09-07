@@ -180,7 +180,7 @@ decompressed.
 ## What the score means
 
 Each page reports a score from `0` to `100`. It is the share of axe rules that
-applied to the page and passed. The `--impact` floor has already dropped the
+applied to the page and passed. The `--severity` floor has already dropped the
 violations you chose not to count:
 
 ```
@@ -208,12 +208,12 @@ a11y:
   crawl: true                            # boolean   default true
   maxPages: 100                          # integer ≥ 1
   tags: ["wcag2a", "wcag2aa"]            # string[]
-  impact: serious                        # minor | moderate | serious | critical
+  severity: serious                      # minor | moderate | serious | critical
   timeout: 30000                         # integer ≥ 1, ms
 ```
 
 `tags` restricts axe to rules carrying any of those tags, so a gate can be
-"WCAG 2.1 AA and nothing else". `impact` is the floor: findings below it are
+"WCAG 2.1 AA and nothing else". `severity` is the floor: findings below it are
 dropped before the score and the exit code are decided. The
 [configuration keys](/manni/a11y/reference/cli/#configuration) table has the
 types and defaults.
@@ -288,12 +288,12 @@ page.
 - Exit `1` fails the job on any remaining violation. Exit `2` fails it on a
   setup problem, such as a seed that will not load. See
   [exit codes](#exit-codes).
-- `--impact serious` gates only on serious and critical findings. Minor and
+- `--severity serious` gates only on serious and critical findings. Minor and
   moderate ones still print.
 - GitHub-hosted runners on Linux, macOS and Windows ship Chrome, so no browser
   step is needed. A bare container needs
   `npx playwright install --with-deps chromium` first.
-- With `urls`, `impact` and `maxPages` under `a11y:` in `manni.config.yaml`,
+- With `urls`, `severity` and `maxPages` under `a11y:` in `manni.config.yaml`,
   the step is a bare `manni a11y check`.
 
 The [manni GitHub Action](/manni/meta/reference/action/) runs the metadata
@@ -304,7 +304,7 @@ check.
 
 | Code | Meaning |
 |---|---|
-| `0` | Every page loaded and none has a violation at or above the impact floor. |
+| `0` | Every page loaded and none has a violation at or above the severity floor. |
 | `1` | At least one page has a remaining violation, or a crawled page failed to load. |
 | `2` | The run could not happen. That is a bad flag, a URL that is not `http(s)`, no URLs and no config, a seed that would not load, or no browser. |
 

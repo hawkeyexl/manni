@@ -122,11 +122,11 @@ describe("manni a11y check (usage errors, no browser needed)", () => {
     expect(r.stderr).toMatch(/^manni: Unknown --format "sarif"\. Use pretty \| json \| github\./);
   });
 
-  it("rejects an unknown --impact", async () => {
-    const r = await run(["check", "https://x.example/", "--impact", "high"]);
+  it("rejects an unknown --severity", async () => {
+    const r = await run(["check", "https://x.example/", "--severity", "high"]);
     expect(r.status).toBe(2);
     expect(r.stderr).toMatch(
-      /^manni: Unknown --impact "high"\. Use minor \| moderate \| serious \| critical\./,
+      /^manni: Unknown --severity "high"\. Use minor \| moderate \| serious \| critical\./,
     );
   });
 
@@ -217,8 +217,8 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
     expect(r.stdout).not.toContain("about.html");
   }, 120_000);
 
-  it("--impact critical drops the findings below it", async () => {
-    const r = await run(["check", `${server.url}/about.html`, "--no-crawl", "--impact", "critical"]);
+  it("--severity critical drops the findings below it", async () => {
+    const r = await run(["check", `${server.url}/about.html`, "--no-crawl", "--severity", "critical"]);
     expect(r.status).toBe(1);
     expect(r.stdout).toContain("image-alt");
     expect(r.stdout).not.toContain("color-contrast");

@@ -15,17 +15,17 @@ export class A11yError extends ToolError {
   }
 }
 
-/** axe's impact levels, least to most severe. `null` impact from axe maps to "minor". */
-export const IMPACTS = ["minor", "moderate", "serious", "critical"] as const;
-export type Impact = (typeof IMPACTS)[number];
+/** The four levels, least to most severe. The analyzer maps axe's `null` to "minor". */
+export const SEVERITIES = ["minor", "moderate", "serious", "critical"] as const;
+export type Severity = (typeof SEVERITIES)[number];
 
-export function isImpact(value: string): value is Impact {
-  return (IMPACTS as readonly string[]).includes(value);
+export function isSeverity(value: string): value is Severity {
+  return (SEVERITIES as readonly string[]).includes(value);
 }
 
-/** `true` when `impact` is at or above `min`. */
-export function meetsImpact(impact: Impact, min: Impact): boolean {
-  return IMPACTS.indexOf(impact) >= IMPACTS.indexOf(min);
+/** `true` when `severity` is at or above `min`. */
+export function meetsSeverity(severity: Severity, min: Severity): boolean {
+  return SEVERITIES.indexOf(severity) >= SEVERITIES.indexOf(min);
 }
 
 export interface ViolationNode {
@@ -40,7 +40,7 @@ export interface ViolationNode {
 export interface Violation {
   /** axe rule id, e.g. "image-alt". */
   id: string;
-  impact: Impact;
+  severity: Severity;
   /** Short rule description, e.g. "Images must have alternate text". */
   help: string;
   /** Deque University rule page. */
@@ -55,7 +55,7 @@ export interface PageResult {
   url: string;
   /** How the URL entered the run. */
   source: "seed" | "sitemap" | "link";
-  /** Violations at or above the impact floor. Empty when `error` is set. */
+  /** Violations at or above the severity floor. Empty when `error` is set. */
   violations: Violation[];
   /** Count of axe rules that passed on this page. */
   passes: number;
@@ -63,7 +63,7 @@ export interface PageResult {
   incomplete: number;
   /**
    * round(100 × passes ÷ (passes + violations.length)), the share of applicable
-   * axe rules that passed after impact filtering. Not a Lighthouse score.
+   * axe rules that passed after severity filtering. Not a Lighthouse score.
    * `null` when the page did not load, or when no rule applied.
    */
   score: number | null;
@@ -88,8 +88,8 @@ export interface CheckSummary {
   failed: number;
   /** Total remaining violations across pages (rules, not nodes). */
   violations: number;
-  /** Violations by impact, always all four keys. */
-  byImpact: Record<Impact, number>;
+  /** Violations by severity, always all four keys. */
+  bySeverity: Record<Severity, number>;
   /** The sitemap URL that supplied pages, or `null` if none was used. */
   sitemap: string | null;
   /**
@@ -120,7 +120,7 @@ export type ProgressEvent =
   | { kind: "page"; index: number; queued: number; url: string }
   /**
    * Page `index` finished. `violations` is axe's count for the page before the
-   * impact floor is applied, so it can be higher than what the report keeps.
+   * severity floor is applied, so it can be higher than what the report keeps.
    * `error` is set when the page could not be loaded or analyzed. A seed that
    * fails ends the run instead, and is reported as the run's error.
    */

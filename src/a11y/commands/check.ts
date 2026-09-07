@@ -2,7 +2,7 @@
  * `manni a11y check`, the command core.
  *
  * Validates the seeds, finds the sitemap, runs the crawl, drops the findings
- * below the impact floor, scores each page and totals the summary. No CLI
+ * below the severity floor, scores each page and totals the summary. No CLI
  * and no IO of its own beyond the injected analyzer and fetcher, so it can be
  * tested end to end with neither a browser nor a network.
  */
@@ -12,10 +12,10 @@ import { discoverSitemap, type Fetcher, type SitemapDiscovery } from "../core/si
 import { isHttpUrl, normalizeUrl } from "../core/url.js";
 import {
   A11yError,
-  meetsImpact,
+  meetsSeverity,
   type CheckRun,
   type CheckSummary,
-  type Impact,
+  type Severity,
   type PageResult,
   type ProgressListener,
 } from "../types.js";
@@ -29,8 +29,8 @@ export interface CheckOptions {
   maxPages: number;
   /** axe tags to restrict to; empty is axe's default rule set. Default `[]`. */
   tags: string[];
-  /** Minimum impact reported and counted. Default `"minor"`. */
-  impact: Impact;
+  /** Minimum severity reported and counted. Default `"minor"`. */
+  severity: Severity;
   /** Per-page navigation timeout in ms. Default `30000`. */
   timeout: number;
 }
@@ -51,7 +51,7 @@ export const CHECK_DEFAULTS: Readonly<Omit<CheckOptions, "urls">> = Object.freez
   crawl: true,
   maxPages: 100,
   tags: [],
-  impact: "minor",
+  severity: "minor",
   timeout: 30000,
 });
 
@@ -59,7 +59,7 @@ export const CHECK_DEFAULTS: Readonly<Omit<CheckOptions, "urls">> = Object.freez
  * 1. `urls.length === 0` → A11yError("No URLs to check. Pass one or more, or set `a11y.urls` in manni.config.yaml.")
  * 2. Any non-http(s) url → A11yError(`Not an http(s) URL: "<url>".`)
  * 3. When `crawl`: `discoverSitemap(firstSeed)` (one sitemap per run, the first seed's origin).
- * 4. `crawl(...)`, then per page: drop violations below `impact`, compute `score`.
+ * 4. `crawl(...)`, then per page: drop violations below `severity`, compute `score`.
  * 5. Build `CheckSummary`. Always awaits `analyzer.close()` in `finally`.
  */
 export async function runCheck(opts: CheckOptions, deps: CheckDeps): Promise<CheckRun> {
@@ -94,7 +94,7 @@ export async function runCheck(opts: CheckOptions, deps: CheckDeps): Promise<Che
       analyzer,
     );
 
-    const results = outcome.pages.map((page) => finishPage(page, opts.impact));
+    const results = outcome.pages.map((page) => finishPage(page, opts.severity));
     return {
       results,
       summary: summarize(results, outcome, sitemap.source, opts.crawl),
@@ -104,10 +104,10 @@ export async function runCheck(opts: CheckOptions, deps: CheckDeps): Promise<Che
   }
 }
 
-/** Apply the impact floor, then score what is left. */
-function finishPage(page: Omit<PageResult, "score">, floor: Impact): PageResult {
+/** Apply the severity floor, then score what is left. */
+function finishPage(page: Omit<PageResult, "score">, floor: Severity): PageResult {
   if (page.error !== undefined) return { ...page, violations: [], score: null };
-  const violations = page.violations.filter((v) => meetsImpact(v.impact, floor));
+  const violations = page.violations.filter((v) => meetsSeverity(v.severity, floor));
   const applicable = page.passes + violations.length;
   const score = applicable === 0 ? null : Math.round((100 * page.passes) / applicable);
   return { ...page, violations, score };
@@ -119,14 +119,14 @@ function summarize(
   sitemap: string | null,
   crawl: boolean,
 ): CheckSummary {
-  const byImpact: Record<Impact, number> = { minor: 0, moderate: 0, serious: 0, critical: 0 };
+  const bySeverity: Record<Severity, number> = { minor: 0, moderate: 0, serious: 0, critical: 0 };
   let failed = 0;
   let violations = 0;
   for (const page of results) {
     if (page.error !== undefined || page.violations.length > 0) failed += 1;
     for (const violation of page.violations) {
       violations += 1;
-      byImpact[violation.impact] += 1;
+      bySeverity[violation.severity] += 1;
     }
   }
   return {
@@ -136,7 +136,7 @@ function summarize(
     duplicates,
     failed,
     violations,
-    byImpact,
+    bySeverity,
     sitemap,
     crawl,
   };

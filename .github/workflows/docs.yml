@@ -158,10 +158,10 @@ jobs:
       # `landmark-unique` (moderate) come from how Starlight renders code
       # blocks and `<Aside>`, and are not fixable from a page. The third,
       # `empty-table-header` (minor), was ours and is fixed. Proposal 0035
-      # defers a baseline like 0001's; until one exists, the floor is the
-      # ratchet. Lower it as findings are fixed, and never raise it.
+      # defers a baseline like 0001's; until one exists, the `--severity`
+      # floor is the ratchet. Lower it as findings are fixed, and never raise it.
       - name: Gate on critical findings
-        run: node dist/cli.js a11y check http://127.0.0.1:4321/manni/ --impact critical --progress -q
+        run: node dist/cli.js a11y check http://127.0.0.1:4321/manni/ --severity critical --progress -q
 
   # Deploy the uploaded artifact to GitHub Pages. Never from a pull request —
   # a PR build is a check, not a release, and `pages: write` on PR-triggered

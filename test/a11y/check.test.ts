@@ -1,6 +1,6 @@
 /**
  * The check core: validates the seeds, finds the sitemap, runs the crawl,
- * filters by impact, scores each page, and totals the summary. The analyzer
+ * filters by severity, scores each page, and totals the summary. The analyzer
  * and the fetcher are injected; nothing here launches a browser.
  */
 import { describe, expect, it } from "vitest";
@@ -41,7 +41,7 @@ describe("CHECK_DEFAULTS", () => {
       crawl: true,
       maxPages: 100,
       tags: [],
-      impact: "minor",
+      severity: "minor",
       timeout: 30000,
     });
   });
@@ -76,7 +76,7 @@ describe("runCheck input validation", () => {
   });
 });
 
-describe("runCheck impact filtering and score", () => {
+describe("runCheck severity filtering and score", () => {
   it("drops violations below the floor before scoring and counting", async () => {
     const site: FakeSite = {
       [`${S}/`]: {
@@ -89,7 +89,7 @@ describe("runCheck impact filtering and score", () => {
         ],
       },
     };
-    const run = await runCheck(opts({ impact: "serious" }), {
+    const run = await runCheck(opts({ severity: "serious" }), {
       analyzer: fakeAnalyzer(site),
       fetcher: noSitemap(),
     });
@@ -128,7 +128,7 @@ describe("runCheck impact filtering and score", () => {
   });
 
   it("scores null when only filtered-out violations applied", async () => {
-    const run = await runCheck(opts({ impact: "critical" }), {
+    const run = await runCheck(opts({ severity: "critical" }), {
       analyzer: fakeAnalyzer({
         [`${S}/`]: { passes: 0, violations: [violation("region", "minor")] },
       }),
@@ -271,7 +271,7 @@ describe("runCheck and the sitemap", () => {
 });
 
 describe("runCheck summary", () => {
-  it("totals violations by impact with all four keys present", async () => {
+  it("totals violations by severity with all four keys present", async () => {
     const site: FakeSite = {
       [`${S}/`]: {
         links: [`${S}/a`],
@@ -289,18 +289,18 @@ describe("runCheck summary", () => {
       duplicates: 0,
       failed: 2,
       violations: 4,
-      byImpact: { minor: 0, moderate: 1, serious: 1, critical: 2 },
+      bySeverity: { minor: 0, moderate: 1, serious: 1, critical: 2 },
       sitemap: null,
       crawl: true,
     });
   });
 
-  it("zero-fills byImpact on a clean run", async () => {
+  it("zero-fills bySeverity on a clean run", async () => {
     const run = await runCheck(opts({}), {
       analyzer: fakeAnalyzer({ [`${S}/`]: {} }),
       fetcher: noSitemap(),
     });
-    expect(run.summary.byImpact).toEqual({ minor: 0, moderate: 0, serious: 0, critical: 0 });
+    expect(run.summary.bySeverity).toEqual({ minor: 0, moderate: 0, serious: 0, critical: 0 });
     expect(run.summary.failed).toBe(0);
   });
 
@@ -388,9 +388,9 @@ describe("runCheck progress", () => {
     expect(events.map((e) => e.kind)).toEqual(["browser", "page", "checked", "done"]);
   });
 
-  it("reports the violation count before the impact floor is applied", async () => {
+  it("reports the violation count before the severity floor is applied", async () => {
     const events: ProgressEvent[] = [];
-    const run = await runCheck(opts({ impact: "critical" }), {
+    const run = await runCheck(opts({ severity: "critical" }), {
       analyzer: fakeAnalyzer({
         [`${S}/`]: {
           violations: [violation("region", "minor"), violation("image-alt", "critical")],

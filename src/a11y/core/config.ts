@@ -12,7 +12,7 @@ import {
   readConfigFile,
   type ConfigFileOptions,
 } from "../../shared/config-file.js";
-import { A11yError, IMPACTS, isImpact, type Impact } from "../types.js";
+import { A11yError, SEVERITIES, isSeverity, type Severity } from "../types.js";
 import { isHttpUrl } from "./url.js";
 
 export interface A11yConfig {
@@ -20,7 +20,7 @@ export interface A11yConfig {
   crawl?: boolean;
   maxPages?: number;
   tags?: string[];
-  impact?: Impact;
+  severity?: Severity;
   timeout?: number;
 }
 
@@ -37,7 +37,7 @@ const SECTION = "a11y";
  * The keys the section may carry. Adding a key to `A11yConfig` means adding
  * it here too, or a config using it is rejected; that coupling is the point.
  */
-const CONFIG_KEYS = ["urls", "crawl", "maxPages", "tags", "impact", "timeout"] as const;
+const CONFIG_KEYS = ["urls", "crawl", "maxPages", "tags", "severity", "timeout"] as const;
 
 const CONFIG_FILE: ConfigFileOptions = {
   section: SECTION,
@@ -86,7 +86,7 @@ export function parseA11yConfig(value: unknown, source: string): A11yConfig {
     config.maxPages = asPositiveInteger(obj.maxPages, "maxPages", source);
   }
   if (obj.tags !== undefined) config.tags = asStringList(obj.tags, "tags", source);
-  if (obj.impact !== undefined) config.impact = asImpact(obj.impact, source);
+  if (obj.severity !== undefined) config.severity = asSeverity(obj.severity, source);
   if (obj.timeout !== undefined) {
     config.timeout = asPositiveInteger(obj.timeout, "timeout", source);
   }
@@ -126,10 +126,10 @@ function asPositiveInteger(value: unknown, field: string, source: string): numbe
   return value;
 }
 
-function asImpact(value: unknown, source: string): Impact {
-  if (typeof value !== "string" || !isImpact(value)) {
+function asSeverity(value: unknown, source: string): Severity {
+  if (typeof value !== "string" || !isSeverity(value)) {
     throw new A11yError(
-      `${source}: "${SECTION}.impact" must be one of ${IMPACTS.join(", ")}.`,
+      `${source}: "${SECTION}.severity" must be one of ${SEVERITIES.join(", ")}.`,
     );
   }
   return value;

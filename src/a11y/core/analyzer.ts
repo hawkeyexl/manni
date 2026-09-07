@@ -18,7 +18,7 @@ export interface AnalyzeOptions {
 }
 
 export interface AnalyzedPage {
-  /** Raw result: every violation regardless of impact; `source` and `score` are filled in by `runCheck`. */
+  /** Raw result: every violation regardless of severity; `source` and `score` are filled in by `runCheck`. */
   result: Omit<PageResult, "source" | "score">;
   /** Absolute `href` of every `a[href]` in the live DOM after load, unfiltered. */
   links: string[];
@@ -97,7 +97,7 @@ interface Session {
  * - `page.goto(url, { waitUntil: "load", timeout })`; `finalUrl` is `page.url()` after it
  * - links: every `a[href]`'s absolute `href` from the live DOM
  * - `new AxeBuilder({ page })`, `.withTags(tags)` only when `tags.length > 0`, `.analyze()`
- * - map axe `Result` → `Violation` (impact `null`/`undefined` → "minor"; node
+ * - map axe `Result` → `Violation` (axe `impact` `null`/`undefined` → `severity` "minor"; node
  *   `target` joined with " "; `failureSummary ?? ""`), `passes.length`, `incomplete.length`
  * - launch failure on every channel → `A11yError(NO_BROWSER_MESSAGE)`
  */
@@ -163,7 +163,8 @@ export function createPlaywrightAnalyzer(): PageAnalyzer {
 function toViolation(result: AxeResult): Violation {
   return {
     id: result.id,
-    impact: result.impact ?? "minor",
+    // axe's name for this level is `impact`; manni says `severity`.
+    severity: result.impact ?? "minor",
     help: result.help,
     helpUrl: result.helpUrl,
     tags: result.tags,
