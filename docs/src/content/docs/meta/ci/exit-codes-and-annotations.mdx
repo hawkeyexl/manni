@@ -298,8 +298,10 @@ Three things matter when wiring it up:
   resolves `artifactLocation.uri` against. GitHub *silently drops* results that
   do not resolve, so a wrong path uploads successfully with zero alerts.
 
-Every finding is reported at `level: "error"`; manni meta has no severity concept
-to map onto SARIF's triage axis, tracked as
+Every finding `manni meta validate` produces is reported at `level: "error"`.
+A finding's `severity` maps onto SARIF's triage axis directly, so a sibling
+tool's advisory findings arrive as `level: "warning"` through the same
+reporter, which is what closed
 [issue #78](https://github.com/hawkeyexl/manni/issues/78). The full field
 reference is on
 [Output formats & exit codes](/manni/meta/reference/output-and-exit-codes/).

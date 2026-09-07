@@ -17,6 +17,7 @@ import pkg from "../../../package.json" with { type: "json" };
 import { warn } from "../../shared/warn.js";
 import {
   DocmetaError,
+  isErrorSeverity,
   type BaselineSummary,
   type FieldError,
   type ValidationResult,
@@ -360,7 +361,9 @@ export function applyBaseline(
     const baselined = r.errors.length - fresh.length;
     return {
       ...r,
-      ok: fresh.length === 0,
+      // The severity invariant, not `fresh.length === 0`: a warning that the
+      // baseline did not forgive is still reported, and still not a failure.
+      ok: !fresh.some(isErrorSeverity),
       errors: fresh,
       ...(baselined > 0 ? { baselined } : {}),
     };

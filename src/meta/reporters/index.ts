@@ -4,6 +4,7 @@
  */
 import {
   DocmetaError,
+  isErrorSeverity,
   type BaselineSummary,
   type RunSummary,
   type ValidationResult,
@@ -239,15 +240,19 @@ export function renderPretty(
       r.baselined != null && r.baselined > 0
         ? c.dim(`  (${r.baselined} baselined)`)
         : "";
-    if (r.ok) {
+    if (r.ok && r.errors.length === 0) {
       if (!opts.quiet) lines.push(`${c.green("✓")} ${r.file}${forgiven}`);
       continue;
     }
-    lines.push(`${c.red("✗")} ${r.file}${forgiven}`);
+    // A file that is `ok` with findings holds only warnings: something to
+    // say, so `--quiet` keeps it, but not a failure, so it is not a `✗`.
+    const mark = r.ok ? c.yellow("⚠") : c.red("✗");
+    lines.push(`${mark} ${r.file}${forgiven}`);
     for (const e of r.errors) {
       const loc = e.line != null ? c.dim(`  (line ${e.line})`) : "";
+      const level = isErrorSeverity(e) ? "" : `${c.yellow("warning")} `;
       lines.push(
-        `    ${c.cyan(fieldLabel(e.instancePath))}  ${e.message}${loc}  ${c.dim(
+        `    ${c.cyan(fieldLabel(e.instancePath))}  ${level}${e.message}${loc}  ${c.dim(
           `[${e.schema}]`,
         )}`,
       );
@@ -262,7 +267,13 @@ export function renderPretty(
     summary.gitignoreSkipped != null && summary.gitignoreSkipped > 0
       ? `, ${summary.gitignoreSkipped} skipped by .gitignore`
       : "";
-  const summaryText = `${summary.files} file${summary.files === 1 ? "" : "s"} checked, ${summary.passed} passed, ${summary.failed} failed, ${summary.errors} error${summary.errors === 1 ? "" : "s"}${skipped}`;
+  // Warnings are named only when there are any, for the same reason as the
+  // skip count: every run of meta's own validation has none.
+  const warnings =
+    summary.warnings != null && summary.warnings > 0
+      ? `, ${plural(summary.warnings, "warning", "warnings")}`
+      : "";
+  const summaryText = `${summary.files} file${summary.files === 1 ? "" : "s"} checked, ${summary.passed} passed, ${summary.failed} failed, ${summary.errors} error${summary.errors === 1 ? "" : "s"}${warnings}${skipped}`;
   if (lines.length > 0) lines.push("");
   lines.push(summary.failed > 0 ? c.red(summaryText) : c.green(summaryText));
   if (summary.baseline) {
@@ -290,7 +301,10 @@ export function renderGithub(results: ValidationResult[]): string {
       const msg = escapeWorkflowCommandMessage(
         `[${e.schema}] ${fieldLabel(e.instancePath)} ${e.message}`,
       );
-      lines.push(`::error ${params.join(",")}::${msg}`);
+      // `::warning` renders inline like `::error` but does not fail the
+      // check, which is exactly the severity invariant in GitHub's terms.
+      const level = isErrorSeverity(e) ? "error" : "warning";
+      lines.push(`::${level} ${params.join(",")}::${msg}`);
     }
   }
   return lines.join("\n");

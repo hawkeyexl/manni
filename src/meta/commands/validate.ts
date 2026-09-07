@@ -7,6 +7,7 @@ import { readFile } from "node:fs/promises";
 import { resolve, extname } from "node:path";
 import {
   DocmetaError,
+  isErrorSeverity,
   type FieldError,
   type RunSummary,
   type ValidationResult,
@@ -331,7 +332,7 @@ export async function runValidate(
     results.push({
       file: label,
       format: extractor.name,
-      ok: errors.length === 0,
+      ok: !errors.some(isErrorSeverity),
       schemas: schemaSet,
       errors,
     });
@@ -383,7 +384,7 @@ export async function runValidate(
           );
         }
         result.errors.push(...errs);
-        result.ok = false;
+        result.ok = result.ok && !errs.some(isErrorSeverity);
       }
     }
   }
@@ -402,11 +403,17 @@ export async function runValidate(
   );
 
   const failed = reported.filter((r) => !r.ok).length;
+  const count = (keep: (e: FieldError) => boolean): number =>
+    reported.reduce((n, r) => n + r.errors.filter(keep).length, 0);
+  const warnings = count((e) => !isErrorSeverity(e));
   const summary: RunSummary = {
     files: reported.length,
     passed: reported.length - failed,
     failed,
-    errors: reported.reduce((n, r) => n + r.errors.length, 0),
+    errors: count(isErrorSeverity),
+    // Omitted at zero, like `gitignoreSkipped` below: nothing meta validates
+    // produces a warning today, so the summary stays as it was.
+    ...(warnings > 0 ? { warnings } : {}),
     // Omitted when nothing was skipped: there is nothing to audit, and the
     // JSON summary stays as it was for every run in a clean repo.
     ...(gitignoreSkipped > 0 ? { gitignoreSkipped } : {}),

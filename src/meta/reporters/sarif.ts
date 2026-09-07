@@ -20,7 +20,11 @@
  */
 import { isAbsolute } from "node:path";
 import pkg from "../../../package.json" with { type: "json" };
-import type { FieldError, ValidationResult } from "../types.js";
+import {
+  isErrorSeverity,
+  type FieldError,
+  type ValidationResult,
+} from "../types.js";
 import {
   canonicalFilePath,
   canonicalSchemaRef,
@@ -77,7 +81,7 @@ interface SarifRule {
 
 interface SarifResult {
   ruleId: string;
-  level: "error";
+  level: "error" | "warning";
   message: { text: string };
   locations: {
     physicalLocation: {
@@ -197,9 +201,10 @@ export function renderSarif(
       }
       sarifResults.push({
         ruleId,
-        // Everything is `error`: docmeta has no severity concept to map onto
-        // SARIF's triage axis. Tracked as issue #78, not hidden here.
-        level: "error",
+        // `FieldError.severity` maps onto SARIF's triage axis directly. Meta's
+        // own validation never sets it, so its findings are all `error`; the
+        // `warning` level is for a sibling tool's advisory findings (#78).
+        level: isErrorSeverity(e) ? "error" : "warning",
         message: { text: `${fieldLabel(e.instancePath)} ${e.message}` },
         locations: [
           {

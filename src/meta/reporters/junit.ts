@@ -13,13 +13,18 @@
  * Violation-as-testcase would make the test count rise and fall with document
  * quality, which reads as a suite someone broke.
  *
+ * **A warning is not a `<failure>`.** JUnit has no level below failure, and a
+ * `<failure>` that did not fail the run would make the tab disagree with the
+ * exit code. A warning-only file is a passing testcase; the warning is still
+ * in the JSON and SARIF output, which have somewhere to put it.
+ *
  * Escaping is the one thing a hand-rolled writer gets wrong. Messages carry
  * schema-authored text — a `pattern` regex may hold `<`, `&`, and quotes — and
  * paths can hold `&`. Every attribute value goes through `xmlEscape`; nothing
  * is interpolated raw.
  */
 import type { FingerprintContext } from "../core/baseline.js";
-import type { ValidationResult } from "../types.js";
+import { isErrorSeverity, type ValidationResult } from "../types.js";
 import { fieldLabel, ruleIdFor } from "./rule-id.js";
 
 /** Suite and classname. One suite per run; nested suites are not portable. */
@@ -109,7 +114,7 @@ export function renderJunit(
   opts: JunitOptions = {},
 ): string {
   const tests = results.length;
-  const failures = results.filter((r) => r.errors.length > 0).length;
+  const failures = results.filter((r) => r.errors.some(isErrorSeverity)).length;
 
   const counts =
     attr("name", SUITE_NAME) +
@@ -130,13 +135,14 @@ export function renderJunit(
   const classname = opts.classname ?? CLASS_NAME;
   for (const r of results) {
     const open = `    <testcase${attr("name", r.file)}${attr("classname", classname)}`;
-    if (r.errors.length === 0) {
+    const failing = r.errors.filter(isErrorSeverity);
+    if (failing.length === 0) {
       // Self-closing: a passing test has nothing to carry.
       lines.push(`${open}/>`);
       continue;
     }
     lines.push(`${open}>`);
-    for (const e of r.errors) {
+    for (const e of failing) {
       const where = e.line != null ? ` (line ${e.line})` : "";
       lines.push(
         `      <failure${attr("type", ruleIdFor(e, opts.frame))}${attr(

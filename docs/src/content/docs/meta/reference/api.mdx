@@ -70,8 +70,9 @@ caller and a subprocess caller are reading the same data model.
 |---|---|
 | `Validator` | The Ajv-backed engine. Validate already-extracted metadata against a schema set without going through the file pipeline. |
 | `ValidationResult` (type) | One file's outcome: the file label, `ok`, the schemas applied, the `errors`, and how many findings a baseline suppressed. |
-| `FieldError` (type) | One violation. The JSON Pointer, the message, the failing keyword, and the schema that produced it. |
-| `RunSummary` (type) | Aggregate counts for a run. Files, passed, failed, errors, plus optional `gitignoreSkipped` and `baseline` blocks. |
+| `FieldError` (type) | One violation. The JSON Pointer, the message, the failing keyword, the schema that produced it, and, when a producer sets one, its `severity`. |
+| `isErrorSeverity` | Whether a `FieldError` counts against `ok`: true for `error` and for an absent severity, false for `warning`. The one reading of the severity invariant; derive `ok` through it. |
+| `RunSummary` (type) | Aggregate counts for a run. Files, passed, failed, errors, plus optional `warnings`, `gitignoreSkipped` and `baseline` blocks. |
 | `BaselineSummary` (type) | How a baseline shaped the run. Its path, whether it was written, and the recorded, suppressed, and stale counts. |
 | `FingerprintContext` (type) | The `frame` a `ValidateRun` returns: the working directory, the directory canonical paths are measured from, and the directory result labels are relative to. Pass it back into `render` for SARIF. |
 

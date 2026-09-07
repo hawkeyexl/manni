@@ -301,6 +301,43 @@ describe("applyBaseline", () => {
   });
 });
 
+describe("applyBaseline: warning severity", () => {
+  const warning = err({ keyword: "moved", severity: "warning" });
+  const failing = err({ keyword: "changed", severity: "error" });
+  const empty = {
+    version: BASELINE_VERSION,
+    generatedWith: "t",
+    entries: { "a.md": [] },
+  };
+
+  it("leaves a warning-only file ok, because a warning never fails a run", () => {
+    const applied = applyBaseline([result("a.md", [warning])], empty);
+    expect(applied.results[0]?.ok).toBe(true);
+    expect(applied.results[0]?.errors).toEqual([warning]);
+  });
+
+  it("fails a file once an unbaselined error-severity finding remains", () => {
+    const applied = applyBaseline([result("a.md", [warning, failing])], empty);
+    expect(applied.results[0]?.ok).toBe(false);
+  });
+
+  it("passes a file whose only error-severity finding is baselined, warnings or not", () => {
+    const recorded = buildBaseline([result("a.md", [failing])], "t");
+    const applied = applyBaseline([result("a.md", [warning, failing])], recorded);
+    expect(applied.results[0]?.ok).toBe(true);
+    expect(applied.results[0]?.baselined).toBe(1);
+  });
+});
+
+describe("fingerprint: severity", () => {
+  it("is excluded, so a rule that changes severity does not re-open every finding", () => {
+    expect(fingerprint(err({ severity: "warning" }))).toBe(
+      fingerprint(err({ severity: "error" })),
+    );
+    expect(fingerprint(err({ severity: "warning" }))).toBe(fingerprint(err()));
+  });
+});
+
 describe("diffBaselines", () => {
   const a = buildBaseline([result("docs/a.md", [err({ subject: "type" })])], "3.4.2");
   const b = buildBaseline(

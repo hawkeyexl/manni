@@ -174,6 +174,33 @@ export interface FieldError {
   line?: number;
   /** 1-based column, when known. */
   col?: number;
+  /**
+   * How much the finding weighs.
+   *
+   * The invariant, stated here and nowhere else: a result's `ok` is true iff
+   * no entry of its `errors` has severity `error`, and an **absent** severity
+   * means `error`. So every producer that never sets this field is unchanged,
+   * and a `warning` is a finding that is reported, baselined and fingerprinted
+   * like any other but never fails a file, and so never moves the exit code.
+   * Nothing in meta's own validation sets `warning` today; a sibling tool's
+   * findings ride these types and reporters, and some of theirs are advisory.
+   *
+   * Deliberately not part of the fingerprint: a rule that is downgraded from
+   * error to warning is the same finding, and a baseline that forgot it on
+   * the way down would re-open every instance.
+   *
+   * `isErrorSeverity` is the one reading of this field; derive `ok` through
+   * it rather than restating the absent-means-error rule.
+   */
+  severity?: "error" | "warning";
+}
+
+/**
+ * Whether a finding counts against `ok`: true for `error` and for an absent
+ * severity, false for `warning`. See `FieldError.severity` for the invariant.
+ */
+export function isErrorSeverity(e: Pick<FieldError, "severity">): boolean {
+  return e.severity !== "warning";
 }
 
 /** Validation outcome for a single file. */
@@ -221,8 +248,17 @@ export interface RunSummary {
   files: number;
   passed: number;
   failed: number;
-  /** Violations reported. Baselined ones are excluded — see `baseline`. */
+  /**
+   * Error-severity findings reported. Baselined ones are excluded — see
+   * `baseline` — and so are warnings, which have their own count.
+   */
   errors: number;
+  /**
+   * Warning-severity findings reported. Omitted when there are none, which is
+   * every run of meta's own validation today, so the JSON summary is unchanged
+   * for them. A warning never fails a file or the run.
+   */
+  warnings?: number;
   /**
    * Candidate documents `.gitignore` removed from the walk. Omitted when it
    * removed none. Reported because silent removal is what makes the filter
