@@ -324,7 +324,7 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
   });
 
   const entries: QueryEntry[] = [];
-  // Sidecar manifests (0035), read once per run and merged into every row.
+  // Sidecar manifests (0037), read once per run and merged into every row.
   const sidecars = await loadSidecars(config, {
     configDir: configDir ?? cwd,
     base,
@@ -451,7 +451,7 @@ interface RunContext {
   configPath?: string;
   /** The boundary a schema read or write may not escape (proposal 0015). */
   trustRoot: SchemaTrustRoot;
-  /** Sidecar manifests of the run (proposal 0035); null when none are configured. */
+  /** Sidecar manifests of the run (proposal 0037); null when none are configured. */
   sidecars: SidecarIndex | null;
   /** Diagnostics for the user; the CLI writes these to stderr. */
   onNotice?: (message: string) => void;
@@ -2465,7 +2465,7 @@ function validateNewPath(p: string, base: string): void {
  */
 
 /**
- * The first increment of sidecars is read-only (0035 rule 6): a write to a
+ * The first increment of sidecars is read-only (0037 rule 6): a write to a
  * key a manifest owns has exactly one honest destination, the manifest, and
  * writing it into the document instead would be the thing 0018 forbids. So
  * every change kind that would touch an owned key refuses at plan time, by

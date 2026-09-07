@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [0.2.0](https://github.com/hawkeyexl/manni/compare/v0.1.0...v0.2.0) (2026-09-07)
+
+
+### Features
+
+* **a11y:** add manni a11y check, an axe-core crawl of a site ([#15](https://github.com/hawkeyexl/manni/issues/15)) ([6dd17aa](https://github.com/hawkeyexl/manni/commit/6dd17aa98c604205ff06b4f5112ff28d30711bbe))
+
 # [0.1.0](https://github.com/hawkeyexl/manni/compare/v0.0.0...v0.1.0) (2026-09-06)
 
 

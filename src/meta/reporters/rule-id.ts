@@ -21,7 +21,7 @@ export const PARSE_ERROR_RULE = "manni/parse-error";
 export const SCHEMA_ERROR_RULE = "manni/schema-error";
 
 /**
- * A document carrying a key a sidecar manifest owns (proposal 0035). Not a
+ * A document carrying a key a sidecar manifest owns (proposal 0037). Not a
  * synthetic-schema special case: `sidecar:owned` is a builtin-shaped ref
  * like `check:<name>`, so the ordinary join produces this id.
  */

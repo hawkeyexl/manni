@@ -310,7 +310,7 @@ describe("resolveTargets: .gitignore-aware discovery", () => {
   });
 
   /**
-   * Candidates spanning more than one repository (proposal 0035). A config in
+   * Candidates spanning more than one repository (proposal 0037). A config in
    * one checkout whose `paths:` reach into another is the sidecar layout, and
    * `git check-ignore` refuses a path outside the repository it runs in with
    * exit 128 — which used to read as "git unavailable" for the *whole* batch,

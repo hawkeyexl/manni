@@ -6,6 +6,12 @@ The site is organized by user intent, not by document type. Each top-level secti
 
 **Frontmatter requirement:** every page in `docs/src/content/docs/**` must include `title` and `description` in its frontmatter. Authoring agents must not create pages without both fields.
 
+## Domains
+
+manni is one bin with one domain per tool (proposals 0033 and 0034), and the site follows the bin. Each domain has its own top-level section, `meta/` and `a11y/` today, and the same intent-based tree applies inside each. That tree is an overview that routes by job-to-be-done, and journey pages per persona. It ends in a flat reference shelf the journeys deep-link into. The navigation tree and content set below are the `meta/` section, the one with enough pages to need them. Every directory in the mapping table lives under `meta/`.
+
+The `a11y/` section launches with two pages, the overview (`a11y/index.mdx`) and the CLI reference (`a11y/reference/cli.mdx`, drift-checked by `npm run docs:check-cli` like meta's). It serves Devin (D1, the CI gate; D3, machine-readable output), with Maya as the reader who runs it locally. a11y has no persona of its own yet, so its pages borrow those two rather than inventing a third. Proposal 0035 records that gap, and the journey pages arrive with the persona.
+
 ---
 
 ## Navigation tree
@@ -62,7 +68,7 @@ Home — "What do you want to do?" router + 30-second proof
 | Apply different schemas to different folders | M3 | ★ | Overrides, glob precedence, multi-schema per file. |
 | Roll out a new required field without breaking the build | M2 | | Tool-supported ratchet (0001): the field goes `required` immediately and `--write-baseline` records the backlog. Rewritten from the four-stage manual rollout, whose hand-maintained `overrides:` glob list the baseline replaces. Now also carries the DDL one-statement ratchet (0024) for fields whose backfill value is uniform. |
 | Retrofit manni meta into an existing docs repo | M1/M2/M4 | | Start lenient, tighten over time. Cross-cutting guide. Step 6 ratchets via the baseline, in step with the M2 page. Step 7 carries the M4 `fill` journey and hands off to the egress page below. There is deliberately no separate `fill` journey page, because splitting step 7 out would duplicate working content. |
-| Keep private metadata in a sidecar | M1, M2, D1, D4 | | Sidecar metadata (0035). The outcome is a private CI run that validates public pages against private keys the public repository never holds. The two-repo layout (public as a submodule of private) and the two workflows. What a collision, an orphan entry and a refused write look like. The contract stays in the configuration reference's Sidecars section. Source of truth: `src/meta/core/sidecars.ts`, `src/meta/core/config.ts`. |
+| Keep private metadata in a sidecar | M1, M2, D1, D4 | | Sidecar metadata (0037). The outcome is a private CI run that validates public pages against private keys the public repository never holds. The two-repo layout (public as a submodule of private) and the two workflows. What a collision, an orphan entry and a refused write look like. The contract stays in the configuration reference's Sidecars section. Source of truth: `src/meta/core/sidecars.ts`, `src/meta/core/config.ts`. |
 | Run `fill` under a data-egress policy | M4, D1 | | The security-review answers for the step 7 `fill` pass. It covers what each inference call transmits. That is the path as matched, the whole metadata block, and the whole file including front matter. It is also each candidate's lifted subschema with its `description`, and every `$defs`/`definitions` block, referenced or not. It covers what the pre-gating cache retains, and the `--local` / `--offline` / `--max-turns` bounds. Consequences and decisions only, because the flag surface stays in the drift-checked CLI reference. Source of truth: `src/commands/fill-prompt.ts`, `src/commands/fill.ts`. |
 
 ### Run it in CI (Devin)

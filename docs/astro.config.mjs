@@ -1,15 +1,46 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 
+/** Every element named `tagName` under `node`, depth first. */
+function elements(node, tagName, found = []) {
+  if (node.type === "element" && node.tagName === tagName) found.push(node);
+  for (const child of node.children ?? []) elements(child, tagName, found);
+  return found;
+}
+
+/**
+ * Expressive Code plugin: put every rendered code block in the tab order.
+ *
+ * A long line makes the `<pre>` scroll sideways, and a scrolling region with
+ * nothing focusable inside it cannot be reached from the keyboard. axe's
+ * `scrollable-region-focusable` rule flags exactly that, and `manni a11y
+ * check` (the Docs workflow's `a11y` job, dogfooding on this site) failed
+ * on it for every page with a wide block. `tabindex="0"` is the fix, and it
+ * is the attribute GitHub's own code blocks carry.
+ */
+const focusableCodeBlocks = {
+  name: "Focusable code blocks",
+  hooks: {
+    postprocessRenderedBlock: ({ renderData }) => {
+      for (const pre of elements(renderData.blockAst, "pre")) {
+        pre.properties.tabIndex = 0;
+      }
+    },
+  },
+};
+
 export default defineConfig({
   site: "https://hawkeyexl.github.io",
   base: "/manni",
   integrations: [
     starlight({
       title: "manni",
-      // One top-level group per tool. `meta` is the metadata tool; the others
-      // arrive with their subcommands, each as a sibling group over its own
-      // directory under src/content/docs/.
+      expressiveCode: {
+        plugins: [focusableCodeBlocks],
+      },
+      // One top-level group per tool. `meta` is the metadata tool and `a11y`
+      // the accessibility tool; the others arrive with their subcommands, each
+      // as a sibling group over its own directory under src/content/docs/.
       sidebar: [
         {
           label: "meta",
@@ -46,6 +77,16 @@ export default defineConfig({
             {
               label: "Proposals",
               items: [{ autogenerate: { directory: "meta/proposals" } }],
+            },
+          ],
+        },
+        {
+          label: "a11y",
+          items: [
+            { label: "Overview", link: "/a11y/" },
+            {
+              label: "Reference",
+              items: [{ autogenerate: { directory: "a11y/reference" } }],
             },
           ],
         },

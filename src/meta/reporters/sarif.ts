@@ -182,7 +182,7 @@ export function renderSarif(
 
     for (const e of r.errors) {
       // A value a sidecar supplied is located in the manifest (proposal
-      // 0035), which may be the one file of the run that *is* inside the
+      // 0037), which may be the one file of the run that *is* inside the
       // repository when the documents are not, or the reverse — so each
       // finding resolves its own uri, and is dropped on its own.
       const uri = e.file != null ? artifactUri(e.file, pathFrame) : docUri;

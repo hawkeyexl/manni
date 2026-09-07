@@ -3204,12 +3204,12 @@ describe("an overrides entry may group several globs", () => {
 });
 
 /**
- * Sidecar metadata (proposal 0035) through the built bin: the merged
+ * Sidecar metadata (proposal 0037) through the built bin: the merged
  * object is what gets validated, a sidecar-sourced violation names the
  * manifest, a document carrying an owned key is a finding, and an orphaned
  * manifest entry is exit 2.
  */
-describe("cli sidecars (0035, built bin)", () => {
+describe("cli sidecars (0037, built bin)", () => {
   const corpus = resolve(root, "test", "fixtures", "sidecars");
 
   it("validates the merged object and attributes a sidecar value to the manifest", () => {

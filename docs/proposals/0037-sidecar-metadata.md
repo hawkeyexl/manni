@@ -1,4 +1,4 @@
-# 0035: sidecar metadata, a private manifest joined to public documents
+# 0037: sidecar metadata, a private manifest joined to public documents
 
 - **Status:** Implemented
 - **Serves:** Maya · M1, M2 · Devin · D1, D4 · Sara · S1

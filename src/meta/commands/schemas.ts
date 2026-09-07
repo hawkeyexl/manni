@@ -768,7 +768,7 @@ export async function runInferSchema(
     onConfigLoaded: opts.onConfigLoaded,
   });
   const usingStdin = inputs.includes(STDIN_TOKEN);
-  // Sidecar manifests (0035): an inferred schema describes the merged corpus.
+  // Sidecar manifests (0037): an inferred schema describes the merged corpus.
   const sidecars = await loadSidecars(config, {
     configDir: configDir ?? cwd,
     base,

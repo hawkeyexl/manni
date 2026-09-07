@@ -1,5 +1,5 @@
 /**
- * Sidecar metadata (proposal 0035): a private manifest joined to public
+ * Sidecar metadata (proposal 0037): a private manifest joined to public
  * documents.
  *
  * The rules under test, each from a proposal this one inherits:

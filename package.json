@@ -1,6 +1,6 @@
 {
   "name": "@hawkeyexl/manni",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "One command line for documentation that is meant to be checked. `manni meta` validates the presence and format of document metadata (Markdown frontmatter and more) against JSON Schema, built for CI. Formerly docmeta.",
   "type": "module",
   "bin": {
@@ -75,6 +75,7 @@
     "esbuild": "^0.28.2"
   },
   "dependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@hawkeyexl/inference": "^0.3.1",
     "@xmldom/xmldom": "^0.9.12",
     "ajv": "^8.17.1",
@@ -85,6 +86,7 @@
     "parse5": "^8.0.1",
     "picocolors": "^1.1.1",
     "picomatch": "^4.0.7",
+    "playwright-core": "^1.63.0",
     "smol-toml": "^1.8.0",
     "yaml": "^2.6.1"
   },

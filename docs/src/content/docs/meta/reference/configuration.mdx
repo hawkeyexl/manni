@@ -434,7 +434,7 @@ would produce fingerprints that change with the working directory.
 
 A check's SELECT says where each violation lives by naming its columns:
 
-| Column | | Meaning |
+| Column | Required | Meaning |
 |---|---|---|
 | `path` | required | The file the finding attaches to, which must be a file the run loaded. A row naming any other path is an error (exit 2) with the check named, as is a check whose SQL does not prepare. |
 | `line` | optional | 1-based source line. `lineFor(path, key)`, a SQL function registered for the run, computes it from the extractor's own position data. It returns `NULL` for an unknown path or a key the extractor cannot place. |

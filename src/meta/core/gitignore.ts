@@ -51,7 +51,7 @@ const unavailable = (): GitignoreAnswer => ({
  * `paths` are relative to `cwd`, posix-style, spelled however the caller
  * spelled them; the answer uses the same spelling.
  *
- * Candidates may lie in more than one repository (proposal 0035): a config in
+ * Candidates may lie in more than one repository (proposal 0037): a config in
  * one checkout whose `paths:` reach into another, or a nested checkout under
  * the run's own root. `git check-ignore` refuses a path outside the repository
  * it runs in with exit 128, and it must not be allowed to refuse for the whole
