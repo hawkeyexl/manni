@@ -115,10 +115,10 @@ an asset extension. Every URL is normalized (fragment dropped, host lowercased,
 default port dropped) and enters the frontier once.
 
 Pages run sequentially, and the crawl checks everything it discovers. There
-is no default cap. The first draft capped a run at 100 pages, and that was
-removed after first use, because a capped crawl reports a partial site as
-checked. `--max-pages <n>` stays as an opt-in bound; what is still queued when
-it is hit is `skipped`. `--no-crawl` checks exactly the seeds: no sitemap, no
+is no default cap. The first draft capped a run at 100 pages. That was removed
+after first use, because a capped crawl reports a partial site as checked.
+`--max-pages <n>` stays as an opt-in bound; what is still queued when it is hit
+is `skipped`. `--no-crawl` checks exactly the seeds: no sitemap, no
 links.
 
 ### The score
