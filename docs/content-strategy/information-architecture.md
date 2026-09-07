@@ -8,9 +8,9 @@ The site is organized by user intent, not by document type. Each top-level secti
 
 ## Domains
 
-manni is one bin with one domain per tool (proposals 0033 and 0034), and the site follows the bin. Each domain has its own top-level section, `meta/` and `a11y/` today, and the same intent-based tree applies inside each: an overview that routes by job-to-be-done, journey pages per persona, and a flat reference shelf the journeys deep-link into. The navigation tree and content set below are the `meta/` section, the one with enough pages to need them; every directory in the mapping table lives under `meta/`.
+manni is one bin with one domain per tool (proposals 0033 and 0034), and the site follows the bin. Each domain has its own top-level section, `meta/` and `a11y/` today, and the same intent-based tree applies inside each. That tree is an overview that routes by job-to-be-done, and journey pages per persona. It ends in a flat reference shelf the journeys deep-link into. The navigation tree and content set below are the `meta/` section, the one with enough pages to need them. Every directory in the mapping table lives under `meta/`.
 
-The `a11y/` section launches with two pages, the overview (`a11y/index.mdx`) and the CLI reference (`a11y/reference/cli.mdx`, drift-checked by `npm run docs:check-cli` like meta's). It serves Devin (D1, the CI gate; D3, machine-readable output), with Maya as the reader who runs it locally. a11y has no persona of its own yet, so its pages borrow those two rather than inventing a third; proposal 0035 records that gap, and the journey pages arrive with the persona.
+The `a11y/` section launches with two pages, the overview (`a11y/index.mdx`) and the CLI reference (`a11y/reference/cli.mdx`, drift-checked by `npm run docs:check-cli` like meta's). It serves Devin (D1, the CI gate; D3, machine-readable output), with Maya as the reader who runs it locally. a11y has no persona of its own yet, so its pages borrow those two rather than inventing a third. Proposal 0035 records that gap, and the journey pages arrive with the persona.
 
 ---
 

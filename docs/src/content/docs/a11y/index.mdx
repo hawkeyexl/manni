@@ -18,14 +18,14 @@ hero:
 import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 `manni a11y check` takes a URL, crawls the site behind it, and runs
-[axe-core](https://github.com/dequelabs/axe-core) against every page it
-reaches. Each page gets a list of violations, with the rule that fired, the
-element it fired on, and axe's own statement of what to change. The run exits
-`1` when any page still has a violation, so the command you run locally is the
-same one that gates a pull request.
+[axe-core](https://github.com/dequelabs/axe-core) against every page it reaches.
+Each page gets a list of violations. Each violation carries the rule that fired,
+the element it fired on, and axe's own statement of what to change. The run
+exits `1` when any page still has a violation, so the command you run locally is
+the same one that gates a pull request.
 
-It checks what axe can decide from a rendered page: missing alternate text,
-buttons and links with no accessible name, form fields without labels,
+It checks what axe can decide from a rendered page. That is missing alternate
+text, buttons and links with no accessible name, form fields without labels,
 contrast, document language, ARIA misuse. It does not test keyboard flows, read
 your source, or write anything back. See [fixing a finding](#fixing-a-finding)
 for what it hands the person who fixes the page.
@@ -54,8 +54,8 @@ package.
 ## Quick start
 
 Point it at a site's front page. With no other flags it finds the sitemap if
-there is one, follows same-host links otherwise, checks up to 100 pages, and
-prints one line per page:
+there is one, and follows same-host links otherwise. It checks up to 100 pages,
+and prints one line per page:
 
 ```sh
 npx @hawkeyexl/manni a11y check https://docs.example.com/
@@ -90,7 +90,7 @@ npx @hawkeyexl/manni a11y check
 ```
 
 With no URLs on the command line and no `a11y.urls` in config there is nothing
-to check, and that is an error rather than an empty green run:
+to check. That is an error rather than an empty green run:
 
 ```
 manni: No URLs to check. Pass one or more, or set `a11y.urls` in manni.config.yaml.
@@ -110,12 +110,12 @@ host is in scope.
 Pages come from two places, in this order:
 
 1. **The sitemap.** `manni a11y check` reads `robots.txt` at the first seed's
-   origin and follows its `Sitemap:` lines, in order. With none, it walks from
-   the seed's own directory up to the site root, nearest directory first, and
-   asks each directory for `sitemap.xml`, `sitemap-index.xml`, and
-   `sitemap_index.xml`. The first that answers and parses wins, so a project
-   site published under a path, such as `https://hawkeyexl.github.io/manni/`,
-   is found at `/manni/sitemap-index.xml` rather than missed at the origin. A
+   origin. It follows the file's `Sitemap:` lines, in order. With none, it walks
+   from the seed's own directory up to the site root, nearest directory first,
+   and asks each directory for `sitemap.xml`, `sitemap-index.xml`, and
+   `sitemap_index.xml`. The first that answers and parses wins. So a project
+   site published under a path, such as `https://hawkeyexl.github.io/manni/`, is
+   found at `/manni/sitemap-index.xml` rather than missed at the origin. A
    sitemap index is followed into its child sitemaps. Every same-host page URL
    it lists is queued, which is how a page nothing links to still gets checked.
 2. **Links.** Every page that loads contributes the same-host `<a href>` links
@@ -135,7 +135,7 @@ the page counts as failed, so the run exits `1`.
 ## What the score means
 
 Each page reports a score from `0` to `100`. It is the share of axe rules that
-applied to the page and passed, after the `--impact` floor has dropped the
+applied to the page and passed. The `--impact` floor has already dropped the
 violations you chose not to count:
 
 ```
@@ -179,20 +179,20 @@ types and defaults.
 |---|---|
 | `0` | Every page loaded and none has a violation at or above the impact floor. |
 | `1` | At least one page has a remaining violation, or a crawled page failed to load. |
-| `2` | The run could not happen: a bad flag, a URL that is not `http(s)`, no URLs and no config, a seed that would not load, or no browser. |
+| `2` | The run could not happen. That is a bad flag, a URL that is not `http(s)`, no URLs and no config, a seed that would not load, or no browser. |
 
 Wire `1` to the gate and `2` to a loud failure, the same split
 [`manni meta validate`](/manni/meta/ci/exit-codes-and-annotations/) uses.
 
 ## Fixing a finding
 
-For every violation the output carries four things: the axe **rule id**
-(`image-alt`), the **selector** of each element that failed (`img.hero`), axe's
-**failure summary** for that element ("Element does not have an alt
-attribute"), and the **help URL** to the rule's page on Deque University. The
-pretty format prints the first three elements per rule; `--format json` carries
-all of them, with each element's outer HTML; `--format github` turns each rule
-into a PR annotation.
+For every violation the output carries four things. The first is the axe **rule
+id** (`image-alt`), and the second is the **selector** of each element that
+failed (`img.hero`). The third is axe's **failure summary** for that element
+("Element does not have an alt attribute"). The fourth is the **help URL** to
+the rule's page on Deque University. The pretty format prints the first three
+elements per rule. `--format json` carries all of them, with each element's
+outer HTML, and `--format github` turns each rule into a PR annotation.
 
 There is no `--fix`. `check` sees a rendered URL, never the Markdown, template,
 or component tree that produced it, so there is nothing at that level it could

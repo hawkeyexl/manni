@@ -5,12 +5,12 @@
   output; Maya runs it locally before she pushes. a11y has no persona of its
   own yet; see Consequences.
 - **Depends on:** [0033](0033-manni-monorepo.md), the umbrella this domain
-  mounts on and the folding-in recipe it is the first to follow;
+  mounts on and the folding-in recipe it is the first to follow.
   [0034](0034-command-grammar.md), the grammar it was planned under: a spelled
   verb, one separator per list, a full interface and an example ladder in the
   plan
 - **Relates to:** [0001](0001-validation-baseline.md), whose ratchet is the
-  shape an a11y baseline would take, deferred here;
+  shape an a11y baseline would take, deferred here.
   [0003](0003-sarif-and-junit-reporters.md), whose SARIF and JUnit output the
   a11y reporters do not yet have, also deferred
 - **Touches:** `src/a11y/**` (new), `src/cli.ts` (one `addCommand`),
@@ -19,30 +19,30 @@
   `test/a11y/**`, `test/fixtures/a11y/site/`,
   `docs/src/content/docs/a11y/**`, `docs/astro.config.mjs`,
   `scripts/check-cli-reference.mjs`, `CLAUDE.md`
-- **Verdict:** Add a second domain, `a11y`, with one verb. `manni a11y check
-  [urls...]` crawls a site from its seeds, stays on their hosts, uses the
-  sitemap as the page list when there is one, runs axe-core in a browser it
-  finds rather than downloads, scores every page, and exits `1` when any page
-  keeps a violation at or above the impact floor.
+- **Verdict:** Add a second domain, `a11y`, with one verb.
+  `manni a11y check [urls...]` crawls a site from its seeds and stays on their
+  hosts. It uses the sitemap as the page list when there is one. It runs
+  axe-core in a browser it finds rather than downloads. It scores every page,
+  and exits `1` when any page keeps a violation at or above the impact floor.
 
 ## Problem
 
 manni is one bin with one subcommand per tool, and since 0033 shipped the bin
-has had exactly one. The folding-in recipe in `CLAUDE.md` has never been run,
-so every sentence in it is untested: the `src/<tool>/` layout, the shared
-config loader with a second top-level key, the `ToolError` base, the docs
-section per domain, the drift check that only knew one page. The second domain
-is where those either hold or get rewritten, and it is cheaper to find out with
-a small tool than with docevals.
+has had exactly one. The folding-in recipe in `CLAUDE.md` has never been run, so
+every sentence in it is untested. That covers the `src/<tool>/` layout, the
+shared config loader with a second top-level key, and the `ToolError` base. It
+covers the docs section per domain and the drift check that only knew one page.
+The second domain is where those either hold or get rewritten, and it is cheaper
+to find out with a small tool than with docevals.
 
-Accessibility is the small tool. The check itself is a solved problem: axe-core
+Accessibility is the small tool. The check itself is a solved problem. axe-core
 is the engine behind Lighthouse's accessibility audit, the browser extensions,
-and most CI plugins, and it produces a per-rule, per-element verdict with a
+and most CI plugins. It produces a per-rule, per-element verdict with a
 remediation sentence attached. What is not solved for a docs team is running it
-over a *site* in CI without writing a crawler, a sitemap reader, and a reporter
-around it every time. Playwright's axe integration checks one page. Lighthouse
-CI checks a list of URLs you maintain by hand. Neither fails a build on a page
-that was published last week and linked from nowhere.
+over a *site* in CI. That takes writing a crawler, a sitemap reader, and a
+reporter around it every time. Playwright's axe integration checks one page.
+Lighthouse CI checks a list of URLs you maintain by hand. Neither fails a build
+on a page that was published last week and linked from nowhere.
 
 The team that owns a docs site already has manni in CI for metadata. A second
 check that reads the same config file and follows the same exit-code contract
@@ -52,12 +52,12 @@ costs them one line in the workflow.
 
 ### A domain, not a `meta` concern
 
-`meta` reads files and validates their metadata. `a11y` loads URLs in a
-browser and runs an engine over the rendered DOM. They share nothing below the
-shared layer: no extractor, no schema, no file resolution. What they share is
-the shared layer itself, which is what 0033 built it for: config discovery
+`meta` reads files and validates their metadata. `a11y` loads URLs in a browser
+and runs an engine over the rendered DOM. They share nothing below the shared
+layer: no extractor, no schema, no file resolution. What they share is the
+shared layer itself, which is what 0033 built it for. That is config discovery
 (`a11y:` beside `meta:` in one `manni.config.yaml`), `ToolError` and the
-exit-code contract in `run.ts`, `warn()`, `programName()`, and now
+exit-code contract in `run.ts`, `warn()`, and `programName()`. It is now also
 `shouldColor`/`palette`, moved from `src/meta/reporters/color.ts` to
 `src/shared/color.ts` with a re-export left behind so meta does not churn.
 
@@ -72,7 +72,7 @@ accessible-name computation are all style-dependent. Three ways to get one were
 weighed:
 
 - **jsdom.** No browser, no install step. Rejected: jsdom does not run layout,
-  so every colour-contrast rule is `incomplete`, and a site whose navigation is
+  so every colour-contrast rule is `incomplete`. A site whose navigation is
   rendered by JavaScript is checked as an empty shell. The findings would be
   wrong in the direction that matters, passing pages that fail.
 - **puppeteer.** Bundles a Chromium download in `postinstall`. Rejected: every
@@ -94,24 +94,25 @@ including when the crawl throws.
 ### The crawl
 
 The seed's host is the scope. Two URLs are the same site when their hostnames
-match case-insensitively and their non-default ports match; scheme is ignored,
+match case-insensitively and their non-default ports match. Scheme is ignored,
 so `http://` and `https://` of one host are one site. Each seed adds its host,
-so `manni a11y check https://docs.example.com/ https://blog.example.com/`
-checks both hosts and nothing else.
+so `manni a11y check https://docs.example.com/ https://blog.example.com/` checks
+both hosts and nothing else.
 
-The frontier is a FIFO: seeds, then the sitemap's URLs, then each page's
-same-host links in the order the page listed them. The sitemap is looked up
-once per run, from the first seed. The candidates, in order: the `Sitemap:`
-lines of `<origin>/robots.txt`, as listed; then, walking from the seed's own
-directory up to the site root, nearest directory first and the root last,
-`sitemap.xml`, `sitemap-index.xml` and `sitemap_index.xml` in each directory.
-The first candidate that returns `2xx` and parses is used; a `<sitemapindex>`
-recurses (depth 3, 50 children). A missing or broken sitemap is "no sitemap",
-never an error. Stress test 8 is why the walk exists. Links are the absolute
-`href` of every `a[href]` in the live DOM after load, filtered to same-host
-page-like URLs: no `mailto:`/`tel:`/`javascript:`/`data:`, and no path whose
-last segment ends in an asset extension. Every URL is normalized (fragment
-dropped, host lowercased, default port dropped) and enters the frontier once.
+The frontier is a FIFO. Seeds come first, then the sitemap's URLs, then each
+page's same-host links in the order the page listed them. The sitemap is looked
+up once per run, from the first seed. The candidates, in order, are the
+`Sitemap:` lines of `<origin>/robots.txt`, as listed, followed by a walk of
+directories. The walk goes from the seed's own directory up to the site root,
+nearest directory first and the root last. In each directory it tries
+`sitemap.xml`, `sitemap-index.xml` and `sitemap_index.xml`. The first candidate
+that returns `2xx` and parses is used; a `<sitemapindex>` recurses (depth 3, 50
+children). A missing or broken sitemap is "no sitemap", never an error. Stress
+test 8 is why the walk exists. Links are the absolute `href` of every `a[href]`
+in the live DOM after load, filtered to same-host page-like URLs. That means no
+`mailto:`/`tel:`/`javascript:`/`data:`, and no path whose last segment ends in
+an asset extension. Every URL is normalized (fragment dropped, host lowercased,
+default port dropped) and enters the frontier once.
 
 Pages run sequentially. `--max-pages` (default 100) stops the run; what is
 still queued is `skipped`. `--no-crawl` checks exactly the seeds: no sitemap,
@@ -119,13 +120,13 @@ no links.
 
 ### The score
 
-Per page, `round(100 × passes ÷ (passes + violations))`, where `passes` is the
-count of axe rules that ran and passed and `violations` is the count of rules
-that failed at or above the `--impact` floor. It is the share of applicable
-rules that passed after impact filtering, and the docs say so in those words.
-It is not a Lighthouse score, and the reason is in the stress test below. The
-score is `null` when a page did not load or no rule applied. axe's
-`incomplete` results are counted and reported and never fail a page.
+Per page, `round(100 × passes ÷ (passes + violations))`. `passes` is the count
+of axe rules that ran and passed. `violations` is the count of rules that failed
+at or above the `--impact` floor. It is the share of applicable rules that
+passed after impact filtering, and the docs say so in those words. It is not a
+Lighthouse score, and the reason is in the stress test below. The score is
+`null` when a page did not load or no rule applied. axe's `incomplete` results
+are counted and reported and never fail a page.
 
 ### Exit codes
 
@@ -170,28 +171,29 @@ manni a11y check [urls...]
       --no-config          ignore any discovered config
 ```
 
-`--no-color` sits on the `a11y` domain command, where `meta` has it. `--tags`
-is a `<list>` option under 0034: one comma-separated value, given once, a
-second occurrence replacing the first; it never accumulates. `[urls...]` is
+`--no-color` sits on the `a11y` domain command, where `meta` has it. `--tags` is
+a `<list>` option under 0034: one comma-separated value, given once, a second
+occurrence replacing the first; it never accumulates. `[urls...]` is
 space-separated because it is argv. The plan carried the full option table and
-an eight-rung ladder from `manni a11y check https://docs.example.com/` to the
-every-flag invocation, plus six usage errors with their stderr lines; the
-reference page carries the same ladder.
+an eight-rung ladder, from `manni a11y check https://docs.example.com/` to the
+every-flag invocation. It also carried six usage errors with their stderr lines.
+The reference page carries the same ladder.
 
 ### Reporters
 
-Three formats. `pretty` prints a header naming the sitemap used (or `no
-sitemap; followed links`), one line per page with its score and impact counts,
-under each failing page one line per rule (impact, rule id, node count, help
-text, Deque University URL) and, under that, the first three failing elements
-as a selector and axe's `failureSummary`, then a footer with totals and the
-`skipped` count. Those element lines are the deterministic remediation the
-tool can honestly offer: which element, which condition failed, in axe's own
-words. `json` is the whole `CheckRun`: `results[]` (`url`, `source`,
-`violations[]`, `passes`, `incomplete`, `score`, `error?`) and `summary`
-(`discovered`, `checked`, `skipped`, `failed`, `violations`, `byImpact`,
-`sitemap`). `github` is one `::error` workflow command per rule per page and
-per failed load, empty when clean.
+Three formats. `pretty` prints a header naming the sitemap used (or
+`no sitemap; followed links`, or `no crawl` under `--no-crawl`). Then it prints
+one line per page with its score and impact counts. Under each failing page it
+prints one line per rule (impact, rule id, node count, help text, Deque
+University URL). Under that come the first three failing elements as a selector
+and axe's `failureSummary`. Last is a footer with totals and the `skipped`
+count. Those element lines are the deterministic remediation the tool can
+honestly offer: which element, which condition failed, in axe's own words.
+`json` is the whole `CheckRun`: `results[]` (`url`, `source`, `violations[]`,
+`passes`, `incomplete`, `score`, `error?`) and `summary` (`discovered`,
+`checked`, `skipped`, `failed`, `violations`, `byImpact`, `sitemap`, `crawl`).
+`github` is one `::error` workflow command per rule per page and per failed
+load, empty when clean.
 
 Colours keep meta's meanings, which `docs/content-strategy/design.md`
 reserves: `✓` green, `✗` red, impact from dim through yellow to red, URLs cyan.
@@ -225,26 +227,25 @@ reserves: `✓` green, `✗` red, impact from dim through yellow to red, URLs cy
 
 Two seeds on two hosts could each have a sitemap, and reading both would find
 more pages. The first-seed rule was kept for two reasons. A run with several
-seeds is the unusual case, and the usual one, a single host, is unaffected.
-And the alternative has an ordering question with no good answer: with two
-sitemaps, whose pages go first in the frontier, and which URL does
-`summary.sitemap` report? One sitemap keeps `summary.sitemap` a string rather
-than an array and keeps the frontier order explainable. The second host is
-still crawled by links from its seed. A later change to per-seed lookup is
-additive to the JSON shape (`sitemap` becomes a list) and is a `feat`, not a
-`fix`.
+seeds is the unusual case, and the usual one, a single host, is unaffected. And
+the alternative has an ordering question with no good answer. With two sitemaps,
+whose pages go first in the frontier, and which URL does `summary.sitemap`
+report? One sitemap keeps `summary.sitemap` a string rather than an array and
+keeps the frontier order explainable. The second host is still crawled by links
+from its seed. A later change to per-seed lookup is additive to the JSON shape
+(`sitemap` becomes a list) and is a `feat`, not a `fix`.
 
 ### 2. Why is a seed failure exit 2 but a crawled page failure exit 1?
 
-The seed is the user's input. If it does not load, nothing was checked, and
-the honest answer is "the run could not happen", which is `2` everywhere in
-manni (0014: an empty run is not success). A crawled page is the site's
-output. If the site links to a page that 404s or times out, that is a defect
-on the site, of the same kind as a missing alt attribute, and it is recorded
-against that page with `error` set and counted in `summary.failed`. Stopping
-the whole run for it would hide every other finding behind the first broken
-link. The split is the same one meta makes between a path that does not exist
-(`2`) and a file whose metadata fails (`1`).
+The seed is the user's input. If it does not load, nothing was checked, and the
+honest answer is "the run could not happen". That is `2` everywhere in manni
+(0014: an empty run is not success). A crawled page is the site's output. If the
+site links to a page that 404s or times out, that is a defect on the site. It is
+of the same kind as a missing alt attribute. It is recorded against that page
+with `error` set and counted in `summary.failed`. Stopping the whole run for it
+would hide every other finding behind the first broken link. The split is the
+same one meta makes between a path that does not exist (`2`) and a file whose
+metadata fails (`1`).
 
 ### 3. Why is `www.example.com` a different host from `example.com`?
 
@@ -261,22 +262,20 @@ ignored) is one a reader can predict; a heuristic is not.
 
 Lighthouse weights each axe rule by an estimate of user impact and reports a
 single number people put in dashboards. The weights are Lighthouse's editorial
-judgment, they change between versions, and a weighted score invites the
-reading "92 is fine". This tool has an exit code for "fine", and the score is
-a per-page trend indicator, not the verdict. An unweighted share of passing
-rules has one property the weighted one lacks: a reader can recompute it from
-`passes` and `violations.length` in the JSON, and see exactly what
-`--impact` changed. The reference page says "not a Lighthouse score" in those
-words, because the first question every reader will ask is why the numbers
-differ.
+judgment, they change between versions, and a weighted score invites the reading
+"92 is fine". This tool has an exit code for "fine", and the score is a per-page
+trend indicator, not the verdict. An unweighted share of passing rules has one
+property the weighted one lacks. A reader can recompute it from `passes` and
+`violations.length` in the JSON, and see exactly what `--impact` changed. The
+reference page says "not a Lighthouse score" in those words, because the first
+question every reader will ask is why the numbers differ.
 
 ### 5. Why does `--tags` not also repeat?
 
-0034 § stress test 4, verbatim. The plan for this domain originally had
-`--tags` both comma-separated and repeatable, and that plan is the one 0034
-cites as the reason the separator rule was written down. It is a `<list>`
-option like meta's `--ext`; the config key `tags:` is a YAML list and mirrors
-the one spelling.
+0034 § stress test 4, verbatim. The plan for this domain originally had `--tags`
+both comma-separated and repeatable. That plan is the one 0034 cites as the
+reason the separator rule was written down. It is a `<list>` option like meta's
+`--ext`; the config key `tags:` is a YAML list and mirrors the one spelling.
 
 ### 6. Why does `incomplete` never count?
 
@@ -301,10 +300,10 @@ with, which 0034 added before this landed. The rest (`src/<tool>/`,
 
 Because real sites keep the sitemap where the site is, and the site is not
 always the origin. A GitHub Pages project site lives under a path.
-`https://hawkeyexl.github.io/manni/` is this tool's own docs, and Astro's
-sitemap integration, which Starlight turns on by default, writes
-`/manni/sitemap-index.xml` there and nothing at the origin, which belongs to
-the account rather than the project. The first real run of `manni a11y check`
+`https://hawkeyexl.github.io/manni/` is this tool's own docs. Astro's sitemap
+integration, which Starlight turns on by default, writes
+`/manni/sitemap-index.xml` there and nothing at the origin. The origin belongs
+to the account rather than the project. The first real run of `manni a11y check`
 against those docs reported `no sitemap; followed links`: the tool was wrong
 about the one site its authors could vouch for. The original rule, `robots.txt`
 then `/sitemap.xml`, was written for a site rooted at `/`, and a docs site is
@@ -314,11 +313,11 @@ often not.
 declaration and needs no guessing. After it the walk starts at the seed's own
 directory and ends at the root, three names per directory. Nearest first means
 the project site finds its file on the first or second try (`/manni/sitemap.xml`
-404s, `/manni/sitemap-index.xml` answers), and a site rooted at the origin
-still finds `/sitemap.xml` where it always did, one directory later than
-before at most. The cost is a few extra 404s per run, each a small GET before
-the first page loads, and only on a site that has no sitemap at all does the
-walk run to the end.
+404s, `/manni/sitemap-index.xml` answers). A site rooted at the origin still
+finds `/sitemap.xml` where it always did, one directory later than before at
+most. The cost is a few extra 404s per run, each a small GET before the first
+page loads. Only on a site that has no sitemap at all does the walk run to the
+end.
 
 ## Consequences
 
@@ -330,14 +329,14 @@ walk run to the end.
 - The site gains `a11y/` beside `meta/`: an overview and a CLI reference,
   drift-checked. `docs/content-strategy/information-architecture.md` gains a
   "Domains" note.
-- **No persona.** The pages serve Devin (D1, D3) with Maya as the local runner,
-  and that is a borrowing. An accessibility owner is a different person from a
-  docs engineer: different vocabulary (WCAG success criteria rather than
-  schema fields), different pains (an audit finding rather than a red PR), and
-  a journey that starts with "which pages are worst" rather than "add a gate".
+- **No persona.** The pages serve Devin (D1, D3) with Maya as the local runner.
+  That is a borrowing. An accessibility owner is a different person from a docs
+  engineer. They have a different vocabulary (WCAG success criteria rather than
+  schema fields) and different pains (an audit finding rather than a red PR).
+  Their journey starts with "which pages are worst" rather than "add a gate".
   The content strategy needs a fifth persona and its CUJs before `a11y/` grows
-  journey pages, and this proposal records the gap rather than inventing the
-  persona in passing.
+  journey pages. This proposal records the gap rather than inventing the persona
+  in passing.
 - The deferred list above is the backlog: SARIF/JUnit, `Disallow`, gzipped
   sitemaps, concurrency, a baseline, the programmatic export. Each is a small
   proposal or a `feat` commit on its own; none blocks the gate working today.

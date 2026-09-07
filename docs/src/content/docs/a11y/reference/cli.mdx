@@ -42,7 +42,7 @@ manni a11y [options] check [urls...] [command options]
 
 | Option | Description |
 |---|---|
-| `--no-color` | Disable colored output. Color is on only when stdout is a TTY, and never under `NO_COLOR`; the meanings match `manni meta`'s: `✓` green, `✗` red, impact from dim through yellow to red, URLs cyan. |
+| `--no-color` | Disable colored output. Color is on only when stdout is a TTY, and never under `NO_COLOR`. The meanings match `manni meta`'s: `✓` green, `✗` red, impact from dim through yellow to red, URLs cyan. |
 
 ## `a11y check`
 
@@ -65,9 +65,9 @@ manni a11y check [urls...] [options]
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `-f, --format` | `<pretty\|json\|github>` | `pretty` | [Output format](#output-formats). An unknown value is an error (exit 2). |
-| `--no-crawl` | n/a | on | Check exactly the given URLs: no sitemap lookup, no link following. Crawling is on by default. Overrides config `crawl:`. |
+| `--no-crawl` | n/a | on | Check exactly the given URLs, with no sitemap lookup and no link following. Crawling is on by default. Overrides config `crawl:`. |
 | `--max-pages` | `<n>` | `100` | Stop after this many pages have been checked; whatever is still queued is reported as `skipped`. Must be an integer of 1 or more (exit 2 otherwise). Overrides config `maxPages:`. |
-| `--tags` | `<list>` | — | Comma-separated axe tags, given once; restrict axe to rules carrying any of them, for example `wcag2a,wcag2aa,wcag21aa,best-practice`. Whitespace around commas is trimmed and empty items are dropped. A second `--tags` replaces the first. Without it axe runs its default rule set. Overrides config `tags:`. |
+| `--tags` | `<list>` | | Comma-separated axe tags, given once; restrict axe to rules carrying any of them, for example `wcag2a,wcag2aa,wcag21aa,best-practice`. Whitespace around commas is trimmed and empty items are dropped. A second `--tags` replaces the first. Without it axe runs its default rule set. Overrides config `tags:`. |
 | `--impact` | `<level>` | `minor` | Minimum impact reported and counted: `minor`, `moderate`, `serious`, or `critical`. Violations below it are dropped before the [score](#the-score) and the exit code are decided. An unknown level is an error (exit 2). Overrides config `impact:`. |
 | `--timeout` | `<ms>` | `30000` | Per-page navigation timeout in milliseconds. Overrides config `timeout:`. |
 | `-q, --quiet` | n/a | off | In `pretty` output, hide pages with no remaining violations. Has no effect on `json` or `github`. |
@@ -83,7 +83,7 @@ Positional seeds are space-separated, because that is what argv is.
 ### The crawl
 
 Scope is the host. Two URLs are on the same site when their hostnames match
-case-insensitively and their non-default ports match; `http://` and `https://`
+case-insensitively and their non-default ports match. `http://` and `https://`
 of one host are one site, and `www.example.com` is not `example.com`. Each seed
 adds its own host to the scope.
 
@@ -91,18 +91,18 @@ The frontier is filled in this order:
 
 1. **Seeds**, as given, normalized (fragment dropped, hostname lowercased,
    default port dropped, path and query kept as written).
-2. **The sitemap.** One lookup per run, from the first seed. The candidates,
-   in order: every `Sitemap:` line in `<origin>/robots.txt`, in the order the
-   file lists them; then, walking from the seed's own directory up to the site
-   root, nearest directory first and the root last, `sitemap.xml`,
-   `sitemap-index.xml`, and `sitemap_index.xml` in each directory. For a seed
-   of `https://example.com/a/b/page.html` that is `/a/b/`, then `/a/`, then
-   `/`, three names in each. The first candidate that returns `2xx` and parses
-   is used, and nothing after it is fetched. A `<sitemapindex>` is followed
-   into its child sitemaps (depth 3, 50 children at most); a `<urlset>`
-   contributes its `<loc>` values. Only same-host page URLs are kept. A
-   missing, failing, or unparseable sitemap means "no sitemap" and is never an
-   error. Gzipped sitemaps are not read.
+2. **The sitemap.** One lookup per run, from the first seed. The candidates, in
+   order, are every `Sitemap:` line in `<origin>/robots.txt`, in the order the
+   file lists them, followed by a walk of directories. The walk goes from the
+   seed's own directory up to the site root, nearest directory first and the
+   root last. In each directory it tries `sitemap.xml`, `sitemap-index.xml`, and
+   `sitemap_index.xml`. For a seed of `https://example.com/a/b/page.html` that
+   is `/a/b/`, then `/a/`, then `/`, three names in each. The first candidate
+   that returns `2xx` and parses is used, and nothing after it is fetched. A
+   `<sitemapindex>` is followed into its child sitemaps (depth 3, 50 children at
+   most); a `<urlset>` contributes its `<loc>` values. Only same-host page URLs
+   are kept. A missing, failing, or unparseable sitemap means "no sitemap" and
+   is never an error. Gzipped sitemaps are not read.
 3. **Links.** After each page loads, the absolute `href` of every `a[href]` in
    the rendered DOM is queued if it is same-host, `http(s)`, and looks like a
    page. `mailto:`, `tel:`, `javascript:`, and `data:` are skipped, and so is a
@@ -126,7 +126,7 @@ as failed for the exit code.
 score = round(100 × passes ÷ (passes + violations))
 ```
 
-`passes` is the number of axe rules that ran and passed on the page;
+`passes` is the number of axe rules that ran and passed on the page.
 `violations` is the number of rules that failed at or above the `--impact`
 floor, counted per rule rather than per element. The result is the share of
 applicable rules that passed after impact filtering. It is not a Lighthouse
@@ -159,12 +159,13 @@ Checked 3 of 3 pages (sitemap: http://localhost:8080/sitemap.xml)
 ```
 
 The header names the sitemap that supplied pages, or reads `(no sitemap;
-followed links)`. Each violation line carries the impact, the rule id, the node
-count, axe's short help text, and the rule's Deque University URL. Under it, the
-first three failing elements print as a selector and axe's failure summary,
-then `(+N more)` past three. A page that could not load prints
-`could not load: <reason>`. The footer adds `; K skipped (--max-pages)` when the
-cap was hit. `-q` hides pages with no remaining violations.
+followed links)`. Under `--no-crawl` it reads `(no crawl)`. Each violation line
+carries the impact, the rule id, the node count, axe's short help text, and the
+rule's Deque University URL. Under it, the first three failing elements print as
+a selector and axe's failure summary, then `(+N more)` past three. A page that
+could not load prints `could not load: <reason>`. The footer adds
+`; K skipped (--max-pages)` when the cap was hit. `-q` hides pages with no
+remaining violations.
 
 **`json`** prints one object, the whole run, for scripts:
 
@@ -202,7 +203,8 @@ cap was hit. `-q` hides pages with no remaining violations.
     "failed": 2,
     "violations": 3,
     "byImpact": { "minor": 0, "moderate": 1, "serious": 2, "critical": 0 },
-    "sitemap": "https://docs.example.com/sitemap.xml"
+    "sitemap": "https://docs.example.com/sitemap.xml",
+    "crawl": true
   }
 }
 ```
@@ -223,13 +225,14 @@ And `summary`:
 
 | Field | Type | Meaning |
 |---|---|---|
-| `discovered` | integer | Distinct URLs that entered the frontier: seeds, sitemap entries, and links. |
+| `discovered` | integer | Distinct URLs that entered the frontier, whether seeds, sitemap entries, or links. |
 | `checked` | integer | Pages actually analyzed. |
 | `skipped` | integer | Discovered but not checked because `--max-pages` was reached. |
 | `failed` | integer | Pages with at least one remaining violation or an `error`. Drives exit `1`. |
 | `violations` | integer | Remaining violations across all pages, counted per rule rather than per node. |
 | `byImpact` | object | Violation counts keyed `minor`, `moderate`, `serious`, `critical`. All four keys are always present. |
 | `sitemap` | string \| `null` | The sitemap URL that supplied pages, or `null` when none was used. |
+| `crawl` | boolean | Whether pages beyond the seeds were discovered. `false` under `--no-crawl`. |
 
 **`github`** prints one workflow command per finding, and nothing when the run
 is clean:
@@ -248,7 +251,7 @@ line to anchor to, since the finding is about a URL.
 |---|---|
 | `0` | Every page loaded and none has a violation at or above the impact floor. |
 | `1` | At least one page has a remaining violation, or a crawled page failed to load. `summary.failed` is greater than zero. |
-| `2` | Usage or operational error: an unknown flag value, a non-`http(s)` URL, no URLs and no config, a seed that could not be loaded, no browser found. One line on stderr prefixed `manni: `. |
+| `2` | Usage or operational error. The causes are an unknown flag value, a non-`http(s)` URL, or no URLs and no config. They also include a seed that could not be loaded, or no browser found. One line on stderr prefixed `manni: `. |
 
 ### Examples
 
@@ -336,4 +339,4 @@ a11y:
 | `timeout` | integer ≥ 1 | `30000` | Per-page navigation timeout in milliseconds. Mirrors `--timeout`. |
 
 An unknown key, a wrong type, an empty `urls` entry, or a `urls` entry that is
-not `http(s)` is an error naming the file and the key (exit 2).
+not `http(s)` is an error. The error names the file and the key (exit 2).
