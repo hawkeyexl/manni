@@ -99,6 +99,9 @@ jobs:
   # as `validate-docs`, one level up: the tool under test checks the site the
   # repo publishes. It runs on pull requests so a page that ships a new finding
   # is annotated before merge, and on main so the live site keeps a record.
+  # The check steps name no URL: it comes from the `a11y:` key of the repo's
+  # own manni.config.yaml, so the job exercises config discovery the way
+  # `validate-docs` does for the metadata tool.
   #
   # Nothing downstream depends on it. The deploy is gated on frontmatter and on
   # the site building, not on this job, because two of the three rules the
@@ -150,7 +153,7 @@ jobs:
       # the sidebar links instead. `--progress` names each page in the log,
       # which has no terminal to draw the status line on.
       - name: Report accessibility findings
-        run: node dist/cli.js a11y check http://127.0.0.1:4321/manni/ -f github --progress
+        run: node dist/cli.js a11y check -f github --progress
         continue-on-error: true
 
       # The gate sits at `critical` today, which is where the site is green.
@@ -161,7 +164,7 @@ jobs:
       # defers a baseline like 0001's; until one exists, the `--severity`
       # floor is the ratchet. Lower it as findings are fixed, and never raise it.
       - name: Gate on critical findings
-        run: node dist/cli.js a11y check http://127.0.0.1:4321/manni/ --severity critical --progress -q
+        run: node dist/cli.js a11y check --severity critical --progress -q
 
   # Deploy the uploaded artifact to GitHub Pages. Never from a pull request —
   # a PR build is a check, not a release, and `pages: write` on PR-triggered

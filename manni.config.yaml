@@ -40,3 +40,22 @@ meta:
         # `text`. Before it existed, every Starlight key on every page went
         # unchecked.
         - astro:starlight:0.41
+
+# The accessibility tool reads `a11y:` and nothing else. Same narrowness as
+# above, for the same reason: this file is ambient for every run beneath the
+# repo, the test suite included. `urls` is safe because a positional URL always
+# wins over it, and the tests always pass one. A `severity` or `tags` here
+# would change what the tests see, so they stay on the command line.
+#
+# The URL is the local preview of the docs site, not the published one,
+# because the point of the check is the build a pull request produces, before
+# it deploys. To run it by hand: `cd docs && npm run build && npx astro
+# preview --host 127.0.0.1 --port 4321`, then `manni a11y check` from anywhere
+# in the repo. The Docs workflow's `a11y` job runs exactly that. To check the
+# live site instead, name it: `manni a11y check https://hawkeyexl.github.io/manni/`.
+a11y:
+  urls:
+    - http://127.0.0.1:4321/manni/
+  # The site has 52 pages today; the default cap of 100 would silently stop
+  # covering it somewhere past that, and a skipped page is a page unchecked.
+  maxPages: 200
