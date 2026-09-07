@@ -94,8 +94,8 @@ value, for example `-s a -s b`.
 
 With [`sidecars:`](/manni/meta/reference/configuration/#sidecars) in config,
 `validate` merges each manifest's values into the document before resolving its
-schema set, files a `sidecar:owned/sidecar` finding for every owned key a
-document carries itself, and on a config-corpus run refuses (exit 2) a manifest
+schema set. It files a `sidecar:owned/sidecar` finding for every owned key a
+document carries itself. On a config-corpus run it refuses (exit 2) a manifest
 entry naming a document the run did not load. That last check runs on the same
 invariant the corpus checks use and has no flag of its own. A positional path
 is what turns it off.
@@ -612,10 +612,10 @@ A schema property is a candidate when it is **missing** from the file's
 metadata, or **present but invalid**. A property that is already present and
 valid is never touched, and neither is `$schema`, which is schema wiring, not
 metadata. A candidate a [sidecar manifest](/manni/meta/reference/configuration/#sidecars)
-owns is refused for the whole file, as a per-file error rather than a skip:
-`"source" is owned by sidecar docs-meta.yaml; manni meta fill cannot write a
-sidecar key. Add it to the manifest instead.` The manifest is the only place the
-value may go, and `fill` does not edit manifests.
+owns is refused for the whole file, as a per-file error rather than a skip.
+The error reads `"source" is owned by sidecar docs-meta.yaml; manni meta fill
+cannot write a sidecar key. Add it to the manifest instead.` The manifest is the
+only place the value may go, and `fill` does not edit manifests.
 
 ### The confidence gate
 

@@ -6,8 +6,8 @@ description: "Validate public docs against private keys such as a ticket or an i
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
 
 Your docs repository is public. Some of the metadata its pages must carry is
-not: the internal design note a guide was written from, the ticket that tracks
-it, the team that owns it. In the public frontmatter it leaks. In a private
+not. Examples are the internal design note a guide was written from, the ticket
+that tracks it, and the team that owns it. In the public frontmatter it leaks. In a private
 spreadsheet it is never validated, and the whole point of a `jira:` key is that
 CI refuses a page without one.
 
@@ -17,9 +17,9 @@ the page. A YAML manifest supplies a fixed set of keys for named documents, and
 The public repository never holds the value, and the private CI run validates
 the public pages against a schema that requires it.
 
-By the end you will have two repositories, one manifest, and a private CI job
-that fails when a public page has no ticket, when a ticket is misspelled, or
-when someone writes the ticket into the public page by hand.
+By the end you will have two repositories, one manifest, and a private CI job.
+The job fails when a public page has no ticket or a ticket is misspelled. It
+also fails when someone writes the ticket into the public page by hand.
 
 <Aside type="note" title="What this page covers">
 The journey. The contract, meaning every rule, message and exit code, lives in
@@ -43,8 +43,8 @@ private-repo/
 
 Two sibling checkouts also run, and report worse. SARIF locates every finding
 relative to the nearest repository root and cannot represent a finding in
-another repository's file, so from a sibling layout every document finding is
-dropped from the log. The submodule keeps every document under the private
+another repository's file. From a sibling layout every document finding is
+therefore dropped from the log. The submodule keeps every document under the private
 root. The reasons are in the
 [reference](/manni/meta/reference/configuration/#the-recommended-layout).
 
@@ -115,7 +115,7 @@ root. The reasons are in the
 
 ## What a failure looks like
 
-Over `test/fixtures/sidecars/`, the corpus this feature's tests run, one page
+`test/fixtures/sidecars/` is the corpus this feature's tests run. One page
 has a malformed ticket in the manifest, one has no entry, and one carries
 `jira:` in its own frontmatter:
 
@@ -138,8 +138,8 @@ that key may be set. All three are exit 1, and `--format github` annotates the
 manifest line for the first and the page line for the other two.
 
 A renamed page whose entry was not updated is different. On a config-corpus run
-it is exit 2, because an entry naming a page the run did not load is a named
-input that is not there. The same fixture directory carries a second config
+it is exit 2. An entry naming a page the run did not load is a named input
+that is not there. The same fixture directory carries a second config
 whose manifest names a page that is gone:
 
 ```
@@ -203,7 +203,7 @@ manni: "docs/auth.md": "jira" is owned by sidecar docs-meta.yaml; edit the sidec
 
 `fill` refuses a page whose missing key the manifest owns, for the same reason.
 Edit `docs-meta.yaml` by hand. A corpus check in the private config can still
-see every private key, so "every guide has a ticket in the open state" is a
+see every private key. So "every guide has a ticket in the open state" is a
 [SQL rule](/manni/meta/ci/query-gates/) like any other.
 
 ## Where to go next

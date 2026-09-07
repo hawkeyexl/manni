@@ -20,7 +20,7 @@ the command line.
 | `schemas` | `(string \| {ref, source?, integrity?})[]` | none | Default [schema set](/manni/meta/reference/schema-resolution/) applied to every file that no higher-precedence rule matches. See [Schemas](#schemas). |
 | `overrides` | `Override[]` | none | Per-glob schema overrides. The first matching entry wins. See [Overrides](#overrides). |
 | `checks` | `Check[]` | none | Named cross-file rules, written as SQL over the corpus's metadata table, that `validate` runs after the per-file schemas, with rows reported as findings. See [Checks](#checks). |
-| `sidecars` | `Sidecar[]` | none | Private YAML manifests joined to public documents. Each supplies a fixed set of top-level keys for named documents, merged into the document's metadata before schema resolution, so every command sees one object. See [Sidecars](#sidecars). |
+| `sidecars` | `Sidecar[]` | none | Private YAML manifests joined to public documents. Each supplies a fixed set of top-level keys for named documents. The values are merged into the document's metadata before schema resolution, so every command sees one object. See [Sidecars](#sidecars). |
 | `baseline` | `string` | none | Path to a [validation baseline](/manni/meta/reference/cli/#baselines). Setting it turns on `--baseline` for every run; `--no-baseline` suppresses it for one. A bare `--write-baseline` records into this same file. |
 | `allowEmpty` | `boolean` | `false` | Treat an input set that resolves to zero files as success instead of an error (exit 2). Equivalent to `--allow-empty`. See [empty input sets](/manni/meta/reference/cli/#empty-input-sets). |
 | `respectGitignore` | `boolean` | `true` | Skip files `.gitignore` covers when expanding directories and globs. `--no-gitignore` overrides it for one run. See [`.gitignore`](/manni/meta/reference/cli/#gitignore). |
@@ -474,9 +474,9 @@ see one object. The manifest is never a document itself. No extractor reads it,
 and it has no row in the `docs` table. It is a join table.
 
 The case it exists for is a public docs repository whose pages must carry
-metadata that is not public: the internal design note a guide was written from,
-the ticket that tracks it, the team that owns it. The value belongs in a private
-repository. The contract on it belongs with the page, in the same schema set,
+metadata that is not public. Examples are the internal design note a guide was
+written from, the ticket that tracks it, and the team that owns it. The value
+belongs in a private repository. The contract on it belongs with the page, in the same schema set,
 checked by the same `validate` run, with the same exit code. A sidecar lets the
 private repository supply the value without the public page ever holding it.
 [Keep private metadata in a sidecar](/manni/meta/set-up/private-metadata-sidecar/)
@@ -501,7 +501,7 @@ meta:
 
 `sidecars:` absent is exactly the behaviour every config had before the key
 existed. The public repository keeps its own plain config and never mentions a
-sidecar, so no public run ever warns about a private file it cannot see.
+sidecar. That way no public run ever warns about a private file it cannot see.
 
 #### The manifest
 
@@ -539,7 +539,7 @@ entry's line. From `test/fixtures/sidecars/`:
 
 1. **Keys are owned.** Each sidecar entry declares the top-level keys it
    supplies. Ownership is disjoint across entries, so two manifests can never
-   disagree about one key, and the config parser refuses a second claim:
+   disagree about one key. The config parser refuses a second claim:
    `sidecars[1].keys claims "jira", which sidecars[0] already owns — a key has exactly one sidecar.`
    No sidecar may own `$schema`. A sidecar never feeds
    [schema resolution](/manni/meta/reference/schema-resolution/); the document's
@@ -551,9 +551,10 @@ entry's line. From `test/fixtures/sidecars/`:
    the schema sees for that run, so the report shows what the public site would
    publish.
 3. **Manifest keys are exact paths, relative to the config's directory.**
-   Matching is on the resolved absolute path, never on the spelling, so a
-   positional run from a subdirectory finds the same entry a config-corpus run
-   does. Stdin never has an entry, because there is no file behind it.
+   Matching is on the resolved absolute path, never on the spelling. A
+   positional run from a subdirectory therefore finds the same entry a
+   config-corpus run does. Stdin never has an entry, because there is no file
+   behind it.
 4. **An entry naming a document the run did not load is exit 2.** A named
    input that is not there is an error, not a silent pass, and a manifest entry
    is a named input. See [the orphan check](#the-orphan-check) for when it runs.
@@ -573,7 +574,7 @@ entry's line. From `test/fixtures/sidecars/`:
 | `validate` | Merges, validates the merged object, files a finding for every owned key a document carries, and runs the orphan check on a config-corpus run. |
 | `get` | Reads the merged value. `manni meta get jira docs/auth.md` prints `docs/auth.md: jira=PLAT-412` from the manifest as readily as it would from the document. It does not yet say which of the two supplied it. |
 | `query` | Every row holds the merged values, so `SELECT _path, jira FROM docs` and a [corpus check](#checks) see the private keys. A write that would touch an owned key refuses (exit 2), before any file is written. |
-| `fill` | A candidate property a sidecar owns is refused for the file, as a per-file error (exit 1) rather than a skip, so a missing private key is never quietly left missing. |
+| `fill` | A candidate property a sidecar owns is refused for the file, as a per-file error (exit 1) rather than a skip. A missing private key is therefore never quietly left missing. |
 
 The `validate` run over `test/fixtures/sidecars/`, whose `docs-meta.yaml`
 supplies `jira` for three of four pages and one page carries `jira:` itself:
@@ -592,8 +593,8 @@ supplies `jira` for three of four pages and one page carries `jira:` itself:
 
 `billing.md` is rule 5: the schema rejected a value the manifest supplied, and
 the location is the manifest's line. `new.md` is an ordinary `required`
-violation, because presence is what schema `required` already says, and a
-missing entry surfaces as a finding the baseline, SARIF and the ratchet already
+violation, because presence is what schema `required` already says. A missing
+entry surfaces as a finding the baseline, SARIF and the ratchet already
 understand. `ops.md` is rule 2.
 
 The write refusals, on the same corpus:
@@ -618,9 +619,9 @@ $ manni meta fill --dry-run
 ```
 
 `fill` refuses those three because `source` is missing from each and the
-schema lists it, so it is a candidate, and a candidate a sidecar owns has
-exactly one honest destination. `auth.md` has both keys in the manifest and is
-left alone.
+schema lists it, so it is a candidate. A candidate a sidecar owns has exactly
+one honest destination. `auth.md` has both keys in the manifest and is left
+alone.
 
 #### Finding identity
 
@@ -640,9 +641,9 @@ the key:
 ```
 
 The ref is shaped like `check:<name>`, so the rule id everywhere, in SARIF,
-JUnit and the baseline, is the ordinary join `sidecar:owned/sidecar`, and
-`sidecar` is reserved as a first segment beside `check`. It is listed with the
-other [reserved rule ids](/manni/meta/reference/output-and-exit-codes/#reserved-rule-ids).
+JUnit and the baseline, is the ordinary join `sidecar:owned/sidecar`. The
+`sidecar` segment is reserved as a first segment beside `check`. It is listed
+with the other [reserved rule ids](/manni/meta/reference/output-and-exit-codes/#reserved-rule-ids).
 
 A rule 5 finding is not a new rule. It is whatever the schema said, with one
 extra JSON field: [`file`](/manni/meta/reference/output-and-exit-codes/#output-formats)
@@ -663,7 +664,7 @@ documents still need work.
 
 #### The orphan check
 
-A manifest entry whose document the run did not load is the rename case: the
+A manifest entry whose document the run did not load is the rename case. The
 page moved, the entry did not, and nobody reads the entry again. That is the
 silent green an unread named input always produces, so it is exit 2:
 
@@ -676,7 +677,7 @@ manni: Sidecar manifest docs-meta.orphan.yaml:3 names "docs/gone.md", which this
 It runs only when the resolved file set **is** the config-resolved corpus, by
 the same invariant [named checks use](#when-checks-run). A positional path,
 stdin, `--as`, `--ext`, `--exclude`, `--no-gitignore` or `-s` means the operator
-chose to look at part of the corpus, and an entry for the rest is expected, not
+chose to look at part of the corpus. An entry for the rest is expected, not
 orphaned. So `manni meta validate docs/auth.md` from the same directory passes
 without mentioning `docs/gone.md`. Unlike checks, the orphan check has no opt-out
 flag. A config-corpus run is the one place the whole manifest is accountable, and
@@ -701,9 +702,9 @@ The alternative, two sibling checkouts with `paths: ["../public/docs/**/*.md"]`,
 runs. It reports worse. SARIF locates every finding relative to the nearest
 repository root, and it cannot represent a finding in another repository's file.
 From a sibling layout every document finding is outside the private root, so
-every one is dropped from the SARIF log, with the
+every one is dropped from the SARIF log. The
 [existing notice](/manni/meta/reference/output-and-exit-codes/#sarif-paths-are-repository-root-relative)
-on stderr. The submodule layout keeps every document URI under the private root,
+goes to stderr. The submodule layout keeps every document URI under the private root,
 so the log is complete. `.gitignore` filtering applies per repository root in
 both layouts, so the public repository's ignores still hold for its files.
 
@@ -728,7 +729,7 @@ Two fixes:
   and what every built-in schema except the [Agent Skills
   pair](/manni/meta/reference/agent-skills-schemas/) does.
 - Or keep it closed, and have the private `overrides` entry restate the whole
-  contract in `private.json`, with the private keys declared, so the public
+  contract in `private.json`, with the private keys declared. Then the public
   schema is not in the private run's set at all.
 
 ## Example

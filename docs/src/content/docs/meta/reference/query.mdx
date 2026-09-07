@@ -183,11 +183,11 @@ Constraints on a DML statement:
   `_path` already loaded is refused by the table's primary key.
 - **A write cannot touch `<stdin>`**, because there is no file behind it.
 - **A key a [sidecar manifest](/manni/meta/reference/configuration/#sidecars)
-  owns is read-only.** Its value is in every row, and a set, remove, rename,
+  owns is read-only.** Its value is in every row. A set, remove, rename,
   `INSERT` or `DELETE` that would touch it refuses by file and key, before any
-  file is written: `"docs/auth.md": "jira" is owned by sidecar docs-meta.yaml;
-  edit the sidecar file instead.` A document the manifest names cannot be moved
-  out from under its entry either: `"docs/auth.md": sidecar docs-meta.yaml
+  file is written. The refusal reads `"docs/auth.md": "jira" is owned by sidecar
+  docs-meta.yaml; edit the sidecar file instead.` A document the manifest names
+  cannot be moved out from under its entry either: `"docs/auth.md": sidecar docs-meta.yaml
   names it; rename the manifest entry first.`
 
 ### Format limits on a write

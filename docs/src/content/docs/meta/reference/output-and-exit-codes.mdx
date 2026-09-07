@@ -227,7 +227,7 @@ which `upload-sarif` rejects.
 | `results[].ruleId` | string | `<schema-ref>/<keyword>`, for example `google:okf:0.1/required`. Built from `keyword`, never from the message, so an Ajv rewording cannot close and reopen every historical alert. |
 | `results[].level` | string | Always `error`. See [severity](#severity-is-always-error) below. |
 | `results[].message.text` | string | The field path (or `(root)`) followed by the violation message. |
-| `results[].locations[].physicalLocation.artifactLocation.uri` | string | The file, **relative to the repository root**. See [paths](#sarif-paths-are-repository-root-relative). For a value a [sidecar manifest](/manni/meta/reference/configuration/#sidecars) supplied, this is the manifest, and each finding resolves its own URI, so a manifest inside the repository is kept even when the document is not, and the reverse. |
+| `results[].locations[].physicalLocation.artifactLocation.uri` | string | The file, **relative to the repository root**. See [paths](#sarif-paths-are-repository-root-relative). For a value a [sidecar manifest](/manni/meta/reference/configuration/#sidecars) supplied, this is the manifest. Each finding resolves its own URI, so a manifest inside the repository is kept even when the document is not, and the reverse. |
 | `results[].locations[].physicalLocation.region.startLine` | number | 1-based source line. The whole `region` is **omitted** when no line is known. SARIF requires `startLine >= 1`. A `0` would be invalid, and a `1` would silently mislocate the finding at the top of the file. A location with only an `artifactLocation` renders as a file-level alert, which is true. No `startColumn` is ever emitted, even for a finding whose JSON `col` is set. The SARIF region stays line-only for now. |
 | `results[].partialFingerprints` | object | `{"docmetaViolation/v1": "<fingerprint>"}`, the same fingerprint the [baseline](/manni/meta/reference/cli/#baselines) records. |
 
@@ -241,7 +241,7 @@ reserved first segment rather than a schema. A [corpus
 check](/manni/meta/reference/configuration/#checks) named `n` reports
 `check:n/check`. A document carrying a key a [sidecar
 manifest](/manni/meta/reference/configuration/#sidecars) owns reports
-`sidecar:owned/sidecar`, whose `rules[]` entry reads "The document carries a key
+`sidecar:owned/sidecar`. Its `rules[]` entry reads "The document carries a key
 a sidecar manifest owns; the manifest is the only place that key may be set."
 
 The `-` (stdin) input produces **no** SARIF result. `<stdin>` is not a path any
