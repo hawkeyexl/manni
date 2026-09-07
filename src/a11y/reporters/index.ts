@@ -7,7 +7,8 @@ import { renderGithub } from "./github.js";
 import { renderJson } from "./json.js";
 import { renderPretty } from "./pretty.js";
 
-export { renderGithub } from "./github.js";
+export { renderGithub, annotationLevel } from "./github.js";
+export type { AnnotationLevel } from "./github.js";
 export { renderJson } from "./json.js";
 export { renderPretty } from "./pretty.js";
 

@@ -198,8 +198,9 @@ honestly offer: which element, which condition failed, in axe's own words.
 `json` is the whole `CheckRun`: `results[]` (`url`, `source`, `violations[]`,
 `passes`, `incomplete`, `score`, `error?`) and `summary` (`discovered`,
 `checked`, `skipped`, `failed`, `violations`, `bySeverity`, `sitemap`, `crawl`).
-`github` is one `::error` workflow command per rule per page and per failed
-load, empty when clean.
+`github` is one workflow command per rule per page and per failed load, empty
+when clean. The command's level follows the severity; stress test 10 has the
+mapping.
 
 Colours keep meta's meanings, which `docs/content-strategy/design.md`
 reserves: `✓` green, `✗` red, severity from dim through yellow to red, URLs cyan.
@@ -372,6 +373,33 @@ margin, the sites that serve different documents at each. A missed page costs
 one page from the run. A doubled page costs a wrong `checked` count, a doubled
 violation total, and a slower run on every static site there is. Query strings
 stay distinct because they are the one place static sites do vary a page.
+
+### 10. Do the severity values match anything outside axe?
+
+No. `minor`, `moderate`, `serious` and `critical` are axe's own scale, which
+it calls impact. Nothing near it uses the same words. pa11y and
+HTML_CodeSniffer say error, warning and notice. GitHub annotations say error,
+warning and notice. SARIF says error, warning and note. Vale and ESLint say
+error and warning. Security tools say critical, high, medium and low.
+
+The values stay as axe reports them, for two reasons. The first is that they
+are what the user meets everywhere else. A Deque rule page names the impact,
+and so does the axe DevTools report a team already reads. A finding that says
+`serious` here and `serious` there is one finding. Renamed, it is two things
+to reconcile. The second is that collapsing the scale loses a step a floor
+needs. This repository's own config sits at `serious`, so a serious finding is
+reported and a critical one fails the gate. With `critical` and `serious`
+folded into one level, that config could not be written.
+
+So the rule is that a domain's `severity` carries its field's native values,
+and each reporter translates to the output's own scale. The `github` reporter
+is the first instance. It maps `critical` and `serious` to `::error`,
+`moderate` to `::warning` and `minor` to `::notice`. A failed load is always
+`::error`. It has no severity to translate and is the worst thing a run can
+hold. SARIF's error, warning and note is the second instance, deferred with
+that reporter. `pretty` and `json` do not translate. Their reader is a person
+or a script looking at the finding itself, and axe's word is the one they
+want.
 
 ## Consequences
 

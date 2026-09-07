@@ -247,12 +247,21 @@ And `summary`:
 is clean:
 
 ```
-::error title=a11y/image-alt::Images must have alternate text — 2 node(s) on https://docs.example.com/install/ (https://dequeuniversity.com/rules/axe/4.13/image-alt)
+::error title=a11y/image-alt::Images must have alternate text — 2 nodes on https://docs.example.com/install/ (https://dequeuniversity.com/rules/axe/4.13/image-alt)
+::warning title=a11y/landmark-unique::Ensures landmarks are unique — 1 node on https://docs.example.com/install/ (https://dequeuniversity.com/rules/axe/4.13/landmark-unique)
 ::error title=a11y/load::https://docs.example.com/old/: net::ERR_NAME_NOT_RESOLVED
 ```
 
 GitHub renders each as an annotation on the workflow run. There is no file or
-line to anchor to, since the finding is about a URL.
+line to anchor to, since the finding is about a URL. The command's level comes
+from the finding's severity. axe has four levels and GitHub has three, so the
+top two share `error`. A page that did not load is always `error`.
+
+| Severity | Annotation |
+| --- | --- |
+| `critical`, `serious` | `::error` |
+| `moderate` | `::warning` |
+| `minor` | `::notice` |
 
 ### Progress
 

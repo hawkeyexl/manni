@@ -282,8 +282,9 @@ page.
 
 ### What each piece does
 
-- `-f github` writes one `::error` annotation per rule per page, and prints
-  nothing when the site is clean.
+- `-f github` writes one annotation per rule per page, and prints nothing
+  when the site is clean. Critical and serious findings are `::error`,
+  moderate ones `::warning`, and minor ones `::notice`.
 - `--progress` prints one line per page on stderr. A CI log has no terminal,
   so without it the run is silent until the report.
 - Exit `1` fails the job on any remaining violation. Exit `2` fails it on a

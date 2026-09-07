@@ -143,10 +143,12 @@ jobs:
           done
 
       # Two steps, one crawl each, because the report and the gate want
-      # different floors. The first runs at the default floor (`minor`) so every
-      # finding lands as an annotation, and it is allowed to fail: with the
-      # findings the site carries today it always does. The second is the
-      # verdict.
+      # different floors. The first runs at the config's floor (`serious`), so
+      # every finding at or above it lands as an annotation. Those are all
+      # serious or critical, so each is a `::error`; the reporter's `::warning`
+      # and `::notice` levels only appear under a lower floor. The step is
+      # allowed to fail: with the findings the site carries today it always
+      # does. The second is the verdict.
       #
       # On localhost the built sitemap lists the production URLs, which are on
       # another host, so the crawl drops them and reaches every page through

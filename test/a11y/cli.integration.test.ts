@@ -276,7 +276,14 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
   it("--format github annotates each violation and says nothing when clean", async () => {
     const bad = await run(["check", `${server.url}/about.html`, "--no-crawl", "-f", "github"]);
     expect(bad.status).toBe(1);
+    // Every line is a workflow command at one of GitHub's three levels. The
+    // fixture's findings are all critical or serious in axe's scale, so each
+    // maps to `::error`; `color-contrast` is the serious one.
+    const lines = bad.stdout.trimEnd().split("\n");
+    expect(lines.length).toBeGreaterThan(0);
+    for (const line of lines) expect(line).toMatch(/^::(error|warning|notice) title=a11y\//);
     expect(bad.stdout).toMatch(/^::error title=a11y\/image-alt::/m);
+    expect(bad.stdout).toMatch(/^::error title=a11y\/color-contrast::/m);
     const ok = await run(["check", `${server.url}/index.html`, "--no-crawl", "-f", "github"]);
     expect(ok.status).toBe(0);
     expect(ok.stdout).toBe("");

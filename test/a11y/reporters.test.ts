@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import {
   A11Y_FORMATS,
   A11Y_FORMAT_LIST,
+  annotationLevel,
   isA11yFormat,
   render,
 } from "../../src/a11y/reporters/index.js";
@@ -256,7 +257,7 @@ describe("render json", () => {
 });
 
 describe("render github", () => {
-  it("emits one error annotation per violation and per failed load", () => {
+  it("emits one annotation per violation and per failed load", () => {
     const run = checkRun([
       page({ url: `${S}/` }),
       page({ url: `${S}/about`, violations: [imageAlt, violation("button-name", "critical")], score: 80 }),
@@ -268,6 +269,49 @@ describe("render github", () => {
       `::error title=a11y/button-name::Rule button-name — 1 node on ${S}/about (https://dequeuniversity.com/rules/axe/4.13/button-name)`,
       `::error title=a11y/load::${S}/broken: net::ERR_CONNECTION_REFUSED`,
     ]);
+  });
+
+  it("maps the four severities onto GitHub's three annotation levels", () => {
+    // axe's scale has four steps and GitHub's has three, so the top two share
+    // `error`. A serious finding fails a floor the same way a critical one does.
+    expect(annotationLevel("critical")).toBe("error");
+    expect(annotationLevel("serious")).toBe("error");
+    expect(annotationLevel("moderate")).toBe("warning");
+    expect(annotationLevel("minor")).toBe("notice");
+  });
+
+  it("annotates each finding at its severity's level", () => {
+    const run = checkRun([
+      page({
+        url: `${S}/mixed`,
+        violations: [
+          violation("label", "critical"),
+          violation("color-contrast", "serious"),
+          violation("landmark-unique", "moderate"),
+          violation("region", "minor"),
+        ],
+        score: 60,
+      }),
+    ]);
+    const lines = render("github", run, off).split("\n");
+    expect(lines).toEqual([
+      `::error title=a11y/label::Rule label — 1 node on ${S}/mixed (https://dequeuniversity.com/rules/axe/4.13/label)`,
+      `::error title=a11y/color-contrast::Rule color-contrast — 1 node on ${S}/mixed (https://dequeuniversity.com/rules/axe/4.13/color-contrast)`,
+      `::warning title=a11y/landmark-unique::Rule landmark-unique — 1 node on ${S}/mixed (https://dequeuniversity.com/rules/axe/4.13/landmark-unique)`,
+      `::notice title=a11y/region::Rule region — 1 node on ${S}/mixed (https://dequeuniversity.com/rules/axe/4.13/region)`,
+    ]);
+  });
+
+  it("keeps a failed load at error whatever the floor", () => {
+    // A page that did not load has no severity to translate. It is always the
+    // most serious thing in the run, so it stays `::error` beside notices.
+    const run = checkRun([
+      page({ url: `${S}/`, violations: [violation("region", "minor")], score: 95 }),
+      page({ url: `${S}/broken`, source: "link", passes: 0, score: null, error: "net::ERR_CONNECTION_REFUSED" }),
+    ]);
+    const lines = render("github", run, off).split("\n");
+    expect(lines[0]).toMatch(/^::notice title=a11y\/region::/);
+    expect(lines[1]).toBe(`::error title=a11y/load::${S}/broken: net::ERR_CONNECTION_REFUSED`);
   });
 
   it("escapes the workflow-command message", () => {
