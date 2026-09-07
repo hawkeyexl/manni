@@ -63,11 +63,24 @@ if (!last) {
   process.exit(2);
 }
 
-/** Bare export names, with the `type ` modifier stripped. */
+/**
+ * Bare export names, with the `type ` modifier stripped.
+ *
+ * When two modules bundled into the entry point declare the same name (the
+ * metadata tool's `loadConfig` and the one inside the `docevals` namespace),
+ * the bundler suffixes one (`loadConfig$1`) and exports it under its real name
+ * with `as`. The published name is the one after `as`; the local alias never
+ * reaches a consumer.
+ */
 const realExports = new Set(
   last[1]
     .split(",")
-    .map((n) => n.trim().replace(/^type\s+/, ""))
+    .map((n) =>
+      n
+        .trim()
+        .replace(/^type\s+/, "")
+        .replace(/^.*\s+as\s+/, ""),
+    )
     .filter(Boolean),
 );
 
