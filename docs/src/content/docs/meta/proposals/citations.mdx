@@ -1,0 +1,166 @@
+---
+title: "manni:citations:1.0.0-proposal.1"
+description: "The proposed citations vocabulary: pin a sentence to the source lines it rests on, by a hash and a commit, so a drift check can say which claim went stale."
+sidebar:
+  order: 10
+  label: "citations"
+---
+
+:::caution[Proposal under review]
+Part of the [metadata vocabularies proposal](/manni/meta/proposals/frontmatter-vocabularies/),
+open for community review. Draft schema:
+[`docs/proposals/0035/schemas/citations/1.0.0-proposal.1.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0035/schemas/citations/1.0.0-proposal.1.json).
+This vocabulary arrived with proposal 0035, after the nine in 0023, and is the
+family's tenth id. It lives under its own proposal directory because 0023's
+set is frozen while its review runs.
+:::
+
+**The question it answers: what do this page's claims rest on?** A common
+vocabulary for pinning a sentence to the source lines it was written from.
+Any drift check can implement it: hash the cited lines the same way, compare
+against the pin, and report the sentence that stopped being true.
+
+## Keys
+
+Two page-level keys. One carries the reserved `citation-` prefix, and the
+other is `citations` itself. Any other `citation-*` key at the page root is
+rejected.
+
+| Key | Type | Notes |
+|---|---|---|
+| `citations` | non-empty list of entries | One entry per pinned range. A page with no citations omits the key |
+| `citation-commit` | commit hash | The commit every entry that omits its own `commit` was pinned at. An entry's own `commit` wins for that entry |
+
+An entry is a closed object. `src` and `integrity` are required; the rest is
+what anchors the pin to the page:
+
+| Field | Type | Notes |
+|---|---|---|
+| `src` | source reference | `path`, `path:L` or `path:L1-L2`: a repo-root-relative posix path and 1-based inclusive lines. `path:L` is the canonical spelling of one line. `~` plus sixteen hex digits stands in for the path of a private source |
+| `integrity` | `sha256-` and 64 hex digits | The pin: the cited lines hashed under one normalization rule. Keyed by a salt when `src` is obfuscated |
+| `commit` | 7 to 40 hex digits | The commit the pin was minted at. Tooling writes all forty |
+| `id` | kebab-case, unique per page | What an in-body reference names, and what a finding is reported under |
+| `claim` | non-empty string | The sentence the citation supports, verbatim. A drift check finds it in the body with whitespace collapsed, so a soft-wrapped sentence still matches |
+| `quote` | boolean, default false | The page reproduces the cited lines in a fenced block, and that block is the anchor |
+
+The `src` grammar rejects an absolute path, a drive letter, a backslash, a
+`.` or `..` segment, an empty segment, a URL and line 0, so a source that
+cannot be resolved fails at the schema. Spaces and dots inside a segment are
+fine: `docs/release notes/v1.2.md:4-9` is a source. That the end line is not
+before the start line is a rule on implementations, since a pattern cannot
+compare two numbers.
+
+**The hashing rule**, stated once in the schema's `integrity` description:
+decode as UTF-8, drop one leading byte-order mark, turn CRLF into LF, split on
+LF and discard the empty element a trailing LF leaves, take the cited lines,
+join them with LF and no trailing LF, keep trailing whitespace. A plain `src`
+hashes that text. An obfuscated `src` hashes the salt, one LF, and the text.
+
+## Inline statements
+
+A citation can also live in the body, as an in-body statement an implementer
+reads, written in the format's own comment syntax. It anchors the paragraph
+that follows it, or the rest of its own line, or with `quote: true` the fenced
+block that follows it. The payload is either an id, referring to the
+frontmatter entry with that id, or a JSON object holding a full entry:
+
+| Format | Forms | Payload allowed |
+|---|---|---|
+| markdown, mdx | `<!-- cite PAYLOAD -->`, `{/* cite PAYLOAD */}`, `[comment]: # (cite PAYLOAD)` | id in all three; JSON only in the first two |
+| html, xml | `<!-- cite PAYLOAD -->` | id, JSON |
+| asciidoc | `// (cite PAYLOAD)` | id only |
+| rst | `.. (cite PAYLOAD)` | id only |
+
+A payload that starts with `{` is JSON, and is validated against the same entry
+shape the frontmatter uses. Anything else must be an id. A reference naming no
+frontmatter entry is a finding, and so are two statements naming the same id.
+Metadata validation sees the frontmatter channel only; an implementer of the
+drift check validates the inline payloads itself.
+
+## Examples
+
+One sentence, pinned to one line:
+
+```yaml
+citations:
+  - id: fetch-timeout
+    src: src/limits.ts:2
+    integrity: sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f
+    commit: 3f9c2a1e7b0d4c5a6f8e9d0b1a2c3d4e5f607182
+    claim: The fetch timeout is 10 seconds.
+```
+
+A page minted in one sitting writes the commit once:
+
+```yaml
+citation-commit: 3f9c2a1e7b0d4c5a6f8e9d0b1a2c3d4e5f607182
+citations:
+  - src: src/limits.ts:1
+    integrity: sha256-…
+    claim: At most 10,000 files are read.
+  - src: src/limits.ts:3
+    integrity: sha256-…
+    claim: A failed fetch is retried three times.
+```
+
+A reference statement anchors an entry to a paragraph when the claim occurs
+more than once, in markdown and in MDX:
+
+```md
+<!-- cite retries -->
+Retries default to 3, and the count is not configurable.
+```
+
+```mdx
+{/* cite retries */}
+Retries default to 3, and the count is not configurable.
+```
+
+An obfuscated entry, citing a private source from a public page. The token
+replaces the path, and the pin is keyed by the same salt, so the page carries
+neither the path nor a verifier for the line:
+
+```yaml
+citations:
+  - src: "~9c1f0e2b7a3d4c5e:1-3"
+    integrity: sha256-…
+    quote: true
+```
+
+## Design decisions
+
+- **A pin is a record of the past.** The family's fourth principle says a
+  derivable fact lies, and a hash of lines that sit right there looks
+  derivable. It is not. The pin says what the lines were when the sentence was
+  written; the check is the comparison between that record and the file now.
+  Recompute it on every run and there is nothing to compare against. It is the
+  same object as evals' `generated-assertion-hash` and the `integrity` pins on
+  a config's schema entries.
+- **`integrity`, with an algorithm prefix.** Named after what it is rather than
+  how it is computed, as the config's schema pins and Subresource Integrity
+  are, so a second algorithm can arrive without a second field. Hex rather than
+  base64, because the family's other hash is hex.
+- **One normalization rule, up front.** CRLF and a byte-order mark are not
+  changes, and a check that runs on every push cannot afford a page of false
+  findings on one platform. Trailing whitespace is kept, because a trailing
+  space is a change.
+- **A keyed pin for an obfuscated source.** A plain hash over a short private
+  line is a verifier a reader can run against guesses. Hashing the salt in
+  front of the text closes that, at the cost that only a checkout with the salt
+  can check the pin. The token is stable across pages, so a public site does
+  reveal how often a private file is cited; that is recorded as accepted.
+- **Two channels, both validated, no precedence.** A frontmatter entry and an
+  inline statement are both real, as element metadata decided for its two
+  channels. A collision is a finding, not a tiebreak.
+- **A closed entry and a guarded prefix.** The entry rejects unknown fields,
+  so `line: 2` beside `src` fails instead of being ignored. The page root stays
+  open for sibling vocabularies, and the `citation-` prefix is reserved so a
+  misspelled `citation-comit` fails the way a closed container would make it.
+
+## What reviewers should poke at
+
+Three questions. Is one algorithm in the `integrity` pattern too tight for a
+draft, given that adding one is a schema revision? Should the stable token be
+closed with a per-page salt, at the cost of a drift check no longer
+recognising one private file across two pages? And are the parenthesised
+statement forms worth keeping, given that they carry an id only?

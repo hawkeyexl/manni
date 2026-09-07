@@ -50,6 +50,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0030](0030-query-schema-flag.md) | `-s/--schema` on `query`: naming the contract DDL evolves | Sara · S1, S3 / Maya · M2, M3 | Implemented (#139) |
 | [0031](0031-input-formats-notebooks-and-markdoc.md) | The input-format gap: Jupyter notebooks and Markdoc in, standalone data files out | Maya · M1, M4 / Sara · S1, S2 | Proposed |
 | [0033](0033-manni-monorepo.md) | One package, one bin: docmeta becomes `manni meta`, in a new repository | Maya · M1, M2 / Devin · D1, D2 / Theo · T1 | Implemented |
+| [0035](0035-citations-and-drift.md) | Citations and drift: pin a claim to source lines, and `manni cite` checks the pin | Devin · D4 / Theo · T1 / Maya · M2 / Sara · S1 | Proposed |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -92,11 +93,17 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
        │                  to the next structured format)
 0018 ──┤                 (write where you read — load-bearing once a format has two channels)
 0014 ──┘                 (why an unreadable corpus errors instead of passing green)
+
+0023 ──┬─> 0035          (the family the citations vocabulary joins as its tenth id;
+       │                  source-of-truth is the page-grain anchor it refines to the line)
+0033 ──┤                 (the umbrella a sibling domain mounts under, and the import rule)
+0034 ──┤                 (the command grammar: no default subcommand, one separator per list)
+0026 ──┘                 (a finding no Ajv keyword produced, riding the reporters and baseline)
 ```
 
 The four `Proposed` SQL items (0026–0029) are independent of each other, with one exception. 0026 and 0029 both grow `query`'s `-f` value list. Each specifies the combined six-value surface, and whichever is implemented second merges into the one const. Recommended implementation order is 0026 → 0029 → 0027 → 0028, which is impact-first. The two config-touching ones (0026, 0027) land apart, so the second rebases trivially.
 
-**Safe to start in any order, no blockers:** 0031. Its dependencies are all shipped, and the arrows above record which rules it inherits, not what it waits on. 0011 held this slot until it shipped. 0023, the only other `Proposed` entry, is not in this bucket. It waits on public review rather than on an implementation slot.
+**Safe to start in any order, no blockers:** 0031. Its dependencies are all shipped, and the arrows above record which rules it inherits, not what it waits on. 0011 held this slot until it shipped. 0023, another `Proposed` entry, is not in this bucket. It waits on public review rather than on an implementation slot. 0035 is `Proposed` too, and is being implemented alongside its own record on `tool/cite`: its vocabulary waits on 0023's review, its tool does not.
 
 **Shipped so far:** everything the table above marks `Implemented`. Through 0025 that is all but 0023 (`Proposed`), 0016 and 0019 (`Accepted`, nothing to ship), and the superseded or rejected halves the Status column records. It also includes the standalone false-green guard called out in [0008 § Problem](0008-remote-schema-durability.md#problem). The dependency graph above is kept as the record of why the early set landed in the order it did.
 
