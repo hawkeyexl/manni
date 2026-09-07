@@ -15,7 +15,7 @@ export { blockMatches, findClaim, normalizeWhitespace, paragraphContains } from 
 export type { ClaimHit } from "./core/claims.js";
 export { gitClient, noGit } from "./core/git.js";
 export { MAX_RANGE_LINES, MOVE_BUDGET_BYTES, MOVE_WINDOW_LINES, classifyCitation, findWindows } from "./core/classify.js";
-export type { ClassifyOptions } from "./core/classify.js";
+export type { ClassifyOptions, FindWindowsOptions } from "./core/classify.js";
 export { MAX_STATEMENTS_PER_PAGE, pageCommit, readPage, validateEntry } from "./core/page.js";
 export type { ReadPageOptions } from "./core/page.js";
 export { checkCitations } from "./core/check-page.js";

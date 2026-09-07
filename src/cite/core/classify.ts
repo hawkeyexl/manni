@@ -13,9 +13,16 @@
  * a full match. Without it, a ±2000-line window around the original position
  * first, then the rest of the file under a 64 MiB hashing budget; past the
  * budget the result is `changed` with `truncatedSearch`.
+ *
+ * Order, as the ladder has it: the move search runs whenever the pin does not
+ * hold, and history decides only what a non-match is called. So a pin that
+ * never held at its commit but whose bytes sit elsewhere in the file is
+ * `moved`, not `never-true`; the search sees the file as it is.
  */
-import type { CitationResult, GitClient, PageCitation, SourceIndex } from "../types.js";
-import { notImplemented } from "./not-implemented.js";
+import type { CitationResult, GitClient, PageCitation, SourceIndex, SourceRange } from "../types.js";
+import { hashLines, sliceLines, splitLines } from "./hash.js";
+import { formatSrc, parseSrc } from "./range.js";
+import { readSource } from "./sources.js";
 
 export const MOVE_WINDOW_LINES = 2000;
 export const MOVE_BUDGET_BYTES = 64 * 1024 * 1024;
@@ -30,26 +37,177 @@ export interface ClassifyOptions {
   salt: string;
   /** Page-level `citation-commit`, the default for entries without `commit`. */
   pageCommit?: string;
+  /** Hashing budget for the blind move search, in bytes. Default `MOVE_BUDGET_BYTES`. */
+  budget?: number;
 }
 
-export function classifyCitation(
-  entry: PageCitation,
-  opts: ClassifyOptions,
-): Promise<CitationResult> {
-  return notImplemented("classifyCitation", entry, opts);
+export interface FindWindowsOptions {
+  /** The 1-based start line the range was pinned at: the blind search begins around it. */
+  around?: number;
+  /** The cited lines at the commit, when git could show them: enables the first-line filter. */
+  original?: readonly string[];
+  /** Hashing budget for the blind search, in bytes. Default `MOVE_BUDGET_BYTES`. */
+  budget?: number;
 }
 
 /**
  * Pure move search over normalized lines: the 1-based start lines where a
- * window of `length` lines hashes to `pin`. `original` (the lines at the
- * commit, when known) enables the first-line filter.
+ * window of `length` lines hashes to `pin`. `original` (the cited lines at the
+ * commit, when known) enables the first-line filter. `salt` keys the hash for
+ * an obfuscated pin and is `undefined` for a plain one.
  */
 export function findWindows(
   lines: readonly string[],
   length: number,
   pin: string,
-  salt: string,
-  opts?: { around?: number; original?: readonly string[] },
+  salt: string | undefined,
+  opts?: FindWindowsOptions,
 ): { starts: number[]; truncated: boolean } {
-  return notImplemented("findWindows", lines, length, pin, salt, opts);
+  const starts: number[] = [];
+  const lastStart = lines.length - length + 1;
+  if (length < 1 || lastStart < 1) return { starts, truncated: false };
+
+  const joined = (start: number): string => lines.slice(start - 1, start - 1 + length).join("\n");
+
+  const original = opts?.original;
+  if (original !== undefined) {
+    const first = original[0];
+    for (let start = 1; start <= lastStart; start++) {
+      if (lines[start - 1] !== first) continue;
+      let same = true;
+      for (let i = 1; i < length; i++) {
+        if (lines[start - 1 + i] !== original[i]) {
+          same = false;
+          break;
+        }
+      }
+      if (same && hashLines(joined(start), salt) === pin) starts.push(start);
+    }
+    return { starts, truncated: false };
+  }
+
+  // Blind: the band around the original position first, then the rest, so the
+  // common small shift is found before the budget is anywhere near spent.
+  const budget = opts?.budget ?? MOVE_BUDGET_BYTES;
+  const around = opts?.around ?? 1;
+  const bandStart = Math.max(1, around - MOVE_WINDOW_LINES);
+  const bandEnd = Math.min(lastStart, around + MOVE_WINDOW_LINES);
+  const order: number[] = [];
+  for (let start = bandStart; start <= bandEnd; start++) order.push(start);
+  for (let start = 1; start < bandStart; start++) order.push(start);
+  for (let start = bandEnd + 1; start <= lastStart; start++) order.push(start);
+
+  let spent = 0;
+  for (const start of order) {
+    const text = joined(start);
+    const bytes = Buffer.byteLength(text, "utf8");
+    if (spent + bytes > budget) return { starts, truncated: true };
+    spent += bytes;
+    if (hashLines(text, salt) === pin) starts.push(start);
+  }
+  return { starts, truncated: false };
+}
+
+/** What git could say about the range at the recorded commit. */
+type History =
+  | { kind: "none" }
+  | { kind: "unavailable" }
+  | { kind: "never-true" }
+  | { kind: "original"; lines: string[] };
+
+async function historyOf(
+  git: GitClient,
+  commit: string,
+  path: string,
+  range: SourceRange,
+  pin: string,
+  salt: string | undefined,
+): Promise<History> {
+  const shown = await git.showFile(commit, path);
+  if ("missing" in shown) {
+    return shown.missing === "commit" ? { kind: "unavailable" } : { kind: "never-true" };
+  }
+  let joined: string;
+  try {
+    joined = sliceLines(splitLines(shown.text), range);
+  } catch {
+    // The range ran past the end of the file as it was at the commit.
+    return { kind: "never-true" };
+  }
+  if (hashLines(joined, salt) !== pin) return { kind: "never-true" };
+  return { kind: "original", lines: joined.split("\n") };
+}
+
+export async function classifyCitation(
+  entry: PageCitation,
+  opts: ClassifyOptions,
+): Promise<CitationResult> {
+  const { citation, origin } = entry;
+  const range = parseSrc(citation.src);
+  const commit = citation.commit ?? opts.pageCommit;
+  const result: CitationResult = { citation, origin, status: "missing" };
+  if (commit !== undefined) result.commit = commit;
+
+  const source = await readSource(opts.root, opts.index, range);
+  if (source.kind === "missing") return result;
+  result.resolvedPath = source.resolvedPath;
+
+  const salt = range.obfuscated ? opts.salt : undefined;
+  const pin = citation.integrity;
+  const lines = splitLines(source.text);
+
+  let here: string | undefined;
+  try {
+    here = hashLines(sliceLines(lines, range), salt);
+  } catch {
+    // The range runs past the end of the file: nothing to compare, so it is
+    // `changed`, and the search below has no window of that length to find.
+    here = undefined;
+  }
+  if (here === pin) {
+    result.status = "current";
+    return result;
+  }
+
+  let history: History = { kind: "none" };
+  if (opts.useGit !== false && commit !== undefined && (await opts.git.available())) {
+    history = await historyOf(opts.git, commit, source.resolvedPath, range, pin, salt);
+  }
+
+  // A whole-file pin has nowhere to move to.
+  if (range.start !== undefined) {
+    const start = range.start;
+    const end = range.end ?? start;
+    const search: FindWindowsOptions = { around: start };
+    if (history.kind === "original") search.original = history.lines;
+    if (opts.budget !== undefined) search.budget = opts.budget;
+    const found = findWindows(lines, end - start + 1, pin, salt, search);
+    if (found.truncated) result.truncatedSearch = true;
+    const spell = (at: number): string =>
+      formatSrc({ ...range, start: at, end: at + (end - start) });
+    const [only] = found.starts;
+    if (found.starts.length === 1 && only !== undefined) {
+      result.status = "moved";
+      result.newSrc = spell(only);
+      return result;
+    }
+    if (found.starts.length > 1) {
+      result.status = "moved-ambiguous";
+      result.candidates = found.starts.map(spell);
+      return result;
+    }
+  }
+
+  if (history.kind === "never-true") {
+    result.status = "never-true";
+    return result;
+  }
+  result.status = "changed";
+  if (history.kind === "unavailable") result.historyAvailable = false;
+  if (history.kind === "original" && commit !== undefined) {
+    result.historyAvailable = true;
+    result.commitsSince = await opts.git.subjectsSince(commit, source.resolvedPath);
+    result.diff = await opts.git.diffSince(commit, source.resolvedPath);
+  }
+  return result;
 }
