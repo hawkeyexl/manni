@@ -472,14 +472,17 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     // forbids. Refused for the file rather than skipped, so a missing private
     // key is never quietly left missing.
     const ownedCandidates = sidecars
-      ? candidates.filter((c) => sidecars.owners.has(c.key))
+      ? candidates.flatMap((c) => {
+          const file = sidecars.owners.get(c.key);
+          return file === undefined ? [] : [{ key: c.key, file }];
+        })
       : [];
     const firstOwned = ownedCandidates[0];
     if (firstOwned) {
       return errorResult(
         label,
         extractor.name,
-        `"${firstOwned.key}" is owned by sidecar ${sidecars?.owners.get(firstOwned.key) ?? "manifest"}; manni meta fill cannot write a sidecar key. Add it to the manifest instead.`,
+        `"${firstOwned.key}" is owned by sidecar ${firstOwned.file}; manni meta fill cannot write a sidecar key. Add it to the manifest instead.`,
         schemaSet,
       );
     }
