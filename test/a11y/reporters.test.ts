@@ -39,7 +39,7 @@ function summarize(
   results: PageResult[],
   over: Partial<CheckSummary> = {},
 ): CheckSummary {
-  const bySeverity: Record<Severity, number> = { minor: 0, moderate: 0, serious: 0, critical: 0 };
+  const bySeverity: Record<Severity, number> = { notice: 0, warning: 0, error: 0 };
   let failed = 0;
   let violations = 0;
   for (const r of results) {
@@ -69,7 +69,8 @@ function checkRun(results: PageResult[], over: Partial<CheckSummary> = {}): Chec
 
 const imageAlt: Violation = {
   id: "image-alt",
-  severity: "serious",
+  severity: "error",
+  impact: "critical",
   help: "Images must have alternate text",
   helpUrl: "https://dequeuniversity.com/rules/axe/4.13/image-alt",
   tags: ["wcag2a"],
@@ -125,15 +126,22 @@ describe("render pretty", () => {
   it("lists a failing page's violations, nodes and the severity counts", () => {
     const failing = page({
       url: `${S}/about`,
-      violations: [imageAlt, violation("button-name", "serious"), violation("region", "minor")],
+      violations: [
+        imageAlt,
+        violation("button-name", "error", "serious"),
+        violation("region", "notice"),
+      ],
       passes: 7,
       score: 70,
     });
     const text = render("pretty", checkRun([failing]), off);
     const lines = text.split("\n");
-    expect(lines).toContain(`✗ ${S}/about  score 70  2 serious, 1 minor`);
+    // Family levels, pluralised, most severe first, zeros omitted.
+    expect(lines).toContain(`✗ ${S}/about  score 70  2 errors, 1 notice`);
+    // The family level leads; axe's own word follows the rule id, so a
+    // finding can still be looked up on its Deque page.
     expect(lines).toContain(
-      "    serious  image-alt  2 nodes  Images must have alternate text  https://dequeuniversity.com/rules/axe/4.13/image-alt",
+      "    error  image-alt (axe: critical)  2 nodes  Images must have alternate text  https://dequeuniversity.com/rules/axe/4.13/image-alt",
     );
     expect(lines).toContain(
       "      img.hero  → Fix any of the following: Element does not have an alt attribute; aria-label attribute does not exist or is empty",
@@ -142,17 +150,32 @@ describe("render pretty", () => {
       "      img:nth-child(2)  → Fix any of the following: Element does not have an alt attribute",
     );
     expect(lines).toContain(
-      "    serious  button-name  1 node  Rule button-name  https://dequeuniversity.com/rules/axe/4.13/button-name",
+      "    error  button-name (axe: serious)  1 node  Rule button-name  https://dequeuniversity.com/rules/axe/4.13/button-name",
     );
     expect(lines).toContain("      html  → Fix button-name");
     expect(lines).toContain(
-      "    minor  region  1 node  Rule region  https://dequeuniversity.com/rules/axe/4.13/region",
+      "    notice  region (axe: minor)  1 node  Rule region  https://dequeuniversity.com/rules/axe/4.13/region",
     );
+  });
+
+  it("uses the singular for one finding at a level and lists warnings between", () => {
+    const failing = page({
+      url: `${S}/mixed`,
+      violations: [
+        violation("region", "notice"),
+        violation("landmark-unique", "warning"),
+        violation("label", "error"),
+      ],
+      score: 70,
+    });
+    const text = render("pretty", checkRun([failing]), off);
+    expect(text).toContain(`✗ ${S}/mixed  score 70  1 error, 1 warning, 1 notice`);
+    expect(text).toContain("    warning  landmark-unique (axe: moderate)  1 node");
   });
 
   it("shows the first three nodes and counts the rest", () => {
     const many: Violation = {
-      ...violation("link-name", "critical"),
+      ...violation("link-name", "error"),
       nodes: [1, 2, 3, 4, 5].map((n) => ({
         target: `a:nth-child(${n})`,
         html: "<a>",
@@ -185,7 +208,7 @@ describe("render pretty", () => {
       [
         page({ url: `${S}/` }),
         page({ url: `${S}/a`, violations: [imageAlt], score: 91 }),
-        page({ url: `${S}/b`, violations: [violation("label", "critical"), violation("region", "minor")], score: 83 }),
+        page({ url: `${S}/b`, violations: [violation("label", "error"), violation("region", "notice")], score: 83 }),
       ],
       { discovered: 5, skipped: 2 },
     );
@@ -260,7 +283,7 @@ describe("render github", () => {
   it("emits one annotation per violation and per failed load", () => {
     const run = checkRun([
       page({ url: `${S}/` }),
-      page({ url: `${S}/about`, violations: [imageAlt, violation("button-name", "critical")], score: 80 }),
+      page({ url: `${S}/about`, violations: [imageAlt, violation("button-name", "error")], score: 80 }),
       page({ url: `${S}/broken`, source: "link", passes: 0, score: null, error: "net::ERR_CONNECTION_REFUSED" }),
     ]);
     const lines = render("github", run, off).split("\n");
@@ -271,13 +294,11 @@ describe("render github", () => {
     ]);
   });
 
-  it("maps the four severities onto GitHub's three annotation levels", () => {
-    // axe's scale has four steps and GitHub's has three, so the top two share
-    // `error`. A serious finding fails a floor the same way a critical one does.
-    expect(annotationLevel("critical")).toBe("error");
-    expect(annotationLevel("serious")).toBe("error");
-    expect(annotationLevel("moderate")).toBe("warning");
-    expect(annotationLevel("minor")).toBe("notice");
+  it("carries the family severity through as the annotation level", () => {
+    // The family scale was chosen to match GitHub's, so the map is one-to-one.
+    expect(annotationLevel("error")).toBe("error");
+    expect(annotationLevel("warning")).toBe("warning");
+    expect(annotationLevel("notice")).toBe("notice");
   });
 
   it("annotates each finding at its severity's level", () => {
@@ -285,10 +306,10 @@ describe("render github", () => {
       page({
         url: `${S}/mixed`,
         violations: [
-          violation("label", "critical"),
-          violation("color-contrast", "serious"),
-          violation("landmark-unique", "moderate"),
-          violation("region", "minor"),
+          violation("label", "error", "critical"),
+          violation("color-contrast", "error", "serious"),
+          violation("landmark-unique", "warning"),
+          violation("region", "notice"),
         ],
         score: 60,
       }),
@@ -306,7 +327,7 @@ describe("render github", () => {
     // A page that did not load has no severity to translate. It is always the
     // most serious thing in the run, so it stays `::error` beside notices.
     const run = checkRun([
-      page({ url: `${S}/`, violations: [violation("region", "minor")], score: 95 }),
+      page({ url: `${S}/`, violations: [violation("region", "notice")], score: 95 }),
       page({ url: `${S}/broken`, source: "link", passes: 0, score: null, error: "net::ERR_CONNECTION_REFUSED" }),
     ]);
     const lines = render("github", run, off).split("\n");

@@ -8,7 +8,15 @@
  */
 import { AxeBuilder } from "@axe-core/playwright";
 import { chromium, type Browser, type Page } from "playwright-core";
-import { A11yError, type PageResult, type Violation, type ViolationNode } from "../types.js";
+import {
+  A11yError,
+  isAxeImpact,
+  type AxeImpact,
+  type PageResult,
+  type Severity,
+  type Violation,
+  type ViolationNode,
+} from "../types.js";
 
 export interface AnalyzeOptions {
   /** axe tags to restrict to; empty = axe defaults. */
@@ -97,8 +105,9 @@ interface Session {
  * - `page.goto(url, { waitUntil: "load", timeout })`; `finalUrl` is `page.url()` after it
  * - links: every `a[href]`'s absolute `href` from the live DOM
  * - `new AxeBuilder({ page })`, `.withTags(tags)` only when `tags.length > 0`, `.analyze()`
- * - map axe `Result` → `Violation` (axe `impact` `null`/`undefined` → `severity` "minor"; node
- *   `target` joined with " "; `failureSummary ?? ""`), `passes.length`, `incomplete.length`
+ * - map axe `Result` → `Violation` (`severity` from `severityOf(impact)`, `impact` kept as
+ *   axe's word with `null`/`undefined` → "minor"; node `target` joined with " ";
+ *   `failureSummary ?? ""`), `passes.length`, `incomplete.length`
  * - launch failure on every channel → `A11yError(NO_BROWSER_MESSAGE)`
  */
 export function createPlaywrightAnalyzer(): PageAnalyzer {
@@ -160,11 +169,39 @@ export function createPlaywrightAnalyzer(): PageAnalyzer {
   };
 }
 
+/** What axe may put in `impact`; the same union `@axe-core/playwright` declares. */
+type ImpactValue = AxeResult["impact"];
+
+/**
+ * axe's impact onto the family severity scale (`src/shared/severity.ts`).
+ * Four levels fold onto three: `critical` and `serious` are both `error`,
+ * `moderate` is `warning`, `minor` is `notice`. A missing impact, which axe
+ * reports as `null` for a rule with no impact set, is the lowest level. The
+ * original word is kept on the violation as `impact`, so nothing is lost for
+ * anyone looking the rule up where axe names it.
+ */
+export function severityOf(impact: ImpactValue | null | undefined): Severity {
+  switch (impact) {
+    case "critical":
+    case "serious":
+      return "error";
+    case "moderate":
+      return "warning";
+    default:
+      return "notice";
+  }
+}
+
+/** axe's word as it stands, or `minor` when it gave none. */
+function impactOf(impact: ImpactValue | null | undefined): AxeImpact {
+  return impact != null && isAxeImpact(impact) ? impact : "minor";
+}
+
 function toViolation(result: AxeResult): Violation {
   return {
     id: result.id,
-    // axe's name for this level is `impact`; manni says `severity`.
-    severity: result.impact ?? "minor",
+    severity: severityOf(result.impact),
+    impact: impactOf(result.impact),
     help: result.help,
     helpUrl: result.helpUrl,
     tags: result.tags,

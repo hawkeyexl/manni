@@ -40,7 +40,7 @@ describe("CHECK_DEFAULTS", () => {
     expect(CHECK_DEFAULTS).toEqual({
       crawl: true,
       tags: [],
-      severity: "minor",
+      severity: "notice",
       timeout: 30000,
     });
   });
@@ -86,14 +86,14 @@ describe("runCheck severity filtering and score", () => {
       [`${S}/`]: {
         passes: 7,
         violations: [
-          violation("color-contrast", "serious"),
-          violation("region", "moderate"),
-          violation("landmark-one-main", "minor"),
-          violation("image-alt", "critical"),
+          violation("color-contrast", "error", "serious"),
+          violation("region", "warning"),
+          violation("landmark-one-main", "notice"),
+          violation("image-alt", "error", "critical"),
         ],
       },
     };
-    const run = await runCheck(opts({ severity: "serious" }), {
+    const run = await runCheck(opts({ severity: "error" }), {
       analyzer: fakeAnalyzer(site),
       fetcher: noSitemap(),
     });
@@ -132,9 +132,9 @@ describe("runCheck severity filtering and score", () => {
   });
 
   it("scores null when only filtered-out violations applied", async () => {
-    const run = await runCheck(opts({ severity: "critical" }), {
+    const run = await runCheck(opts({ severity: "error" }), {
       analyzer: fakeAnalyzer({
-        [`${S}/`]: { passes: 0, violations: [violation("region", "minor")] },
+        [`${S}/`]: { passes: 0, violations: [violation("region", "notice")] },
       }),
       fetcher: noSitemap(),
     });
@@ -145,7 +145,7 @@ describe("runCheck severity filtering and score", () => {
   it("scores 0 when every applicable rule failed", async () => {
     const run = await runCheck(opts({}), {
       analyzer: fakeAnalyzer({
-        [`${S}/`]: { passes: 0, violations: [violation("image-alt", "critical")] },
+        [`${S}/`]: { passes: 0, violations: [violation("image-alt", "error")] },
       }),
       fetcher: noSitemap(),
     });
@@ -284,14 +284,17 @@ describe("runCheck and the sitemap", () => {
 });
 
 describe("runCheck summary", () => {
-  it("totals violations by severity with all four keys present", async () => {
+  it("totals violations by severity with all three keys present", async () => {
     const site: FakeSite = {
       [`${S}/`]: {
         links: [`${S}/a`],
-        violations: [violation("image-alt", "critical"), violation("region", "moderate")],
+        violations: [violation("image-alt", "error"), violation("region", "warning")],
       },
       [`${S}/a`]: {
-        violations: [violation("color-contrast", "serious"), violation("image-alt", "critical")],
+        violations: [
+          violation("color-contrast", "error", "serious"),
+          violation("image-alt", "error", "critical"),
+        ],
       },
     };
     const run = await runCheck(opts({}), { analyzer: fakeAnalyzer(site), fetcher: noSitemap() });
@@ -302,7 +305,7 @@ describe("runCheck summary", () => {
       duplicates: 0,
       failed: 2,
       violations: 4,
-      bySeverity: { minor: 0, moderate: 1, serious: 1, critical: 2 },
+      bySeverity: { notice: 0, warning: 1, error: 3 },
       sitemap: null,
       crawl: true,
     });
@@ -313,14 +316,14 @@ describe("runCheck summary", () => {
       analyzer: fakeAnalyzer({ [`${S}/`]: {} }),
       fetcher: noSitemap(),
     });
-    expect(run.summary.bySeverity).toEqual({ minor: 0, moderate: 0, serious: 0, critical: 0 });
+    expect(run.summary.bySeverity).toEqual({ notice: 0, warning: 0, error: 0 });
     expect(run.summary.failed).toBe(0);
   });
 
   it("counts a page once in failed even with several violations", async () => {
     const run = await runCheck(opts({}), {
       analyzer: fakeAnalyzer({
-        [`${S}/`]: { violations: [violation("a", "minor"), violation("b", "minor")] },
+        [`${S}/`]: { violations: [violation("a", "notice"), violation("b", "notice")] },
       }),
       fetcher: noSitemap(),
     });
@@ -403,10 +406,10 @@ describe("runCheck progress", () => {
 
   it("reports the violation count before the severity floor is applied", async () => {
     const events: ProgressEvent[] = [];
-    const run = await runCheck(opts({ severity: "critical" }), {
+    const run = await runCheck(opts({ severity: "error" }), {
       analyzer: fakeAnalyzer({
         [`${S}/`]: {
-          violations: [violation("region", "minor"), violation("image-alt", "critical")],
+          violations: [violation("region", "notice"), violation("image-alt", "error")],
         },
       }),
       fetcher: noSitemap(),

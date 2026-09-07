@@ -7,8 +7,13 @@
  * remediation: which rule, which selector, what to change.
  *
  * Colors carry the meanings meta already gave them: ✓ green, ✗ red, URLs
- * cyan, and severity from dim (minor) through yellow (moderate) to red
- * (serious) and bold red (critical).
+ * cyan, and severity from dim (notice) through yellow (warning) to red
+ * (error).
+ *
+ * Each violation line leads with the family severity, which is what the
+ * floor and the exit code are decided on. axe's own word follows the rule id
+ * in parentheses, `(axe: critical)`, so the line can still be matched
+ * against the Deque rule page and the axe DevTools report that use it.
  */
 import { palette, type Colors } from "../../shared/color.js";
 import {
@@ -72,21 +77,24 @@ function scoreText(page: PageResult): string {
   return page.score === null ? "n/a" : String(page.score);
 }
 
-/** `2 serious, 1 minor`: most severe first, zeros omitted. */
+/** `2 errors, 1 notice`: most severe first, pluralised, zeros omitted. */
 function severityCounts(violations: Violation[], c: Colors): string {
-  const counts: Record<Severity, number> = { minor: 0, moderate: 0, serious: 0, critical: 0 };
+  const counts: Record<Severity, number> = { notice: 0, warning: 0, error: 0 };
   for (const v of violations) counts[v.severity] += 1;
   return [...SEVERITIES]
     .reverse()
     .filter((severity) => counts[severity] > 0)
-    .map((severity) => paintSeverity(`${counts[severity]} ${severity}`, severity, c))
+    .map((severity) => {
+      const n = counts[severity];
+      return paintSeverity(`${n} ${severity}${n === 1 ? "" : "s"}`, severity, c);
+    })
     .join(", ");
 }
 
 function violationLines(v: Violation, c: Colors): string[] {
   const n = v.nodes.length;
   const lines = [
-    `    ${paintSeverity(v.severity, v.severity, c)}  ${v.id}  ${n} node${n === 1 ? "" : "s"}  ${v.help}  ${c.dim(v.helpUrl)}`,
+    `    ${paintSeverity(v.severity, v.severity, c)}  ${v.id} ${c.dim(`(axe: ${v.impact})`)}  ${n} node${n === 1 ? "" : "s"}  ${v.help}  ${c.dim(v.helpUrl)}`,
   ];
   for (const node of v.nodes.slice(0, MAX_NODES)) {
     lines.push(`      ${node.target}  → ${oneLine(node.summary)}`);
@@ -111,13 +119,11 @@ function oneLine(summary: string): string {
 
 function paintSeverity(text: string, severity: Severity, c: Colors): string {
   switch (severity) {
-    case "minor":
+    case "notice":
       return c.dim(text);
-    case "moderate":
+    case "warning":
       return c.yellow(text);
-    case "serious":
+    case "error":
       return c.red(text);
-    case "critical":
-      return c.bold(c.red(text));
   }
 }

@@ -64,8 +64,8 @@ npx @hawkeyexl/manni a11y check https://docs.example.com/
 ```
 Checked 42 of 42 pages (sitemap: https://docs.example.com/sitemap.xml)
 ✓ https://docs.example.com/            score 100
-✗ https://docs.example.com/install/    score 88   1 serious
-    serious  image-alt  2 nodes  Images must have alternate text  https://dequeuniversity.com/rules/axe/4.13/image-alt
+✗ https://docs.example.com/install/    score 88   1 error
+    error  image-alt (axe: critical)  2 nodes  Images must have alternate text  https://dequeuniversity.com/rules/axe/4.13/image-alt
       img.hero  → Fix any of the following: Element does not have an alt attribute; …
       img.step-2  → Fix any of the following: Element does not have an alt attribute; …
 …
@@ -189,8 +189,8 @@ score = round(100 × passes ÷ (passes + violations))
 ```
 
 It is **not a Lighthouse score**. Lighthouse weights rules; this does not. A
-page with one `critical` finding and thirty passing rules scores `97`, and it
-still fails the run. Read the score as a trend across pages and across runs, and
+page with one `error` and thirty passing rules scores `97`, and it still fails
+the run. Read the score as a trend across pages and across runs, and
 read the exit code as the verdict. A page that did not load, or where no rule
 applied, has no score.
 
@@ -209,15 +209,18 @@ a11y:
   crawl: true                            # boolean   default true
   maxPages: 500                          # integer ≥ 1; absent means no cap
   tags: ["wcag2a", "wcag2aa"]            # string[]
-  severity: serious                      # minor | moderate | serious | critical
+  severity: error                        # notice | warning | error
   timeout: 30000                         # integer ≥ 1, ms
 ```
 
 `tags` restricts axe to rules carrying any of those tags, so a gate can be
 "WCAG 2.1 AA and nothing else". `severity` is the floor: findings below it are
-dropped before the score and the exit code are decided. The
-[configuration keys](/manni/a11y/reference/cli/#configuration) table has the
-types and defaults.
+dropped before the score and the exit code are decided. Its values are the
+family's, `notice`, `warning`, and `error`, the same three every manni tool
+uses. axe's `critical` and `serious` both land as `error`, `moderate` as
+`warning`, and `minor` as `notice`, and each finding keeps axe's word as
+`impact`. The [configuration keys](/manni/a11y/reference/cli/#configuration)
+table has the types and defaults.
 
 ## Run it in CI
 
@@ -283,15 +286,15 @@ page.
 ### What each piece does
 
 - `-f github` writes one annotation per rule per page, and prints nothing
-  when the site is clean. Critical and serious findings are `::error`,
-  moderate ones `::warning`, and minor ones `::notice`.
+  when the site is clean. The annotation level is the finding's severity:
+  `::error`, `::warning`, or `::notice`.
 - `--progress` prints one line per page on stderr. A CI log has no terminal,
   so without it the run is silent until the report.
 - Exit `1` fails the job on any remaining violation. Exit `2` fails it on a
   setup problem, such as a seed that will not load. See
   [exit codes](#exit-codes).
-- `--severity serious` gates only on serious and critical findings. Minor and
-  moderate ones still print.
+- `--severity error` keeps the errors alone. Warnings and notices are dropped
+  before the report and the exit code are decided.
 - GitHub-hosted runners on Linux, macOS and Windows ship Chrome, so no browser
   step is needed. A bare container needs
   `npx playwright install --with-deps chromium` first.

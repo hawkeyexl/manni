@@ -21,7 +21,7 @@ describe("parseA11yConfig", () => {
           crawl: false,
           maxPages: 25,
           tags: ["wcag2a", "wcag2aa"],
-          severity: "serious",
+          severity: "error",
           timeout: 45000,
         },
         FILE,
@@ -31,7 +31,7 @@ describe("parseA11yConfig", () => {
       crawl: false,
       maxPages: 25,
       tags: ["wcag2a", "wcag2aa"],
-      severity: "serious",
+      severity: "error",
       timeout: 45000,
     });
   });
@@ -68,8 +68,10 @@ describe("parseA11yConfig", () => {
     [{ maxPages: 1.5 }, /"a11y\.maxPages" must be an integer >= 1/],
     [{ maxPages: "10" }, /"a11y\.maxPages" must be an integer >= 1/],
     [{ tags: "wcag2a" }, /"a11y\.tags" must be a list of strings/],
-    [{ severity: "high" }, /"a11y\.severity" must be one of minor, moderate, serious, critical/],
-    [{ severity: 2 }, /"a11y\.severity" must be one of minor, moderate, serious, critical/],
+    [{ severity: "high" }, /"a11y\.severity" must be one of notice, warning, error/],
+    // axe's own word is not a family value; the floor is set on the family scale.
+    [{ severity: "serious" }, /"a11y\.severity" must be one of notice, warning, error/],
+    [{ severity: 2 }, /"a11y\.severity" must be one of notice, warning, error/],
     [{ timeout: 0 }, /"a11y\.timeout" must be an integer >= 1/],
     [{ timeout: -5 }, /"a11y\.timeout" must be an integer >= 1/],
   ])("rejects %j", (value, pattern) => {
@@ -91,12 +93,12 @@ describe("loadA11yConfig", () => {
     repo = makeTempRepo({
       files: {
         [FILE]:
-          "meta:\n  paths: [docs]\na11y:\n  urls: [https://docs.example.com/]\n  severity: serious\n",
+          "meta:\n  paths: [docs]\na11y:\n  urls: [https://docs.example.com/]\n  severity: error\n",
       },
     });
     const loaded = await loadA11yConfig(repo);
     expect(loaded).toEqual({
-      config: { urls: ["https://docs.example.com/"], severity: "serious" },
+      config: { urls: ["https://docs.example.com/"], severity: "error" },
       source: FILE,
     });
   });
@@ -133,6 +135,7 @@ describe("loadA11yConfig", () => {
     ["a wrong type", "a11y:\n  crawl: sometimes\n", /manni\.config\.yaml: "a11y\.crawl" must be a boolean/],
     ["maxPages 0", "a11y:\n  maxPages: 0\n", /manni\.config\.yaml: "a11y\.maxPages" must be an integer >= 1/],
     ["a non-http url", "a11y:\n  urls: [ftp://docs.example.com/]\n", /manni\.config\.yaml: "a11y\.urls\[0\]" must be an http\(s\) URL/],
+    ["an axe impact as the severity", "a11y:\n  severity: serious\n", /manni\.config\.yaml: "a11y\.severity" must be one of notice, warning, error/],
   ])("rejects %s, naming the file", async (_what, yaml, pattern) => {
     repo = makeTempRepo({ files: { [FILE]: yaml } });
     await expect(loadA11yConfig(repo)).rejects.toThrow(A11yError);

@@ -6,6 +6,19 @@
  * knows axe's own result shape.
  */
 import { ToolError } from "../shared/errors.js";
+import type { Severity } from "../shared/severity.js";
+
+/**
+ * The severity scale is the family's, not a11y's. It is re-exported here so
+ * the tool's own modules and tests have one import for everything they speak.
+ */
+export {
+  SEVERITIES,
+  SEVERITY_LIST,
+  isSeverity,
+  meetsSeverity,
+  type Severity,
+} from "../shared/severity.js";
 
 /** Operational/usage failure of the a11y tool: one line on stderr, exit 2. */
 export class A11yError extends ToolError {
@@ -15,17 +28,16 @@ export class A11yError extends ToolError {
   }
 }
 
-/** The four levels, least to most severe. The analyzer maps axe's `null` to "minor". */
-export const SEVERITIES = ["minor", "moderate", "serious", "critical"] as const;
-export type Severity = (typeof SEVERITIES)[number];
+/**
+ * axe's own scale, which it calls impact. Least to most severe. The analyzer
+ * maps these onto the family `Severity` (`severityOf`) and keeps the original
+ * on the violation as `impact`.
+ */
+export const AXE_IMPACTS = ["minor", "moderate", "serious", "critical"] as const;
+export type AxeImpact = (typeof AXE_IMPACTS)[number];
 
-export function isSeverity(value: string): value is Severity {
-  return (SEVERITIES as readonly string[]).includes(value);
-}
-
-/** `true` when `severity` is at or above `min`. */
-export function meetsSeverity(severity: Severity, min: Severity): boolean {
-  return SEVERITIES.indexOf(severity) >= SEVERITIES.indexOf(min);
+export function isAxeImpact(value: string): value is AxeImpact {
+  return (AXE_IMPACTS as readonly string[]).includes(value);
 }
 
 export interface ViolationNode {
@@ -40,7 +52,14 @@ export interface ViolationNode {
 export interface Violation {
   /** axe rule id, e.g. "image-alt". */
   id: string;
+  /** The family level, mapped from `impact`. What the floor and the reporters use. */
   severity: Severity;
+  /**
+   * axe's own value, kept for lookup against Deque's rule pages and the axe
+   * DevTools report a team already reads. An unknown or `null` impact is
+   * recorded as `"minor"`.
+   */
+  impact: AxeImpact;
   /** Short rule description, e.g. "Images must have alternate text". */
   help: string;
   /** Deque University rule page. */
@@ -88,7 +107,7 @@ export interface CheckSummary {
   failed: number;
   /** Total remaining violations across pages (rules, not nodes). */
   violations: number;
-  /** Violations by severity, always all four keys. */
+  /** Violations by family severity, always all three keys, zero-filled. */
   bySeverity: Record<Severity, number>;
   /** The sitemap URL that supplied pages, or `null` if none was used. */
   sitemap: string | null;

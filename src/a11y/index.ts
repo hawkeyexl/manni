@@ -12,6 +12,7 @@ export type { Fetcher, SitemapDiscovery, ParsedSitemap } from "./core/sitemap.js
 export {
   createPlaywrightAnalyzer,
   findBrowser,
+  severityOf,
   NO_BROWSER_MESSAGE,
 } from "./core/analyzer.js";
 export type {
@@ -40,8 +41,16 @@ export {
   isA11yFormat,
 } from "./reporters/index.js";
 export type { A11yFormat, RenderOptions } from "./reporters/index.js";
-export { A11yError, SEVERITIES, isSeverity, meetsSeverity } from "./types.js";
+export {
+  A11yError,
+  AXE_IMPACTS,
+  SEVERITIES,
+  SEVERITY_LIST,
+  isSeverity,
+  meetsSeverity,
+} from "./types.js";
 export type {
+  AxeImpact,
   Severity,
   ViolationNode,
   Violation,

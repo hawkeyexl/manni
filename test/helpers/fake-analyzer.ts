@@ -66,11 +66,28 @@ export function fakeAnalyzer(site: FakeSite): FakeAnalyzer {
   return analyzer;
 }
 
-/** A violation of the given severity with one node, enough for counting. */
-export function violation(id: string, severity: Violation["severity"]): Violation {
+/** axe's word for each family level, when a test does not name one itself. */
+const IMPACT_FOR: Record<Violation["severity"], Violation["impact"]> = {
+  notice: "minor",
+  warning: "moderate",
+  error: "critical",
+};
+
+/**
+ * A violation of the given family severity with one node, enough for
+ * counting. `impact` is axe's value and defaults to the one the severity is
+ * mapped from most often; a test that cares (say, `serious` beside
+ * `critical`, both `error`) names it.
+ */
+export function violation(
+  id: string,
+  severity: Violation["severity"],
+  impact: Violation["impact"] = IMPACT_FOR[severity],
+): Violation {
   return {
     id,
     severity,
+    impact,
     help: `Rule ${id}`,
     helpUrl: `https://dequeuniversity.com/rules/axe/4.13/${id}`,
     tags: ["wcag2a"],

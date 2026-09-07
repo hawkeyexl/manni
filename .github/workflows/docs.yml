@@ -143,32 +143,33 @@ jobs:
           done
 
       # Two steps, one crawl each, because the report and the gate want
-      # different floors. The first runs at the config's floor (`serious`), so
-      # every finding at or above it lands as an annotation. Those are all
-      # serious or critical, so each is a `::error`; the reporter's `::warning`
-      # and `::notice` levels only appear under a lower floor. The step is
-      # allowed to fail: with the findings the site carries today it always
-      # does. The second is the verdict.
+      # different floors. The first runs at `notice`, the bottom of the family
+      # scale, so every finding the site carries lands as an annotation at
+      # GitHub's matching level: `error`, `warning` or `notice`, one-to-one,
+      # since the scale was chosen to match GitHub's. The step is allowed to
+      # fail, because any finding at all exits 1 and the verdict is the next
+      # step's.
       #
       # On localhost the built sitemap lists the production URLs, which are on
       # another host, so the crawl drops them and reaches every page through
       # the sidebar links instead. `--progress` names each page in the log,
       # which has no terminal to draw the status line on.
       - name: Report accessibility findings
-        run: node dist/cli.js a11y check -f github --progress
+        run: node dist/cli.js a11y check --severity notice -f github --progress
         continue-on-error: true
 
-      # The gate sits at `critical` today, which is where the site is green.
-      # It carries three rules: `scrollable-region-focusable` (serious) and
-      # `landmark-unique` (moderate) come from how Starlight renders code
-      # blocks and `<Aside>`, and are not fixable from a page. The third,
-      # `empty-table-header` (minor), was ours and is fixed. The report step
-      # above names no floor, so it inherits `severity: serious` from the
-      # config; the moderate and minor findings are not annotated. Proposal 0035
-      # defers a baseline like 0001's; until one exists, the `--severity`
-      # floor is the ratchet. Lower it as findings are fixed, and never raise it.
-      - name: Gate on critical findings
-        run: node dist/cli.js a11y check --severity critical --progress -q
+      # The gate names no floor, so it inherits `severity: error` from the
+      # repo's manni.config.yaml, and fails on any finding at that level.
+      # `scrollable-region-focusable`, axe's `serious` and so an `error`,
+      # used to keep the gate a level above the report; it is fixed in the
+      # site now, by the Expressive Code plugin in docs/astro.config.mjs that
+      # gives every code block a tabindex. `landmark-unique`, axe's
+      # `moderate`, is a `warning` and does not gate; it comes from how
+      # Starlight renders `<Aside>` and is not fixable from a page. Proposal
+      # 0035 defers a baseline like 0001's; until one exists, the config's
+      # floor is the ratchet. Lower it as findings are fixed, never raise it.
+      - name: Gate on error-level findings
+        run: node dist/cli.js a11y check --progress -q
 
   # Deploy the uploaded artifact to GitHub Pages. Never from a pull request —
   # a PR build is a check, not a release, and `pages: write` on PR-triggered

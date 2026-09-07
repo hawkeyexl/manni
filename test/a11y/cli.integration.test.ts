@@ -99,13 +99,19 @@ async function serveSite(): Promise<SchemaServer> {
 }
 
 interface JsonRun {
-  results: { url: string; violations: { id: string }[]; score: number | null; error?: string }[];
+  results: {
+    url: string;
+    violations: { id: string; severity: string; impact: string }[];
+    score: number | null;
+    error?: string;
+  }[];
   summary: {
     checked: number;
     discovered: number;
     skipped: number;
     duplicates: number;
     failed: number;
+    bySeverity: Record<string, number>;
   };
 }
 
@@ -133,11 +139,21 @@ describe("manni a11y check (usage errors, no browser needed)", () => {
     expect(r.stderr).toMatch(/^manni: Unknown --format "sarif"\. Use pretty \| json \| github\./);
   });
 
-  it("rejects an unknown --severity", async () => {
-    const r = await run(["check", "https://x.example/", "--severity", "high"]);
-    expect(r.status).toBe(2);
-    expect(r.stderr).toMatch(
-      /^manni: Unknown --severity "high"\. Use minor \| moderate \| serious \| critical\./,
+  it("rejects an unknown --severity, axe's own words included", async () => {
+    for (const bad of ["high", "serious"]) {
+      const r = await run(["check", "https://x.example/", "--severity", bad]);
+      expect(r.status).toBe(2);
+      expect(r.stderr).toMatch(
+        new RegExp(`^manni: Unknown --severity "${bad}"\\. Use notice \\| warning \\| error\\.`),
+      );
+    }
+  });
+
+  it("documents --severity on the family scale with notice as the default", async () => {
+    const r = await run(["check", "--help"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(
+      /--severity <level>\s+minimum severity reported: notice \| warning \| error\s+\(default: "notice"\)/,
     );
   });
 
@@ -239,12 +255,41 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
     expect(r.stdout).not.toContain("about.html");
   }, 120_000);
 
-  it("--severity critical drops the findings below it", async () => {
-    const r = await run(["check", `${server.url}/about.html`, "--no-crawl", "--severity", "critical"]);
+  it("--severity error keeps every finding on the about page, and each carries axe's impact", async () => {
+    // The fixture's four findings are critical (image-alt, button-name) and
+    // serious (color-contrast, html-has-lang) in axe's scale, and both map to
+    // `error`. So the floor drops nothing here; what it proves is the map,
+    // and that axe's word survives beside the family one.
+    const r = await run([
+      "check",
+      `${server.url}/about.html`,
+      "--no-crawl",
+      "--severity",
+      "error",
+      "-f",
+      "json",
+    ]);
     expect(r.status).toBe(1);
-    expect(r.stdout).toContain("image-alt");
-    expect(r.stdout).not.toContain("color-contrast");
-    expect(r.stdout).not.toContain("html-has-lang");
+    const json = JSON.parse(r.stdout) as JsonRun;
+    const found = Object.fromEntries(
+      (json.results[0]?.violations ?? []).map((v) => [v.id, [v.severity, v.impact]]),
+    );
+    expect(found).toMatchObject({
+      "image-alt": ["error", "critical"],
+      "button-name": ["error", "critical"],
+      "color-contrast": ["error", "serious"],
+      "html-has-lang": ["error", "serious"],
+    });
+    expect(json.summary.bySeverity).toEqual({ notice: 0, warning: 0, error: 4 });
+  }, 120_000);
+
+  it("the pretty report leads with the family level and keeps axe's word after the rule", async () => {
+    const r = await run(["check", `${server.url}/about.html`, "--no-crawl"]);
+    expect(r.status).toBe(1);
+    expect(r.stdout).toMatch(/^✗ \S+about\.html  score \d+  4 errors$/m);
+    expect(r.stdout).toMatch(/^    error  image-alt \(axe: critical\)  \d+ nodes?  /m);
+    expect(r.stdout).toMatch(/^    error  color-contrast \(axe: serious\)  /m);
+    expect(r.stdout).not.toMatch(/^    (critical|serious) /m);
   }, 120_000);
 
   it("--progress reports each page on stderr and leaves stdout to the report", async () => {
@@ -276,9 +321,10 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
   it("--format github annotates each violation and says nothing when clean", async () => {
     const bad = await run(["check", `${server.url}/about.html`, "--no-crawl", "-f", "github"]);
     expect(bad.status).toBe(1);
-    // Every line is a workflow command at one of GitHub's three levels. The
-    // fixture's findings are all critical or serious in axe's scale, so each
-    // maps to `::error`; `color-contrast` is the serious one.
+    // Every line is a workflow command at one of GitHub's three levels, which
+    // are the family's own. The fixture's findings are all critical or serious
+    // in axe's scale, so every one is `error` and lands as `::error`;
+    // `color-contrast` is the serious one.
     const lines = bad.stdout.trimEnd().split("\n");
     expect(lines.length).toBeGreaterThan(0);
     for (const line of lines) expect(line).toMatch(/^::(error|warning|notice) title=a11y\//);

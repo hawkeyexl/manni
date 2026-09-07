@@ -148,14 +148,17 @@ a11y:
   crawl: true                            # boolean
   maxPages: 500                          # integer ≥ 1; absent means no cap
   tags: ["wcag2a", "wcag2aa"]            # string[]
-  severity: serious                      # minor | moderate | serious | critical
+  severity: error                        # notice | warning | error
   timeout: 30000                         # integer ≥ 1, ms
 ```
 
 Read through the shared family loader with `section: "a11y"` and no legacy
 names, since nothing predates it. The level is `severity`, not axe's `impact`,
-so every tool in the family names it with one word. CLI flag > config key > default, the
-precedence 0005 fixed for meta. `urls` is the fallback for `[urls...]`, and
+so every tool in the family names it with one word. Its values are the
+family's too, `notice | warning | error` from `src/shared/severity.ts`, and
+not axe's four. axe's impact is folded onto them when a page is read and kept
+on the finding as `impact`; stress test 10 has the reasoning. CLI flag >
+config key > default, the precedence 0005 fixed for meta. `urls` is the fallback for `[urls...]`, and
 neither is `A11yError`, exit `2`, the way an empty input set is for meta
 (0014). Unknown keys, wrong types, and non-`http(s)` URLs are errors naming
 the file and the key.
@@ -168,7 +171,7 @@ manni a11y check [urls...]
       --no-crawl           check exactly the given URLs
       --max-pages <n>      cap on pages checked            (no cap)
       --tags <list>        comma-separated axe tags, once
-      --severity <level>   minor | moderate | serious | critical  (minor)
+      --severity <level>   notice | warning | error       (notice)
       --timeout <ms>       per-page navigation timeout    (30000)
   -q, --quiet              pretty: hide clean pages
       --progress           report progress on stderr    (only on a terminal)
@@ -190,8 +193,8 @@ The reference page carries the same ladder.
 Three formats. `pretty` prints a header naming the sitemap used (or
 `no sitemap; followed links`, or `no crawl` under `--no-crawl`). Then it prints
 one line per page with its score and severity counts. Under each failing page it
-prints one line per rule (severity, rule id, node count, help text, Deque
-University URL). Under that come the first three failing elements as a selector
+prints one line per rule (severity, rule id, axe's impact in parentheses, node
+count, help text, Deque University URL). Under that come the first three failing elements as a selector
 and axe's `failureSummary`. Last is a footer with totals and the `skipped`
 count. Those element lines are the deterministic remediation the tool can
 honestly offer: which element, which condition failed, in axe's own words.
@@ -199,8 +202,8 @@ honestly offer: which element, which condition failed, in axe's own words.
 `passes`, `incomplete`, `score`, `error?`) and `summary` (`discovered`,
 `checked`, `skipped`, `failed`, `violations`, `bySeverity`, `sitemap`, `crawl`).
 `github` is one workflow command per rule per page and per failed load, empty
-when clean. The command's level follows the severity; stress test 10 has the
-mapping.
+when clean. The command's level is the severity itself, since the family scale
+matches GitHub's; stress test 10 has the map from axe's impact.
 
 Colours keep meta's meanings, which `docs/content-strategy/design.md`
 reserves: `✓` green, `✗` red, severity from dim through yellow to red, URLs cyan.
@@ -376,30 +379,47 @@ stay distinct because they are the one place static sites do vary a page.
 
 ### 10. Do the severity values match anything outside axe?
 
-No. `minor`, `moderate`, `serious` and `critical` are axe's own scale, which
-it calls impact. Nothing near it uses the same words. pa11y and
-HTML_CodeSniffer say error, warning and notice. GitHub annotations say error,
-warning and notice. SARIF says error, warning and note. Vale and ESLint say
-error and warning. Security tools say critical, high, medium and low.
+Not axe's own, and that is the point. `minor`, `moderate`, `serious` and
+`critical` are axe's scale, which it calls impact. Nothing near it uses the
+same words. pa11y and HTML_CodeSniffer say error, warning and notice. GitHub
+annotations say error, warning and notice. SARIF says error, warning and
+note. Vale and ESLint say error and warning. Security tools say critical,
+high, medium and low.
 
-The values stay as axe reports them, for two reasons. The first is that they
-are what the user meets everywhere else. A Deque rule page names the impact,
-and so does the axe DevTools report a team already reads. A finding that says
-`serious` here and `serious` there is one finding. Renamed, it is two things
-to reconcile. The second is that collapsing the scale loses a step a floor
-needs. This repository's own config sits at `serious`, so a serious finding is
-reported and a critical one fails the gate. With `critical` and `serious`
-folded into one level, that config could not be written.
+The first draft of this proposal kept axe's values. The reasoning was that a
+finding named `serious` here and `serious` on its Deque page is one finding.
+Folding four levels onto three also lost the step this repository's own floor
+sat on. That draft was overruled for cross-domain consistency, and the rule it
+leaves is the one in `CLAUDE.md`. A flag or config key two domains both have
+carries the same name and the same values. Those values are defined once,
+under `src/shared/`. `--severity` is such a flag. A user who learns it on one
+domain has learned it on all of them. A config that sets it for the family
+sets it once.
 
-So the rule is that a domain's `severity` carries its field's native values,
-and each reporter translates to the output's own scale. The `github` reporter
-is the first instance. It maps `critical` and `serious` to `::error`,
-`moderate` to `::warning` and `minor` to `::notice`. A failed load is always
-`::error`. It has no severity to translate and is the worst thing a run can
-hold. SARIF's error, warning and note is the second instance, deferred with
-that reporter. `pretty` and `json` do not translate. Their reader is a person
-or a script looking at the finding itself, and axe's word is the one they
-want.
+So the family has one scale, `notice | warning | error`, least to most
+severe, in `src/shared/severity.ts`. It was chosen to match the sinks every
+tool writes to and the linters that sit beside it. GitHub annotations carry
+exactly those three levels, and so do ESLint, Vale and pa11y. A domain whose
+source speaks another scale maps onto it and keeps the source's value in a
+field of its own. a11y is the first instance. The analyzer maps `critical`
+and `serious` to `error`, `moderate` to `warning`, `minor` and a missing
+impact to `notice`, and records axe's word on the finding as `impact`. The
+pretty report prints both, the family level first and `(axe: critical)`
+after the rule id. The JSON carries both fields. A reader who wants the Deque
+page still has the word it uses.
+
+The cost is accepted with open eyes. `critical` and `serious` share a level,
+so a floor cannot sit between them. The config this repository once carried,
+report at `serious` and gate at `critical`, cannot be written on the family
+scale. What replaced it is a report at `notice` and a gate at `error`. One
+finding had held the gate apart from the report, a scrolling code block with
+no keyboard access. It is fixed in the site instead of tolerated by the floor.
+
+The reporters translate nothing now. The `github` command's level is the
+severity itself, one-to-one. A failed load stays `::error`, because it has no
+severity and is the worst thing a run can hold. SARIF's error, warning and
+note is the one sink left that differs, by a single word, and its reporter is
+deferred with 0003.
 
 ## Consequences
 
@@ -423,8 +443,10 @@ want.
   sitemaps, concurrency, a baseline, the programmatic export. Each is a small
   proposal or a `feat` commit on its own; none blocks the gate working today.
 - This repository runs the check on its own docs site from `docs.yml`. It
-  reports every finding and gates at `critical` until the Starlight-level
-  findings are dealt with.
+  annotates every finding at its own level and gates at `error`, the floor
+  the repo's config sets. The code-block finding that used to hold the gate
+  above the report is fixed in the site by an Expressive Code plugin in
+  `docs/astro.config.mjs`.
 - `check` does not fix anything, and the reason is structural rather than
   scope: it sees a rendered URL, not the source. What a fixer would look like,
   and which rules it could honestly fix, is [0036](0036-a11y-fix.md).

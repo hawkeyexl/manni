@@ -121,6 +121,13 @@ The reason is that two more domains are about to land on their own branches.
 A grammar that lives only in `src/cli.ts` gets re-derived, slightly
 differently, by every branch that mounts one. Proposal 0034 is the record.
 
+**Shared concepts use shared values.** A flag or config key two domains both
+have carries the same name **and** the same values, defined once under
+`src/shared/`. Severity is `notice | warning | error`, from
+`src/shared/severity.ts`. A domain whose source speaks another scale maps
+onto it and keeps the source's value in a field of its own. a11y does that
+with axe's `impact`, and proposal 0035's stress test 10 records why.
+
 ### Plans show the full interface
 
 A plan for a code change spells out every exported type, every function

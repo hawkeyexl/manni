@@ -57,7 +57,10 @@ a11y:
   urls:
     - http://127.0.0.1:4321/manni/
   # The project's floor: findings below it are dropped before the score and
-  # the exit code are decided. `--severity <level>` on the command line wins,
-  # which is how the Docs workflow gates at `critical` while reporting from
-  # here. The built-in default is `minor`, everything axe reports.
-  severity: serious
+  # the exit code are decided. The values are the family scale every manni
+  # tool shares, `notice | warning | error`; axe's four impact levels are
+  # mapped onto it, `critical` and `serious` both landing as `error`.
+  # `--severity <level>` on the command line wins, which is how the Docs
+  # workflow reports at `notice` while its gate inherits `error` from here.
+  # The built-in default is `notice`, everything axe reports.
+  severity: error

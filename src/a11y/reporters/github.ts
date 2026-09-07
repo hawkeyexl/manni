@@ -17,24 +17,17 @@ export type AnnotationLevel = "error" | "warning" | "notice";
 /**
  * The annotation level for a finding of the given severity.
  *
- * The rule: a domain's `severity` carries its field's native values, and each
- * reporter translates to the output's own scale. Here the field is axe's
- * (`minor`, `moderate`, `serious`, `critical`) and the output is GitHub's
- * (`notice`, `warning`, `error`). Four steps onto three, so the top two share
- * `error`. A serious finding fails a floor the same way a critical one does,
- * and the two are kept apart everywhere else because a floor needs the line
- * between them. Proposal 0035, stress test 10.
+ * The family scale (`src/shared/severity.ts`) was chosen to match GitHub's,
+ * so the map is one-to-one and this is the identity. It stays a function,
+ * and stays exported, because it is the seam: the translation from a
+ * domain's severity to an output's levels happens here and nowhere else,
+ * and a reporter for a sink with another scale (SARIF's `note`) would carry
+ * its own. axe's four impacts were folded onto these three by the analyzer
+ * (`severityOf`), before any reporter saw the finding. Proposal 0035,
+ * stress test 10.
  */
 export function annotationLevel(severity: Severity): AnnotationLevel {
-  switch (severity) {
-    case "critical":
-    case "serious":
-      return "error";
-    case "moderate":
-      return "warning";
-    case "minor":
-      return "notice";
-  }
+  return severity;
 }
 
 export function renderGithub(run: CheckRun): string {

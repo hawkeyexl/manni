@@ -68,7 +68,7 @@ manni a11y check [urls...] [options]
 | `--no-crawl` | n/a | on | Check exactly the given URLs, with no sitemap lookup and no link following. Crawling is on by default. Overrides config `crawl:`. |
 | `--max-pages` | `<n>` | | Cap on pages checked. Whatever is still queued at the cap is reported as `skipped`. Without it every discovered page is checked. Must be an integer of 1 or more (exit 2 otherwise). Overrides config `maxPages:`. |
 | `--tags` | `<list>` | | Comma-separated axe tags, given once; restrict axe to rules carrying any of them, for example `wcag2a,wcag2aa,wcag21aa,best-practice`. Whitespace around commas is trimmed and empty items are dropped. A second `--tags` replaces the first. Without it axe runs its default rule set. Overrides config `tags:`. |
-| `--severity` | `<level>` | `minor` | Minimum severity reported and counted: `minor`, `moderate`, `serious`, or `critical`. Violations below it are dropped before the [score](#the-score) and the exit code are decided. An unknown level is an error (exit 2). axe calls these levels impact, and manni says severity so every tool in the family uses one word. Overrides config `severity:`. |
+| `--severity` | `<level>` | `notice` | Minimum severity reported and counted, on the family scale: `notice`, `warning`, or `error`. Violations below it are dropped before the [score](#the-score) and the exit code are decided. An unknown level is an error (exit 2). axe's four impact levels are folded onto these three when a page is read. Every finding keeps axe's own value as `impact`, and the [github format](#output-formats) has the table. Overrides config `severity:`. |
 | `--timeout` | `<ms>` | `30000` | Per-page navigation timeout in milliseconds. Overrides config `timeout:`. |
 | `-q, --quiet` | n/a | off | In `pretty` output, hide pages with no remaining violations. Has no effect on `json` or `github`. |
 | `--progress` | n/a | `auto` | Report [progress](#progress) on stderr while the crawl runs. The default is on only when stderr is a terminal. Pass it to see each page in a CI log. |
@@ -136,8 +136,8 @@ score = round(100 × passes ÷ (passes + violations))
 `violations` is the number of rules that failed at or above the `--severity`
 floor, counted per rule rather than per element. The result is the share of
 applicable rules that passed after severity filtering. It is not a Lighthouse
-score: nothing is weighted, and a page with one `critical` finding still fails
-the run whatever its score says. The score is `null` when the page did not load
+score: nothing is weighted, and a page with one `error` still fails the run
+whatever its score says. The score is `null` when the page did not load
 or when no rule applied.
 
 Rules axe could not decide are reported as `incomplete` and never counted as
@@ -151,14 +151,14 @@ the violations under each failing page, and a footer:
 ```
 Checked 3 of 3 pages (sitemap: http://localhost:8080/sitemap.xml)
 ✓ http://localhost:8080/index.html   score 100
-✗ http://localhost:8080/about.html   score 71   2 serious, 1 minor
-    serious  image-alt  3 nodes  Images must have alternate text  https://dequeuniversity.com/rules/axe/4.13/image-alt
+✗ http://localhost:8080/about.html   score 71   2 errors, 1 notice
+    error  image-alt (axe: critical)  3 nodes  Images must have alternate text  https://dequeuniversity.com/rules/axe/4.13/image-alt
       img.hero  → Fix any of the following: Element does not have an alt attribute; …
       img.map  → Fix any of the following: Element does not have an alt attribute; …
       img.logo  → Fix any of the following: Element does not have an alt attribute; …
-    serious  html-has-lang  1 node  <html> element must have a lang attribute  https://dequeuniversity.com/rules/axe/4.13/html-has-lang
+    error  html-has-lang (axe: serious)  1 node  <html> element must have a lang attribute  https://dequeuniversity.com/rules/axe/4.13/html-has-lang
       html  → Fix any of the following: The <html> element does not have a lang attribute
-    minor  region  1 node  All page content should be contained by landmarks  https://dequeuniversity.com/rules/axe/4.13/region
+    notice  region (axe: minor)  1 node  All page content should be contained by landmarks  https://dequeuniversity.com/rules/axe/4.13/region
       p  → Fix any of the following: Some page content is not contained by landmarks
 ✗ http://localhost:8080/orphan.html  could not load: net::ERR_CONNECTION_REFUSED
 4 violations on 2 of 3 pages
@@ -166,8 +166,11 @@ Checked 3 of 3 pages (sitemap: http://localhost:8080/sitemap.xml)
 
 The header names the sitemap that supplied pages, or reads `(no sitemap;
 followed links)`. Under `--no-crawl` it reads `(no crawl)`. Each violation line
-carries the severity, the rule id, the node count, axe's short help text, and the
-rule's Deque University URL. Under it, the first three failing elements print as
+carries the severity, the rule id, and axe's own impact in parentheses. Then
+come the node count, axe's short help text, and the rule's Deque University
+URL. The severity is what the floor and the exit code use. The impact is there
+for lookup, since the Deque page and the axe DevTools report both name it.
+Under it, the first three failing elements print as
 a selector and axe's failure summary, then `(+N more)` past three. A page that
 could not load prints `could not load: <reason>`. The footer adds
 `; K skipped (--max-pages)` when the cap was hit, and `; K duplicates dropped`
@@ -185,7 +188,8 @@ when a redirect landed on a page that was also queued under another spelling.
       "violations": [
         {
           "id": "image-alt",
-          "severity": "serious",
+          "severity": "error",
+          "impact": "critical",
           "help": "Images must have alternate text",
           "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/image-alt",
           "tags": ["cat.text-alternatives", "wcag2a", "wcag111"],
@@ -210,7 +214,7 @@ when a redirect landed on a page that was also queued under another spelling.
     "duplicates": 0,
     "failed": 2,
     "violations": 3,
-    "bySeverity": { "minor": 0, "moderate": 1, "serious": 2, "critical": 0 },
+    "bySeverity": { "notice": 0, "warning": 1, "error": 2 },
     "sitemap": "https://docs.example.com/sitemap.xml",
     "crawl": true
   }
@@ -223,7 +227,9 @@ Each entry of `results[]`:
 |---|---|---|
 | `url` | string | The normalized URL that was checked. |
 | `source` | `"seed"` \| `"sitemap"` \| `"link"` | How the URL entered the run. |
-| `violations` | array | Rules that failed at or above the severity floor. Each has `id`, `severity`, `help`, `helpUrl`, `tags`, and `nodes[]` with `target` (axe's CSS selector path), `html` (the element's outer HTML), and `summary` (axe's failure summary). Empty when `error` is set. |
+| `violations` | array | Rules that failed at or above the severity floor. Each has `id`, `severity`, `impact`, `help`, `helpUrl`, `tags`, and `nodes[]` with `target` (axe's CSS selector path), `html` (the element's outer HTML), and `summary` (axe's failure summary). Empty when `error` is set. |
+| `violations[].severity` | `"notice"` \| `"warning"` \| `"error"` | The family level, mapped from `impact`. What the floor, the exit code, and the `github` format use. |
+| `violations[].impact` | `"minor"` \| `"moderate"` \| `"serious"` \| `"critical"` | axe's own value, kept for lookup against its rule pages. A rule axe reports with no impact is recorded as `"minor"`. |
 | `passes` | integer | Rules that passed on this page. |
 | `incomplete` | integer | Rules axe could not decide. Reported, never counted as failures. |
 | `score` | integer \| `null` | See [the score](#the-score). `null` when the page did not load or no rule applied. |
@@ -239,7 +245,7 @@ And `summary`:
 | `duplicates` | integer | Discovered, then dropped without loading because a redirect had already landed on the same page under another spelling. `checked + skipped + duplicates` equals `discovered`. |
 | `failed` | integer | Pages with at least one remaining violation or an `error`. Drives exit `1`. |
 | `violations` | integer | Remaining violations across all pages, counted per rule rather than per node. |
-| `bySeverity` | object | Violation counts keyed `minor`, `moderate`, `serious`, `critical`. All four keys are always present. |
+| `bySeverity` | object | Violation counts keyed `notice`, `warning`, `error`. All three keys are always present. |
 | `sitemap` | string \| `null` | The sitemap URL that supplied pages, or `null` when none was used. |
 | `crawl` | boolean | Whether pages beyond the seeds were discovered. `false` under `--no-crawl`. |
 
@@ -253,15 +259,18 @@ is clean:
 ```
 
 GitHub renders each as an annotation on the workflow run. There is no file or
-line to anchor to, since the finding is about a URL. The command's level comes
-from the finding's severity. axe has four levels and GitHub has three, so the
-top two share `error`. A page that did not load is always `error`.
+line to anchor to, since the finding is about a URL. The command's level is the
+finding's severity. The family scale was chosen to match GitHub's, so the
+annotations are one-to-one. axe's four impact levels were folded onto that scale
+when the page was read, and this is the map. A page that did not load is always
+`error`.
 
-| Severity | Annotation |
-| --- | --- |
-| `critical`, `serious` | `::error` |
-| `moderate` | `::warning` |
-| `minor` | `::notice` |
+| axe impact | Severity | Annotation |
+| --- | --- | --- |
+| `critical` | `error` | `::error` |
+| `serious` | `error` | `::error` |
+| `moderate` | `warning` | `::warning` |
+| `minor` | `notice` | `::notice` |
 
 ### Progress
 
@@ -294,9 +303,9 @@ crawl, `--no-crawl`, and the zero-argument config form. Continuing from there:
 # Several seeds: each seed's host is in scope; one sitemap lookup, from the first seed.
 manni a11y check https://docs.example.com/ https://blog.example.com/
 
-# Gate only on what matters: WCAG 2.1 AA rules, serious and critical only,
-# hide clean pages. Exit 1 only if a serious or critical finding remains.
-manni a11y check https://docs.example.com/ --tags wcag2a,wcag2aa,wcag21aa --severity serious -q
+# Gate only on what matters: WCAG 2.1 AA rules, errors only, hide clean
+# pages. Exit 1 only if an error remains; warnings and notices are dropped.
+manni a11y check https://docs.example.com/ --tags wcag2a,wcag2aa,wcag21aa --severity error -q
 
 # CI: GitHub annotations, bounded run, explicit config, no color.
 manni a11y check https://docs.example.com/ -f github --max-pages 50 -c ci/manni.config.yaml --no-color
@@ -305,12 +314,12 @@ manni a11y check https://docs.example.com/ -f github --max-pages 50 -c ci/manni.
 manni a11y check https://docs.example.com/ -f json | jq '.summary'
 
 # Every option at once. Two seeds (space-separated); sitemap and links; cap
-# 250 pages; one comma-separated --tags list; moderate floor; 60 s per page;
+# 250 pages; one comma-separated --tags list; warning floor; 60 s per page;
 # quiet; ignore any discovered config; json; no color.
 manni a11y check https://docs.example.com/ https://www.example.com/ \
   --max-pages 250 \
   --tags wcag2a,wcag2aa,wcag21aa,best-practice \
-  --severity moderate \
+  --severity warning \
   --timeout 60000 \
   --quiet \
   --no-config \
@@ -328,7 +337,7 @@ manni a11y check not-a-url
 # manni: Not an http(s) URL: "not-a-url".
 
 manni a11y check https://x.example/ --severity high
-# manni: Unknown --severity "high". Use minor | moderate | serious | critical.
+# manni: Unknown --severity "high". Use notice | warning | error.
 
 manni a11y check https://x.example/ --max-pages 0
 # manni: --max-pages must be an integer ≥ 1.
@@ -357,7 +366,7 @@ a11y:
   crawl: true
   maxPages: 500
   tags: ["wcag2a", "wcag2aa"]
-  severity: serious
+  severity: error
   timeout: 30000
 ```
 
@@ -367,7 +376,7 @@ a11y:
 | `crawl` | boolean | `true` | Whether to discover pages from the sitemap and same-host links. `--no-crawl` sets it to `false` for one run. |
 | `maxPages` | integer ≥ 1 | none, no cap | Cap on pages checked per run. Without it every discovered page is checked. Mirrors `--max-pages`. |
 | `tags` | `string[]` | none | axe tags to restrict the rule set to. Mirrors `--tags`, one item per entry. |
-| `severity` | `minor` \| `moderate` \| `serious` \| `critical` | `minor` | Minimum severity reported and counted. Mirrors `--severity`. |
+| `severity` | `notice` \| `warning` \| `error` | `notice` | Minimum severity reported and counted, on the family scale. Mirrors `--severity`. |
 | `timeout` | integer ≥ 1 | `30000` | Per-page navigation timeout in milliseconds. Mirrors `--timeout`. |
 
 An unknown key, a wrong type, an empty `urls` entry, or a `urls` entry that is

@@ -29,7 +29,7 @@ export interface CheckOptions {
   maxPages?: number;
   /** axe tags to restrict to; empty is axe's default rule set. Default `[]`. */
   tags: string[];
-  /** Minimum severity reported and counted. Default `"minor"`. */
+  /** Minimum family severity reported and counted. Default `"notice"`, everything. */
   severity: Severity;
   /** Per-page navigation timeout in ms. Default `30000`. */
   timeout: number;
@@ -55,7 +55,7 @@ export interface CheckDeps {
 export const CHECK_DEFAULTS: Readonly<Omit<CheckOptions, "urls">> = Object.freeze({
   crawl: true,
   tags: [],
-  severity: "minor",
+  severity: "notice",
   timeout: 30000,
 });
 
@@ -123,7 +123,8 @@ function summarize(
   sitemap: string | null,
   crawl: boolean,
 ): CheckSummary {
-  const bySeverity: Record<Severity, number> = { minor: 0, moderate: 0, serious: 0, critical: 0 };
+  // Spelled out so the compiler, not a test, says when the family scale moves.
+  const bySeverity: Record<Severity, number> = { notice: 0, warning: 0, error: 0 };
   let failed = 0;
   let violations = 0;
   for (const page of results) {

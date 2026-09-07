@@ -335,7 +335,7 @@ describe("crawl progress", () => {
     const site: FakeSite = {
       [`${S}/`]: { links: [`${S}/a`] },
       [`${S}/a`]: {
-        violations: [violation("image-alt", "critical"), violation("region", "minor")],
+        violations: [violation("image-alt", "error"), violation("region", "notice")],
       },
     };
     const events: ProgressEvent[] = [];

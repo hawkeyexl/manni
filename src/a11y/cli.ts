@@ -16,7 +16,13 @@ import { createPlaywrightAnalyzer } from "./core/analyzer.js";
 import { loadA11yConfig, type LoadedA11yConfig } from "./core/config.js";
 import { A11Y_FORMAT_LIST, isA11yFormat, render } from "./reporters/index.js";
 import { CLEAR_LINE, createProgressReporter } from "./reporters/progress.js";
-import { A11yError, SEVERITIES, isSeverity, type Severity, type ProgressListener } from "./types.js";
+import {
+  A11yError,
+  SEVERITY_LIST,
+  isSeverity,
+  type Severity,
+  type ProgressListener,
+} from "./types.js";
 
 /** `--tags <list>`: commas separate, whitespace around them is trimmed, empty items are dropped. */
 function splitList(value: string): string[] {
@@ -88,7 +94,7 @@ export function positiveInteger(value: string, flag: string): number {
 
 function assertSeverity(value: string): Severity {
   if (!isSeverity(value)) {
-    throw new A11yError(`Unknown --severity "${value}". Use ${SEVERITIES.join(" | ")}.`);
+    throw new A11yError(`Unknown --severity "${value}". Use ${SEVERITY_LIST}.`);
   }
   return value;
 }
@@ -149,7 +155,7 @@ export function buildProgram(): Command {
     .option("--tags <list>", "comma-separated axe tags to restrict the rules to")
     .option(
       "--severity <level>",
-      `minimum severity reported: ${SEVERITIES.join(" | ")}`,
+      `minimum severity reported: ${SEVERITY_LIST}`,
       CHECK_DEFAULTS.severity,
     )
     .option(
