@@ -42,9 +42,19 @@ Key layers:
     as `buildProgram()` and mounted by `src/cli.ts`. No entry point of its own.
   - `src/meta/core/`: file resolution, config, schema resolution, validation.
   - `src/meta/reporters/`: output formatting (pretty / json / github / sarif / junit).
+- `src/a11y/`: the accessibility tool, `manni a11y check`.
+  - `src/a11y/core/`: URL normalization and host scope, sitemap discovery
+    (`robots.txt` `Sitemap:` lines, then `/sitemap.xml`), the same-host crawl,
+    the Playwright analyzer (the browser seam, behind `PageAnalyzer`), and the
+    `a11y:` config loader.
+  - `src/a11y/commands/`: the `check` command core, free of CLI/IO plumbing.
+  - `src/a11y/reporters/`: output formatting (pretty / json / github).
+  - `src/a11y/cli.ts`: thin commander wrapper exported as `buildProgram()` and
+    mounted by `src/cli.ts`. No entry point of its own.
 - `src/index.ts`: the programmatic API, re-exporting `src/meta/index.ts`.
 
-Tests stay flat under `test/`; a later tool adds `test/<tool>/`.
+The metadata tool's tests stay flat under `test/`; each later tool adds
+`test/<tool>/`, and `test/a11y/` is the first of those.
 
 ### Folding a tool in
 
@@ -110,6 +120,13 @@ domain copies. A domain with one verb still spells the verb.
 The reason is that two more domains are about to land on their own branches.
 A grammar that lives only in `src/cli.ts` gets re-derived, slightly
 differently, by every branch that mounts one. Proposal 0034 is the record.
+
+**Shared concepts use shared values.** A flag or config key two domains both
+have carries the same name **and** the same values, defined once under
+`src/shared/`. Severity is `notice | warning | error`, from
+`src/shared/severity.ts`. A domain whose source speaks another scale maps
+onto it and keeps the source's value in a field of its own. a11y does that
+with axe's `impact`, and proposal 0035's stress test 10 records why.
 
 ### Plans show the full interface
 
