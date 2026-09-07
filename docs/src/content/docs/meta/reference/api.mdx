@@ -219,3 +219,13 @@ and reStructuredText.
 | Export | Purpose |
 |---|---|
 | `DocmetaError` | The operational/usage failure the CLI maps to exit code `2`. Catch it to distinguish "manni meta could not run" from "the documents did not pass". |
+
+## Sibling tools
+
+Each other tool in the family is one namespace export. Its API cannot collide
+with the flat surface above, and a consumer can see which tool a name belongs
+to. Each namespace is documented on its own tool's pages.
+
+| Export | Purpose |
+|---|---|
+| `cite` | The citation tool's programmatic API. It carries the command cores `runCheck`, `runAdd` and `runUpdate`; the per-page check `checkCitations` and the minter `mintCitation`; the primitives `hashRange`, `parseSrc`, `obfuscatePath` and `parseStatements`; `toValidationResult`, which turns a page report into the `ValidationResult` above so the reporters and the baseline work unchanged; and `CiteError`, its exit-2 failure. `import { cite } from "@hawkeyexl/manni"`. See [the cite reference](/manni/cite/reference/cli/). |

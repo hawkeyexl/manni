@@ -40,3 +40,13 @@ meta:
         # `text`. Before it existed, every Starlight key on every page went
         # unchecked.
         - astro:starlight:0.41
+
+cite:
+  # What a bare `manni cite check` checks: the same published pages. A page
+  # that pins a sentence to a line of this repo's own source is checked here,
+  # against this checkout, so the tool's docs are held to the tool. One key
+  # only, for the same reason `meta:` has two: the root of `src:` paths, the
+  # salt and the severities all take their defaults, and a default is not
+  # ambient behaviour for the test suite the way a setting would be.
+  paths:
+    - "docs/src/content/docs/**/*.{md,mdx}"

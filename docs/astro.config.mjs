@@ -49,6 +49,35 @@ export default defineConfig({
             },
           ],
         },
+        // `cite` is the citation tool. Same shape as `meta`, minus a schemas
+        // track: the vocabulary a citation is written in is meta's, and lives
+        // on meta's proposals hub until it registers.
+        {
+          label: "cite",
+          items: [
+            { label: "Overview", link: "/cite/" },
+            {
+              label: "Get started",
+              items: [{ autogenerate: { directory: "cite/get-started" } }],
+            },
+            {
+              label: "Set up",
+              items: [{ autogenerate: { directory: "cite/set-up" } }],
+            },
+            {
+              label: "Run it in CI",
+              items: [{ autogenerate: { directory: "cite/ci" } }],
+            },
+            {
+              label: "Fix a failing check",
+              items: [{ autogenerate: { directory: "cite/fix" } }],
+            },
+            {
+              label: "Reference",
+              items: [{ autogenerate: { directory: "cite/reference" } }],
+            },
+          ],
+        },
       ],
     }),
   ],

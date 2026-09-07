@@ -1,0 +1,173 @@
+---
+title: Configuration reference
+description: "Every key under cite: in manni.config.yaml (paths, exclude, root, baseline, git, sources, salt, obfuscate, severity), with types, defaults, discovery rules, the salt's precedence, and the severity table."
+sidebar:
+  order: 2
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The citation tool reads the `cite:` key of the family's one config file,
+`manni.config.yaml`, so CI can run a bare `manni cite check`. The config is
+optional. Every key has a default, and the tool runs without one when you pass
+paths on the command line and the sources sit in the same repository as the
+pages.
+
+```yaml title="manni.config.yaml"
+meta:
+  paths: ["docs/**/*.md"]        # the metadata tool's section; cite never reads it
+cite:
+  paths: ["docs/**/*.md"]
+```
+
+## Keys
+
+| Key | Type | Default | Mirrors | Description |
+|---|---|---|---|---|
+| `paths` | `string[]` | none | positional `[paths...]` | Default files, directories, or globs to check or update when no positional paths are given. Relative to the config file. |
+| `exclude` | `string[]` | none | `--exclude` | Globs to exclude from directory and glob walks. `--exclude` values are appended, so both apply. |
+| `allowEmpty` | `boolean` | `false` | `--allow-empty` | Treat an input set that resolves to zero files as success instead of an error (exit 2). |
+| `respectGitignore` | `boolean` | `true` | `--no-gitignore` | Skip files `.gitignore` covers when expanding directories and globs. `--no-gitignore` overrides it for one run. |
+| `root` | `string` | git root | `--root` | The directory `src:` paths resolve from, relative to the config file. It may point outside the repository, at a second checkout. `--root` overrides it for one run. |
+| `baseline` | `string` | none | `--baseline` | Path to a [citation baseline](/manni/cite/reference/cli/#baselines), relative to the config file. Setting it turns on `--baseline` for every run; `--no-baseline` suppresses it for one. A bare `--write-baseline` records into this same file. |
+| `git` | `boolean` | `true` | `--no-git` | Consult git: index sources with `git ls-files`, record `HEAD` on `add`, and use history to tell `changed` from `never-true`. `--no-git` overrides it for one run. |
+| `sources` | `boolean` | `true` | `--no-sources` | Read the sources. `false` runs the page-side rules only and marks every source-side status `skipped`; `update` refuses under it. `--no-sources` overrides it for one run. |
+| `salt` | `string` | `""` | none | Keys obfuscated tokens and their pins. The environment variable `MANNI_CITE_SALT` wins over it; see [the salt](#the-salt). |
+| `obfuscate` | `boolean` | `false` | `--obfuscate` | Have `add` write every new citation as a `~token` with a keyed pin. `--obfuscate` turns it on for one run; there is no flag to turn it off. |
+| `severity` | mapping | the [defaults](#severity) | none | Per-rule severity, `error`, `warning` or `off`. Only the rules named are changed. |
+
+The section must be a YAML mapping; an empty `cite:` is the same as no keys.
+`paths` and `exclude` must be lists of strings; the booleans must be booleans,
+so a quoted `"false"` is rejected rather than read as on. A type error names
+the key and the type it wanted, and nothing else.
+
+### Unknown keys are errors
+
+Any key outside the table above is an operational error (exit 2) naming the
+key it did not recognize and listing the ones it accepts. The same rule holds
+inside `severity`: a rule the tool does not have, or a level other than
+`error`, `warning` and `off`, is an error naming the supported set.
+
+A dropped `allowEmtpy:` would otherwise leave a config that reads as
+configured and is not. The rule also means a config written for a newer manni
+that carries a key this version does not know is rejected outright, so pin
+the version wherever the gate runs.
+
+<Aside type="note" title="Values are never echoed">
+An error about a key says which key and what type it wanted. It never quotes
+the offending value, because `salt` is a secret and a CI log is where these
+messages end up. A misspelled severity **level** is the one exception: a level
+is not a secret, so `eror` is quoted back as the typo it is.
+</Aside>
+
+## Discovery
+
+The tool looks for `manni.config.yaml` (then `manni.config.yml`) in the
+working directory and each ancestor, stopping at the nearest `.git` boundary.
+The first file found wins; ancestor files are never merged. A family file that
+exists but has no `cite:` key belongs to a sibling tool, and discovery keeps
+looking up the tree. There is no pre-family filename for this tool, so nothing
+else is read.
+
+`-c <path>` names the file outright and must exist. `--no-config` skips
+discovery and runs on the defaults alone. When a config governs the run,
+`pretty` output says so on stderr; the machine formats stay clean.
+
+### What relative paths are relative to
+
+| Path | Relative to |
+|---|---|
+| `paths:` and `exclude:` | the config file's directory |
+| `root:` and `baseline:` | the config file's directory |
+| positional `[paths...]` | the working directory |
+| `--root` and `--baseline <path>` | the working directory |
+
+So `cd docs && manni cite check` reaches the same files, the same root and the
+same baseline as a run from the repository root, and baseline fingerprints
+match whichever directory the command ran from.
+
+## The salt
+
+The salt keys every obfuscated token and every keyed pin. It comes from three
+places, in this order:
+
+1. The environment variable `MANNI_CITE_SALT`, when set.
+2. `cite.salt` in the config.
+3. The empty string.
+
+The environment wins so that a CI secret can key a private checkout while the
+public config file carries no salt at all. A config `salt:` is for a private
+repository whose config is itself private. With the empty string, a guessable
+path is brute-forceable: sixteen hex digits of `sha256("\n" + path)` is a
+cheap oracle for anyone who can guess `lib/limits.ts`. A public page that
+cites a private source wants a real salt behind it.
+
+A token or a pin minted under one salt does not resolve under another. Change
+the salt and every obfuscated citation reads as `missing` until it is minted
+again.
+
+## Example
+
+The two-checkout layout, which is the reason `root`, `sources` and `obfuscate`
+exist. The pages are in the public docs repository, so SARIF locations
+resolve; the sources are reached through `--root` from a private CI job that
+checks out both:
+
+```yaml title="manni.config.yaml (public docs repository)"
+cite:
+  paths: ["src/content/docs/**/*.{md,mdx}"]
+  obfuscate: true
+  severity:
+    moved: error          # this repo wants a moved pin to block, not warn
+```
+
+```sh
+# Public CI, no access to the code: page-side rules only, exit 0 on a clean page.
+manni cite check --no-sources
+
+# Private CI: docs and code checked out side by side; from the docs checkout.
+MANNI_CITE_SALT="$CITE_SALT" manni cite check --root ../code -f sarif > cite.sarif
+```
+
+A single-repository setup needs none of that:
+
+```yaml title="manni.config.yaml (pages and sources in one repository)"
+cite:
+  paths: ["docs/**/*.md"]
+  baseline: .manni-cite-baseline.json
+```
+
+## Severity
+
+Every rule has a default severity, and `severity:` moves any of them. `error`
+counts toward exit 1, `warning` is reported and never moves the exit code, and
+`off` is not reported at all. The rules themselves are defined on the
+[citations reference](/manni/cite/reference/citations/#statuses-and-rules).
+
+| Rule | Default | Why |
+|---|---|---|
+| `current` | `off` | Not a finding. `pretty` still lists the citation as `✓`. |
+| `moved` | `warning` | `update` fixes it mechanically, and a PR job that failed on a two-line insert above a cited line would make the ratchet noisy. |
+| `claim-ambiguous` | `warning` | The claim was found; the tool only cannot say which occurrence. |
+| `moved-ambiguous` | `error` | Two or more copies of the cited lines; the tool will not guess. |
+| `changed` | `error` | The lines the sentence rests on are gone from where they were. |
+| `missing` | `error` | The path is not a tracked file under the root, or the token resolves to nothing. |
+| `never-true` | `error` | The pin did not match even at the commit it claims to have been minted at. |
+| `claim-missing` | `error` | The sentence is not in the body. |
+| `statement-orphan` | `error` | An inline reference names an id no frontmatter entry has. |
+| `statement-invalid` | `error` | A statement the tool cannot read, or one that its format does not allow. |
+| `entry-invalid` | `error` | A frontmatter entry the schema refuses, or a duplicate id. |
+| `quote-drift` | `error` | The fenced block does not reproduce the cited lines. |
+
+```yaml title="manni.config.yaml"
+cite:
+  severity:
+    moved: error        # a moved pin blocks until update runs
+    claim-ambiguous: off
+```
+
+A rule set to `off` produces no finding in any format and never enters a
+baseline. A rule set to `warning` renders as `↕` in `pretty`, `::warning` in
+`github`, `level: warning` in SARIF, and a passing testcase in JUnit, exactly
+as the metadata tool's
+[severity](/manni/meta/reference/output-and-exit-codes/#severity) does.

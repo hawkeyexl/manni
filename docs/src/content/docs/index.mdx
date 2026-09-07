@@ -1,6 +1,6 @@
 ---
 title: manni
-description: One command line for documentation that is meant to be checked. Today it validates document metadata against JSON Schema; more tools join it as subcommands.
+description: One command line for documentation that is meant to be checked. Today it validates document metadata against JSON Schema and checks that cited source lines still say what the page says; more tools join it as subcommands.
 template: splash
 hero:
   tagline: One command line for documentation that is meant to be checked.
@@ -34,10 +34,17 @@ npx @hawkeyexl/manni meta validate docs/
     href="/manni/meta/"
     description="Validate the presence and format of document metadata against JSON Schema, built for CI. Read, query and fill it too. Formerly published as docmeta."
   />
+  <LinkCard
+    title="cite"
+    href="/manni/cite/"
+    description="Pin a sentence to the source lines it rests on, and find out when those lines move or change. From git alone, no model, no network."
+  />
 </CardGrid>
 
-More tools are folded in as they become ready to ship. Until one lands, its
-subcommand does not exist, and `manni --help` lists exactly what does.
+`meta` checks what a page says about itself; `cite` checks that what a page
+says about the code is still true. More tools are folded in as they become
+ready to ship. Until one lands, its subcommand does not exist, and
+`manni --help` lists exactly what does.
 
 ## Coming from docmeta?
 

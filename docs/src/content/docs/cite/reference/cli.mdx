@@ -1,0 +1,352 @@
+---
+title: CLI reference
+description: Every manni cite command, argument, and flag (check, add, and update), with exit codes, the citation baseline, and the two-checkout layout for private sources.
+sidebar:
+  order: 1
+citations:
+  - id: check
+    claim: Check every citation in the given pages against its source.
+    src: src/cite/cli.ts:187-188
+    integrity: sha256-a5f8b50113ec46c738fe1fb80886b3109f7e1a86ef3e009fb690a151c40351b9
+    commit: 4f2bd19f0d262f41f1bafde228b62899b4124839
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+{/* The command, argument, and option tables on this page are drift-checked
+    against src/cite/cli.ts by scripts/check-cli-reference.mjs (npm run
+    docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
+    sync with the code; descriptions are free-form.
+
+    This page also carries one real citation of src/cite/cli.ts in its
+    frontmatter, checked by `manni cite check` from the repo root against the
+    repo's own manni.config.yaml. If it reads as changed, the description of
+    the check command moved under it: re-mint with `manni cite update
+    --accept --only check docs/src/content/docs/cite/reference/cli.mdx`. */}
+
+manni cite exposes three subcommands, [`check`](#cite-check), [`add`](#cite-add),
+and [`update`](#cite-update), and no default. A bare `manni cite` prints usage
+and exits `2`, because nothing here is safe to run by accident: `check` can
+fail a build, and `add` and `update` write to pages. `check` and `update` take
+paths and share the metadata tool's [input
+model](/manni/meta/reference/cli/#shared-input-model); `add` takes one page and
+one source.
+
+```sh
+manni cite [options] <command> [command options] [arguments]
+```
+
+Global options (`-V, --version`, `-h, --help`) are the umbrella's, documented
+once on the [metadata tool's page](/manni/meta/reference/cli/#global-options).
+
+## `cite`
+
+The citation tool. Every command on this page lives under it. `cite` accepts
+its own `-V, --version`, which reports the manni version, and `-h, --help`.
+
+```sh
+manni cite [options] <command> [command options] [arguments]
+```
+
+### Options
+
+| Option | Description |
+|---|---|
+| `--no-color` | Disable colored output. Color applies to `pretty` output only, on a TTY, and never under `NO_COLOR`; the same [rules](/manni/meta/reference/output-and-exit-codes/#color-behavior) as the metadata tool. |
+
+## `cite check`
+
+{/* cite check */}
+Check every citation in the given pages against its source. Each entry's
+cited lines are hashed under the [one
+rule](/manni/cite/reference/citations/#the-hashing-rule) and compared with its
+pin, and the entry is classified `current`, `moved`, `moved-ambiguous`,
+`changed`, `never-true` or `missing`. The page-side rules (a claim that is not
+in the body, a statement that names no entry, an entry the schema refuses)
+run whether or not the sources are reachable. Every status and rule, with its
+default severity, is on the [citations
+reference](/manni/cite/reference/citations/#statuses-and-rules).
+
+```sh
+manni cite check [paths...] [options]
+```
+
+Findings ride the metadata tool's reporters and its baseline. `-f github`,
+`sarif` and `junit` produce the same shapes
+[`meta validate`](/manni/meta/reference/output-and-exit-codes/) does, under the
+rule id `manni:cite/<rule>`, and `--baseline` is the same ratchet with its own
+file. No model and no network are involved: a clean corpus costs one hash per
+citation, and git is consulted only when a pin does not hold.
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to check. Use `-` to read a page from stdin, with `--as`. Optional, and falls back to config `paths:` under `cite:`. No paths and no config is an error (exit 2). See the [shared input model](/manni/meta/reference/cli/#shared-input-model). |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Appended to config `exclude:`. |
+| `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) (extractor name, e.g. `markdown`) for every input. Required when reading from stdin. |
+| `-f, --format` | `<pretty\|json\|github\|sarif\|junit>` | `pretty` | Output format. See [output](#output). An unknown value is an error (exit 2). |
+| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/cite/reference/configuration/). When set, the file must exist or the run exits 2. |
+| `--no-config` | n/a | off | Ignore any discovered config file. `-c` and `--no-config` set the same option, so the one written later on the command line wins. |
+| `-q, --quiet` | n/a | off | In `pretty` output, hide current citations and clean files. Has no effect on the machine formats. |
+| `--allow-empty` | n/a | off | Treat zero matched files as success instead of an error (exit 2). See [empty input sets](/manni/meta/reference/cli/#empty-input-sets). |
+| `--no-gitignore` | n/a | on | Check files `.gitignore` covers as well. Filtering is on by default; see [`.gitignore`](/manni/meta/reference/cli/#gitignore). Overrides config `respectGitignore:`. |
+| `--baseline` | `[path]` | config `baseline:`, else `.manni-cite-baseline.json` | Compare findings against a recorded [baseline](#baselines) and fail only on new ones. The value is optional. A named file that does not exist is an error (exit 2). |
+| `--write-baseline` | `[path]` | config `baseline:`, else `.manni-cite-baseline.json` | Record this run's findings as the baseline, then exit 0. Wins over `--baseline`. |
+| `--no-baseline` | n/a | off | Ignore a baseline supplied by config `baseline:` for this run. |
+| `--no-git` | n/a | on | Skip git entirely. No `never-true` verdicts, no history, no commit subjects under `--show-diff`, and sources are indexed by a directory walk instead of `git ls-files`. Overrides config `git:`. |
+| `--no-sources` | n/a | on | Run the page-side rules only. Every source-side status is `skipped`, which is not a finding. For a public docs checkout that does not have the code beside it. Overrides config `sources:`. |
+| `--root` | `<dir>` | — | The directory `src:` paths resolve from, relative to the working directory. It may point at another checkout. Without it: config `root:`, else the nearest git root above the working directory, else the working directory with a notice on stderr. See [where sources resolve from](#where-sources-resolve-from). |
+| `--show-diff` | n/a | off | In `pretty` output, print the commit subjects and the diff of the source since the pin's commit under each `changed` row. The diff is capped, and the row says how many lines were left out. |
+| `--reveal` | n/a | off | In `pretty` output, print the resolved path beside an obfuscated token. Nothing else ever prints it; see the [output rule](/manni/cite/reference/citations/#the-output-rule). |
+
+### Output
+
+`pretty` prints one line per file and one per citation beneath it, with the
+source spelled exactly as the page spelled it, and a summary:
+
+```
+✗ docs/limits.md
+    ✓ max-files       lib/limits.ts:1   current
+    ↕ retries         lib/limits.ts:3   moved -> lib/limits.ts:5   (line 14)
+    ✗ fetch-timeout   lib/limits.ts:2   changed since 3f9c2a1, 1 commit   (line 9)
+
+1 file checked, 0 passed, 1 failed, 2 findings (1 warning)
+```
+
+`✓` is current, `↕` a warning, `✗` an error, and `·` a citation that was
+`skipped` or a finding the baseline forgave. `(line N)` is the sentence or
+statement the citation anchors to, not the frontmatter entry. A file is `✗`
+when it holds an error-severity finding and `⚠` when it holds warnings only.
+
+`json` prints `{ summary, pages }`. `summary` has the metadata tool's shape
+(`files`, `passed`, `failed`, `errors`, and `warnings`, `gitignoreSkipped`,
+`baseline` when non-zero). Each page carries its `citations`, each with its
+`status` and, for a move, `newSrc` or `candidates`, and its `findings`, each
+with `rule`, `ruleId`, `severity`, `message`, `line`, `id` and `src`. The
+resolved path of a token, the diff and the commit subjects are never in it.
+
+`github` prints one annotation per finding, `::warning` for a warning:
+
+```
+::error file=docs/limits.md,line=9,title=manni:cite/changed::fetch-timeout (lib/limits.ts:2): changed since 3f9c2a1, 1 commit
+```
+
+`sarif` and `junit` are the metadata tool's renderers over the same findings:
+rule id `manni:cite/<rule>`, `level` or a passing testcase for a warning,
+`partialFingerprints` matching the baseline, and JUnit testcases under the
+classname `manni.cite`.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | No file holds an error-severity finding the baseline does not already record. Warnings never move the exit code, so a run of `moved` citations exits 0. |
+| `1` | At least one file holds an unbaselined error-severity finding: a `changed`, `never-true`, `missing` or `moved-ambiguous` citation, or a page-side rule at its default severity. |
+| `2` | Operational or usage error. No inputs and no config, no files matched, an unknown `--format` or `--as`, stdin without `--as`, a missing `-c` file, a missing `--baseline` file, a `--root` that does not exist, or a config key the tool does not know. |
+
+### Baselines
+
+A baseline records the findings that exist today so that a run fails only on
+findings that are **new**. It is the metadata tool's
+[ratchet](/manni/meta/reference/cli/#baselines), with its own default file,
+`.manni-cite-baseline.json`, so a `cite --write-baseline` can never erase the
+metadata backlog and the reverse cannot happen either.
+
+```sh
+manni cite check --write-baseline   # record today's findings, then exit 0
+manni cite check --baseline         # from now on, fail only on new ones
+```
+
+The fingerprint is stable across a **move** and across a **line shift**: its
+subject is the entry's `id`, or its `integrity` when it has none, and neither
+changes when `update` rewrites `lib/limits.ts:2` to `lib/limits.ts:4`. It
+changes only when the pin is re-minted, which is the act that resolves the
+finding. A `--baseline` file that does not exist is exit 2, with the remedy
+named: record one with `--write-baseline`, or drop the flag.
+
+### Where sources resolve from
+
+A `src` is a path relative to one **root**, and the root is settled once per
+run: `--root` if given, relative to the working directory; else config
+`root:`, relative to the config file; else the nearest git root above the
+working directory; else the working directory itself, with a notice on
+stderr. Sources are then resolved through **tracked files only**, from
+`git ls-files`, under a realpath containment check, so a symlink out of the
+root is `missing` rather than read. Without git, or under `--no-git`, a walk
+that follows no symlinks stands in.
+
+The root may be another checkout. That is the two-checkout layout: the pages
+live in the docs repository, so SARIF locations resolve, and the sources are
+reached through `--root ../code`. See [Public docs, private
+code](/manni/cite/set-up/public-docs-private-code/).
+
+### Examples
+
+```sh
+manni cite check docs/                              # walk a directory
+manni cite check "docs/**/*.md" -f github           # CI annotations
+manni cite check -f sarif > cite.sarif              # code scanning
+manni cite check --show-diff docs/limits.md         # see what changed, and since when
+manni cite check --baseline                         # fail only on new findings
+manni cite check --no-sources docs/                 # public docs repo: page-side rules only
+MANNI_CITE_SALT=$SECRET manni cite check --root ../code --reveal docs/
+cat page.md | manni cite check - --as markdown      # read from stdin
+```
+
+## `cite add`
+
+Mint a citation for a source range and write it to a page. `add` reads the
+range, hashes it under the rule, records `HEAD` as the commit, and writes the
+entry to the page's frontmatter, or, with `--inline`, as a statement in the
+body. It anchors the entry to a sentence (`--claim`) or to a fenced block
+(`--quote`), and refuses to write a citation it can already see is broken: a
+claim the page does not contain, a block that does not reproduce the range, an
+id the page already uses.
+
+```sh
+manni cite add <page> <src> [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `<page>` | The page to cite from, relative to the working directory. `-` reads the page from stdin and writes the rewritten page to stdout, with the report on stderr; that needs `--as`. |
+| `<src>` | The source: `path`, `path:L`, `path:L1-L2`, or `~token` with the same line forms, relative to the [root](#where-sources-resolve-from). A bare path pins the whole file. `L2` before `L1`, a line past the end of the file, and a path that is not a tracked file under the root are each refused (exit 2). |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--claim` | `<text>` | n/a | The sentence the citation supports, verbatim. It must occur exactly once in the body, compared with whitespace collapsed so a soft-wrapped sentence matches. Zero occurrences is a refusal naming the sentence; two or more is a refusal naming the lines, and `--id` plus a reference statement above the intended paragraph is the remedy. |
+| `--id` | `<id>` | n/a | A kebab-case name for the entry, unique within the page. With `--claim`, a reference statement naming it is written above the claim's paragraph, unless one is already there, which is how a repeated claim is disambiguated. Needs `--claim` or `--quote`: an id nothing references is refused. |
+| `--quote` | n/a | off | The page reproduces the cited lines in a fenced block, and that block is the anchor. Alone, exactly one block in the body must reproduce the range; with `--claim`, the first block after the claim's paragraph must. Refused on `html`, `xml` and `rst`, which have no fence the tool can locate. |
+| `--inline` | n/a | off | Write the entry as an inline JSON statement above the anchor instead of a frontmatter entry. Needs `--claim` or `--quote`, since a statement anchors what follows it. Refused on `asciidoc` and `rst`, whose statement forms carry an id only. The only channel on an `html` or `xml` page, which has no frontmatter to write to. |
+| `--obfuscate` | n/a | config `obfuscate:` | Write `src` as a `~token` and a pin keyed by the salt, so the page carries neither the path nor a verifier for the line. See [obfuscated sources](/manni/cite/reference/citations/#obfuscated-sources). |
+| `--no-commit` | n/a | on | Do not record `HEAD`. Without a commit, a later check can still say the lines changed, but not since when, nor whether the pin was ever true. Off a git checkout no commit is recorded either way. |
+| `--dry-run` | n/a | off | Print the unified diff of the page and write nothing. The report line goes to stderr. |
+| `--as` | `<format>` | n/a | Force the page's [format](/manni/meta/reference/formats/). Required with `-`. |
+| `--root` | `<dir>` | — | The directory `<src>` resolves from, exactly as on [`check`](#where-sources-resolve-from). |
+| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/cite/reference/configuration/), read for `root`, `salt`, `obfuscate` and `git`. |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+
+Neither `--claim` nor `--quote` writes a **bare pin** to the frontmatter:
+`src`, `integrity` and `commit`, with nothing anchoring it. That is
+`source-of-truth` at line granularity: this page rests on these lines, say so
+when they change. `--inline` and `--id` are refused on a bare pin, because
+nothing in the body would reference it.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | The citation was written, or printed under `--dry-run`. The report line says what was added, where, and which line it anchors to. |
+| `2` | A refusal. The page or the source cannot be read, the range is invalid or out of range, the source is not a tracked file under the root, the claim is absent or repeated, no block reproduces the range, the id is taken, or the flags do not compose on this page's format. Nothing is written. |
+
+There is no exit `1`. `add` either writes a citation it has verified, or it
+does not write.
+
+### Examples
+
+```sh
+manni cite add docs/limits.md lib/limits.ts:2 --claim "The fetch timeout is 10 seconds." --id fetch-timeout
+manni cite add docs/limits.md lib/limits.ts:1-3 --quote            # anchor to the block that reproduces it
+manni cite add docs/limits.md lib/limits.ts:1-3 --quote --inline   # as a statement above that block
+manni cite add docs/limits.md lib/limits.ts --dry-run              # a bare pin over the whole file, previewed
+manni cite add docs/limits.md lib/limits.ts:2 --claim "…" --obfuscate --root ../code
+cat page.md | manni cite add - lib/limits.ts:2 --as markdown --claim "…" > out.md
+```
+
+The report line names the pin so a reviewer can read it off the terminal:
+
+```
+docs/limits.md: added fetch-timeout (lib/limits.ts:2, sha256-78af1d33…, 3f9c2a1) to frontmatter; reference at line 8, claim at line 9
+```
+
+## `cite update`
+
+Rewrite moved citations in place; with `--accept`, re-mint changed ones. A
+`moved` entry's `src` is spliced textually, so the rest of the frontmatter,
+its comments and quoting included, is untouched, and an inline statement is
+rewritten in its own form. An obfuscated token stays a token. `update` needs
+the sources, so `--no-sources` and config `sources: false` are refused (exit
+2).
+
+```sh
+manni cite update [paths...] [options]
+```
+
+<Aside type="caution">
+`update` **writes to your pages by default**, like `fill` and `query` on the
+metadata tool. Pass `--dry-run` to see the diffs first, and run it on a clean
+working tree so the rewrite is easy to review.
+</Aside>
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to update. Use `-` to read a page from stdin, with `--as`. Optional, and falls back to config `paths:` under `cite:`. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Appended to config `exclude:`. |
+| `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) for every input. Required when reading from stdin. |
+| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/cite/reference/configuration/). |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `--allow-empty` | n/a | off | Treat zero matched files as success instead of an error (exit 2). |
+| `--no-gitignore` | n/a | on | Update files `.gitignore` covers as well. Overrides config `respectGitignore:`. |
+| `--no-git` | n/a | on | Skip git: no `never-true`, no history. A re-mint under `--accept` then records no commit. |
+| `--no-sources` | n/a | on | Refused. `update` needs the sources to know where an entry moved to. |
+| `--root` | `<dir>` | — | The directory `src:` paths resolve from, exactly as on [`check`](#where-sources-resolve-from). |
+| `--accept` | n/a | off | Re-mint every `changed` and `never-true` entry at `HEAD`: a new `integrity`, and a new `commit` where the entry had one. The report prints the old and the new pin, so the acceptance is visible in the log as well as in the diff. |
+| `--only` | `<id>` | n/a | Limit the rewrite to entries with this id. Repeatable. Entries without an id cannot be named, so a bare pin is reached only by an unfiltered run. |
+| `--dry-run` | n/a | off | Print the diffs and the report; write nothing. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints the run as `{ pages, rewritten, skipped, exitCode }`, with each page's `rewritten` list (`id`, `from`, `to`, `reason`), its `skipped` findings, and whether it was `written`. An unknown value is an error (exit 2). |
+
+### What is rewritten, and what is not
+
+| Status | Without `--accept` | With `--accept` |
+|---|---|---|
+| `moved` | `src` rewritten to the new range. | The same. |
+| `changed`, `never-true` | Skipped, and reported. | `integrity` (and `commit`) re-minted at `HEAD`. |
+| `moved-ambiguous` | Skipped: the tool will not guess which copy. Widen the range and re-add. | The same. |
+| `missing` | Skipped: a path that is gone cannot be rewritten. `add` is the remedy. | The same. |
+| `current` | Left alone. | Left alone. |
+
+A page-side finding (`claim-missing`, `statement-orphan`, an invalid entry) is
+never rewritten, and is reported as skipped.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Everything the run could rewrite was rewritten, or previewed under `--dry-run`, and nothing was skipped with an error-severity finding. |
+| `1` | Something was skipped with an error-severity finding: a `changed` entry without `--accept`, a `moved-ambiguous` one, a `missing` one, a page-side rule. Work is left undone, which is what `fill`'s exit 1 means too. |
+| `2` | Operational or usage error, including `--no-sources`, `sources: false`, an unknown `--format`, and everything `check` exits 2 for. |
+
+### Examples
+
+```sh
+manni cite update docs/                                   # rewrite moved entries
+manni cite update --dry-run docs/                         # see the diffs first
+manni cite update --accept --only fetch-timeout docs/limits.md
+manni cite update --accept --dry-run -f json docs/        # what would be re-minted, as data
+```
+
+The report names each rewrite and the reason:
+
+```
+docs/limits.md: fetch-timeout  lib/limits.ts:2 -> lib/limits.ts:4  (moved)
+1 citation rewritten in 1 file, 0 skipped
+```

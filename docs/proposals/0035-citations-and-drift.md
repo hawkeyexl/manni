@@ -262,8 +262,8 @@ fallback, `--ext`, `--exclude`, `-c`, `--no-config`, `--allow-empty`,
 `--no-gitignore`. Config `cite:` mirrors the flags, plus `salt`, `obfuscate`,
 `root` and a `severity` map; an unknown key, rule or level is a `CiteError`
 that names what is supported and never echoes the value. `--root` defaults to
-the git root, else the config's directory, else cwd, and may point at another
-checkout.
+`cite.root` from the config, else the git root, else cwd, and may point at
+another checkout.
 
 The condensed ladder. The fixture page cites `lib/limits.ts:2`:
 
@@ -412,8 +412,9 @@ checkout is reached by `--root`, not by a path that leaves the root.
 `src:` is repo-root-relative, and the first implementation resolved it from
 cwd, so `cd docs && manni cite check` broke every pin.
 
-**Changed as a result:** the root is the git root, else the config file's
-directory, else cwd, and `--root` overrides all three. Sources resolve through
+**Changed as a result:** the root is `--root`, else `cite.root` from the
+config, resolved against the config file's directory, else the git root, else
+cwd. Sources resolve through
 `git ls-files` under a realpath containment check, so a symlink out of the root
 is `missing`, not read. Without git, a walk that does not follow symlinks.
 

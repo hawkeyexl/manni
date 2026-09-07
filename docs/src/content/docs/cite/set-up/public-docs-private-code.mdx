@@ -1,0 +1,279 @@
+---
+title: Public docs, private code
+description: Cite a private code repository from a public docs site without publishing its paths, and without publishing a verifier for its lines. The two-repo layout, the token, the salt, and what still shows.
+---
+
+import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+Your docs site is public and the code it describes is not. You still want every
+sentence that rests on a line of that code to be checked. A plain citation
+would publish two things you may not want published: the path inside the
+private repository, and a hash that lets anyone with a guess about a short line
+confirm it. This page is the layout that avoids both, and an honest account of
+what a reader of the public site can still see.
+
+The mechanism has three parts. A **token** stands in for the path. A **keyed
+pin** replaces the plain hash. And **two CI jobs** split the check: the public
+one runs the rules that need only the page, the private one runs the rules
+that need the source.
+
+## What a token is, and is not
+
+With `--obfuscate`, or `obfuscate: true` in config, `add` writes the source as
+`~` followed by sixteen hex characters instead of a path:
+
+```yaml
+citations:
+  - id: retries
+    claim: Retries default to 3.
+    src: ~fd8c031de1743e75:5
+    integrity: sha256-a69810da77ae49d08f3c2d2f03424c245d90e3edaa6dc5c1918eeb3f37edcc95
+    commit: 9721b1b1ecd73447b91d7ff10b4c4f8e6639cbc0
+```
+
+The token is the first sixteen hex digits of `sha256(salt + "\n" + path)`,
+where `path` is spelled exactly as a plain `src` would spell it. The pin is
+keyed the same way: `sha256(salt + "\n" + text)` over the cited lines, rather
+than `sha256(text)`. The salt comes from the `MANNI_CITE_SALT` environment
+variable, else `salt:` under `cite:` in config, else the empty string.
+
+A token **is** a stable name for one path. The same salt and the same path
+always give the same token, on every page, so `update` can recognise one file
+across pages and a checkout that has the salt can resolve it.
+
+A token **is not** encryption, and it is not reversible. Nothing on the page
+or in the tool turns a token back into a path. Resolution is a lookup: the
+private checkout hashes every tracked path with the salt and finds the one
+that matches. That is also why there is no manifest to keep in sync or to
+leak.
+
+Two limits are worth stating plainly:
+
+- **Without a salt, a guessable path is brute-forceable.** `lib/limits.ts` is
+  a short string, and anyone can hash short strings. The salt is what makes
+  the token safe; set one.
+- **Tokens are stable across pages.** A reader of the public site can tell
+  that three pages cite the same private file, and can see when its line
+  numbers move. That is the accepted cost of `update` being able to recognise
+  the file. Nothing about the file's name or contents is visible.
+
+## What still shows
+
+Obfuscation hides the path and keys the pin. It does not touch anything else
+in the entry, and the rest of the entry is plain text:
+
+| Field | Visible on the public page | So |
+| --- | --- | --- |
+| `id` | Yes, in full | An id names the claim, and `fetch-timeout` says what a token cannot. Choose ids you would put in a public heading. |
+| `claim` | Yes, in full | The claim is the sentence on the page, which is public anyway. |
+| `commit` | Yes, in full | A commit hash reveals nothing about the repository's contents, but it does let a reader with access line it up with history. |
+| Line numbers | Yes | `~fd8c031de1743e75:5` says line 5. Combined with a stable token, that is how a reader sees a file move. |
+| `src` path | No | The token, and only the token. |
+| `integrity` | Keyed | A reader cannot hash a guess at the line and compare, because the salt is in the hash. |
+
+**Keep the salt out of public files.** It belongs in a CI secret and in the
+environment of anyone minting citations, never in a committed
+`manni.config.yaml` of a public repository. The environment variable wins
+over the config key precisely so the public config can leave `salt:` unset.
+If the salt is ever rotated, every token and every keyed pin stops resolving,
+and each obfuscated citation has to be added again.
+
+<Aside type="note" title="Findings never print the resolved path">
+  Every reporter spells a source exactly as the page spelled it: `~fd8c031de1743e75:5`,
+  never `lib/limits.ts`. The resolved path exists only in memory and reaches
+  output only through the pretty reporter, only under `--reveal`. So the
+  `github`, `json`, `sarif` and `junit` outputs of the private job are safe to
+  attach to a public pull request or upload to code scanning. A test in the
+  repository runs every reporter against a private path and a sentinel salt
+  and asserts neither string appears.
+</Aside>
+
+## The layout
+
+The pages stay in the docs repository, where they are, so a SARIF upload's
+file URIs resolve against the repository they belong to. The sources are
+reached through `--root`, which may point at any directory, including another
+checkout. In CI that means the two repositories are checked out side by side,
+and the check runs from the docs checkout.
+
+<Steps>
+
+1. **Configure the docs repository.** This file is public, so it carries no
+   salt. It does turn obfuscation on, so nobody has to remember `--obfuscate`:
+
+   ```yaml title="manni.config.yaml (public docs repo)"
+   cite:
+     paths: ["src/content/docs/**/*.{md,mdx}"]
+     obfuscate: true
+   ```
+
+2. **Mint citations from the docs checkout.** With the code checked out
+   beside it, at `../code`, and the salt in the environment:
+
+   ```sh
+   MANNI_CITE_SALT=… manni cite add src/content/docs/limits.md lib/limits.ts:3 --claim "It is not configurable." --root ../code --dry-run
+   ```
+
+   ```diff
+   --- src/content/docs/limits.md
+   +++ src/content/docs/limits.md
+   @@ -13,2 +13,6 @@
+        commit: 9721b1b1ecd73447b91d7ff10b4c4f8e6639cbc0
+   +  - claim: It is not configurable.
+   +    src: ~fd8c031de1743e75:3
+   +    integrity: sha256-6b68a169c8407883fd7055f62291e2ab5a74c6ef1e116cc35315da2dfa6bed99
+   +    commit: 8cf8727e45dd75e79ab8637356d396b879e7e159
+    ---
+   ```
+
+   The source is typed as a path, because you know it. The page gets the
+   token.
+
+3. **Run the public job with `--no-sources`.** It has no salt and no code, so
+   it runs the page-side rules only: every statement names a real entry,
+   every entry is well-formed, every claim is on the page. Every source status
+   is `skipped`, which is not a finding:
+
+   ```sh
+   manni cite check --no-sources
+   ```
+
+   ```
+   ✓ src/content/docs/limits.md
+       · fetch-timeout   lib/limits.ts:4   skipped
+       · retries   ~fd8c031de1743e75:5   skipped
+       · inline   lib/limits.ts:3-5   skipped
+
+   1 file checked, 1 passed, 0 failed, 0 findings
+   ```
+
+4. **Run the private job with the salt and `--root`.** From the docs checkout,
+   with the code beside it and the salt from a secret:
+
+   ```sh
+   MANNI_CITE_SALT=… manni cite check --root ../code
+   ```
+
+   ```
+   ✓ src/content/docs/limits.md
+       ✓ fetch-timeout   lib/limits.ts:4   current
+       ✓ retries   ~fd8c031de1743e75:5   current
+       ✓ inline   lib/limits.ts:3-5   current
+
+   1 file checked, 1 passed, 0 failed, 0 findings
+   ```
+
+   Add `-f sarif` or `-f github` here as you would anywhere; see
+   [Run it in CI](/manni/cite/ci/).
+
+</Steps>
+
+Locally, when you want to see which file a token is, `--reveal` prints the
+resolved path beside it, in the pretty reporter only:
+
+```sh
+MANNI_CITE_SALT=… manni cite check --root ../code --reveal
+```
+
+```
+✓ src/content/docs/limits.md
+    ✓ fetch-timeout   lib/limits.ts:4 (lib/limits.ts)   current
+    ✓ retries   ~fd8c031de1743e75:5 (lib/limits.ts)   current
+    ✓ inline   lib/limits.ts:3-5 (lib/limits.ts)   current
+```
+
+### The two jobs in GitHub Actions
+
+```yaml title=".github/workflows/citations.yml (public docs repo)"
+name: Citations
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # Page-side rules only. Runs on every PR, needs no secret and no code.
+  pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npx -y @hawkeyexl/manni cite check --no-sources -f github
+
+  # Source-side rules. Checks the code out beside the docs and resolves
+  # tokens with the salt. Runs on push only, so a fork's PR never sees the
+  # secret.
+  sources:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: docs
+      - uses: actions/checkout@v4
+        with:
+          repository: your-org/code
+          token: ${{ secrets.CODE_READ_TOKEN }}
+          path: code
+          fetch-depth: 0   # never-true and diffs need the pin's commit
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - working-directory: docs
+        env:
+          MANNI_CITE_SALT: ${{ secrets.MANNI_CITE_SALT }}
+        run: npx -y @hawkeyexl/manni cite check --root ../code -f sarif > ../cite.sarif
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: cite.sarif
+```
+
+The private checkout wants `fetch-depth: 0`. A shallow clone cannot show the
+file at the commit a pin was minted at, so `never-true` and the diff degrade
+to `changed (history unavailable)`; [Run it in CI](/manni/cite/ci/#full-history)
+explains.
+
+## When a token does not resolve
+
+Run the private job without the salt, or with the wrong `--root`, and every
+obfuscated citation is `missing`. The message says which two things to check:
+
+```
+✗ docs/limits.md
+    ✓ fetch-timeout   lib/limits.ts:4   current
+    ✗ retries   ~fd8c031de1743e75:5   missing (no tracked file matches; wrong --root or salt?)   (line 22)
+
+1 file checked, 0 passed, 1 failed, 1 finding
+```
+
+Tokens resolve against **tracked files only**, through `git ls-files` under
+the root, with a real-path containment check. A file that is not committed,
+or is reached through a symlink out of the root, does not match. That is
+deliberate: a resolver that walked an arbitrary directory would let
+`--root /` probe a machine for matching files.
+
+## Next steps
+
+<CardGrid>
+  <LinkCard
+    title="Run it in CI"
+    href="/manni/cite/ci/"
+    description="Output formats, exit codes, the baseline ramp, and why the checkout needs full history."
+  />
+  <LinkCard
+    title="Configuration reference"
+    href="/manni/cite/reference/configuration/"
+    description="Every cite: key, including salt, obfuscate, root and sources."
+  />
+</CardGrid>
+
+{/* Doc Detective inline tests: verify this page's documented manni cite behavior
+    against the local build, exposed as `manni cite` / `npx @hawkeyexl/manni cite` via `npm link`
+    (see .github/workflows/docs-as-tests.yml), over committed fixtures.
+    Run with `npx doc-detective`. Config: .doc-detective.json. */}
+{/* test {"testId":"cite-public-private","description":"The public job and the token-not-resolving case, over the committed obfuscated fixture."} */}
+{/* step {"description":"The public job: --no-sources reports every source status as skipped, which is not a finding, and exits 0.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite --no-sources test/fixtures/cite/pages/obfuscated.md","exitCodes":[0],"stdio":"/~e22f931c1370b13e:2   skipped/"}} */}
+{/* step {"description":"Without the salt, a token resolves to nothing and the finding says what to check.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/obfuscated.md","exitCodes":[1],"stdio":"missing (no tracked file matches; wrong --root or salt?)"}} */}
+{/* test end */}

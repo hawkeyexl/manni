@@ -1,0 +1,364 @@
+---
+title: Fix a failing check
+description: Read a manni cite finding, map the status to what happened to the source or the page, apply the fix, and confirm green locally. Every status in one place.
+---
+
+import { Steps, Aside, LinkCard } from '@astrojs/starlight/components';
+
+Your PR's citation check is red, or it carries a warning you'd like gone. This
+page decodes the finding and tells you, status by status, what happened and
+which command clears it. You don't need to know how the citations were set up,
+only what the output is telling you.
+
+<Aside type="tip" title="The fastest path">
+  Find the status in the [table](#every-status-at-a-glance), do the one thing
+  in its row, then [run the check locally](#reproduce-and-confirm-locally) to
+  confirm it's green. Done.
+</Aside>
+
+## Decode the finding
+
+In the default `pretty` output, a page with a problem looks like this:
+
+```
+✗ docs/limits.md
+    ✗ fetch-timeout   lib/limits.ts:2   changed since 9265563, 1 commit   (line 13)
+```
+
+The first line is the page. Each indented line below it is one citation, in
+this shape:
+
+```
+<mark> <label>   <src>   <status>   (line N)
+```
+
+| Part | What it tells you |
+| --- | --- |
+| `<mark>` | `✓` fine, `↕` moved (a warning), `✗` an error, `·` skipped or baselined. |
+| `<label>` | The citation's `id`. `#N` is a frontmatter entry with no id, at position N counting from 0. `inline` is an inline statement with no id. A page-side finding with none of those shows the source it names, or `page`. |
+| `<src>` | The source range as the page spells it: `path:line`, `path:from-to`, a bare `path` for a whole file, or `~token:line` for an obfuscated source. |
+| `<status>` | What the check found. Every one is below. |
+| `(line N)` | The line of the sentence or fenced block the citation anchors. For a problem in the entry itself, the entry's line in the frontmatter. |
+
+In a pull request the same finding is an annotation on line 13, titled
+`manni:cite/changed`. The status is the part after the source.
+
+## Every status at a glance
+
+| Status | Severity | It means | Do this |
+| --- | --- | --- | --- |
+| [`moved`](#moved) | warning | The cited lines are intact, at a different line number. | `manni cite update` |
+| [`moved-ambiguous`](#moved-ambiguous) | error | The cited lines now occur in more than one place. | Widen the range, then `update --accept --only <id>` |
+| [`changed`](#changed) | error | The cited lines are not what they were. | Read `--show-diff`, fix the sentence, then `update --accept --only <id>` |
+| [`never-true`](#never-true) | error | The pin does not match even at the commit it records. | Check the sentence, then `update --accept --only <id>` |
+| [`missing`](#missing) | error | No tracked file at that path, or the token resolves to nothing. | Re-add against the new path; or fix `--root` / the salt |
+| [`claim-missing`](#claim-missing) | error | The anchored paragraph does not contain the claim. | Make the sentence and the `claim` agree |
+| [`claim-ambiguous`](#claim-ambiguous) | warning | The claim occurs in more than one paragraph. | Give the entry an `id` and a reference statement |
+| [`statement-orphan`](#statement-orphan) | error | A reference statement names an id no entry has. | Fix the id, or add the entry |
+| [`statement-invalid`](#statement-invalid) | error | An inline statement's payload is not an id or a full entry. | Fix the payload |
+| [`entry-invalid`](#entry-invalid) | error | A frontmatter entry is malformed, or an id is repeated. | Fix the entry, or let `add` write it |
+| [`quote-drift`](#quote-drift) | error | The fenced block does not reproduce the cited lines. | Paste the lines again |
+
+The first five are about the **source**; the rest are about the **page**.
+`update` handles the mechanical ones and refuses the rest, printing each as
+`skipped` and exiting `1` so you know work is left.
+
+## Source statuses
+
+### moved
+
+```
+⚠ docs/limits.md
+    ↕ fetch-timeout   lib/limits.ts:2   moved -> lib/limits.ts:4   (line 13)
+```
+
+The lines the citation pins are still in the file, byte for byte, but they
+are at a different line number: something was added or removed above them.
+The page still says something true, so this is a **warning** and the exit
+code stays `0`.
+
+**Fix.** `update` rewrites the range in place and changes nothing else:
+
+```sh
+manni cite update docs/limits.md
+```
+
+```
+docs/limits.md: fetch-timeout  lib/limits.ts:2 -> lib/limits.ts:4  (moved)
+1 citation rewritten in 1 file, 0 skipped
+```
+
+### moved-ambiguous
+
+```
+✗ docs/limits.md
+    ✗ retries   lib/dup.ts:2   moved, 2 candidates (lib/dup.ts:3, lib/dup.ts:5); widen the range   (line 22)
+```
+
+The pinned lines left their line number and now occur at two or more places
+in the file. Picking one would be a guess, so `update` skips it. This is common
+for a one-line pin over a line a file repeats, such as `export const RETRIES = 3;`.
+
+**Fix.** Edit the entry's `src` to a range wide enough to occur once, say
+`lib/dup.ts:2-3`, then re-mint the pin over it:
+
+```sh
+manni cite update --accept --only retries docs/limits.md
+```
+
+### changed
+
+```
+✗ docs/limits.md
+    ✗ fetch-timeout   lib/limits.ts:2   changed since 9265563, 1 commit   (line 13)
+```
+
+The bytes at the cited range are not the bytes the pin was minted over, and
+they are nowhere else in the file. The sentence on line 13 may no longer be
+true. The status names the commit the pin was minted at and how many commits
+have touched the file since; `--show-diff` prints their subjects and the diff.
+
+Two variants carry the same meaning with less history. Without git, or for
+an entry with no `commit`, it is a bare `changed`. On a shallow clone it is
+`changed (history unavailable: commit 9265563 not found; fetch-depth: 0)`,
+which [Run it in CI](/manni/cite/ci/#full-history) explains.
+
+**Fix.** Read the diff, then decide what the sentence should say:
+
+```sh
+manni cite check --show-diff docs/limits.md
+```
+
+Fix the sentence, and the entry's `claim` with it so the two still agree. Then
+record that the source is now what the page says:
+
+```sh
+manni cite update --accept --only fetch-timeout docs/limits.md
+```
+
+```
+docs/limits.md: fetch-timeout  sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f -> sha256-7cb6e7f1f11ec2d780b8018abc00ddcb6019080a9d1932fd25dacc55a0d2aed3  (accepted)
+1 citation rewritten in 1 file, 0 skipped
+```
+
+If the sentence was still right and only the code's shape changed, the fix is
+the same `--accept` with no edit to the prose.
+
+### never-true
+
+```
+✗ docs/limits.md
+    ✗ fetch-timeout   lib/limits.ts:4   never true: the pin does not match at 835098c   (line 13)
+```
+
+The tool went back to the commit the entry records and the cited range did
+not hash to the pin there either. So the pin was never a record of those
+lines at that commit. The usual causes: a `src` or `integrity` edited by
+hand; or a `moved` entry that `update` rewrote to a new line number, whose
+`commit` still predates the move, and whose line has since changed.
+
+**Fix.** Treat it as `changed`: check the sentence against the source, then
+re-mint at HEAD with `update --accept --only <id>`. Both pins are printed.
+
+### missing
+
+```
+✗ docs/limits.md
+    ✗ fetch-timeout   src/gone.ts:2   missing   (line 11)
+```
+
+No tracked file exists at that path under the root. A renamed file is
+`missing`, deliberately: a pin names a path, and following renames through
+history would be a guess. So is a file that exists but is not committed,
+since sources resolve through `git ls-files`.
+
+**Fix.** Remove the entry and add it again against the new path:
+
+```sh
+manni cite add docs/limits.md lib/config/limits.ts:2 --claim "The fetch timeout is 10 seconds." --id fetch-timeout
+```
+
+An obfuscated source has its own variant of the message:
+
+```
+    ✗ retries   ~fd8c031de1743e75:5   missing (no tracked file matches; wrong --root or salt?)   (line 22)
+```
+
+The token was hashed against every tracked path under the root and matched
+none. Either `--root` does not point at the code checkout, or
+`MANNI_CITE_SALT` is not the salt the token was minted with. On a public CI
+job that has neither, run with `--no-sources` instead; see
+[Public docs, private code](/manni/cite/set-up/public-docs-private-code/).
+
+## Page statuses
+
+### claim-missing
+
+```
+✗ docs/page.md
+    ✗ fetch-timeout   lib/limits.ts:2   the anchored paragraph does not contain the claim "The fetch timeout is 10 seconds."   (line 11)
+```
+
+The entry has a `claim`, and a reference statement anchors it to a paragraph,
+but that paragraph does not contain the claim. Someone edited the sentence
+without editing the entry, or the other way round. The match ignores line
+wrapping and nothing else: a comma where the claim has a full stop is a miss.
+
+**Fix.** Make the sentence and the `claim` agree, word for word.
+
+### claim-ambiguous
+
+```
+✗ docs/limits.md
+    ↕ #0   src/limits.ts:3   claim found in 2 paragraphs (lines 10, 14); add an id and a reference statement above the one it supports   (line 4)
+```
+
+The entry has a `claim` and no reference statement, so the check looked for
+the sentence and found it in more than one paragraph. It cannot tell which
+one the citation supports, so it reports the entry's own line and warns.
+
+**Fix.** Give the entry an `id`, and put a reference statement above the
+paragraph it supports:
+
+```md
+<!-- cite retries -->
+Retries default to 3. Really.
+```
+
+### statement-orphan
+
+```
+✗ docs/limits.md
+    ✗ nope   no frontmatter entry has id "nope"   (line 10)
+```
+
+A reference statement, `<!-- cite nope -->`, names an id and no entry under
+`citations` has it. A typo in the statement, or an entry that was deleted.
+
+**Fix.** Correct the id in the statement, or add the entry it refers to. Note
+that `cite true` is a reference to the id `true`, so a statement meant to hold
+JSON must start with `{`.
+
+### statement-invalid
+
+```
+✗ docs/page.md
+    ✗ lib/limits.ts:2   must have required property 'integrity'   (line 14)
+    ✗ page   invalid statement: payload is neither an id nor json   (line 17)
+```
+
+An inline statement was found and its payload could not be used. A payload
+that starts with `{` has to be a full entry with at least `src` and
+`integrity`; anything else has to match the id grammar,
+`^[a-z0-9][a-z0-9-]*$`. The parenthesised forms (`[comment]: # (cite …)`,
+AsciiDoc's `// (cite …)`, reStructuredText's `.. (cite …)`) take an id only.
+`quote: true` in HTML, XML or reStructuredText is also `statement-invalid`,
+because those formats have no fenced block to anchor to.
+
+**Fix.** Fix the payload, or delete the statement and let `add --inline`
+write one.
+
+### entry-invalid
+
+```
+✗ docs/limits.md
+    ✗ fetch-timeout   src/limits.ts:2   duplicate id "fetch-timeout"   (line 9)
+    ✗ fetch-timeout   must have required property 'integrity'   (line 4)
+```
+
+A frontmatter entry does not fit the citation shape: a required field is
+missing, `src` does not match the grammar, a range runs backwards, or two
+entries share an `id`. The line is the entry's own line in the frontmatter.
+
+**Fix.** Correct the entry, or delete it and let `add` write a well-formed
+one. The [citations reference](/manni/cite/reference/citations/) has the
+full shape and the `src` grammar.
+
+### quote-drift
+
+```
+✗ docs/limits.md
+    ✗ inline   lib/limits.ts:3-5   quote: true, but the fenced block does not reproduce the cited lines   (line 19)
+```
+
+The citation has `quote: true`, the source is fine, and the fenced block on
+the page is not a copy of the cited lines. This often follows an
+`update --accept` on a quoted range: the pin now matches the new source, and
+the block on the page still shows the old one.
+
+**Fix.** Paste the cited lines into the block again.
+
+## Reproduce and confirm locally
+
+Don't guess and re-push. Run the exact check on your machine.
+
+<Steps>
+
+1. **Run the check on just your page.** No install needed:
+
+   ```sh
+   npx @hawkeyexl/manni cite check docs/limits.md
+   ```
+
+   You'll see the same line CI showed you. Add `--show-diff` for a `changed`.
+
+2. **Apply the fix** from the matching section above.
+
+3. **Run it again** and confirm the green summary:
+
+   ```
+   ✓ docs/limits.md
+       ✓ fetch-timeout   lib/limits.ts:4   current
+
+   1 file checked, 1 passed, 0 failed, 0 findings
+   ```
+
+4. **Re-push.** Commit the page (and, after `update`, its rewritten entry)
+   and the check goes green.
+
+</Steps>
+
+<Aside type="tip">
+  With `paths:` under `cite:` in `manni.config.yaml`, a bare
+  `npx @hawkeyexl/manni cite check` from the repo root checks the same pages
+  CI does. If the sources live in another checkout, CI passes `--root`; do
+  the same.
+</Aside>
+
+## What the exit code means
+
+| Code | Meaning |
+| --- | --- |
+| `0` | No findings, or only warnings. The check is green. |
+| `1` | At least one error-severity finding that is not in the baseline. This is the red check you came here to fix. For `update`, that a citation was skipped. |
+| `2` | An operational error: the check could not run. No inputs and no config, an unknown format, `update` under `--no-sources`. The message is on stderr, prefixed `manni:`. |
+
+A `1` means fix the page or the pin. A `2` means fix the setup, or escalate
+to whoever configured the check.
+
+## Still stuck?
+
+The [CLI reference](/manni/cite/reference/cli/) documents every flag, and the
+[citations reference](/manni/cite/reference/citations/) documents the entry
+shape, the `src` grammar and the hashing rule, which is what decides whether
+two ranges are "the same bytes".
+
+<LinkCard
+  title="Get started"
+  href="/manni/cite/get-started/"
+  description="See each status happen, from a fresh pin through a move and a change, with the command that clears it."
+/>
+
+{/* Doc Detective inline tests: verify this page's documented manni cite behavior
+    against the local build, exposed as `manni cite` / `npx @hawkeyexl/manni cite` via `npm link`
+    (see .github/workflows/docs-as-tests.yml), over committed fixtures.
+    Run with `npx doc-detective`. Config: .doc-detective.json. */}
+{/* test {"testId":"cite-fix-a-failing-check","description":"The status catalog, mapped to fixtures."} */}
+{/* step {"description":"moved: a warning naming the new range, exit 0.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/moved.md","exitCodes":[0],"stdio":"/moved -> src\\/moved\\.ts:4/"}} */}
+{/* step {"description":"changed: an error on the line of the sentence, exit 1.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/stale-claim.md","exitCodes":[1],"stdio":"/src\\/changed\\.ts:2   changed   \\(line 9\\)/"}} */}
+{/* step {"description":"missing: no tracked file at the path, exit 1.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/missing.md","exitCodes":[1],"stdio":"/src\\/gone\\.ts:2   missing/"}} */}
+{/* step {"description":"statement-orphan: a reference naming an id no entry has, exit 1.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/statement-orphan.md","exitCodes":[1],"stdio":"no frontmatter entry has id \"nope\""}} */}
+{/* step {"description":"claim-ambiguous: a claim in two paragraphs is a warning that names both lines.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/claim-ambiguous.md","exitCodes":[1],"stdio":"claim found in 2 paragraphs (lines 10, 14)"}} */}
+{/* step {"description":"entry-invalid: a duplicate id and a missing integrity are named on the entry's line.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/entry-invalid.md","exitCodes":[1],"stdio":"duplicate id \"fetch-timeout\""}} */}
+{/* step {"description":"Reproduce and confirm locally: a fixed page passes with a green summary.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/current.md","exitCodes":[0],"stdio":"1 file checked, 1 passed, 0 failed, 0 findings"}} */}
+{/* test end */}
