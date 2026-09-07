@@ -28,7 +28,14 @@
  */
 import { readFile } from "node:fs/promises";
 import { isAbsolute, relative, resolve, sep } from "node:path";
-import { LineCounter, isMap, isScalar, parseDocument, type Node } from "yaml";
+import {
+  LineCounter,
+  isMap,
+  isNode,
+  isScalar,
+  parseDocument,
+  type Node,
+} from "yaml";
 import type { DocmetaConfig, SidecarConfig } from "./config.js";
 import { FILE_SCHEMA_KEY } from "./resolve-schema.js";
 import { STDIN_LABEL } from "./load-files.js";
@@ -180,7 +187,7 @@ async function loadManifest(
   }
   const owned = new Set(sidecar.keys);
   const lineAt = (node: unknown): number | undefined => {
-    const range = (node as { range?: [number, number, number] } | null)?.range;
+    const range = isNode(node) ? node.range : undefined;
     return range ? lc.linePos(range[0]).line : undefined;
   };
 

@@ -23,8 +23,17 @@ export interface GitignoreAnswer {
   /** Ignored paths, spelled exactly as they were handed in. */
   ignored: Set<string>;
   /**
-   * Whether git answered at all. False means there is no repository here, no
-   * `git` on `PATH`, or git failed — in which case **nothing** is filtered.
+   * Whether git answered for at least one repository the candidates live in.
+   * False means no candidate was inside a repository git could answer for —
+   * no repository, no `git` on `PATH`, or git failed everywhere — in which
+   * case **nothing** is filtered and `ignored` is empty.
+   *
+   * A run spanning several repositories where git answers for some and not
+   * others is *available*: the answered roots are filtered, and a root git
+   * could not answer for is treated like no repository at all, so its
+   * candidates are kept. A partial answer is never reported as none, because
+   * the notice for `false` says "no files were skipped" and that would be a
+   * lie about the roots that did answer.
    */
   available: boolean;
 }
@@ -90,21 +99,21 @@ export async function gitIgnored(
   if (!inSomeRepo) return unavailable();
 
   const ignored = new Set<string>();
-  let available = true;
+  let answered = 0;
   for (const [root, bucket] of byRoot) {
     const answer = await checkIgnore(
       bucket.map((b) => b.rel),
       root,
     );
-    if (!answer.available) {
-      available = false;
-      continue;
-    }
+    // A root git cannot answer for (a broken `.git`, say) is treated like no
+    // repository: its candidates are kept. See `GitignoreAnswer.available`.
+    if (!answer.available) continue;
+    answered += 1;
     for (const b of bucket) {
       if (answer.ignored.has(b.rel)) ignored.add(b.spelled);
     }
   }
-  return { ignored, available };
+  return answered > 0 ? { ignored, available: true } : unavailable();
 }
 
 /** One `git check-ignore` run, from `cwd`, over paths relative to it. */

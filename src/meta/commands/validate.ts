@@ -398,6 +398,11 @@ export async function runValidate(
     // The sidecar merge sits between extraction and everything downstream,
     // so schema resolution, validation, and the corpus checks all see the one
     // object the document and its manifest entry make together.
+    // `merged.extracted` keeps the document's own `lineFor`/`colFor`: a
+    // sidecar key is not in the document, so those answer `undefined` for it
+    // and `merged.locate` answers instead. Rebound rather than shadowed, so
+    // every read below — resolution, validation, the collision loop — sees
+    // the one merged object.
     const merged = mergeSidecars(label, extracted, sidecars, base);
     extracted = merged.extracted;
     if (checksWillRun) checkEntries.push({ label, extracted });

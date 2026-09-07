@@ -16,6 +16,7 @@ import type {
 } from "ajv/dist/2020.js";
 import { DocmetaError, type FieldError } from "../types.js";
 import type { SourceLocation } from "./sidecars.js";
+import { escapePointerSegment } from "../extractors/pointer.js";
 
 // ajv ships its meta-schema refs as JSON. A static JSON import survives
 // bundling as a bare ESM import without the required `type: json` attribute, so
@@ -421,7 +422,9 @@ function toFieldError(
   const located =
     locate?.(instancePath) ??
     (defined.keyword === "additionalProperties"
-      ? locate?.(`${instancePath}/${defined.params.additionalProperty.replace(/~/g, "~0").replace(/\//g, "~1")}`)
+      ? locate?.(
+          `${instancePath}/${escapePointerSegment(defined.params.additionalProperty)}`,
+        )
       : undefined);
   if (located) {
     return {

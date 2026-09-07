@@ -373,6 +373,34 @@ describe("resolveTargets: .gitignore-aware discovery", () => {
       expect(files).toEqual(["public/docs/x.md"]);
     });
 
+    it("keeps the candidates of a repository git cannot answer for, and still filters the rest", async () => {
+      // `public/.git` is a file that is not a gitdir pointer, so the root
+      // walk finds a repository there and git refuses to work in it (exit
+      // 128). That must not switch filtering off for `private/`, and must
+      // not be reported as "no files were skipped" when some were.
+      repo = makeTempRepo({
+        init: false,
+        files: {
+          "private/.gitignore": "scratch/\n",
+          "private/notes/a.md": DOC,
+          "private/scratch/b.md": DOC,
+          "public/.git": "not a gitdir\n",
+          "public/docs/x.md": DOC,
+        },
+      });
+      execFileSync("git", ["init", "-q"], { cwd: join(repo, "private"), stdio: "ignore" });
+      let told = 0;
+      const files = await resolveTargets({
+        inputs: ["**/*.md", "../public/**/*.md"],
+        cwd: join(repo, "private"),
+        onGitignoreUnavailable: () => {
+          told += 1;
+        },
+      });
+      expect(files).toEqual(["../public/docs/x.md", "notes/a.md"]);
+      expect(told).toBe(0);
+    });
+
     it("keeps a candidate that lives in no repository, and still filters the rest", async () => {
       repo = makeTempRepo({
         init: false,
