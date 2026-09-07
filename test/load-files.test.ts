@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { resolveTargetSet, resolveTargets } from "../src/meta/core/load-files.js";
 import { DocmetaError } from "../src/meta/types.js";
@@ -306,6 +307,94 @@ describe("resolveTargets: .gitignore-aware discovery", () => {
       cwd: join(repo, "docs"),
     });
     expect(files).toEqual(["real.md"]);
+  });
+
+  /**
+   * Candidates spanning more than one repository (proposal 0034). A config in
+   * one checkout whose `paths:` reach into another is the sidecar layout, and
+   * `git check-ignore` refuses a path outside the repository it runs in with
+   * exit 128 — which used to read as "git unavailable" for the *whole* batch,
+   * so one cross-root candidate silently switched filtering off for every
+   * file in the run, including the ones in the config's own repository.
+   */
+  describe("candidates in more than one repository", () => {
+    /** `private/` and `public/` as sibling repositories under one temp dir. */
+    const siblings = (): string => {
+      const dir = makeTempRepo({
+        init: false,
+        files: {
+          "private/.gitignore": "scratch/\n",
+          "private/notes/a.md": DOC,
+          "private/scratch/b.md": DOC,
+          "public/.gitignore": "build/\n",
+          "public/docs/x.md": DOC,
+          "public/build/x.md": DOC,
+        },
+      });
+      execFileSync("git", ["init", "-q"], { cwd: join(dir, "private"), stdio: "ignore" });
+      execFileSync("git", ["init", "-q"], { cwd: join(dir, "public"), stdio: "ignore" });
+      return dir;
+    };
+
+    it("honors each repository's .gitignore when a run spans two of them", async () => {
+      repo = siblings();
+      const files = await resolveTargets({
+        inputs: ["**/*.md", "../public/**/*.md"],
+        cwd: join(repo, "private"),
+      });
+      expect(files).toEqual(["../public/docs/x.md", "notes/a.md"]);
+    });
+
+    it("does not report git as unavailable for a cross-root run", async () => {
+      repo = siblings();
+      let told = 0;
+      await resolveTargets({
+        inputs: ["../public/**/*.md"],
+        cwd: join(repo, "private"),
+        onGitignoreUnavailable: () => {
+          told += 1;
+        },
+      });
+      expect(told).toBe(0);
+    });
+
+    it("honors the .gitignore of a repository nested inside the run's own", async () => {
+      repo = makeTempRepo({
+        files: {
+          ".gitignore": "tmp/\n",
+          "tmp/z.md": DOC,
+          "public/.gitignore": "build/\n",
+          "public/docs/x.md": DOC,
+          "public/build/x.md": DOC,
+        },
+      });
+      execFileSync("git", ["init", "-q"], { cwd: join(repo, "public"), stdio: "ignore" });
+      const files = await resolveTargets({ inputs: ["**/*.md"], cwd: repo });
+      expect(files).toEqual(["public/docs/x.md"]);
+    });
+
+    it("keeps a candidate that lives in no repository, and still filters the rest", async () => {
+      repo = makeTempRepo({
+        init: false,
+        files: {
+          "loose/l.md": DOC,
+          "inner/.gitignore": "build/\n",
+          "inner/docs/x.md": DOC,
+          "inner/build/x.md": DOC,
+        },
+      });
+      execFileSync("git", ["init", "-q"], { cwd: join(repo, "inner"), stdio: "ignore" });
+      let told = 0;
+      const files = await resolveTargets({
+        inputs: ["**/*.md"],
+        cwd: repo,
+        onGitignoreUnavailable: () => {
+          told += 1;
+        },
+      });
+      expect(files).toEqual(["inner/docs/x.md", "loose/l.md"]);
+      expect(told).toBe(0);
+    });
   });
 });
 
