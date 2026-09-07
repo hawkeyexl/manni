@@ -87,7 +87,7 @@ manni meta [paths...] [options]
 | `--no-baseline` | n/a | off | Ignore a baseline supplied by config `baseline:` for this run. `--baseline` and `--no-baseline` set the same option, so the one written later on the command line wins. |
 | `--no-checks` | n/a | off | Skip the [corpus checks](/manni/meta/reference/configuration/#checks) supplied by config `checks:` for this run. Checks already run only when the resolved file set is the config-resolved corpus. A run scoped by positional paths, stdin, `--as`, `--ext`, `--exclude`, or `--no-gitignore` skips them with a stderr notice. This flag opts out explicitly. |
 
-<Aside type="note">
+<Aside type="note" title="Repeatable flags">
 Repeatable flags (`-s/--schema`, `--exclude`) accumulate; pass the flag once per
 value, for example `-s a -s b`.
 </Aside>
@@ -169,7 +169,7 @@ Baseline written to .manni-baseline.json
   14 findings recorded (+2 new, -12 no longer occur)
 ```
 
-<Aside type="caution">
+<Aside type="caution" title="A re-record forgives what it did not reach">
 `--write-baseline` replaces the file with what *this run* saw, so a narrowed
 glob or a mistyped `--exclude` forgives every finding it did not reach. The
 `-12 no longer occur` count is the only thing that makes that visible; a
@@ -529,7 +529,7 @@ you already maintain is what determines which properties get proposed.
 manni meta fill [paths...] [options]
 ```
 
-<Aside type="caution">
+<Aside type="caution" title="fill writes by default">
 `fill` **writes to your files by default**. Pass `--dry-run` to preview
 proposals without touching anything, and run it on a clean working tree so the
 changes are easy to review.
@@ -880,7 +880,7 @@ which is the failure vendoring exists to remove.
   exits 2, and so does an input set resolving to zero files. `--allow-empty`
   suppresses both. See [empty input sets](#empty-input-sets).
 
-<Aside type="caution">
+<Aside type="caution" title="--as applies to every input">
 `--as` forces one extractor for every input in the run. Use it for stdin, or to
 read a file whose extension manni meta would not otherwise recognize.
 </Aside>
@@ -919,7 +919,7 @@ nothing is expected. That covers a shared CI template running across repos that
 may have no docs yet. It also covers a pre-commit hook whose file list can be
 empty.
 
-<Aside type="note">
+<Aside type="note" title="A misspelled subcommand parses as a path">
 Because `validate` is the default command, a misspelled subcommand parses as a
 path. `manni meta valdiate docs/` exits 2 with
 `Unknown command "valdiate". Did you mean "validate"?`. The suggestion only
@@ -979,7 +979,7 @@ Four things bound it:
 - **`--no-gitignore` turns it off** for one run, and `respectGitignore: false`
   for a repository.
 
-<Aside type="caution">
+<Aside type="caution" title="Ignoring makes the gate quieter">
 This makes the gate **quieter**. A repo that was validating generated files will
 check fewer of them, and a run that was red can turn green. The skipped count is
 what makes that auditable. A docs tree that is ignored in its entirety fails

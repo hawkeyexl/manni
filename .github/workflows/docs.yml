@@ -104,8 +104,8 @@ jobs:
   # `validate-docs` does for the metadata tool.
   #
   # Nothing downstream depends on it. The deploy is gated on frontmatter and on
-  # the site building, not on this job, because two of the three rules the
-  # site carries today are Starlight rendering matters no page edit can fix.
+  # the site building, not on this job, so a rule that only a Starlight change
+  # can satisfy does not hold the site hostage.
   a11y:
     runs-on: ubuntu-latest
     steps:
@@ -158,17 +158,19 @@ jobs:
         run: node dist/cli.js a11y check --severity notice -f github --progress
         continue-on-error: true
 
-      # The gate names no floor, so it inherits `severity: error` from the
-      # repo's manni.config.yaml, and fails on any finding at that level.
-      # `scrollable-region-focusable`, axe's `serious` and so an `error`,
-      # used to keep the gate a level above the report; it is fixed in the
-      # site now, by the Expressive Code plugin in docs/astro.config.mjs that
-      # gives every code block a tabindex. `landmark-unique`, axe's
-      # `moderate`, is a `warning` and does not gate; it comes from how
-      # Starlight renders `<Aside>` and is not fixable from a page. Proposal
-      # 0035 defers a baseline like 0001's; until one exists, the config's
-      # floor is the ratchet. Lower it as findings are fixed, never raise it.
-      - name: Gate on error-level findings
+      # The gate names no floor, so it inherits `severity:` from the repo's
+      # manni.config.yaml, and fails on any finding at that level. The floor
+      # is `notice` now, so the gate and the report see the same findings.
+      # Two rules used to keep it higher, and both are fixed in the site.
+      # `scrollable-region-focusable`, axe's `serious` and so an `error`, by
+      # the Expressive Code plugin in docs/astro.config.mjs that gives every
+      # code block a tabindex. `landmark-unique`, axe's `moderate` and so a
+      # `warning`, by giving every `<Aside>` on a page its own `title`:
+      # Starlight uses the title as the aside's `aria-label`, and two untitled
+      # asides of one type on a page share the default label. Proposal 0035
+      # defers a baseline like 0001's; until one exists, the config's floor is
+      # the ratchet. Lower it as findings are fixed, never raise it.
+      - name: Gate on findings at the configured floor
         run: node dist/cli.js a11y check --progress -q
 
   # Deploy the uploaded artifact to GitHub Pages. Never from a pull request —
