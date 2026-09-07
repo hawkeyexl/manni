@@ -110,15 +110,10 @@ host is in scope.
 
 Pages come from two places, in this order:
 
-1. **The sitemap.** `manni a11y check` reads `robots.txt` at the first seed's
-   origin. It follows the file's `Sitemap:` lines, in order. With none, it walks
-   from the seed's own directory up to the site root, nearest directory first,
-   and asks each directory for `sitemap.xml`, `sitemap-index.xml`, and
-   `sitemap_index.xml`. The first that answers and parses wins. So a project
-   site published under a path, such as `https://hawkeyexl.github.io/manni/`, is
-   found at `/manni/sitemap-index.xml` rather than missed at the origin. A
-   sitemap index is followed into its child sitemaps. Every same-host page URL
-   it lists is queued, which is how a page nothing links to still gets checked.
+1. **The sitemap.** The site's own list of pages, when it publishes one. It
+   is looked up once per run, before the browser starts. See
+   [Sitemaps](#sitemaps) for when it is read, how it is found, and what
+   happens without one.
 2. **Links.** Every page that loads contributes the same-host `<a href>` links
    in its rendered DOM. Anchors, `mailto:`, `tel:`, and links to assets such as
    PDFs, images, and stylesheets are skipped.
@@ -133,6 +128,54 @@ sitemap lookup and no link following.
 A seed that does not load is exit `2`, because nothing was checked. A crawled
 page that does not load is recorded against that page and the crawl continues;
 the page counts as failed, so the run exits `1`.
+
+## Sitemaps
+
+### When it is looked up
+
+Once per run, before the browser starts, and only when crawling. The lookup
+uses the first seed's origin and path. `--no-crawl` skips it and checks exactly
+the URLs you named.
+
+### How it is found
+
+Plain HTTP requests, no browser, each with a 10-second timeout. Candidates are
+tried in this order, and the first that answers 2xx and parses as a sitemap
+wins:
+
+1. `robots.txt` at the origin, and every `Sitemap:` line in it, in order.
+2. Walking from the seed's own directory up to the site root, nearest first,
+   the files `sitemap.xml`, `sitemap-index.xml`, and `sitemap_index.xml` in
+   each directory.
+
+For `https://h/manni/meta/fix/` the walk asks `/manni/meta/fix/`, then
+`/manni/meta/`, then `/manni/`, then `/`. The walk exists for project sites
+published under a path. `https://hawkeyexl.github.io/manni/` serves
+`/manni/sitemap-index.xml` and nothing at the origin. A body that is 2xx but
+not sitemap XML is skipped, and the next candidate is tried.
+
+### When one is there
+
+A `<sitemapindex>` is followed into its child sitemaps, up to three levels deep
+and fifty children in total. Every `<loc>` is kept when it is on the seed's
+host and looks like a page. That means `http` or `https`, and not an asset such
+as a PDF, an image, or a stylesheet. Those URLs join the queue right after the
+seeds, deduped against them with a trailing slash ignored. Link following still
+runs on top, so a page the sitemap missed but a checked page links to is found
+too. `--max-pages` caps the whole run. The header line names the sitemap that
+was used, and `summary.sitemap` carries its URL.
+
+### When there is none
+
+A 404, a network error, or an unparseable body all mean "no sitemap". None of
+them fails the run. The crawl falls back to same-host links from each checked
+page, breadth first, and the header reads `(no sitemap; followed links)`.
+
+### What it does not do yet
+
+Two gaps are recorded as deferred in proposal 0035. `Disallow` rules in
+`robots.txt` are not honoured, and gzipped sitemaps (`.xml.gz`) are not
+decompressed.
 
 ## What the score means
 
