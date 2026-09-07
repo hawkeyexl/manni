@@ -47,6 +47,10 @@ const variants = {
 // MOVED and AMBIG together: the pinned line is gone from line 2 and equal
 // windows sit at 4 and 11. This is the plan's `2 candidates (:4, :11)` case.
 variants.MOVED_AMBIG = "// Tuned for the docs build.\n// Raise with care.\n" + variants.AMBIG;
+// MOVED, then CHANGED: the two comment lines are in, and line 4 (the old
+// line 2) was edited afterwards. This is what `update` leaves behind when it
+// rewrote `src` to :4 for the move and the value then changed.
+variants.MOVED_CHANGED = "// Tuned for the docs build.\n// Raise with care.\n" + variants.CHANGED;
 
 // ---------------------------------------------------------------------------
 // The hashing rule, stated once in the schema's `integrity` description.
@@ -146,6 +150,19 @@ function classify(entry, current, atCommit, opts = {}) {
   if (atCommit === null) return { status: "never-true", reason: "path absent at commit" };
   const then = pinOf(atCommit, start, end);
   if (then === entry.integrity) return { ...result, historyAvailable: true };
+  // Not at the recorded lines. `update` rewrites `src` for a move and keeps
+  // `commit`, so the lines the pin was minted from may sit elsewhere in the
+  // file as it was then. Only a pin found nowhere there never held; a
+  // whole-file pin has nowhere else to be.
+  if (start !== undefined) {
+    const width = end - start + 1;
+    const was = lines(atCommit);
+    for (let s = 1; s + width - 1 <= was.length; s++) {
+      if (pinOf(atCommit, s, s + width - 1) === entry.integrity) {
+        return { ...result, historyAvailable: true };
+      }
+    }
+  }
   return { status: "never-true", reason: "pin does not match at commit" };
 }
 
@@ -317,6 +334,11 @@ const VERDICTS = [
     { status: "never-true", reason: "pin does not match at commit" }],
   ["never true: path absent at commit", ENTRY, variants.CHANGED, null,
     { status: "never-true", reason: "path absent at commit" }],
+  // `update` rewrote src :2 -> :4 for the move and kept the commit; line 4
+  // then changed. The pinned bytes sat at line 2 at the commit, so the pin
+  // was true then, and this is drift, not a pin that never held.
+  ["moved by update, then changed: the pin held elsewhere at the commit", { ...ENTRY, src: "src/limits.ts:4" },
+    variants.MOVED_CHANGED, SOURCE, { status: "changed", historyAvailable: true }],
   ["crlf is the same bytes", ENTRY, variants.CRLF, SOURCE, { status: "current" }],
   ["bom is the same bytes", ENTRY, variants.BOM, SOURCE, { status: "current" }],
   ["trailing whitespace is a change", ENTRY, variants.TRAILING_WS, SOURCE, { status: "changed", historyAvailable: true }],

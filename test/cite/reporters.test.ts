@@ -202,6 +202,16 @@ describe("renderCheckPretty", () => {
     );
   });
 
+  it("does not repeat a plain path beside itself under reveal", () => {
+    const run = runOf([
+      page({ citations: [citation({ status: "current", resolvedPath: "lib/limits.ts" })] }),
+    ]);
+    expect(renderCheckPretty(run, { ...NO_COLOR, reveal: true })).toContain(
+      "    ✓ fetch-timeout   lib/limits.ts:2   current",
+    );
+    expect(renderCheckPretty(run, { ...NO_COLOR, reveal: true })).not.toContain("(lib/limits.ts)");
+  });
+
   it("labels an id-less frontmatter entry by index and an inline one as inline", () => {
     const run = runOf([
       page({
@@ -288,6 +298,37 @@ describe("renderCheckPretty", () => {
       ].join("\n"),
     );
     expect(renderCheckGithub(run)).toBe("");
+  });
+
+  it("counts baselined findings without pluralising the word", () => {
+    const p = page({
+      citations: [
+        citation({ status: "changed", origin: { kind: "frontmatter", index: 0, anchorLine: 9 } }),
+        citation({ status: "changed", citation: { src: "lib/a.ts:1", integrity: PIN, id: "a" }, origin: { kind: "frontmatter", index: 1, anchorLine: 12 } }),
+      ],
+      findings: [
+        finding({ rule: "changed", message: "changed" }),
+        finding({ rule: "changed", message: "changed", id: "a", src: "lib/a.ts:1", index: 1, line: 12 }),
+      ],
+    });
+    const forgiven: ValidationResult = { ...toValidationResult(p), ok: true, errors: [], baselined: 2 };
+    const run: CheckRun = {
+      results: [forgiven],
+      summary: {
+        files: 1,
+        passed: 1,
+        failed: 0,
+        errors: 0,
+        baseline: { path: ".manni-cite-baseline.json", written: false, recorded: 2, suppressed: 2, stale: 0 },
+      },
+      frame: { cwd: "/repo", base: "/repo" },
+      pages: [p],
+      warnings: 0,
+    };
+    const out = renderCheckPretty(run, NO_COLOR);
+    expect(out).toContain("✓ docs/limits.md  (2 baselined)");
+    expect(out).not.toContain("baselineds");
+    expect(out).toContain("2 findings (2 baselined)");
   });
 
   it("colours the marks, the id column and the locations", () => {

@@ -336,4 +336,33 @@ describe.skipIf(!gitAvailable())("classifyCitation against a real repository", (
     expect(unknown.status).toBe("changed");
     expect(unknown.historyAvailable).toBe(false);
   });
+
+  it("a pin moved by update and then changed is `changed`, not `never-true`", async () => {
+    // C1: the pin is minted for line 2. C2: two lines are inserted above and
+    // `update` rewrites src to :4, keeping the commit at C1. C3: line 4 is
+    // edited. The recorded commit's file holds other bytes at line 4, but the
+    // pinned bytes were there, at line 2, so the pin was true then.
+    repo = makeTempRepo({ files: { [PATH]: ladder.SOURCE } });
+    const first = commitAll(repo, "add limits");
+    writeFileSync(join(repo, PATH), ladder.variants.MOVED ?? "", "utf8");
+    commitAll(repo, "comment the limits");
+    writeFileSync(join(repo, PATH), ladder.variants.MOVED_CHANGED ?? "", "utf8");
+    commitAll(repo, "raise fetch timeout to 30s");
+    const git = gitClient(repo);
+    const index = await buildSourceIndex(repo, "", { gitClient: git });
+    const opts = { root: repo, index, git, salt: "" };
+
+    const result = await classifyCitation(page({ src: `${PATH}:4`, integrity: PIN_L2, commit: first }), opts);
+    expect(result.status).toBe("changed");
+    expect(result.historyAvailable).toBe(true);
+    expect(result.commitsSince).toEqual(["raise fetch timeout to 30s", "comment the limits"]);
+    expect(result.diff).toContain("+export const FETCH_TIMEOUT_MS = 30_000;");
+
+    // The same history, but the pinned bytes were never in the file at C1.
+    const never = await classifyCitation(
+      page({ src: `${PATH}:4`, integrity: ladder.mint("export const NEVER = 1;\n", 1) ?? "", commit: first }),
+      opts,
+    );
+    expect(never.status).toBe("never-true");
+  });
 });

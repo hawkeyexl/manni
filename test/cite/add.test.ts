@@ -181,9 +181,14 @@ describe("runAdd", () => {
     });
 
     it("uses the format's own statement syntax", async () => {
+      // MDX rejects an html comment, so an mdx page gets the jsx comment.
       const label = write("page.mdx", ["---", "title: Limits", "---", "", CLAIM]);
       const result = await add({ page: label, src: "src/limits.ts:2", claim: CLAIM, inline: true });
-      expect(result.content.split("\n")[4]).toMatch(/^<!-- cite \{.*\} -->$/);
+      expect(result.content.split("\n")[4]).toMatch(/^\{\/\* cite \{.*\} \*\/\}$/);
+      expect(await recheck(label)).toEqual(["current"]);
+      const md = write("page.md", ["---", "title: Limits", "---", "", CLAIM]);
+      const inMd = await add({ page: md, src: "src/limits.ts:2", claim: CLAIM, inline: true });
+      expect(inMd.content.split("\n")[4]).toMatch(/^<!-- cite \{.*\} -->$/);
       const html = write("page.html", ["<html><body>", "", `<p>${CLAIM}</p>`, "", "</body></html>"]);
       const inHtml = await add({ page: html, src: "src/limits.ts:2", claim: CLAIM, inline: true });
       expect(inHtml.content.split("\n")[2]).toMatch(/^<!-- cite \{.*\} -->$/);
@@ -268,6 +273,21 @@ describe("runAdd", () => {
       expect(await refusal(add({ page: adoc, src: "src/limits.ts:3", claim: "Retries default to 3." }))).toBe(
         `Claim occurs 2 times in ${adoc} (lines 3, 5). Give it an --id and put \`// (cite <id>)\` above the intended paragraph.`,
       );
+      // MDX rejects an HTML comment, so the advice spells the JSX form.
+      const mdx = write("twice.mdx", ["# Limits", "", "Retries default to 3.", "", "Retries default to 3. Really."]);
+      expect(await refusal(add({ page: mdx, src: "src/limits.ts:3", claim: "Retries default to 3." }))).toBe(
+        `Claim occurs 2 times in ${mdx} (lines 3, 5). Give it an --id and put \`{/* cite <id> */}\` above the intended paragraph.`,
+      );
+    });
+
+    it("writes the jsx comment form on an mdx page", async () => {
+      const mdx = write("claim.mdx", ["---", "title: t", "---", "", "# Limits", "", CLAIM]);
+      const result = await add({ page: mdx, src: "src/limits.ts:2", claim: CLAIM, id: "fetch-timeout" });
+      expect(result.content).toContain(`{/* cite fetch-timeout */}\n${CLAIM}`);
+      expect(result.content).not.toContain("<!--");
+      expect(await recheck(result.file)).toEqual(["current"]);
+      const inline = await add({ page: mdx, src: "src/limits.ts:2", claim: CLAIM, inline: true, dryRun: true });
+      expect(inline.content).toMatch(/^\{\/\* cite \{.*\} \*\/\}$/m);
     });
 
     it("takes the paragraph a reference statement with that id already marks", async () => {

@@ -19,6 +19,8 @@ import {
   statementForms,
 } from "../../src/cite/core/statements.js";
 import { CiteError } from "../../src/cite/errors.js";
+import { readPage as parsePage } from "../../src/cite/core/page.js";
+import type { InlineStatement } from "../../src/cite/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const readPage = (name: string): string =>
@@ -27,15 +29,23 @@ const readPage = (name: string): string =>
 const PIN =
   "sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f";
 
+/** The statements `readPage` finds in a whole page, frontmatter and all. */
+const readPageStatements = (content: string): InlineStatement[] =>
+  parsePage("page.md", content).statements;
+
 describe("statementForms", () => {
-  it("markdown and mdx share three forms; json only in the first two", () => {
-    for (const format of ["markdown", "mdx"]) {
-      expect(statementForms(format)).toEqual([
-        { open: "<!--", close: "-->", json: true },
-        { open: "{/*", close: "*/}", json: true },
-        { open: "[comment]: # (", close: ")", json: false },
-      ]);
-    }
+  it("markdown and mdx share three forms; json only in the comment forms", () => {
+    expect(statementForms("markdown")).toEqual([
+      { open: "<!--", close: "-->", json: true },
+      { open: "{/*", close: "*/}", json: true },
+      { open: "[comment]: # (", close: ")", json: false },
+    ]);
+    // MDX rejects an HTML comment, so its first form is the JSX comment.
+    expect(statementForms("mdx")).toEqual([
+      { open: "{/*", close: "*/}", json: true },
+      { open: "<!--", close: "-->", json: true },
+      { open: "[comment]: # (", close: ")", json: false },
+    ]);
   });
 
   it("html and xml have the comment form only", () => {
@@ -211,6 +221,61 @@ describe("parseStatements", () => {
   });
 });
 
+describe("parseStatements does not read code", () => {
+  const ids = (body: string, format: string): string[] =>
+    parseStatements(body, format).map((s) => (s.payload.kind === "ref" ? s.payload.id : s.payload.kind));
+
+  it("ignores a statement inside a fenced block, backtick or tilde", () => {
+    expect(ids("```md\n<!-- cite fenced -->\nThe claim.\n```\n", "markdown")).toEqual([]);
+    expect(ids("~~~\n{/* cite fenced */}\n~~~\n", "mdx")).toEqual([]);
+    expect(ids("```\n[comment]: # (cite fenced)\n```\n", "markdown")).toEqual([]);
+  });
+
+  it("ignores a fence indented inside a list item, and a shorter fence nested in a longer one", () => {
+    const list = "1. Step.\n\n   ```md\n   <!-- cite fenced -->\n   The claim.\n   ```\n\n2. Next.\n";
+    expect(ids(list, "mdx")).toEqual([]);
+    const nested = "````md\n<!-- cite outer -->\n```ts\ncode\n```\n<!-- cite still-inside -->\n````\n";
+    expect(ids(nested, "markdown")).toEqual([]);
+  });
+
+  it("ignores a statement inside a backtick span, whatever the backtick count", () => {
+    expect(ids("Write `<!-- cite <id> -->` above the paragraph.\n", "markdown")).toEqual([]);
+    expect(ids("Write `` `<!-- cite x -->` `` to show it.\n", "markdown")).toEqual([]);
+    const row = "| markdown, mdx | `<!-- cite PAYLOAD -->`, `{/* cite PAYLOAD */}`, `[comment]: # (cite PAYLOAD)` | id |\n";
+    expect(ids(row, "mdx")).toEqual([]);
+  });
+
+  it("an unclosed backtick is not a span, so the statement after it is read", () => {
+    expect(ids("A stray ` here.\n<!-- cite real -->\nThe claim.\n", "markdown")).toEqual(["real"]);
+  });
+
+  it("still finds a real statement after a fence, and one between two fences", () => {
+    const body = "```md\n<!-- cite fenced -->\n```\n\n<!-- cite real -->\nThe claim.\n\n```\n<!-- cite fenced-again -->\n```\n";
+    const [st, ...rest] = parseStatements(body, "markdown");
+    expect(rest).toEqual([]);
+    expect(st?.payload).toEqual({ kind: "ref", id: "real" });
+    expect(st?.line).toBe(5);
+    expect(st?.anchorLine).toBe(6);
+  });
+
+  it("an unclosed fence runs to the end of the body, as a renderer reads it", () => {
+    expect(ids("```\n<!-- cite fenced -->\n\n<!-- cite also-fenced -->\n", "markdown")).toEqual([]);
+  });
+
+  it("a fence inside the frontmatter is irrelevant: the scanner sees the body only", () => {
+    const content = "---\ntitle: x\ndescription: \"```\"\n---\n\n<!-- cite real -->\nThe claim.\n";
+    expect(readPageStatements(content).map((s) => s.line)).toEqual([6]);
+  });
+
+  it("ignores a statement inside an asciidoc listing block", () => {
+    expect(ids("----\n// (cite fenced)\n----\n\n// (cite real)\nThe claim.\n", "asciidoc")).toEqual(["real"]);
+  });
+
+  it("html has no fences: a statement in a <pre> is still a statement", () => {
+    expect(ids("<pre>\n<!-- cite in-pre -->\n</pre>\n", "html")).toEqual(["in-pre"]);
+  });
+});
+
 describe("detectEol and lineAt", () => {
   it("detects the first line break's flavour", () => {
     expect(detectEol("a\nb\r\n")).toBe("\n");
@@ -304,7 +369,7 @@ describe("formatStatement", () => {
   it("renders a reference in each format's first form", () => {
     const ref = { kind: "ref", id: "fetch-timeout" } as const;
     expect(formatStatement("markdown", ref)).toBe("<!-- cite fetch-timeout -->");
-    expect(formatStatement("mdx", ref)).toBe("<!-- cite fetch-timeout -->");
+    expect(formatStatement("mdx", ref)).toBe("{/* cite fetch-timeout */}");
     expect(formatStatement("html", ref)).toBe("<!-- cite fetch-timeout -->");
     expect(formatStatement("asciidoc", ref)).toBe("// (cite fetch-timeout)");
     expect(formatStatement("rst", ref)).toBe(".. (cite fetch-timeout)");

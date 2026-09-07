@@ -12,6 +12,17 @@
  * and is a reference (`cite true` is a reference to id `true`). The scanner
  * uses `indexOf` for the delimiters, never a regex over the whole page, and is
  * handed the body only, so a `cite` inside frontmatter is never matched.
+ *
+ * It does not read code. An opener inside a fenced block (``` or ~~~ in
+ * markdown and mdx, indented or not; `----` in asciidoc; an unclosed fence
+ * runs to the end, as a renderer reads it) or inside a backtick span (a run of
+ * backticks closed by a run of the same length on the same line) is skipped,
+ * so a page that documents the syntax carries no statements. html and xml
+ * have neither; a `<pre>` is not code to this scanner.
+ *
+ * Every form parses in both markdown and mdx. The first form is what
+ * `formatStatement` writes: the html comment for markdown, the jsx comment
+ * for mdx, which rejects an html comment.
  */
 import type { InlineStatement } from "../types.js";
 import { CiteError } from "../errors.js";
@@ -23,11 +34,11 @@ export interface StatementForm {
   json: boolean;
 }
 
-const MARKDOWN_FORMS: readonly StatementForm[] = [
-  { open: "<!--", close: "-->", json: true },
-  { open: "{/*", close: "*/}", json: true },
-  { open: "[comment]: # (", close: ")", json: false },
-];
+const HTML_COMMENT: StatementForm = { open: "<!--", close: "-->", json: true };
+const JSX_COMMENT: StatementForm = { open: "{/*", close: "*/}", json: true };
+const LINK_REFERENCE: StatementForm = { open: "[comment]: # (", close: ")", json: false };
+const MARKDOWN_FORMS: readonly StatementForm[] = [HTML_COMMENT, JSX_COMMENT, LINK_REFERENCE];
+const MDX_FORMS: readonly StatementForm[] = [JSX_COMMENT, HTML_COMMENT, LINK_REFERENCE];
 const COMMENT_FORMS: readonly StatementForm[] = [
   { open: "<!--", close: "-->", json: true },
 ];
@@ -48,13 +59,23 @@ const ID = /^[a-z0-9][a-z0-9-]*$/;
 const ANY_FENCE = /^(?:`{3,}|~{3,}|-{4,})/;
 const MARKDOWN_FENCE = /^(`{3,}|~{3,})/;
 const ASCIIDOC_FENCE = /^(-{4,})/;
+/**
+ * The fence openers the code skip recognises. A markdown fence keeps its
+ * meaning when indented, as it is inside a list item, so the skip reads it
+ * there too; the locators above stay at column 0 for `quote` anchoring.
+ */
+const SKIP_MARKDOWN_FENCE = /^[ \t]*(`{3,}|~{3,})/;
+const SKIP_ASCIIDOC_FENCE = ASCIIDOC_FENCE;
+/** Formats where a backtick span is inline code. */
+const SPAN_FORMATS = new Set(["markdown", "mdx", "asciidoc", "rst"]);
 
 /** The forms per extractor name. Unknown formats have none. */
 export function statementForms(format: string): readonly StatementForm[] {
   switch (format) {
     case "markdown":
-    case "mdx":
       return MARKDOWN_FORMS;
+    case "mdx":
+      return MDX_FORMS;
     case "html":
     case "xml":
       return COMMENT_FORMS;
@@ -78,6 +99,116 @@ function fenceFor(format: string): RegExp | undefined {
     default:
       return undefined;
   }
+}
+
+/** The fence-opener pattern the code skip uses for a format, or undefined when it has no fences. */
+function skipFenceFor(format: string): RegExp | undefined {
+  switch (format) {
+    case "markdown":
+    case "mdx":
+      return SKIP_MARKDOWN_FENCE;
+    case "asciidoc":
+      return SKIP_ASCIIDOC_FENCE;
+    default:
+      return undefined;
+  }
+}
+
+/** A stretch of the body the scanner does not read, as body offsets. */
+interface CodeRegion {
+  start: number;
+  end: number;
+}
+
+const BACKTICK = 96;
+
+/** Length of the run of backticks starting at `i` in `text` (0 when none). */
+function backtickRun(text: string, i: number): number {
+  let n = 0;
+  while (text.charCodeAt(i + n) === BACKTICK) n++;
+  return n;
+}
+
+/**
+ * The backtick spans on one line, appended to `out` as body offsets. A run
+ * of N backticks opens a span that the next run of exactly N closes; a run
+ * with no closer is literal text.
+ */
+function spanRegions(text: string, lineStart: number, out: CodeRegion[]): void {
+  let i = 0;
+  while (i < text.length) {
+    const n = backtickRun(text, i);
+    if (n === 0) {
+      i++;
+      continue;
+    }
+    let j = i + n;
+    let closer = -1;
+    while (j < text.length) {
+      const m = backtickRun(text, j);
+      if (m === 0) {
+        j++;
+        continue;
+      }
+      if (m === n) {
+        closer = j;
+        break;
+      }
+      j += m;
+    }
+    if (closer === -1) {
+      i += n;
+      continue;
+    }
+    out.push({ start: lineStart + i, end: lineStart + closer + n });
+    i = closer + n;
+  }
+}
+
+/**
+ * Whether a line closes the fence `open`: the same character, at least as
+ * many of it, nothing else on the line. Indentation is allowed as on the
+ * opener; a longer run does not close a shorter one's block, which is how a
+ * ```` block carries a ``` block inside it.
+ */
+function closesFence(text: string, open: { char: string; length: number }): boolean {
+  const trimmed = text.trim();
+  let n = 0;
+  while (trimmed.charAt(n) === open.char) n++;
+  return n >= open.length && n === trimmed.length;
+}
+
+/**
+ * Every fenced block and backtick span in the body, in order, for a format
+ * that has them. An unclosed fence runs to the end of the body.
+ */
+function codeRegions(body: string, format: string): CodeRegion[] {
+  const fence = skipFenceFor(format);
+  const spans = SPAN_FORMATS.has(format);
+  const out: CodeRegion[] = [];
+  if (fence === undefined && !spans) return out;
+  let open: { char: string; length: number; start: number } | undefined;
+  let pos = 0;
+  while (pos < body.length) {
+    const end = lineEnd(body, pos);
+    const text = lineText(body, pos, end);
+    if (open !== undefined) {
+      if (closesFence(text, open)) {
+        out.push({ start: open.start, end });
+        open = undefined;
+      }
+    } else {
+      const opener = fence?.exec(text)?.[1];
+      if (opener !== undefined) {
+        open = { char: opener.charAt(0), length: opener.length, start: pos };
+      } else if (spans) {
+        spanRegions(text, pos, out);
+      }
+    }
+    pos = end + 1;
+  }
+  if (open !== undefined) out.push({ start: open.start, end: body.length });
+  return out;
 }
 
 /** Offset of the terminator of the line containing `pos` (or the text length). */
@@ -135,12 +266,21 @@ export function parseStatements(
   const out: InlineStatement[] = [];
   const fileLine = (bodyOffset: number): number =>
     from.line + lineAt(body, bodyOffset) - 1;
+  const code = codeRegions(body, format);
+  /** The end of the code region `at` falls in, or undefined when it is prose. */
+  const codeEndAt = (at: number): number | undefined =>
+    code.find((r) => at >= r.start && at < r.end)?.end;
 
   for (const form of statementForms(format)) {
     let cursor = 0;
     for (;;) {
       const at = body.indexOf(form.open, cursor);
       if (at === -1) break;
+      const codeEnd = codeEndAt(at);
+      if (codeEnd !== undefined) {
+        cursor = codeEnd;
+        continue;
+      }
       const closeAt = body.indexOf(form.close, at + form.open.length);
       if (closeAt === -1) break;
       const end = closeAt + form.close.length;

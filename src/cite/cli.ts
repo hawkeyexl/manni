@@ -222,7 +222,7 @@ export function buildProgram(): Command {
     .option("--no-sources", "page-side rules only; every source status is skipped")
     .option(
       "--root <dir>",
-      "directory src: paths resolve from (default: git root, else config dir, else cwd)",
+      "directory src: paths resolve from (default: cite.root from config, else the git root, else the current directory)",
     )
     .option("--show-diff", "in pretty output, print the diff and commit subjects for changed")
     .option("--reveal", "in pretty output, print the resolved path beside an obfuscated token")

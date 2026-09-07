@@ -4,9 +4,13 @@
  * current: the range hashes to the pin. moved / moved-ambiguous: a window of
  * the same length hashes equal elsewhere (once / more than once); whole-file
  * citations never move. changed: none equal; with a commit and history,
- * the diff and commit subjects are attached (pretty-only). never-true: the
- * range at the commit does not hash to the pin, or the path is absent there.
- * missing: the source cannot be read.
+ * the diff and commit subjects are attached (pretty-only). never-true: no
+ * window of the range's length anywhere in the file at the commit hashes to
+ * the pin, or the path is absent there. The recorded lines are tried first;
+ * the rest of the file is searched because `update` rewrites `src` for a move
+ * without touching `commit`, so the lines a pin was minted from may sit
+ * elsewhere in the file as it was then. A window that matches there is the
+ * original for the move search below. missing: the source cannot be read.
  *
  * Move search: with the original text (git could show the commit), candidate
  * offsets are where the first line matches, compared lexically, hashed only on
@@ -108,11 +112,16 @@ export function findWindows(
   return { starts, truncated: false };
 }
 
-/** What git could say about the range at the recorded commit. */
+/**
+ * What git could say about the pin at the recorded commit. `unknown` is a
+ * file at the commit too large to search under the budget with the pin found
+ * nowhere in the part that was: neither true nor never true.
+ */
 type History =
   | { kind: "none" }
   | { kind: "unavailable" }
   | { kind: "never-true" }
+  | { kind: "unknown" }
   | { kind: "original"; lines: string[] };
 
 async function historyOf(
@@ -122,20 +131,38 @@ async function historyOf(
   range: SourceRange,
   pin: string,
   salt: string | undefined,
+  budget: number | undefined,
 ): Promise<History> {
   const shown = await git.showFile(commit, path);
   if ("missing" in shown) {
     return shown.missing === "commit" ? { kind: "unavailable" } : { kind: "never-true" };
   }
-  let joined: string;
+  const then = splitLines(shown.text);
+  let joined: string | undefined;
   try {
-    joined = sliceLines(splitLines(shown.text), range);
+    joined = sliceLines(then, range);
   } catch {
     // The range ran past the end of the file as it was at the commit.
-    return { kind: "never-true" };
+    joined = undefined;
   }
-  if (hashLines(joined, salt) !== pin) return { kind: "never-true" };
-  return { kind: "original", lines: joined.split("\n") };
+  if (joined !== undefined && hashLines(joined, salt) === pin) {
+    return { kind: "original", lines: joined.split("\n") };
+  }
+
+  // Not at the recorded lines. `update` rewrites `src` for a move and keeps
+  // `commit`, so the lines the pin was minted from may sit elsewhere in the
+  // file as it was then. Only a pin found nowhere there never held. A
+  // whole-file pin has nowhere else to be.
+  if (range.start === undefined) return { kind: "never-true" };
+  const length = (range.end ?? range.start) - range.start + 1;
+  const search: FindWindowsOptions = { around: range.start };
+  if (budget !== undefined) search.budget = budget;
+  const found = findWindows(then, length, pin, salt, search);
+  const [first] = found.starts;
+  if (first !== undefined) {
+    return { kind: "original", lines: then.slice(first - 1, first - 1 + length) };
+  }
+  return found.truncated ? { kind: "unknown" } : { kind: "never-true" };
 }
 
 export async function classifyCitation(
@@ -171,7 +198,7 @@ export async function classifyCitation(
 
   let history: History = { kind: "none" };
   if (opts.useGit !== false && commit !== undefined && (await opts.git.available())) {
-    history = await historyOf(opts.git, commit, source.resolvedPath, range, pin, salt);
+    history = await historyOf(opts.git, commit, source.resolvedPath, range, pin, salt, opts.budget);
   }
 
   // A whole-file pin has nowhere to move to.
@@ -204,6 +231,7 @@ export async function classifyCitation(
   }
   result.status = "changed";
   if (history.kind === "unavailable") result.historyAvailable = false;
+  if (history.kind === "unknown") result.truncatedSearch = true;
   if (history.kind === "original" && commit !== undefined) {
     result.historyAvailable = true;
     result.commitsSince = await opts.git.subjectsSince(commit, source.resolvedPath);

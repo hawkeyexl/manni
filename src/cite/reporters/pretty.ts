@@ -6,6 +6,7 @@
  */
 import type { ValidationResult } from "../../meta/index.js";
 import { palette } from "../../shared/color.js";
+import { isObfuscatedToken, parseSrc } from "../core/range.js";
 import type {
   CheckRun,
   CitationFinding,
@@ -99,10 +100,22 @@ function labelOfFinding(finding: CitationFinding): string {
   return finding.src ?? "page";
 }
 
-/** The `src` column: as the page spelled it, plus the real path only under `reveal`. */
+/** Whether the page spelled this source as a token. */
+function citesToken(src: string): boolean {
+  try {
+    return isObfuscatedToken(parseSrc(src).path);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The `src` column: as the page spelled it, plus the real path only under
+ * `reveal`, and only beside a token, which is the one spelling that hides it.
+ */
 function srcColumn(result: CitationResult, opts: PrettyOptions, dim: (s: string) => string): string {
   const src = result.citation.src;
-  if (opts.reveal && result.resolvedPath !== undefined) {
+  if (opts.reveal && result.resolvedPath !== undefined && citesToken(src)) {
     return `${src} ${dim(`(${result.resolvedPath})`)}`;
   }
   return src;
@@ -135,8 +148,9 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
   run.pages.forEach((page, index) => {
     const { reported, baselined } = splitBaselined(page, resultFor(run, index));
     const errors = reported.filter((f) => f.severity === "error").length;
+    // "baselined" is a participle, not a noun: 1 baselined, 2 baselined.
     const forgiven =
-      baselined.length > 0 ? c.dim(`  (${plural(baselined.length, "baselined")})`) : "";
+      baselined.length > 0 ? c.dim(`  (${String(baselined.length)} baselined)`) : "";
 
     if (reported.length === 0) {
       if (quiet) return;
