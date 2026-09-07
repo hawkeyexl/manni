@@ -1,6 +1,6 @@
 # 0035: citations and drift: pin a claim to the lines it rests on
 
-- **Status:** Proposed
+- **Status:** Implemented (#17)
 - **Serves:** Devin · D4 · Theo · T1 · Maya · M2 · Sara · S1
 - **Depends on:** [0023](0023-metadata-vocabularies.md), the family this
   vocabulary joins as its tenth id, and whose `source-of-truth` is the
@@ -19,7 +19,7 @@
   the both-channels-are-validated rule that decides how frontmatter entries and
   inline statements coexist. [0021](0021-frontmatter-as-a-database.md), for
   `lineFor`, which is how a frontmatter entry gets a line number
-- **Touches (planned):** `src/cite/**` (new), `src/cli.ts`, `src/index.ts`,
+- **Touches:** `src/cite/**` (new), `src/cli.ts`, `src/index.ts`,
   `src/meta/internal.ts` (new), `src/shared/{cli-options,color,warn}.ts`,
   `eslint.config.js`, `scripts/check-cli-reference.mjs`,
   `docs/proposals/0035/**`, `docs/src/content/docs/cite/**` (new),

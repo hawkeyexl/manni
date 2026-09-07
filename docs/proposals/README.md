@@ -50,7 +50,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0030](0030-query-schema-flag.md) | `-s/--schema` on `query`: naming the contract DDL evolves | Sara · S1, S3 / Maya · M2, M3 | Implemented (#139) |
 | [0031](0031-input-formats-notebooks-and-markdoc.md) | The input-format gap: Jupyter notebooks and Markdoc in, standalone data files out | Maya · M1, M4 / Sara · S1, S2 | Proposed |
 | [0033](0033-manni-monorepo.md) | One package, one bin: docmeta becomes `manni meta`, in a new repository | Maya · M1, M2 / Devin · D1, D2 / Theo · T1 | Implemented |
-| [0035](0035-citations-and-drift.md) | Citations and drift: pin a claim to source lines, and `manni cite` checks the pin | Devin · D4 / Theo · T1 / Maya · M2 / Sara · S1 | Proposed |
+| [0035](0035-citations-and-drift.md) | Citations and drift: pin a claim to source lines, and `manni cite` checks the pin | Devin · D4 / Theo · T1 / Maya · M2 / Sara · S1 | Implemented (#17) |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
