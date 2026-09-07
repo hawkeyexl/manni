@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 import { CHECK_DEFAULTS, runCheck, type CheckOptions } from "../../src/a11y/commands/check.js";
 import type { Fetcher } from "../../src/a11y/core/sitemap.js";
-import { A11yError } from "../../src/a11y/types.js";
+import { A11yError, type ProgressEvent } from "../../src/a11y/types.js";
 import { fakeAnalyzer, violation, type FakeSite } from "../helpers/fake-analyzer.js";
 
 const S = "https://site.example";
@@ -327,5 +327,75 @@ describe("runCheck closes the analyzer", () => {
     const run = await runCheck(opts({}), { analyzer, fetcher });
     expect(run.summary.sitemap).toBeNull();
     expect(analyzer.closed).toBe(1);
+  });
+});
+
+describe("runCheck progress", () => {
+  it("reports the sitemap first when crawling, then the crawl's own events", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: { links: [] },
+      [`${S}/orphan`]: {},
+    };
+    const fetcher = sitemapFetcher({
+      [`${S}/sitemap.xml`]: `<urlset><url><loc>${S}/orphan</loc></url></urlset>`,
+    });
+    const events: ProgressEvent[] = [];
+    await runCheck(opts({}), {
+      analyzer: fakeAnalyzer(site),
+      fetcher,
+      onProgress: (e) => events.push(e),
+    });
+    expect(events).toEqual([
+      { kind: "sitemap", source: `${S}/sitemap.xml`, urls: 1 },
+      { kind: "browser" },
+      { kind: "page", index: 1, queued: 2, url: `${S}/` },
+      { kind: "checked", index: 1, url: `${S}/`, violations: 0 },
+      { kind: "page", index: 2, queued: 2, url: `${S}/orphan` },
+      { kind: "checked", index: 2, url: `${S}/orphan`, violations: 0 },
+      { kind: "done", checked: 2, skipped: 0 },
+    ]);
+  });
+
+  it("reports a null sitemap when none was found", async () => {
+    const events: ProgressEvent[] = [];
+    await runCheck(opts({}), {
+      analyzer: fakeAnalyzer({ [`${S}/`]: {} }),
+      fetcher: noSitemap(),
+      onProgress: (e) => events.push(e),
+    });
+    expect(events[0]).toEqual({ kind: "sitemap", source: null, urls: 0 });
+  });
+
+  it("skips the sitemap event with crawl false", async () => {
+    const events: ProgressEvent[] = [];
+    await runCheck(opts({ crawl: false }), {
+      analyzer: fakeAnalyzer({ [`${S}/`]: { links: [`${S}/a`] } }),
+      fetcher: noSitemap(),
+      onProgress: (e) => events.push(e),
+    });
+    expect(events.map((e) => e.kind)).toEqual(["browser", "page", "checked", "done"]);
+  });
+
+  it("reports the violation count before the impact floor is applied", async () => {
+    const events: ProgressEvent[] = [];
+    const run = await runCheck(opts({ impact: "critical" }), {
+      analyzer: fakeAnalyzer({
+        [`${S}/`]: {
+          violations: [violation("region", "minor"), violation("image-alt", "critical")],
+        },
+      }),
+      fetcher: noSitemap(),
+      onProgress: (e) => events.push(e),
+    });
+    expect(events.find((e) => e.kind === "checked")).toMatchObject({ violations: 2 });
+    expect(run.results[0]?.violations).toHaveLength(1);
+  });
+
+  it("runs without a listener", async () => {
+    const run = await runCheck(opts({}), {
+      analyzer: fakeAnalyzer({ [`${S}/`]: {} }),
+      fetcher: noSitemap(),
+    });
+    expect(run.summary.checked).toBe(1);
   });
 });

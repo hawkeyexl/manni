@@ -204,6 +204,32 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
     expect(r.stdout).not.toContain("html-has-lang");
   }, 120_000);
 
+  it("--progress reports each page on stderr and leaves stdout to the report", async () => {
+    // stderr is a pipe here, so this is the plain, one-line-per-event form.
+    const r = await run(["check", `${server.url}/index.html`, "-f", "json", "--progress"]);
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("manni: starting browser\n");
+    expect(r.stderr).toContain(`manni: sitemap ${server.url}/sitemap.xml (`);
+    expect(r.stderr).toContain(`manni: [1/`);
+    expect(r.stderr).toMatch(/^manni: checked 3 pages, 0 skipped$/m);
+    expect(r.stderr).not.toContain("\x1b");
+    // The report is still the whole of stdout.
+    const json = JSON.parse(r.stdout) as JsonRun;
+    expect(json.summary.checked).toBe(3);
+  }, 120_000);
+
+  it("--no-progress says nothing on stderr", async () => {
+    const r = await run(["check", `${server.url}/index.html`, "--no-crawl", "--no-progress"]);
+    expect(r.status).toBe(0);
+    expect(r.stderr).toBe("");
+  }, 120_000);
+
+  it("reports no progress by default when stderr is not a terminal", async () => {
+    const r = await run(["check", `${server.url}/index.html`, "--no-crawl"]);
+    expect(r.status).toBe(0);
+    expect(r.stderr).toBe("");
+  }, 120_000);
+
   it("--format github annotates each violation and says nothing when clean", async () => {
     const bad = await run(["check", `${server.url}/about.html`, "--no-crawl", "-f", "github"]);
     expect(bad.status).toBe(1);

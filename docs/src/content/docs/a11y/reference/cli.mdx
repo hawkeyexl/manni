@@ -71,6 +71,8 @@ manni a11y check [urls...] [options]
 | `--impact` | `<level>` | `minor` | Minimum impact reported and counted: `minor`, `moderate`, `serious`, or `critical`. Violations below it are dropped before the [score](#the-score) and the exit code are decided. An unknown level is an error (exit 2). Overrides config `impact:`. |
 | `--timeout` | `<ms>` | `30000` | Per-page navigation timeout in milliseconds. Overrides config `timeout:`. |
 | `-q, --quiet` | n/a | off | In `pretty` output, hide pages with no remaining violations. Has no effect on `json` or `github`. |
+| `--progress` | n/a | `auto` | Report [progress](#progress) on stderr while the crawl runs. The default is on only when stderr is a terminal. Pass it to see each page in a CI log. |
+| `--no-progress` | n/a | off | Never report progress, even on a terminal. |
 | `-c, --config` | `<path>` | discovered | Path to a [config file](#configuration). When set, the file must exist or the run exits 2. |
 | `--no-config` | n/a | off | Ignore any discovered config file. `-c` and `--no-config` set the same option, so the one written later on the command line wins. |
 
@@ -244,6 +246,20 @@ is clean:
 
 GitHub renders each as an annotation on the workflow run. There is no file or
 line to anchor to, since the finding is about a URL.
+
+### Progress
+
+The report waits for the whole crawl, and a fifty-page site takes a minute. So
+`check` narrates the run on stderr while it works. It says when the browser is
+starting, which sitemap it found, and which page it is on, as
+`[3/51] https://docs.example.com/install/`. On a terminal that is one status
+line, rewritten in place and cleared before the report prints. Off a terminal
+it is one line per event, each prefixed `manni: `, with no escape codes.
+
+Progress is on by default only when stderr is a terminal, so a CI log stays as
+it was. Pass `--progress` to see it in a CI log anyway. Pass `--no-progress`
+to silence it. Either way stdout carries the report alone, so
+`-f json | jq` keeps working.
 
 ### Exit codes
 

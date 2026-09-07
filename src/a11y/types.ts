@@ -98,3 +98,28 @@ export interface CheckRun {
   results: PageResult[];
   summary: CheckSummary;
 }
+
+/**
+ * What a run says while it is still running. The crawl emits these in order
+ * (`browser`, then `page`/`checked` per page, then `done`); the check core
+ * adds `sitemap` before them when it crawls. A listener is optional, and
+ * nothing is emitted without one.
+ */
+export type ProgressEvent =
+  /** About to launch the browser, before the first page. */
+  | { kind: "browser" }
+  /** Discovery finished: the sitemap that supplied pages (or none), and how many URLs it gave. */
+  | { kind: "sitemap"; source: string | null; urls: number }
+  /** About to check page `index` (1-based); `queued` is every URL discovered so far. */
+  | { kind: "page"; index: number; queued: number; url: string }
+  /**
+   * Page `index` finished. `violations` is axe's count for the page before the
+   * impact floor is applied, so it can be higher than what the report keeps.
+   * `error` is set when the page could not be loaded or analyzed. A seed that
+   * fails ends the run instead, and is reported as the run's error.
+   */
+  | { kind: "checked"; index: number; url: string; violations: number; error?: string }
+  /** The crawl is over: pages analyzed, and pages left in the frontier. */
+  | { kind: "done"; checked: number; skipped: number };
+
+export type ProgressListener = (event: ProgressEvent) => void;

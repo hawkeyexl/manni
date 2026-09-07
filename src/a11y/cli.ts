@@ -15,7 +15,8 @@ import { CHECK_DEFAULTS, runCheck } from "./commands/check.js";
 import { createPlaywrightAnalyzer } from "./core/analyzer.js";
 import { loadA11yConfig, type LoadedA11yConfig } from "./core/config.js";
 import { A11Y_FORMAT_LIST, isA11yFormat, render } from "./reporters/index.js";
-import { A11yError, IMPACTS, isImpact, type Impact } from "./types.js";
+import { CLEAR_LINE, createProgressReporter } from "./reporters/progress.js";
+import { A11yError, IMPACTS, isImpact, type Impact, type ProgressListener } from "./types.js";
 
 /** `--tags <list>`: commas separate, whitespace around them is trimmed, empty items are dropped. */
 function splitList(value: string): string[] {
@@ -25,12 +26,51 @@ function splitList(value: string): string[] {
     .filter(Boolean);
 }
 
-function resolveColor(program: Command): boolean {
+/**
+ * Whether to paint what goes to `stream`. The report and the progress line
+ * are decided separately, since stdout may be a pipe while stderr is still
+ * the terminal (`-f json | jq`), and the other way round.
+ */
+function resolveColor(program: Command, stream: NodeJS.WriteStream): boolean {
   // commander maps --no-color to opts.color === false.
   const noColor = program.opts().color === false;
   // `isTTY` is undefined off a terminal, never false; `shouldColor` treats a
   // missing one as "not a terminal".
-  return shouldColor({ noColor, isTTY: process.stdout.isTTY });
+  return shouldColor({ noColor, isTTY: stream.isTTY });
+}
+
+interface Progress {
+  /** Hears the run's events; `undefined` keeps the run silent. */
+  listener: ProgressListener | undefined;
+  /**
+   * Erase the status line. On a terminal it is rewritten in place, and a run
+   * that dies mid-crawl (no browser, a seed that will not load) would leave
+   * it there for the error to land on. A no-op everywhere else.
+   */
+  clear: () => void;
+}
+
+/**
+ * `--progress` and `--no-progress` decide; with neither, progress is on
+ * exactly when stderr is a terminal, so a CI log stays as it was.
+ */
+function resolveProgress(program: Command, flag: boolean | undefined): Progress {
+  // @types/node says boolean; off a terminal it is undefined (see resolveColor).
+  const tty = (process.stderr.isTTY as boolean | undefined) ?? false;
+  const silent: Progress = { listener: undefined, clear: () => undefined };
+  if (!(flag ?? tty)) return silent;
+  const listener = createProgressReporter({
+    stream: process.stderr,
+    color: resolveColor(program, process.stderr),
+    tty,
+  });
+  if (!tty) return { listener, clear: silent.clear };
+  return {
+    listener,
+    clear: () => {
+      process.stderr.write(CLEAR_LINE);
+    },
+  };
 }
 
 /**
@@ -68,6 +108,8 @@ interface CheckCliOptions {
   timeout: string;
   /** `-q, --quiet`. */
   quiet?: boolean;
+  /** `--progress` → true, `--no-progress` → false, neither → undefined (auto). */
+  progress?: boolean;
   /** `-c <path>` | `--no-config` → false. */
   config?: string | false;
 }
@@ -115,9 +157,15 @@ export function buildProgram(): Command {
       String(CHECK_DEFAULTS.timeout),
     )
     .option("-q, --quiet", "in pretty output, hide pages with no violations")
+    // `--progress` first, so that adding `--no-progress` leaves the default
+    // undefined (auto) instead of commander's `true` for a lone negation.
+    .option("--progress", "report progress on stderr (default: only on a terminal)")
+    .option("--no-progress", "never report progress")
     .option("-c, --config <path>", "path to a manni config file")
     .option("--no-config", "ignore any discovered config file")
     .action(async (urls: string[], options: CheckCliOptions, command: Command) => {
+      // Settled once the flags are validated; until then there is no line to clear.
+      let clearProgress = (): void => undefined;
       try {
         // A value commander filled in from the option's default yields to the
         // config file; one the user typed wins over it. Same three-way
@@ -139,6 +187,10 @@ export function buildProgram(): Command {
             : await loadA11yConfig(process.cwd(), options.config);
         const cfg = loaded.config;
 
+        const parent = command.parent ?? command;
+        const progress = resolveProgress(parent, options.progress);
+        clearProgress = progress.clear;
+
         const run = await runCheck(
           {
             urls: urls.length > 0 ? urls : (cfg.urls ?? []),
@@ -151,10 +203,10 @@ export function buildProgram(): Command {
             impact: typed("impact") ? impact : (cfg.impact ?? CHECK_DEFAULTS.impact),
             timeout: typed("timeout") ? timeout : (cfg.timeout ?? CHECK_DEFAULTS.timeout),
           },
-          { analyzer: createPlaywrightAnalyzer() },
+          { analyzer: createPlaywrightAnalyzer(), onProgress: progress.listener },
         );
 
-        const color = resolveColor(command.parent ?? command);
+        const color = resolveColor(parent, process.stdout);
         const text = render(format, run, { color, quiet: Boolean(options.quiet) });
         // Only `github` may say nothing on a clean run; every other format
         // owes its envelope even when it is empty.
@@ -163,6 +215,7 @@ export function buildProgram(): Command {
         }
         process.exitCode = run.summary.failed > 0 ? 1 : 0;
       } catch (err) {
+        clearProgress();
         fail(err);
       }
     });

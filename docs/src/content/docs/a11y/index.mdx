@@ -74,7 +74,8 @@ Checked 42 of 42 pages (sitemap: https://docs.example.com/sitemap.xml)
 
 Two pages had findings, so the exit code is `1`. `✓` and `✗` differ in glyph as
 well as colour, and colour is off when stdout is not a terminal or `NO_COLOR`
-is set.
+is set. While the crawl runs, a status line on stderr names the page it is on,
+and it clears before the report prints.
 
 To check exactly one page, turn the crawl off:
 

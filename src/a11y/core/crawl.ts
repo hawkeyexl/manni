@@ -7,7 +7,7 @@
  * spelling, and pages run one at a time so a site sees one request at a time.
  */
 import type { AnalyzeOptions, PageAnalyzer } from "./analyzer.js";
-import type { PageResult } from "../types.js";
+import type { PageResult, ProgressListener } from "../types.js";
 import { isPageLink, normalizeUrl, sameHost } from "./url.js";
 
 export interface CrawlOptions {
@@ -20,6 +20,8 @@ export interface CrawlOptions {
   /** Extra URLs to enqueue right after the seeds (from the sitemap). */
   extra: string[];
   analyze: AnalyzeOptions;
+  /** Told about each step as it happens. Absent means silent. */
+  onProgress?: ProgressListener;
 }
 
 export interface CrawlOutcome {
@@ -45,10 +47,14 @@ interface Candidate {
  * - Any other page's failure is recorded as `error` and the crawl continues.
  * - Stops when `pages.length === maxPages`; `skipped` = frontier left behind.
  * - With `crawl: false`, `extra` is ignored and no links are followed.
+ * - `onProgress` hears `browser` once before the first analyze (that is where
+ *   the lazy launch happens), `page` before each analyze, `checked` after
+ *   each, and `done` at the end. A failing seed rethrows before `checked`.
  */
 export async function crawl(opts: CrawlOptions, analyzer: PageAnalyzer): Promise<CrawlOutcome> {
   const frontier: Candidate[] = [];
   const seen = new Set<string>();
+  const progress = opts.onProgress ?? (() => undefined);
 
   const enqueue = (raw: string, source: Source): void => {
     let url: string;
@@ -74,22 +80,23 @@ export async function crawl(opts: CrawlOptions, analyzer: PageAnalyzer): Promise
     const candidate = frontier[next];
     if (candidate === undefined) break;
     const { url, source } = candidate;
+    const index = pages.length + 1;
+    if (index === 1) progress({ kind: "browser" });
+    progress({ kind: "page", index, queued: seen.size, url });
     try {
       const analyzed = await analyzer.analyze(url, opts.analyze);
       pages.push({ ...analyzed.result, url, source });
       if (opts.crawl) for (const link of analyzed.links) enqueue(link, "link");
+      progress({ kind: "checked", index, url, violations: analyzed.result.violations.length });
     } catch (err) {
       if (source === "seed") throw err;
-      pages.push({
-        url,
-        source,
-        violations: [],
-        passes: 0,
-        incomplete: 0,
-        error: err instanceof Error ? err.message : String(err),
-      });
+      const error = err instanceof Error ? err.message : String(err);
+      pages.push({ url, source, violations: [], passes: 0, incomplete: 0, error });
+      progress({ kind: "checked", index, url, violations: 0, error });
     }
   }
 
-  return { pages, discovered: seen.size, skipped: seen.size - pages.length };
+  const skipped = seen.size - pages.length;
+  progress({ kind: "done", checked: pages.length, skipped });
+  return { pages, discovered: seen.size, skipped };
 }

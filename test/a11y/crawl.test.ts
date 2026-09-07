@@ -6,8 +6,8 @@
  */
 import { describe, expect, it } from "vitest";
 import { crawl, type CrawlOptions } from "../../src/a11y/core/crawl.js";
-import { A11yError } from "../../src/a11y/types.js";
-import { fakeAnalyzer, type FakeSite } from "../helpers/fake-analyzer.js";
+import { A11yError, type ProgressEvent } from "../../src/a11y/types.js";
+import { fakeAnalyzer, violation, type FakeSite } from "../helpers/fake-analyzer.js";
 
 const S = "https://site.example";
 const ANALYZE = { tags: [], timeout: 1000 };
@@ -209,5 +209,87 @@ describe("crawl", () => {
     const analyzer = fakeAnalyzer({ [`${S}/A`]: {} });
     const out = await crawl(options({ seeds: [`HTTPS://Site.Example/A#x`] }), analyzer);
     expect(out.pages[0]?.url).toBe(`${S}/A`);
+  });
+});
+
+describe("crawl progress", () => {
+  it("reports the browser, then each page before and after, then done", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: { links: [`${S}/a`] },
+      [`${S}/a`]: {
+        violations: [violation("image-alt", "critical"), violation("region", "minor")],
+      },
+    };
+    const events: ProgressEvent[] = [];
+    await crawl(options({ onProgress: (e) => events.push(e) }), fakeAnalyzer(site));
+    expect(events).toEqual([
+      { kind: "browser" },
+      // The seed is the only URL discovered until its links are read.
+      { kind: "page", index: 1, queued: 1, url: `${S}/` },
+      { kind: "checked", index: 1, url: `${S}/`, violations: 0 },
+      { kind: "page", index: 2, queued: 2, url: `${S}/a` },
+      // Counted before the impact floor: both of /a's violations.
+      { kind: "checked", index: 2, url: `${S}/a`, violations: 2 },
+      { kind: "done", checked: 2, skipped: 0 },
+    ]);
+  });
+
+  it("reports the browser once, before the first page", async () => {
+    const events: ProgressEvent[] = [];
+    await crawl(
+      options({ seeds: [`${S}/`, `${S}/b`], onProgress: (e) => events.push(e) }),
+      fakeAnalyzer({ [`${S}/`]: {}, [`${S}/b`]: {} }),
+    );
+    expect(events.filter((e) => e.kind === "browser")).toHaveLength(1);
+    expect(events[0]).toEqual({ kind: "browser" });
+  });
+
+  it("reports a crawled page that failed with its error", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: { links: [`${S}/broken`] },
+      [`${S}/broken`]: new A11yError(`Could not load ${S}/broken: timeout`),
+    };
+    const events: ProgressEvent[] = [];
+    await crawl(options({ onProgress: (e) => events.push(e) }), fakeAnalyzer(site));
+    expect(events[4]).toEqual({
+      kind: "checked",
+      index: 2,
+      url: `${S}/broken`,
+      violations: 0,
+      error: `Could not load ${S}/broken: timeout`,
+    });
+    expect(events.at(-1)).toEqual({ kind: "done", checked: 2, skipped: 0 });
+  });
+
+  it("counts the frontier left behind in done", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: { links: [`${S}/a`, `${S}/b`] },
+      [`${S}/a`]: {},
+      [`${S}/b`]: {},
+    };
+    const events: ProgressEvent[] = [];
+    await crawl(options({ maxPages: 1, onProgress: (e) => events.push(e) }), fakeAnalyzer(site));
+    expect(events.at(-1)).toEqual({ kind: "done", checked: 1, skipped: 2 });
+  });
+
+  it("stops reporting when a seed fails: no checked, no done", async () => {
+    // The seed's failure is the run's error, and the CLI prints it; a
+    // `checked` here would say the same thing twice on stderr.
+    const events: ProgressEvent[] = [];
+    await expect(
+      crawl(
+        options({ onProgress: (e) => events.push(e) }),
+        fakeAnalyzer({ [`${S}/`]: new A11yError("Could not load: refused") }),
+      ),
+    ).rejects.toThrow("Could not load: refused");
+    expect(events).toEqual([
+      { kind: "browser" },
+      { kind: "page", index: 1, queued: 1, url: `${S}/` },
+    ]);
+  });
+
+  it("says nothing without a listener", async () => {
+    const out = await crawl(options({}), fakeAnalyzer({ [`${S}/`]: {} }));
+    expect(out.pages).toHaveLength(1);
   });
 });

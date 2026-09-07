@@ -167,6 +167,8 @@ manni a11y check [urls...]
       --impact <level>     minor | moderate | serious | critical  (minor)
       --timeout <ms>       per-page navigation timeout    (30000)
   -q, --quiet              pretty: hide clean pages
+      --progress           report progress on stderr    (only on a terminal)
+      --no-progress        never report progress
   -c, --config <path>      explicit config file
       --no-config          ignore any discovered config
 ```
@@ -197,6 +199,20 @@ load, empty when clean.
 
 Colours keep meta's meanings, which `docs/content-strategy/design.md`
 reserves: `✓` green, `✗` red, impact from dim through yellow to red, URLs cyan.
+
+### Progress
+
+Added after first use, which is when the gap showed. `check` printed nothing
+until the whole crawl had finished. The browser launch alone takes seconds,
+and a fifty-page site takes a minute, so a silent minute read as a hang. The
+run now narrates itself on stderr, where a diagnostic belongs, and stdout
+stays the report. On a terminal it is one status line, rewritten in place and
+cleared before the report prints. Off a terminal it is one prefixed line per
+event, with no escape codes. It is on by default only when stderr is a
+terminal, so a CI log stays as it was. `--progress` forces it on, for a CI log
+that wants it, and `--no-progress` silences it. The crawl emits typed events
+to an optional listener. The reporter that renders them is one more file under
+`reporters/`.
 
 ### Deferred, deliberately
 

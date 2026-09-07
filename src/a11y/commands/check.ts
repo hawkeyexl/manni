@@ -17,6 +17,7 @@ import {
   type CheckSummary,
   type Impact,
   type PageResult,
+  type ProgressListener,
 } from "../types.js";
 
 export interface CheckOptions {
@@ -38,6 +39,12 @@ export interface CheckDeps {
   analyzer: PageAnalyzer;
   /** Defaults to global `fetch`. */
   fetcher?: Fetcher;
+  /**
+   * Told about each step as it happens: `sitemap` once discovery is done
+   * (only when crawling), then everything the crawl reports. Absent means
+   * silent.
+   */
+  onProgress?: ProgressListener;
 }
 
 export const CHECK_DEFAULTS: Readonly<Omit<CheckOptions, "urls">> = Object.freeze({
@@ -72,6 +79,7 @@ export async function runCheck(opts: CheckOptions, deps: CheckDeps): Promise<Che
     const first = seeds[0];
     if (opts.crawl && first !== undefined) {
       sitemap = await discoverSitemap(first, deps.fetcher);
+      deps.onProgress?.({ kind: "sitemap", source: sitemap.source, urls: sitemap.urls.length });
     }
 
     const outcome = await crawl(
@@ -81,6 +89,7 @@ export async function runCheck(opts: CheckOptions, deps: CheckDeps): Promise<Che
         maxPages: opts.maxPages,
         extra: sitemap.urls,
         analyze: { tags: opts.tags, timeout: opts.timeout },
+        onProgress: deps.onProgress,
       },
       analyzer,
     );
