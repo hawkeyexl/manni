@@ -10,8 +10,9 @@
  * has to be raised before the analyzer is ever asked to launch.
  */
 import { execSync, spawn } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { findBrowser } from "../../src/a11y/core/analyzer.js";
@@ -36,10 +37,20 @@ interface Run {
  * life, so the browser's requests would never be answered and every page
  * would time out.
  */
+/**
+ * Runs from a directory outside the repository, not from `root`. The repo's own
+ * manni.config.yaml carries an `a11y:` section (the docs-site dogfood), and
+ * config discovery would find it from `root` and apply its `severity` floor
+ * and `urls` to every case here. A temp directory has no `.git` above it, so
+ * discovery looks in that one directory and finds nothing; every case then
+ * sees the built-in defaults unless it names a flag.
+ */
+const cwd = mkdtempSync(join(tmpdir(), "manni-a11y-cli-"));
+
 function run(args: string[], timeout = 120_000): Promise<Run> {
   return new Promise((done) => {
     const child = spawn("node", [manni, "a11y", ...args], {
-      cwd: root,
+      cwd,
       env: { ...process.env, NO_COLOR: "1" },
       timeout,
     });

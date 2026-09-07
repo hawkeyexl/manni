@@ -43,9 +43,9 @@ meta:
 
 # The accessibility tool reads `a11y:` and nothing else. Same narrowness as
 # above, for the same reason: this file is ambient for every run beneath the
-# repo, the test suite included. `urls` is safe because a positional URL always
-# wins over it, and the tests always pass one. A `severity` or `tags` here
-# would change what the tests see, so they stay on the command line.
+# repo, the test suite included. The a11y CLI tests therefore run from a temp
+# directory outside the repo, where discovery finds nothing, so the keys here
+# never reach them. Every key is a default a flag on the command line beats.
 #
 # The URL is the local preview of the docs site, not the published one,
 # because the point of the check is the build a pull request produces, before
@@ -59,3 +59,8 @@ a11y:
   # The site has 52 pages today; the default cap of 100 would silently stop
   # covering it somewhere past that, and a skipped page is a page unchecked.
   maxPages: 200
+  # The project's floor: findings below it are dropped before the score and
+  # the exit code are decided. `--severity <level>` on the command line wins,
+  # which is how the Docs workflow gates at `critical` while reporting from
+  # here. The built-in default is `minor`, everything axe reports.
+  severity: serious
