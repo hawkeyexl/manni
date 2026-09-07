@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>__ORIGIN__/index.html</loc></url>
+  <url><loc>__ORIGIN__/about.html</loc></url>
+  <url><loc>__ORIGIN__/orphan.html</loc></url>
+  <url><loc>https://example.org/elsewhere.html</loc></url>
+</urlset>
