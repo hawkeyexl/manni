@@ -9,7 +9,7 @@ import {
   type ValidationResult,
 } from "../types.js";
 import type { FingerprintContext } from "../core/baseline.js";
-import { palette } from "./color.js";
+import { palette } from "../../shared/color.js";
 import { fieldLabel } from "./rule-id.js";
 import { renderSarif, type SarifOptions } from "./sarif.js";
 import { renderJunit, type JunitOptions } from "./junit.js";

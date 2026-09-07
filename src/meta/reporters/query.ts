@@ -8,7 +8,7 @@
  * array, and the exit code (not the envelope) carries the `--check` verdict.
  */
 import type { QueryChange, QueryRun } from "../commands/query.js";
-import { palette, type Colors } from "./color.js";
+import { palette, type Colors } from "../../shared/color.js";
 import { stringifyValue } from "./get.js";
 
 export interface QueryReportOptions {

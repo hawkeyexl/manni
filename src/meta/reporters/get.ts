@@ -13,7 +13,7 @@
  * affects text a person is reading.
  */
 import type { GetFileResult } from "../commands/get.js";
-import { palette } from "./color.js";
+import { palette } from "../../shared/color.js";
 
 export interface GetReportOptions {
   color?: boolean;

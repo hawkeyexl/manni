@@ -3,14 +3,10 @@
  * schema set per file, validates, and returns structured results. Kept free of
  * CLI/IO plumbing so it can be tested directly.
  */
-import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { resolve, extname } from "node:path";
-import pkg from "../../../package.json" with { type: "json" };
-import { warn } from "../../shared/warn.js";
 import {
   DocmetaError,
-  type BaselineSummary,
   type FieldError,
   type RunSummary,
   type ValidationResult,
@@ -19,12 +15,8 @@ import {
   DEFAULT_BASELINE_PATH,
   LEGACY_BASELINE_PATH,
   type FingerprintContext,
-  applyBaseline,
-  buildBaseline,
-  countFingerprints,
-  diffBaselines,
-  readBaseline,
-  writeBaselineFile,
+  resolveBaselineRequest,
+  settleBaseline,
 } from "../core/baseline.js";
 import {
   extractorByName,
@@ -143,91 +135,6 @@ function parseErrorResult(
     keyword,
   };
   return { file, format, ok: false, schemas: [], errors: [err] };
-}
-
-/** A resolved `--baseline` / `--write-baseline` / `baseline:` request. */
-interface BaselineRequest {
-  absPath: string;
-  /** The path spelled as the user would type it, for messages. */
-  label: string;
-  write: boolean;
-}
-
-/**
- * Settle which baseline file (if any) governs this run, and where it lives.
- *
- * The one subtlety is the base directory. A path the user typed on the command
- * line is relative to where they are standing; a `baseline:` written in a config
- * file is relative to **the config**, because that is where the person editing
- * it can see the file. Resolving a configured path against `cwd` instead would
- * mean running from a subdirectory silently finds no baseline and reports the
- * entire backlog as new — the exact class of bug config discovery exists to fix.
- */
-function resolveBaselineRequest(
-  opts: ValidateOptions,
-  configured: string | undefined,
-  configDir: string | undefined,
-  cwd: string,
-): BaselineRequest | null {
-  /** A path typed on the command line: relative to where the user is standing. */
-  const named = (label: string): Omit<BaselineRequest, "write"> => ({
-    absPath: resolve(cwd, label),
-    label,
-  });
-
-  /**
-   * The file this project's baseline lives in when no path was typed.
-   *
-   * A configured `baseline:` wins over the built-in default here, and that is
-   * load-bearing rather than a nicety: read and write have to agree on one
-   * file. A repo that points `baseline:` somewhere other than the default, then
-   * runs a bare `--write-baseline`, would otherwise record into a second file
-   * nothing ever reads — and the ratchet would silently do nothing at all.
-   *
-   * Both spellings resolve against the **config's** directory, not `cwd`. An
-   * implied baseline is a property of the project, the same as the config that
-   * governs it, so it has to be the same file wherever the command is run from.
-   * Resolving it against `cwd` would break the ratchet the moment someone runs
-   * from `docs/` — the subdirectory workflow config discovery exists to support
-   * — and a later write from there would quietly give the project a second
-   * baseline that nothing reads. An explicitly *typed* path stays relative to
-   * where the user is standing, which is what a shell argument should mean.
-   */
-  const implied = (): Omit<BaselineRequest, "write"> => {
-    const base = configDir ?? cwd;
-    if (configured !== undefined) {
-      return { absPath: resolve(base, configured), label: configured };
-    }
-    // A baseline recorded before the rename is still the project's baseline.
-    // Only when the new name is absent, so a project that has moved is never
-    // pulled back by a stale file it forgot to delete.
-    const current = resolve(base, DEFAULT_BASELINE_PATH);
-    const legacy = resolve(base, LEGACY_BASELINE_PATH);
-    if (!existsSync(current) && existsSync(legacy)) {
-      warn(
-        `"${LEGACY_BASELINE_PATH}" is the pre-rename baseline file name. Rename it to "${DEFAULT_BASELINE_PATH}".`,
-      );
-      return { absPath: legacy, label: LEGACY_BASELINE_PATH };
-    }
-    return { absPath: current, label: DEFAULT_BASELINE_PATH };
-  };
-
-  const requested = (
-    value: string | true,
-  ): Omit<BaselineRequest, "write"> =>
-    typeof value === "string" ? named(value) : implied();
-
-  // Recording wins over comparing: `--write-baseline` must not depend on
-  // whether the file it is about to replace could be read.
-  if (opts.writeBaseline !== undefined && opts.writeBaseline !== false) {
-    return { ...requested(opts.writeBaseline), write: true };
-  }
-  if (opts.baseline === false) return null; // --no-baseline
-  if (opts.baseline !== undefined) {
-    return { ...requested(opts.baseline), write: false };
-  }
-  if (configured) return { ...implied(), write: false };
-  return null;
 }
 
 export async function runValidate(
@@ -487,7 +394,10 @@ export async function runValidate(
 
   const { results: reported, baseline } = await settleBaseline(
     results,
-    resolveBaselineRequest(opts, config?.baseline, configDir, cwd),
+    resolveBaselineRequest(opts, config?.baseline, configDir, cwd, {
+      current: DEFAULT_BASELINE_PATH,
+      legacy: LEGACY_BASELINE_PATH,
+    }),
     frame,
   );
 
@@ -504,66 +414,4 @@ export async function runValidate(
   };
 
   return { results: reported, summary, frame };
-}
-
-/**
- * Apply — or record — the baseline, and describe what it did.
- *
- * On a write, the freshly recorded baseline is then applied to the same
- * results, so `--write-baseline` reports the files it recorded as clean and
- * exits 0 without the exit code needing a special case anywhere.
- *
- * `<stdin>` is the one exception, and deliberately so: it is not a path anyone
- * can look up on the next run, so it is never recorded, never matches, and its
- * findings still fail the run. Reporting it clean would announce success for a
- * violation that was neither fixed nor baselined.
- */
-async function settleBaseline(
-  results: ValidationResult[],
-  request: BaselineRequest | null,
-  ctx: FingerprintContext,
-): Promise<{ results: ValidationResult[]; baseline?: BaselineSummary }> {
-  if (!request) return { results };
-
-  const previous = await readBaseline(request.absPath, request.label);
-
-  if (request.write) {
-    // `<stdin>` is not a path anyone can look up on the next run, so recording
-    // it would only leave an entry that can never match again.
-    const recordable = results.filter((r) => r.file !== STDIN_LABEL);
-    const next = buildBaseline(recordable, pkg.version, ctx);
-    const { added, removed } = diffBaselines(previous, next);
-    await writeBaselineFile(request.absPath, next, request.label);
-    const applied = applyBaseline(results, next, ctx);
-    return {
-      results: applied.results,
-      baseline: {
-        path: request.label,
-        written: true,
-        recorded: countFingerprints(next),
-        suppressed: applied.suppressed,
-        stale: applied.stale,
-        added,
-        removed,
-      },
-    };
-  }
-
-  if (!previous) {
-    throw new DocmetaError(
-      `Baseline "${request.label}" not found. Record one with \`manni meta validate --write-baseline\`, or drop --baseline.`,
-    );
-  }
-
-  const applied = applyBaseline(results, previous, ctx);
-  return {
-    results: applied.results,
-    baseline: {
-      path: request.label,
-      written: false,
-      recorded: applied.recorded,
-      suppressed: applied.suppressed,
-      stale: applied.stale,
-    },
-  };
 }

@@ -5,12 +5,20 @@
  * failures, 2 operational/usage errors).
  */
 import { existsSync } from "node:fs";
-import { basename, extname, relative, resolve as resolvePath } from "node:path";
+import { extname, resolve as resolvePath } from "node:path";
 import { Command, Option } from "commander";
 import picomatch from "picomatch";
 import pkg from "../../package.json" with { type: "json" };
-import { programName } from "../shared/program-name.js";
+import {
+  collect,
+  configOption,
+  explicitFalse,
+  readStdin,
+  reportConfig,
+  splitList,
+} from "../shared/cli-options.js";
 import { fail } from "../shared/run.js";
+import { notice } from "../shared/warn.js";
 import {
   DocmetaError,
   type RunSummary,
@@ -56,17 +64,7 @@ import {
 import { renderGet } from "./reporters/get.js";
 import { renderQuery, renderQueryCsv } from "./reporters/query.js";
 import { renderInfer } from "./reporters/infer.js";
-import { shouldColor, palette } from "./reporters/color.js";
-
-function collect(value: string, prev: string[]): string[] {
-  return prev.concat([value]);
-}
-
-async function readStdin(): Promise<string> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
-  return Buffer.concat(chunks).toString("utf8");
-}
+import { shouldColor, palette } from "../shared/color.js";
 
 function resolveColor(program: Command): boolean {
   // commander maps --no-color to opts.color === false.
@@ -438,63 +436,6 @@ function suggestCommand(token: string | undefined, cwd: string): void {
 }
 
 /**
- * Split the one commander attribute that `-c, --config <path>` and
- * `--no-config` share. Verified by experiment: `opts.config` is `undefined`
- * with neither flag, the string with `-c`, and `false` with `--no-config`.
- */
-function configOption(value: unknown): {
-  configPath?: string;
-  noConfig?: boolean;
-} {
-  if (value === false) return { noConfig: true };
-  return typeof value === "string" ? { configPath: value } : {};
-}
-
-/**
- * Say which config governed the run, and where it came from.
- *
- * Discovery now walks up to the project boundary, so the answer is no longer
- * obvious from the working directory, and an unexpected ancestor config is the
- * difference between a five-minute diagnosis and an hour of confusion. Goes to
- * stderr for anything a machine reads, so structured output stays parseable.
- */
-function reportConfig(
-  toStdout: boolean,
-  cwd: string,
-): (info: { path: string; dir: string }) => void {
-  return (info) => {
-    const where = (relative(cwd, info.dir) || ".").replace(/\\/g, "/");
-    const line = `Using ${basename(info.path)} (${where})\n`;
-    (toStdout ? process.stdout : process.stderr).write(line);
-  };
-}
-
-/**
- * Diagnostics from a command core. Always stderr, never stdout: `json` and
- * `github` output has to stay parseable, and a note is not the report.
- */
-function notice(message: string): void {
-  process.stderr.write(`${programName()}: ${message}\n`);
-}
-
-/**
- * `--no-gitignore` for the core. Commander gives `true` when the flag is
- * absent, but that is its *default*, not a choice the user made — passing it
- * on would override config `respectGitignore:`. Only the explicit `false`
- * travels; absence stays `undefined` so config still decides.
- */
-function gitignoreFlag(value: unknown): boolean | undefined {
-  return value === false ? false : undefined;
-}
-
-function splitList(value: string): string[] {
-  return value
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
-/**
  * Range-check a numeric flag. `parseFloat("abc")` is NaN and every comparison
  * against NaN is false, so the finite check has to be explicit or garbage
  * passes silently.
@@ -550,7 +491,7 @@ interface RunCliOptions extends InputCliOptions {
   /**
    * `--no-gitignore`. Commander supplies `true` when the flag is absent, so
    * this is `boolean` and never `undefined` — which is exactly why
-   * `gitignoreFlag` exists to turn that default back into "no opinion".
+   * `explicitFalse` exists to turn that default back into "no opinion".
    */
   gitignore: boolean;
   offline?: boolean;
@@ -599,7 +540,7 @@ interface QueryCliOptions extends InputCliOptions {
   /** `--dry-run`: preview a mutating statement's diff; default applies. */
   dryRun?: boolean;
   allowEmpty?: boolean;
-  /** `--no-gitignore`; commander's `true` default, see `gitignoreFlag`. */
+  /** `--no-gitignore`; commander's `true` default, see `explicitFalse`. */
   gitignore: boolean;
   offline?: boolean;
 }
@@ -634,7 +575,7 @@ interface InferCliOptions extends InputCliOptions {
   /** `--min-coverage <pct>`; commander's default value is `0`. */
   minCoverage: number;
   allowEmpty?: boolean;
-  /** `--no-gitignore`; commander's `true` default, see `gitignoreFlag`. */
+  /** `--no-gitignore`; commander's `true` default, see `explicitFalse`. */
   gitignore: boolean;
   /** `--offline`; a no-op here by construction, see `InferOptions.offline`. */
   offline?: boolean;
@@ -785,7 +726,7 @@ export function buildProgram(): Command {
             // `undefined` rather than `false` when the flag is absent, so config
             // `allowEmpty:` still wins (the cores do `opts ?? config`).
             allowEmpty: options.allowEmpty ? true : undefined,
-            respectGitignore: gitignoreFlag(options.gitignore),
+            respectGitignore: explicitFalse(options.gitignore),
             // `undefined` rather than `false` when absent, so config `offline:`
             // still decides.
             offline: options.offline ? true : undefined,
@@ -904,7 +845,7 @@ export function buildProgram(): Command {
             onConfigLoaded: reportConfig(format === "pretty", process.cwd()),
             stdinContent,
             allowEmpty: options.allowEmpty ? true : undefined,
-            respectGitignore: gitignoreFlag(options.gitignore),
+            respectGitignore: explicitFalse(options.gitignore),
             offline: options.offline ? true : undefined,
             onNotice: notice,
           });
@@ -1104,7 +1045,7 @@ export function buildProgram(): Command {
             onConfigLoaded: reportConfig(format === "pretty", process.cwd()),
             stdinContent,
             allowEmpty: options.allowEmpty ? true : undefined,
-            respectGitignore: gitignoreFlag(options.gitignore),
+            respectGitignore: explicitFalse(options.gitignore),
             offline: options.offline ? true : undefined,
             onNotice: notice,
           });
@@ -1305,7 +1246,7 @@ export function buildProgram(): Command {
           ),
           stdinContent,
           allowEmpty: options.allowEmpty ? true : undefined,
-          respectGitignore: gitignoreFlag(options.gitignore),
+          respectGitignore: explicitFalse(options.gitignore),
           offline: options.offline ? true : undefined,
           onNotice: notice,
           fields: options.fields ? splitList(options.fields) : undefined,
@@ -1468,7 +1409,7 @@ export function buildProgram(): Command {
           // explicit `--allow-empty` / `--no-gitignore` travels, so config
           // `allowEmpty:` and `respectGitignore:` still decide otherwise.
           allowEmpty: options.allowEmpty ? true : undefined,
-          respectGitignore: gitignoreFlag(options.gitignore),
+          respectGitignore: explicitFalse(options.gitignore),
           // Accepted and ignored — `infer` never fetches. `undefined` rather
           // than `false` all the same, so this stays the same shape as the
           // other four if it ever does gain a meaning.

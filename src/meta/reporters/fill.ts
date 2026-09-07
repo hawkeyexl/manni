@@ -13,7 +13,7 @@
 import { DocmetaError } from "../types.js";
 import type { FillRun } from "../commands/fill-types.js";
 import { toJsonText } from "../core/json-text.js";
-import { palette } from "./color.js";
+import { palette } from "../../shared/color.js";
 import {
   escapeWorkflowCommandMessage,
   escapeWorkflowCommandProperty,
