@@ -76,7 +76,7 @@ export interface CheckSummary {
   discovered: number;
   /** Pages actually analyzed. */
   checked: number;
-  /** Discovered but not checked because `maxPages` was reached. */
+  /** Discovered but not checked because the `maxPages` cap was reached; `0` without a cap. */
   skipped: number;
   /**
    * Discovered, then dropped unloaded because the browser had already landed

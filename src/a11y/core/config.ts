@@ -18,6 +18,7 @@ import { isHttpUrl } from "./url.js";
 export interface A11yConfig {
   urls?: string[];
   crawl?: boolean;
+  /** Cap on pages checked. Absent means no cap. */
   maxPages?: number;
   tags?: string[];
   severity?: Severity;

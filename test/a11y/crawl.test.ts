@@ -12,15 +12,23 @@ import { fakeAnalyzer, violation, type FakeSite } from "../helpers/fake-analyzer
 const S = "https://site.example";
 const ANALYZE = { tags: [], timeout: 1000 };
 
+/** No `maxPages`: the built-in behaviour is to check everything discovered. */
 function options(over: Partial<CrawlOptions>): CrawlOptions {
   return {
     seeds: [`${S}/`],
     crawl: true,
-    maxPages: 100,
     extra: [],
     analyze: ANALYZE,
     ...over,
   };
+}
+
+/** A front page linking to `count` pages, none of which link anywhere. */
+function wideSite(count: number): FakeSite {
+  const links = Array.from({ length: count }, (_, i) => `${S}/p${String(i)}`);
+  const site: FakeSite = { [`${S}/`]: { links } };
+  for (const url of links) site[url] = {};
+  return site;
 }
 
 describe("crawl", () => {
@@ -116,6 +124,21 @@ describe("crawl", () => {
     );
     expect(analyzer.calls.map((c) => c.url)).toEqual([`${S}/`, `${S}/p`]);
     expect(out.discovered).toBe(2);
+  });
+
+  it("without maxPages, checks every page it discovers, past the old cap of 100", async () => {
+    const analyzer = fakeAnalyzer(wideSite(150));
+    const out = await crawl(options({}), analyzer);
+    expect(analyzer.calls).toHaveLength(151);
+    expect(out.pages).toHaveLength(151);
+    expect(out).toMatchObject({ discovered: 151, skipped: 0, duplicates: 0 });
+  });
+
+  it("with maxPages set, stops there even when the frontier is larger", async () => {
+    const analyzer = fakeAnalyzer(wideSite(150));
+    const out = await crawl(options({ maxPages: 100 }), analyzer);
+    expect(analyzer.calls).toHaveLength(100);
+    expect(out).toMatchObject({ discovered: 151, skipped: 51, duplicates: 0 });
   });
 
   it("stops at maxPages and reports the frontier left behind as skipped", async () => {

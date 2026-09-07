@@ -56,9 +56,6 @@ meta:
 a11y:
   urls:
     - http://127.0.0.1:4321/manni/
-  # The site has 52 pages today; the default cap of 100 would silently stop
-  # covering it somewhere past that, and a skipped page is a page unchecked.
-  maxPages: 200
   # The project's floor: findings below it are dropped before the score and
   # the exit code are decided. `--severity <level>` on the command line wins,
   # which is how the Docs workflow gates at `critical` while reporting from

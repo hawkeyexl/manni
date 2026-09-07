@@ -25,8 +25,8 @@ export interface CheckOptions {
   urls: string[];
   /** Follow the sitemap and same-host links. Default `true`. */
   crawl: boolean;
-  /** Stop after this many pages. Default `100`. */
-  maxPages: number;
+  /** Stop after this many pages. Absent means no cap: every discovered page is checked. */
+  maxPages?: number;
   /** axe tags to restrict to; empty is axe's default rule set. Default `[]`. */
   tags: string[];
   /** Minimum severity reported and counted. Default `"minor"`. */
@@ -47,9 +47,13 @@ export interface CheckDeps {
   onProgress?: ProgressListener;
 }
 
+/**
+ * `maxPages` is deliberately absent: the default is no cap. A capped crawl
+ * reports a partial site as checked, so the cap is opt-in, through
+ * `--max-pages` or the config key.
+ */
 export const CHECK_DEFAULTS: Readonly<Omit<CheckOptions, "urls">> = Object.freeze({
   crawl: true,
-  maxPages: 100,
   tags: [],
   severity: "minor",
   timeout: 30000,

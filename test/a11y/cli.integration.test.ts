@@ -155,6 +155,17 @@ describe("manni a11y check (usage errors, no browser needed)", () => {
     expect(r.stderr).toMatch(/^manni: --timeout must be an integer >= 1\./);
   });
 
+  it("documents --max-pages as opt-in, with no default cap", async () => {
+    const r = await run(["check", "--help"]);
+    expect(r.status).toBe(0);
+    // commander wraps a long description onto continuation lines, so match
+    // across whitespace rather than within one line.
+    expect(r.stdout).toMatch(
+      /--max-pages <n>\s+cap on pages checked; the rest are reported as skipped\s+\(default: no cap\)/,
+    );
+    expect(r.stdout).not.toMatch(/--max-pages[^\n]*\n?[^\n]*default: "?\d/);
+  });
+
   it("a11y alone is a usage error with no default subcommand", async () => {
     const r = await run([]);
     expect(r.status).toBe(2);

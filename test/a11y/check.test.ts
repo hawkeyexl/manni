@@ -39,11 +39,15 @@ describe("CHECK_DEFAULTS", () => {
   it("matches the documented defaults", () => {
     expect(CHECK_DEFAULTS).toEqual({
       crawl: true,
-      maxPages: 100,
       tags: [],
       severity: "minor",
       timeout: 30000,
     });
+  });
+
+  it("carries no page cap", () => {
+    expect(CHECK_DEFAULTS.maxPages).toBeUndefined();
+    expect(Object.keys(CHECK_DEFAULTS)).not.toContain("maxPages");
   });
 });
 
@@ -188,6 +192,15 @@ describe("runCheck options through to the analyzer", () => {
     });
     expect(analyzer.calls.map((c) => c.url)).toEqual([`${S}/`]);
     expect(run.results[0]?.url).toBe(`${S}/`);
+  });
+
+  it("by default checks every discovered page, however many, with nothing skipped", async () => {
+    const links = Array.from({ length: 120 }, (_, i) => `${S}/p${String(i)}`);
+    const site: FakeSite = { [`${S}/`]: { links } };
+    for (const url of links) site[url] = {};
+    const run = await runCheck(opts({}), { analyzer: fakeAnalyzer(site), fetcher: noSitemap() });
+    expect(run.results).toHaveLength(121);
+    expect(run.summary).toMatchObject({ discovered: 121, checked: 121, skipped: 0 });
   });
 
   it("honours maxPages and reports the rest as skipped", async () => {

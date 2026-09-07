@@ -66,7 +66,7 @@ manni a11y check [urls...] [options]
 |---|---|---|---|
 | `-f, --format` | `<pretty\|json\|github>` | `pretty` | [Output format](#output-formats). An unknown value is an error (exit 2). |
 | `--no-crawl` | n/a | on | Check exactly the given URLs, with no sitemap lookup and no link following. Crawling is on by default. Overrides config `crawl:`. |
-| `--max-pages` | `<n>` | `100` | Stop after this many pages have been checked; whatever is still queued is reported as `skipped`. Must be an integer of 1 or more (exit 2 otherwise). Overrides config `maxPages:`. |
+| `--max-pages` | `<n>` | | Cap on pages checked. Whatever is still queued at the cap is reported as `skipped`. Without it every discovered page is checked. Must be an integer of 1 or more (exit 2 otherwise). Overrides config `maxPages:`. |
 | `--tags` | `<list>` | | Comma-separated axe tags, given once; restrict axe to rules carrying any of them, for example `wcag2a,wcag2aa,wcag21aa,best-practice`. Whitespace around commas is trimmed and empty items are dropped. A second `--tags` replaces the first. Without it axe runs its default rule set. Overrides config `tags:`. |
 | `--severity` | `<level>` | `minor` | Minimum severity reported and counted: `minor`, `moderate`, `serious`, or `critical`. Violations below it are dropped before the [score](#the-score) and the exit code are decided. An unknown level is an error (exit 2). axe calls these levels impact, and manni says severity so every tool in the family uses one word. Overrides config `severity:`. |
 | `--timeout` | `<ms>` | `30000` | Per-page navigation timeout in milliseconds. Overrides config `timeout:`. |
@@ -118,8 +118,8 @@ spelling arrived first. Where the browser lands after a redirect counts as
 visited too. A queued spelling of that page is then dropped without loading and
 reported as a `duplicate`. Pages are analyzed sequentially, in discovery order,
 and every result records its `source`: `seed`, `sitemap`, or `link`. The run
-stops when `--max-pages` pages have been checked; the frontier left behind is
-the `skipped` count.
+goes on until the frontier is empty. With `--max-pages`, it stops once that many
+pages have been checked, and the frontier left behind is the `skipped` count.
 
 Failures split by where they happen. A seed that fails to load or analyze stops
 the run with exit `2`, because nothing was checked. A crawled page that fails is
@@ -235,7 +235,7 @@ And `summary`:
 |---|---|---|
 | `discovered` | integer | Distinct URLs that entered the frontier, whether seeds, sitemap entries, or links. |
 | `checked` | integer | Pages actually analyzed. |
-| `skipped` | integer | Discovered but not checked because `--max-pages` was reached. |
+| `skipped` | integer | Discovered but not checked because `--max-pages` was reached. `0` when no cap is set. |
 | `duplicates` | integer | Discovered, then dropped without loading because a redirect had already landed on the same page under another spelling. `checked + skipped + duplicates` equals `discovered`. |
 | `failed` | integer | Pages with at least one remaining violation or an `error`. Drives exit `1`. |
 | `violations` | integer | Remaining violations across all pages, counted per rule rather than per node. |
@@ -346,7 +346,7 @@ meta:
 a11y:
   urls: ["https://docs.example.com/"]
   crawl: true
-  maxPages: 100
+  maxPages: 500
   tags: ["wcag2a", "wcag2aa"]
   severity: serious
   timeout: 30000
@@ -356,7 +356,7 @@ a11y:
 |---|---|---|---|
 | `urls` | `string[]` | none | Seed URLs, each `http:` or `https:`. The fallback for `[urls...]`; positional URLs win when both are present. |
 | `crawl` | boolean | `true` | Whether to discover pages from the sitemap and same-host links. `--no-crawl` sets it to `false` for one run. |
-| `maxPages` | integer ≥ 1 | `100` | Cap on pages checked per run. Mirrors `--max-pages`. |
+| `maxPages` | integer ≥ 1 | none, no cap | Cap on pages checked per run. Without it every discovered page is checked. Mirrors `--max-pages`. |
 | `tags` | `string[]` | none | axe tags to restrict the rule set to. Mirrors `--tags`, one item per entry. |
 | `severity` | `minor` \| `moderate` \| `serious` \| `critical` | `minor` | Minimum severity reported and counted. Mirrors `--severity`. |
 | `timeout` | integer ≥ 1 | `30000` | Per-page navigation timeout in milliseconds. Mirrors `--timeout`. |

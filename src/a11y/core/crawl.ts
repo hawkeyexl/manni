@@ -16,8 +16,8 @@ export interface CrawlOptions {
   seeds: string[];
   /** `false` = check exactly `seeds`. */
   crawl: boolean;
-  /** Hard cap on pages analyzed. */
-  maxPages: number;
+  /** Hard cap on pages analyzed. Absent means no cap: the whole frontier is analyzed. */
+  maxPages?: number;
   /** Extra URLs to enqueue right after the seeds (from the sitemap). */
   extra: string[];
   analyze: AnalyzeOptions;
@@ -30,7 +30,7 @@ export interface CrawlOutcome {
   pages: Omit<PageResult, "score">[];
   /** Distinct pages (by `dedupeKey`) that entered the frontier. */
   discovered: number;
-  /** Left in the frontier when `maxPages` stopped the run. */
+  /** Left in the frontier when `maxPages` stopped the run; `0` without a cap. */
   skipped: number;
   /**
    * Dequeued and dropped unloaded, because the browser had already landed on
@@ -59,7 +59,8 @@ interface Candidate {
  * - A page's `finalUrl` (where the browser landed) counts as visited, so a
  *   queued spelling of it is dropped at dequeue time (`duplicates`), and a
  *   link to it seen afterwards is never queued.
- * - Stops when `pages.length === maxPages`; `skipped` = frontier left behind.
+ * - With `maxPages` set, stops when `pages.length === maxPages`; `skipped` =
+ *   frontier left behind. Without it, runs the frontier dry and `skipped` is 0.
  * - With `crawl: false`, `extra` is ignored and no links are followed.
  * - `onProgress` hears `browser` once before the first analyze (that is where
  *   the lazy launch happens), `page` before each analyze, `checked` after
@@ -108,7 +109,8 @@ export async function crawl(opts: CrawlOptions, analyzer: PageAnalyzer): Promise
 
   const pages: CrawlOutcome["pages"] = [];
   let duplicates = 0;
-  for (let next = 0; next < frontier.length && pages.length < opts.maxPages; next++) {
+  const capped = (): boolean => opts.maxPages !== undefined && pages.length >= opts.maxPages;
+  for (let next = 0; next < frontier.length && !capped(); next++) {
     const candidate = frontier[next];
     if (candidate === undefined) break;
     const { url, key, source } = candidate;

@@ -114,9 +114,12 @@ in the live DOM after load, filtered to same-host page-like URLs. That means no
 an asset extension. Every URL is normalized (fragment dropped, host lowercased,
 default port dropped) and enters the frontier once.
 
-Pages run sequentially. `--max-pages` (default 100) stops the run; what is
-still queued is `skipped`. `--no-crawl` checks exactly the seeds: no sitemap,
-no links.
+Pages run sequentially, and the crawl checks everything it discovers. There
+is no default cap. The first draft capped a run at 100 pages, and that was
+removed after first use, because a capped crawl reports a partial site as
+checked. `--max-pages <n>` stays as an opt-in bound; what is still queued when
+it is hit is `skipped`. `--no-crawl` checks exactly the seeds: no sitemap, no
+links.
 
 ### The score
 
@@ -143,7 +146,7 @@ carrying an `error`.
 a11y:
   urls: ["https://docs.example.com/"]   # string[]
   crawl: true                            # boolean
-  maxPages: 100                          # integer ≥ 1
+  maxPages: 500                          # integer ≥ 1; absent means no cap
   tags: ["wcag2a", "wcag2aa"]            # string[]
   severity: serious                      # minor | moderate | serious | critical
   timeout: 30000                         # integer ≥ 1, ms
@@ -163,7 +166,7 @@ the file and the key.
 manni a11y check [urls...]
   -f, --format <format>    pretty | json | github          (pretty)
       --no-crawl           check exactly the given URLs
-      --max-pages <n>      cap on pages checked            (100)
+      --max-pages <n>      cap on pages checked            (no cap)
       --tags <list>        comma-separated axe tags, once
       --severity <level>   minor | moderate | serious | critical  (minor)
       --timeout <ms>       per-page navigation timeout    (30000)

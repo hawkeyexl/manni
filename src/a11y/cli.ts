@@ -98,8 +98,8 @@ interface CheckCliOptions {
   format: string;
   /** `--no-crawl` → false. */
   crawl: boolean;
-  /** `--max-pages <n>`, parsed to int here. */
-  maxPages: string;
+  /** `--max-pages <n>`, parsed to int here. No default: absent means no cap. */
+  maxPages?: string;
   /** `--tags <list>`, split on "," here (same helper shape as meta's --ext). */
   tags?: string;
   /** `--severity <level>`. */
@@ -140,10 +140,11 @@ export function buildProgram(): Command {
     )
     .option("-f, --format <format>", `output: ${A11Y_FORMAT_LIST}`, "pretty")
     .option("--no-crawl", "check exactly the given URLs: no sitemap, no link following")
+    // No commander default on purpose: the built-in behaviour is to check
+    // everything discovered, and "no cap" is not a value commander could hold.
     .option(
       "--max-pages <n>",
-      "stop after this many pages; the rest are reported as skipped",
-      String(CHECK_DEFAULTS.maxPages),
+      "cap on pages checked; the rest are reported as skipped (default: no cap)",
     )
     .option("--tags <list>", "comma-separated axe tags to restrict the rules to")
     .option(
@@ -178,7 +179,10 @@ export function buildProgram(): Command {
           throw new A11yError(`Unknown --format "${format}". Use ${A11Y_FORMAT_LIST}.`);
         }
         const severity = assertSeverity(options.severity);
-        const maxPages = positiveInteger(options.maxPages, "--max-pages");
+        const maxPages =
+          options.maxPages === undefined
+            ? undefined
+            : positiveInteger(options.maxPages, "--max-pages");
         const timeout = positiveInteger(options.timeout, "--timeout");
 
         const loaded: LoadedA11yConfig =
@@ -195,7 +199,8 @@ export function buildProgram(): Command {
           {
             urls: urls.length > 0 ? urls : (cfg.urls ?? []),
             crawl: typed("crawl") ? options.crawl : (cfg.crawl ?? CHECK_DEFAULTS.crawl),
-            maxPages: typed("maxPages") ? maxPages : (cfg.maxPages ?? CHECK_DEFAULTS.maxPages),
+            // Typed flag > config key > no cap. There is no default to fall to.
+            maxPages: maxPages ?? cfg.maxPages,
             tags:
               options.tags !== undefined
                 ? splitList(options.tags)
