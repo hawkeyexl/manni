@@ -232,7 +232,7 @@ A schema fetched successfully is written to a **disk cache** and served from
 there on later runs. An edit-validate loop against a remote contract does not
 re-fetch it every time.
 
-| | |
+| Property | Detail |
 |---|---|
 | Location | `.manni/meta/schema-cache/`, under the config file's directory when a config governs the run, otherwise the working directory. |
 | One file per URL | Named for a SHA-256 digest of the URL, holding the schema plus the URL and the fetch time. |

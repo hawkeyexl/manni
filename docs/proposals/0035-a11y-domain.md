@@ -236,6 +236,9 @@ to an optional listener. The reporter that renders them is one more file under
   `src/meta/index.ts`. `src/a11y/index.ts` exists and is not published,
   because publishing it commits the `PageAnalyzer` seam to a public API before
   a second consumer has asked for it.
+- **An a11y mode for the GitHub Action.** `hawkeyexl/manni` runs the metadata
+  tool only. Until it grows a second mode, the recipe is a plain workflow step
+  that runs `manni a11y check`, and the overview page carries it.
 
 ## Stress test
 
@@ -387,6 +390,9 @@ stay distinct because they are the one place static sites do vary a page.
 - The deferred list above is the backlog: SARIF/JUnit, `Disallow`, gzipped
   sitemaps, concurrency, a baseline, the programmatic export. Each is a small
   proposal or a `feat` commit on its own; none blocks the gate working today.
+- This repository runs the check on its own docs site from `docs.yml`. It
+  reports every finding and gates at `critical` until the Starlight-level
+  findings are dealt with.
 - `check` does not fix anything, and the reason is structural rather than
   scope: it sees a rendered URL, not the source. What a fixer would look like,
   and which rules it could honestly fix, is [0036](0036-a11y-fix.md).

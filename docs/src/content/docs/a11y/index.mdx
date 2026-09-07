@@ -218,6 +218,88 @@ dropped before the score and the exit code are decided. The
 [configuration keys](/manni/a11y/reference/cli/#configuration) table has the
 types and defaults.
 
+## Run it in CI
+
+The check needs a URL that answers, so where it runs depends on when the site
+exists. A deployed site is there all the time. The site a pull request builds
+exists only after the build step, on the runner.
+
+### Check a deployed site on a schedule
+
+This workflow checks the live site once a week, and whenever someone runs it
+from the Actions tab. Nothing in the repository is read, so there is no
+checkout step. The site is the input.
+
+```yaml title=".github/workflows/a11y.yml"
+name: Accessibility
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  a11y:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: npx @hawkeyexl/manni a11y check https://docs.example.com/ -f github --max-pages 200 --progress
+```
+
+### Check a pull request's build before it deploys
+
+To catch a finding before it ships, build the site in the pull request, serve
+the output, and point the check at it. These steps fit into a job that builds
+the site into `dist/`. Adjust the directory to what your generator writes.
+
+```yaml
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci && npm run build
+      - name: Serve the build output
+        run: npx serve dist -l 4173 > serve.log 2>&1 &
+      - name: Wait for the server
+        run: |
+          tries=0
+          until curl -fsS http://127.0.0.1:4173/ > /dev/null; do
+            tries=$((tries + 1))
+            [ "$tries" -lt 60 ] || { echo "server did not answer" >&2; exit 1; }
+            sleep 1
+          done
+      - run: npx @hawkeyexl/manni a11y check http://127.0.0.1:4173/ -f github --progress
+```
+
+A build's sitemap usually lists the production URLs rather than `127.0.0.1`.
+Those are on another host, so the crawl drops them and follows links instead.
+That reaches every page the navigation links to, which on a docs site is every
+page.
+
+### What each piece does
+
+- `-f github` writes one `::error` annotation per rule per page, and prints
+  nothing when the site is clean.
+- `--progress` prints one line per page on stderr. A CI log has no terminal,
+  so without it the run is silent until the report.
+- Exit `1` fails the job on any remaining violation. Exit `2` fails it on a
+  setup problem, such as a seed that will not load. See
+  [exit codes](#exit-codes).
+- `--impact serious` gates only on serious and critical findings. Minor and
+  moderate ones still print.
+- GitHub-hosted runners on Linux, macOS and Windows ship Chrome, so no browser
+  step is needed. A bare container needs
+  `npx playwright install --with-deps chromium` first.
+- With `urls`, `impact` and `maxPages` under `a11y:` in `manni.config.yaml`,
+  the step is a bare `manni a11y check`.
+
+The [manni GitHub Action](/manni/meta/reference/action/) runs the metadata
+tool only, and has no a11y mode yet. A plain step is the way to run this
+check.
+
 ## Exit codes
 
 | Code | Meaning |
