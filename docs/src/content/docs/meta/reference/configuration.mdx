@@ -34,7 +34,7 @@ strings; a non-list or a list containing a non-string value is an error (exit
 must be booleans. A quoted `"false"` is a string, and accepting it would turn a
 setting **on** for someone who wrote it off.
 
-<Aside type="caution">
+<Aside type="caution" title="allowEmpty disables a safety check">
 `allowEmpty: true` disables the check that stops a glob which stopped matching
 from reporting a permanently green result. Set it only where matching nothing is
 genuinely expected, such as a repo in a shared CI template that may have no docs
@@ -105,7 +105,7 @@ Rules, all of them exit 2 when broken:
 override that matched a pinned `ref` still gets that pin, because pins are keyed
 on the reference.
 
-<Aside type="note">
+<Aside type="note" title="Local refs resolve from the config file">
 A local `ref`, and a `source` that is itself a local path, is resolved relative
 to **the config file**, exactly like a plain string ref. See [what relative
 paths are relative to](#what-relative-paths-are-relative-to).
@@ -166,7 +166,7 @@ the internal millisecond arithmetic makes no entry ever read as stale. Each
 gives a cache that silently stops doing its job, in opposite directions. That is
 the failure this key exists to prevent.
 
-<Aside type="note">
+<Aside type="note" title="Where the cache lives">
 The cache lives in `.manni/meta/schema-cache/`, alongside the proposal cache
 `fill` keeps in `.manni/meta/cache/`. Add `.manni/meta/` to your `.gitignore`; neither
 directory should be committed.
@@ -600,7 +600,7 @@ corresponding config value; others merge with it.
 | Fill settings | `--confidence`, `--provider`, `--model`, `--max-turns`, `--chunk-chars`, `--concurrency` | `fill.*` | Each flag **overrides** its matching `fill` key. An unset flag falls back to config, then to the built-in default. |
 | Offline | `--offline` | `offline` | The flag **overrides** the config key, and only in the restrictive direction: passing it turns fetching off. Omitting it falls back to config, then to off. |
 
-<Aside type="caution">
+<Aside type="caution" title="--schema is all-or-nothing">
 `--schema` is all-or-nothing: passing it once makes that schema set apply to
 **every** file in the run, bypassing config `overrides` and per-file `$schema`.
 Use config `overrides` when different folders need different schemas.

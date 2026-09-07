@@ -40,7 +40,7 @@ problem, in this shape:
 | `(line N)` | The source line of the offending field, when manni meta can locate it. A missing required field has no line, so this part is absent. |
 | `[schema-id]` | The schema that flagged it, e.g. `google:okf:0.1`. Useful when more than one schema applies. |
 
-<Aside type="note">
+<Aside type="note" title="Machine-readable output">
   Need machine-readable output instead? `--format json` gives you the same
   information as structured data, `--format github` emits inline PR annotations,
   and `--format sarif` / `--format junit` feed code scanning and the CI "Tests"
@@ -75,7 +75,7 @@ so there's no line to point at.
   ---
 ```
 
-<Aside type="tip">
+<Aside type="tip" title="Picking a value for type">
   Not sure what value `type` should be? The built-in OKF schema accepts any
   non-empty string. Pick the kind of doc this is, such as `concept`, `guide`,
   or `reference`. If your repo uses a custom schema, it may restrict `type` to a
@@ -147,7 +147,7 @@ the very top of the file.
   Body content goes here.
 ```
 
-<Aside type="caution">
+<Aside type="caution" title="Frontmatter comes first">
   The frontmatter block must be the **first** thing in the file. A blank line or
   any text above the opening `---` means manni meta won't recognize it as
   frontmatter.
@@ -182,7 +182,7 @@ unquoted string or a malformed `[table]` header. See
 [frontmatter flavors](/manni/meta/reference/formats/#frontmatter-flavors) for each
 flavor's fences and syntax.
 
-<Aside type="tip">
+<Aside type="tip" title="Read the parser detail">
   The parser detail after the colon (truncated as `<parser detail>` above)
   usually points at the line and character where parsing broke. Read it closely
   It's the fastest clue.
@@ -242,7 +242,7 @@ before CI does.
 
 </Steps>
 
-<Aside type="tip">
+<Aside type="tip" title="Run what CI runs">
   If your repo has a `manni.config.yaml`, running `npx @hawkeyexl/manni meta validate` with
   no path validates the same fileset CI does, using the same schema. To match CI
   exactly, run it from the repo root.
@@ -276,7 +276,7 @@ Then apply it and check your work with the command that flagged the problem:
 manni meta fill docs/intro.md && manni meta validate docs/intro.md
 ```
 
-<Aside type="caution">
+<Aside type="caution" title="fill writes in place">
 `fill` edits the file in place. `--dry-run` is the preview. Review the diff
 before you commit; treat a proposed `description` as a first draft.
 </Aside>
