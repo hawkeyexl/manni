@@ -170,8 +170,8 @@ export function loadSidecars(
 
 export interface MergedMetadata {
   extracted: ExtractedMetadata;
-  /** Owned keys the document itself also carried, in document order. */
-  collisions: string[];
+  /** Owned keys the document itself also carried, each with its owning manifest. */
+  collisions: { key: string; file: string }[];
   /** Where a merged pointer's value lives; undefined for document-owned ones. */
   locate: (pointer: string) => SourceLocation | undefined;
 }

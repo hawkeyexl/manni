@@ -99,12 +99,23 @@ export interface SourceLocation {
   col?: number;
 }
 
+/** A key the document carries that a sidecar owns. */
+export interface SidecarCollision {
+  key: string;
+  /** The owning manifest, as the run reports it. */
+  file: string;
+}
+
 /** What `mergeSidecars` hands back. */
 export interface MergedMetadata {
   /** The document's metadata with every owned key the manifest supplied. */
   extracted: ExtractedMetadata;
-  /** Owned keys the document itself also carried, in document order. */
-  collisions: string[];
+  /**
+   * Owned keys the document itself also carried, in document order, each
+   * with the manifest that owns it — so the finding names it without a
+   * second lookup, and without a fallback for an index that is not there.
+   */
+  collisions: SidecarCollision[];
   /**
    * Where a merged pointer's value lives. Answers only for a value the
    * manifest supplied — a bare key or its `/key` pointer, and anything
@@ -170,7 +181,10 @@ async function loadManifest(
     );
   }
   const lc = new LineCounter();
-  const doc = parseDocument(text, { lineCounter: lc });
+  // `uniqueKeys: false`, so a path named twice reaches the dedicated check
+  // below and is reported by name and line, rather than as a generic
+  // "map keys must be unique" parse error.
+  const doc = parseDocument(text, { lineCounter: lc, uniqueKeys: false });
   const problem = doc.errors[0];
   if (problem) {
     throw new DocmetaError(
@@ -191,10 +205,22 @@ async function loadManifest(
     return range ? lc.linePos(range[0]).line : undefined;
   };
 
+  // A path named twice would otherwise resolve last-wins per key, with both
+  // entries counted and no diagnostic: `yaml` files a duplicate mapping key
+  // under `doc.warnings`, not `doc.errors`. It is almost always a typo, and
+  // it is refused by name rather than merged.
+  const seen = new Map<string, number | undefined>();
   for (const pair of root.items) {
     const spelled = isScalar(pair.key) ? String(pair.key.value) : String(pair.key);
     const entryLine = lineAt(pair.key);
     const where = entryLine === undefined ? file : `${file}:${entryLine}`;
+    if (seen.has(spelled)) {
+      const first = seen.get(spelled);
+      throw new DocmetaError(
+        `Sidecar manifest ${where}: "${spelled}" is named twice (first at line ${first ?? "?"}). Merge the two entries into one.`,
+      );
+    }
+    seen.set(spelled, entryLine);
     if (!isMap(pair.value)) {
       throw new DocmetaError(
         `Sidecar manifest ${where}: "${spelled}" must be a mapping of owned keys to values.`,
@@ -253,9 +279,11 @@ export function mergeSidecars(
   if (!index || label === STDIN_LABEL) {
     return { extracted, collisions: [], locate: none };
   }
-  const collisions = Object.keys(extracted.data).filter((k) =>
-    index.owners.has(k),
-  );
+  const collisions: SidecarCollision[] = [];
+  for (const key of Object.keys(extracted.data)) {
+    const file = index.owners.get(key);
+    if (file !== undefined) collisions.push({ key, file });
+  }
   const supplied = index.byPath.get(resolve(base, label));
   if (!supplied || supplied.size === 0) {
     return { extracted, collisions, locate: none };

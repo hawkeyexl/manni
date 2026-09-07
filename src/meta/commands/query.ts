@@ -2489,6 +2489,11 @@ function refuseSidecarWrites(
   for (const c of changes) {
     if ("schema" in c || "config" in c) continue;
     if ("cleared" in c) {
+      // `data` is the *merged* object, so this refuses whenever the document
+      // is manifest-covered — a manifest supplies a key for it, or it carries
+      // an owned key itself — not only on a collision. Clearing a covered
+      // document would leave its manifest entry an orphan, which the next
+      // corpus run reports as exit 2; refusing here says so up front.
       for (const key of Object.keys(data.get(c.file) ?? {})) {
         const owner = owned(key);
         if (owner !== undefined) refuse(c.file, key, owner);

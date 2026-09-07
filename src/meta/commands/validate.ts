@@ -461,14 +461,14 @@ export async function runValidate(
     // A document carrying a key a sidecar owns (0020 across files: neither
     // channel wins, and the discarded value would be exactly the one nobody
     // checked). Filed against the document at the key's own line.
-    for (const key of merged.collisions) {
+    for (const { key, file } of merged.collisions) {
       const line = extracted.lineFor(key);
       errors.push({
         schema: SIDECAR_OWNED_SCHEMA,
         keyword: SIDECAR_KEYWORD,
         subject: key,
         instancePath: sidecarPointer(key),
-        message: `"${key}" is owned by sidecar ${sidecars?.owners.get(key) ?? "manifest"}; remove it from the document`,
+        message: `"${key}" is owned by sidecar ${file}; remove it from the document`,
         ...(line != null ? { line } : {}),
       });
     }

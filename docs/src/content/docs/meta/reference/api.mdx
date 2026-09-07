@@ -92,6 +92,7 @@ once per run and merges per document. It validates the merged object with
 | `SidecarValue` (type) | One supplied value, with the manifest's reported path and the key's line when known. |
 | `mergeSidecars` | Merge the index's values for one document into its `ExtractedMetadata`. Returns the merged object, the `collisions` (owned keys the document itself carried, which the caller files as findings), and a `locate` callback. Stdin never merges. |
 | `MergedMetadata` (type) | What `mergeSidecars` returns: `extracted`, `collisions`, and `locate`. |
+| `SidecarCollision` (type) | One key a document carries that a sidecar owns, with the owning manifest. `MergedMetadata.collisions` is a list of these. |
 | `SourceLocation` (type) | What `locate` answers with: a `file`, and optionally `line` and `col`. |
 | `sidecarPointer` | The `/<key>` instance path for a collision finding, RFC 6901 escaped. |
 | `orphanEntries` | The manifest entries naming no loaded document, given the run's file labels. Empty when the index is `null`. |

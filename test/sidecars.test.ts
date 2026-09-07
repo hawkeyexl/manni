@@ -111,6 +111,12 @@ describe("sidecars: loading a manifest", () => {
     );
   });
 
+  it("is an operational error when a manifest names one document twice", async () => {
+    await expect(bad("./bad-duplicate-path.yaml")).rejects.toThrow(
+      /bad-duplicate-path\.yaml:5: "docs\/auth\.md" is named twice \(first at line 1\)/,
+    );
+  });
+
   it("refuses $schema in an entry by name", async () => {
     await expect(bad("./bad-schema-key.yaml")).rejects.toThrow(
       /never chooses the schema/,
@@ -152,7 +158,7 @@ describe("sidecars: merging into a document", () => {
       index,
       corpus,
     );
-    expect(merged.collisions).toEqual(["jira"]);
+    expect(merged.collisions).toEqual([{ key: "jira", file: "docs-meta.yaml" }]);
     expect(merged.extracted.data.jira).toBe("PLAT-9");
     expect(merged.locate("/jira")).toBeUndefined();
   });
@@ -160,7 +166,7 @@ describe("sidecars: merging into a document", () => {
   it("flags an owned key in a document that has no manifest entry at all", async () => {
     const index = await loadSidecars(CONFIG, { configDir: corpus, base: corpus });
     const merged = mergeSidecars("docs/new.md", doc({ jira: "PLAT-1" }), index, corpus);
-    expect(merged.collisions).toEqual(["jira"]);
+    expect(merged.collisions).toEqual([{ key: "jira", file: "docs-meta.yaml" }]);
   });
 
   it("is a pass-through with no index", () => {

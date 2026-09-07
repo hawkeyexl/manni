@@ -72,6 +72,7 @@ export type {
   SidecarEntry,
   SidecarValue,
   MergedMetadata,
+  SidecarCollision,
   SourceLocation,
   LoadSidecarsOptions,
 } from "./core/sidecars.js";
