@@ -299,7 +299,7 @@ Three things matter when wiring it up:
   do not resolve, so a wrong path uploads successfully with zero alerts.
 
 Every finding `manni meta validate` produces is reported at `level: "error"`.
-A finding's `severity` maps onto SARIF's triage axis directly, so a sibling
+A finding's `severity` maps onto SARIF's triage axis directly. So a sibling
 tool's advisory findings arrive as `level: "warning"` through the same
 reporter, which is what closed
 [issue #78](https://github.com/hawkeyexl/manni/issues/78). The full field

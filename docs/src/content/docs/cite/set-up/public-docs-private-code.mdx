@@ -7,15 +7,15 @@ import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components'
 
 Your docs site is public and the code it describes is not. You still want every
 sentence that rests on a line of that code to be checked. A plain citation
-would publish two things you may not want published: the path inside the
-private repository, and a hash that lets anyone with a guess about a short line
-confirm it. This page is the layout that avoids both, and an honest account of
-what a reader of the public site can still see.
+would publish two things you may not want published. One is the path inside
+the private repository. The other is a hash that lets anyone with a guess
+about a short line confirm it. This page is the layout that avoids both, and
+an honest account of what a reader of the public site can still see.
 
 The mechanism has three parts. A **token** stands in for the path. A **keyed
-pin** replaces the plain hash. And **two CI jobs** split the check: the public
-one runs the rules that need only the page, the private one runs the rules
-that need the source.
+pin** replaces the plain hash. And **two CI jobs** split the check. The public
+one runs the rules that need only the page, and the private one runs the
+rules that need the source.
 
 ## What a token is, and is not
 
@@ -38,8 +38,8 @@ than `sha256(text)`. The salt comes from the `MANNI_CITE_SALT` environment
 variable, else `salt:` under `cite:` in config, else the empty string.
 
 A token **is** a stable name for one path. The same salt and the same path
-always give the same token, on every page, so `update` can recognise one file
-across pages and a checkout that has the salt can resolve it.
+always give the same token, on every page. So `update` can recognise one file
+across pages, and a checkout that has the salt can resolve it.
 
 A token **is not** encryption, and it is not reversible. Nothing on the page
 or in the tool turns a token back into a path. Resolution is a lookup: the
@@ -130,7 +130,7 @@ and the check runs from the docs checkout.
    token.
 
 3. **Run the public job with `--no-sources`.** It has no salt and no code, so
-   it runs the page-side rules only: every statement names a real entry,
+   it runs the page-side rules only. Every statement names a real entry,
    every entry is well-formed, every claim is on the page. Every source status
    is `skipped`, which is not a finding:
 
@@ -232,7 +232,7 @@ jobs:
 
 The private checkout wants `fetch-depth: 0`. A shallow clone cannot show the
 file at the commit a pin was minted at, so `never-true` and the diff degrade
-to `changed (history unavailable)`; [Run it in CI](/manni/cite/ci/#full-history)
+to `changed (history unavailable)`. [Run it in CI](/manni/cite/ci/#full-history)
 explains.
 
 ## When a token does not resolve

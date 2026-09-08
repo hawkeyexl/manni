@@ -9,9 +9,9 @@ import { Aside } from '@astrojs/starlight/components';
 
 The citation tool reads the `cite:` key of the family's one config file,
 `manni.config.yaml`, so CI can run a bare `manni cite check`. The config is
-optional. Every key has a default, and the tool runs without one when you pass
-paths on the command line and the sources sit in the same repository as the
-pages.
+optional. Every key has a default. The tool runs without a config when two
+things hold. You pass paths on the command line, and the sources sit in the
+same repository as the pages.
 
 ```yaml title="manni.config.yaml"
 meta:
@@ -30,7 +30,7 @@ cite:
 | `respectGitignore` | `boolean` | `true` | `--no-gitignore` | Skip files `.gitignore` covers when expanding directories and globs. `--no-gitignore` overrides it for one run. |
 | `root` | `string` | git root | `--root` | The directory `src:` paths resolve from, relative to the config file. It may point outside the repository, at a second checkout. `--root` overrides it for one run. |
 | `baseline` | `string` | none | `--baseline` | Path to a [citation baseline](/manni/cite/reference/cli/#baselines), relative to the config file. Setting it turns on `--baseline` for every run; `--no-baseline` suppresses it for one. A bare `--write-baseline` records into this same file. |
-| `git` | `boolean` | `true` | `--no-git` | Consult git: index sources with `git ls-files`, record `HEAD` on `add`, and use history to tell `changed` from `never-true`. `--no-git` overrides it for one run. |
+| `git` | `boolean` | `true` | `--no-git` | Consult git. Index sources with `git ls-files`, record `HEAD` on `add`, and use history to tell `changed` from `never-true`. `--no-git` overrides it for one run. |
 | `sources` | `boolean` | `true` | `--no-sources` | Read the sources. `false` runs the page-side rules only and marks every source-side status `skipped`; `update` refuses under it. `--no-sources` overrides it for one run. |
 | `salt` | `string` | `""` | none | Keys obfuscated tokens and their pins. The environment variable `MANNI_CITE_SALT` wins over it; see [the salt](#the-salt). |
 | `obfuscate` | `boolean` | `false` | `--obfuscate` | Have `add` write every new citation as a `~token` with a keyed pin. `--obfuscate` turns it on for one run; there is no flag to turn it off. |
@@ -50,7 +50,7 @@ inside `severity`: a rule the tool does not have, or a level other than
 
 A dropped `allowEmtpy:` would otherwise leave a config that reads as
 configured and is not. The rule also means a config written for a newer manni
-that carries a key this version does not know is rejected outright, so pin
+is rejected outright when it carries a key this version does not know. So pin
 the version wherever the gate runs.
 
 <Aside type="note" title="Values are never echoed">
@@ -83,8 +83,8 @@ discovery and runs on the defaults alone. When a config governs the run,
 | `--root` and `--baseline <path>` | the working directory |
 
 So `cd docs && manni cite check` reaches the same files, the same root and the
-same baseline as a run from the repository root, and baseline fingerprints
-match whichever directory the command ran from.
+same baseline as a run from the repository root. Baseline fingerprints match
+whichever directory the command ran from.
 
 ## The salt
 
@@ -110,7 +110,7 @@ again.
 
 The two-checkout layout, which is the reason `root`, `sources` and `obfuscate`
 exist. The pages are in the public docs repository, so SARIF locations
-resolve; the sources are reached through `--root` from a private CI job that
+resolve. The sources are reached through `--root` from a private CI job that
 checks out both:
 
 ```yaml title="manni.config.yaml (public docs repository)"

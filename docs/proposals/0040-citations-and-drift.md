@@ -30,10 +30,10 @@
 - **Verdict:** Add `manni:citations:1.0.0-proposal.1` to the 0023 family, and
   ship `manni cite` (`check`, `add`, `update`) as the sibling domain that
   implements it. A citation pins a sentence to source lines by a hash and a
-  commit; the check classifies each pin as current, moved, changed, never true
+  commit. The check classifies each pin as current, moved, changed, never true
   or missing, from git alone, with no model and no network. Citations live in
-  frontmatter or inline in the body's comment syntax, and a private source can
-  be cited by an obfuscated token with a keyed pin. One PR, three feature
+  frontmatter or inline in the body's comment syntax. A private source can be
+  cited by an obfuscated token with a keyed pin. One PR, three feature
   commits.
 
 ## Problem
@@ -46,8 +46,8 @@ that names it should be re-read end to end. It is which sentence on that page
 just stopped being true, and every sentence that did not.
 
 Gleb Lukicov's "Your documentation is a build artifact" (2026-08-28) records
-the answer generated docs already use: for each snippet, the source range, a
-hash of those bytes and the commit. A check then sorts every citation into
+the answer generated docs already use. For each snippet, that is the source
+range, a hash of those bytes and the commit. A check then sorts every citation into
 CURRENT, MOVED or CHANGED at zero tokens, and only CHANGED costs a person or a
 model. This family has the two halves of that and has never joined them. evals
 carries `generated-assertion-hash`, a hash-as-lockfile over an assertion. The
@@ -89,8 +89,9 @@ Line 9 is the sentence. Not the page, not the file: the sentence.
   `id`, `claim`, `quote`. The draft is at
   `docs/proposals/0040/schemas/citations/`, with its example ladder beside it.
 - **Inline statements**: the same entry, or a reference to one by id, written in
-  the body in the format's comment syntax, the way Doc Detective's inline
-  statements are. It anchors the paragraph or fenced block that follows it.
+  the body in the format's comment syntax. That is the way Doc Detective's
+  inline statements are written. It anchors the paragraph or fenced block that
+  follows it.
 - **Obfuscated sources**: `~<16 hex>` in place of a path, with a pin keyed by a
   salt. A public docs repo can cite a private code repo without publishing its
   paths, and without publishing a verifier for its lines.
@@ -98,8 +99,8 @@ Line 9 is the sentence. Not the page, not the file: the sentence.
   classifies, `add` mints, `update` rewrites moved pins in place. Findings ride
   meta's reporters and baseline under `manni:cite/<rule>`.
 - **A contract**: the hashing rule, the search regimes, the statuses and their
-  severities, and one output rule, which is that output never says more than
-  the page did.
+  severities, and one output rule. The output rule is that output never says
+  more than the page did.
 
 The vocabulary is meta's; the behaviour is cite's. That split is 0033's:
 meta publishes what a page may say, and a sibling implements what it means.
@@ -116,7 +117,7 @@ Draft 2020-12, root open, `citation-` prefix guarded exactly as evals guards
 | `citations` | list of entries, `minItems: 1` | no | The page's citations. Omit the key rather than write `[]`. |
 | `citation-commit` | commit | no | Default `commit` for every entry that omits its own. |
 | `src` | source reference | **yes** | `path`, `path:L`, `path:L1-L2`, or `~<16 hex>` with the same line forms. Repo-root-relative posix path. `path:L` is canonical for one line. |
-| `integrity` | `^sha256-[0-9a-f]{64}$` | **yes** | The pin: the cited lines hashed under the rule below, keyed when `src` is obfuscated. |
+| `integrity` | `^sha256-[0-9a-f]{64}$` | **yes** | The pin, which is the cited lines hashed under the rule below, keyed when `src` is obfuscated. |
 | `commit` | `^[0-9a-f]{7,40}$` | no | The commit the pin was minted at. The tool writes forty; a person may type seven. |
 | `id` | `^[a-z0-9][a-z0-9-]*$` | no | Unique per page, tool-enforced. What an inline reference names. |
 | `claim` | string, `minLength: 1` | no | The sentence the citation supports, verbatim. |
@@ -124,23 +125,23 @@ Draft 2020-12, root open, `citation-` prefix guarded exactly as evals guards
 
 The entry is closed. There is no `dependentRequired`: a bare `{src, integrity}`
 is legal, and stress test 13 says why. The `src` grammar rejects a leading `/`
-or a drive letter, a backslash, `.` and `..` segments, an empty segment, line
-0, a URL, and a token of the wrong length or case; it accepts spaces and dots
-inside a segment, so `docs/release notes/v1.2.md:4-9` is a source. `L2 >= L1`
-is the tool's rule, because a pattern cannot compare two numbers; the ladder
-pins that the schema accepts `:9-3` so nobody later "fixes" the regex into
-something unreadable.
+or a drive letter, a backslash, `.` and `..` segments, and an empty segment.
+It also rejects line 0, a URL, and a token of the wrong length or case. It
+accepts spaces and dots inside a segment, so `docs/release notes/v1.2.md:4-9`
+is a source. `L2 >= L1` is the tool's rule, because a pattern cannot compare
+two numbers. The ladder pins that the schema accepts `:9-3`, so nobody later
+"fixes" the regex into something unreadable.
 
-**The hashing rule**, stated once here and once in the schema's `integrity`
-description, and nowhere else: decode UTF-8; strip one leading BOM; CRLF to
-LF; split on LF; drop the empty element a trailing LF leaves; take lines L1
-to L2 inclusive, 1-based, or every line for a bare path; join with LF, no
-trailing LF; keep trailing whitespace. Plain `src`: `sha256(text)`.
+**The hashing rule** is stated once here and once in the schema's `integrity`
+description, and nowhere else. Decode UTF-8. Strip one leading BOM. CRLF to
+LF. Split on LF. Drop the empty element a trailing LF leaves. Take lines L1
+to L2 inclusive, 1-based, or every line for a bare path. Join with LF, no
+trailing LF. Keep trailing whitespace. Plain `src`: `sha256(text)`.
 Obfuscated `src`: `sha256(salt + "\n" + text)`. Hex, `sha256-` prefix. The
-goldens, verified with node and asserted by the drift ladder: line 2 of the
-fixture is `78af1d33…fe4b1f`, lines 1-3 are `d2981e71…bed1d6`, the whole
-file and lines 1-7 are both `aebba92f…86e023`, and the CRLF copy of line 2
-hashes identically.
+goldens are verified with node and asserted by the drift ladder. Line 2 of
+the fixture is `78af1d33…fe4b1f`, and lines 1-3 are `d2981e71…bed1d6`. The
+whole file and lines 1-7 are both `aebba92f…86e023`, and the CRLF copy of
+line 2 hashes identically.
 
 **The obfuscation rule**: `"~" + sha256(salt + "\n" + path).hex.slice(0, 16)`,
 with `path` spelled exactly as a plain `src` would spell it. The salt comes
@@ -155,7 +156,7 @@ derivable fact lies, and a hash of lines that sit right there looks derivable.
 It is not. A pin is a record of the past: what the lines were when the
 sentence was written. Recompute it on every run and there is nothing left to
 compare against. The check *is* the comparison between the record and the
-present, and that is the same object as `generated-assertion-hash` and the
+present. That is the same object as `generated-assertion-hash` and the
 config's `integrity` pins, under the same spelling.
 
 ## Inline statements
@@ -178,7 +179,7 @@ the frontmatter entry with that id. `cite true` is a reference to the id
 `statement-invalid`.
 
 The scanner is `indexOf` over the open and close delimiters, never a regex over
-the page, and it runs only over the body: `page.ts` slices from the end of the
+the page, and it runs only over the body. `page.ts` slices from the end of the
 frontmatter and passes the offset and line, so a `cite` inside YAML is never
 matched.
 
@@ -202,10 +203,11 @@ record is where that is said.
 ## The drift-check contract
 
 **Statuses and rules.** A citation is `current`, `moved` (one equal window
-elsewhere in the file), `moved-ambiguous` (two or more), `changed` (no equal
-window), `never-true` (the range at `commit` does not hash to `integrity`, or
-the path was absent there), `missing` (no tracked file, or a token that
-resolves to nothing), or `skipped` (`--no-sources`; not a finding). The page-side
+elsewhere in the file), `moved-ambiguous` (two or more), or `changed` (no
+equal window). Or it is `never-true` (the range at `commit` does not hash to
+`integrity`, or the path was absent there). Or it is `missing` (no tracked
+file, or a token that resolves to nothing), or `skipped` (`--no-sources`; not
+a finding). The page-side
 rules are `claim-missing`, `claim-ambiguous`, `statement-orphan`,
 `statement-invalid`, `entry-invalid` and `quote-drift`. Every rule has a
 default severity: `current` is `off`, `moved` and `claim-ambiguous` are
@@ -214,12 +216,13 @@ warning never touches the exit code.
 
 **Economics.** Two search regimes, and both are local. With git, a non-match
 with a `commit` costs one `git show` of the file at that commit, memoized per
-commit and path; the original text then drives the move search
+commit and path. The original text then drives the move search
 (candidate-by-first-line, then a lexical compare, then the hash). Without git,
 or without a commit, the search is a window of 2,000 lines either side of the
-pinned range, then the rest of the file under a 64 MiB budget, past which the
-result carries `truncatedSearch`. `git show` runs only on a non-match, so a
-clean corpus costs one hash per citation. No model, no network, ever.
+pinned range. Then it is the rest of the file under a 64 MiB budget, past
+which the result carries `truncatedSearch`. `git show` runs only on a
+non-match, so a clean corpus costs one hash per citation. No model, no
+network, ever.
 
 **Output never says more than the page did.** A finding, in every format,
 spells a source exactly as the page spelled it: `~9c1f0e2b7a3d4c5e:4`, never
@@ -233,7 +236,7 @@ fixture whose salt is `SALT-SENTINEL` and whose private path is
 rewrites it. `changed` names the sentence, the range and, with history, the
 commits since, and a person decides whether the prose or the pin is wrong. A
 `changed` finding that recurs is promotable by hand to an `ai` eval, whose
-assertion is the claim: that is where the family's model spend belongs, on the
+assertion is the claim. That is where the family's model spend belongs, on the
 one sentence a zero-token check could not settle. The PR job runs
 `--baseline`, report-only, and a scheduled sweep escalates. This is not a
 pre-commit hook: a pin can go stale in a commit that touches no page.
@@ -254,13 +257,13 @@ an eslint rule stops it reaching into `../meta/{core,extractors,reporters}`.
 | Command | Does | Exit |
 |---|---|---|
 | `check [paths...]` | classify every citation; report through `pretty`, `json`, `github`, `sarif`, `junit`; `--baseline` and `--write-baseline` as meta's, in `.manni-cite-baseline.json`; `--no-git`, `--no-sources`, `--root <dir>`, `--show-diff`, `--reveal` | 0 clean, 1 an unbaselined error, 2 operational |
-| `add <page> <src>` | mint an entry at HEAD and write it: `--claim` anchors a sentence, `--quote` a fenced block, `--inline` writes a JSON statement instead of a frontmatter entry, `--obfuscate` writes a token and a keyed pin, `--no-commit`, `--dry-run` | 0 written, 2 refusal |
+| `add <page> <src>` | mint an entry at HEAD and write it. With `--claim` it anchors a sentence, with `--quote` a fenced block. With `--inline` it writes a JSON statement instead of a frontmatter entry, and with `--obfuscate` a token and a keyed pin. Also `--no-commit` and `--dry-run` | 0 written, 2 refusal |
 | `update [paths...]` | rewrite `moved` entries' `src` in place, textually, comments and quoting untouched; `--accept` re-mints `changed` and `never-true` at HEAD and prints both pins; `--only <id>`; `--dry-run` | 0, 1 when work is left undone, 2 under `--no-sources` |
 
 The input surface is meta's: positional paths, `-` with `--as`, `paths:`
 fallback, `--ext`, `--exclude`, `-c`, `--no-config`, `--allow-empty`,
 `--no-gitignore`. Config `cite:` mirrors the flags, plus `salt`, `obfuscate`,
-`root` and a `severity` map; an unknown key, rule or level is a `CiteError`
+`root` and a `severity` map. An unknown key, rule or level is a `CiteError`
 that names what is supported and never echoes the value. `--root` defaults to
 `cite.root` from the config, else the git root, else cwd, and may point at
 another checkout.
@@ -340,17 +343,17 @@ second field, and a page with both is two facts about one range. The config's
 schema entries already solved this with `integrity: sha256-…`, and so did
 Subresource Integrity.
 
-**Changed as a result:** the field is `integrity`, its value carries a
-`sha256-` prefix, and the pattern closes the algorithm set at one so a future
+**Changed as a result:** the field is `integrity`, and its value carries a
+`sha256-` prefix. The pattern closes the algorithm set at one, so a future
 `sha512-` is a schema revision, not a silent acceptance.
 
 ### 2. `add --claim` with a sentence the page does not contain
 
 The first `add` wrote the entry and let `check` report `claim-missing` on the
-next run. That is a tool minting a pin it already knows is broken, and the
-person who typed the sentence with a typo learns about it from CI.
+next run. That is a tool minting a pin it already knows is broken. The person
+who typed the sentence with a typo learns about it from CI.
 
-**Changed as a result:** `add` runs the same claim search `check` runs, and
+**Changed as a result:** `add` runs the same claim search `check` runs. It
 refuses (exit 2) when the claim occurs zero times, naming the page and the
 sentence. Two or more occurrences are a refusal too, naming the lines, and the
 remedy is `--id` plus a reference statement above the intended paragraph.
@@ -384,13 +387,13 @@ red, on a change that altered nothing the pages said.
 **Changed as a result:** `moved` is a warning, `update` is its one-command fix,
 and warnings never affect the exit code. The same goes for `claim-ambiguous`.
 Meta's `FieldError` gains an optional `severity` in a preparatory commit, with
-the invariant that a result is `ok` iff it holds no error-severity entry, and
-the reporters render `⚠`, `::warning` and SARIF `level` accordingly.
+the invariant that a result is `ok` iff it holds no error-severity entry. The
+reporters render `⚠`, `::warning` and SARIF `level` accordingly.
 
 ### 6. `path:1-7` and `path` are the same bytes and were two pins
 
 The first hashing rule kept the trailing LF for a whole-file pin and dropped it
-for a range, so pinning "the whole file" two ways gave two hashes.
+for a range. So pinning "the whole file" two ways gave two hashes.
 
 **Changed as a result:** one rule. Lines are joined with LF and never
 terminated, so `mint(SOURCE, 1, 7) === mint(SOURCE)`, and the ladder asserts
@@ -426,14 +429,14 @@ is a lie about the pin.
 
 **Changed as a result:** an unknown commit degrades to `changed (history
 unavailable: commit 3f9c2a1 not found; fetch-depth: 0)`, with one notice per
-run, and `never-true` is asserted only when git can actually show the range at
+run. `never-true` is asserted only when git can actually show the range at
 that commit and it does not hash to the pin.
 
 ### 10. CRLF and a BOM
 
 A Windows checkout with `core.autocrlf` turned every pin `changed`. The
 config's schema pins diagnose an encoding mismatch after the fact with a
-message; a citation check runs on every push and cannot afford a page of false
+message. A citation check runs on every push and cannot afford a page of false
 `changed` findings on one platform.
 
 **Changed as a result:** normalization is part of the hashing rule, up front:
@@ -470,8 +473,8 @@ both. There is no third place a commit can come from.
 `source-of-truth` at line granularity, which is a legitimate thing to want
 (this page rests on these lines; tell me when they change), has no spelling.
 
-**Changed as a result:** the bare pin is legal, checked source-side only, and
-the record says why both it and `source-of-truth` exist: they answer at
+**Changed as a result:** the bare pin is legal, and it is checked source-side
+only. The record says why both it and `source-of-truth` exist. They answer at
 different grains, and a page can name its source long before anyone pins a
 sentence. `add` refuses `--inline` and `--id` on a bare pin, since nothing
 anchors it.
@@ -510,7 +513,7 @@ closed:
   without the salt.
 - **The output.** A finding that printed the resolved path beside the token
   would put the path in the SARIF the public CI uploads. Every reporter spells
-  the source as the page spelled it; the resolved path reaches only the pretty
+  the source as the page spelled it. The resolved path reaches only the pretty
   reporter, only under `--reveal`, and the sentinel test proves it across
   formats.
 - **The resolver.** A token that resolves against an arbitrary directory walk
@@ -518,13 +521,13 @@ closed:
   through tracked files only, under realpath containment.
 
 **Changed as a result:** all four, plus the accepted residue stated in the
-vocabulary section: tokens are stable, so a public site reveals how often a
+vocabulary section. Tokens are stable, so a public site reveals how often a
 private file is cited and when it moves.
 
 ### 17. A frontmatter entry and an inline statement for the same sentence
 
 The first draft gave frontmatter precedence over inline. 0020 already decided
-this for element metadata: both channels are validated and neither wins,
+this for element metadata. Both channels are validated and neither wins,
 because a precedence rule turns one channel into a silent override of the
 other.
 
@@ -539,8 +542,8 @@ every citation on a wrapped page was `claim-missing`.
 
 **Changed as a result:** the search is paragraph-scoped and whitespace-
 normalized, and the ladder holds a claim found across two lines. Punctuation is
-not whitespace: the ladder also holds that a comma where the claim has a full
-stop is a miss, which is what caught the plan's own example (item 20).
+not whitespace. The ladder also holds that a comma where the claim has a full
+stop is a miss. That is what caught the plan's own example (item 20).
 
 ### 19. What the baseline fingerprint is made of
 
@@ -583,7 +586,7 @@ runs once the three feature commits land.
 ## Placement
 
 `manni:citations:1.0.0-proposal.1` is intended as the tenth default when
-0023's review concludes, on the same terms as the other nine: the family is the
+0023's review concludes, on the same terms as the other nine. The family is the
 default set, and an entry that is malformed fails a bare run. Until then it is
 reachable by file ref only, and the site's proposals hub lists it as the tenth
 row.
@@ -596,8 +599,8 @@ merge into `src/meta/schemas/` in the same PR.
 
 ## Not breaking
 
-Additive. A new domain under the umbrella, a new config key, a new draft
-vocabulary that nothing resolves by default, and an optional `severity` on
+Additive. A new domain under the umbrella, a new config key, and a new draft
+vocabulary that nothing resolves by default. Also an optional `severity` on
 `FieldError` that every existing finding leaves unset. `feat(cite):`, a minor
 release, in three feature commits on one branch: the frontmatter channel with
 `check` and `add`; inline statements and `update`; obfuscated sources. Each
@@ -613,8 +616,9 @@ the key.
   finding shape by `ruleId`. It is the first integration and not part of this
   proposal.
 - Three `feat:` commits ship one demo video, per the house rule. The demo is the
-  transcript in the Problem section: a page that validates green and cites a
-  line that changed, then `cite check` naming the sentence, with a blue accent.
+  transcript in the Problem section. It shows a page that validates green and
+  cites a line that changed, then `cite check` naming the sentence, with a blue
+  accent.
 - `docs/proposals/0023/ladders/compat-check.cjs` is already broken, reading
   `src/schemas` and `docmeta:` ids that 0033 moved and renamed. It is a
   separate `fix(docs):` and not this proposal's to make.
@@ -627,7 +631,7 @@ the key.
   2. Is one algorithm in the `integrity` pattern too tight for a draft, given
      that a second one is a schema revision?
   3. Should the accepted residue of obfuscation, that tokens are stable across
-     pages, be closed with a per-page salt at the cost of `update` losing the
-     ability to recognise one file across pages?
+     pages, be closed with a per-page salt? The cost is `update` losing the
+     ability to recognise one file across pages.
   4. Are the parenthesised statement forms worth keeping at all, given they
      carry an id only?

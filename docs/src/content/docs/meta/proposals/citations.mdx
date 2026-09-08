@@ -1,6 +1,6 @@
 ---
 title: "manni:citations:1.0.0-proposal.1"
-description: "The proposed citations vocabulary: pin a sentence to the source lines it rests on, by a hash and a commit, so a drift check can say which claim went stale."
+description: "The proposed citations vocabulary pins a sentence to the source lines it rests on, by a hash and a commit, so a drift check can say which claim went stale."
 sidebar:
   order: 10
   label: "citations"
@@ -17,7 +17,7 @@ set is frozen while its review runs.
 
 **The question it answers: what do this page's claims rest on?** A common
 vocabulary for pinning a sentence to the source lines it was written from.
-Any drift check can implement it: hash the cited lines the same way, compare
+Any drift check can implement it. Hash the cited lines the same way, compare
 against the pin, and report the sentence that stopped being true.
 
 ## Keys
@@ -37,24 +37,25 @@ what anchors the pin to the page:
 | Field | Type | Notes |
 |---|---|---|
 | `src` | source reference | `path`, `path:L` or `path:L1-L2`: a repo-root-relative posix path and 1-based inclusive lines. `path:L` is the canonical spelling of one line. `~` plus sixteen hex digits stands in for the path of a private source |
-| `integrity` | `sha256-` and 64 hex digits | The pin: the cited lines hashed under one normalization rule. Keyed by a salt when `src` is obfuscated |
+| `integrity` | `sha256-` and 64 hex digits | The pin, which is the cited lines hashed under one normalization rule. Keyed by a salt when `src` is obfuscated |
 | `commit` | 7 to 40 hex digits | The commit the pin was minted at. Tooling writes all forty |
 | `id` | kebab-case, unique per page | What an in-body reference names, and what a finding is reported under |
 | `claim` | non-empty string | The sentence the citation supports, verbatim. A drift check finds it in the body with whitespace collapsed, so a soft-wrapped sentence still matches |
 | `quote` | boolean, default false | The page reproduces the cited lines in a fenced block, and that block is the anchor |
 
 The `src` grammar rejects an absolute path, a drive letter, a backslash, a
-`.` or `..` segment, an empty segment, a URL and line 0, so a source that
+`.` or `..` segment, an empty segment, a URL and line 0. So a source that
 cannot be resolved fails at the schema. Spaces and dots inside a segment are
 fine: `docs/release notes/v1.2.md:4-9` is a source. That the end line is not
 before the start line is a rule on implementations, since a pattern cannot
 compare two numbers.
 
-**The hashing rule**, stated once in the schema's `integrity` description:
-decode as UTF-8, drop one leading byte-order mark, turn CRLF into LF, split on
-LF and discard the empty element a trailing LF leaves, take the cited lines,
-join them with LF and no trailing LF, keep trailing whitespace. A plain `src`
-hashes that text. An obfuscated `src` hashes the salt, one LF, and the text.
+**The hashing rule** is stated once, in the schema's `integrity` description.
+Decode as UTF-8, drop one leading byte-order mark, and turn CRLF into LF.
+Split on LF and discard the empty element a trailing LF leaves. Take the cited
+lines, join them with LF and no trailing LF, and keep trailing whitespace. A
+plain `src` hashes that text. An obfuscated `src` hashes the salt, one LF, and
+the text.
 
 ## Inline statements
 
@@ -117,7 +118,7 @@ Retries default to 3, and the count is not configurable.
 ```
 
 An obfuscated entry, citing a private source from a public page. The token
-replaces the path, and the pin is keyed by the same salt, so the page carries
+replaces the path, and the pin is keyed by the same salt. So the page carries
 neither the path nor a verifier for the line:
 
 ```yaml
@@ -138,10 +139,10 @@ citations:
   a config's schema entries.
 - **`integrity`, with an algorithm prefix.** Named after what it is rather than
   how it is computed, as the config's schema pins and Subresource Integrity
-  are, so a second algorithm can arrive without a second field. Hex rather than
+  are. So a second algorithm can arrive without a second field. Hex rather than
   base64, because the family's other hash is hex.
 - **One normalization rule, up front.** CRLF and a byte-order mark are not
-  changes, and a check that runs on every push cannot afford a page of false
+  changes. A check that runs on every push cannot afford a page of false
   findings on one platform. Trailing whitespace is kept, because a trailing
   space is a change.
 - **A keyed pin for an obfuscated source.** A plain hash over a short private
@@ -161,6 +162,6 @@ citations:
 
 Three questions. Is one algorithm in the `integrity` pattern too tight for a
 draft, given that adding one is a schema revision? Should the stable token be
-closed with a per-page salt, at the cost of a drift check no longer
-recognising one private file across two pages? And are the parenthesised
+closed with a per-page salt? The cost is a drift check that no longer
+recognises one private file across two pages. And are the parenthesised
 statement forms worth keeping, given that they carry an id only?

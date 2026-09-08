@@ -73,7 +73,7 @@ The first five are about the **source**; the rest are about the **page**.
 ```
 
 The lines the citation pins are still in the file, byte for byte, but they
-are at a different line number: something was added or removed above them.
+are at a different line number. Something was added or removed above them.
 The page still says something true, so this is a **warning** and the exit
 code stays `0`.
 
@@ -153,9 +153,10 @@ the same `--accept` with no edit to the prose.
 
 The tool went back to the commit the entry records and the cited range did
 not hash to the pin there either. So the pin was never a record of those
-lines at that commit. The usual causes: a `src` or `integrity` edited by
-hand; or a `moved` entry that `update` rewrote to a new line number, whose
-`commit` still predates the move, and whose line has since changed.
+lines at that commit. There are two usual causes. One is a `src` or
+`integrity` edited by hand. The other is a `moved` entry that `update` rewrote
+to a new line number. Its `commit` still predates the move, and its line has
+since changed.
 
 **Fix.** Treat it as `changed`: check the sentence against the source, then
 re-mint at HEAD with `update --accept --only <id>`. Both pins are printed.
@@ -266,7 +267,7 @@ write one.
     ✗ fetch-timeout   must have required property 'integrity'   (line 4)
 ```
 
-A frontmatter entry does not fit the citation shape: a required field is
+A frontmatter entry does not fit the citation shape. A required field is
 missing, `src` does not match the grammar, a range runs backwards, or two
 entries share an `id`. The line is the entry's own line in the frontmatter.
 
@@ -283,7 +284,7 @@ full shape and the `src` grammar.
 
 The citation has `quote: true`, the source is fine, and the fenced block on
 the page is not a copy of the cited lines. This often follows an
-`update --accept` on a quoted range: the pin now matches the new source, and
+`update --accept` on a quoted range. The pin now matches the new source, and
 the block on the page still shows the old one.
 
 **Fix.** Paste the cited lines into the block again.
@@ -331,17 +332,17 @@ Don't guess and re-push. Run the exact check on your machine.
 | --- | --- |
 | `0` | No findings, or only warnings. The check is green. |
 | `1` | At least one error-severity finding that is not in the baseline. This is the red check you came here to fix. For `update`, that a citation was skipped. |
-| `2` | An operational error: the check could not run. No inputs and no config, an unknown format, `update` under `--no-sources`. The message is on stderr, prefixed `manni:`. |
+| `2` | An operational error. The check could not run. No inputs and no config, an unknown format, `update` under `--no-sources`. The message is on stderr, prefixed `manni:`. |
 
 A `1` means fix the page or the pin. A `2` means fix the setup, or escalate
 to whoever configured the check.
 
 ## Still stuck?
 
-The [CLI reference](/manni/cite/reference/cli/) documents every flag, and the
+The [CLI reference](/manni/cite/reference/cli/) documents every flag. The
 [citations reference](/manni/cite/reference/citations/) documents the entry
-shape, the `src` grammar and the hashing rule, which is what decides whether
-two ranges are "the same bytes".
+shape, the `src` grammar and the hashing rule. The hashing rule is what
+decides whether two ranges are "the same bytes".
 
 <LinkCard
   title="Get started"

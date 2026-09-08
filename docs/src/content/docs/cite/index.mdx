@@ -17,10 +17,10 @@ hero:
 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-A citation pins one sentence on a page to the source lines it rests on: a path
-and line range, a hash of those lines, and the commit they were read at. manni
-cite then checks every pin against the source and tells you which sentence
-stopped being true, not which page to re-read.
+A citation pins one sentence on a page to the source lines it rests on. It
+records a path and line range, a hash of those lines, and the commit they were
+read at. manni cite then checks every pin against the source and tells you
+which sentence stopped being true, not which page to re-read.
 
 It runs from git alone. No model, no network, one hash per citation on a clean
 run. A line that gained neighbours above it is `moved`, and one command fixes
@@ -101,12 +101,12 @@ finding, fix the sentence, re-mint.
   />
 </CardGrid>
 
-The reference shelf holds the exhaustive detail: the [CLI reference](/manni/cite/reference/cli/)
-for every flag of `check`, `add` and `update`, the
-[configuration reference](/manni/cite/reference/configuration/) for the `cite:`
-keys of `manni.config.yaml`, and the [citations reference](/manni/cite/reference/citations/)
-for the entry shape, the `src` grammar, the hashing rule and the inline
-statement forms.
+The reference shelf holds the exhaustive detail. The
+[CLI reference](/manni/cite/reference/cli/) covers every flag of `check`, `add`
+and `update`. The [configuration reference](/manni/cite/reference/configuration/)
+covers the `cite:` keys of `manni.config.yaml`. The
+[citations reference](/manni/cite/reference/citations/) covers the entry shape,
+the `src` grammar, the hashing rule and the inline statement forms.
 
 ## What manni cite checks, and what it doesn't
 

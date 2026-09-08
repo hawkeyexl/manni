@@ -6,10 +6,10 @@ description: Add the citation check to CI with inline PR annotations, SARIF or J
 import { Steps, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 This page wires `manni cite check` into CI. It runs it on every push and pull
-request, turns findings into annotations on the line of the sentence, and fails
-the job only on an error. It also covers the two things a citation check needs
-that a metadata check does not: full git history, and a way to adopt it on a
-corpus whose pins have already drifted.
+request. It turns findings into annotations on the line of the sentence, and
+fails the job only on an error. It also covers the two things a citation check
+needs that a metadata check does not. One is full git history. The other is a
+way to adopt it on a corpus whose pins have already drifted.
 
 Nothing is installed into the repository. The recipes run `npx`, which fetches
 the published package on demand; the runner needs Node.js 24 or newer.
@@ -25,7 +25,7 @@ rests on.
 | --- | --- |
 | `0` | Every citation is current, or every finding is a warning. |
 | `1` | At least one finding is an error and not in the baseline. |
-| `2` | The check could not run: no inputs and no config, an unknown format, a bad flag. The message goes to stderr, prefixed `manni:`. |
+| `2` | The check could not run. No inputs and no config, an unknown format, a bad flag. The message goes to stderr, prefixed `manni:`. |
 
 **Warnings never fail the job.** `moved` and `claim-ambiguous` are warnings by
 default, because a page that says something true should not go red when
@@ -64,7 +64,7 @@ citation by `id`, then its source as the page spelled it, then the status.
 | `junit` | The CI "Tests" tab. | One `testcase` per page, classname `manni.cite`, a `failure` per error with `type` set to the rule id. |
 
 `update` takes `pretty` or `json` only. The [CLI reference](/manni/cite/reference/cli/)
-has every flag, and the same output rule holds in every format: a source is
+has every flag. The same output rule holds in every format. A source is
 spelled as the page spelled it, never as the resolved path. See
 [Public docs, private code](/manni/cite/set-up/public-docs-private-code/) for
 why that matters.
@@ -147,8 +147,8 @@ sources and both come back.
 
 ## Ramp in with a baseline
 
-A pin can go stale in a commit that touches no page, so on a corpus that has
-been cited for a while the first run will find drift nobody's pull request
+A pin can go stale in a commit that touches no page. So on a corpus that has
+been cited for a while, the first run will find drift nobody's pull request
 caused. The baseline is how the check goes in without blocking on that
 backlog. It is the same mechanism manni meta uses, in its own file, so the two
 tools cannot erase each other's backlog.
@@ -184,8 +184,8 @@ tools cannot erase each other's backlog.
    Commit the file.
 
 2. **Make the PR job report-only.** With `--baseline`, a finding in the file
-   is shown with a `·` and counted as baselined, and only a finding that is
-   not in the file fails the job:
+   is shown with a `·` and counted as baselined. Only a finding that is not
+   in the file fails the job:
 
    ```sh
    manni cite check --baseline
@@ -196,14 +196,14 @@ tools cannot erase each other's backlog.
    ```
 
 3. **Let a scheduled sweep escalate.** A second job, on a schedule, runs the
-   check without `--baseline`. It fails until the backlog is worked off, and
-   it is where a pin that drifted in a commit touching no page shows up, so
-   it never lands on an unrelated pull request.
+   check without `--baseline`. It fails until the backlog is worked off. It is
+   also where a pin that drifted in a commit touching no page shows up. So
+   that pin never lands on an unrelated pull request.
 
 4. **Burn the backlog down.** Each `update` or `update --accept` that resolves
    a finding removes it from the picture. A fingerprint is made of the rule and
-   the entry's `id` (or its `integrity` when it has none), so a baselined
-   finding survives a `moved` rewrite and disappears only when the pin is
+   the entry's `id` (or its `integrity` when it has none). So a baselined
+   finding survives a `moved` rewrite. It disappears only when the pin is
    re-minted, which is the act that resolves it. Regenerate the file with
    `--write-baseline` whenever it is convenient; it only ever shrinks.
 
@@ -220,10 +220,10 @@ tools cannot erase each other's backlog.
 ## Public docs, private code
 
 When the pages are public and the sources are not, the check splits into two
-jobs: a public one that runs `--no-sources` and needs no secret, and a private
-one that checks the code out beside the docs and runs with `--root ../code`
-and the salt from a secret. The layout, the token, and what a reader of the
-public site can still see are on their own page.
+jobs. A public one runs `--no-sources` and needs no secret. A private one
+checks the code out beside the docs and runs with `--root ../code` and the
+salt from a secret. The layout, the token, and what a reader of the public
+site can still see are on their own page.
 
 <LinkCard
   title="Public docs, private code"
