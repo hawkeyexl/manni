@@ -55,6 +55,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0036](0036-a11y-fix.md) | `manni a11y fix`: deterministic repairs to local HTML for the rules that need no human decision; the rest reported as manual | Theo · T1 / Maya · M1 | Proposed |
 | [0037](0037-sidecar-metadata.md) | Sidecar metadata, a private manifest joined to public documents | Maya · M1, M2 / Devin · D1, D4 / Sara · S1 | Implemented |
 | [0038](0038-sidecar-url-manifests.md) | A URL form of `sidecars[].file`, fetched every run with a bearer token from the environment | Devin · D1, D2 / Maya · M1 | Implemented |
+| [0039](0039-sidecar-join.md) | `join`: a sidecar keyed by a frontmatter field, so a rename cannot orphan an entry; two pages sharing a value is a finding on both | Maya · M1, M2 / Devin · D4 / Sara · S3 | Implemented |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -102,6 +103,8 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
                                          a named input that is not there; owned keys refuse
 0037 ──> 0038            (a remote manifest under 0008's offline, timeout and retry rules;
                           fetched every run, never cached)
+0037 ──> 0039            (entries keyed by a frontmatter field; 0015's risk bounded by a
+                          duplicate finding on every page that shares the value)
                                          writes rather than land in the document; both
                                          channels validated, no tiebreak; the orphan check
                                          runs only on the config corpus)

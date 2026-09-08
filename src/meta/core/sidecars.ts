@@ -2,8 +2,8 @@
  * Sidecar metadata (proposal 0037): a private manifest joined to public
  * documents.
  *
- * A sidecar is a YAML mapping from document path to a mapping of owned keys.
- * Its values are merged into each named document's extracted metadata before
+ * A sidecar is a YAML mapping from document to a mapping of owned keys. Its
+ * values are merged into each named document's extracted metadata before
  * schema resolution, so every command sees one object. The manifest itself
  * is never a document: it registers no extractor, appears in no `docs` row,
  * and is what 0031 called a join table rather than the standalone data file
@@ -22,9 +22,13 @@
  *    exactly the one nobody checked. The caller files the finding; the merge
  *    keeps the document's value so the report shows what the public site
  *    would publish.
- *  - **Manifest keys are exact paths, relative to the config's directory.** No
- *    globs and no cascade (0004 rejected partial merges of config for the
+ *  - **A manifest names documents by exact path, or by one frontmatter field.**
+ *    No globs and no cascade (0004 rejected partial merges of config for the
  *    reason that a silently merged result changes what the contract means).
+ *    A path is relative to the config's directory. A field join (0039)
+ *    matches the extracted value of that field, so a rename cannot orphan an
+ *    entry; what can is two pages sharing one value, which is a finding on
+ *    both.
  */
 import { readFile } from "node:fs/promises";
 import { isAbsolute, relative, resolve, sep } from "node:path";
@@ -53,22 +57,33 @@ import { DocmetaError, type ExtractedMetadata } from "../types.js";
  */
 export const SIDECAR_OWNED_SCHEMA = "sidecar:owned";
 
-/** The `keyword` a collision finding carries: no Ajv keyword produced it. */
+/**
+ * The `schema` ref of a duplicate-join finding (0039): two documents carry
+ * the same value of a join field, so one manifest entry matched both.
+ */
+export const SIDECAR_DUPLICATE_SCHEMA = "sidecar:duplicate";
+
+/** The `keyword` every sidecar finding carries: no Ajv keyword produced it. */
 export const SIDECAR_KEYWORD = "sidecar";
+
+/** The join that names documents by path, and the default. */
+export const PATH_JOIN = "path";
 
 /** One value a sidecar supplied, and where it was written. */
 export interface SidecarValue {
   value: unknown;
-  /** Manifest path as the run reports it: relative to the run's base, posix. */
+  /** Manifest path as the run reports it: relative to the run's base, posix — or the URL. */
   file: string;
   /** 1-based line of the key in the manifest, when known. */
   line?: number;
 }
 
-/** One manifest entry, for the orphan check. */
+/** One manifest entry, for the orphan checks. */
 export interface SidecarEntry {
-  /** Absolute document path the entry names. */
-  abs: string;
+  /** `path`, or the frontmatter field this entry is keyed by. */
+  join: string;
+  /** Absolute document path, for a path entry. */
+  abs?: string;
   /** The key exactly as written in the manifest. */
   spelled: string;
   /** Manifest path as the run reports it. */
@@ -77,12 +92,16 @@ export interface SidecarEntry {
   line?: number;
 }
 
+type Values = Map<string, SidecarValue>;
+
 /** Every sidecar of a run, loaded once and consulted per document. */
 export interface SidecarIndex {
   /** Owned key -> manifest path as reported. */
   owners: ReadonlyMap<string, string>;
-  /** Absolute document path -> owned key -> value. */
+  /** Path-joined sidecars: absolute document path -> owned key -> value. */
   byPath: ReadonlyMap<string, ReadonlyMap<string, SidecarValue>>;
+  /** Field-joined sidecars: field -> value -> owned key -> value. */
+  byField: ReadonlyMap<string, ReadonlyMap<string, ReadonlyMap<string, SidecarValue>>>;
   /** Every manifest entry, in manifest order. */
   entries: readonly SidecarEntry[];
 }
@@ -114,6 +133,14 @@ export interface SidecarCollision {
   file: string;
 }
 
+/** A field-joined entry a document matched (0039). */
+export interface SidecarJoin {
+  field: string;
+  value: string;
+  /** The manifest, as the run reports it. */
+  file: string;
+}
+
 /** What `mergeSidecars` hands back. */
 export interface MergedMetadata {
   /** The document's metadata with every owned key the manifest supplied. */
@@ -124,6 +151,8 @@ export interface MergedMetadata {
    * second lookup, and without a fallback for an index that is not there.
    */
   collisions: SidecarCollision[];
+  /** Field-joined entries this document matched, one per sidecar at most. */
+  joins: SidecarJoin[];
   /**
    * Where a merged pointer's value lives. Answers only for a value the
    * manifest supplied — a bare key or its `/key` pointer, and anything
@@ -139,6 +168,11 @@ const posix = (p: string): string => p.split(sep).join("/");
 function reportedPath(abs: string, base: string): string {
   const rel = relative(base, abs);
   return rel === "" ? "." : posix(rel);
+}
+
+/** The join a sidecar config asks for: `path` unless it names a field. */
+export function sidecarJoin(sidecar: Pick<SidecarConfig, "join">): string {
+  return sidecar.join ?? PATH_JOIN;
 }
 
 /**
@@ -157,7 +191,8 @@ export async function loadSidecars(
   if (!configured || configured.length === 0) return null;
 
   const owners = new Map<string, string>();
-  const byPath = new Map<string, Map<string, SidecarValue>>();
+  const byPath = new Map<string, Values>();
+  const byField = new Map<string, Map<string, Values>>();
   const entries: SidecarEntry[] = [];
 
   for (const sidecar of configured) {
@@ -185,9 +220,21 @@ export async function loadSidecars(
       text = await readManifest(abs, file);
     }
     for (const key of sidecar.keys) owners.set(key, file);
-    parseManifest(sidecar, text, file, opts.configDir, byPath, entries);
+    const join = sidecarJoin(sidecar);
+    let target: Map<string, Values>;
+    if (join === PATH_JOIN) {
+      target = byPath;
+    } else {
+      const existing = byField.get(join);
+      if (existing) target = existing;
+      else {
+        target = new Map<string, Values>();
+        byField.set(join, target);
+      }
+    }
+    parseManifest(sidecar, text, file, opts.configDir, join, target, entries);
   }
-  return { owners, byPath, entries };
+  return { owners, byPath, byField, entries };
 }
 
 async function readManifest(abs: string, file: string): Promise<string> {
@@ -206,12 +253,13 @@ function parseManifest(
   text: string,
   file: string,
   configDir: string,
-  byPath: Map<string, Map<string, SidecarValue>>,
+  join: string,
+  target: Map<string, Values>,
   entries: SidecarEntry[],
 ): void {
   const lc = new LineCounter();
-  // `uniqueKeys: false`, so a path named twice reaches the dedicated check
-  // below and is reported by name and line, rather than as a generic
+  // `uniqueKeys: false`, so a document named twice reaches the dedicated
+  // check below and is reported by name and line, rather than as a generic
   // "map keys must be unique" parse error.
   const doc = parseDocument(text, { lineCounter: lc, uniqueKeys: false });
   const problem = doc.errors[0];
@@ -225,7 +273,7 @@ function parseManifest(
   if (root === null || (isScalar(root) && root.value === null)) return;
   if (!isMap(root)) {
     throw new DocmetaError(
-      `Sidecar manifest ${file}: the manifest must be a mapping from document path to owned keys.`,
+      `Sidecar manifest ${file}: the manifest must be a mapping from document ${join === PATH_JOIN ? "path" : `"${join}"`} to owned keys.`,
     );
   }
   const owned = new Set(sidecar.keys);
@@ -234,10 +282,10 @@ function parseManifest(
     return range ? lc.linePos(range[0]).line : undefined;
   };
 
-  // A path named twice would otherwise resolve last-wins per key, with both
-  // entries counted and no diagnostic: `yaml` files a duplicate mapping key
-  // under `doc.warnings`, not `doc.errors`. It is almost always a typo, and
-  // it is refused by name rather than merged.
+  // A document named twice would otherwise resolve last-wins per key, with
+  // both entries counted and no diagnostic: `yaml` files a duplicate mapping
+  // key under `doc.warnings`, not `doc.errors`. It is almost always a typo,
+  // and it is refused by name rather than merged.
   const seen = new Map<string, number | undefined>();
   for (const pair of root.items) {
     const spelled = isScalar(pair.key) ? String(pair.key.value) : String(pair.key);
@@ -255,8 +303,10 @@ function parseManifest(
         `Sidecar manifest ${where}: "${spelled}" must be a mapping of owned keys to values.`,
       );
     }
-    const docAbs = resolve(configDir, spelled);
-    const values = byPath.get(docAbs) ?? new Map<string, SidecarValue>();
+    // A path entry is indexed by its absolute path; a field entry by the
+    // spelled value, which a document's field is compared to as a string.
+    const indexKey = join === PATH_JOIN ? resolve(configDir, spelled) : spelled;
+    const values = target.get(indexKey) ?? new Map<string, SidecarValue>();
     for (const kv of pair.value.items) {
       const key = isScalar(kv.key) ? String(kv.key.value) : String(kv.key);
       if (key === FILE_SCHEMA_KEY) {
@@ -276,9 +326,10 @@ function parseManifest(
       const line = lineAt(kv.key);
       values.set(key, { value, file, ...(line === undefined ? {} : { line }) });
     }
-    byPath.set(docAbs, values);
+    target.set(indexKey, values);
     entries.push({
-      abs: docAbs,
+      join,
+      ...(join === PATH_JOIN ? { abs: indexKey } : {}),
       spelled,
       file,
       ...(entryLine === undefined ? {} : { line: entryLine }),
@@ -286,13 +337,23 @@ function parseManifest(
   }
 }
 
+/** The string a document's join field compares as; undefined when it cannot. */
+function joinValue(raw: unknown): string | undefined {
+  if (typeof raw === "string") return raw;
+  if (typeof raw === "number" || typeof raw === "bigint") return String(raw);
+  if (typeof raw === "boolean") return String(raw);
+  return undefined;
+}
+
 /**
  * Merge the sidecar values for one document into its extracted metadata.
  *
- * `label` is the document as the run spells it, relative to `base`; matching
- * is on the resolved absolute path, never on the spelling, so a positional
- * run from a subdirectory finds the same entry a config-corpus run does.
- * Stdin never has an entry: there is no file behind it.
+ * `label` is the document as the run spells it, relative to `base`; a path
+ * entry matches on the resolved absolute path, never on the spelling, so a
+ * positional run from a subdirectory finds the same entry a config-corpus
+ * run does. A field entry matches on the document's own value of the join
+ * field, wherever the document lives. Stdin never matches a path entry:
+ * there is no file behind it.
  *
  * `present`, `format` and the document's own positions are untouched. A
  * sidecar key is not in the document, so `lineFor` keeps answering
@@ -305,27 +366,43 @@ export function mergeSidecars(
   base: string,
 ): MergedMetadata {
   const none = (): undefined => undefined;
-  if (!index || label === STDIN_LABEL) {
-    return { extracted, collisions: [], locate: none };
-  }
+  if (!index) return { extracted, collisions: [], joins: [], locate: none };
+
   const collisions: SidecarCollision[] = [];
   for (const key of Object.keys(extracted.data)) {
     const file = index.owners.get(key);
     if (file !== undefined) collisions.push({ key, file });
   }
-  const supplied = index.byPath.get(resolve(base, label));
-  if (!supplied || supplied.size === 0) {
-    return { extracted, collisions, locate: none };
+
+  const sources: ReadonlyMap<string, SidecarValue>[] = [];
+  const joins: SidecarJoin[] = [];
+  if (label !== STDIN_LABEL) {
+    const byPath = index.byPath.get(resolve(base, label));
+    if (byPath) sources.push(byPath);
+  }
+  for (const [field, byValue] of index.byField) {
+    const value = joinValue(extracted.data[field]);
+    if (value === undefined) continue;
+    const hit = byValue.get(value);
+    if (!hit) continue;
+    sources.push(hit);
+    const first = hit.values().next().value;
+    joins.push({ field, value, file: first?.file ?? "manifest" });
+  }
+  if (sources.length === 0) {
+    return { extracted, collisions, joins, locate: none };
   }
 
   const data: Record<string, unknown> = { ...extracted.data };
   const merged = new Map<string, SidecarValue>();
-  for (const [key, sv] of supplied) {
-    // The document's value stays: the collision is filed by the caller, and
-    // the report should show what the public site would publish.
-    if (key in extracted.data) continue;
-    data[key] = sv.value;
-    merged.set(key, sv);
+  for (const supplied of sources) {
+    for (const [key, sv] of supplied) {
+      // The document's value stays: the collision is filed by the caller,
+      // and the report should show what the public site would publish.
+      if (key in extracted.data) continue;
+      data[key] = sv.value;
+      merged.set(key, sv);
+    }
   }
   const locate = (pointer: string): SourceLocation | undefined => {
     const top = topLevelKey(pointer);
@@ -334,11 +411,7 @@ export function mergeSidecars(
     if (!sv) return undefined;
     return { file: sv.file, ...(sv.line === undefined ? {} : { line: sv.line }) };
   };
-  return {
-    extracted: { ...extracted, data },
-    collisions,
-    locate,
-  };
+  return { extracted: { ...extracted, data }, collisions, joins, locate };
 }
 
 /** The top-level key a pointer (or bare key) addresses; undefined for the root. */
@@ -349,13 +422,13 @@ function topLevelKey(pointer: string): string | undefined {
   return seg.replace(/~1/g, "/").replace(/~0/g, "~");
 }
 
-/** The `/key` pointer for a collision finding, RFC 6901 escaped. */
+/** The `/key` pointer for a sidecar finding, RFC 6901 escaped. */
 export function sidecarPointer(key: string): string {
   return `/${escapePointerSegment(key)}`;
 }
 
 /**
- * Manifest entries naming no loaded document.
+ * Path entries naming no loaded document.
  *
  * `loaded` are the run's file labels, relative to `base`. Checked only when
  * the run is the config corpus (the same invariant corpus checks use): a
@@ -369,7 +442,25 @@ export function orphanEntries(
 ): SidecarEntry[] {
   if (!index) return [];
   const have = new Set(loaded.map((l) => resolve(base, l)));
-  return index.entries.filter((e) => !have.has(e.abs));
+  return index.entries.filter(
+    (e) => e.join === PATH_JOIN && e.abs !== undefined && !have.has(e.abs),
+  );
+}
+
+/**
+ * Field entries no loaded document matched (0039). `matched` is field -> the
+ * values documents in the run carried, which the caller collects from each
+ * document's `joins` — so this runs after the per-file loop, under the same
+ * corpus invariant as `orphanEntries`.
+ */
+export function orphanJoins(
+  index: SidecarIndex | null,
+  matched: ReadonlyMap<string, ReadonlySet<string>>,
+): SidecarEntry[] {
+  if (!index) return [];
+  return index.entries.filter(
+    (e) => e.join !== PATH_JOIN && !(matched.get(e.join)?.has(e.spelled) ?? false),
+  );
 }
 
 /** The operational error an orphan check raises, naming the first entry. */
@@ -378,7 +469,11 @@ export function orphanError(orphans: readonly SidecarEntry[]): DocmetaError {
   if (!first) throw new Error("orphanError called with no orphans");
   const where = first.line === undefined ? first.file : `${first.file}:${first.line}`;
   const more = orphans.length > 1 ? ` (${orphans.length - 1} more)` : "";
+  const what =
+    first.join === PATH_JOIN
+      ? `names "${first.spelled}", which this run did not load`
+      : `names ${first.join} "${first.spelled}", which no loaded document carries`;
   return new DocmetaError(
-    `Sidecar manifest ${where} names "${first.spelled}", which this run did not load${more}. Fix the entry, or remove it.`,
+    `Sidecar manifest ${where} ${what}${more}. Fix the entry, or remove it.`,
   );
 }

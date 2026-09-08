@@ -243,6 +243,9 @@ check](/manni/meta/reference/configuration/#checks) named `n` reports
 manifest](/manni/meta/reference/configuration/#sidecars) owns reports
 `sidecar:owned/sidecar`. Its `rules[]` entry reads "The document carries a key
 a sidecar manifest owns; the manifest is the only place that key may be set."
+Two documents sharing one value of a manifest's [join
+field](/manni/meta/reference/configuration/#joining-by-a-field) report
+`sidecar:duplicate/sidecar`, with the shared value as the finding's subject.
 
 The `-` (stdin) input produces **no** SARIF result. `<stdin>` is not a path any
 consumer can resolve, and a location pointing at one would be dropped anyway.
@@ -444,13 +447,16 @@ the entry's line:
 | The top level, or an entry, is not a mapping. | `Sidecar manifest bad-entry-scalar.yaml:1: "docs/auth.md" must be a mapping of owned keys to values.` |
 | An entry sets a key the sidecar does not own, or `$schema`. | `Sidecar manifest bad-unowned-key.yaml:1: "docs/auth.md" sets "team", which this sidecar does not own. Add it to the sidecar's "keys", or remove it from the entry.` |
 | An entry names a document the run did not load, on a config-corpus run. | `Sidecar manifest docs-meta.orphan.yaml:3 names "docs/gone.md", which this run did not load. Fix the entry, or remove it.` |
+| A [field-joined](/manni/meta/reference/configuration/#joining-by-a-field) entry names a value no loaded document carries, on a config-corpus run. | `Sidecar manifest docs-meta.orphan.yaml:3 names id "gone-guide", which no loaded document carries. Fix the entry, or remove it.` |
 | A [remote manifest](/manni/meta/reference/configuration/#remote-manifests) could not be fetched. The status is named, the token never. | `Sidecar manifest https://…/docs-meta.yaml could not be fetched: HTTP 404 (a private file answers 404 without a token; set "tokenEnv").` |
 | The variable `tokenEnv` names is not set. | `Sidecar manifest https://…/docs-meta.yaml: the environment variable PRIVATE_DOCS_TOKEN named by "tokenEnv" is not set.` |
 | The manifest is remote and the run is `--offline`. | `Sidecar manifest https://…/docs-meta.yaml is remote and the run is offline. Vendor it to a path, or drop --offline.` |
 | A `query` write would touch an owned key. | `"docs/auth.md": "jira" is owned by sidecar docs-meta.yaml; edit the sidecar file instead.` |
+| A `query` write would change the join field of a document that has an entry. | `"docs/auth.md": "id" is the field sidecar docs-meta.yaml joins on, and this document has an entry; change the manifest first.` |
 
 A schema violation on a value the manifest supplied, and a document carrying a
-key the manifest owns, are exit 1. Both are verdicts about the documents.
+key the manifest owns, are exit 1. So are two documents sharing one value of a
+join field. All three are verdicts about the documents.
 
 ### Per-command meaning of exit 1
 

@@ -2522,6 +2522,25 @@ function refuseSidecarWrites(
     for (const key of keys) {
       const owner = owned(key);
       if (owner !== undefined) refuse(c.file, key, owner);
+      // The join field of a document that matched a field entry (0039):
+      // changing it orphans the entry, which the next corpus run reports.
+      // A rename, by contrast, is exactly what a field join permits.
+      const byValue = index.byField.get(key);
+      if (byValue === undefined) continue;
+      const raw = data.get(c.file)?.[key];
+      const value =
+        typeof raw === "string"
+          ? raw
+          : typeof raw === "number" || typeof raw === "boolean"
+            ? String(raw)
+            : undefined;
+      const entry = value === undefined ? undefined : byValue.get(value);
+      if (entry !== undefined) {
+        const manifest = entry.values().next().value?.file ?? "manifest";
+        throw new DocmetaError(
+          `"${c.file}": "${key}" is the field sidecar ${manifest} joins on, and this document has an entry; change the manifest first.`,
+        );
+      }
     }
   }
 }

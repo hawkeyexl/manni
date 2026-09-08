@@ -64,7 +64,9 @@ root. The reasons are in the
    ```
 
 2. **Write the manifest.** One entry per page, keyed by the page's path
-   relative to the config file. Paths are exact. There are no globs.
+   relative to the config file. Paths are exact. There are no globs. A page
+   that moves often can be keyed by a frontmatter field instead; see
+   [Survive renames with a field join](#survive-renames-with-a-field-join).
 
    ```yaml title="docs-meta.yaml"
    public/docs/guides/auth.md:
@@ -294,6 +296,104 @@ Every rule, including the timeout, the body cap, the redirect behaviour and
 `http://`, is in the
 [reference](/manni/meta/reference/configuration/#remote-manifests).
 
+## Survive renames with a field join
+
+A path entry is orphaned the moment the public page moves, and the next
+corpus run is exit 2 until someone edits the manifest. That is the right
+default for a docset that rarely moves. It is the wrong shape for one that
+moves pages often. It is also wrong for a manifest kept by a team that does
+not watch the public repository's renames. The path is the one thing about a
+page the manifest author does not control.
+
+`join:` keys the manifest by a top-level frontmatter field instead. The page
+carries the key with it, so a rename never orphans an entry. Any field works.
+A hand-written `id`, a Starlight `slug`, and a Docusaurus `id` are the same
+mechanism.
+
+<Steps>
+
+1. **Name the field in the sidecar.** Everything else in the config stays.
+
+   ```yaml title="manni.config.yaml"
+   meta:
+     paths: ["public/docs/**/*.md"]
+     sidecars:
+       - file: ./docs-meta.yaml
+         keys: [source, jira]
+         join: id
+     overrides:
+       - files: "public/docs/**/*.md"
+         schemas: [./schemas/private.json]
+   ```
+
+2. **Key the manifest by that field's values.** The value is compared as a
+   string, wherever the page lives.
+
+   ```yaml title="docs-meta.yaml"
+   auth-guide:
+     source: internal/auth-design.md
+     jira: PLAT-412
+   billing-guide:
+     source: internal/billing.md
+     jira: PLAT-388
+   ```
+
+3. **Require the field in the schema, and give it a shape.** A page without
+   the field matches no entry, and nothing says so. What catches it is the
+   `required` finding for the private key, which only fires when the schema
+   demands both. A `pattern` keeps an id well-formed.
+
+   ```json title="schemas/private.json"
+   {
+     "type": "object",
+     "required": ["title", "id", "jira"],
+     "properties": {
+       "title": { "type": "string" },
+       "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+       "source": { "type": "string" },
+       "jira": { "type": "string", "pattern": "^PLAT-[0-9]+$" }
+     }
+   }
+   ```
+
+</Steps>
+
+Two pages sharing one `id` is a finding on both, at the field's line. One
+entry matched both, and the manifest cannot tell them apart. Both pages
+still receive the entry's values, so the schema judges what the site would
+publish. From `test/fixtures/sidecars-join/`:
+
+```
+✗ docs/dup-a.md
+    /id  2 documents carry id "shared"; docs-meta.yaml cannot tell them apart (docs/dup-b.md)  (line 3)  [sidecar:duplicate]
+✗ docs/dup-b.md
+    /id  2 documents carry id "shared"; docs-meta.yaml cannot tell them apart (docs/dup-a.md)  (line 3)  [sidecar:duplicate]
+```
+
+An entry whose id no page carries is still exit 2 on a corpus run, checked
+once every page has been read:
+
+```
+$ manni meta validate -c manni.orphan.config.yaml
+manni: Sidecar manifest docs-meta.orphan.yaml:3 names id "gone-guide", which no loaded document carries. Fix the entry, or remove it.
+```
+
+The join key is contributor-controlled, and that is the trade. A pull request
+that sets `id: auth-guide` on a new page inherits every private assertion made
+about the real one. Three things bound that. The duplicate finding turns the
+run red rather than green. The schema's `pattern` keeps an id well-formed.
+And the manifest is reviewed in the private repository, where an entry that
+suddenly matches two pages shows up as a duplicate first. A path join has
+none of this exposure, which is why it stays the default.
+
+`query` follows the same line. Renaming a field-joined page is allowed, which
+is the point. Changing its `id` is a write to the join, and is refused:
+
+```
+$ manni meta query "UPDATE docs SET id = 'other' WHERE _path = 'docs/auth.md'"
+manni: "docs/auth.md": "id" is the field sidecar docs-meta.yaml joins on, and this document has an entry; change the manifest first.
+```
+
 ## Editing the values
 
 The first increment is read-only. A key the manifest owns is readable by every
@@ -337,4 +437,7 @@ see every private key. So "every guide has a ticket in the open state" is a
 {/* step {"description":"A config-corpus run over the sidecar fixture merges the manifest, reports the manifest line for a bad value, and files a collision finding (exit 1).","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/sidecars/manni.config.yaml","exitCodes":[1],"stdio":"docs-meta.yaml:6"}} */}
 {/* step {"description":"A manifest entry naming a page the run did not load is exit 2 on a config-corpus run.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/sidecars/manni.orphan.config.yaml","exitCodes":[2],"stdio":"which this run did not load"}} */}
 {/* step {"description":"A write to a sidecar-owned key refuses by name before any file is touched (exit 2).","runShell":{"command":"npx @hawkeyexl/manni meta query -c test/fixtures/sidecars/manni.config.yaml --dry-run \"UPDATE docs SET jira = 'PLAT-1' WHERE _path = 'docs/auth.md'\"","exitCodes":[2],"stdio":"is owned by sidecar"}} */}
+{/* step {"description":"A field-joined manifest files a duplicate finding on both pages sharing one id (exit 1).","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/sidecars-join/manni.config.yaml","exitCodes":[1],"stdio":"cannot tell them apart"}} */}
+{/* step {"description":"A field entry no page carries is exit 2 on a config-corpus run.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/sidecars-join/manni.orphan.config.yaml","exitCodes":[2],"stdio":"which no loaded document carries"}} */}
+{/* step {"description":"An UPDATE of the join field on a matched document is refused (exit 2).","runShell":{"command":"npx @hawkeyexl/manni meta query -c test/fixtures/sidecars-join/manni.config.yaml --dry-run \"UPDATE docs SET id = 'other' WHERE _path = 'docs/auth.md'\"","exitCodes":[2],"stdio":"joins on"}} */}
 {/* test end */}

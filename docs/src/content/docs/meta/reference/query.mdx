@@ -186,9 +186,15 @@ Constraints on a DML statement:
   owns is read-only.** Its value is in every row. A set, remove, rename,
   `INSERT` or `DELETE` that would touch it refuses by file and key, before any
   file is written. The refusal reads `"docs/auth.md": "jira" is owned by sidecar
-  docs-meta.yaml; edit the sidecar file instead.` A document the manifest names
-  cannot be moved out from under its entry either: `"docs/auth.md": sidecar docs-meta.yaml
-  names it; rename the manifest entry first.`
+  docs-meta.yaml; edit the sidecar file instead.` A document a path-joined
+  manifest names cannot be moved out from under its entry either. That
+  refusal reads `"docs/auth.md": sidecar docs-meta.yaml names it; rename the
+  manifest entry first.` A manifest
+  [joined by a field](/manni/meta/reference/configuration/#joining-by-a-field)
+  allows the rename, because the page carries its key with it. What it
+  refuses is an `UPDATE` of the join field on a document that has an entry.
+  That one reads `"docs/auth.md": "id" is the field sidecar docs-meta.yaml
+  joins on, and this document has an entry; change the manifest first.`
 
 ### Format limits on a write
 

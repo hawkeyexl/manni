@@ -62,8 +62,12 @@ export {
   loadSidecars,
   mergeSidecars,
   orphanEntries,
+  orphanJoins,
   orphanError,
+  sidecarJoin,
   sidecarPointer,
+  PATH_JOIN,
+  SIDECAR_DUPLICATE_SCHEMA,
   SIDECAR_OWNED_SCHEMA,
   SIDECAR_KEYWORD,
 } from "./core/sidecars.js";
@@ -80,6 +84,7 @@ export type {
   SidecarValue,
   MergedMetadata,
   SidecarCollision,
+  SidecarJoin,
   SourceLocation,
   LoadSidecarsOptions,
 } from "./core/sidecars.js";

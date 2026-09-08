@@ -81,7 +81,7 @@ The private manifest joined to public documents. See
 [Sidecars](/manni/meta/reference/configuration/#sidecars) in the configuration
 reference for the rules. A caller building its own pipeline loads the index
 once per run and merges per document. It validates the merged object with
-`locate`, and runs the orphan check when the run is the config corpus.
+`locate`, and runs the orphan checks when the run is the config corpus.
 
 | Export | Purpose |
 |---|---|
@@ -91,18 +91,23 @@ once per run and merges per document. It validates the merged object with
 | `SidecarFetchOptions` (type) | Input to `fetchSidecar`, made of `tokenEnv`, `timeoutMs`, `maxBytes`, `offline`, and `env`, the environment `tokenEnv` is read from, which defaults to `process.env`. |
 | `sidecarUrlProblem` | Why a string may not name a remote manifest, or `null` when it may. It refuses a URL carrying userinfo, plain `http://` off a loopback host, and any other scheme. The config parser applies it to every URL `file`. |
 | `SIDECAR_FETCH_TIMEOUT_MS`, `SIDECAR_FETCH_MAX_BYTES` | The fetch's defaults, 10 000 ms and 5 MB, matching the schema fetch. |
-| `SidecarIndex` (type) | Every sidecar of a run. `owners` maps each owned key to its manifest, `byPath` maps an absolute document path to its supplied values, and `entries` lists every manifest entry for the orphan check. |
-| `SidecarEntry` (type) | One manifest entry. It carries the absolute document path it names and the key as spelled in the manifest. It also carries the manifest's reported path and the entry's line when known. |
+| `SidecarIndex` (type) | Every sidecar of a run. `owners` maps each owned key to its manifest. `byPath` maps an absolute document path to its supplied values. `byField` maps a [join field](/manni/meta/reference/configuration/#joining-by-a-field) to its values and each value to the supplied values. `entries` lists every manifest entry for the orphan checks. |
+| `SidecarEntry` (type) | One manifest entry. `join` is `path` or the field it is keyed by, and `abs` is the absolute document path of a path entry, absent for a field entry. It also carries the key as spelled, the manifest's reported path, and the entry's line when known. |
 | `SidecarValue` (type) | One supplied value, with the manifest's reported path and the key's line when known. |
-| `mergeSidecars` | Merge the index's values for one document into its `ExtractedMetadata`. Returns the merged object, the `collisions` (owned keys the document itself carried, which the caller files as findings), and a `locate` callback. Stdin never merges. |
-| `MergedMetadata` (type) | What `mergeSidecars` returns: `extracted`, `collisions`, and `locate`. |
+| `sidecarJoin` | The join a `SidecarConfig` asks for: its `join`, or `PATH_JOIN` when absent. |
+| `PATH_JOIN` | The join that names documents by path, `path`, and the default. |
+| `mergeSidecars` | Merge the index's values for one document into its `ExtractedMetadata`. Returns the merged object, the `collisions` (owned keys the document itself carried, which the caller files as findings), the `joins`, and a `locate` callback. Stdin never merges by path. |
+| `MergedMetadata` (type) | What `mergeSidecars` returns: `extracted`, `collisions`, `joins`, and `locate`. |
 | `SidecarCollision` (type) | One key a document carries that a sidecar owns, with the owning manifest. `MergedMetadata.collisions` is a list of these. |
+| `SidecarJoin` (type) | One field-joined entry a document matched: the `field`, the `value`, and the manifest `file`. `MergedMetadata.joins` is a list of these, one per sidecar at most. |
 | `SourceLocation` (type) | What `locate` answers with: a `file`, and optionally `line` and `col`. |
-| `sidecarPointer` | The `/<key>` instance path for a collision finding, RFC 6901 escaped. |
-| `orphanEntries` | The manifest entries naming no loaded document, given the run's file labels. Empty when the index is `null`. |
+| `sidecarPointer` | The `/<key>` instance path for a collision or duplicate finding, RFC 6901 escaped. |
+| `orphanEntries` | The path entries naming no loaded document, given the run's file labels. Empty when the index is `null`. |
+| `orphanJoins` | The field entries no loaded document matched, given a map of join field to the values the run's documents carried. The caller collects that map from each document's `joins`, so this runs after the per-file loop. Empty when the index is `null`. |
 | `orphanError` | The `DocmetaError` an orphan check raises, naming the first orphan and counting the rest. |
 | `SIDECAR_OWNED_SCHEMA` | The `schema` ref a collision finding carries: `sidecar:owned`. |
-| `SIDECAR_KEYWORD` | The `keyword` a collision finding carries: `sidecar`. Joined, they are the rule id `sidecar:owned/sidecar`. |
+| `SIDECAR_DUPLICATE_SCHEMA` | The `schema` ref a duplicate-join finding carries: `sidecar:duplicate`. |
+| `SIDECAR_KEYWORD` | The `keyword` every sidecar finding carries: `sidecar`. Joined, they are the rule ids `sidecar:owned/sidecar` and `sidecar:duplicate/sidecar`. |
 
 ## Schema resolution
 
@@ -170,7 +175,7 @@ reference](/manni/meta/reference/configuration/) for what each key means.
 | `FillConfig` (type) | Config defaults for `fill`: provider, model, confidence threshold, cost ceiling, concurrency. |
 | `SchemaCacheConfig` (type) | Config for the remote-schema cache, currently `ttlHours`. |
 | `CheckConfig` (type) | One named [corpus check](/manni/meta/reference/configuration/#checks). Its `name` (the durable half of its findings' identity) and the SQL `query`. |
-| `SidecarConfig` (type) | One [sidecar](/manni/meta/reference/configuration/#sidecars) entry, made of the manifest `file`, the top-level `keys` it owns, and an optional `tokenEnv`. `file` is a path relative to the config's directory or an `https://` URL, and `tokenEnv` names the environment variable holding the bearer token for a URL. The parser has already asserted the keys are non-empty, unique, disjoint across entries, and never `$schema`, and that `tokenEnv` appears only on a URL. |
+| `SidecarConfig` (type) | One [sidecar](/manni/meta/reference/configuration/#sidecars) entry, made of the manifest `file`, the top-level `keys` it owns, an optional `tokenEnv`, and an optional `join`. `file` is a path relative to the config's directory or an `https://` URL, and `tokenEnv` names the environment variable holding the bearer token for a URL. `join` is `path` or the top-level field the manifest's keys are values of. The parser has already asserted the keys are non-empty, unique, disjoint across entries, and never `$schema`. It has also asserted that `tokenEnv` appears only on a URL, and that `join` is neither `$schema` nor an owned key. |
 
 ## Reporters
 

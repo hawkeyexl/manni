@@ -10,7 +10,9 @@ import {
   mergeSidecars,
   orphanEntries,
   orphanError,
+  orphanJoins,
   sidecarPointer,
+  SIDECAR_DUPLICATE_SCHEMA,
   SIDECAR_KEYWORD,
   SIDECAR_OWNED_SCHEMA,
 } from "../core/sidecars.js";
@@ -325,6 +327,13 @@ export async function runValidate(
     }),
   );
   const results: ValidationResult[] = [];
+  // Field-joined entries each document matched (0039), keyed by field then
+  // value: the duplicate finding and the post-loop orphan check both need
+  // to know which documents claimed which value.
+  const joinHits = new Map<
+    string,
+    Map<string, { label: string; line?: number; file: string }[]>
+  >();
   // Corpus checks (0026) run only when the resolved file set IS the
   // config-resolved corpus — an invariant, not a flag list: any CLI reshaping
   // of the input set (positional paths, stdin, --as/--ext, --exclude,
@@ -406,6 +415,16 @@ export async function runValidate(
     // the one merged object.
     const merged = mergeSidecars(label, extracted, sidecars, base);
     extracted = merged.extracted;
+    for (const j of merged.joins) {
+      const byValue =
+        joinHits.get(j.field) ??
+        new Map<string, { label: string; line?: number; file: string }[]>();
+      const line = extracted.lineFor(j.field);
+      const hits = byValue.get(j.value) ?? [];
+      hits.push({ label, file: j.file, ...(line != null ? { line } : {}) });
+      byValue.set(j.value, hits);
+      joinHits.set(j.field, byValue);
+    }
     if (checksWillRun) checkEntries.push({ label, extracted });
 
     let resolved: ResolvedSchemaSet;
@@ -495,6 +514,43 @@ export async function runValidate(
   for (const file of files) {
     const content = await readFile(resolve(base, file), "utf8");
     await processOne(file, content, extname(file));
+  }
+
+  // Two documents carrying one join value (0039): one entry matched both,
+  // and the manifest cannot tell them apart. A finding on each, at the
+  // field's own line, whether or not the run is scoped — it is about the
+  // documents loaded, not the corpus. Then, on a corpus run, a field entry
+  // nothing matched is the same orphan a path entry is.
+  if (sidecars) {
+    const byLabel = new Map(results.map((r) => [r.file, r]));
+    const matched = new Map<string, Set<string>>();
+    for (const [field, byValue] of joinHits) {
+      matched.set(field, new Set(byValue.keys()));
+      for (const [value, hits] of byValue) {
+        if (hits.length < 2) continue;
+        for (const hit of hits) {
+          const others = hits
+            .filter((h) => h.label !== hit.label)
+            .map((h) => h.label)
+            .join(", ");
+          const result = byLabel.get(hit.label);
+          if (!result) continue;
+          result.errors.push({
+            schema: SIDECAR_DUPLICATE_SCHEMA,
+            keyword: SIDECAR_KEYWORD,
+            subject: value,
+            instancePath: sidecarPointer(field),
+            message: `${hits.length} documents carry ${field} "${value}"; ${hit.file} cannot tell them apart (${others})`,
+            ...(hit.line != null ? { line: hit.line } : {}),
+          });
+          result.ok = false;
+        }
+      }
+    }
+    if (!scoped) {
+      const orphans = orphanJoins(sidecars, matched);
+      if (orphans.length > 0) throw orphanError(orphans);
+    }
   }
 
   // Corpus checks (0026), after the per-file loop and before the baseline so

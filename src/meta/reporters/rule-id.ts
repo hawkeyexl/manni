@@ -27,12 +27,20 @@ export const SCHEMA_ERROR_RULE = "manni/schema-error";
  */
 export const SIDECAR_OWNED_RULE = "sidecar:owned/sidecar";
 
+/**
+ * Two documents carry the same value of a sidecar's join field (proposal
+ * 0039), so one manifest entry matched both.
+ */
+export const SIDECAR_DUPLICATE_RULE = "sidecar:duplicate/sidecar";
+
 /** What each reserved rule means, for the consumer's rule listing. */
 export const RESERVED_RULES: Record<string, string> = {
   [PARSE_ERROR_RULE]: "The document's metadata block could not be parsed.",
   [SCHEMA_ERROR_RULE]: "No schema set could be resolved for the document.",
   [SIDECAR_OWNED_RULE]:
     "The document carries a key a sidecar manifest owns; the manifest is the only place that key may be set.",
+  [SIDECAR_DUPLICATE_RULE]:
+    "Two documents carry the same value of a sidecar's join field, so one manifest entry matched both.",
 };
 
 /**

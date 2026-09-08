@@ -195,10 +195,18 @@ export interface SidecarConfig {
    * or a report. Refused on a path `file`, where it would do nothing.
    */
   tokenEnv?: string;
+  /**
+   * `path` (the default), or the top-level frontmatter field whose value the
+   * manifest's keys name (proposal 0039). A field join survives a rename;
+   * what it cannot survive is two documents sharing one value, which is a
+   * finding on both. Never `$schema`, and never a key this entry owns: the
+   * value that selects an entry cannot come from the entry.
+   */
+  join?: string;
 }
 
 /** The keys one `sidecars:` entry may carry. */
-const SIDECAR_KEYS = ["file", "keys", "tokenEnv"] as const;
+const SIDECAR_KEYS = ["file", "keys", "tokenEnv", "join"] as const;
 
 /**
  * The grammar a check's name must satisfy: one built-in id *segment*.
@@ -643,6 +651,23 @@ function parseSidecars(raw: unknown, source: string): SidecarConfig[] {
       }
     }
     const keys = e.keys as string[];
+    if (e.join !== undefined) {
+      if (typeof e.join !== "string" || e.join.trim() === "") {
+        throw new DocmetaError(
+          `${source}: sidecars[${i}].join must be "path" or the name of a top-level frontmatter field.`,
+        );
+      }
+      if (e.join === FILE_SCHEMA_KEY) {
+        throw new DocmetaError(
+          `${source}: sidecars[${i}].join may not be "${FILE_SCHEMA_KEY}".`,
+        );
+      }
+      if (keys.includes(e.join)) {
+        throw new DocmetaError(
+          `${source}: sidecars[${i}].join names "${e.join}", which the same entry owns — the value that selects an entry cannot come from the entry.`,
+        );
+      }
+    }
     const seen = new Set<string>();
     for (const key of keys) {
       if (key === FILE_SCHEMA_KEY) {
@@ -668,6 +693,7 @@ function parseSidecars(raw: unknown, source: string): SidecarConfig[] {
       file: e.file,
       keys,
       ...(typeof e.tokenEnv === "string" ? { tokenEnv: e.tokenEnv } : {}),
+      ...(typeof e.join === "string" ? { join: e.join } : {}),
     };
   });
 }
