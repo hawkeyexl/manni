@@ -67,6 +67,13 @@ export {
   SIDECAR_OWNED_SCHEMA,
   SIDECAR_KEYWORD,
 } from "./core/sidecars.js";
+export {
+  fetchSidecar,
+  sidecarUrlProblem,
+  SIDECAR_FETCH_TIMEOUT_MS,
+  SIDECAR_FETCH_MAX_BYTES,
+} from "./core/sidecar-fetch.js";
+export type { SidecarFetchOptions } from "./core/sidecar-fetch.js";
 export type {
   SidecarIndex,
   SidecarEntry,

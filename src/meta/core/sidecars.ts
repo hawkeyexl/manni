@@ -38,6 +38,8 @@ import {
 } from "yaml";
 import type { DocmetaConfig, SidecarConfig } from "./config.js";
 import { FILE_SCHEMA_KEY } from "./resolve-schema.js";
+import { classifyRef } from "./schema-registry.js";
+import { fetchSidecar } from "./sidecar-fetch.js";
 import { STDIN_LABEL } from "./load-files.js";
 import { escapePointerSegment } from "../extractors/pointer.js";
 import { DocmetaError, type ExtractedMetadata } from "../types.js";
@@ -90,6 +92,12 @@ export interface LoadSidecarsOptions {
   configDir: string;
   /** Directory the run's file labels are relative to; manifests are reported the same way. */
   base: string;
+  /** `--offline` / `offline:`: a URL manifest is refused rather than fetched (0038). */
+  offline?: boolean;
+  /** Network timeout for a URL manifest; the schema fetch's default otherwise. */
+  timeoutMs?: number;
+  /** For tests: the environment `tokenEnv` is read from. */
+  env?: Record<string, string | undefined>;
 }
 
 /** A place a merged value lives, for a finding that must name it. */
@@ -153,33 +161,54 @@ export async function loadSidecars(
   const entries: SidecarEntry[] = [];
 
   for (const sidecar of configured) {
-    const abs = isAbsolute(sidecar.file)
-      ? sidecar.file
-      : resolve(opts.configDir, sidecar.file);
-    const file = reportedPath(abs, opts.base);
+    // A URL manifest (0038) is reported as the URL itself, and fetched every
+    // run: it is data, and a stale copy would validate against the wrong
+    // values. A path is reported relative to the run's base, like every
+    // file label. Either way the manifest's *keys* resolve from the config
+    // directory, so a remote manifest names documents the same way a local
+    // one does.
+    let text: string;
+    let file: string;
+    if (classifyRef(sidecar.file).kind === "url") {
+      file = sidecar.file;
+      text = await fetchSidecar(sidecar.file, {
+        ...(sidecar.tokenEnv !== undefined ? { tokenEnv: sidecar.tokenEnv } : {}),
+        ...(opts.offline !== undefined ? { offline: opts.offline } : {}),
+        ...(opts.timeoutMs !== undefined ? { timeoutMs: opts.timeoutMs } : {}),
+        ...(opts.env !== undefined ? { env: opts.env } : {}),
+      });
+    } else {
+      const abs = isAbsolute(sidecar.file)
+        ? sidecar.file
+        : resolve(opts.configDir, sidecar.file);
+      file = reportedPath(abs, opts.base);
+      text = await readManifest(abs, file);
+    }
     for (const key of sidecar.keys) owners.set(key, file);
-    await loadManifest(sidecar, abs, file, opts.configDir, byPath, entries);
+    parseManifest(sidecar, text, file, opts.configDir, byPath, entries);
   }
   return { owners, byPath, entries };
 }
 
-async function loadManifest(
-  sidecar: SidecarConfig,
-  abs: string,
-  file: string,
-  configDir: string,
-  byPath: Map<string, Map<string, SidecarValue>>,
-  entries: SidecarEntry[],
-): Promise<void> {
-  let text: string;
+async function readManifest(abs: string, file: string): Promise<string> {
   try {
-    text = await readFile(abs, "utf8");
+    return await readFile(abs, "utf8");
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
     throw new DocmetaError(
       `Sidecar manifest ${file} could not be read: ${reason}`,
     );
   }
+}
+
+function parseManifest(
+  sidecar: SidecarConfig,
+  text: string,
+  file: string,
+  configDir: string,
+  byPath: Map<string, Map<string, SidecarValue>>,
+  entries: SidecarEntry[],
+): void {
   const lc = new LineCounter();
   // `uniqueKeys: false`, so a path named twice reaches the dedicated check
   // below and is reported by name and line, rather than as a generic

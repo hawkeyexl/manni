@@ -135,6 +135,7 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
   const sidecars = await loadSidecars(config, {
     configDir: configDir ?? cwd,
     base,
+    offline: opts.offline ?? config?.offline ?? false,
   });
 
   const readOne = (label: string, content: string, extension: string): void => {

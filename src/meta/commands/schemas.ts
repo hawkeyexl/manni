@@ -772,6 +772,7 @@ export async function runInferSchema(
   const sidecars = await loadSidecars(config, {
     configDir: configDir ?? cwd,
     base,
+    offline: opts.offline ?? config?.offline ?? false,
   });
 
   if (inputs.length === 0) {

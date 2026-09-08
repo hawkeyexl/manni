@@ -54,7 +54,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0035](0035-a11y-domain.md) | The `a11y` domain: `manni a11y check` crawls a site and scores every page with axe-core, in a browser it finds rather than downloads | Devin · D1, D3 | Implemented |
 | [0036](0036-a11y-fix.md) | `manni a11y fix`: deterministic repairs to local HTML for the rules that need no human decision; the rest reported as manual | Theo · T1 / Maya · M1 | Proposed |
 | [0037](0037-sidecar-metadata.md) | Sidecar metadata, a private manifest joined to public documents | Maya · M1, M2 / Devin · D1, D4 / Sara · S1 | Implemented |
-| [0038](0038-sidecar-url-manifests.md) | A URL form of `sidecars[].file`, fetched every run with a bearer token from the environment | Devin · D1, D2 / Maya · M1 | Proposed |
+| [0038](0038-sidecar-url-manifests.md) | A URL form of `sidecars[].file`, fetched every run with a bearer token from the environment | Devin · D1, D2 / Maya · M1 | Implemented |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 

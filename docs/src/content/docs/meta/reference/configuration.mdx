@@ -131,9 +131,11 @@ repository, or no `git` on `PATH`. Worth doing in a CI image you do not control.
 
 `offline: true` stops manni meta fetching a schema over the network at all. A `url`
 reference is served from the [schema cache](#schema-cache); one that is not
-cached is an operational error (exit 2) naming the URL. Built-in ids and local
-`.json` files are unaffected, because neither touches the network. An air-gapped
-build against the default schema set works with nothing else configured.
+cached is an operational error (exit 2) naming the URL. A [remote sidecar
+manifest](#remote-manifests) is refused outright, because a manifest is never
+cached. Built-in ids and local `.json` files are unaffected, because neither
+touches the network. An air-gapped build against the default schema set works
+with nothing else configured.
 
 ```yaml title="manni.config.yaml"
 meta:
@@ -484,8 +486,9 @@ is the journey; this section is the contract.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `file` | `string` | yes | Manifest path, relative to the config file's directory. A manifest that cannot be read, or is not valid YAML, is an operational error (exit 2). |
+| `file` | `string` | yes | Manifest path, relative to the config file's directory, or an `https://` URL fetched at the start of every run. A manifest that cannot be read or fetched, or is not valid YAML, is an operational error (exit 2). See [Remote manifests](#remote-manifests). |
 | `keys` | `string[]` | yes | The top-level keys this manifest **owns**. Non-empty, no duplicates, disjoint across entries, and never `$schema`. Each violation is a config error (exit 2) naming `sidecars[i].keys`. |
+| `tokenEnv` | `string` | no | Name of an environment variable whose value is sent as a bearer token when `file` is a URL. Allowed only on a URL. On a path it is a config error (exit 2), because no request is made and the token would go nowhere. |
 
 ```yaml
 # private-repo/manni.config.yaml
@@ -534,6 +537,119 @@ entry's line. From `test/fixtures/sidecars/`:
 | An entry sets a key outside `keys:`. | `Sidecar manifest bad-unowned-key.yaml:1: "docs/auth.md" sets "team", which this sidecar does not own. Add it to the sidecar's "keys", or remove it from the entry.` |
 | An entry sets `$schema`. | `Sidecar manifest bad-schema-key.yaml:1: "docs/auth.md" sets "$schema" — a sidecar never chooses the schema a document is judged by; use "overrides" in the config.` |
 | The file is missing. | `Sidecar manifest nope.yaml could not be read: ENOENT: no such file or directory, …` |
+
+#### Remote manifests
+
+`file` may be an `https://` URL instead of a path. The manifest is fetched at
+the start of every run, parsed exactly as a local one is, and merged by the
+same rules. Its document paths still resolve from the config file's directory.
+Nothing downstream of the loader changes. Two layouts use it.
+
+**Across public repositories.** One public repository's pages take keys from a
+manifest in another public repository. Nothing is secret on either side, and
+the run never checks the second repository out. A plain URL is the whole
+configuration:
+
+```yaml
+# docs-site/manni.config.yaml
+meta:
+  paths: ["docs/**/*.md"]
+  sidecars:
+    - file: https://raw.githubusercontent.com/org/docs-catalog/main/owners.yaml
+      keys: [team, owner]
+```
+
+**A private manifest.** The same URL form, plus `tokenEnv`, the name of an
+environment variable holding a bearer token. Its value is sent as
+`Authorization: Bearer <value>` to the origin the config names, and nowhere
+else. The config never holds the token:
+
+```yaml
+# private-repo/manni.config.yaml
+meta:
+  paths: ["public/docs/**/*.md"]
+  sidecars:
+    - file: https://raw.githubusercontent.com/org/private-docs/main/docs-meta.yaml
+      keys: [source, jira]
+      tokenEnv: PRIVATE_DOCS_TOKEN
+```
+
+Both hosts accept a bearer token on their raw-file route, so one `tokenEnv`
+covers either:
+
+| Host | URL shape | Token |
+|---|---|---|
+| GitHub | `https://raw.githubusercontent.com/OWNER/REPO/REF/PATH` | A fine-grained personal access token with read access to the repository's contents. |
+| GitLab | `https://gitlab.com/api/v4/projects/ID/repository/files/PATH/raw?ref=REF` | A project or personal access token with the `read_repository` scope. `PATH` is URL-encoded, so `docs/docs-meta.yaml` is written `docs%2Fdocs-meta.yaml`. |
+
+<Aside type="caution" title="Where the values end up">
+A public repository's CI logs are public. Fetching a private manifest into a
+public run moves the private values from the source tree to the log. A pattern
+failure or a `get` prints them there, and no fetch mechanism can prevent it.
+Fetch a private manifest from the private side only, when that run cannot
+check the manifest out. Across public repositories there is nothing to leak.
+</Aside>
+
+The rules a remote manifest adds:
+
+1. **Fetched every run, never cached.** The [schema cache](#schema-cache)
+   exists because a schema changes rarely. A manifest changes with every page,
+   and a stale copy validates the corpus against the wrong values.
+   `schemaCache` does not apply to a manifest.
+2. **A fetch that fails is exit 2, naming the URL and the status.** A `401` or
+   `403` says the token is wrong. A `404` says the URL is, or that the token is
+   missing, and the message says which. A network error says so. The token
+   never appears in a message.
+3. **`--offline` refuses a remote manifest, exit 2.** By rule 1 there is no
+   cached copy to fall back to. A config with one local and one remote manifest
+   refuses before reading either.
+4. **The credential lives in the environment, never in the config.** A URL
+   carrying userinfo (`https://user:secret@host/…`) is a config error at parse
+   time, because the URL is printed in every diagnostic. `tokenEnv` on a path
+   `file` is a config error too, because no request is made.
+5. **`http://` is refused, except on a loopback host.** A bearer token over
+   plaintext is a leak, and a public manifest is served over `https://` too.
+   `localhost` and `127.0.0.1` are allowed, so a local server can serve one.
+6. **A redirect keeps the token only on the same origin.** A cross-origin
+   redirect is followed without the header, the way browsers and `curl` behave.
+   A manifest that lands where the token does not reach fails as a `401`, which
+   rule 2 reports.
+7. **The URL is operator config, so it is trusted as such.** There is no host
+   allowlist for a manifest URL, and [`schemaTrust`](#schema-trust) does not
+   apply to it. `$schema` inside a fetched manifest is still refused.
+8. **A finding names the URL as the file.** A finding on a fetched value
+   carries the URL and the manifest line. Pretty, GitHub and JUnit print it.
+   SARIF drops that finding with the existing
+   [outside-the-repository notice](/manni/meta/reference/output-and-exit-codes/#sarif-paths-are-repository-root-relative),
+   because a URL is not a repository-relative location. The document-side
+   findings of the same run are unaffected.
+9. **Same bounds as the [schema fetch](/manni/meta/reference/schema-resolution/#url-references).**
+   A 10-second timeout, a 5 MB body cap, and one retry on a network error or
+   a `5xx`. A `4xx` is not retried.
+
+A fetched value that fails its schema reports the URL where a local manifest
+reports its path:
+
+```
+✗ public/docs/guides/billing.md
+    /jira  must match pattern "^PLAT-[0-9]+$"  (https://raw.githubusercontent.com/org/private-docs/main/docs-meta.yaml:6)  [./schemas/private.json]
+```
+
+The operational errors, each exit 2. The URL is abbreviated here, and printed
+whole by the message:
+
+| Problem | Message |
+|---|---|
+| The variable `tokenEnv` names is not set. | `Sidecar manifest https://…/docs-meta.yaml: the environment variable PRIVATE_DOCS_TOKEN named by "tokenEnv" is not set.` |
+| The host answered 404 to an anonymous request. | `Sidecar manifest https://…/docs-meta.yaml could not be fetched: HTTP 404 (a private file answers 404 without a token; set "tokenEnv").` |
+| The host answered 404 with a token sent. | `Sidecar manifest https://…/docs-meta.yaml could not be fetched: HTTP 404 (a private file answers 404 without a valid token).` |
+| The host answered any other non-2xx status. | `Sidecar manifest https://…/docs-meta.yaml could not be fetched: HTTP 403.` |
+| The host did not answer within the timeout. | `Sidecar manifest https://…/docs-meta.yaml could not be fetched: timed out after 10000ms` |
+| The body exceeds the cap. | `Sidecar manifest https://…/docs-meta.yaml is too large: the response exceeds the 5242880-byte limit.` |
+| The run is `--offline`. | `Sidecar manifest https://…/docs-meta.yaml is remote and the run is offline. Vendor it to a path, or drop --offline.` |
+| `tokenEnv` is set on a path `file`. | `manni.config.yaml: sidecars[0].tokenEnv is set, but "file" is a path, so no request is made and the token would go nowhere. Remove it, or make "file" a URL.` |
+| `file` is `http://` on a public host. | `manni.config.yaml: sidecars[0].file is plain http://; a bearer token over plaintext is a leak, and a public manifest is served over https too.` |
+| `file` carries userinfo. | `manni.config.yaml: sidecars[0].file carries a credential in the URL; put the token in an environment variable and name it with "tokenEnv".` |
 
 #### The rules
 
@@ -655,7 +771,7 @@ the value came from.
 
 | Exit | When |
 |---|---|
-| `2` | The config's `sidecars:` is malformed. A manifest is missing, unreadable, not valid YAML, or not the mapping shape above. An entry sets a key outside `keys:`, or sets `$schema`. An entry names a document the run did not load, on a config-corpus run. A `query` write would touch an owned key or rename a document the manifest names. |
+| `2` | The config's `sidecars:` is malformed. A manifest is missing, unreadable, not valid YAML, or not the mapping shape above. A [remote manifest](#remote-manifests) could not be fetched, the run is `--offline`, or the variable `tokenEnv` names is not set. An entry sets a key outside `keys:`, or sets `$schema`. An entry names a document the run did not load, on a config-corpus run. A `query` write would touch an owned key or rename a document the manifest names. |
 | `1` | The merged object fails its schema, including on a value the manifest supplied. A document carries an owned key. `fill` refuses a file because a candidate is owned. |
 
 The split is the one every command already follows. Exit 2 means the run could

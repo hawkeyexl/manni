@@ -18,6 +18,7 @@ import {
 import { findGitRoot } from "../../shared/git-root.js";
 import { FILE_SCHEMA_KEY, rebaseConfigSchemaRefs } from "./resolve-schema.js";
 import { classifyRef } from "./schema-registry.js";
+import { sidecarUrlProblem } from "./sidecar-fetch.js";
 import { INTEGRITY_SHAPE, isIntegrity } from "./integrity.js";
 import { parseElementPath } from "../extractors/element-key.js";
 
@@ -175,7 +176,12 @@ const CHECK_KEYS = ["name", "query"] as const;
  * before schema resolution. The private half of a public docset.
  */
 export interface SidecarConfig {
-  /** Manifest path, relative to the config file's directory. */
+  /**
+   * Manifest path, relative to the config file's directory, or an `https://`
+   * URL (proposal 0038) fetched at the start of every run. A URL serves a
+   * manifest in another public repository as readily as a private one; only
+   * the private one needs `tokenEnv`.
+   */
   file: string;
   /**
    * The top-level keys this manifest owns. Ownership is disjoint across
@@ -183,10 +189,16 @@ export interface SidecarConfig {
    * document carrying an owned key is a finding rather than a tiebreak.
    */
   keys: string[];
+  /**
+   * Name of an environment variable whose value is sent as a bearer token
+   * when `file` is a URL. The token never appears in the config, a message,
+   * or a report. Refused on a path `file`, where it would do nothing.
+   */
+  tokenEnv?: string;
 }
 
 /** The keys one `sidecars:` entry may carry. */
-const SIDECAR_KEYS = ["file", "keys"] as const;
+const SIDECAR_KEYS = ["file", "keys", "tokenEnv"] as const;
 
 /**
  * The grammar a check's name must satisfy: one built-in id *segment*.
@@ -611,6 +623,25 @@ function parseSidecars(raw: unknown, source: string): SidecarConfig[] {
         `${source}: sidecars[${i}].keys must be a non-empty list of key names.`,
       );
     }
+    const isUrl = classifyRef(e.file).kind === "url";
+    if (isUrl) {
+      const problem = sidecarUrlProblem(e.file);
+      if (problem !== null) {
+        throw new DocmetaError(`${source}: sidecars[${i}].file ${problem}.`);
+      }
+    }
+    if (e.tokenEnv !== undefined) {
+      if (typeof e.tokenEnv !== "string" || e.tokenEnv.trim() === "") {
+        throw new DocmetaError(
+          `${source}: sidecars[${i}].tokenEnv must be the name of an environment variable.`,
+        );
+      }
+      if (!isUrl) {
+        throw new DocmetaError(
+          `${source}: sidecars[${i}].tokenEnv is set, but "file" is a path, so no request is made and the token would go nowhere. Remove it, or make "file" a URL.`,
+        );
+      }
+    }
     const keys = e.keys as string[];
     const seen = new Set<string>();
     for (const key of keys) {
@@ -633,7 +664,11 @@ function parseSidecars(raw: unknown, source: string): SidecarConfig[] {
       }
       owners.set(key, i);
     }
-    return { file: e.file, keys };
+    return {
+      file: e.file,
+      keys,
+      ...(typeof e.tokenEnv === "string" ? { tokenEnv: e.tokenEnv } : {}),
+    };
   });
 }
 

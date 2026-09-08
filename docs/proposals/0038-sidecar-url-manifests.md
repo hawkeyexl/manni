@@ -1,6 +1,6 @@
 # 0038: a URL form of `sidecars[].file`
 
-- **Status:** Proposed
+- **Status:** Implemented
 - **Serves:** Devin · D1, D2 · Maya · M1
 - **Depends on:** Four earlier proposals.
   - [0037](0037-sidecar-metadata.md) defines the manifest, its rules, and the read-only first increment this extends.
@@ -15,8 +15,11 @@
 0037 puts the private manifest on disk next to the private config. That is
 the right layout, and it is not the only one people run. A docs team may
 keep the manifest in a repository the CI job does not check out. A platform
-team may serve one manifest to several docsets from a single place. Today
-each of those needs a shell step before every run:
+team may serve one manifest to several docsets from a single place. And the
+manifest need not be private at all. One public repository can hold the keys another public repository's pages
+are judged by. Nothing is secret on either side, and the first repository's
+CI never checks the second one out.
+Today each of those needs a shell step before every run:
 
 ```bash
 gh api -H "Accept: application/vnd.github.raw" \
@@ -36,6 +39,19 @@ true and unhelpful.
 `sidecars[].file` accepts an `https://` URL. The manifest is fetched at the
 start of every run, parsed exactly as a local manifest is, and merged by
 the same rules. Nothing downstream of the loader changes.
+
+A public manifest needs nothing else. This is the cross-repository case:
+one public repository's pages take keys from a file in another.
+
+```yaml
+meta:
+  sidecars:
+    - file: https://raw.githubusercontent.com/org/docs-catalog/main/owners.yaml
+      keys: [team, owner]
+```
+
+A private manifest adds `tokenEnv`, naming the environment variable that
+holds a bearer token:
 
 ```yaml
 meta:
@@ -90,7 +106,7 @@ meta:
 
 | Key | Type | Required | Meaning |
 |---|---|---|---|
-| `sidecars[].file` | `string` | yes | A path relative to the config, as today, or an `https://` URL. `http://` is refused: a bearer token over plaintext is a leak. |
+| `sidecars[].file` | `string` | yes | A path relative to the config, as today, or an `https://` URL. `http://` is refused except on a loopback host, where plaintext leaks nothing and tests need it. |
 | `sidecars[].tokenEnv` | `string` | no | Name of an environment variable whose value is sent as a bearer token. Allowed only when `file` is a URL; on a path it is a config error, because it would do nothing. |
 
 ```ts
@@ -114,13 +130,14 @@ or fetch, and hands either text to the same parser. `SidecarIndex`,
 
 ### Which hosts this covers
 
-Both hosting CLIs already fetch a private file with a stored login. Both
-hosts also accept a bearer personal token on their raw-file routes, so one
-`tokenEnv` covers each without a vendor branch:
+A public manifest is a plain GET on either host's raw route, with no token.
+For a private one, both hosting CLIs already fetch a private file with a
+stored login. Both hosts also accept a bearer personal token on their
+raw-file routes, so one `tokenEnv` covers each without a vendor branch:
 
 | Host | URL shape | Token |
 |---|---|---|
-| GitHub | `https://raw.githubusercontent.com/OWNER/REPO/REF/PATH` | a fine-grained PAT with contents read, or `GITHUB_TOKEN` inside the same org |
+| GitHub | `https://raw.githubusercontent.com/OWNER/REPO/REF/PATH` | a fine-grained PAT with contents read on that repository; the default `GITHUB_TOKEN` reaches only the workflow's own repository |
 | GitLab | `https://gitlab.com/api/v4/projects/ID/repository/files/PATH/raw?ref=REF` | a project or personal access token with `read_repository` |
 
 The set-up page shows both, and says which token scope each needs.
@@ -185,7 +202,8 @@ manni: Sidecar manifest https://raw.githubusercontent.com/org/private-docs/main/
    path outside the repository, and a URL takes the same branch. The
    document-side findings for the same run are unaffected.
 6. **`http://`.** Refused outright rather than warned about. A warning that
-   a token went over plaintext arrives after the token did.
+   a token went over plaintext arrives after the token did. The one exception is a loopback host, where there is no wire to leak on.
+   Without it the fetch could not be tested against a local server.
 7. **Rate limits.** A raw-file fetch counts against the host's rate limit.
    One run makes one request per remote manifest, and a run with three
    manifests makes three. That is well inside any limit, and a 429 is

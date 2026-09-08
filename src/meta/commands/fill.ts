@@ -376,6 +376,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   const sidecars = await loadSidecars(config, {
     configDir: configDir ?? cwd,
     base,
+    offline: opts.offline ?? config?.offline ?? false,
   });
 
   const processOne = async (

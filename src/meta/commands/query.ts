@@ -328,6 +328,7 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
   const sidecars = await loadSidecars(config, {
     configDir: configDir ?? cwd,
     base,
+    offline: opts.offline ?? config?.offline ?? false,
   });
 
   const readOne = (label: string, content: string, extension: string): void => {

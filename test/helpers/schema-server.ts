@@ -15,6 +15,8 @@ export interface Route {
   body?: string;
   /** Content-Type header (default application/json). */
   contentType?: string;
+  /** Extra response headers, e.g. `location` for a redirect route. */
+  headers?: Record<string, string>;
   /** Delay before responding, to drive timeout tests. */
   delayMs?: number;
   /**
@@ -106,6 +108,9 @@ export async function startSchemaServer(
       try {
         res.statusCode = route.status ?? 200;
         res.setHeader("content-type", route.contentType ?? "application/json");
+        for (const [name, value] of Object.entries(route.headers ?? {})) {
+          res.setHeader(name, value);
+        }
         if (route.bodyDelayMs) {
           res.flushHeaders();
           setTimeout(sendBody, route.bodyDelayMs).unref();

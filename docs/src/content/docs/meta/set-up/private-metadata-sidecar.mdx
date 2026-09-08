@@ -1,6 +1,6 @@
 ---
 title: Keep private metadata in a sidecar
-description: "Validate public docs against private keys such as a ticket or an internal source, kept in a manifest in a private repository, with a CI run that holds the public pages to the private contract."
+description: "Validate public docs against keys a sidecar manifest supplies, read from a private checkout or fetched by URL from another repository, public or private."
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -20,6 +20,11 @@ the public pages against a schema that requires it.
 By the end you will have two repositories, one manifest, and a private CI job.
 The job fails when a public page has no ticket or a ticket is misspelled. It
 also fails when someone writes the ticket into the public page by hand.
+
+The manifest need not sit beside the config, and it need not be private.
+`file:` also takes an `https://` URL, fetched every run. One public repository
+can supply keys for another's pages that way, with no secret anywhere.
+[Fetch the manifest by URL](#fetch-the-manifest-by-url) covers both cases.
 
 <Aside type="note" title="What this page covers">
 The journey. The contract, meaning every rule, message and exit code, lives in
@@ -185,6 +190,104 @@ jobs:
 The Action passes no paths, so `paths:` comes from the private config and the
 orphan check runs. Bump the submodule pointer when the public docs change, or
 the private run validates the pages as they were.
+
+## Fetch the manifest by URL
+
+`file:` accepts an `https://` URL as well as a path. The manifest is fetched at
+the start of every run, never cached, and merged exactly as a local one is.
+Use it when the run cannot check the manifest out. Two cases are common, and
+the public one comes first because it needs nothing else.
+
+### Across public repositories
+
+Nothing here is private. One public repository keeps a catalog, say which team
+owns each page, and another public repository's pages are judged by it. The
+docs run never clones the catalog. A plain URL, and no token anywhere:
+
+```yaml title="docs-site/manni.config.yaml"
+meta:
+  paths: ["docs/**/*.md"]
+  sidecars:
+    - file: https://raw.githubusercontent.com/your-org/docs-catalog/main/owners.yaml
+      keys: [team, owner]
+  overrides:
+    - files: "docs/**/*.md"
+      schemas: [./schemas/owned.json]
+```
+
+The ordinary public workflow runs it unchanged. There is no secret to pass,
+and the public log shows only public values. A finding on a fetched value
+names the URL and the manifest line, so the catalog is what to edit.
+
+### A private manifest
+
+The private manifest lives in a repository the job does not check out, such as
+a platform team's catalog that serves several docsets. The run still starts
+from a private checkout, with the public pages as its submodule. Only the
+manifest moves. Add `tokenEnv`, the name of an environment variable holding a
+bearer token:
+
+```yaml title="private-repo/manni.config.yaml"
+meta:
+  paths: ["public/docs/**/*.md"]
+  sidecars:
+    - file: https://raw.githubusercontent.com/your-org/docs-catalog/main/docs-meta.yaml
+      keys: [source, jira]
+      tokenEnv: PRIVATE_DOCS_TOKEN
+  overrides:
+    - files: "public/docs/**/*.md"
+      schemas: [./schemas/private.json]
+```
+
+The workflow passes the secret as that variable. The token never appears in
+the config, a message, or a report:
+
+```yaml title="private-repo/.github/workflows/manni.yml"
+name: Validate metadata
+on: [push, pull_request]
+jobs:
+  manni:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.PUBLIC_DOCS_READ_TOKEN }}
+      - uses: hawkeyexl/manni@v0
+        env:
+          PRIVATE_DOCS_TOKEN: ${{ secrets.PRIVATE_DOCS_TOKEN }}
+```
+
+Both hosts accept a bearer token on their raw-file route, so the same
+`tokenEnv` serves either:
+
+| Host | `file:` | Token in `PRIVATE_DOCS_TOKEN` |
+|---|---|---|
+| GitHub | `https://raw.githubusercontent.com/OWNER/REPO/REF/PATH` | A fine-grained personal access token with read access to the repository's contents. |
+| GitLab | `https://gitlab.com/api/v4/projects/ID/repository/files/PATH/raw?ref=REF` | A project or personal access token with the `read_repository` scope. `PATH` is URL-encoded, so `docs/docs-meta.yaml` is written `docs%2Fdocs-meta.yaml`. |
+
+<Aside type="caution" title="Fetch from the private side">
+A public repository's CI logs are public. A private manifest fetched into a
+public run puts its values in that log. Use the URL form from the private side,
+when the private run cannot check the manifest out, or across public
+repositories. Never use it to feed a public run with private values.
+</Aside>
+
+A run that cannot reach the manifest stops before any page is judged, and says
+why. The status is named and the token never is:
+
+```
+$ PRIVATE_DOCS_TOKEN= manni meta validate
+manni: Sidecar manifest https://raw.githubusercontent.com/your-org/docs-catalog/main/docs-meta.yaml: the environment variable PRIVATE_DOCS_TOKEN named by "tokenEnv" is not set.
+                                                                                    exit 2
+$ manni meta validate --offline
+manni: Sidecar manifest https://raw.githubusercontent.com/your-org/docs-catalog/main/docs-meta.yaml is remote and the run is offline. Vendor it to a path, or drop --offline.
+                                                                                    exit 2
+```
+
+Every rule, including the timeout, the body cap, the redirect behaviour and
+`http://`, is in the
+[reference](/manni/meta/reference/configuration/#remote-manifests).
 
 ## Editing the values
 

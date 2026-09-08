@@ -307,6 +307,7 @@ export async function runValidate(
   const sidecars = await loadSidecars(config, {
     configDir: configDir ?? cwd,
     base,
+    offline: opts.offline ?? config?.offline ?? false,
   });
 
   const validator = new Validator(

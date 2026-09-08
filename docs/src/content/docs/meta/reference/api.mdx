@@ -86,7 +86,11 @@ once per run and merges per document. It validates the merged object with
 | Export | Purpose |
 |---|---|
 | `loadSidecars` | Load every manifest the config declares into one `SidecarIndex`. Resolves to `null` when the config declares none. Throws `DocmetaError` for a manifest that is missing, unparseable, or misshapen, and for an entry setting a key the sidecar does not own. |
-| `LoadSidecarsOptions` (type) | Input to `loadSidecars`. `configDir` is the directory `file` and every manifest key resolve from. `base` is the directory the run's file labels are relative to, so manifests are reported the same way. |
+| `LoadSidecarsOptions` (type) | Input to `loadSidecars`. `configDir` is the directory `file` and every manifest key resolve from. `base` is the directory the run's file labels are relative to, so manifests are reported the same way. `offline` refuses a URL `file` rather than fetching it. `timeoutMs` bounds the fetch, and `env` is the environment `tokenEnv` is read from, for tests. |
+| `fetchSidecar` | Fetch one [remote manifest](/manni/meta/reference/configuration/#remote-manifests) by URL, sending the bearer token `tokenEnv` names to that origin only. Resolves to the manifest text. Throws `DocmetaError` naming the URL and the status, never the token, and under `offline` before any request. `loadSidecars` calls it for a URL `file`. |
+| `SidecarFetchOptions` (type) | Input to `fetchSidecar`, made of `tokenEnv`, `timeoutMs`, `maxBytes`, `offline`, and `env`, the environment `tokenEnv` is read from, which defaults to `process.env`. |
+| `sidecarUrlProblem` | Why a string may not name a remote manifest, or `null` when it may. It refuses a URL carrying userinfo, plain `http://` off a loopback host, and any other scheme. The config parser applies it to every URL `file`. |
+| `SIDECAR_FETCH_TIMEOUT_MS`, `SIDECAR_FETCH_MAX_BYTES` | The fetch's defaults, 10 000 ms and 5 MB, matching the schema fetch. |
 | `SidecarIndex` (type) | Every sidecar of a run. `owners` maps each owned key to its manifest, `byPath` maps an absolute document path to its supplied values, and `entries` lists every manifest entry for the orphan check. |
 | `SidecarEntry` (type) | One manifest entry. It carries the absolute document path it names and the key as spelled in the manifest. It also carries the manifest's reported path and the entry's line when known. |
 | `SidecarValue` (type) | One supplied value, with the manifest's reported path and the key's line when known. |
@@ -166,7 +170,7 @@ reference](/manni/meta/reference/configuration/) for what each key means.
 | `FillConfig` (type) | Config defaults for `fill`: provider, model, confidence threshold, cost ceiling, concurrency. |
 | `SchemaCacheConfig` (type) | Config for the remote-schema cache, currently `ttlHours`. |
 | `CheckConfig` (type) | One named [corpus check](/manni/meta/reference/configuration/#checks). Its `name` (the durable half of its findings' identity) and the SQL `query`. |
-| `SidecarConfig` (type) | One [sidecar](/manni/meta/reference/configuration/#sidecars) entry, made of the manifest `file`, relative to the config's directory, and the top-level `keys` it owns. The parser has already asserted the keys are non-empty, unique, disjoint across entries, and never `$schema`. |
+| `SidecarConfig` (type) | One [sidecar](/manni/meta/reference/configuration/#sidecars) entry, made of the manifest `file`, the top-level `keys` it owns, and an optional `tokenEnv`. `file` is a path relative to the config's directory or an `https://` URL, and `tokenEnv` names the environment variable holding the bearer token for a URL. The parser has already asserted the keys are non-empty, unique, disjoint across entries, and never `$schema`, and that `tokenEnv` appears only on a URL. |
 
 ## Reporters
 
