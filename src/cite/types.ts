@@ -272,6 +272,8 @@ export interface AddOptions {
   cwd?: string;
   stdinContent?: string;
   root?: string;
+  /** Default true. False: no HEAD recorded, and sources indexed by a directory walk. */
+  git?: boolean;
   onNotice?: (message: string) => void;
   onConfigLoaded?: (info: { path: string; dir: string }) => void;
 }
@@ -311,6 +313,8 @@ export interface UpdatePage {
   skipped: CitationFinding[];
   diff: string;
   written: boolean;
+  /** The rewritten page, for the stdin input only: it has no file to be written to. */
+  content?: string;
 }
 
 export interface UpdateRun {

@@ -6,7 +6,7 @@ sidebar:
 citations:
   - id: check
     claim: Check every citation in the given pages against its source.
-    src: src/cite/cli.ts:187-188
+    src: src/cite/cli.ts:189-190
     integrity: sha256-a5f8b50113ec46c738fe1fb80886b3109f7e1a86ef3e009fb690a151c40351b9
     commit: 4f2bd19f0d262f41f1bafde228b62899b4124839
 ---
@@ -237,6 +237,7 @@ manni cite add <page> <src> [options]
 | `--inline` | n/a | off | Write the entry as an inline JSON statement above the anchor instead of a frontmatter entry. Needs `--claim` or `--quote`, since a statement anchors what follows it. Refused on `asciidoc` and `rst`, whose statement forms carry an id only. The only channel on an `html` or `xml` page, which has no frontmatter to write to. |
 | `--obfuscate` | n/a | config `obfuscate:` | Write `src` as a `~token` and a pin keyed by the salt, so the page carries neither the path nor a verifier for the line. See [obfuscated sources](/manni/cite/reference/citations/#obfuscated-sources). |
 | `--no-commit` | n/a | on | Do not record `HEAD`. Without a commit, a later check can still say the lines changed, but not since when, nor whether the pin was ever true. Off a git checkout no commit is recorded either way. |
+| `--no-git` | n/a | on | Skip git entirely. No `HEAD` is recorded, and the source is looked up by a directory walk instead of `git ls-files`, so an untracked file under the root can be cited. Overrides config `git:`. |
 | `--dry-run` | n/a | off | Print the unified diff of the page and write nothing. The report line goes to stderr. |
 | `--as` | `<format>` | n/a | Force the page's [format](/manni/meta/reference/formats/). Required with `-`. |
 | `--root` | `<dir>` | n/a | The directory `<src>` resolves from, exactly as on [`check`](#where-sources-resolve-from). |

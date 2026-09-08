@@ -52,11 +52,14 @@ const RST_FORMS: readonly StatementForm[] = [
 const ID = /^[a-z0-9][a-z0-9-]*$/;
 
 /**
- * A fence opener in any format. `paragraphAfter` and the claim search have no
- * format parameter, so they treat every family's opener as a fence; the
- * per-format locators below are what `quote` anchoring uses.
+ * A fence opener in any format. `paragraphAfter` and the claim search
+ * (`claims.ts`) have no format parameter, so they treat every family's opener
+ * as a fence; the per-format locators below are what `quote` anchoring uses.
+ * A markdown fence keeps its meaning when indented, as inside a list item, so
+ * it is read there too, matching the code skip (`SKIP_MARKDOWN_FENCE`); the
+ * asciidoc `----` stays at column 0.
  */
-const ANY_FENCE = /^(?:`{3,}|~{3,}|-{4,})/;
+export const ANY_FENCE = /^(?:[ \t]*(?:`{3,}|~{3,})|-{4,})/;
 const MARKDOWN_FENCE = /^(`{3,}|~{3,})/;
 const ASCIIDOC_FENCE = /^(-{4,})/;
 /**
@@ -464,24 +467,39 @@ export function fencedBlocks(
   }
 }
 
+/** The form `formatStatement` writes for a format, or a refusal naming the format. */
+function writtenForm(format: string): StatementForm {
+  const form = statementForms(format)[0];
+  if (!form) {
+    throw new CiteError(`No inline statement syntax for format "${format}".`);
+  }
+  return form;
+}
+
+/**
+ * Refuse, as `formatStatement` would, a format whose written form cannot
+ * carry an inline entry (asciidoc, rst: ids only; or no form at all). For a
+ * caller that wants the refusal before it has an entry to format.
+ */
+export function assertInlineEntrySupported(format: string): void {
+  if (!writtenForm(format).json) {
+    throw new CiteError(
+      `Format "${format}" carries inline references only; an inline entry needs a frontmatter entry and a reference statement.`,
+    );
+  }
+}
+
 /** Render a statement in the format's first form, e.g. `<!-- cite fetch-timeout -->`. */
 export function formatStatement(
   format: string,
   payload: { kind: "ref"; id: string } | { kind: "entry"; entry: object },
 ): string {
-  const form = statementForms(format)[0];
-  if (!form) {
-    throw new CiteError(`No inline statement syntax for format "${format}".`);
-  }
+  const form = writtenForm(format);
   let text: string;
   if (payload.kind === "ref") {
     text = payload.id;
   } else {
-    if (!form.json) {
-      throw new CiteError(
-        `Format "${format}" carries inline references only; an inline entry needs a frontmatter entry and a reference statement.`,
-      );
-    }
+    assertInlineEntrySupported(format);
     text = JSON.stringify(payload.entry);
   }
   // `[comment]: # (`, `// (` and `.. (` hug their parentheses; the comment

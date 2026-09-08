@@ -22,6 +22,7 @@ import { readPage } from "../core/page.js";
 import { parseSrc } from "../core/range.js";
 import { buildSourceIndex, readSource } from "../core/sources.js";
 import {
+  assertInlineEntrySupported,
   detectEol,
   fencedBlockAfter,
   fencedBlocks,
@@ -179,9 +180,10 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   if (usingStdin && opts.as === undefined) {
     throw new CiteError("Reading from stdin (`-`) requires --as <format> to choose an extractor.");
   }
-  const path = resolve(cwd, opts.page);
-  const label = usingStdin ? STDIN_LABEL : toPosix(relative(cwd, path));
-  const content = usingStdin ? (opts.stdinContent ?? "") : await readPageFile(path, label);
+  // `-` names no file: nothing to resolve, and nothing to write back to.
+  const path = usingStdin ? undefined : resolve(cwd, opts.page);
+  const label = path === undefined ? STDIN_LABEL : toPosix(relative(cwd, path));
+  const content = path === undefined ? (opts.stdinContent ?? "") : await readPageFile(path, label);
   const page = readPage(label, content, opts.as === undefined ? undefined : { format: opts.as });
   const { format } = page;
 
@@ -204,13 +206,14 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     throw new CiteError(`--quote needs a format with fenced blocks; ${label} is ${format}.`);
   }
   // A format that carries references only (asciidoc, rst) refuses an inline
-  // entry before the source is read; the probe's own message says why.
-  if (opts.inline === true) formatStatement(format, { kind: "entry", entry: {} });
+  // entry before the source is read.
+  if (opts.inline === true) assertInlineEntrySupported(format);
   if (opts.id !== undefined && page.citations.some((c) => c.citation.id === opts.id)) {
     throw new CiteError(`Id "${opts.id}" is already cited in ${label}.`);
   }
 
-  const git = config?.git !== false;
+  // The option outranks the config, as on check and update.
+  const git = opts.git ?? config?.git ?? true;
   const client = git ? gitClient(root) : noGit();
   const sourceIndex = await buildSourceIndex(root, salt, { gitClient: client, git });
   const citation = await mintCitation({
@@ -266,7 +269,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   }
 
   const diff = unifiedDiff(label, content, after);
-  const written = !usingStdin && opts.dryRun !== true;
+  const written = path !== undefined && opts.dryRun !== true;
   if (written) await writeFileAtomic(path, after);
 
   const result: AddResult = { file: label, citation, placed, content: after, diff, written };

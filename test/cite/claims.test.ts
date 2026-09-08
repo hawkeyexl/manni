@@ -64,6 +64,13 @@ describe("findClaim", () => {
     expect(findClaim(content, bodyOffset, "Retries default to 3.").map((h) => h.line)).toEqual([8]);
   });
 
+  it("skips a fence indented inside a list item, as the statement scanner does", () => {
+    const content = "- Step one.\n  ```\n  Retries default to 3.\n  ```\n\nRetries default to 3.\n";
+    expect(findClaim(content, 0, "Retries default to 3.").map((h) => h.line)).toEqual([6]);
+    expect(paragraphContains(content, 0, "Step one.")).toBe(true);
+    expect(paragraphContains(content, 0, "Retries default to 3.")).toBe(false);
+  });
+
   it("finds the fixture's soft-wrapped claim under its frontmatter", () => {
     const content = readPage("wrapped-claim.md");
     const bodyOffset = content.indexOf("# Limits");

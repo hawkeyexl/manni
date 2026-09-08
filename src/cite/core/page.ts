@@ -403,7 +403,7 @@ export function readPage(
     }
   }
 
-  return {
+  const page: PageCitations = {
     file,
     format,
     content,
@@ -412,4 +412,6 @@ export function readPage(
     statements,
     findings: findings.sort(byLine),
   };
+  if (defaultCommit !== undefined) page.commit = defaultCommit;
+  return page;
 }

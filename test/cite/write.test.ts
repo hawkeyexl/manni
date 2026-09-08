@@ -352,6 +352,12 @@ describe("unifiedDiff", () => {
     expect(d).not.toContain("\r");
   });
 
+  it("never shows a BOM as part of a line", () => {
+    const d = unifiedDiff("p", "\uFEFFa\nb\n", "\uFEFFa\nc\n");
+    expect(d).toBe(["--- p", "+++ p", "@@ -1,2 +1,2 @@", " a", "-b", "+c", ""].join("\n"));
+    expect(d).not.toContain("\uFEFF");
+  });
+
   it("matches the add --dry-run rung shape", () => {
     const before = "---\ntitle: Limits\n---\n# Limits\n\nThe fetch timeout is 10 seconds, and it is\nnot configurable.\n";
     const after = before.replace(

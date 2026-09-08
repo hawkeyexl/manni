@@ -10,6 +10,7 @@ import { DocmetaError, locateFrontmatter, type MetadataExtractor } from "../../m
 import { extractorByName } from "../../meta/internal.js";
 import { CiteError } from "../errors.js";
 import type { Citation } from "../types.js";
+import { splitLines } from "./hash.js";
 import { detectEol, lineAt, offsetOfLine } from "./statements.js";
 
 function extractorFor(format: string): MetadataExtractor {
@@ -189,14 +190,11 @@ export function replaceStatement(
 
 type Edit = { op: " " | "-" | "+"; text: string };
 
-const splitLines = (text: string): string[] => {
-  if (text === "") return [];
-  const lines = text.split(/\r?\n/);
-  if (lines[lines.length - 1] === "") lines.pop();
-  return lines;
-};
-
-/** A unified diff of two texts, `---`/`+++` headers with the same label. */
+/**
+ * A unified diff of two texts, `---`/`+++` headers with the same label. Lines
+ * are the hashing rule's (`splitLines`): a BOM is never part of a line, so a
+ * page that carries one diffs the same as one that does not.
+ */
 export function unifiedDiff(label: string, before: string, after: string): string {
   const a = splitLines(before);
   const b = splitLines(after);

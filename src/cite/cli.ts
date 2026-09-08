@@ -117,6 +117,8 @@ interface AddCliOptions {
   obfuscate?: boolean;
   /** `--no-commit`. */
   commit: boolean;
+  /** `--no-git`. */
+  git: boolean;
   dryRun?: boolean;
   as?: string;
   root?: string;
@@ -321,8 +323,9 @@ export function buildProgram(): Command {
     .option("--inline", "write an inline statement above the anchor instead of a frontmatter entry")
     .option("--obfuscate", "write src as ~token and a keyed pin")
     .option("--no-commit", "do not record HEAD")
+    .option("--no-git", "skip git: mint without recording HEAD, and index sources by a directory walk")
     .option("--dry-run", "print the diff; write nothing")
-    .option("--as <format>", "force the page format for every input")
+    .option("--as <format>", "force the page format")
     .option("--root <dir>", "directory src: paths resolve from (as check)")
     .option("-c, --config <path>", "path to a manni config file")
     .option("--no-config", "ignore any discovered config file")
@@ -354,6 +357,7 @@ export function buildProgram(): Command {
           // `undefined` when absent, so config `obfuscate:` still decides.
           obfuscate: options.obfuscate ? true : undefined,
           commit: explicitFalse(options.commit),
+          git: explicitFalse(options.git),
           dryRun,
           as: options.as,
           ...configOption(options.config),
@@ -431,8 +435,12 @@ export function buildProgram(): Command {
           );
         }
         const exts = options.ext ? splitList(options.ext) : undefined;
-        const stdinContent = paths.includes(STDIN_TOKEN) ? await readStdin() : undefined;
+        const usingStdin = paths.includes(STDIN_TOKEN);
+        const stdinContent = usingStdin ? await readStdin() : undefined;
         const dryRun = Boolean(options.dryRun);
+        // With `-` the rewritten page owns stdout, as it does for `add -`; a
+        // dry run prints the diffs instead, so the report keeps stdout.
+        const pageToStdout = usingStdin && !dryRun;
         const cwd = process.cwd();
 
         const run = await runUpdate({
@@ -441,7 +449,7 @@ export function buildProgram(): Command {
           exclude: options.exclude,
           as: options.as,
           ...configOption(options.config),
-          onConfigLoaded: reportConfig(format === "pretty", cwd),
+          onConfigLoaded: reportConfig(format === "pretty" && !pageToStdout, cwd),
           stdinContent,
           allowEmpty: options.allowEmpty ? true : undefined,
           respectGitignore: explicitFalse(options.gitignore),
@@ -462,7 +470,13 @@ export function buildProgram(): Command {
                 // what it rewrote and leaves the file to say the rest.
                 showDiff: dryRun,
               });
-        process.stdout.write(`${text}\n`);
+        const stdinPage = pageToStdout ? run.pages.find((page) => page.content !== undefined) : undefined;
+        if (stdinPage?.content !== undefined) {
+          process.stdout.write(stdinPage.content);
+          process.stderr.write(`${text}\n`);
+        } else {
+          process.stdout.write(`${text}\n`);
+        }
         // Exit 1 when something was skipped with an error-severity finding:
         // work left undone, `fill`'s precedent.
         process.exitCode = run.exitCode;

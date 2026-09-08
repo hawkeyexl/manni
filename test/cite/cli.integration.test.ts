@@ -10,13 +10,16 @@
  * so they need the copy anyway.
  */
 import { execSync, spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { DEFAULT_CITE_BASELINE_PATH } from "../../src/cite/core/config.js";
+import { hashRange } from "../../src/cite/core/hash.js";
 import { obfuscatePath } from "../../src/cite/core/sources.js";
 import { supportedExtensions } from "../../src/meta/index.js";
+import { commitAll, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..", "..");
@@ -301,6 +304,56 @@ describe("manni cite check (the ladder)", () => {
     expect(r.stdout).toContain("✓ <stdin>");
     expect(r.stdout).toContain("    ✓ fetch-timeout   src/limits.ts:2   current");
   });
+
+  it("--write-baseline records a finding, --baseline forgives it, --no-baseline does not", () => {
+    // The bare flags take an optional path, so they go after the positional.
+    const written = check(["pages/stale-claim.md", "--write-baseline"]);
+    expect(written.status).toBe(0);
+    expect(existsSync(join(work, DEFAULT_CITE_BASELINE_PATH))).toBe(true);
+    const against = check(["pages/stale-claim.md", "--baseline"]);
+    expect(against.status).toBe(0);
+    expect(against.stdout).toMatch(/baseline/);
+    const without = check(["pages/stale-claim.md", "--no-baseline"]);
+    expect(without.status).toBe(1);
+    expect(without.stdout).toMatch(/^1 file checked, 0 passed, 1 failed, 1 finding$/m);
+  });
+});
+
+describe.skipIf(!gitAvailable())("manni cite check --show-diff", () => {
+  let repo: string | undefined;
+  afterEach(() => {
+    removeTempRepo(repo);
+    repo = undefined;
+  });
+
+  it("prints the diff and the commit subjects under a changed row", () => {
+    const FIRST = "export const A = 1;\nexport const B = 2;\n";
+    repo = makeTempRepo({ files: { "src/limits.ts": FIRST } });
+    const first = commitAll(repo, "add limits");
+    writeFileSync(
+      join(repo, "limits.md"),
+      [
+        "---",
+        "citations:",
+        "  - src: src/limits.ts:2",
+        `    integrity: ${hashRange(FIRST, { start: 2 })}`,
+        `    commit: ${first}`,
+        "---",
+        "# Limits",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    writeFileSync(join(repo, "src", "limits.ts"), "export const A = 1;\nexport const B = 3;\n", "utf8");
+    commitAll(repo, "raise B to 3");
+
+    const r = run(["cite", "check", "--show-diff", "--root", ".", "limits.md"], { cwd: repo });
+    expect(r.status).toBe(1);
+    expect(r.stdout).toMatch(/^ {4}✗ #0 {3}src\/limits\.ts:2 {3}changed/m);
+    expect(r.stdout).toMatch(/^ {8}raise B to 3$/m);
+    expect(r.stdout).toMatch(/^ {8}-export const B = 2;$/m);
+    expect(r.stdout).toMatch(/^ {8}\+export const B = 3;$/m);
+  });
 });
 
 describe("manni cite add", () => {
@@ -366,6 +419,29 @@ describe("manni cite add", () => {
     );
   });
 
+  it("with - and --dry-run writes the page to stdout, the diff and the message to stderr", () => {
+    const input = readFileSync(join(FIXTURES, "pages", "no-citations.md"), "utf8");
+    const r = cite(["add", "-", "src/limits.ts:2", "--as", "markdown", "--claim", CLAIM, "--dry-run", "--root", "."], { input });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("citations:");
+    expect(r.stdout).toContain("src: src/limits.ts:2");
+    expect(r.stderr).toMatch(/^--- <stdin>$/m);
+    expect(r.stderr).toContain("+citations:");
+    expect(r.stderr.trim()).toMatch(
+      /<stdin>: added citation \(src\/limits\.ts:2, sha256-78af1d33…, no commit\) to frontmatter; claim at line \d+$/,
+    );
+  });
+
+  it.skipIf(!gitAvailable())("--no-git mints without recording HEAD, where the root has one", () => {
+    // The fixture tree inside this repository as the root, so HEAD exists there.
+    const withHead = cite(["add", "pages/no-citations.md", "src/limits.ts:2", "--root", FIXTURES]);
+    expect(withHead.status).toBe(0);
+    expect(withHead.stdout).toMatch(/\(src\/limits\.ts:2, sha256-78af1d33…, [0-9a-f]{7}\)/);
+    const without = cite(["add", "pages/no-citations.md", "src/limits.ts:3", "--no-git", "--root", FIXTURES]);
+    expect(without.status).toBe(0);
+    expect(without.stdout).toContain("(src/limits.ts:3, sha256-e9f5bdf9…, no commit)");
+  });
+
   it("--obfuscate writes a token, keyed by the salt", () => {
     const token = obfuscatePath("src/limits.ts", "SALT-LADDER");
     const r = cite(
@@ -423,6 +499,30 @@ describe("manni cite update", () => {
     expect(parsed.pages[0]).toMatchObject({ file: "pages/stale-claim.md", written: true });
     expect(parsed.pages[0]?.rewritten[0]).toMatchObject({ id: "fetch-timeout", reason: "accepted" });
     expect(cite(["check", "--root", ".", "--no-git", "pages/stale-claim.md"]).status).toBe(0);
+  });
+
+  it("with - writes the rewritten page to stdout and the summary to stderr", () => {
+    const input = readFileSync(join(FIXTURES, "pages", "moved.md"), "utf8");
+    const r = cite(["update", "-", "--as", "markdown", "--root", ".", "--no-git"], { input });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("src: src/moved.ts:4");
+    expect(r.stdout).toContain('"src": "src/moved.ts:5"');
+    expect(r.stdout).toContain("Retries default to 3.");
+    expect(r.stdout).not.toContain("citations rewritten");
+    expect(r.stderr).toContain("<stdin>: fetch-timeout  src/moved.ts:2 -> src/moved.ts:4  (moved)");
+    expect(r.stderr).toContain("2 citations rewritten in 1 file, 0 skipped");
+  });
+
+  it("with - and --dry-run prints the diff and the summary only", () => {
+    const input = readFileSync(join(FIXTURES, "pages", "moved.md"), "utf8");
+    const r = cite(["update", "-", "--dry-run", "--as", "markdown", "--root", ".", "--no-git"], { input });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/^--- <stdin>$/m);
+    expect(r.stdout).toContain("+    src: src/moved.ts:4");
+    expect(r.stdout).toContain("2 citations rewritten in 1 file, 0 skipped");
+    // The page itself is not printed: `# Limits` is outside every hunk's context.
+    expect(r.stdout).not.toContain("# Limits");
+    expect(r.stderr).toBe("");
   });
 
   it("--only limits the rewrite to the named id", () => {

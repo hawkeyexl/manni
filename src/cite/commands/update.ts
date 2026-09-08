@@ -204,7 +204,10 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     const diff = rewritten.length === 0 ? "" : unifiedDiff(label, content, after);
     const written = rewritten.length > 0 && path !== undefined && opts.dryRun !== true;
     if (written) await writeFileAtomic(path, after);
-    pages.push({ file: label, rewritten, skipped, diff, written });
+    const page: UpdatePage = { file: label, rewritten, skipped, diff, written };
+    // The stdin page has nowhere to be written; the caller prints it instead.
+    if (path === undefined) page.content = after;
+    pages.push(page);
     return report;
   };
 

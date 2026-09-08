@@ -3,7 +3,7 @@
  * whitespace collapse to one space on both sides) against paragraphs, so
  * soft-wrapped prose matches. Punctuation is verbatim.
  */
-import { fencedBlockAt, lineAt, paragraphAfter } from "./statements.js";
+import { ANY_FENCE, fencedBlockAt, lineAt, paragraphAfter } from "./statements.js";
 
 export function normalizeWhitespace(text: string): string {
   return text.replace(/\s+/g, " ").trim();
@@ -16,9 +16,6 @@ export interface ClaimHit {
   line: number;
 }
 
-/** A fence opener in any family; the search has no format to narrow it. */
-const ANY_FENCE = /^(?:`{3,}|~{3,}|-{4,})/;
-
 interface Paragraph {
   start: number;
   line: number;
@@ -28,7 +25,9 @@ interface Paragraph {
 
 /**
  * Paragraphs from `bodyOffset`: runs of non-blank lines, with fenced blocks
- * skipped (a fence line toggles, as the ladder's `paragraphs` does).
+ * skipped (a fence line toggles, as the ladder's `paragraphs` does). The
+ * opener is `ANY_FENCE`: the search has no format to narrow it, and an
+ * indented markdown fence counts, as it does for `paragraphAfter`.
  */
 function paragraphsFrom(content: string, bodyOffset: number): Paragraph[] {
   const out: Paragraph[] = [];

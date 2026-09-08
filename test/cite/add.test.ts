@@ -336,6 +336,31 @@ describe("runAdd", () => {
       const without = await add({ page: "pages/no-citations.md", src: "src/limits.ts:3", commit: false });
       expect(without.citation.commit).toBeUndefined();
     });
+
+    it.skipIf(!gitAvailable())("git: false records no commit, by option or by config, where HEAD exists", async () => {
+      workspace("no-citations.md");
+      const byOption = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2", commit: undefined, git: false });
+      expect(byOption.citation.commit).toBeUndefined();
+      const configured = tempConfig("git: false");
+      const byConfig = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:3",
+        commit: undefined,
+        noConfig: false,
+        configPath: configured,
+      });
+      expect(byConfig.citation.commit).toBeUndefined();
+      // The option outranks the config, as on check.
+      const overridden = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:1",
+        commit: undefined,
+        git: true,
+        noConfig: false,
+        configPath: configured,
+      });
+      expect(overridden.citation.commit).toMatch(/^[0-9a-f]{40}$/);
+    });
   });
 
   describe("outputs", () => {

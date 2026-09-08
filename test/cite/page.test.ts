@@ -152,6 +152,13 @@ describe("readPage: frontmatter channel", () => {
     ]);
   });
 
+  it("exposes the page-level citation-commit, and carries none when the page has none", () => {
+    expect(fixture("frontmatter-only.md").commit).toBe("3f9c2a1e7b0d4c5a6f8e9d0b1a2c3d4e5f607182");
+    const plain = fixture("current.md");
+    expect(plain.commit).toBeUndefined();
+    expect("commit" in plain).toBe(false);
+  });
+
   it("anchors a soft-wrapped claim", () => {
     const page = fixture("wrapped-claim.md");
     expect(page.findings).toEqual([]);

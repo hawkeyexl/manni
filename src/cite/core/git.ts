@@ -24,7 +24,10 @@ const NO_COMMIT = /invalid object name|bad revision|unknown revision|bad object/
  */
 const NO_PATH = /does not exist in|exists on disk, but not in|path .* does not exist/i;
 
-type Outcome = { ok: true; stdout: string } | { ok: false; stderr: string; message: string };
+type Outcome =
+  | { ok: true; stdout: string }
+  /** `code` is git's exit status; absent when git could not be run at all. */
+  | { ok: false; stderr: string; message: string; code?: number };
 
 function run(root: string, args: readonly string[]): Promise<Outcome> {
   return new Promise((resolve) => {
@@ -33,8 +36,11 @@ function run(root: string, args: readonly string[]): Promise<Outcome> {
       ["-c", "core.quotepath=false", ...args],
       { cwd: root, windowsHide: true, maxBuffer: MAX_BUFFER, encoding: "utf8" },
       (error, stdout, stderr) => {
-        if (error) resolve({ ok: false, stderr, message: error.message });
-        else resolve({ ok: true, stdout });
+        if (error) {
+          const failure: Outcome = { ok: false, stderr, message: error.message };
+          if (typeof error.code === "number") failure.code = error.code;
+          resolve(failure);
+        } else resolve({ ok: true, stdout });
       },
     );
   });
@@ -57,11 +63,18 @@ export function gitClient(root: string): GitClient {
   const failed = (verb: string, outcome: Extract<Outcome, { ok: false }>): CiteError =>
     new CiteError(`git ${verb} failed: ${outcome.stderr.trim() || outcome.message}`);
 
-  /** Whether the repository has the commit; exit 1 from `--verify --quiet` is "no". */
+  /**
+   * Whether the repository has the commit. `--verify --quiet` exits 1 for an
+   * object it does not have, and that alone is "no": any other failure is
+   * git itself failing, and reading it as "no" would turn a broken checkout
+   * into shallow-clone advice.
+   */
   const hasCommit = (commit: string): Promise<boolean> =>
     once(`has\0${commit}`, async () => {
       const out = await run(root, ["rev-parse", "--verify", "--quiet", "--end-of-options", `${commit}^{commit}`]);
-      return out.ok;
+      if (out.ok) return true;
+      if (out.code === 1) return false;
+      throw failed("rev-parse", out);
     });
 
   return {

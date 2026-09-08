@@ -11,10 +11,21 @@ import { gitClient, noGit } from "../../src/cite/core/git.js";
 import { commitAll, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
 
 const calls = vi.hoisted(() => [] as readonly string[][]);
+/**
+ * When set, `git rev-parse --verify …` fails this way instead of running: the
+ * only way to reach `hasCommit`'s error path, since a repository that answers
+ * `git show` cannot then fail `rev-parse` for a reason other than "absent".
+ */
+const verifyFailure = vi.hoisted(() => ({ current: undefined as { code: number; stderr: string } | undefined }));
 
 /** The overloads of `execFile` leave its argv loosely typed; admit only a string list. */
 function isArgv(value: unknown): value is readonly string[] {
   return Array.isArray(value) && value.every((entry) => typeof entry === "string");
+}
+
+type ExecCallback = (error: Error | null, stdout: string, stderr: string) => void;
+function isCallback(value: unknown): value is ExecCallback {
+  return typeof value === "function";
 }
 
 vi.mock("node:child_process", async (importOriginal) => {
@@ -22,6 +33,14 @@ vi.mock("node:child_process", async (importOriginal) => {
   const execFile = ((...args: Parameters<typeof actual.execFile>) => {
     const argv: unknown = args[1];
     if (isArgv(argv)) (calls as string[][]).push([...argv]);
+    const fake = verifyFailure.current;
+    const callback: unknown = args[args.length - 1];
+    if (fake !== undefined && isArgv(argv) && argv.includes("--verify") && isCallback(callback)) {
+      queueMicrotask(() => {
+        callback(Object.assign(new Error(`Command failed: git (exit ${String(fake.code)})`), { code: fake.code }), "", fake.stderr);
+      });
+      return new actual.ChildProcess();
+    }
     return actual.execFile(...args);
   }) as typeof actual.execFile;
   return { ...actual, execFile };
@@ -119,6 +138,20 @@ describe.skipIf(!HAS_GIT)("gitClient", () => {
     expect(diff).toContain("+export const B = 3;");
     expect(diff).toContain("+export const C = 4;");
     expect(await git.diffSince(first, "sub/inner.txt")).toBe("");
+  });
+
+  it("showFile() reads exit 1 from rev-parse as no such commit, and any other failure as a CiteError", async () => {
+    // A path absent at a known commit is what sends showFile through `rev-parse --verify`.
+    try {
+      verifyFailure.current = { code: 128, stderr: "fatal: not a git repository: '/nowhere/.git'\n" };
+      const broken = gitClient(repo).showFile(first, "never/was.txt");
+      await expect(broken).rejects.toBeInstanceOf(CiteError);
+      await expect(broken).rejects.toThrow("git rev-parse failed: fatal: not a git repository: '/nowhere/.git'");
+      verifyFailure.current = { code: 1, stderr: "" };
+      expect(await gitClient(repo).showFile(first, "never/was.txt")).toEqual({ missing: "commit" });
+    } finally {
+      verifyFailure.current = undefined;
+    }
   });
 
   it("subjectsSince() and diffSince() reject an unknown commit as CiteError", async () => {

@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import {
+  assertInlineEntrySupported,
   detectEol,
   fencedBlockAfter,
   fencedBlocks,
@@ -164,6 +165,16 @@ describe("parseStatements", () => {
   it("has no anchor when nothing follows, or a fence follows", () => {
     expect(parseStatements("<!-- cite x -->\n", "markdown")[0]?.anchorLine).toBeUndefined();
     expect(parseStatements("<!-- cite x -->\n```ts\nconst a = 1;\n```\n", "markdown")[0]?.anchorLine).toBeUndefined();
+  });
+
+  it("anchors a list item and stops at the fence indented inside it", () => {
+    // A statement above a list item whose code block is indented: the anchor
+    // is the item's text, and the paragraph does not run into the fence.
+    const body = "<!-- cite x -->\n- Step one.\n  ```\n  Step two.\n  ```\n";
+    expect(parseStatements(body, "markdown")[0]?.anchorLine).toBe(2);
+    const paragraph = paragraphAfter(body, body.indexOf("- Step"));
+    expect(paragraph).toMatchObject({ line: 2 });
+    expect(paragraph === undefined ? undefined : body.slice(paragraph.start, paragraph.end)).toBe("- Step one.");
   });
 
   it("ignores comments that are not statements", () => {
@@ -387,5 +398,18 @@ describe("formatStatement", () => {
     expect(() => formatStatement("asciidoc", entry)).toThrow(CiteError);
     expect(() => formatStatement("rst", entry)).toThrow(/asciidoc|rst|id/);
     expect(() => formatStatement("nope", { kind: "ref", id: "x" })).toThrow(CiteError);
+  });
+});
+
+describe("assertInlineEntrySupported", () => {
+  it("passes the comment formats and refuses the rest with formatStatement's own message", () => {
+    for (const format of ["markdown", "mdx", "html", "xml"]) {
+      expect(() => { assertInlineEntrySupported(format); }).not.toThrow();
+    }
+    expect(() => { assertInlineEntrySupported("asciidoc"); }).toThrow(
+      'Format "asciidoc" carries inline references only; an inline entry needs a frontmatter entry and a reference statement.',
+    );
+    expect(() => { assertInlineEntrySupported("rst"); }).toThrow(CiteError);
+    expect(() => { assertInlineEntrySupported("nope"); }).toThrow('No inline statement syntax for format "nope".');
   });
 });
