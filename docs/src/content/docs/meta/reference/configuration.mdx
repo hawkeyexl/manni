@@ -20,7 +20,7 @@ the command line.
 | `schemas` | `(string \| {ref, source?, integrity?})[]` | none | Default [schema set](/manni/meta/reference/schema-resolution/) applied to every file that no higher-precedence rule matches. See [Schemas](#schemas). |
 | `overrides` | `Override[]` | none | Per-glob schema overrides. The first matching entry wins. See [Overrides](#overrides). |
 | `checks` | `Check[]` | none | Named cross-file rules, written as SQL over the corpus's metadata table, that `validate` runs after the per-file schemas, with rows reported as findings. See [Checks](#checks). |
-| `sidecars` | `Sidecar[]` | none | Private YAML manifests joined to public documents. Each supplies a fixed set of top-level keys for named documents. The values are merged into the document's metadata before schema resolution, so every command sees one object. See [Sidecars](#sidecars). |
+| `sidecars` | `Sidecar[]` | none | YAML manifests that keep frontmatter values outside the document. Each supplies a fixed set of top-level keys for named documents. The values are merged into the document's metadata before schema resolution, so every command sees one object. See [Sidecars](#sidecars). |
 | `baseline` | `string` | none | Path to a [validation baseline](/manni/meta/reference/cli/#baselines). Setting it turns on `--baseline` for every run; `--no-baseline` suppresses it for one. A bare `--write-baseline` records into this same file. |
 | `allowEmpty` | `boolean` | `false` | Treat an input set that resolves to zero files as success instead of an error (exit 2). Equivalent to `--allow-empty`. See [empty input sets](/manni/meta/reference/cli/#empty-input-sets). |
 | `respectGitignore` | `boolean` | `true` | Skip files `.gitignore` covers when expanding directories and globs. `--no-gitignore` overrides it for one run. See [`.gitignore`](/manni/meta/reference/cli/#gitignore). |
@@ -475,14 +475,23 @@ metadata before schema resolution, so `validate`, `get`, `query` and `fill` all
 see one object. The manifest is never a document itself. No extractor reads it,
 and it has no row in the `docs` table. It is a join table.
 
-The case it exists for is a public docs repository whose pages must carry
-metadata that is not public. Examples are the internal design note a guide was
-written from, the ticket that tracks it, and the team that owns it. The value
-belongs in a private repository. The contract on it belongs with the page, in the same schema set,
-checked by the same `validate` run, with the same exit code. A sidecar lets the
-private repository supply the value without the public page ever holding it.
-[Keep private metadata in a sidecar](/manni/meta/set-up/private-metadata-sidecar/)
-is the journey; this section is the contract.
+A sidecar is frontmatter values kept outside the document and merged at run
+time. The document never holds the value. The contract on it stays with the
+document, in the same schema set, checked by the same `validate` run, with the
+same exit code. Three uses share the one mechanism:
+
+- **Lean documents.** A page carries what it is about. The design note it was
+  written from, the ticket that tracks it, its owner and its review state live
+  in the manifest. A contributor fills in fewer fields, and a reader or an
+  agent that ingests the page sees none of the bookkeeping.
+- **Private values for public documents.** The manifest lives in a private
+  repository. Public CI never sees it, and the private run validates the
+  public pages against it.
+- **Across repositories.** One repository's pages take keys from a manifest
+  in another, by URL, public or private. See [Remote manifests](#remote-manifests).
+
+[Keep metadata in a sidecar](/manni/meta/set-up/sidecar-metadata/) is the
+journey, with a worked path for each; this section is the contract.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
@@ -492,20 +501,21 @@ is the journey; this section is the contract.
 | `join` | `string` | no | `path` (the default), or the top-level frontmatter field the manifest's keys are values of. Never `$schema`, and never a key the same entry owns. A rename cannot orphan a field-joined entry. See [Joining by a field](#joining-by-a-field). |
 
 ```yaml
-# private-repo/manni.config.yaml
+# manni.config.yaml
 meta:
-  paths: ["public/docs/**/*.md"]        # the public checkout, a submodule here
+  paths: ["docs/**/*.md"]
   sidecars:
     - file: ./docs-meta.yaml
       keys: [source, jira]
   overrides:
-    - files: "public/docs/**/*.md"
-      schemas: [./schemas/private.json]  # requires `source` and `jira`
+    - files: "docs/**/*.md"
+      schemas: [./schemas/page.json]  # requires `source` and `jira`
 ```
 
 `sidecars:` absent is exactly the behaviour every config had before the key
-existed. The public repository keeps its own plain config and never mentions a
-sidecar. That way no public run ever warns about a private file it cannot see.
+existed. A repository whose manifest lives elsewhere keeps its own plain config
+and never mentions a sidecar. That way none of its runs warns about a file it
+cannot see.
 
 #### The manifest
 
@@ -513,11 +523,11 @@ A manifest is a YAML mapping from document to a mapping of owned key to
 value. A document is named by path (the default) or by a field. By path:
 
 ```yaml
-# private-repo/docs-meta.yaml
-public/docs/guides/auth.md:
+# docs-meta.yaml
+docs/guides/auth.md:
   source: internal/auth-design.md
   jira: PLAT-412
-public/docs/guides/billing.md:
+docs/guides/billing.md:
   source: internal/billing.md
   jira: PLAT-388
 ```
@@ -548,9 +558,9 @@ a path. The page carries the key with it, so a rename never orphans an entry.
 `join` absent, or `join: path`, is the path behaviour above.
 
 ```yaml
-# private-repo/manni.config.yaml
+# manni.config.yaml
 meta:
-  paths: ["public/docs/**/*.md"]
+  paths: ["docs/**/*.md"]
   sidecars:
     - file: ./docs-meta.yaml
       keys: [source, jira]
@@ -558,7 +568,7 @@ meta:
 ```
 
 ```yaml
-# private-repo/docs-meta.yaml, keyed by each page's `id`
+# docs-meta.yaml, keyed by each page's `id`
 auth-guide:
   source: internal/auth-design.md
   jira: PLAT-412
@@ -573,10 +583,10 @@ extracted value, so it works for every format and for a remote manifest. The
 value is compared as a string, so `id: 42` matches the manifest key `42`. A
 value that is not a scalar matches nothing.
 
-**Require the field in the public schema.** A page without the field matches
+**Require the field in the schema.** A page without the field matches
 no entry, and nothing says so. What catches it is the ordinary `required`
 finding on the merged object, which only exists when a schema demands the
-private key. Require the join field too, and give it a `pattern`, so an id is
+manifest's key. Require the join field too, and give it a `pattern`, so an id is
 at least well-formed:
 
 ```json
@@ -642,12 +652,13 @@ manni: "docs/auth.md": "id" is the field sidecar docs-meta.yaml joins on, and th
 ```
 
 **The join key is contributor-controlled.** A pull request that sets
-`id: auth-guide` on a new page inherits every private assertion made about the
-real one. The public schema cannot tell the two apart. Three things bound
+`id: auth-guide` on a new page inherits every assertion the manifest makes
+about the real one. The schema cannot tell the two apart. Three things bound
 that. The duplicate finding fires on both pages, so the run goes red rather
 than green. The schema's `pattern` keeps an id well-formed. And the manifest
-is reviewed in the private repository. An entry that suddenly matches two
-pages shows up there as a duplicate finding, before it shows up anywhere else.
+is reviewed on its own, in the private repository when there is one. An entry
+that suddenly matches two pages shows up there as a duplicate finding, before
+it shows up anywhere else.
 A path join has none of this exposure, which is why it stays the default.
 
 #### Remote manifests
@@ -799,8 +810,9 @@ whole by the message:
    reporter prints it.
 6. **The first increment is read-only.** `fill`, and `query`'s `UPDATE`,
    `DELETE`, `INSERT` and rename, refuse a sidecar-owned key by name. A value
-   is written back to the place it was read from, and writing an owned key into
-   the public document would put a private value in a public file.
+   is written back to the place it was read from, and an owned key is read
+   from the manifest. When the manifest is private, writing the key into a
+   public document would also leak the value.
 
 #### What each command does
 
@@ -808,8 +820,8 @@ whole by the message:
 |---|---|
 | `validate` | Merges, validates the merged object, files a finding for every owned key a document carries, and runs the orphan check on a config-corpus run. |
 | `get` | Reads the merged value. `manni meta get jira docs/auth.md` prints `docs/auth.md: jira=PLAT-412` from the manifest as readily as it would from the document. It does not yet say which of the two supplied it. |
-| `query` | Every row holds the merged values, so `SELECT _path, jira FROM docs` and a [corpus check](#checks) see the private keys. A write that would touch an owned key, or change the join field of a matched document, refuses (exit 2) before any file is written. |
-| `fill` | A candidate property a sidecar owns is refused for the file, as a per-file error (exit 1) rather than a skip. A missing private key is therefore never quietly left missing. |
+| `query` | Every row holds the merged values, so `SELECT _path, jira FROM docs` and a [corpus check](#checks) see the manifest's keys. A write that would touch an owned key, or change the join field of a matched document, refuses (exit 2) before any file is written. |
+| `fill` | A candidate property a sidecar owns is refused for the file, as a per-file error (exit 1) rather than a skip. A missing owned key is therefore never quietly left missing. |
 
 The `validate` run over `test/fixtures/sidecars/`, whose `docs-meta.yaml`
 supplies `jira` for three of four pages and one page carries `jira:` itself:
@@ -935,8 +947,9 @@ manni: Sidecar manifest docs-meta.orphan.yaml:3 names id "gone-guide", which no 
 
 #### The recommended layout
 
-Put the public repository inside the private one as a git submodule, and run
-from the private checkout:
+This applies when the manifest is private and the pages are public. Put the
+public repository inside the private one as a git submodule, and run from the
+private checkout:
 
 ```
 private-repo/
@@ -958,14 +971,15 @@ goes to stderr. The submodule layout keeps every document URI under the private 
 so the log is complete. `.gitignore` filtering applies per repository root in
 both layouts, so the public repository's ignores still hold for its files.
 
-#### `additionalProperties: false` in the public schema
+#### `additionalProperties: false` in the page's schema
 
-A public schema that closes its object rejects every private key, because after
-the merge the private key is in the object. That is correct, and honest: a
-partition needs the public schema to leave room. The finding names the manifest
-line. With the fixture corpus pointed at a schema that is the same as
-`private.schema.json` except for `"additionalProperties": false` and no
-private keys, saved as `public.schema.json`, `docs/auth.md` reports:
+A schema that closes its object rejects every key the manifest supplies,
+because after the merge the key is in the object. That is correct, and honest.
+The page's schema has to leave room for what the manifest adds. The finding
+names the manifest line. With the fixture corpus pointed at a schema that is
+the same as `private.schema.json` except for `"additionalProperties": false`
+and none of the manifest's keys, saved as `public.schema.json`, `docs/auth.md`
+reports:
 
 ```
 ✗ docs/auth.md
@@ -975,12 +989,12 @@ private keys, saved as `public.schema.json`, `docs/auth.md` reports:
 
 Two fixes:
 
-- Leave `additionalProperties` unset in the public schema, which is the default
+- Leave `additionalProperties` unset in the page's schema, which is the default
   and what every built-in schema except the [Agent Skills
   pair](/manni/meta/reference/agent-skills-schemas/) does.
-- Or keep it closed, and have the private `overrides` entry restate the whole
-  contract in `private.json`, with the private keys declared. Then the public
-  schema is not in the private run's set at all.
+- Or keep it closed, and have the `overrides` entry beside the sidecar restate
+  the whole contract in its own schema, with the manifest's keys declared. Then
+  the closed schema is not in that run's set at all.
 
 ## Example
 

@@ -1,86 +1,77 @@
 ---
-title: Keep private metadata in a sidecar
-description: "Validate public docs against keys a sidecar manifest supplies, read from a private checkout or fetched by URL from another repository, public or private."
+title: Keep metadata in a sidecar
+description: "Keep frontmatter values outside the page and merge them at run time, from a manifest beside the config, in a private repository, or at a URL in another repository."
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
 
-Your docs repository is public. Some of the metadata its pages must carry is
-not. Examples are the internal design note a guide was written from, the ticket
-that tracks it, and the team that owns it. In the public frontmatter it leaks. In a private
-spreadsheet it is never validated, and the whole point of a `jira:` key is that
-CI refuses a page without one.
+A **sidecar** is a YAML manifest that supplies a fixed set of frontmatter keys
+for named documents. `manni meta` merges the values into each page's metadata
+before resolving its schema, so every command sees one object. The page never
+holds the value. The contract on it stays with the page, in the same schema
+set, checked by the same run, with the same exit code.
 
-A **sidecar** puts the value in a private repository and keeps the contract with
-the page. A YAML manifest supplies a fixed set of keys for named documents, and
-`manni meta` merges them into each page's metadata before resolving its schema.
-The public repository never holds the value, and the private CI run validates
-the public pages against a schema that requires it.
+Three things people use it for. Each has a worked path on this page, and all
+three share one manifest format and one set of rules.
 
-By the end you will have two repositories, one manifest, and a private CI job.
-The job fails when a public page has no ticket or a ticket is misspelled. It
-also fails when someone writes the ticket into the public page by hand.
-
-The manifest need not sit beside the config, and it need not be private.
-`file:` also takes an `https://` URL, fetched every run. One public repository
-can supply keys for another's pages that way, with no secret anywhere.
-[Fetch the manifest by URL](#fetch-the-manifest-by-url) covers both cases.
+1. **Lean documents.** A page carries what it is about, and nothing else. The
+   design note it was written from, the ticket that tracks it, its owner and
+   its review state live in the manifest. A contributor fills in fewer fields.
+   A reader, or an agent that ingests the page, sees none of the bookkeeping.
+   The run still sees all of it. Start at [A lean docset](#a-lean-docset).
+2. **Private values for public documents.** The manifest lives in a private
+   repository. Public CI never sees it, and the private run validates the
+   public pages against it. See
+   [Private values for public documents](#private-values-for-public-documents).
+3. **Across repositories.** One repository's pages take keys from a manifest
+   in another, by URL, public or private. See
+   [Across repositories](#across-repositories).
 
 <Aside type="note" title="What this page covers">
 The journey. The contract, meaning every rule, message and exit code, lives in
 the [configuration reference](/manni/meta/reference/configuration/#sidecars).
 </Aside>
 
-## The layout
+## A lean docset
 
-The private repository owns the config, the manifest, and the private schema.
-The public repository is a git submodule inside it:
+The manifest sits beside the config, in the same repository as the pages.
+Nothing here is secret. The point is what the page does not have to carry.
+
+The worked example is `test/fixtures/sidecars/`, the corpus this feature's
+tests run. Four pages, one manifest, one schema. The schema's file name is the
+fixture's, and plays no part:
 
 ```
-private-repo/
-  manni.config.yaml     # paths, sidecars, overrides
-  docs-meta.yaml        # the manifest
-  schemas/private.json  # requires the private keys
-  public/               # git submodule: the public docs repository
-    manni.config.yaml   # plain; never mentions a sidecar
-    docs/guides/auth.md
+manni.config.yaml
+docs-meta.yaml         # the manifest
+private.schema.json    # requires the keys the manifest supplies
+docs/auth.md
+docs/billing.md
+docs/new.md
+docs/ops.md
 ```
-
-Two sibling checkouts also run, and report worse. SARIF locates every finding
-relative to the nearest repository root and cannot represent a finding in
-another repository's file. From a sibling layout every document finding is
-therefore dropped from the log. The submodule keeps every document under the private
-root. The reasons are in the
-[reference](/manni/meta/reference/configuration/#the-recommended-layout).
-
-## Set it up
 
 <Steps>
 
-1. **Add the public repository as a submodule.** From the private repository:
-
-   ```sh
-   git submodule add https://github.com/your-org/public-docs public
-   ```
-
-2. **Write the manifest.** One entry per page, keyed by the page's path
+1. **Write the manifest.** One entry per page, keyed by the page's path
    relative to the config file. Paths are exact. There are no globs. A page
    that moves often can be keyed by a frontmatter field instead; see
    [Survive renames with a field join](#survive-renames-with-a-field-join).
 
    ```yaml title="docs-meta.yaml"
-   public/docs/guides/auth.md:
+   docs/auth.md:
      source: internal/auth-design.md
      jira: PLAT-412
-   public/docs/guides/billing.md:
+   docs/billing.md:
      source: internal/billing.md
      jira: PLAT-388
    ```
 
-3. **Write the private schema.** It requires the keys the manifest supplies.
-   Leave `additionalProperties` unset, or the public keys fail it.
+2. **Write the schema.** It requires the keys the manifest supplies, beside
+   the keys the page carries itself. Leave `additionalProperties` unset, or
+   the page's own keys fail it.
 
-   ```json title="schemas/private.json"
+   ```json title="private.schema.json"
    {
      "type": "object",
      "required": ["title", "jira"],
@@ -92,27 +83,23 @@ root. The reasons are in the
    }
    ```
 
-4. **Declare the sidecar in the private config.** `keys:` names what the
-   manifest owns. A document carrying one of those keys itself is a finding,
-   and an entry setting any other key is an error.
+3. **Declare the sidecar in the config.** `keys:` names what the manifest
+   owns. A page carrying one of those keys itself is a finding, and an entry
+   setting any other key is an error.
 
    ```yaml title="manni.config.yaml"
    meta:
-     paths: ["public/docs/**/*.md"]
+     paths: ["docs/**/*.md"]
      sidecars:
        - file: ./docs-meta.yaml
          keys: [source, jira]
      overrides:
-       - files: "public/docs/**/*.md"
-         schemas: [./schemas/private.json]
+       - files: "docs/**/*.md"
+         schemas: [./private.schema.json]
    ```
 
-   The public repository's own `manni.config.yaml` stays as it is. It never
-   mentions a sidecar, so no public run warns about a private file it cannot
-   see.
-
-5. **Run it from the private checkout.** A bare `manni meta validate` uses the
-   config's `paths:`, which is what makes the orphan check run.
+4. **Run it.** A bare `manni meta validate` uses the config's `paths:`, which
+   is what makes the orphan check run.
 
    ```sh
    npx -y @hawkeyexl/manni meta validate
@@ -120,11 +107,26 @@ root. The reasons are in the
 
 </Steps>
 
-## What a failure looks like
+The page itself carries its title and nothing else:
 
-`test/fixtures/sidecars/` is the corpus this feature's tests run. One page
-has a malformed ticket in the manifest, one has no entry, and one carries
-`jira:` in its own frontmatter:
+```md title="docs/auth.md"
+---
+title: Auth
+---
+
+# Auth
+```
+
+The run sees the whole object. From the fixture directory,
+`manni meta get jira docs/auth.md` prints `docs/auth.md: jira=PLAT-412`, and a
+[corpus check](/manni/meta/ci/query-gates/) can phrase a rule over `jira` like
+any other key.
+
+### What a failure looks like
+
+The fixture's manifest is not the clean one above. One page has a malformed
+ticket in the manifest, one has no entry, and one carries `jira:` in its own
+frontmatter:
 
 ```
 ✓ docs/auth.md
@@ -154,7 +156,94 @@ $ manni meta validate -c manni.orphan.config.yaml
 manni: Sidecar manifest docs-meta.orphan.yaml:3 names "docs/gone.md", which this run did not load. Fix the entry, or remove it.
 ```
 
-## The two workflows
+## Private values for public documents
+
+The same manifest, moved. Your docs repository is public. Some of the metadata
+its pages must carry is not, and in the public frontmatter it leaks. In a
+private spreadsheet it is never validated, and the whole point of a `jira:`
+key is that CI refuses a page without one.
+
+The manifest goes in a private repository, with the config and the schema.
+The public repository never holds the value, and the private CI run validates
+the public pages against a schema that requires it. By the end you will have
+two repositories, one manifest, and a private CI job. The job fails when a
+public page has no ticket or a ticket is misspelled. It also fails when someone
+writes the ticket into the public page by hand.
+
+### The layout
+
+The private repository owns the config, the manifest, and the private schema.
+The public repository is a git submodule inside it:
+
+```
+private-repo/
+  manni.config.yaml     # paths, sidecars, overrides
+  docs-meta.yaml        # the manifest
+  schemas/private.json  # requires the private keys
+  public/               # git submodule: the public docs repository
+    manni.config.yaml   # plain; never mentions a sidecar
+    docs/guides/auth.md
+```
+
+Two sibling checkouts also run, and report worse. SARIF locates every finding
+relative to the nearest repository root and cannot represent a finding in
+another repository's file. From a sibling layout every document finding is
+therefore dropped from the log. The submodule keeps every document under the
+private root. The reasons are in the
+[reference](/manni/meta/reference/configuration/#the-recommended-layout).
+
+### Set it up
+
+<Steps>
+
+1. **Add the public repository as a submodule.** From the private repository:
+
+   ```sh
+   git submodule add https://github.com/your-org/public-docs public
+   ```
+
+2. **Write the manifest.** The entries are the ones from the lean docset,
+   keyed through the submodule:
+
+   ```yaml title="docs-meta.yaml"
+   public/docs/guides/auth.md:
+     source: internal/auth-design.md
+     jira: PLAT-412
+   public/docs/guides/billing.md:
+     source: internal/billing.md
+     jira: PLAT-388
+   ```
+
+3. **Write the private schema.** It is the lean docset's schema, kept where
+   the public repository cannot see it. Leave `additionalProperties` unset,
+   or the public keys fail it.
+
+4. **Declare the sidecar in the private config.**
+
+   ```yaml title="manni.config.yaml"
+   meta:
+     paths: ["public/docs/**/*.md"]
+     sidecars:
+       - file: ./docs-meta.yaml
+         keys: [source, jira]
+     overrides:
+       - files: "public/docs/**/*.md"
+         schemas: [./schemas/private.json]
+   ```
+
+   The public repository's own `manni.config.yaml` stays as it is. It never
+   mentions a sidecar, so no public run warns about a private file it cannot
+   see.
+
+5. **Run it from the private checkout.**
+
+   ```sh
+   npx -y @hawkeyexl/manni meta validate
+   ```
+
+</Steps>
+
+### The two workflows
 
 The public repository keeps its ordinary gate. Nothing about sidecars reaches
 it:
@@ -193,14 +282,14 @@ The Action passes no paths, so `paths:` comes from the private config and the
 orphan check runs. Bump the submodule pointer when the public docs change, or
 the private run validates the pages as they were.
 
-## Fetch the manifest by URL
+## Across repositories
 
 `file:` accepts an `https://` URL as well as a path. The manifest is fetched at
 the start of every run, never cached, and merged exactly as a local one is.
-Use it when the run cannot check the manifest out. Two cases are common, and
-the public one comes first because it needs nothing else.
+Use it when the run cannot check the manifest out. The public form comes
+first because it needs nothing else.
 
-### Across public repositories
+### A public catalog
 
 Nothing here is private. One public repository keeps a catalog, say which team
 owns each page, and another public repository's pages are judged by it. The
@@ -223,10 +312,11 @@ names the URL and the manifest line, so the catalog is what to edit.
 
 ### A private manifest
 
-The private manifest lives in a repository the job does not check out, such as
-a platform team's catalog that serves several docsets. The run still starts
-from a private checkout, with the public pages as its submodule. Only the
-manifest moves. Add `tokenEnv`, the name of an environment variable holding a
+The manifest lives in a private repository the job does not check out, such as
+a platform team's catalog that serves several docsets. This is the
+[private values](#private-values-for-public-documents) case with the manifest
+moved. The run still starts from a private checkout, with the public pages as
+its submodule. Add `tokenEnv`, the name of an environment variable holding a
 bearer token:
 
 ```yaml title="private-repo/manni.config.yaml"
@@ -273,11 +363,12 @@ GitLab  https://gitlab.com/api/v4/projects/ID/repository/files/PATH/raw?ref=REF
 | GitHub | A fine-grained personal access token with read access to the repository's contents. |
 | GitLab | A project or personal access token with the `read_repository` scope. `PATH` is URL-encoded, so `docs/docs-meta.yaml` is written `docs%2Fdocs-meta.yaml`. |
 
-<Aside type="caution" title="Fetch from the private side">
+<Aside type="caution" title="Fetch a private manifest from the private side">
 A public repository's CI logs are public. A private manifest fetched into a
-public run puts its values in that log. Use the URL form from the private side,
-when the private run cannot check the manifest out, or across public
-repositories. Never use it to feed a public run with private values.
+public run puts its values in that log. When the values are private, use the
+URL form from the private side, when the private run cannot check the manifest
+out. Never use it to feed a public run with private values. A public catalog
+has nothing to leak.
 </Aside>
 
 A run that cannot reach the manifest stops before any page is judged, and says
@@ -298,12 +389,12 @@ Every rule, including the timeout, the body cap, the redirect behaviour and
 
 ## Survive renames with a field join
 
-A path entry is orphaned the moment the public page moves, and the next
-corpus run is exit 2 until someone edits the manifest. That is the right
-default for a docset that rarely moves. It is the wrong shape for one that
-moves pages often. It is also wrong for a manifest kept by a team that does
-not watch the public repository's renames. The path is the one thing about a
-page the manifest author does not control.
+A path entry is orphaned the moment the page moves, and the next corpus run
+is exit 2 until someone edits the manifest. That is the right default for a
+docset that rarely moves. It is the wrong shape for one that moves pages
+often. It is also wrong for a manifest kept by a team that does not watch the
+docs repository's renames. The path is the one thing about a page the manifest
+author does not control.
 
 `join:` keys the manifest by a top-level frontmatter field instead. The page
 carries the key with it, so a rename never orphans an entry. Any field works.
@@ -316,14 +407,14 @@ mechanism.
 
    ```yaml title="manni.config.yaml"
    meta:
-     paths: ["public/docs/**/*.md"]
+     paths: ["docs/**/*.md"]
      sidecars:
        - file: ./docs-meta.yaml
          keys: [source, jira]
          join: id
      overrides:
-       - files: "public/docs/**/*.md"
-         schemas: [./schemas/private.json]
+       - files: "docs/**/*.md"
+         schemas: [./private.schema.json]
    ```
 
 2. **Key the manifest by that field's values.** The value is compared as a
@@ -340,10 +431,10 @@ mechanism.
 
 3. **Require the field in the schema, and give it a shape.** A page without
    the field matches no entry, and nothing says so. What catches it is the
-   `required` finding for the private key, which only fires when the schema
+   `required` finding for the manifest's key, which only fires when the schema
    demands both. A `pattern` keeps an id well-formed.
 
-   ```json title="schemas/private.json"
+   ```json title="private.schema.json"
    {
      "type": "object",
      "required": ["title", "id", "jira"],
@@ -379,12 +470,13 @@ manni: Sidecar manifest docs-meta.orphan.yaml:3 names id "gone-guide", which no 
 ```
 
 The join key is contributor-controlled, and that is the trade. A pull request
-that sets `id: auth-guide` on a new page inherits every private assertion made
-about the real one. Three things bound that. The duplicate finding turns the
-run red rather than green. The schema's `pattern` keeps an id well-formed.
-And the manifest is reviewed in the private repository, where an entry that
-suddenly matches two pages shows up as a duplicate first. A path join has
-none of this exposure, which is why it stays the default.
+that sets `id: auth-guide` on a new page inherits every assertion the manifest
+makes about the real one. Three things bound that. The duplicate finding turns
+the run red rather than green. The schema's `pattern` keeps an id well-formed.
+And the manifest is reviewed on its own, in the private repository when there
+is one. An entry that suddenly matches two pages shows up there as a duplicate
+first. A path join has none of this exposure, which is why it stays the
+default.
 
 `query` follows the same line. Renaming a field-joined page is allowed, which
 is the point. Changing its `id` is a write to the join, and is refused:
@@ -397,9 +489,7 @@ manni: "docs/auth.md": "id" is the field sidecar docs-meta.yaml joins on, and th
 ## Editing the values
 
 The first increment is read-only. A key the manifest owns is readable by every
-command and writable by none:
-
-Again over the fixture corpus:
+command and writable by none. Again over the fixture corpus:
 
 ```
 $ manni meta get jira docs/auth.md
@@ -410,8 +500,8 @@ manni: "docs/auth.md": "jira" is owned by sidecar docs-meta.yaml; edit the sidec
 ```
 
 `fill` refuses a page whose missing key the manifest owns, for the same reason.
-Edit `docs-meta.yaml` by hand. A corpus check in the private config can still
-see every private key. So "every guide has a ticket in the open state" is a
+Edit `docs-meta.yaml` by hand. A corpus check can still see every key the
+manifest supplies. So "every guide has a ticket in the open state" is a
 [SQL rule](/manni/meta/ci/query-gates/) like any other.
 
 ## Where to go next
@@ -425,7 +515,7 @@ see every private key. So "every guide has a ticket in the open state" is a
   <LinkCard
     title="Gate on rules that span files"
     href="/manni/meta/ci/query-gates/"
-    description="Phrase a rule over the private keys as SQL, and wire it in beside the gate."
+    description="Phrase a rule over the manifest's keys as SQL, and wire it in beside the gate."
   />
 </CardGrid>
 
@@ -433,7 +523,7 @@ see every private key. So "every guide has a ticket in the open state" is a
     against the local build, exposed as `manni meta` / `npx @hawkeyexl/manni meta` via `npm link`
     (see .github/workflows/docs-as-tests.yml), over committed fixtures.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
-{/* test {"testId":"set-up-private-metadata-sidecar","description":"Sidecar journey, mapped to the local CLI build over test/fixtures/sidecars."} */}
+{/* test {"testId":"set-up-sidecar-metadata","description":"Sidecar journey, mapped to the local CLI build over test/fixtures/sidecars."} */}
 {/* step {"description":"A config-corpus run over the sidecar fixture merges the manifest, reports the manifest line for a bad value, and files a collision finding (exit 1).","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/sidecars/manni.config.yaml","exitCodes":[1],"stdio":"docs-meta.yaml:6"}} */}
 {/* step {"description":"A manifest entry naming a page the run did not load is exit 2 on a config-corpus run.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/sidecars/manni.orphan.config.yaml","exitCodes":[2],"stdio":"which this run did not load"}} */}
 {/* step {"description":"A write to a sidecar-owned key refuses by name before any file is touched (exit 2).","runShell":{"command":"npx @hawkeyexl/manni meta query -c test/fixtures/sidecars/manni.config.yaml --dry-run \"UPDATE docs SET jira = 'PLAT-1' WHERE _path = 'docs/auth.md'\"","exitCodes":[2],"stdio":"is owned by sidecar"}} */}
