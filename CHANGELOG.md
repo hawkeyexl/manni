@@ -4,6 +4,27 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [0.3.0](https://github.com/hawkeyexl/manni/compare/v0.2.0...v0.3.0) (2026-09-08)
+
+
+### Features
+
+* **meta:** sidecar manifests keep frontmatter values outside the document ([ec786d4](https://github.com/hawkeyexl/manni/commit/ec786d4cb125796696221d6684bc4e0277b69c92))
+
+# [0.2.0](https://github.com/hawkeyexl/manni/compare/v0.1.0...v0.2.0) (2026-09-07)
+
+
+### Features
+
+* **a11y:** add manni a11y check, an axe-core crawl of a site ([#15](https://github.com/hawkeyexl/manni/issues/15)) ([6dd17aa](https://github.com/hawkeyexl/manni/commit/6dd17aa98c604205ff06b4f5112ff28d30711bbe))
+
+# [0.1.0](https://github.com/hawkeyexl/manni/compare/v0.0.0...v0.1.0) (2026-09-06)
+
+
+### Features
+
+* publish as @hawkeyexl/manni, starting the 0.x line ([3ad7c6d](https://github.com/hawkeyexl/manni/commit/3ad7c6d034e3ac67fd1546ad1d17c322b7544fc1))
+
 ## [4.13.1](https://github.com/hawkeyexl/docmeta/compare/v4.13.0...v4.13.1) (2026-09-04)
 
 

@@ -7,6 +7,7 @@
  * input formats never touch validation, resolution, or reporting.
  */
 import { ToolError } from "../shared/errors.js";
+import type { Severity } from "../shared/severity.js";
 
 /** Result of pulling a metadata block out of a single document. */
 export interface ExtractedMetadata {
@@ -175,15 +176,26 @@ export interface FieldError {
   /** 1-based column, when known. */
   col?: number;
   /**
-   * How much the finding weighs.
+   * The file `line` and `col` refer to, when it is not the result's own file.
+   *
+   * Set only for a value a sidecar manifest supplied (proposal 0037), spelled
+   * the way the run spells file labels. Absent means the document itself,
+   * which is every violation that existed before sidecars. The finding's
+   * subject file stays `ValidationResult.file`: that is its baseline identity
+   * and its SARIF location, and this names where the *value* was written.
+   */
+  file?: string;
+  /**
+   * How much the finding weighs, on the family scale (`src/shared/severity.ts`).
    *
    * The invariant, stated here and nowhere else: a result's `ok` is true iff
    * no entry of its `errors` has severity `error`, and an **absent** severity
    * means `error`. So every producer that never sets this field is unchanged,
-   * and a `warning` is a finding that is reported, baselined and fingerprinted
-   * like any other but never fails a file, and so never moves the exit code.
-   * Nothing in meta's own validation sets `warning` today; a sibling tool's
-   * findings ride these types and reporters, and some of theirs are advisory.
+   * and a `warning` or `notice` is a finding that is reported, baselined and
+   * fingerprinted like any other but never fails a file, and so never moves
+   * the exit code. Nothing in meta's own validation sets one today; a sibling
+   * tool's findings ride these types and reporters, and some of theirs are
+   * advisory.
    *
    * Deliberately not part of the fingerprint: a rule that is downgraded from
    * error to warning is the same finding, and a baseline that forgot it on
@@ -192,15 +204,16 @@ export interface FieldError {
    * `isErrorSeverity` is the one reading of this field; derive `ok` through
    * it rather than restating the absent-means-error rule.
    */
-  severity?: "error" | "warning";
+  severity?: Severity;
 }
 
 /**
  * Whether a finding counts against `ok`: true for `error` and for an absent
- * severity, false for `warning`. See `FieldError.severity` for the invariant.
+ * severity, false for `warning` and `notice`. See `FieldError.severity` for
+ * the invariant.
  */
 export function isErrorSeverity(e: Pick<FieldError, "severity">): boolean {
-  return e.severity !== "warning";
+  return e.severity === undefined || e.severity === "error";
 }
 
 /** Validation outcome for a single file. */

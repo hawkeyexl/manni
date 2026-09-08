@@ -50,3 +50,28 @@ cite:
   # ambient behaviour for the test suite the way a setting would be.
   paths:
     - "docs/src/content/docs/**/*.{md,mdx}"
+
+# The accessibility tool reads `a11y:` and nothing else. Same narrowness as
+# above, for the same reason: this file is ambient for every run beneath the
+# repo, the test suite included. The a11y CLI tests therefore run from a temp
+# directory outside the repo, where discovery finds nothing, so the keys here
+# never reach them. Every key is a default a flag on the command line beats.
+#
+# The URL is the local preview of the docs site, not the published one,
+# because the point of the check is the build a pull request produces, before
+# it deploys. To run it by hand: `cd docs && npm run build && npx astro
+# preview --host 127.0.0.1 --port 4321`, then `manni a11y check` from anywhere
+# in the repo. The Docs workflow's `a11y` job runs exactly that. To check the
+# live site instead, name it: `manni a11y check https://hawkeyexl.github.io/manni/`.
+a11y:
+  urls:
+    - http://127.0.0.1:4321/manni/
+  # The project's floor: findings below it are dropped before the score and
+  # the exit code are decided. The values are the family scale every manni
+  # tool shares, `notice | warning | error`; axe's four impact levels are
+  # mapped onto it, `critical` and `serious` both landing as `error`.
+  # `--severity <level>` on the command line wins. The built-in default is
+  # `notice`, everything axe reports, and the floor sits there now that the
+  # site carries no finding at any level. It is a ratchet: lower it as
+  # findings are fixed, never raise it.
+  severity: notice

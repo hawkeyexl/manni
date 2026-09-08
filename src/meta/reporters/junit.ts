@@ -143,7 +143,12 @@ export function renderJunit(
     }
     lines.push(`${open}>`);
     for (const e of failing) {
-      const where = e.line != null ? ` (line ${e.line})` : "";
+      const where =
+        e.file != null
+          ? ` (${e.file}${e.line != null ? `:${e.line}` : ""})`
+          : e.line != null
+            ? ` (line ${e.line})`
+            : "";
       lines.push(
         `      <failure${attr("type", ruleIdFor(e, opts.frame))}${attr(
           "message",

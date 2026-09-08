@@ -1,3 +1,10 @@
+/**
+ * Terminal color, decided once for every tool under the umbrella.
+ *
+ * clig.dev: color only on a TTY, never under `NO_COLOR` or `--no-color`. Each
+ * tool's reporters take the decision as a boolean and build a palette from it,
+ * so no reporter ever consults the environment on its own.
+ */
 import pc from "picocolors";
 
 export type Colors = ReturnType<typeof pc.createColors>;

@@ -11,7 +11,7 @@ const { parse } = req("yaml");
 // one-line edit here rather than a literal buried mid-expression.
 const V = "1.0.0-proposal.1";
 const schema = JSON.parse(
-  fs.readFileSync(`docs/proposals/0035/schemas/citations/${V}.json`, "utf8"),
+  fs.readFileSync(`docs/proposals/0040/schemas/citations/${V}.json`, "utf8"),
 );
 const ajv = new Ajv({ allErrors: true, allowUnionTypes: true });
 const validate = ajv.compile(schema);

@@ -87,10 +87,18 @@ manni meta [paths...] [options]
 | `--no-baseline` | n/a | off | Ignore a baseline supplied by config `baseline:` for this run. `--baseline` and `--no-baseline` set the same option, so the one written later on the command line wins. |
 | `--no-checks` | n/a | off | Skip the [corpus checks](/manni/meta/reference/configuration/#checks) supplied by config `checks:` for this run. Checks already run only when the resolved file set is the config-resolved corpus. A run scoped by positional paths, stdin, `--as`, `--ext`, `--exclude`, or `--no-gitignore` skips them with a stderr notice. This flag opts out explicitly. |
 
-<Aside type="note">
+<Aside type="note" title="Repeatable flags">
 Repeatable flags (`-s/--schema`, `--exclude`) accumulate; pass the flag once per
 value, for example `-s a -s b`.
 </Aside>
+
+With [`sidecars:`](/manni/meta/reference/configuration/#sidecars) in config,
+`validate` merges each manifest's values into the document before resolving its
+schema set. It files a `sidecar:owned/sidecar` finding for every owned key a
+document carries itself. On a config-corpus run it refuses (exit 2) a manifest
+entry naming a document the run did not load. That last check runs on the same
+invariant the corpus checks use and has no flag of its own. A positional path
+is what turns it off.
 
 ### Baselines
 
@@ -169,7 +177,7 @@ Baseline written to .manni-baseline.json
   14 findings recorded (+2 new, -12 no longer occur)
 ```
 
-<Aside type="caution">
+<Aside type="caution" title="A re-record forgives what it did not reach">
 `--write-baseline` replaces the file with what *this run* saw, so a narrowed
 glob or a mistyped `--exclude` forgives every finding it did not reach. The
 `-12 no longer occur` count is the only thing that makes that visible; a
@@ -457,6 +465,12 @@ bridge](/manni/meta/reference/query/#the-type-bridge) that turns formats and
 `CHECK` lists into schema constraints, and
 [`-s/--schema`](/manni/meta/reference/query/#naming-the-ddl-target-directly).
 
+A key a [sidecar manifest](/manni/meta/reference/configuration/#sidecars) owns
+is readable in every row and writable in none. `UPDATE`, `DELETE`, `INSERT` and
+a rename that would touch it refuse by name (exit 2), before any file is
+written: `"docs/auth.md": "jira" is owned by sidecar docs-meta.yaml; edit the
+sidecar file instead.`
+
 ### Rows as findings
 
 With `--check` and `-f github|sarif|junit`, result rows render as findings. That is one `::error` annotation, SARIF result, or JUnit `<failure>` per row, through
@@ -529,7 +543,7 @@ you already maintain is what determines which properties get proposed.
 manni meta fill [paths...] [options]
 ```
 
-<Aside type="caution">
+<Aside type="caution" title="fill writes by default">
 `fill` **writes to your files by default**. Pass `--dry-run` to preview
 proposals without touching anything, and run it on a clean working tree so the
 changes are easy to review.
@@ -597,7 +611,11 @@ used, in both output formats.
 A schema property is a candidate when it is **missing** from the file's
 metadata, or **present but invalid**. A property that is already present and
 valid is never touched, and neither is `$schema`, which is schema wiring, not
-metadata.
+metadata. A candidate a [sidecar manifest](/manni/meta/reference/configuration/#sidecars)
+owns is refused for the whole file, as a per-file error rather than a skip.
+The error reads `"source" is owned by sidecar docs-meta.yaml; manni meta fill
+cannot write a sidecar key. Add it to the manifest instead.` The manifest is the
+only place the value may go, and `fill` does not edit manifests.
 
 ### The confidence gate
 
@@ -880,7 +898,7 @@ which is the failure vendoring exists to remove.
   exits 2, and so does an input set resolving to zero files. `--allow-empty`
   suppresses both. See [empty input sets](#empty-input-sets).
 
-<Aside type="caution">
+<Aside type="caution" title="--as applies to every input">
 `--as` forces one extractor for every input in the run. Use it for stdin, or to
 read a file whose extension manni meta would not otherwise recognize.
 </Aside>
@@ -919,7 +937,7 @@ nothing is expected. That covers a shared CI template running across repos that
 may have no docs yet. It also covers a pre-commit hook whose file list can be
 empty.
 
-<Aside type="note">
+<Aside type="note" title="A misspelled subcommand parses as a path">
 Because `validate` is the default command, a misspelled subcommand parses as a
 path. `manni meta valdiate docs/` exits 2 with
 `Unknown command "valdiate". Did you mean "validate"?`. The suggestion only
@@ -979,7 +997,7 @@ Four things bound it:
 - **`--no-gitignore` turns it off** for one run, and `respectGitignore: false`
   for a repository.
 
-<Aside type="caution">
+<Aside type="caution" title="Ignoring makes the gate quieter">
 This makes the gate **quieter**. A repo that was validating generated files will
 check fewer of them, and a run that was red can turn green. The skipped count is
 what makes that auditable. A docs tree that is ignored in its entirety fails

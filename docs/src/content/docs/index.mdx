@@ -17,9 +17,12 @@ hero:
 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-`manni` is one bin with one subcommand per tool. Each tool has its own
-commands, its own section of this site, and its own key in one shared config
-file, `manni.config.yaml`. Install the package once and every tool is there.
+Every command reads `manni <domain> <subcommand> [<subcommand>] [<arguments>]`,
+and the domain is the tool. `manni meta validate docs/` runs the metadata
+tool's `validate` against `docs/`, and `manni meta schemas vendor` reaches a
+verb one level down. Each tool has its own commands, its own section of this
+site, and its own key in one shared config file, `manni.config.yaml`. Install
+the package once and every tool is there.
 
 ```sh
 npm install -D @hawkeyexl/manni
@@ -33,6 +36,11 @@ npx @hawkeyexl/manni meta validate docs/
     title="meta"
     href="/manni/meta/"
     description="Validate the presence and format of document metadata against JSON Schema, built for CI. Read, query and fill it too. Formerly published as docmeta."
+  />
+  <LinkCard
+    title="a11y"
+    href="/manni/a11y/"
+    description="Crawl a site and check every page for accessibility violations with axe-core, built for CI."
   />
   <LinkCard
     title="cite"

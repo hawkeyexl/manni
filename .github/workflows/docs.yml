@@ -94,6 +94,85 @@ jobs:
         with:
           path: docs/dist
 
+  # Dogfood the second domain: build the manni CLI from this repo, build the
+  # docs site, serve it locally, and run `manni a11y check` over it. Same shape
+  # as `validate-docs`, one level up: the tool under test checks the site the
+  # repo publishes. It runs on pull requests so a page that ships a new finding
+  # is annotated before merge, and on main so the live site keeps a record.
+  # The check steps name no URL: it comes from the `a11y:` key of the repo's
+  # own manni.config.yaml, so the job exercises config discovery the way
+  # `validate-docs` does for the metadata tool.
+  #
+  # Nothing downstream depends on it. The deploy is gated on frontmatter and on
+  # the site building, not on this job, so a rule that only a Starlight change
+  # can satisfy does not hold the site hostage.
+  a11y:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            docs/package-lock.json
+      - run: npm ci
+      # The CLI under test, from this checkout rather than npm.
+      - run: npm run build
+      - name: Install docs dependencies
+        run: npm ci
+        working-directory: docs
+      - name: Build docs site
+        run: npm run build
+        working-directory: docs
+
+      # `astro preview` serves docs/dist under the site's `base`, so the
+      # pages answer at /manni/ the way they do on Pages. It stays up for the
+      # rest of the job; the runner tears it down with the job.
+      - name: Serve the built site
+        run: npx astro preview --host 127.0.0.1 --port 4321 > ../preview.log 2>&1 &
+        working-directory: docs
+      - name: Wait for the preview to answer
+        run: |
+          tries=0
+          until curl -fsS http://127.0.0.1:4321/manni/ > /dev/null; do
+            tries=$((tries + 1))
+            [ "$tries" -lt 60 ] || { echo "preview did not answer" >&2; cat preview.log >&2; exit 1; }
+            sleep 1
+          done
+
+      # Two steps, one crawl each, because the report and the gate want
+      # different floors. The first runs at `notice`, the bottom of the family
+      # scale, so every finding the site carries lands as an annotation at
+      # GitHub's matching level: `error`, `warning` or `notice`, one-to-one,
+      # since the scale was chosen to match GitHub's. The step is allowed to
+      # fail, because any finding at all exits 1 and the verdict is the next
+      # step's.
+      #
+      # On localhost the built sitemap lists the production URLs, which are on
+      # another host, so the crawl drops them and reaches every page through
+      # the sidebar links instead. `--progress` names each page in the log,
+      # which has no terminal to draw the status line on.
+      - name: Report accessibility findings
+        run: node dist/cli.js a11y check --severity notice -f github --progress
+        continue-on-error: true
+
+      # The gate names no floor, so it inherits `severity:` from the repo's
+      # manni.config.yaml, and fails on any finding at that level. The floor
+      # is `notice` now, so the gate and the report see the same findings.
+      # Two rules used to keep it higher, and both are fixed in the site.
+      # `scrollable-region-focusable`, axe's `serious` and so an `error`, by
+      # the Expressive Code plugin in docs/astro.config.mjs that gives every
+      # code block a tabindex. `landmark-unique`, axe's `moderate` and so a
+      # `warning`, by giving every `<Aside>` on a page its own `title`:
+      # Starlight uses the title as the aside's `aria-label`, and two untitled
+      # asides of one type on a page share the default label. Proposal 0035
+      # defers a baseline like 0001's; until one exists, the config's floor is
+      # the ratchet. Lower it as findings are fixed, never raise it.
+      - name: Gate on findings at the configured floor
+        run: node dist/cli.js a11y check --progress -q
+
   # Deploy the uploaded artifact to GitHub Pages. Never from a pull request —
   # a PR build is a check, not a release, and `pages: write` on PR-triggered
   # runs is the shape that lets a fork publish over the live site.

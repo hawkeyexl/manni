@@ -74,6 +74,18 @@ describe("manni (built bin)", () => {
     expect(bare.stderr).toMatch(/^\s+check\b/m);
   });
 
+  it("lists a11y as a subcommand", () => {
+    const r = run(manni, ["--help"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/^\s+a11y\b/m);
+  });
+
+  it("shows the full path in a11y's usage line", () => {
+    const r = run(manni, ["a11y", "check", "--help"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/^Usage: manni a11y check /m);
+  });
+
   it("with no command is a usage error that points at the subcommands", () => {
     const r = run(manni, []);
     expect(r.status).toBe(2);

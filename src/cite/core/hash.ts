@@ -1,5 +1,5 @@
 /**
- * The hashing rule, stated once (proposal 0035 § The vocabulary):
+ * The hashing rule, stated once (proposal 0040 § The vocabulary):
  * UTF-8; strip one leading BOM; CRLF → LF; split on LF; drop the empty element
  * a trailing LF leaves; take lines L1..L2 inclusive (1-based); join with LF; no
  * trailing LF; trailing whitespace kept. Plain: sha256(text). Keyed (obfuscated

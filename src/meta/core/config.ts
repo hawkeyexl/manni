@@ -16,8 +16,9 @@ import {
   type ConfigFileOptions,
 } from "../../shared/config-file.js";
 import { findGitRoot } from "../../shared/git-root.js";
-import { rebaseConfigSchemaRefs } from "./resolve-schema.js";
+import { FILE_SCHEMA_KEY, rebaseConfigSchemaRefs } from "./resolve-schema.js";
 import { classifyRef } from "./schema-registry.js";
+import { sidecarUrlProblem } from "./sidecar-fetch.js";
 import { INTEGRITY_SHAPE, isIntegrity } from "./integrity.js";
 import { parseElementPath } from "../extractors/element-key.js";
 
@@ -170,6 +171,44 @@ export interface CheckConfig {
 const CHECK_KEYS = ["name", "query"] as const;
 
 /**
+ * One sidecar manifest (proposal 0037): a YAML file that supplies a fixed set
+ * of top-level keys for named documents, merged into each document's metadata
+ * before schema resolution. The private half of a public docset.
+ */
+export interface SidecarConfig {
+  /**
+   * Manifest path, relative to the config file's directory, or an `https://`
+   * URL (proposal 0038) fetched at the start of every run. A URL serves a
+   * manifest in another public repository as readily as a private one; only
+   * the private one needs `tokenEnv`.
+   */
+  file: string;
+  /**
+   * The top-level keys this manifest owns. Ownership is disjoint across
+   * entries, so two manifests can never disagree about one key, and a
+   * document carrying an owned key is a finding rather than a tiebreak.
+   */
+  keys: string[];
+  /**
+   * Name of an environment variable whose value is sent as a bearer token
+   * when `file` is a URL. The token never appears in the config, a message,
+   * or a report. Refused on a path `file`, where it would do nothing.
+   */
+  tokenEnv?: string;
+  /**
+   * `path` (the default), or the top-level frontmatter field whose value the
+   * manifest's keys name (proposal 0039). A field join survives a rename;
+   * what it cannot survive is two documents sharing one value, which is a
+   * finding on both. Never `$schema`, and never a key this entry owns: the
+   * value that selects an entry cannot come from the entry.
+   */
+  join?: string;
+}
+
+/** The keys one `sidecars:` entry may carry. */
+const SIDECAR_KEYS = ["file", "keys", "tokenEnv", "join"] as const;
+
+/**
  * The grammar a check's name must satisfy: one built-in id *segment*.
  *
  * Not taste. The finding's `schema` field carries `check:<name>` and the
@@ -217,6 +256,7 @@ const CONFIG_KEYS = [
   "schemas",
   "overrides",
   "checks",
+  "sidecars",
   "baseline",
   "allowEmpty",
   "respectGitignore",
@@ -301,6 +341,11 @@ export interface DocmetaConfig {
    * run's file set is the config-resolved corpus. See `CheckConfig`.
    */
   checks?: CheckConfig[];
+  /**
+   * Sidecar manifests whose keys are merged into the documents they name.
+   * See `SidecarConfig`.
+   */
+  sidecars?: SidecarConfig[];
   /**
    * Element paths to lift in addition to each format's convention. See
    * `parseElementPath` for the syntax.
@@ -550,6 +595,109 @@ function withSection(message: string, source: string, section: string): string {
   return message;
 }
 
+/**
+ * Parse `sidecars:` (proposal 0037).
+ *
+ * Every refusal here is a shape that would otherwise read as configured and
+ * do nothing, or do something nobody can see: an entry with no keys owns
+ * nothing and merges nothing; one key under two entries would need a
+ * tiebreak, and 0020's rule is that a tiebreak discards exactly the value
+ * nobody checked; and `$schema` in a sidecar would let a private file pick
+ * the schema a public document is judged by (0015) with the provenance lost
+ * at the merge.
+ */
+function parseSidecars(raw: unknown, source: string): SidecarConfig[] {
+  if (!Array.isArray(raw)) {
+    throw new DocmetaError(`${source}: "sidecars" must be a list.`);
+  }
+  const owners = new Map<string, number>();
+  return raw.map((entry, i) => {
+    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+      throw new DocmetaError(`${source}: sidecars[${i}] must be a mapping.`);
+    }
+    const e = entry as Record<string, unknown>;
+    rejectUnknownKeys(e, SIDECAR_KEYS, `sidecars[${i}]`, source);
+    if (typeof e.file !== "string" || e.file.trim() === "") {
+      throw new DocmetaError(
+        `${source}: sidecars[${i}].file must be a non-empty string naming the manifest, relative to the config file.`,
+      );
+    }
+    if (
+      !Array.isArray(e.keys) ||
+      e.keys.length === 0 ||
+      e.keys.some((k) => typeof k !== "string" || k.trim() === "")
+    ) {
+      throw new DocmetaError(
+        `${source}: sidecars[${i}].keys must be a non-empty list of key names.`,
+      );
+    }
+    const isUrl = classifyRef(e.file).kind === "url";
+    if (isUrl) {
+      const problem = sidecarUrlProblem(e.file);
+      if (problem !== null) {
+        throw new DocmetaError(`${source}: sidecars[${i}].file ${problem}.`);
+      }
+    }
+    if (e.tokenEnv !== undefined) {
+      if (typeof e.tokenEnv !== "string" || e.tokenEnv.trim() === "") {
+        throw new DocmetaError(
+          `${source}: sidecars[${i}].tokenEnv must be the name of an environment variable.`,
+        );
+      }
+      if (!isUrl) {
+        throw new DocmetaError(
+          `${source}: sidecars[${i}].tokenEnv is set, but "file" is a path, so no request is made and the token would go nowhere. Remove it, or make "file" a URL.`,
+        );
+      }
+    }
+    const keys = e.keys as string[];
+    if (e.join !== undefined) {
+      if (typeof e.join !== "string" || e.join.trim() === "") {
+        throw new DocmetaError(
+          `${source}: sidecars[${i}].join must be "path" or the name of a top-level frontmatter field.`,
+        );
+      }
+      if (e.join === FILE_SCHEMA_KEY) {
+        throw new DocmetaError(
+          `${source}: sidecars[${i}].join may not be "${FILE_SCHEMA_KEY}".`,
+        );
+      }
+      if (keys.includes(e.join)) {
+        throw new DocmetaError(
+          `${source}: sidecars[${i}].join names "${e.join}", which the same entry owns — the value that selects an entry cannot come from the entry.`,
+        );
+      }
+    }
+    const seen = new Set<string>();
+    for (const key of keys) {
+      if (key === FILE_SCHEMA_KEY) {
+        throw new DocmetaError(
+          `${source}: sidecars[${i}].keys may not include "${FILE_SCHEMA_KEY}" — a sidecar never chooses the schema a document is judged by; use "overrides".`,
+        );
+      }
+      if (seen.has(key)) {
+        throw new DocmetaError(
+          `${source}: sidecars[${i}].keys lists "${key}" twice.`,
+        );
+      }
+      seen.add(key);
+      const owner = owners.get(key);
+      if (owner !== undefined) {
+        throw new DocmetaError(
+          `${source}: sidecars[${i}].keys claims "${key}", which sidecars[${owner}] already owns — a key has exactly one sidecar.`,
+        );
+      }
+      owners.set(key, i);
+    }
+    return {
+      file: e.file,
+      keys,
+      ...(typeof e.tokenEnv === "string" ? { tokenEnv: e.tokenEnv } : {}),
+      ...(typeof e.join === "string" ? { join: e.join } : {}),
+    };
+  });
+}
+
 function parseConfigDocument(raw: unknown, source: string): DocmetaConfig {
   if (raw == null) return {};
   if (typeof raw !== "object" || Array.isArray(raw)) {
@@ -657,6 +805,10 @@ function parseConfigDocument(raw: unknown, source: string): DocmetaConfig {
 
   if (obj.checks !== undefined) {
     config.checks = parseChecks(obj.checks, source);
+  }
+
+  if (obj.sidecars !== undefined) {
+    config.sidecars = parseSidecars(obj.sidecars, source);
   }
 
   if (obj.elements !== undefined) {

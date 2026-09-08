@@ -182,13 +182,18 @@ export function renderSarif(
     // `<stdin>` is not a path; nothing is lost by leaving it out, so it is not
     // counted as a drop.
     if (r.file === STDIN_LABEL) continue;
-    const uri = artifactUri(r.file, pathFrame);
-    if (uri === null) {
-      dropped += r.errors.length;
-      continue;
-    }
+    const docUri = artifactUri(r.file, pathFrame);
 
     for (const e of r.errors) {
+      // A value a sidecar supplied is located in the manifest (proposal
+      // 0037), which may be the one file of the run that *is* inside the
+      // repository when the documents are not, or the reverse — so each
+      // finding resolves its own uri, and is dropped on its own.
+      const uri = e.file != null ? artifactUri(e.file, pathFrame) : docUri;
+      if (uri === null) {
+        dropped += 1;
+        continue;
+      }
       const ruleId = ruleIdFor(e, frame);
       if (!rules.has(ruleId)) {
         rules.set(ruleId, {

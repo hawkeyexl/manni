@@ -1,4 +1,4 @@
-# 0035: citations and drift: pin a claim to the lines it rests on
+# 0040: citations and drift: pin a claim to the lines it rests on
 
 - **Status:** Implemented (#17)
 - **Serves:** Devin · D4 · Theo · T1 · Maya · M2 · Sara · S1
@@ -22,7 +22,7 @@
 - **Touches:** `src/cite/**` (new), `src/cli.ts`, `src/index.ts`,
   `src/meta/internal.ts` (new), `src/shared/{cli-options,color,warn}.ts`,
   `eslint.config.js`, `scripts/check-cli-reference.mjs`,
-  `docs/proposals/0035/**`, `docs/src/content/docs/cite/**` (new),
+  `docs/proposals/0040/**`, `docs/src/content/docs/cite/**` (new),
   `docs/src/content/docs/meta/proposals/{citations,frontmatter-vocabularies}.mdx`,
   `docs/content-strategy/{cujs,information-architecture}.md`,
   `docs/astro.config.mjs`, `manni.config.yaml`, `test/cite/**`,
@@ -59,7 +59,7 @@ one sentence to `src/limits.ts:2` and the source has since changed under it.
 Metadata validation is the wrong tool and says so by passing:
 
 ```console
-$ node dist/cli.js meta validate -s docs/proposals/0035/schemas/citations/1.0.0-proposal.1.json test/fixtures/cite/pages/stale-claim.md
+$ node dist/cli.js meta validate -s docs/proposals/0040/schemas/citations/1.0.0-proposal.1.json test/fixtures/cite/pages/stale-claim.md
 ✓ test/fixtures/cite/pages/stale-claim.md
 
 1 file checked, 1 passed, 0 failed, 0 errors
@@ -87,7 +87,7 @@ Line 9 is the sentence. Not the page, not the file: the sentence.
   tenth member of the 0023 family. Two page keys, `citations` and
   `citation-commit`, and a closed entry shape: `src`, `integrity`, `commit`,
   `id`, `claim`, `quote`. The draft is at
-  `docs/proposals/0035/schemas/citations/`, with its example ladder beside it.
+  `docs/proposals/0040/schemas/citations/`, with its example ladder beside it.
 - **Inline statements**: the same entry, or a reference to one by id, written in
   the body in the format's comment syntax, the way Doc Detective's inline
   statements are. It anchors the paragraph or fenced block that follows it.
@@ -569,8 +569,8 @@ design was written around would not have caught either.
 ## Verification
 
 ```bash
-node docs/proposals/0035/ladders/citations-examples.cjs   # 36 cases + 35 regex probes, all OK, exit 0
-node docs/proposals/0035/ladders/drift-examples.cjs       # golden hashes asserted, 19 verdicts + 22 claim/statement cases, exit 0
+node docs/proposals/0040/ladders/citations-examples.cjs   # 36 cases + 35 regex probes, all OK, exit 0
+node docs/proposals/0040/ladders/drift-examples.cjs       # golden hashes asserted, 19 verdicts + 22 claim/statement cases, exit 0
 npx vitest run test/cite                                  # unit suites agree with the ladders' fixtures
 node dist/cli.js cite check                                # the repo's own config; exit 0
 node dist/cli.js cite check --root test/fixtures/cite test/fixtures/cite/pages/stale-claim.md   # exit 1
@@ -588,7 +588,7 @@ default set, and an entry that is malformed fails a bare run. Until then it is
 reachable by file ref only, and the site's proposals hub lists it as the tenth
 row.
 
-The draft lives under `docs/proposals/0035/schemas/`, not `0023/schemas/`.
+The draft lives under `docs/proposals/0040/schemas/`, not `0023/schemas/`.
 0023's "Do not" forbids growing its set, and that rule is right: 0023 records
 nine ids as reviewed, and this one has not been. The hub page and the README
 row say where to find it. When both proposals register, the two directories

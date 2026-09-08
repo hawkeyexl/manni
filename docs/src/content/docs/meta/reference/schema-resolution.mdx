@@ -26,7 +26,7 @@ and using the **first** one that yields a non-empty set:
 Once a level produces a set, lower levels are not consulted for that file.
 Within a resolved set, duplicate references are removed.
 
-<Aside type="note">
+<Aside type="note" title="--schema applies to the whole run">
 `--schema` is the only level that applies to the whole run. When present, it
 replaces every per-file `$schema` and all config rules. See the [precedence note
 in the configuration reference](/manni/meta/reference/configuration/#how-config-merges-with-cli-flags).
@@ -132,7 +132,7 @@ file next to that config. That holds whether you run manni meta from the repo ro
 from `docs/`, or with `-c ../manni.config.yaml`. See [config
 discovery](/manni/meta/reference/configuration/#what-relative-paths-are-relative-to).
 
-<Aside type="note">
+<Aside type="note" title="Config schemas report absolute paths">
 When a config directory differs from the working directory, config-supplied file
 schemas are reported by their absolute path. It is then unambiguous which file a
 run actually loaded.
@@ -232,7 +232,7 @@ A schema fetched successfully is written to a **disk cache** and served from
 there on later runs. An edit-validate loop against a remote contract does not
 re-fetch it every time.
 
-| | |
+| Property | Detail |
 |---|---|
 | Location | `.manni/meta/schema-cache/`, under the config file's directory when a config governs the run, otherwise the working directory. |
 | One file per URL | Named for a SHA-256 digest of the URL, holding the schema plus the URL and the fetch time. |
@@ -260,7 +260,7 @@ What invalidates an entry:
 A failed fetch is never cached, and a payload the checks below reject is never
 cached either.
 
-<Aside type="caution">
+<Aside type="caution" title="A local win, not a CI one">
 **This is a local win, not a CI one.** A hosted runner starts with an empty
 workspace, so the cache is cold on **every** job. The remote host is still a
 single point of failure for every repository that points at it. Restoring the
@@ -328,7 +328,7 @@ root keyword is `if`/`then`, `patternProperties`, or `additionalProperties` is
 accepted, because each is perfectly ordinary. An error envelope carries none of
 them.
 
-<Aside type="note">
+<Aside type="note" title="A fetched empty schema is rejected">
 One consequence is worth stating, which is that a fetched `{}` is rejected. It
 is a legal JSON Schema. But over the wire nothing distinguishes a deliberate
 no-op contract from a body that lost its content, and both pass every document.
@@ -358,7 +358,7 @@ A schema with a missing or unrecognized `$schema` meta-schema URI falls back to
 Draft 2020-12. Compilation is non-strict, so lax metadata still compiles. A
 schema that fails to compile is an error (exit 2).
 
-<Aside type="note">
+<Aside type="note" title="Two different $schema keys">
 Two different `$schema` keys are at play. A schema's **own** `$schema` (its
 meta-schema URI) selects the dialect, as described here. A **document's**
 `$schema` selects which schema(s) validate that document, as described in

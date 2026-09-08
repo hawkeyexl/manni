@@ -18,6 +18,7 @@
  * report-only — it is never written into the document.
  */
 import { readFile } from "node:fs/promises";
+import { loadSidecars, mergeSidecars } from "../core/sidecars.js";
 import { resolve, extname, join } from "node:path";
 import {
   completeValidatedJSON,
@@ -369,6 +370,15 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   const turnsExhausted = (): boolean =>
     maxTurns != null && turnsUsed + inFlight >= maxTurns;
 
+  // Sidecar manifests (0037), read once per run. Merged so the schema sees
+  // one object; an owned key is never a fill candidate, since the manifest
+  // is the only place it may be written and fill does not write manifests.
+  const sidecars = await loadSidecars(config, {
+    configDir: configDir ?? cwd,
+    base,
+    offline: opts.offline ?? config?.offline ?? false,
+  });
+
   const processOne = async (
     label: string,
     content: string,
@@ -396,8 +406,15 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     const elements = resolveElements(label, config);
 
     let extracted;
+    let merged;
     try {
-      extracted = extractor.extract(content, label, { elements });
+      merged = mergeSidecars(
+        label,
+        extractor.extract(content, label, { elements }),
+        sidecars,
+        base,
+      );
+      extracted = merged.extracted;
     } catch (err) {
       return errorResult(label, extractor.name, (err as Error).message);
     }
@@ -432,6 +449,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         schemaSet,
         extracted.lineFor,
         extracted.colFor,
+        merged.locate,
       );
     } catch (err) {
       // Same rule as `validate`: a schema the *document* chose failing to load
@@ -449,6 +467,26 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       existingErrors,
       only,
     );
+    // Readable, loudly unwritable (0037 rule 6): a candidate a sidecar owns
+    // could only be satisfied by editing the manifest, which fill does not
+    // do — and writing it into the document would be the one thing 0018
+    // forbids. Refused for the file rather than skipped, so a missing private
+    // key is never quietly left missing.
+    const ownedCandidates = sidecars
+      ? candidates.flatMap((c) => {
+          const file = sidecars.owners.get(c.key);
+          return file === undefined ? [] : [{ key: c.key, file }];
+        })
+      : [];
+    const firstOwned = ownedCandidates[0];
+    if (firstOwned) {
+      return errorResult(
+        label,
+        extractor.name,
+        `"${firstOwned.key}" is owned by sidecar ${firstOwned.file}; manni meta fill cannot write a sidecar key. Add it to the manifest instead.`,
+        schemaSet,
+      );
+    }
     if (candidates.length === 0) {
       return {
         file: label,
