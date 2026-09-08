@@ -1051,3 +1051,81 @@ describe("overrides[].files accepts a list of globs", () => {
     );
   });
 });
+
+/**
+ * `sidecars:` (proposal 0037): manifests that supply a fixed set of top-level
+ * keys for named documents. The parser's job is to refuse every shape that
+ * would read as configured and be silent: an entry with no keys, two entries
+ * claiming one key, and `$schema`, which no sidecar may own.
+ */
+describe("config: sidecars", () => {
+  const parse = (lines: string[]) =>
+    parseConfig(lines.join("\n"), "manni.config.yaml");
+
+  it("parses a sidecar entry with its file and owned keys", () => {
+    const cfg = parse([
+      "sidecars:",
+      "  - file: ./docs-meta.yaml",
+      "    keys: [source, jira]",
+    ]);
+    expect(cfg.sidecars).toEqual([
+      { file: "./docs-meta.yaml", keys: ["source", "jira"] },
+    ]);
+  });
+
+  it("rejects a sidecars value that is not a list", () => {
+    expect(() => parse(["sidecars: ./docs-meta.yaml"])).toThrow(
+      /"sidecars" must be a list/,
+    );
+  });
+
+  it("rejects an entry without a file", () => {
+    expect(() => parse(["sidecars:", "  - keys: [jira]"])).toThrow(
+      /sidecars\[0\]\.file must be a non-empty string/,
+    );
+  });
+
+  it("rejects an entry without keys, and one with an empty list", () => {
+    expect(() => parse(["sidecars:", "  - file: ./m.yaml"])).toThrow(
+      /sidecars\[0\]\.keys must be a non-empty list of key names/,
+    );
+    expect(() =>
+      parse(["sidecars:", "  - file: ./m.yaml", "    keys: []"]),
+    ).toThrow(/sidecars\[0\]\.keys must be a non-empty list of key names/);
+  });
+
+  it("rejects a repeated key within one entry", () => {
+    expect(() =>
+      parse(["sidecars:", "  - file: ./m.yaml", "    keys: [jira, jira]"]),
+    ).toThrow(/sidecars\[0\]\.keys lists "jira" twice/);
+  });
+
+  it("rejects one key owned by two entries", () => {
+    expect(() =>
+      parse([
+        "sidecars:",
+        "  - file: ./a.yaml",
+        "    keys: [jira]",
+        "  - file: ./b.yaml",
+        "    keys: [team, jira]",
+      ]),
+    ).toThrow(/sidecars\[1\]\.keys claims "jira", which sidecars\[0\] already owns/);
+  });
+
+  it("rejects $schema as an owned key", () => {
+    expect(() =>
+      parse(["sidecars:", "  - file: ./m.yaml", "    keys: ['$schema']"]),
+    ).toThrow(/sidecars\[0\]\.keys may not include "\$schema"/);
+  });
+
+  it("rejects an unknown key inside a sidecar entry", () => {
+    expect(() =>
+      parse([
+        "sidecars:",
+        "  - file: ./m.yaml",
+        "    keys: [jira]",
+        "    required: true",
+      ]),
+    ).toThrow(/sidecars\[0\]/);
+  });
+});

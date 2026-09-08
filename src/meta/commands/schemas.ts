@@ -5,6 +5,7 @@
  */
 import { existsSync } from "node:fs";
 import { mkdir, readFile } from "node:fs/promises";
+import { loadSidecars, mergeSidecars } from "../core/sidecars.js";
 import { dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { parseDocument, parse as parseYaml, stringify } from "yaml";
 import { resolveElements } from "../core/resolve-schema.js";
@@ -759,7 +760,7 @@ export async function runInferSchema(
     );
   }
 
-  const { config, inputs, base } = await resolveRunConfig({
+  const { config, inputs, base, configDir } = await resolveRunConfig({
     cwd,
     configPath: opts.configPath,
     noConfig: opts.noConfig,
@@ -767,6 +768,12 @@ export async function runInferSchema(
     onConfigLoaded: opts.onConfigLoaded,
   });
   const usingStdin = inputs.includes(STDIN_TOKEN);
+  // Sidecar manifests (0037): an inferred schema describes the merged corpus.
+  const sidecars = await loadSidecars(config, {
+    configDir: configDir ?? cwd,
+    base,
+    offline: opts.offline ?? config?.offline ?? false,
+  });
 
   if (inputs.length === 0) {
     throw new DocmetaError(
@@ -847,9 +854,14 @@ export async function runInferSchema(
     filesScanned += 1;
     let extracted;
     try {
-      extracted = extractor.extract(content, label, {
-        elements: resolveElements(label, config),
-      });
+      extracted = mergeSidecars(
+        label,
+        extractor.extract(content, label, {
+          elements: resolveElements(label, config),
+        }),
+        sidecars,
+        base,
+      ).extracted;
     } catch (err) {
       // One malformed block must not end the scan: the coverage question is
       // about the rest of the docset, and the bad file is itself a finding.

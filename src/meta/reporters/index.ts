@@ -245,7 +245,14 @@ export function renderPretty(
     }
     lines.push(`${c.red("✗")} ${r.file}${forgiven}`);
     for (const e of r.errors) {
-      const loc = e.line != null ? c.dim(`  (line ${e.line})`) : "";
+      // A value a sidecar supplied is located in the manifest, not the
+      // document, and the location says so (proposal 0037).
+      const loc =
+        e.file != null
+          ? c.dim(`  (${e.file}${e.line != null ? `:${e.line}` : ""})`)
+          : e.line != null
+            ? c.dim(`  (line ${e.line})`)
+            : "";
       lines.push(
         `    ${c.cyan(fieldLabel(e.instancePath))}  ${e.message}${loc}  ${c.dim(
           `[${e.schema}]`,
@@ -282,7 +289,7 @@ export function renderGithub(results: ValidationResult[]): string {
   const lines: string[] = [];
   for (const r of results) {
     for (const e of r.errors) {
-      const params = [`file=${escapeWorkflowCommandProperty(r.file)}`];
+      const params = [`file=${escapeWorkflowCommandProperty(e.file ?? r.file)}`];
       if (e.line != null) params.push(`line=${e.line}`);
       if (e.col != null) params.push(`col=${e.col}`);
       // Escaped as one string, after assembly: the schema id and the field

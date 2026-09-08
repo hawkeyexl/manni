@@ -20,6 +20,7 @@ the command line.
 | `schemas` | `(string \| {ref, source?, integrity?})[]` | none | Default [schema set](/manni/meta/reference/schema-resolution/) applied to every file that no higher-precedence rule matches. See [Schemas](#schemas). |
 | `overrides` | `Override[]` | none | Per-glob schema overrides. The first matching entry wins. See [Overrides](#overrides). |
 | `checks` | `Check[]` | none | Named cross-file rules, written as SQL over the corpus's metadata table, that `validate` runs after the per-file schemas, with rows reported as findings. See [Checks](#checks). |
+| `sidecars` | `Sidecar[]` | none | YAML manifests that keep frontmatter values outside the document. Each supplies a fixed set of top-level keys for named documents. The values are merged into the document's metadata before schema resolution, so every command sees one object. See [Sidecars](#sidecars). |
 | `baseline` | `string` | none | Path to a [validation baseline](/manni/meta/reference/cli/#baselines). Setting it turns on `--baseline` for every run; `--no-baseline` suppresses it for one. A bare `--write-baseline` records into this same file. |
 | `allowEmpty` | `boolean` | `false` | Treat an input set that resolves to zero files as success instead of an error (exit 2). Equivalent to `--allow-empty`. See [empty input sets](/manni/meta/reference/cli/#empty-input-sets). |
 | `respectGitignore` | `boolean` | `true` | Skip files `.gitignore` covers when expanding directories and globs. `--no-gitignore` overrides it for one run. See [`.gitignore`](/manni/meta/reference/cli/#gitignore). |
@@ -130,9 +131,11 @@ repository, or no `git` on `PATH`. Worth doing in a CI image you do not control.
 
 `offline: true` stops manni meta fetching a schema over the network at all. A `url`
 reference is served from the [schema cache](#schema-cache); one that is not
-cached is an operational error (exit 2) naming the URL. Built-in ids and local
-`.json` files are unaffected, because neither touches the network. An air-gapped
-build against the default schema set works with nothing else configured.
+cached is an operational error (exit 2) naming the URL. A [remote sidecar
+manifest](#remote-manifests) is refused outright, because a manifest is never
+cached. Built-in ids and local `.json` files are unaffected, because neither
+touches the network. An air-gapped build against the default schema set works
+with nothing else configured.
 
 ```yaml title="manni.config.yaml"
 meta:
@@ -463,6 +466,535 @@ the corpus; the CLI flags redefine the run.
 [`--no-checks`](/manni/meta/reference/cli/#meta-validate) opts out explicitly for one
 run, mirroring `--no-baseline`. Checks resolve no schemas and make no network
 requests, so `--offline` does not affect them.
+
+### Sidecars
+
+`sidecars` is a list of YAML manifests. Each supplies a fixed set of top-level
+keys for named documents. The values are merged into each document's extracted
+metadata before schema resolution, so `validate`, `get`, `query` and `fill` all
+see one object. The manifest is never a document itself. No extractor reads it,
+and it has no row in the `docs` table. It is a join table.
+
+A sidecar is frontmatter values kept outside the document and merged at run
+time. The document never holds the value. The contract on it stays with the
+document, in the same schema set, checked by the same `validate` run, with the
+same exit code. Three uses share the one mechanism:
+
+- **Lean documents.** A page carries what it is about. The design note it was
+  written from, the ticket that tracks it, its owner and its review state live
+  in the manifest. A contributor fills in fewer fields, and a reader or an
+  agent that ingests the page sees none of the bookkeeping.
+- **Private values for public documents.** The manifest lives in a private
+  repository. Public CI never sees it, and the private run validates the
+  public pages against it.
+- **Across repositories.** One repository's pages take keys from a manifest
+  in another, by URL, public or private. See [Remote manifests](#remote-manifests).
+
+[Keep metadata in a sidecar](/manni/meta/set-up/sidecar-metadata/) is the
+journey, with a worked path for each; this section is the contract.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `file` | `string` | yes | Manifest path, relative to the config file's directory, or an `https://` URL fetched at the start of every run. A manifest that cannot be read or fetched, or is not valid YAML, is an operational error (exit 2). See [Remote manifests](#remote-manifests). |
+| `keys` | `string[]` | yes | The top-level keys this manifest **owns**. Non-empty, no duplicates, disjoint across entries, and never `$schema`. Each violation is a config error (exit 2) naming `sidecars[i].keys`. |
+| `tokenEnv` | `string` | no | Name of an environment variable whose value is sent as a bearer token when `file` is a URL. Allowed only on a URL. On a path it is a config error (exit 2), because no request is made and the token would go nowhere. |
+| `join` | `string` | no | `path` (the default), or the top-level frontmatter field the manifest's keys are values of. Never `$schema`, and never a key the same entry owns. A rename cannot orphan a field-joined entry. See [Joining by a field](#joining-by-a-field). |
+
+```yaml
+# manni.config.yaml
+meta:
+  paths: ["docs/**/*.md"]
+  sidecars:
+    - file: ./docs-meta.yaml
+      keys: [source, jira]
+  overrides:
+    - files: "docs/**/*.md"
+      schemas: [./schemas/page.json]  # requires `source` and `jira`
+```
+
+`sidecars:` absent is exactly the behaviour every config had before the key
+existed. A repository whose manifest lives elsewhere keeps its own plain config
+and never mentions a sidecar. That way none of its runs warns about a file it
+cannot see.
+
+#### The manifest
+
+A manifest is a YAML mapping from document to a mapping of owned key to
+value. A document is named by path (the default) or by a field. By path:
+
+```yaml
+# docs-meta.yaml
+docs/guides/auth.md:
+  source: internal/auth-design.md
+  jira: PLAT-412
+docs/guides/billing.md:
+  source: internal/billing.md
+  jira: PLAT-388
+```
+
+Document paths are **exact**, relative to the config file's directory. There
+are no globs and no cascade. A silently merged result changes what the
+contract means, and a manifest has no specificity rule to decide which of two
+matching patterns wins. "Every guide gets X" is not a manifest feature.
+[Joining by a field](#joining-by-a-field) names documents by a frontmatter
+value instead, so a rename never orphans an entry.
+
+An empty manifest is legal and merges nothing. Every other shape problem is an
+operational error (exit 2) naming the manifest and, where there is one, the
+entry's line. From `test/fixtures/sidecars/`:
+
+| Problem | Message |
+|---|---|
+| The top level is not a mapping. | `Sidecar manifest bad-not-mapping.yaml: the manifest must be a mapping from document path to owned keys.` |
+| An entry is not a mapping. | `Sidecar manifest bad-entry-scalar.yaml:1: "docs/auth.md" must be a mapping of owned keys to values.` |
+| An entry sets a key outside `keys:`. | `Sidecar manifest bad-unowned-key.yaml:1: "docs/auth.md" sets "team", which this sidecar does not own. Add it to the sidecar's "keys", or remove it from the entry.` |
+| An entry sets `$schema`. | `Sidecar manifest bad-schema-key.yaml:1: "docs/auth.md" sets "$schema" — a sidecar never chooses the schema a document is judged by; use "overrides" in the config.` |
+| The file is missing. | `Sidecar manifest nope.yaml could not be read: ENOENT: no such file or directory, …` |
+
+#### Joining by a field
+
+`join: <field>` keys the manifest by a top-level frontmatter field instead of
+a path. The page carries the key with it, so a rename never orphans an entry.
+`join` absent, or `join: path`, is the path behaviour above.
+
+```yaml
+# manni.config.yaml
+meta:
+  paths: ["docs/**/*.md"]
+  sidecars:
+    - file: ./docs-meta.yaml
+      keys: [source, jira]
+      join: id
+```
+
+```yaml
+# docs-meta.yaml, keyed by each page's `id`
+auth-guide:
+  source: internal/auth-design.md
+  jira: PLAT-412
+billing-guide:
+  source: internal/billing.md
+  jira: PLAT-388
+```
+
+Any top-level field works. A hand-written `id`, a Starlight `slug`, and a
+Docusaurus `id` are one mechanism with no special cases. Matching is on the
+extracted value, so it works for every format and for a remote manifest. The
+value is compared as a string, so `id: 42` matches the manifest key `42`. A
+value that is not a scalar matches nothing.
+
+**Require the field in the schema.** A page without the field matches
+no entry, and nothing says so. What catches it is the ordinary `required`
+finding on the merged object, which only exists when a schema demands the
+manifest's key. Require the join field too, and give it a `pattern`, so an id is
+at least well-formed:
+
+```json
+{
+  "type": "object",
+  "required": ["title", "id", "jira"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "jira": { "type": "string", "pattern": "^PLAT-[0-9]+$" }
+  }
+}
+```
+
+The rules a field join adds:
+
+1. **Two pages sharing a value is a finding on both.** One entry matched two
+   documents, and the manifest cannot tell them apart. The finding carries
+   the schema ref `sidecar:duplicate`, the keyword `sidecar`, and the value
+   as `subject`. Its instance path is `/<field>`, at the field's line in each
+   page, under the rule id [`sidecar:duplicate/sidecar`](#finding-identity).
+   It fires whether or not the run is scoped, because it is about the pages
+   loaded. Both pages still receive the entry's values, so the schema judges
+   what the site would publish.
+2. **A field entry no page matched is exit 2 on a corpus run.** The values
+   are only known once every document is read, so the check runs after the
+   per-file loop. A scoped run skips it, as [the orphan check](#the-orphan-check)
+   does for a path entry.
+3. **The join field is never an owned key.** `join` may not be `$schema`, and
+   it may not name a key the same entry owns. The value that selects an entry
+   cannot come from the entry. Each is a config error (exit 2) naming
+   `sidecars[i].join`.
+4. **`path` is the join, not a field.** A frontmatter key literally named
+   `path` cannot be joined on. Nothing else about the value is reserved.
+5. **Changing the field is a write to the join.** `query`'s `UPDATE` of the
+   join field on a document that has an entry is refused before any file is
+   written. Renaming that document is allowed, which is the point.
+
+From `test/fixtures/sidecars-join/`, where `dup-a.md` and `dup-b.md` both say
+`id: shared`:
+
+```
+✗ docs/dup-a.md
+    /id  2 documents carry id "shared"; docs-meta.yaml cannot tell them apart (docs/dup-b.md)  (line 3)  [sidecar:duplicate]
+✗ docs/dup-b.md
+    /id  2 documents carry id "shared"; docs-meta.yaml cannot tell them apart (docs/dup-a.md)  (line 3)  [sidecar:duplicate]
+```
+
+The same directory carries a second config whose manifest names an id no
+page carries. A corpus run stops on it:
+
+```
+$ manni meta validate -c manni.orphan.config.yaml
+manni: Sidecar manifest docs-meta.orphan.yaml:3 names id "gone-guide", which no loaded document carries. Fix the entry, or remove it.
+                                                                                    exit 2
+```
+
+And the `query` refusal, on the default config:
+
+```
+$ manni meta query "UPDATE docs SET id = 'other' WHERE _path = 'docs/auth.md'"
+manni: "docs/auth.md": "id" is the field sidecar docs-meta.yaml joins on, and this document has an entry; change the manifest first.
+                                                                                    exit 2
+```
+
+**The join key is contributor-controlled.** A pull request that sets
+`id: auth-guide` on a new page inherits every assertion the manifest makes
+about the real one. The schema cannot tell the two apart. Three things bound
+that. The duplicate finding fires on both pages, so the run goes red rather
+than green. The schema's `pattern` keeps an id well-formed. And the manifest
+is reviewed on its own, in the private repository when there is one. An entry
+that suddenly matches two pages shows up there as a duplicate finding, before
+it shows up anywhere else.
+A path join has none of this exposure, which is why it stays the default.
+
+#### Remote manifests
+
+`file` may be an `https://` URL instead of a path. The manifest is fetched at
+the start of every run, parsed exactly as a local one is, and merged by the
+same rules. Its document paths still resolve from the config file's directory.
+Nothing downstream of the loader changes. Two layouts use it.
+
+**Across public repositories.** One public repository's pages take keys from a
+manifest in another public repository. Nothing is secret on either side, and
+the run never checks the second repository out. A plain URL is the whole
+configuration:
+
+```yaml
+# docs-site/manni.config.yaml
+meta:
+  paths: ["docs/**/*.md"]
+  sidecars:
+    - file: https://raw.githubusercontent.com/org/docs-catalog/main/owners.yaml
+      keys: [team, owner]
+```
+
+**A private manifest.** The same URL form, plus `tokenEnv`, the name of an
+environment variable holding a bearer token. Its value is sent as
+`Authorization: Bearer <value>` to the origin the config names, and nowhere
+else. The config never holds the token:
+
+```yaml
+# private-repo/manni.config.yaml
+meta:
+  paths: ["public/docs/**/*.md"]
+  sidecars:
+    - file: https://raw.githubusercontent.com/org/private-docs/main/docs-meta.yaml
+      keys: [source, jira]
+      tokenEnv: PRIVATE_DOCS_TOKEN
+```
+
+Both hosts accept a bearer token on their raw-file route, so one `tokenEnv`
+covers either:
+
+```text
+GitHub  https://raw.githubusercontent.com/OWNER/REPO/REF/PATH
+GitLab  https://gitlab.com/api/v4/projects/ID/repository/files/PATH/raw?ref=REF
+```
+
+| Host | Token |
+|---|---|
+| GitHub | A fine-grained personal access token with read access to the repository's contents. |
+| GitLab | A project or personal access token with the `read_repository` scope. `PATH` is URL-encoded, so `docs/docs-meta.yaml` is written `docs%2Fdocs-meta.yaml`. |
+
+<Aside type="caution" title="Where the values end up">
+A public repository's CI logs are public. Fetching a private manifest into a
+public run moves the private values from the source tree to the log. A pattern
+failure or a `get` prints them there, and no fetch mechanism can prevent it.
+Fetch a private manifest from the private side only, when that run cannot
+check the manifest out. Across public repositories there is nothing to leak.
+</Aside>
+
+The rules a remote manifest adds:
+
+1. **Fetched every run, never cached.** The [schema cache](#schema-cache)
+   exists because a schema changes rarely. A manifest changes with every page,
+   and a stale copy validates the corpus against the wrong values.
+   `schemaCache` does not apply to a manifest.
+2. **A fetch that fails is exit 2, naming the URL and the status.** A `401` or
+   `403` says the token is wrong. A `404` says the URL is, or that the token is
+   missing, and the message says which. A network error says so. The token
+   never appears in a message.
+3. **`--offline` refuses a remote manifest, exit 2.** By rule 1 there is no
+   cached copy to fall back to. A config with one local and one remote manifest
+   refuses before reading either.
+4. **The credential lives in the environment, never in the config.** A URL
+   carrying userinfo (`https://user:secret@host/…`) is a config error at parse
+   time, because the URL is printed in every diagnostic. `tokenEnv` on a path
+   `file` is a config error too, because no request is made.
+5. **`http://` is refused, except on a loopback host.** A bearer token over
+   plaintext is a leak, and a public manifest is served over `https://` too.
+   `localhost` and `127.0.0.1` are allowed, so a local server can serve one.
+6. **A redirect keeps the token only on the same origin.** A cross-origin
+   redirect is followed without the header, the way browsers and `curl` behave.
+   A manifest that lands where the token does not reach fails as a `401`, which
+   rule 2 reports.
+7. **The URL is operator config, so it is trusted as such.** There is no host
+   allowlist for a manifest URL, and [`schemaTrust`](#schema-trust) does not
+   apply to it. `$schema` inside a fetched manifest is still refused.
+8. **A finding names the URL as the file.** A finding on a fetched value
+   carries the URL and the manifest line. Pretty, GitHub and JUnit print it.
+   SARIF drops that finding with the existing
+   [outside-the-repository notice](/manni/meta/reference/output-and-exit-codes/#sarif-paths-are-repository-root-relative),
+   because a URL is not a repository-relative location. The document-side
+   findings of the same run are unaffected.
+9. **Same bounds as the [schema fetch](/manni/meta/reference/schema-resolution/#url-references).**
+   A 10-second timeout, a 5 MB body cap, and one retry on a network error or
+   a `5xx`. A `4xx` is not retried.
+
+A fetched value that fails its schema reports the URL where a local manifest
+reports its path:
+
+```
+✗ public/docs/guides/billing.md
+    /jira  must match pattern "^PLAT-[0-9]+$"  (https://raw.githubusercontent.com/org/private-docs/main/docs-meta.yaml:6)  [./schemas/private.json]
+```
+
+The operational errors, each exit 2. The URL is abbreviated here, and printed
+whole by the message:
+
+| Problem | Message |
+|---|---|
+| The variable `tokenEnv` names is not set. | `Sidecar manifest https://…/docs-meta.yaml: the environment variable PRIVATE_DOCS_TOKEN named by "tokenEnv" is not set.` |
+| The host answered 404 to an anonymous request. | `Sidecar manifest https://…/docs-meta.yaml could not be fetched: HTTP 404 (a private file answers 404 without a token; set "tokenEnv").` |
+| The host answered 404 with a token sent. | `Sidecar manifest https://…/docs-meta.yaml could not be fetched: HTTP 404 (a private file answers 404 without a valid token).` |
+| The host answered any other non-2xx status. | `Sidecar manifest https://…/docs-meta.yaml could not be fetched: HTTP 403.` |
+| The host did not answer within the timeout. | `Sidecar manifest https://…/docs-meta.yaml could not be fetched: timed out after 10000ms` |
+| The body exceeds the cap. | `Sidecar manifest https://…/docs-meta.yaml is too large: the response exceeds the 5242880-byte limit.` |
+| The run is `--offline`. | `Sidecar manifest https://…/docs-meta.yaml is remote and the run is offline. Vendor it to a path, or drop --offline.` |
+| `tokenEnv` is set on a path `file`. | `manni.config.yaml: sidecars[0].tokenEnv is set, but "file" is a path, so no request is made and the token would go nowhere. Remove it, or make "file" a URL.` |
+| `file` is `http://` on a public host. | `manni.config.yaml: sidecars[0].file is plain http://; a bearer token over plaintext is a leak, and a public manifest is served over https too.` |
+| `file` carries userinfo. | `manni.config.yaml: sidecars[0].file carries a credential in the URL; put the token in an environment variable and name it with "tokenEnv".` |
+
+#### The rules
+
+1. **Keys are owned.** Each sidecar entry declares the top-level keys it
+   supplies. Ownership is disjoint across entries, so two manifests can never
+   disagree about one key. The config parser refuses a second claim:
+   `sidecars[1].keys claims "jira", which sidecars[0] already owns — a key has exactly one sidecar.`
+   No sidecar may own `$schema`. A sidecar never feeds
+   [schema resolution](/manni/meta/reference/schema-resolution/); the document's
+   contract comes from `overrides` and the rest of the precedence chain.
+2. **A document carrying an owned key is a finding.** Neither channel wins.
+   The discarded value would be exactly the one nobody checked. The finding
+   attaches to the document at the key's line, under the rule id
+   [`sidecar:owned/sidecar`](#finding-identity). The document's value is what
+   the schema sees for that run, so the report shows what the public site would
+   publish.
+3. **Manifest keys name documents by path (the default) or by a field.** A
+   path is exact, relative to the config's directory, and matched on the
+   resolved absolute path, never on the spelling. A positional run from a
+   subdirectory therefore finds the same entry a config-corpus run does.
+   Stdin never has a path entry, because there is no file behind it. A field
+   key matches the page's own value of that field, wherever the page lives.
+   See [Joining by a field](#joining-by-a-field).
+4. **An entry naming a document the run did not load is exit 2.** A named
+   input that is not there is an error, not a silent pass, and a manifest entry
+   is a named input. See [the orphan check](#the-orphan-check) for when it runs.
+5. **A sidecar-sourced violation names the sidecar.** The finding's subject
+   file stays the document, because that is its baseline identity. The error
+   carries the manifest file and line as where the *value* is, and every
+   reporter prints it.
+6. **The first increment is read-only.** `fill`, and `query`'s `UPDATE`,
+   `DELETE`, `INSERT` and rename, refuse a sidecar-owned key by name. A value
+   is written back to the place it was read from, and an owned key is read
+   from the manifest. When the manifest is private, writing the key into a
+   public document would also leak the value.
+
+#### What each command does
+
+| Command | With a sidecar |
+|---|---|
+| `validate` | Merges, validates the merged object, files a finding for every owned key a document carries, and runs the orphan check on a config-corpus run. |
+| `get` | Reads the merged value. `manni meta get jira docs/auth.md` prints `docs/auth.md: jira=PLAT-412` from the manifest as readily as it would from the document. It does not yet say which of the two supplied it. |
+| `query` | Every row holds the merged values, so `SELECT _path, jira FROM docs` and a [corpus check](#checks) see the manifest's keys. A write that would touch an owned key, or change the join field of a matched document, refuses (exit 2) before any file is written. |
+| `fill` | A candidate property a sidecar owns is refused for the file, as a per-file error (exit 1) rather than a skip. A missing owned key is therefore never quietly left missing. |
+
+The `validate` run over `test/fixtures/sidecars/`, whose `docs-meta.yaml`
+supplies `jira` for three of four pages and one page carries `jira:` itself:
+
+```
+✓ docs/auth.md
+✗ docs/billing.md
+    /jira  must match pattern "^PLAT-[0-9]+$"  (docs-meta.yaml:6)  [./private.schema.json]
+✗ docs/new.md
+    (root)  must have required property 'jira'  (line 1)  [./private.schema.json]
+✗ docs/ops.md
+    /jira  "jira" is owned by sidecar docs-meta.yaml; remove it from the document  (line 3)  [sidecar:owned]
+
+4 files checked, 1 passed, 3 failed, 3 errors
+```
+
+`billing.md` is rule 5: the schema rejected a value the manifest supplied, and
+the location is the manifest's line. `new.md` is an ordinary `required`
+violation, because presence is what schema `required` already says. A missing
+entry surfaces as a finding the baseline, SARIF and the ratchet already
+understand. `ops.md` is rule 2.
+
+The write refusals, on the same corpus:
+
+```
+$ manni meta query "UPDATE docs SET jira = 'PLAT-1' WHERE _path = 'docs/auth.md'" --dry-run
+manni: "docs/auth.md": "jira" is owned by sidecar docs-meta.yaml; edit the sidecar file instead.
+                                                                                    exit 2
+$ manni meta query "UPDATE docs SET _path = 'docs/auth2.md' WHERE _path = 'docs/auth.md'" --dry-run
+manni: "docs/auth.md": sidecar docs-meta.yaml names it; rename the manifest entry first.
+                                                                                    exit 2
+$ manni meta fill --dry-run
+✗ docs/billing.md
+    "source" is owned by sidecar docs-meta.yaml; manni meta fill cannot write a sidecar key. Add it to the manifest instead.
+✗ docs/new.md
+    "source" is owned by sidecar docs-meta.yaml; manni meta fill cannot write a sidecar key. Add it to the manifest instead.
+✗ docs/ops.md
+    "source" is owned by sidecar docs-meta.yaml; manni meta fill cannot write a sidecar key. Add it to the manifest instead.
+
+4 files · 0 fields would be written · 0 skipped · 3 errored
+                                                                                    exit 1
+```
+
+`fill` refuses those three because `source` is missing from each and the
+schema lists it, so it is a candidate. A candidate a sidecar owns has exactly
+one honest destination. `auth.md` has both keys in the manifest and is left
+alone.
+
+#### Finding identity
+
+A rule 2 finding carries the schema ref `sidecar:owned`, the keyword `sidecar`,
+the key as `subject`, `/<key>` as its instance path, and the document's line for
+the key:
+
+```json
+{
+  "schema": "sidecar:owned",
+  "keyword": "sidecar",
+  "subject": "jira",
+  "instancePath": "/jira",
+  "message": "\"jira\" is owned by sidecar docs-meta.yaml; remove it from the document",
+  "line": 3
+}
+```
+
+The ref is shaped like `check:<name>`, so the rule id everywhere, in SARIF,
+JUnit and the baseline, is the ordinary join `sidecar:owned/sidecar`. The
+`sidecar` segment is reserved as a first segment beside `check`. It is listed
+with the other [reserved rule ids](/manni/meta/reference/output-and-exit-codes/#reserved-rule-ids).
+
+A duplicate-join finding is shaped the same way. Its schema ref is
+`sidecar:duplicate`, its `subject` is the shared value, and its instance path
+is `/<field>`, at the field's line in each page. Its rule id is
+`sidecar:duplicate/sidecar`. See [Joining by a field](#joining-by-a-field).
+
+A rule 5 finding is not a new rule. It is whatever the schema said, with one
+extra JSON field: [`file`](/manni/meta/reference/output-and-exit-codes/#output-formats)
+naming the manifest, which `line` then refers to. Its subject file stays the
+document, so its fingerprint and its `results[].file` are unchanged by where
+the value came from.
+
+#### Exit codes
+
+| Exit | When |
+|---|---|
+| `2` | The config's `sidecars:` is malformed. A manifest is missing, unreadable, not valid YAML, or not the mapping shape above. A [remote manifest](#remote-manifests) could not be fetched, the run is `--offline`, or the variable `tokenEnv` names is not set. An entry sets a key outside `keys:`, or sets `$schema`. An entry names a document the run did not load, or a field value no document carries, on a config-corpus run. A `query` write would touch an owned key, rename a path-joined document, or change the join field of a matched one. |
+| `1` | The merged object fails its schema, including on a value the manifest supplied. A document carries an owned key. Two documents share one value of a join field. `fill` refuses a file because a candidate is owned. |
+
+The split is the one every command already follows. Exit 2 means the run could
+not establish the contract and produced no verdict. Exit 1 means it did, and the
+documents still need work.
+
+#### The orphan check
+
+A manifest entry whose document the run did not load is the rename case. The
+page moved, the entry did not, and nobody reads the entry again. That is the
+silent green an unread named input always produces, so it is exit 2:
+
+```
+$ manni meta validate -c manni.orphan.config.yaml
+manni: Sidecar manifest docs-meta.orphan.yaml:3 names "docs/gone.md", which this run did not load. Fix the entry, or remove it.
+                                                                                    exit 2
+```
+
+It runs only when the resolved file set **is** the config-resolved corpus, by
+the same invariant [named checks use](#when-checks-run). A positional path,
+stdin, `--as`, `--ext`, `--exclude`, `--no-gitignore` or `-s` means the operator
+chose to look at part of the corpus. An entry for the rest is expected, not
+orphaned. So `manni meta validate docs/auth.md` from the same directory passes
+without mentioning `docs/gone.md`. Unlike checks, the orphan check has no opt-out
+flag. A config-corpus run is the one place the whole manifest is accountable, and
+the fix is a one-line edit.
+
+A [field-joined](#joining-by-a-field) entry has the same check, phrased for
+its key, and under the same invariant. It runs after the per-file loop,
+because the values are only known once every document is read:
+
+```
+$ manni meta validate -c manni.orphan.config.yaml     # in test/fixtures/sidecars-join/
+manni: Sidecar manifest docs-meta.orphan.yaml:3 names id "gone-guide", which no loaded document carries. Fix the entry, or remove it.
+                                                                                    exit 2
+```
+
+#### The recommended layout
+
+This applies when the manifest is private and the pages are public. Put the
+public repository inside the private one as a git submodule, and run from the
+private checkout:
+
+```
+private-repo/
+  manni.config.yaml     # paths: public/docs/**/*.md, sidecars, overrides
+  docs-meta.yaml
+  schemas/private.json
+  public/               # git submodule: the public docs repository
+    manni.config.yaml   # plain; never mentions a sidecar
+    docs/guides/auth.md
+```
+
+The alternative, two sibling checkouts with `paths: ["../public/docs/**/*.md"]`,
+runs. It reports worse. SARIF locates every finding relative to the nearest
+repository root, and it cannot represent a finding in another repository's file.
+From a sibling layout every document finding is outside the private root, so
+every one is dropped from the SARIF log. The
+[existing notice](/manni/meta/reference/output-and-exit-codes/#sarif-paths-are-repository-root-relative)
+goes to stderr. The submodule layout keeps every document URI under the private root,
+so the log is complete. `.gitignore` filtering applies per repository root in
+both layouts, so the public repository's ignores still hold for its files.
+
+#### `additionalProperties: false` in the page's schema
+
+A schema that closes its object rejects every key the manifest supplies,
+because after the merge the key is in the object. That is correct, and honest.
+The page's schema has to leave room for what the manifest adds. The finding
+names the manifest line. With the fixture corpus pointed at a schema that is
+the same as `private.schema.json` except for `"additionalProperties": false`
+and none of the manifest's keys, saved as `public.schema.json`, `docs/auth.md`
+reports:
+
+```
+✗ docs/auth.md
+    (root)  must NOT have additional property 'source'  (docs-meta.yaml:3)  [./public.schema.json]
+    (root)  must NOT have additional property 'jira'  (docs-meta.yaml:4)  [./public.schema.json]
+```
+
+Two fixes:
+
+- Leave `additionalProperties` unset in the page's schema, which is the default
+  and what every built-in schema except the [Agent Skills
+  pair](/manni/meta/reference/agent-skills-schemas/) does.
+- Or keep it closed, and have the `overrides` entry beside the sidecar restate
+  the whole contract in its own schema, with the manifest's keys declared. Then
+  the closed schema is not in that run's set at all.
 
 ## Example
 

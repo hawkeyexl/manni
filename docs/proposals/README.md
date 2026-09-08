@@ -53,6 +53,9 @@ These came out of a review of the shipped product against the intent recorded in
 | [0034](0034-command-grammar.md) | The command grammar: `manni <domain> <subcommand> [<subcommand>] [<arguments>]`, one separator per list, and what a plan must show | all (CLI surface) | Accepted |
 | [0035](0035-a11y-domain.md) | The `a11y` domain: `manni a11y check` crawls a site and scores every page with axe-core, in a browser it finds rather than downloads | Devin · D1, D3 | Implemented |
 | [0036](0036-a11y-fix.md) | `manni a11y fix`: deterministic repairs to local HTML for the rules that need no human decision; the rest reported as manual | Theo · T1 / Maya · M1 | Proposed |
+| [0037](0037-sidecar-metadata.md) | Sidecar metadata, a private manifest joined to public documents | Maya · M1, M2 / Devin · D1, D4 / Sara · S1 | Implemented |
+| [0038](0038-sidecar-url-manifests.md) | A URL form of `sidecars[].file`, fetched every run with a bearer token from the environment | Devin · D1, D2 / Maya · M1 | Implemented |
+| [0039](0039-sidecar-join.md) | `join`: a sidecar keyed by a frontmatter field, so a rename cannot orphan an entry; two pages sharing a value is a finding on both | Maya · M1, M2 / Devin · D4 / Sara · S3 | Implemented |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -95,6 +98,16 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
        │                  to the next structured format)
 0018 ──┤                 (write where you read — load-bearing once a format has two channels)
 0014 ──┘                 (why an unreadable corpus errors instead of passing green)
+
+0004, 0014, 0018, 0020, 0026 ──> 0037   (config-relative manifest keys; an orphan entry is
+                                         a named input that is not there; owned keys refuse
+0037 ──> 0038            (a remote manifest under 0008's offline, timeout and retry rules;
+                          fetched every run, never cached)
+0037 ──> 0039            (entries keyed by a frontmatter field; 0015's risk bounded by a
+                          duplicate finding on every page that shares the value)
+                                         writes rather than land in the document; both
+                                         channels validated, no tiebreak; the orphan check
+                                         runs only on the config corpus)
 ```
 
 The four `Proposed` SQL items (0026–0029) are independent of each other, with one exception. 0026 and 0029 both grow `query`'s `-f` value list. Each specifies the combined six-value surface, and whichever is implemented second merges into the one const. Recommended implementation order is 0026 → 0029 → 0027 → 0028, which is impact-first. The two config-touching ones (0026, 0027) land apart, so the second rebases trivially.

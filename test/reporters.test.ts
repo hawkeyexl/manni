@@ -1233,3 +1233,92 @@ describe("reporters: the common format pair", () => {
     expect(REPORT_FORMAT_LIST).toBe("pretty, json, github, sarif, or junit");
   });
 });
+
+/**
+ * Per-error file attribution (proposal 0037). A violation on a value a
+ * sidecar manifest supplied names the manifest, while the finding stays
+ * filed under the document. Every reporter prints the manifest; SARIF
+ * resolves each finding's uri on its own, so a manifest inside the
+ * repository survives even when its document does not, and vice versa.
+ */
+describe("reporters: a finding located in a sidecar manifest", () => {
+  const results = [
+    {
+      file: "docs/billing.md",
+      format: "markdown",
+      ok: false,
+      schemas: ["./private.schema.json"],
+      errors: [
+        {
+          schema: "./private.schema.json",
+          instancePath: "/jira",
+          keyword: "pattern",
+          message: 'must match pattern "^PLAT-[0-9]+$"',
+          file: "docs-meta.yaml",
+          line: 6,
+        },
+        {
+          schema: "./private.schema.json",
+          instancePath: "",
+          keyword: "required",
+          subject: "title",
+          message: "must have required property 'title'",
+          line: 1,
+        },
+      ],
+    },
+  ];
+  const summary = { files: 1, passed: 0, failed: 1, errors: 2 };
+
+  it("pretty prints the manifest and line beside the value, and the plain line otherwise", () => {
+    const out = renderPretty(results, summary, { color: false });
+    expect(out).toContain("(docs-meta.yaml:6)");
+    expect(out).toContain("(line 1)");
+    expect(out).not.toContain("(line 6)");
+  });
+
+  it("github annotates the manifest file for the sidecar value and the document for the rest", () => {
+    const lines = renderGithub(results).split("\n");
+    expect(lines[0]).toMatch(/^::error file=docs-meta\.yaml,line=6::/);
+    expect(lines[1]).toMatch(/^::error file=docs\/billing\.md,line=1::/);
+  });
+
+  it("junit names the manifest in the failure message", () => {
+    const xml = renderJunit(results);
+    expect(xml).toContain("(docs-meta.yaml:6)");
+    expect(xml).toContain("(line 1)");
+  });
+
+  it("sarif locates each finding in its own file", () => {
+    const log = JSON.parse(renderSarif(results)) as {
+      runs: { results: { locations: { physicalLocation: { artifactLocation: { uri: string }; region?: { startLine: number } } }[] }[] }[];
+    };
+    const locs = log.runs[0]?.results.map((r) => r.locations[0]?.physicalLocation);
+    expect(locs?.[0]?.artifactLocation.uri).toBe("docs-meta.yaml");
+    expect(locs?.[0]?.region?.startLine).toBe(6);
+    expect(locs?.[1]?.artifactLocation.uri).toBe("docs/billing.md");
+  });
+
+  it("sarif drops only the finding whose own file leaves the repository", () => {
+    const outside = results.map((r) => ({
+      ...r,
+      errors: r.errors.map((e, i) =>
+        i === 0 ? { ...e, file: "../private/docs-meta.yaml" } : e,
+      ),
+    }));
+    const notices: string[] = [];
+    const log = JSON.parse(
+      renderSarif(outside, { onNotice: (m) => notices.push(m) }),
+    ) as { runs: { results: unknown[] }[] };
+    expect(log.runs[0]?.results).toHaveLength(1);
+    expect(notices.join("\n")).toMatch(/1 SARIF finding lies outside the repository/);
+  });
+
+  it("json carries the file on the error", () => {
+    const parsed = JSON.parse(renderJson(results, summary)) as {
+      results: { errors: { file?: string }[] }[];
+    };
+    expect(parsed.results[0]?.errors[0]?.file).toBe("docs-meta.yaml");
+    expect(parsed.results[0]?.errors[1]?.file).toBeUndefined();
+  });
+});

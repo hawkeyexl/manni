@@ -11,17 +11,29 @@
  * into picomatch patterns expresses that, and being subtly wrong here silently
  * changes which files get validated.
  *
- * One subprocess per run, fed the whole candidate list on stdin. Measured at
+ * One subprocess per repository the candidates live in, fed that repository's
+ * candidates on stdin — one per run in the ordinary single-checkout case. Measured at
  * 5,000 candidates: 0.111 s with none ignored, 0.260 s with half ignored.
  */
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { dirname, relative, resolve, sep } from "node:path";
+import { findGitRoot } from "../../shared/git-root.js";
 
 export interface GitignoreAnswer {
   /** Ignored paths, spelled exactly as they were handed in. */
   ignored: Set<string>;
   /**
-   * Whether git answered at all. False means there is no repository here, no
-   * `git` on `PATH`, or git failed — in which case **nothing** is filtered.
+   * Whether git answered for at least one repository the candidates live in.
+   * False means no candidate was inside a repository git could answer for —
+   * no repository, no `git` on `PATH`, or git failed everywhere — in which
+   * case **nothing** is filtered and `ignored` is empty.
+   *
+   * A run spanning several repositories where git answers for some and not
+   * others is *available*: the answered roots are filtered, and a root git
+   * could not answer for is treated like no repository at all, so its
+   * candidates are kept. A partial answer is never reported as none, because
+   * the notice for `false` says "no files were skipped" and that would be a
+   * lie about the roots that did answer.
    */
   available: boolean;
 }
@@ -36,21 +48,76 @@ const unavailable = (): GitignoreAnswer => ({
 });
 
 /**
- * `paths` are relative to `cwd`, posix-style, which is what git wants; git
- * resolves them against the repository itself, so a run from a subdirectory and
- * a run from the root agree, and a worktree's `.git` *file* needs no special
- * handling.
+ * `paths` are relative to `cwd`, posix-style, spelled however the caller
+ * spelled them; the answer uses the same spelling.
+ *
+ * Candidates may lie in more than one repository (proposal 0037): a config in
+ * one checkout whose `paths:` reach into another, or a nested checkout under
+ * the run's own root. `git check-ignore` refuses a path outside the repository
+ * it runs in with exit 128, and it must not be allowed to refuse for the whole
+ * batch — one cross-root candidate then switched filtering off for every file
+ * in the run, silently, while the notice blamed a missing repository. So the
+ * candidates are grouped by the repository that contains them and git is asked
+ * once per root, from that root, with paths relative to it. A candidate inside
+ * no repository is kept: there is no `.gitignore` that could cover it.
+ *
+ * `available` is false only when git failed to answer for a repository that
+ * exists, or when no candidate was in any repository at all — the two cases
+ * where filtering was asked for and nothing could be filtered.
  */
-export function gitIgnored(
+export async function gitIgnored(
   paths: string[],
   cwd: string,
 ): Promise<GitignoreAnswer> {
   // Nothing to ask about. Skipping the subprocess also keeps a run over
   // explicitly named files alone from reporting git as unavailable.
   if (paths.length === 0) {
-    return Promise.resolve({ ignored: new Set<string>(), available: true });
+    return { ignored: new Set<string>(), available: true };
   }
 
+  // Group by containing repository. The root walk is one `existsSync` per
+  // directory level and memoized per directory, so a 5,000-file corpus in a
+  // handful of directories costs a handful of walks.
+  const rootOf = new Map<string, string | null>();
+  const byRoot = new Map<string, { rel: string; spelled: string }[]>();
+  let inSomeRepo = false;
+  for (const spelled of paths) {
+    const abs = resolve(cwd, spelled);
+    const dir = dirname(abs);
+    let root = rootOf.get(dir);
+    if (root === undefined) {
+      root = findGitRoot(dir);
+      rootOf.set(dir, root);
+    }
+    if (root === null) continue;
+    inSomeRepo = true;
+    const rel = relative(root, abs).split(sep).join("/");
+    const bucket = byRoot.get(root);
+    if (bucket) bucket.push({ rel, spelled });
+    else byRoot.set(root, [{ rel, spelled }]);
+  }
+  if (!inSomeRepo) return unavailable();
+
+  const ignored = new Set<string>();
+  let answered = 0;
+  for (const [root, bucket] of byRoot) {
+    const answer = await checkIgnore(
+      bucket.map((b) => b.rel),
+      root,
+    );
+    // A root git cannot answer for (a broken `.git`, say) is treated like no
+    // repository: its candidates are kept. See `GitignoreAnswer.available`.
+    if (!answer.available) continue;
+    answered += 1;
+    for (const b of bucket) {
+      if (answer.ignored.has(b.rel)) ignored.add(b.spelled);
+    }
+  }
+  return answered > 0 ? { ignored, available: true } : unavailable();
+}
+
+/** One `git check-ignore` run, from `cwd`, over paths relative to it. */
+function checkIgnore(paths: string[], cwd: string): Promise<GitignoreAnswer> {
   return new Promise((settle) => {
     let done = false;
     const finish = (answer: GitignoreAnswer): void => {

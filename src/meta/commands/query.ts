@@ -8,6 +8,11 @@
 import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, open, readFile, rename, rm } from "node:fs/promises";
+import {
+  loadSidecars,
+  mergeSidecars,
+  type SidecarIndex,
+} from "../core/sidecars.js";
 import { dirname, isAbsolute, resolve, extname, sep } from "node:path";
 import {
   FILE_SCHEMA_KEY,
@@ -319,6 +324,12 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
   });
 
   const entries: QueryEntry[] = [];
+  // Sidecar manifests (0037), read once per run and merged into every row.
+  const sidecars = await loadSidecars(config, {
+    configDir: configDir ?? cwd,
+    base,
+    offline: opts.offline ?? config?.offline ?? false,
+  });
 
   const readOne = (label: string, content: string, extension: string): void => {
     const extractor = forced ?? extractorForExtension(extension);
@@ -327,9 +338,14 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
         `Unsupported file type "${extension}" for "${label}". Supported: ${supportedExtensions().join(", ")}. Use --as to override.`,
       );
     }
-    const extracted = extractor.extract(content, label, {
-      elements: resolveElements(label, config),
-    });
+    const extracted = mergeSidecars(
+      label,
+      extractor.extract(content, label, {
+        elements: resolveElements(label, config),
+      }),
+      sidecars,
+      base,
+    ).extracted;
     entries.push({ label, extracted, extractor });
   };
 
@@ -375,6 +391,7 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
     configDir,
     configPath,
     trustRoot: schemaTrustRoot(cwd, configDir),
+    sidecars,
     onNotice: opts.onNotice,
   });
   // The same frame `runValidate` returns, built from query's own run context:
@@ -435,6 +452,8 @@ interface RunContext {
   configPath?: string;
   /** The boundary a schema read or write may not escape (proposal 0015). */
   trustRoot: SchemaTrustRoot;
+  /** Sidecar manifests of the run (proposal 0037); null when none are configured. */
+  sidecars: SidecarIndex | null;
   /** Diagnostics for the user; the CLI writes these to stderr. */
   onNotice?: (message: string) => void;
 }
@@ -2418,6 +2437,7 @@ function buildChanges(
     changes.push({ file: from, renamed: to, written: false });
   }
 
+  refuseSidecarWrites(changes, entries, ctx);
   return changes;
 }
 
@@ -2444,6 +2464,87 @@ function validateNewPath(p: string, base: string): void {
  * phase two writes atomically. A half-applied bulk edit would leave the
  * corpus in a state no statement describes.
  */
+
+/**
+ * The first increment of sidecars is read-only (0037 rule 6): a write to a
+ * key a manifest owns has exactly one honest destination, the manifest, and
+ * writing it into the document instead would be the thing 0018 forbids. So
+ * every change kind that would touch an owned key refuses at plan time, by
+ * name, the way an RST native header does — and a document a manifest names
+ * cannot be renamed out from under its entry.
+ */
+function refuseSidecarWrites(
+  changes: readonly QueryChange[],
+  entries: readonly QueryEntry[],
+  ctx: RunContext,
+): void {
+  const index = ctx.sidecars;
+  if (!index) return;
+  const owned = (key: string): string | undefined => index.owners.get(key);
+  const refuse = (file: string, key: string, owner: string): never => {
+    throw new DocmetaError(
+      `"${file}": "${key}" is owned by sidecar ${owner}; edit the sidecar file instead.`,
+    );
+  };
+  const data = new Map(entries.map((e) => [e.label, e.extracted.data]));
+  for (const c of changes) {
+    if ("schema" in c || "config" in c) continue;
+    if ("cleared" in c) {
+      // `data` is the *merged* object, so this refuses whenever the document
+      // is manifest-covered — a manifest supplies a key for it, or it carries
+      // an owned key itself — not only on a collision. Clearing a covered
+      // document would leave its manifest entry an orphan, which the next
+      // corpus run reports as exit 2; refusing here says so up front.
+      for (const key of Object.keys(data.get(c.file) ?? {})) {
+        const owner = owned(key);
+        if (owner !== undefined) refuse(c.file, key, owner);
+      }
+      continue;
+    }
+    if ("created" in c) {
+      for (const key of Object.keys(c.to)) {
+        const owner = owned(key);
+        if (owner !== undefined) refuse(c.file, key, owner);
+      }
+      continue;
+    }
+    if ("renamed" in c) {
+      const entry = index.byPath.get(resolve(ctx.base, c.file));
+      if (entry !== undefined && entry.size > 0) {
+        const manifest = [...entry.values()][0]?.file ?? "manifest";
+        throw new DocmetaError(
+          `"${c.file}": sidecar ${manifest} names it; rename the manifest entry first.`,
+        );
+      }
+      continue;
+    }
+    const keys = "renamedFrom" in c ? [c.key, c.renamedFrom] : [c.key];
+    for (const key of keys) {
+      const owner = owned(key);
+      if (owner !== undefined) refuse(c.file, key, owner);
+      // The join field of a document that matched a field entry (0039):
+      // changing it orphans the entry, which the next corpus run reports.
+      // A rename, by contrast, is exactly what a field join permits.
+      const byValue = index.byField.get(key);
+      if (byValue === undefined) continue;
+      const raw = data.get(c.file)?.[key];
+      const value =
+        typeof raw === "string"
+          ? raw
+          : typeof raw === "number" || typeof raw === "boolean"
+            ? String(raw)
+            : undefined;
+      const entry = value === undefined ? undefined : byValue.get(value);
+      if (entry !== undefined) {
+        const manifest = entry.values().next().value?.file ?? "manifest";
+        throw new DocmetaError(
+          `"${c.file}": "${key}" is the field sidecar ${manifest} joins on, and this document has an entry; change the manifest first.`,
+        );
+      }
+    }
+  }
+}
+
 async function applyChanges(
   changes: QueryChange[],
   entries: QueryEntry[],
@@ -2534,9 +2635,14 @@ async function applyChanges(
     const content = await readFile(path, "utf8");
     // The change was computed against load-time data; if the file moved
     // since, applying it would encode a state nobody previewed.
-    const current = entry.extractor.extract(content, label, {
-      elements: resolveElements(label, ctx.config),
-    });
+    const current = mergeSidecars(
+      label,
+      entry.extractor.extract(content, label, {
+        elements: resolveElements(label, ctx.config),
+      }),
+      ctx.sidecars,
+      ctx.base,
+    ).extracted;
 
     if (ops.cleared) {
       if (!deepEqual(current.data, entry.extracted.data)) {
@@ -2576,9 +2682,14 @@ async function applyChanges(
     if (ops.deletions.length > 0) {
       // `deletions` is advisory in the ApplyOptions contract — a writer that
       // cannot remove a key ignores it. Certainty comes from reading back.
-      const check = entry.extractor.extract(applied, label, {
-        elements: resolveElements(label, ctx.config),
-      });
+      const check = mergeSidecars(
+        label,
+        entry.extractor.extract(applied, label, {
+          elements: resolveElements(label, ctx.config),
+        }),
+        ctx.sidecars,
+        ctx.base,
+      ).extracted;
       for (const key of ops.deletions) {
         if (check.data[key] !== undefined) {
           throw new DocmetaError(

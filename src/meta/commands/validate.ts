@@ -5,6 +5,17 @@
  */
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import {
+  loadSidecars,
+  mergeSidecars,
+  orphanEntries,
+  orphanError,
+  orphanJoins,
+  sidecarPointer,
+  SIDECAR_DUPLICATE_SCHEMA,
+  SIDECAR_KEYWORD,
+  SIDECAR_OWNED_SCHEMA,
+} from "../core/sidecars.js";
 import { resolve, extname } from "node:path";
 import pkg from "../../../package.json" with { type: "json" };
 import { warn } from "../../shared/warn.js";
@@ -293,6 +304,14 @@ export async function runValidate(
   // every file in one run shares the same repository.
   const trustRoot = schemaTrustRoot(cwd, configDir);
 
+  // Sidecar manifests (0037), read once per run: a manifest the config names
+  // that cannot be read is the run's problem, not a document's.
+  const sidecars = await loadSidecars(config, {
+    configDir: configDir ?? cwd,
+    base,
+    offline: opts.offline ?? config?.offline ?? false,
+  });
+
   const validator = new Validator(
     schemaLoadOptions({
       // The config's directory when a config governs the run, so one project
@@ -308,6 +327,13 @@ export async function runValidate(
     }),
   );
   const results: ValidationResult[] = [];
+  // Field-joined entries each document matched (0039), keyed by field then
+  // value: the duplicate finding and the post-loop orphan check both need
+  // to know which documents claimed which value.
+  const joinHits = new Map<
+    string,
+    Map<string, { label: string; line?: number; file: string }[]>
+  >();
   // Corpus checks (0026) run only when the resolved file set IS the
   // config-resolved corpus — an invariant, not a flag list: any CLI reshaping
   // of the input set (positional paths, stdin, --as/--ext, --exclude,
@@ -328,6 +354,16 @@ export async function runValidate(
     opts.respectGitignore !== undefined ||
     (opts.cliSchemas?.length ?? 0) > 0;
   const configuredChecks = config?.checks ?? [];
+
+  // A manifest entry naming a document this run did not load (0037 rule 4):
+  // 0014's named-file-that-is-not-there, and 0026 §4's row outside the run.
+  // Only when the run is the config corpus — a positional path means the
+  // operator chose to look at part of it, and entries for the rest are
+  // expected rather than orphaned.
+  if (!scoped) {
+    const orphans = orphanEntries(sidecars, files, base);
+    if (orphans.length > 0) throw orphanError(orphans);
+  }
   const checksWillRun =
     configuredChecks.length > 0 && opts.checks !== false && !scoped;
   // Every successful extraction, kept for the corpus checks (0026): the
@@ -369,6 +405,26 @@ export async function runValidate(
       );
       return;
     }
+    // The sidecar merge sits between extraction and everything downstream,
+    // so schema resolution, validation, and the corpus checks all see the one
+    // object the document and its manifest entry make together.
+    // `merged.extracted` keeps the document's own `lineFor`/`colFor`: a
+    // sidecar key is not in the document, so those answer `undefined` for it
+    // and `merged.locate` answers instead. Rebound rather than shadowed, so
+    // every read below — resolution, validation, the collision loop — sees
+    // the one merged object.
+    const merged = mergeSidecars(label, extracted, sidecars, base);
+    extracted = merged.extracted;
+    for (const j of merged.joins) {
+      const byValue =
+        joinHits.get(j.field) ??
+        new Map<string, { label: string; line?: number; file: string }[]>();
+      const line = extracted.lineFor(j.field);
+      const hits = byValue.get(j.value) ?? [];
+      hits.push({ label, file: j.file, ...(line != null ? { line } : {}) });
+      byValue.set(j.value, hits);
+      joinHits.set(j.field, byValue);
+    }
     if (checksWillRun) checkEntries.push({ label, extracted });
 
     let resolved: ResolvedSchemaSet;
@@ -401,6 +457,7 @@ export async function runValidate(
         schemaSet,
         extracted.lineFor,
         extracted.colFor,
+        merged.locate,
       );
     } catch (err) {
       // A schema the *document* chose failing to load — unparseable, missing,
@@ -420,6 +477,20 @@ export async function runValidate(
         parseErrorResult(label, extractor.name, err.message, "schema"),
       );
       return;
+    }
+    // A document carrying a key a sidecar owns (0020 across files: neither
+    // channel wins, and the discarded value would be exactly the one nobody
+    // checked). Filed against the document at the key's own line.
+    for (const { key, file } of merged.collisions) {
+      const line = extracted.lineFor(key);
+      errors.push({
+        schema: SIDECAR_OWNED_SCHEMA,
+        keyword: SIDECAR_KEYWORD,
+        subject: key,
+        instancePath: sidecarPointer(key),
+        message: `"${key}" is owned by sidecar ${file}; remove it from the document`,
+        ...(line != null ? { line } : {}),
+      });
     }
     results.push({
       file: label,
@@ -443,6 +514,43 @@ export async function runValidate(
   for (const file of files) {
     const content = await readFile(resolve(base, file), "utf8");
     await processOne(file, content, extname(file));
+  }
+
+  // Two documents carrying one join value (0039): one entry matched both,
+  // and the manifest cannot tell them apart. A finding on each, at the
+  // field's own line, whether or not the run is scoped — it is about the
+  // documents loaded, not the corpus. Then, on a corpus run, a field entry
+  // nothing matched is the same orphan a path entry is.
+  if (sidecars) {
+    const byLabel = new Map(results.map((r) => [r.file, r]));
+    const matched = new Map<string, Set<string>>();
+    for (const [field, byValue] of joinHits) {
+      matched.set(field, new Set(byValue.keys()));
+      for (const [value, hits] of byValue) {
+        if (hits.length < 2) continue;
+        for (const hit of hits) {
+          const others = hits
+            .filter((h) => h.label !== hit.label)
+            .map((h) => h.label)
+            .join(", ");
+          const result = byLabel.get(hit.label);
+          if (!result) continue;
+          result.errors.push({
+            schema: SIDECAR_DUPLICATE_SCHEMA,
+            keyword: SIDECAR_KEYWORD,
+            subject: value,
+            instancePath: sidecarPointer(field),
+            message: `${hits.length} documents carry ${field} "${value}"; ${hit.file} cannot tell them apart (${others})`,
+            ...(hit.line != null ? { line: hit.line } : {}),
+          });
+          result.ok = false;
+        }
+      }
+    }
+    if (!scoped) {
+      const orphans = orphanJoins(sidecars, matched);
+      if (orphans.length > 0) throw orphanError(orphans);
+    }
   }
 
   // Corpus checks (0026), after the per-file loop and before the baseline so

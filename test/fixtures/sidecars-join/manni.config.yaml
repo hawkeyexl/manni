@@ -1,0 +1,12 @@
+# Field-joined sidecar fixture (proposal 0039): entries keyed by `id`.
+meta:
+  paths:
+    - "docs/**/*.md"
+  sidecars:
+    - file: ./docs-meta.yaml
+      keys: [source, jira]
+      join: id
+  overrides:
+    - files: "docs/**/*.md"
+      schemas:
+        - ./private.schema.json
