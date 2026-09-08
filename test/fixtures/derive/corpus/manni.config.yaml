@@ -1,0 +1,10 @@
+# A corpus for `manni meta derive`: two pages, a CODEOWNERS file, and three
+# managed fields. The tests copy it into a temp repository and commit it with
+# pinned dates, so the facts under test are the commits', not the clock's.
+meta:
+  paths:
+    - "docs/**/*.md"
+  schemas:
+    - ./permissive.schema.json
+  derive:
+    fields: [created, last-updated, owner]

@@ -112,8 +112,11 @@ source-of-truth:
 - **The cost of stamping a date is real.** A hand-typed `last-updated` goes
   stale quietly, and no JSON Schema can catch that. Comparing the field
   against the repository's own history is a job for tooling that can read
-  both. What stays out is a stored copy of a value this vocabulary already
-  derives, which is why there is no due-date field.
+  both. That comparison now exists: [`manni meta derive` stamps the managed
+  fields from evidence, and `validate` reports a stamp that has gone
+  stale](/manni/meta/set-up/derived-metadata/). What stays out is a stored
+  copy of a value this vocabulary already derives, which is why there is no
+  due-date field.
 - **`last-updated` is not `last-reviewed`.** An update changes the
   content. A review confirms it is still true. A page can have either
   without the other, which is why both dates exist. Both carry the
@@ -175,3 +178,10 @@ Round 9 adds one more. Should the object form of an anchor require a
 key? As proposed it accepts any object, so a drift checker cannot rely
 on finding a `name` or a `path`. Requiring one would be a small
 vocabulary this proposal has not yet reviewed.
+
+Batami Gold's question adds a sixth. She asked for a system that makes the
+updater answer these questions at check-in. Six of the fields can now be
+[stamped from evidence and held to it](/manni/meta/set-up/derived-metadata/),
+and which ones a repository manages is its own choice. Should the vocabulary
+recommend which fields to manage, or stay silent and leave that to the
+tooling's documentation?

@@ -50,6 +50,11 @@ exit code is the caller's.
 | `FillSummary` (type) | Aggregate fill counts, including cost and the required fields left unfilled. |
 | `FilledField` (type) | One proposed field: JSON Pointer, `required`, `confidence`, `reasoning`, the `value`, and whether it was `written`. |
 | `SkipReason` (type) | Why a proposal was not written: `low-confidence`, `schema-mismatch`, or `no-proposal`. |
+| `runDerive` | Stamp the managed stewardship fields from git history, CODEOWNERS and the forge. Backs `manni meta derive`. Writes a `stale` or `unset` field unless `dryRun` or `check`; leaves `current` and `unknown` alone. Throws `DocmetaError` for stdin, a field or source it does not know, nothing to derive, and a consulted source that cannot answer. |
+| `DeriveOptions` (type) | Input to `runDerive`: the same input model minus stdin, plus `fields` and `sources` (config `derive:` otherwise), `dryRun`, `check`, `cache`, a `now` clock, and a `forge` client to inject. |
+| `DeriveRun` (type) | What `runDerive` resolves to: per-file `results`, the `summary`, whether it was a `dryRun` or a `check`, the `sources` consulted with each one's status, and the `frame` SARIF needs. |
+| `DeriveFileResult` (type) | One file's outcome: its `fields` as `DerivedField`s, whether it `changed`, an `error` when it could not be derived or written, and under `check` its `findings`. |
+| `DeriveSummary` (type) | Aggregate counts: files, changed, fields written, and how many fields were stale, unset, or unknown, plus errors. |
 | `getSchemasInfo` | The built-in schema registry and the supported input formats, as data. Backs `manni meta schemas`. |
 | `runVendorSchema` | Fetch a remote schema, write it into the repository, and record its integrity pin. Backs `manni meta schemas vendor`. |
 | `VendorOptions` (type) | Input to `runVendorSchema`: the URL, the destination directory, and whether to update the config. |
@@ -110,6 +115,43 @@ once per run and merges per document. It validates the merged object with
 | `SIDECAR_DUPLICATE_SCHEMA` | The `schema` ref a duplicate-join finding carries: `sidecar:duplicate`. |
 | `SIDECAR_KEYWORD` | The `keyword` every sidecar finding carries: `sidecar`. Joined, they are the rule ids `sidecar:owned/sidecar` and `sidecar:duplicate/sidecar`. |
 
+## Derived metadata
+
+Values computed from git history, CODEOWNERS and the forge rather than written
+by hand. A derived value never merges into what the schema sees. `manni meta
+derive` stamps the managed fields into the document, and `validate` reports a
+managed field whose asserted value differs from the derived one. The exports
+below are the shared vocabulary and the two pure steps every source feeds.
+
+| Export | Purpose |
+|---|---|
+| `DERIVABLE_FIELDS` | The fields `derive.fields` may name: `created`, `last-updated`, `authors`, `owner`, `reviewed-by`, `last-reviewed`. |
+| `DerivableField` (type) | The union of those names. |
+| `isDerivableField` | Type guard for a user-supplied field name. |
+| `DERIVE_SOURCES` | The sources `derive.sources` may name: `git`, `codeowners`, `forge`. Absent in config means all three. |
+| `DeriveSource` (type) | The union of those names. |
+| `isDeriveSource` | Type guard for a user-supplied source name. |
+| `DerivedValue` (type) | One fact a source produced: the `value`, its `source`, and the `evidence` a finding quotes, such as a commit, a CODEOWNERS line, or a pull request. |
+| `DerivedRecord` (type) | Everything derived for one document: the `file` and a `fields` map. A `null` field means a source was consulted and had no fact; an absent one means no source answered. |
+| `SourceStatus` (type) | Whether a source can answer at all, with a `reason` naming the fix when it cannot. |
+| `ForgeClient` (type) | The forge half of a derive run: `detect` the hosting kind and project, `status` (binary on `PATH` and authenticated), and `mergedChangeFor` a commit. Reached through `gh` or `glab`; inject one through `DeriveContext.forge` or `DeriveOptions.forge` to keep the network out. |
+| `ForgeIdentity` (type) | What `detect` answers: the `kind` (`github` or `gitlab`), the `host`, and the `project` path there. |
+| `MergedChange` (type) | The merged pull or merge request that carried a commit: its `id`, when it was `mergedAt`, and its `approvals`. |
+| `Approval` (type) | One `APPROVED` review, the latest per reviewer: the `login` and when it was `submittedAt`. |
+| `DeriveInput` (type) | One document as the sources see it: its `label`, `absPath`, `content`, and `extracted` metadata. |
+| `DeriveContext` (type) | What a derive run holds constant: `cwd`, `base`, `configDir`, the `sources` and `fields` in play, an optional `codeowners` path, whether to `cache`, a `now` clock, and an optional `forge` client. |
+| `DerivedStatus` (type) | How an asserted value stands against the derived one: `current`, `stale`, `unset`, or `unknown`. |
+| `DerivedField` (type) | One compared field: the `field`, the `asserted` value when the document carries one, the `derived` value or `null`, its `source` and `evidence`, the `status`, and whether `derive` has `written` it. |
+| `compareDerived` | Compare what a document asserts with what a source derived. Pure. Lists compare as sets, so a reordered `authors:` is current, not stale. A missing or `null` derived value is `unknown`. |
+| `staleFindings` | The findings `validate` files for a document's managed fields: one `FieldError` per `stale` or `unset` field, on the line the asserted key sits on, with a message naming both values and the evidence. |
+| `DERIVED_STALE_SCHEMA` | The `schema` ref a derived finding carries: `derived:stale`. |
+| `DERIVED_KEYWORD` | The `keyword` every derived finding carries: `derived`. Joined, they are the rule id `derived:stale/derived`. |
+| `deriveMetadata` | The orchestrator: resolve every requested field for every input from the sources the run consults. A source is consulted only when a requested field can come from it, the forge rides on git, and precedence is per field with the first non-null answer winning. |
+| `DeriveResult` (type) | What `deriveMetadata` resolves to: a `DerivedRecord` per input keyed by label, and one `SourceStatus` per source consulted. |
+| `FIELD_SOURCES` | Which sources can state each derivable field, in precedence order: the forge ahead of git for `reviewed-by` and `last-reviewed`, one source for every other field. |
+| `consultedSources` | The sources a run consults: those requested that some requested field can come from, in the requested order. |
+| `assertSourcesAvailable` | Throw the exit-2 `DocmetaError` for the first consulted source that could not answer, with the caller's hint appended after a semicolon. Availability is reported, not thrown, so each command chooses its own way out. |
+
 ## Schema resolution
 
 The precedence chain that decides which schemas apply to a given file. See
@@ -164,7 +206,7 @@ reference](/manni/meta/reference/configuration/) for what each key means.
 | `loadConfig` | Discover (or take an explicit path to) a config file and parse it. Resolves to `null` when discovery finds none. |
 | `parseConfig` | Parse config text that you already have, with a source label for error messages. |
 | `LoadedConfig` (type) | A parsed config plus where it came from. |
-| `DocmetaConfig` (type) | The config document itself: `paths`, `exclude`, `schemas`, `overrides`, `checks`, `sidecars`, `fill`, `schemaTrust`, `schemaCache`, and the rest. |
+| `DocmetaConfig` (type) | The config document itself: `paths`, `exclude`, `schemas`, `overrides`, `checks`, `sidecars`, `derive`, `fill`, `schemaTrust`, `schemaCache`, and the rest. |
 | `resolveRunConfig` | Merge config with the run's inputs and flags into the settings a core actually uses. This is the precedence chain, in one place. |
 | `RunConfigOptions` (type) | Input to `resolveRunConfig`: cwd, `configPath`, `noConfig`, the positional `inputs`, and a load callback. |
 | `RunConfig` (type) | The merged result. The rebased config, the effective inputs, and the resolved run settings. |
@@ -177,6 +219,7 @@ reference](/manni/meta/reference/configuration/) for what each key means.
 | `SchemaCacheConfig` (type) | Config for the remote-schema cache, currently `ttlHours`. |
 | `CheckConfig` (type) | One named [corpus check](/manni/meta/reference/configuration/#checks). Its `name` (the durable half of its findings' identity) and the SQL `query`. |
 | `SidecarConfig` (type) | One [sidecar](/manni/meta/reference/configuration/#sidecars) entry, made of the manifest `file`, the top-level `keys` it owns, an optional `tokenEnv`, and an optional `join`. `file` is a path relative to the config's directory or an `https://` URL, and `tokenEnv` names the environment variable holding the bearer token for a URL. `join` is `path` or the top-level field the manifest's keys are values of. The parser has already asserted the keys are non-empty, unique, disjoint across entries, and never `$schema`. It has also asserted that `tokenEnv` appears only on a URL, and that `join` is neither `$schema` nor an owned key. |
+| `DeriveConfig` (type) | The [derived channel](/manni/meta/reference/configuration/#derive): the managed `fields`, the optional `sources` to consult, and an optional `codeowners` path relative to the config's directory. The parser has already asserted the fields are non-empty, unique, each one of `DERIVABLE_FIELDS`, and never a key a sidecar owns. |
 
 ## Reporters
 
@@ -211,6 +254,11 @@ Pure formatting. A reporter turns a core's result into text and never writes it 
 | `FillReportFormat` (type) | The union of those names. |
 | `isFillFormat` | Type guard for a user-supplied fill format string. |
 | `FillReportOptions` (type) | `color` and `quiet` for `renderFill`. |
+| `renderDerive` | The reporter behind `manni meta derive`. An apply or dry run renders its own `pretty` and `json`; a `--check` run renders every format through `render`, so a stale stamp is a finding under `derived:stale/derived`. The findings formats throw `DocmetaError` without `--check`. |
+| `DERIVE_FORMATS` | The formats `derive` accepts: `pretty`, `json`, `github`, `sarif`, `junit`. The last three need `--check`. |
+| `DeriveReportFormat` (type) | The union of those names. |
+| `isDeriveFormat` | Type guard for a user-supplied derive format string. |
+| `DeriveReportOptions` (type) | The same options as `render`: `color`, `quiet`, the `frame`, and `onNotice`. |
 
 ## Extractors
 

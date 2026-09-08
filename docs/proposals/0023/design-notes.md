@@ -135,6 +135,21 @@ settled it the other way on 2026-09-05. Both fields name the most recent
 instance of a repeating event, so both say `last-`. `created` needs no prefix,
 because a document is written once.
 
+**2026-09-07 ruling: the tooling round 9 pointed at now has a proposal.**
+Round 9 accepted the cost of a stamped date. The grounds were that comparing
+the field against the repository's own history is a job for tooling that can
+read both. That tooling is proposal 0040, at
+`docs/proposals/0040-derived-metadata.md`. It adds a derived channel that never
+merges into what the schema sees. Config names the managed fields. A new verb,
+`manni meta derive`, stamps them from git, CODEOWNERS and the forge's review
+history. `validate` reports a stamp that disagrees with the evidence as a
+`derived:stale` finding. Six stewardship fields are derivable: `created`,
+`last-updated`, `authors`, `owner`, `reviewed-by` and `last-reviewed`. The
+other four stay asserted, because each is a judgment a person makes. Nothing
+in the vocabulary changes. The schema still cannot compare a date to history,
+and now does not have to. The stewardship page carries the pointer, and asks
+reviewers whether the vocabulary should recommend which fields to manage.
+
 **2026-08-26 correction: the whole family is default.** All nine append to
 `DEFAULT_SCHEMAS`, superseding the core-only intent below wherever it
 appears. Bare runs require the pair, validate every family key present,

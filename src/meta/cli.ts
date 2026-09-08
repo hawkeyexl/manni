@@ -26,6 +26,7 @@ import {
   runVendorSchema,
 } from "./commands/schemas.js";
 import { runFill } from "./commands/fill.js";
+import { runDerive } from "./commands/derive.js";
 import { supportedExtensions } from "./extractors/index.js";
 import {
   COMMON_FORMATS,
@@ -53,6 +54,12 @@ import {
   isFillFormat,
   renderFill,
 } from "./reporters/fill.js";
+import {
+  DERIVE_FORMATS,
+  DERIVE_FORMAT_LIST,
+  isDeriveFormat,
+  renderDerive,
+} from "./reporters/derive.js";
 import { renderGet } from "./reporters/get.js";
 import { renderQuery, renderQueryCsv } from "./reporters/query.js";
 import { renderInfer } from "./reporters/infer.js";
@@ -573,11 +580,18 @@ interface ValidateCliOptions extends RunCliOptions {
    * the same shape as `gitignore`.
    */
   checks: boolean;
+  /**
+   * `--no-derive`. The same shape as `checks`: commander's `true` default is
+   * not a choice, so only the explicit `false` travels to the core.
+   */
+  derive: boolean;
 }
 
 interface GetCliOptions extends RunCliOptions {
   /** `--fields <list>`; when present, every positional is a path. */
   fields?: string;
+  /** `--derived`: print the derived value and its evidence beside the asserted one. */
+  derived?: boolean;
 }
 
 /**
@@ -623,6 +637,24 @@ interface FillCliOptions extends RunCliOptions {
   maxTurns?: number;
   chunkChars?: number;
   concurrency?: number;
+}
+
+/**
+ * Not `RunCliOptions`: `derive` declares no `-q/--quiet` and no `--offline`.
+ * It loads no schema, so there is nothing to fetch, and its report already
+ * says `current` in one line per untouched file.
+ */
+interface DeriveCliOptions extends InputCliOptions {
+  fields?: string;
+  sources?: string;
+  dryRun?: boolean;
+  /** `--check`: implies `--dry-run`; a stale or unset field is a finding. */
+  check?: boolean;
+  /** `--no-cache`; commander's `true` default is passed through, as `fill` does. */
+  cache: boolean;
+  allowEmpty?: boolean;
+  /** `--no-gitignore`; commander's `true` default, see `gitignoreFlag`. */
+  gitignore: boolean;
 }
 
 interface SchemasCliOptions {
@@ -737,6 +769,10 @@ export function buildProgram(): Command {
       "--no-checks",
       "skip the corpus checks configured by `checks:` for this run",
     )
+    .option(
+      "--no-derive",
+      "skip the derived-value comparison configured by derive.fields",
+    )
     .addHelpText(
       "after",
       [
@@ -799,6 +835,8 @@ export function buildProgram(): Command {
             // Like `gitignore`: only the explicit `--no-checks` travels, so
             // absence stays "run them when the corpus rule allows".
             checks: options.checks ? undefined : false,
+            // And `--no-derive`, for the managed-field comparison.
+            derive: options.derive ? undefined : false,
           });
 
           const color = resolveColor(command.parent ?? command);
@@ -839,6 +877,10 @@ export function buildProgram(): Command {
     .option(
       "--fields <list>",
       "comma-separated metadata fields to print; every positional is then a path",
+    )
+    .option(
+      "--derived",
+      "show the derived value and its evidence beside the asserted one",
     )
     .option("--ext <list>", "comma-separated extensions for directory walks")
     .option("--exclude <glob>", "glob to exclude; repeatable", collect, [])
@@ -896,6 +938,7 @@ export function buildProgram(): Command {
 
           const results = await runGet({
             fields,
+            derived: Boolean(options.derived),
             inputs: paths,
             as: options.as,
             exclude: options.exclude,
@@ -1339,6 +1382,109 @@ export function buildProgram(): Command {
         // work left undone, so CI should see it. Optional fields are not.
         process.exitCode =
           run.summary.requiredSkipped > 0 || run.summary.errors > 0 ? 1 : 0;
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  program
+    .command("derive")
+    .description(
+      "Stamp the managed stewardship fields from git history, CODEOWNERS and the forge",
+    )
+    .argument("[paths...]", "files, directories, or globs to stamp")
+    .option(
+      "--fields <list>",
+      "comma-separated managed fields to stamp; config derive.fields otherwise",
+    )
+    .option(
+      "--sources <list>",
+      "comma-separated sources to consult: git, codeowners, forge (default all)",
+    )
+    .option("--dry-run", "report what would change and write nothing")
+    .option(
+      "--check",
+      "implies --dry-run: a stale or unset managed field is a finding, exit 1 if any",
+    )
+    .option(
+      "-f, --format <format>",
+      `output: ${DERIVE_FORMATS.join(" | ")} (github, sarif, junit need --check)`,
+      "pretty",
+    )
+    .option("--no-cache", "bypass the forge cache")
+    .option("--ext <list>", "comma-separated extensions for directory walks")
+    .option("--exclude <glob>", "glob to exclude; repeatable", collect, [])
+    .option("--as <format>", "force an input format (e.g. markdown, mdx)")
+    .option("-c, --config <path>", "path to a manni config file")
+    .option("--no-config", "ignore any discovered config file")
+    .option("--allow-empty", "treat zero matched files as success")
+    .option("--no-gitignore", "stamp files .gitignore covers")
+    .addHelpText(
+      "after",
+      [
+        "",
+        "Examples:",
+        "  manni meta derive                                # stamp config derive.fields over config paths",
+        "  manni meta derive --dry-run docs/install.md      # what would change, nothing written",
+        "  manni meta derive --check -f github              # CI: a stale stamp is an annotation, exit 1",
+        "  manni meta derive --fields reviewed-by,last-reviewed",
+        "  manni meta derive --sources git,codeowners       # no gh on this machine",
+      ].join("\n"),
+    )
+    .action(async (paths: string[], options: DeriveCliOptions, command: Command) => {
+      try {
+        const format = options.format;
+        if (!isDeriveFormat(format)) {
+          throw new DocmetaError(
+            `Unknown --format "${format}". Use ${DERIVE_FORMAT_LIST}.`,
+          );
+        }
+        // The findings formats render findings, and only `--check` produces
+        // them. Gated before the run so the refusal costs nothing — and so
+        // nothing is written on a run whose report was never going to render.
+        if (
+          (format === "github" || format === "sarif" || format === "junit") &&
+          !options.check
+        ) {
+          throw new DocmetaError(
+            `${format} is a findings format, which only --check produces`,
+          );
+        }
+        const exts: string[] | undefined = options.ext
+          ? splitList(options.ext)
+          : undefined;
+
+        const run = await runDerive({
+          inputs: paths,
+          fields: options.fields ? splitList(options.fields) : undefined,
+          sources: options.sources ? splitList(options.sources) : undefined,
+          dryRun: Boolean(options.dryRun),
+          check: Boolean(options.check),
+          cache: options.cache,
+          exts,
+          exclude: options.exclude,
+          as: options.as,
+          ...configOption(options.config),
+          onConfigLoaded: reportConfig(!isMachineFormat(format), process.cwd()),
+          allowEmpty: options.allowEmpty ? true : undefined,
+          respectGitignore: gitignoreFlag(options.gitignore),
+          onNotice: notice,
+        });
+
+        const text = renderDerive(run, format, {
+          color: resolveColor(command.parent ?? command),
+          frame: run.frame,
+          onNotice: notice,
+        });
+        // Only `github` may say nothing on a clean run — see `OMITTED_WHEN_CLEAN`.
+        if (text.length > 0 || !OMITTED_WHEN_CLEAN.has(format)) {
+          process.stdout.write(`${text}\n`);
+        }
+        // Exit 1 is `--check`'s alone: an applied run is the work done. A
+        // file the run could not read counts as a finding there too, as it
+        // does for `validate`, so an unparseable document cannot pass the gate.
+        const { stale, unset, errors } = run.summary;
+        process.exitCode = options.check && stale + unset + errors > 0 ? 1 : 0;
       } catch (err) {
         fail(err);
       }

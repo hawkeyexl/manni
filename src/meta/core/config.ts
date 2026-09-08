@@ -21,6 +21,14 @@ import { classifyRef } from "./schema-registry.js";
 import { sidecarUrlProblem } from "./sidecar-fetch.js";
 import { INTEGRITY_SHAPE, isIntegrity } from "./integrity.js";
 import { parseElementPath } from "../extractors/element-key.js";
+import {
+  DERIVABLE_FIELDS,
+  DERIVE_SOURCES,
+  isDerivableField,
+  isDeriveSource,
+  type DerivableField,
+  type DeriveSource,
+} from "./derive/types.js";
 
 export interface SchemaOverride {
   /**
@@ -209,6 +217,29 @@ export interface SidecarConfig {
 const SIDECAR_KEYS = ["file", "keys", "tokenEnv", "join"] as const;
 
 /**
+ * The derived channel: managed fields `manni meta derive` stamps from git
+ * history, CODEOWNERS and the forge, and `validate` checks for drift.
+ */
+export interface DeriveConfig {
+  /**
+   * The managed fields. Each is one of `DERIVABLE_FIELDS`, never `$schema`,
+   * and never a key a sidecar owns: a value with two authorities has none.
+   */
+  fields: DerivableField[];
+  /** Which sources to consult; absent means all of `DERIVE_SOURCES`. */
+  sources?: DeriveSource[];
+  /**
+   * CODEOWNERS path, relative to the config file's directory, when it is not
+   * in one of the places the codeowners source looks by itself. Checked for
+   * existence at run time, not here.
+   */
+  codeowners?: string;
+}
+
+/** The keys a `derive:` mapping may carry. */
+const DERIVE_KEYS = ["fields", "sources", "codeowners"] as const;
+
+/**
  * The grammar a check's name must satisfy: one built-in id *segment*.
  *
  * Not taste. The finding's `schema` field carries `check:<name>` and the
@@ -226,12 +257,25 @@ const SIDECAR_KEYS = ["file", "keys", "tokenEnv", "join"] as const;
 export const CHECK_NAME = /^[a-z0-9][a-z0-9._-]*$/;
 
 /**
+ * Check names a config may not claim, each with why.
+ *
  * `query` is reserved: `manni meta query --check` files its ad-hoc findings as
  * the pseudo-check `check:query`, and a configured check with that name would
  * mint the identical rule id — two different rules sharing one baseline
- * identity.
+ * identity. `derive` is reserved beside it: `manni meta derive` is a verb of
+ * its own with its own finding identity (`derived:stale`), and a check
+ * reporting as `check:derive` would read as that verb's findings.
  */
-const RESERVED_CHECK_NAMES = new Set(["query"]);
+const RESERVED_CHECK_NAMES = new Map<string, string>([
+  [
+    "query",
+    "`manni meta query --check` files its ad-hoc findings as check:query, and a configured check with the same name would share their identity",
+  ],
+  [
+    "derive",
+    "`manni meta derive` is a verb of its own, and a check reporting as check:derive would read as its findings",
+  ],
+]);
 
 /** The keys a `fill:` mapping may carry. */
 const FILL_KEYS = [
@@ -257,6 +301,7 @@ const CONFIG_KEYS = [
   "overrides",
   "checks",
   "sidecars",
+  "derive",
   "baseline",
   "allowEmpty",
   "respectGitignore",
@@ -346,6 +391,11 @@ export interface DocmetaConfig {
    * See `SidecarConfig`.
    */
   sidecars?: SidecarConfig[];
+  /**
+   * The managed fields `derive` stamps and `validate` checks for drift. See
+   * `DeriveConfig`.
+   */
+  derive?: DeriveConfig;
   /**
    * Element paths to lift in addition to each format's convention. See
    * `parseElementPath` for the syntax.
@@ -698,6 +748,105 @@ function parseSidecars(raw: unknown, source: string): SidecarConfig[] {
   });
 }
 
+/**
+ * Parse `derive:`.
+ *
+ * A `derive:` must say something: `fields` to manage, or `sources` or
+ * `codeowners` to shape the reads (`get --derived`, the `derived` table). A
+ * bare `derive:` reads as configured and is not — the same silence
+ * `rejectUnknownKeys` exists to end. `fields` defaults to none when the
+ * other keys carry the block, so a repository without `gh` can narrow
+ * `sources` for its reads without inventing a managed field.
+ * A field is refused when it is not derivable (nothing could ever fill it),
+ * repeated, or owned by a sidecar: a managed field has exactly one authority,
+ * and a sidecar-owned key already has one. `$schema` falls out of the
+ * derivable list, so it never needs a rule of its own.
+ */
+function parseDerive(
+  raw: unknown,
+  source: string,
+  sidecars: readonly SidecarConfig[],
+): DeriveConfig {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    throw new DocmetaError(
+      `${source}: "derive" must be a mapping. Write it as \`derive:\` with \`fields:\` beneath it.`,
+    );
+  }
+  const e = raw as Record<string, unknown>;
+  rejectUnknownKeys(e, DERIVE_KEYS, '"derive"', source);
+
+  if (e.fields === undefined && e.sources === undefined && e.codeowners === undefined) {
+    throw new DocmetaError(
+      `${source}: "derive" sets nothing. Give it \`fields:\` to manage, or \`sources:\` or \`codeowners:\` to shape the reads.`,
+    );
+  }
+  if (
+    e.fields !== undefined &&
+    (!Array.isArray(e.fields) ||
+      e.fields.length === 0 ||
+      e.fields.some((f) => typeof f !== "string"))
+  ) {
+    throw new DocmetaError(
+      `${source}: derive.fields must be a non-empty list of field names. Derivable fields: ${DERIVABLE_FIELDS.join(", ")}.`,
+    );
+  }
+  const fields: DerivableField[] = [];
+  ((e.fields ?? []) as string[]).forEach((f, i) => {
+    if (!isDerivableField(f)) {
+      throw new DocmetaError(
+        `${source}: derive.fields[${i}] "${f}" is not derivable. Derivable fields: ${DERIVABLE_FIELDS.join(", ")}.`,
+      );
+    }
+    if (fields.includes(f)) {
+      throw new DocmetaError(`${source}: derive.fields lists "${f}" twice.`);
+    }
+    const owner = sidecars.find((s) => s.keys.includes(f));
+    if (owner !== undefined) {
+      throw new DocmetaError(
+        `${source}: derive.fields[${i}] "${f}" is owned by sidecars[${sidecars.indexOf(owner)}] (${owner.file}) — a managed field has one authority, and a sidecar key already has one. Drop it from one side.`,
+      );
+    }
+    fields.push(f);
+  });
+  const derive: DeriveConfig = { fields };
+
+  if (e.sources !== undefined) {
+    if (
+      !Array.isArray(e.sources) ||
+      e.sources.length === 0 ||
+      e.sources.some((s) => typeof s !== "string")
+    ) {
+      throw new DocmetaError(
+        `${source}: derive.sources must be a non-empty list of source names. Sources: ${DERIVE_SOURCES.join(", ")}.`,
+      );
+    }
+    const sources: DeriveSource[] = [];
+    (e.sources as string[]).forEach((s, i) => {
+      if (!isDeriveSource(s)) {
+        throw new DocmetaError(
+          `${source}: derive.sources[${i}] "${s}" is not a source. Sources: ${DERIVE_SOURCES.join(", ")}.`,
+        );
+      }
+      if (sources.includes(s)) {
+        throw new DocmetaError(`${source}: derive.sources lists "${s}" twice.`);
+      }
+      sources.push(s);
+    });
+    derive.sources = sources;
+  }
+
+  if (e.codeowners !== undefined) {
+    if (typeof e.codeowners !== "string" || e.codeowners.trim() === "") {
+      throw new DocmetaError(
+        `${source}: derive.codeowners must be a non-empty path to a CODEOWNERS file, relative to the config file.`,
+      );
+    }
+    derive.codeowners = e.codeowners;
+  }
+
+  return derive;
+}
+
 function parseConfigDocument(raw: unknown, source: string): DocmetaConfig {
   if (raw == null) return {};
   if (typeof raw !== "object" || Array.isArray(raw)) {
@@ -811,6 +960,11 @@ function parseConfigDocument(raw: unknown, source: string): DocmetaConfig {
     config.sidecars = parseSidecars(obj.sidecars, source);
   }
 
+  // After sidecars, because a managed field may not be a sidecar-owned key.
+  if (obj.derive !== undefined) {
+    config.derive = parseDerive(obj.derive, source, config.sidecars ?? []);
+  }
+
   if (obj.elements !== undefined) {
     config.elements = asElementPaths(obj.elements, "elements", source);
   }
@@ -890,9 +1044,10 @@ function parseChecks(value: unknown, source: string): CheckConfig[] {
         `${source}: checks[${i}].name "${e.name}" must match [a-z0-9][a-z0-9._-]* and not end in ".json" — the name is part of each finding's identity (check:<name>).`,
       );
     }
-    if (RESERVED_CHECK_NAMES.has(e.name)) {
+    const reserved = RESERVED_CHECK_NAMES.get(e.name);
+    if (reserved !== undefined) {
       throw new DocmetaError(
-        `${source}: checks[${i}].name "${e.name}" is reserved — \`manni meta query --check\` files its ad-hoc findings as check:${e.name}, and a configured check with the same name would share their identity. Pick another name.`,
+        `${source}: checks[${i}].name "${e.name}" is reserved — ${reserved}. Pick another name.`,
       );
     }
     // Two checks sharing a name would share every finding's identity, so the

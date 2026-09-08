@@ -29,6 +29,8 @@ import {
   createCollectionViews,
   type CollectionParams,
 } from "./collections.js";
+import { createDerivedView, mentionsDerived } from "./derive/table.js";
+import type { DerivedRecord } from "./derive/types.js";
 
 /** One loaded file a check may attach findings to. */
 export type CheckEntry = ProjectionEntry;
@@ -160,9 +162,16 @@ function synthesizeMessage(
  * `validate` resolves each file's schema set with, so `FROM authors` in a
  * check means exactly "the files the author schema judged". The shape IS
  * `CollectionParams`: it is handed to `collectCollections` verbatim, and an
- * alias is what keeps the two from drifting apart field by field.
+ * intersection is what keeps the two from drifting apart field by field.
+ *
+ * `derive` is the one addition (proposal 0040): how to get the rows of the
+ * `derived` table when a check names it. A function rather than the rows,
+ * because building them spawns git, and a check that never names the table
+ * must not pay for it. Absent, a check naming the table is refused.
  */
-export type CheckRunContext = CollectionParams;
+export type CheckRunContext = CollectionParams & {
+  derive?: () => Promise<ReadonlyMap<string, DerivedRecord>>;
+};
 
 export async function runChecks(
   checks: readonly CheckConfig[],
@@ -178,6 +187,18 @@ export async function runChecks(
     createDocsTable(db, entries, corpusDataColumns(entries));
     registerLineFor(db, entries);
     createCollectionViews(db, collectCollections(entries, ctx));
+    // The `derived` table (0040), when any check names it: the same view
+    // `query` builds, over every derivable field. Before `query_only`, since
+    // building it loads a table.
+    const wantsDerived = checks.filter((c) => mentionsDerived(c.query));
+    if (wantsDerived.length > 0) {
+      if (ctx.derive === undefined) {
+        throw new DocmetaError(
+          `check "${wantsDerived[0]?.name ?? ""}": the SQL names the derived table, but this run cannot derive. Run it through \`manni meta validate\`, or drop the reference.`,
+        );
+      }
+      createDerivedView(db, await ctx.derive());
+    }
     // Checks are SELECT-only by design — 0021's original discipline, which
     // 0022 lifted for `query` because writes became query's *feature*, judged
     // by its effect gate. Checks have no such gate: without this, an UPDATE

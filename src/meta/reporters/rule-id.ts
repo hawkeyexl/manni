@@ -33,6 +33,13 @@ export const SIDECAR_OWNED_RULE = "sidecar:owned/sidecar";
  */
 export const SIDECAR_DUPLICATE_RULE = "sidecar:duplicate/sidecar";
 
+/**
+ * A managed field whose asserted value differs from the derived one, or is
+ * missing while a source has one. `derived:stale` is builtin-shaped like the
+ * sidecar refs, so the ordinary join produces this id too.
+ */
+export const DERIVED_STALE_RULE = "derived:stale/derived";
+
 /** What each reserved rule means, for the consumer's rule listing. */
 export const RESERVED_RULES: Record<string, string> = {
   [PARSE_ERROR_RULE]: "The document's metadata block could not be parsed.",
@@ -41,6 +48,8 @@ export const RESERVED_RULES: Record<string, string> = {
     "The document carries a key a sidecar manifest owns; the manifest is the only place that key may be set.",
   [SIDECAR_DUPLICATE_RULE]:
     "Two documents carry the same value of a sidecar's join field, so one manifest entry matched both.",
+  [DERIVED_STALE_RULE]:
+    "A managed field whose value differs from what git, CODEOWNERS or the forge says; run `manni meta derive` to refresh it.",
 };
 
 /**

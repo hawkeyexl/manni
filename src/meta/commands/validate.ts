@@ -64,6 +64,18 @@ import {
 import { Validator } from "../core/validator.js";
 import { schemaLoadOptions } from "../core/schema-registry.js";
 import { runChecks, type CheckEntry } from "../core/checks.js";
+import {
+  assertSourcesAvailable,
+  deriveMetadata,
+} from "../core/derive/index.js";
+import { deriveForTable, mentionsDerived } from "../core/derive/table.js";
+import {
+  compareDerived,
+  DERIVE_SOURCES,
+  staleFindings,
+  type DerivedRecord,
+  type DeriveInput,
+} from "../core/derive/types.js";
 
 export interface ValidateOptions {
   inputs: string[];
@@ -112,6 +124,13 @@ export interface ValidateOptions {
    * set is the config-resolved corpus (proposal 0026).
    */
   checks?: boolean;
+  /**
+   * `--no-derive` (false): skip comparing each managed field (`derive.fields`
+   * in the config, proposal 0040) with what the evidence says. Absent leaves
+   * the comparison on whenever `derive:` is configured — on scoped runs too,
+   * since it is per file rather than a corpus rule.
+   */
+  derive?: boolean;
 }
 
 export interface ValidateRun {
@@ -377,6 +396,24 @@ export async function runValidate(
   // it per file. A file whose resolution threw has no entry — deliberately:
   // it was filed as a schema finding and is a member of no view.
   const checkResolved = new Map<string, ResolvedSchemaSet>();
+  // The derived channel (0040): with `derive:` configured and the flag
+  // absent, every file read is an input to one derivation after the loop,
+  // and its managed fields are then compared with what the sources say.
+  // Stdin is never an input — there is no history behind it.
+  const deriveConfig = config?.derive;
+  // A `derive:` carrying only `sources` or `codeowners` shapes the reads and
+  // manages nothing, so there is nothing to compare.
+  const deriveWillRun =
+    deriveConfig !== undefined &&
+    deriveConfig.fields.length > 0 &&
+    opts.derive !== false;
+  // A corpus check naming the `derived` table needs the same inputs, content
+  // included (the git source hashes it to spot an uncommitted body), so the
+  // one list serves both — and fills only when something will read it.
+  const checksNeedDerived =
+    checksWillRun && configuredChecks.some((c) => mentionsDerived(c.query));
+  const deriveInputs: DeriveInput[] = [];
+  const keepDeriveInputs = deriveWillRun || checksNeedDerived;
 
   const processOne = async (
     label: string,
@@ -413,6 +450,14 @@ export async function runValidate(
     // and `merged.locate` answers instead. Rebound rather than shadowed, so
     // every read below — resolution, validation, the collision loop — sees
     // the one merged object.
+    //
+    // The derived comparison is the one reader that takes the document's
+    // OWN extraction, from before the merge: a managed key can never be
+    // sidecar-owned (the config parser refuses the overlap), so the asserted
+    // value is the document's, and `lineFor` must answer for its own lines.
+    if (keepDeriveInputs && label !== STDIN_LABEL) {
+      deriveInputs.push({ label, absPath: resolve(base, label), content, extracted });
+    }
     const merged = mergeSidecars(label, extracted, sidecars, base);
     extracted = merged.extracted;
     for (const j of merged.joins) {
@@ -571,6 +616,15 @@ export async function runValidate(
         trustRoot,
         resolved: checkResolved,
         ...(opts.onNotice ? { onNotice: opts.onNotice } : {}),
+        // A check that names the `derived` table (0040) gets the same view
+        // `query` builds: every derivable field, from the sources the config
+        // allows. Built only when asked for, because building it spawns git.
+        derive: () =>
+          deriveForTable(
+            deriveInputs,
+            { cwd, base, configDir, config },
+            "narrow derive.sources in manni.config.yaml",
+          ),
       });
       const byFile = new Map(results.map((r) => [r.file, r]));
       for (const [file, errs] of findings) {
@@ -586,6 +640,53 @@ export async function runValidate(
         result.errors.push(...errs);
         result.ok = false;
       }
+    }
+  }
+
+  // The derived comparison (0040), once for the run: what each document
+  // asserts for its managed fields against what the sources say. Per file,
+  // so it runs on scoped runs too, and before the baseline so a stale stamp
+  // rides the same ratchet every other finding does. A source that cannot
+  // answer is the run's error — a half-derived comparison would read as "all
+  // current", which is the false green the channel refuses.
+  if (deriveWillRun && deriveInputs.length > 0) {
+    const derived = await deriveMetadata(deriveInputs, {
+      cwd,
+      base,
+      ...(configDir !== undefined ? { configDir } : {}),
+      sources: deriveConfig.sources ?? [...DERIVE_SOURCES],
+      fields: deriveConfig.fields,
+      ...(deriveConfig.codeowners !== undefined
+        ? { codeowners: deriveConfig.codeowners }
+        : {}),
+      cache: true,
+      now: () => new Date(),
+    });
+    assertSourcesAvailable(
+      derived.sources,
+      "pass --no-derive to skip the comparison, or narrow derive.sources",
+    );
+    // A source that answered, with a caveat worth one line: a repository
+    // with no CODEOWNERS file derives null owners rather than failing.
+    for (const [name, status] of Object.entries(derived.sources)) {
+      if (status.available && status.reason !== undefined) {
+        opts.onNotice?.(`${name}: ${status.reason}`);
+      }
+    }
+    const byFile = new Map(results.map((r) => [r.file, r]));
+    for (const input of deriveInputs) {
+      const record: DerivedRecord | undefined = derived.records.get(input.label);
+      const result = byFile.get(input.label);
+      if (!record || !result) continue;
+      const findings = staleFindings(
+        deriveConfig.fields.map((field) =>
+          compareDerived(field, input.extracted.data[field], record.fields[field]),
+        ),
+        input.extracted.lineFor,
+      );
+      if (findings.length === 0) continue;
+      result.errors.push(...findings);
+      result.ok = false;
     }
   }
 

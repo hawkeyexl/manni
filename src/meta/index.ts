@@ -13,6 +13,13 @@ export {
 } from "./commands/schemas.js";
 export type { VendorOptions, VendorResult } from "./commands/schemas.js";
 export { runFill } from "./commands/fill.js";
+export { runDerive } from "./commands/derive.js";
+export type {
+  DeriveOptions,
+  DeriveRun,
+  DeriveFileResult,
+  DeriveSummary,
+} from "./commands/derive.js";
 export type {
   FillOptions,
   FillRun,
@@ -33,6 +40,7 @@ export { loadConfig, parseConfig, resolveRunConfig } from "./core/config.js";
 export type {
   CheckConfig,
   SidecarConfig,
+  DeriveConfig,
   ConfigNotice,
   DocmetaConfig,
   DocumentRefTrust,
@@ -78,6 +86,38 @@ export {
   SIDECAR_FETCH_MAX_BYTES,
 } from "./core/sidecar-fetch.js";
 export type { SidecarFetchOptions } from "./core/sidecar-fetch.js";
+export {
+  compareDerived,
+  staleFindings,
+  isDerivableField,
+  isDeriveSource,
+  DERIVABLE_FIELDS,
+  DERIVE_SOURCES,
+  DERIVED_STALE_SCHEMA,
+  DERIVED_KEYWORD,
+} from "./core/derive/types.js";
+export type {
+  DerivableField,
+  DeriveSource,
+  DerivedValue,
+  DerivedRecord,
+  DerivedField,
+  DerivedStatus,
+  DeriveInput,
+  DeriveContext,
+  ForgeClient,
+  ForgeIdentity,
+  Approval,
+  MergedChange,
+  SourceStatus,
+} from "./core/derive/types.js";
+export {
+  deriveMetadata,
+  consultedSources,
+  assertSourcesAvailable,
+  FIELD_SOURCES,
+} from "./core/derive/index.js";
+export type { DeriveResult } from "./core/derive/index.js";
 export type {
   SidecarIndex,
   SidecarEntry,
@@ -125,6 +165,8 @@ export {
   renderFillGithub,
 } from "./reporters/fill.js";
 export type { FillReportFormat, FillReportOptions } from "./reporters/fill.js";
+export { DERIVE_FORMATS, isDeriveFormat, renderDerive } from "./reporters/derive.js";
+export type { DeriveReportFormat, DeriveReportOptions } from "./reporters/derive.js";
 // `stringifyValue` alongside `renderGet`: a caller building its own loop over
 // `runGet` results needs the same `(unset)`-and-JSON formatting the CLI uses,
 // and deriving it a second time is how two spellings of one rule start.

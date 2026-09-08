@@ -1,0 +1,12 @@
+# Default owner for everything not claimed below.
+*                    @org/docs
+
+docs/                @maya
+docs/api/*.md        @sara @devin
+docs/**/reference.md @sara
+/README.md           @theo
+
+# Drafts have no owner yet: a matching rule with no owners clears the field.
+docs/drafts/
+
+release\ notes/      @devin

@@ -246,6 +246,11 @@ a sidecar manifest owns; the manifest is the only place that key may be set."
 Two documents sharing one value of a manifest's [join
 field](/manni/meta/reference/configuration/#joining-by-a-field) report
 `sidecar:duplicate/sidecar`, with the shared value as the finding's subject.
+A [managed field](/manni/meta/reference/configuration/#derive) whose stamp
+disagrees with the evidence reports `derived:stale/derived`, with the field
+as its instance path. Its `rules[]` entry reads "The document's stamp for a
+managed field disagrees with the evidence; run manni meta derive." `derived`
+is the third reserved first segment, beside `check` and `sidecar`.
 
 The `-` (stdin) input produces **no** SARIF result. `<stdin>` is not a path any
 consumer can resolve, and a location pointing at one would be dropped anyway.
@@ -458,6 +463,33 @@ A schema violation on a value the manifest supplied, and a document carrying a
 key the manifest owns, are exit 1. So are two documents sharing one value of a
 join field. All three are verdicts about the documents.
 
+### Exit 2 from a derive source
+
+With [`derive:`](/manni/meta/reference/configuration/#derive) in config,
+`validate`, `derive`, `get --derived` and a `query` naming the `derived`
+table read evidence from git, a CODEOWNERS file, and the forge's CLI. A
+source that cannot answer is exit 2 naming the fix, never a skipped field. A
+field that was quietly not compared would make a stale stamp read as current.
+A green gate over nothing is the failure this whole contract exists to end.
+The deliberate opt-outs are `--no-derive` on `validate` and `--sources`
+narrowing on `derive`.
+
+| Situation | Message |
+|---|---|
+| The checkout is shallow, as `actions/checkout` leaves it by default. | `git source unavailable: this checkout is shallow; use actions/checkout with fetch-depth: 0, or --sources codeowners,forge` |
+| There is no `git` on `PATH`, or the path is outside any repository, and `git` is a requested source. | `git source unavailable: …`, naming which, and `--sources` as the way out. |
+| `gh` or `glab` is not on `PATH`, and `forge` is a requested source. | `forge source unavailable: gh is not on PATH (origin is github.com); install gh and run gh auth login, or drop reviewed-by from --fields` |
+| `gh` or `glab` is present and not logged in. | `forge source unavailable: …`, naming `gh auth login` or `glab auth login`. |
+| Config `derive.codeowners` names a file that is not there, and `codeowners` is a requested source. | `codeowners source unavailable: …`, naming the path. A repository with no CODEOWNERS file at all is not this case: `owner` derives null and stderr says `codeowners: no CODEOWNERS file found (…)` once. |
+| `derive` was given `-`. | `cannot derive <stdin>: no history behind it` |
+| `derive` was given a field that is not derivable. | `"verified-against" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed` |
+| `derive` has no `derive.fields` in config and no `--fields`. | `nothing to derive: set derive.fields in manni.config.yaml or pass --fields` |
+| `derive` was given a findings format without `--check`. | `sarif is a findings format, which only --check produces` |
+| A `query` write would touch a managed key. | `"last-updated" is managed by derive; run manni meta derive instead.` |
+
+A stamp that disagrees with the evidence is exit 1, from `validate` and from
+`derive --check`. That is a verdict about the document.
+
 ### Per-command meaning of exit 1
 
 | Command | Exits 1 when |
@@ -465,6 +497,7 @@ join field. All three are verdicts about the documents.
 | `validate` | One or more files failed validation. |
 | `get` | One or more files had a metadata block that could not be read. That means frontmatter that is not valid YAML, or that parses to something other than a mapping. A requested field that is merely *absent* is reported as unset and is **not** a failure. An absent **file** is different again: that is an operational error and exits 2. |
 | [`fill`](/manni/meta/reference/cli/#meta-fill) | A property the schema lists as `required` could not be filled confidently, or a file errored. Skipped **optional** properties leave the exit code at `0`. A file whose missing property a [sidecar](/manni/meta/reference/configuration/#sidecars) owns is refused as a per-file error, so it counts here. |
+| [`derive`](/manni/meta/reference/cli/#meta-derive) | **Only** under `--check`, when a managed field is stale or unset. A run that writes exits `0` whatever it changed, because the work is done rather than pending. |
 | `schemas` | Never. |
 
 The rule behind `fill`'s version is the same as `validate`'s: exit 1 means the

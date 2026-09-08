@@ -21,6 +21,7 @@ the command line.
 | `overrides` | `Override[]` | none | Per-glob schema overrides. The first matching entry wins. See [Overrides](#overrides). |
 | `checks` | `Check[]` | none | Named cross-file rules, written as SQL over the corpus's metadata table, that `validate` runs after the per-file schemas, with rows reported as findings. See [Checks](#checks). |
 | `sidecars` | `Sidecar[]` | none | YAML manifests that keep frontmatter values outside the document. Each supplies a fixed set of top-level keys for named documents. The values are merged into the document's metadata before schema resolution, so every command sees one object. See [Sidecars](#sidecars). |
+| `derive` | `Derive` | none | The **managed** stewardship fields, which `manni meta derive` stamps from git, CODEOWNERS and the forge's review history, and which `validate` compares against that evidence. A stamp that disagrees is a finding. See [Derive](#derive). |
 | `baseline` | `string` | none | Path to a [validation baseline](/manni/meta/reference/cli/#baselines). Setting it turns on `--baseline` for every run; `--no-baseline` suppresses it for one. A bare `--write-baseline` records into this same file. |
 | `allowEmpty` | `boolean` | `false` | Treat an input set that resolves to zero files as success instead of an error (exit 2). Equivalent to `--allow-empty`. See [empty input sets](/manni/meta/reference/cli/#empty-input-sets). |
 | `respectGitignore` | `boolean` | `true` | Skip files `.gitignore` covers when expanding directories and globs. `--no-gitignore` overrides it for one run. See [`.gitignore`](/manni/meta/reference/cli/#gitignore). |
@@ -47,7 +48,7 @@ yet.
 Any key outside the table above is an operational error (exit 2), naming the
 key it did not recognize and listing the ones it accepts. The same rule applies
 inside every nested mapping: `schemas[]` entries, `checks[]` entries,
-`schemaCache`, `schemaTrust`, and `fill`.
+`schemaCache`, `schemaTrust`, `fill`, and `derive`.
 
 This is what makes a typo visible. A dropped `schemaTust:` leaves a repository
 that reads as guarded and is not. A dropped `intergrity:` leaves a schema that
@@ -995,6 +996,177 @@ Two fixes:
 - Or keep it closed, and have the `overrides` entry beside the sidecar restate
   the whole contract in its own schema, with the manifest's keys declared. Then
   the closed schema is not in that run's set at all.
+
+### Derive
+
+`derive` names the **managed** fields. A managed field is one whose value is
+computed from evidence rather than typed by a person. The evidence is git
+history, a CODEOWNERS file, and the forge's pull request or merge request
+history, read through the `gh` or `glab` CLI. `manni meta derive` stamps the
+computed value into the document. `validate` compares what is stamped against
+what the evidence says, and a stamp that disagrees is a finding.
+
+A derived value is never merged into what the schema sees. That is the
+difference from a [sidecar](#sidecars). The document stays the truth for
+validation, and the evidence is what the document is held to. Only `derive`
+writes a managed field. `query` refuses an `UPDATE` of one, and `fill` skips
+it.
+
+[Stamp stewardship fields from evidence](/manni/meta/set-up/derived-metadata/)
+is the journey. This section is the contract.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `fields` | `string[]` | no, but a `derive:` must set one of the three keys | The managed fields. Non-empty when present, unique, and each one of [the derivable fields](#the-derivable-fields). Never a key a [sidecar](#sidecars) owns, because the two channels would disagree about where the value lives. Each violation is a config error (exit 2) naming `derive.fields`. Absent means nothing is managed and `validate` compares nothing; `sources` or `codeowners` alone still shape the reads. |
+| `sources` | `string[]` | no | Which of `git`, `codeowners` and `forge` to consult. Non-empty and unique. The default is all three. A field whose only sources are excluded derives null, and can never be stale. |
+| `codeowners` | `string` | no | Path to the CODEOWNERS file, relative to the config file's directory. The default is the forge's own search order, below. When `codeowners` is an active source, the file must exist (exit 2). |
+
+```yaml
+# manni.config.yaml
+meta:
+  paths: ["docs/**/*.md"]
+  derive:
+    fields: [created, last-updated, authors, owner]   # managed
+    sources: [git, codeowners, forge]                 # optional; default all three
+    codeowners: .github/CODEOWNERS                     # optional; default: the forge's search order
+```
+
+`derive:` absent is exactly the behaviour every config had before the key
+existed. No command spawns `git`, `gh` or `glab`, and no field is managed.
+
+#### The derivable fields
+
+Six fields of the [stewardship
+vocabulary](/manni/meta/proposals/stewardship/) can be derived. The other
+four, `stakeholders`, `review-interval`, `verified-against` and
+`source-of-truth`, are judgments a person makes. Naming one of them in
+`fields` is a config error.
+
+| Field | Source | Derived value | Evidence string |
+|---|---|---|---|
+| `created` | git | The stamp set by the commit that added the path (rename-followed), if it set one. Otherwise that commit's author date as `YYYY-MM-DD` in the author's offset | `added in 7a0d424 (2026-08-26)` / `stamped in 7a0d424` |
+| `last-updated` | git | The stamp set by the newest body-changing commit if it set one; else its author date. With an uncommitted body change: the working value if it differs from HEAD's, else today (the one place derive reads a clock) | `body changed in 424f71a (2026-09-07)` / `uncommitted body change` |
+| `authors` | git | Names of authors of body-changing commits plus their `Co-authored-by` trailers, oldest first, deduplicated by email, names ending `[bot]` excluded | `4 body-changing commits` |
+| `owner` | codeowners | Owners matching the path, `@` kept. GitHub: last matching line wins, first file found of `.github/CODEOWNERS`, `CODEOWNERS`, `docs/CODEOWNERS`. GitLab adds `.gitlab/CODEOWNERS` and sections: every section applies, last match wins per section, union of owners | `.github/CODEOWNERS:12` |
+| `reviewed-by` | forge, then git | Logins with an `APPROVED` review on the merged PR/MR containing the newest body-changing commit, `[bot]` suffix stripped for dedupe. Fallback: `Reviewed-by:` trailers on that commit | `github PR #18` / `Reviewed-by trailer in 424f71a` |
+| `last-reviewed` | forge, then git | Date of the latest `APPROVED` review on that PR/MR. Trailer fallback: the commit's author date | as above |
+
+The forge is chosen by the origin host. A `github.com` origin means `gh`, and
+a `gitlab.com` origin means `glab`. manni never holds a token. The CLI's own
+login is what reaches the API, which is why an unauthenticated CLI is an
+error rather than a guess. A merged pull request's answer never changes, so
+it is cached under `.manni/meta/forge-cache/`, keyed by host, owner,
+repository and commit. An open pull request's answer is never cached, because
+the next approval changes it. `--no-cache` bypasses the cache for one run.
+
+#### The rules
+
+1. **The commit that made the fact is the authority.** For a git-derived
+   date, that commit is the one that added the path, or the one that last
+   changed the body. If that commit also set the field, the value it set is
+   the derived value. Otherwise the commit's author date
+   is. A squash commit carrying both the body edit and the stamp therefore
+   agrees with itself, whatever date the forge gave it.
+2. **The body is everything outside the metadata block.** A frontmatter-only
+   edit is not a body change, so a bulk stamp does not move `last-updated`.
+   Formats with no fenced block count any change as a body change. That
+   covers HTML, XML, DITA, and the native reStructuredText and AsciiDoc
+   headers.
+3. **Stale is a finding; unknown is not.** A managed field whose asserted
+   value differs from a non-null derived value is a finding under the rule id
+   [`derived:stale/derived`](#finding-identity-1). A null derived value is no
+   finding. That covers no approval yet, an uncommitted file, and a path
+   outside a repository. Lists compare as sets, so reordering `authors` is
+   not drift.
+4. **A source that cannot answer stops the run.** Git missing, not a
+   repository, or a shallow clone. `gh` or `glab` missing or not logged in. A
+   `codeowners` path that does not exist. Each is exit 2, naming the source
+   and the fix. A check that silently did not run would be a green gate over
+   nothing. `--no-derive` on `validate` and `--sources` narrowing are the
+   deliberate opt-outs. The rule holds for reads too. `get --derived` and a
+   `query` naming the `derived` table consult every source `derive.sources`
+   allows, and the default is all three. A machine without `gh` or `glab`
+   therefore sets `sources: [git, codeowners]`, or the read is exit 2. One
+   absence is a fact rather than a failure: a repository with no CODEOWNERS
+   file at all has declared no owners, so `owner` derives null and the run
+   says so once on stderr. Only a `codeowners:` path that names a missing
+   file is exit 2.
+5. **Only `derive` writes a managed field.** `query` refuses an `UPDATE`,
+   `INSERT` or `DELETE` that would touch one, before any file is written.
+   `fill` never proposes one, and reports the skip.
+6. **The comparison runs on every `validate`, scoped or not.** Unlike
+   [checks](#when-checks-run), it is a per-file fact, so a pre-commit hook
+   passing staged files judges them too. The baseline records a stale stamp
+   like any other finding.
+
+#### What each command does
+
+| Command | With `derive:` |
+|---|---|
+| `validate` | Derives once for the run, then compares each file's managed fields. A stamp that disagrees with a non-null derived value is a `derived:stale` finding at the field's line, exit 1. `--no-derive` skips the comparison for one run. |
+| `derive` | Stamps every managed field whose derived value is non-null and differs from the document, through the same writer `fill` uses. `--dry-run` reports without writing. `--check` implies the dry run, and a stale or unset field is a finding, exit 1. See [`meta derive`](/manni/meta/reference/cli/#meta-derive). |
+| `get` | `--derived` prints the derived value and its evidence beside the asserted one. `manni meta get last-updated docs/install.md --derived` prints `docs/install.md: last-updated=2026-08-20 (derived 2026-09-07, git: body changed in 424f71a)`. A field that is not derivable prints `(not derivable)`. |
+| `query` | A read-only [`derived` table](/manni/meta/reference/query/#the-derived-table) is built when a statement mentions it, with one row per file and a `_sources` column carrying the evidence. A write to a managed key through `docs` is refused (exit 2) before any file is written. |
+| `fill` | A managed field is never a candidate. It is reported with `skipReason: "managed"`, so the omission is visible in the report. |
+
+A run over a page whose body moved after its stamp:
+
+```
+$ manni meta derive
+docs/install.md
+    last-updated  2026-08-20 → 2026-09-07   (git: body changed in 424f71a)
+    owner         (unset) → ["@platform-docs"]  (codeowners: .github/CODEOWNERS:12)
+docs/faq.md  current
+2 files, 1 changed, 2 fields written
+$ manni meta validate
+docs/install.md
+    /last-updated  last-updated says 2026-08-20; git says 2026-09-07 (body changed in 424f71a) — run manni meta derive  (line 9)  [derived:stale]
+1 file checked, 1 failed
+```
+
+The write refusals:
+
+```
+$ manni meta query "UPDATE docs SET \"last-updated\" = '2026-09-07'"
+manni: "last-updated" is managed by derive; run manni meta derive instead.
+                                                                                    exit 2
+$ manni meta query "UPDATE derived SET owner = 'x'"
+manni: SQL error: cannot modify derived because it is a view; a collection or the derived table is read-only
+                                                                                    exit 2
+```
+
+#### Finding identity
+
+A stale stamp carries the schema ref `derived:stale`, the keyword `derived`,
+and `/<field>` as its instance path, at the field's line in the document:
+
+```json
+{
+  "schema": "derived:stale",
+  "keyword": "derived",
+  "instancePath": "/last-updated",
+  "message": "last-updated says 2026-08-20; git says 2026-09-07 (body changed in 424f71a) — run manni meta derive",
+  "line": 9
+}
+```
+
+The ref is shaped like `check:<name>`, so the rule id everywhere, in SARIF,
+JUnit and the baseline, is the ordinary join `derived:stale/derived`. The
+`derived` segment is reserved as a first segment beside `check` and
+`sidecar`, and is listed with the other [reserved rule
+ids](/manni/meta/reference/output-and-exit-codes/#reserved-rule-ids). The
+finding's `file` is never set, because a managed value lives in the document.
+
+#### Exit codes
+
+| Exit | When |
+|---|---|
+| `2` | The config's `derive:` is malformed. `fields` is empty, repeats a name, names a field that is not derivable, or names a key a sidecar owns. `sources` is empty or repeats a source. `codeowners` names a file that is not there. A requested source cannot answer: no `git`, no repository, a shallow clone, `gh` or `glab` missing or not logged in. `derive` was given `-`, a non-derivable `--fields` name, no fields at all, or a findings format without `--check`. A `query` write would touch a managed key. |
+| `1` | `validate` found a managed field whose stamp disagrees with the evidence. `derive --check` found a stale or unset managed field. |
+
+The split is the one every command already follows. Exit 2 means the run
+could not establish the facts and produced no verdict. Exit 1 means it did,
+and the documents still need work.
 
 ## Example
 

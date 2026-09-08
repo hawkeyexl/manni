@@ -270,6 +270,10 @@ case-insensitively. You do not write a `files` pattern, and that matters more
 than it sounds. A hand-written one is easy to narrow to `\.md$` and then quietly
 stop checking the AsciiDoc and DITA in the same repo.
 
+The hook needs nothing more to judge [managed stewardship
+fields](/manni/meta/set-up/derived-metadata/), because `validate` compares a
+stamp against the evidence on staged files too.
+
 <Aside type="note" title="It needs Node on the machine">
 The hook runs `npx @hawkeyexl/manni meta`, so contributors need Node 24 or newer on their
 `PATH`. That is the same requirement as running manni meta anywhere else.

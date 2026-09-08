@@ -1,0 +1,8 @@
+meta:
+  paths:
+    - "docs/**/*.md"
+  schemas:
+    - ./permissive.schema.json
+  derive:
+    fields: [last-updated, owner]
+    sources: [git, codeowners]

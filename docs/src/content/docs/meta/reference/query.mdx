@@ -139,11 +139,54 @@ export](#exporting-the-database), and for statements that observe the catalog.
 Those are `sqlite_master`, `sqlite_schema`, `PRAGMA`, and
 `CREATE`/`DROP`/`ALTER`, where a missing view could not be detected and retried.
 
-<Aside type="note">
+<Aside type="note" title="Checks see the same views">
 The same views exist for the named [`checks:`](/manni/meta/reference/configuration/#checks)
 `validate` runs, from the same code, so `FROM authors` means the same thing in
 both places.
 </Aside>
+
+## The `derived` table
+
+With [`derive:`](/manni/meta/reference/configuration/#derive) in config, a
+second table is available. `derived` holds what the evidence says each
+managed field should be, one row per file. The evidence is git history, the
+CODEOWNERS file, and the forge's review history. It is built only when the
+statement mentions `derived`, because building it spawns `git`, and with the
+`forge` source, `gh` or `glab`. A statement that never names it pays nothing.
+
+| Column | Type | Value |
+|---|---|---|
+| `_path` | TEXT, primary key | The file's label, exactly as in `docs`, so the two tables join on it. |
+| `created` | TEXT | The derived value, or `NULL` when the evidence has no answer. |
+| `last-updated` | TEXT | As above. Quote the identifier, because of the hyphen: `d."last-updated"`. |
+| `authors` | TEXT | A JSON array, as a list is encoded in `docs`. |
+| `owner` | TEXT | A JSON array, even for one owner, because a CODEOWNERS line can name several. |
+| `reviewed-by` | TEXT | A JSON array. |
+| `last-reviewed` | TEXT | A date. |
+| `_sources` | TEXT | JSON text, `{field: {source, evidence}}`, saying where each non-null value came from and why. |
+
+Every field column is present whether or not the field is managed, so one
+query shape serves every config. A field whose sources are excluded by
+`derive.sources` is `NULL`. A requested source that cannot answer is an
+error (exit 2) naming the fix, exactly as for `validate` and `derive`,
+never an empty column.
+
+The pages whose stamp disagrees with the evidence, and why:
+
+```sh
+manni meta query "SELECT d._path, d.\"last-updated\",
+  d._sources ->> '\$.\"last-updated\".evidence' AS why
+  FROM derived d JOIN docs USING (_path)
+  WHERE docs.\"last-updated\" IS NOT d.\"last-updated\""
+```
+
+`derived` is a **view**, so a write to it is refused by SQLite and manni meta
+completes the refusal:
+`cannot modify derived because it is a view; a collection or the derived table is read-only`.
+The value it holds is not stored anywhere. It is recomputed from the
+evidence on every run, and the only way to change it is to change the
+evidence. A managed field in `docs` is read-only too, for a different
+reason, given under [the DML constraints](#dml-statements-edit-files).
 
 ## The SQL vocabulary
 
@@ -195,6 +238,15 @@ Constraints on a DML statement:
   refuses is an `UPDATE` of the join field on a document that has an entry.
   That one reads `"docs/auth.md": "id" is the field sidecar docs-meta.yaml
   joins on, and this document has an entry; change the manifest first.`
+- **A key config [`derive.fields`](/manni/meta/reference/configuration/#derive)
+  manages is read-only.** Its value is computed from evidence, and
+  `manni meta derive` is the one command that writes it. A `SET`, remove,
+  rename, `INSERT` or `DELETE` that would touch it refuses at plan time,
+  before any file is written. The refusal reads `"last-updated" is managed by
+  derive; run manni meta derive instead.`
+- **The [`derived` table](#the-derived-table) is a view.** A write to it
+  refuses with `cannot modify derived because it is a view; a collection or
+  the derived table is read-only`. There is nothing behind it to write to.
 
 ### Format limits on a write
 

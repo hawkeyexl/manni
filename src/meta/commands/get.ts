@@ -18,9 +18,26 @@ import {
   assertNonEmpty,
   gitignoreOptions,
   resolveTargetSet,
+  STDIN_LABEL,
   STDIN_TOKEN,
 } from "../core/load-files.js";
-import { resolveRunConfig, type ConfigNotice } from "../core/config.js";
+import {
+  resolveRunConfig,
+  type ConfigNotice,
+  type DocmetaConfig,
+} from "../core/config.js";
+import {
+  assertSourcesAvailable,
+  deriveMetadata,
+} from "../core/derive/index.js";
+import {
+  DERIVE_SOURCES,
+  isDerivableField,
+  type DerivableField,
+  type DerivedRecord,
+  type DerivedValue,
+  type DeriveInput,
+} from "../core/derive/types.js";
 
 export interface GetOptions {
   fields: string[];
@@ -55,12 +72,30 @@ export interface GetOptions {
    * `--offline` uniformly without knowing which subcommand needs it.
    */
   offline?: boolean;
+  /**
+   * `--derived`: beside each asserted value, what the evidence (git history,
+   * CODEOWNERS, the forge — proposal 0040) says the field should be. Consults
+   * the sources `derive.sources` allows, all three when the config says
+   * nothing, for the requested fields that are derivable. Stdin is refused:
+   * there is no history behind it.
+   */
+  derived?: boolean;
 }
 
 export interface GetFileResult {
   file: string;
   present: boolean;
   values: Record<string, unknown>;
+  /**
+   * With `derived`, the evidence per requested field. A derivable field is
+   * always a key here: a `DerivedValue` when a source answered, `null` when
+   * every consulted source had nothing to say (a file with no commits, a
+   * path no CODEOWNERS rule matches). A requested field that is **not**
+   * derivable is absent from the record — that is the whole signal, and the
+   * reporter prints it as `(not derivable)`. Absent altogether without the
+   * flag, and on a file that did not parse.
+   */
+  derived?: Record<string, DerivedValue | null>;
   /**
    * Why this file yielded no values, when it yielded none for a reason.
    *
@@ -138,6 +173,17 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
     offline: opts.offline ?? config?.offline ?? false,
   });
 
+  // The derived channel (0040): the requested fields a source can state,
+  // and one input per parsed file — the document's OWN extraction, since a
+  // managed key is never sidecar-owned and the git source reads its lines.
+  const derivableFields: DerivableField[] = opts.derived
+    ? opts.fields.filter(isDerivableField)
+    : [];
+  const deriveInputs: DeriveInput[] = [];
+  if (opts.derived && usingStdin) {
+    throw new DocmetaError("cannot derive <stdin>: no history behind it");
+  }
+
   const readOne = (label: string, content: string, extension: string): void => {
     const extractor = forced ?? extractorForExtension(extension);
     if (!extractor) {
@@ -147,14 +193,18 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
     }
     let extracted;
     try {
-      extracted = mergeSidecars(
-        label,
-        extractor.extract(content, label, {
-          elements: resolveElements(label, config),
-        }),
-        sidecars,
-        base,
-      ).extracted;
+      const own = extractor.extract(content, label, {
+        elements: resolveElements(label, config),
+      });
+      if (opts.derived && label !== STDIN_LABEL) {
+        deriveInputs.push({
+          label,
+          absPath: resolve(base, label),
+          content,
+          extracted: own,
+        });
+      }
+      extracted = mergeSidecars(label, own, sidecars, base).extracted;
     } catch (err) {
       // A `DocmetaError` is already operational and already carries a message
       // written for a person — rethrow it untouched, exactly as `validate`
@@ -185,7 +235,7 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
         "Reading from stdin (`-`) requires --as <format> to choose an extractor.",
       );
     }
-    readOne("<stdin>", opts.stdinContent ?? "", forced.extensions[0] ?? "");
+    readOne(STDIN_LABEL, opts.stdinContent ?? "", forced.extensions[0] ?? "");
   }
 
   for (const file of files) {
@@ -193,7 +243,66 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
     readOne(file, content, extname(file));
   }
 
+  if (opts.derived) {
+    await attachDerived(out, deriveInputs, derivableFields, {
+      cwd,
+      base,
+      configDir,
+      config,
+    });
+  }
+
   return out;
+}
+
+/**
+ * One derivation for the run, then a `derived` record on every parsed file:
+ * the requested derivable fields, each a value or `null`. Nothing is derived
+ * when no requested field is derivable — no source is consulted, and each
+ * file still gets an (empty) record so the reporter can say so per field.
+ * A consulted source that cannot answer is the run's error, with the way out.
+ */
+async function attachDerived(
+  out: GetFileResult[],
+  inputs: readonly DeriveInput[],
+  fields: readonly DerivableField[],
+  run: {
+    cwd: string;
+    base: string;
+    configDir: string | undefined;
+    config: DocmetaConfig | null;
+  },
+): Promise<void> {
+  const derive = run.config?.derive;
+  const records: ReadonlyMap<string, DerivedRecord> =
+    fields.length === 0 || inputs.length === 0
+      ? new Map<string, DerivedRecord>()
+      : await (async () => {
+          const result = await deriveMetadata(inputs, {
+            cwd: run.cwd,
+            base: run.base,
+            ...(run.configDir !== undefined ? { configDir: run.configDir } : {}),
+            sources: derive?.sources ?? [...DERIVE_SOURCES],
+            fields,
+            ...(derive?.codeowners !== undefined
+              ? { codeowners: derive.codeowners }
+              : {}),
+            cache: true,
+            now: () => new Date(),
+          });
+          assertSourcesAvailable(
+            result.sources,
+            "drop --derived, or narrow derive.sources",
+          );
+          return result.records;
+        })();
+  for (const r of out) {
+    if (r.error !== undefined) continue;
+    const record = records.get(r.file);
+    const derived: Record<string, DerivedValue | null> = {};
+    for (const field of fields) derived[field] = record?.fields[field] ?? null;
+    r.derived = derived;
+  }
 }
 
 /**

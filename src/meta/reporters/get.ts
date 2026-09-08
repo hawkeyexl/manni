@@ -13,6 +13,7 @@
  * affects text a person is reading.
  */
 import type { GetFileResult } from "../commands/get.js";
+import type { DerivedValue } from "../core/derive/types.js";
 import { palette } from "./color.js";
 
 export interface GetReportOptions {
@@ -26,6 +27,32 @@ export function stringifyValue(value: unknown): string {
   if (value === undefined) return "(unset)";
   if (typeof value === "string") return value;
   return JSON.stringify(value);
+}
+
+/**
+ * The `--derived` parenthetical after a value (proposal 0040): what the
+ * evidence says and where it came from, `(derived (none))` when every source
+ * had nothing to say, and `(not derivable)` for a field no source can state.
+ * The evidence is quoted as the source wrote it, so the reader can check the
+ * claim without re-running — except that a trailing `(<value>)` repeating the
+ * derived value itself is dropped, since the value already precedes it. The
+ * git source spells a date fact `body changed in 424f71a (2026-09-07)` so it
+ * stands alone in `query`'s `_sources` column; here the date is already on
+ * the line.
+ */
+function derivedSuffix(
+  derived: Record<string, DerivedValue | null>,
+  field: string,
+): string {
+  if (!Object.hasOwn(derived, field)) return " (not derivable)";
+  const d = derived[field];
+  if (d == null) return " (derived (none))";
+  const value = stringifyValue(d.value);
+  const repeated = ` (${value})`;
+  const evidence = d.evidence.endsWith(repeated)
+    ? d.evidence.slice(0, -repeated.length)
+    : d.evidence;
+  return ` (derived ${value}, ${d.source}: ${evidence})`;
 }
 
 /**
@@ -55,7 +82,11 @@ export function renderGet(
     }
     if (opts.quiet && fields.every((f) => r.values[f] === undefined)) continue;
     for (const f of fields) {
-      lines.push(`${c.dim(`${r.file}:`)} ${f}=${stringifyValue(r.values[f])}`);
+      const suffix =
+        r.derived === undefined ? "" : c.dim(derivedSuffix(r.derived, f));
+      lines.push(
+        `${c.dim(`${r.file}:`)} ${f}=${stringifyValue(r.values[f])}${suffix}`,
+      );
     }
   }
   return lines.join("\n");

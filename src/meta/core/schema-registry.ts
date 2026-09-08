@@ -102,6 +102,13 @@ export function assertPublishableBuiltinId(id: string): void {
       `Built-in id "${id}" is not publishable: the "sidecar" first segment is reserved for sidecar finding identities (sidecar:owned, proposal 0037).`,
     );
   }
+  // `derived:stale` is the identity of a managed field whose asserted value
+  // differs from what git, CODEOWNERS or the forge says, reserved likewise.
+  if (first === "derived") {
+    throw new Error(
+      `Built-in id "${id}" is not publishable: the "derived" first segment is reserved for derived finding identities (derived:stale).`,
+    );
+  }
 }
 
 for (const id of BUILTINS.keys()) assertPublishableBuiltinId(id);

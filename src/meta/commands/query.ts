@@ -78,6 +78,13 @@ import {
   collectionNames,
   createCollectionViews,
 } from "../core/collections.js";
+import {
+  createDerivedView,
+  DERIVED_VIEW,
+  deriveForTable,
+  mentionsDerived,
+} from "../core/derive/table.js";
+import type { DeriveInput } from "../core/derive/types.js";
 import type { FingerprintContext } from "../core/baseline.js";
 import { stringFormatNames, validatesFormat } from "../core/validator.js";
 import {
@@ -338,15 +345,11 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
         `Unsupported file type "${extension}" for "${label}". Supported: ${supportedExtensions().join(", ")}. Use --as to override.`,
       );
     }
-    const extracted = mergeSidecars(
-      label,
-      extractor.extract(content, label, {
-        elements: resolveElements(label, config),
-      }),
-      sidecars,
-      base,
-    ).extracted;
-    entries.push({ label, extracted, extractor });
+    const own = extractor.extract(content, label, {
+      elements: resolveElements(label, config),
+    });
+    const extracted = mergeSidecars(label, own, sidecars, base).extracted;
+    entries.push({ label, extracted, extractor, own, content });
   };
 
   if (usingStdin) {
@@ -392,6 +395,7 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
     configPath,
     trustRoot: schemaTrustRoot(cwd, configDir),
     sidecars,
+    managed: new Set(config?.derive?.fields ?? []),
     onNotice: opts.onNotice,
   });
   // The same frame `runValidate` returns, built from query's own run context:
@@ -405,6 +409,13 @@ interface QueryEntry {
   extracted: ExtractedMetadata;
   /** The extractor that read it — a write goes back through the same one. */
   extractor: MetadataExtractor;
+  /**
+   * The document's OWN extraction, from before the sidecar merge, and the
+   * text it came from: what the `derived` table (0040) is computed over. A
+   * managed key is never sidecar-owned, and the git source hashes the body.
+   */
+  own: ExtractedMetadata;
+  content: string;
 }
 
 /**
@@ -454,6 +465,11 @@ interface RunContext {
   trustRoot: SchemaTrustRoot;
   /** Sidecar manifests of the run (proposal 0037); null when none are configured. */
   sidecars: SidecarIndex | null;
+  /**
+   * The managed fields (`derive.fields`, proposal 0040): readable in every
+   * row, writable by `manni meta derive` alone. Empty when none are configured.
+   */
+  managed: ReadonlySet<string>;
   /** Diagnostics for the user; the CLI writes these to stderr. */
   onNotice?: (message: string) => void;
 }
@@ -499,14 +515,21 @@ async function prepareDbTarget(resolved: string, display: string): Promise<void>
 class MissingCollectionView extends Error {}
 
 /**
+ * The same signal for the `derived` table (0040): the statement named it,
+ * its view is not built yet, and building it is worth one git walk.
+ */
+class MissingDerivedView extends Error {}
+
+/**
  * Wrap an engine error from the user's statement — prepare-time or
- * execution-time — into the operational refusal the CLI reports. Two cases
+ * execution-time — into the operational refusal the CLI reports. Three cases
  * get a remedy: an INSERT/rename onto a loaded `_path` (the projection's
- * primary key catches it before any disk check can), and a write through a
+ * primary key catches it before any disk check can), a write through a
  * collection view (0027) — SQLite's own refusal, completed with the
- * write-through-docs spelling. The view-name capture is non-greedy up to the
- * literal tail: a collection name may contain spaces, which \S+ would
- * truncate into a remedy naming a view that does not exist.
+ * write-through-docs spelling — and a write to the `derived` view (0040),
+ * which has nothing behind it to write to. The view-name capture is
+ * non-greedy up to the literal tail: a collection name may contain spaces,
+ * which \S+ would truncate into a remedy naming a view that does not exist.
  */
 function refuseSqlError(err: unknown): never {
   const message = (err as Error).message;
@@ -516,8 +539,13 @@ function refuseSqlError(err: unknown): never {
   const viewWrite = /cannot modify (.+?) because it is a view/.exec(message);
   const viewName = viewWrite?.[1];
   if (viewName !== undefined) {
+    if (viewName.toLowerCase() === DERIVED_VIEW) {
+      throw new DocmetaError(
+        `SQL error: ${message}; a collection or the derived table is read-only — the derived table is recomputed from the evidence on every run. Change the evidence, or stamp it into the documents with manni meta derive.`,
+      );
+    }
     throw new DocmetaError(
-      `SQL error: ${message}; a collection is read-only — write through docs: UPDATE docs … WHERE _path IN (SELECT _path FROM "${viewName.replaceAll('"', '""')}").`,
+      `SQL error: ${message}; a collection or the derived table is read-only — write through docs: UPDATE docs … WHERE _path IN (SELECT _path FROM "${viewName.replaceAll('"', '""')}").`,
     );
   }
   throw new DocmetaError(`SQL error: ${message}`);
@@ -599,9 +627,42 @@ async function runSql(
       viewsBuilt = true;
     };
     if (target) buildViews();
+    // The `derived` table (0040): built only when the statement names it,
+    // because building it spawns git (and, with the forge source, gh or
+    // glab). Eager on a raw-text mention — the same over-triggering search
+    // the collections use, for the same reason — and lazily on the engine's
+    // `no such table: derived` as the backstop. Stdin has no history and no
+    // row. Never carried into a `--db` export: the value is not stored
+    // anywhere, and an export that froze it would be the stale stamp the
+    // channel exists to catch.
+    let derivedBuilt: boolean = false;
+    const buildDerived = async (): Promise<void> => {
+      if (derivedBuilt) return;
+      const inputs: DeriveInput[] = entries
+        .filter((e) => e.label !== STDIN_LABEL)
+        .map((e) => ({
+          label: e.label,
+          absPath: resolve(ctx.base, e.label),
+          content: e.content,
+          extracted: e.own,
+        }));
+      const records = await deriveForTable(
+        inputs,
+        {
+          cwd: ctx.cwd,
+          base: ctx.base,
+          ...(ctx.configDir !== undefined ? { configDir: ctx.configDir } : {}),
+          config: ctx.config,
+        },
+        "narrow derive.sources in manni.config.yaml",
+      );
+      createDerivedView(db, records);
+      derivedBuilt = true;
+    };
     if (sql === "") {
       return { columns: [], rows: [], ...(dbInfo ? { db: dbInfo } : {}) };
     }
+    if (mentionsDerived(sql)) await buildDerived();
 
     // ATTACH and VACUUM INTO write files of their own, outside the table the
     // effect gate below watches — the only statements refused by name. The
@@ -687,6 +748,16 @@ async function runSql(
           // after execution began would re-run `stmt.all` and double-apply
           // whatever DML the first run already did.
           throw new MissingCollectionView();
+        }
+        // The same backstop for the `derived` table (0040), for the one
+        // spelling the raw-text search cannot see. Same invariant: raised
+        // only from this prepare-time catch.
+        if (
+          missing !== undefined &&
+          !derivedBuilt &&
+          missing.replace(/^(main|temp)\./i, "").toLowerCase() === DERIVED_VIEW
+        ) {
+          throw new MissingDerivedView();
         }
         refuseSqlError(err);
       }
@@ -792,6 +863,13 @@ async function runSql(
     try {
       return await runOnce();
     } catch (err) {
+      if (err instanceof MissingDerivedView) {
+        // The prepare named the derived table with no view yet: derive,
+        // build it, and re-run the closure — the same one-retry shape as the
+        // collections below, for the same reasons.
+        await buildDerived();
+        return await runOnce();
+      }
       if (!(err instanceof MissingCollectionView)) throw err;
       // The first prepare named a collection with no view yet: build them
       // all and re-run the closure — prepare, snapshots, execution,
@@ -2438,7 +2516,42 @@ function buildChanges(
   }
 
   refuseSidecarWrites(changes, entries, ctx);
+  refuseManagedWrites(changes, entries, ctx);
   return changes;
+}
+
+/**
+ * Only `derive` writes a managed field (0040): that is what makes the stamp
+ * trustworthy, so every other writer refuses it by name, at plan time, the
+ * way a sidecar-owned key is refused. Every change kind that would touch
+ * one: a set (or a `SET k = NULL` deletion), a rename onto or away from it,
+ * an INSERT that carries it, and a DELETE that would strip a document's
+ * block along with the stamp in it.
+ */
+function refuseManagedWrites(
+  changes: readonly QueryChange[],
+  entries: readonly QueryEntry[],
+  ctx: RunContext,
+): void {
+  if (ctx.managed.size === 0) return;
+  const refuse = (key: string): never => {
+    throw new DocmetaError(
+      `"${key}" is managed by derive; run manni meta derive instead.`,
+    );
+  };
+  const data = new Map(entries.map((e) => [e.label, e.extracted.data]));
+  for (const c of changes) {
+    if ("schema" in c || "config" in c || "renamed" in c) continue;
+    const keys =
+      "cleared" in c
+        ? Object.keys(data.get(c.file) ?? {})
+        : "created" in c
+          ? Object.keys(c.to)
+          : "renamedFrom" in c
+            ? [c.key, c.renamedFrom]
+            : [c.key];
+    for (const key of keys) if (ctx.managed.has(key)) refuse(key);
+  }
 }
 
 /** A path an INSERT or rename may target: relative, contained, no traversal. */
