@@ -29,8 +29,8 @@ import {
   createCollectionViews,
   type CollectionParams,
 } from "./collections.js";
-import { createDerivedView, mentionsDerived } from "./derive/table.js";
-import type { DerivedRecord } from "./derive/types.js";
+import { createDerivedView, fieldsForSql, mentionsDerived } from "./derive/table.js";
+import type { DerivableField, DerivedRecord } from "./derive/types.js";
 
 /** One loaded file a check may attach findings to. */
 export type CheckEntry = ProjectionEntry;
@@ -167,10 +167,15 @@ function synthesizeMessage(
  * `derive` is the one addition (proposal 0040): how to get the rows of the
  * `derived` table when a check names it. A function rather than the rows,
  * because building them spawns git, and a check that never names the table
- * must not pay for it. Absent, a check naming the table is refused.
+ * must not pay for it. It is handed the fields the checks can read, so a
+ * caller deriving from scratch consults only the sources those need; a
+ * caller that already derived more may hand back what it has. Absent, a
+ * check naming the table is refused.
  */
 export type CheckRunContext = CollectionParams & {
-  derive?: () => Promise<ReadonlyMap<string, DerivedRecord>>;
+  derive?: (
+    fields: readonly DerivableField[],
+  ) => Promise<ReadonlyMap<string, DerivedRecord>>;
 };
 
 export async function runChecks(
@@ -188,8 +193,8 @@ export async function runChecks(
     registerLineFor(db, entries);
     createCollectionViews(db, collectCollections(entries, ctx));
     // The `derived` table (0040), when any check names it: the same view
-    // `query` builds, over every derivable field. Before `query_only`, since
-    // building it loads a table.
+    // `query` builds, over the union of the fields those checks can read.
+    // Before `query_only`, since building it loads a table.
     const wantsDerived = checks.filter((c) => mentionsDerived(c.query));
     if (wantsDerived.length > 0) {
       if (ctx.derive === undefined) {
@@ -197,7 +202,9 @@ export async function runChecks(
           `check "${wantsDerived[0]?.name ?? ""}": the SQL names the derived table, but this run cannot derive. Run it through \`manni meta validate\`, or drop the reference.`,
         );
       }
-      createDerivedView(db, await ctx.derive());
+      const fields = new Set<DerivableField>();
+      for (const c of wantsDerived) for (const f of fieldsForSql(c.query)) fields.add(f);
+      createDerivedView(db, await ctx.derive([...fields]));
     }
     // Checks are SELECT-only by design — 0021's original discipline, which
     // 0022 lifted for `query` because writes became query's *feature*, judged

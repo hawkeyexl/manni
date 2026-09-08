@@ -164,6 +164,26 @@ describe("derive: config parsing", () => {
   });
 });
 
+describe("derive: reserved collection names", () => {
+  it.each(["derived", "Derived", "_derived_rows", "_DERIVED_ROWS"])(
+    'rejects an override named "%s", which the derived table uses',
+    (name) => {
+      expect(() =>
+        parse([
+          "overrides:",
+          `  - name: ${name}`,
+          '    files: ["docs/**"]',
+          "    schemas: [./s.json]",
+        ]),
+      ).toThrow(
+        new RegExp(
+          `overrides\\[0\\]\\.name "${name}" collides with the derived table`,
+        ),
+      );
+    },
+  );
+});
+
 describe("derive: reserved check name", () => {
   it('rejects a check named "derive" at parse time', () => {
     expect(() =>

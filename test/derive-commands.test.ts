@@ -9,7 +9,7 @@
  * by `makeTempRepo` + `commit`, with author dates pinned, so the facts under
  * test are the ones the commits state.
  */
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   mkdtempSync,
   readdirSync,
@@ -26,7 +26,27 @@ import { runGet } from "../src/meta/commands/get.js";
 import { runQuery } from "../src/meta/commands/query.js";
 import { runFill } from "../src/meta/commands/fill.js";
 import { renderGet } from "../src/meta/reporters/get.js";
+import { loadSqlite } from "../src/meta/core/projection.js";
+import { fieldsForSql, mentionsDerived } from "../src/meta/core/derive/table.js";
 import { DocmetaError, type ValidationResult } from "../src/meta/types.js";
+
+/**
+ * How many times one run derived. The real `deriveMetadata` is wrapped, not
+ * replaced, so every case below still derives from the commits; the counter
+ * is only read by the one case that pins "once per run".
+ */
+const derivations = vi.hoisted(() => ({ calls: 0 }));
+
+vi.mock("../src/meta/core/derive/index.js", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("../src/meta/core/derive/index.js")>();
+  return {
+    ...mod,
+    deriveMetadata: (...args: Parameters<typeof mod.deriveMetadata>) => {
+      derivations.calls += 1;
+      return mod.deriveMetadata(...args);
+    },
+  };
+});
 import {
   commit,
   DOC,
@@ -212,6 +232,38 @@ describe("validate compares managed fields with the evidence", () => {
       "derived:stale",
     ]);
     expect(resultFor(results, "docs/b.md").ok).toBe(true);
+  });
+
+  it("derives once for the run when a managed field and a check both need the evidence", async () => {
+    const files = fixtureFiles();
+    files["manni.config.yaml"] = [
+      "meta:",
+      "  paths:",
+      '    - "docs/**/*.md"',
+      "  schemas:",
+      "    - ./permissive.schema.json",
+      "  derive:",
+      "    fields: [last-updated, owner]",
+      "    sources: [git, codeowners]",
+      "  checks:",
+      "    - name: stale-stamp",
+      "      query: >-",
+      "        SELECT d._path AS path, 'last-updated' AS key,",
+      "               'stamp disagrees with git' AS message",
+      "        FROM derived d JOIN docs USING (_path)",
+      '        WHERE docs."last-updated" IS NOT d."last-updated"',
+      "",
+    ].join("\n");
+    const dir = repo(files);
+    reviseA(dir);
+    derivations.calls = 0;
+    const { results } = await runValidate({ inputs: [], cwd: dir });
+    expect(derivations.calls).toBe(1);
+    // One derivation, both readers served.
+    expect(resultFor(results, "docs/a.md").errors.map((e) => e.schema).sort()).toEqual([
+      "check:stale-stamp",
+      "derived:stale",
+    ]);
   });
 });
 
@@ -419,9 +471,13 @@ describe("query: the derived table", () => {
       "sources: [git, codeowners]\n    codeowners: nope/CODEOWNERS",
     );
     const dir = repo(files);
-    const run = runQuery({ sql: "SELECT _path FROM derived", inputs: [], cwd: dir });
+    // `owner` is what needs the codeowners source; a statement reading
+    // `_path` alone consults nothing and has nothing to refuse.
+    const run = runQuery({ sql: "SELECT _path, owner FROM derived", inputs: [], cwd: dir });
     await expect(run).rejects.toThrow(/codeowners source unavailable/);
     await expect(run).rejects.toThrow(/narrow derive\.sources/);
+    const paths = await runQuery({ sql: "SELECT _path FROM derived", inputs: [], cwd: dir });
+    expect(paths.rows).toHaveLength(2);
   });
 
   it("never consults the evidence for a statement that does not name derived", async () => {
@@ -435,6 +491,99 @@ describe("query: the derived table", () => {
       noConfig: true,
     });
     expect(run.rows).toEqual([{ title: "t" }]);
+  });
+
+  it("does not build the table for a statement that only says the word", async () => {
+    // Same control: no repository, so a build would fail on git. A string
+    // literal is not a table reference.
+    const dir = makeTempRepo({ files: { "docs/a.md": DOC }, init: false });
+    dirs.push(dir);
+    const run = await runQuery({
+      sql: "SELECT title FROM docs WHERE title LIKE '%derived%'",
+      inputs: ["docs"],
+      cwd: dir,
+      noConfig: true,
+    });
+    expect(run.rows).toEqual([]);
+  });
+
+  it("consults only the sources the named columns need", async () => {
+    // No `sources:` in config, so all three are allowed — and this
+    // repository has no origin remote, so the forge cannot answer. A
+    // statement that reads `owner` alone never asks it.
+    const files = fixtureFiles();
+    files["manni.config.yaml"] = (files["manni.config.yaml"] ?? "").replace(
+      "    sources: [git, codeowners]\n",
+      "",
+    );
+    expect(files["manni.config.yaml"]).not.toContain("sources:");
+    const dir = repo(files);
+    const run = await runQuery({
+      sql: "SELECT _path, owner FROM derived ORDER BY _path",
+      inputs: [],
+      cwd: dir,
+    });
+    expect(run.rows).toEqual([
+      { _path: "docs/a.md", owner: '["@docs-team"]' },
+      { _path: "docs/b.md", owner: null },
+    ]);
+    // `*` reads every column, so every source is consulted, and the forge's
+    // silence is the run's error.
+    const all = runQuery({ sql: "SELECT * FROM derived", inputs: [], cwd: dir });
+    await expect(all).rejects.toThrow(/forge source unavailable/);
+  });
+
+  it("never carries the derived table into a --db export", async () => {
+    const dir = repo();
+    const out = join(dir, "export.db");
+    const run = await runQuery({
+      sql: "SELECT _path FROM derived ORDER BY _path",
+      inputs: [],
+      cwd: dir,
+      db: out,
+    });
+    expect(run.rows).toHaveLength(2);
+    const { DatabaseSync } = await loadSqlite();
+    const db = new DatabaseSync(out);
+    try {
+      const names = db
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE lower(name) IN ('derived', '_derived_rows')",
+        )
+        .all();
+      expect(names).toEqual([]);
+      // The export itself is intact.
+      const docs = db.prepare("SELECT count(*) AS n FROM docs").all() as { n: number | bigint }[];
+      expect(Number(docs[0]?.n)).toBe(2);
+    } finally {
+      db.close();
+    }
+  });
+});
+
+describe("the derived table's reading of a statement", () => {
+  it("mentionsDerived looks for the table, not the word", () => {
+    expect(mentionsDerived("SELECT * FROM derived")).toBe(true);
+    expect(mentionsDerived("select _path from DERIVED d")).toBe(true);
+    expect(mentionsDerived('SELECT * FROM "derived"')).toBe(true);
+    expect(mentionsDerived("SELECT a._path FROM docs a JOIN derived b USING (_path)")).toBe(true);
+    expect(mentionsDerived("UPDATE derived SET owner = NULL")).toBe(true);
+    expect(mentionsDerived("SELECT title FROM docs WHERE title LIKE '%derived%'")).toBe(false);
+    expect(mentionsDerived("SELECT 'derived' AS kind FROM docs")).toBe(false);
+    expect(mentionsDerived("SELECT derived FROM docs")).toBe(false);
+  });
+
+  it("fieldsForSql names the columns the statement reads, or all of them", () => {
+    expect(fieldsForSql("SELECT _path, owner FROM derived")).toEqual(["owner"]);
+    expect(
+      fieldsForSql('SELECT d."last-updated", created FROM derived d WHERE d."reviewed-by" IS NULL'),
+    ).toEqual(["created", "last-updated", "reviewed-by"]);
+    expect(fieldsForSql("SELECT _path FROM derived")).toEqual([]);
+    // `*` and `_sources` read every column.
+    expect(fieldsForSql("SELECT * FROM derived")).toHaveLength(6);
+    expect(fieldsForSql("SELECT _sources FROM derived")).toHaveLength(6);
+    // Word boundaries: `owner` is not `owners`, `created` is not `recreated`.
+    expect(fieldsForSql("SELECT owners, recreated FROM derived")).toEqual([]);
   });
 });
 

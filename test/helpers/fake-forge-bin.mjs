@@ -8,7 +8,8 @@
  * answers from a scenario file named by `FAKE_FORGE_SCENARIO`:
  *
  *   {
- *     "log": "<path>",            // optional; every argv appended as one JSON line
+ *     "log": "<path>",            // optional; every call appended as one JSON line:
+ *                                 //   { "argv": [...], "cwd": "<process.cwd()>" }
  *     "responses": [
  *       { "includes": ["api", "repos/o/r/pulls/18/reviews"],
  *         "stdout": [...] | "text", "stderr": "text", "exit": 0, "sleepMs": 0 }
@@ -36,7 +37,10 @@ if (!scenarioPath) {
 } else {
   const scenario = JSON.parse(readFileSync(scenarioPath, "utf8"));
   if (typeof scenario.log === "string") {
-    appendFileSync(scenario.log, `${JSON.stringify(argv)}\n`);
+    appendFileSync(
+      scenario.log,
+      `${JSON.stringify({ argv, cwd: process.cwd() })}\n`,
+    );
   }
   const responses = Array.isArray(scenario.responses) ? scenario.responses : [];
   const hit = responses.find(

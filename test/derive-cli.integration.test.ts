@@ -103,6 +103,17 @@ describe("manni meta derive (built bin)", { timeout: 60_000 }, () => {
     expect(github.stdout).toBe("");
   });
 
+  it("a file the run cannot parse fails the run, --check or not", () => {
+    const { dir } = stageCorpus();
+    writeFile(dir, "docs/broken.md", "---\ntitle: [unclosed\n---\n\nbody\n");
+    const r = run(["derive"], dir);
+    expect(r.status).toBe(1);
+    expect(r.stdout).toContain("✗ docs/broken.md");
+    expect(r.stdout).toContain("1 error");
+    // The rest of the corpus was still stamped.
+    expect(readFileSync(join(dir, "docs", "install.md"), "utf8")).toContain("created: 2026-08-20");
+  });
+
   it("--dry-run reports and writes nothing", () => {
     const { dir } = stageCorpus();
     const r = run(["derive", "--dry-run", "docs/install.md"], dir);

@@ -7,7 +7,9 @@
  * It is a view over a backing table rather than a table, so that SQLite's own
  * `cannot modify derived because it is a view` refuses a write before any
  * effect gate has to: the value it holds is not stored anywhere, and the only
- * way to change it is to change the evidence.
+ * way to change it is to change the evidence. Both objects are transient: a
+ * `--db` export drops them before the handle closes, so a frozen derived
+ * value never outlives the run that computed it.
  */
 import type { DatabaseSync } from "node:sqlite";
 import type { DocmetaConfig } from "../config.js";
@@ -16,6 +18,7 @@ import { assertSourcesAvailable, deriveMetadata } from "./index.js";
 import {
   DERIVABLE_FIELDS,
   DERIVE_SOURCES,
+  type DerivableField,
   type DerivedRecord,
   type DeriveInput,
 } from "./types.js";
@@ -29,16 +32,34 @@ export const DERIVED_TABLE_COLUMNS = [
 
 /** The view's name, and the backing table the rows actually sit in. */
 export const DERIVED_VIEW = "derived";
-const DERIVED_ROWS = "_derived_rows";
+export const DERIVED_ROWS = "_derived_rows";
 
 /**
- * Does the statement name the `derived` table? A whole-word search, and one
- * that deliberately over-triggers: `derived` inside a string literal or a
- * comment costs one always-correct build, while under-triggering would let a
- * catalog read observe a table that should have been there.
+ * Does the statement name the `derived` table? The search wants `derived`
+ * where a table goes — after FROM, JOIN, UPDATE, INTO, TABLE or VIEW, bare
+ * or double-quoted — so that the word inside a string literal, a comment or
+ * a column alias does not spawn git for nothing. A spelling this misses
+ * (`main.derived`, a CTE that shadows it) is caught by the engine's own
+ * `no such table: derived`, which `query` rescues with a lazy build.
  */
 export function mentionsDerived(sql: string): boolean {
-  return /\bderived\b/i.test(sql);
+  return /\b(?:from|join|update|into|table|view)\s+(?:"derived"|derived\b)/i.test(sql);
+}
+
+/**
+ * The derivable fields a statement can read: every one of them when it
+ * selects `*` or reads `_sources` (the evidence spans all six), otherwise
+ * the field names it spells out, quoted or not. `owner` is not `owners` and
+ * `created` is not `recreated`, and the hyphen inside `last-updated` counts
+ * as part of the name. Over-triggering costs one source consulted for
+ * nothing; under-triggering would leave a named column NULL, so a field
+ * that appears anywhere in the text — a literal, a comment — is derived.
+ */
+export function fieldsForSql(sql: string): DerivableField[] {
+  if (sql.includes("*") || /\b_sources\b/i.test(sql)) return [...DERIVABLE_FIELDS];
+  return DERIVABLE_FIELDS.filter((field) =>
+    new RegExp(`(?<![\\w-])${field}(?![\\w-])`, "i").test(sql),
+  );
 }
 
 /**
@@ -84,9 +105,12 @@ export interface DeriveTableContext {
 }
 
 /**
- * Derive every field for the table's rows: all six, from the sources the
- * config allows (all three when it says nothing), with the forge cache on.
- * A requested source that cannot answer is the run's error, never an empty
+ * Derive the table's rows: `fields` — what the caller's statements can read,
+ * see `fieldsForSql` — from the sources the config allows (all three when it
+ * says nothing), with the forge cache on. The view keeps every column, and
+ * a field not derived is NULL in it; only a source some named field needs
+ * is consulted, so a statement reading `owner` never spawns `gh`. A
+ * requested source that cannot answer is the run's error, never an empty
  * column — the same rule `validate` and `derive` follow — and `hint` is the
  * caller's own way out.
  */
@@ -94,6 +118,7 @@ export async function deriveForTable(
   inputs: readonly DeriveInput[],
   ctx: DeriveTableContext,
   hint: string,
+  fields: readonly DerivableField[],
 ): Promise<Map<string, DerivedRecord>> {
   const derive = ctx.config?.derive;
   const result = await deriveMetadata(inputs, {
@@ -101,7 +126,7 @@ export async function deriveForTable(
     base: ctx.base,
     ...(ctx.configDir !== undefined ? { configDir: ctx.configDir } : {}),
     sources: derive?.sources ?? [...DERIVE_SOURCES],
-    fields: [...DERIVABLE_FIELDS],
+    fields,
     ...(derive?.codeowners !== undefined ? { codeowners: derive.codeowners } : {}),
     cache: true,
     now: () => new Date(),

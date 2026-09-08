@@ -6,8 +6,9 @@
  * so one scenario is live per process at a time — vitest runs a file's cases
  * in sequence, which is enough), and returns the `SpawnOptions` that make the
  * client run `node fake-forge-bin.mjs <args>` instead of `gh <args>`. Every
- * spawn is appended to a log the test reads back through `calls()`, so a
- * case can assert the exact argv and, for the cache, that no spawn happened.
+ * spawn is appended to a log the test reads back through `calls()` and
+ * `cwds()`, so a case can assert the exact argv, the directory the CLI ran
+ * from, and, for the cache, that no spawn happened.
  */
 import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -37,7 +38,15 @@ export interface FakeForge {
   dir: string;
   /** Every argv the fake was run with, in order, `prefixArgs` excluded. */
   calls(): string[][];
+  /** The `process.cwd()` of each run, in the same order as `calls()`. */
+  cwds(): string[];
   cleanup(): void;
+}
+
+/** One line of the fake's log. */
+interface LogEntry {
+  argv: string[];
+  cwd: string;
 }
 
 export function fakeForge(
@@ -49,6 +58,13 @@ export function fakeForge(
   const scenario = join(dir, "scenario.json");
   writeFileSync(scenario, JSON.stringify({ log, responses }), "utf8");
   process.env.FAKE_FORGE_SCENARIO = scenario;
+  const entries = (): LogEntry[] => {
+    if (!existsSync(log)) return [];
+    return readFileSync(log, "utf8")
+      .split("\n")
+      .filter((line) => line !== "")
+      .map((line) => JSON.parse(line) as LogEntry);
+  };
   return {
     spawn: {
       bin: process.execPath,
@@ -58,11 +74,10 @@ export function fakeForge(
     },
     dir,
     calls() {
-      if (!existsSync(log)) return [];
-      return readFileSync(log, "utf8")
-        .split("\n")
-        .filter((line) => line !== "")
-        .map((line) => JSON.parse(line) as string[]);
+      return entries().map((e) => e.argv);
+    },
+    cwds() {
+      return entries().map((e) => e.cwd);
     },
     cleanup() {
       if (process.env.FAKE_FORGE_SCENARIO === scenario) {

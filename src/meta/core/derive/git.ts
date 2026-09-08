@@ -19,6 +19,7 @@
  * Availability is a verdict, not an exception (decision 6): git missing, no
  * repository, or a shallow checkout report `available: false` with the fix.
  */
+import { constants as bufferConstants } from "node:buffer";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { dirname, extname, relative, sep } from "node:path";
 import { findGitRoot } from "../../../shared/git-root.js";
@@ -51,6 +52,11 @@ export interface GitSourceOptions {
   now: () => Date;
   /** Runs with more inputs per root than this take the bulk walk. Test seam; default 32. */
   bulkThreshold?: number;
+  /**
+   * Most bytes one git process may write to stdout before the root is
+   * reported too large to read. Test seam; default `MAX_GIT_OUTPUT_BYTES`.
+   */
+  maxOutputBytes?: number;
 }
 
 export interface GitSourceResult {
@@ -61,6 +67,21 @@ export interface GitSourceResult {
 
 const DEFAULT_BULK_THRESHOLD = 32;
 const NULL_SHA = "0".repeat(40);
+
+/**
+ * The whole of one git process's stdout is held in memory and decoded in one
+ * pass; streaming the log is out of scope for now. A history past this cap
+ * is refused rather than decoded: 512 MiB, or V8's string limit where that
+ * is lower, so the cap itself is what stops the run and not an
+ * `ERR_STRING_TOO_LONG` from inside `Buffer#toString`.
+ */
+const MAX_GIT_OUTPUT_BYTES = Math.min(
+  512 * 1024 * 1024,
+  bufferConstants.MAX_STRING_LENGTH,
+);
+
+/** A root whose history cannot be held in memory; caught by `deriveFromGit`. */
+class HistoryTooLarge extends Error {}
 
 /** One commit that touched a document, as either walk form reports it. */
 interface FileHistory {
@@ -92,9 +113,13 @@ export function bodyOf(content: string, fenced: boolean | undefined): string {
 
 /**
  * Never throws for availability: git missing, no repository for any input,
- * or a shallow clone report `status.available: false` with a `reason` that
- * names the fix, and an empty map. A root that answers is used even when
- * another cannot; only "none answered" is unavailable.
+ * a shallow clone, or a history too large to read report
+ * `status.available: false` with a `reason` that names the fix, and an
+ * empty map. One root that cannot answer makes the source unavailable for
+ * the whole run, as `deriveForgeByRoot` rules: a walk that answered for
+ * some roots and silently dropped the rest would read as green for
+ * documents it never looked at. An input outside any repository is not a
+ * failing root; it is simply absent from the records.
  */
 export async function deriveFromGit(
   inputs: readonly DeriveInput[],
@@ -113,10 +138,11 @@ export async function deriveFromGit(
   }
 
   const threshold = opts.bulkThreshold ?? DEFAULT_BULK_THRESHOLD;
+  const maxBytes = opts.maxOutputBytes ?? MAX_GIT_OUTPUT_BYTES;
   const reasons: string[] = [];
-  let answered = 0;
   for (const [root, bucket] of byRoot) {
-    const shallow = await runGit(["rev-parse", "--is-shallow-repository"], root);
+    const run: GitRun = (args, stdin) => runGit(args, root, stdin, maxBytes);
+    const shallow = await run(["rev-parse", "--is-shallow-repository"]);
     if (shallow.missing) {
       return {
         status: { available: false, reason: "git is not on PATH" },
@@ -127,23 +153,31 @@ export async function deriveFromGit(
       reasons.push(`git could not read the repository at ${root}`);
       continue;
     }
-    if (shallow.stdout.trim() === "true") {
+    if (text(shallow).trim() === "true") {
       reasons.push(
         `this checkout is shallow; use actions/checkout with fetch-depth: 0 (${root})`,
       );
       continue;
     }
 
-    const histories =
-      bucket.length <= threshold
-        ? await perFileHistories(root, bucket)
-        : await bulkHistories(root, bucket);
-    if (histories === null) {
-      reasons.push(`git could not read the history at ${root}`);
+    let histories: Map<string, FileHistory[]> | null;
+    let blobs: Map<string, string>;
+    try {
+      histories =
+        bucket.length <= threshold
+          ? await perFileHistories(run, bucket)
+          : await bulkHistories(run, bucket);
+      if (histories === null) {
+        reasons.push(`git could not read the history at ${root}`);
+        continue;
+      }
+      blobs = await fetchBlobs(run, neededBlobs(histories));
+    } catch (err) {
+      if (!(err instanceof HistoryTooLarge)) throw err;
+      reasons.push(`git history is too large to read in one pass (${root})`);
       continue;
     }
 
-    const blobs = await fetchBlobs(root, neededBlobs(histories));
     for (const entry of bucket) {
       const history = histories.get(entry.rel) ?? [];
       records.set(
@@ -151,10 +185,9 @@ export async function deriveFromGit(
         judge(entry.input, root, history, blobs, opts.now),
       );
     }
-    answered += 1;
   }
 
-  if (answered === 0) {
+  if (reasons.length > 0) {
     return {
       status: { available: false, reason: reasons.join("; ") },
       records: new Map(),
@@ -200,11 +233,14 @@ function groupByRoot(inputs: readonly DeriveInput[]): Map<string, RootEntry[]> {
  * deliberately absent: it makes the record boundary ambiguous, where `\x1e`
  * cannot appear in a sha, a date, or a raw line. `--no-abbrev` because
  * `--raw` shortens blob shas by default, and `cat-file` wants the full ones.
+ * `unfold` because a trailer may wrap onto an indented continuation line,
+ * and the header is read up to its first newline: folded, the rest of the
+ * header would be taken for raw lines and the value split in two.
  */
 const RECORD_FORMAT =
   "--format=%x1e%H%x00%aI%x00%an%x00%ae%x00" +
-  "%(trailers:key=Co-authored-by,valueonly,separator=%x1f)%x00" +
-  "%(trailers:key=Reviewed-by,valueonly,separator=%x1f)";
+  "%(trailers:key=Co-authored-by,valueonly,unfold,separator=%x1f)%x00" +
+  "%(trailers:key=Reviewed-by,valueonly,unfold,separator=%x1f)";
 
 const LOG_ARGS = [
   "-c",
@@ -218,22 +254,20 @@ const LOG_ARGS = [
 
 /** The per-file form: `--follow` carries the path across renames itself. */
 async function perFileHistories(
-  root: string,
+  run: GitRun,
   bucket: RootEntry[],
 ): Promise<Map<string, FileHistory[]> | null> {
   const histories = new Map<string, FileHistory[]>();
   for (const entry of bucket) {
-    const out = await runGit(
-      [...LOG_ARGS, "--follow", "--", pathspec(entry.rel)],
-      root,
-    );
+    const out = await run([...LOG_ARGS, "--follow", "--", pathspec(entry.rel)]);
+    if (out.tooLarge) throw new HistoryTooLarge();
     if (out.code !== 0) {
-      if (await isUnbornHead(root)) return histories;
+      if (await isUnbornHead(run)) return histories;
       return null;
     }
     // `--follow` already walked the rename; `attribute` still applies so the
     // rename commit's own raw line is read the same way the bulk form reads it.
-    const attributed = attribute(parseLog(out.stdout), [entry.rel]);
+    const attributed = attribute(parseLog(text(out)), [entry.rel]);
     histories.set(entry.rel, attributed.get(entry.rel) ?? []);
   }
   return histories;
@@ -241,16 +275,17 @@ async function perFileHistories(
 
 /** The bulk form: one walk, every path attributed and followed here. */
 async function bulkHistories(
-  root: string,
+  run: GitRun,
   bucket: RootEntry[],
 ): Promise<Map<string, FileHistory[]> | null> {
-  const out = await runGit(LOG_ARGS, root);
+  const out = await run(LOG_ARGS);
+  if (out.tooLarge) throw new HistoryTooLarge();
   if (out.code !== 0) {
-    if (await isUnbornHead(root)) return new Map();
+    if (await isUnbornHead(run)) return new Map();
     return null;
   }
   return attribute(
-    parseLog(out.stdout),
+    parseLog(text(out)),
     bucket.map((e) => e.rel),
   );
 }
@@ -261,8 +296,8 @@ function pathspec(rel: string): string {
 }
 
 /** A repository with no commits yet has no history rather than a broken one. */
-async function isUnbornHead(root: string): Promise<boolean> {
-  const out = await runGit(["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], root);
+async function isUnbornHead(run: GitRun): Promise<boolean> {
+  const out = await run(["rev-parse", "--verify", "--quiet", "HEAD^{commit}"]);
   return !out.missing && out.code !== 0;
 }
 
@@ -441,16 +476,13 @@ function neededBlobs(histories: Map<string, FileHistory[]>): Set<string> {
  * rather than by order; a `<sha> missing` line yields nothing.
  */
 async function fetchBlobs(
-  root: string,
+  run: GitRun,
   shas: Set<string>,
 ): Promise<Map<string, string>> {
   const blobs = new Map<string, string>();
   if (shas.size === 0) return blobs;
-  const out = await runGit(
-    ["cat-file", "--batch"],
-    root,
-    `${[...shas].join("\n")}\n`,
-  );
+  const out = await run(["cat-file", "--batch"], `${[...shas].join("\n")}\n`);
+  if (out.tooLarge) throw new HistoryTooLarge();
   if (out.code !== 0) return blobs;
   const buf = out.raw;
   let cursor = 0;
@@ -671,27 +703,63 @@ function emailOf(trailer: string): string | null {
 interface GitOutput {
   /** Exit code; null when git was killed by a signal or never started. */
   code: number | null;
-  stdout: string;
-  /** The bytes of stdout, for `cat-file`, whose sizes are byte counts. */
+  /**
+   * The bytes of stdout, undecoded: `cat-file` sizes are byte counts, and
+   * the log is decoded only where it is read, through `text()`.
+   */
   raw: Buffer;
   /** True when `git` itself could not be started (not on PATH). */
   missing: boolean;
+  /** True when stdout passed the byte cap; `raw` is then empty. */
+  tooLarge: boolean;
 }
 
-/** One git process from `cwd`, modelled on `checkIgnore` in gitignore.ts. */
-function runGit(args: string[], cwd: string, stdin?: string): Promise<GitOutput> {
-  return new Promise((settle) => {
+/** One git command in a fixed root, with the run's byte cap bound in. */
+type GitRun = (args: string[], stdin?: string) => Promise<GitOutput>;
+
+/**
+ * Decode stdout as UTF-8. The cap keeps the byte count under V8's string
+ * limit, so a decode that still throws is treated the same way rather than
+ * escaping as a crash.
+ */
+function text(out: GitOutput): string {
+  try {
+    return out.raw.toString("utf8");
+  } catch {
+    throw new HistoryTooLarge();
+  }
+}
+
+/**
+ * One git process from `cwd`, modelled on `checkIgnore` in gitignore.ts.
+ * stdout is collected whole and capped at `maxBytes`: past the cap the
+ * child is killed and the result says `tooLarge` instead of carrying the
+ * bytes. Anything thrown while assembling the result rejects the promise
+ * rather than escaping the 'close' handler as an uncaught exception.
+ */
+function runGit(
+  args: string[],
+  cwd: string,
+  stdin: string | undefined,
+  maxBytes: number,
+): Promise<GitOutput> {
+  return new Promise((settle, reject) => {
     let done = false;
     const finish = (out: GitOutput): void => {
       if (done) return;
       done = true;
       settle(out);
     };
+    const fail = (err: unknown): void => {
+      if (done) return;
+      done = true;
+      reject(err instanceof Error ? err : new Error(String(err)));
+    };
     const failed = (missing: boolean): GitOutput => ({
       code: null,
-      stdout: "",
       raw: Buffer.alloc(0),
       missing,
+      tooLarge: false,
     });
 
     let child: ChildProcessWithoutNullStreams;
@@ -702,8 +770,18 @@ function runGit(args: string[], cwd: string, stdin?: string): Promise<GitOutput>
       return;
     }
 
-    const chunks: Buffer[] = [];
+    let chunks: Buffer[] = [];
+    let total = 0;
+    let tooLarge = false;
     child.stdout.on("data", (chunk: Buffer) => {
+      if (tooLarge) return;
+      total += chunk.length;
+      if (total > maxBytes) {
+        tooLarge = true;
+        chunks = [];
+        child.kill();
+        return;
+      }
       chunks.push(chunk);
     });
     // Drain stderr so a chatty git cannot fill the pipe and stall.
@@ -715,8 +793,12 @@ function runGit(args: string[], cwd: string, stdin?: string): Promise<GitOutput>
     // A dead child makes the pipe write fail; 'error'/'close' report that.
     child.stdin.on("error", () => {});
     child.on("close", (code) => {
-      const raw = Buffer.concat(chunks);
-      finish({ code, stdout: raw.toString("utf8"), raw, missing: false });
+      try {
+        const raw = tooLarge ? Buffer.alloc(0) : Buffer.concat(chunks);
+        finish({ code, raw, missing: false, tooLarge });
+      } catch (err) {
+        fail(err);
+      }
     });
 
     if (stdin === undefined) child.stdin.end();

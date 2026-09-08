@@ -742,7 +742,7 @@ finding without touching anything.
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
-| `--fields` | `<list>` | config `derive.fields` | Comma-separated managed fields to stamp this run. Each must be one of the six [derivable fields](/manni/meta/reference/configuration/#the-derivable-fields). An unknown or non-derivable name is an error (exit 2) listing the six. No config `derive.fields` and no flag is an error (exit 2): `nothing to derive: set derive.fields in manni.config.yaml or pass --fields`. |
+| `--fields` | `<list>` | config `derive.fields` | Comma-separated managed fields to stamp this run. Each must be one of the six [derivable fields](/manni/meta/reference/configuration/#the-derivable-fields). An unknown or non-derivable name is an error (exit 2) listing the six. A field a config [sidecar](/manni/meta/reference/configuration/#sidecars) owns is refused the same way the config parser refuses it in `derive.fields` (exit 2): `"owner" is owned by sidecar ./owners.yaml; a managed field has one authority, and a sidecar key already has one.` No config `derive.fields` and no flag is an error (exit 2): `nothing to derive: set derive.fields in manni.config.yaml or pass --fields`. |
 | `--sources` | `<list>` | config `derive.sources`, else all three | Comma-separated sources to consult: `git`, `codeowners`, `forge`. A field whose only sources are excluded derives null and is left alone. This is the opt-out for a checkout that cannot answer a source, such as a shallow clone. |
 | `--dry-run` | n/a | off | Report what would change and write nothing. |
 | `--check` | n/a | off | Implies `--dry-run`. A managed field that is stale or unset is a finding, and the run exits 1 if there is any. This is the CI spelling. |
@@ -806,9 +806,11 @@ docs/faq.md  current
 2 files, 1 changed, 2 fields written
 ```
 
-Exit `0` means the run applied, or had nothing to do. Exit `1` comes only
-from `--check`, when a managed field is stale or unset. Exit `2` is usage or
-operational, including every source that could not answer.
+Exit `0` means the run applied, or had nothing to do. Exit `1` means a file
+could not be read or written (an unparseable document, a read-only format),
+with or without `--check`, or, under `--check` alone, that a managed field is
+stale or unset. Exit `2` is usage or operational, including every source that
+could not answer.
 
 ### Examples
 

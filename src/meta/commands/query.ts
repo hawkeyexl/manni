@@ -80,8 +80,10 @@ import {
 } from "../core/collections.js";
 import {
   createDerivedView,
+  DERIVED_ROWS,
   DERIVED_VIEW,
   deriveForTable,
+  fieldsForSql,
   mentionsDerived,
 } from "../core/derive/table.js";
 import type { DeriveInput } from "../core/derive/types.js";
@@ -597,6 +599,11 @@ async function runSql(
         columns: SYSTEM_COLUMNS.length + dataColumns.length,
       }
     : undefined;
+  // Whether the derived table was built this run. Held in an object, and
+  // declared here rather than beside `buildDerived`, because the `finally`
+  // below reads it to drop the table from a `--db` export — and a bare
+  // `let` set inside a closure narrows to `false` at that read.
+  const derivedTable = { built: false };
   try {
     createDocsTable(db, entries, dataColumns);
     // Named collections (0027): one view per named override, of the files it
@@ -629,15 +636,17 @@ async function runSql(
     if (target) buildViews();
     // The `derived` table (0040): built only when the statement names it,
     // because building it spawns git (and, with the forge source, gh or
-    // glab). Eager on a raw-text mention — the same over-triggering search
-    // the collections use, for the same reason — and lazily on the engine's
-    // `no such table: derived` as the backstop. Stdin has no history and no
-    // row. Never carried into a `--db` export: the value is not stored
-    // anywhere, and an export that froze it would be the stale stamp the
-    // channel exists to catch.
-    let derivedBuilt: boolean = false;
+    // glab). Eager when the text names it as a table, and lazily on the
+    // engine's `no such table: derived` as the backstop for a spelling the
+    // text search misses. Only the fields the statement can read are
+    // derived, so only the sources those need are consulted; the view
+    // keeps every column, NULL where nothing was derived. Stdin has no
+    // history and no row. Transient in a `--db` export: the value is not
+    // stored anywhere, and an export that froze it would be the stale stamp
+    // the channel exists to catch, so both objects are dropped before the
+    // handle closes (see the `finally` below).
     const buildDerived = async (): Promise<void> => {
-      if (derivedBuilt) return;
+      if (derivedTable.built) return;
       const inputs: DeriveInput[] = entries
         .filter((e) => e.label !== STDIN_LABEL)
         .map((e) => ({
@@ -655,9 +664,10 @@ async function runSql(
           config: ctx.config,
         },
         "narrow derive.sources in manni.config.yaml",
+        fieldsForSql(sql),
       );
       createDerivedView(db, records);
-      derivedBuilt = true;
+      derivedTable.built = true;
     };
     if (sql === "") {
       return { columns: [], rows: [], ...(dbInfo ? { db: dbInfo } : {}) };
@@ -754,7 +764,7 @@ async function runSql(
         // only from this prepare-time catch.
         if (
           missing !== undefined &&
-          !derivedBuilt &&
+          !derivedTable.built &&
           missing.replace(/^(main|temp)\./i, "").toLowerCase() === DERIVED_VIEW
         ) {
           throw new MissingDerivedView();
@@ -883,6 +893,16 @@ async function runSql(
       return await runOnce();
     }
   } finally {
+    // A `--db` export must not carry the derived table: it is recomputed
+    // from the evidence on every run, and a file that froze it would hand a
+    // later reader a stale value with no evidence behind it. In memory the
+    // whole database goes with the handle, so only the export needs the
+    // drop.
+    if (target && derivedTable.built) {
+      db.exec(
+        `DROP VIEW IF EXISTS ${DERIVED_VIEW}; DROP TABLE IF EXISTS ${DERIVED_ROWS}`,
+      );
+    }
     db.close();
   }
 }

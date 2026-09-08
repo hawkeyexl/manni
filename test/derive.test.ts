@@ -275,6 +275,42 @@ describe("runDerive", () => {
     );
   });
 
+  it("refuses --fields naming a key a sidecar owns, as the config parser does", async () => {
+    const { dir } = stageCorpus();
+    // The manifest is never loaded here; the config's `keys` list is the
+    // whole claim, so a trivial file is enough.
+    writeFile(dir, "owners.yaml", "{}\n");
+    writeFile(
+      dir,
+      "manni.config.yaml",
+      [
+        "meta:",
+        "  paths:",
+        '    - "docs/**/*.md"',
+        "  schemas:",
+        "    - ./permissive.schema.json",
+        "  sidecars:",
+        "    - file: ./owners.yaml",
+        "      keys: [owner]",
+        "  derive:",
+        "    fields: [created, last-updated]",
+        "",
+      ].join("\n"),
+    );
+    await expect(
+      runDerive({ inputs: [], cwd: dir, fields: ["owner"] }),
+    ).rejects.toThrow(
+      new DocmetaError(
+        '"owner" is owned by sidecar ./owners.yaml; a managed field has one authority, and a sidecar key already has one.',
+      ),
+    );
+    // A field nobody else owns still runs.
+    const run = await runDerive({ inputs: [], cwd: dir, fields: ["last-updated"] });
+    expect(fieldsOf(run, "docs/install.md").fields.map((f) => f.field)).toEqual([
+      "last-updated",
+    ]);
+  });
+
   it("refuses a source it does not know, naming the three", async () => {
     const { dir } = stageCorpus();
     await expect(

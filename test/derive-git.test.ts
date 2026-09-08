@@ -251,6 +251,29 @@ describe.each(forms)("deriveFromGit ($name)", ({ opts }) => {
     });
   });
 
+  it("unfolds a trailer that wraps onto a continuation line", async () => {
+    const dir = tempRepo({ "a.md": doc("title: t", "one") });
+    const sha = commit(dir, "add", {
+      authorDate: D1,
+      trailers: [
+        "Co-authored-by: Alice Verylongname\n  <alice@example.com>",
+        "Reviewed-by: Bob <bob@example.com>",
+      ],
+    });
+
+    const facts = await factsFor(dir, "a.md", opts(dir));
+    expect(facts.authors).toEqual({
+      value: ["Ada", "Alice Verylongname"],
+      source: "git",
+      evidence: "1 body-changing commit",
+    });
+    expect(facts["reviewed-by"]).toEqual({
+      value: ["Bob"],
+      source: "git",
+      evidence: `Reviewed-by trailer in ${sha.slice(0, 7)}`,
+    });
+  });
+
   it("has no review facts when the newest body commit carries no trailer", async () => {
     const dir = tempRepo({ "a.md": doc("title: t", "one") });
     commit(dir, "add", { authorDate: D1, trailers: ["Reviewed-by: Rae <rae@example.com>"] });
@@ -298,6 +321,43 @@ describe.each(forms)("deriveFromGit ($name)", ({ opts }) => {
     expect(result.status.available).toBe(false);
     expect(result.status.reason).toContain("fetch-depth: 0");
     expect(result.status.reason).toContain(clone);
+    expect(result.records.size).toBe(0);
+  });
+
+  it("is unavailable when one repository cannot answer, even if another can", async () => {
+    // A partially answered walk would omit the shallow root's documents and
+    // report green for the run: the false green the channel refuses.
+    const good = tempRepo({ "a.md": doc("title: t", "one") });
+    commit(good, "add", { authorDate: D1 });
+    const origin = tempRepo({ "b.md": doc("title: t", "one") });
+    commit(origin, "add", { authorDate: D1 });
+    const parent = realpathSync(mkdtempSync(join(tmpdir(), "docmeta-shallow-")));
+    dirs.push(parent);
+    git(parent, ["clone", "-q", "--depth", "1", pathToFileURL(origin).href, "clone"]);
+    const clone = join(parent, "clone");
+
+    const result = await deriveFromGit(
+      [input(good, "a.md"), input(clone, "b.md")],
+      opts(good),
+    );
+    expect(result.status.available).toBe(false);
+    expect(result.status.reason).toContain("fetch-depth: 0");
+    expect(result.status.reason).toContain(clone);
+    expect(result.records.size).toBe(0);
+  });
+
+  it("is unavailable when git's output exceeds the read cap", async () => {
+    const dir = tempRepo({ "a.md": doc("title: t", "one") });
+    commit(dir, "add", { authorDate: D1 });
+
+    const result = await deriveFromGit([input(dir, "a.md")], {
+      ...opts(dir),
+      maxOutputBytes: 64,
+    });
+    expect(result.status).toEqual({
+      available: false,
+      reason: `git history is too large to read in one pass (${dir})`,
+    });
     expect(result.records.size).toBe(0);
   });
 

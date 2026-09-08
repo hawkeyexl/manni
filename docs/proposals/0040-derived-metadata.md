@@ -457,6 +457,34 @@ managed key cannot exist, by config, so no runtime refusal is needed there.
   the updater is an agent, which reads the message and runs the command it
   names.
 
+### What the pre-merge review changed
+
+The code review on the pull request confirmed ten defects in the first
+implementation and the fixes narrowed four behaviours stated above. They are
+recorded here rather than silently absorbed, because each is a rule the
+next channel will meet again.
+
+- A git root that cannot answer makes the whole git source unavailable, even
+  when another root answered. The first draft kept the answering root and
+  dropped the failing one's documents, which derived null and passed. That
+  is the false green decision 6 refuses, and the forge source already applied
+  the stricter rule.
+- The `derived` table derives only the columns a statement can read, and is
+  built only when the statement names the table after `FROM`, `JOIN` or a DDL
+  keyword. The first draft derived all six fields for any SQL containing the
+  word, so a `LIKE '%derived%'` read spawned the forge and exited 2 without
+  `gh`.
+- `derive` exits 1 when a file could not be parsed or written, `--check` or
+  not, as `fill` and `get` do. `--fields` refuses a key a sidecar owns, the
+  way the config parser already did.
+- A `--db` export never carries the derived rows: the view and its backing
+  table are dropped before the handle closes. A collection may not be named
+  `derived` or `_derived_rows`.
+
+Two smaller ones: the trailer atoms use `unfold`, so a wrapped
+`Reviewed-by` is read whole, and a wildcard-final CODEOWNERS pattern such as
+`docs/*` no longer covers nested files, matching GitHub's own example.
+
 ## Follow-ups recorded, not promised
 
 - **Slice 4, suggestions on the pull request.** A reporter that posts

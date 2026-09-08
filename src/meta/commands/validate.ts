@@ -67,12 +67,14 @@ import { runChecks, type CheckEntry } from "../core/checks.js";
 import {
   assertSourcesAvailable,
   deriveMetadata,
+  type DeriveResult,
 } from "../core/derive/index.js";
-import { deriveForTable, mentionsDerived } from "../core/derive/table.js";
+import { fieldsForSql, mentionsDerived } from "../core/derive/table.js";
 import {
   compareDerived,
   DERIVE_SOURCES,
   staleFindings,
+  type DerivableField,
   type DerivedRecord,
   type DeriveInput,
 } from "../core/derive/types.js";
@@ -260,6 +262,19 @@ function resolveBaselineRequest(
   return null;
 }
 
+/**
+ * Run `fn` at most once and hand every caller the same promise, rejection
+ * included: a derivation that failed for the checks has failed for the
+ * comparison too, and must not be retried against the same evidence.
+ */
+function once<T>(fn: () => Promise<T>): () => Promise<T> {
+  let pending: Promise<T> | undefined;
+  return () => {
+    pending ??= fn();
+    return pending;
+  };
+}
+
 export async function runValidate(
   opts: ValidateOptions,
 ): Promise<ValidateRun> {
@@ -410,10 +425,49 @@ export async function runValidate(
   // A corpus check naming the `derived` table needs the same inputs, content
   // included (the git source hashes it to spot an uncommitted body), so the
   // one list serves both — and fills only when something will read it.
-  const checksNeedDerived =
-    checksWillRun && configuredChecks.some((c) => mentionsDerived(c.query));
+  const derivedChecks = checksWillRun
+    ? configuredChecks.filter((c) => mentionsDerived(c.query))
+    : [];
+  const checksNeedDerived = derivedChecks.length > 0;
   const deriveInputs: DeriveInput[] = [];
   const keepDeriveInputs = deriveWillRun || checksNeedDerived;
+  // One derivation for the run, over the union of what either reader needs:
+  // the managed fields the comparison judges, and the columns the checks
+  // can read. Memoized so a check that names the table and a managed field
+  // share the git walk (and the forge round-trip) rather than each paying
+  // for one. A source that cannot answer is the run's error either way — a
+  // half-derived comparison would read as "all current", the false green
+  // the channel refuses — and the hint names the reader that asked.
+  const deriveFields = new Set<DerivableField>(deriveWillRun ? deriveConfig.fields : []);
+  for (const c of derivedChecks) for (const f of fieldsForSql(c.query)) deriveFields.add(f);
+  const derivedOnce = once(async (): Promise<DeriveResult> => {
+    const derived = await deriveMetadata(deriveInputs, {
+      cwd,
+      base,
+      ...(configDir !== undefined ? { configDir } : {}),
+      sources: deriveConfig?.sources ?? [...DERIVE_SOURCES],
+      fields: [...deriveFields],
+      ...(deriveConfig?.codeowners !== undefined
+        ? { codeowners: deriveConfig.codeowners }
+        : {}),
+      cache: true,
+      now: () => new Date(),
+    });
+    assertSourcesAvailable(
+      derived.sources,
+      deriveWillRun
+        ? "pass --no-derive to skip the comparison, or narrow derive.sources"
+        : "narrow derive.sources in manni.config.yaml",
+    );
+    // A source that answered, with a caveat worth one line: a repository
+    // with no CODEOWNERS file derives null owners rather than failing.
+    for (const [name, status] of Object.entries(derived.sources)) {
+      if (status.available && status.reason !== undefined) {
+        opts.onNotice?.(`${name}: ${status.reason}`);
+      }
+    }
+    return derived;
+  });
 
   const processOne = async (
     label: string,
@@ -617,14 +671,11 @@ export async function runValidate(
         resolved: checkResolved,
         ...(opts.onNotice ? { onNotice: opts.onNotice } : {}),
         // A check that names the `derived` table (0040) gets the same view
-        // `query` builds: every derivable field, from the sources the config
-        // allows. Built only when asked for, because building it spawns git.
-        derive: () =>
-          deriveForTable(
-            deriveInputs,
-            { cwd, base, configDir, config },
-            "narrow derive.sources in manni.config.yaml",
-          ),
+        // `query` builds, from the run's one derivation — which already
+        // covers every field the checks can read, so the list handed back
+        // here is not needed. Built only when asked for, because building
+        // it spawns git.
+        derive: async () => (await derivedOnce()).records,
       });
       const byFile = new Map(results.map((r) => [r.file, r]));
       for (const [file, errs] of findings) {
@@ -643,36 +694,13 @@ export async function runValidate(
     }
   }
 
-  // The derived comparison (0040), once for the run: what each document
-  // asserts for its managed fields against what the sources say. Per file,
-  // so it runs on scoped runs too, and before the baseline so a stale stamp
-  // rides the same ratchet every other finding does. A source that cannot
-  // answer is the run's error — a half-derived comparison would read as "all
-  // current", which is the false green the channel refuses.
+  // The derived comparison (0040): what each document asserts for its
+  // managed fields against what the sources say. Per file, so it runs on
+  // scoped runs too, and before the baseline so a stale stamp rides the same
+  // ratchet every other finding does. Reads only the configured fields from
+  // the run's one derivation, which may hold more for the checks' sake.
   if (deriveWillRun && deriveInputs.length > 0) {
-    const derived = await deriveMetadata(deriveInputs, {
-      cwd,
-      base,
-      ...(configDir !== undefined ? { configDir } : {}),
-      sources: deriveConfig.sources ?? [...DERIVE_SOURCES],
-      fields: deriveConfig.fields,
-      ...(deriveConfig.codeowners !== undefined
-        ? { codeowners: deriveConfig.codeowners }
-        : {}),
-      cache: true,
-      now: () => new Date(),
-    });
-    assertSourcesAvailable(
-      derived.sources,
-      "pass --no-derive to skip the comparison, or narrow derive.sources",
-    );
-    // A source that answered, with a caveat worth one line: a repository
-    // with no CODEOWNERS file derives null owners rather than failing.
-    for (const [name, status] of Object.entries(derived.sources)) {
-      if (status.available && status.reason !== undefined) {
-        opts.onNotice?.(`${name}: ${status.reason}`);
-      }
-    }
+    const derived = await derivedOnce();
     const byFile = new Map(results.map((r) => [r.file, r]));
     for (const input of deriveInputs) {
       const record: DerivedRecord | undefined = derived.records.get(input.label);

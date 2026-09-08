@@ -183,6 +183,27 @@ describe("ownersFor (GitHub)", () => {
     });
   });
 
+  it("a trailing wildcard covers the directory's own files, not what is nested", () => {
+    // GitHub: `docs/*` matches docs/getting-started.md and nothing deeper,
+    // so a nested file falls back to the rule before it.
+    const file = load(fx("wildcard-final"), "CODEOWNERS");
+    expect(ownersFor(file, "docs/getting-started.md")).toEqual({
+      owners: ["@docs-team"],
+      line: 2,
+    });
+    expect(ownersFor(file, "docs/build-app/troubleshooting.md")).toEqual({
+      owners: ["@default"],
+      line: 1,
+    });
+  });
+
+  it("a bare extension pattern still matches at any depth", () => {
+    const file = parseCodeowners("*.md @maya\n", "CODEOWNERS", "CODEOWNERS");
+    expect(ownersFor(file, "a.md")).toEqual({ owners: ["@maya"], line: 1 });
+    expect(ownersFor(file, "docs/deep/er/b.md")).toEqual({ owners: ["@maya"], line: 1 });
+    expect(ownersFor(file, "docs/b.txt")).toBeNull();
+  });
+
   it("a single * does not cross directories", () => {
     // docs/api/*.md does not reach docs/api/v2/get.md; docs/ still does.
     expect(ownersFor(github(), "docs/api/v2/get.md")).toEqual({

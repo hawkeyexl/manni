@@ -1480,11 +1480,13 @@ export function buildProgram(): Command {
         if (text.length > 0 || !OMITTED_WHEN_CLEAN.has(format)) {
           process.stdout.write(`${text}\n`);
         }
-        // Exit 1 is `--check`'s alone: an applied run is the work done. A
-        // file the run could not read counts as a finding there too, as it
-        // does for `validate`, so an unparseable document cannot pass the gate.
+        // A file the run could not read or write fails the run whether or
+        // not it wrote the rest, as it does for `fill`: a stamp that was
+        // never applied must not read as done. A stale or unset field is
+        // `--check`'s failure alone — an applied run is the work done.
         const { stale, unset, errors } = run.summary;
-        process.exitCode = options.check && stale + unset + errors > 0 ? 1 : 0;
+        const failed = errors > 0 || (options.check && stale + unset > 0);
+        process.exitCode = failed ? 1 : 0;
       } catch (err) {
         fail(err);
       }

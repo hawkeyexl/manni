@@ -52,19 +52,24 @@ const DEFAULT_TIMEOUT_MS = 30_000;
  * writes: `git@host:owner/repo.git`, `https://[user@]host/owner/repo[.git]`,
  * `ssh://git@host[:port]/owner/repo`. The project keeps every path segment,
  * because a GitLab namespace can nest (`group/sub/repo`). Anything else —
- * a local path, a bare host — is `null`.
+ * a local path, a bare host — is `null`. A local path is recognised before
+ * the scp form is tried, because git reads `C:/mirrors/repo.git` as a
+ * directory on drive C and the scp regex would read it as host `C`.
  */
 export function parseOriginUrl(
   url: string,
 ): { host: string; project: string } | null {
   const trimmed = url.trim();
   if (trimmed === "") return null;
+  if (isLocalPath(trimmed)) return null;
 
   const scp = /^(?:[^@/:]+@)?([^/:]+):(?!\/\/)(.+)$/.exec(trimmed);
   if (scp) {
     const host = scp[1];
     const path = scp[2];
     if (host === undefined || path === undefined) return null;
+    // A one-letter "host" is a DOS drive, whichever slash follows it.
+    if (/^[A-Za-z]$/.test(host)) return null;
     return project(host, path);
   }
 
@@ -77,6 +82,11 @@ export function parseOriginUrl(
   if (!/^(https?|ssh|git):$/.test(parsed.protocol)) return null;
   if (parsed.hostname === "") return null;
   return project(parsed.hostname, parsed.pathname);
+}
+
+/** Absolute, relative, or UNC: the spellings of a path that is not a URL. */
+function isLocalPath(s: string): boolean {
+  return s.startsWith("/") || s.startsWith("./") || s.startsWith("../") || s.startsWith("\\\\");
 }
 
 function project(
@@ -493,6 +503,11 @@ export class GlabClient extends CliClient {
  * result wrapped in the on-disk cache. No origin (or no git) yields a client
  * whose `status()` says so; nothing throws here, because "no forge" is a
  * source being unavailable, and that is reported where sources are reported.
+ *
+ * The CLI is spawned in `root`, not in the caller's `cwd`: `glab` fills in
+ * `:fullpath` from the repository it runs in, and `gh` detects the
+ * repository the same way, so the child must run from the checkout this
+ * client answers for. `spawn.cwd` is the test seam that overrides that.
  */
 export async function createForgeClient(
   root: string,
@@ -503,7 +518,7 @@ export async function createForgeClient(
     spawn?: Partial<SpawnOptions>;
   },
 ): Promise<ForgeClient> {
-  const spawnOpts: SpawnOptions = { ...opts.spawn, cwd: opts.spawn?.cwd ?? opts.cwd };
+  const spawnOpts: SpawnOptions = { ...opts.spawn, cwd: opts.spawn?.cwd ?? root };
   const origin = await originUrl(root);
   const parsed = origin === null ? null : parseOriginUrl(origin);
   const identity = parsed === null ? null : identityFromOrigin(parsed.host, parsed.project);

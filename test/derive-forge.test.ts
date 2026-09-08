@@ -26,7 +26,12 @@ import {
 } from "../src/meta/core/derive/forge.js";
 import { FORGE_CACHE_DIR, ForgeCache, cachedClient } from "../src/meta/core/derive/cache.js";
 import { DocmetaError } from "../src/meta/types.js";
-import { fakeForge, type FakeForge, type FakeResponse } from "./helpers/fake-forge.js";
+import {
+  FAKE_FORGE_BIN,
+  fakeForge,
+  type FakeForge,
+  type FakeResponse,
+} from "./helpers/fake-forge.js";
 import { DOC, makeTempRepo, removeTempRepo } from "./helpers/temp-repo.js";
 
 const GITHUB: ForgeIdentity = { kind: "github", host: "github.com", project: "acme/docs" };
@@ -95,7 +100,20 @@ describe("parseOriginUrl", () => {
   it("rejects what is not a remote URL", () => {
     expect(parseOriginUrl("")).toBeNull();
     expect(parseOriginUrl("/srv/git/docs.git")).toBeNull();
+    expect(parseOriginUrl("./mirrors/docs.git")).toBeNull();
+    expect(parseOriginUrl("../mirrors/docs.git")).toBeNull();
+    expect(parseOriginUrl("\\\\fileserver\\git\\docs.git")).toBeNull();
     expect(parseOriginUrl("https://github.com/")).toBeNull();
+  });
+
+  it("does not read a Windows drive letter as an scp host", () => {
+    expect(parseOriginUrl("C:/mirrors/docs-repo.git")).toBeNull();
+    expect(parseOriginUrl("C:\\mirrors\\repo.git")).toBeNull();
+    expect(parseOriginUrl("c:/mirrors/repo.git")).toBeNull();
+    // The real spellings are untouched.
+    expect(parseOriginUrl("git@github.com:o/r.git")).toEqual({ host: "github.com", project: "o/r" });
+    expect(parseOriginUrl("https://github.com/o/r.git")).toEqual({ host: "github.com", project: "o/r" });
+    expect(parseOriginUrl("ssh://git@host/o/r")).toEqual({ host: "host", project: "o/r" });
   });
 });
 
@@ -533,6 +551,27 @@ describe("createForgeClient", () => {
     });
     expect(await client.detect()).toEqual(GITLAB);
     expect((await client.status()).reason).toContain("glab auth login");
+  });
+
+  it("spawns the CLI in the repository root, not the caller's cwd", async () => {
+    // glab substitutes `:fullpath` from the current repository and gh detects
+    // the repository the same way, so the child must run from the checkout
+    // the client was created for, wherever manni itself was started.
+    repo = makeTempRepo({ files: { "a.md": DOC } });
+    execFileSync("git", ["remote", "add", "origin", "git@github.com:acme/docs.git"], {
+      cwd: repo,
+      stdio: "ignore",
+    });
+    fake = fakeForge(ghScenario());
+    const client = await createForgeClient(repo, {
+      cwd: fake.dir,
+      cache: false,
+      cacheDir: FORGE_CACHE_DIR,
+      spawn: { bin: process.execPath, prefixArgs: [FAKE_FORGE_BIN] },
+    });
+    expect(await client.status()).toEqual({ available: true });
+    expect((await client.mergedChangeFor(SHA))?.id).toBe(18);
+    expect(fake.cwds()).toEqual([repo, repo, repo]);
   });
 
   it("reports a repository with no origin, and never spawns the CLI", async () => {

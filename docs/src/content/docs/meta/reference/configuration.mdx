@@ -1084,9 +1084,11 @@ the next approval changes it. `--no-cache` bypasses the cache for one run.
    and the fix. A check that silently did not run would be a green gate over
    nothing. `--no-derive` on `validate` and `--sources` narrowing are the
    deliberate opt-outs. The rule holds for reads too. `get --derived` and a
-   `query` naming the `derived` table consult every source `derive.sources`
-   allows, and the default is all three. A machine without `gh` or `glab`
-   therefore sets `sources: [git, codeowners]`, or the read is exit 2. One
+   `query` naming the `derived` table consult every source a named column
+   needs, among those `derive.sources` allows, and the default is all three.
+   A `query` reading `owner` alone asks only `codeowners`; one selecting `*`
+   asks all three. A machine without `gh` or `glab` therefore sets
+   `sources: [git, codeowners]`, or a read that needs the forge is exit 2. One
    absence is a fact rather than a failure: a repository with no CODEOWNERS
    file at all has declared no owners, so `owner` derives null and the run
    says so once on stderr. Only a `codeowners:` path that names a missing

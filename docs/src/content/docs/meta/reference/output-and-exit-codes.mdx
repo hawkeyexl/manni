@@ -483,6 +483,7 @@ narrowing on `derive`.
 | Config `derive.codeowners` names a file that is not there, and `codeowners` is a requested source. | `codeowners source unavailable: …`, naming the path. A repository with no CODEOWNERS file at all is not this case: `owner` derives null and stderr says `codeowners: no CODEOWNERS file found (…)` once. |
 | `derive` was given `-`. | `cannot derive <stdin>: no history behind it` |
 | `derive` was given a field that is not derivable. | `"verified-against" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed` |
+| `derive --fields` named a key a config [sidecar](/manni/meta/reference/configuration/#sidecars) owns. | `"owner" is owned by sidecar ./owners.yaml; a managed field has one authority, and a sidecar key already has one.` |
 | `derive` has no `derive.fields` in config and no `--fields`. | `nothing to derive: set derive.fields in manni.config.yaml or pass --fields` |
 | `derive` was given a findings format without `--check`. | `sarif is a findings format, which only --check produces` |
 | A `query` write would touch a managed key. | `"last-updated" is managed by derive; run manni meta derive instead.` |
@@ -497,7 +498,7 @@ A stamp that disagrees with the evidence is exit 1, from `validate` and from
 | `validate` | One or more files failed validation. |
 | `get` | One or more files had a metadata block that could not be read. That means frontmatter that is not valid YAML, or that parses to something other than a mapping. A requested field that is merely *absent* is reported as unset and is **not** a failure. An absent **file** is different again: that is an operational error and exits 2. |
 | [`fill`](/manni/meta/reference/cli/#meta-fill) | A property the schema lists as `required` could not be filled confidently, or a file errored. Skipped **optional** properties leave the exit code at `0`. A file whose missing property a [sidecar](/manni/meta/reference/configuration/#sidecars) owns is refused as a per-file error, so it counts here. |
-| [`derive`](/manni/meta/reference/cli/#meta-derive) | **Only** under `--check`, when a managed field is stale or unset. A run that writes exits `0` whatever it changed, because the work is done rather than pending. |
+| [`derive`](/manni/meta/reference/cli/#meta-derive) | A file the run could not read or write: an unparseable document, or a read-only format it could not stamp. That fails the run with or without `--check`, as it does for `fill`, because a stamp that was never applied must not read as done. Under `--check` a stale or unset managed field fails it too. A run that writes cleanly exits `0` whatever it changed, because the work is done rather than pending. |
 | `schemas` | Never. |
 
 The rule behind `fill`'s version is the same as `validate`'s: exit 1 means the

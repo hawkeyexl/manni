@@ -151,8 +151,18 @@ With [`derive:`](/manni/meta/reference/configuration/#derive) in config, a
 second table is available. `derived` holds what the evidence says each
 managed field should be, one row per file. The evidence is git history, the
 CODEOWNERS file, and the forge's review history. It is built only when the
-statement mentions `derived`, because building it spawns `git`, and with the
-`forge` source, `gh` or `glab`. A statement that never names it pays nothing.
+statement names `derived` as a table (after `FROM`, `JOIN`, `UPDATE`, and the
+like, quoted or not), because building it spawns `git`, and with the `forge`
+source, `gh` or `glab`. A statement that never names it pays nothing, and the
+word inside a string literal or a comment does not count. A spelling the text
+search misses is caught by SQLite's own `no such table: derived`, which
+triggers the same build.
+
+Only the columns the statement can read are derived. A statement that names
+`owner` alone consults the `codeowners` source and nothing else; one that
+selects `*`, or reads `_sources`, derives every column and consults every
+source `derive.sources` allows. A column the statement never names is `NULL`
+in the view.
 
 | Column | Type | Value |
 |---|---|---|
@@ -167,9 +177,9 @@ statement mentions `derived`, because building it spawns `git`, and with the
 
 Every field column is present whether or not the field is managed, so one
 query shape serves every config. A field whose sources are excluded by
-`derive.sources` is `NULL`. A requested source that cannot answer is an
-error (exit 2) naming the fix, exactly as for `validate` and `derive`,
-never an empty column.
+`derive.sources`, or that the statement never names, is `NULL`. A source a
+named column needs that cannot answer is an error (exit 2) naming the fix,
+exactly as for `validate` and `derive`, never an empty column.
 
 The pages whose stamp disagrees with the evidence, and why:
 
@@ -185,8 +195,11 @@ completes the refusal:
 `cannot modify derived because it is a view; a collection or the derived table is read-only`.
 The value it holds is not stored anywhere. It is recomputed from the
 evidence on every run, and the only way to change it is to change the
-evidence. A managed field in `docs` is read-only too, for a different
-reason, given under [the DML constraints](#dml-statements-edit-files).
+evidence. For the same reason a [`--db`](#exporting-the-database) export
+never carries it: the view and its backing table are dropped before the file
+is closed, so an export cannot freeze a derived value. A managed field in
+`docs` is read-only too, for a different reason, given under [the DML
+constraints](#dml-statements-edit-files).
 
 ## The SQL vocabulary
 
@@ -589,7 +602,10 @@ the verdict, and the header-only output *is* the passing gate.
 ## Exporting the database
 
 `--db <path>` writes the built table, collection views included, to a SQLite
-file for any other tool to open. With no SQL, the export is the whole job:
+file for any other tool to open. The [`derived` table](#the-derived-table) is
+the one thing left out: it is dropped before the file closes, because its
+value is recomputed from the evidence on every run and a frozen copy would be
+the stale stamp it exists to catch. With no SQL, the export is the whole job:
 
 ```sh
 manni meta query --db docs.db docs/

@@ -98,7 +98,11 @@ export interface DeriveFileResult {
   format: string;
   /** One entry per requested field, in the requested order. Empty on `error`. */
   fields: DerivedField[];
-  /** Whether a field was written, or would have been but for `dryRun`. */
+  /**
+   * Whether writing the stale and unset fields changed the document, or
+   * would have but for `dryRun`. Computed from the writer's output, so a
+   * patch the format serializes to the same bytes is not a change.
+   */
   changed: boolean;
   /** Why the file could not be derived or written; the run goes on without it. */
   error?: string;
@@ -111,9 +115,9 @@ export interface DeriveFileResult {
 
 export interface DeriveSummary {
   files: number;
-  /** Files with at least one field written, or that would be under `dryRun`. */
+  /** Files whose document changed, or would have under `dryRun`. */
   changed: number;
-  /** Fields actually written to disk: always 0 under `dryRun` and `check`. */
+  /** Fields whose write reached the disk: always 0 under `dryRun` and `check`. */
   written: number;
   stale: number;
   unset: number;
@@ -159,6 +163,17 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   }
 
   const fields = resolveFields(opts.fields, config?.derive?.fields);
+  // The config parser refuses a `derive.fields` entry a sidecar owns; the
+  // same rule holds for `--fields`, which bypasses that parser. The
+  // config's `keys` list is the whole claim, so no manifest is loaded.
+  for (const field of fields) {
+    const owner = config?.sidecars?.find((s) => s.keys.includes(field));
+    if (owner !== undefined) {
+      throw new DocmetaError(
+        `"${field}" is owned by sidecar ${owner.file}; a managed field has one authority, and a sidecar key already has one.`,
+      );
+    }
+  }
   const sources = resolveSources(opts.sources, config?.derive?.sources);
   const check = Boolean(opts.check);
   // `--check` judges and exits; it never writes.
@@ -279,35 +294,47 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       compareDerived(field, doc.extracted.data[field], record?.fields[field]),
     );
     const pending = compared.filter((f) => f.status === "stale" || f.status === "unset");
-    const changed = pending.length > 0;
-
-    if (changed && !dryRun) {
+    // `changed` is what the writer would do, not what the comparison found:
+    // as in `fill`, the patch is applied and the result compared with the
+    // document, so a field is `written` only when bytes went to disk. Under
+    // `dryRun` the same patch is computed and nothing is written.
+    let changed = false;
+    if (pending.length > 0) {
       // Same writer `fill` and `query` use, so a format they cannot write is
       // refused here the same way — and refused loudly, as this file's error,
-      // rather than by leaving a stale stamp in place with exit 0.
+      // rather than by leaving a stale stamp in place with exit 0. Under
+      // `check` a read-only format still gets its findings, since nothing was
+      // going to be written anyway.
       if (typeof doc.apply !== "function") {
-        results.push(
-          errorResult(
-            label,
-            doc.format,
-            `The "${doc.format}" format is read-only; manni meta derive cannot write metadata back to it.`,
-            check,
-            compared,
-          ),
-        );
-        continue;
+        if (!dryRun) {
+          results.push(
+            errorResult(
+              label,
+              doc.format,
+              `The "${doc.format}" format is read-only; manni meta derive cannot write metadata back to it.`,
+              check,
+              compared,
+            ),
+          );
+          continue;
+        }
+        changed = true;
+      } else {
+        const patch: MetadataPatch = {};
+        for (const f of pending) patch[f.field] = f.derived;
+        let next: string;
+        try {
+          next = doc.apply(doc.content, patch, { filePath: label, elements: doc.elements });
+        } catch (err) {
+          results.push(errorResult(label, doc.format, (err as Error).message, check, compared));
+          continue;
+        }
+        changed = next !== doc.content;
+        if (changed && !dryRun) {
+          await writeFileAtomic(doc.absPath, next);
+          for (const f of pending) f.written = true;
+        }
       }
-      const patch: MetadataPatch = {};
-      for (const f of pending) patch[f.field] = f.derived;
-      let next: string;
-      try {
-        next = doc.apply(doc.content, patch, { filePath: label, elements: doc.elements });
-      } catch (err) {
-        results.push(errorResult(label, doc.format, (err as Error).message, check, compared));
-        continue;
-      }
-      if (next !== doc.content) await writeFileAtomic(doc.absPath, next);
-      for (const f of pending) f.written = true;
     }
 
     results.push({

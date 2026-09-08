@@ -215,8 +215,11 @@ const PICOMATCH = { dot: true, windows: false } as const;
  * any depth, so it gets a globstar-and-slash prefix; a leading `/` or a slash
  * in the middle anchors it to the root. A match on a directory covers
  * everything under it, so a second glob with a slash-and-globstar suffix is
- * always included; a trailing `/` means *only* a directory, so the bare
- * pattern is then left out.
+ * included when the last segment is a literal name that could be one; a
+ * trailing `/` means *only* a directory, so the bare pattern is then left
+ * out. A last segment with a wildcard gets no twin: GitHub reads `docs/*`
+ * as the files directly in `docs/`, not `docs/build-app/troubleshooting.md`,
+ * and `*.md` already reaches any depth through its globstar prefix.
  */
 function toGlobs(pattern: string): string[] {
   let p = pattern;
@@ -230,7 +233,9 @@ function toGlobs(pattern: string): string[] {
     anchored = true;
   }
   const base = anchored || p.startsWith("**/") ? p : `**/${p}`;
-  return dirOnly ? [`${base}/**`] : [base, `${base}/**`];
+  if (dirOnly) return [`${base}/**`];
+  const last = p.slice(p.lastIndexOf("/") + 1);
+  return /[*?[]/.test(last) ? [base] : [base, `${base}/**`];
 }
 
 export interface CodeownersSourceOptions {
