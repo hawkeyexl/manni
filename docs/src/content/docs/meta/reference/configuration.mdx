@@ -577,10 +577,15 @@ meta:
 Both hosts accept a bearer token on their raw-file route, so one `tokenEnv`
 covers either:
 
-| Host | URL shape | Token |
-|---|---|---|
-| GitHub | `https://raw.githubusercontent.com/OWNER/REPO/REF/PATH` | A fine-grained personal access token with read access to the repository's contents. |
-| GitLab | `https://gitlab.com/api/v4/projects/ID/repository/files/PATH/raw?ref=REF` | A project or personal access token with the `read_repository` scope. `PATH` is URL-encoded, so `docs/docs-meta.yaml` is written `docs%2Fdocs-meta.yaml`. |
+```text
+GitHub  https://raw.githubusercontent.com/OWNER/REPO/REF/PATH
+GitLab  https://gitlab.com/api/v4/projects/ID/repository/files/PATH/raw?ref=REF
+```
+
+| Host | Token |
+|---|---|
+| GitHub | A fine-grained personal access token with read access to the repository's contents. |
+| GitLab | A project or personal access token with the `read_repository` scope. `PATH` is URL-encoded, so `docs/docs-meta.yaml` is written `docs%2Fdocs-meta.yaml`. |
 
 <Aside type="caution" title="Where the values end up">
 A public repository's CI logs are public. Fetching a private manifest into a
