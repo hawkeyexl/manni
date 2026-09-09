@@ -1,19 +1,34 @@
 ---
 title: Apply different schemas to different folders
-description: Use config overrides to require different metadata for /api than for /guides, with glob precedence and multiple schemas per file.
+description: Use config overrides to require different metadata for /api than for /guides, pointing each one at a collection or at a glob, with precedence and multiple schemas per file.
 ---
 
 import { Steps, Aside, LinkCard } from '@astrojs/starlight/components';
 
-Real docs repos are not uniform. Your `/api` reference pages might need a `type: api-reference` field and an extra schema, while your `/guides` only need the baseline. manni meta handles this with **overrides** in your `manni.config.yaml`. Each override maps a glob of files to its own schema set. So you can tighten the rules for one area without touching the rest.
+Real docs repos are not uniform. Your `/api` reference pages might need a `type: api-reference` field and an extra schema, while your `/guides` only need the baseline. manni meta handles this with **overrides** under `meta:` in your `manni.config.yaml`. Each override maps a subset of your files to its own schema set. So you can tighten the rules for one area without touching the rest.
 
 This guide assumes you already have a working config. If not, start with [Create your manni.config.yaml](/manni/meta/set-up/config/).
 
+## Two ways to name the subset
+
+An `overrides` entry always carries a `schemas` list. It says which files that list governs in exactly one of two ways:
+
+- **`collection: <name>`** points at a set declared in the top-level [`collections:`](/manni/meta/reference/configuration/#collections) list. Reach for this when the area is a real document set the whole repo recognises, such as the API reference, the blog, or the author pages. The globs live in one place, every manni tool sees the same set, and `manni meta query` exposes it as a view of the same name.
+- **`files: <glob>`** takes a glob, or a list of them. Reach for this when the subset exists only to change schema choice: one directory that needs an extra check, or a naming convention that cuts across collections.
+
+An entry carrying both, or neither, is a config error. The rule of thumb is whether anything other than schema resolution cares about the set. If it does, declare a collection.
+
 ## Assign a schema set per area
 
-An `overrides` entry pairs a `files` glob with a `schemas` list. Any file matching the glob is validated against that override's schemas instead of the default `schemas`.
+Here the API reference and the guides are areas the whole repo thinks in, so they are collections, and the overrides point at them by name:
 
 ```yaml title="manni.config.yaml"
+collections:
+  - name: api
+    paths: ["api/**/*.md"]
+  - name: guides
+    paths: ["guides/**/*.md"]
+
 meta:
   # The baseline every doc must satisfy.
   schemas:
@@ -21,19 +36,21 @@ meta:
 
   # Area-specific rules.
   overrides:
-    - files: "api/**/*.md"
+    - collection: api
       schemas:
         - ./schemas/api-reference.json
-    - files: "guides/**/*.md"
+    - collection: guides
       schemas:
         - ./schemas/guide.json
 ```
 
 With this config:
 
-- Files under `api/` are validated against `./schemas/api-reference.json`.
-- Files under `guides/` are validated against `./schemas/guide.json`.
+- Files in the `api` collection are validated against `./schemas/api-reference.json`.
+- Files in the `guides` collection are validated against `./schemas/guide.json`.
 - Everything else falls back to the default `schemas`: here, `google:okf:0.1`.
+
+A file can belong to two collections, when their globs overlap. It still resolves to exactly one schema set, by the first-match rule below.
 
 <Aside type="note">
 An override **replaces** the default `schemas` for matching files; it does not add to them. If you want an area to satisfy the baseline *and* an extra schema, list both in that override (see [Validate one file against multiple schemas](#validate-one-file-against-multiple-schemas) below).
@@ -41,22 +58,26 @@ An override **replaces** the default `schemas` for matching files; it does not a
 
 ## First matching override wins
 
-manni meta evaluates overrides **in order** and stops at the first glob that matches a given file. Order your overrides from most specific to least specific, so a narrow rule is not shadowed by a broader one above it.
+manni meta evaluates overrides **in order** and stops at the first entry that matches a given file, whether it matched by collection or by glob. Order your overrides from most specific to least specific, so a narrow rule is not shadowed by a broader one above it.
 
 ```yaml title="manni.config.yaml"
+collections:
+  - name: api
+    paths: ["api/**/*.md"]
+
 meta:
   overrides:
     # Specific first: deprecated API pages need their own schema.
     - files: "api/deprecated/**/*.md"
       schemas:
         - ./schemas/deprecated.json
-    # General second: everything else under api/.
-    - files: "api/**/*.md"
+    # General second: everything else in the api collection.
+    - collection: api
       schemas:
         - ./schemas/api-reference.json
 ```
 
-Here, `api/deprecated/v1.md` matches the first override and is validated against `deprecated.json`. A file like `api/auth.md` falls through to the second override. If you reversed the two entries, the broad `api/**/*.md` glob would match the deprecated pages first and they would never reach their specific rule.
+Here, `api/deprecated/v1.md` matches the first override and is validated against `deprecated.json`, even though it is also a member of the `api` collection. A file like `api/auth.md` falls through to the second override. If you reversed the two entries, the broad `api` collection would match the deprecated pages first and they would never reach their specific rule. This is also the shape to reach for when an exception is not worth a collection of its own: one narrow `files:` glob above the collection it carves out of.
 
 <Aside type="tip">
 Globs match against POSIX-style paths (forward slashes), so write `api/**/*.md` even on Windows. manni meta normalizes path separators before matching.
@@ -81,19 +102,20 @@ Reach for the list when the paths have no common stem. A per-skill `SKILL.md` on
 <Aside type="caution" title="Dot directories must be named to be found">
 An override decides *how* a file is judged, never *whether* it is looked at. Input discovery skips dot directories: `manni meta validate .` walks past `.claude/` entirely, so the config above would match nothing at all unless the path is named as an input.
 
-Name it in `paths:`, or pass it on the command line, and the files are found:
+Name it in a collection's `paths`, or pass it on the command line, and the files are found:
 
 ```yaml title="manni.config.yaml"
-meta:
-  paths:
-    - .claude
-    - docs
+collections:
+  - name: pages
+    paths:
+      - .claude
+      - docs
 ```
 
 The override globs themselves match dotfiles fine; it is only the walk that skips them. This bites hardest in exactly the case above, where every target is under a dot directory.
 </Aside>
 
-A grouped entry is still **one** override. It takes a single position in the first-match-wins order above. If you give it a `name:`, it becomes one [collection](/manni/meta/reference/configuration/#named-collections), not one per glob.
+A grouped entry is still **one** override. It takes a single position in the first-match-wins order above, however long its list. If the group is a set that anything else refers to, declare it as a collection and point one `collection:` override at it instead. A collection's `paths` accepts the same list of globs, and it gives the set a name that `--collection` and a query's `FROM <name>` can use too.
 
 ## Validate one file against multiple schemas
 
@@ -102,13 +124,13 @@ A `schemas` list, whether the default set or an override, applies as a **set**: 
 ```yaml title="manni.config.yaml"
 meta:
   overrides:
-    - files: "api/**/*.md"
+    - collection: api
       schemas:
         - google:okf:0.1            # baseline: requires type
         - ./schemas/api-reference.json   # plus: requires the api-specific fields
 ```
 
-A file under `api/` must now pass both schemas. This lets you keep the shared baseline, which is OKF's required `type`, while layering area-specific requirements on top. You avoid duplicating the baseline rules in every custom schema.
+A file in the `api` collection must now pass both schemas. This lets you keep the shared baseline, which is OKF's required `type`, while layering area-specific requirements on top. You avoid duplicating the baseline rules in every custom schema.
 
 ## Where overrides sit in schema resolution
 
@@ -120,7 +142,7 @@ Overrides are one link in manni meta's schema-resolution chain. For any single f
 
 2. **File `$schema` field**: a `$schema` key in the file's own frontmatter names its schema set and overrides the config.
 
-3. **Config `overrides`**: the first matching override's `schemas`, as described on this page.
+3. **Config `overrides`**: the first matching override's `schemas`, matched by `collection:` or by `files:`, as described on this page.
 
 4. **Config `schemas`**: the default set, when no override matches.
 
@@ -144,7 +166,11 @@ After editing your config, confirm each area resolves to the schema set you expe
 npx @hawkeyexl/manni meta validate
 ```
 
-If a file matches the wrong override, check the order of your `overrides` entries; remember that the first matching glob wins.
+If a file matches the wrong override, check the order of your `overrides` entries; remember that the first matching entry wins. To read one area on its own, narrow the run to its collection:
+
+```bash
+npx @hawkeyexl/manni meta validate --collection api
+```
 
 {/* Doc Detective inline tests: verify this page's documented manni meta behavior
     against the local build, exposed as `manni meta` / `npx @hawkeyexl/manni meta` via `npm link`
@@ -154,4 +180,5 @@ If a file matches the wrong override, check the order of your `overrides` entrie
 {/* step {"description":"Validate one file against a set of two schemas; a file satisfying both passes.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/schema-ref.md -s google:okf:0.1 -s ./test/fixtures/extra.schema.json","exitCodes":[0],"stdio":"1 passed"}} */}
 {/* step {"description":"The file must satisfy EVERY schema in the set: missing `type` fails the set even though it has a title.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/missing-type.md -s google:okf:0.1 -s ./test/fixtures/extra.schema.json","exitCodes":[1],"stdio":"must have required property 'type'"}} */}
 {/* step {"description":"CLI --schema sits at the top of the resolution chain: forcing a schema the file satisfies makes it pass, overriding the default OKF set it would otherwise fail.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/missing-type.md -s ./test/fixtures/extra.schema.json","exitCodes":[0],"stdio":"1 passed"}} */}
+{/* step {"description":"A file may belong to two collections whose globs overlap, and --collection addresses either of them on its own.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/collections/manni.config.yaml --collection notes","exitCodes":[0],"stdio":"/authors\\/deep\\.md[\\s\\S]*1 file checked, 1 passed/"}} */}
 {/* test end */}

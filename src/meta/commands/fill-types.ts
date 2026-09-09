@@ -94,6 +94,12 @@ export interface FillOptions {
   configPath?: string;
   /** `--no-config`: skip config discovery and use the built-in defaults. */
   noConfig?: boolean;
+  /**
+   * `--collection <name>`, repeatable: run over the named configured
+   * collections instead of every declared one (proposal 0041). Cannot be
+   * combined with positional paths; `-` is allowed beside it.
+   */
+  collections?: string[];
   cwd?: string;
   /** Content for the `-` (stdin) input, injected by the CLI/tests. */
   stdinContent?: string;

@@ -7,11 +7,11 @@
  *   5. the built-in default set (DEFAULT_SCHEMAS)
  */
 import { isAbsolute, relative, resolve } from "node:path";
-import picomatch from "picomatch";
 import type {
   DocmetaConfig,
   DocumentRefTrust,
   SchemaEntry,
+  SchemaOverride,
   SchemaTrustRoot,
 } from "./config.js";
 import {
@@ -20,6 +20,7 @@ import {
   type SchemaPin,
 } from "./schema-registry.js";
 import { DocmetaError } from "../types.js";
+import { matchesFileGlob } from "../../shared/globs.js";
 
 /**
  * Applied when nothing else resolves. Seven-Action is safe to include here
@@ -40,7 +41,7 @@ export const FILE_SCHEMA_KEY = "$schema";
  * The ref *string* is what `resolveSchemaSet` returns and therefore what every
  * report names, what every baseline fingerprint is taken over, and what keys
  * `Validator`'s compile cache. Widening those to carry a mapping would have
- * changed all three; the `{source, integrity}` sidecar travels separately, in
+ * changed all three; the `{source, integrity}` pair travels separately, in
  * the pin map below.
  */
 export function schemaEntryRef(entry: SchemaEntry): string {
@@ -179,9 +180,24 @@ export interface ResolveParams {
    * failure mode this key exists to remove.
    */
   onNotice?: (message: string) => void;
+  /**
+   * The collections this file belongs to (proposal 0041), from `memberOf`.
+   *
+   * What an `overrides[].collection` entry is matched against, in place of the
+   * glob match a `files:` entry gets. Absent means the caller decided
+   * membership does not apply — a library caller with no config file, or a
+   * command that has not resolved it — and a `collection:` override then
+   * matches nothing, rather than everything.
+   */
+  memberOf?: readonly string[];
 }
 
-const matcherCache = new Map<string, (p: string) => boolean>();
+/**
+ * The shared glob matcher, re-exported for the callers that reached it here
+ * while it lived in this module. Membership (0041) and override resolution
+ * ask the same question, so they share one matcher in `src/shared/globs.ts`.
+ */
+export { matchesFileGlob };
 
 /**
  * An override's `files:` as a list, whatever shape it was written in.
@@ -193,43 +209,32 @@ const matcherCache = new Map<string, (p: string) => boolean>();
  * start disagreeing.
  */
 export function overrideGlobs(
-  files: string | readonly string[],
+  files: string | readonly string[] | undefined,
 ): readonly string[] {
+  if (files === undefined) return [];
   return typeof files === "string" ? [files] : files;
 }
 
 /**
- * Does this file path match an override's `files:` glob — or, for the list
- * form, any of them — by the resolver's own rules (picomatch, dot files
- * included, `\` normalized to `/`)?
+ * Does this override govern this file?
  *
- * Exported for the collections layer (proposal 0027), which needs to say *why*
- * a glob-matching file is absent from a view — membership itself never goes
- * through raw glob matching, only through the resolution winner below.
+ * The one place the two spellings of "which files" collapse (0041 rule 8): an
+ * entry carries exactly one of `files:` (globs, matched by the shared matcher)
+ * or `collection:` (a name, matched against the file's membership). Resolution
+ * itself is unchanged — first match wins, in config order — so the two forms
+ * are interchangeable at the point of decision and nowhere else.
  */
-export function matchesFileGlob(
-  glob: string | readonly string[],
+export function overrideMatches(
+  override: SchemaOverride,
   filePath: string,
+  memberOf: readonly string[],
 ): boolean {
-  return matches(glob, filePath);
-}
-
-function matches(glob: string | readonly string[], filePath: string): boolean {
-  // picomatch takes a pattern array natively, so the list form needs no loop
-  // here — but the cache does need a *string* key. Keyed on the array itself
-  // this Map would compare by identity: a hit only for the very same object,
-  // and an entry retained for every config ever parsed. JSON.stringify is the
-  // key because it separates the two shapes on its own — a lone "a/**" and
-  // ["a/**"] serialize differently — with no separator char to collide with
-  // one inside a glob.
-  const key = JSON.stringify(glob);
-  let m = matcherCache.get(key);
-  if (!m) {
-    m = picomatch(glob as string | string[], { dot: true });
-    matcherCache.set(key, m);
+  if (override.collection !== undefined) {
+    return memberOf.includes(override.collection);
   }
-  // Normalize Windows separators so globs written with `/` still match.
-  return m(filePath.replace(/\\/g, "/"));
+  return (
+    override.files !== undefined && matchesFileGlob(filePath, override.files)
+  );
 }
 
 function coerceFileSchema(value: unknown): string[] | undefined {
@@ -371,10 +376,15 @@ export interface ResolvedSchemaSet {
   schemas: string[];
   source: SchemaSetSource;
   /**
-   * Which `overrides[]` entry won, when `source` is `"override"` — the
-   * additive identity proposal 0027 needs: a file belongs to the collection
-   * of the override that won its resolution, and "an override won" without
-   * *which* cannot answer that. Absent for every other source.
+   * Which `overrides[]` entry won, when `source` is `"override"`. Absent for
+   * every other source.
+   *
+   * Under proposal 0027 this decided collection membership, and so which SQL
+   * view a file appeared in. It no longer does: 0041 decides membership from
+   * the collection's own globs, independently of which contract judged the
+   * file. What still needs the index is `query`'s split-set refusal, which
+   * names the override groups a run spans so it can suggest one to re-run
+   * over.
    */
   overrideIndex?: number;
 }
@@ -419,8 +429,9 @@ export function resolveSchemaSetWithSource(
   }
 
   if (config?.overrides) {
+    const memberOf = params.memberOf ?? [];
     for (const [i, ov] of config.overrides.entries()) {
-      if (matches(ov.files, filePath) && ov.schemas.length > 0) {
+      if (overrideMatches(ov, filePath, memberOf) && ov.schemas.length > 0) {
         return { schemas: dedupe(ov.schemas), source: "override", overrideIndex: i };
       }
     }
@@ -452,11 +463,14 @@ export function resolveSchemaSet(params: ResolveParams): string[] {
 export function resolveElements(
   filePath: string,
   config: DocmetaConfig | null | undefined,
+  memberOf: readonly string[] = [],
 ): string[] {
   const out: string[] = [];
   if (config?.elements) out.push(...config.elements);
   for (const ov of config?.overrides ?? []) {
-    if (ov.elements && matches(ov.files, filePath)) out.push(...ov.elements);
+    if (ov.elements && overrideMatches(ov, filePath, memberOf)) {
+      out.push(...ov.elements);
+    }
   }
   return dedupe(out);
 }

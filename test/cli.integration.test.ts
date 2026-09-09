@@ -260,8 +260,9 @@ describe("docmeta CLI (built bin)", () => {
   });
 
   // `--no-config` spells out the second half of the name. `run` stands at the
-  // repo root, which carries a `docmeta.config.yaml` of its own, so without the
-  // flag this would fall back to that config's `paths:` and check the docs.
+  // repo root, which carries a `manni.config.yaml` of its own, so without the
+  // flag this would fall back to that config's `collections:` and check the
+  // docs.
   it("exits 2 when get is given no paths and no config", () => {
     const r = run(["get", "type", "--no-config"]);
     expect(r.status).toBe(2);
@@ -1230,7 +1231,15 @@ describe("config discovery walks up (0004)", () => {
     sandbox = realpathSync(mkdtempSync(join(tmpdir(), "docmeta-0004-")));
     write(".git/HEAD", "ref: refs/heads/main\n");
     write("docmeta.config.yaml", 'schemas:\n  - "./strict.schema.json"\n');
-    write("c2.yaml", 'paths:\n  - "docs/**/*.md"\n');
+    // The document set lives in a top-level `collections:` (0041), which only
+    // a family-shaped file can carry — a legacy per-tool file's whole document
+    // is the tool's section, so it has no top level to put one at. Read through
+    // `-c`, where the section key is unwrapped when present and the document is
+    // taken whole otherwise, so a file that is nothing but `collections:` works.
+    write(
+      "c2.yaml",
+      'collections:\n  - name: pages\n    paths:\n      - "docs/**/*.md"\n',
+    );
     write("strict.schema.json", STRICT);
     write("docs/api/page.md", PAGE);
   });
@@ -1277,7 +1286,7 @@ describe("config discovery walks up (0004)", () => {
     expect(r.stdout).toContain("required property 'owner'");
   });
 
-  it("resolves config `paths:` against the config's directory (defect 2B)", () => {
+  it("resolves a collection's `paths:` against the config's directory (defect 2B)", () => {
     const r = run(
       ["validate", "-c", "../c2.yaml"],
       undefined,
@@ -1330,14 +1339,19 @@ describe("docmeta CLI baseline flags (built bin)", () => {
   };
   const here = (args: string[], cwd = dir) => run(args, undefined, undefined, cwd);
 
-  const CONFIG = 'paths:\n  - "docs/**/*.md"\nschemas:\n  - google:okf:0.1\n';
+  // The family shape (0041): the document set is a top-level collection, the
+  // tool's own options sit under `meta:`. `meta:` comes LAST so the cases below
+  // that append an indented `baseline:` line land it inside the section rather
+  // than beside it.
+  const CONFIG =
+    'collections:\n  - name: pages\n    paths:\n      - "docs/**/*.md"\nmeta:\n  schemas:\n    - google:okf:0.1\n';
 
   beforeEach(() => {
     dir = realpathSync(mkdtempSync(join(tmpdir(), "docmeta-baseline-cli-")));
     // Config discovery walks up only as far as a project boundary, so the
     // scratch project needs one for the run-from-a-subdirectory case.
     write(".git", "gitdir: nowhere\n");
-    write("docmeta.config.yaml", CONFIG);
+    write("manni.config.yaml", CONFIG);
     write("docs/legacy.md", "---\ntitle: No type here\n---\n");
     write("docs/clean.md", "---\ntype: concept\n---\n");
   });
@@ -1397,7 +1411,7 @@ describe("docmeta CLI baseline flags (built bin)", () => {
 
   it("a configured `baseline:` implies --baseline on every run", () => {
     here(["validate", "--write-baseline"]);
-    write("docmeta.config.yaml", `${CONFIG}baseline: .manni-baseline.json\n`);
+    write("manni.config.yaml", `${CONFIG}  baseline: .manni-baseline.json\n`);
     const r = here(["validate"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toContain("1 baselined finding");
@@ -1405,7 +1419,7 @@ describe("docmeta CLI baseline flags (built bin)", () => {
 
   it("--no-baseline ignores a configured baseline for one run", () => {
     here(["validate", "--write-baseline"]);
-    write("docmeta.config.yaml", `${CONFIG}baseline: .manni-baseline.json\n`);
+    write("manni.config.yaml", `${CONFIG}  baseline: .manni-baseline.json\n`);
     const r = here(["validate", "--no-baseline"]);
     expect(r.status).toBe(1);
     expect(r.stdout).not.toContain("baselined finding");
@@ -1413,7 +1427,7 @@ describe("docmeta CLI baseline flags (built bin)", () => {
 
   it("resolves a configured baseline against the config file, not the cwd", () => {
     here(["validate", "--write-baseline"]);
-    write("docmeta.config.yaml", `${CONFIG}baseline: .manni-baseline.json\n`);
+    write("manni.config.yaml", `${CONFIG}  baseline: .manni-baseline.json\n`);
     const r = here(["validate"], join(dir, "docs"));
     expect(r.status).toBe(0);
     expect(r.stdout).toContain("1 baselined finding");
@@ -1424,7 +1438,7 @@ describe("docmeta CLI baseline flags (built bin)", () => {
     // so a repo whose baseline lives elsewhere cannot record into a second file
     // that nothing ever reads.
     mkdirSync(join(dir, ".meta"), { recursive: true });
-    write("docmeta.config.yaml", `${CONFIG}baseline: .meta/base.json\n`);
+    write("manni.config.yaml", `${CONFIG}  baseline: .meta/base.json\n`);
     const r = here(["validate", "--write-baseline"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toContain("Baseline written to .meta/base.json");
@@ -2189,7 +2203,8 @@ describe("docmeta CLI: schemas vendor (built bin)", () => {
     expect(r.status).toBe(2);
     expect(r.stderr).toMatch(/ignored/i);
     expect(existsSync(join(repo, ".docmeta"))).toBe(false);
-    expect(existsSync(join(repo, "docmeta.config.yaml"))).toBe(false);
+    // The file a successful vendor would have created here is the family one.
+    expect(existsSync(join(repo, "manni.config.yaml"))).toBe(false);
   });
 
   it("converts a bare-URL config into a vendored one", async () => {
@@ -2198,7 +2213,7 @@ describe("docmeta CLI: schemas vendor (built bin)", () => {
     repo = makeTempRepo({
       files: {
         "ok.md": OK,
-        "docmeta.config.yaml": `paths:\n  - "*.md"\nschemas:\n  - ${url}\n`,
+        "manni.config.yaml": `collections:\n  - name: pages\n    paths:\n      - "*.md"\nmeta:\n  schemas:\n    - ${url}\n`,
       },
     });
     const r = await runInAsync(["schemas", "vendor", url], repo);
@@ -2206,7 +2221,7 @@ describe("docmeta CLI: schemas vendor (built bin)", () => {
 
     expect(r.status).toBe(0);
     expect(r.stdout).toContain("reference updated");
-    const config = readFileSync(join(repo, "docmeta.config.yaml"), "utf8");
+    const config = readFileSync(join(repo, "manni.config.yaml"), "utf8");
     // The URL is provenance now, not a live dependency.
     expect(config).toContain("ref: ./schema/2.1.json");
     expect(config.match(new RegExp(url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g")))
@@ -2442,10 +2457,11 @@ describe("get: --fields, positional kept as a fallback (0005 §1)", () => {
     expect(files(r)).toEqual([A]);
   });
 
-  it("--fields with no positional falls back to config paths:", () => {
+  it("--fields with no positional falls back to a configured collection", () => {
     const repo = makeTempRepo({
       files: {
-        "docmeta.config.yaml": 'paths:\n  - "*.md"\n',
+        "manni.config.yaml":
+          'collections:\n  - name: pages\n    paths:\n      - "*.md"\n',
         "one.md": "---\ntitle: from config\n---\n\n# one\n",
       },
       init: false,
@@ -2658,7 +2674,7 @@ describe("get: a document whose frontmatter will not parse", () => {
 describe("get --quiet (0005 §2)", () => {
   // `--no-config` on both runs, because the assertion is that quiet stdout is
   // *empty*. The repo root's own config would otherwise put `Using
-  // docmeta.config.yaml (.)` there — a true statement about the run, but not a
+  // manni.config.yaml (.)` there — a true statement about the run, but not a
   // file, and it would turn this into a test about the notice.
   it("hides a file where every requested field is unset", () => {
     const args = ["get", "title", "test/fixtures/no-frontmatter.md", "--no-config"];
@@ -3135,20 +3151,26 @@ describe("an overrides entry may group several globs", () => {
    * accepting the list and the resolver matching on every entry have to line
    * up across a real config discovery, and the unit tests cover one each.
    */
-  // `paths:` names the dot directory explicitly, and has to: directory and
-  // glob expansion both run with `dot: false`, so a bare `validate .` walks
-  // past `.claude/` and would check nothing at all. The override's own globs
-  // match dotfiles fine — the two settings are independent — which is exactly
-  // the trap worth pinning down: a config that looks right and matches zero
-  // files unless the dot path is named.
+  // The collection's `paths:` names the dot directory explicitly, and has to:
+  // directory and glob expansion both run with `dot: false`, so a bare
+  // `validate .` walks past `.claude/` and would check nothing at all. The
+  // override's own globs match dotfiles fine — the two settings are
+  // independent — which is exactly the trap worth pinning down: a config that
+  // looks right and matches zero files unless the dot path is named.
+  //
+  // The override still groups globs with `files:` (0041 keeps that spelling
+  // beside `collection:`); only the document set moved to the top level.
   const CONFIG = [
-    "paths: [.claude, docs]",
-    "schemas: [./baseline.json]",
-    "overrides:",
-    "  - files:",
-    '      - ".claude/skills/*/SKILL.md"',
-    '      - ".claude/agents/*.md"',
-    "    schemas: [./strict.json]",
+    "collections:",
+    "  - name: pages",
+    "    paths: [.claude, docs]",
+    "meta:",
+    "  schemas: [./baseline.json]",
+    "  overrides:",
+    "    - files:",
+    '        - ".claude/skills/*/SKILL.md"',
+    '        - ".claude/agents/*.md"',
+    "      schemas: [./strict.json]",
     "",
   ].join("\n");
 
@@ -3162,7 +3184,7 @@ describe("an overrides entry may group several globs", () => {
   const BASELINE = JSON.stringify({ type: "object", required: ["title"] });
 
   const tree = () => ({
-    "docmeta.config.yaml": CONFIG,
+    "manni.config.yaml": CONFIG,
     "strict.json": STRICT,
     "baseline.json": BASELINE,
     ".claude/skills/demo/SKILL.md": DOC,
@@ -3204,20 +3226,22 @@ describe("an overrides entry may group several globs", () => {
 });
 
 /**
- * Sidecar metadata (proposal 0037) through the built bin: the merged
- * object is what gets validated, a sidecar-sourced violation names the
+ * External metadata (proposal 0037) through the built bin: the merged
+ * object is what gets validated, a manifest-sourced violation names the
  * manifest, a document carrying an owned key is a finding, and an orphaned
  * manifest entry is exit 2.
  */
-describe("cli sidecars (0037, built bin)", () => {
-  const corpus = resolve(root, "test", "fixtures", "sidecars");
+describe("cli external metadata (0037, built bin)", () => {
+  const corpus = resolve(root, "test", "fixtures", "external-metadata");
 
-  it("validates the merged object and attributes a sidecar value to the manifest", () => {
+  it("validates the merged object and attributes a manifest value to the manifest", () => {
     const r = run(["validate", "--no-color"], undefined, undefined, corpus);
     expect(r.status).toBe(1);
     expect(r.stdout).toContain("✓ docs/auth.md");
     expect(r.stdout).toMatch(/✗ docs\/billing\.md\n\s+\/jira\s+must match pattern.*\(docs-meta\.yaml:6\)/);
-    expect(r.stdout).toMatch(/✗ docs\/ops\.md\n\s+\/jira\s+"jira" is owned by sidecar docs-meta\.yaml.*\(line 3\)\s+\[sidecar:owned\]/);
+    expect(r.stdout).toMatch(
+      /✗ docs\/ops\.md\n\s+\/jira\s+"jira" is owned by manifest docs-meta\.yaml \(collection pages\).*\(line 3\)\s+\[external:owned\]/,
+    );
     expect(r.stdout).toMatch(/✗ docs\/new\.md\n\s+\(root\)\s+must have required property 'jira'/);
   });
 
@@ -3230,7 +3254,7 @@ describe("cli sidecars (0037, built bin)", () => {
     expect(billing?.errors[0]).toMatchObject({ file: "docs-meta.yaml", line: 6 });
   });
 
-  it("reads a sidecar key through get and query", () => {
+  it("reads a manifest key through get and query", () => {
     const g = run(["get", "jira", "docs/auth.md"], undefined, undefined, corpus);
     expect(g.status).toBe(0);
     expect(g.stdout).toContain("PLAT-412");
@@ -3244,7 +3268,7 @@ describe("cli sidecars (0037, built bin)", () => {
     expect(q.stdout).toContain("docs/auth.md");
   });
 
-  it("refuses to write a sidecar-owned key, exit 2", () => {
+  it("refuses to write a manifest-owned key, exit 2", () => {
     const r = run(
       ["query", "UPDATE docs SET jira = 'PLAT-1' WHERE _path = 'docs/auth.md'", "--dry-run"],
       undefined,
@@ -3252,7 +3276,9 @@ describe("cli sidecars (0037, built bin)", () => {
       corpus,
     );
     expect(r.status).toBe(2);
-    expect(r.stderr).toMatch(/"jira" is owned by sidecar docs-meta\.yaml; edit the sidecar file instead/);
+    expect(r.stderr).toMatch(
+      /"jira" is owned by manifest docs-meta\.yaml; edit the manifest instead/,
+    );
   });
 
   it("exits 2 when a manifest entry names a document the corpus run did not load", () => {
@@ -3264,5 +3290,379 @@ describe("cli sidecars (0037, built bin)", () => {
     );
     expect(r.status).toBe(2);
     expect(r.stderr).toMatch(/docs-meta\.orphan\.yaml:3 names "docs\/gone\.md", which this run did not load/);
+  });
+});
+
+/**
+ * `--collection <name>` (proposal 0041) through the built bin: the ladder from
+ * the proposal, run against a repo whose two collections resolve to *different*
+ * schemas. Asserting the resolved schema set per file, and not only pass/fail,
+ * is what makes the selection observable — a run that validated everything
+ * would look identical otherwise.
+ *
+ * The stderr anchors are `^docmeta: ` rather than the `^manni: ` of the
+ * proposal's ladder, because this suite drives `dist/docmeta.js` and the prefix
+ * follows the bin that was run (`programName`). `test/manni.integration.test.ts`
+ * is where the umbrella's own prefix is asserted.
+ */
+describe("cli --collection (0041, built bin)", () => {
+  // Declaration order is guides, then blog. Every ordering assertion below
+  // depends on that and on nothing else in the file.
+  const CONFIG = [
+    "collections:",
+    "  - name: guides",
+    "    paths:",
+    '      - "docs/guides/**/*.md"',
+    "  - name: blog",
+    "    paths:",
+    '      - "blog/**/*.md"',
+    "meta:",
+    "  schemas:",
+    "    - ./base.json",
+    "  overrides:",
+    "    - collection: guides",
+    "      schemas: [./guides.json]",
+    "    - collection: blog",
+    "      schemas: [./blog.json]",
+    "",
+  ].join("\n");
+
+  // Three distinct required keys, so the schema a file was judged by is legible
+  // in the output even without reading the `schemas` field.
+  const schemaRequiring = (key: string): string =>
+    JSON.stringify({
+      type: "object",
+      required: ["title", key],
+      properties: { [key]: { type: "string" } },
+    });
+
+  const tree = (): Record<string, string> => ({
+    "manni.config.yaml": CONFIG,
+    "base.json": schemaRequiring("base"),
+    "guides.json": schemaRequiring("owner"),
+    "blog.json": schemaRequiring("author"),
+    "docs/guides/auth.md": "---\ntitle: auth\nowner: platform\n---\n\n# auth\n",
+    "blog/hello.md": "---\ntitle: hello\nauthor: sam\n---\n\n# hello\n",
+  });
+
+  let dir: string | undefined;
+  beforeEach(() => {
+    dir = makeTempRepo({ files: tree(), init: false });
+  });
+  afterEach(() => {
+    removeTempRepo(dir);
+    dir = undefined;
+  });
+
+  interface ValidateJson {
+    results: { file: string; ok: boolean; schemas: string[] }[];
+  }
+
+  /** Run in the temp repo; `run()`'s cwd default is this repository's own root. */
+  const runIn = (args: string[], input?: string): Run => {
+    const r = spawnText(
+      spawnSync("node", [bin, ...args], {
+        cwd: dir,
+        encoding: "utf8",
+        ...(input === undefined ? {} : { input }),
+      }),
+    );
+    return {
+      stdout: r.stdout ?? "",
+      stderr: r.stderr ?? "",
+      status: r.status ?? 1,
+    };
+  };
+
+  /** Files in `-f json` validate output, in the order the run reported them. */
+  const validated = (r: Run): string[] => {
+    const parsed = JSON.parse(r.stdout) as ValidateJson;
+    return parsed.results.map((x) => x.file.replace(/\\/g, "/"));
+  };
+
+  /** The schema set each file resolved to, keyed by file. */
+  const resolved = (r: Run): Record<string, string[]> => {
+    const parsed = JSON.parse(r.stdout) as ValidateJson;
+    return Object.fromEntries(
+      parsed.results.map((x) => [x.file.replace(/\\/g, "/"), x.schemas]),
+    );
+  };
+
+  // Every declared collection, in declaration order. The *report* sorts its
+  // files (`resolveTargetSet` de-duplicates and sorts), so this is the sorted
+  // form of "both collections" — and it is the yardstick every selection below
+  // is compared against.
+  const BOTH = ["blog/hello.md", "docs/guides/auth.md"];
+
+  it("validates every collection with no flag", () => {
+    const r = runIn(["validate", "-f", "json"]);
+    expect(r.status).toBe(0);
+    expect(validated(r)).toEqual(BOTH);
+    expect(resolved(r)).toEqual({
+      "docs/guides/auth.md": ["./guides.json"],
+      "blog/hello.md": ["./blog.json"],
+    });
+  });
+
+  it("runs over one named collection only", () => {
+    const r = runIn(["validate", "--collection", "guides", "-f", "json"]);
+    expect(r.status).toBe(0);
+    expect(validated(r)).toEqual(["docs/guides/auth.md"]);
+    expect(resolved(r)).toEqual({ "docs/guides/auth.md": ["./guides.json"] });
+  });
+
+  it("takes both, in declaration order regardless of the order named", () => {
+    const declared = runIn([
+      "validate",
+      "--collection",
+      "guides",
+      "--collection",
+      "blog",
+      "-f",
+      "json",
+    ]);
+    const reversed = runIn([
+      "validate",
+      "--collection",
+      "blog",
+      "--collection",
+      "guides",
+      "-f",
+      "json",
+    ]);
+    expect(declared.status).toBe(0);
+    expect(validated(declared)).toEqual(BOTH);
+    // Declaration order governs, so naming them the other way round is not a
+    // different run: byte-identical output, and identical to naming neither.
+    expect(reversed.stdout).toBe(declared.stdout);
+    expect(reversed.stdout).toBe(runIn(["validate", "-f", "json"]).stdout);
+  });
+
+  it("dedupes a repeated name", () => {
+    const once = runIn(["validate", "--collection", "guides", "-f", "json"]);
+    const twice = runIn([
+      "validate",
+      "--collection",
+      "guides",
+      "--collection",
+      "guides",
+      "-f",
+      "json",
+    ]);
+    expect(twice.status).toBe(once.status);
+    expect(twice.stdout).toBe(once.stdout);
+    expect(validated(twice)).toEqual(["docs/guides/auth.md"]);
+  });
+
+  it("never splits a name on commas: one occurrence, one name", () => {
+    // The comma form names a collection nobody declared rather than quietly
+    // selecting two — "one separator per list", made visible.
+    const r = runIn(["validate", "--collection", "guides,blog"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(
+      /^docmeta: no collection named "guides,blog" in manni\.config\.yaml\. Configured: guides, blog\.$/m,
+    );
+  });
+
+  it("exits 2 on an unknown name, naming what is configured", () => {
+    const r = runIn(["validate", "--collection", "gides"]);
+    expect(r.status).toBe(2);
+    // Unlike the two refusals below, this one is only knowable *after* the file
+    // is read, so the pretty "Using ..." banner has already been printed. No
+    // report follows it.
+    expect(r.stdout).not.toContain("✓");
+    expect(r.stderr).toMatch(
+      /^docmeta: no collection named "gides" in manni\.config\.yaml\. Configured: guides, blog\.$/m,
+    );
+  });
+
+  it("exits 2 when combined with a positional path", () => {
+    const r = runIn(["validate", "--collection", "guides", "docs/x.md"]);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(r.stderr).toMatch(
+      /^docmeta: --collection selects a configured collection; it cannot be combined with paths\.$/m,
+    );
+  });
+
+  it("exits 2 with --no-config: there is nothing left to select from", () => {
+    const r = runIn(["validate", "--collection", "guides", "--no-config"]);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(r.stderr).toMatch(
+      /^docmeta: --collection needs a config file to select from\.$/m,
+    );
+  });
+
+  it("accepts - beside the flag and exits by findings", () => {
+    // Stdin is not a path, so it says nothing about which collections the run
+    // covers — but it is the only input, so the collections' globs stay unused.
+    const bad = runIn(
+      ["validate", "--collection", "guides", "-", "--as", "markdown", "-f", "json"],
+      "---\ntitle: piped\n---\n",
+    );
+    expect(bad.status).toBe(1);
+    expect(validated(bad)).toEqual(["<stdin>"]);
+    // `base` is missing, not `owner`: stdin is a member of nothing, so the
+    // per-collection override never reaches it.
+    expect(bad.stdout).toContain("required property 'base'");
+
+    const ok = runIn(
+      ["validate", "--collection", "blog", "-", "--as", "markdown", "-f", "json"],
+      "---\ntitle: piped\nbase: b\n---\n",
+    );
+    expect(ok.status).toBe(0);
+    expect(validated(ok)).toEqual(["<stdin>"]);
+  });
+
+  it("scopes a query run, collection views included", () => {
+    const scoped = runIn([
+      "query",
+      "SELECT _path FROM docs",
+      "--collection",
+      "blog",
+      "-f",
+      "csv",
+    ]);
+    expect(scoped.status).toBe(0);
+    expect(scoped.stdout).toContain("blog/hello.md");
+    expect(scoped.stdout).not.toContain("docs/guides/auth.md");
+
+    // The view named for the collection is still queryable while the run is
+    // scoped to it — the remedy 0041 has a split-set refusal suggest.
+    const view = runIn([
+      "query",
+      "SELECT _path FROM guides",
+      "--collection",
+      "guides",
+      "-f",
+      "csv",
+    ]);
+    expect(view.status).toBe(0);
+    expect(view.stdout).toContain("docs/guides/auth.md");
+    expect(view.stdout).not.toContain("blog/hello.md");
+  });
+
+  it("scopes a get run, for the parity the working agreements require", () => {
+    const r = runIn(["get", "title", "--collection", "guides", "-f", "json"]);
+    expect(r.status).toBe(0);
+    const parsed = JSON.parse(r.stdout) as {
+      file: string;
+      values: Record<string, unknown>;
+    }[];
+    expect(parsed.map((x) => x.file.replace(/\\/g, "/"))).toEqual([
+      "docs/guides/auth.md",
+    ]);
+    expect(parsed[0]?.values.title).toBe("auth");
+  });
+
+  it("leaves get's and query's input disambiguation alone", () => {
+    // The seam worth pinning: with `--collection` and no positional at all,
+    // `resolveGetInputs` / `resolveQueryInputs` still see an empty positional
+    // list. Commander consumes the flag *and* its value, so neither
+    // `--collection` nor `guides` ever lands in the `[fields]` or `[sql]` slot
+    // — the flag is invisible to both helpers, which is why neither changed.
+    const g = runIn(["get", "--fields", "title", "--collection", "guides", "-f", "json"]);
+    expect(g.status).toBe(0);
+    const got = JSON.parse(g.stdout) as { file: string }[];
+    expect(got.map((x) => x.file.replace(/\\/g, "/"))).toEqual([
+      "docs/guides/auth.md",
+    ]);
+
+    const q = runIn([
+      "query",
+      "--query",
+      "SELECT _path FROM docs",
+      "--collection",
+      "blog",
+      "-f",
+      "csv",
+    ]);
+    expect(q.status).toBe(0);
+    expect(q.stdout).toContain("blog/hello.md");
+
+    // And the missing-field-list / missing-statement errors still fire first:
+    // a collection to run over is not a field list, nor a statement.
+    const noFields = runIn(["get", "--collection", "guides"]);
+    expect(noFields.status).toBe(2);
+    expect(noFields.stderr).toMatch(
+      /^docmeta: Specify at least one field to get\./m,
+    );
+    const noSql = runIn(["query", "--collection", "guides"]);
+    expect(noSql.status).toBe(2);
+    expect(noSql.stderr).toMatch(/^docmeta: Specify SQL to run\./m);
+  });
+
+  it("scopes a schemas infer scan", () => {
+    const one = runIn(["schemas", "infer", "--collection", "blog", "-f", "json"]);
+    expect(one.status).toBe(0);
+    const scoped = JSON.parse(one.stdout) as { filesScanned: number };
+    expect(scoped.filesScanned).toBe(1);
+
+    const both = runIn(["schemas", "infer", "-f", "json"]);
+    expect(both.status).toBe(0);
+    expect(
+      (JSON.parse(both.stdout) as { filesScanned: number }).filesScanned,
+    ).toBe(2);
+  });
+
+  it("scopes a fill dry run", () => {
+    const r = runIn([
+      "fill",
+      "--collection",
+      "guides",
+      "--dry-run",
+      "--provider",
+      "mock",
+      "-f",
+      "json",
+    ]);
+    expect(r.status).toBe(0);
+    const parsed = JSON.parse(r.stdout) as { results: { file: string }[] };
+    expect(parsed.results.map((x) => x.file.replace(/\\/g, "/"))).toEqual([
+      "docs/guides/auth.md",
+    ]);
+  });
+
+  it("composes with every other input flag at once", () => {
+    const r = runIn([
+      "validate",
+      "-c",
+      "manni.config.yaml",
+      "--collection",
+      "guides",
+      "--exclude",
+      "**/wip/**",
+      "--ext",
+      "md",
+      "--offline",
+      "-f",
+      "json",
+    ]);
+    expect(r.status).toBe(0);
+    expect(validated(r)).toEqual(["docs/guides/auth.md"]);
+  });
+
+  it("documents the option identically on all five commands, and not on vendor", () => {
+    const line =
+      "--collection <name> configured collection to run over; repeatable";
+    for (const argv of [
+      ["validate", "--help"],
+      ["get", "--help"],
+      ["query", "--help"],
+      ["fill", "--help"],
+      ["schemas", "infer", "--help"],
+    ]) {
+      const r = runIn(argv);
+      expect(r.status, argv.join(" ")).toBe(0);
+      // Whitespace-flattened, so commander's column padding and any wrapping of
+      // a long description cannot make the five look different when they agree.
+      expect(r.stdout.replace(/\s+/g, " "), argv.join(" ")).toContain(line);
+    }
+    // `schemas vendor` downloads a schema and reads no documents, so there is
+    // no collection for it to run over.
+    const vendor = runIn(["schemas", "vendor", "--help"]);
+    expect(vendor.status).toBe(0);
+    expect(vendor.stdout).not.toContain("--collection");
   });
 });

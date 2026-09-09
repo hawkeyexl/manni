@@ -130,13 +130,23 @@ with axe's `impact`, and proposal 0035's stress test 10 records why.
 
 ### Plans show the full interface
 
-A plan for a code change spells out every exported type, every function
-signature, and every CLI argument and option. For an argument or option that
-means the name, type, default, required or optional, and what it does. It also
-spells out every config key and every output shape it adds or changes. "Add a
-flag for X" is a sentence, not a plan. The review happens on the plan, so
-anything the plan leaves to be invented during implementation is something the
-reviewer never saw. The first time anyone looks at it is in the diff.
+A plan for a code change spells out the **user-facing interface**: every config
+key as the YAML a user writes (name, type, default, required or optional, and
+what it does), every CLI argument and option, every message with its exit code,
+and every output shape it adds or changes. Show the config as a before/after
+document rather than as a type. The programmatic API (what `src/index.ts`
+exports) is listed when it changes, as a rename or addition table, after the
+user-facing surface and never instead of it. Internal types and function
+signatures are implementation and stay out of the plan. "Add a flag for X" is a
+sentence, not a plan. The review happens on the plan, so anything the plan
+leaves to be invented during implementation is something the reviewer never saw.
+The first time anyone looks at it is in the diff.
+
+The reason for the split is that the review is about what a user will type and
+read. A plan that opens with twelve interface declarations buries the two config
+keys they will actually write, and the interfaces get rewritten during
+implementation anyway. What cannot be rewritten cheaply is a config key, a flag
+name, or an error message, because those ship.
 
 **CLI plans show examples from minimal to maximal.** A plan that adds or
 changes a command carries a ladder of invocations. The first rung is the bare

@@ -14,6 +14,7 @@ import { fail } from "../shared/run.js";
 import { CHECK_DEFAULTS, runCheck } from "./commands/check.js";
 import { createPlaywrightAnalyzer } from "./core/analyzer.js";
 import { loadA11yConfig, type LoadedA11yConfig } from "./core/config.js";
+import { resolveSeeds } from "./core/seeds.js";
 import { A11Y_FORMAT_LIST, isA11yFormat, render } from "./reporters/index.js";
 import { CLEAR_LINE, createProgressReporter } from "./reporters/progress.js";
 import {
@@ -23,6 +24,15 @@ import {
   type Severity,
   type ProgressListener,
 } from "./types.js";
+
+/**
+ * `--collection <name>`: one name per occurrence, never split on commas. The
+ * two lines are meta's `collect`, copied rather than imported: a tool does not
+ * reach into a sibling tool's CLI.
+ */
+function collect(value: string, prev: string[]): string[] {
+  return prev.concat([value]);
+}
 
 /** `--tags <list>`: commas separate, whitespace around them is trimmed, empty items are dropped. */
 function splitList(value: string): string[] {
@@ -116,6 +126,8 @@ interface CheckCliOptions {
   quiet?: boolean;
   /** `--progress` → true, `--no-progress` → false, neither → undefined (auto). */
   progress?: boolean;
+  /** `--collection <name>`, one value per occurrence. `[]` when never given. */
+  collection: string[];
   /** `-c <path>` | `--no-config` → false. */
   config?: string | false;
 }
@@ -142,7 +154,7 @@ export function buildProgram(): Command {
     .description("Crawl from the given URLs and check every page with axe-core")
     .argument(
       "[urls...]",
-      "http(s) seed URLs; falls back to a11y.urls in manni.config.yaml",
+      "http(s) seed URLs; falls back to a collection's url: or a11y.urls in manni.config.yaml",
     )
     .option("-f, --format <format>", `output: ${A11Y_FORMAT_LIST}`, "pretty")
     .option("--no-crawl", "check exactly the given URLs: no sitemap, no link following")
@@ -168,6 +180,12 @@ export function buildProgram(): Command {
     // undefined (auto) instead of commander's `true` for a lone negation.
     .option("--progress", "report progress on stderr (default: only on a terminal)")
     .option("--no-progress", "never report progress")
+    .option(
+      "--collection <name>",
+      "configured collection to run over; repeatable",
+      collect,
+      [],
+    )
     .option("-c, --config <path>", "path to a manni config file")
     .option("--no-config", "ignore any discovered config file")
     .action(async (urls: string[], options: CheckCliOptions, command: Command) => {
@@ -193,9 +211,22 @@ export function buildProgram(): Command {
 
         const loaded: LoadedA11yConfig =
           options.config === false
-            ? { config: {}, source: null }
+            // --no-config drops the collections with the section: the file
+            // the user told the run to ignore is where both live.
+            ? { config: {}, source: null, collections: [] }
             : await loadA11yConfig(process.cwd(), options.config);
         const cfg = loaded.config;
+
+        // Before the analyzer exists: a run with nothing to check, or a
+        // --collection that cannot be honoured, costs a message and not a
+        // browser launch.
+        const seeds = resolveSeeds({
+          urls,
+          collections: options.collection,
+          ...(cfg.urls === undefined ? {} : { configUrls: cfg.urls }),
+          declared: loaded.collections,
+          source: loaded.source,
+        });
 
         const parent = command.parent ?? command;
         const progress = resolveProgress(parent, options.progress);
@@ -203,7 +234,7 @@ export function buildProgram(): Command {
 
         const run = await runCheck(
           {
-            urls: urls.length > 0 ? urls : (cfg.urls ?? []),
+            urls: seeds,
             crawl: typed("crawl") ? options.crawl : (cfg.crawl ?? CHECK_DEFAULTS.crawl),
             // Typed flag > config key > no cap. There is no default to fall to.
             maxPages: maxPages ?? cfg.maxPages,

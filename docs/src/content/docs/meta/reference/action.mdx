@@ -24,12 +24,12 @@ line, and it does not become an empty flag.
 
 | Input | Default | Maps to |
 |---|---|---|
-| `paths` | none | Positional paths. Files, directories, or globs. Falls back to `paths:` in your config when unset. |
+| `paths` | none | Positional paths. Files, directories, or globs. Space-separated, or one per line — use lines for any path containing a space. Unset, it falls back to the [collections](/manni/meta/reference/configuration/#collections) in your config, which is every declared one unless `args` narrows the run with `--collection`. |
 | `schema` | none | One `-s` per entry. |
 | `config` | none | `-c` |
 | `format` | `github` | `--format`. One of `pretty`, `json`, `github`, `sarif`, `junit`. |
 | `version` | `0` | The npm version range fetched, as `@hawkeyexl/manni@<version>`. Also accepts a path or tarball. |
-| `args` | none | Appended verbatim after everything else, for anything the inputs above do not cover. |
+| `args` | none | Appended verbatim after everything else, for anything the inputs above do not cover. [`--collection`](#selecting-a-collection) reaches the Action this way. |
 | `node-version` | `24` | Passed to `actions/setup-node`. manni meta needs 24 or newer. |
 
 <Aside type="caution" title="Quotes are not shell-processed">
@@ -62,6 +62,33 @@ filtering and [gitignore rules](/manni/meta/reference/cli/#shared-input-model).
 Letting the runner expand the pattern first would substitute the shell's view of
 the tree for manni meta's. It would do so silently, and differently depending on
 the working directory.
+
+### Selecting a collection
+
+There is no `collection` input. `--collection` reaches the Action through `args`,
+the documented escape hatch for every flag the inputs above do not name:
+
+```yaml
+- uses: hawkeyexl/manni@v0
+  with:
+    args: --collection guides
+```
+
+The flag repeats rather than splitting on commas, so two collections are two
+occurrences on the same line:
+
+```yaml
+- uses: hawkeyexl/manni@v0
+  with:
+    args: --collection guides --collection blog
+```
+
+Leave `paths` unset when you do this. `--collection` selects from the config, so
+it cannot be combined with positional paths, and a workflow that sets both fails
+the step with exit 2:
+`--collection selects a configured collection; it cannot be combined with paths.`
+With neither, the run covers every declared collection, which is what the
+`paths`-less form above already did.
 
 ## Outputs
 

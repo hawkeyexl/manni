@@ -95,6 +95,69 @@ describe("family config discovery", () => {
     expect(found?.value).toEqual({ paths: ["legacy"] });
   });
 
+  it("a family file with collections: and no section is still the tool's config", async () => {
+    const root = await tree({
+      "manni.config.yaml":
+        "collections:\n  - name: guides\n    paths: [docs/guides]\n",
+    });
+    const found = await findConfigFile(root, META);
+    expect(found?.kind).toBe("manni");
+    expect(found?.wrapped).toBe(true);
+    expect(found?.value).toBeNull();
+    expect(found?.collections).toEqual([
+      {
+        name: "guides",
+        paths: ["docs/guides"],
+        exclude: [],
+        externalMetadata: [],
+      },
+    ]);
+    expect(stderr).toEqual([]);
+  });
+
+  it("a family file with both hands over the section and the collections", async () => {
+    const root = await tree({
+      "manni.config.yaml":
+        "collections:\n  - name: guides\n    paths: [docs/guides]\n    url: https://example.com/guides/\nmeta:\n  allowEmpty: true\n",
+    });
+    const found = await findConfigFile(root, META);
+    expect(found?.value).toEqual({ allowEmpty: true });
+    expect(found?.collections.map((c) => c.url)).toEqual([
+      "https://example.com/guides/",
+    ]);
+  });
+
+  it("a family file with neither the key nor collections: falls through and up the tree", async () => {
+    const root = await tree({
+      "manni.config.yaml": "meta:\n  allowEmpty: true\n",
+      "docs/manni.config.yaml": "docevals:\n  version: 1\n",
+      "docs/api/.keep": "",
+    });
+    const found = await findConfigFile(join(root, "docs", "api"), META);
+    expect(found?.dir).toBe(root);
+    expect(found?.value).toEqual({ allowEmpty: true });
+    expect(found?.collections).toEqual([]);
+  });
+
+  it("a malformed collections: entry is reported through the tool's factory", async () => {
+    class MyError extends Error {}
+    const root = await tree({
+      "manni.config.yaml": "collections:\n  - name: guides\n",
+    });
+    await expect(
+      findConfigFile(root, { ...META, toError: (m) => new MyError(m) }),
+    ).rejects.toThrow(
+      "manni.config.yaml: collections[0].paths must be a non-empty list of files, directories or globs.",
+    );
+  });
+
+  it("a legacy per-tool file carries no collections", async () => {
+    const root = await tree({ "docmeta.config.yaml": "paths: [old]\n" });
+    const found = await findConfigFile(root, META);
+    expect(found?.kind).toBe("legacy");
+    expect(found?.collections).toEqual([]);
+  });
+
   it("a family file with the key beats a legacy file in the same directory", async () => {
     const root = await tree({
       "manni.config.yaml": "meta:\n  paths: [new]\n",
@@ -122,6 +185,9 @@ describe("family config discovery", () => {
     expect(stderr[0]).toContain('"docmeta.config.yaml" is a deprecated config file name');
     expect(stderr[0]).toContain("`meta:`");
     expect(stderr[0]).toContain('"manni.config.yaml"');
+    expect(stderr[0]).toContain(
+      "and its paths, exclude and sidecars keys to a top-level collections: list.",
+    );
   });
 
   it("orders manni, then moose, then legacy within one directory", async () => {
@@ -183,6 +249,34 @@ describe("family config discovery", () => {
       const read = await readConfigFile("docmeta.config.yaml", root, META);
       expect(read.wrapped).toBe(false);
       expect(read.value).toEqual({ paths: ["x"] });
+    });
+
+    it("hands over an empty section for a collections-only document", async () => {
+      const root = await tree({
+        "anything.yaml":
+          "collections:\n  - name: guides\n    paths: [docs/guides]\n",
+      });
+      const read = await readConfigFile("anything.yaml", root, META);
+      expect(read.wrapped).toBe(true);
+      expect(read.value).toBeNull();
+      expect(read.collections.map((c) => c.name)).toEqual(["guides"]);
+    });
+
+    it("unwraps the section and parses collections beside it", async () => {
+      const root = await tree({
+        "anything.yaml":
+          "collections:\n  - name: guides\n    paths: [docs/guides]\nmeta:\n  allowEmpty: true\n",
+      });
+      const read = await readConfigFile("anything.yaml", root, META);
+      expect(read.wrapped).toBe(true);
+      expect(read.value).toEqual({ allowEmpty: true });
+      expect(read.collections.map((c) => c.name)).toEqual(["guides"]);
+    });
+
+    it("takes the whole document, and no collections, for a legacy shape", async () => {
+      const root = await tree({ "docmeta.config.yaml": "paths: [x]\n" });
+      const read = await readConfigFile("docmeta.config.yaml", root, META);
+      expect(read.collections).toEqual([]);
     });
 
     it("never warns, even for a deprecated name", async () => {

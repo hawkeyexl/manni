@@ -41,27 +41,30 @@ manni meta validates the **presence and format** of your frontmatter against [JS
    The command above works, but you do not want to retype paths and schemas every run. CI also needs a stored definition of what "valid" means for your repo. Capture it in a config file so a bare `manni meta validate` knows what to do.
 
    ```yaml title="manni.config.yaml"
-   meta:
-     # Default targets when no paths are passed on the command line.
-     paths:
-       - "docs/**/*.md"
+   # Which documents exist. Every manni tool reads this.
+   collections:
+     - name: pages
+       paths:
+         - "docs/**/*.md"
 
+   # How the metadata tool judges them.
+   meta:
      # The schema set every matched file must satisfy.
      schemas:
        - google:okf:0.1
    ```
 
-   `paths` is the fallback manni meta uses when you do not name files on the command line. `schemas` is the set each file is validated against; every file must satisfy every schema you list.
+   The file has two halves. A top-level `collections:` list declares your document sets, once, for every tool under `manni`. A bare `manni meta validate` reads them all when you name no files on the command line. `meta.schemas` is the set each file is validated against; every file must satisfy every schema you list.
 
    <LinkCard
      title="Create your manni.config.yaml"
      href="/manni/meta/set-up/config/"
-     description="Every config key explained: paths, exclude, schemas, and overrides, with a complete worked example."
+     description="Both halves explained: collections with their paths and exclusions, then schemas and overrides, with a complete worked example."
    />
 
 3. **Run the stored configuration.**
 
-   With the config committed, you no longer pass paths or schemas. manni meta discovers `manni.config.yaml` in the current directory and uses its `paths` and `schemas`.
+   With the config committed, you no longer pass paths or schemas. manni meta discovers `manni.config.yaml` in the current directory, reads every collection it declares, and applies `meta.schemas`.
 
    ```bash
    npx @hawkeyexl/manni meta validate
@@ -70,7 +73,7 @@ manni meta validates the **presence and format** of your frontmatter against [JS
    This is the exact command CI will run. Confirm it reports what you expect locally before you wire it up.
 
    <Aside type="caution">
-   If you run a bare `manni meta validate` with no config file and no paths, manni meta exits with code `2`. The message is `No files to validate.` That is an operational error rather than a silent pass. It means manni meta had nothing to do.
+   If you run a bare `manni meta validate` with no config file and no paths, manni meta exits with code `2` and tells you to pass paths or declare a collection. That is an operational error rather than a silent pass. It means manni meta had nothing to do.
    </Aside>
 
 4. **Land the CI gate.**
@@ -93,7 +96,7 @@ manni meta validates the **presence and format** of your frontmatter against [JS
 
 ## What you have now
 
-A committed `manni.config.yaml` that defines which files to check, and which schema they must satisfy. Plus a CI step that runs the same check on every pull request, and fails the build on bad metadata. New contributors get the same enforcement you do, without any review fatigue on your side.
+A committed `manni.config.yaml` whose `collections:` list defines which documents exist, and whose `meta:` section defines the schema they must satisfy. Plus a CI step that runs the same check on every pull request, and fails the build on bad metadata. New contributors get the same enforcement you do, without any review fatigue on your side.
 
 ## Where to go next
 

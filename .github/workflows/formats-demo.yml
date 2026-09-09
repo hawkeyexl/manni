@@ -117,8 +117,8 @@ jobs:
             --exclude "test/fixtures/collections/**" \
             --exclude "test/fixtures/platform/**" \
             --exclude "test/fixtures/infer-parity/**" \
-            --exclude "test/fixtures/sidecars/**" \
-            --exclude "test/fixtures/sidecars-join/**" \
+            --exclude "test/fixtures/external-metadata/**" \
+            --exclude "test/fixtures/external-metadata-join/**" \
             --allow-empty -f sarif > manni.sarif
           echo "results=$(jq '.runs[0].results | length' manni.sarif)" >> "$GITHUB_OUTPUT"
 
@@ -156,8 +156,8 @@ jobs:
             --exclude "test/fixtures/collections/**" \
             --exclude "test/fixtures/platform/**" \
             --exclude "test/fixtures/infer-parity/**" \
-            --exclude "test/fixtures/sidecars/**" \
-            --exclude "test/fixtures/sidecars-join/**" \
+            --exclude "test/fixtures/external-metadata/**" \
+            --exclude "test/fixtures/external-metadata-join/**" \
             --allow-empty -f junit > manni-junit.xml
 
       # GitHub renders no JUnit natively. A third-party reporter action would be

@@ -6,9 +6,11 @@
 # spell the schema out on the command line; a bare `manni meta validate` at the
 # repo root now reaches the same verdict.
 #
-# One file for the whole family, one top-level key per tool (proposal 0033).
-# The metadata tool reads `meta:` and nothing else, so a sibling tool's section
-# can sit beside it without either reading the other's keys.
+# One file for the whole family, one top-level key per tool (proposal 0033),
+# plus the one key that is nobody's: `collections:` declares the document sets
+# every tool reads (proposal 0041). The metadata tool reads `collections:` and
+# `meta:`, so a sibling tool's section can sit beside them without either
+# reading the other's keys.
 #
 # It is deliberately narrow, because a config at the repo root is discovered by
 # *every* manni run anywhere beneath it — including this repo's own test
@@ -17,19 +19,36 @@
 #
 # In particular the docs schema hangs off `overrides:` rather than top-level
 # `schemas:`. `schemas:` is the default set applied to **every** validated file,
-# not only the ones `paths:` matched, so putting it there would judge a fixture
+# not only the collection's members, so putting it there would judge a fixture
 # under `test/` against the docs frontmatter contract. An override applies only
-# to files its glob matches; everything else keeps DEFAULT_SCHEMAS.
+# to the files it governs; everything else keeps DEFAULT_SCHEMAS.
+
+# What a bare `manni meta validate` checks: the published docs pages. Named
+# `site` rather than `docs`, which `collections:` refuses — `docs` is the table
+# every `manni meta query` reads, and a view of that name would shadow it.
+collections:
+  - name: site
+    paths:
+      - "docs/src/content/docs/**/*.{md,mdx}"
+    # Where those pages are published, and so what `manni a11y check` checks
+    # when it is given no URLs of its own (proposal 0041, rule 12). It is the
+    # local preview rather than the deployed site, because the point of the
+    # check is the build a pull request produces, before it deploys. To run it
+    # by hand: `cd docs && npm run build && npx astro preview --host 127.0.0.1
+    # --port 4321`, then `manni a11y check` from anywhere in the repo. The Docs
+    # workflow's `a11y` job runs exactly that. To check the live site instead,
+    # name it: `manni a11y check https://hawkeyexl.github.io/manni/`.
+    #
+    # It is not `a11y.urls` because it is a fact about where this collection
+    # of documents lives, not a setting of the accessibility tool — the whole
+    # reason a collection is declared once for every tool to read.
+    url: http://127.0.0.1:4321/manni/
 
 meta:
-  # What a bare `manni meta validate` checks: the published docs pages.
-  paths:
-    - "docs/src/content/docs/**/*.{md,mdx}"
-
   # Every published page must declare a non-empty title and description. Scoped
-  # to the same glob as `paths:` so it governs the docs and nothing else.
+  # to the `site` collection, so it governs the docs and nothing else.
   overrides:
-    - files: "docs/src/content/docs/**/*.{md,mdx}"
+    - collection: site
       schemas:
         - ./docs/doc-frontmatter.schema.json
         # The platform contract this site actually runs on. The house schema
@@ -47,15 +66,10 @@ meta:
 # directory outside the repo, where discovery finds nothing, so the keys here
 # never reach them. Every key is a default a flag on the command line beats.
 #
-# The URL is the local preview of the docs site, not the published one,
-# because the point of the check is the build a pull request produces, before
-# it deploys. To run it by hand: `cd docs && npm run build && npx astro
-# preview --host 127.0.0.1 --port 4321`, then `manni a11y check` from anywhere
-# in the repo. The Docs workflow's `a11y` job runs exactly that. To check the
-# live site instead, name it: `manni a11y check https://hawkeyexl.github.io/manni/`.
+# It carries no `urls:`. The seeds come from the `site` collection's `url:`
+# above, which is the fallback a11y uses when nothing is named on the command
+# line and this section sets no urls of its own.
 a11y:
-  urls:
-    - http://127.0.0.1:4321/manni/
   # The project's floor: findings below it are dropped before the score and
   # the exit code are decided. The values are the family scale every manni
   # tool shares, `notice | warning | error`; axe's four impact levels are

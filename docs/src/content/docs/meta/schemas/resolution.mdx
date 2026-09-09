@@ -59,7 +59,16 @@ meta:
         - ./schemas/api.schema.json
 ```
 
-Each `overrides` entry pairs a `files` glob with a `schemas` list. Entries are tried in order, and the first whose glob matches the file supplies the set. (For every config key, type, and default, see the [Configuration reference](/manni/meta/reference/configuration/).)
+Each `overrides` entry pairs a `schemas` list with the files it governs, named
+in **one** of two ways: a `files` glob, as above, or `collection: <name>`, which
+governs the members of a declared [collection](/manni/meta/reference/configuration/#collections).
+An entry carries exactly one of the two. Entries are tried in order, and the
+first that matches the file supplies the set, whichever way it names its files.
+
+Reach for `collection:` when the set is a real document set the repository
+already declares, so the globs are written once; keep `files:` for a glob that
+only affects which schema applies. (For every config key, type, and default, see
+the [Configuration reference](/manni/meta/reference/configuration/).)
 
 <Aside type="tip" title="A worked example">
 With the config above, a repo-wide default of `google:okf:0.1` (level 4) and an override applying `api.schema.json` to `api/**` (level 3), resolution plays out like this:
