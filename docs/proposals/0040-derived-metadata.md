@@ -1,6 +1,6 @@
 # 0040: derived metadata, evidence from git, CODEOWNERS and the forge
 
-- **Status:** Proposed
+- **Status:** Implemented (#19)
 - **Serves:** Maya · M1, M2 · Devin · D4 · Theo · T1
 - **Depends on:** Three earlier proposals.
   - [0021](0021-frontmatter-as-a-database.md) is the query engine. The
@@ -58,8 +58,8 @@ A schema can require the fields. It cannot make the values true. And of the
 three questions, only the third has an answer the tool can check against
 evidence. What version a page was verified against, and whether the whole
 page was read, are facts only the updater holds. So this proposal is about
-the third question, asked at check-in as a finding, and about writing the
-answer down for the fields where evidence exists.
+the third question, asked at check-in as a finding. It is also about writing
+the answer down for the fields where evidence exists.
 
 The stewardship page admits as much. Its design decisions say: "A hand-typed
 `last-updated` goes stale quietly, and no JSON Schema can catch that.
@@ -126,9 +126,9 @@ output shapes.
    authenticated. A `derive.codeowners` path that does not exist. The message
    names the remedy, such as `fetch-depth: 0` or `gh auth login`. One absence
    is drawn on the other side of the line. A repository with no CODEOWNERS
-   file has declared no owners, which is a fact, so `owner` derives null and
+   file has declared no owners, which is a fact. So `owner` derives null, and
    the source reports the search as a notice rather than a failure. The
-   verification run found the first draft treating it as exit 2, which made a
+   verification run found the first draft treating it as exit 2. That made a
    repository without the file unable to read the `derived` table at all. The
    deliberate opt-outs are `--no-derive` on `validate` and `--sources`
    narrowing. gitignore degrades open on purpose. This is the opposite, on
@@ -481,8 +481,8 @@ next channel will meet again.
   table are dropped before the handle closes. A collection may not be named
   `derived` or `_derived_rows`.
 
-Two smaller ones: the trailer atoms use `unfold`, so a wrapped
-`Reviewed-by` is read whole, and a wildcard-final CODEOWNERS pattern such as
+Two smaller changes follow. The trailer atoms use `unfold`, so a wrapped
+`Reviewed-by` is read whole. A wildcard-final CODEOWNERS pattern such as
 `docs/*` no longer covers nested files, matching GitHub's own example.
 
 ## Follow-ups recorded, not promised

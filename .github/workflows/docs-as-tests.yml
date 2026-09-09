@@ -36,6 +36,11 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v7
+        with:
+          # The derived-metadata page runs `get --derived` against this
+          # repository's own history, and a shallow checkout is refused by
+          # design (proposal 0040, decision 6).
+          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: 24

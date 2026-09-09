@@ -428,7 +428,18 @@ export class GhClient extends CliClient {
       }
       if (mergedAt === null) continue;
 
-      const reviews = items(await api(`repos/${project}/pulls/${c.number}/reviews?per_page=100`))
+      // The reviews endpoint lists oldest first, 100 per page, with no sort
+      // parameter, so a long-lived PR's latest approvals sit past the first
+      // page. Walk pages until one comes back short.
+      const raw: Record<string, unknown>[] = [];
+      for (let page = 1; ; page += 1) {
+        const batch = items(
+          await api(`repos/${project}/pulls/${c.number}/reviews?per_page=100&page=${page}`),
+        );
+        raw.push(...batch);
+        if (batch.length < 100) break;
+      }
+      const reviews = raw
         .map((r) => ({
           login: isRecord(r.user) ? stringOf(r.user.login) : null,
           state: stringOf(r.state),

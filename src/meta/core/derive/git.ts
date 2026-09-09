@@ -83,6 +83,18 @@ const MAX_GIT_OUTPUT_BYTES = Math.min(
 /** A root whose history cannot be held in memory; caught by `deriveFromGit`. */
 class HistoryTooLarge extends Error {}
 
+/**
+ * `git cat-file --batch` exited non-zero: a corrupt object, a missing pack,
+ * lock contention. An empty blob map would read every body as empty and
+ * every history entry as unchanged, which is the false green the channel
+ * refuses, so it is a failed root like a shallow clone.
+ */
+class BlobsUnreadable extends Error {
+  constructor(readonly detail: string) {
+    super(detail);
+  }
+}
+
 /** One commit that touched a document, as either walk form reports it. */
 interface FileHistory {
   sha: string;
@@ -173,6 +185,10 @@ export async function deriveFromGit(
       }
       blobs = await fetchBlobs(run, neededBlobs(histories));
     } catch (err) {
+      if (err instanceof BlobsUnreadable) {
+        reasons.push(`git cat-file could not read the history (${root}): ${err.detail}`);
+        continue;
+      }
       if (!(err instanceof HistoryTooLarge)) throw err;
       reasons.push(`git history is too large to read in one pass (${root})`);
       continue;
@@ -483,7 +499,7 @@ async function fetchBlobs(
   if (shas.size === 0) return blobs;
   const out = await run(["cat-file", "--batch"], `${[...shas].join("\n")}\n`);
   if (out.tooLarge) throw new HistoryTooLarge();
-  if (out.code !== 0) return blobs;
+  if (out.code !== 0) throw new BlobsUnreadable(`exit ${String(out.code)}`);
   const buf = out.raw;
   let cursor = 0;
   while (cursor < buf.length) {

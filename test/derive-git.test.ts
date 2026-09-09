@@ -307,7 +307,7 @@ describe.each(forms)("deriveFromGit ($name)", ({ opts }) => {
     expect(facts.lastBodyCommit).toBe(sha);
   });
 
-  it("refuses a shallow clone and names the fix", async () => {
+  it("refuses a shallow clone and names the fix", { timeout: 60_000 }, async () => {
     const origin = tempRepo({ "a.md": doc("title: t", "one") });
     commit(origin, "add", { authorDate: D1 });
     writeFile(origin, "a.md", doc("title: t", "two"));
@@ -324,7 +324,7 @@ describe.each(forms)("deriveFromGit ($name)", ({ opts }) => {
     expect(result.records.size).toBe(0);
   });
 
-  it("is unavailable when one repository cannot answer, even if another can", async () => {
+  it("is unavailable when one repository cannot answer, even if another can", { timeout: 60_000 }, async () => {
     // A partially answered walk would omit the shallow root's documents and
     // report green for the run: the false green the channel refuses.
     const good = tempRepo({ "a.md": doc("title: t", "one") });

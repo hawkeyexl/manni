@@ -154,8 +154,30 @@ describe("GhClient", () => {
     expect(fake.calls()).toEqual([
       ["auth", "status", "--hostname", "github.com"],
       ["api", "--hostname", "github.com", `repos/acme/docs/commits/${SHA}/pulls`],
-      ["api", "--hostname", "github.com", "repos/acme/docs/pulls/18/reviews?per_page=100"],
+      ["api", "--hostname", "github.com", "repos/acme/docs/pulls/18/reviews?per_page=100&page=1"],
     ]);
+  });
+
+  it("walks every page of reviews, since the endpoint lists oldest first", async () => {
+    // A full first page means a second page may hold the latest approval.
+    const firstPage = Array.from({ length: 100 }, (_, i) => ({
+      user: { login: "maya" },
+      state: "COMMENTED",
+      submitted_at: `2026-01-01T00:${String(i % 60).padStart(2, "0")}:00Z`,
+    }));
+    fake = fakeForge([
+      AUTH_OK,
+      { includes: ["api", `commits/${SHA}/pulls`], stdout: [PR_18] },
+      // page=2 first: the fake matches the first scenario whose tokens all appear.
+      {
+        includes: ["api", "reviews?per_page=100&page=2"],
+        stdout: [{ user: { login: "devin" }, state: "APPROVED", submitted_at: "2026-03-02T08:30:00Z" }],
+      },
+      { includes: ["api", "reviews?per_page=100&page=1"], stdout: firstPage },
+    ]);
+    const change = await new GhClient(GITHUB, fake.spawn).mergedChangeFor(SHA);
+    expect(change?.approvals).toEqual([{ login: "devin", submittedAt: "2026-03-02T08:30:00Z" }]);
+    expect(fake.calls().filter((c) => c.some((a) => a.includes("reviews")))).toHaveLength(2);
   });
 
   it("keeps the REST spelling of a bot when it is the latest approval", async () => {
@@ -230,7 +252,7 @@ describe("GhClient", () => {
     expect(fake.calls().map((c) => c.at(-1))).toEqual([
       `repos/acme/docs/commits/${SHA}/pulls`,
       "repos/acme/docs/pulls/18",
-      "repos/acme/docs/pulls/18/reviews?per_page=100",
+      "repos/acme/docs/pulls/18/reviews?per_page=100&page=1",
     ]);
   });
 
@@ -298,7 +320,7 @@ describe("GhClient", () => {
     const client = new GhClient(GITHUB, fake.spawn);
     await expect(client.mergedChangeFor(SHA)).rejects.toThrow(DocmetaError);
     await expect(client.mergedChangeFor(SHA)).rejects.toThrow(
-      /gh api --hostname github\.com repos\/acme\/docs\/pulls\/18\/reviews\?per_page=100 failed \(exit 1\): gh: API rate limit exceeded/,
+      /gh api --hostname github\.com repos\/acme\/docs\/pulls\/18\/reviews\?per_page=100&page=1 failed \(exit 1\): gh: API rate limit exceeded/,
     );
   });
 

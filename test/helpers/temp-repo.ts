@@ -44,7 +44,9 @@ export function makeTempRepo(opts: TempRepoOptions): string {
 
 /** Safe to call with `undefined`, so `afterEach` needs no guard of its own. */
 export function removeTempRepo(dir: string | undefined): void {
-  if (dir) rmSync(dir, { recursive: true, force: true });
+  // Retries for Windows, where a git child that has just exited can still
+  // hold the directory for a moment and `rm` answers EPERM.
+  if (dir) rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 }
 
 /** A minimal document that parses; the content is never what is under test. */

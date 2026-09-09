@@ -174,16 +174,26 @@ export function ownersFor(
   });
   if (winners.size === 0) return null;
 
+  // The evidence line is the last winner that named an owner, so it points
+  // at a rule the reader can see owners on. A winner that names nobody (no
+  // owners, no section default) sets the line only when no winner named
+  // anyone, which is the "no owner" clearing case.
   const owners: string[] = [];
   let line = 0;
+  let lineFromOwner = false;
   for (const section of order) {
     const rule = winners.get(section);
     if (!rule) continue;
-    line = rule.line;
     const chosen =
       rule.owners.length > 0
         ? rule.owners
         : (section === undefined ? undefined : defaults.get(section)) ?? [];
+    if (chosen.length > 0) {
+      line = rule.line;
+      lineFromOwner = true;
+    } else if (!lineFromOwner) {
+      line = rule.line;
+    }
     for (const o of chosen) if (!owners.includes(o)) owners.push(o);
   }
   return { owners, line };
