@@ -8,7 +8,7 @@
  * `--follow` and the bulk whole-repository walk — because proposal 0040
  * promises the two produce the same history.
  */
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { mkdtempSync, readFileSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -28,6 +28,11 @@ import {
   removeTempRepo,
   writeFile,
 } from "./helpers/temp-repo.js";
+
+// Every case here spawns git, the built bin, or a fake CLI, and a Windows
+// runner under load takes longer than vitest's 5 s default for a single
+// spawn chain. The whole file gets the budget the bin-spawning suites use.
+vi.setConfig({ testTimeout: 60_000 });
 
 const D1 = "2020-01-02T03:04:05+02:00";
 const D2 = "2020-02-03T03:04:05+02:00";

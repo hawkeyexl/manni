@@ -10,7 +10,7 @@
  * orchestrator whether the repository is on GitHub or GitLab, so a case can
  * point the same fake at either host, or at no origin remote.
  */
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
@@ -31,6 +31,11 @@ import {
 import { markdownExtractor } from "../src/meta/extractors/markdown.js";
 import { DocmetaError } from "../src/meta/types.js";
 import { commit, makeTempRepo, removeTempRepo, writeFile } from "./helpers/temp-repo.js";
+
+// Every case here spawns git, the built bin, or a fake CLI, and a Windows
+// runner under load takes longer than vitest's 5 s default for a single
+// spawn chain. The whole file gets the budget the bin-spawning suites use.
+vi.setConfig({ testTimeout: 60_000 });
 
 const D1 = "2026-01-10T09:00:00+00:00";
 const D2 = "2026-02-20T09:00:00+00:00";

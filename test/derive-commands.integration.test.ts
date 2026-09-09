@@ -2,7 +2,7 @@
  * The derived channel through the built bin: the flags E1 wires
  * (`validate --no-derive`, `get --derived`) and the refusals that need none.
  */
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { execFileSync, execSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -13,6 +13,11 @@ import {
   removeTempRepo,
   writeFile,
 } from "./helpers/temp-repo.js";
+
+// Every case here spawns git, the built bin, or a fake CLI, and a Windows
+// runner under load takes longer than vitest's 5 s default for a single
+// spawn chain. The whole file gets the budget the bin-spawning suites use.
+vi.setConfig({ testTimeout: 60_000 });
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");

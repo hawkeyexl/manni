@@ -7,7 +7,7 @@
  * `last-updated`, `owner`); `docs/faq.md` is committed current and
  * `docs/install.md` is committed with one stale stamp and two unset fields.
  */
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { cpSync, mkdtempSync, readFileSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -23,6 +23,11 @@ import {
   removeTempRepo,
   writeFile,
 } from "./helpers/temp-repo.js";
+
+// Every case here spawns git, the built bin, or a fake CLI, and a Windows
+// runner under load takes longer than vitest's 5 s default for a single
+// spawn chain. The whole file gets the budget the bin-spawning suites use.
+vi.setConfig({ testTimeout: 60_000 });
 
 const here = dirname(fileURLToPath(import.meta.url));
 const CORPUS = resolve(here, "fixtures", "derive", "corpus");

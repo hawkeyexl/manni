@@ -56,6 +56,11 @@ import {
   writeFile,
 } from "./helpers/temp-repo.js";
 
+// Every case here spawns git, the built bin, or a fake CLI, and a Windows
+// runner under load takes longer than vitest's 5 s default for a single
+// spawn chain. The whole file gets the budget the bin-spawning suites use.
+vi.setConfig({ testTimeout: 60_000 });
+
 const FIXTURE = resolve(__dirname, "fixtures", "derive", "commands");
 
 /** Every fixture file, keyed by posix-relative path. */
