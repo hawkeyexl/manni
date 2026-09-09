@@ -106,8 +106,8 @@ export interface DeriveTableContext {
 
 /**
  * Derive the table's rows: `fields` — what the caller's statements can read,
- * see `fieldsForSql` — from the sources the config allows (all three when it
- * says nothing), with the forge cache on. The view keeps every column, and
+ * see `fieldsForSql` — from the sources the config allows (all four when it
+ * says nothing), with the review cache on. The view keeps every column, and
  * a field not derived is NULL in it; only a source some named field needs
  * is consulted, so a statement reading `owner` never spawns `gh`. A
  * requested source that cannot answer is the run's error, never an empty

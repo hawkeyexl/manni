@@ -1,11 +1,11 @@
 /**
  * A stand-in for `gh` and `glab`.
  *
- * The forge source never speaks HTTP: it spawns the vendor's CLI, whose auth
+ * The review sources never speak HTTP: they spawn the vendor's CLI, whose auth
  * store is the trust boundary. So the seam the tests need is the *process*,
- * not a fetch. This script is run as `node fake-forge-bin.mjs <args...>`
+ * not a fetch. This script is run as `node fake-review-cli-bin.mjs <args...>`
  * (the client takes `bin: process.execPath, prefixArgs: [this file]`) and
- * answers from a scenario file named by `FAKE_FORGE_SCENARIO`:
+ * answers from a scenario file named by `FAKE_REVIEW_SCENARIO`:
  *
  *   {
  *     "log": "<path>",            // optional; every call appended as one JSON line:
@@ -30,9 +30,9 @@
 import { appendFileSync, readFileSync } from "node:fs";
 
 const argv = process.argv.slice(2);
-const scenarioPath = process.env.FAKE_FORGE_SCENARIO;
+const scenarioPath = process.env.FAKE_REVIEW_SCENARIO;
 if (!scenarioPath) {
-  process.stderr.write("fake-forge: FAKE_FORGE_SCENARIO is not set\n");
+  process.stderr.write("fake-review-cli: FAKE_REVIEW_SCENARIO is not set\n");
   process.exitCode = 3;
 } else {
   const scenario = JSON.parse(readFileSync(scenarioPath, "utf8"));
@@ -49,7 +49,7 @@ if (!scenarioPath) {
       r.includes.every((t) => argv.some((a) => a.includes(t))),
   );
   if (!hit) {
-    process.stderr.write(`fake-forge: no response for ${argv.join(" ")}\n`);
+    process.stderr.write(`fake-review-cli: no response for ${argv.join(" ")}\n`);
     process.exitCode = 1;
   } else {
     if (typeof hit.sleepMs === "number" && hit.sleepMs > 0) {

@@ -1,14 +1,14 @@
 ---
 title: Stamp stewardship fields from evidence
-description: "Let manni meta stamp created, last-updated, authors, owner, reviewed-by and last-reviewed from git, CODEOWNERS and the forge, and fail the build when a stamp goes stale."
+description: "Let manni meta stamp created, last-updated, authors, owner, reviewed-by and last-reviewed from git, CODEOWNERS, GitHub and GitLab, and fail the build when a stamp goes stale."
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
 
 A **managed** field is a stewardship field whose value comes from evidence
 rather than from a person's memory. The evidence is git history, a
-CODEOWNERS file, and the pull request or merge request history the forge
-keeps, read through the `gh` or `glab` CLI. `manni meta derive` stamps the
+CODEOWNERS file, and the pull request or merge request history GitHub or
+GitLab keeps, read through the `gh` or `glab` CLI. `manni meta derive` stamps the
 value into the page. `manni meta validate` compares what is stamped against
 what the evidence says, and a stamp that disagrees fails the build.
 
@@ -40,7 +40,7 @@ built-in system that forces whoever updates a page, human or agent, to answer
 these questions at check-in. This page is that system, and it is honest about
 its reach. It can answer the first two questions from evidence. Git knows
 when the body changed and who changed it. CODEOWNERS knows who answers for the
-path. The forge knows who approved the change and when. Six fields follow:
+path. GitHub or GitLab knows who approved the change and when. Six fields follow:
 `created`, `last-updated`, `authors`, `owner`, `reviewed-by`, and
 `last-reviewed`. The third question stays with people. What a page was
 verified against, and who has a stake in it, is a judgment no history holds.
@@ -64,8 +64,9 @@ Name the fields you want managed. Everything else is optional.
        fields: [created, last-updated, authors, owner]
    ```
 
-2. **Narrow the sources, if you must.** The default consults all three. A
-   machine with no `gh` can leave the forge out, and a field whose only
+2. **Narrow the sources, if you must.** The default names all four, and
+   the origin remote picks which of `github` and `gitlab` is asked. A
+   machine with no `gh` can leave both out, and a field whose only
    source is excluded is simply never stamped and never stale.
 
    ```yaml title="manni.config.yaml"
@@ -76,7 +77,7 @@ Name the fields you want managed. Everything else is optional.
    ```
 
 3. **Point at CODEOWNERS, if it is somewhere unusual.** By default the file
-   is found where the forge looks for it.
+   is found where GitHub or GitLab looks for it.
 
    ```yaml title="manni.config.yaml"
    meta:
@@ -149,7 +150,7 @@ fenced block, such as HTML, XML or DITA, where any change counts. The
 ## In a pull request
 
 Two things have to be true on the runner. The checkout needs history, and
-the forge CLI needs a login. `actions/checkout` gives one commit by default,
+the `gh` or `glab` CLI needs a login. `actions/checkout` gives one commit by default,
 and one commit cannot say when a body last changed. `derive` refuses a
 shallow clone rather than guessing, and names the fix, so the step to add is
 `fetch-depth: 0`. `gh` is already on every GitHub-hosted runner, and the
@@ -219,7 +220,7 @@ validate-metadata:
 ## After approval
 
 `reviewed-by` and `last-reviewed` come from the approval itself. A reviewer
-clicks approve, and the forge now knows who reviewed the change and when.
+clicks approve, and GitHub or GitLab now knows who reviewed the change and when.
 Nothing has to transcribe it. A workflow that runs on the approval event
 stamps both fields and pushes the stamp to the pull request branch:
 
@@ -262,8 +263,8 @@ and when, and the next body change starts the cycle again.
 
 <Aside type="caution" title="A push can dismiss the approval that caused it">
 Under a branch rule that dismisses stale approvals on every push, the stamp
-commit dismisses the approval it records. That is the forge's rule, not
-manni's. Exempt the bot from dismissal, or run the stamp on merge to the
+commit dismisses the approval it records. That is GitHub's or GitLab's rule,
+not manni's. Exempt the bot from dismissal, or run the stamp on merge to the
 default branch instead. There the pull request is closed and the answer is
 final.
 </Aside>

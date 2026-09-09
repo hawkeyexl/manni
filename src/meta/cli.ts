@@ -1390,7 +1390,7 @@ export function buildProgram(): Command {
   program
     .command("derive")
     .description(
-      "Stamp the managed stewardship fields from git history, CODEOWNERS and the forge",
+      "Stamp the managed stewardship fields from git history, CODEOWNERS and GitHub or GitLab reviews",
     )
     .argument("[paths...]", "files, directories, or globs to stamp")
     .option(
@@ -1399,7 +1399,7 @@ export function buildProgram(): Command {
     )
     .option(
       "--sources <list>",
-      "comma-separated sources to consult: git, codeowners, forge (default all)",
+      "comma-separated sources to consult: git, codeowners, github, gitlab (default all)",
     )
     .option("--dry-run", "report what would change and write nothing")
     .option(
@@ -1411,7 +1411,7 @@ export function buildProgram(): Command {
       `output: ${DERIVE_FORMATS.join(" | ")} (github, sarif, junit need --check)`,
       "pretty",
     )
-    .option("--no-cache", "bypass the forge cache")
+    .option("--no-cache", "bypass the GitHub or GitLab review cache")
     .option("--ext <list>", "comma-separated extensions for directory walks")
     .option("--exclude <glob>", "glob to exclude; repeatable", collect, [])
     .option("--as <format>", "force an input format (e.g. markdown, mdx)")

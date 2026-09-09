@@ -508,9 +508,9 @@ describe("query: the derived table", () => {
   });
 
   it("consults only the sources the named columns need", async () => {
-    // No `sources:` in config, so all three are allowed — and this
-    // repository has no origin remote, so the forge cannot answer. A
-    // statement that reads `owner` alone never asks it.
+    // No `sources:` in config, so all four are allowed — and this
+    // repository has no origin remote, so neither review source can answer. A
+    // statement that reads `owner` alone never asks them.
     const files = fixtureFiles();
     files["manni.config.yaml"] = (files["manni.config.yaml"] ?? "").replace(
       "    sources: [git, codeowners]\n",
@@ -527,10 +527,10 @@ describe("query: the derived table", () => {
       { _path: "docs/a.md", owner: '["@docs-team"]' },
       { _path: "docs/b.md", owner: null },
     ]);
-    // `*` reads every column, so every source is consulted, and the forge's
-    // silence is the run's error.
+    // `*` reads every column, so every source is consulted, and the review
+    // sources' silence is the run's error.
     const all = runQuery({ sql: "SELECT * FROM derived", inputs: [], cwd: dir });
-    await expect(all).rejects.toThrow(/forge source unavailable/);
+    await expect(all).rejects.toThrow(/github source unavailable/);
   });
 
   it("never carries the derived table into a --db export", async () => {

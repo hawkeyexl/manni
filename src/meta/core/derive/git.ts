@@ -41,7 +41,7 @@ export interface GitFacts {
   "reviewed-by": DerivedValue | null;
   /** From `Reviewed-by` trailers only. */
   "last-reviewed": DerivedValue | null;
-  /** Full sha of the newest body-changing commit, for the forge source; null when uncommitted or none. */
+  /** Full sha of the newest body-changing commit, for the review sources; null when uncommitted or none. */
   lastBodyCommit: string | null;
   /** Repository root the document lives in, absolute, native separators. */
   root: string;
@@ -128,7 +128,7 @@ export function bodyOf(content: string, fenced: boolean | undefined): string {
  * a shallow clone, or a history too large to read report
  * `status.available: false` with a `reason` that names the fix, and an
  * empty map. One root that cannot answer makes the source unavailable for
- * the whole run, as `deriveForgeByRoot` rules: a walk that answered for
+ * the whole run, as `deriveReviewsByRoot` rules: a walk that answered for
  * some roots and silently dropped the rest would read as green for
  * documents it never looked at. An input outside any repository is not a
  * failing root; it is simply absent from the records.

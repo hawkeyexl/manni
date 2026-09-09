@@ -49,7 +49,7 @@ export const RESERVED_RULES: Record<string, string> = {
   [SIDECAR_DUPLICATE_RULE]:
     "Two documents carry the same value of a sidecar's join field, so one manifest entry matched both.",
   [DERIVED_STALE_RULE]:
-    "A managed field whose value differs from what git, CODEOWNERS or the forge says; run `manni meta derive` to refresh it.",
+    "A managed field whose value differs from what git, CODEOWNERS or the GitHub or GitLab review record says; run `manni meta derive` to refresh it.",
 };
 
 /**

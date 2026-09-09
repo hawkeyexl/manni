@@ -467,7 +467,7 @@ join field. All three are verdicts about the documents.
 
 With [`derive:`](/manni/meta/reference/configuration/#derive) in config,
 `validate`, `derive`, `get --derived` and a `query` naming the `derived`
-table read evidence from git, a CODEOWNERS file, and the forge's CLI. A
+table read evidence from git, a CODEOWNERS file, and the `gh` or `glab` CLI. A
 source that cannot answer is exit 2 naming the fix, never a skipped field. A
 field that was quietly not compared would make a stale stamp read as current.
 A green gate over nothing is the failure this whole contract exists to end.
@@ -476,10 +476,13 @@ narrowing on `derive`.
 
 | Situation | Message |
 |---|---|
-| The checkout is shallow, as `actions/checkout` leaves it by default. | `git source unavailable: this checkout is shallow; use actions/checkout with fetch-depth: 0, or --sources codeowners,forge` |
+| The checkout is shallow, as `actions/checkout` leaves it by default. | `git source unavailable: this checkout is shallow; use actions/checkout with fetch-depth: 0, or --sources codeowners,github,gitlab` |
 | There is no `git` on `PATH`, or the path is outside any repository, and `git` is a requested source. | `git source unavailable: …`, naming which, and `--sources` as the way out. |
-| `gh` or `glab` is not on `PATH`, and `forge` is a requested source. | `forge source unavailable: gh is not on PATH (origin is github.com); install gh and run gh auth login, or drop reviewed-by from --fields` |
-| `gh` or `glab` is present and not logged in. | `forge source unavailable: …`, naming `gh auth login` or `glab auth login`. |
+| `gh` or `glab` is not on `PATH`, and the `github` or `gitlab` source the origin remote matches is requested. | `github source unavailable: gh is not on PATH (origin is github.com); install gh and run gh auth login, or drop reviewed-by from --fields` |
+| `gh` or `glab` is present and not logged in. | `github source unavailable: …` or `gitlab source unavailable: …`, naming `gh auth login` or `glab auth login`. |
+| The sources name only the one of `github` and `gitlab` the origin remote does not match, and `reviewed-by` or `last-reviewed` is managed. | `the origin remote is github.com, which is GitHub; add github to sources, or drop reviewed-by and last-reviewed from the managed fields` |
+| There is no origin remote, and `reviewed-by` or `last-reviewed` is managed. | `no origin remote to tell GitHub from GitLab` |
+| The origin host names neither platform, and `sources` does not list exactly one of `github`, `gitlab`. | `the origin remote is git.example.com, which names neither GitHub nor GitLab; list exactly one of github, gitlab in derive.sources to say which it is` |
 | Config `derive.codeowners` names a file that is not there, and `codeowners` is a requested source. | `codeowners source unavailable: …`, naming the path. A repository with no CODEOWNERS file at all is not this case: `owner` derives null and stderr says `codeowners: no CODEOWNERS file found (…)` once. |
 | `derive` was given `-`. | `cannot derive <stdin>: no history behind it` |
 | `derive` was given a field that is not derivable. | `"verified-against" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed` |

@@ -1,6 +1,6 @@
 /**
  * `derive` — stamp the managed stewardship fields into each document from
- * evidence: git history, CODEOWNERS, and the forge's review record.
+ * evidence: git history, CODEOWNERS, and the review record on GitHub or GitLab.
  *
  * The shape is `fill`'s (load, extract, decide, write through the extractor)
  * with the deciding step replaced by the derived channel: every requested
@@ -51,7 +51,7 @@ import {
   type DerivedField,
   type DeriveInput,
   type DeriveSource,
-  type ForgeClient,
+  type ReviewClient,
   type SourceStatus,
 } from "../core/derive/types.js";
 
@@ -59,13 +59,13 @@ export interface DeriveOptions {
   inputs: string[];
   /** `--fields`: the managed fields to stamp this run; config `derive.fields` otherwise. */
   fields?: string[];
-  /** `--sources`: the sources to consult; config `derive.sources`, else all three. */
+  /** `--sources`: the sources to consult; config `derive.sources`, else all four. */
   sources?: string[];
   /** `--dry-run`: report what would change and write nothing. */
   dryRun?: boolean;
   /** `--check`: implies `dryRun`; stale and unset fields are findings. */
   check?: boolean;
-  /** Use the on-disk forge cache. Default true. */
+  /** Use the on-disk GitHub or GitLab review cache. Default true. */
   cache?: boolean;
   /** `--as` format override (extractor name). */
   as?: string;
@@ -88,8 +88,8 @@ export interface DeriveOptions {
   onConfigLoaded?: (info: ConfigNotice) => void;
   /** The clock an uncommitted body change is dated by. Test seam; default `new Date()`. */
   now?: () => Date;
-  /** The forge, for every repository in the run. Test seam; default `gh` / `glab`. */
-  forge?: ForgeClient;
+  /** The review client, for every repository in the run. Test seam; default `gh` / `glab`. */
+  reviews?: ReviewClient;
 }
 
 export interface DeriveFileResult {
@@ -266,7 +266,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     codeowners: config?.derive?.codeowners,
     cache: opts.cache ?? true,
     now: opts.now ?? (() => new Date()),
-    forge: opts.forge,
+    reviews: opts.reviews,
   });
   assertSourcesAvailable(derived.sources, SOURCE_HINT);
   // A source that answered, with a caveat worth one line: a repository with
@@ -383,7 +383,7 @@ function resolveFields(
   return out;
 }
 
-/** The sources this run consults: `--sources`, else config `derive.sources`, else all three. */
+/** The sources this run consults: `--sources`, else config `derive.sources`, else all four. */
 function resolveSources(
   flag: string[] | undefined,
   configured: readonly DeriveSource[] | undefined,

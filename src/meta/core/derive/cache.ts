@@ -1,14 +1,14 @@
 /**
- * The cross-run cache for forge answers.
+ * The GitHub or GitLab review cache: cross-run, for merged-change answers.
  *
  * A merged pull request is history: its approvals cannot change, so the
  * answer for `host/project/sha` is good forever and there is no TTL. An
  * *open* PR's answer is the opposite — the next approval changes it — so a
- * `null` from the forge is never written. `--no-cache` disables both
+ * `null` from the host is never written. `--no-cache` disables both
  * directions for one run.
  *
  * Same shape as `schema-cache.ts`: one file per key under
- * `.manni/meta/forge-cache/`, named by a digest so the key (which carries
+ * `.manni/meta/review-cache/`, named by a digest so the key (which carries
  * `/`) can never decide where a write lands; a malformed entry is a miss;
  * a failed write is swallowed, because a read-only checkout must cost the
  * next run one `gh` call, not this run its result. Synchronous, because a
@@ -18,13 +18,13 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { ForgeClient, ForgeIdentity, MergedChange } from "./types.js";
+import type { ReviewClient, RemoteIdentity, MergedChange } from "./types.js";
 
-/** Where the cache lives, relative to the project root. `.manni/` is gitignored. */
-export const FORGE_CACHE_DIR = ".manni/meta/forge-cache";
+/** Where the GitHub or GitLab review cache lives, relative to the project root. `.manni/` is gitignored. */
+export const REVIEW_CACHE_DIR = ".manni/meta/review-cache";
 
 /** The only entry format this version understands. */
-export const FORGE_CACHE_VERSION = 1;
+export const REVIEW_CACHE_VERSION = 1;
 
 interface Entry {
   version: number;
@@ -33,7 +33,8 @@ interface Entry {
   change: MergedChange;
 }
 
-export class ForgeCache {
+/** The GitHub or GitLab review cache: one immutable merged change per `host/project/sha`. */
+export class ReviewCache {
   constructor(
     private readonly dir: string,
     private readonly enabled: boolean,
@@ -54,14 +55,14 @@ export class ForgeCache {
       return undefined;
     }
     if (!isRecord(raw)) return undefined;
-    if (raw.version !== FORGE_CACHE_VERSION || raw.key !== key) return undefined;
+    if (raw.version !== REVIEW_CACHE_VERSION || raw.key !== key) return undefined;
     const change = readChange(raw.change);
     return change ?? undefined;
   }
 
   set(key: string, value: MergedChange): void {
     if (!this.enabled) return;
-    const entry: Entry = { version: FORGE_CACHE_VERSION, key, change: value };
+    const entry: Entry = { version: REVIEW_CACHE_VERSION, key, change: value };
     const path = this.entryPath(key);
     // Temp file beside the target plus rename, so a reader never sees half an
     // entry. Synchronous: see the module comment.
@@ -87,10 +88,10 @@ export class ForgeCache {
  * straight through — which, for a client with no origin, is a `null`.
  */
 export function cachedClient(
-  client: ForgeClient,
-  cache: ForgeCache,
-  identity: ForgeIdentity | null,
-): ForgeClient {
+  client: ReviewClient,
+  cache: ReviewCache,
+  identity: RemoteIdentity | null,
+): ReviewClient {
   return {
     detect: () => client.detect(),
     status: () => client.status(),

@@ -105,8 +105,8 @@ export type {
   DerivedStatus,
   DeriveInput,
   DeriveContext,
-  ForgeClient,
-  ForgeIdentity,
+  ReviewClient,
+  RemoteIdentity,
   Approval,
   MergedChange,
   SourceStatus,
@@ -118,6 +118,26 @@ export {
   FIELD_SOURCES,
 } from "./core/derive/index.js";
 export type { DeriveResult } from "./core/derive/index.js";
+export {
+  GitHubClient,
+  GitLabClient,
+  createReviewClient,
+  deriveFromReviews,
+  parseOriginUrl,
+  identityFromOrigin,
+} from "./core/derive/reviews.js";
+export type {
+  ReviewSourceInput,
+  ReviewFacts,
+  ReviewSourceResult,
+  SpawnOptions,
+} from "./core/derive/reviews.js";
+export {
+  ReviewCache,
+  cachedClient,
+  REVIEW_CACHE_DIR,
+  REVIEW_CACHE_VERSION,
+} from "./core/derive/cache.js";
 export type {
   SidecarIndex,
   SidecarEntry,

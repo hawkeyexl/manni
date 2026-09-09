@@ -218,7 +218,7 @@ const SIDECAR_KEYS = ["file", "keys", "tokenEnv", "join"] as const;
 
 /**
  * The derived channel: managed fields `manni meta derive` stamps from git
- * history, CODEOWNERS and the forge, and `validate` checks for drift.
+ * history, CODEOWNERS and the review record on GitHub or GitLab, and `validate` checks for drift.
  */
 export interface DeriveConfig {
   /**

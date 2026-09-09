@@ -635,7 +635,7 @@ async function runSql(
     };
     if (target) buildViews();
     // The `derived` table (0040): built only when the statement names it,
-    // because building it spawns git (and, with the forge source, gh or
+    // because building it spawns git (and, with the github or gitlab source, gh or
     // glab). Eager when the text names it as a table, and lazily on the
     // engine's `no such table: derived` as the backstop for a spelling the
     // text search misses. Only the fields the statement can read are

@@ -15,12 +15,12 @@ describe("derive: config parsing", () => {
     const cfg = parse([
       "derive:",
       "  fields: [created, last-updated, authors, owner]",
-      "  sources: [git, codeowners, forge]",
+      "  sources: [git, codeowners, github, gitlab]",
       "  codeowners: .github/CODEOWNERS",
     ]);
     expect(cfg.derive).toEqual({
       fields: ["created", "last-updated", "authors", "owner"],
-      sources: ["git", "codeowners", "forge"],
+      sources: ["git", "codeowners", "github", "gitlab"],
       codeowners: ".github/CODEOWNERS",
     });
   });
@@ -115,11 +115,11 @@ describe("derive: config parsing", () => {
     );
   });
 
-  it("rejects a source that is not one of the three", () => {
+  it("rejects a source that is not one of the four", () => {
     expect(() =>
       parse(["derive:", "  fields: [created]", "  sources: [git, svn]"]),
     ).toThrow(
-      /derive\.sources\[1\] "svn" is not a source\. Sources: git, codeowners, forge\./,
+      /derive\.sources\[1\] "svn" is not a source\. Sources: git, codeowners, github, gitlab./,
     );
   });
 
@@ -202,13 +202,14 @@ describe("derive: field and source vocabularies", () => {
       "reviewed-by",
       "last-reviewed",
     ]);
-    expect([...DERIVE_SOURCES]).toEqual(["git", "codeowners", "forge"]);
+    expect([...DERIVE_SOURCES]).toEqual(["git", "codeowners", "github", "gitlab"]);
   });
 
   it("guards a user-supplied name", () => {
     expect(isDerivableField("owner")).toBe(true);
     expect(isDerivableField("title")).toBe(false);
-    expect(isDeriveSource("forge")).toBe(true);
+    expect(isDeriveSource("github")).toBe(true);
+    expect(isDeriveSource("gitlab")).toBe(true);
     expect(isDeriveSource("svn")).toBe(false);
   });
 });

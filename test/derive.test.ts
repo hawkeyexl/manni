@@ -311,12 +311,12 @@ describe("runDerive", () => {
     ]);
   });
 
-  it("refuses a source it does not know, naming the three", async () => {
+  it("refuses a source it does not know, naming the four", async () => {
     const { dir } = stageCorpus();
     await expect(
       runDerive({ inputs: [], cwd: dir, sources: ["svn"] }),
     ).rejects.toThrow(
-      new DocmetaError('"svn" is not a source; sources are git, codeowners, forge'),
+      new DocmetaError('"svn" is not a source; sources are git, codeowners, github, gitlab'),
     );
   });
 

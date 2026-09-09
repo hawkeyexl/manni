@@ -50,8 +50,8 @@ exit code is the caller's.
 | `FillSummary` (type) | Aggregate fill counts, including cost and the required fields left unfilled. |
 | `FilledField` (type) | One proposed field: JSON Pointer, `required`, `confidence`, `reasoning`, the `value`, and whether it was `written`. |
 | `SkipReason` (type) | Why a proposal was not written: `low-confidence`, `schema-mismatch`, or `no-proposal`. |
-| `runDerive` | Stamp the managed stewardship fields from git history, CODEOWNERS and the forge. Backs `manni meta derive`. Writes a `stale` or `unset` field unless `dryRun` or `check`; leaves `current` and `unknown` alone. Throws `DocmetaError` for stdin, a field or source it does not know, nothing to derive, and a consulted source that cannot answer. |
-| `DeriveOptions` (type) | Input to `runDerive`: the same input model minus stdin, plus `fields` and `sources` (config `derive:` otherwise), `dryRun`, `check`, `cache`, a `now` clock, and a `forge` client to inject. |
+| `runDerive` | Stamp the managed stewardship fields from git history, CODEOWNERS, GitHub and GitLab. Backs `manni meta derive`. Writes a `stale` or `unset` field unless `dryRun` or `check`; leaves `current` and `unknown` alone. Throws `DocmetaError` for stdin, a field or source it does not know, nothing to derive, and a consulted source that cannot answer. |
+| `DeriveOptions` (type) | Input to `runDerive`: the same input model minus stdin, plus `fields` and `sources` (config `derive:` otherwise), `dryRun`, `check`, `cache`, a `now` clock, and a `reviews` client to inject. |
 | `DeriveRun` (type) | What `runDerive` resolves to: per-file `results`, the `summary`, whether it was a `dryRun` or a `check`, the `sources` consulted with each one's status, and the `frame` SARIF needs. |
 | `DeriveFileResult` (type) | One file's outcome: its `fields` as `DerivedField`s, whether it `changed`, an `error` when it could not be derived or written, and under `check` its `findings`. |
 | `DeriveSummary` (type) | The aggregate counts. They cover files, changed files, fields written, how many fields were stale, unset, or unknown, and errors. |
@@ -117,7 +117,7 @@ once per run and merges per document. It validates the merged object with
 
 ## Derived metadata
 
-Values computed from git history, CODEOWNERS and the forge rather than written
+Values computed from git history, CODEOWNERS, GitHub and GitLab rather than written
 by hand. A derived value never merges into what the schema sees. `manni meta
 derive` stamps the managed fields into the document, and `validate` reports a
 managed field whose asserted value differs from the derived one. The exports
@@ -128,27 +128,41 @@ below are the shared vocabulary and the two pure steps every source feeds.
 | `DERIVABLE_FIELDS` | The fields `derive.fields` may name: `created`, `last-updated`, `authors`, `owner`, `reviewed-by`, `last-reviewed`. |
 | `DerivableField` (type) | The union of those names. |
 | `isDerivableField` | Type guard for a user-supplied field name. |
-| `DERIVE_SOURCES` | The sources `derive.sources` may name: `git`, `codeowners`, `forge`. Absent in config means all three. |
+| `DERIVE_SOURCES` | The sources `derive.sources` may name: `git`, `codeowners`, `github`, `gitlab`. Absent in config means all four, of which only the `github` or `gitlab` the origin remote matches is consulted. |
 | `DeriveSource` (type) | The union of those names. |
 | `isDeriveSource` | Type guard for a user-supplied source name. |
 | `DerivedValue` (type) | One fact a source produced. It carries the `value`, its `source`, and the `evidence` a finding quotes, such as a commit, a CODEOWNERS line, or a pull request. |
 | `DerivedRecord` (type) | Everything derived for one document, as the `file` and a `fields` map. A `null` field means a source was consulted and had no fact; an absent one means no source answered. |
 | `SourceStatus` (type) | Whether a source can answer at all, with a `reason` naming the fix when it cannot. |
-| `ForgeClient` (type) | The forge half of a derive run: `detect` the hosting kind and project, `status` (binary on `PATH` and authenticated), and `mergedChangeFor` a commit. Reached through `gh` or `glab`; inject one through `DeriveContext.forge` or `DeriveOptions.forge` to keep the network out. |
-| `ForgeIdentity` (type) | What `detect` answers: the `kind` (`github` or `gitlab`), the `host`, and the `project` path there. |
+| `ReviewClient` (type) | The GitHub or GitLab half of a derive run: `detect` the hosting kind and project, `status` (binary on `PATH` and authenticated), and `mergedChangeFor` a commit. Reached through `gh` or `glab`; inject one through `DeriveContext.reviews` or `DeriveOptions.reviews` to keep the network out. |
+| `RemoteIdentity` (type) | What `detect` answers from the origin remote: the `kind` (`github` or `gitlab`), the `host`, and the `project` path there. |
+| `GitHubClient` | A `ReviewClient` that shells out to `gh`: the pull request for a commit, then its `APPROVED` reviews. |
+| `GitLabClient` | A `ReviewClient` that shells out to `glab`: the merge request for a commit, then its approvals. |
+| `createReviewClient` | Build the client for a repository root. It reads the origin remote, picks `GitHubClient` or `GitLabClient`, and wraps it in the review cache. |
+| `SpawnOptions` (type) | How a client reaches its binary, with the `bin` (`gh` or `glab` on `PATH` by default), any `prefixArgs`, the `cwd`, and a `timeoutMs`. Tests point `bin` at a fake script. |
+| `parseOriginUrl` | The `host` and `project` an origin URL names, for the scp, `https` and `ssh` spellings git writes. A local path or a bare host is `null`. |
+| `identityFromOrigin` | The `RemoteIdentity` for a parsed origin, with the `kind` decided by the host. |
+| `cachedClient` | A `ReviewClient` whose `mergedChangeFor` reads through a `ReviewCache`. Only a merged answer is stored, and a client with no identity goes straight through. |
+| `ReviewSourceInput` (type) | One document as the review source sees it, with its `label` and the newest body-changing commit's `sha`. The `sha` is `null` for an uncommitted document. |
+| `ReviewFacts` (type) | What the review source answers for one document: `reviewed-by` and `last-reviewed`, each a `DerivedValue` or `null`. |
+| `ReviewSourceResult` (type) | What `deriveFromReviews` resolves to: the source's `status` and its `records` by label. |
+| `deriveFromReviews` | The `github` or `gitlab` source. One lookup per distinct commit, however many documents share it. An unavailable client is reported in `status` and never called. |
+| `ReviewCache` | The on-disk cache of merged answers under `REVIEW_CACHE_DIR`, keyed by host, project and commit. A disabled cache misses every time and stores nothing. |
+| `REVIEW_CACHE_DIR` | Where the cache lives, relative to the project root: `.manni/meta/review-cache`. |
+| `REVIEW_CACHE_VERSION` | The entry format this version reads. An entry with another version is a miss. |
 | `MergedChange` (type) | The merged pull or merge request that carried a commit: its `id`, when it was `mergedAt`, and its `approvals`. |
 | `Approval` (type) | One `APPROVED` review, the latest per reviewer: the `login` and when it was `submittedAt`. |
 | `DeriveInput` (type) | One document as the sources see it, with its `label`, `absPath`, `content`, and `extracted` metadata. |
-| `DeriveContext` (type) | What a derive run holds constant: `cwd`, `base`, `configDir`, the `sources` and `fields` in play, an optional `codeowners` path, whether to `cache`, a `now` clock, and an optional `forge` client. |
+| `DeriveContext` (type) | What a derive run holds constant: `cwd`, `base`, `configDir`, the `sources` and `fields` in play, an optional `codeowners` path, whether to `cache`, a `now` clock, and an optional `reviews` client. |
 | `DerivedStatus` (type) | How an asserted value stands against the derived one: `current`, `stale`, `unset`, or `unknown`. |
 | `DerivedField` (type) | One compared field. It carries the `field`, the `asserted` value when the document carries one, the `derived` value or `null`, its `source` and `evidence`, the `status`, and whether `derive` has `written` it. |
 | `compareDerived` | Compare what a document asserts with what a source derived. Pure. Lists compare as sets, so a reordered `authors:` is current, not stale. A missing or `null` derived value is `unknown`. |
 | `staleFindings` | The findings `validate` files for a document's managed fields. Each `stale` or `unset` field gets one `FieldError`, on the line the asserted key sits on. The message names both values and the evidence. |
 | `DERIVED_STALE_SCHEMA` | The `schema` ref a derived finding carries: `derived:stale`. |
 | `DERIVED_KEYWORD` | The `keyword` every derived finding carries: `derived`. Joined, they are the rule id `derived:stale/derived`. |
-| `deriveMetadata` | The orchestrator. It resolves every requested field for every input from the sources the run consults. A source is consulted only when a requested field can come from it, and the forge rides on git. Precedence is per field, with the first non-null answer winning. |
+| `deriveMetadata` | The orchestrator. It resolves every requested field for every input from the sources the run consults. A source is consulted only when a requested field can come from it, and the `github` or `gitlab` source rides on git. Precedence is per field, with the first non-null answer winning. |
 | `DeriveResult` (type) | What `deriveMetadata` resolves to: a `DerivedRecord` per input keyed by label, and one `SourceStatus` per source consulted. |
-| `FIELD_SOURCES` | Which sources can state each derivable field, in precedence order: the forge ahead of git for `reviewed-by` and `last-reviewed`, one source for every other field. |
+| `FIELD_SOURCES` | Which sources can state each derivable field, in precedence order: `github` or `gitlab` ahead of `git` for `reviewed-by` and `last-reviewed`, one source for every other field. |
 | `consultedSources` | The sources a run consults, meaning those requested that some requested field can come from, in the requested order. |
 | `assertSourcesAvailable` | Throw the exit-2 `DocmetaError` for the first consulted source that could not answer, with the caller's hint appended after a semicolon. Availability is reported, not thrown, so each command chooses its own way out. |
 

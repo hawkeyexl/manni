@@ -1,4 +1,4 @@
-# 0040: derived metadata, evidence from git, CODEOWNERS and the forge
+# 0040: derived metadata, evidence from git, CODEOWNERS, GitHub and GitLab
 
 - **Status:** Implemented (#19)
 - **Serves:** Maya · M1, M2 · Devin · D4 · Theo · T1
@@ -24,7 +24,7 @@
     This is the tooling that round pointed at.
   - [0014](0014-empty-input-is-not-success.md) is the reason a source that
     cannot answer is exit 2 rather than a skipped check.
-- **Touches (planned):** `src/meta/core/derive/{types,git,codeowners,forge,cache}.ts` (new),
+- **Touches (planned):** `src/meta/core/derive/{types,git,codeowners,reviews,cache}.ts` (new),
   `src/meta/core/{config,schema-registry}.ts`,
   `src/meta/reporters/{rule-id,derive}.ts`,
   `src/meta/commands/{derive,validate,get,query,fill}.ts`, `src/meta/cli.ts`,
@@ -80,7 +80,7 @@ The same holds for `authors` after a colleague rewrites a section, for
 `owner` after a CODEOWNERS reshuffle, and for `reviewed-by` after a review
 nobody transcribed. Every one of those facts already exists somewhere the
 tool could look. Git has the dates and the authors. CODEOWNERS has the
-owner. The forge has the approvals. What is missing is the comparison, and a
+owner. GitHub or GitLab has the approvals. What is missing is the comparison, and a
 way to write the answer down.
 
 ## Decision
@@ -99,8 +99,8 @@ output shapes.
    changed the body. If that commit also set the field, the value it set *is*
    the derived value. Otherwise the commit's author date is.
    This is what makes the comparison squash-proof. A squash commit carrying
-   both the body edit and the stamp agrees with itself, whatever date the
-   forge gave it.
+   both the body edit and the stamp agrees with itself, whatever date GitHub
+   or GitLab gave it.
 3. **Body means everything outside the metadata block.** The split is
    `locateFrontmatter`, the same function the writers use. A frontmatter-only
    sweep is therefore not a body change, and a bulk stamp does not move
@@ -134,13 +134,24 @@ output shapes.
    narrowing. gitignore degrades open on purpose. This is the opposite, on
    purpose, for 0014's reason. A check that silently did not run is a green
    gate over nothing.
-7. **The forge is reached through its CLI, chosen by the origin host.** 0038
+7. **GitHub and GitLab are reached through their own CLIs.** 0038
    rejected `gh` and `glab` for fetching a URL that `fetch` reaches in one
    call. This is a different job. The facts live behind two vendors' auth
    stores and two API grammars, and the owner's direction is that the CLI is
    the trust boundary. `gh` is on every GitHub-hosted runner, and `glab` is
    one package install on GitLab's. manni never holds a token, never reads
-   one, and never prints one.
+   one, and never prints one. They are two sources, `github` and `gitlab`,
+   and each applies to the platform it names and to nothing else. The origin
+   remote decides which one a repository is. A host that says `github` is
+   GitHub and one that says `gitlab` is GitLab, whatever the domain. A host
+   that says neither is not guessed. The config names it, by listing exactly
+   one of the two in `sources`, and a bare host with both or neither listed is
+   exit 2. The other source is never asked, even when `sources` names it.
+   Naming only the one the origin does not match is exit 2. So is a checkout
+   with no origin remote, because nothing then tells GitHub from GitLab. The
+   owner set this line on 2026-09-09. An earlier draft took an unnamed host
+   for GitHub Enterprise. A name that quietly meant "or the other one" is the
+   ambiguity the two names exist to remove.
 8. **Git history is read in bulk.** One `git log --raw -M` walk per
    repository root, with no pathspec, so renames are followed from one
    process. One `git cat-file --batch -z` for the blobs the judge needs. The
@@ -163,7 +174,7 @@ output shapes.
 
 ### The derivable vocabulary
 
-Version one is fixed. Six fields, three sources.
+Version one is fixed. Six fields, four sources.
 
 | Field | Source | Derived value | Evidence string |
 |---|---|---|---|
@@ -171,20 +182,20 @@ Version one is fixed. Six fields, three sources.
 | `last-updated` | git | The stamp set by the newest body-changing commit if it set one; else its author date. With an uncommitted body change: the working value if it differs from HEAD's, else today (the one place derive reads a clock) | `body changed in 424f71a (2026-09-07)` / `uncommitted body change` |
 | `authors` | git | Names of authors of body-changing commits plus their `Co-authored-by` trailers, oldest first, deduplicated by email, names ending `[bot]` excluded | `4 body-changing commits` |
 | `owner` | codeowners | Owners matching the path, `@` kept. GitHub: last matching line wins, first file found of `.github/CODEOWNERS`, `CODEOWNERS`, `docs/CODEOWNERS`. GitLab adds `.gitlab/CODEOWNERS` and sections: every section applies, last match wins per section, union of owners | `.github/CODEOWNERS:12` |
-| `reviewed-by` | forge, then git | Logins with an `APPROVED` review on the merged PR/MR containing the newest body-changing commit, `[bot]` suffix stripped for dedupe. Fallback: `Reviewed-by:` trailers on that commit | `github PR #18` / `Reviewed-by trailer in 424f71a` |
-| `last-reviewed` | forge, then git | Date of the latest `APPROVED` review on that PR/MR. Trailer fallback: the commit's author date | as above |
+| `reviewed-by` | `github` or `gitlab`, then `git` | Logins with an `APPROVED` review on the merged PR/MR containing the newest body-changing commit, `[bot]` suffix stripped for dedupe. Fallback: `Reviewed-by:` trailers on that commit | `github PR #18` / `Reviewed-by trailer in 424f71a` |
+| `last-reviewed` | `github` or `gitlab`, then `git` | Date of the latest `APPROVED` review on that PR/MR. Trailer fallback: the commit's author date | as above |
 
 Not derivable, and not offered: `stakeholders`, `review-interval`,
 `verified-against`, `source-of-truth`. Each is a judgment a person makes.
 Naming one in `derive.fields` is a config error.
 
-Forge lookups, by host. GitHub: the PR for a commit from
+Review lookups, by origin host. GitHub: the PR for a commit from
 `gh api repos/{o}/{r}/commits/{sha}/pulls`, falling back to
 `gh pr list --search <sha> --state merged`, and reviews from
 `gh api repos/{o}/{r}/pulls/{n}/reviews`. GitLab:
 `glab api projects/:fullpath/repository/commits/<sha>/merge_requests` and
 `.../merge_requests/<iid>/approvals`. A merged answer is immutable, so it is
-cached under `.manni/meta/forge-cache/`, keyed by host, owner, repository and
+cached under `.manni/meta/review-cache/`, keyed by host, owner, repository and
 sha. An open PR's answer is never cached, because the next approval changes
 it. `--no-cache` bypasses the cache for one run.
 
@@ -196,14 +207,14 @@ Under `meta:`, camelCase like `allowEmpty`:
 meta:
   derive:
     fields: [created, last-updated, authors, owner]   # managed
-    sources: [git, codeowners, forge]                 # optional; default all three
-    codeowners: .github/CODEOWNERS                     # optional; default: the forge's search order
+    sources: [git, codeowners, github, gitlab]        # optional; default all four
+    codeowners: .github/CODEOWNERS                     # optional; default: GitHub's or GitLab's search order
 ```
 
 | Key | Type | Required | Rule |
 |---|---|---|---|
 | `derive.fields` | `string[]` | no, but a `derive:` must set one of its three keys | Non-empty when present, unique, each a derivable field, never a sidecar-owned key. A violation is a config error, exit 2, naming `derive.fields`. Absent manages nothing; `sources` or `codeowners` alone shape the reads, which is how a machine without `gh` narrows the `derived` table. |
-| `derive.sources` | list of `git`, `codeowners`, `forge` | no | Non-empty, unique. A field whose only sources are excluded derives null, and can never be stale. |
+| `derive.sources` | list of `git`, `codeowners`, `github`, `gitlab` | no | Non-empty, unique. Only the one of `github` and `gitlab` that matches the origin remote is consulted. A field whose only sources are excluded derives null, and can never be stale. |
 | `derive.codeowners` | `string` | no | Relative to the config's directory. Must exist when `codeowners` is an active source, exit 2. |
 
 `derive` joins the known top-level keys, so an unknown key inside it is an
@@ -220,11 +231,11 @@ means the same thing everywhere.
 |---|---|---|---|
 | `[paths...]` | positional | `paths:` from config | Files, directories, globs. `-` is refused, exit 2: `cannot derive <stdin>: no history behind it`. |
 | `--fields <list>` | comma list, once | `derive.fields` | Which managed fields to stamp this run. An unknown or non-derivable name is exit 2. No config and no flag is exit 2: `nothing to derive: set derive.fields in manni.config.yaml or pass --fields`. |
-| `--sources <list>` | comma list, once | `derive.sources`, else all three | Sources to consult. |
+| `--sources <list>` | comma list, once | `derive.sources`, else all four | Sources to consult: `git`, `codeowners`, `github`, `gitlab`. |
 | `--dry-run` | flag | off | Report what would change; write nothing. |
 | `--check` | flag | off | Implies `--dry-run`. A stale or unset managed field is a finding, exit 1 if any. |
 | `-f, --format <fmt>` | `pretty`, `json`, `github`, `sarif`, `junit` | `pretty` | `github`, `sarif` and `junit` only with `--check`. Otherwise exit 2: `sarif is a findings format, which only --check produces`. |
-| `--no-cache` | flag | cache on | Bypass the forge cache. |
+| `--no-cache` | flag | cache on | Bypass the GitHub or GitLab review cache. |
 | shared with `validate` | | | `--ext <list>`, `--exclude <glob>` (repeatable), `--as <format>`, `-c, --config <path>`, `--no-config`, `--allow-empty`, `--no-gitignore`, and the global `--no-color`. Same names, same semantics. |
 
 Exit codes: `0` applied, or nothing to do. `1` only under `--check`. `2` for
@@ -250,10 +261,16 @@ $ manni meta derive --fields verified-against
 manni: "verified-against" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed
                                                                     exit 2
 $ manni meta derive                       # CI with fetch-depth: 1
-manni: git source unavailable: this checkout is shallow; use actions/checkout with fetch-depth: 0, or --sources codeowners,forge
+manni: git source unavailable: this checkout is shallow; use actions/checkout with fetch-depth: 0, or --sources codeowners,github,gitlab
                                                                     exit 2
 $ manni meta derive --fields reviewed-by  # no gh on PATH
-manni: forge source unavailable: gh is not on PATH (origin is github.com); install gh and run gh auth login, or drop reviewed-by from --fields
+manni: github source unavailable: gh is not on PATH (origin is github.com); install gh and run gh auth login, or drop reviewed-by from --fields
+                                                                    exit 2
+$ manni meta derive --fields reviewed-by --sources gitlab   # origin is github.com
+manni: the origin remote is github.com, which is GitHub; add github to sources, or drop reviewed-by and last-reviewed from the managed fields
+                                                                    exit 2
+$ manni meta derive --fields reviewed-by  # no origin remote
+manni: no origin remote to tell GitHub from GitLab
                                                                     exit 2
 ```
 
@@ -326,7 +343,7 @@ The public types, from `src/meta/core/derive/types.ts`:
 ```ts
 export const DERIVABLE_FIELDS = ["created", "last-updated", "authors", "owner", "reviewed-by", "last-reviewed"] as const;
 export type DerivableField = (typeof DERIVABLE_FIELDS)[number];
-export const DERIVE_SOURCES = ["git", "codeowners", "forge"] as const;
+export const DERIVE_SOURCES = ["git", "codeowners", "github", "gitlab"] as const;
 export type DeriveSource = (typeof DERIVE_SOURCES)[number];
 
 export interface DeriveConfig { fields: DerivableField[]; sources?: DeriveSource[]; codeowners?: string }
@@ -431,7 +448,7 @@ managed key cannot exist, by config, so no runtime refusal is needed there.
 10. **The stamp commit and the approval.** The after-approval workflow pushes
     a stamp to the pull request branch. Under a branch rule that dismisses
     stale approvals on push, the stamp dismisses the approval that produced
-    it. That is the forge's rule, not manni's, and the docs say so. The
+    it. That is GitHub's or GitLab's rule, not manni's, and the docs say so. The
     remedies are to exempt the bot, or to stamp on merge instead.
 
 ## Consequences
@@ -440,8 +457,8 @@ managed key cannot exist, by config, so no runtime refusal is needed there.
   repository that stamps `last-updated` by hand today and adopts
   `derive.fields` will go red on every page whose body moved since the stamp.
   `--write-baseline` records that backlog, and the M2 page says how.
-- `validate` may now spawn `git`, and with the `forge` source, `gh` or
-  `glab`. A run with no `derive:` in config spawns nothing new. `--no-derive`
+- `validate` may now spawn `git`, and with the `github` or `gitlab` source,
+  `gh` or `glab`. A run with no `derive:` in config spawns nothing new. `--no-derive`
   makes a run with one behave as before.
 - The derivation runs once per run, not once per file. The bulk walk is one
   process per repository root, so a corpus run over a thousand pages costs
@@ -467,13 +484,13 @@ next channel will meet again.
 - A git root that cannot answer makes the whole git source unavailable, even
   when another root answered. The first draft kept the answering root and
   dropped the failing one's documents, which derived null and passed. That
-  is the false green decision 6 refuses, and the forge source already applied
-  the stricter rule.
+  is the false green decision 6 refuses, and the GitHub and GitLab sources
+  already applied the stricter rule.
 - The `derived` table derives only the columns a statement can read, and is
   built only when the statement names the table after `FROM`, `JOIN` or a DDL
   keyword. The first draft derived all six fields for any SQL containing the
-  word, so a `LIKE '%derived%'` read spawned the forge and exited 2 without
-  `gh`.
+  word, so a `LIKE '%derived%'` read spawned `gh` and exited 2 when it was
+  missing.
 - `derive` exits 1 when a file could not be parsed or written, `--check` or
   not, as `fill` and `get` do. `--fields` refuses a key a sidecar owns, the
   way the config parser already did.

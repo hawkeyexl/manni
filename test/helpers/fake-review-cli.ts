@@ -1,11 +1,11 @@
 /**
- * Point a `GhClient` / `GlabClient` at `fake-forge-bin.mjs`.
+ * Point a `GitHubClient` / `GitLabClient` at `fake-review-cli-bin.mjs`.
  *
- * `fakeForge(responses)` writes a scenario file to a fresh temp directory,
- * names it in `FAKE_FORGE_SCENARIO` (the fake reads its script from there,
+ * `fakeReviewCli(responses)` writes a scenario file to a fresh temp directory,
+ * names it in `FAKE_REVIEW_SCENARIO` (the fake reads its script from there,
  * so one scenario is live per process at a time — vitest runs a file's cases
  * in sequence, which is enough), and returns the `SpawnOptions` that make the
- * client run `node fake-forge-bin.mjs <args>` instead of `gh <args>`. Every
+ * client run `node fake-review-cli-bin.mjs <args>` instead of `gh <args>`. Every
  * spawn is appended to a log the test reads back through `calls()` and
  * `cwds()`, so a case can assert the exact argv, the directory the CLI ran
  * from, and, for the cache, that no spawn happened.
@@ -14,11 +14,11 @@ import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileS
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { SpawnOptions } from "../../src/meta/core/derive/forge.js";
+import type { SpawnOptions } from "../../src/meta/core/derive/reviews.js";
 
 /** The script that impersonates `gh` and `glab`. */
-export const FAKE_FORGE_BIN = fileURLToPath(
-  new URL("./fake-forge-bin.mjs", import.meta.url),
+export const FAKE_REVIEW_CLI_BIN = fileURLToPath(
+  new URL("./fake-review-cli-bin.mjs", import.meta.url),
 );
 
 export interface FakeResponse {
@@ -32,7 +32,7 @@ export interface FakeResponse {
   sleepMs?: number;
 }
 
-export interface FakeForge {
+export interface FakeReviewCli {
   spawn: SpawnOptions;
   /** The temp directory; the client's `cwd`, and where the scenario lives. */
   dir: string;
@@ -49,15 +49,15 @@ interface LogEntry {
   cwd: string;
 }
 
-export function fakeForge(
+export function fakeReviewCli(
   responses: FakeResponse[],
   opts: { timeoutMs?: number } = {},
-): FakeForge {
-  const dir = realpathSync(mkdtempSync(join(tmpdir(), "manni-fake-forge-")));
+): FakeReviewCli {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "manni-fake-review-cli-")));
   const log = join(dir, "calls.log");
   const scenario = join(dir, "scenario.json");
   writeFileSync(scenario, JSON.stringify({ log, responses }), "utf8");
-  process.env.FAKE_FORGE_SCENARIO = scenario;
+  process.env.FAKE_REVIEW_SCENARIO = scenario;
   const entries = (): LogEntry[] => {
     if (!existsSync(log)) return [];
     return readFileSync(log, "utf8")
@@ -68,7 +68,7 @@ export function fakeForge(
   return {
     spawn: {
       bin: process.execPath,
-      prefixArgs: [FAKE_FORGE_BIN],
+      prefixArgs: [FAKE_REVIEW_CLI_BIN],
       cwd: dir,
       ...(opts.timeoutMs !== undefined ? { timeoutMs: opts.timeoutMs } : {}),
     },
@@ -80,8 +80,8 @@ export function fakeForge(
       return entries().map((e) => e.cwd);
     },
     cleanup() {
-      if (process.env.FAKE_FORGE_SCENARIO === scenario) {
-        delete process.env.FAKE_FORGE_SCENARIO;
+      if (process.env.FAKE_REVIEW_SCENARIO === scenario) {
+        delete process.env.FAKE_REVIEW_SCENARIO;
       }
       rmSync(dir, { recursive: true, force: true });
     },

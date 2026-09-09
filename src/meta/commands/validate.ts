@@ -434,7 +434,7 @@ export async function runValidate(
   // One derivation for the run, over the union of what either reader needs:
   // the managed fields the comparison judges, and the columns the checks
   // can read. Memoized so a check that names the table and a managed field
-  // share the git walk (and the forge round-trip) rather than each paying
+  // share the git walk (and the gh or glab round-trip) rather than each paying
   // for one. A source that cannot answer is the run's error either way — a
   // half-derived comparison would read as "all current", the false green
   // the channel refuses — and the hint names the reader that asked.

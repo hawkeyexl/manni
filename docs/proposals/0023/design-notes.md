@@ -141,8 +141,8 @@ the field against the repository's own history is a job for tooling that can
 read both. That tooling is proposal 0040, at
 `docs/proposals/0040-derived-metadata.md`. It adds a derived channel that never
 merges into what the schema sees. Config names the managed fields. A new verb,
-`manni meta derive`, stamps them from git, CODEOWNERS and the forge's review
-history. `validate` reports a stamp that disagrees with the evidence as a
+`manni meta derive`, stamps them from git, CODEOWNERS and the GitHub or
+GitLab review history. `validate` reports a stamp that disagrees with the evidence as a
 `derived:stale` finding. Six stewardship fields are derivable: `created`,
 `last-updated`, `authors`, `owner`, `reviewed-by` and `last-reviewed`. The
 other four stay asserted, because each is a judgment a person makes. Nothing

@@ -21,7 +21,7 @@ the command line.
 | `overrides` | `Override[]` | none | Per-glob schema overrides. The first matching entry wins. See [Overrides](#overrides). |
 | `checks` | `Check[]` | none | Named cross-file rules, written as SQL over the corpus's metadata table, that `validate` runs after the per-file schemas, with rows reported as findings. See [Checks](#checks). |
 | `sidecars` | `Sidecar[]` | none | YAML manifests that keep frontmatter values outside the document. Each supplies a fixed set of top-level keys for named documents. The values are merged into the document's metadata before schema resolution, so every command sees one object. See [Sidecars](#sidecars). |
-| `derive` | `Derive` | none | The **managed** stewardship fields, which `manni meta derive` stamps from git, CODEOWNERS and the forge's review history, and which `validate` compares against that evidence. A stamp that disagrees is a finding. See [Derive](#derive). |
+| `derive` | `Derive` | none | The **managed** stewardship fields, which `manni meta derive` stamps from git, CODEOWNERS and the GitHub or GitLab review history, and which `validate` compares against that evidence. A stamp that disagrees is a finding. See [Derive](#derive). |
 | `baseline` | `string` | none | Path to a [validation baseline](/manni/meta/reference/cli/#baselines). Setting it turns on `--baseline` for every run; `--no-baseline` suppresses it for one. A bare `--write-baseline` records into this same file. |
 | `allowEmpty` | `boolean` | `false` | Treat an input set that resolves to zero files as success instead of an error (exit 2). Equivalent to `--allow-empty`. See [empty input sets](/manni/meta/reference/cli/#empty-input-sets). |
 | `respectGitignore` | `boolean` | `true` | Skip files `.gitignore` covers when expanding directories and globs. `--no-gitignore` overrides it for one run. See [`.gitignore`](/manni/meta/reference/cli/#gitignore). |
@@ -1001,8 +1001,8 @@ Two fixes:
 
 `derive` names the **managed** fields. A managed field is one whose value is
 computed from evidence rather than typed by a person. The evidence is git
-history, a CODEOWNERS file, and the forge's pull request or merge request
-history, read through the `gh` or `glab` CLI. `manni meta derive` stamps the
+history, a CODEOWNERS file, and the pull request or merge request history
+GitHub or GitLab keeps, read through the `gh` or `glab` CLI. `manni meta derive` stamps the
 computed value into the document. `validate` compares what is stamped against
 what the evidence says, and a stamp that disagrees is a finding.
 
@@ -1018,8 +1018,8 @@ is the journey. This section is the contract.
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `fields` | `string[]` | no, but a `derive:` must set one of the three keys | The managed fields. Non-empty when present, unique, and each one of [the derivable fields](#the-derivable-fields). Never a key a [sidecar](#sidecars) owns, because the two channels would disagree about where the value lives. Each violation is a config error (exit 2) naming `derive.fields`. Absent means nothing is managed and `validate` compares nothing; `sources` or `codeowners` alone still shape the reads. |
-| `sources` | `string[]` | no | Which of `git`, `codeowners` and `forge` to consult. Non-empty and unique. The default is all three. A field whose only sources are excluded derives null, and can never be stale. |
-| `codeowners` | `string` | no | Path to the CODEOWNERS file, relative to the config file's directory. The default is the forge's own search order, below. When `codeowners` is an active source, the file must exist (exit 2). |
+| `sources` | `string[]` | no | Which of `git`, `codeowners`, `github` and `gitlab` to consult. Non-empty and unique. The default is all four. Only the one of `github` and `gitlab` that matches the origin remote is consulted; see [the review sources](#the-review-sources). A field whose only sources are excluded derives null, and can never be stale. |
+| `codeowners` | `string` | no | Path to the CODEOWNERS file, relative to the config file's directory. The default is GitHub's or GitLab's own search order, below. When `codeowners` is an active source, the file must exist (exit 2). |
 
 ```yaml
 # manni.config.yaml
@@ -1027,8 +1027,8 @@ meta:
   paths: ["docs/**/*.md"]
   derive:
     fields: [created, last-updated, authors, owner]   # managed
-    sources: [git, codeowners, forge]                 # optional; default all three
-    codeowners: .github/CODEOWNERS                     # optional; default: the forge's search order
+    sources: [git, codeowners, github, gitlab]        # optional; default all four
+    codeowners: .github/CODEOWNERS                     # optional; default: GitHub's or GitLab's search order
 ```
 
 `derive:` absent is exactly the behaviour every config had before the key
@@ -1048,16 +1048,34 @@ four, `stakeholders`, `review-interval`, `verified-against` and
 | `last-updated` | git | The stamp set by the newest body-changing commit if it set one; else its author date. With an uncommitted body change: the working value if it differs from HEAD's, else today (the one place derive reads a clock) | `body changed in 424f71a (2026-09-07)` / `uncommitted body change` |
 | `authors` | git | Names of authors of body-changing commits plus their `Co-authored-by` trailers, oldest first, deduplicated by email, names ending `[bot]` excluded | `4 body-changing commits` |
 | `owner` | codeowners | Owners matching the path, `@` kept. GitHub: last matching line wins, first file found of `.github/CODEOWNERS`, `CODEOWNERS`, `docs/CODEOWNERS`. GitLab adds `.gitlab/CODEOWNERS` and sections: every section applies, last match wins per section, union of owners | `.github/CODEOWNERS:12` |
-| `reviewed-by` | forge, then git | Logins with an `APPROVED` review on the merged PR/MR containing the newest body-changing commit, `[bot]` suffix stripped for dedupe. Fallback: `Reviewed-by:` trailers on that commit | `github PR #18` / `Reviewed-by trailer in 424f71a` |
-| `last-reviewed` | forge, then git | Date of the latest `APPROVED` review on that PR/MR. Trailer fallback: the commit's author date | as above |
+| `reviewed-by` | `github` or `gitlab`, then `git` | Logins with an `APPROVED` review on the merged PR/MR containing the newest body-changing commit, `[bot]` suffix stripped for dedupe. Fallback: `Reviewed-by:` trailers on that commit | `github PR #18` / `Reviewed-by trailer in 424f71a` |
+| `last-reviewed` | `github` or `gitlab`, then `git` | Date of the latest `APPROVED` review on that PR/MR. Trailer fallback: the commit's author date | as above |
 
-The forge is chosen by the origin host. A `github.com` origin means `gh`, and
-a `gitlab.com` origin means `glab`. manni never holds a token. The CLI's own
-login is what reaches the API, which is why an unauthenticated CLI is an
-error rather than a guess. A merged pull request's answer never changes, so
-it is cached under `.manni/meta/forge-cache/`, keyed by host, owner,
-repository and commit. An open pull request's answer is never cached, because
-the next approval changes it. `--no-cache` bypasses the cache for one run.
+#### The review sources
+
+`github` and `gitlab` are two sources, and each applies to the platform it
+names and to nothing else. `github` reaches GitHub through `gh`, `gitlab`
+reaches GitLab through `glab`, and neither ever stands in for the other. The
+origin remote decides which one a repository is. A host whose name says
+`github` is GitHub, whatever the domain, and one that says `gitlab` is
+GitLab. A host that says neither, such as `git.example.com`, is not guessed.
+The config names it, by listing exactly one of the two in `sources`.
+
+Three configurations cannot be answered and are exit 2 when `reviewed-by` or
+`last-reviewed` is managed. Naming only the one the origin does not match
+says `the origin remote is github.com, which is GitHub; add github to
+sources, or drop reviewed-by and last-reviewed from the managed fields`. A
+bare host with both or neither listed says `the origin remote is
+git.example.com, which names neither GitHub nor GitLab; list exactly one of
+github, gitlab in derive.sources to say which it is`. A checkout with no
+origin remote says `no origin remote to tell GitHub from GitLab`.
+
+manni never holds a token. The CLI's own login is what reaches the API, which
+is why an unauthenticated CLI is an error rather than a guess. A merged pull
+request's answer never changes, so it is cached under
+`.manni/meta/review-cache/`, keyed by host, owner, repository and commit. An
+open pull request's answer is never cached, because the next approval changes
+it. `--no-cache` bypasses the cache for one run.
 
 #### The rules
 
@@ -1066,7 +1084,7 @@ the next approval changes it. `--no-cache` bypasses the cache for one run.
    changed the body. If that commit also set the field, the value it set is
    the derived value. Otherwise the commit's author date
    is. A squash commit carrying both the body edit and the stamp therefore
-   agrees with itself, whatever date the forge gave it.
+   agrees with itself, whatever date GitHub or GitLab gave it.
 2. **The body is everything outside the metadata block.** A frontmatter-only
    edit is not a body change, so a bulk stamp does not move `last-updated`.
    Formats with no fenced block count any change as a body change. That
@@ -1085,10 +1103,10 @@ the next approval changes it. `--no-cache` bypasses the cache for one run.
    nothing. `--no-derive` on `validate` and `--sources` narrowing are the
    deliberate opt-outs. The rule holds for reads too. `get --derived` and a
    `query` naming the `derived` table consult every source a named column
-   needs, among those `derive.sources` allows, and the default is all three.
+   needs, among those `derive.sources` allows, and the default is all four.
    A `query` reading `owner` alone asks only `codeowners`; one selecting `*`
-   asks all three. A machine without `gh` or `glab` therefore sets
-   `sources: [git, codeowners]`, or a read that needs the forge is exit 2. One
+   asks every source. A machine without `gh` or `glab` therefore sets
+   `sources: [git, codeowners]`, or a read that needs GitHub or GitLab is exit 2. One
    absence is a fact rather than a failure. A repository with no CODEOWNERS
    file at all has declared no owners, so `owner` derives null and the run
    says so once on stderr. Only a `codeowners:` path that names a missing

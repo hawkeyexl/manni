@@ -1,11 +1,14 @@
 /**
  * `deriveMetadata` — the orchestrator that consults git, CODEOWNERS and the
- * forge for every requested field and resolves each field's precedence.
+ * review record on GitHub or GitLab for every requested field and resolves
+ * each field's precedence.
  *
  * The repository is built at runtime with pinned dates and identities. The
- * forge is a hand-written `ForgeClient` injected through `ctx.forge`, which
- * both keeps the network out and lets a case assert the forge was never
- * asked at all.
+ * review record is a hand-written `ReviewClient` injected through
+ * `ctx.reviews`, which both keeps the network out and lets a case assert the
+ * host was never asked at all. Its `detect()` answer is what tells the
+ * orchestrator whether the repository is on GitHub or GitLab, so a case can
+ * point the same fake at either host, or at no origin remote.
  */
 import { afterEach, describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
@@ -21,8 +24,9 @@ import {
   DERIVE_SOURCES,
   type DeriveContext,
   type DeriveInput,
-  type ForgeClient,
   type MergedChange,
+  type RemoteIdentity,
+  type ReviewClient,
 } from "../src/meta/core/derive/types.js";
 import { markdownExtractor } from "../src/meta/extractors/markdown.js";
 import { DocmetaError } from "../src/meta/types.js";
@@ -32,6 +36,9 @@ const D1 = "2026-01-10T09:00:00+00:00";
 const D2 = "2026-02-20T09:00:00+00:00";
 const NOW = new Date(2026, 8, 7, 12, 0, 0);
 
+const ON_GITHUB: RemoteIdentity = { kind: "github", host: "github.com", project: "acme/docs" };
+const ON_GITLAB: RemoteIdentity = { kind: "gitlab", host: "gitlab.com", project: "acme/docs" };
+
 const doc = (fm: string, body: string): string => `---\n${fm}\n---\n\n${body}\n`;
 
 function input(dir: string, rel: string): DeriveInput {
@@ -40,14 +47,21 @@ function input(dir: string, rel: string): DeriveInput {
   return { label: rel, absPath, content, extracted: markdownExtractor.extract(content, absPath) };
 }
 
-/** A forge that approves everything, and remembers what it was asked. */
-function fakeForge(change: MergedChange | null = MERGED): ForgeClient & { calls: string[] } {
+/**
+ * A review client that approves everything, and remembers what it was asked.
+ * `identity` is what `detect()` answers: GitHub by default, GitLab for the
+ * mirror cases, `null` for a repository with no origin remote.
+ */
+function fakeReviews(
+  change: MergedChange | null = MERGED,
+  identity: RemoteIdentity | null = ON_GITHUB,
+): ReviewClient & { calls: string[] } {
   const calls: string[] = [];
   return {
     calls,
     detect: () => {
       calls.push("detect");
-      return Promise.resolve({ kind: "github" as const, host: "github.com", project: "acme/docs" });
+      return Promise.resolve(identity);
     },
     status: () => {
       calls.push("status");
@@ -110,18 +124,19 @@ describe("consultedSources", () => {
   it("consults only the sources some requested field can come from", () => {
     expect(consultedSources(["owner"], DERIVE_SOURCES)).toEqual(["codeowners"]);
     expect(consultedSources(["created", "owner"], DERIVE_SOURCES)).toEqual(["git", "codeowners"]);
-    expect(consultedSources(["reviewed-by"], DERIVE_SOURCES)).toEqual(["git", "forge"]);
+    expect(consultedSources(["reviewed-by"], DERIVE_SOURCES)).toEqual(["git", "github", "gitlab"]);
   });
 
   it("is narrowed by the run's source list, in that list's order", () => {
     expect(consultedSources(DERIVABLE_FIELDS, ["git"])).toEqual(["git"]);
-    expect(consultedSources(DERIVABLE_FIELDS, ["forge", "git"])).toEqual(["forge", "git"]);
-    expect(consultedSources(["owner"], ["git", "forge"])).toEqual([]);
+    expect(consultedSources(DERIVABLE_FIELDS, ["github", "git"])).toEqual(["github", "git"]);
+    expect(consultedSources(DERIVABLE_FIELDS, ["gitlab", "git"])).toEqual(["gitlab", "git"]);
+    expect(consultedSources(["owner"], ["git", "github", "gitlab"])).toEqual([]);
   });
 
-  it("FIELD_SOURCES lists the forge ahead of git for the review fields only", () => {
-    expect(FIELD_SOURCES["reviewed-by"]).toEqual(["forge", "git"]);
-    expect(FIELD_SOURCES["last-reviewed"]).toEqual(["forge", "git"]);
+  it("FIELD_SOURCES lists GitHub and GitLab ahead of git for the review fields only", () => {
+    expect(FIELD_SOURCES["reviewed-by"]).toEqual(["github", "gitlab", "git"]);
+    expect(FIELD_SOURCES["last-reviewed"]).toEqual(["github", "gitlab", "git"]);
     expect(FIELD_SOURCES.owner).toEqual(["codeowners"]);
     expect(FIELD_SOURCES.created).toEqual(["git"]);
   });
@@ -130,13 +145,15 @@ describe("consultedSources", () => {
 describe("deriveMetadata", () => {
   it("resolves all six fields, each from its source", async () => {
     const { dir, first, second } = repo();
-    const forge = fakeForge();
-    const result = await deriveMetadata([input(dir, "docs/a.md"), input(dir, "docs/b.md")], ctx(dir, { forge }));
+    const reviews = fakeReviews();
+    const result = await deriveMetadata([input(dir, "docs/a.md"), input(dir, "docs/b.md")], ctx(dir, { reviews }));
 
+    // Both review sources were allowed; the origin is GitHub, so only
+    // `github` was consulted and only `github` is reported.
     expect(result.sources).toEqual({
       git: { available: true },
       codeowners: { available: true },
-      forge: { available: true },
+      github: { available: true },
     });
     const a = result.records.get("docs/a.md");
     expect(a?.file).toBe("docs/a.md");
@@ -145,39 +162,57 @@ describe("deriveMetadata", () => {
       "last-updated": { value: "2026-02-20", source: "git", evidence: `body changed in ${second.slice(0, 7)} (2026-02-20)` },
       authors: { value: ["Ada", "Bob"], source: "git", evidence: "2 body-changing commits" },
       owner: { value: ["@platform-docs", "@maya"], source: "codeowners", evidence: ".github/CODEOWNERS:1" },
-      "reviewed-by": { value: ["maya", "devin"], source: "forge", evidence: "github PR #18" },
-      "last-reviewed": { value: "2026-02-21", source: "forge", evidence: "github PR #18" },
+      "reviewed-by": { value: ["maya", "devin"], source: "github", evidence: "github PR #18" },
+      "last-reviewed": { value: "2026-02-21", source: "github", evidence: "github PR #18" },
     });
     // b.md was never edited after its first commit, and that commit is the
-    // one the forge is asked about.
+    // one the host is asked about.
     const b = result.records.get("docs/b.md");
     expect(b?.fields.created).toMatchObject({ value: "2026-01-10" });
-    expect(b?.fields["reviewed-by"]).toMatchObject({ source: "forge" });
-    expect(forge.calls.filter((c) => c.startsWith("mergedChangeFor"))).toEqual([
+    expect(b?.fields["reviewed-by"]).toMatchObject({ source: "github" });
+    expect(reviews.calls.filter((c) => c.startsWith("mergedChangeFor"))).toEqual([
       `mergedChangeFor ${second}`,
       `mergedChangeFor ${first}`,
     ]);
   });
 
+  it("names gitlab as the source when the origin is GitLab", async () => {
+    const { dir } = repo();
+    const reviews = fakeReviews(MERGED, ON_GITLAB);
+    const result = await deriveMetadata(
+      [input(dir, "docs/a.md")],
+      ctx(dir, { reviews, fields: ["reviewed-by", "last-reviewed"] }),
+    );
+    expect(result.sources).toEqual({ git: { available: true }, gitlab: { available: true } });
+    expect(result.sources).not.toHaveProperty("github");
+    const fields = result.records.get("docs/a.md")?.fields;
+    expect(fields?.["reviewed-by"]).toEqual({
+      value: ["maya", "devin"],
+      source: "gitlab",
+      evidence: "gitlab MR !18",
+    });
+    expect(fields?.["last-reviewed"]).toMatchObject({ value: "2026-02-21", source: "gitlab" });
+  });
+
   it("consults only the sources the requested fields need", async () => {
     const { dir } = repo();
-    const forge = fakeForge();
-    const result = await deriveMetadata([input(dir, "docs/a.md")], ctx(dir, { forge, fields: ["owner"] }));
+    const reviews = fakeReviews();
+    const result = await deriveMetadata([input(dir, "docs/a.md")], ctx(dir, { reviews, fields: ["owner"] }));
     expect(result.sources).toEqual({ codeowners: { available: true } });
     expect(result.records.get("docs/a.md")?.fields).toEqual({
       owner: { value: ["@platform-docs", "@maya"], source: "codeowners", evidence: ".github/CODEOWNERS:1" },
     });
-    expect(forge.calls).toEqual([]);
+    expect(reviews.calls).toEqual([]);
   });
 
-  it("never calls the forge when the sources list leaves it out", async () => {
+  it("never calls the host when the sources list leaves both review sources out", async () => {
     const { dir, second } = repo();
-    const forge = fakeForge();
-    const result = await deriveMetadata([input(dir, "docs/a.md")], ctx(dir, { forge, sources: ["git"] }));
+    const reviews = fakeReviews();
+    const result = await deriveMetadata([input(dir, "docs/a.md")], ctx(dir, { reviews, sources: ["git"] }));
     expect(result.sources).toEqual({ git: { available: true } });
-    expect(forge.calls).toEqual([]);
+    expect(reviews.calls).toEqual([]);
     const fields = result.records.get("docs/a.md")?.fields;
-    // With the forge out, the trailer is the review evidence.
+    // With GitHub and GitLab out, the trailer is the review evidence.
     expect(fields?.["reviewed-by"]).toEqual({
       value: ["Rae"],
       source: "git",
@@ -188,22 +223,22 @@ describe("deriveMetadata", () => {
     expect(fields?.owner).toBeNull();
   });
 
-  it("prefers the forge's approvals over a Reviewed-by trailer", async () => {
+  it("prefers the host's approvals over a Reviewed-by trailer", async () => {
     const { dir } = repo();
     const result = await deriveMetadata(
       [input(dir, "docs/a.md")],
-      ctx(dir, { forge: fakeForge(), fields: ["reviewed-by", "last-reviewed"] }),
+      ctx(dir, { reviews: fakeReviews(), fields: ["reviewed-by", "last-reviewed"] }),
     );
     const fields = result.records.get("docs/a.md")?.fields;
-    expect(fields?.["reviewed-by"]).toMatchObject({ value: ["maya", "devin"], source: "forge" });
-    expect(fields?.["last-reviewed"]).toMatchObject({ value: "2026-02-21", source: "forge" });
+    expect(fields?.["reviewed-by"]).toMatchObject({ value: ["maya", "devin"], source: "github" });
+    expect(fields?.["last-reviewed"]).toMatchObject({ value: "2026-02-21", source: "github" });
   });
 
-  it("falls back to the trailer when the forge has no merged change", async () => {
+  it("falls back to the trailer when the host has no merged change", async () => {
     const { dir, second } = repo();
     const result = await deriveMetadata(
       [input(dir, "docs/a.md")],
-      ctx(dir, { forge: fakeForge(null), fields: ["reviewed-by"] }),
+      ctx(dir, { reviews: fakeReviews(null), fields: ["reviewed-by"] }),
     );
     expect(result.records.get("docs/a.md")?.fields["reviewed-by"]).toEqual({
       value: ["Rae"],
@@ -212,18 +247,107 @@ describe("deriveMetadata", () => {
     });
   });
 
-  it("reports the forge unavailable without git, and never calls it", async () => {
+  it("reports a review source unavailable without git, and never calls the host", async () => {
     const { dir } = repo();
-    const forge = fakeForge();
+    const reviews = fakeReviews();
     const result = await deriveMetadata(
       [input(dir, "docs/a.md")],
-      ctx(dir, { forge, sources: ["forge"], fields: ["reviewed-by"] }),
+      ctx(dir, { reviews, sources: ["github"], fields: ["reviewed-by"] }),
     );
-    expect(result.sources.forge?.available).toBe(false);
-    expect(result.sources.forge?.reason).toContain("needs the git source");
-    expect(result.sources).not.toHaveProperty("git");
-    expect(forge.calls).toEqual([]);
+    expect(result.sources).toEqual({
+      github: {
+        available: false,
+        reason:
+          "the github source needs the git source to find each document's commits; add git to sources",
+      },
+    });
+    expect(reviews.calls).toEqual([]);
     expect(result.records.get("docs/a.md")?.fields["reviewed-by"]).toBeNull();
+  });
+
+  it("names the requested source when gitlab is the one missing git", async () => {
+    const { dir } = repo();
+    const reviews = fakeReviews(MERGED, ON_GITLAB);
+    const result = await deriveMetadata(
+      [input(dir, "docs/a.md")],
+      ctx(dir, { reviews, sources: ["gitlab"], fields: ["reviewed-by"] }),
+    );
+    expect(result.sources.gitlab?.reason).toBe(
+      "the gitlab source needs the git source to find each document's commits; add git to sources",
+    );
+    expect(result.sources).not.toHaveProperty("github");
+    expect(reviews.calls).toEqual([]);
+  });
+
+  it("reports gitlab unavailable when the origin is GitHub and only gitlab was requested", async () => {
+    const { dir } = repo();
+    const reviews = fakeReviews();
+    const result = await deriveMetadata(
+      [input(dir, "docs/a.md")],
+      ctx(dir, { reviews, sources: ["git", "gitlab"], fields: ["reviewed-by"] }),
+    );
+    expect(result.sources).toEqual({
+      git: { available: true },
+      gitlab: {
+        available: false,
+        reason:
+          "the origin remote is github.com, which is GitHub; add github to sources, or drop reviewed-by and last-reviewed from the managed fields",
+      },
+    });
+    // Detected, never asked. git still answers from the trailer; the caller
+    // decides, through assertSourcesAvailable, that an unavailable source
+    // fails the run.
+    expect(reviews.calls).toEqual(["detect"]);
+    expect(result.records.get("docs/a.md")?.fields["reviewed-by"]).toMatchObject({ source: "git" });
+  });
+
+  it("reports github unavailable when the origin is GitLab and only github was requested", async () => {
+    const { dir } = repo();
+    const reviews = fakeReviews(MERGED, ON_GITLAB);
+    const result = await deriveMetadata(
+      [input(dir, "docs/a.md")],
+      ctx(dir, { reviews, sources: ["git", "github"], fields: ["reviewed-by"] }),
+    );
+    expect(result.sources).toEqual({
+      git: { available: true },
+      github: {
+        available: false,
+        reason:
+          "the origin remote is gitlab.com, which is GitLab; add gitlab to sources, or drop reviewed-by and last-reviewed from the managed fields",
+      },
+    });
+    expect(reviews.calls).toEqual(["detect"]);
+  });
+
+  it("reports every requested review source unavailable when there is no origin remote", async () => {
+    const { dir } = repo();
+    const reviews = fakeReviews(MERGED, null);
+    const result = await deriveMetadata(
+      [input(dir, "docs/a.md")],
+      ctx(dir, { reviews, fields: ["reviewed-by"] }),
+    );
+    expect(result.sources).toEqual({
+      git: { available: true },
+      github: { available: false, reason: "no origin remote to tell GitHub from GitLab" },
+      gitlab: { available: false, reason: "no origin remote to tell GitHub from GitLab" },
+    });
+    // After a null detect the orchestrator asks the client's status for the
+    // reason, since a bare host and a missing origin read differently.
+    expect(reviews.calls).toEqual(["detect", "status"]);
+    expect(result.records.get("docs/a.md")?.fields["reviewed-by"]).toMatchObject({ source: "git" });
+  });
+
+  it("reports only the requested review source when there is no origin remote", async () => {
+    const { dir } = repo();
+    const reviews = fakeReviews(MERGED, null);
+    const result = await deriveMetadata(
+      [input(dir, "docs/a.md")],
+      ctx(dir, { reviews, sources: ["git", "gitlab"], fields: ["reviewed-by"] }),
+    );
+    expect(result.sources).toEqual({
+      git: { available: true },
+      gitlab: { available: false, reason: "no origin remote to tell GitHub from GitLab" },
+    });
   });
 
   it("gives a document outside any repository all-null fields", async () => {
@@ -235,7 +359,7 @@ describe("deriveMetadata", () => {
     dirs.push(outside);
     const result = await deriveMetadata(
       [input(dir, "docs/a.md"), input(outside, "loose.md")],
-      ctx(dir, { forge: fakeForge() }),
+      ctx(dir, { reviews: fakeReviews() }),
     );
     expect(result.sources.git).toEqual({ available: true });
     const loose = result.records.get("loose.md");
@@ -252,7 +376,7 @@ describe("deriveMetadata", () => {
 
   it("assertSourcesAvailable throws exit-2 with the caller's hint appended", () => {
     expect(() => {
-      assertSourcesAvailable({ git: { available: true }, forge: { available: true } });
+      assertSourcesAvailable({ git: { available: true }, github: { available: true } });
     }).not.toThrow();
     expect(() => {
       assertSourcesAvailable(
@@ -265,9 +389,9 @@ describe("deriveMetadata", () => {
       ),
     );
     expect(() => {
-      assertSourcesAvailable({ forge: { available: false } });
+      assertSourcesAvailable({ gitlab: { available: false } });
     }).toThrow(
-      new DocmetaError("forge source unavailable: it could not answer"),
+      new DocmetaError("gitlab source unavailable: it could not answer"),
     );
   });
 });

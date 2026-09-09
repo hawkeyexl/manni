@@ -22,7 +22,7 @@ import { relative, resolve, sep } from "node:path";
 import picomatch from "picomatch";
 import type { DerivedValue, SourceStatus } from "./types.js";
 
-/** Where a CODEOWNERS file may live, in the order the forges look. */
+/** Where a CODEOWNERS file may live, in the order GitHub and GitLab look. */
 export const CODEOWNERS_LOCATIONS = [
   ".github/CODEOWNERS",
   "CODEOWNERS",
@@ -79,7 +79,7 @@ const TOKEN = /(?:\\.|[^\s\\])+/g;
 
 /**
  * Parse CODEOWNERS text. Never throws: a line that cannot be read as a rule
- * or a section header (an unclosed `[Name`, say) is skipped, since the forge
+ * or a section header (an unclosed `[Name`, say) is skipped, since the host
  * would skip it too and a derived value should not fail the run over it.
  */
 export function parseCodeowners(

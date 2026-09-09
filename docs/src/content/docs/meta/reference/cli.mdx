@@ -715,8 +715,8 @@ cat page.md | manni meta fill - --as markdown   # filled document to stdout
 ## `meta derive`
 
 Stamp the **managed** stewardship fields into each document from evidence.
-The evidence is git history, a CODEOWNERS file, and the forge's pull request
-or merge request history, read through the `gh` or `glab` CLI. Which fields
+The evidence is git history, a CODEOWNERS file, and the pull request or merge
+request history GitHub or GitLab keeps, read through the `gh` or `glab` CLI. Which fields
 are managed comes from config
 [`derive.fields`](/manni/meta/reference/configuration/#derive), or from
 `--fields` for one run. `derive` is the only command that writes a managed
@@ -743,11 +743,11 @@ finding without touching anything.
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `--fields` | `<list>` | config `derive.fields` | Comma-separated managed fields to stamp this run. Each must be one of the six [derivable fields](/manni/meta/reference/configuration/#the-derivable-fields). An unknown or non-derivable name is an error (exit 2) listing the six. A field a config [sidecar](/manni/meta/reference/configuration/#sidecars) owns is refused (exit 2), the same way the config parser refuses it in `derive.fields`. The message is `"owner" is owned by sidecar ./owners.yaml; a managed field has one authority, and a sidecar key already has one.` No config `derive.fields` and no flag is an error (exit 2): `nothing to derive: set derive.fields in manni.config.yaml or pass --fields`. |
-| `--sources` | `<list>` | config `derive.sources`, else all three | Comma-separated sources to consult: `git`, `codeowners`, `forge`. A field whose only sources are excluded derives null and is left alone. This is the opt-out for a checkout that cannot answer a source, such as a shallow clone. |
+| `--sources` | `<list>` | config `derive.sources`, else all four | Comma-separated sources to consult: `git`, `codeowners`, `github`, `gitlab`. Only the one of `github` and `gitlab` that matches the origin remote is consulted. A field whose only sources are excluded derives null and is left alone. This is the opt-out for a checkout that cannot answer a source, such as a shallow clone. |
 | `--dry-run` | n/a | off | Report what would change and write nothing. |
 | `--check` | n/a | off | Implies `--dry-run`. A managed field that is stale or unset is a finding, and the run exits 1 if there is any. This is the CI spelling. |
 | `-f, --format` | `<pretty\|json\|github\|sarif\|junit>` | `pretty` | [Output format](/manni/meta/reference/output-and-exit-codes/). `github`, `sarif`, and `junit` describe findings, so they are legal only with `--check`. Without it they are an error (exit 2): `sarif is a findings format, which only --check produces`. An unknown value is an error (exit 2). |
-| `--no-cache` | n/a | cache on | Bypass the forge cache in `.manni/meta/forge-cache`. Only a merged pull request's answer is ever cached, so this matters when a merged answer was recorded wrongly, never for an open one. |
+| `--no-cache` | n/a | cache on | Bypass the GitHub or GitLab review cache in `.manni/meta/review-cache`. Only a merged pull request's answer is ever cached, so this matters when a merged answer was recorded wrongly, never for an open one. |
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Merged with config `exclude:` and the [default ignores](#default-ignores). |
 | `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) (extractor name, e.g. `markdown`). |
@@ -776,8 +776,11 @@ current, which is the false green the comparison exists to end.
 
 | Situation | Message |
 |---|---|
-| The checkout is shallow, as `actions/checkout` leaves it by default. | `git source unavailable: this checkout is shallow; use actions/checkout with fetch-depth: 0, or --sources codeowners,forge` |
-| `gh` or `glab` is not on `PATH`. | `forge source unavailable: gh is not on PATH (origin is github.com); install gh and run gh auth login, or drop reviewed-by from --fields` |
+| The checkout is shallow, as `actions/checkout` leaves it by default. | `git source unavailable: this checkout is shallow; use actions/checkout with fetch-depth: 0, or --sources codeowners,github,gitlab` |
+| `gh` or `glab` is not on `PATH`. | `github source unavailable: gh is not on PATH (origin is github.com); install gh and run gh auth login, or drop reviewed-by from --fields` |
+| `--sources` names only the one of `github` and `gitlab` the origin remote does not match. | `the origin remote is github.com, which is GitHub; add github to sources, or drop reviewed-by and last-reviewed from the managed fields` |
+| There is no origin remote. | `no origin remote to tell GitHub from GitLab` |
+| The origin host names neither platform, and `sources` does not list exactly one of the two. | `the origin remote is git.example.com, which names neither GitHub nor GitLab; list exactly one of github, gitlab in derive.sources to say which it is` |
 
 A `gh` or `glab` that is present and not logged in is refused the same way,
 naming `gh auth login` or `glab auth login`. So is a config `codeowners:`
@@ -820,7 +823,7 @@ manni meta derive --dry-run docs/install.md        # what would change, nothing 
 manni meta derive --check -f github                # CI: a stale stamp is an annotation, exit 1
 manni meta derive --fields reviewed-by,last-reviewed   # after an approval, stamp who and when
 manni meta derive --sources git,codeowners         # no gh on this machine
-manni meta derive --fields owner --no-cache docs/  # re-read the forge
+manni meta derive --fields owner --no-cache docs/  # re-read GitHub or GitLab
 ```
 
 ## `meta schemas`

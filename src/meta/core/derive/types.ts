@@ -1,6 +1,6 @@
 /**
  * The derived metadata channel: values computed from git history, CODEOWNERS
- * and the forge rather than written by hand.
+ * and the review record on GitHub or GitLab rather than written by hand.
  *
  * A derived value never merges into what the schema sees. `manni meta derive`
  * stamps the managed fields (`derive.fields` in the config) into the
@@ -26,8 +26,8 @@ export const DERIVABLE_FIELDS = [
 
 export type DerivableField = (typeof DERIVABLE_FIELDS)[number];
 
-/** Every source `derive.sources` may name; absent means all three. */
-export const DERIVE_SOURCES = ["git", "codeowners", "forge"] as const;
+/** Every source `derive.sources` may name; absent means all four. */
+export const DERIVE_SOURCES = ["git", "codeowners", "github", "gitlab"] as const;
 
 export type DeriveSource = (typeof DERIVE_SOURCES)[number];
 
@@ -66,8 +66,8 @@ export interface SourceStatus {
   reason?: string;
 }
 
-/** Which forge the origin remote points at, and what to call the project there. */
-export interface ForgeIdentity {
+/** Which host the origin remote points at, and what to call the project there. */
+export interface RemoteIdentity {
   kind: "github" | "gitlab";
   host: string;
   /** `owner/repo` on GitHub; the full namespace path on GitLab. */
@@ -92,12 +92,12 @@ export interface MergedChange {
 }
 
 /**
- * The forge half of the derive context: the merged change behind a commit and
+ * The review half of the derive context: the merged change behind a commit and
  * who approved it. Reached through `gh` / `glab`, never an HTTP client — see
- * `forge.ts`.
+ * `reviews.ts`.
  */
-export interface ForgeClient {
-  detect(): Promise<ForgeIdentity | null>;
+export interface ReviewClient {
+  detect(): Promise<RemoteIdentity | null>;
   /** Binary on PATH and authenticated for the host; `reason` names the fix. */
   status(): Promise<SourceStatus>;
   /** The merged PR/MR that contains the commit, or null (open, none, or unknown). */
@@ -123,7 +123,8 @@ export interface DeriveContext {
   codeowners?: string;
   cache: boolean;
   now: () => Date;
-  forge?: ForgeClient;
+  /** The review client for every repository in the run; the built-in `gh` / `glab` clients when absent. */
+  reviews?: ReviewClient;
 }
 
 /**

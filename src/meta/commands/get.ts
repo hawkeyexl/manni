@@ -74,8 +74,8 @@ export interface GetOptions {
   offline?: boolean;
   /**
    * `--derived`: beside each asserted value, what the evidence (git history,
-   * CODEOWNERS, the forge — proposal 0040) says the field should be. Consults
-   * the sources `derive.sources` allows, all three when the config says
+   * CODEOWNERS, GitHub or GitLab reviews — proposal 0040) says the field should be. Consults
+   * the sources `derive.sources` allows, all four when the config says
    * nothing, for the requested fields that are derivable. Stdin is refused:
    * there is no history behind it.
    */

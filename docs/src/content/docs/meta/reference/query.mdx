@@ -150,10 +150,10 @@ both places.
 With [`derive:`](/manni/meta/reference/configuration/#derive) in config, a
 second table is available. `derived` holds what the evidence says each
 managed field should be, one row per file. The evidence is git history, the
-CODEOWNERS file, and the forge's review history. It is built only when the
+CODEOWNERS file, and the GitHub or GitLab review history. It is built only when the
 statement names `derived` as a table (after `FROM`, `JOIN`, `UPDATE`, and the
 like, quoted or not). That is because building it spawns `git`, and with the
-`forge` source, `gh` or `glab`. A statement that never names it pays nothing, and the
+`github` or `gitlab` source, `gh` or `glab`. A statement that never names it pays nothing, and the
 word inside a string literal or a comment does not count. A spelling the text
 search misses is caught by SQLite's own `no such table: derived`, which
 triggers the same build.
