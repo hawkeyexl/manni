@@ -83,6 +83,10 @@ export function run(bin: string, args: string[], opts: SpawnOptions): Promise<Ru
      * for. `clearTimeout` is idempotent, so the `close` handler may still
      * call it. The SIGKILL timer is deliberately not cleared — it is the
      * escalation, and it has to fire.
+     *
+     * `timer` is declared below this closure, so every caller must reach
+     * `stop` from an async handler, as all of them do. Calling it straight
+     * from the spawn path would hit the temporal dead zone.
      */
     const stop = (r: Omit<Run, "code">): void => {
       clearTimeout(timer);
