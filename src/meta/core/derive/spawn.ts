@@ -77,8 +77,15 @@ export function run(bin: string, args: string[], opts: SpawnOptions): Promise<Ru
      * trap, and `close` waits for the stdio streams as well as the exit —
      * a grandchild holding stdout keeps it pending. So the promise settles
      * here rather than waiting, and SIGKILL follows shortly after.
+     *
+     * `timer` is cleared here rather than left to `close`, for the same
+     * reason: `close` is exactly the event this function refuses to wait
+     * for. `clearTimeout` is idempotent, so the `close` handler may still
+     * call it. The SIGKILL timer is deliberately not cleared — it is the
+     * escalation, and it has to fire.
      */
     const stop = (r: Omit<Run, "code">): void => {
+      clearTimeout(timer);
       child.kill();
       setTimeout(() => child.kill("SIGKILL"), 1_000).unref();
       finish({ code: null, ...r });
