@@ -16,10 +16,18 @@
  * read as "no approvals" would file a stale finding against a document that
  * was in fact reviewed.
  */
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { resolve as resolvePath } from "node:path";
 import { DocmetaError } from "../../types.js";
 import { ReviewCache, cachedClient } from "./cache.js";
+import {
+  BinMissing,
+  DEFAULT_TIMEOUT_MS,
+  commandLine,
+  lastLine,
+  run,
+  type Run,
+  type SpawnOptions,
+} from "./spawn.js";
 import type {
   Approval,
   DerivedValue,
@@ -30,19 +38,7 @@ import type {
 } from "./types.js";
 
 export type { Approval, ReviewClient, RemoteIdentity, MergedChange } from "./types.js";
-
-/** How a client reaches the binary; tests point `bin` at node and a fake script. */
-export interface SpawnOptions {
-  /** Defaults to `gh` / `glab`, resolved on PATH. */
-  bin?: string;
-  /** Arguments placed before the command's own, such as a script for `node`. */
-  prefixArgs?: string[];
-  cwd: string;
-  /** Kill the child after this long. Default 30 s. */
-  timeoutMs?: number;
-}
-
-const DEFAULT_TIMEOUT_MS = 30_000;
+export type { SpawnOptions } from "./spawn.js";
 
 // ---------------------------------------------------------------------------
 // Origin → identity
@@ -144,86 +140,7 @@ class UnknownHostClient implements ReviewClient {
 }
 
 // ---------------------------------------------------------------------------
-// Spawning
-
-interface Run {
-  /** Exit code; `null` when a signal ended the child. */
-  code: number | null;
-  stdout: string;
-  stderr: string;
-  timedOut: boolean;
-}
-
-/** The binary could not be started at all: nothing on PATH by that name. */
-class BinMissing extends Error {}
-
-/** One child, stdout collected, stderr drained and kept for the message. */
-function run(bin: string, args: string[], opts: SpawnOptions): Promise<Run> {
-  return new Promise((settle, reject) => {
-    let done = false;
-    const finish = (r: Run): void => {
-      if (done) return;
-      done = true;
-      settle(r);
-    };
-    const fail = (err: Error): void => {
-      if (done) return;
-      done = true;
-      reject(err);
-    };
-
-    let child: ChildProcessWithoutNullStreams;
-    try {
-      child = spawn(bin, [...(opts.prefixArgs ?? []), ...args], {
-        cwd: opts.cwd,
-        windowsHide: true,
-      });
-    } catch (err) {
-      fail(err instanceof Error ? err : new Error(String(err)));
-      return;
-    }
-
-    let stdout = "";
-    let stderr = "";
-    let timedOut = false;
-    child.stdout.setEncoding("utf8");
-    child.stdout.on("data", (chunk: string) => {
-      stdout += chunk;
-    });
-    // Drained *and* kept: a chatty CLI must not stall the pipe, and its last
-    // line is what names the failure to the user.
-    child.stderr.setEncoding("utf8");
-    child.stderr.on("data", (chunk: string) => {
-      stderr += chunk;
-    });
-    child.stdin.end();
-
-    const timer = setTimeout(() => {
-      timedOut = true;
-      child.kill();
-    }, opts.timeoutMs ?? DEFAULT_TIMEOUT_MS);
-
-    // No binary on PATH lands here rather than throwing from spawn().
-    child.on("error", (err: NodeJS.ErrnoException) => {
-      clearTimeout(timer);
-      fail(err.code === "ENOENT" ? new BinMissing(err.message) : err);
-    });
-    child.on("close", (code) => {
-      clearTimeout(timer);
-      finish({ code, stdout, stderr, timedOut });
-    });
-  });
-}
-
-/** `gh api --hostname h repos/…`: the command as the user would type it. */
-function commandLine(bin: string, args: string[]): string {
-  return [bin, ...args].join(" ");
-}
-
-function lastLine(text: string): string {
-  const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
-  return lines.at(-1) ?? "";
-}
+// Failure reading
 
 /** The HTTP status a `gh`/`glab` failure line carries, when it carries one. */
 function httpStatus(stderr: string): number | null {

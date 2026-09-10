@@ -272,10 +272,10 @@ describe("runDerive", () => {
   it("refuses a field that is not derivable, naming the six that are", async () => {
     const { dir } = stageCorpus();
     await expect(
-      runDerive({ inputs: [], cwd: dir, fields: ["verified-against"] }),
+      runDerive({ inputs: [], cwd: dir, fields: ["stakeholders"] }),
     ).rejects.toThrow(
       new DocmetaError(
-        '"verified-against" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed',
+        '"stakeholders" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed, or any key with an entry in derive.commands',
       ),
     );
   });
@@ -321,7 +321,7 @@ describe("runDerive", () => {
     await expect(
       runDerive({ inputs: [], cwd: dir, sources: ["svn"] }),
     ).rejects.toThrow(
-      new DocmetaError('"svn" is not a source; sources are git, codeowners, github, gitlab'),
+      new DocmetaError('"svn" is not a source; sources are git, codeowners, github, gitlab, command'),
     );
   });
 
@@ -451,5 +451,114 @@ describe("renderDerive", () => {
     const junit = renderDerive(run, "junit", { frame: run.frame });
     expect(junit).toContain('type="derived:stale/derived"');
     expect(junit).toContain('classname="manni.derive"');
+  });
+});
+
+/**
+ * The `command` source (proposal 0041). `test/fixtures/derive/command/`
+ * manages one command-derived field, `verified-against`, from a command
+ * that reads `version.json` beside the config; the document asserts
+ * `1.4.1` and the file says `1.4.2`. `sources` names `command` alone, so
+ * no commit history is staged: the tree is copied and the run reads it.
+ */
+describe("runDerive with a command source", () => {
+  const COMMAND = resolve(here, "fixtures", "derive", "command");
+  const ARGV = "node -p require('./version.json').version";
+
+  function stageCommand(): string {
+    const dir = makeTempRepo({ files: {} });
+    dirs.push(dir);
+    cpSync(COMMAND, dir, { recursive: true });
+    return dir;
+  }
+
+  /** The fixture's config with the command replaced. */
+  function configWith(run: string): string {
+    return [
+      "meta:",
+      "  paths:",
+      '    - "docs/**/*.md"',
+      "  schemas:",
+      "    - ./permissive.schema.json",
+      "  derive:",
+      "    fields: [verified-against]",
+      "    sources: [command]",
+      "    commands:",
+      "      verified-against:",
+      `        run: ${run}`,
+      "",
+    ].join("\n");
+  }
+
+  it("stamps the command's value, and a second run finds it current", async () => {
+    const dir = stageCommand();
+    const run = await runDerive({ inputs: [], cwd: dir });
+    expect(run.sources).toEqual({ command: { available: true } });
+    const install = fieldsOf(run, "docs/install.md");
+    expect(install.changed).toBe(true);
+    expect(install.fields).toEqual([
+      {
+        field: "verified-against",
+        asserted: "1.4.1",
+        derived: "1.4.2",
+        source: "command",
+        evidence: ARGV,
+        status: "stale",
+        written: true,
+      },
+    ]);
+    expect(extract(dir, "docs/install.md")["verified-against"]).toBe("1.4.2");
+    expect(run.summary).toMatchObject({ files: 1, changed: 1, written: 1, stale: 1 });
+
+    const again = await runDerive({ inputs: [], cwd: dir });
+    expect(fieldsOf(again, "docs/install.md").fields[0]?.status).toBe("current");
+    expect(again.summary).toMatchObject({ changed: 0, written: 0, stale: 0 });
+  });
+
+  it("--dry-run shows the change and writes nothing", async () => {
+    const dir = stageCommand();
+    const before = readFileSync(join(dir, "docs", "install.md"), "utf8");
+    const run = await runDerive({ inputs: [], cwd: dir, dryRun: true });
+    const text = renderDerive(run, "pretty", { color: false });
+    expect(text).toMatch(/verified-against\s+1\.4\.1 → 1\.4\.2/);
+    expect(text).toContain("dry run, nothing written");
+    expect(readFileSync(join(dir, "docs", "install.md"), "utf8")).toBe(before);
+  });
+
+  it("--sources git leaves a command field unknown, and runs no command", async () => {
+    const dir = stageCommand();
+    const run = await runDerive({ inputs: [], cwd: dir, sources: ["git"] });
+    expect(run.sources).toEqual({});
+    const install = fieldsOf(run, "docs/install.md");
+    expect(install.changed).toBe(false);
+    expect(install.fields[0]).toMatchObject({
+      field: "verified-against",
+      status: "unknown",
+      derived: null,
+    });
+    expect(extract(dir, "docs/install.md")["verified-against"]).toBe("1.4.1");
+  });
+
+  it("a command that exits non-zero is the run's error, exit 2", async () => {
+    const dir = stageCommand();
+    writeFile(
+      dir,
+      "manni.config.yaml",
+      configWith(`["node", "-e", "console.error('no version here'); process.exit(3)"]`),
+    );
+    const failure = runDerive({ inputs: [], cwd: dir });
+    await expect(failure).rejects.toBeInstanceOf(DocmetaError);
+    await expect(failure).rejects.toThrow(/^command source unavailable: /);
+    await expect(failure).rejects.toThrow("narrow --sources or --fields");
+    expect(extract(dir, "docs/install.md")["verified-against"]).toBe("1.4.1");
+  });
+
+  it("a program that is not on PATH is the run's error, exit 2", async () => {
+    const dir = stageCommand();
+    writeFile(dir, "manni.config.yaml", configWith(`["manni-no-such-program-0041"]`));
+    const failure = runDerive({ inputs: [], cwd: dir });
+    await expect(failure).rejects.toBeInstanceOf(DocmetaError);
+    await expect(failure).rejects.toThrow(/^command source unavailable: /);
+    await expect(failure).rejects.toThrow("manni-no-such-program-0041");
   });
 });

@@ -714,10 +714,12 @@ cat page.md | manni meta fill - --as markdown   # filled document to stdout
 
 ## `meta derive`
 
-Stamp the **managed** stewardship fields into each document from evidence.
-The evidence is git history, a CODEOWNERS file, and the pull request or merge
-request history GitHub or GitLab keeps, read through the `gh` or `glab` CLI. Which fields
-are managed comes from config
+Stamp the **managed** fields into each document from evidence. The evidence
+is git history, a CODEOWNERS file, and the pull request or merge request
+history GitHub or GitLab keeps, read through the `gh` or `glab` CLI. For any
+other field, it is the output of a
+[command](/manni/meta/reference/configuration/#commands) the config names.
+Which fields are managed comes from config
 [`derive.fields`](/manni/meta/reference/configuration/#derive), or from
 `--fields` for one run. `derive` is the only command that writes a managed
 field. `validate` is what reports a stamp that has gone stale.
@@ -742,8 +744,8 @@ finding without touching anything.
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
-| `--fields` | `<list>` | config `derive.fields` | Comma-separated managed fields to stamp this run. Each must be one of the six [derivable fields](/manni/meta/reference/configuration/#the-derivable-fields). An unknown or non-derivable name is an error (exit 2) listing the six. A field a config [sidecar](/manni/meta/reference/configuration/#sidecars) owns is refused (exit 2), the same way the config parser refuses it in `derive.fields`. The message is `"owner" is owned by sidecar ./owners.yaml; a managed field has one authority, and a sidecar key already has one.` No config `derive.fields` and no flag is an error (exit 2): `nothing to derive: set derive.fields in manni.config.yaml or pass --fields`. |
-| `--sources` | `<list>` | config `derive.sources`, else all four | Comma-separated sources to consult: `git`, `codeowners`, `github`, `gitlab`. Only the one of `github` and `gitlab` that matches the origin remote is consulted. A field whose only sources are excluded derives null and is left alone. This is the opt-out for a checkout that cannot answer a source, such as a shallow clone. |
+| `--fields` | `<list>` | config `derive.fields` | Comma-separated managed fields to stamp this run. Each must be one of the six [derivable fields](/manni/meta/reference/configuration/#the-derivable-fields) or a key with an entry in config [`derive.commands`](/manni/meta/reference/configuration/#commands). An unknown or non-derivable name is an error (exit 2) listing the six and pointing at `derive.commands`. A field a config [sidecar](/manni/meta/reference/configuration/#sidecars) owns is refused (exit 2), the same way the config parser refuses it in `derive.fields`. The message is `"owner" is owned by sidecar ./owners.yaml; a managed field has one authority, and a sidecar key already has one.` No config `derive.fields` and no flag is an error (exit 2): `nothing to derive: set derive.fields in manni.config.yaml or pass --fields`. |
+| `--sources` | `<list>` | config `derive.sources`, else all five | Comma-separated sources to consult: `git`, `codeowners`, `github`, `gitlab`, `command`. Only the one of `github` and `gitlab` that matches the origin remote is consulted. `command` covers every field with an entry in config [`derive.commands`](/manni/meta/reference/configuration/#commands). A field whose only sources are excluded derives null and is left alone. This is the opt-out for a checkout that cannot answer a source, such as a shallow clone. |
 | `--dry-run` | n/a | off | Report what would change and write nothing. |
 | `--check` | n/a | off | Implies `--dry-run`. A managed field that is stale or unset is a finding, and the run exits 1 if there is any. This is the CI spelling. |
 | `-f, --format` | `<pretty\|json\|github\|sarif\|junit>` | `pretty` | [Output format](/manni/meta/reference/output-and-exit-codes/). `github`, `sarif`, and `junit` describe findings, so they are legal only with `--check`. Without it they are an error (exit 2): `sarif is a findings format, which only --check produces`. An unknown value is an error (exit 2). |
@@ -781,6 +783,9 @@ current, which is the false green the comparison exists to end.
 | `--sources` names only the one of `github` and `gitlab` the origin remote does not match. | `the origin remote is github.com, which is GitHub; add github to sources, or drop reviewed-by and last-reviewed from the managed fields` |
 | There is no origin remote. | `no origin remote to tell GitHub from GitLab` |
 | The origin host names neither platform, and `sources` does not list exactly one of the two. | `the origin remote is git.example.com, which names neither GitHub nor GitLab; list exactly one of github, gitlab in derive.sources to say which it is` |
+| A configured command exited non-zero. | ``command source unavailable: `jq -r .version package.json` failed (exit 2): jq: error: Could not open package.json; narrow --sources or --fields`` |
+| A configured command's program is not on `PATH`. | ``command source unavailable: `jq` is not on PATH (derive.commands.verified-against); narrow --sources or --fields`` |
+| A configured command ran past its `timeout`. | ``command source unavailable: `node scripts/source-for.mjs docs/install.md` timed out after 60s; narrow --sources or --fields`` |
 
 A `gh` or `glab` that is present and not logged in is refused the same way,
 naming `gh auth login` or `glab auth login`. So is a config `codeowners:`
@@ -824,6 +829,7 @@ manni meta derive --check -f github                # CI: a stale stamp is an ann
 manni meta derive --fields reviewed-by,last-reviewed   # after an approval, stamp who and when
 manni meta derive --sources git,codeowners         # no gh on this machine
 manni meta derive --fields owner --no-cache docs/  # re-read GitHub or GitLab
+manni meta derive --fields verified-against        # stamp the version a config command reads
 ```
 
 ## `meta schemas`

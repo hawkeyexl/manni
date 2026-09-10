@@ -10,29 +10,67 @@
  * way to change it is to change the evidence. Both objects are transient: a
  * `--db` export drops them before the handle closes, so a frozen derived
  * value never outlives the run that computed it.
+ *
+ * The columns are the run's: the six built-in fields, then one per key of
+ * `derive.commands` (proposal 0041), so a command-derived field is read
+ * exactly as a built-in one is.
  */
 import type { DatabaseSync } from "node:sqlite";
-import type { DocmetaConfig } from "../config.js";
+import type { DeriveConfig, DocmetaConfig } from "../config.js";
 import { bindValue, quoteIdent } from "../projection.js";
 import { assertSourcesAvailable, deriveMetadata } from "./index.js";
 import {
   DERIVABLE_FIELDS,
   DERIVE_SOURCES,
   type DerivableField,
+  type DeriveCommand,
   type DerivedRecord,
   type DeriveInput,
 } from "./types.js";
 
-/** The view's columns, in order: the path, every derivable field, the evidence. */
-export const DERIVED_TABLE_COLUMNS = [
-  "_path",
-  ...DERIVABLE_FIELDS,
-  "_sources",
-] as const;
-
 /** The view's name, and the backing table the rows actually sit in. */
 export const DERIVED_VIEW = "derived";
 export const DERIVED_ROWS = "_derived_rows";
+
+/** How long a configured command may run when its entry says nothing: 60 s. */
+export const DEFAULT_COMMAND_TIMEOUT_MS = 60_000;
+
+/**
+ * The `command` source's table as the derive context wants it, from the
+ * config's spelling: `timeout` is in seconds there and `timeoutMs` here.
+ * Undefined when the config configures no command, so a context built from
+ * it consults the source for nothing.
+ */
+export function commandsOf(
+  config?: DeriveConfig,
+): Readonly<Record<string, DeriveCommand>> | undefined {
+  if (config?.commands === undefined) return undefined;
+  const out: Record<string, DeriveCommand> = {};
+  for (const [field, c] of Object.entries(config.commands)) {
+    out[field] = {
+      run: c.run,
+      timeoutMs:
+        c.timeout === undefined ? DEFAULT_COMMAND_TIMEOUT_MS : Math.round(c.timeout * 1000),
+    };
+  }
+  return out;
+}
+
+/**
+ * Every field a run can derive: the built-ins in the order messages list
+ * them, then the command keys sorted, so the list is the same whatever
+ * order the config wrote them in.
+ */
+export function derivableFields(
+  commands?: Readonly<Record<string, DeriveCommand>>,
+): DerivableField[] {
+  return [...DERIVABLE_FIELDS, ...Object.keys(commands ?? {}).sort()];
+}
+
+/** The view's columns, in order: the path, every derivable field, the evidence. */
+export function derivedColumns(commands?: Readonly<Record<string, DeriveCommand>>): string[] {
+  return ["_path", ...derivableFields(commands), "_sources"];
+}
 
 /**
  * Does the statement name the `derived` table? The search wants `derived`
@@ -47,44 +85,54 @@ export function mentionsDerived(sql: string): boolean {
 }
 
 /**
- * The derivable fields a statement can read: every one of them when it
- * selects `*` or reads `_sources` (the evidence spans all six), otherwise
- * the field names it spells out, quoted or not. `owner` is not `owners` and
- * `created` is not `recreated`, and the hyphen inside `last-updated` counts
- * as part of the name. Over-triggering costs one source consulted for
- * nothing; under-triggering would leave a named column NULL, so a field
- * that appears anywhere in the text — a literal, a comment — is derived.
+ * The derivable fields a statement can read, out of `fields` — the run's
+ * own list, see `derivableFields`: every one of them when it selects `*` or
+ * reads `_sources` (the evidence spans them all), otherwise the field names
+ * it spells out, quoted or not. `owner` is not `owners` and `created` is
+ * not `recreated`, and the hyphen inside `last-updated` counts as part of
+ * the name; a command key is matched as written, whatever it contains.
+ * Over-triggering costs one source consulted for nothing; under-triggering
+ * would leave a named column NULL, so a field that appears anywhere in the
+ * text — a literal, a comment — is derived.
  */
-export function fieldsForSql(sql: string): DerivableField[] {
-  if (sql.includes("*") || /\b_sources\b/i.test(sql)) return [...DERIVABLE_FIELDS];
-  return DERIVABLE_FIELDS.filter((field) =>
-    new RegExp(`(?<![\\w-])${field}(?![\\w-])`, "i").test(sql),
+export function fieldsForSql(sql: string, fields: readonly DerivableField[]): DerivableField[] {
+  if (sql.includes("*") || /\b_sources\b/i.test(sql)) return [...fields];
+  return fields.filter((field) =>
+    new RegExp(`(?<![\\w-])${escapeRegExp(field)}(?![\\w-])`, "i").test(sql),
   );
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /**
  * Create the backing table, load one row per record, and expose it as the
- * `derived` view. Values go through `bindValue`, so a list is JSON text
- * exactly as it is in `docs`; `_sources` is the JSON object
- * `{field: {source, evidence}}` over the non-null fields.
+ * `derived` view. `columns` is the run's list (`derivedColumns`), and the
+ * values are placed by it, so the view and the rows agree by construction.
+ * Values go through `bindValue`, so a list is JSON text exactly as it is in
+ * `docs`; `_sources` is the JSON object `{field: {source, evidence}}` over
+ * the non-null fields.
  */
 export function createDerivedView(
   db: DatabaseSync,
   records: ReadonlyMap<string, DerivedRecord>,
+  columns: readonly string[],
 ): void {
-  const columns = DERIVED_TABLE_COLUMNS.map(quoteIdent);
+  const quoted = columns.map(quoteIdent);
   db.exec(
-    `CREATE TABLE ${DERIVED_ROWS} (${columns
+    `CREATE TABLE ${DERIVED_ROWS} (${quoted
       .map((c, i) => (i === 0 ? `${c} TEXT PRIMARY KEY` : `${c} TEXT`))
       .join(", ")})`,
   );
   const insert = db.prepare(
-    `INSERT INTO ${DERIVED_ROWS} VALUES (${columns.map(() => "?").join(", ")})`,
+    `INSERT INTO ${DERIVED_ROWS} VALUES (${quoted.map(() => "?").join(", ")})`,
   );
+  const fields = columns.slice(1, -1);
   db.exec("BEGIN");
   for (const [label, record] of records) {
     const sources: Record<string, { source: string; evidence: string }> = {};
-    const values = DERIVABLE_FIELDS.map((field) => {
+    const values = fields.map((field) => {
       const derived = record.fields[field];
       if (derived == null) return null;
       sources[field] = { source: derived.source, evidence: derived.evidence };
@@ -106,13 +154,14 @@ export interface DeriveTableContext {
 
 /**
  * Derive the table's rows: `fields` — what the caller's statements can read,
- * see `fieldsForSql` — from the sources the config allows (all four when it
+ * see `fieldsForSql` — from the sources the config allows (all five when it
  * says nothing), with the review cache on. The view keeps every column, and
  * a field not derived is NULL in it; only a source some named field needs
- * is consulted, so a statement reading `owner` never spawns `gh`. A
- * requested source that cannot answer is the run's error, never an empty
- * column — the same rule `validate` and `derive` follow — and `hint` is the
- * caller's own way out.
+ * is consulted, so a statement reading `owner` never spawns `gh`, and a
+ * configured command runs only when its field is read. A requested source
+ * that cannot answer is the run's error, never an empty column — the same
+ * rule `validate` and `derive` follow — and `hint` is the caller's own way
+ * out.
  */
 export async function deriveForTable(
   inputs: readonly DeriveInput[],
@@ -121,6 +170,7 @@ export async function deriveForTable(
   fields: readonly DerivableField[],
 ): Promise<Map<string, DerivedRecord>> {
   const derive = ctx.config?.derive;
+  const commands = commandsOf(derive);
   const result = await deriveMetadata(inputs, {
     cwd: ctx.cwd,
     base: ctx.base,
@@ -128,6 +178,7 @@ export async function deriveForTable(
     sources: derive?.sources ?? [...DERIVE_SOURCES],
     fields,
     ...(derive?.codeowners !== undefined ? { codeowners: derive.codeowners } : {}),
+    ...(commands !== undefined ? { commands } : {}),
     cache: true,
     now: () => new Date(),
   });

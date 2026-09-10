@@ -69,12 +69,16 @@ import {
   deriveMetadata,
   type DeriveResult,
 } from "../core/derive/index.js";
-import { fieldsForSql, mentionsDerived } from "../core/derive/table.js";
+import {
+  commandsOf,
+  derivableFields,
+  fieldsForSql,
+  mentionsDerived,
+} from "../core/derive/table.js";
 import {
   compareDerived,
   DERIVE_SOURCES,
   staleFindings,
-  type DerivableField,
   type DerivedRecord,
   type DeriveInput,
 } from "../core/derive/types.js";
@@ -438,8 +442,12 @@ export async function runValidate(
   // for one. A source that cannot answer is the run's error either way — a
   // half-derived comparison would read as "all current", the false green
   // the channel refuses — and the hint names the reader that asked.
-  const deriveFields = new Set<DerivableField>(deriveWillRun ? deriveConfig.fields : []);
-  for (const c of derivedChecks) for (const f of fieldsForSql(c.query)) deriveFields.add(f);
+  // The configured commands (0041) are part of both: a command's field is
+  // managed like a built-in one, and is a column the checks can read.
+  const deriveCommands = commandsOf(deriveConfig);
+  const deriveFields = new Set<string>(deriveWillRun ? deriveConfig.fields : []);
+  const readable = derivableFields(deriveCommands);
+  for (const c of derivedChecks) for (const f of fieldsForSql(c.query, readable)) deriveFields.add(f);
   const derivedOnce = once(async (): Promise<DeriveResult> => {
     const derived = await deriveMetadata(deriveInputs, {
       cwd,
@@ -450,6 +458,7 @@ export async function runValidate(
       ...(deriveConfig?.codeowners !== undefined
         ? { codeowners: deriveConfig.codeowners }
         : {}),
+      ...(deriveCommands !== undefined ? { commands: deriveCommands } : {}),
       cache: true,
       now: () => new Date(),
     });

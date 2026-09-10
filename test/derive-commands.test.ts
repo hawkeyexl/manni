@@ -27,7 +27,12 @@ import { runQuery } from "../src/meta/commands/query.js";
 import { runFill } from "../src/meta/commands/fill.js";
 import { renderGet } from "../src/meta/reporters/get.js";
 import { loadSqlite } from "../src/meta/core/projection.js";
-import { fieldsForSql, mentionsDerived } from "../src/meta/core/derive/table.js";
+import {
+  derivedColumns,
+  fieldsForSql,
+  mentionsDerived,
+} from "../src/meta/core/derive/table.js";
+import { DERIVABLE_FIELDS } from "../src/meta/core/derive/types.js";
 import { DocmetaError, type ValidationResult } from "../src/meta/types.js";
 
 /**
@@ -579,16 +584,137 @@ describe("the derived table's reading of a statement", () => {
   });
 
   it("fieldsForSql names the columns the statement reads, or all of them", () => {
-    expect(fieldsForSql("SELECT _path, owner FROM derived")).toEqual(["owner"]);
+    const all = DERIVABLE_FIELDS;
+    expect(fieldsForSql("SELECT _path, owner FROM derived", all)).toEqual(["owner"]);
     expect(
-      fieldsForSql('SELECT d."last-updated", created FROM derived d WHERE d."reviewed-by" IS NULL'),
+      fieldsForSql(
+        'SELECT d."last-updated", created FROM derived d WHERE d."reviewed-by" IS NULL',
+        all,
+      ),
     ).toEqual(["created", "last-updated", "reviewed-by"]);
-    expect(fieldsForSql("SELECT _path FROM derived")).toEqual([]);
+    expect(fieldsForSql("SELECT _path FROM derived", all)).toEqual([]);
     // `*` and `_sources` read every column.
-    expect(fieldsForSql("SELECT * FROM derived")).toHaveLength(6);
-    expect(fieldsForSql("SELECT _sources FROM derived")).toHaveLength(6);
+    expect(fieldsForSql("SELECT * FROM derived", all)).toHaveLength(6);
+    expect(fieldsForSql("SELECT _sources FROM derived", all)).toHaveLength(6);
     // Word boundaries: `owner` is not `owners`, `created` is not `recreated`.
-    expect(fieldsForSql("SELECT owners, recreated FROM derived")).toEqual([]);
+    expect(fieldsForSql("SELECT owners, recreated FROM derived", all)).toEqual([]);
+  });
+
+  it("fieldsForSql reads the run's own field list, with a command key's metacharacters escaped", () => {
+    const fields = ["a.b", "created"];
+    expect(fieldsForSql('SELECT "a.b" FROM derived', fields)).toEqual(["a.b"]);
+    // Unescaped, `a.b` would match `axb`.
+    expect(fieldsForSql('SELECT "axb" FROM derived', fields)).toEqual([]);
+    expect(fieldsForSql("SELECT * FROM derived", fields)).toEqual(fields);
+    expect(fieldsForSql('SELECT "verified-against" FROM derived', ["verified-against"])).toEqual([
+      "verified-against",
+    ]);
+  });
+
+  it("derivedColumns is the path, the built-ins, the command keys sorted, then the evidence", () => {
+    expect(derivedColumns()).toEqual(["_path", ...DERIVABLE_FIELDS, "_sources"]);
+    expect(
+      derivedColumns({
+        "verified-against": { run: ["true"], timeoutMs: 1 },
+        "api-version": { run: ["true"], timeoutMs: 1 },
+      }),
+    ).toEqual(["_path", ...DERIVABLE_FIELDS, "api-version", "verified-against", "_sources"]);
+  });
+});
+
+/**
+ * The `command` source (proposal 0041) as the same commands see it. The
+ * fixture manages one command-derived field, `verified-against`, whose
+ * command reads `version.json` beside the config; the document asserts
+ * `1.4.1` and the file says `1.4.2`. No git history is needed: `sources`
+ * names `command` alone.
+ */
+describe("a command-derived field", () => {
+  const COMMAND_FIXTURE = resolve(__dirname, "fixtures", "derive", "command");
+  const ARGV = "node -p require('./version.json').version";
+
+  function fixtureTree(): Record<string, string> {
+    const out: Record<string, string> = {};
+    const walk = (dir: string, prefix: string): void => {
+      for (const name of readdirSync(dir)) {
+        const abs = join(dir, name);
+        const rel = prefix === "" ? name : `${prefix}/${name}`;
+        if (statSync(abs).isDirectory()) walk(abs, rel);
+        else out[rel] = readFileSync(abs, "utf8");
+      }
+    };
+    walk(COMMAND_FIXTURE, "");
+    return out;
+  }
+
+  function commandRepo(): string {
+    const dir = makeTempRepo({ files: fixtureTree() });
+    dirs.push(dir);
+    return dir;
+  }
+
+  it("validate reports the stale stamp as derived:stale, naming the command", async () => {
+    const dir = commandRepo();
+    const { results, summary } = await runValidate({ inputs: [], cwd: dir });
+    const install = resultFor(results, "docs/install.md");
+    expect(install.ok).toBe(false);
+    const findings = derivedFindings(install);
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      schema: "derived:stale",
+      keyword: "derived",
+      instancePath: "/verified-against",
+      subject: "verified-against",
+      line: 3,
+    });
+    expect(findings[0]?.message).toContain("verified-against says 1.4.1");
+    expect(findings[0]?.message).toContain(`command says 1.4.2 (${ARGV})`);
+    expect(summary.failed).toBe(1);
+  });
+
+  it("get --derived shows the command's value and its argv", async () => {
+    const dir = commandRepo();
+    const results = await runGet({
+      fields: ["verified-against"],
+      inputs: ["docs/install.md"],
+      cwd: dir,
+      derived: true,
+    });
+    expect(results[0]?.derived).toEqual({
+      "verified-against": { value: "1.4.2", source: "command", evidence: ARGV },
+    });
+    expect(renderGet(results, ["verified-against"])).toBe(
+      `docs/install.md: verified-against=1.4.1 (derived 1.4.2, command: ${ARGV})`,
+    );
+  });
+
+  it("the derived table has a column for the command's field", async () => {
+    const dir = commandRepo();
+    const run = await runQuery({
+      sql: 'SELECT _path, "verified-against", _sources FROM derived',
+      inputs: [],
+      cwd: dir,
+    });
+    expect(run.rows).toEqual([
+      {
+        _path: "docs/install.md",
+        "verified-against": "1.4.2",
+        _sources: JSON.stringify({
+          "verified-against": { source: "command", evidence: ARGV },
+        }),
+      },
+    ]);
+  });
+
+  it("query refuses to write the command's field, as a managed one", async () => {
+    const dir = commandRepo();
+    await expect(
+      runQuery({
+        sql: `UPDATE docs SET "verified-against" = 'x'`,
+        inputs: [],
+        cwd: dir,
+      }),
+    ).rejects.toThrow('"verified-against" is managed by derive; run manni meta derive instead.');
   });
 });
 

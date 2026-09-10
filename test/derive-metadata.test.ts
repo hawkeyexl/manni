@@ -11,17 +11,19 @@
  * point the same fake at either host, or at no origin remote.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   FIELD_SOURCES,
   assertSourcesAvailable,
   consultedSources,
   deriveMetadata,
+  sourcesFor,
 } from "../src/meta/core/derive/index.js";
 import {
   DERIVABLE_FIELDS,
   DERIVE_SOURCES,
+  type DeriveCommand,
   type DeriveContext,
   type DeriveInput,
   type MergedChange,
@@ -144,6 +146,95 @@ describe("consultedSources", () => {
     expect(FIELD_SOURCES["last-reviewed"]).toEqual(["github", "gitlab", "git"]);
     expect(FIELD_SOURCES.owner).toEqual(["codeowners"]);
     expect(FIELD_SOURCES.created).toEqual(["git"]);
+  });
+
+  it("sourcesFor answers the built-in table, the command table, or nothing", () => {
+    expect(sourcesFor("created")).toEqual(["git"]);
+    expect(sourcesFor("created", COMMANDS)).toEqual(["git"]);
+    expect(sourcesFor("verified-against", COMMANDS)).toEqual(["command"]);
+    expect(sourcesFor("verified-against")).toEqual([]);
+    expect(sourcesFor("nobody-configured", COMMANDS)).toEqual([]);
+    // A built-in never reaches the command arm, whatever the table says. The
+    // config parser forbids this key, so the orchestrator's table is the only
+    // place it can be asserted.
+    expect(sourcesFor("last-updated", { "last-updated": ECHO })).toEqual(["git"]);
+  });
+
+  it("consults command only when a requested field has a command", () => {
+    expect(consultedSources(["verified-against"], DERIVE_SOURCES, COMMANDS)).toEqual(["command"]);
+    expect(consultedSources(["created", "verified-against"], DERIVE_SOURCES, COMMANDS)).toEqual([
+      "git",
+      "command",
+    ]);
+    expect(consultedSources(["created"], DERIVE_SOURCES, COMMANDS)).toEqual(["git"]);
+    expect(consultedSources(["verified-against"], DERIVE_SOURCES)).toEqual([]);
+    expect(consultedSources(["verified-against"], ["git"], COMMANDS)).toEqual([]);
+  });
+});
+
+const ECHO: DeriveCommand = {
+  run: [process.execPath, "-e", 'process.stdout.write("v2.1")'],
+  timeoutMs: 10_000,
+};
+
+const COMMANDS: Readonly<Record<string, DeriveCommand>> = { "verified-against": ECHO };
+
+describe("deriveMetadata with the command source", () => {
+  it("derives a configured field from its command", async () => {
+    const { dir } = repo();
+    const result = await deriveMetadata(
+      [input(dir, "docs/a.md"), input(dir, "docs/b.md")],
+      ctx(dir, { commands: COMMANDS, fields: ["verified-against"] }),
+    );
+    expect(result.sources).toEqual({ command: { available: true } });
+    expect(result.records.get("docs/a.md")?.fields).toEqual({
+      "verified-against": { value: "v2.1", source: "command", evidence: ECHO.run.join(" ") },
+    });
+    expect(result.records.get("docs/b.md")?.fields["verified-against"]).toMatchObject({ value: "v2.1" });
+  });
+
+  it("answers null and reports nothing when the sources list leaves command out", async () => {
+    const { dir } = repo();
+    const result = await deriveMetadata(
+      [input(dir, "docs/a.md")],
+      ctx(dir, { commands: COMMANDS, fields: ["verified-against"], sources: ["git"] }),
+    );
+    expect(result.sources).toEqual({});
+    expect(result.records.get("docs/a.md")?.fields).toEqual({ "verified-against": null });
+  });
+
+  it("never spawns a command for a field the run did not ask for", async () => {
+    const { dir } = repo();
+    const marker = join(dir, "ran");
+    const commands: Readonly<Record<string, DeriveCommand>> = {
+      "verified-against": {
+        run: [process.execPath, "-e", 'require("fs").writeFileSync(process.argv[1], "x")', marker],
+        timeoutMs: 10_000,
+      },
+    };
+    const result = await deriveMetadata(
+      [input(dir, "docs/a.md")],
+      ctx(dir, { commands, fields: ["last-updated"], sources: DERIVE_SOURCES }),
+    );
+    expect(result.sources).toEqual({ git: { available: true } });
+    expect(existsSync(marker)).toBe(false);
+    expect(result.records.get("docs/a.md")?.fields).not.toHaveProperty("verified-against");
+  });
+
+  it("reports the command source unavailable, alongside the others, when a command fails", async () => {
+    const { dir } = repo();
+    const failing: DeriveCommand = { run: [process.execPath, "-e", "process.exit(3)"], timeoutMs: 10_000 };
+    const result = await deriveMetadata(
+      [input(dir, "docs/a.md")],
+      ctx(dir, { commands: { tag: failing }, fields: ["created", "tag"], sources: ["git", "command"] }),
+    );
+    expect(result.sources.git).toEqual({ available: true });
+    expect(result.sources.command).toEqual({
+      available: false,
+      reason: `\`${failing.run.join(" ")}\` failed (exit 3): no output on stderr (derive.commands.tag)`,
+    });
+    expect(result.records.get("docs/a.md")?.fields.tag).toBeNull();
+    expect(result.records.get("docs/a.md")?.fields.created).not.toBeNull();
   });
 });
 

@@ -1399,7 +1399,7 @@ export function buildProgram(): Command {
     )
     .option(
       "--sources <list>",
-      "comma-separated sources to consult: git, codeowners, github, gitlab (default all)",
+      "comma-separated sources to consult: git, codeowners, github, gitlab, command (default all)",
     )
     .option("--dry-run", "report what would change and write nothing")
     .option(

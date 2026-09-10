@@ -125,11 +125,14 @@ below are the shared vocabulary and the two pure steps every source feeds.
 
 | Export | Purpose |
 |---|---|
-| `DERIVABLE_FIELDS` | The fields `derive.fields` may name: `created`, `last-updated`, `authors`, `owner`, `reviewed-by`, `last-reviewed`. |
-| `DerivableField` (type) | The union of those names. |
-| `isDerivableField` | Type guard for a user-supplied field name. |
-| `DERIVE_SOURCES` | The sources `derive.sources` may name: `git`, `codeowners`, `github`, `gitlab`. Absent in config means all four, of which only the `github` or `gitlab` the origin remote matches is consulted. |
+| `DERIVABLE_FIELDS` | The six built-in fields: `created`, `last-updated`, `authors`, `owner`, `reviewed-by`, `last-reviewed`. |
+| `BuiltinDerivableField` (type) | The union of those names. |
+| `DerivableField` (type) | A managed field name, which is one of the built-ins or a key with an entry in `derive.commands`. The config parser guarantees one or the other, so it is `string` to the type system. |
+| `isBuiltinField` | Type guard for a user-supplied field name: whether it is one of the six built-ins. |
+| `isDerivableField` | The same guard under its earlier name, kept for API stability. |
+| `DERIVE_SOURCES` | The sources `derive.sources` may name: `git`, `codeowners`, `github`, `gitlab`, `command`. Absent in config means all five, of which only the `github` or `gitlab` the origin remote matches is consulted. |
 | `DeriveSource` (type) | The union of those names. |
+| `DeriveCommand` (type) | One `derive.commands` entry as the derive context carries it: the `run` argv, the program first, and the `timeoutMs` to wait for it. |
 | `isDeriveSource` | Type guard for a user-supplied source name. |
 | `DerivedValue` (type) | One fact a source produced. It carries the `value`, its `source`, and the `evidence` a finding quotes, such as a commit, a CODEOWNERS line, or a pull request. |
 | `DerivedRecord` (type) | Everything derived for one document, as the `file` and a `fields` map. A `null` field means a source was consulted and had no fact; an absent one means no source answered. |
@@ -140,6 +143,9 @@ below are the shared vocabulary and the two pure steps every source feeds.
 | `GitLabClient` | A `ReviewClient` that shells out to `glab`: the merge request for a commit, then its approvals. |
 | `createReviewClient` | Build the client for a repository root. It reads the origin remote, picks `GitHubClient` or `GitLabClient`, and wraps it in the review cache. |
 | `SpawnOptions` (type) | How a client reaches its binary, with the `bin` (`gh` or `glab` on `PATH` by default), any `prefixArgs`, the `cwd`, and a `timeoutMs`. Tests point `bin` at a fake script. |
+| `run` | Run one child process to completion. Stdout is collected, stderr drained and kept, and the child killed after `timeoutMs`. The review clients and the `command` source both spawn through it. Rejects with `BinMissing` when nothing on `PATH` has the binary's name. |
+| `Run` (type) | What `run` resolves to: the exit `code` (`null` when a signal ended the child), `stdout`, `stderr`, and whether it `timedOut`. |
+| `BinMissing` | The error `run` rejects with when the binary could not be started at all. |
 | `parseOriginUrl` | The `host` and `project` an origin URL names, for the scp, `https` and `ssh` spellings git writes. A local path or a bare host is `null`. |
 | `identityFromOrigin` | The `RemoteIdentity` for a parsed origin, with the `kind` decided by the host. |
 | `cachedClient` | A `ReviewClient` whose `mergedChangeFor` reads through a `ReviewCache`. Only a merged answer is stored, and a client with no identity goes straight through. |
@@ -153,7 +159,7 @@ below are the shared vocabulary and the two pure steps every source feeds.
 | `MergedChange` (type) | The merged pull or merge request that carried a commit: its `id`, when it was `mergedAt`, and its `approvals`. |
 | `Approval` (type) | One `APPROVED` review, the latest per reviewer: the `login` and when it was `submittedAt`. |
 | `DeriveInput` (type) | One document as the sources see it, with its `label`, `absPath`, `content`, and `extracted` metadata. |
-| `DeriveContext` (type) | What a derive run holds constant: `cwd`, `base`, `configDir`, the `sources` and `fields` in play, an optional `codeowners` path, whether to `cache`, a `now` clock, and an optional `reviews` client. |
+| `DeriveContext` (type) | What a derive run holds constant: `cwd`, `base`, `configDir`, the `sources` and `fields` in play, an optional `codeowners` path, the optional `commands` table, whether to `cache`, a `now` clock, and an optional `reviews` client. |
 | `DerivedStatus` (type) | How an asserted value stands against the derived one: `current`, `stale`, `unset`, or `unknown`. |
 | `DerivedField` (type) | One compared field. It carries the `field`, the `asserted` value when the document carries one, the `derived` value or `null`, its `source` and `evidence`, the `status`, and whether `derive` has `written` it. |
 | `compareDerived` | Compare what a document asserts with what a source derived. Pure. Lists compare as sets, so a reordered `authors:` is current, not stale. A missing or `null` derived value is `unknown`. |
@@ -163,7 +169,15 @@ below are the shared vocabulary and the two pure steps every source feeds.
 | `deriveMetadata` | The orchestrator. It resolves every requested field for every input from the sources the run consults. A source is consulted only when a requested field can come from it, and the `github` or `gitlab` source rides on git. Precedence is per field, with the first non-null answer winning. |
 | `DeriveResult` (type) | What `deriveMetadata` resolves to: a `DerivedRecord` per input keyed by label, and one `SourceStatus` per source consulted. |
 | `FIELD_SOURCES` | Which sources can state each derivable field, in precedence order: `github` or `gitlab` ahead of `git` for `reviewed-by` and `last-reviewed`, one source for every other field. |
-| `consultedSources` | The sources a run consults, meaning those requested that some requested field can come from, in the requested order. |
+| `sourcesFor` | Which sources can state one field, in precedence order. A built-in gets its `FIELD_SOURCES` row. A key of the `commands` table gets `command`. Any other name gets nothing. A built-in never reaches the command arm. |
+| `consultedSources` | The sources a run consults, meaning those requested that some requested field can come from, in the requested order. Takes the `commands` table so `command` counts when a requested field has an entry. |
+| `deriveFromCommands` | The `command` source. Each entry in the table runs once, or once per document when its argv carries `{path}`, in the given `cwd` and never through a shell. The first program that is missing, times out, or exits non-zero makes the source unavailable, with nothing further spawned. |
+| `CommandSourceOptions` (type) | Input to `deriveFromCommands`: the `cwd` to run in (the config directory, else the run's) and an optional `spawn` seam that points every command at another binary. |
+| `CommandSourceResult` (type) | What `deriveFromCommands` resolves to: the source's `status` and, by label, each document's fields as `DerivedValue` or `null`. |
+| `PATH_PLACEHOLDER` | The argv token, `{path}`, that a per-file command carries where the document's label goes. |
+| `isPerFile` | Whether a `DeriveCommand` runs once per document, which is whether any of its argv carries `{path}`. |
+| `argvFor` | A command's argv with every `{path}` replaced by a document's label. |
+| `valueOf` | What a command's stdout means: `null` when blank, the parsed value when it is JSON of any type, the trimmed text otherwise. |
 | `assertSourcesAvailable` | Throw the exit-2 `DocmetaError` for the first consulted source that could not answer, with the caller's hint appended after a semicolon. Availability is reported, not thrown, so each command chooses its own way out. |
 
 ## Schema resolution
@@ -233,7 +247,8 @@ reference](/manni/meta/reference/configuration/) for what each key means.
 | `SchemaCacheConfig` (type) | Config for the remote-schema cache, currently `ttlHours`. |
 | `CheckConfig` (type) | One named [corpus check](/manni/meta/reference/configuration/#checks). Its `name` (the durable half of its findings' identity) and the SQL `query`. |
 | `SidecarConfig` (type) | One [sidecar](/manni/meta/reference/configuration/#sidecars) entry, made of the manifest `file`, the top-level `keys` it owns, an optional `tokenEnv`, and an optional `join`. `file` is a path relative to the config's directory or an `https://` URL, and `tokenEnv` names the environment variable holding the bearer token for a URL. `join` is `path` or the top-level field the manifest's keys are values of. The parser has already asserted the keys are non-empty, unique, disjoint across entries, and never `$schema`. It has also asserted that `tokenEnv` appears only on a URL, and that `join` is neither `$schema` nor an owned key. |
-| `DeriveConfig` (type) | The [derived channel](/manni/meta/reference/configuration/#derive), made of the managed `fields`, the optional `sources` to consult, and an optional `codeowners` path relative to the config's directory. The parser has already asserted the fields are non-empty, unique, each one of `DERIVABLE_FIELDS`, and never a key a sidecar owns. |
+| `DeriveConfig` (type) | The [derived channel](/manni/meta/reference/configuration/#derive), made of the managed `fields`, the optional `sources` to consult, an optional `codeowners` path relative to the config's directory, and the optional `commands` table. The parser has already asserted the fields are non-empty, unique, each one of `DERIVABLE_FIELDS` or a key of `commands`, and never a key a sidecar owns. |
+| `DeriveCommandConfig` (type) | One `derive.commands` entry as the config spells it, with the `run` argv, the program first, and an optional `timeout` in seconds. The parser has already asserted `run` is a non-empty list of non-empty strings and `timeout` a positive number. It has also refused a key that is a built-in field, `$schema`, or a key a sidecar owns. |
 
 ## Reporters
 

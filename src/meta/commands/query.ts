@@ -79,9 +79,12 @@ import {
   createCollectionViews,
 } from "../core/collections.js";
 import {
+  commandsOf,
   createDerivedView,
+  derivableFields,
   DERIVED_ROWS,
   DERIVED_VIEW,
+  derivedColumns,
   deriveForTable,
   fieldsForSql,
   mentionsDerived,
@@ -655,6 +658,9 @@ async function runSql(
           content: e.content,
           extracted: e.own,
         }));
+      // The run's columns: the built-ins and the configured command keys
+      // (0041), so a statement reading a command's field runs the command.
+      const commands = commandsOf(ctx.config?.derive);
       const records = await deriveForTable(
         inputs,
         {
@@ -664,9 +670,9 @@ async function runSql(
           config: ctx.config,
         },
         "narrow derive.sources in manni.config.yaml",
-        fieldsForSql(sql),
+        fieldsForSql(sql, derivableFields(commands)),
       );
-      createDerivedView(db, records);
+      createDerivedView(db, records, derivedColumns(commands));
       derivedTable.built = true;
     };
     if (sql === "") {

@@ -140,10 +140,10 @@ describe("manni meta derive (built bin)", { timeout: 60_000 }, () => {
 
   it("refuses a field that is not derivable", () => {
     const { dir } = stageCorpus();
-    const r = run(["derive", "--fields", "verified-against"], dir);
+    const r = run(["derive", "--fields", "stakeholders"], dir);
     expect(r.status).toBe(2);
     expect(r.stderr).toContain(
-      '"verified-against" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed',
+      '"stakeholders" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed, or any key with an entry in derive.commands',
     );
   });
 
@@ -218,5 +218,35 @@ describe("the derived channel's flags on validate and get (built bin)", { timeou
   it("validate --help and get --help name the flags", () => {
     expect(run(["validate", "--help"]).stdout).toContain("--no-derive");
     expect(run(["get", "--help"]).stdout).toContain("--derived");
+  });
+});
+
+/**
+ * The `command` source (proposal 0041) end to end: `validate` is red on the
+ * stale stamp, `derive` writes the command's value, and `validate` is green.
+ * The fixture's `sources` names `command` alone, so no history is staged.
+ */
+describe("manni meta derive with a command source (built bin)", { timeout: 60_000 }, () => {
+  const COMMAND = resolve(here, "fixtures", "derive", "command");
+
+  it("validate is red, derive stamps the value, validate is green", () => {
+    const dir = makeTempRepo({ files: {} });
+    dirs.push(dir);
+    cpSync(COMMAND, dir, { recursive: true });
+
+    const before = run(["validate"], dir);
+    expect(before.status).toBe(1);
+    expect(before.stdout).toContain("verified-against says 1.4.1");
+    expect(before.stdout).toContain("command says 1.4.2 (node -p require('./version.json').version)");
+
+    const derive = run(["derive"], dir);
+    expect(derive.status).toBe(0);
+    expect(derive.stdout).toMatch(/verified-against\s+1\.4\.1 → 1\.4\.2/);
+    expect(readFileSync(join(dir, "docs", "install.md"), "utf8")).toContain(
+      "verified-against: 1.4.2",
+    );
+
+    const after = run(["validate"], dir);
+    expect(after.status).toBe(0);
   });
 });

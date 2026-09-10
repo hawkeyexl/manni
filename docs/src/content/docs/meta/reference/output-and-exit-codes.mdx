@@ -467,8 +467,10 @@ join field. All three are verdicts about the documents.
 
 With [`derive:`](/manni/meta/reference/configuration/#derive) in config,
 `validate`, `derive`, `get --derived` and a `query` naming the `derived`
-table read evidence from git, a CODEOWNERS file, and the `gh` or `glab` CLI. A
-source that cannot answer is exit 2 naming the fix, never a skipped field. A
+table read evidence from git, a CODEOWNERS file, the `gh` or `glab` CLI, and
+any [command](/manni/meta/reference/configuration/#commands) the config
+names. A source that cannot answer is exit 2 naming the fix, never a skipped
+field. A
 field that was quietly not compared would make a stale stamp read as current.
 A green gate over nothing is the failure this whole contract exists to end.
 The deliberate opt-outs are `--no-derive` on `validate` and `--sources`
@@ -484,8 +486,12 @@ narrowing on `derive`.
 | There is no origin remote, and `reviewed-by` or `last-reviewed` is managed. | `no origin remote to tell GitHub from GitLab` |
 | The origin host names neither platform, and `sources` does not list exactly one of `github`, `gitlab`. | `the origin remote is git.example.com, which names neither GitHub nor GitLab; list exactly one of github, gitlab in derive.sources to say which it is` |
 | Config `derive.codeowners` names a file that is not there, and `codeowners` is a requested source. | `codeowners source unavailable: …`, naming the path. A repository with no CODEOWNERS file at all is not this case: `owner` derives null and stderr says `codeowners: no CODEOWNERS file found (…)` once. |
+| A configured command exited non-zero, and `command` is a requested source. | ``command source unavailable: `jq -r .version package.json` failed (exit 2): jq: error: Could not open package.json; narrow --sources or --fields``, with the last stderr line after the exit code. |
+| A configured command's program is not on `PATH`. | ``command source unavailable: `jq` is not on PATH (derive.commands.verified-against); narrow --sources or --fields`` |
+| A configured command ran past its `timeout`. | ``command source unavailable: `node scripts/source-for.mjs docs/install.md` timed out after 60s; narrow --sources or --fields`` |
+| Config `derive.commands` names a field a built-in source already derives. | `derive.commands.last-updated targets a field git already derives; a command may only derive a field no built-in source claims`. A sidecar-owned key and `$schema` are refused the same way. |
 | `derive` was given `-`. | `cannot derive <stdin>: no history behind it` |
-| `derive` was given a field that is not derivable. | `"verified-against" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed` |
+| `derive` was given a field that is not derivable. | `"stakeholders" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed, or any key with an entry in derive.commands` |
 | `derive --fields` named a key a config [sidecar](/manni/meta/reference/configuration/#sidecars) owns. | `"owner" is owned by sidecar ./owners.yaml; a managed field has one authority, and a sidecar key already has one.` |
 | `derive` has no `derive.fields` in config and no `--fields`. | `nothing to derive: set derive.fields in manni.config.yaml or pass --fields` |
 | `derive` was given a findings format without `--check`. | `sarif is a findings format, which only --check produces` |

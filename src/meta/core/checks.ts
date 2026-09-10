@@ -29,7 +29,14 @@ import {
   createCollectionViews,
   type CollectionParams,
 } from "./collections.js";
-import { createDerivedView, fieldsForSql, mentionsDerived } from "./derive/table.js";
+import {
+  commandsOf,
+  createDerivedView,
+  derivableFields,
+  derivedColumns,
+  fieldsForSql,
+  mentionsDerived,
+} from "./derive/table.js";
 import type { DerivableField, DerivedRecord } from "./derive/types.js";
 
 /** One loaded file a check may attach findings to. */
@@ -202,9 +209,13 @@ export async function runChecks(
           `check "${wantsDerived[0]?.name ?? ""}": the SQL names the derived table, but this run cannot derive. Run it through \`manni meta validate\`, or drop the reference.`,
         );
       }
+      // The run's columns: the built-ins and the configured command keys
+      // (0041), read from the same config the collection views come from.
+      const commands = commandsOf(ctx.config?.derive);
+      const readable = derivableFields(commands);
       const fields = new Set<DerivableField>();
-      for (const c of wantsDerived) for (const f of fieldsForSql(c.query)) fields.add(f);
-      createDerivedView(db, await ctx.derive([...fields]));
+      for (const c of wantsDerived) for (const f of fieldsForSql(c.query, readable)) fields.add(f);
+      createDerivedView(db, await ctx.derive([...fields]), derivedColumns(commands));
     }
     // Checks are SELECT-only by design — 0021's original discipline, which
     // 0022 lifted for `query` because writes became query's *feature*, judged

@@ -30,10 +30,12 @@ import {
   assertSourcesAvailable,
   deriveMetadata,
 } from "../core/derive/index.js";
+import { commandsOf } from "../core/derive/table.js";
 import {
   DERIVE_SOURCES,
-  isDerivableField,
+  isBuiltinField,
   type DerivableField,
+  type DeriveCommand,
   type DerivedRecord,
   type DerivedValue,
   type DeriveInput,
@@ -176,8 +178,11 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
   // The derived channel (0040): the requested fields a source can state,
   // and one input per parsed file — the document's OWN extraction, since a
   // managed key is never sidecar-owned and the git source reads its lines.
+  // A field is derivable when a built-in source claims it, or when the
+  // config runs a command for it (0041).
+  const commands: Readonly<Record<string, DeriveCommand>> = commandsOf(config?.derive) ?? {};
   const derivableFields: DerivableField[] = opts.derived
-    ? opts.fields.filter(isDerivableField)
+    ? opts.fields.filter((f) => isBuiltinField(f) || Object.hasOwn(commands, f))
     : [];
   const deriveInputs: DeriveInput[] = [];
   if (opts.derived && usingStdin) {
@@ -274,6 +279,7 @@ async function attachDerived(
   },
 ): Promise<void> {
   const derive = run.config?.derive;
+  const commands = commandsOf(derive);
   const records: ReadonlyMap<string, DerivedRecord> =
     fields.length === 0 || inputs.length === 0
       ? new Map<string, DerivedRecord>()
@@ -287,6 +293,7 @@ async function attachDerived(
             ...(derive?.codeowners !== undefined
               ? { codeowners: derive.codeowners }
               : {}),
+            ...(commands !== undefined ? { commands } : {}),
             cache: true,
             now: () => new Date(),
           });

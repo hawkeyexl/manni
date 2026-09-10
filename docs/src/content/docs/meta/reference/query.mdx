@@ -150,10 +150,12 @@ both places.
 With [`derive:`](/manni/meta/reference/configuration/#derive) in config, a
 second table is available. `derived` holds what the evidence says each
 managed field should be, one row per file. The evidence is git history, the
-CODEOWNERS file, and the GitHub or GitLab review history. It is built only when the
+CODEOWNERS file, the GitHub or GitLab review history, and the output of any
+[command](/manni/meta/reference/configuration/#commands) the config names. It is built only when the
 statement names `derived` as a table (after `FROM`, `JOIN`, `UPDATE`, and the
-like, quoted or not). That is because building it spawns `git`, and with the
-`github` or `gitlab` source, `gh` or `glab`. A statement that never names it pays nothing, and the
+like, quoted or not). That is because building it spawns `git`, with the
+`github` or `gitlab` source `gh` or `glab`, and with the `command` source the
+configured programs. A statement that never names it pays nothing, and the
 word inside a string literal or a comment does not count. A spelling the text
 search misses is caught by SQLite's own `no such table: derived`, which
 triggers the same build.
@@ -173,10 +175,16 @@ in the view.
 | `owner` | TEXT | A JSON array, even for one owner, because a CODEOWNERS line can name several. |
 | `reviewed-by` | TEXT | A JSON array. |
 | `last-reviewed` | TEXT | A date. |
-| `_sources` | TEXT | JSON text, `{field: {source, evidence}}`, saying where each non-null value came from and why. |
+| one per key in `derive.commands` | TEXT | The command's trimmed stdout. A list or object is JSON text, as in `docs`. `verified-against` from `jq -r .version package.json` is `1.4.2`; from a script printing `{"name":"operator","version":"1.4.2"}` it is that object's JSON text. |
+| `_sources` | TEXT | JSON text, `{field: {source, evidence}}`, saying where each non-null value came from and why. For a command column the source is `command` and the evidence is the argv, `{path}` already substituted. |
 
-Every field column is present whether or not the field is managed, so one
-query shape serves every config. A field whose sources are excluded by
+Every built-in field column is present whether or not the field is managed,
+so one query shape serves every config. The command columns follow, one per
+key in [`derive.commands`](/manni/meta/reference/configuration/#commands),
+so their set depends on the config. Quote a hyphenated name, as for
+`last-updated`. A statement that names a command column derives only that
+column and runs only that command. A read of `owner` still spawns nothing.
+A field whose sources are excluded by
 `derive.sources`, or that the statement never names, is `NULL`. A source a
 named column needs that cannot answer is an error (exit 2) naming the fix,
 exactly as for `validate` and `derive`, never an empty column.
