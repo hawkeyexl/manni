@@ -74,6 +74,7 @@ import {
   derivableFields,
   fieldsForSql,
   mentionsDerived,
+  mentionsResolved,
 } from "../core/derive/table.js";
 import {
   compareDerived,
@@ -432,11 +433,14 @@ export async function runValidate(
     deriveConfig !== undefined &&
     deriveConfig.fields.length > 0 &&
     opts.derive !== false;
-  // A corpus check naming the `derived` table needs the same inputs, content
-  // included (the git source hashes it to spot an uncommitted body), so the
-  // one list serves both — and fills only when something will read it.
+  // A corpus check naming the `derived` or `resolved` table needs the same
+  // inputs, content included (the git source hashes it to spot an uncommitted
+  // body), so the one list serves both — and fills only when something will
+  // read it. Both names count: a check reading `resolved` alone in a repo
+  // with no managed fields would otherwise keep no inputs, derive nothing,
+  // and read every column NULL without saying so.
   const derivedChecks = checksWillRun
-    ? configuredChecks.filter((c) => mentionsDerived(c.query))
+    ? configuredChecks.filter((c) => mentionsDerived(c.query) || mentionsResolved(c.query))
     : [];
   const checksNeedDerived = derivedChecks.length > 0;
   const deriveInputs: DeriveInput[] = [];

@@ -123,12 +123,16 @@ finding instead, which is what CI runs.
 To see the evidence for one field without writing anything:
 
 ```sh
-npx -y @hawkeyexl/manni meta get last-updated docs/install.md --derived
+npx -y @hawkeyexl/manni meta get last-updated docs/install.md
 ```
 
 ```
-docs/install.md: last-updated=2026-08-20 (derived 2026-09-07, git: body changed in 424f71a)
+docs/install.md: last-updated=2026-08-20  (asserted; git says 2026-09-07, body changed in 424f71a)
 ```
+
+The page asserts one date and git says another, so the line says both. No
+flag is needed for that, and [See what a page resolves
+to](#see-what-a-page-resolves-to) has the rest of the read surface.
 
 Once a field is managed, `validate` holds every page to it:
 
@@ -141,6 +145,56 @@ docs/install.md
 
 The message names the fix. Run `manni meta derive`, commit, and the page is
 current.
+
+## See what a page resolves to
+
+A page with no `owner` in its frontmatter can still have an owner. CODEOWNERS
+may cover the path, and nobody wrote it down. `get` answers that without a
+flag, because a read gives back the **resolved value**. That is the asserted
+value where the page has the key, and the derived one where it does not.
+
+```sh
+npx -y @hawkeyexl/manni meta get owner docs/install.md docs/faq.md
+```
+
+```
+docs/install.md: owner=@platform-docs  (derived, codeowners: .github/CODEOWNERS:12)
+docs/faq.md: owner=@docs-team  (asserted)
+```
+
+`install.md` says nothing about ownership, and CODEOWNERS line 12 answers for
+it. `faq.md` names its own owner, which is what the page publishes, so that
+is what comes back. To see only what the pages store, and consult nothing:
+
+```sh
+npx -y @hawkeyexl/manni meta get owner docs/install.md --no-derived
+```
+
+```
+docs/install.md: owner=(unset)
+```
+
+Across a corpus, the same question is SQL. `query` builds a read-only
+[`resolved` table](/manni/meta/reference/query/#the-resolved-table) whose
+`_origin` column says, per field, which side won:
+
+```sh
+npx -y @hawkeyexl/manni meta query "SELECT _path, owner, _origin ->> '\$.owner' AS origin FROM resolved"
+```
+
+So "the pages CODEOWNERS covers that nobody wrote an owner into" is one
+`WHERE` clause:
+
+```sh
+npx -y @hawkeyexl/manni meta query "SELECT _path FROM resolved WHERE _origin ->> '\$.owner' = 'derived'"
+```
+
+<Aside type="note" title="Resolved values, not schema resolution">
+manni meta also *resolves* a schema set, which is how it picks the schemas
+that judge a file. That is a different subject, covered by [schema
+resolution](/manni/meta/reference/schema-resolution/). Everything on this
+page is about a resolved **value**.
+</Aside>
 
 ## Derive a field with a command
 
@@ -192,11 +246,11 @@ docs/install.md
 To see the two side by side without writing anything:
 
 ```sh
-npx -y @hawkeyexl/manni meta get verified-against docs/install.md --derived
+npx -y @hawkeyexl/manni meta get verified-against docs/install.md
 ```
 
 ```
-docs/install.md: verified-against=1.4.1 (derived 1.4.2, command: jq -r .version package.json)
+docs/install.md: verified-against=1.4.1  (asserted; command says 1.4.2, jq -r .version package.json)
 ```
 
 A field that differs per page takes `{path}` in the argv. The command then
@@ -396,9 +450,11 @@ manni: "last-updated" is managed by derive; run manni meta derive instead.
 `fill` never proposes a managed field, and reports the skip so the omission
 is visible. A managed field can still be read everywhere. `get` prints it,
 and a [corpus check](/manni/meta/ci/query-gates/) can phrase a rule over it.
-`query` gains a read-only `derived` table holding what the evidence says,
-one row per page. So "every page whose stamp disagrees with git" is a
-[SQL question](/manni/meta/reference/query/#the-derived-table).
+`query` gains two read-only tables. [`derived`](/manni/meta/reference/query/#the-derived-table)
+holds what the evidence says, one row per page, and
+[`resolved`](/manni/meta/reference/query/#the-resolved-table) holds what to
+believe. So "every page whose stamp disagrees with git" is a SQL question,
+and so is "every page whose owner nobody wrote down".
 
 To stop managing a field, remove it from `derive.fields`. The stamp stays in
 the page as an ordinary asserted value, and nothing compares it any more.
@@ -448,7 +504,9 @@ holds the page to the evidence. What it can do is change the body and run
     (see .github/workflows/docs-as-tests.yml), over this repository's own history.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"set-up-derived-metadata","description":"Derived metadata journey, mapped to the local CLI build over this repository's own git history."} */}
-{/* step {"description":"get --derived prints the derived value and its evidence beside the asserted one, from this repository's history (exit 0).","runShell":{"command":"npx @hawkeyexl/manni meta get created docs/src/content/docs/meta/proposals/stewardship.mdx --derived","exitCodes":[0],"stdio":"created="}} */}
+{/* step {"description":"get derives without a flag and prints the resolved value with its origin, from this repository's history (exit 0).","runShell":{"command":"npx @hawkeyexl/manni meta get created docs/src/content/docs/meta/proposals/stewardship.mdx","exitCodes":[0],"stdio":"created="}} */}
+{/* step {"description":"--derived is still accepted, so a script written before derivation became the default keeps working (exit 0).","runShell":{"command":"npx @hawkeyexl/manni meta get created docs/src/content/docs/meta/proposals/stewardship.mdx --derived","exitCodes":[0],"stdio":"created="}} */}
+{/* step {"description":"--no-derived prints only what the document stores, consulting no source (exit 0).","runShell":{"command":"npx @hawkeyexl/manni meta get created docs/src/content/docs/meta/proposals/stewardship.mdx --no-derived","exitCodes":[0],"stdio":"created="}} */}
 {/* step {"description":"A field that is not derivable is refused by name before any source is consulted (exit 2).","runShell":{"command":"npx @hawkeyexl/manni meta derive --fields verified-against","exitCodes":[2],"stdio":"not derivable"}} */}
 {/* step {"description":"A command in the config derives verified-against from the fixture's version file, and --dry-run reports it without writing (exit 0).","runShell":{"command":"npx @hawkeyexl/manni meta derive --fields verified-against --dry-run -c test/fixtures/derive/command/manni.config.yaml","exitCodes":[0],"stdio":"verified-against"}} */}
 {/* test end */}

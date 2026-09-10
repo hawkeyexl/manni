@@ -595,7 +595,14 @@ interface ValidateCliOptions extends RunCliOptions {
 interface GetCliOptions extends RunCliOptions {
   /** `--fields <list>`; when present, every positional is a path. */
   fields?: string;
-  /** `--derived`: print the derived value and its evidence beside the asserted one. */
+  /**
+   * `--no-derived` / `--derived`. Both spellings are registered, which is
+   * why this is `boolean | undefined` rather than commander's usual `true`
+   * default for a `--no-` flag: registering the positive form alongside it
+   * removes that default, so the key is absent when neither was given.
+   * Only the explicit `false` means anything — derivation is on otherwise,
+   * and `--derived` is the no-op kept for scripts written before 0042.
+   */
   derived?: boolean;
   /**
    * `--no-cache`. Commander supplies `true` when the flag is absent, so
@@ -898,9 +905,14 @@ export function buildProgram(): Command {
       "comma-separated metadata fields to print; every positional is then a path",
     )
     .option(
-      "--derived",
-      "show the derived value and its evidence beside the asserted one",
+      "--no-derived",
+      "print only what the document stores, consulting no source",
     )
+    // Registered beside `--no-derived` on purpose. Commander gives a lone
+    // `--no-x` the default `true`; declaring `--x` as well removes that
+    // default, so "neither flag" is `undefined` and stays distinguishable —
+    // and the spelling that used to turn derivation on still parses.
+    .option("--derived", "accepted and inert: derivation is already on")
     .option("--no-cache", "bypass the GitHub or GitLab review cache")
     .option("--ext <list>", "comma-separated extensions for directory walks")
     .option("--exclude <glob>", "glob to exclude; repeatable", collect, [])
@@ -931,6 +943,7 @@ export function buildProgram(): Command {
         "  manni meta get --fields title,type docs/intro.md",
         "  manni meta get author.name,/author/email docs/intro.md",
         '  manni meta get type "**/*.md" -f json',
+        "  manni meta get owner docs/intro.md --no-derived",
         "  cat page.md | manni meta get title - --as markdown",
       ].join("\n"),
     )
@@ -958,7 +971,7 @@ export function buildProgram(): Command {
 
           const results = await runGet({
             fields,
-            derived: Boolean(options.derived),
+            derived: options.derived !== false,
             cache: options.cache,
             inputs: paths,
             as: options.as,

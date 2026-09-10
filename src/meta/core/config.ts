@@ -1053,12 +1053,13 @@ function parseConfigDocument(raw: unknown, source: string): DocmetaConfig {
             `${source}: overrides[${i}].name "${e.name}" collides with the docs table every query reads. Pick another name.`,
           );
         }
-        // The derived table (proposal 0040) is a view named `derived` over
-        // a backing table named `_derived_rows`, built beside `docs` when a
-        // statement asks for it. Case-folded for the same reason as `docs`.
-        if (["derived", "_derived_rows"].includes(e.name.toLowerCase())) {
+        // The derived table (proposal 0040) is a view named `derived` over a
+        // backing table named `_derived_rows`, built beside `docs` when a
+        // statement asks for it, and `resolved` is the view over the two.
+        // Case-folded for the same reason as `docs`.
+        if (["derived", "_derived_rows", "resolved"].includes(e.name.toLowerCase())) {
           throw new DocmetaError(
-            `${source}: overrides[${i}].name "${e.name}" collides with the derived table a query builds beside docs (the derived view and its _derived_rows table). Pick another name.`,
+            `${source}: overrides[${i}].name "${e.name}" collides with the derived table a query builds beside docs (the derived view, its _derived_rows table, and the resolved view over both). Pick another name.`,
           );
         }
         // SQLite reserves the prefix (case-insensitively) for internal

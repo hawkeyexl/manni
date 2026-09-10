@@ -58,6 +58,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0039](0039-sidecar-join.md) | `join`: a sidecar keyed by a frontmatter field, so a rename cannot orphan an entry; two pages sharing a value is a finding on both | Maya · M1, M2 / Devin · D4 / Sara · S3 | Implemented |
 | [0040](0040-derived-metadata.md) | Derived metadata, with managed stewardship fields stamped from git, CODEOWNERS, GitHub and GitLab by `manni meta derive`, and a stale stamp reported by `validate` | Maya · M1, M2 / Devin · D4 / Theo · T1 | Implemented (#19) |
 | [0041](0041-command-source.md) | The `command` source: a managed field derived by an argv the config names, so `verified-against` can be checked against the product's own version | Maya · M1, M2 / Devin · D4 / Sara · S2 | Implemented (#21) |
+| [0042](0042-resolved-reads.md) | Resolved reads, where a third read-only view `resolved` holds the asserted value or the derived one, with `_origin` naming which. `get` derives by default | Maya · M1, M2 / Devin · D4 / Theo · T1 | Implemented (#TBD) |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -109,6 +110,8 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
                           duplicate finding on every page that shares the value)
 0040 ──> 0041            (a fifth source, `command`, on 0040's managed-field rules; the
                           config-trusts-the-operator line 0026 and 0038 drew)
+0041 ──> 0042            (the derived channel gave a value two possible origins;
+                          `resolved` is the view that says which one a read got)
                                          writes rather than land in the document; both
                                          channels validated, no tiebreak; the orphan check
                                          runs only on the config corpus)

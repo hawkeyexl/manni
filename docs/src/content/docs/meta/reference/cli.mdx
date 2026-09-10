@@ -213,6 +213,14 @@ manni meta validate --baseline                     # fail only on new findings
 Print the values of one or more metadata fields from each file. Useful for
 scripted extraction. `get` reads and reports values; it does not validate.
 
+With [`derive:`](/manni/meta/reference/configuration/#derive) in config, `get`
+prints the **resolved value** of each field. That is the asserted value when
+the document carries the key, and the derived one otherwise, with the origin
+on the same line. Derivation is on by default, and `--no-derived` turns it
+off. A field no source can state consults nothing, so `get title docs/`
+spawns no process whatever the config says. `get` never writes, and its exit
+code is unchanged.
+
 ```sh
 manni meta get --fields <list> [paths...] [options]
 manni meta get [fields] [paths...] [options]
@@ -290,8 +298,9 @@ unaffected.
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `--fields` | `<list>` | the `[fields]` positional | Comma-separated fields to print. When given, **every** positional is a path. See [naming the fields](#naming-the-fields). |
-| `--derived` | n/a | off | Print the [derived value](/manni/meta/reference/configuration/#derive) and its evidence beside the asserted one, as `last-updated=2026-08-20 (derived 2026-09-07, git: body changed in 424f71a)`. In `json`, each file's object gains a `derived` record. A field that is not derivable prints `(not derivable)`. Stdin is refused with this flag, because there is no history behind it (exit 2). A source that cannot answer is exit 2 naming the fix. |
-| `--no-cache` | n/a | off | Ask GitHub or GitLab again rather than reading the [review cache](/manni/meta/reference/configuration/#the-review-sources). Only `--derived` consults it, and only for `reviewed-by` and `last-reviewed`. A merged change's approvals never change, so the cache is on by default; this is the way past an answer recorded wrongly. |
+| `--no-derived` | n/a | off | Print only what the document stores. No source is consulted, no origin is annotated, and the output is what `get` printed before config [`derive:`](/manni/meta/reference/configuration/#derive) existed. |
+| `--derived` | n/a | off | Accepted and inert. It was the opt-in before derivation became the default. A script that passes it still runs, and prints what a run without it prints. |
+| `--no-cache` | n/a | off | Ask GitHub or GitLab again rather than reading the [review cache](/manni/meta/reference/configuration/#the-review-sources). Only a run that derives consults it, and only for `reviewed-by` and `last-reviewed`. A merged change's approvals never change, so the cache is on by default; this is the way past an answer recorded wrongly. |
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Merged with config `exclude:` and the [default ignores](#default-ignores). |
 | `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) (extractor name). Required when reading from stdin. |
@@ -310,6 +319,38 @@ requested field per file. Unset fields print as `(unset)`. In `json` format it
 prints an array of `{ file, present, values }` objects, where `values` maps each
 requested field to its value. A requested field that is unset is omitted from
 `values`. `present` reports whether the file had a metadata block at all.
+
+With config [`derive:`](/manni/meta/reference/configuration/#derive), the
+value on each line is the resolved one and an annotation says where it came
+from. There are four shapes, and `--no-derived` drops the annotation
+entirely:
+
+```console
+$ manni meta get title,owner,last-updated docs/install.md
+docs/install.md: title=Install the operator  (asserted)
+docs/install.md: owner=@platform-docs  (derived, codeowners: .github/CODEOWNERS:12)
+docs/install.md: last-updated=2026-08-20  (asserted; git says 2026-09-07, body changed in 424f71a)
+
+$ manni meta get title docs/install.md --no-derived
+docs/install.md: title=Install the operator
+```
+
+A field neither the document nor any source has prints `(unset)`, with no
+annotation after it. The third line above is the drift case. The document
+asserts a value, the evidence disagrees, and the asserted one is what `get`
+prints, because that is what the page publishes. `validate` reports the same
+disagreement as `derived:stale`.
+
+In `json`, each file's object gains a `resolved` record and an `origin`
+record beside the existing `values`, and a `derived` record carrying the raw
+derived values and their evidence. `values` is untouched, so a consumer
+reading only what the document stores sees exactly what it saw before.
+`--quiet` hides a file when every requested field is unset **after**
+resolving, so a page whose only `owner` comes from CODEOWNERS still prints.
+
+Stdin derives nothing, and that is not an error. A piped document has no
+path, so no source can speak for it, and `cat page.md | manni meta get title -
+--as markdown` resolves to the document's own values.
 
 A file whose metadata block could not be **read at all** is reported against
 that file, rather than ending the run. That means frontmatter that is not valid
@@ -332,7 +373,8 @@ manni meta get title,type docs/intro.md
 manni meta get --fields title,type docs/intro.md
 manni meta get author.name,/author/email docs/intro.md
 manni meta get type "**/*.md" -f json
-manni meta get owner "docs/**/*.md" -q          # only the files that set it
+manni meta get owner "docs/**/*.md" -q          # only the files that resolve one
+manni meta get owner docs/install.md --no-derived   # what the page stores, nothing else
 cat page.md | manni meta get title - --as markdown
 ```
 
@@ -397,7 +439,7 @@ table](/manni/meta/reference/query/#the-docs-table).
 | `--param` | `<name=value>` | n/a | Bind a named SQL parameter (`$name`, `:name`, or `@name`) as a **string**; `name:=value` parses the value as JSON for a typed bind. Repeatable. See [bound parameters](#bound-parameters). |
 | `--db` | `<path>` | n/a | Also write the built database to this file, and the SQL is then optional. The file is a regenerated artifact, so an existing SQLite database at the path is overwritten and anything else is refused. See [exporting the database](#exporting-the-database). |
 | `--dry-run` | n/a | off | Preview a mutating statement instead of applying it, so you see the per-file diff it would make with nothing touched. `--check` implies it, because a check judges and never mutates. See [writing back](#writing-back). |
-| `--no-cache` | n/a | off | Ask GitHub or GitLab again rather than reading the [review cache](/manni/meta/reference/configuration/#the-review-sources). Only a statement naming the `derived` table consults it, and only for `reviewed-by` and `last-reviewed`. A merged change's approvals never change, so the cache is on by default; this is the way past an answer recorded wrongly. |
+| `--no-cache` | n/a | off | Ask GitHub or GitLab again rather than reading the [review cache](/manni/meta/reference/configuration/#the-review-sources). Only a statement naming the [`derived`](/manni/meta/reference/query/#the-derived-table) or [`resolved`](/manni/meta/reference/query/#the-resolved-table) table consults it, and only for `reviewed-by` and `last-reviewed`. A merged change's approvals never change, so the cache is on by default; this is the way past an answer recorded wrongly. |
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Merged with config `exclude:` and the [default ignores](#default-ignores). |
 | `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) (extractor name). Required when reading from stdin. |
