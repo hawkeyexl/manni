@@ -71,11 +71,16 @@ Nine decisions, then the config, the ladder, and the shapes.
    substituted, so a script can answer for one page. An argv without it runs
    once per run, and the one value is copied to every document. There is no
    flag for this. The argv says which it is.
-3. **The value is the trimmed stdout, read as JSON when it parses.** `1.4.2`
-   is the string `1.4.2`. `["a","b"]` is a list. `{"name":"operator",
-   "version":"1.4.2"}` is an object, which is `verified-against`'s checker
-   form from 0023 round 9. Empty stdout with exit 0 is null, meaning no fact,
-   which is never stale.
+3. **The value is the trimmed stdout, and only structured JSON is parsed.**
+   `1.4.2` is the string `1.4.2`. `["a","b"]` is a list.
+   `{"name":"operator","version":"1.4.2"}` is an object, which is
+   `verified-against`'s checker form from 0023 round 9. Empty stdout with
+   exit 0 is null, meaning no fact, which is never stale. Only `{`, `[` and
+   `"` open a parse. The pre-merge review found the first draft parsing any
+   JSON, which silently rewrote a bare scalar. `1.10` became the number
+   `1.1`, so a command reporting version 1.10 stamped 1.1 into the document.
+   A field wants the characters the command printed. An object or a list is
+   the only thing a parse was ever for.
 4. **A command may only derive a field no built-in source claims.** A
    command for `last-updated` is a config error, exit 2. The six built-ins
    have one authority each. A second authority for the same key would make

@@ -131,21 +131,6 @@ export async function deriveMetadata(
   const consulted = new Set(consultedSources(ctx.fields, ctx.sources, ctx.commands));
   const sources: Partial<Record<DeriveSource, SourceStatus>> = {};
 
-  // command: only the entries for fields this run asked for, so a narrowed
-  // `--fields` spawns nothing it does not need.
-  let commanded: Map<string, Record<string, DerivedValue | null>> = new Map();
-  if (consulted.has("command") && ctx.commands !== undefined) {
-    const wanted = new Set(ctx.fields);
-    const commands = Object.fromEntries(
-      Object.entries(ctx.commands).filter(([field]) => wanted.has(field)),
-    );
-    if (Object.keys(commands).length > 0) {
-      const result = await deriveFromCommands(inputs, commands, { cwd: ctx.configDir ?? ctx.cwd });
-      sources.command = result.status;
-      commanded = result.records;
-    }
-  }
-
   // git: the walk every other source builds on.
   let git: Map<string, GitFacts> = new Map();
   if (consulted.has("git")) {
@@ -206,6 +191,27 @@ export async function deriveMetadata(
       const result = await deriveReviewsByRoot(inputs, git, rootFor, ctx, requested);
       Object.assign(sources, result.status);
       reviews = result.records;
+    }
+  }
+
+  // command: last, and only when nothing has failed yet. A configured
+  // command is the one source that runs a program of the operator's own,
+  // which may do more than report a value, so it is not spawned for a run
+  // already destined for exit 2 — and the source that failed first is the
+  // one whose reason `assertSourcesAvailable` reports.
+  let commanded: Map<string, Record<string, DerivedValue | null>> = new Map();
+  const doomed = Object.values(sources).some((s) => !s.available);
+  if (consulted.has("command") && ctx.commands !== undefined && !doomed) {
+    // Only the entries for fields this run asked for, so a narrowed
+    // `--fields` spawns nothing it does not need.
+    const wanted = new Set(ctx.fields);
+    const commands = Object.fromEntries(
+      Object.entries(ctx.commands).filter(([field]) => wanted.has(field)),
+    );
+    if (Object.keys(commands).length > 0) {
+      const result = await deriveFromCommands(inputs, commands, { cwd: ctx.configDir ?? ctx.cwd });
+      sources.command = result.status;
+      commanded = result.records;
     }
   }
 

@@ -53,7 +53,17 @@ function tempDir(): string {
   return dir;
 }
 afterEach(() => {
-  for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
+  // Best effort, because a killed command settles before the child has
+  // finished dying, and on Windows it holds this directory as its cwd until
+  // it does. The temp directory is the OS's to reap; a test asserts about
+  // the source's answer, not about housekeeping.
+  for (const d of dirs.splice(0)) {
+    try {
+      rmSync(d, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+    } catch {
+      /* the OS reaps it */
+    }
+  }
 });
 
 describe("valueOf", () => {
@@ -63,12 +73,19 @@ describe("valueOf", () => {
     expect(valueOf("  v2.1 \n")).toBe("v2.1");
   });
 
-  it("parses stdout that is JSON, of any type", () => {
+  it("parses stdout that is structured JSON", () => {
     expect(valueOf('{"a":1,"b":[1,2]}\n')).toEqual({ a: 1, b: [1, 2] });
     expect(valueOf('["x","y"]')).toEqual(["x", "y"]);
-    expect(valueOf("42")).toBe(42);
-    expect(valueOf("true")).toBe(true);
     expect(valueOf('"quoted"')).toBe("quoted");
+  });
+
+  it("keeps a bare scalar as text, so a version is never renumbered", () => {
+    // `1.10` read as JSON is the number 1.1, and stamping that into a
+    // document changes which version the page claims to be verified against.
+    expect(valueOf("1.10")).toBe("1.10");
+    expect(valueOf("42")).toBe("42");
+    expect(valueOf("true")).toBe("true");
+    expect(valueOf("0012")).toBe("0012");
   });
 
   it("keeps stdout that is not JSON as the trimmed string", () => {
@@ -207,6 +224,35 @@ describe("deriveFromCommands", () => {
       available: false,
       reason: `\`${command.run.join(" ")}\` timed out after 0.2s (derive.commands.slow)`,
     });
+  });
+
+  it("is unavailable when the command floods stdout, and does not wait for it", async () => {
+    // A program writing without end would otherwise be read into memory
+    // until the run died; the cap kills it and names the field.
+    const command = cmd(
+      "const s='x'.repeat(1024*1024); for(;;) process.stdout.write(s);",
+      [],
+      60_000,
+    );
+    const result = await deriveFromCommands(INPUTS, { flood: command }, { cwd: tempDir() });
+    expect(result.status.available).toBe(false);
+    expect(result.status.reason).toContain("MiB; a command reports one field's value");
+    expect(result.status.reason).toContain("(derive.commands.flood)");
+  });
+
+  it("returns from a timeout even when the child ignores SIGTERM", async () => {
+    // `close` waits for the stdio streams as well as the exit, so a child
+    // that traps the signal would hang the run past its own timeout.
+    const command = cmd(
+      "process.on('SIGTERM', () => {}); setTimeout(() => {}, 30000);",
+      [],
+      300,
+    );
+    const started = Date.now();
+    const result = await deriveFromCommands(INPUTS, { stubborn: command }, { cwd: tempDir() });
+    expect(result.status.available).toBe(false);
+    expect(result.status.reason).toContain("timed out after 0.3s");
+    expect(Date.now() - started).toBeLessThan(10_000);
   });
 
   it("stops at the first failure and spawns nothing after it", async () => {

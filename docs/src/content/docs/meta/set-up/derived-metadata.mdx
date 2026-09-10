@@ -162,10 +162,11 @@ meta:
 
 `run` is an argv list, never a shell string, so it means the same thing on
 every platform. The command runs once, in the config file's directory, and
-its trimmed stdout is the value for every page. Output that parses as JSON is
-read as JSON, so a script that prints `{"name":"operator","version":"1.4.2"}`
-derives the object form the [vocabulary](/manni/meta/proposals/stewardship/)
-recommends for a checker.
+its trimmed stdout is the value for every page. Structured JSON is parsed, so
+a script that prints `{"name":"operator","version":"1.4.2"}` derives the
+object form the [vocabulary](/manni/meta/proposals/stewardship/) recommends
+for a checker. Anything else stays the text the command printed, so a version
+such as `1.10` is stamped as you wrote it.
 
 ```sh
 npx -y @hawkeyexl/manni meta derive

@@ -1116,10 +1116,8 @@ meta:
 
 The rules:
 
-- **The value is the trimmed stdout, read as JSON when it parses.** `1.4.2`
-  is the string `1.4.2`. `["a","b"]` is a list. `{"name":"operator","version":"1.4.2"}`
-  is an object, which is `verified-against`'s checker form. Empty stdout
-  with exit 0 is null, meaning no fact, which is never stale.
+- **The value is the trimmed stdout, and only structured JSON is parsed.** `1.4.2` is the string `1.4.2`. `["a","b"]` is a list. `{"name":"operator","version":"1.4.2"}` is an object, which is `verified-against`'s checker form. Only `{`, `[` and `"` open a parse, so a bare scalar keeps the characters the command printed: a version `1.10` stays `1.10` rather than becoming the number `1.1`. Empty stdout with exit 0 is null, meaning no fact, which is never stale.
+- **A command that floods or hangs is a failure, not a value.** Output past 8 MiB on either stream, or a run past the entry's `timeout`, kills the command and makes the source unavailable. A command reports one field's value.
 - **`{path}` chooses per file; its absence chooses per run.** An argv
   containing `{path}` runs once per document, with the document's run label
   substituted, so a script can answer for one page. Without it the command

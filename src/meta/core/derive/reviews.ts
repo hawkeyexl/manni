@@ -247,6 +247,12 @@ abstract class CliClient implements ReviewClient {
     }
     const cmd = commandLine(this.tool, args);
     if (r.timedOut) throw this.timeout(args);
+    // A truncated answer must not be read as the whole one: half a page of
+    // reviews would file a stale finding against a document that was
+    // reviewed, which is the half-answer this class refuses everywhere.
+    if (r.tooLarge) {
+      throw new DocmetaError(`${cmd} wrote more output than manni will read`);
+    }
     if (r.code !== 0) {
       if (isNotFound(r)) return null;
       const detail = lastLine(r.stderr) || lastLine(r.stdout);
@@ -492,7 +498,7 @@ export async function createReviewClient(
 async function originUrl(root: string): Promise<string | null> {
   try {
     const r = await run("git", ["remote", "get-url", "origin"], { cwd: root });
-    if (r.code !== 0 || r.timedOut) return null;
+    if (r.code !== 0 || r.timedOut || r.tooLarge) return null;
     return stringOf(r.stdout.trim());
   } catch {
     return null;

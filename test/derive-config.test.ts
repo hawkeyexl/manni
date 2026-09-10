@@ -329,6 +329,27 @@ describe("derive: commands", () => {
       ),
     ).toThrow(/manni\.config\.yaml: meta\.derive\.commands\.created targets a field git already derives/);
   });
+
+  it.each(["_path", "_sources"])(
+    'refuses a command named "%s", a column of the derived table',
+    (name) => {
+      // Every command key is a column beside `_path` and `_sources`, so one
+      // spelled like either declares the column twice and SQLite refuses the
+      // table with a raw error in the middle of a query.
+      expect(() =>
+        parse([
+          "derive:",
+          "  commands:",
+          `    ${name}:`,
+          '      run: ["node", "-p", "1"]',
+        ]),
+      ).toThrow(
+        new RegExp(
+          `derive\\.commands\\.${name} collides with a column of the derived table`,
+        ),
+      );
+    },
+  );
 });
 
 describe("derive: reserved collection names", () => {

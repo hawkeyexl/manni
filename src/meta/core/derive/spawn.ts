@@ -19,12 +19,23 @@ export interface SpawnOptions {
 
 export const DEFAULT_TIMEOUT_MS = 30_000;
 
+/**
+ * How much of a child's output is kept, per stream. `gh` and `glab` answer
+ * in JSON a page at a time, and a configured command reports one field's
+ * value, so a stream past this is a program doing something else — `cat` on
+ * the wrong file — and reading it to the end would trade the run's memory
+ * for output nobody wants. The git walk caps itself the same way.
+ */
+export const MAX_OUTPUT_BYTES = 8 * 1024 * 1024;
+
 export interface Run {
   /** Exit code; `null` when a signal ended the child. */
   code: number | null;
   stdout: string;
   stderr: string;
   timedOut: boolean;
+  /** A stream passed `MAX_OUTPUT_BYTES` and the child was killed. */
+  tooLarge: boolean;
 }
 
 /** The binary could not be started at all: nothing on PATH by that name. */
@@ -59,21 +70,43 @@ export function run(bin: string, args: string[], opts: SpawnOptions): Promise<Ru
     let stdout = "";
     let stderr = "";
     let timedOut = false;
+    let tooLarge = false;
+
+    /**
+     * Stop the child for good. `kill()` is SIGTERM, which a program may
+     * trap, and `close` waits for the stdio streams as well as the exit —
+     * a grandchild holding stdout keeps it pending. So the promise settles
+     * here rather than waiting, and SIGKILL follows shortly after.
+     */
+    const stop = (r: Omit<Run, "code">): void => {
+      child.kill();
+      setTimeout(() => child.kill("SIGKILL"), 1_000).unref();
+      finish({ code: null, ...r });
+    };
+
     child.stdout.setEncoding("utf8");
     child.stdout.on("data", (chunk: string) => {
       stdout += chunk;
+      if (stdout.length > MAX_OUTPUT_BYTES) {
+        tooLarge = true;
+        stop({ stdout, stderr, timedOut, tooLarge });
+      }
     });
     // Drained *and* kept: a chatty CLI must not stall the pipe, and its last
     // line is what names the failure to the user.
     child.stderr.setEncoding("utf8");
     child.stderr.on("data", (chunk: string) => {
       stderr += chunk;
+      if (stderr.length > MAX_OUTPUT_BYTES) {
+        tooLarge = true;
+        stop({ stdout, stderr, timedOut, tooLarge });
+      }
     });
     child.stdin.end();
 
     const timer = setTimeout(() => {
       timedOut = true;
-      child.kill();
+      stop({ stdout, stderr, timedOut, tooLarge });
     }, opts.timeoutMs ?? DEFAULT_TIMEOUT_MS);
 
     // No binary on PATH lands here rather than throwing from spawn().
@@ -83,7 +116,7 @@ export function run(bin: string, args: string[], opts: SpawnOptions): Promise<Ru
     });
     child.on("close", (code) => {
       clearTimeout(timer);
-      finish({ code, stdout, stderr, timedOut });
+      finish({ code, stdout, stderr, timedOut, tooLarge });
     });
   });
 }

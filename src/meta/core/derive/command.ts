@@ -14,7 +14,14 @@
  * documents it never reached, which is the false green the whole channel
  * refuses. Availability is reported, never thrown, as the other sources do.
  */
-import { BinMissing, lastLine, run, type Run, type SpawnOptions } from "./spawn.js";
+import {
+  BinMissing,
+  MAX_OUTPUT_BYTES,
+  lastLine,
+  run,
+  type Run,
+  type SpawnOptions,
+} from "./spawn.js";
 import type { DerivedValue, DeriveCommand, DeriveInput, SourceStatus } from "./types.js";
 
 /** The argv token a per-file command carries where the document's label goes. */
@@ -45,12 +52,21 @@ export function argvFor(command: DeriveCommand, label: string): string[] {
 
 /**
  * What a command's stdout means: nothing when blank, the parsed value when it
- * is JSON of any type, the trimmed text otherwise. A date or a version string
+ * is *structured* JSON, the trimmed text otherwise. A date or a version string
  * stays a string; a list or an object arrives as one.
+ *
+ * Only `{`, `[` and `"` open a parse, and that boundary is the whole point.
+ * A bare scalar is text a person wrote, and reading it as JSON silently
+ * rewrites it: `1.10` becomes the number `1.1`, so a command reporting
+ * version 1.10 stamps 1.1 into the document. A field wants the characters
+ * the command printed. The structured forms are the reason a parse exists at
+ * all — `verified-against` takes an object, and a list of anchors is a list —
+ * and neither of those can be confused with prose.
  */
 export function valueOf(stdout: string): unknown {
   const text = stdout.trim();
   if (text === "") return null;
+  if (!/^[{["]/.test(text)) return text;
   try {
     return JSON.parse(text) as unknown;
   } catch {
@@ -122,6 +138,11 @@ async function runOne(
   }
   if (result.timedOut) {
     return { reason: `\`${line}\` timed out after ${String(timeoutMs / 1000)}s ${where}` };
+  }
+  if (result.tooLarge) {
+    return {
+      reason: `\`${line}\` wrote more than ${String(MAX_OUTPUT_BYTES / (1024 * 1024))} MiB; a command reports one field's value ${where}`,
+    };
   }
   if (result.code !== 0) {
     const last = lastLine(result.stderr);

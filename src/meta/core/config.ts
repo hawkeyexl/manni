@@ -270,6 +270,12 @@ const BUILTIN_CLAIMED_BY: Readonly<Record<BuiltinDerivableField, string>> = {
   "last-reviewed": "GitHub or GitLab",
 };
 
+/**
+ * The `derived` table's own columns, which a command key may not be spelled
+ * like: the view is `_path`, the derivable fields, then `_sources`.
+ */
+const DERIVED_TABLE_RESERVED: ReadonlySet<string> = new Set(["_path", "_sources"]);
+
 /** The tail every not-derivable message ends with. */
 const DERIVABLE_LIST = `Derivable fields: ${DERIVABLE_FIELDS.join(", ")}, or any key with an entry in derive.commands.`;
 
@@ -926,6 +932,16 @@ function parseDeriveCommands(
     if (isBuiltinField(key)) {
       throw new DocmetaError(
         `${source}: derive.commands.${key} targets a field ${BUILTIN_CLAIMED_BY[key]} already derives; a command may only derive a field no built-in source claims.`,
+      );
+    }
+    // Every command key is a column of the `derived` table beside `_path`
+    // and `_sources`, so one spelled like either would be declared twice and
+    // SQLite would refuse the table with a raw error, mid-query. Refused
+    // here for the reason an override named `derived` is (see the overrides
+    // parser): a name collision is a config mistake, said at parse time.
+    if (DERIVED_TABLE_RESERVED.has(key)) {
+      throw new DocmetaError(
+        `${source}: derive.commands.${key} collides with a column of the derived table a query builds (${[...DERIVED_TABLE_RESERVED].join(", ")}). Pick another field name.`,
       );
     }
     const owner = sidecars.find((s) => s.keys.includes(key));

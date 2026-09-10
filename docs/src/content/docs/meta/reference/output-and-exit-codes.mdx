@@ -489,7 +489,9 @@ narrowing on `derive`.
 | A configured command exited non-zero, and `command` is a requested source. | ``command source unavailable: `jq -r .version package.json` failed (exit 2): jq: error: Could not open package.json; narrow --sources or --fields``, with the last stderr line after the exit code. |
 | A configured command's program is not on `PATH`. | ``command source unavailable: `jq` is not on PATH (derive.commands.verified-against); narrow --sources or --fields`` |
 | A configured command ran past its `timeout`. | ``command source unavailable: `node scripts/source-for.mjs docs/install.md` timed out after 60s; narrow --sources or --fields`` |
+| A configured command wrote more than 8 MiB on stdout or stderr. | ``command source unavailable: `cat big.log` wrote more than 8 MiB; a command reports one field's value (derive.commands.notes)``. The command is killed rather than read to the end. |
 | Config `derive.commands` names a field a built-in source already derives. | `derive.commands.last-updated targets a field git already derives; a command may only derive a field no built-in source claims`. A sidecar-owned key and `$schema` are refused the same way. |
+| Config `derive.commands` names `_path` or `_sources`. | `derive.commands._path collides with a column of the derived table a query builds (_path, _sources). Pick another field name.` |
 | `derive` was given `-`. | `cannot derive <stdin>: no history behind it` |
 | `derive` was given a field that is not derivable. | `"stakeholders" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed, or any key with an entry in derive.commands` |
 | `derive --fields` named a key a config [sidecar](/manni/meta/reference/configuration/#sidecars) owns. | `"owner" is owned by sidecar ./owners.yaml; a managed field has one authority, and a sidecar key already has one.` |
