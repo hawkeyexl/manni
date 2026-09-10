@@ -87,6 +87,7 @@ manni meta [paths...] [options]
 | `--write-baseline` | `[path]` | config `baseline:`, else `.manni-baseline.json` | Record this run's findings as the baseline, then exit 0. The value is optional. Wins over `--baseline`. Findings from `-` (stdin) are the one exception: they cannot be recorded, so they still fail the run. |
 | `--no-baseline` | n/a | off | Ignore a baseline supplied by config `baseline:` for this run. `--baseline` and `--no-baseline` set the same option, so the one written later on the command line wins. |
 | `--no-checks` | n/a | off | Skip the [corpus checks](/manni/meta/reference/configuration/#checks) supplied by config `checks:` for this run. Checks already run only when the resolved file set is the config-resolved corpus. A run scoped by positional paths, stdin, `--as`, `--ext`, `--exclude`, or `--no-gitignore` skips them with a stderr notice. This flag opts out explicitly. |
+| `--no-cache` | n/a | off | Ask GitHub or GitLab again rather than reading the [review cache](/manni/meta/reference/configuration/#the-review-sources). Only the managed-field comparison consults it, and only for `reviewed-by` and `last-reviewed`. A merged change's approvals never change, so the cache is on by default; this is the way past an answer recorded wrongly. |
 | `--no-derive` | n/a | off | Skip the [managed-field comparison](/manni/meta/reference/configuration/#derive) supplied by config `derive:` for this run. Unlike checks, the comparison runs on scoped runs too, because it is a per-file fact. This flag is the only opt-out. |
 
 <Aside type="note" title="Repeatable flags">
@@ -290,6 +291,7 @@ unaffected.
 |---|---|---|---|
 | `--fields` | `<list>` | the `[fields]` positional | Comma-separated fields to print. When given, **every** positional is a path. See [naming the fields](#naming-the-fields). |
 | `--derived` | n/a | off | Print the [derived value](/manni/meta/reference/configuration/#derive) and its evidence beside the asserted one, as `last-updated=2026-08-20 (derived 2026-09-07, git: body changed in 424f71a)`. In `json`, each file's object gains a `derived` record. A field that is not derivable prints `(not derivable)`. Stdin is refused with this flag, because there is no history behind it (exit 2). A source that cannot answer is exit 2 naming the fix. |
+| `--no-cache` | n/a | off | Ask GitHub or GitLab again rather than reading the [review cache](/manni/meta/reference/configuration/#the-review-sources). Only `--derived` consults it, and only for `reviewed-by` and `last-reviewed`. A merged change's approvals never change, so the cache is on by default; this is the way past an answer recorded wrongly. |
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Merged with config `exclude:` and the [default ignores](#default-ignores). |
 | `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) (extractor name). Required when reading from stdin. |
@@ -395,6 +397,7 @@ table](/manni/meta/reference/query/#the-docs-table).
 | `--param` | `<name=value>` | n/a | Bind a named SQL parameter (`$name`, `:name`, or `@name`) as a **string**; `name:=value` parses the value as JSON for a typed bind. Repeatable. See [bound parameters](#bound-parameters). |
 | `--db` | `<path>` | n/a | Also write the built database to this file, and the SQL is then optional. The file is a regenerated artifact, so an existing SQLite database at the path is overwritten and anything else is refused. See [exporting the database](#exporting-the-database). |
 | `--dry-run` | n/a | off | Preview a mutating statement instead of applying it, so you see the per-file diff it would make with nothing touched. `--check` implies it, because a check judges and never mutates. See [writing back](#writing-back). |
+| `--no-cache` | n/a | off | Ask GitHub or GitLab again rather than reading the [review cache](/manni/meta/reference/configuration/#the-review-sources). Only a statement naming the `derived` table consults it, and only for `reviewed-by` and `last-reviewed`. A merged change's approvals never change, so the cache is on by default; this is the way past an answer recorded wrongly. |
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Merged with config `exclude:` and the [default ignores](#default-ignores). |
 | `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) (extractor name). Required when reading from stdin. |

@@ -144,6 +144,12 @@ export interface QueryOptions {
    */
   offline?: boolean;
   /**
+   * `--no-cache` (false): ask GitHub or GitLab again rather than reading the
+   * review cache. Only a statement naming the `derived` table consults it,
+   * and only for `reviewed-by` and `last-reviewed`; absent leaves it on.
+   */
+  cache?: boolean;
+  /**
    * `--dry-run`: preview the statement's per-file changes — the diff it
    * would make, files untouched. Without it a mutating statement applies,
    * matching `fill`'s convention (proposal 0025; 0022 recorded the original
@@ -393,6 +399,7 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
       ? { cliSchemas: opts.schemas }
       : {}),
     write: !opts.dryRun,
+    cache: opts.cache ?? true,
     base,
     config,
     cwd,
@@ -457,6 +464,8 @@ interface RunContext {
    */
   cliSchemas?: string[];
   write: boolean;
+  /** Whether the review cache may answer a `derived` build; `--no-cache` clears it. */
+  cache: boolean;
   /** Directory file labels resolve against (see `resolveRunConfig`). */
   base: string;
   config: DocmetaConfig | null;
@@ -668,6 +677,7 @@ async function runSql(
           base: ctx.base,
           ...(ctx.configDir !== undefined ? { configDir: ctx.configDir } : {}),
           config: ctx.config,
+          cache: ctx.cache,
         },
         "narrow derive.sources in manni.config.yaml",
         fieldsForSql(sql, derivableFields(commands)),

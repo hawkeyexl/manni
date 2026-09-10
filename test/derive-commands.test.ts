@@ -40,7 +40,7 @@ import { DocmetaError, type ValidationResult } from "../src/meta/types.js";
  * replaced, so every case below still derives from the commits; the counter
  * is only read by the one case that pins "once per run".
  */
-const derivations = vi.hoisted(() => ({ calls: 0 }));
+const derivations = vi.hoisted(() => ({ calls: 0, cache: [] as boolean[] }));
 
 vi.mock("../src/meta/core/derive/index.js", async (importOriginal) => {
   const mod = await importOriginal<typeof import("../src/meta/core/derive/index.js")>();
@@ -48,6 +48,7 @@ vi.mock("../src/meta/core/derive/index.js", async (importOriginal) => {
     ...mod,
     deriveMetadata: (...args: Parameters<typeof mod.deriveMetadata>) => {
       derivations.calls += 1;
+      derivations.cache.push(args[1].cache);
       return mod.deriveMetadata(...args);
     },
   };
@@ -369,6 +370,37 @@ describe("get --derived", () => {
         derived: true,
       }),
     ).rejects.toThrow("cannot derive <stdin>: no history behind it");
+  });
+});
+
+describe("--no-cache reaches the review cache from every reader", () => {
+  // The cache answers for a merged change, whose approvals never change. The
+  // flag is the way past an answer recorded wrongly, so every command that
+  // consults a review source has to carry it, not only `derive`.
+  it("threads cache: false from validate, get and query, and defaults to true", async () => {
+    const dir = repo();
+    derivations.cache.length = 0;
+
+    await runValidate({ inputs: [], cwd: dir });
+    await runValidate({ inputs: [], cwd: dir, cache: false });
+    expect(derivations.cache).toEqual([true, false]);
+
+    derivations.cache.length = 0;
+    await runGet({ fields: ["owner"], inputs: ["docs/a.md"], cwd: dir, derived: true });
+    await runGet({
+      fields: ["owner"],
+      inputs: ["docs/a.md"],
+      cwd: dir,
+      derived: true,
+      cache: false,
+    });
+    expect(derivations.cache).toEqual([true, false]);
+
+    derivations.cache.length = 0;
+    const sql = "SELECT _path, owner FROM derived";
+    await runQuery({ sql, inputs: [], cwd: dir });
+    await runQuery({ sql, inputs: [], cwd: dir, cache: false });
+    expect(derivations.cache).toEqual([true, false]);
   });
 });
 

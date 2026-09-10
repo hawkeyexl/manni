@@ -150,6 +150,8 @@ export interface DeriveTableContext {
   base: string;
   configDir?: string;
   config: DocmetaConfig | null;
+  /** Whether the GitHub or GitLab review cache may answer; `--no-cache` clears it. */
+  cache: boolean;
 }
 
 /**
@@ -179,7 +181,7 @@ export async function deriveForTable(
     fields,
     ...(derive?.codeowners !== undefined ? { codeowners: derive.codeowners } : {}),
     ...(commands !== undefined ? { commands } : {}),
-    cache: true,
+    cache: ctx.cache,
     now: () => new Date(),
   });
   assertSourcesAvailable(result.sources, hint);

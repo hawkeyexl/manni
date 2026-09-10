@@ -125,6 +125,12 @@ export interface ValidateOptions {
    */
   offline?: boolean;
   /**
+   * `--no-cache` (false): ask GitHub or GitLab again rather than reading the
+   * review cache. It reaches the comparison and any check reading the
+   * `derived` table; absent leaves the cache on.
+   */
+  cache?: boolean;
+  /**
    * `--no-checks` (false): skip the config's named corpus checks for this
    * run. Absent leaves them on — they still only run when the resolved file
    * set is the config-resolved corpus (proposal 0026).
@@ -459,7 +465,7 @@ export async function runValidate(
         ? { codeowners: deriveConfig.codeowners }
         : {}),
       ...(deriveCommands !== undefined ? { commands: deriveCommands } : {}),
-      cache: true,
+      cache: opts.cache ?? true,
       now: () => new Date(),
     });
     assertSourcesAvailable(

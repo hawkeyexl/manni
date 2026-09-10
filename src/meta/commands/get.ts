@@ -75,6 +75,12 @@ export interface GetOptions {
    */
   offline?: boolean;
   /**
+   * `--no-cache` (false): ask GitHub or GitLab again rather than reading the
+   * review cache. Only `--derived` consults it, and only for `reviewed-by`
+   * and `last-reviewed`; absent leaves the cache on.
+   */
+  cache?: boolean;
+  /**
    * `--derived`: beside each asserted value, what the evidence (git history,
    * CODEOWNERS, GitHub or GitLab reviews — proposal 0040) says the field should be. Consults
    * the sources `derive.sources` allows, all four when the config says
@@ -254,6 +260,7 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
       base,
       configDir,
       config,
+      cache: opts.cache ?? true,
     });
   }
 
@@ -276,6 +283,7 @@ async function attachDerived(
     base: string;
     configDir: string | undefined;
     config: DocmetaConfig | null;
+    cache: boolean;
   },
 ): Promise<void> {
   const derive = run.config?.derive;
@@ -294,7 +302,7 @@ async function attachDerived(
               ? { codeowners: derive.codeowners }
               : {}),
             ...(commands !== undefined ? { commands } : {}),
-            cache: true,
+            cache: run.cache,
             now: () => new Date(),
           });
           assertSourcesAvailable(
