@@ -300,7 +300,7 @@ describe("derive: commands", () => {
     ).toThrow(/derive\.commands\.verified-against\.run\[1\] must be a non-empty string/);
   });
 
-  it.each(["0", "-1", "abc", "'5'", ".inf", ".nan"])(
+  it.each(["0", "-1", "abc", "'5'", ".inf", ".nan", "0.5", "0.001"])(
     "rejects timeout %s",
     (timeout) => {
       expect(() =>
@@ -308,16 +308,19 @@ describe("derive: commands", () => {
           command("    verified-against:", "      run: [./bin/version]", `      timeout: ${timeout}`),
         ),
       ).toThrow(
-        /derive\.commands\.verified-against\.timeout must be a positive number of seconds/,
+        /derive\.commands\.verified-against\.timeout must be a whole number of seconds, greater than zero/,
       );
     },
   );
 
-  it("accepts a fractional timeout", () => {
+  it("accepts a whole number of seconds", () => {
+    // Fractions are refused because they read as a budget and act as a kill
+    // switch: `timeout: 0.001` allows one millisecond, so nothing ever
+    // answers. The reference has always said seconds, as an integer.
     const cfg = parse(
-      command("    verified-against:", "      run: [./bin/version]", "      timeout: 0.5"),
+      command("    verified-against:", "      run: [./bin/version]", "      timeout: 30"),
     );
-    expect(cfg.derive?.commands?.["verified-against"]?.timeout).toBe(0.5);
+    expect(cfg.derive?.commands?.["verified-against"]?.timeout).toBe(30);
   });
 
   it("names the section when the config came from the family file", () => {
