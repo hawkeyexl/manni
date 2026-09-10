@@ -29,9 +29,9 @@ manni meta finds your config in one of two ways:
 - **Discovery.** With no `--config` flag, manni meta looks in the current working directory for `manni.config.yaml`, then `manni.config.yml`, and then repeats that in each parent directory. The first file carrying a `meta:` key **or** a `collections:` list wins, and the search stops at your repo root. That is the first directory containing `.git`. If no parent is a repository, only the current directory is checked.
 - **Explicit path.** Pass `-c <path>` (or `--config <path>`) to point at a specific file. If that file does not exist, manni meta exits with an error rather than falling back to discovery.
 
-A file with `collections:` and no `meta:` is still the metadata tool's config. That is deliberate: one file describes the repository, so a repo that declares its documents has declared them for every tool, whether or not it has tuned that tool yet.
+A file with `collections:` and no `meta:` is still the metadata tool's config. That is deliberate. One file describes the repository, so a repo that declares its documents has declared them for every tool. That holds whether or not it has tuned that tool yet.
 
-Two older file names are still read, each with a warning on stderr: `moose.config.yaml`, the family file under its previous name, and `docmeta.config.yaml`, whose whole document is the `meta:` section with no wrapper key. A legacy file has no top-level, so it cannot carry collections; rename it to `manni.config.yaml` and split its keys across the two halves. The [configuration reference](/manni/meta/reference/configuration/#discovery) has the full order.
+Two older file names are still read, each with a warning on stderr. `moose.config.yaml` is the family file under its previous name. `docmeta.config.yaml` holds the `meta:` section as its whole document, with no wrapper key. A legacy file has no top-level, so it cannot carry collections; rename it to `manni.config.yaml` and split its keys across the two halves. The [configuration reference](/manni/meta/reference/configuration/#discovery) has the full order.
 
 Because the search walks up, `manni meta validate` gives the same verdict from your repo root as it does from `docs/` or from a package subdirectory. When a config governs a run, manni meta prints a line naming it, such as `Using manni.config.yaml (../..)`. To run against the built-in defaults instead, pass `--no-config`.
 
@@ -98,7 +98,7 @@ npx @hawkeyexl/manni meta validate --collection authors --collection pages
 It selects from the config, so it cannot be combined with positional paths (`--collection selects a configured collection; it cannot be combined with paths.`), and it needs a config to select from. It is most useful as a CI gate over one part of a docs set. One thing it turns off: corpus [`checks:`](/manni/meta/reference/configuration/#checks) read the whole corpus or nothing, so a scoped run skips them with a notice on stderr.
 
 <Aside type="caution" title="`exclude` decides membership, not what a typed path covers">
-A collection's `exclude` says which files are **in** the collection. It does not filter a path you type on the command line. So with `exclude: ["**/drafts/**"]`, a bare `manni meta validate` skips the drafts, and `manni meta validate docs/` does not: you named `docs/`, and manni has no basis for picking which collection's exclusions to apply to it. `--exclude <glob>` is the spelling for "and skip these" on a typed path. This changed in 1.0; a config `exclude` used to be merged into every run.
+A collection's `exclude` says which files are **in** the collection. It does not filter a path you type on the command line. So with `exclude: ["**/drafts/**"]`, a bare `manni meta validate` skips the drafts, and `manni meta validate docs/` does not. You named `docs/`, and manni has no basis for picking which collection's exclusions to apply to it. `--exclude <glob>` is the spelling for "and skip these" on a typed path. This changed in 1.0; a config `exclude` used to be merged into every run.
 </Aside>
 
 ### Metadata that lives outside the document

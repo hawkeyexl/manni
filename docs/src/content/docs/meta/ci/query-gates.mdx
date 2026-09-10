@@ -80,8 +80,8 @@ docs/guide.md  ghost
 
 `FROM authors` means "the files the `authors` collection selects", which is what
 the config says it means. Membership comes from the collection, not from
-re-spelling the glob in SQL, so moving the directory means updating one config
-line and the rule follows. The override is not what makes the view; the
+re-spelling the glob in SQL. Moving the directory means updating one config
+line, and the rule follows. The override is not what makes the view; the
 collection is. Two collections may overlap, and a file in both appears in both
 views. The [query reference](/manni/meta/reference/query/#collections-as-views) has the view contract
 in full.

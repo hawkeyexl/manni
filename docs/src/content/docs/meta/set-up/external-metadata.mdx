@@ -29,8 +29,8 @@ three share one manifest format and one set of rules.
 
 A manifest belongs to a **collection**, the named document set every manni tool
 reads. `externalMetadata:` sits inside the collection entry, beside the globs
-that select the pages the manifest describes, so the two are declared together
-and neither can drift from the other.
+that select the pages the manifest describes. The two are declared together, so
+neither can drift from the other.
 
 <Aside type="note" title="What this page covers">
 The journey. The contract, meaning every rule, message and exit code, lives in
@@ -40,8 +40,8 @@ reference](/manni/meta/reference/configuration/#external-metadata).
 
 <Aside type="caution" title="Coming from a 0.x config?">
 This was called a **sidecar**, and it was `meta.sidecars` in the config. In
-1.0.0 it is `externalMetadata` on a collection, the old key is refused with a
-message naming the new one, and the two finding ids are `external:owned` and
+1.0.0 it is `externalMetadata` on a collection, and the old key is refused with
+a message naming the new one. The two finding ids are `external:owned` and
 `external:duplicate`. If you have a
 [baseline](/manni/meta/reference/cli/#baselines) recorded before the upgrade,
 regenerate it. [Migrating a 0.x
@@ -101,7 +101,7 @@ docs/ops.md
    ```
 
 3. **Declare the collection, and hang the manifest off it.** `paths:` selects
-   the pages. `externalMetadata.keys:` names what the manifest owns: a page
+   the pages. `externalMetadata.keys:` names what the manifest owns. A page
    carrying one of those keys itself is a finding, and an entry setting any
    other key is an error. The override points at the collection by name, so the
    glob is written once.
@@ -167,8 +167,8 @@ frontmatter:
 Each line points at the place to fix. `billing.md`'s bad value is at
 `docs-meta.yaml:6`, so the manifest is what to edit. `new.md` needs an entry.
 `ops.md` needs its `jira:` line removed, because the manifest is the only place
-that key may be set, and the message names the collection whose manifest owns
-it. All three are exit 1, and `--format github` annotates the manifest line for
+that key may be set. The message names the collection whose manifest owns it.
+All three are exit 1, and `--format github` annotates the manifest line for
 the first and the page line for the other two.
 
 A renamed page whose entry was not updated is different. On a run that reads the
@@ -183,13 +183,14 @@ manni: Manifest docs-meta.orphan.yaml:3 names "docs/gone.md", which this run did
 
 <Aside type="note" title="Naming a path skips that check; naming a collection does not">
 Naming a path tells manni you chose to look at part of the corpus, so entries for
-the rest are expected rather than orphaned: `manni meta validate docs/auth.md`
+the rest are expected rather than orphaned. `manni meta validate docs/auth.md`
 passes without mentioning `docs/gone.md`.
 
-`--collection` is different. It chooses a corpus rather than reshaping one — the
-run loads all of every collection it names — so `manni meta validate --collection
-pages` still reports the orphan, while entries of collections it did not name are
-left alone. A CI job that gates one collection keeps this check.
+`--collection` is different. It chooses a corpus rather than reshaping one,
+because the run loads all of every collection it names. So
+`manni meta validate --collection pages` still reports the orphan, while entries
+of collections it did not name are left alone. A CI job that gates one
+collection keeps this check.
 
 Either way the page's manifests still merge, because
 [membership](/manni/meta/reference/configuration/#membership) is decided per
@@ -570,11 +571,11 @@ manni: docs/api/auth.md: "owner" is owned by manifests in two of its collections
 ```
 
 Two fixes, both in the config where the overlap was declared. Narrow `guides` so
-it stops covering `docs/api/` — `exclude: ["docs/api/**"]` does it, since a
+it stops covering `docs/api/`. `exclude: ["docs/api/**"]` does it, since a
 collection's `exclude` decides membership. Or move `owner` out of one of the two
 manifests, so only one owns the key for that page.
 
-Overlapping collections are otherwise fine, and useful: a page in both appears
+Overlapping collections are otherwise fine, and useful. A page in both appears
 in both [views](/manni/meta/reference/query/#collections-as-views), and still
 resolves exactly one schema set by first-match-wins.
 

@@ -13,14 +13,14 @@ This guide assumes you already have a working config. If not, start with [Create
 
 An `overrides` entry always carries a `schemas` list. It says which files that list governs in exactly one of two ways:
 
-- **`collection: <name>`** points at a set declared in the top-level [`collections:`](/manni/meta/reference/configuration/#collections) list. Reach for this when the area is a real document set the whole repo recognises, such as the API reference, the blog, or the author pages. The globs live in one place, every manni tool sees the same set, and `manni meta query` exposes it as a view of the same name.
-- **`files: <glob>`** takes a glob, or a list of them. Reach for this when the subset exists only to change schema choice: one directory that needs an extra check, or a naming convention that cuts across collections.
+- **`collection: <name>`** points at a set declared in the top-level [`collections:`](/manni/meta/reference/configuration/#collections) list. Reach for this when the area is a real document set the whole repo recognises. The API reference, the blog, and the author pages are examples. The globs live in one place, and every manni tool sees the same set. `manni meta query` exposes it as a view of the same name.
+- **`files: <glob>`** takes a glob, or a list of them. Reach for this when the subset exists only to change schema choice. That might be one directory that needs an extra check, or a naming convention that cuts across collections.
 
 An entry carrying both, or neither, is a config error. The rule of thumb is whether anything other than schema resolution cares about the set. If it does, declare a collection.
 
 ## Assign a schema set per area
 
-Here the API reference and the guides are areas the whole repo thinks in, so they are collections, and the overrides point at them by name:
+Here the API reference and the guides are areas the whole repo thinks in, so they are collections. The overrides point at them by name:
 
 ```yaml title="manni.config.yaml"
 collections:
@@ -77,7 +77,7 @@ meta:
         - ./schemas/api-reference.json
 ```
 
-Here, `api/deprecated/v1.md` matches the first override and is validated against `deprecated.json`, even though it is also a member of the `api` collection. A file like `api/auth.md` falls through to the second override. If you reversed the two entries, the broad `api` collection would match the deprecated pages first and they would never reach their specific rule. This is also the shape to reach for when an exception is not worth a collection of its own: one narrow `files:` glob above the collection it carves out of.
+Here, `api/deprecated/v1.md` matches the first override and is validated against `deprecated.json`, even though it is also a member of the `api` collection. A file like `api/auth.md` falls through to the second override. If you reversed the two entries, the broad `api` collection would match the deprecated pages first and they would never reach their specific rule. This is also the shape to reach for when an exception is not worth a collection of its own. Put one narrow `files:` glob above the collection it carves out of.
 
 <Aside type="tip">
 Globs match against POSIX-style paths (forward slashes), so write `api/**/*.md` even on Windows. manni meta normalizes path separators before matching.

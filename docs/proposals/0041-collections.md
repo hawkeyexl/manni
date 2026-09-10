@@ -15,13 +15,15 @@
     collections defined here, and the flag is designed.
   - [0004](0004-config-upward-discovery.md) makes config paths resolve from the
     config file's directory. A collection's globs resolve the same way.
-- **Relates to:** [0005](0005-command-parity.md) and
-  [0034](0034-command-grammar.md), whose parity and separator rules the new
-  flag follows; [0014](0014-empty-input-is-not-success.md), for the empty
-  collection; [0020](0020-element-metadata.md) and
-  [0015](0015-schema-trust-boundary.md), whose no-tiebreak and no-schema rules
-  carry over unchanged; [0026](0026-corpus-checks-are-findings.md), whose
-  `scoped` invariant decides when an orphan check runs.
+- **Relates to:** Six earlier proposals.
+  - [0005](0005-command-parity.md) and [0034](0034-command-grammar.md), whose
+    parity and separator rules the new flag follows.
+  - [0014](0014-empty-input-is-not-success.md), for the empty collection.
+  - [0020](0020-element-metadata.md) and
+    [0015](0015-schema-trust-boundary.md), whose no-tiebreak and no-schema
+    rules carry over unchanged.
+  - [0026](0026-corpus-checks-are-findings.md), whose `scoped` invariant
+    decides when an orphan check runs.
 - **Supersedes:** [0027](0027-named-collections.md). The `name:` key on
   `overrides[]` is removed; a collection is the thing that has a name.
 - **Touches (planned):** `src/shared/{config-file,collections,globs}.ts`,
@@ -47,15 +49,15 @@ key names and a different default. Every document tool that lands will declare
 it a third and fourth time. A repository with three tools will spell one glob
 three ways, and the day the docs move, two of the three go quietly stale. 0033
 made one file so that a user learns one place. It left the *content* of that
-place per tool, which was right for keys that are one tool's business
-(`schemas`, `severity`, `judge`) and wrong for the one key every document tool
-must agree on.
+place per tool. That was right for keys that are one tool's business
+(`schemas`, `severity`, `judge`). It was wrong for the one key every document
+tool must agree on.
 
 **The private half of the metadata is declared under `meta:` too.** 0037's
 manifests supply frontmatter values that live outside the document. That is a
 fact about the documents, not about the validator. docevals evaluating a page
-needs the page's `owner:` whether it came from the frontmatter or a manifest,
-and today it would have to read `meta.sidecars` to find out.
+needs the page's `owner:` whether it came from the frontmatter or a manifest.
+Today it would have to read `meta.sidecars` to find out.
 
 And the word. `sidecars` names a file-layout pattern, which a docs engineer
 does not recognise. In review, the feature had to be explained before its
@@ -123,66 +125,68 @@ trust, cache, `fill` defaults.
    line. Only `--exclude` does that. This changes today's behaviour, where
    `meta.exclude` was merged into every run, and the stress test records why.
 4. **Membership is what external metadata attaches to.** A loaded file is a
-   member of a collection when, relative to the config file's directory, it
-   matches one of the collection's `paths` and none of its `exclude`. Whether
-   the file came from the walk or the command line makes no difference. A
-   member of `guides` gets `guides`' manifests merged; a positional file that
-   is a member of no collection gets none. 0037 rules 1, 2, 5 and 6 apply to
-   each manifest exactly as written.
+   member of a collection when it matches one of the collection's `paths` and
+   none of its `exclude`. Both are taken relative to the config file's
+   directory. Whether the file came from the walk or the command line makes no
+   difference. A member of `guides` gets `guides`' manifests merged; a
+   positional file that is a member of no collection gets none. 0037 rules 1,
+   2, 5 and 6 apply to each manifest exactly as written.
 5. **Ownership is disjoint within a collection, and never ambiguous across
    them.** The config parser asserts that two manifests of one collection own
    no key in common, as 0037 does across `sidecars[]`. Two collections may each
    own the same key: `guides` and `blog` can both have a manifest supplying
    `owner`. If one loaded file is a member of both, and both own a key, that
-   run is exit 2, naming the file, the key and both collections. A precedence
-   rule would be a tiebreak, and 0020 and 0037 refuse tiebreaks.
+   run is exit 2. The message names the file, the key and both collections. A
+   precedence rule would be a tiebreak, and 0020 and 0037 refuse tiebreaks.
 6. **The orphan check is per collection, when that collection is in the run.**
-   0037 rule 4 says an entry naming a document the run did not load is exit 2,
-   checked only when the run is the config corpus. The corpus is now each
-   collection. The check runs for a collection when the run had no positional
-   paths, or `--collection` named it. A positional path skips it, as today.
+   0037 rule 4 says an entry naming a document the run did not load is exit 2.
+   That is checked only when the run is the config corpus. The corpus is now
+   each collection. The check runs for a collection when the run had no
+   positional paths, or `--collection` named it. A positional path skips it, as
+   today.
 7. **Every collection is a view.** `manni meta query` exposes each collection
    as a read-only SQL view of its name over `docs`, holding the collection's
    members the run loaded. 0027 built views from override groups that won
    schema resolution, so views were disjoint. These are built from membership,
-   so two collections may overlap, and `FROM guides` means "the files the
-   guides collection selects", which is what the config says it means.
+   so two collections may overlap. `FROM guides` means "the files the guides
+   collection selects", which is what the config says it means.
 8. **An override may name a collection instead of globs.** `overrides[]`
    carries exactly one of `files:` (globs, as today) or `collection:` (a name).
-   Resolution is unchanged: first match wins, and a `collection:` override
+   Resolution is unchanged. First match wins, and a `collection:` override
    matches the collection's members. `overrides[].name` is removed with 0027.
 9. **The walk happens once; membership is decided after it.** A run resolves
    its targets in one pass over the selected collections' `paths`, with the
-   family-wide ignores and `--exclude` applied, and then keeps a file when it
-   is a member of a selected collection. A collection's own `exclude` acts only
-   through membership. That is what makes rule 3 implementable: a positional
+   family-wide ignores and `--exclude` applied. It then keeps a file when it is
+   a member of a selected collection. A collection's own `exclude` acts only
+   through membership. That is what makes rule 3 implementable. A positional
    directory is walked the same way, and every expanded file is tested for
-   membership individually, so `docs/` picks up the manifests of whichever
-   collections its files belong to without any collection's exclusions
-   silencing a file the operator named.
+   membership individually. So `docs/` picks up the manifests of whichever
+   collections its files belong to, and no collection's exclusions silence a
+   file the operator named.
 10. **Membership is path arithmetic, not a filesystem question.** A label is
-    made relative to the config file's directory in posix form and compared:
-    an entry containing glob metacharacters is matched as a glob, and any other
-    entry matches itself and everything beneath it, which is how a bare
-    directory and a bare filename both work. A path outside the config
-    directory and stdin are members of nothing. No `stat` is involved, so
-    membership costs nothing per file and cannot fail.
+    made relative to the config file's directory in posix form and compared
+    against each entry. An entry containing glob metacharacters is matched as
+    a glob. Any other entry matches itself and everything beneath it, which is
+    how a bare directory and a bare filename both work. A path outside the
+    config directory and stdin are members of nothing. No `stat` is involved,
+    so membership costs nothing per file and cannot fail.
 11. **Corpus checks see the whole corpus or nothing.** `checks:` (0026) are
-    SQL over the projection, and a run narrowed by `--collection` would leave
-    every unselected collection's view empty, so a `FROM blog` check would pass
-    by having nothing to fail on. `--collection` therefore skips the checks
-    with a notice on stderr rather than running them against a subset. Every
-    declared collection still gets its view, empty or not, so a query naming
-    one is never a SQL error.
+    SQL over the projection. A run narrowed by `--collection` would leave
+    every unselected collection's view empty. A `FROM blog` check would then
+    pass by having nothing to fail on. `--collection` therefore skips the
+    checks with a notice on stderr rather than running them against a subset.
+    Every declared collection still gets its view, empty or not, so a query
+    naming one is never a SQL error.
 12. **A collection may say where it is published.** `url:` is the site root the
-    collection's documents appear at, and it is what `manni a11y check` checks
+    collection's documents appear at. It is what `manni a11y check` checks
     when it is given no URLs of its own. Seeds are decided in one order, first
-    non-empty winning: positional URLs; the `url` of each collection named by
-    `--collection`; `a11y.urls`; the `url` of every declared collection that
-    has one. `a11y.urls` stays, because a site has entry points that are not a
-    documentation collection, and because nothing that ships today should have
-    to move. A collection with no `url` contributes nothing, and is an error
-    only when `--collection` named it.
+    non-empty winning. Positional URLs come first, then the `url` of each
+    collection named by `--collection`. After those come `a11y.urls`, then the
+    `url` of every declared collection that has one. `a11y.urls` stays,
+    because a site has entry points that are not a documentation collection,
+    and because nothing that ships today should have to move. A collection
+    with no `url` contributes nothing, and is an error only when
+    `--collection` named it.
 
 ### What moves where
 
@@ -208,12 +212,12 @@ more export on that path.
 0033's walk stops at the first family file carrying the tool's key. A
 repository whose family file has `collections:` and no `meta:` must still be
 the metadata tool's config, or `manni meta validate` there would find nothing.
-So the rule becomes: a family file is a tool's config when it carries the
+So the rule changes. A family file is a tool's config when it carries the
 tool's key **or** `collections:`. A file with `collections:` alone hands the
 tool an empty section and the collections. The legacy per-tool files
 (`docmeta.config.yaml`) are one section with no wrapper, so they carry no
-collections; a legacy file that still says `paths:` is refused with the same
-message as `meta.paths` (rule 1), which is how a user learns to migrate.
+collections. A legacy file that still says `paths:` is refused with the same
+message as `meta.paths` (rule 1). That is how a user learns to migrate.
 
 ## Interface
 
@@ -227,7 +231,7 @@ Top level of `manni.config.yaml`:
 | `collections[].name` | `string` | yes | The collection's name: what `--collection`, `overrides[].collection` and `FROM <name>` refer to. Non-blank, unique case-insensitively, not `docs`, not `sqlite_*` (0027's view-name refusals, unchanged). |
 | `collections[].paths` | `string[]` | yes | Files, directories or globs, relative to the config file's directory. Non-empty list of non-empty strings. |
 | `collections[].exclude` | `string[]` | no | Globs that remove files from `paths`, same base. Default `[]`. `**/node_modules/**` and `**/.git/**` are always excluded, family-wide. |
-| `collections[].url` | `string` | no | Where the collection is published: one `http:` or `https:` root. `manni a11y check` seeds from it when it is given no URLs of its own. Anything else is a config error. |
+| `collections[].url` | `string` | no | Where the collection is published, as one `http:` or `https:` root. `manni a11y check` seeds from it when it is given no URLs of its own. Anything else is a config error. |
 | `collections[].externalMetadata` | `ExternalMetadata[]` | no | Manifests joined to this collection's members. Default `[]`. An explicit `[]` is accepted, as is an explicit `exclude: []`; only `collections: []` is refused. |
 | `collections[].externalMetadata[].file` | `string` | yes | Manifest path relative to the config file's directory, or an `https://` URL (0038). |
 | `collections[].externalMetadata[].keys` | `string[]` | yes | The top-level keys this manifest owns. Non-empty, unique, disjoint across this collection's manifests, never `$schema`. |
@@ -257,7 +261,7 @@ manni.config.yaml: collections[0] must be a mapping.
 manni.config.yaml: collections[0] has unknown key "path". Supported keys: name, paths, exclude, externalMetadata.
 manni.config.yaml: collections[0].name must be a non-empty string.
 manni.config.yaml: collections[1].name "Guides" is already taken by collections[0]; names are compared case-insensitively because they become SQL views.
-manni.config.yaml: collections[0].name "docs" collides with the docs table every query reads. Pick another name.
+manni.config.yaml: collections[0].name "docs" collides with the docs table every query reads. Pick another name, such as "site" or "pages".
 manni.config.yaml: collections[0].name "sqlite_x" starts with "sqlite_", which SQLite reserves for its own objects. Pick another name.
 manni.config.yaml: collections[0].paths must be a non-empty list of files, directories or globs.
 manni.config.yaml: collections[0].exclude must be a list of globs.
@@ -272,13 +276,13 @@ The remaining `externalMetadata[]` messages are 0037's, 0038's and 0039's
 "manifest".
 
 Two details about how these print. `collections:` is a top-level key, so its
-messages are never prefixed with a section name; the metadata tool's habit of
+messages are never prefixed with a section name. The metadata tool's habit of
 rewriting `"paths"` into `"meta.paths"` for a discovered family file must not
-apply to them, nor to the four moved-key refusals, which name `meta` in their
-own prose already. And `overrides[].collection` can only be checked once the
-collections are known, which is after both halves of the file are parsed, so
-that refusal arrives from the loader rather than the section parser while still
-naming `overrides[0].collection` as its path.
+apply to them. Nor does it apply to the four moved-key refusals, which name
+`meta` in their own prose already. And `overrides[].collection` can only be
+checked once the collections are known, which is after both halves of the file
+are parsed. So that refusal arrives from the loader rather than the section
+parser, while still naming `overrides[0].collection` as its path.
 
 ### Types
 
@@ -563,12 +567,12 @@ docs/api/auth.md: "owner" is owned by manifests in two of its collections, guide
 ```
 
 Baseline fingerprints carry the schema ref, so an existing baseline entry for
-either finding stops matching after the upgrade, the finding reappears, and the
+either finding stops matching after the upgrade. The finding reappears, and the
 run is exit 1 until the baseline is regenerated. That is the one place the
-rename costs a user an action, and the release note says so. The alternative,
-keeping `sidecar:` in every SARIF `ruleId` after the docs stop using the word,
-would make the rule id the only place the old term survives, which is the
-exact situation a reader of a SARIF alert is least equipped to decode.
+rename costs a user an action, and the release note says so. The alternative
+was keeping `sidecar:` in every SARIF `ruleId` after the docs stop using the
+word. That would make the rule id the only place the old term survives. It is
+the exact situation a reader of a SARIF alert is least equipped to decode.
 
 JSON, SARIF, JUnit and pretty output shapes are otherwise unchanged. The
 manifest file and line ride the same `file`/`line` fields (0037 rule 5).
@@ -675,23 +679,23 @@ manni: No URLs to check. Pass one or more, set url: on a collection, or set a11y
 - **a11y** gains the `url` seed order of rule 12 and `--collection`, and keeps
   `a11y.urls`. Its config loader passes the collections through; nothing else
   about the crawl, the scope or the scoring changes. It is also affected by the
-  discovery rule above: a family file carrying `collections:` and no `a11y:`
-  now stops the walk and hands a11y an empty section, where before the walk
+  discovery rule above. A family file carrying `collections:` and no `a11y:`
+  now stops the walk and hands a11y an empty section. Before, the walk
   continued upward. That is the intended reading of "one file describes the
-  repository", and the alternative was a per-tool opt-in flag on the shared
+  repository". The alternative was a per-tool opt-in flag on the shared
   loader, which is a second grammar for the same question.
 
 ## Options
 
 **A. Leave `meta.paths` and `meta.sidecars` where they are; other tools read
-`meta:`.** Rejected. It makes `meta:` the family section under another name,
-breaks the shared loader's own contract that a tool reads only its key, and
-means the docevals user configures documents under a tool they may not run.
+`meta:`.** Rejected. It makes `meta:` the family section under another name.
+It breaks the shared loader's own contract that a tool reads only its key. And
+it means the docevals user configures documents under a tool they may not run.
 
 **B. A family section named for the concept (`documents:`) rather than a
 list.** Rejected in review. One anonymous set cannot be pointed at, and the
 first thing docevals wants is "evaluate the guides, not the blog". A list of
-named sets is the shape 0027 already proved out for query, and the flag it
+named sets is the shape 0027 already proved out for query. The flag it
 recorded as follow-up is exactly the selector a list needs.
 
 **C. Keep 0027's override-group views beside collection views.** Rejected.
@@ -711,13 +715,13 @@ allows a public URL manifest.
 
 **F. Move `a11y.urls` onto the collection and remove it, as `meta.paths` is
 removed.** Rejected, and this is the one asymmetry in the proposal. `paths:` and
-`urls:` look like the same kind of key but are not: every document a tool reads
-belongs to a collection by construction, while a site has entry points that no
-documentation collection covers — a marketing page, a status page, a staging
-host. `collections[].url` is therefore a fallback that a shipped `a11y.urls`
-beats, and the seed order in rule 12 is the whole of the contract. Nothing
-that works today stops working, which is also why `a11y` needs no `feat!:` of
-its own.
+`urls:` look like the same kind of key but are not. Every document a tool reads
+belongs to a collection by construction. A site has entry points that no
+documentation collection covers, such as a marketing page, a status page or a
+staging host. `collections[].url` is therefore a fallback that a shipped
+`a11y.urls` beats, and the seed order in rule 12 is the whole of the contract.
+Nothing that works today stops working, which is also why `a11y` needs no
+`feat!:` of its own.
 
 **G. `urls:` (a list) on the collection instead of `url:`.** Rejected. A
 collection is published at one root; several unlinked entry points are what
@@ -734,9 +738,9 @@ collection is published at one root; several unlinked entry points are what
 2. **Positional paths lose the config `exclude`.** Today `meta.exclude:
    ["**/drafts/**"]` filters `manni meta validate docs/` too. Under rule 3 it
    does not, because `exclude` is now one collection's membership rule and a
-   positional directory belongs to no collection as a whole. The reasoning is
-   that an operator who types `docs/` chose `docs/`; the tool has no basis to
-   pick which collection's exclusions to honour once there are several.
+   positional directory belongs to no collection as a whole. An operator who
+   types `docs/` chose `docs/`. The tool has no basis to pick which
+   collection's exclusions to honour once there are several.
    `--exclude` is the spelling for "and skip these". Recorded as a behaviour
    change in the release note.
 3. **The name `docs`.** The most natural name for the main collection is
@@ -746,11 +750,11 @@ collection is published at one root; several unlinked entry points are what
 4. **Two ownership scopes.** Within a collection, disjoint at parse time;
    across collections, checked per file at run time. A parse-time check across
    collections would forbid the legitimate case of `guides` and `blog` each
-   supplying `owner`, so the run-time check is the one that fires only on an
+   supplying `owner`. The run-time check is the one that fires only on an
    actual overlap.
-5. **Two meanings of `url` in one config.** A collection now has a `url` (where
-   its pages are published) and its manifests have a `file` that may be a URL
-   (where its private metadata is fetched from). They are unrelated, and a
+5. **Two meanings of `url` in one config.** A collection now has a `url`, where
+   its pages are published. Its manifests have a `file` that may be a URL,
+   where its private metadata is fetched from. They are unrelated, and a
    reader could take `url:` for the manifest's location. The names stay,
    because `file:` says "the manifest" and `url:` sits at the collection level
    beside `paths:`, which is the level that describes the documents. The
@@ -765,11 +769,11 @@ collection is published at one root; several unlinked entry points are what
 8. **Legacy `docmeta.config.yaml` with `paths:`.** Refused with the rule-1
    message. The legacy filename is already announced as going away in a major
    version, and this is that version.
-9. **A version.** `feat!:` on a 0.x package: semantic-release's default rules
-   take manni from 0.3.0 to 1.0.0. That is a release-visible decision this
-   proposal makes and the reviewer should confirm.
+9. **A version.** `feat!:` on a 0.x package means semantic-release's default
+   rules take manni from 0.3.0 to 1.0.0 in one step. That is a release-visible
+   decision this proposal makes, and the reviewer should confirm it.
 10. **`withSection`.** Messages for `collections:` start with a quoted key or
-    with `collections[`, both shapes `withSection` already prefixes, so a
+    with `collections[`, both shapes `withSection` already prefixes. So a
     parse error under a discovered family file reads `manni.config.yaml:
     collections[0].paths …` with no new plumbing.
 
@@ -791,7 +795,8 @@ This is a `feat!:`. What breaks, and what the message says:
   is new, but a mid-migration repository could produce it.
 - The docs page `meta/set-up/sidecar-metadata` moves to
   `meta/set-up/external-metadata`, with an Astro `redirects` entry for the old
-  URL, since the site has none today and an inbound link should not 404.
+  URL. The site has none today, and an inbound link should not 404.
 
-Not breaking: every 0037, 0038 and 0039 rule about what a manifest may
-contain, how it joins, what a violation reports and what refuses to write.
+The 0037, 0038 and 0039 rules are not breaking. What a manifest may contain,
+how it joins, what a violation reports and what refuses to write all carry over
+unchanged.

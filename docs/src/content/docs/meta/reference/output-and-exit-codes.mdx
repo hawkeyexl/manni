@@ -418,15 +418,16 @@ affected.
 
 A [fingerprint](/manni/meta/reference/cli/#baselines) is built from the schema
 ref, the instance path, the keyword and the subject. The schema ref of these two
-findings *is* the identity that was renamed — `sidecar:owned` became
-`external:owned`, and `sidecar:duplicate` became `external:duplicate` — so every
+findings *is* the identity that was renamed. `sidecar:owned` became
+`external:owned`, and `sidecar:duplicate` became `external:duplicate`, so every
 recorded fingerprint for them changes. Every other finding's fingerprint is
 untouched, so the `--write-baseline` that fixes this reports a small, explicable
-diff: the same count back, moved from the old fingerprints to the new ones.
+diff. The same count comes back, moved from the old fingerprints to the new ones.
 
-Keeping `sidecar:` in the SARIF `ruleId` would have avoided the regeneration, at
-the price of making the rule id the only place the old word survived — which is
-exactly the string a reader of a SARIF alert is least equipped to decode.
+Keeping `sidecar:` in the SARIF `ruleId` would have avoided the regeneration.
+The price would have been making the rule id the only place the old word
+survived. That is exactly the string a reader of a SARIF alert is least equipped
+to decode.
 
 ### Exit 2 when nothing was checked
 
@@ -490,7 +491,7 @@ the entry's line:
 A schema violation on a value the manifest supplied, and a document carrying a
 key the manifest owns, are exit 1. So are two documents sharing one value of a
 join field. All three are verdicts about the documents. The last row above is
-not: two collections owning one key for one file is a config overlap, and there
+not. Two collections owning one key for one file is a config overlap, and there
 is nothing about the document to fix.
 
 ### Exit 2 from collection selection
@@ -533,11 +534,12 @@ documents still need work, not that manni meta malfunctioned.
   **stderr**, prefixed with `manni: `. Usage errors the argument parser
   rejects also go to stderr, prefixed with `error: ` and followed by
   `(add --help for usage)`.
-- **Notices** are things a run wants you to know that are not failures — the
-  corpus checks a narrowed run skipped, a config that turned out to govern the
-  run, a `.gitignore` that could not be consulted. They go to **stderr** too,
-  with the same `manni: ` prefix, and they never change the exit code. Nothing
-  on stdout depends on them, so redirecting stdout keeps the report clean.
+- **Notices** are things a run wants you to know that are not failures. The
+  corpus checks a narrowed run skipped are one. A config that turned out to
+  govern the run, or a `.gitignore` that could not be consulted, are others.
+  They go to **stderr** too, with the same `manni: ` prefix, and they never
+  change the exit code. Nothing on stdout depends on them, so redirecting
+  stdout keeps the report clean.
 
 This separation lets you capture machine-readable output cleanly:
 

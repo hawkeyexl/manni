@@ -8,12 +8,12 @@ import { Aside } from '@astrojs/starlight/components';
 A `manni.config.yaml` file has two levels, and the split is the point.
 [`collections:`](#collections) at the top declares the **document sets**, once,
 for every tool in the family to read. [`meta:`](#keys) holds what is the
-metadata validator's own business: the default [schema
+metadata validator's own business. That is the default [schema
 set](/manni/meta/reference/schema-resolution/), per-collection and per-glob
 overrides, cross-file checks, and the trust settings. With both in place CI can
 run a bare `manni meta validate`.
 
-The config is optional; every key has a default, and manni meta runs without a
+The config is optional. Every key has a default, and manni meta runs without a
 config when you pass paths and schemas on the command line.
 
 ## Migrating a 0.x config
@@ -60,7 +60,7 @@ meta:
 | Was | Refused with | Write instead |
 |---|---|---|
 | `meta.paths` | `manni.config.yaml: "paths" is no longer a meta key. Document sets are declared once for every tool, under a top-level collections: list. See …#collections` | [`collections[].paths`](#collections) |
-| `meta.exclude` | `manni.config.yaml: "exclude" is no longer a meta key. Document sets are declared once for every tool, under a top-level collections: list. See …#collections` | [`collections[].exclude`](#collections), whose meaning narrowed — see [Membership](#membership) |
+| `meta.exclude` | `manni.config.yaml: "exclude" is no longer a meta key. Document sets are declared once for every tool, under a top-level collections: list. See …#collections` | [`collections[].exclude`](#collections), whose meaning narrowed. See [Membership](#membership) |
 | `meta.sidecars` | `manni.config.yaml: "sidecars" is no longer a meta key. It is externalMetadata on a collection, under the top-level collections: list. See …#external-metadata` | [`collections[].externalMetadata`](#external-metadata) |
 | `overrides[].name` | `manni.config.yaml: overrides[0] no longer carries "name". Define a collection with that name and point the override at it with collection:.` | A collection with that name, and [`overrides[].collection`](#overrides) pointing at it |
 
@@ -77,7 +77,7 @@ Three more things changed with the keys.
 - **The two finding identities** are `external:owned/external` and
   `external:duplicate/external`, where they were `sidecar:owned/sidecar` and
   `sidecar:duplicate/sidecar`. A [baseline](/manni/meta/reference/cli/#baselines)
-  recorded before 1.0.0 stops matching those two, so the findings reappear and
+  recorded before 1.0.0 stops matching those two. The findings reappear, and
   the run is exit 1 until you regenerate it with `--write-baseline`.
 - **A collection's `exclude:` no longer filters a path you type.** Under
   `meta.exclude` it filtered every run. It is now a membership rule, and only
@@ -109,8 +109,8 @@ collections:
 |---|---|---|---|---|
 | `name` | `string` | yes | none | What [`--collection`](#selecting-collections-on-the-command-line), [`overrides[].collection`](#overrides) and `FROM <name>` in SQL refer to. Non-blank, unique case-insensitively, never `docs`, and never starting `sqlite_`. |
 | `paths` | `string[]` | yes | none | Files, directories, or globs, relative to the config file's directory. A non-empty list of non-empty strings. |
-| `exclude` | `string[]` | no | `[]` | Globs that remove a file from the collection, same base. Membership only — see [Membership](#membership). An explicit `[]` is accepted. |
-| `url` | `string` | no | none | Where the collection is published: one `http:` or `https:` root. [`manni a11y check`](/manni/a11y/reference/cli/) seeds from it. See [Where a collection is published](#where-a-collection-is-published). |
+| `exclude` | `string[]` | no | `[]` | Globs that remove a file from the collection, same base. Membership only. See [Membership](#membership). An explicit `[]` is accepted. |
+| `url` | `string` | no | none | One `http:` or `https:` root, where the collection is published. [`manni a11y check`](/manni/a11y/reference/cli/) seeds from it. See [Where a collection is published](#where-a-collection-is-published). |
 | `externalMetadata` | `ExternalMetadata[]` | no | `[]` | Manifests joined to this collection's members. See [External metadata](#external-metadata). An explicit `[]` is accepted. |
 
 `collections:` absent means no configured documents, exactly as an absent
@@ -133,7 +133,7 @@ manni.config.yaml: collections[0] must be a mapping.
 manni.config.yaml: collections[0] has unknown key "path". Supported keys: name, paths, exclude, url, externalMetadata.
 manni.config.yaml: collections[0].name must be a non-empty string.
 manni.config.yaml: collections[1].name "guides" is already taken by collections[0]; names are compared case-insensitively because they become SQL views.
-manni.config.yaml: collections[0].name "docs" collides with the docs table every query reads. Pick another name.
+manni.config.yaml: collections[0].name "docs" collides with the docs table every query reads. Pick another name, such as "site" or "pages".
 manni.config.yaml: collections[0].name "sqlite_x" starts with "sqlite_", which SQLite reserves for its own objects. Pick another name.
 manni.config.yaml: collections[0].paths must be a non-empty list of files, directories or globs.
 manni.config.yaml: collections[0].exclude must be a list of globs.
@@ -181,8 +181,8 @@ manni: --collection needs a config file to select from.
 rather than a reshaping of the configured corpus.
 
 A run narrowed by `--collection` is a **scoped** run, so it skips the
-[corpus checks](#when-checks-run) with a notice naming the collections, rather
-than running a `FROM blog` rule over a corpus that does not contain the blog:
+[corpus checks](#when-checks-run) with a notice naming the collections. It does
+not run a `FROM blog` rule over a corpus that does not contain the blog:
 
 ```
 $ manni meta validate --collection guides
@@ -199,7 +199,7 @@ from the command line.
 
 1. **A positional path is a file the operator chose.** It is loaded whether or
    not any collection contains it. `manni meta validate README.md` validates
-   `README.md` even where no collection mentions it; it simply gets no
+   `README.md` even where no collection mentions it. It simply gets no
    manifests, and resolves its schema from `schemas:`, a matching glob
    override, or the built-in default set.
 2. **Membership is the collection's own globs.** A file belongs to a collection
@@ -207,7 +207,7 @@ from the command line.
    collection's `paths` and none of its `exclude`. Nothing about the schema the
    file is judged by affects it.
 3. **It is path arithmetic, not a filesystem question.** A `paths` entry
-   containing glob metacharacters is matched as a glob; any other entry matches
+   containing glob metacharacters is matched as a glob. Any other entry matches
    itself and everything beneath it, which is how a bare directory and a bare
    filename both work. `exclude` entries are always matched as globs. No `stat`
    is involved, so membership costs nothing per file and cannot fail. A path
@@ -215,7 +215,7 @@ from the command line.
 4. **A file may belong to two collections.** It appears in both views, takes the
    manifests of both, and still resolves exactly one schema set by
    first-match-wins. Two collections owning the same external-metadata key is
-   fine until one file is a member of both; that case is exit 2, and
+   fine until one file is a member of both. That case is exit 2, and
    [rule 5](#the-rules) says so.
 5. **A collection's `exclude` never filters a path you type.** Only `--exclude`
    does. The tool has no basis for picking which collection's exclusions to
@@ -224,13 +224,13 @@ from the command line.
 
 <Aside type="caution" title="`exclude:` shapes the collection, so it shapes a collection run">
 `paths` and `exclude` are two halves of one statement, and a run that reads the
-collections honours both: a file the collection excludes is not read, gets no
+collections honours both. A file the collection excludes is not read. It gets no
 manifests, has no row in the collection's view, and is not governed by a
 `collection:` override.
 
 A path given **on the command line** is the exception. `manni meta validate
 docs/` reads exactly `docs/`, excluded files included, because you named that
-directory — the tool has no basis to choose whose exclusions to apply once a
+directory. The tool has no basis to choose whose exclusions to apply once a
 typed path spans several collections. [`--exclude`](/manni/meta/reference/cli/)
 is the spelling for filtering a path you typed; the [default
 ignores](/manni/meta/reference/cli/#default-ignores) and
@@ -244,7 +244,7 @@ collection to say so.
 
 `url:` is the site root the collection's documents appear at. It is a fact about
 the documents rather than a setting of any one tool, which is why it sits beside
-`paths:`, and it is what [`manni a11y
+`paths:`. It is what [`manni a11y
 check`](/manni/a11y/reference/cli/) checks when it is given no URLs of its own.
 
 ```yaml title="manni.config.yaml"
@@ -254,12 +254,17 @@ collections:
     url: https://docs.example.com/guides/
 ```
 
-Seeds are decided in one order, the first non-empty winning: positional URLs on
-the command line; the `url` of each collection `--collection` named; `a11y.urls`;
-then the `url` of every declared collection that has one. `a11y.urls` stays,
-because a site has entry points no documentation collection covers — a marketing
-page, a status page, a staging host. A collection with no `url` contributes
-nothing, and is an error only when `--collection` named it.
+Seeds are decided in one order, and the first non-empty source wins:
+
+1. positional URLs on the command line;
+2. the `url` of each collection `--collection` named;
+3. `a11y.urls`;
+4. the `url` of every declared collection that has one.
+
+`a11y.urls` stays, because a site has entry points no documentation collection
+covers, such as a marketing page, a status page, or a staging host. A collection
+with no `url` contributes nothing, and is an error only when `--collection`
+named it.
 
 <Aside type="note" title="Two unrelated URLs in one config">
 A collection's `url:` is where its **pages** are published. An
@@ -389,7 +394,7 @@ collections:
         join: id
 ```
 
-```yaml title="docs-meta.yaml — keyed by each page's `id`"
+```yaml title="docs-meta.yaml — keyed by each page's id"
 auth-guide:
   source: internal/auth-design.md
   jira: PLAT-412
@@ -629,7 +634,7 @@ whole by the message:
 5. **Two collections may own one key, but not for one file.** `guides` and
    `blog` can each have a manifest supplying `owner`; that is ordinary. If one
    loaded file is a [member](#membership) of both, and both own the key, the run
-   is exit 2 naming the file, the key and both collections. A precedence rule
+   is exit 2. It names the file, the key and both collections. A precedence rule
    here would be a tiebreak, and manni meta refuses tiebreaks between metadata
    channels. The fix is in the config, where the overlap was declared:
 
@@ -652,7 +657,7 @@ whole by the message:
 
 | Command | With external metadata |
 |---|---|
-| `validate` | Merges, validates the merged object, files a finding for every owned key a document carries, and runs the orphan check on a corpus run, including one narrowed with `--collection`. |
+| `validate` | Merges, validates the merged object, and files a finding for every owned key a document carries. Runs the orphan check on a corpus run, including one narrowed with `--collection`. |
 | `get` | Reads the merged value. `manni meta get jira docs/auth.md` prints `docs/auth.md: jira=PLAT-412` from the manifest as readily as it would from the document. It does not yet say which of the two supplied it. |
 | `query` | Every row holds the merged values, so `SELECT _path, jira FROM docs` and a [corpus check](#checks) see the manifest's keys. A write that would touch an owned key, or change the join field of a matched document, refuses (exit 2) before any file is written. |
 | `fill` | A candidate property a manifest owns is refused for the file, as a per-file error (exit 1) rather than a skip. A missing owned key is therefore never quietly left missing. |
@@ -772,14 +777,14 @@ manni: Manifest docs-meta.orphan.yaml:3 names "docs/gone.md", which this run did
 
 It runs only when the resolved file set **is** a corpus. A positional path,
 stdin, `--as`, `--ext`, `--exclude`, `--no-gitignore` or `-s` means the operator
-chose to look at part of one, so an entry for the rest is expected rather than
-orphaned: `manni meta validate docs/auth.md` from the same directory passes
+chose to look at part of one. An entry for the rest is then expected rather than
+orphaned. `manni meta validate docs/auth.md` from the same directory passes
 without mentioning `docs/gone.md`.
 
 `--collection` is the exception, and it differs from [named
 checks](#when-checks-run) here. Naming collections does not reshape the corpus,
-it chooses one — the run loads all of every collection it names, so an entry of a
-named collection is still accountable, and `manni meta validate --collection
+it chooses one. The run loads all of every collection it names, so an entry of a
+named collection is still accountable. `manni meta validate --collection
 pages` reports the orphan above. Entries belonging to collections the run did not
 name are skipped, since it never looked at their documents. A job narrowed to one
 collection therefore keeps the check it relies on.
@@ -825,8 +830,8 @@ so the log is complete. `.gitignore` filtering applies per repository root in
 both layouts, so the public repository's ignores still hold for its files.
 
 A path that climbs out of the config's directory is also a member of nothing
-(see [Membership](#membership)), so a sibling layout gets no manifests at all.
-That is the second reason to prefer the submodule.
+(see [Membership](#membership)). A sibling layout therefore gets no manifests at
+all. That is the second reason to prefer the submodule.
 
 #### `additionalProperties: false` in the page's schema
 
@@ -850,8 +855,8 @@ Two fixes:
   and what every built-in schema except the [Agent Skills
   pair](/manni/meta/reference/agent-skills-schemas/) does.
 - Or keep it closed, and have the `overrides` entry that governs the collection
-  restate the whole contract in its own schema, with the manifest's keys
-  declared. Then the closed schema is not in that run's set at all.
+  restate the whole contract in its own schema. Declare the manifest's keys
+  there, and the closed schema is not in that run's set at all.
 
 ## Keys
 
@@ -1206,7 +1211,7 @@ meta:
 
 Point an override at a collection whenever the collection is the thing you meant.
 The config then declares the set once, and the override says what judges it. Keep
-`files:` for a shape no other tool needs to name — a single file, or a path
+`files:` for a shape no other tool needs to name, such as a single file or a path
 pattern that cuts across collections.
 
 <Aside type="note" title="overrides[].name is gone">
@@ -1214,7 +1219,7 @@ Until 1.0.0 an override carrying `name:` became a named **collection** and a SQL
 view. A collection is now the thing that has a name, and an override points at
 one. See [Migrating a 0.x config](#migrating-a-0x-config) for the refusal, and
 [Collections as views](/manni/meta/reference/query/#collections-as-views) for
-what the views hold now: membership follows the config's globs, so views may
+what the views hold now. Membership follows the config's globs, so views may
 overlap where the old ones were disjoint by construction.
 </Aside>
 
@@ -1310,11 +1315,11 @@ manni: corpus checks skipped: run is scoped to collections guides, blog
 
 `--collection` disqualifies a run even though every declared collection still
 gets a [view](/manni/meta/reference/query/#collections-as-views). The views of the
-unselected collections would hold only what the run happened to load, so a
+unselected collections would hold only what the run happened to load. A
 `FROM blog` check would pass by having nothing to fail on. Config-level
 `respectGitignore:` does **not** disqualify, because it *defines* the corpus; the
 CLI flags redefine the run. A collection's own `exclude:` does not disqualify
-either — it is a [membership](#membership) rule, not a run-shaping one.
+either. It is a [membership](#membership) rule, not a run-shaping one.
 [`--no-checks`](/manni/meta/reference/cli/#meta-validate) opts out explicitly for one
 run, mirroring `--no-baseline`. Checks resolve no schemas and make no network
 requests, so `--offline` does not affect them.
@@ -1362,7 +1367,7 @@ meta:
 `api` and `guides` overlap `pages` deliberately. `pages` is the corpus a bare
 `manni meta validate` reads; the other two are what `--collection guides`,
 `overrides[].collection` and `FROM guides` name. A file under `docs/api/` is a
-member of both `pages` and `api`, which is fine: it resolves one schema set by
+member of both `pages` and `api`, which is fine. It resolves one schema set by
 first-match-wins, and appears in both views.
 
 ## Discovery
@@ -1398,7 +1403,7 @@ for these files, in order:
 The **first file found wins** and the search stops there, and that now includes
 a file whose only relevant key is `collections:`. A repository mid-migration,
 with a `collections:`-only file above a per-tool file below it, sees the outer
-one win where the walk used to continue upward. Configs are never merged. `schemas` is a set every file must satisfy in full, and `overrides` is
+one win. The walk used to continue upward. Configs are never merged. `schemas` is a set every file must satisfy in full, and `overrides` is
 first-match-wins ordered. A partial merge would quietly redefine what the
 contract means. A `manni.config.yaml` inside `docs/` therefore *shadows* the
 one at the repo root for runs started inside `docs/`. That is the escape hatch

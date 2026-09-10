@@ -24,7 +24,7 @@ line, and it does not become an empty flag.
 
 | Input | Default | Maps to |
 |---|---|---|
-| `paths` | none | Positional paths. Files, directories, or globs. Space-separated, or one per line — use lines for any path containing a space. Unset, it falls back to the [collections](/manni/meta/reference/configuration/#collections) in your config, which is every declared one unless `args` narrows the run with `--collection`. |
+| `paths` | none | Positional paths. Files, directories, or globs. Space-separated, or one per line. Use lines for any path containing a space. Unset, it falls back to the [collections](/manni/meta/reference/configuration/#collections) in your config, which is every declared one unless `args` narrows the run with `--collection`. |
 | `schema` | none | One `-s` per entry. |
 | `config` | none | `-c` |
 | `format` | `github` | `--format`. One of `pretty`, `json`, `github`, `sarif`, `junit`. |
@@ -84,8 +84,8 @@ occurrences on the same line:
 ```
 
 Leave `paths` unset when you do this. `--collection` selects from the config, so
-it cannot be combined with positional paths, and a workflow that sets both fails
-the step with exit 2:
+it cannot be combined with positional paths. A workflow that sets both fails the
+step with exit 2. The message is
 `--collection selects a configured collection; it cannot be combined with paths.`
 With neither, the run covers every declared collection, which is what the
 `paths`-less form above already did.

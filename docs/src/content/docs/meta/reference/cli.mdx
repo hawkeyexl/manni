@@ -97,7 +97,7 @@ value, for example `-s a -s b`.
 With [`externalMetadata:`](/manni/meta/reference/configuration/#external-metadata)
 on a collection, `validate` merges each manifest's values into the document
 before resolving its schema set. Which manifests apply is decided by
-[membership](#membership-and-what-exclude-filters): a document gets the
+[membership](#membership-and-what-exclude-filters). A document gets the
 manifests of every collection it belongs to, and a file that belongs to none
 gets no manifests at all. It files an `external:owned/external` finding for
 every owned key a document carries itself, reading `"jira" is owned by manifest
@@ -938,10 +938,13 @@ manni meta validate --collection guides --collection blog    # two
 ```
 
 The flag repeats, one name per occurrence, and never splits on commas. One
-separator per list is the rule across the whole CLI: a positional variadic is
-space-separated, a `<list>` option is comma-separated and given once, and a
-repeatable option takes one value per occurrence. So `--collection guides,blog`
-is a single name, and no collection has it:
+separator per list is the rule across the whole CLI.
+
+- A positional variadic is space-separated.
+- A `<list>` option is comma-separated and given once.
+- A repeatable option takes one value per occurrence.
+
+So `--collection guides,blog` is a single name, and no collection has it:
 
 ```console
 $ manni meta validate --collection guides,blog
@@ -951,7 +954,7 @@ exit=2
 
 Naming a collection twice is not an error, because repeats collapse. Naming one
 that is not declared is, since a typo that silently narrowed a run to nothing
-would read as a clean pass. The other two refusals are structural: the flag
+would read as a clean pass. The other two refusals are structural. The flag
 selects from the config, so it can neither take paths beside it nor run without
 a config to select from.
 
@@ -969,7 +972,7 @@ exit=2
 
 With no paths, no `--collection`, and nothing declared under `collections:`,
 there is nothing to run over, and that is an operational error rather than empty
-output. The verb matches the command — `validate`, `read` for both
+output. The verb matches the command. It is `validate`, `read` for both
 [`get`](#meta-get) and [`query`](#meta-query), `fill`, and `scan` for
 [`schemas infer`](#meta-schemas-infer):
 
@@ -979,14 +982,14 @@ manni: No files to validate. Pass paths/globs, or declare a collection under `co
 
 #### Membership, and what `exclude:` filters
 
-A file is a **member** of a collection when, relative to the config file's
-directory, it matches one of that collection's `paths:` and none of its
-`exclude:`. Membership is decided per file and it is what [external
+A file is a **member** of a collection when it matches one of that collection's
+`paths:` and none of its `exclude:`. Both are matched relative to the config
+file's directory. Membership is decided per file and it is what [external
 metadata](/manni/meta/reference/configuration/#external-metadata) attaches to. A
 file that is a member of no collection gets no manifests, and a file that is a
-member of two gets both collections' manifests. Where the file came from — the
-walk or the command line — makes no difference. Membership is arithmetic on the
-path, so it costs nothing per file and never touches the filesystem; stdin, and
+member of two gets both collections' manifests. Where the file came from, the
+walk or the command line, makes no difference. Membership is arithmetic on the
+path, so it costs nothing per file and never touches the filesystem. Stdin, and
 any path outside the config's directory, are members of nothing.
 
 That makes a collection's `exclude:` a membership rule and nothing more. It does
@@ -1013,7 +1016,7 @@ manni: corpus checks skipped: run is scoped to collections guides, blog
 ```
 
 A check is SQL over the projection, and every unselected collection's view would
-be empty, so a `FROM blog` check would pass by having nothing to fail on.
+be empty. A `FROM blog` check would therefore pass by having nothing to fail on.
 Skipping and saying so is the honest answer. Every declared collection still
 gets its view, selected or not, so a
 [query](/manni/meta/reference/query/) naming one is never a SQL error.
@@ -1144,7 +1147,7 @@ with `No files matched` (exit 2), rather than reporting a green zero.
 {/* step {"description":"schemas -f json prints { builtins, formats }.","runShell":{"command":"manni meta schemas -f json","exitCodes":[0],"stdio":"/\"builtins\"[\\s\\S]*\"formats\"/"}} */}
 {/* step {"description":"schemas reports per-format writability, which fill depends on.","runShell":{"command":"manni meta schemas -f json","exitCodes":[0],"stdio":"/\"name\": \"markdown\"[\\s\\S]*\"writable\": true/"}} */}
 {/* step {"description":"schemas rejects a validate-only format rather than silently printing pretty (exit 2).","runShell":{"command":"manni meta schemas -f github","exitCodes":[2],"stdio":"Unknown --format"}} */}
-{/* step {"description":"DDL type bridge (0028): a declared format type previews as the whole property the schema will gain — type, format, required. --dry-run keeps the step read-only.","runShell":{"command":"manni meta query --dry-run -c test/fixtures/ddl-bridge/docmeta.config.yaml \"ALTER TABLE docs ADD COLUMN reviewed_on DATE NOT NULL DEFAULT '2026-08-26'\" test/fixtures/ddl-bridge/docs","exitCodes":[0],"stdio":"+ reviewed_on (string, format date, required)"}} */}
+{/* step {"description":"DDL type bridge (0028): a declared format type previews as the whole property the schema will gain — type, format, required. --dry-run keeps the step read-only.","runShell":{"command":"manni meta query --dry-run -c test/fixtures/ddl-bridge/manni.config.yaml \"ALTER TABLE docs ADD COLUMN reviewed_on DATE NOT NULL DEFAULT '2026-08-26'\" test/fixtures/ddl-bridge/docs","exitCodes":[0],"stdio":"+ reviewed_on (string, format date, required)"}} */}
 {/* step {"description":"fill documents its confidence gate and provider flags in --help.","runShell":{"command":"manni meta fill --help","exitCodes":[0],"stdio":"--confidence"}} */}
 {/* step {"description":"fill follows the shared input model: no paths and no config is an operational error (exit 2).","runShell":{"command":"manni meta fill --no-config","exitCodes":[2],"stdio":"No files"}} */}
 {/* step {"description":"fill rejects a non-numeric --confidence before contacting a provider (exit 2).","runShell":{"command":"manni meta fill test/fixtures/valid.md --confidence abc","exitCodes":[2],"stdio":"--confidence"}} */}

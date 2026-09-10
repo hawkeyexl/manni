@@ -73,7 +73,7 @@ manni meta validates the **presence and format** of your frontmatter against [JS
    This is the exact command CI will run. Confirm it reports what you expect locally before you wire it up.
 
    <Aside type="caution">
-   If you run a bare `manni meta validate` with no config file and no paths, manni meta exits with code `2` and tells you to pass paths or declare a collection. That is an operational error rather than a silent pass. It means manni meta had nothing to do.
+   A bare `manni meta validate` with no config file and no paths exits with code `2`. The message tells you to pass paths or declare a collection. That is an operational error rather than a silent pass. It means manni meta had nothing to do.
    </Aside>
 
 4. **Land the CI gate.**

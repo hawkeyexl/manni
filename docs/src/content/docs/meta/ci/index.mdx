@@ -115,9 +115,9 @@ deliberately.
 
 ### Let the config file supply the paths
 
-If your repository has a `manni.config.yaml` at its root, the document sets in
-its top-level `collections:` list are what a run reads when you pass no
-positional targets. That lets the workflow step drop the glob entirely:
+If your repository has a `manni.config.yaml` at its root, its top-level
+`collections:` list already names the document sets. A run with no positional
+targets reads those. That lets the workflow step drop the glob entirely:
 
 ```yaml title=".github/workflows/manni.yml" {3}
 - name: Validate frontmatter
