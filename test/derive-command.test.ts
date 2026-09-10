@@ -227,10 +227,17 @@ describe("deriveFromCommands", () => {
   });
 
   it("is unavailable when the command floods stdout, and does not wait for it", async () => {
-    // A program writing without end would otherwise be read into memory
-    // until the run died; the cap kills it and names the field.
+    // A program writing far more than a field's value would otherwise be read
+    // into memory until the run died; the cap kills it and names the field.
+    //
+    // The writes yield to the child's own event loop, and stop at 12 MiB. A
+    // tight `for(;;) process.stdout.write(...)` never yields, so once the pipe
+    // fills the child buffers every chunk in its own heap and dies of that
+    // first — on Linux and macOS the parent then saw a signal, not the cap,
+    // and the case passed only on Windows for the wrong reason.
     const command = cmd(
-      "const s='x'.repeat(1024*1024); for(;;) process.stdout.write(s);",
+      "const s='x'.repeat(1024*1024);let n=0;" +
+        "const w=()=>{if(n++<12){process.stdout.write(s);setImmediate(w);}};w();",
       [],
       60_000,
     );
