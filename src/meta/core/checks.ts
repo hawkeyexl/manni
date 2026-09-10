@@ -29,15 +29,18 @@ import {
   createCollectionViews,
   type CollectionParams,
 } from "./collections.js";
+import { commandsOf } from "./derive/config.js";
 import {
-  commandsOf,
   createDerivedView,
-  derivableFields,
   derivedColumns,
   fieldsForSql,
   mentionsDerived,
 } from "./derive/table.js";
-import type { DerivableField, DerivedRecord } from "./derive/types.js";
+import {
+  derivableFields,
+  type DerivableField,
+  type DerivedRecord,
+} from "./derive/types.js";
 
 /** One loaded file a check may attach findings to. */
 export type CheckEntry = ProjectionEntry;

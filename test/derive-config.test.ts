@@ -4,7 +4,6 @@ import {
   DERIVABLE_FIELDS,
   DERIVE_SOURCES,
   isBuiltinField,
-  isDerivableField,
   isDeriveSource,
 } from "../src/meta/core/derive/types.js";
 
@@ -400,10 +399,6 @@ describe("derive: field and source vocabularies", () => {
     expect(isBuiltinField("owner")).toBe(true);
     expect(isBuiltinField("verified-against")).toBe(false);
     expect(isBuiltinField("title")).toBe(false);
-    // The old name stays as an alias for the same guard.
-    expect(isDerivableField).toBe(isBuiltinField);
-    expect(isDerivableField("owner")).toBe(true);
-    expect(isDerivableField("title")).toBe(false);
     expect(isDeriveSource("command")).toBe(true);
     expect(isDeriveSource("github")).toBe(true);
     expect(isDeriveSource("gitlab")).toBe(true);

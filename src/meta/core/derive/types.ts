@@ -36,9 +36,6 @@ export function isBuiltinField(x: string): x is BuiltinDerivableField {
   return (DERIVABLE_FIELDS as readonly string[]).includes(x);
 }
 
-/** The guard under its old name, kept for API stability. */
-export const isDerivableField = isBuiltinField;
-
 /** Every source `derive.sources` may name; absent means all five. */
 export const DERIVE_SOURCES = ["git", "codeowners", "github", "gitlab", "command"] as const;
 
@@ -55,6 +52,17 @@ export interface DeriveCommand {
 
 export function isDeriveSource(x: string): x is DeriveSource {
   return (DERIVE_SOURCES as readonly string[]).includes(x);
+}
+
+/**
+ * Every field a run can derive: the built-ins in the order messages list
+ * them, then the command keys sorted, so the list is the same whatever
+ * order the config wrote them in.
+ */
+export function derivableFields(
+  commands?: Readonly<Record<string, DeriveCommand>>,
+): DerivableField[] {
+  return [...DERIVABLE_FIELDS, ...Object.keys(commands ?? {}).sort()];
 }
 
 /**

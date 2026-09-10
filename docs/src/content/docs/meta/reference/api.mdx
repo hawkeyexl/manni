@@ -128,8 +128,7 @@ below are the shared vocabulary and the two pure steps every source feeds.
 | `DERIVABLE_FIELDS` | The six built-in fields: `created`, `last-updated`, `authors`, `owner`, `reviewed-by`, `last-reviewed`. |
 | `BuiltinDerivableField` (type) | The union of those names. |
 | `DerivableField` (type) | A managed field name, which is one of the built-ins or a key with an entry in `derive.commands`. The config parser guarantees one or the other, so it is `string` to the type system. |
-| `isBuiltinField` | Type guard for a user-supplied field name: whether it is one of the six built-ins. |
-| `isDerivableField` | The same guard under its earlier name, kept for API stability. |
+| `isBuiltinField` | Type guard for a user-supplied field name: whether it is one of the six built-ins. It answers `false` for a key with a `derive.commands` entry, which is derivable but not built in; ask `isBuiltinField(f) \|\| Object.hasOwn(commands, f)` for the wider question. |
 | `DERIVE_SOURCES` | The sources `derive.sources` may name: `git`, `codeowners`, `github`, `gitlab`, `command`. Absent in config means all five, of which only the `github` or `gitlab` the origin remote matches is consulted. |
 | `DeriveSource` (type) | The union of those names. |
 | `DeriveCommand` (type) | One `derive.commands` entry as the derive context carries it: the `run` argv, the program first, and the `timeoutMs` to wait for it. |

@@ -91,7 +91,6 @@ export {
   compareDerived,
   staleFindings,
   isBuiltinField,
-  isDerivableField,
   isDeriveSource,
   DERIVABLE_FIELDS,
   DERIVE_SOURCES,
