@@ -1,6 +1,6 @@
 # 0042: resolved reads, a third view that says which value you got
 
-- **Status:** Implemented (#TBD)
+- **Status:** Implemented (#22)
 - **Serves:** Maya · M1, M2 · Devin · D4 · Theo · T1
 - **Depends on:** Two earlier proposals.
   - [0040](0040-derived-metadata.md) built the derived channel. It gave every
