@@ -975,9 +975,12 @@ function parseDeriveCommands(
     const command: DeriveCommandConfig = { run };
 
     if (c.timeout !== undefined) {
-      if (typeof c.timeout !== "number" || !Number.isFinite(c.timeout) || c.timeout <= 0) {
+      // Whole seconds, because the reference says so and because a fraction
+      // reads as a budget while acting as a kill switch: `timeout: 0.001` is
+      // a 1 ms allowance that ends every spawn before it can answer.
+      if (typeof c.timeout !== "number" || !Number.isInteger(c.timeout) || c.timeout <= 0) {
         throw new DocmetaError(
-          `${source}: ${where}.timeout must be a positive number of seconds.`,
+          `${source}: ${where}.timeout must be a whole number of seconds, greater than zero.`,
         );
       }
       command.timeout = c.timeout;

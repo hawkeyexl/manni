@@ -30,7 +30,7 @@ import {
   assertSourcesAvailable,
   deriveMetadata,
 } from "../core/derive/index.js";
-import { commandsOf } from "../core/derive/table.js";
+import { commandsOf } from "../core/derive/config.js";
 import {
   DERIVE_SOURCES,
   isBuiltinField,

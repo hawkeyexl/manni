@@ -78,11 +78,10 @@ import {
   collectionNames,
   createCollectionViews,
 } from "../core/collections.js";
+import { commandsOf } from "../core/derive/config.js";
 import {
-  commandsOf,
   createDerivedView,
   createResolvedView,
-  derivableFields,
   DERIVED_ROWS,
   DERIVED_VIEW,
   derivedColumns,
@@ -92,7 +91,7 @@ import {
   mentionsResolved,
   RESOLVED_VIEW,
 } from "../core/derive/table.js";
-import type { DeriveInput } from "../core/derive/types.js";
+import { derivableFields, type DeriveInput } from "../core/derive/types.js";
 import type { FingerprintContext } from "../core/baseline.js";
 import { stringFormatNames, validatesFormat } from "../core/validator.js";
 import {

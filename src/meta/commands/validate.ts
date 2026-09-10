@@ -69,15 +69,15 @@ import {
   deriveMetadata,
   type DeriveResult,
 } from "../core/derive/index.js";
+import { commandsOf } from "../core/derive/config.js";
 import {
-  commandsOf,
-  derivableFields,
   fieldsForSql,
   mentionsDerived,
   mentionsResolved,
 } from "../core/derive/table.js";
 import {
   compareDerived,
+  derivableFields,
   DERIVE_SOURCES,
   staleFindings,
   type DerivedRecord,

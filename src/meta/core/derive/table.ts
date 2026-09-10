@@ -16,12 +16,13 @@
  * exactly as a built-in one is.
  */
 import type { DatabaseSync } from "node:sqlite";
-import type { DeriveConfig, DocmetaConfig } from "../config.js";
+import type { DocmetaConfig } from "../config.js";
 import { bindValue, quoteIdent, RESERVED } from "../projection.js";
+import { commandsOf } from "./config.js";
 import { assertSourcesAvailable, deriveMetadata } from "./index.js";
 import {
-  DERIVABLE_FIELDS,
   DERIVE_SOURCES,
+  derivableFields,
   type DerivableField,
   type DeriveCommand,
   type DerivedRecord,
@@ -38,41 +39,6 @@ export const RESOLVED_VIEW = "resolved";
 /** The two columns `resolved` adds past the fields: which side, and why. */
 const ORIGIN_COLUMN = "_origin";
 const SOURCES_COLUMN = "_sources";
-
-/** How long a configured command may run when its entry says nothing: 60 s. */
-export const DEFAULT_COMMAND_TIMEOUT_MS = 60_000;
-
-/**
- * The `command` source's table as the derive context wants it, from the
- * config's spelling: `timeout` is in seconds there and `timeoutMs` here.
- * Undefined when the config configures no command, so a context built from
- * it consults the source for nothing.
- */
-export function commandsOf(
-  config?: DeriveConfig,
-): Readonly<Record<string, DeriveCommand>> | undefined {
-  if (config?.commands === undefined) return undefined;
-  const out: Record<string, DeriveCommand> = {};
-  for (const [field, c] of Object.entries(config.commands)) {
-    out[field] = {
-      run: c.run,
-      timeoutMs:
-        c.timeout === undefined ? DEFAULT_COMMAND_TIMEOUT_MS : Math.round(c.timeout * 1000),
-    };
-  }
-  return out;
-}
-
-/**
- * Every field a run can derive: the built-ins in the order messages list
- * them, then the command keys sorted, so the list is the same whatever
- * order the config wrote them in.
- */
-export function derivableFields(
-  commands?: Readonly<Record<string, DeriveCommand>>,
-): DerivableField[] {
-  return [...DERIVABLE_FIELDS, ...Object.keys(commands ?? {}).sort()];
-}
 
 /** The view's columns, in order: the path, every derivable field, the evidence. */
 export function derivedColumns(commands?: Readonly<Record<string, DeriveCommand>>): string[] {
