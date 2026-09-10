@@ -95,10 +95,10 @@ describe("parseCollections (0041)", () => {
 
   it('refuses the name "docs" in any casing', () => {
     expect(refusal([{ name: "docs", paths: ["docs"] }])).toBe(
-      'manni.config.yaml: collections[0].name "docs" collides with the docs table every query reads. Pick another name.',
+      'manni.config.yaml: collections[0].name "docs" collides with the docs table every query reads. Pick another name, such as "site" or "pages".',
     );
     expect(refusal([{ name: "DOCS", paths: ["docs"] }])).toBe(
-      'manni.config.yaml: collections[0].name "DOCS" collides with the docs table every query reads. Pick another name.',
+      'manni.config.yaml: collections[0].name "DOCS" collides with the docs table every query reads. Pick another name, such as "site" or "pages".',
     );
   });
 
@@ -380,9 +380,18 @@ describe("selectCollections (0041)", () => {
     expect(selectCollections(all, [], SOURCE, toError)).toEqual(all);
   });
 
-  it("matches names case-sensitively", () => {
+  it("matches names case-sensitively, and says so when that is the whole miss", () => {
+    // Names are unique case-insensitively (they become SQL views) but are
+    // selected by their one spelling. "Configured: guides" beside "Guides"
+    // would read as a contradiction without the hint.
     expect(messageOf(() => selectCollections(all, ["Guides"], SOURCE, toError))).toBe(
-      'no collection named "Guides" in manni.config.yaml. Configured: guides, blog, api.',
+      'no collection named "Guides" in manni.config.yaml. Configured: guides, blog, api. Names are case-sensitive; did you mean "guides"?',
+    );
+  });
+
+  it("gives no casing hint when no name is a casing away", () => {
+    expect(messageOf(() => selectCollections(all, ["gides"], SOURCE, toError))).toBe(
+      'no collection named "gides" in manni.config.yaml. Configured: guides, blog, api.',
     );
   });
 
@@ -410,6 +419,18 @@ describe("isMember (0041)", () => {
     const c = collection({ paths: ["docs/**/*.md"] });
     expect(isMember(c, "docs/guides/intro.md")).toBe(true);
     expect(isMember(c, "docs/guides/intro.mdx")).toBe(false);
+  });
+
+  // An extended glob has no `*`, `?`, `[` or `{` of its own, so a hand-rolled
+  // character test read it as a literal path and it matched nothing, silently.
+  // picomatch decides what a glob is.
+  it("treats an extended glob as a glob, not a literal path", () => {
+    const c = collection({ paths: ["docs/!(drafts)/**"] });
+    expect(isMember(c, "docs/guides/intro.md")).toBe(true);
+    expect(isMember(c, "docs/drafts/wip.md")).toBe(false);
+    const alt = collection({ paths: ["docs/@(guides|howto)/*.md"] });
+    expect(isMember(alt, "docs/howto/x.md")).toBe(true);
+    expect(isMember(alt, "docs/ref/x.md")).toBe(false);
   });
 
   it("matches everything beneath a bare directory", () => {

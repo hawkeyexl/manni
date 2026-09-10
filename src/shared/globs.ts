@@ -9,6 +9,15 @@
  */
 import picomatch from "picomatch";
 
+/**
+ * One compiled matcher per distinct glob, kept for the life of the process.
+ * Never evicted, on purpose: the set of globs a run sees is the config's plus
+ * a handful of flags, which is dozens at most, and a compile is the expensive
+ * step. This module is shared across the family, so if it ever sits inside a
+ * long-lived host that feeds it unbounded user globs, this is the line to
+ * revisit — bound it, or key it per run. Until then an eviction policy would
+ * be machinery for a case that does not exist.
+ */
 const matcherCache = new Map<string, (p: string) => boolean>();
 
 /**

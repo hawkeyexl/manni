@@ -186,7 +186,7 @@ describe("family config discovery", () => {
     expect(stderr[0]).toContain("`meta:`");
     expect(stderr[0]).toContain('"manni.config.yaml"');
     expect(stderr[0]).toContain(
-      "and its paths, exclude and sidecars keys to a top-level collections: list.",
+      "and its paths, exclude and sidecars keys to a top-level collections: list, where sidecars becomes externalMetadata.",
     );
   });
 

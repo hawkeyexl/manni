@@ -16,6 +16,7 @@
  * would let a private file pick the schema a public document is judged by
  * (0015) with the provenance lost at the merge.
  */
+import picomatch from "picomatch";
 import { matchesFileGlob } from "./globs.js";
 
 /** One external-metadata manifest (proposals 0037, 0038, 0039) joined to a collection. */
@@ -158,7 +159,7 @@ export function parseCollections(
     const folded = name.toLowerCase();
     if (folded === "docs") {
       throw toError(
-        `${source}: ${where}.name "${name}" collides with the docs table every query reads. Pick another name.`,
+        `${source}: ${where}.name "${name}" collides with the docs table every query reads. Pick another name, such as "site" or "pages".`,
       );
     }
     if (folded.startsWith("sqlite_")) {
@@ -362,8 +363,19 @@ export function selectCollections(
         collections.length === 0
           ? "(none)"
           : collections.map((c) => c.name).join(", ");
+      // Names are unique case-insensitively (they become SQL views) but are
+      // selected by their one spelling. When the miss is only a casing miss,
+      // say so — "Configured: guides" beside "Guides" reads as a contradiction
+      // to anyone who does not already know the rule.
+      const nearMiss = collections.find(
+        (c) => c.name.toLowerCase() === name.toLowerCase(),
+      );
+      const hint =
+        nearMiss === undefined
+          ? ""
+          : ` Names are case-sensitive; did you mean "${nearMiss.name}"?`;
       throw toError(
-        `no collection named "${name}" in ${source}. Configured: ${configured}.`,
+        `no collection named "${name}" in ${source}. Configured: ${configured}.${hint}`,
       );
     }
   }
@@ -399,6 +411,18 @@ function normalizeEntry(entry: string): string {
   return posix.endsWith("/") ? posix.slice(0, -1) : posix;
 }
 
+/**
+ * Is this `paths` entry a glob, by picomatch's own definition, rather than a
+ * bare file or directory to match by prefix?
+ *
+ * picomatch decides, not a character class of our own: an extended glob such
+ * as `docs/!(drafts)/**` or `@(a|b)` has no `*`, `?`, `[` or `{` of its own
+ * and a hand-rolled test read it as a literal path — matching nothing and
+ * excluding nothing, silently. The one cost is that a literal directory whose
+ * name carries parentheses, `docs/notes (old)`, is also read as a glob and so
+ * matches itself only, not everything beneath it. Spell such a path as
+ * `docs/notes (old)/**` to get the prefix behaviour back.
+ */
 function isGlob(entry: string): boolean {
-  return /[*?[{]/.test(entry);
+  return picomatch.scan(entry).isGlob;
 }
