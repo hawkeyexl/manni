@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [1.1.0](https://github.com/hawkeyexl/manni/compare/v1.0.1...v1.1.0) (2026-09-11)
+
+
+### Features
+
+* **meta:** derive managed metadata from git, CODEOWNERS, GitHub and GitLab ([#19](https://github.com/hawkeyexl/manni/issues/19)) ([19784e1](https://github.com/hawkeyexl/manni/commit/19784e191ef4b731d4c94d74691cd1e4eccb1b20)), closes [#21](https://github.com/hawkeyexl/manni/issues/21) [#22](https://github.com/hawkeyexl/manni/issues/22)
+
 ## [1.0.1](https://github.com/hawkeyexl/manni/compare/v1.0.0...v1.0.1) (2026-09-11)
 
 

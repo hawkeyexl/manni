@@ -1,6 +1,6 @@
 {
   "name": "@hawkeyexl/manni",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "One command line for documentation that is meant to be checked. `manni meta` validates the presence and format of document metadata (Markdown frontmatter and more) against JSON Schema, built for CI. Formerly docmeta.",
   "type": "module",
   "bin": {
