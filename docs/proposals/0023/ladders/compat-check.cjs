@@ -1,5 +1,5 @@
-// Composability cross-check: the nine proposed docmeta vocabularies against
-// every current built-in in src/schemas (plus PR #117's four when their
+// Composability cross-check: the nine proposed manni vocabularies against
+// every current built-in in src/meta/schemas (plus PR #117's four when their
 // copies are supplied as argv[2]). For each shared key, probes the proposed
 // schema with the other claimant's most extreme legal value — a REJECT is
 // either a recorded design exception (proposal 0023 names them all) or a bug.
@@ -62,9 +62,9 @@ function loadDir(root) {
 const proposed = PROPOSED_DIRS.map((name) => JSON.parse(
   fs.readFileSync(`${PROPOSED_ROOT}/${name}/${vOf(name)}.json`, "utf8"),
 ));
-// The drafts live outside src/schemas, so everything there is a real
+// The drafts live outside src/meta/schemas, so everything there is a real
 // registered built-in — no hand-maintained skip set to drift.
-const current = loadDir("src/schemas");
+const current = loadDir("src/meta/schemas");
 const pr117Path = process.argv[2];
 let pr117 = [];
 if (pr117Path !== undefined) {
@@ -76,7 +76,7 @@ if (pr117Path !== undefined) {
   }
   pr117 = loadDir(pr117Path);
 } else {
-  console.log("note: PR #117 schema copies not supplied; checking against src/schemas built-ins only");
+  console.log("note: PR #117 schema copies not supplied; checking against src/meta/schemas built-ins only");
 }
 const others = [...current, ...pr117];
 console.log(`proposed ids: ${proposed.length}; current built-ins checked: ${others.length}\n`);
@@ -179,7 +179,7 @@ const probes = [
 
 console.log("\n=== law probes (other claimants' extreme legal values vs the proposed owner) ===");
 for (const [name, doc, ownerShort, expectReject] of probes) {
-  const id = `docmeta:${ownerShort}:${vOf(ownerShort)}`;
+  const id = `manni:${ownerShort}:${vOf(ownerShort)}`;
   const validate = compiled.get(id);
   if (!validate) {
     // A probe naming an id nothing compiled to is a broken probe, not a pass.
@@ -209,7 +209,7 @@ for (const [name, doc, ownerShort, expectReject] of probes) {
 // appears twice — and this proposal never argued for the stricter rule. It
 // also produced a false positive that stood for a while: `metadata` is claimed
 // by anthropic:claude-skill:2.1, whose `metadata` is a free-form object, which
-// is *exactly* the arrangement docmeta:artifact-evals is designed around ("an
+// is *exactly* the arrangement manni:artifact-evals is designed around ("an
 // artifact's top level is the host tool's contract and `metadata` is its
 // sanctioned extension bag"). The overlap there is the design working, not a
 // collision.
@@ -219,7 +219,7 @@ for (const [name, doc, ownerShort, expectReject] of probes) {
 // only a new error pointing *at that key* counts.
 //
 // One precondition first. A schema sealed against the family's own floor
-// composes with nothing docmeta publishes — docmeta:core requires `title`, so a
+// composes with nothing manni publishes — manni:core requires `title`, so a
 // root that forbids unknown keys and does not declare `title` can never be
 // stacked with any of the nine. Per-key probes against such a schema report a
 // conflict for every key, which says nothing about the key. Those are named and
@@ -246,7 +246,7 @@ function errorsFor(validate, doc) {
 }
 
 /**
- * Can this built-in be stacked with the docmeta family at all? Probed, not
+ * Can this built-in be stacked with the manni family at all? Probed, not
  * assumed: add the family's own required floor and see whether the schema
  * rejects the key itself.
  */
@@ -272,7 +272,7 @@ const compiledOthers = others.map((s) => {
 const sealed = compiledOthers.filter((o) => sealedAgainstTheFamily(o.validate));
 for (const o of sealed) {
   console.log(
-    `${o.id}: sealed root — rejects docmeta:core's own \`title\`, so it composes with no vocabulary in this family. Per-key probes below skip it.`,
+    `${o.id}: sealed root — rejects manni:core's own \`title\`, so it composes with no vocabulary in this family. Per-key probes below skip it.`,
   );
 }
 const stackable = compiledOthers.filter((o) => !sealed.includes(o));
@@ -303,7 +303,7 @@ for (const [key, value] of Object.entries(ENVELOPE_VALUES)) {
 
 // The one detail worth carrying even though it is not a finding: inside the
 // sealed set, agentskills:skill:1.0 declares `metadata` as a map of strings, so
-// of docmeta:artifact-evals' shapes only the single-assertion string shorthand
+// of manni:artifact-evals' shapes only the single-assertion string shorthand
 // would fit it. That is moot while the same schema also forbids `title` — the
 // pair can never validate one document — but it is the thing to re-check if the
 // standard ever opens its root.
