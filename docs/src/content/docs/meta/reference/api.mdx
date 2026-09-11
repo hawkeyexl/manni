@@ -237,7 +237,7 @@ below are the shared vocabulary and the two pure steps every source feeds.
 | `PATH_PLACEHOLDER` | The argv token, `{path}`, that a per-file command carries where the document's label goes. |
 | `isPerFile` | Whether a `DeriveCommand` runs once per document, which is whether any of its argv carries `{path}`. |
 | `argvFor` | A command's argv with every `{path}` replaced by a document's label. |
-| `valueOf` | What a command's stdout means: `null` when blank, the parsed value when it is JSON of any type, the trimmed text otherwise. |
+| `valueOf` | What a command's stdout means. Blank output is `null`. An object, a list or a quoted string is parsed as JSON. Anything else is the trimmed text, so a bare `1.10` keeps its trailing zero. |
 | `assertSourcesAvailable` | Throw the exit-2 `DocmetaError` for the first consulted source that could not answer, with the caller's hint appended after a semicolon. Availability is reported, not thrown, so each command chooses its own way out. |
 | `RESOLVED_VIEW` | The name of the third table a query can read, `resolved`: the effective value per field, over `docs` and the derived rows. |
 | `resolvedColumns` | Every column `resolved` carries, in order: `_path`, the `docs` data columns, any derivable field `docs` lacks, then `_origin` and `_sources`. |
