@@ -20,6 +20,7 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, relative, resolve, sep } from "node:path";
 import picomatch from "picomatch";
+import { errorMessage } from "../../../shared/errors.js";
 import type { DerivedValue, SourceStatus } from "./types.js";
 
 /** Where a CODEOWNERS file may live, in the order GitHub and GitLab look. */
@@ -338,7 +339,7 @@ export async function deriveFromCodeowners(
       return {
         status: {
           available: false,
-          reason: `CODEOWNERS at ${label} could not be read: ${err instanceof Error ? err.message : String(err)}`,
+          reason: `CODEOWNERS at ${label} could not be read: ${errorMessage(err)}`,
         },
         records,
       };

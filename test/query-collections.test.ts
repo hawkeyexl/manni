@@ -412,3 +412,30 @@ describe("collections (0041): views over membership", () => {
     expect(guide?.errors[0]?.message).toContain('no author page for "ghost"');
   });
 });
+
+describe("a collection-scoped elements: override on the write path", () => {
+  const scoped = resolve(here, "fixtures", "query-collection-elements");
+  function scopedCopy(): string {
+    const dir = mkdtempSync(join(tmpdir(), "manni-query-scoped-elements-"));
+    tempDirs.push(dir);
+    cpSync(scoped, dir, { recursive: true });
+    return dir;
+  }
+
+  it("updates the element the collection's override names, where it was read", async () => {
+    // The override lifts `meta.owner`, keyed by its parent element, for the
+    // guides collection only.
+    // The write has to use the element set the read used, or the key reads as
+    // present and then has no element to be written into.
+    const dir = scopedCopy();
+    const run = await runQuery({
+      sql: `UPDATE docs SET "meta.owner" = '["grace"]' WHERE _path = 'guides/owned.xml'`,
+      inputs: [],
+      cwd: dir,
+    });
+    expect(run.changes).toHaveLength(1);
+    const xml = readFileSync(join(dir, "guides", "owned.xml"), "utf8");
+    expect(xml).toContain("<owner>grace</owner>");
+    expect(xml).not.toContain("ada");
+  });
+});

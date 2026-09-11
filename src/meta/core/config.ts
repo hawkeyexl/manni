@@ -34,6 +34,7 @@ import {
   type DerivableField,
   type DeriveSource,
 } from "./derive/types.js";
+import { errorMessage } from "../../shared/errors.js";
 
 export interface SchemaOverride {
   /**
@@ -163,7 +164,7 @@ function asElementPaths(
     try {
       parseElementPath(path);
     } catch (err) {
-      throw new DocmetaError(`${source}: ${where} — ${(err as Error).message}`);
+      throw new DocmetaError(`${source}: ${where} — ${errorMessage(err)}`);
     }
   }
   return list;
@@ -595,7 +596,7 @@ export function parseConfig(text: string, source: string): DocmetaConfig {
     raw = parseYaml(text);
   } catch (err) {
     throw new DocmetaError(
-      `${source}: invalid YAML: ${(err as Error).message}`,
+      `${source}: invalid YAML: ${errorMessage(err)}`,
     );
   }
   return parseConfigValue(raw, source);
@@ -716,18 +717,32 @@ function assertNoMovedKeys(raw: unknown, source: string): void {
 }
 
 /**
+ * A message from a rule that runs outside `parseConfigValue`, with the prefix
+ * that parser gives its own. A check in `loadConfig` needs both halves of the
+ * family file, so it cannot sit inside the parser, but its message should
+ * still name the key the way the reader wrote it: `meta.overrides[0] …`, as
+ * the configuration reference documents. A legacy per-tool file has no
+ * section, so its message is unchanged.
+ */
+function inSection(message: string, source: string, section: string | undefined): string {
+  return section === undefined ? message : withSection(message, source, section);
+}
+
+/**
  * Refuse an `overrides[].collection` naming a collection nobody declared.
  *
  * Checked here rather than in the section parser because it is the one
  * override rule that needs the *other* half of the family file: `collections:`
  * is a top-level key, parsed by the shared loader, and the section parser
- * never sees it. The path shape stays `overrides[i].collection` so the message
- * reads like every other config error (0041 § interface).
+ * never sees it. The message goes through `inSection`, so it reads
+ * `meta.overrides[i].collection` like every error the section parser raises
+ * (0041 § interface).
  */
 function assertOverrideCollections(
   config: DocmetaConfig,
   collections: readonly CollectionConfig[],
   source: string,
+  section: string | undefined,
 ): void {
   const names = new Set(collections.map((c) => c.name));
   for (const [i, ov] of (config.overrides ?? []).entries()) {
@@ -737,7 +752,11 @@ function assertOverrideCollections(
         ? "(none)"
         : collections.map((c) => c.name).join(", ");
     throw new DocmetaError(
-      `${source}: overrides[${i}].collection names "${ov.collection}", which collections: does not define. Defined: ${defined}.`,
+      inSection(
+        `${source}: overrides[${i}].collection names "${ov.collection}", which collections: does not define. Defined: ${defined}.`,
+        source,
+        section,
+      ),
     );
   }
 }
@@ -786,7 +805,7 @@ export function manifestOwning(
  * `assertOverrideCollections` does. `manni meta derive --fields` asks
  * `manifestOwning` directly, because that flag never passes through here.
  *
- * The message goes through `withSection`, as a section-parser error does, so
+ * The message goes through `inSection`, as `assertOverrideCollections` does, so
  * it reads `meta.derive.fields[1]` the way the configuration reference says a
  * `meta:` error reads. Manifests exist only in a family file, so in practice
  * the section is always there.
@@ -800,7 +819,7 @@ function assertManagedFieldsUnowned(
   const refuse = (path: string, owner: ManifestOwner): never => {
     const message = `${source}: ${path} is owned by collections[${owner.collection}].externalMetadata[${owner.entry}] (${owner.file}) — a managed field has one authority, and a manifest key already has one. Drop it from one side.`;
     throw new DocmetaError(
-      section === undefined ? message : withSection(message, source, section),
+      inSection(message, source, section),
     );
   };
   // Commands first, as the parser reads them: a command's key is where a
@@ -1433,7 +1452,7 @@ export async function loadConfig(
   if (file === null) return null;
   const section = file.wrapped ? META_SECTION : undefined;
   const config = parseConfigValue(file.value, file.source, section);
-  assertOverrideCollections(config, file.collections, file.source);
+  assertOverrideCollections(config, file.collections, file.source, section);
   assertManagedFieldsUnowned(config, file.collections, file.source, section);
   return {
     config,

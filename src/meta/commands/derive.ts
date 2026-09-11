@@ -40,6 +40,7 @@ import {
 } from "../extractors/index.js";
 import { resolveElements } from "../core/resolve-schema.js";
 import { writeFileAtomic } from "../core/write-file.js";
+import { errorMessage } from "../../shared/errors.js";
 import { assertSourcesAvailable, deriveMetadata } from "../core/derive/index.js";
 import { commandsOf } from "../core/derive/config.js";
 import {
@@ -276,7 +277,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         apply: extractor.apply,
       });
     } catch (err) {
-      errors.set(label, { format: extractor.name, message: err instanceof Error ? err.message : String(err) });
+      errors.set(label, { format: extractor.name, message: errorMessage(err) });
     }
   }
 
@@ -351,7 +352,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         try {
           next = doc.apply(doc.content, patch, { filePath: label, elements: doc.elements });
         } catch (err) {
-          results.push(errorResult(label, doc.format, err instanceof Error ? err.message : String(err), check, compared));
+          results.push(errorResult(label, doc.format, errorMessage(err), check, compared));
           continue;
         }
         changed = next !== doc.content;

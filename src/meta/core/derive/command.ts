@@ -22,6 +22,7 @@ import {
   type Run,
   type SpawnOptions,
 } from "./spawn.js";
+import { errorMessage } from "../../../shared/errors.js";
 import type { DerivedValue, DeriveCommand, DeriveInput, SourceStatus } from "./types.js";
 
 /** The argv token a per-file command carries where the document's label goes. */
@@ -134,7 +135,7 @@ async function runOne(
     if (err instanceof BinMissing) {
       return { reason: `\`${program}\` is not on PATH ${where}` };
     }
-    return { reason: `\`${line}\` could not be run: ${err instanceof Error ? err.message : String(err)} ${where}` };
+    return { reason: `\`${line}\` could not be run: ${errorMessage(err)} ${where}` };
   }
   if (result.timedOut) {
     return { reason: `\`${line}\` timed out after ${String(timeoutMs / 1000)}s ${where}` };

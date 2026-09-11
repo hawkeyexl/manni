@@ -1174,7 +1174,7 @@ describe("overrides[].collection must name a declared collection (0041)", () => 
       ].join("\n"),
     );
     await expect(loadConfig(undefined, root)).rejects.toThrow(
-      'manni.config.yaml: overrides[0].collection names "gides", which collections: does not define. Defined: guides, blog.',
+      'manni.config.yaml: meta.overrides[0].collection names "gides", which collections: does not define. Defined: guides, blog.',
     );
   });
 
@@ -1192,7 +1192,7 @@ describe("overrides[].collection must name a declared collection (0041)", () => 
       ].join("\n"),
     );
     await expect(loadConfig(undefined, root)).rejects.toThrow(
-      'manni.config.yaml: overrides[0].collection names "guides", which collections: does not define. Defined: (none).',
+      'manni.config.yaml: meta.overrides[0].collection names "guides", which collections: does not define. Defined: (none).',
     );
   });
 });
