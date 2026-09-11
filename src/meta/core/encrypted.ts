@@ -213,8 +213,10 @@ const MAX_ROUNDS = 8;
 
 /**
  * Collect a document's marks and decrypt what it can. `locate` answers for a
- * value an external-metadata manifest supplied, which is private by
- * construction and never flagged.
+ * value an external-metadata manifest supplied. That exempts it from
+ * `encrypted:plain` and nothing else: a manifest is private by construction,
+ * so a plain value in one is not a leak, but a ciphertext in one is read,
+ * decrypted and reported under the same rules as one the page holds.
  */
 export async function encryptionView(opts: {
   data: Record<string, unknown>;
@@ -248,9 +250,12 @@ export async function encryptionView(opts: {
       const value = valueAt(data, pointer);
       if (value === undefined) continue;
       view.marked.push(pointer);
-      if (locate?.(pointer) !== undefined) continue;
       if (!isEncryptedValue(value)) {
-        view.plain.push(pointer);
+        // A manifest is private by construction (0037), so a plain value it
+        // supplied is not the leak `encrypted:plain` is about. That exemption
+        // is about the *plain* case alone: a ciphertext a manifest supplied
+        // is read, validated and reported exactly like one on the page.
+        if (locate?.(pointer) === undefined) view.plain.push(pointer);
         continue;
       }
       sealed.push(pointer);
@@ -286,7 +291,28 @@ interface Positions {
   colFor?(this: void, pointer: string): number | undefined;
 }
 
-function at(pointer: string, pos: Positions): { line?: number; col?: number } {
+/** Where a merged value lives, when a manifest supplied it (0037). */
+type Locator = (pointer: string) => SourceLocation | undefined;
+
+/**
+ * The place a finding points at: the manifest entry's own line when a
+ * manifest supplied the value, and the document's own position otherwise.
+ * The same order `toFieldError` uses, so an encryption finding and a schema
+ * finding on one pointer name the same place.
+ */
+function at(
+  pointer: string,
+  pos: Positions,
+  locate?: Locator,
+): { file?: string; line?: number; col?: number } {
+  const located = locate?.(pointer);
+  if (located) {
+    return {
+      file: located.file,
+      ...(located.line != null ? { line: located.line } : {}),
+      ...(located.col != null ? { col: located.col } : {}),
+    };
+  }
   const line = pos.lineFor(pointer);
   const col = pos.colFor?.(pointer);
   return { ...(line != null ? { line } : {}), ...(col != null ? { col } : {}) };
@@ -302,6 +328,7 @@ export function settleFindings(
   errors: readonly FieldError[],
   view: EncryptionView,
   pos: Positions,
+  locate?: Locator,
 ): FieldError[] {
   const hidden = [...view.unreadable, ...view.unverified];
   const out: FieldError[] = [];
@@ -313,7 +340,8 @@ export function settleFindings(
       out.push(e);
       continue;
     }
-    const { subject, line: _line, col: _col, ...rest } = e;
+    const { subject, file: _file, line: _line, col: _col, ...rest } = e;
+    void _file;
     void _line;
     void _col;
     out.push({
@@ -321,14 +349,18 @@ export function settleFindings(
       instancePath: inside,
       message: generic ?? e.message,
       ...(generic === undefined && subject !== undefined ? { subject } : {}),
-      ...at(inside, pos),
+      ...at(inside, pos, locate),
     });
   }
   return out;
 }
 
 /** The findings encryption itself raises for a view, in pointer order. */
-export function encryptionFindings(view: EncryptionView, pos: Positions): FieldError[] {
+export function encryptionFindings(
+  view: EncryptionView,
+  pos: Positions,
+  locate?: Locator,
+): FieldError[] {
   return [
     ...view.plain.map((p) => ({ p, schema: ENCRYPTED_PLAIN_SCHEMA, message: plainMessage(p) })),
     ...view.unreadable.map((p) => ({
@@ -341,7 +373,7 @@ export function encryptionFindings(view: EncryptionView, pos: Positions): FieldE
     keyword: ENCRYPTED_KEYWORD,
     instancePath: p,
     message,
-    ...at(p, pos),
+    ...at(p, pos, locate),
   }));
 }
 

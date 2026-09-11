@@ -417,6 +417,7 @@ What `manni meta validate` does with a marked property:
 |---|---|---|
 | The page holds a plain value, whatever the key state | Finding `encrypted:plain/encrypted`: `/owner holds a plain value; its schema marks it x-manni-encrypt.` | 1 |
 | A plain value an [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) supplied | Validated as plain text and never flagged. The manifest is private by construction. | 0 or 1 |
+| An encrypted value a manifest supplied | The three rows below, unchanged. The exemption above is about plain values alone. A finding names the manifest and the entry's own line. | 0 or 1 |
 | Encrypted, the key is available, and it decrypts | The decrypted value is validated against the property's full schema: `type`, `enum`, `pattern`, `format` and the rest. No finding prints the value. | 0 or 1 |
 | Encrypted, the key is available, and it does not decrypt | Finding `encrypted:unreadable/encrypted`: `/owner does not decrypt under the current key: encrypted under another key, or edited by hand.` | 1 |
 | Encrypted, and no key is available | Findings at or under that pointer are dropped, and the run warns once on stderr. | unaffected |
