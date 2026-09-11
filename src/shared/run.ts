@@ -10,7 +10,7 @@
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { CommanderError, type Command } from "commander";
-import { ToolError } from "./errors.js";
+import { ToolError, errorMessage } from "./errors.js";
 import { programName, setProgramName } from "./program-name.js";
 
 /** Report an operational error on stderr and exit 2. */
@@ -18,7 +18,7 @@ export function fail(err: unknown): never {
   const msg =
     err instanceof ToolError
       ? err.message
-      : `Unexpected error: ${(err as Error).message}`;
+      : `Unexpected error: ${errorMessage(err)}`;
   process.stderr.write(`${programName()}: ${msg}\n`);
   process.exit(2);
 }

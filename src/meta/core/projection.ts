@@ -101,16 +101,25 @@ export function createDocsTable(
     `INSERT INTO docs VALUES (${["?", "?", "?", "?", ...dataColumns.map(() => "?")].join(", ")})`,
   );
   db.exec("BEGIN");
-  for (const { label, extracted } of entries) {
-    insert.run(
-      label,
-      extracted.format,
-      extracted.present ? 1 : 0,
-      JSON.stringify(extracted.data),
-      ...dataColumns.map((c) => bindValue(extracted.data[c])),
-    );
+  // Committed or rolled back, never left open: a caller may keep using the
+  // handle after a failed insert, and every later statement would otherwise
+  // run inside the half-built transaction.
+  let committed = false;
+  try {
+    for (const { label, extracted } of entries) {
+      insert.run(
+        label,
+        extracted.format,
+        extracted.present ? 1 : 0,
+        JSON.stringify(extracted.data),
+        ...dataColumns.map((c) => bindValue(extracted.data[c])),
+      );
+    }
+    db.exec("COMMIT");
+    committed = true;
+  } finally {
+    if (!committed) db.exec("ROLLBACK");
   }
-  db.exec("COMMIT");
 }
 
 /**

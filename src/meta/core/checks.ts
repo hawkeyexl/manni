@@ -29,6 +29,7 @@ import {
   createCollectionViews,
   type CollectionParams,
 } from "./collections.js";
+import { errorMessage } from "../../shared/errors.js";
 
 /** One loaded file a check may attach findings to. */
 export type CheckEntry = ProjectionEntry;
@@ -209,7 +210,7 @@ export async function runChecks(
       } catch (err) {
         // The scan's own refusal (one name under two prefixes), check named.
         throw new DocmetaError(
-          `check "${check.name}": ${(err as Error).message}`,
+          `check "${check.name}": ${errorMessage(err)}`,
         );
       }
       if (tokens.length > 0) {
@@ -225,7 +226,7 @@ export async function runChecks(
         columns = stmt.columns().map((c) => c.name);
         rows = stmt.all();
       } catch (err) {
-        const message = (err as Error).message;
+        const message = errorMessage(err);
         throw new DocmetaError(
           message.includes("attempt to write a readonly database")
             ? `check "${check.name}": ${message} — checks are read-only by design; a check is a SELECT over the projection. Edit the corpus with \`manni meta query\` instead.`

@@ -25,6 +25,7 @@ import { rebaseConfigSchemaRefs } from "./resolve-schema.js";
 import { classifyRef } from "./schema-registry.js";
 import { INTEGRITY_SHAPE, isIntegrity } from "./integrity.js";
 import { parseElementPath } from "../extractors/element-key.js";
+import { errorMessage } from "../../shared/errors.js";
 
 export interface SchemaOverride {
   /**
@@ -154,7 +155,7 @@ function asElementPaths(
     try {
       parseElementPath(path);
     } catch (err) {
-      throw new DocmetaError(`${source}: ${where} — ${(err as Error).message}`);
+      throw new DocmetaError(`${source}: ${where} — ${errorMessage(err)}`);
     }
   }
   return list;
@@ -505,7 +506,7 @@ export function parseConfig(text: string, source: string): DocmetaConfig {
     raw = parseYaml(text);
   } catch (err) {
     throw new DocmetaError(
-      `${source}: invalid YAML: ${(err as Error).message}`,
+      `${source}: invalid YAML: ${errorMessage(err)}`,
     );
   }
   return parseConfigValue(raw, source);

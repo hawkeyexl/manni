@@ -16,6 +16,7 @@ import { DocmetaError, type FieldError, type ValidationResult } from "../types.j
 import { stripBom } from "./json-text.js";
 import { classifyRef } from "./schema-registry.js";
 import { writeFileAtomic } from "./write-file.js";
+import { errorMessage } from "../../shared/errors.js";
 
 /** Where `--baseline` / `--write-baseline` / `baseline:` point when unspecified. */
 export const DEFAULT_BASELINE_PATH = ".manni-baseline.json";
@@ -179,7 +180,7 @@ export function parseBaseline(text: string, source: string): Baseline {
     // hashes it, so this is purely the parsing concession. See `stripBom`.
     raw = JSON.parse(stripBom(text));
   } catch (err) {
-    bad(source, `invalid JSON: ${(err as Error).message}`);
+    bad(source, `invalid JSON: ${errorMessage(err)}`);
   }
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     bad(source, "top level must be an object.");
@@ -244,7 +245,7 @@ export async function readBaseline(
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
     throw new DocmetaError(
-      `Baseline "${source}" could not be read: ${(err as Error).message}`,
+      `Baseline "${source}" could not be read: ${errorMessage(err)}`,
     );
   }
   return parseBaseline(text, source);
@@ -272,7 +273,7 @@ export async function writeBaselineFile(
     await writeFileAtomic(absPath, serializeBaseline(baseline));
   } catch (err) {
     throw new DocmetaError(
-      `Baseline "${source}" could not be written: ${(err as Error).message}`,
+      `Baseline "${source}" could not be written: ${errorMessage(err)}`,
     );
   }
 }

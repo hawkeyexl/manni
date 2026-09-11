@@ -42,6 +42,7 @@ import {
   type LoadSchemaOptions,
 } from "./schema-registry.js";
 import { FILE_SCHEMA_KEY } from "./resolve-schema.js";
+import { errorMessage } from "../../shared/errors.js";
 
 type Dialect = "2020" | "2019" | "draft7" | "draft4";
 
@@ -304,7 +305,7 @@ export class Validator {
       return ajv.compile(schema);
     } catch (err) {
       throw new DocmetaError(
-        `Schema "${ref}" failed to compile: ${(err as Error).message}`,
+        `Schema "${ref}" failed to compile: ${errorMessage(err)}`,
       );
     }
   }
