@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [1.1.1](https://github.com/hawkeyexl/manni/compare/v1.1.0...v1.1.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* keep NaN and the infinities in errorMessage ([#28](https://github.com/hawkeyexl/manni/issues/28)) ([5e1e959](https://github.com/hawkeyexl/manni/commit/5e1e959b51ef3d0f3757bceff70030d9002440d7))
+
 # [1.1.0](https://github.com/hawkeyexl/manni/compare/v1.0.1...v1.1.0) (2026-09-11)
 
 
