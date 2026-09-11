@@ -223,27 +223,40 @@ standard uses to `properties` before turning this on.
 
 ## Wire them up
 
-A Docusaurus site has three content roots with three different contracts, so
-config [overrides](/manni/meta/reference/configuration/) are the natural fit:
+A Docusaurus site has three content roots with three different contracts. Each
+root is a document set the whole site thinks in, so declare the three as
+[collections](/manni/meta/reference/configuration/#collections) and point one
+[override](/manni/meta/reference/configuration/#overrides) at each:
 
 ```yaml title="manni.config.yaml"
+collections:
+  - name: guides
+    paths: [docs]
+  - name: blog
+    paths: [blog]
+  - name: pages
+    paths: [src/pages]
+
 meta:
-  paths:
-    - docs
-    - blog
-    - src/pages
   overrides:
-    - files: "docs/**"
+    - collection: guides
       schemas:
         - docusaurus:docs:3.10
         - diataxis:diataxis:1.0
-    - files: "blog/**"
+    - collection: blog
       schemas:
         - docusaurus:blog:3.10
-    - files: "src/pages/**"
+    - collection: pages
       schemas:
         - docusaurus:pages:3.10
 ```
+
+Two things about the names. `docs` is refused, because `manni meta query` builds
+a table of that name and each collection becomes a view beside it. So the
+Docusaurus `docs/` root is `guides` here. That leaves `pages` free for
+`src/pages`, the root Docusaurus itself calls pages and whose schema is named
+for it. And once the roots are named, a run can address one of them:
+`manni meta validate --collection blog`.
 
 The first matching override wins, so order them from most to least specific. For
 a one-off run, pass the id directly:
@@ -254,8 +267,8 @@ manni meta validate docs/ -s docusaurus:docs:3.10
 
 <Aside type="note" title="Versioned docs and i18n">
 Docusaurus copies docs into `versioned_docs/` and `i18n/`, which carry the same
-front matter contract. Add them to `paths` and give them the same override, or
-widen the glob to `**/docs/**`.
+front matter contract. Add them to the `pages` collection's `paths` so the same
+override reaches them, or widen its glob to `**/docs/**`.
 </Aside>
 
 <Aside type="danger" title="Always pass `--fields` when you run `fill` against these">

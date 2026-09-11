@@ -15,7 +15,7 @@ import type {
   ValidateFunction,
 } from "ajv/dist/2020.js";
 import { DocmetaError, type FieldError } from "../types.js";
-import type { SourceLocation } from "./sidecars.js";
+import type { SourceLocation } from "./external-metadata.js";
 import { escapePointerSegment } from "../extractors/pointer.js";
 
 // ajv ships its meta-schema refs as JSON. A static JSON import survives
@@ -326,7 +326,7 @@ export class Validator {
     colFor?: (pointer: string) => number | undefined,
     /**
      * Where a merged value lives when it is not in the document (proposal
-     * 0037): a sidecar manifest's file and line. Consulted before `lineFor`,
+     * 0037): a manifest's file and line. Consulted before `lineFor`,
      * and additive in the way `colFor` was.
      */
     locate?: (pointer: string) => SourceLocation | undefined,
@@ -414,7 +414,7 @@ function toFieldError(
     message = `must NOT have additional property '${defined.params.additionalProperty}'`;
     wantsColumn = false;
   }
-  // A value a sidecar supplied is not in the document, so `lineFor` has no
+  // A value a manifest supplied is not in the document, so `lineFor` has no
   // answer for it; `locate` does. `additionalProperties` is the one keyword
   // whose offending value sits at a *child* of `instancePath`, and when that
   // child came from the manifest, the manifest line is where a reader should

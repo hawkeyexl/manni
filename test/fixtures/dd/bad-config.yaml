@@ -1,4 +1,5 @@
-# Invalid: `paths` must be a list of strings, not a scalar.
-paths: "not-a-list"
-schemas:
-  - google:okf:0.1
+# Invalid: `collections` must be a list, not a scalar.
+collections: "not-a-list"
+meta:
+  schemas:
+    - google:okf:0.1

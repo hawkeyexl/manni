@@ -90,11 +90,12 @@ the command needs no arguments at all, which is the form a CI step uses:
 npx @hawkeyexl/manni a11y check
 ```
 
-With no URLs on the command line and no `a11y.urls` in config there is nothing
-to check. That is an error rather than an empty green run:
+With no URLs on the command line, no `url:` on any collection, and no
+`a11y.urls` in config there is nothing to check. That is an error rather than an
+empty green run:
 
 ```
-manni: No URLs to check. Pass one or more, or set `a11y.urls` in manni.config.yaml.
+manni: No URLs to check. Pass one or more, set url: on a collection, or set a11y.urls in manni.config.yaml.
 ```
 
 Exit `2`. The [CLI reference](/manni/a11y/reference/cli/#examples) continues

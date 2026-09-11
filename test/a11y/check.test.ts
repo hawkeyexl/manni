@@ -56,7 +56,7 @@ describe("runCheck input validation", () => {
     const analyzer = fakeAnalyzer({});
     await expect(runCheck(opts({ urls: [] }), { analyzer, fetcher: noSitemap() })).rejects.toThrow(
       new A11yError(
-        "No URLs to check. Pass one or more, or set `a11y.urls` in manni.config.yaml.",
+        "No URLs to check. Pass one or more, set url: on a collection, or set a11y.urls in manni.config.yaml.",
       ),
     );
     expect(analyzer.calls).toEqual([]);

@@ -37,9 +37,23 @@ export {
   DEFAULT_SCHEMAS,
 } from "./core/resolve-schema.js";
 export { loadConfig, parseConfig, resolveRunConfig } from "./core/config.js";
+// Collections (proposal 0041) are declared once for the whole family, so the
+// parser and the membership test live in `src/shared/` and are re-exported
+// here: a programmatic caller of `runValidate` reaches everything through one
+// module, as it always has.
+export {
+  parseCollections,
+  selectCollections,
+  isMember,
+  externalMetadataUrlProblem,
+} from "../shared/collections.js";
+export type {
+  CollectionConfig,
+  ExternalMetadataConfig,
+} from "../shared/collections.js";
+export { memberOf } from "./core/collections.js";
 export type {
   CheckConfig,
-  SidecarConfig,
   DeriveConfig,
   DeriveCommandConfig,
   ConfigNotice,
@@ -68,25 +82,24 @@ export type {
 } from "./core/schema-registry.js";
 export { integrityOf, isIntegrity, INTEGRITY_SHAPE } from "./core/integrity.js";
 export {
-  loadSidecars,
-  mergeSidecars,
+  loadExternalMetadata,
+  mergeExternalMetadata,
   orphanEntries,
   orphanJoins,
   orphanError,
-  sidecarJoin,
-  sidecarPointer,
+  externalMetadataJoin,
+  externalMetadataPointer,
   PATH_JOIN,
-  SIDECAR_DUPLICATE_SCHEMA,
-  SIDECAR_OWNED_SCHEMA,
-  SIDECAR_KEYWORD,
-} from "./core/sidecars.js";
+  EXTERNAL_DUPLICATE_SCHEMA,
+  EXTERNAL_OWNED_SCHEMA,
+  EXTERNAL_KEYWORD,
+} from "./core/external-metadata.js";
 export {
-  fetchSidecar,
-  sidecarUrlProblem,
-  SIDECAR_FETCH_TIMEOUT_MS,
-  SIDECAR_FETCH_MAX_BYTES,
-} from "./core/sidecar-fetch.js";
-export type { SidecarFetchOptions } from "./core/sidecar-fetch.js";
+  fetchExternalMetadata,
+  EXTERNAL_METADATA_FETCH_TIMEOUT_MS,
+  EXTERNAL_METADATA_FETCH_MAX_BYTES,
+} from "./core/external-metadata-fetch.js";
+export type { ExternalMetadataFetchOptions } from "./core/external-metadata-fetch.js";
 export {
   compareDerived,
   staleFindings,
@@ -152,15 +165,15 @@ export {
   REVIEW_CACHE_VERSION,
 } from "./core/derive/cache.js";
 export type {
-  SidecarIndex,
-  SidecarEntry,
-  SidecarValue,
+  ExternalMetadataIndex,
+  ExternalMetadataEntry,
+  ExternalMetadataValue,
   MergedMetadata,
-  SidecarCollision,
-  SidecarJoin,
+  ExternalMetadataCollision,
+  ExternalMetadataJoin,
   SourceLocation,
-  LoadSidecarsOptions,
-} from "./core/sidecars.js";
+  LoadExternalMetadataOptions,
+} from "./core/external-metadata.js";
 export {
   SchemaCache,
   SCHEMA_CACHE_DIR,

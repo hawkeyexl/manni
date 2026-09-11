@@ -217,9 +217,10 @@ describe("validate compares managed fields with the evidence", () => {
   it("gives a corpus check that names the derived table the same view", async () => {
     const files = fixtureFiles();
     files["manni.config.yaml"] = [
+      "collections:",
+      "  - name: site",
+      '    paths: ["docs/**/*.md"]',
       "meta:",
-      "  paths:",
-      '    - "docs/**/*.md"',
       "  schemas:",
       "    - ./permissive.schema.json",
       "  derive:",
@@ -248,9 +249,10 @@ describe("validate compares managed fields with the evidence", () => {
   it("derives once for the run when a managed field and a check both need the evidence", async () => {
     const files = fixtureFiles();
     files["manni.config.yaml"] = [
+      "collections:",
+      "  - name: site",
+      '    paths: ["docs/**/*.md"]',
       "meta:",
-      "  paths:",
-      '    - "docs/**/*.md"',
       "  schemas:",
       "    - ./permissive.schema.json",
       "  derive:",

@@ -18,7 +18,8 @@
  * report-only — it is never written into the document.
  */
 import { readFile } from "node:fs/promises";
-import { loadSidecars, mergeSidecars } from "../core/sidecars.js";
+import { loadExternalMetadata, mergeExternalMetadata } from "../core/external-metadata.js";
+import { memberOf, retainMembers } from "../core/collections.js";
 import { resolve, extname, join } from "node:path";
 import {
   completeValidatedJSON,
@@ -162,13 +163,17 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   const cwd = opts.cwd ?? process.cwd();
   // Explicit CLI inputs win, else config `paths:`; `base` is whichever of the
   // two directories those inputs were written relative to.
-  const { config, inputs, base, configDir } = await resolveRunConfig({
-    cwd,
-    configPath: opts.configPath,
-    noConfig: opts.noConfig,
-    inputs: opts.inputs,
-    onConfigLoaded: opts.onConfigLoaded,
-  });
+  const { config, inputs, base, configDir, collections, fromCollections } =
+    await resolveRunConfig({
+      cwd,
+      configPath: opts.configPath,
+      noConfig: opts.noConfig,
+      inputs: opts.inputs,
+      ...(opts.collections !== undefined
+        ? { collections: opts.collections }
+        : {}),
+      onConfigLoaded: opts.onConfigLoaded,
+    });
   // How every schema in this run is loaded: the cross-run cache and
   // `--offline`. `fill` calls `loadSchema` directly as well as through the
   // validator, so both have to be handed the same settings.
@@ -186,7 +191,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   const usingStdin = inputs.includes(STDIN_TOKEN);
   if (inputs.length === 0) {
     throw new DocmetaError(
-      "No files to fill. Pass paths/globs, or add `paths:` under `meta:` in manni.config.yaml.",
+      "No files to fill. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.",
     );
   }
 
@@ -273,8 +278,13 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   const fileInputs = inputs.filter((i) => i !== STDIN_TOKEN);
   const allowEmpty = opts.allowEmpty ?? config?.allowEmpty;
   const fillExts = opts.exts ?? forcedExtractor?.extensions;
-  const fillExclude = [...(config?.exclude ?? []), ...(opts.exclude ?? [])];
-  const { files, gitignoreSkipped } = await resolveTargetSet({
+  // Only `--exclude`: a collection's `exclude:` governs membership, not the
+  // walk of a path someone typed (0041 rule 3).
+  const fillExclude = opts.exclude ?? [];
+  /** The collections one label belongs to, computed once per file. */
+  const membersFor = (label: string): string[] =>
+    memberOf(collections, configDir ?? cwd, base, label);
+  const { files: walked, gitignoreSkipped } = await resolveTargetSet({
     inputs: fileInputs,
     exts: fillExts,
     exclude: fillExclude,
@@ -286,6 +296,11 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       onNotice: opts.onNotice,
     }),
   });
+  // Rule 9: the walk applied only the family ignores and `--exclude`, so it saw
+  // just the first half of each collection's statement. Narrow it to actual
+  // members, or a collection's `exclude:` would shape its SQL view and not what
+  // a bare run reads. Skipped for typed paths: those are the operator's (rule 3).
+  const files = fromCollections ? retainMembers(walked, membersFor) : walked;
   assertNonEmpty({
     files,
     inputs: fileInputs,
@@ -372,10 +387,10 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   const turnsExhausted = (): boolean =>
     maxTurns != null && turnsUsed + inFlight >= maxTurns;
 
-  // Sidecar manifests (0037), read once per run. Merged so the schema sees
+  // External metadata (0037), read once per run. Merged so the schema sees
   // one object; an owned key is never a fill candidate, since the manifest
   // is the only place it may be written and fill does not write manifests.
-  const sidecars = await loadSidecars(config, {
+  const externalMetadata = await loadExternalMetadata(collections, {
     configDir: configDir ?? cwd,
     base,
     offline: opts.offline ?? config?.offline ?? false,
@@ -405,15 +420,19 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     // Resolved once per file. It walks every `overrides:` entry and dedupes,
     // and the three call sites below — extract, the write pre-flight, and the
     // write itself — all want the same answer for the same file.
-    const elements = resolveElements(label, config);
+    // The collections this file belongs to, computed once per file: the merge
+    // and both resolution calls below ask the same question of it.
+    const members = membersFor(label);
+    const elements = resolveElements(label, config, members);
 
     let extracted;
     let merged;
     try {
-      merged = mergeSidecars(
+      merged = mergeExternalMetadata(
         label,
         extractor.extract(content, label, { elements }),
-        sidecars,
+        externalMetadata,
+        members,
         base,
       );
       extracted = merged.extracted;
@@ -428,6 +447,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         fileSchema: extracted.data[FILE_SCHEMA_KEY],
         cliSchemas: opts.cliSchemas,
         config,
+        memberOf: members,
         // Same trust boundary as `validate`: `fill` writes metadata back into
         // the document, so a schema a document chose for itself decides what
         // gets written — if anything, a stronger reason to guard it.
@@ -485,15 +505,18 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         skipReason: "managed",
       }));
     const candidates = proposed.filter((c) => !managed.has(c.key));
-    // Readable, loudly unwritable (0037 rule 6): a candidate a sidecar owns
+    // Readable, loudly unwritable (0037 rule 6): a candidate a manifest owns
     // could only be satisfied by editing the manifest, which fill does not
     // do — and writing it into the document would be the one thing 0018
     // forbids. Refused for the file rather than skipped, so a missing private
     // key is never quietly left missing.
-    const ownedCandidates = sidecars
+    // One owner is enough to refuse, and naming the first is the whole
+    // message: a key two of this file's collections own is a run-time error
+    // (0041 rule 5) long before fill picks candidates.
+    const ownedCandidates = externalMetadata
       ? candidates.flatMap((c) => {
-          const file = sidecars.owners.get(c.key);
-          return file === undefined ? [] : [{ key: c.key, file }];
+          const owner = externalMetadata.owners.get(c.key)?.[0];
+          return owner === undefined ? [] : [{ key: c.key, file: owner.file }];
         })
       : [];
     const firstOwned = ownedCandidates[0];
@@ -501,7 +524,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       return errorResult(
         label,
         extractor.name,
-        `"${firstOwned.key}" is owned by sidecar ${firstOwned.file}; manni meta fill cannot write a sidecar key. Add it to the manifest instead.`,
+        `"${firstOwned.key}" is owned by manifest ${firstOwned.file}; manni meta fill cannot write a manifest key. Add it to the manifest instead.`,
         schemaSet,
       );
     }

@@ -100,7 +100,52 @@ describe("loadA11yConfig", () => {
     expect(loaded).toEqual({
       config: { urls: ["https://docs.example.com/"], severity: "error" },
       source: FILE,
+      collections: [],
     });
+  });
+
+  it("passes the family file's collections through, url included", async () => {
+    repo = makeTempRepo({
+      files: {
+        [FILE]:
+          "collections:\n" +
+          "  - name: guides\n" +
+          "    paths: [docs/guides]\n" +
+          "    url: https://docs.example.com/guides/\n" +
+          "  - name: blog\n" +
+          "    paths: [docs/blog]\n" +
+          "a11y:\n  severity: error\n",
+      },
+    });
+    const loaded = await loadA11yConfig(repo);
+    expect(loaded.config).toEqual({ severity: "error" });
+    expect(loaded.source).toBe(FILE);
+    expect(loaded.collections).toEqual([
+      {
+        name: "guides",
+        paths: ["docs/guides"],
+        exclude: [],
+        externalMetadata: [],
+        url: "https://docs.example.com/guides/",
+      },
+      { name: "blog", paths: ["docs/blog"], exclude: [], externalMetadata: [] },
+    ]);
+  });
+
+  // Discovery stops at a family file that declares the documents but gives
+  // a11y no options of its own; walking past it would lose the collections
+  // whose `url` is the seed (proposal 0041).
+  it("finds a file with collections: and no a11y: section", async () => {
+    repo = makeTempRepo({
+      files: {
+        [FILE]:
+          "collections:\n  - name: guides\n    paths: [docs]\n    url: https://docs.example.com/\n",
+      },
+    });
+    const loaded = await loadA11yConfig(repo);
+    expect(loaded.config).toEqual({});
+    expect(loaded.source).toBe(FILE);
+    expect(loaded.collections.map((c) => c.url)).toEqual(["https://docs.example.com/"]);
   });
 
   it("walks up from a subdirectory and names the file relative to cwd", async () => {
@@ -117,17 +162,17 @@ describe("loadA11yConfig", () => {
 
   it("skips a family file that has no a11y: key", async () => {
     repo = makeTempRepo({ files: { [FILE]: "meta:\n  paths: [docs]\n" } });
-    expect(await loadA11yConfig(repo)).toEqual({ config: {}, source: null });
+    expect(await loadA11yConfig(repo)).toEqual({ config: {}, source: null, collections: [] });
   });
 
   it("returns an empty config when no file exists", async () => {
     repo = makeTempRepo({ files: { "README.md": "" } });
-    expect(await loadA11yConfig(repo)).toEqual({ config: {}, source: null });
+    expect(await loadA11yConfig(repo)).toEqual({ config: {}, source: null, collections: [] });
   });
 
   it("reads an empty a11y: section as {} and still reports the file", async () => {
     repo = makeTempRepo({ files: { [FILE]: "meta:\n  paths: [docs]\na11y:\n" } });
-    expect(await loadA11yConfig(repo)).toEqual({ config: {}, source: FILE });
+    expect(await loadA11yConfig(repo)).toEqual({ config: {}, source: FILE, collections: [] });
   });
 
   it.each([
@@ -153,6 +198,7 @@ describe("loadA11yConfig", () => {
     expect(loaded).toEqual({
       config: { urls: ["https://ci.example.com/"] },
       source: "ci/a11y.yaml",
+      collections: [],
     });
   });
 

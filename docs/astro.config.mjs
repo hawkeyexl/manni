@@ -32,6 +32,18 @@ const focusableCodeBlocks = {
 export default defineConfig({
   site: "https://hawkeyexl.github.io",
   base: "/manni",
+  // Moved pages. The two halves are spelled differently on purpose: Astro
+  // prepends `base` to the **key**, so the route is written base-relative, and
+  // it emits the **value** verbatim into the meta-refresh and the canonical
+  // link, so the destination has to carry `/manni` itself. Written without it,
+  // the redirect builds and resolves and sends the reader to
+  // hawkeyexl.github.io/meta/... — off the project base, a 404.
+  //
+  // Proposal 0041 renamed the sidecar vocabulary to external metadata. Release
+  // notes and pull requests link to the old URL, so it must not 404.
+  redirects: {
+    "/meta/set-up/sidecar-metadata": "/manni/meta/set-up/external-metadata",
+  },
   integrations: [
     starlight({
       title: "manni",

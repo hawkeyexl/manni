@@ -8,11 +8,12 @@
 import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, open, readFile, rename, rm } from "node:fs/promises";
+import type { CollectionConfig } from "../../shared/collections.js";
 import {
-  loadSidecars,
-  mergeSidecars,
-  type SidecarIndex,
-} from "../core/sidecars.js";
+  loadExternalMetadata,
+  mergeExternalMetadata,
+  type ExternalMetadataIndex,
+} from "../core/external-metadata.js";
 import { dirname, isAbsolute, resolve, extname, sep } from "node:path";
 import {
   FILE_SCHEMA_KEY,
@@ -76,6 +77,8 @@ import {
 import {
   collectCollections,
   collectionNames,
+  memberOf,
+  retainMembers,
   createCollectionViews,
 } from "../core/collections.js";
 import { commandsOf } from "../core/derive/config.js";
@@ -120,6 +123,12 @@ export interface QueryOptions {
   configPath?: string;
   /** `--no-config`: skip config discovery and use the built-in defaults. */
   noConfig?: boolean;
+  /**
+   * `--collection <name>`, repeatable: run over the named configured
+   * collections instead of every declared one (proposal 0041). Cannot be
+   * combined with positional paths; `-` is allowed beside it.
+   */
+  collections?: string[];
   cwd?: string;
   /** Content for the `-` (stdin) input, injected by the CLI/tests. */
   stdinContent?: string;
@@ -289,20 +298,34 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
 
   // Explicit CLI inputs win, else config `paths:`; `base` is whichever of the
   // two directories those inputs were written relative to.
-  const { config, inputs, base, configDir, configPath } = await resolveRunConfig(
-    {
+  const {
+    config,
+    inputs,
+    base,
+    configDir,
+    configPath,
+    configSection,
+    collections,
+    declaredCollections,
+    fromCollections,
+  } = await resolveRunConfig({
       cwd,
       configPath: opts.configPath,
       noConfig: opts.noConfig,
       inputs: opts.inputs,
+      ...(opts.collections !== undefined
+        ? { collections: opts.collections }
+        : {}),
       onConfigLoaded: opts.onConfigLoaded,
-    },
-  );
+    });
+  /** The collections one label belongs to, computed once per file. */
+  const membersFor = (label: string): string[] =>
+    memberOf(collections, configDir ?? cwd, base, label);
   const usingStdin = inputs.includes(STDIN_TOKEN);
 
   if (inputs.length === 0) {
     throw new DocmetaError(
-      "No files to read. Pass paths/globs, or add `paths:` under `meta:` in manni.config.yaml.",
+      "No files to read. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.",
     );
   }
 
@@ -316,8 +339,10 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
   const exts = opts.exts ?? (forced ? forced.extensions : undefined);
   const fileInputs = inputs.filter((i) => i !== STDIN_TOKEN);
   const allowEmpty = opts.allowEmpty ?? config?.allowEmpty;
-  const exclude = [...(config?.exclude ?? []), ...(opts.exclude ?? [])];
-  const { files, gitignoreSkipped } = await resolveTargetSet({
+  // Only `--exclude`: a collection's `exclude:` governs membership, not the
+  // walk of a path someone typed (0041 rule 3).
+  const exclude = opts.exclude ?? [];
+  const { files: walked, gitignoreSkipped } = await resolveTargetSet({
     inputs: fileInputs,
     exts,
     exclude,
@@ -329,6 +354,11 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
       onNotice: opts.onNotice,
     }),
   });
+  // Rule 9: the walk applied only the family ignores and `--exclude`, so it saw
+  // just the first half of each collection's statement. Narrow it to actual
+  // members, or a collection's `exclude:` would shape its SQL view and not what
+  // a bare run reads. Skipped for typed paths: those are the operator's (rule 3).
+  const files = fromCollections ? retainMembers(walked, membersFor) : walked;
   assertNonEmpty({
     files,
     inputs: fileInputs,
@@ -341,8 +371,8 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
   });
 
   const entries: QueryEntry[] = [];
-  // Sidecar manifests (0037), read once per run and merged into every row.
-  const sidecars = await loadSidecars(config, {
+  // External metadata (0037), read once per run and merged into every row.
+  const externalMetadata = await loadExternalMetadata(collections, {
     configDir: configDir ?? cwd,
     base,
     offline: opts.offline ?? config?.offline ?? false,
@@ -355,10 +385,11 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
         `Unsupported file type "${extension}" for "${label}". Supported: ${supportedExtensions().join(", ")}. Use --as to override.`,
       );
     }
+    const members = membersFor(label);
     const own = extractor.extract(content, label, {
-      elements: resolveElements(label, config),
+      elements: resolveElements(label, config, members),
     });
-    const extracted = mergeSidecars(label, own, sidecars, base).extracted;
+    const extracted = mergeExternalMetadata(label, own, externalMetadata, members, base).extracted;
     entries.push({ label, extracted, extractor, own, content });
   };
 
@@ -404,8 +435,12 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
     cwd,
     configDir,
     configPath,
+    configSection,
     trustRoot: schemaTrustRoot(cwd, configDir),
-    sidecars,
+    externalMetadata,
+    collections,
+    declaredCollections,
+    memberships: membersFor,
     managed: new Set(config?.derive?.fields ?? []),
     onNotice: opts.onNotice,
   });
@@ -421,9 +456,10 @@ interface QueryEntry {
   /** The extractor that read it — a write goes back through the same one. */
   extractor: MetadataExtractor;
   /**
-   * The document's OWN extraction, from before the sidecar merge, and the
-   * text it came from: what the `derived` table (0040) is computed over. A
-   * managed key is never sidecar-owned, and the git source hashes the body.
+   * The document's OWN extraction, from before the external-metadata merge,
+   * and the text it came from: what the `derived` table (0040) is computed
+   * over. A managed key is never manifest-owned, and the git source hashes
+   * the body.
    */
   own: ExtractedMetadata;
   content: string;
@@ -474,10 +510,26 @@ interface RunContext {
   configDir?: string;
   /** Absolute path of the governing config file, when one exists. */
   configPath?: string;
+  /**
+   * The key that config sits under — `meta` in a family file, absent in a
+   * legacy per-tool file. Only the DDL config rewrite needs it, and it needs
+   * it badly: `schemas:` is one level down in a family file.
+   */
+  configSection?: string;
   /** The boundary a schema read or write may not escape (proposal 0015). */
   trustRoot: SchemaTrustRoot;
-  /** Sidecar manifests of the run (proposal 0037); null when none are configured. */
-  sidecars: SidecarIndex | null;
+  /** External metadata of the run (proposal 0037); null when none are configured. */
+  externalMetadata: ExternalMetadataIndex | null;
+  /** The collections the run covers (proposal 0041); `[]` with no config. */
+  collections: readonly CollectionConfig[];
+  /**
+   * Every collection the config declares, selected or not. The views are built
+   * from this list (0041 rule 11), so a statement naming a collection
+   * `--collection` left out still answers instead of failing to compile.
+   */
+  declaredCollections: readonly CollectionConfig[];
+  /** The collections one label belongs to - `memberOf` bound to this run. */
+  memberships: (label: string) => readonly string[];
   /**
    * The managed fields (`derive.fields`, proposal 0040): readable in every
    * row, writable by `manni meta derive` alone. Empty when none are configured.
@@ -617,14 +669,13 @@ async function runSql(
   const derivedTable = { built: false };
   try {
     createDocsTable(db, entries, dataColumns);
-    // Named collections (0027): one view per named override, of the files it
-    // won resolution for — built LAZILY on the normal path, because 0021's
-    // founding rule is that plain reads resolve nothing: a statement that
-    // never names a collection must not pay the per-file resolution walk
-    // membership costs. The build happens on demand (below, when the engine
-    // reports the collection's table as missing) — with one eager exception:
-    // a `--db` export must carry the views (0027 § stress test 5), empty-SQL
-    // export-only runs included.
+    // Collections (0041 rule 7): one view per declared collection, holding the
+    // members the run loaded — built LAZILY on the normal path, because a
+    // statement that never names a collection should pay nothing for the
+    // membership arithmetic and the view SQL. The build happens on demand
+    // (below, when the engine reports the collection's table as missing) —
+    // with one eager exception: a `--db` export must carry the views (0027 §
+    // stress test 5), empty-SQL export-only runs included.
     // Annotated `boolean`: assignments happen inside `buildViews`, which
     // narrowing does not track — an inferred `false` reads every later
     // `!viewsBuilt` as always-true.
@@ -636,10 +687,9 @@ async function runSql(
       createCollectionViews(
         db,
         collectCollections(entries, {
-          config: ctx.config,
-          fileBase: ctx.cwd,
-          trustRoot: ctx.trustRoot,
-          ...(ctx.onNotice ? { onNotice: ctx.onNotice } : {}),
+          collections: ctx.declaredCollections,
+          ...(ctx.configDir !== undefined ? { configDir: ctx.configDir } : {}),
+          base: ctx.base,
         }),
       );
       viewsBuilt = true;
@@ -725,7 +775,9 @@ async function runSql(
       lower.includes("sqlite_schema") ||
       lower.includes("pragma") ||
       /^(create|drop|alter)\b/i.test(head) ||
-      collectionNames(ctx.config).some((n) => lower.includes(n.toLowerCase()));
+      collectionNames(ctx.declaredCollections).some((n) =>
+        lower.includes(n.toLowerCase()),
+      );
     if (observesCatalog) buildViews();
 
     // 0024: `SET k = NULL` is the removal spelling, so the literal `k: null`
@@ -765,7 +817,7 @@ async function runSql(
         if (
           missing !== undefined &&
           !viewsBuilt &&
-          namesConfiguredCollection(missing, ctx.config)
+          namesConfiguredCollection(missing, ctx.declaredCollections)
         ) {
           // INVARIANT: this signal may only ever be raised from this
           // prepare-time catch. `no such table` is a compile error — probed
@@ -941,10 +993,10 @@ function missingTableName(message: string): string | undefined {
  */
 function namesConfiguredCollection(
   missing: string,
-  config: DocmetaConfig | null,
+  collections: readonly CollectionConfig[],
 ): boolean {
   const candidates = [missing, missing.replace(/^(main|temp)\./i, "")];
-  return collectionNames(config).some((n) =>
+  return collectionNames(collections).some((n) =>
     candidates.some((c) => c.toLowerCase() === n.toLowerCase()),
   );
 }
@@ -1738,6 +1790,7 @@ async function planSchemaMutation(
           filePath: e.label,
           fileSchema: e.extracted.data[FILE_SCHEMA_KEY],
           config: ctx.config,
+          memberOf: ctx.memberships(e.label),
           fileBase: ctx.cwd,
           trustRoot: ctx.trustRoot,
           onNotice: ctx.onNotice,
@@ -1775,9 +1828,13 @@ async function planSchemaMutation(
       .sort((a, b) => a - b)
       .flatMap((i) => {
         const o = overrides[i];
-        return o?.name !== undefined
-          ? [`${o.name} (${overrideGlobs(o.files).join(", ")})`]
-          : [];
+        if (o?.collection === undefined) return [];
+        // The globs come from the declaration now (0041): the override names a
+        // collection, and the collection is where its `paths:` live.
+        const declared = ctx.collections.find((c) => c.name === o.collection);
+        return [
+          `${o.collection} (${overrideGlobs(declared?.paths).join(", ")})`,
+        ];
       });
     const last = named[named.length - 1];
     // 0030: -s makes the set unanimous by construction, so it is the third
@@ -2203,9 +2260,20 @@ async function planConfigEdit(
     }
     return n;
   };
-  const topSeq = doc.get("schemas", true);
+  // Where the tool's keys live in this file. A family `manni.config.yaml`
+  // holds them under `meta:`; a legacy per-tool file *is* the section, so its
+  // keys are at the top level. Reading the top level unconditionally finds
+  // nothing in the family shape, which is the documented default since
+  // proposal 0033 — every fork and every pin refresh then refused with
+  // "no `schemas:` entry in it matches" against a config that plainly has one.
+  // The suite missed it because every fixture was a legacy file until 0041.
+  const root = ctx.configSection === undefined ? doc : doc.get(ctx.configSection, true);
+  const keyOf = (key: string): unknown =>
+    root === doc ? doc.get(key, true) : isMap(root) ? root.get(key, true) : undefined;
+
+  const topSeq = keyOf("schemas");
   let repointCount = repoint(topSeq);
-  const overrides = doc.get("overrides", true);
+  const overrides = keyOf("overrides");
   if (isSeq(overrides)) {
     for (const entry of overrides.items) {
       if (isMap(entry)) repointCount += repoint(entry.get("schemas", true));
@@ -2550,7 +2618,7 @@ function buildChanges(
     changes.push({ file: from, renamed: to, written: false });
   }
 
-  refuseSidecarWrites(changes, entries, ctx);
+  refuseExternalMetadataWrites(changes, entries, ctx);
   refuseManagedWrites(changes, entries, ctx);
   return changes;
 }
@@ -2558,7 +2626,7 @@ function buildChanges(
 /**
  * Only `derive` writes a managed field (0040): that is what makes the stamp
  * trustworthy, so every other writer refuses it by name, at plan time, the
- * way a sidecar-owned key is refused. Every change kind that would touch
+ * way a manifest-owned key is refused. Every change kind that would touch
  * one: a set (or a `SET k = NULL` deletion), a rename onto or away from it,
  * an INSERT that carries it, and a DELETE that would strip a document's
  * block along with the stamp in it.
@@ -2614,24 +2682,28 @@ function validateNewPath(p: string, base: string): void {
  */
 
 /**
- * The first increment of sidecars is read-only (0037 rule 6): a write to a
+ * The first increment of external metadata is read-only (0037 rule 6): a write to a
  * key a manifest owns has exactly one honest destination, the manifest, and
  * writing it into the document instead would be the thing 0018 forbids. So
  * every change kind that would touch an owned key refuses at plan time, by
  * name, the way an RST native header does — and a document a manifest names
  * cannot be renamed out from under its entry.
  */
-function refuseSidecarWrites(
+function refuseExternalMetadataWrites(
   changes: readonly QueryChange[],
   entries: readonly QueryEntry[],
   ctx: RunContext,
 ): void {
-  const index = ctx.sidecars;
+  const index = ctx.externalMetadata;
   if (!index) return;
-  const owned = (key: string): string | undefined => index.owners.get(key);
+  // One manifest is enough to refuse, and naming the first owner is the whole
+  // message: a key owned by two collections' manifests is a run-time error
+  // long before a write reaches here (0041 rule 5).
+  const owned = (key: string): string | undefined =>
+    index.owners.get(key)?.[0]?.file;
   const refuse = (file: string, key: string, owner: string): never => {
     throw new DocmetaError(
-      `"${file}": "${key}" is owned by sidecar ${owner}; edit the sidecar file instead.`,
+      `"${file}": "${key}" is owned by manifest ${owner}; edit the manifest instead.`,
     );
   };
   const data = new Map(entries.map((e) => [e.label, e.extracted.data]));
@@ -2661,7 +2733,7 @@ function refuseSidecarWrites(
       if (entry !== undefined && entry.size > 0) {
         const manifest = [...entry.values()][0]?.file ?? "manifest";
         throw new DocmetaError(
-          `"${c.file}": sidecar ${manifest} names it; rename the manifest entry first.`,
+          `"${c.file}": manifest ${manifest} names it; rename the manifest entry first.`,
         );
       }
       continue;
@@ -2686,7 +2758,7 @@ function refuseSidecarWrites(
       if (entry !== undefined) {
         const manifest = entry.values().next().value?.file ?? "manifest";
         throw new DocmetaError(
-          `"${c.file}": "${key}" is the field sidecar ${manifest} joins on, and this document has an entry; change the manifest first.`,
+          `"${c.file}": "${key}" is the field manifest ${manifest} joins on, and this document has an entry; change the manifest first.`,
         );
       }
     }
@@ -2783,12 +2855,14 @@ async function applyChanges(
     const content = await readFile(path, "utf8");
     // The change was computed against load-time data; if the file moved
     // since, applying it would encode a state nobody previewed.
-    const current = mergeSidecars(
+    const members = ctx.memberships(label);
+    const current = mergeExternalMetadata(
       label,
       entry.extractor.extract(content, label, {
-        elements: resolveElements(label, ctx.config),
+        elements: resolveElements(label, ctx.config, members),
       }),
-      ctx.sidecars,
+      ctx.externalMetadata,
+      members,
       ctx.base,
     ).extracted;
 
@@ -2830,12 +2904,13 @@ async function applyChanges(
     if (ops.deletions.length > 0) {
       // `deletions` is advisory in the ApplyOptions contract — a writer that
       // cannot remove a key ignores it. Certainty comes from reading back.
-      const check = mergeSidecars(
+      const check = mergeExternalMetadata(
         label,
         entry.extractor.extract(applied, label, {
-          elements: resolveElements(label, ctx.config),
+          elements: resolveElements(label, ctx.config, members),
         }),
-        ctx.sidecars,
+        ctx.externalMetadata,
+        members,
         ctx.base,
       ).extracted;
       for (const key of ops.deletions) {

@@ -1,0 +1,15 @@
+# Field-joined manifest fixture (proposal 0039): entries keyed by `id`.
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./docs-meta.yaml
+        keys: [source, jira]
+        join: id
+
+meta:
+  overrides:
+    - collection: pages
+      schemas:
+        - ./private.schema.json

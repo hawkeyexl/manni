@@ -95,11 +95,11 @@ export function assertPublishableBuiltinId(id: string): void {
       `Built-in id "${id}" is not publishable: the "check" first segment is reserved for corpus check identities (check:<name>, proposal 0026).`,
     );
   }
-  // `sidecar:owned` is the identity of a document carrying a key a sidecar
-  // manifest owns (proposal 0037), reserved for the same reason.
-  if (first === "sidecar") {
+  // `external:owned` is the identity of a document carrying a key a manifest
+  // owns (proposal 0037), reserved for the same reason.
+  if (first === "external") {
     throw new Error(
-      `Built-in id "${id}" is not publishable: the "sidecar" first segment is reserved for sidecar finding identities (sidecar:owned, proposal 0037).`,
+      `Built-in id "${id}" is not publishable: the "external" first segment is reserved for external-metadata finding identities (external:owned, external:duplicate, proposal 0037).`,
     );
   }
   // `derived:stale` is the identity of a managed field whose asserted value

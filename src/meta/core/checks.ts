@@ -29,7 +29,6 @@ import {
   createCollectionViews,
   type CollectionParams,
 } from "./collections.js";
-import { commandsOf } from "./derive/config.js";
 import {
   createDerivedView,
   derivedColumns,
@@ -39,6 +38,7 @@ import {
 import {
   derivableFields,
   type DerivableField,
+  type DeriveCommand,
   type DerivedRecord,
 } from "./derive/types.js";
 
@@ -167,12 +167,13 @@ function synthesizeMessage(
  */
 /**
  * The run context a check projection may need beyond the entries themselves:
- * the config whose named overrides become collection views (proposal 0027),
- * and the resolution inputs membership is decided with — the same ones
- * `validate` resolves each file's schema set with, so `FROM authors` in a
- * check means exactly "the files the author schema judged". The shape IS
- * `CollectionParams`: it is handed to `collectCollections` verbatim, and an
- * intersection is what keeps the two from drifting apart field by field.
+ * the declared collections that become views, and the two directories
+ * membership is arithmetic between (proposal 0041 rules 7 and 10). No
+ * resolution inputs: a check's `FROM authors` means "the files the authors
+ * collection selects", which is what the config says, and deciding it costs
+ * nothing but string arithmetic. The shape IS `CollectionParams`: it is handed
+ * to `collectCollections` verbatim, and an intersection is what keeps the two
+ * from drifting apart field by field.
  *
  * `derive` is the one addition (proposal 0040): how to get the rows of the
  * `derived` table when a check names it. A function rather than the rows,
@@ -186,6 +187,12 @@ export type CheckRunContext = CollectionParams & {
   derive?: (
     fields: readonly DerivableField[],
   ) => Promise<ReadonlyMap<string, DerivedRecord>>;
+  /**
+   * The configured commands (proposal 0042), whose keys are columns of the
+   * `derived` table beside the built-ins. Handed over rather than read from a
+   * config, because since proposal 0041 a check's context carries none.
+   */
+  commands?: Readonly<Record<string, DeriveCommand>>;
 };
 
 export async function runChecks(
@@ -213,8 +220,8 @@ export async function runChecks(
         );
       }
       // The run's columns: the built-ins and the configured command keys
-      // (0042), read from the same config the collection views come from.
-      const commands = commandsOf(ctx.config?.derive);
+      // (0042), handed over by the caller that read the config.
+      const commands = ctx.commands;
       const readable = derivableFields(commands);
       const fields = new Set<DerivableField>();
       for (const c of wantsDerived) for (const f of fieldsForSql(c.query, readable)) fields.add(f);

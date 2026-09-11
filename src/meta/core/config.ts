@@ -1,8 +1,9 @@
 /**
  * Optional lightweight YAML config: the `meta:` section of the family file
  * (`manni.config.yaml`), or the whole of a pre-family `docmeta.config.yaml`.
- * Supplies default targets, excludes, the default schema set, and optional
- * per-glob overrides, so CI can run a bare `manni meta validate`.
+ * Supplies the default schema set and optional per-glob or per-collection
+ * overrides, so CI can run a bare `manni meta validate`. Which documents exist
+ * is not here: proposal 0041 moved that to the family-level `collections:`.
  *
  * Finding the file is shared with every tool under the umbrella
  * (src/shared/config-file.ts); what the section may contain is decided here.
@@ -16,9 +17,12 @@ import {
   type ConfigFileOptions,
 } from "../../shared/config-file.js";
 import { findGitRoot } from "../../shared/git-root.js";
+import {
+  selectCollections,
+  type CollectionConfig,
+} from "../../shared/collections.js";
 import { FILE_SCHEMA_KEY, rebaseConfigSchemaRefs } from "./resolve-schema.js";
 import { classifyRef } from "./schema-registry.js";
-import { sidecarUrlProblem } from "./sidecar-fetch.js";
 import { INTEGRITY_SHAPE, isIntegrity } from "./integrity.js";
 import { parseElementPath } from "../extractors/element-key.js";
 import {
@@ -42,20 +46,23 @@ export interface SchemaOverride {
    * caller may hand `runValidate` a config object it built itself, and that
    * caller's bare string must keep working. Read it through `overrideGlobs`
    * rather than directly — that is the one place the two shapes collapse.
+   *
+   * Optional since proposal 0041: an entry carries **exactly one** of `files`
+   * or `collection`.
    */
-  files: string | string[];
+  files?: string | string[];
   schemas: string[];
   /**
-   * Optional collection name (proposal 0027): the override group becomes a
-   * SQL view of that name over the `docs` projection, holding exactly the
-   * files this override won schema resolution for. Any string is legal —
-   * view names are quoted identifiers — except the refusals `parseConfig`
-   * makes: a duplicate, `docs` (the table every query already reads), a
-   * blank name, and a name starting `sqlite_` (SQLite reserves the prefix).
-   * A `name:` also requires `schemas:`, because a schema-less override never
-   * wins resolution and its view would be empty by construction.
+   * The collection this override governs (proposal 0041), in place of globs of
+   * its own: it matches the members of the named collection, which are decided
+   * once, at the top level of the family file, for every tool. Must name a
+   * collection `collections:` defines — checked by `loadConfig`, which is the
+   * first place both halves of the file are known.
+   *
+   * This is what `overrides[].name` was for under 0027, inverted: a collection
+   * is the thing that has a name, and an override points at it.
    */
-  name?: string;
+  collection?: string;
   /**
    * Extra element paths for files matching `files`. Unlike `schemas`, which the
    * first matching override *replaces* because a schema set is a complete
@@ -163,7 +170,7 @@ function asElementPaths(
 }
 
 /** The keys one `overrides:` entry may carry. */
-const OVERRIDE_KEYS = ["name", "files", "schemas", "elements"] as const;
+const OVERRIDE_KEYS = ["collection", "files", "schemas", "elements"] as const;
 
 /**
  * One named corpus check (proposal 0026): SQL run over the `docs` projection
@@ -178,44 +185,6 @@ export interface CheckConfig {
 
 /** The keys one `checks:` entry may carry. */
 const CHECK_KEYS = ["name", "query"] as const;
-
-/**
- * One sidecar manifest (proposal 0037): a YAML file that supplies a fixed set
- * of top-level keys for named documents, merged into each document's metadata
- * before schema resolution. The private half of a public docset.
- */
-export interface SidecarConfig {
-  /**
-   * Manifest path, relative to the config file's directory, or an `https://`
-   * URL (proposal 0038) fetched at the start of every run. A URL serves a
-   * manifest in another public repository as readily as a private one; only
-   * the private one needs `tokenEnv`.
-   */
-  file: string;
-  /**
-   * The top-level keys this manifest owns. Ownership is disjoint across
-   * entries, so two manifests can never disagree about one key, and a
-   * document carrying an owned key is a finding rather than a tiebreak.
-   */
-  keys: string[];
-  /**
-   * Name of an environment variable whose value is sent as a bearer token
-   * when `file` is a URL. The token never appears in the config, a message,
-   * or a report. Refused on a path `file`, where it would do nothing.
-   */
-  tokenEnv?: string;
-  /**
-   * `path` (the default), or the top-level frontmatter field whose value the
-   * manifest's keys name (proposal 0039). A field join survives a rename;
-   * what it cannot survive is two documents sharing one value, which is a
-   * finding on both. Never `$schema`, and never a key this entry owns: the
-   * value that selects an entry cannot come from the entry.
-   */
-  join?: string;
-}
-
-/** The keys one `sidecars:` entry may carry. */
-const SIDECAR_KEYS = ["file", "keys", "tokenEnv", "join"] as const;
 
 /**
  * One `derive.commands` entry: a program to run for a field's value, as the
@@ -235,8 +204,8 @@ export interface DeriveCommandConfig {
 export interface DeriveConfig {
   /**
    * The managed fields. Each is one of `DERIVABLE_FIELDS` or a key of
-   * `commands`, never `$schema`, and never a key a sidecar owns: a value with
-   * two authorities has none.
+   * `commands`, never `$schema`, and never a key a manifest owns: a value
+   * with two authorities has none.
    */
   fields: DerivableField[];
   /** Which sources to consult; absent means all of `DERIVE_SOURCES`. */
@@ -249,7 +218,7 @@ export interface DeriveConfig {
   codeowners?: string;
   /**
    * The `command` source's table, by the field each command derives. A key
-   * is never a built-in field, `$schema`, or a key a sidecar owns.
+   * is never a built-in field, `$schema`, or a key a manifest owns.
    */
   commands?: Record<string, DeriveCommandConfig>;
 }
@@ -335,12 +304,9 @@ const FILL_KEYS = [
  * this list exists to end.
  */
 const CONFIG_KEYS = [
-  "paths",
-  "exclude",
   "schemas",
   "overrides",
   "checks",
-  "sidecars",
   "derive",
   "baseline",
   "allowEmpty",
@@ -413,8 +379,6 @@ export interface SchemaCacheConfig {
 const MAX_TTL_HOURS = 8760;
 
 export interface DocmetaConfig {
-  paths?: string[];
-  exclude?: string[];
   /**
    * The default schema set. Each entry is either a reference string or a
    * `{ ref, source?, integrity? }` mapping — see `SchemaEntry`.
@@ -426,11 +390,6 @@ export interface DocmetaConfig {
    * run's file set is the config-resolved corpus. See `CheckConfig`.
    */
   checks?: CheckConfig[];
-  /**
-   * Sidecar manifests whose keys are merged into the documents they name.
-   * See `SidecarConfig`.
-   */
-  sidecars?: SidecarConfig[];
   /**
    * The managed fields `derive` stamps and `validate` checks for drift. See
    * `DeriveConfig`.
@@ -550,10 +509,10 @@ function asFileGlobs(
 /**
  * Parse the top-level `schemas:` list, which accepts both forms.
  *
- * Separate from `asStringList` on purpose. That helper also validates `paths`,
- * `exclude`, and `overrides[].schemas`, and widening it in place would have
- * quietly widened all four — `paths: [{ref: …}]` would have started parsing and
- * then failed somewhere far from the config file.
+ * Separate from `asStringList` on purpose. That helper also validates
+ * `elements` and `overrides[].schemas`, and widening it in place would have
+ * quietly widened those too — `elements: [{ref: …}]` would have started
+ * parsing and then failed somewhere far from the config file.
  */
 function asSchemaList(
   value: unknown,
@@ -656,6 +615,14 @@ export function parseConfigValue(
   source: string,
   section?: string,
 ): DocmetaConfig {
+  // Deliberately outside the `withSection` wrapper below, and outside both
+  // branches' `try`. These four messages name `meta` in their own prose, so
+  // `withSection` rewriting `"paths"` into `"meta.paths"` would produce
+  // `"meta.paths" is no longer a meta key` — a sentence that contradicts
+  // itself. They run for the unwrapped legacy form too, because a
+  // `docmeta.config.yaml` that still says `paths:` is exactly the file whose
+  // owner needs to be told where the key went (0041 § discovery).
+  assertNoMovedKeys(raw, source);
   if (section === undefined) return parseConfigDocument(raw, source);
   try {
     return parseConfigDocument(raw, source);
@@ -685,107 +652,167 @@ function withSection(message: string, source: string, section: string): string {
   return message;
 }
 
+/** Where the configuration reference documents each moved key. */
+const CONFIG_REF = "https://hawkeyexl.github.io/manni/meta/reference/configuration/";
+
 /**
- * Parse `sidecars:` (proposal 0037).
+ * The three keys proposal 0041 moved out of `meta:` and up to the family
+ * level, with the sentence that says where each went.
  *
- * Every refusal here is a shape that would otherwise read as configured and
- * do nothing, or do something nobody can see: an entry with no keys owns
- * nothing and merges nothing; one key under two entries would need a
- * tiebreak, and 0020's rule is that a tiebreak discards exactly the value
- * nobody checked; and `$schema` in a sidecar would let a private file pick
- * the schema a public document is judged by (0015) with the provenance lost
- * at the merge.
+ * Refused rather than aliased: an alias is a permanent second surface for one
+ * concept, and the whole point of `collections:` is that the document set is
+ * declared **once** for every tool. This is the umbrella's rule for a moved
+ * command, applied to a moved key.
  */
-function parseSidecars(raw: unknown, source: string): SidecarConfig[] {
-  if (!Array.isArray(raw)) {
-    throw new DocmetaError(`${source}: "sidecars" must be a list.`);
-  }
-  const owners = new Map<string, number>();
-  return raw.map((entry, i) => {
-    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
-      throw new DocmetaError(`${source}: sidecars[${i}] must be a mapping.`);
-    }
-    const e = entry as Record<string, unknown>;
-    rejectUnknownKeys(e, SIDECAR_KEYS, `sidecars[${i}]`, source);
-    if (typeof e.file !== "string" || e.file.trim() === "") {
+const MOVED_KEYS: readonly (readonly [string, string])[] = [
+  [
+    "paths",
+    `Document sets are declared once for every tool, under a top-level collections: list. See ${CONFIG_REF}#collections`,
+  ],
+  [
+    "exclude",
+    `Document sets are declared once for every tool, under a top-level collections: list. See ${CONFIG_REF}#collections`,
+  ],
+  [
+    "sidecars",
+    `It is externalMetadata on a collection, under the top-level collections: list. See ${CONFIG_REF}#external-metadata`,
+  ],
+];
+
+/**
+ * Refuse a key 0041 moved, in either the wrapped or the unwrapped form.
+ *
+ * Reads the raw value as a mapping rather than going through
+ * `parseConfigDocument`, because it must run *before* the unknown-key check
+ * (which would report `paths` as a typo) and before `withSection` (which would
+ * rewrite the key into the message's own subject).
+ */
+function assertNoMovedKeys(raw: unknown, source: string): void {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return;
+  const obj = raw as Record<string, unknown>;
+  for (const [key, remedy] of MOVED_KEYS) {
+    if (Object.hasOwn(obj, key)) {
       throw new DocmetaError(
-        `${source}: sidecars[${i}].file must be a non-empty string naming the manifest, relative to the config file.`,
+        `${source}: "${key}" is no longer a meta key. ${remedy}`,
       );
     }
+  }
+  // `overrides[].name` went the same way, one level down: a collection is the
+  // thing that has a name now (0041 supersedes 0027), and an override points
+  // at one. Indexed, because a long `overrides:` list needs to say which entry.
+  if (!Array.isArray(obj.overrides)) return;
+  for (const [i, entry] of obj.overrides.entries()) {
     if (
-      !Array.isArray(e.keys) ||
-      e.keys.length === 0 ||
-      e.keys.some((k) => typeof k !== "string" || k.trim() === "")
+      typeof entry === "object" &&
+      entry !== null &&
+      !Array.isArray(entry) &&
+      Object.hasOwn(entry as Record<string, unknown>, "name")
     ) {
       throw new DocmetaError(
-        `${source}: sidecars[${i}].keys must be a non-empty list of key names.`,
+        `${source}: overrides[${i}] no longer carries "name". Define a collection with that name and point the override at it with collection:.`,
       );
     }
-    const isUrl = classifyRef(e.file).kind === "url";
-    if (isUrl) {
-      const problem = sidecarUrlProblem(e.file);
-      if (problem !== null) {
-        throw new DocmetaError(`${source}: sidecars[${i}].file ${problem}.`);
+  }
+}
+
+/**
+ * Refuse an `overrides[].collection` naming a collection nobody declared.
+ *
+ * Checked here rather than in the section parser because it is the one
+ * override rule that needs the *other* half of the family file: `collections:`
+ * is a top-level key, parsed by the shared loader, and the section parser
+ * never sees it. The path shape stays `overrides[i].collection` so the message
+ * reads like every other config error (0041 § interface).
+ */
+function assertOverrideCollections(
+  config: DocmetaConfig,
+  collections: readonly CollectionConfig[],
+  source: string,
+): void {
+  const names = new Set(collections.map((c) => c.name));
+  for (const [i, ov] of (config.overrides ?? []).entries()) {
+    if (ov.collection === undefined || names.has(ov.collection)) continue;
+    const defined =
+      collections.length === 0
+        ? "(none)"
+        : collections.map((c) => c.name).join(", ");
+    throw new DocmetaError(
+      `${source}: overrides[${i}].collection names "${ov.collection}", which collections: does not define. Defined: ${defined}.`,
+    );
+  }
+}
+
+/** Where a key is owned: the manifest, and its place in the family file. */
+export interface ManifestOwner {
+  /** Index into `collections:`. */
+  collection: number;
+  /** The collection's name, for a message a person reads. */
+  name: string;
+  /** Index into that collection's `externalMetadata:`. */
+  entry: number;
+  /** The manifest's `file`, as the config wrote it. */
+  file: string;
+}
+
+/**
+ * The manifest that owns `key`, if any declared collection has one.
+ *
+ * Every declared collection counts, not only the ones a run selected: a
+ * manifest's `keys:` list is a claim about the key everywhere, not about one
+ * run. No manifest is read, because the config's own `keys:` list is the whole
+ * claim.
+ */
+export function manifestOwning(
+  key: string,
+  collections: readonly CollectionConfig[],
+): ManifestOwner | undefined {
+  for (const [c, collection] of collections.entries()) {
+    for (const [e, manifest] of collection.externalMetadata.entries()) {
+      if (manifest.keys.includes(key)) {
+        return { collection: c, name: collection.name, entry: e, file: manifest.file };
       }
     }
-    if (e.tokenEnv !== undefined) {
-      if (typeof e.tokenEnv !== "string" || e.tokenEnv.trim() === "") {
-        throw new DocmetaError(
-          `${source}: sidecars[${i}].tokenEnv must be the name of an environment variable.`,
-        );
-      }
-      if (!isUrl) {
-        throw new DocmetaError(
-          `${source}: sidecars[${i}].tokenEnv is set, but "file" is a path, so no request is made and the token would go nowhere. Remove it, or make "file" a URL.`,
-        );
-      }
-    }
-    const keys = e.keys as string[];
-    if (e.join !== undefined) {
-      if (typeof e.join !== "string" || e.join.trim() === "") {
-        throw new DocmetaError(
-          `${source}: sidecars[${i}].join must be "path" or the name of a top-level frontmatter field.`,
-        );
-      }
-      if (e.join === FILE_SCHEMA_KEY) {
-        throw new DocmetaError(
-          `${source}: sidecars[${i}].join may not be "${FILE_SCHEMA_KEY}".`,
-        );
-      }
-      if (keys.includes(e.join)) {
-        throw new DocmetaError(
-          `${source}: sidecars[${i}].join names "${e.join}", which the same entry owns — the value that selects an entry cannot come from the entry.`,
-        );
-      }
-    }
-    const seen = new Set<string>();
-    for (const key of keys) {
-      if (key === FILE_SCHEMA_KEY) {
-        throw new DocmetaError(
-          `${source}: sidecars[${i}].keys may not include "${FILE_SCHEMA_KEY}" — a sidecar never chooses the schema a document is judged by; use "overrides".`,
-        );
-      }
-      if (seen.has(key)) {
-        throw new DocmetaError(
-          `${source}: sidecars[${i}].keys lists "${key}" twice.`,
-        );
-      }
-      seen.add(key);
-      const owner = owners.get(key);
-      if (owner !== undefined) {
-        throw new DocmetaError(
-          `${source}: sidecars[${i}].keys claims "${key}", which sidecars[${owner}] already owns — a key has exactly one sidecar.`,
-        );
-      }
-      owners.set(key, i);
-    }
-    return {
-      file: e.file,
-      keys,
-      ...(typeof e.tokenEnv === "string" ? { tokenEnv: e.tokenEnv } : {}),
-      ...(typeof e.join === "string" ? { join: e.join } : {}),
-    };
-  });
+  }
+  return undefined;
+}
+
+/**
+ * Refuse a `derive.fields` entry or a `derive.commands` key that some manifest
+ * owns (proposals 0040 and 0042).
+ *
+ * A managed field has one authority, and a manifest key already has one. The
+ * rule needs both halves of the family file, `meta.derive` and the top-level
+ * `collections:`, so it runs here for the same reason
+ * `assertOverrideCollections` does. `manni meta derive --fields` asks
+ * `manifestOwning` directly, because that flag never passes through here.
+ *
+ * The message goes through `withSection`, as a section-parser error does, so
+ * it reads `meta.derive.fields[1]` the way the configuration reference says a
+ * `meta:` error reads. Manifests exist only in a family file, so in practice
+ * the section is always there.
+ */
+function assertManagedFieldsUnowned(
+  config: DocmetaConfig,
+  collections: readonly CollectionConfig[],
+  source: string,
+  section: string | undefined,
+): void {
+  const refuse = (path: string, owner: ManifestOwner): never => {
+    const message = `${source}: ${path} is owned by collections[${owner.collection}].externalMetadata[${owner.entry}] (${owner.file}) — a managed field has one authority, and a manifest key already has one. Drop it from one side.`;
+    throw new DocmetaError(
+      section === undefined ? message : withSection(message, source, section),
+    );
+  };
+  // Commands first, as the parser reads them: a command's key is where a
+  // field outside the built-ins is claimed, so that is the line to name.
+  for (const key of Object.keys(config.derive?.commands ?? {})) {
+    const owner = manifestOwning(key, collections);
+    if (owner !== undefined) refuse(`derive.commands.${key}`, owner);
+  }
+  for (const [i, field] of (config.derive?.fields ?? []).entries()) {
+    const owner = manifestOwning(field, collections);
+    if (owner !== undefined) refuse(`derive.fields[${i}] "${field}"`, owner);
+  }
 }
 
 /**
@@ -797,10 +824,11 @@ function parseSidecars(raw: unknown, source: string): SidecarConfig[] {
  * `rejectUnknownKeys` exists to end. `fields` defaults to none when the
  * other keys carry the block, so a repository without `gh` can narrow
  * `sources` for its reads without inventing a managed field.
- * A field is refused when it is not derivable (nothing could ever fill it),
- * repeated, or owned by a sidecar: a managed field has exactly one authority,
- * and a sidecar-owned key already has one. `$schema` falls out of the
- * derivable list, so it never needs a rule of its own there.
+ * A field is refused when it is not derivable (nothing could ever fill it)
+ * or repeated. `$schema` falls out of the derivable list, so it never needs a
+ * rule of its own there. A field a manifest owns is refused as well, by
+ * `assertManagedFieldsUnowned` in `loadConfig`, because manifests are declared
+ * on the top-level `collections:` this parser never sees.
  *
  * `commands` is parsed before `fields`, because a key of `commands` is what
  * makes a non-built-in field derivable. A command may only derive a field
@@ -809,7 +837,6 @@ function parseSidecars(raw: unknown, source: string): SidecarConfig[] {
 function parseDerive(
   raw: unknown,
   source: string,
-  sidecars: readonly SidecarConfig[],
 ): DeriveConfig {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     throw new DocmetaError(
@@ -831,7 +858,7 @@ function parseDerive(
   }
 
   const commands =
-    e.commands === undefined ? undefined : parseDeriveCommands(e.commands, source, sidecars);
+    e.commands === undefined ? undefined : parseDeriveCommands(e.commands, source);
 
   if (
     e.fields !== undefined &&
@@ -852,12 +879,6 @@ function parseDerive(
     }
     if (fields.includes(f)) {
       throw new DocmetaError(`${source}: derive.fields lists "${f}" twice.`);
-    }
-    const owner = sidecars.find((s) => s.keys.includes(f));
-    if (owner !== undefined) {
-      throw new DocmetaError(
-        `${source}: derive.fields[${i}] "${f}" is owned by sidecars[${sidecars.indexOf(owner)}] (${owner.file}) — a managed field has one authority, and a sidecar key already has one. Drop it from one side.`,
-      );
     }
     fields.push(f);
   });
@@ -904,15 +925,15 @@ function parseDerive(
 
 /**
  * Parse `derive.commands`: a mapping of field name to command. A key is
- * refused when it is empty, `$schema`, a built-in field (a command may only
- * derive a field no built-in source claims), or a key a sidecar owns. Each
- * command carries `run`, the argv with the program first, and an optional
- * `timeout` in seconds.
+ * refused when it is empty, `$schema`, or a built-in field (a command may
+ * only derive a field no built-in source claims). A key a manifest owns is
+ * refused too, by `assertManagedFieldsUnowned` in `loadConfig`. Each command
+ * carries `run`, the argv with the program first, and an optional `timeout`
+ * in seconds.
  */
 function parseDeriveCommands(
   raw: unknown,
   source: string,
-  sidecars: readonly SidecarConfig[],
 ): Record<string, DeriveCommandConfig> {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     throw new DocmetaError(
@@ -937,17 +958,12 @@ function parseDeriveCommands(
     // Every command key is a column of the `derived` table beside `_path`
     // and `_sources`, so one spelled like either would be declared twice and
     // SQLite would refuse the table with a raw error, mid-query. Refused
-    // here for the reason an override named `derived` is (see the overrides
-    // parser): a name collision is a config mistake, said at parse time.
+    // here for the reason a collection named `derived` is (see
+    // `parseCollections`): a name collision is a config mistake, said at
+    // parse time.
     if (DERIVED_TABLE_RESERVED.has(key)) {
       throw new DocmetaError(
         `${source}: derive.commands.${key} collides with a column of the derived table a query builds (${[...DERIVED_TABLE_RESERVED].join(", ")}). Pick another field name.`,
-      );
-    }
-    const owner = sidecars.find((s) => s.keys.includes(key));
-    if (owner !== undefined) {
-      throw new DocmetaError(
-        `${source}: derive.commands.${key} is owned by sidecars[${sidecars.indexOf(owner)}] (${owner.file}) — a managed field has one authority, and a sidecar key already has one.`,
       );
     }
 
@@ -999,9 +1015,6 @@ function parseConfigDocument(raw: unknown, source: string): DocmetaConfig {
   rejectUnknownKeys(obj, CONFIG_KEYS, "the top level", source);
   const config: DocmetaConfig = {};
 
-  if (obj.paths !== undefined) config.paths = asStringList(obj.paths, "paths", source);
-  if (obj.exclude !== undefined)
-    config.exclude = asStringList(obj.exclude, "exclude", source);
   if (obj.schemas !== undefined)
     config.schemas = asSchemaList(obj.schemas, "schemas", source);
 
@@ -1009,7 +1022,6 @@ function parseConfigDocument(raw: unknown, source: string): DocmetaConfig {
     if (!Array.isArray(obj.overrides)) {
       throw new DocmetaError(`${source}: "overrides" must be a list.`);
     }
-    const seenNames = new Set<string>();
     config.overrides = obj.overrides.map((entry, i) => {
       if (typeof entry !== "object" || entry === null) {
         throw new DocmetaError(`${source}: overrides[${i}] must be a mapping.`);
@@ -1022,7 +1034,29 @@ function parseConfigDocument(raw: unknown, source: string): DocmetaConfig {
       // schemas" must be a list of strings`, blaming the key that is missing
       // rather than the one that is wrong.
       rejectUnknownKeys(e, OVERRIDE_KEYS, `overrides[${i}]`, source);
-      const files = asFileGlobs(e.files, `overrides[${i}].files`, source);
+      // Exactly one of the two ways to say which files an override governs
+      // (0041 rule 8). Both would need a rule for how they combine, and
+      // neither is a rule that governs nothing — the same reads-as-configured
+      // silence the no-effect refusal below exists to end.
+      const hasFiles = e.files !== undefined;
+      const hasCollection = e.collection !== undefined;
+      if (hasFiles === hasCollection) {
+        throw new DocmetaError(
+          `${source}: overrides[${i}] must carry exactly one of "files" or "collection".`,
+        );
+      }
+      const files = hasFiles
+        ? asFileGlobs(e.files, `overrides[${i}].files`, source)
+        : undefined;
+      let collection: string | undefined;
+      if (hasCollection) {
+        if (typeof e.collection !== "string" || e.collection.trim() === "") {
+          throw new DocmetaError(
+            `${source}: overrides[${i}].collection must be a non-empty string naming a collection.`,
+          );
+        }
+        collection = e.collection;
+      }
       const schemas =
         e.schemas === undefined
           ? []
@@ -1039,66 +1073,16 @@ function parseConfigDocument(raw: unknown, source: string): DocmetaConfig {
           `${source}: overrides[${i}] sets neither "schemas" nor "elements", so it has no effect.`,
         );
       }
-      // `name:` refusals (proposal 0027), all at parse time so a name that
-      // could never become a working view fails where the user can see the
-      // config line, not as a SQL error three reads later.
-      let name: string | undefined;
-      if (e.name !== undefined) {
-        if (typeof e.name !== "string" || e.name.trim() === "") {
-          throw new DocmetaError(
-            `${source}: overrides[${i}].name must be a non-empty string — it becomes the collection's view name.`,
-          );
-        }
-        // SQLite object names are case-insensitive, so any casing of "docs"
-        // collides with the projection table itself.
-        if (e.name.toLowerCase() === "docs") {
-          throw new DocmetaError(
-            `${source}: overrides[${i}].name "${e.name}" collides with the docs table every query reads. Pick another name.`,
-          );
-        }
-        // The derived table (proposal 0040) is a view named `derived` over
-        // a backing table named `_derived_rows`, built beside `docs` when a
-        // statement asks for it. Case-folded for the same reason as `docs`.
-        if (["derived", "_derived_rows"].includes(e.name.toLowerCase())) {
-          throw new DocmetaError(
-            `${source}: overrides[${i}].name "${e.name}" collides with the derived table a query builds beside docs (the derived view and its _derived_rows table). Pick another name.`,
-          );
-        }
-        // SQLite reserves the prefix (case-insensitively) for internal
-        // objects and refuses such a CREATE VIEW outright, quoting
-        // notwithstanding.
-        if (e.name.toLowerCase().startsWith("sqlite_")) {
-          throw new DocmetaError(
-            `${source}: overrides[${i}].name "${e.name}" starts with "sqlite_", which SQLite reserves for its own objects. Pick another name.`,
-          );
-        }
-        // A schema-less override never wins schema resolution (the resolver
-        // skips it), so its view would be empty by construction — the same
-        // reads-as-configured-and-is-not silence the no-effect refusal above
-        // exists to end.
-        if (schemas.length === 0) {
-          throw new DocmetaError(
-            `${source}: overrides[${i}] names a collection ("${e.name}") but sets no "schemas", so it can never win schema resolution and its view would always be empty. Add "schemas", or drop the name.`,
-          );
-        }
-        // Two overrides sharing a name would be one CREATE VIEW clobbering
-        // another — and first-match-wins already means only one could hold
-        // the files both claim. Case-folded, like the docs/sqlite_ guards:
-        // SQLite's object namespace is case-insensitive, so "Authors" and
-        // "authors" are one view name to the engine.
-        if (seenNames.has(e.name.toLowerCase())) {
-          throw new DocmetaError(
-            `${source}: overrides[${i}] reuses the name "${e.name}"; collection names must be unique.`,
-          );
-        }
-        seenNames.add(e.name.toLowerCase());
-        name = e.name;
-      }
+      // Whether `collection` names a *declared* collection is checked by
+      // `loadConfig`, the first place both halves of the family file are
+      // known. Every view-name refusal 0027 made here — blank, `docs`,
+      // `sqlite_`, duplicate — now lives in `parseCollections`, beside the
+      // name it belongs to.
       return {
-        files,
+        ...(files !== undefined ? { files } : {}),
+        ...(collection !== undefined ? { collection } : {}),
         schemas,
         ...(elements ? { elements } : {}),
-        ...(name !== undefined ? { name } : {}),
       };
     });
   }
@@ -1107,13 +1091,11 @@ function parseConfigDocument(raw: unknown, source: string): DocmetaConfig {
     config.checks = parseChecks(obj.checks, source);
   }
 
-  if (obj.sidecars !== undefined) {
-    config.sidecars = parseSidecars(obj.sidecars, source);
-  }
-
-  // After sidecars, because a managed field may not be a sidecar-owned key.
+  // Whether a managed field is a key some manifest owns is checked by
+  // `loadConfig`, beside the override collections: manifests are declared on
+  // the top-level `collections:`, which this parser never sees.
   if (obj.derive !== undefined) {
-    config.derive = parseDerive(obj.derive, source, config.sidecars ?? []);
+    config.derive = parseDerive(obj.derive, source);
   }
 
   if (obj.elements !== undefined) {
@@ -1362,17 +1344,28 @@ export interface LoadedConfig {
   /** Absolute path to the file the config was read from. */
   path: string;
   /**
-   * Directory holding that file. Relative paths written *in* the config —
-   * `paths:`, `exclude:`, local-file schema refs — are meaningful relative to
+   * Directory holding that file. Relative paths written *in* the config — a
+   * collection's `paths:`, local-file schema refs — are meaningful relative to
    * this, not to the directory the command happened to be invoked from.
    */
   dir: string;
+  /**
+   * The file as the user would name it, which is how every config message
+   * spells it. Threaded from `ConfigFile.source` so `selectCollections` can
+   * name the file a `--collection` failed to find a collection in.
+   */
+  source: string;
   /**
    * The family-file key the config was read from under (`"meta"`), when it
    * was. Absent for a pre-family file, whose top level is the config. A
    * command that writes the file back (`schemas vendor`) needs to know.
    */
   section?: string;
+  /**
+   * Every collection the family file declares (proposal 0041), in declaration
+   * order. `[]` for a legacy per-tool file, which carries no family-wide keys.
+   */
+  collections: CollectionConfig[];
 }
 
 // The project boundary lives with the family config discovery now; the SARIF
@@ -1439,10 +1432,15 @@ export async function loadConfig(
     : await findConfigFile(cwd, CONFIG_FILE);
   if (file === null) return null;
   const section = file.wrapped ? META_SECTION : undefined;
+  const config = parseConfigValue(file.value, file.source, section);
+  assertOverrideCollections(config, file.collections, file.source);
+  assertManagedFieldsUnowned(config, file.collections, file.source, section);
   return {
-    config: parseConfigValue(file.value, file.source, section),
+    config,
     path: file.path,
     dir: file.dir,
+    source: file.source,
+    collections: file.collections,
     ...(section !== undefined ? { section } : {}),
   };
 }
@@ -1462,25 +1460,46 @@ export interface RunConfigOptions {
   configPath?: string;
   /** `--no-config`: skip discovery and run on the built-in defaults. */
   noConfig?: boolean;
-  /** Positional inputs; empty means fall back to the config's `paths:`. */
+  /**
+   * Positional inputs; empty means fall back to the configured collections'
+   * `paths:` (proposal 0041).
+   */
   inputs: string[];
+  /**
+   * `--collection <name>`, repeatable: the collections this run covers. Empty
+   * or absent means every declared collection — the same thing, because
+   * commander's repeatable collector hands a caller `[]` when the flag was
+   * never passed (see `selectCollections`).
+   */
+  collections?: string[];
   onConfigLoaded?: (info: ConfigNotice) => void;
 }
+
+/**
+ * The stdin token, `load-files.ts`'s `STDIN_TOKEN`, repeated as a literal so
+ * this module does not depend on the file loader it sits below. It is the one
+ * input allowed beside `--collection`: stdin is not a path, so it says nothing
+ * about which collections the run covers.
+ */
+const STDIN_TOKEN_LITERAL = "-";
 
 export interface RunConfig {
   /** The config, with its local file schema refs already rebased. */
   config: DocmetaConfig | null;
-  /** What to resolve: the positional inputs, or the config's `paths:`. */
+  /**
+   * What to resolve: the positional inputs, or the selected collections'
+   * `paths:`, concatenated in declaration order.
+   */
   inputs: string[];
   /**
    * Directory those inputs — and so every resolved file path, and every file
    * read — are relative to.
    *
-   * A run uses *either* positional paths *or* config `paths:`, never both, so
-   * there is exactly one base per run and no ambiguity about which it is.
-   * Positional paths are typed by a person standing in a shell, so they stay
-   * relative to the working directory; `paths:` globs were written next to the
-   * config, so they resolve from there.
+   * A run uses *either* positional paths *or* the collections' `paths:`, never
+   * both, so there is exactly one base per run and no ambiguity about which it
+   * is. Positional paths are typed by a person standing in a shell, so they
+   * stay relative to the working directory; a collection's globs were written
+   * next to the config, so they resolve from there.
    */
   base: string;
   /**
@@ -1501,6 +1520,40 @@ export interface RunConfig {
    * assumed filename names the wrong file in every one of those setups.
    */
   configPath?: string;
+  /**
+   * The key the tool's config sits under in that file — `meta` for a family
+   * file, `undefined` for a legacy per-tool file whose whole document is the
+   * section.
+   *
+   * Anything that *rewrites* the config by hand has to know: `schemas:` is at
+   * the top level of a legacy file and one level down in a family file, so a
+   * rewriter that assumes the top level silently finds nothing in the shape
+   * proposal 0033 made the default. `query`'s DDL repointing did exactly that
+   * until the 0041 fixtures stopped being legacy files and made it visible.
+   */
+  configSection?: string;
+  /**
+   * The collections this run covers (proposal 0041): every declared one, or
+   * the ones `--collection` named. `[]` when no config governs the run.
+   *
+   * Selected even when the inputs are positional, because membership is what
+   * external metadata attaches to (rule 4) and a file the operator typed is
+   * still a member of whatever collections contain it.
+   */
+  collections: CollectionConfig[];
+  /**
+   * Every collection the config declares, in declaration order — the same list
+   * `collections` narrows. `query` needs both: membership and manifests follow
+   * the *selected* set, while every *declared* collection is a SQL view (0041
+   * rule 11), so a statement naming one the run did not select still answers.
+   */
+  declaredCollections: CollectionConfig[];
+  /**
+   * Whether `inputs` came from the collections rather than the command line.
+   * The corpus invariant every scoped check reads: a positional path means the
+   * operator chose part of the corpus.
+   */
+  fromCollections: boolean;
 }
 
 /**
@@ -1515,21 +1568,60 @@ export async function resolveRunConfig(
   // are one commander option), but the cores are public API.
   const cwd = opts.cwd ?? process.cwd();
 
+  // `--collection` names something only a config can define, and it selects a
+  // set the operator did not type — so it composes with neither positional
+  // paths nor `--no-config`. Both refusals come before discovery, so the
+  // message is about the flags rather than about whatever the walk found.
+  const wanted = opts.collections ?? [];
+  if (wanted.length > 0) {
+    const typed = opts.inputs.filter((i) => i !== STDIN_TOKEN_LITERAL);
+    if (typed.length > 0) {
+      throw new DocmetaError(
+        "--collection selects a configured collection; it cannot be combined with paths.",
+      );
+    }
+  }
+
   const loaded = opts.noConfig ? null : await loadConfig(opts.configPath, cwd);
+  if (wanted.length > 0 && loaded === null) {
+    throw new DocmetaError("--collection needs a config file to select from.");
+  }
   if (loaded) opts.onConfigLoaded?.({ path: loaded.path, dir: loaded.dir });
 
   const config = loaded
     ? rebaseConfigSchemaRefs(loaded.config, loaded.dir, cwd)
     : null;
 
-  const fromConfig = opts.inputs.length === 0;
-  const inputs = fromConfig ? (config?.paths ?? []) : opts.inputs;
-  const base = fromConfig && inputs.length > 0 && loaded ? loaded.dir : cwd;
+  // Selected whatever the inputs are: a positional file is still a member of
+  // the collections that contain it, so its manifests have to be loadable.
+  const collections = loaded
+    ? selectCollections(
+        loaded.collections,
+        opts.collections,
+        loaded.source,
+        (message) => new DocmetaError(message),
+      )
+    : [];
+
+  const fromCollections = opts.inputs.length === 0;
+  const inputs = fromCollections
+    ? collections.flatMap((c) => c.paths)
+    : opts.inputs;
+  const base = fromCollections && inputs.length > 0 && loaded ? loaded.dir : cwd;
 
   return {
     config,
     inputs,
     base,
-    ...(loaded ? { configDir: loaded.dir, configPath: loaded.path } : {}),
+    collections,
+    declaredCollections: loaded ? [...loaded.collections] : [],
+    fromCollections,
+    ...(loaded
+      ? {
+          configDir: loaded.dir,
+          configPath: loaded.path,
+          ...(loaded.section === undefined ? {} : { configSection: loaded.section }),
+        }
+      : {}),
   };
 }

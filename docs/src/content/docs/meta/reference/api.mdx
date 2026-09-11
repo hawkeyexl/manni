@@ -1,6 +1,6 @@
 ---
 title: TypeScript API reference
-description: Every symbol manni meta publishes from its programmatic entry point, covering command cores, schema resolution, config, cache, reporters, extractors, and result types.
+description: Every symbol manni meta publishes from its programmatic entry point, covering command cores, collections, external metadata, schema resolution, config, cache, reporters, extractors, and result types.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -73,47 +73,108 @@ caller and a subprocess caller are reading the same data model.
 
 | Export | Purpose |
 |---|---|
-| `Validator` | The Ajv-backed engine. Validate already-extracted metadata against a schema set without going through the file pipeline. `validate` takes the data, the schema refs, a `lineFor` callback, an optional `colFor`, and an optional fifth `locate` callback. `locate` says where a merged value lives when it is not in the document (a [sidecar](#sidecars) manifest's file and line). |
+| `Validator` | The Ajv-backed engine. Validate already-extracted metadata against a schema set without going through the file pipeline. `validate` takes the data, the schema refs, a `lineFor` callback, an optional `colFor`, and an optional fifth `locate` callback. `locate` says where a merged value lives when it is not in the document (an [external-metadata](#external-metadata) manifest's file and line). |
 | `ValidationResult` (type) | One file's outcome: the file label, `ok`, the schemas applied, the `errors`, and how many findings a baseline suppressed. |
-| `FieldError` (type) | One violation. The JSON Pointer, the message, the failing keyword, and the schema that produced it. An optional `file` names the file `line` and `col` refer to when it is not the result's own. It is set only for a value a sidecar manifest supplied. |
+| `FieldError` (type) | One violation. The JSON Pointer, the message, the failing keyword, and the schema that produced it. An optional `file` names the file `line` and `col` refer to when it is not the result's own. It is set only for a value an external-metadata manifest supplied. |
 | `RunSummary` (type) | Aggregate counts for a run. Files, passed, failed, errors, plus optional `gitignoreSkipped` and `baseline` blocks. |
 | `BaselineSummary` (type) | How a baseline shaped the run. Its path, whether it was written, and the recorded, suppressed, and stale counts. |
 | `FingerprintContext` (type) | The `frame` a `ValidateRun` returns: the working directory, the directory canonical paths are measured from, and the directory result labels are relative to. Pass it back into `render` for SARIF. |
 
-## Sidecars
+## Collections
 
-The manifest that keeps frontmatter values outside the document, joined to
-documents at run time. See
-[Sidecars](/manni/meta/reference/configuration/#sidecars) in the configuration
-reference for the rules. A caller building its own pipeline loads the index
-once per run and merges per document. It validates the merged object with
-`locate`, and runs the orphan checks when the run is the config corpus.
+A **collection** is a named set of documents, declared once at the top level of
+`manni.config.yaml` and read by every tool in the family. It carries the globs
+that select its files, the globs that exclude them, and the external metadata
+joined to them. See
+[Collections](/manni/meta/reference/configuration/#collections) in the
+configuration reference for the keys, and [collections as
+inputs](/manni/meta/reference/cli/#collections-as-inputs) for what the CLI does
+with them.
+
+These live in the shared layer rather than the metadata tool's, because the
+document set is not one tool's business. A caller that wants the same file sets
+`manni meta` sees parses them once and asks `isMember` or `memberOf` per file.
 
 | Export | Purpose |
 |---|---|
-| `loadSidecars` | Load every manifest the config declares into one `SidecarIndex`. Resolves to `null` when the config declares none. Throws `DocmetaError` for a manifest that is missing, unparseable, or misshapen, and for an entry setting a key the sidecar does not own. |
-| `LoadSidecarsOptions` (type) | Input to `loadSidecars`. `configDir` is the directory `file` and every manifest key resolve from. `base` is the directory the run's file labels are relative to, so manifests are reported the same way. `offline` refuses a URL `file` rather than fetching it. `timeoutMs` bounds the fetch, and `env` is the environment `tokenEnv` is read from, for tests. |
-| `fetchSidecar` | Fetch one [remote manifest](/manni/meta/reference/configuration/#remote-manifests) by URL, sending the bearer token `tokenEnv` names to that origin only. Resolves to the manifest text. Throws `DocmetaError` naming the URL and the status, never the token, and under `offline` before any request. `loadSidecars` calls it for a URL `file`. |
-| `SidecarFetchOptions` (type) | Input to `fetchSidecar`, made of `tokenEnv`, `timeoutMs`, `maxBytes`, `offline`, and `env`, the environment `tokenEnv` is read from, which defaults to `process.env`. |
-| `sidecarUrlProblem` | Why a string may not name a remote manifest, or `null` when it may. It refuses a URL carrying userinfo, plain `http://` off a loopback host, and any other scheme. The config parser applies it to every URL `file`. |
-| `SIDECAR_FETCH_TIMEOUT_MS`, `SIDECAR_FETCH_MAX_BYTES` | The fetch's defaults, 10 000 ms and 5 MB, matching the schema fetch. |
-| `SidecarIndex` (type) | Every sidecar of a run. `owners` maps each owned key to its manifest. `byPath` maps an absolute document path to its supplied values. `byField` maps a [join field](/manni/meta/reference/configuration/#joining-by-a-field) to its values and each value to the supplied values. `entries` lists every manifest entry for the orphan checks. |
-| `SidecarEntry` (type) | One manifest entry. `join` is `path` or the field it is keyed by, and `abs` is the absolute document path of a path entry, absent for a field entry. It also carries the key as spelled, the manifest's reported path, and the entry's line when known. |
-| `SidecarValue` (type) | One supplied value, with the manifest's reported path and the key's line when known. |
-| `sidecarJoin` | The join a `SidecarConfig` asks for: its `join`, or `PATH_JOIN` when absent. |
+| `CollectionConfig` (type) | One declared collection. It carries its `name`, the `paths` that select its files, and the `exclude` globs that remove them. It also carries the `externalMetadata` manifests joined to its members and an optional `url` naming where it is published. `exclude` and `externalMetadata` are always present, defaulted to `[]` by the parser, so a consumer never checks for `undefined`. |
+| `ExternalMetadataConfig` (type) | One [external-metadata](#external-metadata) manifest on a collection. It carries the manifest `file`, the top-level `keys` it owns, an optional `tokenEnv`, and an optional `join`. `file` is a path relative to the config's directory or an `https://` URL, and `tokenEnv` names the environment variable holding that URL's bearer token. `join` is `path` or the top-level field the manifest's keys are values of. The parser has already asserted the keys are non-empty, unique, disjoint across the collection's manifests, and never `$schema`. It has also asserted that `tokenEnv` appears only on a URL, and that `join` is neither `$schema` nor an owned key. |
+| `parseCollections` | Parse a family file's top-level `collections:` value into `CollectionConfig[]`, in declaration order. Errors are built with a `toError` callback you supply, so each tool reports a bad family file in its own error class. |
+| `selectCollections` | The collections a run covers. That is every one when `names` is `undefined`, else the named ones in **declaration** order however they were named on the command line. Repeats collapse. An unknown name throws, because a typo that silently narrowed a run to nothing would read as a clean pass. |
+| `isMember` | Whether one file belongs to one collection. `relPath` is posix and already relative to the config file's directory, so this is arithmetic on a string. There is no `stat`, nothing that can fail, and no per-file cost. A path that climbed out of the config directory, and stdin, are members of nothing. |
+| `memberOf` | The names of every collection a file belongs to, given the collections, the config directory, the run's base, and the file's label. This is what [`mergeExternalMetadata`](#external-metadata) takes, computed once per file. |
+| `externalMetadataUrlProblem` | Why a URL may not name a manifest, or `null` when it may. It refuses userinfo in the URL, plain `http://` off a loopback host, and any other scheme. The config parser applies it to every URL `file`, which is why it lives here rather than beside the fetcher. |
+
+## External metadata
+
+The manifest that keeps frontmatter values outside the document, joined to a
+collection's members at run time. See [external
+metadata](/manni/meta/reference/configuration/#external-metadata) in the
+configuration reference for the rules, and [keep metadata outside the
+document](/manni/meta/set-up/external-metadata/) for the walkthrough. A caller
+building its own pipeline loads the index once per run and merges per document.
+It validates the merged object with `locate`, and runs the orphan checks when
+the run is the config corpus.
+
+The vocabulary changed in this release. What was a *sidecar* is now **external
+metadata**, and the file it lives in is a **manifest**. Every `Sidecar*` and
+`sidecar*` export was renamed accordingly, with no aliases. The [rename
+table](#the-sidecar-rename) below maps each old name to its new one.
+
+| Export | Purpose |
+|---|---|
+| `loadExternalMetadata` | Load every manifest of every collection the run covers into one `ExternalMetadataIndex`. Takes the `CollectionConfig[]` rather than the config, because the declaration is the collections'. Resolves to `null` when none of them declares a manifest, which is every setup that existed before the feature. Throws `DocmetaError` for a manifest that is missing, unparseable, or misshapen, and for an entry setting a key the manifest does not own. |
+| `LoadExternalMetadataOptions` (type) | Input to `loadExternalMetadata`. `configDir` is the directory `file` and every manifest key resolve from. `base` is the directory the run's file labels are relative to, so manifests are reported the same way. `offline` refuses a URL `file` rather than fetching it. `timeoutMs` bounds the fetch, and `env` is the environment `tokenEnv` is read from, for tests. |
+| `fetchExternalMetadata` | Fetch one [remote manifest](/manni/meta/reference/configuration/#external-metadata) by URL, sending the bearer token `tokenEnv` names to that origin only. Resolves to the manifest text. Throws `DocmetaError` naming the URL and the status, never the token, and under `offline` before any request. `loadExternalMetadata` calls it for a URL `file`. |
+| `ExternalMetadataFetchOptions` (type) | Input to `fetchExternalMetadata`, made of `tokenEnv`, `timeoutMs`, `maxBytes`, `offline`, and `env`, the environment `tokenEnv` is read from, which defaults to `process.env`. |
+| `EXTERNAL_METADATA_FETCH_TIMEOUT_MS`, `EXTERNAL_METADATA_FETCH_MAX_BYTES` | The fetch's defaults, 10 000 ms and 5 MB, matching the schema fetch. |
+| `ExternalMetadataIndex` (type) | Every manifest of a run. `owners` maps each owned key to **every** collection that owns it, with the manifest that does. It is a list rather than one entry, because two collections may each legitimately supply the same key. `byPath` maps an absolute document path to its supplied values. `byField` maps a [join field](/manni/meta/reference/configuration/#external-metadata) to its values and each value to the supplied values. `entries` lists every manifest entry for the orphan checks. |
+| `ExternalMetadataEntry` (type) | One manifest entry. `collection` is the collection whose manifest declared it. `join` is `path` or the field it is keyed by, and `abs` is the absolute document path of a path entry, absent for a field entry. It also carries the key as spelled, the manifest's reported path, and the entry's line when known. |
+| `ExternalMetadataValue` (type) | One supplied value, with the `collection` whose manifest supplied it, the manifest's reported path, and the key's line when known. |
+| `externalMetadataJoin` | The join an `ExternalMetadataConfig` asks for: its `join`, or `PATH_JOIN` when absent. |
 | `PATH_JOIN` | The join that names documents by path, `path`, and the default. |
-| `mergeSidecars` | Merge the index's values for one document into its `ExtractedMetadata`. Returns the merged object, the `collisions` (owned keys the document itself carried, which the caller files as findings), the `joins`, and a `locate` callback. Stdin never merges by path. |
-| `MergedMetadata` (type) | What `mergeSidecars` returns: `extracted`, `collisions`, `joins`, and `locate`. |
-| `SidecarCollision` (type) | One key a document carries that a sidecar owns, with the owning manifest. `MergedMetadata.collisions` is a list of these. |
-| `SidecarJoin` (type) | One field-joined entry a document matched: the `field`, the `value`, and the manifest `file`. `MergedMetadata.joins` is a list of these, one per sidecar at most. |
+| `mergeExternalMetadata` | Merge the index's values for one document into its `ExtractedMetadata`. Takes the collections the document belongs to, a [`memberOf`](#collections) result, and consults only their manifests. A file that is a member of nothing therefore merges nothing. Returns the merged object, the `collisions` (owned keys the document itself carried, which the caller files as findings), the `joins`, and a `locate` callback. Throws `DocmetaError` when two of the document's collections own one key. There is nothing about the document to fix, and a precedence rule would be a tiebreak. Stdin never merges by path. |
+| `MergedMetadata` (type) | What `mergeExternalMetadata` returns: `extracted`, `collisions`, `joins`, and `locate`. |
+| `ExternalMetadataCollision` (type) | One key a document carries that a manifest owns, with the owning manifest and its `collection`. `MergedMetadata.collisions` is a list of these. |
+| `ExternalMetadataJoin` (type) | One field-joined entry a document matched: the `field`, the `value`, the manifest `file`, and its `collection`. `MergedMetadata.joins` is a list of these, one per manifest at most. |
 | `SourceLocation` (type) | What `locate` answers with: a `file`, and optionally `line` and `col`. |
-| `sidecarPointer` | The `/<key>` instance path for a collision or duplicate finding, RFC 6901 escaped. |
+| `externalMetadataPointer` | The `/<key>` instance path for a collision or duplicate finding, RFC 6901 escaped. |
 | `orphanEntries` | The path entries naming no loaded document, given the run's file labels. Empty when the index is `null`. |
 | `orphanJoins` | The field entries no loaded document matched, given a map of join field to the values the run's documents carried. The caller collects that map from each document's `joins`, so this runs after the per-file loop. Empty when the index is `null`. |
 | `orphanError` | The `DocmetaError` an orphan check raises, naming the first orphan and counting the rest. |
-| `SIDECAR_OWNED_SCHEMA` | The `schema` ref a collision finding carries: `sidecar:owned`. |
-| `SIDECAR_DUPLICATE_SCHEMA` | The `schema` ref a duplicate-join finding carries: `sidecar:duplicate`. |
-| `SIDECAR_KEYWORD` | The `keyword` every sidecar finding carries: `sidecar`. Joined, they are the rule ids `sidecar:owned/sidecar` and `sidecar:duplicate/sidecar`. |
+| `EXTERNAL_OWNED_SCHEMA` | The `schema` ref a collision finding carries: `external:owned`. |
+| `EXTERNAL_DUPLICATE_SCHEMA` | The `schema` ref a duplicate-join finding carries: `external:duplicate`. |
+| `EXTERNAL_KEYWORD` | The `keyword` every external-metadata finding carries: `external`. Joined, they are the [rule ids](/manni/meta/reference/output-and-exit-codes/#reserved-rule-ids) `external:owned/external` and `external:duplicate/external`. |
+
+<Aside type="caution" title="The index is loaded once, membership is per file">
+`loadExternalMetadata` takes the collections the run *covers*; `mergeExternalMetadata`
+takes the collections one document *belongs to*. They are different lists, and
+passing the run's list per document would merge a manifest into a file that is
+not in its collection.
+</Aside>
+
+### The sidecar rename
+
+Nothing about what a manifest may contain, how it joins, or what a violation
+reports has changed. The names have. There are no aliases, so an upgrade is a
+find-and-replace:
+
+| Was | Is |
+|---|---|
+| `SidecarConfig` | `ExternalMetadataConfig`, now on a collection |
+| `loadSidecars` / `LoadSidecarsOptions` | `loadExternalMetadata` / `LoadExternalMetadataOptions`, taking the collections rather than the config |
+| `mergeSidecars` | `mergeExternalMetadata`, taking the collections the file belongs to |
+| `SidecarIndex` / `SidecarEntry` / `SidecarValue` | `ExternalMetadataIndex` / `ExternalMetadataEntry` / `ExternalMetadataValue` |
+| `SidecarCollision` / `SidecarJoin` | `ExternalMetadataCollision` / `ExternalMetadataJoin` |
+| `sidecarJoin` / `sidecarPointer` | `externalMetadataJoin` / `externalMetadataPointer` |
+| `SIDECAR_OWNED_SCHEMA` / `SIDECAR_DUPLICATE_SCHEMA` / `SIDECAR_KEYWORD` | `EXTERNAL_OWNED_SCHEMA` / `EXTERNAL_DUPLICATE_SCHEMA` / `EXTERNAL_KEYWORD` |
+| `fetchSidecar` / `SidecarFetchOptions` / `sidecarUrlProblem` | `fetchExternalMetadata` / `ExternalMetadataFetchOptions` / `externalMetadataUrlProblem` |
+| `SIDECAR_FETCH_TIMEOUT_MS` / `SIDECAR_FETCH_MAX_BYTES` | `EXTERNAL_METADATA_FETCH_TIMEOUT_MS` / `EXTERNAL_METADATA_FETCH_MAX_BYTES` |
+
+`orphanEntries`, `orphanJoins`, `orphanError`, `PATH_JOIN`, `MergedMetadata` and
+`SourceLocation` keep their names and their signatures. The two finding
+identities are renamed with the vocabulary, which
+[costs a baseline a regeneration](/manni/meta/reference/output-and-exit-codes/#the-rename-invalidates-two-baselined-findings).
 
 ## Derived metadata
 
@@ -226,17 +287,19 @@ The on-disk cache for schemas fetched over `http(s)`, shared across runs.
 ## Configuration
 
 Loading, parsing, and merging `manni.config.yaml`. See the [configuration
-reference](/manni/meta/reference/configuration/) for what each key means.
+reference](/manni/meta/reference/configuration/) for what each key means. The
+top-level `collections:` key is family-wide rather than the metadata tool's, and
+its exports are under [Collections](#collections).
 
 | Export | Purpose |
 |---|---|
 | `loadConfig` | Discover (or take an explicit path to) a config file and parse it. Resolves to `null` when discovery finds none. |
 | `parseConfig` | Parse config text that you already have, with a source label for error messages. |
-| `LoadedConfig` (type) | A parsed config plus where it came from. |
-| `DocmetaConfig` (type) | The config document itself: `paths`, `exclude`, `schemas`, `overrides`, `checks`, `sidecars`, `derive`, `fill`, `schemaTrust`, `schemaCache`, and the rest. |
+| `LoadedConfig` (type) | A parsed config plus where it came from. It carries the file's `path`, its `dir`, and the `source` label every config message spells it as. It also carries the family-file `section` it was read from under, and every `collections` the family file declares. |
+| `DocmetaConfig` (type) | The `meta:` section itself: `schemas`, `overrides`, `checks`, `elements`, `derive`, `fill`, `baseline`, `schemaTrust`, `schemaCache`, and the rest. It no longer carries `paths`, `exclude` or `sidecars`; the document set and its external metadata are [collections](#collections), which every tool reads. |
 | `resolveRunConfig` | Merge config with the run's inputs and flags into the settings a core actually uses. This is the precedence chain, in one place. |
-| `RunConfigOptions` (type) | Input to `resolveRunConfig`: cwd, `configPath`, `noConfig`, the positional `inputs`, and a load callback. |
-| `RunConfig` (type) | The merged result. The rebased config, the effective inputs, and the resolved run settings. |
+| `RunConfigOptions` (type) | Input to `resolveRunConfig`: cwd, `configPath`, `noConfig`, the positional `inputs`, the `collections` names `--collection` gave (empty or absent means every declared one), and a load callback. |
+| `RunConfig` (type) | The merged result. It carries the rebased config, the effective `inputs`, and the `base` those are relative to. The inputs are the positional ones, or the selected collections' `paths` concatenated in declaration order. It names the `configDir`/`configPath`/`configSection` that governed the run and the `collections` the run covers. It lists every `declaredCollections` the config declares, each of which is a SQL view whether the run selected it or not. And it carries `fromCollections`, the corpus invariant every scoped check reads. |
 | `ConfigNotice` (type) | Told to the caller once when a run turns out to be governed by a config: its path and directory. |
 | `SchemaEntry` (type) | A `schemas:` entry, either a bare reference string or a `SchemaRefEntry`. |
 | `SchemaRefEntry` (type) | The object form. A reference plus its integrity pin. |
@@ -245,9 +308,8 @@ reference](/manni/meta/reference/configuration/) for what each key means.
 | `FillConfig` (type) | Config defaults for `fill`: provider, model, confidence threshold, cost ceiling, concurrency. |
 | `SchemaCacheConfig` (type) | Config for the remote-schema cache, currently `ttlHours`. |
 | `CheckConfig` (type) | One named [corpus check](/manni/meta/reference/configuration/#checks). Its `name` (the durable half of its findings' identity) and the SQL `query`. |
-| `SidecarConfig` (type) | One [sidecar](/manni/meta/reference/configuration/#sidecars) entry, made of the manifest `file`, the top-level `keys` it owns, an optional `tokenEnv`, and an optional `join`. `file` is a path relative to the config's directory or an `https://` URL, and `tokenEnv` names the environment variable holding the bearer token for a URL. `join` is `path` or the top-level field the manifest's keys are values of. The parser has already asserted the keys are non-empty, unique, disjoint across entries, and never `$schema`. It has also asserted that `tokenEnv` appears only on a URL, and that `join` is neither `$schema` nor an owned key. |
-| `DeriveConfig` (type) | The [derived channel](/manni/meta/reference/configuration/#derive), made of the managed `fields`, the optional `sources` to consult, an optional `codeowners` path relative to the config's directory, and the optional `commands` table. The parser has already asserted the fields are non-empty, unique, each one of `DERIVABLE_FIELDS` or a key of `commands`, and never a key a sidecar owns. |
-| `DeriveCommandConfig` (type) | One `derive.commands` entry as the config spells it, with the `run` argv, the program first, and an optional `timeout` in seconds. The parser has already asserted `run` is a non-empty list of non-empty strings and `timeout` a positive number. It has also refused a key that is a built-in field, `$schema`, or a key a sidecar owns. |
+| `DeriveConfig` (type) | The [derived channel](/manni/meta/reference/configuration/#derive), made of the managed `fields`, the optional `sources` to consult, an optional `codeowners` path relative to the config's directory, and the optional `commands` table. The parser has already asserted the fields are non-empty, unique, and each one of `DERIVABLE_FIELDS` or a key of `commands`. `loadConfig` has also asserted that no field and no `commands` key is a key an [external-metadata](#external-metadata) manifest owns on any collection. |
+| `DeriveCommandConfig` (type) | One `derive.commands` entry as the config spells it, with the `run` argv, the program first, and an optional `timeout` in seconds. The parser has already asserted `run` is a non-empty list of non-empty strings and `timeout` a positive whole number. It has also refused a key that is a built-in field or `$schema`, and `loadConfig` refuses one a manifest owns. |
 
 ## Reporters
 

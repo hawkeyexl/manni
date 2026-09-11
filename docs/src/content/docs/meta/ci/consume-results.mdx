@@ -141,8 +141,9 @@ to a file with `tee` first, as
 When a script needs metadata *values* rather than a validation verdict (say, to
 build an index of every page's `title` and `type`), use `manni meta get`. It reads
 the named fields from each file and prints them. It shares `validate`'s input
-handling: positional paths, directories, globs, `-` for stdin with `--as`, and
-`paths:` from config as a fallback.
+handling: positional paths, directories, globs, `-` for stdin with `--as`, the
+`collections:` from config as the fallback, and `--collection <name>` to narrow
+to one of them.
 
 Pass the fields as a single comma-separated argument, then the targets:
 
@@ -262,7 +263,11 @@ for (const result of results) {
 `runValidate` accepts a `ValidateOptions` object. The fields mirror the CLI:
 
 - **`inputs`**: files, directories, or globs to validate. When empty, manni meta
-  falls back to `paths:` from the config, exactly as the CLI does.
+  falls back to the `collections:` declared in the config, exactly as the CLI
+  does.
+- **`collections`**: collection names to run over, the programmatic equivalent of
+  a repeated `--collection`. Like the flag, it cannot be combined with a
+  non-empty `inputs`.
 - **`cliSchemas`**: schema references that override `$schema` and config (the
   programmatic equivalent of `--schema`).
 - **`exts`**, **`exclude`**, **`as`**, **`configPath`**: directory-walk

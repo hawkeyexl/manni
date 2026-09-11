@@ -1,0 +1,5 @@
+# The wider collection's manifest: every page under docs/ takes its owner here.
+docs/api/auth.md:
+  owner: platform
+docs/guides/intro.md:
+  owner: docs-team

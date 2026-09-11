@@ -291,8 +291,8 @@ describe.skipIf(!hasBash)("action.yml input wiring", () => {
   });
 
   it("logs no phantom argument when argv is empty", () => {
-    // A consumer relying entirely on `paths:` in docmeta.config.yaml, with
-    // `format: ""`, reaches npx with no arguments. `printf ' %q'` on an empty
+    // A consumer relying entirely on the collections in manni.config.yaml,
+    // with `format: ""`, reaches npx with no arguments. `printf ' %q'` on an empty
     // array prints `''`, which reads as an empty positional argument being
     // passed — and this line exists to tell them what actually ran.
     const res = runAction({});

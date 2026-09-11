@@ -11,12 +11,13 @@ const here = dirname(fileURLToPath(import.meta.url));
 const corpus = resolve(here, "fixtures", "collections");
 
 /**
- * All cases run over `test/fixtures/collections/`: a config whose two
- * `overrides:` entries carry `name:` (proposal 0027) — `authors` over the
- * authors directory and `notes` over a deep-file glob — an `authors/` and
- * `docs/` split, one file matching both named globs, and one file naming its
- * own `$schema`. Inputs come from the config's `paths:`, so the run is the
- * config-resolved corpus.
+ * All cases run over `test/fixtures/collections/`: a config declaring three
+ * collections (proposal 0041, which supersedes 0027) — `pages` over the whole
+ * corpus, `authors` over the authors directory and `notes` over a deep-file
+ * glob — with an override pointing at the last two and none at `pages`. An
+ * `authors/` and `docs/` split, one file belonging to all three collections,
+ * and one file naming its own `$schema`. Inputs come from the config's
+ * `collections:`, so the run is the config-resolved corpus.
  */
 function q(sql: string, extra: Partial<QueryOptions> = {}) {
   return runQuery({ sql, inputs: [], cwd: corpus, ...extra });
@@ -33,21 +34,70 @@ afterAll(() => {
   for (const dir of tempDirs) rmSync(dir, { recursive: true, force: true });
 });
 
-describe("named collections (0027): views over override groups", () => {
-  it("a named override is a view of the files it won resolution for", async () => {
+describe("collections (0041): views over membership", () => {
+  it("a collection is a view of the members the run loaded", async () => {
     const run = await q("SELECT _path FROM authors ORDER BY _path");
     expect(run.rows).toEqual([
       { _path: "authors/ada.md" },
       { _path: "authors/deep.md" },
       { _path: "authors/grace.md" },
+      { _path: "authors/self.md" },
     ]);
   });
 
-  it("views are disjoint: a file matching two named globs joins the first", async () => {
-    // authors/deep.md matches the `notes` glob too, but `authors` is the
-    // override that won its schema resolution — first-match-wins.
-    const run = await q("SELECT _path FROM notes");
-    expect(run.rows).toEqual([]);
+  it("views overlap: a file in two collections appears in both", async () => {
+    // 0041 rule 7, and the reversal of 0027's disjointness: membership is what
+    // the config says the set contains, not which override won resolution, so
+    // authors/deep.md is in `notes` *and* in `authors` — and in `pages` too.
+    const notes = await q("SELECT _path FROM notes ORDER BY _path");
+    expect(notes.rows).toEqual([{ _path: "authors/deep.md" }]);
+    const both = await q(
+      `SELECT a._path FROM authors a JOIN notes n ON n._path = a._path`,
+    );
+    expect(both.rows).toEqual([{ _path: "authors/deep.md" }]);
+    const pages = await q(
+      "SELECT count(*) AS n FROM pages WHERE _path = 'authors/deep.md'",
+    );
+    expect(pages.rows).toEqual([{ n: 1 }]);
+  });
+
+  it("a collection no override points at is still a view", async () => {
+    // `pages` carries no `overrides[].collection`, so under 0027 it had no
+    // view at all and `FROM pages` was a SQL error. It is a declared
+    // collection, so it is a view.
+    const run = await q("SELECT count(*) AS n FROM pages");
+    expect(run.rows).toEqual([{ n: 6 }]);
+  });
+
+  it("a view with no loaded members is empty, not missing", async () => {
+    // Positional `docs` loads no authors file, so `authors` and `notes` hold
+    // nothing. 0014's rule is about the run's inputs, not about a view: a
+    // query naming a declared collection must answer, not fail.
+    const run = await runQuery({
+      sql: "SELECT count(*) AS n FROM authors",
+      inputs: ["docs"],
+      cwd: corpus,
+    });
+    expect(run.rows).toEqual([{ n: 0 }]);
+    const notes = await runQuery({
+      sql: "SELECT _path FROM notes",
+      inputs: ["docs"],
+      cwd: corpus,
+    });
+    expect(notes.rows).toEqual([]);
+  });
+
+  it("a collection --collection did not select is still a view", async () => {
+    // 0041 rule 11: every *declared* collection gets its view, so narrowing
+    // the run never turns `FROM pages` into `no such table`. The view holds
+    // the members the run loaded — authors/deep.md belongs to all three.
+    const run = await runQuery({
+      sql: "SELECT _path FROM pages ORDER BY _path",
+      inputs: [],
+      cwd: corpus,
+      collections: ["notes"],
+    });
+    expect(run.rows).toEqual([{ _path: "authors/deep.md" }]);
   });
 
   it("the flagship join reads FROM authors instead of a GLOB self-join", async () => {
@@ -59,55 +109,42 @@ describe("named collections (0027): views over override groups", () => {
     expect(run.rows).toEqual([{ _path: "docs/guide.md", author: "ghost" }]);
   });
 
-  it("a file's own $schema takes it out of the view, with a stderr notice", async () => {
+  it("a file's own $schema does not move it out of the view, and says nothing", async () => {
+    // 0027 § stress test 1 emitted a notice here, because membership followed
+    // schema resolution. Under 0041 membership is the config's globs, so
+    // authors/self.md is a plain member and there is nothing to explain.
     const notices: string[] = [];
     const run = await q("SELECT _path FROM authors WHERE _path LIKE '%self%'", {
       onNotice: (m) => notices.push(m),
     });
-    expect(run.rows).toEqual([]);
-    // ...but the file is still an ordinary docs row.
-    const asDoc = await q("SELECT _path FROM docs WHERE _path LIKE '%self%'");
-    expect(asDoc.rows).toEqual([{ _path: "authors/self.md" }]);
-    const notice = notices.find((m) => m.includes("authors/self.md"));
-    expect(notice).toBeDefined();
-    expect(notice).toContain('"authors"');
-    expect(notice).toContain("$schema");
+    expect(run.rows).toEqual([{ _path: "authors/self.md" }]);
+    expect(notices).toEqual([]);
   });
 
-  it("schemaTrust.documentRefs: none flips membership back in", async () => {
+  it("schemaTrust does not touch membership: a plain read resolves no schemas", async () => {
+    // 0021's founding rule, which 0027 had to bend and 0041 restores. A
+    // document `$schema` the trust settings would refuse cannot reach a view:
+    // no resolution runs, so there is no refusal to demote a file over and no
+    // notice to print, and the SELECT is unaffected.
     const dir = tempCopy();
     writeFileSync(
-      join(dir, "docmeta.config.yaml"),
-      `${readFileSync(join(dir, "docmeta.config.yaml"), "utf8")}schemaTrust:\n  documentRefs: none\n`,
-    );
-    const run = await runQuery({
-      sql: "SELECT _path FROM authors ORDER BY _path",
-      inputs: [],
-      cwd: dir,
-    });
-    expect(run.rows.map((r) => r._path)).toContain("authors/self.md");
-  });
-
-  it("a per-file trust refusal demotes to member-of-no-view, never exit 2", async () => {
-    const dir = tempCopy();
-    writeFileSync(
-      join(dir, "docmeta.config.yaml"),
-      `${readFileSync(join(dir, "docmeta.config.yaml"), "utf8")}schemaTrust:\n  documentRefs: local\n`,
+      join(dir, "manni.config.yaml"),
+      `${readFileSync(join(dir, "manni.config.yaml"), "utf8")}  schemaTrust:\n    documentRefs: local\n`,
     );
     writeFileSync(
       join(dir, "authors", "url.md"),
       "---\n$schema: https://schemas.example.com/x.json\ntitle: URL\nslug: url\n---\nBody.\n",
     );
-    // The refused file must not abort a working SELECT...
-    const ok = await runQuery({ sql: "SELECT 1 AS one", inputs: [], cwd: dir });
-    expect(ok.rows).toEqual([{ one: 1 }]);
-    // ...it is simply a member of no view, while its docs row is unaffected.
+    const notices: string[] = [];
     const view = await runQuery({
       sql: "SELECT _path FROM authors WHERE _path LIKE '%url%'",
       inputs: [],
       cwd: dir,
+      onNotice: (m) => notices.push(m),
     });
-    expect(view.rows).toEqual([]);
+    expect(view.rows).toEqual([{ _path: "authors/url.md" }]);
+    expect(notices).toEqual([]);
+    // ...and the row itself is the ordinary one it always was.
     const table = await runQuery({
       sql: "SELECT title FROM docs WHERE _path = 'authors/url.md'",
       inputs: [],
@@ -126,11 +163,11 @@ describe("named collections (0027): views over override groups", () => {
       const views = db
         .prepare("SELECT name FROM sqlite_master WHERE type = 'view' ORDER BY name")
         .all() as { name: string }[];
-      expect(views.map((v) => v.name)).toEqual(["authors", "notes"]);
+      expect(views.map((v) => v.name)).toEqual(["authors", "notes", "pages"]);
       const rows = db.prepare("SELECT count(*) n FROM authors").all() as {
         n: number | bigint;
       }[];
-      expect(Number(rows[0]?.n)).toBe(3);
+      expect(Number(rows[0]?.n)).toBe(4);
     } finally {
       db.close();
     }
@@ -180,15 +217,20 @@ describe("named collections (0027): views over override groups", () => {
     tempDirs.push(dir);
     cpSync(corpus, dir, { recursive: true });
     writeFileSync(
-      join(dir, "docmeta.config.yaml"),
+      join(dir, "manni.config.yaml"),
       [
-        "paths:",
-        '  - "docs/**/*.md"',
-        '  - "authors/**/*.md"',
-        "overrides:",
+        "collections:",
+        "  - name: pages",
+        "    paths:",
+        '      - "docs/**/*.md"',
+        '      - "authors/**/*.md"',
         '  - name: "my authors"',
-        '    files: "authors/**"',
-        "    schemas: [./author.schema.json]",
+        "    paths:",
+        '      - "authors/**"',
+        "meta:",
+        "  overrides:",
+        '    - collection: "my authors"',
+        "      schemas: [./author.schema.json]",
         "",
       ].join("\n"),
     );
@@ -213,18 +255,21 @@ describe("named collections (0027): views over override groups", () => {
     tempDirs.push(dir);
     cpSync(corpus, dir, { recursive: true });
     writeFileSync(
-      join(dir, "docmeta.config.yaml"),
+      join(dir, "manni.config.yaml"),
       [
-        "paths:",
-        '  - "docs/**/*.md"',
-        '  - "authors/**/*.md"',
-        "overrides:",
+        "collections:",
         "  - name: authors",
-        '    files: "authors/**"',
-        "    schemas: [./author.schema.json]",
+        "    paths:",
+        '      - "authors/**"',
         "  - name: guides",
-        '    files: "docs/**"',
-        "    schemas: [./base.schema.json]",
+        "    paths:",
+        '      - "docs/**"',
+        "meta:",
+        "  overrides:",
+        "    - collection: authors",
+        "      schemas: [./author.schema.json]",
+        "    - collection: guides",
+        "      schemas: [./base.schema.json]",
         "",
       ].join("\n"),
     );
@@ -249,17 +294,16 @@ describe("named collections (0027): views over override groups", () => {
     expect(message).toContain("pass -s");
   });
 
-  it("a plain SELECT never walks resolution: no views, no exclusion notice", async () => {
-    // 0021's founding rule, kept under 0027: a read that names no collection
-    // resolves nothing. The observable proxy is the "$schema won" notice —
-    // it can only come from the membership walk, so a plain SELECT with
-    // named overrides configured must not produce it.
+  it("a plain SELECT builds no views and says nothing", async () => {
+    // Membership is path arithmetic (rule 10), but a statement that names no
+    // collection should still pay nothing and print nothing: the views are
+    // built lazily, and nothing in the build has an opinion to voice.
     const notices: string[] = [];
     const run = await q("SELECT _path FROM docs ORDER BY _path LIMIT 1", {
       onNotice: (m) => notices.push(m),
     });
     expect(run.rows).toEqual([{ _path: "authors/ada.md" }]);
-    expect(notices.find((m) => m.includes("authors/self.md"))).toBeUndefined();
+    expect(notices).toEqual([]);
   });
 
   it("a case-variant collection reference still resolves lazily", async () => {
@@ -271,6 +315,7 @@ describe("named collections (0027): views over override groups", () => {
       "authors/ada.md",
       "authors/deep.md",
       "authors/grace.md",
+      "authors/self.md",
     ]);
   });
 
@@ -287,7 +332,11 @@ describe("named collections (0027): views over override groups", () => {
     const run = await q(
       "SELECT name FROM sqlite_master WHERE type = 'view' ORDER BY name",
     );
-    expect(run.rows).toEqual([{ name: "authors" }, { name: "notes" }]);
+    expect(run.rows).toEqual([
+      { name: "authors" },
+      { name: "notes" },
+      { name: "pages" },
+    ]);
   });
 
   it("PRAGMA table_info(collection) reports the docs columns, not silence", async () => {
@@ -318,15 +367,20 @@ describe("named collections (0027): views over override groups", () => {
     tempDirs.push(dir);
     cpSync(corpus, dir, { recursive: true });
     writeFileSync(
-      join(dir, "docmeta.config.yaml"),
+      join(dir, "manni.config.yaml"),
       [
-        "paths:",
-        '  - "docs/**/*.md"',
-        '  - "authors/**/*.md"',
-        "overrides:",
+        "collections:",
+        "  - name: pages",
+        "    paths:",
+        '      - "docs/**/*.md"',
+        '      - "authors/**/*.md"',
         '  - name: "a\\"\\nb"',
-        '    files: "authors/**"',
-        "    schemas: [./author.schema.json]",
+        "    paths:",
+        '      - "authors/**"',
+        "meta:",
+        "  overrides:",
+        '    - collection: "a\\"\\nb"',
+        "      schemas: [./author.schema.json]",
         "",
       ].join("\n"),
     );
@@ -341,14 +395,14 @@ describe("named collections (0027): views over override groups", () => {
   it("corpus checks read the same views", async () => {
     const dir = tempCopy();
     writeFileSync(
-      join(dir, "docmeta.config.yaml"),
-      `${readFileSync(join(dir, "docmeta.config.yaml"), "utf8")}checks:
-  - name: dangling-author
-    query: >-
-      SELECT d._path AS path, 'author' AS key,
-             'no author page for "' || d.author || '"' AS message
-      FROM docs d LEFT JOIN authors a ON a.slug = d.author
-      WHERE d.author IS NOT NULL AND a._path IS NULL
+      join(dir, "manni.config.yaml"),
+      `${readFileSync(join(dir, "manni.config.yaml"), "utf8")}  checks:
+    - name: dangling-author
+      query: >-
+        SELECT d._path AS path, 'author' AS key,
+               'no author page for "' || d.author || '"' AS message
+        FROM docs d LEFT JOIN authors a ON a.slug = d.author
+        WHERE d.author IS NOT NULL AND a._path IS NULL
 `,
     );
     const run = await runValidate({ inputs: [], cwd: dir });
