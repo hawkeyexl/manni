@@ -23,7 +23,9 @@
   `lineFor`, which is how a frontmatter entry gets a line number.
   [0045](0045-family-encryption-key.md), the family encryption key private
   sources are encrypted with, and the `manni key` domain that sets and
-  rotates it; see stress test 23
+  rotates it; see stress test 23. [0037](0037-sidecar-metadata.md) and
+  [0039](0039-sidecar-join.md), the external-metadata manifest a collection
+  may keep its citations in, and the field it joins on; see stress test 25
 - **Touches:** `src/cite/**` (new), `src/cli.ts`, `src/index.ts`,
   `src/meta/internal.ts` (new), `src/shared/{cli-options,color,warn}.ts`,
   `eslint.config.js`, `scripts/check-cli-reference.mjs`,
@@ -65,8 +67,8 @@ one sentence to `src/limits.ts:2` and the source has since changed under it.
 Metadata validation is the wrong tool and says so by passing:
 
 ```console
-$ node dist/cli.js meta validate -s docs/proposals/0044/schemas/citations/1.0.0-proposal.1.json test/fixtures/cite/pages/stale-claim.md
-✓ test/fixtures/cite/pages/stale-claim.md
+$ node dist/cli.js meta validate -s docs/proposals/0044/schemas/citations/1.0.0-proposal.3.json test/fixtures/cite/pages/source-changed.md
+✓ test/fixtures/cite/pages/source-changed.md
 
 1 file checked, 1 passed, 0 failed, 0 errors
 # exit 0
@@ -77,30 +79,35 @@ say about a hash. Whether the pin still holds is a comparison against the
 source, and that is the check this proposal adds:
 
 ```console
-$ node dist/cli.js cite check --root test/fixtures/cite test/fixtures/cite/pages/stale-claim.md
-✗ test/fixtures/cite/pages/stale-claim.md
-    ✗ fetch-timeout   src/limits.ts:2   changed   (line 9)
+$ node dist/cli.js cite check --root test/fixtures/cite test/fixtures/cite/pages/source-changed.md
+✗ test/fixtures/cite/pages/source-changed.md
+    ✗ fetch-timeout   :15 current   src/changed.ts:2 changed
 
 1 file checked, 0 passed, 1 failed, 1 finding
 # exit 1
 ```
 
-Line 9 is the sentence. Not the page, not the file: the sentence.
+Line 15 is the sentence. Not the page, not the file: the sentence. The claim
+end is current, so the prose did not move. The source under it did.
 
 ## Summary
 
-- **A vocabulary**, `manni:citations:1.0.0-proposal.1`, published by meta as the
-  tenth member of the 0023 family. Two page keys, `citations` and
-  `citation-commit`, and a closed entry shape: `src`, `integrity`, `commit`,
-  `id`, `claim`, `quote`. The draft is at
-  `docs/proposals/0044/schemas/citations/`, with its example ladder beside it.
-- **Inline statements**: the same entry, or a reference to one by id, written in
-  the body in the format's comment syntax. That is the way Doc Detective's
-  inline statements are written. It anchors the paragraph or fenced block that
-  follows it.
-- **Encrypted sources**: `~` and at least 82 base64url characters in place of
-  a path. The path is encrypted under the family key of 0045, and the pin is
-  keyed by it. A public docs repo can cite a private code repo without
+- **A vocabulary**, `manni:citations:1.0.0-proposal.3`, published by meta as the
+  tenth member of the 0023 family. One page key, `citations`, and a closed
+  entry of two blocks. `claim` and `source` are each a line range and a hash.
+  The drafts live at `docs/proposals/0044/schemas/citations/`, with the example
+  ladder beside them; `proposal.1` and `proposal.2` are kept.
+- **Markers**: an entry's id, written in the body in the format's comment
+  syntax. That is the way Doc Detective's inline statements are written. A
+  marker anchors the rest of its own line, else the paragraph that follows it.
+  It is the alternative to claim lines, never a second copy of the entry.
+- **A sidecar**: a collection may keep its citations in an external-metadata
+  manifest (0037, 0041) instead of frontmatter. Nothing on the page then
+  repeats the entry, and a public page carries no YAML it did not ask for.
+- **Encrypted sources**: `source.file` holds `~` and at least 82 base64url
+  characters in place of a path. The path is encrypted under the family key of
+  0045, as any other value is, and the pin over it is keyed and reads
+  `hmac-sha256-`. A public docs repo can cite a private code repo without
   publishing its paths, and without publishing a verifier for its lines.
 - **A tool**, `manni cite`, a sibling domain under the umbrella: `check`
   classifies, `add` mints, `update` rewrites moved pins in place. Findings ride
@@ -117,49 +124,95 @@ record for that.
 ## The vocabulary
 
 Draft 2020-12, root open, `citation-` prefix guarded exactly as evals guards
-`eval-`:
+`eval-`. One page key, and an entry of two blocks that share one shape:
+
+```yaml
+citations:
+  - id: fetch-timeout                # anchored by its claim lines
+    claim:
+      lines: 3                       # body lines, counted after the frontmatter
+      integrity: sha256-c41f09aa…
+    source:
+      file: lib/limits.ts
+      lines: 2
+      integrity: sha256-78af1d33…
+      commit-sha: 3f9c2a1e7b0d4c5a6f8e9d0b1a2c3d4e5f607182
+  - id: retries                      # anchored by a marker, which pins what it anchors
+    claim:
+      integrity: sha256-0b7e…
+    source:
+      file: ~AQx7Vb2…
+      lines: 5
+      integrity: hmac-sha256-5e0c…
+  - source:                          # a bare pin: the page rests on this file
+      file: lib/limits.ts
+      integrity: sha256-aebba92f…
+```
 
 | Key / field | Type | Required | Meaning |
 |---|---|---|---|
 | `citations` | list of entries, `minItems: 1` | no | The page's citations. Omit the key rather than write `[]`. |
-| `citation-commit` | commit | no | Default `commit` for every entry that omits its own. |
-| `src` | source reference | **yes** | `path`, `path:L`, `path:L1-L2`, or an encrypted path with the same line forms. An encrypted path is `~` and at least 82 base64url characters, from draft `1.0.0-proposal.2`; `proposal.1` spelled it `~<16 hex>`. Repo-root-relative posix path. `path:L` is canonical for one line. |
-| `integrity` | `^sha256-[0-9a-f]{64}$` | **yes** | The pin, which is the cited lines hashed under the rule below, keyed when `src` is encrypted. |
-| `commit` | `^[0-9a-f]{7,40}$` | no | The commit the pin was minted at. The tool writes forty; a person may type seven. |
-| `id` | `^[a-z0-9][a-z0-9-]*$` | no | Unique per page, tool-enforced. What an inline reference names. |
-| `claim` | string, `minLength: 1` | no | The sentence the citation supports, verbatim. |
-| `quote` | boolean, default false | no | The anchored fenced block reproduces the cited lines. |
+| `id` | `^[a-z0-9][a-z0-9-]*$` | no; yes when a marker names the entry | Unique per page, tool-enforced. What a marker names, and what a finding and `update --only` use. |
+| `claim` | block | no | The page text the citation supports. Absent, the entry is a bare pin, or a marker with no drift check on its sentence. |
+| `claim.lines` | `L` or `"L1-L2"` | yes, unless a marker names the entry | Lines of the page **body**, counted from the first line after the frontmatter. A page with no frontmatter counts from its first line. |
+| `claim.integrity` | `^sha256-[0-9a-f]{64}$` | **yes**, inside `claim` | The claimed lines hashed under the rule below. Always plain, never keyed: the page is public. With a marker, it pins the lines the marker anchors. |
+| `source` | block | **yes** | The lines the claim rests on. The only required member of an entry. |
+| `source.file` | root-relative posix path, or `~` and at least 82 base64url characters | **yes** | The file. A `~` value is the path encrypted with the family key of 0045; draft `proposal.1` spelled it `~<16 hex>`. |
+| `source.lines` | `L` or `"L1-L2"` | no | File lines. Absent pins the whole file. Readable even when `file` is encrypted. |
+| `source.integrity` | `^(?:sha256\|hmac-sha256)-[0-9a-f]{64}$` | **yes**, inside `source` | The pin. It reads `hmac-sha256-` exactly when `file` is encrypted, so the page carries no verifier for a guessed private line. |
+| `source.commit-sha` | `^[0-9a-f]{7,64}$` | no | The git commit hash the pin was taken at. Sixty-four covers a SHA-256 repository. The tool writes the full hash; a person may type seven. |
+| `quote` | boolean, default false | no | The claim is a fenced block that reproduces the cited lines. |
 
-The entry is closed. There is no `dependentRequired`: a bare `{src, integrity}`
-is legal, and stress test 13 says why. The `src` grammar rejects a leading `/`
-or a drive letter, a backslash, `.` and `..` segments, and an empty segment.
-It also rejects line 0, a URL, and an encrypted path that is too short or leaves the base64url alphabet. It
-accepts spaces and dots inside a segment, so `docs/release notes/v1.2.md:4-9`
-is a source. `L2 >= L1` is the tool's rule, because a pattern cannot compare
-two numbers. The ladder pins that the schema accepts `:9-3`, so nobody later
-"fixes" the regex into something unreadable.
+The entry is closed, and so is each block. There is no `dependentRequired`: a
+bare entry of `source` alone is legal, and stress test 13 says why. The
+`source.file` grammar rejects a leading `/` or a drive letter, a backslash,
+`.` and `..` segments, and an empty segment. It also rejects a URL, and an
+encrypted path that is too short or leaves the base64url alphabet. It accepts
+spaces and dots inside a segment, so `docs/release notes/v1.2.md` is a file.
+Neither `lines` form has a line 0. `L2 >= L1` is the tool's rule, because a
+pattern cannot compare two numbers. The ladder pins that the schema accepts
+`"9-3"`, so nobody later "fixes" the regex into something unreadable.
+
+**Removed** in `1.0.0-proposal.3`: the top-level `src` and `integrity`, the
+entry `commit`, the page-level `citation-commit`, `claim` as a string, and the
+inline JSON entry. The page root still rejects any other `citation-*` key, so
+a typo fails loudly.
+
+**Why the claim is pinned in body lines.** The entry usually lives in the file
+it numbers. With file lines, adding a tag by hand or with `meta fill` would
+move every claim on the page. Two branches adding citations to one page would
+then conflict on every `lines:` value. Body lines never move for a frontmatter
+edit. What people see stays file lines: the command line
+(`cite add docs/limits.md:9`), every `(line N)`, and every report translate.
+Only someone reading the YAML sees the difference.
 
 **The hashing rule** is stated once here and once in the schema's `integrity`
-description, and nowhere else. Decode UTF-8. Strip one leading BOM. CRLF to
-LF. Split on LF. Drop the empty element a trailing LF leaves. Take lines L1
-to L2 inclusive, 1-based, or every line for a bare path. Join with LF, no
-trailing LF. Keep trailing whitespace. Plain `src`: `sha256(text)`.
-Encrypted `src`: HMAC-SHA256 of the text under the pin subkey 0045 derives
-from the family key. Hex, `sha256-` prefix. The
-goldens are verified with node and asserted by the drift ladder. Line 2 of
-the fixture is `78af1d33…fe4b1f`, and lines 1-3 are `d2981e71…bed1d6`. The
-whole file and lines 1-7 are both `aebba92f…86e023`, and the CRLF copy of
-line 2 hashes identically.
+description, and nowhere else. It is one rule for both ends. Decode UTF-8.
+Strip one leading BOM. CRLF to LF. Split on LF. Drop the empty element a
+trailing LF leaves. Take lines L1 to L2 inclusive, 1-based, or every line for
+a bare file. Join with LF, no trailing LF. Keep trailing whitespace. A plain
+`source.file`, and every `claim`: `sha256(text)`, prefixed `sha256-`. An
+encrypted `source.file`: HMAC-SHA256 of the text under the pin subkey 0045
+derives from the family key, prefixed `hmac-sha256-`. Hex either way. The
+prefix follows `file`, and any other pairing is `entry-invalid`. The goldens
+are verified with node and asserted by the drift ladder. Line 2 of the fixture
+is `78af1d33…fe4b1f`, and lines 1-3 are `d2981e71…bed1d6`. The whole file and
+lines 1-7 are both `aebba92f…86e023`, and the CRLF copy of line 2 hashes
+identically.
 
-**The encryption rule**: the path, spelled exactly as a plain `src` would
-spell it, encrypted under the family key in the `cite-src` context. 0045
-states the construction and the ciphertext format once, for every tool. The
-key comes from `MANNI_ENCRYPTION_KEY`, else a top-level `encryptionKey:` in
-the config. With no key, `add` writes no encrypted form, so stress test 22's
-empty-salt form is gone. The encryption is deterministic, so a public site
-reveals how often a private file is cited and when it moves. That is recorded
-as accepted: the alternative is a per-page context, which makes `update`
-unable to recognise one file across two pages.
+**The encryption rule**: `source.file` is an ordinary encrypted value. The
+path is spelled exactly as a plain path would be spelled, then encrypted under
+the family key in the `cite-src` context. The token format is the one 0045
+gives the family. `source.lines` stays readable beside it, so the ciphertext
+covers a whole value rather than half a string. 0045 states the construction and the
+format once, for every tool. The key comes from `MANNI_ENCRYPTION_KEY`, else a
+top-level `encryptionKey:` in the config. With no key, `add` writes no
+encrypted form, so stress test 22's empty-salt form is gone. `source.file`
+never carries `x-manni-encrypt`, or every plain source would fail
+`meta validate`. The encryption is deterministic, so a public site reveals how
+often a private file is cited and when it moves. That is recorded as accepted:
+the alternative is a per-page context, which makes `update` unable to
+recognise one file across two pages.
 
 **Why a pin is not a derivable fact.** Principle 4 of the family says a
 derivable fact lies, and a hash of lines that sit right there looks derivable.
@@ -169,64 +222,169 @@ compare against. The check *is* the comparison between the record and the
 present. That is the same object as `generated-assertion-hash` and the
 config's `integrity` pins, under the same spelling.
 
-## Inline statements
+## Markers
 
-One keyword, `cite`, two payloads, in the format's own comment syntax,
-mirroring Doc Detective's `fileTypes.ts`, which treats `.md` and `.mdx` alike:
+A marker names an entry by its id. One keyword, `cite`, one payload, in the
+format's own comment syntax, mirroring Doc Detective's `fileTypes.ts`, which
+treats `.md` and `.mdx` alike:
 
-| Format | Forms | Payload allowed |
-|---|---|---|
-| markdown, mdx | `<!-- cite PAYLOAD -->`, `{/* cite PAYLOAD */}`, `[comment]: # (cite PAYLOAD)` | id in all three; JSON only in the first two |
-| html, xml | `<!-- cite PAYLOAD -->` | id, JSON |
-| asciidoc | `// (cite PAYLOAD)` | id only |
-| rst | `.. (cite PAYLOAD)` (manni's own form; Doc Detective has none) | id only |
+| Format | Forms |
+|---|---|
+| markdown, mdx | `<!-- cite fetch-timeout -->`, `{/* cite fetch-timeout */}`, `[comment]: # (cite fetch-timeout)` |
+| html, xml | `<!-- cite fetch-timeout -->` |
+| asciidoc | `// (cite fetch-timeout)` |
+| rst | `.. (cite fetch-timeout)` (manni's own form; Doc Detective has none) |
 
-A payload starting with `{` is JSON: a full entry, validated against the same
-`citationEntry` the frontmatter uses, with `claim` optional because position
-is the anchor. Anything else must match the id grammar and is a *reference* to
-the frontmatter entry with that id. `cite true` is a reference to the id
-`true`, so it is `statement-orphan`, never JSON. Anything else is
-`statement-invalid`.
+The payload must match the id grammar. `cite true` names the id `true`, so it
+is `marker-orphan` when no entry has that id. A payload starting with `{` is
+`marker-invalid`, and its message says where the entry belongs:
+`A marker names an entry by id. Write the entry in frontmatter or the sidecar.`
+Anything else is `marker-invalid` too.
+
+The inline JSON entry is gone. An entry lives in frontmatter or in the
+sidecar, so a source is never written into the body. That is what lets a
+public page carry markers over a private code base with nothing to redact.
 
 The scanner is `indexOf` over the open and close delimiters, never a regex over
 the page, and it runs only over the body. `page.ts` slices from the end of the
 frontmatter and passes the offset and line, so a `cite` inside YAML is never
 matched.
 
-**Anchor**: the rest of the statement's line if non-blank, else the paragraph
+**Anchor**: the rest of the marker's line if non-blank, else the paragraph
 that follows, through the next blank line or fence. With `quote: true`, the
 next fenced block (```` ``` ```` or `~~~`; `----` in asciidoc). html, xml and
-rst have no fence locator in v1, and `quote` there is `statement-invalid`.
-Claims are matched whitespace-normalized against the paragraph, so a
-soft-wrapped sentence still matches; `add`, `check` and `update` share the one
-search.
+rst have no fence locator in v1, so a `quote` there never finds its block:
+`quote-drift` under a marker, `anchor-invalid` under claim lines. Text is
+matched whitespace-normalized against the paragraph, so a soft-wrapped
+sentence still matches; `add`, `check` and `update` share the one search.
 
-**Rules**: a reference naming no frontmatter id is `statement-orphan`. Two
-statements naming one id are `claim-ambiguous`. A frontmatter entry with a
-`claim` and a reference statement must find the claim in the anchored
-paragraph, else `claim-missing`. Caps: 500 statements per page and 5,000 lines
-per range; beyond those, `statement-invalid` and `entry-invalid`. Meta's
-`validate` sees only the frontmatter channel. cite validates inline payloads
-itself, with Ajv against a bundled copy of the draft entry schema, and this
-record is where that is said.
+**Rules**: a marker naming no entry is `marker-orphan`. Two markers naming one
+id are `marker-repeated`, and the first anchors. A marker moves with the text
+it anchors, so a marker-anchored claim is never `claim-moved`. When the
+entry's `claim` carries an `integrity`, the marker's text is pinned, and an
+edit to it is `claim-changed`. A marker and `claim.lines` on one entry are
+`anchor-invalid`: keep one. Caps: 500 markers per page and 5,000 lines per
+range; beyond those, `marker-invalid` and `entry-invalid`. Meta's `validate`
+sees the frontmatter channel, and the manifest channel through external
+metadata. cite validates the entries itself, with Ajv against a bundled copy
+of the draft entry schema, and this record is where that is said.
+
+## The sidecar: citations as external metadata
+
+An entry lives in the page's frontmatter, or in an external-metadata manifest
+(0037, 0041) the collection declares. There is no new config key. A collection
+that lists a manifest owning `citations` keeps its citations there:
+
+```yaml
+collections:
+  - name: site
+    paths: ["docs/**/*.{md,mdx}"]
+    externalMetadata:
+      - file: docs-citations.yaml   # relative to the config file; a local file, never a URL
+        keys: [citations]
+```
+
+The manifest is keyed by page path, or by a page field under `join:`:
+
+```yaml
+docs/limits.md:
+  citations:
+    - id: fetch-timeout
+      claim: { lines: 3, integrity: sha256-c41f09aa… }
+      source: { file: lib/limits.ts, lines: 2, integrity: sha256-78af1d33… }
+```
+
+**Reading.** `check`, `update`, `add` and `manni key rotate` read a page's
+citations from the manifest that owns them, through meta's existing merge.
+Which manifest owns a page is decided by every collection in the config,
+whatever `--collection` or the positional paths select. So a page checked by
+path still finds its sidecar. `--no-config` reads frontmatter only.
+
+**Writing.** `add`, `update` and `key rotate` edit the manifest in place. They
+splice only that page's `citations` value, so every other byte of the file is
+unchanged, and they read the file back to confirm it. `update` writes each
+manifest once per run. These are the first writers of a manifest; `meta fill`
+and `meta query` stay read-only.
+
+**Where findings sit.** A claim or marker finding sits on the page line, where
+a reviewer reads it. A finding about the entry itself sits on the manifest and
+the entry's own line. That covers `entry-invalid`, and a bare pin whose source
+changed. It needs meta's manifest loader to keep per-item lines, where today it
+keeps only the owned key's line. SARIF drops a location outside the repository,
+so a manifest outside it is reported on the page instead.
+
+**Refused, following meta's rules**, each exit 2:
+
+- A URL manifest that owns `citations`, since cite writes citations. It would
+  also put private paths into public CI output.
+- A page in two collections whose manifests both own `citations`.
+- Two pages sharing one `join:` value, which is meta's duplicate rule.
+- A manifest entry naming a page that is gone, such as after a `git mv`, which
+  is meta's orphan rule on a whole-collection run.
+- A page that still carries its own `citations:` while a manifest owns the key.
+  That is meta's `external:owned` in `validate`, and `entry-invalid` here.
+
+```
+manni: A page read from stdin has no path, and its citations live in docs-citations.yaml, which is keyed by path.
+manni: docs/limits.md is in collections site and api, and both keep citations in a manifest.
+manni: manni.config.yaml: collection site: citations cannot come from a URL manifest, because cite writes them.
+```
+
+**Public docs over private code.** The sidecar sits in the docs repository with
+`source.file` encrypted, as frontmatter does today. The public job runs
+`--no-check-sources`, and now also checks the claim ends, since those are
+page-side.
 
 ## The drift-check contract
 
-**Statuses and rules.** A citation is `current`, `moved` (one equal window
-elsewhere in the file), `moved-ambiguous` (two or more), or `changed` (no
-equal window). Or it is `never-true` (the range at `commit` does not hash to
-`integrity`, or the path was absent there). Or it is `missing` (no tracked
-file, or no key to decrypt an encrypted path), or `skipped`
-(`--no-check-sources` or `checkSources: false`; not a finding). The page-side
-rules are `claim-missing`, `claim-ambiguous`, `statement-orphan`,
-`statement-invalid`, `entry-invalid` and `quote-drift`. Every rule has a
-default severity: `current` is `off`, `moved` and `claim-ambiguous` are
-`warning`, everything else is `error`. Config can move any of them to
-`error`, `warning`, `notice` or `off`: the family scale, plus `off`. A warning
-or a notice never touches the exit code.
+**Statuses.** A citation has two ends, and each end carries a status.
+`current` and `skipped` are statuses, not rules, so neither appears in
+`severity:`. A source end is `skipped` when `--no-check-sources` or
+`checkSources: false` turned that check off, and a skip is not a finding. The
+claim end is page-side and runs either way. Every other status has a rule of
+its own.
 
-**Economics.** Two search regimes, and both are local. With git, a non-match
-with a `commit` costs one `git show` of the file at that commit, memoized per
+**Rules.** Fourteen, and `severity:` takes exactly these names:
+
+| Rule | Was | Default | Meaning |
+|---|---|---|---|
+| `source-moved` | `moved` | warning | The pinned source text is found once at other lines. `update` rewrites `source.lines`. |
+| `source-moved-ambiguous` | `moved-ambiguous` | error | Found at several places in the file. |
+| `source-changed` | `changed` | error | Not found, and the pin held at `commit-sha`. |
+| `source-never-true` | `never-true` | error | Not found, and it did not hold at `commit-sha` either. |
+| `source-missing` | `missing` | error | The file is gone, or does not decrypt under the current key. |
+| `claim-moved` | new | notice | The pinned page text is found verbatim at other lines, so nothing drifted. `update` rewrites `claim.lines`. |
+| `claim-moved-ambiguous` | new | warning | The pinned page text is found verbatim at several places. `update` skips it. |
+| `claim-changed` | replaces `claim-missing` | warning | The pinned page text is gone: the sentence was edited. `update --accept` re-pins it. |
+| `marker-orphan` | `statement-orphan` | error | A marker names an id no entry has. |
+| `marker-invalid` | `statement-invalid` | error | A malformed marker, including one carrying a JSON payload. |
+| `marker-repeated` | the second use of `claim-ambiguous` | warning | Two markers name one id; the first anchors it. |
+| `anchor-invalid` | new | error | The anchor cannot work. Three cases, below. |
+| `entry-invalid` | same | error | A schema failure, a pin prefix that does not match `file`, a duplicate id, or a page `citations:` a manifest owns. |
+| `quote-drift` | same | error | The quoted block no longer reproduces the source. |
+
+Config can move any rule to `error`, `warning`, `notice` or `off`: the family
+scale, plus `off`. A warning or a notice never touches the exit code.
+
+`anchor-invalid` has three reachable cases, and each names the entry:
+
+- `fetch-timeout has claim lines and a marker. Keep one.`
+- `fetch-timeout: quote needs a claim or a marker.`
+- `fetch-timeout: the quote's claim lines 14-18 are no longer a fenced block.`
+
+A fourth case was drafted, for claim lines that point into the frontmatter.
+Body-relative lines cannot, so it survives only as an `add` refusal.
+
+**`claim-changed` defaults to warning**, not error. It fires on any edit to a
+pinned paragraph, including a typo fix beside the cited sentence, and that
+would block prose work for nothing. A team that wants every edit to a cited
+sentence reviewed sets it to `error`. `claim-ambiguous` is gone: a pinned range
+cannot be ambiguous on the page it was taken from.
+
+**Economics.** Two search regimes, and both are local. The claim end costs no
+git at all: the page is right there, and its search is the move search over
+the body. With git, a non-match on the source end with a `commit-sha` costs
+one `git show` of the file at that commit, memoized per
 commit and path. The original text then drives the move search
 (candidate-by-first-line, then a lexical compare, then the hash). Without git,
 or without a commit, the search is a window of 2,000 lines either side of the
@@ -243,9 +401,11 @@ decrypted path. Diffs, commit subjects and decrypted paths live on
 fixture whose private path is `private/SECRET.ts`, and asserts that neither
 the path nor the key appears.
 
-**Repair is scoped by the finding.** `moved` is mechanical and `update`
-rewrites it. `changed` names the sentence, the range and, with history, the
-commits since, and a person decides whether the prose or the pin is wrong. A
+**Repair is scoped by the finding.** A move on either end is mechanical, and
+`update` rewrites `source.lines` or `claim.lines`. `source-changed` names the
+sentence, the range and, with history, the commits since, and a person decides
+whether the prose or the pin is wrong. `claim-changed` names what the page now
+says, and `update --accept` re-pins it. A
 `changed` finding that recurs is promotable by hand to an `ai` eval, whose
 assertion is the claim. That is where the family's model spend belongs, on the
 one sentence a zero-token check could not settle. The PR job runs
@@ -255,8 +415,10 @@ pre-commit hook: a pin can go stale in a commit that touches no page.
 **Identity.** `ruleId = "manni:cite/" + rule`. `manni:cite` matches
 `BUILTIN_ID`, so `canonicalSchemaRef` leaves it alone. The fingerprint inputs
 are `schema: "manni:cite"`, `keyword: rule`, `instancePath` (`/citations/N`
-for frontmatter, `""` for inline) and `subject: id ?? integrity`. Stress test
-19 is why the subject is the integrity and not the source.
+for an entry, `""` for a page-level finding) and
+`subject: id ?? source.integrity`. The claim's pin is never the subject, or
+accepting a claim would reopen every baselined finding on that citation.
+Stress test 19 is why the subject is the integrity and not the source.
 
 ## The tool
 
@@ -268,8 +430,8 @@ an eslint rule stops it reaching into `../meta/{core,extractors,reporters}`.
 | Command | Does | Exit |
 |---|---|---|
 | `check [paths...]` | classify every citation; report through `pretty`, `json`, `github`, `sarif`, `junit`; `--baseline` and `--write-baseline` as meta's, in `.manni-cite-baseline.json`; `--no-check-sources`, `--root <dir>`, `--show-diff`, `--reveal` | 0 clean, 1 an unbaselined error, 2 operational |
-| `add <page> <src>` | mint an entry at HEAD and write it. With `--claim` it anchors a sentence, with `--quote` a fenced block. With `--inline` it writes a JSON statement instead of a frontmatter entry. Whenever an encryption key is available it writes an encrypted path and a keyed pin. `--encrypt` asks for that form, and prompts for a key when none is available (0045). Also `--no-commit` and `--dry-run` | 0 written, 2 refusal |
-| `update [paths...]` | rewrite `moved` entries' `src` in place, textually, comments and quoting untouched; `--accept` re-mints `changed` and `never-true` at HEAD and prints both pins; `--only <id>`; `--dry-run` | 0, 1 when work is left undone, 2 under `--no-check-sources` |
+| `add <page>[:L\|:L1-L2] <src>` | mint an entry at HEAD and write it. The page lines are the claim, and `--marker` writes a marker above them instead. `--quote` says those lines are a fenced block reproducing the source. `--id <id>` names the entry, and is required with `--marker`. Whenever an encryption key is available it writes an encrypted `source.file` and a keyed pin. `--encrypt` asks for that form, and prompts for a key when none is available (0045). Also `--no-commit-sha` and `--dry-run` | 0 written, 2 refusal |
+| `update [paths...]` | rewrite moved entries in place on either end. The edit is textual, so comments and quoting survive. `--accept` re-pins a changed claim, and re-mints `source-changed` and `source-never-true` at HEAD, printing both pins. Also `--only <id>` and `--dry-run` | 0, 1 when work is left undone, 2 under `--no-check-sources` |
 
 Private sources are encrypted with the family's key, and its verbs are the
 family's too. `manni key set` writes it, and `manni key rotate` re-encrypts
@@ -287,10 +449,10 @@ test 24. `cite.salt` is refused with a message naming `manni key set`.
 
 | Key | Type | Default | Mirrors | Meaning |
 |---|---|---|---|---|
-| `root` | string | the git root, else cwd | `--root <dir>` | Where `src:` paths resolve from, relative to the config file. |
+| `root` | string | the git root, else cwd | `--root <dir>` | Where `source.file` paths resolve from, relative to the config file. |
 | `baseline` | string | none | `--baseline [path]` | The citation baseline. Setting it turns `--baseline` on. |
 | `checkSources` | boolean | `true` | `--no-check-sources` | Check citations against their sources. `false` runs the page-side rules only, every source status is `skipped`, and `update` refuses it. |
-| `severity` | map, rule to `error \| warning \| notice \| off` | the defaults above | none | Per-rule severity: the family scale, plus `off`. |
+| `severity` | map, one of the 14 rule names to `error \| warning \| notice \| off` | the defaults above | none | Per-rule severity: the family scale, plus `off`. |
 | `allowEmpty` | boolean | `false` | `--allow-empty` | As meta's. |
 | `respectGitignore` | boolean | `true` | `--no-gitignore` | As meta's. |
 
@@ -302,53 +464,78 @@ that names what is supported and never echoes the value. `--root` defaults to
 `cite.root` from the config, else the git root, else cwd, and may point at
 another checkout.
 
-The condensed ladder. The fixture page cites `lib/limits.ts:2`:
+The condensed ladder. A row is the claim end, then the source end, both in
+file lines, and then the manifest when one owns the entry. A pin prints
+abbreviated to eight hex characters, a commit to seven. The label is the
+entry's `id`, and empty when it has none:
 
 ```console
 $ manni cite check docs/limits.md
 ✓ docs/limits.md
-    ✓ fetch-timeout   lib/limits.ts:2   current
+    ✓ fetch-timeout   :9 current   lib/limits.ts:2 current
+    ✓                              lib/limits.ts current
 # exit 0
 
 $ manni cite check                                      # lib/limits.ts gained two lines above
 ⚠ docs/limits.md
-    ↕ fetch-timeout   lib/limits.ts:2   moved -> lib/limits.ts:4   (line 9)
+    ↕ fetch-timeout   :9 current   lib/limits.ts:2 moved -> lib/limits.ts:4
 # exit 0
 
 $ manni cite update
-docs/limits.md: fetch-timeout  lib/limits.ts:2 -> lib/limits.ts:4  (moved)
+docs/limits.md: fetch-timeout source lib/limits.ts:2 -> lib/limits.ts:4 (moved)
 # exit 0
 
 $ manni cite check --show-diff                          # the line itself changed
 ✗ docs/limits.md
-    ✗ fetch-timeout   lib/limits.ts:4   changed since 3f9c2a1, 1 commit   (line 9)
+    ✗ fetch-timeout   :9 current   lib/limits.ts:4 changed since 3f9c2a1, 1 commit
         raise fetch timeout to 30s
         -export const FETCH_TIMEOUT_MS = 10_000;
         +export const FETCH_TIMEOUT_MS = 30_000;
 # exit 1
 
-$ manni cite check -f github
-::error file=docs/limits.md,line=9,title=manni:cite/changed::fetch-timeout (lib/limits.ts:4): changed since 3f9c2a1, 1 commit
-# exit 1
+$ manni cite check                                      # and the sentence was edited
+⚠ docs/limits.md
+    ↕ fetch-timeout   :9 changed   lib/limits.ts:4 current
+# exit 0
 
-$ manni cite check --no-check-sources docs/             # public docs repo: page-side only
+$ manni cite check -f github
+::warning file=docs/limits.md,line=9,title=manni:cite/claim-changed::fetch-timeout: the claim at line 9 has changed since it was pinned
+# exit 0
+
+$ manni cite check --no-check-sources docs/             # public docs repo: claim ends and markers
 ✓ docs/limits.md
-    · fetch-timeout   ~AQm4…:2   skipped
+    ✓ fetch-timeout   :9 current   ~AQm4…:2 skipped
 # exit 0
 
 $ MANNI_ENCRYPTION_KEY=… manni cite check --root ../code --reveal docs/
 ✓ docs/limits.md
-    ✓ fetch-timeout   ~AQm4…:2 (lib/limits.ts)   current
+    ✓ fetch-timeout   :9 current   ~AQm4…:2 (lib/limits.ts) current
 # exit 0
 
-$ manni cite add docs/limits.md lib/limits.ts:2 --claim "The fetch timeout is 10 seconds." --id fetch-timeout
-docs/limits.md: added fetch-timeout (lib/limits.ts:2, sha256-78af1d33…, 3f9c2a1) to frontmatter; reference at line 8, claim at line 9
+$ manni cite add docs/limits.md:9 lib/limits.ts:2 --id fetch-timeout
+docs/limits.md: added fetch-timeout to frontmatter (claim at line 9, sha256-c41f09aa…; source lib/limits.ts:2, sha256-78af1d33…, 3f9c2a1)
 # exit 0
 
-$ manni cite add docs/limits.md lib/limits.ts:2 --claim "The fetch timeout is 9 seconds."
-manni: Claim not found in docs/limits.md: "The fetch timeout is 9 seconds.". Add the sentence first, or omit --claim.
+$ manni cite add docs/limits.md:30 lib/limits.ts:8-12 --id timeouts --marker
+docs/limits.md: added timeouts to frontmatter; marker at line 30, claim pinned at line 31
+# exit 0
+
+$ manni cite add docs/limits.md lib/limits.ts                       # a bare pin
+docs/limits.md: added a bare pin to frontmatter (source lib/limits.ts, sha256-aebba92f…, 3f9c2a1)
+# exit 0
+
+$ manni cite add docs/limits.md:2 lib/limits.ts:2
+manni: docs/limits.md:2 is in the frontmatter. A claim is body text.
+# exit 2
+
+$ manni cite add docs/limits.md:9 lib/limits.ts:2 --claim "The fetch timeout is 10 seconds."
+error: unknown option '--claim'
 # exit 2
 ```
+
+`--claim` and `--inline` are gone. The page lines replace the first, and
+entries no longer live in the body, so nothing needs the second. Where an
+entry is written, frontmatter or manifest, follows the config and not a flag.
 
 The two-repo layout, which is the reason encrypted sources exist:
 
@@ -357,6 +544,9 @@ The two-repo layout, which is the reason encrypted sources exist:
 collections:
   - name: site
     paths: ["src/content/docs/**/*.{md,mdx}"]
+    externalMetadata:
+      - file: docs-citations.yaml   # the entries; the pages carry nothing
+        keys: [citations]
 # no encryptionKey here: MANNI_ENCRYPTION_KEY supplies it, and a key turns
 # encryption on (stress tests 22 and 23; this example first carried
 # `cite: {obfuscate: true}`, then relied on MANNI_CITE_SALT)
@@ -366,7 +556,9 @@ collections:
 ```
 
 The pages stay where the docs are so SARIF URIs resolve; the sources are
-reached through `--root`.
+reached through `--root`. The public job is no longer page-side in name only.
+The claim ends live on the page, so `--no-check-sources` still catches a
+sentence edited out from under its citation.
 
 ## Stress test
 
@@ -730,14 +922,57 @@ and `--no-sources` becomes `--no-check-sources`. `update` refuses it with
 kept. A notice is reported and never fails a run. It is a `::notice` in GitHub
 output, SARIF level `note`, and never a JUnit failure.
 
+### 25. A copied claim, a keyed pin that read `sha256-`, and a page that carried it all
+
+Four fields said something other than what they held, and a fifth problem was
+where they all lived. Draft `1.0.0-proposal.3` closes the five together.
+
+- **The keyed pin lied about its algorithm.** An encrypted source was pinned
+  `sha256-`, and the value was an HMAC. A reader who hashed the line by hand
+  got a mismatch and no reason for it. The pin now reads `hmac-sha256-`, and
+  the prefix follows `file`. Either pairing the other way is `entry-invalid`.
+- **The ciphertext covered half a string.** `src: ~AQm4…:5` encrypted the path
+  and left the line number glued to it. That made a private source look like a
+  scheme of its own. `source.file` is now an ordinary value, encrypted in the
+  family's one token format, and `source.lines` sits readable beside it.
+- **`commit` did not say what it held.** It could be read as a hash, a ref or
+  an id. It is `source.commit-sha`, the name GitLab's `CI_COMMIT_SHA` and
+  GitHub's `sha` already use, and it accepts up to 64 hex digits.
+- **The claim was copied, not pinned.** `claim:` held the sentence verbatim, so
+  every cited sentence was written twice. A copy edit beside it was
+  `claim-missing`, and the repair was to retype the sentence in YAML. The claim
+  is now pinned exactly as the source is, by lines and an integrity hash. A
+  marker stays as the easier anchor for an author who prefers one.
+- **Every entry lived on the page.** A page with twenty citations carried a
+  hundred lines of YAML at the top, and a public page carried the ciphertexts
+  too. Entries may now live in an external-metadata manifest a collection
+  declares. Nothing on the page repeats the entry.
+
+The adversarial review moved two things. First, claim lines were going to be
+file lines, as a person counts them. The review showed three ways that breaks.
+A hand-added frontmatter tag moves every claim on the page. So does a
+`meta fill` run. And two branches adding citations to one page collide on
+every `lines:` value, in a file where the entry usually sits above the text it
+numbers. Second, the review proposed dropping cite's separate encryption
+context label. Its argument was that `source.file` is now an ordinary
+encrypted value and needs no special case. That was rejected. The label is
+what keeps a meta tool from re-encrypting a source without re-keying its pin.
+A rotation that did would leave every encrypted citation broken.
+
+**Changed as a result:** claim lines are body-relative, counted from the first
+line after the frontmatter. Every command argument, every `(line N)` and every
+report translates back to file lines. The context label stays, and stays
+internal: no user types it and no output shows it. The other four decisions
+stand as the review found them.
+
 ## Verification
 
 ```bash
-node docs/proposals/0044/ladders/citations-examples.cjs   # 36 cases + 35 regex probes, all OK, exit 0
-node docs/proposals/0044/ladders/drift-examples.cjs       # golden hashes asserted, 19 verdicts + 22 claim/statement cases, exit 0
+node docs/proposals/0044/ladders/citations-examples.cjs   # 52 cases + 31 regex probes, all OK, exit 0
+node docs/proposals/0044/ladders/drift-examples.cjs       # golden hashes asserted, 100 checks, exit 0
 npx vitest run test/cite                                  # unit suites agree with the ladders' fixtures
 node dist/cli.js cite check                                # the repo's own config; exit 0
-node dist/cli.js cite check --root test/fixtures/cite test/fixtures/cite/pages/stale-claim.md   # exit 1
+node dist/cli.js cite check --root test/fixtures/cite test/fixtures/cite/pages/source-changed.md   # exit 1
 node dist/cli.js meta validate                             # the dogfood gate; exit 0
 ```
 
@@ -746,26 +981,28 @@ runs once the three feature commits land.
 
 ## Placement
 
-`manni:citations:1.0.0-proposal.1` is intended as the tenth default when
+`manni:citations:1.0.0-proposal.3` is intended as the tenth default when
 0023's review concludes, on the same terms as the other nine. The family is the
 default set, and an entry that is malformed fails a bare run. Until then it is
 reachable by file ref only, and the site's proposals hub lists it as the tenth
 row.
 
-The draft lives under `docs/proposals/0044/schemas/`, not `0023/schemas/`.
+The drafts live under `docs/proposals/0044/schemas/`, not `0023/schemas/`.
 0023's "Do not" forbids growing its set, and that rule is right: 0023 records
 nine ids as reviewed, and this one has not been. The hub page and the README
-row say where to find it. When both proposals register, the two directories
-merge into `src/meta/schemas/` in the same PR.
+row say where to find them. `proposal.1` and `proposal.2` are kept beside
+`proposal.3`, since a draft that shipped is a record too. When both proposals
+register, the two directories merge into `src/meta/schemas/` in the same PR.
 
 ## Not breaking
 
 Additive. A new domain under the umbrella, a new config key, and a new draft
 vocabulary that nothing resolves by default. Also an optional `severity` on
 `FieldError` that every existing finding leaves unset. `feat(cite):`, a minor
-release, in three feature commits on one branch: the frontmatter channel with
-`check` and `add`; inline statements and `update`; private sources. 0045
-then moved private sources onto the family key. Each
+release, in feature commits on one branch: the frontmatter channel with
+`check` and `add`; the body channel and `update`; private sources. 0045
+then moved private sources onto the family key. The redesign in stress
+test 25 turned the body channel into markers and added the sidecar. Each
 commit carries its own tests and fixtures, so the branch reviews commit by
 commit and merges once. The same caveat as 0026: a shared `manni.config.yaml`
 that adopts `cite:` needs every consumer of that config on a manni that knows

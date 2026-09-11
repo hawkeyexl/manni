@@ -301,6 +301,10 @@ same exit code. Three uses share the one mechanism:
   public pages against it.
 - **Across repositories.** One repository's pages take keys from a manifest
   in another, by URL, public or private. See [Remote manifests](#remote-manifests).
+- **Citations.** A manifest that owns `citations` keeps a collection's
+  [citation entries](/manni/cite/reference/citations/#the-sidecar) out of the
+  pages. This is the one key a tool other than `meta` reads, and writes. See
+  [A manifest that owns citations](#a-manifest-that-owns-citations).
 
 [Keep metadata outside the document](/manni/meta/set-up/external-metadata/) is
 the journey, with a worked path for each; this section is the contract.
@@ -381,6 +385,57 @@ entry's line. From `test/fixtures/external-metadata/`:
 
 A [field-joined](#joining-by-a-field) manifest reports the same shapes with its
 own noun: `the manifest must be a mapping from document "id" to owned keys.`
+
+The loader keeps the line of each entry **and of each item inside it**, not
+only the line of the owned key. So a tool that finds a problem in the third
+citation of a page can report the line that citation sits on. `validate`'s own
+findings still sit on the owned key's line, because a schema judges the merged
+value as a whole.
+
+#### A manifest that owns citations
+
+`citations` is the one owned key another tool in the family reads, and the one
+a tool **writes**. A collection that declares a manifest owning it keeps its
+pages' citation entries there, and the pages carry none:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: site
+    paths: ["docs/**/*.{md,mdx}"]
+    externalMetadata:
+      - file: docs-citations.yaml
+        keys: [citations]
+```
+
+```yaml title="docs-citations.yaml"
+docs/limits.md:
+  citations:
+    - id: fetch-timeout
+      claim: { lines: 3, integrity: sha256-c41f09aa… }
+      source: { file: lib/limits.ts, lines: 2, integrity: sha256-78af1d33…, commit-sha: 3f9c2a1e… }
+```
+
+`manni cite check`, `add` and `update`, and `manni key rotate`, read a page's
+citations from the manifest that owns them, through the merge above. `add`,
+`update` and `key rotate` also write it, splicing only that page's `citations`
+value and reading the file back to confirm. `meta fill` and `meta query` stay
+read-only, on this key as on every other.
+
+Two rules are particular to this key:
+
+- **A URL manifest may not own `citations`.** It is a config error (exit 2),
+  because cite writes citations and a URL cannot be written. It would also put
+  private source paths into public CI output.
+- **A finding about a citation entry sits on the manifest.** It carries the
+  manifest's path and the entry's own line, which is what the per-item lines
+  above are for. A claim or marker finding still sits on the page. SARIF drops
+  a location outside the repository, so a manifest kept outside it is reported
+  on the page instead.
+
+A page that still carries its own `citations:` while a manifest owns the key
+is [`external:owned`](#finding-identity) in `validate`, and `entry-invalid` in
+`cite check`. The [citations reference](/manni/cite/reference/citations/#the-sidecar)
+has the entry shape and every refusal.
 
 #### Joining by a field
 

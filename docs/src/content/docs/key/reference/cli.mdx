@@ -99,9 +99,11 @@ Re-encrypt every encrypted value in the given pages, else the selected
 collections, under a new key. It finds values by their ciphertext, not through
 schema marks. Every string in a page's metadata that has the ciphertext shape
 and decrypts under the current key is re-encrypted. So is every encrypted
-citation `src`, with its keyed pin. Pages are re-encrypted in memory first, and
-nothing is written unless every value could be. See
-[how rotation finds values](#how-rotation-finds-values).
+citation's `source.file`, with its `hmac-sha256-` pin, wherever the entry
+sits. A page's frontmatter and a collection's citations manifest are both
+rewritten, and the manifest is spliced one page's `citations` value at a time.
+Pages are re-encrypted in memory first, and nothing is written unless every
+value could be. See [how rotation finds values](#how-rotation-finds-values).
 
 A whole run writes the new key to the config, beside the old one, before the
 first page. It removes the old one after the last. An interruption at any
@@ -164,8 +166,9 @@ stdin, because it writes the files it reads; `-` is refused.
 `rotate` resolves no schema. It reads each page's metadata and takes every
 string with the ciphertext shape, `~` and at least 82 base64url characters.
 Each one that decrypts under the current key is re-encrypted under the new one.
-So is every encrypted citation `src`, and the keyed pin over its cited lines is
-re-keyed with it.
+So is every encrypted citation's `source.file`, and the `hmac-sha256-` pin
+over its cited lines is re-keyed with it. Entries a citations manifest owns
+are found the same way, through the collection that declares it.
 
 The authentication tag proves a value was encrypted under the current key, so
 no schema has to say where the values are. A mark that lives in a `-s` schema,
@@ -274,8 +277,8 @@ It writes nothing at all, not a page and not the config, and its last line is
 
 ### The citation baseline
 
-A citation baseline fingerprints a citation that has no id by its pin, and a
-new key changes every pin. When a baseline exists, a run that wrote pages ends
+A citation baseline fingerprints a citation that has no id by its
+`source.integrity`, and a new key changes every keyed pin. When a baseline exists, a run that wrote pages ends
 with this line:
 
 ```
@@ -427,8 +430,8 @@ $ manni key rotate --to 0123456789abcdef0123456789abcdef --collection site --ext
 The ciphertexts above are shortened. In `pretty` output each one shows as `~`
 and its first four characters; `-f json` carries every one whole. A metadata
 value is named by its JSON pointer, `/owner`. A citation is named by its id,
-and keeps its line range after the ciphertext. A citation with no id is named
-by where it sits: `/citations/0` in the frontmatter list, or `line 12` inline.
-In JSON a citation row carries `kind: "citation"`, its `id`, `index` or `line`,
-and `from` and `to`; a skipped row carries `kind` and `message` in place of
-`from` and `to`.
+and keeps its `source.lines` after the ciphertext. A citation with no id is
+named by where it sits, `/citations/0`, and by the manifest when one owns it.
+In JSON a citation row carries `kind: "citation"`, its `id` or `index`, and
+`from` and `to`; a skipped row carries `kind` and `message` in place of `from`
+and `to`.

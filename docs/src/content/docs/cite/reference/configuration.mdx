@@ -36,6 +36,29 @@ A family file that declares `collections:` and no `cite:` section is still
 this tool's config: the documents are declared, and every cite key takes its
 default.
 
+### The citations manifest
+
+A collection may keep its pages' citations in a sidecar instead of in each
+page's frontmatter. There is no `cite:` key for it. The collection declares an
+`externalMetadata:` manifest that owns the `citations` key, and cite reads and
+writes that file:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: site
+    paths: ["docs/**/*.{md,mdx}"]
+    externalMetadata:
+      - file: docs-citations.yaml   # relative to the config file
+        keys: [citations]
+```
+
+Which manifest owns a page is decided by every collection in the file,
+whatever `--collection` or the positional paths select. So a page checked by
+path still finds its sidecar, and `--no-config` reads frontmatter only. A URL
+manifest that owns `citations` is refused (exit 2), because cite writes them.
+[The sidecar](/manni/cite/reference/citations/#the-sidecar) has the manifest
+shape and every refusal.
+
 `paths` and `exclude` are not `cite:` keys. Each is refused with an error
 that says where it went (exit 2):
 
@@ -50,9 +73,9 @@ manni.config.yaml: "exclude" is no longer a cite key. Document sets are declared
 |---|---|---|---|---|
 | `allowEmpty` | `boolean` | `false` | `--allow-empty` | Treat an input set that resolves to zero files as success instead of an error (exit 2). |
 | `respectGitignore` | `boolean` | `true` | `--no-gitignore` | Skip files `.gitignore` covers when expanding directories and globs. `--no-gitignore` overrides it for one run. |
-| `root` | `string` | git root | `--root` | The directory `src:` paths resolve from, relative to the config file. It may point outside the repository, at a second checkout. `--root` overrides it for one run. |
+| `root` | `string` | git root | `--root` | The directory `source.file` paths resolve from, relative to the config file. It may point outside the repository, at a second checkout. `--root` overrides it for one run. |
 | `baseline` | `string` | none | `--baseline` | Path to a [citation baseline](/manni/cite/reference/cli/#baselines), relative to the config file. Setting it turns on `--baseline` for every run; `--no-baseline` suppresses it for one. A bare `--write-baseline` records into this same file. |
-| `checkSources` | `boolean` | `true` | `--no-check-sources` | Check citations against their sources. `false` runs the page-side rules only and reports every source status as `skipped`, which is not a finding. `update` refuses it. `--no-check-sources` turns it off for one run. |
+| `checkSources` | `boolean` | `true` | `--no-check-sources` | Check citations against their sources. `false` runs the page-side rules only, including every claim end, and reports every source status as `skipped`, which is not a finding. `update` refuses it. `--no-check-sources` turns it off for one run. |
 | `severity` | mapping | the [defaults](#severity) | none | Per-rule severity: `error`, `warning`, `notice` or `off`. Only the rules named are changed. |
 
 The section must be a YAML mapping; an empty `cite:` is the same as no keys.
@@ -65,7 +88,7 @@ else.
 No key turns git on or off. The tool uses it whenever git is on `PATH` and the
 root is inside a work tree. Sources are then indexed by `git ls-files`, so
 only tracked files can be cited. `add` records `HEAD`, and history tells
-`changed` from `never-true`. Otherwise the sources are indexed by a directory
+`source-changed` from `source-never-true`. Otherwise the sources are indexed by a directory
 walk. A run that would have used git then warns once on stderr:
 
 ```
@@ -139,7 +162,7 @@ or `MANNI_ENCRYPTION_KEY`, which wins over it. With a key available, `add`
 encrypts every source it writes, and `check` decrypts each one to check it.
 The [configuration reference](/manni/meta/reference/configuration/#encryption-key)
 has the key itself, and [`manni key`](/manni/key/) sets and rotates it.
-Rotation re-encrypts every citation's source and re-keys its pin with it.
+Rotation re-encrypts every `source.file` and re-keys its pin with it, in frontmatter and in a citations manifest alike.
 
 ## Example
 
@@ -156,7 +179,7 @@ collections:
     paths: ["src/content/docs/**/*.{md,mdx}"]
 cite:
   severity:
-    moved: error          # this repo wants a moved pin to block, not warn
+    source-moved: error   # this repo wants a moved pin to block, not warn
 ```
 
 ```sh
@@ -187,26 +210,32 @@ counts toward exit 1. `warning` and `notice` are reported and never move the
 exit code. `off` is not reported at all. The rules themselves are defined on the
 [citations reference](/manni/cite/reference/citations/#statuses-and-rules).
 
+`severity:` takes exactly these fourteen names. `current` and `skipped` are
+statuses, per end, and neither is a rule, so neither can be named here.
+
 | Rule | Default | Why |
 |---|---|---|
-| `current` | `off` | Not a finding. `pretty` still lists the citation as `✓`. |
-| `moved` | `warning` | `update` fixes it mechanically, and a PR job that failed on a two-line insert above a cited line would make the ratchet noisy. |
-| `claim-ambiguous` | `warning` | The claim was found; the tool only cannot say which occurrence. |
-| `moved-ambiguous` | `error` | Two or more copies of the cited lines; the tool will not guess. |
-| `changed` | `error` | The lines the sentence rests on are gone from where they were. |
-| `missing` | `error` | The path is not a tracked file under the root, or the token resolves to nothing. |
-| `never-true` | `error` | The pin did not match even at the commit it claims to have been minted at. |
-| `claim-missing` | `error` | The sentence is not in the body. |
-| `statement-orphan` | `error` | An inline reference names an id no frontmatter entry has. |
-| `statement-invalid` | `error` | A statement the tool cannot read, or one that its format does not allow. |
-| `entry-invalid` | `error` | A frontmatter entry the schema refuses, or a duplicate id. |
+| `source-moved` | `warning` | `update` fixes it mechanically, and a PR job that failed on a two-line insert above a cited line would make the ratchet noisy. |
+| `source-moved-ambiguous` | `error` | Two or more copies of the cited lines; the tool will not guess. |
+| `source-changed` | `error` | The lines the sentence rests on are gone from where they were. |
+| `source-never-true` | `error` | The pin did not match even at the commit it records. |
+| `source-missing` | `error` | The path is not a tracked file under the root, or the ciphertext resolves to nothing. |
+| `claim-moved` | `notice` | The pinned page text is found verbatim elsewhere, so nothing drifted. `update` rewrites the lines. |
+| `claim-moved-ambiguous` | `warning` | The pinned text sits in more than one place, and the tool will not guess. |
+| `claim-changed` | `warning` | It fires on any edit to a pinned paragraph, a typo fix beside the cited sentence included. Set it to `error` to have every such edit reviewed. |
+| `marker-orphan` | `error` | A marker names an id no entry has. |
+| `marker-invalid` | `error` | A marker the tool cannot read, including one carrying JSON. |
+| `marker-repeated` | `warning` | Two markers name one id; the first anchors it. |
+| `anchor-invalid` | `error` | The anchor cannot work, so neither end can be judged. |
+| `entry-invalid` | `error` | An entry the schema refuses, a duplicate id, or a pin prefix that does not match the source. |
 | `quote-drift` | `error` | The fenced block does not reproduce the cited lines. |
 
 ```yaml title="manni.config.yaml"
 cite:
   severity:
-    moved: error              # a moved pin blocks until update runs
-    claim-ambiguous: notice   # reported, never fails a run
+    source-moved: error       # a moved pin blocks until update runs
+    claim-changed: error      # every edit to a cited sentence gets reviewed
+    marker-repeated: off      # not reported at all
 ```
 
 A rule set to `off` produces no finding in any format and never enters a

@@ -27,32 +27,35 @@ rests on.
 | `1` | At least one finding is an error and not in the baseline. |
 | `2` | The check could not run. No inputs and no config, an unknown format, a bad flag. The message goes to stderr, prefixed `manni:`. |
 
-**Warnings never fail the job.** `moved` and `claim-ambiguous` are warnings by
-default, because a page that says something true should not go red when
-someone adds a comment above the cited line. The summary counts them
-separately:
+**Warnings and notices never fail the job.** `source-moved` and
+`claim-changed` are warnings by default, and `claim-moved` is a notice. A page
+that says something true should not go red for a comment added above the cited
+line. Nor for a typo fixed beside the sentence. The summary counts each apart:
 
 ```
-1 file checked, 1 passed, 0 failed, 1 finding (1 warning)
+1 file checked, 1 passed, 0 failed, 2 findings (1 warning) (1 notice)
 ```
 
 Every other rule is an error by default. The `severity:` map under `cite:` in
-`manni.config.yaml` can move any rule to `error`, `warning`, `notice` or `off`.
-A notice is reported one level below a warning, and never fails the job
-either. See the [configuration reference](/manni/cite/reference/configuration/).
+`manni.config.yaml` can move any of the fourteen rules to `error`, `warning`,
+`notice` or `off`. See the
+[configuration reference](/manni/cite/reference/configuration/#severity).
 
 **`-f github` produces inline annotations.** One workflow command per finding,
 pinned to the page and the line of the sentence, with the rule id as the
 title. An error and a warning look like this:
 
 ```
-::error file=docs/limits.md,line=13,title=manni%3Acite/changed::fetch-timeout (lib/limits.ts:2): changed since 9265563, 1 commit
-::warning file=docs/limits.md,line=13,title=manni%3Acite/moved::fetch-timeout (lib/limits.ts:2): moved -> lib/limits.ts:4
+::error file=docs/limits.md,line=13,title=manni%3Acite/source-changed::fetch-timeout (lib/limits.ts:2): changed since 9265563, 1 commit
+::warning file=docs/limits.md,line=13,title=manni%3Acite/claim-changed::fetch-timeout: the claim at line 13 has changed since it was pinned.
 ```
 
 GitHub renders each as an annotation on the pull request diff, so a reviewer
-sees which sentence went stale without opening the log. The message names the
-citation by `id`, then its source as the page spelled it, then the status.
+sees which sentence went stale without opening the log. A source finding names
+the citation by `id`, then its source as the entry spelled it, then the status.
+A claim, marker or anchor finding is already a sentence about the entry, so it
+is annotated as it stands. A finding about an entry a sidecar owns is
+annotated on the manifest.
 
 ## Output formats
 
@@ -60,8 +63,8 @@ citation by `id`, then its source as the page spelled it, then the status.
 | --- | --- | --- |
 | `pretty` | People, and local runs. The default. | One line per citation under its page; a summary line. `-q` hides current citations and clean pages. |
 | `github` | GitHub Actions annotations. | `::error` / `::warning` / `::notice` workflow commands, one per finding, `title=manni:cite/<rule>`. |
-| `json` | Scripts and dashboards. | `summary` plus `pages[]`, each with every citation's status and every finding's `rule`, `ruleId`, `severity`, `message` and `line`. Under `--no-check-sources`, source statuses are `skipped` and appear here only. |
-| `sarif` | GitHub code scanning and any SARIF consumer. | One result per finding with `ruleId: manni:cite/<rule>`, `level`, the page as `artifactLocation.uri`, `region.startLine`, and a fingerprint stable across a move. |
+| `json` | Scripts and dashboards. | `summary` plus `pages[]`, each with every citation's `claim` and `source` ends, its `origin` and `anchor`, and every finding's `rule`, `ruleId`, `severity`, `message` and `line`. Under `--no-check-sources`, source statuses are `skipped` and appear here only. |
+| `sarif` | GitHub code scanning and any SARIF consumer. | One result per finding with `ruleId: manni:cite/<rule>`, `level`, the page as `artifactLocation.uri`, `region.startLine`, and a fingerprint stable across a move. Code scanning drops a location outside the repository, so a manifest that sits outside it is reported on the page. |
 | `junit` | The CI "Tests" tab. | One `testcase` per page, classname `manni.cite`, a `failure` per error with `type` set to the rule id. |
 
 `update` takes `pretty` or `json` only. The [CLI reference](/manni/cite/reference/cli/)
@@ -81,18 +84,19 @@ why that matters.
 
 `actions/checkout` fetches one commit by default. A citation records the
 commit its pin was minted at, and two of the check's answers need the file as
-it was then. `never-true` is the finding that the pin never matched at that
-commit, and the diff under `--show-diff` runs from that commit to HEAD. On a
-shallow clone neither is possible, and the check degrades honestly rather than
-guessing:
+it was then. `source-never-true` is the finding that the pin never matched at
+that commit, and the diff under `--show-diff` runs from that commit to HEAD.
+On a shallow clone neither is possible, and the check degrades honestly rather
+than guessing:
 
 ```
 manni: commit 9265563 not found in history; use fetch-depth: 0 to enable never-true and diffs
 ✗ docs/limits.md
-    ✗ fetch-timeout   lib/limits.ts:2   changed (history unavailable: commit 9265563 not found; fetch-depth: 0)   (line 13)
+    ✗ fetch-timeout   :13 current   lib/limits.ts:2 changed (history unavailable: commit 9265563 not found; fetch-depth: 0)
 ```
 
-The status is still `changed`, still an error, so the gate holds. What is lost
+The status is still `source-changed`, still an error, so the gate holds. The
+claim end needs no history, so it is judged either way. What is lost
 is the distinction between a line that changed since and a pin that was
 wrong from the start. Set `fetch-depth: 0` on the checkout that holds the
 sources and both come back.
@@ -150,8 +154,8 @@ an unpacked archive.
    locally and in CI.
 
 3. **Commit and push.** On the next pull request the job runs. A clean run
-   passes, a `moved` warns without failing, and a `changed` fails the job and
-   annotates the sentence.
+   passes, a moved end warns or notices without failing, and a changed source
+   fails the job and annotates the sentence.
 
 </Steps>
 
@@ -218,8 +222,9 @@ tools cannot erase each other's backlog.
 
 4. **Burn the backlog down.** Each `update` or `update --accept` that resolves
    a finding removes it from the picture. A fingerprint is made of the rule and
-   the entry's `id` (or its `integrity` when it has none). So a baselined
-   finding survives a `moved` rewrite. It disappears only when the pin is
+   the entry's `id` (or its `source.integrity` when it has none). So a
+   baselined finding survives a move on either end, and accepting a changed
+   claim never reopens one. It disappears only when the source pin is
    re-minted, which is the act that resolves it. Regenerate the file with
    `--write-baseline` whenever it is convenient; it only ever shrinks.
    One exception: `manni key rotate` re-keys the pin of every encrypted
@@ -239,11 +244,12 @@ tools cannot erase each other's backlog.
 ## Public docs, private code
 
 When the pages are public and the sources are not, the check splits into two
-jobs. A public one runs `--no-check-sources` and needs no secret. A private one
-checks the code out beside the docs and runs with `--root ../code`. It reads
-the family encryption key from a secret, `MANNI_ENCRYPTION_KEY`. The layout,
-the encrypted source, and what a reader of the public site can still see are
-on their own page.
+jobs. A public one runs `--no-check-sources` and needs no secret, and it still
+checks every claim end, because the claim is page-side. A private one checks
+the code out beside the docs and runs with `--root ../code`. It reads the
+family encryption key from a secret, `MANNI_ENCRYPTION_KEY`. The layout, the
+encrypted source, the sidecar manifest, and what a reader of the public site
+can still see are on their own page.
 
 <LinkCard
   title="Public docs, private code"
@@ -257,10 +263,12 @@ Open a pull request that changes a cited line in a source file. Then check
 that:
 
 - The job is red, and the changed sentence carries an inline annotation
-  titled `manni:cite/changed`.
+  titled `manni:cite/source-changed`.
 - A pull request that only adds lines above a cited one leaves the job green
-  with a `manni:cite/moved` warning.
-- Running `manni cite update` in that branch clears the warning.
+  with a `manni:cite/source-moved` warning.
+- One that only adds a paragraph above a cited sentence leaves it green with a
+  `manni:cite/claim-moved` notice.
+- Running `manni cite update` in that branch clears both.
 
 To see the same lines locally, run with `-f github` from your shell; drop the
 flag for the readable report.
@@ -284,7 +292,8 @@ flag for the readable report.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"cite-ci","description":"The properties the CI integration rests on, run against the local CLI build and committed fixtures."} */}
 {/* step {"description":"A clean page exits 0 so the job stays green.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/current.md -f github","exitCodes":[0]}} */}
-{/* step {"description":"A changed citation exits 1 and emits an ::error workflow command titled with the rule id, pinned to the sentence line.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/stale-claim.md -f github","exitCodes":[1],"stdio":"/::error file=.*line=9,title=manni%3Acite\\/changed::/"}} */}
-{/* step {"description":"A moved citation is a ::warning and exits 0: warnings never fail the job.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/moved.md -f github","exitCodes":[0],"stdio":"/::warning file=.*title=manni%3Acite\\/moved::/"}} */}
+{/* step {"description":"A changed source exits 1 and emits an ::error workflow command titled with the rule id, pinned to the sentence line.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/source-changed.md -f github","exitCodes":[1],"stdio":"/::error file=.*line=15,title=manni%3Acite\\/source-changed::/"}} */}
+{/* step {"description":"A moved source is a ::warning and exits 0: warnings never fail the job.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/moved.md -f github","exitCodes":[0],"stdio":"/::warning file=.*title=manni%3Acite\\/source-moved::/"}} */}
+{/* step {"description":"A moved claim is a ::notice and exits 0: a notice never fails the job either.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/claim-moved.md -f github","exitCodes":[0],"stdio":"/::notice file=.*title=manni%3Acite\\/claim-moved::/"}} */}
 {/* step {"description":"An operational error (no inputs, no config) exits 2, distinct from a finding.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config","exitCodes":[2],"stdio":"No files to check"}} */}
 {/* test end */}

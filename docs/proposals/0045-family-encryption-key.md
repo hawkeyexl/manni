@@ -37,7 +37,7 @@
   `src/meta/commands/{validate,fill,query}.ts`, `src/meta/reporters/**`,
   `src/cite/**`, `src/cli.ts`, `src/index.ts`,
   `scripts/check-cli-reference.mjs`,
-  `docs/proposals/0044/schemas/citations/1.0.0-proposal.2.json` (new),
+  `docs/proposals/0044/schemas/citations/1.0.0-proposal.{2,3}.json` (new),
   `docs/src/content/docs/key/**` (new),
   `docs/src/content/docs/meta/reference/{configuration,schema-resolution,output-and-exit-codes,query,api}.mdx`,
   `docs/src/content/docs/meta/schemas/index.mdx`,
@@ -170,6 +170,10 @@ owner: ~AQx7Vb2…(82 characters)
   object is encrypted as one ciphertext. The plaintext is JSON before
   encryption. An encrypted `number`, `boolean` or `array` decrypts to its real
   type and is validated as that.
+- **Not on a citation.** `source.file` is an encrypted value, and the
+  citations vocabulary still never marks it. Encryption there is cite's
+  decision, taken per source and per repository, so a mark would make every
+  plain source fail `meta validate`. The `fileRef` description says so.
 
 ### What `meta validate` does with a marked property
 
@@ -209,14 +213,20 @@ The output reference documents them beside `external:owned/external`.
 - **External metadata joins (0039).** A marked `join:` field is decrypted
   before matching when the key is available. With no key the run refuses,
   exit 2 (stress test 10).
-- **`cite add`** encrypts every source it writes whenever a key is available.
-  `--obfuscate` becomes `--encrypt`, which asks for the encrypted form and
-  prompts for a key when none is available.
-- **`cite check`** decrypts an encrypted `src` and checks the path against the
-  tracked files. With an encrypted citation and no key it stays fail-closed.
-  The citation is `missing (no encryption key is available to decrypt it)`, an
-  error, unless `--no-check-sources` skips it. `--reveal` prints the decrypted path,
-  as it printed the resolved one before.
+- **`cite add`** encrypts every `source.file` it writes whenever a key is
+  available. `--obfuscate` becomes `--encrypt`, which asks for the encrypted
+  form and prompts for a key when none is available.
+- **`cite check`** decrypts an encrypted `source.file` and checks the path
+  against the tracked files. With an encrypted citation and no key it stays
+  fail-closed. The citation is
+  `missing (no encryption key is available to decrypt it)`, an error, unless
+  `--no-check-sources` skips it. `--reveal` prints the decrypted path, as it
+  printed the resolved one before.
+- **`manni key rotate`** re-encrypts `source.file` and re-keys the pin over it,
+  wherever the entry lives. That is the page's frontmatter, and the citation
+  manifests a collection declares (0037, 0041). A manifest is spliced in place,
+  one page's `citations` value at a time, so a rotation leaves every other byte
+  of it alone.
 
 ### When a write needs a key and none is available
 
@@ -390,8 +400,10 @@ manni: Unknown --format "sarif". Use pretty or json.
 
 `rotate` finds values by their ciphertext, not through schema marks. Every
 string in a page's metadata that has the ciphertext shape and decrypts under
-the current key is re-encrypted. So is every encrypted citation `src`, and its
-keyed pin is re-keyed from the cited lines. That is why `rotate` takes `--root`,
+the current key is re-encrypted. So is every encrypted `source.file`, and the
+`hmac-sha256-` pin over it is re-keyed from the cited lines. It reaches them
+wherever the entry lives, in the page's frontmatter and in a citation manifest
+alike. That is why `rotate` takes `--root`,
 and uses git as `cite check` does, whenever it is available. The authentication
 tag proves a value is ours, so no schema has to be resolved. A mark from a `-s` schema or an unreachable remote cannot hide
 a value from rotation (stress test 5).
@@ -434,16 +446,24 @@ test 7).
   valid ciphertext is canonical, and one edited by hand never decrypts.
 - **The property name is not bound.** A value moved between fields stays
   readable, and joins across fields work.
-- **The keyed pin.** A citation pin over an encrypted source is `sha256-` and
-  the hex HMAC-SHA256 of the cited text under the pin subkey. It can be
-  compared, and it cannot be reversed.
+- **The keyed pin.** A citation pin over an encrypted source is `hmac-sha256-`
+  and the hex HMAC-SHA256 of the cited text under the pin subkey. It can be
+  compared, and it cannot be reversed. The prefix says which it is, so a reader
+  who hashes the line by hand learns why the two do not match. A plain source
+  keeps `sha256-`, and either pairing the other way is an invalid entry.
 - **Why SIV-style on GCM.** A deterministic scheme wants a SIV mode, and Node
   has none: `aes-256-gcm-siv` and `aes-*-siv` are unknown ciphers in Node 24.
   Deriving the nonce from the plaintext, and checking it on decryption, gives
   the same property on AES-256-GCM. It needs `node:crypto` only, and no
   dependency.
 - **One format for the family.** Meta values and cite paths encrypt the same
-  way, under different contexts, so rotation has one rule.
+  way, under different contexts, so rotation has one rule. A citation's
+  `source.file` is a whole value in that format, not a path glued to a line
+  number. `source.lines` stays readable beside it.
+- **One context stays apart.** `cite-src` is separate from `meta` on purpose,
+  and it is internal: no user types it and no output shows it. It is what
+  stops a meta tool from re-encrypting a source without also re-keying the pin
+  over it. A rotation that did would leave every encrypted citation broken.
 
 **What equality leaks.** Equal plaintexts give equal ciphertexts, which is what
 a join needs. On a small enum, one publicly known page reveals every page with
@@ -781,8 +801,10 @@ End to end, in a temp repository, with a schema that marks `owner` and
 - **cite and `manni key` are unreleased.** `cite.salt`, `MANNI_CITE_SALT`,
   `manni cite salt set|rotate`, `--obfuscate` and the `~<16 hex>` form never
   reached npm. They go without aliases. `cite.salt` is refused with a message
-  naming `manni key set`, as 0041 refuses a moved key. The citations draft
-  `1.0.0-proposal.1` is kept beside the new `1.0.0-proposal.2`.
+  naming `manni key set`, as 0041 refuses a moved key. The citations drafts
+  `1.0.0-proposal.1` and `1.0.0-proposal.2` are kept beside the shipped
+  `1.0.0-proposal.3`, which is where the `hmac-sha256-` prefix and the whole
+  encrypted `source.file` live.
 - **meta gains an opt-in keyword and a top-level key.** A schema without
   `x-manni-encrypt` validates exactly as before. A config without
   `encryptionKey:` reads exactly as before. No existing page holds a
@@ -810,8 +832,10 @@ End to end, in a temp repository, with a schema that marks `owner` and
   encryption and link to the family key.
 - 0044 was unmerged and written in this PR, so its salt and obfuscation
   sections were edited to match what ships. Its stress tests 16 and 22 stay as
-  written, and its stress test 23 records the change. No reader relied on the
-  unmerged text, so this is not the amendment CLAUDE.md forbids.
+  written, and its stress test 23 records the change. The later redesign of
+  the entry did the same: the sections match what ships, and 0044's stress
+  test 25 records it. No reader relied on the unmerged text, so neither is the
+  amendment CLAUDE.md forbids.
 - CLAUDE.md's grammar paragraph gains the family-resource domain, and its
   key-layers list gains `src/key/` and `src/cite/`.
 - The `feat` ships a demo video. A page with a plain `owner` fails, `meta fill`

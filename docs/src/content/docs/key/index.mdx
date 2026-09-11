@@ -55,9 +55,11 @@ keyword's rules.
 
 **Private source paths in public docs.** A sentence on a public page can cite a
 line in a private repository. With a key available, `manni cite add` encrypts
-the source path, so the page carries a ciphertext where the path would be. The
-public CI job checks the page without the sources. The private job has the key,
-decrypts each path, and checks the cited lines. The
+`source.file`, so the entry carries a ciphertext where the path would be, and
+its pin reads `hmac-sha256-`. The entry may sit in the page's frontmatter or
+in a citations manifest, and the key covers both. The public CI job checks the
+pages without the sources. The private job has the key, decrypts each path,
+and checks the cited lines. The
 [cite CLI reference](/manni/cite/reference/cli/) has the flags.
 
 ## Two commands
@@ -65,7 +67,7 @@ decrypts each path, and checks the cited lines. The
 | Command | Does |
 | --- | --- |
 | `manni key set [value]` | Writes `encryptionKey:` to `manni.config.yaml`, and creates the file when there is none. Without a value it generates 64 random hex characters, 256 bits. It never prints the key. |
-| `manni key rotate [paths...]` | Re-encrypts every encrypted value under a new key, then writes the new key. Nothing is written unless every value re-encrypts, and a run cut off part of the way finishes when you run it again. |
+| `manni key rotate [paths...]` | Re-encrypts every encrypted value under a new key, in pages and in citation manifests alike, then writes the new key. Nothing is written unless every value re-encrypts, and a run cut off part of the way finishes when you run it again. |
 
 There is no default subcommand. `manni key` alone prints usage and exits `2`.
 

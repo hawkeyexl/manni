@@ -1,6 +1,6 @@
 ---
 title: Public docs, private code
-description: Cite a private code repository from a public docs site without publishing its paths, and without publishing a verifier for its lines. The two-repo layout, the encrypted source, the family encryption key, and what still shows.
+description: Cite a private code repository from a public docs site without publishing its paths, and without publishing a verifier for its lines. The two-repo layout, the encrypted source, the sidecar manifest, the family encryption key, and what still shows.
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -12,10 +12,12 @@ the private repository. The other is a hash that lets anyone with a guess
 about a short line confirm it. This page is the layout that avoids both, and
 an honest account of what a reader of the public site can still see.
 
-The mechanism has three parts. An **encrypted source** stands in for the path.
-A **keyed pin** replaces the plain hash. And **two CI jobs** split the check.
-The public one runs the rules that need only the page. The private one has the
-key and the code, and runs the rules that need the source.
+The mechanism has four parts. An **encrypted source** stands in for the path.
+A **keyed pin** replaces the plain hash. A **sidecar manifest** keeps the
+entries off the pages entirely. And **two CI jobs** split the check. The
+public one runs the rules that need only the page, and that now includes every
+claim end. The private one has the key and the code, and runs the rules that
+need the source.
 
 ## What an encrypted source is, and is not
 
@@ -27,17 +29,23 @@ per run:
 ```yaml
 citations:
   - id: retries
-    claim: Retries default to 3.
-    src: ~AQm4…:5
-    integrity: sha256-a69810da77ae49d08f3c2d2f03424c245d90e3edaa6dc5c1918eeb3f37edcc95
-    commit: 9721b1b1ecd73447b91d7ff10b4c4f8e6639cbc0
+    claim:
+      lines: 12
+      integrity: sha256-3049e93e72873542aac2c1c4778fa655e70656f03c08f202444062f404a3315d
+    source:
+      file: ~AQm4…
+      lines: 5
+      integrity: hmac-sha256-a69810da77ae49d08f3c2d2f03424c245d90e3edaa6dc5c1918eeb3f37edcc95
+      commit-sha: 9721b1b1ecd73447b91d7ff10b4c4f8e6639cbc0
 ```
 
 The real ciphertext is `~` and at least 82 base64url characters, shortened
-here and below. It is the path, spelled exactly as a plain `src` would spell
-it, encrypted under the key. The line suffix follows it in plain text. The pin
-is keyed too. It is an HMAC of the cited lines under a key derived from the
-encryption key, rather than `sha256(text)`.
+here and below. It is the path, encrypted under the key, in the same token
+format a `manni meta` value uses. `source.lines` sits beside it in plain text.
+The pin is keyed too, and says so: `hmac-sha256-` is an HMAC of the cited
+lines under a key derived from the encryption key, rather than `sha256(text)`.
+A reader who hashes a guess at the line by hand learns from the prefix why it
+does not match.
 [Proposal 0045](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0045-family-encryption-key.md)
 states the construction.
 
@@ -74,11 +82,11 @@ the entry, and the rest of the entry is plain text:
 | Field | Visible on the public page | So |
 | --- | --- | --- |
 | `id` | Yes, in full | An id names the claim, and `fetch-timeout` says what a ciphertext cannot. Choose ids you would put in a public heading. |
-| `claim` | Yes, in full | The claim is the sentence on the page, which is public anyway. |
-| `commit` | Yes, in full | A commit hash reveals nothing about the repository's contents, but it does let a reader with access line it up with history. |
-| Line numbers | Yes | `~AQm4…:5` says line 5. Combined with a stable ciphertext, that is how a reader sees a file move. |
-| `src` path | No | The ciphertext, and only the ciphertext. |
-| `integrity` | Keyed | A reader cannot hash a guess at the line and compare, because the pin is an HMAC under the key. |
+| `claim` | Yes, as lines and a plain hash | The claim's lines and pin are over the page, which is public anyway. |
+| `source.commit-sha` | Yes, in full | A commit hash reveals nothing about the repository's contents, but it does let a reader with access line it up with history. |
+| `source.lines` | Yes | `~AQm4…` with `lines: 5` says line 5. Combined with a stable ciphertext, that is how a reader sees a file move. |
+| `source.file` | No | The ciphertext, and only the ciphertext. |
+| `source.integrity` | Keyed | A reader cannot hash a guess at the line and compare, because the pin is an HMAC under the key. |
 
 **Keep the key out of public files.** It belongs in a CI secret and in the
 environment of anyone minting citations. A key committed to the public
@@ -99,10 +107,10 @@ would never be read.
 key does not decrypt under another. A key changed by hand leaves every
 encrypted citation `missing (does not decrypt under the current key)`.
 [`manni key rotate`](/manni/key/reference/cli/#key-rotate) re-encrypts every
-encrypted citation and re-keys its pin. The same run re-encrypts every
-encrypted metadata value, so the whole family moves to the new key together.
-Run it from the docs checkout with the code beside it, because each pin is
-re-keyed from the cited lines.
+`source.file` and re-keys its pin, in a page's frontmatter and in a citations
+manifest alike. The same run re-encrypts every encrypted metadata value, so
+the whole family moves to the new key together. Run it from the docs checkout
+with the code beside it, because each pin is re-keyed from the cited lines.
 
 Here the key comes from `MANNI_ENCRYPTION_KEY`, so it rotates through the
 environment. `--to` is required, and the config is never written, so the
@@ -146,15 +154,27 @@ and the check runs from the docs checkout.
 <Steps>
 
 1. **Configure the docs repository.** This file is public, so it carries no
-   key. The pages are a collection, which every manni tool reads. The key
-   lives in the environment, and a key in the environment turns encryption
-   on, so nobody has to remember a flag:
+   key. The pages are a collection, which every manni tool reads. The
+   collection also declares a manifest that owns `citations`, so no page
+   carries a line of citation YAML. The key lives in the environment, and a
+   key in the environment turns encryption on, so nobody has to remember a
+   flag:
 
    ```yaml title="manni.config.yaml (public docs repo)"
    collections:
      - name: site
        paths: ["src/content/docs/**/*.{md,mdx}"]
+       externalMetadata:
+         - file: docs-citations.yaml
+           keys: [citations]
    ```
+
+   The manifest is a local file in the docs repository, keyed by page path.
+   `cite add`, `cite update` and `manni key rotate` write it, splicing only
+   the page's `citations` value. A URL manifest is refused for this key, both
+   because cite writes it and because a fetch would put private paths in
+   public CI output. [The sidecar](/manni/cite/reference/citations/#the-sidecar)
+   has the shape and every refusal.
 
    Generate the key once, 256 random bits, the size `manni key set` makes.
    Store it as a CI secret named `MANNI_ENCRYPTION_KEY`, and in the shell of
@@ -168,23 +188,29 @@ and the check runs from the docs checkout.
    beside it, at `../code`, and the key in the environment:
 
    ```sh
-   MANNI_ENCRYPTION_KEY=… manni cite add src/content/docs/limits.md lib/limits.ts:3 --claim "It is not configurable." --encrypt --root ../code --dry-run
+   MANNI_ENCRYPTION_KEY=… manni cite add src/content/docs/limits.md:14 lib/limits.ts:3 --id configurable --encrypt --root ../code --dry-run
    ```
 
    ```diff
-   --- src/content/docs/limits.md
-   +++ src/content/docs/limits.md
-   @@ -13,2 +13,6 @@
-        commit: 9721b1b1ecd73447b91d7ff10b4c4f8e6639cbc0
-   +  - claim: It is not configurable.
-   +    src: ~AQm4…:3
-   +    integrity: sha256-6b68a169c8407883fd7055f62291e2ab5a74c6ef1e116cc35315da2dfa6bed99
-   +    commit: 8cf8727e45dd75e79ab8637356d396b879e7e159
-    ---
+   --- docs-citations.yaml
+   +++ docs-citations.yaml
+   @@ -6,2 +6,10 @@
+          commit-sha: 9721b1b1ecd73447b91d7ff10b4c4f8e6639cbc0
+   +    - id: configurable
+   +      claim:
+   +        lines: 11
+   +        integrity: sha256-2a4c6df0e2b3f5c7a1908d4e6b2c8f0a3d5e7b9c1f2a4d6e8b0c2f4a6d8e0b2c
+   +      source:
+   +        file: ~AQm4…
+   +        lines: 3
+   +        integrity: hmac-sha256-6b68a169c8407883fd7055f62291e2ab5a74c6ef1e116cc35315da2dfa6bed99
+   +        commit-sha: 8cf8727e45dd75e79ab8637356d396b879e7e159
    ```
 
-   The source is typed as a path, because you know it. The page gets the
+   The source is typed as a path, because you know it. The manifest gets the
    ciphertext, the same one `retries` carries, because it is the same file.
+   The page itself is not touched, and the claim's `lines: 11` counts its
+   body.
 
    `--encrypt` changes nothing beside a key. Without one, it turns a plain
    path on a public page into a refusal. Off a terminal, `add` writes nothing
@@ -197,10 +223,11 @@ and the check runs from the docs checkout.
    On a terminal it offers to generate a key and write it to
    `manni.config.yaml`. In this layout, answer `N` and set the secret instead.
 
-3. **Run the public job with `--no-check-sources`.** It has no key and no code, so
-   it runs the page-side rules only. Every statement names a real entry,
-   every entry is well-formed, every claim is on the page. Every source
-   status is `skipped`, which is not a finding:
+3. **Run the public job with `--no-check-sources`.** It has no key and no
+   code, so it runs the page-side rules only. Every marker names a real
+   entry, and every entry is well-formed and well-anchored. **Every claim end
+   is checked**, because the claim is page-side. Only the source statuses are
+   `skipped`, which is not a finding:
 
    ```sh
    manni cite check --no-check-sources
@@ -208,12 +235,18 @@ and the check runs from the docs checkout.
 
    ```
    ✓ src/content/docs/limits.md
-       · fetch-timeout   lib/limits.ts:4   skipped
-       · retries   ~AQm4…:5   skipped
-       · inline   lib/limits.ts:3-5   skipped
+       ✓ fetch-timeout   :9 current    lib/limits.ts:4 skipped    docs-citations.yaml:3
+       ✓ retries         :12 current   ~AQm4…:5 skipped           docs-citations.yaml:8
+       ✓ configurable    :14 current   ~AQm4…:3 skipped           docs-citations.yaml:14
 
    1 file checked, 1 passed, 0 failed, 0 findings
    ```
+
+   A citation whose claim end is current is `✓`, whatever its source end says.
+   Only a bare pin, which has no claim, reads `·` here. That is the gain of
+   pinning the claim rather than copying it. An editor who reworded a cited
+   sentence hears about it on the public job, with no key and no code in the
+   room.
 
    Keep the flag. Without it, a job with no key reports every encrypted
    citation `missing`, and that is an error. `checkSources: false` in the
@@ -229,9 +262,9 @@ and the check runs from the docs checkout.
 
    ```
    ✓ src/content/docs/limits.md
-       ✓ fetch-timeout   lib/limits.ts:4   current
-       ✓ retries   ~AQm4…:5   current
-       ✓ inline   lib/limits.ts:3-5   current
+       ✓ fetch-timeout   :9 current    lib/limits.ts:4 current    docs-citations.yaml:3
+       ✓ retries         :12 current   ~AQm4…:5 current           docs-citations.yaml:8
+       ✓ configurable    :14 current   ~AQm4…:3 current           docs-citations.yaml:14
 
    1 file checked, 1 passed, 0 failed, 0 findings
    ```
@@ -250,9 +283,9 @@ MANNI_ENCRYPTION_KEY=… manni cite check --root ../code --reveal
 
 ```
 ✓ src/content/docs/limits.md
-    ✓ fetch-timeout   lib/limits.ts:4   current
-    ✓ retries   ~AQm4…:5 (lib/limits.ts)   current
-    ✓ inline   lib/limits.ts:3-5   current
+    ✓ fetch-timeout   :9 current    lib/limits.ts:4 current                 docs-citations.yaml:3
+    ✓ retries         :12 current   ~AQm4…:5 (lib/limits.ts) current        docs-citations.yaml:8
+    ✓ configurable    :14 current   ~AQm4…:3 (lib/limits.ts) current        docs-citations.yaml:14
 ```
 
 ### The two jobs in GitHub Actions
@@ -304,7 +337,7 @@ jobs:
 ```
 
 The private checkout wants `fetch-depth: 0`. A shallow clone cannot show the
-file at the commit a pin was minted at, so `never-true` and the diff degrade
+file at the commit a pin was minted at, so `source-never-true` and the diff degrade
 to `changed (history unavailable)`. [Run it in CI](/manni/cite/ci/#full-history)
 explains.
 
@@ -316,8 +349,8 @@ of the three it was:
 
 ```
 ✗ docs/limits.md
-    ✓ fetch-timeout   lib/limits.ts:4   current
-    ✗ retries   ~AQm4…:5   missing (no encryption key is available to decrypt it)   (line 22)
+    ✓ fetch-timeout   :9 current    lib/limits.ts:4 current
+    ✗ retries         :12 current   ~AQm4…:5 missing (no encryption key is available to decrypt it)
 
 1 file checked, 0 passed, 1 failed, 1 finding
 ```
@@ -350,7 +383,7 @@ path follows. Without git, the root is walked, and symlinks are not followed.
   <LinkCard
     title="Configuration reference"
     href="/manni/cite/reference/configuration/"
-    description="Every cite: key, including root and checkSources."
+    description="Every cite: key, including root and checkSources, and the collection that declares a citations manifest."
   />
 </CardGrid>
 
@@ -359,7 +392,9 @@ path follows. Without git, the root is walked, and symlinks are not followed.
     (see .github/workflows/docs-as-tests.yml), over committed fixtures.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"cite-public-private","description":"The public job, the missing key, and the private job with --reveal, over the committed encrypted fixture."} */}
-{/* step {"description":"The public job: --no-check-sources reports every source status as skipped, which is not a finding, and exits 0.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite --no-check-sources test/fixtures/cite/pages/encrypted.md","exitCodes":[0],"stdio":"/~[A-Za-z0-9_-]{82,}:2   skipped/"}} */}
+{/* step {"description":"The public job: --no-check-sources skips the source end, and exits 0.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite --no-check-sources test/fixtures/cite/pages/encrypted.md","exitCodes":[0],"stdio":"/~AR0x…:2 skipped/"}} */}
+{/* step {"description":"The public job still checks the claim end, because the claim is page-side: a reworded sentence is a finding with no key and no code.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite --no-check-sources test/fixtures/cite/pages/claim-changed.md","exitCodes":[0],"stdio":"the claim at line 15 has changed since it was pinned"}} */}
 {/* step {"description":"Without the key, an encrypted source is missing, an error, and the finding says why.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/encrypted.md","exitCodes":[1],"stdio":"missing (no encryption key is available to decrypt it)"}} */}
-{/* step {"description":"With the key in the environment the private job passes, and --reveal prints the decrypted path beside the ciphertext. The key is the fixture's fixed test key, never a real one.","runShell":{"command":"MANNI_ENCRYPTION_KEY=cite-fixture-key-0123456789abcdef npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite --reveal test/fixtures/cite/pages/encrypted.md","exitCodes":[0],"stdio":"/~[A-Za-z0-9_-]{82,}:2 \\(src\\/limits\\.ts\\)   current/"}} */}
+{/* step {"description":"An encrypted source pinned sha256- rather than hmac-sha256- is entry-invalid, and the message names the prefix.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/hmac-mismatch.md","exitCodes":[1],"stdio":"an encrypted source is pinned with hmac-sha256-, not sha256-."}} */}
+{/* step {"description":"With the key in the environment the private job passes, and --reveal prints the decrypted path beside the ciphertext. The key is the fixture's fixed test key, never a real one.","runShell":{"command":"MANNI_ENCRYPTION_KEY=cite-fixture-key-0123456789abcdef npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite --reveal test/fixtures/cite/pages/encrypted.md","exitCodes":[0],"stdio":"/~AR0x…:2 \\(src\\/limits\\.ts\\) current/"}} */}
 {/* test end */}
