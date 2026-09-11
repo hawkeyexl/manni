@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "manni:structure:1.0.0-proposal.1",
-  "title": "docmeta structure vocabulary (1.0.0-proposal.1)",
-  "description": "What the page connects to: products, concepts, and other pages. Relationships between pages — which no generator owns — never position in a navigation tree, which every generator does; there is deliberately no ordering, no parent, no nav title here. The applicability and concept fields are the harvest fallbacks of their deeper `kg` twins (docmeta:kg:1.0.0-proposal.1): where both are present, the deeper declaration wins.",
+  "title": "manni structure vocabulary (1.0.0-proposal.1)",
+  "description": "What the page connects to: products, concepts, and other pages. Relationships between pages — which no generator owns — never position in a navigation tree, which every generator does; there is deliberately no ordering, no parent, no nav title here. The applicability and concept fields are the harvest fallbacks of their deeper `kg` twins (manni:kg:1.0.0-proposal.1): where both are present, the deeper declaration wins.",
   "type": "object",
   "additionalProperties": true,
   "properties": {
@@ -16,7 +16,7 @@
     },
     "concepts": {
       "$ref": "#/$defs/stringList",
-      "description": "Controlled-vocabulary terms from your glossary that this page is about — a curated list, where `keywords` (docmeta:core:1.0.0-proposal.1) is free words. The bridge into knowledge-graph tooling, and the harvest fallback of the deeper `kg.concepts`."
+      "description": "Controlled-vocabulary terms from your glossary that this page is about — a curated list, where `keywords` (manni:core:1.0.0-proposal.1) is free words. The bridge into knowledge-graph tooling, and the harvest fallback of the deeper `kg.concepts`."
     },
     "prerequisites": {
       "$ref": "#/$defs/stringList",
@@ -24,7 +24,7 @@
     },
     "next-steps": {
       "$ref": "#/$defs/stringList",
-      "description": "Where the reader goes after this page: several sensible follow-ons, unordered. Relationship, not navigation — the generator's `next`/`prev` position keys are a different fact and stay with the generator. **A deeper or more advanced treatment of the same topic belongs here too.** There is deliberately no separate `advanced` or `deeper-dive` field, and no ranking among these: \"more advanced\" is a claim about the reader, not about the page, and it is derived — two pages sharing `concepts` while pointing at `personas` of different levels (docmeta:audience:1.0.0-proposal.1) — which is the same reasoning that cut reader `expertise` from this family. A docs set with no persona definitions cannot derive it, and that is the deliberate day-one cost."
+      "description": "Where the reader goes after this page: several sensible follow-ons, unordered. Relationship, not navigation — the generator's `next`/`prev` position keys are a different fact and stay with the generator. **A deeper or more advanced treatment of the same topic belongs here too.** There is deliberately no separate `advanced` or `deeper-dive` field, and no ranking among these: \"more advanced\" is a claim about the reader, not about the page, and it is derived — two pages sharing `concepts` while pointing at `personas` of different levels (manni:audience:1.0.0-proposal.1) — which is the same reasoning that cut reader `expertise` from this family. A docs set with no persona definitions cannot derive it, and that is the deliberate day-one cost."
     },
     "related-pages": {
       "$ref": "#/$defs/stringList",

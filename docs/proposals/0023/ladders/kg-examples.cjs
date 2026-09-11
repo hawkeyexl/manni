@@ -1,4 +1,4 @@
-// Validate the docmeta:kg:1.0.0-proposal.1 example ladder against the draft schema,
+// Validate the manni:kg:1.0.0-proposal.1 example ladder against the draft schema,
 // without registering anything. Run from the repo root:
 //   node docs/proposals/0023/ladders/kg-examples.cjs
 const fs = require("fs");

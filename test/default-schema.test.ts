@@ -33,7 +33,8 @@
  */
 import { describe, it, expect } from "vitest";
 import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { readdir, readFile } from "node:fs/promises";
 import { runValidate } from "../src/meta/commands/validate.js";
 import { loadSchema } from "../src/meta/core/schema-registry.js";
 
@@ -44,7 +45,7 @@ const DRAFTS = "./docs/proposals/0023/schemas";
 /**
  * The drafts carry a semver **prerelease** version, not build metadata: the
  * hyphen is what makes `1.0.0-proposal.1` sort *below* the `1.0.0` these
- * register as, and what keeps a `docmeta:core:1` range from ever resolving to
+ * register as, and what keeps a `manni:core:1` range from ever resolving to
  * a draft. Spelled `+proposal.1` it would compare equal to the release, which
  * is the opposite of what a review draft wants.
  *
@@ -183,6 +184,32 @@ describe("the six house vocabularies", () => {
       }
     }
     expect(seen.size).toBe(36);
+  });
+
+  it("names manni as the vendor in every draft string, across every revision", async () => {
+    // The rename from docmeta rewrote each `$id` and left every
+    // human-readable string behind, so a draft could answer to
+    // `manni:core:...` while calling itself a "docmeta core page vocabulary"
+    // in the same breath, and point at sibling ids that no longer resolve.
+    // Pinned over the whole directory rather than the nine ids the rest of
+    // this suite loads: the superseded revisions are what anyone comparing
+    // two versions reads, and they carried the same stale strings.
+    const dir = join(root, "docs/proposals/0023/schemas");
+    const files: string[] = [];
+    for (const family of await readdir(dir)) {
+      for (const entry of await readdir(join(dir, family))) {
+        if (entry.endsWith(".json")) files.push(join(dir, family, entry));
+      }
+    }
+    expect(files.length).toBe(14);
+
+    for (const file of files) {
+      const raw = await readFile(file, "utf8");
+      expect(raw, file).not.toMatch(/docmeta/i);
+      const schema = JSON.parse(raw) as { $id: string; title: string };
+      expect(schema.$id, file).toMatch(/^manni:/);
+      expect(schema.title, file).toMatch(/^manni /);
+    }
   });
 
   it("spells every field in lowercase kebab-case", async () => {
