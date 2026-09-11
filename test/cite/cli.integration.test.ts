@@ -20,6 +20,9 @@ import { hashRange } from "../../src/cite/core/hash.js";
 import { encryptSourcePath } from "../../src/cite/core/sources.js";
 import { supportedExtensions } from "../../src/meta/index.js";
 import { commitAll, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
+import type { Command } from "commander";
+import { buildProgram as buildCite, colorFor } from "../../src/cite/cli.js";
+import { buildProgram as buildUmbrella } from "../../src/cli.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..", "..");
@@ -630,5 +633,58 @@ describe("manni cite update", () => {
     const page = readFileSync(join(work, "pages", "moved.md"), "utf8");
     expect(page).toContain("src: src/moved.ts:4");
     expect(page).toContain('"src": "src/moved.ts:3"');
+  });
+});
+
+/**
+ * Colour only happens on a TTY, which a spawned bin never is, so the
+ * resolution is tested in-process: parse through commander's real routing
+ * with `check`'s action swapped for a no-op, then ask `colorFor` about the
+ * command the action would have received, with `isTTY` forced on.
+ */
+describe("manni cite --no-color (resolution)", () => {
+  function find(parent: Command, name: string): Command {
+    const found = parent.commands.find((c) => c.name() === name);
+    if (found === undefined) throw new Error(`no ${name} command under ${parent.name()}`);
+    return found;
+  }
+
+  async function parsedCheck(program: Command, check: Command, argv: string[]): Promise<Command> {
+    check.action(() => undefined);
+    await program.parseAsync(argv);
+    return check;
+  }
+
+  const umbrellaCheck = (args: string[]): Promise<Command> => {
+    const program = buildUmbrella();
+    return parsedCheck(program, find(find(program, "cite"), "check"), ["node", "manni", "cite", ...args]);
+  };
+
+  const standaloneCheck = (args: string[]): Promise<Command> => {
+    const program = buildCite();
+    return parsedCheck(program, find(program, "check"), ["node", "cite", ...args]);
+  };
+
+  it("colours a TTY when nothing turns it off (the control)", async () => {
+    expect(colorFor(await umbrellaCheck(["check", "x.md"]), true, {})).toBe(true);
+    expect(colorFor(await standaloneCheck(["check", "x.md"]), true, {})).toBe(true);
+  });
+
+  it("under the umbrella, --no-color before the verb turns colour off on a TTY", async () => {
+    expect(colorFor(await umbrellaCheck(["--no-color", "check", "x.md"]), true, {})).toBe(false);
+  });
+
+  it("under the umbrella, --no-color after the verb turns colour off on a TTY", async () => {
+    expect(colorFor(await umbrellaCheck(["check", "--no-color", "x.md"]), true, {})).toBe(false);
+  });
+
+  it("the standalone cite program honours --no-color the same way", async () => {
+    expect(colorFor(await standaloneCheck(["--no-color", "check", "x.md"]), true, {})).toBe(false);
+  });
+
+  it("NO_COLOR and a non-TTY still turn colour off", async () => {
+    const check = await umbrellaCheck(["check", "x.md"]);
+    expect(colorFor(check, true, { NO_COLOR: "1" })).toBe(false);
+    expect(colorFor(check, undefined, {})).toBe(false);
   });
 });

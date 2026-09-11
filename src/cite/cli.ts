@@ -44,23 +44,38 @@ const JUNIT_CLASSNAME = "manni.cite";
 const UPDATE_FORMATS = ["pretty", "json"] as const;
 type UpdateFormat = (typeof UPDATE_FORMATS)[number];
 
-function resolveColor(program: Command): boolean {
-  // commander maps --no-color to opts.color === false. `isTTY` is passed
-  // uncoerced: Node leaves it undefined off a terminal, never false, and
-  // `shouldColor` reads a missing one as "not a terminal".
-  const noColor = program.opts().color === false;
-  return shouldColor({ noColor, isTTY: process.stdout.isTTY });
+/**
+ * Whether `command`'s output gets colour: this domain's `--no-color` and
+ * `NO_COLOR` turn it off, and otherwise only a TTY turns it on
+ * (`shouldColor`). `isTTY` is passed uncoerced: Node leaves it undefined off
+ * a terminal, never false, and `shouldColor` reads a missing one as "not a
+ * terminal".
+ */
+export function colorFor(
+  command: Command,
+  isTTY: boolean | undefined,
+  env?: NodeJS.ProcessEnv,
+): boolean {
+  // commander maps --no-color to opts.color === false, on the command that
+  // declares it.
+  const noColor = colorOwner(command).opts().color === false;
+  return shouldColor({ noColor, isTTY, env });
+}
+
+/**
+ * The nearest command, this one or an ancestor, that declares `--no-color`:
+ * the `cite` program, wherever it is mounted. Not the root: under the
+ * umbrella that is `manni`, which has no `--no-color` of its own.
+ */
+function colorOwner(command: Command): Command {
+  for (let c: Command | null = command; c !== null; c = c.parent) {
+    if (c.options.some((o) => o.long === "--no-color")) return c;
+  }
+  return command;
 }
 
 function isUpdateFormat(value: string): value is UpdateFormat {
   return (UPDATE_FORMATS as readonly string[]).includes(value);
-}
-
-/** The root program's `--no-color`, wherever this command sits in the tree. */
-function rootOf(command: Command): Command {
-  let root = command;
-  while (root.parent) root = root.parent;
-  return root;
 }
 
 /**
@@ -287,7 +302,7 @@ export function buildProgram(): Command {
         switch (format) {
           case "pretty":
             text = renderCheckPretty(run, {
-              color: resolveColor(rootOf(command)),
+              color: colorFor(command, process.stdout.isTTY),
               quiet: Boolean(options.quiet),
               showDiff: Boolean(options.showDiff),
               reveal: Boolean(options.reveal),
@@ -492,7 +507,7 @@ export function buildProgram(): Command {
           format === "json"
             ? renderUpdateJson(run)
             : renderUpdatePretty(run, {
-                color: resolveColor(rootOf(command)),
+                color: colorFor(command, process.stdout.isTTY),
                 // The diffs are the point of a dry run; a real run prints
                 // what it rewrote and leaves the file to say the rest.
                 showDiff: dryRun,
