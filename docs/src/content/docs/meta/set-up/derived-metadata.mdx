@@ -1,0 +1,515 @@
+---
+title: Stamp stewardship fields from evidence
+description: "Let manni meta stamp created, last-updated, authors, owner, reviewed-by and last-reviewed from git, CODEOWNERS, GitHub and GitLab, and fail the build when a stamp goes stale."
+---
+
+import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+A **managed** field is a stewardship field whose value comes from evidence
+rather than from a person's memory. The evidence is git history, a
+CODEOWNERS file, and the pull request or merge request history GitHub or
+GitLab keeps, read through the `gh` or `glab` CLI. For any other field, it is
+the output of [a command you name](#derive-a-field-with-a-command).
+`manni meta derive` stamps the value into the page. `manni meta validate` compares what is stamped against
+what the evidence says, and a stamp that disagrees fails the build.
+
+The page stays the truth for validation. Nothing is merged in from outside,
+and nothing about the schema changes. What changes is that a stamped date can
+no longer be quietly wrong.
+
+<Aside type="note" title="What this page covers">
+The journey. The contract, meaning every rule, message and exit code, lives in
+the [configuration reference](/manni/meta/reference/configuration/#derive).
+</Aside>
+
+## The tired updater
+
+The [stewardship vocabulary](/manni/meta/proposals/stewardship/) asks three
+questions of every page. Who wrote it, and who answers for it now? When did
+it change, and when was it last reviewed? What was it verified against? Each
+answer is a field, and a schema can require every one of them.
+
+A schema cannot make the answers true. Someone fixes a paragraph at the end of
+a long day, and `last-updated` keeps last month's date. A colleague rewrites a
+section, and `authors` keeps the original name. The page moves to another
+team in CODEOWNERS, and `owner` never hears about it. A reviewer approves the
+pull request, and nobody transcribes the approval. Every field is present and
+well-formed, so the run is green.
+
+Batami Gold's comment on the vocabulary named the gap. She asked for a
+built-in system that forces whoever updates a page, human or agent, to answer
+these questions at check-in. This page is that system, and it is honest about
+its reach. It can answer the first two questions from evidence. Git knows
+when the body changed and who changed it. CODEOWNERS knows who answers for the
+path. GitHub or GitLab knows who approved the change and when. Six fields follow:
+`created`, `last-updated`, `authors`, `owner`, `reviewed-by`, and
+`last-reviewed`. The third question is split. What a page was verified
+against is a judgment. The version it should have been verified against is
+a fact a program can read, and [a command in the
+config](#derive-a-field-with-a-command) reads it. Who has a stake in a page
+is a judgment no history holds. For that, `required` in the schema is the
+whole enforcement, and the finding it produces is the reminder.
+
+## Configure it
+
+Name the fields you want managed. Everything else is optional.
+
+<Steps>
+
+1. **List the managed fields.** Only these are stamped, and only these are
+   compared. A field you leave out stays a plain asserted field, exactly as
+   before.
+
+   ```yaml title="manni.config.yaml"
+   collections:
+     - name: pages
+       paths: ["docs/**/*.md"]
+
+   meta:
+     derive:
+       fields: [created, last-updated, authors, owner]
+   ```
+
+2. **Narrow the sources, if you must.** The default names all five,
+   `command` included, and the origin remote picks which of `github` and
+   `gitlab` is asked. A machine with no `gh` can leave both out, and a
+   field whose only source is excluded is never stamped and never stale.
+
+   ```yaml title="manni.config.yaml"
+   meta:
+     derive:
+       fields: [created, last-updated, authors, owner]
+       sources: [git, codeowners]
+   ```
+
+3. **Point at CODEOWNERS, if it is somewhere unusual.** By default the file
+   is found where GitHub or GitLab looks for it.
+
+   ```yaml title="manni.config.yaml"
+   meta:
+     derive:
+       fields: [owner]
+       codeowners: .github/CODEOWNERS
+   ```
+
+</Steps>
+
+A managed field cannot also be a key an [external-metadata
+manifest](/manni/meta/set-up/external-metadata/) owns. The two would disagree
+about where the value lives, so the config is refused.
+
+## Run it locally
+
+From the repository, over every configured collection:
+
+```sh
+npx -y @hawkeyexl/manni meta derive
+```
+
+```
+docs/install.md
+    last-updated  2026-08-20 → 2026-09-07   (git: body changed in 424f71a)
+    owner         (unset) → ["@platform-docs"]  (codeowners: .github/CODEOWNERS:12)
+docs/faq.md  current
+2 files, 1 changed, 2 fields written
+```
+
+Each line says what changed, and the parenthesis says why. The body of
+`install.md` last changed in commit `424f71a`, so that commit's date is what
+`last-updated` should say. Line 12 of CODEOWNERS names the owner. `faq.md`
+already agreed with the evidence, so nothing was written.
+
+`derive` writes by default, like `fill` and `query`. Pass `--dry-run` to see
+the same report with nothing touched. Pass `--check` to make a stale field a
+finding instead, which is what CI runs.
+
+To see the evidence for one field without writing anything:
+
+```sh
+npx -y @hawkeyexl/manni meta get last-updated docs/install.md
+```
+
+```
+docs/install.md: last-updated=2026-08-20  (asserted; git says 2026-09-07, body changed in 424f71a)
+```
+
+The page asserts one date and git says another, so the line says both. No
+flag is needed for that, and [See what a page resolves
+to](#see-what-a-page-resolves-to) has the rest of the read surface.
+
+Once a field is managed, `validate` holds every page to it:
+
+```
+$ manni meta validate
+docs/install.md
+    /last-updated  last-updated says 2026-08-20; git says 2026-09-07 (body changed in 424f71a) — run manni meta derive  (line 9)  [derived:stale]
+1 file checked, 1 failed
+```
+
+The message names the fix. Run `manni meta derive`, commit, and the page is
+current.
+
+## See what a page resolves to
+
+A page with no `owner` in its frontmatter can still have an owner. CODEOWNERS
+may cover the path, and nobody wrote it down. `get` answers that without a
+flag, because a read gives back the **resolved value**. That is the asserted
+value where the page has the key, and the derived one where it does not.
+
+```sh
+npx -y @hawkeyexl/manni meta get owner docs/install.md docs/faq.md
+```
+
+```
+docs/install.md: owner=@platform-docs  (derived, codeowners: .github/CODEOWNERS:12)
+docs/faq.md: owner=@docs-team  (asserted)
+```
+
+`install.md` says nothing about ownership, and CODEOWNERS line 12 answers for
+it. `faq.md` names its own owner, which is what the page publishes, so that
+is what comes back. To see only what the pages store, and consult nothing:
+
+```sh
+npx -y @hawkeyexl/manni meta get owner docs/install.md --no-derived
+```
+
+```
+docs/install.md: owner=(unset)
+```
+
+Across a corpus, the same question is SQL. `query` builds a read-only
+[`resolved` table](/manni/meta/reference/query/#the-resolved-table) whose
+`_origin` column says, per field, which side won:
+
+```sh
+npx -y @hawkeyexl/manni meta query "SELECT _path, owner, _origin ->> '\$.owner' AS origin FROM resolved"
+```
+
+So "the pages CODEOWNERS covers that nobody wrote an owner into" is one
+`WHERE` clause:
+
+```sh
+npx -y @hawkeyexl/manni meta query "SELECT _path FROM resolved WHERE _origin ->> '\$.owner' = 'derived'"
+```
+
+<Aside type="note" title="Resolved values, not schema resolution">
+manni meta also *resolves* a schema set, which is how it picks the schemas
+that judge a file. That is a different subject, covered by [schema
+resolution](/manni/meta/reference/schema-resolution/). Everything on this
+page is about a resolved **value**.
+</Aside>
+
+## Derive a field with a command
+
+Batami's first question was "what version did you check this against?" No
+history answers it, but the repository usually knows the version. It is in
+`package.json`, a `VERSION` file, or one `git describe` away. A **command**
+in the config reads it, and `verified-against` becomes a managed field like
+the six above.
+
+```yaml title="manni.config.yaml"
+meta:
+  paths: ["docs/**/*.md"]
+  derive:
+    fields: [last-updated, verified-against]
+    commands:
+      verified-against:
+        run: ["jq", "-r", ".version", "package.json"]
+```
+
+`run` is an argv list, never a shell string, so it means the same thing on
+every platform. The command runs once, in the config file's directory, and
+its trimmed stdout is the value for every page. Structured JSON is parsed, so
+a script that prints `{"name":"operator","version":"1.4.2"}` derives the
+object form the [vocabulary](/manni/meta/proposals/stewardship/) recommends
+for a checker. Anything else stays the text the command printed, so a version
+such as `1.10` is stamped as you wrote it.
+
+```sh
+npx -y @hawkeyexl/manni meta derive
+```
+
+```
+docs/install.md
+    verified-against  1.4.1 → 1.4.2   (command: jq -r .version package.json)
+1 file, 1 changed, 1 field written
+```
+
+The evidence is the command itself, so anyone reading the report can run it
+by hand. From then on, a release that moves `package.json` makes every page
+still stamped with the old version a finding:
+
+```
+$ manni meta validate
+docs/install.md
+    /verified-against  verified-against says 1.4.1; command says 1.4.2 (jq -r .version package.json) — run manni meta derive  (line 7)  [derived:stale]
+1 file checked, 1 failed
+```
+
+To see the two side by side without writing anything:
+
+```sh
+npx -y @hawkeyexl/manni meta get verified-against docs/install.md
+```
+
+```
+docs/install.md: verified-against=1.4.1  (asserted; command says 1.4.2, jq -r .version package.json)
+```
+
+A field that differs per page takes `{path}` in the argv. The command then
+runs once per document, with the document's path in place of the
+placeholder, so a script can answer for one page:
+
+```yaml title="manni.config.yaml"
+meta:
+  derive:
+    fields: [source-of-truth]
+    commands:
+      source-of-truth:
+        run: ["node", "scripts/source-for.mjs", "{path}"]
+        timeout: 30
+```
+
+A command that prints nothing and exits 0 has no answer, and the page is
+left alone. A command that fails, hangs past its timeout, or is not
+installed stops the run with exit 2. A shallow clone does the same, for the
+same reason. The argv is in the message. A command may only derive a field no
+built-in source claims, so a `commands.last-updated` entry is refused by
+name.
+
+<Aside type="caution" title="The config that names a command is trusted">
+This is the first config key that runs a program. It sits on the same line
+as the SQL in `checks:` and the URL of a remote manifest. The config is a
+reviewed file in your repository, and what it names is what runs. A document
+can never supply a command, and nothing in a document reaches the argv.
+Review a pull request that touches `manni.config.yaml` the way you review a
+workflow file. The [reference](/manni/meta/reference/configuration/#commands)
+has every rule and message.
+</Aside>
+
+<Aside type="note" title="What a body change is">
+A body change is any change outside the metadata block. Editing frontmatter
+alone, including the stamp `derive` writes, is not one. So stamping a page
+does not move its own `last-updated`. The exception is a format with no
+fenced block, such as HTML, XML or DITA, where any change counts. The
+[rules](/manni/meta/reference/configuration/#the-rules-1) say more.
+</Aside>
+
+## In a pull request
+
+Two things have to be true on the runner. The checkout needs history, and
+the `gh` or `glab` CLI needs a login. `actions/checkout` gives one commit by default,
+and one commit cannot say when a body last changed. `derive` refuses a
+shallow clone rather than guessing, and names the fix, so the step to add is
+`fetch-depth: 0`. `gh` is already on every GitHub-hosted runner, and the
+workflow's own token logs it in.
+
+```yaml title=".github/workflows/manni.yml"
+name: Validate metadata
+on: [push, pull_request]
+jobs:
+  manni:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: hawkeyexl/manni@v0
+        env:
+          GH_TOKEN: ${{ github.token }}
+```
+
+The Action runs `validate`, and `validate` compares every managed field. A
+stale stamp is an inline annotation on the diff, at the field's line, with
+the command to run in the message. The Action has no input for this. Anything
+you need to pass reaches it through `args`, and the one flag worth knowing is
+the opt-out:
+
+```yaml
+      - uses: hawkeyexl/manni@v0
+        with:
+          args: --no-derive
+```
+
+To annotate what `derive` *would* write, rather than only what is stale, add
+a second step. `--check` implies a dry run, so it never touches the checkout:
+
+```yaml
+      - run: npx -y @hawkeyexl/manni@0 meta derive --check -f github
+        env:
+          GH_TOKEN: ${{ github.token }}
+```
+
+<Aside type="caution" title="A source that cannot answer stops the run">
+A shallow clone, a missing `git`, a `gh` that is not logged in, a missing
+CODEOWNERS path, or a configured command that fails is exit 2. The fix is in the message. It is never a field
+that was quietly skipped. A skipped field would make a stale
+stamp read as current, and a green gate over nothing is the failure this
+tool exists to end. Narrow `--sources` when a source is genuinely out of
+reach.
+</Aside>
+
+On GitLab, the same recipe uses `glab`, which is one package install on the
+runner image, logged in with the job token:
+
+```yaml title=".gitlab-ci.yml"
+validate-metadata:
+  stage: test
+  image: node:24
+  variables:
+    GIT_DEPTH: 0
+    GITLAB_TOKEN: $CI_JOB_TOKEN
+  before_script:
+    - apt-get update && apt-get install -y glab
+  script:
+    - npx -y @hawkeyexl/manni@0 meta validate
+```
+
+## After approval
+
+`reviewed-by` and `last-reviewed` come from the approval itself. A reviewer
+clicks approve, and GitHub or GitLab now knows who reviewed the change and when.
+Nothing has to transcribe it. A workflow that runs on the approval event
+stamps both fields and pushes the stamp to the pull request branch:
+
+```yaml title=".github/workflows/stamp-review.yml"
+name: Stamp review metadata
+on:
+  pull_request_review:
+    types: [submitted]
+jobs:
+  stamp:
+    if: github.event.review.state == 'approved'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npx -y @hawkeyexl/manni@0 meta derive --fields reviewed-by,last-reviewed
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "chore: stamp review metadata"
+          git push
+```
+
+The pull request is still open, so its answer is never cached, and every run
+reads the approvals as they stand. Before the first approval the derived
+value is null, which is no finding. So `validate` does not fail a pull
+request for a review that has not happened yet. After it, the stamp says who
+and when, and the next body change starts the cycle again.
+
+<Aside type="caution" title="A push can dismiss the approval that caused it">
+Under a branch rule that dismisses stale approvals on every push, the stamp
+commit dismisses the approval it records. That is GitHub's or GitLab's rule,
+not manni's. Exempt the bot from dismissal, or run the stamp on merge to the
+default branch instead. There the pull request is closed and the answer is
+final.
+</Aside>
+
+## Rolling out on an existing corpus
+
+The first `validate` after adding `derive.fields` reports every page whose
+body moved since its stamp. On a corpus that stamped dates by hand for a
+year, that is most of it. Two ways through.
+
+The direct way is to stamp everything once and commit it. That is one
+`manni meta derive`, one review of the diff, and one commit. The diff is
+readable because each line changes one field on one page, and the report
+says why.
+
+The gradual way is the [baseline](/manni/meta/set-up/new-required-field/).
+Record today's stale stamps, and from then on fail only on new ones:
+
+```sh
+npx -y @hawkeyexl/manni meta validate --write-baseline
+```
+
+A stale stamp is a finding like any other, so it rides the same ratchet. The
+debt stays visible in the `N baselined findings` line on every run. It
+shrinks as pages are touched, because a page that goes through `derive` has
+nothing left to forgive.
+
+## Editing the values
+
+Only `derive` writes a managed field. That is what makes the stamp
+trustworthy, so the other writers refuse it by name:
+
+```
+$ manni meta query "UPDATE docs SET \"last-updated\" = '2026-09-07'"
+manni: "last-updated" is managed by derive; run manni meta derive instead.
+```
+
+`fill` never proposes a managed field, and reports the skip so the omission
+is visible. A managed field can still be read everywhere. `get` prints it,
+and a [corpus check](/manni/meta/ci/query-gates/) can phrase a rule over it.
+`query` gains two read-only tables. [`derived`](/manni/meta/reference/query/#the-derived-table)
+holds what the evidence says, one row per page, and
+[`resolved`](/manni/meta/reference/query/#the-resolved-table) holds what to
+believe. So "every page whose stamp disagrees with git" is a SQL question,
+and so is "every page whose owner nobody wrote down".
+
+To stop managing a field, remove it from `derive.fields`. The stamp stays in
+the page as an ordinary asserted value, and nothing compares it any more.
+
+## If the updater is an agent
+
+An agent that edits a page and opens a pull request hits the same gate a
+person does, and the gate is built for it. The finding's message is a
+complete instruction: `last-updated says 2026-08-20; git says 2026-09-07
+(body changed in 424f71a) — run manni meta derive`. An agent reading its own
+CI output has the command to run, and running it produces a diff that
+explains itself. There is no prompt to write and no rule to teach. The
+message is the prompt.
+
+The same holds in the other direction. An agent cannot make a stamp true by
+typing it, because `query` and `fill` refuse a managed field and `validate`
+holds the page to the evidence. What it can do is change the body and run
+`derive`, which is the honest sequence for a person too.
+
+## Where to go next
+
+<CardGrid>
+  <LinkCard
+    title="Derive in the configuration reference"
+    href="/manni/meta/reference/configuration/#derive"
+    description="Every field's derivation rule, every message, and every exit code."
+  />
+  <LinkCard
+    title="manni meta derive in the CLI reference"
+    href="/manni/meta/reference/cli/#meta-derive"
+    description="Every flag, with --check, --sources and --no-cache."
+  />
+  <LinkCard
+    title="The stewardship vocabulary"
+    href="/manni/meta/proposals/stewardship/"
+    description="The ten fields, which six are derivable, and the open review questions."
+  />
+  <LinkCard
+    title="Roll out a new required field"
+    href="/manni/meta/set-up/new-required-field/"
+    description="The baseline ratchet a stale-stamp backlog rides on."
+  />
+</CardGrid>
+
+{/* Doc Detective inline tests: verify this page's documented manni meta behavior
+    against the local build, exposed as `manni meta` / `npx @hawkeyexl/manni meta` via `npm link`
+    (see .github/workflows/docs-as-tests.yml), over this repository's own history.
+    Run with `npx doc-detective`. Config: .doc-detective.json. */}
+{/* test {"testId":"set-up-derived-metadata","description":"Derived metadata journey, mapped to the local CLI build over this repository's own git history."} */}
+{/* step {"description":"get derives without a flag and prints the resolved value with its origin, from this repository's history (exit 0).","runShell":{"command":"npx @hawkeyexl/manni meta get created docs/src/content/docs/meta/proposals/stewardship.mdx","exitCodes":[0],"stdio":"created="}} */}
+{/* step {"description":"--derived is still accepted, so a script written before derivation became the default keeps working (exit 0).","runShell":{"command":"npx @hawkeyexl/manni meta get created docs/src/content/docs/meta/proposals/stewardship.mdx --derived","exitCodes":[0],"stdio":"created="}} */}
+{/* step {"description":"--no-derived prints only what the document stores, consulting no source (exit 0).","runShell":{"command":"npx @hawkeyexl/manni meta get created docs/src/content/docs/meta/proposals/stewardship.mdx --no-derived","exitCodes":[0],"stdio":"created="}} */}
+{/* step {"description":"A field that is not derivable is refused by name before any source is consulted (exit 2).","runShell":{"command":"npx @hawkeyexl/manni meta derive --fields verified-against","exitCodes":[2],"stdio":"not derivable"}} */}
+{/* step {"description":"A command in the config derives verified-against from the fixture's version file, and --dry-run reports it without writing (exit 0).","runShell":{"command":"npx @hawkeyexl/manni meta derive --fields verified-against --dry-run -c test/fixtures/derive/command/manni.config.yaml","exitCodes":[0],"stdio":"verified-against"}} */}
+{/* test end */}

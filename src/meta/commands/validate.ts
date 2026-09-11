@@ -65,6 +65,25 @@ import {
 import { Validator } from "../core/validator.js";
 import { schemaLoadOptions } from "../core/schema-registry.js";
 import { runChecks, type CheckEntry } from "../core/checks.js";
+import {
+  assertSourcesAvailable,
+  deriveMetadata,
+  type DeriveResult,
+} from "../core/derive/index.js";
+import { commandsOf } from "../core/derive/config.js";
+import {
+  fieldsForSql,
+  mentionsDerived,
+  mentionsResolved,
+} from "../core/derive/table.js";
+import {
+  compareDerived,
+  derivableFields,
+  DERIVE_SOURCES,
+  staleFindings,
+  type DerivedRecord,
+  type DeriveInput,
+} from "../core/derive/types.js";
 import { errorMessage } from "../../shared/errors.js";
 
 export interface ValidateOptions {
@@ -115,11 +134,26 @@ export interface ValidateOptions {
    */
   offline?: boolean;
   /**
+   * `--no-cache` (false): ask GitHub or GitLab again rather than reading the
+   * review cache. It reaches the comparison and any check reading the
+   * `derived` table; absent leaves the cache on.
+   */
+  cache?: boolean;
+  /**
    * `--no-checks` (false): skip the config's named corpus checks for this
    * run. Absent leaves them on — they still only run when the resolved file
    * set is the config-resolved corpus (proposal 0026).
    */
   checks?: boolean;
+  /**
+   * `--no-derive` (false): skip comparing each managed field (`derive.fields`
+   * in the config, proposal 0040) with what the evidence says. Absent leaves
+   * the comparison on whenever `derive:` is configured — on scoped runs too,
+   * since it is per file rather than a corpus rule.
+   */
+  derive?: boolean;
+  /** The clock an uncommitted body change is dated by. Test seam; default `new Date()`. */
+  now?: () => Date;
 }
 
 export interface ValidateRun {
@@ -247,6 +281,19 @@ function resolveBaselineRequest(
   }
   if (configured) return { ...implied(), write: false };
   return null;
+}
+
+/**
+ * Run `fn` at most once and hand every caller the same promise, rejection
+ * included: a derivation that failed for the checks has failed for the
+ * comparison too, and must not be retried against the same evidence.
+ */
+function once<T>(fn: () => Promise<T>): () => Promise<T> {
+  let pending: Promise<T> | undefined;
+  return () => {
+    pending ??= fn();
+    return pending;
+  };
 }
 
 export async function runValidate(
@@ -419,6 +466,72 @@ export async function runValidate(
   // matters — but the common no-checks path should not retain every file's
   // extraction, so the list fills only when the checks will actually run.
   const checkEntries: CheckEntry[] = [];
+  // The derived channel (0040): with `derive:` configured and the flag
+  // absent, every file read is an input to one derivation after the loop,
+  // and its managed fields are then compared with what the sources say.
+  // Stdin is never an input — there is no history behind it.
+  const deriveConfig = config?.derive;
+  // A `derive:` carrying only `sources` or `codeowners` shapes the reads and
+  // manages nothing, so there is nothing to compare.
+  const deriveWillRun =
+    deriveConfig !== undefined &&
+    deriveConfig.fields.length > 0 &&
+    opts.derive !== false;
+  // A corpus check naming the `derived` or `resolved` table needs the same
+  // inputs, content included (the git source hashes it to spot an uncommitted
+  // body), so the one list serves both — and fills only when something will
+  // read it. Both names count: a check reading `resolved` alone in a repo
+  // with no managed fields would otherwise keep no inputs, derive nothing,
+  // and read every column NULL without saying so.
+  const derivedChecks = checksWillRun
+    ? configuredChecks.filter((c) => mentionsDerived(c.query) || mentionsResolved(c.query))
+    : [];
+  const checksNeedDerived = derivedChecks.length > 0;
+  const deriveInputs: DeriveInput[] = [];
+  const keepDeriveInputs = deriveWillRun || checksNeedDerived;
+  // One derivation for the run, over the union of what either reader needs:
+  // the managed fields the comparison judges, and the columns the checks
+  // can read. Memoized so a check that names the table and a managed field
+  // share the git walk (and the gh or glab round-trip) rather than each paying
+  // for one. A source that cannot answer is the run's error either way — a
+  // half-derived comparison would read as "all current", the false green
+  // the channel refuses — and the hint names the reader that asked.
+  // The configured commands (0042) are part of both: a command's field is
+  // managed like a built-in one, and is a column the checks can read.
+  const deriveCommands = commandsOf(deriveConfig);
+  const deriveFields = new Set<string>(deriveWillRun ? deriveConfig.fields : []);
+  const readable = derivableFields(deriveCommands);
+  for (const c of derivedChecks) for (const f of fieldsForSql(c.query, readable)) deriveFields.add(f);
+  const derivedOnce = once(async (): Promise<DeriveResult> => {
+    const derived = await deriveMetadata(deriveInputs, {
+      cwd,
+      base,
+      ...(configDir !== undefined ? { configDir } : {}),
+      sources: deriveConfig?.sources ?? [...DERIVE_SOURCES],
+      fields: [...deriveFields],
+      ...(deriveConfig?.codeowners !== undefined
+        ? { codeowners: deriveConfig.codeowners }
+        : {}),
+      ...(deriveCommands !== undefined ? { commands: deriveCommands } : {}),
+      cache: opts.cache ?? true,
+      now: opts.now ?? (() => new Date()),
+    });
+    assertSourcesAvailable(
+      derived.sources,
+      deriveWillRun
+        ? "pass --no-derive to skip the comparison, or narrow derive.sources"
+        : "narrow derive.sources in manni.config.yaml",
+    );
+    // A source that answered, with a caveat worth one line: a repository
+    // with no CODEOWNERS file derives null owners rather than failing.
+    for (const [name, status] of Object.entries(derived.sources)) {
+      if (status.available && status.reason !== undefined) {
+        opts.onNotice?.(`${name}: ${status.reason}`);
+      }
+    }
+    return derived;
+  });
+
   const processOne = async (
     label: string,
     content: string,
@@ -455,6 +568,14 @@ export async function runValidate(
     // and `merged.locate` answers instead. Rebound rather than shadowed, so
     // every read below — resolution, validation, the collision loop — sees
     // the one merged object.
+    //
+    // The derived comparison is the one reader that takes the document's
+    // OWN extraction, from before the merge: a managed key can never be
+    // manifest-owned (`loadConfig` refuses the overlap), so the asserted
+    // value is the document's, and `lineFor` must answer for its own lines.
+    if (keepDeriveInputs && label !== STDIN_LABEL) {
+      deriveInputs.push({ label, absPath: resolve(base, label), content, extracted });
+    }
     const merged = mergeExternalMetadata(label, extracted, externalMetadata, members, base);
     extracted = merged.extracted;
     for (const j of merged.joins) {
@@ -622,6 +743,15 @@ export async function runValidate(
         collections: declaredCollections,
         ...(configDir !== undefined ? { configDir } : {}),
         base,
+        // A check that names the `derived` table (0040) gets the same view
+        // `query` builds, from the run's one derivation — which already
+        // covers every field the checks can read, so the list handed back
+        // here is not needed. Built only when asked for, because building
+        // it spawns git.
+        derive: async () => (await derivedOnce()).records,
+        // Its columns include the configured commands' keys (0042), which a
+        // check's context cannot read from a config since 0041.
+        ...(deriveCommands !== undefined ? { commands: deriveCommands } : {}),
       });
       const byFile = new Map(results.map((r) => [r.file, r]));
       for (const [file, errs] of findings) {
@@ -637,6 +767,30 @@ export async function runValidate(
         result.errors.push(...errs);
         result.ok = false;
       }
+    }
+  }
+
+  // The derived comparison (0040): what each document asserts for its
+  // managed fields against what the sources say. Per file, so it runs on
+  // scoped runs too, and before the baseline so a stale stamp rides the same
+  // ratchet every other finding does. Reads only the configured fields from
+  // the run's one derivation, which may hold more for the checks' sake.
+  if (deriveWillRun && deriveInputs.length > 0) {
+    const derived = await derivedOnce();
+    const byFile = new Map(results.map((r) => [r.file, r]));
+    for (const input of deriveInputs) {
+      const record: DerivedRecord | undefined = derived.records.get(input.label);
+      const result = byFile.get(input.label);
+      if (!record || !result) continue;
+      const findings = staleFindings(
+        deriveConfig.fields.map((field) =>
+          compareDerived(field, input.extracted.data[field], record.fields[field]),
+        ),
+        input.extracted.lineFor,
+      );
+      if (findings.length === 0) continue;
+      result.errors.push(...findings);
+      result.ok = false;
     }
   }
 

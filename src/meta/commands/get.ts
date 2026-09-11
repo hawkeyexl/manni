@@ -19,9 +19,28 @@ import {
   assertNonEmpty,
   gitignoreOptions,
   resolveTargetSet,
+  STDIN_LABEL,
   STDIN_TOKEN,
 } from "../core/load-files.js";
-import { resolveRunConfig, type ConfigNotice } from "../core/config.js";
+import {
+  resolveRunConfig,
+  type ConfigNotice,
+  type DocmetaConfig,
+} from "../core/config.js";
+import {
+  assertSourcesAvailable,
+  deriveMetadata,
+} from "../core/derive/index.js";
+import { commandsOf } from "../core/derive/config.js";
+import {
+  DERIVE_SOURCES,
+  isBuiltinField,
+  type DerivableField,
+  type DeriveCommand,
+  type DerivedRecord,
+  type DerivedValue,
+  type DeriveInput,
+} from "../core/derive/types.js";
 
 export interface GetOptions {
   fields: string[];
@@ -62,12 +81,61 @@ export interface GetOptions {
    * `--offline` uniformly without knowing which subcommand needs it.
    */
   offline?: boolean;
+  /**
+   * `--no-cache` (false): ask GitHub or GitLab again rather than reading the
+   * review cache. Only `--derived` consults it, and only for `reviewed-by`
+   * and `last-reviewed`; absent leaves the cache on.
+   */
+  cache?: boolean;
+  /**
+   * Whether to resolve each requested field against the evidence — git
+   * history, CODEOWNERS, the review record, a configured command (proposals
+   * 0040, 0042). **On unless explicitly `false`** (proposal 0043): a read
+   * says what the value is and where it came from, and `--no-derived` is the
+   * way back to what the document alone stores.
+   *
+   * Only the requested fields a source can state are derived, so a field no
+   * source claims consults nothing and spawns nothing. Stdin is included in
+   * the run and simply derives nothing: a piped document has no path, so no
+   * source can speak for it, and that is an answer rather than an error.
+   */
+  derived?: boolean;
+  /** The clock an uncommitted body change is dated by. Test seam; default `new Date()`. */
+  now?: () => Date;
 }
 
 export interface GetFileResult {
   file: string;
   present: boolean;
   values: Record<string, unknown>;
+  /**
+   * The evidence per requested field. A derivable field is always a key
+   * here: a `DerivedValue` when a source answered, `null` when every
+   * consulted source had nothing to say (a file with no commits, a path no
+   * CODEOWNERS rule matches). A requested field that is **not** derivable is
+   * absent from the record. Absent altogether under `--no-derived`, when no
+   * requested field is derivable, and on a file that did not parse.
+   */
+  derived?: Record<string, DerivedValue | null>;
+  /**
+   * The effective value per requested field (proposal 0043): the document's
+   * when it **carries the key**, the derived one otherwise, and absent when
+   * neither side has it. Presence is `Object.hasOwn`, not truthiness, so a
+   * document writing `owner: null` has asserted a value and no derived one
+   * replaces it — the same rule the `resolved` SQL view implements.
+   *
+   * Shaped exactly like `values`: one entry per requested field, `undefined`
+   * where nothing resolved, which JSON drops. Absent under `--no-derived`,
+   * and on a file that did not parse.
+   */
+  resolved?: Record<string, unknown>;
+  /**
+   * Which side answered, for the fields that resolved to something. A field
+   * neither the document nor any source has is absent, which is how a reader
+   * tells "unset" from "unset, but derivable". Absent under `--no-derived`,
+   * and on a file that did not parse.
+   */
+  origin?: Record<string, "asserted" | "derived">;
   /**
    * Why this file yielded no values, when it yielded none for a reason.
    *
@@ -159,6 +227,23 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
     offline: opts.offline ?? config?.offline ?? false,
   });
 
+  // The derived channel (0040): the requested fields a source can state,
+  // and one input per parsed file — the document's OWN extraction, since a
+  // managed key is never manifest-owned and the git source reads its lines.
+  // A field is derivable when a built-in source claims it, or when the
+  // config runs a command for it (0042).
+  const commands: Readonly<Record<string, DeriveCommand>> = commandsOf(config?.derive) ?? {};
+  // Derivation is on unless the user said `--no-derived` (proposal 0043).
+  const deriving = opts.derived !== false;
+  const derivableFields: DerivableField[] = deriving
+    ? opts.fields.filter((f) => isBuiltinField(f) || Object.hasOwn(commands, f))
+    : [];
+  const deriveInputs: DeriveInput[] = [];
+  // Which requested fields each parsed file **carries**, keyed by label. It
+  // is the resolution rule's whole input, and it is collected here because
+  // only `readOne` holds the extracted data.
+  const carried = new Map<string, Record<string, boolean>>();
+
   const readOne = (label: string, content: string, extension: string): void => {
     const extractor = forced ?? extractorForExtension(extension);
     if (!extractor) {
@@ -169,15 +254,18 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
     const members = membersFor(label);
     let extracted;
     try {
-      extracted = mergeExternalMetadata(
-        label,
-        extractor.extract(content, label, {
-          elements: resolveElements(label, config, members),
-        }),
-        externalMetadata,
-        members,
-        base,
-      ).extracted;
+      const own = extractor.extract(content, label, {
+        elements: resolveElements(label, config, members),
+      });
+      if (deriving && label !== STDIN_LABEL) {
+        deriveInputs.push({
+          label,
+          absPath: resolve(base, label),
+          content,
+          extracted: own,
+        });
+      }
+      extracted = mergeExternalMetadata(label, own, externalMetadata, members, base).extracted;
     } catch (err) {
       // A `DocmetaError` is already operational and already carries a message
       // written for a person — rethrow it untouched, exactly as `validate`
@@ -198,7 +286,12 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
       return;
     }
     const values: Record<string, unknown> = {};
-    for (const f of opts.fields) values[f] = resolveField(extracted.data, f);
+    const carries: Record<string, boolean> = {};
+    for (const f of opts.fields) {
+      values[f] = resolveField(extracted.data, f);
+      carries[f] = carriesField(extracted.data, f);
+    }
+    carried.set(label, carries);
     out.push({ file: label, present: extracted.present, values });
   };
 
@@ -208,7 +301,7 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
         "Reading from stdin (`-`) requires --as <format> to choose an extractor.",
       );
     }
-    readOne("<stdin>", opts.stdinContent ?? "", forced.extensions[0] ?? "");
+    readOne(STDIN_LABEL, opts.stdinContent ?? "", forced.extensions[0] ?? "");
   }
 
   for (const file of files) {
@@ -216,7 +309,119 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
     readOne(file, content, extname(file));
   }
 
+  if (deriving) {
+    await attachResolved(out, deriveInputs, {
+      fields: opts.fields,
+      derivable: derivableFields,
+      carried,
+      run: {
+        cwd,
+        base,
+        configDir,
+        config,
+        cache: opts.cache ?? true,
+        now: opts.now ?? (() => new Date()),
+      },
+    });
+  }
+
   return out;
+}
+
+/**
+ * One derivation for the run, then three records on every parsed file: the
+ * evidence (`derived`), the effective value (`resolved`), and which side
+ * answered (`origin`).
+ *
+ * Nothing is derived when no requested field is derivable, or when every
+ * input is stdin — no source is consulted and no process is spawned, and
+ * each file still gets its records, because the document is then the only
+ * side there is and every field it carries resolves to `asserted`. A
+ * consulted source that cannot answer is the run's error, with the way out.
+ *
+ * The resolution rule is one line, and it is the same one the `resolved` SQL
+ * view implements: the document's value when the document **carries the
+ * key**, the derived one otherwise. Carrying is `Object.hasOwn` (see
+ * `carriesField`), so `owner: null` is an assertion and outranks CODEOWNERS.
+ */
+async function attachResolved(
+  out: GetFileResult[],
+  inputs: readonly DeriveInput[],
+  opts: {
+    /** Every requested field, in the order the user named them. */
+    fields: readonly string[];
+    /** The subset a source can state; only these are derived. */
+    derivable: readonly DerivableField[];
+    /** Which requested fields each parsed file carries, by label. */
+    carried: ReadonlyMap<string, Record<string, boolean>>;
+    run: {
+      cwd: string;
+      base: string;
+      configDir: string | undefined;
+      config: DocmetaConfig | null;
+      cache: boolean;
+      now: () => Date;
+    };
+  },
+): Promise<void> {
+  const { run } = opts;
+  const derive = run.config?.derive;
+  const commands = commandsOf(derive);
+  const records: ReadonlyMap<string, DerivedRecord> =
+    opts.derivable.length === 0 || inputs.length === 0
+      ? new Map<string, DerivedRecord>()
+      : await (async () => {
+          const result = await deriveMetadata(inputs, {
+            cwd: run.cwd,
+            base: run.base,
+            ...(run.configDir !== undefined ? { configDir: run.configDir } : {}),
+            sources: derive?.sources ?? [...DERIVE_SOURCES],
+            fields: opts.derivable,
+            ...(derive?.codeowners !== undefined
+              ? { codeowners: derive.codeowners }
+              : {}),
+            ...(commands !== undefined ? { commands } : {}),
+            cache: run.cache,
+            now: run.now,
+          });
+          assertSourcesAvailable(
+            result.sources,
+            "pass --no-derived, or narrow derive.sources",
+          );
+          return result.records;
+        })();
+  for (const r of out) {
+    if (r.error !== undefined) continue;
+    const record = records.get(r.file);
+    const derived: Record<string, DerivedValue | null> = {};
+    for (const field of opts.derivable) {
+      derived[field] = record?.fields[field] ?? null;
+    }
+    const carries = opts.carried.get(r.file) ?? {};
+    const resolved: Record<string, unknown> = {};
+    const origin: Record<string, "asserted" | "derived"> = {};
+    for (const field of opts.fields) {
+      const evidence = derived[field];
+      if (carries[field] === true) {
+        resolved[field] = r.values[field];
+        origin[field] = "asserted";
+      } else if (evidence != null) {
+        resolved[field] = evidence.value;
+        origin[field] = "derived";
+      } else {
+        // Neither side has it. Shaped like `values`, which also carries the
+        // key with `undefined` rather than dropping it, so a caller iterating
+        // the requested fields sees the same key set on both records.
+        resolved[field] = undefined;
+      }
+    }
+    // Only when a requested field is derivable. With none there is no
+    // evidence to report, and `{}` would read as "derived, and nothing
+    // answered".
+    if (opts.derivable.length > 0) r.derived = derived;
+    r.resolved = resolved;
+    r.origin = origin;
+  }
 }
 
 /**
@@ -254,6 +459,45 @@ function resolveField(data: Record<string, unknown>, field: string): unknown {
     return data[field];
   }
   return undefined;
+}
+
+/**
+ * Does the document **carry** this field? `resolveField`'s twin, deciding
+ * presence rather than value, and it follows exactly the same three routes:
+ * JSON Pointer, dot-notation descent, then the literal dotted key.
+ *
+ * The difference is the last step. `resolveField` reports a miss as
+ * `undefined`, which a key written `owner:` — present, valued null — cannot
+ * be told apart from. So the final segment is an own-property test rather
+ * than a read, and an asserted null answers `true`. For a bare top-level
+ * field this is `Object.hasOwn(data, field)`, which is the rule the
+ * `resolved` SQL view spells `json_type(_data, '$."field"') IS NOT NULL`.
+ */
+function carriesField(data: Record<string, unknown>, field: string): boolean {
+  const segments = field.startsWith("/")
+    ? parseJsonPointer(field)
+    : field.split(".");
+  if (carriesPath(data, segments)) return true;
+  return (
+    !field.startsWith("/") &&
+    field.includes(".") &&
+    Object.prototype.hasOwnProperty.call(data, field)
+  );
+}
+
+/** Whether `segments` names an existing member of `data`. */
+function carriesPath(data: Record<string, unknown>, segments: string[]): boolean {
+  const last = segments.at(-1);
+  if (last === undefined) return true;
+  const parent =
+    segments.length === 1 ? data : descend(data, segments.slice(0, -1));
+  if (Array.isArray(parent)) {
+    return /^\d+$/.test(last) && Number(last) < parent.length;
+  }
+  if (parent !== null && typeof parent === "object") {
+    return Object.prototype.hasOwnProperty.call(parent, last);
+  }
+  return false;
 }
 
 /** Walk `segments` into `data`, or `undefined` at the first miss. */

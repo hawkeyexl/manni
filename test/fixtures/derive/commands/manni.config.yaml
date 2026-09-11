@@ -1,0 +1,11 @@
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+
+meta:
+  schemas:
+    - ./permissive.schema.json
+  derive:
+    fields: [last-updated, owner]
+    sources: [git, codeowners]

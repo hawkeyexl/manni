@@ -394,8 +394,9 @@ wins over the same key in config, and config wins over the default. Every key
 is optional, and an empty `a11y:` section is the same as none.
 
 ```yaml title="manni.config.yaml"
-meta:
-  paths: ["docs/"]
+collections:
+  - name: site
+    paths: ["docs/"]
 
 a11y:
   urls: ["https://docs.example.com/"]

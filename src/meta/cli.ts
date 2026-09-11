@@ -26,6 +26,7 @@ import {
   runVendorSchema,
 } from "./commands/schemas.js";
 import { runFill } from "./commands/fill.js";
+import { runDerive } from "./commands/derive.js";
 import { supportedExtensions } from "./extractors/index.js";
 import {
   COMMON_FORMATS,
@@ -53,6 +54,12 @@ import {
   isFillFormat,
   renderFill,
 } from "./reporters/fill.js";
+import {
+  DERIVE_FORMATS,
+  DERIVE_FORMAT_LIST,
+  isDeriveFormat,
+  renderDerive,
+} from "./reporters/derive.js";
 import { renderGet } from "./reporters/get.js";
 import { renderQuery, renderQueryCsv } from "./reporters/query.js";
 import { renderInfer } from "./reporters/infer.js";
@@ -581,11 +588,36 @@ interface ValidateCliOptions extends RunCliOptions {
    * the same shape as `gitignore`.
    */
   checks: boolean;
+  /**
+   * `--no-derive`. The same shape as `checks`: commander's `true` default is
+   * not a choice, so only the explicit `false` travels to the core.
+   */
+  derive: boolean;
+  /**
+   * `--no-cache`. Commander's `true` default travels straight through: the
+   * review cache answers the comparison unless the user said otherwise.
+   */
+  cache: boolean;
 }
 
 interface GetCliOptions extends RunCliOptions {
   /** `--fields <list>`; when present, every positional is a path. */
   fields?: string;
+  /**
+   * `--no-derived` / `--derived`. Both spellings are registered, which is
+   * why this is `boolean | undefined` rather than commander's usual `true`
+   * default for a `--no-` flag: registering the positive form alongside it
+   * removes that default, so the key is absent when neither was given.
+   * Only the explicit `false` means anything — derivation is on otherwise,
+   * and `--derived` is the no-op kept for scripts written before 0043.
+   */
+  derived?: boolean;
+  /**
+   * `--no-cache`. Commander supplies `true` when the flag is absent, so
+   * this travels straight through: the review cache answers unless the
+   * user said otherwise.
+   */
+  cache: boolean;
 }
 
 /**
@@ -610,6 +642,11 @@ interface QueryCliOptions extends InputCliOptions {
   /** `--no-gitignore`; commander's `true` default, see `gitignoreFlag`. */
   gitignore: boolean;
   offline?: boolean;
+  /**
+   * `--no-cache`. Commander's `true` default, like `gitignore`: the review
+   * cache answers a `derived` build unless the user said otherwise.
+   */
+  cache: boolean;
 }
 
 interface FillCliOptions extends RunCliOptions {
@@ -631,6 +668,24 @@ interface FillCliOptions extends RunCliOptions {
   maxTurns?: number;
   chunkChars?: number;
   concurrency?: number;
+}
+
+/**
+ * Not `RunCliOptions`: `derive` declares no `-q/--quiet` and no `--offline`.
+ * It loads no schema, so there is nothing to fetch, and its report already
+ * says `current` in one line per untouched file.
+ */
+interface DeriveCliOptions extends InputCliOptions {
+  fields?: string;
+  sources?: string;
+  dryRun?: boolean;
+  /** `--check`: implies `--dry-run`; a stale or unset field is a finding. */
+  check?: boolean;
+  /** `--no-cache`; commander's `true` default is passed through, as `fill` does. */
+  cache: boolean;
+  allowEmpty?: boolean;
+  /** `--no-gitignore`; commander's `true` default, see `gitignoreFlag`. */
+  gitignore: boolean;
 }
 
 interface SchemasCliOptions {
@@ -751,6 +806,11 @@ export function buildProgram(): Command {
       "--no-checks",
       "skip the corpus checks configured by `checks:` for this run",
     )
+    .option("--no-cache", "bypass the GitHub or GitLab review cache")
+    .option(
+      "--no-derive",
+      "skip the derived-value comparison configured by derive.fields",
+    )
     .addHelpText(
       "after",
       [
@@ -818,6 +878,10 @@ export function buildProgram(): Command {
             // Like `gitignore`: only the explicit `--no-checks` travels, so
             // absence stays "run them when the corpus rule allows".
             checks: options.checks ? undefined : false,
+            // And `--no-derive`, for the managed-field comparison.
+            derive: options.derive ? undefined : false,
+            // And `--no-cache`, so a wrong cached review answer can be re-asked.
+            cache: options.cache,
           });
 
           const color = resolveColor(command.parent ?? command);
@@ -859,6 +923,16 @@ export function buildProgram(): Command {
       "--fields <list>",
       "comma-separated metadata fields to print; every positional is then a path",
     )
+    .option(
+      "--no-derived",
+      "print only what the document stores, consulting no source",
+    )
+    // Registered beside `--no-derived` on purpose. Commander gives a lone
+    // `--no-x` the default `true`; declaring `--x` as well removes that
+    // default, so "neither flag" is `undefined` and stays distinguishable —
+    // and the spelling that used to turn derivation on still parses.
+    .option("--derived", "accepted and inert: derivation is already on")
+    .option("--no-cache", "bypass the GitHub or GitLab review cache")
     .option("--ext <list>", "comma-separated extensions for directory walks")
     .option("--exclude <glob>", "glob to exclude; repeatable", collect, [])
     .option("--as <format>", "force an input format (e.g. markdown, mdx)")
@@ -894,6 +968,7 @@ export function buildProgram(): Command {
         "  manni meta get --fields title,type docs/intro.md",
         "  manni meta get author.name,/author/email docs/intro.md",
         '  manni meta get type "**/*.md" -f json',
+        "  manni meta get owner docs/intro.md --no-derived",
         "  cat page.md | manni meta get title - --as markdown",
       ].join("\n"),
     )
@@ -921,6 +996,8 @@ export function buildProgram(): Command {
 
           const results = await runGet({
             fields,
+            derived: options.derived !== false,
+            cache: options.cache,
             inputs: paths,
             as: options.as,
             exclude: options.exclude,
@@ -1025,6 +1102,7 @@ export function buildProgram(): Command {
     .option("--no-config", "ignore any discovered config file")
     .option("--allow-empty", "treat zero matched files as success")
     .option("--no-gitignore", "load files .gitignore covers")
+    .option("--no-cache", "bypass the GitHub or GitLab review cache")
     .option(
       "--offline",
       "accepted and ignored: query resolves schemas from disk and built-ins, never the network",
@@ -1126,6 +1204,7 @@ export function buildProgram(): Command {
             sql,
             db: options.db,
             dryRun,
+            cache: options.cache,
             ...(Object.keys(params).length > 0 ? { params } : {}),
             ...(options.schema.length > 0 ? { schemas: options.schema } : {}),
             inputs: paths,
@@ -1379,6 +1458,119 @@ export function buildProgram(): Command {
         // work left undone, so CI should see it. Optional fields are not.
         process.exitCode =
           run.summary.requiredSkipped > 0 || run.summary.errors > 0 ? 1 : 0;
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  program
+    .command("derive")
+    .description(
+      "Stamp the managed stewardship fields from git history, CODEOWNERS and GitHub or GitLab reviews",
+    )
+    .argument("[paths...]", "files, directories, or globs to stamp")
+    .option(
+      "--fields <list>",
+      "comma-separated managed fields to stamp; config derive.fields otherwise",
+    )
+    .option(
+      "--sources <list>",
+      "comma-separated sources to consult: git, codeowners, github, gitlab, command (default all)",
+    )
+    .option("--dry-run", "report what would change and write nothing")
+    .option(
+      "--check",
+      "implies --dry-run: a stale or unset managed field is a finding, exit 1 if any",
+    )
+    .option(
+      "-f, --format <format>",
+      `output: ${DERIVE_FORMATS.join(" | ")} (github, sarif, junit need --check)`,
+      "pretty",
+    )
+    .option("--no-cache", "bypass the GitHub or GitLab review cache")
+    .option("--ext <list>", "comma-separated extensions for directory walks")
+    .option("--exclude <glob>", "glob to exclude; repeatable", collect, [])
+    .option("--as <format>", "force an input format (e.g. markdown, mdx)")
+    .option(
+      "--collection <name>",
+      "configured collection to run over; repeatable",
+      collect,
+      [],
+    )
+    .option("-c, --config <path>", "path to a manni config file")
+    .option("--no-config", "ignore any discovered config file")
+    .option("--allow-empty", "treat zero matched files as success")
+    .option("--no-gitignore", "stamp files .gitignore covers")
+    .addHelpText(
+      "after",
+      [
+        "",
+        "Examples:",
+        "  manni meta derive                                # stamp config derive.fields over every collection",
+        "  manni meta derive --collection guides            # stamp one configured collection",
+        "  manni meta derive --dry-run docs/install.md      # what would change, nothing written",
+        "  manni meta derive --check -f github              # CI: a stale stamp is an annotation, exit 1",
+        "  manni meta derive --fields reviewed-by,last-reviewed",
+        "  manni meta derive --sources git,codeowners       # no gh on this machine",
+      ].join("\n"),
+    )
+    .action(async (paths: string[], options: DeriveCliOptions, command: Command) => {
+      try {
+        const format = options.format;
+        if (!isDeriveFormat(format)) {
+          throw new DocmetaError(
+            `Unknown --format "${format}". Use ${DERIVE_FORMAT_LIST}.`,
+          );
+        }
+        // The findings formats render findings, and only `--check` produces
+        // them. Gated before the run so the refusal costs nothing — and so
+        // nothing is written on a run whose report was never going to render.
+        if (
+          (format === "github" || format === "sarif" || format === "junit") &&
+          !options.check
+        ) {
+          throw new DocmetaError(
+            `${format} is a findings format, which only --check produces`,
+          );
+        }
+        const exts: string[] | undefined = options.ext
+          ? splitList(options.ext)
+          : undefined;
+
+        const run = await runDerive({
+          inputs: paths,
+          fields: options.fields ? splitList(options.fields) : undefined,
+          sources: options.sources ? splitList(options.sources) : undefined,
+          dryRun: Boolean(options.dryRun),
+          check: Boolean(options.check),
+          cache: options.cache,
+          exts,
+          exclude: options.exclude,
+          as: options.as,
+          collections: options.collection,
+          ...configOption(options.config),
+          onConfigLoaded: reportConfig(!isMachineFormat(format), process.cwd()),
+          allowEmpty: options.allowEmpty ? true : undefined,
+          respectGitignore: gitignoreFlag(options.gitignore),
+          onNotice: notice,
+        });
+
+        const text = renderDerive(run, format, {
+          color: resolveColor(command.parent ?? command),
+          frame: run.frame,
+          onNotice: notice,
+        });
+        // Only `github` may say nothing on a clean run — see `OMITTED_WHEN_CLEAN`.
+        if (text.length > 0 || !OMITTED_WHEN_CLEAN.has(format)) {
+          process.stdout.write(`${text}\n`);
+        }
+        // A file the run could not read or write fails the run whether or
+        // not it wrote the rest, as it does for `fill`: a stamp that was
+        // never applied must not read as done. A stale or unset field is
+        // `--check`'s failure alone — an applied run is the work done.
+        const { stale, unset, errors } = run.summary;
+        const failed = errors > 0 || (options.check && stale + unset > 0);
+        process.exitCode = failed ? 1 : 0;
       } catch (err) {
         fail(err);
       }

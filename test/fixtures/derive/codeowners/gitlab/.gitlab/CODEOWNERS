@@ -1,0 +1,12 @@
+# Rules before any section header belong to the default section.
+*             @org/all
+
+[Docs] @org/docs
+docs/
+docs/api/     @sara
+
+^[Optional]
+docs/api/     @devin
+
+[Security][2] @sec
+docs/api/**

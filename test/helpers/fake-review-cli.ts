@@ -1,0 +1,96 @@
+/**
+ * Point a `GitHubClient` / `GitLabClient` at `fake-review-cli-bin.mjs`.
+ *
+ * `fakeReviewCli(responses)` writes a scenario file to a fresh temp directory,
+ * names it in `FAKE_REVIEW_SCENARIO` (the fake reads its script from there,
+ * so one scenario is live per process at a time — vitest runs a file's cases
+ * in sequence, which is enough), and returns the `SpawnOptions` that make the
+ * client run `node fake-review-cli-bin.mjs <args>` instead of `gh <args>`. Every
+ * spawn is appended to a log the test reads back through `calls()` and
+ * `cwds()`, so a case can assert the exact argv, the directory the CLI ran
+ * from, and, for the cache, that no spawn happened.
+ */
+import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import type { SpawnOptions } from "../../src/meta/core/derive/reviews.js";
+
+/** The script that impersonates `gh` and `glab`. */
+export const FAKE_REVIEW_CLI_BIN = fileURLToPath(
+  new URL("./fake-review-cli-bin.mjs", import.meta.url),
+);
+
+export interface FakeResponse {
+  /** Each token must be a substring of some argv element for this response to fire. */
+  includes: string[];
+  /** A string is written as-is; anything else is JSON-encoded. */
+  stdout?: unknown;
+  stderr?: string;
+  exit?: number;
+  /** Delay before answering, for the timeout case. */
+  sleepMs?: number;
+}
+
+export interface FakeReviewCli {
+  spawn: SpawnOptions;
+  /** The temp directory; the client's `cwd`, and where the scenario lives. */
+  dir: string;
+  /** Every argv the fake was run with, in order, `prefixArgs` excluded. */
+  calls(): string[][];
+  /** The `process.cwd()` of each run, in the same order as `calls()`. */
+  cwds(): string[];
+  cleanup(): void;
+}
+
+/** One line of the fake's log. */
+interface LogEntry {
+  argv: string[];
+  cwd: string;
+}
+
+export function fakeReviewCli(
+  responses: FakeResponse[],
+  opts: { timeoutMs?: number } = {},
+): FakeReviewCli {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "manni-fake-review-cli-")));
+  const log = join(dir, "calls.log");
+  const scenario = join(dir, "scenario.json");
+  writeFileSync(scenario, JSON.stringify({ log, responses }), "utf8");
+  process.env.FAKE_REVIEW_SCENARIO = scenario;
+  const entries = (): LogEntry[] => {
+    if (!existsSync(log)) return [];
+    return readFileSync(log, "utf8")
+      .split("\n")
+      .filter((line) => line !== "")
+      .map((line) => JSON.parse(line) as LogEntry);
+  };
+  return {
+    spawn: {
+      bin: process.execPath,
+      prefixArgs: [FAKE_REVIEW_CLI_BIN],
+      cwd: dir,
+      ...(opts.timeoutMs !== undefined ? { timeoutMs: opts.timeoutMs } : {}),
+    },
+    dir,
+    calls() {
+      return entries().map((e) => e.argv);
+    },
+    cwds() {
+      return entries().map((e) => e.cwd);
+    },
+    cleanup() {
+      if (process.env.FAKE_REVIEW_SCENARIO === scenario) {
+        delete process.env.FAKE_REVIEW_SCENARIO;
+      }
+      // Best effort: a timed-out call settles before the child has finished
+      // dying, and on Windows it holds this directory as its cwd until it
+      // does. The temp directory is the OS's to reap.
+      try {
+        rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+      } catch {
+        /* the OS reaps it */
+      }
+    },
+  };
+}
