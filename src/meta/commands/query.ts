@@ -2695,7 +2695,9 @@ async function applyChanges(
         path,
         content: extractor.apply("", ops.created, {
           filePath: label,
-          elements: resolveElements(label, ctx.config),
+          // The new file's memberships, from its path alone. An INSERT has to
+          // write through the element set a read of that file would use.
+          elements: resolveElements(label, ctx.config, ctx.memberships(label)),
         }),
         ensureDir: true,
       });
@@ -2750,7 +2752,9 @@ async function applyChanges(
     }
     const applied = entry.extractor.apply(content, ops.patch, {
       filePath: label,
-      elements: resolveElements(label, ctx.config),
+      // The memberships the read above used. Without them a collection-scoped
+      // element the read found has nowhere to be written.
+      elements: resolveElements(label, ctx.config, members),
       deletions: ops.deletions,
     });
     if (ops.deletions.length > 0) {
