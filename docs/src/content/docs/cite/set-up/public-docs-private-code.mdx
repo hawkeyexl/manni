@@ -197,13 +197,13 @@ and the check runs from the docs checkout.
    On a terminal it offers to generate a key and write it to
    `manni.config.yaml`. In this layout, answer `N` and set the secret instead.
 
-3. **Run the public job with `--no-sources`.** It has no key and no code, so
+3. **Run the public job with `--no-check-sources`.** It has no key and no code, so
    it runs the page-side rules only. Every statement names a real entry,
    every entry is well-formed, every claim is on the page. Every source
    status is `skipped`, which is not a finding:
 
    ```sh
-   manni cite check --no-sources
+   manni cite check --no-check-sources
    ```
 
    ```
@@ -216,7 +216,9 @@ and the check runs from the docs checkout.
    ```
 
    Keep the flag. Without it, a job with no key reports every encrypted
-   citation `missing`, and that is an error.
+   citation `missing`, and that is an error. `checkSources: false` in the
+   config would do the same, but the private job reads that file too, and it
+   needs the sources.
 
 4. **Run the private job with the key and `--root`.** From the docs checkout,
    with the code beside it and the key from a secret:
@@ -264,19 +266,19 @@ on:
 
 jobs:
   # Page-side rules only. Runs on every PR, needs no key and no code.
-  pages:
+  public:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: npx -y @hawkeyexl/manni cite check --no-sources -f github
+      - run: npx -y @hawkeyexl/manni cite check --no-check-sources -f github
 
   # Source-side rules. Checks the code out beside the docs and decrypts
   # each source with the family key. Runs on push only, so a fork's PR
   # never sees the secret.
-  sources:
+  private:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
@@ -322,14 +324,15 @@ of the three it was:
 
 | Message | Cause | Fix |
 | --- | --- | --- |
-| `missing (no encryption key is available to decrypt it)` | The job has no key. | Set `MANNI_ENCRYPTION_KEY` from the secret, or run the page-side rules alone with `--no-sources`. |
+| `missing (no encryption key is available to decrypt it)` | The job has no key. | Set `MANNI_ENCRYPTION_KEY` from the secret, or run the page-side rules alone with `--no-check-sources`. |
 | `missing (does not decrypt under the current key)` | The key is not the one the source was encrypted under, or the ciphertext was edited by hand. | Use the key the pages were encrypted under. After a rotation, update the secret to the new key. |
 | `missing (no tracked file matches; wrong --root?)` | The path decrypted, and no tracked file under the root has it. | Point `--root` at the code checkout. If the file was renamed, add the citation again. |
 
-A decrypted path resolves against **tracked files only**, through
-`git ls-files` under the root, with a real-path containment check. A file that
-is not committed, or is reached through a symlink out of the root, does not
-match. That is deliberate, and it is the same rule a plain path follows.
+Where git is available, a decrypted path resolves against **tracked files
+only**, through `git ls-files` under the root, with a real-path containment
+check. A file that is not committed, or is reached through a symlink out of
+the root, does not match. That is deliberate, and it is the same rule a plain
+path follows. Without git, the root is walked, and symlinks are not followed.
 
 ## Next steps
 
@@ -347,7 +350,7 @@ match. That is deliberate, and it is the same rule a plain path follows.
   <LinkCard
     title="Configuration reference"
     href="/manni/cite/reference/configuration/"
-    description="Every cite: key, including root and sources."
+    description="Every cite: key, including root and checkSources."
   />
 </CardGrid>
 
@@ -356,7 +359,7 @@ match. That is deliberate, and it is the same rule a plain path follows.
     (see .github/workflows/docs-as-tests.yml), over committed fixtures.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"cite-public-private","description":"The public job, the missing key, and the private job with --reveal, over the committed encrypted fixture."} */}
-{/* step {"description":"The public job: --no-sources reports every source status as skipped, which is not a finding, and exits 0.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite --no-sources test/fixtures/cite/pages/encrypted.md","exitCodes":[0],"stdio":"/~[A-Za-z0-9_-]{82,}:2   skipped/"}} */}
+{/* step {"description":"The public job: --no-check-sources reports every source status as skipped, which is not a finding, and exits 0.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite --no-check-sources test/fixtures/cite/pages/encrypted.md","exitCodes":[0],"stdio":"/~[A-Za-z0-9_-]{82,}:2   skipped/"}} */}
 {/* step {"description":"Without the key, an encrypted source is missing, an error, and the finding says why.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/encrypted.md","exitCodes":[1],"stdio":"missing (no encryption key is available to decrypt it)"}} */}
 {/* step {"description":"With the key in the environment the private job passes, and --reveal prints the decrypted path beside the ciphertext. The key is the fixture's fixed test key, never a real one.","runShell":{"command":"MANNI_ENCRYPTION_KEY=cite-fixture-key-0123456789abcdef npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite --reveal test/fixtures/cite/pages/encrypted.md","exitCodes":[0],"stdio":"/~[A-Za-z0-9_-]{82,}:2 \\(src\\/limits\\.ts\\)   current/"}} */}
 {/* test end */}

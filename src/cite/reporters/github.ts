@@ -1,7 +1,8 @@
 /**
  * GitHub workflow commands, one per finding:
  * `::error file=<file>,line=<n>,title=<ruleId>::<id or src> (<src>): <message>`
- * with `::warning` for warning severity. Uses meta's escapes. A baselined
+ * with `::warning` and `::notice` for the lower levels: the family scale is
+ * GitHub's, so the level is the severity. Uses meta's escapes. A baselined
  * finding is not an annotation; a clean run is the empty string.
  */
 import {

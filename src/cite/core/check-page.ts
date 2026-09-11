@@ -22,7 +22,7 @@ import type {
 import { findingsFor } from "./adapt.js";
 import { classifyCitation, MOVE_BUDGET_BYTES } from "./classify.js";
 import { blockMatches } from "./claims.js";
-import { gitClient, noGit } from "./git.js";
+import { GIT_UNAVAILABLE_HISTORY, gitClient } from "./git.js";
 import { hashLines, sliceLines, splitLines } from "./hash.js";
 import { readPage } from "./page.js";
 import { parseSrc } from "./range.js";
@@ -123,7 +123,7 @@ export async function checkCitations(
 ): Promise<PageCitationReport> {
   const read = readPage(page.file, page.content, page.format === undefined ? undefined : { format: page.format });
   const severity = resolveSeverity(opts.severity);
-  const client = opts.gitClient ?? (opts.git === false ? noGit() : gitClient(opts.root));
+  const client = opts.gitClient ?? gitClient(opts.root);
 
   const results: CitationResult[] = [];
   const findings: CitationFinding[] = [];
@@ -136,7 +136,7 @@ export async function checkCitations(
     if (kept.rule === "quote-drift") reported.add(keyOf(kept));
   }
 
-  if (opts.sources === false) {
+  if (opts.checkSources === false) {
     for (const { citation, origin } of read.citations) {
       const result: CitationResult = { citation, origin, status: "skipped" };
       const commit = citation.commit ?? read.commit;
@@ -144,9 +144,7 @@ export async function checkCitations(
       results.push(result);
     }
   } else {
-    const indexOpts: Parameters<typeof buildSourceIndex>[1] = { gitClient: client };
-    if (opts.git !== undefined) indexOpts.git = opts.git;
-    const index = opts.sourceIndex ?? (await buildSourceIndex(opts.root, indexOpts));
+    const index = opts.sourceIndex ?? (await buildSourceIndex(opts.root, { gitClient: client }));
     const quoteInput: QuoteInput = {
       content: read.content,
       bodyOffset: read.bodyOffset,
@@ -156,7 +154,6 @@ export async function checkCitations(
       key: opts.key,
     };
     const classifyOpts: Parameters<typeof classifyCitation>[1] = { root: opts.root, index, git: client, key: opts.key };
-    if (opts.git !== undefined) classifyOpts.useGit = opts.git;
     if (read.commit !== undefined) classifyOpts.pageCommit = read.commit;
 
     for (const entry of read.citations) {
@@ -182,6 +179,14 @@ export async function checkCitations(
   }
 
   findings.push(...findingsFor(results, severity));
+
+  // History is read for a citation with a commit, so a page that holds one
+  // and has no git to read it through says why its verdicts are plainer.
+  // With the sources off nothing is classified, and git is never asked.
+  const wantsHistory =
+    opts.checkSources !== false &&
+    read.citations.some(({ citation }) => (citation.commit ?? read.commit) !== undefined);
+  if (wantsHistory && !(await client.available())) notices.push(GIT_UNAVAILABLE_HISTORY);
 
   const unavailable = results.find((r) => r.historyAvailable === false);
   if (unavailable?.commit !== undefined) {

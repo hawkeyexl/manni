@@ -16,9 +16,9 @@ cite:
   respectGitignore: false
   root: ../src
   baseline: .cite-baseline.json
-  git: false
-  sources: false
+  checkSources: false
   severity:
     moved: error
     changed: warning
+    claim-ambiguous: notice
     current: off

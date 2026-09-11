@@ -142,7 +142,6 @@ lines to re-key citation pins, so run it where the sources are reachable.
 | `--allow-empty` | n/a | off | Treat zero matched files as success. |
 | `--no-gitignore` | n/a | on | Include files `.gitignore` covers. |
 | `--root` | `<dir>` | `cite.root`, else the git root | Where cited sources resolve from, to re-key citation pins. `cite.root` resolves from the config file's directory, and `--root` from the working directory. |
-| `--no-git` | n/a | on | Index sources by a directory walk instead of `git ls-files`. |
 | `--dry-run` | n/a | off | Print what would change; write nothing. |
 | `-f, --format` | `<format>` | `pretty` | `pretty` or `json`. The JSON shape is in the [examples](#examples). Any other value is refused (exit 2). |
 
@@ -401,7 +400,7 @@ docs/auth.md: /owner  ~AQx7…  -> ~AQp2…
 Key not written: it comes from MANNI_ENCRYPTION_KEY. Update the secret to the value you passed.
 # exit 0
 
-$ manni key rotate --to 0123456789abcdef0123456789abcdef --collection site --ext md,mdx --exclude "docs/drafts/**" --as markdown -c manni.config.yaml --allow-empty --no-gitignore --root . --no-git --dry-run -f json
+$ manni key rotate --to 0123456789abcdef0123456789abcdef --collection site --ext md,mdx --exclude "docs/drafts/**" --as markdown -c manni.config.yaml --allow-empty --no-gitignore --root . --dry-run -f json
 {
   "pages": [
     {

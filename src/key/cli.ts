@@ -55,8 +55,6 @@ interface RotateCliOptions {
   /** `--no-gitignore`. */
   gitignore: boolean;
   root?: string;
-  /** `--no-git`. */
-  git: boolean;
   dryRun?: boolean;
   /** `-f, --format <format>`. Always a string: the declaration has a default. */
   format: string;
@@ -135,7 +133,6 @@ export function buildProgram(): Command {
       "--root <dir>",
       "directory cited sources resolve from (default: cite.root from config, else the git root)",
     )
-    .option("--no-git", "index sources by a directory walk instead of git ls-files")
     .option("--dry-run", "print what would change; write nothing")
     .option("-f, --format <format>", `output: ${ROTATE_FORMATS.join(" | ")}`, "pretty")
     .addHelpText(
@@ -167,7 +164,6 @@ export function buildProgram(): Command {
           allowEmpty: options.allowEmpty ? true : undefined,
           respectGitignore: explicitFalse(options.gitignore),
           root: options.root,
-          git: explicitFalse(options.git),
           dryRun: Boolean(options.dryRun),
           onNotice: notice,
         });

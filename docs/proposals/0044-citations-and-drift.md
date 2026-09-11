@@ -216,13 +216,14 @@ record is where that is said.
 elsewhere in the file), `moved-ambiguous` (two or more), or `changed` (no
 equal window). Or it is `never-true` (the range at `commit` does not hash to
 `integrity`, or the path was absent there). Or it is `missing` (no tracked
-file, or no key to decrypt an encrypted path), or `skipped` (`--no-sources`; not
-a finding). The page-side
+file, or no key to decrypt an encrypted path), or `skipped`
+(`--no-check-sources` or `checkSources: false`; not a finding). The page-side
 rules are `claim-missing`, `claim-ambiguous`, `statement-orphan`,
 `statement-invalid`, `entry-invalid` and `quote-drift`. Every rule has a
 default severity: `current` is `off`, `moved` and `claim-ambiguous` are
-`warning`, everything else is `error`, and config can move any of them. A
-warning never touches the exit code.
+`warning`, everything else is `error`. Config can move any of them to
+`error`, `warning`, `notice` or `off`: the family scale, plus `off`. A warning
+or a notice never touches the exit code.
 
 **Economics.** Two search regimes, and both are local. With git, a non-match
 with a `commit` costs one `git show` of the file at that commit, memoized per
@@ -266,9 +267,9 @@ an eslint rule stops it reaching into `../meta/{core,extractors,reporters}`.
 
 | Command | Does | Exit |
 |---|---|---|
-| `check [paths...]` | classify every citation; report through `pretty`, `json`, `github`, `sarif`, `junit`; `--baseline` and `--write-baseline` as meta's, in `.manni-cite-baseline.json`; `--no-git`, `--no-sources`, `--root <dir>`, `--show-diff`, `--reveal` | 0 clean, 1 an unbaselined error, 2 operational |
+| `check [paths...]` | classify every citation; report through `pretty`, `json`, `github`, `sarif`, `junit`; `--baseline` and `--write-baseline` as meta's, in `.manni-cite-baseline.json`; `--no-check-sources`, `--root <dir>`, `--show-diff`, `--reveal` | 0 clean, 1 an unbaselined error, 2 operational |
 | `add <page> <src>` | mint an entry at HEAD and write it. With `--claim` it anchors a sentence, with `--quote` a fenced block. With `--inline` it writes a JSON statement instead of a frontmatter entry. Whenever an encryption key is available it writes an encrypted path and a keyed pin. `--encrypt` asks for that form, and prompts for a key when none is available (0045). Also `--no-commit` and `--dry-run` | 0 written, 2 refusal |
-| `update [paths...]` | rewrite `moved` entries' `src` in place, textually, comments and quoting untouched; `--accept` re-mints `changed` and `never-true` at HEAD and prints both pins; `--only <id>`; `--dry-run` | 0, 1 when work is left undone, 2 under `--no-sources` |
+| `update [paths...]` | rewrite `moved` entries' `src` in place, textually, comments and quoting untouched; `--accept` re-mints `changed` and `never-true` at HEAD and prints both pins; `--only <id>`; `--dry-run` | 0, 1 when work is left undone, 2 under `--no-check-sources` |
 
 Private sources are encrypted with the family's key, and its verbs are the
 family's too. `manni key set` writes it, and `manni key rotate` re-encrypts
@@ -280,10 +281,23 @@ configured collections as the fallback and `--collection <name>` to narrow to
 one, `--ext`, `--exclude`, `-c`, `--no-config`, `--allow-empty`,
 `--no-gitignore`. The document set is the family's top-level `collections:`
 list (0041); `cite.paths` and `cite.exclude` are refused with a message saying
-so. Config `cite:` mirrors the remaining flags, plus `root` and a
-`severity` map. `obfuscate` was a key until stress test 22, and `salt` until
-stress test 23; `cite.salt` is refused with a message naming `manni key set`.
-An unknown key, rule or level is a `CiteError`
+so. Config `cite:` holds the keys below. `obfuscate` was a key until stress
+test 22, `salt` until stress test 23, and `git` and `sources` until stress
+test 24. `cite.salt` is refused with a message naming `manni key set`.
+
+| Key | Type | Default | Mirrors | Meaning |
+|---|---|---|---|---|
+| `root` | string | the git root, else cwd | `--root <dir>` | Where `src:` paths resolve from, relative to the config file. |
+| `baseline` | string | none | `--baseline [path]` | The citation baseline. Setting it turns `--baseline` on. |
+| `checkSources` | boolean | `true` | `--no-check-sources` | Check citations against their sources. `false` runs the page-side rules only, every source status is `skipped`, and `update` refuses it. |
+| `severity` | map, rule to `error \| warning \| notice \| off` | the defaults above | none | Per-rule severity: the family scale, plus `off`. |
+| `allowEmpty` | boolean | `false` | `--allow-empty` | As meta's. |
+| `respectGitignore` | boolean | `true` | `--no-gitignore` | As meta's. |
+
+There is no key or flag for git. It is used whenever it is available: git on
+`PATH` and the root inside a work tree. Sources are then indexed by
+`git ls-files`, else by a directory walk, and a run that would have used git
+warns once (stress test 24). An unknown key, rule or level is a `CiteError`
 that names what is supported and never echoes the value. `--root` defaults to
 `cite.root` from the config, else the git root, else cwd, and may point at
 another checkout.
@@ -317,7 +331,7 @@ $ manni cite check -f github
 ::error file=docs/limits.md,line=9,title=manni:cite/changed::fetch-timeout (lib/limits.ts:4): changed since 3f9c2a1, 1 commit
 # exit 1
 
-$ manni cite check --no-sources docs/                   # public docs repo: page-side only
+$ manni cite check --no-check-sources docs/             # public docs repo: page-side only
 ✓ docs/limits.md
     · fetch-timeout   ~AQm4…:2   skipped
 # exit 0
@@ -346,7 +360,7 @@ collections:
 # no encryptionKey here: MANNI_ENCRYPTION_KEY supplies it, and a key turns
 # encryption on (stress tests 22 and 23; this example first carried
 # `cite: {obfuscate: true}`, then relied on MANNI_CITE_SALT)
-# public CI:   manni cite check --no-sources
+# public CI:   manni cite check --no-check-sources
 # private CI:  check out docs and code side by side; from the docs checkout:
 #              MANNI_ENCRYPTION_KEY=$SECRET manni cite check --root ../code -f sarif
 ```
@@ -682,6 +696,40 @@ encrypted citation and no key, `cite check` reports
 `--no-sources` skips it. `--reveal` prints the decrypted path. The new `src`
 grammar is in draft `1.0.0-proposal.2`, and `proposal.1` is kept.
 
+### 24. Two switches for things the tool can tell, and a scale of its own
+
+`cite:` had a `git` key, and `check`, `add`, `update` and `manni key rotate`
+had `--no-git`. Both turned git off. Whether git is there is a fact the tool
+can find out: git is on `PATH` and the root is inside a work tree, or not. A
+switch for something the tool can detect is one more way to be wrong. Set off
+where git was present, it threw away `never-true`, the diffs and the recorded
+commit for nothing.
+
+`sources`, with `--no-sources`, was a real choice, and the public docs job
+needs it. But the name did not say what it switched. Read cold,
+`sources: false` could mean that nothing here cites a source, or that sources
+are not indexed. What it does is skip the check against the sources.
+
+`severity` took `error`, `warning` or `off`. The family scale is
+`notice | warning | error`, defined once in `src/shared/severity.ts`, and a
+concept two domains share carries the same values. Cite spoke two thirds of
+that scale. A team that wanted a rule reported, below a warning, had nowhere
+to put it.
+
+**Changed as a result:** `git` and `--no-git` are removed, with no alias,
+since cite is unreleased. Git is used whenever it is available, and sources are
+indexed by `git ls-files`, else by a directory walk. A run that would have used
+git and cannot warns once. `check`, `update` and `key rotate` say
+`git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.`
+when a citation carries a commit or `--show-diff` was given. `add` and
+`update --accept` say `git is not available here, so the citation records no commit.`
+when a commit would have been recorded. `sources` is renamed `checkSources`,
+and `--no-sources` becomes `--no-check-sources`. `update` refuses it with
+``update needs the sources: drop --no-check-sources (or `checkSources: false`).``
+`severity` accepts `error | warning | notice | off`, the family scale with `off`
+kept. A notice is reported and never fails a run. It is a `::notice` in GitHub
+output, SARIF level `note`, and never a JUnit failure.
+
 ## Verification
 
 ```bash
@@ -726,7 +774,7 @@ the key.
 ## Consequences
 
 - docevals owes an ADR for `tool:cite`: a native grader, `mode: per-file`,
-  options `root`, `git` and `sources`, mapping `report.findings` to its own
+  options `root` and `checkSources`, mapping `report.findings` to its own
   finding shape by `ruleId`. It is the first integration and not part of this
   proposal.
 - Three `feat:` commits ship one demo video, per the house rule. The demo is the

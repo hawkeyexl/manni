@@ -215,7 +215,7 @@ The output reference documents them beside `external:owned/external`.
 - **`cite check`** decrypts an encrypted `src` and checks the path against the
   tracked files. With an encrypted citation and no key it stays fail-closed.
   The citation is `missing (no encryption key is available to decrypt it)`, an
-  error, unless `--no-sources` skips it. `--reveal` prints the decrypted path,
+  error, unless `--no-check-sources` skips it. `--reveal` prints the decrypted path,
   as it printed the resolved one before.
 
 ### When a write needs a key and none is available
@@ -296,7 +296,6 @@ next two sections.
 | `--allow-empty` | | off | Treat zero matched files as success. |
 | `--no-gitignore` | | on | Include files `.gitignore` covers. |
 | `--root` | `<dir>` | git root | Where cited sources resolve from, to re-key citation pins. |
-| `--no-git` | | on | Index sources by a directory walk instead of `git ls-files`. |
 | `--dry-run` | | off | Print what would change; write nothing. |
 | `-f, --format` | `<format>` | `pretty` | `pretty \| json` |
 
@@ -340,7 +339,7 @@ docs/auth.md: /owner  ~AQx7…  -> ~AQp2…
 Key not written: it comes from MANNI_ENCRYPTION_KEY. Update the secret to the value you passed.
 # exit 0
 
-$ manni key rotate --to 0123456789abcdef0123456789abcdef --collection site --ext md,mdx --exclude "docs/drafts/**" --as markdown -c manni.config.yaml --allow-empty --no-gitignore --root . --no-git --dry-run -f json
+$ manni key rotate --to 0123456789abcdef0123456789abcdef --collection site --ext md,mdx --exclude "docs/drafts/**" --as markdown -c manni.config.yaml --allow-empty --no-gitignore --root . --dry-run -f json
 {"pages":[{"file":"docs/auth.md","rewritten":[{"kind":"metadata","pointer":"/owner","from":"~AQx7…","to":"~AQp2…"}],"skipped":[],"written":false}],"reencrypted":1,"skipped":0,"keyWritten":false}
 # exit 0
 ```
@@ -392,9 +391,9 @@ manni: Unknown --format "sarif". Use pretty or json.
 `rotate` finds values by their ciphertext, not through schema marks. Every
 string in a page's metadata that has the ciphertext shape and decrypts under
 the current key is re-encrypted. So is every encrypted citation `src`, and its
-keyed pin is re-keyed from the cited lines. That is why `rotate` takes `--root`
-and `--no-git`. The authentication tag proves a value is ours, so no schema has
-to be resolved. A mark from a `-s` schema or an unreachable remote cannot hide
+keyed pin is re-keyed from the cited lines. That is why `rotate` takes `--root`,
+and uses git as `cite check` does, whenever it is available. The authentication
+tag proves a value is ours, so no schema has to be resolved. A mark from a `-s` schema or an unreachable remote cannot hide
 a value from rotation (stress test 5).
 
 A value that already decrypts under the new key counts as done, so an

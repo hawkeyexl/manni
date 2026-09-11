@@ -4,10 +4,10 @@
  * the deterministic rungs of the ladder itself.
  *
  * Every run that touches sources works in a throwaway copy of
- * `test/fixtures/cite`, with that copy as `--root` and git switched off, so
- * the source index is a walk of the copy and nothing depends on which
- * fixtures happen to be tracked in this repository. `add` and `update` write,
- * so they need the copy anyway.
+ * `test/fixtures/cite`, with that copy as `--root`. The copy is in the temp
+ * directory, outside any git work tree, so the source index is a walk of the
+ * copy and nothing depends on which fixtures happen to be tracked in this
+ * repository. `add` and `update` write, so they need the copy anyway.
  */
 import { execSync, spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -32,6 +32,9 @@ const FIXTURES = resolve(root, "test", "fixtures", "cite");
 const FIXTURE_KEY = "cite-fixture-key-0123456789abcdef";
 /** Another fixed test key, for the runs that bring their own. */
 const CLI_KEY = "cli-key-0123456789abcdef0123456789abc";
+const NO_HISTORY =
+  "git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.";
+const NO_COMMIT = "git is not available here, so the citation records no commit.";
 
 interface Run {
   stdout: string;
@@ -58,7 +61,7 @@ function run(args: string[], opts: { cwd?: string; input?: string; env?: Record<
 
 /** A fresh copy of the fixture tree; the tests write into it. */
 let work: string;
-/** `cite <verb> … --root . --no-git`, run from the copy. */
+/** `cite <verb> …`, run from the copy. */
 const cite = (args: string[], opts: { input?: string; env?: Record<string, string> } = {}): Run =>
   run(["cite", ...args], { cwd: work, ...opts });
 
@@ -117,7 +120,7 @@ describe("manni cite (usage errors)", () => {
 
   it("check with nothing to check", () => {
     usage(
-      ["check", "--root", ".", "--no-git"],
+      ["check", "--root", "."],
       "No files to check. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.",
     );
   });
@@ -129,14 +132,14 @@ describe("manni cite (usage errors)", () => {
       "utf8",
     );
     usage(
-      ["check", "--collection", "gides", "--root", ".", "--no-git"],
+      ["check", "--collection", "gides", "--root", "."],
       'no collection named "gides" in manni.config.yaml. Configured: pages.',
     );
   });
 
   it("check --collection beside a path", () => {
     usage(
-      ["check", "--collection", "pages", "pages/current.md", "--root", ".", "--no-git"],
+      ["check", "--collection", "pages", "pages/current.md", "--root", "."],
       "--collection selects a configured collection; it cannot be combined with paths.",
     );
   });
@@ -147,7 +150,7 @@ describe("manni cite (usage errors)", () => {
 
   it("check - without --as", () => {
     usage(
-      ["check", "-", "pages/", "--root", ".", "--no-git"],
+      ["check", "-", "pages/", "--root", "."],
       "Reading from stdin (`-`) requires --as <format> to choose an extractor.",
       { input: "---\ntitle: t\n---\n" },
     );
@@ -155,7 +158,7 @@ describe("manni cite (usage errors)", () => {
 
   it("check --as foo", () => {
     usage(
-      ["check", "--as", "foo", "pages/", "--root", ".", "--no-git"],
+      ["check", "--as", "foo", "pages/", "--root", "."],
       `Unknown format "foo". Supported extensions: ${supportedExtensions().join(", ")}.`,
     );
   });
@@ -220,14 +223,42 @@ describe("manni cite (usage errors)", () => {
     usage(["update", "-f", "sarif", "pages/"], 'Unknown --format "sarif". Use pretty or json.');
   });
 
-  it("update --no-sources", () => {
-    usage(["update", "--no-sources", "pages/"], "update needs the sources: drop --no-sources (or `sources: false`).");
+  it("update --no-check-sources", () => {
+    usage(
+      ["update", "--no-check-sources", "pages/"],
+      "update needs the sources: drop --no-check-sources (or `checkSources: false`).",
+    );
+  });
+
+  it("--no-git and --no-sources are gone, with no alias", () => {
+    const gone: [string[], string][] = [
+      [["check", "--no-git", "pages/current.md"], "--no-git"],
+      [["add", "pages/no-citations.md", "src/limits.ts:2", "--no-git"], "--no-git"],
+      [["update", "--no-git", "pages/moved.md"], "--no-git"],
+      [["check", "--no-sources", "pages/current.md"], "--no-sources"],
+      [["update", "--no-sources", "pages/moved.md"], "--no-sources"],
+    ];
+    for (const [args, flag] of gone) {
+      const r = cite([...args, "--root", "."]);
+      expect(r.status).toBe(2);
+      expect(r.stderr).toContain(`unknown option '${flag}'`);
+    }
+  });
+
+  it("cite.git and cite.sources in config are unknown keys", () => {
+    for (const key of ["git", "sources"]) {
+      writeFileSync(join(work, "manni.config.yaml"), `cite:\n  ${key}: false\n`, "utf8");
+      usage(
+        ["check", "--root", ".", "pages/current.md"],
+        `Unknown key "${key}" under cite: in manni.config.yaml. Supported keys: allowEmpty, respectGitignore, root, baseline, checkSources, severity.`,
+      );
+    }
   });
 });
 
 describe("manni cite check (the ladder)", () => {
   const check = (args: string[], opts?: { input?: string; env?: Record<string, string> }): Run =>
-    cite(["check", "--root", ".", "--no-git", ...args], opts);
+    cite(["check", "--root", ".", ...args], opts);
 
   it("--collection runs over the named collection", () => {
     writeFileSync(
@@ -235,7 +266,7 @@ describe("manni cite check (the ladder)", () => {
       "collections:\n  - name: pages\n    paths: ['pages/current.md']\n  - name: rest\n    paths: ['pages/moved.md']\n",
       "utf8",
     );
-    const r = cite(["check", "--collection", "pages", "--root", ".", "--no-git"]);
+    const r = cite(["check", "--collection", "pages", "--root", "."]);
     expect(r.status).toBe(0);
     expect(r.stdout).toContain("pages/current.md");
     expect(r.stdout).not.toContain("moved.md");
@@ -321,9 +352,48 @@ describe("manni cite check (the ladder)", () => {
     expect(r.stdout).toContain('type="manni:cite/changed"');
   });
 
-  it("--no-sources skips every source and passes, with no key", () => {
+  it("says on stderr, once, that history is off when a citation carries a commit and git is not there", () => {
+    const r = check(["pages/frontmatter-only.md", "pages/current.md"]);
+    expect(r.stderr).toBe(`manni: ${NO_HISTORY}\n`);
+    expect(check(["pages/current.md"]).stderr).toBe("");
+    expect(check(["--show-diff", "pages/current.md"]).stderr).toBe(`manni: ${NO_HISTORY}\n`);
+    // stdout stays the report's: json still parses.
+    const json = check(["-f", "json", "pages/frontmatter-only.md"]);
+    expect(json.stderr).toBe(`manni: ${NO_HISTORY}\n`);
+    expect(() => JSON.parse(json.stdout) as unknown).not.toThrow();
+  });
+
+  it("a notice is reported in every format and never fails the check", () => {
+    writeFileSync(join(work, "manni.config.yaml"), "cite:\n  severity:\n    changed: notice\n", "utf8");
+    const pretty = check(["pages/stale-claim.md"]);
+    expect(pretty.status).toBe(0);
+    expect(pretty.stdout).toMatch(/^ℹ pages\/stale-claim\.md$/m);
+    expect(pretty.stdout).toMatch(/^ {4}ℹ fetch-timeout {3}src\/changed\.ts:2 {3}changed {3}\(line \d+\)$/m);
+    expect(pretty.stdout).toMatch(/^1 file checked, 1 passed, 0 failed, 1 finding \(1 notice\)$/m);
+    const github = check(["-f", "github", "pages/stale-claim.md"]);
+    expect(github.status).toBe(0);
+    expect(github.stdout.trim()).toMatch(/^::notice file=pages\/stale-claim\.md,line=\d+,title=manni%3Acite\/changed::/);
+    const sarif = check(["-f", "sarif", "pages/stale-claim.md"]);
+    expect(sarif.status).toBe(0);
+    const levels = (JSON.parse(sarif.stdout) as { runs: { results: { level: string }[] }[] }).runs[0]?.results.map(
+      (r) => r.level,
+    );
+    expect(levels).toEqual(["note"]);
+    const junit = check(["-f", "junit", "pages/stale-claim.md"]);
+    expect(junit.status).toBe(0);
+    expect(junit.stdout).not.toContain("<failure");
+    expect(junit.stdout).toContain('failures="0"');
+    const json = check(["-f", "json", "pages/stale-claim.md"]);
+    expect(json.status).toBe(0);
+    expect((JSON.parse(json.stdout) as { summary: Record<string, number> }).summary).toMatchObject({
+      errors: 0,
+      notices: 1,
+    });
+  });
+
+  it("--no-check-sources skips every source and passes, with no key", () => {
     const token = encryptSourcePath("src/limits.ts", FIXTURE_KEY);
-    const r = check(["--no-sources", "pages/encrypted.md"]);
+    const r = check(["--no-check-sources", "pages/encrypted.md"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toContain(`    · fetch-timeout   ${token}:2   skipped`);
     expect(r.stdout).toContain("1 file checked, 1 passed, 0 failed, 0 findings");
@@ -429,7 +499,7 @@ describe("manni cite add", () => {
     expect(page).toContain("citations:");
     expect(page).toContain("src: src/limits.ts:2");
     expect(page).toContain("<!-- cite fetch-timeout -->");
-    expect(cite(["check", "--root", ".", "--no-git", "pages/no-citations.md"]).status).toBe(0);
+    expect(cite(["check", "--root", ".", "pages/no-citations.md"]).status).toBe(0);
   });
 
   it("writes a bare pin with no anchor", () => {
@@ -474,8 +544,11 @@ describe("manni cite add", () => {
     expect(r.status).toBe(0);
     expect(r.stdout).toContain("citations:");
     expect(r.stdout).toContain("integrity: sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f");
-    expect(r.stderr.trim()).toMatch(
-      /^<stdin>: added citation \(src\/limits\.ts:2, sha256-78af1d33…, no commit\) to frontmatter; claim at line \d+$/,
+    // The copy is no work tree, so the notice comes first, then the report.
+    expect(r.stderr).toMatch(
+      new RegExp(
+        `^manni: ${NO_COMMIT.replace(/[.]/g, "\\.")}\\n<stdin>: added citation \\(src/limits\\.ts:2, sha256-78af1d33…, no commit\\) to frontmatter; claim at line \\d+\\n$`,
+      ),
     );
   });
 
@@ -492,14 +565,21 @@ describe("manni cite add", () => {
     );
   });
 
-  it.skipIf(!gitAvailable())("--no-git mints without recording HEAD, where the root has one", () => {
+  it.skipIf(!gitAvailable())("records HEAD where the root is in a work tree, and says so where it is not", () => {
     // The fixture tree inside this repository as the root, so HEAD exists there.
     const withHead = cite(["add", "pages/no-citations.md", "src/limits.ts:2", "--root", FIXTURES]);
     expect(withHead.status).toBe(0);
     expect(withHead.stdout).toMatch(/\(src\/limits\.ts:2, sha256-78af1d33…, [0-9a-f]{7}\)/);
-    const without = cite(["add", "pages/no-citations.md", "src/limits.ts:3", "--no-git", "--root", FIXTURES]);
+    expect(withHead.stderr).toBe("");
+    // The copy as the root: no work tree, so no commit, and one line saying why.
+    const without = cite(["add", "pages/no-citations.md", "src/limits.ts:3", "--root", "."]);
     expect(without.status).toBe(0);
     expect(without.stdout).toContain("(src/limits.ts:3, sha256-e9f5bdf9…, no commit)");
+    expect(without.stderr).toBe(`manni: ${NO_COMMIT}\n`);
+    // Under --no-commit nothing was wanted from git, so nothing is said.
+    const unwanted = cite(["add", "pages/no-citations.md", "src/limits.ts:1", "--no-commit", "--root", "."]);
+    expect(unwanted.status).toBe(0);
+    expect(unwanted.stderr).toBe("");
   });
 
   it("a key in the environment encrypts without --encrypt", () => {
@@ -517,18 +597,18 @@ describe("manni cite add", () => {
   it("a key in the config encrypts without --encrypt, and check reads it back", () => {
     writeFileSync(join(work, "manni.config.yaml"), `encryptionKey: ${CLI_KEY}\n`, "utf8");
     const token = encryptSourcePath("src/limits.ts", CLI_KEY);
-    const r = cite(["add", "pages/no-citations.md", "src/limits.ts:2", "--claim", CLAIM, "--root", ".", "--no-git"]);
+    const r = cite(["add", "pages/no-citations.md", "src/limits.ts:2", "--claim", CLAIM, "--root", "."]);
     expect(r.status).toBe(0);
     expect(r.stdout).toContain(`(${token}:2, sha256-`);
     expect(readFileSync(join(work, "pages", "no-citations.md"), "utf8")).toContain(`src: ${token}:2`);
-    const after = cite(["check", "--root", ".", "--no-git", "pages/no-citations.md"]);
+    const after = cite(["check", "--root", ".", "pages/no-citations.md"]);
     expect(after.status).toBe(0);
     expect(after.stdout).toContain(`${token}:2   current`);
   });
 
   it("--encrypt with no key, off a terminal, refuses without a question and writes nothing", () => {
     const before = readFileSync(join(work, "pages", "no-citations.md"), "utf8");
-    const r = cite(["add", "pages/no-citations.md", "src/limits.ts:2", "--claim", CLAIM, "--encrypt", "--root", ".", "--no-git"]);
+    const r = cite(["add", "pages/no-citations.md", "src/limits.ts:2", "--claim", CLAIM, "--encrypt", "--root", "."]);
     expect(r.status).toBe(2);
     expect(r.stdout).toBe("");
     expect(r.stderr.split(/\r?\n/)[0]).toBe(
@@ -540,14 +620,14 @@ describe("manni cite add", () => {
   });
 
   it("--obfuscate is gone, with no alias", () => {
-    const r = cite(["add", "pages/no-citations.md", "src/limits.ts:2", "--obfuscate", "--root", ".", "--no-git"]);
+    const r = cite(["add", "pages/no-citations.md", "src/limits.ts:2", "--obfuscate", "--root", "."]);
     expect(r.status).toBe(2);
     expect(r.stderr).toMatch(/unknown option '--obfuscate'/);
   });
 
   it("config salt: is refused, naming the family key, and never echoing the value", () => {
     writeFileSync(join(work, "manni.config.yaml"), "cite:\n  salt: s3cret-value\n", "utf8");
-    const r = cite(["add", "pages/no-citations.md", "src/limits.ts:2", "--root", ".", "--no-git"]);
+    const r = cite(["add", "pages/no-citations.md", "src/limits.ts:2", "--root", "."]);
     expect(r.status).toBe(2);
     expect(r.stderr.split(/\r?\n/)[0]).toBe(
       'manni: manni.config.yaml: "salt" is no longer a cite key. Values are encrypted with a family key: a top-level encryptionKey:, or MANNI_ENCRYPTION_KEY. Run `manni key set`.',
@@ -558,7 +638,7 @@ describe("manni cite add", () => {
 
 describe("manni cite update", () => {
   it("rewrites moved entries so the next check is clean", () => {
-    const r = cite(["update", "--root", ".", "--no-git", "pages/moved.md"]);
+    const r = cite(["update", "--root", ".", "pages/moved.md"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toContain("pages/moved.md: fetch-timeout  src/moved.ts:2 -> src/moved.ts:4  (moved)");
     expect(r.stdout).toContain("pages/moved.md: inline  src/moved.ts:3 -> src/moved.ts:5  (moved)");
@@ -567,14 +647,14 @@ describe("manni cite update", () => {
     expect(page).toContain("src: src/moved.ts:4");
     expect(page).toContain('"src": "src/moved.ts:5"');
 
-    const again = cite(["check", "--root", ".", "--no-git", "pages/moved.md"]);
+    const again = cite(["check", "--root", ".", "pages/moved.md"]);
     expect(again.status).toBe(0);
     expect(again.stdout).toContain("1 file checked, 1 passed, 0 failed, 0 findings");
   });
 
   it("--dry-run prints the diffs and leaves the page alone", () => {
     const before = readFileSync(join(work, "pages", "moved.md"), "utf8");
-    const r = cite(["update", "--dry-run", "--root", ".", "--no-git", "pages/moved.md"]);
+    const r = cite(["update", "--dry-run", "--root", ".", "pages/moved.md"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^--- pages\/moved\.md$/m);
     expect(r.stdout).toContain("+    src: src/moved.ts:4");
@@ -583,12 +663,12 @@ describe("manni cite update", () => {
   });
 
   it("skips a changed entry without --accept and exits 1; --accept re-mints it", () => {
-    const skipped = cite(["update", "--root", ".", "--no-git", "pages/stale-claim.md"]);
+    const skipped = cite(["update", "--root", ".", "pages/stale-claim.md"]);
     expect(skipped.status).toBe(1);
     expect(skipped.stdout).toContain("pages/stale-claim.md: fetch-timeout  ✗ skipped: changed");
     expect(skipped.stdout).toContain("0 citations rewritten in 0 files, 1 skipped");
 
-    const accepted = cite(["update", "--accept", "-f", "json", "--root", ".", "--no-git", "pages/stale-claim.md"]);
+    const accepted = cite(["update", "--accept", "-f", "json", "--root", ".", "pages/stale-claim.md"]);
     expect(accepted.status).toBe(0);
     const parsed = JSON.parse(accepted.stdout) as {
       pages: { file: string; rewritten: { id?: string; reason: string }[]; written: boolean }[];
@@ -599,12 +679,12 @@ describe("manni cite update", () => {
     expect(parsed).toMatchObject({ rewritten: 1, skipped: 0, exitCode: 0 });
     expect(parsed.pages[0]).toMatchObject({ file: "pages/stale-claim.md", written: true });
     expect(parsed.pages[0]?.rewritten[0]).toMatchObject({ id: "fetch-timeout", reason: "accepted" });
-    expect(cite(["check", "--root", ".", "--no-git", "pages/stale-claim.md"]).status).toBe(0);
+    expect(cite(["check", "--root", ".", "pages/stale-claim.md"]).status).toBe(0);
   });
 
   it("with - writes the rewritten page to stdout and the summary to stderr", () => {
     const input = readFileSync(join(FIXTURES, "pages", "moved.md"), "utf8");
-    const r = cite(["update", "-", "--as", "markdown", "--root", ".", "--no-git"], { input });
+    const r = cite(["update", "-", "--as", "markdown", "--root", "."], { input });
     expect(r.status).toBe(0);
     expect(r.stdout).toContain("src: src/moved.ts:4");
     expect(r.stdout).toContain('"src": "src/moved.ts:5"');
@@ -616,7 +696,7 @@ describe("manni cite update", () => {
 
   it("with - and --dry-run prints the diff and the summary only", () => {
     const input = readFileSync(join(FIXTURES, "pages", "moved.md"), "utf8");
-    const r = cite(["update", "-", "--dry-run", "--as", "markdown", "--root", ".", "--no-git"], { input });
+    const r = cite(["update", "-", "--dry-run", "--as", "markdown", "--root", "."], { input });
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^--- <stdin>$/m);
     expect(r.stdout).toContain("+    src: src/moved.ts:4");
@@ -627,7 +707,7 @@ describe("manni cite update", () => {
   });
 
   it("--only limits the rewrite to the named id", () => {
-    const r = cite(["update", "--only", "fetch-timeout", "--root", ".", "--no-git", "pages/moved.md"]);
+    const r = cite(["update", "--only", "fetch-timeout", "--root", ".", "pages/moved.md"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toContain("1 citation rewritten in 1 file, 0 skipped");
     const page = readFileSync(join(work, "pages", "moved.md"), "utf8");

@@ -34,9 +34,9 @@ import { join, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import {
   DEFAULT_CITE_BASELINE_PATH,
+  GIT_UNAVAILABLE_HISTORY,
   buildSourceIndex,
   gitClient,
-  noGit,
   parseCiteConfig,
   parseSrc,
   readPage,
@@ -120,25 +120,37 @@ function isEnoent(error: unknown): boolean {
   return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
 }
 
-async function indexFor(root: string, client: GitClient, git: boolean): Promise<SourceIndex> {
+async function indexFor(root: string, client: GitClient): Promise<SourceIndex> {
   try {
-    return await buildSourceIndex(root, { gitClient: client, git });
+    return await buildSourceIndex(root, { gitClient: client });
   } catch (error) {
     if (isEnoent(error)) throw new KeyError(`Root directory not found: ${root}.`);
     throw error;
   }
 }
 
-/** Whether the page carries a citation whose source is encrypted: only then are sources read. */
-function citesEncrypted(file: string, content: string, format: string | undefined): boolean {
+/**
+ * The page's encrypted citations, the only ones a rotation reads sources
+ * for: whether it has any, and whether one carries a commit (its own or the
+ * page's), which is when history would be read.
+ */
+function encryptedCitations(
+  file: string,
+  content: string,
+  format: string | undefined,
+): { any: boolean; withCommit: boolean } {
   const read = readPage(file, content, format === undefined ? undefined : { format });
-  return read.citations.some(({ citation }) => {
+  const encrypted = read.citations.filter(({ citation }) => {
     try {
       return parseSrc(citation.src).encrypted;
     } catch {
       return false;
     }
   });
+  return {
+    any: encrypted.length > 0,
+    withCommit: encrypted.some(({ citation }) => (citation.commit ?? read.commit) !== undefined),
+  };
 }
 
 interface Planned {
@@ -228,29 +240,31 @@ export async function runKeyRotate(opts: KeyRotateOptions): Promise<KeyRotateRes
 
   const cite = citeSection(file);
   const { root, fellBack } = rootFor(opts.root, cite, file, cwd);
-  const useGit = opts.git ?? true;
-  const client = opts.gitClient ?? (useGit ? gitClient(root) : noGit());
+  const client = opts.gitClient ?? gitClient(root);
   // Built once, and only when a page cites an encrypted source.
   let index: Promise<SourceIndex> | undefined;
   const sourceIndex = (): Promise<SourceIndex> => {
     if (index === undefined) {
       if (fellBack) opts.onNotice?.(`No git root found; resolving src: paths from ${cwd}`);
-      index = indexFor(root, client, useGit);
+      index = indexFor(root, client);
     }
     return index;
   };
 
   const planned: Planned[] = [];
+  let wantsHistory = false;
   for (const rel of files) {
     const path = resolve(base, rel);
     const before = await readFile(path, "utf8");
     if (!ANY_CIPHERTEXT.test(before)) continue;
     const page = { file: rel, content: before, ...(format === undefined ? {} : { format }) };
     const meta = reencryptMetadata(page, { fromKey, toKey });
-    const cited: ReencryptCitationsResult = citesEncrypted(rel, meta.content, format)
+    const encrypted = encryptedCitations(rel, meta.content, format);
+    if (encrypted.withCommit) wantsHistory = true;
+    const cited: ReencryptCitationsResult = encrypted.any
       ? await reencryptCitations(
           { ...page, content: meta.content },
-          { root, fromKey, toKey, git: useGit, gitClient: client, sourceIndex: await sourceIndex() },
+          { root, fromKey, toKey, gitClient: client, sourceIndex: await sourceIndex() },
         )
       : { content: meta.content, rewritten: [], skipped: [] };
     const rewritten: RotatedValue[] = [
@@ -269,6 +283,10 @@ export async function runKeyRotate(opts: KeyRotateOptions): Promise<KeyRotateRes
       changed: cited.content !== before,
     });
   }
+
+  // A pin that no longer holds is re-keyed from the lines at its commit, so a
+  // citation with one wants git. Where git is not there, said once.
+  if (wantsHistory && !(await client.available())) opts.onNotice?.(GIT_UNAVAILABLE_HISTORY);
 
   const reencrypted = planned.reduce((n, p) => n + p.page.rewritten.length, 0);
   const skipped = planned.reduce((n, p) => n + p.page.skipped.length, 0);

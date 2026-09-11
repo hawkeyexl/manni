@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkCitations } from "../../src/cite/core/check-page.js";
+import { noGit } from "../../src/cite/core/git.js";
 import { hashRange } from "../../src/cite/core/hash.js";
 import { encryptSourcePath } from "../../src/cite/core/sources.js";
 import type { CheckPageOptions, GitClient, PageCitationReport } from "../../src/cite/types.js";
@@ -33,6 +34,9 @@ function shallowGit(files: string[], available = true): GitClient {
 }
 
 const FIXTURE_FILES = ["src/a.txt", "src/limits.ts"];
+
+const NO_HISTORY =
+  "git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.";
 
 function check(name: string, over?: Partial<CheckPageOptions>): Promise<PageCitationReport> {
   const file = join(PAGES, name);
@@ -93,11 +97,11 @@ describe("checkCitations", () => {
     ]);
   });
 
-  it("keeps page-side findings and marks every source skipped under sources: false", async () => {
-    const orphan = await check("statement-orphan.md", { sources: false });
+  it("keeps page-side findings and marks every source skipped under checkSources: false", async () => {
+    const orphan = await check("statement-orphan.md", { checkSources: false });
     expect(statuses(orphan)).toEqual(["skipped"]);
     expect(rules(orphan)).toEqual(["statement-orphan"]);
-    const inline = await check("inline.md", { sources: false });
+    const inline = await check("inline.md", { checkSources: false });
     expect(statuses(inline)).toEqual(["skipped", "skipped", "skipped"]);
     expect(inline.findings).toEqual([]);
   });
@@ -120,11 +124,19 @@ describe("checkCitations", () => {
     ]);
   });
 
-  it("reports a git-free run as changed without history", async () => {
-    const report = await check("frontmatter-only.md", { git: false, gitClient: undefined });
+  it("reports a git-free run as changed without history, and says why", async () => {
+    const report = await check("frontmatter-only.md", { gitClient: noGit() });
     expect(statuses(report)).toEqual(["current", "changed"]);
     expect(report.citations[1]?.historyAvailable).toBeUndefined();
-    expect(report.notices).toEqual([]);
+    expect(report.notices).toEqual([NO_HISTORY]);
+  });
+
+  it("says nothing about git when no citation carries a commit, or the sources are off", async () => {
+    const plain = await check("inline.md", { gitClient: shallowGit(FIXTURE_FILES, false) });
+    expect(statuses(plain)).toEqual(["current", "changed", "changed"]);
+    expect(plain.notices).toEqual([]);
+    const skipped = await check("frontmatter-only.md", { gitClient: noGit(), checkSources: false });
+    expect(skipped.notices).toEqual([]);
   });
 
   it("honours a forced format", async () => {
@@ -284,7 +296,7 @@ describe("checkCitations: encrypted sources and the leak sentinel", () => {
     root = makeTempRepo({ init: false, files: { [SECRET]: SECRET_TEXT } });
     const report = await checkCitations(
       { file: "docs/page.md", content: pageFor(encryptSourcePath(SECRET, OTHER), OTHER) },
-      { root, key: KEY, git: false },
+      { root, key: KEY, gitClient: noGit() },
     );
     expect(statuses(report)).toEqual(["missing"]);
     expect(report.citations[0]?.resolvedPath).toBeUndefined();
@@ -298,7 +310,7 @@ describe("checkCitations: encrypted sources and the leak sentinel", () => {
     root = makeTempRepo({ init: false, files: { [SECRET]: SECRET_TEXT } });
     const report = await checkCitations(
       { file: "docs/page.md", content: pageFor(encryptSourcePath(SECRET, KEY), KEY) },
-      { root, git: false },
+      { root, gitClient: noGit() },
     );
     expect(statuses(report)).toEqual(["missing"]);
     expect(report.findings.map((f) => [f.rule, f.severity, f.message])).toEqual([
@@ -310,7 +322,7 @@ describe("checkCitations: encrypted sources and the leak sentinel", () => {
     root = makeTempRepo({ init: false, files: { [SECRET]: SECRET_TEXT } });
     const report = await checkCitations(
       { file: "docs/page.md", content: pageFor(encryptSourcePath(SECRET, KEY), KEY) },
-      { root, git: false, sources: false },
+      { root, gitClient: noGit(), checkSources: false },
     );
     expect(statuses(report)).toEqual(["skipped"]);
     expect(report.findings).toEqual([]);
@@ -320,7 +332,7 @@ describe("checkCitations: encrypted sources and the leak sentinel", () => {
     root = makeTempRepo({ init: false, files: { [SECRET]: SECRET_TEXT } });
     const report = await checkCitations(
       { file: "docs/page.md", content: pageFor(encryptSourcePath(SECRET, KEY), OTHER) },
-      { root, key: KEY, git: false },
+      { root, key: KEY, gitClient: noGit() },
     );
     expect(statuses(report)).toEqual(["changed"]);
     expect(JSON.stringify(report.findings)).not.toContain("SECRET");

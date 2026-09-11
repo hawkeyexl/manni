@@ -9,7 +9,7 @@ import { createRequire } from "node:module";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { checkCitations } from "../../src/cite/core/check-page.js";
-import { gitClient } from "../../src/cite/core/git.js";
+import { gitClient, noGit } from "../../src/cite/core/git.js";
 import { hashRange } from "../../src/cite/core/hash.js";
 import { encryptSourcePath } from "../../src/cite/core/sources.js";
 import { reencryptCitations } from "../../src/cite/index.js";
@@ -69,7 +69,7 @@ describe("reencryptCitations", () => {
 
     const result = await reencryptCitations(
       { file: "docs/limits.md", content },
-      { root: dir, fromKey: FROM, toKey: TO, git: false },
+      { root: dir, fromKey: FROM, toKey: TO, gitClient: noGit() },
     );
 
     const next = encryptSourcePath(PATH, TO);
@@ -90,7 +90,7 @@ describe("reencryptCitations", () => {
 
     // The page reads clean under the new key. The report rows name no path:
     // only the plain entry spells one, and it spelled it before.
-    const report = await checkCitations({ file: "docs/limits.md", content: result.content }, { root: dir, key: TO, git: false });
+    const report = await checkCitations({ file: "docs/limits.md", content: result.content }, { root: dir, key: TO, gitClient: noGit() });
     expect(report.citations.map((c) => c.status)).toEqual(["current", "current", "current"]);
     expect(JSON.stringify({ rewritten: result.rewritten, skipped: result.skipped })).not.toContain(PATH);
   });
@@ -98,14 +98,14 @@ describe("reencryptCitations", () => {
   it("leaves a citation that already decrypts under the new key, so a rerun is safe", async () => {
     const dir = repo();
     const content = onePage(`${encryptSourcePath(PATH, TO)}:2`, pinUnder(TO));
-    const result = await reencryptCitations({ file: "p.md", content }, { root: dir, fromKey: FROM, toKey: TO, git: false });
+    const result = await reencryptCitations({ file: "p.md", content }, { root: dir, fromKey: FROM, toKey: TO, gitClient: noGit() });
     expect(result).toEqual({ content, rewritten: [], skipped: [] });
   });
 
   it("skips a citation that decrypts under neither key", async () => {
     const dir = repo();
     const content = onePage(`${encryptSourcePath(PATH, STRANGER)}:2`, pinUnder(STRANGER));
-    const result = await reencryptCitations({ file: "p.md", content }, { root: dir, fromKey: FROM, toKey: TO, git: false });
+    const result = await reencryptCitations({ file: "p.md", content }, { root: dir, fromKey: FROM, toKey: TO, gitClient: noGit() });
     expect(result.rewritten).toEqual([]);
     expect(result.skipped).toEqual([{ index: 0, line: 3, message: "does not decrypt under the current key" }]);
     expect(result.content).toBe(content);
@@ -114,7 +114,7 @@ describe("reencryptCitations", () => {
   it("skips a citation whose decrypted path is not tracked, without naming it", async () => {
     const dir = repo();
     const content = onePage(`${encryptSourcePath("src/gone.ts", FROM)}:2`, pinUnder(FROM));
-    const result = await reencryptCitations({ file: "p.md", content }, { root: dir, fromKey: FROM, toKey: TO, git: false });
+    const result = await reencryptCitations({ file: "p.md", content }, { root: dir, fromKey: FROM, toKey: TO, gitClient: noGit() });
     expect(result.skipped).toEqual([{ index: 0, line: 3, message: "missing (no tracked file matches)" }]);
     expect(result.content).toBe(content);
     expect(JSON.stringify(result.skipped)).not.toContain("gone");
@@ -124,7 +124,7 @@ describe("reencryptCitations", () => {
     const dir = repo();
     writeFileSync(join(dir, PATH), ladder.variants.CHANGED ?? "", "utf8");
     const content = onePage(`${encryptSourcePath(PATH, FROM)}:2`, pinUnder(FROM), "    id: fetch-timeout\n");
-    const result = await reencryptCitations({ file: "p.md", content }, { root: dir, fromKey: FROM, toKey: TO, git: false });
+    const result = await reencryptCitations({ file: "p.md", content }, { root: dir, fromKey: FROM, toKey: TO, gitClient: noGit() });
     expect(result.rewritten).toEqual([]);
     expect(result.skipped).toEqual([{ id: "fetch-timeout", index: 0, line: 3, message: CHANGED }]);
     expect(result.content).toBe(content);
@@ -133,7 +133,7 @@ describe("reencryptCitations", () => {
   it("comes back byte for byte when the page has no encrypted citation", async () => {
     const dir = repo();
     const content = onePage("src/limits.ts:2", hashRange(ladder.SOURCE, LINE_2));
-    const result = await reencryptCitations({ file: "p.md", content }, { root: dir, fromKey: FROM, toKey: TO, git: false });
+    const result = await reencryptCitations({ file: "p.md", content }, { root: dir, fromKey: FROM, toKey: TO, gitClient: noGit() });
     expect(result).toEqual({ content, rewritten: [], skipped: [] });
   });
 
@@ -156,7 +156,7 @@ describe("reencryptCitations", () => {
     expect(report.citations.map((c) => c.status)).toEqual(["changed"]);
 
     // Without git the same entry has no lines to be re-keyed from.
-    const blind = await reencryptCitations({ file: "p.md", content }, { root: dir, fromKey: FROM, toKey: TO, git: false });
+    const blind = await reencryptCitations({ file: "p.md", content }, { root: dir, fromKey: FROM, toKey: TO, gitClient: noGit() });
     expect(blind.skipped).toEqual([{ index: 0, line: 3, message: CHANGED }]);
   });
 });

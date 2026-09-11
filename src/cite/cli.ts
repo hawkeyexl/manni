@@ -103,8 +103,6 @@ interface InputCliOptions {
   allowEmpty?: boolean;
   /** `--no-gitignore`. */
   gitignore: boolean;
-  /** `--no-git`. */
-  git: boolean;
   /** `--root <dir>`: where `src:` paths resolve from. */
   root?: string;
 }
@@ -121,8 +119,8 @@ interface CheckCliOptions extends InputCliOptions {
   baseline?: string | boolean;
   /** `--write-baseline [path]`; `true` for the bare flag. */
   writeBaseline?: string | boolean;
-  /** `--no-sources`. */
-  sources: boolean;
+  /** `--no-check-sources`. */
+  checkSources: boolean;
   showDiff?: boolean;
   reveal?: boolean;
 }
@@ -136,8 +134,6 @@ interface AddCliOptions {
   encrypt?: boolean;
   /** `--no-commit`. */
   commit: boolean;
-  /** `--no-git`. */
-  git: boolean;
   dryRun?: boolean;
   as?: string;
   root?: string;
@@ -145,8 +141,8 @@ interface AddCliOptions {
 }
 
 interface UpdateCliOptions extends InputCliOptions {
-  /** `--no-sources`: declared so the refusal names the flag rather than commander rejecting it. */
-  sources: boolean;
+  /** `--no-check-sources`: declared so the refusal names the flag rather than commander rejecting it. */
+  checkSources: boolean;
   accept?: boolean;
   /** `--only <id>`, repeatable; commander's default value is `[]`. */
   only: string[];
@@ -245,8 +241,7 @@ export function buildProgram(): Command {
       ),
     )
     .option("--no-baseline", "ignore a baseline configured by `baseline:`")
-    .option("--no-git", "skip git: no never-true, no history, no commit subjects")
-    .option("--no-sources", "page-side rules only; every source status is skipped")
+    .option("--no-check-sources", "page-side rules only; every source status is skipped")
     .option(
       "--root <dir>",
       "directory src: paths resolve from (default: cite.root from config, else the git root, else the current directory)",
@@ -293,8 +288,10 @@ export function buildProgram(): Command {
           onNotice: notice,
           baseline: options.baseline,
           writeBaseline: options.writeBaseline,
-          git: explicitFalse(options.git),
-          sources: explicitFalse(options.sources),
+          checkSources: explicitFalse(options.checkSources),
+          // Only so the run can say git is not there to give diffs; the diffs
+          // themselves are the pretty reporter's.
+          showDiff: options.showDiff ? true : undefined,
           root: options.root,
         });
 
@@ -353,7 +350,6 @@ export function buildProgram(): Command {
       "write src encrypted, with a keyed pin; with no key, offer to create one (an available key encrypts without the flag)",
     )
     .option("--no-commit", "do not record HEAD")
-    .option("--no-git", "skip git: mint without recording HEAD, and index sources by a directory walk")
     .option("--dry-run", "print the diff; write nothing")
     .option("--as <format>", "force the page format")
     .option("--root <dir>", "directory src: paths resolve from (as check)")
@@ -388,7 +384,6 @@ export function buildProgram(): Command {
           // encrypts without the flag.
           encrypt: options.encrypt ? true : undefined,
           commit: explicitFalse(options.commit),
-          git: explicitFalse(options.git),
           dryRun,
           as: options.as,
           ...configOption(options.config),
@@ -441,8 +436,7 @@ export function buildProgram(): Command {
     .option("--no-config", "ignore any discovered config file")
     .option("--allow-empty", "treat zero matched files as success")
     .option("--no-gitignore", "update files .gitignore covers")
-    .option("--no-git", "skip git: no never-true, no history")
-    .option("--no-sources", "refused: update needs the sources")
+    .option("--no-check-sources", "refused: update needs the sources")
     .option("--root <dir>", "directory src: paths resolve from (as check)")
     .option("--accept", "re-mint changed and never-true entries at HEAD; prints old and new pins")
     .option("--only <id>", "limit to entries with this id; repeatable", collect, [])
@@ -470,9 +464,9 @@ export function buildProgram(): Command {
             `Unknown --format "${format}". Use ${COMMON_FORMAT_LIST}.`,
           );
         }
-        if (!options.sources) {
+        if (!options.checkSources) {
           throw new CiteError(
-            "update needs the sources: drop --no-sources (or `sources: false`).",
+            "update needs the sources: drop --no-check-sources (or `checkSources: false`).",
           );
         }
         const exts = options.ext ? splitList(options.ext) : undefined;
@@ -496,7 +490,6 @@ export function buildProgram(): Command {
           allowEmpty: options.allowEmpty ? true : undefined,
           respectGitignore: explicitFalse(options.gitignore),
           onNotice: notice,
-          git: explicitFalse(options.git),
           root: options.root,
           accept: options.accept ? true : undefined,
           only: options.only.length > 0 ? options.only : undefined,

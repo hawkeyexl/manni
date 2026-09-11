@@ -4,8 +4,8 @@
  * family in a temp directory: a config holding the key and two collections,
  * two pages with an encrypted `owner`, and one page citing an encrypted source.
  * A `.git` directory is made by hand so discovery stops there and the source
- * root is the tree, and sources are indexed by a walk (`git: false`), so
- * nothing depends on git answering. Every run passes its own `env`, so a
+ * root is the tree, and sources are indexed by a walk (an injected `noGit()`),
+ * so nothing depends on git answering. Every run passes its own `env`, so a
  * developer's `MANNI_ENCRYPTION_KEY` is never read.
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -14,7 +14,7 @@ import { parse } from "yaml";
 import { afterEach, describe, expect, it } from "vitest";
 import { hashRange } from "../../src/cite/core/hash.js";
 import { encryptSourcePath } from "../../src/cite/core/sources.js";
-import { runCheck } from "../../src/cite/index.js";
+import { noGit, runCheck } from "../../src/cite/index.js";
 import {
   KeyError,
   runKeyRotate,
@@ -145,7 +145,7 @@ function srcOf(): string {
 }
 
 function rotate(opts: Partial<KeyRotateOptions> = {}): Promise<KeyRotateResult> {
-  return runKeyRotate({ inputs: [], cwd: tree(), env: {}, git: false, ...opts });
+  return runKeyRotate({ inputs: [], cwd: tree(), env: {}, gitClient: noGit(), ...opts });
 }
 
 /** The refusal a run ends in: a `KeyError`, by message. */
@@ -220,9 +220,30 @@ describe("runKeyRotate: a whole run", () => {
     const stale = await runValidate({ inputs, cliSchemas, cwd: tree(), env: { MANNI_ENCRYPTION_KEY: OLD } });
     expect(stale.summary.failed).toBe(2);
 
-    const checked = await runCheck({ inputs: ["docs/limits.md"], cwd: tree(), env: {}, git: false });
+    const checked = await runCheck({ inputs: ["docs/limits.md"], cwd: tree(), env: {}, gitClient: noGit() });
     expect(checked.pages[0]?.citations.map((c) => c.status)).toEqual(["current"]);
     expect(checked.summary.failed).toBe(0);
+  });
+
+  it("says once that git is not there when a citation it re-keys carries a commit", async () => {
+    const pinned = citingPage(OLD).replace(
+      "    claim: The fetch timeout is 10 seconds.",
+      "    commit: 3f9c2a1\n    claim: The fetch timeout is 10 seconds.",
+    );
+    family({ extra: { "docs/pinned.md": pinned, "blog/pinned.md": pinned } });
+    const notices: string[] = [];
+    const result = await rotate({ onNotice: (m) => notices.push(m) });
+    expect(result.skipped).toBe(0);
+    expect(notices.filter((m) => m.startsWith("git "))).toEqual([
+      "git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.",
+    ]);
+  });
+
+  it("says nothing about git when no citation it re-keys carries a commit", async () => {
+    family();
+    const notices: string[] = [];
+    await rotate({ onNotice: (m) => notices.push(m) });
+    expect(notices.filter((m) => m.startsWith("git "))).toEqual([]);
   });
 
   it("renders the plan's JSON shape, with full ciphertexts", async () => {

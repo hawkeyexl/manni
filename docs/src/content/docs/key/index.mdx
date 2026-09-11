@@ -183,7 +183,7 @@ read, keep the key in the environment instead:
 
 A job without the secret still runs. `manni meta validate` drops findings on
 the encrypted values it cannot decrypt and says so once on stderr, and
-`manni cite check --no-sources` skips the encrypted sources. To rotate a key
+`manni cite check --no-check-sources` skips the encrypted sources. To rotate a key
 that lives in the environment, pass the new one with `--to`, then update the
 secret to that value. See
 [a key from the environment](/manni/key/reference/cli/#a-key-from-the-environment).

@@ -31,7 +31,7 @@ import {
 import { toValidationResult } from "../core/adapt.js";
 import { checkCitations } from "../core/check-page.js";
 import { DEFAULT_CITE_BASELINE_PATH, resolveCiteRun } from "../core/config.js";
-import { gitClient, noGit } from "../core/git.js";
+import { GIT_UNAVAILABLE_HISTORY, gitClient } from "../core/git.js";
 import { buildSourceIndex } from "../core/sources.js";
 import { CiteError } from "../errors.js";
 import type {
@@ -56,15 +56,17 @@ export interface PreparedRun {
   forced?: MetadataExtractor;
   /** What every `checkCitations` call in the run shares: root, key, table, client, index. */
   pageOptions: CheckPageOptions;
+  /** The git client every page shares, the one in `pageOptions`. */
+  git: GitClient;
 }
 
 function isEnoent(error: unknown): boolean {
   return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
 }
 
-async function indexFor(root: string, client: GitClient, git: boolean): Promise<SourceIndex> {
+async function indexFor(root: string, client: GitClient): Promise<SourceIndex> {
   try {
-    return await buildSourceIndex(root, { gitClient: client, git });
+    return await buildSourceIndex(root, { gitClient: client });
   } catch (error) {
     if (isEnoent(error)) throw new CiteError(`Root directory not found: ${root}.`);
     throw error;
@@ -96,9 +98,9 @@ export async function prepareRun(
   });
   const { config, inputs, base } = run;
 
-  const sources = opts.sources ?? config?.sources ?? true;
-  if (requireSources && !sources) {
-    throw new CiteError(`${verb} needs the sources: drop --no-sources (or \`sources: false\`).`);
+  const checkSources = opts.checkSources ?? config?.checkSources ?? true;
+  if (requireSources && !checkSources) {
+    throw new CiteError(`${verb} needs the sources: drop --no-check-sources (or \`checkSources: false\`).`);
   }
   if (inputs.length === 0) {
     throw new CiteError(
@@ -143,19 +145,20 @@ export async function prepareRun(
   });
   assertNonEmpty({ files, inputs: fileInputs, usingStdin, allowEmpty, exclude, exts, gitignoreSkipped, action });
 
-  const git = opts.git ?? config?.git ?? true;
-  const client = git ? gitClient(run.root) : noGit();
+  // Git is used whenever it is there: on PATH, with the root inside a work
+  // tree. Where it is not, the index is a walk and history is off, and a page
+  // whose citations wanted history says so (see `checkCitations`).
+  const git = opts.gitClient ?? gitClient(run.root);
   const pageOptions: CheckPageOptions = {
     root: run.root,
-    git,
-    sources,
+    checkSources,
     key: run.key,
     severity: config?.severity,
-    gitClient: client,
+    gitClient: git,
   };
-  if (sources) pageOptions.sourceIndex = await indexFor(run.root, client, git);
+  if (checkSources) pageOptions.sourceIndex = await indexFor(run.root, git);
 
-  return { cwd, run, files, gitignoreSkipped, usingStdin, forced, pageOptions };
+  return { cwd, run, files, gitignoreSkipped, usingStdin, forced, pageOptions, git };
 }
 
 /** Read a resolved target, as the run labelled it. */
@@ -163,20 +166,26 @@ export function readTarget(run: CiteRun, file: string): Promise<string> {
   return readFile(resolve(run.base, file), "utf8");
 }
 
-/** Run-level notices are said once per run, however many pages raised them. */
-export function sayNotices(pages: readonly PageCitationReport[], onNotice: CheckOptions["onNotice"]): void {
+/**
+ * Run-level notices are said once per run, however many pages raised them.
+ * `also` is what the run has to say beyond its pages: said after them, and
+ * not again when a page already said it.
+ */
+export function sayNotices(
+  pages: readonly PageCitationReport[],
+  onNotice: CheckOptions["onNotice"],
+  also: readonly string[] = [],
+): void {
   const said = new Set<string>();
-  for (const page of pages) {
-    for (const notice of page.notices) {
-      if (said.has(notice)) continue;
-      said.add(notice);
-      onNotice?.(notice);
-    }
+  for (const notice of [...pages.flatMap((page) => page.notices), ...also]) {
+    if (said.has(notice)) continue;
+    said.add(notice);
+    onNotice?.(notice);
   }
 }
 
 export async function runCheck(opts: CheckOptions): Promise<CheckRun> {
-  const { cwd, run, files, gitignoreSkipped, usingStdin, forced, pageOptions } = await prepareRun(
+  const { cwd, run, files, gitignoreSkipped, usingStdin, forced, pageOptions, git } = await prepareRun(
     opts,
     "checked",
     "check",
@@ -188,7 +197,10 @@ export async function runCheck(opts: CheckOptions): Promise<CheckRun> {
   };
   if (usingStdin) await checkOne(STDIN_LABEL, opts.stdinContent ?? "");
   for (const file of files) await checkOne(file, await readTarget(run, file));
-  sayNotices(pages, opts.onNotice);
+  // `--show-diff` wants history whatever the pages carry. With the sources
+  // off nothing is classified, so nothing wants git.
+  const wantsDiff = opts.showDiff === true && pageOptions.checkSources !== false && !(await git.available());
+  sayNotices(pages, opts.onNotice, wantsDiff ? [GIT_UNAVAILABLE_HISTORY] : []);
 
   const results = pages.map(toValidationResult);
   // Fingerprints must not depend on where the command was run from, so they
@@ -209,7 +221,8 @@ export async function runCheck(opts: CheckOptions): Promise<CheckRun> {
   const failed = reported.filter((r) => !r.ok).length;
   const count = (keep: (e: FieldError) => boolean): number =>
     reported.reduce((n, r) => n + r.errors.filter(keep).length, 0);
-  const warnings = count((e) => !isErrorSeverity(e));
+  const warnings = count((e) => e.severity === "warning");
+  const notices = count((e) => e.severity === "notice");
   const summary: RunSummary = {
     files: reported.length,
     passed: reported.length - failed,
@@ -218,9 +231,10 @@ export async function runCheck(opts: CheckOptions): Promise<CheckRun> {
     // Omitted at zero, as meta's summary has them, so the JSON shape of a
     // clean run is the one every consumer of `meta validate` already reads.
     ...(warnings > 0 ? { warnings } : {}),
+    ...(notices > 0 ? { notices } : {}),
     ...(gitignoreSkipped > 0 ? { gitignoreSkipped } : {}),
     ...(baseline ? { baseline } : {}),
   };
 
-  return { results: reported, summary, frame, pages, warnings };
+  return { results: reported, summary, frame, pages, warnings, notices };
 }

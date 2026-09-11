@@ -122,7 +122,21 @@ export function gitClient(root: string): GitClient {
   };
 }
 
-/** A client that answers "no git": `available()` false, everything else empty. */
+/**
+ * What a run says, once, when git is not there and the run wanted it: a
+ * citation carries a commit, or `--show-diff` asked for diffs, so history
+ * would have been read. Said through `onNotice`; never a finding.
+ */
+export const GIT_UNAVAILABLE_HISTORY =
+  "git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.";
+
+/** What `add` and `update --accept` say, once, when a commit would have been recorded and git is not there. */
+export const GIT_UNAVAILABLE_COMMIT = "git is not available here, so the citation records no commit.";
+
+/**
+ * A client that answers "no git": `available()` false, everything else empty.
+ * What a caller passes as `gitClient` to run without git where git is there.
+ */
 export function noGit(): GitClient {
   return {
     available: () => Promise.resolve(false),

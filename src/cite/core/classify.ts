@@ -35,9 +35,8 @@ export const MAX_RANGE_LINES = 5000;
 export interface ClassifyOptions {
   root: string;
   index: SourceIndex;
+  /** History is read through it when it reports git available, and never otherwise. */
   git: GitClient;
-  /** Default true; false skips never-true, history and subjects. */
-  useGit?: boolean;
   /** The encryption key: decrypts an encrypted source and keys its pin. */
   key?: string;
   /** Page-level `citation-commit`, the default for entries without `commit`. */
@@ -204,7 +203,7 @@ export async function classifyCitation(
   }
 
   let history: History = { kind: "none" };
-  if (opts.useGit !== false && commit !== undefined && (await opts.git.available())) {
+  if (commit !== undefined && (await opts.git.available())) {
     history = await historyOf(opts.git, commit, source.resolvedPath, range, pin, key, opts.budget);
   }
 

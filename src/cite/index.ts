@@ -13,7 +13,7 @@ export { detectEol, fencedBlockAfter, fencedBlockAt, fencedBlocks, formatStateme
 export type { StatementForm } from "./core/statements.js";
 export { blockMatches, findClaim, normalizeWhitespace, paragraphContains } from "./core/claims.js";
 export type { ClaimHit } from "./core/claims.js";
-export { gitClient, noGit } from "./core/git.js";
+export { GIT_UNAVAILABLE_COMMIT, GIT_UNAVAILABLE_HISTORY, gitClient, noGit } from "./core/git.js";
 export { MAX_RANGE_LINES, MOVE_BUDGET_BYTES, MOVE_WINDOW_LINES, classifyCitation, findWindows, historyOf } from "./core/classify.js";
 export type { ClassifyOptions, FindWindowsOptions, History } from "./core/classify.js";
 export { MAX_STATEMENTS_PER_PAGE, pageCommit, readPage, validateEntry } from "./core/page.js";

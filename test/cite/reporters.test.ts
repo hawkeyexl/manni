@@ -66,14 +66,11 @@ function page(over: Partial<PageCitationReport> = {}): PageCitationReport {
 /** A run whose adapted results and summary are derived the way the core derives them. */
 function runOf(pages: PageCitationReport[], over: Partial<CheckRun> = {}): CheckRun {
   const results = pages.map(toValidationResult);
-  const errors = results.reduce(
-    (n, r) => n + r.errors.filter((e) => e.severity !== "warning").length,
-    0,
-  );
-  const warnings = results.reduce(
-    (n, r) => n + r.errors.filter((e) => e.severity === "warning").length,
-    0,
-  );
+  const count = (severity: string): number =>
+    results.reduce((n, r) => n + r.errors.filter((e) => e.severity === severity).length, 0);
+  const errors = count("error");
+  const warnings = count("warning");
+  const notices = count("notice");
   const failed = results.filter((r) => !r.ok).length;
   const summary: RunSummary = {
     files: results.length,
@@ -81,6 +78,7 @@ function runOf(pages: PageCitationReport[], over: Partial<CheckRun> = {}): Check
     failed,
     errors,
     ...(warnings > 0 ? { warnings } : {}),
+    ...(notices > 0 ? { notices } : {}),
   };
   return {
     results,
@@ -88,6 +86,7 @@ function runOf(pages: PageCitationReport[], over: Partial<CheckRun> = {}): Check
     frame: { cwd: "/repo", base: "/repo" },
     pages,
     warnings,
+    notices,
     ...over,
   };
 }
@@ -288,6 +287,7 @@ describe("renderCheckPretty", () => {
       frame: { cwd: "/repo", base: "/repo" },
       pages: [p],
       warnings: 0,
+      notices: 0,
     };
     expect(splitBaselined(p, forgiven)).toEqual({ reported: [], baselined: p.findings });
     expect(renderCheckPretty(run, NO_COLOR)).toBe(
@@ -325,11 +325,46 @@ describe("renderCheckPretty", () => {
       frame: { cwd: "/repo", base: "/repo" },
       pages: [p],
       warnings: 0,
+      notices: 0,
     };
     const out = renderCheckPretty(run, NO_COLOR);
     expect(out).toContain("✓ docs/limits.md  (2 baselined)");
     expect(out).not.toContain("baselineds");
     expect(out).toContain("2 findings (2 baselined)");
+  });
+
+  it("prints a notice under ℹ, keeps the file passing, and counts it apart from warnings", () => {
+    const run = runOf([
+      page({
+        citations: [citation({ status: "changed" })],
+        findings: [finding({ rule: "changed", severity: "notice", message: "changed since 3f9c2a1, 1 commit" })],
+      }),
+    ]);
+    expect(renderCheckPretty(run, NO_COLOR)).toBe(
+      [
+        "ℹ docs/limits.md",
+        "    ℹ fetch-timeout   lib/limits.ts:2   changed since 3f9c2a1, 1 commit   (line 9)",
+        "",
+        "1 file checked, 1 passed, 0 failed, 1 finding (1 notice)",
+      ].join("\n"),
+    );
+  });
+
+  it("names warnings and notices apart on the summary line", () => {
+    const run = runOf([
+      page({
+        citations: [citation({ status: "changed" })],
+        findings: [
+          finding({ rule: "changed", message: "changed" }),
+          finding({ rule: "moved", severity: "warning", message: "moved -> lib/limits.ts:4" }),
+          finding({ rule: "quote-drift", severity: "notice", message: "quote drifted" }),
+        ],
+      }),
+    ]);
+    const out = renderCheckPretty(run, NO_COLOR).split("\n");
+    expect(out[0]).toBe("✗ docs/limits.md");
+    expect(out.slice(1, 4).map((line) => line.trim().slice(0, 1))).toEqual(["✗", "↕", "ℹ"]);
+    expect(out.at(-1)).toBe("1 file checked, 0 passed, 1 failed, 3 findings (1 warning) (1 notice)");
   });
 
   it("colours the marks, the id column and the locations", () => {
@@ -417,6 +452,13 @@ describe("renderCheckGithub", () => {
   it("is empty on a clean run", () => {
     expect(renderCheckGithub(runOf([page({ citations: [citation({ status: "current" })] })]))).toBe("");
   });
+
+  it("emits ::notice for a notice", () => {
+    const run = runOf([page({ findings: [finding({ rule: "changed", severity: "notice", message: "changed" })] })]);
+    expect(renderCheckGithub(run)).toBe(
+      "::notice file=docs/limits.md,line=9,title=manni%3Acite/changed::fetch-timeout (lib/limits.ts:2): changed",
+    );
+  });
 });
 
 describe("update reporters", () => {
@@ -458,6 +500,35 @@ describe("update reporters", () => {
 
   it("serializes the run as is", () => {
     expect(JSON.parse(renderUpdateJson(run))).toEqual(run);
+  });
+});
+
+describe("update reporters: severity marks", () => {
+  it("marks a skipped finding by its severity: ✗, ↕, ℹ", () => {
+    const run: UpdateRun = {
+      pages: [
+        {
+          file: "docs/limits.md",
+          rewritten: [],
+          skipped: [
+            finding({ rule: "changed", message: "changed" }),
+            finding({ rule: "moved-ambiguous", severity: "warning", message: "ambiguous" }),
+            finding({ rule: "quote-drift", severity: "notice", message: "quote drifted" }),
+          ],
+          diff: "",
+          written: false,
+        },
+      ],
+      rewritten: 0,
+      skipped: 3,
+      exitCode: 1,
+    };
+    expect(renderUpdatePretty(run, NO_COLOR).split("\n")).toEqual([
+      "docs/limits.md: fetch-timeout  ✗ skipped: changed",
+      "docs/limits.md: fetch-timeout  ↕ skipped: ambiguous",
+      "docs/limits.md: fetch-timeout  ℹ skipped: quote drifted",
+      "0 citations rewritten in 0 files, 3 skipped",
+    ]);
   });
 });
 

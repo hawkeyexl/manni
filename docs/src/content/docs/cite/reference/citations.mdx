@@ -131,7 +131,7 @@ path is padded before encryption, so a ciphertext's length reveals only a
 size class.
 
 Without the key, `check` reports an encrypted citation `missing`, an error,
-unless `--no-sources` skips it. Under another key it is `missing` too, because
+unless `--no-check-sources` skips it. Under another key it is `missing` too, because
 the ciphertext does not decrypt.
 
 ## The hashing rule
@@ -229,6 +229,18 @@ a claim `add` accepted is a claim `check` will find.
 table. A status is a finding when its rule's severity is not `off`; the
 page-side rules are findings in their own right.
 
+A severity is one of the family's three levels, or `off`. The defaults are in
+the tables below, and
+[`severity:`](/manni/cite/reference/configuration/#severity) in config moves
+any of them.
+
+| Severity | Reported | Fails the run | `github` | SARIF `level` | JUnit |
+|---|---|---|---|---|---|
+| `error` | yes | yes, exit `1`, unless baselined | `::error` | `error` | a `failure` |
+| `warning` | yes | no | `::warning` | `warning` | a passing testcase |
+| `notice` | yes | no | `::notice` | `note` | a passing testcase |
+| `off` | no | no | nothing | nothing | nothing |
+
 ### Source-side statuses
 
 | Status | Meaning | Message | Default |
@@ -236,10 +248,10 @@ page-side rules are findings in their own right.
 | `current` | The range hashes to the pin. | `current` | `off` |
 | `moved` | The pin does not hold at its range, and exactly one window of the same length elsewhere in the file hashes to it. `update` rewrites the `src`. A whole-file citation never moves. | `moved -> lib/limits.ts:4` | `warning` |
 | `moved-ambiguous` | Two or more windows hash to the pin; the tool will not guess which. Widen the range. | `moved, 2 candidates (lib/limits.ts:4, lib/limits.ts:11); widen the range` | `error` |
-| `changed` | No window hashes to the pin. With a commit and history: since when, and how many commits touched the path. With a commit git cannot show: `history unavailable`, plus one run notice about `fetch-depth: 0`. | `changed since 3f9c2a1, 2 commits` | `error` |
+| `changed` | No window hashes to the pin. With a commit and history: since when, and how many commits touched the path. With a commit git cannot show: `history unavailable`, plus one run notice about `fetch-depth: 0`. Where git is not available, a bare `changed`, plus one run warning. | `changed since 3f9c2a1, 2 commits` | `error` |
 | `never-true` | No window of the range's length anywhere in the file at the recorded commit hashes to the pin, or the path was absent there. Asserted only when git can show that commit; a pin that held somewhere in that file was true when minted, so a later mismatch is `changed`. | `never true: the pin does not match at 3f9c2a1` | `error` |
-| `missing` | The path is not a tracked file under the root, or an encrypted source cannot be decrypted. A rename is `missing`; `add` is the remedy. | `missing`. An encrypted source says why: `missing (no encryption key is available to decrypt it)`, `missing (does not decrypt under the current key)` or `missing (no tracked file matches; wrong --root?)` | `error` |
-| `skipped` | The sources were not read (`--no-sources` or `sources: false`). Not a finding; `json` carries the status. | `skipped` | none |
+| `missing` | The path is not a tracked file under the root (without git, not a file under it), or an encrypted source cannot be decrypted. A rename is `missing`; `add` is the remedy. | `missing`. An encrypted source says why: `missing (no encryption key is available to decrypt it)`, `missing (does not decrypt under the current key)` or `missing (no tracked file matches; wrong --root?)` | `error` |
+| `skipped` | The sources were not read (`--no-check-sources` or `checkSources: false`). Not a finding; `json` carries the status. | `skipped` | none |
 
 The move search runs whenever the pin does not hold, and history decides only
 what a non-match is called. With the original text (git could show the

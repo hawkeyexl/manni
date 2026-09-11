@@ -52,11 +52,11 @@ describe("parseCiteConfig", () => {
         "respectGitignore: false",
         "root: ../src",
         "baseline: .cite-baseline.json",
-        "git: false",
-        "sources: false",
+        "checkSources: false",
         "severity:",
         "  moved: error",
         "  changed: warning",
+        "  claim-ambiguous: notice",
         "  current: off",
       ].join("\n"),
     );
@@ -65,9 +65,8 @@ describe("parseCiteConfig", () => {
       respectGitignore: false,
       root: "../src",
       baseline: ".cite-baseline.json",
-      git: false,
-      sources: false,
-      severity: { moved: "error", changed: "warning", current: "off" },
+      checkSources: false,
+      severity: { moved: "error", changed: "warning", "claim-ambiguous": "notice", current: "off" },
     });
   });
 
@@ -85,7 +84,7 @@ describe("parseCiteConfig", () => {
   it("rejects an unknown key, naming it and the supported keys", () => {
     expect(() => parse("allowEmtpy: true\n")).toThrow(CiteError);
     expect(() => parse("allowEmtpy: true\n")).toThrow(
-      /^Unknown key "allowEmtpy" under cite: in c\.yaml\. Supported keys: allowEmpty, respectGitignore, root, baseline, git, sources, severity\.$/,
+      /^Unknown key "allowEmtpy" under cite: in c\.yaml\. Supported keys: allowEmpty, respectGitignore, root, baseline, checkSources, severity\.$/,
     );
   });
 
@@ -101,8 +100,18 @@ describe("parseCiteConfig", () => {
 
   it("calls obfuscate what it now is, an unknown key", () => {
     expect(messageOf("obfuscate: true\n")).toBe(
-      'Unknown key "obfuscate" under cite: in c.yaml. Supported keys: allowEmpty, respectGitignore, root, baseline, git, sources, severity.',
+      'Unknown key "obfuscate" under cite: in c.yaml. Supported keys: allowEmpty, respectGitignore, root, baseline, checkSources, severity.',
     );
+  });
+
+  it("calls git and sources what they now are, unknown keys", () => {
+    // Cite is unreleased, so a dropped or renamed key has no alias and no
+    // deprecation message: it is a typo like any other.
+    for (const key of ["git", "sources"]) {
+      expect(messageOf(`${key}: false\n`)).toBe(
+        `Unknown key "${key}" under cite: in c.yaml. Supported keys: allowEmpty, respectGitignore, root, baseline, checkSources, severity.`,
+      );
+    }
   });
 
   it("refuses paths and exclude, saying where the document set went", () => {
@@ -129,11 +138,20 @@ describe("parseCiteConfig", () => {
 
   it("rejects a bad severity level, naming the rule and the levels", () => {
     expect(() => parse("severity:\n  moved: loud\n")).toThrow(
-      /cite\.severity\.moved in c\.yaml must be one of error, warning, off/,
+      /cite\.severity\.moved in c\.yaml must be one of error, warning, notice, off/,
     );
     expect(() => parse("severity:\n  moved: loud\n")).toThrow(/"loud"/);
     expect(() => parse("severity:\n  moved: 3\n")).toThrow(
-      /cite\.severity\.moved in c\.yaml must be one of error, warning, off/,
+      /cite\.severity\.moved in c\.yaml must be one of error, warning, notice, off/,
+    );
+  });
+
+  it("takes every level of the family scale, and off", () => {
+    for (const level of ["error", "warning", "notice", "off"]) {
+      expect(parse(`severity:\n  moved: ${level}\n`).severity).toEqual({ moved: level });
+    }
+    expect(messageOf("severity:\n  moved: info\n")).toBe(
+      'cite.severity.moved in c.yaml must be one of error, warning, notice, off, not "info".',
     );
   });
 
@@ -144,7 +162,7 @@ describe("parseCiteConfig", () => {
   });
 
   it("names the key and the expected type for a wrong-typed value", () => {
-    for (const key of ["allowEmpty", "respectGitignore", "git", "sources"]) {
+    for (const key of ["allowEmpty", "respectGitignore", "checkSources"]) {
       expect(() => parse(`${key}: yes please\n`)).toThrow(
         new RegExp(`cite\\.${key} in c\\.yaml must be a boolean`),
       );
@@ -175,7 +193,7 @@ describe("parseCiteConfig", () => {
     }
     // The same rule for every other key.
     expect(messageOf(`root: [${secret}]\n`)).not.toContain(secret);
-    expect(messageOf(`git: ${secret}\n`)).not.toContain(secret);
+    expect(messageOf(`checkSources: ${secret}\n`)).not.toContain(secret);
     expect(messageOf(`severity: ${secret}\n`)).not.toContain(secret);
   });
 });
@@ -212,18 +230,17 @@ describe("loadCiteConfig", () => {
       respectGitignore: false,
       root: "../src",
       baseline: ".cite-baseline.json",
-      git: false,
-      sources: false,
-      severity: { moved: "error", changed: "warning", current: "off" },
+      checkSources: false,
+      severity: { moved: "error", changed: "warning", "claim-ambiguous": "notice", current: "off" },
     });
   });
 
   it("takes its keys from under cite: and leaves meta: alone", async () => {
     const root = await tree({
-      "manni.config.yaml": "meta:\n  schemas: [docs.schema.json]\ncite:\n  git: false\n",
+      "manni.config.yaml": "meta:\n  schemas: [docs.schema.json]\ncite:\n  checkSources: false\n",
     });
     const loaded = await loadCiteConfig(undefined, root);
-    expect(loaded?.config).toEqual({ git: false });
+    expect(loaded?.config).toEqual({ checkSources: false });
     expect(loaded?.collections).toEqual([]);
     expect(loaded?.source).toBe("manni.config.yaml");
     expect(loaded?.path).toBe(join(root, "manni.config.yaml"));
@@ -235,7 +252,7 @@ describe("loadCiteConfig", () => {
     // Discovery stops here rather than walking past it (0041).
     const root = await tree({
       ".git/HEAD": "ref: refs/heads/main\n",
-      "manni.config.yaml": "cite:\n  git: false\n",
+      "manni.config.yaml": "cite:\n  checkSources: false\n",
       "docs/manni.config.yaml": "collections:\n  - name: pages\n    paths: [pages]\n",
     });
     const loaded = await loadCiteConfig(undefined, join(root, "docs"));
@@ -246,7 +263,7 @@ describe("loadCiteConfig", () => {
 
   it("a bad collections: list is a CiteError", async () => {
     const root = await tree({
-      "manni.config.yaml": "collections:\n  - name: docs\n    paths: [docs]\ncite:\n  git: false\n",
+      "manni.config.yaml": "collections:\n  - name: docs\n    paths: [docs]\ncite:\n  checkSources: false\n",
     });
     await expect(loadCiteConfig(undefined, root)).rejects.toBeInstanceOf(CiteError);
     await expect(loadCiteConfig(undefined, root)).rejects.toThrow(/collections\[0\]\.name "docs" collides/);
@@ -255,13 +272,13 @@ describe("loadCiteConfig", () => {
   it("a family file with only meta: is not cite's config", async () => {
     const root = await tree({
       ".git/HEAD": "ref: refs/heads/main\n",
-      "manni.config.yaml": "cite:\n  git: false\n",
+      "manni.config.yaml": "cite:\n  checkSources: false\n",
       "docs/manni.config.yaml": "meta:\n  schemas: [docs.schema.json]\n",
     });
     // Discovery keeps looking past the sibling tool's file...
     const loaded = await loadCiteConfig(undefined, join(root, "docs"));
     expect(loaded?.path).toBe(join(root, "manni.config.yaml"));
-    expect(loaded?.config).toEqual({ git: false });
+    expect(loaded?.config).toEqual({ checkSources: false });
   });
 
   it("returns null when only a sibling tool is configured", async () => {
@@ -290,9 +307,9 @@ describe("loadCiteConfig", () => {
   });
 
   it("an explicit path without a cite: key is read whole", async () => {
-    const root = await tree({ "cite.yaml": "git: false\n" });
+    const root = await tree({ "cite.yaml": "checkSources: false\n" });
     const loaded = await loadCiteConfig("cite.yaml", root);
-    expect(loaded?.config).toEqual({ git: false });
+    expect(loaded?.config).toEqual({ checkSources: false });
   });
 });
 
@@ -326,7 +343,7 @@ describe("resolveCiteRun", () => {
     "  - name: guides",
     "    paths: ['guides/*.mdx']",
     "cite:",
-    "  git: false",
+    "  checkSources: false",
     "",
   ].join("\n");
 
@@ -350,7 +367,7 @@ describe("resolveCiteRun", () => {
     expect(run.collections.map((c) => c.name)).toEqual(["pages", "guides"]);
     expect(run.configDir).toBe(root);
     expect(run.configPath).toBe(join(root, "manni.config.yaml"));
-    expect(run.config).toEqual({ git: false });
+    expect(run.config).toEqual({ checkSources: false });
     expect(seen).toEqual([{ path: join(root, "manni.config.yaml"), dir: root }]);
   });
 
@@ -498,7 +515,7 @@ describe("resolveCiteRun", () => {
   it("takes the encryption key from the environment over the config, else none", async () => {
     const root = await tree({
       ".git/HEAD": "ref: refs/heads/main\n",
-      "manni.config.yaml": `encryptionKey: ${CONFIG_KEY}\ncite:\n  git: false\n`,
+      "manni.config.yaml": `encryptionKey: ${CONFIG_KEY}\ncite:\n  checkSources: false\n`,
     });
     const fromEnv = await resolveCiteRun({
       cwd: root,

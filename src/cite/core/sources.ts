@@ -43,8 +43,7 @@ export function decryptSourcePath(token: string, key: string): string | undefine
 }
 
 export interface BuildIndexOptions {
-  /** Default true: use `git ls-files` when the client reports availability. */
-  git?: boolean;
+  /** `git ls-files` when this client reports git available; a walk when it does not, or with no client. */
   gitClient?: GitClient;
 }
 
@@ -73,7 +72,7 @@ async function admit(root: string, realRoot: string, rel: string): Promise<strin
 
 async function candidates(root: string, opts: BuildIndexOptions | undefined): Promise<string[]> {
   const client = opts?.gitClient;
-  if (opts?.git !== false && client !== undefined && (await client.available())) {
+  if (client !== undefined && (await client.available())) {
     return client.lsFiles();
   }
   return fg("**/*", {

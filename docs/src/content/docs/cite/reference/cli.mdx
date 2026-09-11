@@ -6,7 +6,7 @@ sidebar:
 citations:
   - id: check
     claim: Check every citation in the given pages against its source.
-    src: src/cite/cli.ts:208-209
+    src: src/cite/cli.ts:204-205
     integrity: sha256-a5f8b50113ec46c738fe1fb80886b3109f7e1a86ef3e009fb690a151c40351b9
     commit: 4f2bd19f0d262f41f1bafde228b62899b4124839
 ---
@@ -107,8 +107,7 @@ citation, and git is consulted only when a pin does not hold.
 | `--baseline` | `[path]` | config `baseline:`, else `.manni-cite-baseline.json` | Compare findings against a recorded [baseline](#baselines) and fail only on new ones. The value is optional. A named file that does not exist is an error (exit 2). |
 | `--write-baseline` | `[path]` | config `baseline:`, else `.manni-cite-baseline.json` | Record this run's findings as the baseline, then exit 0. Wins over `--baseline`. |
 | `--no-baseline` | n/a | off | Ignore a baseline supplied by config `baseline:` for this run. |
-| `--no-git` | n/a | on | Skip git entirely. No `never-true` verdicts, no history, no commit subjects under `--show-diff`, and sources are indexed by a directory walk instead of `git ls-files`. Overrides config `git:`. |
-| `--no-sources` | n/a | on | Run the page-side rules only. Every source-side status is `skipped`, which is not a finding. For a public docs checkout that does not have the code beside it. Overrides config `sources:`. |
+| `--no-check-sources` | n/a | on | Run the page-side rules only. Every source-side status is `skipped`, which is not a finding. For a public docs checkout that does not have the code beside it. Overrides config `checkSources:`. |
 | `--root` | `<dir>` | n/a | The directory `src:` paths resolve from, relative to the working directory. It may point at another checkout. Without it: config `root:`, else the nearest git root above the working directory, else the working directory with a notice on stderr. See [where sources resolve from](#where-sources-resolve-from). |
 | `--show-diff` | n/a | off | In `pretty` output, print the commit subjects and the diff of the source since the pin's commit under each `changed` row. The diff is capped, and the row says how many lines were left out. |
 | `--reveal` | n/a | off | In `pretty` output, print the decrypted path beside an encrypted source. Nothing else ever prints it; see the [output rule](/manni/cite/reference/citations/#the-output-rule). |
@@ -127,28 +126,32 @@ source spelled exactly as the page spelled it, and a summary:
 1 file checked, 0 passed, 1 failed, 2 findings (1 warning)
 ```
 
-`✓` is current, `↕` a warning, `✗` an error, and `·` a citation that was
-`skipped` or a finding the baseline forgave. `(line N)` is the sentence or
-statement the citation anchors to, not the frontmatter entry. A file is `✗`
-when it holds an error-severity finding and `⚠` when it holds warnings only.
+`✓` is current, `↕` a warning, `ℹ` a notice, `✗` an error, and `·` a
+citation that was `skipped` or a finding the baseline forgave. `(line N)` is
+the sentence or statement the citation anchors to, not the frontmatter entry.
+A file is `✗` when it holds an error-severity finding, `⚠` when its worst
+finding is a warning, and `ℹ` when it holds notices only. The summary counts
+notices apart from warnings, as in `2 findings (1 warning, 1 notice)`.
 
 `json` prints `{ summary, pages }`. `summary` has the metadata tool's shape
-(`files`, `passed`, `failed`, `errors`, and `warnings`, `gitignoreSkipped`,
+(`files`, `passed`, `failed`, `errors`, and `warnings`, `notices`, `gitignoreSkipped`,
 `baseline` when non-zero). Each page carries its `citations`, each with its
 `status` and, for a move, `newSrc` or `candidates`, and its `findings`, each
 with `rule`, `ruleId`, `severity`, `message`, `line`, `id` and `src`. The
 resolved path of a token, the diff and the commit subjects are never in it.
 
-`github` prints one annotation per finding, `::warning` for a warning:
+`github` prints one annotation per finding, `::warning` for a warning and
+`::notice` for a notice:
 
 ```
 ::error file=docs/limits.md,line=9,title=manni:cite/changed::fetch-timeout (lib/limits.ts:2): changed since 3f9c2a1, 1 commit
 ```
 
 `sarif` and `junit` are the metadata tool's renderers over the same findings.
-They carry the rule id `manni:cite/<rule>`, `level` or a passing testcase for
-a warning, `partialFingerprints` matching the baseline, and JUnit testcases
-under the classname `manni.cite`.
+They carry the rule id `manni:cite/<rule>` and `partialFingerprints` matching
+the baseline. A warning is SARIF level `warning` and a notice level `note`,
+and in JUnit neither is a failure. JUnit testcases carry the classname
+`manni.cite`.
 
 ### Exit codes
 
@@ -186,8 +189,8 @@ config `root:`, relative to the config file. Else it is the nearest git root
 above the working directory. Else it is the working directory itself, with a
 notice on stderr. Sources are then resolved through **tracked files only**,
 from `git ls-files`, under a realpath containment check. So a symlink out of
-the root is `missing` rather than read. Without git, or under `--no-git`, a
-walk that follows no symlinks stands in.
+the root is `missing` rather than read. Without git, a walk that follows no
+symlinks stands in.
 
 The root may be another checkout. That is the two-checkout layout: the pages
 live in the docs repository, so SARIF locations resolve, and the sources are
@@ -204,7 +207,7 @@ manni cite check "docs/**/*.md" -f github           # CI annotations
 manni cite check -f sarif > cite.sarif              # code scanning
 manni cite check --show-diff docs/limits.md         # see what changed, and since when
 manni cite check --baseline                         # fail only on new findings
-manni cite check --no-sources docs/                 # public docs repo: page-side rules only
+manni cite check --no-check-sources docs/           # public docs repo: page-side rules only
 MANNI_ENCRYPTION_KEY=$SECRET manni cite check --root ../code --reveal docs/
 cat page.md | manni cite check - --as markdown      # read from stdin
 ```
@@ -240,11 +243,10 @@ manni cite add <page> <src> [options]
 | `--inline` | n/a | off | Write the entry as an inline JSON statement above the anchor instead of a frontmatter entry. Needs `--claim` or `--quote`, since a statement anchors what follows it. Refused on `asciidoc` and `rst`, whose statement forms carry an id only. The only channel on an `html` or `xml` page, which has no frontmatter to write to. |
 | `--encrypt` | n/a | off | Write `src` encrypted, with a keyed pin, so the page carries neither the path nor a verifier for the line. An available encryption key, a top-level `encryptionKey:` or `MANNI_ENCRYPTION_KEY`, encrypts every `add` without the flag. With no key, on a terminal, `add` offers to generate one and write it to `manni.config.yaml`. Off a terminal, or on a no, it refuses (exit 2) and writes nothing. |
 | `--no-commit` | n/a | on | Do not record `HEAD`. Without a commit, a later check can still say the lines changed, but not since when, nor whether the pin was ever true. Off a git checkout no commit is recorded either way. |
-| `--no-git` | n/a | on | Skip git entirely. No `HEAD` is recorded, and the source is looked up by a directory walk instead of `git ls-files`, so an untracked file under the root can be cited. Overrides config `git:`. |
 | `--dry-run` | n/a | off | Print the unified diff of the page and write nothing. The report line goes to stderr. |
 | `--as` | `<format>` | n/a | Force the page's [format](/manni/meta/reference/formats/). Required with `-`. |
 | `--root` | `<dir>` | n/a | The directory `<src>` resolves from, exactly as on [`check`](#where-sources-resolve-from). |
-| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/cite/reference/configuration/), read for `root`, `git` and the encryption key. |
+| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/cite/reference/configuration/), read for `root` and the encryption key. |
 | `--no-config` | n/a | off | Ignore any discovered config file. |
 
 Neither `--claim` nor `--quote` writes a **bare pin** to the frontmatter:
@@ -286,8 +288,8 @@ Rewrite moved citations in place; with `--accept`, re-mint changed ones. A
 `moved` entry's `src` is spliced textually, so the rest of the frontmatter,
 its comments and quoting included, is untouched. An inline statement is
 rewritten in its own form. An encrypted source stays encrypted. `update` needs
-the sources, so `--no-sources` and config `sources: false` are refused (exit
-2).
+the sources, so `--no-check-sources` and config `checkSources: false` are
+refused (exit 2).
 
 ```sh
 manni cite update [paths...] [options]
@@ -317,8 +319,7 @@ working tree so the rewrite is easy to review.
 | `--no-config` | n/a | off | Ignore any discovered config file. |
 | `--allow-empty` | n/a | off | Treat zero matched files as success instead of an error (exit 2). |
 | `--no-gitignore` | n/a | on | Update files `.gitignore` covers as well. Overrides config `respectGitignore:`. |
-| `--no-git` | n/a | on | Skip git. No `never-true`, no history. A re-mint under `--accept` then records no commit. |
-| `--no-sources` | n/a | on | Refused. `update` needs the sources to know where an entry moved to. |
+| `--no-check-sources` | n/a | on | Refused. `update` needs the sources to know where an entry moved to. |
 | `--root` | `<dir>` | n/a | The directory `src:` paths resolve from, exactly as on [`check`](#where-sources-resolve-from). |
 | `--accept` | n/a | off | Re-mint every `changed` and `never-true` entry at `HEAD`: a new `integrity`, and a new `commit` where the entry had one. The report prints the old and the new pin, so the acceptance is visible in the log as well as in the diff. |
 | `--only` | `<id>` | n/a | Limit the rewrite to entries with this id. Repeatable. Entries without an id cannot be named, so a bare pin is reached only by an unfiltered run. |
@@ -344,7 +345,7 @@ never rewritten, and is reported as skipped.
 |---|---|
 | `0` | Everything the run could rewrite was rewritten, or previewed under `--dry-run`, and nothing was skipped with an error-severity finding. |
 | `1` | Something was skipped with an error-severity finding: a `changed` entry without `--accept`, a `moved-ambiguous` one, a `missing` one, a page-side rule. Work is left undone, which is what `fill`'s exit 1 means too. |
-| `2` | Operational or usage error, including `--no-sources`, `sources: false`, an unknown `--format`, and everything `check` exits 2 for. |
+| `2` | Operational or usage error, including `--no-check-sources`, `checkSources: false`, an unknown `--format`, and everything `check` exits 2 for. |
 
 ### Examples
 

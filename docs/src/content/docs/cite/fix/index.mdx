@@ -118,10 +118,17 @@ they are nowhere else in the file. The sentence on line 13 may no longer be
 true. The status names the commit the pin was minted at and how many commits
 have touched the file since; `--show-diff` prints their subjects and the diff.
 
-Two variants carry the same meaning with less history. Without git, or for
-an entry with no `commit`, it is a bare `changed`. On a shallow clone it is
-`changed (history unavailable: commit 9265563 not found; fetch-depth: 0)`,
-which [Run it in CI](/manni/cite/ci/#full-history) explains.
+Three variants carry the same meaning with less history. An entry with no
+`commit` is a bare `changed`. On a shallow clone it is
+`changed (history unavailable: commit 9265563 not found; fetch-depth: 0)`.
+Where git is not available at all, it is a bare `changed` too, and the run
+warns once on stderr:
+
+```
+manni: git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.
+```
+
+[Run it in CI](/manni/cite/ci/#full-history) explains the last two.
 
 **Fix.** Read the diff, then decide what the sentence should say:
 
@@ -171,8 +178,8 @@ re-mint at HEAD with `update --accept --only <id>`. Both pins are printed.
 
 No tracked file exists at that path under the root. A renamed file is
 `missing`, deliberately: a pin names a path, and following renames through
-history would be a guess. So is a file that exists but is not committed,
-since sources resolve through `git ls-files`.
+history would be a guess. Where git is available, sources resolve through
+`git ls-files`, so a file that exists but is not committed is `missing` too.
 
 **Fix.** Remove the entry and add it again against the new path:
 
@@ -191,7 +198,7 @@ parentheses names the cause:
 
 - **`no encryption key is available to decrypt it`.** The job has no family
   encryption key. Set `MANNI_ENCRYPTION_KEY` from the secret. A public CI job
-  that has no key and no code runs with `--no-sources` instead; see
+  that has no key and no code runs with `--no-check-sources` instead; see
   [Public docs, private code](/manni/cite/set-up/public-docs-private-code/).
 - **`does not decrypt under the current key`.** The key is not the one the
   source was encrypted under. After a key rotation, the secret may still hold
@@ -339,9 +346,9 @@ Don't guess and re-push. Run the exact check on your machine.
 
 | Code | Meaning |
 | --- | --- |
-| `0` | No findings, or only warnings. The check is green. |
+| `0` | No findings, or only warnings and notices. The check is green. |
 | `1` | At least one error-severity finding that is not in the baseline. This is the red check you came here to fix. For `update`, that a citation was skipped. |
-| `2` | An operational error. The check could not run. No inputs and no config, an unknown format, `update` under `--no-sources`. The message is on stderr, prefixed `manni:`. |
+| `2` | An operational error. The check could not run. No inputs and no config, an unknown format, `update` under `--no-check-sources`. The message is on stderr, prefixed `manni:`. |
 
 A `1` means fix the page or the pin. A `2` means fix the setup, or escalate
 to whoever configured the check.

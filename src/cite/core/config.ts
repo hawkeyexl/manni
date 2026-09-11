@@ -21,6 +21,7 @@ import {
 } from "../../shared/config-file.js";
 import { resolveEncryptionKey } from "../../shared/encryption-key.js";
 import { findGitRoot } from "../../shared/git-root.js";
+import { SEVERITIES } from "../../shared/severity.js";
 import { CiteError } from "../errors.js";
 import {
   CITE_RULES,
@@ -42,8 +43,7 @@ const CONFIG_KEYS: readonly (keyof CiteConfig)[] = [
   "respectGitignore",
   "root",
   "baseline",
-  "git",
-  "sources",
+  "checkSources",
   "severity",
 ];
 
@@ -57,7 +57,15 @@ const SALT_KEY = "salt";
 const saltRefusal = (source: string): string =>
   `${source}: "salt" is no longer a cite key. Values are encrypted with a family key: a top-level encryptionKey:, or MANNI_ENCRYPTION_KEY. Run \`manni key set\`.`;
 
-const SEVERITY_LEVELS: readonly CiteSeverity[] = ["error", "warning", "off"];
+/**
+ * The levels a rule takes: the family scale, most severe first, then `off`.
+ * Built from `SEVERITIES`, so a level the family adds is a level cite takes.
+ */
+const SEVERITY_LEVELS: readonly CiteSeverity[] = [...[...SEVERITIES].reverse(), "off"];
+
+function isLevel(value: unknown): value is CiteSeverity {
+  return typeof value === "string" && (SEVERITY_LEVELS as readonly string[]).includes(value);
+}
 
 /**
  * Where the metadata tool's configuration reference documents `collections:`.
@@ -148,7 +156,7 @@ function parseSeverity(
   for (const [rule, level] of Object.entries(value)) {
     // `rejectUnknownKeys` already settled this; the guard is for the type.
     if (!isCiteRule(rule)) continue;
-    if (typeof level !== "string" || !(SEVERITY_LEVELS as readonly string[]).includes(level)) {
+    if (!isLevel(level)) {
       // A level is not a secret, so a string one is quoted back: `eror` reads
       // as the typo it is. Anything else is described by type only.
       const got = typeof level === "string" ? `, not "${level}"` : "";
@@ -156,7 +164,7 @@ function parseSeverity(
         `cite.severity.${rule} in ${source} must be one of ${SEVERITY_LEVELS.join(", ")}${got}.`,
       );
     }
-    severity[rule] = level as CiteSeverity;
+    severity[rule] = level;
   }
   return severity;
 }
@@ -183,9 +191,8 @@ export function parseCiteConfig(raw: unknown, source: string): CiteConfig {
   if (raw.root !== undefined) config.root = asString(raw.root, "root", source);
   if (raw.baseline !== undefined)
     config.baseline = asString(raw.baseline, "baseline", source);
-  if (raw.git !== undefined) config.git = asBoolean(raw.git, "git", source);
-  if (raw.sources !== undefined)
-    config.sources = asBoolean(raw.sources, "sources", source);
+  if (raw.checkSources !== undefined)
+    config.checkSources = asBoolean(raw.checkSources, "checkSources", source);
 
   if (raw.severity !== undefined) config.severity = parseSeverity(raw.severity, source);
   return config;

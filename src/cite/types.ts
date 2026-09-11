@@ -12,6 +12,7 @@ import type { CollectionConfig } from "../shared/collections.js";
 import type { ConfigFile } from "../shared/config-file.js";
 import type { KeySource } from "../shared/encryption-key.js";
 import type { Confirm } from "../shared/prompt.js";
+import type { Severity } from "../shared/severity.js";
 
 /** A parsed `src`: `path`, `path:L`, `path:L1-L2`, or an encrypted `~source[:…]`. */
 export interface SourceRange {
@@ -90,7 +91,11 @@ export const CITE_RULES = [
 ] as const;
 export type CiteRule = (typeof CITE_RULES)[number];
 
-export type CiteSeverity = "error" | "warning" | "off";
+/**
+ * A rule's level: the family scale (`src/shared/severity.ts`) plus `off`,
+ * which drops the rule's findings altogether.
+ */
+export type CiteSeverity = Severity | "off";
 
 /** The result of classifying one citation against its source. */
 export interface CitationResult {
@@ -125,7 +130,8 @@ export interface CitationFinding {
   rule: CiteRule;
   /** `manni:cite/<rule>`. */
   ruleId: string;
-  severity: "error" | "warning";
+  /** On the family scale: an `error` fails the file; a `warning` or a `notice` is reported and never does. */
+  severity: Severity;
   message: string;
   /** File line the finding anchors to. */
   line?: number;
@@ -177,16 +183,19 @@ export interface SourceIndex {
 export interface CheckPageOptions {
   /** Absolute directory `src:` paths resolve from. */
   root: string;
-  /** Default true. False: no never-true, no history, no subjects. */
-  git?: boolean;
   /** Default true. False: page-side rules only; every source status is `skipped`. */
-  sources?: boolean;
+  checkSources?: boolean;
   /**
    * The encryption key: decrypts encrypted sources and keys their pins.
    * Absent, an encrypted citation is `missing` (no key to decrypt it).
    */
   key?: string;
   severity?: Partial<Record<CiteRule, CiteSeverity>>;
+  /**
+   * The git client the source index and history are read through. Defaults
+   * to one over the root, which is used whenever git is on PATH and the root
+   * is inside a work tree. A caller that wants no git at all passes `noGit()`.
+   */
   gitClient?: GitClient;
   sourceIndex?: SourceIndex;
 }
@@ -269,9 +278,21 @@ export interface CheckOptions {
   onConfigLoaded?: (info: { path: string; dir: string }) => void;
   baseline?: string | boolean;
   writeBaseline?: string | boolean;
-  git?: boolean;
-  sources?: boolean;
+  /** `--no-check-sources` (false): page-side rules only. Absent leaves `checkSources:` in charge. */
+  checkSources?: boolean;
+  /**
+   * `--show-diff`: the report will want diffs and commit subjects. The check
+   * is the same either way; the run only says, once, when git is not there
+   * to give them.
+   */
+  showDiff?: boolean;
   root?: string;
+  /**
+   * The git client every page is checked through. Defaults to one over the
+   * root, used whenever git is on PATH and the root is inside a work tree; a
+   * test hands in a fake.
+   */
+  gitClient?: GitClient;
   /** Defaults to `process.env`; read for `MANNI_ENCRYPTION_KEY`. A test hands in its own. */
   env?: NodeJS.ProcessEnv;
 }
@@ -282,6 +303,7 @@ export interface CheckRun {
   frame: import("../meta/index.js").FingerprintContext;
   pages: PageCitationReport[];
   warnings: number;
+  notices: number;
 }
 
 export interface AddOptions {
@@ -307,8 +329,11 @@ export interface AddOptions {
   cwd?: string;
   stdinContent?: string;
   root?: string;
-  /** Default true. False: no HEAD recorded, and sources indexed by a directory walk. */
-  git?: boolean;
+  /**
+   * The git client HEAD and the source index are read through. Defaults to
+   * one over the root; a test hands in a fake.
+   */
+  gitClient?: GitClient;
   /** Defaults to `process.env`; read for `MANNI_ENCRYPTION_KEY`. A test hands in its own. */
   env?: NodeJS.ProcessEnv;
   onNotice?: (message: string) => void;
@@ -398,8 +423,7 @@ export interface CiteConfig {
   respectGitignore?: boolean;
   root?: string;
   baseline?: string;
-  git?: boolean;
-  sources?: boolean;
+  checkSources?: boolean;
   severity?: Partial<Record<CiteRule, CiteSeverity>>;
 }
 

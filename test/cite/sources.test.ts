@@ -146,10 +146,8 @@ describe("buildSourceIndex", () => {
       expect([...index.files()]).toEqual(["a.txt"]);
     });
 
-    it("walks when the client reports git unavailable, or when git is off", async () => {
+    it("walks when the client reports git unavailable", async () => {
       repo = makeTempRepo({ init: false, files: { "a.txt": "a\n", "b.txt": "b\n" } });
-      const off = await buildSourceIndex(repo, { git: false, gitClient: fakeGit(["a.txt"]) });
-      expect([...off.files()].sort()).toEqual(["a.txt", "b.txt"]);
       const unavailable = await buildSourceIndex(repo, { gitClient: fakeGit(["a.txt"], false) });
       expect([...unavailable.files()].sort()).toEqual(["a.txt", "b.txt"]);
     });

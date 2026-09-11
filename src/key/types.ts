@@ -62,8 +62,6 @@ export interface KeyRotateOptions {
   respectGitignore?: boolean;
   /** `--root <dir>`, cwd-relative: where cited sources resolve from. Else `cite.root`, else the git root, else `cwd`. */
   root?: string;
-  /** `--no-git` (false): index sources by a directory walk. */
-  git?: boolean;
   /** `--dry-run`: re-encrypt in memory, write nothing. */
   dryRun?: boolean;
   cwd?: string;
@@ -71,7 +69,11 @@ export interface KeyRotateOptions {
   env?: NodeJS.ProcessEnv;
   /** Stderr diagnostics; the CLI adds the `manni: ` prefix. */
   onNotice?: (message: string) => void;
-  /** The git client sources are read through. Defaults to one over the root. */
+  /**
+   * The git client sources and history are read through. Defaults to one
+   * over the root, used whenever git is on PATH and the root is inside a
+   * work tree; a test hands in a fake.
+   */
   gitClient?: GitClient;
   /** How a page is written. Defaults to an atomic write; tests inject a failure. */
   writePage?: (path: string, content: string) => Promise<void>;

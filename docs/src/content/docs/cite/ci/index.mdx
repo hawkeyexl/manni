@@ -23,7 +23,7 @@ rests on.
 
 | Code | Meaning |
 | --- | --- |
-| `0` | Every citation is current, or every finding is a warning. |
+| `0` | Every citation is current, or every finding is a warning or a notice. |
 | `1` | At least one finding is an error and not in the baseline. |
 | `2` | The check could not run. No inputs and no config, an unknown format, a bad flag. The message goes to stderr, prefixed `manni:`. |
 
@@ -37,8 +37,9 @@ separately:
 ```
 
 Every other rule is an error by default. The `severity:` map under `cite:` in
-`manni.config.yaml` can move any rule to `error`, `warning` or `off`; see the
-[configuration reference](/manni/cite/reference/configuration/).
+`manni.config.yaml` can move any rule to `error`, `warning`, `notice` or `off`.
+A notice is reported one level below a warning, and never fails the job
+either. See the [configuration reference](/manni/cite/reference/configuration/).
 
 **`-f github` produces inline annotations.** One workflow command per finding,
 pinned to the page and the line of the sentence, with the rule id as the
@@ -58,8 +59,8 @@ citation by `id`, then its source as the page spelled it, then the status.
 | Format | Use it for | Shape |
 | --- | --- | --- |
 | `pretty` | People, and local runs. The default. | One line per citation under its page; a summary line. `-q` hides current citations and clean pages. |
-| `github` | GitHub Actions annotations. | `::error` / `::warning` workflow commands, one per finding, `title=manni:cite/<rule>`. |
-| `json` | Scripts and dashboards. | `summary` plus `pages[]`, each with every citation's status and every finding's `rule`, `ruleId`, `severity`, `message` and `line`. Under `--no-sources`, source statuses are `skipped` and appear here only. |
+| `github` | GitHub Actions annotations. | `::error` / `::warning` / `::notice` workflow commands, one per finding, `title=manni:cite/<rule>`. |
+| `json` | Scripts and dashboards. | `summary` plus `pages[]`, each with every citation's status and every finding's `rule`, `ruleId`, `severity`, `message` and `line`. Under `--no-check-sources`, source statuses are `skipped` and appear here only. |
 | `sarif` | GitHub code scanning and any SARIF consumer. | One result per finding with `ruleId: manni:cite/<rule>`, `level`, the page as `artifactLocation.uri`, `region.startLine`, and a fingerprint stable across a move. |
 | `junit` | The CI "Tests" tab. | One `testcase` per page, classname `manni.cite`, a `failure` per error with `type` set to the rule id. |
 
@@ -95,6 +96,20 @@ The status is still `changed`, still an error, so the gate holds. What is lost
 is the distinction between a line that changed since and a pin that was
 wrong from the start. Set `fetch-depth: 0` on the checkout that holds the
 sources and both come back.
+
+There is no flag to turn git off. The check uses git whenever it is
+available, which means git on `PATH` and the root inside a work tree. A job
+without it still runs. The sources are indexed by a directory walk instead of
+`git ls-files`, and the run says once what it gave up:
+
+```
+manni: git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.
+```
+
+It says so only when a citation carries a commit, or under `--show-diff`. The
+statuses degrade as on a shallow clone, and the gate still holds. To get the
+history back, run the job in an image that has git, on a checkout rather than
+an unpacked archive.
 
 ## Standalone workflow
 
@@ -224,7 +239,7 @@ tools cannot erase each other's backlog.
 ## Public docs, private code
 
 When the pages are public and the sources are not, the check splits into two
-jobs. A public one runs `--no-sources` and needs no secret. A private one
+jobs. A public one runs `--no-check-sources` and needs no secret. A private one
 checks the code out beside the docs and runs with `--root ../code`. It reads
 the family encryption key from a secret, `MANNI_ENCRYPTION_KEY`. The layout,
 the encrypted source, and what a reader of the public site can still see are
@@ -259,7 +274,7 @@ flag for the readable report.
   <LinkCard
     title="CLI reference"
     href="/manni/cite/reference/cli/"
-    description="Every flag of check, including the reporters, the baseline and the git options."
+    description="Every flag of check, including the reporters, the baseline and the root."
   />
 </CardGrid>
 

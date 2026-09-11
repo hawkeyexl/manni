@@ -16,7 +16,7 @@ import { STDIN_LABEL, STDIN_TOKEN } from "../../meta/internal.js";
 import { ensureEncryptionKey } from "../../shared/prompt.js";
 import { blockMatches, findClaim, paragraphContains } from "../core/claims.js";
 import { resolveCiteRun } from "../core/config.js";
-import { gitClient, noGit } from "../core/git.js";
+import { GIT_UNAVAILABLE_COMMIT, gitClient } from "../core/git.js";
 import { sliceLines, splitLines } from "../core/hash.js";
 import { mintCitation } from "../core/mint.js";
 import { readPage } from "../core/page.js";
@@ -177,7 +177,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     onNotice: opts.onNotice,
     env: opts.env,
   });
-  const { config, root } = run;
+  const { root } = run;
 
   const usingStdin = opts.page === STDIN_TOKEN;
   if (usingStdin && opts.as === undefined) {
@@ -215,10 +215,10 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     throw new CiteError(`Id "${opts.id}" is already cited in ${label}.`);
   }
 
-  // The option outranks the config, as on check and update.
-  const git = opts.git ?? config?.git ?? true;
-  const client = git ? gitClient(root) : noGit();
-  const sourceIndex = await buildSourceIndex(root, { gitClient: client, git });
+  // Git is used whenever it is there, as on check and update: the index is
+  // `git ls-files` and the commit is HEAD. Where it is not, a walk and none.
+  const client = opts.gitClient ?? gitClient(root);
+  const sourceIndex = await buildSourceIndex(root, { gitClient: client });
   const mint = (key: string | undefined, encrypt: boolean): Promise<Citation> =>
     mintCitation({
       root,
@@ -299,6 +299,9 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   const diff = unifiedDiff(label, content, after);
   const written = path !== undefined && opts.dryRun !== true;
   if (written) await writeFileAtomic(path, after);
+  // A commit was wanted (no --no-commit) and git had none to give. Said once
+  // the add has succeeded, so a refused add says nothing about git.
+  if (opts.commit !== false && !(await client.available())) opts.onNotice?.(GIT_UNAVAILABLE_COMMIT);
 
   const result: AddResult = { file: label, citation, placed, content: after, diff, written };
   if (anchorLine !== undefined) result.anchorLine = anchorLine;

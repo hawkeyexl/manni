@@ -174,23 +174,16 @@ describe("classifyCitation agrees with the ladder", () => {
     expect(result.commit).toBe("3f9c2a1");
   });
 
-  it("leaves history alone under useGit: false, and when git is unavailable", async () => {
+  it("leaves history alone when git is unavailable", async () => {
     writeFileSync(join(root, PATH), ladder.variants.CHANGED ?? "", "utf8");
     const entry = page({ src: `${PATH}:2`, integrity: PIN_L2, commit: "3f9c2a1" });
-    const off = await classifyCitation(entry, {
-      root,
-      index: indexOf([PATH]),
-      git: fakeGit(ladder.variants.AT_COMMIT_OTHER),
-      useGit: false,
-    });
-    expect(verdictOf(off)).toEqual({ status: "changed" });
-    expect(off.commitsSince).toBeUndefined();
     const absent = await classifyCitation(entry, {
       root,
       index: indexOf([PATH]),
       git: fakeGit(ladder.variants.AT_COMMIT_OTHER, false),
     });
     expect(verdictOf(absent)).toEqual({ status: "changed" });
+    expect(absent.commitsSince).toBeUndefined();
   });
 
   it("moves a keyed pin without history, spelling the token as the page did", async () => {

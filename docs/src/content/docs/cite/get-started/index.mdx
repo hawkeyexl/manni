@@ -17,10 +17,10 @@ Every transcript below is real output from the built tool.
 - **Node.js 24 or newer.** Check with `node --version`.
 - **A git repository** holding both the page and the source it cites. manni
   cite finds sources through `git ls-files` and reads history through
-  `git show`, so an untracked file is reported `missing`, and a shallow clone
-  loses the `never-true` status and the diff. Without git at all, pass
-  `--no-git`: the check still classifies `current`, `moved` and `changed`, just
-  without commits.
+  `git show`. So an untracked file is reported `missing`, and a shallow clone
+  loses the `never-true` status and the diff. Where git is not available,
+  manni cite walks the directory instead and warns once. The check still
+  classifies `current`, `moved` and `changed`, just without commits.
 
 manni cite ships in the same package as manni meta. If you have one, you have
 the other.

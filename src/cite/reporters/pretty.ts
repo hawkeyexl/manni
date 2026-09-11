@@ -1,6 +1,7 @@
 /**
- * Pretty output for `check` and `update`. Marks: ✓ current, ↕ warning,
- * ✗ error, · skipped; a file line is ✓ / ⚠ (warnings only) / ✗. Diffs and
+ * Pretty output for `check` and `update`. Marks: ✓ current, ✗ error,
+ * ↕ warning, ℹ notice, · skipped; a file line is ✓, ✗ (an error), ⚠ (a
+ * warning, no error) or ℹ (notices only). Diffs and
  * commit subjects print only under `showDiff`; a decrypted path only under
  * `reveal`. Colour via `shouldColor`; never under `--no-color`/`NO_COLOR`.
  */
@@ -27,6 +28,18 @@ export const DIFF_LINE_CAP = 60;
 
 const plural = (n: number, one: string, many = `${one}s`): string =>
   `${String(n)} ${n === 1 ? one : many}`;
+
+/** A finding's mark, by severity: ✗ error, ↕ warning, ℹ notice. */
+function severityMark(severity: CitationFinding["severity"], c: ReturnType<typeof palette>): string {
+  switch (severity) {
+    case "error":
+      return c.red("✗");
+    case "warning":
+      return c.yellow("↕");
+    case "notice":
+      return c.dim("ℹ");
+  }
+}
 
 /** A page's findings, split into the ones the baseline let through and the ones it forgave. */
 export interface SplitFindings {
@@ -141,14 +154,14 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
   const lines: string[] = [];
   const quiet = opts.quiet ?? false;
 
-  const markFor = (finding: CitationFinding): string =>
-    finding.severity === "error" ? c.red("✗") : c.yellow("↕");
+  const markFor = (finding: CitationFinding): string => severityMark(finding.severity, c);
   const location = (line: number | undefined): string =>
     line === undefined ? "" : c.dim(`   (line ${String(line)})`);
 
   run.pages.forEach((page, index) => {
     const { reported, baselined } = splitBaselined(page, resultFor(run, index));
     const errors = reported.filter((f) => f.severity === "error").length;
+    const warned = reported.some((f) => f.severity === "warning");
     // "baselined" is a participle, not a noun: 1 baselined, 2 baselined.
     const forgiven =
       baselined.length > 0 ? c.dim(`  (${String(baselined.length)} baselined)`) : "";
@@ -157,7 +170,8 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
       if (quiet) return;
       lines.push(`${c.green("✓")} ${page.file}${forgiven}`);
     } else {
-      const mark = errors > 0 ? c.red("✗") : c.yellow("⚠");
+      // The most severe finding marks the file. Only ✗ is a failure.
+      const mark = errors > 0 ? c.red("✗") : warned ? c.yellow("⚠") : c.dim("ℹ");
       lines.push(`${mark} ${page.file}${forgiven}`);
     }
 
@@ -204,10 +218,12 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
 
   const { summary } = run;
   const warnings = summary.warnings ?? 0;
+  const notices = summary.notices ?? 0;
   const baselined = summary.baseline?.suppressed ?? 0;
-  const findings = summary.errors + warnings + baselined;
+  const findings = summary.errors + warnings + notices + baselined;
   const parts = [plural(findings, "finding")];
   if (warnings > 0) parts.push(`(${plural(warnings, "warning")})`);
+  if (notices > 0) parts.push(`(${plural(notices, "notice")})`);
   if (baselined > 0) parts.push(`(${String(baselined)} baselined)`);
   const summaryText = `${plural(summary.files, "file")} checked, ${String(summary.passed)} passed, ${String(summary.failed)} failed, ${parts.join(" ")}`;
   if (lines.length > 0) lines.push("");
@@ -236,7 +252,7 @@ export function renderUpdatePretty(run: UpdateRun, opts: PrettyOptions): string 
       );
     }
     for (const finding of page.skipped) {
-      const mark = finding.severity === "error" ? c.red("✗") : c.yellow("↕");
+      const mark = severityMark(finding.severity, c);
       lines.push(
         `${page.file}: ${c.cyan(labelOfFinding(finding))}  ${mark} skipped: ${finding.message}`,
       );

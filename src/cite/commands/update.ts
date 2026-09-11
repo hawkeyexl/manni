@@ -13,6 +13,7 @@ import { resolve } from "node:path";
 import { writeFileAtomic } from "../../meta/index.js";
 import { STDIN_LABEL } from "../../meta/internal.js";
 import { checkCitations } from "../core/check-page.js";
+import { GIT_UNAVAILABLE_COMMIT } from "../core/git.js";
 import { mintCitation } from "../core/mint.js";
 import { rewriteInlineFields, spliceEntryField, unifiedDiff } from "../core/write.js";
 import { CiteError } from "../errors.js";
@@ -86,7 +87,7 @@ function rewriteOf(plan: Plan): UpdateRewrite {
 }
 
 export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
-  const { run, files, usingStdin, forced, pageOptions } = await prepareRun(opts, "updated", "update", true);
+  const { run, files, usingStdin, forced, pageOptions, git } = await prepareRun(opts, "updated", "update", true);
   const only = opts.only !== undefined && opts.only.length > 0 ? new Set(opts.only) : undefined;
   const accept = opts.accept === true;
 
@@ -103,7 +104,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
         root: run.root,
         src: result.citation.src,
         key: run.key,
-        gitClient: pageOptions.gitClient,
+        gitClient: git,
         sourceIndex: pageOptions.sourceIndex,
       });
       return { kind: "accepted", result, minted };
@@ -150,7 +151,10 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
   for (const file of files) {
     reports.push(await updateOne(file, await readTarget(run, file), resolve(run.base, file)));
   }
-  sayNotices(reports, opts.onNotice);
+  // A re-mint records HEAD when git has one. Where git is not there the entry
+  // is re-pinned without a commit, and the run says so once.
+  const reminted = pages.some((page) => page.rewritten.some((r) => r.reason === "accepted"));
+  sayNotices(reports, opts.onNotice, reminted && !(await git.available()) ? [GIT_UNAVAILABLE_COMMIT] : []);
 
   const rewritten = pages.reduce((n, page) => n + page.rewritten.length, 0);
   const skipped = pages.reduce((n, page) => n + page.skipped.length, 0);

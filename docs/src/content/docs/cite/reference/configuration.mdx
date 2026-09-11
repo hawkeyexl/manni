@@ -1,6 +1,6 @@
 ---
 title: Configuration reference
-description: "Every key of the cite section in manni.config.yaml (root, baseline, git, sources, severity), with types, defaults, where the document set is declared, discovery rules, the refused salt key, and the severity table."
+description: "Every key of the cite section in manni.config.yaml (root, baseline, checkSources, severity), with types, defaults, where the document set is declared, when git is used, discovery rules, the refused salt key, and the severity table."
 sidebar:
   order: 2
 ---
@@ -52,22 +52,37 @@ manni.config.yaml: "exclude" is no longer a cite key. Document sets are declared
 | `respectGitignore` | `boolean` | `true` | `--no-gitignore` | Skip files `.gitignore` covers when expanding directories and globs. `--no-gitignore` overrides it for one run. |
 | `root` | `string` | git root | `--root` | The directory `src:` paths resolve from, relative to the config file. It may point outside the repository, at a second checkout. `--root` overrides it for one run. |
 | `baseline` | `string` | none | `--baseline` | Path to a [citation baseline](/manni/cite/reference/cli/#baselines), relative to the config file. Setting it turns on `--baseline` for every run; `--no-baseline` suppresses it for one. A bare `--write-baseline` records into this same file. |
-| `git` | `boolean` | `true` | `--no-git` | Consult git. Index sources with `git ls-files`, record `HEAD` on `add`, and use history to tell `changed` from `never-true`. `--no-git` overrides it for one run. |
-| `sources` | `boolean` | `true` | `--no-sources` | Read the sources. `false` runs the page-side rules only and marks every source-side status `skipped`; `update` refuses under it. `--no-sources` overrides it for one run. |
-
-| `severity` | mapping | the [defaults](#severity) | none | Per-rule severity, `error`, `warning` or `off`. Only the rules named are changed. |
+| `checkSources` | `boolean` | `true` | `--no-check-sources` | Check citations against their sources. `false` runs the page-side rules only and reports every source status as `skipped`, which is not a finding. `update` refuses it. `--no-check-sources` turns it off for one run. |
+| `severity` | mapping | the [defaults](#severity) | none | Per-rule severity: `error`, `warning`, `notice` or `off`. Only the rules named are changed. |
 
 The section must be a YAML mapping; an empty `cite:` is the same as no keys.
 The booleans must be booleans, so a quoted `"false"` is rejected rather than
 read as on. A type error names the key and the type it wanted, and nothing
 else.
 
+### Git is used when it is available
+
+No key turns git on or off. The tool uses it whenever git is on `PATH` and the
+root is inside a work tree. Sources are then indexed by `git ls-files`, so
+only tracked files can be cited. `add` records `HEAD`, and history tells
+`changed` from `never-true`. Otherwise the sources are indexed by a directory
+walk. A run that would have used git then warns once on stderr:
+
+```
+manni: git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.
+manni: git is not available here, so the citation records no commit.
+```
+
+`check`, `update` and `manni key rotate` print the first, when a citation
+carries a commit or `--show-diff` was given. `add` and `update --accept` print
+the second, when a commit would have been recorded.
+
 ### Unknown keys are errors
 
 Any key outside the table above is an operational error (exit 2) naming the
 key it did not recognize and listing the ones it accepts. The same rule holds
 inside `severity`: a rule the tool does not have, or a level other than
-`error`, `warning` and `off`, is an error naming the supported set.
+`error`, `warning`, `notice` and `off`, is an error naming the supported set.
 
 A dropped `allowEmtpy:` would otherwise leave a config that reads as
 configured and is not. The rule also means a config written for a newer manni
@@ -128,7 +143,7 @@ Rotation re-encrypts every citation's source and re-keys its pin with it.
 
 ## Example
 
-The two-checkout layout, which is the reason `root` and `sources` exist. The
+The two-checkout layout, which is the reason `root` and `checkSources` exist. The
 pages are in the public docs repository, so SARIF locations resolve. The
 sources are reached through `--root` from a private CI job that checks out
 both. The file is public, so it carries no `encryptionKey:`. The key lives in
@@ -146,11 +161,14 @@ cite:
 
 ```sh
 # Public CI, no access to the code or the key: page-side rules only.
-manni cite check --no-sources
+manni cite check --no-check-sources
 
 # Private CI: docs and code checked out side by side; from the docs checkout.
 MANNI_ENCRYPTION_KEY="$ENCRYPTION_KEY" manni cite check --root ../code -f sarif > cite.sarif
 ```
+
+The public job passes the flag rather than setting `checkSources: false`. The
+private job reads the same file, and needs the sources.
 
 A single-repository setup needs none of that:
 
@@ -165,8 +183,8 @@ cite:
 ## Severity
 
 Every rule has a default severity, and `severity:` moves any of them. `error`
-counts toward exit 1, `warning` is reported and never moves the exit code, and
-`off` is not reported at all. The rules themselves are defined on the
+counts toward exit 1. `warning` and `notice` are reported and never move the
+exit code. `off` is not reported at all. The rules themselves are defined on the
 [citations reference](/manni/cite/reference/citations/#statuses-and-rules).
 
 | Rule | Default | Why |
@@ -187,12 +205,14 @@ counts toward exit 1, `warning` is reported and never moves the exit code, and
 ```yaml title="manni.config.yaml"
 cite:
   severity:
-    moved: error        # a moved pin blocks until update runs
-    claim-ambiguous: off
+    moved: error              # a moved pin blocks until update runs
+    claim-ambiguous: notice   # reported, never fails a run
 ```
 
 A rule set to `off` produces no finding in any format and never enters a
 baseline. A rule set to `warning` renders as `↕` in `pretty`, `::warning` in
 `github`, `level: warning` in SARIF, and a passing testcase in JUnit, exactly
 as the metadata tool's
-[severity](/manni/meta/reference/output-and-exit-codes/#severity) does.
+[severity](/manni/meta/reference/output-and-exit-codes/#severity) does. A rule
+set to `notice` is reported one level lower: `::notice` in `github`,
+`level: note` in SARIF, and never a JUnit failure.

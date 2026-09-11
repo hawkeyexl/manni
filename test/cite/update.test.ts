@@ -2,8 +2,9 @@
  * `runUpdate` against temp copies of the fixture pages. `moved.ts` is the
  * ladder SOURCE with two lines above it, so `moved.md`'s pins hold two lines
  * down; `changed.ts` drifted at line 2, so `stale-claim.md` is `changed` and
- * only `--accept` re-mints it. Git is off for the fixture cases, as in
- * check.test.ts; the commit splice runs against a throwaway repository.
+ * only `--accept` re-mints it. The fixture cases inject a git that is not
+ * there, as in check.test.ts; the commit splice runs against a throwaway
+ * repository.
  */
 import { afterEach, describe, expect, it } from "vitest";
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -12,6 +13,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runCheck } from "../../src/cite/commands/check.js";
 import { runUpdate } from "../../src/cite/commands/update.js";
+import { noGit } from "../../src/cite/core/git.js";
 import { hashRange } from "../../src/cite/core/hash.js";
 import { encryptSourcePath } from "../../src/cite/core/sources.js";
 import { CiteError } from "../../src/cite/errors.js";
@@ -29,6 +31,9 @@ const PIN_L3 = "sha256-e9f5bdf94a12c610b54573d2b66347592887805e59c69b64803a8c0d3
 
 const source = (name: string): string => readFileSync(join(SRC, name), "utf8");
 const CHANGED_L2 = hashRange(source("changed.ts"), { start: 2, end: 2 });
+const NO_HISTORY =
+  "git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.";
+const NO_COMMIT = "git is not available here, so the citation records no commit.";
 
 let cwd = "";
 function workspace(...pages: string[]): void {
@@ -49,14 +54,14 @@ afterEach(() => {
 });
 
 function update(over: Partial<UpdateOptions> & { inputs: string[] }): Promise<UpdateRun> {
-  return runUpdate({ cwd, root: ROOT, noConfig: true, git: false, env: {}, ...over });
+  return runUpdate({ cwd, root: ROOT, noConfig: true, gitClient: noGit(), env: {}, ...over });
 }
 
 async function statuses(label: string, configPath?: string): Promise<string[]> {
   const run = await runCheck({
     cwd,
     root: ROOT,
-    git: false,
+    gitClient: noGit(),
     env: {},
     inputs: [label],
     ...(configPath === undefined ? { noConfig: true } : { configPath }),
@@ -111,7 +116,7 @@ describe("runUpdate", () => {
 
   it("--accept re-mints an encrypted entry in its own form: encrypted, under the current key", async () => {
     workspace();
-    const config = tempConfig("git: false", KEY);
+    const config = tempConfig("", KEY);
     const token = encryptSourcePath("src/changed.ts", KEY);
     const before = hashRange(source("limits.ts"), { start: 2, end: 2 }, KEY);
     const label = write("token.md", ["---", "citations:", `  - src: ${token}:2`, `    integrity: ${before}`, "---", "Body."]);
@@ -128,7 +133,7 @@ describe("runUpdate", () => {
 
   it("--accept keeps a plain entry plain, even with a key available", async () => {
     workspace("stale-claim.md");
-    const config = tempConfig("git: false", KEY);
+    const config = tempConfig("", KEY);
     const run = await update({ inputs: ["pages/stale-claim.md"], noConfig: false, configPath: config, accept: true });
     expect(run.pages[0]?.rewritten.map((r) => r.to)).toEqual([CHANGED_L2]);
     expect(onDisk("pages/stale-claim.md")).not.toMatch(/src: ~/);
@@ -136,7 +141,7 @@ describe("runUpdate", () => {
 
   it("keeps an encrypted source encrypted across the move", async () => {
     workspace();
-    const config = tempConfig("git: false", KEY);
+    const config = tempConfig("", KEY);
     const token = encryptSourcePath("src/moved.ts", KEY);
     const label = write("token.md", [
       "---",
@@ -238,18 +243,43 @@ describe("runUpdate", () => {
 
   it("refuses to run without the sources", async () => {
     workspace("moved.md");
-    const message = "update needs the sources: drop --no-sources (or `sources: false`).";
-    expect(await refusal(update({ inputs: ["pages/moved.md"], sources: false }))).toBe(message);
-    expect(await refusal(update({ inputs: ["pages/moved.md"], noConfig: false, configPath: tempConfig("sources: false") }))).toBe(message);
+    const message = "update needs the sources: drop --no-check-sources (or `checkSources: false`).";
+    expect(await refusal(update({ inputs: ["pages/moved.md"], checkSources: false }))).toBe(message);
+    expect(
+      await refusal(update({ inputs: ["pages/moved.md"], noConfig: false, configPath: tempConfig("checkSources: false") })),
+    ).toBe(message);
     expect(await refusal(update({ inputs: [] }))).toBe(
       "No files to update. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.",
     );
   });
 
+  it("says once, under --accept, that a re-mint without git records no commit", async () => {
+    workspace("stale-claim.md");
+    const notices: string[] = [];
+    const run = await update({ inputs: ["pages/stale-claim.md"], accept: true, onNotice: (m) => notices.push(m) });
+    expect(run.rewritten).toBe(1);
+    expect(notices).toEqual([NO_COMMIT]);
+  });
+
+  it("says nothing about git when nothing needed it", async () => {
+    workspace("moved.md", "stale-claim.md");
+    const notices: string[] = [];
+    await update({ inputs: ["pages/moved.md", "pages/stale-claim.md"], onNotice: (m) => notices.push(m) });
+    expect(notices).toEqual([]);
+  });
+
+  it("says history is off for a citation with a commit, then that the re-mint records none", async () => {
+    workspace("frontmatter-only.md");
+    const notices: string[] = [];
+    const run = await update({ inputs: ["pages/frontmatter-only.md"], accept: true, onNotice: (m) => notices.push(m) });
+    expect(run.rewritten).toBe(1);
+    expect(notices).toEqual([NO_HISTORY, NO_COMMIT]);
+  });
+
   it("falls back to the configured collections when no paths are given", async () => {
     workspace("moved.md");
     const config = join(cwd, "manni.config.yaml");
-    writeFileSync(config, "collections:\n  - name: pages\n    paths: ['pages/*.md']\ncite:\n  git: false\n", "utf8");
+    writeFileSync(config, "collections:\n  - name: pages\n    paths: ['pages/*.md']\n", "utf8");
     const run = await update({ inputs: [], noConfig: false, configPath: config });
     expect(run.pages.map((p) => [p.file, p.written])).toEqual([["pages/moved.md", true]]);
     expect(run.rewritten).toBe(2);

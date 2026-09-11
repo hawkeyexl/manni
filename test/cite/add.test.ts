@@ -11,6 +11,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runAdd } from "../../src/cite/commands/add.js";
 import { runCheck } from "../../src/cite/commands/check.js";
+import { noGit } from "../../src/cite/core/git.js";
 import { hashRange } from "../../src/cite/core/hash.js";
 import { readPage } from "../../src/cite/core/page.js";
 import { decryptSourcePath, encryptSourcePath } from "../../src/cite/core/sources.js";
@@ -28,6 +29,7 @@ const PIN_L2 = "sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e
 const PIN_L3 = "sha256-e9f5bdf94a12c610b54573d2b66347592887805e59c69b64803a8c0d30edaea3";
 const PIN_1_3 = "sha256-d2981e71e50b9bd645ab30ad36aeb87dcb3c3268ff8d90ed3b021a45dfbed1d6";
 const CLAIM = "The fetch timeout is 10 seconds.";
+const NO_COMMIT = "git is not available here, so the citation records no commit.";
 
 const LINE_2 = "export const FETCH_TIMEOUT_MS = 10_000;";
 const LINES_1_3 = ["export const MAX_FILES = 10_000;", LINE_2, "export const RETRIES = 3;"];
@@ -62,7 +64,7 @@ async function recheck(label: string, configPath?: string): Promise<string[]> {
   const run = await runCheck({
     cwd,
     root: ROOT,
-    git: false,
+    gitClient: noGit(),
     env: {},
     inputs: [label],
     ...(configPath === undefined ? { noConfig: true } : { configPath }),
@@ -394,7 +396,7 @@ describe("runAdd", () => {
 
     it("writes the key into the config the run found, beside its cite: section", async () => {
       workspace("no-citations.md");
-      const config = tempConfig("git: false");
+      const config = tempConfig("allowEmpty: true");
       const result = await add({
         page: "pages/no-citations.md",
         src: "src/limits.ts:2",
@@ -404,7 +406,7 @@ describe("runAdd", () => {
         confirm: () => Promise.resolve(true),
       });
       const text = readFileSync(config, "utf8");
-      expect(text).toMatch(/^cite:\n {2}git: false\n/);
+      expect(text).toMatch(/^cite:\n {2}allowEmpty: true\n/);
       expect(text).toMatch(/^encryptionKey: [0-9a-f]{64}$/m);
       expect(written()).toContain("Encryption key written to ");
       expect(await recheck(result.file, config)).toEqual(["current"]);
@@ -459,29 +461,31 @@ describe("runAdd", () => {
       expect(without.citation.commit).toBeUndefined();
     });
 
-    it.skipIf(!gitAvailable())("git: false records no commit, by option or by config, where HEAD exists", async () => {
+    it("without git, records no commit and says so once", async () => {
       workspace("no-citations.md");
-      const byOption = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2", commit: undefined, git: false });
-      expect(byOption.citation.commit).toBeUndefined();
-      const configured = tempConfig("git: false");
-      const byConfig = await add({
+      const notices: string[] = [];
+      const result = await add({
         page: "pages/no-citations.md",
-        src: "src/limits.ts:3",
+        src: "src/limits.ts:2",
         commit: undefined,
-        noConfig: false,
-        configPath: configured,
+        gitClient: noGit(),
+        onNotice: (m) => notices.push(m),
       });
-      expect(byConfig.citation.commit).toBeUndefined();
-      // The option outranks the config, as on check.
-      const overridden = await add({
-        page: "pages/no-citations.md",
-        src: "src/limits.ts:1",
-        commit: undefined,
-        git: true,
-        noConfig: false,
-        configPath: configured,
-      });
-      expect(overridden.citation.commit).toMatch(/^[0-9a-f]{40}$/);
+      expect(result.citation.commit).toBeUndefined();
+      expect(notices).toEqual([NO_COMMIT]);
+    });
+
+    it("says nothing about git when no commit was wanted, or git is there", async () => {
+      workspace("no-citations.md");
+      const notices: string[] = [];
+      const onNotice = (m: string): void => {
+        notices.push(m);
+      };
+      await add({ page: "pages/no-citations.md", src: "src/limits.ts:2", commit: false, gitClient: noGit(), onNotice });
+      expect(notices).toEqual([]);
+      const there = { ...noGit(), available: () => Promise.resolve(true), lsFiles: () => Promise.resolve(["src/limits.ts"]) };
+      await add({ page: "pages/no-citations.md", src: "src/limits.ts:3", commit: undefined, gitClient: there, onNotice });
+      expect(notices).toEqual([]);
     });
   });
 

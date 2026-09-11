@@ -188,7 +188,7 @@ describe("manni key set", () => {
 describe("manni key rotate", () => {
   it("a whole run re-encrypts every value and writes the key last", () => {
     family();
-    const r = key(["rotate", "--no-git"]);
+    const r = key(["rotate"]);
     expect(r.stderr).toBe("");
     expect(r.status).toBe(0);
     const lines = r.stdout.trimEnd().split("\n");
@@ -202,9 +202,16 @@ describe("manni key rotate", () => {
     expect(readConfig().encryptionKey).not.toBe(OLD);
   });
 
+  it("--no-git is gone, with no alias", () => {
+    family();
+    const r = key(["rotate", "--no-git"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/unknown option '--no-git'/);
+  });
+
   it("-f json carries full ciphertexts in the plan's shape", () => {
     family();
-    const r = key(["rotate", "--to", NEW, "--no-git", "-f", "json"]);
+    const r = key(["rotate", "--to", NEW, "-f", "json"]);
     expect(r.status).toBe(0);
     const json = JSON.parse(r.stdout) as {
       pages: { file: string; rewritten: { kind: string }[]; written: boolean }[];
@@ -226,7 +233,7 @@ describe("manni key rotate", () => {
       extra: { "docs/stray.md": `---\nowner: ${encryptValue("platform", STRANGER, "meta")}\n---\n` },
     });
     const config = readFileSync(join(work, "manni.config.yaml"), "utf8");
-    const r = key(["rotate", "--no-git"]);
+    const r = key(["rotate"]);
     expect(r.status).toBe(1);
     const lines = r.stdout.trimEnd().split("\n");
     expect(lines).toContain("docs/stray.md: /owner  skipped: does not decrypt under the current key");
@@ -257,7 +264,7 @@ describe("manni key rotate", () => {
 
   it("a narrowed run with --to says how to finish", () => {
     family();
-    const r = key(["rotate", "--collection", "site", "--to", NEW, "--no-git"]);
+    const r = key(["rotate", "--collection", "site", "--to", NEW]);
     expect(r.status).toBe(0);
     expect(r.stdout.trimEnd().split("\n").at(-1)).toBe(
       "Key not written: this run covered part of the family. Finish with a whole run under the same key: `manni key rotate --to <the same value>`.",
@@ -277,7 +284,7 @@ describe("manni key rotate", () => {
   it("finishes an unfinished rotation and says so", () => {
     family();
     write({ "manni.config.yaml": `encryptionKey: ${NEW}\nencryptionKeyPrevious: ${OLD}\ncollections:\n  - name: site\n    paths: ["docs/**/*.md"]\n` });
-    const r = key(["rotate", "--no-git"]);
+    const r = key(["rotate"]);
     expect(r.status).toBe(0);
     expect(r.stdout.trimEnd().split("\n").slice(-2)).toEqual([
       "Finished the interrupted rotation in manni.config.yaml.",

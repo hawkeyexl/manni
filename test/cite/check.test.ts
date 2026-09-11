@@ -1,10 +1,11 @@
 /**
  * `runCheck` over the fixture pages with `test/fixtures/cite` as both cwd and
  * root, the way `manni cite check --root test/fixtures/cite pages/x.md` runs
- * from that directory. Git is off for the fixture cases so the source index
- * walks the directory (a fixture added on a branch is not yet tracked, and a
- * `git ls-files` index would call it missing); the git-dependent cases build
- * a throwaway repository. The first block recomputes every fixture pin, so a
+ * from that directory. The fixture cases inject a git that is not there
+ * (`noGit()`), so the source index walks the directory (a fixture added on a
+ * branch is not yet tracked, and a `git ls-files` index would call it
+ * missing); the git-dependent cases build a throwaway repository. The first
+ * block recomputes every fixture pin, so a
  * hand-typed hash cannot rot without a test saying so.
  */
 import { afterEach, describe, expect, it } from "vitest";
@@ -14,12 +15,13 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runCheck } from "../../src/cite/commands/check.js";
 import { DEFAULT_CITE_BASELINE_PATH } from "../../src/cite/core/config.js";
+import { noGit } from "../../src/cite/core/git.js";
 import { hashRange } from "../../src/cite/core/hash.js";
 import { readPage } from "../../src/cite/core/page.js";
 import { parseSrc } from "../../src/cite/core/range.js";
 import { decryptSourcePath, encryptSourcePath } from "../../src/cite/core/sources.js";
 import { CiteError } from "../../src/cite/errors.js";
-import type { CheckOptions, CheckRun } from "../../src/cite/types.js";
+import type { CheckOptions, CheckRun, GitClient } from "../../src/cite/types.js";
 import { commitAll, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -32,6 +34,8 @@ const SENTINEL = "sentinel-key-0123456789abcdef012345";
 const OTHER = "another-key-0123456789abcdef012345";
 const PIN_L2 = "sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f";
 const UNKNOWN = "0123456789abcdef0123456789abcdef01234567";
+const NO_HISTORY =
+  "git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.";
 
 const source = (name: string): string => readFileSync(join(SRC, name), "utf8");
 const page = (name: string): string => readFileSync(join(PAGES, name), "utf8");
@@ -40,9 +44,9 @@ const statuses = (run: CheckRun, i = 0): string[] =>
   (run.pages[i]?.citations ?? []).map((c) => c.status);
 const rules = (run: CheckRun, i = 0): string[] => (run.pages[i]?.findings ?? []).map((f) => f.rule);
 
-/** `runCheck` from the fixture directory, git off, no config unless a case says so. */
+/** `runCheck` from the fixture directory, without git, no config unless a case says so. */
 function check(over: Partial<CheckOptions> & { inputs: string[] }): Promise<CheckRun> {
-  return runCheck({ cwd: ROOT, root: ROOT, noConfig: true, git: false, env: {}, ...over });
+  return runCheck({ cwd: ROOT, root: ROOT, noConfig: true, gitClient: noGit(), env: {}, ...over });
 }
 
 async function refusal(promise: Promise<unknown>): Promise<string> {
@@ -160,7 +164,7 @@ describe("runCheck", () => {
     expect(statuses(fromEnv)).toEqual(["current"]);
   });
 
-  it("with no key, an encrypted citation is missing and an error; --no-sources skips it", async () => {
+  it("with no key, an encrypted citation is missing and an error; --no-check-sources skips it", async () => {
     const without = await check({ inputs: ["pages/encrypted.md"] });
     expect(statuses(without)).toEqual(["missing"]);
     expect(without.pages[0]?.findings.map((f) => [f.severity, f.message])).toEqual([
@@ -169,7 +173,7 @@ describe("runCheck", () => {
     expect(without.results[0]?.ok).toBe(false);
     expect(without.summary).toEqual({ files: 1, passed: 0, failed: 1, errors: 1 });
 
-    const skipped = await check({ inputs: ["pages/encrypted.md"], sources: false });
+    const skipped = await check({ inputs: ["pages/encrypted.md"], checkSources: false });
     expect(statuses(skipped)).toEqual(["skipped"]);
     expect(skipped.results[0]?.ok).toBe(true);
     expect(skipped.summary).toEqual({ files: 1, passed: 1, failed: 0, errors: 0 });
@@ -216,22 +220,36 @@ describe("runCheck", () => {
     expect(off.summary).toEqual({ files: 1, passed: 1, failed: 0, errors: 0 });
   });
 
-  it("skips every source under sources: false, from the flag or the config", async () => {
-    const flag = await check({ inputs: ["pages/stale-claim.md"], sources: false });
+  it("reports a notice without failing the file or the run, and counts it apart", async () => {
+    const run = await check({
+      inputs: ["pages/stale-claim.md"],
+      noConfig: false,
+      configPath: tempConfig("severity:\n  changed: notice"),
+    });
+    expect(run.pages[0]?.findings.map((f) => [f.rule, f.severity])).toEqual([["changed", "notice"]]);
+    expect(run.results[0]?.ok).toBe(true);
+    expect(run.results[0]?.errors.map((e) => e.severity)).toEqual(["notice"]);
+    expect(run.summary).toEqual({ files: 1, passed: 1, failed: 0, errors: 0, notices: 1 });
+    expect(run.warnings).toBe(0);
+    expect(run.notices).toBe(1);
+  });
+
+  it("skips every source under checkSources: false, from the flag or the config", async () => {
+    const flag = await check({ inputs: ["pages/stale-claim.md"], checkSources: false });
     expect(statuses(flag)).toEqual(["skipped"]);
     expect(flag.results[0]?.ok).toBe(true);
     const configured = await check({
       inputs: ["pages/stale-claim.md"],
       noConfig: false,
-      configPath: tempConfig("sources: false"),
+      configPath: tempConfig("checkSources: false"),
     });
     expect(statuses(configured)).toEqual(["skipped"]);
     // The flag is explicit-true only when someone wrote it; absent leaves config in charge.
     const overridden = await check({
       inputs: ["pages/stale-claim.md"],
-      sources: true,
+      checkSources: true,
       noConfig: false,
-      configPath: tempConfig("sources: false"),
+      configPath: tempConfig("checkSources: false"),
     });
     expect(statuses(overridden)).toEqual(["changed"]);
   });
@@ -352,7 +370,7 @@ describe("runCheck", () => {
       mkdirSync(join(dir, "ci"));
       writeFileSync(
         join(dir, "manni.config.yaml"),
-        "collections:\n  - name: pages\n    paths: ['pages/*.md']\ncite:\n  git: false\n  baseline: ci/cite.json\n",
+        "collections:\n  - name: pages\n    paths: ['pages/*.md']\ncite:\n  baseline: ci/cite.json\n",
         "utf8",
       );
       const written = await check({ cwd: dir, inputs: [], noConfig: false, writeBaseline: true });
@@ -384,7 +402,7 @@ describe("runCheck", () => {
           "manni.config.yaml":
             (collections ??
               "collections:\n  - name: pages\n    paths: ['docs/*.md']\n  - name: notes\n    paths: ['notes/*.md']\n") +
-            "cite:\n  root: .\n  git: false\n",
+            "cite:\n  root: .\n",
         },
         init,
       });
@@ -436,16 +454,18 @@ describe("runCheck", () => {
     });
 
     it.skipIf(!gitAvailable())("resolves paths: from the config's directory when run from below it", async () => {
+      // `git init` with nothing committed: git would index no source, so
+      // this case, about paths rather than git, runs without it.
       const dir = configured(true);
       const cwd = join(dir, "docs");
-      const run = await runCheck({ cwd, inputs: [], collection: ["pages"] });
+      const run = await runCheck({ cwd, inputs: [], collection: ["pages"], gitClient: noGit() });
       expect(files(run)).toEqual([
         ["docs/ok.md", true],
         ["docs/stale.md", false],
       ]);
       expect(run.frame).toEqual({ cwd, base: dir, runBase: dir });
       // Positional paths stay cwd-relative, and the label follows.
-      const named = await runCheck({ cwd, inputs: ["stale.md"] });
+      const named = await runCheck({ cwd, inputs: ["stale.md"], gitClient: noGit() });
       expect(named.results.map((r) => r.file)).toEqual(["stale.md"]);
       expect(named.frame).toEqual({ cwd, base: dir, runBase: cwd });
     });
@@ -473,7 +493,7 @@ describe("runCheck", () => {
         cwd: dir,
         inputs: ["page.md"],
         noConfig: true,
-        git: false,
+        gitClient: noGit(),
         onNotice: (m) => notices.push(m),
       });
       expect(notices).toEqual([`No git root found; resolving src: paths from ${dir}`]);
@@ -513,6 +533,50 @@ describe("runCheck", () => {
       }
       expect(JSON.stringify(run.results)).not.toContain(".ts");
       expect(JSON.stringify(run.summary)).not.toContain(".ts");
+    });
+  });
+
+  describe("without git", () => {
+    const heard = async (over: Partial<CheckOptions> & { inputs: string[] }): Promise<string[]> => {
+      const notices: string[] = [];
+      await check({ ...over, onNotice: (m) => notices.push(m) });
+      return notices;
+    };
+
+    it("says once per run that history is off, when a citation carries a commit", async () => {
+      // Two pages carrying commits: the file and the same page on stdin.
+      const notices = await heard({
+        inputs: ["pages/frontmatter-only.md", "-"],
+        as: "markdown",
+        stdinContent: page("frontmatter-only.md"),
+      });
+      expect(notices).toEqual([NO_HISTORY]);
+    });
+
+    it("says it under --show-diff too, with no commit on the page", async () => {
+      expect(await heard({ inputs: ["pages/current.md"], showDiff: true })).toEqual([NO_HISTORY]);
+    });
+
+    it("says nothing when nothing needed git", async () => {
+      expect(await heard({ inputs: ["pages/current.md", "pages/moved.md", "pages/stale-claim.md"] })).toEqual([]);
+      // With the sources off git is never asked, commit or no commit.
+      expect(
+        await heard({ inputs: ["pages/frontmatter-only.md"], checkSources: false, showDiff: true }),
+      ).toEqual([]);
+    });
+
+    it("says nothing about it when git is there", async () => {
+      const there: GitClient = {
+        ...noGit(),
+        available: () => Promise.resolve(true),
+        lsFiles: () => Promise.resolve(["src/a.txt", "src/limits.ts"]),
+      };
+      const notices = await heard({ inputs: ["pages/frontmatter-only.md"], gitClient: there, showDiff: true });
+      // History is asked for and a depth-1 clone cannot show it: that is the
+      // shallow-clone advice, not the missing-git one.
+      expect(notices).toEqual([
+        "commit 0123456 not found in history; use fetch-depth: 0 to enable never-true and diffs",
+      ]);
     });
   });
 
@@ -574,10 +638,18 @@ describe("runCheck", () => {
       expect(run.pages[1]?.findings[0]?.message).toBe(
         `never true: the pin does not match at ${second.slice(0, 7)}`,
       );
-      // `--no-git` turns both into a plain `changed`.
-      const noGit = await runCheck({ cwd: repo, inputs: ["docs"], noConfig: true, git: false });
-      expect(noGit.pages.map(statusesOf)).toEqual([["changed"], ["changed"]]);
-      expect(noGit.pages[0]?.citations[0]?.historyAvailable).toBeUndefined();
+      // Where git is not there, both are a plain `changed`, and the run says why once.
+      const notices: string[] = [];
+      const blind = await runCheck({
+        cwd: repo,
+        inputs: ["docs"],
+        noConfig: true,
+        gitClient: noGit(),
+        onNotice: (m) => notices.push(m),
+      });
+      expect(blind.pages.map(statusesOf)).toEqual([["changed"], ["changed"]]);
+      expect(blind.pages[0]?.citations[0]?.historyAvailable).toBeUndefined();
+      expect(notices).toEqual([NO_HISTORY]);
     });
   });
 });

@@ -25,7 +25,7 @@ import type {
   SourceRange,
 } from "../types.js";
 import { historyOf } from "./classify.js";
-import { gitClient, noGit } from "./git.js";
+import { gitClient } from "./git.js";
 import { hashLines, sliceLines, splitLines } from "./hash.js";
 import { readPage } from "./page.js";
 import { formatSrc, parseSrc } from "./range.js";
@@ -64,7 +64,6 @@ interface Context {
   root: string;
   index: SourceIndex;
   git: GitClient;
-  useGit: boolean;
   fromKey: string;
   pageCommit?: string;
 }
@@ -92,7 +91,7 @@ async function pinnedLines(
   if (joined !== undefined && hashLines(joined, ctx.fromKey) === citation.integrity) return { joined };
 
   const commit = citation.commit ?? ctx.pageCommit;
-  if (ctx.useGit && commit !== undefined && (await ctx.git.available())) {
+  if (commit !== undefined && (await ctx.git.available())) {
     const history = await historyOf(ctx.git, commit, path, range, citation.integrity, ctx.fromKey, undefined);
     if (history.kind === "original") return { joined: history.lines.join("\n") };
   }
@@ -105,7 +104,7 @@ export async function reencryptCitations(
     root: string;
     fromKey: string;
     toKey: string;
-    git?: boolean;
+    /** History and the source index are read through it; defaults to one over the root. */
     gitClient?: GitClient;
     sourceIndex?: SourceIndex;
   },
@@ -116,10 +115,9 @@ export async function reencryptCitations(
   // A page with nothing encrypted costs no index and no git.
   if (encrypted.length === 0) return result;
 
-  const useGit = opts.git !== false;
-  const git = opts.gitClient ?? (useGit ? gitClient(opts.root) : noGit());
-  const index = opts.sourceIndex ?? (await buildSourceIndex(opts.root, { gitClient: git, git: useGit }));
-  const ctx: Context = { root: opts.root, index, git, useGit, fromKey: opts.fromKey };
+  const git = opts.gitClient ?? gitClient(opts.root);
+  const index = opts.sourceIndex ?? (await buildSourceIndex(opts.root, { gitClient: git }));
+  const ctx: Context = { root: opts.root, index, git, fromKey: opts.fromKey };
   if (read.commit !== undefined) ctx.pageCommit = read.commit;
 
   let after = page.content;
