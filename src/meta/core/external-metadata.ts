@@ -50,6 +50,8 @@ import { fetchExternalMetadata } from "./external-metadata-fetch.js";
 import { STDIN_LABEL } from "./load-files.js";
 import { escapePointerSegment } from "../extractors/pointer.js";
 import { DocmetaError, type ExtractedMetadata } from "../types.js";
+import { decryptValue, isEncryptedValue } from "../../shared/encryption.js";
+import { EncryptionRefusal, META_CONTEXT } from "./encrypted.js";
 
 /**
  * The `schema` ref a collision finding carries, and so its baseline and rule
@@ -155,7 +157,14 @@ export interface ExternalMetadataCollision {
 /** A field-joined entry a document matched (0039). */
 export interface ExternalMetadataJoin {
   field: string;
+  /** The value matched: the field's plaintext, decrypted first when the page holds it encrypted. */
   value: string;
+  /**
+   * The field as the page holds it, when that differs from `value`: the
+   * ciphertext of an encrypted join field (proposal 0045). A finding about
+   * the join names this, never the plaintext.
+   */
+  pageValue?: string;
   /** The manifest, as the run reports it. */
   file: string;
   /** The collection that manifest belongs to (proposal 0041). */
@@ -408,6 +417,11 @@ function joinValue(raw: unknown): string | undefined {
  * `present`, `format` and the document's own positions are untouched. A
  * manifest key is not in the document, so `lineFor` keeps answering
  * `undefined` for it, and `locate` answers instead.
+ *
+ * A join field the page holds encrypted (proposal 0045) is decrypted with
+ * `options.encryptionKey` before it is matched. With no key, and a manifest
+ * of this document's collections joining on that field, the run cannot match
+ * and refuses. A ciphertext that does not decrypt matches nothing.
  */
 export function mergeExternalMetadata(
   label: string,
@@ -415,6 +429,7 @@ export function mergeExternalMetadata(
   index: ExternalMetadataIndex | null,
   memberOf: readonly string[],
   base: string,
+  options: { encryptionKey?: () => string | undefined } = {},
 ): MergedMetadata {
   const none = (): undefined => undefined;
   // A file that belongs to no collection gets nothing merged, and carries no
@@ -441,7 +456,27 @@ export function mergeExternalMetadata(
     if (byPath) sources.push(byPath);
   }
   for (const [field, byValue] of index.byField) {
-    const value = joinValue(extracted.data[field]);
+    const raw = extracted.data[field];
+    let value: string | undefined;
+    let pageValue: string | undefined;
+    if (isEncryptedValue(raw)) {
+      const joinsHere = [...byValue.values()].some((supplied) =>
+        [...supplied.values()].some((sv) => mine(sv.collection)),
+      );
+      if (!joinsHere) continue;
+      const key = options.encryptionKey?.();
+      if (key === undefined) {
+        throw new EncryptionRefusal(
+          `externalMetadata join field "${field}" is encrypted on these pages, and no encryption key is available to match them.`,
+        );
+      }
+      const opened = decryptValue(raw, key, META_CONTEXT);
+      if (!opened.ok) continue;
+      value = joinValue(opened.value);
+      pageValue = raw;
+    } else {
+      value = joinValue(raw);
+    }
     if (value === undefined) continue;
     const hit = byValue.get(value);
     if (!hit) continue;
@@ -451,7 +486,13 @@ export function mergeExternalMetadata(
     // second entry for one document would read as a second document.
     const first = [...hit.values()].find((sv) => mine(sv.collection));
     if (first) {
-      joins.push({ field, value, file: first.file, collection: first.collection });
+      joins.push({
+        field,
+        value,
+        ...(pageValue === undefined ? {} : { pageValue }),
+        file: first.file,
+        collection: first.collection,
+      });
     }
   }
 

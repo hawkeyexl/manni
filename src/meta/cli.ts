@@ -19,6 +19,7 @@ import {
 } from "../shared/cli-options.js";
 import { fail } from "../shared/run.js";
 import { notice } from "../shared/warn.js";
+import { terminalConfirm } from "../shared/prompt.js";
 import {
   DocmetaError,
   type RunSummary,
@@ -1081,6 +1082,9 @@ export function buildProgram(): Command {
             respectGitignore: explicitFalse(options.gitignore),
             offline: options.offline ? true : undefined,
             onNotice: notice,
+            // A write to a column marked x-manni-encrypt with no key asks
+            // for one on a terminal, and refuses off one (proposal 0045).
+            confirm: terminalConfirm(),
           });
           // With SQL, the rows own stdout and the export is a diagnostic;
           // export-only, the export summary IS the report.
@@ -1300,6 +1304,10 @@ export function buildProgram(): Command {
           chunkChars: options.chunkChars,
           concurrency: options.concurrency,
           includeContent: usingStdin,
+          // A field marked x-manni-encrypt with no key asks for one on a
+          // terminal, and refuses off one (proposal 0045). Reading the page
+          // from stdin leaves no terminal to ask on.
+          confirm: usingStdin ? undefined : terminalConfirm(),
         });
 
         const color = resolveColor(command.parent ?? command);

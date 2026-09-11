@@ -38,7 +38,13 @@ import {
   type ProviderSpec,
   type TokenUsage,
 } from "@hawkeyexl/inference";
-import { DocmetaError, type FieldError, type MetadataPatch } from "../types.js";
+import {
+  DocmetaError,
+  type ApplyOptions,
+  type FieldError,
+  type MetadataExtractor,
+  type MetadataPatch,
+} from "../types.js";
 import { resolveRunConfig, schemaTrustRoot } from "../core/config.js";
 import {
   assertNonEmpty,
@@ -63,6 +69,20 @@ import { loadSchema, schemaLoadOptions } from "../core/schema-registry.js";
 import { Validator, compileWithFormats } from "../core/validator.js";
 import { toJsonText } from "../core/json-text.js";
 import { writeFileAtomic } from "../core/write-file.js";
+import {
+  ENCRYPTED_PLACEHOLDER,
+  EncryptionRefusal,
+  META_CONTEXT,
+  encryptionView,
+  lazyKey,
+  pointerOf,
+  redactForModel,
+  settleFindings,
+  topLevelKeyOf,
+  type EncryptionView,
+} from "../core/encrypted.js";
+import { encryptValue } from "../../shared/encryption.js";
+import { ensureEncryptionKey } from "../../shared/prompt.js";
 import {
   FILL_PROMPT_VERSION,
   FILL_SYSTEM_PROMPT,
@@ -163,7 +183,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   const cwd = opts.cwd ?? process.cwd();
   // Explicit CLI inputs win, else config `paths:`; `base` is whichever of the
   // two directories those inputs were written relative to.
-  const { config, inputs, base, configDir, collections, fromCollections } =
+  const { config, inputs, base, configDir, collections, fromCollections, configFile } =
     await resolveRunConfig({
       cwd,
       configPath: opts.configPath,
@@ -394,6 +414,32 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     offline: opts.offline ?? config?.offline ?? false,
   });
 
+  // Proposal 0045. The key encrypted values are read and written with: the
+  // configured one, resolved when first needed, or the one this run's prompt
+  // wrote. The prompt is asked once, whichever worker needs it first, and
+  // every other worker awaits the same answer.
+  const configuredKey = lazyKey(configFile, opts.env);
+  let ensuredKey: string | undefined;
+  let ensuring: Promise<string> | undefined;
+  const currentKey = (): string | undefined => ensuredKey ?? configuredKey();
+  const writeKey = async (subject: string): Promise<string> => {
+    const have = currentKey();
+    if (have !== undefined) return have;
+    ensuring ??= ensureEncryptionKey({
+      subject,
+      cwd,
+      file: configFile ?? null,
+      ...(opts.env === undefined ? {} : { env: opts.env }),
+      ...(opts.confirm === undefined ? {} : { confirm: opts.confirm }),
+      notice: (message) => opts.onNotice?.(message),
+      toError: (message) => new EncryptionRefusal(message),
+    }).then(({ key }) => {
+      ensuredKey = key;
+      return key;
+    });
+    return ensuring;
+  };
+
   const processOne = async (
     label: string,
     content: string,
@@ -432,9 +478,12 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         externalMetadata,
         members,
         base,
+        { encryptionKey: currentKey },
       );
       extracted = merged.extracted;
     } catch (err) {
+      // A refusal about the run's key is the run's, not this file's.
+      if (err instanceof EncryptionRefusal) throw err;
       return errorResult(label, extractor.name, (err as Error).message);
     }
 
@@ -460,18 +509,35 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     const schemaSet = resolved.schemas;
     let schemas: Record<string, unknown>[];
     let existingErrors;
+    let view: EncryptionView;
     try {
       schemas = await Promise.all(
         schemaSet.map((ref) => loadSchema(ref, schemaOptions)),
       );
-      existingErrors = await validator.validate(
-        extracted.data,
-        schemaSet,
-        extracted.lineFor,
-        extracted.colFor,
-        merged.locate,
+      // Validated as `validate` does (proposal 0045): marked values as their
+      // plaintext, on a copy, and nothing at or under a value no key could
+      // read. A ciphertext that fails its enum is not a missing value, and
+      // fill must never overwrite it with a guess.
+      view = await encryptionView({
+        data: extracted.data,
+        refs: schemaSet,
+        validator,
+        key: currentKey,
+        locate: merged.locate,
+      });
+      existingErrors = settleFindings(
+        await validator.validate(
+          view.data,
+          schemaSet,
+          extracted.lineFor,
+          extracted.colFor,
+          merged.locate,
+        ),
+        view,
+        extracted,
       );
     } catch (err) {
+      if (err instanceof EncryptionRefusal) throw err;
       // Same rule as `validate`: a schema the *document* chose failing to load
       // is that document's failure and is reported as one, so one file cannot
       // abort the run. Every other source stays operational, because a schema
@@ -483,7 +549,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     }
     const candidates = collectCandidates(
       schemas,
-      extracted.data,
+      view.data,
       existingErrors,
       only,
     );
@@ -510,7 +576,31 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         schemaSet,
       );
     }
-    if (candidates.length === 0) {
+    // Proposal 0045: which of this file's writes must be encrypted. A valid
+    // value the page holds in plain text in a marked property is encrypted
+    // where it stands, with no proposal; a candidate is one when the schema
+    // marks it, asked with a placeholder in its place, because an absent
+    // property is one Ajv never evaluates.
+    const inPlace = view.plain.flatMap((pointer) => {
+      const key = topLevelKeyOf(pointer);
+      if (key === undefined || (only !== undefined && !only.has(key))) return [];
+      if (externalMetadata?.owners.has(key) === true) return [];
+      if (candidates.some((c) => c.key === key)) return [];
+      return [{ key, pointer, value: extracted.data[key] }];
+    });
+    const probe: Record<string, unknown> = { ...view.data };
+    for (const c of candidates) {
+      if (!Object.hasOwn(probe, c.key)) probe[c.key] = "";
+    }
+    const probeMarks: ReadonlySet<string> =
+      candidates.length > 0
+        ? await validator.markedPointers(probe, schemaSet)
+        : new Set<string>();
+    const sealedCandidates = candidates.filter((c) =>
+      probeMarks.has(pointerOf(c.key)),
+    );
+
+    if (candidates.length === 0 && inPlace.length === 0) {
       return {
         file: label,
         format: extractor.name,
@@ -531,6 +621,13 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       return errorResult(label, extractor.name, (err as Error).message, schemaSet);
     }
 
+    // The key before the first model request, so a refused prompt never
+    // wastes a paid run.
+    const firstSealed =
+      inPlace[0]?.pointer ??
+      (sealedCandidates[0] === undefined ? undefined : pointerOf(sealedCandidates[0].key));
+    if (firstSealed !== undefined) await writeKey(firstSealed);
+
     // ---- Propose (cache first) -------------------------------------------
     const cacheKey = buildCacheKey([
       identity.provider,
@@ -545,13 +642,18 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       candidates.map((c) => c.key).join(","),
       sha256(content),
     ]);
-    const hit = cache?.get(cacheKey);
+    const hit = candidates.length > 0 ? cache?.get(cacheKey) : undefined;
 
-    let proposals: ProposalSet;
+    // What the model is told the page already holds: neither the plaintext
+    // nor the ciphertext of a marked field (0017's egress rule).
+    const existing = redactForModel(extracted.data, [...view.marked, ...probeMarks]);
+
+    // No candidates means the only work is encrypting what the page holds.
+    let proposals: ProposalSet = {};
     if (hit) {
       cachedCount++;
       proposals = hit.proposals;
-    } else {
+    } else if (candidates.length > 0) {
       if (turnsExhausted()) {
         turnsSpent = true;
         return errorResult(
@@ -581,6 +683,16 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       // An overflow means the budget was too generous for this model — there is
       // no way to ask a model its input limit ahead of time — so halve it once
       // and retry rather than failing a file for being long.
+      // The page as the model reads it: marked values and every ciphertext
+      // read `(encrypted)` in the body too, not only in the metadata above.
+      const modelContent = contentForModel(
+        content,
+        extractor,
+        existing,
+        extracted.data,
+        (pointer) => merged.locate(pointer) !== undefined,
+        { filePath: label, elements },
+      );
       let chunkChars = chunkBudget;
       let attempt = 0;
       let sets: ProposalSet[] | undefined;
@@ -589,7 +701,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       let failure: string | undefined;
       while (attempt < 2 && sets === undefined) {
         attempt++;
-        const chunks = splitBody(content, chunkChars);
+        const chunks = splitBody(modelContent, chunkChars);
         const collected: ProposalSet[] = [];
         let overflowed = false;
         let cutShort = false;
@@ -612,7 +724,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
               system: FILL_SYSTEM_PROMPT,
               user: buildUserPrompt({
                 filePath: label,
-                existing: extracted.data,
+                existing,
                 candidates,
                 body: chunk,
                 ...(chunks.length > 1
@@ -694,12 +806,17 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     // ---- Re-validate, and revert anything that makes the page worse -------
     const accepted = fields.filter((f) => f.written);
     if (accepted.length > 0) {
-      const merged = { ...extracted.data, ...patchOf(accepted) };
-      const after = await validator.validate(
-        merged,
-        schemaSet,
-        extracted.lineFor,
-        extracted.colFor,
+      // The decrypted copy, so a marked value is judged as its plaintext.
+      const merged = { ...view.data, ...patchOf(accepted) };
+      const after = settleFindings(
+        await validator.validate(
+          merged,
+          schemaSet,
+          extracted.lineFor,
+          extracted.colFor,
+        ),
+        view,
+        extracted,
       );
       const broken = new Set(
         after.map((e) => topKey(e.instancePath)).filter((k) => k !== ""),
@@ -714,7 +831,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     }
 
     const writable = fields.filter((f) => f.written);
-    if (writable.length === 0) {
+    if (writable.length === 0 && inPlace.length === 0) {
       return {
         file: label,
         format: extractor.name,
@@ -725,9 +842,42 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       };
     }
 
+    // Proposal 0045: a marked value is written encrypted and reported as
+    // `(encrypted)`. The marks are read again over the values about to land,
+    // since a proposal can take an `if` branch the page did not.
+    const finalMarks: ReadonlySet<string> =
+      writable.length > 0
+        ? await validator.markedPointers({ ...view.data, ...patchOf(writable) }, schemaSet)
+        : new Set<string>();
+    const patch: MetadataPatch = {};
+    for (const f of writable) {
+      const key = keyOf(f);
+      const pointer = pointerOf(key);
+      if (finalMarks.has(pointer) || probeMarks.has(pointer)) {
+        patch[key] = encryptValue(f.value, await writeKey(pointer), META_CONTEXT);
+        f.value = ENCRYPTED_PLACEHOLDER;
+        f.encrypted = true;
+      } else {
+        patch[key] = f.value;
+      }
+    }
+    const required = requiredKeys(schemas);
+    for (const f of inPlace) {
+      patch[f.key] = encryptValue(f.value, await writeKey(f.pointer), META_CONTEXT);
+      fields.push({
+        field: f.pointer,
+        required: required.has(f.key),
+        confidence: 1,
+        reasoning: IN_PLACE_REASONING,
+        value: ENCRYPTED_PLACEHOLDER,
+        written: true,
+        encrypted: true,
+      });
+    }
+
     let next: string;
     try {
-      next = extractor.apply(content, patchOf(writable), {
+      next = extractor.apply(content, patch, {
         filePath: label,
         elements,
       });
@@ -799,6 +949,55 @@ function topKey(instancePath: string): string {
 }
 
 const keyOf = (f: FilledField): string => f.field.slice(1);
+
+/** Why a value fill did not propose was written: it was encrypted where it stood. */
+const IN_PLACE_REASONING =
+  "The page held this value in plain text; its schema marks it x-manni-encrypt, so it was encrypted.";
+
+/** A ciphertext anywhere in a document's text. */
+const CIPHERTEXT_IN_TEXT = /~[A-Za-z0-9_-]{82,}/g;
+
+/**
+ * The document as the model reads it (proposal 0045, 0017's egress rule).
+ * Every marked value the page itself holds, plain or encrypted, is rewritten
+ * to `(encrypted)` through the format's own writer, and a text pass then
+ * hides any ciphertext the writer did not reach. `existing` is the redacted
+ * metadata; a key whose value it changed is one to rewrite. A value a
+ * manifest supplied is not in the text, so it is left out of the patch.
+ */
+function contentForModel(
+  content: string,
+  extractor: MetadataExtractor,
+  existing: Record<string, unknown>,
+  held: Record<string, unknown>,
+  supplied: (pointer: string) => boolean,
+  options: ApplyOptions,
+): string {
+  const patch: MetadataPatch = {};
+  for (const [key, value] of Object.entries(existing)) {
+    if (!Object.hasOwn(held, key) || supplied(pointerOf(key))) continue;
+    if (toJsonText(value) !== toJsonText(held[key])) patch[key] = value;
+  }
+  let text = content;
+  if (Object.keys(patch).length > 0 && extractor.apply !== undefined) {
+    try {
+      text = extractor.apply(content, patch, options);
+    } catch {
+      // The text pass below still hides every ciphertext.
+    }
+  }
+  return text.replace(CIPHERTEXT_IN_TEXT, ENCRYPTED_PLACEHOLDER);
+}
+
+/** Every top-level property some schema in the set requires. */
+function requiredKeys(schemas: Record<string, unknown>[]): Set<string> {
+  const out = new Set<string>();
+  for (const schema of schemas) {
+    if (!Array.isArray(schema.required)) continue;
+    for (const r of schema.required as unknown[]) if (typeof r === "string") out.add(r);
+  }
+  return out;
+}
 
 function patchOf(fields: FilledField[]): MetadataPatch {
   const patch: MetadataPatch = {};

@@ -42,6 +42,7 @@ import {
   type LoadSchemaOptions,
 } from "./schema-registry.js";
 import { FILE_SCHEMA_KEY } from "./resolve-schema.js";
+import { ENCRYPT_KEYWORD } from "./encrypted.js";
 
 type Dialect = "2020" | "2019" | "draft7" | "draft4";
 
@@ -82,8 +83,56 @@ function buildAjv(dialect: Dialect): InstanceType<AjvCtor> {
   // draft-06 shares the draft-07 build; register its meta-schema so draft-06
   // schemas compile too rather than erroring on an unknown `$schema`.
   if (dialect === "draft7") ajv.addMetaSchema(draft06MetaSchema);
+  registerEncryptKeyword(ajv);
   registerBuiltins(ajv, dialect);
   return ajv;
+}
+
+/**
+ * Where `x-manni-encrypt: true` records the instance pointers it is evaluated
+ * at, while `markedPointers` is running. `undefined` the rest of the time, so
+ * an ordinary validation pays one comparison per marked property.
+ *
+ * Module state is safe here because a compiled validator is synchronous: the
+ * recorder is set, the one call runs to completion, and it is cleared, all in
+ * one tick. `fill`'s worker pool interleaves only at its awaits, and there is
+ * none inside that window.
+ */
+let markRecorder: Set<string> | undefined;
+
+/**
+ * `x-manni-encrypt` (proposal 0045), on every Ajv meta builds. It never fails
+ * a value: validation of a marked property is the rest of its schema, run on
+ * the decrypted copy. What it does is say where it was evaluated, so Ajv's
+ * own resolution — `$ref`, `allOf`, a referenced built-in, the `anyOf`,
+ * `oneOf` and `if` branches it takes — decides where a mark counts.
+ *
+ * The boolean meta-schema is what refuses `"x-manni-encrypt": "yes"` at
+ * compile time; `compileUncached` turns Ajv's wording into the one message
+ * the plan ships.
+ */
+function registerEncryptKeyword(ajv: InstanceType<AjvCtor>): void {
+  ajv.addKeyword({
+    keyword: ENCRYPT_KEYWORD,
+    metaSchema: { type: "boolean" },
+    errors: false,
+    validate: (
+      schema: unknown,
+      _data: unknown,
+      _parent?: unknown,
+      cxt?: { instancePath: string },
+    ): boolean => {
+      if (schema === true && markRecorder !== undefined) {
+        markRecorder.add(cxt?.instancePath ?? "");
+      }
+      return true;
+    },
+  });
+}
+
+/** Ajv's compile error for a non-boolean mark names the keyword. */
+function isMarkShapeError(err: unknown): boolean {
+  return err instanceof Error && err.message.includes(`"${ENCRYPT_KEYWORD}"`);
 }
 
 /**
@@ -303,10 +352,46 @@ export class Validator {
       }
       return ajv.compile(schema);
     } catch (err) {
+      if (isMarkShapeError(err)) {
+        throw new DocmetaError(
+          `${ref}: "${ENCRYPT_KEYWORD}" must be true or false.`,
+        );
+      }
       throw new DocmetaError(
         `Schema "${ref}" failed to compile: ${(err as Error).message}`,
       );
     }
+  }
+
+  /**
+   * The instance pointers of `data` that carry `x-manni-encrypt: true` under
+   * any schema in `refs`, in the order the validator evaluated them.
+   *
+   * A first pass with the recording keyword, so a mark counts exactly where
+   * validation would evaluate it. Only present values are marked: Ajv applies
+   * a property's subschema to a property that exists. A branch Ajv does not
+   * take (`then` behind a failing `if`, an `anyOf` branch after a passing
+   * one) contributes nothing; a branch it takes contributes its marks
+   * whether or not the branch passes, because a ciphertext routinely fails
+   * the rest of its own subschema until it is decrypted.
+   */
+  async markedPointers(
+    data: Record<string, unknown>,
+    refs: string[],
+  ): Promise<Set<string>> {
+    const { [FILE_SCHEMA_KEY]: _omit, ...subject } = data;
+    void _omit;
+    const marks = new Set<string>();
+    for (const ref of refs) {
+      const fn = await this.compile(ref);
+      markRecorder = marks;
+      try {
+        fn(subject);
+      } finally {
+        markRecorder = undefined;
+      }
+    }
+    return marks;
   }
 
   /**

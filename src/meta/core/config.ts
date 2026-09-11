@@ -14,6 +14,7 @@ import { DocmetaError } from "../types.js";
 import {
   findConfigFile,
   readConfigFile,
+  type ConfigFile,
   type ConfigFileOptions,
 } from "../../shared/config-file.js";
 import { findGitRoot } from "../../shared/git-root.js";
@@ -1004,6 +1005,18 @@ export interface LoadedConfig {
    * order. `[]` for a legacy per-tool file, which carries no family-wide keys.
    */
   collections: CollectionConfig[];
+  /**
+   * The family file's top-level `encryptionKey:` (proposal 0045), when it has
+   * one. `MANNI_ENCRYPTION_KEY` wins over it: read the run's key through
+   * `resolveEncryptionKey`, never from here directly.
+   */
+  encryptionKey?: string;
+  /**
+   * The file itself, as family discovery found it. What a write that needs a
+   * key hands `ensureEncryptionKey`, so the key lands in the file that
+   * governs the run.
+   */
+  configFile?: ConfigFile;
 }
 
 // The project boundary lives with the family config discovery now; the SARIF
@@ -1079,6 +1092,8 @@ export async function loadConfig(
     source: file.source,
     collections: file.collections,
     ...(section !== undefined ? { section } : {}),
+    ...(file.encryptionKey !== undefined ? { encryptionKey: file.encryptionKey } : {}),
+    configFile: file,
   };
 }
 
@@ -1191,6 +1206,12 @@ export interface RunConfig {
    * operator chose part of the corpus.
    */
   fromCollections: boolean;
+  /**
+   * The governing config file, when one governs the run: what the run's
+   * encryption key resolves from (proposal 0045), with `MANNI_ENCRYPTION_KEY`
+   * winning over it, and where a write that needs a key writes one.
+   */
+  configFile?: ConfigFile;
 }
 
 /**
@@ -1258,6 +1279,7 @@ export async function resolveRunConfig(
           configDir: loaded.dir,
           configPath: loaded.path,
           ...(loaded.section === undefined ? {} : { configSection: loaded.section }),
+          ...(loaded.configFile === undefined ? {} : { configFile: loaded.configFile }),
         }
       : {}),
   };

@@ -251,6 +251,18 @@ documents sharing one value of a manifest's [join field](/manni/meta/reference/c
 Its `rules[]` entry reads "Two documents carry the same value of a manifest's
 join field, so one manifest entry matched both."
 
+A property its schema marks
+[`x-manni-encrypt`](/manni/meta/reference/schema-resolution/#encrypted-values)
+reports one of two more, both with the reserved `encrypted` first segment. A
+plain value reports `encrypted:plain/encrypted`. Its `rules[]` entry reads "A
+property the schema marks x-manni-encrypt holds a plain value; the page must
+hold it encrypted." A value that does not decrypt under the current key reports
+`encrypted:unreadable/encrypted`. Its `rules[]` entry reads "A property the
+schema marks x-manni-encrypt holds a value that does not decrypt under the
+current key." Neither carries a subject, so neither fingerprint depends on a
+value. An encrypted value a run has no key to check is not a finding. The run
+warns once on stderr, and the exit code is unaffected.
+
 Those last two ids were `sidecar:owned/sidecar` and `sidecar:duplicate/sidecar`
 before external metadata was renamed, and a baseline recorded under the old ones
 [no longer matches](#the-rename-invalidates-two-baselined-findings).

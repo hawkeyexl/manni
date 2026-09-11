@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "$defs": {
+    "secret": { "type": "string", "x-manni-encrypt": true }
+  },
+  "allOf": [
+    { "properties": { "owner": { "$ref": "#/$defs/secret" } } },
+    {
+      "anyOf": [
+        { "properties": { "service": { "type": "string", "x-manni-encrypt": true } } }
+      ]
+    }
+  ],
+  "if": { "properties": { "kind": { "const": "internal" } }, "required": ["kind"] },
+  "then": { "properties": { "internal-ticket": { "x-manni-encrypt": true } } },
+  "properties": {
+    "kind": { "type": "string" },
+    "public-note": { "type": "string", "x-manni-encrypt": false }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "contacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": { "lead": { "type": "string" } },
+      "x-manni-encrypt": true
+    }
+  }
+}

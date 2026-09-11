@@ -22,6 +22,13 @@ export type {
   SkipReason,
 } from "./commands/fill.js";
 export { Validator } from "./core/validator.js";
+// Meta's half of `manni key rotate` (proposal 0045): re-encrypt one page's
+// metadata values, found by their ciphertext, under a new key.
+export { reencryptMetadata } from "./core/reencrypt.js";
+export type {
+  ReencryptedValue,
+  ReencryptMetadataResult,
+} from "./core/reencrypt.js";
 export {
   resolveSchemaSet,
   collectSchemaPins,

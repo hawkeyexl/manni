@@ -371,3 +371,73 @@ When a file's resolved set contains more than one schema, the metadata is
 validated against **every** schema in the set. The report is the union of all
 violations. A file passes only when it satisfies all schemas in its set. Each
 reported error is tagged with the schema that produced it.
+
+## Encrypted values
+
+`x-manni-encrypt: true` on a property says the page must hold that property's
+value encrypted. `false`, or no keyword at all, is an ordinary property.
+
+```json title="schemas/page.json"
+{
+  "properties": {
+    "owner": { "type": "string", "enum": ["platform", "billing"], "x-manni-encrypt": true },
+    "internal-ticket": { "type": "string", "pattern": "^PROJ-[0-9]+$", "x-manni-encrypt": true }
+  },
+  "required": ["owner"]
+}
+```
+
+A page then carries a ciphertext, `~` and at least 82 base64url characters:
+
+```yaml
+owner: ~AQx7Vb2…
+```
+
+- **Where a mark counts.** Wherever the validator evaluates it. That includes a
+  `$ref`, an `allOf`, a referenced built-in, and the `anyOf`, `oneOf` and
+  `if`/`then` branches the validator takes. A mark behind a failing `if` does
+  not count, and neither does a mark on a property the page does not have.
+- **Whole values.** The mark applies to the whole value. An array or an object
+  is encrypted as one ciphertext. What is encrypted is the value's JSON, so an
+  encrypted number, boolean or array decrypts to its real type and is validated
+  as that.
+- **Writers encrypt top-level properties.** `manni meta fill` and a `manni meta
+  query` `UPDATE` or `INSERT` write a marked top-level property encrypted. A
+  nested mark is validated and never written.
+- **A value other than `true` or `false` is a schema error** when the schema
+  compiles, exit 2:
+
+```
+./schemas/page.json: "x-manni-encrypt" must be true or false.
+```
+
+What `manni meta validate` does with a marked property:
+
+| Situation | Outcome | Exit |
+|---|---|---|
+| The page holds a plain value, whatever the key state | Finding `encrypted:plain/encrypted`: `/owner holds a plain value; its schema marks it x-manni-encrypt.` | 1 |
+| A plain value an [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) supplied | Validated as plain text and never flagged. The manifest is private by construction. | 0 or 1 |
+| Encrypted, the key is available, and it decrypts | The decrypted value is validated against the property's full schema: `type`, `enum`, `pattern`, `format` and the rest. No finding prints the value. | 0 or 1 |
+| Encrypted, the key is available, and it does not decrypt | Finding `encrypted:unreadable/encrypted`: `/owner does not decrypt under the current key: encrypted under another key, or edited by hand.` | 1 |
+| Encrypted, and no key is available | Findings at or under that pointer are dropped, and the run warns once on stderr. | unaffected |
+
+The key is the family's
+[`encryptionKey:`](/manni/meta/reference/configuration/#encryption-key), or
+`MANNI_ENCRYPTION_KEY`. With neither, the run says how many values it could not
+check:
+
+```
+manni: 3 encrypted values were not verified: no encryption key is available. Set MANNI_ENCRYPTION_KEY, or run `manni key set`.
+```
+
+Two consequences of that last row:
+
+- A condition elsewhere in the schema, such as
+  `if: {properties: {owner: {const: …}}}`, still sees the ciphertext.
+- A [baseline](/manni/meta/reference/cli/#baselines) written with no key does
+  not record the dropped findings. They return as new on the next run that has
+  the key.
+
+Validation reads a copy of the metadata with every readable value decrypted.
+The page itself is never changed. A finding inside an encrypted value is filed
+at the value's own pointer, so it never names a key of an encrypted object.

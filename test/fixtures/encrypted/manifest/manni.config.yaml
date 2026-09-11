@@ -1,0 +1,15 @@
+# A private manifest supplies a plain owner: the manifest is private by
+# construction, so a plain value from it is never an encrypted:plain finding.
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./owners.yaml
+        keys: [owner]
+
+meta:
+  overrides:
+    - collection: pages
+      schemas:
+        - ../encrypted.schema.json

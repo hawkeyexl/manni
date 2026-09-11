@@ -58,6 +58,13 @@ import {
 import { Validator } from "../core/validator.js";
 import { schemaLoadOptions } from "../core/schema-registry.js";
 import { runChecks, type CheckEntry } from "../core/checks.js";
+import {
+  encryptionFindings,
+  encryptionView,
+  lazyKey,
+  settleFindings,
+  unverifiedWarning,
+} from "../core/encrypted.js";
 
 export interface ValidateOptions {
   inputs: string[];
@@ -112,6 +119,12 @@ export interface ValidateOptions {
    * set is the config-resolved corpus (proposal 0026).
    */
   checks?: boolean;
+  /**
+   * The environment `MANNI_ENCRYPTION_KEY` is read from (proposal 0045).
+   * Defaults to `process.env`; tests pass their own so a developer's key is
+   * never read.
+   */
+  env?: NodeJS.ProcessEnv;
 }
 
 export interface ValidateRun {
@@ -171,6 +184,7 @@ export async function runValidate(
     collections,
     declaredCollections,
     fromCollections,
+    configFile,
   } =
     await resolveRunConfig({
       cwd,
@@ -270,7 +284,7 @@ export async function runValidate(
   // to know which documents claimed which value.
   const joinHits = new Map<
     string,
-    Map<string, { label: string; line?: number; file: string }[]>
+    Map<string, { label: string; line?: number; file: string; shown: string }[]>
   >();
   // Corpus checks (0026) run only when the resolved file set IS the
   // config-resolved corpus — an invariant, not a flag list: any CLI reshaping
@@ -326,6 +340,10 @@ export async function runValidate(
   // matters — but the common no-checks path should not retain every file's
   // extraction, so the list fills only when the checks will actually run.
   const checkEntries: CheckEntry[] = [];
+  // The run's encryption key (proposal 0045), resolved the first time a
+  // ciphertext needs it, and the encrypted values no key could verify.
+  const encryptionKey = lazyKey(configFile, opts.env);
+  let unverified = 0;
   const processOne = async (
     label: string,
     content: string,
@@ -362,15 +380,24 @@ export async function runValidate(
     // and `merged.locate` answers instead. Rebound rather than shadowed, so
     // every read below — resolution, validation, the collision loop — sees
     // the one merged object.
-    const merged = mergeExternalMetadata(label, extracted, externalMetadata, members, base);
+    const merged = mergeExternalMetadata(label, extracted, externalMetadata, members, base, {
+      encryptionKey,
+    });
     extracted = merged.extracted;
     for (const j of merged.joins) {
       const byValue =
         joinHits.get(j.field) ??
-        new Map<string, { label: string; line?: number; file: string }[]>();
+        new Map<string, { label: string; line?: number; file: string; shown: string }[]>();
       const line = extracted.lineFor(j.field);
       const hits = byValue.get(j.value) ?? [];
-      hits.push({ label, file: j.file, ...(line != null ? { line } : {}) });
+      // A finding names the join value as the page holds it: the ciphertext
+      // of an encrypted field, never its plaintext.
+      hits.push({
+        label,
+        file: j.file,
+        shown: j.pageValue ?? j.value,
+        ...(line != null ? { line } : {}),
+      });
       byValue.set(j.value, hits);
       joinHits.set(j.field, byValue);
     }
@@ -401,13 +428,31 @@ export async function runValidate(
     const schemaSet = resolved.schemas;
     let errors: FieldError[];
     try {
-      errors = await validator.validate(
-        extracted.data,
-        schemaSet,
-        extracted.lineFor,
-        extracted.colFor,
-        merged.locate,
-      );
+      // Proposal 0045: marked values are validated as their plaintext, on a
+      // copy; the page's own object is never mutated, and no finding may say
+      // more about an encrypted value than the page did.
+      const view = await encryptionView({
+        data: extracted.data,
+        refs: schemaSet,
+        validator,
+        key: encryptionKey,
+        locate: merged.locate,
+      });
+      unverified += view.unverified.length;
+      errors = [
+        ...settleFindings(
+          await validator.validate(
+            view.data,
+            schemaSet,
+            extracted.lineFor,
+            extracted.colFor,
+            merged.locate,
+          ),
+          view,
+          extracted,
+        ),
+        ...encryptionFindings(view, extracted),
+      ];
     } catch (err) {
       // A schema the *document* chose failing to load — unparseable, missing,
       // integrity mismatch — is that document's failure, and is filed as one.
@@ -465,6 +510,10 @@ export async function runValidate(
     await processOne(file, content, extname(file));
   }
 
+  // Once per run, however many files held them (proposal 0045): the exit code
+  // is unaffected, and the count is of values, not of the findings dropped.
+  if (unverified > 0) opts.onNotice?.(unverifiedWarning(unverified));
+
   // Two documents carrying one join value (0039): one entry matched both,
   // and the manifest cannot tell them apart. A finding on each, at the
   // field's own line, whether or not the run is scoped — it is about the
@@ -475,7 +524,7 @@ export async function runValidate(
     const matched = new Map<string, Set<string>>();
     for (const [field, byValue] of joinHits) {
       matched.set(field, new Set(byValue.keys()));
-      for (const [value, hits] of byValue) {
+      for (const hits of byValue.values()) {
         if (hits.length < 2) continue;
         for (const hit of hits) {
           const others = hits
@@ -487,9 +536,9 @@ export async function runValidate(
           result.errors.push({
             schema: EXTERNAL_DUPLICATE_SCHEMA,
             keyword: EXTERNAL_KEYWORD,
-            subject: value,
+            subject: hit.shown,
             instancePath: externalMetadataPointer(field),
-            message: `${hits.length} documents carry ${field} "${value}"; ${hit.file} cannot tell them apart (${others})`,
+            message: `${hits.length} documents carry ${field} "${hit.shown}"; ${hit.file} cannot tell them apart (${others})`,
             ...(hit.line != null ? { line: hit.line } : {}),
           });
           result.ok = false;

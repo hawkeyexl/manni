@@ -33,8 +33,24 @@ export const EXTERNAL_OWNED_RULE = "external:owned/external";
  */
 export const EXTERNAL_DUPLICATE_RULE = "external:duplicate/external";
 
+/**
+ * A property its schema marks `x-manni-encrypt` holds a plain value
+ * (proposal 0045). Builtin-shaped like `external:owned`.
+ */
+export const ENCRYPTED_PLAIN_RULE = "encrypted:plain/encrypted";
+
+/**
+ * A marked property holds a ciphertext that does not decrypt under the
+ * current key (proposal 0045).
+ */
+export const ENCRYPTED_UNREADABLE_RULE = "encrypted:unreadable/encrypted";
+
 /** What each reserved rule means, for the consumer's rule listing. */
 export const RESERVED_RULES: Record<string, string> = {
+  [ENCRYPTED_PLAIN_RULE]:
+    "A property the schema marks x-manni-encrypt holds a plain value; the page must hold it encrypted.",
+  [ENCRYPTED_UNREADABLE_RULE]:
+    "A property the schema marks x-manni-encrypt holds a value that does not decrypt under the current key.",
   [PARSE_ERROR_RULE]: "The document's metadata block could not be parsed.",
   [SCHEMA_ERROR_RULE]: "No schema set could be resolved for the document.",
   [EXTERNAL_OWNED_RULE]:
