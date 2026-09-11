@@ -20,6 +20,7 @@
  * The plaintext never leaves this module except as the copy validation reads
  * and the value a writer is about to encrypt.
  */
+import type { DerivedField } from "./derive/types.js";
 import type { ConfigFile } from "../../shared/config-file.js";
 import { decryptValue, isEncryptedValue } from "../../shared/encryption.js";
 import {
@@ -368,4 +369,18 @@ export function redactForModel(
     return node;
   };
   return scrub(out) as Record<string, unknown>;
+}
+
+/**
+ * A compared managed field as a report may show it when its schema marks it
+ * `x-manni-encrypt` (proposals 0040 and 0045): both values as `(encrypted)`,
+ * the status and the evidence as they were. `derive` and the derived
+ * comparison in `validate` both report through it.
+ */
+export function redactedDerived(f: DerivedField): DerivedField {
+  return {
+    ...f,
+    ...(f.asserted !== undefined ? { asserted: ENCRYPTED_PLACEHOLDER } : {}),
+    ...(f.derived !== null ? { derived: ENCRYPTED_PLACEHOLDER } : {}),
+  };
 }

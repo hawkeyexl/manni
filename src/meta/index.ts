@@ -13,6 +13,13 @@ export {
 } from "./commands/schemas.js";
 export type { VendorOptions, VendorResult } from "./commands/schemas.js";
 export { runFill } from "./commands/fill.js";
+export { runDerive } from "./commands/derive.js";
+export type {
+  DeriveOptions,
+  DeriveRun,
+  DeriveFileResult,
+  DeriveSummary,
+} from "./commands/derive.js";
 export type {
   FillOptions,
   FillRun,
@@ -54,6 +61,8 @@ export type {
 export { memberOf } from "./core/collections.js";
 export type {
   CheckConfig,
+  DeriveConfig,
+  DeriveCommandConfig,
   ConfigNotice,
   DocmetaConfig,
   DocumentRefTrust,
@@ -98,6 +107,76 @@ export {
   EXTERNAL_METADATA_FETCH_MAX_BYTES,
 } from "./core/external-metadata-fetch.js";
 export type { ExternalMetadataFetchOptions } from "./core/external-metadata-fetch.js";
+export {
+  compareDerived,
+  staleFindings,
+  isBuiltinField,
+  isDeriveSource,
+  DERIVABLE_FIELDS,
+  DERIVE_SOURCES,
+  DERIVED_STALE_SCHEMA,
+  DERIVED_KEYWORD,
+} from "./core/derive/types.js";
+export type {
+  BuiltinDerivableField,
+  DerivableField,
+  DeriveCommand,
+  DeriveSource,
+  DerivedValue,
+  DerivedRecord,
+  DerivedField,
+  DerivedStatus,
+  DeriveInput,
+  DeriveContext,
+  ReviewClient,
+  RemoteIdentity,
+  Approval,
+  MergedChange,
+  SourceStatus,
+} from "./core/derive/types.js";
+export {
+  deriveMetadata,
+  consultedSources,
+  sourcesFor,
+  assertSourcesAvailable,
+  FIELD_SOURCES,
+} from "./core/derive/index.js";
+export type { DeriveResult } from "./core/derive/index.js";
+export {
+  deriveFromCommands,
+  PATH_PLACEHOLDER,
+  isPerFile,
+  argvFor,
+  valueOf,
+} from "./core/derive/command.js";
+export type { CommandSourceOptions, CommandSourceResult } from "./core/derive/command.js";
+export {
+  GitHubClient,
+  GitLabClient,
+  createReviewClient,
+  deriveFromReviews,
+  parseOriginUrl,
+  identityFromOrigin,
+} from "./core/derive/reviews.js";
+export type {
+  ReviewSourceInput,
+  ReviewFacts,
+  ReviewSourceResult,
+} from "./core/derive/reviews.js";
+export {
+  RESOLVED_VIEW,
+  resolvedColumns,
+  createResolvedView,
+  mentionsResolved,
+} from "./core/derive/table.js";
+export { run, BinMissing } from "./core/derive/spawn.js";
+export type { Run, SpawnOptions } from "./core/derive/spawn.js";
+export {
+  ReviewCache,
+  cachedClient,
+  REVIEW_CACHE_DIR,
+  REVIEW_CACHE_VERSION,
+} from "./core/derive/cache.js";
 export type {
   ExternalMetadataIndex,
   ExternalMetadataEntry,
@@ -145,6 +224,8 @@ export {
   renderFillGithub,
 } from "./reporters/fill.js";
 export type { FillReportFormat, FillReportOptions } from "./reporters/fill.js";
+export { DERIVE_FORMATS, isDeriveFormat, renderDerive } from "./reporters/derive.js";
+export type { DeriveReportFormat, DeriveReportOptions } from "./reporters/derive.js";
 // `stringifyValue` alongside `renderGet`: a caller building its own loop over
 // `runGet` results needs the same `(unset)`-and-JSON formatting the CLI uses,
 // and deriving it a second time is how two spellings of one rule start.

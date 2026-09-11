@@ -34,7 +34,12 @@ export type SkipReason =
   /** Writing it would leave the document failing its own schema. */
   | "schema-mismatch"
   /** The model declined to propose a value. */
-  | "no-proposal";
+  | "no-proposal"
+  /**
+   * The field is managed by `derive` (`derive.fields` in the config), so it
+   * was never sent for inference: only `manni meta derive` writes it.
+   */
+  | "managed";
 
 export interface FilledField {
   /** JSON Pointer, e.g. "/title" — the same form `validate` reports. */

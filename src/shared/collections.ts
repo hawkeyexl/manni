@@ -162,6 +162,15 @@ export function parseCollections(
         `${source}: ${where}.name "${name}" collides with the docs table every query reads. Pick another name, such as "site" or "pages".`,
       );
     }
+    // The derived table (proposal 0040) is a view named `derived` over a
+    // backing table named `_derived_rows`, built beside `docs` when a
+    // statement asks for it, and `resolved` (proposal 0043) is the view over
+    // `docs` and those rows. Any of the three would shadow it the same way.
+    if (folded === "derived" || folded === "_derived_rows" || folded === "resolved") {
+      throw toError(
+        `${source}: ${where}.name "${name}" collides with the derived table a query builds beside docs (the derived view, its _derived_rows table, and the resolved view over both). Pick another name.`,
+      );
+    }
     if (folded.startsWith("sqlite_")) {
       throw toError(
         `${source}: ${where}.name "${name}" starts with "sqlite_", which SQLite reserves for its own objects. Pick another name.`,

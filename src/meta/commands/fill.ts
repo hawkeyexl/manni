@@ -261,6 +261,8 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   );
   const dryRun = Boolean(opts.dryRun);
   const only = opts.fields != null ? new Set(opts.fields) : undefined;
+  /** The managed fields (0040): read everywhere, written only by `derive`. */
+  const managed = new Set<string>(config?.derive?.fields ?? []);
 
   const requestedProvider = (opts.provider ??
     config?.fill?.provider ??
@@ -561,12 +563,28 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       }
       return errorResult(label, extractor.name, err.message);
     }
-    const candidates = collectCandidates(
+    const proposed = collectCandidates(
       schemas,
       view.data,
       existingErrors,
       only,
     );
+    // A managed field (0040) is never a candidate: only `derive` writes it,
+    // and a model's guess at a date git already knows would be exactly the
+    // stamp the channel exists to make trustworthy. Reported rather than
+    // dropped, so the omission is visible and a required one still fails
+    // the run — the fix being `manni meta derive`, not a better model.
+    const managedSkips: FilledField[] = proposed
+      .filter((c) => managed.has(c.key))
+      .map((c) => ({
+        field: `/${c.key}`,
+        required: c.required,
+        confidence: 0,
+        reasoning: "managed by derive",
+        written: false,
+        skipReason: "managed",
+      }));
+    const candidates = proposed.filter((c) => !managed.has(c.key));
     // Readable, loudly unwritable (0037 rule 6): a candidate a manifest owns
     // could only be satisfied by editing the manifest, which fill does not
     // do — and writing it into the document would be the one thing 0018
@@ -619,7 +637,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         file: label,
         format: extractor.name,
         schemas: schemaSet,
-        fields: [],
+        fields: managedSkips,
         changed: false,
         ...(opts.includeContent ? { content } : {}),
       };
@@ -815,7 +833,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     }
 
     // ---- Gate -------------------------------------------------------------
-    const fields = gate(candidates, proposals, threshold);
+    const fields = [...managedSkips, ...gate(candidates, proposals, threshold)];
 
     // ---- Re-validate, and revert anything that makes the page worse -------
     const accepted = fields.filter((f) => f.written);

@@ -56,7 +56,10 @@ These came out of a review of the shipped product against the intent recorded in
 | [0037](0037-sidecar-metadata.md) | Sidecar metadata, a private manifest joined to public documents | Maya · M1, M2 / Devin · D1, D4 / Sara · S1 | Implemented |
 | [0038](0038-sidecar-url-manifests.md) | A URL form of `sidecars[].file`, fetched every run with a bearer token from the environment | Devin · D1, D2 / Maya · M1 | Implemented |
 | [0039](0039-sidecar-join.md) | `join`: a sidecar keyed by a frontmatter field, so a rename cannot orphan an entry; two pages sharing a value is a finding on both | Maya · M1, M2 / Devin · D4 / Sara · S3 | Implemented |
+| [0040](0040-derived-metadata.md) | Derived metadata, with managed stewardship fields stamped from git, CODEOWNERS, GitHub and GitLab by `manni meta derive`, and a stale stamp reported by `validate` | Maya · M1, M2 / Devin · D4 / Theo · T1 | Implemented (#19) |
 | [0041](0041-collections.md) | `collections:`, the family-level home for document sets and their external metadata; `sidecars` becomes `externalMetadata` on a collection and `--collection <name>` scopes a run | Maya · M1, M2 / Devin · D1, D4 / Sara · S1 | Implemented |
+| [0042](0042-command-source.md) | The `command` source: a managed field derived by an argv the config names, so `verified-against` can be checked against the product's own version | Maya · M1, M2 / Devin · D4 / Sara · S2 | Implemented (#21) |
+| [0043](0043-resolved-reads.md) | Resolved reads, where a third read-only view `resolved` holds the asserted value or the derived one, with `_origin` naming which. `get` derives by default | Maya · M1, M2 / Devin · D4 / Theo · T1 | Implemented (#22) |
 | [0044](0044-citations-and-drift.md) | Citations and drift, which pin a claim to source lines so `manni cite` can check the pin | Devin · D4 / Theo · T1 / Maya · M2 / Sara · S1 | Implemented (#17) |
 | [0045](0045-family-encryption-key.md) | A family encryption key: `encryptionKey:`, `manni key`, and `x-manni-encrypt` for metadata that must not appear in plain text | Sara · S1 / Devin · D5 / Maya · M5 | Implemented (#17) |
 
@@ -104,13 +107,17 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
 
 0004, 0014, 0018, 0020, 0026 ──> 0037   (config-relative manifest keys; an orphan entry is
                                          a named input that is not there; owned keys refuse
+                                         writes rather than land in the document; both
+                                         channels validated, no tiebreak; the orphan check
+                                         runs only on the config corpus)
 0037 ──> 0038            (a remote manifest under 0008's offline, timeout and retry rules;
                           fetched every run, never cached)
 0037 ──> 0039            (entries keyed by a frontmatter field; 0015's risk bounded by a
                           duplicate finding on every page that shares the value)
-                                         writes rather than land in the document; both
-                                         channels validated, no tiebreak; the orphan check
-                                         runs only on the config corpus)
+0040 ──> 0042            (a fifth source, `command`, on 0040's managed-field rules; the
+                          config-trusts-the-operator line 0026 and 0038 drew)
+0042 ──> 0043            (the derived channel gave a value two possible origins;
+                          `resolved` is the view that says which one a read got)
 
 0023 ──┬─> 0044          (the family the citations vocabulary joins as its tenth id;
        │                  source-of-truth is the page-grain anchor it refines to the line)

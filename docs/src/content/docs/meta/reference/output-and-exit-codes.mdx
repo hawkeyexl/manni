@@ -239,7 +239,7 @@ which `upload-sarif` rejects.
 manni meta's own failures do not get a rule id built from `(parse)`. A document
 whose metadata block could not be read reports `manni/parse-error`, and one
 whose schema set could not be resolved reports `manni/schema-error`. Each is a
-real entry in `rules[]`. Two more ids are built by the ordinary join from a
+real entry in `rules[]`. More ids are built by the ordinary join from a
 reserved first segment rather than a schema. A [corpus
 check](/manni/meta/reference/configuration/#checks) named `n` reports
 `check:n/check`. A document carrying a key an [external-metadata
@@ -266,6 +266,12 @@ warns once on stderr, and the exit code is unaffected.
 Those last two ids were `sidecar:owned/sidecar` and `sidecar:duplicate/sidecar`
 before external metadata was renamed, and a baseline recorded under the old ones
 [no longer matches](#the-rename-invalidates-two-baselined-findings).
+
+A [managed field](/manni/meta/reference/configuration/#derive) whose stamp
+disagrees with the evidence reports `derived:stale/derived`, with the field
+as its instance path. Its `rules[]` entry reads "The document's stamp for a
+managed field disagrees with the evidence; run manni meta derive." `derived`
+is the third reserved first segment, beside `check` and `external`.
 
 The `-` (stdin) input produces **no** SARIF result. `<stdin>` is not a path any
 consumer can resolve, and a location pointing at one would be dropped anyway.
@@ -531,6 +537,50 @@ comes from the findings:
 manni: corpus checks skipped: run is scoped to collections guides, blog
 ```
 
+### Exit 2 from a derive source
+
+With [`derive:`](/manni/meta/reference/configuration/#derive) in config,
+`validate`, `derive`, `get`, and a `query` naming the
+[`derived`](/manni/meta/reference/query/#the-derived-table) or
+[`resolved`](/manni/meta/reference/query/#the-resolved-table) table read
+evidence from git, a CODEOWNERS file, the `gh` or `glab` CLI, and
+any [command](/manni/meta/reference/configuration/#commands) the config
+names. A source that cannot answer is exit 2 naming the fix, never a skipped
+field. A
+field that was quietly not compared would make a stale stamp read as current.
+A green gate over nothing is the failure this whole contract exists to end.
+The deliberate opt-outs are `--no-derive` on `validate`, `--no-derived` on
+`get`, and `--sources` narrowing on `derive`.
+
+| Situation | Message |
+|---|---|
+| The checkout is shallow, as `actions/checkout` leaves it by default. | `git source unavailable: this checkout is shallow; use actions/checkout with fetch-depth: 0, or --sources codeowners,github,gitlab` |
+| There is no `git` on `PATH`, or the path is outside any repository, and `git` is a requested source. | `git source unavailable: …`, naming which, and `--sources` as the way out. |
+| `gh` or `glab` is not on `PATH`, and the `github` or `gitlab` source the origin remote matches is requested. | `github source unavailable: gh is not on PATH (origin is github.com); install gh and run gh auth login, or drop reviewed-by from --fields` |
+| `gh` or `glab` is present and not logged in. | `github source unavailable: …` or `gitlab source unavailable: …`, naming `gh auth login` or `glab auth login`. |
+| The sources name only the one of `github` and `gitlab` the origin remote does not match, and `reviewed-by` or `last-reviewed` is managed. | `the origin remote is github.com, which is GitHub; add github to sources, or drop reviewed-by and last-reviewed from the managed fields` |
+| There is no origin remote, and `reviewed-by` or `last-reviewed` is managed. | `no origin remote to tell GitHub from GitLab` |
+| The origin host names neither platform, and `sources` does not list exactly one of `github`, `gitlab`. | `the origin remote is git.example.com, which names neither GitHub nor GitLab; list exactly one of github, gitlab in derive.sources to say which it is` |
+| Config `derive.codeowners` names a file that is not there, and `codeowners` is a requested source. | `codeowners source unavailable: …`, naming the path. A repository with no CODEOWNERS file at all is not this case: `owner` derives null and stderr says `codeowners: no CODEOWNERS file found (…)` once. |
+| A configured command exited non-zero, and `command` is a requested source. | ``command source unavailable: `jq -r .version package.json` failed (exit 2): jq: error: Could not open package.json; narrow --sources or --fields``, with the last stderr line after the exit code. |
+| A configured command's program is not on `PATH`. | ``command source unavailable: `jq` is not on PATH (derive.commands.verified-against); narrow --sources or --fields`` |
+| A configured command ran past its `timeout`. | ``command source unavailable: `node scripts/source-for.mjs docs/install.md` timed out after 60s; narrow --sources or --fields`` |
+| A configured command wrote more than 8 MiB on stdout or stderr. | ``command source unavailable: `cat big.log` wrote more than 8 MiB; a command reports one field's value (derive.commands.notes)``. The command is killed rather than read to the end. |
+| Config `derive.commands` names a field a built-in source already derives. | `derive.commands.last-updated targets a field git already derives; a command may only derive a field no built-in source claims`. `$schema` is refused the same way, and a manifest-owned key when the config loads. |
+| Config `derive.commands` names `_path` or `_sources`. | `derive.commands._path collides with a column of the derived table a query builds (_path, _sources). Pick another field name.` |
+| `derive` was given `-`. | `cannot derive <stdin>: no history behind it` |
+| `derive` was given a field that is not derivable. | `"stakeholders" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed, or any key with an entry in derive.commands` |
+| Config `derive.fields` names a key a collection's [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. The config is refused when it loads. | `manni.config.yaml: meta.derive.fields[3] "owner" is owned by collections[0].externalMetadata[0] (./owners.yaml) — a managed field has one authority, and a manifest key already has one. Drop it from one side.` |
+| Config `derive.commands` names a key a collection's [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. The config is refused when it loads. | `manni.config.yaml: meta.derive.commands.verified-against is owned by collections[0].externalMetadata[0] (./versions.yaml) — a managed field has one authority, and a manifest key already has one. Drop it from one side.` |
+| `derive --fields` named a key a collection's [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. | `"owner" is owned by the manifest ./owners.yaml on collection guides; a managed field has one authority, and a manifest key already has one.` |
+| `derive` has no `derive.fields` in config and no `--fields`. | `nothing to derive: set derive.fields in manni.config.yaml or pass --fields` |
+| `derive` was given a findings format without `--check`. | `sarif is a findings format, which only --check produces` |
+| A `query` write would touch a managed key. | `"last-updated" is managed by derive; run manni meta derive instead.` |
+| A `query` write names the `resolved` table. | ``cannot modify resolved because it is a view; the resolved table is read-only — it is `docs` and the evidence joined, so write to docs, or stamp the evidence with manni meta derive.`` |
+
+A stamp that disagrees with the evidence is exit 1, from `validate` and from
+`derive --check`. That is a verdict about the document.
+
 ### Per-command meaning of exit 1
 
 | Command | Exits 1 when |
@@ -538,6 +588,7 @@ manni: corpus checks skipped: run is scoped to collections guides, blog
 | `validate` | One or more files failed validation. |
 | `get` | One or more files had a metadata block that could not be read. That means frontmatter that is not valid YAML, or that parses to something other than a mapping. A requested field that is merely *absent* is reported as unset and is **not** a failure. An absent **file** is different again: that is an operational error and exits 2. |
 | [`fill`](/manni/meta/reference/cli/#meta-fill) | A property the schema lists as `required` could not be filled confidently, or a file errored. Skipped **optional** properties leave the exit code at `0`. A file whose missing property an [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns is refused as a per-file error, so it counts here. |
+| [`derive`](/manni/meta/reference/cli/#meta-derive) | A file the run could not read or write, such as an unparseable document or a read-only format it could not stamp. That fails the run with or without `--check`, as it does for `fill`, because a stamp that was never applied must not read as done. Under `--check` a stale or unset managed field fails it too. A run that writes cleanly exits `0` whatever it changed, because the work is done rather than pending. |
 | `schemas` | Never. |
 
 The rule behind `fill`'s version is the same as `validate`'s: exit 1 means the

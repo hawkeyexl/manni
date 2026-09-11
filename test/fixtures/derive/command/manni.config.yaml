@@ -1,0 +1,14 @@
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+
+meta:
+  schemas:
+    - ./permissive.schema.json
+  derive:
+    fields: [verified-against]
+    sources: [command]
+    commands:
+      verified-against:
+        run: ["node", "-p", "require('./version.json').version"]

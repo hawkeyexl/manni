@@ -45,6 +45,13 @@ export const ENCRYPTED_PLAIN_RULE = "encrypted:plain/encrypted";
  */
 export const ENCRYPTED_UNREADABLE_RULE = "encrypted:unreadable/encrypted";
 
+/**
+ * A managed field whose asserted value differs from the derived one, or is
+ * missing while a source has one. `derived:stale` is builtin-shaped like the
+ * external refs, so the ordinary join produces this id too.
+ */
+export const DERIVED_STALE_RULE = "derived:stale/derived";
+
 /** What each reserved rule means, for the consumer's rule listing. */
 export const RESERVED_RULES: Record<string, string> = {
   [ENCRYPTED_PLAIN_RULE]:
@@ -57,6 +64,8 @@ export const RESERVED_RULES: Record<string, string> = {
     "The document carries a key a manifest owns; the manifest is the only place that key may be set.",
   [EXTERNAL_DUPLICATE_RULE]:
     "Two documents carry the same value of a manifest's join field, so one manifest entry matched both.",
+  [DERIVED_STALE_RULE]:
+    "A managed field whose value differs from what git, CODEOWNERS or the GitHub or GitLab review record says; run `manni meta derive` to refresh it.",
 };
 
 /**

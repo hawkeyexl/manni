@@ -50,6 +50,11 @@ exit code is the caller's.
 | `FillSummary` (type) | Aggregate fill counts, including cost and the required fields left unfilled. |
 | `FilledField` (type) | One proposed field: JSON Pointer, `required`, `confidence`, `reasoning`, the `value`, and whether it was `written`. `encrypted` is set when the value was written encrypted, and `value` then reads `(encrypted)`. |
 | `SkipReason` (type) | Why a proposal was not written: `low-confidence`, `schema-mismatch`, or `no-proposal`. |
+| `runDerive` | Stamp the managed stewardship fields from git history, CODEOWNERS, GitHub and GitLab. Backs `manni meta derive`. Writes a `stale` or `unset` field unless `dryRun` or `check`; leaves `current` and `unknown` alone. Throws `DocmetaError` for stdin, a field or source it does not know, nothing to derive, and a consulted source that cannot answer. |
+| `DeriveOptions` (type) | Input to `runDerive`: the same input model minus stdin, plus `fields` and `sources` (config `derive:` otherwise), `dryRun`, `check`, `cache`, a `now` clock, and a `reviews` client to inject. |
+| `DeriveRun` (type) | What `runDerive` resolves to: per-file `results`, the `summary`, whether it was a `dryRun` or a `check`, the `sources` consulted with each one's status, and the `frame` SARIF needs. |
+| `DeriveFileResult` (type) | One file's outcome: its `fields` as `DerivedField`s, whether it `changed`, an `error` when it could not be derived or written, and under `check` its `findings`. |
+| `DeriveSummary` (type) | The aggregate counts. They cover files, changed files, fields written, how many fields were stale, unset, or unknown, and errors. |
 | `getSchemasInfo` | The built-in schema registry and the supported input formats, as data. Backs `manni meta schemas`. |
 | `runVendorSchema` | Fetch a remote schema, write it into the repository, and record its integrity pin. Backs `manni meta schemas vendor`. |
 | `VendorOptions` (type) | Input to `runVendorSchema`: the URL, the destination directory, and whether to update the config. |
@@ -186,6 +191,74 @@ is held encrypted on the page, under the family's
 | `ReencryptMetadataResult` (type) | What `reencryptMetadata` returns: the new `content` (the input itself when nothing changed), the `rewritten` values, and the `skipped` ones, each a `pointer` and a `message`. |
 | `ReencryptedValue` (type) | One rewritten value. It carries the JSON `pointer`, and the ciphertext `from` and `to`. |
 
+## Derived metadata
+
+Values computed from git history, CODEOWNERS, GitHub and GitLab rather than written
+by hand. A derived value never merges into what the schema sees. `manni meta
+derive` stamps the managed fields into the document, and `validate` reports a
+managed field whose asserted value differs from the derived one. The exports
+below are the shared vocabulary and the two pure steps every source feeds.
+
+| Export | Purpose |
+|---|---|
+| `DERIVABLE_FIELDS` | The six built-in fields: `created`, `last-updated`, `authors`, `owner`, `reviewed-by`, `last-reviewed`. |
+| `BuiltinDerivableField` (type) | The union of those names. |
+| `DerivableField` (type) | A managed field name, which is one of the built-ins or a key with an entry in `derive.commands`. The config parser guarantees one or the other, so it is `string` to the type system. |
+| `isBuiltinField` | Type guard for a user-supplied field name: whether it is one of the six built-ins. It answers `false` for a key with a `derive.commands` entry, which is derivable but not built in; ask `isBuiltinField(f) \|\| Object.hasOwn(commands, f)` for the wider question. |
+| `DERIVE_SOURCES` | The sources `derive.sources` may name: `git`, `codeowners`, `github`, `gitlab`, `command`. Absent in config means all five, of which only the `github` or `gitlab` the origin remote matches is consulted. |
+| `DeriveSource` (type) | The union of those names. |
+| `DeriveCommand` (type) | One `derive.commands` entry as the derive context carries it: the `run` argv, the program first, and the `timeoutMs` to wait for it. |
+| `isDeriveSource` | Type guard for a user-supplied source name. |
+| `DerivedValue` (type) | One fact a source produced. It carries the `value`, its `source`, and the `evidence` a finding quotes, such as a commit, a CODEOWNERS line, or a pull request. |
+| `DerivedRecord` (type) | Everything derived for one document, as the `file` and a `fields` map. A `null` field means a source was consulted and had no fact; an absent one means no source answered. |
+| `SourceStatus` (type) | Whether a source can answer at all, with a `reason` naming the fix when it cannot. |
+| `ReviewClient` (type) | The GitHub or GitLab half of a derive run: `detect` the hosting kind and project, `status` (binary on `PATH` and authenticated), and `mergedChangeFor` a commit. Reached through `gh` or `glab`; inject one through `DeriveContext.reviews` or `DeriveOptions.reviews` to keep the network out. |
+| `RemoteIdentity` (type) | What `detect` answers from the origin remote: the `kind` (`github` or `gitlab`), the `host`, and the `project` path there. |
+| `GitHubClient` | A `ReviewClient` that shells out to `gh`: the pull request for a commit, then its `APPROVED` reviews. |
+| `GitLabClient` | A `ReviewClient` that shells out to `glab`: the merge request for a commit, then its approvals. |
+| `createReviewClient` | Build the client for a repository root. It reads the origin remote, picks `GitHubClient` or `GitLabClient`, and wraps it in the review cache. |
+| `SpawnOptions` (type) | How a client reaches its binary, with the `bin` (`gh` or `glab` on `PATH` by default), any `prefixArgs`, the `cwd`, and a `timeoutMs`. Tests point `bin` at a fake script. |
+| `run` | Run one child process to completion. Stdout is collected, stderr drained and kept, and the child killed after `timeoutMs`. The review clients and the `command` source both spawn through it. Rejects with `BinMissing` when nothing on `PATH` has the binary's name. |
+| `Run` (type) | What `run` resolves to: the exit `code` (`null` when a signal ended the child), `stdout`, `stderr`, and whether it `timedOut`. |
+| `BinMissing` | The error `run` rejects with when the binary could not be started at all. |
+| `parseOriginUrl` | The `host` and `project` an origin URL names, for the scp, `https` and `ssh` spellings git writes. A local path or a bare host is `null`. |
+| `identityFromOrigin` | The `RemoteIdentity` for a parsed origin, with the `kind` decided by the host. |
+| `cachedClient` | A `ReviewClient` whose `mergedChangeFor` reads through a `ReviewCache`. Only a merged answer is stored, and a client with no identity goes straight through. |
+| `ReviewSourceInput` (type) | One document as the review source sees it, with its `label` and the newest body-changing commit's `sha`. The `sha` is `null` for an uncommitted document. |
+| `ReviewFacts` (type) | What the review source answers for one document: `reviewed-by` and `last-reviewed`, each a `DerivedValue` or `null`. |
+| `ReviewSourceResult` (type) | What `deriveFromReviews` resolves to: the source's `status` and its `records` by label. |
+| `deriveFromReviews` | The `github` or `gitlab` source. One lookup per distinct commit, however many documents share it. An unavailable client is reported in `status` and never called. |
+| `ReviewCache` | The on-disk cache of merged answers under `REVIEW_CACHE_DIR`, keyed by host, project and commit. A disabled cache misses every time and stores nothing. |
+| `REVIEW_CACHE_DIR` | Where the cache lives, relative to the project root: `.manni/meta/review-cache`. |
+| `REVIEW_CACHE_VERSION` | The entry format this version reads. An entry with another version is a miss. |
+| `MergedChange` (type) | The merged pull or merge request that carried a commit: its `id`, when it was `mergedAt`, and its `approvals`. |
+| `Approval` (type) | One `APPROVED` review, the latest per reviewer: the `login` and when it was `submittedAt`. |
+| `DeriveInput` (type) | One document as the sources see it, with its `label`, `absPath`, `content`, and `extracted` metadata. |
+| `DeriveContext` (type) | What a derive run holds constant: `cwd`, `base`, `configDir`, the `sources` and `fields` in play, an optional `codeowners` path, the optional `commands` table, whether to `cache`, a `now` clock, and an optional `reviews` client. |
+| `DerivedStatus` (type) | How an asserted value stands against the derived one: `current`, `stale`, `unset`, or `unknown`. |
+| `DerivedField` (type) | One compared field. It carries the `field`, the `asserted` value when the document carries one, the `derived` value or `null`, its `source` and `evidence`, the `status`, and whether `derive` has `written` it. |
+| `compareDerived` | Compare what a document asserts with what a source derived. Pure. Lists compare as sets, so a reordered `authors:` is current, not stale. A missing or `null` derived value is `unknown`. |
+| `staleFindings` | The findings `validate` files for a document's managed fields. Each `stale` or `unset` field gets one `FieldError`, on the line the asserted key sits on. The message names both values and the evidence. |
+| `DERIVED_STALE_SCHEMA` | The `schema` ref a derived finding carries: `derived:stale`. |
+| `DERIVED_KEYWORD` | The `keyword` every derived finding carries: `derived`. Joined, they are the rule id `derived:stale/derived`. |
+| `deriveMetadata` | The orchestrator. It resolves every requested field for every input from the sources the run consults. A source is consulted only when a requested field can come from it, and the `github` or `gitlab` source rides on git. Precedence is per field, with the first non-null answer winning. |
+| `DeriveResult` (type) | What `deriveMetadata` resolves to: a `DerivedRecord` per input keyed by label, and one `SourceStatus` per source consulted. |
+| `FIELD_SOURCES` | Which sources can state each derivable field, in precedence order: `github` or `gitlab` ahead of `git` for `reviewed-by` and `last-reviewed`, one source for every other field. |
+| `sourcesFor` | Which sources can state one field, in precedence order. A built-in gets its `FIELD_SOURCES` row. A key of the `commands` table gets `command`. Any other name gets nothing. A built-in never reaches the command arm. |
+| `consultedSources` | The sources a run consults, meaning those requested that some requested field can come from, in the requested order. Takes the `commands` table so `command` counts when a requested field has an entry. |
+| `deriveFromCommands` | The `command` source. Each entry in the table runs once, or once per document when its argv carries `{path}`, in the given `cwd` and never through a shell. The first program that is missing, times out, or exits non-zero makes the source unavailable, with nothing further spawned. |
+| `CommandSourceOptions` (type) | Input to `deriveFromCommands`: the `cwd` to run in (the config directory, else the run's) and an optional `spawn` seam that points every command at another binary. |
+| `CommandSourceResult` (type) | What `deriveFromCommands` resolves to: the source's `status` and, by label, each document's fields as `DerivedValue` or `null`. |
+| `PATH_PLACEHOLDER` | The argv token, `{path}`, that a per-file command carries where the document's label goes. |
+| `isPerFile` | Whether a `DeriveCommand` runs once per document, which is whether any of its argv carries `{path}`. |
+| `argvFor` | A command's argv with every `{path}` replaced by a document's label. |
+| `valueOf` | What a command's stdout means. Blank output is `null`. An object, a list or a quoted string is parsed as JSON. Anything else is the trimmed text, so a bare `1.10` keeps its trailing zero. |
+| `assertSourcesAvailable` | Throw the exit-2 `DocmetaError` for the first consulted source that could not answer, with the caller's hint appended after a semicolon. Availability is reported, not thrown, so each command chooses its own way out. |
+| `RESOLVED_VIEW` | The name of the third table a query can read, `resolved`: the effective value per field, over `docs` and the derived rows. |
+| `resolvedColumns` | Every column `resolved` carries, in order: `_path`, the `docs` data columns, any derivable field `docs` lacks, then `_origin` and `_sources`. |
+| `createResolvedView` | Create that view on a database that already holds `docs` and the derived rows. A field the document carries resolves to the asserted value, including an explicit `null`; any other resolves to the derived one. `_origin` names the winner per field and omits a field neither side has. Read-only, because it is a view. |
+| `mentionsResolved` | Whether a statement names `resolved` where a table goes, so the view is built only for a query that reads it. The twin of `mentionsDerived`. |
+
 ## Schema resolution
 
 The precedence chain that decides which schemas apply to a given file. See
@@ -242,7 +315,7 @@ its exports are under [Collections](#collections).
 | `loadConfig` | Discover (or take an explicit path to) a config file and parse it. Resolves to `null` when discovery finds none. |
 | `parseConfig` | Parse config text that you already have, with a source label for error messages. |
 | `LoadedConfig` (type) | A parsed config plus where it came from. It carries the file's `path`, its `dir`, and the `source` label every config message spells it as. It also carries the family-file `section` it was read from under, and every `collections` the family file declares. `encryptionKey` is the file's top-level key when it has one, and `configFile` is the file as family discovery found it. |
-| `DocmetaConfig` (type) | The `meta:` section itself: `schemas`, `overrides`, `checks`, `elements`, `fill`, `baseline`, `schemaTrust`, `schemaCache`, and the rest. It no longer carries `paths`, `exclude` or `sidecars`; the document set and its external metadata are [collections](#collections), which every tool reads. |
+| `DocmetaConfig` (type) | The `meta:` section itself: `schemas`, `overrides`, `checks`, `elements`, `derive`, `fill`, `baseline`, `schemaTrust`, `schemaCache`, and the rest. It no longer carries `paths`, `exclude` or `sidecars`; the document set and its external metadata are [collections](#collections), which every tool reads. |
 | `resolveRunConfig` | Merge config with the run's inputs and flags into the settings a core actually uses. This is the precedence chain, in one place. |
 | `RunConfigOptions` (type) | Input to `resolveRunConfig`: cwd, `configPath`, `noConfig`, the positional `inputs`, the `collections` names `--collection` gave (empty or absent means every declared one), and a load callback. |
 | `RunConfig` (type) | The merged result. It carries the rebased config, the effective `inputs`, and the `base` those are relative to. The inputs are the positional ones, or the selected collections' `paths` concatenated in declaration order. It names the `configDir`/`configPath`/`configSection` that governed the run and the `collections` the run covers. It lists every `declaredCollections` the config declares, each of which is a SQL view whether the run selected it or not. And it carries `fromCollections`, the corpus invariant every scoped check reads. `configFile` is the governing file, which the run's encryption key resolves from. |
@@ -254,6 +327,8 @@ its exports are under [Collections](#collections).
 | `FillConfig` (type) | Config defaults for `fill`: provider, model, confidence threshold, cost ceiling, concurrency. |
 | `SchemaCacheConfig` (type) | Config for the remote-schema cache, currently `ttlHours`. |
 | `CheckConfig` (type) | One named [corpus check](/manni/meta/reference/configuration/#checks). Its `name` (the durable half of its findings' identity) and the SQL `query`. |
+| `DeriveConfig` (type) | The [derived channel](/manni/meta/reference/configuration/#derive), made of the managed `fields`, the optional `sources` to consult, an optional `codeowners` path relative to the config's directory, and the optional `commands` table. The parser has already asserted the fields are non-empty, unique, and each one of `DERIVABLE_FIELDS` or a key of `commands`. `loadConfig` has also asserted that no field and no `commands` key is a key an [external-metadata](#external-metadata) manifest owns on any collection. |
+| `DeriveCommandConfig` (type) | One `derive.commands` entry as the config spells it, with the `run` argv, the program first, and an optional `timeout` in seconds. The parser has already asserted `run` is a non-empty list of non-empty strings and `timeout` a positive whole number. It has also refused a key that is a built-in field or `$schema`, and `loadConfig` refuses one a manifest owns. |
 
 ## Reporters
 
@@ -288,6 +363,11 @@ Pure formatting. A reporter turns a core's result into text and never writes it 
 | `FillReportFormat` (type) | The union of those names. |
 | `isFillFormat` | Type guard for a user-supplied fill format string. |
 | `FillReportOptions` (type) | `color` and `quiet` for `renderFill`. |
+| `renderDerive` | The reporter behind `manni meta derive`. An apply or dry run renders its own `pretty` and `json`; a `--check` run renders every format through `render`, so a stale stamp is a finding under `derived:stale/derived`. The findings formats throw `DocmetaError` without `--check`. |
+| `DERIVE_FORMATS` | The formats `derive` accepts: `pretty`, `json`, `github`, `sarif`, `junit`. The last three need `--check`. |
+| `DeriveReportFormat` (type) | The union of those names. |
+| `isDeriveFormat` | Type guard for a user-supplied derive format string. |
+| `DeriveReportOptions` (type) | The same options as `render`: `color`, `quiet`, the `frame`, and `onNotice`. |
 
 ## Extractors
 
