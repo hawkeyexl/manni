@@ -666,7 +666,9 @@ describe("cli query (built bin)", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
-  });
+    // Two CLI spawns and a SQLite export: past the 5 s default on a slow
+    // Windows runner, as the other timed tests in this file are.
+  }, 60000);
 });
 
 describe("cli query csv and params (0029, built bin)", () => {

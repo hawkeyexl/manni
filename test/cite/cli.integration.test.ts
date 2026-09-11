@@ -384,7 +384,8 @@ describe.skipIf(!gitAvailable())("manni cite check --show-diff", () => {
     expect(r.stdout).toMatch(/^ {8}raise B to 3$/m);
     expect(r.stdout).toMatch(/^ {8}-export const B = 2;$/m);
     expect(r.stdout).toMatch(/^ {8}\+export const B = 3;$/m);
-  });
+    // Two commits and a CLI spawn: past the 5 s default on a slow Windows runner.
+  }, 60000);
 });
 
 describe("manni cite add", () => {
