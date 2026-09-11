@@ -626,18 +626,32 @@ function assertNoMovedKeys(raw: unknown, source: string): void {
 }
 
 /**
+ * A message from a rule that runs outside `parseConfigValue`, with the prefix
+ * that parser gives its own. A check in `loadConfig` needs both halves of the
+ * family file, so it cannot sit inside the parser, but its message should
+ * still name the key the way the reader wrote it: `meta.overrides[0] …`, as
+ * the configuration reference documents. A legacy per-tool file has no
+ * section, so its message is unchanged.
+ */
+function inSection(message: string, source: string, section: string | undefined): string {
+  return section === undefined ? message : withSection(message, source, section);
+}
+
+/**
  * Refuse an `overrides[].collection` naming a collection nobody declared.
  *
  * Checked here rather than in the section parser because it is the one
  * override rule that needs the *other* half of the family file: `collections:`
  * is a top-level key, parsed by the shared loader, and the section parser
- * never sees it. The path shape stays `overrides[i].collection` so the message
- * reads like every other config error (0041 § interface).
+ * never sees it. The message goes through `inSection`, so it reads
+ * `meta.overrides[i].collection` like every error the section parser raises
+ * (0041 § interface).
  */
 function assertOverrideCollections(
   config: DocmetaConfig,
   collections: readonly CollectionConfig[],
   source: string,
+  section: string | undefined,
 ): void {
   const names = new Set(collections.map((c) => c.name));
   for (const [i, ov] of (config.overrides ?? []).entries()) {
@@ -647,7 +661,11 @@ function assertOverrideCollections(
         ? "(none)"
         : collections.map((c) => c.name).join(", ");
     throw new DocmetaError(
-      `${source}: overrides[${i}].collection names "${ov.collection}", which collections: does not define. Defined: ${defined}.`,
+      inSection(
+        `${source}: overrides[${i}].collection names "${ov.collection}", which collections: does not define. Defined: ${defined}.`,
+        source,
+        section,
+      ),
     );
   }
 }
@@ -1071,7 +1089,7 @@ export async function loadConfig(
   if (file === null) return null;
   const section = file.wrapped ? META_SECTION : undefined;
   const config = parseConfigValue(file.value, file.source, section);
-  assertOverrideCollections(config, file.collections, file.source);
+  assertOverrideCollections(config, file.collections, file.source, section);
   return {
     config,
     path: file.path,
