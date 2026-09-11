@@ -1,4 +1,4 @@
-# 0041: the `command` source, a managed field derived by a program the config names
+# 0042: the `command` source, a managed field derived by a program the config names
 
 - **Status:** Implemented (#21)
 - **Serves:** Maya · M1, M2 · Devin · D4 · Sara · S2

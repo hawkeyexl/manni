@@ -185,7 +185,7 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
   // and one input per parsed file — the document's OWN extraction, since a
   // managed key is never sidecar-owned and the git source reads its lines.
   // A field is derivable when a built-in source claims it, or when the
-  // config runs a command for it (0041).
+  // config runs a command for it (0042).
   const commands: Readonly<Record<string, DeriveCommand>> = commandsOf(config?.derive) ?? {};
   const derivableFields: DerivableField[] = opts.derived
     ? opts.fields.filter((f) => isBuiltinField(f) || Object.hasOwn(commands, f))

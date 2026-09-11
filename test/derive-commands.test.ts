@@ -655,7 +655,7 @@ describe("the derived table's reading of a statement", () => {
 });
 
 /**
- * The `command` source (proposal 0041) as the same commands see it. The
+ * The `command` source (proposal 0042) as the same commands see it. The
  * fixture manages one command-derived field, `verified-against`, whose
  * command reads `version.json` beside the config; the document asserts
  * `1.4.1` and the file says `1.4.2`. No git history is needed: `sources`

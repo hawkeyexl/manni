@@ -12,7 +12,7 @@
  * value never outlives the run that computed it.
  *
  * The columns are the run's: the six built-in fields, then one per key of
- * `derive.commands` (proposal 0041), so a command-derived field is read
+ * `derive.commands` (proposal 0042), so a command-derived field is read
  * exactly as a built-in one is.
  */
 import type { DatabaseSync } from "node:sqlite";

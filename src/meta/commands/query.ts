@@ -667,7 +667,7 @@ async function runSql(
           extracted: e.own,
         }));
       // The run's columns: the built-ins and the configured command keys
-      // (0041), so a statement reading a command's field runs the command.
+      // (0042), so a statement reading a command's field runs the command.
       const commands = commandsOf(ctx.config?.derive);
       const records = await deriveForTable(
         inputs,
