@@ -1,4 +1,4 @@
-// Validate the docmeta:artifact-evals:1.0.0-proposal.2 example ladder against the draft
+// Validate the manni:artifact-evals:1.0.0-proposal.2 example ladder against the draft
 // schema. Run from the repo root:
 //   node docs/proposals/0023/ladders/artifact-evals-examples.cjs
 const fs = require("fs");
