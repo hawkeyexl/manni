@@ -102,7 +102,10 @@ and decrypts under the current key is re-encrypted. So is every encrypted
 citation's `source.file`, with its `hmac-sha256-` pin, wherever the entry
 sits. A page's frontmatter and a collection's citations manifest are both
 rewritten, and the manifest is spliced one page's `citations` value at a time.
-Pages are re-encrypted in memory first, and nothing is written unless every
+It re-encrypts every other encrypted value in those collections' local
+[external-metadata manifests](/manni/meta/reference/configuration/#external-metadata)
+as well. Everything is re-encrypted in memory first, and nothing is written
+unless every
 value could be. See [how rotation finds values](#how-rotation-finds-values).
 
 A whole run writes the new key to the config, beside the old one, before the
@@ -120,9 +123,10 @@ manni key rotate [paths...] [options]
 ```
 
 <Aside type="caution" title="rotate writes pages and the key by default">
-`rotate` writes to your pages and your config by default. Pass `--dry-run` to
-see every change first, and run it on a clean working tree. It reads the cited
-lines to re-key citation pins, so run it where the sources are reachable.
+`rotate` writes to your pages, your local manifests and your config by default.
+Pass `--dry-run` to see every change first, and run it on a clean working tree.
+It reads the cited lines to re-key citation pins, so run it where the sources
+are reachable.
 </Aside>
 
 ### Arguments
@@ -155,8 +159,8 @@ stdin, because it writes the files it reads; `-` is refused.
 
 | Code | `key set` | `key rotate` |
 |---|---|---|
-| `0` | The key was written, or under `--dry-run` would have been. | Every encrypted value was re-encrypted, or already decrypted under the new key. The pages were written, and the key too unless the run was narrowed or the key comes from `MANNI_ENCRYPTION_KEY`. Under `--dry-run`, nothing was written. |
-| `1` | n/a | At least one value could not be re-encrypted. Nothing was written, not even the pages that re-encrypted cleanly. |
+| `0` | The key was written, or under `--dry-run` would have been. | Every encrypted value was re-encrypted, or already decrypted under the new key. The pages and manifests were written, and the key too unless the run was narrowed or the key comes from `MANNI_ENCRYPTION_KEY`. Under `--dry-run`, nothing was written. |
+| `1` | n/a | At least one value could not be re-encrypted. Nothing was written, not even the files that re-encrypted cleanly. |
 | `2` | Refused. Nothing was written. See [refusals](#refusals). | Operational or usage error. See [refusals](#refusals). |
 
 ## How rotation finds values
@@ -175,13 +179,41 @@ no schema has to say where the values are. A mark that lives in a `-s` schema,
 or behind a remote `$ref` the run cannot reach, cannot hide a value from
 rotation.
 
+### In manifests as well as pages
+
+A value does not have to sit in a page. An
+[external-metadata manifest](/manni/meta/reference/configuration/#external-metadata)
+holds the private half of a document, which is where an encrypted value most
+often lives. So `rotate` re-encrypts the local manifests of every collection
+it covers, alongside the pages.
+
+The rule inside a manifest is the rule inside a page. Every string with the
+ciphertext shape, at any depth of an owned value, is a candidate, and the
+authentication tag decides. Only the value's own text is replaced: the
+comments, the key order, the quoting and the line endings all survive.
+
+Two things are left alone.
+
+- A manifest whose `file` is a URL is read-only, so it is never loaded.
+  Rotation reaches no network. Rotate the file at its source, then update the
+  key.
+- The `citations` key belongs to `manni cite`, which re-keys a citation's
+  source together with its pin. Re-encrypting the source on its own would
+  break the pin, so rotation does not touch that key in a manifest or on a
+  page.
+
+A narrowed run covers the manifests of the collections it selected.
+`--collection` names them. Positional paths select the collections those files
+belong to, so a page and its private half move together.
+
 ### Every value, or none
 
-Pages are re-encrypted in memory first. A value with the ciphertext shape that
-decrypts under neither the current key nor the new one is skipped. A single
-skip means nothing is written, not a page and not the key. The run exits `1`,
-and the pages stay under the current key until the value is fixed. The new key
-is never written beside a value it cannot decrypt.
+Every page and every manifest is re-encrypted in memory first. A value with the
+ciphertext shape that decrypts under neither the current key nor the new one is
+skipped. A single skip means nothing is written, not a page, not a manifest and
+not the key. The run exits `1`, and everything stays under the current key
+until the value is fixed. The new key is never written beside a value it cannot
+decrypt.
 
 ### The order of the writes
 
@@ -189,12 +221,12 @@ A whole run whose key lives in the config writes in three steps:
 
 1. The config: `encryptionKey:` becomes the new key, and
    `encryptionKeyPrevious:` holds the old one, in one atomic write.
-2. The pages.
+2. The pages, then the manifests.
 3. The config again, without `encryptionKeyPrevious:`.
 
 The key goes first so that it is never lost. A key the command generated for
-itself reaches the config before any page is encrypted under it. The old key
-stays beside it until no page needs it.
+itself reaches the config before any value is encrypted under it. The old key
+stays beside it until nothing needs it.
 
 ### An interrupted rotation
 
@@ -240,10 +272,11 @@ lets a narrowed run compose with a whole run, and lets a stopped run finish.
 
 ### A narrowed run
 
-Positional paths or `--collection` cover part of the family. Writing the key
-after such a run would leave every page outside it encrypted under a key the
-config no longer holds. So a narrowed run requires `--to` and never writes the
-key, and its last line says how to finish:
+Positional paths or `--collection` cover part of the family, pages and
+manifests alike. Writing the key after such a run would leave everything
+outside it encrypted under a key the config no longer holds. So a narrowed run
+requires `--to` and never writes the key, and its last line says how to
+finish:
 
 ```
 Key not written: this run covered part of the family. Finish with a whole run under the same key: `manni key rotate --to <the same value>`.
@@ -271,9 +304,10 @@ rotated pages merge.
 
 ### A dry run
 
-`--dry-run` re-encrypts every page in memory and reports what would change.
-It writes nothing at all, not a page and not the config, and its last line is
-`Dry run: nothing written.` A value it would skip still exits `1`.
+`--dry-run` re-encrypts every page and manifest in memory and reports what
+would change. It writes nothing at all, not a page, not a manifest and not the
+config. Its last line is `Dry run: nothing written.` A value it would skip
+still exits `1`.
 
 ### The citation baseline
 
@@ -387,7 +421,8 @@ Encryption key written to ops/manni.config.yaml.
 $ manni key rotate
 docs/auth.md: /owner  ~AQx7…  -> ~AQp2…
 docs/limits.md: fetch-timeout  ~AQm4…:2 -> ~AQr9…:2
-2 values re-encrypted in 2 files, 0 skipped
+private/site.yaml: docs/handbook.md/owner  ~AQb1…  -> ~AQt6…
+3 values re-encrypted in 3 files, 0 skipped
 Encryption key written to manni.config.yaml.
 # exit 0
 
@@ -420,7 +455,23 @@ $ manni key rotate --to 0123456789abcdef0123456789abcdef --collection site --ext
       "written": false
     }
   ],
-  "reencrypted": 1,
+  "manifests": [
+    {
+      "file": "private/site.yaml",
+      "collection": "site",
+      "rewritten": [
+        {
+          "entry": "docs/handbook.md",
+          "pointer": "/owner",
+          "from": "~AQb1…",
+          "to": "~AQt6…"
+        }
+      ],
+      "skipped": [],
+      "written": false
+    }
+  ],
+  "reencrypted": 2,
   "skipped": 0,
   "keyWritten": false
 }
@@ -435,3 +486,10 @@ named by where it sits, `/citations/0`, and by the manifest when one owns it.
 In JSON a citation row carries `kind: "citation"`, its `id` or `index`, and
 `from` and `to`; a skipped row carries `kind` and `message` in place of `from`
 and `to`.
+
+`manifests` lists the local manifests, one row each, in the order the selected
+collections declare them. A URL manifest is read-only and never appears. Each
+row names the manifest as the run reports it and the `collection` that
+declared it. A value in one is named by the document entry it belongs to and
+the JSON pointer inside that entry. So `docs/handbook.md/owner` reads as one
+name in `pretty`, and as two fields, `entry` and `pointer`, in JSON.

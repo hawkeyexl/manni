@@ -8,29 +8,35 @@
  * keyed pin. A value already under the new key counts as done, so a run can
  * always be repeated.
  *
+ * A value does not have to sit in a page. An external-metadata manifest
+ * (proposal 0037) holds the private half of the same documents, which is
+ * where an encrypted value most often lives, so the local manifests of the
+ * collections a run covers are re-encrypted with the pages. See
+ * `planManifests`.
+ *
  * Input resolution is `cite check`'s: positional paths from `cwd`, else the
  * selected collections' `paths:` from the config's directory, `--exclude`
  * added to a collection's own `exclude:`, and zero files an error unless
  * `--allow-empty`.
  *
- * Every page is re-encrypted in memory first. One skip and nothing is written
- * (exit 1). Otherwise a whole run whose key comes from the config writes in
- * three steps, so that an interruption at any point leaves every value
- * readable by the next run:
+ * Every page and manifest is re-encrypted in memory first. One skip and
+ * nothing is written (exit 1). Otherwise a whole run whose key comes from the
+ * config writes in three steps, so that an interruption at any point leaves
+ * every value readable by the next run:
  *
  * 1. the config: `encryptionKey:` the new key, `encryptionKeyPrevious:` the
  *    old one, in one atomic write;
- * 2. the pages;
+ * 2. the pages, then the manifests;
  * 3. the config again, without `encryptionKeyPrevious:`.
  *
  * A run that finds `encryptionKeyPrevious:` finishes that rotation: from the
  * previous key to the current one. A narrowed run (paths or `--collection`)
- * and a run whose key comes from `MANNI_ENCRYPTION_KEY` write pages and never
- * the config. `--dry-run` writes nothing at all.
+ * and a run whose key comes from `MANNI_ENCRYPTION_KEY` write pages and
+ * manifests and never the config. `--dry-run` writes nothing at all.
  */
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { parse as parseYaml } from "yaml";
 import {
   DEFAULT_CITE_BASELINE_PATH,
@@ -50,15 +56,28 @@ import {
   type ReencryptCitationsResult,
   type SourceIndex,
 } from "../../cite/index.js";
-import { reencryptMetadata, supportedExtensions, writeFileAtomic } from "../../meta/index.js";
+import {
+  PATH_JOIN,
+  classifyRef,
+  externalMetadataJoin,
+  loadExternalMetadata,
+  reencryptMetadata,
+  supportedExtensions,
+  writeFileAtomic,
+  type ExternalMetadataEntry,
+  type ExternalMetadataIndex,
+  type ExternalMetadataValue,
+} from "../../meta/index.js";
 import {
   STDIN_TOKEN,
   assertNonEmpty,
   extractorByName,
   gitignoreOptions,
+  reencryptData,
   resolveTargetSet,
+  spliceManifestValue,
 } from "../../meta/internal.js";
-import { selectCollections } from "../../shared/collections.js";
+import { isMember, selectCollections, type CollectionConfig } from "../../shared/collections.js";
 import type { ConfigFile } from "../../shared/config-file.js";
 import { resolveEncryptionKey, writeEncryptionKey } from "../../shared/encryption-key.js";
 import { generateEncryptionKey, isValidEncryptionKey } from "../../shared/encryption.js";
@@ -68,6 +87,7 @@ import { KeyError } from "../errors.js";
 import type {
   KeyRotateOptions,
   KeyRotateResult,
+  RotateManifest,
   RotateOutcome,
   RotatePage,
   RotatedValue,
@@ -209,6 +229,154 @@ async function rotateManifestCitations(
       /"commit-sha"\s*:/.test(JSON.stringify(input.entry)),
     ),
   };
+}
+
+interface PlannedManifest {
+  manifest: RotateManifest;
+  path: string;
+  /** The manifest's text, with every rewritten value spliced into it. */
+  text: string;
+  changed: boolean;
+}
+
+/** How a run spells a manifest: relative to its base, like every file label. */
+function reportedPath(abs: string, base: string): string {
+  const rel = relative(base, abs);
+  return rel === "" ? "." : rel.split(sep).join("/");
+}
+
+/**
+ * The collections whose manifests this run covers. A run over every
+ * collection, and one narrowed by `--collection`, covers the collections it
+ * selected. A run over positional paths covers the collections those files
+ * belong to, so the private half of a page a run re-encrypts moves with it.
+ */
+function manifestCollections(
+  collections: readonly CollectionConfig[],
+  opts: {
+    fromCollections: boolean;
+    files: readonly string[];
+    base: string;
+    configDir: string;
+  },
+): CollectionConfig[] {
+  if (opts.fromCollections) return [...collections];
+  const rels = opts.files.map((rel) =>
+    reportedPath(resolve(opts.base, rel), opts.configDir),
+  );
+  return collections.filter((c) => rels.some((rel) => isMember(c, rel)));
+}
+
+/** The owned values one manifest entry supplies, or an empty map. */
+function valuesOf(
+  index: ExternalMetadataIndex,
+  entry: ExternalMetadataEntry,
+): ReadonlyMap<string, ExternalMetadataValue> {
+  const empty = new Map<string, ExternalMetadataValue>();
+  if (entry.join === PATH_JOIN) {
+    return entry.abs === undefined ? empty : (index.byPath.get(entry.abs) ?? empty);
+  }
+  return index.byField.get(entry.join)?.get(entry.spelled) ?? empty;
+}
+
+/**
+ * Re-encrypt the metadata values that live in the selected collections' local
+ * manifests (proposals 0037, 0039 and 0041).
+ *
+ * A manifest is private by construction, so it is where an encrypted value is
+ * most likely to sit. Rotation would otherwise leave it under the old key and
+ * `meta validate` would report `encrypted:unreadable` on every page the
+ * manifest feeds.
+ *
+ * Two things are left alone. A URL manifest is somebody else's file and
+ * read-only (0038), so it is never loaded, and a rotation reaches no network.
+ * The `citations` key is cite's: it re-keys a citation's source together with
+ * its pin, under its own context, and re-encrypting the source alone would
+ * break the pin. `reencryptData` skips it for the same reason
+ * `reencryptMetadata` does on a page.
+ *
+ * Text in, text out. Each value is spliced into the manifest by
+ * `spliceManifestValue`, which replaces that value's range and keeps every
+ * other byte: the comments, the key order, the quoting and the line endings.
+ * Nothing is written here; the caller writes when every value could be
+ * re-encrypted.
+ */
+async function planManifests(opts: {
+  collections: readonly CollectionConfig[];
+  configDir: string;
+  base: string;
+  fromKey: string;
+  toKey: string;
+}): Promise<PlannedManifest[]> {
+  const local = opts.collections
+    .map((c) => ({
+      ...c,
+      externalMetadata: c.externalMetadata.filter(
+        (m) => classifyRef(m.file).kind !== "url",
+      ),
+    }))
+    .filter((c) => c.externalMetadata.length > 0);
+  if (local.length === 0) return [];
+
+  const index = await loadExternalMetadata(local, {
+    configDir: opts.configDir,
+    base: opts.base,
+  });
+  if (index === null) return [];
+
+  // One plan per manifest file, so a manifest two collections declare is read
+  // once and spliced once. Its reported path and collection identify it the
+  // way `index.entries` does.
+  const plans = new Map<string, PlannedManifest>();
+  const located = new Map<string, string>();
+  for (const c of local) {
+    for (const m of c.externalMetadata) {
+      const join = externalMetadataJoin(m);
+      const abs = isAbsolute(m.file) ? m.file : resolve(opts.configDir, m.file);
+      const file = reportedPath(abs, opts.base);
+      located.set(`${c.name}\u0000${file}\u0000${join}`, abs);
+      if (plans.has(abs)) continue;
+      plans.set(abs, {
+        manifest: { file, collection: c.name, rewritten: [], skipped: [], written: false },
+        path: abs,
+        text: await readFile(abs, "utf8"),
+        changed: false,
+      });
+    }
+  }
+
+  for (const entry of index.entries) {
+    const abs = located.get(`${entry.collection}\u0000${entry.file}\u0000${entry.join}`);
+    const plan = abs === undefined ? undefined : plans.get(abs);
+    if (plan === undefined) continue;
+    const data: Record<string, unknown> = {};
+    for (const [key, supplied] of valuesOf(index, entry)) {
+      if (supplied.file === entry.file && supplied.collection === entry.collection) {
+        data[key] = supplied.value;
+      }
+    }
+    const done = reencryptData(data, { fromKey: opts.fromKey, toKey: opts.toKey });
+    for (const r of done.rewritten) {
+      plan.manifest.rewritten.push({ entry: entry.spelled, ...r });
+    }
+    for (const s of done.skipped) {
+      plan.manifest.skipped.push({ entry: entry.spelled, ...s });
+    }
+    for (const key of done.keys) {
+      plan.text = spliceManifestValue(plan.text, {
+        entry: entry.spelled,
+        key,
+        value: done.data[key],
+        join: entry.join,
+        file: plan.manifest.file,
+      }).text;
+      plan.changed = true;
+    }
+  }
+
+  return [...plans.values()].filter(
+    (p) => p.manifest.rewritten.length > 0 || p.manifest.skipped.length > 0,
+  );
 }
 
 export async function runKeyRotate(opts: KeyRotateOptions): Promise<KeyRotateResult> {
@@ -375,8 +543,31 @@ export async function runKeyRotate(opts: KeyRotateOptions): Promise<KeyRotateRes
   // citation with one wants git. Where git is not there, said once.
   if (wantsHistory && !(await client.available())) opts.onNotice?.(GIT_UNAVAILABLE_HISTORY);
 
-  const reencrypted = planned.reduce((n, p) => n + p.page.rewritten.length, 0);
-  const skipped = planned.reduce((n, p) => n + p.page.skipped.length, 0);
+  // The private half of the same documents: every local manifest of the
+  // collections this run covers. Planned in memory like the pages, and
+  // counted with them, so one unreadable value anywhere stops the whole run.
+  const valueManifests =
+    file === null
+      ? []
+      : await planManifests({
+          collections: manifestCollections(collections, {
+            fromCollections,
+            files,
+            base,
+            configDir: file.dir,
+          }),
+          configDir: file.dir,
+          base,
+          fromKey,
+          toKey,
+        });
+
+  const reencrypted =
+    planned.reduce((n, p) => n + p.page.rewritten.length, 0) +
+    valueManifests.reduce((n, m) => n + m.manifest.rewritten.length, 0);
+  const skipped =
+    planned.reduce((n, p) => n + p.page.skipped.length, 0) +
+    valueManifests.reduce((n, m) => n + m.manifest.skipped.length, 0);
   const writePage = opts.writePage ?? ((path: string, content: string) => writeFileAtomic(path, content));
 
   let outcome: RotateOutcome;
@@ -393,14 +584,20 @@ export async function runKeyRotate(opts: KeyRotateOptions): Promise<KeyRotateRes
     if (!narrowed && keyFile !== null && previous === undefined) {
       await writeEncryptionKey({ file: keyFile, key: toKey, previous: fromKey, cwd, toError: toKeyError });
     }
-    // (2) The pages, and the manifests that hold their citations. Each
-    // manifest is written once, however many pages it keeps entries for.
+    // (2) The pages, then the manifests: the citations one owns, and the
+    // encrypted values another holds. Each manifest is written once,
+    // however many pages it keeps entries for.
     for (const p of planned) {
       if (!p.changed) continue;
       await writePage(p.path, p.content);
       p.page.written = true;
     }
     for (const changed of manifests.changed()) await writePage(changed.path, changed.text);
+    for (const m of valueManifests) {
+      if (!m.changed) continue;
+      await writePage(m.path, m.text);
+      m.manifest.written = true;
+    }
     // (3) The old key goes, now that nothing is under it.
     if (!narrowed && keyFile !== null) {
       await writeEncryptionKey({ file: keyFile, key: toKey, previous: null, cwd, toError: toKeyError });
@@ -418,6 +615,7 @@ export async function runKeyRotate(opts: KeyRotateOptions): Promise<KeyRotateRes
 
   return {
     pages: planned.map((p) => p.page),
+    manifests: valueManifests.map((m) => m.manifest),
     reencrypted,
     skipped,
     keyWritten: outcome === "written" || outcome === "finished",

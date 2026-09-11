@@ -75,7 +75,10 @@ export interface KeyRotateOptions {
    * work tree; a test hands in a fake.
    */
   gitClient?: GitClient;
-  /** How a page is written. Defaults to an atomic write; tests inject a failure. */
+  /**
+   * How a page or a manifest is written. Defaults to an atomic write; tests
+   * inject a failure.
+   */
   writePage?: (path: string, content: string) => Promise<void>;
 }
 
@@ -127,6 +130,41 @@ export interface RotatePage {
 }
 
 /**
+ * A value re-encrypted in an external-metadata manifest (proposals 0037 and
+ * 0041): which document entry supplied it, and where it sits in that entry.
+ */
+export interface RotatedManifestValue {
+  /** The document entry, exactly as the manifest spells it. */
+  entry: string;
+  /** JSON pointer into the entry's owned keys: `/owner`, `/contacts/0/email`. */
+  pointer: string;
+  from: string;
+  to: string;
+}
+
+/** A manifest value that could not be re-encrypted, and why. */
+export interface SkippedManifestValue {
+  entry: string;
+  pointer: string;
+  message: string;
+}
+
+/**
+ * One local external-metadata manifest with something encrypted in it. A URL
+ * manifest is read-only (0038) and is never planned, so it never appears.
+ */
+export interface RotateManifest {
+  /** The manifest as the run reports it, relative to the run's base. */
+  file: string;
+  /** The collection whose `externalMetadata:` declared it. */
+  collection: string;
+  rewritten: RotatedManifestValue[];
+  skipped: SkippedManifestValue[];
+  /** Whether this run wrote the manifest. */
+  written: boolean;
+}
+
+/**
  * How a run ended, which decides its last line:
  *
  * - `written`: a whole run wrote the pages, then the new key to the config.
@@ -141,6 +179,11 @@ export type RotateOutcome = "written" | "finished" | "narrowed" | "env" | "skipp
 export interface KeyRotateResult {
   /** Pages that had something to re-encrypt or skip, in the order they were read. */
   pages: RotatePage[];
+  /**
+   * Local external-metadata manifests that had something to re-encrypt or
+   * skip, in the order the selected collections declare them.
+   */
+  manifests: RotateManifest[];
   /** Values re-encrypted, in memory under `--dry-run` and a skip. */
   reencrypted: number;
   skipped: number;

@@ -1,0 +1,6 @@
+# The `blog` collection's private manifest, so a narrowed rotation has a
+# manifest it must leave alone. Its one ciphertext is under the rotate
+# suite's OLD test key. Never a real key.
+
+blog/notes.md:
+  team: ~AbM9VPhKlCOXovYz8v0oXJZ28zXS89hAD7nRfUnH0Uhr9ifKwfivNGLxTwVo_7DAwklg8U2SAtluVUl7Qw
