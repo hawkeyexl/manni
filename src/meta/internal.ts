@@ -57,6 +57,14 @@ export {
   isMachineFormat,
 } from "./reporters/index.js";
 export { extractorByName, listFormats } from "./extractors/index.js";
+// `manni cite` keeps its citations in an external-metadata manifest and is the
+// first writer of one. Text in, text out; meta's own commands never call it,
+// so `meta fill` and `meta query` stay read-only on manifests.
+export { spliceManifestValue } from "./core/external-metadata-write.js";
+export type {
+  SpliceManifestOptions,
+  SplicedManifest,
+} from "./core/external-metadata-write.js";
 // `manni key set` refuses to create a family file beside one of these, which
 // the new file would hide from the metadata tool's discovery.
 export { LEGACY_CONFIG_NAMES } from "./core/config.js";

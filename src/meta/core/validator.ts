@@ -501,17 +501,18 @@ function toFieldError(
     wantsColumn = false;
   }
   // A value a manifest supplied is not in the document, so `lineFor` has no
-  // answer for it; `locate` does. `additionalProperties` is the one keyword
-  // whose offending value sits at a *child* of `instancePath`, and when that
-  // child came from the manifest, the manifest line is where a reader should
-  // look — a public schema refusing a private key is exactly the case.
+  // answer for it; `locate` does, down to the line of the deepest node the
+  // pointer reaches. `additionalProperties` is the one keyword whose offending
+  // value sits at a *child* of `instancePath`, so the child is asked first.
+  // Inside a manifest value that is the stray key's own line rather than its
+  // parent's. At the root it is the manifest line of a private key a public
+  // schema refused, which is exactly the case a reader needs pointed at.
   const located =
-    locate?.(instancePath) ??
-    (defined.keyword === "additionalProperties"
-      ? locate?.(
+    defined.keyword === "additionalProperties"
+      ? (locate?.(
           `${instancePath}/${escapePointerSegment(defined.params.additionalProperty)}`,
-        )
-      : undefined);
+        ) ?? locate?.(instancePath))
+      : locate?.(instancePath);
   if (located) {
     return {
       schema,

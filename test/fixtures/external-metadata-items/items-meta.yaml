@@ -1,0 +1,20 @@
+# A finding inside a manifest list names the item's own line, not the owned key's.
+docs/block.md:
+  citations:
+    - id: good
+      source:
+        file: lib/a.ts
+    - id: wrong-type
+      source:
+        file: 42
+    - source:
+        file: lib/c.ts
+    - id: stray
+      extra: true
+docs/flow.md:
+  citations: [
+      { id: good, source: { file: lib/a.ts } },
+      { id: wrong-type, source: { file: 42 } },
+      { source: { file: lib/c.ts } },
+      { id: stray, extra: true }
+    ]

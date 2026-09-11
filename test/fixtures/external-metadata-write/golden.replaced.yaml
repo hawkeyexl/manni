@@ -1,0 +1,29 @@
+# Citations for the docs site. Keep entries sorted by path.
+
+docs/intro.md:
+  jira: 'PLAT-1'   # single-quoted on purpose
+  citations:
+    - id: old
+      source: { file: lib/old.ts, lines: 1 }
+
+# The limits page cites two sources.
+docs/limits.md:
+  jira: "PLAT-2"
+  citations:  # managed by manni cite
+    - id: fetch-timeout
+      claim:
+        lines: 4
+        integrity: sha256-abc
+      source:
+        file: lib/limits.ts
+        lines: 2
+    - id: retries
+      claim:
+        lines: 9
+  owner: docs-team
+
+"docs/quoted.md":
+  jira: PLAT-3  # no citations yet
+
+docs/zeta.md:
+  citations: [ { id: z, source: { file: lib/z.ts } } ]
