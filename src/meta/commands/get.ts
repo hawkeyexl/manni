@@ -83,7 +83,7 @@ export interface GetOptions {
   /**
    * Whether to resolve each requested field against the evidence — git
    * history, CODEOWNERS, the review record, a configured command (proposals
-   * 0040, 0041). **On unless explicitly `false`** (proposal 0042): a read
+   * 0040, 0042). **On unless explicitly `false`** (proposal 0043): a read
    * says what the value is and where it came from, and `--no-derived` is the
    * way back to what the document alone stores.
    *
@@ -109,7 +109,7 @@ export interface GetFileResult {
    */
   derived?: Record<string, DerivedValue | null>;
   /**
-   * The effective value per requested field (proposal 0042): the document's
+   * The effective value per requested field (proposal 0043): the document's
    * when it **carries the key**, the derived one otherwise, and absent when
    * neither side has it. Presence is `Object.hasOwn`, not truthiness, so a
    * document writing `owner: null` has asserted a value and no derived one
@@ -208,9 +208,9 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
   // and one input per parsed file — the document's OWN extraction, since a
   // managed key is never sidecar-owned and the git source reads its lines.
   // A field is derivable when a built-in source claims it, or when the
-  // config runs a command for it (0041).
+  // config runs a command for it (0042).
   const commands: Readonly<Record<string, DeriveCommand>> = commandsOf(config?.derive) ?? {};
-  // Derivation is on unless the user said `--no-derived` (proposal 0042).
+  // Derivation is on unless the user said `--no-derived` (proposal 0043).
   const deriving = opts.derived !== false;
   const derivableFields: DerivableField[] = deriving
     ? opts.fields.filter((f) => isBuiltinField(f) || Object.hasOwn(commands, f))

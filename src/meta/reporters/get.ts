@@ -44,7 +44,7 @@ function evidenceOf(d: DerivedValue): string {
 }
 
 /**
- * The annotation after a resolved value (proposal 0042): which side the value
+ * The annotation after a resolved value (proposal 0043): which side the value
  * came from, and — when the two sides disagree — what the other one says.
  * Five cases, and only five:
  *
@@ -77,7 +77,7 @@ function annotation(r: GetFileResult, field: string): string {
 
 /**
  * One `<file>: <field>=<value>` line per requested field per file. The value
- * is the **resolved** one where the run derived (proposal 0042), followed by
+ * is the **resolved** one where the run derived (proposal 0043), followed by
  * the annotation saying which side answered; under `--no-derived` it is what
  * the document stores, with no annotation at all.
  *

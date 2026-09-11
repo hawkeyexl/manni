@@ -601,7 +601,7 @@ interface GetCliOptions extends RunCliOptions {
    * default for a `--no-` flag: registering the positive form alongside it
    * removes that default, so the key is absent when neither was given.
    * Only the explicit `false` means anything — derivation is on otherwise,
-   * and `--derived` is the no-op kept for scripts written before 0042.
+   * and `--derived` is the no-op kept for scripts written before 0043.
    */
   derived?: boolean;
   /**

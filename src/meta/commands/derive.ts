@@ -164,7 +164,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     );
   }
 
-  // The configured commands (0041): a key of theirs is as derivable as a
+  // The configured commands (0042): a key of theirs is as derivable as a
   // built-in field, and the source runs them where the config lives.
   const commands = commandsOf(config?.derive);
   const fields = resolveFields(opts.fields, config?.derive?.fields, commands);

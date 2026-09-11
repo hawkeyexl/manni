@@ -452,7 +452,7 @@ export async function runValidate(
   // for one. A source that cannot answer is the run's error either way — a
   // half-derived comparison would read as "all current", the false green
   // the channel refuses — and the hint names the reader that asked.
-  // The configured commands (0041) are part of both: a command's field is
+  // The configured commands (0042) are part of both: a command's field is
   // managed like a built-in one, and is a column the checks can read.
   const deriveCommands = commandsOf(deriveConfig);
   const deriveFields = new Set<string>(deriveWillRun ? deriveConfig.fields : []);

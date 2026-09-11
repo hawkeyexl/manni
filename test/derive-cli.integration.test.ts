@@ -233,7 +233,7 @@ describe("the derived channel's flags on validate and get (built bin)", { timeou
     expect(flagged.stdout).toBe(bare.stdout);
   });
 
-  // Stdin derives nothing, and that is not an error. Before 0042 this was a
+  // Stdin derives nothing, and that is not an error. Before 0043 this was a
   // refusal, and a refusal cannot survive a default-on flag: a piped read is
   // an ordinary one. Both spellings of the field list are exercised, since
   // `-` in the first slot is a path and never a field name.
@@ -282,7 +282,7 @@ describe("the derived channel's flags on validate and get (built bin)", { timeou
 });
 
 /**
- * The `command` source (proposal 0041) end to end: `validate` is red on the
+ * The `command` source (proposal 0042) end to end: `validate` is red on the
  * stale stamp, `derive` writes the command's value, and `validate` is green.
  * The fixture's `sources` names `command` alone, so no history is staged.
  */

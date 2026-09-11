@@ -224,7 +224,7 @@ export async function runChecks(
         );
       }
       // The run's columns: the built-ins and the configured command keys
-      // (0041), read from the same config the collection views come from.
+      // (0042), read from the same config the collection views come from.
       const commands = commandsOf(ctx.config?.derive);
       const readable = derivableFields(commands);
       const fields = new Set<DerivableField>();

@@ -1,4 +1,4 @@
-# 0042: resolved reads, a third view that says which value you got
+# 0043: resolved reads, a third view that says which value you got
 
 - **Status:** Implemented (#22)
 - **Serves:** Maya · M1, M2 · Devin · D4 · Theo · T1
@@ -6,7 +6,7 @@
   - [0040](0040-derived-metadata.md) built the derived channel. It gave every
     managed field a second possible origin, and this proposal makes that
     origin visible on a read.
-  - [0041](0041-command-source.md) added the `command` source. A configured
+  - [0042](0042-command-source.md) added the `command` source. A configured
     argv is one more thing a value can come from, so it widens the same gap.
 - **Relates to:** Two proposals this one touches without depending on them.
   - [0021](0021-frontmatter-as-a-database.md) is the query engine. `resolved`
@@ -27,7 +27,7 @@
 
 ## Problem
 
-0040 and 0041 gave manni a second place a value can come from. Before them,
+0040 and 0042 gave manni a second place a value can come from. Before them,
 every value a page had was in the page. Now `owner` may come from CODEOWNERS,
 `last-updated` from a commit, and `verified-against` from a configured
 command. The tool got worse at the question those features exist to answer.
@@ -202,7 +202,7 @@ a file when every requested field is unset *after* resolving.
    for `title`. Under this proposal every field resolves, because a field
    with no source resolves to its asserted value. Printing "not derivable"
    beside a real value would say the read failed when it succeeded. The
-   marker is removed rather than reworded, and 0041's widening of
+   marker is removed rather than reworded, and 0042's widening of
    `DerivableField` to `string` had already made the set config-dependent.
 6. **Stdin.** A piped document has no path, so git, CODEOWNERS, the forges
    and a `{path}` command can none of them speak for it. 0040 made
@@ -235,7 +235,7 @@ a file when every requested field is unset *after* resolving.
   suffix, and `-f json` was always the parseable surface.
 - `--derived` is inert rather than removed. That is a second spelling for
   nothing, which the parallel-behaviors rule dislikes. It is kept because
-  0040 and 0041 shipped the flag in worked examples on two published pages.
+  0040 and 0042 shipped the flag in worked examples on two published pages.
   A hard removal would break those transcripts for no gain.
 - The `derived` table stays exactly as it was. A gate written against it
   keeps working, and the join in decision 5 is still how a corpus check asks

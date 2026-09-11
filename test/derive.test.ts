@@ -455,7 +455,7 @@ describe("renderDerive", () => {
 });
 
 /**
- * The `command` source (proposal 0041). `test/fixtures/derive/command/`
+ * The `command` source (proposal 0042). `test/fixtures/derive/command/`
  * manages one command-derived field, `verified-against`, from a command
  * that reads `version.json` beside the config; the document asserts
  * `1.4.1` and the file says `1.4.2`. `sources` names `command` alone, so
@@ -555,10 +555,10 @@ describe("runDerive with a command source", () => {
 
   it("a program that is not on PATH is the run's error, exit 2", async () => {
     const dir = stageCommand();
-    writeFile(dir, "manni.config.yaml", configWith(`["manni-no-such-program-0041"]`));
+    writeFile(dir, "manni.config.yaml", configWith(`["manni-no-such-program-0042"]`));
     const failure = runDerive({ inputs: [], cwd: dir });
     await expect(failure).rejects.toBeInstanceOf(DocmetaError);
     await expect(failure).rejects.toThrow(/^command source unavailable: /);
-    await expect(failure).rejects.toThrow("manni-no-such-program-0041");
+    await expect(failure).rejects.toThrow("manni-no-such-program-0042");
   });
 });
