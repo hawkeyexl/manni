@@ -8,6 +8,7 @@
  */
 import type { PageAnalyzer } from "../core/analyzer.js";
 import { crawl, type CrawlOutcome } from "../core/crawl.js";
+import { NO_SEEDS_MESSAGE } from "../core/seeds.js";
 import { discoverSitemap, type Fetcher, type SitemapDiscovery } from "../core/sitemap.js";
 import { isHttpUrl, normalizeUrl } from "../core/url.js";
 import {
@@ -60,7 +61,9 @@ export const CHECK_DEFAULTS: Readonly<Omit<CheckOptions, "urls">> = Object.freez
 });
 
 /**
- * 1. `urls.length === 0` → A11yError("No URLs to check. Pass one or more, or set `a11y.urls` in manni.config.yaml.")
+ * 1. `urls.length === 0` → A11yError(NO_SEEDS_MESSAGE). The CLI resolves its
+ *    seeds with `resolveSeeds` and never arrives here empty; a programmatic
+ *    caller that passed none hears the same thing.
  * 2. Any non-http(s) url → A11yError(`Not an http(s) URL: "<url>".`)
  * 3. When `crawl`: `discoverSitemap(firstSeed)` (one sitemap per run, the first seed's origin).
  * 4. `crawl(...)`, then per page: drop violations below `severity`, compute `score`.
@@ -70,9 +73,7 @@ export async function runCheck(opts: CheckOptions, deps: CheckDeps): Promise<Che
   const { analyzer } = deps;
   try {
     if (opts.urls.length === 0) {
-      throw new A11yError(
-        "No URLs to check. Pass one or more, or set `a11y.urls` in manni.config.yaml.",
-      );
+      throw new A11yError(NO_SEEDS_MESSAGE);
     }
     for (const url of opts.urls) {
       if (!isHttpUrl(url)) throw new A11yError(`Not an http(s) URL: "${url}".`);

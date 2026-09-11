@@ -120,7 +120,7 @@ validate-metadata:
 validate-metadata:
   stage: test
   image: node:24
-  # Targets come from paths: in manni.config.yaml at the repo root.
+  # Targets come from collections: in manni.config.yaml at the repo root.
   script:
     - npx -y @hawkeyexl/manni meta validate
 ```

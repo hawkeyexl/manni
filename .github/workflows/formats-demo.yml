@@ -38,7 +38,11 @@
 # workflow's default set they are standing alerts for files doing their job.
 # `test/fixtures/query-csv/` and `test/fixtures/collections/` are excluded
 # ahead of the fixtures 0029 and 0027 add for the same reason — a glob that
-# matches nothing is harmless.
+# matches nothing is harmless. `test/fixtures/checks-collections/` and
+# `test/fixtures/external-metadata-overlap/` (0041) are excluded on the same
+# principle: each carries its own `manni.config.yaml`, and its pages are
+# shaped for what that config tests — a `FROM <collection>` check, a file in
+# two collections — not for the default schema set.
 #
 # `test/fixtures/platform/` is excluded on the same principle, and it is the
 # clearest case of it. Every file there exists to be judged against the platform
@@ -117,8 +121,10 @@ jobs:
             --exclude "test/fixtures/collections/**" \
             --exclude "test/fixtures/platform/**" \
             --exclude "test/fixtures/infer-parity/**" \
-            --exclude "test/fixtures/sidecars/**" \
-            --exclude "test/fixtures/sidecars-join/**" \
+            --exclude "test/fixtures/external-metadata/**" \
+            --exclude "test/fixtures/external-metadata-join/**" \
+            --exclude "test/fixtures/external-metadata-overlap/**" \
+            --exclude "test/fixtures/checks-collections/**" \
             --allow-empty -f sarif > manni.sarif
           echo "results=$(jq '.runs[0].results | length' manni.sarif)" >> "$GITHUB_OUTPUT"
 
@@ -156,8 +162,10 @@ jobs:
             --exclude "test/fixtures/collections/**" \
             --exclude "test/fixtures/platform/**" \
             --exclude "test/fixtures/infer-parity/**" \
-            --exclude "test/fixtures/sidecars/**" \
-            --exclude "test/fixtures/sidecars-join/**" \
+            --exclude "test/fixtures/external-metadata/**" \
+            --exclude "test/fixtures/external-metadata-join/**" \
+            --exclude "test/fixtures/external-metadata-overlap/**" \
+            --exclude "test/fixtures/checks-collections/**" \
             --allow-empty -f junit > manni-junit.xml
 
       # GitHub renders no JUnit natively. A third-party reporter action would be

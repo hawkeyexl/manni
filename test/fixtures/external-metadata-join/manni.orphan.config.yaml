@@ -1,0 +1,10 @@
+# The orphan half of the field-joined fixture (proposal 0039, moved under
+# `collections:` by 0041): an entry keyed by an `id` no page carries.
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./docs-meta.orphan.yaml
+        keys: [jira]
+        join: id

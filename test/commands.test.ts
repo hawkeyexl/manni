@@ -40,11 +40,14 @@ const extra = join(here, "fixtures", "extra.schema.json");
 const NO_TYPE_PAGE = "---\ntitle: No type\n---\n";
 /** A config whose `baseline:` deliberately is not the default path. */
 const CUSTOM_BASELINE_CONFIG = [
-  "paths:",
-  '  - "*.md"',
-  "schemas:",
-  "  - google:okf:0.1",
-  "baseline: recorded.json",
+  "collections:",
+  "  - name: pages",
+  "    paths:",
+  '      - "*.md"',
+  "meta:",
+  "  schemas:",
+  "    - google:okf:0.1",
+  "  baseline: recorded.json",
   "",
 ].join("\n");
 
@@ -384,12 +387,83 @@ describe("runGet", () => {
     ).rejects.toBeInstanceOf(DocmetaError);
   });
 
-  it("falls back to config paths when no inputs are given", async () => {
+  /**
+   * A collection's `exclude:` decides what the collection *contains*, so a run
+   * that reads the collections must not validate a file the collection excludes
+   * (proposal 0041 rules 9 and 10).
+   *
+   * This was wrong once in a way worth pinning: the walk applied only
+   * `--exclude`, so `manni meta validate` with no paths checked every file the
+   * `paths:` globs matched, while `SELECT _path FROM <name>` correctly returned
+   * the narrowed set. One config, two answers about the same collection — the
+   * exact ambiguity 0041 exists to remove.
+   */
+  it("does not read a file a collection's exclude removes (0041 rule 9)", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "manni-collection-exclude-"));
+    try {
+      await mkdir(join(dir, "docs"), { recursive: true });
+      await mkdir(join(dir, "drafts"), { recursive: true });
+      const page = `---\ntype: guide\n---\n`;
+      await writeFile(join(dir, "docs", "kept.md"), page);
+      await writeFile(join(dir, "drafts", "wip.md"), page);
+      await writeFile(
+        join(dir, "manni.config.yaml"),
+        [
+          "collections:",
+          "  - name: pages",
+          '    paths: ["docs/**/*.md", "drafts/**/*.md"]',
+          '    exclude: ["drafts/**"]',
+          "",
+        ].join("\n"),
+      );
+
+      const results = await runGet({ fields: ["type"], inputs: [], cwd: dir });
+      expect(results.map((r) => r.file)).toEqual(["docs/kept.md"]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  /**
+   * The other half of rule 3: a path someone types is theirs, and no
+   * collection's `exclude:` filters it. Only `--exclude` does.
+   */
+  it("still reads an excluded file when the path is given explicitly", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "manni-collection-typed-"));
+    try {
+      await mkdir(join(dir, "drafts"), { recursive: true });
+      await writeFile(join(dir, "drafts", "wip.md"), `---\ntype: guide\n---\n`);
+      await writeFile(
+        join(dir, "manni.config.yaml"),
+        [
+          "collections:",
+          "  - name: pages",
+          '    paths: ["drafts/**/*.md"]',
+          '    exclude: ["drafts/**"]',
+          "",
+        ].join("\n"),
+      );
+
+      const results = await runGet({
+        fields: ["type"],
+        inputs: ["drafts/wip.md"],
+        cwd: dir,
+      });
+      expect(results.map((r) => r.file)).toEqual(["drafts/wip.md"]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("falls back to the configured collections when no inputs are given", async () => {
+    // The document set is the family file's `collections:` (proposal 0041
+    // rule 2): with no positional paths, the run is every collection. The
+    // repo-root fixture config is a legacy per-tool file, which cannot carry
+    // one, so the fixture that declares collections is what this reads.
     const results = await runGet({
       fields: ["type"],
       inputs: [],
-      cwd: join(here, "fixtures"),
-      configPath: join(here, "fixtures", "docmeta.config.yaml"),
+      cwd: join(here, "fixtures", "collections"),
     });
     expect(results.length).toBeGreaterThan(0);
   });
@@ -534,7 +608,7 @@ describe("config discovery and resolution base (0004)", () => {
   // run that fails to find the config reports a false green.
   const nested = join(here, "fixtures", "nested-config");
   const nestedDocs = join(nested, "docs");
-  const nestedConfig = join(nested, "docmeta.config.yaml");
+  const nestedConfig = join(nested, "manni.config.yaml");
 
   const ownerError = (results: { errors: { message: string }[] }[]): boolean =>
     results.some((r) => r.errors.some((e) => /'owner'/.test(e.message)));
@@ -814,7 +888,7 @@ describe("runValidate --write-baseline", () => {
     // would record into a second file nothing ever reads, and the ratchet would
     // quietly do nothing.
     await writeFile(
-      join(tmp, "docmeta.config.yaml"),
+      join(tmp, "manni.config.yaml"),
       CUSTOM_BASELINE_CONFIG,
       "utf8",
     );
@@ -822,7 +896,7 @@ describe("runValidate --write-baseline", () => {
     const { summary } = await runValidate({
       inputs: [],
       cwd: tmp,
-      configPath: join(tmp, "docmeta.config.yaml"),
+      configPath: join(tmp, "manni.config.yaml"),
       writeBaseline: true,
     });
     expect(summary.baseline).toMatchObject({
@@ -990,8 +1064,7 @@ describe("runVendorSchema (0008)", () => {
       join(dir, "docmeta.config.yaml"),
       [
         "# keep me",
-        "paths:",
-        '  - "*.md"',
+        "baseline: recorded.json",
         "schemas:",
         `  - ${url()}`,
         "",
@@ -1003,7 +1076,7 @@ describe("runVendorSchema (0008)", () => {
 
     const written = await readFile(join(dir, "docmeta.config.yaml"), "utf8");
     expect(written).toContain("# keep me");
-    expect(written).toContain("*.md");
+    expect(written).toContain("baseline: recorded.json");
     // The URL survives only as `source:`, never as a second live reference.
     expect(written.match(new RegExp(escapeRe(url()), "g"))).toHaveLength(1);
     const cfg = parseConfig(written, "docmeta.config.yaml");

@@ -3,26 +3,38 @@
 # each tool owns one top-level key, and the metadata tool's is `meta:`. All keys
 # are optional.
 
+# The document sets, declared once for every tool (proposal 0041). A run with no
+# positional paths reads every collection; `--collection <name>` narrows it.
+collections:
+  - name: guides
+    # Files, dirs, or globs, relative to this file.
+    paths:
+      - "docs/**/*.md"
+    # Paths to skip (node_modules and .git are always excluded). This governs
+    # the collection's membership, not a path you type on the command line —
+    # `--exclude` is the spelling for that.
+    exclude:
+      - "**/drafts/**"
+    # Where these pages are published. `manni a11y check` seeds its crawl from
+    # here when no URL is given on the command line, so the document set and the
+    # site it becomes are declared in one place. Optional.
+    url: https://docs.example.com/guides/
+  - name: articles
+    paths:
+      - "articles/**/*.md"
+
 meta:
-  # Default targets when no paths are passed on the CLI. Files, dirs, or globs.
-  paths:
-    - "docs/**/*.md"
-    - "articles/**/*.md"
-
-  # Paths to skip (node_modules and .git are always excluded).
-  exclude:
-    - "**/drafts/**"
-
   # Default schema SET applied to every matched file. Each file must satisfy
   # ALL of these. A ref is a built-in id (vendor:name:version), a local .json
   # path, or an http(s) URL.
   schemas:
     - google:okf:0.1
 
-  # Optional per-glob overrides (first match wins). Use these to require extra
-  # schemas for a subset of files.
+  # Optional overrides (first match wins). Each entry carries exactly one of
+  # `collection:` (a name from the list above) or `files:` (globs of its own).
+  # Use them to require extra schemas for a subset of files.
   overrides:
-    - files: "articles/**/*.md"
+    - collection: articles
       schemas:
         - google:okf:0.1
         # - doc-detective:1.0   # add your own / additional schemas here

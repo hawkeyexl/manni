@@ -1,13 +1,16 @@
 /**
  * The validate+checks path resolves every file's schema set exactly once.
  *
- * `validate`'s per-file loop already resolves each file; when the named
- * corpus checks then build collection views (proposal 0027), the membership
- * walk must reuse those resolutions instead of re-resolving the whole corpus
- * a second time. The counter seam wraps `resolveSchemaSetWithSource` — the
- * one function both walks go through — and the parity cases pin that reuse
- * changed nothing observable: the "$schema won" notice still fires, and a
- * file whose resolution failed is still a member of no view.
+ * `validate`'s per-file loop resolves each file. Building the corpus checks'
+ * collection views must add nothing to that count: under proposal 0041 rule 7
+ * a view holds the collection's *members* — path arithmetic against the config
+ * directory — so the read path resolves no schemas at all, which is 0021's
+ * founding rule that 0027's resolution-winner membership had to bend. The
+ * counter seam wraps `resolveSchemaSetWithSource`, the one function resolution
+ * goes through, and the parity cases pin what that means where 0027 was
+ * observable: a document `$schema` neither removes a file from a view nor
+ * explains itself on stderr, and a `$schema` the trust settings refuse is a
+ * finding about that file and nothing more.
  */
 import { describe, it, expect, vi, beforeEach, afterAll } from "vitest";
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -37,13 +40,20 @@ import { runQuery } from "../src/meta/commands/query.js";
 const here = dirname(fileURLToPath(import.meta.url));
 const corpus = resolve(here, "fixtures", "collections");
 
-const CHECK = `checks:
-  - name: dangling-author
-    query: >-
-      SELECT d._path AS path, 'author' AS key,
-             'no author page for "' || d.author || '"' AS message
-      FROM docs d LEFT JOIN authors a ON a.slug = d.author
-      WHERE d.author IS NOT NULL AND a._path IS NULL
+const CHECK = `  checks:
+    - name: dangling-author
+      query: >-
+        SELECT d._path AS path, 'author' AS key,
+               'no author page for "' || d.author || '"' AS message
+        FROM docs d LEFT JOIN authors a ON a.slug = d.author
+        WHERE d.author IS NOT NULL AND a._path IS NULL
+`;
+
+/** A second check, whose only job is to report what the `authors` view holds. */
+const MEMBERS_CHECK = `    - name: in-authors
+      query: >-
+        SELECT a._path AS path, 'slug' AS key, 'a member of authors' AS message
+        FROM authors a
 `;
 
 const tempDirs: string[] = [];
@@ -51,7 +61,7 @@ function corpusWithChecks(extraConfig = ""): string {
   const dir = mkdtempSync(join(tmpdir(), "docmeta-resolution-walk-"));
   tempDirs.push(dir);
   cpSync(corpus, dir, { recursive: true });
-  const config = join(dir, "docmeta.config.yaml");
+  const config = join(dir, "manni.config.yaml");
   writeFileSync(config, `${readFileSync(config, "utf8")}${CHECK}${extraConfig}`);
   return dir;
 }
@@ -68,8 +78,8 @@ describe("validate+checks: one resolution walk (not two)", () => {
     const dir = corpusWithChecks();
     const run = await runValidate({ inputs: [], cwd: dir });
     expect(run.results.length).toBeGreaterThan(0);
-    // One call per file from the per-file loop; the checks' membership walk
-    // reuses them. A second full walk would double this.
+    // One call per file, from the per-file loop alone: the view build resolves
+    // nothing. A membership walk that resolved would double this.
     expect(counter.calls).toBe(run.results.length);
     // ...and the check still fired over the views it needed.
     const guide = run.results.find((r) => r.file === "docs/guide.md");
@@ -78,14 +88,22 @@ describe("validate+checks: one resolution walk (not two)", () => {
     );
   });
 
-  it('the "$schema won" exclusion notice still fires from the reused walk', async () => {
-    const dir = corpusWithChecks();
+  it("a document $schema keeps its collection membership, and says nothing", async () => {
+    // 0027's stress test 1 removed authors/self.md from the `authors` view,
+    // because its own `$schema` outranked the override, and printed a notice
+    // saying so. Membership does not consult resolution, so the file is an
+    // ordinary member and there is nothing to explain.
+    const dir = corpusWithChecks(MEMBERS_CHECK);
     const notices: string[] = [];
-    await runValidate({ inputs: [], cwd: dir, onNotice: (m) => notices.push(m) });
-    const notice = notices.find((m) => m.includes("authors/self.md"));
-    expect(notice).toBeDefined();
-    expect(notice).toContain('"authors"');
-    expect(notice).toContain("$schema");
+    const run = await runValidate({
+      inputs: [],
+      cwd: dir,
+      onNotice: (m) => notices.push(m),
+    });
+    const self = run.results.find((r) => r.file === "authors/self.md");
+    expect(self?.errors.some((e) => e.schema === "check:in-authors")).toBe(true);
+    expect(notices.find((m) => m.includes("authors/self.md"))).toBeUndefined();
+    expect(counter.calls).toBe(run.results.length);
   });
 
   it("query DDL under -s resolves the CLI set once, never per file (0030)", async () => {
@@ -110,8 +128,14 @@ describe("validate+checks: one resolution walk (not two)", () => {
     expect(counter.calls).toBe(1);
   });
 
-  it("a file whose resolution failed is a member of no view, not re-resolved", async () => {
-    const dir = corpusWithChecks("schemaTrust:\n  documentRefs: local\n");
+  it("a file whose resolution failed is still a member, and not re-resolved", async () => {
+    // 0027 demoted it to "member of no view", because a refused `$schema`
+    // meant there was no winning override to put it in one. The refusal is
+    // still that file's finding, and now it is nothing else: membership never
+    // asked the resolver.
+    const dir = corpusWithChecks(
+      `${MEMBERS_CHECK}  schemaTrust:\n    documentRefs: local\n`,
+    );
     writeFileSync(
       join(dir, "authors", "url.md"),
       "---\n$schema: https://schemas.example.com/x.json\ntitle: URL\nslug: url\n---\nBody.\n",
@@ -121,12 +145,16 @@ describe("validate+checks: one resolution walk (not two)", () => {
     const refused = run.results.find((r) => r.file === "authors/url.md");
     expect(refused?.ok).toBe(false);
     expect(refused?.errors[0]?.keyword).toBe("schema");
+    // ...and it is in the `authors` view all the same.
+    expect(refused?.errors.some((e) => e.schema === "check:in-authors")).toBe(
+      true,
+    );
     // ...the checks still ran over the rest of the corpus...
     const guide = run.results.find((r) => r.file === "docs/guide.md");
     expect(guide?.errors.some((e) => e.schema === "check:dangling-author")).toBe(
       true,
     );
-    // ...and nothing resolved the failed file a second time.
+    // ...and nothing resolved any file a second time.
     expect(counter.calls).toBe(run.results.length);
   });
 });
