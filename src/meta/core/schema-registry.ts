@@ -43,6 +43,7 @@ import agentSkills10 from "../schemas/agent-skills/1.0.json" with { type: "json"
 import claudeSkill21 from "../schemas/claude-skill/2.1.json" with { type: "json" };
 import mkdocsMaterial97 from "../schemas/mkdocs-material/9.7.json" with { type: "json" };
 import claudeSubagent21 from "../schemas/claude-subagent/2.1.json" with { type: "json" };
+import { errorMessage } from "../../shared/errors.js";
 
 export interface BuiltinInfo {
   id: string;
@@ -713,7 +714,7 @@ async function requestSchema(
   } catch (err) {
     if (isAbort(err)) throw timedOut;
     throw new RetryableFetchError(
-      `Failed to fetch schema "${ref}": ${(err as Error).message}`,
+      `Failed to fetch schema "${ref}": ${errorMessage(err)}`,
     );
   }
   if (!res.ok) {
@@ -782,7 +783,7 @@ export async function fetchSchemaBytes(
     // the schema author instead of at the network.
     if (isAbort(err)) throw timedOut;
     throw new DocmetaError(
-      `Failed to fetch schema "${ref}": ${(err as Error).message}`,
+      `Failed to fetch schema "${ref}": ${errorMessage(err)}`,
     );
   }
 
@@ -795,7 +796,7 @@ export async function fetchSchemaBytes(
     parsed = JSON.parse(raw);
   } catch (err) {
     throw new DocmetaError(
-      `Schema "${ref}" did not return valid JSON: ${(err as Error).message}`,
+      `Schema "${ref}" did not return valid JSON: ${errorMessage(err)}`,
     );
   }
 
@@ -1098,7 +1099,7 @@ export async function loadSchema(
     return JSON.parse(text) as Record<string, unknown>;
   } catch (err) {
     throw new DocmetaError(
-      `Schema file "${ref}" is not valid JSON: ${withoutFileExcerpt((err as Error).message, text)}`,
+      `Schema file "${ref}" is not valid JSON: ${withoutFileExcerpt(errorMessage(err), text)}`,
     );
   }
 }

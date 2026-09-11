@@ -91,6 +91,7 @@ import {
   type SchemaPin,
 } from "../core/schema-registry.js";
 import { parseDocument, isMap, isSeq, isScalar } from "yaml";
+import { errorMessage } from "../../shared/errors.js";
 
 export interface QueryOptions {
   /**
@@ -561,7 +562,7 @@ class MissingCollectionView extends Error {}
  * truncate into a remedy naming a view that does not exist.
  */
 function refuseSqlError(err: unknown): never {
-  const message = (err as Error).message;
+  const message = errorMessage(err);
   if (message.includes("UNIQUE constraint failed: docs._path")) {
     throw new DocmetaError("That _path already exists in the corpus.");
   }
@@ -611,7 +612,7 @@ async function runSql(
     db = new DatabaseSync(target ? target.resolved : ":memory:");
   } catch (err) {
     throw new DocmetaError(
-      `Cannot open "${target?.display ?? ":memory:"}": ${(err as Error).message}`,
+      `Cannot open "${target?.display ?? ":memory:"}": ${errorMessage(err)}`,
     );
   }
   const dbInfo = target
@@ -721,7 +722,7 @@ async function runSql(
         stmt = db.prepare(sql);
         columns = stmt.columns().map((c) => c.name);
       } catch (err) {
-        const message = (err as Error).message;
+        const message = errorMessage(err);
         // Lazy collection views: the first time a statement names a configured
         // collection, its view does not exist yet and the engine reports the
         // table as missing (case-folded — SQLite resolves table names
@@ -1685,7 +1686,7 @@ async function planSchemaMutation(
       } catch (err) {
         // `coerceFileSchema` throws a plain Error; either way the file that
         // carried the bad `$schema` is the one fact the user needs.
-        throw new DocmetaError(`"${e.label}": ${(err as Error).message}`);
+        throw new DocmetaError(`"${e.label}": ${errorMessage(err)}`);
       }
       sources.add(resolved.source);
       if (resolved.overrideIndex !== undefined) {
@@ -2836,7 +2837,7 @@ async function applyChanges(
       // EXDEV and friends arrive as raw fs errors; name the move and keep
       // the operational exit code instead of an "Unexpected error" trace.
       throw new DocmetaError(
-        `Cannot move "${r.from}" to "${r.to}": ${(err as Error).message}`,
+        `Cannot move "${r.from}" to "${r.to}": ${errorMessage(err)}`,
       );
     }
   }
