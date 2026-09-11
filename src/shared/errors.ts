@@ -22,12 +22,17 @@ export class ToolError extends Error {
  * JavaScript can throw anything, so `(err as Error).message` is `undefined`
  * for a thrown string, number or `null`, and "undefined" is what the user
  * reads. An Error, or anything with a string `message`, gives that message.
- * A string is its own message. Anything else gives its JSON text, or its
- * `String()` form when it will not serialise.
+ * A string is its own message, and so is a number or a bigint, as `String()`
+ * writes it: JSON would turn `NaN` and the infinities into `null`. Anything
+ * else gives its JSON text, or its `String()` form when it will not
+ * serialise.
  */
 export function errorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
   if (typeof err === "string") return err;
+  // Before the JSON step, which writes NaN and the infinities as "null" and
+  // throws on a bigint.
+  if (typeof err === "number" || typeof err === "bigint") return String(err);
   if (
     typeof err === "object" &&
     err !== null &&
@@ -42,7 +47,8 @@ export function errorMessage(err: unknown): string {
     const json = JSON.stringify(err) as string | undefined;
     if (json !== undefined) return json;
   } catch {
-    // A cycle, or a BigInt: fall through to the one form that always exists.
+    // A cycle, or a bigint inside an object: fall through to the one form
+    // that always exists.
   }
   return String(err);
 }
