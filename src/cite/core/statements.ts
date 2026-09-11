@@ -1,16 +1,18 @@
 /**
- * Inline statements: `cite PAYLOAD` inside the format's comment syntax.
+ * Markers: `cite <id>` inside the format's comment syntax.
  *
- * | Format        | Forms                                                        | Payload |
- * |---------------|--------------------------------------------------------------|---------|
- * | markdown, mdx | `<!-- cite … -->`, `{/* cite … *\/}`, `[comment]: # (cite …)` | id in all three; JSON in the first two |
- * | html, xml     | `<!-- cite … -->`                                            | id, JSON |
- * | asciidoc      | `// (cite …)`                                                | id only |
- * | rst           | `.. (cite …)`                                                | id only |
+ * | Format        | Forms                                                        |
+ * |---------------|--------------------------------------------------------------|
+ * | markdown, mdx | `<!-- cite … -->`, `{/* cite … *\/}`, `[comment]: # (cite …)` |
+ * | html, xml     | `<!-- cite … -->`                                            |
+ * | asciidoc      | `// (cite …)`                                                |
+ * | rst           | `.. (cite …)`                                                |
  *
- * A payload starting with `{` is JSON; otherwise it must match the id grammar
- * and is a reference (`cite true` is a reference to id `true`). The scanner
- * uses `indexOf` for the delimiters, never a regex over the whole page, and is
+ * A marker carries an id and nothing else (`cite true` names id `true`). A
+ * payload starting with `{` was the inline entry of proposal 0044's first
+ * draft; it is `marker-invalid` now, because an entry lives in frontmatter or
+ * a manifest and a source is never written into the body. The scanner uses
+ * `indexOf` for the delimiters, never a regex over the whole page, and is
  * handed the body only, so a `cite` inside frontmatter is never matched.
  *
  * It does not read code. An opener inside a fenced block (``` or ~~~ in
@@ -30,24 +32,16 @@ import { CiteError } from "../errors.js";
 export interface StatementForm {
   open: string;
   close: string;
-  /** Whether a JSON object payload is allowed in this form. */
-  json: boolean;
 }
 
-const HTML_COMMENT: StatementForm = { open: "<!--", close: "-->", json: true };
-const JSX_COMMENT: StatementForm = { open: "{/*", close: "*/}", json: true };
-const LINK_REFERENCE: StatementForm = { open: "[comment]: # (", close: ")", json: false };
+const HTML_COMMENT: StatementForm = { open: "<!--", close: "-->" };
+const JSX_COMMENT: StatementForm = { open: "{/*", close: "*/}" };
+const LINK_REFERENCE: StatementForm = { open: "[comment]: # (", close: ")" };
 const MARKDOWN_FORMS: readonly StatementForm[] = [HTML_COMMENT, JSX_COMMENT, LINK_REFERENCE];
 const MDX_FORMS: readonly StatementForm[] = [JSX_COMMENT, HTML_COMMENT, LINK_REFERENCE];
-const COMMENT_FORMS: readonly StatementForm[] = [
-  { open: "<!--", close: "-->", json: true },
-];
-const ASCIIDOC_FORMS: readonly StatementForm[] = [
-  { open: "// (", close: ")", json: false },
-];
-const RST_FORMS: readonly StatementForm[] = [
-  { open: ".. (", close: ")", json: false },
-];
+const COMMENT_FORMS: readonly StatementForm[] = [{ open: "<!--", close: "-->" }];
+const ASCIIDOC_FORMS: readonly StatementForm[] = [{ open: "// (", close: ")" }];
+const RST_FORMS: readonly StatementForm[] = [{ open: ".. (", close: ")" }];
 
 const ID = /^[a-z0-9][a-z0-9-]*$/;
 
@@ -241,23 +235,12 @@ function nextLineStart(content: string, offset: number): number {
   return lineEnd(content, offset) + 1;
 }
 
-function payloadOf(
-  payload: string,
-  form: StatementForm,
-): InlineStatement["payload"] {
+function payloadOf(payload: string): InlineStatement["payload"] {
   if (payload === "") return { kind: "bad", reason: "empty payload" };
-  if (payload.startsWith("{")) {
-    if (!form.json) {
-      return { kind: "bad", reason: "json payload not allowed in this form" };
-    }
-    try {
-      return { kind: "entry", entry: JSON.parse(payload) as unknown };
-    } catch {
-      return { kind: "bad", reason: "malformed json" };
-    }
-  }
+  // An entry lives in frontmatter or a manifest; the body carries a name.
+  if (payload.startsWith("{")) return { kind: "bad", reason: "a JSON payload", json: true };
   if (ID.test(payload)) return { kind: "ref", id: payload };
-  return { kind: "bad", reason: "payload is neither an id nor json" };
+  return { kind: "bad", reason: "payload is not an id" };
 }
 
 /** Scan a body for statements. `from` maps body offsets/lines to file offsets/lines. */
@@ -295,19 +278,13 @@ export function parseStatements(
       const payload = inner.slice(4).trim();
 
       // Anchor: the rest of the close delimiter's line when it carries text,
-      // else the paragraph that follows.
-      const restEnd = lineEnd(body, end);
-      let anchorLine: number | undefined;
-      if (body.slice(end, restEnd).trim() !== "") {
-        anchorLine = fileLine(closeAt);
-      } else {
-        const paragraph = paragraphAfter(body, end);
-        anchorLine = paragraph ? from.line + paragraph.line - 1 : undefined;
-      }
+      // else the paragraph or fenced block that follows.
+      const unit = anchoredLines(body, end, format);
+      const anchorLine = unit === undefined ? undefined : from.line + unit.start - 1;
 
       const statement: InlineStatement = {
         line: fileLine(at),
-        payload: payloadOf(payload, form),
+        payload: payloadOf(payload),
         raw: inner,
         start: from.offset + at,
         end: from.offset + end,
@@ -471,41 +448,88 @@ export function fencedBlocks(
 function writtenForm(format: string): StatementForm {
   const form = statementForms(format)[0];
   if (!form) {
-    throw new CiteError(`No inline statement syntax for format "${format}".`);
+    throw new CiteError(`No marker syntax for format "${format}".`);
   }
   return form;
 }
 
-/**
- * Refuse, as `formatStatement` would, a format whose written form cannot
- * carry an inline entry (asciidoc, rst: ids only; or no form at all). For a
- * caller that wants the refusal before it has an entry to format.
- */
-export function assertInlineEntrySupported(format: string): void {
-  if (!writtenForm(format).json) {
-    throw new CiteError(
-      `Format "${format}" carries inline references only; an inline entry needs a frontmatter entry and a reference statement.`,
-    );
-  }
-}
-
-/** Render a statement in the format's first form, e.g. `<!-- cite fetch-timeout -->`. */
-export function formatStatement(
-  format: string,
-  payload: { kind: "ref"; id: string } | { kind: "entry"; entry: object },
-): string {
+/** Render a marker in the format's first form, e.g. `<!-- cite fetch-timeout -->`. */
+export function formatStatement(format: string, payload: { kind: "ref"; id: string }): string {
   const form = writtenForm(format);
-  let text: string;
-  if (payload.kind === "ref") {
-    text = payload.id;
-  } else {
-    assertInlineEntrySupported(format);
-    text = JSON.stringify(payload.entry);
-  }
   // `[comment]: # (`, `// (` and `.. (` hug their parentheses; the comment
   // forms take a space inside each delimiter.
   const pad = form.open.endsWith("(") ? "" : " ";
-  return `${form.open}${pad}cite ${text}${pad}${form.close}`;
+  return `${form.open}${pad}cite ${payload.id}${pad}${form.close}`;
+}
+
+/** The first non-blank line at or after `offset`, as a 1-based line of `text`. */
+function nextNonBlankLine(text: string, offset: number): number | undefined {
+  let pos = nextLineStart(text, offset);
+  while (pos < text.length) {
+    const end = lineEnd(text, pos);
+    if (lineText(text, pos, end).trim() !== "") return lineAt(text, pos);
+    pos = end + 1;
+  }
+  return undefined;
+}
+
+/**
+ * The fenced block opening on `line`, as the lines it spans, fences included.
+ * Undefined when that line is not an opener the format knows, or the block is
+ * never closed.
+ */
+export function fenceSpanAt(
+  text: string,
+  line: number,
+  format: string,
+): { start: number; end: number } | undefined {
+  const fence = fenceFor(format);
+  if (!fence) return undefined;
+  const block = scanFence(text, offsetOfLine(text, line), fence);
+  if (!block || block.line !== line) return undefined;
+  return { start: line, end: lineAt(text, block.end) };
+}
+
+/** Whether `line` sits inside a fenced block rather than opening one. */
+export function insideFence(
+  text: string,
+  bodyOffset: number,
+  line: number,
+  format: string,
+): boolean {
+  return fencedBlocks(text, bodyOffset, format).some(
+    (block) => line > block.line && line <= lineAt(text, block.end),
+  );
+}
+
+/**
+ * The lines a marker anchors, as 1-based lines of `text`: the rest of its own
+ * line when that carries text, else the paragraph or fenced block that
+ * follows. With `quote`, the next fenced block after it, wherever that is.
+ * Undefined when nothing follows to anchor.
+ */
+export function anchoredLines(
+  text: string,
+  after: number,
+  format: string,
+  quote = false,
+): { start: number; end: number } | undefined {
+  if (quote) {
+    const block = fencedBlockAfter(text, after, format);
+    return block === undefined ? undefined : { start: block.line, end: lineAt(text, block.end) };
+  }
+  const restEnd = lineEnd(text, after);
+  if (text.slice(after, restEnd).trim() !== "") {
+    const line = lineAt(text, after);
+    return { start: line, end: line };
+  }
+  const paragraph = paragraphAfter(text, after);
+  if (paragraph !== undefined) {
+    return { start: paragraph.line, end: lineAt(text, paragraph.end) };
+  }
+  // A fence where a paragraph would be: the block is what the marker anchors.
+  const line = nextNonBlankLine(text, after);
+  return line === undefined ? undefined : fenceSpanAt(text, line, format);
 }
 
 /** 1-based file line of a file offset, counting CRLF once. */

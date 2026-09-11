@@ -1,32 +1,85 @@
 /**
  * JSON output. `{ summary, pages }` for check; the `UpdateRun` for update.
- * `resolvedPath`, `diff` and `commitsSince` are stripped from every citation:
- * output never says more than the page did.
- */
-import type { CheckRun, CitationResult, PageCitationReport, UpdateRun } from "../types.js";
-
-/**
- * The fields of a `CitationResult` a machine format may carry. An allowlist
- * rather than a strip: a field added to `CitationResult` later stays private
+ *
+ * A citation prints its two ends and how they are anchored. `resolvedPath`,
+ * `diff`, `commitsSince` and a changed claim's current lines are left out of
+ * every citation: output never says more than the page did. It is an
+ * allowlist rather than a strip, so a field added to the result stays private
  * until someone decides here that it is safe to print.
  */
-export type PublicCitationResult = Pick<
+import type {
+  CheckRun,
+  CitationAnchor,
   CitationResult,
-  "citation" | "origin" | "status" | "newSrc" | "candidates" | "commit" | "historyAvailable" | "truncatedSearch"
->;
+  OriginKind,
+  PageCitationReport,
+  UpdateRun,
+} from "../types.js";
+
+export interface PublicClaimEnd {
+  lines?: string;
+  fileLines?: string;
+  status: string;
+  newLines?: string;
+  candidates?: string[];
+}
+
+export interface PublicSourceEnd {
+  src: string;
+  status: string;
+  newLines?: string;
+  newSrc?: string;
+  candidates?: string[];
+  commitSha?: string;
+  historyAvailable?: boolean;
+  truncatedSearch?: boolean;
+}
+
+export interface PublicCitationResult {
+  id?: string;
+  origin: { kind: OriginKind; file: string; line?: number };
+  anchor: CitationAnchor;
+  claim: PublicClaimEnd | null;
+  source: PublicSourceEnd;
+}
 
 export function publicCitation(result: CitationResult): PublicCitationResult {
-  const out: PublicCitationResult = {
-    citation: result.citation,
-    origin: result.origin,
-    status: result.status,
+  const origin: PublicCitationResult["origin"] = {
+    kind: result.origin.kind,
+    file: result.origin.file,
   };
-  if (result.newSrc !== undefined) out.newSrc = result.newSrc;
-  if (result.candidates !== undefined) out.candidates = result.candidates;
-  if (result.commit !== undefined) out.commit = result.commit;
-  if (result.historyAvailable !== undefined) out.historyAvailable = result.historyAvailable;
-  if (result.truncatedSearch !== undefined) out.truncatedSearch = result.truncatedSearch;
-  return out;
+  if (result.origin.line !== undefined) origin.line = result.origin.line;
+
+  const source: PublicSourceEnd = { src: result.source.src, status: result.source.status };
+  if (result.source.newLines !== undefined) source.newLines = result.source.newLines;
+  if (result.source.newSrc !== undefined) source.newSrc = result.source.newSrc;
+  if (result.source.candidates !== undefined) source.candidates = result.source.candidates;
+  if (result.source.commitSha !== undefined) source.commitSha = result.source.commitSha;
+  if (result.source.historyAvailable !== undefined) {
+    source.historyAvailable = result.source.historyAvailable;
+  }
+  if (result.source.truncatedSearch !== undefined) {
+    source.truncatedSearch = result.source.truncatedSearch;
+  }
+
+  let claim: PublicClaimEnd | null = null;
+  if (result.claim !== null) {
+    claim = { status: result.claim.status };
+    if (result.claim.lines !== undefined) claim.lines = result.claim.lines;
+    if (result.claim.fileLines !== undefined) claim.fileLines = result.claim.fileLines;
+    if (result.claim.newLines !== undefined) claim.newLines = result.claim.newLines;
+    if (result.claim.candidates !== undefined) claim.candidates = result.claim.candidates;
+  }
+
+  // Key order is the order the plan spells a citation in: what it is called,
+  // where it is kept, what anchors it, then its two ends.
+  return {
+    ...(result.citation.id === undefined ? {} : { id: result.citation.id }),
+    origin,
+    anchor: result.anchor,
+    claim,
+    source,
+  };
 }
 
 export interface PublicPageReport extends Omit<PageCitationReport, "citations"> {

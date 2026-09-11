@@ -54,10 +54,10 @@ describe("parseCiteConfig", () => {
         "baseline: .cite-baseline.json",
         "checkSources: false",
         "severity:",
-        "  moved: error",
-        "  changed: warning",
-        "  claim-ambiguous: notice",
-        "  current: off",
+        "  source-moved: error",
+        "  source-changed: warning",
+        "  claim-changed: notice",
+        "  marker-repeated: off",
       ].join("\n"),
     );
     expect(cfg).toEqual({
@@ -66,7 +66,12 @@ describe("parseCiteConfig", () => {
       root: "../src",
       baseline: ".cite-baseline.json",
       checkSources: false,
-      severity: { moved: "error", changed: "warning", "claim-ambiguous": "notice", current: "off" },
+      severity: {
+        "source-moved": "error",
+        "source-changed": "warning",
+        "claim-changed": "notice",
+        "marker-repeated": "off",
+      },
     });
   });
 
@@ -132,26 +137,60 @@ describe("parseCiteConfig", () => {
 
   it("rejects an unknown rule under severity, naming the rules", () => {
     expect(() => parse("severity:\n  drifted: error\n")).toThrow(
-      /^Unknown key "drifted" under cite\.severity: in c\.yaml\. Supported keys: current, moved, .*quote-drift\.$/,
+      /^Unknown key "drifted" under cite\.severity: in c\.yaml\. Supported keys: source-moved, source-moved-ambiguous, .*quote-drift\.$/,
     );
   });
 
+  it("calls the old rule names what they now are, unknown rules", () => {
+    // The rules were renamed so each one says which end it is about. A config
+    // written against the old names is a typo like any other, with no alias.
+    const rules = CITE_RULES.join(", ");
+    for (const old of [
+      "moved",
+      "changed",
+      "claim-missing",
+      "claim-ambiguous",
+      "statement-orphan",
+      "statement-invalid",
+      "current",
+    ]) {
+      expect(messageOf(`severity:\n  ${old}: error\n`)).toBe(
+        `Unknown key "${old}" under cite.severity: in c.yaml. Supported keys: ${rules}.`,
+      );
+    }
+  });
+
+  it("names each end's rules, so a rename lands on the right one", () => {
+    // The pairs that used to be one rule: a source that drifted and a claim
+    // that drifted now report separately, and both are configurable.
+    expect(parse("severity:\n  source-changed: error\n  claim-changed: notice\n").severity).toEqual({
+      "source-changed": "error",
+      "claim-changed": "notice",
+    });
+    expect(parse("severity:\n  source-moved: off\n  claim-moved: off\n").severity).toEqual({
+      "source-moved": "off",
+      "claim-moved": "off",
+    });
+  });
+
   it("rejects a bad severity level, naming the rule and the levels", () => {
-    expect(() => parse("severity:\n  moved: loud\n")).toThrow(
-      /cite\.severity\.moved in c\.yaml must be one of error, warning, notice, off/,
+    expect(() => parse("severity:\n  source-moved: loud\n")).toThrow(
+      /cite\.severity\.source-moved in c\.yaml must be one of error, warning, notice, off/,
     );
-    expect(() => parse("severity:\n  moved: loud\n")).toThrow(/"loud"/);
-    expect(() => parse("severity:\n  moved: 3\n")).toThrow(
-      /cite\.severity\.moved in c\.yaml must be one of error, warning, notice, off/,
+    expect(() => parse("severity:\n  source-moved: loud\n")).toThrow(/"loud"/);
+    expect(() => parse("severity:\n  source-moved: 3\n")).toThrow(
+      /cite\.severity\.source-moved in c\.yaml must be one of error, warning, notice, off/,
     );
   });
 
   it("takes every level of the family scale, and off", () => {
     for (const level of ["error", "warning", "notice", "off"]) {
-      expect(parse(`severity:\n  moved: ${level}\n`).severity).toEqual({ moved: level });
+      expect(parse(`severity:\n  source-moved: ${level}\n`).severity).toEqual({
+        "source-moved": level,
+      });
     }
-    expect(messageOf("severity:\n  moved: info\n")).toBe(
-      'cite.severity.moved in c.yaml must be one of error, warning, notice, off, not "info".',
+    expect(messageOf("severity:\n  source-moved: info\n")).toBe(
+      'cite.severity.source-moved in c.yaml must be one of error, warning, notice, off, not "info".',
     );
   });
 
@@ -231,7 +270,12 @@ describe("loadCiteConfig", () => {
       root: "../src",
       baseline: ".cite-baseline.json",
       checkSources: false,
-      severity: { moved: "error", changed: "warning", "claim-ambiguous": "notice", current: "off" },
+      severity: {
+        "source-moved": "error",
+        "source-changed": "warning",
+        "claim-changed": "notice",
+        "marker-repeated": "off",
+      },
     });
   });
 

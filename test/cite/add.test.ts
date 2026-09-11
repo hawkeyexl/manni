@@ -1,21 +1,35 @@
 /**
  * `runAdd` against temp copies of the fixture pages, with `test/fixtures/cite`
- * as the root so `src/limits.ts` is the ladder SOURCE. `commit: false` keeps
- * the minted entry deterministic; the one HEAD case runs only where git is.
- * Every refusal is pinned to its exact text, because the CLI prints it as is.
+ * as the root so `src/limits.ts` is the ladder SOURCE. `commitSha: false`
+ * keeps the minted entry deterministic; the one HEAD case runs only where git
+ * is. Every refusal is pinned to its exact text, because the CLI prints it as
+ * is.
+ *
+ * The page lines a caller gives are FILE lines, as an editor numbers them.
+ * What the entry stores is BODY lines, counted from the first line after the
+ * frontmatter, and what the result reports is file lines *after* the append.
+ * Those three are different numbers, so each is asserted separately.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parse as parseYaml } from "yaml";
 import { runAdd } from "../../src/cite/commands/add.js";
 import { runCheck } from "../../src/cite/commands/check.js";
 import { noGit } from "../../src/cite/core/git.js";
 import { hashRange } from "../../src/cite/core/hash.js";
 import { readPage } from "../../src/cite/core/page.js";
 import { decryptSourcePath, encryptSourcePath } from "../../src/cite/core/sources.js";
-import { parse as parseYaml } from "yaml";
 import { CiteError } from "../../src/cite/errors.js";
 import type { AddOptions, AddResult } from "../../src/cite/types.js";
 import { gitAvailable } from "../helpers/temp-repo.js";
@@ -25,14 +39,26 @@ const ROOT = join(here, "..", "fixtures", "cite");
 const PAGES = join(ROOT, "pages");
 /** A fixed test key; never the developer's environment. */
 const KEY = "add-key-0123456789abcdef0123456789abc";
+
+/** Source pins: `src/limits.ts`, whole and by line. */
+const PIN_WHOLE = "sha256-aebba92fe4cddf100cc781281d1f24ad7c234b6189413e2130d5fe71ed86e023";
 const PIN_L2 = "sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f";
 const PIN_L3 = "sha256-e9f5bdf94a12c610b54573d2b66347592887805e59c69b64803a8c0d30edaea3";
 const PIN_1_3 = "sha256-d2981e71e50b9bd645ab30ad36aeb87dcb3c3268ff8d90ed3b021a45dfbed1d6";
+/** Claim pins: the page text, always plain. */
 const CLAIM = "The fetch timeout is 10 seconds.";
+const CLAIM_PIN = "sha256-921b21cccab21a4577f224ec4171aa56a3414bb3a5a4704ab8b6f314c46aa094";
+const WRAPPED_PIN = "sha256-93f59d1e26513d9a8be099c55aa8ba06c90020f079d7fb16d4a7ca65851f0ec3";
+const BLOCK_PIN = "sha256-caadbbaf3c4628bac327f01aea6aa17ff283269e7a8814a1f3ea443da36e90e0";
 const NO_COMMIT = "git is not available here, so the citation records no commit.";
 
 const LINE_2 = "export const FETCH_TIMEOUT_MS = 10_000;";
-const LINES_1_3 = ["export const MAX_FILES = 10_000;", LINE_2, "export const RETRIES = 3;"];
+const LINE_3 = "export const RETRIES = 3;";
+const LINES_1_3 = ["export const MAX_FILES = 10_000;", LINE_2, LINE_3];
+/** Built out of band so the fence never opens a block in this file. */
+const TICKS = String.fromCharCode(96, 96, 96);
+const OPEN = `${TICKS}ts`;
+const CLOSE = TICKS;
 
 let cwd = "";
 
@@ -49,6 +75,10 @@ function write(name: string, lines: string[]): string {
   writeFileSync(join(cwd, "pages", name), lines.join("\n") + "\n", "utf8");
   return `pages/${name}`;
 }
+/** A page whose body is one fenced block, with the lead and tail around it. */
+function fenced(name: string, lead: string[], block: string[], tail: string[] = []): string {
+  return write(name, ["---", "title: Limits", "---", ...lead, OPEN, ...block, CLOSE, ...tail]);
+}
 const onDisk = (label: string): string => readFileSync(join(cwd, label), "utf8");
 afterEach(() => {
   if (cwd !== "") rmSync(cwd, { recursive: true, force: true });
@@ -56,11 +86,14 @@ afterEach(() => {
 });
 
 function add(over: Partial<AddOptions> & { page: string; src: string }): Promise<AddResult> {
-  return runAdd({ cwd, root: ROOT, noConfig: true, commit: false, env: {}, ...over });
+  return runAdd({ cwd, root: ROOT, noConfig: true, commitSha: false, env: {}, ...over });
 }
 
-/** Statuses `runCheck` gives the page afterwards: what a CI job would see. */
-async function recheck(label: string, configPath?: string): Promise<string[]> {
+/** What `runCheck` says about the page afterwards: what a CI job would see. */
+async function recheck(
+  label: string,
+  configPath?: string,
+): Promise<{ ends: string[]; findings: string[] }> {
   const run = await runCheck({
     cwd,
     root: ROOT,
@@ -69,9 +102,13 @@ async function recheck(label: string, configPath?: string): Promise<string[]> {
     inputs: [label],
     ...(configPath === undefined ? { noConfig: true } : { configPath }),
   });
-  const findings = run.pages[0]?.findings.map((f) => f.rule) ?? [];
-  return [...(run.pages[0]?.citations.map((c) => c.status) ?? []), ...findings.filter((r) => r !== "current")];
+  const page = run.pages[0];
+  return {
+    ends: page?.citations.map((c) => `${c.claim?.status ?? "none"}/${c.source.status}`) ?? [],
+    findings: page?.findings.map((f) => f.rule) ?? [],
+  };
 }
+const CURRENT = { ends: ["current/current"], findings: [] };
 
 async function refusal(promise: Promise<unknown>): Promise<string> {
   try {
@@ -92,50 +129,89 @@ function tempConfig(cite: string, key?: string): string {
 }
 
 describe("runAdd", () => {
-  describe("frontmatter placement", () => {
-    it("appends a claimed entry and reports the claim's line after the append", async () => {
-      workspace("no-citations.md");
-      const result = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2", claim: CLAIM });
-      expect(result.placed).toBe("frontmatter");
-      expect(result.file).toBe("pages/no-citations.md");
-      expect(result.citation).toEqual({ claim: CLAIM, src: "src/limits.ts:2", integrity: PIN_L2 });
-      expect(result.written).toBe(true);
-      expect(onDisk(result.file)).toBe(result.content);
-      // Four frontmatter lines were added above the sentence, which sat on line 6.
-      expect(result.anchorLine).toBe(10);
-      expect(result.referenceLine).toBeUndefined();
-      expect(result.content.split("\n")[9]).toBe(CLAIM);
-      expect(readPage(result.file, result.content).citations.map((c) => c.citation)).toEqual([result.citation]);
-      expect(result.diff.split("\n").slice(0, 2)).toEqual(["--- pages/no-citations.md", "+++ pages/no-citations.md"]);
-      expect(result.diff).toContain("+citations:");
-      expect(await recheck(result.file)).toEqual(["current"]);
-    });
-
-    it("writes a reference statement above the paragraph when given an id", async () => {
-      workspace("no-citations.md");
-      const result = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2", claim: CLAIM, id: "fetch-timeout" });
-      expect(result.placed).toBe("frontmatter");
-      expect(result.citation).toEqual({ id: "fetch-timeout", claim: CLAIM, src: "src/limits.ts:2", integrity: PIN_L2 });
-      expect(result.referenceLine).toBe(11);
-      expect(result.anchorLine).toBe(12);
-      const lines = result.content.split("\n");
-      expect(lines[10]).toBe("<!-- cite fetch-timeout -->");
-      expect(lines[11]).toBe(CLAIM);
-      expect(await recheck(result.file)).toEqual(["current"]);
-      const page = readPage(result.file, result.content);
-      expect(page.citations[0]?.origin).toEqual({ kind: "frontmatter", index: 0, line: 4, anchorLine: 12 });
-    });
-
-    it("adds a bare pin with nothing anchoring it", async () => {
+  describe("a bare pin", () => {
+    it("writes a source and nothing else", async () => {
       workspace("no-citations.md");
       const result = await add({ page: "pages/no-citations.md", src: "src/limits.ts" });
-      expect(result.citation).toEqual({
-        src: "src/limits.ts",
-        integrity: "sha256-aebba92fe4cddf100cc781281d1f24ad7c234b6189413e2130d5fe71ed86e023",
+      expect(result.placed).toBe("frontmatter");
+      expect(result.file).toBe("pages/no-citations.md");
+      expect(result.citation).toEqual({ source: { file: "src/limits.ts", integrity: PIN_WHOLE } });
+      expect(result.claimLines).toBeUndefined();
+      expect(result.markerLine).toBeUndefined();
+      expect(result.written).toBe(true);
+      expect(onDisk(result.file)).toBe(result.content);
+      expect(result.content).not.toContain("cite ");
+      expect(await recheck(result.file)).toEqual({ ends: ["none/current"], findings: [] });
+    });
+
+    it("names the page in the diff and leaves the body alone", async () => {
+      workspace("no-citations.md");
+      const before = onDisk("pages/no-citations.md");
+      const result = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2" });
+      expect(result.diff.split("\n").slice(0, 2)).toEqual([
+        "--- pages/no-citations.md",
+        "+++ pages/no-citations.md",
+      ]);
+      expect(result.diff).toContain("+citations:");
+      expect(result.content.slice(result.content.indexOf("# Limits"))).toBe(
+        before.slice(before.indexOf("# Limits")),
+      );
+    });
+  });
+
+  describe("a claim", () => {
+    it("stores body lines and reports the file line after the write", async () => {
+      workspace("no-citations.md");
+      // File line 6 is the claim; body line 1 is file line 4, so the entry says 3.
+      const result = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
       });
-      expect(result.anchorLine).toBeUndefined();
-      expect(result.content).not.toContain("<!-- cite");
-      expect(await recheck(result.file)).toEqual(["current"]);
+      expect(result.citation).toEqual({
+        claim: { lines: 3, integrity: CLAIM_PIN },
+        source: { file: "src/limits.ts", lines: 2, integrity: PIN_L2 },
+      });
+      expect(result.claimLines).toEqual({ start: 14, end: 14 });
+      expect(result.content.split("\n")[13]).toBe(CLAIM);
+      expect(readPage(result.file, result.content).citations[0]?.citation).toEqual(result.citation);
+      expect(await recheck(result.file)).toEqual(CURRENT);
+    });
+
+    it("writes a range for a claim that spans lines", async () => {
+      workspace("claim-range.md");
+      const result = await add({
+        page: "pages/claim-range.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 15, end: 16 },
+      });
+      expect(result.citation.claim).toEqual({ lines: "3-4", integrity: WRAPPED_PIN });
+      expect(result.claimLines).toEqual({ start: 22, end: 23 });
+      const lines = result.content.split("\n");
+      expect(lines.slice(21, 23)).toEqual([
+        "The fetch timeout is 10 seconds. It is",
+        "not configurable.",
+      ]);
+      expect(await recheck(result.file)).toEqual({
+        ends: ["current/current", "current/current"],
+        findings: [],
+      });
+    });
+
+    it("orders the entry id, claim, source, quote", async () => {
+      const label = fenced("ordered.md", ["# Limits", ""], LINES_1_3);
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:1-3",
+        pageLines: { start: 6, end: 10 },
+        quote: true,
+        id: "header",
+      });
+      expect(Object.keys(result.citation)).toEqual(["id", "claim", "source", "quote"]);
+      expect(Object.keys(result.citation.source)).toEqual(["file", "lines", "integrity"]);
+      expect(result.content).toMatch(
+        /- id: header\n\s+claim:\n\s+lines: .*\n\s+integrity: .*\n\s+source:\n\s+file: .*\n\s+lines: .*\n\s+integrity: .*\n\s+quote: true\n/,
+      );
     });
 
     it("keeps comments, key order and the body byte-for-byte", async () => {
@@ -150,11 +226,17 @@ describe("runAdd", () => {
         CLAIM,
       ]);
       const before = onDisk(label);
-      const result = await add({ page: label, src: "src/limits.ts:2", claim: CLAIM });
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 8, end: 8 },
+      });
       expect(result.content).toContain("# house rule: description first");
       expect(result.content).toContain("title: Limits # shown in the nav");
       expect(result.content.indexOf("description:")).toBeLessThan(result.content.indexOf("title:"));
-      expect(result.content.slice(result.content.indexOf("\n# Limits"))).toBe(before.slice(before.indexOf("\n# Limits")));
+      expect(result.content.slice(result.content.indexOf("\n# Limits"))).toBe(
+        before.slice(before.indexOf("\n# Limits")),
+      );
     });
 
     it("keeps a CRLF page CRLF", async () => {
@@ -162,189 +244,275 @@ describe("runAdd", () => {
       const result = await add({
         page: "pages/crlf.md",
         src: "src/limits.ts:3",
-        claim: "It is not configurable.",
-        id: "retries",
+        pageLines: { start: 15, end: 15 },
       });
       expect(result.content.replace(/\r\n/g, "")).not.toContain("\n");
-      expect(result.content).toContain("<!-- cite retries -->\r\n");
-      expect(result.content).toContain("integrity: " + PIN_L3 + "\r\n");
-      expect(await recheck(result.file)).toEqual(["current", "current"]);
+      expect(result.content).toContain(`      integrity: ${PIN_L3}\r\n`);
+      expect(result.citation.claim).toEqual({ lines: 3, integrity: CLAIM_PIN });
+      expect(await recheck(result.file)).toEqual({
+        ends: ["current/current", "current/current"],
+        findings: [],
+      });
     });
   });
 
-  describe("inline placement", () => {
-    it("writes a JSON statement above the claim's paragraph and leaves the frontmatter alone", async () => {
+  describe("--marker", () => {
+    it("writes the marker above the lines and pins what it anchors, with no claim lines", async () => {
       workspace("no-citations.md");
-      const result = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2", claim: CLAIM, inline: true });
-      expect(result.placed).toBe("inline");
-      expect(result.content).not.toContain("citations:");
+      const result = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        marker: true,
+        id: "fetch-timeout",
+      });
+      expect(result.citation.claim).toEqual({ integrity: CLAIM_PIN });
+      expect(result.citation.claim?.lines).toBeUndefined();
+      expect(result.markerLine).toBe(14);
+      expect(result.claimLines).toEqual({ start: 15, end: 15 });
       const lines = result.content.split("\n");
-      // The statement leads with the pin and ends with the prose, as the proposal spells it.
-      expect(lines[5]).toBe(`<!-- cite {"src":"src/limits.ts:2","integrity":"${PIN_L2}","claim":"${CLAIM}"} -->`);
-      expect(lines[6]).toBe(CLAIM);
-      expect(result.anchorLine).toBe(7);
-      expect(result.referenceLine).toBeUndefined();
-      expect(await recheck(result.file)).toEqual(["current"]);
+      expect(lines[13]).toBe("<!-- cite fetch-timeout -->");
+      expect(lines[14]).toBe(CLAIM);
+      expect(await recheck(result.file)).toEqual(CURRENT);
     });
 
-    it("uses the format's own statement syntax", async () => {
-      // MDX rejects an html comment, so an mdx page gets the jsx comment.
-      const label = write("page.mdx", ["---", "title: Limits", "---", "", CLAIM]);
-      const result = await add({ page: label, src: "src/limits.ts:2", claim: CLAIM, inline: true });
-      expect(result.content.split("\n")[4]).toMatch(/^\{\/\* cite \{.*\} \*\/\}$/);
-      expect(await recheck(label)).toEqual(["current"]);
-      const md = write("page.md", ["---", "title: Limits", "---", "", CLAIM]);
-      const inMd = await add({ page: md, src: "src/limits.ts:2", claim: CLAIM, inline: true });
-      expect(inMd.content.split("\n")[4]).toMatch(/^<!-- cite \{.*\} -->$/);
-      const html = write("page.html", ["<html><body>", "", `<p>${CLAIM}</p>`, "", "</body></html>"]);
-      const inHtml = await add({ page: html, src: "src/limits.ts:2", claim: CLAIM, inline: true });
-      expect(inHtml.content.split("\n")[2]).toMatch(/^<!-- cite \{.*\} -->$/);
-      expect(inHtml.anchorLine).toBe(4);
-      expect(await recheck(html)).toEqual(["current"]);
-    });
-  });
-
-  describe("--quote", () => {
-    const fenced = (name: string, lead: string[], block: string[], tail: string[] = []): string =>
-      write(name, ["---", "title: Limits", "---", ...lead, "```ts", ...block, "```", ...tail]);
-
-    it("anchors to the one fenced block that reproduces the range", async () => {
-      const label = fenced("quoted.md", ["# Limits", ""], LINES_1_3);
-      const result = await add({ page: label, src: "src/limits.ts:1-3", quote: true });
-      expect(result.placed).toBe("frontmatter");
-      expect(result.citation).toEqual({ src: "src/limits.ts:1-3", integrity: PIN_1_3, quote: true });
-      // The opener sat on line 6; the frontmatter grew by four lines.
-      expect(result.anchorLine).toBe(10);
-      expect(await recheck(label)).toEqual(["current"]);
-    });
-
-    it("puts an inline statement directly above the block", async () => {
-      const label = fenced("quoted.md", ["# Limits", ""], LINES_1_3);
-      const result = await add({ page: label, src: "src/limits.ts:1-3", quote: true, inline: true });
-      const lines = result.content.split("\n");
-      expect(lines[5]).toBe(`<!-- cite {"src":"src/limits.ts:1-3","integrity":"${PIN_1_3}","quote":true} -->`);
-      expect(lines[6]).toBe("```ts");
-      expect(result.anchorLine).toBe(7);
-      expect(await recheck(label)).toEqual(["current"]);
-    });
-
-    it("with a claim, anchors the claim and requires the next block to reproduce the range", async () => {
-      const label = fenced("quoted.md", ["# Limits", "", CLAIM, ""], [LINE_2]);
-      const result = await add({ page: label, src: "src/limits.ts:2", claim: CLAIM, quote: true, id: "fetch-timeout" });
-      expect(result.citation).toEqual({ id: "fetch-timeout", claim: CLAIM, src: "src/limits.ts:2", integrity: PIN_L2, quote: true });
-      const lines = result.content.split("\n");
-      expect(lines[lines.indexOf(CLAIM) - 1]).toBe("<!-- cite fetch-timeout -->");
-      expect(await recheck(label)).toEqual(["current"]);
-    });
-
-    it("refuses when the block after the claim reproduces something else", async () => {
-      const label = fenced("quoted.md", ["# Limits", "", CLAIM, ""], ["export const RETRIES = 3;"]);
-      expect(await refusal(add({ page: label, src: "src/limits.ts:2", claim: CLAIM, quote: true }))).toBe(
-        `The fenced block after the claim in ${label} does not reproduce src/limits.ts:2.`,
-      );
-      const bare = write("bare.md", ["---", "title: Limits", "---", CLAIM]);
-      expect(await refusal(add({ page: bare, src: "src/limits.ts:2", claim: CLAIM, quote: true }))).toBe(
-        `No fenced block follows the claim in ${bare}.`,
-      );
-    });
-
-    it("refuses when no block, or more than one, reproduces the range", async () => {
-      const none = fenced("none.md", [], ["export const RETRIES = 3;"]);
-      expect(await refusal(add({ page: none, src: "src/limits.ts:1-3", quote: true }))).toBe(
-        `No fenced block in ${none} reproduces src/limits.ts:1-3.`,
-      );
-      const twice = fenced("twice.md", [], LINES_1_3, ["", "~~~", ...LINES_1_3, "~~~"]);
-      expect(await refusal(add({ page: twice, src: "src/limits.ts:1-3", quote: true }))).toBe(
-        `2 fenced blocks in ${twice} reproduce src/limits.ts:1-3 (lines 4, 10); add --claim to say which sentence introduces it.`,
-      );
-    });
-
-    it("refuses on a format with no fenced blocks", async () => {
-      workspace("inline.html", "inline.rst");
-      expect(await refusal(add({ page: "pages/inline.html", src: "src/limits.ts:2", quote: true }))).toBe(
-        "--quote needs a format with fenced blocks; pages/inline.html is html.",
-      );
-      expect(await refusal(add({ page: "pages/inline.rst", src: "src/limits.ts:2", quote: true }))).toBe(
-        "--quote needs a format with fenced blocks; pages/inline.rst is rst.",
-      );
-    });
-  });
-
-  describe("a repeated claim", () => {
-    it("refuses without an id, naming the lines and the statement to add", async () => {
-      workspace("claim-ambiguous.md");
-      expect(await refusal(add({ page: "pages/claim-ambiguous.md", src: "src/limits.ts:3", claim: "Retries default to 3." }))).toBe(
-        "Claim occurs 2 times in pages/claim-ambiguous.md (lines 10, 14). Give it an --id and put `<!-- cite <id> -->` above the intended paragraph.",
-      );
-      const adoc = write("twice.adoc", ["= Limits", "", "Retries default to 3.", "", "Retries default to 3. Really."]);
-      expect(await refusal(add({ page: adoc, src: "src/limits.ts:3", claim: "Retries default to 3." }))).toBe(
-        `Claim occurs 2 times in ${adoc} (lines 3, 5). Give it an --id and put \`// (cite <id>)\` above the intended paragraph.`,
-      );
-      // MDX rejects an HTML comment, so the advice spells the JSX form.
-      const mdx = write("twice.mdx", ["# Limits", "", "Retries default to 3.", "", "Retries default to 3. Really."]);
-      expect(await refusal(add({ page: mdx, src: "src/limits.ts:3", claim: "Retries default to 3." }))).toBe(
-        `Claim occurs 2 times in ${mdx} (lines 3, 5). Give it an --id and put \`{/* cite <id> */}\` above the intended paragraph.`,
-      );
-    });
-
-    it("writes the jsx comment form on an mdx page", async () => {
-      const mdx = write("claim.mdx", ["---", "title: t", "---", "", "# Limits", "", CLAIM]);
-      const result = await add({ page: mdx, src: "src/limits.ts:2", claim: CLAIM, id: "fetch-timeout" });
-      expect(result.content).toContain(`{/* cite fetch-timeout */}\n${CLAIM}`);
-      expect(result.content).not.toContain("<!--");
-      expect(await recheck(result.file)).toEqual(["current"]);
-      const inline = await add({ page: mdx, src: "src/limits.ts:2", claim: CLAIM, inline: true, dryRun: true });
-      expect(inline.content).toMatch(/^\{\/\* cite \{.*\} \*\/\}$/m);
-    });
-
-    it("takes the paragraph a reference statement with that id already marks", async () => {
-      const label = write("marked.md", [
+    it("pins the whole paragraph the marker anchors, not just the named line", async () => {
+      const label = write("wrapped.md", [
         "---",
         "title: Limits",
         "---",
         "# Limits",
         "",
-        "Retries default to 3.",
-        "",
-        "<!-- cite retries -->",
-        "Retries default to 3. Really.",
+        "The fetch timeout is 10 seconds. It is",
+        "not configurable.",
       ]);
-      const result = await add({ page: label, src: "src/limits.ts:3", claim: "Retries default to 3.", id: "retries" });
-      expect(result.content.match(/cite retries/g)).toHaveLength(1);
-      expect(result.referenceLine).toBe(13);
-      expect(result.anchorLine).toBe(14);
-      expect(await recheck(label)).toEqual(["current"]);
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        marker: true,
+        id: "fetch-timeout",
+      });
+      expect(result.citation.claim).toEqual({ integrity: WRAPPED_PIN });
+      expect(result.claimLines).toEqual({ start: 15, end: 16 });
+      expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("uses the format's own comment syntax", async () => {
+      const mdx = write("page.mdx", ["---", "title: t", "---", "", "# Limits", "", CLAIM]);
+      const result = await add({
+        page: mdx,
+        src: "src/limits.ts:2",
+        pageLines: { start: 7, end: 7 },
+        marker: true,
+        id: "fetch-timeout",
+      });
+      expect(result.content).toContain(`{/* cite fetch-timeout */}\n${CLAIM}`);
+      expect(result.content).not.toContain("<!--");
+      expect(await recheck(mdx)).toEqual(CURRENT);
+    });
+
+    it("anchors the fenced block that follows when it is also a quote", async () => {
+      const label = fenced("quoted.md", ["# Limits", ""], [LINE_2], ["", "After."]);
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 8 },
+        quote: true,
+        marker: true,
+        id: "timeout",
+      });
+      expect(result.citation.claim?.lines).toBeUndefined();
+      expect(result.citation.quote).toBe(true);
+      expect(result.markerLine).toBe(15);
+      expect(result.claimLines).toEqual({ start: 16, end: 18 });
+      expect(result.content.split("\n")[14]).toBe("<!-- cite timeout -->");
+      expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("refuses without page lines and without an id", async () => {
+      workspace("no-citations.md");
+      const page = "pages/no-citations.md";
+      expect(await refusal(add({ page, src: "src/limits.ts:2", marker: true, id: "x" }))).toBe(
+        "--marker needs the page lines to anchor: pages/no-citations.md:L.",
+      );
+      expect(
+        await refusal(
+          add({ page, src: "src/limits.ts:2", marker: true, pageLines: { start: 6, end: 6 } }),
+        ),
+      ).toBe("--marker needs --id: the marker names the entry.");
+    });
+
+    it("refuses an id the page already marks, naming the marker's line", async () => {
+      workspace("marker-orphan.md");
+      expect(
+        await refusal(
+          add({
+            page: "pages/marker-orphan.md",
+            src: "src/limits.ts:3",
+            pageLines: { start: 13, end: 13 },
+            marker: true,
+            id: "nope",
+          }),
+        ),
+      ).toBe("pages/marker-orphan.md already has a marker nope at line 12.");
+    });
+
+    it("refuses lines with nothing for a marker to anchor", async () => {
+      const label = write("blank.md", ["---", "title: Limits", "---", "# Limits", "", "", ""]);
+      expect(
+        await refusal(
+          add({
+            page: label,
+            src: "src/limits.ts:2",
+            pageLines: { start: 6, end: 6 },
+            marker: true,
+            id: "x",
+          }),
+        ),
+      ).toBe(`${label}:6 has no paragraph or block for a marker to anchor.`);
     });
   });
 
-  describe("minting", () => {
+  describe("--quote", () => {
+    it("pins a fenced block that reproduces the source", async () => {
+      const label = fenced("quoted.md", ["# Limits", ""], LINES_1_3);
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:1-3",
+        pageLines: { start: 6, end: 10 },
+        quote: true,
+      });
+      expect(result.citation).toEqual({
+        claim: { lines: "3-7", integrity: BLOCK_PIN },
+        source: { file: "src/limits.ts", lines: "1-3", integrity: PIN_1_3 },
+        quote: true,
+      });
+      expect(result.claimLines).toEqual({ start: 15, end: 19 });
+      expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("refuses without the block's lines", async () => {
+      workspace("no-citations.md");
+      expect(
+        await refusal(add({ page: "pages/no-citations.md", src: "src/limits.ts:2", quote: true })),
+      ).toBe("--quote needs the block's lines: pages/no-citations.md:L1-L2.");
+    });
+
+    it("refuses lines that are not a fenced block, opener to closing fence", async () => {
+      workspace("no-citations.md");
+      expect(
+        await refusal(
+          add({
+            page: "pages/no-citations.md",
+            src: "src/limits.ts:2",
+            pageLines: { start: 6, end: 6 },
+            quote: true,
+          }),
+        ),
+      ).toBe("pages/no-citations.md:6 is not a fenced block, so it cannot be a quote.");
+      // The opener is right; the range stops one line short of the closing fence.
+      const label = fenced("short.md", ["# Limits", ""], LINES_1_3);
+      expect(
+        await refusal(
+          add({
+            page: label,
+            src: "src/limits.ts:1-3",
+            pageLines: { start: 6, end: 9 },
+            quote: true,
+          }),
+        ),
+      ).toBe(`${label}:6-9 is not a fenced block, so it cannot be a quote.`);
+    });
+
+    it("refuses on a format with no fenced blocks at all", async () => {
+      workspace("marker.rst");
+      expect(
+        await refusal(
+          add({
+            page: "pages/marker.rst",
+            src: "src/limits.ts:3",
+            pageLines: { start: 12, end: 13 },
+            quote: true,
+          }),
+        ),
+      ).toBe("pages/marker.rst:12-13 is not a fenced block, so it cannot be a quote.");
+    });
+
+    it("refuses a block that reproduces something else", async () => {
+      const label = fenced("other.md", ["# Limits", ""], [LINE_3]);
+      expect(
+        await refusal(
+          add({
+            page: label,
+            src: "src/limits.ts:1-3",
+            pageLines: { start: 6, end: 8 },
+            quote: true,
+          }),
+        ),
+      ).toBe(`The block at ${label}:6-8 does not reproduce src/limits.ts:1-3.`);
+    });
+  });
+
+  describe("encryption", () => {
     it("encrypts every add once a key is configured, with no flag, and check reads it back", async () => {
       workspace("no-citations.md");
       const config = tempConfig("", KEY);
       const token = encryptSourcePath("src/limits.ts", KEY);
-      const keyed = hashRange(LINE_2, undefined, KEY);
-      const byKey = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2", claim: CLAIM, noConfig: false, configPath: config });
-      expect(byKey.citation).toEqual({ claim: CLAIM, src: `${token}:2`, integrity: keyed });
+      const byKey = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        noConfig: false,
+        configPath: config,
+      });
+      expect(byKey.citation.source.file).toBe(token);
+      expect(byKey.citation.source.integrity).toBe(hashRange(LINE_2, undefined, KEY));
+      expect(byKey.citation.source.integrity.startsWith("hmac-sha256-")).toBe(true);
+      // A claim is always pinned plain: the page is public.
+      expect(byKey.citation.claim?.integrity).toBe(CLAIM_PIN);
       expect(byKey.content).not.toContain("limits.ts");
-      expect(await recheck(byKey.file, config)).toEqual(["current"]);
+      expect(await recheck(byKey.file, config)).toEqual(CURRENT);
       // Without the key the page names no file: the citation is missing.
-      expect(await recheck(byKey.file)).toEqual(["missing", "missing"]);
+      expect(await recheck(byKey.file)).toEqual({
+        ends: ["current/missing"],
+        findings: ["source-missing"],
+      });
+    });
 
-      // The flag is redundant beside a key, and changes nothing.
-      const flagged = await add({ page: "pages/no-citations.md", src: "src/limits.ts:3", encrypt: true, noConfig: false, configPath: config });
-      expect(flagged.citation).toEqual({ src: `${token}:3`, integrity: hashRange(LINES_1_3[2] ?? "", undefined, KEY) });
+    it("takes the flag beside a key as redundant, and changes nothing", async () => {
+      workspace("no-citations.md");
+      const config = tempConfig("", KEY);
+      const flagged = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:3",
+        encrypt: true,
+        noConfig: false,
+        configPath: config,
+      });
+      expect(flagged.citation).toEqual({
+        source: {
+          file: encryptSourcePath("src/limits.ts", KEY),
+          lines: 3,
+          integrity: hashRange(LINE_3, undefined, KEY),
+        },
+      });
     });
 
     it("writes a plain path with no key and no flag", async () => {
       workspace("no-citations.md");
       const plain = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2" });
-      expect(plain.citation).toEqual({ src: "src/limits.ts:2", integrity: PIN_L2 });
+      expect(plain.citation.source).toEqual({ file: "src/limits.ts", lines: 2, integrity: PIN_L2 });
     });
 
     it("the environment's key encrypts as a configured one does", async () => {
       workspace("no-citations.md");
-      const result = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2", env: { MANNI_ENCRYPTION_KEY: KEY } });
-      expect(result.citation.src).toBe(`${encryptSourcePath("src/limits.ts", KEY)}:2`);
+      const result = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        env: { MANNI_ENCRYPTION_KEY: KEY },
+      });
+      expect(result.citation.source.file).toBe(encryptSourcePath("src/limits.ts", KEY));
     });
   });
 
@@ -373,6 +541,7 @@ describe("runAdd", () => {
       const result = await add({
         page: "pages/no-citations.md",
         src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
         encrypt: true,
         confirm: (question) => {
           questions.push(question);
@@ -380,18 +549,19 @@ describe("runAdd", () => {
         },
         onNotice: (message) => notices.push(message),
       });
-      expect(notices[0]).toBe("src/limits.ts:2 must be encrypted, and no encryption key is available.");
+      expect(notices[0]).toBe(
+        "src/limits.ts:2 must be encrypted, and no encryption key is available.",
+      );
       expect(questions).toEqual(["Generate a key and write it to manni.config.yaml? "]);
       expect(written()).toContain("Created manni.config.yaml with an encryption key.\n");
 
       const doc = parseYaml(readFileSync(configOnDisk(), "utf8")) as { encryptionKey?: unknown };
       const key = typeof doc.encryptionKey === "string" ? doc.encryptionKey : "";
       expect(key).toMatch(/^[0-9a-f]{64}$/);
-      const [path = ""] = result.citation.src.split(":");
-      expect(decryptSourcePath(path, key)).toBe("src/limits.ts");
-      expect(result.citation.integrity).toBe(hashRange(LINE_2, undefined, key));
+      expect(decryptSourcePath(result.citation.source.file, key)).toBe("src/limits.ts");
+      expect(result.citation.source.integrity).toBe(hashRange(LINE_2, undefined, key));
       expect(onDisk(result.file)).not.toContain("limits.ts");
-      expect(await recheck(result.file, configOnDisk())).toEqual(["current"]);
+      expect(await recheck(result.file, configOnDisk())).toEqual(CURRENT);
     });
 
     it("writes the key into the config the run found, beside its cite: section", async () => {
@@ -409,14 +579,22 @@ describe("runAdd", () => {
       expect(text).toMatch(/^cite:\n {2}allowEmpty: true\n/);
       expect(text).toMatch(/^encryptionKey: [0-9a-f]{64}$/m);
       expect(written()).toContain("Encryption key written to ");
-      expect(await recheck(result.file, config)).toEqual(["current"]);
+      expect(await recheck(result.file, config)).toEqual({
+        ends: ["none/current"],
+        findings: [],
+      });
     });
 
     it("on a no, refuses and writes nothing", async () => {
       workspace("no-citations.md");
       const before = onDisk("pages/no-citations.md");
       const message = await refusal(
-        add({ page: "pages/no-citations.md", src: "src/limits.ts:2", encrypt: true, confirm: () => Promise.resolve(false) }),
+        add({
+          page: "pages/no-citations.md",
+          src: "src/limits.ts:2",
+          encrypt: true,
+          confirm: () => Promise.resolve(false),
+        }),
       );
       expect(message).toBe(REFUSAL);
       expect(onDisk("pages/no-citations.md")).toBe(before);
@@ -427,7 +605,12 @@ describe("runAdd", () => {
       workspace("no-citations.md");
       const notices: string[] = [];
       const message = await refusal(
-        add({ page: "pages/no-citations.md", src: "src/limits.ts:2", encrypt: true, onNotice: (m) => notices.push(m) }),
+        add({
+          page: "pages/no-citations.md",
+          src: "src/limits.ts:2",
+          encrypt: true,
+          onNotice: (m) => notices.push(m),
+        }),
       );
       expect(message).toBe(REFUSAL);
       expect(notices).toEqual([]);
@@ -441,24 +624,53 @@ describe("runAdd", () => {
         asked += 1;
         return Promise.resolve(true);
       };
-      expect(await refusal(add({ page: "pages/no-citations.md", src: "src/nope.ts:1", encrypt: true, confirm }))).toBe(
-        "Source not found: src/nope.ts is not a tracked file under the root.",
-      );
       expect(
         await refusal(
-          add({ page: "pages/no-citations.md", src: "src/limits.ts:2", claim: "Not in the page.", encrypt: true, confirm }),
+          add({ page: "pages/no-citations.md", src: "src/nope.ts:1", encrypt: true, confirm }),
         ),
-      ).toBe('Claim not found in pages/no-citations.md: "Not in the page.". Add the sentence first, or omit --claim.');
+      ).toBe("Source not found: src/nope.ts is not a tracked file under the root.");
+      expect(
+        await refusal(
+          add({
+            page: "pages/no-citations.md",
+            src: "src/limits.ts:2",
+            pageLines: { start: 40, end: 40 },
+            encrypt: true,
+            confirm,
+          }),
+        ),
+      ).toBe("pages/no-citations.md:40 is past the end of the page (6 lines).");
       expect(asked).toBe(0);
       expect(existsSync(configOnDisk())).toBe(false);
     });
+  });
 
+  describe("commit-sha", () => {
     it.skipIf(!gitAvailable())("records HEAD unless told not to", async () => {
       workspace("no-citations.md");
-      const withHead = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2", commit: undefined });
-      expect(withHead.citation.commit).toMatch(/^[0-9a-f]{40}$/);
-      const without = await add({ page: "pages/no-citations.md", src: "src/limits.ts:3", commit: false });
-      expect(without.citation.commit).toBeUndefined();
+      const withHead = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        commitSha: undefined,
+      });
+      expect(withHead.citation.source["commit-sha"]).toMatch(/^[0-9a-f]{40}$/);
+      expect(Object.keys(withHead.citation.source)).toEqual([
+        "file",
+        "lines",
+        "integrity",
+        "commit-sha",
+      ]);
+    });
+
+    it("records none under --no-commit-sha", async () => {
+      workspace("no-citations.md");
+      const without = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:3",
+        commitSha: false,
+      });
+      expect(without.citation.source["commit-sha"]).toBeUndefined();
+      expect(without.content).not.toContain("commit-sha");
     });
 
     it("without git, records no commit and says so once", async () => {
@@ -467,11 +679,11 @@ describe("runAdd", () => {
       const result = await add({
         page: "pages/no-citations.md",
         src: "src/limits.ts:2",
-        commit: undefined,
+        commitSha: undefined,
         gitClient: noGit(),
         onNotice: (m) => notices.push(m),
       });
-      expect(result.citation.commit).toBeUndefined();
+      expect(result.citation.source["commit-sha"]).toBeUndefined();
       expect(notices).toEqual([NO_COMMIT]);
     });
 
@@ -481,10 +693,26 @@ describe("runAdd", () => {
       const onNotice = (m: string): void => {
         notices.push(m);
       };
-      await add({ page: "pages/no-citations.md", src: "src/limits.ts:2", commit: false, gitClient: noGit(), onNotice });
+      await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        commitSha: false,
+        gitClient: noGit(),
+        onNotice,
+      });
       expect(notices).toEqual([]);
-      const there = { ...noGit(), available: () => Promise.resolve(true), lsFiles: () => Promise.resolve(["src/limits.ts"]) };
-      await add({ page: "pages/no-citations.md", src: "src/limits.ts:3", commit: undefined, gitClient: there, onNotice });
+      const there = {
+        ...noGit(),
+        available: () => Promise.resolve(true),
+        lsFiles: () => Promise.resolve(["src/limits.ts"]),
+      };
+      await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:3",
+        commitSha: undefined,
+        gitClient: there,
+        onNotice,
+      });
       expect(notices).toEqual([]);
     });
   });
@@ -493,7 +721,12 @@ describe("runAdd", () => {
     it("prints the diff and writes nothing under --dry-run", async () => {
       workspace("no-citations.md");
       const before = onDisk("pages/no-citations.md");
-      const result = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2", claim: CLAIM, dryRun: true });
+      const result = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        dryRun: true,
+      });
       expect(result.written).toBe(false);
       expect(result.diff).toContain("+citations:");
       expect(result.content).not.toBe(before);
@@ -502,11 +735,18 @@ describe("runAdd", () => {
 
     it("returns the rewritten page for stdin instead of writing it", async () => {
       workspace();
-      const result = await add({ page: "-", src: "src/limits.ts:2", claim: CLAIM, as: "markdown", stdinContent: readFileSync(join(PAGES, "no-citations.md"), "utf8") });
+      const result = await add({
+        page: "-",
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        as: "markdown",
+        stdinContent: readFileSync(join(PAGES, "no-citations.md"), "utf8"),
+      });
       expect(result.file).toBe("<stdin>");
       expect(result.written).toBe(false);
       expect(result.content).toContain("citations:");
-      expect(result.anchorLine).toBe(10);
+      expect(result.citation.claim).toEqual({ lines: 3, integrity: CLAIM_PIN });
+      expect(result.claimLines).toEqual({ start: 14, end: 14 });
       expect(result.diff.split("\n")[0]).toBe("--- <stdin>");
     });
   });
@@ -526,38 +766,50 @@ describe("runAdd", () => {
       );
     });
 
-    it("refuses a claim the page does not carry", async () => {
+    it("refuses page lines past the end of the page", async () => {
       workspace("no-citations.md");
-      expect(await refusal(add({ page: "pages/no-citations.md", src: "src/limits.ts:2", claim: "The fetch timeout is 9 seconds." }))).toBe(
-        'Claim not found in pages/no-citations.md: "The fetch timeout is 9 seconds.". Add the sentence first, or omit --claim.',
-      );
+      expect(
+        await refusal(
+          add({
+            page: "pages/no-citations.md",
+            src: "src/limits.ts:2",
+            pageLines: { start: 40, end: 40 },
+          }),
+        ),
+      ).toBe("pages/no-citations.md:40 is past the end of the page (6 lines).");
     });
 
-    it("refuses an id the page already cites, in either channel", async () => {
-      workspace("current.md", "inline.mdx");
-      expect(await refusal(add({ page: "pages/current.md", src: "src/limits.ts:2", claim: CLAIM, id: "fetch-timeout" }))).toBe(
-        'Id "fetch-timeout" is already cited in pages/current.md.',
-      );
-      const inline = write("inline-id.md", ["---", "title: Limits", "---", `<!-- cite {"id":"retries","src":"src/limits.ts:3","integrity":"${PIN_L3}"} -->`, "Retries default to 3.", "", CLAIM]);
-      expect(await refusal(add({ page: inline, src: "src/limits.ts:2", claim: CLAIM, id: "retries" }))).toBe(
-        `Id "retries" is already cited in ${inline}.`,
-      );
+    it("refuses page lines that sit in the frontmatter", async () => {
+      workspace("claim-range.md");
+      expect(
+        await refusal(
+          add({
+            page: "pages/claim-range.md",
+            src: "src/limits.ts:2",
+            pageLines: { start: 2, end: 2 },
+          }),
+        ),
+      ).toBe("pages/claim-range.md:2 is in the frontmatter. A claim is body text.");
     });
 
-    it("refuses --inline and --id with nothing to anchor", async () => {
-      workspace("no-citations.md");
-      expect(await refusal(add({ page: "pages/no-citations.md", src: "src/limits.ts:2", inline: true }))).toBe(
-        "--inline needs --claim or --quote: an inline statement anchors the paragraph or block that follows it.",
-      );
-      expect(await refusal(add({ page: "pages/no-citations.md", src: "src/limits.ts:2", id: "fetch-timeout" }))).toBe(
-        "--id needs --claim or --quote: nothing would reference it.",
-      );
+    it("refuses an id the page already cites", async () => {
+      workspace("current.md");
+      expect(
+        await refusal(
+          add({
+            page: "pages/current.md",
+            src: "src/limits.ts:2",
+            pageLines: { start: 17, end: 17 },
+            id: "fetch-timeout",
+          }),
+        ),
+      ).toBe("pages/current.md already has an entry fetch-timeout.");
     });
 
     it("refuses a page that has no frontmatter to write to", async () => {
-      workspace("inline.html");
-      expect(await refusal(add({ page: "pages/inline.html", src: "src/limits.ts:3", claim: CLAIM }))).toBe(
-        "pages/inline.html has no frontmatter to write to. Use --inline.",
+      workspace("marker.html");
+      expect(await refusal(add({ page: "pages/marker.html", src: "src/limits.ts:3" }))).toBe(
+        "pages/marker.html has no frontmatter to write to; keep its citations in a manifest instead.",
       );
     });
 
@@ -566,12 +818,18 @@ describe("runAdd", () => {
       expect(await refusal(add({ page: "-", src: "src/limits.ts:2", stdinContent: "x" }))).toBe(
         "Reading from stdin (`-`) requires --as <format> to choose an extractor.",
       );
-      expect(await refusal(add({ page: "pages/nope.md", src: "src/limits.ts:2" }))).toBe('File not found: "pages/nope.md".');
+      expect(await refusal(add({ page: "pages/nope.md", src: "src/limits.ts:2" }))).toBe(
+        'File not found: "pages/nope.md".',
+      );
     });
 
     it("refuses an id that is not kebab-case", async () => {
       workspace("no-citations.md");
-      expect(await refusal(add({ page: "pages/no-citations.md", src: "src/limits.ts:2", claim: CLAIM, id: "Fetch Timeout" }))).toBe(
+      expect(
+        await refusal(
+          add({ page: "pages/no-citations.md", src: "src/limits.ts:2", id: "Fetch Timeout" }),
+        ),
+      ).toBe(
         'Invalid id "Fetch Timeout": use lowercase letters, digits and hyphens, starting with a letter or digit.',
       );
     });

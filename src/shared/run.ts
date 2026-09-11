@@ -23,13 +23,40 @@ export function fail(err: unknown): never {
   process.exit(2);
 }
 
+/**
+ * The marker a normalized stdin-with-lines argument carries in place of its
+ * `-`. It is a NUL, which no path and no option can hold, and it never
+ * reaches a message: a page read from stdin is labelled `<stdin>`.
+ */
+export const STDIN_LINES_MARKER = "\u0000";
+
+/** `-:9`, `-:14-18`: stdin, and the lines of it a command was pointed at. */
+const STDIN_WITH_LINES = /^-(:[1-9][0-9]*(?:-[1-9][0-9]*)?)$/;
+
+/**
+ * Rewrite `-:L` so commander reads it as an operand.
+ *
+ * `-` is stdin in every command of the family, so `-:9` is stdin and a line
+ * range, the form `cite add` takes its claim's lines in. Commander tells an
+ * option from an operand lexically, by the leading `-`, and would reject the
+ * token as an unknown option before any command saw it. The rewrite is here,
+ * once, rather than in the one command that reads the form today: the rule
+ * is about what `-` means to the family, not about that command.
+ */
+export function normalizeStdinArgv(argv: readonly string[]): string[] {
+  return argv.map((arg) => {
+    const lines = STDIN_WITH_LINES.exec(arg)?.[1];
+    return lines === undefined ? arg : `${STDIN_LINES_MARKER}${lines}`;
+  });
+}
+
 export async function runProgram(
   program: Command,
   argv: string[] = process.argv,
 ): Promise<void> {
   setProgramName(program.name());
   try {
-    await program.parseAsync(argv);
+    await program.parseAsync(normalizeStdinArgv(argv));
   } catch (err) {
     // `exitOverride()` makes commander throw on every terminating condition,
     // including the successful ones. Branch on `err.exitCode`, not on a list of

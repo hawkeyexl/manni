@@ -218,14 +218,19 @@ function open(
   return { ok: true, value };
 }
 
+/** The prefix a keyed pin carries, so it never reads as a plain hash of the text. */
+export const KEYED_PIN_PREFIX = "hmac-sha256-";
+
 /**
- * A keyed fingerprint of `text`: `sha256-` and the hex HMAC-SHA256 under the
- * pin subkey. Stable per key, so it can be compared without being reversible.
+ * A keyed fingerprint of `text`: `hmac-sha256-` and the hex HMAC-SHA256 under
+ * the pin subkey. Stable per key, so it can be compared without being
+ * reversible. The prefix says it is an HMAC: hashing the text by hand gives
+ * a different value, and the prefix is why.
  */
 export function keyedPin(text: string, key: string): string {
   requireKey(key, "keyedPin");
   const mac = createHmac("sha256", subkeys(key).pin)
     .update(text, "utf8")
     .digest("hex");
-  return `sha256-${mac}`;
+  return `${KEYED_PIN_PREFIX}${mac}`;
 }

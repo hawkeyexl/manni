@@ -1,17 +1,15 @@
 /**
  * Every way the tool rewrites a page. Frontmatter appends go through meta's
- * `applyFrontmatter` (comments and key order preserved). A `moved` rewrite
- * splices the `src:` line textually at `lineFor("/citations/N/src")`, so
- * nothing else in the block is touched. Inline statements are inserted or
- * replaced by offset with the page's own EOL. Files are written with
- * `writeFileAtomic`.
+ * `applyFrontmatter` (comments and key order preserved). A repair splices one
+ * scalar textually at `lineFor("/citations/N/source/lines")` and the like, so
+ * nothing else in the block is touched. Markers are inserted by offset with
+ * the page's own EOL. Files are written with `writeFileAtomic`.
  */
 import { DocmetaError, locateFrontmatter, type MetadataExtractor } from "../../meta/index.js";
 import { extractorByName } from "../../meta/internal.js";
 import { CiteError } from "../errors.js";
-import type { Citation, InlineStatement } from "../types.js";
+import type { Citation, LineSpec } from "../types.js";
 import { splitLines } from "./hash.js";
-import { readPage } from "./page.js";
 import { detectEol, lineAt, offsetOfLine } from "./statements.js";
 
 function extractorFor(format: string): MetadataExtractor {
@@ -43,12 +41,14 @@ export function appendFrontmatterCitation(
   // frontmatter. Whether this *page* can take a block is `apply`'s call:
   // markdown creates one, asciidoc and rst refuse when none exists.
   if (!extractor.apply || !readsFencedFrontmatter(extractor, label)) {
-    throw new CiteError(`${label} has no frontmatter to write to. Use --inline.`);
+    throw new CiteError(
+      `${label} has no frontmatter to write to; keep its citations in a manifest instead.`,
+    );
   }
   const extracted = extractor.extract(content, label);
   if (locateFrontmatter(content)?.flavor === "toml") {
     throw new CiteError(
-      `${label} has TOML frontmatter; manni cannot add a citations table without re-emitting the whole block, which would drop its comments. Add the entry by hand, or use --inline.`,
+      `${label} has TOML frontmatter; manni cannot add a citations table without re-emitting the whole block, which would drop its comments. Add the entry by hand.`,
     );
   }
 
@@ -58,16 +58,37 @@ export function appendFrontmatterCitation(
   }
   // `isArray` narrows `unknown` to `any[]`; name the element type before it spreads.
   const existing: unknown[] = raw;
-  // Field order as given; an undefined optional field must not become `null`.
-  const entry = Object.fromEntries(
-    Object.entries(citation).filter(([, v]) => v !== undefined),
-  );
+  const entry = entryObject(citation);
   try {
     return extractor.apply(content, { citations: [...existing, entry] });
   } catch (e) {
     if (e instanceof DocmetaError) throw new CiteError(`${label}: ${e.message}`);
     throw e;
   }
+}
+
+/**
+ * The entry as a plain object, in the order a reader scans it, with every
+ * absent optional left out rather than written as `null`.
+ */
+export function entryObject(citation: Citation): Record<string, unknown> {
+  const source: Record<string, unknown> = { file: citation.source.file };
+  if (citation.source.lines !== undefined) source.lines = citation.source.lines;
+  source.integrity = citation.source.integrity;
+  if (citation.source["commit-sha"] !== undefined) {
+    source["commit-sha"] = citation.source["commit-sha"];
+  }
+  const entry: Record<string, unknown> = {};
+  if (citation.id !== undefined) entry.id = citation.id;
+  if (citation.claim !== undefined) {
+    const claim: Record<string, unknown> = {};
+    if (citation.claim.lines !== undefined) claim.lines = citation.claim.lines;
+    claim.integrity = citation.claim.integrity;
+    entry.claim = claim;
+  }
+  entry.source = source;
+  if (citation.quote !== undefined) entry.quote = citation.quote;
+  return entry;
 }
 
 /** Plain YAML scalars that would read back as something other than the string. */
@@ -124,18 +145,27 @@ function splitScalarLine(
   return { lead, scalar: rest.slice(0, end), trail: rest.slice(end) };
 }
 
-/** Replace the scalar on the `src:` (or `integrity:`/`commit:`) line of entry N. */
+/** One scalar of an entry a repair may rewrite: a file, an end's lines, its pin, or the commit. */
+export type EntryPath = readonly [
+  end: "claim" | "source",
+  field: "file" | "lines" | "integrity" | "commit-sha",
+];
+
+/** Replace the scalar on one line of entry N, e.g. `source.lines` after a move. */
 export function spliceEntryField(
   content: string,
   format: string,
   index: number,
-  field: "src" | "integrity" | "commit",
-  value: string,
+  path: EntryPath,
+  value: LineSpec,
 ): string {
+  const [which, field] = path;
   const refuse = (): CiteError =>
-    new CiteError(`Cannot rewrite citations[${index}].${field} in ${format} frontmatter; edit it by hand.`);
+    new CiteError(
+      `Cannot rewrite citations[${String(index)}].${which}.${field} in ${format} frontmatter; edit it by hand.`,
+    );
   const extractor = extractorFor(format);
-  const pointer = `/citations/${index}/${field}`;
+  const pointer = `/citations/${String(index)}/${which}/${field}`;
   // `lineFor` walks up to the nearest recorded ancestor when the exact
   // pointer is unknown (TOML records top-level keys only), so the line it
   // names is checked for the field before anything is touched.
@@ -149,8 +179,11 @@ export function spliceEntryField(
   if (!parts) throw refuse();
 
   const quote = parts.scalar.charAt(0);
+  // A number is written plain whatever the old value's quoting was, so that
+  // a range that became one line reads back as the integer it now is.
   const spelled =
-    quote === '"' ? doubleQuote(value)
+    typeof value === "number" ? String(value)
+    : quote === '"' ? doubleQuote(value)
     : quote === "'" ? singleQuote(value)
     : needsYamlQuotes(value) ? doubleQuote(value)
     : value;
@@ -159,11 +192,15 @@ export function spliceEntryField(
   // Read it back: a splice that lands anywhere but on that one value is a
   // refusal, not a damaged page.
   const check: unknown = extractor.extract(out, "page").data.citations;
-  const written: unknown = Array.isArray(check) ? check[index] : undefined;
-  const readBack =
-    written !== null && typeof written === "object" ? (written as Record<string, unknown>)[field] : undefined;
+  const entry: unknown = Array.isArray(check) ? check[index] : undefined;
+  const block = isRecord(entry) ? entry[which] : undefined;
+  const readBack = isRecord(block) ? block[field] : undefined;
   if (readBack !== value) throw refuse();
   return out;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 /** Insert a statement line before the line containing `offset`, with the page's EOL. */
@@ -174,85 +211,6 @@ export function insertStatementBefore(
 ): string {
   const start = offsetOfLine(content, lineAt(content, offset));
   return content.slice(0, start) + statement + detectEol(content) + content.slice(start);
-}
-
-/** Replace the statement text between `start` and `end`. */
-export function replaceStatement(
-  content: string,
-  start: number,
-  end: number,
-  statement: string,
-): string {
-  if (start < 0 || end < start || end > content.length) {
-    throw new CiteError(`Cannot replace a statement at ${start}-${end} in a page of ${content.length} characters.`);
-  }
-  return content.slice(0, start) + statement + content.slice(end);
-}
-
-export type InlineField = "src" | "integrity" | "commit";
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-/**
- * Replace one string field's value inside a statement's JSON text, leaving
- * the author's spacing and key order alone, as `spliceEntryField` leaves a
- * YAML line. `undefined` when the text carries no such field.
- */
-function spliceJsonField(text: string, field: InlineField, value: string): string | undefined {
-  const keyed = new RegExp(`("${field}"\\s*:\\s*)"(?:[^"\\\\]|\\\\.)*"`);
-  if (!keyed.test(text)) return undefined;
-  // A function, so a `$` in the value is a character and not a back-reference.
-  return text.replace(keyed, (_match, lead: string) => lead + JSON.stringify(value));
-}
-
-/** The inline entry statement on `line`, from a fresh read of the page. */
-function statementAt(content: string, format: string, label: string, line: number): InlineStatement {
-  const statement = readPage(label, content, { format }).statements.find((s) => s.line === line);
-  if (statement?.payload.kind !== "entry" || !isRecord(statement.payload.entry)) {
-    throw new CiteError(`Cannot find the statement at ${label}:${String(line)} to rewrite; edit it by hand.`);
-  }
-  return statement;
-}
-
-/**
- * Rewrite fields of the inline entry on `line`. The page is re-read for the
- * offsets, because an earlier splice may have moved them; the line has not,
- * since every rewrite keeps its line count. A field the statement does not
- * carry is left out (`commit` on an entry that never recorded one). The
- * result is read back before it is trusted, as the YAML splice is. `update`
- * and `reencryptCitations` both rewrite through here.
- */
-export function rewriteInlineFields(
-  content: string,
-  format: string,
-  label: string,
-  line: number,
-  fields: Partial<Record<InlineField, string>>,
-): string {
-  const statement = statementAt(content, format, label, line);
-  const original = content.slice(statement.start, statement.end);
-  const refuse = (): CiteError =>
-    new CiteError(`Cannot rewrite the statement at ${label}:${String(line)} (\`${original}\`); edit it by hand.`);
-  let text = original;
-  const wanted: [InlineField, string][] = [];
-  for (const field of ["src", "integrity", "commit"] as const) {
-    const value = fields[field];
-    if (value === undefined) continue;
-    const spliced = spliceJsonField(text, field, value);
-    if (spliced === undefined) {
-      if (field === "commit") continue;
-      throw refuse();
-    }
-    text = spliced;
-    wanted.push([field, value]);
-  }
-  const out = replaceStatement(content, statement.start, statement.end, text);
-  const check = statementAt(out, format, label, line).payload;
-  const entry = check.kind === "entry" && isRecord(check.entry) ? check.entry : undefined;
-  if (entry === undefined || wanted.some(([field, value]) => entry[field] !== value)) throw refuse();
-  return out;
 }
 
 type Edit = { op: " " | "-" | "+"; text: string };

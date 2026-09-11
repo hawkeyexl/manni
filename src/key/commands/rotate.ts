@@ -4,7 +4,7 @@
  *
  * Values are found by their ciphertext, never through schema marks: meta's
  * `reencryptMetadata` takes every string of the ciphertext shape in a page's
- * metadata, and cite's `reencryptCitations` every encrypted `src` with its
+ * metadata, and cite's `reencryptCitations` every encrypted `source.file` with its
  * keyed pin. A value already under the new key counts as done, so a run can
  * always be repeated.
  *
@@ -38,8 +38,8 @@ import {
   buildSourceIndex,
   gitClient,
   parseCiteConfig,
-  parseSrc,
   readPage,
+  sourceRange,
   reencryptCitations,
   type CiteConfig,
   type GitClient,
@@ -140,16 +140,10 @@ function encryptedCitations(
   format: string | undefined,
 ): { any: boolean; withCommit: boolean } {
   const read = readPage(file, content, format === undefined ? undefined : { format });
-  const encrypted = read.citations.filter(({ citation }) => {
-    try {
-      return parseSrc(citation.src).encrypted;
-    } catch {
-      return false;
-    }
-  });
+  const encrypted = read.citations.filter(({ citation }) => sourceRange(citation.source).encrypted);
   return {
     any: encrypted.length > 0,
-    withCommit: encrypted.some(({ citation }) => (citation.commit ?? read.commit) !== undefined),
+    withCommit: encrypted.some(({ citation }) => citation.source["commit-sha"] !== undefined),
   };
 }
 

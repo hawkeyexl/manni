@@ -1,24 +1,29 @@
 /**
- * Which rules fail a run, which only warn, and which are silent.
+ * Which rules fail a run, which only warn, and which are notices.
  *
- * Warnings never affect the exit code (docevals' rule; meta has no warnings).
- * `moved` is a warning because `cite update` fixes it mechanically, and a PR
- * job that failed on it would make the ratchet noisy; a repository that wants
- * it hard sets `severity: { moved: error }`.
+ * Warnings and notices never affect the exit code (docevals' rule).
+ * `source-moved` is a warning because `cite update` fixes it mechanically,
+ * and a PR job that failed on it would make the ratchet noisy. `claim-moved`
+ * is a notice: the text is found verbatim, so nothing drifted.
+ * `claim-changed` is a warning, since it fires on any edit to a pinned
+ * paragraph, a typo fix beside the cited sentence included. A repository that
+ * wants either hard sets `severity: { claim-changed: error }`.
  */
 import { CITE_RULES, type CiteRule, type CiteSeverity } from "../types.js";
 
 export const DEFAULT_SEVERITY: Readonly<Record<CiteRule, CiteSeverity>> = {
-  current: "off",
-  moved: "warning",
-  "claim-ambiguous": "warning",
-  "moved-ambiguous": "error",
-  changed: "error",
-  missing: "error",
-  "never-true": "error",
-  "claim-missing": "error",
-  "statement-orphan": "error",
-  "statement-invalid": "error",
+  "source-moved": "warning",
+  "source-moved-ambiguous": "error",
+  "source-changed": "error",
+  "source-never-true": "error",
+  "source-missing": "error",
+  "claim-moved": "notice",
+  "claim-moved-ambiguous": "warning",
+  "claim-changed": "warning",
+  "marker-orphan": "error",
+  "marker-invalid": "error",
+  "marker-repeated": "warning",
+  "anchor-invalid": "error",
   "entry-invalid": "error",
   "quote-drift": "error",
 };

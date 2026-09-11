@@ -3,10 +3,12 @@
  * AES-256-GCM, so equal plaintexts give equal tokens and joins work, with the
  * plaintext padded to a size class so a token's length says little.
  */
+import { createHash, createHmac, hkdfSync } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   ENCRYPTED_VALUE,
   ENCRYPTION_KEY_SHAPE,
+  KEYED_PIN_PREFIX,
   decryptValue,
   encryptValue,
   generateEncryptionKey,
@@ -135,12 +137,45 @@ describe("isEncryptedValue", () => {
 });
 
 describe("keyedPin", () => {
-  it("is sha256-prefixed lowercase hex, stable, and differs by key", () => {
+  it("is hmac-sha256-prefixed lowercase hex, stable, and differs by key", () => {
     const pin = keyedPin("src/limits.ts", KEY);
-    expect(pin).toMatch(/^sha256-[0-9a-f]{64}$/);
+    expect(pin).toMatch(/^hmac-sha256-[0-9a-f]{64}$/);
     expect(keyedPin("src/limits.ts", KEY)).toBe(pin);
     expect(keyedPin("src/limits.ts", OTHER)).not.toBe(pin);
     expect(keyedPin("src/other.ts", KEY)).not.toBe(pin);
+  });
+
+  it("carries the prefix it exports, and nothing else starts a pin", () => {
+    expect(KEYED_PIN_PREFIX).toBe("hmac-sha256-");
+    expect(keyedPin("src/limits.ts", KEY).startsWith(KEYED_PIN_PREFIX)).toBe(true);
+  });
+
+  it("is the same HMAC as before: only the prefix changed", () => {
+    // The digest, recomputed from the construction the module documents: the
+    // pin subkey is HKDF-SHA256 over the key with an empty salt, labelled
+    // `manni/v1/pin`.
+    const subkey = Buffer.from(
+      hkdfSync("sha256", Buffer.from(KEY, "utf8"), Buffer.alloc(0), "manni/v1/pin", 32),
+    );
+    const mac = createHmac("sha256", subkey).update("src/limits.ts", "utf8").digest("hex");
+    expect(keyedPin("src/limits.ts", KEY)).toBe(`hmac-sha256-${mac}`);
+    // The old spelling of the same digest, which a pin may never read as.
+    expect(keyedPin("src/limits.ts", KEY)).not.toBe(`sha256-${mac}`);
+  });
+
+  it("can never be mistaken for a plain hash of the text", () => {
+    const pin = keyedPin("src/limits.ts", KEY);
+    expect(pin.startsWith("sha256-")).toBe(false);
+    const plain = `sha256-${createHash("sha256").update("src/limits.ts", "utf8").digest("hex")}`;
+    expect(pin).not.toBe(plain);
+    expect(pin.slice(KEYED_PIN_PREFIX.length)).not.toBe(plain.slice("sha256-".length));
+  });
+
+  it("refuses a key that is not key-shaped, without echoing it", () => {
+    expect(() => keyedPin("src/limits.ts", "short")).toThrow(
+      "keyedPin: the key must be at least 32 hex or base64url characters.",
+    );
+    expect(() => keyedPin("src/limits.ts", "short")).not.toThrow(/short/);
   });
 });
 

@@ -1,69 +1,112 @@
 /**
- * Findings and their meta adapter. Messages are spelled from the page's own
- * `src`; the FieldError identity (schema, keyword, instancePath, subject) is
- * what the baseline fingerprint and the SARIF rule id are built from, so both
- * are pinned here to survive a move and a line shift.
+ * Findings and their meta adapter. An entry has two ends, so `findingsFor`
+ * reports on both: the claim end against the page, the source end against the
+ * files. Messages are spelled from the entry's own `source`; the FieldError
+ * identity (schema, keyword, instancePath, subject) is what the baseline
+ * fingerprint and the SARIF rule id are built from, so both are pinned here to
+ * survive a move, a line shift and an accepted claim.
  */
 import { describe, expect, it } from "vitest";
-import { findingsFor, messageFor, toValidationResult } from "../../src/cite/core/adapt.js";
+import { claimMessageFor, findingsFor, messageFor, toValidationResult } from "../../src/cite/core/adapt.js";
 import { DEFAULT_SEVERITY, resolveSeverity } from "../../src/cite/core/severity.js";
 import type {
   CitationFinding,
   CitationResult,
+  ClaimEnd,
   MissingReason,
   PageCitationReport,
+  SourceEnd,
 } from "../../src/cite/types.js";
 import { fingerprint, ruleIdFor } from "../../src/meta/internal.js";
 import type { FieldError } from "../../src/meta/index.js";
 
 const PIN = "sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f";
+const CLAIM_PIN = "sha256-921b21cccab21a4577f224ec4171aa56a3414bb3a5a4704ab8b6f314c46aa094";
 const COMMIT = "3f9c2a1e7b0d4c5a6f8e9d0b1a2c3d4e5f607182";
 /** Ciphertext-shaped: `~` and 84 base64url characters. Only its spelling matters here. */
 const TOKEN = "~" + "AQx7Vb2_Kp-9Qm".repeat(6);
 
-function result(over: Partial<CitationResult> & { status: CitationResult["status"] }): CitationResult {
+/** A source end, `lib/limits.ts:2` unless a test says otherwise. */
+function source(over: Partial<SourceEnd> & { status: SourceEnd["status"] }): SourceEnd {
+  return { src: "lib/limits.ts:2", resolvedPath: "lib/limits.ts", ...over };
+}
+
+/** A claim end pinned at body line 3, file line 9. */
+function claim(over: Partial<ClaimEnd> & { status: ClaimEnd["status"] }): ClaimEnd {
+  return { lines: "3", fileLines: "9", ...over };
+}
+
+function result(over: Partial<CitationResult> & { source: SourceEnd }): CitationResult {
   return {
-    citation: { id: "fetch-timeout", src: "lib/limits.ts:2", integrity: PIN },
-    origin: { kind: "frontmatter", index: 0, line: 4, anchorLine: 9 },
-    resolvedPath: "lib/limits.ts",
+    citation: {
+      id: "fetch-timeout",
+      source: { file: "lib/limits.ts", lines: 2, integrity: PIN },
+    },
+    origin: { kind: "frontmatter", file: "docs/limits.md", line: 4, index: 0 },
+    anchor: "claim",
+    anchorLine: 9,
+    claim: null,
     ...over,
   };
 }
 
+/**
+ * An entry with nothing anchoring it on the page: a bare pin, or a claim pin
+ * with neither lines nor a marker. Its findings sit on the entry's own line.
+ */
+function unanchored(over: Partial<CitationResult> & { source: SourceEnd }): CitationResult {
+  const out = result({ anchor: null, claim: null, ...over });
+  delete out.anchorLine;
+  return out;
+}
+
 describe("messageFor", () => {
-  it("spells each status per the plan's table", () => {
-    expect(messageFor(result({ status: "current" }))).toBe("current");
-    expect(messageFor(result({ status: "moved", newSrc: "lib/limits.ts:4" }))).toBe("moved -> lib/limits.ts:4");
+  it("spells each source status per the plan's table", () => {
+    expect(messageFor(source({ status: "current" }))).toBe("current");
+    expect(messageFor(source({ status: "moved", newSrc: "lib/limits.ts:4" }))).toBe(
+      "moved -> lib/limits.ts:4",
+    );
     expect(
-      messageFor(result({ status: "moved-ambiguous", candidates: ["lib/limits.ts:4", "lib/limits.ts:11"] })),
+      messageFor(
+        source({
+          status: "moved-ambiguous",
+          candidates: ["lib/limits.ts:4", "lib/limits.ts:11"],
+        }),
+      ),
     ).toBe("moved, 2 candidates (lib/limits.ts:4, lib/limits.ts:11); widen the range");
-    expect(messageFor(result({ status: "changed" }))).toBe("changed");
-    expect(messageFor(result({ status: "changed", commit: COMMIT }))).toBe("changed since 3f9c2a1");
+    expect(messageFor(source({ status: "changed" }))).toBe("changed");
+    expect(messageFor(source({ status: "changed", commitSha: COMMIT }))).toBe("changed since 3f9c2a1");
     expect(
-      messageFor(result({ status: "changed", commit: COMMIT, historyAvailable: true, commitsSince: ["a", "b"] })),
+      messageFor(
+        source({ status: "changed", commitSha: COMMIT, historyAvailable: true, commitsSince: ["a", "b"] }),
+      ),
     ).toBe("changed since 3f9c2a1, 2 commits");
     expect(
-      messageFor(result({ status: "changed", commit: COMMIT, historyAvailable: true, commitsSince: ["a"] })),
+      messageFor(
+        source({ status: "changed", commitSha: COMMIT, historyAvailable: true, commitsSince: ["a"] }),
+      ),
     ).toBe("changed since 3f9c2a1, 1 commit");
     expect(
-      messageFor(result({ status: "changed", commit: COMMIT, historyAvailable: true, commitsSince: [] })),
+      messageFor(
+        source({ status: "changed", commitSha: COMMIT, historyAvailable: true, commitsSince: [] }),
+      ),
     ).toBe("changed since 3f9c2a1, 0 commits");
-    expect(messageFor(result({ status: "changed", commit: COMMIT, historyAvailable: false }))).toBe(
+    expect(messageFor(source({ status: "changed", commitSha: COMMIT, historyAvailable: false }))).toBe(
       "changed (history unavailable: commit 3f9c2a1 not found; fetch-depth: 0)",
     );
-    expect(messageFor(result({ status: "never-true", commit: COMMIT }))).toBe(
+    expect(messageFor(source({ status: "never-true", commitSha: COMMIT }))).toBe(
       "never true: the pin does not match at 3f9c2a1",
     );
-    expect(messageFor(result({ status: "missing" }))).toBe("missing");
-    expect(messageFor(result({ status: "skipped" }))).toBe("skipped");
+    expect(messageFor(source({ status: "never-true" }))).toBe(
+      "never true: the pin does not match at the recorded commit",
+    );
+    expect(messageFor(source({ status: "missing" }))).toBe("missing");
+    expect(messageFor(source({ status: "skipped" }))).toBe("skipped");
   });
 
   it("says why an encrypted source is missing, and never which path", () => {
-    const missing = (reason: MissingReason, src = `${TOKEN}:2`): string => {
-      const r = result({ status: "missing", citation: { src, integrity: PIN }, missingReason: reason });
-      delete r.resolvedPath;
-      return messageFor(r);
-    };
+    const missing = (reason: MissingReason, src = `${TOKEN}:2`): string =>
+      messageFor({ src, status: "missing", missingReason: reason });
     expect(missing("no-key")).toBe("missing (no encryption key is available to decrypt it)");
     expect(missing("undecryptable")).toBe("missing (does not decrypt under the current key)");
     expect(missing("untracked")).toBe("missing (no tracked file matches; wrong --root?)");
@@ -73,66 +116,182 @@ describe("messageFor", () => {
   });
 
   it("never spells the resolved path", () => {
-    const moved = result({
+    const moved = source({
       status: "moved",
-      citation: { src: `${TOKEN}:2`, integrity: PIN },
+      src: `${TOKEN}:2`,
       newSrc: `${TOKEN}:4`,
       resolvedPath: "private/SECRET.ts",
       commitsSince: ["touch private/SECRET.ts"],
       diff: "--- private/SECRET.ts",
     });
     expect(messageFor(moved)).toBe(`moved -> ${TOKEN}:4`);
-    const changed = { ...moved, status: "changed" as const, commit: COMMIT, historyAvailable: true };
+    const changed: SourceEnd = { ...moved, status: "changed", commitSha: COMMIT, historyAvailable: true };
     expect(messageFor(changed)).not.toContain("SECRET");
+  });
+});
+
+describe("claimMessageFor", () => {
+  it("spells each claim status, in the page lines a reviewer reads", () => {
+    expect(
+      claimMessageFor(
+        result({
+          source: source({ status: "current" }),
+          claim: claim({ status: "moved", newLines: "5", newFileLines: "11" }),
+        }),
+      ),
+    ).toBe("fetch-timeout: the claim moved from line 9 to line 11.");
+    expect(
+      claimMessageFor(
+        result({
+          source: source({ status: "current" }),
+          claim: claim({
+            status: "moved-ambiguous",
+            candidates: ["5", "24"],
+            candidateFileLines: ["11", "30"],
+          }),
+        }),
+      ),
+    ).toBe("fetch-timeout: the claim at line 9 now appears at lines 11 and 30.");
+    expect(
+      claimMessageFor(
+        result({ source: source({ status: "current" }), claim: claim({ status: "changed" }) }),
+      ),
+    ).toBe("fetch-timeout: the claim at line 9 has changed since it was pinned.");
+    // A pin with neither lines nor a marker anchors nothing at all.
+    expect(
+      claimMessageFor(
+        result({ source: source({ status: "current" }), anchor: null, claim: { status: "changed" } }),
+      ),
+    ).toBe(
+      "fetch-timeout: the claim has no lines and no marker names the entry, so its pin anchors nothing.",
+    );
+    // `current` and `skipped` are not findings, and have nothing to say.
+    expect(
+      claimMessageFor(
+        result({ source: source({ status: "current" }), claim: claim({ status: "current" }) }),
+      ),
+    ).toBe("");
+    expect(
+      claimMessageFor(
+        result({ source: source({ status: "skipped" }), claim: claim({ status: "skipped" }) }),
+      ),
+    ).toBe("");
+    expect(claimMessageFor(result({ source: source({ status: "current" }) }))).toBe("");
+  });
+
+  it("drops the id prefix for an entry that has none, and reads a marker's line", () => {
+    const anonymous = result({
+      citation: { source: { file: "lib/limits.ts", lines: 2, integrity: PIN } },
+      source: source({ status: "current" }),
+      claim: claim({ status: "changed" }),
+    });
+    expect(claimMessageFor(anonymous)).toBe("the claim at line 9 has changed since it was pinned.");
+    // A marker-anchored claim carries no `lines`; the marker's line is where it sits.
+    const marked = result({
+      source: source({ status: "current" }),
+      anchor: "marker",
+      markerLine: 14,
+      anchorLine: 15,
+      claim: { fileLines: "15", status: "changed" },
+    });
+    expect(claimMessageFor(marked)).toBe(
+      "fetch-timeout: the claim at line 15 has changed since it was pinned.",
+    );
   });
 });
 
 describe("findingsFor", () => {
   const severity = resolveSeverity();
 
-  it("produces one finding per result whose rule is on, at the anchor line", () => {
-    const results = [
-      result({ status: "current" }),
-      result({ status: "moved", newSrc: "lib/limits.ts:4" }),
-      result({
-        status: "changed",
-        citation: { src: "lib/limits.ts:3", integrity: PIN },
-        origin: { kind: "inline", line: 12 },
-      }),
-      result({ status: "skipped", origin: { kind: "frontmatter", index: 2 } }),
-    ];
-    const findings = findingsFor(results, severity);
+  it("reports both ends of a citation, each at the line a reviewer reads", () => {
+    const findings = findingsFor(
+      [
+        result({
+          source: source({ status: "moved", newSrc: "lib/limits.ts:4" }),
+          claim: claim({ status: "changed" }),
+        }),
+      ],
+      severity,
+    );
     expect(findings).toEqual([
       {
-        rule: "moved",
-        ruleId: "manni:cite/moved",
+        rule: "claim-changed",
+        ruleId: "manni:cite/claim-changed",
         severity: "warning",
-        message: "moved -> lib/limits.ts:4",
+        message: "fetch-timeout: the claim at line 9 has changed since it was pinned.",
+        src: "lib/limits.ts:2",
+        index: 0,
         line: 9,
         id: "fetch-timeout",
-        src: "lib/limits.ts:2",
-        newSrc: "lib/limits.ts:4",
-        index: 0,
       },
       {
-        rule: "changed",
-        ruleId: "manni:cite/changed",
-        severity: "error",
-        message: "changed",
-        line: 12,
-        src: "lib/limits.ts:3",
+        rule: "source-moved",
+        ruleId: "manni:cite/source-moved",
+        severity: "warning",
+        message: "moved -> lib/limits.ts:4",
+        src: "lib/limits.ts:2",
+        index: 0,
+        line: 9,
+        id: "fetch-timeout",
+        newSrc: "lib/limits.ts:4",
       },
     ]);
   });
 
-  it("falls back to the entry line when nothing anchors it, and omits it when unknown", () => {
-    const [unanchored] = findingsFor(
-      [result({ status: "missing", origin: { kind: "frontmatter", index: 1, line: 5 } })],
+  it("says nothing about an end that holds, or one that was never looked at", () => {
+    const findings = findingsFor(
+      [
+        result({ source: source({ status: "current" }), claim: claim({ status: "current" }) }),
+        // `--no-check-sources`: the source end is skipped, the claim still judged.
+        result({
+          source: source({ status: "skipped" }),
+          claim: claim({ status: "changed" }),
+          origin: { kind: "frontmatter", file: "docs/limits.md", line: 12, index: 1 },
+        }),
+      ],
       severity,
     );
-    expect(unanchored?.line).toBe(5);
+    expect(findings.map((f) => [f.rule, f.index])).toEqual([["claim-changed", 1]]);
+  });
+
+  it("puts a finding with no page line on the entry's own line, in its own file", () => {
+    // A bare pin: no claim to anchor it, and the source drifted.
+    const [bare] = findingsFor([unanchored({ source: source({ status: "changed" }) })], severity);
+    expect(bare).toMatchObject({ rule: "source-changed", line: 4 });
+    expect(bare).not.toHaveProperty("file");
+    // The same entry, owned by a manifest: the finding names the manifest.
+    const [owned] = findingsFor(
+      [
+        unanchored({
+          source: source({ status: "changed" }),
+          origin: { kind: "manifest", file: "docs/citations.yaml", line: 7, index: 0 },
+        }),
+      ],
+      severity,
+    );
+    expect(owned).toMatchObject({ rule: "source-changed", line: 7, file: "docs/citations.yaml" });
+    // And a claim pin that anchors nothing sits there too.
+    const [nowhere] = findingsFor(
+      [
+        unanchored({
+          source: source({ status: "current" }),
+          origin: { kind: "manifest", file: "docs/citations.yaml", line: 7, index: 0 },
+          claim: { status: "changed" },
+        }),
+      ],
+      severity,
+    );
+    expect(nowhere).toMatchObject({ rule: "claim-changed", line: 7, file: "docs/citations.yaml" });
+  });
+
+  it("omits the line altogether when nothing knows one", () => {
     const [unknown] = findingsFor(
-      [result({ status: "missing", origin: { kind: "frontmatter", index: 1 } })],
+      [
+        unanchored({
+          source: source({ status: "missing" }),
+          origin: { kind: "frontmatter", file: "docs/limits.md", index: 1 },
+        }),
+      ],
       severity,
     );
     expect(unknown).toBeDefined();
@@ -140,13 +299,27 @@ describe("findingsFor", () => {
   });
 
   it("honours the severity table: off drops, and a rule can move either way", () => {
-    const results = [result({ status: "current" }), result({ status: "moved", newSrc: "x:1" }), result({ status: "changed" })];
-    const findings = findingsFor(results, resolveSeverity({ current: "warning", moved: "off", changed: "warning" }));
+    const results = [
+      result({ source: source({ status: "moved", newSrc: "x:1" }), claim: claim({ status: "moved", newFileLines: "11" }) }),
+      result({
+        source: source({ status: "changed" }),
+        claim: claim({ status: "changed" }),
+        origin: { kind: "frontmatter", file: "docs/limits.md", line: 12, index: 1 },
+      }),
+    ];
+    const findings = findingsFor(
+      results,
+      resolveSeverity({ "claim-moved": "off", "source-moved": "error", "claim-changed": "error" }),
+    );
     expect(findings.map((f) => [f.rule, f.severity])).toEqual([
-      ["current", "warning"],
-      ["changed", "warning"],
+      ["source-moved", "error"],
+      ["claim-changed", "error"],
+      ["source-changed", "error"],
     ]);
-    expect(DEFAULT_SEVERITY.current).toBe("off");
+    // The defaults a repository is expected to re-level are the claim's.
+    expect(DEFAULT_SEVERITY["claim-moved"]).toBe("notice");
+    expect(DEFAULT_SEVERITY["claim-changed"]).toBe("warning");
+    expect(DEFAULT_SEVERITY["source-moved"]).toBe("warning");
   });
 });
 
@@ -156,11 +329,14 @@ function report(findings: CitationFinding[], citations: CitationResult[] = []): 
 
 describe("toValidationResult", () => {
   const results = [
-    result({ status: "moved", newSrc: "lib/limits.ts:4" }),
+    result({ source: source({ status: "moved", newSrc: "lib/limits.ts:4" }) }),
     result({
-      status: "changed",
-      citation: { src: "lib/limits.ts:3", integrity: "sha256-" + "3".repeat(64) },
-      origin: { kind: "inline", line: 12, anchorLine: 13 },
+      citation: {
+        source: { file: "lib/limits.ts", lines: 3, integrity: "sha256-" + "3".repeat(64) },
+      },
+      source: source({ src: "lib/limits.ts:3", status: "changed" }),
+      origin: { kind: "frontmatter", file: "docs/limits.md", line: 12, index: 1 },
+      anchorLine: 13,
     }),
   ];
   const findings = findingsFor(results, resolveSeverity());
@@ -176,16 +352,16 @@ describe("toValidationResult", () => {
         schema: "manni:cite",
         instancePath: "/citations/0",
         message: "moved -> lib/limits.ts:4",
-        keyword: "moved",
+        keyword: "source-moved",
         subject: "fetch-timeout",
         line: 9,
         severity: "warning",
       },
       {
         schema: "manni:cite",
-        instancePath: "",
+        instancePath: "/citations/1",
         message: "changed",
-        keyword: "changed",
+        keyword: "source-changed",
         subject: "sha256-" + "3".repeat(64),
         line: 13,
         severity: "error",
@@ -193,9 +369,28 @@ describe("toValidationResult", () => {
     ]);
   });
 
-  it("is ok when every finding is a warning, and when there are none", () => {
+  it("omits the line for a finding that sits on another file", () => {
+    const owned = findingsFor(
+      [
+        unanchored({
+          source: source({ status: "changed" }),
+          origin: { kind: "manifest", file: "docs/citations.yaml", line: 7, index: 0 },
+        }),
+      ],
+      resolveSeverity(),
+    );
+    expect(owned[0]).toMatchObject({ line: 7, file: "docs/citations.yaml" });
+    // Line 7 of the manifest would read as line 7 of the page, so it is dropped.
+    const [error] = toValidationResult(report(owned)).errors;
+    expect(error).toMatchObject({ keyword: "source-changed", instancePath: "/citations/0" });
+    expect(error).not.toHaveProperty("line");
+  });
+
+  it("is ok when no finding is an error, and when there are none", () => {
     const warnings = findings.map((f) => ({ ...f, severity: "warning" as const }));
     expect(toValidationResult(report(warnings, results)).ok).toBe(true);
+    const notices = findings.map((f) => ({ ...f, severity: "notice" as const }));
+    expect(toValidationResult(report(notices, results)).ok).toBe(true);
     expect(toValidationResult(report([])).ok).toBe(true);
     expect(toValidationResult(report([])).errors).toEqual([]);
   });
@@ -205,21 +400,25 @@ describe("toValidationResult", () => {
       rule: "entry-invalid",
       ruleId: "manni:cite/entry-invalid",
       severity: "error",
-      message: "must have required property 'integrity'",
+      message: "/source must have required property 'integrity'",
       line: 4,
       index: 0,
       id: "fetch-timeout",
     };
     const anonymous: CitationFinding = {
-      rule: "statement-invalid",
-      ruleId: "manni:cite/statement-invalid",
+      rule: "marker-invalid",
+      ruleId: "manni:cite/marker-invalid",
       severity: "error",
-      message: "invalid statement: malformed json",
+      message: "invalid marker: malformed json",
       line: 20,
     };
     const [a, b] = toValidationResult(report([pageSide, anonymous])).errors;
-    expect(a).toMatchObject({ instancePath: "/citations/0", keyword: "entry-invalid", subject: "fetch-timeout" });
-    expect(b).toMatchObject({ instancePath: "", keyword: "statement-invalid", line: 20 });
+    expect(a).toMatchObject({
+      instancePath: "/citations/0",
+      keyword: "entry-invalid",
+      subject: "fetch-timeout",
+    });
+    expect(b).toMatchObject({ instancePath: "", keyword: "marker-invalid", line: 20 });
     expect(b).not.toHaveProperty("subject");
   });
 
@@ -227,46 +426,68 @@ describe("toValidationResult", () => {
     const [first] = toValidationResult(report(findings, results)).errors;
     expect(first).toBeDefined();
     if (!first) return;
-    expect(ruleIdFor(first)).toBe("manni:cite/moved");
-    expect(ruleIdFor(first, { cwd: "/repo/docs", base: "/repo" })).toBe("manni:cite/moved");
+    expect(ruleIdFor(first)).toBe("manni:cite/source-moved");
+    expect(ruleIdFor(first, { cwd: "/repo/docs", base: "/repo" })).toBe("manni:cite/source-moved");
   });
 });
 
 describe("fingerprint stability", () => {
-  const before = result({ status: "changed", origin: { kind: "frontmatter", index: 0, line: 4, anchorLine: 9 } });
-
+  /** The one error a result produces, fingerprinted the way the baseline does. */
   const printOf = (r: CitationResult): string => {
-    const [error] = toValidationResult(report(findingsFor([r], resolveSeverity()), [r])).errors;
-    if (!error) throw new Error("expected one error");
+    const errors = toValidationResult(report(findingsFor([r], resolveSeverity()), [r])).errors;
+    const [error] = errors;
+    if (errors.length !== 1 || !error) throw new Error("expected exactly one error");
     return fingerprint(error, { cwd: "/repo", base: "/repo" });
   };
 
-  it("is unchanged by a moved rewrite of src, and by a line shift", () => {
+  const before = result({ source: source({ status: "changed" }) });
+
+  it("is unchanged by a moved rewrite of the source, and by a line shift", () => {
     const rewritten = result({
-      status: "changed",
-      citation: { ...before.citation, src: "lib/limits.ts:4" },
-      origin: { kind: "frontmatter", index: 0, line: 4, anchorLine: 9 },
+      citation: {
+        id: "fetch-timeout",
+        source: { file: "lib/limits.ts", lines: 4, integrity: PIN },
+      },
+      source: source({ src: "lib/limits.ts:4", status: "changed" }),
     });
     const shifted = result({
-      status: "changed",
-      origin: { kind: "frontmatter", index: 0, line: 7, anchorLine: 30 },
+      source: source({ status: "changed" }),
+      origin: { kind: "frontmatter", file: "docs/limits.md", line: 7, index: 0 },
+      anchorLine: 30,
     });
     expect(printOf(rewritten)).toBe(printOf(before));
     expect(printOf(shifted)).toBe(printOf(before));
   });
 
-  it("falls back to integrity without an id, which a re-mint changes", () => {
-    const anonymous = result({
-      status: "changed",
-      citation: { src: "lib/limits.ts:2", integrity: PIN },
-      origin: { kind: "inline", line: 12 },
-    });
+  it("fingerprints an entry with no id by the source pin, never the claim pin", () => {
+    const anonymous = (claimPin: string, sourcePin: string): CitationResult =>
+      result({
+        citation: {
+          claim: { lines: 3, integrity: claimPin },
+          source: { file: "lib/limits.ts", lines: 2, integrity: sourcePin },
+        },
+        source: source({ status: "current" }),
+        claim: claim({ status: "changed" }),
+      });
+    const pinned = anonymous(CLAIM_PIN, PIN);
+    // Accepting a changed claim re-mints its pin; the baselined finding must
+    // not reopen because of it.
+    const accepted = anonymous("sha256-" + "1".repeat(64), PIN);
+    expect(printOf(accepted)).toBe(printOf(pinned));
+    // Re-minting the source pin is a different citation, and a new finding.
+    const resourced = anonymous(CLAIM_PIN, "sha256-" + "2".repeat(64));
+    expect(printOf(resourced)).not.toBe(printOf(pinned));
+  });
+
+  it("prefers the id over either pin when the entry has one", () => {
     const reminted = result({
-      status: "changed",
-      citation: { src: "lib/limits.ts:2", integrity: "sha256-" + "1".repeat(64) },
-      origin: { kind: "inline", line: 12 },
+      citation: {
+        id: "fetch-timeout",
+        source: { file: "lib/limits.ts", lines: 2, integrity: "sha256-" + "1".repeat(64) },
+      },
+      source: source({ status: "changed" }),
     });
-    expect(printOf(anonymous)).not.toBe(printOf(reminted));
+    expect(printOf(reminted)).toBe(printOf(before));
   });
 });
 
@@ -277,21 +498,31 @@ describe("leak sentinel", () => {
     ["moved", "moved-ambiguous", "changed", "missing", "never-true", "current"] as const
   ).map((status, i) =>
     result({
-      status,
-      citation: { src: `${TOKEN}:2`, integrity: PIN, commit: COMMIT },
-      origin: { kind: "frontmatter", index: i, line: 4 + i },
-      resolvedPath: SECRET,
-      newSrc: `${TOKEN}:4`,
-      candidates: [`${TOKEN}:4`, `${TOKEN}:11`],
-      historyAvailable: true,
-      commitsSince: [`touch ${SECRET} with ${KEY}`],
-      diff: `--- a/${SECRET}\n+++ b/${SECRET}\n`,
+      citation: {
+        claim: { lines: 3, integrity: CLAIM_PIN },
+        source: { file: TOKEN, lines: 2, integrity: PIN, "commit-sha": COMMIT },
+      },
+      origin: { kind: "frontmatter", file: "docs/limits.md", line: 4 + i, index: i },
+      anchorLine: 9 + i,
+      claim: claim({ status: "changed", text: ["The fetch timeout is 10 seconds."] }),
+      source: source({
+        status,
+        src: `${TOKEN}:2`,
+        commitSha: COMMIT,
+        resolvedPath: SECRET,
+        newSrc: `${TOKEN}:4`,
+        candidates: [`${TOKEN}:4`, `${TOKEN}:11`],
+        historyAvailable: true,
+        commitsSince: [`touch ${SECRET} with ${KEY}`],
+        diff: `--- a/${SECRET}\n+++ b/${SECRET}\n`,
+      }),
     }),
   );
 
   it("keeps the decrypted path and the key out of every finding and FieldError", () => {
-    const findings = findingsFor(results, resolveSeverity({ current: "warning" }));
-    expect(findings).toHaveLength(results.length);
+    const findings = findingsFor(results, resolveSeverity());
+    // Every result carries a changed claim; five of the six sources report too.
+    expect(findings).toHaveLength(results.length + 5);
     const errors: FieldError[] = toValidationResult(report(findings, results)).errors;
     const text = JSON.stringify({ findings, errors });
     expect(text).not.toContain(SECRET);

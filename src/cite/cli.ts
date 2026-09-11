@@ -19,7 +19,7 @@ import {
 } from "../shared/cli-options.js";
 import { shouldColor } from "../shared/color.js";
 import { terminalConfirm } from "../shared/prompt.js";
-import { fail } from "../shared/run.js";
+import { STDIN_LINES_MARKER, fail } from "../shared/run.js";
 import { notice } from "../shared/warn.js";
 import {
   COMMON_FORMAT_LIST,
@@ -33,10 +33,12 @@ import { runAdd } from "./commands/add.js";
 import { runCheck } from "./commands/check.js";
 import { runUpdate } from "./commands/update.js";
 import { CiteError } from "./errors.js";
+import { spellSource } from "./core/range.js";
+import { shortCommit, shortPin, shortSrc } from "./core/spell.js";
 import { renderCheckGithub } from "./reporters/github.js";
 import { renderCheckJson, renderUpdateJson } from "./reporters/json.js";
 import { renderCheckPretty, renderUpdatePretty } from "./reporters/pretty.js";
-import type { AddResult } from "./types.js";
+import type { AddResult, PageLines } from "./types.js";
 
 /** JUnit `classname` for the citation tool's findings. */
 const JUNIT_CLASSNAME = "manni.cite";
@@ -126,14 +128,13 @@ interface CheckCliOptions extends InputCliOptions {
 }
 
 interface AddCliOptions {
-  claim?: string;
   id?: string;
+  marker?: boolean;
   quote?: boolean;
-  inline?: boolean;
   /** `--encrypt`. */
   encrypt?: boolean;
-  /** `--no-commit`. */
-  commit: boolean;
+  /** `--no-commit-sha`. */
+  commitSha: boolean;
   dryRun?: boolean;
   as?: string;
   root?: string;
@@ -150,36 +151,62 @@ interface UpdateCliOptions extends InputCliOptions {
   format: string;
 }
 
-/** `sha256-78af1d33…`: the first eight hex digits of a pin, for a human. */
-function shortIntegrity(integrity: string): string {
-  const m = /^(sha256-)([0-9a-f]{8})/i.exec(integrity);
-  if (m?.[1] !== undefined && m[2] !== undefined) return `${m[1]}${m[2]}…`;
-  return integrity;
+/**
+ * Split `docs/limits.md:9` or `docs/limits.md:14-18` into the page and the
+ * claim's lines. Only a trailing `:L` or `:L1-L2` is read as lines, so a path
+ * that carries a colon keeps it, and `-:9` still reads the page from stdin.
+ */
+export function splitPageArgument(arg: string): { page: string; lines?: PageLines } {
+  // `-:9` reaches commander as an operand only after the bin rewrites its
+  // leading `-`; both spellings name stdin and the same lines.
+  const text = arg.startsWith(STDIN_LINES_MARKER)
+    ? `${STDIN_TOKEN}${arg.slice(STDIN_LINES_MARKER.length)}`
+    : arg;
+  const m = /:([1-9][0-9]*)(?:-([1-9][0-9]*))?$/.exec(text);
+  const head = m === null ? text : text.slice(0, m.index);
+  if (m === null || head === "") return { page: arg };
+  const start = Number(m[1]);
+  const end = m[2] === undefined ? start : Number(m[2]);
+  if (end < start) {
+    throw new CiteError(`Invalid range "${arg}": end line ${end} is before start line ${start}.`);
+  }
+  return { page: head, lines: { start, end } };
+}
+
+/** `line 9`, or `lines 14-18` for a range. */
+function spellAt(lines: PageLines, noun = "line"): string {
+  return lines.start === lines.end
+    ? `${noun} ${String(lines.start)}`
+    : `${noun}s ${String(lines.start)}-${String(lines.end)}`;
 }
 
 /**
  * What `add` says on success. One sentence composed from the result: what was
- * added, where it went, and which lines it anchors to. The `src` is spelled
- * as it was written to the page (the ciphertext when encrypted).
+ * added, where it went, and what each end is pinned to. Lines are the page's
+ * own, after the write. The source is spelled as it was written to the page,
+ * abbreviated when it is a ciphertext.
  */
 export function addMessage(result: AddResult): string {
-  const { citation } = result;
-  const name = citation.id ?? "citation";
-  const commit = citation.commit === undefined ? "no commit" : citation.commit.slice(0, 7);
-  const pin = `(${citation.src}, ${shortIntegrity(citation.integrity)}, ${commit})`;
-  const anchor =
-    citation.claim !== undefined ? "claim" : citation.quote === true ? "fenced block" : undefined;
-  const at = result.anchorLine === undefined ? undefined : `line ${String(result.anchorLine)}`;
+  const { citation, claimLines } = result;
+  const claim = citation.claim;
+  const name = citation.id ?? (claim === undefined ? "a bare pin" : "an entry");
+  const src = shortSrc(spellSource(citation.source));
+  const commit = citation.source["commit-sha"];
+  const pin = `${src}, ${shortPin(citation.source.integrity)}, ${commit === undefined ? "no commit" : shortCommit(commit)}`;
+  const head = `${result.file}: added ${name} to frontmatter`;
 
-  if (result.placed === "inline") {
-    const where = anchor !== undefined && at !== undefined ? ` above the ${anchor} at ${at}` : "";
-    return `${result.file}: added inline ${name} ${pin}${where}`;
+  if (result.markerLine !== undefined) {
+    const at =
+      claimLines === undefined ? "" : `, claim pinned at line ${String(claimLines.start)}`;
+    return `${head}; marker at line ${String(result.markerLine)}${at}`;
   }
-  const tail: string[] = [];
-  if (result.referenceLine !== undefined) tail.push(`reference at line ${String(result.referenceLine)}`);
-  if (anchor !== undefined && at !== undefined) tail.push(`${anchor} at ${at}`);
-  const where = tail.length > 0 ? `; ${tail.join(", ")}` : "";
-  return `${result.file}: added ${name} ${pin} to frontmatter${where}`;
+  if (claim === undefined || claimLines === undefined) {
+    return `${head} (source ${pin})`;
+  }
+  if (citation.quote === true) {
+    return `${head} (claim ${spellAt(claimLines, "line")}, a block that reproduces ${src})`;
+  }
+  return `${head} (claim at ${spellAt(claimLines)}, ${shortPin(claim.integrity)}; source ${pin})`;
 }
 
 export function buildProgram(): Command {
@@ -336,23 +363,25 @@ export function buildProgram(): Command {
   program
     .command("add")
     .description("Mint a citation for a source range and write it to a page")
-    .argument("<page>", "the page to cite from (use - for stdin, with --as)")
+    .argument(
+      "<page>",
+      "the page to cite from, with the claim's lines: page:L or page:L1-L2 (use - for stdin, with --as)",
+    )
     .argument(
       "<src>",
       "path, path:L or path:L1-L2 relative to --root, or an encrypted ~source with the same line forms",
     )
-    .option("--claim <text>", "the sentence the citation supports; must occur once in the body")
-    .option("--id <id>", "kebab-case id; resolves a repeated claim, names a reference statement")
-    .option("--quote", "the page reproduces the range in a fenced block; anchor to that block")
-    .option("--inline", "write an inline statement above the anchor instead of a frontmatter entry")
+    .option("--id <id>", "kebab-case id, unique on the page; required with --marker")
+    .option("--marker", "write a cite <id> marker above the page lines and pin the text it anchors")
+    .option("--quote", "the page lines are a fenced block that reproduces the source")
     .option(
       "--encrypt",
-      "write src encrypted, with a keyed pin; with no key, offer to create one (an available key encrypts without the flag)",
+      "write source.file encrypted, with an hmac-sha256- pin; with no key, offer to create one (an available key encrypts without the flag)",
     )
-    .option("--no-commit", "do not record HEAD")
+    .option("--no-commit-sha", "do not record HEAD")
     .option("--dry-run", "print the diff; write nothing")
     .option("--as <format>", "force the page format")
-    .option("--root <dir>", "directory src: paths resolve from (as check)")
+    .option("--root <dir>", "directory source paths resolve from (as check)")
     .option("-c, --config <path>", "path to a manni config file")
     .option("--no-config", "ignore any discovered config file")
     .addHelpText(
@@ -360,14 +389,16 @@ export function buildProgram(): Command {
       [
         "",
         "Examples:",
-        '  manni cite add docs/limits.md lib/limits.ts:2 --claim "The fetch timeout is 10 seconds." --id fetch-timeout',
-        "  manni cite add docs/limits.md lib/limits.ts:1-3 --quote --inline",
+        "  manni cite add docs/limits.md:9 lib/limits.ts:2 --id fetch-timeout",
+        "  manni cite add docs/limits.md:30 lib/limits.ts:8-12 --id timeouts --marker",
+        "  manni cite add docs/limits.md:14-18 lib/limits.ts:1-3 --quote",
         "  manni cite add docs/limits.md lib/limits.ts --dry-run",
-        '  cat page.md | manni cite add - lib/limits.ts:2 --as markdown --claim "…" > out.md',
+        "  cat page.md | manni cite add -:9 lib/limits.ts:2 --as markdown > out.md",
       ].join("\n"),
     )
-    .action(async (page: string, src: string, options: AddCliOptions) => {
+    .action(async (pageArgument: string, src: string, options: AddCliOptions) => {
       try {
+        const { page, lines } = splitPageArgument(pageArgument);
         const usingStdin = page === STDIN_TOKEN;
         const stdinContent = usingStdin ? await readStdin() : undefined;
         const dryRun = Boolean(options.dryRun);
@@ -375,15 +406,15 @@ export function buildProgram(): Command {
 
         const result = await runAdd({
           page,
+          pageLines: lines,
           src,
-          claim: options.claim,
           id: options.id,
+          marker: options.marker ? true : undefined,
           quote: options.quote ? true : undefined,
-          inline: options.inline ? true : undefined,
           // `undefined` when absent, so the key decides: an available one
           // encrypts without the flag.
           encrypt: options.encrypt ? true : undefined,
-          commit: explicitFalse(options.commit),
+          commitSha: explicitFalse(options.commitSha),
           dryRun,
           as: options.as,
           ...configOption(options.config),

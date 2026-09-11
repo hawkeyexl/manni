@@ -18,7 +18,7 @@ cite:
   baseline: .cite-baseline.json
   checkSources: false
   severity:
-    moved: error
-    changed: warning
-    claim-ambiguous: notice
-    current: off
+    source-moved: error
+    source-changed: warning
+    claim-changed: notice
+    marker-repeated: off

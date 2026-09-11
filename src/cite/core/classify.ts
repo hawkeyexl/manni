@@ -23,9 +23,9 @@
  * never held at its commit but whose bytes sit elsewhere in the file is
  * `moved`, not `never-true`; the search sees the file as it is.
  */
-import type { CitationResult, GitClient, PageCitation, SourceIndex, SourceRange } from "../types.js";
+import type { GitClient, PageCitation, SourceEnd, SourceIndex, SourceRange } from "../types.js";
 import { hashLines, sliceLines, splitLines } from "./hash.js";
-import { formatSrc, parseSrc } from "./range.js";
+import { formatSrc, lineSpec, sourceRange, spellSource } from "./range.js";
 import { readSource } from "./sources.js";
 
 export const MOVE_WINDOW_LINES = 2000;
@@ -39,8 +39,6 @@ export interface ClassifyOptions {
   git: GitClient;
   /** The encryption key: decrypts an encrypted source and keys its pin. */
   key?: string;
-  /** Page-level `citation-commit`, the default for entries without `commit`. */
-  pageCommit?: string;
   /** Hashing budget for the blind move search, in bytes. Default `MOVE_BUDGET_BYTES`. */
   budget?: number;
 }
@@ -170,12 +168,12 @@ export async function historyOf(
 export async function classifyCitation(
   entry: PageCitation,
   opts: ClassifyOptions,
-): Promise<CitationResult> {
-  const { citation, origin } = entry;
-  const range = parseSrc(citation.src);
-  const commit = citation.commit ?? opts.pageCommit;
-  const result: CitationResult = { citation, origin, status: "missing" };
-  if (commit !== undefined) result.commit = commit;
+): Promise<SourceEnd> {
+  const { citation } = entry;
+  const range = sourceRange(citation.source);
+  const commit = citation.source["commit-sha"];
+  const result: SourceEnd = { src: spellSource(citation.source), status: "missing" };
+  if (commit !== undefined) result.commitSha = commit;
 
   const source = await readSource(opts.root, opts.index, range, opts.key);
   if (source.kind === "missing") {
@@ -186,7 +184,7 @@ export async function classifyCitation(
 
   // Only an encrypted source carries a keyed pin, and reading one needed the key.
   const key = range.encrypted ? opts.key : undefined;
-  const pin = citation.integrity;
+  const pin = citation.source.integrity;
   const lines = splitLines(source.text);
 
   let here: string | undefined;
@@ -222,6 +220,7 @@ export async function classifyCitation(
     if (found.starts.length === 1 && only !== undefined) {
       result.status = "moved";
       result.newSrc = spell(only);
+      result.newLines = String(lineSpec({ start: only, end: only + (end - start) }));
       return result;
     }
     if (found.starts.length > 1) {

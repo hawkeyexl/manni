@@ -66,18 +66,32 @@ const UNFINISHED =
 const ownerPage = (title: string, value: string, key = OLD): string =>
   `---\ntitle: ${title}\nowner: ${encryptValue(value, key, "meta")}\n---\n\n# ${title}\n`;
 
-function citingPage(key: string): string {
+/** The claim, and its plain pin: body line 2 of a citing page. */
+const CLAIM = "The fetch timeout is 10 seconds.";
+const CLAIM_PIN = hashRange(`${CLAIM}\n`, { start: 1, end: 1 });
+
+/**
+ * A page citing `src/limits.ts:2` with the path encrypted under `key`. Both
+ * ends are spelled the way the schema does: a `claim` pinned plain, and a
+ * `source` whose pin is keyed exactly because its `file` is a ciphertext.
+ */
+function citingPage(key: string, commitSha?: string): string {
   return [
     "---",
     "title: Limits",
     "citations:",
     "  - id: fetch-timeout",
-    `    src: ${encryptSourcePath("src/limits.ts", key)}:2`,
-    `    integrity: ${hashRange(SOURCE, LINE_2, key)}`,
-    "    claim: The fetch timeout is 10 seconds.",
+    "    claim:",
+    "      lines: 2",
+    `      integrity: ${CLAIM_PIN}`,
+    "    source:",
+    `      file: ${encryptSourcePath("src/limits.ts", key)}`,
+    "      lines: 2",
+    `      integrity: ${hashRange(SOURCE, LINE_2, key)}`,
+    ...(commitSha === undefined ? [] : [`      commit-sha: ${commitSha}`]),
     "---",
     "",
-    "The fetch timeout is 10 seconds.",
+    CLAIM,
     "",
   ].join("\n");
 }
@@ -137,10 +151,17 @@ function ownerOf(rel: string): string {
   return m[1];
 }
 
-/** The citation's `src` token on the limits page, without its line suffix. */
+/** The citation's encrypted `source.file` on the limits page. */
 function srcOf(): string {
-  const m = /src: (~[A-Za-z0-9_-]+):2$/m.exec(read("docs/limits.md"));
-  if (m?.[1] === undefined) throw new Error("no encrypted src");
+  const m = /^ {6}file: (~[A-Za-z0-9_-]+)$/m.exec(read("docs/limits.md"));
+  if (m?.[1] === undefined) throw new Error("no encrypted source.file");
+  return m[1];
+}
+
+/** The citation's `source.integrity` on the limits page: the keyed pin. */
+function pinOf(): string {
+  const m = /^ {6}integrity: (hmac-sha256-[0-9a-f]{64})$/m.exec(read("docs/limits.md"));
+  if (m?.[1] === undefined) throw new Error("no keyed pin");
   return m[1];
 }
 
@@ -220,16 +241,53 @@ describe("runKeyRotate: a whole run", () => {
     const stale = await runValidate({ inputs, cliSchemas, cwd: tree(), env: { MANNI_ENCRYPTION_KEY: OLD } });
     expect(stale.summary.failed).toBe(2);
 
+    // Both ends of the rotated citation read clean: the source under the new
+    // key, and the claim, which a rotation never touches.
     const checked = await runCheck({ inputs: ["docs/limits.md"], cwd: tree(), env: {}, gitClient: noGit() });
-    expect(checked.pages[0]?.citations.map((c) => c.status)).toEqual(["current"]);
+    expect(checked.pages[0]?.citations.map((c) => c.source.status)).toEqual(["current"]);
+    expect(checked.pages[0]?.citations.map((c) => c.claim?.status)).toEqual(["current"]);
     expect(checked.summary.failed).toBe(0);
+    expect(read("docs/limits.md")).toContain(`      integrity: ${CLAIM_PIN}\n`);
+  });
+
+  it("moves both halves of a source end: the file and its keyed pin", async () => {
+    family();
+    const before = { file: srcOf(), pin: pinOf() };
+    await rotate({ to: NEW });
+
+    expect(srcOf()).toBe(encryptSourcePath("src/limits.ts", NEW));
+    expect(pinOf()).toBe(hashRange(SOURCE, LINE_2, NEW));
+    expect(read("docs/limits.md")).not.toContain(before.file);
+    expect(read("docs/limits.md")).not.toContain(before.pin);
+  });
+
+  it("re-keys a pin left under the old key when the file is already under the new one", async () => {
+    // The half rotation meta's walker can leave: the ciphertext moved, the
+    // keyed pin did not. A rerun finishes it rather than calling it done.
+    const half = citingPage(OLD).replace(
+      `      file: ${encryptSourcePath("src/limits.ts", OLD)}\n`,
+      `      file: ${encryptSourcePath("src/limits.ts", NEW)}\n`,
+    );
+    family({ extra: { "docs/limits.md": half } });
+    expect(pinOf()).toBe(hashRange(SOURCE, LINE_2, OLD));
+
+    const result = await rotate({ to: NEW });
+
+    expect(result).toMatchObject({ outcome: "written", skipped: 0 });
+    expect(srcOf()).toBe(encryptSourcePath("src/limits.ts", NEW));
+    expect(pinOf()).toBe(hashRange(SOURCE, LINE_2, NEW));
+    // The source did not move, so the row spells the same value both ways.
+    const row = result.pages.find((p) => p.file === "docs/limits.md")?.rewritten[0];
+    expect(row).toMatchObject({
+      kind: "citation",
+      id: "fetch-timeout",
+      from: `${srcOf()}:2`,
+      to: `${srcOf()}:2`,
+    });
   });
 
   it("says once that git is not there when a citation it re-keys carries a commit", async () => {
-    const pinned = citingPage(OLD).replace(
-      "    claim: The fetch timeout is 10 seconds.",
-      "    commit: 3f9c2a1\n    claim: The fetch timeout is 10 seconds.",
-    );
+    const pinned = citingPage(OLD, "3f9c2a1");
     family({ extra: { "docs/pinned.md": pinned, "blog/pinned.md": pinned } });
     const notices: string[] = [];
     const result = await rotate({ onNotice: (m) => notices.push(m) });
@@ -385,6 +443,27 @@ describe("runKeyRotate: every value, or none", () => {
     const lines = pretty(result);
     expect(lines).toContain("docs/stray.md: /owner  skipped: does not decrypt under the current key");
     expect(lines.at(-1)).toBe("Key not written: 1 value could not be re-encrypted. Fix it and rotate again.");
+  });
+
+  it("a citation that decrypts under neither key is skipped too, named by its id", async () => {
+    family({ extra: { "docs/stray.md": citingPage(STRANGER) } });
+    const before = snapshot(["docs/stray.md"]);
+    const result = await rotate();
+
+    expect(result).toMatchObject({ outcome: "skipped", keyWritten: false, skipped: 1, exitCode: 1 });
+    expect(snapshot(["docs/stray.md"])).toEqual(before);
+    expect(result.pages.find((p) => p.file === "docs/stray.md")?.skipped).toEqual([
+      {
+        kind: "citation",
+        id: "fetch-timeout",
+        index: 0,
+        line: 4,
+        message: "does not decrypt under the current key",
+      },
+    ]);
+    expect(pretty(result)).toContain(
+      "docs/stray.md: fetch-timeout  skipped: does not decrypt under the current key",
+    );
   });
 
   it("says how many, in the plural", async () => {

@@ -1,11 +1,24 @@
+/**
+ * The hashing rule. The text a pin covers is unchanged from proposal 0044's
+ * ladder; what changed is how a keyed pin spells itself. A plain pin is
+ * `sha256-`; an encrypted source's pin is `hmac-sha256-` and the same sixty-
+ * four digits the ladder computes, so the prefix says which rule produced it.
+ */
 import { describe, expect, it } from "vitest";
 import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { hashLines, hashRange, normalizeText, sliceLines, splitLines } from "../../src/cite/core/hash.js";
+import {
+  hashLines,
+  hashRange,
+  isKeyedPin,
+  normalizeText,
+  sliceLines,
+  splitLines,
+} from "../../src/cite/core/hash.js";
 import { CiteError } from "../../src/cite/errors.js";
-import { keyedPin } from "../../src/shared/encryption.js";
+import { KEYED_PIN_PREFIX, keyedPin } from "../../src/shared/encryption.js";
 
 const require = createRequire(import.meta.url);
 const ladder = require("../../docs/proposals/0044/ladders/drift-examples.cjs") as {
@@ -14,6 +27,7 @@ const ladder = require("../../docs/proposals/0044/ladders/drift-examples.cjs") a
   // A property, not a method: the ladder's `mint` is a plain function that
   // never touches `this`, so destructuring it below is sound.
   mint: (text: string, l1?: number, l2?: number, key?: string) => string | undefined;
+  pin: (text: string, key: string) => string;
   KEY: string;
 };
 const { SOURCE, variants, mint, KEY } = ladder;
@@ -91,16 +105,44 @@ describe("sliceLines", () => {
 });
 
 describe("hashLines", () => {
-  it("spells the pin sha256-<64 hex>", () => {
+  it("spells a plain pin sha256-<64 hex>", () => {
     expect(hashLines("")).toMatch(/^sha256-[0-9a-f]{64}$/);
     expect(hashLines("")).toBe("sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
   });
 
-  it("keys the pin with the encryption key: the HMAC keyedPin spells", () => {
+  it("spells a keyed pin hmac-sha256-<64 hex>, the HMAC keyedPin gives", () => {
+    // The prefix is the whole point: a reader can tell which rule made the
+    // pin, and hashing the text by hand will not reproduce this one.
     expect(hashLines("x", KEY)).toBe(keyedPin("x", KEY));
-    expect(hashLines("x", KEY)).toMatch(/^sha256-[0-9a-f]{64}$/);
+    expect(hashLines("x", KEY)).toMatch(/^hmac-sha256-[0-9a-f]{64}$/);
+    expect(hashLines("x", KEY).startsWith(KEYED_PIN_PREFIX)).toBe(true);
     expect(hashLines("x", KEY)).not.toBe(hashLines("x"));
     expect(hashLines("x", KEY)).not.toBe(hashLines("x", "another-key-0123456789abcdef012345"));
+  });
+
+  it("is the ladder's keyed pin, prefix and digits alike", () => {
+    // The proposal's own implementation, so the prefix change is pinned to
+    // the record rather than to this module's opinion of it.
+    for (const text of ["", "x", "export const FETCH_TIMEOUT_MS = 10_000;"]) {
+      expect(hashLines(text, KEY)).toBe(ladder.pin(text, KEY));
+    }
+    expect(hashLines("x", KEY).slice(KEYED_PIN_PREFIX.length)).toMatch(/^[0-9a-f]{64}$/);
+  });
+});
+
+describe("isKeyedPin", () => {
+  it("is true for hmac-sha256- and false for sha256-", () => {
+    expect(isKeyedPin(hashLines("x", KEY))).toBe(true);
+    expect(isKeyedPin(hashLines("x"))).toBe(false);
+    expect(isKeyedPin(PIN_L2)).toBe(false);
+    expect(isKeyedPin(`hmac-${PIN_L2}`)).toBe(true);
+  });
+
+  it("is false for anything that is not a pin", () => {
+    expect(isKeyedPin("")).toBe(false);
+    expect(isKeyedPin("md5-deadbeef")).toBe(false);
+    // The prefix is exact: a pin is keyed only when it says so up front.
+    expect(isKeyedPin("sha256-hmac-sha256-00")).toBe(false);
   });
 });
 
@@ -128,7 +170,9 @@ describe("hashRange", () => {
   it("is keyed only when a key is passed", () => {
     expect(hashRange(SOURCE, { start: 2 }, KEY)).not.toBe(PIN_L2);
     expect(hashRange(SOURCE, { start: 2 }, KEY)).toBe(keyedPin(SOURCE.split("\n")[1] ?? "", KEY));
+    expect(isKeyedPin(hashRange(SOURCE, { start: 2 }, KEY))).toBe(true);
     expect(hashRange(SOURCE, { start: 2 }, undefined)).toBe(PIN_L2);
+    expect(isKeyedPin(hashRange(SOURCE, { start: 2 }, undefined))).toBe(false);
   });
 
   it("agrees with the ladder's mint on every variant, plain and keyed", () => {

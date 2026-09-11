@@ -1,18 +1,25 @@
 /**
- * Pretty output for `check` and `update`. Marks: ✓ current, ✗ error,
- * ↕ warning, ℹ notice, · skipped; a file line is ✓, ✗ (an error), ⚠ (a
- * warning, no error) or ℹ (notices only). Diffs and
- * commit subjects print only under `showDiff`; a decrypted path only under
+ * Pretty output for `check` and `update`.
+ *
+ * A citation is one row: its name, its claim end, its source end, and, when a
+ * manifest owns the entry, where that is. Both ends read in file lines, the
+ * only lines a person sees. Marks: ✓ current, ✗ error, ↕ warning, ℹ notice,
+ * · skipped or baselined; a file line is ✓, ✗ (an error), ⚠ (a warning, no
+ * error) or ℹ (notices only). Diffs, commit subjects and a changed claim's
+ * current lines print only under `showDiff`; a decrypted path only under
  * `reveal`. Colour via `shouldColor`; never under `--no-color`/`NO_COLOR`.
  */
 import type { ValidationResult } from "../../meta/index.js";
 import { palette } from "../../shared/color.js";
+import { messageFor } from "../core/adapt.js";
 import { parseSrc } from "../core/range.js";
+import { shortCommit, shortPin, shortSrc } from "../core/spell.js";
 import type {
   CheckRun,
   CitationFinding,
   CitationResult,
   PageCitationReport,
+  UpdateRewrite,
   UpdateRun,
 } from "../types.js";
 
@@ -66,12 +73,14 @@ export function splitBaselined(
   for (const finding of page.findings) {
     const instancePath =
       finding.index === undefined ? "" : `/citations/${String(finding.index)}`;
+    // A finding that sits on a manifest carries no line into the result.
+    const line = finding.file === undefined ? finding.line : undefined;
     const at = pool.findIndex(
       (e) =>
         e.keyword === finding.rule &&
         e.instancePath === instancePath &&
         e.message === finding.message &&
-        (e.line ?? null) === (finding.line ?? null),
+        (e.line ?? null) === (line ?? null),
     );
     if (at === -1) {
       out.baselined.push(finding);
@@ -92,28 +101,24 @@ export function resultFor(run: CheckRun, index: number): ValidationResult | unde
   return run.results.find((r) => r.file === page.file);
 }
 
-/** Whether a finding is about this citation: by index for frontmatter, by line for inline. */
+/** Whether a finding is about this citation. Every entry has an index, in either channel. */
 function belongsTo(finding: CitationFinding, result: CitationResult): boolean {
-  const { origin } = result;
-  if (origin.kind === "frontmatter") return finding.index === origin.index;
-  if (finding.index !== undefined || finding.line === undefined) return false;
-  return finding.line === origin.anchorLine || finding.line === origin.line;
+  return finding.index !== undefined && finding.index === result.origin.index;
 }
 
-/** `<id>`, else `#N` for a frontmatter entry, else `inline`. */
+/** `<id>`, else nothing: the ends say which entry it is. */
 function labelOf(result: CitationResult): string {
-  if (result.citation.id !== undefined) return result.citation.id;
-  return result.origin.kind === "frontmatter" ? `#${String(result.origin.index)}` : "inline";
+  return result.citation.id ?? "";
 }
 
-/** A page-side finding's label: its id, its index, or the source it names. */
+/** A page-level finding's label: its id, its index, or the source it names. */
 function labelOfFinding(finding: CitationFinding): string {
   if (finding.id !== undefined) return finding.id;
   if (finding.index !== undefined) return `#${String(finding.index)}`;
   return finding.src ?? "page";
 }
 
-/** Whether the page spelled this source encrypted. */
+/** Whether the entry spelled this source encrypted. */
 function citesEncrypted(src: string): boolean {
   try {
     return parseSrc(src).encrypted;
@@ -122,25 +127,58 @@ function citesEncrypted(src: string): boolean {
   }
 }
 
-/**
- * The `src` column: as the page spelled it, plus the decrypted path only
- * under `reveal`, and only beside an encrypted source, the one spelling that
- * hides it.
- */
-function srcColumn(result: CitationResult, opts: PrettyOptions, dim: (s: string) => string): string {
-  const src = result.citation.src;
-  if (opts.reveal && result.resolvedPath !== undefined && citesEncrypted(src)) {
-    return `${src} ${dim(`(${result.resolvedPath})`)}`;
+/** The claim end column: where it is, in file lines, and how it reads. */
+function claimColumn(result: CitationResult): string {
+  const { claim } = result;
+  const where =
+    result.anchor === "marker" && result.markerLine !== undefined
+      ? `marker :${String(result.markerLine)}`
+      : claim?.fileLines === undefined
+        ? ""
+        : `:${claim.fileLines}`;
+  if (claim === null) return where;
+  let status: string;
+  switch (claim.status) {
+    case "moved":
+      status = `moved -> :${claim.newFileLines ?? "?"}`;
+      break;
+    case "moved-ambiguous": {
+      const at = (claim.candidateFileLines ?? []).map((lines) => `:${lines}`);
+      status = `moved, ${plural(at.length, "candidate")} (${at.join(", ")})`;
+      break;
+    }
+    default:
+      status = claim.status;
   }
-  return src;
+  return where === "" ? status : `${where} ${status}`;
 }
 
-/** The subjects and diff under a `changed` row, dim, the diff capped. */
+/**
+ * The source end column: the source as the entry spelled it, plus the
+ * decrypted path only under `reveal`, and only beside an encrypted source,
+ * the one spelling that hides it.
+ */
+function sourceColumn(
+  result: CitationResult,
+  opts: PrettyOptions,
+  dim: (s: string) => string,
+): string {
+  const { source } = result;
+  const src = shortSrc(source.src);
+  const revealed =
+    opts.reveal && source.resolvedPath !== undefined && citesEncrypted(source.src)
+      ? ` ${dim(`(${source.resolvedPath})`)}`
+      : "";
+  return `${src}${revealed} ${messageFor(source)}`;
+}
+
+/** The subjects and diff under a changed source, dim, the diff capped. */
 function diffLines(result: CitationResult, dim: (s: string) => string): string[] {
   const out: string[] = [];
-  for (const subject of result.commitsSince ?? []) out.push(dim(`        ${subject}`));
-  if (result.diff === undefined || result.diff === "") return out;
-  const lines = result.diff.split(/\r?\n/);
+  for (const subject of result.source.commitsSince ?? []) out.push(dim(`        ${subject}`));
+  const diff = result.source.diff;
+  if (diff === undefined || diff === "") return out;
+  const lines = diff.split(/\r?\n/);
   while (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
   const shown = lines.slice(0, DIFF_LINE_CAP);
   for (const line of shown) out.push(dim(`        ${line}`));
@@ -149,12 +187,36 @@ function diffLines(result: CitationResult, dim: (s: string) => string): string[]
   return out;
 }
 
+/** The page lines a changed claim covers now, dim and capped: what `--show-diff` adds. */
+function claimLines(result: CitationResult, dim: (s: string) => string): string[] {
+  const text = result.claim?.text ?? [];
+  const shown = text.slice(0, DIFF_LINE_CAP);
+  const out = shown.map((line) => dim(`        ${line}`));
+  const more = text.length - shown.length;
+  if (more > 0) out.push(dim(`        … (${plural(more, "more line")})`));
+  return out;
+}
+
+/** One row of a page's citation table, before the columns are padded. */
+interface Row {
+  mark: string;
+  label: string;
+  claim: string;
+  source: string;
+  where: string;
+  /** Lines printed under the row: findings that are not an end, and diffs. */
+  under: string[];
+}
+
+function padTo(text: string, width: number, plain: number): string {
+  // Colour codes are not width, so the visible length is passed in.
+  return width <= plain ? text : text + " ".repeat(width - plain);
+}
+
 export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
   const c = palette(opts.color);
   const lines: string[] = [];
   const quiet = opts.quiet ?? false;
-
-  const markFor = (finding: CitationFinding): string => severityMark(finding.severity, c);
   const location = (line: number | undefined): string =>
     line === undefined ? "" : c.dim(`   (line ${String(line)})`);
 
@@ -177,41 +239,78 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
 
     const isBaselined = new Set(baselined);
     const placed = new Set<CitationFinding>();
+    const rows: Row[] = [];
 
     for (const result of page.citations) {
       const own = page.findings.filter((f) => belongsTo(f, result) && !placed.has(f));
-      const label = c.cyan(labelOf(result));
-      const src = srcColumn(result, opts, c.dim);
-      if (own.length === 0) {
-        if (quiet) continue;
-        const skipped = result.status === "skipped";
-        const mark = skipped ? c.dim("·") : c.green("✓");
-        const message = skipped ? "skipped" : "current";
-        lines.push(`    ${mark} ${label}   ${src}   ${message}`);
-        continue;
-      }
+      for (const finding of own) placed.add(finding);
+      const live = own.filter((f) => !isBaselined.has(f));
+      if (own.length === 0 && quiet) continue;
+      const worst =
+        live.find((f) => f.severity === "error") ??
+        live.find((f) => f.severity === "warning") ??
+        live[0];
+      const mark =
+        worst !== undefined
+          ? severityMark(worst.severity, c)
+          : own.length > 0
+            ? c.dim("·")
+            : result.source.status === "skipped" && result.claim === null
+              ? c.dim("·")
+              : c.green("✓");
+
+      // The ends are the row; anything else about the entry is a line under it.
+      const endRules = new Set(["claim-", "source-"]);
+      const under: string[] = [];
       for (const finding of own) {
-        placed.add(finding);
-        const forgivenHere = isBaselined.has(finding);
-        const row = `${finding.message}${location(finding.line)}`;
-        lines.push(
-          forgivenHere
-            ? `    ${c.dim("·")} ${label}   ${src}   ${c.dim(`${finding.message} (baselined)`)}${location(finding.line)}`
-            : `    ${markFor(finding)} ${label}   ${src}   ${row}`,
-        );
-        if (opts.showDiff && finding.rule === "changed") lines.push(...diffLines(result, c.dim));
+        const isEnd = [...endRules].some((prefix) => finding.rule.startsWith(prefix));
+        if (isEnd) continue;
+        const text = isBaselined.has(finding)
+          ? c.dim(`${finding.message} (baselined)`)
+          : finding.message;
+        under.push(`      ${severityMark(finding.severity, c)} ${text}${location(finding.line)}`);
       }
+      if (opts.showDiff) {
+        if (own.some((f) => f.rule === "source-changed")) under.push(...diffLines(result, c.dim));
+        if (own.some((f) => f.rule === "claim-changed")) under.push(...claimLines(result, c.dim));
+      }
+      const forgivenEnd = own.length > 0 && live.length === 0 ? c.dim(" (baselined)") : "";
+      rows.push({
+        mark,
+        label: labelOf(result),
+        claim: claimColumn(result),
+        source: `${sourceColumn(result, opts, c.dim)}${forgivenEnd}`,
+        where:
+          result.origin.kind === "manifest"
+            ? `${result.origin.file}${result.origin.line === undefined ? "" : `:${String(result.origin.line)}`}`
+            : "",
+        under,
+      });
     }
 
-    // Findings about no classified citation: a statement nothing references,
-    // an entry the schema refused, a claim that never appeared.
+    // Columns are as wide as this page needs them, and no wider.
+    const width = (pick: (row: Row) => string): number =>
+      rows.reduce((n, row) => Math.max(n, pick(row).length), 0);
+    const labelWidth = width((row) => row.label);
+    const claimWidth = width((row) => row.claim);
+    const anyWhere = rows.some((row) => row.where !== "");
+    const sourceWidth = anyWhere ? width((row) => row.source) : 0;
+    for (const row of rows) {
+      const label = padTo(c.cyan(row.label), labelWidth, row.label.length);
+      const source = padTo(row.source, sourceWidth, row.source.length);
+      const text = `    ${row.mark} ${label}   ${padTo(row.claim, claimWidth, row.claim.length)}   ${source}${row.where === "" ? "" : `   ${c.dim(row.where)}`}`;
+      lines.push(text.replace(/\s+$/, ""));
+      lines.push(...row.under);
+    }
+
+    // Findings about no entry: a marker naming nothing, a reserved page key.
     for (const finding of page.findings) {
       if (placed.has(finding)) continue;
       const label = c.cyan(labelOfFinding(finding));
       lines.push(
         isBaselined.has(finding)
           ? `    ${c.dim("·")} ${label}   ${c.dim(`${finding.message} (baselined)`)}${location(finding.line)}`
-          : `    ${markFor(finding)} ${label}   ${finding.message}${location(finding.line)}`,
+          : `    ${severityMark(finding.severity, c)} ${label}   ${finding.message}${location(finding.line)}`,
       );
     }
   });
@@ -234,6 +333,22 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
   return lines.join("\n");
 }
 
+/** What one rewritten end says it did. */
+export function rewriteLine(rewrite: UpdateRewrite): string {
+  const word = rewrite.from.includes("-") ? "lines" : "line";
+  const status = rewrite.status === "never-true" ? "never true" : rewrite.status;
+  if (rewrite.reason === "moved") {
+    return rewrite.end === "claim"
+      ? `claim ${word} ${rewrite.from} -> ${rewrite.to} (moved)`
+      : `source ${shortSrc(rewrite.from)} -> ${shortSrc(rewrite.to)} (moved)`;
+  }
+  if (rewrite.end === "claim") {
+    return `claim at line ${String(rewrite.at ?? 0)} re-pinned (${status}; now "${rewrite.text ?? ""}")`;
+  }
+  const at = rewrite.commitSha === undefined ? "" : ` at ${shortCommit(rewrite.commitSha)}`;
+  return `source ${shortSrc(rewrite.src ?? "")} re-pinned${at} (${status}; ${shortPin(rewrite.from)} -> ${shortPin(rewrite.to)})`;
+}
+
 export function renderUpdatePretty(run: UpdateRun, opts: PrettyOptions): string {
   const c = palette(opts.color);
   const lines: string[] = [];
@@ -246,10 +361,8 @@ export function renderUpdatePretty(run: UpdateRun, opts: PrettyOptions): string 
       }
     }
     for (const rewrite of page.rewritten) {
-      const label = rewrite.id ?? (rewrite.index === undefined ? "inline" : `#${String(rewrite.index)}`);
-      lines.push(
-        `${page.file}: ${c.cyan(label)}  ${rewrite.from} -> ${rewrite.to}  ${c.dim(`(${rewrite.reason})`)}`,
-      );
+      const label = rewrite.id ?? `#${String(rewrite.index)}`;
+      lines.push(`${page.file}: ${c.cyan(label)} ${rewriteLine(rewrite)}`);
     }
     for (const finding of page.skipped) {
       const mark = severityMark(finding.severity, c);

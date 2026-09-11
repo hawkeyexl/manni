@@ -1,8 +1,12 @@
 /**
- * Claim anchoring: whitespace-normalized search scoped to paragraphs, one hit
- * per paragraph, reported at the line the claim starts on. The cases are the
- * ladder's (docs/proposals/0044/ladders/drift-examples.cjs), plus the fixture
- * with a soft-wrapped claim under a frontmatter block.
+ * The claim end: the page text a citation supports, classified against the
+ * page as it is now.
+ *
+ * A claim's `lines` are body-relative, so editing the frontmatter never moves
+ * them; every line a reader sees is a file line, translated here. The pin
+ * holds where it was recorded: `current`. The same text sits verbatim
+ * elsewhere: `moved`, once, or `moved-ambiguous`. Nowhere: `changed`. A
+ * marker-anchored claim pins what its marker anchors, so it never moves.
  */
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
@@ -10,17 +14,39 @@ import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import {
   blockMatches,
-  findClaim,
+  claimEnd,
+  claimLine,
+  claimLineNow,
+  claimLinesNow,
+  markerUnit,
   normalizeWhitespace,
-  paragraphContains,
+  pinOfLines,
+  toBodyLines,
+  toFileLines,
+  unitAt,
 } from "../../src/cite/core/claims.js";
+import { splitLines } from "../../src/cite/core/hash.js";
+import { readPage } from "../../src/cite/core/page.js";
+import type { ClaimEnd, PageCitations } from "../../src/cite/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const readPage = (name: string): string =>
-  readFileSync(`${here}/../fixtures/cite/pages/${name}`, "utf8");
+const pagesDir = `${here}/../fixtures/cite/pages`;
+const readFixture = (name: string): string => readFileSync(`${pagesDir}/${name}`, "utf8");
+const fixture = (name: string): PageCitations =>
+  readPage(`${pagesDir}/${name}`, readFixture(name));
 
-const CLAIM = "The fetch timeout is 10 seconds.";
-const PAGE = `# Limits\n\nThe fetch timeout is 10 seconds. It is\nnot configurable.\n\nRetries default to 3.\n`;
+/** The claim pin over "The fetch timeout is 10 seconds." */
+const CLAIM_PIN = "sha256-921b21cccab21a4577f224ec4171aa56a3414bb3a5a4704ab8b6f314c46aa094";
+const PIN = "sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f";
+
+/** The claim end of the page's first entry. */
+function endOf(page: PageCitations): ClaimEnd | null {
+  const entry = page.citations[0];
+  if (entry === undefined) throw new Error("the fixture has no citations");
+  return claimEnd(page, entry, splitLines(page.content));
+}
+
+const endOfFixture = (name: string): ClaimEnd | null => endOf(fixture(name));
 
 describe("normalizeWhitespace", () => {
   it("collapses runs of whitespace to one space and trims", () => {
@@ -29,81 +55,8 @@ describe("normalizeWhitespace", () => {
   });
 });
 
-describe("findClaim", () => {
-  it("finds a claim in a paragraph, at the line it starts on", () => {
-    expect(findClaim(PAGE, 0, CLAIM)).toEqual([{ paragraphStart: 10, line: 3 }]);
-  });
-
-  it("misses a claim that is not there", () => {
-    expect(findClaim(PAGE, 0, "The fetch timeout is 9 seconds.")).toEqual([]);
-  });
-
-  it("treats punctuation verbatim: a comma for a full stop is a miss", () => {
-    expect(findClaim("The fetch timeout is 10 seconds, and it is\nnot configurable.\n", 0, CLAIM)).toEqual([]);
-  });
-
-  it("finds a soft-wrapped claim across two lines", () => {
-    expect(
-      findClaim(PAGE, 0, "The fetch timeout is 10 seconds. It is not configurable.").map((h) => h.line),
-    ).toEqual([3]);
-  });
-
-  it("reports one hit per paragraph containing the claim", () => {
-    const twice = `Retries default to 3.\n\nSome other text.\n\n<!-- cite retries -->\nRetries default to 3. Really.\n`;
-    expect(findClaim(twice, 0, "Retries default to 3.").map((h) => h.line)).toEqual([1, 6]);
-  });
-
-  it("points at the sentence, not the statement sitting above it in the same paragraph", () => {
-    const body = "<!-- cite x -->\nlead-in\nThe claim here.\n";
-    expect(findClaim(body, 0, "The claim here.")).toEqual([{ paragraphStart: 0, line: 3 }]);
-  });
-
-  it("searches only from the body offset and skips fenced code", () => {
-    const content = "claim: Retries default to 3.\n---\n\n```\nRetries default to 3.\n```\n\nRetries default to 3.\n";
-    const bodyOffset = content.indexOf("---\n") + 4;
-    expect(findClaim(content, bodyOffset, "Retries default to 3.").map((h) => h.line)).toEqual([8]);
-  });
-
-  it("skips a fence indented inside a list item, as the statement scanner does", () => {
-    const content = "- Step one.\n  ```\n  Retries default to 3.\n  ```\n\nRetries default to 3.\n";
-    expect(findClaim(content, 0, "Retries default to 3.").map((h) => h.line)).toEqual([6]);
-    expect(paragraphContains(content, 0, "Step one.")).toBe(true);
-    expect(paragraphContains(content, 0, "Retries default to 3.")).toBe(false);
-  });
-
-  it("finds the fixture's soft-wrapped claim under its frontmatter", () => {
-    const content = readPage("wrapped-claim.md");
-    const bodyOffset = content.indexOf("# Limits");
-    const hits = findClaim(content, bodyOffset, "The fetch timeout is 10 seconds. It is not configurable.");
-    expect(hits.map((h) => h.line)).toEqual([12]);
-    expect(content.slice(hits[0]?.paragraphStart)).toMatch(/^The fetch timeout/);
-  });
-
-  it("never matches an empty claim", () => {
-    expect(findClaim(PAGE, 0, "  ")).toEqual([]);
-  });
-});
-
-describe("paragraphContains", () => {
-  it("checks the paragraph starting at an offset, whitespace-normalized", () => {
-    const at = PAGE.indexOf("The fetch");
-    expect(paragraphContains(PAGE, at, "The fetch timeout is 10 seconds. It is not configurable.")).toBe(true);
-    expect(paragraphContains(PAGE, at, "Retries default to 3.")).toBe(false);
-  });
-
-  it("skips blank lines before the paragraph", () => {
-    expect(paragraphContains(PAGE, PAGE.indexOf("\n\nThe fetch"), CLAIM)).toBe(true);
-  });
-
-  it("reads a fenced block's content when the offset sits on its fence", () => {
-    const content = "x\n```ts\nconst a = 1;\n```\n";
-    expect(paragraphContains(content, 2, "const a = 1;")).toBe(true);
-    expect(paragraphContains(content, 2, "const b = 2;")).toBe(false);
-  });
-});
-
 describe("blockMatches", () => {
-  it("compares under the hashing rule: BOM, CRLF and one trailing LF do not count", () => {
+  it("compares under the hashing rule: a BOM, CRLF and one trailing LF do not count", () => {
     const cited = "export const A = 1;\nexport const B = 2;";
     expect(blockMatches("export const A = 1;\nexport const B = 2;\n", cited)).toBe(true);
     expect(blockMatches("﻿export const A = 1;\r\nexport const B = 2;\r\n", cited)).toBe(true);
@@ -115,5 +68,238 @@ describe("blockMatches", () => {
     expect(blockMatches("export const A = 2;\n", cited)).toBe(false);
     expect(blockMatches("export const A = 1; \n", cited)).toBe(false);
     expect(blockMatches("export const A = 1;\n\n", cited)).toBe(false);
+  });
+});
+
+describe("toFileLines and toBodyLines", () => {
+  it("body line 1 is the first line after the frontmatter", () => {
+    expect(toFileLines({ start: 1, end: 1 }, 13)).toEqual({ start: 13, end: 13 });
+    expect(toFileLines({ start: 3, end: 4 }, 13)).toEqual({ start: 15, end: 16 });
+    // A page with no frontmatter: the body starts on line 1 and nothing moves.
+    expect(toFileLines({ start: 3, end: 4 }, 1)).toEqual({ start: 3, end: 4 });
+  });
+
+  it("round-trips a range through the body line", () => {
+    const lines = { start: 3, end: 7 };
+    expect(toBodyLines(toFileLines(lines, 13), 13)).toEqual(lines);
+    expect(toBodyLines({ start: 15, end: 16 }, 13)).toEqual({ start: 3, end: 4 });
+  });
+});
+
+describe("pinOfLines", () => {
+  it("pins a range of page lines, plain, under the hashing rule", () => {
+    const lines = splitLines(readFixture("current.md"));
+    expect(pinOfLines(lines, { start: 15, end: 15 })).toBe(CLAIM_PIN);
+    expect(pinOfLines(lines, { start: 15, end: 15 })).not.toBe(
+      pinOfLines(lines, { start: 15, end: 17 }),
+    );
+  });
+
+  it("is undefined for a range that runs off either end of the page", () => {
+    const lines = splitLines("a\nb\nc\n");
+    expect(pinOfLines(lines, { start: 1, end: 3 })).toBeDefined();
+    expect(pinOfLines(lines, { start: 1, end: 4 })).toBeUndefined();
+    expect(pinOfLines(lines, { start: 0, end: 1 })).toBeUndefined();
+  });
+});
+
+describe("claimLine, claimLineNow and claimLinesNow", () => {
+  it("claimLine is where the claim was recorded, whatever happened since", () => {
+    expect(claimLine({ fileLines: "15", status: "current" })).toBe(15);
+    expect(claimLine({ fileLines: "15-16", status: "changed" })).toBe(15);
+    expect(claimLine({ status: "changed" })).toBeUndefined();
+  });
+
+  it("claimLineNow prefers where the claim moved to, then the first candidate", () => {
+    expect(
+      claimLineNow({ fileLines: "15", status: "moved", newFileLines: "17" }),
+    ).toBe(17);
+    expect(
+      claimLineNow({ fileLines: "15", status: "moved-ambiguous", candidateFileLines: ["17", "21"] }),
+    ).toBe(17);
+    expect(claimLineNow({ fileLines: "15", status: "current" })).toBe(15);
+    expect(claimLineNow({ status: "skipped" })).toBeUndefined();
+  });
+
+  it("claimLinesNow gives the whole range the claim occupies now", () => {
+    expect(
+      claimLinesNow({ fileLines: "15-16", status: "moved", newFileLines: "20-21" }),
+    ).toEqual({ start: 20, end: 21 });
+    expect(claimLinesNow({ fileLines: "16-20", status: "current" })).toEqual({
+      start: 16,
+      end: 20,
+    });
+    expect(claimLinesNow({ status: "changed" })).toBeUndefined();
+  });
+});
+
+describe("claimEnd: recorded lines", () => {
+  it("is current when the pin holds, with the body lines translated to file lines", () => {
+    const page = fixture("current.md");
+    expect(page.bodyLine).toBe(13);
+    expect(endOf(page)).toEqual({ lines: "3", fileLines: "15", status: "current" });
+  });
+
+  it("translates a multi-line claim the same way", () => {
+    expect(endOfFixture("claim-range.md")).toEqual({
+      lines: "3-4",
+      fileLines: "15-16",
+      status: "current",
+    });
+  });
+
+  it("is moved when the text sits verbatim somewhere else, in both line frames", () => {
+    expect(endOfFixture("claim-moved.md")).toEqual({
+      lines: "3",
+      fileLines: "15",
+      status: "moved",
+      newLines: "5",
+      newFileLines: "17",
+    });
+  });
+
+  it("is moved-ambiguous when the text sits in more than one place", () => {
+    expect(endOfFixture("claim-moved-ambiguous.md")).toEqual({
+      lines: "3",
+      fileLines: "15",
+      status: "moved-ambiguous",
+      candidates: ["5", "9"],
+      candidateFileLines: ["17", "21"],
+    });
+  });
+
+  it("is changed when the sentence was edited, and carries the lines as they read now", () => {
+    expect(endOfFixture("claim-changed.md")).toEqual({
+      lines: "3",
+      fileLines: "15",
+      status: "changed",
+      text: ["The fetch timeout is 30 seconds."],
+    });
+  });
+
+  it("stays current when the frontmatter grows a key above the claim", () => {
+    // frontmatter-tag.md is current.md with `tags:` added: the claim's body
+    // lines are untouched and the file line it maps to moves by one.
+    const tagged = fixture("frontmatter-tag.md");
+    expect(tagged.bodyLine).toBe(14);
+    expect(endOf(tagged)).toEqual({ lines: "3", fileLines: "16", status: "current" });
+    expect(endOfFixture("current.md")).toMatchObject({ lines: "3", fileLines: "15" });
+  });
+
+  it("is null for an entry with no claim: a bare pin", () => {
+    expect(endOfFixture("whole-file.md")).toBeNull();
+  });
+
+  it("is skipped when the entry carries both anchors, which anchor-invalid reports", () => {
+    expect(endOfFixture("anchor-both.md")).toEqual({
+      lines: "3",
+      fileLines: "15",
+      status: "skipped",
+    });
+  });
+});
+
+describe("claimEnd: marker-anchored", () => {
+  it("is current when the pin holds over what the marker anchors", () => {
+    expect(endOfFixture("marker.md")).toEqual({ fileLines: "19", status: "current" });
+  });
+
+  it("is changed when the anchored sentence was edited; it never moves", () => {
+    expect(endOfFixture("marker-changed.md")).toEqual({
+      fileLines: "15",
+      status: "changed",
+      text: ["Retries default to 5."],
+    });
+  });
+
+  it("pins the whole fenced block under quote, fences included", () => {
+    expect(endOfFixture("quote-marker.md")).toEqual({ fileLines: "16-18", status: "current" });
+  });
+
+  it("is changed when a claim pin anchors nothing at all", () => {
+    const content = `---\ntitle: Limits\ncitations:\n  - id: x\n    claim:\n      integrity: ${CLAIM_PIN}\n    source:\n      file: src/limits.ts\n      integrity: ${PIN}\n---\n# Limits\n\nThe fetch timeout is 10 seconds.\n`;
+    const page = readPage("p.md", content);
+    expect(page.findings).toEqual([]);
+    expect(endOf(page)).toEqual({ status: "changed" });
+  });
+});
+
+describe("unitAt", () => {
+  it("gives the paragraph opening on a line, to its last line", () => {
+    const page = fixture("claim-range.md");
+    const lines = splitLines(page.content);
+    expect(unitAt(page, 15, lines)).toEqual({
+      lines: { start: 15, end: 16 },
+      kind: "paragraph",
+      text: ["The fetch timeout is 10 seconds. It is", "not configurable."],
+    });
+  });
+
+  it("gives the fenced block opening on a line, fences included", () => {
+    const page = fixture("quote.md");
+    const lines = splitLines(page.content);
+    expect(unitAt(page, 16, lines)).toEqual({
+      lines: { start: 16, end: 20 },
+      kind: "block",
+      text: [
+        "```ts",
+        "export const MAX_FILES = 10_000;",
+        "export const FETCH_TIMEOUT_MS = 10_000;",
+        "export const RETRIES = 3;",
+        "```",
+      ],
+    });
+  });
+
+  it("skips a blank line, a line inside a fenced block, and a line past the page", () => {
+    const page = fixture("quote.md");
+    const lines = splitLines(page.content);
+    expect(lines[14]).toBe("");
+    expect(unitAt(page, 15, lines)).toBeUndefined();
+    expect(unitAt(page, 17, lines)).toBeUndefined();
+    expect(unitAt(page, 20, lines)).toBeUndefined();
+    expect(unitAt(page, lines.length + 1, lines)).toBeUndefined();
+  });
+
+  it("skips every line of the frontmatter", () => {
+    const page = fixture("current.md");
+    const lines = splitLines(page.content);
+    expect(page.bodyLine).toBe(13);
+    for (let line = 1; line < page.bodyLine; line++) {
+      expect(unitAt(page, line, lines)).toBeUndefined();
+    }
+    expect(unitAt(page, page.bodyLine, lines)).toMatchObject({ kind: "paragraph" });
+  });
+});
+
+describe("markerUnit", () => {
+  it("gives the paragraph a marker anchors", () => {
+    const page = fixture("marker.md");
+    const entry = page.citations[0];
+    expect(entry).toBeDefined();
+    if (!entry) return;
+    expect(markerUnit(page, entry, splitLines(page.content))).toEqual({
+      lines: { start: 19, end: 19 },
+      kind: "paragraph",
+      text: ["Retries default to 3. Really."],
+    });
+  });
+
+  it("gives the fenced block a quote marker anchors, and nothing for an entry with no marker", () => {
+    const quoted = fixture("quote-marker.md");
+    const quotedEntry = quoted.citations[0];
+    expect(quotedEntry).toBeDefined();
+    if (!quotedEntry) return;
+    expect(markerUnit(quoted, quotedEntry, splitLines(quoted.content))).toEqual({
+      lines: { start: 16, end: 18 },
+      kind: "block",
+      text: ["```ts", "export const FETCH_TIMEOUT_MS = 10_000;", "```"],
+    });
+
+    const plain = fixture("current.md");
+    const plainEntry = plain.citations[0];
+    expect(plainEntry).toBeDefined();
+    if (!plainEntry) return;
+    expect(markerUnit(plain, plainEntry, splitLines(plain.content))).toBeUndefined();
   });
 });

@@ -1,14 +1,17 @@
 /**
- * Findings → meta's `ValidationResult`, so the github/sarif/junit reporters
- * and the baseline ratchet work unchanged.
+ * Findings, their messages, and the bridge to meta's `ValidationResult`, so
+ * the github/sarif/junit reporters and the baseline ratchet work unchanged.
+ *
+ * A claim or marker finding sits on the page line a reviewer reads. A finding
+ * about the entry itself, `entry-invalid` or a bare pin whose source changed,
+ * sits on the entry's own line, in the manifest when one owns it.
  *
  * FieldError: schema "manni:cite" (matches BUILTIN_ID, so canonicalSchemaRef
- * leaves it alone), keyword = rule, instancePath "/citations/N" for a
- * frontmatter entry or "" for an inline one, subject = id ?? integrity (stable
- * across a move and a line shift; changes only on re-mint), line, severity.
- * `ok` is true iff no error-severity finding.
+ * leaves it alone), keyword = rule, instancePath "/citations/N", subject =
+ * id ?? source.integrity, never the claim's pin, so accepting a claim does
+ * not reopen baselined findings. `ok` is true iff no error-severity finding.
  *
- * Every message is spelled from the page's own `src`. `resolvedPath`,
+ * Every message spells the source as the entry spelled it. `resolvedPath`,
  * `commitsSince` and `diff` never enter a message: they are pretty-only
  * fields, shown under `--reveal` and `--show-diff`.
  */
@@ -16,11 +19,14 @@ import { isErrorSeverity, type FieldError, type ValidationResult } from "../../m
 import type {
   CitationFinding,
   CitationResult,
-  CitationStatus,
   CiteRule,
   CiteSeverity,
+  ClaimEnd,
   PageCitationReport,
+  SourceEnd,
+  SourceStatus,
 } from "../types.js";
+import { claimLine } from "./claims.js";
 import { parseSrc } from "./range.js";
 import { RULE_ID_PREFIX, ruleId } from "./severity.js";
 
@@ -33,7 +39,13 @@ function plural(n: number, noun: string): string {
   return `${String(n)} ${noun}${n === 1 ? "" : "s"}`;
 }
 
-/** Whether the page spelled this source encrypted. */
+/** `11 and 30`, `11, 20 and 30`: a list as a sentence reads it. */
+function listOf(values: readonly string[]): string {
+  if (values.length <= 1) return values.join("");
+  return `${values.slice(0, -1).join(", ")} and ${values[values.length - 1] ?? ""}`;
+}
+
+/** Whether the entry spelled this source encrypted. */
 function citesEncrypted(src: string): boolean {
   try {
     return parseSrc(src).encrypted;
@@ -46,9 +58,9 @@ function citesEncrypted(src: string): boolean {
  * Why an encrypted source is missing, in words that never name the path. A
  * plain path names its own file, so the bare status says the rest.
  */
-function missingMessage(result: CitationResult): string {
-  if (!citesEncrypted(result.citation.src)) return "missing";
-  switch (result.missingReason) {
+function missingMessage(source: SourceEnd): string {
+  if (!citesEncrypted(source.src)) return "missing";
+  switch (source.missingReason) {
     case "no-key":
       return "missing (no encryption key is available to decrypt it)";
     case "undecryptable":
@@ -61,86 +73,168 @@ function missingMessage(result: CitationResult): string {
   }
 }
 
-/** The one place a finding's message is composed, per rule. */
-export function messageFor(result: CitationResult): string {
-  switch (result.status) {
+/** The one place a source end's message is composed, per status. */
+export function messageFor(source: SourceEnd): string {
+  switch (source.status) {
     case "current":
       return "current";
     case "skipped":
       return "skipped";
     case "moved":
-      return `moved -> ${result.newSrc ?? "?"}`;
+      return `moved -> ${source.newSrc ?? "?"}`;
     case "moved-ambiguous": {
-      const candidates = result.candidates ?? [];
+      const candidates = source.candidates ?? [];
       return `moved, ${plural(candidates.length, "candidate")} (${candidates.join(", ")}); widen the range`;
     }
     case "changed": {
-      if (result.commit === undefined) return "changed";
-      const at = short(result.commit);
-      if (result.historyAvailable === false) {
+      if (source.commitSha === undefined) return "changed";
+      const at = short(source.commitSha);
+      if (source.historyAvailable === false) {
         return `changed (history unavailable: commit ${at} not found; fetch-depth: 0)`;
       }
-      if (result.commitsSince === undefined) return `changed since ${at}`;
-      return `changed since ${at}, ${plural(result.commitsSince.length, "commit")}`;
+      if (source.commitsSince === undefined) return `changed since ${at}`;
+      return `changed since ${at}, ${plural(source.commitsSince.length, "commit")}`;
     }
     case "never-true":
-      return result.commit === undefined
+      return source.commitSha === undefined
         ? "never true: the pin does not match at the recorded commit"
-        : `never true: the pin does not match at ${short(result.commit)}`;
+        : `never true: the pin does not match at ${short(source.commitSha)}`;
     case "missing":
-      return missingMessage(result);
+      return missingMessage(source);
   }
 }
 
-/** The rule a status reports under, or undefined for a status that is not a finding. */
-function ruleOf(status: CitationStatus): CiteRule | undefined {
-  return status === "skipped" ? undefined : status;
+/** `<id>: <text>`, or the text alone for an entry with no id. */
+function named(id: string | undefined, text: string): string {
+  return id === undefined ? text : `${id}: ${text}`;
 }
 
-/** Findings for classified results under a severity table; `off` rules produce none. */
+/** `line 9`, or `lines 9-10` when the claim covers several. */
+function at(spec: string): string {
+  return spec.includes("-") ? `lines ${spec}` : `line ${spec}`;
+}
+
+/** The one place a claim end's message is composed, per status. */
+export function claimMessageFor(result: CitationResult): string {
+  const claim = result.claim;
+  const id = result.citation.id;
+  if (claim === null) return "";
+  // A marker-anchored claim has no lines of its own; it is judged where the
+  // marker's text sits, and that is what the message names.
+  const where =
+    claim.fileLines ??
+    (result.markerLine === undefined ? undefined : String(result.markerLine));
+  switch (claim.status) {
+    case "moved":
+      return named(
+        id,
+        `the claim moved from ${at(where ?? "?")} to ${at(claim.newFileLines ?? "?")}.`,
+      );
+    case "moved-ambiguous":
+      return named(
+        id,
+        `the claim at ${at(where ?? "?")} now appears at lines ${listOf(claim.candidateFileLines ?? [])}.`,
+      );
+    case "changed":
+      return where === undefined
+        ? named(id, "the claim has no lines and no marker names the entry, so its pin anchors nothing.")
+        : named(id, `the claim at ${at(where)} has changed since it was pinned.`);
+    case "current":
+    case "skipped":
+      return "";
+  }
+}
+
+/** The rule a source status reports under, or undefined for one that is not a finding. */
+function sourceRuleOf(status: SourceStatus): CiteRule | undefined {
+  if (status === "skipped" || status === "current") return undefined;
+  return `source-${status}`;
+}
+
+/** The rule a claim status reports under, or undefined. */
+function claimRuleOf(claim: ClaimEnd): CiteRule | undefined {
+  const status = claim.status;
+  if (status === "skipped" || status === "current") return undefined;
+  return `claim-${status}`;
+}
+
+/** Where a finding about a whole entry sits: its own line, in its own file. */
+function entrySite(result: CitationResult): Pick<CitationFinding, "line" | "file"> {
+  const site: Pick<CitationFinding, "line" | "file"> = {};
+  if (result.origin.line !== undefined) site.line = result.origin.line;
+  if (result.origin.kind === "manifest") site.file = result.origin.file;
+  return site;
+}
+
+/** Where a finding about an anchored citation sits: the page line it anchors to. */
+function anchorSite(result: CitationResult): Pick<CitationFinding, "line" | "file"> {
+  if (result.anchorLine !== undefined) return { line: result.anchorLine };
+  return entrySite(result);
+}
+
+/** Findings for classified citations under a severity table; `off` rules produce none. */
 export function findingsFor(
   results: readonly CitationResult[],
   severity: Readonly<Record<CiteRule, CiteSeverity>>,
 ): CitationFinding[] {
   const out: CitationFinding[] = [];
-  for (const result of results) {
-    const rule = ruleOf(result.status);
-    if (rule === undefined) continue;
+  const push = (
+    result: CitationResult,
+    rule: CiteRule,
+    message: string,
+    site: Pick<CitationFinding, "line" | "file">,
+    extra?: Pick<CitationFinding, "newSrc">,
+  ): void => {
     const level = severity[rule];
-    if (level === "off") continue;
+    if (level === "off") return;
     const finding: CitationFinding = {
       rule,
       ruleId: ruleId(rule),
       severity: level,
-      message: messageFor(result),
+      message,
+      src: result.source.src,
+      index: result.origin.index,
     };
-    const line = result.origin.anchorLine ?? result.origin.line;
-    if (line !== undefined) finding.line = line;
+    if (site.line !== undefined) finding.line = site.line;
+    if (site.file !== undefined) finding.file = site.file;
     if (result.citation.id !== undefined) finding.id = result.citation.id;
-    finding.src = result.citation.src;
-    if (result.newSrc !== undefined) finding.newSrc = result.newSrc;
-    if (result.origin.kind === "frontmatter") finding.index = result.origin.index;
+    if (extra?.newSrc !== undefined) finding.newSrc = extra.newSrc;
     out.push(finding);
+  };
+
+  for (const result of results) {
+    const claim = result.claim;
+    if (claim !== null) {
+      const rule = claimRuleOf(claim);
+      // A claim pin that anchors nothing has no page line to sit on.
+      if (rule !== undefined) {
+        const site =
+          claimLine(claim) === undefined && result.markerLine === undefined
+            ? entrySite(result)
+            : { line: claimLine(claim) ?? result.markerLine };
+        push(result, rule, claimMessageFor(result), site);
+      }
+    }
+    const rule = sourceRuleOf(result.source.status);
+    if (rule === undefined) continue;
+    const extra =
+      result.source.newSrc === undefined ? undefined : { newSrc: result.source.newSrc };
+    push(result, rule, messageFor(result.source), anchorSite(result), extra);
   }
   return out;
 }
 
 /**
- * The integrity of the citation a finding is about, for the fingerprint
- * subject of an entry with no id. A frontmatter finding names its index; an
- * inline one is matched by the line it anchors to or sits on.
+ * The pin of the citation a finding is about, for the fingerprint subject of
+ * an entry with no id. Always the source's: accepting a changed claim must
+ * not reopen a baselined finding.
  */
-function integrityFor(finding: CitationFinding, results: readonly CitationResult[]): string | undefined {
-  for (const result of results) {
-    const { origin } = result;
-    if (finding.index !== undefined) {
-      if (origin.kind === "frontmatter" && origin.index === finding.index) return result.citation.integrity;
-      continue;
-    }
-    if (origin.kind !== "inline" || finding.line === undefined) continue;
-    if (origin.anchorLine === finding.line || origin.line === finding.line) return result.citation.integrity;
-  }
-  return undefined;
+function integrityFor(
+  finding: CitationFinding,
+  results: readonly CitationResult[],
+): string | undefined {
+  if (finding.index === undefined) return undefined;
+  return results.find((r) => r.origin.index === finding.index)?.citation.source.integrity;
 }
 
 export function toValidationResult(report: PageCitationReport): ValidationResult {
@@ -154,7 +248,9 @@ export function toValidationResult(report: PageCitationReport): ValidationResult
     };
     const subject = finding.id ?? integrityFor(finding, report.citations);
     if (subject !== undefined) error.subject = subject;
-    if (finding.line !== undefined) error.line = finding.line;
+    // A line in another file would read as a line in this one, so a finding
+    // that sits on a manifest carries none here.
+    if (finding.line !== undefined && finding.file === undefined) error.line = finding.line;
     return error;
   });
   return {

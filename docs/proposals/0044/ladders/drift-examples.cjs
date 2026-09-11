@@ -160,11 +160,12 @@ function decrypt(token, key, context = "cite-src") {
   }
 }
 
-// The keyed pin: `sha256-` and the hex HMAC-SHA256 of the text under the pin
-// subkey, so a public page carries no verifier a reader could run against a
-// guessed private line.
+// The keyed pin: `hmac-sha256-` and the hex HMAC-SHA256 of the text under the
+// pin subkey, so a public page carries no verifier a reader could run against
+// a guessed private line. The prefix says it is an HMAC, so hashing the line
+// by hand and getting a different value has a reason on the page.
 function pin(text, key) {
-  return "sha256-" + crypto.createHmac("sha256", subkey(key, "manni/v1/pin")).update(text, "utf8").digest("hex");
+  return "hmac-sha256-" + crypto.createHmac("sha256", subkey(key, "manni/v1/pin")).update(text, "utf8").digest("hex");
 }
 
 function parseSrc(src) {

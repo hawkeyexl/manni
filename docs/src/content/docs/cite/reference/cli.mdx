@@ -5,10 +5,13 @@ sidebar:
   order: 1
 citations:
   - id: check
-    claim: Check every citation in the given pages against its source.
-    src: src/cite/cli.ts:204-205
-    integrity: sha256-a5f8b50113ec46c738fe1fb80886b3109f7e1a86ef3e009fb690a151c40351b9
-    commit: 4f2bd19f0d262f41f1bafde228b62899b4124839
+    claim:
+      integrity: sha256-32bdb41ee85635759451a9604dfac13f9e312b691b31d5779e47c9c627382003
+    source:
+      file: src/cite/cli.ts
+      lines: 232
+      integrity: sha256-4711ef1b0d273138be4647e20811c36bce97b3d228b0414a0616c200045a63d7
+      commit-sha: fc09aeff7891fcbedfe7d127393fc662fd3ddf7a
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -230,19 +233,18 @@ manni cite add <page> <src> [options]
 
 | Argument | Description |
 |---|---|
-| `<page>` | The page to cite from, relative to the working directory. `-` reads the page from stdin and writes the rewritten page to stdout, with the report on stderr; that needs `--as`. |
+| `<page>[:L\|:L1-L2]` | The page to cite from, relative to the working directory, and the claim's lines as an editor numbers them. Only a trailing `:L` or `:L1-L2` is read as lines, so a path that carries a colon keeps it. Without lines, the entry is a bare pin. `-` reads the page from stdin and writes the rewritten page to stdout, with the report on stderr; that needs `--as`, and `-:L` carries lines. |
 | `<src>` | The source: `path`, `path:L` or `path:L1-L2`, relative to the [root](#where-sources-resolve-from), or an encrypted `~source` with the same line forms. A bare path pins the whole file. `L2` before `L1` and a line past the end of the file are refused (exit 2). So is a path that is not a tracked file under the root, and an encrypted source that the current key can't decrypt. |
 
 ### Options
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
-| `--claim` | `<text>` | n/a | The sentence the citation supports, verbatim. It must occur exactly once in the body, compared with whitespace collapsed so a soft-wrapped sentence matches. Zero occurrences is a refusal naming the sentence. Two or more is a refusal naming the lines, and `--id` plus a reference statement above the intended paragraph is the remedy. |
-| `--id` | `<id>` | n/a | A kebab-case name for the entry, unique within the page. With `--claim`, a reference statement naming it is written above the claim's paragraph, unless one is already there. That is how a repeated claim is disambiguated. Needs `--claim` or `--quote`: an id nothing references is refused. |
-| `--quote` | n/a | off | The page reproduces the cited lines in a fenced block, and that block is the anchor. Alone, exactly one block in the body must reproduce the range; with `--claim`, the first block after the claim's paragraph must. Refused on `html`, `xml` and `rst`, which have no fence the tool can locate. |
-| `--inline` | n/a | off | Write the entry as an inline JSON statement above the anchor instead of a frontmatter entry. Needs `--claim` or `--quote`, since a statement anchors what follows it. Refused on `asciidoc` and `rst`, whose statement forms carry an id only. The only channel on an `html` or `xml` page, which has no frontmatter to write to. |
+| `--id` | `<id>` | n/a | A kebab-case name for the entry, unique within the page. What a marker names, and what `update --only` and every finding are reported under. Required with `--marker`; optional otherwise, including on a bare pin. An id the page already uses is refused. |
+| `--marker` | n/a | off | Write a `cite <id>` marker above the page lines instead of storing claim lines, and pin the text it anchors. The marker travels with its sentence, so a marker-anchored claim never moves. Needs the page lines and `--id`. |
+| `--quote` | n/a | off | The page lines are a fenced block, fences included, that reproduces the cited lines. The block is pinned whole, and its contents are compared with the source, so a quoted snippet that drifts is `quote-drift` even while the pin holds. Needs the page lines, and a format with a fence the tool can locate (not `html`, `xml` or `rst`). |
 | `--encrypt` | n/a | off | Write `src` encrypted, with a keyed pin, so the page carries neither the path nor a verifier for the line. An available encryption key, a top-level `encryptionKey:` or `MANNI_ENCRYPTION_KEY`, encrypts every `add` without the flag. With no key, on a terminal, `add` offers to generate one and write it to `manni.config.yaml`. Off a terminal, or on a no, it refuses (exit 2) and writes nothing. |
-| `--no-commit` | n/a | on | Do not record `HEAD`. Without a commit, a later check can still say the lines changed, but not since when, nor whether the pin was ever true. Off a git checkout no commit is recorded either way. |
+| `--no-commit-sha` | n/a | on | Do not record `HEAD` as the entry's `commit-sha`. Without it, a later check can still say the lines changed, but not since when, nor whether the pin was ever true. Off a git checkout no commit is recorded either way. |
 | `--dry-run` | n/a | off | Print the unified diff of the page and write nothing. The report line goes to stderr. |
 | `--as` | `<format>` | n/a | Force the page's [format](/manni/meta/reference/formats/). Required with `-`. |
 | `--root` | `<dir>` | n/a | The directory `<src>` resolves from, exactly as on [`check`](#where-sources-resolve-from). |

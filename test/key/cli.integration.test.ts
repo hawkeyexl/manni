@@ -68,8 +68,10 @@ function family(opts: { key?: boolean; extra?: Record<string, string> } = {}): v
       "---",
       "citations:",
       "  - id: fetch-timeout",
-      `    src: ${encryptSourcePath("src/limits.ts", OLD)}:2`,
-      `    integrity: ${hashRange(SOURCE, { start: 2, end: 2 }, OLD)}`,
+      "    source:",
+      `      file: ${encryptSourcePath("src/limits.ts", OLD)}`,
+      "      lines: 2",
+      `      integrity: ${hashRange(SOURCE, { start: 2, end: 2 }, OLD)}`,
       "---",
       "Body.",
       "",
@@ -200,6 +202,23 @@ describe("manni key rotate", () => {
     ]);
     expect(readConfig()).not.toHaveProperty("encryptionKeyPrevious");
     expect(readConfig().encryptionKey).not.toBe(OLD);
+  });
+
+  it("leaves the citation reading current under the new key", () => {
+    family();
+    expect(key(["rotate"]).status).toBe(0);
+    // Both halves of the source end moved, and the pin is still keyed.
+    const page = readFileSync(join(work, "docs", "limits.md"), "utf8");
+    expect(page).toMatch(/^ {6}file: ~[A-Za-z0-9_-]{82,}$/m);
+    expect(page).toMatch(/^ {6}integrity: hmac-sha256-[0-9a-f]{64}$/m);
+    expect(page).not.toContain(encryptSourcePath("src/limits.ts", OLD));
+
+    const r = run(["cite", "check", "docs/limits.md"], { cwd: work });
+    expect(r.stderr).toBe("");
+    expect(r.status).toBe(0);
+    expect(r.stdout.trimEnd().split("\n").at(-1)).toBe(
+      "1 file checked, 1 passed, 0 failed, 0 findings",
+    );
   });
 
   it("--no-git is gone, with no alias", () => {

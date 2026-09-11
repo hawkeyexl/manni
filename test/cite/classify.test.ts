@@ -1,10 +1,14 @@
 /**
- * Classification agrees with the ladder (docs/proposals/0044/ladders/
- * drift-examples.cjs): every row of its VERDICTS table is replayed here
- * through the real `classifyCitation`, with the ladder's `current` text on
- * disk and its `atCommit` answered by a fake git client. The move search is
- * then exercised in both regimes and under a byte budget, and once more
- * against a real repository with two commits.
+ * Source-end classification agrees with the ladder (docs/proposals/0044/
+ * ladders/drift-examples.cjs): every row of its VERDICTS table is replayed
+ * here through the real `classifyCitation`, with the ladder's `current` text
+ * on disk and its `atCommit` answered by a fake git client. The ladder spells
+ * a source as one string (`path:L1-L2`); an entry spells it as `source.file`
+ * and `source.lines`, so `citationOf` translates, and the result's `src` must
+ * read back as the ladder wrote it.
+ *
+ * The move search is then exercised in both regimes and under a byte budget,
+ * and once more against a real repository with two commits.
  */
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createRequire } from "node:module";
@@ -16,15 +20,17 @@ import {
   classifyCitation,
   findWindows,
 } from "../../src/cite/core/classify.js";
-import { hashLines, splitLines } from "../../src/cite/core/hash.js";
+import { hashLines, hashRange, splitLines } from "../../src/cite/core/hash.js";
+import { parseSrc, rangeLines } from "../../src/cite/core/range.js";
 import { buildSourceIndex } from "../../src/cite/core/sources.js";
 import { gitClient } from "../../src/cite/core/git.js";
 import type {
   Citation,
-  CitationResult,
+  CitationSource,
   GitClient,
   PageCitation,
   ShownFile,
+  SourceEnd,
   SourceIndex,
 } from "../../src/cite/types.js";
 import { commitAll, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
@@ -69,6 +75,27 @@ const TOKEN = ladder.encrypt(PATH, KEY);
 const SOURCE_LINES = splitLines(ladder.SOURCE);
 const PIN_L2 = ladder.mint(ladder.SOURCE, 2) ?? "";
 
+/** The ladder's keyed pin for a range: what an encrypted source carries. */
+function keyedPin(text: string, l1?: number, l2?: number): string {
+  return ladder.mint(text, l1, l2, KEY) ?? "";
+}
+
+/** The ladder's `src` and pin as an entry writes them: `source.file` plus `source.lines`. */
+function sourceOf(src: string, integrity: string, commit?: string): CitationSource {
+  const range = parseSrc(src);
+  const source: CitationSource = { file: range.path, integrity };
+  const lines = rangeLines(range);
+  if (lines !== undefined) source.lines = lines;
+  if (commit !== undefined) source["commit-sha"] = commit;
+  return source;
+}
+
+function citationOf(entry: LadderEntry): Citation {
+  const citation: Citation = { source: sourceOf(entry.src, entry.integrity, entry.commit) };
+  if (entry.id !== undefined) citation.id = entry.id;
+  return citation;
+}
+
 /**
  * The verdict's key: the ladder's own unless the verdict names another, or
  * names none (`{ key: undefined }`: the run has no key at all).
@@ -106,15 +133,20 @@ function fakeGit(atCommit: LadderAtCommit, available = true): GitClient {
 }
 
 function page(citation: Citation): PageCitation {
-  return { citation, origin: { kind: "frontmatter", index: 0, line: 3 } };
+  return { citation, origin: { kind: "frontmatter", file: "docs/limits.md", index: 0, line: 3 } };
 }
 
-/** The ladder's verdict shape, from a result: status plus the fields the ladder names. */
-function verdictOf(result: CitationResult): LadderExpected {
-  const out: LadderExpected = { status: result.status };
-  if (result.newSrc !== undefined) out.newSrc = result.newSrc;
-  if (result.candidates !== undefined) out.candidates = result.candidates;
-  if (result.historyAvailable !== undefined) out.historyAvailable = result.historyAvailable;
+/** One entry from the ladder's own spelling of a source. */
+function entryFor(src: string, integrity: string, commit?: string): PageCitation {
+  return page({ source: sourceOf(src, integrity, commit) });
+}
+
+/** The ladder's verdict shape, from a source end: status plus the fields the ladder names. */
+function verdictOf(source: SourceEnd): LadderExpected {
+  const out: LadderExpected = { status: source.status };
+  if (source.newSrc !== undefined) out.newSrc = source.newSrc;
+  if (source.candidates !== undefined) out.candidates = source.candidates;
+  if (source.historyAvailable !== undefined) out.historyAvailable = source.historyAvailable;
   return out;
 }
 
@@ -130,66 +162,71 @@ describe("classifyCitation agrees with the ladder", () => {
   for (const [name, entry, current, atCommit, expected, opts] of ladder.VERDICTS) {
     it(name, async () => {
       if (current !== null) writeFileSync(join(root, PATH), current, "utf8");
-      const citation: Citation = { src: entry.src, integrity: entry.integrity };
-      if (entry.id !== undefined) citation.id = entry.id;
-      if (entry.commit !== undefined) citation.commit = entry.commit;
+      const citation = citationOf(entry);
       const result = await classifyCitation(page(citation), {
         root,
         index: indexOf(current === null ? [] : [PATH]),
         git: fakeGit(atCommit),
         ...keyFor(opts),
       });
-      // `reason` and `fileLines` are the ladder's own; CitationResult has no
-      // field for either, so the comparison is over what it does carry.
+      // `reason` and `fileLines` are the ladder's own; SourceEnd has no field
+      // for either, so the comparison is over what it does carry.
       const { reason: _reason, fileLines: _fileLines, ...want } = expected;
       expect(verdictOf(result)).toEqual(want);
-      expect(result.citation).toBe(citation);
+      // The source is spelled back exactly as the entry spelled it.
+      expect(result.src).toBe(entry.src);
       // An encrypted source with no key, or another one, names no file to resolve.
       if (expected.status !== "missing") expect(result.resolvedPath).toBe(PATH);
-      if (entry.commit !== undefined) expect(result.commit).toBe(entry.commit);
+      if (entry.commit !== undefined) expect(result.commitSha).toBe(entry.commit);
+      else expect(result.commitSha).toBeUndefined();
     });
   }
 
   it("attaches commit subjects and the diff to a changed pin with history", async () => {
     writeFileSync(join(root, PATH), ladder.variants.CHANGED ?? "", "utf8");
-    const result = await classifyCitation(
-      page({ src: `${PATH}:2`, integrity: PIN_L2, commit: "3f9c2a1" }),
-      { root, index: indexOf([PATH]), git: fakeGit(ladder.SOURCE) },
-    );
+    const result = await classifyCitation(entryFor(`${PATH}:2`, PIN_L2, "3f9c2a1"), {
+      root,
+      index: indexOf([PATH]),
+      git: fakeGit(ladder.SOURCE),
+    });
     expect(result.status).toBe("changed");
     expect(result.historyAvailable).toBe(true);
     expect(result.commitsSince).toEqual(["raise fetch timeout to 30s"]);
     expect(result.diff).toBe("-old\n+new\n");
   });
 
-  it("takes the page-level commit when the entry carries none", async () => {
+  it("takes the commit from source.commit-sha, and asks git for none without one", async () => {
     writeFileSync(join(root, PATH), ladder.variants.CHANGED ?? "", "utf8");
-    const result = await classifyCitation(page({ src: `${PATH}:2`, integrity: PIN_L2 }), {
-      root,
-      index: indexOf([PATH]),
-      git: fakeGit(ladder.variants.AT_COMMIT_OTHER),
-      pageCommit: "3f9c2a1",
+    const opts = { root, index: indexOf([PATH]), git: fakeGit(ladder.variants.AT_COMMIT_OTHER) };
+    const recorded = await classifyCitation(entryFor(`${PATH}:2`, PIN_L2, "3f9c2a1"), opts);
+    expect(recorded.status).toBe("never-true");
+    expect(recorded.commitSha).toBe("3f9c2a1");
+    // No `commit-sha` anywhere: `showFile` throws if it is called at all.
+    const none = await classifyCitation(entryFor(`${PATH}:2`, PIN_L2), {
+      ...opts,
+      git: fakeGit(undefined),
     });
-    expect(result.status).toBe("never-true");
-    expect(result.commit).toBe("3f9c2a1");
+    expect(verdictOf(none)).toEqual({ status: "changed" });
+    expect(none.commitSha).toBeUndefined();
+    expect(none.commitsSince).toBeUndefined();
   });
 
   it("leaves history alone when git is unavailable", async () => {
     writeFileSync(join(root, PATH), ladder.variants.CHANGED ?? "", "utf8");
-    const entry = page({ src: `${PATH}:2`, integrity: PIN_L2, commit: "3f9c2a1" });
-    const absent = await classifyCitation(entry, {
+    const absent = await classifyCitation(entryFor(`${PATH}:2`, PIN_L2, "3f9c2a1"), {
       root,
       index: indexOf([PATH]),
       git: fakeGit(ladder.variants.AT_COMMIT_OTHER, false),
     });
     expect(verdictOf(absent)).toEqual({ status: "changed" });
+    expect(absent.commitSha).toBe("3f9c2a1");
     expect(absent.commitsSince).toBeUndefined();
   });
 
   it("moves a keyed pin without history, spelling the token as the page did", async () => {
     writeFileSync(join(root, PATH), ladder.variants.MOVED ?? "", "utf8");
     const keyed = ladder.mint(ladder.SOURCE, 1, 3, KEY) ?? "";
-    const result = await classifyCitation(page({ src: `${TOKEN}:1-3`, integrity: keyed }), {
+    const result = await classifyCitation(entryFor(`${TOKEN}:1-3`, keyed), {
       root,
       index: indexOf([PATH]),
       git: fakeGit(undefined),
@@ -197,12 +234,13 @@ describe("classifyCitation agrees with the ladder", () => {
     });
     expect(result.status).toBe("moved");
     expect(result.newSrc).toBe(`${TOKEN}:3-5`);
+    expect(result.newLines).toBe("3-5");
     expect(result.resolvedPath).toBe(PATH);
   });
 
   it("reports a truncated search as changed with truncatedSearch", async () => {
     writeFileSync(join(root, PATH), ladder.variants.MOVED ?? "", "utf8");
-    const result = await classifyCitation(page({ src: `${PATH}:2`, integrity: PIN_L2 }), {
+    const result = await classifyCitation(entryFor(`${PATH}:2`, PIN_L2), {
       root,
       index: indexOf([PATH]),
       git: fakeGit(undefined),
@@ -236,21 +274,37 @@ describe("findWindows", () => {
   it("with the original lines, a first-line match that diverges later is not hashed into a hit", () => {
     const lines = [line2, "different", line2, SOURCE_LINES[2] ?? ""];
     const pin = hashLines([line2, SOURCE_LINES[2] ?? ""].join("\n"));
-    expect(findWindows(lines, 2, pin, undefined, { original: [line2, SOURCE_LINES[2] ?? ""] })).toEqual({
-      starts: [3],
-      truncated: false,
-    });
+    expect(
+      findWindows(lines, 2, pin, undefined, { original: [line2, SOURCE_LINES[2] ?? ""] }),
+    ).toEqual({ starts: [3], truncated: false });
   });
 
   it("without the original lines: hashes windows, keyed when a key is given", () => {
-    expect(findWindows(moved, 1, PIN_L2, undefined, { around: 2 })).toEqual({ starts: [4], truncated: false });
+    expect(findWindows(moved, 1, PIN_L2, undefined, { around: 2 })).toEqual({
+      starts: [4],
+      truncated: false,
+    });
     expect(findWindows(ambiguous, 1, PIN_L2, undefined, { around: 2 })).toEqual({
       starts: [4, 11],
       truncated: false,
     });
-    const keyed = ladder.mint(ladder.SOURCE, 2, 2, KEY) ?? "";
-    expect(findWindows(moved, 1, keyed, KEY, { around: 2 })).toEqual({ starts: [4], truncated: false });
-    expect(findWindows(moved, 1, keyed, undefined, { around: 2 })).toEqual({ starts: [], truncated: false });
+    const keyed = keyedPin(ladder.SOURCE, 2, 2);
+    expect(findWindows(moved, 1, keyed, KEY, { around: 2 })).toEqual({
+      starts: [4],
+      truncated: false,
+    });
+    expect(findWindows(moved, 1, keyed, undefined, { around: 2 })).toEqual({
+      starts: [],
+      truncated: false,
+    });
+  });
+
+  it("mints the ladder's keyed pin, `hmac-sha256-` and all", () => {
+    // The prefix is what tells a reader the value is a MAC rather than a hash
+    // they could recompute; the ladder and the implementation agree on both.
+    expect(keyedPin(ladder.SOURCE, 2, 2)).toMatch(/^hmac-sha256-[0-9a-f]{64}$/);
+    expect(hashRange(ladder.SOURCE, { start: 2, end: 2 }, KEY)).toBe(keyedPin(ladder.SOURCE, 2, 2));
+    expect(keyedPin(ladder.SOURCE, 2, 2)).not.toBe(PIN_L2);
   });
 
   it("a window longer than the file has nowhere to be", () => {
@@ -278,7 +332,10 @@ describe("findWindows", () => {
       starts: [],
       truncated: true,
     });
-    expect(findWindows(lines, 1, outside, undefined, { around })).toEqual({ starts: [4900], truncated: false });
+    expect(findWindows(lines, 1, outside, undefined, { around })).toEqual({
+      starts: [4900],
+      truncated: false,
+    });
     expect(MOVE_BUDGET_BYTES).toBe(64 * 1024 * 1024);
   });
 
@@ -307,29 +364,33 @@ describe.skipIf(!gitAvailable())("classifyCitation against a real repository", (
     const index = await buildSourceIndex(repo, { gitClient: git });
     const opts = { root: repo, index, git };
 
-    const changed = await classifyCitation(page({ src: `${PATH}:2`, integrity: PIN_L2, commit: first }), opts);
+    const changed = await classifyCitation(entryFor(`${PATH}:2`, PIN_L2, first), opts);
     expect(changed.status).toBe("changed");
     expect(changed.historyAvailable).toBe(true);
     expect(changed.commitsSince).toEqual(["raise fetch timeout to 30s"]);
     expect(changed.diff).toContain("+export const FETCH_TIMEOUT_MS = 30_000;");
 
-    const neverTrue = await classifyCitation(page({ src: `${PATH}:2`, integrity: PIN_L2, commit: second }), opts);
+    const neverTrue = await classifyCitation(entryFor(`${PATH}:2`, PIN_L2, second), opts);
     expect(neverTrue.status).toBe("never-true");
 
     const absent = await classifyCitation(
-      page({ src: "src/new.ts:1", integrity: "sha256-" + "0".repeat(64), commit: first }),
+      entryFor("src/new.ts:1", "sha256-" + "0".repeat(64), first),
       opts,
     );
     expect(absent.status).toBe("never-true");
 
     writeFileSync(join(repo, PATH), ladder.variants.MOVED ?? "", "utf8");
-    const moved = await classifyCitation(page({ src: `${PATH}:2`, integrity: PIN_L2, commit: first }), opts);
+    const moved = await classifyCitation(entryFor(`${PATH}:2`, PIN_L2, first), opts);
     expect(moved.status).toBe("moved");
     expect(moved.newSrc).toBe(`${PATH}:4`);
     expect(moved.commitsSince).toBeUndefined();
 
     const unknown = await classifyCitation(
-      page({ src: `${PATH}:2`, integrity: "sha256-" + "0".repeat(64), commit: "0123456789abcdef0123456789abcdef01234567" }),
+      entryFor(
+        `${PATH}:2`,
+        "sha256-" + "0".repeat(64),
+        "0123456789abcdef0123456789abcdef01234567",
+      ),
       opts,
     );
     expect(unknown.status).toBe("changed");
@@ -338,9 +399,9 @@ describe.skipIf(!gitAvailable())("classifyCitation against a real repository", (
 
   it("a pin moved by update and then changed is `changed`, not `never-true`", async () => {
     // C1: the pin is minted for line 2. C2: two lines are inserted above and
-    // `update` rewrites src to :4, keeping the commit at C1. C3: line 4 is
-    // edited. The recorded commit's file holds other bytes at line 4, but the
-    // pinned bytes were there, at line 2, so the pin was true then.
+    // `update` rewrites the source to :4, keeping `commit-sha` at C1. C3: line
+    // 4 is edited. The recorded commit's file holds other bytes at line 4, but
+    // the pinned bytes were there, at line 2, so the pin was true then.
     repo = makeTempRepo({ files: { [PATH]: ladder.SOURCE } });
     const first = commitAll(repo, "add limits");
     writeFileSync(join(repo, PATH), ladder.variants.MOVED ?? "", "utf8");
@@ -351,7 +412,7 @@ describe.skipIf(!gitAvailable())("classifyCitation against a real repository", (
     const index = await buildSourceIndex(repo, { gitClient: git });
     const opts = { root: repo, index, git };
 
-    const result = await classifyCitation(page({ src: `${PATH}:4`, integrity: PIN_L2, commit: first }), opts);
+    const result = await classifyCitation(entryFor(`${PATH}:4`, PIN_L2, first), opts);
     expect(result.status).toBe("changed");
     expect(result.historyAvailable).toBe(true);
     expect(result.commitsSince).toEqual(["raise fetch timeout to 30s", "comment the limits"]);
@@ -359,7 +420,7 @@ describe.skipIf(!gitAvailable())("classifyCitation against a real repository", (
 
     // The same history, but the pinned bytes were never in the file at C1.
     const never = await classifyCitation(
-      page({ src: `${PATH}:4`, integrity: ladder.mint("export const NEVER = 1;\n", 1) ?? "", commit: first }),
+      entryFor(`${PATH}:4`, ladder.mint("export const NEVER = 1;\n", 1) ?? "", first),
       opts,
     );
     expect(never.status).toBe("never-true");

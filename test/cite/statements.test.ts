@@ -1,20 +1,26 @@
 /**
- * Inline statement scanning. The cases mirror the ladder in
- * docs/proposals/0044/ladders/drift-examples.cjs, which is the behaviour the
- * scanner has to match, plus the file-relative mapping (`from`) the ladder
- * did not need because it never saw a frontmatter block.
+ * Marker scanning, and the line geometry every other module reads through it:
+ * paragraphs, fenced blocks, and what a marker anchors.
+ *
+ * A marker is `cite <id>` in the format's comment syntax and carries nothing
+ * else. A JSON payload was the inline entry of proposal 0044's first draft; it
+ * is a bad payload now, because an entry lives in frontmatter or a manifest.
  */
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import {
-  assertInlineEntrySupported,
+  anchoredLines,
   detectEol,
+  fenceSpanAt,
   fencedBlockAfter,
+  fencedBlockAt,
   fencedBlocks,
   formatStatement,
+  insideFence,
   lineAt,
+  offsetOfLine,
   paragraphAfter,
   parseStatements,
   statementForms,
@@ -27,43 +33,34 @@ const here = dirname(fileURLToPath(import.meta.url));
 const readPage = (name: string): string =>
   readFileSync(`${here}/../fixtures/cite/pages/${name}`, "utf8");
 
-const PIN =
-  "sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f";
-
 /** The statements `readPage` finds in a whole page, frontmatter and all. */
 const readPageStatements = (content: string): InlineStatement[] =>
   parsePage("page.md", content).statements;
 
 describe("statementForms", () => {
-  it("markdown and mdx share three forms; json only in the comment forms", () => {
+  it("markdown and mdx share three forms, and carry no json flag", () => {
     expect(statementForms("markdown")).toEqual([
-      { open: "<!--", close: "-->", json: true },
-      { open: "{/*", close: "*/}", json: true },
-      { open: "[comment]: # (", close: ")", json: false },
+      { open: "<!--", close: "-->" },
+      { open: "{/*", close: "*/}" },
+      { open: "[comment]: # (", close: ")" },
     ]);
     // MDX rejects an HTML comment, so its first form is the JSX comment.
     expect(statementForms("mdx")).toEqual([
-      { open: "{/*", close: "*/}", json: true },
-      { open: "<!--", close: "-->", json: true },
-      { open: "[comment]: # (", close: ")", json: false },
+      { open: "{/*", close: "*/}" },
+      { open: "<!--", close: "-->" },
+      { open: "[comment]: # (", close: ")" },
     ]);
   });
 
   it("html and xml have the comment form only", () => {
     for (const format of ["html", "xml"]) {
-      expect(statementForms(format)).toEqual([
-        { open: "<!--", close: "-->", json: true },
-      ]);
+      expect(statementForms(format)).toEqual([{ open: "<!--", close: "-->" }]);
     }
   });
 
-  it("asciidoc and rst carry ids only", () => {
-    expect(statementForms("asciidoc")).toEqual([
-      { open: "// (", close: ")", json: false },
-    ]);
-    expect(statementForms("rst")).toEqual([
-      { open: ".. (", close: ")", json: false },
-    ]);
+  it("asciidoc and rst have one form each", () => {
+    expect(statementForms("asciidoc")).toEqual([{ open: "// (", close: ")" }]);
+    expect(statementForms("rst")).toEqual([{ open: ".. (", close: ")" }]);
   });
 
   it("an unknown format has no forms", () => {
@@ -72,8 +69,9 @@ describe("statementForms", () => {
 });
 
 describe("parseStatements", () => {
-  it("parses a reference statement with its anchor, raw text and offsets", () => {
-    const body = "Retries default to 3.\n\nSome other text.\n\n<!-- cite retries -->\nRetries default to 3. Really.\n";
+  it("parses a marker with its anchor, raw text and offsets", () => {
+    const body =
+      "Retries default to 3.\n\nSome other text.\n\n<!-- cite retries -->\nRetries default to 3. Really.\n";
     const [st, ...rest] = parseStatements(body, "markdown");
     expect(rest).toEqual([]);
     expect(st).toBeDefined();
@@ -89,10 +87,7 @@ describe("parseStatements", () => {
     const frontmatter = "---\ntitle: x\n---\n";
     const body = "# Title\n\n<!-- cite fetch-timeout -->\nThe claim.\n";
     const content = frontmatter + body;
-    const [st] = parseStatements(body, "markdown", {
-      offset: frontmatter.length,
-      line: 4,
-    });
+    const [st] = parseStatements(body, "markdown", { offset: frontmatter.length, line: 4 });
     expect(st).toBeDefined();
     if (!st) return;
     expect(st.line).toBe(6);
@@ -100,18 +95,28 @@ describe("parseStatements", () => {
     expect(content.slice(st.start, st.end)).toBe("<!-- cite fetch-timeout -->");
   });
 
-  it("`cite true` is a reference to id `true`, never json", () => {
+  it("`cite true` names the id `true`", () => {
     expect(parseStatements("<!-- cite true -->\nx\n", "markdown")[0]?.payload).toEqual({
       kind: "ref",
       id: "true",
     });
   });
 
-  it("parses a json payload in the html comment form", () => {
-    expect(
-      parseStatements(`<!-- cite {"src":"a:1","integrity":"${PIN}"} -->\nx\n`, "markdown")[0]
-        ?.payload,
-    ).toEqual({ kind: "entry", entry: { src: "a:1", integrity: PIN } });
+  it("a JSON payload is a bad payload, flagged as json", () => {
+    const body = '<!-- cite {"source": {"file": "src/limits.ts"}} -->\nx\n';
+    expect(parseStatements(body, "markdown")[0]?.payload).toEqual({
+      kind: "bad",
+      reason: "a JSON payload",
+      json: true,
+    });
+    // Every form says the same: there is no form an entry may be written in.
+    expect(parseStatements('{/* cite {"a":1} */}\nx\n', "mdx")[0]?.payload).toMatchObject({
+      kind: "bad",
+      json: true,
+    });
+    expect(parseStatements('[comment]: # (cite {"a":1})\nx\n', "markdown")[0]?.payload).toMatchObject(
+      { kind: "bad", json: true },
+    );
   });
 
   it("parses the mdx expression form", () => {
@@ -119,18 +124,12 @@ describe("parseStatements", () => {
       kind: "ref",
       id: "fetch-timeout",
     });
-    expect(
-      parseStatements(`{/* cite {"src":"a:1","integrity":"${PIN}"} */}\nx\n`, "mdx")[0]?.payload,
-    ).toEqual({ kind: "entry", entry: { src: "a:1", integrity: PIN } });
   });
 
-  it("parses the markdown link-reference form, ids only", () => {
-    expect(parseStatements("[comment]: # (cite fetch-timeout)\nx\n", "markdown")[0]?.payload).toEqual(
-      { kind: "ref", id: "fetch-timeout" },
-    );
-    expect(parseStatements('[comment]: # (cite {"src":"a:1"})\nx\n', "markdown")[0]?.payload).toEqual(
-      { kind: "bad", reason: "json payload not allowed in this form" },
-    );
+  it("parses the markdown link-reference form", () => {
+    expect(
+      parseStatements("[comment]: # (cite fetch-timeout)\nx\n", "markdown")[0]?.payload,
+    ).toEqual({ kind: "ref", id: "fetch-timeout" });
   });
 
   it("parses the asciidoc and rst forms", () => {
@@ -145,7 +144,10 @@ describe("parseStatements", () => {
   });
 
   it("parses the comment form in html with line and anchor", () => {
-    const st = parseStatements("<p>x</p>\n<!-- cite fetch-timeout -->\n<p>The claim.</p>\n", "html")[0];
+    const st = parseStatements(
+      "<p>x</p>\n<!-- cite fetch-timeout -->\n<p>The claim.</p>\n",
+      "html",
+    )[0];
     expect(st).toMatchObject({
       line: 2,
       anchorLine: 3,
@@ -154,31 +156,43 @@ describe("parseStatements", () => {
     });
   });
 
-  it("anchors to the rest of the statement's own line when it is not blank", () => {
-    expect(parseStatements("<!-- cite fetch-timeout --> The claim.\n", "markdown")[0]?.anchorLine).toBe(1);
+  it("anchors to the rest of the marker's own line when it is not blank", () => {
+    expect(
+      parseStatements("<!-- cite fetch-timeout --> The claim.\n", "markdown")[0]?.anchorLine,
+    ).toBe(1);
   });
 
   it("skips blank lines to find the anchored paragraph", () => {
     expect(parseStatements("<!-- cite x -->\n\n\nThe claim.\n", "markdown")[0]?.anchorLine).toBe(4);
   });
 
-  it("has no anchor when nothing follows, or a fence follows", () => {
+  it("anchors the fenced block that sits where a paragraph would", () => {
+    // `parseStatements` anchors without `quote`, and a fence where the
+    // paragraph would be is still what the marker sits above.
+    expect(
+      parseStatements("<!-- cite x -->\n```ts\nconst a = 1;\n```\n", "markdown")[0]?.anchorLine,
+    ).toBe(2);
+  });
+
+  it("has no anchor when nothing follows", () => {
     expect(parseStatements("<!-- cite x -->\n", "markdown")[0]?.anchorLine).toBeUndefined();
-    expect(parseStatements("<!-- cite x -->\n```ts\nconst a = 1;\n```\n", "markdown")[0]?.anchorLine).toBeUndefined();
+    expect(parseStatements("<!-- cite x -->\n\n\n", "markdown")[0]?.anchorLine).toBeUndefined();
   });
 
   it("anchors a list item and stops at the fence indented inside it", () => {
-    // A statement above a list item whose code block is indented: the anchor
-    // is the item's text, and the paragraph does not run into the fence.
     const body = "<!-- cite x -->\n- Step one.\n  ```\n  Step two.\n  ```\n";
     expect(parseStatements(body, "markdown")[0]?.anchorLine).toBe(2);
     const paragraph = paragraphAfter(body, body.indexOf("- Step"));
     expect(paragraph).toMatchObject({ line: 2 });
-    expect(paragraph === undefined ? undefined : body.slice(paragraph.start, paragraph.end)).toBe("- Step one.");
+    expect(paragraph === undefined ? undefined : body.slice(paragraph.start, paragraph.end)).toBe(
+      "- Step one.",
+    );
   });
 
-  it("ignores comments that are not statements", () => {
-    expect(parseStatements("<!-- citeable -->\n<!-- todo -->\n<!-- cite-x -->\nx\n", "markdown")).toEqual([]);
+  it("ignores comments that are not markers", () => {
+    expect(
+      parseStatements("<!-- citeable -->\n<!-- todo -->\n<!-- cite-x -->\nx\n", "markdown"),
+    ).toEqual([]);
   });
 
   it("treats a bare `cite` with no whitespace after it as an empty payload", () => {
@@ -188,18 +202,18 @@ describe("parseStatements", () => {
     });
   });
 
-  it("reports malformed json, an empty payload, and a payload that is neither", () => {
-    expect(parseStatements("<!-- cite {src: nope} -->\nx\n", "markdown")[0]?.payload).toEqual({
-      kind: "bad",
-      reason: "malformed json",
-    });
+  it("reports an empty payload and a payload that is not an id", () => {
     expect(parseStatements("<!-- cite -->\nx\n", "markdown")[0]?.payload).toEqual({
       kind: "bad",
       reason: "empty payload",
     });
     expect(parseStatements("<!-- cite Fetch Timeout -->\nx\n", "markdown")[0]?.payload).toEqual({
       kind: "bad",
-      reason: "payload is neither an id nor json",
+      reason: "payload is not an id",
+    });
+    expect(parseStatements("<!-- cite -Leading -->\nx\n", "markdown")[0]?.payload).toEqual({
+      kind: "bad",
+      reason: "payload is not an id",
     });
   });
 
@@ -219,12 +233,12 @@ describe("parseStatements", () => {
     expect(st?.anchorLine).toBe(4);
   });
 
-  it("reports a multi-line statement at its opening line and anchors after its close", () => {
-    const body = `<!-- cite {\n  "src": "a:1",\n  "integrity": "${PIN}"\n} -->\nThe claim.\n`;
+  it("reports a multi-line marker at its opening line and anchors after its close", () => {
+    const body = "<!-- cite\n  fetch-timeout\n-->\nThe claim.\n";
     const st = parseStatements(body, "markdown")[0];
     expect(st?.line).toBe(1);
-    expect(st?.anchorLine).toBe(5);
-    expect(st?.payload).toEqual({ kind: "entry", entry: { src: "a:1", integrity: PIN } });
+    expect(st?.anchorLine).toBe(4);
+    expect(st?.payload).toEqual({ kind: "ref", id: "fetch-timeout" });
   });
 
   it("finds nothing for a format with no forms", () => {
@@ -234,9 +248,11 @@ describe("parseStatements", () => {
 
 describe("parseStatements does not read code", () => {
   const ids = (body: string, format: string): string[] =>
-    parseStatements(body, format).map((s) => (s.payload.kind === "ref" ? s.payload.id : s.payload.kind));
+    parseStatements(body, format).map((s) =>
+      s.payload.kind === "ref" ? s.payload.id : s.payload.kind,
+    );
 
-  it("ignores a statement inside a fenced block, backtick or tilde", () => {
+  it("ignores a marker inside a fenced block, backtick or tilde", () => {
     expect(ids("```md\n<!-- cite fenced -->\nThe claim.\n```\n", "markdown")).toEqual([]);
     expect(ids("~~~\n{/* cite fenced */}\n~~~\n", "mdx")).toEqual([]);
     expect(ids("```\n[comment]: # (cite fenced)\n```\n", "markdown")).toEqual([]);
@@ -249,19 +265,20 @@ describe("parseStatements does not read code", () => {
     expect(ids(nested, "markdown")).toEqual([]);
   });
 
-  it("ignores a statement inside a backtick span, whatever the backtick count", () => {
-    expect(ids("Write `<!-- cite <id> -->` above the paragraph.\n", "markdown")).toEqual([]);
+  it("ignores a marker inside a backtick span, whatever the backtick count", () => {
+    expect(ids("Write `<!-- cite id -->` above the paragraph.\n", "markdown")).toEqual([]);
     expect(ids("Write `` `<!-- cite x -->` `` to show it.\n", "markdown")).toEqual([]);
-    const row = "| markdown, mdx | `<!-- cite PAYLOAD -->`, `{/* cite PAYLOAD */}`, `[comment]: # (cite PAYLOAD)` | id |\n";
+    const row = "| markdown | `<!-- cite ID -->`, `{/* cite ID */}`, `[comment]: # (cite ID)` |\n";
     expect(ids(row, "mdx")).toEqual([]);
   });
 
-  it("an unclosed backtick is not a span, so the statement after it is read", () => {
+  it("an unclosed backtick is not a span, so the marker after it is read", () => {
     expect(ids("A stray ` here.\n<!-- cite real -->\nThe claim.\n", "markdown")).toEqual(["real"]);
   });
 
-  it("still finds a real statement after a fence, and one between two fences", () => {
-    const body = "```md\n<!-- cite fenced -->\n```\n\n<!-- cite real -->\nThe claim.\n\n```\n<!-- cite fenced-again -->\n```\n";
+  it("still finds a real marker after a fence, and one between two fences", () => {
+    const body =
+      "```md\n<!-- cite fenced -->\n```\n\n<!-- cite real -->\nThe claim.\n\n```\n<!-- cite fenced-again -->\n```\n";
     const [st, ...rest] = parseStatements(body, "markdown");
     expect(rest).toEqual([]);
     expect(st?.payload).toEqual({ kind: "ref", id: "real" });
@@ -274,20 +291,22 @@ describe("parseStatements does not read code", () => {
   });
 
   it("a fence inside the frontmatter is irrelevant: the scanner sees the body only", () => {
-    const content = "---\ntitle: x\ndescription: \"```\"\n---\n\n<!-- cite real -->\nThe claim.\n";
+    const content = '---\ntitle: x\ndescription: "```"\n---\n\n<!-- cite real -->\nThe claim.\n';
     expect(readPageStatements(content).map((s) => s.line)).toEqual([6]);
   });
 
-  it("ignores a statement inside an asciidoc listing block", () => {
-    expect(ids("----\n// (cite fenced)\n----\n\n// (cite real)\nThe claim.\n", "asciidoc")).toEqual(["real"]);
+  it("ignores a marker inside an asciidoc listing block", () => {
+    expect(ids("----\n// (cite fenced)\n----\n\n// (cite real)\nThe claim.\n", "asciidoc")).toEqual([
+      "real",
+    ]);
   });
 
-  it("html has no fences: a statement in a <pre> is still a statement", () => {
+  it("html has no fences: a marker in a <pre> is still a marker", () => {
     expect(ids("<pre>\n<!-- cite in-pre -->\n</pre>\n", "html")).toEqual(["in-pre"]);
   });
 });
 
-describe("detectEol and lineAt", () => {
+describe("detectEol, lineAt and offsetOfLine", () => {
   it("detects the first line break's flavour", () => {
     expect(detectEol("a\nb\r\n")).toBe("\n");
     expect(detectEol("a\r\nb\n")).toBe("\r\n");
@@ -299,6 +318,14 @@ describe("detectEol and lineAt", () => {
     expect(lineAt("a\nb\nc", 2)).toBe(2);
     expect(lineAt("a\r\nb\r\nc", 6)).toBe(3);
     expect(lineAt("a\nb\n", 4)).toBe(3);
+  });
+
+  it("gives the offset a line starts at, and the length past the end", () => {
+    const text = "a\nbb\nccc\n";
+    expect(offsetOfLine(text, 1)).toBe(0);
+    expect(offsetOfLine(text, 3)).toBe(5);
+    expect(offsetOfLine(text, 99)).toBe(text.length);
+    expect(lineAt(text, offsetOfLine(text, 3))).toBe(3);
   });
 });
 
@@ -334,7 +361,7 @@ describe("paragraphAfter", () => {
   });
 });
 
-describe("fencedBlockAfter and fencedBlocks", () => {
+describe("fencedBlockAfter, fencedBlockAt and fencedBlocks", () => {
   it("finds a backtick block in markdown with content offsets, line and text", () => {
     const content = "<!-- cite x -->\n\n```ts\nconst a = 1;\nconst b = 2;\n```\n";
     const b = fencedBlockAfter(content, "<!-- cite x -->".length, "markdown");
@@ -366,50 +393,109 @@ describe("fencedBlockAfter and fencedBlocks", () => {
     expect(fencedBlockAfter("x\nprose\n", 1, "markdown")).toBeUndefined();
   });
 
+  it("fencedBlockAt reads the block only when the offset's line opens one", () => {
+    const content = "prose\n```ts\ncode\n```\n";
+    expect(fencedBlockAt(content, content.indexOf("```"))?.text).toBe("code\n");
+    expect(fencedBlockAt(content, 0)).toBeUndefined();
+  });
+
   it("lists every block after the body offset", () => {
     const content = readPage("quote.md");
     const bodyOffset = content.indexOf("# Limits");
     const blocks = fencedBlocks(content, bodyOffset, "markdown");
-    expect(blocks.map((b) => b.line)).toEqual([13, 20]);
-    expect(blocks[1]?.text).toBe("export const FETCH_TIMEOUT_MS = 10_000;\n");
+    expect(blocks.map((b) => b.line)).toEqual([16]);
+    expect(blocks[0]?.text).toBe(
+      "export const MAX_FILES = 10_000;\nexport const FETCH_TIMEOUT_MS = 10_000;\nexport const RETRIES = 3;\n",
+    );
     expect(fencedBlocks(content, bodyOffset, "rst")).toEqual([]);
   });
 });
 
+describe("fenceSpanAt and insideFence", () => {
+  it("spans the block opening on a line, fences included", () => {
+    const content = "# T\n\n```ts\nconst a = 1;\n```\n\nprose\n";
+    expect(fenceSpanAt(content, 3, "markdown")).toEqual({ start: 3, end: 5 });
+  });
+
+  it("is undefined when the line does not open a block, or the format has no locator", () => {
+    const content = "# T\n\n```ts\nconst a = 1;\n```\n";
+    expect(fenceSpanAt(content, 4, "markdown")).toBeUndefined();
+    expect(fenceSpanAt(content, 1, "markdown")).toBeUndefined();
+    expect(fenceSpanAt(content, 3, "rst")).toBeUndefined();
+    expect(fenceSpanAt("```ts\nnever closed\n", 1, "markdown")).toBeUndefined();
+  });
+
+  it("insideFence is true between the fences and false on either of them", () => {
+    const content = "# T\n\n```ts\nconst a = 1;\n```\n\nprose\n";
+    expect(insideFence(content, 0, 3, "markdown")).toBe(false);
+    expect(insideFence(content, 0, 4, "markdown")).toBe(true);
+    expect(insideFence(content, 0, 5, "markdown")).toBe(true);
+    expect(insideFence(content, 0, 7, "markdown")).toBe(false);
+    // rst has no locator, so nothing is ever inside a fence there.
+    expect(insideFence(content, 0, 4, "rst")).toBe(false);
+  });
+});
+
+describe("anchoredLines", () => {
+  it("takes the rest of the marker's own line when it carries text", () => {
+    const content = "# T\n\n<!-- cite x --> The claim.\n\nmore\n";
+    const after = content.indexOf("-->") + 3;
+    expect(anchoredLines(content, after, "markdown")).toEqual({ start: 3, end: 3 });
+  });
+
+  it("takes the paragraph that follows, to its last line", () => {
+    const content = "<!-- cite x -->\nThe claim. It is\nnot configurable.\n\nnext\n";
+    const after = content.indexOf("-->") + 3;
+    expect(anchoredLines(content, after, "markdown")).toEqual({ start: 2, end: 3 });
+  });
+
+  it("takes the fenced block when one sits where the paragraph would", () => {
+    const content = "<!-- cite x -->\n```ts\nconst a = 1;\n```\n";
+    const after = content.indexOf("-->") + 3;
+    expect(anchoredLines(content, after, "markdown")).toEqual({ start: 2, end: 4 });
+  });
+
+  it("under quote, takes the next fenced block wherever it is", () => {
+    const content = "<!-- cite x -->\nsome prose first\n\n```ts\nconst a = 1;\n```\n";
+    const after = content.indexOf("-->") + 3;
+    expect(anchoredLines(content, after, "markdown", true)).toEqual({ start: 4, end: 6 });
+    // Without quote the prose is what it anchors.
+    expect(anchoredLines(content, after, "markdown")).toEqual({ start: 2, end: 2 });
+  });
+
+  it("is undefined when nothing follows, and when quote finds no block", () => {
+    expect(anchoredLines("<!-- cite x -->\n", 15, "markdown")).toBeUndefined();
+    expect(anchoredLines("<!-- cite x -->\nprose only\n", 15, "markdown", true)).toBeUndefined();
+    // rst has no fence locator, so quote can never anchor there.
+    expect(anchoredLines("<!-- cite x -->\n```\nc\n```\n", 15, "rst", true)).toBeUndefined();
+  });
+});
+
 describe("formatStatement", () => {
-  it("renders a reference in each format's first form", () => {
+  it("renders a marker in each format's first form", () => {
     const ref = { kind: "ref", id: "fetch-timeout" } as const;
     expect(formatStatement("markdown", ref)).toBe("<!-- cite fetch-timeout -->");
     expect(formatStatement("mdx", ref)).toBe("{/* cite fetch-timeout */}");
     expect(formatStatement("html", ref)).toBe("<!-- cite fetch-timeout -->");
+    expect(formatStatement("xml", ref)).toBe("<!-- cite fetch-timeout -->");
     expect(formatStatement("asciidoc", ref)).toBe("// (cite fetch-timeout)");
     expect(formatStatement("rst", ref)).toBe(".. (cite fetch-timeout)");
   });
 
-  it("renders an entry as compact json and round-trips through the scanner", () => {
-    const entry = { src: "a:1", integrity: PIN, quote: true };
-    const text = formatStatement("markdown", { kind: "entry", entry });
-    expect(text).toBe(`<!-- cite ${JSON.stringify(entry)} -->`);
-    expect(parseStatements(`${text}\n`, "markdown")[0]?.payload).toEqual({ kind: "entry", entry });
-  });
-
-  it("refuses an entry for an id-only format and an unknown format", () => {
-    const entry = { kind: "entry", entry: { src: "a:1", integrity: PIN } } as const;
-    expect(() => formatStatement("asciidoc", entry)).toThrow(CiteError);
-    expect(() => formatStatement("rst", entry)).toThrow(/asciidoc|rst|id/);
-    expect(() => formatStatement("nope", { kind: "ref", id: "x" })).toThrow(CiteError);
-  });
-});
-
-describe("assertInlineEntrySupported", () => {
-  it("passes the comment formats and refuses the rest with formatStatement's own message", () => {
-    for (const format of ["markdown", "mdx", "html", "xml"]) {
-      expect(() => { assertInlineEntrySupported(format); }).not.toThrow();
+  it("round-trips through the scanner in every format", () => {
+    for (const format of ["markdown", "mdx", "html", "asciidoc", "rst"]) {
+      const text = formatStatement(format, { kind: "ref", id: "fetch-timeout" });
+      expect(parseStatements(`${text}\nThe claim.\n`, format)[0]?.payload).toEqual({
+        kind: "ref",
+        id: "fetch-timeout",
+      });
     }
-    expect(() => { assertInlineEntrySupported("asciidoc"); }).toThrow(
-      'Format "asciidoc" carries inline references only; an inline entry needs a frontmatter entry and a reference statement.',
+  });
+
+  it("refuses a format with no marker syntax", () => {
+    expect(() => formatStatement("nope", { kind: "ref", id: "x" })).toThrow(CiteError);
+    expect(() => formatStatement("nope", { kind: "ref", id: "x" })).toThrow(
+      'No marker syntax for format "nope".',
     );
-    expect(() => { assertInlineEntrySupported("rst"); }).toThrow(CiteError);
-    expect(() => { assertInlineEntrySupported("nope"); }).toThrow('No inline statement syntax for format "nope".');
   });
 });

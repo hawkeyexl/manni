@@ -592,7 +592,7 @@ describe("reencryptMetadata", () => {
       title: "A",
       owner,
       meta: { ticket, tags: ["x"] },
-      citations: [{ src: cited }],
+      citations: [{ source: { file: cited, integrity: "hmac-sha256-" + "0".repeat(64) } }],
     });
     const result = reencryptMetadata({ file: "a.md", content }, { fromKey: KEY, toKey: OTHER });
     expect(result.skipped).toEqual([]);
@@ -603,7 +603,9 @@ describe("reencryptMetadata", () => {
     expect(decrypts(data.owner, OTHER)).toBe("platform");
     expect(decrypts((data.meta as { ticket: string }).ticket, OTHER)).toBe("PROJ-1");
     expect((data.meta as { tags: string[] }).tags).toEqual(["x"]);
-    expect(data.citations).toEqual([{ src: cited }]);
+    expect(data.citations).toEqual([
+      { source: { file: cited, integrity: "hmac-sha256-" + "0".repeat(64) } },
+    ]);
     expect(data.title).toBe("A");
     expect(result.content).toContain("Body.");
   });

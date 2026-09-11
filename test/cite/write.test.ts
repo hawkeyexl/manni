@@ -1,8 +1,9 @@
 /**
  * Page rewrites. Frontmatter appends ride meta's `applyFrontmatter`, so the
  * tests here pin what cite relies on it for (comments, key order, BOM, EOL and
- * body survive) rather than re-testing the serializer. The `src:` splice and
- * the inline insert/replace are cite's own and are tested line by line.
+ * body survive) rather than re-testing the serializer. `entryObject`'s reading
+ * order, the per-field splice a repair makes, and the marker insert are cite's
+ * own and are tested field by field and line by line.
  */
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
@@ -10,8 +11,8 @@ import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import {
   appendFrontmatterCitation,
+  entryObject,
   insertStatementBefore,
-  replaceStatement,
   spliceEntryField,
   unifiedDiff,
 } from "../../src/cite/core/write.js";
@@ -23,16 +24,18 @@ const here = dirname(fileURLToPath(import.meta.url));
 const readPage = (name: string): string =>
   readFileSync(`${here}/../fixtures/cite/pages/${name}`, "utf8");
 
-const PIN =
-  "sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f";
-const NEW_PIN =
-  "sha256-1c4e000000000000000000000000000000000000000000000000000000001c4e";
+const PIN = "sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f";
+const PIN_L3 = "sha256-e9f5bdf94a12c610b54573d2b66347592887805e59c69b64803a8c0d30edaea3";
+const PIN_WHOLE = "sha256-aebba92fe4cddf100cc781281d1f24ad7c234b6189413e2130d5fe71ed86e023";
+const CLAIM_PIN = "sha256-921b21cccab21a4577f224ec4171aa56a3414bb3a5a4704ab8b6f314c46aa094";
+const WRAPPED_PIN = "sha256-93f59d1e26513d9a8be099c55aa8ba06c90020f079d7fb16d4a7ca65851f0ec3";
+const NEW_PIN = "sha256-1c4e000000000000000000000000000000000000000000000000000000001c4e";
+const COMMIT = "89abcdef0123456789abcdef0123456789abcdef";
 
 const entry: Citation = {
   id: "retries",
-  src: "src/limits.ts:3",
-  integrity: PIN,
-  claim: "Retries default to 3.",
+  claim: { lines: 5, integrity: CLAIM_PIN },
+  source: { file: "src/limits.ts", lines: 3, integrity: PIN_L3 },
 };
 
 /** The `citations` array as meta reads it back from a page. */
@@ -46,8 +49,10 @@ describe("appendFrontmatterCitation", () => {
       "# house rule: description before title",
       "description: Limits of the fetcher",
       "citations:",
-      "  - src: src/limits.ts:2",
-      `    integrity: ${PIN}`,
+      "  - source:",
+      "      file: src/limits.ts",
+      "      lines: 2",
+      `      integrity: ${PIN}`,
       "title: Limits # shown in the nav",
       "tags: [a, b]",
       "---",
@@ -61,7 +66,7 @@ describe("appendFrontmatterCitation", () => {
     const out = appendFrontmatterCitation(page, "markdown", entry, "docs/limits.md");
 
     expect(citationsOf(out)).toEqual([
-      { src: "src/limits.ts:2", integrity: PIN },
+      { source: { file: "src/limits.ts", lines: 2, integrity: PIN } },
       entry,
     ]);
     // Comments, the unusual key order and the flow sequence all survive.
@@ -71,10 +76,16 @@ describe("appendFrontmatterCitation", () => {
     expect(out).toMatch(/tags: \[ ?a, b ?\]/);
     const keys = extractFrontmatter(out, "markdown");
     expect(Object.keys(keys.data)).toEqual(["description", "citations", "title", "tags"]);
-    // The entry is written with its fields in the order given.
-    expect(out).toMatch(/- src: src\/limits\.ts:2\n\s+integrity: sha256-[0-9a-f]+\n\s+- id: retries\n\s+src: src\/limits\.ts:3\n\s+integrity: sha256-[0-9a-f]+\n\s+claim: Retries default to 3\./);
     // Body byte-for-byte.
     expect(out.slice(out.indexOf("\n# Limits"))).toBe(page.slice(page.indexOf("\n# Limits")));
+  });
+
+  it("writes the entry's fields in reading order", () => {
+    const page = readPage("no-citations.md");
+    const out = appendFrontmatterCitation(page, "markdown", { ...entry, quote: true });
+    expect(out).toMatch(
+      /- id: retries\n\s+claim:\n\s+lines: 5\n\s+integrity: sha256-[0-9a-f]+\n\s+source:\n\s+file: src\/limits\.ts\n\s+lines: 3\n\s+integrity: sha256-[0-9a-f]+\n\s+quote: true\n/,
+    );
   });
 
   it("creates the citations key on a page whose frontmatter has none", () => {
@@ -106,42 +117,57 @@ describe("appendFrontmatterCitation", () => {
     const page = readPage("crlf.md");
     const out = appendFrontmatterCitation(page, "markdown", entry, "docs/crlf.md");
     expect(out).not.toMatch(/[^\r]\n/);
-    expect(out.endsWith("not configurable.\r\n")).toBe(true);
+    expect(out.endsWith("The fetch timeout is 10 seconds.\r\n")).toBe(true);
     expect(citationsOf(out)).toEqual([
-      { id: "fetch-timeout", src: "src/limits.ts:2", integrity: PIN, claim: "The fetch timeout is 10 seconds." },
+      {
+        id: "fetch-timeout",
+        claim: { lines: 3, integrity: CLAIM_PIN },
+        source: { file: "src/limits.ts", lines: 2, integrity: PIN },
+      },
       entry,
     ]);
   });
 
   it("drops undefined optional fields rather than writing null", () => {
     const page = readPage("no-citations.md");
-    const sparse: Citation = { src: "src/limits.ts:3", integrity: PIN, id: undefined, claim: undefined };
+    const sparse: Citation = {
+      id: undefined,
+      claim: undefined,
+      source: { file: "src/limits.ts", lines: undefined, integrity: PIN_WHOLE, "commit-sha": undefined },
+      quote: undefined,
+    };
     const out = appendFrontmatterCitation(page, "markdown", sparse);
     expect(out).not.toContain("null");
-    expect(citationsOf(out)).toEqual([{ src: "src/limits.ts:3", integrity: PIN }]);
+    expect(citationsOf(out)).toEqual([{ source: { file: "src/limits.ts", integrity: PIN_WHOLE } }]);
   });
 
-  it("refuses an html page, naming the file", () => {
-    const page = readPage("inline.html");
+  it("refuses an html page, naming the file and where the entry should go instead", () => {
+    const page = readPage("marker.html");
     expect(() => appendFrontmatterCitation(page, "html", entry, "docs/limits.html")).toThrow(
-      new CiteError("docs/limits.html has no frontmatter to write to. Use --inline."),
+      new CiteError(
+        "docs/limits.html has no frontmatter to write to; keep its citations in a manifest instead.",
+      ),
     );
     expect(() => appendFrontmatterCitation(page, "html", entry)).toThrow(
-      "the page has no frontmatter to write to. Use --inline.",
+      "the page has no frontmatter to write to; keep its citations in a manifest instead.",
     );
   });
 
   it("refuses TOML frontmatter with a one-line explanation", () => {
     const page = '+++\ntitle = "Limits"\n+++\n\nBody.\n';
-    expect(() => appendFrontmatterCitation(page, "markdown", entry, "docs/limits.md")).toThrow(CiteError);
     expect(() => appendFrontmatterCitation(page, "markdown", entry, "docs/limits.md")).toThrow(
-      /docs\/limits\.md has TOML frontmatter/,
+      CiteError,
+    );
+    expect(() => appendFrontmatterCitation(page, "markdown", entry, "docs/limits.md")).toThrow(
+      /docs\/limits\.md has TOML frontmatter.*Add the entry by hand\.$/s,
     );
   });
 
   it("rethrows meta's refusals as CiteError", () => {
     const page = "= Limits\n\nBody.\n";
-    expect(() => appendFrontmatterCitation(page, "asciidoc", entry, "docs/limits.adoc")).toThrow(CiteError);
+    expect(() => appendFrontmatterCitation(page, "asciidoc", entry, "docs/limits.adoc")).toThrow(
+      CiteError,
+    );
     expect(() => appendFrontmatterCitation(page, "asciidoc", entry, "docs/limits.adoc")).toThrow(
       /docs\/limits\.adoc: .*no fenced front matter block/,
     );
@@ -159,92 +185,174 @@ describe("appendFrontmatterCitation", () => {
   });
 });
 
-describe("spliceEntryField", () => {
-  const page = readPage("frontmatter-only.md");
-
-  it("rewrites src in place, touching nothing else", () => {
-    const out = spliceEntryField(page, "markdown", 0, "src", "src/limits.ts:4");
-    const diff = unifiedDiff("p", page, out);
-    expect(diff).toContain("-    src: src/limits.ts:2\n+    src: src/limits.ts:4\n");
-    expect(diff.split("\n").filter((l) => l.startsWith("-") && !l.startsWith("---"))).toHaveLength(1);
-    expect(extractFrontmatter(out, "markdown").data.citations).toMatchObject([
-      { src: "src/limits.ts:4" },
-      { src: "src/limits.ts" },
+describe("entryObject", () => {
+  it("reads id, claim, source, quote, and the source file, lines, integrity, commit-sha", () => {
+    const full: Citation = {
+      id: "fetch-timeout",
+      claim: { lines: "3-4", integrity: WRAPPED_PIN },
+      source: { file: "src/limits.ts", lines: 2, integrity: PIN, "commit-sha": COMMIT },
+      quote: true,
+    };
+    const object = entryObject(full);
+    expect(Object.keys(object)).toEqual(["id", "claim", "source", "quote"]);
+    expect(Object.keys(object.claim as Record<string, unknown>)).toEqual(["lines", "integrity"]);
+    expect(Object.keys(object.source as Record<string, unknown>)).toEqual([
+      "file",
+      "lines",
+      "integrity",
+      "commit-sha",
     ]);
   });
 
-  it("addresses the second entry and its other fields", () => {
-    let out = spliceEntryField(page, "markdown", 1, "integrity", NEW_PIN);
-    out = spliceEntryField(out, "markdown", 1, "commit", "89abcdef0123456789abcdef0123456789abcdef");
+  it("leaves every absent optional out, down to a bare pin", () => {
+    expect(entryObject({ source: { file: "src/limits.ts", integrity: PIN_WHOLE } })).toEqual({
+      source: { file: "src/limits.ts", integrity: PIN_WHOLE },
+    });
+  });
+
+  it("writes a marker-anchored claim with its pin and no lines", () => {
+    const object = entryObject({
+      id: "retries",
+      claim: { integrity: CLAIM_PIN },
+      source: { file: "src/limits.ts", lines: 3, integrity: PIN_L3 },
+    });
+    expect(object.claim).toEqual({ integrity: CLAIM_PIN });
+    expect(Object.keys(object.claim as Record<string, unknown>)).toEqual(["integrity"]);
+  });
+});
+
+describe("spliceEntryField", () => {
+  const page = readPage("frontmatter-only.md");
+
+  it("rewrites source.file in place, touching nothing else", () => {
+    const out = spliceEntryField(page, "markdown", 0, ["source", "file"], "lib/limits.ts");
+    const diff = unifiedDiff("p", page, out);
+    expect(diff).toContain("-      file: src/limits.ts\n+      file: lib/limits.ts\n");
+    expect(diff.split("\n").filter((l) => l.startsWith("-") && !l.startsWith("---"))).toHaveLength(1);
     expect(extractFrontmatter(out, "markdown").data.citations).toMatchObject([
-      { integrity: PIN },
-      { integrity: NEW_PIN, commit: "89abcdef0123456789abcdef0123456789abcdef" },
+      { source: { file: "lib/limits.ts" } },
+      { source: { file: "src/limits.ts" } },
+    ]);
+  });
+
+  it("rewrites source.lines, plain, so a range that became one line reads as an integer", () => {
+    const range = spliceEntryField(page, "markdown", 0, ["source", "lines"], "4-6");
+    expect(range).toContain("      lines: 4-6\n");
+    const one = spliceEntryField(range, "markdown", 0, ["source", "lines"], 4);
+    expect(one).toContain("      lines: 4\n");
+    expect(extractFrontmatter(one, "markdown").data.citations).toMatchObject([
+      { source: { lines: 4 } },
+      {},
+    ]);
+  });
+
+  it("rewrites source.integrity and source.commit-sha on the entry that carries them", () => {
+    let out = spliceEntryField(page, "markdown", 0, ["source", "integrity"], NEW_PIN);
+    out = spliceEntryField(out, "markdown", 1, ["source", "commit-sha"], COMMIT);
+    expect(extractFrontmatter(out, "markdown").data.citations).toMatchObject([
+      { source: { integrity: NEW_PIN } },
+      { source: { integrity: PIN_WHOLE, "commit-sha": COMMIT } },
+    ]);
+  });
+
+  it("rewrites claim.lines and claim.integrity", () => {
+    let out = spliceEntryField(page, "markdown", 0, ["claim", "lines"], "5-6");
+    out = spliceEntryField(out, "markdown", 0, ["claim", "integrity"], NEW_PIN);
+    expect(extractFrontmatter(out, "markdown").data.citations).toMatchObject([
+      { claim: { lines: "5-6", integrity: NEW_PIN } },
+      {},
+    ]);
+    // The source end of the same entry is untouched.
+    expect(out).toContain(`      integrity: ${PIN}\n`);
+  });
+
+  it("collapses a claim range to the integer when it became one line", () => {
+    const out = spliceEntryField(page, "markdown", 0, ["claim", "lines"], 3);
+    expect(out).toContain("      lines: 3\n");
+    expect(extractFrontmatter(out, "markdown").data.citations).toMatchObject([
+      { claim: { lines: 3 } },
+      {},
     ]);
   });
 
   it("keeps a trailing comment", () => {
-    const commented = page.replace("src: src/limits.ts:2", "src: src/limits.ts:2   # the timeout");
-    const out = spliceEntryField(commented, "markdown", 0, "src", "src/limits.ts:4");
-    expect(out).toContain("    src: src/limits.ts:4   # the timeout\n");
+    const commented = page.replace("file: src/limits.ts", "file: src/limits.ts   # the timeout");
+    const out = spliceEntryField(commented, "markdown", 0, ["source", "file"], "lib/limits.ts");
+    expect(out).toContain("      file: lib/limits.ts   # the timeout\n");
   });
 
-  it("keeps the quoting style of a quoted src", () => {
-    const dq = page.replace("src: src/limits.ts:2", 'src: "src/limits.ts:2"');
-    expect(spliceEntryField(dq, "markdown", 0, "src", "docs notes/limits.ts:4")).toContain(
-      '    src: "docs notes/limits.ts:4"\n',
+  it("keeps the quoting style of a quoted scalar", () => {
+    const dq = page.replace("file: src/limits.ts", 'file: "src/limits.ts"');
+    expect(spliceEntryField(dq, "markdown", 0, ["source", "file"], "docs notes/limits.ts")).toContain(
+      '      file: "docs notes/limits.ts"\n',
     );
-    const sq = page.replace("src: src/limits.ts:2", "src: 'src/limits.ts:2' # x");
-    expect(spliceEntryField(sq, "markdown", 0, "src", "a'b.ts:1")).toContain(
-      "    src: 'a''b.ts:1' # x\n",
+    const sq = page.replace("file: src/limits.ts", "file: 'src/limits.ts' # x");
+    expect(spliceEntryField(sq, "markdown", 0, ["source", "file"], "a'b.ts")).toContain(
+      "      file: 'a''b.ts' # x\n",
     );
   });
 
   it("leaves a plain scalar plain, quoting only when YAML would misread it", () => {
-    expect(spliceEntryField(page, "markdown", 0, "src", "~9c1f0e2b7a3d4c5e:2")).toContain(
-      "    src: ~9c1f0e2b7a3d4c5e:2\n",
+    expect(
+      spliceEntryField(page, "markdown", 0, ["source", "file"], "~9c1f0e2b7a3d4c5e"),
+    ).toContain("      file: ~9c1f0e2b7a3d4c5e\n");
+    expect(spliceEntryField(page, "markdown", 0, ["source", "file"], "my docs/limits.ts")).toContain(
+      "      file: my docs/limits.ts\n",
     );
-    expect(spliceEntryField(page, "markdown", 0, "src", "my docs/limits.ts:4")).toContain(
-      "    src: my docs/limits.ts:4\n",
-    );
-    const out = spliceEntryField(page, "markdown", 0, "src", "odd: name.ts");
-    expect(out).toContain('    src: "odd: name.ts"\n');
+    const out = spliceEntryField(page, "markdown", 0, ["source", "file"], "odd: name.ts");
+    expect(out).toContain('      file: "odd: name.ts"\n');
     expect(extractFrontmatter(out, "markdown").data.citations).toMatchObject([
-      { src: "odd: name.ts" },
-      { src: "src/limits.ts" },
+      { source: { file: "odd: name.ts" } },
+      { source: { file: "src/limits.ts" } },
     ]);
   });
 
   it("works on a CRLF page", () => {
     const crlf = readPage("crlf.md");
-    const out = spliceEntryField(crlf, "markdown", 0, "src", "src/limits.ts:4");
-    expect(out).toContain("    src: src/limits.ts:4\r\n");
+    const out = spliceEntryField(crlf, "markdown", 0, ["source", "lines"], "2-3");
+    expect(out).toContain("      lines: 2-3\r\n");
     expect(out).not.toMatch(/[^\r]\n/);
   });
 
-  it("works on a flow entry that starts on the dash line", () => {
-    const dashed = "---\ncitations:\n- src: a.ts:1\n  integrity: x\n---\n";
-    expect(spliceEntryField(dashed, "markdown", 0, "src", "b.ts:2")).toBe(
-      "---\ncitations:\n- src: b.ts:2\n  integrity: x\n---\n",
+  it("works on an entry that starts on the dash line", () => {
+    const dashed = "---\ncitations:\n- source:\n    file: a.ts\n    integrity: x\n---\n";
+    expect(spliceEntryField(dashed, "markdown", 0, ["source", "file"], "b.ts")).toBe(
+      "---\ncitations:\n- source:\n    file: b.ts\n    integrity: x\n---\n",
     );
   });
 
-  it("refuses TOML, an absent entry and an absent field", () => {
-    const toml = `+++\n[[citations]]\nsrc = "src/limits.ts:2"\nintegrity = "${PIN}"\n+++\n`;
-    expect(() => spliceEntryField(toml, "markdown", 0, "src", "x")).toThrow(
-      new CiteError("Cannot rewrite citations[0].src in markdown frontmatter; edit it by hand."),
+  it("refuses TOML, an absent entry, an absent end and an absent field", () => {
+    const toml = `+++\n[[citations]]\n[citations.source]\nfile = "src/limits.ts"\nintegrity = "${PIN}"\n+++\n`;
+    expect(() => spliceEntryField(toml, "markdown", 0, ["source", "file"], "x")).toThrow(
+      new CiteError(
+        "Cannot rewrite citations[0].source.file in markdown frontmatter; edit it by hand.",
+      ),
     );
-    expect(() => spliceEntryField(page, "markdown", 5, "src", "x")).toThrow(
-      new CiteError("Cannot rewrite citations[5].src in markdown frontmatter; edit it by hand."),
+    expect(() => spliceEntryField(page, "markdown", 5, ["source", "file"], "x")).toThrow(
+      new CiteError(
+        "Cannot rewrite citations[5].source.file in markdown frontmatter; edit it by hand.",
+      ),
     );
-    expect(() => spliceEntryField(page, "markdown", 0, "commit", "x")).toThrow(
-      new CiteError("Cannot rewrite citations[0].commit in markdown frontmatter; edit it by hand."),
+    // The second entry is a bare pin: it has no claim end at all.
+    expect(() => spliceEntryField(page, "markdown", 1, ["claim", "integrity"], NEW_PIN)).toThrow(
+      new CiteError(
+        "Cannot rewrite citations[1].claim.integrity in markdown frontmatter; edit it by hand.",
+      ),
     );
-    expect(() => spliceEntryField("no frontmatter\n", "markdown", 0, "src", "x")).toThrow(CiteError);
+    // ...and no `lines` under its source: it pins the whole file.
+    expect(() => spliceEntryField(page, "markdown", 1, ["source", "lines"], 2)).toThrow(
+      new CiteError(
+        "Cannot rewrite citations[1].source.lines in markdown frontmatter; edit it by hand.",
+      ),
+    );
+    expect(() => spliceEntryField("no frontmatter\n", "markdown", 0, ["source", "file"], "x")).toThrow(
+      CiteError,
+    );
   });
 
   it("refuses a flow-style entry it cannot address line by line", () => {
-    const flow = "---\ncitations: [{ src: a.ts:1, integrity: x }]\n---\n";
-    expect(() => spliceEntryField(flow, "markdown", 0, "src", "b.ts:2")).toThrow(CiteError);
+    const flow = "---\ncitations: [{ source: { file: a.ts, integrity: x } }]\n---\n";
+    expect(() => spliceEntryField(flow, "markdown", 0, ["source", "file"], "b.ts")).toThrow(CiteError);
   });
 });
 
@@ -268,22 +376,6 @@ describe("insertStatementBefore", () => {
   it("inserts at offset 0 and at the end", () => {
     expect(insertStatementBefore("a\n", 0, "s")).toBe("s\na\n");
     expect(insertStatementBefore("a\nb", 3, "s")).toBe("a\ns\nb");
-  });
-});
-
-describe("replaceStatement", () => {
-  it("replaces exactly the span", () => {
-    const page = "x\n<!-- cite old -->\ny\n";
-    const start = page.indexOf("<!--");
-    const end = page.indexOf("-->") + 3;
-    expect(replaceStatement(page, start, end, "<!-- cite new -->")).toBe(
-      "x\n<!-- cite new -->\ny\n",
-    );
-  });
-
-  it("refuses an inverted or out-of-range span", () => {
-    expect(() => replaceStatement("abc", 2, 1, "s")).toThrow(CiteError);
-    expect(() => replaceStatement("abc", 0, 9, "s")).toThrow(CiteError);
   });
 });
 
@@ -359,7 +451,8 @@ describe("unifiedDiff", () => {
   });
 
   it("matches the add --dry-run rung shape", () => {
-    const before = "---\ntitle: Limits\n---\n# Limits\n\nThe fetch timeout is 10 seconds, and it is\nnot configurable.\n";
+    const before =
+      "---\ntitle: Limits\n---\n# Limits\n\nThe fetch timeout is 10 seconds, and it is\nnot configurable.\n";
     const after = before.replace(
       "The fetch timeout",
       "<!-- cite fetch-timeout -->\nThe fetch timeout",
