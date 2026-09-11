@@ -109,7 +109,7 @@ describe("parseSrc", () => {
   });
 
   it("agrees with the ladder's parser on every well-formed src", () => {
-    const ladder = require("../../docs/proposals/0040/ladders/drift-examples.cjs") as {
+    const ladder = require("../../docs/proposals/0042/ladders/drift-examples.cjs") as {
       parseSrc(src: string): SourceRange;
     };
     for (const src of ["a", "a:2", "a:1-3", TOKEN, `${TOKEN}:2`, `${TOKEN}:1-3`]) {

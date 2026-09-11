@@ -563,7 +563,10 @@ describe("schemaTrust · a published built-in URL (0009)", () => {
   });
 });
 
-describe("resolveSchemaSetWithSource: the winning override's identity (0027)", () => {
+// 0027 added the winning override's index for its collection views, and 0041
+// took that consumer away (membership is the config's globs now). It is still
+// how `query`'s 0024 split-set refusal names the groups a DDL run spans.
+describe("resolveSchemaSetWithSource: the winning override's identity", () => {
   const config = {
     schemas: ["x:y:1"],
     overrides: [

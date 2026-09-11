@@ -1,0 +1,9 @@
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
+
+meta:
+  schemas:
+    - google:okf:0.1
+  baseline: .docmeta-baseline.json

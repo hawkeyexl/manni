@@ -1,5 +1,5 @@
 /**
- * The citation tool's types. Proposal 0040 is the record; the plan that
+ * The citation tool's types. Proposal 0042 is the record; the plan that
  * preceded it fixed these shapes before any module was written, so every
  * chunk codes against the same contract.
  *

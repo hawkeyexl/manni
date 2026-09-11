@@ -7,6 +7,7 @@
  * because a misspelled `maxPages:` that was silently ignored would run the
  * crawl on defaults and read as a clean pass.
  */
+import type { CollectionConfig } from "../../shared/collections.js";
 import {
   findConfigFile,
   readConfigFile,
@@ -29,6 +30,13 @@ export interface LoadedA11yConfig {
   config: A11yConfig;
   /** Where it came from, for messages. `null` when no file was found or `--no-config`. */
   source: string | null;
+  /**
+   * The family file's top-level `collections:`, passed straight through: a
+   * collection's `url` is a seed source (proposal 0041, rule 12), and the
+   * declaration belongs to the family rather than to `a11y:`. `[]` when no
+   * file was found and when none are declared.
+   */
+  collections: CollectionConfig[];
 }
 
 /** The tool's key in the family file. */
@@ -52,6 +60,8 @@ const CONFIG_FILE: ConfigFileOptions = {
  * `{ section: "a11y", legacyNames: [], toError: (m) => new A11yError(m) }`.
  * Unknown keys, wrong types, empty `urls` entries and non-`http(s)` urls are
  * `A11yError`s naming the file and key. `null` config (empty section) is `{}`.
+ * The document's `collections:` come back alongside, parsed by the shared
+ * loader: the key is the family's, not this section's.
  */
 export async function loadA11yConfig(
   cwd: string,
@@ -61,8 +71,12 @@ export async function loadA11yConfig(
     explicitPath === undefined
       ? await findConfigFile(cwd, CONFIG_FILE)
       : await readConfigFile(explicitPath, cwd, CONFIG_FILE);
-  if (file === null) return { config: {}, source: null };
-  return { config: parseA11yConfig(file.value, file.source), source: file.source };
+  if (file === null) return { config: {}, source: null, collections: [] };
+  return {
+    config: parseA11yConfig(file.value, file.source),
+    source: file.source,
+    collections: file.collections,
+  };
 }
 
 /** Pure parser, exported for tests. */

@@ -67,10 +67,12 @@ Commit `.manni-baseline.json` alongside the schema change. It is a source file, 
 Point your config at the file so every run, yours and CI's, compares against it:
 
 ```yaml title="manni.config.yaml"
-meta:
-  paths:
-    - "docs/**/*.md"
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
 
+meta:
   schemas:
     - ./schemas/doc.json
 
@@ -169,7 +171,7 @@ No parallel lenient schema, no hand-maintained list of which folders are clean, 
   <LinkCard
     title="Apply different schemas to different folders"
     href="/manni/meta/set-up/different-schemas-per-folder/"
-    description="Overrides and glob precedence, for when different areas need genuinely different rules rather than a staged rollout."
+    description="Collection and glob overrides, and their precedence, for when different areas need genuinely different rules rather than a staged rollout."
   />
   <LinkCard
     title="CLI reference"

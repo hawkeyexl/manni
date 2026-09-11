@@ -10,7 +10,7 @@
  * has to be raised before the analyzer is ever asked to launch.
  */
 import { execSync, spawn } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -47,10 +47,33 @@ interface Run {
  */
 const cwd = mkdtempSync(join(tmpdir(), "manni-a11y-cli-"));
 
-function run(args: string[], timeout = 120_000): Promise<Run> {
+/**
+ * A second working directory, carrying a family file that declares `guides`
+ * with a `url:` and `blog` without one. The seed errors of proposal 0041's
+ * rule 12 need a config to name, and `cwd` above has to stay empty so every
+ * other case keeps seeing the built-in defaults. Discovery from a temp
+ * directory looks in that one directory, so the file is found and reported
+ * under the name the user would type.
+ */
+const collectionsCwd = mkdtempSync(join(tmpdir(), "manni-a11y-collections-"));
+writeFileSync(
+  join(collectionsCwd, "manni.config.yaml"),
+  [
+    "collections:",
+    "  - name: guides",
+    "    paths: [docs/guides]",
+    "    url: https://docs.example.com/guides/",
+    "  - name: blog",
+    "    paths: [docs/blog]",
+    "",
+  ].join("\n"),
+  "utf8",
+);
+
+function run(args: string[], timeout = 120_000, dir = cwd): Promise<Run> {
   return new Promise((done) => {
     const child = spawn("node", [manni, "a11y", ...args], {
-      cwd,
+      cwd: dir,
       env: { ...process.env, NO_COLOR: "1" },
       timeout,
     });
@@ -127,10 +150,65 @@ describe("manni a11y check (usage errors, no browser needed)", () => {
     expect(r.stderr).toMatch(/^manni: Not an http\(s\) URL: "not-a-url"\./);
   });
 
-  it("with no URLs and no config is an operational error", async () => {
+  it("with no URLs, no collection url and no config is an operational error", async () => {
     const r = await run(["check", "--no-config"]);
     expect(r.status).toBe(2);
-    expect(r.stderr).toMatch(/^manni: No URLs to check\./);
+    expect(r.stdout).toBe("");
+    expect(r.stderr).toMatch(
+      /^manni: No URLs to check\. Pass one or more, set url: on a collection, or set a11y\.urls in manni\.config\.yaml\./,
+    );
+  });
+
+  it("refuses --collection together with positional URLs", async () => {
+    const r = await run(["check", "--collection", "guides", "https://x.example/"], 120_000, collectionsCwd);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(r.stderr).toMatch(
+      /^manni: --collection selects a configured collection; it cannot be combined with URLs\./,
+    );
+  });
+
+  it("refuses a --collection that declares no url:", async () => {
+    const r = await run(["check", "--collection", "blog"], 120_000, collectionsCwd);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(r.stderr).toMatch(/^manni: collection "blog" has no url: to check\./);
+  });
+
+  it("refuses an unknown --collection, listing what is configured", async () => {
+    const r = await run(["check", "--collection", "gides"], 120_000, collectionsCwd);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(r.stderr).toMatch(
+      /^manni: no collection named "gides" in manni\.config\.yaml\. Configured: guides, blog\./,
+    );
+  });
+
+  // The same sentence `manni meta` uses for the same combination: the flag
+  // selects from a config file, so the absence of one is the thing to report,
+  // not the name.
+  it("refuses --collection when the config is refused", async () => {
+    const r = await run(
+      ["check", "--collection", "guides", "--no-config"],
+      120_000,
+      collectionsCwd,
+    );
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(r.stderr).toMatch(
+      /^manni: --collection needs a config file to select from\./,
+    );
+  });
+
+  it("documents --collection and the collection fallback on the seeds", async () => {
+    const r = await run(["check", "--help"]);
+    expect(r.status).toBe(0);
+    // commander wraps a long description, so match across whitespace.
+    expect(r.stdout).toMatch(/--collection <name>\s+configured collection to run over; repeatable/);
+    // Commander lists the variadic under Arguments as the bare name.
+    expect(r.stdout).toMatch(
+      /urls\s+http\(s\) seed URLs; falls back to a collection's url:\s+or\s+a11y\.urls in manni\.config\.yaml/,
+    );
   });
 
   it("rejects an unknown --format", async () => {

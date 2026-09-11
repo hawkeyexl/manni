@@ -477,6 +477,14 @@ interface InputCliOptions {
   /** `-f, --format <format>`. Always a string: every declaration has a default. */
   format: string;
   /**
+   * `--collection <name>`, repeatable — commander's default value is `[]`, and
+   * that empty array travels to the core unchanged. `selectCollections` reads
+   * it as "every declared collection", the same as absence, so there is no
+   * `undefined` dance here and must not be one: `[]` meaning "no collections"
+   * would make a plain run validate nothing and exit 0.
+   */
+  collection: string[];
+  /**
    * `-c, --config <path>` and `--no-config` share one commander attribute:
    * `undefined` with neither flag, the path with `-c`, `false` with
    * `--no-config`. Split by `configOption`.
@@ -633,6 +641,12 @@ export function buildProgram(): Command {
       `output: ${REPORT_FORMATS.join(" | ")}`,
       "pretty",
     )
+    .option(
+      "--collection <name>",
+      "configured collection to run over; repeatable",
+      collect,
+      [],
+    )
     .option("-c, --config <path>", "path to a manni config file")
     .option("--no-config", "ignore any discovered config file")
     .option("-q, --quiet", "in pretty output, hide passing files")
@@ -717,6 +731,11 @@ export function buildProgram(): Command {
             exts,
             exclude: options.exclude,
             as: options.as,
+            // Straight through: commander gives `[]` when the flag was never
+            // typed, and the core reads an empty list as every declared
+            // collection. Refusing paths beside it, and refusing it with no
+            // config, is `resolveRunConfig`'s job, before the walk.
+            collections: options.collection,
             ...configOption(options.config),
             onConfigLoaded: reportConfig(
               !isMachineFormat(format),
@@ -789,6 +808,12 @@ export function buildProgram(): Command {
       `output: ${COMMON_FORMATS.join(" | ")}`,
       "pretty",
     )
+    .option(
+      "--collection <name>",
+      "configured collection to run over; repeatable",
+      collect,
+      [],
+    )
     .option("-c, --config <path>", "path to a manni config file")
     .option("--no-config", "ignore any discovered config file")
     .option(
@@ -841,6 +866,7 @@ export function buildProgram(): Command {
             as: options.as,
             exclude: options.exclude,
             exts,
+            collections: options.collection,
             ...configOption(options.config),
             onConfigLoaded: reportConfig(format === "pretty", process.cwd()),
             stdinContent,
@@ -929,6 +955,12 @@ export function buildProgram(): Command {
       "-f, --format <format>",
       `output: ${QUERY_FORMATS.join(" | ")} (github, sarif, junit need --check)`,
       "pretty",
+    )
+    .option(
+      "--collection <name>",
+      "configured collection to run over; repeatable",
+      collect,
+      [],
     )
     .option("-c, --config <path>", "path to a manni config file")
     .option("--no-config", "ignore any discovered config file")
@@ -1041,6 +1073,7 @@ export function buildProgram(): Command {
             as: options.as,
             exclude: options.exclude,
             exts,
+            collections: options.collection,
             ...configOption(options.config),
             onConfigLoaded: reportConfig(format === "pretty", process.cwd()),
             stdinContent,
@@ -1171,6 +1204,12 @@ export function buildProgram(): Command {
       `output: ${FILL_FORMATS.join(" | ")}`,
       "pretty",
     )
+    .option(
+      "--collection <name>",
+      "configured collection to run over; repeatable",
+      collect,
+      [],
+    )
     .option("-c, --config <path>", "path to a manni config file")
     .option("--no-config", "ignore any discovered config file")
     .option(
@@ -1237,6 +1276,7 @@ export function buildProgram(): Command {
           exts,
           exclude: options.exclude,
           as: options.as,
+          collections: options.collection,
           ...configOption(options.config),
           // With `-` the filled document owns stdout, so the notice is a
           // diagnostic there just as the report is.
@@ -1361,6 +1401,12 @@ export function buildProgram(): Command {
       `output: ${COMMON_FORMATS.join(" | ")}`,
       "pretty",
     )
+    .option(
+      "--collection <name>",
+      "configured collection to run over; repeatable",
+      collect,
+      [],
+    )
     .option("-c, --config <path>", "path to a manni config file")
     .option("--no-config", "ignore any discovered config file")
     .option("--allow-empty", "treat zero matched files as success")
@@ -1400,6 +1446,7 @@ export function buildProgram(): Command {
           exts,
           exclude: options.exclude,
           as: options.as,
+          collections: options.collection,
           ...configOption(options.config),
           onConfigLoaded: reportConfig(format === "pretty", process.cwd()),
           stdinContent,

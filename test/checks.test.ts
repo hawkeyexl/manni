@@ -21,6 +21,8 @@ import { DocmetaError, type ExtractedMetadata } from "../src/meta/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const corpus = resolve(here, "fixtures", "checks");
+/** Two collections, and a check whose `FROM` names one of them (0041 rule 7). */
+const collectionCorpus = resolve(here, "fixtures", "checks-collections");
 
 /** A minimal corpus entry for runChecks, with optional known line positions. */
 function entry(
@@ -377,10 +379,13 @@ describe("validate runs configured checks", () => {
     ).toHaveLength(1);
   });
 
-  it("-s/--schema also disqualifies: the override empties every collection view", async () => {
-    // The file set is unchanged, but cliSchemas outranks every override, so
-    // all 0027 collection views would be empty by construction — a
-    // `FROM <collection>` check would green silently.
+  it("-s/--schema also disqualifies: it replaces the corpus contract", async () => {
+    // The file set is unchanged, and under 0041 the collection views are
+    // unchanged too — membership never consulted resolution. `-s` still
+    // disqualifies for the reason it always mattered: cliSchemas outranks
+    // every override, so every file is judged against a set the config never
+    // assigned it, and a check written against the configured contract would
+    // be reporting on a corpus that exists only inside this run.
     const notices: string[] = [];
     const { summary } = await runValidate({
       inputs: [],
@@ -412,6 +417,64 @@ describe("validate runs configured checks", () => {
         notices.some((n) => n.includes("corpus checks skipped")),
       ).toBe(true);
     }
+  });
+
+  it("a check reads a collection as a view of its members", async () => {
+    // The check is `FROM guides WHERE owner IS NULL`. Only the guide with no
+    // owner is a finding: blog/post.md has no owner either and is outside the
+    // view, which is what makes `FROM guides` worth writing.
+    const { results, summary } = await runValidate({
+      inputs: [],
+      cwd: collectionCorpus,
+    });
+    expect(summary.files).toBe(3);
+    const flagged = results.filter((r) =>
+      r.errors.some((e) => e.schema === "check:guide-needs-owner"),
+    );
+    expect(flagged.map((r) => r.file)).toEqual(["guides/orphan.md"]);
+    expect(flagged[0]?.errors[0]?.message).toBe("every guide needs an owner");
+  });
+
+  it("--collection skips the checks, and the notice names the collections", async () => {
+    // 0041 rule 11: a run narrowed by name is not the corpus either — every
+    // unselected collection's view holds only what the run happened to load,
+    // so a `FROM blog` check would pass by having nothing to fail on.
+    const notices: string[] = [];
+    const { summary } = await runValidate({
+      inputs: [],
+      cwd: collectionCorpus,
+      collections: ["guides"],
+      onNotice: (m) => notices.push(m),
+    });
+    expect(summary.failed).toBe(0);
+    expect(notices).toContain(
+      "corpus checks skipped: run is scoped to collections guides",
+    );
+  });
+
+  it("the --collection notice lists the names in declaration order", async () => {
+    const notices: string[] = [];
+    await runValidate({
+      inputs: [],
+      cwd: collectionCorpus,
+      // Named in the other order on the command line; the notice reads the
+      // config's order, so two runs of the same set say the same thing.
+      collections: ["blog", "guides"],
+      onNotice: (m) => notices.push(m),
+    });
+    expect(notices).toContain(
+      "corpus checks skipped: run is scoped to collections guides, blog",
+    );
+  });
+
+  it("a scoped run that is not --collection keeps the plain notice", async () => {
+    const notices: string[] = [];
+    await runValidate({
+      inputs: ["guides"],
+      cwd: collectionCorpus,
+      onNotice: (m) => notices.push(m),
+    });
+    expect(notices).toContain("corpus checks skipped: run is scoped");
   });
 
   it("--no-checks opts out without a notice", async () => {

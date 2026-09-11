@@ -1,7 +1,7 @@
 /**
  * `manni cite add`: mint one citation and write it to a page.
  *
- * Composition (proposal 0040 §5): `--claim` anchors the paragraph carrying
+ * Composition (proposal 0042 §5): `--claim` anchors the paragraph carrying
  * the sentence; `--quote` anchors the fenced block reproducing the range, or
  * with `--claim` requires the first block after the sentence to; neither is
  * a bare pin. The entry goes to the frontmatter, with a `cite <id>` reference

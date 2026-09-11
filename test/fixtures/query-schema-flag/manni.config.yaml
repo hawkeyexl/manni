@@ -1,0 +1,10 @@
+# Two local schemas in one set — the ADD ambiguity -s exists to resolve.
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
+
+meta:
+  schemas:
+    - ./schemas/house.json
+    - ./schemas/extra.json

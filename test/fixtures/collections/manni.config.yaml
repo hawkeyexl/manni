@@ -1,0 +1,27 @@
+# Three collections, two of which an override points at (proposal 0041, which
+# supersedes 0027's `overrides[].name`). `pages` is the corpus a bare run reads;
+# `authors` and `notes` are what `FROM authors` and `FROM notes` mean.
+#
+# `authors/**` and `**/deep*.md` deliberately OVERLAP on authors/deep.md: under
+# 0041 a file may belong to two collections, and first-match-wins still gives it
+# exactly one schema set.
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
+      - "authors/**/*.md"
+  - name: authors
+    paths:
+      - "authors/**"
+  - name: notes
+    paths:
+      - "**/deep*.md"
+
+meta:
+  schemas:
+    - ./base.schema.json
+  overrides:
+    - collection: authors
+      schemas: [./author.schema.json]
+    - collection: notes
+      schemas: [./author.schema.json]

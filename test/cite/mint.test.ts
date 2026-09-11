@@ -9,7 +9,7 @@ import { CiteError } from "../../src/cite/errors.js";
 import type { GitClient } from "../../src/cite/types.js";
 
 const require = createRequire(import.meta.url);
-const ladder = require("../../docs/proposals/0040/ladders/drift-examples.cjs") as {
+const ladder = require("../../docs/proposals/0042/ladders/drift-examples.cjs") as {
   SOURCE: string;
   mint(text: string, l1?: number, l2?: number, salt?: string): string | undefined;
 };

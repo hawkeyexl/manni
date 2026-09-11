@@ -249,7 +249,7 @@ export function renderPretty(
     const mark = r.ok ? c.yellow("⚠") : c.red("✗");
     lines.push(`${mark} ${r.file}${forgiven}`);
     for (const e of r.errors) {
-      // A value a sidecar supplied is located in the manifest, not the
+      // A value a manifest supplied is located in the manifest, not the
       // document, and the location says so (proposal 0037).
       const loc =
         e.file != null

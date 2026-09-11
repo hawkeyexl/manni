@@ -44,7 +44,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0024](0024-standard-sql-vocabulary.md) | Standard SQL vocabulary: DML edits the files, DDL edits the schema | Maya · M2, M3 / Sara · S1, S3 / Devin · D3 | Implemented (#125, #126) |
 | [0025](0025-query-dry-run-polarity.md) | query writes by default, `--dry-run` previews | Devin · D4 / Maya · M2 | Implemented |
 | [0026](0026-corpus-checks-are-findings.md) | Corpus checks are findings, as named `checks:` in config, run by `validate` | Devin · D4 / Maya · M2 | Implemented (#132) |
-| [0027](0027-named-collections.md) | Named collections, which are override groups as SQL views | Devin · D4 / Maya · M2 | Implemented (#134) |
+| [0027](0027-named-collections.md) | Named collections, which are override groups as SQL views | Devin · D4 / Maya · M2 | Superseded by [0041](0041-collections.md) |
 | [0028](0028-ddl-type-bridge.md) | The DDL type bridge, with formats as column types and enums as CHECK IN | Sara · S1, S3 / Maya · M2, M3 | Implemented (#135) |
 | [0029](0029-query-for-scripts.md) | query for scripts: CSV output and bound parameters | Devin · D3, D4 | Implemented (#133) |
 | [0030](0030-query-schema-flag.md) | `-s/--schema` on `query`: naming the contract DDL evolves | Sara · S1, S3 / Maya · M2, M3 | Implemented (#139) |
@@ -56,7 +56,8 @@ These came out of a review of the shipped product against the intent recorded in
 | [0037](0037-sidecar-metadata.md) | Sidecar metadata, a private manifest joined to public documents | Maya · M1, M2 / Devin · D1, D4 / Sara · S1 | Implemented |
 | [0038](0038-sidecar-url-manifests.md) | A URL form of `sidecars[].file`, fetched every run with a bearer token from the environment | Devin · D1, D2 / Maya · M1 | Implemented |
 | [0039](0039-sidecar-join.md) | `join`: a sidecar keyed by a frontmatter field, so a rename cannot orphan an entry; two pages sharing a value is a finding on both | Maya · M1, M2 / Devin · D4 / Sara · S3 | Implemented |
-| [0040](0040-citations-and-drift.md) | Citations and drift, which pin a claim to source lines so `manni cite` can check the pin | Devin · D4 / Theo · T1 / Maya · M2 / Sara · S1 | Implemented (#17) |
+| [0041](0041-collections.md) | `collections:`, the family-level home for document sets and their external metadata; `sidecars` becomes `externalMetadata` on a collection and `--collection <name>` scopes a run | Maya · M1, M2 / Devin · D1, D4 / Sara · S1 | Implemented |
+| [0042](0042-citations-and-drift.md) | Citations and drift, which pin a claim to source lines so `manni cite` can check the pin | Devin · D4 / Theo · T1 / Maya · M2 / Sara · S1 | Implemented (#17) |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -110,7 +111,7 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
                                          channels validated, no tiebreak; the orphan check
                                          runs only on the config corpus)
 
-0023 ──┬─> 0040          (the family the citations vocabulary joins as its tenth id;
+0023 ──┬─> 0042          (the family the citations vocabulary joins as its tenth id;
        │                  source-of-truth is the page-grain anchor it refines to the line)
 0033 ──┤                 (the umbrella a sibling domain mounts under, and the import rule)
 0034 ──┤                 (the command grammar: no default subcommand, one separator per list)

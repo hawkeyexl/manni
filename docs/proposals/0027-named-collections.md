@@ -1,6 +1,6 @@
 # 0027: named collections: override groups as views
 
-- **Status:** Implemented (#134)
+- **Status:** Superseded by [0041](0041-collections.md)
 - **Serves:** Devin · D4 · Maya · M2
 - **Depends on:** [0021](0021-frontmatter-as-a-database.md). This is its roadmap
   item P2, re-scoped, as Options D explains. Also
