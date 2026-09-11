@@ -9,8 +9,9 @@
 import { DocmetaError, locateFrontmatter, type MetadataExtractor } from "../../meta/index.js";
 import { extractorByName } from "../../meta/internal.js";
 import { CiteError } from "../errors.js";
-import type { Citation } from "../types.js";
+import type { Citation, InlineStatement } from "../types.js";
 import { splitLines } from "./hash.js";
+import { readPage } from "./page.js";
 import { detectEol, lineAt, offsetOfLine } from "./statements.js";
 
 function extractorFor(format: string): MetadataExtractor {
@@ -186,6 +187,72 @@ export function replaceStatement(
     throw new CiteError(`Cannot replace a statement at ${start}-${end} in a page of ${content.length} characters.`);
   }
   return content.slice(0, start) + statement + content.slice(end);
+}
+
+export type InlineField = "src" | "integrity" | "commit";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Replace one string field's value inside a statement's JSON text, leaving
+ * the author's spacing and key order alone, as `spliceEntryField` leaves a
+ * YAML line. `undefined` when the text carries no such field.
+ */
+function spliceJsonField(text: string, field: InlineField, value: string): string | undefined {
+  const keyed = new RegExp(`("${field}"\\s*:\\s*)"(?:[^"\\\\]|\\\\.)*"`);
+  if (!keyed.test(text)) return undefined;
+  // A function, so a `$` in the value is a character and not a back-reference.
+  return text.replace(keyed, (_match, lead: string) => lead + JSON.stringify(value));
+}
+
+/** The inline entry statement on `line`, from a fresh read of the page. */
+function statementAt(content: string, format: string, label: string, line: number): InlineStatement {
+  const statement = readPage(label, content, { format }).statements.find((s) => s.line === line);
+  if (statement?.payload.kind !== "entry" || !isRecord(statement.payload.entry)) {
+    throw new CiteError(`Cannot find the statement at ${label}:${String(line)} to rewrite; edit it by hand.`);
+  }
+  return statement;
+}
+
+/**
+ * Rewrite fields of the inline entry on `line`. The page is re-read for the
+ * offsets, because an earlier splice may have moved them; the line has not,
+ * since every rewrite keeps its line count. A field the statement does not
+ * carry is left out (`commit` on an entry that never recorded one). The
+ * result is read back before it is trusted, as the YAML splice is. `update`
+ * and `salt rotate` both rewrite through here.
+ */
+export function rewriteInlineFields(
+  content: string,
+  format: string,
+  label: string,
+  line: number,
+  fields: Partial<Record<InlineField, string>>,
+): string {
+  const statement = statementAt(content, format, label, line);
+  const original = content.slice(statement.start, statement.end);
+  const refuse = (): CiteError =>
+    new CiteError(`Cannot rewrite the statement at ${label}:${String(line)} (\`${original}\`); edit it by hand.`);
+  let text = original;
+  const wanted: [InlineField, string][] = [];
+  for (const field of ["src", "integrity", "commit"] as const) {
+    const value = fields[field];
+    if (value === undefined) continue;
+    const spliced = spliceJsonField(text, field, value);
+    if (spliced === undefined) {
+      if (field === "commit") continue;
+      throw refuse();
+    }
+    text = spliced;
+    wanted.push([field, value]);
+  }
+  const out = replaceStatement(content, statement.start, statement.end, text);
+  const check = statementAt(out, format, label, line).payload;
+  const entry = check.kind === "entry" && isRecord(check.entry) ? check.entry : undefined;
+  if (entry === undefined || wanted.some(([field, value]) => entry[field] !== value)) throw refuse();
+  return out;
 }
 
 type Edit = { op: " " | "-" | "+"; text: string };

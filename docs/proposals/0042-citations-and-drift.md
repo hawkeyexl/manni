@@ -259,16 +259,17 @@ an eslint rule stops it reaching into `../meta/{core,extractors,reporters}`.
 | Command | Does | Exit |
 |---|---|---|
 | `check [paths...]` | classify every citation; report through `pretty`, `json`, `github`, `sarif`, `junit`; `--baseline` and `--write-baseline` as meta's, in `.manni-cite-baseline.json`; `--no-git`, `--no-sources`, `--root <dir>`, `--show-diff`, `--reveal` | 0 clean, 1 an unbaselined error, 2 operational |
-| `add <page> <src>` | mint an entry at HEAD and write it. With `--claim` it anchors a sentence, with `--quote` a fenced block. With `--inline` it writes a JSON statement instead of a frontmatter entry, and with `--obfuscate` a token and a keyed pin. Also `--no-commit` and `--dry-run` | 0 written, 2 refusal |
+| `add <page> <src>` | mint an entry at HEAD and write it. With `--claim` it anchors a sentence, with `--quote` a fenced block. With `--inline` it writes a JSON statement instead of a frontmatter entry. Once a salt is configured it writes a token and a keyed pin; `--obfuscate` forces that form with no salt (stress test 22). Also `--no-commit` and `--dry-run` | 0 written, 2 refusal |
 | `update [paths...]` | rewrite `moved` entries' `src` in place, textually, comments and quoting untouched; `--accept` re-mints `changed` and `never-true` at HEAD and prints both pins; `--only <id>`; `--dry-run` | 0, 1 when work is left undone, 2 under `--no-sources` |
+| `salt set [value]`, `salt rotate [paths...]` | write `cite.salt` into the config, generating 32 hex characters when given none, comments kept. Re-key every obfuscated citation under a new salt (`--to`), then write it where the old one lives. A salt from `MANNI_CITE_SALT` is never written, and `--to` is then required. Atomic: anything skipped means nothing written (stress test 22) | 0; rotate 1 when an entry could not be re-keyed; 2 refusal |
 
 The input surface is meta's: positional paths, `-` with `--as`, the
 configured collections as the fallback and `--collection <name>` to narrow to
 one, `--ext`, `--exclude`, `-c`, `--no-config`, `--allow-empty`,
 `--no-gitignore`. The document set is the family's top-level `collections:`
 list (0041); `cite.paths` and `cite.exclude` are refused with a message saying
-so. Config `cite:` mirrors the remaining flags, plus `salt`, `obfuscate`,
-`root` and a `severity` map. An unknown key, rule or level is a `CiteError`
+so. Config `cite:` mirrors the remaining flags, plus `salt`, `root` and a
+`severity` map (`obfuscate` was a key until stress test 22). An unknown key, rule or level is a `CiteError`
 that names what is supported and never echoes the value. `--root` defaults to
 `cite.root` from the config, else the git root, else cwd, and may point at
 another checkout.
@@ -328,8 +329,8 @@ The two-repo layout, which is the reason obfuscation exists:
 collections:
   - name: site
     paths: ["src/content/docs/**/*.{md,mdx}"]
-cite:
-  obfuscate: true
+# no salt here: MANNI_CITE_SALT supplies it, and a salt turns obfuscation on
+# (stress test 22; this example first carried `cite: {obfuscate: true}`)
 # public CI:   manni cite check --no-sources
 # private CI:  check out docs and code side by side; from the docs checkout:
 #              MANNI_CITE_SALT=$SECRET manni cite check --root ../code -f sarif
@@ -594,6 +595,53 @@ it, repeatable, one name per occurrence, and shares meta's three usage errors.
 A typed path is still filtered by `--exclude` alone. The repo's own config
 drops its `cite:` section: the `site` collection is the set, and every other
 cite key is a default.
+
+### 22. Obfuscation followed a flag, and the salt could not be changed
+
+Obfuscation was a switch of its own: `--obfuscate` on the command line, or
+`obfuscate: true` in config. The salt was a separate key that only keyed the
+result. So a repository could carry a salt and still mint a plain path on the
+one run where somebody forgot the flag. The page then published the path the
+salt existed to hide. The failure was silent, because a plain citation is
+valid. And the salt could be set but never changed. Editing the key by hand
+turned every token and every keyed pin `missing`. The only repair was to add
+each citation again.
+
+Two things follow. First, the salt is the switch. A configured salt
+obfuscates every source `add` writes. It can sit in `cite.salt` or in
+`MANNI_CITE_SALT`. No flag has to be remembered. The `--obfuscate` flag stays
+for a run with no salt at all. That keys under the empty string and is
+documented as the weak form. Second,
+the salt is a first-class setting with a lifecycle. The `set` verb writes it
+into the config in place, generating 32 hex characters when given none. It
+keeps the file's comments and refuses to overwrite a salt that exists. The
+`rotate` verb re-keys every obfuscated citation under a new salt and then
+writes it. Every
+page is rewritten in memory first, and nothing reaches disk unless every entry
+re-keyed. A salt written beside one citation still under the old key is
+exactly the half-state that made hand edits unsafe. An entry whose pin no
+longer holds is re-keyed from the lines at its commit, when git can show them.
+That is the classifier's own search. So a `changed` citation stays `changed`
+rather than becoming `never-true`. Otherwise it is skipped, with
+`update --accept` named as the repair, and the run exits 1 with nothing
+written.
+
+**Changed as a result:** `cite.obfuscate` is removed and refused with a
+message naming `salt set`. `add` obfuscates whenever a salt is configured.
+`manni cite salt` is a third-level noun grouping `set` and `rotate`, as
+`meta schemas` groups `vendor`, with no default subcommand. The `salt` row of
+the configuration reference says it turns obfuscation on. The public-docs
+layout keeps the key out of the file and the value in the secret. `set`
+would otherwise write a secret into a public config. `rotate` writes the
+new salt where the old one lives. A salt from `cite.salt` is replaced in
+the config. A salt from `MANNI_CITE_SALT` rotates through the environment:
+`--to` is required, the pages are re-keyed under it, and the config is never
+touched. The run ends by saying the salt was not written and that the secret
+is the operator's to update. An earlier draft wrote the config in both cases
+and warned that the environment still wins. A flag to skip the write was the
+open question. That put a secret into the public file of the
+very layout the secret exists for. A flag to opt out of a wrong default is
+the wrong shape. The source of the salt decides, and there is no flag.
 
 ## Verification
 

@@ -15,6 +15,7 @@ import { selectCollections } from "../../shared/collections.js";
 import {
   findConfigFile,
   readConfigFile,
+  type ConfigFile,
   type ConfigFileOptions,
 } from "../../shared/config-file.js";
 import { findGitRoot } from "../../shared/git-root.js";
@@ -26,6 +27,7 @@ import {
   type CiteRun,
   type CiteSeverity,
   type LoadedCiteConfig,
+  type SaltSource,
 } from "../types.js";
 import { isCiteRule } from "./severity.js";
 
@@ -42,9 +44,19 @@ const CONFIG_KEYS: readonly (keyof CiteConfig)[] = [
   "git",
   "sources",
   "salt",
-  "obfuscate",
   "severity",
 ];
+
+/**
+ * The key a configured salt replaced. Obfuscation used to be its own switch,
+ * which a page minted without it silently did not get. Now the salt is the
+ * switch, and the old key is refused rather than ignored: a config that still
+ * says `obfuscate: true` was written for the old rule, and its author should
+ * hear that the salt does the job.
+ */
+const OBFUSCATE_KEY = "obfuscate";
+const OBFUSCATE_REFUSAL =
+  "cite.obfuscate is no longer a key. A configured salt obfuscates every source add writes; run `manni cite salt set` to configure one.";
 
 const SEVERITY_LEVELS: readonly CiteSeverity[] = ["error", "warning", "off"];
 
@@ -161,6 +173,8 @@ export function parseCiteConfig(raw: unknown, source: string): CiteConfig {
     throw new CiteError(`cite: in ${source} must be a mapping.`);
   }
   assertNoMovedKeys(raw, source);
+  // Before the unknown-key check, which would call it a typo.
+  if (Object.hasOwn(raw, OBFUSCATE_KEY)) throw new CiteError(OBFUSCATE_REFUSAL);
   rejectUnknownKeys(raw, CONFIG_KEYS, "cite", source);
   const config: CiteConfig = {};
   if (raw.allowEmpty !== undefined)
@@ -174,10 +188,23 @@ export function parseCiteConfig(raw: unknown, source: string): CiteConfig {
   if (raw.sources !== undefined)
     config.sources = asBoolean(raw.sources, "sources", source);
   if (raw.salt !== undefined) config.salt = asString(raw.salt, "salt", source);
-  if (raw.obfuscate !== undefined)
-    config.obfuscate = asBoolean(raw.obfuscate, "obfuscate", source);
   if (raw.severity !== undefined) config.severity = parseSeverity(raw.severity, source);
   return config;
+}
+
+/**
+ * The family file itself, found as `loadCiteConfig` finds it but before its
+ * `cite:` slice is parsed. `salt set` and `salt rotate` read it this way,
+ * because they write it back and need the text and the section shape, not
+ * only the values. `null` when discovery finds nothing.
+ */
+export function readCiteConfigFile(
+  explicitPath: string | undefined,
+  cwd: string,
+): Promise<ConfigFile | null> {
+  return explicitPath
+    ? readConfigFile(explicitPath, cwd, CONFIG_FILE)
+    : findConfigFile(cwd, CONFIG_FILE);
 }
 
 /**
@@ -193,9 +220,7 @@ export async function loadCiteConfig(
   explicitPath?: string,
   cwd: string = process.cwd(),
 ): Promise<LoadedCiteConfig | null> {
-  const file = explicitPath
-    ? await readConfigFile(explicitPath, cwd, CONFIG_FILE)
-    : await findConfigFile(cwd, CONFIG_FILE);
+  const file = await readCiteConfigFile(explicitPath, cwd);
   if (file === null) return null;
   return {
     config: parseCiteConfig(file.value, file.source),
@@ -231,6 +256,21 @@ export interface CiteRunOptions {
 
 /** The stdin token, repeated so this module does not depend on the file loader above it. */
 const STDIN = "-";
+
+/**
+ * The salt a run keys with, and where it came from: `MANNI_CITE_SALT` when
+ * set, else `cite.salt`, else the empty string, which is no salt at all. One
+ * function, so `salt rotate` and every other command agree on which wins.
+ */
+export function resolveSalt(
+  env: NodeJS.ProcessEnv,
+  config: CiteConfig | null,
+): { salt: string; saltSource: SaltSource } {
+  const fromEnv = env[SALT_ENV];
+  if (fromEnv !== undefined) return { salt: fromEnv, saltSource: "env" };
+  if (config?.salt !== undefined) return { salt: config.salt, saltSource: "config" };
+  return { salt: "", saltSource: "none" };
+}
 
 /**
  * Settle what every command core needs before it touches a file: which
@@ -290,7 +330,7 @@ export async function resolveCiteRun(opts: CiteRunOptions): Promise<CiteRun> {
     }
   }
 
-  const salt = env[SALT_ENV] ?? config?.salt ?? "";
+  const { salt, saltSource } = resolveSalt(env, config);
 
   return {
     config,
@@ -298,8 +338,9 @@ export async function resolveCiteRun(opts: CiteRunOptions): Promise<CiteRun> {
     base,
     collections,
     fromCollections,
-    ...(loaded ? { configDir: loaded.dir, configPath: loaded.path } : {}),
+    ...(loaded ? { configDir: loaded.dir, configPath: loaded.path, configSource: loaded.source } : {}),
     root,
     salt,
+    saltSource,
   };
 }

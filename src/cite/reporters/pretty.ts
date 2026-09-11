@@ -12,6 +12,7 @@ import type {
   CitationFinding,
   CitationResult,
   PageCitationReport,
+  SaltRotateRun,
   UpdateRun,
 } from "../types.js";
 
@@ -243,5 +244,43 @@ export function renderUpdatePretty(run: UpdateRun, opts: PrettyOptions): string 
   }
   const summary = `${plural(run.rewritten, "citation")} rewritten in ${plural(files, "file")}, ${String(run.skipped)} skipped`;
   lines.push(run.exitCode === 0 ? c.green(summary) : c.red(summary));
+  return lines.join("\n");
+}
+
+/** An entry's id, else `#N` for a frontmatter index, else `inline`. */
+function labelOfRow(row: { id?: string; index?: number }): string {
+  return row.id ?? (row.index === undefined ? "inline" : `#${String(row.index)}`);
+}
+
+/**
+ * `salt rotate`: one line per re-keyed entry (`~old:L -> ~new:L`), one per
+ * skipped entry with its reason, a summary, and where the salt went, or why
+ * it did not. The salt itself is never printed.
+ */
+export function renderRotatePretty(run: SaltRotateRun, opts: PrettyOptions): string {
+  const c = palette(opts.color);
+  const lines: string[] = [];
+  let files = 0;
+  for (const page of run.pages) {
+    if (page.rewritten.length > 0) files += 1;
+    for (const rewrite of page.rewritten) {
+      lines.push(`${page.file}: ${c.cyan(labelOfRow(rewrite))}  ${rewrite.from} -> ${rewrite.to}`);
+    }
+    for (const skip of page.skipped) {
+      lines.push(`${page.file}: ${c.cyan(labelOfRow(skip))}  ${c.red("✗")} skipped: ${skip.reason}`);
+    }
+  }
+  const summary = `${plural(run.rekeyed, "citation")} re-keyed in ${plural(files, "file")}, ${String(run.skipped)} skipped`;
+  lines.push(run.exitCode === 0 ? c.green(summary) : c.red(summary));
+  if (run.skipped > 0) {
+    lines.push(c.red(`Salt not written: ${plural(run.skipped, "citation")} could not be re-keyed. Fix them and rotate again.`));
+  } else if (run.saltSource === "env") {
+    // The tool cannot update a secret; the operator passed the value and holds it.
+    lines.push("Salt not written: it comes from MANNI_CITE_SALT. Update the secret to the value you passed.");
+  } else if (run.saltWritten) {
+    lines.push(`Salt written to ${run.source}.`);
+  } else {
+    lines.push(`Would write cite.salt to ${run.source}.`);
+  }
   return lines.join("\n");
 }

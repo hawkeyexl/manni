@@ -174,6 +174,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     root: opts.root,
     onConfigLoaded: opts.onConfigLoaded,
     onNotice: opts.onNotice,
+    env: opts.env,
   });
 
   const usingStdin = opts.page === STDIN_TOKEN;
@@ -223,7 +224,10 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     id: opts.id,
     quote: opts.quote === true ? true : undefined,
     commit: opts.commit === false ? false : undefined,
-    obfuscate: opts.obfuscate ?? config?.obfuscate,
+    // Obfuscation follows the salt: a configured (or environment) salt means
+    // every add writes a token, without a flag to remember. `--obfuscate`
+    // still forces it under the empty salt, which is the weak form.
+    obfuscate: opts.obfuscate ?? salt !== "",
     salt,
     gitClient: client,
     sourceIndex,

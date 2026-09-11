@@ -1,6 +1,6 @@
 ---
 title: Configuration reference
-description: "Every key of the cite section in manni.config.yaml (root, baseline, git, sources, salt, obfuscate, severity), with types, defaults, where the document set is declared, discovery rules, the salt's precedence, and the severity table."
+description: "Every key of the cite section in manni.config.yaml (root, baseline, git, sources, salt, severity), with types, defaults, where the document set is declared, discovery rules, how the salt is set and rotated and which one wins, and the severity table."
 sidebar:
   order: 2
 ---
@@ -54,8 +54,7 @@ manni.config.yaml: "exclude" is no longer a cite key. Document sets are declared
 | `baseline` | `string` | none | `--baseline` | Path to a [citation baseline](/manni/cite/reference/cli/#baselines), relative to the config file. Setting it turns on `--baseline` for every run; `--no-baseline` suppresses it for one. A bare `--write-baseline` records into this same file. |
 | `git` | `boolean` | `true` | `--no-git` | Consult git. Index sources with `git ls-files`, record `HEAD` on `add`, and use history to tell `changed` from `never-true`. `--no-git` overrides it for one run. |
 | `sources` | `boolean` | `true` | `--no-sources` | Read the sources. `false` runs the page-side rules only and marks every source-side status `skipped`; `update` refuses under it. `--no-sources` overrides it for one run. |
-| `salt` | `string` | `""` | none | Keys obfuscated tokens and their pins. The environment variable `MANNI_CITE_SALT` wins over it; see [the salt](#the-salt). |
-| `obfuscate` | `boolean` | `false` | `--obfuscate` | Have `add` write every new citation as a `~token` with a keyed pin. `--obfuscate` turns it on for one run; there is no flag to turn it off. |
+| `salt` | `string` | `""` | none | Keys obfuscated tokens and their pins, and turns obfuscation on. Once it is set, `add` writes every new citation as a `~token` with a keyed pin. Written by [`manni cite salt set`](/manni/cite/reference/cli/#cite-salt-set), replaced by [`manni cite salt rotate`](/manni/cite/reference/cli/#cite-salt-rotate). The environment variable `MANNI_CITE_SALT` wins over it; see [the salt](#the-salt). |
 | `severity` | mapping | the [defaults](#severity) | none | Per-rule severity, `error`, `warning` or `off`. Only the rules named are changed. |
 
 The section must be a YAML mapping; an empty `cite:` is the same as no keys.
@@ -74,6 +73,14 @@ A dropped `allowEmtpy:` would otherwise leave a config that reads as
 configured and is not. The rule also means a config written for a newer manni
 is rejected outright when it carries a key this version does not know. So pin
 the version wherever the gate runs.
+
+One former key is refused by name rather than as a typo. `obfuscate` used to
+switch obfuscation on; the salt does that now, so a config that still carries
+it hears what replaced it (exit 2):
+
+```
+cite.obfuscate is no longer a key. A configured salt obfuscates every source add writes; run `manni cite salt set` to configure one.
+```
 
 <Aside type="note" title="Values are never echoed">
 An error about a key says which key and what type it wanted. It never quotes
@@ -110,37 +117,102 @@ whichever directory the command ran from.
 
 ## The salt
 
-The salt keys every obfuscated token and every keyed pin. It comes from three
-places, in this order:
+The salt keys every obfuscated token and every keyed pin, and it is the
+switch that turns obfuscation on. Once a salt is configured, `add` writes
+every source as a `~token` with a keyed pin, and there is no flag to remember.
+It comes from three places, in this order:
 
 1. The environment variable `MANNI_CITE_SALT`, when set.
 2. `cite.salt` in the config.
-3. The empty string.
+3. The empty string, which is no salt at all.
 
 The environment wins so that a CI secret can key a private checkout while the
 public config file carries no salt at all. A config `salt:` is for a private
 repository whose config is itself private. With the empty string, a guessable
 path is brute-forceable: sixteen hex digits of `sha256("\n" + path)` is a
 cheap oracle for anyone who can guess `lib/limits.ts`. A public page that
-cites a private source wants a real salt behind it.
+cites a private source wants a real salt behind it. `--obfuscate` on `add`
+still forces a token under the empty string, and that is the weak form.
+
+### Setting it
+
+[`manni cite salt set`](/manni/cite/reference/cli/#cite-salt-set) writes the
+key into the discovered config, or the one `-c` names. Given no value, it
+generates 32 lowercase hex characters. It keeps the file's comments
+and other keys, creates the `cite:` section when there is none, and never
+prints the value. It refuses when a salt is already there, because replacing
+one in place is what `rotate` is for.
+
+```sh
+manni cite salt set
+```
+
+```
+Salt written to manni.config.yaml.
+```
+
+Keep the config private once it carries a salt, or leave the key unset and
+put the salt in `MANNI_CITE_SALT` instead. A salt in the environment
+obfuscates every `add` exactly as a configured one does.
+
+### Rotating it
 
 A token or a pin minted under one salt does not resolve under another. Change
-the salt and every obfuscated citation reads as `missing` until it is minted
-again.
+the key by hand and every obfuscated citation reads as `missing`.
+[`manni cite salt rotate`](/manni/cite/reference/cli/#cite-salt-rotate) is
+the way to change it. It re-keys every obfuscated citation in the given
+pages under the new salt, then writes that salt where the old one lives.
+Nothing is written unless every citation re-keyed, so the corpus is never
+half under each salt.
+
+A salt in the config is replaced in the config:
+
+```sh
+manni cite salt rotate --root ../code
+```
+
+```
+Salt written to manni.config.yaml.
+```
+
+A salt in `MANNI_CITE_SALT` rotates through the environment. The tool cannot
+update a secret, so `--to` is required and the config is never touched. Pass
+the new value, then update the secret to it:
+
+```sh
+MANNI_CITE_SALT="$OLD_SALT" manni cite salt rotate --to "$NEW_SALT" --root ../code
+```
+
+```
+Salt not written: it comes from MANNI_CITE_SALT. Update the secret to the value you passed.
+```
+
+Without `--to`, the run refuses (exit 2) before it reads a page:
+
+```
+manni: The salt comes from MANNI_CITE_SALT; pass --to <value>, re-key with it, then update the secret. Nothing is written to config.
+```
+
+The rule keeps a secret out of a public file. In the two-repository layout
+the config is committed to the public docs repository, and a rotation that
+wrote there would publish the new salt. `set` still warns when
+`MANNI_CITE_SALT` is set, because the environment wins over the key it
+wrote. See [public docs, private code](/manni/cite/set-up/public-docs-private-code/).
 
 ## Example
 
-The two-checkout layout, which is the reason `root`, `sources` and `obfuscate`
+The two-checkout layout, which is the reason `root`, `sources` and the salt
 exist. The pages are in the public docs repository, so SARIF locations
 resolve. The sources are reached through `--root` from a private CI job that
-checks out both:
+checks out both. The file is public, so it carries no `salt:`. The salt lives
+in `MANNI_CITE_SALT`, and a salt in the environment obfuscates every `add`
+exactly as a configured one would:
 
 ```yaml title="manni.config.yaml (public docs repository)"
 collections:
   - name: site
     paths: ["src/content/docs/**/*.{md,mdx}"]
 cite:
-  obfuscate: true
   severity:
     moved: error          # this repo wants a moved pin to block, not warn
 ```

@@ -3,7 +3,7 @@
  * `resolvedPath`, `diff` and `commitsSince` are stripped from every citation:
  * output never says more than the page did.
  */
-import type { CheckRun, CitationResult, PageCitationReport, UpdateRun } from "../types.js";
+import type { CheckRun, CitationResult, PageCitationReport, SaltRotateRun, UpdateRun } from "../types.js";
 
 /**
  * The fields of a `CitationResult` a machine format may carry. An allowlist
@@ -43,4 +43,14 @@ export function renderCheckJson(run: CheckRun): string {
 
 export function renderUpdateJson(run: UpdateRun): string {
   return JSON.stringify(run, null, 2);
+}
+
+/**
+ * `salt rotate` as data: `{ pages, rekeyed, skipped, saltWritten }`. The
+ * config's location and the dry-run flag are for the pretty report; the
+ * salt itself is never in any output.
+ */
+export function renderRotateJson(run: SaltRotateRun): string {
+  const { pages, rekeyed, skipped, saltWritten } = run;
+  return JSON.stringify({ pages, rekeyed, skipped, saltWritten }, null, 2);
 }

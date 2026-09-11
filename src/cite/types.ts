@@ -253,6 +253,8 @@ export interface CheckOptions {
   git?: boolean;
   sources?: boolean;
   root?: string;
+  /** Defaults to `process.env`; read for `MANNI_CITE_SALT`. A test hands in its own. */
+  env?: NodeJS.ProcessEnv;
 }
 
 export interface CheckRun {
@@ -270,6 +272,11 @@ export interface AddOptions {
   id?: string;
   quote?: boolean;
   inline?: boolean;
+  /**
+   * Write `src` as a token and a keyed pin. Absent, obfuscation follows the
+   * salt: a configured or environment salt obfuscates every add, and no salt
+   * writes a plain path. `true` with no salt keys under the empty string.
+   */
   obfuscate?: boolean;
   /** `false` records no commit. */
   commit?: boolean;
@@ -282,6 +289,8 @@ export interface AddOptions {
   root?: string;
   /** Default true. False: no HEAD recorded, and sources indexed by a directory walk. */
   git?: boolean;
+  /** Defaults to `process.env`; read for `MANNI_CITE_SALT`. A test hands in its own. */
+  env?: NodeJS.ProcessEnv;
   onNotice?: (message: string) => void;
   onConfigLoaded?: (info: { path: string; dir: string }) => void;
 }
@@ -332,6 +341,89 @@ export interface UpdateRun {
   exitCode: 0 | 1;
 }
 
+/** `manni cite salt set [<value>]`: write `cite.salt` into the config file. */
+export interface SaltSetOptions {
+  /** The salt to write. Absent generates 32 lowercase hex characters. */
+  value?: string;
+  /** `-c/--config`: the file to edit, instead of the discovered one. */
+  configPath?: string;
+  cwd?: string;
+  /** Say what would be written and write nothing. */
+  dryRun?: boolean;
+  /** Defaults to `process.env`; read for `MANNI_CITE_SALT`, which wins over the key. */
+  env?: NodeJS.ProcessEnv;
+  /** Told once when the environment carries a salt that outranks the one written. */
+  onWarn?: (message: string) => void;
+}
+
+export interface SaltSetResult {
+  /** The config file as the user would name it, for the report line. Never the value. */
+  source: string;
+  /** Absolute path of the config file. */
+  path: string;
+  written: boolean;
+}
+
+/**
+ * `manni cite salt rotate [paths...]`: re-key every obfuscated citation under
+ * a new salt, then write it where the old one lives. A config salt is
+ * replaced in the config; a salt from `MANNI_CITE_SALT` is never written
+ * anywhere, and `to` is then required, because the tool cannot update the
+ * secret. Inputs resolve as `check`'s do; the config is where the old salt
+ * is read from, so `--no-config` has no meaning here, and neither has stdin,
+ * since a rotated page is written back to its file.
+ */
+export interface SaltRotateOptions
+  extends Omit<CheckOptions, "baseline" | "writeBaseline" | "sources" | "stdinContent" | "noConfig"> {
+  /** The new salt. Absent generates 32 lowercase hex characters; required when the salt comes from the environment. */
+  to?: string;
+  /** Report every rewrite and write nothing: no page, no salt. */
+  dryRun?: boolean;
+}
+
+export interface SaltRotateRewrite {
+  id?: string;
+  /** Index in `citations` for a frontmatter entry. */
+  index?: number;
+  /** File line of the entry or statement. */
+  line?: number;
+  /** The `src` before and after, spelled as the page spells it. */
+  from: string;
+  to: string;
+}
+
+export interface SaltRotateSkip {
+  id?: string;
+  index?: number;
+  line?: number;
+  /** Spelled as the page spelled it. */
+  src: string;
+  reason: string;
+}
+
+export interface SaltRotatePage {
+  file: string;
+  rewritten: SaltRotateRewrite[];
+  skipped: SaltRotateSkip[];
+  written: boolean;
+}
+
+export interface SaltRotateRun {
+  pages: SaltRotatePage[];
+  /** Citations re-keyed in memory; written only when `skipped` is zero and the run is not a dry run. */
+  rekeyed: number;
+  skipped: number;
+  /** `false` under `--dry-run`, when anything was skipped, and always when the salt comes from the environment. */
+  saltWritten: boolean;
+  /** Where the old salt came from. `"none"` is refused before a run exists. */
+  saltSource: Exclude<SaltSource, "none">;
+  /** The config file the salt was, or would be, written to, as the user would name it. */
+  source: string;
+  dryRun: boolean;
+  /** `1` when anything was skipped: the rotation is work left undone. */
+  exitCode: 0 | 1;
+}
+
 /**
  * Config under `cite:` in manni.config.yaml, camelCase as `meta:` is. The
  * document set is not here: proposal 0041 moved `paths` and `exclude` to the
@@ -344,8 +436,12 @@ export interface CiteConfig {
   baseline?: string;
   git?: boolean;
   sources?: boolean;
+  /**
+   * Keys obfuscated tokens and pins, and turns obfuscation on: once a salt
+   * is configured, `add` writes every source as a token. `MANNI_CITE_SALT`
+   * wins over it. Written by `salt set`, replaced by `salt rotate`.
+   */
   salt?: string;
-  obfuscate?: boolean;
   severity?: Partial<Record<CiteRule, CiteSeverity>>;
 }
 
@@ -375,7 +471,19 @@ export interface CiteRun {
   fromCollections: boolean;
   configDir?: string;
   configPath?: string;
+  /** The config file as the user would name it, for messages. */
+  configSource?: string;
   /** Absolute root `src:` paths resolve from. */
   root: string;
   salt: string;
+  /** Where `salt` came from. The environment wins over the config. */
+  saltSource: SaltSource;
 }
+
+/**
+ * Where a run's salt was read from: `MANNI_CITE_SALT`, `cite.salt`, or
+ * nowhere. `salt rotate` reads it to decide where the new salt goes: a salt
+ * managed in the environment rotates through the environment, and the
+ * config is never touched, so a secret never lands in a public file.
+ */
+export type SaltSource = "env" | "config" | "none";

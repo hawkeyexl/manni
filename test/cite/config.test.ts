@@ -52,7 +52,6 @@ describe("parseCiteConfig", () => {
         "git: false",
         "sources: false",
         "salt: s3cret",
-        "obfuscate: true",
         "severity:",
         "  moved: error",
         "  changed: warning",
@@ -67,7 +66,6 @@ describe("parseCiteConfig", () => {
       git: false,
       sources: false,
       salt: "s3cret",
-      obfuscate: true,
       severity: { moved: "error", changed: "warning", current: "off" },
     });
   });
@@ -86,7 +84,19 @@ describe("parseCiteConfig", () => {
   it("rejects an unknown key, naming it and the supported keys", () => {
     expect(() => parse("allowEmtpy: true\n")).toThrow(CiteError);
     expect(() => parse("allowEmtpy: true\n")).toThrow(
-      /^Unknown key "allowEmtpy" under cite: in c\.yaml\. Supported keys: allowEmpty, respectGitignore, root, baseline, git, sources, salt, obfuscate, severity\.$/,
+      /^Unknown key "allowEmtpy" under cite: in c\.yaml\. Supported keys: allowEmpty, respectGitignore, root, baseline, git, sources, salt, severity\.$/,
+    );
+  });
+
+  it("refuses obfuscate, saying the salt took its place", () => {
+    // Refused before the unknown-key check, so the message says what replaced
+    // the key rather than calling it a typo. Same shape as the moved keys.
+    expect(() => parse("obfuscate: true\n")).toThrow(CiteError);
+    expect(messageOf("obfuscate: true\n")).toBe(
+      "cite.obfuscate is no longer a key. A configured salt obfuscates every source add writes; run `manni cite salt set` to configure one.",
+    );
+    expect(messageOf("obfuscate: false\n")).toBe(
+      "cite.obfuscate is no longer a key. A configured salt obfuscates every source add writes; run `manni cite salt set` to configure one.",
     );
   });
 
@@ -129,7 +139,7 @@ describe("parseCiteConfig", () => {
   });
 
   it("names the key and the expected type for a wrong-typed value", () => {
-    for (const key of ["allowEmpty", "respectGitignore", "git", "sources", "obfuscate"]) {
+    for (const key of ["allowEmpty", "respectGitignore", "git", "sources"]) {
       expect(() => parse(`${key}: yes please\n`)).toThrow(
         new RegExp(`cite\\.${key} in c\\.yaml must be a boolean`),
       );
@@ -200,7 +210,6 @@ describe("loadCiteConfig", () => {
       git: false,
       sources: false,
       salt: "fixture-salt",
-      obfuscate: true,
       severity: { moved: "error", changed: "warning", current: "off" },
     });
   });
@@ -277,9 +286,9 @@ describe("loadCiteConfig", () => {
   });
 
   it("an explicit path without a cite: key is read whole", async () => {
-    const root = await tree({ "cite.yaml": "obfuscate: true\n" });
+    const root = await tree({ "cite.yaml": "git: false\n" });
     const loaded = await loadCiteConfig("cite.yaml", root);
-    expect(loaded?.config).toEqual({ obfuscate: true });
+    expect(loaded?.config).toEqual({ git: false });
   });
 });
 
@@ -493,9 +502,11 @@ describe("resolveCiteRun", () => {
       env: { [SALT_ENV]: "from-env" },
     });
     expect(fromEnv.salt).toBe("from-env");
+    expect(fromEnv.saltSource).toBe("env");
 
     const fromConfig = await resolveCiteRun({ cwd: root, inputs: [], env: {} });
     expect(fromConfig.salt).toBe("from-config");
+    expect(fromConfig.saltSource).toBe("config");
 
     const none = await resolveCiteRun({
       cwd: root,
@@ -504,5 +515,6 @@ describe("resolveCiteRun", () => {
       env: {},
     });
     expect(none.salt).toBe("");
+    expect(none.saltSource).toBe("none");
   });
 });

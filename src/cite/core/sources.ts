@@ -9,6 +9,7 @@
  * Token: `"~" + sha256(salt + "\n" + path).hex.slice(0, 16)`.
  */
 import fg from "fast-glob";
+import { randomBytes } from "node:crypto";
 import { lstat, readFile, realpath } from "node:fs/promises";
 import { join, sep } from "node:path";
 import { CiteError } from "../errors.js";
@@ -21,6 +22,15 @@ export function obfuscatePath(path: string, salt: string): string {
   // The same keyed formula a pin uses, over the path instead of the lines.
   const hex = hashLines(path, salt).slice(PIN_PREFIX.length);
   return `~${hex.slice(0, 16)}`;
+}
+
+/**
+ * A fresh salt for `salt set` and `salt rotate`: sixteen random bytes as 32
+ * lowercase hex characters. Hex, so it survives YAML unquoted in every case
+ * but the all-digit one, which the writer quotes.
+ */
+export function generateSalt(): string {
+  return randomBytes(16).toString("hex");
 }
 
 export interface BuildIndexOptions {

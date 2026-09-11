@@ -311,22 +311,34 @@ describe("runAdd", () => {
   });
 
   describe("minting", () => {
-    it("obfuscates from the flag or the config, keyed with the configured salt", async () => {
+    it("obfuscates every add once a salt is configured, with no flag", async () => {
       workspace("no-citations.md");
       const config = tempConfig(`salt: ${SALT}`);
       const token = obfuscatePath("src/limits.ts", SALT);
       const keyed = hashRange(LINE_2, undefined, SALT);
-      const flagged = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2", claim: CLAIM, obfuscate: true, noConfig: false, configPath: config });
-      expect(flagged.citation).toEqual({ claim: CLAIM, src: `${token}:2`, integrity: keyed });
-      expect(flagged.content).not.toContain("limits.ts");
-      expect(await recheck(flagged.file, config)).toEqual(["current"]);
+      const bySalt = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2", claim: CLAIM, noConfig: false, configPath: config });
+      expect(bySalt.citation).toEqual({ claim: CLAIM, src: `${token}:2`, integrity: keyed });
+      expect(bySalt.content).not.toContain("limits.ts");
+      expect(await recheck(bySalt.file, config)).toEqual(["current"]);
 
+      // The flag is redundant beside a salt, and changes nothing.
+      const flagged = await add({ page: "pages/no-citations.md", src: "src/limits.ts:3", obfuscate: true, noConfig: false, configPath: config });
+      expect(flagged.citation).toEqual({ src: `${token}:3`, integrity: hashRange(LINES_1_3[2] ?? "", undefined, SALT) });
+    });
+
+    it("obfuscates under the empty salt only when the flag asks for it", async () => {
       workspace("no-citations.md");
-      const configured = tempConfig(`salt: ${SALT}\nobfuscate: true`);
-      const byConfig = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2", noConfig: false, configPath: configured });
-      expect(byConfig.citation.src).toBe(`${token}:2`);
-      const plain = await add({ page: "pages/no-citations.md", src: "src/limits.ts:3", obfuscate: false, noConfig: false, configPath: configured });
-      expect(plain.citation.src).toBe("src/limits.ts:3");
+      const plain = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2" });
+      expect(plain.citation.src).toBe("src/limits.ts:2");
+      const weak = await add({ page: "pages/no-citations.md", src: "src/limits.ts:3", obfuscate: true });
+      expect(weak.citation.src).toBe(`${obfuscatePath("src/limits.ts", "")}:3`);
+      expect(weak.citation.integrity).toBe(hashRange(LINES_1_3[2] ?? "", undefined, ""));
+    });
+
+    it("the environment's salt obfuscates as a configured one does", async () => {
+      workspace("no-citations.md");
+      const result = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2", env: { MANNI_CITE_SALT: SALT } });
+      expect(result.citation.src).toBe(`${obfuscatePath("src/limits.ts", SALT)}:2`);
     });
 
     it.skipIf(!gitAvailable())("records HEAD unless told not to", async () => {

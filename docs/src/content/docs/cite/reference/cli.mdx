@@ -1,12 +1,12 @@
 ---
 title: CLI reference
-description: Every manni cite command, argument, and flag (check, add, and update), with exit codes, the citation baseline, and the two-checkout layout for private sources.
+description: Every manni cite command, argument, and flag (check, add, update, salt set, and salt rotate), with exit codes, the citation baseline, and the two-checkout layout for private sources.
 sidebar:
   order: 1
 citations:
   - id: check
     claim: Check every citation in the given pages against its source.
-    src: src/cite/cli.ts:191-192
+    src: src/cite/cli.ts:206-207
     integrity: sha256-a5f8b50113ec46c738fe1fb80886b3109f7e1a86ef3e009fb690a151c40351b9
     commit: 4f2bd19f0d262f41f1bafde228b62899b4124839
 ---
@@ -24,11 +24,13 @@ import { Aside } from '@astrojs/starlight/components';
     the check command moved under it: re-mint with `manni cite update
     --accept --only check docs/src/content/docs/cite/reference/cli.mdx`. */}
 
-manni cite exposes three subcommands, [`check`](#cite-check), [`add`](#cite-add),
-and [`update`](#cite-update), and no default. A bare `manni cite` prints usage
-and exits `2`, because nothing here is safe to run by accident: `check` can
-fail a build, and `add` and `update` write to pages. `check` and `update` take
-paths and share the metadata tool's [input
+manni cite exposes three verbs, [`check`](#cite-check), [`add`](#cite-add)
+and [`update`](#cite-update), and one noun, [`salt`](#cite-salt), which groups
+[`set`](#cite-salt-set) and [`rotate`](#cite-salt-rotate). There is no default.
+A bare `manni cite` prints usage and exits `2`, because nothing here is safe to
+run by accident. `check` can fail a build. `add`, `update` and `salt rotate`
+write to pages, and `salt set` writes to the config. `check`, `update` and
+`salt rotate` take paths and share the metadata tool's [input
 model](/manni/meta/reference/cli/#shared-input-model); `add` takes one page and
 one source.
 
@@ -238,13 +240,13 @@ manni cite add <page> <src> [options]
 | `--id` | `<id>` | n/a | A kebab-case name for the entry, unique within the page. With `--claim`, a reference statement naming it is written above the claim's paragraph, unless one is already there. That is how a repeated claim is disambiguated. Needs `--claim` or `--quote`: an id nothing references is refused. |
 | `--quote` | n/a | off | The page reproduces the cited lines in a fenced block, and that block is the anchor. Alone, exactly one block in the body must reproduce the range; with `--claim`, the first block after the claim's paragraph must. Refused on `html`, `xml` and `rst`, which have no fence the tool can locate. |
 | `--inline` | n/a | off | Write the entry as an inline JSON statement above the anchor instead of a frontmatter entry. Needs `--claim` or `--quote`, since a statement anchors what follows it. Refused on `asciidoc` and `rst`, whose statement forms carry an id only. The only channel on an `html` or `xml` page, which has no frontmatter to write to. |
-| `--obfuscate` | n/a | config `obfuscate:` | Write `src` as a `~token` and a pin keyed by the salt, so the page carries neither the path nor a verifier for the line. See [obfuscated sources](/manni/cite/reference/citations/#obfuscated-sources). |
+| `--obfuscate` | n/a | off | Write `src` as a `~token` and a pin keyed by the salt, so the page carries neither the path nor a verifier for the line. A configured salt does this without the flag. The flag is for a run with no salt at all, which keys under the empty string and is weak. See [obfuscated sources](/manni/cite/reference/citations/#obfuscated-sources) and [`salt set`](#cite-salt-set). |
 | `--no-commit` | n/a | on | Do not record `HEAD`. Without a commit, a later check can still say the lines changed, but not since when, nor whether the pin was ever true. Off a git checkout no commit is recorded either way. |
 | `--no-git` | n/a | on | Skip git entirely. No `HEAD` is recorded, and the source is looked up by a directory walk instead of `git ls-files`, so an untracked file under the root can be cited. Overrides config `git:`. |
 | `--dry-run` | n/a | off | Print the unified diff of the page and write nothing. The report line goes to stderr. |
 | `--as` | `<format>` | n/a | Force the page's [format](/manni/meta/reference/formats/). Required with `-`. |
 | `--root` | `<dir>` | n/a | The directory `<src>` resolves from, exactly as on [`check`](#where-sources-resolve-from). |
-| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/cite/reference/configuration/), read for `root`, `salt`, `obfuscate` and `git`. |
+| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/cite/reference/configuration/), read for `root`, `salt` and `git`. |
 | `--no-config` | n/a | off | Ignore any discovered config file. |
 
 Neither `--claim` nor `--quote` writes a **bare pin** to the frontmatter:
@@ -362,3 +364,189 @@ The report names each rewrite and the reason:
 docs/limits.md: fetch-timeout  lib/limits.ts:2 -> lib/limits.ts:4  (moved)
 1 citation rewritten in 1 file, 0 skipped
 ```
+
+## `cite salt`
+
+The salt that keys every obfuscated token and pin, as a noun grouping two
+verbs. A configured salt is what turns obfuscation on. Once `cite.salt` is
+set, or `MANNI_CITE_SALT` is in the environment, every `add` writes a
+`~token` and a keyed pin, with no flag to remember. [`set`](#cite-salt-set)
+writes the key and [`rotate`](#cite-salt-rotate) replaces it, re-keying every
+citation minted under the old one. There is no default subcommand. A bare
+`manni cite salt` prints usage and exits `2`.
+
+```sh
+manni cite salt <command> [command options] [arguments]
+```
+
+## `cite salt set`
+
+Write `cite.salt` into `manni.config.yaml`. The discovered file, or the one
+`-c` names, is edited in place. Its comments and every other key survive, and
+a `cite:` section is created when the file has none. With no `<value>`, a
+fresh salt of 32 lowercase hex characters is generated. The value is never
+printed. The report says where it went, and nothing else.
+
+```sh
+manni cite salt set [value] [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[value]` | The salt to write. Optional. Without it, 32 lowercase hex characters from 16 random bytes. An empty string is refused (exit 2). |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--dry-run` | n/a | off | Print where the salt would be written and write nothing. |
+| `-c, --config` | `<path>` | discovered | The [config file](/manni/cite/reference/configuration/) to write into. It must exist. There is no `--no-config`, because the file is the thing being written. |
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | The salt was written, or under `--dry-run` would have been. |
+| `2` | No config file was found, a salt is already configured, the `-c` file is missing, or the value is empty. Nothing is written. |
+
+A configured salt is a refusal, because replacing it in place would leave
+every obfuscated citation `missing`. `rotate` is the command that replaces it:
+
+```
+manni: A salt is already configured in manni.config.yaml. Run `manni cite salt rotate` to replace it and re-key every obfuscated citation.
+```
+
+When `MANNI_CITE_SALT` is set, the key is still written, with a warning on
+stderr that the environment wins over it for every run.
+
+### Examples
+
+```sh
+manni cite salt set                              # generate one and write it
+manni cite salt set --dry-run                    # say where it would go
+manni cite salt set "$(openssl rand -hex 16)"    # one you made yourself
+manni cite salt set -c docs/manni.config.yaml    # a named config
+```
+
+```
+Salt written to manni.config.yaml.
+```
+
+## `cite salt rotate`
+
+Re-key every obfuscated citation under a new salt, then write that salt where
+the old one lives. A salt from `cite.salt` is replaced in the config. A salt
+from `MANNI_CITE_SALT` rotates through the environment: `--to` is required,
+the pages are re-keyed under it, and the config is never touched. Each
+`~token` becomes the same path's token under the new salt, and each keyed pin
+is re-keyed over the same lines. A plain path is left alone. Inputs resolve
+exactly as [`check`](#cite-check)'s do. The run is atomic. Every page is
+rewritten in memory first, and nothing reaches disk until every entry has
+re-keyed. So the new salt is never written beside a citation that still holds
+the old one.
+
+```sh
+manni cite salt rotate [paths...] [options]
+```
+
+<Aside type="caution">
+`rotate` **writes to your pages and your config by default**. With
+`MANNI_CITE_SALT` set it writes the pages only. Pass `--dry-run` to see every
+rewrite first, and run it on a clean working tree. Run it where the sources
+are reachable: it has to read the cited lines to re-key them.
+</Aside>
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to rotate. Optional. Without paths the run covers every configured [collection](/manni/meta/reference/configuration/#collections), or the ones `--collection` names. Stdin is refused: a rotated page is written back to its file. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--to` | `<value>` | 32 random hex characters | The new salt. Required when the salt comes from `MANNI_CITE_SALT`, because the tool cannot update a secret; without it the run refuses (exit 2). An empty string is refused (exit 2). |
+| `--collection` | `<name>` | every collection | Run over a configured [collection](/manni/meta/reference/configuration/#collections), exactly as on [`check`](#cite-check). Repeatable, one name per occurrence, never comma-separated. |
+| `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. When the run reads from collections, their `exclude:` globs apply as well. |
+| `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) for every input. |
+| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/cite/reference/configuration/). It is where the old salt is read from, and where a config salt is replaced. |
+| `--no-gitignore` | n/a | on | Rotate files `.gitignore` covers as well. Overrides config `respectGitignore:`. |
+| `--no-git` | n/a | on | Skip git. A citation whose pin no longer holds is then skipped, rather than re-keyed from the lines at its commit. |
+| `--root` | `<dir>` | n/a | The directory `src:` paths resolve from, exactly as on [`check`](#where-sources-resolve-from). |
+| `--dry-run` | n/a | off | Print every rewrite and every skip; write neither the pages nor the salt. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints `{ pages, rekeyed, skipped, saltWritten }`, with each page's `rewritten` list (`id`, `index`, `line`, `from`, `to`), its `skipped` list (the same fields, plus `src` and `reason`), and whether it was `written`. `saltWritten` is `false` under `--dry-run`, when anything was skipped, and always when the salt comes from `MANNI_CITE_SALT`. The salt is in neither format. An unknown value is an error (exit 2). |
+
+### What is re-keyed, and what is not
+
+| Citation | Result |
+|---|---|
+| A token whose pin holds over the cited lines today. | Re-keyed over those lines. |
+| A token whose pin no longer holds, with a `commit` git can show, and the lines found there. | Re-keyed over the lines as they were then, so the citation reads `changed` after, exactly as before. |
+| A token whose pin holds nowhere the tool can look. | Skipped: `changed; run manni cite update --accept before rotating`. |
+| A token no tracked file matches under the current salt. | Skipped: `missing (no tracked file matches under the current salt)`. |
+| A plain path. | Untouched. It carries nothing the salt keys. |
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Every obfuscated citation re-keyed and the pages and the salt were written, or under `--dry-run` would have been. With `MANNI_CITE_SALT` set, the pages were written and the salt was not. |
+| `1` | At least one citation was skipped. Nothing was written, not even the pages that re-keyed cleanly. The corpus stays under the old salt until the skipped entries are fixed and the run repeated. |
+| `2` | Operational or usage error. No config file, no salt configured, a salt from `MANNI_CITE_SALT` with no `--to`, nothing to rotate, an empty `--to`, stdin, an unknown `--format`, and everything `check` exits 2 for. |
+
+The refusals, each on its own line on stderr:
+
+```
+manni: No manni.config.yaml found. Create one, or name it with -c.
+manni: No salt is configured; nothing to rotate. Run `manni cite salt set` first.
+manni: The salt comes from MANNI_CITE_SALT; pass --to <value>, re-key with it, then update the secret. Nothing is written to config.
+manni: No files to rotate. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.
+```
+
+### Examples
+
+```sh
+manni cite salt rotate                            # every collection, a fresh salt
+manni cite salt rotate --dry-run docs/            # see what would be re-keyed
+manni cite salt rotate --to "$NEW_SALT" --root ../code
+MANNI_CITE_SALT="$OLD_SALT" manni cite salt rotate --to "$NEW_SALT" --root ../code -f json
+```
+
+The report names each rewrite by the entry's id, else `#N` for a frontmatter
+index, else `inline`, and then says what happened to the salt:
+
+```
+docs/limits.md: fetch-timeout  ~fd8c031de1743e75:5 -> ~2c9e41a0b7d3f618:5
+docs/limits.md: inline  ~fd8c031de1743e75:3-5 -> ~2c9e41a0b7d3f618:3-5
+2 citations re-keyed in 1 file, 0 skipped
+Salt written to manni.config.yaml.
+```
+
+When anything was skipped, the last line says so instead, and nothing was
+written:
+
+```
+docs/limits.md: retries  ✗ skipped: changed; run `manni cite update --accept` before rotating
+1 citation re-keyed in 1 file, 1 skipped
+Salt not written: 1 citation could not be re-keyed. Fix them and rotate again.
+```
+
+When `MANNI_CITE_SALT` is set, the salt rotates through the environment. The
+pages are re-keyed under the value `--to` names, the config is never touched,
+and the last line says the secret is yours to update:
+
+```
+docs/limits.md: fetch-timeout  ~fd8c031de1743e75:5 -> ~2c9e41a0b7d3f618:5
+1 citation re-keyed in 1 file, 0 skipped
+Salt not written: it comes from MANNI_CITE_SALT. Update the secret to the value you passed.
+```
+
+Update the secret and push the re-keyed pages together, or the next private
+run reads every token as `missing`. The rule exists for the
+[two-repository layout](/manni/cite/set-up/public-docs-private-code/), where
+the config is a public file and a rotation that wrote there would publish the
+salt.

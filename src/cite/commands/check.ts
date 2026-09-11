@@ -92,12 +92,13 @@ export async function prepareRun(
     root: opts.root,
     onConfigLoaded: opts.onConfigLoaded,
     onNotice: opts.onNotice,
+    env: opts.env,
   });
   const { config, inputs, base } = run;
 
   const sources = opts.sources ?? config?.sources ?? true;
   if (requireSources && !sources) {
-    throw new CiteError("update needs the sources: drop --no-sources (or `sources: false`).");
+    throw new CiteError(`${verb} needs the sources: drop --no-sources (or \`sources: false\`).`);
   }
   if (inputs.length === 0) {
     throw new CiteError(

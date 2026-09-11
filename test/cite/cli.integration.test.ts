@@ -67,13 +67,14 @@ afterEach(() => {
 });
 
 describe("manni cite (grammar)", () => {
-  it("lists check, add and update", () => {
+  it("lists check, add, update and salt", () => {
     const r = run(["cite", "--help"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^Usage: manni cite /m);
     expect(r.stdout).toMatch(/^\s+check\b/m);
     expect(r.stdout).toMatch(/^\s+add\b/m);
     expect(r.stdout).toMatch(/^\s+update\b/m);
+    expect(r.stdout).toMatch(/^\s+salt\b/m);
   });
 
   it("has no default subcommand: bare `manni cite` is a usage error", () => {
@@ -83,10 +84,21 @@ describe("manni cite (grammar)", () => {
     expect(r.stderr).toMatch(/^Usage: manni cite \[options\] \[command\]/m);
   });
 
+  it("salt has no default subcommand either: bare `manni cite salt` is a usage error", () => {
+    const r = run(["cite", "salt"]);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(r.stderr).toMatch(/^Usage: manni cite salt \[options\] \[command\]/m);
+    expect(r.stderr).toMatch(/^\s+set\b/m);
+    expect(r.stderr).toMatch(/^\s+rotate\b/m);
+  });
+
   it("shows the qualified usage line on every subcommand", () => {
     expect(run(["cite", "check", "--help"]).stdout).toMatch(/^Usage: manni cite check /m);
     expect(run(["cite", "add", "--help"]).stdout).toMatch(/^Usage: manni cite add /m);
     expect(run(["cite", "update", "--help"]).stdout).toMatch(/^Usage: manni cite update /m);
+    expect(run(["cite", "salt", "set", "--help"]).stdout).toMatch(/^Usage: manni cite salt set /m);
+    expect(run(["cite", "salt", "rotate", "--help"]).stdout).toMatch(/^Usage: manni cite salt rotate /m);
   });
 });
 
@@ -474,16 +486,43 @@ describe("manni cite add", () => {
     expect(without.stdout).toContain("(src/limits.ts:3, sha256-e9f5bdf9…, no commit)");
   });
 
-  it("--obfuscate writes a token, keyed by the salt", () => {
+  it("a salt in the environment obfuscates without --obfuscate", () => {
     const token = obfuscatePath("src/limits.ts", "SALT-LADDER");
     const r = cite(
-      ["add", "pages/no-citations.md", "src/limits.ts:2", "--claim", CLAIM, "--obfuscate", "--root", "."],
+      ["add", "pages/no-citations.md", "src/limits.ts:2", "--claim", CLAIM, "--root", "."],
       { env: { MANNI_CITE_SALT: "SALT-LADDER" } },
     );
     expect(r.status).toBe(0);
     expect(r.stdout).toContain(`(${token}:2, sha256-`);
     expect(r.stdout).not.toContain("src/limits.ts");
     expect(readFileSync(join(work, "pages", "no-citations.md"), "utf8")).toContain(`src: ${token}:2`);
+  });
+
+  it("a salt in the config obfuscates without --obfuscate", () => {
+    writeFileSync(join(work, "manni.config.yaml"), "cite:\n  salt: SALT-LADDER\n", "utf8");
+    const token = obfuscatePath("src/limits.ts", "SALT-LADDER");
+    const r = cite(["add", "pages/no-citations.md", "src/limits.ts:2", "--claim", CLAIM, "--root", ".", "--no-git"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain(`(${token}:2, sha256-`);
+    expect(readFileSync(join(work, "pages", "no-citations.md"), "utf8")).toContain(`src: ${token}:2`);
+  });
+
+  it("--obfuscate with no salt keys under the empty string", () => {
+    const token = obfuscatePath("src/limits.ts", "");
+    const r = cite(["add", "pages/no-citations.md", "src/limits.ts:2", "--claim", CLAIM, "--obfuscate", "--root", ".", "--no-git"], {
+      env: { MANNI_CITE_SALT: "" },
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain(`(${token}:2, sha256-`);
+  });
+
+  it("config obfuscate: is refused, naming salt set", () => {
+    writeFileSync(join(work, "manni.config.yaml"), "cite:\n  obfuscate: true\n", "utf8");
+    const r = cite(["add", "pages/no-citations.md", "src/limits.ts:2", "--root", ".", "--no-git"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr.split(/\r?\n/)[0]).toBe(
+      "manni: cite.obfuscate is no longer a key. A configured salt obfuscates every source add writes; run `manni cite salt set` to configure one.",
+    );
   });
 });
 
@@ -564,5 +603,159 @@ describe("manni cite update", () => {
     const page = readFileSync(join(work, "pages", "moved.md"), "utf8");
     expect(page).toContain("src: src/moved.ts:4");
     expect(page).toContain('"src": "src/moved.ts:3"');
+  });
+});
+
+describe("manni cite salt", () => {
+  const setConfig = (text: string): void => {
+    writeFileSync(join(work, "manni.config.yaml"), text, "utf8");
+  };
+  const readConfig = (): string => readFileSync(join(work, "manni.config.yaml"), "utf8");
+  const usage = (args: string[], line: string, env?: Record<string, string>): void => {
+    const r = cite(args, { env });
+    expect(r.status).toBe(2);
+    expect(r.stderr.split(/\r?\n/)[0]).toBe(`manni: ${line}`);
+  };
+
+  it("set writes a random salt into the discovered config and prints where, never the value", () => {
+    setConfig("# keep me\ncollections:\n  - name: pages\n    paths: ['pages/*.md']\n");
+    const r = cite(["salt", "set"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toBe("Salt written to manni.config.yaml.\n");
+    expect(r.stderr).toBe("");
+    const text = readConfig();
+    expect(text).toContain("# keep me");
+    const m = /^  salt: ([0-9a-f]{32})$/m.exec(text);
+    expect(m).not.toBeNull();
+    expect(r.stdout).not.toContain(m?.[1] ?? "never");
+  });
+
+  it("set takes a value, and --dry-run says what it would do", () => {
+    setConfig("cite: {}\n");
+    const dry = cite(["salt", "set", "abc123", "--dry-run"]);
+    expect(dry.status).toBe(0);
+    expect(dry.stdout).toBe("Would write cite.salt to manni.config.yaml.\n");
+    expect(readConfig()).toBe("cite: {}\n");
+    const r = cite(["salt", "set", "abc123", "-c", "manni.config.yaml"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toBe("Salt written to manni.config.yaml.\n");
+    expect(readConfig()).toBe("cite: { salt: abc123 }\n");
+  });
+
+  it("set refuses a configured salt, a missing config, and a missing -c file", () => {
+    usage(
+      ["salt", "set", "-c", "config/manni.config.yaml"],
+      "A salt is already configured in config/manni.config.yaml. Run `manni cite salt rotate` to replace it and re-key every obfuscated citation.",
+    );
+    usage(["salt", "set"], "No manni.config.yaml found. Create one, or name it with -c.");
+    usage(["salt", "set", "-c", "nope.yaml"], 'Config file not found: "nope.yaml".');
+  });
+
+  it("set warns when MANNI_CITE_SALT is set", () => {
+    setConfig("cite: {}\n");
+    const r = cite(["salt", "set", "abc123"], { env: { MANNI_CITE_SALT: "from-env" } });
+    expect(r.status).toBe(0);
+    expect(r.stderr).toBe("manni: MANNI_CITE_SALT is set and wins over cite.salt for every run.\n");
+    expect(readConfig()).toBe("cite: { salt: abc123 }\n");
+  });
+
+  it("rotate re-keys every obfuscated citation and writes the new salt, so the next check is clean", () => {
+    setConfig("cite:\n  salt: SALT-FIXTURE\n");
+    const oldToken = obfuscatePath("src/limits.ts", "SALT-FIXTURE");
+    const newToken = obfuscatePath("src/limits.ts", "SALT-ROTATED");
+    const r = cite(["salt", "rotate", "--to", "SALT-ROTATED", "--root", ".", "--no-git", "pages/obfuscated.md"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("Using manni.config.yaml (.)");
+    expect(r.stdout).toContain(`pages/obfuscated.md: fetch-timeout  ${oldToken}:2 -> ${newToken}:2`);
+    expect(r.stdout).toContain("1 citation re-keyed in 1 file, 0 skipped");
+    expect(r.stdout).toContain("Salt written to manni.config.yaml.");
+    expect(readConfig()).toContain("salt: SALT-ROTATED");
+    const page = readFileSync(join(work, "pages", "obfuscated.md"), "utf8");
+    expect(page).toContain(`src: ${newToken}:2`);
+    expect(page).not.toContain(oldToken);
+    const after = cite(["check", "--root", ".", "--no-git", "pages/obfuscated.md"]);
+    expect(after.status).toBe(0);
+    expect(after.stdout).toContain(`${newToken}:2   current`);
+  });
+
+  it("rotate -f json prints the run as data, and keeps stdout clean", () => {
+    setConfig("cite:\n  salt: SALT-FIXTURE\n");
+    const r = cite(["salt", "rotate", "--to", "SALT-ROTATED", "--root", ".", "--no-git", "-f", "json", "pages/obfuscated.md"]);
+    expect(r.status).toBe(0);
+    const parsed = JSON.parse(r.stdout) as {
+      pages: { file: string; written: boolean; rewritten: { id?: string; from: string; to: string }[] }[];
+      rekeyed: number;
+      skipped: number;
+      saltWritten: boolean;
+    };
+    expect(Object.keys(parsed).sort()).toEqual(["pages", "rekeyed", "saltWritten", "skipped"]);
+    expect(parsed).toMatchObject({ rekeyed: 1, skipped: 0, saltWritten: true });
+    expect(parsed.pages[0]).toMatchObject({ file: "pages/obfuscated.md", written: true });
+    expect(parsed.pages[0]?.rewritten[0]?.id).toBe("fetch-timeout");
+  });
+
+  it("rotate skips a changed entry, writes nothing, and exits 1", () => {
+    setConfig("cite:\n  salt: SALT-FIXTURE\n");
+    const token = obfuscatePath("src/limits.ts", "SALT-FIXTURE");
+    writeFileSync(
+      join(work, "pages", "stale-token.md"),
+      `---\ncitations:\n  - src: ${token}:2\n    integrity: ${hashRange("nope", undefined, "SALT-FIXTURE")}\n---\nBody.\n`,
+      "utf8",
+    );
+    const r = cite(["salt", "rotate", "--to", "SALT-ROTATED", "--root", ".", "--no-git", "pages/obfuscated.md", "pages/stale-token.md"]);
+    expect(r.status).toBe(1);
+    expect(r.stdout).toContain("pages/stale-token.md: #0  ✗ skipped: changed; run `manni cite update --accept` before rotating");
+    expect(r.stdout).toContain("1 citation re-keyed in 1 file, 1 skipped");
+    expect(r.stdout).toContain("Salt not written: 1 citation could not be re-keyed. Fix them and rotate again.");
+    expect(readConfig()).toBe("cite:\n  salt: SALT-FIXTURE\n");
+    expect(readFileSync(join(work, "pages", "obfuscated.md"), "utf8")).toContain(`src: ${token}:2`);
+  });
+
+  it("rotate --dry-run rewrites nothing", () => {
+    setConfig("cite:\n  salt: SALT-FIXTURE\n");
+    const before = readFileSync(join(work, "pages", "obfuscated.md"), "utf8");
+    const r = cite(["salt", "rotate", "--to", "SALT-ROTATED", "--dry-run", "--root", ".", "--no-git", "pages/obfuscated.md"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("1 citation re-keyed in 1 file, 0 skipped");
+    expect(r.stdout).toContain("Would write cite.salt to manni.config.yaml.");
+    expect(readFileSync(join(work, "pages", "obfuscated.md"), "utf8")).toBe(before);
+    expect(readConfig()).toBe("cite:\n  salt: SALT-FIXTURE\n");
+  });
+
+  it("rotate with MANNI_CITE_SALT set re-keys the pages, leaves the config alone, and says to update the secret", () => {
+    setConfig("cite:\n  salt: not-the-one\n");
+    const newToken = obfuscatePath("src/limits.ts", "SALT-ROTATED");
+    const env = { MANNI_CITE_SALT: "SALT-FIXTURE" };
+    const r = cite(["salt", "rotate", "--to", "SALT-ROTATED", "--root", ".", "--no-git", "pages/obfuscated.md"], { env });
+    expect(r.status).toBe(0);
+    expect(r.stderr).toBe("");
+    expect(r.stdout).toContain("1 citation re-keyed in 1 file, 0 skipped");
+    expect(r.stdout).toContain("Salt not written: it comes from MANNI_CITE_SALT. Update the secret to the value you passed.");
+    expect(r.stdout).not.toContain("SALT-");
+    expect(readConfig()).toBe("cite:\n  salt: not-the-one\n");
+    expect(readFileSync(join(work, "pages", "obfuscated.md"), "utf8")).toContain(`src: ${newToken}:2`);
+    const after = cite(["check", "--root", ".", "--no-git", "pages/obfuscated.md"], { env: { MANNI_CITE_SALT: "SALT-ROTATED" } });
+    expect(after.status).toBe(0);
+
+    const json = cite(["salt", "rotate", "--to", "SALT-AGAIN", "--root", ".", "--no-git", "-f", "json", "pages/obfuscated.md"], {
+      env: { MANNI_CITE_SALT: "SALT-ROTATED" },
+    });
+    expect(json.status).toBe(0);
+    expect(JSON.parse(json.stdout)).toMatchObject({ rekeyed: 1, skipped: 0, saltWritten: false });
+  });
+
+  it("rotate refuses with no config, no salt, nothing to rotate, and an unknown format", () => {
+    usage(["salt", "rotate", "--root", ".", "--no-git", "pages/obfuscated.md"], "No manni.config.yaml found. Create one, or name it with -c.");
+    setConfig("cite:\n  git: false\n");
+    usage(["salt", "rotate", "--root", ".", "pages/obfuscated.md"], "No salt is configured; nothing to rotate. Run `manni cite salt set` first.");
+    usage(
+      ["salt", "rotate", "--root", ".", "pages/obfuscated.md"],
+      "The salt comes from MANNI_CITE_SALT; pass --to <value>, re-key with it, then update the secret. Nothing is written to config.",
+      { MANNI_CITE_SALT: "SALT-FIXTURE" },
+    );
+    expect(readConfig()).toBe("cite:\n  git: false\n");
+    setConfig("cite:\n  salt: SALT-FIXTURE\n  git: false\n");
+    usage(["salt", "rotate", "--root", "."], "No files to rotate. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.");
+    usage(["salt", "rotate", "--root", ".", "-f", "yaml", "pages/obfuscated.md"], 'Unknown --format "yaml". Use pretty or json.');
   });
 });

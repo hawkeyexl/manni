@@ -14,14 +14,12 @@ import { writeFileAtomic } from "../../meta/index.js";
 import { STDIN_LABEL } from "../../meta/internal.js";
 import { checkCitations } from "../core/check-page.js";
 import { mintCitation } from "../core/mint.js";
-import { readPage } from "../core/page.js";
-import { replaceStatement, spliceEntryField, unifiedDiff } from "../core/write.js";
+import { rewriteInlineFields, spliceEntryField, unifiedDiff } from "../core/write.js";
 import { CiteError } from "../errors.js";
 import type {
   Citation,
   CitationFinding,
   CitationResult,
-  InlineStatement,
   PageCitationReport,
   UpdateOptions,
   UpdatePage,
@@ -33,10 +31,6 @@ import { prepareRun, readTarget, sayNotices } from "./check.js";
 type Plan =
   | { kind: "moved"; result: CitationResult; src: string }
   | { kind: "accepted"; result: CitationResult; minted: Citation };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 /** The keys a finding about this citation would carry (see `keyOfFinding`). */
 function keysOf(result: CitationResult): string[] {
@@ -51,73 +45,12 @@ function keyOfFinding(finding: CitationFinding): string {
   return finding.index === undefined ? `line:${finding.line ?? 0}` : `index:${finding.index}`;
 }
 
-type InlineField = "src" | "integrity" | "commit";
-
-/**
- * Replace one string field's value inside a statement's JSON text, leaving
- * the author's spacing and key order alone, as `spliceEntryField` leaves a
- * YAML line. `undefined` when the text carries no such field.
- */
-function spliceJsonField(text: string, field: InlineField, value: string): string | undefined {
-  const keyed = new RegExp(`("${field}"\\s*:\\s*)"(?:[^"\\\\]|\\\\.)*"`);
-  if (!keyed.test(text)) return undefined;
-  // A function, so a `$` in the value is a character and not a back-reference.
-  return text.replace(keyed, (_match, lead: string) => lead + JSON.stringify(value));
-}
-
-/** The inline entry statement on `line`, from a fresh read of the page. */
-function statementAt(content: string, format: string, label: string, line: number): InlineStatement {
-  const statement = readPage(label, content, { format }).statements.find((s) => s.line === line);
-  if (statement?.payload.kind !== "entry" || !isRecord(statement.payload.entry)) {
-    throw new CiteError(`Cannot find the statement at ${label}:${line} to rewrite; edit it by hand.`);
-  }
-  return statement;
-}
-
-/**
- * Rewrite fields of the inline entry on `line`. The page is re-read for the
- * offsets, because an earlier splice may have moved them; the line has not,
- * since every rewrite keeps its line count. A field the statement does not
- * carry is left out (`commit` on an entry that never recorded one). The
- * result is read back before it is trusted, as the YAML splice is.
- */
-function rewriteInline(
-  content: string,
-  format: string,
-  label: string,
-  line: number,
-  fields: Partial<Record<InlineField, string>>,
-): string {
-  const statement = statementAt(content, format, label, line);
-  const original = content.slice(statement.start, statement.end);
-  const refuse = (): CiteError =>
-    new CiteError(`Cannot rewrite the statement at ${label}:${line} (\`${original}\`); edit it by hand.`);
-  let text = original;
-  const wanted: [InlineField, string][] = [];
-  for (const field of ["src", "integrity", "commit"] as const) {
-    const value = fields[field];
-    if (value === undefined) continue;
-    const spliced = spliceJsonField(text, field, value);
-    if (spliced === undefined) {
-      if (field === "commit") continue;
-      throw refuse();
-    }
-    text = spliced;
-    wanted.push([field, value]);
-  }
-  const out = replaceStatement(content, statement.start, statement.end, text);
-  const check = statementAt(out, format, label, line).payload;
-  const entry = check.kind === "entry" && isRecord(check.entry) ? check.entry : undefined;
-  if (entry === undefined || wanted.some(([field, value]) => entry[field] !== value)) throw refuse();
-  return out;
-}
-
 function apply(content: string, format: string, label: string, plan: Plan): string {
   const { origin } = plan.result;
   if (plan.kind === "moved") {
     return origin.kind === "frontmatter"
       ? spliceEntryField(content, format, origin.index, "src", plan.src)
-      : rewriteInline(content, format, label, origin.line, { src: plan.src });
+      : rewriteInlineFields(content, format, label, origin.line, { src: plan.src });
   }
   const { integrity, commit } = plan.minted;
   if (origin.kind === "frontmatter") {
@@ -133,7 +66,7 @@ function apply(content: string, format: string, label: string, plan: Plan): stri
     }
     return out;
   }
-  return rewriteInline(content, format, label, origin.line, { integrity, commit });
+  return rewriteInlineFields(content, format, label, origin.line, { integrity, commit });
 }
 
 function rewriteOf(plan: Plan): UpdateRewrite {

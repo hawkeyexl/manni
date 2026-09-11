@@ -16,7 +16,6 @@ cite:
   git: false
   sources: false
   salt: fixture-salt
-  obfuscate: true
   severity:
     moved: error
     changed: warning

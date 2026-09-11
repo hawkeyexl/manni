@@ -115,16 +115,18 @@ export function findWindows(
 /**
  * What git could say about the pin at the recorded commit. `unknown` is a
  * file at the commit too large to search under the budget with the pin found
- * nowhere in the part that was: neither true nor never true.
+ * nowhere in the part that was: neither true nor never true. `original`
+ * carries the cited lines as they were then, which `salt rotate` re-keys
+ * from when the pin no longer holds today.
  */
-type History =
+export type History =
   | { kind: "none" }
   | { kind: "unavailable" }
   | { kind: "never-true" }
   | { kind: "unknown" }
   | { kind: "original"; lines: string[] };
 
-async function historyOf(
+export async function historyOf(
   git: GitClient,
   commit: string,
   path: string,
