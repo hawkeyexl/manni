@@ -1,5 +1,5 @@
 /**
- * Classification agrees with the ladder (docs/proposals/0042/ladders/
+ * Classification agrees with the ladder (docs/proposals/0044/ladders/
  * drift-examples.cjs): every row of its VERDICTS table is replayed here
  * through the real `classifyCitation`, with the ladder's `current` text on
  * disk and its `atCommit` answered by a fake git client. The move search is
@@ -54,7 +54,7 @@ type Verdict = [
   expected: LadderExpected,
   opts?: { salt?: string },
 ];
-const ladder = require("../../docs/proposals/0042/ladders/drift-examples.cjs") as {
+const ladder = require("../../docs/proposals/0044/ladders/drift-examples.cjs") as {
   SOURCE: string;
   variants: Record<string, string>;
   mint(text: string, l1?: number, l2?: number, salt?: string): string | undefined;

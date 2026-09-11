@@ -1,7 +1,7 @@
 /**
  * Claim anchoring: whitespace-normalized search scoped to paragraphs, one hit
  * per paragraph, reported at the line the claim starts on. The cases are the
- * ladder's (docs/proposals/0042/ladders/drift-examples.cjs), plus the fixture
+ * ladder's (docs/proposals/0044/ladders/drift-examples.cjs), plus the fixture
  * with a soft-wrapped claim under a frontmatter block.
  */
 import { describe, it, expect } from "vitest";

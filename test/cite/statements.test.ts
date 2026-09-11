@@ -1,6 +1,6 @@
 /**
  * Inline statement scanning. The cases mirror the ladder in
- * docs/proposals/0042/ladders/drift-examples.cjs, which is the behaviour the
+ * docs/proposals/0044/ladders/drift-examples.cjs, which is the behaviour the
  * scanner has to match, plus the file-relative mapping (`from`) the ladder
  * did not need because it never saw a frontmatter block.
  */

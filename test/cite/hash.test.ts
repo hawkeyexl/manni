@@ -7,7 +7,7 @@ import { hashLines, hashRange, normalizeText, sliceLines, splitLines } from "../
 import { CiteError } from "../../src/cite/errors.js";
 
 const require = createRequire(import.meta.url);
-const ladder = require("../../docs/proposals/0042/ladders/drift-examples.cjs") as {
+const ladder = require("../../docs/proposals/0044/ladders/drift-examples.cjs") as {
   SOURCE: string;
   variants: Record<string, string>;
   // A property, not a method: the ladder's `mint` is a plain function that

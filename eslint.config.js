@@ -99,7 +99,7 @@ export default tseslint.config(
   },
 
   {
-    // The import rule for sibling tools (proposal 0042, §7). A tool under
+    // The import rule for sibling tools (proposal 0044, §7). A tool under
     // `src/<tool>/` reaches the metadata library through two doors only:
     // `../meta/index.js`, the public API, and `../meta/internal.js`, the
     // family-internal barrel. Reaching into `core/`, `extractors/` or

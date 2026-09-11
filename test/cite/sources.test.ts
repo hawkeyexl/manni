@@ -8,7 +8,7 @@ import type { GitClient } from "../../src/cite/types.js";
 import { makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
 
 const require = createRequire(import.meta.url);
-const ladder = require("../../docs/proposals/0042/ladders/drift-examples.cjs") as {
+const ladder = require("../../docs/proposals/0044/ladders/drift-examples.cjs") as {
   obfuscate(path: string, salt: string): string;
 };
 

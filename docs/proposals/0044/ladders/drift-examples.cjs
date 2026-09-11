@@ -1,4 +1,4 @@
-// The drift-check contract of proposal 0042, as a self-contained reference
+// The drift-check contract of proposal 0044, as a self-contained reference
 // implementation: the hashing rule, the obfuscation rule, the classifier, the
 // inline-statement scanner and the claim search, each run against a fixed
 // source file and its variants. No src/ import and no schema: this ladder is
