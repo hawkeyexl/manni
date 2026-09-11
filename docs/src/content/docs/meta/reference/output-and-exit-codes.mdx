@@ -105,8 +105,9 @@ Machine-readable. Prints a single JSON object with a run `summary` and a
 | `summary.files` | number | Files checked. |
 | `summary.passed` | number | Files that passed. |
 | `summary.failed` | number | Files that failed. |
-| `summary.errors` | number | Error-severity findings reported across all files. Findings a [baseline](/manni/meta/reference/cli/#baselines) forgave are **not** counted here, and neither are warnings. |
+| `summary.errors` | number | Error-severity findings reported across all files. Findings a [baseline](/manni/meta/reference/cli/#baselines) forgave are **not** counted here, and neither are warnings or notices. |
 | `summary.warnings` | number | Warning-severity findings reported across all files. A warning never fails a file or the run. **Omitted** when there are none, which is every run of `manni meta validate` today. |
+| `summary.notices` | number | Notice-severity findings reported across all files. A notice never fails a file or the run. **Omitted** when there are none, which is every run of `manni meta validate` today. |
 | `summary.gitignoreSkipped` | number | Candidate documents [`.gitignore`](/manni/meta/reference/cli/#gitignore) removed from the walk. Counted after the extension filter, and excluding `--exclude` removals. **Omitted** when none were skipped. |
 | `summary.baseline` | object | Present only when a baseline governed the run. See [baseline fields](#baseline-fields). |
 | `results[].file` | string | File path. |
@@ -120,7 +121,7 @@ Machine-readable. Prints a single JSON object with a run `summary` and a
 | `results[].errors[].keyword` | string | The JSON Schema keyword that failed (`required`, `format`, `pattern`, `type`, …), or `parse` / `schema` for manni meta's own errors. |
 | `results[].errors[].subject` | string | The identifier within that keyword, which is the missing property, the additional property, the format name, or the expected type. Omitted for keywords whose parameter is a schema-authored *value*, such as `pattern`'s regex or `minLength`'s number. |
 | `results[].errors[].line` | number | 1-based source line. Omitted when unknown. |
-| `results[].errors[].severity` | string | `error` or `warning`. **Omitted** when `error`, which is every finding `manni meta validate` produces; sibling tools in the family report advisory findings as `warning` through the same shape. A file is `ok` iff none of its errors has severity `error`, and a warning never moves the exit code. |
+| `results[].errors[].severity` | string | `error`, `warning` or `notice`. **Omitted** when `error`, which is every finding `manni meta validate` produces; sibling tools in the family report advisory findings as `warning` or `notice` through the same shape. A file is `ok` iff none of its errors has severity `error`, and a warning or a notice never moves the exit code. |
 | `results[].errors[].col` | number | 1-based column. Supplied by the `html` and `xml` extractors, from the `content=` attribute of a `<meta>` tag or the value of an XML attribute. Omitted for every other format, and for a `required` violation in any format. That error reports the parent object, and a missing property has no column. |
 | `results[].errors[].file` | string | The file `line` and `col` refer to, when it is not `results[].file`. Set only for a value an [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) supplied, spelled the way the run spells file labels (`docs-meta.yaml`). Omitted for every violation whose value is in the document, which is every violation a run with no `externalMetadata:` on any collection produces. The finding's subject file stays `results[].file`; this names where the value was written. |
 
@@ -133,8 +134,9 @@ violation" across runs or across manni meta versions. `message` is for humans.
 
 GitHub Actions workflow-command annotations. Prints one `::error::` line per
 finding, which GitHub renders inline on the pull request. A finding whose
-`severity` is `warning` prints as `::warning::` instead, which renders the same
-way and fails nothing. Files with no findings produce no output.
+`severity` is `warning` prints as `::warning::` instead, and one whose
+`severity` is `notice` as `::notice::`. Both render the same way and fail
+nothing. Files with no findings produce no output.
 
 ```
 ::error file=docs/api.md,line=2::[google:okf:0.1] (root) must have required property 'type'
@@ -228,7 +230,7 @@ which `upload-sarif` rejects.
 | `runs[].tool.driver.version` | string | The manni meta version that produced the log. |
 | `runs[].tool.driver.rules` | object[] | Only the rules this run actually **hit**, deduplicated. manni meta does not enumerate every keyword of every schema. |
 | `results[].ruleId` | string | `<schema-ref>/<keyword>`, for example `google:okf:0.1/required`. Built from `keyword`, never from the message, so an Ajv rewording cannot close and reopen every historical alert. |
-| `results[].level` | string | `error`, or `warning` for a finding whose `severity` is `warning`. See [severity](#severity) below. |
+| `results[].level` | string | `error`; `warning` for a finding whose `severity` is `warning`; `note` for one whose `severity` is `notice`. See [severity](#severity) below. |
 | `results[].message.text` | string | The field path (or `(root)`) followed by the violation message. |
 | `results[].locations[].physicalLocation.artifactLocation.uri` | string | The file, **relative to the repository root**. See [paths](#sarif-paths-are-repository-root-relative). For a value an [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) supplied, this is the manifest. Each finding resolves its own URI, so a manifest inside the repository is kept even when the document is not, and the reverse. |
 | `results[].locations[].physicalLocation.region.startLine` | number | 1-based source line. The whole `region` is **omitted** when no line is known. SARIF requires `startLine >= 1`. A `0` would be invalid, and a `1` would silently mislocate the finding at the top of the file. A location with only an `artifactLocation` renders as a file-level alert, which is true. No `startColumn` is ever emitted, even for a finding whose JSON `col` is set. The SARIF region stays line-only for now. |
@@ -303,10 +305,10 @@ still track as separate alerts. GitHub derives alert identity from fingerprint
 #### Severity
 
 SARIF's `level` is its main triage axis, and a finding's `severity` maps onto
-it directly: `error` by default, `warning` when the producer says so. Every
-finding manni meta's own validation produces is an `error`. The `warning`
-level exists for sibling tools in the family whose advisory findings ride this
-reporter, and it is what closes
+it directly. A finding is `error` by default, `warning` for a warning, and
+`note` for a notice, since SARIF has no level named notice. Every finding manni meta's own
+validation produces is an `error`. The lower levels exist for sibling tools in
+the family whose advisory findings ride this reporter, and it is what closes
 [issue #78](https://github.com/hawkeyexl/manni/issues/78).
 
 <Aside type="note" title="Two unrelated $schema keys">
@@ -346,7 +348,7 @@ JUnit XML, which Jenkins, GitLab, CircleCI, and Azure render natively in their
 |---|---|---|
 | `name` | `testsuites`, `testsuite` | Always `manni meta`. |
 | `tests` | `testsuites`, `testsuite` | Files checked, as **one test per file** rather than per violation. |
-| `failures` | `testsuites`, `testsuite` | Files with at least one error-severity violation. A warning is not a `<failure>`: JUnit has no level below failure, and a warning-only file is a passing testcase, matching the exit code. |
+| `failures` | `testsuites`, `testsuite` | Files with at least one error-severity violation. A warning or a notice is not a `<failure>`, because JUnit has no level below failure. A file holding only warnings or notices is a passing testcase, matching the exit code. |
 | `errors` | `testsuites`, `testsuite` | Always `0`. Every violation is a `<failure>`; `errors` is reserved for a test that could not run, which has no analogue here. |
 | `name` | `testcase` | The file path, as manni meta reported it. Not rebased onto the repository root. Unlike SARIF, nothing resolves it. |
 | `classname` | `testcase` | Always `manni.validate`. |

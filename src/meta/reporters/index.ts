@@ -257,7 +257,9 @@ export function renderPretty(
           : e.line != null
             ? c.dim(`  (line ${e.line})`)
             : "";
-      const level = isErrorSeverity(e) ? "" : `${c.yellow(e.severity ?? "warning")} `;
+      const level = isErrorSeverity(e)
+        ? ""
+        : `${e.severity === "notice" ? c.dim("notice") : c.yellow("warning")} `;
       lines.push(
         `    ${c.cyan(fieldLabel(e.instancePath))}  ${level}${e.message}${loc}  ${c.dim(
           `[${e.schema}]`,
@@ -280,7 +282,11 @@ export function renderPretty(
     summary.warnings != null && summary.warnings > 0
       ? `, ${plural(summary.warnings, "warning", "warnings")}`
       : "";
-  const summaryText = `${summary.files} file${summary.files === 1 ? "" : "s"} checked, ${summary.passed} passed, ${summary.failed} failed, ${summary.errors} error${summary.errors === 1 ? "" : "s"}${warnings}${skipped}`;
+  const notices =
+    summary.notices != null && summary.notices > 0
+      ? `, ${plural(summary.notices, "notice", "notices")}`
+      : "";
+  const summaryText = `${summary.files} file${summary.files === 1 ? "" : "s"} checked, ${summary.passed} passed, ${summary.failed} failed, ${summary.errors} error${summary.errors === 1 ? "" : "s"}${warnings}${notices}${skipped}`;
   if (lines.length > 0) lines.push("");
   lines.push(summary.failed > 0 ? c.red(summaryText) : c.green(summaryText));
   if (summary.baseline) {
@@ -308,9 +314,11 @@ export function renderGithub(results: ValidationResult[]): string {
       const msg = escapeWorkflowCommandMessage(
         `[${e.schema}] ${fieldLabel(e.instancePath)} ${e.message}`,
       );
-      // `::warning` renders inline like `::error` but does not fail the
-      // check, which is exactly the severity invariant in GitHub's terms.
-      const level = isErrorSeverity(e) ? "error" : "warning";
+      // The family scale was chosen to be GitHub's, so the level is the
+      // severity, and an absent one is `error` (`isErrorSeverity`).
+      // `::warning` and `::notice` render inline like `::error` but do not
+      // fail the check, which is the severity invariant in GitHub's terms.
+      const level = e.severity ?? "error";
       lines.push(`::${level} ${params.join(",")}::${msg}`);
     }
   }

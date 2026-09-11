@@ -823,7 +823,8 @@ export async function runValidate(
   const failed = reported.filter((r) => !r.ok).length;
   const count = (keep: (e: FieldError) => boolean): number =>
     reported.reduce((n, r) => n + r.errors.filter(keep).length, 0);
-  const warnings = count((e) => !isErrorSeverity(e));
+  const warnings = count((e) => e.severity === "warning");
+  const notices = count((e) => e.severity === "notice");
   const summary: RunSummary = {
     files: reported.length,
     passed: reported.length - failed,
@@ -832,6 +833,7 @@ export async function runValidate(
     // Omitted at zero, like `gitignoreSkipped` below: nothing meta validates
     // produces a warning today, so the summary stays as it was.
     ...(warnings > 0 ? { warnings } : {}),
+    ...(notices > 0 ? { notices } : {}),
     // Omitted when nothing was skipped: there is nothing to audit, and the
     // JSON summary stays as it was for every run in a clean repo.
     ...(gitignoreSkipped > 0 ? { gitignoreSkipped } : {}),

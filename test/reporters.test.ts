@@ -1333,6 +1333,86 @@ describe("reporters: warning severity", () => {
   });
 });
 
+// The family's third level. A notice is reported like a warning and never
+// fails anything, and each sink spells it in its own word: GitHub's
+// `::notice`, SARIF's `note`. JUnit has no level below failure, so a notice
+// is a passing testcase there, as a warning is.
+describe("reporters: notice severity", () => {
+  const notice: FieldError = {
+    schema: "manni:cite",
+    instancePath: "/citations/0",
+    message: "changed since 3f9c2a1",
+    keyword: "changed",
+    subject: "fetch-timeout",
+    line: 9,
+    severity: "notice",
+  };
+  const warning: FieldError = {
+    ...notice,
+    keyword: "moved",
+    message: "moved -> lib/limits.ts:4",
+    severity: "warning",
+  };
+  const noticeOnly: ValidationResult = {
+    file: "note.md",
+    format: "markdown",
+    ok: true,
+    schemas: ["manni:cite"],
+    errors: [notice],
+  };
+  const mixed: ValidationResult = {
+    file: "mixed.md",
+    format: "markdown",
+    ok: true,
+    schemas: ["manni:cite"],
+    errors: [warning, notice],
+  };
+  const both = [noticeOnly, mixed];
+  const sum: RunSummary = {
+    files: 2,
+    passed: 2,
+    failed: 0,
+    errors: 0,
+    warnings: 1,
+    notices: 2,
+  };
+
+  it("github emits ::notice for a notice, beside ::warning for a warning", () => {
+    const levels = renderGithub(both)
+      .split("\n")
+      .map((line) => line.slice(0, line.indexOf(" ")));
+    expect(levels).toEqual(["::notice", "::warning", "::notice"]);
+  });
+
+  it("sarif reports level note for a notice, and stays valid", () => {
+    const run = sarifRun(renderSarif(both));
+    expect(run.results.map((r) => r.level)).toEqual(["note", "warning", "note"]);
+    expectValidSarif(renderSarif(both));
+  });
+
+  it("junit: a notice is not a <failure>", () => {
+    const doc = parseXml(renderJunit(both));
+    expect(attr(doc.documentElement, "tests")).toBe("2");
+    expect(attr(doc.documentElement, "failures")).toBe("0");
+    expect(doc.getElementsByTagName("failure").length).toBe(0);
+  });
+
+  it("pretty names the level and counts notices apart from warnings", () => {
+    const out = renderPretty(both, sum, { color: false });
+    expect(out).toContain("notice changed since 3f9c2a1");
+    expect(out).toContain("2 files checked, 2 passed, 0 failed, 0 errors, 1 warning, 2 notices");
+  });
+
+  it("json carries a notice through untouched", () => {
+    const parsed = JSON.parse(renderJson(both, sum)) as {
+      results: { errors: { severity: string }[] }[];
+      summary: RunSummary;
+    };
+    expect(parsed.results[0]?.errors[0]?.severity).toBe("notice");
+    expect(parsed.summary.notices).toBe(2);
+  });
+});
+
 /**
  * Per-error file attribution (proposal 0037). A violation on a value a
  * manifest supplied names the manifest, while the finding stays

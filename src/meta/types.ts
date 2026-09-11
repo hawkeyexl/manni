@@ -273,6 +273,11 @@ export interface RunSummary {
    */
   warnings?: number;
   /**
+   * Notice-severity findings reported. Omitted when there are none, as
+   * `warnings` is. A notice never fails a file or the run.
+   */
+  notices?: number;
+  /**
    * Candidate documents `.gitignore` removed from the walk. Omitted when it
    * removed none. Reported because silent removal is what makes the filter
    * dangerous — a counted removal is auditable.
