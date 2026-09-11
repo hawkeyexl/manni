@@ -5,8 +5,11 @@
  * Three rules live here and nowhere else:
  *
  * 1. **A source is consulted only when a requested field can come from it.**
- *    `FIELD_SOURCES` says which; the run's `sources` list narrows it. A
- *    source nobody asked for is never spawned and never reported.
+ *    `FIELD_SOURCES` says which for the built-ins, and `derive.commands`
+ *    which keys the `command` source answers; the run's `sources` list
+ *    narrows it. A source nobody asked for is never spawned and never
+ *    reported, and a command for a field the run did not request is never
+ *    spawned either.
  * 2. **The review sources ride on git, and the origin remote picks one.**
  *    `github` and `gitlab` both read the merged change behind a document's
  *    newest body-changing commit, which only the git walk can name, so
@@ -30,10 +33,14 @@ import { findGitRoot } from "../../../shared/git-root.js";
 import { DocmetaError } from "../../types.js";
 import { REVIEW_CACHE_DIR } from "./cache.js";
 import { deriveFromCodeowners } from "./codeowners.js";
+import { deriveFromCommands } from "./command.js";
 import { createReviewClient, deriveFromReviews, type ReviewFacts } from "./reviews.js";
 import { deriveFromGit, type GitFacts } from "./git.js";
+import { isBuiltinField } from "./types.js";
 import type {
+  BuiltinDerivableField,
   DerivableField,
+  DeriveCommand,
   DeriveContext,
   DerivedRecord,
   DerivedValue,
@@ -44,8 +51,8 @@ import type {
   SourceStatus,
 } from "./types.js";
 
-/** Which sources can state each field, in precedence order. */
-export const FIELD_SOURCES: Readonly<Record<DerivableField, readonly DeriveSource[]>> = {
+/** Which sources can state each built-in field, in precedence order. */
+export const FIELD_SOURCES: Readonly<Record<BuiltinDerivableField, readonly DeriveSource[]>> = {
   created: ["git"],
   "last-updated": ["git"],
   authors: ["git"],
@@ -72,13 +79,30 @@ export interface DeriveResult {
   sources: Partial<Record<DeriveSource, SourceStatus>>;
 }
 
+/**
+ * Which sources can state a field, in precedence order: the built-in table
+ * for one of the six, `command` for a key of `commands`, nothing otherwise.
+ * A built-in never reaches the command arm, whatever the table says.
+ */
+export function sourcesFor(
+  field: DerivableField,
+  commands?: Readonly<Record<string, DeriveCommand>>,
+): readonly DeriveSource[] {
+  if (isBuiltinField(field)) return FIELD_SOURCES[field];
+  if (commands !== undefined && Object.hasOwn(commands, field)) return ["command"];
+  return [];
+}
+
 /** The sources a run consults: requested, and able to state a requested field. */
 export function consultedSources(
   fields: readonly DerivableField[],
   sources: readonly DeriveSource[],
+  commands?: Readonly<Record<string, DeriveCommand>>,
 ): DeriveSource[] {
   const needed = new Set<DeriveSource>();
-  for (const field of fields) for (const s of FIELD_SOURCES[field]) needed.add(s);
+  for (const field of fields) {
+    for (const s of sourcesFor(field, commands)) needed.add(s);
+  }
   return sources.filter((s) => needed.has(s));
 }
 
@@ -104,7 +128,7 @@ export async function deriveMetadata(
   inputs: readonly DeriveInput[],
   ctx: DeriveContext,
 ): Promise<DeriveResult> {
-  const consulted = new Set(consultedSources(ctx.fields, ctx.sources));
+  const consulted = new Set(consultedSources(ctx.fields, ctx.sources, ctx.commands));
   const sources: Partial<Record<DeriveSource, SourceStatus>> = {};
 
   // git: the walk every other source builds on.
@@ -170,16 +194,38 @@ export async function deriveMetadata(
     }
   }
 
+  // command: last, and only when nothing has failed yet. A configured
+  // command is the one source that runs a program of the operator's own,
+  // which may do more than report a value, so it is not spawned for a run
+  // already destined for exit 2 — and the source that failed first is the
+  // one whose reason `assertSourcesAvailable` reports.
+  let commanded: Map<string, Record<string, DerivedValue | null>> = new Map();
+  const doomed = Object.values(sources).some((s) => !s.available);
+  if (consulted.has("command") && ctx.commands !== undefined && !doomed) {
+    // Only the entries for fields this run asked for, so a narrowed
+    // `--fields` spawns nothing it does not need.
+    const wanted = new Set(ctx.fields);
+    const commands = Object.fromEntries(
+      Object.entries(ctx.commands).filter(([field]) => wanted.has(field)),
+    );
+    if (Object.keys(commands).length > 0) {
+      const result = await deriveFromCommands(inputs, commands, { cwd: ctx.configDir ?? ctx.cwd });
+      sources.command = result.status;
+      commanded = result.records;
+    }
+  }
+
   const records = new Map<string, DerivedRecord>();
   for (const input of inputs) {
     const fields: DerivedRecord["fields"] = {};
     const g = git.get(input.label);
     const r = reviews.get(input.label);
+    const c = commanded.get(input.label);
     for (const field of ctx.fields) {
       let value: DerivedValue | null = null;
-      for (const source of FIELD_SOURCES[field]) {
+      for (const source of sourcesFor(field, ctx.commands)) {
         if (!consulted.has(source)) continue;
-        const candidate = valueFrom(source, field, g, r, owners.get(input.label));
+        const candidate = valueFrom(source, field, g, r, owners.get(input.label), c);
         if (candidate !== null) {
           value = candidate;
           break;
@@ -198,11 +244,14 @@ function valueFrom(
   git: GitFacts | undefined,
   reviews: ReviewFacts | undefined,
   owner: DerivedValue | null | undefined,
+  commanded: Readonly<Record<string, DerivedValue | null>> | undefined,
 ): DerivedValue | null {
   switch (source) {
     case "git":
-      if (git === undefined || field === "owner") return null;
+      if (git === undefined || !isBuiltinField(field) || field === "owner") return null;
       return git[field];
+    case "command":
+      return commanded?.[field] ?? null;
     case "codeowners":
       return field === "owner" ? (owner ?? null) : null;
     case "github":

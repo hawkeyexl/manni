@@ -29,8 +29,20 @@ import {
   createCollectionViews,
   type CollectionParams,
 } from "./collections.js";
-import { createDerivedView, fieldsForSql, mentionsDerived } from "./derive/table.js";
-import type { DerivableField, DerivedRecord } from "./derive/types.js";
+import {
+  createDerivedView,
+  createResolvedView,
+  derivedColumns,
+  fieldsForSql,
+  mentionsDerived,
+  mentionsResolved,
+} from "./derive/table.js";
+import {
+  derivableFields,
+  type DerivableField,
+  type DeriveCommand,
+  type DerivedRecord,
+} from "./derive/types.js";
 
 /** One loaded file a check may attach findings to. */
 export type CheckEntry = ProjectionEntry;
@@ -165,8 +177,9 @@ function synthesizeMessage(
  * to `collectCollections` verbatim, and an intersection is what keeps the two
  * from drifting apart field by field.
  *
- * `derive` is the one addition (proposal 0040): how to get the rows of the
- * `derived` table when a check names it. A function rather than the rows,
+ * `derive` is the one addition (proposal 0040): how to get the rows behind
+ * the `derived` and `resolved` tables when a check names either. A function
+ * rather than the rows,
  * because building them spawns git, and a check that never names the table
  * must not pay for it. It is handed the fields the checks can read, so a
  * caller deriving from scratch consults only the sources those need; a
@@ -177,6 +190,12 @@ export type CheckRunContext = CollectionParams & {
   derive?: (
     fields: readonly DerivableField[],
   ) => Promise<ReadonlyMap<string, DerivedRecord>>;
+  /**
+   * The configured commands (proposal 0042), whose keys are columns of the
+   * `derived` table beside the built-ins. Handed over rather than read from a
+   * config, because since proposal 0041 a check's context carries none.
+   */
+  commands?: Readonly<Record<string, DeriveCommand>>;
 };
 
 export async function runChecks(
@@ -190,22 +209,35 @@ export async function runChecks(
   const { DatabaseSync } = await loadSqlite();
   const db = new DatabaseSync(":memory:");
   try {
-    createDocsTable(db, entries, corpusDataColumns(entries));
+    // The one column list both `docs` and `resolved` are built from: the
+    // view's asserted side reads those columns by name, so a second call
+    // could not be allowed to disagree with the table's.
+    const dataColumns = corpusDataColumns(entries);
+    createDocsTable(db, entries, dataColumns);
     registerLineFor(db, entries);
     createCollectionViews(db, collectCollections(entries, ctx));
-    // The `derived` table (0040), when any check names it: the same view
-    // `query` builds, over the union of the fields those checks can read.
-    // Before `query_only`, since building it loads a table.
-    const wantsDerived = checks.filter((c) => mentionsDerived(c.query));
+    // The derived channel's tables (0040), when any check names one: the same
+    // views `query` builds, over the union of the fields those checks can
+    // read. Either name builds both — `resolved` is `docs` joined to the same
+    // rows — so a check reading the effective value costs the same one
+    // derivation. Before `query_only`, since building them loads a table.
+    const wantsDerived = checks.filter(
+      (c) => mentionsDerived(c.query) || mentionsResolved(c.query),
+    );
     if (wantsDerived.length > 0) {
       if (ctx.derive === undefined) {
         throw new DocmetaError(
-          `check "${wantsDerived[0]?.name ?? ""}": the SQL names the derived table, but this run cannot derive. Run it through \`manni meta validate\`, or drop the reference.`,
+          `check "${wantsDerived[0]?.name ?? ""}": the SQL names the derived or resolved table, but this run cannot derive. Run it through \`manni meta validate\`, or drop the reference.`,
         );
       }
+      // The run's columns: the built-ins and the configured command keys
+      // (0042), handed over by the caller that read the config.
+      const commands = ctx.commands;
+      const readable = derivableFields(commands);
       const fields = new Set<DerivableField>();
-      for (const c of wantsDerived) for (const f of fieldsForSql(c.query)) fields.add(f);
-      createDerivedView(db, await ctx.derive([...fields]));
+      for (const c of wantsDerived) for (const f of fieldsForSql(c.query, readable)) fields.add(f);
+      createDerivedView(db, await ctx.derive([...fields]), derivedColumns(commands));
+      createResolvedView(db, dataColumns, commands);
     }
     // Checks are SELECT-only by design — 0021's original discipline, which
     // 0022 lifted for `query` because writes became query's *feature*, judged

@@ -107,7 +107,7 @@ collections:
 
 | Key | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `name` | `string` | yes | none | What [`--collection`](#selecting-collections-on-the-command-line), [`overrides[].collection`](#overrides) and `FROM <name>` in SQL refer to. Non-blank, unique case-insensitively, never `docs`, `derived` or `_derived_rows` in any case, and never starting `sqlite_`. |
+| `name` | `string` | yes | none | What [`--collection`](#selecting-collections-on-the-command-line), [`overrides[].collection`](#overrides) and `FROM <name>` in SQL refer to. Non-blank, unique case-insensitively, never `docs`, `derived`, `_derived_rows` or `resolved` in any case, and never starting `sqlite_`. |
 | `paths` | `string[]` | yes | none | Files, directories, or globs, relative to the config file's directory. A non-empty list of non-empty strings. |
 | `exclude` | `string[]` | no | `[]` | Globs that remove a file from the collection, same base. Membership only. See [Membership](#membership). An explicit `[]` is accepted. |
 | `url` | `string` | no | none | One `http:` or `https:` root, where the collection is published. [`manni a11y check`](/manni/a11y/reference/cli/) seeds from it. See [Where a collection is published](#where-a-collection-is-published). |
@@ -122,8 +122,9 @@ Every name becomes a SQL view name in
 [`query`](/manni/meta/reference/query/#collections-as-views), which is where
 four of the name rules come from. SQLite compares identifiers without regard to
 case, so two names differing only in case would be one view. `docs` is the table
-every query reads. `derived` and `_derived_rows` are the view and backing table
-a query builds for [derived metadata](#derive), refused in any case.
+every query reads. `derived`, `_derived_rows` and `resolved` are the views and
+backing table a query builds for [derived metadata](#derive), refused in any
+case.
 `sqlite_` is a prefix SQLite reserves.
 
 The refusals, each exit 2:
@@ -136,7 +137,7 @@ manni.config.yaml: collections[0] has unknown key "path". Supported keys: name, 
 manni.config.yaml: collections[0].name must be a non-empty string.
 manni.config.yaml: collections[1].name "guides" is already taken by collections[0]; names are compared case-insensitively because they become SQL views.
 manni.config.yaml: collections[0].name "docs" collides with the docs table every query reads. Pick another name, such as "site" or "pages".
-manni.config.yaml: collections[0].name "derived" collides with the derived table a query builds beside docs (the derived view and its _derived_rows table). Pick another name.
+manni.config.yaml: collections[0].name "derived" collides with the derived table a query builds beside docs (the derived view, its _derived_rows table, and the resolved view over both). Pick another name.
 manni.config.yaml: collections[0].name "sqlite_x" starts with "sqlite_", which SQLite reserves for its own objects. Pick another name.
 manni.config.yaml: collections[0].paths must be a non-empty list of files, directories or globs.
 manni.config.yaml: collections[0].exclude must be a list of globs.
@@ -872,7 +873,7 @@ files a run reads.
 | `schemas` | `(string \| {ref, source?, integrity?})[]` | none | Default [schema set](/manni/meta/reference/schema-resolution/) applied to every file that no higher-precedence rule matches. See [Schemas](#schemas). |
 | `overrides` | `Override[]` | none | Per-collection or per-glob schema overrides. The first matching entry wins. See [Overrides](#overrides). |
 | `checks` | `Check[]` | none | Named cross-file rules, written as SQL over the corpus's metadata table, that `validate` runs after the per-file schemas, with rows reported as findings. See [Checks](#checks). |
-| `derive` | `Derive` | none | The **managed** stewardship fields, which `manni meta derive` stamps from git, CODEOWNERS and the GitHub or GitLab review history, and which `validate` compares against that evidence. A stamp that disagrees is a finding. See [Derive](#derive). |
+| `derive` | `Derive` | none | The **managed** fields. `manni meta derive` stamps them from git, CODEOWNERS, the GitHub or GitLab review history, or a command the config names. `validate` compares each stamp against that evidence, and one that disagrees is a finding. See [Derive](#derive). |
 | `baseline` | `string` | none | Path to a [validation baseline](/manni/meta/reference/cli/#baselines). Setting it turns on `--baseline` for every run; `--no-baseline` suppresses it for one. A bare `--write-baseline` records into this same file. |
 | `allowEmpty` | `boolean` | `false` | Treat an input set that resolves to zero files as success instead of an error (exit 2). Equivalent to `--allow-empty`. See [empty input sets](/manni/meta/reference/cli/#empty-input-sets). |
 | `respectGitignore` | `boolean` | `true` | Skip files `.gitignore` covers when expanding directories and globs. `--no-gitignore` overrides it for one run. See [`.gitignore`](/manni/meta/reference/cli/#gitignore). |
@@ -1333,9 +1334,11 @@ requests, so `--offline` does not affect them.
 `derive` names the **managed** fields. A managed field is one whose value is
 computed from evidence rather than typed by a person. The evidence is git
 history, a CODEOWNERS file, and the pull request or merge request history
-GitHub or GitLab keeps, read through the `gh` or `glab` CLI. `manni meta derive` stamps the
-computed value into the document. `validate` compares what is stamped against
-what the evidence says, and a stamp that disagrees is a finding.
+GitHub or GitLab keeps, read through the `gh` or `glab` CLI. For any other
+field, it is the output of a [command](#commands) the config names.
+`manni meta derive` stamps the computed value into the document. `validate`
+compares what is stamped against what the evidence says, and a stamp that
+disagrees is a finding.
 
 A derived value is never merged into what the schema sees. That is the
 difference from [external metadata](#external-metadata). The document stays
@@ -1343,14 +1346,25 @@ the truth for validation, and the evidence is what the document is held to.
 Only `derive` writes a managed field. `query` refuses an `UPDATE` of one, and
 `fill` skips it.
 
+**A read derives, and says which value it gave back.** `get` prints the
+**resolved value** of each field, annotated with its origin. A resolved value
+is the asserted one where the document has the key, and the derived one where
+it does not. `query`
+builds a [`resolved` table](/manni/meta/reference/query/#the-resolved-table)
+that says the same thing in SQL. Neither has to be asked. `--no-derived` on
+`get`, and simply not naming the table in `query`, are the ways to read the
+document alone. A field no source can state consults nothing either way, so
+reading `title` spawns no process.
+
 [Stamp stewardship fields from evidence](/manni/meta/set-up/derived-metadata/)
 is the journey. This section is the contract.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `fields` | `string[]` | no, but a `derive:` must set one of the three keys | The managed fields. Non-empty when present, unique, and each one of [the derivable fields](#the-derivable-fields). Each violation is a config error (exit 2) naming `derive.fields`. Never a key a collection's [external-metadata](#external-metadata) manifest owns, because the two channels would disagree about where the value lives. See [a field a manifest owns](#a-field-a-manifest-owns). Absent means nothing is managed and `validate` compares nothing; `sources` or `codeowners` alone still shape the reads. |
-| `sources` | `string[]` | no | Which of `git`, `codeowners`, `github` and `gitlab` to consult. Non-empty and unique. The default is all four. Only the one of `github` and `gitlab` that matches the origin remote is consulted; see [the review sources](#the-review-sources). A field whose only sources are excluded derives null, and can never be stale. |
+| `fields` | `string[]` | no, but a `derive:` must set one of the four keys | The managed fields. Non-empty when present, unique, and each one of [the derivable fields](#the-derivable-fields) or a key with an entry in [`commands`](#commands). Each violation is a config error (exit 2) naming `derive.fields`. Never a key a collection's [external-metadata](#external-metadata) manifest owns, because the two channels would disagree about where the value lives. See [a field a manifest owns](#a-field-a-manifest-owns). Absent means nothing is managed and `validate` compares nothing; `sources`, `codeowners` or `commands` alone still shape the reads. |
+| `sources` | `string[]` | no | Which of `git`, `codeowners`, `github`, `gitlab` and `command` to consult. Non-empty and unique. The default is all five. Only the one of `github` and `gitlab` that matches the origin remote is consulted; see [the review sources](#the-review-sources). A field whose only sources are excluded derives null, and can never be stale. |
 | `codeowners` | `string` | no | Path to the CODEOWNERS file, relative to the config file's directory. The default is GitHub's or GitLab's own search order, below. When `codeowners` is an active source, the file must exist (exit 2). |
+| `commands` | map | no | One entry per field a program derives, keyed by the frontmatter key. Each entry has `run`, an argv list, and an optional `timeout` in seconds. The key may not be one of the six built-in fields, a manifest-owned key, or `$schema` (exit 2). See [Commands](#commands). |
 
 ```yaml
 # manni.config.yaml
@@ -1360,13 +1374,17 @@ collections:
 
 meta:
   derive:
-    fields: [created, last-updated, authors, owner]   # managed
-    sources: [git, codeowners, github, gitlab]        # optional; default all four
+    fields: [created, last-updated, authors, owner, verified-against]   # managed
+    sources: [git, codeowners, github, gitlab, command]   # optional; default all five
     codeowners: .github/CODEOWNERS                     # optional; default: GitHub's or GitLab's search order
+    commands:                                          # optional; a program per field
+      verified-against:
+        run: ["jq", "-r", ".version", "package.json"]
 ```
 
 `derive:` absent is exactly the behaviour every config had before the key
-existed. No command spawns `git`, `gh` or `glab`, and no field is managed.
+existed. No command spawns `git`, `gh`, `glab` or a configured program, and
+no field is managed.
 
 #### A field a manifest owns
 
@@ -1380,15 +1398,19 @@ manni.config.yaml: meta.derive.fields[3] "owner" is owned by collections[0].exte
 ```
 
 [`derive --fields`](/manni/meta/reference/cli/#meta-derive) refuses a
-manifest-owned name the same way for one run.
+manifest-owned name the same way for one run. A [`commands`](#commands) key a
+manifest owns is refused when the config loads too, and the message names
+`meta.derive.commands.<key>` in place of the field's index.
 
 #### The derivable fields
 
 Six fields of the [stewardship
-vocabulary](/manni/meta/proposals/stewardship/) can be derived. The other
-four, `stakeholders`, `review-interval`, `verified-against` and
-`source-of-truth`, are judgments a person makes. Naming one of them in
-`fields` is a config error.
+vocabulary](/manni/meta/proposals/stewardship/) have a built-in source. The
+other four, `stakeholders`, `review-interval`, `verified-against` and
+`source-of-truth`, are judgments a person makes, and no built-in reads them.
+Naming one of them in `fields` is a config error unless a
+[command](#commands) derives it. That is how `verified-against` is checked
+against the product's own version file.
 
 | Field | Source | Derived value | Evidence string |
 |---|---|---|---|
@@ -1425,6 +1447,74 @@ request's answer never changes, so it is cached under
 open pull request's answer is never cached, because the next approval changes
 it. `--no-cache` bypasses the cache for one run.
 
+#### Commands
+
+`commands` names a program per field, for a field no built-in source
+claims. The trimmed stdout is the derived value, and the field is then
+managed exactly as the six built-ins are. `derive` stamps it, `validate`
+reports a stamp that disagrees, `fill` and `query` refuse to write it, and
+`get --derived` and the [`derived` table](/manni/meta/reference/query/#the-derived-table)
+show it with the argv as evidence.
+
+```yaml
+# manni.config.yaml
+meta:
+  derive:
+    fields: [last-updated, verified-against]
+    sources: [git, command]                  # optional; default all five
+    commands:
+      verified-against:
+        run: ["jq", "-r", ".version", "package.json"]
+      source-of-truth:
+        run: ["node", "scripts/source-for.mjs", "{path}"]   # per file
+        timeout: 30                                          # seconds; default 60
+```
+
+| Key | Type | Required | Description |
+|---|---|---|---|
+| `run` | `string[]` | yes | The argv, never a shell string. A user who wants a shell writes `["sh", "-c", "…"]` and owns the quoting. An element containing `{path}` makes the command per file. |
+| `timeout` | integer | no | Seconds before a running command is killed. The default is `60`. |
+
+The rules:
+
+- **The value is the trimmed stdout, and only structured JSON is parsed.** `1.4.2` is the string `1.4.2`. `["a","b"]` is a list. `{"name":"operator","version":"1.4.2"}` is an object, which is `verified-against`'s checker form. Only `{`, `[` and `"` open a parse, so a bare scalar keeps the characters the command printed: a version `1.10` stays `1.10` rather than becoming the number `1.1`. Empty stdout with exit 0 is null, meaning no fact, which is never stale.
+- **A command that floods or hangs is a failure, not a value.** Output past 8 MiB on either stream, or a run past the entry's `timeout`, kills the command and makes the source unavailable. A command reports one field's value.
+- **`{path}` chooses per file; its absence chooses per run.** An argv
+  containing `{path}` runs once per document, with the document's run label
+  substituted, so a script can answer for one page. Without it the command
+  runs once, and the one value is copied to every document.
+- **A command may only derive a field no built-in source claims.** A
+  command for `last-updated` is a config error (exit 2): `derive.commands.last-updated targets a field git already derives; a command may only derive a field no built-in source claims`.
+  A manifest-owned key and `$schema` are refused the same way. `fields` may
+  name any key that has a command, and a `derive:` with only `commands:` is
+  valid.
+- **The source is `command`, once.** `sources` lists it beside the other
+  four, and the default includes it. Excluding it makes every command field
+  derive null. The evidence string is the argv joined with spaces, `{path}`
+  already substituted, so a reader can run it by hand.
+- **Commands run in the config file's directory**, or the working directory
+  when there is no config. The environment is inherited. Nothing is cached,
+  because only the operator knows what a command reads.
+- **A command that cannot answer stops the run.** A non-zero exit, a timeout,
+  or a program that is not on `PATH` makes the `command` source unavailable,
+  exit 2. It is never a null that reads as current. The three messages:
+
+```
+manni: command source unavailable: `jq -r .version package.json` failed (exit 2): jq: error: Could not open package.json; narrow --sources or --fields
+manni: command source unavailable: `jq` is not on PATH (derive.commands.verified-against); narrow --sources or --fields
+manni: command source unavailable: `node scripts/source-for.mjs docs/install.md` timed out after 60s; narrow --sources or --fields
+```
+
+<Aside type="caution" title="The config that runs a command is trusted">
+This is the first config key that executes something. It sits on the line
+[`checks:`](#checks) drew for SQL and [a remote manifest](#remote-manifests)
+drew for a fetch. The config is a reviewed file in the repository the
+operator owns, and what it names is what runs. A document can never supply a
+command. Nothing in a document reaches the argv, and `{path}` is the run
+label from the corpus walk, not a value the document carries. Review
+`manni.config.yaml` in a pull request the way you review a workflow file.
+</Aside>
+
 #### The rules
 
 1. **The commit that made the fact is the authority.** For a git-derived
@@ -1446,12 +1536,14 @@ it. `--no-cache` bypasses the cache for one run.
    not drift.
 4. **A source that cannot answer stops the run.** Git missing, not a
    repository, or a shallow clone. `gh` or `glab` missing or not logged in. A
-   `codeowners` path that does not exist. Each is exit 2, naming the source
-   and the fix. A check that silently did not run would be a green gate over
-   nothing. `--no-derive` on `validate` and `--sources` narrowing are the
-   deliberate opt-outs. The rule holds for reads too. `get --derived` and a
-   `query` naming the `derived` table consult every source a named column
-   needs, among those `derive.sources` allows, and the default is all four.
+   `codeowners` path that does not exist. A [command](#commands) that exits
+   non-zero, times out, or is not on `PATH`. Each is exit 2, naming the
+   source and the fix. A check that silently did not run would be a green
+   gate over nothing. `--no-derive` on `validate`, `--no-derived` on `get`,
+   and `--sources` narrowing are the deliberate opt-outs. The rule holds for
+   reads too. `get` and a `query` naming the `derived` or `resolved` table
+   consult every source a named field needs, among those `derive.sources`
+   allows, and the default is all five.
    A `query` reading `owner` alone asks only `codeowners`; one selecting `*`
    asks every source. A machine without `gh` or `glab` therefore sets
    `sources: [git, codeowners]`, or a read that needs GitHub or GitLab is exit 2. One
@@ -1473,8 +1565,8 @@ it. `--no-cache` bypasses the cache for one run.
 |---|---|
 | `validate` | Derives once for the run, then compares each file's managed fields. A stamp that disagrees with a non-null derived value is a `derived:stale` finding at the field's line, exit 1. `--no-derive` skips the comparison for one run. |
 | `derive` | Stamps every managed field whose derived value is non-null and differs from the document, through the same writer `fill` uses. `--dry-run` reports without writing. `--check` implies the dry run, and a stale or unset field is a finding, exit 1. See [`meta derive`](/manni/meta/reference/cli/#meta-derive). |
-| `get` | `--derived` prints the derived value and its evidence beside the asserted one. `manni meta get last-updated docs/install.md --derived` prints `docs/install.md: last-updated=2026-08-20 (derived 2026-09-07, git: body changed in 424f71a)`. A field that is not derivable prints `(not derivable)`. |
-| `query` | A read-only [`derived` table](/manni/meta/reference/query/#the-derived-table) is built when a statement mentions it, with one row per file and a `_sources` column carrying the evidence. A write to a managed key through `docs` is refused (exit 2) before any file is written. |
+| `get` | Prints the resolved value of each field, with its origin on the same line. `manni meta get owner docs/install.md` prints `docs/install.md: owner=@platform-docs  (derived, codeowners: .github/CODEOWNERS:12)`. Derivation is on by default, and `--no-derived` prints only what the document stores. `--derived` is accepted and inert. |
+| `query` | Two read-only tables, [`derived`](/manni/meta/reference/query/#the-derived-table) and [`resolved`](/manni/meta/reference/query/#the-resolved-table), each built when a statement names it. `derived` is what the evidence says; `resolved` is the asserted value where there is one and the derived value otherwise, with `_origin` naming which. A write to a managed key through `docs` is refused (exit 2) before any file is written. |
 | `fill` | A managed field is never a candidate. It is reported with `skipReason: "managed"`, so the omission is visible in the report. |
 
 A run over a page whose body moved after its stamp:
@@ -1500,6 +1592,9 @@ manni: "last-updated" is managed by derive; run manni meta derive instead.
                                                                                     exit 2
 $ manni meta query "UPDATE derived SET owner = 'x'"
 manni: SQL error: cannot modify derived because it is a view; a collection or the derived table is read-only
+                                                                                    exit 2
+$ manni meta query "UPDATE resolved SET owner = 'x'"
+manni: SQL error: cannot modify resolved because it is a view; the resolved table is read-only — it is `docs` and the evidence joined, so write to docs, or stamp the evidence with manni meta derive.
                                                                                     exit 2
 ```
 
@@ -1529,7 +1624,7 @@ finding's `file` is never set, because a managed value lives in the document.
 
 | Exit | When |
 |---|---|
-| `2` | The config's `derive:` is malformed. `fields` is empty, repeats a name, names a field that is not derivable, or names a key a collection's manifest owns. `sources` is empty or repeats a source. `codeowners` names a file that is not there. A requested source cannot answer: no `git`, no repository, a shallow clone, `gh` or `glab` missing or not logged in. `derive` was given `-`, a non-derivable or manifest-owned `--fields` name, no fields at all, or a findings format without `--check`. A `query` write would touch a managed key. |
+| `2` | The config's `derive:` is malformed. `fields` is empty, repeats a name, names a field that is not derivable, or names a key a collection's manifest owns. `sources` is empty or repeats a source. `codeowners` names a file that is not there. A `commands` entry targets a built-in field, a manifest-owned key or `$schema`, or has no `run`. A requested source cannot answer: no `git`, no repository, a shallow clone, `gh` or `glab` missing or not logged in. A command failed, timed out or is not on `PATH`. `derive` was given `-`, a non-derivable or manifest-owned `--fields` name, no fields at all, or a findings format without `--check`. A `query` write would touch a managed key. |
 | `1` | `validate` found a managed field whose stamp disagrees with the evidence. `derive --check` found a stale or unset managed field. |
 
 The split is the one every command already follows. Exit 2 means the run

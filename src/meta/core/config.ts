@@ -21,15 +21,16 @@ import {
   selectCollections,
   type CollectionConfig,
 } from "../../shared/collections.js";
-import { rebaseConfigSchemaRefs } from "./resolve-schema.js";
+import { FILE_SCHEMA_KEY, rebaseConfigSchemaRefs } from "./resolve-schema.js";
 import { classifyRef } from "./schema-registry.js";
 import { INTEGRITY_SHAPE, isIntegrity } from "./integrity.js";
 import { parseElementPath } from "../extractors/element-key.js";
 import {
   DERIVABLE_FIELDS,
   DERIVE_SOURCES,
-  isDerivableField,
+  isBuiltinField,
   isDeriveSource,
+  type BuiltinDerivableField,
   type DerivableField,
   type DeriveSource,
 } from "./derive/types.js";
@@ -186,13 +187,25 @@ export interface CheckConfig {
 const CHECK_KEYS = ["name", "query"] as const;
 
 /**
+ * One `derive.commands` entry: a program to run for a field's value, as the
+ * config spells it. `run` is the argv, the program first; `timeout` is in
+ * seconds. The derive context carries the parsed form, `DeriveCommand`.
+ */
+export interface DeriveCommandConfig {
+  run: string[];
+  timeout?: number;
+}
+
+/**
  * The derived channel: managed fields `manni meta derive` stamps from git
- * history, CODEOWNERS and the review record on GitHub or GitLab, and `validate` checks for drift.
+ * history, CODEOWNERS, the review record on GitHub or GitLab, or a configured
+ * command, and `validate` checks for drift.
  */
 export interface DeriveConfig {
   /**
-   * The managed fields. Each is one of `DERIVABLE_FIELDS`, never `$schema`,
-   * and never a key a manifest owns: a value with two authorities has none.
+   * The managed fields. Each is one of `DERIVABLE_FIELDS` or a key of
+   * `commands`, never `$schema`, and never a key a manifest owns: a value
+   * with two authorities has none.
    */
   fields: DerivableField[];
   /** Which sources to consult; absent means all of `DERIVE_SOURCES`. */
@@ -203,10 +216,37 @@ export interface DeriveConfig {
    * existence at run time, not here.
    */
   codeowners?: string;
+  /**
+   * The `command` source's table, by the field each command derives. A key
+   * is never a built-in field, `$schema`, or a key a manifest owns.
+   */
+  commands?: Record<string, DeriveCommandConfig>;
 }
 
 /** The keys a `derive:` mapping may carry. */
-const DERIVE_KEYS = ["fields", "sources", "codeowners"] as const;
+const DERIVE_KEYS = ["fields", "sources", "codeowners", "commands"] as const;
+
+/** The keys one `derive.commands` entry may carry. */
+const DERIVE_COMMAND_KEYS = ["run", "timeout"] as const;
+
+/** Which built-in source claims each built-in field, as a refusal names it. */
+const BUILTIN_CLAIMED_BY: Readonly<Record<BuiltinDerivableField, string>> = {
+  created: "git",
+  "last-updated": "git",
+  authors: "git",
+  owner: "codeowners",
+  "reviewed-by": "GitHub or GitLab",
+  "last-reviewed": "GitHub or GitLab",
+};
+
+/**
+ * The `derived` table's own columns, which a command key may not be spelled
+ * like: the view is `_path`, the derivable fields, then `_sources`.
+ */
+const DERIVED_TABLE_RESERVED: ReadonlySet<string> = new Set(["_path", "_sources"]);
+
+/** The tail every not-derivable message ends with. */
+const DERIVABLE_LIST = `Derivable fields: ${DERIVABLE_FIELDS.join(", ")}, or any key with an entry in derive.commands.`;
 
 /**
  * The grammar a check's name must satisfy: one built-in id *segment*.
@@ -737,7 +777,8 @@ export function manifestOwning(
 }
 
 /**
- * Refuse a `derive.fields` entry some manifest owns (proposal 0040).
+ * Refuse a `derive.fields` entry or a `derive.commands` key that some manifest
+ * owns (proposals 0040 and 0042).
  *
  * A managed field has one authority, and a manifest key already has one. The
  * rule needs both halves of the family file, `meta.derive` and the top-level
@@ -756,13 +797,21 @@ function assertManagedFieldsUnowned(
   source: string,
   section: string | undefined,
 ): void {
-  for (const [i, field] of (config.derive?.fields ?? []).entries()) {
-    const owner = manifestOwning(field, collections);
-    if (owner === undefined) continue;
-    const message = `${source}: derive.fields[${i}] "${field}" is owned by collections[${owner.collection}].externalMetadata[${owner.entry}] (${owner.file}) — a managed field has one authority, and a manifest key already has one. Drop it from one side.`;
+  const refuse = (path: string, owner: ManifestOwner): never => {
+    const message = `${source}: ${path} is owned by collections[${owner.collection}].externalMetadata[${owner.entry}] (${owner.file}) — a managed field has one authority, and a manifest key already has one. Drop it from one side.`;
     throw new DocmetaError(
       section === undefined ? message : withSection(message, source, section),
     );
+  };
+  // Commands first, as the parser reads them: a command's key is where a
+  // field outside the built-ins is claimed, so that is the line to name.
+  for (const key of Object.keys(config.derive?.commands ?? {})) {
+    const owner = manifestOwning(key, collections);
+    if (owner !== undefined) refuse(`derive.commands.${key}`, owner);
+  }
+  for (const [i, field] of (config.derive?.fields ?? []).entries()) {
+    const owner = manifestOwning(field, collections);
+    if (owner !== undefined) refuse(`derive.fields[${i}] "${field}"`, owner);
   }
 }
 
@@ -777,9 +826,13 @@ function assertManagedFieldsUnowned(
  * `sources` for its reads without inventing a managed field.
  * A field is refused when it is not derivable (nothing could ever fill it)
  * or repeated. `$schema` falls out of the derivable list, so it never needs a
- * rule of its own. A field a manifest owns is refused as well, by
+ * rule of its own there. A field a manifest owns is refused as well, by
  * `assertManagedFieldsUnowned` in `loadConfig`, because manifests are declared
  * on the top-level `collections:` this parser never sees.
+ *
+ * `commands` is parsed before `fields`, because a key of `commands` is what
+ * makes a non-built-in field derivable. A command may only derive a field
+ * no built-in source claims, and the refusal names the source that does.
  */
 function parseDerive(
   raw: unknown,
@@ -793,11 +846,20 @@ function parseDerive(
   const e = raw as Record<string, unknown>;
   rejectUnknownKeys(e, DERIVE_KEYS, '"derive"', source);
 
-  if (e.fields === undefined && e.sources === undefined && e.codeowners === undefined) {
+  if (
+    e.fields === undefined &&
+    e.sources === undefined &&
+    e.codeowners === undefined &&
+    e.commands === undefined
+  ) {
     throw new DocmetaError(
-      `${source}: "derive" sets nothing. Give it \`fields:\` to manage, or \`sources:\` or \`codeowners:\` to shape the reads.`,
+      `${source}: "derive" sets nothing. Give it \`fields:\` to manage, \`commands:\` to derive from a command, or \`sources:\` or \`codeowners:\` to shape the reads.`,
     );
   }
+
+  const commands =
+    e.commands === undefined ? undefined : parseDeriveCommands(e.commands, source);
+
   if (
     e.fields !== undefined &&
     (!Array.isArray(e.fields) ||
@@ -805,14 +867,14 @@ function parseDerive(
       e.fields.some((f) => typeof f !== "string"))
   ) {
     throw new DocmetaError(
-      `${source}: derive.fields must be a non-empty list of field names. Derivable fields: ${DERIVABLE_FIELDS.join(", ")}.`,
+      `${source}: derive.fields must be a non-empty list of field names. ${DERIVABLE_LIST}`,
     );
   }
   const fields: DerivableField[] = [];
   ((e.fields ?? []) as string[]).forEach((f, i) => {
-    if (!isDerivableField(f)) {
+    if (!isBuiltinField(f) && !(commands !== undefined && Object.hasOwn(commands, f))) {
       throw new DocmetaError(
-        `${source}: derive.fields[${i}] "${f}" is not derivable. Derivable fields: ${DERIVABLE_FIELDS.join(", ")}.`,
+        `${source}: derive.fields[${i}] "${f}" is not derivable. ${DERIVABLE_LIST}`,
       );
     }
     if (fields.includes(f)) {
@@ -856,7 +918,92 @@ function parseDerive(
     derive.codeowners = e.codeowners;
   }
 
+  if (commands !== undefined) derive.commands = commands;
+
   return derive;
+}
+
+/**
+ * Parse `derive.commands`: a mapping of field name to command. A key is
+ * refused when it is empty, `$schema`, or a built-in field (a command may
+ * only derive a field no built-in source claims). A key a manifest owns is
+ * refused too, by `assertManagedFieldsUnowned` in `loadConfig`. Each command
+ * carries `run`, the argv with the program first, and an optional `timeout`
+ * in seconds.
+ */
+function parseDeriveCommands(
+  raw: unknown,
+  source: string,
+): Record<string, DeriveCommandConfig> {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    throw new DocmetaError(
+      `${source}: derive.commands must be a mapping of field name to command.`,
+    );
+  }
+  const commands: Record<string, DeriveCommandConfig> = {};
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (key.trim() === "") {
+      throw new DocmetaError(`${source}: derive.commands has an empty field name.`);
+    }
+    if (key === FILE_SCHEMA_KEY) {
+      throw new DocmetaError(
+        `${source}: derive.commands may not derive "${FILE_SCHEMA_KEY}" — a command never chooses the schema a document is judged by.`,
+      );
+    }
+    if (isBuiltinField(key)) {
+      throw new DocmetaError(
+        `${source}: derive.commands.${key} targets a field ${BUILTIN_CLAIMED_BY[key]} already derives; a command may only derive a field no built-in source claims.`,
+      );
+    }
+    // Every command key is a column of the `derived` table beside `_path`
+    // and `_sources`, so one spelled like either would be declared twice and
+    // SQLite would refuse the table with a raw error, mid-query. Refused
+    // here for the reason a collection named `derived` is (see
+    // `parseCollections`): a name collision is a config mistake, said at
+    // parse time.
+    if (DERIVED_TABLE_RESERVED.has(key)) {
+      throw new DocmetaError(
+        `${source}: derive.commands.${key} collides with a column of the derived table a query builds (${[...DERIVED_TABLE_RESERVED].join(", ")}). Pick another field name.`,
+      );
+    }
+
+    const where = `derive.commands.${key}`;
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      throw new DocmetaError(
+        `${source}: ${where} must be a mapping with \`run:\` beneath it.`,
+      );
+    }
+    const c = value as Record<string, unknown>;
+    rejectUnknownKeys(c, DERIVE_COMMAND_KEYS, where, source);
+
+    if (!Array.isArray(c.run) || c.run.length === 0) {
+      throw new DocmetaError(
+        `${source}: ${where}.run must be a non-empty list of strings, the program first.`,
+      );
+    }
+    const run: string[] = [];
+    (c.run as unknown[]).forEach((arg, j) => {
+      if (typeof arg !== "string" || arg.trim() === "") {
+        throw new DocmetaError(`${source}: ${where}.run[${j}] must be a non-empty string.`);
+      }
+      run.push(arg);
+    });
+    const command: DeriveCommandConfig = { run };
+
+    if (c.timeout !== undefined) {
+      // Whole seconds, because the reference says so and because a fraction
+      // reads as a budget while acting as a kill switch: `timeout: 0.001` is
+      // a 1 ms allowance that ends every spawn before it can answer.
+      if (typeof c.timeout !== "number" || !Number.isInteger(c.timeout) || c.timeout <= 0) {
+        throw new DocmetaError(
+          `${source}: ${where}.timeout must be a whole number of seconds, greater than zero.`,
+        );
+      }
+      command.timeout = c.timeout;
+    }
+    commands[key] = command;
+  }
+  return commands;
 }
 
 function parseConfigDocument(raw: unknown, source: string): DocmetaConfig {

@@ -89,6 +89,7 @@ manni meta [paths...] [options]
 | `--write-baseline` | `[path]` | config `baseline:`, else `.manni-baseline.json` | Record this run's findings as the baseline, then exit 0. The value is optional. Wins over `--baseline`. Findings from `-` (stdin) are the one exception: they cannot be recorded, so they still fail the run. |
 | `--no-baseline` | n/a | off | Ignore a baseline supplied by config `baseline:` for this run. `--baseline` and `--no-baseline` set the same option, so the one written later on the command line wins. |
 | `--no-checks` | n/a | off | Skip the [corpus checks](/manni/meta/reference/configuration/#checks) supplied by config `checks:` for this run. Checks already run only when the resolved file set is the config-resolved corpus. A run scoped by `--collection`, positional paths, stdin, `--as`, `--ext`, `--exclude`, or `--no-gitignore` skips them with a stderr notice; see [corpus checks and a narrowed run](#corpus-checks-and-a-narrowed-run). This flag opts out explicitly. |
+| `--no-cache` | n/a | off | Ask GitHub or GitLab again rather than reading the [review cache](/manni/meta/reference/configuration/#the-review-sources). Only the managed-field comparison consults it, and only for `reviewed-by` and `last-reviewed`. A merged change's approvals never change, so the cache is on by default; this is the way past an answer recorded wrongly. |
 | `--no-derive` | n/a | off | Skip the [managed-field comparison](/manni/meta/reference/configuration/#derive) supplied by config `derive:` for this run. Unlike checks, the comparison runs on scoped runs too, `--collection` included, because it is a per-file fact. This flag is the only opt-out. |
 
 <Aside type="note" title="Repeatable flags">
@@ -220,6 +221,14 @@ manni meta validate --baseline                     # fail only on new findings
 Print the values of one or more metadata fields from each file. Useful for
 scripted extraction. `get` reads and reports values; it does not validate.
 
+With [`derive:`](/manni/meta/reference/configuration/#derive) in config, `get`
+prints the **resolved value** of each field. That is the asserted value when
+the document carries the key, and the derived one otherwise, with the origin
+on the same line. Derivation is on by default, and `--no-derived` turns it
+off. A field no source can state consults nothing, so `get title docs/`
+spawns no process whatever the config says. `get` never writes, and its exit
+code is unchanged.
+
 ```sh
 manni meta get --fields <list> [paths...] [options]
 manni meta get [fields] [paths...] [options]
@@ -297,7 +306,9 @@ unaffected.
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `--fields` | `<list>` | the `[fields]` positional | Comma-separated fields to print. When given, **every** positional is a path. See [naming the fields](#naming-the-fields). |
-| `--derived` | n/a | off | Print the [derived value](/manni/meta/reference/configuration/#derive) and its evidence beside the asserted one, as `last-updated=2026-08-20 (derived 2026-09-07, git: body changed in 424f71a)`. In `json`, each file's object gains a `derived` record. A field that is not derivable prints `(not derivable)`. Stdin is refused with this flag, because there is no history behind it (exit 2). A source that cannot answer is exit 2 naming the fix. |
+| `--no-derived` | n/a | off | Print only what the document stores. No source is consulted, no origin is annotated, and the output is what `get` printed before config [`derive:`](/manni/meta/reference/configuration/#derive) existed. |
+| `--derived` | n/a | off | Accepted and inert. It was the opt-in before derivation became the default. A script that passes it still runs, and prints what a run without it prints. |
+| `--no-cache` | n/a | off | Ask GitHub or GitLab again rather than reading the [review cache](/manni/meta/reference/configuration/#the-review-sources). Only a run that derives consults it, and only for `reviewed-by` and `last-reviewed`. A merged change's approvals never change, so the cache is on by default; this is the way past an answer recorded wrongly. |
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Merged with the [default ignores](#default-ignores). A collection's own `exclude:` is a [membership](#membership-and-what-exclude-filters) rule and never filters a path you type; `--exclude` is the only thing that does. |
 | `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) (extractor name). Required when reading from stdin. |
@@ -317,6 +328,38 @@ requested field per file. Unset fields print as `(unset)`. In `json` format it
 prints an array of `{ file, present, values }` objects, where `values` maps each
 requested field to its value. A requested field that is unset is omitted from
 `values`. `present` reports whether the file had a metadata block at all.
+
+With config [`derive:`](/manni/meta/reference/configuration/#derive), the
+value on each line is the resolved one and an annotation says where it came
+from. There are four shapes, and `--no-derived` drops the annotation
+entirely:
+
+```console
+$ manni meta get title,owner,last-updated docs/install.md
+docs/install.md: title=Install the operator  (asserted)
+docs/install.md: owner=@platform-docs  (derived, codeowners: .github/CODEOWNERS:12)
+docs/install.md: last-updated=2026-08-20  (asserted; git says 2026-09-07, body changed in 424f71a)
+
+$ manni meta get title docs/install.md --no-derived
+docs/install.md: title=Install the operator
+```
+
+A field neither the document nor any source has prints `(unset)`, with no
+annotation after it. The third line above is the drift case. The document
+asserts a value, the evidence disagrees, and the asserted one is what `get`
+prints, because that is what the page publishes. `validate` reports the same
+disagreement as `derived:stale`.
+
+In `json`, each file's object gains a `resolved` record and an `origin`
+record beside the existing `values`, and a `derived` record carrying the raw
+derived values and their evidence. `values` is untouched, so a consumer
+reading only what the document stores sees exactly what it saw before.
+`--quiet` hides a file when every requested field is unset **after**
+resolving, so a page whose only `owner` comes from CODEOWNERS still prints.
+
+Stdin derives nothing, and that is not an error. A piped document has no
+path, so no source can speak for it, and `cat page.md | manni meta get title -
+--as markdown` resolves to the document's own values.
 
 A file whose metadata block could not be **read at all** is reported against
 that file, rather than ending the run. That means frontmatter that is not valid
@@ -339,7 +382,8 @@ manni meta get title,type docs/intro.md
 manni meta get --fields title,type docs/intro.md
 manni meta get author.name,/author/email docs/intro.md
 manni meta get type "**/*.md" -f json
-manni meta get owner "docs/**/*.md" -q          # only the files that set it
+manni meta get owner "docs/**/*.md" -q          # only the files that resolve one
+manni meta get owner docs/install.md --no-derived   # what the page stores, nothing else
 cat page.md | manni meta get title - --as markdown
 ```
 
@@ -405,6 +449,7 @@ table](/manni/meta/reference/query/#the-docs-table).
 | `--param` | `<name=value>` | n/a | Bind a named SQL parameter (`$name`, `:name`, or `@name`) as a **string**; `name:=value` parses the value as JSON for a typed bind. Repeatable. See [bound parameters](#bound-parameters). |
 | `--db` | `<path>` | n/a | Also write the built database to this file, and the SQL is then optional. The file is a regenerated artifact, so an existing SQLite database at the path is overwritten and anything else is refused. See [exporting the database](#exporting-the-database). |
 | `--dry-run` | n/a | off | Preview a mutating statement instead of applying it, so you see the per-file diff it would make with nothing touched. `--check` implies it, because a check judges and never mutates. See [writing back](#writing-back). |
+| `--no-cache` | n/a | off | Ask GitHub or GitLab again rather than reading the [review cache](/manni/meta/reference/configuration/#the-review-sources). Only a statement naming the [`derived`](/manni/meta/reference/query/#the-derived-table) or [`resolved`](/manni/meta/reference/query/#the-resolved-table) table consults it, and only for `reviewed-by` and `last-reviewed`. A merged change's approvals never change, so the cache is on by default; this is the way past an answer recorded wrongly. |
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Merged with the [default ignores](#default-ignores). A collection's own `exclude:` is a [membership](#membership-and-what-exclude-filters) rule and never filters a path you type; `--exclude` is the only thing that does. |
 | `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) (extractor name). Required when reading from stdin. |
@@ -728,10 +773,12 @@ cat page.md | manni meta fill - --as markdown   # filled document to stdout
 
 ## `meta derive`
 
-Stamp the **managed** stewardship fields into each document from evidence.
-The evidence is git history, a CODEOWNERS file, and the pull request or merge
-request history GitHub or GitLab keeps, read through the `gh` or `glab` CLI. Which fields
-are managed comes from config
+Stamp the **managed** fields into each document from evidence. The evidence
+is git history, a CODEOWNERS file, and the pull request or merge request
+history GitHub or GitLab keeps, read through the `gh` or `glab` CLI. For any
+other field, it is the output of a
+[command](/manni/meta/reference/configuration/#commands) the config names.
+Which fields are managed comes from config
 [`derive.fields`](/manni/meta/reference/configuration/#derive), or from
 `--fields` for one run. `derive` is the only command that writes a managed
 field. `validate` is what reports a stamp that has gone stale.
@@ -756,8 +803,8 @@ finding without touching anything.
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
-| `--fields` | `<list>` | config `derive.fields` | Comma-separated managed fields to stamp this run. Each must be one of the six [derivable fields](/manni/meta/reference/configuration/#the-derivable-fields). An unknown or non-derivable name is an error (exit 2) listing the six. A field a collection's [external-metadata](/manni/meta/reference/configuration/#external-metadata) manifest owns is refused (exit 2), the same way loading the config refuses it in `derive.fields`. The message is `"owner" is owned by the manifest ./owners.yaml on collection guides; a managed field has one authority, and a manifest key already has one.` No config `derive.fields` and no flag is an error (exit 2): `nothing to derive: set derive.fields in manni.config.yaml or pass --fields`. |
-| `--sources` | `<list>` | config `derive.sources`, else all four | Comma-separated sources to consult: `git`, `codeowners`, `github`, `gitlab`. Only the one of `github` and `gitlab` that matches the origin remote is consulted. A field whose only sources are excluded derives null and is left alone. This is the opt-out for a checkout that cannot answer a source, such as a shallow clone. |
+| `--fields` | `<list>` | config `derive.fields` | Comma-separated managed fields to stamp this run. Each must be one of the six [derivable fields](/manni/meta/reference/configuration/#the-derivable-fields) or a key with an entry in config [`derive.commands`](/manni/meta/reference/configuration/#commands). An unknown or non-derivable name is an error (exit 2) listing the six and pointing at `derive.commands`. A field a collection's [external-metadata](/manni/meta/reference/configuration/#external-metadata) manifest owns is refused (exit 2), the same way loading the config refuses it in `derive.fields`. The message is `"owner" is owned by the manifest ./owners.yaml on collection guides; a managed field has one authority, and a manifest key already has one.` No config `derive.fields` and no flag is an error (exit 2): `nothing to derive: set derive.fields in manni.config.yaml or pass --fields`. |
+| `--sources` | `<list>` | config `derive.sources`, else all five | Comma-separated sources to consult: `git`, `codeowners`, `github`, `gitlab`, `command`. Only the one of `github` and `gitlab` that matches the origin remote is consulted. `command` covers every field with an entry in config [`derive.commands`](/manni/meta/reference/configuration/#commands). A field whose only sources are excluded derives null and is left alone. This is the opt-out for a checkout that cannot answer a source, such as a shallow clone. |
 | `--dry-run` | n/a | off | Report what would change and write nothing. |
 | `--check` | n/a | off | Implies `--dry-run`. A managed field that is stale or unset is a finding, and the run exits 1 if there is any. This is the CI spelling. |
 | `-f, --format` | `<pretty\|json\|github\|sarif\|junit>` | `pretty` | [Output format](/manni/meta/reference/output-and-exit-codes/). `github`, `sarif`, and `junit` describe findings, so they are legal only with `--check`. Without it they are an error (exit 2): `sarif is a findings format, which only --check produces`. An unknown value is an error (exit 2). |
@@ -796,6 +843,9 @@ current, which is the false green the comparison exists to end.
 | `--sources` names only the one of `github` and `gitlab` the origin remote does not match. | `the origin remote is github.com, which is GitHub; add github to sources, or drop reviewed-by and last-reviewed from the managed fields` |
 | There is no origin remote. | `no origin remote to tell GitHub from GitLab` |
 | The origin host names neither platform, and `sources` does not list exactly one of the two. | `the origin remote is git.example.com, which names neither GitHub nor GitLab; list exactly one of github, gitlab in derive.sources to say which it is` |
+| A configured command exited non-zero. | ``command source unavailable: `jq -r .version package.json` failed (exit 2): jq: error: Could not open package.json; narrow --sources or --fields`` |
+| A configured command's program is not on `PATH`. | ``command source unavailable: `jq` is not on PATH (derive.commands.verified-against); narrow --sources or --fields`` |
+| A configured command ran past its `timeout`. | ``command source unavailable: `node scripts/source-for.mjs docs/install.md` timed out after 60s; narrow --sources or --fields`` |
 
 A `gh` or `glab` that is present and not logged in is refused the same way,
 naming `gh auth login` or `glab auth login`. So is a config `codeowners:`
@@ -840,6 +890,7 @@ manni meta derive --check -f github                # CI: a stale stamp is an ann
 manni meta derive --fields reviewed-by,last-reviewed   # after an approval, stamp who and when
 manni meta derive --sources git,codeowners         # no gh on this machine
 manni meta derive --fields owner --no-cache docs/  # re-read GitHub or GitLab
+manni meta derive --fields verified-against        # stamp the version a config command reads
 ```
 
 ## `meta schemas`

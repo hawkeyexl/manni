@@ -163,10 +163,12 @@ both places.
 With [`derive:`](/manni/meta/reference/configuration/#derive) in config, a
 second table is available. `derived` holds what the evidence says each
 managed field should be, one row per file. The evidence is git history, the
-CODEOWNERS file, and the GitHub or GitLab review history. It is built only when the
+CODEOWNERS file, the GitHub or GitLab review history, and the output of any
+[command](/manni/meta/reference/configuration/#commands) the config names. It is built only when the
 statement names `derived` as a table (after `FROM`, `JOIN`, `UPDATE`, and the
-like, quoted or not). That is because building it spawns `git`, and with the
-`github` or `gitlab` source, `gh` or `glab`. A statement that never names it pays nothing, and the
+like, quoted or not). That is because building it spawns `git`, with the
+`github` or `gitlab` source `gh` or `glab`, and with the `command` source the
+configured programs. A statement that never names it pays nothing, and the
 word inside a string literal or a comment does not count. A spelling the text
 search misses is caught by SQLite's own `no such table: derived`, which
 triggers the same build.
@@ -186,10 +188,16 @@ in the view.
 | `owner` | TEXT | A JSON array, even for one owner, because a CODEOWNERS line can name several. |
 | `reviewed-by` | TEXT | A JSON array. |
 | `last-reviewed` | TEXT | A date. |
-| `_sources` | TEXT | JSON text, `{field: {source, evidence}}`, saying where each non-null value came from and why. |
+| one per key in `derive.commands` | TEXT | The command's trimmed stdout. A list or object is JSON text, as in `docs`. `verified-against` from `jq -r .version package.json` is `1.4.2`; from a script printing `{"name":"operator","version":"1.4.2"}` it is that object's JSON text. |
+| `_sources` | TEXT | JSON text, `{field: {source, evidence}}`, saying where each non-null value came from and why. For a command column the source is `command` and the evidence is the argv, `{path}` already substituted. |
 
-Every field column is present whether or not the field is managed, so one
-query shape serves every config. A field whose sources are excluded by
+Every built-in field column is present whether or not the field is managed,
+so one query shape serves every config. The command columns follow, one per
+key in [`derive.commands`](/manni/meta/reference/configuration/#commands),
+so their set depends on the config. Quote a hyphenated name, as for
+`last-updated`. A statement that names a command column derives only that
+column and runs only that command. A read of `owner` still spawns nothing.
+A field whose sources are excluded by
 `derive.sources`, or that the statement never names, is `NULL`. A source a
 named column needs that cannot answer is an error (exit 2) naming the fix,
 exactly as for `validate` and `derive`, never an empty column.
@@ -217,6 +225,77 @@ constraints](#dml-statements-edit-files).
 Because a query builds the `derived` view and its `_derived_rows` table beside
 `docs`, a [collection](/manni/meta/reference/configuration/#collections) may
 not take either name, in any case. The config is refused when it loads (exit 2).
+
+## The `resolved` table
+
+<Aside type="note" title="Two meanings of resolve">
+manni meta also *resolves* a schema set, which is how it decides which schemas
+judge a file. That is a different subject, and it lives in [schema
+resolution](/manni/meta/reference/schema-resolution/). This section is about a
+**resolved value**, meaning the value a read of one frontmatter key gives back.
+</Aside>
+
+`resolved` is the third table, beside `docs` and `derived`. It holds the
+resolved frontmatter of every file, one row each. A resolved value is the
+asserted one when the document carries the key, and the derived one
+otherwise. `_origin` says which of the two came back.
+
+The three tables answer three different questions. `docs` is what the file
+says. `derived` is what the evidence says. `resolved` is what to believe.
+
+`resolved` is a **view** over the other two, so it cannot disagree with them
+and costs no second read of the corpus. It is built under the same rule
+`derived` follows. A statement that never names it pays nothing, and a
+statement that names it derives only the columns it can read. So
+`SELECT owner FROM resolved` consults `codeowners` alone, and
+`SELECT * FROM resolved` consults every source
+[`derive.sources`](/manni/meta/reference/configuration/#derive) allows.
+
+| Column | Type | Value |
+|---|---|---|
+| `_path` | TEXT, primary key | The file's label, exactly as in `docs` and `derived`, so all three join on it. |
+| every column `docs` has | as in `docs` | The asserted value when the document carries the key, the derived value when it does not, and `NULL` when neither side has one. The system columns `_format`, `_present` and `_data` stay in `docs`, so a statement that needs them joins on `_path`. |
+| every derivable field `docs` lacks | TEXT | The derived value, or `NULL` when no source answered. A list or object is JSON text, as in `docs`. |
+| `_origin` | TEXT | JSON text, `{field: "asserted"}` or `{field: "derived"}`, carrying only the fields that resolved to something. A field neither side has is absent from the object. |
+| `_sources` | TEXT | JSON text, `{field: {source, evidence}}`, exactly as in [`derived`](#the-derived-table). |
+
+Presence is decided by `_data`, not by `NULL`. A column is `NULL` both when
+the key is absent and when the document writes `key: null`, so the view asks
+`_data` which of the two it is. That is the same rule the [system
+columns](#system-columns) already state for `docs`. A document that writes
+`owner: null` has asserted a value, so `resolved` keeps the null and
+`_origin` says `asserted`.
+
+Where a document asserts a value and the evidence disagrees, the asserted one
+wins, because that is what the page publishes. The drift is still visible.
+`validate` files it as `derived:stale`, and the join below asks for it
+directly.
+
+```sql
+SELECT _path, owner, _origin ->> '$.owner' AS origin FROM resolved;
+SELECT _path FROM resolved WHERE _origin ->> '$.owner' = 'derived';
+SELECT d._path FROM docs d JOIN derived x USING (_path) WHERE d."last-updated" IS NOT x."last-updated";
+```
+
+The first prints each page's owner and where it came from. The second lists
+the pages CODEOWNERS covers that nobody wrote an `owner` into. The third is
+the drift question, and it stays a `docs` to `derived` join, because that is
+the comparison `resolved` deliberately does not make.
+
+Every write to `resolved` is refused, and the refusal names both ways
+forward:
+
+```
+$ manni meta query "UPDATE resolved SET owner = 'x'"
+manni meta query: SQL error: cannot modify resolved because it is a view; the resolved table is read-only — it is `docs` and the evidence joined, so write to docs, or stamp the evidence with manni meta derive.
+                                                                      exit 2
+```
+
+A [`--db`](#exporting-the-database) export never carries it. `resolved` is
+dropped before the file closes, along with `derived` and its backing table,
+because half of every row is recomputed from the evidence on every run. A
+[collection](/manni/meta/reference/configuration/#collections) may not be
+called `resolved` either, and the config is refused when it loads (exit 2).
 
 ## The SQL vocabulary
 
@@ -277,6 +356,10 @@ Constraints on a DML statement:
 - **The [`derived` table](#the-derived-table) is a view.** A write to it
   refuses with `cannot modify derived because it is a view; a collection or
   the derived table is read-only`. There is nothing behind it to write to.
+- **The [`resolved` table](#the-resolved-table) is a view too.** A write to
+  it refuses with `cannot modify resolved because it is a view; the resolved
+  table is read-only`, and the message goes on to name both ways forward.
+  Write to `docs`, or stamp the evidence with `manni meta derive`.
 
 ### Format limits on a write
 
@@ -619,10 +702,12 @@ the verdict, and the header-only output *is* the passing gate.
 ## Exporting the database
 
 `--db <path>` writes the built table, collection views included, to a SQLite
-file for any other tool to open. The [`derived` table](#the-derived-table) is
-the one thing left out. It is dropped before the file closes, because its
-value is recomputed from the evidence on every run. A frozen copy would be
-the stale stamp it exists to catch. With no SQL, the export is the whole job:
+file for any other tool to open. The [`derived`](#the-derived-table) and
+[`resolved`](#the-resolved-table) tables are the two things left out. Both
+are dropped before the file closes, along with `derived`'s backing table,
+because their values are recomputed from the evidence on every run. A frozen
+copy would be the stale stamp they exist to catch. With no SQL, the export is
+the whole job:
 
 ```sh
 manni meta query --db docs.db docs/

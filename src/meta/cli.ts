@@ -593,13 +593,31 @@ interface ValidateCliOptions extends RunCliOptions {
    * not a choice, so only the explicit `false` travels to the core.
    */
   derive: boolean;
+  /**
+   * `--no-cache`. Commander's `true` default travels straight through: the
+   * review cache answers the comparison unless the user said otherwise.
+   */
+  cache: boolean;
 }
 
 interface GetCliOptions extends RunCliOptions {
   /** `--fields <list>`; when present, every positional is a path. */
   fields?: string;
-  /** `--derived`: print the derived value and its evidence beside the asserted one. */
+  /**
+   * `--no-derived` / `--derived`. Both spellings are registered, which is
+   * why this is `boolean | undefined` rather than commander's usual `true`
+   * default for a `--no-` flag: registering the positive form alongside it
+   * removes that default, so the key is absent when neither was given.
+   * Only the explicit `false` means anything — derivation is on otherwise,
+   * and `--derived` is the no-op kept for scripts written before 0043.
+   */
   derived?: boolean;
+  /**
+   * `--no-cache`. Commander supplies `true` when the flag is absent, so
+   * this travels straight through: the review cache answers unless the
+   * user said otherwise.
+   */
+  cache: boolean;
 }
 
 /**
@@ -624,6 +642,11 @@ interface QueryCliOptions extends InputCliOptions {
   /** `--no-gitignore`; commander's `true` default, see `gitignoreFlag`. */
   gitignore: boolean;
   offline?: boolean;
+  /**
+   * `--no-cache`. Commander's `true` default, like `gitignore`: the review
+   * cache answers a `derived` build unless the user said otherwise.
+   */
+  cache: boolean;
 }
 
 interface FillCliOptions extends RunCliOptions {
@@ -783,6 +806,7 @@ export function buildProgram(): Command {
       "--no-checks",
       "skip the corpus checks configured by `checks:` for this run",
     )
+    .option("--no-cache", "bypass the GitHub or GitLab review cache")
     .option(
       "--no-derive",
       "skip the derived-value comparison configured by derive.fields",
@@ -856,6 +880,8 @@ export function buildProgram(): Command {
             checks: options.checks ? undefined : false,
             // And `--no-derive`, for the managed-field comparison.
             derive: options.derive ? undefined : false,
+            // And `--no-cache`, so a wrong cached review answer can be re-asked.
+            cache: options.cache,
           });
 
           const color = resolveColor(command.parent ?? command);
@@ -898,9 +924,15 @@ export function buildProgram(): Command {
       "comma-separated metadata fields to print; every positional is then a path",
     )
     .option(
-      "--derived",
-      "show the derived value and its evidence beside the asserted one",
+      "--no-derived",
+      "print only what the document stores, consulting no source",
     )
+    // Registered beside `--no-derived` on purpose. Commander gives a lone
+    // `--no-x` the default `true`; declaring `--x` as well removes that
+    // default, so "neither flag" is `undefined` and stays distinguishable —
+    // and the spelling that used to turn derivation on still parses.
+    .option("--derived", "accepted and inert: derivation is already on")
+    .option("--no-cache", "bypass the GitHub or GitLab review cache")
     .option("--ext <list>", "comma-separated extensions for directory walks")
     .option("--exclude <glob>", "glob to exclude; repeatable", collect, [])
     .option("--as <format>", "force an input format (e.g. markdown, mdx)")
@@ -936,6 +968,7 @@ export function buildProgram(): Command {
         "  manni meta get --fields title,type docs/intro.md",
         "  manni meta get author.name,/author/email docs/intro.md",
         '  manni meta get type "**/*.md" -f json',
+        "  manni meta get owner docs/intro.md --no-derived",
         "  cat page.md | manni meta get title - --as markdown",
       ].join("\n"),
     )
@@ -963,7 +996,8 @@ export function buildProgram(): Command {
 
           const results = await runGet({
             fields,
-            derived: Boolean(options.derived),
+            derived: options.derived !== false,
+            cache: options.cache,
             inputs: paths,
             as: options.as,
             exclude: options.exclude,
@@ -1068,6 +1102,7 @@ export function buildProgram(): Command {
     .option("--no-config", "ignore any discovered config file")
     .option("--allow-empty", "treat zero matched files as success")
     .option("--no-gitignore", "load files .gitignore covers")
+    .option("--no-cache", "bypass the GitHub or GitLab review cache")
     .option(
       "--offline",
       "accepted and ignored: query resolves schemas from disk and built-ins, never the network",
@@ -1169,6 +1204,7 @@ export function buildProgram(): Command {
             sql,
             db: options.db,
             dryRun,
+            cache: options.cache,
             ...(Object.keys(params).length > 0 ? { params } : {}),
             ...(options.schema.length > 0 ? { schemas: options.schema } : {}),
             inputs: paths,
@@ -1439,7 +1475,7 @@ export function buildProgram(): Command {
     )
     .option(
       "--sources <list>",
-      "comma-separated sources to consult: git, codeowners, github, gitlab (default all)",
+      "comma-separated sources to consult: git, codeowners, github, gitlab, command (default all)",
     )
     .option("--dry-run", "report what would change and write nothing")
     .option(

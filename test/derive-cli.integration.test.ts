@@ -140,10 +140,10 @@ describe("manni meta derive (built bin)", { timeout: 60_000 }, () => {
 
   it("refuses a field that is not derivable", () => {
     const { dir } = stageCorpus();
-    const r = run(["derive", "--fields", "verified-against"], dir);
+    const r = run(["derive", "--fields", "stakeholders"], dir);
     expect(r.status).toBe(2);
     expect(r.stderr).toContain(
-      '"verified-against" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed',
+      '"stakeholders" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed, or any key with an entry in derive.commands',
     );
   });
 
@@ -208,15 +208,105 @@ describe("the derived channel's flags on validate and get (built bin)", { timeou
     expect(r.status).toBe(0);
   });
 
-  it("get accepts --derived", () => {
-    // Only the parser is under test: what `--derived` does (and whether this
-    // checkout can answer for it) belongs to get's own tests.
-    const r = run(["get", "--derived", "title", "test/fixtures/valid.md"]);
-    expect(r.stderr).not.toContain("unknown option");
+  it("get shows a derived value with no flag at all", () => {
+    const { dir } = stageCorpus();
+    const r = run(["get", "owner", "docs/install.md"], dir);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(
+      /^docs\/install\.md: owner=\["@platform-docs"\] \(derived, codeowners: [^)]+\)$/m,
+    );
+  });
+
+  it("get --no-derived prints the bare line", () => {
+    const { dir } = stageCorpus();
+    const r = run(["get", "owner", "docs/install.md", "--no-derived"], dir);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/^docs\/install\.md: owner=\(unset\)$/m);
+  });
+
+  it("get --derived still parses, and behaves as the default", () => {
+    const { dir } = stageCorpus();
+    const bare = run(["get", "owner", "docs/install.md"], dir);
+    const flagged = run(["get", "--derived", "owner", "docs/install.md"], dir);
+    expect(flagged.stderr).not.toContain("unknown option");
+    expect(flagged.status).toBe(0);
+    expect(flagged.stdout).toBe(bare.stdout);
+  });
+
+  // Stdin derives nothing, and that is not an error. Before 0043 this was a
+  // refusal, and a refusal cannot survive a default-on flag: a piped read is
+  // an ordinary one. Both spellings of the field list are exercised, since
+  // `-` in the first slot is a path and never a field name.
+  it.each([
+    ["fields first", ["get", "title", "-", "--as", "markdown"]],
+    ["--fields", ["get", "--fields", "title", "-", "--as", "markdown"]],
+  ])("get reads piped stdin (%s) at exit 0, deriving nothing", (_name, args) => {
+    const { dir } = stageCorpus();
+    const r = spawnText(
+      spawnSync("node", [bin, "meta", ...args], {
+        cwd: dir,
+        encoding: "utf8",
+        input: readFileSync(join(dir, "docs", "install.md"), "utf8"),
+        env: { ...process.env, NO_COLOR: "1" },
+      }),
+    );
+    expect(r.status).toBe(0);
+    // No annotation would mean nothing resolved; the document is the only
+    // side a piped read has, and it answered.
+    expect(r.stdout).toContain("<stdin>: title=Install (asserted)");
+  });
+
+  it("get over stdin resolves a derivable field to what the document says", () => {
+    const { dir } = stageCorpus();
+    const r = spawnText(
+      spawnSync("node", [bin, "meta", "get", "last-updated", "-", "--as", "markdown"], {
+        cwd: dir,
+        encoding: "utf8",
+        input: readFileSync(join(dir, "docs", "install.md"), "utf8"),
+        env: { ...process.env, NO_COLOR: "1" },
+      }),
+    );
+    // `last-updated` is derivable and the repository's history disagrees with
+    // the stamp — but a piped document has no path, so no source speaks for
+    // it and the asserted value stands alone.
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("<stdin>: last-updated=2026-08-20 (asserted)");
   });
 
   it("validate --help and get --help name the flags", () => {
     expect(run(["validate", "--help"]).stdout).toContain("--no-derive");
-    expect(run(["get", "--help"]).stdout).toContain("--derived");
+    const get = run(["get", "--help"]).stdout;
+    expect(get).toContain("--no-derived");
+    expect(get).toContain("--derived");
+  });
+});
+
+/**
+ * The `command` source (proposal 0042) end to end: `validate` is red on the
+ * stale stamp, `derive` writes the command's value, and `validate` is green.
+ * The fixture's `sources` names `command` alone, so no history is staged.
+ */
+describe("manni meta derive with a command source (built bin)", { timeout: 60_000 }, () => {
+  const COMMAND = resolve(here, "fixtures", "derive", "command");
+
+  it("validate is red, derive stamps the value, validate is green", () => {
+    const dir = makeTempRepo({ files: {} });
+    dirs.push(dir);
+    cpSync(COMMAND, dir, { recursive: true });
+
+    const before = run(["validate"], dir);
+    expect(before.status).toBe(1);
+    expect(before.stdout).toContain("verified-against says 1.4.1");
+    expect(before.stdout).toContain("command says 1.4.2 (node -p require('./version.json').version)");
+
+    const derive = run(["derive"], dir);
+    expect(derive.status).toBe(0);
+    expect(derive.stdout).toMatch(/verified-against\s+1\.4\.1 → 1\.4\.2/);
+    expect(readFileSync(join(dir, "docs", "install.md"), "utf8")).toContain(
+      "verified-against: 1.4.2",
+    );
+
+    const after = run(["validate"], dir);
+    expect(after.status).toBe(0);
   });
 });

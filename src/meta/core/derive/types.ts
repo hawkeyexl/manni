@@ -14,7 +14,7 @@ import type { ExtractedMetadata, FieldError } from "../../types.js";
 import { escapePointerSegment } from "../../extractors/pointer.js";
 import { toJsonText } from "../json-text.js";
 
-/** Every field `derive.fields` may name, in the order messages list them. */
+/** The six built-in fields, in the order messages list them. */
 export const DERIVABLE_FIELDS = [
   "created",
   "last-updated",
@@ -24,19 +24,45 @@ export const DERIVABLE_FIELDS = [
   "last-reviewed",
 ] as const;
 
-export type DerivableField = (typeof DERIVABLE_FIELDS)[number];
+export type BuiltinDerivableField = (typeof DERIVABLE_FIELDS)[number];
 
-/** Every source `derive.sources` may name; absent means all four. */
-export const DERIVE_SOURCES = ["git", "codeowners", "github", "gitlab"] as const;
+/**
+ * A managed field name: one of the six built-ins, or a key with an entry in
+ * `derive.commands`. The config parser guarantees one or the other.
+ */
+export type DerivableField = string;
+
+export function isBuiltinField(x: string): x is BuiltinDerivableField {
+  return (DERIVABLE_FIELDS as readonly string[]).includes(x);
+}
+
+/** Every source `derive.sources` may name; absent means all five. */
+export const DERIVE_SOURCES = ["git", "codeowners", "github", "gitlab", "command"] as const;
 
 export type DeriveSource = (typeof DERIVE_SOURCES)[number];
 
-export function isDerivableField(x: string): x is DerivableField {
-  return (DERIVABLE_FIELDS as readonly string[]).includes(x);
+/**
+ * One configured command, as `derive.commands` reads after parsing: the argv
+ * to run, the program first, and how long to wait for it.
+ */
+export interface DeriveCommand {
+  run: readonly string[];
+  timeoutMs: number;
 }
 
 export function isDeriveSource(x: string): x is DeriveSource {
   return (DERIVE_SOURCES as readonly string[]).includes(x);
+}
+
+/**
+ * Every field a run can derive: the built-ins in the order messages list
+ * them, then the command keys sorted, so the list is the same whatever
+ * order the config wrote them in.
+ */
+export function derivableFields(
+  commands?: Readonly<Record<string, DeriveCommand>>,
+): DerivableField[] {
+  return [...DERIVABLE_FIELDS, ...Object.keys(commands ?? {}).sort()];
 }
 
 /**
@@ -57,7 +83,7 @@ export interface DerivedValue {
  */
 export interface DerivedRecord {
   file: string;
-  fields: Partial<Record<DerivableField, DerivedValue | null>>;
+  fields: Record<DerivableField, DerivedValue | null>;
 }
 
 /** Whether a source can answer at all; `reason` names the fix when not. */
@@ -121,6 +147,8 @@ export interface DeriveContext {
   fields: readonly DerivableField[];
   /** CODEOWNERS path, when the config names one; resolved from `configDir`. */
   codeowners?: string;
+  /** The `command` source's table, by the field each command derives; absent means none configured. */
+  commands?: Readonly<Record<string, DeriveCommand>>;
   cache: boolean;
   now: () => Date;
   /** The review client for every repository in the run; the built-in `gh` / `glab` clients when absent. */

@@ -104,11 +104,11 @@ describe("parseCollections (0041)", () => {
 
   // The derived table (proposal 0040) is a view named `derived` over a table
   // named `_derived_rows`, built beside `docs` when a statement reads it.
-  it.each(["derived", "Derived", "_derived_rows", "_DERIVED_ROWS"])(
-    'refuses the name "%s", which the derived table uses',
+  it.each(["derived", "Derived", "_derived_rows", "_DERIVED_ROWS", "resolved", "Resolved", "RESOLVED"])(
+    'refuses the name "%s", which the derived tables use',
     (name) => {
       expect(refusal([{ name, paths: ["docs"] }])).toBe(
-        `manni.config.yaml: collections[0].name "${name}" collides with the derived table a query builds beside docs (the derived view and its _derived_rows table). Pick another name.`,
+        `manni.config.yaml: collections[0].name "${name}" collides with the derived table a query builds beside docs (the derived view, its _derived_rows table, and the resolved view over both). Pick another name.`,
       );
     },
   );

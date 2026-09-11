@@ -55,6 +55,7 @@ export { memberOf } from "./core/collections.js";
 export type {
   CheckConfig,
   DeriveConfig,
+  DeriveCommandConfig,
   ConfigNotice,
   DocmetaConfig,
   DocumentRefTrust,
@@ -102,7 +103,7 @@ export type { ExternalMetadataFetchOptions } from "./core/external-metadata-fetc
 export {
   compareDerived,
   staleFindings,
-  isDerivableField,
+  isBuiltinField,
   isDeriveSource,
   DERIVABLE_FIELDS,
   DERIVE_SOURCES,
@@ -110,7 +111,9 @@ export {
   DERIVED_KEYWORD,
 } from "./core/derive/types.js";
 export type {
+  BuiltinDerivableField,
   DerivableField,
+  DeriveCommand,
   DeriveSource,
   DerivedValue,
   DerivedRecord,
@@ -127,10 +130,19 @@ export type {
 export {
   deriveMetadata,
   consultedSources,
+  sourcesFor,
   assertSourcesAvailable,
   FIELD_SOURCES,
 } from "./core/derive/index.js";
 export type { DeriveResult } from "./core/derive/index.js";
+export {
+  deriveFromCommands,
+  PATH_PLACEHOLDER,
+  isPerFile,
+  argvFor,
+  valueOf,
+} from "./core/derive/command.js";
+export type { CommandSourceOptions, CommandSourceResult } from "./core/derive/command.js";
 export {
   GitHubClient,
   GitLabClient,
@@ -143,8 +155,15 @@ export type {
   ReviewSourceInput,
   ReviewFacts,
   ReviewSourceResult,
-  SpawnOptions,
 } from "./core/derive/reviews.js";
+export {
+  RESOLVED_VIEW,
+  resolvedColumns,
+  createResolvedView,
+  mentionsResolved,
+} from "./core/derive/table.js";
+export { run, BinMissing } from "./core/derive/spawn.js";
+export type { Run, SpawnOptions } from "./core/derive/spawn.js";
 export {
   ReviewCache,
   cachedClient,

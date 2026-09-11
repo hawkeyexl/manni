@@ -83,7 +83,14 @@ export function fakeReviewCli(
       if (process.env.FAKE_REVIEW_SCENARIO === scenario) {
         delete process.env.FAKE_REVIEW_SCENARIO;
       }
-      rmSync(dir, { recursive: true, force: true });
+      // Best effort: a timed-out call settles before the child has finished
+      // dying, and on Windows it holds this directory as its cwd until it
+      // does. The temp directory is the OS's to reap.
+      try {
+        rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+      } catch {
+        /* the OS reaps it */
+      }
     },
   };
 }

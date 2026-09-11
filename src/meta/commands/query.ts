@@ -81,15 +81,20 @@ import {
   retainMembers,
   createCollectionViews,
 } from "../core/collections.js";
+import { commandsOf } from "../core/derive/config.js";
 import {
   createDerivedView,
+  createResolvedView,
   DERIVED_ROWS,
   DERIVED_VIEW,
+  derivedColumns,
   deriveForTable,
   fieldsForSql,
   mentionsDerived,
+  mentionsResolved,
+  RESOLVED_VIEW,
 } from "../core/derive/table.js";
-import type { DeriveInput } from "../core/derive/types.js";
+import { derivableFields, type DeriveInput } from "../core/derive/types.js";
 import type { FingerprintContext } from "../core/baseline.js";
 import { stringFormatNames, validatesFormat } from "../core/validator.js";
 import {
@@ -149,6 +154,12 @@ export interface QueryOptions {
    * suppress.
    */
   offline?: boolean;
+  /**
+   * `--no-cache` (false): ask GitHub or GitLab again rather than reading the
+   * review cache. Only a statement naming the `derived` table consults it,
+   * and only for `reviewed-by` and `last-reviewed`; absent leaves it on.
+   */
+  cache?: boolean;
   /**
    * `--dry-run`: preview the statement's per-file changes — the diff it
    * would make, files untouched. Without it a mutating statement applies,
@@ -421,6 +432,7 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
       ? { cliSchemas: opts.schemas }
       : {}),
     write: !opts.dryRun,
+    cache: opts.cache ?? true,
     base,
     config,
     cwd,
@@ -490,6 +502,8 @@ interface RunContext {
    */
   cliSchemas?: string[];
   write: boolean;
+  /** Whether the review cache may answer a `derived` build; `--no-cache` clears it. */
+  cache: boolean;
   /** Directory file labels resolve against (see `resolveRunConfig`). */
   base: string;
   config: DocmetaConfig | null;
@@ -569,10 +583,11 @@ async function prepareDbTarget(resolved: string, display: string): Promise<void>
 class MissingCollectionView extends Error {}
 
 /**
- * The same signal for the `derived` table (0040): the statement named it,
- * its view is not built yet, and building it is worth one git walk.
+ * The same signal for the derived channel's two tables (0040): the statement
+ * named `derived` or `resolved`, neither view is built yet, and building them
+ * is worth one git walk. One class for both, because one build makes both.
  */
-class MissingDerivedView extends Error {}
+class MissingDerivedTable extends Error {}
 
 /**
  * Wrap an engine error from the user's statement — prepare-time or
@@ -580,8 +595,11 @@ class MissingDerivedView extends Error {}
  * get a remedy: an INSERT/rename onto a loaded `_path` (the projection's
  * primary key catches it before any disk check can), a write through a
  * collection view (0027) — SQLite's own refusal, completed with the
- * write-through-docs spelling — and a write to the `derived` view (0040),
- * which has nothing behind it to write to. The view-name capture is
+ * write-through-docs spelling — and a write to the `derived` or `resolved`
+ * view (0040), neither of which has anything behind it to write to.
+ * `resolved` gets a remedy of its own because it has two sides: a value the
+ * document should state is a write to `docs`, and one the evidence should
+ * state is a derive run. The view-name capture is
  * non-greedy up to the literal tail: a collection name may contain spaces,
  * which \S+ would truncate into a remedy naming a view that does not exist.
  */
@@ -596,6 +614,11 @@ function refuseSqlError(err: unknown): never {
     if (viewName.toLowerCase() === DERIVED_VIEW) {
       throw new DocmetaError(
         `SQL error: ${message}; a collection or the derived table is read-only — the derived table is recomputed from the evidence on every run. Change the evidence, or stamp it into the documents with manni meta derive.`,
+      );
+    }
+    if (viewName.toLowerCase() === RESOLVED_VIEW) {
+      throw new DocmetaError(
+        `SQL error: ${message}; the resolved table is read-only — it is \`docs\` and the evidence joined, so write to docs, or stamp the evidence with manni meta derive.`,
       );
     }
     throw new DocmetaError(
@@ -684,11 +707,14 @@ async function runSql(
       viewsBuilt = true;
     };
     if (target) buildViews();
-    // The `derived` table (0040): built only when the statement names it,
-    // because building it spawns git (and, with the github or gitlab source, gh or
-    // glab). Eager when the text names it as a table, and lazily on the
-    // engine's `no such table: derived` as the backstop for a spelling the
-    // text search misses. Only the fields the statement can read are
+    // The derived channel's tables (0040), `derived` and `resolved`: built
+    // only when the statement names one of them, because building them spawns
+    // git (and, with the github or gitlab source, gh or glab). One build makes
+    // both — `resolved` is the join of `docs` with the same rows — so naming
+    // either pays the walk once and a statement joining the two pays it once
+    // too. Eager when the text names one as a table, and lazily on the
+    // engine's `no such table: derived` / `: resolved` as the backstop for a
+    // spelling the text search misses. Only the fields the statement can read are
     // derived, so only the sources those need are consulted; the view
     // keeps every column, NULL where nothing was derived. Stdin has no
     // history and no row. Transient in a `--db` export: the value is not
@@ -705,6 +731,9 @@ async function runSql(
           content: e.content,
           extracted: e.own,
         }));
+      // The run's columns: the built-ins and the configured command keys
+      // (0042), so a statement reading a command's field runs the command.
+      const commands = commandsOf(ctx.config?.derive);
       const records = await deriveForTable(
         inputs,
         {
@@ -712,17 +741,24 @@ async function runSql(
           base: ctx.base,
           ...(ctx.configDir !== undefined ? { configDir: ctx.configDir } : {}),
           config: ctx.config,
+          cache: ctx.cache,
         },
         "narrow derive.sources in manni.config.yaml",
-        fieldsForSql(sql),
+        fieldsForSql(sql, derivableFields(commands)),
       );
-      createDerivedView(db, records);
+      createDerivedView(db, records, derivedColumns(commands));
+      // `resolved` (0040) is the join of the two, so it is built from the
+      // same `dataColumns` `createDocsTable` was given — the view's asserted
+      // side reads those columns by name, and a list recomputed here could
+      // disagree with the table's (a SET target the scan added has a column
+      // in `docs` and must have one in `resolved`).
+      createResolvedView(db, dataColumns, commands);
       derivedTable.built = true;
     };
     if (sql === "") {
       return { columns: [], rows: [], ...(dbInfo ? { db: dbInfo } : {}) };
     }
-    if (mentionsDerived(sql)) await buildDerived();
+    if (mentionsDerived(sql) || mentionsResolved(sql)) await buildDerived();
 
     // ATTACH and VACUUM INTO write files of their own, outside the table the
     // effect gate below watches — the only statements refused by name. The
@@ -811,15 +847,16 @@ async function runSql(
           // whatever DML the first run already did.
           throw new MissingCollectionView();
         }
-        // The same backstop for the `derived` table (0040), for the one
-        // spelling the raw-text search cannot see. Same invariant: raised
-        // only from this prepare-time catch.
+        // The same backstop for the derived channel's tables (0040), for the
+        // one spelling the raw-text search cannot see. Either name signals the
+        // one build that makes both. Same invariant: raised only from this
+        // prepare-time catch.
+        const missingBare = missing?.replace(/^(main|temp)\./i, "").toLowerCase();
         if (
-          missing !== undefined &&
           !derivedTable.built &&
-          missing.replace(/^(main|temp)\./i, "").toLowerCase() === DERIVED_VIEW
+          (missingBare === DERIVED_VIEW || missingBare === RESOLVED_VIEW)
         ) {
-          throw new MissingDerivedView();
+          throw new MissingDerivedTable();
         }
         refuseSqlError(err);
       }
@@ -925,9 +962,9 @@ async function runSql(
     try {
       return await runOnce();
     } catch (err) {
-      if (err instanceof MissingDerivedView) {
-        // The prepare named the derived table with no view yet: derive,
-        // build it, and re-run the closure — the same one-retry shape as the
+      if (err instanceof MissingDerivedTable) {
+        // The prepare named `derived` or `resolved` with no view yet: derive,
+        // build both, and re-run the closure — the same one-retry shape as the
         // collections below, for the same reasons.
         await buildDerived();
         return await runOnce();
@@ -945,14 +982,15 @@ async function runSql(
       return await runOnce();
     }
   } finally {
-    // A `--db` export must not carry the derived table: it is recomputed
-    // from the evidence on every run, and a file that froze it would hand a
-    // later reader a stale value with no evidence behind it. In memory the
-    // whole database goes with the handle, so only the export needs the
-    // drop.
+    // A `--db` export must not carry the derived channel's tables: they are
+    // recomputed from the evidence on every run, and a file that froze one
+    // would hand a later reader a stale value with no evidence behind it. In
+    // memory the whole database goes with the handle, so only the export
+    // needs the drop. `resolved` goes first: it reads the backing table, and
+    // an export must never carry a view over a table it no longer has.
     if (target && derivedTable.built) {
       db.exec(
-        `DROP VIEW IF EXISTS ${DERIVED_VIEW}; DROP TABLE IF EXISTS ${DERIVED_ROWS}`,
+        `DROP VIEW IF EXISTS ${RESOLVED_VIEW}; DROP VIEW IF EXISTS ${DERIVED_VIEW}; DROP TABLE IF EXISTS ${DERIVED_ROWS}`,
       );
     }
     db.close();

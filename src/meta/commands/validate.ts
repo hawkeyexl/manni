@@ -70,12 +70,17 @@ import {
   deriveMetadata,
   type DeriveResult,
 } from "../core/derive/index.js";
-import { fieldsForSql, mentionsDerived } from "../core/derive/table.js";
+import { commandsOf } from "../core/derive/config.js";
+import {
+  fieldsForSql,
+  mentionsDerived,
+  mentionsResolved,
+} from "../core/derive/table.js";
 import {
   compareDerived,
+  derivableFields,
   DERIVE_SOURCES,
   staleFindings,
-  type DerivableField,
   type DerivedRecord,
   type DeriveInput,
 } from "../core/derive/types.js";
@@ -127,6 +132,12 @@ export interface ValidateOptions {
    * in charge, which itself defaults to off.
    */
   offline?: boolean;
+  /**
+   * `--no-cache` (false): ask GitHub or GitLab again rather than reading the
+   * review cache. It reaches the comparison and any check reading the
+   * `derived` table; absent leaves the cache on.
+   */
+  cache?: boolean;
   /**
    * `--no-checks` (false): skip the config's named corpus checks for this
    * run. Absent leaves them on — they still only run when the resolved file
@@ -463,11 +474,14 @@ export async function runValidate(
     deriveConfig !== undefined &&
     deriveConfig.fields.length > 0 &&
     opts.derive !== false;
-  // A corpus check naming the `derived` table needs the same inputs, content
-  // included (the git source hashes it to spot an uncommitted body), so the
-  // one list serves both — and fills only when something will read it.
+  // A corpus check naming the `derived` or `resolved` table needs the same
+  // inputs, content included (the git source hashes it to spot an uncommitted
+  // body), so the one list serves both — and fills only when something will
+  // read it. Both names count: a check reading `resolved` alone in a repo
+  // with no managed fields would otherwise keep no inputs, derive nothing,
+  // and read every column NULL without saying so.
   const derivedChecks = checksWillRun
-    ? configuredChecks.filter((c) => mentionsDerived(c.query))
+    ? configuredChecks.filter((c) => mentionsDerived(c.query) || mentionsResolved(c.query))
     : [];
   const checksNeedDerived = derivedChecks.length > 0;
   const deriveInputs: DeriveInput[] = [];
@@ -479,8 +493,12 @@ export async function runValidate(
   // for one. A source that cannot answer is the run's error either way — a
   // half-derived comparison would read as "all current", the false green
   // the channel refuses — and the hint names the reader that asked.
-  const deriveFields = new Set<DerivableField>(deriveWillRun ? deriveConfig.fields : []);
-  for (const c of derivedChecks) for (const f of fieldsForSql(c.query)) deriveFields.add(f);
+  // The configured commands (0042) are part of both: a command's field is
+  // managed like a built-in one, and is a column the checks can read.
+  const deriveCommands = commandsOf(deriveConfig);
+  const deriveFields = new Set<string>(deriveWillRun ? deriveConfig.fields : []);
+  const readable = derivableFields(deriveCommands);
+  for (const c of derivedChecks) for (const f of fieldsForSql(c.query, readable)) deriveFields.add(f);
   const derivedOnce = once(async (): Promise<DeriveResult> => {
     const derived = await deriveMetadata(deriveInputs, {
       cwd,
@@ -491,7 +509,8 @@ export async function runValidate(
       ...(deriveConfig?.codeowners !== undefined
         ? { codeowners: deriveConfig.codeowners }
         : {}),
-      cache: true,
+      ...(deriveCommands !== undefined ? { commands: deriveCommands } : {}),
+      cache: opts.cache ?? true,
       now: () => new Date(),
     });
     assertSourcesAvailable(
@@ -727,6 +746,9 @@ export async function runValidate(
         // here is not needed. Built only when asked for, because building
         // it spawns git.
         derive: async () => (await derivedOnce()).records,
+        // Its columns include the configured commands' keys (0042), which a
+        // check's context cannot read from a config since 0041.
+        ...(deriveCommands !== undefined ? { commands: deriveCommands } : {}),
       });
       const byFile = new Map(results.map((r) => [r.file, r]));
       for (const [file, errs] of findings) {

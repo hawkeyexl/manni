@@ -41,14 +41,16 @@ import {
 import { resolveElements } from "../core/resolve-schema.js";
 import { writeFileAtomic } from "../core/write-file.js";
 import { assertSourcesAvailable, deriveMetadata } from "../core/derive/index.js";
+import { commandsOf } from "../core/derive/config.js";
 import {
   compareDerived,
   DERIVABLE_FIELDS,
   DERIVE_SOURCES,
-  isDerivableField,
+  isBuiltinField,
   isDeriveSource,
   staleFindings,
   type DerivableField,
+  type DeriveCommand,
   type DerivedField,
   type DeriveInput,
   type DeriveSource,
@@ -171,7 +173,10 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     );
   }
 
-  const fields = resolveFields(opts.fields, config?.derive?.fields);
+  // The configured commands (0042): a key of theirs is as derivable as a
+  // built-in field, and the source runs them where the config lives.
+  const commands = commandsOf(config?.derive);
+  const fields = resolveFields(opts.fields, config?.derive?.fields, commands);
   // `loadConfig` refuses a `derive.fields` entry a manifest owns; the same
   // rule holds for `--fields`, which bypasses the config. Every declared
   // collection counts, not only the selected ones, and the config's `keys:`
@@ -283,6 +288,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     sources,
     fields,
     codeowners: config?.derive?.codeowners,
+    commands,
     cache: opts.cache ?? true,
     now: opts.now ?? (() => new Date()),
     reviews: opts.reviews,
@@ -383,6 +389,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
 function resolveFields(
   flag: string[] | undefined,
   configured: readonly DerivableField[] | undefined,
+  commands: Readonly<Record<string, DeriveCommand>> | undefined,
 ): DerivableField[] {
   const names = flag ?? configured;
   if (names === undefined || names.length === 0) {
@@ -392,9 +399,9 @@ function resolveFields(
   }
   const out: DerivableField[] = [];
   for (const name of names) {
-    if (!isDerivableField(name)) {
+    if (!isBuiltinField(name) && !(commands !== undefined && Object.hasOwn(commands, name))) {
       throw new DocmetaError(
-        `"${name}" is not derivable; derivable fields are ${DERIVABLE_FIELDS.join(", ")}`,
+        `"${name}" is not derivable; derivable fields are ${DERIVABLE_FIELDS.join(", ")}, or any key with an entry in derive.commands`,
       );
     }
     if (!out.includes(name)) out.push(name);
