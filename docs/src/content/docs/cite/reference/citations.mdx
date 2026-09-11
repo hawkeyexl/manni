@@ -426,7 +426,7 @@ once. A range longer than 5,000 lines is `entry-invalid`.
 |---|---|---|---|
 | `claim-moved` | The pinned page text is found verbatim at other lines, so nothing drifted. `update` rewrites `claim.lines`. | `fetch-timeout: the claim moved from line 9 to line 11.` | `notice` |
 | `claim-moved-ambiguous` | The pinned text is found verbatim at several places. `update` skips it. | `fetch-timeout: the claim at line 9 now appears at lines 11 and 30.` | `warning` |
-| `claim-changed` | The pinned page text is gone: the sentence was edited. `update --accept` re-pins it. | `fetch-timeout: the claim at line 9 has changed since it was pinned.` | `warning` |
+| `claim-changed` | The pinned page text is gone, so the sentence was edited. `update --accept` re-pins it. | `fetch-timeout: the claim at line 9 has changed since it was pinned.` | `warning` |
 
 `claim-changed` defaults to a **warning**, not an error. It fires on any edit
 to a pinned paragraph, including a typo fix beside the cited sentence, and
@@ -479,7 +479,7 @@ private path are known strings, and asserts neither appears.
 
 | Term | Meaning |
 |---|---|
-| **citation** | One entry: a source end, optionally a claim end, and optionally an id and a quote flag. Lives in a page's `citations` list or in a sidecar manifest. |
+| **citation** | One entry, with a source end, optionally a claim end, and optionally an id and a quote flag. Lives in a page's `citations` list or in a sidecar manifest. |
 | **claim** | The page text a citation supports, pinned by body lines and a hash. Not a copy of the sentence. |
 | **source** | The file, the lines, the pin and the commit the claim rests on. |
 | **pin** | An `integrity` value: the hash of an end's lines under the rule, at the moment it was minted. A record of the past, not a copy of the present, which is why it is stored rather than recomputed. |

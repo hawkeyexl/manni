@@ -269,7 +269,7 @@ sees the frontmatter channel, and the manifest channel through external
 metadata. cite validates the entries itself, with Ajv against a bundled copy
 of the draft entry schema, and this record is where that is said.
 
-## The sidecar: citations as external metadata
+## Citations in a sidecar manifest
 
 An entry lives in the page's frontmatter, or in an external-metadata manifest
 (0037, 0041) the collection declares. There is no new config key. A collection
@@ -355,7 +355,7 @@ its own.
 | `source-missing` | `missing` | error | The file is gone, or does not decrypt under the current key. |
 | `claim-moved` | new | notice | The pinned page text is found verbatim at other lines, so nothing drifted. `update` rewrites `claim.lines`. |
 | `claim-moved-ambiguous` | new | warning | The pinned page text is found verbatim at several places. `update` skips it. |
-| `claim-changed` | replaces `claim-missing` | warning | The pinned page text is gone: the sentence was edited. `update --accept` re-pins it. |
+| `claim-changed` | replaces `claim-missing` | warning | The pinned page text is gone, so the sentence was edited. `update --accept` re-pins it. |
 | `marker-orphan` | `statement-orphan` | error | A marker names an id no entry has. |
 | `marker-invalid` | `statement-invalid` | error | A malformed marker, including one carrying a JSON payload. |
 | `marker-repeated` | the second use of `claim-ambiguous` | warning | Two markers name one id; the first anchors it. |
