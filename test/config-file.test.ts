@@ -213,6 +213,29 @@ describe("family config discovery", () => {
     await expect(run).rejects.not.toThrow(/hunter2|value: x/);
   });
 
+  it("parses encryptionKeyPrevious, present only while a rotation is unfinished (0045)", async () => {
+    const previous = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    const root = await tree({
+      "manni.config.yaml": `encryptionKey: ${KEY}\nencryptionKeyPrevious: ${previous}\nmeta: {}\n`,
+    });
+    const found = await findConfigFile(root, META);
+    expect(found?.encryptionKey).toBe(KEY);
+    expect(found?.encryptionKeyPrevious).toBe(previous);
+  });
+
+  it("a malformed encryptionKeyPrevious is refused without echoing it", async () => {
+    class MyError extends Error {}
+    const root = await tree({
+      "manni.config.yaml": `encryptionKey: ${KEY}\nencryptionKeyPrevious: hunter2\nmeta: {}\n`,
+    });
+    const run = findConfigFile(root, { ...META, toError: (m) => new MyError(m) });
+    await expect(run).rejects.toBeInstanceOf(MyError);
+    await expect(run).rejects.toThrow(
+      'manni.config.yaml: "encryptionKeyPrevious" must be at least 32 hex or base64url characters.',
+    );
+    await expect(run).rejects.not.toThrow(/hunter2/);
+  });
+
   it("a legacy file's encryptionKey is not read: its whole document is the tool's section", async () => {
     const root = await tree({
       "docmeta.config.yaml": `encryptionKey: ${KEY}\npaths: [old]\n`,

@@ -4,3 +4,6 @@ export * from "./meta/index.js";
 // metadata tool's flat export or with each other's:
 // `import { cite } from "@hawkeyexl/manni"`.
 export * as cite from "./cite/index.js";
+// The family encryption key's domain (proposal 0045): its command cores and
+// the encryption primitives. `import { key } from "@hawkeyexl/manni"`.
+export * as key from "./key/index.js";

@@ -65,7 +65,7 @@ decrypts each path, and checks the cited lines. The
 | Command | Does |
 | --- | --- |
 | `manni key set [value]` | Writes `encryptionKey:` to `manni.config.yaml`, and creates the file when there is none. Without a value it generates 64 random hex characters, 256 bits. It never prints the key. |
-| `manni key rotate [paths...]` | Re-encrypts every encrypted value under a new key, then writes the new key. Pages and key are written only when every value re-encrypted. |
+| `manni key rotate [paths...]` | Re-encrypts every encrypted value under a new key, then writes the new key. Nothing is written unless every value re-encrypts, and a run cut off part of the way finishes when you run it again. |
 
 There is no default subcommand. `manni key` alone prints usage and exits `2`.
 
@@ -113,6 +113,13 @@ Encryption key written to manni.config.yaml.
 
 The page changed and the key changed, and `manni meta validate` still passes.
 An `owner: platform` typed in by hand fails it, exit `1`.
+
+The new key reaches the config before the first page does, with the old key
+beside it until the last page is written. A rotation cut off part of the way
+therefore loses no key and no value. Run `manni key rotate` again and it
+finishes. The
+[CLI reference](/manni/key/reference/cli/#an-interrupted-rotation) has the
+order of the writes.
 
 ## Where the key lives
 

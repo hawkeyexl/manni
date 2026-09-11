@@ -331,7 +331,7 @@ Encryption key written to manni.config.yaml.
 $ manni key rotate --collection site --to "$NEW_KEY"
 docs/auth.md: /owner  ~AQx7…  -> ~AQp2…
 1 value re-encrypted in 1 file, 0 skipped
-Key not written: this run covered part of the family. Write it with `manni key rotate` or `manni key set`.
+Key not written: this run covered part of the family. Finish with a whole run under the same key: `manni key rotate --to <the same value>`.
 # exit 0
 
 $ MANNI_ENCRYPTION_KEY=… manni key rotate --to "$NEW_KEY"
@@ -401,7 +401,10 @@ A value that already decrypts under the new key counts as done, so an
 interrupted rotation can be run again (stress test 6). Pages are re-encrypted
 in memory first. Pages and the key are written only when every value could be
 re-encrypted. A string with the ciphertext shape that decrypts under neither
-key is skipped and reported, and one skip means nothing is written.
+key is skipped and reported, and one skip means nothing is written. A whole
+run then writes the key first. The config gets the new key, with the old one
+beside it as `encryptionKeyPrevious:`. The pages follow, and last the config
+loses the old key (stress test 6).
 
 When a citation baseline exists, rotation ends with a line saying it needs
 re-recording (stress test 13).
@@ -543,10 +546,34 @@ pages no longer decrypt under the current key. They would be skipped as
 unreadable, and the rotation could never finish.
 
 **Changed as a result:** a value that already decrypts under the new key counts
-as done. Running again with the same `--to` resumes where the last run stopped.
-The same rule makes narrowed runs composable (stress test 7). Pages are
-re-encrypted in memory before anything is written, so a value that cannot be
-re-encrypted stops the run before its first write.
+as done, and the key is written first. The same rule makes narrowed runs
+composable (stress test 7). Pages are re-encrypted in memory before anything is
+written, so a value that cannot be re-encrypted stops the run before its first
+write. A whole run whose key comes from the config then writes in three steps:
+
+1. The config, with `encryptionKey:` the new key and `encryptionKeyPrevious:`
+   the old one, in one atomic write.
+2. The pages.
+3. The config again, without `encryptionKeyPrevious:`.
+
+A run killed at any point leaves every value readable under one of the two keys
+the config names. A key the run generated for itself reaches the config before
+any page is encrypted under it, so it is never lost with the process. The next
+`manni key rotate` finds `encryptionKeyPrevious:` and finishes the rotation. It
+re-encrypts from the previous key to the current one, and counts the values
+already under the current key as done. Then it removes the previous key. It says
+`Finished the interrupted rotation in manni.config.yaml.` before its counts.
+While the previous key is present, `key set`, a narrowed run and any `--to`
+other than the current key are refused, exit 2:
+
+```
+A rotation is unfinished in manni.config.yaml. Run `manni key rotate` with no --to to finish it.
+```
+
+A key from `MANNI_ENCRYPTION_KEY` never touches the config (stress test 14), so
+it needs none of this. Its pages are finished the first way: a second run with
+the same `--to`. `encryptionKeyPrevious:` is shape-checked like
+`encryptionKey:`, never echoed, and read only by `manni key rotate`.
 
 ### 7. A narrowed run could write a key parts of the family were not re-encrypted under
 
@@ -556,12 +583,19 @@ until something read it. `--collection site` has the same hole for every other
 collection.
 
 **Changed as a result:** a narrowed run, with positional paths or
-`--collection`, requires `--to` and never writes the key, and it ends by saying
-so. The operator runs it area by area with one `--to`. The last step is a
-whole run with the same `--to`. The values already rotated count as done
-(stress test 6), and the key is written. The residue is a page no collection
-declares. A whole run covers the declared collections, so it does not reach
-that page, and a narrowed run over it with the same `--to` does.
+`--collection`, requires `--to` and never writes the key. Its last line says
+how to finish:
+
+```
+Key not written: this run covered part of the family. Finish with a whole run under the same key: `manni key rotate --to <the same value>`.
+```
+
+The operator runs it area by area with one `--to`. The last step is a whole
+run with the same `--to`. The values already rotated count as done (stress
+test 6). The key is written in stress test 6's order: the new key beside the
+old one, the pages, then the old key removed. The residue is a page no
+collection declares. A whole run covers the declared collections, so it does
+not reach that page, and a narrowed run over it with the same `--to` does.
 
 ### 8. The same plaintext under two contexts would reuse a GCM nonce
 
@@ -695,6 +729,28 @@ domain is a tool, or a family resource with verbs. 0034 is not edited. This
 record is where the extension lives, and CLAUDE.md's grammar paragraph cites
 it. The rest of 0034 holds for `key`: spelled verbs, no default subcommand, one
 separator per list.
+
+### 16. A new family file would hide a legacy per-tool file
+
+With no family file, `manni key set` creates `manni.config.yaml` at the git
+root. A repository that still keeps the metadata tool's options in
+`docmeta.config.yaml` there would lose them. Discovery reads the family file
+first in a directory, and a family file carrying `encryptionKey:` is every
+tool's config (stress test 3). `manni meta` would then read the new file's
+empty section and stop reading the legacy one. The key write would succeed and
+silently turn off every option the repository had.
+
+**Changed as a result:** `key set` refuses to create `manni.config.yaml`
+beside `docmeta.config.yaml` or `docmeta.config.yml`, exit 2:
+
+```
+docmeta.config.yaml is a single-tool config; a manni.config.yaml beside it would hide it. Move its keys under meta: in manni.config.yaml first.
+```
+
+A family file that already sits beside a legacy one is edited as usual,
+because it already wins there. `-c` at a single-tool file is refused, as the
+key prompt refuses one. A top-level key would turn that tool's whole document
+into a family file.
 
 ## Verification
 

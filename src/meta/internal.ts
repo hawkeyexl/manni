@@ -57,3 +57,6 @@ export {
   isMachineFormat,
 } from "./reporters/index.js";
 export { extractorByName, listFormats } from "./extractors/index.js";
+// `manni key set` refuses to create a family file beside one of these, which
+// the new file would hide from the metadata tool's discovery.
+export { LEGACY_CONFIG_NAMES } from "./core/config.js";

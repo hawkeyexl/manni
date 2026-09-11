@@ -12,6 +12,7 @@ import { PassThrough } from "node:stream";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   findConfigFile,
+  readFamilyConfigFile,
   type ConfigFile,
   type ConfigFileOptions,
 } from "../src/shared/config-file.js";
@@ -278,6 +279,83 @@ describe("writeEncryptionKey", () => {
       writeEncryptionKey({ file: null, key: "short", cwd: root, toError }),
     ).rejects.toBeInstanceOf(KeyError);
     expect(existsSync(join(root, "manni.config.yaml"))).toBe(false);
+  });
+
+  it("previous sets encryptionKeyPrevious beside the key in one write, and null removes it", async () => {
+    const root = repo({ "manni.config.yaml": `meta: {}\nencryptionKey: ${OTHER}\n` });
+    const path = join(root, "manni.config.yaml");
+    const file = await findConfigFile(root, CITE);
+    await writeEncryptionKey({ file, key: KEY, previous: OTHER, cwd: root, toError });
+    expect(read(path)).toBe(`meta: {}\nencryptionKey: ${KEY}\nencryptionKeyPrevious: ${OTHER}\n`);
+    const during = await findConfigFile(root, CITE);
+    expect(during?.encryptionKeyPrevious).toBe(OTHER);
+
+    // Omitted, an existing previous key is left where it is.
+    await writeEncryptionKey({ file: during, key: KEY, cwd: root, toError });
+    expect(read(path)).toBe(`meta: {}\nencryptionKey: ${KEY}\nencryptionKeyPrevious: ${OTHER}\n`);
+
+    await writeEncryptionKey({ file: during, key: KEY, previous: null, cwd: root, toError });
+    expect(read(path)).toBe(`meta: {}\nencryptionKey: ${KEY}\n`);
+  });
+
+  it("refuses a previous key that is not key-shaped, without echoing it", async () => {
+    const root = repo({ "manni.config.yaml": "meta: {}\n" });
+    const file = await findConfigFile(root, CITE);
+    const run = writeEncryptionKey({ file, key: KEY, previous: "hunter2", cwd: root, toError });
+    await expect(run).rejects.toBeInstanceOf(KeyError);
+    await expect(run).rejects.not.toThrow(/hunter2/);
+    expect(read(join(root, "manni.config.yaml"))).toBe("meta: {}\n");
+  });
+});
+
+describe("readFamilyConfigFile", () => {
+  it("reads an explicit family file whatever sections it carries, as a family file", async () => {
+    const root = repo({ "ops/manni.config.yaml": "meta:\n  allowEmpty: true\n" });
+    const file = await readFamilyConfigFile("ops/manni.config.yaml", root, toError);
+    expect(file).toMatchObject({
+      path: join(root, "ops", "manni.config.yaml"),
+      source: "ops/manni.config.yaml",
+      kind: "explicit",
+      wrapped: true,
+      value: null,
+    });
+    await writeEncryptionKey({ file, key: KEY, cwd: root, toError });
+    expect(read(join(root, "ops", "manni.config.yaml"))).toBe(
+      `meta:\n  allowEmpty: true\nencryptionKey: ${KEY}\n`,
+    );
+  });
+
+  it("reads any file carrying a family key, or an empty one, as a family file", async () => {
+    const root = repo({ "a.yaml": `encryptionKey: ${KEY}\n`, "b.yaml": "" });
+    expect((await readFamilyConfigFile("a.yaml", root, toError)).wrapped).toBe(true);
+    expect((await readFamilyConfigFile("b.yaml", root, toError)).wrapped).toBe(true);
+  });
+
+  it("reads a single-tool file whole, so a key write refuses it", async () => {
+    const root = repo({ "docmeta.config.yaml": "allowEmpty: true\n" });
+    const file = await readFamilyConfigFile("docmeta.config.yaml", root, toError);
+    expect(file.wrapped).toBe(false);
+    await expect(writeEncryptionKey({ file, key: KEY, cwd: root, toError })).rejects.toThrow(
+      /^docmeta\.config\.yaml is a single-tool config file/,
+    );
+  });
+
+  it("carries the file's keys, and tolerates a malformed one, as findFamilyConfigFile does", async () => {
+    const root = repo({
+      "good.yaml": `encryptionKey: ${KEY}\nencryptionKeyPrevious: ${OTHER}\n`,
+      "bad.yaml": "encryptionKey: hunter2\n",
+    });
+    const good = await readFamilyConfigFile("good.yaml", root, toError);
+    expect(good.encryptionKey).toBe(KEY);
+    expect(good.encryptionKeyPrevious).toBe(OTHER);
+    expect((await readFamilyConfigFile("bad.yaml", root, toError)).encryptionKey).toBeUndefined();
+  });
+
+  it("is an error when the file is missing", async () => {
+    const root = repo({});
+    await expect(readFamilyConfigFile("nope.yaml", root, toError)).rejects.toThrow(
+      'Config file not found: "nope.yaml".',
+    );
   });
 });
 

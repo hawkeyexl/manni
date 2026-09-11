@@ -14,6 +14,7 @@ import { isDeepStrictEqual } from "node:util";
 import { isMap, parseDocument, parse as parseYaml, stringify } from "yaml";
 import {
   ENCRYPTION_KEY_FIELD,
+  ENCRYPTION_KEY_PREVIOUS_FIELD,
   FAMILY_CONFIG_NAMES,
   MOOSE_CONFIG_NAMES,
   type ConfigFile,
@@ -22,7 +23,12 @@ import { isValidEncryptionKey } from "./encryption.js";
 import { findGitRoot } from "./git-root.js";
 import { writeTextAtomic } from "./write-file.js";
 
-export { ENCRYPTION_KEY_FIELD, findFamilyConfigFile } from "./config-file.js";
+export {
+  ENCRYPTION_KEY_FIELD,
+  ENCRYPTION_KEY_PREVIOUS_FIELD,
+  findFamilyConfigFile,
+  readFamilyConfigFile,
+} from "./config-file.js";
 
 /** The environment variable that wins over the config's key. */
 export const ENCRYPTION_KEY_ENV = "MANNI_ENCRYPTION_KEY";
@@ -122,8 +128,20 @@ async function defaultTarget(cwd: string): Promise<Target> {
   return { path, source: relativeSource(cwd, path), text: null };
 }
 
-/** `text` with the top-level key set, comments and key order kept. */
-function withKey(text: string, key: string, source: string, toError: ToError): string {
+/**
+ * What a write does with `encryptionKeyPrevious:`: a string sets it, `null`
+ * removes it, and `undefined` leaves whatever is there.
+ */
+type Previous = string | null | undefined;
+
+/** `text` with the top-level keys set, comments and key order kept. */
+function withKey(
+  text: string,
+  key: string,
+  previous: Previous,
+  source: string,
+  toError: ToError,
+): string {
   const doc = parseDocument(text);
   const [first] = doc.errors;
   if (first !== undefined) {
@@ -135,6 +153,8 @@ function withKey(text: string, key: string, source: string, toError: ToError): s
   // Replaces an existing key in place, appends a new one, and turns an empty
   // or comment-only document into a one-key mapping.
   doc.set(ENCRYPTION_KEY_FIELD, key);
+  if (typeof previous === "string") doc.set(ENCRYPTION_KEY_PREVIOUS_FIELD, previous);
+  if (previous === null) doc.delete(ENCRYPTION_KEY_PREVIOUS_FIELD);
   return doc.toString();
 }
 
@@ -151,11 +171,20 @@ function verify(
   before: string | null,
   after: string,
   key: string,
+  previous: Previous,
   source: string,
   toError: ToError,
 ): void {
   const old: unknown = before === null ? null : parseYaml(before);
-  const expected = { ...(isMapping(old) ? old : {}), [ENCRYPTION_KEY_FIELD]: key };
+  // Every old key as it was, the key set, and the previous key set, removed
+  // or left alone as `previous` says.
+  const expected = Object.fromEntries(
+    Object.entries({
+      ...(isMapping(old) ? old : {}),
+      [ENCRYPTION_KEY_FIELD]: key,
+      ...(typeof previous === "string" ? { [ENCRYPTION_KEY_PREVIOUS_FIELD]: previous } : {}),
+    }).filter(([name]) => previous !== null || name !== ENCRYPTION_KEY_PREVIOUS_FIELD),
+  );
   const reread: unknown = parseYaml(after);
   if (!isMapping(reread) || !isDeepStrictEqual(reread, expected)) {
     throw toError(
@@ -173,6 +202,10 @@ function verify(
  * when there is none. A single-tool file (legacy, or an explicit `-c` file
  * read whole as one tool's section) is refused. `dryRun` does everything but
  * the write, so a caller can name the target before asking about it.
+ *
+ * `previous` is for `manni key rotate` alone: a string writes it as
+ * `encryptionKeyPrevious:` in the same atomic write as the key, `null`
+ * removes it, and omitted leaves the file's own. Never echoed either.
  */
 export async function writeEncryptionKey(opts: {
   file: ConfigFile | null;
@@ -180,20 +213,29 @@ export async function writeEncryptionKey(opts: {
   cwd: string;
   toError: ToError;
   dryRun?: boolean;
+  previous?: string | null;
 }): Promise<{ path: string; source: string; created: boolean }> {
-  const { file, key, toError } = opts;
+  const { file, key, toError, previous } = opts;
   if (!isValidEncryptionKey(key)) {
     throw toError(
       `The ${ENCRYPTION_KEY_FIELD} must be at least 32 hex or base64url characters.`,
+    );
+  }
+  if (typeof previous === "string" && !isValidEncryptionKey(previous)) {
+    throw toError(
+      `The ${ENCRYPTION_KEY_PREVIOUS_FIELD} must be at least 32 hex or base64url characters.`,
     );
   }
   const target =
     file === null ? await defaultTarget(opts.cwd) : await fileTarget(file, toError);
   const text =
     target.text === null
-      ? stringify({ [ENCRYPTION_KEY_FIELD]: key })
-      : withKey(target.text, key, target.source, toError);
-  verify(target.text, text, key, target.source, toError);
+      ? stringify({
+          [ENCRYPTION_KEY_FIELD]: key,
+          ...(typeof previous === "string" ? { [ENCRYPTION_KEY_PREVIOUS_FIELD]: previous } : {}),
+        })
+      : withKey(target.text, key, previous, target.source, toError);
+  verify(target.text, text, key, previous, target.source, toError);
   if (opts.dryRun !== true) await writeTextAtomic(target.path, text);
   return { path: target.path, source: target.source, created: target.text === null };
 }

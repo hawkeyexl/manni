@@ -107,7 +107,7 @@ export default tseslint.config(
     // change to a sibling, and would let a sibling depend on something the
     // package never promised. `docevals` is named so the rule is already in
     // place when that branch merges; the glob is harmless while it is absent.
-    files: ["src/{cite,docevals}/**/*.ts"],
+    files: ["src/{cite,docevals,key}/**/*.ts"],
     rules: {
       "no-restricted-imports": [
         "error",

@@ -34,7 +34,7 @@
  * `-c ./anything.yaml` needs no filename sniffing and no flag.
  */
 import { readFile } from "node:fs/promises";
-import { dirname, join, relative, resolve } from "node:path";
+import { basename, dirname, join, relative, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { parseCollections, type CollectionConfig } from "./collections.js";
 import { isValidEncryptionKey } from "./encryption.js";
@@ -55,6 +55,14 @@ export const MOOSE_CONFIG_NAMES: readonly string[] = [
 
 /** The top-level key holding the family encryption key (proposal 0045). */
 export const ENCRYPTION_KEY_FIELD = "encryptionKey";
+
+/**
+ * The top-level key holding the key a rotation is replacing (proposal 0045).
+ * Present only while a rotation is unfinished: `manni key rotate` writes it
+ * beside the new key before it touches a page, and removes it once every page
+ * is written. Read only by `manni key rotate`, which finishes the rotation.
+ */
+export const ENCRYPTION_KEY_PREVIOUS_FIELD = "encryptionKeyPrevious";
 
 export interface ConfigFileOptions {
   /** The tool's key in a family file, e.g. `"meta"`. */
@@ -104,6 +112,12 @@ export interface ConfigFile {
    * read it through `resolveEncryptionKey`, not directly.
    */
   encryptionKey?: string;
+  /**
+   * The document's top-level `encryptionKeyPrevious:`, validated here as
+   * `encryptionKey` is. Present only while a rotation is unfinished, and read
+   * only by `manni key rotate`, which finishes it.
+   */
+  encryptionKeyPrevious?: string;
 }
 
 type ToError = (message: string) => Error;
@@ -200,16 +214,48 @@ function encryptionKeyOf(
   document: Document,
   source: string,
   toError: ToError,
-): { encryptionKey?: string } {
+): { encryptionKey?: string; encryptionKeyPrevious?: string } {
   const { doc } = document;
-  if (doc === null || !Object.hasOwn(doc, ENCRYPTION_KEY_FIELD)) return {};
-  const value = doc[ENCRYPTION_KEY_FIELD];
-  if (!isValidEncryptionKey(value)) {
-    throw toError(
-      `${source}: "${ENCRYPTION_KEY_FIELD}" must be at least 32 hex or base64url characters. Run \`manni key set\` to generate one.`,
-    );
+  if (doc === null) return {};
+  const keys: { encryptionKey?: string; encryptionKeyPrevious?: string } = {};
+  if (Object.hasOwn(doc, ENCRYPTION_KEY_FIELD)) {
+    const value = doc[ENCRYPTION_KEY_FIELD];
+    if (!isValidEncryptionKey(value)) {
+      throw toError(
+        `${source}: "${ENCRYPTION_KEY_FIELD}" must be at least 32 hex or base64url characters. Run \`manni key set\` to generate one.`,
+      );
+    }
+    keys.encryptionKey = value;
   }
-  return { encryptionKey: value };
+  // The key an unfinished rotation is replacing. Key material too, so the
+  // same shape rule and the same silence about the value. There is no advice
+  // to generate one: `manni key rotate` writes it, and nothing else should.
+  if (Object.hasOwn(doc, ENCRYPTION_KEY_PREVIOUS_FIELD)) {
+    const value = doc[ENCRYPTION_KEY_PREVIOUS_FIELD];
+    if (!isValidEncryptionKey(value)) {
+      throw toError(
+        `${source}: "${ENCRYPTION_KEY_PREVIOUS_FIELD}" must be at least 32 hex or base64url characters.`,
+      );
+    }
+    keys.encryptionKeyPrevious = value;
+  }
+  return keys;
+}
+
+/**
+ * The family keys as `manni key` reads them: only valid ones, and a malformed
+ * one is no error, because replacing it is what the caller is for.
+ */
+function tolerantKeysOf(document: Document): {
+  encryptionKey?: string;
+  encryptionKeyPrevious?: string;
+} {
+  const key = document.doc?.[ENCRYPTION_KEY_FIELD];
+  const previous = document.doc?.[ENCRYPTION_KEY_PREVIOUS_FIELD];
+  return {
+    ...(isValidEncryptionKey(key) ? { encryptionKey: key } : {}),
+    ...(isValidEncryptionKey(previous) ? { encryptionKeyPrevious: previous } : {}),
+  };
 }
 
 function relativeSource(cwd: string, path: string): string {
@@ -341,7 +387,6 @@ export async function findFamilyConfigFile(
         const document = await readDocument(path, source, toError);
         if (document === null) continue;
         if (kind === "moose") warn(mooseWarning(name));
-        const key = document.doc?.[ENCRYPTION_KEY_FIELD];
         return {
           path,
           dir,
@@ -351,10 +396,49 @@ export async function findFamilyConfigFile(
           wrapped: true,
           kind,
           collections: collectionsOf(document, source, toError),
-          ...(isValidEncryptionKey(key) ? { encryptionKey: key } : {}),
+          ...tolerantKeysOf(document),
         };
       }
     }
   }
   return null;
+}
+
+/**
+ * Read an explicit path as a family file, for `manni key set -c`, which writes
+ * the family's key and so belongs to no one tool's section.
+ *
+ * The file is a family file when it is empty, carries a family key, or is
+ * named as one (`manni.config.yaml`, `moose.config.yaml`): its top-level keys
+ * are then sections, whatever they are, and `value` is `null`. Anything else
+ * is read whole as one tool's section (`wrapped: false`), which the key writer
+ * refuses rather than turn into a family file under that tool's feet. Missing
+ * is an error, as it is for `readConfigFile`. Keys are carried as
+ * `findFamilyConfigFile` carries them.
+ */
+export async function readFamilyConfigFile(
+  explicitPath: string,
+  cwd: string,
+  toError: ToError,
+): Promise<ConfigFile> {
+  const path = resolve(cwd, explicitPath);
+  const document = await readDocument(path, explicitPath, toError);
+  if (document === null) {
+    throw toError(`Config file not found: "${explicitPath}".`);
+  }
+  const { doc } = document;
+  const named = [...FAMILY_CONFIG_NAMES, ...MOOSE_CONFIG_NAMES].includes(basename(path));
+  const family =
+    doc === null || named || FAMILY_KEYS.some((key) => Object.hasOwn(doc, key));
+  return {
+    path,
+    dir: dirname(path),
+    source: explicitPath,
+    text: document.text,
+    value: family ? null : doc,
+    wrapped: family,
+    kind: "explicit",
+    collections: collectionsOf(document, explicitPath, toError),
+    ...tolerantKeysOf(document),
+  };
 }
