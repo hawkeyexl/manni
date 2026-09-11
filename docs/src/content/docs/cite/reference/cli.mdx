@@ -295,7 +295,7 @@ the sources, so `--no-sources` and config `sources: false` are refused (exit
 manni cite update [paths...] [options]
 ```
 
-<Aside type="caution">
+<Aside type="caution" title="update writes by default">
 `update` **writes to your pages by default**, like `fill` and `query` on the
 metadata tool. Pass `--dry-run` to see the diffs first, and run it on a clean
 working tree so the rewrite is easy to review.
@@ -451,7 +451,7 @@ the old one.
 manni cite salt rotate [paths...] [options]
 ```
 
-<Aside type="caution">
+<Aside type="caution" title="rotate writes pages and config by default">
 `rotate` **writes to your pages and your config by default**. With
 `MANNI_CITE_SALT` set it writes the pages only. Pass `--dry-run` to see every
 rewrite first, and run it on a clean working tree. Run it where the sources
