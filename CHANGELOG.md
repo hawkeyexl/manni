@@ -4,6 +4,15 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [1.0.1](https://github.com/hawkeyexl/manni/compare/v1.0.0...v1.0.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* **meta:** pass collection memberships through query's writes ([#26](https://github.com/hawkeyexl/manni/issues/26)) ([eb4a4e1](https://github.com/hawkeyexl/manni/commit/eb4a4e15b00933e889018662838654def4f00923))
+* **meta:** prefix the override-collection error with its section ([#25](https://github.com/hawkeyexl/manni/issues/25)) ([272946a](https://github.com/hawkeyexl/manni/commit/272946a0d01fb76d7b567268b05d5534e0c39a66))
+* say what was thrown, and close the docs table's transaction ([#27](https://github.com/hawkeyexl/manni/issues/27)) ([c6765d6](https://github.com/hawkeyexl/manni/commit/c6765d6bd58a77737cf79a47b2c7c0c7e659879e))
+
 # [1.0.0](https://github.com/hawkeyexl/manni/compare/v0.3.0...v1.0.0) (2026-09-11)
 
 
