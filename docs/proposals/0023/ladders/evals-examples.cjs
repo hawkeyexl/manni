@@ -1,4 +1,4 @@
-// Validate the docmeta:evals:1.0.0-proposal.2 example ladder against the draft schema,
+// Validate the manni:evals:1.0.0-proposal.2 example ladder against the draft schema,
 // without registering anything. Run from the worktree root.
 const fs = require("fs");
 const { createRequire } = require("module");
@@ -22,7 +22,7 @@ const cases = [
 
   ["2 list shorthand", true,
 `evals:
-  - The install command is \`npm i -g docmeta\`.
+  - The install command is \`npm i -g manni\`.
   - The stated Node minimum is 24 or later.`],
 
   ["3 mixed list with config references", true,

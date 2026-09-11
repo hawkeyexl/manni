@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "manni:stewardship:1.0.0-proposal.2",
-  "title": "docmeta stewardship vocabulary (1.0.0-proposal.2)",
+  "title": "manni stewardship vocabulary (1.0.0-proposal.2)",
   "description": "Is this page cared for: attribution, ownership, review, the document's own dates, and the anchors that make drift detectable. Every field records a fact a person asserts about the document, rather than one a tool reads off the file. `created` and `last-updated` are here on that line, and proposal.1 left them out on the other one. Git's timestamps answer a neighbouring question: when this path first appeared in this repo, and when any byte of it last moved. That parts company with the document's own history at every migration, split, squashed import, typo fix and bulk frontmatter sweep. It is the same reason `authors` sits here — git records who committed a change, not who wrote the prose. A published page carries no repo, so a stamped date travels with the document where a derived one cannot. The cost is the one proposal.1 named: a hand-typed `last-updated` goes stale quietly, and no JSON Schema can catch that. The review dates are records, not freshness gates: JSON Schema cannot compare a date to today, and deriving the due date from `last-reviewed` + `review-interval` belongs to tooling that can read a clock (any freshness grader reads `last-reviewed`).",
   "type": "object",
   "additionalProperties": true,
