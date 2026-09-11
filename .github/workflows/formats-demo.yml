@@ -126,6 +126,7 @@ jobs:
             --exclude "test/fixtures/external-metadata-overlap/**" \
             --exclude "test/fixtures/checks-collections/**" \
             --exclude "test/fixtures/cite/**" \
+            --exclude "test/fixtures/encrypted/**" 
             --allow-empty -f sarif > manni.sarif
           echo "results=$(jq '.runs[0].results | length' manni.sarif)" >> "$GITHUB_OUTPUT"
 
