@@ -1256,8 +1256,8 @@ describe("runFill — operational errors", () => {
   it("takes the threshold from config when no flag is given", async () => {
     await mkdir(join(dir, "docs"), { recursive: true });
     await writeFile(
-      join(dir, "docmeta.config.yaml"),
-      "paths:\n  - 'docs/**/*.md'\nfill:\n  confidenceThreshold: 0.95\n",
+      join(dir, "manni.config.yaml"),
+      "collections:\n  - name: pages\n    paths:\n      - 'docs/**/*.md'\nmeta:\n  fill:\n    confidenceThreshold: 0.95\n",
       "utf8",
     );
     await writeFile(join(dir, "docs", "page.md"), fixture("no-block.md"), "utf8");
@@ -1359,8 +1359,8 @@ describe("provider selection", () => {
     // satisfies it exactly as --provider does, so a bare --model alongside it is
     // fine — the flag and the config key are not different rules.
     await writeFile(
-      join(dir, "docmeta.config.yaml"),
-      "paths:\n  - '**/*.md'\nfill:\n  provider: openai\n",
+      join(dir, "manni.config.yaml"),
+      "collections:\n  - name: pages\n    paths:\n      - '**/*.md'\nmeta:\n  fill:\n    provider: openai\n",
       "utf8",
     );
     await expect(
@@ -1434,8 +1434,8 @@ describe("provider selection", () => {
 
   it("reads the provider from config when no flag is given", async () => {
     await writeFile(
-      join(dir, "docmeta.config.yaml"),
-      "paths:\n  - '**/*.md'\nfill:\n  provider: antropic\n",
+      join(dir, "manni.config.yaml"),
+      "collections:\n  - name: pages\n    paths:\n      - '**/*.md'\nmeta:\n  fill:\n    provider: antropic\n",
       "utf8",
     );
     // A typo in config is as operational as a typo on the command line.

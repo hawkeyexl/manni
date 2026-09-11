@@ -280,7 +280,7 @@ describe("runDerive", () => {
     );
   });
 
-  it("refuses --fields naming a key a sidecar owns, as the config parser does", async () => {
+  it("refuses --fields naming a key a collection's manifest owns, as loadConfig does", async () => {
     const { dir } = stageCorpus();
     // The manifest is never loaded here; the config's `keys` list is the
     // whole claim, so a trivial file is enough.
@@ -289,26 +289,33 @@ describe("runDerive", () => {
       dir,
       "manni.config.yaml",
       [
+        "collections:",
+        "  - name: site",
+        '    paths: ["docs/**/*.md"]',
+        "    externalMetadata:",
+        "      - file: ./owners.yaml",
+        "        keys: [owner]",
+        "  - name: faq",
+        '    paths: ["docs/faq.md"]',
         "meta:",
-        "  paths:",
-        '    - "docs/**/*.md"',
         "  schemas:",
         "    - ./permissive.schema.json",
-        "  sidecars:",
-        "    - file: ./owners.yaml",
-        "      keys: [owner]",
         "  derive:",
         "    fields: [created, last-updated]",
         "",
       ].join("\n"),
     );
+    const owned = new DocmetaError(
+      '"owner" is owned by the manifest ./owners.yaml on collection site; a managed field has one authority, and a manifest key already has one.',
+    );
     await expect(
       runDerive({ inputs: [], cwd: dir, fields: ["owner"] }),
-    ).rejects.toThrow(
-      new DocmetaError(
-        '"owner" is owned by sidecar ./owners.yaml; a managed field has one authority, and a sidecar key already has one.',
-      ),
-    );
+    ).rejects.toThrow(owned);
+    // Every declared collection's claim counts, not only the selected ones:
+    // narrowing the run to a collection with no manifest does not free the key.
+    await expect(
+      runDerive({ inputs: [], cwd: dir, fields: ["owner"], collections: ["faq"] }),
+    ).rejects.toThrow(owned);
     // A field nobody else owns still runs.
     const run = await runDerive({ inputs: [], cwd: dir, fields: ["last-updated"] });
     expect(fieldsOf(run, "docs/install.md").fields.map((f) => f.field)).toEqual([
@@ -336,11 +343,67 @@ describe("runDerive", () => {
     );
   });
 
-  it("is an operational error with no inputs and no config paths", async () => {
+  it("is an operational error with no inputs and no collections", async () => {
     const { dir } = stageCorpus();
+    const empty = new DocmetaError(
+      "No files to derive. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.",
+    );
     await expect(
       runDerive({ inputs: [], cwd: dir, noConfig: true, fields: ["owner"] }),
-    ).rejects.toThrow(DocmetaError);
+    ).rejects.toThrow(empty);
+    // A config file that declares no collection has nothing to fall back on
+    // either.
+    writeFile(
+      dir,
+      "manni.config.yaml",
+      ["meta:", "  derive:", "    fields: [owner]", ""].join("\n"),
+    );
+    await expect(runDerive({ inputs: [], cwd: dir })).rejects.toThrow(empty);
+  });
+
+  it("--collection narrows a bare run to the named collections; none covers every one", async () => {
+    const { dir } = stageCorpus();
+    writeFile(
+      dir,
+      "manni.config.yaml",
+      [
+        "collections:",
+        "  - name: install",
+        '    paths: ["docs/install.md"]',
+        "  - name: faq",
+        '    paths: ["docs/faq.md"]',
+        "meta:",
+        "  schemas:",
+        "    - ./permissive.schema.json",
+        "  derive:",
+        "    fields: [created, last-updated, owner]",
+        "",
+      ].join("\n"),
+    );
+    const narrowed = await runDerive({
+      inputs: [],
+      cwd: dir,
+      collections: ["faq"],
+      dryRun: true,
+    });
+    expect(narrowed.results.map((r) => r.file)).toEqual(["docs/faq.md"]);
+
+    const every = await runDerive({ inputs: [], cwd: dir, dryRun: true });
+    expect(every.results.map((r) => r.file).sort()).toEqual([
+      "docs/faq.md",
+      "docs/install.md",
+    ]);
+  });
+
+  it("refuses --collection beside a path", async () => {
+    const { dir } = stageCorpus();
+    await expect(
+      runDerive({ inputs: ["docs/install.md"], cwd: dir, collections: ["site"] }),
+    ).rejects.toThrow(
+      new DocmetaError(
+        "--collection selects a configured collection; it cannot be combined with paths.",
+      ),
+    );
   });
 
   it("refuses a shallow clone with the fix and the derive hint", async () => {

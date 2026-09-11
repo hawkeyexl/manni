@@ -33,6 +33,7 @@
 import { readFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
+import { parseCollections, type CollectionConfig } from "./collections.js";
 import { searchPath } from "./git-root.js";
 import { warn } from "./warn.js";
 
@@ -82,6 +83,13 @@ export interface ConfigFile {
   wrapped: boolean;
   /** How the file was found. Explicit paths are never warned about. */
   kind: "manni" | "moose" | "legacy" | "explicit";
+  /**
+   * The document's top-level `collections:` (proposal 0041), parsed once here
+   * because every tool reads the same declaration. `[]` when the key is
+   * absent, and always `[]` for a `legacy` file: a per-tool file's whole
+   * document *is* the tool's section, so it carries no family-wide keys.
+   */
+  collections: CollectionConfig[];
 }
 
 interface Document {
@@ -127,6 +135,9 @@ function parseMapping(
   return raw as Record<string, unknown>;
 }
 
+/** The top-level key holding the family's document sets. */
+const COLLECTIONS_KEY = "collections";
+
 function slice(
   document: Document,
   opts: ConfigFileOptions,
@@ -135,7 +146,28 @@ function slice(
   if (doc !== null && Object.hasOwn(doc, opts.section)) {
     return { value: doc[opts.section] ?? null, wrapped: true };
   }
+  // A family file carrying `collections:` and no section is still this tool's
+  // config: the documents are declared, the tool just has no options of its
+  // own. Handing back an empty section is what stops discovery walking past a
+  // file that says which documents exist (0041).
+  if (doc !== null && Object.hasOwn(doc, COLLECTIONS_KEY)) {
+    return { value: null, wrapped: true };
+  }
   return null;
+}
+
+/**
+ * The document's collections. Parsed with the tool's own `toError`, so a bad
+ * `collections:` is reported in the class the tool already catches.
+ */
+function collectionsOf(
+  document: Document,
+  source: string,
+  opts: ConfigFileOptions,
+): CollectionConfig[] {
+  const { doc } = document;
+  if (doc === null || !Object.hasOwn(doc, COLLECTIONS_KEY)) return [];
+  return parseCollections(doc[COLLECTIONS_KEY], source, opts.toError);
 }
 
 function relativeSource(cwd: string, path: string): string {
@@ -170,7 +202,15 @@ export async function findConfigFile(
             `"${name}" is the pre-rename name of the family config file. Rename it to "${FAMILY_CONFIG_NAMES[0] ?? "manni.config.yaml"}".`,
           );
         }
-        return { path, dir, source, text: document.text, kind, ...found };
+        return {
+          path,
+          dir,
+          source,
+          text: document.text,
+          kind,
+          collections: collectionsOf(document, source, opts),
+          ...found,
+        };
       }
     }
     for (const name of opts.legacyNames) {
@@ -179,7 +219,7 @@ export async function findConfigFile(
       const document = await readDocument(path, source, opts);
       if (document === null) continue;
       warn(
-        `"${name}" is a deprecated config file name and will stop being read in a future major version. Move its keys under \`${opts.section}:\` in "${FAMILY_CONFIG_NAMES[0] ?? "manni.config.yaml"}".`,
+        `"${name}" is a deprecated config file name and will stop being read in a future major version. Move its keys under \`${opts.section}:\` in "${FAMILY_CONFIG_NAMES[0] ?? "manni.config.yaml"}", and its paths, exclude and sidecars keys to a top-level collections: list, where sidecars becomes externalMetadata.`,
       );
       return {
         path,
@@ -189,6 +229,7 @@ export async function findConfigFile(
         value: document.doc,
         wrapped: false,
         kind: "legacy",
+        collections: [],
       };
     }
   }
@@ -221,6 +262,7 @@ export async function readConfigFile(
     source: explicitPath,
     text: document.text,
     kind: "explicit",
+    collections: collectionsOf(document, explicitPath, opts),
     ...found,
   };
 }

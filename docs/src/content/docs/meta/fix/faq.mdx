@@ -122,26 +122,47 @@ at a frontmatter field, never at your writing.
 
 ## How do I exclude drafts from validation?
 
-Exclude them by glob. On the command line:
+Exclude them by glob, in one of two places, and the difference matters.
+
+On the command line, `--exclude` filters whatever this run walks:
 
 ```sh
 manni meta validate docs/ --exclude "**/drafts/**"
 ```
 
-`--exclude` is repeatable and merges with the default ignores (`node_modules`,
-`.git`) and anything in your config. To make the exclusion permanent for the
-whole repo, add it under `exclude:` in `manni.config.yaml` instead, so every
-run, local and CI, skips the same files.
+It is repeatable and merges with the default ignores (`node_modules`, `.git`).
 
-<Aside type="tip">
-  If you control the config, prefer the config `exclude:` key so local runs and
-  CI agree. Use the `--exclude` flag for one-off runs.
+In config, `exclude:` belongs to a collection and decides what that collection
+*contains*:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: pages
+    paths: ["docs/**/*.md"]
+    exclude: ["**/drafts/**"]
+```
+
+A bare `manni meta validate` reads the collections, so the drafts are skipped
+every run, locally and in CI.
+
+<Aside type="caution" title="A collection's exclude does not filter a path you type">
+  The two are not interchangeable. `exclude:` shapes the collection, so it
+  applies when a run reads the collections. It does **not** filter a path given
+  on the command line: `manni meta validate docs/` walks exactly `docs/`, drafts
+  included, because you named that directory. Use `--exclude` when you are
+  naming paths yourself.
+
+  Before 1.0.0 the config key filtered every run, typed paths included. It moved
+  onto the collection with [proposal
+  0041](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0041-collections.md).
+  Once a repository declares several document sets, there is no principled way
+  to choose whose exclusions apply to a directory you typed.
 </Aside>
 
 <LinkCard
   title="Configuration reference"
-  href="/manni/meta/reference/configuration/"
-  description="The exclude key, paths, schemas, and overrides, with how config merges with CLI flags."
+  href="/manni/meta/reference/configuration/#collections"
+  description="Collections, their paths and exclude keys, schemas, and overrides, with how config merges with CLI flags."
 />
 
 ## Still stuck?

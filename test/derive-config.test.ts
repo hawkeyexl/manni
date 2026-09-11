@@ -1,5 +1,12 @@
-import { describe, it, expect } from "vitest";
-import { parseConfig, parseConfigValue } from "../src/meta/core/config.js";
+import { afterEach, describe, it, expect } from "vitest";
+import { mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import {
+  loadConfig,
+  parseConfig,
+  parseConfigValue,
+} from "../src/meta/core/config.js";
 import {
   DERIVABLE_FIELDS,
   DERIVE_SOURCES,
@@ -99,22 +106,6 @@ describe("derive: config parsing", () => {
     );
   });
 
-  it("rejects a field a sidecar entry owns, naming the manifest", () => {
-    expect(() =>
-      parse([
-        "sidecars:",
-        "  - file: ./a.yaml",
-        "    keys: [jira]",
-        "  - file: ./owners.yaml",
-        "    keys: [owner]",
-        "derive:",
-        "  fields: [created, owner]",
-      ]),
-    ).toThrow(
-      /derive\.fields\[1\] "owner" is owned by sidecars\[1\] \(\.\/owners\.yaml\)/,
-    );
-  });
-
   it("rejects a source that is not one of the four", () => {
     expect(() =>
       parse(["derive:", "  fields: [created]", "  sources: [git, svn]"]),
@@ -164,24 +155,56 @@ describe("derive: config parsing", () => {
   });
 });
 
-describe("derive: reserved collection names", () => {
-  it.each(["derived", "Derived", "_derived_rows", "_DERIVED_ROWS"])(
-    'rejects an override named "%s", which the derived table uses',
-    (name) => {
-      expect(() =>
-        parse([
-          "overrides:",
-          `  - name: ${name}`,
-          '    files: ["docs/**"]',
-          "    schemas: [./s.json]",
-        ]),
-      ).toThrow(
-        new RegExp(
-          `overrides\\[0\\]\\.name "${name}" collides with the derived table`,
-        ),
-      );
-    },
-  );
+/**
+ * A managed field a manifest already owns. The rule needs `meta.derive` and
+ * the top-level `collections:`, which the section parser never sees, so the
+ * refusal comes from `loadConfig`, as the undeclared-collection one does.
+ * The collection names `derived` and `_derived_rows` are refused by the
+ * shared parser; test/collections.test.ts covers them beside `docs`.
+ */
+describe("derive: a field a collection's manifest owns (0041)", () => {
+  let tmp: string | undefined;
+
+  afterEach(async () => {
+    if (tmp) await rm(tmp, { recursive: true, force: true });
+    tmp = undefined;
+  });
+
+  async function repo(config: string[]): Promise<string> {
+    tmp = await realpath(await mkdtemp(join(tmpdir(), "docmeta-derive-owned-")));
+    await writeFile(join(tmp, "manni.config.yaml"), config.join("\n"), "utf8");
+    return tmp;
+  }
+
+  const withFields = (fields: string): string[] => [
+    "collections:",
+    "  - name: guides",
+    '    paths: ["guides/**/*.md"]',
+    "  - name: pages",
+    '    paths: ["docs/**/*.md"]',
+    "    externalMetadata:",
+    "      - file: ./a.yaml",
+    "        keys: [jira]",
+    "      - file: ./owners.yaml",
+    "        keys: [owner]",
+    "meta:",
+    "  derive:",
+    `    fields: ${fields}`,
+    "",
+  ];
+
+  it("rejects it at load, naming the collection and the manifest", async () => {
+    const root = await repo(withFields("[created, owner]"));
+    await expect(loadConfig(undefined, root)).rejects.toThrow(
+      'manni.config.yaml: meta.derive.fields[1] "owner" is owned by collections[1].externalMetadata[1] (./owners.yaml) — a managed field has one authority, and a manifest key already has one. Drop it from one side.',
+    );
+  });
+
+  it("accepts a field no manifest owns", async () => {
+    const root = await repo(withFields("[created, last-updated]"));
+    const loaded = await loadConfig(undefined, root);
+    expect(loaded?.config.derive?.fields).toEqual(["created", "last-updated"]);
+  });
 });
 
 describe("derive: reserved check name", () => {

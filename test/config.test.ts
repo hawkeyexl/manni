@@ -4,9 +4,12 @@ import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { parse as parseYaml } from "yaml";
 import {
   loadConfig,
   parseConfig,
+  parseConfigValue,
+  resolveRunConfig,
   schemaTrustRoot,
 } from "../src/meta/core/config.js";
 import {
@@ -22,10 +25,6 @@ describe("config", () => {
   it("parses a lightweight YAML config", () => {
     const cfg = parseConfig(
       [
-        "paths:",
-        "  - 'books/**/*.md'",
-        "exclude:",
-        "  - '**/drafts/**'",
         "schemas:",
         "  - google:okf:0.1",
         "overrides:",
@@ -36,8 +35,6 @@ describe("config", () => {
       ].join("\n"),
       "docmeta.config.yaml",
     );
-    expect(cfg.paths).toEqual(["books/**/*.md"]);
-    expect(cfg.exclude).toEqual(["**/drafts/**"]);
     expect(cfg.schemas).toEqual(["google:okf:0.1"]);
     expect(cfg.overrides?.[0]?.files).toBe("articles/**/*.md");
     expect(cfg.overrides?.[0]?.schemas).toContain("doc-detective:1.0");
@@ -45,7 +42,7 @@ describe("config", () => {
 
   it("treats an empty config as all-undefined", () => {
     const cfg = parseConfig("", "docmeta.config.yaml");
-    expect(cfg.paths).toBeUndefined();
+    expect(cfg.overrides).toBeUndefined();
     expect(cfg.schemas).toBeUndefined();
   });
 
@@ -111,8 +108,6 @@ describe("config", () => {
     // config that has always been valid. Exercise all of them together.
     const cfg = parseConfig(
       [
-        "paths: ['docs/**/*.md']",
-        "exclude: ['**/drafts/**']",
         "schemas: ['google:okf:0.1']",
         "overrides:",
         "  - files: 'a/**'",
@@ -171,7 +166,9 @@ describe("config", () => {
     });
 
     it("leaves fill undefined when absent", () => {
-      expect(parseConfig("paths:\n  - x.md", "x.yaml").fill).toBeUndefined();
+      expect(
+        parseConfig("schemas:\n  - google:okf:0.1", "x.yaml").fill,
+      ).toBeUndefined();
     });
 
     it("rejects a confidence threshold outside 0-1", () => {
@@ -286,9 +283,11 @@ describe("config discovery reads the family file", () => {
   });
 
   it("an explicit path to a wrapped file unwraps it without filename sniffing", async () => {
-    const root = await tree({ "whatever.yml": "meta:\n  paths: [docs]\n" });
+    const root = await tree({
+      "whatever.yml": "meta:\n  schemas: [google:okf:0.1]\n",
+    });
     const loaded = await loadConfig("whatever.yml", root);
-    expect(loaded?.config.paths).toEqual(["docs"]);
+    expect(loaded?.config.schemas).toEqual(["google:okf:0.1"]);
     expect(loaded?.section).toBe("meta");
   });
 });
@@ -434,7 +433,8 @@ describe("config: respectGitignore", () => {
 
   it("is undefined when absent, so the default stays in one place", () => {
     expect(
-      parseConfig("paths: ['a.md']\n", "docmeta.config.yaml").respectGitignore,
+      parseConfig("schemas: ['google:okf:0.1']\n", "docmeta.config.yaml")
+        .respectGitignore,
     ).toBeUndefined();
   });
 
@@ -462,7 +462,8 @@ describe("config: offline", () => {
 
   it("is undefined when absent, so the default stays in one place", () => {
     expect(
-      parseConfig("paths: ['a.md']\n", "docmeta.config.yaml").offline,
+      parseConfig("schemas: ['google:okf:0.1']\n", "docmeta.config.yaml")
+        .offline,
     ).toBeUndefined();
   });
 
@@ -527,7 +528,8 @@ describe("config: schemaCache", () => {
 
   it("is undefined when absent, so the default stays in one place", () => {
     expect(
-      parseConfig("paths: ['a.md']\n", "docmeta.config.yaml").schemaCache,
+      parseConfig("schemas: ['google:okf:0.1']\n", "docmeta.config.yaml")
+        .schemaCache,
     ).toBeUndefined();
   });
 });
@@ -668,13 +670,10 @@ describe("schemas: the object form (0008)", () => {
     );
   });
 
-  // `asStringList` is shared with paths, exclude, and overrides[].schemas.
-  // Widening it in place would have widened all four.
-  it("does not widen paths, exclude, or overrides[].schemas", () => {
-    expect(() => parseConfig("paths:\n  - ref: ./x.md\n", "c.yaml")).toThrow(
-      DocmetaError,
-    );
-    expect(() => parseConfig("exclude:\n  - ref: ./x.md\n", "c.yaml")).toThrow(
+  // `asStringList` is shared with `elements` and `overrides[].schemas`.
+  // Widening it in place would have widened those too.
+  it("does not widen elements or overrides[].schemas", () => {
+    expect(() => parseConfig("elements:\n  - ref: ./x.md\n", "c.yaml")).toThrow(
       DocmetaError,
     );
     expect(() =>
@@ -717,7 +716,8 @@ describe("config: schemaTrust", () => {
 
   it("is undefined when absent, so the default stays in one place", () => {
     expect(
-      parseConfig("paths: ['a.md']\n", "docmeta.config.yaml").schemaTrust,
+      parseConfig("schemas: ['google:okf:0.1']\n", "docmeta.config.yaml")
+        .schemaTrust,
     ).toBeUndefined();
   });
 
@@ -816,8 +816,18 @@ describe("the repository's own manni.config.yaml", () => {
     const loaded = await loadConfig(undefined, repoRoot);
     expect(loaded?.path).toBe(join(repoRoot, "manni.config.yaml"));
     expect(loaded?.dir).toBe(repoRoot);
-    expect(loaded?.config.paths).toEqual([
-      "docs/src/content/docs/**/*.{md,mdx}",
+    // The document set is a top-level collection, read by every tool (0041),
+    // rather than a `meta:` key only the metadata tool could see.
+    expect(loaded?.collections).toEqual([
+      {
+        name: "site",
+        paths: ["docs/src/content/docs/**/*.{md,mdx}"],
+        exclude: [],
+        externalMetadata: [],
+        // Where the site is published, so `manni a11y check` needs no `urls:`
+        // of its own (0041 rule 12). The local preview, not the deployed site.
+        url: "http://127.0.0.1:4321/manni/",
+      },
     ]);
 
     const ref = loaded?.config.overrides?.[0]?.schemas[0];
@@ -841,6 +851,10 @@ describe("the repository's own manni.config.yaml", () => {
       resolveSchemaSet({
         filePath: "docs/src/content/docs/index.mdx",
         config,
+        // The override names the `site` collection rather than globs of its
+        // own, so membership is what it matches on — the command cores compute
+        // this per file with `memberOf`.
+        memberOf: ["site"],
       }),
       // Two, and both are load-bearing. The local schema is the house rule
       // (title + description, neither of which Starlight itself requires); the
@@ -851,125 +865,11 @@ describe("the repository's own manni.config.yaml", () => {
       "./docs/doc-frontmatter.schema.json",
       "astro:starlight:0.41",
     ]);
+    // A file outside the collection is a member of nothing, so the override
+    // cannot reach it and DEFAULT_SCHEMAS stands.
     expect(
       resolveSchemaSet({ filePath: "test/fixtures/valid.md", config }),
     ).toEqual([...DEFAULT_SCHEMAS]);
-  });
-});
-
-describe("named overrides (0027)", () => {
-  const withName = (name: string): string =>
-    [
-      "overrides:",
-      `  - name: ${JSON.stringify(name)}`,
-      '    files: "authors/**"',
-      "    schemas: [google:okf:0.1]",
-      "",
-    ].join("\n");
-
-  it("accepts an optional name on an override", () => {
-    const cfg = parseConfig(withName("authors"), "docmeta.config.yaml");
-    expect(cfg.overrides?.[0]?.name).toBe("authors");
-  });
-
-  it("accepts any other string: names are quoted identifiers", () => {
-    const cfg = parseConfig(withName("API docs & guides"), "docmeta.config.yaml");
-    expect(cfg.overrides?.[0]?.name).toBe("API docs & guides");
-  });
-
-  it("leaves name unset when the key is absent", () => {
-    const cfg = parseConfig(
-      'overrides:\n  - files: "a/**"\n    schemas: [google:okf:0.1]\n',
-      "docmeta.config.yaml",
-    );
-    expect(cfg.overrides?.[0]?.name).toBeUndefined();
-  });
-
-  it("refuses a duplicate name", () => {
-    const text = [
-      "overrides:",
-      "  - name: authors",
-      '    files: "authors/**"',
-      "    schemas: [google:okf:0.1]",
-      "  - name: authors",
-      '    files: "people/**"',
-      "    schemas: [google:okf:0.1]",
-      "",
-    ].join("\n");
-    expect(() => parseConfig(text, "docmeta.config.yaml")).toThrow(
-      /overrides\[1\].*"authors"/,
-    );
-  });
-
-  it("refuses the name docs, in any casing", () => {
-    expect(() => parseConfig(withName("docs"), "docmeta.config.yaml")).toThrow(
-      /docs/,
-    );
-    expect(() => parseConfig(withName("Docs"), "docmeta.config.yaml")).toThrow(
-      /docs table/i,
-    );
-  });
-
-  it("refuses an empty or blank name", () => {
-    expect(() => parseConfig(withName(""), "docmeta.config.yaml")).toThrow(
-      /overrides\[0\].name/,
-    );
-    expect(() => parseConfig(withName("   "), "docmeta.config.yaml")).toThrow(
-      /overrides\[0\].name/,
-    );
-  });
-
-  it("refuses a non-string name", () => {
-    const text =
-      'overrides:\n  - name: 3\n    files: "a/**"\n    schemas: [google:okf:0.1]\n';
-    expect(() => parseConfig(text, "docmeta.config.yaml")).toThrow(
-      /overrides\[0\].name/,
-    );
-  });
-
-  it("refuses a name starting sqlite_, in any casing", () => {
-    expect(() =>
-      parseConfig(withName("sqlite_authors"), "docmeta.config.yaml"),
-    ).toThrow(/sqlite_/);
-    expect(() =>
-      parseConfig(withName("SQLite_authors"), "docmeta.config.yaml"),
-    ).toThrow(/sqlite_/);
-  });
-
-  it("refuses a name on an override with no schemas", () => {
-    const text = [
-      "overrides:",
-      "  - name: authors",
-      '    files: "authors/**"',
-      "    elements: [article/title]",
-      "",
-    ].join("\n");
-    expect(() => parseConfig(text, "docmeta.config.yaml")).toThrow(
-      /never win schema resolution/,
-    );
-  });
-
-  // SQLite's object namespace is case-insensitive, so "Authors" and "authors"
-  // are one view name to the engine — the duplicate guard folds case exactly
-  // as the docs/sqlite_ refusals above it do.
-  it("refuses duplicate names, case-insensitively", () => {
-    const two = (a: string, b: string) =>
-      [
-        "overrides:",
-        `  - name: ${a}`,
-        '    files: "authors/**"',
-        "    schemas: [google:okf:0.1]",
-        `  - name: ${b}`,
-        '    files: "docs/**"',
-        "    schemas: [google:okf:0.1]",
-        "",
-      ].join("\n");
-    expect(() => parseConfig(two("authors", "authors"), "docmeta.config.yaml")).toThrow(
-      /reuses the name/,
-    );
-    expect(() => parseConfig(two("Authors", "authors"), "docmeta.config.yaml")).toThrow(
-      /reuses the name/,
-    );
   });
 });
 
@@ -1053,79 +953,375 @@ describe("overrides[].files accepts a list of globs", () => {
 });
 
 /**
- * `sidecars:` (proposal 0037): manifests that supply a fixed set of top-level
- * keys for named documents. The parser's job is to refuse every shape that
- * would read as configured and be silent: an entry with no keys, two entries
- * claiming one key, and `$schema`, which no sidecar may own.
+ * The four keys proposal 0041 moved out of `meta:`.
+ *
+ * Refused rather than aliased, and the message names the new location: an alias
+ * is a permanent second surface for the one concept `collections:` exists to
+ * declare exactly once. Each is asserted in **both** spellings of a config —
+ * wrapped under `meta:` in a family file, and unwrapped in a legacy
+ * `docmeta.config.yaml` — because a user of the old per-tool file is precisely
+ * the person who needs to be told where the key went, and because the section
+ * wrapper rewrites `"paths"` into `"meta.paths"` for every *other* message.
+ * These four name `meta` in their own prose, so that rewrite would make each
+ * one contradict itself.
  */
-describe("config: sidecars", () => {
-  const parse = (lines: string[]) =>
-    parseConfig(lines.join("\n"), "manni.config.yaml");
+describe("config: moved keys are refused (0041)", () => {
+  /** The same document, once wrapped under `meta:` and once bare. */
+  const bothForms = (lines: string[]): (() => unknown)[] => [
+    () =>
+      parseConfigValue(
+        parseYaml(lines.join("\n")),
+        "manni.config.yaml",
+        "meta",
+      ),
+    () => parseConfig(lines.join("\n"), "docmeta.config.yaml"),
+  ];
 
-  it("parses a sidecar entry with its file and owned keys", () => {
-    const cfg = parse([
+  it('refuses "paths", naming the top-level collections: list', () => {
+    for (const parse of bothForms(["paths:", "  - 'docs/**/*.md'"])) {
+      expect(parse).toThrow(DocmetaError);
+      expect(parse).toThrow(
+        '"paths" is no longer a meta key. Document sets are declared once for every tool, under a top-level collections: list. See https://hawkeyexl.github.io/manni/meta/reference/configuration/#collections',
+      );
+    }
+  });
+
+  it('refuses "exclude" with the same message', () => {
+    for (const parse of bothForms(["exclude:", "  - '**/drafts/**'"])) {
+      expect(parse).toThrow(
+        '"exclude" is no longer a meta key. Document sets are declared once for every tool, under a top-level collections: list. See https://hawkeyexl.github.io/manni/meta/reference/configuration/#collections',
+      );
+    }
+  });
+
+  it('refuses "sidecars", naming externalMetadata on a collection', () => {
+    for (const parse of bothForms([
       "sidecars:",
       "  - file: ./docs-meta.yaml",
-      "    keys: [source, jira]",
+      "    keys: [source]",
+    ])) {
+      expect(parse).toThrow(
+        '"sidecars" is no longer a meta key. It is externalMetadata on a collection, under the top-level collections: list. See https://hawkeyexl.github.io/manni/meta/reference/configuration/#external-metadata',
+      );
+    }
+  });
+
+  it('refuses overrides[].name, naming the offending entry', () => {
+    for (const parse of bothForms([
+      "overrides:",
+      "  - files: 'a/**'",
+      "    schemas: [google:okf:0.1]",
+      "  - name: authors",
+      "    files: 'authors/**'",
+      "    schemas: [google:okf:0.1]",
+    ])) {
+      expect(parse).toThrow(
+        'overrides[1] no longer carries "name". Define a collection with that name and point the override at it with collection:.',
+      );
+    }
+  });
+
+  // The moved-key check runs before the unknown-key check, so the message is
+  // the migration note rather than `has unknown key "paths"` — which would be
+  // true and useless, since the user did not misspell anything.
+  it("beats the unknown-key refusal, which would blame a typo", () => {
+    expect(() => parseConfig("paths: ['a.md']\n", "c.yaml")).toThrow(
+      /no longer a meta key/,
+    );
+    expect(() => parseConfig("paths: ['a.md']\n", "c.yaml")).not.toThrow(
+      /unknown key/,
+    );
+  });
+
+  // The prefix is the file, as in every other config message, and the sentence
+  // that follows says `meta` itself. `withSection` must not touch it.
+  it("keeps the message intact under a discovered family file", () => {
+    expect(() =>
+      parseConfigValue({ paths: ["a.md"] }, "manni.config.yaml", "meta"),
+    ).toThrow(/^manni\.config\.yaml: "paths" is no longer a meta key\./);
+  });
+});
+
+/**
+ * `overrides[].collection` (0041 rule 8), which replaces 0027's
+ * `overrides[].name` with its inverse: a collection is the thing that has a
+ * name, and an override points at one. An entry carries exactly one of `files:`
+ * or `collection:`, because both would need a rule for how they combine and
+ * neither is a rule that governs nothing.
+ */
+describe("overrides[].collection (0041)", () => {
+  /** One `overrides:` entry, its lines indented under the key. */
+  const override = (lines: string[]): string =>
+    ["overrides:", ...lines.map((l) => `  ${l}`), ""].join("\n");
+
+  it("parses a collection override", () => {
+    const cfg = parseConfig(
+      override(["- collection: guides", "  schemas: [google:okf:0.1]"]),
+      "manni.config.yaml",
+    );
+    expect(cfg.overrides?.[0]?.collection).toBe("guides");
+    expect(cfg.overrides?.[0]?.files).toBeUndefined();
+  });
+
+  it("refuses an entry carrying neither files nor collection", () => {
+    expect(() =>
+      parseConfig(override(["- schemas: [google:okf:0.1]"]), "c.yaml"),
+    ).toThrow('overrides[0] must carry exactly one of "files" or "collection".');
+  });
+
+  it("refuses an entry carrying both", () => {
+    expect(() =>
+      parseConfig(
+        override([
+          "- collection: guides",
+          '  files: "guides/**"',
+          "  schemas: [google:okf:0.1]",
+        ]),
+        "c.yaml",
+      ),
+    ).toThrow('overrides[0] must carry exactly one of "files" or "collection".');
+  });
+
+  it("refuses a collection that is not a non-empty string", () => {
+    for (const value of ["3", '""', '"   "', "[guides]"]) {
+      expect(() =>
+        parseConfig(
+          override([`- collection: ${value}`, "  schemas: [google:okf:0.1]"]),
+          "c.yaml",
+        ),
+      ).toThrow(
+        "overrides[0].collection must be a non-empty string naming a collection.",
+      );
+    }
+  });
+
+  // Still refused, and still by index: the override governs nothing whether it
+  // names globs or a collection.
+  it("still refuses an override that sets neither schemas nor elements", () => {
+    expect(() =>
+      parseConfig(override(["- collection: guides"]), "c.yaml"),
+    ).toThrow(/overrides\[0\] sets neither "schemas" nor "elements"/);
+  });
+});
+
+/**
+ * Whether a `collection:` names a *declared* collection can only be answered
+ * once both halves of the family file are parsed — `collections:` is a
+ * top-level key the section parser never sees — so the refusal comes from
+ * `loadConfig`. It still names `overrides[i].collection` as its path, so it
+ * reads like every other config error.
+ */
+describe("overrides[].collection must name a declared collection (0041)", () => {
+  let tmp: string | undefined;
+
+  afterEach(async () => {
+    if (tmp) await rm(tmp, { recursive: true, force: true });
+    tmp = undefined;
+  });
+
+  async function repo(config: string): Promise<string> {
+    tmp = await realpath(await mkdtemp(join(tmpdir(), "docmeta-coll-ovr-")));
+    await writeFile(join(tmp, "manni.config.yaml"), config, "utf8");
+    return tmp;
+  }
+
+  it("accepts a name the list defines, and resolves through it", async () => {
+    const root = await repo(
+      [
+        "collections:",
+        "  - name: guides",
+        '    paths: ["docs/guides/**/*.md"]',
+        "meta:",
+        "  overrides:",
+        "    - collection: guides",
+        "      schemas: [google:okf:0.1]",
+        "",
+      ].join("\n"),
+    );
+    const loaded = await loadConfig(undefined, root);
+    expect(loaded?.collections.map((c) => c.name)).toEqual(["guides"]);
+    // Membership is what a `collection:` override matches on, so resolution
+    // needs the member list the command cores compute per file.
+    expect(
+      resolveSchemaSet({
+        filePath: "docs/guides/auth.md",
+        config: loaded?.config,
+        memberOf: ["guides"],
+      }),
+    ).toEqual(["google:okf:0.1"]);
+    // A file in no collection cannot reach it, however its path reads.
+    expect(
+      resolveSchemaSet({
+        filePath: "docs/guides/auth.md",
+        config: loaded?.config,
+      }),
+    ).toEqual([...DEFAULT_SCHEMAS]);
+  });
+
+  it("refuses an undefined name and lists the ones that are defined", async () => {
+    const root = await repo(
+      [
+        "collections:",
+        "  - name: guides",
+        '    paths: ["docs/guides/**/*.md"]',
+        "  - name: blog",
+        '    paths: ["blog/**/*.md"]',
+        "meta:",
+        "  overrides:",
+        "    - collection: gides",
+        "      schemas: [google:okf:0.1]",
+        "",
+      ].join("\n"),
+    );
+    await expect(loadConfig(undefined, root)).rejects.toThrow(
+      'manni.config.yaml: overrides[0].collection names "gides", which collections: does not define. Defined: guides, blog.',
+    );
+  });
+
+  // A config with an override pointing at a collection and no `collections:`
+  // at all is the mid-migration shape, so the tail has to say "(none)" rather
+  // than trail off after "Defined:".
+  it("says (none) when the file declares no collections", async () => {
+    const root = await repo(
+      [
+        "meta:",
+        "  overrides:",
+        "    - collection: guides",
+        "      schemas: [google:okf:0.1]",
+        "",
+      ].join("\n"),
+    );
+    await expect(loadConfig(undefined, root)).rejects.toThrow(
+      'manni.config.yaml: overrides[0].collection names "guides", which collections: does not define. Defined: (none).',
+    );
+  });
+});
+
+/**
+ * `resolveRunConfig` with no positional paths: the run is every collection, in
+ * declaration order, measured from the config file's directory. That is today's
+ * `paths:` fallback with a list where there was one entry (0041 rule 2).
+ */
+describe("resolveRunConfig: collections (0041)", () => {
+  let tmp: string | undefined;
+
+  afterEach(async () => {
+    if (tmp) await rm(tmp, { recursive: true, force: true });
+    tmp = undefined;
+  });
+
+  const TWO = [
+    "collections:",
+    "  - name: guides",
+    '    paths: ["docs/guides/**/*.md"]',
+    "  - name: blog",
+    '    paths: ["blog/**/*.md", "blog/**/*.mdx"]',
+    "meta:",
+    "  schemas: [google:okf:0.1]",
+    "",
+  ].join("\n");
+
+  async function repo(config = TWO): Promise<string> {
+    tmp = await realpath(await mkdtemp(join(tmpdir(), "docmeta-run-coll-")));
+    await writeFile(join(tmp, "manni.config.yaml"), config, "utf8");
+    return tmp;
+  }
+
+  it("reads every collection, in declaration order, from the config's dir", async () => {
+    const root = await repo();
+    const run = await resolveRunConfig({ cwd: root, inputs: [] });
+    expect(run.inputs).toEqual([
+      "docs/guides/**/*.md",
+      "blog/**/*.md",
+      "blog/**/*.mdx",
     ]);
-    expect(cfg.sidecars).toEqual([
-      { file: "./docs-meta.yaml", keys: ["source", "jira"] },
-    ]);
+    expect(run.base).toBe(root);
+    expect(run.collections.map((c) => c.name)).toEqual(["guides", "blog"]);
+    expect(run.fromCollections).toBe(true);
   });
 
-  it("rejects a sidecars value that is not a list", () => {
-    expect(() => parse(["sidecars: ./docs-meta.yaml"])).toThrow(
-      /"sidecars" must be a list/,
+  it("narrows to the named collections, still in declaration order", async () => {
+    const root = await repo();
+    const run = await resolveRunConfig({
+      cwd: root,
+      inputs: [],
+      // Named out of order on purpose: the run order is the config's, not the
+      // command line's, so two invocations of one CI job cannot differ.
+      collections: ["blog", "guides"],
+    });
+    expect(run.collections.map((c) => c.name)).toEqual(["guides", "blog"]);
+    expect(run.inputs[0]).toBe("docs/guides/**/*.md");
+  });
+
+  it("refuses a name no collection carries, listing the ones configured", async () => {
+    const root = await repo();
+    await expect(
+      resolveRunConfig({ cwd: root, inputs: [], collections: ["gides"] }),
+    ).rejects.toThrow(
+      'no collection named "gides" in manni.config.yaml. Configured: guides, blog.',
     );
   });
 
-  it("rejects an entry without a file", () => {
-    expect(() => parse(["sidecars:", "  - keys: [jira]"])).toThrow(
-      /sidecars\[0\]\.file must be a non-empty string/,
+  it("lets positional paths win, and says so with fromCollections", async () => {
+    const root = await repo();
+    const run = await resolveRunConfig({
+      cwd: root,
+      inputs: ["README.md"],
+    });
+    expect(run.inputs).toEqual(["README.md"]);
+    expect(run.fromCollections).toBe(false);
+    // Still selected: a file the operator typed is a member of whatever
+    // collections contain it, so its manifests have to be loadable (rule 4).
+    expect(run.collections.map((c) => c.name)).toEqual(["guides", "blog"]);
+  });
+
+  it("refuses --collection beside a path", async () => {
+    const root = await repo();
+    await expect(
+      resolveRunConfig({
+        cwd: root,
+        inputs: ["docs/x.md"],
+        collections: ["guides"],
+      }),
+    ).rejects.toThrow(
+      "--collection selects a configured collection; it cannot be combined with paths.",
     );
   });
 
-  it("rejects an entry without keys, and one with an empty list", () => {
-    expect(() => parse(["sidecars:", "  - file: ./m.yaml"])).toThrow(
-      /sidecars\[0\]\.keys must be a non-empty list of key names/,
-    );
-    expect(() =>
-      parse(["sidecars:", "  - file: ./m.yaml", "    keys: []"]),
-    ).toThrow(/sidecars\[0\]\.keys must be a non-empty list of key names/);
+  it("refuses --collection with no config to select from", async () => {
+    const root = await repo();
+    await expect(
+      resolveRunConfig({
+        cwd: root,
+        inputs: [],
+        noConfig: true,
+        collections: ["guides"],
+      }),
+    ).rejects.toThrow("--collection needs a config file to select from.");
   });
 
-  it("rejects a repeated key within one entry", () => {
-    expect(() =>
-      parse(["sidecars:", "  - file: ./m.yaml", "    keys: [jira, jira]"]),
-    ).toThrow(/sidecars\[0\]\.keys lists "jira" twice/);
+  // Stdin is not a path, so it says nothing about which collections the run
+  // covers: it is the one input allowed beside the flag, and the collections
+  // are still selected so their manifests are available to the merge.
+  it("allows stdin beside --collection", async () => {
+    const root = await repo();
+    const run = await resolveRunConfig({
+      cwd: root,
+      inputs: ["-"],
+      collections: ["guides"],
+    });
+    expect(run.inputs).toEqual(["-"]);
+    expect(run.collections.map((c) => c.name)).toEqual(["guides"]);
+    expect(run.fromCollections).toBe(false);
   });
 
-  it("rejects one key owned by two entries", () => {
-    expect(() =>
-      parse([
-        "sidecars:",
-        "  - file: ./a.yaml",
-        "    keys: [jira]",
-        "  - file: ./b.yaml",
-        "    keys: [team, jira]",
-      ]),
-    ).toThrow(/sidecars\[1\]\.keys claims "jira", which sidecars\[0\] already owns/);
-  });
-
-  it("rejects $schema as an owned key", () => {
-    expect(() =>
-      parse(["sidecars:", "  - file: ./m.yaml", "    keys: ['$schema']"]),
-    ).toThrow(/sidecars\[0\]\.keys may not include "\$schema"/);
-  });
-
-  it("rejects an unknown key inside a sidecar entry", () => {
-    expect(() =>
-      parse([
-        "sidecars:",
-        "  - file: ./m.yaml",
-        "    keys: [jira]",
-        "    required: true",
-      ]),
-    ).toThrow(/sidecars\[0\]/);
+  // 0014, one level up from an empty glob: a config that declares no documents
+  // hands the command an empty input list, and the command's own "No files to
+  // …" refusal is what the user sees.
+  it("hands back no inputs when the file declares no collections", async () => {
+    const root = await repo("meta:\n  schemas: [google:okf:0.1]\n");
+    const run = await resolveRunConfig({ cwd: root, inputs: [] });
+    expect(run.inputs).toEqual([]);
+    expect(run.collections).toEqual([]);
   });
 });

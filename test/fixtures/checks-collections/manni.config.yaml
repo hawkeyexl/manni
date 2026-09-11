@@ -1,0 +1,23 @@
+# Two collections and one check that reads one of them as a view (0041 rule 7).
+# `guides` and `blog` hold the same shape of document, and only `guides` has a
+# rule — so a check whose `FROM` names the collection must find the guide with
+# no owner and leave the blog post alone. Two collections also give the
+# `--collection` skip notice more than one name to print.
+collections:
+  - name: guides
+    paths:
+      - "guides/**/*.md"
+  - name: blog
+    paths:
+      - "blog/**/*.md"
+
+meta:
+  schemas:
+    - ./permissive.schema.json
+  checks:
+    - name: guide-needs-owner
+      query: >-
+        SELECT g._path AS path, 'owner' AS key,
+               'every guide needs an owner' AS message
+        FROM guides g
+        WHERE g.owner IS NULL

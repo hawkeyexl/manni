@@ -1,7 +1,7 @@
-paths:
-  - "*.md"
-exclude:
-  - "**/drafts/**"
+# The pre-family per-tool file, whose whole document is the `meta:` section.
+# It carries no `paths:`/`exclude:` — those moved to a top-level `collections:`
+# (proposal 0041), which a legacy file cannot express — so a run against it
+# names its own paths.
 schemas:
   - google:okf:0.1
 overrides:

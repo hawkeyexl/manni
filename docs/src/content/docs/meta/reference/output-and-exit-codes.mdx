@@ -36,8 +36,8 @@ Each error line has the form:
 - `(line N)` is omitted when no source line is known.
 - `[schema-id]` is the schema that produced the error.
 
-When the value at fault came from a [sidecar
-manifest](/manni/meta/reference/configuration/#sidecars) rather than the
+When the value at fault came from an [external-metadata
+manifest](/manni/meta/reference/configuration/#external-metadata) rather than the
 document, the location names the manifest instead, as `(docs-meta.yaml:6)`.
 The file line above it is still the document, because that is the finding's
 identity; the parenthesis is where the value was written.
@@ -120,7 +120,7 @@ Machine-readable. Prints a single JSON object with a run `summary` and a
 | `results[].errors[].subject` | string | The identifier within that keyword, which is the missing property, the additional property, the format name, or the expected type. Omitted for keywords whose parameter is a schema-authored *value*, such as `pattern`'s regex or `minLength`'s number. |
 | `results[].errors[].line` | number | 1-based source line. Omitted when unknown. |
 | `results[].errors[].col` | number | 1-based column. Supplied by the `html` and `xml` extractors, from the `content=` attribute of a `<meta>` tag or the value of an XML attribute. Omitted for every other format, and for a `required` violation in any format. That error reports the parent object, and a missing property has no column. |
-| `results[].errors[].file` | string | The file `line` and `col` refer to, when it is not `results[].file`. Set only for a value a [sidecar manifest](/manni/meta/reference/configuration/#sidecars) supplied, spelled the way the run spells file labels (`docs-meta.yaml`). Omitted for every violation whose value is in the document, which is every violation a run without `sidecars:` produces. The finding's subject file stays `results[].file`; this names where the value was written. |
+| `results[].errors[].file` | string | The file `line` and `col` refer to, when it is not `results[].file`. Set only for a value an [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) supplied, spelled the way the run spells file labels (`docs-meta.yaml`). Omitted for every violation whose value is in the document, which is every violation a run with no `externalMetadata:` on any collection produces. The finding's subject file stays `results[].file`; this names where the value was written. |
 
 `keyword` and `subject` are the machine-stable half of a violation's identity.
 They are what a script should key on when it needs to recognize "the same
@@ -145,8 +145,8 @@ Each line has the form:
 
 `line` and `col` are included only when known. `col` today means an `html` or
 `xml` document and a violation other than `required`. `<field>` is the field
-path, or `(root)` for a whole-document error. For a value a [sidecar
-manifest](/manni/meta/reference/configuration/#sidecars) supplied, `file=` and
+path, or `(root)` for a whole-document error. For a value an [external-metadata
+manifest](/manni/meta/reference/configuration/#external-metadata) supplied, `file=` and
 `line=` name the manifest and its line, because that is the line the annotation
 should land on:
 
@@ -227,7 +227,7 @@ which `upload-sarif` rejects.
 | `results[].ruleId` | string | `<schema-ref>/<keyword>`, for example `google:okf:0.1/required`. Built from `keyword`, never from the message, so an Ajv rewording cannot close and reopen every historical alert. |
 | `results[].level` | string | Always `error`. See [severity](#severity-is-always-error) below. |
 | `results[].message.text` | string | The field path (or `(root)`) followed by the violation message. |
-| `results[].locations[].physicalLocation.artifactLocation.uri` | string | The file, **relative to the repository root**. See [paths](#sarif-paths-are-repository-root-relative). For a value a [sidecar manifest](/manni/meta/reference/configuration/#sidecars) supplied, this is the manifest. Each finding resolves its own URI, so a manifest inside the repository is kept even when the document is not, and the reverse. |
+| `results[].locations[].physicalLocation.artifactLocation.uri` | string | The file, **relative to the repository root**. See [paths](#sarif-paths-are-repository-root-relative). For a value an [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) supplied, this is the manifest. Each finding resolves its own URI, so a manifest inside the repository is kept even when the document is not, and the reverse. |
 | `results[].locations[].physicalLocation.region.startLine` | number | 1-based source line. The whole `region` is **omitted** when no line is known. SARIF requires `startLine >= 1`. A `0` would be invalid, and a `1` would silently mislocate the finding at the top of the file. A location with only an `artifactLocation` renders as a file-level alert, which is true. No `startColumn` is ever emitted, even for a finding whose JSON `col` is set. The SARIF region stays line-only for now. |
 | `results[].partialFingerprints` | object | `{"docmetaViolation/v1": "<fingerprint>"}`, the same fingerprint the [baseline](/manni/meta/reference/cli/#baselines) records. |
 
@@ -236,21 +236,27 @@ which `upload-sarif` rejects.
 manni meta's own failures do not get a rule id built from `(parse)`. A document
 whose metadata block could not be read reports `manni/parse-error`, and one
 whose schema set could not be resolved reports `manni/schema-error`. Each is a
-real entry in `rules[]`. Two more ids are built by the ordinary join from a
+real entry in `rules[]`. More ids are built by the ordinary join from a
 reserved first segment rather than a schema. A [corpus
 check](/manni/meta/reference/configuration/#checks) named `n` reports
-`check:n/check`. A document carrying a key a [sidecar
-manifest](/manni/meta/reference/configuration/#sidecars) owns reports
-`sidecar:owned/sidecar`. Its `rules[]` entry reads "The document carries a key
-a sidecar manifest owns; the manifest is the only place that key may be set."
-Two documents sharing one value of a manifest's [join
-field](/manni/meta/reference/configuration/#joining-by-a-field) report
-`sidecar:duplicate/sidecar`, with the shared value as the finding's subject.
+`check:n/check`. A document carrying a key an [external-metadata
+manifest](/manni/meta/reference/configuration/#external-metadata) owns reports
+`external:owned/external`. Its `rules[]` entry reads "The document carries a key
+a manifest owns; the manifest is the only place that key may be set." Two
+documents sharing one value of a manifest's [join field](/manni/meta/reference/configuration/#external-metadata) report
+`external:duplicate/external`, with the shared value as the finding's subject.
+Its `rules[]` entry reads "Two documents carry the same value of a manifest's
+join field, so one manifest entry matched both."
+
+Those last two ids were `sidecar:owned/sidecar` and `sidecar:duplicate/sidecar`
+before external metadata was renamed, and a baseline recorded under the old ones
+[no longer matches](#the-rename-invalidates-two-baselined-findings).
+
 A [managed field](/manni/meta/reference/configuration/#derive) whose stamp
 disagrees with the evidence reports `derived:stale/derived`, with the field
 as its instance path. Its `rules[]` entry reads "The document's stamp for a
 managed field disagrees with the evidence; run manni meta derive." `derived`
-is the third reserved first segment, beside `check` and `sidecar`.
+is the third reserved first segment, beside `check` and `external`.
 
 The `-` (stdin) input produces **no** SARIF result. `<stdin>` is not a path any
 consumer can resolve, and a location pointing at one would be dropped anyway.
@@ -328,7 +334,7 @@ JUnit XML, which Jenkins, GitLab, CircleCI, and Azure render natively in their
 | `name` | `testcase` | The file path, as manni meta reported it. Not rebased onto the repository root. Unlike SARIF, nothing resolves it. |
 | `classname` | `testcase` | Always `manni.validate`. |
 | `type` | `failure` | The same rule id SARIF uses: `<schema-ref>/<keyword>`. |
-| `message` | `failure` | The field path (or `(root)`), the violation message, and `(line N)` when the line is known. For a value a [sidecar manifest](/manni/meta/reference/configuration/#sidecars) supplied, the location is `(docs-meta.yaml:6)`, as in the pretty format. |
+| `message` | `failure` | The field path (or `(root)`), the violation message, and `(line N)` when the line is known. For a value an [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) supplied, the location is `(docs-meta.yaml:6)`, as in the pretty format. |
 
 One test per **file** is deliberate. The tab then reads "2 tests, 1 failed" and
 matches `2 files checked, 1 failed`. One test per *violation* would make the
@@ -401,6 +407,34 @@ schema.
   regardless of how many violations there were.
 - A `--baseline` file that does not exist is exit `2`, not a silent pass.
 
+### The rename invalidates two baselined findings
+
+<Aside type="caution" title="Regenerate the baseline after upgrading">
+A baseline recorded before external metadata was renamed **stops matching** its
+`external:owned/external` and `external:duplicate/external` findings. They
+reappear as new, and the run exits `1` until the baseline is regenerated:
+
+```sh
+manni meta validate --write-baseline
+```
+
+This is the one upgrade action the rename costs. Nothing else in a baseline is
+affected.
+</Aside>
+
+A [fingerprint](/manni/meta/reference/cli/#baselines) is built from the schema
+ref, the instance path, the keyword and the subject. The schema ref of these two
+findings *is* the identity that was renamed. `sidecar:owned` became
+`external:owned`, and `sidecar:duplicate` became `external:duplicate`, so every
+recorded fingerprint for them changes. Every other finding's fingerprint is
+untouched, so the `--write-baseline` that fixes this reports a small, explicable
+diff. The same count comes back, moved from the old fingerprints to the new ones.
+
+Keeping `sidecar:` in the SARIF `ruleId` would have avoided the regeneration.
+The price would have been making the rule id the only place the old word
+survived. That is exactly the string a reader of a SARIF alert is least equipped
+to decode.
+
 ### Exit 2 when nothing was checked
 
 An input set that resolves to **zero files** is exit 2, not exit 0. Two shapes,
@@ -439,29 +473,52 @@ are looking at your schema host or at a proxy in front of it. See [what manni me
 requires of a fetched
 schema](/manni/meta/reference/schema-resolution/#what-manni-meta-requires-of-a-fetched-schema).
 
-### Exit 2 from a sidecar manifest
+### Exit 2 from an external-metadata manifest
 
-A [sidecar manifest](/manni/meta/reference/configuration/#sidecars) is a
+An [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) is a
 config-supplied input, so one that is wrong is the run's problem rather than a
 document's. These are exit 2, each naming the manifest and, where there is one,
 the entry's line:
 
 | Situation | Message |
 |---|---|
-| The manifest is missing, or not valid YAML. | `Sidecar manifest nope.yaml could not be read: ENOENT: …` |
-| The top level, or an entry, is not a mapping. | `Sidecar manifest bad-entry-scalar.yaml:1: "docs/auth.md" must be a mapping of owned keys to values.` |
-| An entry sets a key the sidecar does not own, or `$schema`. | `Sidecar manifest bad-unowned-key.yaml:1: "docs/auth.md" sets "team", which this sidecar does not own. Add it to the sidecar's "keys", or remove it from the entry.` |
-| An entry names a document the run did not load, on a config-corpus run. | `Sidecar manifest docs-meta.orphan.yaml:3 names "docs/gone.md", which this run did not load. Fix the entry, or remove it.` |
-| A [field-joined](/manni/meta/reference/configuration/#joining-by-a-field) entry names a value no loaded document carries, on a config-corpus run. | `Sidecar manifest docs-meta.orphan.yaml:3 names id "gone-guide", which no loaded document carries. Fix the entry, or remove it.` |
-| A [remote manifest](/manni/meta/reference/configuration/#remote-manifests) could not be fetched. The status is named, the token never. | `Sidecar manifest https://…/docs-meta.yaml could not be fetched: HTTP 404 (a private file answers 404 without a token; set "tokenEnv").` |
-| The variable `tokenEnv` names is not set. | `Sidecar manifest https://…/docs-meta.yaml: the environment variable PRIVATE_DOCS_TOKEN named by "tokenEnv" is not set.` |
-| The manifest is remote and the run is `--offline`. | `Sidecar manifest https://…/docs-meta.yaml is remote and the run is offline. Vendor it to a path, or drop --offline.` |
-| A `query` write would touch an owned key. | `"docs/auth.md": "jira" is owned by sidecar docs-meta.yaml; edit the sidecar file instead.` |
-| A `query` write would change the join field of a document that has an entry. | `"docs/auth.md": "id" is the field sidecar docs-meta.yaml joins on, and this document has an entry; change the manifest first.` |
+| The manifest is missing, or not valid YAML. | `Manifest nope.yaml could not be read: ENOENT: …` |
+| The top level, or an entry, is not a mapping. | `Manifest bad-entry-scalar.yaml:1: "docs/auth.md" must be a mapping of owned keys to values.` |
+| An entry sets a key the manifest does not own, or `$schema`. | `Manifest bad-unowned-key.yaml:1: "docs/auth.md" sets "team", which this manifest does not own. Add it to the manifest's "keys", or remove it from the entry.` |
+| An entry names a document the run did not load, on a config-corpus run. | `Manifest docs-meta.orphan.yaml:3 names "docs/gone.md", which this run did not load. Fix the entry, or remove it.` |
+| A [field-joined](/manni/meta/reference/configuration/#external-metadata) entry names a value no loaded document carries, on a config-corpus run. | `Manifest docs-meta.orphan.yaml:3 names id "gone-guide", which no loaded document carries. Fix the entry, or remove it.` |
+| A [remote manifest](/manni/meta/reference/configuration/#external-metadata) could not be fetched. The status is named, the token never. | `Manifest https://…/docs-meta.yaml could not be fetched: HTTP 404 (a private file answers 404 without a token; set "tokenEnv").` |
+| The variable `tokenEnv` names is not set. | `Manifest https://…/docs-meta.yaml: the environment variable PRIVATE_DOCS_TOKEN named by "tokenEnv" is not set.` |
+| The manifest is remote and the run is `--offline`. | `Manifest https://…/docs-meta.yaml is remote and the run is offline. Vendor it to a path, or drop --offline.` |
+| A `query` write would touch an owned key. | `"docs/auth.md": "jira" is owned by manifest docs-meta.yaml; edit the manifest instead.` |
+| A `query` write would change the join field of a document that has an entry. | `"docs/auth.md": "id" is the field manifest docs-meta.yaml joins on, and this document has an entry; change the manifest first.` |
+| One document is a member of two collections whose manifests both own one key. | `docs/api/auth.md: "owner" is owned by manifests in two of its collections, guides (guides-meta.yaml) and api (api-meta.yaml); a key has one manifest per file. Narrow one collection's paths or exclude.` |
 
 A schema violation on a value the manifest supplied, and a document carrying a
 key the manifest owns, are exit 1. So are two documents sharing one value of a
-join field. All three are verdicts about the documents.
+join field. All three are verdicts about the documents. The last row above is
+not. Two collections owning one key for one file is a config overlap, and there
+is nothing about the document to fix.
+
+### Exit 2 from collection selection
+
+[`--collection`](/manni/meta/reference/cli/#collections-as-inputs) selects a
+configured collection, so all three of its refusals are usage errors:
+
+| Situation | Message |
+|---|---|
+| No collection has that name. A comma-separated value lands here, because the flag repeats instead. | `no collection named "gides" in manni.config.yaml. Configured: guides, blog.` |
+| Positional paths were given beside it. | `--collection selects a configured collection; it cannot be combined with paths.` |
+| No config governs the run, whether none was found or `--no-config` was passed. | `--collection needs a config file to select from.` |
+
+Narrowing a run also **skips** the [corpus
+checks](/manni/meta/reference/configuration/#checks) rather than running them
+over a subset. That is a notice on stderr, not an error, and the exit code still
+comes from the findings:
+
+```
+manni: corpus checks skipped: run is scoped to collections guides, blog
+```
 
 ### Exit 2 from a derive source
 
@@ -486,7 +543,8 @@ narrowing on `derive`.
 | Config `derive.codeowners` names a file that is not there, and `codeowners` is a requested source. | `codeowners source unavailable: …`, naming the path. A repository with no CODEOWNERS file at all is not this case: `owner` derives null and stderr says `codeowners: no CODEOWNERS file found (…)` once. |
 | `derive` was given `-`. | `cannot derive <stdin>: no history behind it` |
 | `derive` was given a field that is not derivable. | `"verified-against" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed` |
-| `derive --fields` named a key a config [sidecar](/manni/meta/reference/configuration/#sidecars) owns. | `"owner" is owned by sidecar ./owners.yaml; a managed field has one authority, and a sidecar key already has one.` |
+| Config `derive.fields` names a key a collection's [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. The config is refused when it loads. | `manni.config.yaml: meta.derive.fields[3] "owner" is owned by collections[0].externalMetadata[0] (./owners.yaml) — a managed field has one authority, and a manifest key already has one. Drop it from one side.` |
+| `derive --fields` named a key a collection's [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. | `"owner" is owned by the manifest ./owners.yaml on collection guides; a managed field has one authority, and a manifest key already has one.` |
 | `derive` has no `derive.fields` in config and no `--fields`. | `nothing to derive: set derive.fields in manni.config.yaml or pass --fields` |
 | `derive` was given a findings format without `--check`. | `sarif is a findings format, which only --check produces` |
 | A `query` write would touch a managed key. | `"last-updated" is managed by derive; run manni meta derive instead.` |
@@ -500,7 +558,7 @@ A stamp that disagrees with the evidence is exit 1, from `validate` and from
 |---|---|
 | `validate` | One or more files failed validation. |
 | `get` | One or more files had a metadata block that could not be read. That means frontmatter that is not valid YAML, or that parses to something other than a mapping. A requested field that is merely *absent* is reported as unset and is **not** a failure. An absent **file** is different again: that is an operational error and exits 2. |
-| [`fill`](/manni/meta/reference/cli/#meta-fill) | A property the schema lists as `required` could not be filled confidently, or a file errored. Skipped **optional** properties leave the exit code at `0`. A file whose missing property a [sidecar](/manni/meta/reference/configuration/#sidecars) owns is refused as a per-file error, so it counts here. |
+| [`fill`](/manni/meta/reference/cli/#meta-fill) | A property the schema lists as `required` could not be filled confidently, or a file errored. Skipped **optional** properties leave the exit code at `0`. A file whose missing property an [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns is refused as a per-file error, so it counts here. |
 | [`derive`](/manni/meta/reference/cli/#meta-derive) | A file the run could not read or write, such as an unparseable document or a read-only format it could not stamp. That fails the run with or without `--check`, as it does for `fill`, because a stamp that was never applied must not read as done. Under `--check` a stale or unset managed field fails it too. A run that writes cleanly exits `0` whatever it changed, because the work is done rather than pending. |
 | `schemas` | Never. |
 
@@ -515,6 +573,12 @@ documents still need work, not that manni meta malfunctioned.
   **stderr**, prefixed with `manni: `. Usage errors the argument parser
   rejects also go to stderr, prefixed with `error: ` and followed by
   `(add --help for usage)`.
+- **Notices** are things a run wants you to know that are not failures. The
+  corpus checks a narrowed run skipped are one. A config that turned out to
+  govern the run, or a `.gitignore` that could not be consulted, are others.
+  They go to **stderr** too, with the same `manni: ` prefix, and they never
+  change the exit code. Nothing on stdout depends on them, so redirecting
+  stdout keeps the report clean.
 
 This separation lets you capture machine-readable output cleanly:
 

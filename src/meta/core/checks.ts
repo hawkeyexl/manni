@@ -157,12 +157,13 @@ function synthesizeMessage(
  */
 /**
  * The run context a check projection may need beyond the entries themselves:
- * the config whose named overrides become collection views (proposal 0027),
- * and the resolution inputs membership is decided with — the same ones
- * `validate` resolves each file's schema set with, so `FROM authors` in a
- * check means exactly "the files the author schema judged". The shape IS
- * `CollectionParams`: it is handed to `collectCollections` verbatim, and an
- * intersection is what keeps the two from drifting apart field by field.
+ * the declared collections that become views, and the two directories
+ * membership is arithmetic between (proposal 0041 rules 7 and 10). No
+ * resolution inputs: a check's `FROM authors` means "the files the authors
+ * collection selects", which is what the config says, and deciding it costs
+ * nothing but string arithmetic. The shape IS `CollectionParams`: it is handed
+ * to `collectCollections` verbatim, and an intersection is what keeps the two
+ * from drifting apart field by field.
  *
  * `derive` is the one addition (proposal 0040): how to get the rows of the
  * `derived` table when a check names it. A function rather than the rows,

@@ -27,7 +27,7 @@ afterAll(() => {
 /**
  * Throwaway copies of the DDL fixtures. Config discovery in a temp dir walks
  * only the cwd (no `.git` boundary above it), so the copied
- * `docmeta.config.yaml` governs the run exactly as in a real repo.
+ * `manni.config.yaml` governs the run exactly as in a real repo.
  */
 function copy(fixture: string): string {
   const d = mkdtempSync(join(tmpdir(), "docmeta-ddl-"));
@@ -44,6 +44,18 @@ const houseOf = (d: string): Record<string, unknown> =>
     string,
     unknown
   >;
+
+/**
+ * A family config (proposal 0041) over the DDL fixtures' `docs/` tree.
+ *
+ * The document set is declared once at the top level, for every tool, as a
+ * collection; only the metadata tool's own keys live under `meta:`. `metaKeys`
+ * is that section's body, already indented two spaces, so each call site still
+ * reads as the YAML it writes, and `lead` carries a comment the config
+ * rewriter must preserve.
+ */
+const familyConfig = (metaKeys: string, lead = ""): string =>
+  `${lead}collections:\n  - name: pages\n    paths:\n      - "docs/**/*.md"\nmeta:\n${metaKeys}`;
 
 describe("runQuery DDL — the schema is the table (0024)", () => {
   it("ALTER ADD edits the local schema in place, preview first", async () => {
@@ -133,7 +145,7 @@ describe("runQuery DDL — the schema is the table (0024)", () => {
     expect(
       (fork.properties as Record<string, unknown>).reviewed,
     ).toEqual({ type: "string" });
-    const cfg = readFileSync(join(d, "docmeta.config.yaml"), "utf8");
+    const cfg = readFileSync(join(d, "manni.config.yaml"), "utf8");
     expect(cfg).toContain("./schemas/okf-0.1.local.json");
     expect(cfg).toContain("# Pinned to a builtin on purpose.");
     expect(cfg).not.toContain("- google:okf:0.1");
@@ -158,8 +170,8 @@ describe("runQuery DDL — the schema is the table (0024)", () => {
     // A split set: an override sends two.md to a different schema list.
     const split = copy("query-ddl");
     appendFileSync(
-      join(split, "docmeta.config.yaml"),
-      'overrides:\n  - files: "docs/two.md"\n    schemas:\n      - google:okf:0.1\n',
+      join(split, "manni.config.yaml"),
+      '  overrides:\n    - files: "docs/two.md"\n      schemas:\n        - google:okf:0.1\n',
     );
     await expect(
       ddl("ALTER TABLE docs ADD COLUMN x TEXT", split),
@@ -348,8 +360,10 @@ describe("runQuery DDL — -s names the contract (0030)", () => {
     // -s set is by definition not the config's set.
     const d = copy("query-schema-flag");
     writeFileSync(
-      join(d, "docmeta.config.yaml"),
-      'paths:\n  - "docs/**/*.md"\nschemas:\n  - ./schemas/house.json\n  - google:okf:0.1\n',
+      join(d, "manni.config.yaml"),
+      familyConfig(
+        "  schemas:\n    - ./schemas/house.json\n    - google:okf:0.1\n",
+      ),
     );
     writeFileSync(
       join(d, "docs", "one.md"),
@@ -370,7 +384,7 @@ describe("runQuery DDL — -s names the contract (0030)", () => {
         (c) => "schema" in c && c.forkedFrom === "google:okf:0.1",
       ),
     ).toBe(true);
-    const cfg = readFileSync(join(d, "docmeta.config.yaml"), "utf8");
+    const cfg = readFileSync(join(d, "manni.config.yaml"), "utf8");
     expect(cfg).toContain("./schemas/okf-0.1.local.json");
     expect(cfg).not.toContain("google:okf:0.1");
     expect(cfg).toContain("./schemas/house.json");
@@ -385,8 +399,10 @@ describe("runQuery DDL — -s names the contract (0030)", () => {
     if (!okf) return;
     const d = copy("query-schema-flag");
     writeFileSync(
-      join(d, "docmeta.config.yaml"),
-      `paths:\n  - "docs/**/*.md"\nschemas:\n  - ./schemas/house.json\n  - ${okf.url}\n`,
+      join(d, "manni.config.yaml"),
+      familyConfig(
+        `  schemas:\n    - ./schemas/house.json\n    - ${okf.url}\n`,
+      ),
     );
     await runQuery({
       sql: "ALTER TABLE docs ADD COLUMN reviewed TEXT",
@@ -394,7 +410,7 @@ describe("runQuery DDL — -s names the contract (0030)", () => {
       cwd: d,
       schemas: ["google:okf:0.1"],
     });
-    const cfg = readFileSync(join(d, "docmeta.config.yaml"), "utf8");
+    const cfg = readFileSync(join(d, "manni.config.yaml"), "utf8");
     expect(cfg).toContain("./schemas/okf-0.1.local.json");
     expect(cfg).not.toContain(okf.url);
   });
@@ -440,8 +456,10 @@ describe("runQuery DDL — -s names the contract (0030)", () => {
     const d = copy("query-ddl");
     const pin = integrityOf(readFileSync(join(d, "schemas", "house.json")));
     writeFileSync(
-      join(d, "docmeta.config.yaml"),
-      `paths:\n  - "docs/**/*.md"\nschemas:\n  - ref: ./schemas/house.json\n    integrity: ${pin}\n`,
+      join(d, "manni.config.yaml"),
+      familyConfig(
+        `  schemas:\n    - ref: ./schemas/house.json\n      integrity: ${pin}\n`,
+      ),
     );
     const run = await ddlS(
       "ALTER TABLE docs ADD COLUMN reviewed TEXT",
@@ -452,7 +470,7 @@ describe("runQuery DDL — -s names the contract (0030)", () => {
     expect(
       run.changes?.some((c) => "config" in c && c.key === "integrity"),
     ).toBe(true);
-    const cfg = readFileSync(join(d, "docmeta.config.yaml"), "utf8");
+    const cfg = readFileSync(join(d, "manni.config.yaml"), "utf8");
     expect(cfg).not.toContain(pin);
     expect(cfg).toContain(
       integrityOf(readFileSync(join(d, "schemas", "house.json"))),
@@ -496,20 +514,22 @@ describe("runQuery DDL — -s names the contract (0030)", () => {
     cpSync(resolve(here, "fixtures", "query-ddl"), sub, { recursive: true });
     const pin = integrityOf(readFileSync(join(sub, "schemas", "house.json")));
     writeFileSync(
-      join(sub, "docmeta.config.yaml"),
-      `paths:\n  - "docs/**/*.md"\nschemas:\n  - ref: ./schemas/house.json\n    integrity: ${pin}\n`,
+      join(sub, "manni.config.yaml"),
+      familyConfig(
+        `  schemas:\n    - ref: ./schemas/house.json\n      integrity: ${pin}\n`,
+      ),
     );
     const run = await runQuery({
       sql: "ALTER TABLE docs ADD COLUMN reviewed TEXT",
       inputs: ["sub/docs"],
       cwd: root,
-      configPath: join(sub, "docmeta.config.yaml"),
+      configPath: join(sub, "manni.config.yaml"),
       schemas: ["sub/schemas/house.json"],
     });
     expect(
       run.changes?.some((c) => "config" in c && c.key === "integrity"),
     ).toBe(true);
-    const cfg = readFileSync(join(sub, "docmeta.config.yaml"), "utf8");
+    const cfg = readFileSync(join(sub, "manni.config.yaml"), "utf8");
     expect(cfg).not.toContain(pin);
     expect(cfg).toContain(
       integrityOf(readFileSync(join(sub, "schemas", "house.json"))),
@@ -517,7 +537,7 @@ describe("runQuery DDL — -s names the contract (0030)", () => {
     const v = await runValidate({
       inputs: ["sub/docs"],
       cwd: root,
-      configPath: join(sub, "docmeta.config.yaml"),
+      configPath: join(sub, "manni.config.yaml"),
     });
     expect(v.summary.failed).toBe(0);
 
@@ -531,8 +551,10 @@ describe("runQuery DDL — -s names the contract (0030)", () => {
       readFileSync(join(tampered, "schemas", "house.json")),
     );
     writeFileSync(
-      join(tampered, "docmeta.config.yaml"),
-      `paths:\n  - "docs/**/*.md"\nschemas:\n  - ref: ./schemas/house.json\n    integrity: ${stalePin}\n`,
+      join(tampered, "manni.config.yaml"),
+      familyConfig(
+        `  schemas:\n    - ref: ./schemas/house.json\n      integrity: ${stalePin}\n`,
+      ),
     );
     appendFileSync(join(tampered, "schemas", "house.json"), "\n");
     await expect(
@@ -540,7 +562,7 @@ describe("runQuery DDL — -s names the contract (0030)", () => {
         sql: "ALTER TABLE docs ADD COLUMN reviewed TEXT",
         inputs: ["tampered/docs"],
         cwd: root,
-        configPath: join(tampered, "docmeta.config.yaml"),
+        configPath: join(tampered, "manni.config.yaml"),
         schemas: ["tampered/schemas/house.json"],
       }),
     ).rejects.toThrow(/recorded integrity/);
@@ -558,8 +580,8 @@ describe("runQuery DDL — -s names the contract (0030)", () => {
   it("a split corpus proceeds under -s, and the refusal without it names the remedy", async () => {
     const split = copy("query-ddl");
     appendFileSync(
-      join(split, "docmeta.config.yaml"),
-      'overrides:\n  - files: "docs/two.md"\n    schemas:\n      - google:okf:0.1\n',
+      join(split, "manni.config.yaml"),
+      '  overrides:\n    - files: "docs/two.md"\n      schemas:\n        - google:okf:0.1\n',
     );
     await expect(
       ddl("ALTER TABLE docs ADD COLUMN x TEXT", split),
@@ -602,21 +624,19 @@ describe("runQuery DDL — targeting, containment, and the config edit", () => {
 
   it("repoints the governing config even when it is spelled .yml", async () => {
     const d = copy("query-ddl-builtin");
-    renameSync(
-      join(d, "docmeta.config.yaml"),
-      join(d, "docmeta.config.yml"),
-    );
+    renameSync(join(d, "manni.config.yaml"), join(d, "manni.config.yml"));
     await ddl("ALTER TABLE docs ADD COLUMN reviewed TEXT", d, true);
-    const cfg = readFileSync(join(d, "docmeta.config.yml"), "utf8");
+    const cfg = readFileSync(join(d, "manni.config.yml"), "utf8");
     expect(cfg).toContain("./schemas/okf-0.1.local.json");
     expect(cfg).toContain("# Pinned to a builtin on purpose.");
   });
 
-  it("edits the -c config, never a bystander docmeta.config.yaml", async () => {
+  it("edits the -c config, never a bystander manni.config.yaml", async () => {
     const d = copy("query-ddl-builtin");
-    renameSync(join(d, "docmeta.config.yaml"), join(d, "custom.yaml"));
-    const decoy = "# Decoy that does not govern this run.\nschemas:\n  - google:okf:0.1\n";
-    writeFileSync(join(d, "docmeta.config.yaml"), decoy);
+    renameSync(join(d, "manni.config.yaml"), join(d, "custom.yaml"));
+    const decoy =
+      "# Decoy that does not govern this run.\nmeta:\n  schemas:\n    - google:okf:0.1\n";
+    writeFileSync(join(d, "manni.config.yaml"), decoy);
     await runQuery({
       sql: "ALTER TABLE docs ADD COLUMN reviewed TEXT",
       inputs: ["docs"],
@@ -627,17 +647,20 @@ describe("runQuery DDL — targeting, containment, and the config edit", () => {
     expect(readFileSync(join(d, "custom.yaml"), "utf8")).toContain(
       "./schemas/okf-0.1.local.json",
     );
-    expect(readFileSync(join(d, "docmeta.config.yaml"), "utf8")).toBe(decoy);
+    expect(readFileSync(join(d, "manni.config.yaml"), "utf8")).toBe(decoy);
   });
 
   it("repoints a mapping-form schemas: entry, comments intact", async () => {
     const d = copy("query-ddl-builtin");
     writeFileSync(
-      join(d, "docmeta.config.yaml"),
-      '# Pinned to a builtin on purpose.\npaths:\n  - "docs/**/*.md"\nschemas:\n  - ref: google:okf:0.1\n',
+      join(d, "manni.config.yaml"),
+      familyConfig(
+        "  schemas:\n    - ref: google:okf:0.1\n",
+        "# Pinned to a builtin on purpose.\n",
+      ),
     );
     await ddl("ALTER TABLE docs ADD COLUMN reviewed TEXT", d, true);
-    const cfg = readFileSync(join(d, "docmeta.config.yaml"), "utf8");
+    const cfg = readFileSync(join(d, "manni.config.yaml"), "utf8");
     expect(cfg).toContain("ref: ./schemas/okf-0.1.local.json");
     expect(cfg).toContain("# Pinned to a builtin on purpose.");
     expect(cfg).not.toContain("google:okf:0.1\n");
@@ -657,14 +680,14 @@ describe("runQuery DDL — targeting, containment, and the config edit", () => {
 
   it("discloses the config edit as a change, and a preview leaves it alone", async () => {
     const d = copy("query-ddl-builtin");
-    const before = readFileSync(join(d, "docmeta.config.yaml"), "utf8");
+    const before = readFileSync(join(d, "manni.config.yaml"), "utf8");
     const preview = await ddl("ALTER TABLE docs ADD COLUMN reviewed TEXT", d);
     expect(
       preview.changes?.some(
         (c) => "config" in c && c.key === "schemas" && !c.written,
       ),
     ).toBe(true);
-    expect(readFileSync(join(d, "docmeta.config.yaml"), "utf8")).toBe(before);
+    expect(readFileSync(join(d, "manni.config.yaml"), "utf8")).toBe(before);
   });
 
   it("forks a published-builtin URL as the builtin it aliases", async () => {
@@ -673,8 +696,8 @@ describe("runQuery DDL — targeting, containment, and the config edit", () => {
     if (!okf) return;
     const d = copy("query-ddl-builtin");
     writeFileSync(
-      join(d, "docmeta.config.yaml"),
-      `paths:\n  - "docs/**/*.md"\nschemas:\n  - ${okf.url}\n`,
+      join(d, "manni.config.yaml"),
+      familyConfig(`  schemas:\n    - ${okf.url}\n`),
     );
     const run = await runQuery({
       sql: "ALTER TABLE docs ADD COLUMN reviewed TEXT",
@@ -687,7 +710,7 @@ describe("runQuery DDL — targeting, containment, and the config edit", () => {
         (c) => "schema" in c && c.forkedFrom === "google:okf:0.1",
       ),
     ).toBe(true);
-    expect(readFileSync(join(d, "docmeta.config.yaml"), "utf8")).toContain(
+    expect(readFileSync(join(d, "manni.config.yaml"), "utf8")).toContain(
       "./schemas/okf-0.1.local.json",
     );
   });
@@ -710,14 +733,16 @@ describe("runQuery DDL — targeting, containment, and the config edit", () => {
     const d = copy("query-ddl");
     const pin = integrityOf(readFileSync(join(d, "schemas", "house.json")));
     writeFileSync(
-      join(d, "docmeta.config.yaml"),
-      `paths:\n  - "docs/**/*.md"\nschemas:\n  - ref: ./schemas/house.json\n    integrity: ${pin}\n`,
+      join(d, "manni.config.yaml"),
+      familyConfig(
+        `  schemas:\n    - ref: ./schemas/house.json\n      integrity: ${pin}\n`,
+      ),
     );
     const run = await ddl("ALTER TABLE docs ADD COLUMN reviewed TEXT", d, true);
     expect(
       run.changes?.some((c) => "config" in c && c.key === "integrity"),
     ).toBe(true);
-    const cfg = readFileSync(join(d, "docmeta.config.yaml"), "utf8");
+    const cfg = readFileSync(join(d, "manni.config.yaml"), "utf8");
     expect(cfg).not.toContain(pin);
     expect(cfg).toContain(
       integrityOf(readFileSync(join(d, "schemas", "house.json"))),
@@ -738,8 +763,8 @@ describe("runQuery DDL — targeting, containment, and the config edit", () => {
   it("refuses a URL schema with the vendor-first remedy", async () => {
     const d = copy("query-ddl");
     writeFileSync(
-      join(d, "docmeta.config.yaml"),
-      'paths:\n  - "docs/**/*.md"\nschemas:\n  - https://example.com/x.json\n',
+      join(d, "manni.config.yaml"),
+      familyConfig("  schemas:\n    - https://example.com/x.json\n"),
     );
     await expect(
       ddl("ALTER TABLE docs ADD COLUMN x TEXT", d),
@@ -762,8 +787,10 @@ describe("runQuery DDL — targeting, containment, and the config edit", () => {
     const d = copy("query-ddl");
     writeFileSync(join(d, "schemas", "extra.json"), "{\n  \"type\": \"object\"\n}\n");
     writeFileSync(
-      join(d, "docmeta.config.yaml"),
-      'paths:\n  - "docs/**/*.md"\nschemas:\n  - ./schemas/house.json\n  - ./schemas/extra.json\n',
+      join(d, "manni.config.yaml"),
+      familyConfig(
+        "  schemas:\n    - ./schemas/house.json\n    - ./schemas/extra.json\n",
+      ),
     );
     const err = await ddl("ALTER TABLE docs ADD COLUMN x TEXT", d).catch(
       (e: unknown) => e as Error,
@@ -781,8 +808,10 @@ describe("runQuery DDL — targeting, containment, and the config edit", () => {
     const d = copy("query-ddl");
     writeFileSync(join(d, "schemas", "extra.json"), '{\n  "type": "object"\n}\n');
     writeFileSync(
-      join(d, "docmeta.config.yaml"),
-      'paths:\n  - "docs/**/*.md"\nschemas:\n  - ./schemas/house.json\n  - ./schemas/extra.json\n',
+      join(d, "manni.config.yaml"),
+      familyConfig(
+        "  schemas:\n    - ./schemas/house.json\n    - ./schemas/extra.json\n",
+      ),
     );
     // two.md spells the identical set in the opposite order.
     writeFileSync(
@@ -801,8 +830,10 @@ describe("runQuery DDL — targeting, containment, and the config edit", () => {
       '{\n  "required": ["title"]\n}\n',
     );
     writeFileSync(
-      join(d, "docmeta.config.yaml"),
-      'paths:\n  - "docs/**/*.md"\nschemas:\n  - ./schemas/house.json\n  - ./schemas/strict.json\n',
+      join(d, "manni.config.yaml"),
+      familyConfig(
+        "  schemas:\n    - ./schemas/house.json\n    - ./schemas/strict.json\n",
+      ),
     );
     await expect(
       ddl("ALTER TABLE docs DROP COLUMN title", d, true),

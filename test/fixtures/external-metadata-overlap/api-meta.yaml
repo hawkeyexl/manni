@@ -1,0 +1,4 @@
+# The narrower collection's manifest, owning the same key for the pages it
+# covers. Legal on its own; ambiguous only for a page both collections hold.
+docs/api/auth.md:
+  owner: api-team

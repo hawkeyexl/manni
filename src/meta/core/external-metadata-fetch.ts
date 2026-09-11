@@ -1,5 +1,5 @@
 /**
- * Fetch a remote sidecar manifest (proposal 0038).
+ * Fetch a remote manifest (proposal 0038).
  *
  * A manifest named by URL is fetched at the start of every run and never
  * cached: it is data that changes with every page, and a stale copy validates
@@ -16,10 +16,10 @@
 import { DocmetaError } from "../types.js";
 
 /** Default network timeout, matching the schema fetch. */
-export const SIDECAR_FETCH_TIMEOUT_MS = 10_000;
+export const EXTERNAL_METADATA_FETCH_TIMEOUT_MS = 10_000;
 
 /** Body cap, matching the schema fetch. */
-export const SIDECAR_FETCH_MAX_BYTES = 5 * 1024 * 1024;
+export const EXTERNAL_METADATA_FETCH_MAX_BYTES = 5 * 1024 * 1024;
 
 /** Redirects followed before giving up. */
 const MAX_REDIRECTS = 5;
@@ -27,7 +27,7 @@ const MAX_REDIRECTS = 5;
 /** Backoff before the single retry. */
 const RETRY_DELAY_MS = 500;
 
-export interface SidecarFetchOptions {
+export interface ExternalMetadataFetchOptions {
   /** Environment variable holding a bearer token. Absent means an anonymous request. */
   tokenEnv?: string;
   timeoutMs?: number;
@@ -38,59 +38,25 @@ export interface SidecarFetchOptions {
   env?: Record<string, string | undefined>;
 }
 
-/**
- * Whether a URL may name a sidecar manifest: `https://` anywhere, or `http://`
- * on a loopback host only, where plaintext leaks nothing. Userinfo is refused
- * because the URL is printed in every diagnostic and a secret in it would
- * print too. Returns the reason it may not, or `null`.
- */
-export function sidecarUrlProblem(url: string): string | null {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return "is not a valid URL";
-  }
-  if (parsed.username !== "" || parsed.password !== "") {
-    return 'carries a credential in the URL; put the token in an environment variable and name it with "tokenEnv"';
-  }
-  if (parsed.protocol === "https:") return null;
-  if (parsed.protocol === "http:" && isLoopback(parsed.hostname)) return null;
-  if (parsed.protocol === "http:") {
-    return "is plain http://; a bearer token over plaintext is a leak, and a public manifest is served over https too";
-  }
-  return `has the unsupported scheme "${parsed.protocol}"`;
-}
-
-function isLoopback(host: string): boolean {
-  return (
-    host === "localhost" ||
-    host === "127.0.0.1" ||
-    host === "[::1]" ||
-    host === "::1" ||
-    host.startsWith("127.")
-  );
-}
-
 /** Fetch one remote manifest. Resolves to its text; throws `DocmetaError`. */
-export async function fetchSidecar(
+export async function fetchExternalMetadata(
   url: string,
-  opts: SidecarFetchOptions = {},
+  opts: ExternalMetadataFetchOptions = {},
 ): Promise<string> {
   if (opts.offline) {
     throw new DocmetaError(
-      `Sidecar manifest ${url} is remote and the run is offline. Vendor it to a path, or drop --offline.`,
+      `Manifest ${url} is remote and the run is offline. Vendor it to a path, or drop --offline.`,
     );
   }
-  const timeoutMs = opts.timeoutMs ?? SIDECAR_FETCH_TIMEOUT_MS;
-  const maxBytes = opts.maxBytes ?? SIDECAR_FETCH_MAX_BYTES;
+  const timeoutMs = opts.timeoutMs ?? EXTERNAL_METADATA_FETCH_TIMEOUT_MS;
+  const maxBytes = opts.maxBytes ?? EXTERNAL_METADATA_FETCH_MAX_BYTES;
   const env = opts.env ?? process.env;
   let token: string | undefined;
   if (opts.tokenEnv !== undefined) {
     token = env[opts.tokenEnv];
     if (token === undefined || token === "") {
       throw new DocmetaError(
-        `Sidecar manifest ${url}: the environment variable ${opts.tokenEnv} named by "tokenEnv" is not set.`,
+        `Manifest ${url}: the environment variable ${opts.tokenEnv} named by "tokenEnv" is not set.`,
       );
     }
   }
@@ -104,7 +70,7 @@ export async function fetchSidecar(
   }
   if (res instanceof Error) {
     throw new DocmetaError(
-      `Sidecar manifest ${url} could not be fetched: ${res.message}`,
+      `Manifest ${url} could not be fetched: ${res.message}`,
     );
   }
   if (!res.ok) {
@@ -115,7 +81,7 @@ export async function fetchSidecar(
           ? " (a private file answers 404 without a valid token)"
           : "";
     throw new DocmetaError(
-      `Sidecar manifest ${url} could not be fetched: HTTP ${res.status}${hint}.`,
+      `Manifest ${url} could not be fetched: HTTP ${res.status}${hint}.`,
     );
   }
   return readCapped(url, res, maxBytes);
@@ -188,7 +154,7 @@ async function readCapped(
     if (total > maxBytes) {
       await reader.cancel();
       throw new DocmetaError(
-        `Sidecar manifest ${url} is too large: the response exceeds the ${maxBytes}-byte limit.`,
+        `Manifest ${url} is too large: the response exceeds the ${maxBytes}-byte limit.`,
       );
     }
     chunks.push(value);

@@ -115,19 +115,35 @@ deliberately.
 
 ### Let the config file supply the paths
 
-If your repository has a `manni.config.yaml` at its root, its `paths:` key is
-the fallback when you pass no positional targets. That lets the workflow step
-drop the glob entirely:
+If your repository has a `manni.config.yaml` at its root, its top-level
+`collections:` list already names the document sets. A run with no positional
+targets reads those. That lets the workflow step drop the glob entirely:
 
 ```yaml title=".github/workflows/manni.yml" {3}
 - name: Validate frontmatter
-  # Targets come from paths: in manni.config.yaml at the repo root.
+  # Targets come from collections: in manni.config.yaml at the repo root.
   run: npx -y @hawkeyexl/manni meta validate --format github
 ```
 
 Keeping the target list in `manni.config.yaml` means the same command works
-locally and in CI, and you change what gets validated in one place. See
-[Create your manni.config.yaml](/manni/meta/set-up/) for the config keys.
+locally and in CI, and you change what gets validated in one place. Because a
+collection is declared once for every manni tool rather than per tool, the
+a11y gate beside this one reads the same list. See
+[Create your manni.config.yaml](/manni/meta/set-up/config/) for both halves of
+the file.
+
+To gate one part of a docs set rather than all of it, name its collection.
+`--collection <name>` is repeatable, one name per occurrence:
+
+```yaml title=".github/workflows/manni.yml"
+- name: Validate the published guides
+  run: npx -y @hawkeyexl/manni meta validate --collection guides --format github
+```
+
+A scoped run does skip corpus
+[`checks:`](/manni/meta/reference/configuration/#checks), with a notice on
+stderr, because a rule that spans the corpus cannot be answered by part of it.
+Keep one unscoped job if you gate on those.
 
 ## Add a step to an existing workflow
 

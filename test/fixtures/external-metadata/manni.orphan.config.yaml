@@ -1,0 +1,11 @@
+# The orphan half of the fixture (proposal 0037, moved under `collections:` by
+# 0041): a manifest entry naming a document the corpus does not contain. No
+# `meta:` section, so the built-in default schema judges the files and the
+# orphan refusal is the only thing this config is about.
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./docs-meta.orphan.yaml
+        keys: [jira]
