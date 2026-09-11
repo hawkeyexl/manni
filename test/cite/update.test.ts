@@ -213,8 +213,18 @@ describe("runUpdate", () => {
     expect(await refusal(update({ inputs: ["pages/moved.md"], sources: false }))).toBe(message);
     expect(await refusal(update({ inputs: ["pages/moved.md"], noConfig: false, configPath: tempConfig("sources: false") }))).toBe(message);
     expect(await refusal(update({ inputs: [] }))).toBe(
-      "No files to update. Pass paths/globs, or add `paths:` under `cite:` in manni.config.yaml.",
+      "No files to update. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.",
     );
+  });
+
+  it("falls back to the configured collections when no paths are given", async () => {
+    workspace("moved.md");
+    const config = join(cwd, "manni.config.yaml");
+    writeFileSync(config, "collections:\n  - name: pages\n    paths: ['pages/*.md']\ncite:\n  git: false\n", "utf8");
+    const run = await update({ inputs: [], noConfig: false, configPath: config });
+    expect(run.pages.map((p) => [p.file, p.written])).toEqual([["pages/moved.md", true]]);
+    expect(run.rewritten).toBe(2);
+    expect(await statuses("pages/moved.md", config)).toEqual(["current", "current"]);
   });
 
   it("takes stdin, returning the diff without writing", async () => {

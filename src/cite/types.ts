@@ -8,6 +8,7 @@
  * the cited lines, compares the pin, and classifies each entry.
  */
 import type { ValidationResult } from "../meta/index.js";
+import type { CollectionConfig } from "../shared/collections.js";
 
 /** A parsed `src`: `path`, `path:L`, `path:L1-L2`, or `~token[:…]`. */
 export interface SourceRange {
@@ -228,8 +229,15 @@ export interface PageCitations {
 }
 
 export interface CheckOptions {
+  /** Positional inputs; empty means the configured collections' `paths:` (0041). */
   inputs: string[];
+  /**
+   * `--collection <name>`, repeatable: the collections this run covers. Empty
+   * or absent means every declared one; see `selectCollections`.
+   */
+  collection?: string[];
   exts?: string[];
+  /** `--exclude`, appended to the selected collections' `exclude:` when the run reads from them. */
   exclude?: string[];
   as?: string;
   configPath?: string;
@@ -324,10 +332,12 @@ export interface UpdateRun {
   exitCode: 0 | 1;
 }
 
-/** Config under `cite:` in manni.config.yaml, camelCase as `meta:` is. */
+/**
+ * Config under `cite:` in manni.config.yaml, camelCase as `meta:` is. The
+ * document set is not here: proposal 0041 moved `paths` and `exclude` to the
+ * family-level `collections:` list, which every tool reads.
+ */
 export interface CiteConfig {
-  paths?: string[];
-  exclude?: string[];
   allowEmpty?: boolean;
   respectGitignore?: boolean;
   root?: string;
@@ -343,14 +353,26 @@ export interface LoadedCiteConfig {
   config: CiteConfig;
   path: string;
   dir: string;
+  /** The file as the user would name it, for messages. */
+  source: string;
+  /** The family file's top-level `collections:`, parsed by the shared layer (0041). */
+  collections: CollectionConfig[];
 }
 
 /** What every command core resolves before touching a file. */
 export interface CiteRun {
   config: CiteConfig | null;
+  /** The positional inputs, or the selected collections' `paths:` in declaration order. */
   inputs: string[];
-  /** Directory positional inputs and config `paths` resolve from. */
+  /** Directory the inputs resolve from: cwd for positional inputs, the config directory for collections. */
   base: string;
+  /**
+   * The collections this run covers: every declared one, or the ones
+   * `--collection` named. `[]` when no config governs the run.
+   */
+  collections: CollectionConfig[];
+  /** Whether `inputs` came from the collections rather than the command line. */
+  fromCollections: boolean;
   configDir?: string;
   configPath?: string;
   /** Absolute root `src:` paths resolve from. */

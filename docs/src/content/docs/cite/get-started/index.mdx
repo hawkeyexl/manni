@@ -140,12 +140,15 @@ Retries default to 3.
 </Steps>
 
 <Aside type="note" title="Let the config supply the paths">
-  With `paths:` under `cite:` in `manni.config.yaml`, a bare `manni cite check`
-  checks the same pages CI does. The example repo's config is two lines:
+  With the pages declared as a collection under `collections:` in
+  `manni.config.yaml`, a bare `manni cite check` checks the same pages CI
+  does. The example repo's config is three lines, and every manni tool reads
+  them:
 
   ```yaml title="manni.config.yaml"
-  cite:
-    paths: ["docs/**/*.md"]
+  collections:
+    - name: docs-pages
+      paths: ["docs/**/*.md"]
   ```
 
   Every key is in the [configuration reference](/manni/cite/reference/configuration/).

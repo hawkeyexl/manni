@@ -130,8 +130,9 @@ sources and both come back.
 
 2. **Adapt the targets.** Replace `"docs/**/*.md"` with the paths, directories
    or globs to check, quoted so the shell hands them to the tool intact. With
-   `paths:` under `cite:` in `manni.config.yaml`, drop the argument entirely
-   and the same command works locally and in CI.
+   the pages declared as a collection under `collections:` in
+   `manni.config.yaml`, drop the argument entirely and the same command works
+   locally and in CI.
 
 3. **Commit and push.** On the next pull request the job runs. A clean run
    passes, a `moved` warns without failing, and a `changed` fails the job and

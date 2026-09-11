@@ -88,6 +88,7 @@ export async function prepareRun(
     configPath: opts.configPath,
     noConfig: opts.noConfig,
     inputs: opts.inputs,
+    collection: opts.collection,
     root: opts.root,
     onConfigLoaded: opts.onConfigLoaded,
     onNotice: opts.onNotice,
@@ -100,7 +101,7 @@ export async function prepareRun(
   }
   if (inputs.length === 0) {
     throw new CiteError(
-      `No files to ${verb}. Pass paths/globs, or add \`paths:\` under \`cite:\` in manni.config.yaml.`,
+      `No files to ${verb}. Pass paths/globs, or declare a collection under \`collections:\` in manni.config.yaml.`,
     );
   }
 
@@ -118,7 +119,15 @@ export async function prepareRun(
   const exts = opts.exts ?? forced?.extensions;
   const fileInputs = inputs.filter((input) => input !== STDIN_TOKEN);
   const allowEmpty = opts.allowEmpty ?? config?.allowEmpty;
-  const exclude = [...(config?.exclude ?? []), ...(opts.exclude ?? [])];
+  // A collection's `exclude:` shapes the collection, so it applies when the
+  // inputs came from the collections and never to a path the operator typed.
+  // `--exclude` filters either way; the union is deduplicated, first spelling wins.
+  const exclude = [
+    ...new Set([
+      ...(opts.exclude ?? []),
+      ...(run.fromCollections ? run.collections.flatMap((c) => c.exclude) : []),
+    ]),
+  ];
   const { files, gitignoreSkipped } = await resolveTargetSet({
     inputs: fileInputs,
     exts,

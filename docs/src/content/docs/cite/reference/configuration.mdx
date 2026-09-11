@@ -1,31 +1,53 @@
 ---
 title: Configuration reference
-description: "Every key of the cite section in manni.config.yaml (paths, exclude, root, baseline, git, sources, salt, obfuscate, severity), with types, defaults, discovery rules, the salt's precedence, and the severity table."
+description: "Every key of the cite section in manni.config.yaml (root, baseline, git, sources, salt, obfuscate, severity), with types, defaults, where the document set is declared, discovery rules, the salt's precedence, and the severity table."
 sidebar:
   order: 2
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-The citation tool reads the `cite:` key of the family's one config file,
-`manni.config.yaml`, so CI can run a bare `manni cite check`. The config is
-optional. Every key has a default. The tool runs without a config when two
-things hold. You pass paths on the command line, and the sources sit in the
-same repository as the pages.
+The citation tool reads two keys of the family's one config file,
+`manni.config.yaml`. The top-level `collections:` list says which pages exist,
+and the `cite:` section holds the tool's own settings. Together they let CI
+run a bare `manni cite check`. The config is optional. Every key has a default. The tool runs without a
+config when two things hold. You pass paths on the command line, and the
+sources sit in the same repository as the pages.
 
 ```yaml title="manni.config.yaml"
+collections:
+  - name: docs-pages
+    paths: ["docs/**/*.md"]      # the document set, read by every tool
 meta:
-  paths: ["docs/**/*.md"]        # the metadata tool's section; cite never reads it
+  schemas: ["./page.schema.json"] # the metadata tool's section; cite never reads it
 cite:
-  paths: ["docs/**/*.md"]
+  baseline: .manni-cite-baseline.json
+```
+
+## Document sets
+
+The pages a bare `manni cite check` or `manni cite update` covers come from
+the top-level `collections:` list, declared once for every tool. Each
+collection names its `paths` and `exclude` globs, relative to the config
+file. The keys, their rules and the `--collection` flag that narrows a run to
+one are on the metadata tool's
+[configuration reference](/manni/meta/reference/configuration/#collections).
+A family file that declares `collections:` and no `cite:` section is still
+this tool's config: the documents are declared, and every cite key takes its
+default.
+
+`paths` and `exclude` are not `cite:` keys. Each is refused with an error
+that says where it went (exit 2):
+
+```
+manni.config.yaml: "paths" is no longer a cite key. Document sets are declared once for every tool, under a top-level collections: list. See https://hawkeyexl.github.io/manni/meta/reference/configuration/#collections
+manni.config.yaml: "exclude" is no longer a cite key. Document sets are declared once for every tool, under a top-level collections: list. See https://hawkeyexl.github.io/manni/meta/reference/configuration/#collections
 ```
 
 ## Keys
 
 | Key | Type | Default | Mirrors | Description |
 |---|---|---|---|---|
-| `paths` | `string[]` | none | positional `[paths...]` | Default files, directories, or globs to check or update when no positional paths are given. Relative to the config file. |
-| `exclude` | `string[]` | none | `--exclude` | Globs to exclude from directory and glob walks. `--exclude` values are appended, so both apply. |
 | `allowEmpty` | `boolean` | `false` | `--allow-empty` | Treat an input set that resolves to zero files as success instead of an error (exit 2). |
 | `respectGitignore` | `boolean` | `true` | `--no-gitignore` | Skip files `.gitignore` covers when expanding directories and globs. `--no-gitignore` overrides it for one run. |
 | `root` | `string` | git root | `--root` | The directory `src:` paths resolve from, relative to the config file. It may point outside the repository, at a second checkout. `--root` overrides it for one run. |
@@ -37,9 +59,9 @@ cite:
 | `severity` | mapping | the [defaults](#severity) | none | Per-rule severity, `error`, `warning` or `off`. Only the rules named are changed. |
 
 The section must be a YAML mapping; an empty `cite:` is the same as no keys.
-`paths` and `exclude` must be lists of strings; the booleans must be booleans,
-so a quoted `"false"` is rejected rather than read as on. A type error names
-the key and the type it wanted, and nothing else.
+The booleans must be booleans, so a quoted `"false"` is rejected rather than
+read as on. A type error names the key and the type it wanted, and nothing
+else.
 
 ### Unknown keys are errors
 
@@ -64,10 +86,10 @@ is not a secret, so `eror` is quoted back as the typo it is.
 
 The tool looks for `manni.config.yaml` (then `manni.config.yml`) in the
 working directory and each ancestor, stopping at the nearest `.git` boundary.
-The first file found wins; ancestor files are never merged. A family file that
-exists but has no `cite:` key belongs to a sibling tool, and discovery keeps
-looking up the tree. There is no pre-family filename for this tool, so nothing
-else is read.
+The first file found wins; ancestor files are never merged. A family file with
+neither a `cite:` key nor a `collections:` list belongs to a sibling tool, and
+discovery keeps looking up the tree. There is no pre-family filename for this
+tool, so nothing else is read.
 
 `-c <path>` names the file outright and must exist. `--no-config` skips
 discovery and runs on the defaults alone. When a config governs the run,
@@ -77,7 +99,7 @@ discovery and runs on the defaults alone. When a config governs the run,
 
 | Path | Relative to |
 |---|---|
-| `paths:` and `exclude:` | the config file's directory |
+| a collection's `paths:` and `exclude:` | the config file's directory |
 | `root:` and `baseline:` | the config file's directory |
 | positional `[paths...]` | the working directory |
 | `--root` and `--baseline <path>` | the working directory |
@@ -114,8 +136,10 @@ resolve. The sources are reached through `--root` from a private CI job that
 checks out both:
 
 ```yaml title="manni.config.yaml (public docs repository)"
+collections:
+  - name: site
+    paths: ["src/content/docs/**/*.{md,mdx}"]
 cite:
-  paths: ["src/content/docs/**/*.{md,mdx}"]
   obfuscate: true
   severity:
     moved: error          # this repo wants a moved pin to block, not warn
@@ -132,8 +156,10 @@ MANNI_CITE_SALT="$CITE_SALT" manni cite check --root ../code -f sarif > cite.sar
 A single-repository setup needs none of that:
 
 ```yaml title="manni.config.yaml (pages and sources in one repository)"
+collections:
+  - name: docs-pages
+    paths: ["docs/**/*.md"]
 cite:
-  paths: ["docs/**/*.md"]
   baseline: .manni-cite-baseline.json
 ```
 

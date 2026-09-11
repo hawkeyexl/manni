@@ -26,6 +26,9 @@
 # What a bare `manni meta validate` checks: the published docs pages. Named
 # `site` rather than `docs`, which `collections:` refuses — `docs` is the table
 # every `manni meta query` reads, and a view of that name would shadow it.
+# The citation tool reads it too: a bare `manni cite check` checks these same
+# pages against this checkout, and every other cite key is a default, so it
+# needs no section of its own.
 collections:
   - name: site
     paths:
@@ -59,16 +62,6 @@ meta:
         # `text`. Before it existed, every Starlight key on every page went
         # unchecked.
         - astro:starlight:0.41
-
-cite:
-  # What a bare `manni cite check` checks: the same published pages. A page
-  # that pins a sentence to a line of this repo's own source is checked here,
-  # against this checkout, so the tool's docs are held to the tool. One key
-  # only, for the same reason `meta:` has two: the root of `src:` paths, the
-  # salt and the severities all take their defaults, and a default is not
-  # ambient behaviour for the test suite the way a setting would be.
-  paths:
-    - "docs/src/content/docs/**/*.{md,mdx}"
 
 # The accessibility tool reads `a11y:` and nothing else. Same narrowness as
 # above, for the same reason: this file is ambient for every run beneath the

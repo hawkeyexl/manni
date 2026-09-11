@@ -1,10 +1,14 @@
 # Every `cite:` key, once, so a test can prove each one round-trips. The
-# sibling `meta:` section is here to show the tool reads its own key only.
+# document set is the family's `collections:` list (proposal 0041), which the
+# citation tool reads as every tool does. The sibling `meta:` section is here
+# to show the tool reads its own key only.
+collections:
+  - name: pages
+    paths: ["pages/**/*.md", "guides/*.mdx"]
+    exclude: ["**/drafts/**"]
 meta:
-  paths: ["docs/**/*.md"]
+  schemas: ["./docs.schema.json"]
 cite:
-  paths: ["pages/**/*.md", "guides/*.mdx"]
-  exclude: ["**/drafts/**"]
   allowEmpty: true
   respectGitignore: false
   root: ../src

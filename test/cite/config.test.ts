@@ -45,8 +45,6 @@ describe("parseCiteConfig", () => {
   it("round-trips every key", () => {
     const cfg = parse(
       [
-        "paths: ['pages/**/*.md']",
-        "exclude: ['**/drafts/**']",
         "allowEmpty: true",
         "respectGitignore: false",
         "root: ../src",
@@ -62,8 +60,6 @@ describe("parseCiteConfig", () => {
       ].join("\n"),
     );
     expect(cfg).toEqual({
-      paths: ["pages/**/*.md"],
-      exclude: ["**/drafts/**"],
       allowEmpty: true,
       respectGitignore: false,
       root: "../src",
@@ -90,8 +86,24 @@ describe("parseCiteConfig", () => {
   it("rejects an unknown key, naming it and the supported keys", () => {
     expect(() => parse("allowEmtpy: true\n")).toThrow(CiteError);
     expect(() => parse("allowEmtpy: true\n")).toThrow(
-      /^Unknown key "allowEmtpy" under cite: in c\.yaml\. Supported keys: paths, exclude, allowEmpty, respectGitignore, root, baseline, git, sources, salt, obfuscate, severity\.$/,
+      /^Unknown key "allowEmtpy" under cite: in c\.yaml\. Supported keys: allowEmpty, respectGitignore, root, baseline, git, sources, salt, obfuscate, severity\.$/,
     );
+  });
+
+  it("refuses paths and exclude, saying where the document set went", () => {
+    // Refused before the unknown-key check, so the message says where the key
+    // moved rather than calling it a typo (proposal 0041).
+    const where =
+      "Document sets are declared once for every tool, under a top-level collections: list. See https://hawkeyexl.github.io/manni/meta/reference/configuration/#collections";
+    expect(() => parse("paths: ['pages/**/*.md']\n")).toThrow(CiteError);
+    expect(messageOf("paths: ['pages/**/*.md']\n")).toBe(
+      `c.yaml: "paths" is no longer a cite key. ${where}`,
+    );
+    expect(messageOf("exclude: ['**/drafts/**']\n")).toBe(
+      `c.yaml: "exclude" is no longer a cite key. ${where}`,
+    );
+    // Even beside a typo: the moved key is the more useful thing to say.
+    expect(messageOf("allowEmtpy: true\npaths: [pages]\n")).toMatch(/"paths" is no longer a cite key/);
   });
 
   it("rejects an unknown rule under severity, naming the rules", () => {
@@ -117,12 +129,6 @@ describe("parseCiteConfig", () => {
   });
 
   it("names the key and the expected type for a wrong-typed value", () => {
-    expect(() => parse("paths: pages\n")).toThrow(
-      /cite\.paths in c\.yaml must be a list of strings/,
-    );
-    expect(() => parse("exclude: [1]\n")).toThrow(
-      /cite\.exclude in c\.yaml must be a list of strings/,
-    );
     for (const key of ["allowEmpty", "respectGitignore", "git", "sources", "obfuscate"]) {
       expect(() => parse(`${key}: yes please\n`)).toThrow(
         new RegExp(`cite\\.${key} in c\\.yaml must be a boolean`),
@@ -153,7 +159,7 @@ describe("parseCiteConfig", () => {
       expect(message).not.toContain(secret);
     }
     // The same rule for every other key.
-    expect(messageOf(`paths: ${secret}\n`)).not.toContain(secret);
+    expect(messageOf(`root: [${secret}]\n`)).not.toContain(secret);
     expect(messageOf(`git: ${secret}\n`)).not.toContain(secret);
     expect(messageOf(`severity: ${secret}\n`)).not.toContain(secret);
   });
@@ -181,9 +187,12 @@ describe("loadCiteConfig", () => {
     const loaded = await loadCiteConfig(FIXTURE, here);
     expect(loaded?.path).toBe(FIXTURE);
     expect(loaded?.dir).toBe(fixtures);
+    expect(loaded?.source).toBe(FIXTURE);
+    // The document set is the family's, parsed by the shared layer (0041).
+    expect(loaded?.collections).toEqual([
+      { name: "pages", paths: ["pages/**/*.md", "guides/*.mdx"], exclude: ["**/drafts/**"], externalMetadata: [] },
+    ]);
     expect(loaded?.config).toEqual({
-      paths: ["pages/**/*.md", "guides/*.mdx"],
-      exclude: ["**/drafts/**"],
       allowEmpty: true,
       respectGitignore: false,
       root: "../src",
@@ -198,30 +207,54 @@ describe("loadCiteConfig", () => {
 
   it("takes its keys from under cite: and leaves meta: alone", async () => {
     const root = await tree({
-      "manni.config.yaml": "meta:\n  paths: [docs]\ncite:\n  git: false\n",
+      "manni.config.yaml": "meta:\n  schemas: [docs.schema.json]\ncite:\n  git: false\n",
     });
     const loaded = await loadCiteConfig(undefined, root);
     expect(loaded?.config).toEqual({ git: false });
+    expect(loaded?.collections).toEqual([]);
+    expect(loaded?.source).toBe("manni.config.yaml");
     expect(loaded?.path).toBe(join(root, "manni.config.yaml"));
     expect(loaded?.dir).toBe(root);
+  });
+
+  it("a family file with collections: and no cite: is cite's config", async () => {
+    // The documents are declared; the tool just has no options of its own.
+    // Discovery stops here rather than walking past it (0041).
+    const root = await tree({
+      ".git/HEAD": "ref: refs/heads/main\n",
+      "manni.config.yaml": "cite:\n  git: false\n",
+      "docs/manni.config.yaml": "collections:\n  - name: pages\n    paths: [pages]\n",
+    });
+    const loaded = await loadCiteConfig(undefined, join(root, "docs"));
+    expect(loaded?.path).toBe(join(root, "docs", "manni.config.yaml"));
+    expect(loaded?.config).toEqual({});
+    expect(loaded?.collections.map((c) => c.name)).toEqual(["pages"]);
+  });
+
+  it("a bad collections: list is a CiteError", async () => {
+    const root = await tree({
+      "manni.config.yaml": "collections:\n  - name: docs\n    paths: [docs]\ncite:\n  git: false\n",
+    });
+    await expect(loadCiteConfig(undefined, root)).rejects.toBeInstanceOf(CiteError);
+    await expect(loadCiteConfig(undefined, root)).rejects.toThrow(/collections\[0\]\.name "docs" collides/);
   });
 
   it("a family file with only meta: is not cite's config", async () => {
     const root = await tree({
       ".git/HEAD": "ref: refs/heads/main\n",
-      "manni.config.yaml": "cite:\n  paths: [pages]\n",
-      "docs/manni.config.yaml": "meta:\n  paths: [docs]\n",
+      "manni.config.yaml": "cite:\n  git: false\n",
+      "docs/manni.config.yaml": "meta:\n  schemas: [docs.schema.json]\n",
     });
     // Discovery keeps looking past the sibling tool's file...
     const loaded = await loadCiteConfig(undefined, join(root, "docs"));
     expect(loaded?.path).toBe(join(root, "manni.config.yaml"));
-    expect(loaded?.config.paths).toEqual(["pages"]);
+    expect(loaded?.config).toEqual({ git: false });
   });
 
   it("returns null when only a sibling tool is configured", async () => {
     const root = await tree({
       ".git/HEAD": "ref: refs/heads/main\n",
-      "manni.config.yaml": "meta:\n  paths: [docs]\n",
+      "manni.config.yaml": "meta:\n  schemas: [docs.schema.json]\n",
     });
     expect(await loadCiteConfig(undefined, root)).toBeNull();
   });
@@ -271,10 +304,23 @@ describe("resolveCiteRun", () => {
     return tmp;
   }
 
-  it("falls back to config paths, resolved from the config directory", async () => {
+  /** Two collections and a `cite:` section, the family shape (0041). */
+  const TWO_COLLECTIONS = [
+    "collections:",
+    "  - name: pages",
+    "    paths: [pages]",
+    "    exclude: ['**/drafts/**']",
+    "  - name: guides",
+    "    paths: ['guides/*.mdx']",
+    "cite:",
+    "  git: false",
+    "",
+  ].join("\n");
+
+  it("falls back to every collection's paths, resolved from the config directory", async () => {
     const root = await tree({
       ".git/HEAD": "ref: refs/heads/main\n",
-      "manni.config.yaml": "cite:\n  paths: [pages]\n",
+      "manni.config.yaml": TWO_COLLECTIONS,
       "docs/.keep": "",
     });
     const cwd = join(root, "docs");
@@ -285,31 +331,85 @@ describe("resolveCiteRun", () => {
       env: {},
       onConfigLoaded: (info) => seen.push(info),
     });
-    expect(run.inputs).toEqual(["pages"]);
+    expect(run.inputs).toEqual(["pages", "guides/*.mdx"]);
     expect(run.base).toBe(root);
+    expect(run.fromCollections).toBe(true);
+    expect(run.collections.map((c) => c.name)).toEqual(["pages", "guides"]);
     expect(run.configDir).toBe(root);
     expect(run.configPath).toBe(join(root, "manni.config.yaml"));
-    expect(run.config?.paths).toEqual(["pages"]);
+    expect(run.config).toEqual({ git: false });
     expect(seen).toEqual([{ path: join(root, "manni.config.yaml"), dir: root }]);
+  });
+
+  it("--collection narrows the run to the named collections, in declaration order", async () => {
+    const root = await tree({
+      ".git/HEAD": "ref: refs/heads/main\n",
+      "manni.config.yaml": TWO_COLLECTIONS,
+    });
+    const one = await resolveCiteRun({ cwd: root, inputs: [], collection: ["guides"], env: {} });
+    expect(one.inputs).toEqual(["guides/*.mdx"]);
+    expect(one.collections.map((c) => c.name)).toEqual(["guides"]);
+    const both = await resolveCiteRun({
+      cwd: root,
+      inputs: [],
+      collection: ["guides", "pages", "guides"],
+      env: {},
+    });
+    expect(both.inputs).toEqual(["pages", "guides/*.mdx"]);
+    // An empty list is no list: commander's collector hands `[]` over.
+    const all = await resolveCiteRun({ cwd: root, inputs: [], collection: [], env: {} });
+    expect(all.collections.map((c) => c.name)).toEqual(["pages", "guides"]);
+  });
+
+  it("an unknown --collection is an error naming the configured ones", async () => {
+    const root = await tree({
+      ".git/HEAD": "ref: refs/heads/main\n",
+      "manni.config.yaml": TWO_COLLECTIONS,
+    });
+    const failing = resolveCiteRun({ cwd: root, inputs: [], collection: ["gides"], env: {} });
+    await expect(failing).rejects.toBeInstanceOf(CiteError);
+    await expect(failing).rejects.toThrow(
+      'no collection named "gides" in manni.config.yaml. Configured: pages, guides.',
+    );
+  });
+
+  it("--collection composes with neither positional paths nor --no-config", async () => {
+    const root = await tree({
+      ".git/HEAD": "ref: refs/heads/main\n",
+      "manni.config.yaml": TWO_COLLECTIONS,
+    });
+    await expect(
+      resolveCiteRun({ cwd: root, inputs: ["a.md"], collection: ["pages"], env: {} }),
+    ).rejects.toThrow("--collection selects a configured collection; it cannot be combined with paths.");
+    await expect(
+      resolveCiteRun({ cwd: root, inputs: [], collection: ["pages"], noConfig: true, env: {} }),
+    ).rejects.toThrow("--collection needs a config file to select from.");
+    // Stdin is one more input, not a path, so it rides beside the flag.
+    const run = await resolveCiteRun({ cwd: root, inputs: ["-"], collection: ["pages"], env: {} });
+    expect(run.inputs).toEqual(["-"]);
+    expect(run.collections.map((c) => c.name)).toEqual(["pages"]);
   });
 
   it("positional inputs resolve from cwd even when a config governs", async () => {
     const root = await tree({
       ".git/HEAD": "ref: refs/heads/main\n",
-      "manni.config.yaml": "cite:\n  paths: [pages]\n",
+      "manni.config.yaml": TWO_COLLECTIONS,
       "docs/.keep": "",
     });
     const cwd = join(root, "docs");
     const run = await resolveCiteRun({ cwd, inputs: ["a.md"], env: {} });
     expect(run.inputs).toEqual(["a.md"]);
     expect(run.base).toBe(cwd);
+    expect(run.fromCollections).toBe(false);
+    // Still selected: a typed file is a member of whatever contains it.
+    expect(run.collections.map((c) => c.name)).toEqual(["pages", "guides"]);
     expect(run.configDir).toBe(root);
   });
 
-  it("--no-config skips discovery and loads nothing", async () => {
+  it("--no-config skips discovery and loads nothing, collections included", async () => {
     const root = await tree({
       ".git/HEAD": "ref: refs/heads/main\n",
-      "manni.config.yaml": "cite:\n  paths: [pages]\n",
+      "manni.config.yaml": TWO_COLLECTIONS,
     });
     const seen: unknown[] = [];
     const run = await resolveCiteRun({
@@ -321,6 +421,7 @@ describe("resolveCiteRun", () => {
     });
     expect(run.config).toBeNull();
     expect(run.inputs).toEqual([]);
+    expect(run.collections).toEqual([]);
     expect(run.base).toBe(root);
     expect(run.configDir).toBeUndefined();
     expect(run.configPath).toBeUndefined();

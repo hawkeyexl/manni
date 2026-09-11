@@ -213,7 +213,7 @@ describe("runCheck", () => {
 
   it("refuses to run with no inputs and no config", async () => {
     expect(await refusal(check({ inputs: [] }))).toBe(
-      "No files to check. Pass paths/globs, or add `paths:` under `cite:` in manni.config.yaml.",
+      "No files to check. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.",
     );
   });
 
@@ -325,7 +325,11 @@ describe("runCheck", () => {
     it("resolves a configured baseline against the config directory", async () => {
       const dir = project();
       mkdirSync(join(dir, "ci"));
-      writeFileSync(join(dir, "manni.config.yaml"), "cite:\n  paths: ['pages/*.md']\n  git: false\n  baseline: ci/cite.json\n", "utf8");
+      writeFileSync(
+        join(dir, "manni.config.yaml"),
+        "collections:\n  - name: pages\n    paths: ['pages/*.md']\ncite:\n  git: false\n  baseline: ci/cite.json\n",
+        "utf8",
+      );
       const written = await check({ cwd: dir, inputs: [], noConfig: false, writeBaseline: true });
       expect(written.summary.baseline?.path).toBe("ci/cite.json");
       expect(existsSync(join(dir, "ci", "cite.json"))).toBe(true);
@@ -339,34 +343,81 @@ describe("runCheck", () => {
   });
 
   describe("config", () => {
-    /** A project whose config lists `docs/*.md` and resolves sources from its own directory. */
-    function configured(init: boolean): string {
+    /**
+     * A project whose `pages` collection lists `docs/*.md` and whose config
+     * resolves sources from its own directory. A second collection, `notes`,
+     * covers `notes/*.md`; the `--collection` cases pick between them.
+     */
+    function configured(init: boolean, collections?: string): string {
       const dir = makeTempRepo({
         files: {
           "src/changed.ts": source("changed.ts"),
+          "src/limits.ts": source("limits.ts"),
           "docs/stale.md": page("stale-claim.md"),
-          "manni.config.yaml": "cite:\n  paths: ['docs/*.md']\n  root: .\n  git: false\n",
+          "docs/ok.md": page("current.md"),
+          "notes/ok.md": page("current.md"),
+          "manni.config.yaml":
+            (collections ??
+              "collections:\n  - name: pages\n    paths: ['docs/*.md']\n  - name: notes\n    paths: ['notes/*.md']\n") +
+            "cite:\n  root: .\n  git: false\n",
         },
         init,
       });
       temps.push(dir);
       return dir;
     }
+    const files = (run: CheckRun): [string, boolean][] => run.results.map((r) => [r.file, r.ok]);
 
-    it("falls back to paths: from the config", async () => {
+    it("falls back to every collection's paths: from the config", async () => {
       const dir = configured(false);
       const loaded: { path: string; dir: string }[] = [];
       const run = await runCheck({ cwd: dir, inputs: [], onConfigLoaded: (info) => loaded.push(info) });
       expect(loaded).toEqual([{ path: join(dir, "manni.config.yaml"), dir }]);
-      expect(run.results.map((r) => [r.file, r.ok])).toEqual([["docs/stale.md", false]]);
+      expect(files(run)).toEqual([
+        ["docs/ok.md", true],
+        ["docs/stale.md", false],
+        ["notes/ok.md", true],
+      ]);
       expect(run.frame).toEqual({ cwd: dir, base: dir, runBase: dir });
+    });
+
+    it("--collection narrows the run to the named collection", async () => {
+      const dir = configured(false);
+      const run = await runCheck({ cwd: dir, inputs: [], collection: ["notes"] });
+      expect(files(run)).toEqual([["notes/ok.md", true]]);
+    });
+
+    it("an unknown --collection is refused with the configured names", async () => {
+      const dir = configured(false);
+      expect(await refusal(runCheck({ cwd: dir, inputs: [], collection: ["gides"] }))).toBe(
+        'no collection named "gides" in manni.config.yaml. Configured: pages, notes.',
+      );
+    });
+
+    it("a collection's exclude: shapes the collection, never a typed path", async () => {
+      const dir = configured(
+        false,
+        "collections:\n  - name: pages\n    paths: ['docs/*.md']\n    exclude: ['docs/stale*']\n",
+      );
+      // From the collection: the excluded page is not visited...
+      const run = await runCheck({ cwd: dir, inputs: [] });
+      expect(files(run)).toEqual([["docs/ok.md", true]]);
+      // ...and --exclude adds to the list rather than replacing it.
+      const more = await runCheck({ cwd: dir, inputs: [], exclude: ["docs/ok*"], allowEmpty: true });
+      expect(files(more)).toEqual([]);
+      // A typed path is what the operator asked for, whatever a collection excludes.
+      const typed = await runCheck({ cwd: dir, inputs: ["docs/stale.md"] });
+      expect(files(typed)).toEqual([["docs/stale.md", false]]);
     });
 
     it.skipIf(!gitAvailable())("resolves paths: from the config's directory when run from below it", async () => {
       const dir = configured(true);
       const cwd = join(dir, "docs");
-      const run = await runCheck({ cwd, inputs: [] });
-      expect(run.results.map((r) => [r.file, r.ok])).toEqual([["docs/stale.md", false]]);
+      const run = await runCheck({ cwd, inputs: [], collection: ["pages"] });
+      expect(files(run)).toEqual([
+        ["docs/ok.md", true],
+        ["docs/stale.md", false],
+      ]);
       expect(run.frame).toEqual({ cwd, base: dir, runBase: dir });
       // Positional paths stay cwd-relative, and the label follows.
       const named = await runCheck({ cwd, inputs: ["stale.md"] });

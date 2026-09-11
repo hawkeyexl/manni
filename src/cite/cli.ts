@@ -70,6 +70,8 @@ function rootOf(command: Command): Command {
  * explicit `false` travels to the core (`explicitFalse`).
  */
 interface InputCliOptions {
+  /** `--collection <name>`, repeatable; commander's default value is `[]`. */
+  collection: string[];
   /** `--ext <list>`; the command splits it. */
   ext?: string;
   /** `--exclude <glob>`, repeatable; commander's default value is `[]`. */
@@ -192,6 +194,12 @@ export function buildProgram(): Command {
       "[paths...]",
       "files, directories, or globs to check (use - for stdin)",
     )
+    .option(
+      "--collection <name>",
+      "configured collection to run over; repeatable",
+      collect,
+      [],
+    )
     .option("--ext <list>", "comma-separated extensions for directory walks")
     .option("--exclude <glob>", "glob to exclude; repeatable", collect, [])
     .option("--as <format>", "force an input format for every input")
@@ -234,6 +242,7 @@ export function buildProgram(): Command {
         "",
         "Examples:",
         "  manni cite check docs/                          # walk a directory",
+        "  manni cite check --collection guides             # one configured collection",
         '  manni cite check "docs/**/*.md" -f github        # CI annotations',
         "  manni cite check --show-diff docs/limits.md      # see what changed",
         "  manni cite check --baseline                      # fail only on new findings",
@@ -254,6 +263,7 @@ export function buildProgram(): Command {
 
         const run = await runCheck({
           inputs: paths,
+          collection: options.collection,
           exts,
           exclude: options.exclude,
           as: options.as,
@@ -393,6 +403,12 @@ export function buildProgram(): Command {
       "[paths...]",
       "files, directories, or globs to update (use - for stdin)",
     )
+    .option(
+      "--collection <name>",
+      "configured collection to run over; repeatable",
+      collect,
+      [],
+    )
     .option("--ext <list>", "comma-separated extensions for directory walks")
     .option("--exclude <glob>", "glob to exclude; repeatable", collect, [])
     .option("--as <format>", "force an input format for every input")
@@ -445,6 +461,7 @@ export function buildProgram(): Command {
 
         const run = await runUpdate({
           inputs: paths,
+          collection: options.collection,
           exts,
           exclude: options.exclude,
           as: options.as,

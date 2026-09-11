@@ -6,7 +6,7 @@ sidebar:
 citations:
   - id: check
     claim: Check every citation in the given pages against its source.
-    src: src/cite/cli.ts:189-190
+    src: src/cite/cli.ts:191-192
     integrity: sha256-a5f8b50113ec46c738fe1fb80886b3109f7e1a86ef3e009fb690a151c40351b9
     commit: 4f2bd19f0d262f41f1bafde228b62899b4124839
 ---
@@ -88,14 +88,15 @@ citation, and git is consulted only when a pin does not hold.
 
 | Argument | Description |
 |---|---|
-| `[paths...]` | Files, directories, or globs to check. Use `-` to read a page from stdin, with `--as`. Optional, and falls back to config `paths:` under `cite:`. No paths and no config is an error (exit 2). See the [shared input model](/manni/meta/reference/cli/#shared-input-model). |
+| `[paths...]` | Files, directories, or globs to check. Use `-` to read a page from stdin, with `--as`. Optional. Without paths the run covers every configured [collection](/manni/meta/reference/configuration/#collections), or the ones `--collection` names. No paths and no collections is an error (exit 2). See the [shared input model](/manni/meta/reference/cli/#shared-input-model). |
 
 ### Options
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
+| `--collection` | `<name>` | every collection | Run over a configured [collection](/manni/meta/reference/configuration/#collections) rather than every declared one. Repeatable, one name per occurrence, never comma-separated; repeats collapse, and a name must match a declared collection exactly. Cannot be combined with positional paths, and needs a config file to select from (exit 2 for both). |
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
-| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Appended to config `exclude:`. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. When the run reads from collections, their `exclude:` globs apply as well; a typed path is filtered by `--exclude` alone. |
 | `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) (extractor name, e.g. `markdown`) for every input. Required when reading from stdin. |
 | `-f, --format` | `<pretty\|json\|github\|sarif\|junit>` | `pretty` | Output format. See [output](#output). An unknown value is an error (exit 2). |
 | `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/cite/reference/configuration/). When set, the file must exist or the run exits 2. |
@@ -197,6 +198,8 @@ code](/manni/cite/set-up/public-docs-private-code/).
 
 ```sh
 manni cite check docs/                              # walk a directory
+manni cite check                                    # every configured collection
+manni cite check --collection guides                # one of them
 manni cite check "docs/**/*.md" -f github           # CI annotations
 manni cite check -f sarif > cite.sarif              # code scanning
 manni cite check --show-diff docs/limits.md         # see what changed, and since when
@@ -300,14 +303,15 @@ working tree so the rewrite is easy to review.
 
 | Argument | Description |
 |---|---|
-| `[paths...]` | Files, directories, or globs to update. Use `-` to read a page from stdin, with `--as`. Optional, and falls back to config `paths:` under `cite:`. |
+| `[paths...]` | Files, directories, or globs to update. Use `-` to read a page from stdin, with `--as`. Optional. Without paths the run covers every configured [collection](/manni/meta/reference/configuration/#collections), or the ones `--collection` names. |
 
 ### Options
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
+| `--collection` | `<name>` | every collection | Run over a configured [collection](/manni/meta/reference/configuration/#collections), exactly as on [`check`](#cite-check). Repeatable, one name per occurrence, never comma-separated. |
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
-| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Appended to config `exclude:`. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. When the run reads from collections, their `exclude:` globs apply as well. |
 | `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) for every input. Required when reading from stdin. |
 | `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/cite/reference/configuration/). |
 | `--no-config` | n/a | off | Ignore any discovered config file. |
@@ -346,6 +350,7 @@ never rewritten, and is reported as skipped.
 
 ```sh
 manni cite update docs/                                   # rewrite moved entries
+manni cite update --collection guides                     # one configured collection
 manni cite update --dry-run docs/                         # see the diffs first
 manni cite update --accept --only fetch-timeout docs/limits.md
 manni cite update --accept --dry-run -f json docs/        # what would be re-minted, as data

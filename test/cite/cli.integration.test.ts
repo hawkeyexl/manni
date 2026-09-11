@@ -100,7 +100,26 @@ describe("manni cite (usage errors)", () => {
   it("check with nothing to check", () => {
     usage(
       ["check", "--root", ".", "--no-git"],
-      "No files to check. Pass paths/globs, or add `paths:` under `cite:` in manni.config.yaml.",
+      "No files to check. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.",
+    );
+  });
+
+  it("check --collection with a name the config does not declare", () => {
+    writeFileSync(
+      join(work, "manni.config.yaml"),
+      "collections:\n  - name: pages\n    paths: ['pages/current.md']\n",
+      "utf8",
+    );
+    usage(
+      ["check", "--collection", "gides", "--root", ".", "--no-git"],
+      'no collection named "gides" in manni.config.yaml. Configured: pages.',
+    );
+  });
+
+  it("check --collection beside a path", () => {
+    usage(
+      ["check", "--collection", "pages", "pages/current.md", "--root", ".", "--no-git"],
+      "--collection selects a configured collection; it cannot be combined with paths.",
     );
   });
 
@@ -191,6 +210,18 @@ describe("manni cite (usage errors)", () => {
 describe("manni cite check (the ladder)", () => {
   const check = (args: string[], opts?: { input?: string; env?: Record<string, string> }): Run =>
     cite(["check", "--root", ".", "--no-git", ...args], opts);
+
+  it("--collection runs over the named collection", () => {
+    writeFileSync(
+      join(work, "manni.config.yaml"),
+      "collections:\n  - name: pages\n    paths: ['pages/current.md']\n  - name: rest\n    paths: ['pages/moved.md']\n",
+      "utf8",
+    );
+    const r = cite(["check", "--collection", "pages", "--root", ".", "--no-git"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("pages/current.md");
+    expect(r.stdout).not.toContain("moved.md");
+  });
 
   it("passes a current citation", () => {
     const r = check(["pages/current.md"]);

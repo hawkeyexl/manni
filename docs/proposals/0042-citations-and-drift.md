@@ -10,7 +10,9 @@
   session, on its own branch: `manni <domain> <subcommand>`, no default
   subcommand, one separator per list. [0026](0026-corpus-checks-are-findings.md),
   the precedent for a finding no Ajv keyword produced, with a rule id, riding
-  meta's reporters and baseline
+  meta's reporters and baseline. [0041](0041-collections.md), the family-level
+  `collections:` list this tool reads its document set from, and the
+  `--collection` flag it shares; see stress test 21
 - **Relates to:** [0001](0001-validation-baseline.md), the baseline a new rule
   ramps in on. [0008](0008-remote-schema-durability.md), for the offline
   discipline: no network, ever. [0022](0022-sql-write-back.md) and
@@ -260,9 +262,12 @@ an eslint rule stops it reaching into `../meta/{core,extractors,reporters}`.
 | `add <page> <src>` | mint an entry at HEAD and write it. With `--claim` it anchors a sentence, with `--quote` a fenced block. With `--inline` it writes a JSON statement instead of a frontmatter entry, and with `--obfuscate` a token and a keyed pin. Also `--no-commit` and `--dry-run` | 0 written, 2 refusal |
 | `update [paths...]` | rewrite `moved` entries' `src` in place, textually, comments and quoting untouched; `--accept` re-mints `changed` and `never-true` at HEAD and prints both pins; `--only <id>`; `--dry-run` | 0, 1 when work is left undone, 2 under `--no-sources` |
 
-The input surface is meta's: positional paths, `-` with `--as`, `paths:`
-fallback, `--ext`, `--exclude`, `-c`, `--no-config`, `--allow-empty`,
-`--no-gitignore`. Config `cite:` mirrors the flags, plus `salt`, `obfuscate`,
+The input surface is meta's: positional paths, `-` with `--as`, the
+configured collections as the fallback and `--collection <name>` to narrow to
+one, `--ext`, `--exclude`, `-c`, `--no-config`, `--allow-empty`,
+`--no-gitignore`. The document set is the family's top-level `collections:`
+list (0041); `cite.paths` and `cite.exclude` are refused with a message saying
+so. Config `cite:` mirrors the remaining flags, plus `salt`, `obfuscate`,
 `root` and a `severity` map. An unknown key, rule or level is a `CiteError`
 that names what is supported and never echoes the value. `--root` defaults to
 `cite.root` from the config, else the git root, else cwd, and may point at
@@ -320,8 +325,10 @@ The two-repo layout, which is the reason obfuscation exists:
 
 ```yaml
 # public docs repo: manni.config.yaml (public)
+collections:
+  - name: site
+    paths: ["src/content/docs/**/*.{md,mdx}"]
 cite:
-  paths: ["src/content/docs/**/*.{md,mdx}"]
   obfuscate: true
 # public CI:   manni cite check --no-sources
 # private CI:  check out docs and code side by side; from the docs checkout:
@@ -568,6 +575,25 @@ search could not find it.
 comment at each saying what the plan had. Neither rule moved: forty means
 forty, and verbatim means verbatim. A ladder that only held the cases the
 design was written around would not have caught either.
+
+### 21. 0041 landed while this branch was open
+
+This record gave `cite:` its own `paths` and `exclude`, mirroring what
+`meta:` had when it was written. Proposal 0041 then moved the document set
+out of every tool's section and up to a top-level `collections:` list, read
+by every tool. It added `--collection <name>` to narrow a run to one. It landed
+on main while this branch was open. The merge kept a `cite:` section whose
+`paths:` the metadata tool would have refused one key over, and a fixture
+that spelled the same set twice.
+
+**Changed as a result:** `cite.paths` and `cite.exclude` are removed, and
+each is refused with meta's sentence saying where it went. A bare `check` or
+`update` covers every declared collection, resolved from the config directory,
+with the collections' `exclude:` globs applied. `--collection <name>` narrows
+it, repeatable, one name per occurrence, and shares meta's three usage errors.
+A typed path is still filtered by `--exclude` alone. The repo's own config
+drops its `cite:` section: the `site` collection is the set, and every other
+cite key is a default.
 
 ## Verification
 
