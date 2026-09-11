@@ -1,6 +1,6 @@
 ---
 title: Citations reference
-description: "The citations vocabulary as manni cite implements it: the two channels, the entry fields, the src grammar and obfuscated tokens, the hashing rule, inline statement syntax per format, anchoring, and every status and rule with its default severity."
+description: "The citations vocabulary as manni cite implements it: the two channels, the entry fields, the src grammar and encrypted sources, the hashing rule, inline statement syntax per format, anchoring, and every status and rule with its default severity."
 sidebar:
   order: 3
 ---
@@ -10,8 +10,9 @@ import { Aside } from '@astrojs/starlight/components';
 A citation pins a sentence on a page to the source lines it was written from.
 The pin is a hash of those lines and the commit the hash was taken at. This
 page is the vocabulary as the tool ships it. The schema it implements is
-`manni:citations:1.0.0-proposal.1`. The metadata tool publishes it as the
-tenth member of its vocabulary family, and it is open for review. The draft
+`manni:citations:1.0.0-proposal.2`, which adds encrypted sources to
+`proposal.1`. The metadata tool publishes `proposal.1` as the tenth member of
+its vocabulary family, and both drafts are open for review. The first draft
 and its design notes are on the [proposal page](/manni/meta/proposals/citations/).
 
 ## Two channels
@@ -63,8 +64,8 @@ anchors the pin to the page.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `src` | source reference | yes | The cited lines: `path`, `path:L` or `path:L1-L2`, with the path repo-root-relative and posix, and lines 1-based and inclusive. `path:L` is the canonical spelling of one line; `path:L-L` is accepted and never written. A bare `path` pins the whole file. A `~` token stands in for the path of a private source. See [the `src` grammar](#the-src-grammar). |
-| `integrity` | `sha256-` and 64 lowercase hex digits | yes | The pin, which is the cited lines hashed under [the one rule](#the-hashing-rule). Keyed by the salt when `src` is obfuscated. |
+| `src` | source reference | yes | The cited lines: `path`, `path:L` or `path:L1-L2`, with the path repo-root-relative and posix, and lines 1-based and inclusive. `path:L` is the canonical spelling of one line; `path:L-L` is accepted and never written. A bare `path` pins the whole file. A `~` ciphertext stands in for the path of a private source. See [the `src` grammar](#the-src-grammar). |
+| `integrity` | `sha256-` and 64 lowercase hex digits | yes | The pin, which is the cited lines hashed under [the one rule](#the-hashing-rule). A keyed HMAC when `src` is encrypted. |
 | `commit` | 7 to 40 lowercase hex digits | no | The commit the pin was minted at. Overrides `citation-commit` for this entry. The tool writes forty and prints seven; a person may type seven. Without one, a check can say the lines changed, but not since when, nor whether the pin was ever true. |
 | `id` | `^[a-z0-9][a-z0-9-]*$`, unique per page | no | What an inline reference names, what a finding is reported under, and what `update --only` selects. Required in practice the moment the body points at the entry or the same claim occurs twice. |
 | `claim` | non-empty string | no | The sentence the citation supports, verbatim. The tool finds it in the body with whitespace collapsed, so a soft-wrapped sentence matches, and reports the citation at that line. Punctuation is not whitespace: a comma where the claim has a full stop is a miss. |
@@ -80,16 +81,17 @@ what `manni cite check` adds.
 path
 path:L
 path:L1-L2
-~0123456789abcdef
-~0123456789abcdef:L
-~0123456789abcdef:L1-L2
+~CIPHERTEXT
+~CIPHERTEXT:L
+~CIPHERTEXT:L1-L2
 ```
 
 A `path` is relative to the [root](/manni/cite/reference/cli/#where-sources-resolve-from),
 posix-separated, and free of `.` and `..` segments. Segments may hold spaces
 and dots, so `docs/release notes/v1.2.md:4-9` is a source. The grammar
 rejects a leading `/`, a drive letter, a backslash, an empty segment, a URL,
-line `0`, and a token of the wrong length or case. So a source that could
+and line `0`. It also rejects a ciphertext shorter than 82 characters, or one
+holding a character outside base64url. So a source that could
 never resolve fails at the schema rather than resolving to nothing. Lines are
 1-based and inclusive. That the end line is not before the start line is the
 tool's rule, since a pattern cannot compare two numbers. `path:9-3` is refused
@@ -98,26 +100,39 @@ by `add` and is `entry-invalid` on a page.
 The pattern, as the schema spells it:
 
 ```
-^(?:~[0-9a-f]{16}|(?!~)(?:(?!\.\.?(?:/|:|$))[^/\\:\r\n\t]+)(?:/(?:(?!\.\.?(?:/|:|$))[^/\\:\r\n\t]+))*)(?::[1-9][0-9]*(?:-[1-9][0-9]*)?)?$
+^(?:~[A-Za-z0-9_-]{82,}|(?!~)(?:(?!\.\.?(?:/|:|$))[^/\\:\r\n\t]+)(?:/(?:(?!\.\.?(?:/|:|$))[^/\\:\r\n\t]+))*)(?::[1-9][0-9]*(?:-[1-9][0-9]*)?)?$
 ```
 
-### Obfuscated sources
+### Encrypted sources
 
-`~` followed by sixteen lowercase hex digits is an **obfuscated** source. The
-token is the first sixteen hex digits of `sha256(salt + "\n" + path)`, with
-`path` spelled exactly as a plain `src` would spell it. The line forms are
-the same after it. Only a checkout that has the salt and the files can
-resolve it. The tool hashes every tracked file's path under the salt and looks
-the token up. So a public docs repository can cite a private code repository
-without publishing its paths. The pin over an obfuscated source is keyed by
-the same salt. So the page also publishes no verifier a reader could run
-against a guessed line.
+`~` followed by at least 82 base64url characters is an **encrypted** source.
+The ciphertext is the path, spelled exactly as a plain `src` would spell it,
+encrypted under the family encryption key. The line forms follow it unchanged.
+Examples on these pages shorten it to `~AQm4…:2`, and the real value is
+longer. The key is a top-level `encryptionKey:` in `manni.config.yaml`, or
+`MANNI_ENCRYPTION_KEY`, which wins. [`manni key`](/manni/key/) sets it and
+rotates it.
 
-Two things follow from the token being a function of the path alone. It is
+The encryption is deterministic AES-256-GCM in the `cite-src` context, so one
+path under one key always gives one ciphertext.
+[Proposal 0045](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0045-family-encryption-key.md)
+states the construction. A checkout that has the key decrypts the path, then
+checks it against the tracked files as it would a plain one. So a public docs
+repository can cite a private code repository without publishing its paths.
+The pin over an encrypted source is keyed, as [the hashing rule](#the-hashing-rule)
+says. So the page also publishes no verifier a reader could run against a
+guessed line.
+
+Two things follow from the encryption being deterministic. A ciphertext is
 stable across pages, so a public site does reveal how often one private file
-is cited and when it moves. That is recorded as accepted. And two paths that
-hash to one token under a salt are a refusal naming the count, with the remedy
-of changing the salt.
+is cited and when it moves. That is recorded as accepted. And `update` can
+recognise one file across pages, because its ciphertext does not change. The
+path is padded before encryption, so a ciphertext's length reveals only a
+size class.
+
+Without the key, `check` reports an encrypted citation `missing`, an error,
+unless `--no-sources` skips it. Under another key it is `missing` too, because
+the ciphertext does not decrypt.
 
 ## The hashing rule
 
@@ -127,9 +142,11 @@ Stated once, in the schema's `integrity` description, and implemented once:
 > on LF and discard the empty element a trailing LF leaves. Take lines L1 to
 > L2 inclusive, or every line for a bare path. Join with LF and no trailing
 > LF. Keep trailing whitespace. A plain `src` hashes that text alone. An
-> obfuscated `src` hashes the salt, one LF, and the text.
+> encrypted `src` carries a keyed pin instead: the HMAC-SHA256 of that text
+> under a pin key derived from the encryption key.
 
-The value is spelled `sha256-` and sixty-four lowercase hex digits. Two
+The value is spelled `sha256-` and sixty-four lowercase hex digits, keyed or
+not. The keyed pin can be compared, and it cannot be reversed. Two
 consequences are worth knowing. A file's trailing newline is not a line, so
 `path:1-7` and `path` over a seven-line file are one pin. And CRLF and a
 byte-order mark are not changes, so a Windows checkout under `core.autocrlf`
@@ -221,7 +238,7 @@ page-side rules are findings in their own right.
 | `moved-ambiguous` | Two or more windows hash to the pin; the tool will not guess which. Widen the range. | `moved, 2 candidates (lib/limits.ts:4, lib/limits.ts:11); widen the range` | `error` |
 | `changed` | No window hashes to the pin. With a commit and history: since when, and how many commits touched the path. With a commit git cannot show: `history unavailable`, plus one run notice about `fetch-depth: 0`. | `changed since 3f9c2a1, 2 commits` | `error` |
 | `never-true` | No window of the range's length anywhere in the file at the recorded commit hashes to the pin, or the path was absent there. Asserted only when git can show that commit; a pin that held somewhere in that file was true when minted, so a later mismatch is `changed`. | `never true: the pin does not match at 3f9c2a1` | `error` |
-| `missing` | The path is not a tracked file under the root, or the token resolves to nothing. A rename is `missing`; `add` is the remedy. | `missing`, or for a token `missing (no tracked file matches; wrong --root or salt?)` | `error` |
+| `missing` | The path is not a tracked file under the root, or an encrypted source cannot be decrypted. A rename is `missing`; `add` is the remedy. | `missing`. An encrypted source says why: `missing (no encryption key is available to decrypt it)`, `missing (does not decrypt under the current key)` or `missing (no tracked file matches; wrong --root?)` | `error` |
 | `skipped` | The sources were not read (`--no-sources` or `sources: false`). Not a finding; `json` carries the status. | `skipped` | none |
 
 The move search runs whenever the pin does not hold, and history decides only
@@ -250,19 +267,22 @@ schema, the rule, the entry's position and a subject. The position is
 `/citations/N` for a frontmatter entry and the root for an inline one. The
 subject is the `id`, or the `integrity` when there is none. The subject
 survives a move and a line shift and changes only on a re-mint, which is the
-act that resolves the finding.
+act that resolves the finding. A key rotation is the exception. Over an
+encrypted source the `integrity` is the keyed pin, which `manni key rotate`
+changes. Give such a citation an `id`, or re-record the baseline after a
+rotation.
 
 ## The output rule
 
 **Output never says more than the page did.** A finding, in every format,
-spells a source exactly as the page spelled it: `~9c1f0e2b7a3d4c5e:4`, never
-the path the token resolved to. The resolved path, the diff since the commit
+spells a source exactly as the page spelled it: `~AQm4…:4`, never the path
+it decrypts to. The decrypted path, the diff since the commit
 and the commit subjects live on the result and reach output through the
 `pretty` reporter only, under [`--reveal`](/manni/cite/reference/cli/#cite-check)
 and `--show-diff`. `json`, `github`, `sarif` and `junit` never carry them, so
-a public CI job can upload a SARIF log from a run that resolved private
-sources. A sentinel test runs every reporter against a fixture whose salt and
-private path are known strings and asserts neither appears.
+a public CI job can upload a SARIF log from a run that decrypted private
+sources. A sentinel test runs every reporter against a fixture whose key and
+private path are known strings, and asserts neither appears.
 
 ## Terms
 
@@ -273,6 +293,6 @@ private path are known strings and asserts neither appears.
 | **pin** | The `integrity` value: the hash of the cited lines under the rule, at the moment the citation was minted. A record of the past, not a copy of the present, which is why it is stored rather than recomputed. |
 | **statement** | A `cite` comment in the body, in the format's own syntax. Carries an id or a JSON entry, and anchors what follows it. |
 | **reference** | A statement whose payload is an id. It points at the frontmatter entry with that id and anchors it to a paragraph. |
-| **token** | A `~` and sixteen hex digits standing in for a path in `src`. Derived from the salt and the path; resolvable only where both the salt and the files are. |
-| **salt** | The secret that keys tokens and the pins over them. From `MANNI_CITE_SALT`, else config `salt`, else the empty string. |
+| **encrypted source** | A `~` and at least 82 base64url characters standing in for a path in `src`: the path, encrypted under the encryption key. Readable only where both the key and the files are. |
+| **encryption key** | The family secret that encrypts private source paths and keys the pins over them. From `MANNI_ENCRYPTION_KEY`, else a top-level `encryptionKey:` in config. A `salt:` under `cite:` is refused. [`manni key`](/manni/key/) sets and rotates it. |
 | **drift** | The gap between what a page says and what its source now holds. A `changed` citation is drift at the sentence; `quote-drift` is a reproduced block that no longer matches. |

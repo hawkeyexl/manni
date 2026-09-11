@@ -36,7 +36,7 @@ this shape:
 | --- | --- |
 | `<mark>` | `✓` fine, `↕` moved (a warning), `✗` an error, `·` skipped or baselined. |
 | `<label>` | The citation's `id`. `#N` is a frontmatter entry with no id, at position N counting from 0. `inline` is an inline statement with no id. A page-side finding with none of those shows the source it names, or `page`. |
-| `<src>` | The source range as the page spells it: `path:line`, `path:from-to`, a bare `path` for a whole file, or `~token:line` for an obfuscated source. |
+| `<src>` | The source range as the page spells it: `path:line`, `path:from-to`, a bare `path` for a whole file, or a ciphertext such as `~AQm4…:line` for an encrypted source. |
 | `<status>` | What the check found. Every one is below. |
 | `(line N)` | The line of the sentence or fenced block the citation anchors. For a problem in the entry itself, the entry's line in the frontmatter. |
 
@@ -51,7 +51,7 @@ In a pull request the same finding is an annotation on line 13, titled
 | [`moved-ambiguous`](#moved-ambiguous) | error | The cited lines now occur in more than one place. | Widen the range, then `update --accept --only <id>` |
 | [`changed`](#changed) | error | The cited lines are not what they were. | Read `--show-diff`, fix the sentence, then `update --accept --only <id>` |
 | [`never-true`](#never-true) | error | The pin does not match even at the commit it records. | Check the sentence, then `update --accept --only <id>` |
-| [`missing`](#missing) | error | No tracked file at that path, or the token resolves to nothing. | Re-add against the new path; or fix `--root` / the salt |
+| [`missing`](#missing) | error | No tracked file at that path, or an encrypted source that cannot be decrypted. | Re-add against the new path; or fix `--root` / the key |
 | [`claim-missing`](#claim-missing) | error | The anchored paragraph does not contain the claim. | Make the sentence and the `claim` agree |
 | [`claim-ambiguous`](#claim-ambiguous) | warning | The claim occurs in more than one paragraph. | Give the entry an `id` and a reference statement |
 | [`statement-orphan`](#statement-orphan) | error | A reference statement names an id no entry has. | Fix the id, or add the entry |
@@ -179,17 +179,25 @@ since sources resolve through `git ls-files`.
 manni cite add docs/limits.md lib/config/limits.ts:2 --claim "The fetch timeout is 10 seconds." --id fetch-timeout
 ```
 
-An obfuscated source has its own variant of the message:
+An encrypted source says why it is missing, and never names the path:
 
 ```
-    ✗ retries   ~fd8c031de1743e75:5   missing (no tracked file matches; wrong --root or salt?)   (line 22)
+    ✗ retries   ~AQm4…:5   missing (no encryption key is available to decrypt it)   (line 22)
 ```
 
-The token was hashed against every tracked path under the root and matched
-none. Either `--root` does not point at the code checkout, or
-`MANNI_CITE_SALT` is not the salt the token was minted with. On a public CI
-job that has neither, run with `--no-sources` instead; see
-[Public docs, private code](/manni/cite/set-up/public-docs-private-code/).
+The real ciphertext is 82 characters or more, shortened here. The part in
+parentheses names the cause:
+
+- **`no encryption key is available to decrypt it`.** The job has no family
+  encryption key. Set `MANNI_ENCRYPTION_KEY` from the secret. A public CI job
+  that has no key and no code runs with `--no-sources` instead; see
+  [Public docs, private code](/manni/cite/set-up/public-docs-private-code/).
+- **`does not decrypt under the current key`.** The key is not the one the
+  source was encrypted under. After a key rotation, the secret may still hold
+  the old key.
+- **`no tracked file matches; wrong --root?`.** The path decrypted, and no
+  tracked file under the root has it. Point `--root` at the code checkout, or
+  add the citation again against the new path.
 
 ## Page statuses
 

@@ -112,6 +112,10 @@ Retries default to 3.
    statement is what ties the entry to a place on the page, so the check can
    report a line number.
 
+   With a family encryption key available, `src` holds a ciphertext instead
+   of the path. [Public docs, private code](/manni/cite/set-up/public-docs-private-code/)
+   explains when you want that.
+
    The claim has to occur **once** in the body, word for word. Soft-wrapping
    is fine, so the sentence split across two lines above still matches, but
    punctuation counts. If the sentence isn't there, `add` refuses rather than
@@ -398,7 +402,7 @@ and your code is not, set up the two-repo layout.
   <LinkCard
     title="Public docs, private code"
     href="/manni/cite/set-up/public-docs-private-code/"
-    description="Cite a private repository from a public site without publishing its paths."
+    description="Encrypt a private repository's source paths, so a public site can cite it without publishing them."
   />
   <LinkCard
     title="Fix a failing check"
