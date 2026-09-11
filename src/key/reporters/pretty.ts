@@ -85,10 +85,26 @@ export function renderRotatePretty(result: KeyRotateResult, opts: PrettyOptions)
       lines.push(`${page.file}: ${nameOf(row)}  ${c.red("skipped:")} ${row.message}`);
     }
   }
+  // A manifest value is named by the entry it belongs to and the pointer
+  // inside it, so one line says which document's private half moved.
+  for (const manifest of result.manifests) {
+    for (const row of manifest.rewritten) {
+      lines.push(
+        `${manifest.file}: ${row.entry}${row.pointer}  ${c.dim(shortCiphertext(row.from))}  -> ${shortCiphertext(row.to)}`,
+      );
+    }
+    for (const row of manifest.skipped) {
+      lines.push(
+        `${manifest.file}: ${row.entry}${row.pointer}  ${c.red("skipped:")} ${row.message}`,
+      );
+    }
+  }
   if (result.outcome === "finished" && result.configSource !== undefined) {
     lines.push(`Finished the interrupted rotation in ${result.configSource}.`);
   }
-  const files = result.pages.filter((page) => page.rewritten.length > 0).length;
+  const files =
+    result.pages.filter((page) => page.rewritten.length > 0).length +
+    result.manifests.filter((manifest) => manifest.rewritten.length > 0).length;
   lines.push(
     `${plural(result.reencrypted, "value")} re-encrypted in ${plural(files, "file")}, ${String(result.skipped)} skipped`,
   );

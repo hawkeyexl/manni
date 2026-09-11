@@ -278,8 +278,9 @@ Exit `0` written, `2` refused. It never prints the key.
 #### `manni key rotate [paths...]`
 
 Re-encrypts every encrypted value in the given pages, else the selected
-collections, under a new key. How it finds them, and when it writes, are the
-next two sections.
+collections, under a new key. It covers those collections' local
+external-metadata manifests too. How it finds the values, and when it writes,
+are the next two sections.
 
 | Argument | Required | Description |
 |---|---|---|
@@ -396,14 +397,23 @@ and uses git as `cite check` does, whenever it is available. The authentication
 tag proves a value is ours, so no schema has to be resolved. A mark from a `-s` schema or an unreachable remote cannot hide
 a value from rotation (stress test 5).
 
+A value need not sit in a page. An external-metadata manifest (0037) holds the
+private half of a document. That is where a marked value most often lives. So
+a rotation also re-encrypts the local manifests of the collections it covers
+(stress test 17). The rule inside a manifest is the rule inside a page, with
+two exclusions. A URL manifest (0038) is read-only and is never loaded, so a
+rotation reaches no network. The `citations` key is cite's, which re-keys a
+source with its pin. Rotation leaves it alone in a manifest, exactly as it
+does on a page.
+
 A value that already decrypts under the new key counts as done, so an
-interrupted rotation can be run again (stress test 6). Pages are re-encrypted
-in memory first. Pages and the key are written only when every value could be
-re-encrypted. A string with the ciphertext shape that decrypts under neither
-key is skipped and reported, and one skip means nothing is written. A whole
-run then writes the key first. The config gets the new key, with the old one
-beside it as `encryptionKeyPrevious:`. The pages follow, and last the config
-loses the old key (stress test 6).
+interrupted rotation can be run again (stress test 6). Every page and manifest
+is re-encrypted in memory first. Nothing is written, and no key, unless every
+value could be re-encrypted. A string with the ciphertext shape that decrypts
+under neither key is skipped and reported, and one skip means nothing is
+written. A whole run then writes the key first. The config gets the new key,
+with the old one beside it as `encryptionKeyPrevious:`. The pages and manifests
+follow, and last the config loses the old key (stress test 6).
 
 When a citation baseline exists, rotation ends with a line saying it needs
 re-recording (stress test 13).
@@ -413,7 +423,9 @@ re-recording (stress test 13).
 A narrowed run, with positional paths or `--collection`, can cover only part of
 the family. It requires `--to` and never writes the key. The operator runs it
 area by area with one `--to`, then writes the key with a whole run (stress
-test 7).
+test 7). It covers the manifests of the collections it selected. `--collection`
+names them, and positional paths select the collections those files belong to,
+so a page and its private half move together.
 
 ### The ciphertext
 
@@ -751,6 +763,34 @@ because it already wins there. `-c` at a single-tool file is refused, as the
 key prompt refuses one. A top-level key would turn that tool's whole document
 into a family file.
 
+### 17. An encrypted value in a manifest survived the rotation
+
+Rotation walked page files and nothing else. An external-metadata manifest
+(0037) is not a page: it registers no extractor and appears in no `docs` row.
+So a marked value a manifest supplied stayed under the old key while every
+page moved, and `meta validate` then reported `encrypted:unreadable` on every
+page that manifest fed. The next rotation could not repair it either. The
+value decrypted under neither key by then, so the run skipped it and refused
+to write anything at all.
+
+This is the likeliest place for the failure, not an unlikely one. A manifest
+is private by construction, which is the whole reason a value would be
+encrypted rather than published.
+
+**Changed as a result:** a rotation loads the local manifests of the
+collections it covers. It re-encrypts their values with the pages, planning
+everything in memory before the first write. Three things bound it.
+
+- A URL manifest is read-only, so it is never loaded and a rotation reaches
+  no network. Rotate the file at its source, then update the key.
+- The `citations` key is skipped, in a manifest as on a page. Cite re-keys a
+  citation's source with its pin under its own context, and re-encrypting the
+  source alone would break every encrypted citation.
+- One value is spliced at a time, by the same writer cite's sidecar citations
+  use. It replaces that value's range and keeps every other byte, then reads
+  the result back before returning it. A manifest is hand-written, and
+  re-emitting one would cost its comments and its key order.
+
 ## Verification
 
 ```bash
@@ -771,7 +811,8 @@ End to end, in a temp repository, with a schema that marks `owner` and
    through the injected prompt, and the built-bin tests cover the refusal off a
    terminal.
 3. `validate` exits 0, and exits 1 for an owner not in the enum.
-4. `key rotate` re-encrypts the owner and a cited source together.
+4. `key rotate` re-encrypts the owner, a cited source and a manifest value
+   together.
 5. `validate` still exits 0 under the new key.
 6. `validate` with no key prints the not-verified warning.
 7. The ciphertexts of `platform` and `billing` have equal length.

@@ -65,6 +65,11 @@ export type {
   SpliceManifestOptions,
   SplicedManifest,
 } from "./core/external-metadata-write.js";
+// `manni key rotate` re-encrypts the values a manifest supplies as well as
+// the ones a page carries. `reencryptMetadata` reads a page; this is the same
+// rule over metadata that is already parsed, and it skips `citations` too.
+export { reencryptData } from "./core/reencrypt.js";
+export type { ReencryptDataResult } from "./core/reencrypt.js";
 // `manni key set` refuses to create a family file beside one of these, which
 // the new file would hide from the metadata tool's discovery.
 export { LEGACY_CONFIG_NAMES } from "./core/config.js";

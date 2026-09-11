@@ -34,6 +34,16 @@ export interface ReencryptMetadataResult {
   skipped: { pointer: string; message: string }[];
 }
 
+export interface ReencryptDataResult {
+  /** The metadata with every rewritten value; the input itself when nothing was. */
+  data: Record<string, unknown>;
+  rewritten: ReencryptedValue[];
+  /** Values that could not be re-encrypted, and why. */
+  skipped: { pointer: string; message: string }[];
+  /** The top-level keys whose value changed, in document order. */
+  keys: string[];
+}
+
 /** The subtree cite owns. */
 const CITATIONS_KEY = "citations";
 
@@ -105,6 +115,53 @@ function tokensIn(data: Record<string, unknown>): Found[] {
   return found;
 }
 
+/**
+ * Re-encrypt every ciphertext in one metadata object, `citations` aside.
+ *
+ * The rule `reencryptMetadata` runs on a page, on the data alone: a value
+ * that decrypts under `fromKey` is rewritten under `toKey`, one already under
+ * `toKey` is done, and one under neither is skipped. `manni key rotate` calls
+ * it a second time for the values an external-metadata manifest supplies,
+ * which live in the manifest rather than in any page.
+ *
+ * `writable` says whether the caller can write what it plans. `false` lists
+ * every value it would have rewritten as skipped instead, in document order
+ * beside the ones that could not be read, and rewrites nothing.
+ */
+export function reencryptData(
+  data: Record<string, unknown>,
+  opts: { fromKey: string; toKey: string; writable?: boolean },
+): ReencryptDataResult {
+  const writable = opts.writable ?? true;
+  const rewritten: ReencryptedValue[] = [];
+  const skipped: { pointer: string; message: string }[] = [];
+  const found = tokensIn(data);
+  for (const { pointer, token } of found) {
+    const opened = decryptValue(token, opts.fromKey, META_CONTEXT);
+    if (opened.ok) {
+      if (!writable) {
+        skipped.push({ pointer, message: READ_ONLY });
+        continue;
+      }
+      rewritten.push({
+        pointer,
+        from: token,
+        to: encryptValue(opened.value, opts.toKey, META_CONTEXT),
+      });
+      continue;
+    }
+    if (decryptValue(token, opts.toKey, META_CONTEXT).ok) continue;
+    skipped.push({ pointer, message: NOT_OURS });
+  }
+  if (rewritten.length === 0) return { data, rewritten, skipped, keys: [] };
+
+  let next: Record<string, unknown> = data;
+  for (const r of rewritten) next = withValueAt(next, r.pointer, r.to);
+  const done = new Set(rewritten.map((r) => r.pointer));
+  const keys = [...new Set(found.filter((f) => done.has(f.pointer)).map((f) => f.top))];
+  return { data: next, rewritten, skipped, keys };
+}
+
 /** `reencryptMetadata` with the extractor chosen. Exported for tests. */
 export function reencryptWith(
   extractor: MetadataExtractor,
@@ -120,41 +177,17 @@ export function reencryptWith(
     }
   };
   const data = read(page.content);
-  const rewritten: ReencryptedValue[] = [];
-  const skipped: { pointer: string; message: string }[] = [];
   const apply = extractor.apply;
-  for (const { pointer, token } of tokensIn(data)) {
-    const opened = decryptValue(token, opts.fromKey, META_CONTEXT);
-    if (opened.ok) {
-      if (apply === undefined) {
-        skipped.push({ pointer, message: READ_ONLY });
-        continue;
-      }
-      rewritten.push({
-        pointer,
-        from: token,
-        to: encryptValue(opened.value, opts.toKey, META_CONTEXT),
-      });
-      continue;
-    }
-    if (decryptValue(token, opts.toKey, META_CONTEXT).ok) continue;
-    skipped.push({ pointer, message: NOT_OURS });
-  }
+  const plan = reencryptData(data, { ...opts, writable: apply !== undefined });
+  const { rewritten, skipped } = plan;
   if (rewritten.length === 0 || apply === undefined) {
     return { content: page.content, rewritten: [], skipped };
   }
 
   // One patch entry per top-level key: the whole value, with its tokens
   // replaced, because a writer sets top-level keys and nothing deeper.
-  let next: Record<string, unknown> = data;
-  for (const r of rewritten) next = withValueAt(next, r.pointer, r.to);
   const patch: MetadataPatch = {};
-  const tops = new Set(
-    tokensIn(data)
-      .filter((f) => rewritten.some((r) => r.pointer === f.pointer))
-      .map((f) => f.top),
-  );
-  for (const top of tops) patch[top] = next[top];
+  for (const top of plan.keys) patch[top] = plan.data[top];
   const content = apply(page.content, patch, { filePath: page.file });
 
   // A writer that cannot keep a value is worse than a refused rotation: the

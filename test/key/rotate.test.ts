@@ -9,7 +9,8 @@
  * developer's `MANNI_ENCRYPTION_KEY` is never read.
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { afterEach, describe, expect, it } from "vitest";
 import { hashRange } from "../../src/cite/core/hash.js";
@@ -84,6 +85,44 @@ function citingPage(key: string): string {
 
 const PAGES = ["docs/auth.md", "docs/limits.md", "blog/post.md"];
 
+// ---------------------------------------------------------------------------
+// External-metadata manifests (proposals 0037, 0039 and 0041). The private
+// half of a document lives in the collection's manifest, so a rotation that
+// skipped it would leave `meta validate` reporting `encrypted:unreadable`.
+// ---------------------------------------------------------------------------
+
+const here = dirname(fileURLToPath(import.meta.url));
+const manifestFixture = (name: string): string =>
+  readFileSync(join(here, "..", "fixtures", "key-rotate-manifests", name), "utf8");
+
+/** The same two collections, each with a local manifest of its own. */
+const MANIFEST_COLLECTIONS = [
+  "collections:",
+  "  - name: site",
+  '    paths: ["docs/**/*.md"]',
+  "    externalMetadata:",
+  "      - file: private/site.yaml",
+  "        keys: [jira, owner, citations]",
+  "  - name: blog",
+  '    paths: ["blog/**/*.md"]',
+  "    externalMetadata:",
+  "      - file: private/blog.yaml",
+  "        keys: [team]",
+  "",
+].join("\n");
+
+/** The two documents the manifests name; neither carries a private key itself. */
+const MANIFEST_PAGES = {
+  "docs/handbook.md": "---\ntitle: Handbook\n---\n\n# Handbook\n",
+  "blog/notes.md": "---\ntitle: Notes\n---\n\n# Notes\n",
+};
+
+const MANIFEST_FILES = {
+  ...MANIFEST_PAGES,
+  "private/site.yaml": manifestFixture("site.yaml"),
+  "private/blog.yaml": manifestFixture("blog.yaml"),
+};
+
 let dir: string | undefined;
 afterEach(() => {
   removeTempRepo(dir);
@@ -94,13 +133,21 @@ afterEach(() => {
  * The family: `encryptionKey: OLD` in the config unless `key` says otherwise
  * (`null` for none), and every page encrypted under OLD.
  */
-function family(opts: { key?: string | null; config?: string; extra?: Record<string, string> } = {}): string {
+function family(
+  opts: {
+    key?: string | null;
+    /** The `collections:` block; the two plain ones unless a case wants manifests. */
+    collections?: string;
+    config?: string;
+    extra?: Record<string, string>;
+  } = {},
+): string {
   const key = opts.key === undefined ? OLD : opts.key;
   const header = key === null ? "" : `encryptionKey: ${key}\n`;
   dir = makeTempRepo({
     init: false,
     files: {
-      "manni.config.yaml": header + COLLECTIONS + (opts.config ?? ""),
+      "manni.config.yaml": header + (opts.collections ?? COLLECTIONS) + (opts.config ?? ""),
       "schemas/page.schema.json": SCHEMA,
       "src/limits.ts": SOURCE,
       "docs/auth.md": ownerPage("Auth", "platform"),
@@ -254,7 +301,13 @@ describe("runKeyRotate: a whole run", () => {
       pages: { file: string; rewritten: unknown[]; skipped: unknown[]; written: boolean }[];
     } & Record<string, unknown>;
 
-    expect(Object.keys(json)).toEqual(["pages", "reencrypted", "skipped", "keyWritten"]);
+    expect(Object.keys(json)).toEqual([
+      "pages",
+      "manifests",
+      "reencrypted",
+      "skipped",
+      "keyWritten",
+    ]);
     expect(json).toMatchObject({ reencrypted: 3, skipped: 0, keyWritten: true });
     expect(json.pages).toContainEqual({
       file: "docs/auth.md",
@@ -456,6 +509,183 @@ describe("runKeyRotate: an interrupted rotation", () => {
     expect(await refusal(rotate({ to: STRANGER }))).toBe(UNFINISHED);
     expect(await refusal(rotate({ collection: ["blog"], to: NEW }))).toBe(UNFINISHED);
     expect(await refusal(runKeySet({ cwd: tree(), env: {} }))).toBe(UNFINISHED);
+  });
+});
+
+describe("runKeyRotate: external-metadata manifests", () => {
+  /** The family, with a local manifest on each collection. */
+  const withManifests = (extra: Record<string, string> = {}): string =>
+    family({ collections: MANIFEST_COLLECTIONS, extra: { ...MANIFEST_FILES, ...extra } });
+
+  /** One owned value of one entry, as the manifest now holds it. */
+  function supplied(manifest: string, entry: string, key: string): unknown {
+    const doc = parse(read(manifest)) as Record<string, Record<string, unknown>>;
+    return doc[entry]?.[key];
+  }
+
+  it("re-encrypts a value a manifest supplies, so it decrypts under the new key", async () => {
+    withManifests();
+    const before = supplied("private/site.yaml", "docs/handbook.md", "owner");
+
+    const result = await rotate({ to: NEW });
+
+    expect(result).toMatchObject({ outcome: "written", skipped: 0, exitCode: 0 });
+    const after = supplied("private/site.yaml", "docs/handbook.md", "owner");
+    expect(after).not.toBe(before);
+    expect(typeof after === "string" ? decryptValue(after, NEW, "meta") : null).toEqual({
+      ok: true,
+      value: "platform",
+    });
+    expect(result.manifests).toEqual([
+      {
+        file: "private/site.yaml",
+        collection: "site",
+        rewritten: [
+          { entry: "docs/handbook.md", pointer: "/owner", from: before, to: after },
+        ],
+        skipped: [],
+        written: true,
+      },
+      {
+        file: "private/blog.yaml",
+        collection: "blog",
+        rewritten: [expect.objectContaining({ entry: "blog/notes.md", pointer: "/team" })],
+        skipped: [],
+        written: true,
+      },
+    ]);
+  });
+
+  it("leaves the citations a manifest holds to cite, byte for byte", async () => {
+    withManifests();
+    const citations = (text: string): string => text.slice(text.indexOf("  citations:"));
+    const before = citations(read("private/site.yaml"));
+
+    await rotate({ to: NEW });
+
+    expect(citations(read("private/site.yaml"))).toBe(before);
+  });
+
+  it("changes no other byte of the manifest: its comments, plain keys and order stay", async () => {
+    withManifests();
+    const before = read("private/site.yaml").split("\n");
+
+    await rotate({ to: NEW });
+
+    const after = read("private/site.yaml").split("\n");
+    const owner = before.findIndex((line) => line.startsWith("  owner:"));
+    expect(owner).toBeGreaterThan(-1);
+    expect(after.filter((_, i) => i !== owner)).toEqual(before.filter((_, i) => i !== owner));
+  });
+
+  it("leaves nothing in a manifest under the old key, so the next rotation is clean", async () => {
+    withManifests();
+    await rotate({ to: NEW });
+    const once = supplied("private/site.yaml", "docs/handbook.md", "owner");
+    expect(typeof once === "string" && decryptValue(once, OLD, "meta").ok).toBe(false);
+
+    // The regression: a manifest value left behind decrypts under neither key
+    // by now, so the second rotation would skip it and refuse to write.
+    const again = await rotate({ to: STRANGER });
+
+    expect(again).toMatchObject({ outcome: "written", skipped: 0, exitCode: 0 });
+    const twice = supplied("private/site.yaml", "docs/handbook.md", "owner");
+    expect(typeof twice === "string" ? decryptValue(twice, STRANGER, "meta") : null).toEqual({
+      ok: true,
+      value: "platform",
+    });
+  });
+
+  it("a narrowed run covers only the selected collection's manifests", async () => {
+    withManifests();
+    const blog = read("private/blog.yaml");
+
+    const result = await rotate({ collection: ["site"], to: NEW });
+
+    expect(result.manifests.map((m) => m.file)).toEqual(["private/site.yaml"]);
+    const owner = supplied("private/site.yaml", "docs/handbook.md", "owner");
+    expect(typeof owner === "string" && decryptValue(owner, NEW, "meta").ok).toBe(true);
+    expect(read("private/blog.yaml")).toBe(blog);
+  });
+
+  it("a positional path covers the manifests of the collections its files belong to", async () => {
+    withManifests();
+    const blog = read("private/blog.yaml");
+
+    const result = await rotate({ inputs: ["docs/auth.md"], to: NEW });
+
+    expect(result.manifests.map((m) => m.file)).toEqual(["private/site.yaml"]);
+    expect(read("private/blog.yaml")).toBe(blog);
+  });
+
+  it("a manifest value that decrypts under neither key stops the whole run", async () => {
+    const stray = `docs/handbook.md:\n  jira: ${encryptValue("PLAT-9", STRANGER, "meta")}\n`;
+    withManifests({ "private/site.yaml": stray });
+    const before = snapshot(["private/site.yaml", "private/blog.yaml"]);
+
+    const result = await rotate();
+
+    expect(result).toMatchObject({ outcome: "skipped", keyWritten: false, skipped: 1, exitCode: 1 });
+    expect(result.manifests[0]?.skipped).toEqual([
+      {
+        entry: "docs/handbook.md",
+        pointer: "/jira",
+        message: "does not decrypt under the current key",
+      },
+    ]);
+    expect(snapshot(["private/site.yaml", "private/blog.yaml"])).toEqual(before);
+    expect(pretty(result)).toContain(
+      "private/site.yaml: docs/handbook.md/jira  skipped: does not decrypt under the current key",
+    );
+  });
+
+  it("dry run plans every manifest value and writes none", async () => {
+    withManifests();
+    const before = snapshot(["private/site.yaml", "private/blog.yaml"]);
+
+    const result = await rotate({ dryRun: true });
+
+    expect(result.manifests.map((m) => m.written)).toEqual([false, false]);
+    expect(snapshot(["private/site.yaml", "private/blog.yaml"])).toEqual(before);
+  });
+
+  it("counts and prints a manifest value beside the pages", async () => {
+    withManifests();
+    const before = supplied("private/site.yaml", "docs/handbook.md", "owner");
+    const result = await rotate({ to: NEW });
+    const after = supplied("private/site.yaml", "docs/handbook.md", "owner");
+
+    // Three on the pages, one per manifest.
+    expect(result.reencrypted).toBe(5);
+    const lines = pretty(result);
+    expect(lines).toContain(
+      `private/site.yaml: docs/handbook.md/owner  ${short(String(before))}  -> ${short(String(after))}`,
+    );
+    expect(lines).toContain("5 values re-encrypted in 5 files, 0 skipped");
+    const json = JSON.parse(renderRotateJson(result)) as Record<string, unknown>;
+    expect(Object.keys(json)).toEqual([
+      "pages",
+      "manifests",
+      "reencrypted",
+      "skipped",
+      "keyWritten",
+    ]);
+  });
+
+  it("never reads a URL manifest, which is read-only", async () => {
+    const remote = MANIFEST_COLLECTIONS.replace(
+      "      - file: private/blog.yaml\n        keys: [team]\n",
+      "      - file: https://example.invalid/private.yaml\n        keys: [team]\n",
+    );
+    family({
+      collections: remote,
+      extra: { ...MANIFEST_PAGES, "private/site.yaml": manifestFixture("site.yaml") },
+    });
+
+    const result = await rotate({ to: NEW });
+
+    expect(result.manifests.map((m) => m.file)).toEqual(["private/site.yaml"]);
+    expect(result.exitCode).toBe(0);
   });
 });
 
