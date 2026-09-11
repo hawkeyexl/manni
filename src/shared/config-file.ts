@@ -40,6 +40,7 @@ import { parseCollections, type CollectionConfig } from "./collections.js";
 import { isValidEncryptionKey } from "./encryption.js";
 import { searchPath } from "./git-root.js";
 import { warn } from "./warn.js";
+import { errorMessage } from "./errors.js";
 
 /** The canonical family filenames, in discovery order. */
 export const FAMILY_CONFIG_NAMES: readonly string[] = [
@@ -156,7 +157,7 @@ function parseMapping(
   try {
     raw = parseYaml(text);
   } catch (err) {
-    throw toError(`${source}: invalid YAML: ${(err as Error).message}`);
+    throw toError(`${source}: invalid YAML: ${errorMessage(err)}`);
   }
   if (raw == null) return null;
   if (typeof raw !== "object" || Array.isArray(raw)) {

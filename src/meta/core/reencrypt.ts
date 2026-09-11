@@ -13,6 +13,7 @@
  */
 import { extname } from "node:path";
 import { decryptValue, encryptValue, isEncryptedValue } from "../../shared/encryption.js";
+import { errorMessage } from "../../shared/errors.js";
 import { escapePointerSegment } from "../extractors/pointer.js";
 import { extractorByName, extractorForExtension, supportedExtensions } from "../extractors/index.js";
 import { DocmetaError, type MetadataExtractor, type MetadataPatch } from "../types.js";
@@ -115,7 +116,7 @@ export function reencryptWith(
       return extractor.extract(content, page.file).data;
     } catch (err) {
       if (err instanceof DocmetaError) throw err;
-      throw new DocmetaError(`${page.file}: ${(err as Error).message}`);
+      throw new DocmetaError(`${page.file}: ${errorMessage(err)}`);
     }
   };
   const data = read(page.content);

@@ -1,0 +1,16 @@
+# A collection-scoped `elements:` override, for query's write path.
+#
+# `article/meta/owner` lifts `meta.owner`, keyed by its parent element, from
+# the guides collection's pages and from no other page. The convention never
+# reaches it: `<meta>` holds elements, so it is structure rather than a value,
+# and only the root's direct children are lifted by convention. This override
+# is the only way the key is read, so a write that ignores it cannot find the
+# element the read found.
+collections:
+  - name: guides
+    paths: ["guides/**/*.xml"]
+
+meta:
+  overrides:
+    - collection: guides
+      elements: ["article/meta/owner"]

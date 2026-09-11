@@ -65,6 +65,7 @@ import {
   settleFindings,
   unverifiedWarning,
 } from "../core/encrypted.js";
+import { errorMessage } from "../../shared/errors.js";
 
 export interface ValidateOptions {
   inputs: string[];
@@ -368,7 +369,7 @@ export async function runValidate(
       // document — it aborts the run rather than counting as a file failure.
       if (err instanceof DocmetaError) throw err;
       results.push(
-        parseErrorResult(label, extractor.name, (err as Error).message, "parse"),
+        parseErrorResult(label, extractor.name, errorMessage(err), "parse"),
       );
       return;
     }
@@ -420,7 +421,7 @@ export async function runValidate(
       });
     } catch (err) {
       results.push(
-        parseErrorResult(label, extractor.name, (err as Error).message, "schema"),
+        parseErrorResult(label, extractor.name, errorMessage(err), "schema"),
       );
       return;
     }

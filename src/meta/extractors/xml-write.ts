@@ -38,6 +38,7 @@ import {
   attrValueSpan,
   afterElementName,
 } from "./xml-locate.js";
+import { errorMessage } from "../../shared/errors.js";
 
 interface Edit {
   start: number;
@@ -65,7 +66,7 @@ export function applyXml(
     // A document the reader rejects has no trustworthy positions, so there is
     // nothing safe to splice.
     throw new DocmetaError(
-      `Refusing to write metadata: ${(err as Error).message}`,
+      `Refusing to write metadata: ${errorMessage(err)}`,
     );
   }
 
@@ -291,7 +292,7 @@ function verify(
     }).data;
   } catch (err) {
     throw new DocmetaError(
-      `Refusing to write XML metadata: the rewritten document did not parse (${(err as Error).message}).`,
+      `Refusing to write XML metadata: the rewritten document did not parse (${errorMessage(err)}).`,
     );
   }
   if (!deepEqual(actual, expected)) {

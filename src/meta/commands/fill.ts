@@ -101,6 +101,7 @@ import type {
   Proposal,
   ProposalSet,
 } from "./fill-types.js";
+import { errorMessage } from "../../shared/errors.js";
 
 export type {
   Candidate,
@@ -374,7 +375,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         throw new DocmetaError(
           err instanceof InferenceError
             ? err.message
-            : `Could not construct the "${providerName}" provider: ${(err as Error).message}`,
+            : `Could not construct the "${providerName}" provider: ${errorMessage(err)}`,
         );
       }
     }
@@ -497,7 +498,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     } catch (err) {
       // A refusal about the run's key is the run's, not this file's.
       if (err instanceof EncryptionRefusal) throw err;
-      return errorResult(label, extractor.name, (err as Error).message);
+      return errorResult(label, extractor.name, errorMessage(err));
     }
 
     let resolved: ResolvedSchemaSet;
@@ -516,7 +517,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         onNotice: opts.onNotice,
       });
     } catch (err) {
-      return errorResult(label, extractor.name, (err as Error).message);
+      return errorResult(label, extractor.name, errorMessage(err));
     }
 
     const schemaSet = resolved.schemas;
@@ -631,7 +632,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     try {
       extractor.apply(content, {}, { filePath: label, elements });
     } catch (err) {
-      return errorResult(label, extractor.name, (err as Error).message, schemaSet);
+      return errorResult(label, extractor.name, errorMessage(err), schemaSet);
     }
 
     // The key before the first model request, so a refused prompt never
@@ -688,7 +689,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         return errorResult(
           label,
           extractor.name,
-          `Could not build a proposal schema from ${schemaSet.join(", ")}: ${(err as Error).message}`,
+          `Could not build a proposal schema from ${schemaSet.join(", ")}: ${errorMessage(err)}`,
           schemaSet,
         );
       }
@@ -898,7 +899,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       return errorResult(
         label,
         extractor.name,
-        (err as Error).message,
+        errorMessage(err),
         schemaSet,
         fields,
       );
@@ -1540,7 +1541,7 @@ async function resolveIdentity(spec: {
     throw new DocmetaError(
       err instanceof InferenceError
         ? err.message
-        : `Could not resolve provider "${spec.provider}": ${(err as Error).message}`,
+        : `Could not resolve provider "${spec.provider}": ${errorMessage(err)}`,
     );
   }
 }
