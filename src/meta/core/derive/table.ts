@@ -104,17 +104,26 @@ export function createDerivedView(
   );
   const fields = columns.slice(1, -1);
   db.exec("BEGIN");
-  for (const [label, record] of records) {
-    const sources: Record<string, { source: string; evidence: string }> = {};
-    const values = fields.map((field) => {
-      const derived = record.fields[field];
-      if (derived == null) return null;
-      sources[field] = { source: derived.source, evidence: derived.evidence };
-      return bindValue(derived.value);
-    });
-    insert.run(label, ...values, JSON.stringify(sources));
+  // Committed or rolled back, never left open: the caller may keep using the
+  // handle after a failed insert, and every later statement would otherwise
+  // run inside the half-built transaction.
+  let committed = false;
+  try {
+    for (const [label, record] of records) {
+      const sources: Record<string, { source: string; evidence: string }> = {};
+      const values = fields.map((field) => {
+        const derived = record.fields[field];
+        if (derived == null) return null;
+        sources[field] = { source: derived.source, evidence: derived.evidence };
+        return bindValue(derived.value);
+      });
+      insert.run(label, ...values, JSON.stringify(sources));
+    }
+    db.exec("COMMIT");
+    committed = true;
+  } finally {
+    if (!committed) db.exec("ROLLBACK");
   }
-  db.exec("COMMIT");
   db.exec(`CREATE VIEW ${DERIVED_VIEW} AS SELECT * FROM ${DERIVED_ROWS}`);
 }
 
@@ -259,6 +268,8 @@ export interface DeriveTableContext {
   config: DocmetaConfig | null;
   /** Whether the GitHub or GitLab review cache may answer; `--no-cache` clears it. */
   cache: boolean;
+  /** The clock an uncommitted body change is dated by; default `new Date()`. */
+  now?: () => Date;
 }
 
 /**
@@ -289,7 +300,7 @@ export async function deriveForTable(
     ...(derive?.codeowners !== undefined ? { codeowners: derive.codeowners } : {}),
     ...(commands !== undefined ? { commands } : {}),
     cache: ctx.cache,
-    now: () => new Date(),
+    now: ctx.now ?? (() => new Date()),
   });
   assertSourcesAvailable(result.sources, hint);
   return result.records;

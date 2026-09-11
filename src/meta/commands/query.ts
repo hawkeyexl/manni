@@ -188,6 +188,8 @@ export interface QueryOptions {
    * applied — a flag that would silently mean nothing must refuse.
    */
   schemas?: string[];
+  /** The clock an uncommitted body change is dated by. Test seam; default `new Date()`. */
+  now?: () => Date;
 }
 
 /**
@@ -433,6 +435,7 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
       : {}),
     write: !opts.dryRun,
     cache: opts.cache ?? true,
+    ...(opts.now !== undefined ? { now: opts.now } : {}),
     base,
     config,
     cwd,
@@ -504,6 +507,8 @@ interface RunContext {
   write: boolean;
   /** Whether the review cache may answer a `derived` build; `--no-cache` clears it. */
   cache: boolean;
+  /** The clock an uncommitted body change is dated by; default `new Date()`. */
+  now?: () => Date;
   /** Directory file labels resolve against (see `resolveRunConfig`). */
   base: string;
   config: DocmetaConfig | null;
@@ -742,6 +747,7 @@ async function runSql(
           ...(ctx.configDir !== undefined ? { configDir: ctx.configDir } : {}),
           config: ctx.config,
           cache: ctx.cache,
+          ...(ctx.now !== undefined ? { now: ctx.now } : {}),
         },
         "narrow derive.sources in manni.config.yaml",
         fieldsForSql(sql, derivableFields(commands)),

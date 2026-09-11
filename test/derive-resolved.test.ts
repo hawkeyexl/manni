@@ -147,6 +147,30 @@ describe("resolved: the view's shape", () => {
   });
 });
 
+describe("derived: the backing table's transaction", () => {
+  it("rolls back and leaves no transaction open when an insert fails", async () => {
+    const { DatabaseSync } = await loadSqlite();
+    const db = new DatabaseSync(":memory:");
+    // A circular value cannot become JSON text, so its insert throws partway
+    // through the transaction.
+    const circular: Record<string, unknown> = {};
+    circular.self = circular;
+    expect(() => {
+      createDerivedView(
+        db,
+        new Map([["a.md", record("a.md", { owner: circular })]]),
+        derivedColumns(),
+      );
+    }).toThrow();
+    // SQLite refuses a BEGIN inside an open transaction, so this passing
+    // proves the failed one was closed.
+    expect(() => {
+      db.exec("BEGIN");
+    }).not.toThrow();
+    db.close();
+  });
+});
+
 describe("resolved: which side answers", () => {
   it("gives the asserted value when the document carries the key", async () => {
     const { db } = await build({

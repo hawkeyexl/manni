@@ -100,6 +100,8 @@ export interface GetOptions {
    * source can speak for it, and that is an answer rather than an error.
    */
   derived?: boolean;
+  /** The clock an uncommitted body change is dated by. Test seam; default `new Date()`. */
+  now?: () => Date;
 }
 
 export interface GetFileResult {
@@ -312,7 +314,14 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
       fields: opts.fields,
       derivable: derivableFields,
       carried,
-      run: { cwd, base, configDir, config, cache: opts.cache ?? true },
+      run: {
+        cwd,
+        base,
+        configDir,
+        config,
+        cache: opts.cache ?? true,
+        now: opts.now ?? (() => new Date()),
+      },
     });
   }
 
@@ -351,6 +360,7 @@ async function attachResolved(
       configDir: string | undefined;
       config: DocmetaConfig | null;
       cache: boolean;
+      now: () => Date;
     };
   },
 ): Promise<void> {
@@ -372,7 +382,7 @@ async function attachResolved(
               : {}),
             ...(commands !== undefined ? { commands } : {}),
             cache: run.cache,
-            now: () => new Date(),
+            now: run.now,
           });
           assertSourcesAvailable(
             result.sources,

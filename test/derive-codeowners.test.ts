@@ -326,6 +326,35 @@ describe("ownersFor (GitLab sections)", () => {
 });
 
 describe("deriveFromCodeowners", () => {
+  it("is unavailable, not a crash, when the CODEOWNERS file cannot be read", async () => {
+    // A path that exists and cannot be read. A directory stands in for a
+    // file deleted between the existence check and the read.
+    const res = await deriveFromCodeowners(
+      [{ label: "docs/api/get.md", absPath: fx("github", "docs", "api", "get.md") }],
+      { explicit: ".github", configDir: fx("github"), rootOf: rootOfFixture("github") },
+    );
+    expect(res.status.available).toBe(false);
+    expect(res.status.reason).toMatch(/could not be read/);
+  });
+
+  it("asks for a directory's repository root once, however many of its files are read", async () => {
+    let calls = 0;
+    const inner = rootOfFixture("github");
+    await deriveFromCodeowners(
+      [
+        { label: "docs/api/get.md", absPath: fx("github", "docs", "api", "get.md") },
+        { label: "docs/api/post.md", absPath: fx("github", "docs", "api", "post.md") },
+      ],
+      {
+        rootOf: (p) => {
+          calls += 1;
+          return inner(p);
+        },
+      },
+    );
+    expect(calls).toBe(1);
+  });
+
   it("derives owners per input from the root's CODEOWNERS", async () => {
     const res = await deriveFromCodeowners(
       [

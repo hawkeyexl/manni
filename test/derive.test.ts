@@ -13,6 +13,9 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { runDerive, type DeriveRun } from "../src/meta/commands/derive.js";
+import { runGet } from "../src/meta/commands/get.js";
+import { runValidate } from "../src/meta/commands/validate.js";
+import { runQuery } from "../src/meta/commands/query.js";
 import { renderDerive } from "../src/meta/reporters/derive.js";
 import { DocmetaError } from "../src/meta/types.js";
 import { markdownExtractor } from "../src/meta/extractors/markdown.js";
@@ -260,6 +263,31 @@ describe("runDerive", () => {
       written: true,
     });
     expect(extract(dir, "docs/faq.md")["last-updated"]).toBe("2030-01-15");
+  });
+
+  it("dates it with the injected clock in get, validate and query too", async () => {
+    // The seam `derive` has, on the three read paths that also derive, so a
+    // test of any of them controls the date an uncommitted body gets.
+    const { dir } = stageCorpus();
+    const faq = readFileSync(join(dir, "docs", "faq.md"), "utf8");
+    writeFile(dir, "docs/faq.md", `${faq}\nA new paragraph.\n`);
+    const now = (): Date => new Date(2030, 0, 15, 12, 0, 0);
+
+    const got = await runGet({ fields: ["last-updated"], inputs: ["docs/faq.md"], cwd: dir, now });
+    expect(got[0]?.derived?.["last-updated"]?.value).toBe("2030-01-15");
+
+    const { results } = await runValidate({ inputs: ["docs/faq.md"], cwd: dir, now });
+    expect(results[0]?.errors.map((e) => e.message)).toContainEqual(
+      expect.stringContaining("git says 2030-01-15"),
+    );
+
+    const run = await runQuery({
+      sql: 'SELECT "last-updated" AS d FROM derived',
+      inputs: ["docs/faq.md"],
+      cwd: dir,
+      now,
+    });
+    expect(run.rows).toEqual([{ d: "2030-01-15" }]);
   });
 
   it("refuses stdin: there is no history behind it", async () => {

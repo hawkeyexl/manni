@@ -140,7 +140,9 @@ export interface DeriveInput {
 
 /** What a derive run holds constant across every document it visits. */
 export interface DeriveContext {
+  /** The run's working directory, the fallback when no config directory applies. */
   cwd: string;
+  /** Directory the input labels are relative to, as `resolveRunConfig` settled it. */
   base: string;
   configDir?: string;
   sources: readonly DeriveSource[];
@@ -169,7 +171,10 @@ export interface DerivedField {
   field: DerivableField;
   /** What the document carries; absent when it carries nothing. */
   asserted?: unknown;
-  /** What the sources say; `null` when they could not answer. */
+  /**
+   * What the sources say. `null` when they could not answer, which is exactly
+   * when `status` is `unknown`.
+   */
   derived: unknown;
   source?: DeriveSource;
   evidence?: string;

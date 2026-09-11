@@ -75,7 +75,11 @@ const HOST_NAME: Readonly<Record<ReviewSource, string>> = {
 export interface DeriveResult {
   /** Keyed by `DeriveInput.label`; every input has a record. */
   records: Map<string, DerivedRecord>;
-  /** One status per source the run consulted. A source nobody asked for is absent. */
+  /**
+   * One status per source the run consulted. A source nobody asked for is
+   * absent, and so is whichever of `github` and `gitlab` the origin remote does
+   * not point at. Absent means not applicable here, never unavailable.
+   */
   sources: Partial<Record<DeriveSource, SourceStatus>>;
 }
 

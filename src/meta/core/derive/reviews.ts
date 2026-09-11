@@ -546,6 +546,10 @@ export async function deriveFromReviews(
   if (!status.available) return { status, records };
 
   const identity = await client.detect();
+  // `status()` answering `available` means the client found its host, so both
+  // built-in clients return an identity here. The fallback serves only a
+  // custom `ReviewClient` that breaks that promise, and it attributes every
+  // fact to GitHub. Such a client should return an identity from `detect()`.
   const kind = identity?.kind ?? "github";
   const bySha = new Map<string, Promise<MergedChange | null>>();
   const changeFor = (sha: string): Promise<MergedChange | null> => {

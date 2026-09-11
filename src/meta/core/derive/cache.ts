@@ -46,7 +46,7 @@ export class ReviewCache {
   }
 
   /** The cached change, or `undefined` for a miss. Never `null`: nulls are not stored. */
-  get(key: string): MergedChange | null | undefined {
+  get(key: string): MergedChange | undefined {
     if (!this.enabled) return undefined;
     let raw: unknown;
     try {
@@ -99,7 +99,7 @@ export function cachedClient(
       if (identity === null) return client.mergedChangeFor(sha);
       const key = `${identity.host}/${identity.project}/${sha}`;
       const hit = cache.get(key);
-      if (hit !== undefined && hit !== null) return hit;
+      if (hit !== undefined) return hit;
       const change = await client.mergedChangeFor(sha);
       if (change !== null) cache.set(key, change);
       return change;

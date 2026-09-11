@@ -18,7 +18,7 @@
  */
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { relative, resolve, sep } from "node:path";
+import { dirname, relative, resolve, sep } from "node:path";
 import picomatch from "picomatch";
 import type { DerivedValue, SourceStatus } from "./types.js";
 
@@ -297,10 +297,12 @@ export async function deriveFromCodeowners(
   const byRoot = new Map<string, { label: string; absPath: string }[]>();
   const rootCache = new Map<string, string | null>();
   for (const input of inputs) {
-    let root = rootCache.get(input.absPath);
+    // Keyed by directory: every file in one directory shares its repository.
+    const dir = dirname(input.absPath);
+    let root = rootCache.get(dir);
     if (root === undefined) {
       root = opts.rootOf(input.absPath);
-      rootCache.set(input.absPath, root);
+      rootCache.set(dir, root);
     }
     if (root === null) continue;
     const bucket = byRoot.get(root);
@@ -326,7 +328,21 @@ export async function deriveFromCodeowners(
       );
       parsed.set(key, file);
     }
-    const owners = await file;
+    let owners: CodeownersFile;
+    try {
+      owners = await file;
+    } catch (err) {
+      // It was there a moment ago: deleted since, or not a readable file at
+      // all. A source that cannot answer says so. It never crashes the run,
+      // and it never answers "nobody owns this".
+      return {
+        status: {
+          available: false,
+          reason: `CODEOWNERS at ${label} could not be read: ${err instanceof Error ? err.message : String(err)}`,
+        },
+        records,
+      };
+    }
     for (const input of bucket) {
       const rel = toPosix(relative(root, input.absPath));
       const hit = ownersFor(owners, rel);

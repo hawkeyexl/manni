@@ -159,7 +159,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       ...(opts.collections !== undefined ? { collections: opts.collections } : {}),
       onConfigLoaded: opts.onConfigLoaded,
     });
-  // Refused before anything else is looked at: every other command takes `-`
+  // Refused before any file is read: every other command takes `-`
   // as one more input, but a piped document has no commits, no path a
   // CODEOWNERS rule could match, and no pull request. There is nothing to
   // derive from, so the answer would be "unknown" for every field — and a
@@ -276,7 +276,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         apply: extractor.apply,
       });
     } catch (err) {
-      errors.set(label, { format: extractor.name, message: (err as Error).message });
+      errors.set(label, { format: extractor.name, message: err instanceof Error ? err.message : String(err) });
     }
   }
 
@@ -351,7 +351,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         try {
           next = doc.apply(doc.content, patch, { filePath: label, elements: doc.elements });
         } catch (err) {
-          results.push(errorResult(label, doc.format, (err as Error).message, check, compared));
+          results.push(errorResult(label, doc.format, err instanceof Error ? err.message : String(err), check, compared));
           continue;
         }
         changed = next !== doc.content;

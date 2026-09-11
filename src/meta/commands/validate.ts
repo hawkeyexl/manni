@@ -151,6 +151,8 @@ export interface ValidateOptions {
    * since it is per file rather than a corpus rule.
    */
   derive?: boolean;
+  /** The clock an uncommitted body change is dated by. Test seam; default `new Date()`. */
+  now?: () => Date;
 }
 
 export interface ValidateRun {
@@ -511,7 +513,7 @@ export async function runValidate(
         : {}),
       ...(deriveCommands !== undefined ? { commands: deriveCommands } : {}),
       cache: opts.cache ?? true,
-      now: () => new Date(),
+      now: opts.now ?? (() => new Date()),
     });
     assertSourcesAvailable(
       derived.sources,
