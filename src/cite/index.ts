@@ -52,10 +52,35 @@ export type { ClaimUnit } from "./core/claims.js";
 export { GIT_UNAVAILABLE_COMMIT, GIT_UNAVAILABLE_HISTORY, gitClient, noGit } from "./core/git.js";
 export { MAX_RANGE_LINES, MOVE_BUDGET_BYTES, MOVE_WINDOW_LINES, classifyCitation, findWindows, historyOf } from "./core/classify.js";
 export type { ClassifyOptions, FindWindowsOptions, History } from "./core/classify.js";
-export { MARKER_JSON, MAX_MARKERS_PER_PAGE, bodyLineOf, readPage, validateEntry } from "./core/page.js";
+export {
+  MARKER_JSON,
+  MAX_MARKERS_PER_PAGE,
+  bodyLineOf,
+  ownedMessage,
+  pickExtractor,
+  readPage,
+  validateEntry,
+} from "./core/page.js";
+export {
+  CITATIONS_KEY,
+  duplicateJoinRefusal,
+  loadCitationSidecars,
+  orphanRefusal,
+  sidecarsFor,
+  twoManifestsRefusal,
+  urlManifestRefusal,
+} from "./core/sidecar.js";
+export type {
+  CitationManifest,
+  CitationSidecars,
+  LoadSidecarOptions,
+  PageSidecar,
+} from "./core/sidecar.js";
+export { ManifestSet, itemLine, splice } from "./core/manifest.js";
+export type { HeldManifest } from "./core/manifest.js";
 export type { ReadPageOptions } from "./core/page.js";
 export { checkCitations } from "./core/check-page.js";
-export { claimMessageFor, findingsFor, messageFor, toValidationResult } from "./core/adapt.js";
+export { claimMessageFor, errorSite, findingsFor, messageFor, toValidationResult } from "./core/adapt.js";
 export { appendFrontmatterCitation, entryObject, insertStatementBefore, spliceEntryField, unifiedDiff } from "./core/write.js";
 export type { EntryPath } from "./core/write.js";
 export { mintCitation } from "./core/mint.js";
@@ -65,7 +90,8 @@ export type { CiteRunOptions } from "./core/config.js";
 export { runCheck } from "./commands/check.js";
 export { runAdd } from "./commands/add.js";
 export { runUpdate } from "./commands/update.js";
-export { reencryptCitations } from "./core/reencrypt.js";
+export { reencryptCitationEntries, reencryptCitations } from "./core/reencrypt.js";
+export type { ReencryptEntriesResult, ReencryptOptions } from "./core/reencrypt.js";
 export { renderCheckPretty, renderUpdatePretty, rewriteLine } from "./reporters/pretty.js";
 export type { PrettyOptions } from "./reporters/pretty.js";
 export { renderCheckJson, renderUpdateJson } from "./reporters/json.js";

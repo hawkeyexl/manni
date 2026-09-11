@@ -15,6 +15,7 @@
  * `commitsSince` and `diff` never enter a message: they are pretty-only
  * fields, shown under `--reveal` and `--show-diff`.
  */
+import { isAbsolute } from "node:path";
 import { isErrorSeverity, type FieldError, type ValidationResult } from "../../meta/index.js";
 import type {
   CitationFinding,
@@ -237,6 +238,29 @@ function integrityFor(
   return results.find((r) => r.origin.index === finding.index)?.citation.source.integrity;
 }
 
+/**
+ * Where a finding is located once it becomes a `FieldError`: the page, or
+ * the manifest the entry sits in.
+ *
+ * A manifest outside the repository has no location any reporter can use —
+ * SARIF drops a uri that rebases to `../…`, and a GitHub annotation on one
+ * lands nowhere — so the finding falls back to the page, and its line goes
+ * with the file it belonged to. Inside the tree, both travel, and `file`
+ * is what every reporter reads to annotate the manifest instead.
+ */
+export function errorSite(
+  finding: CitationFinding,
+): Pick<CitationFinding, "line" | "file"> {
+  if (finding.file === undefined) {
+    return finding.line === undefined ? {} : { line: finding.line };
+  }
+  if (finding.file.startsWith("../") || isAbsolute(finding.file)) return {};
+  return {
+    file: finding.file,
+    ...(finding.line === undefined ? {} : { line: finding.line }),
+  };
+}
+
 export function toValidationResult(report: PageCitationReport): ValidationResult {
   const errors: FieldError[] = report.findings.map((finding) => {
     const error: FieldError = {
@@ -248,9 +272,9 @@ export function toValidationResult(report: PageCitationReport): ValidationResult
     };
     const subject = finding.id ?? integrityFor(finding, report.citations);
     if (subject !== undefined) error.subject = subject;
-    // A line in another file would read as a line in this one, so a finding
-    // that sits on a manifest carries none here.
-    if (finding.line !== undefined && finding.file === undefined) error.line = finding.line;
+    const site = errorSite(finding);
+    if (site.file !== undefined) error.file = site.file;
+    if (site.line !== undefined) error.line = site.line;
     return error;
   });
   return {

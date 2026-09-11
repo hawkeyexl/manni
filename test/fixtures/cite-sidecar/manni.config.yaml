@@ -1,0 +1,23 @@
+# Citations kept outside the page (proposal 0044, "the sidecar is external
+# metadata"). No cite: key turns it on: the `site` collection declares an
+# externalMetadata manifest that owns `citations`, so check, add and update
+# read and write them there and the pages carry none.
+#
+# `guides` keys its manifest by a page field instead of by path (0039), so a
+# `git mv` cannot orphan an entry. Both shapes are exercised, because a
+# writer has to find the entry either way.
+collections:
+  - name: site
+    paths: ["pages/**/*.md"]
+    externalMetadata:
+      - file: ./citations.yaml
+        keys: [citations]
+  - name: guides
+    paths: ["guides/**/*.md"]
+    externalMetadata:
+      - file: ./slugs.yaml
+        keys: [citations]
+        join: slug
+cite:
+  # The sources sit beside the pages in this fixture.
+  root: .

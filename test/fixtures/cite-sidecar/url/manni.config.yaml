@@ -1,0 +1,8 @@
+# A URL manifest cannot own `citations`: cite writes them, and a URL is not
+# somewhere to write. Refused when the run starts, before a page is read.
+collections:
+  - name: site
+    paths: ["*.md"]
+    externalMetadata:
+      - file: https://example.com/citations.yaml
+        keys: [citations]

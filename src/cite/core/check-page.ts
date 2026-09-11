@@ -186,6 +186,7 @@ export async function checkCitations(
   const readOptions: Parameters<typeof readPage>[2] = {};
   if (page.format !== undefined) readOptions.format = page.format;
   if (opts.citations !== undefined) readOptions.citations = opts.citations;
+  if (opts.owned !== undefined) readOptions.owned = opts.owned;
   const read = readPage(page.file, page.content, readOptions);
   const severity = resolveSeverity(opts.severity);
   const client = opts.gitClient ?? gitClient(opts.root);

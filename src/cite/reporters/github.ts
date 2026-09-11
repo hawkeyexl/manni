@@ -9,6 +9,7 @@ import {
   escapeWorkflowCommandMessage,
   escapeWorkflowCommandProperty,
 } from "../../meta/internal.js";
+import { errorSite } from "../core/adapt.js";
 import type { CheckRun, CitationFinding, CiteRule } from "../types.js";
 import { resultFor, splitBaselined } from "./pretty.js";
 
@@ -46,9 +47,12 @@ export function renderCheckGithub(run: CheckRun): string {
   run.pages.forEach((page, index) => {
     const { reported } = splitBaselined(page, resultFor(run, index));
     for (const finding of reported) {
-      // A finding about an entry a manifest owns is annotated on the manifest.
-      const params = [`file=${escapeWorkflowCommandProperty(finding.file ?? page.file)}`];
-      if (finding.line !== undefined) params.push(`line=${String(finding.line)}`);
+      // A finding about an entry a manifest owns is annotated on the
+      // manifest, unless that manifest is outside the tree, where an
+      // annotation would land nowhere: then the page carries it.
+      const site = errorSite(finding);
+      const params = [`file=${escapeWorkflowCommandProperty(site.file ?? page.file)}`];
+      if (site.line !== undefined) params.push(`line=${String(site.line)}`);
       params.push(`title=${escapeWorkflowCommandProperty(finding.ruleId)}`);
       lines.push(
         `::${finding.severity} ${params.join(",")}::${escapeWorkflowCommandMessage(annotationMessage(finding))}`,

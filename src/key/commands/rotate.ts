@@ -35,13 +35,17 @@ import { parse as parseYaml } from "yaml";
 import {
   DEFAULT_CITE_BASELINE_PATH,
   GIT_UNAVAILABLE_HISTORY,
+  ManifestSet,
   buildSourceIndex,
   gitClient,
+  loadCitationSidecars,
   parseCiteConfig,
   readPage,
   sourceRange,
+  reencryptCitationEntries,
   reencryptCitations,
   type CiteConfig,
+  type CitationSidecars,
   type GitClient,
   type ReencryptCitationsResult,
   type SourceIndex,
@@ -154,6 +158,59 @@ interface Planned {
   changed: boolean;
 }
 
+/**
+ * The citations of one page that a manifest owns (proposal 0044). They are
+ * re-encrypted exactly as a page's own are — a citation counts as done only
+ * when its `source.file` decrypts under the new key *and* its pin holds —
+ * and written back as one value per page, each manifest written once.
+ *
+ * Kept in its own function, and reached from one place in the loop below, so
+ * nothing about how *meta* values are rotated changes.
+ */
+async function rotateManifestCitations(
+  sidecars: CitationSidecars | null,
+  manifests: ManifestSet,
+  page: { file: string; content: string; format?: string },
+  opts: {
+    root: string;
+    fromKey: string;
+    toKey: string;
+    gitClient: GitClient;
+    sourceIndex: () => Promise<SourceIndex>;
+  },
+): Promise<{ rewritten: RotatedValue[]; skipped: SkippedValue[]; wantsHistory: boolean }> {
+  const none = { rewritten: [], skipped: [], wantsHistory: false };
+  if (sidecars === null) return none;
+  const sidecar = sidecars.forPage(page.file, page.content, page.format);
+  const owner = sidecar.owner;
+  if (owner === undefined || sidecar.citations === undefined) return none;
+  // Only a manifest entry that actually holds a ciphertext costs an index.
+  if (!sidecar.citations.some((input) => ANY_CIPHERTEXT.test(JSON.stringify(input.entry)))) {
+    return none;
+  }
+  const result = await reencryptCitationEntries(
+    { ...page, citations: sidecar.citations },
+    {
+      root: opts.root,
+      fromKey: opts.fromKey,
+      toKey: opts.toKey,
+      gitClient: opts.gitClient,
+      sourceIndex: await opts.sourceIndex(),
+    },
+  );
+  if (result.changed && sidecar.entry !== undefined) {
+    await manifests.write(owner, sidecar.entry, result.entries, 0);
+  }
+  return {
+    rewritten: result.rewritten.map((r) => ({ kind: "citation" as const, ...r })),
+    skipped: result.skipped.map((s) => ({ kind: "citation" as const, ...s })),
+    // A pin that no longer holds is re-keyed from the lines at its commit.
+    wantsHistory: sidecar.citations.some((input) =>
+      /"commit-sha"\s*:/.test(JSON.stringify(input.entry)),
+    ),
+  };
+}
+
 export async function runKeyRotate(opts: KeyRotateOptions): Promise<KeyRotateResult> {
   const cwd = resolve(opts.cwd ?? process.cwd());
   const env = opts.env ?? process.env;
@@ -245,13 +302,47 @@ export async function runKeyRotate(opts: KeyRotateOptions): Promise<KeyRotateRes
     return index;
   };
 
+  // The manifests that own `citations` (proposal 0044): a page whose entries
+  // live in one carries no ciphertext of its own, so they are read for every
+  // page of the run, not only the ones the shortcut below lets through.
+  const sidecars =
+    file === null
+      ? null
+      : await loadCitationSidecars({
+          collections: file.collections,
+          configDir: file.dir,
+          base,
+          configSource: file.source,
+          key: current,
+          toError: toKeyError,
+        });
+  const manifests = new ManifestSet();
+
   const planned: Planned[] = [];
   let wantsHistory = false;
   for (const rel of files) {
     const path = resolve(base, rel);
     const before = await readFile(path, "utf8");
-    if (!ANY_CIPHERTEXT.test(before)) continue;
     const page = { file: rel, content: before, ...(format === undefined ? {} : { format }) };
+    // A page's own values first, then the entries its manifest holds.
+    const sidecarWork = await rotateManifestCitations(sidecars, manifests, page, {
+      root,
+      fromKey,
+      toKey,
+      gitClient: client,
+      sourceIndex,
+    });
+    if (sidecarWork.wantsHistory) wantsHistory = true;
+    if (!ANY_CIPHERTEXT.test(before)) {
+      if (sidecarWork.rewritten.length === 0 && sidecarWork.skipped.length === 0) continue;
+      planned.push({
+        page: { file: rel, rewritten: sidecarWork.rewritten, skipped: sidecarWork.skipped, written: false },
+        path,
+        content: before,
+        changed: false,
+      });
+      continue;
+    }
     const meta = reencryptMetadata(page, { fromKey, toKey });
     const encrypted = encryptedCitations(rel, meta.content, format);
     if (encrypted.withCommit) wantsHistory = true;
@@ -264,10 +355,12 @@ export async function runKeyRotate(opts: KeyRotateOptions): Promise<KeyRotateRes
     const rewritten: RotatedValue[] = [
       ...meta.rewritten.map((r) => ({ kind: "metadata" as const, ...r })),
       ...cited.rewritten.map((r) => ({ kind: "citation" as const, ...r })),
+      ...sidecarWork.rewritten,
     ];
     const skipped: SkippedValue[] = [
       ...meta.skipped.map((s) => ({ kind: "metadata" as const, ...s })),
       ...cited.skipped.map((s) => ({ kind: "citation" as const, ...s })),
+      ...sidecarWork.skipped,
     ];
     if (rewritten.length === 0 && skipped.length === 0) continue;
     planned.push({
@@ -300,12 +393,14 @@ export async function runKeyRotate(opts: KeyRotateOptions): Promise<KeyRotateRes
     if (!narrowed && keyFile !== null && previous === undefined) {
       await writeEncryptionKey({ file: keyFile, key: toKey, previous: fromKey, cwd, toError: toKeyError });
     }
-    // (2) The pages.
+    // (2) The pages, and the manifests that hold their citations. Each
+    // manifest is written once, however many pages it keeps entries for.
     for (const p of planned) {
       if (!p.changed) continue;
       await writePage(p.path, p.content);
       p.page.written = true;
     }
+    for (const changed of manifests.changed()) await writePage(changed.path, changed.text);
     // (3) The old key goes, now that nothing is under it.
     if (!narrowed && keyFile !== null) {
       await writeEncryptionKey({ file: keyFile, key: toKey, previous: null, cwd, toError: toKeyError });

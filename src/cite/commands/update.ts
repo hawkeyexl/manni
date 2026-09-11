@@ -33,6 +33,7 @@ import {
 import { GIT_UNAVAILABLE_COMMIT } from "../core/git.js";
 import { splitLines } from "../core/hash.js";
 import { mintCitation } from "../core/mint.js";
+import { ManifestSet } from "../core/manifest.js";
 import { readPage } from "../core/page.js";
 import { lineSpec, parseLines } from "../core/range.js";
 import { spliceEntryField, unifiedDiff } from "../core/write.js";
@@ -41,6 +42,7 @@ import type {
   Citation,
   CitationResult,
   LineSpec,
+  ManifestChange,
   PageCitation,
   PageCitationReport,
   PageCitations,
@@ -49,7 +51,14 @@ import type {
   UpdateRewrite,
   UpdateRun,
 } from "../types.js";
-import { prepareRun, readTarget, sayNotices } from "./check.js";
+import {
+  assertNoOrphanJoins,
+  assertNoOrphans,
+  joinHits,
+  prepareRun,
+  readTarget,
+  sayNotices,
+} from "./check.js";
 
 type Plan =
   | { kind: "claim-moved"; result: CitationResult; lines: LineSpec; from: string; to: string }
@@ -104,6 +113,54 @@ function apply(content: string, format: string, plan: Plan): string {
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * The same repair, against an entry that lives in a manifest. The page's
+ * whole `citations` value is written back at the end of the run, so a repair
+ * here is an edit to the parsed entry rather than a splice of one scalar.
+ * An entry the writer cannot reach — a list item that is not a mapping —
+ * leaves its finding reported.
+ */
+function applyToEntry(entry: unknown, plan: Plan): boolean {
+  if (!isRecord(entry)) return false;
+  const end = (name: "claim" | "source"): Record<string, unknown> | undefined =>
+    isRecord(entry[name]) ? entry[name] : undefined;
+  switch (plan.kind) {
+    case "claim-moved": {
+      const claim = end("claim");
+      if (claim === undefined) return false;
+      claim.lines = plan.lines;
+      return true;
+    }
+    case "source-moved": {
+      const source = end("source");
+      if (source === undefined) return false;
+      source.lines = plan.lines;
+      return true;
+    }
+    case "claim-accepted": {
+      const claim = end("claim");
+      if (claim === undefined) return false;
+      claim.integrity = plan.pin;
+      if (plan.lines !== undefined) claim.lines = plan.lines;
+      return true;
+    }
+    case "source-accepted": {
+      const source = end("source");
+      if (source === undefined) return false;
+      source.integrity = plan.minted.source.integrity;
+      const commit = plan.minted.source["commit-sha"];
+      // As on a page: a re-mint records a commit only where the entry
+      // already recorded one, so this never adds the key.
+      if (commit !== undefined) source["commit-sha"] = commit;
+      return true;
+    }
+  }
+}
+
 function rewriteOf(plan: Plan): UpdateRewrite {
   const { citation, origin, source } = plan.result;
   const base: Pick<UpdateRewrite, "id" | "index" | "line"> = { index: origin.index };
@@ -153,12 +210,13 @@ function rewriteOf(plan: Plan): UpdateRewrite {
 }
 
 export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
-  const { run, files, usingStdin, forced, pageOptions, git } = await prepareRun(
-    opts,
-    "updated",
-    "update",
-    true,
-  );
+  const prepared = await prepareRun(opts, "updated", "update", true);
+  const { run, files, usingStdin, forced, pageOptions, git } = prepared;
+  assertNoOrphans(prepared);
+  const hits = joinHits();
+  // Each manifest is read once and written once, however many of its pages
+  // the run repairs.
+  const manifests = new ManifestSet();
   const only = opts.only !== undefined && opts.only.length > 0 ? new Set(opts.only) : undefined;
   const accept = opts.accept === true;
 
@@ -248,32 +306,59 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     content: string,
     path?: string,
   ): Promise<PageCitationReport> => {
-    const report = await checkCitations({ file: label, content, format: forced?.name }, pageOptions);
+    const setup = prepared.setupFor(label, content);
+    if (setup.sidecar !== undefined) hits.record(setup.sidecar, label);
+    const report = await checkCitations({ file: label, content, format: forced?.name }, setup.options);
     const { format } = report;
-    const page = readPage(label, content, forced === undefined ? undefined : { format: forced.name });
+    const page = readPage(label, content, {
+      ...(forced === undefined ? {} : { format: forced.name }),
+      ...(setup.options.citations === undefined ? {} : { citations: setup.options.citations }),
+      ...(setup.options.owned === undefined ? {} : { owned: setup.options.owned }),
+    });
     const lines = splitLines(content);
     const rewritten: UpdateRewrite[] = [];
     /** `<index>\0<rule>` of every finding a rewrite settled. */
     const settled = new Set<string>();
     let after = content;
+    // The manifest's entries for this page, edited in memory and written
+    // back as one value once the page is done.
+    const owner = setup.sidecar?.owner;
+    const entries: unknown[] | undefined =
+      setup.sidecar?.citations === undefined
+        ? undefined
+        : (JSON.parse(JSON.stringify(setup.sidecar.citations.map((c) => c.entry))) as unknown[]);
+    let manifestDirty = false;
     for (const result of report.citations) {
       if (only !== undefined && (result.citation.id === undefined || !only.has(result.citation.id))) {
         continue;
       }
       const entry = page.citations.find((c) => c.origin.index === result.origin.index);
       for (const plan of await plansFor(result, entry, page, lines)) {
-        after = apply(after, format, plan);
+        if (result.origin.kind === "manifest") {
+          if (entries === undefined || !applyToEntry(entries[result.origin.index], plan)) continue;
+          manifestDirty = true;
+        } else {
+          after = apply(after, format, plan);
+        }
         rewritten.push(rewriteOf(plan));
         settled.add(`${String(result.origin.index)}\0${settles(plan)}`);
       }
+    }
+    if (manifestDirty && owner !== undefined && entries !== undefined) {
+      if (setup.sidecar?.entry === undefined) {
+        throw new CiteError(
+          `${label} carries no ${owner.join}: value, so its citations cannot be keyed in ${owner.file}.`,
+        );
+      }
+      await manifests.write(owner, setup.sidecar.entry, entries, 0);
     }
     const skipped = report.findings.filter(
       (finding) =>
         (only === undefined || (finding.id !== undefined && only.has(finding.id))) &&
         !settled.has(`${String(finding.index ?? -1)}\0${finding.rule}`),
     );
-    const diff = rewritten.length === 0 ? "" : unifiedDiff(label, content, after);
-    const written = rewritten.length > 0 && path !== undefined && opts.dryRun !== true;
+    const diff = after === content ? "" : unifiedDiff(label, content, after);
+    const written = after !== content && path !== undefined && opts.dryRun !== true;
     if (written) await writeFileAtomic(path, after);
     const out: UpdatePage = { file: label, rewritten, skipped, diff, written };
     // The stdin page has nowhere to be written; the caller prints it instead.
@@ -287,6 +372,16 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
   for (const file of files) {
     reports.push(await updateOne(file, await readTarget(run, file), resolve(run.base, file)));
   }
+  assertNoOrphanJoins(prepared, hits);
+
+  // One write per manifest, after every page that touches it is settled.
+  const changedManifests = manifests.changed();
+  const rewrittenManifests: ManifestChange[] = [];
+  for (const changed of changedManifests) {
+    const write = opts.dryRun !== true;
+    if (write) await writeFileAtomic(changed.path, changed.text);
+    rewrittenManifests.push({ file: changed.file, diff: changed.diff, written: write });
+  }
   // A re-mint records HEAD when git has one. Where git is not there the entry
   // is re-pinned without a commit, and the run says so once.
   const reminted = pages.some((page) =>
@@ -297,5 +392,11 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
   const rewritten = pages.reduce((n, page) => n + page.rewritten.length, 0);
   const skipped = pages.reduce((n, page) => n + page.skipped.length, 0);
   const undone = pages.some((page) => page.skipped.some((finding) => finding.severity === "error"));
-  return { pages, rewritten, skipped, exitCode: undone ? 1 : 0 };
+  return {
+    pages,
+    rewritten,
+    skipped,
+    ...(rewrittenManifests.length > 0 ? { manifests: rewrittenManifests } : {}),
+    exitCode: undone ? 1 : 0,
+  };
 }

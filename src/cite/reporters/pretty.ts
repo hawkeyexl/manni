@@ -11,7 +11,7 @@
  */
 import type { ValidationResult } from "../../meta/index.js";
 import { palette } from "../../shared/color.js";
-import { messageFor } from "../core/adapt.js";
+import { errorSite, messageFor } from "../core/adapt.js";
 import { parseSrc } from "../core/range.js";
 import { shortCommit, shortPin, shortSrc } from "../core/spell.js";
 import type {
@@ -73,8 +73,9 @@ export function splitBaselined(
   for (const finding of page.findings) {
     const instancePath =
       finding.index === undefined ? "" : `/citations/${String(finding.index)}`;
-    // A finding that sits on a manifest carries no line into the result.
-    const line = finding.file === undefined ? finding.line : undefined;
+    // A finding that sits on a manifest carries that file's line, and one
+    // whose manifest lies outside the tree carries no line at all.
+    const line = errorSite(finding).line;
     const at = pool.findIndex(
       (e) =>
         e.keyword === finding.rule &&
@@ -217,8 +218,14 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
   const c = palette(opts.color);
   const lines: string[] = [];
   const quiet = opts.quiet ?? false;
-  const location = (line: number | undefined): string =>
-    line === undefined ? "" : c.dim(`   (line ${String(line)})`);
+  // A finding about an entry a manifest owns names the manifest, because
+  // its line is a line of that file and not of the page above it.
+  const location = (finding: CitationFinding): string => {
+    const { file, line } = errorSite(finding);
+    if (line === undefined) return "";
+    if (file === undefined) return c.dim(`   (line ${String(line)})`);
+    return c.dim(`   (${file}:${String(line)})`);
+  };
 
   run.pages.forEach((page, index) => {
     const { reported, baselined } = splitBaselined(page, resultFor(run, index));
@@ -268,7 +275,7 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
         const text = isBaselined.has(finding)
           ? c.dim(`${finding.message} (baselined)`)
           : finding.message;
-        under.push(`      ${severityMark(finding.severity, c)} ${text}${location(finding.line)}`);
+        under.push(`      ${severityMark(finding.severity, c)} ${text}${location(finding)}`);
       }
       if (opts.showDiff) {
         if (own.some((f) => f.rule === "source-changed")) under.push(...diffLines(result, c.dim));
@@ -309,8 +316,8 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
       const label = c.cyan(labelOfFinding(finding));
       lines.push(
         isBaselined.has(finding)
-          ? `    ${c.dim("·")} ${label}   ${c.dim(`${finding.message} (baselined)`)}${location(finding.line)}`
-          : `    ${severityMark(finding.severity, c)} ${label}   ${finding.message}${location(finding.line)}`,
+          ? `    ${c.dim("·")} ${label}   ${c.dim(`${finding.message} (baselined)`)}${location(finding)}`
+          : `    ${severityMark(finding.severity, c)} ${label}   ${finding.message}${location(finding)}`,
       );
     }
   });
@@ -369,6 +376,15 @@ export function renderUpdatePretty(run: UpdateRun, opts: PrettyOptions): string 
       lines.push(
         `${page.file}: ${c.cyan(labelOfFinding(finding))}  ${mark} skipped: ${finding.message}`,
       );
+    }
+  }
+  // The manifests, after the pages: a dry run owes the diff of every file it
+  // would have written, and an entry a manifest owns is written there.
+  if (opts.showDiff) {
+    for (const manifest of run.manifests ?? []) {
+      for (const line of manifest.diff.split(/\r?\n/)) {
+        if (line !== "") lines.push(c.dim(line));
+      }
     }
   }
   const summary = `${plural(run.rewritten, "citation")} rewritten in ${plural(files, "file")}, ${String(run.skipped)} skipped`;

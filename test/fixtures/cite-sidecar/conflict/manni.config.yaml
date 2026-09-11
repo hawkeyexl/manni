@@ -1,0 +1,16 @@
+# A page in two collections whose manifests both own `citations`. A writer
+# would have to pick one, and picking is the tiebreak 0020 refuses: exit 2,
+# before either manifest is read.
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: ./site.yaml
+        keys: [citations]
+  - name: api
+    paths: ["docs/*.md"]
+    externalMetadata:
+      - file: ./api.yaml
+        keys: [citations]
+cite:
+  root: ..

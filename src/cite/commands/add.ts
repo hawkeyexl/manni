@@ -25,8 +25,15 @@ import { mintCitation } from "../core/mint.js";
 import { bodyLineOf, readPage } from "../core/page.js";
 import { lineSpec, parseSrc, spellLines } from "../core/range.js";
 import { buildSourceIndex, readSource } from "../core/sources.js";
+import { ManifestSet } from "../core/manifest.js";
+import { sidecarsFor, type PageSidecar } from "../core/sidecar.js";
 import { anchoredLines, fenceSpanAt, formatStatement, offsetOfLine } from "../core/statements.js";
-import { appendFrontmatterCitation, insertStatementBefore, unifiedDiff } from "../core/write.js";
+import {
+  appendFrontmatterCitation,
+  entryObject,
+  insertStatementBefore,
+  unifiedDiff,
+} from "../core/write.js";
 import { CiteError } from "../errors.js";
 import type {
   AddOptions,
@@ -93,7 +100,31 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   const path = usingStdin ? undefined : resolve(cwd, opts.page);
   const label = path === undefined ? STDIN_LABEL : toPosix(relative(cwd, path));
   const content = path === undefined ? (opts.stdinContent ?? "") : await readPageFile(path, label);
-  const page = readPage(label, content, opts.as === undefined ? undefined : { format: opts.as });
+
+  // The manifests that own `citations`, if any collection declares one. The
+  // page is labelled from the working directory here, so membership is
+  // measured from there too.
+  const sidecars = await sidecarsFor(run, { base: cwd });
+  const firstManifest = sidecars?.manifests[0];
+  if (usingStdin && firstManifest !== undefined) {
+    const keyedBy = firstManifest.join === "path" ? "path" : firstManifest.join;
+    throw new CiteError(
+      `A page read from stdin has no path, and its citations live in ${firstManifest.file}, which is keyed by ${keyedBy}.`,
+    );
+  }
+  const sidecar: PageSidecar | undefined = usingStdin
+    ? undefined
+    : sidecars?.forPage(label, content, opts.as);
+  const owner = sidecar?.owner;
+
+  const page = readPage(label, content, {
+    ...(opts.as === undefined ? {} : { format: opts.as }),
+    // The entries already there are the manifest's, so `--id` uniqueness and
+    // the marker checks are measured against them and not against a page
+    // that carries none.
+    ...(sidecar?.citations === undefined ? {} : { citations: sidecar.citations }),
+    ...(owner === undefined ? {} : { owned: { file: owner.file, collection: owner.collection } }),
+  });
   const { format } = page;
 
   const pageLines = opts.pageLines;
@@ -225,27 +256,59 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     citation = await mint(key, true);
   }
 
-  const after = appendFrontmatterCitation(body, format, citation, label);
+  // Where the entry goes follows the config, not a flag: a collection whose
+  // manifest owns `citations` keeps them there, and the page is left alone
+  // but for a marker.
+  const manifests = new ManifestSet();
+  let placed: AddResult["manifest"];
+  if (owner !== undefined) {
+    if (sidecar?.entry === undefined) {
+      throw new CiteError(
+        `${label} carries no ${owner.join}: value, so its citations cannot be keyed in ${owner.file}.`,
+      );
+    }
+    const existing = (sidecar.citations ?? []).map((input) => input.entry);
+    const list = [...existing, entryObject(citation)];
+    const at = await manifests.write(owner, sidecar.entry, list, list.length - 1);
+    const [changed] = manifests.changed();
+    placed = {
+      file: at.file,
+      line: at.line,
+      content: changed?.text ?? "",
+      diff: changed?.diff ?? "",
+      written: false,
+    };
+  }
+
+  const after = owner === undefined ? appendFrontmatterCitation(body, format, citation, label) : body;
   // The frontmatter append leaves the body's bytes alone, so every body line
   // moves by exactly what the block grew. The marker sits in the body, so the
-  // page it was inserted into already has this page's body line.
+  // page it was inserted into already has this page's body line. An entry
+  // written to a manifest grows no block, so nothing moves.
   const shift = bodyLineOf(after, locateFrontmatter(after)?.closeEnd ?? 0) - page.bodyLine;
 
   const result: AddResult = {
     file: label,
     citation,
-    placed: "frontmatter",
+    placed: owner === undefined ? "frontmatter" : "manifest",
     content: after,
     diff: unifiedDiff(label, content, after),
     written: false,
+    ...(placed === undefined ? {} : { manifest: placed }),
   };
   if (markerAt !== undefined) result.markerLine = markerAt + shift;
   if (claimSpan !== undefined) {
     result.claimLines = { start: claimSpan.start + shift, end: claimSpan.end + shift };
   }
 
-  result.written = path !== undefined && opts.dryRun !== true;
+  // A manifest entry leaves the page byte for byte as it was, unless a
+  // marker went into the body; there is then nothing to write.
+  result.written = path !== undefined && opts.dryRun !== true && after !== content;
   if (result.written && path !== undefined) await writeFileAtomic(path, after);
+  if (result.manifest !== undefined && opts.dryRun !== true) {
+    for (const changed of manifests.changed()) await writeFileAtomic(changed.path, changed.text);
+    result.manifest.written = true;
+  }
   // A commit was wanted (no --no-commit-sha) and git had none to give. Said
   // once the add has succeeded, so a refused add says nothing about git.
   if (opts.commitSha !== false && !(await client.available())) {

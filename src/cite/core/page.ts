@@ -54,6 +54,17 @@ export interface ReadPageOptions {
    * page's own frontmatter `citations` is not read.
    */
   citations?: readonly CitationInput[];
+  /**
+   * The manifest that owns this page's `citations`, when one does. A page
+   * that also carries its own is `entry-invalid`: neither channel wins, and
+   * the discarded value would be exactly the one nobody checked.
+   */
+  owned?: { file: string; collection: string };
+}
+
+/** Meta's `external:owned` sentence, said by `cite check` under `entry-invalid`. */
+export function ownedMessage(owner: { file: string; collection: string }): string {
+  return `"citations" is owned by manifest ${owner.file} (collection ${owner.collection}); remove it from the document`;
 }
 
 // ajv is CommonJS with a default export; under NodeNext the constructor lives
@@ -147,7 +158,7 @@ function subjectOf(entry: unknown): Pick<FindingExtra, "id" | "src"> {
   return out;
 }
 
-function pickExtractor(file: string, format: string | undefined): MetadataExtractor {
+export function pickExtractor(file: string, format: string | undefined): MetadataExtractor {
   if (format !== undefined) {
     const forced = extractorByName(format);
     if (!forced?.implemented) {
@@ -218,6 +229,16 @@ export function readPage(
 
   const injected = opts?.citations;
   const rawCitations = data.citations;
+  // The page carries a key a manifest owns (0020 across files). The page's
+  // own entries are still read and checked, so the report shows what the
+  // page would publish; the finding says the manifest is the one authority.
+  if (opts?.owned !== undefined && rawCitations !== undefined) {
+    findings.push(
+      finding("entry-invalid", ownedMessage(opts.owned), {
+        line: extracted.lineFor("/citations"),
+      }),
+    );
+  }
   if (injected === undefined && rawCitations !== undefined && !Array.isArray(rawCitations)) {
     findings.push(
       finding("entry-invalid", "citations must be an array of entries", {

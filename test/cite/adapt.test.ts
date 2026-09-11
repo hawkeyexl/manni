@@ -369,7 +369,7 @@ describe("toValidationResult", () => {
     ]);
   });
 
-  it("omits the line for a finding that sits on another file", () => {
+  it("carries the manifest and its line for a finding that sits there", () => {
     const owned = findingsFor(
       [
         unanchored({
@@ -380,10 +380,33 @@ describe("toValidationResult", () => {
       resolveSeverity(),
     );
     expect(owned[0]).toMatchObject({ line: 7, file: "docs/citations.yaml" });
-    // Line 7 of the manifest would read as line 7 of the page, so it is dropped.
+    // `file` says which file line 7 belongs to, so both travel: every
+    // reporter locates the entry in the manifest rather than in the page.
     const [error] = toValidationResult(report(owned)).errors;
+    expect(error).toMatchObject({
+      keyword: "source-changed",
+      instancePath: "/citations/0",
+      file: "docs/citations.yaml",
+      line: 7,
+    });
+  });
+
+  it("falls back to the page for a manifest outside the repository", () => {
+    const outside = findingsFor(
+      [
+        unanchored({
+          source: source({ status: "changed" }),
+          origin: { kind: "manifest", file: "../private/citations.yaml", line: 7, index: 0 },
+        }),
+      ],
+      resolveSeverity(),
+    );
+    // SARIF drops a uri that rebases outside the repository, and a line in
+    // another file would read as a line in this one: neither travels.
+    const [error] = toValidationResult(report(outside)).errors;
     expect(error).toMatchObject({ keyword: "source-changed", instancePath: "/citations/0" });
     expect(error).not.toHaveProperty("line");
+    expect(error).not.toHaveProperty("file");
   });
 
   it("is ok when no finding is an error, and when there are none", () => {

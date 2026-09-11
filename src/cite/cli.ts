@@ -193,7 +193,13 @@ export function addMessage(result: AddResult): string {
   const src = shortSrc(spellSource(citation.source));
   const commit = citation.source["commit-sha"];
   const pin = `${src}, ${shortPin(citation.source.integrity)}, ${commit === undefined ? "no commit" : shortCommit(commit)}`;
-  const head = `${result.file}: added ${name} to frontmatter`;
+  // Where it went: the page's own frontmatter, or the manifest that owns the
+  // page's citations, at the line the entry now sits on.
+  const where =
+    result.manifest === undefined
+      ? "frontmatter"
+      : `${result.manifest.file}:${String(result.manifest.line)}`;
+  const head = `${result.file}: added ${name} to ${where}`;
 
   if (result.markerLine !== undefined) {
     const at =
@@ -430,13 +436,16 @@ export function buildProgram(): Command {
         });
 
         const message = addMessage(result);
+        // A dry run prints every diff the write would make: the page's, and
+        // the manifest's when the entry goes there.
+        const diffs = [result.diff, result.manifest?.diff ?? ""].filter((d) => d.length > 0);
         if (usingStdin) {
           // The rewritten page owns stdout; everything else is a diagnostic.
           process.stdout.write(result.content);
-          if (dryRun && result.diff.length > 0) process.stderr.write(`${result.diff}\n`);
+          if (dryRun) for (const diff of diffs) process.stderr.write(`${diff}\n`);
           process.stderr.write(`${message}\n`);
         } else if (dryRun) {
-          if (result.diff.length > 0) process.stdout.write(`${result.diff}\n`);
+          for (const diff of diffs) process.stdout.write(`${diff}\n`);
           process.stderr.write(`${message}\n`);
         } else {
           process.stdout.write(`${message}\n`);

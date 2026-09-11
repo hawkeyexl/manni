@@ -1,0 +1,11 @@
+# A manifest entry naming a page that is not there, after a `git mv` say.
+# Meta's orphan rule, and cite applies it where meta does: on a run that
+# covers the whole corpus.
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: ./citations.yaml
+        keys: [citations]
+cite:
+  root: ..

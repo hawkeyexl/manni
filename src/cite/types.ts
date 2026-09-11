@@ -276,6 +276,12 @@ export interface CheckPageOptions {
    * grader calling `checkCitations` on a sidecar page would find no citations.
    */
   citations?: readonly CitationInput[];
+  /**
+   * The manifest that owns this page's `citations`, when one does. A page
+   * that carries its own anyway is `entry-invalid`, in meta's `external:owned`
+   * words.
+   */
+  owned?: { file: string; collection: string };
 }
 
 export interface MintOptions {
@@ -433,11 +439,28 @@ export interface AddOptions {
   confirm?: Confirm;
 }
 
+/** The manifest half of a write: what it says now, and whether it was saved. */
+export interface ManifestWrite {
+  /** The manifest as the run reports it. */
+  file: string;
+  /** 1-based line the written entry now sits on. */
+  line: number;
+  /** The whole manifest, rewritten. */
+  content: string;
+  diff: string;
+  written: boolean;
+}
+
 export interface AddResult {
   file: string;
   citation: Citation;
-  /** Where the entry was written. */
-  placed: "frontmatter";
+  /**
+   * Where the entry was written: the page's frontmatter, or the manifest the
+   * page's collection declares. The config decides, not a flag.
+   */
+  placed: "frontmatter" | "manifest";
+  /** The manifest the entry went to, under `placed: "manifest"`. */
+  manifest?: ManifestWrite;
   /** File lines of the claim after the write: the claim lines, or the text the marker anchors. */
   claimLines?: PageLines;
   /** File line of the marker written above the claim, under `marker`. */
@@ -491,10 +514,20 @@ export interface UpdatePage {
   content?: string;
 }
 
+/** One manifest a run rewrote: what changed in it, and whether it was saved. */
+export interface ManifestChange {
+  /** The manifest as the run reports it. */
+  file: string;
+  diff: string;
+  written: boolean;
+}
+
 export interface UpdateRun {
   pages: UpdatePage[];
   rewritten: number;
   skipped: number;
+  /** The manifests this run rewrote, each written once however many pages it holds. */
+  manifests?: ManifestChange[];
   exitCode: 0 | 1;
 }
 

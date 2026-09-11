@@ -1,0 +1,11 @@
+# Two pages carrying one `join:` value: one manifest entry matches both, and
+# a write would land on whichever page the run reached last. Exit 2.
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: ./citations.yaml
+        keys: [citations]
+        join: slug
+cite:
+  root: ..
