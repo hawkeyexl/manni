@@ -551,6 +551,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         ),
         view,
         extracted,
+        merged.locate,
       );
     } catch (err) {
       if (err instanceof EncryptionRefusal) throw err;

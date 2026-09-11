@@ -173,6 +173,66 @@ describe("meta validate with a marked property", () => {
     ]);
   });
 
+  it("reads a manifest-supplied ciphertext, naming the manifest and its own line", async () => {
+    const notices: string[] = [];
+    const { results } = await runValidate({
+      inputs: [],
+      cwd: join(fixtures, "manifest-encrypted"),
+      env: withKey,
+      onNotice: (m) => notices.push(m),
+    });
+    const byFile = new Map(results.map((r) => [r.file, r]));
+    // Decrypts, and the plaintext satisfies the enum the ciphertext cannot.
+    expect(byFile.get("docs/auth.md")?.errors).toEqual([]);
+    // Decrypts, and the plaintext fails the enum: the schema is applied to
+    // the value, not to the token.
+    expect(byFile.get("docs/wrong.md")?.errors).toEqual([
+      expect.objectContaining({
+        schema: "../encrypted.schema.json",
+        keyword: "enum",
+        instancePath: "/owner",
+        file: "owners.yaml",
+        line: 7,
+      }),
+    ]);
+    // A token under another key is unreadable, at the entry's own line.
+    expect(byFile.get("docs/stale.md")?.errors).toEqual([
+      {
+        schema: "encrypted:unreadable",
+        keyword: "encrypted",
+        instancePath: "/owner",
+        message:
+          "/owner does not decrypt under the current key: encrypted under another key, or edited by hand.",
+        file: "owners.yaml",
+        line: 9,
+      },
+    ]);
+    // No finding prints a plaintext, and none prints a token either.
+    const text = JSON.stringify(results);
+    expect(text).not.toContain("finance");
+    expect(text).not.toContain("platform");
+    expect(text).not.toContain("~A");
+    expect(notices).toEqual([]);
+  });
+
+  it("with no key, drops the findings under a manifest-supplied ciphertext and warns once", async () => {
+    const notices: string[] = [];
+    const { results } = await runValidate({
+      inputs: [],
+      cwd: join(fixtures, "manifest-encrypted"),
+      env: noKey,
+      onNotice: (m) => notices.push(m),
+    });
+    expect(results.map((r) => [r.file, r.ok, r.errors])).toEqual([
+      ["docs/auth.md", true, []],
+      ["docs/stale.md", true, []],
+      ["docs/wrong.md", true, []],
+    ]);
+    expect(notices).toEqual([
+      "3 encrypted values were not verified: no encryption key is available. Set MANNI_ENCRYPTION_KEY, or run `manni key set`.",
+    ]);
+  });
+
   it("validates a value that decrypts under the key against the full schema", async () => {
     await page("ok.md", { title: "Ok", owner: enc("platform"), "internal-ticket": enc("PROJ-12") });
     await page("bad.md", { title: "Bad", owner: enc("finance"), "internal-ticket": enc("nope") });

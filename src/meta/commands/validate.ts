@@ -602,8 +602,9 @@ export async function runValidate(
           ),
           view,
           extracted,
+          merged.locate,
         ),
-        ...encryptionFindings(view, extracted),
+        ...encryptionFindings(view, extracted, merged.locate),
       ];
     } catch (err) {
       // A schema the *document* chose failing to load — unparseable, missing,
