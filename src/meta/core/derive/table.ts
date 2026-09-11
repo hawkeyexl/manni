@@ -17,7 +17,7 @@
  */
 import type { DatabaseSync } from "node:sqlite";
 import type { DocmetaConfig } from "../config.js";
-import { bindValue, quoteIdent } from "../projection.js";
+import { bindValue, quoteIdent, RESERVED } from "../projection.js";
 import { commandsOf } from "./config.js";
 import { assertSourcesAvailable, deriveMetadata } from "./index.js";
 import {
@@ -33,9 +33,16 @@ import {
 export const DERIVED_VIEW = "derived";
 export const DERIVED_ROWS = "_derived_rows";
 
+/** The third table: the effective value per field, over `docs` and the rows. */
+export const RESOLVED_VIEW = "resolved";
+
+/** The two columns `resolved` adds past the fields: which side, and why. */
+const ORIGIN_COLUMN = "_origin";
+const SOURCES_COLUMN = "_sources";
+
 /** The view's columns, in order: the path, every derivable field, the evidence. */
 export function derivedColumns(commands?: Readonly<Record<string, DeriveCommand>>): string[] {
-  return ["_path", ...derivableFields(commands), "_sources"];
+  return ["_path", ...derivableFields(commands), SOURCES_COLUMN];
 }
 
 /**
@@ -52,8 +59,9 @@ export function mentionsDerived(sql: string): boolean {
 
 /**
  * The derivable fields a statement can read, out of `fields` — the run's
- * own list, see `derivableFields`: every one of them when it selects `*` or
- * reads `_sources` (the evidence spans them all), otherwise the field names
+ * own list, see `derivableFields`: every one of them when it selects `*`, or
+ * reads `_sources` or `_origin` (the evidence and the origin map span them
+ * all), otherwise the field names
  * it spells out, quoted or not. `owner` is not `owners` and `created` is
  * not `recreated`, and the hyphen inside `last-updated` counts as part of
  * the name; a command key is matched as written, whatever it contains.
@@ -62,7 +70,7 @@ export function mentionsDerived(sql: string): boolean {
  * text — a literal, a comment — is derived.
  */
 export function fieldsForSql(sql: string, fields: readonly DerivableField[]): DerivableField[] {
-  if (sql.includes("*") || /\b_sources\b/i.test(sql)) return [...fields];
+  if (sql.includes("*") || /\b_(?:sources|origin)\b/i.test(sql)) return [...fields];
   return fields.filter((field) =>
     new RegExp(`(?<![\\w-])${escapeRegExp(field)}(?![\\w-])`, "i").test(sql),
   );
@@ -108,6 +116,139 @@ export function createDerivedView(
   }
   db.exec("COMMIT");
   db.exec(`CREATE VIEW ${DERIVED_VIEW} AS SELECT * FROM ${DERIVED_ROWS}`);
+}
+
+/**
+ * Every column `resolved` carries, in order: `_path`, the `docs` data columns,
+ * then any derivable field `docs` does not already have, then `_origin` and
+ * `_sources`. A docs column that is also a derivable field appears once, in
+ * the position `docs` gives it, so the field list only ever adds.
+ *
+ * The system columns are skipped: `_path` is already first, and `_format`,
+ * `_present` and `_data` are facts about the document rather than values a
+ * source could state. A frontmatter key spelled `_origin` or `_sources` is
+ * skipped for the same reason a reserved one is — the column is taken.
+ */
+export function resolvedColumns(
+  docsColumns: readonly string[],
+  commands?: Readonly<Record<string, DeriveCommand>>,
+): string[] {
+  const columns = ["_path"];
+  const seen = new Set<string>(["_path", ORIGIN_COLUMN, SOURCES_COLUMN]);
+  for (const column of docsColumns) {
+    if (seen.has(column) || RESERVED.has(column)) continue;
+    seen.add(column);
+    columns.push(column);
+  }
+  for (const field of derivableFields(commands)) {
+    if (seen.has(field)) continue;
+    seen.add(field);
+    columns.push(field);
+  }
+  columns.push(ORIGIN_COLUMN, SOURCES_COLUMN);
+  return columns;
+}
+
+/**
+ * Does the statement name the `resolved` table? The twin of `mentionsDerived`,
+ * with the same shape and the same reason: `resolved` where a table goes, so
+ * that a column alias or the word inside `unresolved` does not build a view —
+ * and, more to the point, does not spawn git behind it.
+ */
+export function mentionsResolved(sql: string): boolean {
+  return /\b(?:from|join|update|into|table|view)\s+(?:"resolved"|resolved\b)/i.test(sql);
+}
+
+/** One field name as a SQLite JSON path step: `$."last-updated"`. */
+function jsonPath(field: string): string {
+  // JSON.stringify quotes and escapes exactly the way SQLite's path parser
+  // reads a quoted label — `\"` for a quote, `\\` for a backslash — and the
+  // way the label was written into `_data` in the first place.
+  return `$.${JSON.stringify(field)}`;
+}
+
+/** Any string as a SQL string literal (doubling internal apostrophes). */
+function sqlString(value: string): string {
+  return `'${value.replaceAll("'", "''")}'`;
+}
+
+/**
+ * Create the `resolved` view: one row per `docs` row, holding the effective
+ * value of every field — what the document asserts when it carries the key,
+ * what the evidence derived otherwise — plus `_origin` saying which of the two
+ * answered, and the derived row's `_sources` unchanged. Call after
+ * `createDocsTable` and `createDerivedView`.
+ *
+ * **Presence is decided by `_data`, never by NULL.** A docs column is NULL
+ * both when the key is absent and when the document writes `key: null`, and
+ * those are opposite answers: an explicit null is an assertion, and the
+ * derived value must not overwrite it. So each field asks
+ * `json_type(_data, '$."field"') IS NOT NULL`, which is true for a JSON null
+ * and false for an absent key.
+ *
+ * `_origin` is `json_patch('{}', json_object(…))` over a CASE per field that
+ * yields `'asserted'`, `'derived'`, or NULL. `json_object` alone would keep
+ * the NULL members — a field neither side has would read as present with a
+ * null origin — and RFC 7396 merge-patch, which `json_patch` implements, is
+ * exactly the "a null member deletes the key" rule that drops them. One patch
+ * call does the whole object, so the shape stays flat however many fields the
+ * run carries.
+ *
+ * The join is a LEFT JOIN, so a file the derive run has no row for keeps its
+ * asserted values with an all-`asserted` `_origin` and a NULL `_sources`.
+ *
+ * Read-only by construction: SQLite refuses a write to a view with no
+ * INSTEAD OF trigger, and there is none. The effective value is not stored
+ * anywhere, so the only way to change it is to change the document or the
+ * evidence.
+ *
+ * Call it after `createDocsTable` and `createDerivedView`. SQLite accepts a
+ * view over a table that does not exist yet and fails only at the first read,
+ * as `no such table: main._derived_rows`, far from the call that got the
+ * order wrong.
+ */
+export function createResolvedView(
+  db: DatabaseSync,
+  docsColumns: readonly string[],
+  commands?: Readonly<Record<string, DeriveCommand>>,
+): void {
+  const columns = resolvedColumns(docsColumns, commands);
+  const fields = columns.slice(1, -2);
+  const inDocs = new Set(docsColumns);
+  const inDerived = new Set(derivableFields(commands));
+
+  const selects = [`d.${quoteIdent("_path")} AS ${quoteIdent("_path")}`];
+  const origin: string[] = [];
+  for (const field of fields) {
+    const path = sqlString(jsonPath(field));
+    const asserted = `json_type(d.${quoteIdent("_data")}, ${path}) IS NOT NULL`;
+    // A field with no docs column can only be asserted by an inconsistent
+    // table, but `_data` answers for it either way and costs nothing here.
+    const assertedValue = inDocs.has(field)
+      ? `d.${quoteIdent(field)}`
+      : `d.${quoteIdent("_data")} ->> ${path}`;
+    if (inDerived.has(field)) {
+      const derivedValue = `r.${quoteIdent(field)}`;
+      selects.push(
+        `CASE WHEN ${asserted} THEN ${assertedValue} ELSE ${derivedValue} END AS ${quoteIdent(field)}`,
+      );
+      origin.push(
+        `${sqlString(field)}, CASE WHEN ${asserted} THEN 'asserted' WHEN ${derivedValue} IS NOT NULL THEN 'derived' END`,
+      );
+    } else {
+      // A docs-only column: no source states it, so the document always wins.
+      selects.push(`${assertedValue} AS ${quoteIdent(field)}`);
+      origin.push(`${sqlString(field)}, CASE WHEN ${asserted} THEN 'asserted' END`);
+    }
+  }
+  selects.push(
+    `json_patch('{}', json_object(${origin.join(", ")})) AS ${quoteIdent(ORIGIN_COLUMN)}`,
+  );
+  selects.push(`r.${quoteIdent(SOURCES_COLUMN)} AS ${quoteIdent(SOURCES_COLUMN)}`);
+
+  db.exec(
+    `CREATE VIEW ${RESOLVED_VIEW} AS SELECT ${selects.join(", ")} FROM docs d LEFT JOIN ${DERIVED_ROWS} r USING (${quoteIdent("_path")})`,
+  );
 }
 
 /** Where a table build stands: the run's directories and its config. */

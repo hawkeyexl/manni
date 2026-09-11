@@ -523,15 +523,17 @@ manni: corpus checks skipped: run is scoped to collections guides, blog
 ### Exit 2 from a derive source
 
 With [`derive:`](/manni/meta/reference/configuration/#derive) in config,
-`validate`, `derive`, `get --derived` and a `query` naming the `derived`
-table read evidence from git, a CODEOWNERS file, the `gh` or `glab` CLI, and
+`validate`, `derive`, `get`, and a `query` naming the
+[`derived`](/manni/meta/reference/query/#the-derived-table) or
+[`resolved`](/manni/meta/reference/query/#the-resolved-table) table read
+evidence from git, a CODEOWNERS file, the `gh` or `glab` CLI, and
 any [command](/manni/meta/reference/configuration/#commands) the config
 names. A source that cannot answer is exit 2 naming the fix, never a skipped
 field. A
 field that was quietly not compared would make a stale stamp read as current.
 A green gate over nothing is the failure this whole contract exists to end.
-The deliberate opt-outs are `--no-derive` on `validate` and `--sources`
-narrowing on `derive`.
+The deliberate opt-outs are `--no-derive` on `validate`, `--no-derived` on
+`get`, and `--sources` narrowing on `derive`.
 
 | Situation | Message |
 |---|---|
@@ -557,6 +559,7 @@ narrowing on `derive`.
 | `derive` has no `derive.fields` in config and no `--fields`. | `nothing to derive: set derive.fields in manni.config.yaml or pass --fields` |
 | `derive` was given a findings format without `--check`. | `sarif is a findings format, which only --check produces` |
 | A `query` write would touch a managed key. | `"last-updated" is managed by derive; run manni meta derive instead.` |
+| A `query` write names the `resolved` table. | ``cannot modify resolved because it is a view; the resolved table is read-only — it is `docs` and the evidence joined, so write to docs, or stamp the evidence with manni meta derive.`` |
 
 A stamp that disagrees with the evidence is exit 1, from `validate` and from
 `derive --check`. That is a verdict about the document.

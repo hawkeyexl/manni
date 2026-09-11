@@ -156,6 +156,12 @@ export type {
   ReviewFacts,
   ReviewSourceResult,
 } from "./core/derive/reviews.js";
+export {
+  RESOLVED_VIEW,
+  resolvedColumns,
+  createResolvedView,
+  mentionsResolved,
+} from "./core/derive/table.js";
 export { run, BinMissing } from "./core/derive/spawn.js";
 export type { Run, SpawnOptions } from "./core/derive/spawn.js";
 export {

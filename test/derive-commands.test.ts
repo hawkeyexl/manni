@@ -22,7 +22,7 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { MockProvider } from "@hawkeyexl/inference";
 import { runValidate } from "../src/meta/commands/validate.js";
-import { runGet } from "../src/meta/commands/get.js";
+import { runGet, type GetFileResult } from "../src/meta/commands/get.js";
 import { runQuery } from "../src/meta/commands/query.js";
 import { runFill } from "../src/meta/commands/fill.js";
 import { renderGet } from "../src/meta/reporters/get.js";
@@ -103,6 +103,16 @@ function repo(files: Record<string, string> = fixtureFiles()): string {
 const A = fixtureFiles()["docs/a.md"] ?? "";
 const A_BODY_EDIT = A.replace("Body of a.", "Body of a, revised.");
 const A_FRONTMATTER_EDIT = A.replace("title: A", "title: A, retitled");
+
+/**
+ * `docs/b.md` carrying `owner:` with no value — the key present, the value
+ * null. It is the case `Object.hasOwn` gets right and a truthiness test does
+ * not: the document made a statement, and no derived value may overwrite it.
+ */
+const B_NULL_OWNER = (fixtureFiles()["docs/b.md"] ?? "").replace(
+  "title: B",
+  "title: B\nowner:",
+);
 
 /** Edit `docs/a.md`'s body and commit it, dated `D_EDIT`; returns the sha. */
 function reviseA(dir: string): string {
@@ -280,15 +290,14 @@ describe("validate compares managed fields with the evidence", () => {
   });
 });
 
-describe("get --derived", () => {
-  it("adds a derived record beside the asserted values", async () => {
+describe("get resolves each field, and says which side answered (0043)", () => {
+  it("adds a derived record beside the asserted values, with no flag", async () => {
     const dir = repo();
     const sha = git(dir, ["rev-parse", "HEAD"]).slice(0, 7);
     const results = await runGet({
       fields: ["last-updated", "owner", "title"],
       inputs: ["docs/a.md"],
       cwd: dir,
-      derived: true,
     });
     expect(results).toHaveLength(1);
     const r = results[0];
@@ -315,63 +324,232 @@ describe("get --derived", () => {
     expect(r?.derived).not.toHaveProperty("title");
   });
 
-  it("renders the derived value and its evidence in the pretty line", async () => {
+  it("carries resolved and origin records, one entry per requested field", async () => {
     const dir = repo();
-    const sha = reviseA(dir).slice(0, 7);
     const results = await runGet({
-      fields: ["last-updated", "title"],
+      fields: ["last-updated", "owner", "title", "stakeholders"],
       inputs: ["docs/a.md"],
       cwd: dir,
-      derived: true,
     });
-    expect(renderGet(results, ["last-updated", "title"])).toBe(
-      [
-        // The evidence's own `(2026-09-07)` is trimmed: the date is already the derived value on this line.
-        `docs/a.md: last-updated=2026-08-20 (derived 2026-09-07, git: body changed in ${sha})`,
-        "docs/a.md: title=A (not derivable)",
-      ].join("\n"),
-    );
+    const r = results[0];
+    expect(r?.resolved).toEqual({
+      "last-updated": "2026-08-20",
+      owner: ["@docs-team"],
+      title: "A",
+      // Neither side has it, so it resolves to nothing — and JSON drops it.
+      stakeholders: undefined,
+    });
+    // `origin` carries only the fields that resolved to something.
+    expect(r?.origin).toEqual({
+      "last-updated": "asserted",
+      owner: "asserted",
+      title: "asserted",
+    });
+    expect(JSON.parse(JSON.stringify(r))).toMatchObject({
+      resolved: { owner: ["@docs-team"] },
+      origin: { owner: "asserted" },
+    });
   });
 
-  it("prints (derived (none)) when the source had no answer", async () => {
+  // Case 1: asserted, with no derived value or no derivable field at all.
+  it("annotates (asserted) for a field no source can state", async () => {
     const dir = repo();
+    const results = await runGet({
+      fields: ["title"],
+      inputs: ["docs/a.md"],
+      cwd: dir,
+    });
+    expect(renderGet(results, ["title"])).toBe("docs/a.md: title=A (asserted)");
+  });
+
+  it("leaves derived absent when no requested field is derivable", async () => {
+    // `derived` is the evidence per derivable field. With none requested
+    // there is no evidence to report, and `{}` would read as "derived, and
+    // nothing answered".
+    const dir = repo();
+    const results = await runGet({ fields: ["title"], inputs: ["docs/a.md"], cwd: dir });
+    expect(results[0]).not.toHaveProperty("derived");
+    expect(results[0]?.origin).toEqual({ title: "asserted" });
+  });
+
+  // Case 1 again, and the one a truthiness test gets wrong: the document
+  // carries `owner:` with no value. The key is present, so the document has
+  // spoken, and `(unset)` would be a different — and false — answer.
+  it("reads an asserted null as a value, not as an absent key", async () => {
+    const dir = repo({ ...fixtureFiles(), "docs/b.md": B_NULL_OWNER });
     const results = await runGet({
       fields: ["owner"],
       inputs: ["docs/b.md"],
       cwd: dir,
-      derived: true,
     });
-    expect(results[0]?.derived).toEqual({ owner: null });
+    expect(results[0]?.origin).toEqual({ owner: "asserted" });
+    expect(results[0]?.resolved).toEqual({ owner: null });
+    expect(renderGet(results, ["owner"])).toBe("docs/b.md: owner=null (asserted)");
+  });
+
+  // Presence is `Object.hasOwn`, so an asserted null outranks a source that
+  // does have an answer — and the disagreement is named rather than hidden.
+  it("lets an asserted null outrank a derived value", async () => {
+    const dir = repo({
+      ...fixtureFiles(),
+      "docs/b.md": B_NULL_OWNER,
+      CODEOWNERS: "* @docs-team\n",
+    });
+    const results = await runGet({
+      fields: ["owner"],
+      inputs: ["docs/b.md"],
+      cwd: dir,
+    });
+    expect(results[0]?.origin).toEqual({ owner: "asserted" });
+    expect(results[0]?.resolved).toEqual({ owner: null });
     expect(renderGet(results, ["owner"])).toBe(
-      "docs/b.md: owner=(unset) (derived (none))",
+      'docs/b.md: owner=null (asserted; codeowners says ["@docs-team"], CODEOWNERS:1)',
     );
   });
 
-  it("carries no derived record without the flag", async () => {
+  // Case 2: the document has no key, and a source answered.
+  it("prints the derived value and its evidence when the document is silent", async () => {
+    const dir = repo({ ...fixtureFiles(), CODEOWNERS: "* @docs-team\n" });
+    const results = await runGet({
+      fields: ["owner"],
+      inputs: ["docs/b.md"],
+      cwd: dir,
+    });
+    expect(results[0]?.origin).toEqual({ owner: "derived" });
+    expect(renderGet(results, ["owner"])).toBe(
+      'docs/b.md: owner=["@docs-team"] (derived, codeowners: CODEOWNERS:1)',
+    );
+  });
+
+  // Case 3: both sides answered, and they agree.
+  it("annotates (asserted) when the evidence agrees", async () => {
     const dir = repo();
     const results = await runGet({
       fields: ["last-updated"],
       inputs: ["docs/a.md"],
       cwd: dir,
     });
+    expect(renderGet(results, ["last-updated"])).toBe(
+      "docs/a.md: last-updated=2026-08-20 (asserted)",
+    );
+  });
+
+  it("annotates (asserted) when a list agrees with the evidence in another order", () => {
+    // Lists compare as multisets, the way `validate` compares them, so a
+    // reordered `authors` is not drift and must not print as drift.
+    const r: GetFileResult = {
+      file: "docs/a.md",
+      present: true,
+      values: { authors: ["b@x", "a@x"] },
+      derived: { authors: { value: ["a@x", "b@x"], source: "git", evidence: "2 commits" } },
+      resolved: { authors: ["b@x", "a@x"] },
+      origin: { authors: "asserted" },
+    };
+    expect(renderGet([r], ["authors"])).toBe('docs/a.md: authors=["b@x","a@x"] (asserted)');
+  });
+
+  // Case 4: both sides answered, and they disagree. The asserted value is
+  // what the page publishes, so it is what prints; the drift is named after it.
+  it("names the drift when the evidence disagrees", async () => {
+    const dir = repo();
+    const sha = reviseA(dir).slice(0, 7);
+    const results = await runGet({
+      fields: ["last-updated", "title"],
+      inputs: ["docs/a.md"],
+      cwd: dir,
+    });
+    expect(renderGet(results, ["last-updated", "title"])).toBe(
+      [
+        // The evidence's own `(2026-09-07)` is trimmed: the date is already on the line.
+        `docs/a.md: last-updated=2026-08-20 (asserted; git says 2026-09-07, body changed in ${sha})`,
+        "docs/a.md: title=A (asserted)",
+      ].join("\n"),
+    );
+  });
+
+  // Case 5: neither side has it. `(unset)` as always, and no annotation.
+  it("prints (unset) with no annotation when neither side has the field", async () => {
+    const dir = repo();
+    const results = await runGet({
+      fields: ["owner"],
+      inputs: ["docs/b.md"],
+      cwd: dir,
+    });
+    expect(results[0]?.derived).toEqual({ owner: null });
+    expect(results[0]?.origin).toEqual({});
+    expect(renderGet(results, ["owner"])).toBe("docs/b.md: owner=(unset)");
+  });
+
+  it("--no-derived prints the bare line and consults nothing", async () => {
+    const dir = repo();
+    reviseA(dir);
+    const before = derivations.calls;
+    const results = await runGet({
+      fields: ["last-updated"],
+      inputs: ["docs/a.md"],
+      cwd: dir,
+      derived: false,
+    });
+    expect(derivations.calls).toBe(before);
     expect(results[0]).not.toHaveProperty("derived");
+    expect(results[0]).not.toHaveProperty("resolved");
+    expect(results[0]).not.toHaveProperty("origin");
     expect(renderGet(results, ["last-updated"])).toBe(
       "docs/a.md: last-updated=2026-08-20",
     );
   });
 
-  it("refuses stdin: there is no history behind it", async () => {
+  it("quiet hides a file only when every field is unset after resolving", async () => {
+    const owned = repo({ ...fixtureFiles(), CODEOWNERS: "* @docs-team\n" });
+    const shown = await runGet({
+      fields: ["owner"],
+      inputs: ["docs/b.md"],
+      cwd: owned,
+    });
+    expect(renderGet(shown, ["owner"], { quiet: true })).toBe(
+      'docs/b.md: owner=["@docs-team"] (derived, codeowners: CODEOWNERS:1)',
+    );
+
+    // The same page in a repository whose CODEOWNERS does not cover it.
+    const unowned = repo();
+    const hidden = await runGet({
+      fields: ["owner"],
+      inputs: ["docs/b.md"],
+      cwd: unowned,
+    });
+    expect(renderGet(hidden, ["owner"], { quiet: true })).toBe("");
+  });
+
+  it("spawns nothing for a field no source can state", async () => {
     const dir = repo();
-    await expect(
-      runGet({
-        fields: ["last-updated"],
-        inputs: ["-"],
-        as: "markdown",
-        stdinContent: DOC,
-        cwd: dir,
-        derived: true,
-      }),
-    ).rejects.toThrow("cannot derive <stdin>: no history behind it");
+    const before = derivations.calls;
+    const results = await runGet({
+      fields: ["title"],
+      inputs: ["docs/a.md"],
+      cwd: dir,
+    });
+    expect(derivations.calls).toBe(before);
+    // Still resolved, still annotated: the document is the only side there is.
+    expect(results[0]?.origin).toEqual({ title: "asserted" });
+  });
+
+  it("derives nothing for stdin, and that is not an error", async () => {
+    const dir = repo();
+    const before = derivations.calls;
+    const results = await runGet({
+      fields: ["last-updated", "title"],
+      inputs: ["-"],
+      as: "markdown",
+      stdinContent: DOC,
+      cwd: dir,
+    });
+    expect(derivations.calls).toBe(before);
+    expect(results).toHaveLength(1);
+    expect(results[0]?.file).toBe("<stdin>");
+    // Every field a piped document answers is its own.
+    for (const origin of Object.values(results[0]?.origin ?? {})) {
+      expect(origin).toBe("asserted");
+    }
   });
 });
 
@@ -605,6 +783,203 @@ describe("query: the derived table", () => {
   });
 });
 
+/**
+ * The `resolved` table: the effective value per field, over `docs` and the
+ * evidence, with `_origin` naming which side answered. Driven end-to-end here
+ * (the view's own SQL is `derive-resolved.test.ts`): what a statement naming
+ * it triggers, what it refuses, and what it leaves behind.
+ */
+describe("query: the resolved table", () => {
+  /**
+   * The fixture with CODEOWNERS widened to cover `docs/b.md`, which states no
+   * owner of its own — so one file's owner is asserted and the other's is
+   * derived, which is the whole distinction the table exists to draw.
+   */
+  function ownedFixture(): Record<string, string> {
+    const files = fixtureFiles();
+    files.CODEOWNERS = "docs/a.md @docs-team\ndocs/b.md @b-team\n";
+    return files;
+  }
+
+  it("gives the asserted value, or the derived one, and says which", async () => {
+    const dir = repo(ownedFixture());
+    const run = await runQuery({
+      sql: `SELECT _path, owner, _origin ->> '$.owner' AS origin FROM resolved ORDER BY _path`,
+      inputs: [],
+      cwd: dir,
+    });
+    expect(run.rows).toEqual([
+      { _path: "docs/a.md", owner: '["@docs-team"]', origin: "asserted" },
+      { _path: "docs/b.md", owner: '["@b-team"]', origin: "derived" },
+    ]);
+  });
+
+  it("lists the files whose owner the document does not state", async () => {
+    const dir = repo(ownedFixture());
+    const run = await runQuery({
+      sql: `SELECT _path FROM resolved WHERE _origin ->> '$.owner' = 'derived'`,
+      inputs: [],
+      cwd: dir,
+    });
+    expect(run.rows).toEqual([{ _path: "docs/b.md" }]);
+  });
+
+  it("derives every field for a statement that reads _origin alone", async () => {
+    // No field is named, so only `_origin` says what to derive. Deriving
+    // nothing would report b.md's owner as absent, not as derived.
+    const dir = repo(ownedFixture());
+    const run = await runQuery({
+      sql: "SELECT _path, _origin FROM resolved ORDER BY _path",
+      inputs: [],
+      cwd: dir,
+    });
+    const origins = run.rows.map((row): unknown => JSON.parse(String(row["_origin"])));
+    expect(origins).toEqual([
+      expect.objectContaining({ owner: "asserted" }),
+      expect.objectContaining({ owner: "derived" }),
+    ]);
+  });
+
+  it("still lets the drift join mean what it meant: resolved keeps the assertion", async () => {
+    const dir = repo(ownedFixture());
+    reviseA(dir);
+    const run = await runQuery({
+      sql: `SELECT r._path, r."last-updated" AS effective, d."last-updated" AS evidence,
+                   r._origin ->> '$.last-updated' AS origin
+            FROM resolved r JOIN derived d USING (_path)
+            WHERE r."last-updated" IS NOT d."last-updated"`,
+      inputs: [],
+      cwd: dir,
+    });
+    expect(run.rows).toEqual([
+      {
+        _path: "docs/a.md",
+        effective: "2026-08-20",
+        evidence: "2026-09-07",
+        origin: "asserted",
+      },
+    ]);
+  });
+
+  it("refuses a write to the resolved table as read-only", async () => {
+    const dir = repo();
+    const run = runQuery({
+      sql: `UPDATE resolved SET owner = 'x'`,
+      inputs: [],
+      cwd: dir,
+    });
+    await expect(run).rejects.toThrow(DocmetaError);
+    await expect(run).rejects.toThrow(/the resolved table is read-only/);
+    await expect(run).rejects.toThrow(/manni meta derive/);
+  });
+
+  it("never carries the resolved table into a --db export", async () => {
+    const dir = repo(ownedFixture());
+    const out = join(dir, "export.db");
+    const run = await runQuery({
+      sql: "SELECT _path, owner FROM resolved ORDER BY _path",
+      inputs: [],
+      cwd: dir,
+      db: out,
+    });
+    expect(run.rows).toHaveLength(2);
+    const { DatabaseSync } = await loadSqlite();
+    const db = new DatabaseSync(out);
+    try {
+      const names = db
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE lower(name) IN ('resolved', 'derived', '_derived_rows')",
+        )
+        .all();
+      expect(names).toEqual([]);
+      const docs = db.prepare("SELECT count(*) AS n FROM docs").all() as {
+        n: number | bigint;
+      }[];
+      expect(Number(docs[0]?.n)).toBe(2);
+    } finally {
+      db.close();
+    }
+  });
+
+  it("does not build the table for a statement that only says the word", async () => {
+    // No repository, so a build would fail on git: a string literal is not a
+    // table reference, and neither table is named.
+    const dir = makeTempRepo({ files: { "docs/a.md": DOC }, init: false });
+    dirs.push(dir);
+    const run = await runQuery({
+      sql: "SELECT title FROM docs WHERE title LIKE '%resolved%'",
+      inputs: ["docs"],
+      cwd: dir,
+      noConfig: true,
+    });
+    expect(run.rows).toEqual([]);
+  });
+
+  it("gives a corpus check that names the resolved table the same view", async () => {
+    const files = fixtureFiles();
+    files["manni.config.yaml"] = [
+      "collections:",
+      "  - name: site",
+      "    paths:",
+      '      - "docs/**/*.md"',
+      "meta:",
+      "  schemas:",
+      "    - ./permissive.schema.json",
+      "  derive:",
+      "    fields: [last-updated, owner]",
+      "    sources: [git, codeowners]",
+      "  checks:",
+      "    - name: owner-asserted",
+      "      query: >-",
+      "        SELECT _path AS path, 'owner' AS key,",
+      "               'the document states its own owner' AS message",
+      "        FROM resolved WHERE _origin ->> '$.owner' = 'asserted'",
+      "",
+    ].join("\n");
+    const dir = repo(files);
+    const { results } = await runValidate({ inputs: [], cwd: dir });
+    expect(resultFor(results, "docs/a.md").errors.map((e) => e.schema)).toEqual([
+      "check:owner-asserted",
+    ]);
+    expect(resultFor(results, "docs/b.md").ok).toBe(true);
+  });
+
+  it("derives for a check that names resolved when no field is managed", async () => {
+    // The check is the only reason to derive: no `derive.fields`, so the
+    // comparison never runs. Filtering the checks on `mentionsDerived` alone
+    // kept no inputs, derived nothing, and read every column NULL — a check
+    // that answers the opposite of the truth without saying so.
+    const files = fixtureFiles();
+    // b.md states no owner, and CODEOWNERS covers it: the only way this check
+    // finds anything is a derivation that actually ran.
+    files.CODEOWNERS = "docs/a.md @docs-team\ndocs/b.md @b-team\n";
+    files["manni.config.yaml"] = [
+      "collections:",
+      "  - name: site",
+      "    paths:",
+      '      - "docs/**/*.md"',
+      "meta:",
+      "  schemas:",
+      "    - ./permissive.schema.json",
+      "  derive:",
+      "    sources: [git, codeowners]",
+      "  checks:",
+      "    - name: owner-only-derived",
+      "      query: >-",
+      "        SELECT _path AS path, 'owner' AS key,",
+      "               'nobody wrote this owner down' AS message",
+      "        FROM resolved WHERE _origin ->> '$.owner' = 'derived'",
+      "",
+    ].join("\n");
+    const dir = repo(files);
+    const { results } = await runValidate({ inputs: [], cwd: dir });
+    expect(resultFor(results, "docs/b.md").errors.map((e) => e.schema)).toEqual([
+      "check:owner-only-derived",
+    ]);
+    expect(resultFor(results, "docs/a.md").ok).toBe(true);
+  });
+});
+
 describe("the derived table's reading of a statement", () => {
   it("mentionsDerived looks for the table, not the word", () => {
     expect(mentionsDerived("SELECT * FROM derived")).toBe(true);
@@ -630,6 +1005,10 @@ describe("the derived table's reading of a statement", () => {
     // `*` and `_sources` read every column.
     expect(fieldsForSql("SELECT * FROM derived", all)).toHaveLength(6);
     expect(fieldsForSql("SELECT _sources FROM derived", all)).toHaveLength(6);
+    // `_origin` spans every field as `_sources` does. Deriving none of them
+    // would leave every row saying `asserted` or nothing, which reads as an
+    // answer rather than a gap.
+    expect(fieldsForSql("SELECT _path, _origin FROM resolved", all)).toHaveLength(6);
     // Word boundaries: `owner` is not `owners`, `created` is not `recreated`.
     expect(fieldsForSql("SELECT owners, recreated FROM derived", all)).toEqual([]);
   });
@@ -706,19 +1085,21 @@ describe("a command-derived field", () => {
     expect(summary.failed).toBe(1);
   });
 
-  it("get --derived shows the command's value and its argv", async () => {
+  it("get shows the command's value and its argv beside the asserted one", async () => {
     const dir = commandRepo();
     const results = await runGet({
       fields: ["verified-against"],
       inputs: ["docs/install.md"],
       cwd: dir,
-      derived: true,
     });
     expect(results[0]?.derived).toEqual({
       "verified-against": { value: "1.4.2", source: "command", evidence: ARGV },
     });
+    // The document carries the key, so it wins, and the command's answer is
+    // named after it — a command-derived field drifts exactly as a git one does.
+    expect(results[0]?.origin).toEqual({ "verified-against": "asserted" });
     expect(renderGet(results, ["verified-against"])).toBe(
-      `docs/install.md: verified-against=1.4.1 (derived 1.4.2, command: ${ARGV})`,
+      `docs/install.md: verified-against=1.4.1 (asserted; command says 1.4.2, ${ARGV})`,
     );
   });
 

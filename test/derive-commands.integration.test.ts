@@ -100,13 +100,13 @@ describe("derived channel (built bin)", () => {
     expect(r.status).toBe(0);
   });
 
-  it("get --derived prints the derived value and its evidence", () => {
-    const r = run(staleRepo(), ["get", "last-updated", "docs/a.md", "--derived"]);
+  it("get names the drift beside the asserted value, with no flag", () => {
+    const r = run(staleRepo(), ["get", "last-updated", "docs/a.md"]);
     expect(r.stderr).toBe("");
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(
       // The evidence's own `(2026-09-07)` is trimmed: the date is already on the line.
-      /^docs\/a\.md: last-updated=2026-08-20 \(derived 2026-09-07, git: body changed in [0-9a-f]{7}\)$/m,
+      /^docs\/a\.md: last-updated=2026-08-20 \(asserted; git says 2026-09-07, body changed in [0-9a-f]{7}\)$/m,
     );
   });
 

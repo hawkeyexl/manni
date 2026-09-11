@@ -107,7 +107,7 @@ collections:
 
 | Key | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `name` | `string` | yes | none | What [`--collection`](#selecting-collections-on-the-command-line), [`overrides[].collection`](#overrides) and `FROM <name>` in SQL refer to. Non-blank, unique case-insensitively, never `docs`, `derived` or `_derived_rows` in any case, and never starting `sqlite_`. |
+| `name` | `string` | yes | none | What [`--collection`](#selecting-collections-on-the-command-line), [`overrides[].collection`](#overrides) and `FROM <name>` in SQL refer to. Non-blank, unique case-insensitively, never `docs`, `derived`, `_derived_rows` or `resolved` in any case, and never starting `sqlite_`. |
 | `paths` | `string[]` | yes | none | Files, directories, or globs, relative to the config file's directory. A non-empty list of non-empty strings. |
 | `exclude` | `string[]` | no | `[]` | Globs that remove a file from the collection, same base. Membership only. See [Membership](#membership). An explicit `[]` is accepted. |
 | `url` | `string` | no | none | One `http:` or `https:` root, where the collection is published. [`manni a11y check`](/manni/a11y/reference/cli/) seeds from it. See [Where a collection is published](#where-a-collection-is-published). |
@@ -122,8 +122,9 @@ Every name becomes a SQL view name in
 [`query`](/manni/meta/reference/query/#collections-as-views), which is where
 four of the name rules come from. SQLite compares identifiers without regard to
 case, so two names differing only in case would be one view. `docs` is the table
-every query reads. `derived` and `_derived_rows` are the view and backing table
-a query builds for [derived metadata](#derive), refused in any case.
+every query reads. `derived`, `_derived_rows` and `resolved` are the views and
+backing table a query builds for [derived metadata](#derive), refused in any
+case.
 `sqlite_` is a prefix SQLite reserves.
 
 The refusals, each exit 2:
@@ -136,7 +137,7 @@ manni.config.yaml: collections[0] has unknown key "path". Supported keys: name, 
 manni.config.yaml: collections[0].name must be a non-empty string.
 manni.config.yaml: collections[1].name "guides" is already taken by collections[0]; names are compared case-insensitively because they become SQL views.
 manni.config.yaml: collections[0].name "docs" collides with the docs table every query reads. Pick another name, such as "site" or "pages".
-manni.config.yaml: collections[0].name "derived" collides with the derived table a query builds beside docs (the derived view and its _derived_rows table). Pick another name.
+manni.config.yaml: collections[0].name "derived" collides with the derived table a query builds beside docs (the derived view, its _derived_rows table, and the resolved view over both). Pick another name.
 manni.config.yaml: collections[0].name "sqlite_x" starts with "sqlite_", which SQLite reserves for its own objects. Pick another name.
 manni.config.yaml: collections[0].paths must be a non-empty list of files, directories or globs.
 manni.config.yaml: collections[0].exclude must be a list of globs.
@@ -1345,6 +1346,16 @@ the truth for validation, and the evidence is what the document is held to.
 Only `derive` writes a managed field. `query` refuses an `UPDATE` of one, and
 `fill` skips it.
 
+**A read derives, and says which value it gave back.** `get` prints the
+**resolved value** of each field, annotated with its origin. A resolved value
+is the asserted one where the document has the key, and the derived one where
+it does not. `query`
+builds a [`resolved` table](/manni/meta/reference/query/#the-resolved-table)
+that says the same thing in SQL. Neither has to be asked. `--no-derived` on
+`get`, and simply not naming the table in `query`, are the ways to read the
+document alone. A field no source can state consults nothing either way, so
+reading `title` spawns no process.
+
 [Stamp stewardship fields from evidence](/manni/meta/set-up/derived-metadata/)
 is the journey. This section is the contract.
 
@@ -1528,11 +1539,11 @@ label from the corpus walk, not a value the document carries. Review
    `codeowners` path that does not exist. A [command](#commands) that exits
    non-zero, times out, or is not on `PATH`. Each is exit 2, naming the
    source and the fix. A check that silently did not run would be a green
-   gate over nothing. `--no-derive` on `validate` and `--sources` narrowing
-   are the deliberate opt-outs. The rule holds for reads too. `get --derived`
-   and a `query` naming the `derived` table consult every source a named
-   column needs, among those `derive.sources` allows, and the default is all
-   five.
+   gate over nothing. `--no-derive` on `validate`, `--no-derived` on `get`,
+   and `--sources` narrowing are the deliberate opt-outs. The rule holds for
+   reads too. `get` and a `query` naming the `derived` or `resolved` table
+   consult every source a named field needs, among those `derive.sources`
+   allows, and the default is all five.
    A `query` reading `owner` alone asks only `codeowners`; one selecting `*`
    asks every source. A machine without `gh` or `glab` therefore sets
    `sources: [git, codeowners]`, or a read that needs GitHub or GitLab is exit 2. One
@@ -1554,8 +1565,8 @@ label from the corpus walk, not a value the document carries. Review
 |---|---|
 | `validate` | Derives once for the run, then compares each file's managed fields. A stamp that disagrees with a non-null derived value is a `derived:stale` finding at the field's line, exit 1. `--no-derive` skips the comparison for one run. |
 | `derive` | Stamps every managed field whose derived value is non-null and differs from the document, through the same writer `fill` uses. `--dry-run` reports without writing. `--check` implies the dry run, and a stale or unset field is a finding, exit 1. See [`meta derive`](/manni/meta/reference/cli/#meta-derive). |
-| `get` | `--derived` prints the derived value and its evidence beside the asserted one. `manni meta get last-updated docs/install.md --derived` prints `docs/install.md: last-updated=2026-08-20 (derived 2026-09-07, git: body changed in 424f71a)`. A field that is not derivable prints `(not derivable)`. |
-| `query` | A read-only [`derived` table](/manni/meta/reference/query/#the-derived-table) is built when a statement mentions it, with one row per file and a `_sources` column carrying the evidence. A write to a managed key through `docs` is refused (exit 2) before any file is written. |
+| `get` | Prints the resolved value of each field, with its origin on the same line. `manni meta get owner docs/install.md` prints `docs/install.md: owner=@platform-docs  (derived, codeowners: .github/CODEOWNERS:12)`. Derivation is on by default, and `--no-derived` prints only what the document stores. `--derived` is accepted and inert. |
+| `query` | Two read-only tables, [`derived`](/manni/meta/reference/query/#the-derived-table) and [`resolved`](/manni/meta/reference/query/#the-resolved-table), each built when a statement names it. `derived` is what the evidence says; `resolved` is the asserted value where there is one and the derived value otherwise, with `_origin` naming which. A write to a managed key through `docs` is refused (exit 2) before any file is written. |
 | `fill` | A managed field is never a candidate. It is reported with `skipReason: "managed"`, so the omission is visible in the report. |
 
 A run over a page whose body moved after its stamp:
@@ -1581,6 +1592,9 @@ manni: "last-updated" is managed by derive; run manni meta derive instead.
                                                                                     exit 2
 $ manni meta query "UPDATE derived SET owner = 'x'"
 manni: SQL error: cannot modify derived because it is a view; a collection or the derived table is read-only
+                                                                                    exit 2
+$ manni meta query "UPDATE resolved SET owner = 'x'"
+manni: SQL error: cannot modify resolved because it is a view; the resolved table is read-only — it is `docs` and the evidence joined, so write to docs, or stamp the evidence with manni meta derive.
                                                                                     exit 2
 ```
 
