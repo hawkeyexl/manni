@@ -254,7 +254,7 @@ statement that names it derives only the columns it can read. So
 | Column | Type | Value |
 |---|---|---|
 | `_path` | TEXT, primary key | The file's label, exactly as in `docs` and `derived`, so all three join on it. |
-| every column `docs` has | as in `docs` | The asserted value when the document carries the key, the derived value when it does not, and `NULL` when neither side has one. The system columns `_format`, `_present` and `_data` pass through from `docs` unchanged. |
+| every column `docs` has | as in `docs` | The asserted value when the document carries the key, the derived value when it does not, and `NULL` when neither side has one. The system columns `_format`, `_present` and `_data` stay in `docs`, so a statement that needs them joins on `_path`. |
 | every derivable field `docs` lacks | TEXT | The derived value, or `NULL` when no source answered. A list or object is JSON text, as in `docs`. |
 | `_origin` | TEXT | JSON text, `{field: "asserted"}` or `{field: "derived"}`, carrying only the fields that resolved to something. A field neither side has is absent from the object. |
 | `_sources` | TEXT | JSON text, `{field: {source, evidence}}`, exactly as in [`derived`](#the-derived-table). |

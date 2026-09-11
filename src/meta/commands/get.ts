@@ -111,8 +111,8 @@ export interface GetFileResult {
    * here: a `DerivedValue` when a source answered, `null` when every
    * consulted source had nothing to say (a file with no commits, a path no
    * CODEOWNERS rule matches). A requested field that is **not** derivable is
-   * absent from the record. Absent altogether under `--no-derived`, and on a
-   * file that did not parse.
+   * absent from the record. Absent altogether under `--no-derived`, when no
+   * requested field is derivable, and on a file that did not parse.
    */
   derived?: Record<string, DerivedValue | null>;
   /**
@@ -405,7 +405,10 @@ async function attachResolved(
         resolved[field] = undefined;
       }
     }
-    r.derived = derived;
+    // Only when a requested field is derivable. With none there is no
+    // evidence to report, and `{}` would read as "derived, and nothing
+    // answered".
+    if (opts.derivable.length > 0) r.derived = derived;
     r.resolved = resolved;
     r.origin = origin;
   }

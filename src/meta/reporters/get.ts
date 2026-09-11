@@ -13,7 +13,7 @@
  * affects text a person is reading.
  */
 import type { GetFileResult } from "../commands/get.js";
-import type { DerivedValue } from "../core/derive/types.js";
+import { compareDerived, type DerivedValue } from "../core/derive/types.js";
 import { palette } from "./color.js";
 
 export interface GetReportOptions {
@@ -50,7 +50,7 @@ function evidenceOf(d: DerivedValue): string {
  *
  * 1. asserted, with no derived value or no derivable field → `(asserted)`
  * 2. nothing asserted, a source answered → `(derived, <source>: <evidence>)`
- * 3. both, agreeing → `(asserted)`
+ * 3. both, agreeing as `validate` judges it → `(asserted)`
  * 4. both, disagreeing → `(asserted; <source> says <value>, <evidence>)`
  * 5. neither → nothing at all; the value already prints `(unset)`
  *
@@ -69,7 +69,9 @@ function annotation(r: GetFileResult, field: string): string {
     return d == null ? "" : ` (derived, ${d.source}: ${evidenceOf(d)})`;
   }
   if (d == null) return " (asserted)";
-  if (JSON.stringify(r.resolved?.[field]) === JSON.stringify(d.value)) {
+  // Judged as `validate` judges it, with lists as multisets, so the two can
+  // never disagree about whether a value is drift.
+  if (compareDerived(field, r.resolved?.[field], d).status === "current") {
     return " (asserted)";
   }
   return ` (asserted; ${d.source} says ${stringifyValue(d.value)}, ${evidenceOf(d)})`;

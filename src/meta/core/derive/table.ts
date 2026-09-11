@@ -59,8 +59,9 @@ export function mentionsDerived(sql: string): boolean {
 
 /**
  * The derivable fields a statement can read, out of `fields` — the run's
- * own list, see `derivableFields`: every one of them when it selects `*` or
- * reads `_sources` (the evidence spans them all), otherwise the field names
+ * own list, see `derivableFields`: every one of them when it selects `*`, or
+ * reads `_sources` or `_origin` (the evidence and the origin map span them
+ * all), otherwise the field names
  * it spells out, quoted or not. `owner` is not `owners` and `created` is
  * not `recreated`, and the hyphen inside `last-updated` counts as part of
  * the name; a command key is matched as written, whatever it contains.
@@ -69,7 +70,7 @@ export function mentionsDerived(sql: string): boolean {
  * text — a literal, a comment — is derived.
  */
 export function fieldsForSql(sql: string, fields: readonly DerivableField[]): DerivableField[] {
-  if (sql.includes("*") || /\b_sources\b/i.test(sql)) return [...fields];
+  if (sql.includes("*") || /\b_(?:sources|origin)\b/i.test(sql)) return [...fields];
   return fields.filter((field) =>
     new RegExp(`(?<![\\w-])${escapeRegExp(field)}(?![\\w-])`, "i").test(sql),
   );
@@ -200,6 +201,11 @@ function sqlString(value: string): string {
  * INSTEAD OF trigger, and there is none. The effective value is not stored
  * anywhere, so the only way to change it is to change the document or the
  * evidence.
+ *
+ * Call it after `createDocsTable` and `createDerivedView`. SQLite accepts a
+ * view over a table that does not exist yet and fails only at the first read,
+ * as `no such table: main._derived_rows`, far from the call that got the
+ * order wrong.
  */
 export function createResolvedView(
   db: DatabaseSync,

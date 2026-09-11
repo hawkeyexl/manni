@@ -22,7 +22,7 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { MockProvider } from "@hawkeyexl/inference";
 import { runValidate } from "../src/meta/commands/validate.js";
-import { runGet } from "../src/meta/commands/get.js";
+import { runGet, type GetFileResult } from "../src/meta/commands/get.js";
 import { runQuery } from "../src/meta/commands/query.js";
 import { runFill } from "../src/meta/commands/fill.js";
 import { renderGet } from "../src/meta/reporters/get.js";
@@ -362,6 +362,16 @@ describe("get resolves each field, and says which side answered (0043)", () => {
     expect(renderGet(results, ["title"])).toBe("docs/a.md: title=A (asserted)");
   });
 
+  it("leaves derived absent when no requested field is derivable", async () => {
+    // `derived` is the evidence per derivable field. With none requested
+    // there is no evidence to report, and `{}` would read as "derived, and
+    // nothing answered".
+    const dir = repo();
+    const results = await runGet({ fields: ["title"], inputs: ["docs/a.md"], cwd: dir });
+    expect(results[0]).not.toHaveProperty("derived");
+    expect(results[0]?.origin).toEqual({ title: "asserted" });
+  });
+
   // Case 1 again, and the one a truthiness test gets wrong: the document
   // carries `owner:` with no value. The key is present, so the document has
   // spoken, and `(unset)` would be a different — and false — answer.
@@ -422,6 +432,20 @@ describe("get resolves each field, and says which side answered (0043)", () => {
     expect(renderGet(results, ["last-updated"])).toBe(
       "docs/a.md: last-updated=2026-08-20 (asserted)",
     );
+  });
+
+  it("annotates (asserted) when a list agrees with the evidence in another order", () => {
+    // Lists compare as multisets, the way `validate` compares them, so a
+    // reordered `authors` is not drift and must not print as drift.
+    const r: GetFileResult = {
+      file: "docs/a.md",
+      present: true,
+      values: { authors: ["b@x", "a@x"] },
+      derived: { authors: { value: ["a@x", "b@x"], source: "git", evidence: "2 commits" } },
+      resolved: { authors: ["b@x", "a@x"] },
+      origin: { authors: "asserted" },
+    };
+    expect(renderGet([r], ["authors"])).toBe('docs/a.md: authors=["b@x","a@x"] (asserted)');
   });
 
   // Case 4: both sides answered, and they disagree. The asserted value is
@@ -800,6 +824,22 @@ describe("query: the resolved table", () => {
     expect(run.rows).toEqual([{ _path: "docs/b.md" }]);
   });
 
+  it("derives every field for a statement that reads _origin alone", async () => {
+    // No field is named, so only `_origin` says what to derive. Deriving
+    // nothing would report b.md's owner as absent, not as derived.
+    const dir = repo(ownedFixture());
+    const run = await runQuery({
+      sql: "SELECT _path, _origin FROM resolved ORDER BY _path",
+      inputs: [],
+      cwd: dir,
+    });
+    const origins = run.rows.map((row): unknown => JSON.parse(String(row["_origin"])));
+    expect(origins).toEqual([
+      expect.objectContaining({ owner: "asserted" }),
+      expect.objectContaining({ owner: "derived" }),
+    ]);
+  });
+
   it("still lets the drift join mean what it meant: resolved keeps the assertion", async () => {
     const dir = repo(ownedFixture());
     reviseA(dir);
@@ -965,6 +1005,10 @@ describe("the derived table's reading of a statement", () => {
     // `*` and `_sources` read every column.
     expect(fieldsForSql("SELECT * FROM derived", all)).toHaveLength(6);
     expect(fieldsForSql("SELECT _sources FROM derived", all)).toHaveLength(6);
+    // `_origin` spans every field as `_sources` does. Deriving none of them
+    // would leave every row saying `asserted` or nothing, which reads as an
+    // answer rather than a gap.
+    expect(fieldsForSql("SELECT _path, _origin FROM resolved", all)).toHaveLength(6);
     // Word boundaries: `owner` is not `owners`, `created` is not `recreated`.
     expect(fieldsForSql("SELECT owners, recreated FROM derived", all)).toEqual([]);
   });

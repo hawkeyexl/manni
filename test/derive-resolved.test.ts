@@ -131,6 +131,20 @@ describe("resolved: the view's shape", () => {
     expect(info.map((c) => c.name)).toEqual(columns);
     db.close();
   });
+
+  it("carries none of the docs system columns", async () => {
+    // `_format`, `_present` and `_data` describe the file, not a value, so
+    // they stay in `docs`. A statement that needs them joins on `_path`.
+    const { db } = await build({ entries: [entry("a.md", { title: "A" })] });
+    const names = (
+      db.prepare(`PRAGMA table_info(${RESOLVED_VIEW})`).all() as { name: string }[]
+    ).map((c) => c.name);
+    expect(names).not.toContain("_format");
+    expect(names).not.toContain("_present");
+    expect(names).not.toContain("_data");
+    expect(() => db.prepare(`SELECT _format FROM ${RESOLVED_VIEW}`)).toThrow(/no such column/);
+    db.close();
+  });
 });
 
 describe("resolved: which side answers", () => {
