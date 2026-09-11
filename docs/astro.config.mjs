@@ -53,33 +53,43 @@ export default defineConfig({
       // One top-level group per tool. `meta` is the metadata tool and `a11y`
       // the accessibility tool; the others arrive with their subcommands, each
       // as a sibling group over its own directory under src/content/docs/.
+      //
+      // Every group starts collapsed, so the landing page shows one line per
+      // tool. Starlight still opens whichever groups contain the current page.
       sidebar: [
         {
           label: "meta",
+          collapsed: true,
           items: [
             { label: "Overview", link: "/meta/" },
             {
               label: "Get started",
+              collapsed: true,
               items: [{ autogenerate: { directory: "meta/get-started" } }],
             },
             {
               label: "Set up validation",
+              collapsed: true,
               items: [{ autogenerate: { directory: "meta/set-up" } }],
             },
             {
               label: "Run it in CI",
+              collapsed: true,
               items: [{ autogenerate: { directory: "meta/ci" } }],
             },
             {
               label: "Define & evolve schemas",
+              collapsed: true,
               items: [{ autogenerate: { directory: "meta/schemas" } }],
             },
             {
               label: "Fix a failing check",
+              collapsed: true,
               items: [{ autogenerate: { directory: "meta/fix" } }],
             },
             {
               label: "Reference",
+              collapsed: true,
               items: [{ autogenerate: { directory: "meta/reference" } }],
             },
             // Published proposals under community review. Distinct from
@@ -88,16 +98,19 @@ export default defineConfig({
             // feedback, and links back to the full internal record.
             {
               label: "Proposals",
+              collapsed: true,
               items: [{ autogenerate: { directory: "meta/proposals" } }],
             },
           ],
         },
         {
           label: "a11y",
+          collapsed: true,
           items: [
             { label: "Overview", link: "/a11y/" },
             {
               label: "Reference",
+              collapsed: true,
               items: [{ autogenerate: { directory: "a11y/reference" } }],
             },
           ],
@@ -107,26 +120,32 @@ export default defineConfig({
         // on meta's proposals hub until it registers.
         {
           label: "cite",
+          collapsed: true,
           items: [
             { label: "Overview", link: "/cite/" },
             {
               label: "Get started",
+              collapsed: true,
               items: [{ autogenerate: { directory: "cite/get-started" } }],
             },
             {
               label: "Set up",
+              collapsed: true,
               items: [{ autogenerate: { directory: "cite/set-up" } }],
             },
             {
               label: "Run it in CI",
+              collapsed: true,
               items: [{ autogenerate: { directory: "cite/ci" } }],
             },
             {
               label: "Fix a failing check",
+              collapsed: true,
               items: [{ autogenerate: { directory: "cite/fix" } }],
             },
             {
               label: "Reference",
+              collapsed: true,
               items: [{ autogenerate: { directory: "cite/reference" } }],
             },
           ],
@@ -136,10 +155,12 @@ export default defineConfig({
         // verbs, so the same two-page shape as `a11y`.
         {
           label: "key",
+          collapsed: true,
           items: [
             { label: "Overview", link: "/key/" },
             {
               label: "Reference",
+              collapsed: true,
               items: [{ autogenerate: { directory: "key/reference" } }],
             },
           ],
