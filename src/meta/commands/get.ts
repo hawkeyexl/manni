@@ -5,9 +5,10 @@
  * identically.
  */
 import { readFile } from "node:fs/promises";
-import { loadSidecars, mergeSidecars } from "../core/sidecars.js";
+import { loadExternalMetadata, mergeExternalMetadata } from "../core/external-metadata.js";
 import { resolve, extname } from "node:path";
 import { resolveElements } from "../core/resolve-schema.js";
+import { memberOf, retainMembers } from "../core/collections.js";
 import { DocmetaError } from "../types.js";
 import {
   extractorByName,
@@ -50,6 +51,12 @@ export interface GetOptions {
   configPath?: string;
   /** `--no-config`: skip config discovery and use the built-in defaults. */
   noConfig?: boolean;
+  /**
+   * `--collection <name>`, repeatable: run over the named configured
+   * collections instead of every declared one (proposal 0041). Cannot be
+   * combined with positional paths; `-` is allowed beside it.
+   */
+  collections?: string[];
   cwd?: string;
   /** Content for the `-` (stdin) input, injected by the CLI/tests. */
   stdinContent?: string;
@@ -147,18 +154,22 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
 
   // Explicit CLI inputs win, else config `paths:`; `base` is whichever of the
   // two directories those inputs were written relative to.
-  const { config, inputs, base, configDir } = await resolveRunConfig({
-    cwd,
-    configPath: opts.configPath,
-    noConfig: opts.noConfig,
-    inputs: opts.inputs,
-    onConfigLoaded: opts.onConfigLoaded,
-  });
+  const { config, inputs, base, configDir, collections, fromCollections } =
+    await resolveRunConfig({
+      cwd,
+      configPath: opts.configPath,
+      noConfig: opts.noConfig,
+      inputs: opts.inputs,
+      ...(opts.collections !== undefined
+        ? { collections: opts.collections }
+        : {}),
+      onConfigLoaded: opts.onConfigLoaded,
+    });
   const usingStdin = inputs.includes(STDIN_TOKEN);
 
   if (inputs.length === 0) {
     throw new DocmetaError(
-      "No files to read. Pass paths/globs, or add `paths:` under `meta:` in manni.config.yaml.",
+      "No files to read. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.",
     );
   }
 
@@ -172,8 +183,13 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
   const exts = opts.exts ?? (forced ? forced.extensions : undefined);
   const fileInputs = inputs.filter((i) => i !== STDIN_TOKEN);
   const allowEmpty = opts.allowEmpty ?? config?.allowEmpty;
-  const exclude = [...(config?.exclude ?? []), ...(opts.exclude ?? [])];
-  const { files, gitignoreSkipped } = await resolveTargetSet({
+  // Only `--exclude`: a collection's `exclude:` governs membership, not the
+  // walk of a path someone typed (0041 rule 3).
+  const exclude = opts.exclude ?? [];
+  /** The collections one label belongs to, computed once per file. */
+  const membersFor = (label: string): string[] =>
+    memberOf(collections, configDir ?? cwd, base, label);
+  const { files: walked, gitignoreSkipped } = await resolveTargetSet({
     inputs: fileInputs,
     exts,
     exclude,
@@ -185,6 +201,11 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
       onNotice: opts.onNotice,
     }),
   });
+  // Rule 9: the walk applied only the family ignores and `--exclude`, so it saw
+  // just the first half of each collection's statement. Narrow it to actual
+  // members, or a collection's `exclude:` would shape its SQL view and not what
+  // a bare run reads. Skipped for typed paths: those are the operator's (rule 3).
+  const files = fromCollections ? retainMembers(walked, membersFor) : walked;
   assertNonEmpty({
     files,
     inputs: fileInputs,
@@ -197,8 +218,8 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
   });
 
   const out: GetFileResult[] = [];
-  // Sidecar manifests (0037), read once per run.
-  const sidecars = await loadSidecars(config, {
+  // External metadata (0037), read once per run.
+  const externalMetadata = await loadExternalMetadata(collections, {
     configDir: configDir ?? cwd,
     base,
     offline: opts.offline ?? config?.offline ?? false,
@@ -206,7 +227,7 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
 
   // The derived channel (0040): the requested fields a source can state,
   // and one input per parsed file — the document's OWN extraction, since a
-  // managed key is never sidecar-owned and the git source reads its lines.
+  // managed key is never manifest-owned and the git source reads its lines.
   // A field is derivable when a built-in source claims it, or when the
   // config runs a command for it (0042).
   const commands: Readonly<Record<string, DeriveCommand>> = commandsOf(config?.derive) ?? {};
@@ -228,10 +249,11 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
         `Unsupported file type "${extension}" for "${label}". Supported: ${supportedExtensions().join(", ")}. Use --as to override.`,
       );
     }
+    const members = membersFor(label);
     let extracted;
     try {
       const own = extractor.extract(content, label, {
-        elements: resolveElements(label, config),
+        elements: resolveElements(label, config, members),
       });
       if (deriving && label !== STDIN_LABEL) {
         deriveInputs.push({
@@ -241,7 +263,7 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
           extracted: own,
         });
       }
-      extracted = mergeSidecars(label, own, sidecars, base).extracted;
+      extracted = mergeExternalMetadata(label, own, externalMetadata, members, base).extracted;
     } catch (err) {
       // A `DocmetaError` is already operational and already carries a message
       // written for a person — rethrow it untouched, exactly as `validate`

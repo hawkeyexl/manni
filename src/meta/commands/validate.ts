@@ -6,16 +6,16 @@
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import {
-  loadSidecars,
-  mergeSidecars,
+  loadExternalMetadata,
+  mergeExternalMetadata,
   orphanEntries,
   orphanError,
   orphanJoins,
-  sidecarPointer,
-  SIDECAR_DUPLICATE_SCHEMA,
-  SIDECAR_KEYWORD,
-  SIDECAR_OWNED_SCHEMA,
-} from "../core/sidecars.js";
+  externalMetadataPointer,
+  EXTERNAL_DUPLICATE_SCHEMA,
+  EXTERNAL_KEYWORD,
+  EXTERNAL_OWNED_SCHEMA,
+} from "../core/external-metadata.js";
 import { resolve, extname } from "node:path";
 import pkg from "../../../package.json" with { type: "json" };
 import { warn } from "../../shared/warn.js";
@@ -54,6 +54,7 @@ import {
   schemaTrustRoot,
   type ConfigNotice,
 } from "../core/config.js";
+import { memberOf, retainMembers } from "../core/collections.js";
 import {
   collectSchemaPins,
   resolveSchemaSetWithSource,
@@ -94,6 +95,12 @@ export interface ValidateOptions {
   configPath?: string;
   /** `--no-config`: skip config discovery and use the built-in defaults. */
   noConfig?: boolean;
+  /**
+   * `--collection <name>`, repeatable: run over the named configured
+   * collections instead of every declared one (proposal 0041). Cannot be
+   * combined with positional paths; `-` is allowed beside it.
+   */
+  collections?: string[];
   cwd?: string;
   /** Content for the `-` (stdin) input, injected by the CLI/tests. */
   stdinContent?: string;
@@ -293,18 +300,33 @@ export async function runValidate(
 
   // Explicit CLI inputs win, else config `paths:`; `base` is whichever of the
   // two directories those inputs were written relative to.
-  const { config, inputs, base, configDir } = await resolveRunConfig({
-    cwd,
-    configPath: opts.configPath,
-    noConfig: opts.noConfig,
-    inputs: opts.inputs,
-    onConfigLoaded: opts.onConfigLoaded,
-  });
+  const {
+    config,
+    inputs,
+    base,
+    configDir,
+    collections,
+    declaredCollections,
+    fromCollections,
+  } =
+    await resolveRunConfig({
+      cwd,
+      configPath: opts.configPath,
+      noConfig: opts.noConfig,
+      inputs: opts.inputs,
+      ...(opts.collections !== undefined
+        ? { collections: opts.collections }
+        : {}),
+      onConfigLoaded: opts.onConfigLoaded,
+    });
+  /** The collections one label belongs to, computed once per file. */
+  const membersFor = (label: string): string[] =>
+    memberOf(collections, configDir ?? cwd, base, label);
   const usingStdin = inputs.includes(STDIN_TOKEN);
 
   if (inputs.length === 0) {
     throw new DocmetaError(
-      "No files to validate. Pass paths/globs, or add `paths:` under `meta:` in manni.config.yaml.",
+      "No files to validate. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.",
     );
   }
 
@@ -321,8 +343,11 @@ export async function runValidate(
 
   const fileInputs = inputs.filter((i) => i !== STDIN_TOKEN);
   const allowEmpty = opts.allowEmpty ?? config?.allowEmpty;
-  const exclude = [...(config?.exclude ?? []), ...(opts.exclude ?? [])];
-  const { files, gitignoreSkipped } = await resolveTargetSet({
+  // Only `--exclude`. A collection's `exclude:` governs *membership*, not the
+  // walk of a path someone typed (0041 rule 3): the tool has no basis to pick
+  // which collection's exclusions to honour once there are several.
+  const exclude = opts.exclude ?? [];
+  const { files: walked, gitignoreSkipped } = await resolveTargetSet({
     inputs: fileInputs,
     exts,
     exclude,
@@ -334,6 +359,11 @@ export async function runValidate(
       onNotice: opts.onNotice,
     }),
   });
+  // Rule 9: the walk applied only the family ignores and `--exclude`, so it saw
+  // just the first half of each collection's statement. Narrow it to actual
+  // members, or a collection's `exclude:` would shape its SQL view and not what
+  // a bare run reads. Skipped for typed paths: those are the operator's (rule 3).
+  const files = fromCollections ? retainMembers(walked, membersFor) : walked;
   assertNonEmpty({
     files,
     inputs: fileInputs,
@@ -349,9 +379,9 @@ export async function runValidate(
   // every file in one run shares the same repository.
   const trustRoot = schemaTrustRoot(cwd, configDir);
 
-  // Sidecar manifests (0037), read once per run: a manifest the config names
+  // External metadata (0037), read once per run: a manifest the config names
   // that cannot be read is the run's problem, not a document's.
-  const sidecars = await loadSidecars(config, {
+  const externalMetadata = await loadExternalMetadata(collections, {
     configDir: configDir ?? cwd,
     base,
     offline: opts.offline ?? config?.offline ?? false,
@@ -383,13 +413,18 @@ export async function runValidate(
   // config-resolved corpus — an invariant, not a flag list: any CLI reshaping
   // of the input set (positional paths, stdin, --as/--ext, --exclude,
   // --no-gitignore) disqualifies the run, because a corpus rule computed over
-  // half a corpus reports wrong answers. `-s/--schema` disqualifies too even
-  // though the file set is unchanged: a schema override reshapes the corpus
-  // *contract* — cliSchemas outranks every override, so all 0027 collection
-  // views would be empty by construction and a `FROM <collection>` check
-  // would green silently. Config `exclude:` and `respectGitignore:` do not
-  // disqualify — they *define* the corpus; the CLI flags redefine the run.
-  const scoped =
+  // half a corpus reports wrong answers. `--collection` is the same reshaping
+  // by name (0041 rule 11): every unselected collection's view holds only what
+  // the run happened to load, so a `FROM blog` check would pass by having
+  // nothing to fail on. `-s/--schema` disqualifies too even though the file
+  // set is unchanged: a CLI schema override reshapes the corpus *contract* —
+  // cliSchemas outranks every override, so every file is judged against a set
+  // the config never assigned it, and a check written against the configured
+  // contract would be reporting on a corpus that does not exist outside this
+  // run. Config `exclude:` and `respectGitignore:` do not disqualify — they
+  // *define* the corpus; the CLI flags redefine the run.
+  const scopedToCollections = (opts.collections?.length ?? 0) > 0;
+  const scopedByFlags =
     opts.inputs.length > 0 ||
     // redundant with inputs.length (stdin is an input) — kept as belt-and-suspenders
     usingStdin ||
@@ -398,15 +433,26 @@ export async function runValidate(
     (opts.exclude !== undefined && opts.exclude.length > 0) ||
     opts.respectGitignore !== undefined ||
     (opts.cliSchemas?.length ?? 0) > 0;
+  // Corpus checks need the whole corpus: a reshaping flag disqualifies, and so
+  // does narrowing by name, because every unselected collection's view then
+  // holds only what the run happened to load (0041 rule 11).
+  const scoped = scopedByFlags || scopedToCollections;
   const configuredChecks = config?.checks ?? [];
 
   // A manifest entry naming a document this run did not load (0037 rule 4):
   // 0014's named-file-that-is-not-there, and 0026 §4's row outside the run.
-  // Only when the run is the config corpus — a positional path means the
-  // operator chose to look at part of it, and entries for the rest are
+  // Only when the run is a corpus — a positional path or a reshaping flag means
+  // the operator chose to look at part of it, and entries for the rest are
   // expected rather than orphaned.
-  if (!scoped) {
-    const orphans = orphanEntries(sidecars, files, base);
+  //
+  // `--collection` is not such a reshaping. It makes each named collection the
+  // corpus (0041 rule 6): the run loaded all of every collection it named, so
+  // an entry of one of those pointing at a document that is not there is a
+  // stale entry, and a CI job narrowed to one collection would otherwise lose
+  // the check it relies on. Entries of unselected collections are skipped.
+  if (!scopedByFlags) {
+    const covered = scopedToCollections ? collections.map((c) => c.name) : undefined;
+    const orphans = orphanEntries(externalMetadata, files, base, covered);
     if (orphans.length > 0) throw orphanError(orphans);
   }
   const checksWillRun =
@@ -417,11 +463,6 @@ export async function runValidate(
   // matters — but the common no-checks path should not retain every file's
   // extraction, so the list fills only when the checks will actually run.
   const checkEntries: CheckEntry[] = [];
-  // Each file's resolution outcome from the loop below, so the checks'
-  // collection-view membership (0027) reuses this walk instead of re-running
-  // it per file. A file whose resolution threw has no entry — deliberately:
-  // it was filed as a schema finding and is a member of no view.
-  const checkResolved = new Map<string, ResolvedSchemaSet>();
   // The derived channel (0040): with `derive:` configured and the flag
   // absent, every file read is an input to one derivation after the loop,
   // and its managed fields are then compared with what the sources say.
@@ -501,10 +542,11 @@ export async function runValidate(
       );
     }
 
+    const members = membersFor(label);
     let extracted;
     try {
       extracted = extractor.extract(content, label, {
-        elements: resolveElements(label, config),
+        elements: resolveElements(label, config, members),
       });
     } catch (err) {
       // A `DocmetaError` out of an extractor is operational, not a bad
@@ -515,23 +557,23 @@ export async function runValidate(
       );
       return;
     }
-    // The sidecar merge sits between extraction and everything downstream,
+    // The external-metadata merge sits between extraction and everything downstream,
     // so schema resolution, validation, and the corpus checks all see the one
     // object the document and its manifest entry make together.
     // `merged.extracted` keeps the document's own `lineFor`/`colFor`: a
-    // sidecar key is not in the document, so those answer `undefined` for it
+    // manifest key is not in the document, so those answer `undefined` for it
     // and `merged.locate` answers instead. Rebound rather than shadowed, so
     // every read below — resolution, validation, the collision loop — sees
     // the one merged object.
     //
     // The derived comparison is the one reader that takes the document's
     // OWN extraction, from before the merge: a managed key can never be
-    // sidecar-owned (the config parser refuses the overlap), so the asserted
+    // manifest-owned (`loadConfig` refuses the overlap), so the asserted
     // value is the document's, and `lineFor` must answer for its own lines.
     if (keepDeriveInputs && label !== STDIN_LABEL) {
       deriveInputs.push({ label, absPath: resolve(base, label), content, extracted });
     }
-    const merged = mergeSidecars(label, extracted, sidecars, base);
+    const merged = mergeExternalMetadata(label, extracted, externalMetadata, members, base);
     extracted = merged.extracted;
     for (const j of merged.joins) {
       const byValue =
@@ -552,6 +594,7 @@ export async function runValidate(
         fileSchema: extracted.data[FILE_SCHEMA_KEY],
         cliSchemas: opts.cliSchemas,
         config,
+        memberOf: members,
         // A document's own `$schema` is measured from the run's directory, the
         // same base `loadSchema` will read it from, and contained to the
         // repository the run is standing in.
@@ -565,7 +608,6 @@ export async function runValidate(
       );
       return;
     }
-    if (checksWillRun) checkResolved.set(label, resolved);
 
     const schemaSet = resolved.schemas;
     let errors: FieldError[];
@@ -596,17 +638,17 @@ export async function runValidate(
       );
       return;
     }
-    // A document carrying a key a sidecar owns (0020 across files: neither
+    // A document carrying a key a manifest owns (0020 across files: neither
     // channel wins, and the discarded value would be exactly the one nobody
     // checked). Filed against the document at the key's own line.
-    for (const { key, file } of merged.collisions) {
+    for (const { key, file, collection } of merged.collisions) {
       const line = extracted.lineFor(key);
       errors.push({
-        schema: SIDECAR_OWNED_SCHEMA,
-        keyword: SIDECAR_KEYWORD,
+        schema: EXTERNAL_OWNED_SCHEMA,
+        keyword: EXTERNAL_KEYWORD,
         subject: key,
-        instancePath: sidecarPointer(key),
-        message: `"${key}" is owned by sidecar ${file}; remove it from the document`,
+        instancePath: externalMetadataPointer(key),
+        message: `"${key}" is owned by manifest ${file} (collection ${collection}); remove it from the document`,
         ...(line != null ? { line } : {}),
       });
     }
@@ -639,7 +681,7 @@ export async function runValidate(
   // field's own line, whether or not the run is scoped — it is about the
   // documents loaded, not the corpus. Then, on a corpus run, a field entry
   // nothing matched is the same orphan a path entry is.
-  if (sidecars) {
+  if (externalMetadata) {
     const byLabel = new Map(results.map((r) => [r.file, r]));
     const matched = new Map<string, Set<string>>();
     for (const [field, byValue] of joinHits) {
@@ -654,10 +696,10 @@ export async function runValidate(
           const result = byLabel.get(hit.label);
           if (!result) continue;
           result.errors.push({
-            schema: SIDECAR_DUPLICATE_SCHEMA,
-            keyword: SIDECAR_KEYWORD,
+            schema: EXTERNAL_DUPLICATE_SCHEMA,
+            keyword: EXTERNAL_KEYWORD,
             subject: value,
-            instancePath: sidecarPointer(field),
+            instancePath: externalMetadataPointer(field),
             message: `${hits.length} documents carry ${field} "${value}"; ${hit.file} cannot tell them apart (${others})`,
             ...(hit.line != null ? { line: hit.line } : {}),
           });
@@ -665,8 +707,11 @@ export async function runValidate(
         }
       }
     }
-    if (!scoped) {
-      const orphans = orphanJoins(sidecars, matched);
+    // Same corpus invariant as the path-entry orphans above, and the same
+    // reading of `--collection`: a named collection is a corpus of its own.
+    if (!scopedByFlags) {
+      const covered = scopedToCollections ? collections.map((c) => c.name) : undefined;
+      const orphans = orphanJoins(externalMetadata, matched, covered);
       if (orphans.length > 0) throw orphanError(orphans);
     }
   }
@@ -676,25 +721,34 @@ export async function runValidate(
   // conditions live with `scoped`, computed before the loop above.
   if (configuredChecks.length > 0 && opts.checks !== false) {
     if (scoped) {
-      opts.onNotice?.("corpus checks skipped: run is scoped");
+      // Name the reason when it is `--collection`: "scoped" alone reads as a
+      // stray positional path, and the operator who narrowed the run by name
+      // is the one most likely to expect the checks to have run.
+      opts.onNotice?.(
+        scopedToCollections
+          ? `corpus checks skipped: run is scoped to collections ${collections
+              .map((c) => c.name)
+              .join(", ")}`
+          : "corpus checks skipped: run is scoped",
+      );
     } else {
       const findings = await runChecks(configuredChecks, checkEntries, {
-        // The same resolution inputs the per-file loop used, so a check's
-        // collection views (0027) hold exactly the files each override group
-        // was validated as — and `resolved` hands over that loop's outcomes,
-        // so membership is read from them instead of resolving twice.
-        config,
-        ...(opts.cliSchemas ? { cliSchemas: opts.cliSchemas } : {}),
-        fileBase: cwd,
-        trustRoot,
-        resolved: checkResolved,
-        ...(opts.onNotice ? { onNotice: opts.onNotice } : {}),
+        // Every declared collection is a view (0041 rule 7), holding the
+        // members this run loaded — decided by the same path arithmetic
+        // `membersFor` uses, so a check and a `manni meta query` over the same
+        // corpus see the same collections.
+        collections: declaredCollections,
+        ...(configDir !== undefined ? { configDir } : {}),
+        base,
         // A check that names the `derived` table (0040) gets the same view
         // `query` builds, from the run's one derivation — which already
         // covers every field the checks can read, so the list handed back
         // here is not needed. Built only when asked for, because building
         // it spawns git.
         derive: async () => (await derivedOnce()).records,
+        // Its columns include the configured commands' keys (0042), which a
+        // check's context cannot read from a config since 0041.
+        ...(deriveCommands !== undefined ? { commands: deriveCommands } : {}),
       });
       const byFile = new Map(results.map((r) => [r.file, r]));
       for (const [file, errs] of findings) {

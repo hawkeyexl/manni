@@ -1,6 +1,9 @@
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+
 meta:
-  paths:
-    - "docs/**/*.md"
   schemas:
     - ./permissive.schema.json
   derive:

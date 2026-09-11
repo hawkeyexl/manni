@@ -1236,12 +1236,12 @@ describe("reporters: the common format pair", () => {
 
 /**
  * Per-error file attribution (proposal 0037). A violation on a value a
- * sidecar manifest supplied names the manifest, while the finding stays
+ * manifest supplied names the manifest, while the finding stays
  * filed under the document. Every reporter prints the manifest; SARIF
  * resolves each finding's uri on its own, so a manifest inside the
  * repository survives even when its document does not, and vice versa.
  */
-describe("reporters: a finding located in a sidecar manifest", () => {
+describe("reporters: a finding located in an external manifest", () => {
   const results = [
     {
       file: "docs/billing.md",
@@ -1277,7 +1277,7 @@ describe("reporters: a finding located in a sidecar manifest", () => {
     expect(out).not.toContain("(line 6)");
   });
 
-  it("github annotates the manifest file for the sidecar value and the document for the rest", () => {
+  it("github annotates the manifest file for the manifest value and the document for the rest", () => {
     const lines = renderGithub(results).split("\n");
     expect(lines[0]).toMatch(/^::error file=docs-meta\.yaml,line=6::/);
     expect(lines[1]).toMatch(/^::error file=docs\/billing\.md,line=1::/);

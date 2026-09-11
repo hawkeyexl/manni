@@ -46,9 +46,9 @@ manni a11y [options] check [urls...] [command options]
 
 ## `a11y check`
 
-Crawl a site from the given seeds, or from `a11y.urls` in config, and run
-axe-core against every page. Exit `1` when any page keeps a violation at or
-above the severity floor.
+Crawl a site from the given seeds, or from a collection's `url:` or `a11y.urls`
+in config, and run axe-core against every page. Exit `1` when any page keeps a
+violation at or above the severity floor.
 
 ```sh
 manni a11y check [urls...] [options]
@@ -58,7 +58,7 @@ manni a11y check [urls...] [options]
 
 | Argument | Description |
 |---|---|
-| `[urls...]` | Seed URLs, space-separated, each `http:` or `https:`. Every seed's host is in crawl scope. Optional, and falls back to config `a11y.urls`; neither is an error (exit 2). A seed that is not `http(s)` is rejected before any browser launches. |
+| `[urls...]` | Seed URLs, space-separated, each `http:` or `https:`. Every seed's host is in crawl scope. Optional, and falls back to a collection's `url:` or config `a11y.urls`; none of the three is an error (exit 2). See [where seeds come from](#where-seeds-come-from). A seed that is not `http(s)` is rejected before any browser launches. |
 
 ### Options
 
@@ -73,6 +73,7 @@ manni a11y check [urls...] [options]
 | `-q, --quiet` | n/a | off | In `pretty` output, hide pages with no remaining violations. Has no effect on `json` or `github`. |
 | `--progress` | n/a | `auto` | Report [progress](#progress) on stderr while the crawl runs. The default is on only when stderr is a terminal. Pass it to see each page in a CI log. |
 | `--no-progress` | n/a | off | Never report progress, even on a terminal. |
+| `--collection` | `<name>` | every collection | Seed from the `url:` of a configured [collection](/manni/meta/reference/configuration/#collections). Repeatable, one name per occurrence, never comma-separated; repeats collapse. Cannot be combined with positional URLs, needs a config file, and a named collection that declares no `url:` is an error (exit 2 for all three). See [where seeds come from](#where-seeds-come-from). |
 | `-c, --config` | `<path>` | discovered | Path to a [config file](#configuration). When set, the file must exist or the run exits 2. |
 | `--no-config` | n/a | off | Ignore any discovered config file. `-c` and `--no-config` set the same option, so the one written later on the command line wins. |
 
@@ -81,6 +82,35 @@ manni a11y check [urls...] [options]
 not accumulate across repeats, the way `manni meta`'s `--exclude <glob>` does.
 Positional seeds are space-separated, because that is what argv is.
 </Aside>
+
+### Where seeds come from
+
+Four sources can name a seed. The first non-empty one wins, and the rest are
+ignored:
+
+1. Positional `[urls...]`, as typed.
+2. The `url:` of each collection named by `--collection`, in the order the
+   collections are declared.
+3. `a11y.urls` in config.
+4. The `url:` of every declared collection that has one, in declaration order.
+
+`a11y.urls` sits ahead of the collections because a site has entry points no
+documentation collection covers, such as a marketing or status page. Nothing
+that already sets `a11y.urls` changes behaviour by adding a collection `url:`.
+
+Naming a collection that declares no `url:` is an error, while a collection
+without one simply contributing nothing to rung 4 is not. `--collection blog`
+asked for something specific and has to be told it cannot be done; a bare
+`manni a11y check` gets whatever is publishable.
+
+```
+manni: collection "blog" has no url: to check.
+manni: --collection selects a configured collection; it cannot be combined with URLs.
+manni: --collection needs a config file to select from.
+manni: No URLs to check. Pass one or more, set url: on a collection, or set a11y.urls in manni.config.yaml.
+```
+
+All four exit `2`.
 
 ### The crawl
 
@@ -303,6 +333,12 @@ crawl, `--no-crawl`, and the zero-argument config form. Continuing from there:
 # Several seeds: each seed's host is in scope; one sitemap lookup, from the first seed.
 manni a11y check https://docs.example.com/ https://blog.example.com/
 
+# One collection, seeded from its url: — the same name meta validates by.
+manni a11y check --collection guides
+
+# Two of them, in the order the config declares, whatever order they are named.
+manni a11y check --collection blog --collection guides
+
 # Gate only on what matters: WCAG 2.1 AA rules, errors only, hide clean
 # pages. Exit 1 only if an error remains; warnings and notices are dropped.
 manni a11y check https://docs.example.com/ --tags wcag2a,wcag2aa,wcag21aa --severity error -q
@@ -358,8 +394,9 @@ wins over the same key in config, and config wins over the default. Every key
 is optional, and an empty `a11y:` section is the same as none.
 
 ```yaml title="manni.config.yaml"
-meta:
-  paths: ["docs/"]
+collections:
+  - name: site
+    paths: ["docs/"]
 
 a11y:
   urls: ["https://docs.example.com/"]
@@ -372,7 +409,7 @@ a11y:
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `urls` | `string[]` | none | Seed URLs, each `http:` or `https:`. The fallback for `[urls...]`; positional URLs win when both are present. |
+| `urls` | `string[]` | none | Seed URLs, each `http:` or `https:`. A fallback for `[urls...]`; positional URLs win when both are present, and this key wins over a collection's `url:`. See [where seeds come from](#where-seeds-come-from). |
 | `crawl` | boolean | `true` | Whether to discover pages from the sitemap and same-host links. `--no-crawl` sets it to `false` for one run. |
 | `maxPages` | integer ≥ 1 | none, no cap | Cap on pages checked per run. Without it every discovered page is checked. Mirrors `--max-pages`. |
 | `tags` | `string[]` | none | axe tags to restrict the rule set to. Mirrors `--tags`, one item per entry. |
@@ -381,3 +418,18 @@ a11y:
 
 An unknown key, a wrong type, an empty `urls` entry, or a `urls` entry that is
 not `http(s)` is an error. The error names the file and the key (exit 2).
+
+`urls` is optional. A repository that declares its documents as
+[collections](/manni/meta/reference/configuration/#collections) can give each
+one a `url:` and leave the `a11y:` section to the options above, or omit it
+entirely:
+
+```yaml
+collections:
+  - name: guides
+    paths: ["docs/guides/**/*.md"]
+    url: https://docs.example.com/guides/
+
+a11y:
+  severity: warning
+```

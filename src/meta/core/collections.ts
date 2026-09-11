@@ -1,152 +1,162 @@
 /**
- * Named collections (proposal 0027): each `overrides[]` entry carrying a
- * `name:` becomes a SQL view over the `docs` projection, holding exactly the
- * files that override **won schema resolution for** — first-match-wins, so
- * views are disjoint, and `FROM authors` means "the files the author schema
- * judges".
+ * Collection views, and the membership adapter that decides what a collection
+ * contains.
+ *
+ * `memberOf` is proposal 0041's rule 10: which collections a file belongs to,
+ * as path arithmetic against the config file's directory. It is what external
+ * metadata attaches to, what an `overrides[].collection` resolves through, and
+ * — since 0041 rule 7 — what a SQL view holds.
+ *
+ * One meaning of "collection", everywhere. 0027 built each view from the files
+ * an override *won schema resolution for*, so views were disjoint, only a
+ * collection an override pointed at had a view at all, and a file whose own
+ * `$schema` outranked the override was announced as not being in it. 0041
+ * makes a view the set the config says it is: every declared collection is a
+ * view, two views may overlap, and `FROM authors` reads as "the files the
+ * authors collection selects".
+ *
+ * That restores 0021's founding rule, which 0027 had to bend: a plain read
+ * resolves no schemas. Nothing in this module resolves anything, so there is
+ * no trust refusal to demote a file over, no per-file walk to pay for, and no
+ * notice to print. Resolution still honours `overrides[].collection` — it
+ * matches through `memberOf` in `resolve-schema.ts`, which is untouched.
  *
  * Shared by both projection consumers — `query` and the corpus checks
  * `validate` runs — so the two cannot drift on what a collection contains.
- *
- * Labeling, never a gate: plain reads resolve no schemas (0021's founding
- * rule), so the resolution walk below runs only when the config names at
- * least one collection, and a per-file refusal (a `$schema` the trust
- * settings reject, or one that cannot even be coerced) demotes the file to
- * "member of no view" rather than turning a working SELECT into exit 2. The
- * file's `docs` row is untouched either way.
  */
 import type { DatabaseSync } from "node:sqlite";
-import type { DocmetaConfig, SchemaTrustRoot } from "./config.js";
-import {
-  FILE_SCHEMA_KEY,
-  matchesFileGlob,
-  overrideGlobs,
-  resolveSchemaSetWithSource,
-  type ResolvedSchemaSet,
-} from "./resolve-schema.js";
+import { isAbsolute, relative, resolve as resolvePath, sep } from "node:path";
+import { isMember, type CollectionConfig } from "../../shared/collections.js";
+import { STDIN_LABEL } from "./load-files.js";
 import { quoteIdent, type ProjectionEntry } from "./projection.js";
 
-/** One named override group, with the members resolution awarded it. */
+/**
+ * Names of the collections this file belongs to, in declaration order.
+ *
+ * Where the two bases meet. A run labels files relative to `base` — the
+ * working directory for positional paths, the config's directory otherwise —
+ * while membership is decided relative to the config file's directory, because
+ * that is where a collection's globs were written (0004). So the label is
+ * resolved against `base` and then measured from `configDir`.
+ *
+ * Pure path arithmetic (0041 rule 10): no `stat`, nothing that can fail, and
+ * nothing that costs per file. Stdin and anything outside `configDir` are
+ * members of nothing — stdin because there is no file behind it, and `isMember`
+ * refuses a `../` path on its own.
+ */
+export function memberOf(
+  collections: readonly CollectionConfig[],
+  configDir: string,
+  base: string,
+  label: string,
+): string[] {
+  if (collections.length === 0) return [];
+  if (label === STDIN_LABEL) return [];
+  const rel = relative(configDir, resolvePath(base, label))
+    .split(sep)
+    .join("/");
+  // `relative` gives back an *absolute* path when the two sides share no root
+  // — a different drive letter on Windows. That is as far outside the config
+  // directory as a path can be, and it carries no `../` for `isMember` to
+  // refuse, so it is refused here.
+  if (isAbsolute(rel)) return [];
+  return collections.filter((c) => isMember(c, rel)).map((c) => c.name);
+}
+
+/**
+ * Narrow a walked file set to the files that belong to a selected collection
+ * (proposal 0041 rule 9).
+ *
+ * The walk applies the family-wide ignores and `--exclude` only, because a
+ * collection's `paths:` and `exclude:` are two halves of one statement and the
+ * walk sees just the first half. Without this second pass a collection's
+ * `exclude:` shaped its SQL view but not what a bare run read, so one config
+ * gave two different answers about the same collection — the ambiguity 0041
+ * exists to remove.
+ *
+ * Apply it **only** when the inputs came from the collections. A path someone
+ * typed is theirs, and no collection's exclusions filter it (rule 3); the
+ * caller decides, which is why this takes the already-walked list rather than
+ * consulting `fromCollections` itself.
+ */
+export function retainMembers(
+  files: readonly string[],
+  membersFor: (label: string) => readonly string[],
+): string[] {
+  return files.filter((label) => membersFor(label).length > 0);
+}
+
+/** One collection, with the loaded files that belong to it. */
 export interface Collection {
   name: string;
   /** `_path` labels of the member files. May be empty — an empty view. */
   members: string[];
 }
 
-/** The named `overrides[]` entries, with the glob and index membership needs. */
-function namedOverrides(
-  config: DocmetaConfig | null | undefined,
-): { name: string; files: string | string[]; index: number }[] {
-  return (config?.overrides ?? []).flatMap((o, i) =>
-    o.name !== undefined ? [{ name: o.name, files: o.files, index: i }] : [],
-  );
-}
-
 /**
- * The configured collection names, in override order — the one list every
- * "is this a collection?" consumer shares: the membership walk below, and
+ * The declared collection names, in declaration order — the one list every
+ * "is this a collection?" consumer shares: the view builder below, and
  * `query`'s eager-build trigger and lazy-retry match. Callers that compare
  * case-insensitively use `String.prototype.toLowerCase`, whose Unicode fold
  * is looser than SQLite's ASCII-only fold — that mismatch can only
  * over-trigger a harmless eager build or rebuild, never miss a real match.
  */
 export function collectionNames(
-  config: DocmetaConfig | null | undefined,
+  collections: readonly CollectionConfig[] | undefined,
 ): string[] {
-  return namedOverrides(config).map((n) => n.name);
+  return (collections ?? []).map((c) => c.name);
 }
 
 export interface CollectionParams {
-  /** Optional so the checks' run context can be this very shape. */
-  config?: DocmetaConfig | null;
-  /** `--schema` values, when the caller has them: `cli` outranks overrides. */
-  cliSchemas?: string[];
-  /** Directory a relative document-supplied file ref is measured from. */
-  fileBase?: string;
-  /** The repository boundary a document-supplied local path may not escape. */
-  trustRoot?: SchemaTrustRoot;
   /**
-   * Diagnostics for the user (stderr). Used for exactly one notice: a file a
-   * named glob matches that is *not* in the view because its own `$schema`
-   * won resolution (0027 § stress test 1) — the designed meaning, stated
-   * where it happens instead of discovered later.
+   * Every collection the config **declares** — not just the ones `--collection`
+   * selected, and not just the ones an override points at. Each one is a view
+   * (0041 rule 11), so narrowing a run never turns `FROM blog` into a SQL
+   * error; it turns it into a view holding whatever of `blog` the run loaded.
+   * Optional so the checks' run context can be this very shape; absent, or
+   * empty, means there are no collections and so no views.
    */
-  onNotice?: (message: string) => void;
+  collections?: readonly CollectionConfig[];
   /**
-   * Precomputed resolutions, label → resolved set, from a caller that already
-   * walked resolution for every entry (`validate`'s per-file loop). When
-   * present the walk below is skipped entirely and membership is read from
-   * the map, so one run resolves each file once. An entry with no map entry
-   * is a file whose resolution *failed* in the caller's walk: it is a member
-   * of no view (labeling never gates), and re-resolving it here would only
-   * re-throw or diverge from the finding the caller already filed.
+   * The config file's directory: what a collection's globs are measured from
+   * (0004). Only read when there is a collection to build a view for, which is
+   * only ever true when a config governs the run.
    */
-  resolved?: ReadonlyMap<string, ResolvedSchemaSet>;
+  configDir?: string;
+  /** Directory the run's file labels are relative to (`RunConfig.base`). */
+  base?: string;
 }
 
 /**
- * Compute every collection's member list from the loaded entries.
+ * Compute every declared collection's member list from the loaded entries.
  *
- * Membership is the resolution winner, never a raw glob match: an overlapping
- * glob must not put one file in two collections when only one schema set
- * judges it. The resolver's own notices (e.g. the `documentRefs: none` drop)
- * are deliberately not re-voiced here — `validate` already reports them from
- * its own walk, and a read-only query should not repeat them per statement;
- * this walk speaks only for view membership.
+ * Membership is the config's own arithmetic — `memberOf`, the same function
+ * external metadata and `overrides[].collection` go through — so a view holds
+ * exactly the loaded files the collection selects, and a file in two
+ * collections is in both views. Nothing here resolves a schema, opens a file,
+ * or can fail.
  */
 export function collectCollections(
   entries: readonly ProjectionEntry[],
   params: CollectionParams,
 ): Collection[] {
-  const named = namedOverrides(params.config);
-  if (named.length === 0) return [];
+  const declared = params.collections ?? [];
+  if (declared.length === 0) return [];
+  // A collection can only be declared by a config file, so both bases are set
+  // whenever there is a view to build; the fallbacks keep the arithmetic total
+  // rather than optional.
+  const base = params.base ?? ".";
+  const configDir = params.configDir ?? base;
 
-  const members = new Map<number, string[]>();
+  const members = new Map<string, string[]>();
   for (const entry of entries) {
-    let resolved: ResolvedSchemaSet;
-    if (params.resolved) {
-      const pre = params.resolved.get(entry.label);
-      // No entry means the caller's walk failed to resolve this file —
-      // member of no view, same as the catch below, without a re-resolution
-      // that would re-throw or diverge.
-      if (!pre) continue;
-      resolved = pre;
-    } else {
-      try {
-        resolved = resolveSchemaSetWithSource({
-          filePath: entry.label,
-          fileSchema: entry.extracted.data[FILE_SCHEMA_KEY],
-          ...(params.cliSchemas ? { cliSchemas: params.cliSchemas } : {}),
-          config: params.config,
-          ...(params.fileBase !== undefined ? { fileBase: params.fileBase } : {}),
-          ...(params.trustRoot ? { trustRoot: params.trustRoot } : {}),
-        });
-      } catch {
-        // A refused or malformed `$schema` demotes to "member of no view";
-        // `validate` is where that refusal becomes a finding (0027 § stress
-        // test 3), and a query must keep working regardless.
-        continue;
-      }
-    }
-    if (resolved.source === "override" && resolved.overrideIndex !== undefined) {
-      const list = members.get(resolved.overrideIndex);
+    for (const name of memberOf(declared, configDir, base, entry.label)) {
+      const list = members.get(name);
       if (list) list.push(entry.label);
-      else members.set(resolved.overrideIndex, [entry.label]);
-      continue;
-    }
-    if (resolved.source === "document") {
-      const excluded = named.find((g) => matchesFileGlob(g.files, entry.label));
-      if (excluded) {
-        params.onNotice?.(
-          `${entry.label}: not in the "${excluded.name}" collection — its own "${FILE_SCHEMA_KEY}" won schema resolution over the override (${overrideGlobs(excluded.files).join(", ")}). Membership follows the schema a file is validated as; set schemaTrust.documentRefs to "none" to let the override decide.`,
-        );
-      }
+      else members.set(name, [entry.label]);
     }
   }
-  return named.map(({ name, index }) => ({
-    name,
-    members: members.get(index) ?? [],
-  }));
+  return declared.map((c) => ({ name: c.name, members: members.get(c.name) ?? [] }));
 }
 
 /** One member path as a SQL string literal (doubling internal quotes). */
@@ -159,7 +169,7 @@ function quoteSqlString(value: string): string {
  * `docs` table.
  *
  * Each view is built from the computed member list — literal paths, `WHERE 0`
- * for an empty group — never from a SQL translation of the config glob:
+ * for an empty collection — never from a SQL translation of the config glob:
  * picomatch and SQLite `GLOB` are different languages, and membership was
  * already decided by the code that owns the decision. The IN-list scales past
  * any real corpus (0027 § stress test 4: SQLite's SQL-length ceiling is

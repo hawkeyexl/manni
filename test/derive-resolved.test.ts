@@ -24,7 +24,6 @@ import {
   resolvedColumns,
 } from "../src/meta/core/derive/table.js";
 import type { DeriveCommand, DerivedRecord } from "../src/meta/core/derive/types.js";
-import { parseConfig } from "../src/meta/core/config.js";
 
 /** One `docs` row's worth of frontmatter, as the projection wants it. */
 function entry(label: string, data: Record<string, unknown>): ProjectionEntry {
@@ -270,21 +269,6 @@ describe("mentionsResolved", () => {
   });
 });
 
-describe("resolved: reserved collection name", () => {
-  it.each(["resolved", "Resolved", "RESOLVED"])(
-    'refuses an override named "%s"',
-    (name) => {
-      expect(() =>
-        parseConfig(
-          [
-            "overrides:",
-            `  - name: ${name}`,
-            '    files: ["docs/**"]',
-            "    schemas: [./s.json]",
-          ].join("\n"),
-          "manni.config.yaml",
-        ),
-      ).toThrow(new RegExp(`overrides\\[0\\]\\.name "${name}" collides`));
-    },
-  );
-});
+// `resolved` is a reserved collection name, beside `derived` and
+// `_derived_rows`. Since proposal 0041 a view name belongs to a collection,
+// not an override, so test/collections.test.ts covers it in every casing.

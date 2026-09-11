@@ -1,15 +1,15 @@
 ---
-title: Keep metadata in a sidecar
-description: "Keep frontmatter values outside the page and merge them at run time, from a manifest beside the config, in a private repository, or at a URL in another repository."
+title: Keep metadata outside the document
+description: "Keep frontmatter values outside the page and merge them at run time, from a manifest beside the config, from a private repository, or from a URL in another repository."
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
 
-A **sidecar** is a YAML manifest that supplies a fixed set of frontmatter keys
-for named documents. `manni meta` merges the values into each page's metadata
-before resolving its schema, so every command sees one object. The page never
-holds the value. The contract on it stays with the page, in the same schema
-set, checked by the same run, with the same exit code.
+**External metadata** is a YAML **manifest** that supplies a fixed set of
+frontmatter keys for named documents. `manni meta` merges the values into each
+page's metadata before resolving its schema, so every command sees one object.
+The page never holds the value. The contract on it stays with the page, in the
+same schema set, checked by the same run, with the same exit code.
 
 Three things people use it for. Each has a worked path on this page, and all
 three share one manifest format and one set of rules.
@@ -27,9 +27,26 @@ three share one manifest format and one set of rules.
    in another, by URL, public or private. See
    [Across repositories](#across-repositories).
 
+A manifest belongs to a **collection**, the named document set every manni tool
+reads. `externalMetadata:` sits inside the collection entry, beside the globs
+that select the pages the manifest describes. The two are declared together, so
+neither can drift from the other.
+
 <Aside type="note" title="What this page covers">
 The journey. The contract, meaning every rule, message and exit code, lives in
-the [configuration reference](/manni/meta/reference/configuration/#sidecars).
+the [configuration
+reference](/manni/meta/reference/configuration/#external-metadata).
+</Aside>
+
+<Aside type="caution" title="Coming from a 0.x config?">
+This was called a **sidecar**, and it was `meta.sidecars` in the config. In
+1.0.0 it is `externalMetadata` on a collection, and the old key is refused with
+a message naming the new one. The two finding ids are `external:owned` and
+`external:duplicate`. If you have a
+[baseline](/manni/meta/reference/cli/#baselines) recorded before the upgrade,
+regenerate it. [Migrating a 0.x
+config](/manni/meta/reference/configuration/#migrating-a-0x-config) is the
+before-and-after.
 </Aside>
 
 ## A lean docset
@@ -37,9 +54,9 @@ the [configuration reference](/manni/meta/reference/configuration/#sidecars).
 The manifest sits beside the config, in the same repository as the pages.
 Nothing here is secret. The point is what the page does not have to carry.
 
-The worked example is `test/fixtures/sidecars/`, the corpus this feature's
-tests run. Four pages, one manifest, one schema. The schema's file name is the
-fixture's, and plays no part:
+The worked example is `test/fixtures/external-metadata/`, the corpus this
+feature's tests run. Four pages, one manifest, one schema. The schema's file
+name is the fixture's, and plays no part:
 
 ```
 manni.config.yaml
@@ -83,23 +100,28 @@ docs/ops.md
    }
    ```
 
-3. **Declare the sidecar in the config.** `keys:` names what the manifest
-   owns. A page carrying one of those keys itself is a finding, and an entry
-   setting any other key is an error.
+3. **Declare the collection, and hang the manifest off it.** `paths:` selects
+   the pages. `externalMetadata.keys:` names what the manifest owns. A page
+   carrying one of those keys itself is a finding, and an entry setting any
+   other key is an error. The override points at the collection by name, so the
+   glob is written once.
 
    ```yaml title="manni.config.yaml"
+   collections:
+     - name: pages
+       paths: ["docs/**/*.md"]
+       externalMetadata:
+         - file: ./docs-meta.yaml
+           keys: [source, jira]
+
    meta:
-     paths: ["docs/**/*.md"]
-     sidecars:
-       - file: ./docs-meta.yaml
-         keys: [source, jira]
      overrides:
-       - files: "docs/**/*.md"
+       - collection: pages
          schemas: [./private.schema.json]
    ```
 
-4. **Run it.** A bare `manni meta validate` uses the config's `paths:`, which
-   is what makes the orphan check run.
+4. **Run it.** A bare `manni meta validate` reads every collection, which is
+   what makes the orphan check run.
 
    ```sh
    npx -y @hawkeyexl/manni meta validate
@@ -120,7 +142,9 @@ title: Auth
 The run sees the whole object. From the fixture directory,
 `manni meta get jira docs/auth.md` prints `docs/auth.md: jira=PLAT-412`, and a
 [corpus check](/manni/meta/ci/query-gates/) can phrase a rule over `jira` like
-any other key.
+any other key. So can a query over the collection's own
+[view](/manni/meta/reference/query/#collections-as-views):
+`SELECT _path FROM pages WHERE jira IS NULL`.
 
 ### What a failure looks like
 
@@ -135,7 +159,7 @@ frontmatter:
 ✗ docs/new.md
     (root)  must have required property 'jira'  (line 1)  [./private.schema.json]
 ✗ docs/ops.md
-    /jira  "jira" is owned by sidecar docs-meta.yaml; remove it from the document  (line 3)  [sidecar:owned]
+    /jira  "jira" is owned by manifest docs-meta.yaml (collection pages); remove it from the document  (line 3)  [external:owned]
 
 4 files checked, 1 passed, 3 failed, 3 errors
 ```
@@ -143,18 +167,35 @@ frontmatter:
 Each line points at the place to fix. `billing.md`'s bad value is at
 `docs-meta.yaml:6`, so the manifest is what to edit. `new.md` needs an entry.
 `ops.md` needs its `jira:` line removed, because the manifest is the only place
-that key may be set. All three are exit 1, and `--format github` annotates the
-manifest line for the first and the page line for the other two.
+that key may be set. The message names the collection whose manifest owns it.
+All three are exit 1, and `--format github` annotates the manifest line for
+the first and the page line for the other two.
 
-A renamed page whose entry was not updated is different. On a config-corpus run
-it is exit 2. An entry naming a page the run did not load is a named input
-that is not there. The same fixture directory carries a second config
-whose manifest names a page that is gone:
+A renamed page whose entry was not updated is different. On a run that reads the
+whole corpus it is exit 2. An entry naming a page the run did not load is a
+named input that is not there. The same fixture directory carries a second
+config whose manifest names a page that is gone:
 
 ```
 $ manni meta validate -c manni.orphan.config.yaml
-manni: Sidecar manifest docs-meta.orphan.yaml:3 names "docs/gone.md", which this run did not load. Fix the entry, or remove it.
+manni: Manifest docs-meta.orphan.yaml:3 names "docs/gone.md", which this run did not load. Fix the entry, or remove it.
 ```
+
+<Aside type="note" title="Naming a path skips that check; naming a collection does not">
+Naming a path tells manni you chose to look at part of the corpus, so entries for
+the rest are expected rather than orphaned. `manni meta validate docs/auth.md`
+passes without mentioning `docs/gone.md`.
+
+`--collection` is different. It chooses a corpus rather than reshaping one,
+because the run loads all of every collection it names. So
+`manni meta validate --collection pages` still reports the orphan, while entries
+of collections it did not name are left alone. A CI job that gates one
+collection keeps this check.
+
+Either way the page's manifests still merge, because
+[membership](/manni/meta/reference/configuration/#membership) is decided per
+file however the file reached the run.
+</Aside>
 
 ## Private values for public documents
 
@@ -177,19 +218,21 @@ The public repository is a git submodule inside it:
 
 ```
 private-repo/
-  manni.config.yaml     # paths, sidecars, overrides
+  manni.config.yaml     # the collection, its manifest, and the override
   docs-meta.yaml        # the manifest
   schemas/private.json  # requires the private keys
   public/               # git submodule: the public docs repository
-    manni.config.yaml   # plain; never mentions a sidecar
+    manni.config.yaml   # plain; never mentions external metadata
     docs/guides/auth.md
 ```
 
 Two sibling checkouts also run, and report worse. SARIF locates every finding
 relative to the nearest repository root and cannot represent a finding in
 another repository's file. From a sibling layout every document finding is
-therefore dropped from the log. The submodule keeps every document under the
-private root. The reasons are in the
+therefore dropped from the log. A path that climbs out of the config's
+directory is also a member of no collection, so it would take no manifests at
+all. The submodule keeps every document under the private root. The reasons are
+in the
 [reference](/manni/meta/reference/configuration/#the-recommended-layout).
 
 ### Set it up
@@ -218,22 +261,25 @@ private root. The reasons are in the
    the public repository cannot see it. Leave `additionalProperties` unset,
    or the public keys fail it.
 
-4. **Declare the sidecar in the private config.**
+4. **Declare the collection in the private config.**
 
    ```yaml title="manni.config.yaml"
+   collections:
+     - name: public-pages
+       paths: ["public/docs/**/*.md"]
+       externalMetadata:
+         - file: ./docs-meta.yaml
+           keys: [source, jira]
+
    meta:
-     paths: ["public/docs/**/*.md"]
-     sidecars:
-       - file: ./docs-meta.yaml
-         keys: [source, jira]
      overrides:
-       - files: "public/docs/**/*.md"
+       - collection: public-pages
          schemas: [./schemas/private.json]
    ```
 
    The public repository's own `manni.config.yaml` stays as it is. It never
-   mentions a sidecar, so no public run warns about a private file it cannot
-   see.
+   mentions external metadata, so no public run warns about a private file it
+   cannot see.
 
 5. **Run it from the private checkout.**
 
@@ -245,8 +291,8 @@ private root. The reasons are in the
 
 ### The two workflows
 
-The public repository keeps its ordinary gate. Nothing about sidecars reaches
-it:
+The public repository keeps its ordinary gate. Nothing about the manifest
+reaches it:
 
 ```yaml title="public-docs/.github/workflows/manni.yml"
 name: Validate metadata
@@ -278,9 +324,9 @@ jobs:
       - uses: hawkeyexl/manni@v0
 ```
 
-The Action passes no paths, so `paths:` comes from the private config and the
-orphan check runs. Bump the submodule pointer when the public docs change, or
-the private run validates the pages as they were.
+The Action passes no paths, so the targets come from the private config's
+`collections:` and the orphan check runs. Bump the submodule pointer when the
+public docs change, or the private run validates the pages as they were.
 
 ## Across repositories
 
@@ -296,13 +342,16 @@ owns each page, and another public repository's pages are judged by it. The
 docs run never clones the catalog. A plain URL, and no token anywhere:
 
 ```yaml title="docs-site/manni.config.yaml"
+collections:
+  - name: pages
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: https://raw.githubusercontent.com/your-org/docs-catalog/main/owners.yaml
+        keys: [team, owner]
+
 meta:
-  paths: ["docs/**/*.md"]
-  sidecars:
-    - file: https://raw.githubusercontent.com/your-org/docs-catalog/main/owners.yaml
-      keys: [team, owner]
   overrides:
-    - files: "docs/**/*.md"
+    - collection: pages
       schemas: [./schemas/owned.json]
 ```
 
@@ -320,14 +369,17 @@ its submodule. Add `tokenEnv`, the name of an environment variable holding a
 bearer token:
 
 ```yaml title="private-repo/manni.config.yaml"
+collections:
+  - name: public-pages
+    paths: ["public/docs/**/*.md"]
+    externalMetadata:
+      - file: https://raw.githubusercontent.com/your-org/docs-catalog/main/docs-meta.yaml
+        keys: [source, jira]
+        tokenEnv: PRIVATE_DOCS_TOKEN
+
 meta:
-  paths: ["public/docs/**/*.md"]
-  sidecars:
-    - file: https://raw.githubusercontent.com/your-org/docs-catalog/main/docs-meta.yaml
-      keys: [source, jira]
-      tokenEnv: PRIVATE_DOCS_TOKEN
   overrides:
-    - files: "public/docs/**/*.md"
+    - collection: public-pages
       schemas: [./schemas/private.json]
 ```
 
@@ -376,10 +428,10 @@ why. The status is named and the token never is:
 
 ```
 $ PRIVATE_DOCS_TOKEN= manni meta validate
-manni: Sidecar manifest https://raw.githubusercontent.com/your-org/docs-catalog/main/docs-meta.yaml: the environment variable PRIVATE_DOCS_TOKEN named by "tokenEnv" is not set.
+manni: Manifest https://raw.githubusercontent.com/your-org/docs-catalog/main/docs-meta.yaml: the environment variable PRIVATE_DOCS_TOKEN named by "tokenEnv" is not set.
                                                                                     exit 2
 $ manni meta validate --offline
-manni: Sidecar manifest https://raw.githubusercontent.com/your-org/docs-catalog/main/docs-meta.yaml is remote and the run is offline. Vendor it to a path, or drop --offline.
+manni: Manifest https://raw.githubusercontent.com/your-org/docs-catalog/main/docs-meta.yaml is remote and the run is offline. Vendor it to a path, or drop --offline.
                                                                                     exit 2
 ```
 
@@ -389,8 +441,8 @@ Every rule, including the timeout, the body cap, the redirect behaviour and
 
 ## Survive renames with a field join
 
-A path entry is orphaned the moment the page moves, and the next corpus run
-is exit 2 until someone edits the manifest. That is the right default for a
+A path entry is orphaned the moment the page moves, and the next whole-corpus
+run is exit 2 until someone edits the manifest. That is the right default for a
 docset that rarely moves. It is the wrong shape for one that moves pages
 often. It is also wrong for a manifest kept by a team that does not watch the
 docs repository's renames. The path is the one thing about a page the manifest
@@ -403,17 +455,21 @@ mechanism.
 
 <Steps>
 
-1. **Name the field in the sidecar.** Everything else in the config stays.
+1. **Name the field on the manifest entry.** Everything else in the config
+   stays.
 
    ```yaml title="manni.config.yaml"
+   collections:
+     - name: pages
+       paths: ["docs/**/*.md"]
+       externalMetadata:
+         - file: ./docs-meta.yaml
+           keys: [source, jira]
+           join: id
+
    meta:
-     paths: ["docs/**/*.md"]
-     sidecars:
-       - file: ./docs-meta.yaml
-         keys: [source, jira]
-         join: id
      overrides:
-       - files: "docs/**/*.md"
+       - collection: pages
          schemas: [./private.schema.json]
    ```
 
@@ -452,21 +508,21 @@ mechanism.
 Two pages sharing one `id` is a finding on both, at the field's line. One
 entry matched both, and the manifest cannot tell them apart. Both pages
 still receive the entry's values, so the schema judges what the site would
-publish. From `test/fixtures/sidecars-join/`:
+publish. From `test/fixtures/external-metadata-join/`:
 
 ```
 ✗ docs/dup-a.md
-    /id  2 documents carry id "shared"; docs-meta.yaml cannot tell them apart (docs/dup-b.md)  (line 3)  [sidecar:duplicate]
+    /id  2 documents carry id "shared"; docs-meta.yaml cannot tell them apart (docs/dup-b.md)  (line 3)  [external:duplicate]
 ✗ docs/dup-b.md
-    /id  2 documents carry id "shared"; docs-meta.yaml cannot tell them apart (docs/dup-a.md)  (line 3)  [sidecar:duplicate]
+    /id  2 documents carry id "shared"; docs-meta.yaml cannot tell them apart (docs/dup-a.md)  (line 3)  [external:duplicate]
 ```
 
-An entry whose id no page carries is still exit 2 on a corpus run, checked
-once every page has been read:
+An entry whose id no page carries is still exit 2 on a whole-corpus run,
+checked once every page has been read:
 
 ```
 $ manni meta validate -c manni.orphan.config.yaml
-manni: Sidecar manifest docs-meta.orphan.yaml:3 names id "gone-guide", which no loaded document carries. Fix the entry, or remove it.
+manni: Manifest docs-meta.orphan.yaml:3 names id "gone-guide", which no loaded document carries. Fix the entry, or remove it.
 ```
 
 The join key is contributor-controlled, and that is the trade. A pull request
@@ -483,8 +539,45 @@ is the point. Changing its `id` is a write to the join, and is refused:
 
 ```
 $ manni meta query "UPDATE docs SET id = 'other' WHERE _path = 'docs/auth.md'"
-manni: "docs/auth.md": "id" is the field sidecar docs-meta.yaml joins on, and this document has an entry; change the manifest first.
+manni: "docs/auth.md": "id" is the field manifest docs-meta.yaml joins on, and this document has an entry; change the manifest first.
 ```
+
+## When a page is in two collections
+
+Two collections may each have a manifest supplying `owner`. That is ordinary: a
+`guides` collection and a `blog` collection are separate sets with separate
+catalogs. It only becomes a question when one page is a member of both, which
+happens when their globs overlap:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: guides
+    paths: ["docs/**/*.md"]          # includes docs/api/
+    externalMetadata:
+      - file: ./guides-meta.yaml
+        keys: [owner]
+  - name: api
+    paths: ["docs/api/**/*.md"]      # a subset of the above
+    externalMetadata:
+      - file: ./api-meta.yaml
+        keys: [owner]
+```
+
+`docs/api/auth.md` is in both, and both own `owner`. There is no honest winner,
+so the run stops rather than picking one:
+
+```
+manni: docs/api/auth.md: "owner" is owned by manifests in two of its collections, guides (guides-meta.yaml) and api (api-meta.yaml); a key has one manifest per file. Narrow one collection's paths or exclude.
+```
+
+Two fixes, both in the config where the overlap was declared. Narrow `guides` so
+it stops covering `docs/api/`. `exclude: ["docs/api/**"]` does it, since a
+collection's `exclude` decides membership. Or move `owner` out of one of the two
+manifests, so only one owns the key for that page.
+
+Overlapping collections are otherwise fine, and useful. A page in both appears
+in both [views](/manni/meta/reference/query/#collections-as-views), and still
+resolves exactly one schema set by first-match-wins.
 
 ## Editing the values
 
@@ -496,7 +589,7 @@ $ manni meta get jira docs/auth.md
 docs/auth.md: jira=PLAT-412
 
 $ manni meta query "UPDATE docs SET jira = 'PLAT-1' WHERE _path = 'docs/auth.md'"
-manni: "docs/auth.md": "jira" is owned by sidecar docs-meta.yaml; edit the sidecar file instead.
+manni: "docs/auth.md": "jira" is owned by manifest docs-meta.yaml; edit the manifest instead.
 ```
 
 `fill` refuses a page whose missing key the manifest owns, for the same reason.
@@ -508,9 +601,14 @@ manifest supplies. So "every guide has a ticket in the open state" is a
 
 <CardGrid>
   <LinkCard
-    title="Sidecars in the configuration reference"
-    href="/manni/meta/reference/configuration/#sidecars"
+    title="External metadata in the configuration reference"
+    href="/manni/meta/reference/configuration/#external-metadata"
     description="Every rule, message and exit code, and the additionalProperties caveat."
+  />
+  <LinkCard
+    title="Collections in the configuration reference"
+    href="/manni/meta/reference/configuration/#collections"
+    description="The document set every tool reads: paths, exclude, url, membership, and --collection."
   />
   <LinkCard
     title="Gate on rules that span files"
@@ -523,11 +621,12 @@ manifest supplies. So "every guide has a ticket in the open state" is a
     against the local build, exposed as `manni meta` / `npx @hawkeyexl/manni meta` via `npm link`
     (see .github/workflows/docs-as-tests.yml), over committed fixtures.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
-{/* test {"testId":"set-up-sidecar-metadata","description":"Sidecar journey, mapped to the local CLI build over test/fixtures/sidecars."} */}
-{/* step {"description":"A config-corpus run over the sidecar fixture merges the manifest, reports the manifest line for a bad value, and files a collision finding (exit 1).","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/sidecars/manni.config.yaml","exitCodes":[1],"stdio":"docs-meta.yaml:6"}} */}
-{/* step {"description":"A manifest entry naming a page the run did not load is exit 2 on a config-corpus run.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/sidecars/manni.orphan.config.yaml","exitCodes":[2],"stdio":"which this run did not load"}} */}
-{/* step {"description":"A write to a sidecar-owned key refuses by name before any file is touched (exit 2).","runShell":{"command":"npx @hawkeyexl/manni meta query -c test/fixtures/sidecars/manni.config.yaml --dry-run \"UPDATE docs SET jira = 'PLAT-1' WHERE _path = 'docs/auth.md'\"","exitCodes":[2],"stdio":"is owned by sidecar"}} */}
-{/* step {"description":"A field-joined manifest files a duplicate finding on both pages sharing one id (exit 1).","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/sidecars-join/manni.config.yaml","exitCodes":[1],"stdio":"cannot tell them apart"}} */}
-{/* step {"description":"A field entry no page carries is exit 2 on a config-corpus run.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/sidecars-join/manni.orphan.config.yaml","exitCodes":[2],"stdio":"which no loaded document carries"}} */}
-{/* step {"description":"An UPDATE of the join field on a matched document is refused (exit 2).","runShell":{"command":"npx @hawkeyexl/manni meta query -c test/fixtures/sidecars-join/manni.config.yaml --dry-run \"UPDATE docs SET id = 'other' WHERE _path = 'docs/auth.md'\"","exitCodes":[2],"stdio":"joins on"}} */}
+{/* test {"testId":"set-up-external-metadata","description":"External-metadata journey, mapped to the local CLI build over test/fixtures/external-metadata."} */}
+{/* step {"description":"A whole-corpus run over the external-metadata fixture merges the manifest, reports the manifest line for a bad value, and files a collision finding (exit 1).","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/external-metadata/manni.config.yaml","exitCodes":[1],"stdio":"docs-meta.yaml:6"}} */}
+{/* step {"description":"The owned-key finding names the manifest and the collection it belongs to.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/external-metadata/manni.config.yaml","exitCodes":[1],"stdio":"is owned by manifest docs-meta.yaml (collection pages)"}} */}
+{/* step {"description":"A manifest entry naming a page the run did not load is exit 2 on a whole-corpus run.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/external-metadata/manni.orphan.config.yaml","exitCodes":[2],"stdio":"which this run did not load"}} */}
+{/* step {"description":"A write to a manifest-owned key refuses by name before any file is touched (exit 2).","runShell":{"command":"npx @hawkeyexl/manni meta query -c test/fixtures/external-metadata/manni.config.yaml --dry-run \"UPDATE docs SET jira = 'PLAT-1' WHERE _path = 'docs/auth.md'\"","exitCodes":[2],"stdio":"is owned by manifest"}} */}
+{/* step {"description":"A field-joined manifest files a duplicate finding on both pages sharing one id (exit 1).","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/external-metadata-join/manni.config.yaml","exitCodes":[1],"stdio":"cannot tell them apart"}} */}
+{/* step {"description":"A field entry no page carries is exit 2 on a whole-corpus run.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/external-metadata-join/manni.orphan.config.yaml","exitCodes":[2],"stdio":"which no loaded document carries"}} */}
+{/* step {"description":"An UPDATE of the join field on a matched document is refused (exit 2).","runShell":{"command":"npx @hawkeyexl/manni meta query -c test/fixtures/external-metadata-join/manni.config.yaml --dry-run \"UPDATE docs SET id = 'other' WHERE _path = 'docs/auth.md'\"","exitCodes":[2],"stdio":"joins on"}} */}
 {/* test end */}

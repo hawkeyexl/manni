@@ -13,10 +13,11 @@ import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
 manni meta exposes six subcommands: [`validate`](#meta-validate) (the default),
 [`get`](#meta-get), [`query`](#meta-query), [`fill`](#meta-fill),
 [`derive`](#meta-derive), and [`schemas`](#meta-schemas), the last of which is
-a group with its own [`infer`](#meta-schemas-infer) and [`vendor`](#meta-schemas-vendor)
-subcommands. `validate`, `get`, `query`, `fill`, `derive`, and `schemas infer`
-all take paths. They share an [input model](#shared-input-model) and several
-flags with identical semantics.
+a group with its own [`infer`](#meta-schemas-infer) and
+[`vendor`](#meta-schemas-vendor) subcommands. Every one of them but
+`schemas vendor` takes paths. They share an [input model](#shared-input-model)
+and several flags with identical semantics,
+[`--collection`](#collections-as-inputs) included.
 
 ```sh
 manni meta [global options] [command] [command options] [arguments]
@@ -66,7 +67,7 @@ manni meta [paths...] [options]
 
 | Argument | Description |
 |---|---|
-| `[paths...]` | Files, directories, or globs to validate. Use `-` to read from stdin. Optional, and falls back to config `paths:`. See the [shared input model](#shared-input-model). |
+| `[paths...]` | Files, directories, or globs to validate. Use `-` to read from stdin. Optional, and falls back to the configured [collections](#collections-as-inputs). See the [shared input model](#shared-input-model). |
 
 ### Options
 
@@ -74,11 +75,12 @@ manni meta [paths...] [options]
 |---|---|---|---|
 | `-s, --schema` | `<ref>` | n/a | Schema to validate against. Repeatable. When given, it overrides `$schema` and config for every file. See [reference kinds](/manni/meta/reference/schema-resolution/#reference-kinds). |
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
-| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Merged with config `exclude:` and the [default ignores](#default-ignores). |
+| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Merged with the [default ignores](#default-ignores). A collection's own `exclude:` is a [membership](#membership-and-what-exclude-filters) rule and never filters a path you type; `--exclude` is the only thing that does. |
 | `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) (extractor name, e.g. `markdown`). Required when reading from stdin. |
 | `-f, --format` | `<pretty\|json\|github\|sarif\|junit>` | `pretty` | [Output format](/manni/meta/reference/output-and-exit-codes/). An unknown value is an error (exit 2). |
 | `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/meta/reference/configuration/). When set, the file must exist or manni meta exits 2. |
 | `--no-config` | n/a | off | Ignore any discovered config file and run on the [built-in default schema set](/manni/meta/reference/schema-resolution/#precedence). `-c` and `--no-config` set the same option, so the one written later on the command line wins. |
+| `--collection` | `<name>` | every collection | Run over a configured [collection](/manni/meta/reference/configuration/#collections) rather than the whole corpus. Repeatable, one name per occurrence, never comma-separated; repeats collapse, and a name must match a declared collection exactly. Cannot be combined with positional paths, and needs a config file to select from (exit 2 for both). See [collections as inputs](#collections-as-inputs). |
 | `-q, --quiet` | n/a | off | In `pretty` output, hide passing files. Has no effect on `json`, `github`, `sarif`, or `junit`. |
 | `--allow-empty` | n/a | off | Treat zero matched files as success instead of an error (exit 2). See [empty input sets](#empty-input-sets). |
 | `--no-gitignore` | n/a | on | Validate files `.gitignore` covers as well. Filtering is on by default; see [default ignores](#default-ignores). Overrides config `respectGitignore:`. |
@@ -86,22 +88,26 @@ manni meta [paths...] [options]
 | `--baseline` | `[path]` | config `baseline:`, else `.manni-baseline.json` | Compare findings against a recorded [baseline](#baselines) and fail only on new ones. The value is optional, and omitting it means *this project's* baseline. That is the configured `baseline:` path when there is one, resolved against the config file, and otherwise `.manni-baseline.json`. Config `baseline:` turns this on for every run. A named file that does not exist is an error (exit 2). |
 | `--write-baseline` | `[path]` | config `baseline:`, else `.manni-baseline.json` | Record this run's findings as the baseline, then exit 0. The value is optional. Wins over `--baseline`. Findings from `-` (stdin) are the one exception: they cannot be recorded, so they still fail the run. |
 | `--no-baseline` | n/a | off | Ignore a baseline supplied by config `baseline:` for this run. `--baseline` and `--no-baseline` set the same option, so the one written later on the command line wins. |
-| `--no-checks` | n/a | off | Skip the [corpus checks](/manni/meta/reference/configuration/#checks) supplied by config `checks:` for this run. Checks already run only when the resolved file set is the config-resolved corpus. A run scoped by positional paths, stdin, `--as`, `--ext`, `--exclude`, or `--no-gitignore` skips them with a stderr notice. This flag opts out explicitly. |
+| `--no-checks` | n/a | off | Skip the [corpus checks](/manni/meta/reference/configuration/#checks) supplied by config `checks:` for this run. Checks already run only when the resolved file set is the config-resolved corpus. A run scoped by `--collection`, positional paths, stdin, `--as`, `--ext`, `--exclude`, or `--no-gitignore` skips them with a stderr notice; see [corpus checks and a narrowed run](#corpus-checks-and-a-narrowed-run). This flag opts out explicitly. |
 | `--no-cache` | n/a | off | Ask GitHub or GitLab again rather than reading the [review cache](/manni/meta/reference/configuration/#the-review-sources). Only the managed-field comparison consults it, and only for `reviewed-by` and `last-reviewed`. A merged change's approvals never change, so the cache is on by default; this is the way past an answer recorded wrongly. |
-| `--no-derive` | n/a | off | Skip the [managed-field comparison](/manni/meta/reference/configuration/#derive) supplied by config `derive:` for this run. Unlike checks, the comparison runs on scoped runs too, because it is a per-file fact. This flag is the only opt-out. |
+| `--no-derive` | n/a | off | Skip the [managed-field comparison](/manni/meta/reference/configuration/#derive) supplied by config `derive:` for this run. Unlike checks, the comparison runs on scoped runs too, `--collection` included, because it is a per-file fact. This flag is the only opt-out. |
 
 <Aside type="note" title="Repeatable flags">
 Repeatable flags (`-s/--schema`, `--exclude`) accumulate; pass the flag once per
 value, for example `-s a -s b`.
 </Aside>
 
-With [`sidecars:`](/manni/meta/reference/configuration/#sidecars) in config,
-`validate` merges each manifest's values into the document before resolving its
-schema set. It files a `sidecar:owned/sidecar` finding for every owned key a
-document carries itself. On a config-corpus run it refuses (exit 2) a manifest
-entry naming a document the run did not load. That last check runs on the same
-invariant the corpus checks use and has no flag of its own. A positional path
-is what turns it off.
+With [`externalMetadata:`](/manni/meta/reference/configuration/#external-metadata)
+on a collection, `validate` merges each manifest's values into the document
+before resolving its schema set. Which manifests apply is decided by
+[membership](#membership-and-what-exclude-filters). A document gets the
+manifests of every collection it belongs to, and a file that belongs to none
+gets no manifests at all. It files an `external:owned/external` finding for
+every owned key a document carries itself, reading `"jira" is owned by manifest
+guides-meta.yaml (collection guides); remove it from the document`. On a
+config-corpus run it refuses (exit 2) a manifest entry naming a document the
+run did not load. That last check runs on the same invariant the corpus checks
+use and has no flag of its own. A positional path is what turns it off.
 
 With [`derive:`](/manni/meta/reference/configuration/#derive) in config,
 `validate` derives every managed field once for the run and compares each
@@ -198,6 +204,8 @@ re-record reporting a drop you cannot explain should not be committed.
 ### Examples
 
 ```sh
+manni meta validate                                # every configured collection
+manni meta validate --collection guides            # one of them
 manni meta validate docs/                          # walk a directory
 manni meta validate "**/*.md" -f github            # CI annotations
 manni meta validate "**/*.md" -f sarif > out.sarif # code scanning
@@ -231,7 +239,7 @@ manni meta get [fields] [paths...] [options]
 | Argument | Description |
 |---|---|
 | `[fields]` | Comma-separated metadata field references to print, when `--fields` is not used. Each is a top-level key (`title`), or a dot-notation path into nested objects and arrays (`author.name`, `tags.0`). A [JSON Pointer](https://datatracker.ietf.org/doc/html/rfc6901) works too, when prefixed with `/` (`/author/name`, `/tags/0`). See [naming the fields](#naming-the-fields). |
-| `[paths...]` | Files, directories, or globs to read. Use `-` to read from stdin. Optional, and falls back to config `paths:`. See the [shared input model](#shared-input-model). |
+| `[paths...]` | Files, directories, or globs to read. Use `-` to read from stdin. Optional, and falls back to the configured [collections](#collections-as-inputs). See the [shared input model](#shared-input-model). |
 
 A requested field that is absent from a file is reported as unset rather than
 as an error.
@@ -246,7 +254,7 @@ The field list can be given either way, and there is one rule:
 ```sh
 manni meta get title,type docs/intro.md          # positional field list
 manni meta get --fields title,type docs/intro.md # the flag; both positionals are paths
-manni meta get --fields title                    # no paths: config `paths:` applies
+manni meta get --fields title                    # no paths: the collections apply
 ```
 
 `--fields` is the same flag [`fill`](#meta-fill) takes, and it is the unambiguous
@@ -302,11 +310,12 @@ unaffected.
 | `--derived` | n/a | off | Accepted and inert. It was the opt-in before derivation became the default. A script that passes it still runs, and prints what a run without it prints. |
 | `--no-cache` | n/a | off | Ask GitHub or GitLab again rather than reading the [review cache](/manni/meta/reference/configuration/#the-review-sources). Only a run that derives consults it, and only for `reviewed-by` and `last-reviewed`. A merged change's approvals never change, so the cache is on by default; this is the way past an answer recorded wrongly. |
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
-| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Merged with config `exclude:` and the [default ignores](#default-ignores). |
+| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Merged with the [default ignores](#default-ignores). A collection's own `exclude:` is a [membership](#membership-and-what-exclude-filters) rule and never filters a path you type; `--exclude` is the only thing that does. |
 | `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) (extractor name). Required when reading from stdin. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `sarif` and `junit` are `validate`-only, and `github` is available on `validate`, [`fill`](#meta-fill), and [`derive --check`](#meta-derive). An unknown value is an error (exit 2). |
 | `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/meta/reference/configuration/). When set, the file must exist or manni meta exits 2. |
 | `--no-config` | n/a | off | Ignore any discovered config file and run on the [built-in default schema set](/manni/meta/reference/schema-resolution/#precedence). `-c` and `--no-config` set the same option, so the one written later on the command line wins. |
+| `--collection` | `<name>` | every collection | Run over a configured [collection](/manni/meta/reference/configuration/#collections) rather than the whole corpus. Repeatable, one name per occurrence, never comma-separated; repeats collapse, and a name must match a declared collection exactly. Cannot be combined with positional paths, and needs a config file to select from (exit 2 for both). See [collections as inputs](#collections-as-inputs). |
 | `-q, --quiet` | n/a | off | In `pretty` output, hide files where **every** requested field is unset. A file with any value present still prints, `(unset)` included, because quiet hides files and never values. Has no effect on `json`. |
 | `--allow-empty` | n/a | off | Treat zero matched files as success instead of an error (exit 2). See [empty input sets](#empty-input-sets). |
 | `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. Filtering is on by default; see [default ignores](#default-ignores). Overrides config `respectGitignore:`. |
@@ -390,9 +399,9 @@ gate.
 
 This section is the flag surface. The command's full contract is the [`query`
 command reference](/manni/meta/reference/query/). That covers the `docs` table and
-its columns, and the DML and DDL vocabulary. It also covers named collections as
-views, the DDL type bridge, the column convention for findings, and every
-refusal.
+its columns, and the DML and DDL vocabulary. It also covers [collections as
+views](/manni/meta/reference/query/#collections-as-views), the DDL type bridge,
+the column convention for findings, and every refusal.
 
 ```sh
 manni meta query --query <sql> [paths...] [options]
@@ -404,7 +413,7 @@ manni meta query [sql] [paths...] [options]
 | Argument | Description |
 |---|---|
 | `[sql]` | One SQL statement, run against the `docs` table described below, when `--query` is not used. A second statement after a `;` is refused rather than silently ignored. Optional when `--db` is given, because exporting needs no query. |
-| `[paths...]` | Files, directories, or globs to load. Use `-` to read from stdin. Optional, and falls back to config `paths:`. See the [shared input model](#shared-input-model). |
+| `[paths...]` | Files, directories, or globs to load. Use `-` to read from stdin. Optional, and falls back to the configured [collections](#collections-as-inputs). See the [shared input model](#shared-input-model). |
 
 The same rule as `get`'s field list applies: if `--query` is present, **every**
 positional is a path; otherwise the first positional is the SQL. A token in the
@@ -420,10 +429,11 @@ cannot shadow. The database is built in memory on every run and discarded;
 
 Statements are judged by their **effects** on that disposable projection: reads
 return rows, and everything else maps back into file space. Like `get`, `query`
-resolves no schema on plain reads and DML, and makes no network requests. Only a
+resolves no schema on plain reads and DML, and makes no network requests. A
 statement naming a
-[collection](/manni/meta/reference/query/#named-collections-as-views), or a DDL
-statement, consults resolution.
+[collection](/manni/meta/reference/query/#collections-as-views) resolves nothing
+either, because a view's membership is its collection's own globs. Only a DDL
+statement consults resolution.
 
 The full contract covers every column, how values are encoded, the registered
 SQL functions, and the vocabulary. It is in [the `docs`
@@ -441,11 +451,12 @@ table](/manni/meta/reference/query/#the-docs-table).
 | `--dry-run` | n/a | off | Preview a mutating statement instead of applying it, so you see the per-file diff it would make with nothing touched. `--check` implies it, because a check judges and never mutates. See [writing back](#writing-back). |
 | `--no-cache` | n/a | off | Ask GitHub or GitLab again rather than reading the [review cache](/manni/meta/reference/configuration/#the-review-sources). Only a statement naming the [`derived`](/manni/meta/reference/query/#the-derived-table) or [`resolved`](/manni/meta/reference/query/#the-resolved-table) table consults it, and only for `reviewed-by` and `last-reviewed`. A merged change's approvals never change, so the cache is on by default; this is the way past an answer recorded wrongly. |
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
-| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Merged with config `exclude:` and the [default ignores](#default-ignores). |
+| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Merged with the [default ignores](#default-ignores). A collection's own `exclude:` is a [membership](#membership-and-what-exclude-filters) rule and never filters a path you type; `--exclude` is the only thing that does. |
 | `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) (extractor name). Required when reading from stdin. |
 | `-f, --format` | `<pretty\|json\|csv\|github\|sarif\|junit>` | `pretty` | Output format. `pretty`, `json`, and `csv` render result rows unconditionally ([CSV output](#csv-output) describes the dialect). `github`, `sarif`, and `junit` render findings, so they are legal only with `--check` and only when the result carries a `path` column. See [rows as findings](#rows-as-findings). An unknown value, a findings format without `--check`, or a `--check` result without `path` is an error (exit 2). |
 | `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/meta/reference/configuration/). When set, the file must exist or manni meta exits 2. |
 | `--no-config` | n/a | off | Ignore any discovered config file. `-c` and `--no-config` set the same option, so the one written later on the command line wins. |
+| `--collection` | `<name>` | every collection | Run over a configured [collection](/manni/meta/reference/configuration/#collections) rather than the whole corpus. Repeatable, one name per occurrence, never comma-separated; repeats collapse, and a name must match a declared collection exactly. Cannot be combined with positional paths, and needs a config file to select from (exit 2 for both). See [collections as inputs](#collections-as-inputs). |
 | `--allow-empty` | n/a | off | Treat zero matched files as success instead of an error (exit 2). See [empty input sets](#empty-input-sets). |
 | `--no-gitignore` | n/a | on | Load files `.gitignore` covers as well. Filtering is on by default; see [default ignores](#default-ignores). Overrides config `respectGitignore:`. |
 | `--offline` | n/a | off | Accepted for parity with the other commands. It has no effect here. Reads and DML load no schema, and DDL resolves its set from disk and the bundled built-ins only. A URL ref refuses with "vendor it first" before anything could fetch, so there is no network request to suppress. |
@@ -521,11 +532,12 @@ bridge](/manni/meta/reference/query/#the-type-bridge) that turns formats and
 `CHECK` lists into schema constraints, and
 [`-s/--schema`](/manni/meta/reference/query/#naming-the-ddl-target-directly).
 
-A key a [sidecar manifest](/manni/meta/reference/configuration/#sidecars) owns
-is readable in every row and writable in none. `UPDATE`, `DELETE`, `INSERT` and
-a rename that would touch it refuse by name (exit 2), before any file is
-written: `"docs/auth.md": "jira" is owned by sidecar docs-meta.yaml; edit the
-sidecar file instead.`
+A key an [external-metadata
+manifest](/manni/meta/reference/configuration/#external-metadata) owns is
+readable in every row and writable in none. `UPDATE`, `DELETE`, `INSERT` and a
+rename that would touch it refuse by name (exit 2), before any file is written:
+`"docs/auth.md": "jira" is owned by manifest docs-meta.yaml; edit the manifest
+instead.`
 
 ### Rows as findings
 
@@ -634,7 +646,7 @@ used, in both output formats.
 
 | Argument | Description |
 |---|---|
-| `[paths...]` | Files, directories, or globs to fill. Use `-` to read from stdin, which prints the filled document to stdout and writes nothing to disk. Optional, and falls back to config `paths:`. See the [shared input model](#shared-input-model). |
+| `[paths...]` | Files, directories, or globs to fill. Use `-` to read from stdin, which prints the filled document to stdout and writes nothing to disk. Optional, and falls back to the configured [collections](#collections-as-inputs). See the [shared input model](#shared-input-model). |
 
 ### Options
 
@@ -657,6 +669,7 @@ used, in both output formats.
 | `-f, --format` | `<pretty\|json\|github>` | `pretty` | Output format. `github` emits [one annotation per required property that could not be filled](#github-annotations). `sarif` and `junit` stay `validate`-only: they describe *findings in files*, and a skipped optional property is a proposal with a confidence score, not a finding. An unknown value is an error (exit 2). |
 | `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/meta/reference/configuration/). |
 | `--no-config` | n/a | off | Ignore any discovered config file and run on the [built-in default schema set](/manni/meta/reference/schema-resolution/#precedence). `-c` and `--no-config` set the same option, so the one written later on the command line wins. |
+| `--collection` | `<name>` | every collection | Run over a configured [collection](/manni/meta/reference/configuration/#collections) rather than the whole corpus. Repeatable, one name per occurrence, never comma-separated; repeats collapse, and a name must match a declared collection exactly. Cannot be combined with positional paths, and needs a config file to select from (exit 2 for both). See [collections as inputs](#collections-as-inputs). |
 | `-q, --quiet` | n/a | off | In `pretty` output, hide files with nothing written **and** nothing left undone. A file whose required property could not be filled, or that errored, always prints. Those are the files that make the run exit 1. Has no effect on `json` or `github`. |
 | `--allow-empty` | n/a | off | Treat zero matched files as success instead of an error (exit 2). See [empty input sets](#empty-input-sets). |
 | `--no-gitignore` | n/a | on | Fill files `.gitignore` covers as well. Filtering is on by default; see [default ignores](#default-ignores). Overrides config `respectGitignore:`. |
@@ -667,11 +680,12 @@ used, in both output formats.
 A schema property is a candidate when it is **missing** from the file's
 metadata, or **present but invalid**. A property that is already present and
 valid is never touched, and neither is `$schema`, which is schema wiring, not
-metadata. A candidate a [sidecar manifest](/manni/meta/reference/configuration/#sidecars)
-owns is refused for the whole file, as a per-file error rather than a skip.
-The error reads `"source" is owned by sidecar docs-meta.yaml; manni meta fill
-cannot write a sidecar key. Add it to the manifest instead.` The manifest is the
-only place the value may go, and `fill` does not edit manifests.
+metadata. A candidate an [external-metadata
+manifest](/manni/meta/reference/configuration/#external-metadata) owns is
+refused for the whole file, as a per-file error rather than a skip. The error
+reads `"jira" is owned by manifest guides-meta.yaml; manni meta fill cannot
+write a manifest key. Add it to the manifest instead.` The manifest is the only
+place the value may go, and `fill` does not edit manifests.
 
 ### The confidence gate
 
@@ -783,21 +797,22 @@ finding without touching anything.
 
 | Argument | Description |
 |---|---|
-| `[paths...]` | Files, directories, or globs to stamp. Optional, and falls back to config `paths:`. See the [shared input model](#shared-input-model). `-` is refused (exit 2), because a piped document has no history behind it: `cannot derive <stdin>: no history behind it`. |
+| `[paths...]` | Files, directories, or globs to stamp. Optional, and falls back to the configured [collections](#collections-as-inputs). See the [shared input model](#shared-input-model). `-` is refused (exit 2), because a piped document has no history behind it: `cannot derive <stdin>: no history behind it`. |
 
 ### Options
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
-| `--fields` | `<list>` | config `derive.fields` | Comma-separated managed fields to stamp this run. Each must be one of the six [derivable fields](/manni/meta/reference/configuration/#the-derivable-fields) or a key with an entry in config [`derive.commands`](/manni/meta/reference/configuration/#commands). An unknown or non-derivable name is an error (exit 2) listing the six and pointing at `derive.commands`. A field a config [sidecar](/manni/meta/reference/configuration/#sidecars) owns is refused (exit 2), the same way the config parser refuses it in `derive.fields`. The message is `"owner" is owned by sidecar ./owners.yaml; a managed field has one authority, and a sidecar key already has one.` No config `derive.fields` and no flag is an error (exit 2): `nothing to derive: set derive.fields in manni.config.yaml or pass --fields`. |
+| `--fields` | `<list>` | config `derive.fields` | Comma-separated managed fields to stamp this run. Each must be one of the six [derivable fields](/manni/meta/reference/configuration/#the-derivable-fields) or a key with an entry in config [`derive.commands`](/manni/meta/reference/configuration/#commands). An unknown or non-derivable name is an error (exit 2) listing the six and pointing at `derive.commands`. A field a collection's [external-metadata](/manni/meta/reference/configuration/#external-metadata) manifest owns is refused (exit 2), the same way loading the config refuses it in `derive.fields`. The message is `"owner" is owned by the manifest ./owners.yaml on collection guides; a managed field has one authority, and a manifest key already has one.` No config `derive.fields` and no flag is an error (exit 2): `nothing to derive: set derive.fields in manni.config.yaml or pass --fields`. |
 | `--sources` | `<list>` | config `derive.sources`, else all five | Comma-separated sources to consult: `git`, `codeowners`, `github`, `gitlab`, `command`. Only the one of `github` and `gitlab` that matches the origin remote is consulted. `command` covers every field with an entry in config [`derive.commands`](/manni/meta/reference/configuration/#commands). A field whose only sources are excluded derives null and is left alone. This is the opt-out for a checkout that cannot answer a source, such as a shallow clone. |
 | `--dry-run` | n/a | off | Report what would change and write nothing. |
 | `--check` | n/a | off | Implies `--dry-run`. A managed field that is stale or unset is a finding, and the run exits 1 if there is any. This is the CI spelling. |
 | `-f, --format` | `<pretty\|json\|github\|sarif\|junit>` | `pretty` | [Output format](/manni/meta/reference/output-and-exit-codes/). `github`, `sarif`, and `junit` describe findings, so they are legal only with `--check`. Without it they are an error (exit 2): `sarif is a findings format, which only --check produces`. An unknown value is an error (exit 2). |
 | `--no-cache` | n/a | cache on | Bypass the GitHub or GitLab review cache in `.manni/meta/review-cache`. Only a merged pull request's answer is ever cached, so this matters when a merged answer was recorded wrongly, never for an open one. |
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
-| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Merged with config `exclude:` and the [default ignores](#default-ignores). |
+| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Merged with the [default ignores](#default-ignores). A collection's own `exclude:` is a [membership](#membership-and-what-exclude-filters) rule and never filters a path you type; `--exclude` is the only thing that does. |
 | `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) (extractor name, e.g. `markdown`). |
+| `--collection` | `<name>` | every collection | Run over a configured [collection](/manni/meta/reference/configuration/#collections) rather than the whole corpus. Repeatable, one name per occurrence, never comma-separated; repeats collapse, and a name must match a declared collection exactly. Cannot be combined with positional paths, and needs a config file to select from (exit 2 for both). See [collections as inputs](#collections-as-inputs). |
 | `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/meta/reference/configuration/). When set, the file must exist or manni meta exits 2. |
 | `--no-config` | n/a | off | Ignore any discovered config file. `-c` and `--no-config` set the same option, so the one written later on the command line wins. With no config there is no `derive.fields`, so `--fields` is required. |
 | `--allow-empty` | n/a | off | Treat zero matched files as success instead of an error (exit 2). See [empty input sets](#empty-input-sets). |
@@ -868,7 +883,8 @@ source that could not answer.
 ### Examples
 
 ```sh
-manni meta derive                                  # stamp config derive.fields over config paths
+manni meta derive                                  # stamp config derive.fields over every collection
+manni meta derive --collection guides              # stamp one configured collection
 manni meta derive --dry-run docs/install.md        # what would change, nothing written
 manni meta derive --check -f github                # CI: a stale stamp is an annotation, exit 1
 manni meta derive --fields reviewed-by,last-reviewed   # after an approval, stamp who and when
@@ -920,7 +936,7 @@ manni meta schemas infer [paths...] [options]
 
 | Argument | Description |
 |---|---|
-| `[paths...]` | Files, directories, or globs to scan. Use `-` to read from stdin. Optional, and falls back to config `paths:`. See the [shared input model](#shared-input-model). |
+| `[paths...]` | Files, directories, or globs to scan. Use `-` to read from stdin. Optional, and falls back to the configured [collections](#collections-as-inputs). See the [shared input model](#shared-input-model). |
 
 ### Options
 
@@ -929,11 +945,12 @@ manni meta schemas infer [paths...] [options]
 | `--out` | `<path>` | n/a | Write the draft schema to this file. Refuses to overwrite an existing file, and refuses a path `.gitignore` covers; see below. |
 | `--min-coverage` | `<pct>` | `0` | Hide keys below this coverage percentage. The default shows everything, deliberately: the long tail is where "one team's convention" hides. |
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
-| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Merged with config `exclude:` and the [default ignores](#default-ignores). |
+| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. Merged with the [default ignores](#default-ignores). A collection's own `exclude:` is a [membership](#membership-and-what-exclude-filters) rule and never filters a path you type; `--exclude` is the only thing that does. |
 | `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) (extractor name, e.g. `markdown`). Required when reading from stdin. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. Anything else is a usage error (exit `2`). |
 | `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/meta/reference/configuration/). When set, the file must exist or manni meta exits 2. |
 | `--no-config` | n/a | off | Ignore any discovered config file. `-c` and `--no-config` set the same option, so the one written later on the command line wins. |
+| `--collection` | `<name>` | every collection | Run over a configured [collection](/manni/meta/reference/configuration/#collections) rather than the whole corpus. Repeatable, one name per occurrence, never comma-separated; repeats collapse, and a name must match a declared collection exactly. Cannot be combined with positional paths, and needs a config file to select from (exit 2 for both). See [collections as inputs](#collections-as-inputs). |
 | `--allow-empty` | n/a | off | Treat zero matched files as success instead of an error (exit 2). See [empty input sets](#empty-input-sets). |
 | `--no-gitignore` | n/a | on | Scan files `.gitignore` covers as well. Filtering is on by default; see [default ignores](#default-ignores). Overrides config `respectGitignore:`. |
 | `--offline` | n/a | off | Accepted and ignored, so one flag set covers every command. `infer` resolves no schema and contacts no provider, so it is already offline and there is nothing for the flag to suppress. |
@@ -1054,8 +1071,8 @@ which is the failure vendoring exists to remove.
 
 ## Shared input model
 
-`validate`, `get`, `query`, `fill`, and `derive` resolve their inputs the
-same way.
+`validate`, `get`, `query`, `fill`, `derive`, and `schemas infer` resolve
+their inputs the same way.
 
 - **Positional paths** are files, directories, or globs. A named file is always
   read. A directory or glob is expanded and filtered to the extensions in
@@ -1066,12 +1083,16 @@ same way.
   because there is no filename extension to detect from. Without `--as`, manni meta
   exits 2. [`derive`](#meta-derive) refuses `-` outright, because a piped
   document has no history to derive from.
-- **Config `paths:` is the fallback.** When no positional paths are given,
-  manni meta uses `paths:` from the [config file](/manni/meta/reference/configuration/).
-  Positional paths, when present, override config `paths:` entirely.
-- **No input and no config is an error.** With no paths and no config `paths:`,
-  manni meta exits 2 with an operational error. Empty output is never produced
-  silently.
+- **The configured collections are the fallback.** When no positional paths are
+  given, manni meta runs over every
+  [collection](/manni/meta/reference/configuration/#collections) the config
+  declares, in declaration order, or over the ones
+  [`--collection`](#collections-as-inputs) names. Positional paths, when
+  present, replace that entirely.
+- **No input and no collection is an error.** With no paths and nothing under
+  `collections:`, manni meta exits 2 with an operational error naming both
+  remedies. Empty output is never produced silently. See [collections as
+  inputs](#collections-as-inputs).
 - **Matching no files is also an error.** A named path that does not exist
   exits 2, and so does an input set resolving to zero files. `--allow-empty`
   suppresses both. See [empty input sets](#empty-input-sets).
@@ -1080,6 +1101,105 @@ same way.
 `--as` forces one extractor for every input in the run. Use it for stdin, or to
 read a file whose extension manni meta would not otherwise recognize.
 </Aside>
+
+### Collections as inputs
+
+A [collection](/manni/meta/reference/configuration/#collections) is a named set
+of documents, declared once at the top level of `manni.config.yaml` and read by
+every tool in the family. With no positional paths, a run covers **every**
+declared collection, in declaration order. `--collection <name>` narrows it to
+the ones you name.
+
+```sh
+manni meta validate                                          # every collection
+manni meta validate --collection guides                      # one of them
+manni meta validate --collection guides --collection blog    # two
+```
+
+The flag repeats, one name per occurrence, and never splits on commas. One
+separator per list is the rule across the whole CLI.
+
+- A positional variadic is space-separated.
+- A `<list>` option is comma-separated and given once.
+- A repeatable option takes one value per occurrence.
+
+So `--collection guides,blog` is a single name, and no collection has it:
+
+```console
+$ manni meta validate --collection guides,blog
+manni: no collection named "guides,blog" in manni.config.yaml. Configured: guides, blog.
+exit=2
+```
+
+Naming a collection twice is not an error, because repeats collapse. Naming one
+that is not declared is, since a typo that silently narrowed a run to nothing
+would read as a clean pass. The other two refusals are structural. The flag
+selects from the config, so it can neither take paths beside it nor run without
+a config to select from.
+
+```console
+$ manni meta validate --collection guides docs/x.md
+manni: --collection selects a configured collection; it cannot be combined with paths.
+exit=2
+
+$ manni meta validate --collection guides --no-config
+manni: --collection needs a config file to select from.
+exit=2
+```
+
+`-` (stdin) is not a path in that sense and is allowed beside `--collection`.
+
+With no paths, no `--collection`, and nothing declared under `collections:`,
+there is nothing to run over, and that is an operational error rather than empty
+output. The verb matches the command. It is `validate`, `read` for both
+[`get`](#meta-get) and [`query`](#meta-query), `fill`, `derive`, and `scan`
+for [`schemas infer`](#meta-schemas-infer):
+
+```
+manni: No files to validate. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.
+```
+
+#### Membership, and what `exclude:` filters
+
+A file is a **member** of a collection when it matches one of that collection's
+`paths:` and none of its `exclude:`. Both are matched relative to the config
+file's directory. Membership is decided per file and it is what [external
+metadata](/manni/meta/reference/configuration/#external-metadata) attaches to. A
+file that is a member of no collection gets no manifests, and a file that is a
+member of two gets both collections' manifests. Where the file came from, the
+walk or the command line, makes no difference. Membership is arithmetic on the
+path, so it costs nothing per file and never touches the filesystem. Stdin, and
+any path outside the config's directory, are members of nothing.
+
+That makes a collection's `exclude:` a membership rule and nothing more. It does
+not filter a path you type. `manni meta validate docs/` reads every document
+under `docs/`, including ones a collection excludes, because you named `docs/`.
+`--exclude` is the spelling for "and skip these".
+
+<Aside type="caution" title="A collection's exclude no longer filters a typed path">
+Through 0.3.0, `meta.exclude:` was merged into **every** run, so
+`manni meta validate docs/` honoured it. `meta.exclude:` is gone, and a
+collection's `exclude:` governs membership only. A script that typed a path and
+relied on config to trim the walk needs those globs as `--exclude` now.
+</Aside>
+
+#### Corpus checks and a narrowed run
+
+[Corpus checks](/manni/meta/reference/configuration/#checks) run only when the
+resolved file set is the whole configured corpus. `--collection` narrows it, so
+they are skipped, with a notice on stderr naming the collections in declaration
+order however they were given on the command line:
+
+```
+manni: corpus checks skipped: run is scoped to collections guides, blog
+```
+
+A check is SQL over the projection, and every unselected collection's view would
+be empty. A `FROM blog` check would therefore pass by having nothing to fail on.
+Skipping and saying so is the honest answer. Every declared collection still
+gets its view, selected or not, so a
+[query](/manni/meta/reference/query/) naming one is never a SQL error.
+
 
 ### Empty input sets
 
@@ -1125,8 +1245,8 @@ character, and does not exist on disk. So `manni meta docs/` keeps working.
 
 ### Default ignores
 
-Directory and glob expansion always skips these globs, in addition to anything
-from `--exclude` or config `exclude:`:
+Directory and glob expansion always skips these globs, family-wide, in addition
+to anything from `--exclude`:
 
 | Glob | Skips |
 |---|---|
@@ -1136,6 +1256,10 @@ from `--exclude` or config `exclude:`:
 Dotfiles and dot-directories are also excluded from directory and glob walks by
 default. An explicitly named file is always read, even if it matches an ignore
 glob or is a dotfile.
+
+A collection's own `exclude:` is not in this list, because it is not a walk
+filter. It decides [membership](#membership-and-what-exclude-filters), which is
+a different question from which files a walk reaches.
 
 #### `.gitignore`
 
@@ -1202,7 +1326,7 @@ with `No files matched` (exit 2), rather than reporting a green zero.
 {/* step {"description":"schemas -f json prints { builtins, formats }.","runShell":{"command":"manni meta schemas -f json","exitCodes":[0],"stdio":"/\"builtins\"[\\s\\S]*\"formats\"/"}} */}
 {/* step {"description":"schemas reports per-format writability, which fill depends on.","runShell":{"command":"manni meta schemas -f json","exitCodes":[0],"stdio":"/\"name\": \"markdown\"[\\s\\S]*\"writable\": true/"}} */}
 {/* step {"description":"schemas rejects a validate-only format rather than silently printing pretty (exit 2).","runShell":{"command":"manni meta schemas -f github","exitCodes":[2],"stdio":"Unknown --format"}} */}
-{/* step {"description":"DDL type bridge (0028): a declared format type previews as the whole property the schema will gain — type, format, required. --dry-run keeps the step read-only.","runShell":{"command":"manni meta query --dry-run -c test/fixtures/ddl-bridge/docmeta.config.yaml \"ALTER TABLE docs ADD COLUMN reviewed_on DATE NOT NULL DEFAULT '2026-08-26'\" test/fixtures/ddl-bridge/docs","exitCodes":[0],"stdio":"+ reviewed_on (string, format date, required)"}} */}
+{/* step {"description":"DDL type bridge (0028): a declared format type previews as the whole property the schema will gain — type, format, required. --dry-run keeps the step read-only.","runShell":{"command":"manni meta query --dry-run -c test/fixtures/ddl-bridge/manni.config.yaml \"ALTER TABLE docs ADD COLUMN reviewed_on DATE NOT NULL DEFAULT '2026-08-26'\" test/fixtures/ddl-bridge/docs","exitCodes":[0],"stdio":"+ reviewed_on (string, format date, required)"}} */}
 {/* step {"description":"fill documents its confidence gate and provider flags in --help.","runShell":{"command":"manni meta fill --help","exitCodes":[0],"stdio":"--confidence"}} */}
 {/* step {"description":"fill follows the shared input model: no paths and no config is an operational error (exit 2).","runShell":{"command":"manni meta fill --no-config","exitCodes":[2],"stdio":"No files"}} */}
 {/* step {"description":"fill rejects a non-numeric --confidence before contacting a provider (exit 2).","runShell":{"command":"manni meta fill test/fixtures/valid.md --confidence abc","exitCodes":[2],"stdio":"--confidence"}} */}

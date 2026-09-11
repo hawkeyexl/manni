@@ -61,8 +61,11 @@ Name the fields you want managed. Everything else is optional.
    before.
 
    ```yaml title="manni.config.yaml"
+   collections:
+     - name: pages
+       paths: ["docs/**/*.md"]
+
    meta:
-     paths: ["docs/**/*.md"]
      derive:
        fields: [created, last-updated, authors, owner]
    ```
@@ -91,13 +94,13 @@ Name the fields you want managed. Everything else is optional.
 
 </Steps>
 
-A managed field cannot also be a key a [sidecar](/manni/meta/set-up/sidecar-metadata/)
-owns. The two would disagree about where the value lives, so the config is
-refused.
+A managed field cannot also be a key an [external-metadata
+manifest](/manni/meta/set-up/external-metadata/) owns. The two would disagree
+about where the value lives, so the config is refused.
 
 ## Run it locally
 
-From the repository, over the config's `paths:`:
+From the repository, over every configured collection:
 
 ```sh
 npx -y @hawkeyexl/manni meta derive
@@ -276,7 +279,7 @@ name.
 
 <Aside type="caution" title="The config that names a command is trusted">
 This is the first config key that runs a program. It sits on the same line
-as the SQL in `checks:` and the URL of a remote sidecar. The config is a
+as the SQL in `checks:` and the URL of a remote manifest. The config is a
 reviewed file in your repository, and what it names is what runs. A document
 can never supply a command, and nothing in a document reaches the argv.
 Review a pull request that touches `manni.config.yaml` the way you review a

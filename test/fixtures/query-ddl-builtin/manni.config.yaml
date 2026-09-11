@@ -1,0 +1,9 @@
+# Pinned to a builtin on purpose.
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
+
+meta:
+  schemas:
+    - google:okf:0.1

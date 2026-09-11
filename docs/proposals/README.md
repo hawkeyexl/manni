@@ -44,7 +44,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0024](0024-standard-sql-vocabulary.md) | Standard SQL vocabulary: DML edits the files, DDL edits the schema | Maya · M2, M3 / Sara · S1, S3 / Devin · D3 | Implemented (#125, #126) |
 | [0025](0025-query-dry-run-polarity.md) | query writes by default, `--dry-run` previews | Devin · D4 / Maya · M2 | Implemented |
 | [0026](0026-corpus-checks-are-findings.md) | Corpus checks are findings, as named `checks:` in config, run by `validate` | Devin · D4 / Maya · M2 | Implemented (#132) |
-| [0027](0027-named-collections.md) | Named collections, which are override groups as SQL views | Devin · D4 / Maya · M2 | Implemented (#134) |
+| [0027](0027-named-collections.md) | Named collections, which are override groups as SQL views | Devin · D4 / Maya · M2 | Superseded by [0041](0041-collections.md) |
 | [0028](0028-ddl-type-bridge.md) | The DDL type bridge, with formats as column types and enums as CHECK IN | Sara · S1, S3 / Maya · M2, M3 | Implemented (#135) |
 | [0029](0029-query-for-scripts.md) | query for scripts: CSV output and bound parameters | Devin · D3, D4 | Implemented (#133) |
 | [0030](0030-query-schema-flag.md) | `-s/--schema` on `query`: naming the contract DDL evolves | Sara · S1, S3 / Maya · M2, M3 | Implemented (#139) |
@@ -57,6 +57,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0038](0038-sidecar-url-manifests.md) | A URL form of `sidecars[].file`, fetched every run with a bearer token from the environment | Devin · D1, D2 / Maya · M1 | Implemented |
 | [0039](0039-sidecar-join.md) | `join`: a sidecar keyed by a frontmatter field, so a rename cannot orphan an entry; two pages sharing a value is a finding on both | Maya · M1, M2 / Devin · D4 / Sara · S3 | Implemented |
 | [0040](0040-derived-metadata.md) | Derived metadata, with managed stewardship fields stamped from git, CODEOWNERS, GitHub and GitLab by `manni meta derive`, and a stale stamp reported by `validate` | Maya · M1, M2 / Devin · D4 / Theo · T1 | Implemented (#19) |
+| [0041](0041-collections.md) | `collections:`, the family-level home for document sets and their external metadata; `sidecars` becomes `externalMetadata` on a collection and `--collection <name>` scopes a run | Maya · M1, M2 / Devin · D1, D4 / Sara · S1 | Implemented |
 | [0042](0042-command-source.md) | The `command` source: a managed field derived by an argv the config names, so `verified-against` can be checked against the product's own version | Maya · M1, M2 / Devin · D4 / Sara · S2 | Implemented (#21) |
 | [0043](0043-resolved-reads.md) | Resolved reads, where a third read-only view `resolved` holds the asserted value or the derived one, with `_origin` naming which. `get` derives by default | Maya · M1, M2 / Devin · D4 / Theo · T1 | Implemented (#22) |
 

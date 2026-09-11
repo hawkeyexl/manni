@@ -23,7 +23,7 @@ import {
   type MetadataExtractor,
   type MetadataPatch,
 } from "../types.js";
-import { resolveRunConfig, type ConfigNotice } from "../core/config.js";
+import { manifestOwning, resolveRunConfig, type ConfigNotice } from "../core/config.js";
 import type { FingerprintContext } from "../core/baseline.js";
 import {
   assertNonEmpty,
@@ -31,6 +31,7 @@ import {
   resolveTargetSet,
   STDIN_TOKEN,
 } from "../core/load-files.js";
+import { memberOf, retainMembers } from "../core/collections.js";
 import {
   extractorByName,
   extractorForExtension,
@@ -59,6 +60,12 @@ import {
 
 export interface DeriveOptions {
   inputs: string[];
+  /**
+   * `--collection <name>`, repeatable: stamp only the named configured
+   * collections instead of every declared one (proposal 0041). Cannot be
+   * combined with paths.
+   */
+  collections?: string[];
   /** `--fields`: the managed fields to stamp this run; config `derive.fields` otherwise. */
   fields?: string[];
   /** `--sources`: the sources to consult; config `derive.sources`, else all four. */
@@ -143,13 +150,15 @@ const SOURCE_HINT = "narrow --sources or --fields";
 
 export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   const cwd = opts.cwd ?? process.cwd();
-  const { config, inputs, base, configDir } = await resolveRunConfig({
-    cwd,
-    configPath: opts.configPath,
-    noConfig: opts.noConfig,
-    inputs: opts.inputs,
-    onConfigLoaded: opts.onConfigLoaded,
-  });
+  const { config, inputs, base, configDir, collections, declaredCollections, fromCollections } =
+    await resolveRunConfig({
+      cwd,
+      configPath: opts.configPath,
+      noConfig: opts.noConfig,
+      inputs: opts.inputs,
+      ...(opts.collections !== undefined ? { collections: opts.collections } : {}),
+      onConfigLoaded: opts.onConfigLoaded,
+    });
   // Refused before anything else is looked at: every other command takes `-`
   // as one more input, but a piped document has no commits, no path a
   // CODEOWNERS rule could match, and no pull request. There is nothing to
@@ -160,7 +169,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   }
   if (inputs.length === 0) {
     throw new DocmetaError(
-      "No files to derive. Pass paths/globs, or add `paths:` under `meta:` in manni.config.yaml.",
+      "No files to derive. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.",
     );
   }
 
@@ -168,14 +177,15 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   // built-in field, and the source runs them where the config lives.
   const commands = commandsOf(config?.derive);
   const fields = resolveFields(opts.fields, config?.derive?.fields, commands);
-  // The config parser refuses a `derive.fields` entry a sidecar owns; the
-  // same rule holds for `--fields`, which bypasses that parser. The
-  // config's `keys` list is the whole claim, so no manifest is loaded.
+  // `loadConfig` refuses a `derive.fields` entry a manifest owns; the same
+  // rule holds for `--fields`, which bypasses the config. Every declared
+  // collection counts, not only the selected ones, and the config's `keys:`
+  // list is the whole claim, so no manifest is loaded.
   for (const field of fields) {
-    const owner = config?.sidecars?.find((s) => s.keys.includes(field));
+    const owner = manifestOwning(field, declaredCollections);
     if (owner !== undefined) {
       throw new DocmetaError(
-        `"${field}" is owned by sidecar ${owner.file}; a managed field has one authority, and a sidecar key already has one.`,
+        `"${field}" is owned by the manifest ${owner.file} on collection ${owner.name}; a managed field has one authority, and a manifest key already has one.`,
       );
     }
   }
@@ -195,8 +205,13 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
 
   const allowEmpty = opts.allowEmpty ?? config?.allowEmpty;
   const exts = opts.exts ?? forcedExtractor?.extensions;
-  const exclude = [...(config?.exclude ?? []), ...(opts.exclude ?? [])];
-  const { files, gitignoreSkipped } = await resolveTargetSet({
+  // Only `--exclude`: a collection's `exclude:` governs membership, not the
+  // walk of a path someone typed (0041 rule 3).
+  const exclude = opts.exclude ?? [];
+  /** The collections one label belongs to, computed once per file. */
+  const membersFor = (label: string): string[] =>
+    memberOf(collections, configDir ?? cwd, base, label);
+  const { files: walked, gitignoreSkipped } = await resolveTargetSet({
     inputs,
     exts,
     exclude,
@@ -208,6 +223,10 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       onNotice: opts.onNotice,
     }),
   });
+  // Rule 9: narrow the walk to actual members, or a collection's `exclude:`
+  // would shape its SQL view and not what a bare run stamps. Skipped for
+  // typed paths: those are the operator's (rule 3).
+  const files = fromCollections ? retainMembers(walked, membersFor) : walked;
   assertNonEmpty({
     files,
     inputs,
@@ -245,7 +264,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       continue;
     }
     const content = await readFile(absPath, "utf8");
-    const elements = resolveElements(label, config);
+    const elements = resolveElements(label, config, membersFor(label));
     try {
       loaded.set(label, {
         label,

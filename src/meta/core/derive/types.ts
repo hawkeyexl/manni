@@ -181,7 +181,7 @@ export interface DerivedField {
 /**
  * The `schema` ref a stale-field finding carries, and so its baseline and
  * rule identity: `derived:stale/derived`. Shaped like `check:<name>` and
- * `sidecar:owned` so `classifyRef` passes it through as a built-in id rather
+ * `external:owned` so `classifyRef` passes it through as a built-in id rather
  * than resolving it as a cwd-relative file path, and reserved in the registry
  * for the same reason those are.
  */
