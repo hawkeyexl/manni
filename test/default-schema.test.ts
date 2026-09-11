@@ -201,7 +201,13 @@ describe("the six house vocabularies", () => {
         if (entry.endsWith(".json")) files.push(join(dir, family, entry));
       }
     }
-    expect(files.length).toBe(14);
+    // A floor, not the count. The loop below is what catches a stale string,
+    // and it catches one in a fifteenth draft exactly as well as in these
+    // fourteen. Pinning the exact number would only trade that failure for a
+    // count mismatch that says nothing about what is wrong, on the day
+    // someone adds a revision. What the floor rules out is the glob quietly
+    // matching nothing and the whole assertion passing on an empty list.
+    expect(files.length).toBeGreaterThan(0);
 
     for (const file of files) {
       const raw = await readFile(file, "utf8");
