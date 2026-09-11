@@ -19,6 +19,14 @@ describe("errorMessage", () => {
     expect(errorMessage(42)).toBe("42");
   });
 
+  it.each([
+    [NaN, "NaN"],
+    [Infinity, "Infinity"],
+    [-Infinity, "-Infinity"],
+  ])("gives %s its own name, not the null JSON would write", (thrown, message) => {
+    expect(errorMessage(thrown)).toBe(message);
+  });
+
   it("says null for null", () => {
     expect(errorMessage(null)).toBe("null");
   });
