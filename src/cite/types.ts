@@ -9,13 +9,16 @@
  */
 import type { ValidationResult } from "../meta/index.js";
 import type { CollectionConfig } from "../shared/collections.js";
+import type { ConfigFile } from "../shared/config-file.js";
+import type { KeySource } from "../shared/encryption-key.js";
+import type { Confirm } from "../shared/prompt.js";
 
-/** A parsed `src`: `path`, `path:L`, `path:L1-L2`, or `~token[:…]`. */
+/** A parsed `src`: `path`, `path:L`, `path:L1-L2`, or an encrypted `~source[:…]`. */
 export interface SourceRange {
-  /** Repo-root-relative posix path, or the `~token` when `obfuscated`. */
+  /** Repo-root-relative posix path, or the `~` ciphertext when `encrypted`. */
   path: string;
-  /** `true` when `path` is a `~<16 hex>` token rather than a path. */
-  obfuscated: boolean;
+  /** `true` when `path` is an encrypted source (`~` and 82+ base64url characters) rather than a path. */
+  encrypted: boolean;
   /** 1-based, inclusive. Both absent for a whole-file citation. */
   start?: number;
   end?: number;
@@ -24,7 +27,7 @@ export interface SourceRange {
 /** One entry of `citations`, or the object payload of an inline statement. */
 export interface Citation {
   src: string;
-  /** `sha256-<64 hex>`; keyed with the salt when `src` is obfuscated. */
+  /** `sha256-<64 hex>`: over the cited lines, or the keyed pin (an HMAC under the encryption key) when `src` is encrypted. */
   integrity: string;
   commit?: string;
   id?: string;
@@ -60,6 +63,13 @@ export type CitationStatus =
   | "skipped";
 
 /**
+ * Why a source could not be read: not a tracked file under the root, an
+ * encrypted source with no key to decrypt it, one that does not decrypt under
+ * the key there is, or a tracked file that could not be read.
+ */
+export type MissingReason = "untracked" | "no-key" | "undecryptable" | "unreadable";
+
+/**
  * Every rule a finding can carry, stated once. The union and the default
  * severity table below are derived from this array so the three cannot
  * disagree.
@@ -88,11 +98,13 @@ export interface CitationResult {
   origin: CitationOrigin;
   status: CitationStatus;
   /**
-   * The real path an obfuscated token resolved to. Never printed except by
+   * The path an encrypted source decrypted to. Never printed except by
    * the pretty reporter under `--reveal`; never serialized to a machine
    * format. Output spells a source exactly as the page spelled it.
    */
   resolvedPath?: string;
+  /** For `missing`: why the source could not be read. Composes the message, which never names a path. */
+  missingReason?: MissingReason;
   /** For `moved`: the new `src`, spelled as the page spells sources. */
   newSrc?: string;
   /** For `moved-ambiguous`: every candidate `src`. */
@@ -158,8 +170,7 @@ export interface GitClient {
  */
 export interface SourceIndex {
   files(): readonly string[];
-  /** Resolve a `~token` to its path, or `undefined`. */
-  resolve(token: string): string | undefined;
+  /** Whether `path` is a tracked file under the root. An encrypted source is decrypted first, then asked here. */
   has(path: string): boolean;
 }
 
@@ -170,8 +181,11 @@ export interface CheckPageOptions {
   git?: boolean;
   /** Default true. False: page-side rules only; every source status is `skipped`. */
   sources?: boolean;
-  /** Keys obfuscated tokens and pins. Default `""`. */
-  salt?: string;
+  /**
+   * The encryption key: decrypts encrypted sources and keys their pins.
+   * Absent, an encrypted citation is `missing` (no key to decrypt it).
+   */
+  key?: string;
   severity?: Partial<Record<CiteRule, CiteSeverity>>;
   gitClient?: GitClient;
   sourceIndex?: SourceIndex;
@@ -185,8 +199,13 @@ export interface MintOptions {
   quote?: boolean;
   /** A commit to record; `false` records none; absent records HEAD when git has one. */
   commit?: string | false;
-  obfuscate?: boolean;
-  salt?: string;
+  /**
+   * Write `src` encrypted and pin the lines with the keyed pin; needs `key`.
+   * A `src` that is already encrypted stays encrypted either way.
+   */
+  encrypt?: boolean;
+  /** The encryption key: encrypts, decrypts an encrypted `src`, and keys its pin. */
+  key?: string;
   gitClient?: GitClient;
   sourceIndex?: SourceIndex;
 }
@@ -253,7 +272,7 @@ export interface CheckOptions {
   git?: boolean;
   sources?: boolean;
   root?: string;
-  /** Defaults to `process.env`; read for `MANNI_CITE_SALT`. A test hands in its own. */
+  /** Defaults to `process.env`; read for `MANNI_ENCRYPTION_KEY`. A test hands in its own. */
   env?: NodeJS.ProcessEnv;
 }
 
@@ -273,11 +292,12 @@ export interface AddOptions {
   quote?: boolean;
   inline?: boolean;
   /**
-   * Write `src` as a token and a keyed pin. Absent, obfuscation follows the
-   * salt: a configured or environment salt obfuscates every add, and no salt
-   * writes a plain path. `true` with no salt keys under the empty string.
+   * `--encrypt`: write `src` encrypted, with a keyed pin, even when no key is
+   * available yet, in which case `confirm` is asked whether to generate one.
+   * An available key encrypts every add without it, so `false` and absent
+   * are the same.
    */
-  obfuscate?: boolean;
+  encrypt?: boolean;
   /** `false` records no commit. */
   commit?: boolean;
   dryRun?: boolean;
@@ -289,10 +309,15 @@ export interface AddOptions {
   root?: string;
   /** Default true. False: no HEAD recorded, and sources indexed by a directory walk. */
   git?: boolean;
-  /** Defaults to `process.env`; read for `MANNI_CITE_SALT`. A test hands in its own. */
+  /** Defaults to `process.env`; read for `MANNI_ENCRYPTION_KEY`. A test hands in its own. */
   env?: NodeJS.ProcessEnv;
   onNotice?: (message: string) => void;
   onConfigLoaded?: (info: { path: string; dir: string }) => void;
+  /**
+   * Asked when `encrypt` needs a key and there is none; the CLI passes
+   * `terminalConfirm()`. Absent, the add refuses instead of asking.
+   */
+  confirm?: Confirm;
 }
 
 export interface AddResult {
@@ -341,93 +366,32 @@ export interface UpdateRun {
   exitCode: 0 | 1;
 }
 
-/** `manni cite salt set [<value>]`: write `cite.salt` into the config file. */
-export interface SaltSetOptions {
-  /** The salt to write. Absent generates 32 lowercase hex characters. */
-  value?: string;
-  /** `-c/--config`: the file to edit, instead of the discovered one. */
-  configPath?: string;
-  cwd?: string;
-  /** Say what would be written and write nothing. */
-  dryRun?: boolean;
-  /** Defaults to `process.env`; read for `MANNI_CITE_SALT`, which wins over the key. */
-  env?: NodeJS.ProcessEnv;
-  /** Told once when the environment carries a salt that outranks the one written. */
-  onWarn?: (message: string) => void;
-}
-
-export interface SaltSetResult {
-  /** The config file as the user would name it, for the report line. Never the value. */
-  source: string;
-  /** Absolute path of the config file. */
-  path: string;
-  written: boolean;
-}
-
-/**
- * `manni cite salt rotate [paths...]`: re-key every obfuscated citation under
- * a new salt, then write it where the old one lives. A config salt is
- * replaced in the config; a salt from `MANNI_CITE_SALT` is never written
- * anywhere, and `to` is then required, because the tool cannot update the
- * secret. Inputs resolve as `check`'s do; the config is where the old salt
- * is read from, so `--no-config` has no meaning here, and neither has stdin,
- * since a rotated page is written back to its file.
- */
-export interface SaltRotateOptions
-  extends Omit<CheckOptions, "baseline" | "writeBaseline" | "sources" | "stdinContent" | "noConfig"> {
-  /** The new salt. Absent generates 32 lowercase hex characters; required when the salt comes from the environment. */
-  to?: string;
-  /** Report every rewrite and write nothing: no page, no salt. */
-  dryRun?: boolean;
-}
-
-export interface SaltRotateRewrite {
+/** One citation `reencryptCitations` rewrote: where it sits, and its `src` before and after. */
+export interface ReencryptedCitation {
   id?: string;
   /** Index in `citations` for a frontmatter entry. */
   index?: number;
   /** File line of the entry or statement. */
   line?: number;
-  /** The `src` before and after, spelled as the page spells it. */
+  /** The whole `src`, line suffix included, under the old key and under the new. */
   from: string;
   to: string;
 }
 
-export interface SaltRotateSkip {
-  id?: string;
-  index?: number;
-  line?: number;
-  /** Spelled as the page spelled it. */
-  src: string;
-  reason: string;
-}
-
-export interface SaltRotatePage {
-  file: string;
-  rewritten: SaltRotateRewrite[];
-  skipped: SaltRotateSkip[];
-  written: boolean;
-}
-
-export interface SaltRotateRun {
-  pages: SaltRotatePage[];
-  /** Citations re-keyed in memory; written only when `skipped` is zero and the run is not a dry run. */
-  rekeyed: number;
-  skipped: number;
-  /** `false` under `--dry-run`, when anything was skipped, and always when the salt comes from the environment. */
-  saltWritten: boolean;
-  /** Where the old salt came from. `"none"` is refused before a run exists. */
-  saltSource: Exclude<SaltSource, "none">;
-  /** The config file the salt was, or would be, written to, as the user would name it. */
-  source: string;
-  dryRun: boolean;
-  /** `1` when anything was skipped: the rotation is work left undone. */
-  exitCode: 0 | 1;
+/** What `reencryptCitations` did to one page. */
+export interface ReencryptCitationsResult {
+  /** The page with every re-encrypted citation rewritten; the input itself when none was. */
+  content: string;
+  rewritten: ReencryptedCitation[];
+  /** Citations that could not be re-encrypted, and why. A message never names a path. */
+  skipped: { id?: string; index?: number; line?: number; message: string }[];
 }
 
 /**
  * Config under `cite:` in manni.config.yaml, camelCase as `meta:` is. The
  * document set is not here: proposal 0041 moved `paths` and `exclude` to the
- * family-level `collections:` list, which every tool reads.
+ * family-level `collections:` list, which every tool reads. Neither is the
+ * encryption key, the top-level `encryptionKey:` every tool reads (0045).
  */
 export interface CiteConfig {
   allowEmpty?: boolean;
@@ -436,12 +400,6 @@ export interface CiteConfig {
   baseline?: string;
   git?: boolean;
   sources?: boolean;
-  /**
-   * Keys obfuscated tokens and pins, and turns obfuscation on: once a salt
-   * is configured, `add` writes every source as a token. `MANNI_CITE_SALT`
-   * wins over it. Written by `salt set`, replaced by `salt rotate`.
-   */
-  salt?: string;
   severity?: Partial<Record<CiteRule, CiteSeverity>>;
 }
 
@@ -475,15 +433,16 @@ export interface CiteRun {
   configSource?: string;
   /** Absolute root `src:` paths resolve from. */
   root: string;
-  salt: string;
-  /** Where `salt` came from. The environment wins over the config. */
-  saltSource: SaltSource;
+  /**
+   * The family encryption key (proposal 0045): `MANNI_ENCRYPTION_KEY`, else
+   * the config's top-level `encryptionKey:`. Absent when neither is set.
+   */
+  key?: string;
+  /** Where `key` came from. The environment wins over the config. */
+  keySource: KeySource;
+  /**
+   * The config file that governs the run, as discovery found it. A write
+   * that needs a key (`add --encrypt` with none) puts one there.
+   */
+  configFile?: ConfigFile;
 }
-
-/**
- * Where a run's salt was read from: `MANNI_CITE_SALT`, `cite.salt`, or
- * nowhere. `salt rotate` reads it to decide where the new salt goes: a salt
- * managed in the environment rotates through the environment, and the
- * config is never touched, so a secret never lands in a public file.
- */
-export type SaltSource = "env" | "config" | "none";

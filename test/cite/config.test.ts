@@ -6,7 +6,6 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import {
-  SALT_ENV,
   loadCiteConfig,
   parseCiteConfig,
   resolveCiteRun,
@@ -18,6 +17,10 @@ import { makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
 const here = dirname(fileURLToPath(import.meta.url));
 const fixtures = resolve(here, "..", "fixtures", "cite", "config");
 const FIXTURE = join(fixtures, "manni.config.yaml");
+
+/** Fixed test keys; never the developer's environment. */
+const CONFIG_KEY = "config-key-0123456789abcdef0123456789";
+const ENV_KEY = "env-key-0123456789abcdef0123456789ab";
 
 /** Parse a YAML snippet as the `cite:` slice, the way the loader hands it over. */
 function parse(yaml: string): ReturnType<typeof parseCiteConfig> {
@@ -51,7 +54,6 @@ describe("parseCiteConfig", () => {
         "baseline: .cite-baseline.json",
         "git: false",
         "sources: false",
-        "salt: s3cret",
         "severity:",
         "  moved: error",
         "  changed: warning",
@@ -65,7 +67,6 @@ describe("parseCiteConfig", () => {
       baseline: ".cite-baseline.json",
       git: false,
       sources: false,
-      salt: "s3cret",
       severity: { moved: "error", changed: "warning", current: "off" },
     });
   });
@@ -84,19 +85,23 @@ describe("parseCiteConfig", () => {
   it("rejects an unknown key, naming it and the supported keys", () => {
     expect(() => parse("allowEmtpy: true\n")).toThrow(CiteError);
     expect(() => parse("allowEmtpy: true\n")).toThrow(
-      /^Unknown key "allowEmtpy" under cite: in c\.yaml\. Supported keys: allowEmpty, respectGitignore, root, baseline, git, sources, salt, severity\.$/,
+      /^Unknown key "allowEmtpy" under cite: in c\.yaml\. Supported keys: allowEmpty, respectGitignore, root, baseline, git, sources, severity\.$/,
     );
   });
 
-  it("refuses obfuscate, saying the salt took its place", () => {
+  it("refuses salt, naming the family key that replaced it", () => {
     // Refused before the unknown-key check, so the message says what replaced
     // the key rather than calling it a typo. Same shape as the moved keys.
-    expect(() => parse("obfuscate: true\n")).toThrow(CiteError);
+    const refusal =
+      'c.yaml: "salt" is no longer a cite key. Values are encrypted with a family key: a top-level encryptionKey:, or MANNI_ENCRYPTION_KEY. Run `manni key set`.';
+    expect(() => parse("salt: s3cret\n")).toThrow(CiteError);
+    expect(messageOf("salt: s3cret\n")).toBe(refusal);
+    expect(messageOf("salt: [s3cret]\n")).toBe(refusal);
+  });
+
+  it("calls obfuscate what it now is, an unknown key", () => {
     expect(messageOf("obfuscate: true\n")).toBe(
-      "cite.obfuscate is no longer a key. A configured salt obfuscates every source add writes; run `manni cite salt set` to configure one.",
-    );
-    expect(messageOf("obfuscate: false\n")).toBe(
-      "cite.obfuscate is no longer a key. A configured salt obfuscates every source add writes; run `manni cite salt set` to configure one.",
+      'Unknown key "obfuscate" under cite: in c.yaml. Supported keys: allowEmpty, respectGitignore, root, baseline, git, sources, severity.',
     );
   });
 
@@ -144,7 +149,7 @@ describe("parseCiteConfig", () => {
         new RegExp(`cite\\.${key} in c\\.yaml must be a boolean`),
       );
     }
-    for (const key of ["root", "baseline", "salt"]) {
+    for (const key of ["root", "baseline"]) {
       expect(() => parse(`${key}: [a]\n`)).toThrow(
         new RegExp(`cite\\.${key} in c\\.yaml must be a string`),
       );
@@ -162,10 +167,10 @@ describe("parseCiteConfig", () => {
 
   it("never echoes a wrong-typed value", () => {
     const secret = "hunter2-do-not-print";
-    // A salt of the wrong type is still a salt: name the key, not the value.
-    for (const yaml of [`salt: [${secret}]\n`, `salt: {k: ${secret}}\n`]) {
+    // A salt, of any type, is refused by name and never quoted back.
+    for (const yaml of [`salt: ${secret}\n`, `salt: [${secret}]\n`, `salt: {k: ${secret}}\n`]) {
       const message = messageOf(yaml);
-      expect(message).toMatch(/cite\.salt in c\.yaml must be a string/);
+      expect(message).toMatch(/"salt" is no longer a cite key/);
       expect(message).not.toContain(secret);
     }
     // The same rule for every other key.
@@ -209,7 +214,6 @@ describe("loadCiteConfig", () => {
       baseline: ".cite-baseline.json",
       git: false,
       sources: false,
-      salt: "fixture-salt",
       severity: { moved: "error", changed: "warning", current: "off" },
     });
   });
@@ -491,22 +495,27 @@ describe("resolveCiteRun", () => {
     expect(notices).toEqual([`No git root found; resolving src: paths from ${cwd}`]);
   });
 
-  it("takes the salt from the environment over the config, else empty", async () => {
+  it("takes the encryption key from the environment over the config, else none", async () => {
     const root = await tree({
       ".git/HEAD": "ref: refs/heads/main\n",
-      "manni.config.yaml": "cite:\n  salt: from-config\n",
+      "manni.config.yaml": `encryptionKey: ${CONFIG_KEY}\ncite:\n  git: false\n`,
     });
     const fromEnv = await resolveCiteRun({
       cwd: root,
       inputs: [],
-      env: { [SALT_ENV]: "from-env" },
+      env: { MANNI_ENCRYPTION_KEY: ENV_KEY },
     });
-    expect(fromEnv.salt).toBe("from-env");
-    expect(fromEnv.saltSource).toBe("env");
+    expect(fromEnv.key).toBe(ENV_KEY);
+    expect(fromEnv.keySource).toBe("env");
 
     const fromConfig = await resolveCiteRun({ cwd: root, inputs: [], env: {} });
-    expect(fromConfig.salt).toBe("from-config");
-    expect(fromConfig.saltSource).toBe("config");
+    expect(fromConfig.key).toBe(CONFIG_KEY);
+    expect(fromConfig.keySource).toBe("config");
+
+    // An empty variable is what an absent CI secret expands to: unset, not refused.
+    const emptyEnv = await resolveCiteRun({ cwd: root, inputs: [], env: { MANNI_ENCRYPTION_KEY: "" } });
+    expect(emptyEnv.key).toBe(CONFIG_KEY);
+    expect(emptyEnv.keySource).toBe("config");
 
     const none = await resolveCiteRun({
       cwd: root,
@@ -514,7 +523,33 @@ describe("resolveCiteRun", () => {
       noConfig: true,
       env: {},
     });
-    expect(none.salt).toBe("");
-    expect(none.saltSource).toBe("none");
+    expect(none.key).toBeUndefined();
+    expect(none.keySource).toBe("none");
+  });
+
+  it("reads the fixture's top-level key, the family's and not a cite one", async () => {
+    const run = await resolveCiteRun({ cwd: here, configPath: FIXTURE, inputs: [], env: {} });
+    expect(run.key).toBe("cite-fixture-key-0123456789abcdef");
+    expect(run.keySource).toBe("config");
+    expect(run.config).not.toHaveProperty("encryptionKey");
+  });
+
+  it("a family file carrying only encryptionKey: is cite's config, and stops the walk", async () => {
+    const root = await tree({
+      ".git/HEAD": "ref: refs/heads/main\n",
+      "manni.config.yaml": "cite:\n  git: true\n",
+      "docs/manni.config.yaml": `encryptionKey: ${CONFIG_KEY}\n`,
+    });
+    const run = await resolveCiteRun({ cwd: join(root, "docs"), inputs: [], env: {} });
+    expect(run.configPath).toBe(join(root, "docs", "manni.config.yaml"));
+    expect(run.config).toEqual({});
+    expect(run.key).toBe(CONFIG_KEY);
+  });
+
+  it("refuses a malformed key in the environment, never echoing it", async () => {
+    const root = await tree({ ".git/HEAD": "ref: refs/heads/main\n" });
+    const run = resolveCiteRun({ cwd: root, inputs: [], env: { MANNI_ENCRYPTION_KEY: "short-secret" } });
+    await expect(run).rejects.toBeInstanceOf(CiteError);
+    await expect(run).rejects.toThrow(/^MANNI_ENCRYPTION_KEY must be at least 32 hex or base64url characters\.$/);
   });
 });

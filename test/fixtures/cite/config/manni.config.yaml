@@ -1,3 +1,6 @@
+# The family encryption key (proposal 0045), top level beside collections:.
+# The same fixed test key pages/encrypted.md was encrypted with; never a real one.
+encryptionKey: cite-fixture-key-0123456789abcdef
 # Every `cite:` key, once, so a test can prove each one round-trips. The
 # document set is the family's `collections:` list (proposal 0041), which the
 # citation tool reads as every tool does. The sibling `meta:` section is here
@@ -15,7 +18,6 @@ cite:
   baseline: .cite-baseline.json
   git: false
   sources: false
-  salt: fixture-salt
   severity:
     moved: error
     changed: warning

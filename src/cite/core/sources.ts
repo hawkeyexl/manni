@@ -1,36 +1,45 @@
 /**
- * Where a `src` may resolve to, and how an obfuscated token is minted.
+ * Where a `src` may resolve to, and how an encrypted source is written and
+ * read.
  *
  * Sources resolve through tracked files only (`git ls-files -z`) when git is
  * available, else through a walk that follows no symlinks. Every candidate is
  * realpath-contained in the root, so a committed symlink or a `..` cannot reach
  * outside it. A page is untrusted input to the CI job that checks it.
  *
- * Token: `"~" + sha256(salt + "\n" + path).hex.slice(0, 16)`.
+ * An encrypted source is the path encrypted with the family key in the
+ * `cite-src` context (proposal 0045). Reading one decrypts it to the path and
+ * then asks the index exactly as a plain path is asked, so a ciphertext is
+ * never a way around the tracked-file rule.
  */
 import fg from "fast-glob";
-import { randomBytes } from "node:crypto";
 import { lstat, readFile, realpath } from "node:fs/promises";
 import { join, sep } from "node:path";
-import { CiteError } from "../errors.js";
-import type { GitClient, SourceIndex, SourceRange } from "../types.js";
-import { hashLines } from "./hash.js";
+import { decryptValue, encryptValue } from "../../shared/encryption.js";
+import type { GitClient, MissingReason, SourceIndex, SourceRange } from "../types.js";
+import { SRC_PATTERN } from "./range.js";
 
-const PIN_PREFIX = "sha256-";
+/** The one context cite encrypts in, bound as associated data. */
+const CONTEXT = "cite-src";
 
-export function obfuscatePath(path: string, salt: string): string {
-  // The same keyed formula a pin uses, over the path instead of the lines.
-  const hex = hashLines(path, salt).slice(PIN_PREFIX.length);
-  return `~${hex.slice(0, 16)}`;
+/** `path` encrypted under `key`: `~` and at least 82 base64url characters. */
+export function encryptSourcePath(path: string, key: string): string {
+  return encryptValue(path, key, CONTEXT);
 }
 
 /**
- * A fresh salt for `salt set` and `salt rotate`: sixteen random bytes as 32
- * lowercase hex characters. Hex, so it survives YAML unquoted in every case
- * but the all-digit one, which the writer quotes.
+ * The path an encrypted source holds, or `undefined` when it does not decrypt
+ * under `key` in the `cite-src` context, or holds anything but a path a plain
+ * `src` could spell. A ciphertext is trusted no further than the page's own
+ * paths are.
  */
-export function generateSalt(): string {
-  return randomBytes(16).toString("hex");
+export function decryptSourcePath(token: string, key: string): string | undefined {
+  const opened = decryptValue(token, key, CONTEXT);
+  if (!opened.ok || typeof opened.value !== "string") return undefined;
+  const path = opened.value;
+  // A bare plain path: no line suffix, and no ciphertext inside a ciphertext.
+  if (path.includes(":") || path.startsWith("~") || !SRC_PATTERN.test(path)) return undefined;
+  return path;
 }
 
 export interface BuildIndexOptions {
@@ -76,11 +85,7 @@ async function candidates(root: string, opts: BuildIndexOptions | undefined): Pr
   });
 }
 
-export async function buildSourceIndex(
-  root: string,
-  salt: string,
-  opts?: BuildIndexOptions,
-): Promise<SourceIndex> {
+export async function buildSourceIndex(root: string, opts?: BuildIndexOptions): Promise<SourceIndex> {
   const realRoot = await realpath(root);
   const admitted = await Promise.all(
     (await candidates(root, opts)).map((rel) => admit(root, realRoot, rel)),
@@ -89,51 +94,37 @@ export async function buildSourceIndex(
     [...new Set(admitted.filter((rel): rel is string => rel !== undefined))].sort(),
   );
   const byPath = new Set(files);
-  const byToken = new Map<string, string[]>();
-  for (const path of files) {
-    const token = obfuscatePath(path, salt);
-    const holders = byToken.get(token);
-    if (holders === undefined) byToken.set(token, [path]);
-    else holders.push(path);
-  }
   return {
     files: () => files,
-    resolve(token) {
-      const holders = byToken.get(token);
-      if (holders === undefined) return undefined;
-      if (holders.length > 1) {
-        throw new CiteError(
-          `Token ${token} matches ${holders.length} tracked files; change the salt so every path gets its own token.`,
-        );
-      }
-      return holders[0];
-    },
     has: (path) => byPath.has(path),
   };
 }
 
 export type ReadSourceResult =
   | { kind: "ok"; resolvedPath: string; text: string }
-  | { kind: "missing"; reason: "untracked" | "unresolved-token" | "unreadable" };
+  | { kind: "missing"; reason: MissingReason };
 
 /**
- * Read the file a range names, resolving a token through the index. Never
+ * Read the file a range names. An encrypted source is decrypted under `key`
+ * first: with no key it is `no-key`, under another key `undecryptable`. Never
  * reads a path the index does not hold.
  */
 export async function readSource(
   root: string,
   index: SourceIndex,
   range: SourceRange,
+  key?: string,
 ): Promise<ReadSourceResult> {
   let resolvedPath: string;
-  if (range.obfuscated) {
-    const found = index.resolve(range.path);
-    if (found === undefined) return { kind: "missing", reason: "unresolved-token" };
-    resolvedPath = found;
+  if (range.encrypted) {
+    if (key === undefined) return { kind: "missing", reason: "no-key" };
+    const path = decryptSourcePath(range.path, key);
+    if (path === undefined) return { kind: "missing", reason: "undecryptable" };
+    resolvedPath = path;
   } else {
-    if (!index.has(range.path)) return { kind: "missing", reason: "untracked" };
     resolvedPath = range.path;
   }
+  if (!index.has(resolvedPath)) return { kind: "missing", reason: "untracked" };
   try {
     const text = await readFile(join(root, resolvedPath), "utf8");
     return { kind: "ok", resolvedPath, text };

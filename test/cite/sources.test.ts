@@ -2,17 +2,21 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createRequire } from "node:module";
 import { mkdirSync, rmSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
-import { buildSourceIndex, obfuscatePath, readSource } from "../../src/cite/core/sources.js";
+import { buildSourceIndex, decryptSourcePath, encryptSourcePath, readSource } from "../../src/cite/core/sources.js";
 import { parseSrc } from "../../src/cite/core/range.js";
 import type { GitClient } from "../../src/cite/types.js";
+import { encryptValue } from "../../src/shared/encryption.js";
 import { makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
 
 const require = createRequire(import.meta.url);
 const ladder = require("../../docs/proposals/0044/ladders/drift-examples.cjs") as {
-  obfuscate(path: string, salt: string): string;
+  encrypt(value: unknown, key: string, context?: string): string;
+  KEY: string;
 };
 
-const SALT = "SALT-LADDER";
+/** Fixed test keys. Never the developer's environment. */
+const KEY = "sources-key-0123456789abcdef0123456789";
+const OTHER = "another-key-0123456789abcdef012345";
 
 /** A client that answers with a fixed list; nothing else is reachable. */
 function fakeGit(files: string[], available = true): GitClient {
@@ -48,18 +52,47 @@ function canLink(kind: "file" | "junction"): boolean {
 const FILE_SYMLINKS = canLink("file");
 const DIR_LINKS = canLink("junction");
 
-describe("obfuscatePath", () => {
-  it("is ~ and the first sixteen hex of sha256(salt + LF + path)", () => {
-    const token = obfuscatePath("src/limits.ts", SALT);
-    expect(token).toMatch(/^~[0-9a-f]{16}$/);
-    expect(token).toBe(ladder.obfuscate("src/limits.ts", SALT));
-    expect(obfuscatePath("src/limits.ts", "")).toBe(ladder.obfuscate("src/limits.ts", ""));
-    expect(obfuscatePath("docs/release notes/v1.2.md", "s")).toBe(ladder.obfuscate("docs/release notes/v1.2.md", "s"));
+describe("the ladder's encryption", () => {
+  it("is the family's encryptValue, byte for byte, for a fixed key and path", () => {
+    for (const path of ["src/limits.ts", "docs/release notes/v1.2.md", "a"]) {
+      expect(ladder.encrypt(path, ladder.KEY)).toBe(encryptValue(path, ladder.KEY, "cite-src"));
+      expect(ladder.encrypt(path, KEY)).toBe(encryptValue(path, KEY, "cite-src"));
+    }
+    expect(ladder.encrypt("owner", KEY, "meta")).toBe(encryptValue("owner", KEY, "meta"));
+  });
+});
+
+describe("encryptSourcePath / decryptSourcePath", () => {
+  it("encrypts a path as the family does, in the cite-src context", () => {
+    const token = encryptSourcePath("src/limits.ts", KEY);
+    expect(token).toMatch(/^~[A-Za-z0-9_-]{82,}$/);
+    expect(token).toBe(encryptValue("src/limits.ts", KEY, "cite-src"));
+    expect(token).toBe(ladder.encrypt("src/limits.ts", KEY));
   });
 
-  it("depends on the salt and on the path", () => {
-    expect(obfuscatePath("src/limits.ts", "other")).not.toBe(obfuscatePath("src/limits.ts", SALT));
-    expect(obfuscatePath("src/other.ts", SALT)).not.toBe(obfuscatePath("src/limits.ts", SALT));
+  it("is deterministic per key and path, and depends on both", () => {
+    expect(encryptSourcePath("src/limits.ts", KEY)).toBe(encryptSourcePath("src/limits.ts", KEY));
+    expect(encryptSourcePath("src/limits.ts", OTHER)).not.toBe(encryptSourcePath("src/limits.ts", KEY));
+    expect(encryptSourcePath("src/other.ts", KEY)).not.toBe(encryptSourcePath("src/limits.ts", KEY));
+  });
+
+  it("decrypts to the path under its key, and to nothing under another", () => {
+    const token = encryptSourcePath("docs/release notes/v1.2.md", KEY);
+    expect(decryptSourcePath(token, KEY)).toBe("docs/release notes/v1.2.md");
+    expect(decryptSourcePath(token, OTHER)).toBeUndefined();
+  });
+
+  it("decrypts only a plain path: another context, a non-string, or a path src refuses is nothing", () => {
+    expect(decryptSourcePath(encryptValue("src/limits.ts", KEY, "meta"), KEY)).toBeUndefined();
+    expect(decryptSourcePath(encryptValue(42, KEY, "cite-src"), KEY)).toBeUndefined();
+    for (const path of ["../outside.ts", "/abs.ts", "a:2", "~nested", "a\\b", ""]) {
+      expect(decryptSourcePath(encryptValue(path, KEY, "cite-src"), KEY), path).toBeUndefined();
+    }
+  });
+
+  it("refuses a value that is not ciphertext-shaped", () => {
+    expect(decryptSourcePath("~9c1f0a2b3c4d5e6f", KEY)).toBeUndefined();
+    expect(decryptSourcePath("src/limits.ts", KEY)).toBeUndefined();
   });
 });
 
@@ -81,7 +114,7 @@ describe("buildSourceIndex", () => {
           "top.txt": "t\n",
         },
       });
-      const index = await buildSourceIndex(repo, SALT);
+      const index = await buildSourceIndex(repo);
       expect([...index.files()].sort()).toEqual([
         ".hidden/rc",
         "docs/release notes/v1.2.md",
@@ -103,21 +136,21 @@ describe("buildSourceIndex", () => {
           "sub/node_modules/pkg/index.js": "j\n",
         },
       });
-      const index = await buildSourceIndex(repo, SALT);
+      const index = await buildSourceIndex(repo);
       expect([...index.files()]).toEqual(["a.txt"]);
     });
 
     it("is what a real git init with no client falls back to", async () => {
       repo = makeTempRepo({ files: { "a.txt": "a\n" } });
-      const index = await buildSourceIndex(repo, SALT);
+      const index = await buildSourceIndex(repo);
       expect([...index.files()]).toEqual(["a.txt"]);
     });
 
     it("walks when the client reports git unavailable, or when git is off", async () => {
       repo = makeTempRepo({ init: false, files: { "a.txt": "a\n", "b.txt": "b\n" } });
-      const off = await buildSourceIndex(repo, SALT, { git: false, gitClient: fakeGit(["a.txt"]) });
+      const off = await buildSourceIndex(repo, { git: false, gitClient: fakeGit(["a.txt"]) });
       expect([...off.files()].sort()).toEqual(["a.txt", "b.txt"]);
-      const unavailable = await buildSourceIndex(repo, SALT, { gitClient: fakeGit(["a.txt"], false) });
+      const unavailable = await buildSourceIndex(repo, { gitClient: fakeGit(["a.txt"], false) });
       expect([...unavailable.files()].sort()).toEqual(["a.txt", "b.txt"]);
     });
 
@@ -127,7 +160,7 @@ describe("buildSourceIndex", () => {
       try {
         symlinkSync(join(outside, "secret.txt"), join(repo, "leak.txt"));
         symlinkSync(join(repo, "a.txt"), join(repo, "self.txt"));
-        const index = await buildSourceIndex(repo, SALT);
+        const index = await buildSourceIndex(repo);
         expect([...index.files()]).toEqual(["a.txt"]);
       } finally {
         removeTempRepo(outside);
@@ -139,7 +172,7 @@ describe("buildSourceIndex", () => {
       const outside = makeTempRepo({ init: false, files: { "secret.txt": "s\n" } });
       try {
         symlinkSync(outside, join(repo, "outdir"), "junction");
-        const index = await buildSourceIndex(repo, SALT);
+        const index = await buildSourceIndex(repo);
         expect([...index.files()]).toEqual(["a.txt"]);
         expect(index.has("outdir/secret.txt")).toBe(false);
       } finally {
@@ -154,28 +187,28 @@ describe("buildSourceIndex", () => {
         init: false,
         files: { "a.txt": "a\n", "untracked.txt": "u\n", "sub/b.txt": "b\n" },
       });
-      const index = await buildSourceIndex(repo, SALT, { gitClient: fakeGit(["a.txt", "sub/b.txt"]) });
+      const index = await buildSourceIndex(repo, { gitClient: fakeGit(["a.txt", "sub/b.txt"]) });
       expect([...index.files()].sort()).toEqual(["a.txt", "sub/b.txt"]);
       expect(index.has("untracked.txt")).toBe(false);
     });
 
     it("drops a tracked path that is absent from the working tree", async () => {
       repo = makeTempRepo({ init: false, files: { "a.txt": "a\n" } });
-      const index = await buildSourceIndex(repo, SALT, { gitClient: fakeGit(["a.txt", "gone.txt"]) });
+      const index = await buildSourceIndex(repo, { gitClient: fakeGit(["a.txt", "gone.txt"]) });
       expect([...index.files()]).toEqual(["a.txt"]);
     });
 
     it("drops a tracked path that resolves outside the root", async () => {
       repo = makeTempRepo({ init: false, files: { "inner/a.txt": "a\n", "outer.txt": "o\n" } });
       const root = join(repo, "inner");
-      const index = await buildSourceIndex(root, SALT, { gitClient: fakeGit(["a.txt", "../outer.txt"]) });
+      const index = await buildSourceIndex(root, { gitClient: fakeGit(["a.txt", "../outer.txt"]) });
       expect([...index.files()]).toEqual(["a.txt"]);
     });
 
     it.skipIf(!FILE_SYMLINKS)("drops a tracked symlink", async () => {
       repo = makeTempRepo({ init: false, files: { "a.txt": "a\n" } });
       symlinkSync(join(repo, "a.txt"), join(repo, "link.txt"));
-      const index = await buildSourceIndex(repo, SALT, { gitClient: fakeGit(["a.txt", "link.txt"]) });
+      const index = await buildSourceIndex(repo, { gitClient: fakeGit(["a.txt", "link.txt"]) });
       expect([...index.files()]).toEqual(["a.txt"]);
     });
 
@@ -186,7 +219,7 @@ describe("buildSourceIndex", () => {
       const outside = makeTempRepo({ init: false, files: { "secret.txt": "s\n" } });
       try {
         symlinkSync(outside, join(repo, "outdir"), "junction");
-        const index = await buildSourceIndex(repo, SALT, {
+        const index = await buildSourceIndex(repo, {
           gitClient: fakeGit(["a.txt", "outdir/secret.txt"]),
         });
         expect([...index.files()]).toEqual(["a.txt"]);
@@ -196,19 +229,10 @@ describe("buildSourceIndex", () => {
     });
   });
 
-  describe("resolve / has", () => {
-    it("resolves a token minted from a listed path, and nothing else", async () => {
-      repo = makeTempRepo({ init: false, files: { "src/limits.ts": "x\n", "src/a.txt": "a\n" } });
-      const index = await buildSourceIndex(repo, SALT);
-      expect(index.resolve(obfuscatePath("src/limits.ts", SALT))).toBe("src/limits.ts");
-      expect(index.resolve(obfuscatePath("src/a.txt", SALT))).toBe("src/a.txt");
-      expect(index.resolve(obfuscatePath("src/limits.ts", "other"))).toBeUndefined();
-      expect(index.resolve(obfuscatePath("src/missing.ts", SALT))).toBeUndefined();
-    });
-
+  describe("has", () => {
     it("matches paths exactly, as posix relative spellings", async () => {
       repo = makeTempRepo({ init: false, files: { "src/limits.ts": "x\n" } });
-      const index = await buildSourceIndex(repo, SALT);
+      const index = await buildSourceIndex(repo);
       expect(index.has("src/limits.ts")).toBe(true);
       expect(index.has("./src/limits.ts")).toBe(false);
       expect(index.has("src\\limits.ts")).toBe(false);
@@ -218,7 +242,7 @@ describe("buildSourceIndex", () => {
 
     it("returns a read-only file list", async () => {
       repo = makeTempRepo({ init: false, files: { "a.txt": "a\n" } });
-      const index = await buildSourceIndex(repo, SALT);
+      const index = await buildSourceIndex(repo);
       expect(Object.isFrozen(index.files())).toBe(true);
     });
   });
@@ -233,7 +257,7 @@ describe("readSource", () => {
 
   it("reads a listed path", async () => {
     repo = makeTempRepo({ init: false, files: { "src/limits.ts": "x\ny\n" } });
-    const index = await buildSourceIndex(repo, SALT);
+    const index = await buildSourceIndex(repo);
     await expect(readSource(repo, index, parseSrc("src/limits.ts:2"))).resolves.toEqual({
       kind: "ok",
       resolvedPath: "src/limits.ts",
@@ -241,38 +265,58 @@ describe("readSource", () => {
     });
   });
 
-  it("resolves a token through the index", async () => {
+  it("decrypts an encrypted source under the key, then reads it through the index", async () => {
     repo = makeTempRepo({ init: false, files: { "src/limits.ts": "x\n" } });
-    const index = await buildSourceIndex(repo, SALT);
-    const token = obfuscatePath("src/limits.ts", SALT);
-    await expect(readSource(repo, index, parseSrc(`${token}:1`))).resolves.toEqual({
+    const index = await buildSourceIndex(repo);
+    const token = encryptSourcePath("src/limits.ts", KEY);
+    await expect(readSource(repo, index, parseSrc(`${token}:1`), KEY)).resolves.toEqual({
       kind: "ok",
       resolvedPath: "src/limits.ts",
       text: "x\n",
     });
   });
 
+  it("cannot read an encrypted source with no key", async () => {
+    repo = makeTempRepo({ init: false, files: { "src/limits.ts": "x\n" } });
+    const index = await buildSourceIndex(repo);
+    const token = encryptSourcePath("src/limits.ts", KEY);
+    await expect(readSource(repo, index, parseSrc(`${token}:1`))).resolves.toEqual({
+      kind: "missing",
+      reason: "no-key",
+    });
+  });
+
+  it("requires the decrypted path to be tracked", async () => {
+    repo = makeTempRepo({ init: false, files: { "a.txt": "a\n", "untracked.txt": "u\n" } });
+    const index = await buildSourceIndex(repo, { gitClient: fakeGit(["a.txt"]) });
+    const token = encryptSourcePath("untracked.txt", KEY);
+    await expect(readSource(repo, index, parseSrc(token), KEY)).resolves.toEqual({
+      kind: "missing",
+      reason: "untracked",
+    });
+  });
+
   it("refuses a path the index lacks, even when the file exists", async () => {
     repo = makeTempRepo({ init: false, files: { "a.txt": "a\n", "untracked.txt": "u\n" } });
-    const index = await buildSourceIndex(repo, SALT, { gitClient: fakeGit(["a.txt"]) });
+    const index = await buildSourceIndex(repo, { gitClient: fakeGit(["a.txt"]) });
     await expect(readSource(repo, index, parseSrc("untracked.txt"))).resolves.toEqual({
       kind: "missing",
       reason: "untracked",
     });
   });
 
-  it("refuses a token that resolves to nothing", async () => {
+  it("refuses a source that does not decrypt under the key", async () => {
     repo = makeTempRepo({ init: false, files: { "a.txt": "a\n" } });
-    const index = await buildSourceIndex(repo, SALT);
-    await expect(readSource(repo, index, parseSrc(obfuscatePath("a.txt", "wrong")))).resolves.toEqual({
+    const index = await buildSourceIndex(repo);
+    await expect(readSource(repo, index, parseSrc(encryptSourcePath("a.txt", OTHER)), KEY)).resolves.toEqual({
       kind: "missing",
-      reason: "unresolved-token",
+      reason: "undecryptable",
     });
   });
 
   it("reports a listed file it cannot read", async () => {
     repo = makeTempRepo({ init: false, files: { "a.txt": "a\n" } });
-    const index = await buildSourceIndex(repo, SALT);
+    const index = await buildSourceIndex(repo);
     rmSync(join(repo, "a.txt"));
     mkdirSync(join(repo, "a.txt"));
     await expect(readSource(repo, index, parseSrc("a.txt"))).resolves.toEqual({

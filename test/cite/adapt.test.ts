@@ -10,6 +10,7 @@ import { DEFAULT_SEVERITY, resolveSeverity } from "../../src/cite/core/severity.
 import type {
   CitationFinding,
   CitationResult,
+  MissingReason,
   PageCitationReport,
 } from "../../src/cite/types.js";
 import { fingerprint, ruleIdFor } from "../../src/meta/internal.js";
@@ -17,7 +18,8 @@ import type { FieldError } from "../../src/meta/index.js";
 
 const PIN = "sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f";
 const COMMIT = "3f9c2a1e7b0d4c5a6f8e9d0b1a2c3d4e5f607182";
-const TOKEN = "~9c1f0e2b7a3d4c5e";
+/** Ciphertext-shaped: `~` and 84 base64url characters. Only its spelling matters here. */
+const TOKEN = "~" + "AQx7Vb2_Kp-9Qm".repeat(6);
 
 function result(over: Partial<CitationResult> & { status: CitationResult["status"] }): CitationResult {
   return {
@@ -56,13 +58,18 @@ describe("messageFor", () => {
     expect(messageFor(result({ status: "skipped" }))).toBe("skipped");
   });
 
-  it("tells a token holder where to look when a token resolves to nothing", () => {
-    const missing = result({
-      status: "missing",
-      citation: { src: `${TOKEN}:2`, integrity: PIN },
-    });
-    delete missing.resolvedPath;
-    expect(messageFor(missing)).toBe("missing (no tracked file matches; wrong --root or salt?)");
+  it("says why an encrypted source is missing, and never which path", () => {
+    const missing = (reason: MissingReason, src = `${TOKEN}:2`): string => {
+      const r = result({ status: "missing", citation: { src, integrity: PIN }, missingReason: reason });
+      delete r.resolvedPath;
+      return messageFor(r);
+    };
+    expect(missing("no-key")).toBe("missing (no encryption key is available to decrypt it)");
+    expect(missing("undecryptable")).toBe("missing (does not decrypt under the current key)");
+    expect(missing("untracked")).toBe("missing (no tracked file matches; wrong --root?)");
+    expect(missing("unreadable")).toBe("missing");
+    // A plain path names its file already; the bare status says the rest.
+    expect(missing("untracked", "lib/limits.ts:2")).toBe("missing");
   });
 
   it("never spells the resolved path", () => {
@@ -264,7 +271,7 @@ describe("fingerprint stability", () => {
 });
 
 describe("leak sentinel", () => {
-  const SALT = "SALT-SENTINEL";
+  const KEY = "sentinel-key-0123456789abcdef012345";
   const SECRET = "private/SECRET.ts";
   const results: CitationResult[] = (
     ["moved", "moved-ambiguous", "changed", "missing", "never-true", "current"] as const
@@ -277,19 +284,19 @@ describe("leak sentinel", () => {
       newSrc: `${TOKEN}:4`,
       candidates: [`${TOKEN}:4`, `${TOKEN}:11`],
       historyAvailable: true,
-      commitsSince: [`touch ${SECRET} with ${SALT}`],
+      commitsSince: [`touch ${SECRET} with ${KEY}`],
       diff: `--- a/${SECRET}\n+++ b/${SECRET}\n`,
     }),
   );
 
-  it("keeps the resolved path and the salt out of every finding and FieldError", () => {
+  it("keeps the decrypted path and the key out of every finding and FieldError", () => {
     const findings = findingsFor(results, resolveSeverity({ current: "warning" }));
     expect(findings).toHaveLength(results.length);
     const errors: FieldError[] = toValidationResult(report(findings, results)).errors;
     const text = JSON.stringify({ findings, errors });
     expect(text).not.toContain(SECRET);
     expect(text).not.toContain("SECRET");
-    expect(text).not.toContain(SALT);
+    expect(text).not.toContain(KEY);
     expect(text).toContain(TOKEN);
   });
 });

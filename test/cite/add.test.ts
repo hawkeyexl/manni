@@ -4,7 +4,7 @@
  * the minted entry deterministic; the one HEAD case runs only where git is.
  * Every refusal is pinned to its exact text, because the CLI prints it as is.
  */
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -13,7 +13,8 @@ import { runAdd } from "../../src/cite/commands/add.js";
 import { runCheck } from "../../src/cite/commands/check.js";
 import { hashRange } from "../../src/cite/core/hash.js";
 import { readPage } from "../../src/cite/core/page.js";
-import { obfuscatePath } from "../../src/cite/core/sources.js";
+import { decryptSourcePath, encryptSourcePath } from "../../src/cite/core/sources.js";
+import { parse as parseYaml } from "yaml";
 import { CiteError } from "../../src/cite/errors.js";
 import type { AddOptions, AddResult } from "../../src/cite/types.js";
 import { gitAvailable } from "../helpers/temp-repo.js";
@@ -21,7 +22,8 @@ import { gitAvailable } from "../helpers/temp-repo.js";
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, "..", "fixtures", "cite");
 const PAGES = join(ROOT, "pages");
-const SALT = "SALT-FIXTURE";
+/** A fixed test key; never the developer's environment. */
+const KEY = "add-key-0123456789abcdef0123456789abc";
 const PIN_L2 = "sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f";
 const PIN_L3 = "sha256-e9f5bdf94a12c610b54573d2b66347592887805e59c69b64803a8c0d30edaea3";
 const PIN_1_3 = "sha256-d2981e71e50b9bd645ab30ad36aeb87dcb3c3268ff8d90ed3b021a45dfbed1d6";
@@ -52,7 +54,7 @@ afterEach(() => {
 });
 
 function add(over: Partial<AddOptions> & { page: string; src: string }): Promise<AddResult> {
-  return runAdd({ cwd, root: ROOT, noConfig: true, commit: false, ...over });
+  return runAdd({ cwd, root: ROOT, noConfig: true, commit: false, env: {}, ...over });
 }
 
 /** Statuses `runCheck` gives the page afterwards: what a CI job would see. */
@@ -61,6 +63,7 @@ async function recheck(label: string, configPath?: string): Promise<string[]> {
     cwd,
     root: ROOT,
     git: false,
+    env: {},
     inputs: [label],
     ...(configPath === undefined ? { noConfig: true } : { configPath }),
   });
@@ -78,9 +81,11 @@ async function refusal(promise: Promise<unknown>): Promise<string> {
   throw new Error("expected a refusal");
 }
 
-function tempConfig(cite: string): string {
+/** `manni.config.yaml` in the workspace: the given `cite:` body, and the family key when given. */
+function tempConfig(cite: string, key?: string): string {
   const path = join(cwd, "manni.config.yaml");
-  writeFileSync(path, `cite:\n${cite.replace(/^/gm, "  ")}\n`, "utf8");
+  const family = key === undefined ? "" : `encryptionKey: ${key}\n`;
+  writeFileSync(path, `${family}cite:\n${cite.replace(/^/gm, "  ")}\n`, "utf8");
   return path;
 }
 
@@ -311,34 +316,139 @@ describe("runAdd", () => {
   });
 
   describe("minting", () => {
-    it("obfuscates every add once a salt is configured, with no flag", async () => {
+    it("encrypts every add once a key is configured, with no flag, and check reads it back", async () => {
       workspace("no-citations.md");
-      const config = tempConfig(`salt: ${SALT}`);
-      const token = obfuscatePath("src/limits.ts", SALT);
-      const keyed = hashRange(LINE_2, undefined, SALT);
-      const bySalt = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2", claim: CLAIM, noConfig: false, configPath: config });
-      expect(bySalt.citation).toEqual({ claim: CLAIM, src: `${token}:2`, integrity: keyed });
-      expect(bySalt.content).not.toContain("limits.ts");
-      expect(await recheck(bySalt.file, config)).toEqual(["current"]);
+      const config = tempConfig("", KEY);
+      const token = encryptSourcePath("src/limits.ts", KEY);
+      const keyed = hashRange(LINE_2, undefined, KEY);
+      const byKey = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2", claim: CLAIM, noConfig: false, configPath: config });
+      expect(byKey.citation).toEqual({ claim: CLAIM, src: `${token}:2`, integrity: keyed });
+      expect(byKey.content).not.toContain("limits.ts");
+      expect(await recheck(byKey.file, config)).toEqual(["current"]);
+      // Without the key the page names no file: the citation is missing.
+      expect(await recheck(byKey.file)).toEqual(["missing", "missing"]);
 
-      // The flag is redundant beside a salt, and changes nothing.
-      const flagged = await add({ page: "pages/no-citations.md", src: "src/limits.ts:3", obfuscate: true, noConfig: false, configPath: config });
-      expect(flagged.citation).toEqual({ src: `${token}:3`, integrity: hashRange(LINES_1_3[2] ?? "", undefined, SALT) });
+      // The flag is redundant beside a key, and changes nothing.
+      const flagged = await add({ page: "pages/no-citations.md", src: "src/limits.ts:3", encrypt: true, noConfig: false, configPath: config });
+      expect(flagged.citation).toEqual({ src: `${token}:3`, integrity: hashRange(LINES_1_3[2] ?? "", undefined, KEY) });
     });
 
-    it("obfuscates under the empty salt only when the flag asks for it", async () => {
+    it("writes a plain path with no key and no flag", async () => {
       workspace("no-citations.md");
       const plain = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2" });
-      expect(plain.citation.src).toBe("src/limits.ts:2");
-      const weak = await add({ page: "pages/no-citations.md", src: "src/limits.ts:3", obfuscate: true });
-      expect(weak.citation.src).toBe(`${obfuscatePath("src/limits.ts", "")}:3`);
-      expect(weak.citation.integrity).toBe(hashRange(LINES_1_3[2] ?? "", undefined, ""));
+      expect(plain.citation).toEqual({ src: "src/limits.ts:2", integrity: PIN_L2 });
     });
 
-    it("the environment's salt obfuscates as a configured one does", async () => {
+    it("the environment's key encrypts as a configured one does", async () => {
       workspace("no-citations.md");
-      const result = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2", env: { MANNI_CITE_SALT: SALT } });
-      expect(result.citation.src).toBe(`${obfuscatePath("src/limits.ts", SALT)}:2`);
+      const result = await add({ page: "pages/no-citations.md", src: "src/limits.ts:2", env: { MANNI_ENCRYPTION_KEY: KEY } });
+      expect(result.citation.src).toBe(`${encryptSourcePath("src/limits.ts", KEY)}:2`);
+    });
+  });
+
+  describe("--encrypt with no key", () => {
+    const REFUSAL =
+      "src/limits.ts:2 must be encrypted, and no encryption key is available. Run `manni key set`, or set MANNI_ENCRYPTION_KEY.";
+    /** What the prompt helper wrote straight to stderr: its confirmation line. */
+    let stderr: string[] = [];
+    beforeEach(() => {
+      stderr = [];
+      vi.spyOn(process.stderr, "write").mockImplementation((chunk: string | Uint8Array) => {
+        stderr.push(typeof chunk === "string" ? chunk : "");
+        return true;
+      });
+    });
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+    const written = (): string => stderr.join("");
+    const configOnDisk = (): string => join(cwd, "manni.config.yaml");
+
+    it("asks once, and on a yes writes a key and encrypts with it", async () => {
+      workspace("no-citations.md");
+      const questions: string[] = [];
+      const notices: string[] = [];
+      const result = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        encrypt: true,
+        confirm: (question) => {
+          questions.push(question);
+          return Promise.resolve(true);
+        },
+        onNotice: (message) => notices.push(message),
+      });
+      expect(notices[0]).toBe("src/limits.ts:2 must be encrypted, and no encryption key is available.");
+      expect(questions).toEqual(["Generate a key and write it to manni.config.yaml? "]);
+      expect(written()).toContain("Created manni.config.yaml with an encryption key.\n");
+
+      const doc = parseYaml(readFileSync(configOnDisk(), "utf8")) as { encryptionKey?: unknown };
+      const key = typeof doc.encryptionKey === "string" ? doc.encryptionKey : "";
+      expect(key).toMatch(/^[0-9a-f]{64}$/);
+      const [path = ""] = result.citation.src.split(":");
+      expect(decryptSourcePath(path, key)).toBe("src/limits.ts");
+      expect(result.citation.integrity).toBe(hashRange(LINE_2, undefined, key));
+      expect(onDisk(result.file)).not.toContain("limits.ts");
+      expect(await recheck(result.file, configOnDisk())).toEqual(["current"]);
+    });
+
+    it("writes the key into the config the run found, beside its cite: section", async () => {
+      workspace("no-citations.md");
+      const config = tempConfig("git: false");
+      const result = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        encrypt: true,
+        noConfig: false,
+        configPath: config,
+        confirm: () => Promise.resolve(true),
+      });
+      const text = readFileSync(config, "utf8");
+      expect(text).toMatch(/^cite:\n {2}git: false\n/);
+      expect(text).toMatch(/^encryptionKey: [0-9a-f]{64}$/m);
+      expect(written()).toContain("Encryption key written to ");
+      expect(await recheck(result.file, config)).toEqual(["current"]);
+    });
+
+    it("on a no, refuses and writes nothing", async () => {
+      workspace("no-citations.md");
+      const before = onDisk("pages/no-citations.md");
+      const message = await refusal(
+        add({ page: "pages/no-citations.md", src: "src/limits.ts:2", encrypt: true, confirm: () => Promise.resolve(false) }),
+      );
+      expect(message).toBe(REFUSAL);
+      expect(onDisk("pages/no-citations.md")).toBe(before);
+      expect(existsSync(configOnDisk())).toBe(false);
+    });
+
+    it("with no way to ask, refuses without a question or a notice", async () => {
+      workspace("no-citations.md");
+      const notices: string[] = [];
+      const message = await refusal(
+        add({ page: "pages/no-citations.md", src: "src/limits.ts:2", encrypt: true, onNotice: (m) => notices.push(m) }),
+      );
+      expect(message).toBe(REFUSAL);
+      expect(notices).toEqual([]);
+      expect(existsSync(configOnDisk())).toBe(false);
+    });
+
+    it("refuses what needs no key before asking for one", async () => {
+      workspace("no-citations.md");
+      let asked = 0;
+      const confirm = (): Promise<boolean> => {
+        asked += 1;
+        return Promise.resolve(true);
+      };
+      expect(await refusal(add({ page: "pages/no-citations.md", src: "src/nope.ts:1", encrypt: true, confirm }))).toBe(
+        "Source not found: src/nope.ts is not a tracked file under the root.",
+      );
+      expect(
+        await refusal(
+          add({ page: "pages/no-citations.md", src: "src/limits.ts:2", claim: "Not in the page.", encrypt: true, confirm }),
+        ),
+      ).toBe('Claim not found in pages/no-citations.md: "Not in the page.". Add the sentence first, or omit --claim.');
+      expect(asked).toBe(0);
+      expect(existsSync(configOnDisk())).toBe(false);
     });
 
     it.skipIf(!gitAvailable())("records HEAD unless told not to", async () => {

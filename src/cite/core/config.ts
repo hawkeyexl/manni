@@ -7,8 +7,9 @@
  * shared loader parses and `resolveCiteRun` selects from. Unknown keys, rules
  * or levels are errors that name the supported keys and never echo a value.
  * Root resolution: `--root` (cwd-relative) > `cite.root` > git root > cwd,
- * with a notice on the last fallback. Salt: env `MANNI_CITE_SALT` >
- * `cite.salt` > "".
+ * with a notice on the last fallback. The encryption key is the family's, not
+ * a `cite:` key: `MANNI_ENCRYPTION_KEY` > the top-level `encryptionKey:` >
+ * none, resolved in src/shared/encryption-key.ts (proposal 0045).
  */
 import { resolve } from "node:path";
 import { selectCollections } from "../../shared/collections.js";
@@ -18,6 +19,7 @@ import {
   type ConfigFile,
   type ConfigFileOptions,
 } from "../../shared/config-file.js";
+import { resolveEncryptionKey } from "../../shared/encryption-key.js";
 import { findGitRoot } from "../../shared/git-root.js";
 import { CiteError } from "../errors.js";
 import {
@@ -27,12 +29,11 @@ import {
   type CiteRun,
   type CiteSeverity,
   type LoadedCiteConfig,
-  type SaltSource,
 } from "../types.js";
 import { isCiteRule } from "./severity.js";
 
 export const CITE_SECTION = "cite";
-export const SALT_ENV = "MANNI_CITE_SALT";
+
 export const DEFAULT_CITE_BASELINE_PATH = ".manni-cite-baseline.json";
 
 /** The keys `cite:` accepts, in the order the reference table lists them. */
@@ -43,20 +44,18 @@ const CONFIG_KEYS: readonly (keyof CiteConfig)[] = [
   "baseline",
   "git",
   "sources",
-  "salt",
   "severity",
 ];
 
 /**
- * The key a configured salt replaced. Obfuscation used to be its own switch,
- * which a page minted without it silently did not get. Now the salt is the
- * switch, and the old key is refused rather than ignored: a config that still
- * says `obfuscate: true` was written for the old rule, and its author should
- * hear that the salt does the job.
+ * The key the family encryption key replaced (proposal 0045). It keyed cite's
+ * own hashed tokens; values are now encrypted under one key every tool reads,
+ * so the old key is refused by name rather than called a typo. The message
+ * never quotes the value, which was a secret.
  */
-const OBFUSCATE_KEY = "obfuscate";
-const OBFUSCATE_REFUSAL =
-  "cite.obfuscate is no longer a key. A configured salt obfuscates every source add writes; run `manni cite salt set` to configure one.";
+const SALT_KEY = "salt";
+const saltRefusal = (source: string): string =>
+  `${source}: "salt" is no longer a cite key. Values are encrypted with a family key: a top-level encryptionKey:, or MANNI_ENCRYPTION_KEY. Run \`manni key set\`.`;
 
 const SEVERITY_LEVELS: readonly CiteSeverity[] = ["error", "warning", "off"];
 
@@ -117,9 +116,9 @@ function rejectUnknownKeys(
 
 /**
  * Every type error names the key and the type it wanted, and nothing else.
- * `salt` is a secret, and a message that quoted the offending value would put
- * it in a CI log; the same shape for every key keeps that a rule rather than
- * a special case.
+ * A value can be a secret pasted under the wrong key, and a message that
+ * quoted it would put it in a CI log; the same shape for every key keeps that
+ * a rule rather than a special case.
  */
 function wrongType(key: string, expected: string, source: string): CiteError {
   return new CiteError(`cite.${key} in ${source} must be ${expected}.`);
@@ -174,7 +173,7 @@ export function parseCiteConfig(raw: unknown, source: string): CiteConfig {
   }
   assertNoMovedKeys(raw, source);
   // Before the unknown-key check, which would call it a typo.
-  if (Object.hasOwn(raw, OBFUSCATE_KEY)) throw new CiteError(OBFUSCATE_REFUSAL);
+  if (Object.hasOwn(raw, SALT_KEY)) throw new CiteError(saltRefusal(source));
   rejectUnknownKeys(raw, CONFIG_KEYS, "cite", source);
   const config: CiteConfig = {};
   if (raw.allowEmpty !== undefined)
@@ -187,16 +186,17 @@ export function parseCiteConfig(raw: unknown, source: string): CiteConfig {
   if (raw.git !== undefined) config.git = asBoolean(raw.git, "git", source);
   if (raw.sources !== undefined)
     config.sources = asBoolean(raw.sources, "sources", source);
-  if (raw.salt !== undefined) config.salt = asString(raw.salt, "salt", source);
+
   if (raw.severity !== undefined) config.severity = parseSeverity(raw.severity, source);
   return config;
 }
 
 /**
  * The family file itself, found as `loadCiteConfig` finds it but before its
- * `cite:` slice is parsed. `salt set` and `salt rotate` read it this way,
- * because they write it back and need the text and the section shape, not
- * only the values. `null` when discovery finds nothing.
+ * `cite:` slice is parsed: the text, the section shape and the family keys
+ * (`collections:`, `encryptionKey:`), for a caller that needs more than the
+ * values, such as a write that puts a key there. `null` when discovery finds
+ * nothing.
  */
 export function readCiteConfigFile(
   explicitPath: string | undefined,
@@ -221,7 +221,11 @@ export async function loadCiteConfig(
   cwd: string = process.cwd(),
 ): Promise<LoadedCiteConfig | null> {
   const file = await readCiteConfigFile(explicitPath, cwd);
-  if (file === null) return null;
+  return file === null ? null : toLoaded(file);
+}
+
+/** A discovered file's `cite:` slice, parsed, with where it came from. */
+function toLoaded(file: ConfigFile): LoadedCiteConfig {
   return {
     config: parseCiteConfig(file.value, file.source),
     path: file.path,
@@ -258,24 +262,9 @@ export interface CiteRunOptions {
 const STDIN = "-";
 
 /**
- * The salt a run keys with, and where it came from: `MANNI_CITE_SALT` when
- * set, else `cite.salt`, else the empty string, which is no salt at all. One
- * function, so `salt rotate` and every other command agree on which wins.
- */
-export function resolveSalt(
-  env: NodeJS.ProcessEnv,
-  config: CiteConfig | null,
-): { salt: string; saltSource: SaltSource } {
-  const fromEnv = env[SALT_ENV];
-  if (fromEnv !== undefined) return { salt: fromEnv, saltSource: "env" };
-  if (config?.salt !== undefined) return { salt: config.salt, saltSource: "config" };
-  return { salt: "", saltSource: "none" };
-}
-
-/**
  * Settle what every command core needs before it touches a file: which
  * config governs the run, what to resolve and from where, the root `src:`
- * paths resolve against, and the salt.
+ * paths resolve against, and the encryption key.
  */
 export async function resolveCiteRun(opts: CiteRunOptions): Promise<CiteRun> {
   const cwd = resolve(opts.cwd);
@@ -295,7 +284,8 @@ export async function resolveCiteRun(opts: CiteRunOptions): Promise<CiteRun> {
   // `--no-config` wins over an explicit path, as in meta: the CLI cannot
   // supply both, but the cores are public API. It drops the collections with
   // the section: the file the run was told to ignore is where both live.
-  const loaded = opts.noConfig ? null : await loadCiteConfig(opts.configPath, cwd);
+  const file = opts.noConfig ? null : await readCiteConfigFile(opts.configPath, cwd);
+  const loaded = file === null ? null : toLoaded(file);
   if (wanted.length > 0 && loaded === null) {
     throw new CiteError("--collection needs a config file to select from.");
   }
@@ -330,7 +320,13 @@ export async function resolveCiteRun(opts: CiteRunOptions): Promise<CiteRun> {
     }
   }
 
-  const { salt, saltSource } = resolveSalt(env, config);
+  // The family key, from the environment or the file's top level. A
+  // malformed one is refused here, before any page is read.
+  const { key, source: keySource } = resolveEncryptionKey({
+    env,
+    file,
+    toError: (message) => new CiteError(message),
+  });
 
   return {
     config,
@@ -340,7 +336,8 @@ export async function resolveCiteRun(opts: CiteRunOptions): Promise<CiteRun> {
     fromCollections,
     ...(loaded ? { configDir: loaded.dir, configPath: loaded.path, configSource: loaded.source } : {}),
     root,
-    salt,
-    saltSource,
+    key,
+    keySource,
+    ...(file === null ? {} : { configFile: file }),
   };
 }

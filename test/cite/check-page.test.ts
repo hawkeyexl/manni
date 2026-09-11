@@ -10,7 +10,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkCitations } from "../../src/cite/core/check-page.js";
 import { hashRange } from "../../src/cite/core/hash.js";
-import { obfuscatePath } from "../../src/cite/core/sources.js";
+import { encryptSourcePath } from "../../src/cite/core/sources.js";
 import type { CheckPageOptions, GitClient, PageCitationReport } from "../../src/cite/types.js";
 import { makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
 
@@ -139,7 +139,7 @@ describe("checkCitations", () => {
 
   it("takes a prebuilt source index", async () => {
     const report = await check("inline.md", {
-      sourceIndex: { files: () => [], resolve: () => undefined, has: () => false },
+      sourceIndex: { files: () => [], has: () => false },
     });
     expect(statuses(report)).toEqual(["missing", "missing", "missing"]);
   });
@@ -230,8 +230,10 @@ describe("checkCitations: quote", () => {
   });
 });
 
-describe("checkCitations: obfuscated sources and the leak sentinel", () => {
-  const SALT = "SALT-SENTINEL";
+describe("checkCitations: encrypted sources and the leak sentinel", () => {
+  /** Fixed test keys; never the developer's environment. */
+  const KEY = "sentinel-key-0123456789abcdef012345";
+  const OTHER = "another-key-0123456789abcdef012345";
   const SECRET = "private/SECRET.ts";
   const SECRET_TEXT = "const a = 1;\nconst b = 2;\nconst c = 3;\n";
   let root: string | undefined;
@@ -240,44 +242,85 @@ describe("checkCitations: obfuscated sources and the leak sentinel", () => {
     root = undefined;
   });
 
-  it("resolves a token, and says nothing the page did not", async () => {
+  /** A page citing SECRET's line 2 through an encrypted source, pinned under `pinKey`. */
+  function pageFor(token: string, pinKey: string): string {
+    const keyed = hashRange(SECRET_TEXT, { start: 2, end: 2 }, pinKey);
+    return `---\ncitations:\n  - { id: fetch-timeout, src: "${token}:2", integrity: ${keyed} }\n---\nBody.\n`;
+  }
+
+  it("decrypts a source, and says nothing the page did not", async () => {
     root = makeTempRepo({ init: false, files: { [SECRET]: SECRET_TEXT } });
-    const token = obfuscatePath(SECRET, SALT);
-    const keyed = hashRange(SECRET_TEXT, { start: 2, end: 2 }, SALT);
+    const token = encryptSourcePath(SECRET, KEY);
+    const gone = encryptSourcePath("private/GONE.ts", KEY);
+    const keyed = hashRange(SECRET_TEXT, { start: 2, end: 2 }, KEY);
     const content = [
       "---",
       "citation-commit: 3f9c2a1e7b0d4c5a6f8e9d0b1a2c3d4e5f607182",
       "citations:",
       `  - { id: current, src: "${token}:2", integrity: ${keyed} }`,
       `  - { id: changed, src: "${token}:3", integrity: ${keyed} }`,
-      `  - { id: gone, src: "~0000000000000000:1", integrity: ${keyed} }`,
+      `  - { id: gone, src: "${gone}:1", integrity: ${keyed} }`,
       "---",
       "Body.",
       "",
     ].join("\n");
     const report = await checkCitations(
       { file: "docs/page.md", content },
-      { root, salt: SALT, gitClient: shallowGit([SECRET]) },
+      { root, key: KEY, gitClient: shallowGit([SECRET]) },
     );
     expect(statuses(report)).toEqual(["current", "moved", "missing"]);
     expect(report.citations[0]?.resolvedPath).toBe(SECRET);
     expect(report.findings.map((f) => f.message)).toEqual([
       `moved -> ${token}:2`,
-      "missing (no tracked file matches; wrong --root or salt?)",
+      "missing (no tracked file matches; wrong --root?)",
     ]);
     const text = JSON.stringify({ findings: report.findings, notices: report.notices });
     expect(text).not.toContain("SECRET");
-    expect(text).not.toContain(SALT);
+    expect(text).not.toContain("GONE");
+    expect(text).not.toContain(KEY);
   });
 
-  it("a wrong salt is a changed pin, not a leak", async () => {
+  it("a source encrypted under another key is missing, not a leak", async () => {
     root = makeTempRepo({ init: false, files: { [SECRET]: SECRET_TEXT } });
-    const token = obfuscatePath(SECRET, SALT);
-    const keyed = hashRange(SECRET_TEXT, { start: 2, end: 2 }, "other");
-    const content = `---\ncitations:\n  - { src: "${token}:2", integrity: ${keyed} }\n---\nBody.\n`;
     const report = await checkCitations(
-      { file: "docs/page.md", content },
-      { root, salt: SALT, git: false },
+      { file: "docs/page.md", content: pageFor(encryptSourcePath(SECRET, OTHER), OTHER) },
+      { root, key: KEY, git: false },
+    );
+    expect(statuses(report)).toEqual(["missing"]);
+    expect(report.citations[0]?.resolvedPath).toBeUndefined();
+    expect(report.findings.map((f) => [f.rule, f.severity, f.message])).toEqual([
+      ["missing", "error", "missing (does not decrypt under the current key)"],
+    ]);
+    expect(JSON.stringify(report)).not.toContain("SECRET");
+  });
+
+  it("with no key, an encrypted source is missing, and an error", async () => {
+    root = makeTempRepo({ init: false, files: { [SECRET]: SECRET_TEXT } });
+    const report = await checkCitations(
+      { file: "docs/page.md", content: pageFor(encryptSourcePath(SECRET, KEY), KEY) },
+      { root, git: false },
+    );
+    expect(statuses(report)).toEqual(["missing"]);
+    expect(report.findings.map((f) => [f.rule, f.severity, f.message])).toEqual([
+      ["missing", "error", "missing (no encryption key is available to decrypt it)"],
+    ]);
+  });
+
+  it("with the sources off, an encrypted source is skipped, key or no key", async () => {
+    root = makeTempRepo({ init: false, files: { [SECRET]: SECRET_TEXT } });
+    const report = await checkCitations(
+      { file: "docs/page.md", content: pageFor(encryptSourcePath(SECRET, KEY), KEY) },
+      { root, git: false, sources: false },
+    );
+    expect(statuses(report)).toEqual(["skipped"]);
+    expect(report.findings).toEqual([]);
+  });
+
+  it("a pin keyed under another key is changed, not a leak", async () => {
+    root = makeTempRepo({ init: false, files: { [SECRET]: SECRET_TEXT } });
+    const report = await checkCitations(
+      { file: "docs/page.md", content: pageFor(encryptSourcePath(SECRET, KEY), OTHER) },
+      { root, key: KEY, git: false },
     );
     expect(statuses(report)).toEqual(["changed"]);
     expect(JSON.stringify(report.findings)).not.toContain("SECRET");

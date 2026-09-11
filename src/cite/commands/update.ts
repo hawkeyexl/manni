@@ -96,12 +96,13 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     }
     if (!accept || (result.status !== "changed" && result.status !== "never-true")) return undefined;
     try {
-      // The src as the page spells it: a token stays a token, and mint keys
-      // the pin accordingly. HEAD is recorded when git has one.
+      // The src as the page spells it: an encrypted source stays encrypted,
+      // under the key it decrypted with, and mint keys the pin accordingly;
+      // a plain one stays plain. HEAD is recorded when git has one.
       const minted = await mintCitation({
         root: run.root,
         src: result.citation.src,
-        salt: run.salt,
+        key: run.key,
         gitClient: pageOptions.gitClient,
         sourceIndex: pageOptions.sourceIndex,
       });

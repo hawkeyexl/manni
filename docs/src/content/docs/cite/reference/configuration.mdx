@@ -1,6 +1,6 @@
 ---
 title: Configuration reference
-description: "Every key of the cite section in manni.config.yaml (root, baseline, git, sources, salt, severity), with types, defaults, where the document set is declared, discovery rules, how the salt is set and rotated and which one wins, and the severity table."
+description: "Every key of the cite section in manni.config.yaml (root, baseline, git, sources, severity), with types, defaults, where the document set is declared, discovery rules, the refused salt key, and the severity table."
 sidebar:
   order: 2
 ---
@@ -54,7 +54,7 @@ manni.config.yaml: "exclude" is no longer a cite key. Document sets are declared
 | `baseline` | `string` | none | `--baseline` | Path to a [citation baseline](/manni/cite/reference/cli/#baselines), relative to the config file. Setting it turns on `--baseline` for every run; `--no-baseline` suppresses it for one. A bare `--write-baseline` records into this same file. |
 | `git` | `boolean` | `true` | `--no-git` | Consult git. Index sources with `git ls-files`, record `HEAD` on `add`, and use history to tell `changed` from `never-true`. `--no-git` overrides it for one run. |
 | `sources` | `boolean` | `true` | `--no-sources` | Read the sources. `false` runs the page-side rules only and marks every source-side status `skipped`; `update` refuses under it. `--no-sources` overrides it for one run. |
-| `salt` | `string` | `""` | none | Keys obfuscated tokens and their pins, and turns obfuscation on. Once it is set, `add` writes every new citation as a `~token` with a keyed pin. Written by [`manni cite salt set`](/manni/cite/reference/cli/#cite-salt-set), replaced by [`manni cite salt rotate`](/manni/cite/reference/cli/#cite-salt-rotate). The environment variable `MANNI_CITE_SALT` wins over it; see [the salt](#the-salt). |
+
 | `severity` | mapping | the [defaults](#severity) | none | Per-rule severity, `error`, `warning` or `off`. Only the rules named are changed. |
 
 The section must be a YAML mapping; an empty `cite:` is the same as no keys.
@@ -74,17 +74,18 @@ configured and is not. The rule also means a config written for a newer manni
 is rejected outright when it carries a key this version does not know. So pin
 the version wherever the gate runs.
 
-One former key is refused by name rather than as a typo. `obfuscate` used to
-switch obfuscation on; the salt does that now, so a config that still carries
-it hears what replaced it (exit 2):
+One former key is refused by name rather than as a typo. `salt` keyed cited
+sources before they were encrypted with the family's encryption key, a
+top-level `encryptionKey:` that every tool reads. A config that still carries
+it hears what replaced it (exit 2), and the message never quotes the value:
 
 ```
-cite.obfuscate is no longer a key. A configured salt obfuscates every source add writes; run `manni cite salt set` to configure one.
+manni.config.yaml: "salt" is no longer a cite key. Values are encrypted with a family key: a top-level encryptionKey:, or MANNI_ENCRYPTION_KEY. Run `manni key set`.
 ```
 
 <Aside type="note" title="Values are never echoed">
 An error about a key says which key and what type it wanted. It never quotes
-the offending value, because `salt` is a secret and a CI log is where these
+the offending value, because a value can be a secret and a CI log is where these
 messages end up. A misspelled severity **level** is the one exception: a level
 is not a secret, so `eror` is quoted back as the typo it is.
 </Aside>

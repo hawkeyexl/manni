@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 import { runCheck } from "../../src/cite/commands/check.js";
 import { runUpdate } from "../../src/cite/commands/update.js";
 import { hashRange } from "../../src/cite/core/hash.js";
-import { obfuscatePath } from "../../src/cite/core/sources.js";
+import { encryptSourcePath } from "../../src/cite/core/sources.js";
 import { CiteError } from "../../src/cite/errors.js";
 import type { UpdateOptions, UpdateRun } from "../../src/cite/types.js";
 import { commitAll, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
@@ -22,7 +22,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, "..", "fixtures", "cite");
 const PAGES = join(ROOT, "pages");
 const SRC = join(ROOT, "src");
-const SALT = "SALT-FIXTURE";
+/** A fixed test key; never the developer's environment. */
+const KEY = "update-key-0123456789abcdef0123456789";
 const PIN_L2 = "sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f";
 const PIN_L3 = "sha256-e9f5bdf94a12c610b54573d2b66347592887805e59c69b64803a8c0d30edaea3";
 
@@ -48,7 +49,7 @@ afterEach(() => {
 });
 
 function update(over: Partial<UpdateOptions> & { inputs: string[] }): Promise<UpdateRun> {
-  return runUpdate({ cwd, root: ROOT, noConfig: true, git: false, ...over });
+  return runUpdate({ cwd, root: ROOT, noConfig: true, git: false, env: {}, ...over });
 }
 
 async function statuses(label: string, configPath?: string): Promise<string[]> {
@@ -56,6 +57,7 @@ async function statuses(label: string, configPath?: string): Promise<string[]> {
     cwd,
     root: ROOT,
     git: false,
+    env: {},
     inputs: [label],
     ...(configPath === undefined ? { noConfig: true } : { configPath }),
   });
@@ -72,9 +74,11 @@ async function refusal(promise: Promise<unknown>): Promise<string> {
   throw new Error("expected a refusal");
 }
 
-function tempConfig(cite: string): string {
+/** `manni.config.yaml` in the workspace: the given `cite:` body, and the family key when given. */
+function tempConfig(cite: string, key?: string): string {
   const path = join(cwd, "manni.config.yaml");
-  writeFileSync(path, `cite:\n${cite.replace(/^/gm, "  ")}\n`, "utf8");
+  const family = key === undefined ? "" : `encryptionKey: ${key}\n`;
+  writeFileSync(path, `${family}cite:\n${cite.replace(/^/gm, "  ")}\n`, "utf8");
   return path;
 }
 
@@ -105,15 +109,40 @@ describe("runUpdate", () => {
     expect(await statuses("pages/moved.md")).toEqual(["current", "current"]);
   });
 
-  it("keeps an obfuscated token obfuscated across the move", async () => {
+  it("--accept re-mints an encrypted entry in its own form: encrypted, under the current key", async () => {
     workspace();
-    const config = tempConfig(`salt: ${SALT}\ngit: false`);
-    const token = obfuscatePath("src/moved.ts", SALT);
+    const config = tempConfig("git: false", KEY);
+    const token = encryptSourcePath("src/changed.ts", KEY);
+    const before = hashRange(source("limits.ts"), { start: 2, end: 2 }, KEY);
+    const label = write("token.md", ["---", "citations:", `  - src: ${token}:2`, `    integrity: ${before}`, "---", "Body."]);
+    expect(await statuses(label, config)).toEqual(["changed"]);
+    const run = await update({ inputs: [label], noConfig: false, configPath: config, accept: true });
+    const reminted = hashRange(source("changed.ts"), { start: 2, end: 2 }, KEY);
+    expect(run.pages[0]?.rewritten).toEqual([{ index: 0, line: 3, from: before, to: reminted, reason: "accepted" }]);
+    const after = onDisk(label);
+    expect(after).toContain(`  - src: ${token}:2\n`);
+    expect(after).toContain(`    integrity: ${reminted}\n`);
+    expect(after).not.toContain("changed.ts");
+    expect(await statuses(label, config)).toEqual(["current"]);
+  });
+
+  it("--accept keeps a plain entry plain, even with a key available", async () => {
+    workspace("stale-claim.md");
+    const config = tempConfig("git: false", KEY);
+    const run = await update({ inputs: ["pages/stale-claim.md"], noConfig: false, configPath: config, accept: true });
+    expect(run.pages[0]?.rewritten.map((r) => r.to)).toEqual([CHANGED_L2]);
+    expect(onDisk("pages/stale-claim.md")).not.toMatch(/src: ~/);
+  });
+
+  it("keeps an encrypted source encrypted across the move", async () => {
+    workspace();
+    const config = tempConfig("git: false", KEY);
+    const token = encryptSourcePath("src/moved.ts", KEY);
     const label = write("token.md", [
       "---",
       "citations:",
       `  - src: ${token}:2`,
-      `    integrity: ${hashRange(source("limits.ts"), { start: 2, end: 2 }, SALT)}`,
+      `    integrity: ${hashRange(source("limits.ts"), { start: 2, end: 2 }, KEY)}`,
       "---",
       "Body.",
     ]);

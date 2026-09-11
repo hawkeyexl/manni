@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { mintCitation } from "../../src/cite/core/mint.js";
-import { obfuscatePath } from "../../src/cite/core/sources.js";
+import { encryptSourcePath } from "../../src/cite/core/sources.js";
 import { hashRange } from "../../src/cite/core/hash.js";
 import { CiteError } from "../../src/cite/errors.js";
 import type { GitClient } from "../../src/cite/types.js";
@@ -11,19 +11,21 @@ import type { GitClient } from "../../src/cite/types.js";
 const require = createRequire(import.meta.url);
 const ladder = require("../../docs/proposals/0044/ladders/drift-examples.cjs") as {
   SOURCE: string;
-  mint(text: string, l1?: number, l2?: number, salt?: string): string | undefined;
+  mint(text: string, l1?: number, l2?: number, key?: string): string | undefined;
 };
 
 const here = dirname(fileURLToPath(import.meta.url));
 /** The fixture root: `src/limits.ts` under it is the ladder's SOURCE. */
 const ROOT = join(here, "..", "fixtures", "cite");
 
-const SALT = "SALT-LADDER";
+/** Fixed test keys; never the developer's environment. */
+const KEY = "mint-key-0123456789abcdef0123456789ab";
+const OTHER = "another-key-0123456789abcdef012345";
 const HEAD = "3f9c2a1e7b0d4c5a6f8e9d0b1a2c3d4e5f607182";
 const PIN_L2 = "sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f";
 const PIN_1_3 = "sha256-d2981e71e50b9bd645ab30ad36aeb87dcb3c3268ff8d90ed3b021a45dfbed1d6";
 const PIN_WHOLE = "sha256-aebba92fe4cddf100cc781281d1f24ad7c234b6189413e2130d5fe71ed86e023";
-const TOKEN = obfuscatePath("src/limits.ts", SALT);
+const TOKEN = encryptSourcePath("src/limits.ts", KEY);
 
 function fakeGit(opts: { available?: boolean; head?: string | null; files?: string[] } = {}): GitClient {
   const unreachable = () => Promise.reject(new Error("not expected here"));
@@ -104,38 +106,42 @@ describe("mintCitation", () => {
     ).rejects.toThrow(CiteError);
   });
 
-  it("obfuscates the src and keys the pin with the salt", async () => {
+  it("encrypts the src and keys the pin under the key", async () => {
     const c = await mintCitation({
       root: ROOT,
       src: "src/limits.ts:2",
-      obfuscate: true,
-      salt: SALT,
+      encrypt: true,
+      key: KEY,
       commit: false,
     });
-    expect(c).toEqual({ src: `${TOKEN}:2`, integrity: ladder.mint(ladder.SOURCE, 2, 2, SALT) });
+    expect(c).toEqual({ src: `${TOKEN}:2`, integrity: ladder.mint(ladder.SOURCE, 2, 2, KEY) });
     expect(c.integrity).not.toBe(PIN_L2);
     expect(JSON.stringify(c)).not.toContain("limits");
   });
 
-  it("keys with the empty salt when obfuscating without one", async () => {
-    const c = await mintCitation({ root: ROOT, src: "src/limits.ts:1-3", obfuscate: true, commit: false });
-    expect(c).toEqual({
-      src: `${obfuscatePath("src/limits.ts", "")}:1-3`,
-      integrity: ladder.mint(ladder.SOURCE, 1, 3, ""),
-    });
+  it("writes a plain src unless told to encrypt, whatever the key", async () => {
+    const c = await mintCitation({ root: ROOT, src: "src/limits.ts:2", key: KEY, commit: false });
+    expect(c).toEqual({ src: "src/limits.ts:2", integrity: PIN_L2 });
   });
 
-  it("accepts a src that is already a token, resolving it through the index and keeping it", async () => {
-    const c = await mintCitation({ root: ROOT, src: `${TOKEN}:2`, salt: SALT, commit: false });
-    expect(c).toEqual({ src: `${TOKEN}:2`, integrity: ladder.mint(ladder.SOURCE, 2, 2, SALT) });
-    const explicit = await mintCitation({ root: ROOT, src: `${TOKEN}:2`, salt: SALT, obfuscate: true, commit: false });
+  it("refuses to encrypt with no key, naming the src as typed", async () => {
+    await expect(
+      mintCitation({ root: ROOT, src: "src/limits.ts:1-3", encrypt: true, commit: false }),
+    ).rejects.toThrow(
+      "src/limits.ts:1-3 must be encrypted, and no encryption key is available. Run `manni key set`, or set MANNI_ENCRYPTION_KEY.",
+    );
+  });
+
+  it("accepts a src that is already encrypted, decrypting it under the key and keeping it", async () => {
+    const c = await mintCitation({ root: ROOT, src: `${TOKEN}:2`, key: KEY, commit: false });
+    expect(c).toEqual({ src: `${TOKEN}:2`, integrity: ladder.mint(ladder.SOURCE, 2, 2, KEY) });
+    const explicit = await mintCitation({ root: ROOT, src: `${TOKEN}:2`, key: KEY, encrypt: true, commit: false });
     expect(explicit).toEqual(c);
   });
 
   it("uses a given source index instead of building one", async () => {
     const index = {
       files: () => Object.freeze(["src/limits.ts"]),
-      resolve: () => undefined,
       has: (p: string) => p === "src/limits.ts",
     };
     const c = await mintCitation({ root: ROOT, src: "src/limits.ts:2", commit: false, sourceIndex: index });
@@ -162,10 +168,23 @@ describe("mintCitation", () => {
     ).rejects.toThrow("Source not found: src/a.txt is not a tracked file under the root.");
   });
 
-  it("refuses a token nothing matches, without naming any path", async () => {
-    const wrong = obfuscatePath("src/limits.ts", "wrong");
-    await expect(mintCitation({ root: ROOT, src: `${wrong}:2`, salt: SALT, commit: false })).rejects.toThrow(
-      `No tracked file matches ${wrong} (wrong --root or salt?).`,
+  it("refuses a src another key encrypted, without naming any path", async () => {
+    const wrong = encryptSourcePath("src/limits.ts", OTHER);
+    await expect(mintCitation({ root: ROOT, src: `${wrong}:2`, key: KEY, commit: false })).rejects.toThrow(
+      `${wrong} does not decrypt under the current key.`,
+    );
+  });
+
+  it("refuses an encrypted src with no key to decrypt it", async () => {
+    await expect(mintCitation({ root: ROOT, src: `${TOKEN}:2`, commit: false })).rejects.toThrow(
+      `${TOKEN} is encrypted, and no encryption key is available to decrypt it.`,
+    );
+  });
+
+  it("refuses an encrypted src whose path is not tracked, without naming the path", async () => {
+    const untracked = encryptSourcePath("src/nope.ts", KEY);
+    await expect(mintCitation({ root: ROOT, src: `${untracked}:1`, key: KEY, commit: false })).rejects.toThrow(
+      `No tracked file matches ${untracked} (wrong --root?).`,
     );
   });
 

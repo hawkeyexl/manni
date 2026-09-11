@@ -1,16 +1,17 @@
 /**
- * `src` grammar: `path`, `path:L`, `path:L1-L2`, or `~<16 hex>` with the same
- * line forms. The regex is the schema's `srcRef` pattern, spelled once here and
- * once in `schema/citations.json`; `test/cite/range.test.ts` pins the two equal.
+ * `src` grammar: `path`, `path:L`, `path:L1-L2`, or an encrypted source (`~`
+ * and at least 82 base64url characters, proposal 0045) with the same line
+ * forms. The regex is the schema's `srcRef` pattern, spelled once here and
+ * once in `schema/citations.json`; `test/cite/range.test.ts` pins the two
+ * equal.
  */
+import { isEncryptedValue } from "../../shared/encryption.js";
 import { CiteError } from "../errors.js";
 import type { SourceRange } from "../types.js";
 
 /** The schema's `$defs.srcRef.pattern`, as a RegExp. */
 export const SRC_PATTERN =
-  /^(?:~[0-9a-f]{16}|(?!~)(?:(?!\.\.?(?:\/|:|$))[^/\\:\r\n\t]+)(?:\/(?:(?!\.\.?(?:\/|:|$))[^/\\:\r\n\t]+))*)(?::[1-9][0-9]*(?:-[1-9][0-9]*)?)?$/;
-
-const TOKEN_PATTERN = /^~[0-9a-f]{16}$/;
+  /^(?:~[A-Za-z0-9_-]{82,}|(?!~)(?:(?!\.\.?(?:\/|:|$))[^/\\:\r\n\t]+)(?:\/(?:(?!\.\.?(?:\/|:|$))[^/\\:\r\n\t]+))*)(?::[1-9][0-9]*(?:-[1-9][0-9]*)?)?$/;
 
 /**
  * Parse a `src`. Throws `CiteError` on bad grammar or an end line before the
@@ -20,15 +21,15 @@ const TOKEN_PATTERN = /^~[0-9a-f]{16}$/;
 export function parseSrc(src: string): SourceRange {
   if (!SRC_PATTERN.test(src)) {
     throw new CiteError(
-      `Invalid src "${src}": expected path, path:L, path:L1-L2, or ~<16 hex> with the same line forms; ` +
+      `Invalid src "${src}": expected path, path:L, path:L1-L2, or an encrypted source (~ and at least 82 base64url characters) with the same line forms; ` +
         "the path is repo-root-relative, posix, and free of . and .. segments.",
     );
   }
-  // The grammar keeps `:` out of every path segment, so the first one starts
-  // the line suffix.
+  // The grammar keeps `:` out of every path segment and out of the base64url
+  // alphabet, so the first one starts the line suffix.
   const colon = src.indexOf(":");
   const path = colon === -1 ? src : src.slice(0, colon);
-  const range: SourceRange = { path, obfuscated: TOKEN_PATTERN.test(path) };
+  const range: SourceRange = { path, encrypted: isEncryptedValue(path) };
   if (colon === -1) return range;
   const [startText, endText] = src.slice(colon + 1).split("-");
   const start = Number(startText);
@@ -47,9 +48,4 @@ export function formatSrc(range: SourceRange): string {
   if (start === undefined) return path;
   if (end === undefined || end === start) return `${path}:${start}`;
   return `${path}:${start}-${end}`;
-}
-
-/** `true` for a `~<16 hex>` token. */
-export function isObfuscatedToken(path: string): boolean {
-  return TOKEN_PATTERN.test(path);
 }

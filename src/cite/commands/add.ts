@@ -13,6 +13,7 @@ import { readFile } from "node:fs/promises";
 import { relative, resolve } from "node:path";
 import { locateFrontmatter, writeFileAtomic } from "../../meta/index.js";
 import { STDIN_LABEL, STDIN_TOKEN } from "../../meta/internal.js";
+import { ensureEncryptionKey } from "../../shared/prompt.js";
 import { blockMatches, findClaim, paragraphContains } from "../core/claims.js";
 import { resolveCiteRun } from "../core/config.js";
 import { gitClient, noGit } from "../core/git.js";
@@ -93,9 +94,9 @@ function referenceHint(format: string): string {
 }
 
 /** The cited lines, joined as the hashing rule joins them. */
-async function citedText(root: string, index: SourceIndex, src: string): Promise<string> {
+async function citedText(root: string, index: SourceIndex, src: string, key: string | undefined): Promise<string> {
   const range = parseSrc(src);
-  const source = await readSource(root, index, range);
+  const source = await readSource(root, index, range, key);
   // Minting already read this range, so a miss here is a race with the disk.
   if (source.kind === "missing") {
     throw new CiteError(`Source not readable: ${range.path} could not be read.`);
@@ -166,7 +167,7 @@ function anchorQuote(page: PageCitations, cited: string, src: string, label: str
 
 export async function runAdd(opts: AddOptions): Promise<AddResult> {
   const cwd = resolve(opts.cwd ?? process.cwd());
-  const { config, root, salt } = await resolveCiteRun({
+  const run = await resolveCiteRun({
     cwd,
     configPath: opts.configPath,
     noConfig: opts.noConfig,
@@ -176,6 +177,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     onNotice: opts.onNotice,
     env: opts.env,
   });
+  const { config, root } = run;
 
   const usingStdin = opts.page === STDIN_TOKEN;
   if (usingStdin && opts.as === undefined) {
@@ -216,27 +218,49 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   // The option outranks the config, as on check and update.
   const git = opts.git ?? config?.git ?? true;
   const client = git ? gitClient(root) : noGit();
-  const sourceIndex = await buildSourceIndex(root, salt, { gitClient: client, git });
-  const citation = await mintCitation({
-    root,
-    src: opts.src,
-    claim: opts.claim,
-    id: opts.id,
-    quote: opts.quote === true ? true : undefined,
-    commit: opts.commit === false ? false : undefined,
-    // Obfuscation follows the salt: a configured (or environment) salt means
-    // every add writes a token, without a flag to remember. `--obfuscate`
-    // still forces it under the empty salt, which is the weak form.
-    obfuscate: opts.obfuscate ?? salt !== "",
-    salt,
-    gitClient: client,
-    sourceIndex,
-  });
+  const sourceIndex = await buildSourceIndex(root, { gitClient: client, git });
+  const mint = (key: string | undefined, encrypt: boolean): Promise<Citation> =>
+    mintCitation({
+      root,
+      src: opts.src,
+      claim: opts.claim,
+      id: opts.id,
+      quote: opts.quote === true ? true : undefined,
+      commit: opts.commit === false ? false : undefined,
+      encrypt,
+      key,
+      gitClient: client,
+      sourceIndex,
+    });
+
+  // Encryption follows the key: an available one encrypts every add, with no
+  // flag to remember, and `--encrypt` asks for one when there is none. With a
+  // key in hand this mint is the citation written. Without one it is plain,
+  // and settles every refusal that needs no key (the source, the range, the
+  // anchors below) before the question is put, so a refused add never leaves
+  // a key behind.
+  const needsKey = opts.encrypt === true && run.key === undefined;
+  let citation = await mint(run.key, run.key !== undefined);
 
   let anchor: Anchor | undefined;
   if (opts.claim !== undefined) anchor = anchorClaim(page, opts.claim, opts.id, label);
   if (opts.quote === true) {
-    anchor = anchorQuote(page, await citedText(root, sourceIndex, opts.src), opts.src, label, anchor);
+    anchor = anchorQuote(page, await citedText(root, sourceIndex, opts.src, run.key), opts.src, label, anchor);
+  }
+
+  if (needsKey) {
+    const { key } = await ensureEncryptionKey({
+      subject: opts.src,
+      cwd,
+      file: run.configFile ?? null,
+      env: opts.env,
+      confirm: opts.confirm,
+      notice: (message) => {
+        opts.onNotice?.(message);
+      },
+      toError: (message) => new CiteError(message),
+    });
+    citation = await mint(key, true);
   }
 
   let after: string;

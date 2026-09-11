@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { hashLines, hashRange, normalizeText, sliceLines, splitLines } from "../../src/cite/core/hash.js";
 import { CiteError } from "../../src/cite/errors.js";
+import { keyedPin } from "../../src/shared/encryption.js";
 
 const require = createRequire(import.meta.url);
 const ladder = require("../../docs/proposals/0044/ladders/drift-examples.cjs") as {
@@ -12,9 +13,10 @@ const ladder = require("../../docs/proposals/0044/ladders/drift-examples.cjs") a
   variants: Record<string, string>;
   // A property, not a method: the ladder's `mint` is a plain function that
   // never touches `this`, so destructuring it below is sound.
-  mint: (text: string, l1?: number, l2?: number, salt?: string) => string | undefined;
+  mint: (text: string, l1?: number, l2?: number, key?: string) => string | undefined;
+  KEY: string;
 };
-const { SOURCE, variants, mint } = ladder;
+const { SOURCE, variants, mint, KEY } = ladder;
 
 const here = dirname(fileURLToPath(import.meta.url));
 const FIXTURE = join(here, "..", "fixtures", "cite", "src", "limits.ts");
@@ -94,10 +96,11 @@ describe("hashLines", () => {
     expect(hashLines("")).toBe("sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
   });
 
-  it("keys the hash with the salt and one LF, and an empty salt is still a key", () => {
-    expect(hashLines("x", "s")).toBe(hashLines("s\nx"));
-    expect(hashLines("x", "")).toBe(hashLines("\nx"));
-    expect(hashLines("x", "")).not.toBe(hashLines("x"));
+  it("keys the pin with the encryption key: the HMAC keyedPin spells", () => {
+    expect(hashLines("x", KEY)).toBe(keyedPin("x", KEY));
+    expect(hashLines("x", KEY)).toMatch(/^sha256-[0-9a-f]{64}$/);
+    expect(hashLines("x", KEY)).not.toBe(hashLines("x"));
+    expect(hashLines("x", KEY)).not.toBe(hashLines("x", "another-key-0123456789abcdef012345"));
   });
 });
 
@@ -122,9 +125,9 @@ describe("hashRange", () => {
     expect(hashRange(variants["TRAILING_WS"] ?? "", { start: 2 })).not.toBe(PIN_L2);
   });
 
-  it("is keyed only when a salt is passed, and an empty salt still keys", () => {
-    expect(hashRange(SOURCE, { start: 2 }, "SALT-LADDER")).not.toBe(PIN_L2);
-    expect(hashRange(SOURCE, { start: 2 }, "")).not.toBe(PIN_L2);
+  it("is keyed only when a key is passed", () => {
+    expect(hashRange(SOURCE, { start: 2 }, KEY)).not.toBe(PIN_L2);
+    expect(hashRange(SOURCE, { start: 2 }, KEY)).toBe(keyedPin(SOURCE.split("\n")[1] ?? "", KEY));
     expect(hashRange(SOURCE, { start: 2 }, undefined)).toBe(PIN_L2);
   });
 
@@ -139,11 +142,11 @@ describe("hashRange", () => {
     ];
     for (const [name, text] of Object.entries(texts)) {
       for (const [l1, l2] of ranges) {
-        for (const salt of [undefined, "", "SALT-LADDER"]) {
-          const want = mint(text, l1, l2, salt);
+        for (const key of [undefined, KEY]) {
+          const want = mint(text, l1, l2, key);
           if (want === undefined) continue;
-          const label = `${name} ${JSON.stringify([l1, l2, salt])}`;
-          expect(hashRange(text, { start: l1, end: l2 }, salt), label).toBe(want);
+          const label = `${name} ${JSON.stringify([l1, l2, key === undefined ? "plain" : "keyed"])}`;
+          expect(hashRange(text, { start: l1, end: l2 }, key), label).toBe(want);
         }
       }
     }

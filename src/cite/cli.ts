@@ -18,8 +18,9 @@ import {
   splitList,
 } from "../shared/cli-options.js";
 import { shouldColor } from "../shared/color.js";
+import { terminalConfirm } from "../shared/prompt.js";
 import { fail } from "../shared/run.js";
-import { notice, warn } from "../shared/warn.js";
+import { notice } from "../shared/warn.js";
 import {
   COMMON_FORMAT_LIST,
   OMITTED_WHEN_CLEAN,
@@ -30,12 +31,11 @@ import {
 import { REPORT_FORMATS, isReportFormat, render } from "../meta/index.js";
 import { runAdd } from "./commands/add.js";
 import { runCheck } from "./commands/check.js";
-import { runSaltRotate, runSaltSet } from "./commands/salt.js";
 import { runUpdate } from "./commands/update.js";
 import { CiteError } from "./errors.js";
 import { renderCheckGithub } from "./reporters/github.js";
-import { renderCheckJson, renderRotateJson, renderUpdateJson } from "./reporters/json.js";
-import { renderCheckPretty, renderRotatePretty, renderUpdatePretty } from "./reporters/pretty.js";
+import { renderCheckJson, renderUpdateJson } from "./reporters/json.js";
+import { renderCheckPretty, renderUpdatePretty } from "./reporters/pretty.js";
 import type { AddResult } from "./types.js";
 
 /** JUnit `classname` for the citation tool's findings. */
@@ -117,7 +117,8 @@ interface AddCliOptions {
   id?: string;
   quote?: boolean;
   inline?: boolean;
-  obfuscate?: boolean;
+  /** `--encrypt`. */
+  encrypt?: boolean;
   /** `--no-commit`. */
   commit: boolean;
   /** `--no-git`. */
@@ -138,20 +139,6 @@ interface UpdateCliOptions extends InputCliOptions {
   format: string;
 }
 
-interface SaltSetCliOptions {
-  dryRun?: boolean;
-  /** `-c, --config <path>`. No `--no-config` here: the config is what gets written. */
-  config?: string;
-}
-
-interface SaltRotateCliOptions extends Omit<InputCliOptions, "config" | "allowEmpty"> {
-  /** `--to <value>`: the new salt. Absent generates one. */
-  to?: string;
-  config?: string;
-  dryRun?: boolean;
-  format: string;
-}
-
 /** `sha256-78af1d33…`: the first eight hex digits of a pin, for a human. */
 function shortIntegrity(integrity: string): string {
   const m = /^(sha256-)([0-9a-f]{8})/i.exec(integrity);
@@ -162,7 +149,7 @@ function shortIntegrity(integrity: string): string {
 /**
  * What `add` says on success. One sentence composed from the result: what was
  * added, where it went, and which lines it anchors to. The `src` is spelled
- * as it was written to the page (a token when obfuscated).
+ * as it was written to the page (the ciphertext when encrypted).
  */
 export function addMessage(result: AddResult): string {
   const { citation } = result;
@@ -250,7 +237,7 @@ export function buildProgram(): Command {
       "directory src: paths resolve from (default: cite.root from config, else the git root, else the current directory)",
     )
     .option("--show-diff", "in pretty output, print the diff and commit subjects for changed")
-    .option("--reveal", "in pretty output, print the resolved path beside an obfuscated token")
+    .option("--reveal", "in pretty output, print the decrypted path beside an encrypted source")
     .addHelpText(
       "after",
       [
@@ -340,13 +327,16 @@ export function buildProgram(): Command {
     .argument("<page>", "the page to cite from (use - for stdin, with --as)")
     .argument(
       "<src>",
-      "path, path:L, path:L1-L2 or ~token[:…], relative to --root",
+      "path, path:L or path:L1-L2 relative to --root, or an encrypted ~source with the same line forms",
     )
     .option("--claim <text>", "the sentence the citation supports; must occur once in the body")
     .option("--id <id>", "kebab-case id; resolves a repeated claim, names a reference statement")
     .option("--quote", "the page reproduces the range in a fenced block; anchor to that block")
     .option("--inline", "write an inline statement above the anchor instead of a frontmatter entry")
-    .option("--obfuscate", "write src as ~token and a keyed pin even with no salt (a configured salt does this without the flag)")
+    .option(
+      "--encrypt",
+      "write src encrypted, with a keyed pin; with no key, offer to create one (an available key encrypts without the flag)",
+    )
     .option("--no-commit", "do not record HEAD")
     .option("--no-git", "skip git: mint without recording HEAD, and index sources by a directory walk")
     .option("--dry-run", "print the diff; write nothing")
@@ -379,9 +369,9 @@ export function buildProgram(): Command {
           id: options.id,
           quote: options.quote ? true : undefined,
           inline: options.inline ? true : undefined,
-          // `undefined` when absent, so the salt decides: a configured one
-          // obfuscates without the flag.
-          obfuscate: options.obfuscate ? true : undefined,
+          // `undefined` when absent, so the key decides: an available one
+          // encrypts without the flag.
+          encrypt: options.encrypt ? true : undefined,
           commit: explicitFalse(options.commit),
           git: explicitFalse(options.git),
           dryRun,
@@ -392,6 +382,10 @@ export function buildProgram(): Command {
           stdinContent,
           root: options.root,
           onNotice: notice,
+          // Only on a terminal: off one, a missing key is a refusal, not a
+          // question nobody can answer. With `-` stdin is the page, so no
+          // question is put either.
+          confirm: terminalConfirm(),
         });
 
         const message = addMessage(result);
@@ -512,121 +506,6 @@ export function buildProgram(): Command {
         }
         // Exit 1 when something was skipped with an error-severity finding:
         // work left undone, `fill`'s precedent.
-        process.exitCode = run.exitCode;
-      } catch (err) {
-        fail(err);
-      }
-    });
-
-  // A noun grouping two verbs, as `meta schemas` does. No default subcommand:
-  // bare `manni cite salt` prints usage and exits 2, because one verb writes
-  // the config and the other rewrites pages.
-  const salt = program
-    .command("salt")
-    .description("Configure and rotate the salt that keys obfuscated citations");
-
-  salt
-    .command("set")
-    .description("Write cite.salt into manni.config.yaml; a configured salt obfuscates every add")
-    .argument("[value]", "the salt to write (default: 32 random hex characters)")
-    .option("--dry-run", "say where the salt would be written; write nothing")
-    .option("-c, --config <path>", "path to a manni config file")
-    .addHelpText(
-      "after",
-      [
-        "",
-        "Examples:",
-        "  manni cite salt set                              # generate one, write it",
-        "  manni cite salt set --dry-run                    # say where it would go",
-        "  manni cite salt set -c docs/manni.config.yaml    # a named config",
-      ].join("\n"),
-    )
-    .action(async (value: string | undefined, options: SaltSetCliOptions) => {
-      try {
-        const result = await runSaltSet({
-          value,
-          configPath: options.config,
-          dryRun: Boolean(options.dryRun),
-          onWarn: warn,
-        });
-        // Where, never what: the value is a secret and stdout is a log.
-        process.stdout.write(
-          result.written ? `Salt written to ${result.source}.\n` : `Would write cite.salt to ${result.source}.\n`,
-        );
-        process.exitCode = 0;
-      } catch (err) {
-        fail(err);
-      }
-    });
-
-  salt
-    .command("rotate")
-    .description("Re-key every obfuscated citation under a new salt, then write it to manni.config.yaml (never when MANNI_CITE_SALT holds it)")
-    .argument("[paths...]", "files, directories, or globs to rotate")
-    .option("--to <value>", "the new salt (default: 32 random hex characters; required when MANNI_CITE_SALT is set)")
-    .option(
-      "--collection <name>",
-      "configured collection to run over; repeatable",
-      collect,
-      [],
-    )
-    .option("--ext <list>", "comma-separated extensions for directory walks")
-    .option("--exclude <glob>", "glob to exclude; repeatable", collect, [])
-    .option("--as <format>", "force an input format for every input")
-    .option("-c, --config <path>", "path to a manni config file")
-    .option("--no-gitignore", "rotate files .gitignore covers")
-    .option("--no-git", "skip git: a changed entry cannot be re-keyed from the lines at its commit")
-    .option("--root <dir>", "directory src: paths resolve from (as check)")
-    .option("--dry-run", "print what would be re-keyed; write nothing")
-    .option(
-      "-f, --format <format>",
-      `output: ${UPDATE_FORMATS.join(" | ")}`,
-      "pretty",
-    )
-    .addHelpText(
-      "after",
-      [
-        "",
-        "Examples:",
-        "  manni cite salt rotate                            # every collection, a fresh salt",
-        "  manni cite salt rotate --dry-run docs/            # see what would be re-keyed",
-        "  manni cite salt rotate --to \"$NEW_SALT\" --root ../code",
-      ].join("\n"),
-    )
-    .action(async (paths: string[], options: SaltRotateCliOptions, command: Command) => {
-      try {
-        const format = options.format;
-        if (!isUpdateFormat(format)) {
-          throw new CiteError(
-            `Unknown --format "${format}". Use ${COMMON_FORMAT_LIST}.`,
-          );
-        }
-        const exts = options.ext ? splitList(options.ext) : undefined;
-        const dryRun = Boolean(options.dryRun);
-        const cwd = process.cwd();
-
-        const run = await runSaltRotate({
-          inputs: paths,
-          collection: options.collection,
-          exts,
-          exclude: options.exclude,
-          as: options.as,
-          configPath: options.config,
-          onConfigLoaded: reportConfig(format === "pretty", cwd),
-          respectGitignore: explicitFalse(options.gitignore),
-          onNotice: notice,
-          git: explicitFalse(options.git),
-          root: options.root,
-          to: options.to,
-          dryRun,
-        });
-
-        const text =
-          format === "json"
-            ? renderRotateJson(run)
-            : renderRotatePretty(run, { color: resolveColor(rootOf(command)) });
-        process.stdout.write(`${text}\n`);
-        // Exit 1 when anything was skipped: the rotation is work left undone.
         process.exitCode = run.exitCode;
       } catch (err) {
         fail(err);

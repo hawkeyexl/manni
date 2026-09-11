@@ -21,7 +21,7 @@ import type {
   CiteSeverity,
   PageCitationReport,
 } from "../types.js";
-import { isObfuscatedToken, parseSrc } from "./range.js";
+import { parseSrc } from "./range.js";
 import { RULE_ID_PREFIX, ruleId } from "./severity.js";
 
 /** The seven characters a person reads a commit by. */
@@ -33,12 +33,31 @@ function plural(n: number, noun: string): string {
   return `${String(n)} ${noun}${n === 1 ? "" : "s"}`;
 }
 
-/** Whether the page spelled this source as a token. */
-function citesToken(src: string): boolean {
+/** Whether the page spelled this source encrypted. */
+function citesEncrypted(src: string): boolean {
   try {
-    return isObfuscatedToken(parseSrc(src).path);
+    return parseSrc(src).encrypted;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Why an encrypted source is missing, in words that never name the path. A
+ * plain path names its own file, so the bare status says the rest.
+ */
+function missingMessage(result: CitationResult): string {
+  if (!citesEncrypted(result.citation.src)) return "missing";
+  switch (result.missingReason) {
+    case "no-key":
+      return "missing (no encryption key is available to decrypt it)";
+    case "undecryptable":
+      return "missing (does not decrypt under the current key)";
+    case "untracked":
+      return "missing (no tracked file matches; wrong --root?)";
+    case "unreadable":
+    case undefined:
+      return "missing";
   }
 }
 
@@ -69,9 +88,7 @@ export function messageFor(result: CitationResult): string {
         ? "never true: the pin does not match at the recorded commit"
         : `never true: the pin does not match at ${short(result.commit)}`;
     case "missing":
-      return citesToken(result.citation.src)
-        ? "missing (no tracked file matches; wrong --root or salt?)"
-        : "missing";
+      return missingMessage(result);
   }
 }
 

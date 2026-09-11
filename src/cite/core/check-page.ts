@@ -60,7 +60,7 @@ interface QuoteInput {
   format: string;
   root: string;
   index: Parameters<typeof readSource>[1];
-  salt: string;
+  key?: string;
 }
 
 /** The cited lines as they are now, or undefined when they cannot be read. */
@@ -69,7 +69,7 @@ async function citedNow(
   result: CitationResult,
   range: SourceRange,
 ): Promise<string | undefined> {
-  const source = await readSource(input.root, input.index, range);
+  const source = await readSource(input.root, input.index, range, input.key);
   if (source.kind === "missing") return undefined;
   // After a move the bytes live at the new range; compare against those.
   const at = result.status === "moved" && result.newSrc !== undefined ? parseSrc(result.newSrc) : range;
@@ -81,8 +81,8 @@ async function citedNow(
 }
 
 /** Whether a block reproduces the citation, as pinned or as the source is now. */
-function faithful(blockText: string, pin: string, salt: string | undefined, now: string | undefined): boolean {
-  if (hashLines(splitLines(blockText).join("\n"), salt) === pin) return true;
+function faithful(blockText: string, pin: string, key: string | undefined, now: string | undefined): boolean {
+  if (hashLines(splitLines(blockText).join("\n"), key) === pin) return true;
   return now !== undefined && blockMatches(blockText, now);
 }
 
@@ -93,7 +93,7 @@ function faithful(blockText: string, pin: string, salt: string | undefined, now:
  */
 async function quoteDrift(input: QuoteInput, result: CitationResult): Promise<string | undefined> {
   const range = parseSrc(result.citation.src);
-  const salt = range.obfuscated ? input.salt : undefined;
+  const key = range.encrypted ? input.key : undefined;
   const pin = result.citation.integrity;
   const now = await citedNow(input, result, range);
   const { origin } = result;
@@ -101,7 +101,7 @@ async function quoteDrift(input: QuoteInput, result: CitationResult): Promise<st
   if (origin.anchorLine !== undefined) {
     const block = fencedBlockAfter(input.content, offsetOfLine(input.content, origin.anchorLine), input.format);
     if (block !== undefined && block.line === origin.anchorLine) {
-      return faithful(block.text, pin, salt, now)
+      return faithful(block.text, pin, key, now)
         ? undefined
         : "quote: true, but the fenced block does not reproduce the cited lines";
     }
@@ -111,7 +111,7 @@ async function quoteDrift(input: QuoteInput, result: CitationResult): Promise<st
     if (origin.kind === "inline") return undefined;
   }
   const blocks = fencedBlocks(input.content, input.bodyOffset, input.format);
-  if (blocks.some((block) => faithful(block.text, pin, salt, now))) return undefined;
+  if (blocks.some((block) => faithful(block.text, pin, key, now))) return undefined;
   return blocks.length === 0
     ? "quote: true, but the page has no fenced block"
     : "quote: true, but no fenced block reproduces the cited lines";
@@ -122,7 +122,6 @@ export async function checkCitations(
   opts: CheckPageOptions,
 ): Promise<PageCitationReport> {
   const read = readPage(page.file, page.content, page.format === undefined ? undefined : { format: page.format });
-  const salt = opts.salt ?? "";
   const severity = resolveSeverity(opts.severity);
   const client = opts.gitClient ?? (opts.git === false ? noGit() : gitClient(opts.root));
 
@@ -145,18 +144,18 @@ export async function checkCitations(
       results.push(result);
     }
   } else {
-    const indexOpts: Parameters<typeof buildSourceIndex>[2] = { gitClient: client };
+    const indexOpts: Parameters<typeof buildSourceIndex>[1] = { gitClient: client };
     if (opts.git !== undefined) indexOpts.git = opts.git;
-    const index = opts.sourceIndex ?? (await buildSourceIndex(opts.root, salt, indexOpts));
+    const index = opts.sourceIndex ?? (await buildSourceIndex(opts.root, indexOpts));
     const quoteInput: QuoteInput = {
       content: read.content,
       bodyOffset: read.bodyOffset,
       format: read.format,
       root: opts.root,
       index,
-      salt,
+      key: opts.key,
     };
-    const classifyOpts: Parameters<typeof classifyCitation>[1] = { root: opts.root, index, git: client, salt };
+    const classifyOpts: Parameters<typeof classifyCitation>[1] = { root: opts.root, index, git: client, key: opts.key };
     if (opts.git !== undefined) classifyOpts.useGit = opts.git;
     if (read.commit !== undefined) classifyOpts.pageCommit = read.commit;
 

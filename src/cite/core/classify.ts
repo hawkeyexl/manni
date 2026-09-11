@@ -38,7 +38,8 @@ export interface ClassifyOptions {
   git: GitClient;
   /** Default true; false skips never-true, history and subjects. */
   useGit?: boolean;
-  salt: string;
+  /** The encryption key: decrypts an encrypted source and keys its pin. */
+  key?: string;
   /** Page-level `citation-commit`, the default for entries without `commit`. */
   pageCommit?: string;
   /** Hashing budget for the blind move search, in bytes. Default `MOVE_BUDGET_BYTES`. */
@@ -57,14 +58,14 @@ export interface FindWindowsOptions {
 /**
  * Pure move search over normalized lines: the 1-based start lines where a
  * window of `length` lines hashes to `pin`. `original` (the cited lines at the
- * commit, when known) enables the first-line filter. `salt` keys the hash for
- * an obfuscated pin and is `undefined` for a plain one.
+ * commit, when known) enables the first-line filter. `key` keys the hash for
+ * an encrypted source's pin and is `undefined` for a plain one.
  */
 export function findWindows(
   lines: readonly string[],
   length: number,
   pin: string,
-  salt: string | undefined,
+  key: string | undefined,
   opts?: FindWindowsOptions,
 ): { starts: number[]; truncated: boolean } {
   const starts: number[] = [];
@@ -85,7 +86,7 @@ export function findWindows(
           break;
         }
       }
-      if (same && hashLines(joined(start), salt) === pin) starts.push(start);
+      if (same && hashLines(joined(start), key) === pin) starts.push(start);
     }
     return { starts, truncated: false };
   }
@@ -107,7 +108,7 @@ export function findWindows(
     const bytes = Buffer.byteLength(text, "utf8");
     if (spent + bytes > budget) return { starts, truncated: true };
     spent += bytes;
-    if (hashLines(text, salt) === pin) starts.push(start);
+    if (hashLines(text, key) === pin) starts.push(start);
   }
   return { starts, truncated: false };
 }
@@ -116,7 +117,7 @@ export function findWindows(
  * What git could say about the pin at the recorded commit. `unknown` is a
  * file at the commit too large to search under the budget with the pin found
  * nowhere in the part that was: neither true nor never true. `original`
- * carries the cited lines as they were then, which `salt rotate` re-keys
+ * carries the cited lines as they were then, which `reencryptCitations` re-keys
  * from when the pin no longer holds today.
  */
 export type History =
@@ -132,7 +133,7 @@ export async function historyOf(
   path: string,
   range: SourceRange,
   pin: string,
-  salt: string | undefined,
+  key: string | undefined,
   budget: number | undefined,
 ): Promise<History> {
   const shown = await git.showFile(commit, path);
@@ -147,7 +148,7 @@ export async function historyOf(
     // The range ran past the end of the file as it was at the commit.
     joined = undefined;
   }
-  if (joined !== undefined && hashLines(joined, salt) === pin) {
+  if (joined !== undefined && hashLines(joined, key) === pin) {
     return { kind: "original", lines: joined.split("\n") };
   }
 
@@ -159,7 +160,7 @@ export async function historyOf(
   const length = (range.end ?? range.start) - range.start + 1;
   const search: FindWindowsOptions = { around: range.start };
   if (budget !== undefined) search.budget = budget;
-  const found = findWindows(then, length, pin, salt, search);
+  const found = findWindows(then, length, pin, key, search);
   const [first] = found.starts;
   if (first !== undefined) {
     return { kind: "original", lines: then.slice(first - 1, first - 1 + length) };
@@ -177,17 +178,21 @@ export async function classifyCitation(
   const result: CitationResult = { citation, origin, status: "missing" };
   if (commit !== undefined) result.commit = commit;
 
-  const source = await readSource(opts.root, opts.index, range);
-  if (source.kind === "missing") return result;
+  const source = await readSource(opts.root, opts.index, range, opts.key);
+  if (source.kind === "missing") {
+    result.missingReason = source.reason;
+    return result;
+  }
   result.resolvedPath = source.resolvedPath;
 
-  const salt = range.obfuscated ? opts.salt : undefined;
+  // Only an encrypted source carries a keyed pin, and reading one needed the key.
+  const key = range.encrypted ? opts.key : undefined;
   const pin = citation.integrity;
   const lines = splitLines(source.text);
 
   let here: string | undefined;
   try {
-    here = hashLines(sliceLines(lines, range), salt);
+    here = hashLines(sliceLines(lines, range), key);
   } catch {
     // The range runs past the end of the file: nothing to compare, so it is
     // `changed`, and the search below has no window of that length to find.
@@ -200,7 +205,7 @@ export async function classifyCitation(
 
   let history: History = { kind: "none" };
   if (opts.useGit !== false && commit !== undefined && (await opts.git.available())) {
-    history = await historyOf(opts.git, commit, source.resolvedPath, range, pin, salt, opts.budget);
+    history = await historyOf(opts.git, commit, source.resolvedPath, range, pin, key, opts.budget);
   }
 
   // A whole-file pin has nowhere to move to.
@@ -210,7 +215,7 @@ export async function classifyCitation(
     const search: FindWindowsOptions = { around: start };
     if (history.kind === "original") search.original = history.lines;
     if (opts.budget !== undefined) search.budget = opts.budget;
-    const found = findWindows(lines, end - start + 1, pin, salt, search);
+    const found = findWindows(lines, end - start + 1, pin, key, search);
     if (found.truncated) result.truncatedSearch = true;
     const spell = (at: number): string =>
       formatSrc({ ...range, start: at, end: at + (end - start) });

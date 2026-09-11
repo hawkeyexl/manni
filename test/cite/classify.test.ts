@@ -52,28 +52,37 @@ type Verdict = [
   current: string | null,
   atCommit: LadderAtCommit,
   expected: LadderExpected,
-  opts?: { salt?: string },
+  opts?: { key?: string },
 ];
 const ladder = require("../../docs/proposals/0044/ladders/drift-examples.cjs") as {
   SOURCE: string;
   variants: Record<string, string>;
-  mint(text: string, l1?: number, l2?: number, salt?: string): string | undefined;
-  obfuscate(path: string, salt: string): string;
+  mint(text: string, l1?: number, l2?: number, key?: string): string | undefined;
+  encrypt(value: unknown, key: string): string;
+  KEY: string;
   VERDICTS: Verdict[];
 };
 
-const SALT = "SALT-LADDER";
+const KEY = ladder.KEY;
 const PATH = "src/limits.ts";
-const TOKEN = ladder.obfuscate(PATH, SALT);
+const TOKEN = ladder.encrypt(PATH, KEY);
 const SOURCE_LINES = splitLines(ladder.SOURCE);
 const PIN_L2 = ladder.mint(ladder.SOURCE, 2) ?? "";
 
-/** An index over one path, with the ladder's token resolving to it whatever the salt. */
+/**
+ * The verdict's key: the ladder's own unless the verdict names another, or
+ * names none (`{ key: undefined }`: the run has no key at all).
+ */
+function keyFor(opts: { key?: string } | undefined): { key?: string } {
+  const key = opts !== undefined && "key" in opts ? opts.key : KEY;
+  return key === undefined ? {} : { key };
+}
+
+/** An index over the given paths. */
 function indexOf(files: string[]): SourceIndex {
   const held = new Set(files);
   return {
     files: () => files,
-    resolve: (token) => (token === TOKEN && held.has(PATH) ? PATH : undefined),
     has: (path) => held.has(path),
   };
 }
@@ -128,14 +137,15 @@ describe("classifyCitation agrees with the ladder", () => {
         root,
         index: indexOf(current === null ? [] : [PATH]),
         git: fakeGit(atCommit),
-        salt: opts?.salt ?? SALT,
+        ...keyFor(opts),
       });
       // `reason` and `fileLines` are the ladder's own; CitationResult has no
       // field for either, so the comparison is over what it does carry.
       const { reason: _reason, fileLines: _fileLines, ...want } = expected;
       expect(verdictOf(result)).toEqual(want);
       expect(result.citation).toBe(citation);
-      if (current !== null) expect(result.resolvedPath).toBe(PATH);
+      // An encrypted source with no key, or another one, names no file to resolve.
+      if (expected.status !== "missing") expect(result.resolvedPath).toBe(PATH);
       if (entry.commit !== undefined) expect(result.commit).toBe(entry.commit);
     });
   }
@@ -144,7 +154,7 @@ describe("classifyCitation agrees with the ladder", () => {
     writeFileSync(join(root, PATH), ladder.variants.CHANGED ?? "", "utf8");
     const result = await classifyCitation(
       page({ src: `${PATH}:2`, integrity: PIN_L2, commit: "3f9c2a1" }),
-      { root, index: indexOf([PATH]), git: fakeGit(ladder.SOURCE), salt: "" },
+      { root, index: indexOf([PATH]), git: fakeGit(ladder.SOURCE) },
     );
     expect(result.status).toBe("changed");
     expect(result.historyAvailable).toBe(true);
@@ -158,7 +168,6 @@ describe("classifyCitation agrees with the ladder", () => {
       root,
       index: indexOf([PATH]),
       git: fakeGit(ladder.variants.AT_COMMIT_OTHER),
-      salt: "",
       pageCommit: "3f9c2a1",
     });
     expect(result.status).toBe("never-true");
@@ -173,7 +182,6 @@ describe("classifyCitation agrees with the ladder", () => {
       index: indexOf([PATH]),
       git: fakeGit(ladder.variants.AT_COMMIT_OTHER),
       useGit: false,
-      salt: "",
     });
     expect(verdictOf(off)).toEqual({ status: "changed" });
     expect(off.commitsSince).toBeUndefined();
@@ -181,19 +189,18 @@ describe("classifyCitation agrees with the ladder", () => {
       root,
       index: indexOf([PATH]),
       git: fakeGit(ladder.variants.AT_COMMIT_OTHER, false),
-      salt: "",
     });
     expect(verdictOf(absent)).toEqual({ status: "changed" });
   });
 
   it("moves a keyed pin without history, spelling the token as the page did", async () => {
     writeFileSync(join(root, PATH), ladder.variants.MOVED ?? "", "utf8");
-    const keyed = ladder.mint(ladder.SOURCE, 1, 3, SALT) ?? "";
+    const keyed = ladder.mint(ladder.SOURCE, 1, 3, KEY) ?? "";
     const result = await classifyCitation(page({ src: `${TOKEN}:1-3`, integrity: keyed }), {
       root,
       index: indexOf([PATH]),
       git: fakeGit(undefined),
-      salt: SALT,
+      key: KEY,
     });
     expect(result.status).toBe("moved");
     expect(result.newSrc).toBe(`${TOKEN}:3-5`);
@@ -206,7 +213,6 @@ describe("classifyCitation agrees with the ladder", () => {
       root,
       index: indexOf([PATH]),
       git: fakeGit(undefined),
-      salt: "",
       budget: 4,
     });
     expect(result.status).toBe("changed");
@@ -243,14 +249,14 @@ describe("findWindows", () => {
     });
   });
 
-  it("without the original lines: hashes windows, keyed when a salt is given", () => {
+  it("without the original lines: hashes windows, keyed when a key is given", () => {
     expect(findWindows(moved, 1, PIN_L2, undefined, { around: 2 })).toEqual({ starts: [4], truncated: false });
     expect(findWindows(ambiguous, 1, PIN_L2, undefined, { around: 2 })).toEqual({
       starts: [4, 11],
       truncated: false,
     });
-    const keyed = ladder.mint(ladder.SOURCE, 2, 2, SALT) ?? "";
-    expect(findWindows(moved, 1, keyed, SALT, { around: 2 })).toEqual({ starts: [4], truncated: false });
+    const keyed = ladder.mint(ladder.SOURCE, 2, 2, KEY) ?? "";
+    expect(findWindows(moved, 1, keyed, KEY, { around: 2 })).toEqual({ starts: [4], truncated: false });
     expect(findWindows(moved, 1, keyed, undefined, { around: 2 })).toEqual({ starts: [], truncated: false });
   });
 
@@ -305,8 +311,8 @@ describe.skipIf(!gitAvailable())("classifyCitation against a real repository", (
     writeFileSync(join(repo, "src", "new.ts"), "export const NEW = 1;\n", "utf8");
     const second = commitAll(repo, "raise fetch timeout to 30s");
     const git = gitClient(repo);
-    const index = await buildSourceIndex(repo, "", { gitClient: git });
-    const opts = { root: repo, index, git, salt: "" };
+    const index = await buildSourceIndex(repo, { gitClient: git });
+    const opts = { root: repo, index, git };
 
     const changed = await classifyCitation(page({ src: `${PATH}:2`, integrity: PIN_L2, commit: first }), opts);
     expect(changed.status).toBe("changed");
@@ -349,8 +355,8 @@ describe.skipIf(!gitAvailable())("classifyCitation against a real repository", (
     writeFileSync(join(repo, PATH), ladder.variants.MOVED_CHANGED ?? "", "utf8");
     commitAll(repo, "raise fetch timeout to 30s");
     const git = gitClient(repo);
-    const index = await buildSourceIndex(repo, "", { gitClient: git });
-    const opts = { root: repo, index, git, salt: "" };
+    const index = await buildSourceIndex(repo, { gitClient: git });
+    const opts = { root: repo, index, git };
 
     const result = await classifyCitation(page({ src: `${PATH}:4`, integrity: PIN_L2, commit: first }), opts);
     expect(result.status).toBe("changed");

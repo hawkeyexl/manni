@@ -1,5 +1,5 @@
 // The drift-check contract of proposal 0044, as a self-contained reference
-// implementation: the hashing rule, the obfuscation rule, the classifier, the
+// implementation: the hashing rule, the encryption rule, the classifier, the
 // inline-statement scanner and the claim search, each run against a fixed
 // source file and its variants. No src/ import and no schema: this ladder is
 // what the implementation in src/cite/ must agree with, not the other way
@@ -74,9 +74,9 @@ function sha256(s) {
 // mint(text)            whole file, plain
 // mint(text, 2)         one line, plain
 // mint(text, 1, 3)      a range, plain
-// mint(text, 1, 3, salt) keyed: sha256(salt + "\n" + text). The keyed form is
-// what an obfuscated `src` carries; the salt may be "" and is still a key.
-function mint(text, l1, l2, salt) {
+// mint(text, 1, 3, key) keyed: the pin below, an HMAC under a key derived from
+// the encryption key. The keyed form is what an encrypted `src` carries.
+function mint(text, l1, l2, key) {
   const all = lines(text);
   let picked;
   if (l1 === undefined) picked = all;
@@ -86,15 +86,85 @@ function mint(text, l1, l2, salt) {
     picked = all.slice(l1 - 1, end);
   }
   const body = picked.join("\n");
-  return "sha256-" + sha256(salt === undefined ? body : salt + "\n" + body);
+  return key === undefined ? "sha256-" + sha256(body) : pin(body, key);
 }
 
 // ---------------------------------------------------------------------------
-// The obfuscation rule.
+// The encryption rule (proposal 0045), the family's one ciphertext format.
+// A cite source is the path's JSON, encrypted in the `cite-src` context.
+//
+// Three subkeys come from the configured key with HKDF-SHA256 and an empty
+// salt, labelled manni/v1/encrypt, manni/v1/nonce and manni/v1/pin. The
+// plaintext is the JSON padded with 0x80 then 0x00 to the next multiple of 32
+// (always at least one pad byte). The nonce is the first 12 bytes of
+// HMAC(nonce key, context || 0x00 || padded), so equal plaintexts give equal
+// ciphertexts. AES-256-GCM seals the padded text with associated data
+// 0x01 || context. The token is `~` and unpadded base64url of
+// 0x01 || nonce || ciphertext || 16-byte tag: 82 characters at the shortest.
 // ---------------------------------------------------------------------------
 
-function obfuscate(path, salt) {
-  return "~" + sha256(salt + "\n" + path).slice(0, 16);
+function subkey(key, label) {
+  return Buffer.from(crypto.hkdfSync("sha256", Buffer.from(key, "utf8"), Buffer.alloc(0), label, 32));
+}
+
+function pad(data) {
+  const out = Buffer.alloc((Math.floor(data.length / 32) + 1) * 32);
+  data.copy(out);
+  out[data.length] = 0x80;
+  return out;
+}
+
+function nonceOf(key, ctx, padded) {
+  return crypto
+    .createHmac("sha256", subkey(key, "manni/v1/nonce"))
+    .update(ctx)
+    .update(Buffer.from([0x00]))
+    .update(padded)
+    .digest()
+    .subarray(0, 12);
+}
+
+function encrypt(value, key, context = "cite-src") {
+  const ctx = Buffer.from(context, "utf8");
+  const padded = pad(Buffer.from(JSON.stringify(value), "utf8"));
+  const nonce = nonceOf(key, ctx, padded);
+  const cipher = crypto.createCipheriv("aes-256-gcm", subkey(key, "manni/v1/encrypt"), nonce, { authTagLength: 16 });
+  cipher.setAAD(Buffer.concat([Buffer.from([0x01]), ctx]));
+  const sealed = Buffer.concat([cipher.update(padded), cipher.final()]);
+  const bytes = Buffer.concat([Buffer.from([0x01]), nonce, sealed, cipher.getAuthTag()]);
+  return "~" + bytes.toString("base64url");
+}
+
+// The value, or undefined when the token is not ours under this key: a bad
+// tag, a nonce that is not the HMAC of what it seals, or padding that is not
+// exactly what `pad` writes.
+function decrypt(token, key, context = "cite-src") {
+  if (!/^~[A-Za-z0-9_-]{82,}$/.test(token)) return undefined;
+  const bytes = Buffer.from(token.slice(1), "base64url");
+  if (bytes.toString("base64url") !== token.slice(1) || bytes[0] !== 0x01) return undefined;
+  if (bytes.length < 61 || (bytes.length - 29) % 32 !== 0) return undefined;
+  const ctx = Buffer.from(context, "utf8");
+  const nonce = bytes.subarray(1, 13);
+  try {
+    const decipher = crypto.createDecipheriv("aes-256-gcm", subkey(key, "manni/v1/encrypt"), nonce, { authTagLength: 16 });
+    decipher.setAAD(Buffer.concat([Buffer.from([0x01]), ctx]));
+    decipher.setAuthTag(bytes.subarray(bytes.length - 16));
+    const padded = Buffer.concat([decipher.update(bytes.subarray(13, bytes.length - 16)), decipher.final()]);
+    if (!nonceOf(key, ctx, padded).equals(nonce)) return undefined;
+    let end = padded.length - 1;
+    while (end >= 0 && padded[end] === 0) end--;
+    if (end < 0 || padded[end] !== 0x80 || padded.length !== (Math.floor(end / 32) + 1) * 32) return undefined;
+    return JSON.parse(padded.subarray(0, end).toString("utf8"));
+  } catch {
+    return undefined;
+  }
+}
+
+// The keyed pin: `sha256-` and the hex HMAC-SHA256 of the text under the pin
+// subkey, so a public page carries no verifier a reader could run against a
+// guessed private line.
+function pin(text, key) {
+  return "sha256-" + crypto.createHmac("sha256", subkey(key, "manni/v1/pin")).update(text, "utf8").digest("hex");
 }
 
 function parseSrc(src) {
@@ -102,7 +172,7 @@ function parseSrc(src) {
   const path = m[1];
   const start = m[2] === undefined ? undefined : Number(m[2]);
   const end = m[3] === undefined ? start : Number(m[3]);
-  return { path, obfuscated: path.startsWith("~"), start, end };
+  return { path, encrypted: path.startsWith("~"), start, end };
 }
 
 function formatSrc(path, start, end) {
@@ -118,10 +188,13 @@ function formatSrc(path, start, end) {
 // ---------------------------------------------------------------------------
 
 function classify(entry, current, atCommit, opts = {}) {
-  const { path, obfuscated, start, end } = parseSrc(entry.src);
-  const salt = obfuscated ? (opts.salt ?? "") : undefined;
-  const pinOf = (text, a, b) => mint(text, a, b, salt);
+  const { path, encrypted, start, end } = parseSrc(entry.src);
+  const key = encrypted ? opts.key : undefined;
+  const pinOf = (text, a, b) => mint(text, a, b, key);
 
+  // An encrypted source names a file only under the key it was encrypted
+  // with. No key, or another one, and there is no file to read.
+  if (encrypted && (key === undefined || typeof decrypt(path, key) !== "string")) return { status: "missing" };
   if (current === null) return { status: "missing" };
 
   const now = lines(current);
@@ -315,8 +388,10 @@ const COMMIT = "3f9c2a1e7b0d4c5a6f8e9d0b1a2c3d4e5f607182";
 const PIN_L2 = mint(SOURCE, 2);
 const PIN_1_3 = mint(SOURCE, 1, 3);
 const PIN_WHOLE = mint(SOURCE);
-const SALT = "SALT-LADDER";
-const TOKEN = obfuscate("src/limits.ts", SALT);
+// A fixed test key: at least 32 hex or base64url characters, like any
+// configured one. Never a real key.
+const KEY = "ladder-key-0123456789abcdef0123456789";
+const TOKEN = encrypt("src/limits.ts", KEY);
 
 const ENTRY = { id: "fetch-timeout", src: "src/limits.ts:2", integrity: PIN_L2, commit: COMMIT };
 
@@ -348,12 +423,16 @@ const VERDICTS = [
   ["whole-file pin holds across crlf", { src: "src/limits.ts", integrity: PIN_WHOLE }, variants.CRLF, undefined, { status: "current" }],
   ["range beyond eof", { src: "src/limits.ts:1-7", integrity: PIN_WHOLE, commit: COMMIT }, variants.SHRUNK, SOURCE,
     { status: "changed", historyAvailable: true, fileLines: 3 }],
-  ["obfuscated, keyed pin, right salt", { src: `${TOKEN}:2`, integrity: mint(SOURCE, 2, 2, SALT) }, SOURCE, undefined,
+  ["encrypted, keyed pin, right key", { src: `${TOKEN}:2`, integrity: mint(SOURCE, 2, 2, KEY) }, SOURCE, undefined,
     { status: "current" }],
-  ["obfuscated, keyed pin, moved", { src: `${TOKEN}:2`, integrity: mint(SOURCE, 2, 2, SALT) }, variants.MOVED, undefined,
+  ["encrypted, keyed pin, moved", { src: `${TOKEN}:2`, integrity: mint(SOURCE, 2, 2, KEY) }, variants.MOVED, undefined,
     { status: "moved", newSrc: `${TOKEN}:4` }],
-  ["obfuscated, wrong salt is a changed pin, not a leak", { src: `${TOKEN}:2`, integrity: mint(SOURCE, 2, 2, SALT) }, SOURCE, undefined,
-    { status: "changed" }, { salt: "wrong" }],
+  ["encrypted, keyed pin, changed", { src: `${TOKEN}:2`, integrity: mint(SOURCE, 2, 2, KEY) }, variants.CHANGED, undefined,
+    { status: "changed" }],
+  ["encrypted, another key is missing, not a leak", { src: `${TOKEN}:2`, integrity: mint(SOURCE, 2, 2, KEY) }, SOURCE, undefined,
+    { status: "missing" }, { key: "another-key-0123456789abcdef012345" }],
+  ["encrypted, no key is missing", { src: `${TOKEN}:2`, integrity: mint(SOURCE, 2, 2, KEY) }, SOURCE, undefined,
+    { status: "missing" }, { key: undefined }],
 ];
 
 function run() {
@@ -364,15 +443,22 @@ function run() {
   assert.strictEqual(mint(SOURCE, 1, 7), PIN_WHOLE, "1-N equals the whole file");
   assert.strictEqual(mint(variants.CRLF, 2), PIN_L2, "crlf line 2 equals plain line 2");
   assert.strictEqual(mint(variants.BOM, 1, 3), PIN_1_3, "a bom does not enter the hash");
-  assert.notStrictEqual(mint(SOURCE, 2, 2, ""), PIN_L2, "an empty salt is still a key");
-  assert.strictEqual(TOKEN.length, 17);
-  assert.match(TOKEN, /^~[0-9a-f]{16}$/);
-  assert.notStrictEqual(obfuscate("src/limits.ts", "other"), TOKEN, "the token depends on the salt");
+  assert.notStrictEqual(mint(SOURCE, 2, 2, KEY), PIN_L2, "a keyed pin is not the plain one");
+  assert.strictEqual(mint(SOURCE, 2, 2, KEY), mint(SOURCE, 2, 2, KEY), "a keyed pin is stable per key");
+  assert.notStrictEqual(mint(SOURCE, 2, 2, "another-key-0123456789abcdef012345"), mint(SOURCE, 2, 2, KEY));
+  // "src/limits.ts" is 15 bytes of JSON, one padded block: 61 bytes, 82 characters.
+  assert.strictEqual(TOKEN.length, 83);
+  assert.match(TOKEN, /^~[A-Za-z0-9_-]{82,}$/);
+  assert.strictEqual(encrypt("src/limits.ts", KEY), TOKEN, "equal plaintexts give equal ciphertexts");
+  assert.strictEqual(decrypt(TOKEN, KEY), "src/limits.ts", "the ciphertext decrypts to the path");
+  assert.strictEqual(decrypt(TOKEN, "another-key-0123456789abcdef012345"), undefined, "and only under its key");
+  assert.strictEqual(decrypt(TOKEN, KEY, "meta"), undefined, "and only in its context");
+  assert.notStrictEqual(encrypt("src/limits.ts", "another-key-0123456789abcdef012345"), TOKEN);
   console.log("golden hashes");
   console.log(`  line 2    ${PIN_L2}`);
   console.log(`  lines 1-3 ${PIN_1_3}`);
   console.log(`  whole     ${PIN_WHOLE}  (= lines 1-7)`);
-  console.log(`  token     ${TOKEN}  (salt ${JSON.stringify(SALT)})`);
+  console.log(`  source    ${TOKEN}  (src/limits.ts, encrypted)`);
 
   let bad = 0;
   const check = (name, got, expected) => {
@@ -388,7 +474,7 @@ function run() {
 
   console.log("\nverdicts: classify(entry, current, atCommit)");
   for (const [name, entry, current, atCommit, expected, opts] of VERDICTS) {
-    const got = classify(entry, current, atCommit, { salt: SALT, ...opts });
+    const got = classify(entry, current, atCommit, { key: KEY, ...opts });
     check(`${name.padEnd(52)} -> ${expected.status}`, got, expected);
   }
 
@@ -464,7 +550,10 @@ module.exports = {
   normalize,
   lines,
   mint,
-  obfuscate,
+  encrypt,
+  decrypt,
+  pin,
+  KEY,
   parseSrc,
   formatSrc,
   classify,

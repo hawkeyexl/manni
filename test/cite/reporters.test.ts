@@ -26,9 +26,10 @@ import type { RunSummary, ValidationResult } from "../../src/meta/index.js";
 
 const PIN = "sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f";
 const COMMIT = "3f9c2a1e7b0d4c5a6f8e9d0b1a2c3d4e5f607182";
-const TOKEN = "~9c1f0e2b7a3d4c5e";
+/** Ciphertext-shaped: `~` and 84 base64url characters. Only its spelling matters here. */
+const TOKEN = "~" + "AQx7Vb2_Kp-9Qm".repeat(6);
 const SECRET = "private/SECRET.ts";
-const SALT = "SALT-SENTINEL";
+const KEY = "sentinel-key-0123456789abcdef012345";
 
 function citation(over: Partial<CitationResult> & { status: CitationResult["status"] }): CitationResult {
   return {
@@ -184,7 +185,7 @@ describe("renderCheckPretty", () => {
     expect(renderCheckPretty(run, NO_COLOR)).toContain(`    · fetch-timeout   ${TOKEN}:2   skipped`);
   });
 
-  it("reveals the resolved path beside a token only under reveal", () => {
+  it("reveals the decrypted path beside an encrypted source only under reveal", () => {
     const run = runOf([
       page({
         citations: [
@@ -476,7 +477,7 @@ describe("the output rule", () => {
     }),
   ]);
 
-  it("never prints the resolved path, the diff or the salt in json, github or plain pretty", () => {
+  it("never prints the decrypted path, the diff or the key in json, github or plain pretty", () => {
     for (const text of [
       renderCheckJson(sentinel),
       renderCheckGithub(sentinel),
@@ -484,7 +485,7 @@ describe("the output rule", () => {
       renderCheckPretty(sentinel, { ...NO_COLOR, showDiff: false, reveal: false }),
     ]) {
       expect(text).not.toContain(SECRET);
-      expect(text).not.toContain(SALT);
+      expect(text).not.toContain(KEY);
       expect(text).toContain(TOKEN);
     }
   });

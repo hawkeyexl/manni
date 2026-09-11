@@ -222,7 +222,7 @@ function statementAt(content: string, format: string, label: string, line: numbe
  * since every rewrite keeps its line count. A field the statement does not
  * carry is left out (`commit` on an entry that never recorded one). The
  * result is read back before it is trusted, as the YAML splice is. `update`
- * and `salt rotate` both rewrite through here.
+ * and `reencryptCitations` both rewrite through here.
  */
 export function rewriteInlineFields(
   content: string,

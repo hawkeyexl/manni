@@ -54,7 +54,7 @@ export interface PreparedRun {
   usingStdin: boolean;
   /** The `--as` extractor, validated. */
   forced?: MetadataExtractor;
-  /** What every `checkCitations` call in the run shares: root, salt, table, client, index. */
+  /** What every `checkCitations` call in the run shares: root, key, table, client, index. */
   pageOptions: CheckPageOptions;
 }
 
@@ -62,9 +62,9 @@ function isEnoent(error: unknown): boolean {
   return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
 }
 
-async function indexFor(root: string, salt: string, client: GitClient, git: boolean): Promise<SourceIndex> {
+async function indexFor(root: string, client: GitClient, git: boolean): Promise<SourceIndex> {
   try {
-    return await buildSourceIndex(root, salt, { gitClient: client, git });
+    return await buildSourceIndex(root, { gitClient: client, git });
   } catch (error) {
     if (isEnoent(error)) throw new CiteError(`Root directory not found: ${root}.`);
     throw error;
@@ -149,11 +149,11 @@ export async function prepareRun(
     root: run.root,
     git,
     sources,
-    salt: run.salt,
+    key: run.key,
     severity: config?.severity,
     gitClient: client,
   };
-  if (sources) pageOptions.sourceIndex = await indexFor(run.root, run.salt, client, git);
+  if (sources) pageOptions.sourceIndex = await indexFor(run.root, client, git);
 
   return { cwd, run, files, gitignoreSkipped, usingStdin, forced, pageOptions };
 }

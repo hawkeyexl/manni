@@ -17,7 +17,7 @@ import { DEFAULT_CITE_BASELINE_PATH } from "../../src/cite/core/config.js";
 import { hashRange } from "../../src/cite/core/hash.js";
 import { readPage } from "../../src/cite/core/page.js";
 import { parseSrc } from "../../src/cite/core/range.js";
-import { obfuscatePath } from "../../src/cite/core/sources.js";
+import { decryptSourcePath, encryptSourcePath } from "../../src/cite/core/sources.js";
 import { CiteError } from "../../src/cite/errors.js";
 import type { CheckOptions, CheckRun } from "../../src/cite/types.js";
 import { commitAll, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
@@ -26,8 +26,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, "..", "fixtures", "cite");
 const PAGES = join(ROOT, "pages");
 const SRC = join(ROOT, "src");
-const SALT = "SALT-FIXTURE";
-const SENTINEL = "SALT-SENTINEL";
+/** The fixed test key pages/encrypted.md was encrypted with. Never the developer's environment. */
+const FIXTURE_KEY = "cite-fixture-key-0123456789abcdef";
+const SENTINEL = "sentinel-key-0123456789abcdef012345";
+const OTHER = "another-key-0123456789abcdef012345";
 const PIN_L2 = "sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f";
 const UNKNOWN = "0123456789abcdef0123456789abcdef01234567";
 
@@ -40,7 +42,7 @@ const rules = (run: CheckRun, i = 0): string[] => (run.pages[i]?.findings ?? [])
 
 /** `runCheck` from the fixture directory, git off, no config unless a case says so. */
 function check(over: Partial<CheckOptions> & { inputs: string[] }): Promise<CheckRun> {
-  return runCheck({ cwd: ROOT, root: ROOT, noConfig: true, git: false, ...over });
+  return runCheck({ cwd: ROOT, root: ROOT, noConfig: true, git: false, env: {}, ...over });
 }
 
 async function refusal(promise: Promise<unknown>): Promise<string> {
@@ -59,11 +61,12 @@ function tempDir(): string {
   temps.push(dir);
   return dir;
 }
-/** A directory holding one `manni.config.yaml` with the given `cite:` body. */
-function tempConfig(cite: string): string {
+/** A directory holding one `manni.config.yaml` with the given `cite:` body, and the family key when given. */
+function tempConfig(cite: string, key?: string): string {
   const dir = tempDir();
   const path = join(dir, "manni.config.yaml");
-  writeFileSync(path, `cite:\n${cite.replace(/^/gm, "  ")}\n`, "utf8");
+  const family = key === undefined ? "" : `encryptionKey: ${key}\n`;
+  writeFileSync(path, `${family}cite:\n${cite.replace(/^/gm, "  ")}\n`, "utf8");
   return path;
 }
 afterEach(() => {
@@ -72,23 +75,24 @@ afterEach(() => {
 
 describe("fixture pins", () => {
   /** Page, entry, the source it was minted from and the range that still holds there. */
-  const holds: { page: string; index: number; file: string; salt?: string; at?: [number, number] }[] = [
+  const holds: { page: string; index: number; file: string; key?: string; at?: [number, number] }[] = [
     { page: "current.md", index: 0, file: "limits.ts", at: [2, 2] },
     { page: "stale-claim.md", index: 0, file: "limits.ts", at: [2, 2] },
     { page: "moved.md", index: 0, file: "moved.ts", at: [4, 4] },
     { page: "moved.md", index: 1, file: "moved.ts", at: [5, 5] },
     { page: "missing.md", index: 0, file: "limits.ts", at: [2, 2] },
     { page: "whole-file.md", index: 0, file: "limits.ts" },
-    { page: "obfuscated.md", index: 0, file: "limits.ts", at: [2, 2], salt: SALT },
+    { page: "encrypted.md", index: 0, file: "limits.ts", at: [2, 2], key: FIXTURE_KEY },
   ];
 
-  it.each(holds)("$page entry $index was minted from $file", ({ page: name, index, file, at, salt }) => {
+  it.each(holds)("$page entry $index was minted from $file", ({ page: name, index, file, at, key }) => {
     const citation = readPage(name, page(name)).citations[index]?.citation;
     expect(citation).toBeDefined();
     const range = at ? { start: at[0], end: at[1] } : undefined;
-    expect(citation?.integrity).toBe(hashRange(source(file), range, salt));
+    expect(citation?.integrity).toBe(hashRange(source(file), range, key));
     const parsed = parseSrc(citation?.src ?? "");
-    if (salt !== undefined) expect(parsed.path).toBe(obfuscatePath(`src/${file}`, salt));
+    expect(parsed.encrypted).toBe(key !== undefined);
+    if (key !== undefined) expect(decryptSourcePath(parsed.path, key)).toBe(`src/${file}`);
   });
 
   it("stale-claim.md drifted: changed.ts line 2 no longer hashes to the pin", () => {
@@ -144,17 +148,38 @@ describe("runCheck", () => {
     expect(whole.results[0]?.ok).toBe(true);
   });
 
-  it("resolves a token through the configured salt, and calls it missing without one", async () => {
-    const withSalt = await check({
-      inputs: ["pages/obfuscated.md"],
+  it("decrypts an encrypted source with the configured key, or the environment's", async () => {
+    const fromConfig = await check({
+      inputs: ["pages/encrypted.md"],
       noConfig: false,
-      configPath: tempConfig(`salt: ${SALT}`),
+      configPath: tempConfig("", FIXTURE_KEY),
     });
-    expect(statuses(withSalt)).toEqual(["current"]);
-    const without = await check({ inputs: ["pages/obfuscated.md"] });
+    expect(statuses(fromConfig)).toEqual(["current"]);
+    expect(fromConfig.results[0]?.ok).toBe(true);
+    const fromEnv = await check({ inputs: ["pages/encrypted.md"], env: { MANNI_ENCRYPTION_KEY: FIXTURE_KEY } });
+    expect(statuses(fromEnv)).toEqual(["current"]);
+  });
+
+  it("with no key, an encrypted citation is missing and an error; --no-sources skips it", async () => {
+    const without = await check({ inputs: ["pages/encrypted.md"] });
     expect(statuses(without)).toEqual(["missing"]);
-    expect(without.pages[0]?.findings.map((f) => f.message)).toEqual([
-      "missing (no tracked file matches; wrong --root or salt?)",
+    expect(without.pages[0]?.findings.map((f) => [f.severity, f.message])).toEqual([
+      ["error", "missing (no encryption key is available to decrypt it)"],
+    ]);
+    expect(without.results[0]?.ok).toBe(false);
+    expect(without.summary).toEqual({ files: 1, passed: 0, failed: 1, errors: 1 });
+
+    const skipped = await check({ inputs: ["pages/encrypted.md"], sources: false });
+    expect(statuses(skipped)).toEqual(["skipped"]);
+    expect(skipped.results[0]?.ok).toBe(true);
+    expect(skipped.summary).toEqual({ files: 1, passed: 1, failed: 0, errors: 0 });
+  });
+
+  it("under another key, an encrypted citation is missing and says so", async () => {
+    const run = await check({ inputs: ["pages/encrypted.md"], env: { MANNI_ENCRYPTION_KEY: OTHER } });
+    expect(statuses(run)).toEqual(["missing"]);
+    expect(run.pages[0]?.findings.map((f) => f.message)).toEqual([
+      "missing (does not decrypt under the current key)",
     ]);
   });
 
@@ -458,14 +483,14 @@ describe("runCheck", () => {
 
   describe("output never says more than the page did", () => {
     it("spells a token page's findings with the token, never the resolved path", async () => {
-      const token = obfuscatePath("src/moved.ts", SENTINEL);
+      const token = encryptSourcePath("src/moved.ts", SENTINEL);
       const keyed = hashRange(source("limits.ts"), { start: 2, end: 2 }, SENTINEL);
       const content = [
         "---",
         "citations:",
         `  - src: ${token}:2`,
         `    integrity: ${keyed}`,
-        `  - src: ${obfuscatePath("src/limits.ts", SENTINEL)}:2`,
+        `  - src: ${encryptSourcePath("src/limits.ts", SENTINEL)}:2`,
         `    integrity: ${PIN_L2}`,
         "---",
         "Body.",
@@ -476,7 +501,7 @@ describe("runCheck", () => {
         as: "markdown",
         stdinContent: content,
         noConfig: false,
-        configPath: tempConfig(`salt: ${SENTINEL}`),
+        configPath: tempConfig("", SENTINEL),
       });
       expect(statuses(run)).toEqual(["moved", "changed"]);
       expect(run.pages[0]?.citations[0]?.newSrc).toBe(`${token}:4`);

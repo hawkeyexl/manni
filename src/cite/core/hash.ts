@@ -2,10 +2,12 @@
  * The hashing rule, stated once (proposal 0044 § The vocabulary):
  * UTF-8; strip one leading BOM; CRLF → LF; split on LF; drop the empty element
  * a trailing LF leaves; take lines L1..L2 inclusive (1-based); join with LF; no
- * trailing LF; trailing whitespace kept. Plain: sha256(text). Keyed (obfuscated
- * `src`): sha256(salt + "\n" + text). Spelled `sha256-<64 hex>`.
+ * trailing LF; trailing whitespace kept. Plain: sha256(text). Keyed (an
+ * encrypted `src`): the family's keyed pin, HMAC-SHA256 under a key derived
+ * from the encryption key (proposal 0045). Both spelled `sha256-<64 hex>`.
  */
 import { integrityOf } from "../../meta/index.js";
+import { keyedPin } from "../../shared/encryption.js";
 import { CiteError } from "../errors.js";
 
 /** BOM stripped, CRLF folded to LF. */
@@ -40,20 +42,19 @@ export function sliceLines(
   return lines.slice(start - 1, end).join("\n");
 }
 
-/**
- * `sha256-<hex>` of the cited lines; keyed when `salt` is a string. The empty
- * string is still a key, so a plain pin passes `undefined`, never `""`.
- */
+/** `sha256-<hex>` of the cited lines; the keyed pin under `key` when one is given. */
 export function hashRange(
   text: string,
   range?: { start?: number; end?: number },
-  salt?: string,
+  key?: string,
 ): string {
-  return hashLines(sliceLines(splitLines(text), range), salt);
+  return hashLines(sliceLines(splitLines(text), range), key);
 }
 
-/** `sha256-<hex>` of already-joined lines; keyed when `salt` is a string. */
-export function hashLines(joined: string, salt?: string): string {
-  const keyed = salt === undefined ? joined : `${salt}\n${joined}`;
-  return integrityOf(Buffer.from(keyed, "utf8"));
+/**
+ * `sha256-<hex>` of already-joined lines: plain, or with `key` the keyed pin
+ * an encrypted `src` carries. A plain pin passes `undefined`.
+ */
+export function hashLines(joined: string, key?: string): string {
+  return key === undefined ? integrityOf(Buffer.from(joined, "utf8")) : keyedPin(joined, key);
 }

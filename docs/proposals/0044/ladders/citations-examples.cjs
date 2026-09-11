@@ -1,4 +1,4 @@
-// Validate the manni:citations:1.0.0-proposal.1 example ladder against the draft
+// Validate the manni:citations:1.0.0-proposal.2 example ladder against the draft
 // schema, without registering anything. Run from the worktree root.
 const fs = require("fs");
 const { createRequire } = require("module");
@@ -9,7 +9,16 @@ const { parse } = req("yaml");
 
 // The draft's semver prerelease, spelled once per ladder so a bump is a
 // one-line edit here rather than a literal buried mid-expression.
-const V = "1.0.0-proposal.1";
+const V = "1.0.0-proposal.2";
+
+// Ciphertext-shaped sources: `~` and base64url (A-Z, a-z, 0-9, `-`, `_`). The
+// schema checks the shape only; whether a value decrypts is the key holder's
+// question. 84 characters here, 82 at the shortest.
+const CIPHER = "~" + "AQx7Vb2_Kp-9Qm".repeat(6);
+// One character short of the shortest ciphertext.
+const SHORT = CIPHER.slice(0, 82);
+// Standard base64's `+` and `/` are not in the base64url alphabet.
+const BAD_ALPHABET = "~" + "AQx7Vb2+Kp/9Qm".repeat(6);
 const schema = JSON.parse(
   fs.readFileSync(`docs/proposals/0044/schemas/citations/${V}.json`, "utf8"),
 );
@@ -101,14 +110,19 @@ citations:
     src: src/limits.ts:2
     integrity: ${PIN}`],
 
-  ["13 an obfuscated source with a range", true,
+  ["13 an encrypted source with a range", true,
 `citations:
-  - src: "~9c1f0e2b7a3d4c5e:1-3"
+  - src: "${CIPHER}:1-3"
     integrity: ${PIN}`],
 
-  ["14 an obfuscated whole-file pin", true,
+  ["14 an encrypted whole-file pin", true,
 `citations:
-  - src: "~9c1f0e2b7a3d4c5e"
+  - src: "${CIPHER}"
+    integrity: ${PIN}`],
+
+  ["15 the shortest encrypted source, 82 characters", true,
+`citations:
+  - src: "${CIPHER.slice(0, 83)}:2"
     integrity: ${PIN}`],
 
   // Negatives.
@@ -214,14 +228,19 @@ citations:
   - src: src/
     integrity: ${PIN}`],
 
-  ["N21 an uppercase obfuscation token", false,
+  ["N21 an encrypted source one character short of the shortest", false,
 `citations:
-  - src: "~9C1F0E2B7A3D4C5E"
+  - src: "${SHORT}:2"
     integrity: ${PIN}`],
 
-  ["N22 a fifteen-hex obfuscation token", false,
+  ["N22 an encrypted source in standard base64, not base64url", false,
 `citations:
-  - src: "~9c1f0e2b7a3d4c5"
+  - src: "${BAD_ALPHABET}:2"
+    integrity: ${PIN}`],
+
+  ["N23 proposal.1's sixteen-hex token, which carried no ciphertext", false,
+`citations:
+  - src: "~9c1f0e2b7a3d4c5e:1-3"
     integrity: ${PIN}`],
 ];
 
@@ -252,8 +271,9 @@ const probes = [
   ["docs/release notes/v1.2.md:4-9", true],
   [".hidden/file.md", true],
   ["a.b.c", true],
-  ["~9c1f0e2b7a3d4c5e", true],
-  ["~9c1f0e2b7a3d4c5e:1-3", true],
+  [CIPHER, true],
+  [`${CIPHER}:1-3`, true],
+  [CIPHER.slice(0, 83), true],
   ["src/limits.ts:9-3", true],
   ["https://x/y", false],
   ["C:/x", false],
@@ -275,9 +295,10 @@ const probes = [
   ["a:-2", false],
   ["a:1-2-3", false],
   ["a\tb", false],
-  ["~9C1F0E2B7A3D4C5E", false],
-  ["~9c1f0e2b7a3d4c5", false],
-  ["~9c1f0e2b7a3d4c5e7", false],
+  [SHORT, false],
+  [BAD_ALPHABET, false],
+  [`${CIPHER}=`, false],
+  ["~9c1f0e2b7a3d4c5e", false],
   ["~home/x", false],
   ["~", false],
 ];
