@@ -151,12 +151,13 @@ the same `--accept` with no edit to the prose.
     ✗ fetch-timeout   lib/limits.ts:4   never true: the pin does not match at 835098c   (line 13)
 ```
 
-The tool went back to the commit the entry records and the cited range did
-not hash to the pin there either. So the pin was never a record of those
-lines at that commit. There are two usual causes. One is a `src` or
-`integrity` edited by hand. The other is a `moved` entry that `update` rewrote
-to a new line number. Its `commit` still predates the move, and its line has
-since changed.
+The tool went back to the commit the entry records and searched the whole
+file there. No range of the cited length hashed to the pin. So the pin was
+never a record of that file at that commit. The usual cause is an entry
+edited by hand: a `src`, `integrity` or `commit` that does not belong with
+the others. A move is not a cause. After `update` rewrites a moved range, a
+later edit to the line reads `changed`, because the pinned bytes were in the
+file at that commit.
 
 **Fix.** Treat it as `changed`: check the sentence against the source, then
 re-mint at HEAD with `update --accept --only <id>`. Both pins are printed.

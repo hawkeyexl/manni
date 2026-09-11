@@ -305,9 +305,11 @@ at `lib/limits.ts:4`.
 
 <Aside type="note" title="Move, then change">
   `update` rewrites the range and keeps the entry's `commit`. If the line
-  later changes as well, the check goes back to that commit, finds a
-  different line 4 there, and reports `never-true` rather than `changed`. The
-  fix is the same: read the source, fix the prose, `update --accept`.
+  later changes as well, the check finds the pinned bytes at their old line
+  in that commit. So it reports `changed since <commit>`, and the fix is the
+  one above: fix the prose, then `update --accept`. `never-true` is kept
+  for a pin that matches nowhere in the file at its commit, such as one typed
+  by hand.
   [Fix a failing check](/manni/cite/fix/#never-true) has the details.
 </Aside>
 
