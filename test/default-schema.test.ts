@@ -196,9 +196,14 @@ describe("the six house vocabularies", () => {
     // two versions reads, and they carried the same stale strings.
     const dir = join(root, "docs/proposals/0023/schemas");
     const files: string[] = [];
-    for (const family of await readdir(dir)) {
-      for (const entry of await readdir(join(dir, family))) {
-        if (entry.endsWith(".json")) files.push(join(dir, family, entry));
+    for (const family of await readdir(dir, { withFileTypes: true })) {
+      // Anything but a family directory is skipped rather than descended
+      // into. A stray file here — a README, a .gitkeep — would otherwise
+      // fail the inner readdir with ENOTDIR, which says nothing about the
+      // vendor string this test exists to check.
+      if (!family.isDirectory()) continue;
+      for (const entry of await readdir(join(dir, family.name))) {
+        if (entry.endsWith(".json")) files.push(join(dir, family.name, entry));
       }
     }
     // A floor, not the count. The loop below is what catches a stale string,
