@@ -439,6 +439,19 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     });
     return ensuring;
   };
+  /**
+   * A marked value as it lands in the patch. A dry run writes nothing and
+   * reports `(encrypted)`, so it neither prompts nor refuses: it encrypts
+   * under a key it already has, and otherwise holds the placeholder, as
+   * `query --dry-run` does.
+   */
+  const seal = async (value: unknown, pointer: string): Promise<unknown> => {
+    if (dryRun) {
+      const key = currentKey();
+      return key === undefined ? ENCRYPTED_PLACEHOLDER : encryptValue(value, key, META_CONTEXT);
+    }
+    return encryptValue(value, await writeKey(pointer), META_CONTEXT);
+  };
 
   const processOne = async (
     label: string,
@@ -622,11 +635,11 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     }
 
     // The key before the first model request, so a refused prompt never
-    // wastes a paid run.
+    // wastes a paid run. A dry run writes nothing, so it needs no key.
     const firstSealed =
       inPlace[0]?.pointer ??
       (sealedCandidates[0] === undefined ? undefined : pointerOf(sealedCandidates[0].key));
-    if (firstSealed !== undefined) await writeKey(firstSealed);
+    if (firstSealed !== undefined && !dryRun) await writeKey(firstSealed);
 
     // ---- Propose (cache first) -------------------------------------------
     const cacheKey = buildCacheKey([
@@ -854,7 +867,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       const key = keyOf(f);
       const pointer = pointerOf(key);
       if (finalMarks.has(pointer) || probeMarks.has(pointer)) {
-        patch[key] = encryptValue(f.value, await writeKey(pointer), META_CONTEXT);
+        patch[key] = await seal(f.value, pointer);
         f.value = ENCRYPTED_PLACEHOLDER;
         f.encrypted = true;
       } else {
@@ -863,7 +876,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     }
     const required = requiredKeys(schemas);
     for (const f of inPlace) {
-      patch[f.key] = encryptValue(f.value, await writeKey(f.pointer), META_CONTEXT);
+      patch[f.key] = await seal(f.value, f.pointer);
       fields.push({
         field: f.pointer,
         required: required.has(f.key),

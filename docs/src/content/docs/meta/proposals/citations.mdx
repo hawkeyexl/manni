@@ -1,5 +1,5 @@
 ---
-title: "manni:citations:1.0.0-proposal.1"
+title: "manni:citations:1.0.0-proposal.2"
 description: "The proposed citations vocabulary pins a sentence to the source lines it rests on, by a hash and a commit, so a drift check can say which claim went stale."
 sidebar:
   order: 10
@@ -9,7 +9,8 @@ sidebar:
 :::caution[Proposal under review]
 Part of the [metadata vocabularies proposal](/manni/meta/proposals/frontmatter-vocabularies/),
 open for community review. Draft schema:
-[`docs/proposals/0044/schemas/citations/1.0.0-proposal.1.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0044/schemas/citations/1.0.0-proposal.1.json).
+[`docs/proposals/0044/schemas/citations/1.0.0-proposal.2.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0044/schemas/citations/1.0.0-proposal.2.json).
+`1.0.0-proposal.1` is kept beside it, unchanged, as the superseded draft.
 This vocabulary arrived with proposal 0044, after the nine in 0023, and is the
 family's tenth id. It lives under its own proposal directory because 0023's
 set is frozen while its review runs.
@@ -36,8 +37,8 @@ what anchors the pin to the page:
 
 | Field | Type | Notes |
 |---|---|---|
-| `src` | source reference | `path`, `path:L` or `path:L1-L2`: a repo-root-relative posix path and 1-based inclusive lines. `path:L` is the canonical spelling of one line. `~` plus sixteen hex digits stands in for the path of a private source |
-| `integrity` | `sha256-` and 64 hex digits | The pin, which is the cited lines hashed under one normalization rule. Keyed by a salt when `src` is obfuscated |
+| `src` | source reference | `path`, `path:L` or `path:L1-L2`: a repo-root-relative posix path and 1-based inclusive lines. `path:L` is the canonical spelling of one line. In place of the path, `~` and at least 82 base64url characters is an encrypted source: the path, encrypted under the family encryption key |
+| `integrity` | `sha256-` and 64 hex digits | The pin, which is the cited lines hashed under one normalization rule. Keyed by the family encryption key when `src` is encrypted |
 | `commit` | 7 to 40 hex digits | The commit the pin was minted at. Tooling writes all forty |
 | `id` | kebab-case, unique per page | What an in-body reference names, and what a finding is reported under |
 | `claim` | non-empty string | The sentence the citation supports, verbatim. A drift check finds it in the body with whitespace collapsed, so a soft-wrapped sentence still matches |
@@ -54,8 +55,11 @@ compare two numbers.
 Decode as UTF-8, drop one leading byte-order mark, and turn CRLF into LF.
 Split on LF and discard the empty element a trailing LF leaves. Take the cited
 lines, join them with LF and no trailing LF, and keep trailing whitespace. A
-plain `src` hashes that text. An obfuscated `src` hashes the salt, one LF, and
-the text.
+plain `src` hashes that text. An encrypted `src` carries a keyed pin instead.
+That is the HMAC-SHA256 of the text under a key derived from the family
+encryption key, still spelled `sha256-`.
+[Proposal 0045](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0045-family-encryption-key.md)
+states the construction of both the ciphertext and the keyed pin.
 
 ## Inline statements
 
@@ -117,13 +121,13 @@ Retries default to 3, and the count is not configurable.
 Retries default to 3, and the count is not configurable.
 ```
 
-An obfuscated entry, citing a private source from a public page. The token
-replaces the path, and the pin is keyed by the same salt. So the page carries
-neither the path nor a verifier for the line:
+An encrypted entry, citing a private source from a public page. The ciphertext
+replaces the path, and the pin is keyed by the same family encryption key. So
+the page carries neither the path nor a verifier for the line:
 
 ```yaml
 citations:
-  - src: "~9c1f0e2b7a3d4c5e:1-3"
+  - src: "~AQ…:1-3"
     integrity: sha256-…
     quote: true
 ```
@@ -145,11 +149,14 @@ citations:
   changes. A check that runs on every push cannot afford a page of false
   findings on one platform. Trailing whitespace is kept, because a trailing
   space is a change.
-- **A keyed pin for an obfuscated source.** A plain hash over a short private
-  line is a verifier a reader can run against guesses. Hashing the salt in
-  front of the text closes that, at the cost that only a checkout with the salt
-  can check the pin. The token is stable across pages, so a public site does
-  reveal how often a private file is cited; that is recorded as accepted.
+- **An encrypted path, under the family's key.** A checkout with the family
+  encryption key and the files can decrypt the path and read the lines, so it
+  needs no second secret. The encryption is deterministic, so one path under
+  one key always gives one ciphertext. A public site therefore does reveal how
+  often a private file is cited; that is recorded as accepted.
+- **A keyed pin for an encrypted source.** A plain hash over a short private
+  line is a verifier a reader can run against guesses. A keyed pin closes
+  that, at the cost that only a checkout with the key can check the pin.
 - **Two channels, both validated, no precedence.** A frontmatter entry and an
   inline statement are both real, as element metadata decided for its two
   channels. A collision is a finding, not a tiebreak.
@@ -161,7 +168,7 @@ citations:
 ## What reviewers should poke at
 
 Three questions. Is one algorithm in the `integrity` pattern too tight for a
-draft, given that adding one is a schema revision? Should the stable token be
-closed with a per-page salt? The cost is a drift check that no longer
-recognises one private file across two pages. And are the parenthesised
-statement forms worth keeping, given that they carry an id only?
+draft, given that adding one is a schema revision? Should the ciphertext differ
+from page to page? The cost is a drift check that no longer recognises one
+private file across two pages. And are the parenthesised statement forms worth
+keeping, given that they carry an id only?

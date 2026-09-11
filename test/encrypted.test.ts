@@ -387,6 +387,53 @@ describe("meta fill with a marked property", () => {
       expect(existsSync(join(dir, "manni.config.yaml"))).toBe(false);
     });
   }
+
+  it("with no key, a dry run still proposes a marked value, as (encrypted)", async () => {
+    await page("a.md", { title: "A" });
+    const before = await readFile(join(dir, "a.md"), "utf8");
+    const provider = propose({ owner: { value: "billing", confidence: 0.9 } });
+    const run = await runFill({
+      ...fillOpts(["a.md"], noKey),
+      fields: ["owner"],
+      inferenceProvider: provider,
+      dryRun: true,
+    });
+    expect(provider.requests).toHaveLength(1);
+    expect(run.results[0]?.fields).toEqual([
+      expect.objectContaining({ field: "/owner", value: "(encrypted)", encrypted: true }),
+    ]);
+    const report = renderFill("pretty", run);
+    expect(report).toContain("(encrypted)");
+    expect(report).not.toContain("billing");
+    expect(await readFile(join(dir, "a.md"), "utf8")).toBe(before);
+    expect(existsSync(join(dir, "manni.config.yaml"))).toBe(false);
+  });
+
+  it("with no key, a dry run reports an in-place encryption without asking for a key", async () => {
+    await writeFile(join(dir, "auth.md"), readFileSync(join(fixtures, "plain-owner.md")));
+    const before = await readFile(join(dir, "auth.md"), "utf8");
+    const questions: string[] = [];
+    const provider = propose({});
+    const run = await runFill({
+      ...fillOpts(["auth.md"], noKey),
+      fields: ["owner"],
+      inferenceProvider: provider,
+      dryRun: true,
+      confirm: (q) => {
+        questions.push(q);
+        return Promise.resolve(true);
+      },
+    });
+    expect(questions).toEqual([]);
+    expect(provider.requests).toHaveLength(0);
+    expect(run.results[0]?.changed).toBe(true);
+    expect(run.results[0]?.fields).toEqual([
+      expect.objectContaining({ field: "/owner", value: "(encrypted)", encrypted: true }),
+    ]);
+    expect(renderFill("pretty", run)).toContain("(encrypted)");
+    expect(await readFile(join(dir, "auth.md"), "utf8")).toBe(before);
+    expect(existsSync(join(dir, "manni.config.yaml"))).toBe(false);
+  });
 });
 
 describe("meta query writes a marked column encrypted", () => {
