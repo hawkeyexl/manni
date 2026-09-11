@@ -4,6 +4,41 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [1.0.0](https://github.com/hawkeyexl/manni/compare/v0.3.0...v1.0.0) (2026-09-11)
+
+
+* feat(meta)!: collections declare document sets for every tool ([#20](https://github.com/hawkeyexl/manni/issues/20)) ([3f559dc](https://github.com/hawkeyexl/manni/commit/3f559dc898ceacaae9e803d36968152df46968a1))
+
+
+### BREAKING CHANGES
+
+* `meta.paths`, `meta.exclude`, `meta.sidecars` and
+`overrides[].name` are removed. Each is refused with a message naming where it
+went: document sets go in the top-level `collections:` list, manifests become
+`collections[].externalMetadata`, and an override points at a collection with
+`collection:` instead of carrying a name of its own. There is no alias, because
+an alias is a permanent second way to say one thing.
+
+The two external-metadata finding identities are renamed, so the SARIF and JUnit
+rule ids become `external:owned/external` and `external:duplicate/external`. A
+baseline recorded before this stops matching those two findings: they reappear
+and the run exits 1 until the baseline is regenerated.
+
+Config `exclude:` no longer filters a path given on the command line. It shapes
+the collection, so it applies when a run reads the collections; `--exclude` is
+what filters a path you typed. With several collections there is no principled
+way to choose whose exclusions apply to a directory someone named.
+
+Every `Sidecar*` export is renamed to its `ExternalMetadata*` spelling, and
+`SidecarConfig` moves to `src/shared/` as `ExternalMetadataConfig`.
+
+Config discovery now stops at a family file carrying `collections:` even when it
+has no section for the tool being run.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* fix(meta): extended globs count as globs, and three messages say more
+
 # [0.3.0](https://github.com/hawkeyexl/manni/compare/v0.2.0...v0.3.0) (2026-09-08)
 
 
