@@ -58,6 +58,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0039](0039-sidecar-join.md) | `join`: a sidecar keyed by a frontmatter field, so a rename cannot orphan an entry; two pages sharing a value is a finding on both | Maya · M1, M2 / Devin · D4 / Sara · S3 | Implemented |
 | [0041](0041-collections.md) | `collections:`, the family-level home for document sets and their external metadata; `sidecars` becomes `externalMetadata` on a collection and `--collection <name>` scopes a run | Maya · M1, M2 / Devin · D1, D4 / Sara · S1 | Implemented |
 | [0044](0044-citations-and-drift.md) | Citations and drift, which pin a claim to source lines so `manni cite` can check the pin | Devin · D4 / Theo · T1 / Maya · M2 / Sara · S1 | Implemented (#17) |
+| [0045](0045-family-encryption-key.md) | A family encryption key: `encryptionKey:`, `manni key`, and `x-manni-encrypt` for metadata that must not appear in plain text | Sara · S1 / Devin · D5 / Maya · M5 | Implemented (#17) |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -116,6 +117,9 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
 0033 ──┤                 (the umbrella a sibling domain mounts under, and the import rule)
 0034 ──┤                 (the command grammar: no default subcommand, one separator per list)
 0026 ──┘                 (a finding no Ajv keyword produced, riding the reporters and baseline)
+
+0041 ──┬─> 0045          (encryptionKey: joins collections: as a family key, and stops discovery)
+0044 ──┘                 (cite's salted hashes, which the family key and encryption replace)
 ```
 
 The four `Proposed` SQL items (0026–0029) are independent of each other, with one exception. 0026 and 0029 both grow `query`'s `-f` value list. Each specifies the combined six-value surface, and whichever is implemented second merges into the one const. Recommended implementation order is 0026 → 0029 → 0027 → 0028, which is impact-first. The two config-touching ones (0026, 0027) land apart, so the second rebases trivially.

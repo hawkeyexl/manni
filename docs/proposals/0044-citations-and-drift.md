@@ -20,7 +20,10 @@
   writes-by-default precedents `update` follows. [0020](0020-element-metadata.md),
   the both-channels-are-validated rule that decides how frontmatter entries and
   inline statements coexist. [0021](0021-frontmatter-as-a-database.md), for
-  `lineFor`, which is how a frontmatter entry gets a line number
+  `lineFor`, which is how a frontmatter entry gets a line number.
+  [0045](0045-family-encryption-key.md), the family encryption key private
+  sources are encrypted with, and the `manni key` domain that sets and
+  rotates it; see stress test 23
 - **Touches:** `src/cite/**` (new), `src/cli.ts`, `src/index.ts`,
   `src/meta/internal.ts` (new), `src/shared/{cli-options,color,warn}.ts`,
   `eslint.config.js`, `scripts/check-cli-reference.mjs`,
@@ -35,8 +38,9 @@
   commit. The check classifies each pin as current, moved, changed, never true
   or missing, from git alone, with no model and no network. Citations live in
   frontmatter or inline in the body's comment syntax. A private source can be
-  cited by an obfuscated token with a keyed pin. One PR, three feature
-  commits.
+  cited by its path encrypted under the family key of
+  [0045](0045-family-encryption-key.md), with a keyed pin. One PR, three
+  feature commits.
 
 ## Problem
 
@@ -94,9 +98,10 @@ Line 9 is the sentence. Not the page, not the file: the sentence.
   the body in the format's comment syntax. That is the way Doc Detective's
   inline statements are written. It anchors the paragraph or fenced block that
   follows it.
-- **Obfuscated sources**: `~<16 hex>` in place of a path, with a pin keyed by a
-  salt. A public docs repo can cite a private code repo without publishing its
-  paths, and without publishing a verifier for its lines.
+- **Encrypted sources**: `~` and at least 82 base64url characters in place of
+  a path. The path is encrypted under the family key of 0045, and the pin is
+  keyed by it. A public docs repo can cite a private code repo without
+  publishing its paths, and without publishing a verifier for its lines.
 - **A tool**, `manni cite`, a sibling domain under the umbrella: `check`
   classifies, `add` mints, `update` rewrites moved pins in place. Findings ride
   meta's reporters and baseline under `manni:cite/<rule>`.
@@ -118,8 +123,8 @@ Draft 2020-12, root open, `citation-` prefix guarded exactly as evals guards
 |---|---|---|---|
 | `citations` | list of entries, `minItems: 1` | no | The page's citations. Omit the key rather than write `[]`. |
 | `citation-commit` | commit | no | Default `commit` for every entry that omits its own. |
-| `src` | source reference | **yes** | `path`, `path:L`, `path:L1-L2`, or `~<16 hex>` with the same line forms. Repo-root-relative posix path. `path:L` is canonical for one line. |
-| `integrity` | `^sha256-[0-9a-f]{64}$` | **yes** | The pin, which is the cited lines hashed under the rule below, keyed when `src` is obfuscated. |
+| `src` | source reference | **yes** | `path`, `path:L`, `path:L1-L2`, or an encrypted path with the same line forms. An encrypted path is `~` and at least 82 base64url characters, from draft `1.0.0-proposal.2`; `proposal.1` spelled it `~<16 hex>`. Repo-root-relative posix path. `path:L` is canonical for one line. |
+| `integrity` | `^sha256-[0-9a-f]{64}$` | **yes** | The pin, which is the cited lines hashed under the rule below, keyed when `src` is encrypted. |
 | `commit` | `^[0-9a-f]{7,40}$` | no | The commit the pin was minted at. The tool writes forty; a person may type seven. |
 | `id` | `^[a-z0-9][a-z0-9-]*$` | no | Unique per page, tool-enforced. What an inline reference names. |
 | `claim` | string, `minLength: 1` | no | The sentence the citation supports, verbatim. |
@@ -128,7 +133,7 @@ Draft 2020-12, root open, `citation-` prefix guarded exactly as evals guards
 The entry is closed. There is no `dependentRequired`: a bare `{src, integrity}`
 is legal, and stress test 13 says why. The `src` grammar rejects a leading `/`
 or a drive letter, a backslash, `.` and `..` segments, and an empty segment.
-It also rejects line 0, a URL, and a token of the wrong length or case. It
+It also rejects line 0, a URL, and an encrypted path that is too short or leaves the base64url alphabet. It
 accepts spaces and dots inside a segment, so `docs/release notes/v1.2.md:4-9`
 is a source. `L2 >= L1` is the tool's rule, because a pattern cannot compare
 two numbers. The ladder pins that the schema accepts `:9-3`, so nobody later
@@ -139,19 +144,22 @@ description, and nowhere else. Decode UTF-8. Strip one leading BOM. CRLF to
 LF. Split on LF. Drop the empty element a trailing LF leaves. Take lines L1
 to L2 inclusive, 1-based, or every line for a bare path. Join with LF, no
 trailing LF. Keep trailing whitespace. Plain `src`: `sha256(text)`.
-Obfuscated `src`: `sha256(salt + "\n" + text)`. Hex, `sha256-` prefix. The
+Encrypted `src`: HMAC-SHA256 of the text under the pin subkey 0045 derives
+from the family key. Hex, `sha256-` prefix. The
 goldens are verified with node and asserted by the drift ladder. Line 2 of
 the fixture is `78af1d33…fe4b1f`, and lines 1-3 are `d2981e71…bed1d6`. The
 whole file and lines 1-7 are both `aebba92f…86e023`, and the CRLF copy of
 line 2 hashes identically.
 
-**The obfuscation rule**: `"~" + sha256(salt + "\n" + path).hex.slice(0, 16)`,
-with `path` spelled exactly as a plain `src` would spell it. The salt comes
-from `MANNI_CITE_SALT`, else `cite.salt` in config, else `""`. Without a salt
-a guessable path is brute-forceable, and the docs say so. Tokens are stable
-across pages, so a public site reveals how often a private file is cited and
-when it moves. That is recorded as accepted: the alternative is a per-page
-salt, which makes `update` unable to recognise one file across two pages.
+**The encryption rule**: the path, spelled exactly as a plain `src` would
+spell it, encrypted under the family key in the `cite-src` context. 0045
+states the construction and the ciphertext format once, for every tool. The
+key comes from `MANNI_ENCRYPTION_KEY`, else a top-level `encryptionKey:` in
+the config. With no key, `add` writes no encrypted form, so stress test 22's
+empty-salt form is gone. The encryption is deterministic, so a public site
+reveals how often a private file is cited and when it moves. That is recorded
+as accepted: the alternative is a per-page context, which makes `update`
+unable to recognise one file across two pages.
 
 **Why a pin is not a derivable fact.** Principle 4 of the family says a
 derivable fact lies, and a hash of lines that sit right there looks derivable.
@@ -208,7 +216,7 @@ record is where that is said.
 elsewhere in the file), `moved-ambiguous` (two or more), or `changed` (no
 equal window). Or it is `never-true` (the range at `commit` does not hash to
 `integrity`, or the path was absent there). Or it is `missing` (no tracked
-file, or a token that resolves to nothing), or `skipped` (`--no-sources`; not
+file, or no key to decrypt an encrypted path), or `skipped` (`--no-sources`; not
 a finding). The page-side
 rules are `claim-missing`, `claim-ambiguous`, `statement-orphan`,
 `statement-invalid`, `entry-invalid` and `quote-drift`. Every rule has a
@@ -227,12 +235,12 @@ non-match, so a clean corpus costs one hash per citation. No model, no
 network, ever.
 
 **Output never says more than the page did.** A finding, in every format,
-spells a source exactly as the page spelled it: `~9c1f0e2b7a3d4c5e:4`, never
-the resolved path. Diffs, commit subjects and resolved paths live on
+spells a source exactly as the page spelled it: `~AQm4…:4`, never the
+decrypted path. Diffs, commit subjects and decrypted paths live on
 `CitationResult` and reach output only through the pretty reporter under
 `--show-diff` and `--reveal`. A sentinel test runs every reporter against a
-fixture whose salt is `SALT-SENTINEL` and whose private path is
-`private/SECRET.ts`, and asserts neither string appears.
+fixture whose private path is `private/SECRET.ts`, and asserts that neither
+the path nor the key appears.
 
 **Repair is scoped by the finding.** `moved` is mechanical and `update`
 rewrites it. `changed` names the sentence, the range and, with history, the
@@ -259,17 +267,23 @@ an eslint rule stops it reaching into `../meta/{core,extractors,reporters}`.
 | Command | Does | Exit |
 |---|---|---|
 | `check [paths...]` | classify every citation; report through `pretty`, `json`, `github`, `sarif`, `junit`; `--baseline` and `--write-baseline` as meta's, in `.manni-cite-baseline.json`; `--no-git`, `--no-sources`, `--root <dir>`, `--show-diff`, `--reveal` | 0 clean, 1 an unbaselined error, 2 operational |
-| `add <page> <src>` | mint an entry at HEAD and write it. With `--claim` it anchors a sentence, with `--quote` a fenced block. With `--inline` it writes a JSON statement instead of a frontmatter entry. Once a salt is configured it writes a token and a keyed pin; `--obfuscate` forces that form with no salt (stress test 22). Also `--no-commit` and `--dry-run` | 0 written, 2 refusal |
+| `add <page> <src>` | mint an entry at HEAD and write it. With `--claim` it anchors a sentence, with `--quote` a fenced block. With `--inline` it writes a JSON statement instead of a frontmatter entry. Whenever an encryption key is available it writes an encrypted path and a keyed pin. `--encrypt` asks for that form, and prompts for a key when none is available (0045). Also `--no-commit` and `--dry-run` | 0 written, 2 refusal |
 | `update [paths...]` | rewrite `moved` entries' `src` in place, textually, comments and quoting untouched; `--accept` re-mints `changed` and `never-true` at HEAD and prints both pins; `--only <id>`; `--dry-run` | 0, 1 when work is left undone, 2 under `--no-sources` |
-| `salt set [value]`, `salt rotate [paths...]` | write `cite.salt` into the config, generating 32 hex characters when given none, comments kept. Re-key every obfuscated citation under a new salt (`--to`), then write it where the old one lives. A salt from `MANNI_CITE_SALT` is never written, and `--to` is then required. Atomic: anything skipped means nothing written (stress test 22) | 0; rotate 1 when an entry could not be re-keyed; 2 refusal |
+
+Private sources are encrypted with the family's key, and its verbs are the
+family's too. `manni key set` writes it, and `manni key rotate` re-encrypts
+cite's sources beside meta's values (0045). `manni cite salt set|rotate` held those
+verbs until stress test 23.
 
 The input surface is meta's: positional paths, `-` with `--as`, the
 configured collections as the fallback and `--collection <name>` to narrow to
 one, `--ext`, `--exclude`, `-c`, `--no-config`, `--allow-empty`,
 `--no-gitignore`. The document set is the family's top-level `collections:`
 list (0041); `cite.paths` and `cite.exclude` are refused with a message saying
-so. Config `cite:` mirrors the remaining flags, plus `salt`, `root` and a
-`severity` map (`obfuscate` was a key until stress test 22). An unknown key, rule or level is a `CiteError`
+so. Config `cite:` mirrors the remaining flags, plus `root` and a
+`severity` map. `obfuscate` was a key until stress test 22, and `salt` until
+stress test 23; `cite.salt` is refused with a message naming `manni key set`.
+An unknown key, rule or level is a `CiteError`
 that names what is supported and never echoes the value. `--root` defaults to
 `cite.root` from the config, else the git root, else cwd, and may point at
 another checkout.
@@ -305,12 +319,12 @@ $ manni cite check -f github
 
 $ manni cite check --no-sources docs/                   # public docs repo: page-side only
 ✓ docs/limits.md
-    · fetch-timeout   ~9c1f0e2b7a3d4c5e:2   skipped
+    · fetch-timeout   ~AQm4…:2   skipped
 # exit 0
 
-$ MANNI_CITE_SALT=… manni cite check --root ../code --reveal docs/
+$ MANNI_ENCRYPTION_KEY=… manni cite check --root ../code --reveal docs/
 ✓ docs/limits.md
-    ✓ fetch-timeout   ~9c1f0e2b7a3d4c5e:2 (lib/limits.ts)   current
+    ✓ fetch-timeout   ~AQm4…:2 (lib/limits.ts)   current
 # exit 0
 
 $ manni cite add docs/limits.md lib/limits.ts:2 --claim "The fetch timeout is 10 seconds." --id fetch-timeout
@@ -322,18 +336,19 @@ manni: Claim not found in docs/limits.md: "The fetch timeout is 9 seconds.". Add
 # exit 2
 ```
 
-The two-repo layout, which is the reason obfuscation exists:
+The two-repo layout, which is the reason encrypted sources exist:
 
 ```yaml
 # public docs repo: manni.config.yaml (public)
 collections:
   - name: site
     paths: ["src/content/docs/**/*.{md,mdx}"]
-# no salt here: MANNI_CITE_SALT supplies it, and a salt turns obfuscation on
-# (stress test 22; this example first carried `cite: {obfuscate: true}`)
+# no encryptionKey here: MANNI_ENCRYPTION_KEY supplies it, and a key turns
+# encryption on (stress tests 22 and 23; this example first carried
+# `cite: {obfuscate: true}`, then relied on MANNI_CITE_SALT)
 # public CI:   manni cite check --no-sources
 # private CI:  check out docs and code side by side; from the docs checkout:
-#              MANNI_CITE_SALT=$SECRET manni cite check --root ../code -f sarif
+#              MANNI_ENCRYPTION_KEY=$SECRET manni cite check --root ../code -f sarif
 ```
 
 The pages stay where the docs are so SARIF URIs resolve; the sources are
@@ -643,6 +658,30 @@ open question. That put a secret into the public file of the
 very layout the secret exists for. A flag to opt out of a wrong default is
 the wrong shape. The source of the salt decides, and there is no flag.
 
+### 23. 0045 replaced salted hashes with encryption under a family key
+
+Items 16 and 22 designed a salted hash for paths, and it held for paths. Cite
+recovers a path by hashing every tracked file, and the tracked files are a
+finite list. Proposal 0045 then needed the same secret for metadata values,
+which have no such list. A hashed value could not be validated, shown or
+re-keyed. And a salt under `cite:` was one tool's secret, which no other tool
+could read.
+
+**Changed as a result:** 0045 replaced the salt with a family key and the hash
+with encryption. Items 16 and 22 stay as written. `src` carries `~` and at
+least 82 base64url characters: the path, encrypted in the `cite-src` context.
+The pin over an encrypted source is an HMAC under a subkey of the family key.
+The key is a top-level `encryptionKey:`, or `MANNI_ENCRYPTION_KEY`.
+`cite.salt`, `MANNI_CITE_SALT` and `manni cite salt set|rotate` are removed
+without aliases, since none was released. `cite.salt` is refused with a
+message naming `manni key set`, and `--obfuscate` becomes `--encrypt`.
+`manni key rotate` re-encrypts cite's sources and meta's values in one run. It
+keeps item 22's rule that a key from the environment is never written. With an
+encrypted citation and no key, `cite check` reports
+`missing (no encryption key is available to decrypt it)`, an error, unless
+`--no-sources` skips it. `--reveal` prints the decrypted path. The new `src`
+grammar is in draft `1.0.0-proposal.2`, and `proposal.1` is kept.
+
 ## Verification
 
 ```bash
@@ -677,7 +716,8 @@ Additive. A new domain under the umbrella, a new config key, and a new draft
 vocabulary that nothing resolves by default. Also an optional `severity` on
 `FieldError` that every existing finding leaves unset. `feat(cite):`, a minor
 release, in three feature commits on one branch: the frontmatter channel with
-`check` and `add`; inline statements and `update`; obfuscated sources. Each
+`check` and `add`; inline statements and `update`; private sources. 0045
+then moved private sources onto the family key. Each
 commit carries its own tests and fixtures, so the branch reviews commit by
 commit and merges once. The same caveat as 0026: a shared `manni.config.yaml`
 that adopts `cite:` needs every consumer of that config on a manni that knows
@@ -704,8 +744,8 @@ the key.
      `off` and rely on a scheduled `update`?
   2. Is one algorithm in the `integrity` pattern too tight for a draft, given
      that a second one is a schema revision?
-  3. Should the accepted residue of obfuscation, that tokens are stable across
-     pages, be closed with a per-page salt? The cost is `update` losing the
-     ability to recognise one file across pages.
+  3. Should the accepted residue of encryption, that a path's ciphertext is
+     the same on every page, be closed with a per-page context? The cost is
+     `update` losing the ability to recognise one file across pages.
   4. Are the parenthesised statement forms worth keeping at all, given they
      carry an id only?

@@ -47,10 +47,16 @@ npx @hawkeyexl/manni meta validate docs/
     href="/manni/cite/"
     description="Pin a sentence to the source lines it rests on, and find out when those lines move or change. From git alone, no model, no network."
   />
+  <LinkCard
+    title="key"
+    href="/manni/key/"
+    description="Set and rotate the family encryption key, so a required field or a private source path is on the page without being readable there."
+  />
 </CardGrid>
 
 `meta` checks what a page says about itself; `cite` checks that what a page
-says about the code is still true. More tools are folded in as they become
+says about the code is still true. `key` sets and rotates the one encryption
+key both of them encrypt values with. More tools are folded in as they become
 ready to ship. Until one lands, its subcommand does not exist, and
 `manni --help` lists exactly what does.
 

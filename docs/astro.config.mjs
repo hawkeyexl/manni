@@ -131,6 +131,19 @@ export default defineConfig({
             },
           ],
         },
+        // `key` manages a family resource rather than documents: the one
+        // encryption key every tool encrypts values with (proposal 0045). Two
+        // verbs, so the same two-page shape as `a11y`.
+        {
+          label: "key",
+          items: [
+            { label: "Overview", link: "/key/" },
+            {
+              label: "Reference",
+              items: [{ autogenerate: { directory: "key/reference" } }],
+            },
+          ],
+        },
       ],
     }),
   ],
