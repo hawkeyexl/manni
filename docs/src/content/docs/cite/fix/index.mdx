@@ -227,7 +227,6 @@ parentheses names the cause:
 ```
 ℹ docs/limits.md
     ℹ fetch-timeout   :13 moved -> :15   lib/limits.ts:2 current
-    ℹ fetch-timeout: the claim moved from line 13 to line 15.
 ```
 
 The pinned page text is found verbatim at another line. Someone inserted a
@@ -253,7 +252,6 @@ text, so there is nothing to rewrite.
 ```
 ⚠ docs/limits.md
     ↕ retries   :15 moved, 2 candidates (:17, :21)   src/limits.ts:3 current
-    ↕ retries: the claim at line 15 now appears at lines 17 and 21.
 ```
 
 The pinned text is now at two or more places on the page, and `update` will
@@ -272,7 +270,6 @@ manni cite add docs/limits.md:21 src/limits.ts:3 --id retries --marker
 ```
 ⚠ docs/limits.md
     ↕ fetch-timeout   :13 changed   lib/limits.ts:2 current
-    ↕ fetch-timeout: the claim at line 13 has changed since it was pinned.
 ```
 
 The pinned page text is gone, so the sentence was edited. This is a **warning**,
@@ -480,9 +477,9 @@ whether two ranges are "the same bytes".
 {/* step {"description":"source-moved: a warning naming the new range, exit 0.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/moved.md","exitCodes":[0],"stdio":"/moved -> src\\/moved\\.ts:4/"}} */}
 {/* step {"description":"source-changed: an error on the source end, with the claim end still current, exit 1.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/source-changed.md","exitCodes":[1],"stdio":"/:15 current\\s+src\\/changed\\.ts:2 changed/"}} */}
 {/* step {"description":"source-missing: no tracked file at the path, exit 1.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/missing.md","exitCodes":[1],"stdio":"/src\\/gone\\.ts:2 missing/"}} */}
-{/* step {"description":"claim-moved: an inserted paragraph is a notice that names both lines, exit 0.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/claim-moved.md","exitCodes":[0],"stdio":"the claim moved from line 15 to line 17"}} */}
-{/* step {"description":"claim-moved-ambiguous: the pinned text at two places is a warning that names both, exit 0.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/claim-moved-ambiguous.md","exitCodes":[0],"stdio":"now appears at lines 17 and 21"}} */}
-{/* step {"description":"claim-changed: an edited sentence is a warning on the claim's line, exit 0.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/claim-changed.md","exitCodes":[0],"stdio":"the claim at line 15 has changed since it was pinned"}} */}
+{/* step {"description":"claim-moved: an inserted paragraph is a notice that names both lines, exit 0.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/claim-moved.md","exitCodes":[0],"stdio":"/fetch-timeout\s+:15 moved -> :17/"}} */}
+{/* step {"description":"claim-moved-ambiguous: the pinned text at two places is a warning that names both, exit 0.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/claim-moved-ambiguous.md","exitCodes":[0],"stdio":"/retries\s+:15 moved, 2 candidates \(:17, :21\)/"}} */}
+{/* step {"description":"claim-changed: an edited sentence is a warning on the claim's line, exit 0.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/claim-changed.md","exitCodes":[0],"stdio":"/fetch-timeout\s+:15 changed/"}} */}
 {/* step {"description":"marker-orphan: a marker naming an id no entry has, exit 1.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/marker-orphan.md","exitCodes":[1],"stdio":"no entry has id \"nope\""}} */}
 {/* step {"description":"marker-invalid: a JSON payload hears where the entry belongs, exit 1.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/marker-json.md","exitCodes":[1],"stdio":"A marker names an entry by id. Write the entry in frontmatter or the sidecar."}} */}
 {/* step {"description":"anchor-invalid: claim lines and a marker together, exit 1.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/anchor-both.md","exitCodes":[1],"stdio":"has claim lines and a marker. Keep one."}} */}
