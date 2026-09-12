@@ -4,6 +4,410 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [2.0.0](https://github.com/hawkeyexl/manni/compare/v1.1.1...v2.0.0) (2026-09-12)
+
+
+### Features
+
+* citation tracking and a family encryption key (proposals 0044, 0045) ([#17](https://github.com/hawkeyexl/manni/issues/17)) ([fe9d7e8](https://github.com/hawkeyexl/manni/commit/fe9d7e89c078552621d9c5d8aaf71cc58483d4af)), closes [#78](https://github.com/hawkeyexl/manni/issues/78) [#18](https://github.com/hawkeyexl/manni/issues/18) [#19](https://github.com/hawkeyexl/manni/issues/19)
+
+
+### BREAKING CHANGES
+
+* `cite.paths` and `cite.exclude` are removed. Document
+sets are declared once under the top-level `collections:` list.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+
+* docs(meta): give the local-model fill steps three minutes
+
+Doc Detective caps a shell step at 60 s. The two `fill --provider
+llama-cpp` steps on the CLI reference run a 3B model on a CPU-only
+runner, and a cold inference there has crossed that cap on two of five
+runs of this branch, with the weights already cached and prefetched.
+The step now allows 180 s, which is the inference's cost rather than a
+download's.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+
+* test: give three spawn-heavy tests a minute on slow runners
+
+A Windows runner tipped three tests past vitest's 5 s default: the
+cite --show-diff case that builds a two-commit repo and spawns the CLI,
+and two meta cases that export a SQLite database. Each now carries the
+60 s allowance the other timed tests in these files already have. The
+previous run passed every matrix entry, so this is runner speed, not a
+regression.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+
+* feat(cite): a global, rotatable salt, and sources obfuscate whenever one is set
+
+A token derived from a path alone is only as private as the path is
+guessable, so the salt becomes a first-class setting rather than a flag
+to remember. `manni cite salt set` writes `cite.salt` into the config,
+generating 32 hex characters when none is given, and refuses to
+overwrite one. `manni cite salt rotate` re-keys every obfuscated token
+and pin under a new salt, atomically: pages and the salt are written
+only when every entry could be re-keyed, and a changed entry is skipped
+with the `update --accept` it needs first. A salt that comes from
+MANNI_CITE_SALT rotates through the environment: `--to` is required and
+the config is never written, so a public docs checkout never carries the
+secret. With a salt configured, `add` obfuscates every source it writes;
+the `obfuscate` config key is refused with a pointer to `salt set`.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+
+* docs(cite): title the caution asides on the CLI reference
+
+Starlight names an untitled aside by its type, so two untitled cautions
+on one page are two landmarks called "Caution", which axe reports as
+landmark-unique and the Docs a11y job fails at the notice floor. Each
+* `cite.salt`, MANNI_CITE_SALT, `manni cite salt set` and
+`manni cite salt rotate` are removed, and `--obfuscate` is `--encrypt`.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* fix(meta): fill --dry-run needs no encryption key
+
+A dry run writes nothing and reports a marked value as "(encrypted)",
+so it neither asks for a key nor refuses without one, as `query
+--dry-run` already does. The citations proposal page presents the
+proposal.2 draft, whose private sources are encrypted.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* feat(key): manni key set and rotate manage the family encryption key
+
+`manni key set` writes a generated or given key to the top of the
+family config, and refuses to replace one. `manni key rotate`
+re-encrypts every encrypted value in the family, metadata and
+citations alike, found by its ciphertext rather than by schema marks,
+and writes pages and the key only when every value could be
+re-encrypted. It writes the new key first and keeps the old one as
+`encryptionKeyPrevious` until the pages are written, so a rotation that
+is interrupted is finished by running it again. A run over part of the
+family needs --to and never writes the key; an environment key rotates
+with --to and leaves the config alone.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* fix(cite): --no-color turns colour off under the umbrella
+
+Colour was resolved from the top-most program, which under `manni` is
+the umbrella and never declares --no-color, so `manni cite --no-color
+check` still printed colour on a terminal. It is now read from the
+nearest command that declares the flag, the cite program wherever it
+is mounted.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* docs(cite): follow the CLI reference's own citation to its new lines
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* ci: exclude the encrypted-metadata fixtures from the SARIF fixture run
+
+The pages under test/fixtures/encrypted exercise x-manni-encrypt, not
+OKF, so each one would open a code-scanning alert for a missing type.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* ci: restore the line continuation in the SARIF fixture run
+
+The previous commit's exclusion lost its trailing backslash, which ended
+the validate command before --allow-empty and the redirect.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* docs(cite): a move then a change reads changed, not never-true
+
+The get-started aside and the fix page still described the classifier
+from before the history search was widened. A pin that update moved
+is found at its old line in the recorded commit, so a later edit
+reads changed; never-true is left for a pin that matches nowhere in
+the file at that commit.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* fix(meta): report notice findings as notices in github, sarif and pretty
+
+The family scale is notice | warning | error, but meta's reporters sent every
+non-error to warning: `::warning` in GitHub output and level `warning` in
+SARIF. A notice is now `::notice` and SARIF level `note`; JUnit already
+treated it as a passing testcase and now has a test for it. The run summary
+counts notices apart from warnings (`summary.notices`, omitted at zero), and
+pretty prints the word `notice` dim. Meta's own validation emits neither, so
+its output is unchanged.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* feat(cite): use git when it is available, rename sources to checkSources, accept notice
+
+Three changes to the cite: section and its flags, recorded as stress test 24
+in proposal 0044. Cite is unreleased, so there are no aliases.
+
+- `cite.git` and `--no-git` (check, add, update, key rotate) are removed. Git
+  is used whenever it is on PATH and the root is inside a work tree; sources
+  are indexed by `git ls-files`, else by a walk. A run that wanted git and
+  cannot use it warns once: without history for check, update and key rotate,
+  with no recorded commit for add and update --accept. Programmatic callers
+  pass `gitClient: noGit()`.
+- `cite.sources` / `--no-sources` become `checkSources` / `--no-check-sources`.
+- `cite.severity` accepts `error | warning | notice | off`, the family scale
+  plus `off`. A notice is reported and never fails a run; pretty marks it `ℹ`.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* feat(meta): locate a manifest finding at the entry's own line
+
+A value an external-metadata manifest supplies was located only at the owned
+key's line, so a finding at /citations/3/source/file pointed at `citations:`.
+The loader now records the line of every node inside an owned value, and
+`locate` answers with the deepest node a pointer reaches, falling back to the
+nearest ancestor. `additionalProperties` asks the stray key's own line first.
+
+Adds `spliceManifestValue`, which rewrites one owned value for one entry of a
+manifest and changes no other byte: it replaces a single text range, so
+comments, key order, quoting and line endings survive, and it reads the result
+back before returning it. Both are exported through the family-internal barrel
+for `manni cite`, which keeps citations in a manifest. `meta fill` and
+`meta query` stay read-only on manifests.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* ci: exclude the manifest-line fixtures from the formats demo
+
+test/fixtures/external-metadata-items/ carries its own config and schema, and
+its two pages exist to be located: a finding on a manifest-supplied value must
+report the manifest line of that list item, in block and in flow style. Judged
+against this workflow's default set they are standing code-scanning alerts for
+files doing their job, as every other fixture directory with its own contract
+already is.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* ci: give the review job 100 turns
+
+The review ran out of turns on this pull request four times, twice on re-runs,
+at 50. A review that cannot finish reports nothing, so the budget is the whole
+check. 100 is the smallest raise that fits a change this size.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* feat(cite): pin the claim like the source, in two blocks
+
+An entry no longer copies its sentence. It has two ends with one shape, and
+each is a line range plus a hash:
+
+  citations:
+    - id: fetch-timeout
+      claim:  { lines: 3, integrity: sha256-… }
+      source: { file: lib/limits.ts, lines: 2, integrity: sha256-…,
+                commit-sha: 3f9c2a1e… }
+
+- The claim end is classified by the source's own machinery: `claim-moved`
+  (notice), `claim-moved-ambiguous` (warning) and `claim-changed` (warning),
+  which `update` repairs and `update --accept` re-pins. `claim-missing` and
+  `claim-ambiguous` are gone.
+- Claim lines count from the first line after the frontmatter, so writing an
+  entry, or adding a tag by hand, never moves another claim. Commands and
+  reports speak file lines.
+- Markers stay as the easier anchor, id only, renamed to `marker-orphan`,
+  `marker-invalid` and `marker-repeated`. A marker-anchored entry may carry a
+  claim `integrity`, which pins the text the marker anchors. The inline JSON
+  entry is gone: an entry is never written into the body.
+- Source rules are renamed `source-*`, and anchors that cannot work are
+  `anchor-invalid`.
+- `source.file` is the path alone, encrypted as a value, and the keyed pin now
+  reads `hmac-sha256-`. A prefix that does not match the file is a finding.
+- `commit` becomes `source.commit-sha`, page-level `citation-commit` is gone,
+  and `add --no-commit` is `--no-commit-sha`.
+- `cite add <page>[:L|:L1-L2] <src>` takes the claim's lines where `--claim`
+  took its text; `--marker` records a marker; `--inline` is gone. `-:L` is
+  stdin with lines, normalized for the whole family in the bin runner.
+
+The vocabulary draft is `manni:citations:1.0.0-proposal.3`; `proposal.1` and
+`.2` are kept as written.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* fix(key): rotate encrypted values in local manifests too
+
+`key rotate` walked page files and nothing else. An external-metadata
+manifest is not a page: it registers no extractor and appears in no
+`docs` row. So a value marked `x-manni-encrypt` that a manifest supplied
+stayed under the old key while every page moved, and it decrypted under
+neither key afterwards. The next rotation could not repair it either: it
+skipped the value and refused to write anything at all.
+
+That is the likeliest place for the failure rather than an unlikely one.
+A manifest is private by construction, which is the whole reason a value
+would be encrypted rather than published.
+
+A rotation now loads the local manifests of the collections it covers
+and re-encrypts their values with the pages. Three things bound it.
+
+- A URL manifest is read-only, so it is never loaded and a rotation
+  reaches no network.
+- The `citations` key is skipped, in a manifest as on a page. Cite
+  re-keys a citation's source with its pin under its own context, and
+  re-encrypting the source alone would break every encrypted citation.
+- One value is spliced at a time by `spliceManifestValue`, which
+  replaces that value's range, keeps every other byte, and reads the
+  result back. A manifest's comments and key order survive.
+
+Rotation stays atomic. Pages and manifests are re-encrypted in memory
+first, one skip anywhere means nothing is written, and the key still
+goes first with `encryptionKeyPrevious:` so an interrupted run resumes.
+A narrowed run covers the manifests of the collections it selected:
+`--collection` names them, and positional paths select the collections
+those files belong to.
+
+The result gains a `manifests` array beside `pages`, in the core and in
+`-f json`. A manifest value is named by its entry and its pointer, so
+`pretty` prints `private/site.yaml: docs/handbook.md/owner`.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* fix(meta): read a manifest-supplied encrypted value, not its token
+
+`encryptionView` skipped every pointer `locate()` answered for, and
+`locate()` answers for every value an external-metadata manifest
+supplied. A property marked `x-manni-encrypt` whose value lives in a
+manifest was therefore validated as raw ciphertext: its `enum`,
+`pattern` or `format` failed against the token, a stale token never
+reported `encrypted:unreadable`, and a run with no key dropped nothing
+and warned about nothing.
+
+The exemption was only ever about `encrypted:plain`, which a manifest
+value is exempt from because the manifest is private by construction.
+Narrow it to that. A manifest-supplied ciphertext is decrypted,
+validated as its plaintext against the property's full schema, and
+reported under proposal 0045's rules.
+
+`settleFindings` and `encryptionFindings` take the locator too, so an
+encryption finding names the manifest and the entry's own line, the
+way a schema finding on the same pointer already did.
+
+The schema-resolution reference described the fixed behaviour already;
+it gains one row saying the manifest exemption covers plain values
+alone.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* docs(cite): rewrite the citation docs and records for two-ended entries
+
+The citations reference is rewritten around the two ends, body lines against
+file lines, the file grammar that replaces the src grammar, markers, quotes,
+the sidecar, and the statuses and the fourteen rules. The CLI reference gets
+the new output shapes, the `add` ladder and the refusals. Get started, fix,
+CI and the two-repository set-up follow, as do the key pages for rotation and
+meta's configuration reference for a manifest that owns citations.
+
+Records: 0044 gains the shipped entry shape, a sidecar section and stress
+test 25, which records the five decisions and the adversarial review that
+moved claim lines to the body and kept cite's own encryption context. 0045
+covers the encrypted source value, the hmac-sha256- pin, and rotation
+reaching citation manifests.
+
+Both ladder scripts are rewritten for proposal.3 and run clean, and the one
+real citation in these docs is re-pinned over the paragraph it anchors.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* feat(cite): keep citations in an external-metadata manifest
+
+A collection that declares a manifest owning `citations` keeps its pages'
+entries there, so a page carries no citation metadata at all, and a public
+page need not carry encrypted tokens. The manifest is the family's existing
+sidecar (0037, 0039, 0041), read through meta's merge.
+
+- `check`, `update`, `add` and `manni key rotate` read a page's citations from
+  the manifest that owns them. Membership comes from every declared
+  collection, so a page named by path still finds its sidecar.
+- `add`, `update` and `key rotate` write the manifest in place, splicing one
+  value so no other byte moves, once per manifest per run. A page is left
+  untouched unless a marker goes into it.
+- A finding about an entry names the manifest and the entry's own line; one
+  about a claim or a marker stays on the page. A manifest outside the tree
+  falls back to the page, which is what SARIF can resolve.
+- Refused: a URL manifest owning citations, a page whose two collections both
+  keep citations in a manifest, `add` from stdin when a manifest is keyed by
+  path, and two pages sharing one join value. A page that still carries its
+  own `citations:` is `entry-invalid`, in meta's words.
+
+The dogfood citation in the CLI reference is re-pinned, since these changes
+moved its source.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* docs: rewrite five colon reveals the house voice refuses
+
+Vale's Voices.ColonReveal fired on a heading, a glossary row, and the
+claim-changed description in three places. Each is now a plain sentence.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* docs(cite): assert what pretty prints, not the message text
+
+The docs-as-tests steps for claim-moved, claim-moved-ambiguous and
+claim-changed expected a finding's message. Pretty prints one row per
+citation and carries the message only in the github and json formats, so the
+steps could not match. They now assert the row, with the line numbers the
+fixtures really produce.
+
+Three example blocks on the fix page showed that message as a second pretty
+line, which the reporter never prints. Removed.
+
+Verified by running Doc Detective over the cite pages against the local build.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* docs: give every persona a journey through every tool they touch
+
+The docs grew tool by tool, so coverage was uneven per person rather than per
+tool. Maya could pin a claim but not keep citations out of her pages, and had
+no path to an accessible site. Devin had no rotation runbook and no CI page for
+accessibility. Sara had no journey into either new tool. Theo had no way to fix
+an accessibility failure.
+
+Seven journeys are added to the content strategy (M6, M7, D6, D7, S4, S5, T3),
+and nine pages carry them:
+
+- cite: a set-up index for the single-repository path, keeping citations in a
+  sidecar manifest, and requiring citations in the standard.
+- key: where the key lives, and a six-step rotation runbook that keeps CI green.
+- meta: requiring a field while keeping its value private, promoted out of the
+  schema-authoring page.
+- a11y: get started, gate it in CI, and fix one violation. The overview is
+  trimmed back to an overview, with its two inbound links repointed.
+
+Accessibility gets no fifth persona. Maya, Devin and Theo own it, as they own
+the same work elsewhere.
+
+Also: `## Severity across the family` in the output reference, the seam that had
+no home; the citation journeys corrected to the shipped surface; the information
+architecture corrected where it described the old entry shape, the superseded
+schema draft, two domains instead of four, and pre-monorepo source paths.
+
+Examples are captured from real runs. The cite, key and meta pages carry 45 Doc
+Detective steps; the a11y pages carry none, because a crawl needs a browser and
+a served site, and each says so.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* docs(cite): name the first column of the sidecar comparison table
+
+axe reported `empty-table-header` on the frontmatter-against-sidecar table:
+its first header cell was blank, so a screen reader announces a column with no
+name. The column holds what differs between the two, and now says so.
+
+Worth noting for the severity work already filed: this finding is a notice, and
+it still failed the a11y run, which is the inconsistency with the family scale.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
 ## [1.1.1](https://github.com/hawkeyexl/manni/compare/v1.1.0...v1.1.1) (2026-09-11)
 
 
