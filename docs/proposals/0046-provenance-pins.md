@@ -1,0 +1,698 @@
+# 0046: provenance pins the lines a machine wrote; meta-provenance keeps the fields
+
+- **Status:** Proposed
+- **Serves:** Maya · M8 · Sara · S1 · Devin · D4
+- **Depends on:** [0040](0040-derived-metadata.md), the derived channel this
+  field rides: `manni meta derive` stamps it, `validate` reports a stale stamp,
+  and decision 2 is the squash-proofing rule generalized here from a date to a
+  range. [0044](0044-citations-and-drift.md), the pin: a line range and an
+  integrity hash, counted in body lines, under one hashing rule.
+  [0023](0023-metadata-vocabularies.md), the family whose `provenance`,
+  `kg.provenance`, `eval-provenance` and `metadata.eval-provenance` this
+  proposal redraws. [0041](0041-collections.md), the `externalMetadata:`
+  manifest the record may live in. [0043](0043-resolved-reads.md), the
+  `resolved` view that exposes it
+- **Relates to:** [0045](0045-family-encryption-key.md), for why a pin over a
+  public page is always plain `sha256-`, and for treating an empty environment
+  variable as unset. [0002](0002-ci-distribution-artifacts.md), the hook a
+  later trailer writer could hang on; see open question 2
+- **Supersedes, in part:** one rule of 0040, for `provenance` only: a managed
+  field a manifest owns is refused. See [In an external manifest](#in-an-external-manifest).
+  0040 is not edited
+- **Touches (planned):** `docs/proposals/0023/schemas/ai-context/1.0.0-proposal.2.json`,
+  `docs/proposals/0023/schemas/kg/1.0.0-proposal.2.json`,
+  `docs/proposals/0023/schemas/evals/1.0.0-proposal.3.json`,
+  `docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.3.json` (all new),
+  `docs/proposals/0046/ladders/**` (new), `docs/proposals/0023/design-notes.md`,
+  `docs/content-strategy/cujs.md`,
+  `docs/src/content/docs/meta/proposals/{ai-context,kg,evals,artifact-evals}.mdx`.
+  The implementation, later: `src/meta/core/derive/{git,index,types,config}.ts`,
+  `src/meta/commands/derive.ts`, `src/meta/core/config.ts`,
+  `src/cite/core/{hash,range}.ts` moving to `src/shared/`, `test/derive*`,
+  `test/fixtures/derive/**`
+- **Verdict:** Redefine `provenance` as a derived record of which machine wrote
+  which lines of the body. Each entry is a pin, `lines` plus `integrity`, with
+  the machine's name. `manni meta derive` stamps it from `git blame` and commit
+  evidence, and `validate` fails when a pinned range has changed or the
+  evidence names another machine. Rename today's per-model field attribution
+  to `meta-provenance`, address its fields by JSON Pointer, and fold
+  `kg.provenance`, `eval-provenance` and `metadata.eval-provenance` into it.
+  No new verb: one option and one positional form on `derive`, and one config
+  key.
+
+## Problem
+
+Agents edit docs every day now. A Claude Code session rewrites a procedure. A
+support bot patches a troubleshooting section. A person copy-edits both a week
+later. Maya reviews by pull request, and once the PR merges she can no longer
+see which parts of a page a machine wrote.
+
+The family has one field for it. `generated-by` names the model that generated
+a page's content: one string for one page. A page with three authors names one
+of them. The `provenance` arrays beside it answer a different question, which
+machine proposed which *frontmatter fields*, and a human deletes an entry once
+it is reviewed. So they are a to-review list, not a history, and they say
+nothing about prose. They also come in four shapes: a free list of names in
+ai-context, a closed enum inside `kg`, a list of eval ids under the reserved
+`eval-` prefix, and the same one level down in an artifact's `metadata`.
+
+What that costs:
+
+- **Review goes to the wrong text.** Maya re-reads whole pages to find the
+  machine-written parts, or trusts the last diff and misses the section an agent
+  rewrote three PRs ago.
+- **A human edit over machine text is silent.** Nothing notices when reviewed
+  text a machine was credited with is replaced.
+- **The bias check reads the wrong author.** The evals self-preference-bias
+  check reads the page's one `generated-by`, so a judge can grade a section its
+  own model wrote without knowing.
+- **Sara maintains four shapes for one idea**, each with its own guard exception
+  and its own review page.
+
+Git does not answer this on its own. 0023's review round 9 recorded that git
+knows who *committed* a change, not who wrote the prose, which is why `authors`
+is asserted. 0040 confirms the machinery: it reads `git log --raw`, which is per
+file, and never calls `git blame`. Nothing in the codebase produces per-line
+attribution today.
+
+## Summary
+
+- **`provenance`** is a list of pins. Each says one machine wrote one range of
+  body lines, and carries the integrity of that range. It is a managed field:
+  `derive` stamps it, `validate` compares the stamp with the present, `fill`
+  never proposes it, and `query UPDATE` refuses it.
+- **Evidence** comes from `git blame` plus what machines leave behind: a stamp
+  in the commit that made the edit, a `Generated-by:` trailer, or a
+  `Co-authored-by:` trailer the config names as a machine. A machine that
+  leaves nothing is invisible, and the proposal says so rather than guessing.
+- **Adding an entry is one command an agent already runs.** With
+  `MANNI_GENERATED_BY` set, `manni meta derive` before a commit attributes the
+  uncommitted lines, and the stamp lands in the same commit as the edit. From
+  then on the stamp is its own evidence.
+- **`meta-provenance`** is today's field attribution under a name that says
+  what it attributes. Fields become JSON Pointers, evals stay ids, and the
+  three other shapes fold into it.
+- **Nothing is keyed by a string copied from the content.** A pin locates
+  prose. A pointer locates a value. Both survive the record moving to an
+  external manifest.
+
+## The vocabulary
+
+### `provenance`
+
+In `manni:ai-context:1.0.0-proposal.2`. A list, `minItems: 1`. Each entry is
+closed.
+
+```yaml
+---
+title: Rate limits
+generated-by: claude-fable-5            # unchanged: the page's origin
+provenance:
+  - generated-by: claude-fable-5
+    lines: 12-31
+    integrity: sha256-c41f09aa…
+  - generated-by: claude-sonnet-5
+    lines: 44
+    integrity: sha256-0b7e11d4…
+---
+```
+
+| Field | Type / pattern | Required | Meaning |
+|---|---|---|---|
+| `generated-by` | string, `minLength: 1` | **yes** | The machine that wrote these lines. The same name, and the same kind of value, as the page-level field it refines |
+| `lines` | `L` or `"L1-L2"` | **yes** | Body lines, counted from the first line after the frontmatter. Where the pin was last seen |
+| `integrity` | `^sha256-[0-9a-f]{64}$` | **yes** | The pin, and the entry's identity |
+
+Four rules come from 0044 and are cited rather than restated. `lines` and
+`integrity` are spelled and patterned exactly as in
+`manni:citations:1.0.0-proposal.3`. The hashing rule is that proposal's, stated
+once there. Lines are body lines for that proposal's reason: otherwise a
+frontmatter edit, including this field's own stamp, would move every pin.
+`L2 >= L1` is the tool's rule, because a pattern cannot compare numbers.
+
+**`integrity` is always plain.** The page is public, so a keyed
+`hmac-sha256-` pin would hide nothing, which is why a citation's claim end is
+always plain too.
+
+**`lines` is a position, `integrity` is an identity.** Matching goes by
+integrity. A stale `lines` value is a moved pin, not a wrong one.
+
+**There is no `commit-sha`.** Evidence is read from blame when the record is
+checked, so the stamp does not change when uncommitted lines are committed. A
+field that changed on that commit would make every attribution a second commit.
+
+**Humans never appear.** `authors` carries them. A range no machine wrote has
+no entry, and an all-human page has no `provenance`.
+
+### `meta-provenance`
+
+Also in `manni:ai-context:1.0.0-proposal.2`. It is the field attribution that
+`provenance` was, with its meaning unchanged. There is one entry per model, and
+consumers merge entries by `generated-by`. A human deletes an entry once its
+fields are reviewed, so a surviving entry means unreviewed machine metadata. It
+is not managed and not derived.
+
+```yaml
+meta-provenance:
+  - generated-by: claude-fable-5
+    fields: [/intent, /kg/label]
+    evals: [install-works]
+    confidence:
+      /intent: 0.9
+      /kg/label: 0.84
+      install-works: 0.7
+```
+
+| Field | Type / pattern | Required | Meaning |
+|---|---|---|---|
+| `generated-by` | string, `minLength: 1` | **yes** | The model that proposed them |
+| `fields` | list of JSON Pointers, `^/`, unique, `minItems: 1` | one of `fields` or `evals` | The metadata values it proposed. `/kg/label` reaches inside a block |
+| `evals` | list of eval ids, `^[a-z0-9][a-z0-9-]*$`, unique, `minItems: 1` | one of `fields` or `evals` | The evals it proposed, by id, so reordering the list orphans nothing |
+| `confidence` | map from a pointer or an eval id to a number in 0..1 | no | Per-field or per-eval confidence |
+
+The two key forms of `confidence` cannot collide. A pointer starts with `/`,
+and an id cannot.
+
+### What moves where
+
+| Before | After |
+|---|---|
+| ai-context `provenance: [{generated-by, fields: [intent], confidence: {intent: 0.9}}]` | `meta-provenance: [{generated-by, fields: [/intent], confidence: {/intent: 0.9}}]` |
+| `kg: {provenance: [{generated-by, fields: [label]}]}` | page-level `meta-provenance: [{generated-by, fields: [/kg/label]}]` |
+| `eval-provenance: [{generated-by, evals: [x]}]` | page-level `meta-provenance: [{generated-by, evals: [x]}]` |
+| artifact-evals `metadata.eval-provenance` | `metadata.meta-provenance`, the same entry one level down |
+| evals root guard `^eval-(?!suite$\|skip$\|provenance$)` | `^eval-(?!suite$\|skip$)` |
+| artifact-evals `metadata` guard `^eval-(?!skip$\|provenance$)` | `^eval-(?!skip$)` |
+
+The artifact side keeps its record under `metadata` for the reason 0023 gave:
+an artifact's top level is its host tool's contract, and `metadata` is the
+extension bag. The entry definition appears in both drafts byte for byte, and
+the ladder asserts that it does.
+
+Three changes to the entry are deliberate. Pointers replace bare names, because
+a pointer is the location `validate` already reports and a bare name cannot
+reach into `kg`. An entry must name `fields` or `evals`, because today
+`- generated-by: x` passes and says nothing. Compatibility with the old shape is
+not kept: the key is renamed, so no document silently keeps its old meaning.
+
+## The derivation contract
+
+`provenance` derives from the existing `git` source. `FIELD_SOURCES.provenance`
+is `["git"]`, and blame runs only when `provenance` is in `derive.fields`, which
+is the per-field gating 0040 already has. There is no `blame` source to turn
+off: the field list already decides whether blame runs.
+
+**Evidence, per body line, first match wins:**
+
+1. **Uncommitted, with a name.** Blame reports the zero sha, and
+   `--generated-by` or `MANNI_GENERATED_BY` is set. The line is that machine's.
+2. **A stamp in the commit that wrote it.** Blame gives the line's number in
+   the commit that last changed it. If that commit's own blob carries a
+   `provenance` entry whose range covers that number, and whose integrity
+   matches that blob's lines, the line is that entry's machine. This is 0040's
+   decision 2, generalized from a date to a range: the commit that made the
+   fact is the authority, and a stamp it carried agrees with itself whatever a
+   squash later did to the history.
+3. **A `Generated-by:` trailer** on that commit names the machine.
+4. **A `Co-authored-by:` trailer** on that commit whose name or email matches
+   `derive.machines` names the machine, by the trailer's name.
+5. **Otherwise, no evidence.**
+
+Contiguous lines resolved to one machine form one entry, hashed under the
+hashing rule.
+
+How the evidence is read, where the list above leaves room:
+
+- **Uncommitted lines take evidence from rule 1 only.** The working tree's
+  stamp is never evidence for itself. A `validate` before the commit reads a
+  fresh stamp as current with no evidence, not as stale.
+- **Rule 2 checks a stamp only at its recorded lines,** converted to that
+  commit's own body numbering. The same text elsewhere in that blob does not
+  count. An entry that fails the schema is not evidence. When two valid entries
+  cover one line, the first in the list wins. Where the record lives in a
+  manifest, rule 2 reads the manifest's blob at that commit, under the page's
+  path, which is where the stamp landed when edit and stamp were committed
+  together.
+- **A stamp outranks its own commit's trailer.** Rules 2 and 3 can disagree on
+  one commit. The stamp wins, because it names lines and the trailer names a
+  commit.
+- **Trailers.** Keys compare without case, as git's own trailer parsing does.
+  When a commit carries several trailers of one kind, the first wins. Rule 4's
+  machine is the trailer's name as written, such as `Claude Opus 5`, and the
+  email only when the name is empty.
+
+**Comparing the stamp with the present.** Each stamped entry is matched to the
+freshly derived entries by integrity. Position only breaks a tie between
+ranges of identical text: the nearest start line wins, an equal distance goes
+to the earlier range, and each derived entry is taken by one stamp at most. A
+stamp that matches no derived entry is searched for anywhere in the current
+body. Found nowhere, it is `changed`. Found, it is `stale` if any line in the
+window names a different machine, and otherwise current or moved. A window of
+lines that name the same machine or none is not a contradiction.
+
+| Case | Status | Finding |
+|---|---|---|
+| Same integrity and machine, same lines | current | none |
+| Same integrity and machine, other lines | moved | none; `derive` rewrites `lines` when it next writes |
+| The pinned text is found nowhere | changed | `derived:stale` |
+| The evidence names a different machine for those lines | stale | `derived:stale` |
+| The evidence names no machine, and the pin matches | current | none |
+| The evidence names a machine for lines no entry covers | unset | `derived:stale` |
+
+**No evidence is not a contradiction.** A stamped range over lines whose commit
+names no machine stands for as long as its pin matches. Without that rule, a
+person could never attribute lines after the fact: the next check would call
+the attribution stale because git had nothing to say.
+
+A derived range is `unset` only where some of its lines fall outside every
+stamp matched above and outside the recorded lines of every changed stamp. So a
+person's edit inside an agent's range is one `changed` finding, not a changed
+finding plus two unset ones.
+
+`derive` keeps current and moved entries, rewriting `lines` for a moved one.
+It re-derives changed and stale ones from the evidence, dropping a changed one
+when no evidence remains, and adds unset ones. It never drops an entry that
+nothing contradicts. `moved` and `changed` mean what they mean in 0044.
+
+## Adding an entry
+
+Four ways, cheapest first.
+
+**An agent stamps its own edit, before committing.** Blame cannot see
+uncommitted lines, so `--generated-by` attributes exactly those. An agent sets
+the variable once per session; it is one line in a repository's agent
+instructions.
+
+```bash
+export MANNI_GENERATED_BY=claude-fable-5
+# …the agent rewrites lines 12-31 of docs/limits.md…
+manni meta derive
+# docs/limits.md: provenance lines 12-31: claude-fable-5 (uncommitted)
+git commit -am "docs: rewrite the install steps"
+```
+
+The edit and its stamp land in one commit, so evidence rule 2 reads the stamp
+back from that commit from then on. No trailer is ever needed. This is the path
+the docs lead with.
+
+**A person, precisely.** A range on the path scopes the attribution, in the
+spelling `cite add` uses:
+
+```bash
+manni meta derive docs/limits.md:12-31 --generated-by claude-fable-5
+```
+
+With a range, `--generated-by` attributes those lines whether committed or not,
+unless evidence rules 2 to 4 name a different machine, which is refused.
+Without a range, it attributes uncommitted lines only. The range is also the
+answer when a person and an agent both have uncommitted edits in one file.
+
+**A trailer.** `Generated-by: claude-fable-5` in a commit message, for a tool
+that commits without running `derive`. Every later run picks it up.
+
+**`derive.machines`, so history attributes itself.** Many repositories already
+end agent commits with a `Co-authored-by:` naming the model, and this one does.
+The tool cannot tell that trailer from a person's, so this is a key rather than
+a detection. A match counts as a machine for `provenance` and is excluded from
+`authors`, which also fixes the weakness 0040 records: a bot with an ordinary
+name lands in `authors`.
+
+## In an external manifest
+
+A pin needs nothing from the page but its body, so the record works the same
+from a manifest. The manifest is keyed by page path, which is the join 0041
+owns, and below that the entries are pins.
+
+```yaml
+# private/provenance.yaml
+docs/limits.md:
+  provenance:
+    - generated-by: claude-fable-5
+      lines: 12-31
+      integrity: sha256-c41f09aa…
+```
+
+Today a managed field that a manifest owns is refused, exit 2, both at config
+load and in `derive`: "a managed field has one authority, and a manifest key
+already has one." That rule protects a hand-curated manifest, such as an owners
+list, from a tool overwriting it. A `provenance` entry is never hand-curated.
+It is a pin a tool mints. So, **for `provenance` only**, the manifest is where
+the stamp is stored rather than a second authority, and `derive` writes into it
+with the same comment-preserving splice `cite update` uses. Every other managed
+field keeps the refusal.
+
+## The tool
+
+No new verb. `manni meta derive` gains one option and one positional form, and
+`meta.derive` gains one key.
+
+### Options and arguments
+
+| Change | Spelling | Meaning |
+|---|---|---|
+| New option | `--generated-by <name>` | Attributes uncommitted body lines, or the lines a range names, to `<name>`. Defaults to `MANNI_GENERATED_BY`; an empty value is unset |
+| New positional form | `<path>:L`, `<path>:L1-L2` | File lines of one file, scoping `--generated-by`. Parsed as `cite add` parses a page argument: the last `:L` suffix, so a drive letter is not a range. Legal only with `--generated-by` |
+
+Every other `derive` flag is unchanged, including `-` refusing stdin.
+
+**What people see is file lines.** The range on the command line, every
+message and every report use file lines, as in cite. Only the YAML holds body
+lines, and `derive` translates. The examples below are file lines.
+
+### Config, before and after
+
+```yaml
+# before
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+meta:
+  derive:
+    fields: [created, last-updated, authors]
+```
+
+```yaml
+# after
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:                                  # optional
+      - file: ./private/provenance.yaml
+        keys: [provenance]
+meta:
+  derive:
+    fields: [created, last-updated, authors, provenance]
+    machines: ["*[bot]", "noreply@anthropic.com"]      # optional
+```
+
+| Key | Type | Required | Default | Meaning |
+|---|---|---|---|---|
+| `meta.derive.fields` | list of strings | no | absent: nothing managed | Unchanged. `provenance` is a legal value |
+| `meta.derive.machines` | list of glob strings, non-empty, unique | no | `["*[bot]"]` | Trailer identities that are machines, matched against a trailer's name and its email. Globs match case-sensitively, and brackets are literal, so `*[bot]` means a name ending in `[bot]` |
+| `collections[].externalMetadata[].keys` | list of strings | — | — | Unchanged. May name `provenance` beside `derive.fields` |
+
+The default for `machines` is exactly today's behaviour, so a configuration
+that never writes the key changes nothing. `meta-provenance` needs no config.
+
+### Messages and exit codes
+
+| When | Output | Exit |
+|---|---|---|
+| `validate`, a pinned range changed | `provenance lines 12-31 changed since claude-fable-5 wrote them — run manni meta derive` | 1 |
+| `validate`, the evidence names another machine | `provenance lines 12-31 say claude-fable-5; blame says claude-sonnet-5 (9b0e2c1) — run manni meta derive` | 1 |
+| `validate`, machine lines with no entry | `provenance is unset for lines 44-52; blame says claude-sonnet-5 (4c1d2e0) — run manni meta derive` | 1 |
+| `derive`, written | `docs/limits.md: provenance lines 12-31: claude-fable-5 (blame: 9b0e2c1)` | 0 |
+| `derive`, written from `--generated-by` | `docs/limits.md: provenance lines 12-31: claude-fable-5 (uncommitted)` | 0 |
+| `derive`, a moved pin | `docs/limits.md: provenance lines 15-34: claude-fable-5 (moved from 12-31)` | 0 |
+| `derive`, into a manifest | `private/provenance.yaml: docs/limits.md provenance lines 12-31: claude-fable-5 (uncommitted)` | 0 |
+| `derive`, nothing uncommitted | `docs/limits.md: no uncommitted body lines; --generated-by attributes only what is not yet committed.` | 0 |
+| `derive --check` | the three `validate` findings, nothing written | 1 |
+| `derive`, a non-fenced format on the page | `docs/page.html: provenance cannot be stamped into the page: in the "html" format the metadata is part of the body it pins. Keep provenance in an externalMetadata manifest.` | 1 |
+| `get` | `provenance  lines 12-31: claude-fable-5  (derived, blame: 9b0e2c1)` | 0 |
+| `query` | `derived._sources` holds `{"provenance": {"source": "git", "evidence": "blame: 9b0e2c1"}}` | 0 |
+| `query UPDATE` | `"provenance" is managed by derive; run manni meta derive instead.` | 2 |
+| a range the evidence contradicts | `docs/limits.md:12-31: blame attributes these lines to claude-sonnet-5 (9b0e2c1); --generated-by cannot overrule a recorded machine.` | 2 |
+| a range without the option | `docs/limits.md:12-31 names lines, which only --generated-by uses. Pass --generated-by, or drop the range.` | 2 |
+| the option without the field | `--generated-by attributes provenance, which is not in --fields. Add provenance, or drop --generated-by.` | 2 |
+| a range past the end | `docs/limits.md has no lines 12-99: the file ends at line 40.` | 2 |
+| a range into the frontmatter | `docs/limits.md:2-5 reaches into the frontmatter; provenance pins body lines, which start at line 8.` | 2 |
+| a shallow clone | 0040's message, unchanged | 2 |
+
+The three findings keep 0040's rule id, `derived:stale/derived`, and instance
+path, `/provenance`. They add one thing 0040's findings do not carry: the file
+line of the range, so the `github` and `sarif` formats annotate the prose
+rather than line 1. Diagnostics carry the `manni:` prefix on stderr; report
+lines do not.
+
+### From the minimum to every option
+
+```bash
+# 1. Attribute what I just wrote
+MANNI_GENERATED_BY=claude-fable-5 manni meta derive --fields provenance
+# docs/limits.md: provenance lines 12-31: claude-fable-5 (uncommitted)
+
+# 2. Precisely, for committed or mixed work
+manni meta derive docs/limits.md:12-31 --generated-by claude-fable-5 --fields provenance
+
+# 3. From config: every managed field, stamps landing in the manifest
+manni meta derive
+
+# 4. The gate
+manni meta validate
+# docs/limits.md
+#   line 12  /provenance  provenance lines 12-31 changed since claude-fable-5 wrote them — run manni meta derive
+
+# 5. CI, without writing
+manni meta derive --check -f github
+# ::error file=docs/limits.md,line=12,title=derived:stale/derived::provenance lines 12-31 changed since claude-fable-5 wrote them
+
+# 6. Scripting: every range one family of models wrote
+manni meta query "SELECT _path, e.value FROM resolved, json_each(resolved.provenance) AS e WHERE json_extract(e.value, '$.generated-by') LIKE 'claude-%'" -f json
+
+# 7. Every option at once
+manni meta derive docs/limits.md:12-31 --generated-by claude-fable-5 \
+  --fields provenance,last-updated --sources git --collection site \
+  --ext md,mdx --exclude "docs/legacy/**" --check -f sarif --no-cache -c manni.config.yaml
+
+# 8. Usage errors, exit 2
+manni meta derive docs/limits.md:12-31
+# manni: docs/limits.md:12-31 names lines, which only --generated-by uses. Pass --generated-by, or drop the range.
+manni meta derive --generated-by claude-fable-5 --fields last-updated
+# manni: --generated-by attributes provenance, which is not in --fields. Add provenance, or drop --generated-by.
+manni meta derive docs/limits.md:12-31 --generated-by claude-fable-5
+# manni: docs/limits.md:12-31: blame attributes these lines to claude-sonnet-5 (9b0e2c1); --generated-by cannot overrule a recorded machine.
+manni meta derive --fields provenance -
+# manni: cannot derive <stdin>: no history behind it
+```
+
+Rung 7 pairs a range with `--check`. The check reports what the attribution
+would write and exits 1 if anything is stale, writing nothing, which is what
+`--check` means for every field.
+
+## Stress test
+
+What was tried against this design, and what each attempt changed.
+
+### 1. The first design added four verbs
+
+The first sketch was `manni meta authorship add|check|update|log`, a copy of
+cite's surface with a new pin engine behind it. Its one real advantage is worth
+keeping in view: a pin that is never re-derived catches an edit nobody
+recorded, where a derivation simply re-attributes. The costs were four verbs
+that repeat `derive`'s inputs, a second implementation of the hashing rule, and
+a `log` verb answering what `git log -p` on the page already shows.
+
+**Changed as a result:** built on `derive`, which already reads git, parses
+trailers, writes stamps and reports stale ones through `validate`, `get` and
+`query`. The advantage survives in part: a range someone edited after the stamp
+is `changed` until `derive` runs. No verb was needed. A later verb is welcome
+where a job does not fit `derive`.
+
+### 2. Sections were keyed by heading slug
+
+The second sketch mapped a GitHub-style heading slug to the machines that wrote
+the section, as `kg.sections` keys its typing. A slug is a copy of the heading
+text. Renaming a heading orphans the key. In an external manifest, nothing sees
+the heading change at all.
+
+**Changed as a result:** an entry is a pin. It refers to content by where it is
+and a hash of it, never by copying it, the rule the citation claim end was
+redesigned to follow.
+
+### 3. A new key, `authorship`, beside `provenance`
+
+Keeping `provenance` for fields and adding `authorship` for prose left two keys
+for one question, and four shapes for the field half of it. Nothing registers
+`provenance` yet; one test and one fixture read the draft.
+
+**Changed as a result:** `provenance` means prose attribution, and the field
+attribution is renamed `meta-provenance`, absorbing the other three shapes.
+
+### 4. One record for prose and fields
+
+A single `provenance` with entries located by `lines` or by `pointer` was
+considered. It would have made field attribution derived too, and retired the
+delete-on-review loop, which is how a reviewer marks machine metadata as
+checked.
+
+**Changed as a result:** two keys. Prose attribution is derived. Field
+attribution keeps its review semantics under a clearer name.
+
+### 5. `blame` was its own source
+
+A sixth source, `blame`, would let a monorepo keep `git` and skip the cost of
+blame. That is a switch for something the configuration already says: blame is
+needed exactly when `provenance` is in `derive.fields`.
+
+**Changed as a result:** `provenance` derives from `git`, and the field list is
+the switch.
+
+### 6. The stamp carried `commit-sha`
+
+With `commit-sha` in each entry, an entry written from uncommitted lines has no
+commit. Committing it gives it one, the derived value differs, and `derive`
+writes again. Every attribution became two commits.
+
+**Changed as a result:** no `commit-sha`. Blame supplies the commit when the
+record is read, and messages and `get` show it.
+
+### 7. No evidence was read as a person
+
+Reading "the commit names no machine" as "a person wrote it" made every
+after-the-fact attribution stale on the next check, since git has nothing to
+say about lines a person attributes later.
+
+**Changed as a result:** no evidence is not a contradiction. A pin that matches
+over lines whose commit names no machine is current.
+
+### 8. The stamp is part of the body in HTML, XML and DITA
+
+0040 records that `bodyOf` returns the whole content for a format whose
+metadata is not fenced, so a stamp write counts as a body change. For
+`last-updated` that self-triggers a date. For `provenance` it is worse: the
+stamp shifts and changes the very lines it pins.
+
+**Changed as a result:** in those formats `derive` refuses to stamp
+`provenance` into the page, as a per-file error, and names the manifest as the
+place to keep it. A manifest pin over those pages works, because the manifest
+is not part of the page.
+
+### 9. A person edits inside an agent's range
+
+An agent's stamp pins body lines 3 to 8, and a person changes line 5. The pin
+no longer matches: `changed`. `derive` re-blames. Lines 3, 4 and 6 to 8 still
+come from the agent's commit, whose own blob carried the stamp, so evidence
+rule 2 keeps them with the agent. Line 5 comes from the person's commit and has
+no evidence.
+
+**Changed as a result:** nothing; this is the case the generalized decision 2
+exists for. The blame ladder reproduces it, and it is the demo.
+
+### 10. A squash merge
+
+Blame collapses the branch onto the squash commit, which carries no trailer of
+its own. Its blob carries every stamp written on the branch.
+
+**Changed as a result:** nothing. Evidence rule 2 reads the stamps from the
+squash commit, and the ladder reproduces it.
+
+### 11. A reflow across a page
+
+Every line changes, so every pin is `changed`, and the next `derive` finds no
+machine evidence on the reflow commit.
+
+**Changed as a result:** nothing, and the loss is stated. The bytes the machine
+wrote are no longer there. A formatter run belongs in its own commit, before or
+after attribution, not between an edit and its stamp.
+
+### 12. Two ranges with identical text
+
+A repeated admonition or a duplicated step has one integrity for two places.
+
+**Changed as a result:** the tie rule. Integrity matches first, then the nearest
+`lines` value. The ladder reproduces it.
+
+### 13. kg loses a guard
+
+`kg.provenance` enumerated the twelve fields a machine may fill, so a machine
+attribution on `sections`, `revision-of` or `derived-from` failed the schema.
+Those three are curated by hand. A free JSON Pointer cannot express that.
+
+**Changed as a result:** the guard moves from the schema to kg's harvest, which
+reports a `meta-provenance` pointer under `/kg/sections`, `/kg/revision-of` or
+`/kg/derived-from`. The kg review page's pointer to this proposal says so.
+
+### 14. A consumer reads the old keys
+
+docevals' resolver was specified against `eval-provenance`, and the evals and
+artifact-evals review pages describe it.
+
+**Changed as a result:** each affected review page carries a pointer to this
+proposal, and the table in [What moves where](#what-moves-where) is the
+migration. No id is registered, so nothing that shipped breaks.
+
+### 15. A `machines` glob that is too wide
+
+`*noreply*` would catch the GitHub no-reply addresses real contributors commit
+with, and remove them from `authors`.
+
+**Changed as a result:** the default stays `["*[bot]"]`, the example uses an
+exact address, and the configuration reference will recommend exact addresses.
+
+### 16. Cost
+
+0040 reads each file's history only back to its first body-changing commit.
+Blame reads every line's history, and there is no shortcut for it.
+
+**Changed as a result:** blame runs only when `provenance` is managed, its
+results are to go through `derive`'s existing cache with `--no-cache` as the
+escape, and the `derive` reference will state the cost.
+
+### 17. `*[bot]` was a character class
+
+The reference ladder matched `derive.machines` with plain `picomatch`, which
+reads `[bot]` as a character class. The default then matched any name ending
+in `b`, `o` or `t`, so Scott and Matt counted as machines and left `authors`.
+
+**Changed as a result:** brackets in a `machines` glob are literal, so the
+default keeps 0040's exact `[bot]`-suffix behaviour. The ladder asserts that
+Scott and Matt are people.
+
+## Verification
+
+```bash
+node docs/proposals/0046/ladders/provenance-examples.cjs   # 34 rungs + 7 structural checks, 41/41, exit 0
+node docs/proposals/0046/ladders/blame-examples.cjs        # cases A-J and variants, 55 checks, golden hashes; exit 0
+node docs/proposals/0023/ladders/evals-examples.cjs        # earlier drafts untouched
+node docs/proposals/0023/ladders/artifact-evals-examples.cjs
+node docs/proposals/0023/ladders/kg-examples.cjs
+node docs/proposals/0044/ladders/citations-examples.cjs    # the pin this borrows
+node dist/cli.js meta validate                             # the dogfood gate; exit 0
+```
+
+The ladders run today, with nothing registered and no `src/` change.
+
+## Placement
+
+The four drafts live under `docs/proposals/0023/schemas/`, beside the drafts
+they revise. That is where 0023's review rounds put every revision, and it is
+different from 0044's case: 0044 added a tenth id, which 0023's "Do not" rules
+out, while this proposal revises four of the nine. `1.0.0-proposal.1` of
+ai-context and kg, and `1.0.0-proposal.2` of evals and artifact-evals, are left
+exactly as written. When `test/default-schema.test.ts` moves its pins to the
+new drafts, `FIELDS["ai-context"]` gains `meta-provenance` in the same commit,
+and the disjointness test confirms no other house id claims it.
+
+## Not breaking
+
+The drafts are additive files, and nothing resolves them by default. The
+implementation is `feat(meta):`, a minor release: a new legal value for
+`derive.fields`, a new optional key, a new option, and a new positional form
+that is legal only beside that option. The one relaxed rule, a manifest owning
+`provenance`, turns an exit 2 into a success. The rename from `provenance` to
+`meta-provenance`, and the removal of three keys, happen inside unregistered
+drafts, so they break no shipped schema.
+
+## Consequences
+
+- The implementation extracts cite's hashing and range parsing to
+  `src/shared/`, so the family has one hashing rule in code as it does in
+  prose.
+- The implementation PR ships the demo video. Its story is stress test 9: an
+  agent's stamp, a person's edit inside it, `validate` naming the line, one
+  `derive`.
+- `docs/content-strategy/cujs.md` gains M8. The meta reference pages for
+  `derive` and configuration gain the option, the positional form, the key and
+  the messages above.
+- 0023's design notes carry a dated ruling pointing here.
+- Open questions for the review:
+  1. Should a machine's name be split into the model and the agent that ran it,
+     with an `Agent:` trailer and a field of its own?
+  2. Is a `prepare-commit-msg` hook, writing `Generated-by:` from
+     `MANNI_GENERATED_BY`, worth hanging on 0002's hook infrastructure?
+  3. Should `fill` write `meta-provenance` for the fields it writes? It is the
+     only step that knows the model and the confidence when it happens.
+  4. Should the evals self-preference-bias check read `provenance` ahead of the
+     page-level `generated-by`?
+  5. Do `provenance` and `meta-provenance` belong in core rather than
+     ai-context? This is 0023's open question 7, sharper now that there are two.

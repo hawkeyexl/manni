@@ -88,3 +88,11 @@ Two questions. Does the closed block plus open page root land well for
 graph implementers? And do the plain-language renames (`label`,
 `about-product-aspect`) read better than the SKOS and iiRDS spellings
 they replaced?
+
+Proposal 0046 would remove `kg.provenance`, in draft `1.0.0-proposal.2`.
+The trail for kg fields moves to the page-level `meta-provenance` in
+[ai-context](/manni/meta/proposals/ai-context/), where each field is a JSON
+Pointer under `/kg/`, such as `/kg/broader`. The block's closed field list
+kept `sections`, `revision-of` and `derived-from` out of the trail, and a
+pointer cannot. That guard would move to the graph layer, where the harvest
+reports a machine attribution on those fields.

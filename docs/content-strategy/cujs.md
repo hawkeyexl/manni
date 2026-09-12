@@ -58,6 +58,16 @@ Maya's older pages predate the standard, so the fields her gate now requires are
 
 ---
 
+### M8 · See which lines a machine wrote, and catch them changing
+
+**Outcome.** Maya reviews what agents wrote, not whole pages. She learns when a human edit replaces text a machine was credited with.
+
+**Steps.** She adds `provenance` to `derive.fields`, plus `machines:` so that past agent commits count. Her agents export `MANNI_GENERATED_BY` and run `manni meta derive` before they commit. Each run stamps the lines an agent wrote with its name, a line range and an integrity hash, so the edit and its attribution land in one commit. CI runs `manni meta validate`, which compares each pin with the page and with git blame. She lists the machine-written ranges with `manni meta get --fields provenance`. Where the page is public, she keeps the record in a private manifest instead.
+
+**What success looks like.** A changed range fails `validate` at the line of the prose, and one `derive` clears it. A range that only moved is not a finding.
+
+---
+
 ## Devin, Platform / CI Engineer
 
 ### D1 · Add the gate to our CI platform

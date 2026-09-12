@@ -150,6 +150,22 @@ in the vocabulary changes. The schema still cannot compare a date to history,
 and now does not have to. The stewardship page carries the pointer, and asks
 reviewers whether the vocabulary should recommend which fields to manage.
 
+**2026-09-12 ruling: provenance is pinned, and field attribution is one shape.**
+Proposal 0046, at `docs/proposals/0046-provenance-pins.md`, redefines
+ai-context's `provenance`. It becomes a derived record of the body lines each
+machine wrote. An entry names the machine, the lines and an integrity hash,
+which is the mechanism citations already use to pin a claim.
+`manni meta derive` stamps it, and `validate` reports a pin whose text changed
+or whose evidence names another machine. The per-model field attribution
+keeps its semantics under a new name, `meta-provenance`. Its `fields` become
+JSON Pointers, and it absorbs `kg.provenance`, `eval-provenance` and
+`metadata.eval-provenance`, so the family has one shape for the idea instead
+of four. The new drafts are ai-context `1.0.0-proposal.2`, kg
+`1.0.0-proposal.2`, evals `1.0.0-proposal.3` and artifact-evals
+`1.0.0-proposal.3`. Every earlier draft keeps its bytes. This answers part of
+open question 7, where machine-production fields live, by settling their
+shape. It does not move them to core. The four review pages carry the pointer.
+
 **2026-08-26 correction: the whole family is default.** All nine append to
 `DEFAULT_SCHEMAS`, superseding the core-only intent below wherever it
 appears. Bare runs require the pair, validate every family key present,
