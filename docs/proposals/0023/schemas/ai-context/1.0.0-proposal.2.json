@@ -2,21 +2,16 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "manni:ai-context:1.0.0-proposal.2",
   "title": "manni AI-context vocabulary (1.0.0-proposal.2)",
-  "description": "How machines made and may use this page: production provenance (`generated-by`, `provenance`, `meta-provenance`) and consumption guidance (`risks`, `sample-questions`). `provenance` pins the body lines a machine wrote, and is managed by `manni meta derive`. `meta-provenance` is the family's human-review loop for metadata: machines propose fields and evals, and entries retire as humans review them. `risks` uses the open-enum idiom: recommended flags anchored in published prior art, any string legal, unknown values read as caution rather than absence. proposal.1 used `provenance` for field attribution; that record is `meta-provenance` here, and `provenance` now attributes prose.",
+  "description": "How machines made and may use this page: production provenance (`provenance`, `meta-provenance`) and consumption guidance (`risks`, `sample-questions`). `provenance` pins the body lines a machine wrote, and is managed by `manni meta derive`. `meta-provenance` is the family's human-review loop for metadata: machines propose fields and evals, and entries retire as humans review them. `risks` uses the open-enum idiom: recommended flags anchored in published prior art, any string legal, unknown values read as caution rather than absence. proposal.1 used `provenance` for field attribution; that record is `meta-provenance` here, and `provenance` now attributes prose. The machines that wrote a page are the distinct `generated-by` values across its `provenance` entries.",
   "type": "object",
   "additionalProperties": true,
   "properties": {
-    "generated-by": {
-      "type": "string",
-      "minLength": 1,
-      "description": "The model, agent, or tool that generated this page's content, if any. Consumers use it for self-preference-bias checks: a judge should know when it is grading its own author."
-    },
     "provenance": {
       "type": "array",
       "items": {
         "$ref": "#/$defs/provenanceEntry"
       },
-      "description": "Which body lines a machine wrote: one entry per range, each naming the machine, the lines, and a pin over them. Lines are body lines, counted after the frontmatter as for a citation's claim. `lines` is where the pin was last seen and `integrity` is its identity, so a range that moves keeps its entry and a range whose text changes loses it. The field is managed by `manni meta derive` (proposal 0046), which reads the evidence from git; `fill` never proposes it. Humans never appear here, because `authors` carries them. Complementary to `generated-by`, which attributes the page as a whole, and to `meta-provenance`, which attributes its metadata.",
+      "description": "Which body lines a machine wrote: one entry per range, each naming the machine, the lines, and a pin over them. Lines are body lines, counted after the frontmatter as for a citation's claim. `lines` is where the pin was last seen and `integrity` is its identity, so a range that moves keeps its entry and a range whose text changes loses it. The field is managed by `manni meta derive` (proposal 0046), which reads the evidence from git; `fill` never proposes it. Humans never appear here, because `authors` carries them. The machines that wrote the page are the distinct `generated-by` values across its entries, and a page no machine wrote has no `provenance`. They are what the self-preference-bias check reads: a judge is grading its own author when its model is among the machines attributed for what it grades. By the eval's `target`, that is the machines here for `body` (the default), the machines in `meta-provenance` for `frontmatter`, both for `raw`, and none for a companion file (`{source: file, path}`), which carries its own record if it is a page. The check covers the whole body, because `target` has no lines form. A knowledge-graph harvest reads the page's machines from here too. Complementary to `meta-provenance`, which attributes the page's metadata.",
       "minItems": 1,
       "uniqueItems": true
     },
@@ -25,7 +20,7 @@
       "items": {
         "$ref": "#/$defs/metaProvenanceEntry"
       },
-      "description": "Attribution for machine-proposed metadata, one entry per model (consumers merge by generated-by; the schema dedupes identical entries): which fields and which evals it proposed, at what confidence. The human-review trail for enrichment — a human deletes an entry once its fields and evals are reviewed, so a surviving entry means unreviewed machine metadata. Not managed and not derived: whoever proposes the values writes the entry. One key for the whole family, replacing ai-context `provenance` (proposal.1), `kg.provenance`, `eval-provenance`, and artifact-evals `metadata.eval-provenance`. Complementary to `generated-by`, which attributes the page's content, and to `provenance`, which attributes its prose line by line.",
+      "description": "Attribution for machine-proposed metadata, one entry per model (consumers merge by generated-by; the schema dedupes identical entries): which fields and which evals it proposed, at what confidence. The human-review trail for enrichment — a human deletes an entry once its fields and evals are reviewed, so a surviving entry means unreviewed machine metadata. Not managed and not derived: whoever proposes the values writes the entry. `manni meta fill` writes it for the fields it writes, in the same write: it merges into the entry whose `generated-by` is the run's model (the first such entry, if a person has made two), appending the written fields' JSON Pointers, escaped per RFC 6901 so a key `a/b` is `/a~1b`, after the entry's existing ones and setting their `confidence`; when the run's model has no entry, it appends one. Re-encrypting an existing value in place proposes nothing and is not recorded. `meta-provenance` is never proposed to a model: `fill` skips it as a candidate and leaves it out of the metadata it sends. One key for the whole family, replacing ai-context `provenance` (proposal.1), `kg.provenance`, `eval-provenance`, and artifact-evals `metadata.eval-provenance`. Complementary to `provenance`, which attributes the page's prose line by line.",
       "minItems": 1,
       "uniqueItems": true
     },

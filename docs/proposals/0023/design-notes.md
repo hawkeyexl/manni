@@ -165,6 +165,12 @@ of four. The new drafts are ai-context `1.0.0-proposal.2`, kg
 `1.0.0-proposal.3`. Every earlier draft keeps its bytes. This answers part of
 open question 7, where machine-production fields live, by settling their
 shape. It does not move them to core. The four review pages carry the pointer.
+Review round 1 of 0046 settled the rest. The page-level `generated-by` leaves
+ai-context `1.0.0-proposal.2`, because `provenance` names the machines per
+range. The self-preference-bias check reads `provenance` for a `body` target,
+`meta-provenance` for `frontmatter`, and both for `raw`. `manni meta fill`
+writes `meta-provenance` for the fields it writes. Both keys stay in
+ai-context, which closes open question 7 for them.
 
 **2026-08-26 correction: the whole family is default.** All nine append to
 `DEFAULT_SCHEMAS`, superseding the core-only intent below wherever it

@@ -146,4 +146,7 @@ Machine-proposed eval ids move to the page-level `meta-provenance` in
 [ai-context](/manni/meta/proposals/ai-context/), under its `evals` list, so one
 trail covers fields and evals alike. The `eval-` prefix guard no longer
 excepts `provenance`, so an `eval-provenance` key at the page root is rejected
-like any other unknown `eval-*` key.
+like any other unknown `eval-*` key. The self-preference warning would read the
+machines in ai-context's `provenance` for a `body` target, `meta-provenance`
+for `frontmatter`, and both for `raw`, rather than one page-level
+`generated-by`.

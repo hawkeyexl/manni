@@ -14,6 +14,9 @@
 // prefix guard stops excepting it) and artifact-evals
 // `metadata.eval-provenance` (artifact-evals proposal.3, which carries
 // `metadata.meta-provenance` with the same entry, repeated byte for byte).
+// The page-level `generated-by` goes too: the machines that wrote a page are
+// the distinct `generated-by` values across its `provenance`, so ai-context
+// proposal.2 keeps that name only as a member of the two entry shapes.
 //
 // The earlier drafts sit beside these in `docs/proposals/0023/schemas/` and
 // are never edited: each is the record of what the vocabulary looked like when
@@ -78,7 +81,6 @@ const cases = [
   // ---------------------------------------------------------- provenance
   ["P1 provenance with one range", "ai-context", true,
 `title: Rate limits
-generated-by: claude-fable-5
 provenance:
   - generated-by: claude-fable-5
     lines: 12-31
@@ -170,7 +172,6 @@ provenance:
 
   ["P5 a proposal.1 document with no provenance still passes proposal.2", "ai-context", true,
 `title: Install the operator
-generated-by: claude-fable-5
 risks: [privileged, cost-incurring, org-specific-flag]
 sample-questions:
   - How do I install the operator on EKS?
@@ -381,6 +382,9 @@ const assertions = [
   ["artifact-evals proposal.3 guard is ^eval-(?!skip$)",
     JSON.stringify(schemas["artifact-evals"].properties.metadata.patternProperties) ===
       JSON.stringify({ "^eval-(?!skip$)": false })],
+  ["ai-context proposal.2 defines exactly meta-provenance, provenance, risks and sample-questions",
+    JSON.stringify(Object.keys(schemas["ai-context"].properties).sort()) ===
+      JSON.stringify(["meta-provenance", "provenance", "risks", "sample-questions"])],
   ["no new draft still defines a provenanceEntry for field attribution",
     !("provenanceEntry" in schemas.evals.$defs) && !("provenanceEntry" in schemas["artifact-evals"].$defs) &&
       schemas["ai-context"].$defs.provenanceEntry.required.includes("integrity")],

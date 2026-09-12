@@ -14,8 +14,9 @@
   `resolved` view that exposes it
 - **Relates to:** [0045](0045-family-encryption-key.md), for why a pin over a
   public page is always plain `sha256-`, and for treating an empty environment
-  variable as unset. [0002](0002-ci-distribution-artifacts.md), the hook a
-  later trailer writer could hang on; see open question 2
+  variable as unset. [0002](0002-ci-distribution-artifacts.md), the pre-commit
+  hook file the `manni-meta-derive` hook joins. [0017](0017-fill-egress-and-bounds.md),
+  for what `fill` sends, which now excludes both provenance keys
 - **Supersedes, in part:** one rule of 0040, for `provenance` only: a managed
   field a manifest owns is refused. See [In an external manifest](#in-an-external-manifest).
   0040 is not edited
@@ -27,18 +28,23 @@
   `docs/content-strategy/cujs.md`,
   `docs/src/content/docs/meta/proposals/{ai-context,kg,evals,artifact-evals}.mdx`.
   The implementation, later: `src/meta/core/derive/{git,index,types,config}.ts`,
-  `src/meta/commands/derive.ts`, `src/meta/core/config.ts`,
-  `src/cite/core/{hash,range}.ts` moving to `src/shared/`, `test/derive*`,
-  `test/fixtures/derive/**`
+  `src/meta/commands/{derive,fill}.ts`, `src/meta/commands/fill-types.ts`,
+  `src/meta/reporters/fill.ts`, `src/meta/core/config.ts`,
+  `src/cite/core/{hash,range}.ts` moving to `src/shared/`,
+  `.pre-commit-hooks.yaml`, `test/pre-commit-hook.test.ts`, `test/derive*`,
+  `test/fill*`, `test/fixtures/derive/**`,
+  `docs/src/content/docs/meta/ci/recipes.mdx`
 - **Verdict:** Redefine `provenance` as a derived record of which machine wrote
   which lines of the body. Each entry is a pin, `lines` plus `integrity`, with
   the machine's name. `manni meta derive` stamps it from `git blame` and commit
   evidence, and `validate` fails when a pinned range has changed or the
   evidence names another machine. Rename today's per-model field attribution
   to `meta-provenance`, address its fields by JSON Pointer, and fold
-  `kg.provenance`, `eval-provenance` and `metadata.eval-provenance` into it.
-  No new verb: one option and one positional form on `derive`, and one config
-  key.
+  `kg.provenance`, `eval-provenance` and `metadata.eval-provenance` into it;
+  `manni meta fill` writes it for the fields it fills. Drop the page-level
+  `generated-by`, which `provenance` makes redundant. No new verb: one option
+  and one positional form on `derive`, one config key, and one more pre-commit
+  hook, `manni-meta-derive`. Review round 1 settled the five open questions.
 
 ## Problem
 
@@ -89,9 +95,15 @@ attribution today.
   `MANNI_GENERATED_BY` set, `manni meta derive` before a commit attributes the
   uncommitted lines, and the stamp lands in the same commit as the edit. From
   then on the stamp is its own evidence.
+- **The pre-commit hook does it for them.** `manni-meta-derive` runs `derive`
+  on the staged files, so an agent with `MANNI_GENERATED_BY` exported gets its
+  lines attributed without remembering a command.
 - **`meta-provenance`** is today's field attribution under a name that says
   what it attributes. Fields become JSON Pointers, evals stay ids, and the
-  three other shapes fold into it.
+  three other shapes fold into it. `fill` writes it for the fields it fills.
+- **There is no page-level `generated-by`.** The machines that wrote a page are
+  the distinct `generated-by` values across its `provenance`, and the
+  self-preference-bias check reads them there.
 - **Nothing is keyed by a string copied from the content.** A pin locates
   prose. A pointer locates a value. Both survive the record moving to an
   external manifest.
@@ -106,7 +118,6 @@ closed.
 ```yaml
 ---
 title: Rate limits
-generated-by: claude-fable-5            # unchanged: the page's origin
 provenance:
   - generated-by: claude-fable-5
     lines: 12-31
@@ -119,7 +130,7 @@ provenance:
 
 | Field | Type / pattern | Required | Meaning |
 |---|---|---|---|
-| `generated-by` | string, `minLength: 1` | **yes** | The machine that wrote these lines. The same name, and the same kind of value, as the page-level field it refines |
+| `generated-by` | string, `minLength: 1` | **yes** | The machine that wrote these lines, as one name. There is no separate agent field |
 | `lines` | `L` or `"L1-L2"` | **yes** | Body lines, counted from the first line after the frontmatter. Where the pin was last seen |
 | `integrity` | `^sha256-[0-9a-f]{64}$` | **yes** | The pin, and the entry's identity |
 
@@ -144,13 +155,35 @@ field that changed on that commit would make every attribution a second commit.
 **Humans never appear.** `authors` carries them. A range no machine wrote has
 no entry, and an all-human page has no `provenance`.
 
+**There is no page-level `generated-by`.** ai-context `proposal.1` had one:
+one model for one page. The machines that wrote a page are now the distinct
+`generated-by` values across its `provenance`, which is both finer and harder
+to get wrong. The kg harvest reads them there.
+
+### The self-preference-bias check
+
+A judge is grading its own author when its model is among the machines
+attributed for what it grades. What it grades is the eval's `target`:
+
+| `target` | Machines compared against |
+|---|---|
+| `body` (the default) | the distinct `provenance[].generated-by` |
+| `frontmatter` | the distinct `meta-provenance[].generated-by` |
+| `raw` | both |
+| `{source: file, path}` | none; a companion file carries its own record if it is a page |
+
+The check covers the whole body, because `target` has no form that names
+lines. A `{lines}` target is a question for a later evals draft, not this one;
+see stress test 17.
+
 ### `meta-provenance`
 
 Also in `manni:ai-context:1.0.0-proposal.2`. It is the field attribution that
 `provenance` was, with its meaning unchanged. There is one entry per model, and
 consumers merge entries by `generated-by`. A human deletes an entry once its
 fields are reviewed, so a surviving entry means unreviewed machine metadata. It
-is not managed and not derived.
+is not managed and not derived. `manni meta fill` writes it; see
+[`fill` writes meta-provenance](#fill-writes-meta-provenance).
 
 ```yaml
 meta-provenance:
@@ -173,10 +206,13 @@ meta-provenance:
 The two key forms of `confidence` cannot collide. A pointer starts with `/`,
 and an id cannot.
 
-### What moves where
+### From draft to draft
 
-| Before | After |
+What the new drafts change against the drafts under review:
+
+| Earlier draft | New draft |
 |---|---|
+| ai-context `generated-by` | removed; the machines come from `provenance` |
 | ai-context `provenance: [{generated-by, fields: [intent], confidence: {intent: 0.9}}]` | `meta-provenance: [{generated-by, fields: [/intent], confidence: {/intent: 0.9}}]` |
 | `kg: {provenance: [{generated-by, fields: [label]}]}` | page-level `meta-provenance: [{generated-by, fields: [/kg/label]}]` |
 | `eval-provenance: [{generated-by, evals: [x]}]` | page-level `meta-provenance: [{generated-by, evals: [x]}]` |
@@ -189,11 +225,10 @@ an artifact's top level is its host tool's contract, and `metadata` is the
 extension bag. The entry definition appears in both drafts byte for byte, and
 the ladder asserts that it does.
 
-Three changes to the entry are deliberate. Pointers replace bare names, because
+Two changes to the entry are deliberate. Pointers replace bare names, because
 a pointer is the location `validate` already reports and a bare name cannot
 reach into `kg`. An entry must name `fields` or `evals`, because today
-`- generated-by: x` passes and says nothing. Compatibility with the old shape is
-not kept: the key is renamed, so no document silently keeps its old meaning.
+`- generated-by: x` passes and says nothing.
 
 ## The derivation contract
 
@@ -469,6 +504,126 @@ Rung 7 pairs a range with `--check`. The check reports what the attribution
 would write and exits 1 if anything is stale, writing nothing, which is what
 `--check` means for every field.
 
+## `fill` writes meta-provenance
+
+For each file where `fill` writes at least one field, it records those fields
+in `meta-provenance` in the same write. Under `--dry-run` it reports the entry
+it would write. There is no switch: the page's schemas decide, below.
+
+**The entry.** `generated-by` is the run's model, the name the footer prints
+after the provider (`anthropic/claude-sonnet-4-5` records `claude-sonnet-4-5`).
+`fields` are the JSON Pointers of the fields written, escaped per RFC 6901, so
+a key `a/b` is `/a~1b`. `confidence` maps each of those pointers to the
+confidence it was written at. Re-encrypting an existing value in place is not a
+proposal and is not recorded. An encrypted field is recorded by pointer; its
+value never appears.
+
+**The merge.** `fill` replaces top-level values, so it computes the whole list.
+Where an entry for this model exists, the new pointers go after its existing
+`fields`, their confidences are set, and everything else in the entry is kept.
+Where two entries share the model, which only a hand edit produces, the first
+is used. Otherwise a new entry is appended. A pointer a reviewer removed comes
+back only when `fill` writes that field again, which is a new machine value.
+
+**Never proposed.** `provenance` and `meta-provenance` are never candidates for
+the model, skipped as `$schema` is, and both are removed from the existing
+metadata `fill` sends. A schema that defines them would otherwise ask a model to
+invent hashes and to attribute itself.
+
+**Not written, while the fields still are.** `fill`'s re-check ignores errors at
+the document root, which is where `additionalProperties` reports, so the entry
+is checked on its own. It is not written when any error sits at or under
+`/meta-provenance` or a root error names it, or when a manifest owns
+`meta-provenance`, since `fill` writes no manifest. Neither changes the exit
+code: failing a file for its side record would block filling.
+
+| Surface | Addition |
+|---|---|
+| pretty, written | `    meta-provenance  claude-sonnet-4-5: /intent, /title`, under the file, after its fields |
+| pretty, schema | `    meta-provenance not written: this page's schemas do not allow it` |
+| pretty, manifest | `    meta-provenance not written: owned by manifest private/meta.yaml, which manni meta fill does not write` |
+| JSON, `FillFileResult.metaProvenance` | `{"written": true, "entry": {"generated-by": "claude-sonnet-4-5", "fields": ["/intent"], "confidence": {"/intent": 0.9}}}`, or `{"written": false, "skipReason": "schema-mismatch"}`, or the same with `"manifest-owned"`. Absent when no field was written |
+| `github` | nothing new; it is not an error |
+| summary and exit codes | unchanged; the entry is not counted in `written` |
+
+`metaProvenance` follows `FillFileResult`'s camelCase, beside `skipReason` and
+`dryRun`. No flag and no usage error is added.
+
+```bash
+# 1. The minimum
+manni meta fill docs/limits.md
+# ✓ docs/limits.md
+#     /intent  "Set request limits"  0.90
+#     meta-provenance  claude-sonnet-4-5: /intent
+# anthropic/claude-sonnet-4-5 · Threshold 0.7 · 1 file · 1 field written · 0 skipped
+
+# 2. Scripting
+manni meta fill docs/limits.md --dry-run -f json
+#   "metaProvenance": {"written": true, "entry": {"generated-by": "claude-sonnet-4-5", "fields": ["/intent"], "confidence": {"/intent": 0.9}}}
+
+# 3. A closed schema without the key: the field is written, the entry is not, exit 0
+manni meta fill
+#     meta-provenance not written: this page's schemas do not allow it
+
+# 4. Every option at once; none is new
+manni meta fill docs/ --fields intent,title --confidence 0.8 --provider anthropic \
+  --model claude-sonnet-4-5 --collection site --ext md,mdx --exclude "docs/legacy/**" \
+  --max-turns 20 --no-cache --dry-run -f json -c manni.config.yaml
+```
+
+## The pre-commit hook
+
+A second hook joins `manni-meta` in `.pre-commit-hooks.yaml`, with the same
+`files` pattern, which `test/pre-commit-hook.test.ts` asserts for both:
+
+```yaml
+- id: manni-meta-derive
+  name: manni meta derive
+  description: Stamp managed metadata, including provenance, before a commit
+  entry: npx --yes @hawkeyexl/manni@0 meta derive
+  language: system
+  files: '(?i)\.(adoc|asciidoc|dita|ditamap|htm|html|markdown|md|mdx|rst|xml)$'
+```
+
+A repository lists it ahead of validation:
+
+```yaml
+repos:
+  - repo: https://github.com/hawkeyexl/manni
+    rev: vX.Y.Z
+    hooks:
+      - id: manni-meta-derive
+      - id: manni-meta
+```
+
+pre-commit passes the staged files, and `derive` stamps them. With
+`MANNI_GENERATED_BY` exported, the uncommitted lines are attributed by evidence
+rule 1. Without it, only what history already evidences is stamped. When
+`derive` changes a file, pre-commit stops the commit, as it does for any
+formatter. Re-staging and committing again passes, because the stamp now reads
+as current, and the edit and its stamp land in one commit, which evidence rule 2
+needs.
+
+```bash
+# 1. An agent session
+export MANNI_GENERATED_BY=claude-fable-5
+git commit -am "docs: rewrite the install steps"
+# manni meta derive........................................................Failed
+# - hook id: manni-meta-derive
+# - files were modified by this hook
+# docs/limits.md: provenance lines 12-31: claude-fable-5 (uncommitted)
+git add -u && git commit -m "docs: rewrite the install steps"
+# manni meta derive........................................................Passed
+# manni meta validate......................................................Passed
+
+# 2. A repository that manages nothing: derive's existing refusal, exit 2
+# manni: nothing to derive: set derive.fields in manni.config.yaml or pass --fields
+```
+
+The hook is for repositories with `derive.fields` set. A shallow clone gets
+0040's message, exit 2. `Generated-by:` stays readable as evidence rule 3 for a
+tool that commits without the hook.
+
 ## Stress test
 
 What was tried against this design, and what each attempt changed.
@@ -602,16 +757,7 @@ Those three are curated by hand. A free JSON Pointer cannot express that.
 reports a `meta-provenance` pointer under `/kg/sections`, `/kg/revision-of` or
 `/kg/derived-from`. The kg review page's pointer to this proposal says so.
 
-### 14. A consumer reads the old keys
-
-docevals' resolver was specified against `eval-provenance`, and the evals and
-artifact-evals review pages describe it.
-
-**Changed as a result:** each affected review page carries a pointer to this
-proposal, and the table in [What moves where](#what-moves-where) is the
-migration. No id is registered, so nothing that shipped breaks.
-
-### 15. A `machines` glob that is too wide
+### 14. A `machines` glob that is too wide
 
 `*noreply*` would catch the GitHub no-reply addresses real contributors commit
 with, and remove them from `authors`.
@@ -619,7 +765,7 @@ with, and remove them from `authors`.
 **Changed as a result:** the default stays `["*[bot]"]`, the example uses an
 exact address, and the configuration reference will recommend exact addresses.
 
-### 16. Cost
+### 15. Cost
 
 0040 reads each file's history only back to its first body-changing commit.
 Blame reads every line's history, and there is no shortcut for it.
@@ -628,7 +774,7 @@ Blame reads every line's history, and there is no shortcut for it.
 results are to go through `derive`'s existing cache with `--no-cache` as the
 escape, and the `derive` reference will state the cost.
 
-### 17. `*[bot]` was a character class
+### 16. `*[bot]` was a character class
 
 The reference ladder matched `derive.machines` with plain `picomatch`, which
 reads `[bot]` as a character class. The default then matched any name ending
@@ -638,10 +784,64 @@ in `b`, `o` or `t`, so Scott and Matt counted as machines and left `authors`.
 default keeps 0040's exact `[bot]`-suffix behaviour. The ladder asserts that
 Scott and Matt are people.
 
+### 17. The bias check cannot narrow to a section
+
+An eval's `target` is `body`, `raw`, `frontmatter` or a companion file. None
+names lines, so a judge grading one section is compared with every machine that
+wrote any part of the body.
+
+**Changed as a result:** nothing in this proposal. The check is whole-body, and a
+lines form for `target` is left to a later evals draft.
+
+### 18. `fill`'s re-check drops errors at the root
+
+`fill` re-validates the patched document but keeps only errors under a field.
+`additionalProperties` reports at the root, so a closed schema that disallows
+`meta-provenance` would have let the entry through.
+
+**Changed as a result:** the entry is checked on its own, including root errors
+that name it.
+
+### 19. A manifest owns `meta-provenance`
+
+`fill` fails a file when a key it must write belongs to a manifest. Applied to
+the side record, one manifest entry would stop every page in the collection
+from being filled.
+
+**Changed as a result:** the entry is reported as not written, and the fields
+are filled.
+
+### 20. The hook stops the commit it stamps
+
+A pre-commit hook that changes files fails the run. The first commit attempt
+after an agent's edit therefore stops.
+
+**Changed as a result:** accepted, as the pattern every formatter hook has. The
+second attempt passes, and the stamp lands in the same commit as the edit. The
+rejected alternative, a `prepare-commit-msg` hook writing `Generated-by:`,
+never interrupts, but it needed a new verb or `sh` on the PATH, and it
+attributes a commit rather than lines.
+
+### 21. `fill` builds its pointers unescaped
+
+`fill` spells a field's pointer as `/` plus the key, so a key holding `/` or `~`
+gives a malformed pointer.
+
+**Changed as a result:** `meta-provenance` pointers are escaped per RFC 6901,
+and the implementation fixes the pointer where `fill` builds it.
+
+### 22. A schema defines the provenance keys
+
+A schema set that defines `provenance` or `meta-provenance` makes each a missing
+field, and `fill` would ask the model for it.
+
+**Changed as a result:** both are excluded from `fill`'s candidates and from the
+metadata it sends.
+
 ## Verification
 
 ```bash
-node docs/proposals/0046/ladders/provenance-examples.cjs   # 34 rungs + 7 structural checks, 41/41, exit 0
+node docs/proposals/0046/ladders/provenance-examples.cjs   # 34 rungs + 8 structural checks, 42/42, exit 0
 node docs/proposals/0046/ladders/blame-examples.cjs        # cases A-J and variants, 55 checks, golden hashes; exit 0
 node docs/proposals/0023/ladders/evals-examples.cjs        # earlier drafts untouched
 node docs/proposals/0023/ladders/artifact-evals-examples.cjs
@@ -660,18 +860,20 @@ different from 0044's case: 0044 added a tenth id, which 0023's "Do not" rules
 out, while this proposal revises four of the nine. `1.0.0-proposal.1` of
 ai-context and kg, and `1.0.0-proposal.2` of evals and artifact-evals, are left
 exactly as written. When `test/default-schema.test.ts` moves its pins to the
-new drafts, `FIELDS["ai-context"]` gains `meta-provenance` in the same commit,
-and the disjointness test confirms no other house id claims it.
+new drafts, `FIELDS["ai-context"]` becomes `meta-provenance`, `provenance`,
+`risks` and `sample-questions` in the same commit. The family count stays 36,
+one key out and one in, and the disjointness test confirms no other house id
+claims the new one.
 
 ## Not breaking
 
 The drafts are additive files, and nothing resolves them by default. The
 implementation is `feat(meta):`, a minor release: a new legal value for
 `derive.fields`, a new optional key, a new option, and a new positional form
-that is legal only beside that option. The one relaxed rule, a manifest owning
-`provenance`, turns an exit 2 into a success. The rename from `provenance` to
-`meta-provenance`, and the removal of three keys, happen inside unregistered
-drafts, so they break no shipped schema.
+that is legal only beside that option, and one more hook. The one relaxed
+rule, a manifest owning `provenance`, turns an exit 2 into a success. One
+behaviour is new for existing users: `fill` adds `meta-provenance` to pages
+whose schemas allow it. The release notes say so.
 
 ## Consequences
 
@@ -684,15 +886,23 @@ drafts, so they break no shipped schema.
 - `docs/content-strategy/cujs.md` gains M8. The meta reference pages for
   `derive` and configuration gain the option, the positional form, the key and
   the messages above.
+- The CI recipes page gains `manni-meta-derive` beside `manni-meta`.
 - 0023's design notes carry a dated ruling pointing here.
-- Open questions for the review:
-  1. Should a machine's name be split into the model and the agent that ran it,
-     with an `Agent:` trailer and a field of its own?
-  2. Is a `prepare-commit-msg` hook, writing `Generated-by:` from
-     `MANNI_GENERATED_BY`, worth hanging on 0002's hook infrastructure?
-  3. Should `fill` write `meta-provenance` for the fields it writes? It is the
-     only step that knows the model and the confidence when it happens.
-  4. Should the evals self-preference-bias check read `provenance` ahead of the
-     page-level `generated-by`?
-  5. Do `provenance` and `meta-provenance` belong in core rather than
-     ai-context? This is 0023's open question 7, sharper now that there are two.
+- No question is left open. [Review round 1](#review-round-1) records the
+  answers.
+
+## Review round 1
+
+The first draft ended with five open questions. The answers:
+
+| # | Question | Answer | What changed |
+|---|---|---|---|
+| 1 | Split the machine's name into model and agent? | No | An entry's `generated-by` is one name. No `Agent:` trailer, no second field |
+| 2 | A hook that makes attribution automatic? | Yes, one that runs `derive` | [The pre-commit hook](#the-pre-commit-hook), chosen over a trailer hook; stress test 20 |
+| 3 | Should `fill` write `meta-provenance`? | Yes | [`fill` writes meta-provenance](#fill-writes-meta-provenance); stress tests 18, 19, 21 and 22 |
+| 4 | Should the bias check read `provenance`? | Yes, and drop the page-level `generated-by` | [The self-preference-bias check](#the-self-preference-bias-check); stress test 17 |
+| 5 | Core or ai-context? | ai-context | Both keys stay in ai-context, which closes 0023's open question 7 for them |
+
+The answers also removed a concern the first draft carried: every key this
+proposal renames or removes was only ever proposed, so there is no migration to
+describe, only the draft-to-draft table.

@@ -91,5 +91,7 @@ and `validate` reports a pin whose text has changed. The per-model field
 attribution described above is renamed `meta-provenance`, with the same
 review semantics. Its `fields` become JSON Pointers, so `/kg/label` reaches
 into a block. It also takes over the kg block's `provenance` and the eval
-vocabularies' `eval-provenance`. That sharpens the first question, since there
-would be two production records to place rather than one.
+vocabularies' `eval-provenance`. After review, the page-level `generated-by`
+would be dropped, since `provenance` names the machines per range.
+`manni meta fill` would write `meta-provenance` for the fields it fills. Both
+records would stay in ai-context, which answers the first question.
