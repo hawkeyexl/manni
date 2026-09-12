@@ -282,46 +282,19 @@ Naming the schema inside a document is the most self-contained option. You can a
 
 ## Keep a value encrypted on the page
 
-Some fields your standard requires are not for publishing: an `owner`, an
-internal ticket, a service name. Mark them `x-manni-encrypt`, and the page has
-to hold them encrypted. manni meta still checks the real value wherever the key
-is available.
+Some fields your standard requires are not for publishing. An `owner`, an
+internal ticket, a service name. Mark the property `x-manni-encrypt`, and the
+page has to hold that value encrypted:
 
-<Steps>
+```json title="schemas/page.json"
+"owner": { "type": "string", "enum": ["platform", "billing"], "x-manni-encrypt": true }
+```
 
-1. Mark the property in your schema:
-
-   ```json title="schemas/page.json"
-   "owner": { "type": "string", "enum": ["platform", "billing"], "x-manni-encrypt": true }
-   ```
-
-2. Create the family key:
-
-   ```sh
-   manni key set
-   ```
-
-   In a shared repository, keep the key out of the config. Set
-   `MANNI_ENCRYPTION_KEY` from a secret instead.
-
-3. Let manni write the values. `manni meta fill` encrypts a marked value it
-   writes, and encrypts a valid one the page already holds in plain text:
-
-   ```sh
-   manni meta fill docs/auth.md --fields owner
-   ```
-
-4. Validate. A plain `owner` fails with `encrypted:plain/encrypted`, and an
-   encrypted one is checked against your `enum` as its real value.
-
-</Steps>
-
-Choose the fields with care. Equal values encrypt to equal ciphertexts, which is
-what lets a manifest join on one. On a small `enum`, one page whose owner is
-public knowledge reveals every page with the same ciphertext. The rules are in
-[Encrypted values](/manni/meta/reference/schema-resolution/#encrypted-values),
-and the key is in [Encryption
-key](/manni/meta/reference/configuration/#encryption-key).
+The field stays required and your `enum` still holds, because validation checks
+the decrypted value against the property's whole schema. [Require a field and
+keep its value private](/manni/meta/schemas/encrypted-fields/) follows one such
+value through every command that touches it. [Put the key where every tool
+finds it](/manni/key/set-up/) settles where the key lives first.
 
 ## Where to go next
 

@@ -1,0 +1,193 @@
+---
+title: Fix a failing check
+description: "Read one manni a11y annotation, reproduce it locally, map the rule and selector to the change, make the fix, and confirm the page comes back green."
+---
+
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+Your pull request carries an accessibility annotation and you would like it
+gone. This page takes one violation from the annotation to a green local run.
+You do not need to learn axe, and you do not need to know how the check was set
+up. You need the rule it names and the element it fired on.
+
+<Aside type="note" title="Where this output came from">
+The annotation and both command outputs below were copied from a real run
+against a served site, `test/fixtures/a11y/site/` on port 4173. A crawl needs a
+browser and a running server, and the docs-as-tests job has neither. So these
+commands are not replayed by CI the way the `manni meta` examples are. Long axe
+failure summaries are cut with `…`.
+</Aside>
+
+## The annotation
+
+This is what the job left on the run:
+
+```
+::error title=a11y/image-alt::Images must have alternative text — 1 node on http://127.0.0.1:4173/orphan.html (https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright)
+```
+
+Three things are in that line. `image-alt` is the axe rule. `orphan.html` is the
+published page it fired on. The URL at the end is the rule's page on Deque
+University, which explains the rule itself rather than your page.
+
+There is no file and no line number, because the check saw a rendered URL rather
+than your source. Finding the source is the first thing you do, and the selector
+in the local run is what points at it.
+
+## Reproduce it locally
+
+Serve your build, then check that one page. `--no-crawl` skips the sitemap and
+the link following, so the run takes a couple of seconds instead of a minute:
+
+```sh
+npx @hawkeyexl/manni a11y check http://127.0.0.1:4173/orphan.html --no-crawl
+```
+
+```
+Checked 1 of 1 pages (no crawl)
+✗ http://127.0.0.1:4173/orphan.html  score 94  1 error
+    error  image-alt (axe: critical)  1 node  Images must have alternative text  https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
+      img  → Fix any of the following: Element does not have an alt attribute; …
+
+1 violation on 1 of 1 pages
+```
+
+If the command stops with `No browser found`, install one once with
+`npx playwright install chromium`. [Get started](/manni/a11y/get-started/) has
+the detail, including how to serve a build.
+
+## The four things every finding carries
+
+| Part | In this finding | What to do with it |
+|---|---|---|
+| Rule id | `image-alt` | Names the rule in one token. Search your templates for the pattern it describes, and use it when you talk about the finding. |
+| Selector | `img` | The element that failed, as a CSS selector. Match it against the rendered page to find the component or partial that emits it. |
+| Failure summary | `Element does not have an alt attribute; …` | axe's statement of what is wrong with this element. It lists every condition that would have satisfied the rule. |
+| Help URL | The Deque University link | Explains the rule, why it exists, and the accepted ways to satisfy it. Read it when the summary alone is not enough. |
+
+The pretty output prints the first three failing elements per rule, and
+`(+N more)` past three. When you need every element, or the outer HTML of each
+one, use `--format json`:
+
+```json
+{
+  "id": "image-alt",
+  "severity": "error",
+  "impact": "critical",
+  "help": "Images must have alternative text",
+  "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright",
+  "nodes": [
+    {
+      "target": "img",
+      "html": "<img src=\"y.png\">",
+      "summary": "Fix any of the following:\n  Element does not have an alt attribute\n  …"
+    }
+  ]
+}
+```
+
+That is one entry of `results[].violations`, with the `tags` array left out.
+`html` is usually the fastest way to find the source, because the attribute
+values in it are yours.
+
+## Make the fix
+
+`nodes[0].html` gives `<img src="y.png">`, so the source is whatever emits that
+image. Add the alt text there:
+
+```html title="orphan.html" del={2} ins={3}
+<h1>Orphan</h1>
+<img src="y.png" />
+<img src="y.png" alt="The orphan diagram" />
+```
+
+Writing the words is the part no tool does for you. Describe what the image
+conveys in context, not what it depicts. An icon beside a link that already says
+"Download" conveys nothing extra, and its alt attribute should be empty:
+`alt=""`. That is a deliberate statement that the image is decorative, and it is
+different from having no attribute at all.
+
+## Confirm it
+
+Rebuild, then run the same command again:
+
+```
+Checked 1 of 1 pages (no crawl)
+✓ http://127.0.0.1:4173/orphan.html  score 100
+
+0 violations on 0 of 1 pages
+```
+
+Exit `0`, and the annotation is gone on the next push. The score went from `94`
+to `100`, which is the share of applicable axe rules that passed. Read the exit
+code as the verdict and the score as a trend.
+
+## Why there is no `--fix`
+
+`check` sees a rendered URL. It never sees the Markdown, the template, or the
+component tree that produced it. There is nothing at that level it could edit,
+and rewriting the served HTML would fix a build artifact that the next build
+throws away.
+
+The deeper reason holds even where the source is reachable. The fix for
+`image-alt` is a sentence describing an image, and the fix for `button-name` is
+the name of what the button does. Both are content. A tool that invented them
+would produce a page that passes the check and still fails the reader, which is
+worse than a red build.
+
+What the check does deterministically is name the element and the condition that
+failed. That is the node line, and it is where the machine's contribution ends.
+
+## What axe cannot decide from a rendered page
+
+A green run means no rule fired, not that the page is accessible. Four classes
+of problem are outside what a rendered page can settle.
+
+- **Text that is present but wrong.** `alt="image"` satisfies `image-alt`.
+  `<button>Click here</button>` satisfies `button-name`. Both pass, and neither
+  helps anyone.
+- **Rules axe could not decide.** Contrast over a background image is the common
+  one. These are counted and reported as `incomplete`, and they never fail the
+  run. A person has to look.
+- **Anything that needs interaction.** Keyboard order, focus traps, a menu that
+  opens on hover, a dialog that does not return focus. The check loads a page
+  and reads it once.
+- **Meaning and order.** Whether a heading level matches the document's
+  structure, whether the reading order matches the visual one, whether a label
+  describes its field truthfully.
+
+What an automated check catches is the part that regresses silently, which is
+why it belongs in CI. It is a floor rather than a certificate, and a manual
+review still finds things no rule can.
+
+<Aside type="tip" title="When the fix is not yours to make">
+A finding in a shared component or a third-party widget is not something to work
+around in your page. Open an issue against the component, and say which rule
+fired and on which element. The repository's
+[severity floor](/manni/a11y/ci/#move-the-settings-into-config) is the lever for
+deciding whether that blocks merges in the meantime, and it belongs to whoever
+owns the gate.
+</Aside>
+
+<CardGrid>
+  <LinkCard
+    title="Get started"
+    href="/manni/a11y/get-started/"
+    description="Install a browser, serve a build, and run the whole crawl yourself. The path from a first run to a clean one."
+  />
+  <LinkCard
+    title="What the tool checks"
+    href="/manni/a11y/"
+    description="The crawl model, what the score means, and the a11y config block that decides which findings count."
+  />
+  <LinkCard
+    title="CLI reference"
+    href="/manni/a11y/reference/cli/"
+    description="Every argument and flag of manni a11y check, the three output formats in full, exit codes, and the config keys."
+  />
+  <LinkCard
+    title="Fix a metadata check"
+    href="/manni/meta/fix/"
+    description="The same job on the other tool. Decode a manni meta validation error, find the field and line, and confirm green locally."
+  />
+</CardGrid>

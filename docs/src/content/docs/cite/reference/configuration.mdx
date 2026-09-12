@@ -242,6 +242,7 @@ A rule set to `off` produces no finding in any format and never enters a
 baseline. A rule set to `warning` renders as `↕` in `pretty`, `::warning` in
 `github`, `level: warning` in SARIF, and a passing testcase in JUnit, exactly
 as the metadata tool's
-[severity](/manni/meta/reference/output-and-exit-codes/#severity) does. A rule
+[severity](/manni/meta/reference/output-and-exit-codes/#severity-across-the-family)
+does. A rule
 set to `notice` is reported one level lower: `::notice` in `github`,
 `level: note` in SARIF, and never a JUnit failure.

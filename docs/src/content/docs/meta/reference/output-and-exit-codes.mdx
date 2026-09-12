@@ -392,6 +392,87 @@ governed the run.
 | `added` | number | Fingerprints this write added. Write only. |
 | `removed` | number | Fingerprints this write dropped. Write only. |
 
+## Severity across the family
+
+Every manni tool speaks one severity scale, `notice | warning | error`, least
+severe first. It is defined once for the whole family rather than per tool. A
+`warning` therefore means the same thing in `manni cite check` output as it
+does here. The scale was chosen to match the sinks these tools write to.
+GitHub annotations, ESLint, Vale and pa11y all use exactly these three words.
+
+### Which tool emits which
+
+| Tool | Levels it emits | How a level is decided |
+|---|---|---|
+| `manni meta validate` | `error` only | Every finding this tool's own validation produces is an error. The reporters carry the other two for sibling tools. |
+| `manni cite check` | all three | Per rule. Each rule has a default, and [`cite.severity.<rule>`](/manni/cite/reference/configuration/#severity) moves any of them, or sets it to `off`. |
+| `manni a11y check` | all three | Mapped from axe's `impact` when a page is read. Its [`--severity`](/manni/a11y/reference/cli/) flag then drops everything below a floor. |
+| `manni key rotate` | none | It has no findings model. A value either re-encrypts or is skipped, and a skip exits `1`. |
+
+So a repository that runs only `manni meta validate` sees one level, and adding
+a second tool is what puts the other two on screen.
+
+### How each level renders
+
+| Format | `notice` | `warning` | `error` |
+|---|---|---|---|
+| `pretty`, this tool | the word `notice`, dim, before the message | the word `warning`, yellow | no word; the file line is `✗` |
+| `pretty`, `cite` | `ℹ`, dim | `↕`, yellow | `✗`, red |
+| `pretty`, `a11y` | the word `notice`, dim | the word `warning`, yellow | the word `error`, red |
+| `json` | `"severity": "notice"` | `"severity": "warning"` | the field is absent in `meta`, and `"error"` in `cite` and `a11y` |
+| `github` | `::notice` | `::warning` | `::error` |
+| `sarif` | `"level": "note"` | `"level": "warning"` | `"level": "error"` |
+| `junit` | not a `<failure>`; the testcase passes | not a `<failure>`; the testcase passes | one `<failure>` element |
+
+`sarif` has no level named notice, so `note` is the nearest thing it defines.
+`junit` has no level below failure, and a `<failure>` that did not fail the run
+would make the tab disagree with the exit code. `sarif` and `junit` are emitted
+by this tool and by `manni cite`; `manni a11y check` reports in `pretty`, `json`
+and `github`.
+
+A pretty summary line counts the lower levels only when there are some. This
+tool prints `2 files checked, 2 passed, 0 failed, 0 errors, 1 warning, 2
+notices`, and `manni cite check` prints the counts in parentheses, as
+`2 files checked, 2 passed, 0 failed, 2 findings (1 warning) (1 notice)`.
+
+### What each level does to the exit code
+
+| Tool | What makes it exit `1` |
+|---|---|
+| `manni meta validate` | A file with at least one error-severity finding. |
+| `manni cite check` | A file with at least one unbaselined error-severity finding. Warnings and notices never move it. |
+| `manni a11y check` | A page that failed to load, or one with any remaining violation. Severity is not consulted, so raising `--severity` is what stops a lower level failing the run. |
+
+There is no `--fail-on` and no `--min-severity` anywhere in the family. A tool
+either fixes its levels, as this one does, or exposes the one lever its shape
+allows.
+
+### How a domain maps its own scale on
+
+A tool whose source speaks another scale folds onto these three and keeps the
+source's own value in a field of its own. Nothing is lost for lookup, and one
+word still means one thing across the family.
+
+`manni a11y check` is the worked example. axe reports four impacts, and each
+violation carries both:
+
+| axe `impact` | Family `severity` |
+|---|---|
+| `critical` | `error` |
+| `serious` | `error` |
+| `moderate` | `warning` |
+| `minor`, or none | `notice` |
+
+A violation keeps `impact` as its own JSON field, and the pretty line prints
+both, as `error  image-alt (axe: critical)`. The severity is what the floor and
+the exit code use. The impact is what you look up in axe's own documentation.
+
+`manni cite` has no foreign scale to fold. It assigns a severity per rule
+instead, and adds one value the family scale does not have. A rule set to `off`
+produces no finding in any format and never enters a baseline. The [cite
+configuration reference](/manni/cite/reference/configuration/#severity) has all
+fourteen rules and their defaults.
+
 ## Exit codes
 
 | Code | Meaning |

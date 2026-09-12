@@ -5,13 +5,13 @@ tableOfContents: false
 hero:
   tagline: Crawl a site and check every page for accessibility violations with axe-core, built for CI.
   actions:
-    - text: CLI reference
-      link: /manni/a11y/reference/cli/
+    - text: Get started
+      link: /manni/a11y/get-started/
       icon: right-arrow
       variant: primary
-    - text: Install a browser
-      link: /manni/a11y/#a-browser
-      icon: setting
+    - text: CLI reference
+      link: /manni/a11y/reference/cli/
+      icon: open-book
       variant: minimal
 ---
 
@@ -24,83 +24,19 @@ the element it fired on, and axe's own statement of what to change. The run
 exits `1` when any page still has a violation, so the command you run locally is
 the same one that gates a pull request.
 
+## What it checks, and what it leaves alone
+
 It checks what axe can decide from a rendered page. That is missing alternate
 text, buttons and links with no accessible name, form fields without labels,
-contrast, document language, ARIA misuse. It does not test keyboard flows, read
-your source, or write anything back. See [fixing a finding](#fixing-a-finding)
-for what it hands the person who fixes the page.
+contrast, document language, and ARIA misuse.
 
-## A browser
+It does not test keyboard flows, read your source, or write anything back. There
+is no `--fix`, because the check never sees the Markdown, template, or component
+tree that produced the page. [Fix a failing check](/manni/a11y/fix/) covers what
+it hands the person who fixes the page, and what a green run does not prove.
 
-axe runs inside a real browser. Installing `@hawkeyexl/manni` does not download
-one, so that the metadata tool stays a small install. `manni a11y check` looks
-for, in order, Google Chrome, Microsoft Edge, and Playwright's own Chromium. If
-you have neither Chrome nor Edge, install the Chromium once:
-
-```sh
-npx playwright install chromium
-```
-
-Without any of the three the command stops before it loads a page:
-
-```
-manni: No browser found. Install one with `npx playwright install chromium`, or install Google Chrome or Microsoft Edge.
-```
-
-That is exit `2`, an operational error rather than a failed check. GitHub-hosted
-runners ship Chrome on every OS, so a CI step usually needs nothing beyond the
-package.
-
-## Quick start
-
-Point it at a site's front page. With no other flags it finds the sitemap if
-there is one, and follows same-host links otherwise. It checks every page it
-finds, and prints one line per page:
-
-```sh
-npx @hawkeyexl/manni a11y check https://docs.example.com/
-```
-
-```
-Checked 42 of 42 pages (sitemap: https://docs.example.com/sitemap.xml)
-✓ https://docs.example.com/            score 100
-✗ https://docs.example.com/install/    score 88   1 error
-    error  image-alt (axe: critical)  2 nodes  Images must have alternate text  https://dequeuniversity.com/rules/axe/4.13/image-alt
-      img.hero  → Fix any of the following: Element does not have an alt attribute; …
-      img.step-2  → Fix any of the following: Element does not have an alt attribute; …
-…
-3 violations on 2 of 42 pages
-```
-
-Two pages had findings, so the exit code is `1`. `✓` and `✗` differ in glyph as
-well as colour, and colour is off when stdout is not a terminal or `NO_COLOR`
-is set. While the crawl runs, a status line on stderr names the page it is on,
-and it clears before the report prints.
-
-To check exactly one page, turn the crawl off:
-
-```sh
-npx @hawkeyexl/manni a11y check https://docs.example.com/install/ --no-crawl
-```
-
-Once the seeds live in `manni.config.yaml` (see [configuration](#configuration)),
-the command needs no arguments at all, which is the form a CI step uses:
-
-```sh
-npx @hawkeyexl/manni a11y check
-```
-
-With no URLs on the command line, no `url:` on any collection, and no
-`a11y.urls` in config there is nothing to check. That is an error rather than an
-empty green run:
-
-```
-manni: No URLs to check. Pass one or more, set url: on a collection, or set a11y.urls in manni.config.yaml.
-```
-
-Exit `2`. The [CLI reference](/manni/a11y/reference/cli/#examples) continues
-this ladder through several seeds, WCAG tag filters, GitHub annotations, and
-the JSON form.
+axe runs inside a real browser, and installing `@hawkeyexl/manni` does not
+download one. [Get started](/manni/a11y/get-started/) has the one-time install.
 
 ## How the crawl works
 
@@ -223,125 +159,25 @@ uses. axe's `critical` and `serious` both land as `error`, `moderate` as
 `impact`. The [configuration keys](/manni/a11y/reference/cli/#configuration)
 table has the types and defaults.
 
-## Run it in CI
-
-The check needs a URL that answers, so where it runs depends on when the site
-exists. A deployed site is there all the time. The site a pull request builds
-exists only after the build step, on the runner.
-
-### Check a deployed site on a schedule
-
-This workflow checks the live site once a week, and whenever someone runs it
-from the Actions tab. Nothing in the repository is read, so there is no
-checkout step. The site is the input.
-
-```yaml title=".github/workflows/a11y.yml"
-name: Accessibility
-
-on:
-  schedule:
-    - cron: "0 6 * * 1"
-  workflow_dispatch:
-
-jobs:
-  a11y:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-      - run: npx @hawkeyexl/manni a11y check https://docs.example.com/ -f github --progress
-```
-
-### Check a pull request's build before it deploys
-
-To catch a finding before it ships, build the site in the pull request, serve
-the output, and point the check at it. These steps fit into a job that builds
-the site into `dist/`. Adjust the directory to what your generator writes.
-
-```yaml
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci && npm run build
-      - name: Serve the build output
-        run: npx serve dist -l 4173 > serve.log 2>&1 &
-      - name: Wait for the server
-        run: |
-          tries=0
-          until curl -fsS http://127.0.0.1:4173/ > /dev/null; do
-            tries=$((tries + 1))
-            [ "$tries" -lt 60 ] || { echo "server did not answer" >&2; exit 1; }
-            sleep 1
-          done
-      - run: npx @hawkeyexl/manni a11y check http://127.0.0.1:4173/ -f github --progress
-```
-
-A build's sitemap usually lists the production URLs rather than `127.0.0.1`.
-Those are on another host, so the crawl drops them and follows links instead.
-That reaches every page the navigation links to, which on a docs site is every
-page.
-
-### What each piece does
-
-- `-f github` writes one annotation per rule per page, and prints nothing
-  when the site is clean. The annotation level is the finding's severity:
-  `::error`, `::warning`, or `::notice`.
-- `--progress` prints one line per page on stderr. A CI log has no terminal,
-  so without it the run is silent until the report.
-- Exit `1` fails the job on any remaining violation. Exit `2` fails it on a
-  setup problem, such as a seed that will not load. See
-  [exit codes](#exit-codes).
-- `--severity error` keeps the errors alone. Warnings and notices are dropped
-  before the report and the exit code are decided.
-- GitHub-hosted runners on Linux, macOS and Windows ship Chrome, so no browser
-  step is needed. A bare container needs
-  `npx playwright install --with-deps chromium` first.
-- With `urls` and `severity` under `a11y:` in `manni.config.yaml`, the step is
-  a bare `manni a11y check`.
-
-The [manni GitHub Action](/manni/meta/reference/action/) runs the metadata
-tool only, and has no a11y mode yet. A plain step is the way to run this
-check.
-
-## Exit codes
-
-| Code | Meaning |
-|---|---|
-| `0` | Every page loaded and none has a violation at or above the severity floor. |
-| `1` | At least one page has a remaining violation, or a crawled page failed to load. |
-| `2` | The run could not happen. That is a bad flag, a URL that is not `http(s)`, no URLs and no config, a seed that would not load, or no browser. |
-
-Wire `1` to the gate and `2` to a loud failure, the same split
-[`manni meta validate`](/manni/meta/ci/exit-codes-and-annotations/) uses.
-
-## Fixing a finding
-
-For every violation the output carries four things. The first is the axe **rule
-id** (`image-alt`), and the second is the **selector** of each element that
-failed (`img.hero`). The third is axe's **failure summary** for that element
-("Element does not have an alt attribute"). The fourth is the **help URL** to
-the rule's page on Deque University. The pretty format prints the first three
-elements per rule. `--format json` carries all of them, with each element's
-outer HTML, and `--format github` turns each rule into a PR annotation.
-
-There is no `--fix`. `check` sees a rendered URL, never the Markdown, template,
-or component tree that produced it, so there is nothing at that level it could
-edit safely. What it can do deterministically is name the element and the
-condition that failed, which is what the node lines are. Fixing files is a
-separate command with a separate surface, and it is not part of `check`.
-
 <CardGrid>
+  <LinkCard
+    title="Get started"
+    href="/manni/a11y/get-started/"
+    description="Install a browser, crawl a local build, read the score and the first findings, fix one, and re-run until the command exits 0."
+  />
+  <LinkCard
+    title="Gate accessibility in CI"
+    href="/manni/a11y/ci/"
+    description="A scheduled run against the live site, and a pull request run that builds, serves and crawls. Annotations, exit codes, and a crawl that runs long."
+  />
+  <LinkCard
+    title="Fix a failing check"
+    href="/manni/a11y/fix/"
+    description="One violation end to end. The rule id, the selector, the failure summary, the help URL, the fix, and why there is no --fix."
+  />
   <LinkCard
     title="CLI reference"
     href="/manni/a11y/reference/cli/"
     description="Every argument and flag of manni a11y check, the crawl model, the score, the three output formats, exit codes, and the a11y config keys."
-  />
-  <LinkCard
-    title="manni meta"
-    href="/manni/meta/"
-    description="The metadata tool that shares the bin and the config file. Its CI recipes carry the exit-code wiring a11y follows."
   />
 </CardGrid>

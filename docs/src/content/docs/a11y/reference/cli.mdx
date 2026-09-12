@@ -326,8 +326,9 @@ to silence it. Either way stdout carries the report alone, so
 
 ### Examples
 
-The [overview](/manni/a11y/#quick-start) covers the first three rungs: a bare
-crawl, `--no-crawl`, and the zero-argument config form. Continuing from there:
+[Get started](/manni/a11y/get-started/#run-the-first-crawl) covers the first
+three rungs, a bare crawl, `--no-crawl`, and the zero-argument config form.
+Continuing from there:
 
 ```bash
 # Several seeds: each seed's host is in scope; one sitemap lookup, from the first seed.
@@ -376,7 +377,7 @@ manni a11y check https://x.example/ --severity high
 # manni: Unknown --severity "high". Use notice | warning | error.
 
 manni a11y check https://x.example/ --max-pages 0
-# manni: --max-pages must be an integer ≥ 1.
+# manni: --max-pages must be an integer >= 1.
 
 manni a11y check https://x.example/ -f sarif
 # manni: Unknown --format "sarif". Use pretty | json | github.

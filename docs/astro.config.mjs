@@ -109,6 +109,21 @@ export default defineConfig({
           items: [
             { label: "Overview", link: "/a11y/" },
             {
+              label: "Get started",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "a11y/get-started" } }],
+            },
+            {
+              label: "Run it in CI",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "a11y/ci" } }],
+            },
+            {
+              label: "Fix a failing check",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "a11y/fix" } }],
+            },
+            {
               label: "Reference",
               collapsed: true,
               items: [{ autogenerate: { directory: "a11y/reference" } }],
@@ -158,6 +173,16 @@ export default defineConfig({
           collapsed: true,
           items: [
             { label: "Overview", link: "/key/" },
+            {
+              label: "Set up",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "key/set-up" } }],
+            },
+            {
+              label: "Run it in CI",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "key/ci" } }],
+            },
             {
               label: "Reference",
               collapsed: true,
