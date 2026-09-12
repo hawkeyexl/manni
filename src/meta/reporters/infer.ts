@@ -18,7 +18,7 @@
  */
 import type { InferKeyReport, InferResult } from "../commands/schemas.js";
 import { toJsonText } from "../core/json-text.js";
-import { palette } from "./color.js";
+import { palette } from "../../shared/color.js";
 
 export interface InferReportOptions {
   color?: boolean;

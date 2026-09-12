@@ -11,9 +11,11 @@ one at a time, each on its own branch, merged only when production-ready.
 Proposal 0033 is the record.
 
 Every command reads `manni <domain> <subcommand> [<subcommand>] [<arguments>]`.
-The domain is the tool: `manni meta validate docs/`, `manni meta schemas vendor`
-and, once it lands, `manni a11y check <url>`. Proposal 0034 states the grammar
-and what it rules out.
+A domain is a tool: `manni meta validate docs/`, `manni meta schemas vendor`
+and, once it lands, `manni a11y check <url>`. Or it is a family resource with
+verbs: `manni key set` writes the encryption key every tool reads. Proposal
+0034 states the grammar and what it rules out, and proposal 0045 adds the
+family resource.
 
 `manni meta` is a TypeScript CLI that validates the **presence and format** of
 document metadata (frontmatter / headers) against **JSON Schema**, built for
@@ -27,11 +29,12 @@ Key layers:
   mounts it under its name. Owns nothing else.
 - `src/docmeta.ts`: the `docmeta` bin. The metadata tool's program under its
   old name, for scripts written before the rename.
-- `src/shared/`: what every tool uses. Family config discovery
+- `src/shared/`: what every tool uses. It holds family config discovery
   (`config-file.ts`: one `manni.config.yaml`, one top-level key per tool),
-  `warn()` (stderr, said once), the `ToolError` base, the bin runner
-  (`run.ts`, which owns the exit-code contract) and the program name the
-  stderr prefix follows.
+  `warn()` (stderr, said once) and the `ToolError` base. It also holds the bin
+  runner (`run.ts`, which owns the exit-code contract) and the program name
+  the stderr prefix follows. The family encryption key and its one ciphertext
+  format are here too (`encryption-key.ts`, `encryption.ts`).
 - `src/meta/`: the metadata tool.
   - `src/meta/extractors/`: per-format metadata extraction behind the
     `MetadataExtractor` interface (`src/meta/types.ts`). New formats are an
@@ -51,6 +54,20 @@ Key layers:
   - `src/a11y/reporters/`: output formatting (pretty / json / github).
   - `src/a11y/cli.ts`: thin commander wrapper exported as `buildProgram()` and
     mounted by `src/cli.ts`. No entry point of its own.
+- `src/cite/`: the citation tool, `manni cite check`, `add` and `update`
+  (proposal 0044). A citation pins a sentence to source lines by a hash and a
+  commit, and `check` classifies each pin from git alone.
+  - `src/cite/core/`: page and inline-statement parsing, the claim search, the
+    hashing rule, source resolution through git, the classifier, and the
+    `cite:` config loader.
+  - `src/cite/commands/`: the command cores, free of CLI/IO plumbing.
+  - `src/cite/reporters/`: output formatting (pretty / json / github).
+  - `src/cite/cli.ts`: thin commander wrapper exported as `buildProgram()` and
+    mounted by `src/cli.ts`. No entry point of its own.
+- `src/key/`: the family key's domain, `manni key set` and `manni key rotate`
+  (proposal 0045). It owns no cryptography. `rotate` orchestrates meta's and
+  cite's re-encryption, and the one ciphertext format lives in
+  `src/shared/encryption.ts`.
 - `src/index.ts`: the programmatic API, re-exporting `src/meta/index.ts`.
 
 The metadata tool's tests stay flat under `test/`; each later tool adds
@@ -61,9 +78,9 @@ The metadata tool's tests stay flat under `test/`; each later tool adds
 Each tool lands on its own `tool/<name>` branch (never `feat/…`, which
 `.releaserc.json` treats as a prerelease channel and publishes on every push).
 Its sources go to `src/<tool>/`, importing the metadata library by relative
-path (`../meta/index.js`); its `cli.ts` exports `buildProgram()` and has no
-entry point; its error class extends `ToolError`; it reads its own key of
-`manni.config.yaml` through `src/shared/config-file.ts`; its stderr prefix
+path (`../meta/index.js`). Its `cli.ts` exports `buildProgram()` and has no
+entry point, and its error class extends `ToolError`. It reads its own key of
+`manni.config.yaml` through `src/shared/config-file.ts`, and its stderr prefix
 comes from `programName()`. The umbrella mounts it with `addCommand`. The
 import commit cites the source repository and SHA. A new domain also ships a
 `docs/src/content/docs/<domain>/` section with at least an overview page and a
@@ -126,7 +143,10 @@ have carries the same name **and** the same values, defined once under
 `src/shared/`. Severity is `notice | warning | error`, from
 `src/shared/severity.ts`. A domain whose source speaks another scale maps
 onto it and keeps the source's value in a field of its own. a11y does that
-with axe's `impact`, and proposal 0035's stress test 10 records why.
+with axe's `impact`, and proposal 0035's stress test 10 records why. The
+family encryption key is `encryptionKey:` at the top of `manni.config.yaml`,
+or `MANNI_ENCRYPTION_KEY`, and every tool reads it through
+`src/shared/encryption-key.ts`.
 
 ### Plans show the full interface
 

@@ -53,11 +53,40 @@ describe("manni (built bin)", () => {
     }
   }, 180000);
 
-  it("lists meta as a subcommand", () => {
+  it("lists meta, cite and key as subcommands", () => {
     const r = run(manni, ["--help"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^Usage: manni /m);
     expect(r.stdout).toMatch(/^\s+meta\b/m);
+    expect(r.stdout).toMatch(/^\s+cite\b/m);
+    expect(r.stdout).toMatch(/^\s+key\b/m);
+  });
+
+  it("mounts the key domain under key, with no default command", () => {
+    expect(run(manni, ["key", "rotate", "--help"]).stdout).toMatch(
+      /^Usage: manni key rotate /m,
+    );
+    // Proposal 0045 extends 0034: `key` is a family resource with verbs, and
+    // a bare `manni key` is a usage error that shows them.
+    const bare = run(manni, ["key"]);
+    expect(bare.status).toBe(2);
+    expect(bare.stdout).toBe("");
+    expect(bare.stderr).toMatch(/^Usage: manni key /m);
+    expect(bare.stderr).toMatch(/^\s+set\b/m);
+    expect(bare.stderr).toMatch(/^\s+rotate\b/m);
+  });
+
+  it("mounts the citation tool under cite, with no default command", () => {
+    expect(run(manni, ["cite", "check", "--help"]).stdout).toMatch(
+      /^Usage: manni cite check /m,
+    );
+    // Proposal 0034: `cite` has verbs and nothing else, so a bare `manni cite`
+    // is a usage error that shows them.
+    const bare = run(manni, ["cite"]);
+    expect(bare.status).toBe(2);
+    expect(bare.stdout).toBe("");
+    expect(bare.stderr).toMatch(/^Usage: manni cite /m);
+    expect(bare.stderr).toMatch(/^\s+check\b/m);
   });
 
   it("lists a11y as a subcommand", () => {

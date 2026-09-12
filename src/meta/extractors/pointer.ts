@@ -34,7 +34,7 @@ export function escapePointerSegment(key: string): string {
  * only at `/tags`. The document root is the last resort.
  */
 export function positionForFactory(
-  map: Map<string, number>,
+  map: ReadonlyMap<string, number>,
 ): (pointer: string) => number | undefined {
   return (pointer: string) => {
     // A bare top-level key (e.g. "type") maps to its "/type" JSON pointer.

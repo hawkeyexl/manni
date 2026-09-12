@@ -1,6 +1,7 @@
 /** Shared shapes for the `fill` command, split out to keep imports acyclic. */
 import type { InferenceProvider } from "@hawkeyexl/inference";
 import type { ConfigNotice } from "../core/config.js";
+import type { Confirm } from "../../shared/prompt.js";
 
 /** A schema property `fill` may propose a value for. */
 export interface Candidate {
@@ -46,10 +47,19 @@ export interface FilledField {
   required: boolean;
   confidence: number;
   reasoning: string;
-  /** Absent when the field was skipped. */
+  /**
+   * Absent when the field was skipped. `(encrypted)` when the field's schema
+   * marks it `x-manni-encrypt`: the page holds the ciphertext, and no report
+   * prints either that or the plaintext (proposal 0045).
+   */
   value?: unknown;
   written: boolean;
   skipReason?: SkipReason;
+  /**
+   * The value was written encrypted, because the field's schema marks it
+   * `x-manni-encrypt`. Absent otherwise.
+   */
+  encrypted?: boolean;
 }
 
 export interface FillFileResult {
@@ -150,4 +160,17 @@ export interface FillOptions {
   includeContent?: boolean;
   /** Test seam: bypasses `makeProvider`, so no API key is needed. */
   inferenceProvider?: InferenceProvider;
+  /**
+   * How to ask for a new encryption key when a field its schema marks
+   * `x-manni-encrypt` is about to be written and no key is available
+   * (proposal 0045). The CLI passes `terminalConfirm()`, which is `undefined`
+   * off a terminal; absent, the run refuses (exit 2) before the first model
+   * request.
+   */
+  confirm?: Confirm;
+  /**
+   * The environment `MANNI_ENCRYPTION_KEY` is read from. Defaults to
+   * `process.env`; tests pass their own.
+   */
+  env?: NodeJS.ProcessEnv;
 }

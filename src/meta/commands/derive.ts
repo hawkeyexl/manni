@@ -23,7 +23,12 @@ import {
   type MetadataExtractor,
   type MetadataPatch,
 } from "../types.js";
-import { manifestOwning, resolveRunConfig, type ConfigNotice } from "../core/config.js";
+import {
+  manifestOwning,
+  resolveRunConfig,
+  schemaTrustRoot,
+  type ConfigNotice,
+} from "../core/config.js";
 import type { FingerprintContext } from "../core/baseline.js";
 import {
   assertNonEmpty,
@@ -38,7 +43,31 @@ import {
   listFormats,
   supportedExtensions,
 } from "../extractors/index.js";
-import { resolveElements } from "../core/resolve-schema.js";
+import {
+  collectSchemaPins,
+  FILE_SCHEMA_KEY,
+  resolveElements,
+  resolveSchemaSetWithSource,
+  type ResolvedSchemaSet,
+} from "../core/resolve-schema.js";
+import { schemaLoadOptions } from "../core/schema-registry.js";
+import { Validator } from "../core/validator.js";
+import {
+  ENCRYPTED_PLACEHOLDER,
+  EncryptionRefusal,
+  META_CONTEXT,
+  encryptionView,
+  isAtOrUnder,
+  lazyKey,
+  pointerOf,
+  redactedDerived,
+  unreadableMessage,
+  valueAt,
+  withValueAt,
+} from "../core/encrypted.js";
+import { encryptValue } from "../../shared/encryption.js";
+import { ENCRYPTION_KEY_ENV } from "../../shared/encryption-key.js";
+import { ensureEncryptionKey, type Confirm } from "../../shared/prompt.js";
 import { writeFileAtomic } from "../core/write-file.js";
 import { errorMessage } from "../../shared/errors.js";
 import { assertSourcesAvailable, deriveMetadata } from "../core/derive/index.js";
@@ -53,6 +82,7 @@ import {
   type DerivableField,
   type DeriveCommand,
   type DerivedField,
+  type DerivedRecord,
   type DeriveInput,
   type DeriveSource,
   type ReviewClient,
@@ -100,6 +130,19 @@ export interface DeriveOptions {
   now?: () => Date;
   /** The review client, for every repository in the run. Test seam; default `gh` / `glab`. */
   reviews?: ReviewClient;
+  /**
+   * How to ask for a new encryption key when a field its schema marks
+   * `x-manni-encrypt` is about to be stamped and no key is available
+   * (proposal 0045). The CLI passes `terminalConfirm()`, which is `undefined`
+   * off a terminal; absent, such a stamp refuses (exit 2). A dry run never
+   * asks: it writes nothing.
+   */
+  confirm?: Confirm;
+  /**
+   * The environment `MANNI_ENCRYPTION_KEY` is read from. Defaults to
+   * `process.env`; tests pass their own.
+   */
+  env?: NodeJS.ProcessEnv;
 }
 
 export interface DeriveFileResult {
@@ -151,8 +194,16 @@ const SOURCE_HINT = "narrow --sources or --fields";
 
 export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   const cwd = opts.cwd ?? process.cwd();
-  const { config, inputs, base, configDir, collections, declaredCollections, fromCollections } =
-    await resolveRunConfig({
+  const {
+    config,
+    inputs,
+    base,
+    configDir,
+    collections,
+    declaredCollections,
+    fromCollections,
+    configFile,
+  } = await resolveRunConfig({
       cwd,
       configPath: opts.configPath,
       noConfig: opts.noConfig,
@@ -194,6 +245,45 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   const check = Boolean(opts.check);
   // `--check` judges and exits; it never writes.
   const dryRun = Boolean(opts.dryRun) || check;
+
+  // Proposal 0045: a managed field its schema marks `x-manni-encrypt` is
+  // compared by its plaintext and stamped encrypted, as every other write of
+  // a marked value is. The schemas are read for their marks alone; `derive`
+  // judges nothing else about the document.
+  const schemaOptions = schemaLoadOptions({
+    root: configDir ?? cwd,
+    // A relative file ref belongs to the run's directory, not the cache root.
+    fileBase: cwd,
+    ttlHours: config?.schemaCache?.ttlHours,
+    offline: config?.offline,
+    pins: collectSchemaPins(config),
+  });
+  const trustRoot = schemaTrustRoot(cwd, configDir);
+  const validator = new Validator(schemaOptions);
+  const configuredKey = lazyKey(configFile, opts.env);
+  let ensuredKey: string | undefined;
+  const currentKey = (): string | undefined => ensuredKey ?? configuredKey();
+  /**
+   * A marked value as it lands in the patch. A dry run writes nothing, so it
+   * neither prompts nor refuses: it encrypts under a key it already has, and
+   * otherwise holds `(encrypted)`, as `fill --dry-run` does.
+   */
+  const seal = async (value: unknown, pointer: string): Promise<unknown> => {
+    const have = currentKey();
+    if (have !== undefined) return encryptValue(value, have, META_CONTEXT);
+    if (dryRun) return ENCRYPTED_PLACEHOLDER;
+    const { key } = await ensureEncryptionKey({
+      subject: pointer,
+      cwd,
+      file: configFile ?? null,
+      ...(opts.env === undefined ? {} : { env: opts.env }),
+      ...(opts.confirm === undefined ? {} : { confirm: opts.confirm }),
+      notice: (message) => opts.onNotice?.(message),
+      toError: (message) => new EncryptionRefusal(message),
+    });
+    ensuredKey = key;
+    return encryptValue(value, key, META_CONTEXT);
+  };
 
   const forcedExtractor = opts.as ? extractorByName(opts.as) : undefined;
   if (opts.as && !forcedExtractor) {
@@ -303,6 +393,93 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     }
   }
 
+  // ---- Encryption (0045) -----------------------------------------------------
+  /**
+   * What encryption makes of one document's managed fields. `data` is the
+   * page's metadata with every readable encrypted value decrypted, and
+   * `marked` the pointers its schema marks, read over the page as it would
+   * be stamped: an absent property is one Ajv never evaluates, so an unset
+   * field's mark only shows once its value is in place. A managed field
+   * holding a ciphertext no key can read cannot be compared, so it is the
+   * file's error rather than a guess either way.
+   */
+  const markFields = async (
+    doc: Loaded,
+    record: DerivedRecord | undefined,
+  ): Promise<{ data: Record<string, unknown>; marked: string[] } | { error: string }> => {
+    let resolved: ResolvedSchemaSet;
+    try {
+      resolved = resolveSchemaSetWithSource({
+        filePath: doc.label,
+        fileSchema: doc.extracted.data[FILE_SCHEMA_KEY],
+        config,
+        memberOf: membersFor(doc.label),
+        // The trust boundary `validate` and `fill` apply to a document's own
+        // `$schema`, since that schema decides what gets encrypted.
+        fileBase: cwd,
+        trustRoot,
+        onNotice: opts.onNotice,
+      });
+    } catch (err) {
+      return { error: errorMessage(err) };
+    }
+    try {
+      const view = await encryptionView({
+        data: doc.extracted.data,
+        refs: resolved.schemas,
+        validator,
+        key: currentKey,
+      });
+      for (const field of fields) {
+        const at = pointerOf(field);
+        if (view.unverified.some((p) => isAtOrUnder(p, at))) {
+          return {
+            error: `${at} is encrypted, and no encryption key is available to compare it. Set ${ENCRYPTION_KEY_ENV}, or run \`manni key set\`.`,
+          };
+        }
+        const unreadable = view.unreadable.find((p) => isAtOrUnder(p, at));
+        if (unreadable !== undefined) return { error: unreadableMessage(unreadable) };
+      }
+      const stamped: Record<string, unknown> = { ...view.data };
+      for (const field of fields) {
+        const d = record?.fields[field];
+        if (d != null) stamped[field] = d.value;
+      }
+      const marks = await validator.markedPointers(stamped, resolved.schemas);
+      return { data: view.data, marked: [...new Set([...view.marked, ...marks])] };
+    } catch (err) {
+      if (err instanceof EncryptionRefusal) throw err;
+      // As in `validate` and `fill`: a schema the document chose failing to
+      // load is that document's failure; one the operator configured is the
+      // run's.
+      if (!(err instanceof DocmetaError) || resolved.source !== "document") throw err;
+      return { error: err.message };
+    }
+  };
+  /**
+   * A value about to be stamped, with every marked pointer at or under its
+   * field encrypted, shallowest first: a mark inside a value already sealed
+   * is covered by the one on the whole.
+   */
+  const sealField = async (
+    field: string,
+    value: unknown,
+    marked: readonly string[],
+  ): Promise<unknown> => {
+    const at = pointerOf(field);
+    let holder: Record<string, unknown> = { [field]: value };
+    const sealed: string[] = [];
+    const under = marked.filter((p) => isAtOrUnder(p, at)).sort((a, b) => a.length - b.length);
+    for (const pointer of under) {
+      if (sealed.some((s) => isAtOrUnder(pointer, s))) continue;
+      const inner = valueAt(holder, pointer);
+      if (inner === undefined) continue;
+      holder = withValueAt(holder, pointer, await seal(inner, pointer));
+      sealed.push(pointer);
+    }
+    return holder[field];
+  };
+
   // ---- Compare, and write ----------------------------------------------------
   const results: DeriveFileResult[] = [];
   for (const label of files) {
@@ -316,9 +493,23 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     if (!doc) continue;
 
     const record = derived.records.get(label);
+    // A marked field (0045) is compared by its plaintext, stamped encrypted,
+    // and reported as `(encrypted)`, as `fill` and `query` report one.
+    const marks = await markFields(doc, record);
+    if ("error" in marks) {
+      results.push(errorResult(label, doc.format, marks.error, check));
+      continue;
+    }
+    const isMarked = (field: string): boolean => {
+      const at = pointerOf(field);
+      return marks.marked.some((p) => isAtOrUnder(p, at));
+    };
     const compared = fields.map((field) =>
-      compareDerived(field, doc.extracted.data[field], record?.fields[field]),
+      compareDerived(field, marks.data[field], record?.fields[field]),
     );
+    // Read when reporting, after `written` is set on `compared` below.
+    const shown = (): DerivedField[] =>
+      compared.map((f) => (isMarked(f.field) ? redactedDerived(f) : f));
     const pending = compared.filter((f) => f.status === "stale" || f.status === "unset");
     // `changed` is what the writer would do, not what the comparison found:
     // as in `fill`, the patch is applied and the result compared with the
@@ -339,7 +530,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
               doc.format,
               `The "${doc.format}" format is read-only; manni meta derive cannot write metadata back to it.`,
               check,
-              compared,
+              shown(),
             ),
           );
           continue;
@@ -347,12 +538,16 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         changed = true;
       } else {
         const patch: MetadataPatch = {};
-        for (const f of pending) patch[f.field] = f.derived;
+        for (const f of pending) {
+          patch[f.field] = isMarked(f.field)
+            ? await sealField(f.field, f.derived, marks.marked)
+            : f.derived;
+        }
         let next: string;
         try {
           next = doc.apply(doc.content, patch, { filePath: label, elements: doc.elements });
         } catch (err) {
-          results.push(errorResult(label, doc.format, errorMessage(err), check, compared));
+          results.push(errorResult(label, doc.format, errorMessage(err), check, shown()));
           continue;
         }
         changed = next !== doc.content;
@@ -363,12 +558,13 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       }
     }
 
+    const reported = shown();
     results.push({
       file: label,
       format: doc.format,
-      fields: compared,
+      fields: reported,
       changed,
-      ...(check ? { findings: staleFindings(compared, doc.extracted.lineFor) } : {}),
+      ...(check ? { findings: staleFindings(reported, doc.extracted.lineFor) } : {}),
     });
   }
 

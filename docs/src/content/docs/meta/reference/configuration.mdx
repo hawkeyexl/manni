@@ -301,6 +301,10 @@ same exit code. Three uses share the one mechanism:
   public pages against it.
 - **Across repositories.** One repository's pages take keys from a manifest
   in another, by URL, public or private. See [Remote manifests](#remote-manifests).
+- **Citations.** A manifest that owns `citations` keeps a collection's
+  [citation entries](/manni/cite/reference/citations/#the-sidecar) out of the
+  pages. This is the one key a tool other than `meta` reads, and writes. See
+  [A manifest that owns citations](#a-manifest-that-owns-citations).
 
 [Keep metadata outside the document](/manni/meta/set-up/external-metadata/) is
 the journey, with a worked path for each; this section is the contract.
@@ -381,6 +385,57 @@ entry's line. From `test/fixtures/external-metadata/`:
 
 A [field-joined](#joining-by-a-field) manifest reports the same shapes with its
 own noun: `the manifest must be a mapping from document "id" to owned keys.`
+
+The loader keeps the line of each entry **and of each item inside it**, not
+only the line of the owned key. So a tool that finds a problem in the third
+citation of a page can report the line that citation sits on. `validate`'s own
+findings still sit on the owned key's line, because a schema judges the merged
+value as a whole.
+
+#### A manifest that owns citations
+
+`citations` is the one owned key another tool in the family reads, and the one
+a tool **writes**. A collection that declares a manifest owning it keeps its
+pages' citation entries there, and the pages carry none:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: site
+    paths: ["docs/**/*.{md,mdx}"]
+    externalMetadata:
+      - file: docs-citations.yaml
+        keys: [citations]
+```
+
+```yaml title="docs-citations.yaml"
+docs/limits.md:
+  citations:
+    - id: fetch-timeout
+      claim: { lines: 3, integrity: sha256-c41f09aa… }
+      source: { file: lib/limits.ts, lines: 2, integrity: sha256-78af1d33…, commit-sha: 3f9c2a1e… }
+```
+
+`manni cite check`, `add` and `update`, and `manni key rotate`, read a page's
+citations from the manifest that owns them, through the merge above. `add`,
+`update` and `key rotate` also write it, splicing only that page's `citations`
+value and reading the file back to confirm. `meta fill` and `meta query` stay
+read-only, on this key as on every other.
+
+Two rules are particular to this key:
+
+- **A URL manifest may not own `citations`.** It is a config error (exit 2),
+  because cite writes citations and a URL cannot be written. It would also put
+  private source paths into public CI output.
+- **A finding about a citation entry sits on the manifest.** It carries the
+  manifest's path and the entry's own line, which is what the per-item lines
+  above are for. A claim or marker finding still sits on the page. SARIF drops
+  a location outside the repository, so a manifest kept outside it is reported
+  on the page instead.
+
+A page that still carries its own `citations:` while a manifest owns the key
+is [`external:owned`](#finding-identity) in `validate`, and `entry-invalid` in
+`cite check`. The [citations reference](/manni/cite/reference/citations/#the-sidecar)
+has the entry shape and every refusal.
 
 #### Joining by a field
 
@@ -861,6 +916,98 @@ Two fixes:
 - Or keep it closed, and have the `overrides` entry that governs the collection
   restate the whole contract in its own schema. Declare the manifest's keys
   there, and the closed schema is not in that run's set at all.
+
+## Encryption key
+
+`encryptionKey:` is the family's one encryption key. It sits at the top level
+beside `collections:`, and every tool reads it. A value whose schema marks it
+[`x-manni-encrypt`](/manni/meta/reference/schema-resolution/#encrypted-values)
+is written encrypted under this key, and `manni meta validate` decrypts it with
+this key to check it.
+
+```yaml title="manni.config.yaml"
+encryptionKey: 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+collections:
+  - name: site
+    paths: ["docs/src/content/docs/**/*.{md,mdx}"]
+```
+
+| Key | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `encryptionKey` | `string` | no | none | The family key, of at least 32 hex or base64url characters. [`manni key set`](/manni/key/) generates 64 random hex characters, which is 256 bits. `MANNI_ENCRYPTION_KEY` in the environment wins over it. |
+
+- **The environment wins.** When `MANNI_ENCRYPTION_KEY` is set, it is the key
+  and the config's is not read. An empty variable counts as unset, because
+  that is what an absent CI secret expands to.
+- **The key counts for discovery.** A `manni.config.yaml` carrying
+  `encryptionKey:` and no `meta:` section is still this tool's config, and
+  stops the [search](#discovery). A file the key prompt created holds nothing
+  else, and the next run has to find it.
+- **An explicit `-c` file** whose top level carries `encryptionKey:` is read as
+  a family file. A legacy `docmeta.config.yaml` carries no key, as it carries
+  no collections.
+- **Refusals are exit 2**, and neither repeats the value:
+
+```
+manni.config.yaml: "encryptionKey" must be at least 32 hex or base64url characters. Run `manni key set` to generate one.
+MANNI_ENCRYPTION_KEY must be at least 32 hex or base64url characters.
+```
+
+A malformed `MANNI_ENCRYPTION_KEY` is refused by the first run that needs a
+key, not by every run in a repository that encrypts nothing.
+
+<Aside type="caution" title="A committed key decrypts every value">
+A key in a file git tracks is published with the pages it protects. Anyone who
+can read the repository can then decrypt every encrypted value. When a write
+is about to put a new key in a file git does not ignore, manni says so on
+stderr:
+
+```
+manni: manni.config.yaml is not ignored by git: once committed, anyone who can read the repository can decrypt every encrypted value. Prefer MANNI_ENCRYPTION_KEY for a shared repository.
+```
+
+For a shared or public repository, keep the key in `MANNI_ENCRYPTION_KEY`, set
+from a CI secret, and out of the config.
+</Aside>
+
+**Strength is the operator's.** The configured value is key material. It is
+expanded, not stretched, so a hand-picked value is only as strong as it is
+random. Let [`manni key set`](/manni/key/) generate one.
+
+### When a write needs a key
+
+`manni meta fill`, and a `manni meta query` `UPDATE` or `INSERT`, write a
+marked value encrypted. When no key is available, they offer to create one on a
+terminal, where stdin and stderr are both terminals:
+
+```console
+$ manni meta fill docs/auth.md
+manni: /owner must be encrypted, and no encryption key is available.
+Generate a key and write it to manni.config.yaml? [y/N] y
+Encryption key written to manni.config.yaml.
+```
+
+`fill` asks before its first model request, so a refused prompt never wastes a
+paid run. With no config file, the key goes to `manni.config.yaml` at the git
+root, else the working directory. The confirmation then reads `Created
+manni.config.yaml with an encryption key.` An answer other than `y`, an empty
+answer, or no terminal to ask on stops the command with exit 2:
+
+```
+manni: /owner must be encrypted, and no encryption key is available. Run `manni key set`, or set MANNI_ENCRYPTION_KEY.
+```
+
+`validate`, `get`, a `query` `SELECT`, and a `query` `--dry-run` never ask.
+
+### Joining on an encrypted field
+
+A manifest [joined](#external-metadata) on a field the pages hold encrypted is
+matched on the decrypted value, when the key is available. With no key the run
+cannot match the entries, and refuses with exit 2:
+
+```
+externalMetadata join field "owner" is encrypted on these pages, and no encryption key is available to match them.
+```
 
 ## Keys
 
@@ -1691,11 +1838,12 @@ directory and then each parent directory in turn. In every directory it looks
 for these files, in order:
 
 1. `manni.config.yaml`, then `manni.config.yml`, read at their `meta:` key.
-   A family file counts as the metadata tool's config when it carries `meta:`
-   **or** `collections:`. One with `collections:` and no `meta:` still describes
-   this repository's documents, so it stops the search and hands the tool an
-   empty section plus the collections. A family file with neither key belongs to
-   a sibling tool and is skipped, so the search continues.
+   A family file counts as the metadata tool's config when it carries `meta:`,
+   `collections:` or [`encryptionKey:`](#encryption-key). One with a family key
+   and no `meta:` still describes this repository. It stops the search and
+   hands the tool an empty section plus the collections and the key. A family
+   file with none of the three belongs to a sibling tool and is skipped, so the
+   search continues.
 2. `moose.config.yaml`, then `moose.config.yml`: the family file under its
    pre-rename name. Same shape, read the same way, with a warning on stderr to
    rename it.
@@ -1740,9 +1888,9 @@ defaults.
 
 When you pass `-c/--config <path>` explicitly, no search happens at all and that
 file must exist; a missing config file is an error (exit 2). The file is read by
-the same rule whatever it is named: if it has a `meta:` or `collections:` key it
-is read as a family file, and if it has neither, the whole document is the
-`meta:` section. So `-c ./anything.yaml` works for
+the same rule whatever it is named. If it has a `meta:`, `collections:` or
+`encryptionKey:` key it is read as a family file. If it has none of them, the
+whole document is the `meta:` section. So `-c ./anything.yaml` works for
 both shapes without a flag, and an explicit path is never warned about.
 
 When a run is governed by a config, manni meta says so before the report:

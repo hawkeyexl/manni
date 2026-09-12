@@ -86,6 +86,30 @@ stored *string* `"2026"`. See [bound parameters](#bound-parameters).
 The encoding is symmetric, and a write restores the value to the type the file
 had. See [type restoration](#type-restoration).
 
+### Encrypted values
+
+A column whose schema marks it
+[`x-manni-encrypt`](/manni/meta/reference/schema-resolution/#encrypted-values)
+holds what the page holds, the ciphertext. `SELECT` returns it, as `manni meta
+get` does. A `WHERE owner = 'platform'` therefore matches nothing on pages whose
+owner is encrypted. Equal values encrypt to equal ciphertexts, so comparing one
+page's `owner` column with another's does find the pages that share a value.
+
+An `UPDATE` or `INSERT` that writes a marked column writes it encrypted. Each
+written file's schema set is resolved the way `validate` resolves it: config
+`schemas:`, `overrides`, the file's `$schema`, and `-s`. A value that is already
+a ciphertext is written as it is. Every report prints `(encrypted)` in place of
+the value, the `json` change objects included:
+
+```
+docs/auth.md: owner: (encrypted) -> (encrypted)
+```
+
+A write that needs a key when none is available asks for one on a terminal, and
+refuses off one with exit 2. See [When a write needs a
+key](/manni/meta/reference/configuration/#when-a-write-needs-a-key). A
+`--dry-run` or `--check` never asks, because it writes nothing.
+
 ### Functions available to a statement
 
 Beyond everything stock SQLite provides, two functions are registered per run:

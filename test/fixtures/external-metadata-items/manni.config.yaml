@@ -1,0 +1,15 @@
+# Per-item manifest lines: a manifest that supplies a list of mappings, once
+# in block style and once in flow style.
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./items-meta.yaml
+        keys: [citations]
+
+meta:
+  overrides:
+    - collection: pages
+      schemas:
+        - ./items.schema.json

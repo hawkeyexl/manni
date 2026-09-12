@@ -105,7 +105,9 @@ Machine-readable. Prints a single JSON object with a run `summary` and a
 | `summary.files` | number | Files checked. |
 | `summary.passed` | number | Files that passed. |
 | `summary.failed` | number | Files that failed. |
-| `summary.errors` | number | Errors reported across all files. Findings a [baseline](/manni/meta/reference/cli/#baselines) forgave are **not** counted here. |
+| `summary.errors` | number | Error-severity findings reported across all files. Findings a [baseline](/manni/meta/reference/cli/#baselines) forgave are **not** counted here, and neither are warnings or notices. |
+| `summary.warnings` | number | Warning-severity findings reported across all files. A warning never fails a file or the run. **Omitted** when there are none, which is every run of `manni meta validate` today. |
+| `summary.notices` | number | Notice-severity findings reported across all files. A notice never fails a file or the run. **Omitted** when there are none, which is every run of `manni meta validate` today. |
 | `summary.gitignoreSkipped` | number | Candidate documents [`.gitignore`](/manni/meta/reference/cli/#gitignore) removed from the walk. Counted after the extension filter, and excluding `--exclude` removals. **Omitted** when none were skipped. |
 | `summary.baseline` | object | Present only when a baseline governed the run. See [baseline fields](#baseline-fields). |
 | `results[].file` | string | File path. |
@@ -119,6 +121,7 @@ Machine-readable. Prints a single JSON object with a run `summary` and a
 | `results[].errors[].keyword` | string | The JSON Schema keyword that failed (`required`, `format`, `pattern`, `type`, …), or `parse` / `schema` for manni meta's own errors. |
 | `results[].errors[].subject` | string | The identifier within that keyword, which is the missing property, the additional property, the format name, or the expected type. Omitted for keywords whose parameter is a schema-authored *value*, such as `pattern`'s regex or `minLength`'s number. |
 | `results[].errors[].line` | number | 1-based source line. Omitted when unknown. |
+| `results[].errors[].severity` | string | `error`, `warning` or `notice`. **Omitted** when `error`, which is every finding `manni meta validate` produces; sibling tools in the family report advisory findings as `warning` or `notice` through the same shape. A file is `ok` iff none of its errors has severity `error`, and a warning or a notice never moves the exit code. |
 | `results[].errors[].col` | number | 1-based column. Supplied by the `html` and `xml` extractors, from the `content=` attribute of a `<meta>` tag or the value of an XML attribute. Omitted for every other format, and for a `required` violation in any format. That error reports the parent object, and a missing property has no column. |
 | `results[].errors[].file` | string | The file `line` and `col` refer to, when it is not `results[].file`. Set only for a value an [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) supplied, spelled the way the run spells file labels (`docs-meta.yaml`). Omitted for every violation whose value is in the document, which is every violation a run with no `externalMetadata:` on any collection produces. The finding's subject file stays `results[].file`; this names where the value was written. |
 
@@ -130,8 +133,10 @@ violation" across runs or across manni meta versions. `message` is for humans.
 <TabItem label="github">
 
 GitHub Actions workflow-command annotations. Prints one `::error::` line per
-error, which GitHub renders inline on the pull request. Files with no errors
-produce no output.
+finding, which GitHub renders inline on the pull request. A finding whose
+`severity` is `warning` prints as `::warning::` instead, and one whose
+`severity` is `notice` as `::notice::`. Both render the same way and fail
+nothing. Files with no findings produce no output.
 
 ```
 ::error file=docs/api.md,line=2::[google:okf:0.1] (root) must have required property 'type'
@@ -225,7 +230,7 @@ which `upload-sarif` rejects.
 | `runs[].tool.driver.version` | string | The manni meta version that produced the log. |
 | `runs[].tool.driver.rules` | object[] | Only the rules this run actually **hit**, deduplicated. manni meta does not enumerate every keyword of every schema. |
 | `results[].ruleId` | string | `<schema-ref>/<keyword>`, for example `google:okf:0.1/required`. Built from `keyword`, never from the message, so an Ajv rewording cannot close and reopen every historical alert. |
-| `results[].level` | string | Always `error`. See [severity](#severity-is-always-error) below. |
+| `results[].level` | string | `error`; `warning` for a finding whose `severity` is `warning`; `note` for one whose `severity` is `notice`. See [severity](#severity) below. |
 | `results[].message.text` | string | The field path (or `(root)`) followed by the violation message. |
 | `results[].locations[].physicalLocation.artifactLocation.uri` | string | The file, **relative to the repository root**. See [paths](#sarif-paths-are-repository-root-relative). For a value an [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) supplied, this is the manifest. Each finding resolves its own URI, so a manifest inside the repository is kept even when the document is not, and the reverse. |
 | `results[].locations[].physicalLocation.region.startLine` | number | 1-based source line. The whole `region` is **omitted** when no line is known. SARIF requires `startLine >= 1`. A `0` would be invalid, and a `1` would silently mislocate the finding at the top of the file. A location with only an `artifactLocation` renders as a file-level alert, which is true. No `startColumn` is ever emitted, even for a finding whose JSON `col` is set. The SARIF region stays line-only for now. |
@@ -247,6 +252,18 @@ documents sharing one value of a manifest's [join field](/manni/meta/reference/c
 `external:duplicate/external`, with the shared value as the finding's subject.
 Its `rules[]` entry reads "Two documents carry the same value of a manifest's
 join field, so one manifest entry matched both."
+
+A property its schema marks
+[`x-manni-encrypt`](/manni/meta/reference/schema-resolution/#encrypted-values)
+reports one of two more, both with the reserved `encrypted` first segment. A
+plain value reports `encrypted:plain/encrypted`. Its `rules[]` entry reads "A
+property the schema marks x-manni-encrypt holds a plain value; the page must
+hold it encrypted." A value that does not decrypt under the current key reports
+`encrypted:unreadable/encrypted`. Its `rules[]` entry reads "A property the
+schema marks x-manni-encrypt holds a value that does not decrypt under the
+current key." Neither carries a subject, so neither fingerprint depends on a
+value. An encrypted value a run has no key to check is not a finding. The run
+warns once on stderr, and the exit code is unaffected.
 
 Those last two ids were `sidecar:owned/sidecar` and `sidecar:duplicate/sidecar`
 before external metadata was renamed, and a baseline recorded under the old ones
@@ -285,11 +302,13 @@ entry key. So **two files with the same violation share a fingerprint.** They
 still track as separate alerts. GitHub derives alert identity from fingerprint
 *plus* rule *plus* location. Do not use the fingerprint alone as an alert key.
 
-#### Severity is always `error`
+#### Severity
 
-SARIF's `level` is its main triage axis, and manni meta has no severity concept to
-map onto it, so every finding is reported as `error`. That is honest rather than
-invented, and it is tracked as
+SARIF's `level` is its main triage axis, and a finding's `severity` maps onto
+it directly. A finding is `error` by default, `warning` for a warning, and
+`note` for a notice, since SARIF has no level named notice. Every finding manni meta's own
+validation produces is an `error`. The lower levels exist for sibling tools in
+the family whose advisory findings ride this reporter, and it is what closes
 [issue #78](https://github.com/hawkeyexl/manni/issues/78).
 
 <Aside type="note" title="Two unrelated $schema keys">
@@ -329,7 +348,7 @@ JUnit XML, which Jenkins, GitLab, CircleCI, and Azure render natively in their
 |---|---|---|
 | `name` | `testsuites`, `testsuite` | Always `manni meta`. |
 | `tests` | `testsuites`, `testsuite` | Files checked, as **one test per file** rather than per violation. |
-| `failures` | `testsuites`, `testsuite` | Files with at least one violation. |
+| `failures` | `testsuites`, `testsuite` | Files with at least one error-severity violation. A warning or a notice is not a `<failure>`, because JUnit has no level below failure. A file holding only warnings or notices is a passing testcase, matching the exit code. |
 | `errors` | `testsuites`, `testsuite` | Always `0`. Every violation is a `<failure>`; `errors` is reserved for a test that could not run, which has no analogue here. |
 | `name` | `testcase` | The file path, as manni meta reported it. Not rebased onto the repository root. Unlike SARIF, nothing resolves it. |
 | `classname` | `testcase` | Always `manni.validate`. |
@@ -372,6 +391,87 @@ governed the run.
 | `stale` | number | Recorded fingerprints for checked files that no longer occur. Never fatal. |
 | `added` | number | Fingerprints this write added. Write only. |
 | `removed` | number | Fingerprints this write dropped. Write only. |
+
+## Severity across the family
+
+Every manni tool speaks one severity scale, `notice | warning | error`, least
+severe first. It is defined once for the whole family rather than per tool. A
+`warning` therefore means the same thing in `manni cite check` output as it
+does here. The scale was chosen to match the sinks these tools write to.
+GitHub annotations, ESLint, Vale and pa11y all use exactly these three words.
+
+### Which tool emits which
+
+| Tool | Levels it emits | How a level is decided |
+|---|---|---|
+| `manni meta validate` | `error` only | Every finding this tool's own validation produces is an error. The reporters carry the other two for sibling tools. |
+| `manni cite check` | all three | Per rule. Each rule has a default, and [`cite.severity.<rule>`](/manni/cite/reference/configuration/#severity) moves any of them, or sets it to `off`. |
+| `manni a11y check` | all three | Mapped from axe's `impact` when a page is read. Its [`--severity`](/manni/a11y/reference/cli/) flag then drops everything below a floor. |
+| `manni key rotate` | none | It has no findings model. A value either re-encrypts or is skipped, and a skip exits `1`. |
+
+So a repository that runs only `manni meta validate` sees one level, and adding
+a second tool is what puts the other two on screen.
+
+### How each level renders
+
+| Format | `notice` | `warning` | `error` |
+|---|---|---|---|
+| `pretty`, this tool | the word `notice`, dim, before the message | the word `warning`, yellow | no word; the file line is `✗` |
+| `pretty`, `cite` | `ℹ`, dim | `↕`, yellow | `✗`, red |
+| `pretty`, `a11y` | the word `notice`, dim | the word `warning`, yellow | the word `error`, red |
+| `json` | `"severity": "notice"` | `"severity": "warning"` | the field is absent in `meta`, and `"error"` in `cite` and `a11y` |
+| `github` | `::notice` | `::warning` | `::error` |
+| `sarif` | `"level": "note"` | `"level": "warning"` | `"level": "error"` |
+| `junit` | not a `<failure>`; the testcase passes | not a `<failure>`; the testcase passes | one `<failure>` element |
+
+`sarif` has no level named notice, so `note` is the nearest thing it defines.
+`junit` has no level below failure, and a `<failure>` that did not fail the run
+would make the tab disagree with the exit code. `sarif` and `junit` are emitted
+by this tool and by `manni cite`; `manni a11y check` reports in `pretty`, `json`
+and `github`.
+
+A pretty summary line counts the lower levels only when there are some. This
+tool prints `2 files checked, 2 passed, 0 failed, 0 errors, 1 warning, 2
+notices`, and `manni cite check` prints the counts in parentheses, as
+`2 files checked, 2 passed, 0 failed, 2 findings (1 warning) (1 notice)`.
+
+### What each level does to the exit code
+
+| Tool | What makes it exit `1` |
+|---|---|
+| `manni meta validate` | A file with at least one error-severity finding. |
+| `manni cite check` | A file with at least one unbaselined error-severity finding. Warnings and notices never move it. |
+| `manni a11y check` | A page that failed to load, or one with any remaining violation. Severity is not consulted, so raising `--severity` is what stops a lower level failing the run. |
+
+There is no `--fail-on` and no `--min-severity` anywhere in the family. A tool
+either fixes its levels, as this one does, or exposes the one lever its shape
+allows.
+
+### How a domain maps its own scale on
+
+A tool whose source speaks another scale folds onto these three and keeps the
+source's own value in a field of its own. Nothing is lost for lookup, and one
+word still means one thing across the family.
+
+`manni a11y check` is the worked example. axe reports four impacts, and each
+violation carries both:
+
+| axe `impact` | Family `severity` |
+|---|---|
+| `critical` | `error` |
+| `serious` | `error` |
+| `moderate` | `warning` |
+| `minor`, or none | `notice` |
+
+A violation keeps `impact` as its own JSON field, and the pretty line prints
+both, as `error  image-alt (axe: critical)`. The severity is what the floor and
+the exit code use. The impact is what you look up in axe's own documentation.
+
+`manni cite` has no foreign scale to fold. It assigns a severity per rule
+instead, and adds one value the family scale does not have. A rule set to `off`
+produces no finding in any format and never enters a baseline. The [cite
+configuration reference](/manni/cite/reference/configuration/#severity) has all
+fourteen rules and their defaults.
 
 ## Exit codes
 

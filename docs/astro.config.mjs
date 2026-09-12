@@ -109,9 +109,84 @@ export default defineConfig({
           items: [
             { label: "Overview", link: "/a11y/" },
             {
+              label: "Get started",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "a11y/get-started" } }],
+            },
+            {
+              label: "Run it in CI",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "a11y/ci" } }],
+            },
+            {
+              label: "Fix a failing check",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "a11y/fix" } }],
+            },
+            {
               label: "Reference",
               collapsed: true,
               items: [{ autogenerate: { directory: "a11y/reference" } }],
+            },
+          ],
+        },
+        // `cite` is the citation tool. Same shape as `meta`, minus a schemas
+        // track: the vocabulary a citation is written in is meta's, and lives
+        // on meta's proposals hub until it registers.
+        {
+          label: "cite",
+          collapsed: true,
+          items: [
+            { label: "Overview", link: "/cite/" },
+            {
+              label: "Get started",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "cite/get-started" } }],
+            },
+            {
+              label: "Set up",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "cite/set-up" } }],
+            },
+            {
+              label: "Run it in CI",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "cite/ci" } }],
+            },
+            {
+              label: "Fix a failing check",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "cite/fix" } }],
+            },
+            {
+              label: "Reference",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "cite/reference" } }],
+            },
+          ],
+        },
+        // `key` manages a family resource rather than documents: the one
+        // encryption key every tool encrypts values with (proposal 0045). Two
+        // verbs, so the same two-page shape as `a11y`.
+        {
+          label: "key",
+          collapsed: true,
+          items: [
+            { label: "Overview", link: "/key/" },
+            {
+              label: "Set up",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "key/set-up" } }],
+            },
+            {
+              label: "Run it in CI",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "key/ci" } }],
+            },
+            {
+              label: "Reference",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "key/reference" } }],
             },
           ],
         },

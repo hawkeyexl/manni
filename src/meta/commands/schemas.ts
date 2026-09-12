@@ -43,6 +43,7 @@ import {
 } from "../core/load-files.js";
 import { toJsonText } from "../core/json-text.js";
 import { writeFileAtomic } from "../core/write-file.js";
+import { lazyKey } from "../core/encrypted.js";
 
 export interface SchemasInfo {
   builtins: BuiltinInfo[];
@@ -767,7 +768,7 @@ export async function runInferSchema(
     );
   }
 
-  const { config, inputs, base, configDir, collections, fromCollections } =
+  const { config, inputs, base, configDir, collections, fromCollections, configFile } =
     await resolveRunConfig({
       cwd,
       configPath: opts.configPath,
@@ -778,6 +779,8 @@ export async function runInferSchema(
         : {}),
       onConfigLoaded: opts.onConfigLoaded,
     });
+  // An encrypted join field is decrypted before matching (proposal 0045).
+  const joinKey = lazyKey(configFile, undefined);
   const usingStdin = inputs.includes(STDIN_TOKEN);
   // External metadata (0037): an inferred schema describes the merged corpus.
   const externalMetadata = await loadExternalMetadata(collections, {
@@ -884,6 +887,7 @@ export async function runInferSchema(
         externalMetadata,
         members,
         base,
+        { encryptionKey: joinKey },
       ).extracted;
     } catch (err) {
       // One malformed block must not end the scan: the coverage question is

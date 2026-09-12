@@ -1,0 +1,16 @@
+# A manifest joined on a marked field (0039 + 0045): pages hold their owner
+# encrypted, and the manifest is keyed by the owner's plaintext.
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./owners.yaml
+        keys: [jira]
+        join: owner
+
+meta:
+  overrides:
+    - collection: pages
+      schemas:
+        - ./join.schema.json

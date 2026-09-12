@@ -3,7 +3,6 @@
  * schema set per file, validates, and returns structured results. Kept free of
  * CLI/IO plumbing so it can be tested directly.
  */
-import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import {
   loadExternalMetadata,
@@ -17,11 +16,9 @@ import {
   EXTERNAL_OWNED_SCHEMA,
 } from "../core/external-metadata.js";
 import { resolve, extname } from "node:path";
-import pkg from "../../../package.json" with { type: "json" };
-import { warn } from "../../shared/warn.js";
 import {
   DocmetaError,
-  type BaselineSummary,
+  isErrorSeverity,
   type FieldError,
   type RunSummary,
   type ValidationResult,
@@ -30,12 +27,8 @@ import {
   DEFAULT_BASELINE_PATH,
   LEGACY_BASELINE_PATH,
   type FingerprintContext,
-  applyBaseline,
-  buildBaseline,
-  countFingerprints,
-  diffBaselines,
-  readBaseline,
-  writeBaselineFile,
+  resolveBaselineRequest,
+  settleBaseline,
 } from "../core/baseline.js";
 import {
   extractorByName,
@@ -65,6 +58,16 @@ import {
 import { Validator } from "../core/validator.js";
 import { schemaLoadOptions } from "../core/schema-registry.js";
 import { runChecks, type CheckEntry } from "../core/checks.js";
+import {
+  encryptionFindings,
+  encryptionView,
+  isAtOrUnder,
+  lazyKey,
+  pointerOf,
+  redactedDerived,
+  settleFindings,
+  unverifiedWarning,
+} from "../core/encrypted.js";
 import {
   assertSourcesAvailable,
   deriveMetadata,
@@ -146,6 +149,12 @@ export interface ValidateOptions {
    */
   checks?: boolean;
   /**
+   * The environment `MANNI_ENCRYPTION_KEY` is read from (proposal 0045).
+   * Defaults to `process.env`; tests pass their own so a developer's key is
+   * never read.
+   */
+  env?: NodeJS.ProcessEnv;
+  /**
    * `--no-derive` (false): skip comparing each managed field (`derive.fields`
    * in the config, proposal 0040) with what the evidence says. Absent leaves
    * the comparison on whenever `derive:` is configured — on scoped runs too,
@@ -198,89 +207,19 @@ function parseErrorResult(
   return { file, format, ok: false, schemas: [], errors: [err] };
 }
 
-/** A resolved `--baseline` / `--write-baseline` / `baseline:` request. */
-interface BaselineRequest {
-  absPath: string;
-  /** The path spelled as the user would type it, for messages. */
-  label: string;
-  write: boolean;
-}
-
 /**
- * Settle which baseline file (if any) governs this run, and where it lives.
- *
- * The one subtlety is the base directory. A path the user typed on the command
- * line is relative to where they are standing; a `baseline:` written in a config
- * file is relative to **the config**, because that is where the person editing
- * it can see the file. Resolving a configured path against `cwd` instead would
- * mean running from a subdirectory silently finds no baseline and reports the
- * entire backlog as new — the exact class of bug config discovery exists to fix.
+ * What the derived comparison needs from one file's encryption view
+ * (proposals 0040 and 0045), kept from the per-file loop for after it.
  */
-function resolveBaselineRequest(
-  opts: ValidateOptions,
-  configured: string | undefined,
-  configDir: string | undefined,
-  cwd: string,
-): BaselineRequest | null {
-  /** A path typed on the command line: relative to where the user is standing. */
-  const named = (label: string): Omit<BaselineRequest, "write"> => ({
-    absPath: resolve(cwd, label),
-    label,
-  });
-
-  /**
-   * The file this project's baseline lives in when no path was typed.
-   *
-   * A configured `baseline:` wins over the built-in default here, and that is
-   * load-bearing rather than a nicety: read and write have to agree on one
-   * file. A repo that points `baseline:` somewhere other than the default, then
-   * runs a bare `--write-baseline`, would otherwise record into a second file
-   * nothing ever reads — and the ratchet would silently do nothing at all.
-   *
-   * Both spellings resolve against the **config's** directory, not `cwd`. An
-   * implied baseline is a property of the project, the same as the config that
-   * governs it, so it has to be the same file wherever the command is run from.
-   * Resolving it against `cwd` would break the ratchet the moment someone runs
-   * from `docs/` — the subdirectory workflow config discovery exists to support
-   * — and a later write from there would quietly give the project a second
-   * baseline that nothing reads. An explicitly *typed* path stays relative to
-   * where the user is standing, which is what a shell argument should mean.
-   */
-  const implied = (): Omit<BaselineRequest, "write"> => {
-    const base = configDir ?? cwd;
-    if (configured !== undefined) {
-      return { absPath: resolve(base, configured), label: configured };
-    }
-    // A baseline recorded before the rename is still the project's baseline.
-    // Only when the new name is absent, so a project that has moved is never
-    // pulled back by a stale file it forgot to delete.
-    const current = resolve(base, DEFAULT_BASELINE_PATH);
-    const legacy = resolve(base, LEGACY_BASELINE_PATH);
-    if (!existsSync(current) && existsSync(legacy)) {
-      warn(
-        `"${LEGACY_BASELINE_PATH}" is the pre-rename baseline file name. Rename it to "${DEFAULT_BASELINE_PATH}".`,
-      );
-      return { absPath: legacy, label: LEGACY_BASELINE_PATH };
-    }
-    return { absPath: current, label: DEFAULT_BASELINE_PATH };
-  };
-
-  const requested = (
-    value: string | true,
-  ): Omit<BaselineRequest, "write"> =>
-    typeof value === "string" ? named(value) : implied();
-
-  // Recording wins over comparing: `--write-baseline` must not depend on
-  // whether the file it is about to replace could be read.
-  if (opts.writeBaseline !== undefined && opts.writeBaseline !== false) {
-    return { ...requested(opts.writeBaseline), write: true };
-  }
-  if (opts.baseline === false) return null; // --no-baseline
-  if (opts.baseline !== undefined) {
-    return { ...requested(opts.baseline), write: false };
-  }
-  if (configured) return { ...implied(), write: false };
-  return null;
+interface ManagedView {
+  /** The metadata with every readable encrypted value decrypted. A copy. */
+  data: Record<string, unknown>;
+  /** The pointers the schema marks, over the metadata as the page holds it. */
+  marked: readonly string[];
+  /** Marked pointers holding a ciphertext no key could read. */
+  hidden: readonly string[];
+  /** The file's schema set, to read the mark of a field the page lacks. */
+  refs: string[];
 }
 
 /**
@@ -311,6 +250,7 @@ export async function runValidate(
     collections,
     declaredCollections,
     fromCollections,
+    configFile,
   } =
     await resolveRunConfig({
       cwd,
@@ -410,7 +350,7 @@ export async function runValidate(
   // to know which documents claimed which value.
   const joinHits = new Map<
     string,
-    Map<string, { label: string; line?: number; file: string }[]>
+    Map<string, { label: string; line?: number; file: string; shown: string }[]>
   >();
   // Corpus checks (0026) run only when the resolved file set IS the
   // config-resolved corpus — an invariant, not a flag list: any CLI reshaping
@@ -466,6 +406,11 @@ export async function runValidate(
   // matters — but the common no-checks path should not retain every file's
   // extraction, so the list fills only when the checks will actually run.
   const checkEntries: CheckEntry[] = [];
+  // The run's encryption key (proposal 0045), resolved the first time a
+  // ciphertext needs it, and the encrypted values no key could verify.
+  const encryptionKey = lazyKey(configFile, opts.env);
+  let unverified = 0;
+
   // The derived channel (0040): with `derive:` configured and the flag
   // absent, every file read is an input to one derivation after the loop,
   // and its managed fields are then compared with what the sources say.
@@ -488,6 +433,9 @@ export async function runValidate(
     : [];
   const checksNeedDerived = derivedChecks.length > 0;
   const deriveInputs: DeriveInput[] = [];
+  // Each compared file's encryption view (0045), so a marked managed field is
+  // compared by its plaintext and never named in the clear.
+  const managedViews = new Map<string, ManagedView>();
   const keepDeriveInputs = deriveWillRun || checksNeedDerived;
   // One derivation for the run, over the union of what either reader needs:
   // the managed fields the comparison judges, and the columns the checks
@@ -576,15 +524,24 @@ export async function runValidate(
     if (keepDeriveInputs && label !== STDIN_LABEL) {
       deriveInputs.push({ label, absPath: resolve(base, label), content, extracted });
     }
-    const merged = mergeExternalMetadata(label, extracted, externalMetadata, members, base);
+    const merged = mergeExternalMetadata(label, extracted, externalMetadata, members, base, {
+      encryptionKey,
+    });
     extracted = merged.extracted;
     for (const j of merged.joins) {
       const byValue =
         joinHits.get(j.field) ??
-        new Map<string, { label: string; line?: number; file: string }[]>();
+        new Map<string, { label: string; line?: number; file: string; shown: string }[]>();
       const line = extracted.lineFor(j.field);
       const hits = byValue.get(j.value) ?? [];
-      hits.push({ label, file: j.file, ...(line != null ? { line } : {}) });
+      // A finding names the join value as the page holds it: the ciphertext
+      // of an encrypted field, never its plaintext.
+      hits.push({
+        label,
+        file: j.file,
+        shown: j.pageValue ?? j.value,
+        ...(line != null ? { line } : {}),
+      });
       byValue.set(j.value, hits);
       joinHits.set(j.field, byValue);
     }
@@ -615,13 +572,40 @@ export async function runValidate(
     const schemaSet = resolved.schemas;
     let errors: FieldError[];
     try {
-      errors = await validator.validate(
-        extracted.data,
-        schemaSet,
-        extracted.lineFor,
-        extracted.colFor,
-        merged.locate,
-      );
+      // Proposal 0045: marked values are validated as their plaintext, on a
+      // copy; the page's own object is never mutated, and no finding may say
+      // more about an encrypted value than the page did.
+      const view = await encryptionView({
+        data: extracted.data,
+        refs: schemaSet,
+        validator,
+        key: encryptionKey,
+        locate: merged.locate,
+      });
+      unverified += view.unverified.length;
+      if (deriveWillRun && label !== STDIN_LABEL) {
+        managedViews.set(label, {
+          data: view.data,
+          marked: view.marked,
+          hidden: [...view.unreadable, ...view.unverified],
+          refs: schemaSet,
+        });
+      }
+      errors = [
+        ...settleFindings(
+          await validator.validate(
+            view.data,
+            schemaSet,
+            extracted.lineFor,
+            extracted.colFor,
+            merged.locate,
+          ),
+          view,
+          extracted,
+          merged.locate,
+        ),
+        ...encryptionFindings(view, extracted, merged.locate),
+      ];
     } catch (err) {
       // A schema the *document* chose failing to load — unparseable, missing,
       // integrity mismatch — is that document's failure, and is filed as one.
@@ -658,7 +642,7 @@ export async function runValidate(
     results.push({
       file: label,
       format: extractor.name,
-      ok: errors.length === 0,
+      ok: !errors.some(isErrorSeverity),
       schemas: schemaSet,
       errors,
     });
@@ -679,6 +663,10 @@ export async function runValidate(
     await processOne(file, content, extname(file));
   }
 
+  // Once per run, however many files held them (proposal 0045): the exit code
+  // is unaffected, and the count is of values, not of the findings dropped.
+  if (unverified > 0) opts.onNotice?.(unverifiedWarning(unverified));
+
   // Two documents carrying one join value (0039): one entry matched both,
   // and the manifest cannot tell them apart. A finding on each, at the
   // field's own line, whether or not the run is scoped — it is about the
@@ -689,7 +677,7 @@ export async function runValidate(
     const matched = new Map<string, Set<string>>();
     for (const [field, byValue] of joinHits) {
       matched.set(field, new Set(byValue.keys()));
-      for (const [value, hits] of byValue) {
+      for (const hits of byValue.values()) {
         if (hits.length < 2) continue;
         for (const hit of hits) {
           const others = hits
@@ -701,9 +689,9 @@ export async function runValidate(
           result.errors.push({
             schema: EXTERNAL_DUPLICATE_SCHEMA,
             keyword: EXTERNAL_KEYWORD,
-            subject: value,
+            subject: hit.shown,
             instancePath: externalMetadataPointer(field),
-            message: `${hits.length} documents carry ${field} "${value}"; ${hit.file} cannot tell them apart (${others})`,
+            message: `${hits.length} documents carry ${field} "${hit.shown}"; ${hit.file} cannot tell them apart (${others})`,
             ...(hit.line != null ? { line: hit.line } : {}),
           });
           result.ok = false;
@@ -765,7 +753,7 @@ export async function runValidate(
           );
         }
         result.errors.push(...errs);
-        result.ok = false;
+        result.ok = result.ok && !errs.some(isErrorSeverity);
       }
     }
   }
@@ -782,10 +770,36 @@ export async function runValidate(
       const record: DerivedRecord | undefined = derived.records.get(input.label);
       const result = byFile.get(input.label);
       if (!record || !result) continue;
+      // Proposal 0045: a marked managed field is compared by its plaintext
+      // and named as `(encrypted)`. One no key could read is left
+      // uncompared: the run already says so once, and a guess either way
+      // would be a false finding or a false green.
+      const managed = managedViews.get(input.label);
+      const fields = deriveConfig.fields.filter(
+        (field) => !(managed?.hidden.some((p) => isAtOrUnder(p, pointerOf(field))) ?? false),
+      );
+      let marked: readonly string[] = [];
+      if (managed !== undefined) {
+        // Read over the page as `derive` would stamp it: an absent property
+        // is one Ajv never evaluates, so an unset field's mark only shows
+        // once its value is in place.
+        const stamped: Record<string, unknown> = { ...managed.data };
+        for (const field of fields) {
+          const d = record.fields[field];
+          if (d != null) stamped[field] = d.value;
+        }
+        marked = [...managed.marked, ...(await validator.markedPointers(stamped, managed.refs))];
+      }
       const findings = staleFindings(
-        deriveConfig.fields.map((field) =>
-          compareDerived(field, input.extracted.data[field], record.fields[field]),
-        ),
+        fields.map((field) => {
+          const compared = compareDerived(
+            field,
+            managed !== undefined ? managed.data[field] : input.extracted.data[field],
+            record.fields[field],
+          );
+          const at = pointerOf(field);
+          return marked.some((p) => isAtOrUnder(p, at)) ? redactedDerived(compared) : compared;
+        }),
         input.extracted.lineFor,
       );
       if (findings.length === 0) continue;
@@ -800,16 +814,27 @@ export async function runValidate(
 
   const { results: reported, baseline } = await settleBaseline(
     results,
-    resolveBaselineRequest(opts, config?.baseline, configDir, cwd),
+    resolveBaselineRequest(opts, config?.baseline, configDir, cwd, {
+      current: DEFAULT_BASELINE_PATH,
+      legacy: LEGACY_BASELINE_PATH,
+    }),
     frame,
   );
 
   const failed = reported.filter((r) => !r.ok).length;
+  const count = (keep: (e: FieldError) => boolean): number =>
+    reported.reduce((n, r) => n + r.errors.filter(keep).length, 0);
+  const warnings = count((e) => e.severity === "warning");
+  const notices = count((e) => e.severity === "notice");
   const summary: RunSummary = {
     files: reported.length,
     passed: reported.length - failed,
     failed,
-    errors: reported.reduce((n, r) => n + r.errors.length, 0),
+    errors: count(isErrorSeverity),
+    // Omitted at zero, like `gitignoreSkipped` below: nothing meta validates
+    // produces a warning today, so the summary stays as it was.
+    ...(warnings > 0 ? { warnings } : {}),
+    ...(notices > 0 ? { notices } : {}),
     // Omitted when nothing was skipped: there is nothing to audit, and the
     // JSON summary stays as it was for every run in a clean repo.
     ...(gitignoreSkipped > 0 ? { gitignoreSkipped } : {}),
@@ -817,66 +842,4 @@ export async function runValidate(
   };
 
   return { results: reported, summary, frame };
-}
-
-/**
- * Apply — or record — the baseline, and describe what it did.
- *
- * On a write, the freshly recorded baseline is then applied to the same
- * results, so `--write-baseline` reports the files it recorded as clean and
- * exits 0 without the exit code needing a special case anywhere.
- *
- * `<stdin>` is the one exception, and deliberately so: it is not a path anyone
- * can look up on the next run, so it is never recorded, never matches, and its
- * findings still fail the run. Reporting it clean would announce success for a
- * violation that was neither fixed nor baselined.
- */
-async function settleBaseline(
-  results: ValidationResult[],
-  request: BaselineRequest | null,
-  ctx: FingerprintContext,
-): Promise<{ results: ValidationResult[]; baseline?: BaselineSummary }> {
-  if (!request) return { results };
-
-  const previous = await readBaseline(request.absPath, request.label);
-
-  if (request.write) {
-    // `<stdin>` is not a path anyone can look up on the next run, so recording
-    // it would only leave an entry that can never match again.
-    const recordable = results.filter((r) => r.file !== STDIN_LABEL);
-    const next = buildBaseline(recordable, pkg.version, ctx);
-    const { added, removed } = diffBaselines(previous, next);
-    await writeBaselineFile(request.absPath, next, request.label);
-    const applied = applyBaseline(results, next, ctx);
-    return {
-      results: applied.results,
-      baseline: {
-        path: request.label,
-        written: true,
-        recorded: countFingerprints(next),
-        suppressed: applied.suppressed,
-        stale: applied.stale,
-        added,
-        removed,
-      },
-    };
-  }
-
-  if (!previous) {
-    throw new DocmetaError(
-      `Baseline "${request.label}" not found. Record one with \`manni meta validate --write-baseline\`, or drop --baseline.`,
-    );
-  }
-
-  const applied = applyBaseline(results, previous, ctx);
-  return {
-    results: applied.results,
-    baseline: {
-      path: request.label,
-      written: false,
-      recorded: applied.recorded,
-      suppressed: applied.suppressed,
-      stale: applied.stale,
-    },
-  };
 }

@@ -1,0 +1,234 @@
+---
+title: Get started
+description: "Install a browser, crawl a local build with manni a11y check, read the score and the findings, fix one, and re-run until the command exits 0."
+---
+
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+This page takes a site you can serve locally and makes it pass its own
+accessibility check. You install a browser once, crawl the build, read the score
+and the findings, and fix them. The last run on this page exits `0`. It is the
+same command a [CI job](/manni/a11y/ci/) runs against the deployed site.
+
+<Aside type="note" title="Where this output came from">
+Every output block below was copied from a real run. The site is
+`test/fixtures/a11y/site/`, the three-page fixture the test suite uses, served
+on port 4173. A crawl needs a browser and a running server, and the
+docs-as-tests job has neither. So the commands here are not replayed by CI the
+way the `manni meta` examples are. Long axe failure summaries are cut with `…`.
+</Aside>
+
+## Before you start
+
+`manni a11y check` runs on [Node.js](https://nodejs.org/) 24 or newer. Check
+your version:
+
+```sh
+node --version
+```
+
+You also need a browser and a served site. The next two sections cover both.
+
+## Install a browser
+
+axe runs inside a real browser. Installing `@hawkeyexl/manni` does not download
+one, so that the metadata tool stays a small install. `manni a11y check` looks
+for Google Chrome, then Microsoft Edge, then Playwright's own Chromium. If you
+have neither Chrome nor Edge, install the Chromium once:
+
+```sh
+npx playwright install chromium
+```
+
+Without any of the three the command stops before it loads a page:
+
+```
+manni: No browser found. Install one with `npx playwright install chromium`, or install Google Chrome or Microsoft Edge.
+```
+
+That is exit `2`, an operational error rather than a failed check. You do this
+once per machine. GitHub-hosted runners already ship Chrome, so the CI step
+usually needs nothing beyond the package.
+
+## Serve the build
+
+The check reads a URL, never a directory. Build the site, then serve the output
+on a port of your choice:
+
+```sh
+npm run build
+npx serve dist -l 4173
+```
+
+Leave that running and open a second terminal for the rest of this page. Any
+static server will do. The port only has to match the URL you check.
+
+<Aside type="tip" title="Checking a deployed site instead">
+Point the command at the public URL and skip the build and the server. The
+crawl is the same. Checking the local build is what catches a finding before a
+reader meets it.
+</Aside>
+
+## Run the first crawl
+
+Give the command the front page of the served site. With no other flags it
+looks for a sitemap, follows same-host links, and checks every page it finds:
+
+```sh
+npx @hawkeyexl/manni a11y check http://127.0.0.1:4173/
+```
+
+```
+Checked 3 of 3 pages (sitemap: http://127.0.0.1:4173/sitemap.xml)
+✓ http://127.0.0.1:4173/  score 100
+✗ http://127.0.0.1:4173/about.html  score 78  4 errors
+    error  button-name (axe: critical)  1 node  Buttons must have discernible text  https://dequeuniversity.com/rules/axe/4.13/button-name?application=playwright
+      button  → Fix any of the following: Element does not have inner text that is visible to screen readers; …
+    error  color-contrast (axe: serious)  1 node  Elements must meet minimum color contrast ratio thresholds  https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright
+      p  → Fix any of the following: Element has insufficient color contrast of 2.84 (foreground color: #999999, background color: #ffffff, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1
+    error  html-has-lang (axe: serious)  1 node  <html> element must have a lang attribute  https://dequeuniversity.com/rules/axe/4.13/html-has-lang?application=playwright
+      html  → Fix any of the following: The <html> element does not have a lang attribute
+    error  image-alt (axe: critical)  1 node  Images must have alternative text  https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
+      img  → Fix any of the following: Element does not have an alt attribute; …
+✗ http://127.0.0.1:4173/orphan.html  score 94  1 error
+    error  image-alt (axe: critical)  1 node  Images must have alternative text  https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
+      img  → Fix any of the following: Element does not have an alt attribute; …
+
+5 violations on 2 of 3 pages
+```
+
+Two pages carry findings, so the command exits `1`. While the crawl runs, a
+status line on stderr names the page it is on. It clears before the report
+prints, so `-f json` piped into another tool still gets clean stdout.
+
+## Read the report
+
+Four things are on screen, from the top down.
+
+| Part | What it tells you |
+|---|---|
+| The header | How many pages were checked, and where they came from. A sitemap supplied them here. Without one it reads `(no sitemap; followed links)`. |
+| The page line | `✓` or `✗`, the URL, the [score](/manni/a11y/#what-the-score-means), and the remaining findings by severity. The glyph carries the meaning, so the line survives a greyscale screenshot. |
+| The violation line | The severity, the axe rule id, and axe's own impact. Then the number of failing elements, axe's one-line description, and the rule's page on Deque University. |
+| The node line | One failing element, as a CSS selector and axe's statement of what is wrong with it. The first three elements per rule print. |
+
+The score is the share of axe rules that applied to the page and passed. Nothing
+is weighted, so it is not a Lighthouse score. Read the score as a trend and the
+exit code as the verdict. A page with one error scores `94` and still fails the
+run.
+
+## Fix the first finding
+
+Start with the cheapest one. `html-has-lang` fired on `about.html`, and the node
+line names the element as `html`. The page declares no document language, which
+affects every screen reader that reads it aloud. That is one attribute in the
+template:
+
+```html title="about.html" del={2} ins={3}
+<!doctype html>
+<html>
+<html lang="en">
+  <head>
+```
+
+Rebuild, then run the crawl again:
+
+```
+Checked 3 of 3 pages (sitemap: http://127.0.0.1:4173/sitemap.xml)
+✓ http://127.0.0.1:4173/  score 100
+✗ http://127.0.0.1:4173/about.html  score 84  3 errors
+    error  button-name (axe: critical)  1 node  Buttons must have discernible text  https://dequeuniversity.com/rules/axe/4.13/button-name?application=playwright
+      button  → Fix any of the following: Element does not have inner text that is visible to screen readers; …
+    error  color-contrast (axe: serious)  1 node  Elements must meet minimum color contrast ratio thresholds  https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright
+      p  → Fix any of the following: Element has insufficient color contrast of 2.84 (foreground color: #999999, background color: #ffffff, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1
+    error  image-alt (axe: critical)  1 node  Images must have alternative text  https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
+      img  → Fix any of the following: Element does not have an alt attribute; …
+
+4 violations on 2 of 3 pages
+```
+
+One rule is gone and the page score moved from `78` to `84`. The run still
+exits `1`, because four findings remain.
+
+## Work one page at a time
+
+A full crawl of a large site takes a minute or more, which is slow to iterate
+against. While you are fixing one page, check that page alone:
+
+```sh
+npx @hawkeyexl/manni a11y check http://127.0.0.1:4173/orphan.html --no-crawl
+```
+
+`--no-crawl` skips the sitemap lookup and the link following, and checks exactly
+the URLs you name. After alt text is added to the image on that page:
+
+```
+Checked 1 of 1 pages (no crawl)
+✓ http://127.0.0.1:4173/orphan.html  score 100
+
+0 violations on 0 of 1 pages
+```
+
+Exit `0`. [Fix a failing check](/manni/a11y/fix/) walks one violation end to
+end, including how to choose the words in an alt attribute.
+
+## Re-run until it is clean
+
+With the button given a label, the paragraph given a readable colour, and both
+images given alt text, the whole crawl comes back green:
+
+```
+Checked 3 of 3 pages (sitemap: http://127.0.0.1:4173/sitemap.xml)
+✓ http://127.0.0.1:4173/  score 100
+✓ http://127.0.0.1:4173/about.html  score 100
+✓ http://127.0.0.1:4173/orphan.html  score 100
+
+0 violations on 0 of 3 pages
+```
+
+That is exit `0`, and it is what a CI gate waits for.
+
+## Put the seeds in config
+
+Once the URL lives in `manni.config.yaml`, the command takes no arguments. That
+is the form a CI step runs, and the file is the one `manni meta` already reads:
+
+```yaml title="manni.config.yaml"
+a11y:
+  urls: ["https://docs.example.com/"]
+  severity: error
+```
+
+```sh
+npx @hawkeyexl/manni a11y check
+```
+
+`severity` is the floor. At `error` the warnings and notices are dropped before
+the score and the exit code are decided. The
+[configuration keys](/manni/a11y/reference/cli/#configuration) table has the
+types and defaults, and [where seeds come
+from](/manni/a11y/reference/cli/#where-seeds-come-from) covers seeding from a
+collection instead.
+
+<CardGrid>
+  <LinkCard
+    title="Gate accessibility in CI"
+    href="/manni/a11y/ci/"
+    description="A scheduled run against the live site, and a pull request run that builds, serves and crawls. Annotations, exit codes, and a crawl that runs long."
+  />
+  <LinkCard
+    title="Fix a failing check"
+    href="/manni/a11y/fix/"
+    description="One violation end to end. The rule id, the selector, the failure summary, the help URL, the fix, and the re-run that proves it."
+  />
+  <LinkCard
+    title="How the crawl works"
+    href="/manni/a11y/"
+    description="What the tool checks and what it leaves alone, how pages are discovered, what the score means, and the a11y config block."
+  />
+  <LinkCard
+    title="CLI reference"
+    href="/manni/a11y/reference/cli/"
+    description="Every argument and flag of manni a11y check, the three output formats, exit codes, and the config keys."
+  />
+</CardGrid>

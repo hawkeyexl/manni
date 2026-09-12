@@ -1,0 +1,253 @@
+---
+title: Gate accessibility in CI
+description: "Run manni a11y check on a schedule against the live site, and on every pull request against the build the branch produces, with GitHub annotations."
+---
+
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+The check needs a URL that answers, so where it runs depends on when the site
+exists. A deployed site is there all the time. The site a pull request builds
+exists only after the build step, on the runner. Those are the two shapes on
+this page, and most repositories end up running both.
+
+<Aside type="note" title="Where this output came from">
+The command output below was copied from a real run against a served site,
+`test/fixtures/a11y/site/` on port 4173. The workflow files are written for
+GitHub Actions and are not executed here. A crawl needs a browser and a running
+server, which the docs-as-tests job does not provide. So nothing on this page is
+replayed by CI the way the `manni meta` examples are.
+</Aside>
+
+## Check the deployed site on a schedule
+
+This workflow checks the live site once a week, and whenever someone runs it
+from the Actions tab. Nothing in the repository is read, so there is no checkout
+step. The site is the input.
+
+```yaml title=".github/workflows/a11y.yml"
+name: Accessibility
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  a11y:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: npx @hawkeyexl/manni a11y check https://docs.example.com/ -f github --progress
+```
+
+A schedule catches what a pull request cannot see. That includes content
+published from a CMS, a third-party widget that changed, and a page nobody has
+edited in a year.
+
+## Check a pull request before it deploys
+
+To catch a finding before it ships, build the site in the pull request. Serve
+the output, wait for the port, and point the check at it. Adjust the build
+command and the output directory to what your generator writes.
+
+```yaml title=".github/workflows/a11y-pr.yml"
+name: Accessibility (pull request)
+
+on:
+  pull_request:
+
+jobs:
+  a11y:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci && npm run build
+      - name: Serve the build output
+        run: npx serve dist -l 4173 > serve.log 2>&1 &
+      - name: Wait for the server
+        run: |
+          tries=0
+          until curl -fsS http://127.0.0.1:4173/ > /dev/null; do
+            tries=$((tries + 1))
+            [ "$tries" -lt 60 ] || { echo "server did not answer" >&2; exit 1; }
+            sleep 1
+          done
+      - run: npx @hawkeyexl/manni a11y check http://127.0.0.1:4173/ -f github --progress
+```
+
+The wait step is the one people leave out. A server started with `&` returns
+immediately, and the crawl then fails on a seed that is not listening yet. That
+is exit `2`, not a violation, so the job fails loudly rather than reporting a
+clean site.
+
+A build's sitemap usually lists the production URLs rather than `127.0.0.1`.
+Those are on another host, so the crawl drops them and follows links instead.
+That reaches every page the navigation links to, which on a docs site is every
+page.
+
+## What each piece does
+
+- `-f github` writes one annotation per rule per page, and prints nothing when
+  the site is clean.
+- `--progress` prints one line per page on stderr. A CI log has no terminal, so
+  without it the run is silent until the report.
+- Exit `1` fails the job on a remaining violation, and exit `2` fails it on a
+  setup problem. See [exit codes](#exit-codes).
+- GitHub-hosted runners on Linux, macOS and Windows ship Chrome, so no browser
+  step is needed. A bare container needs
+  `npx playwright install --with-deps chromium` first.
+- With `urls` and `severity` under `a11y:` in `manni.config.yaml`, the step is a
+  bare `manni a11y check`.
+
+<Aside type="caution" title="The packaged action runs meta only">
+The [manni GitHub Action](/manni/meta/reference/action/) wraps the metadata
+tool, and it has no a11y mode yet. A plain `run:` step is the way to run this
+check.
+</Aside>
+
+## Annotations
+
+`-f github` emits one workflow command per rule per page. GitHub renders each as
+an annotation on the workflow run:
+
+```
+::error title=a11y/button-name::Buttons must have discernible text — 1 node on http://127.0.0.1:4173/about.html (https://dequeuniversity.com/rules/axe/4.13/button-name?application=playwright)
+::error title=a11y/color-contrast::Elements must meet minimum color contrast ratio thresholds — 1 node on http://127.0.0.1:4173/about.html (https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright)
+::error title=a11y/html-has-lang::<html> element must have a lang attribute — 1 node on http://127.0.0.1:4173/about.html (https://dequeuniversity.com/rules/axe/4.13/html-has-lang?application=playwright)
+::error title=a11y/image-alt::Images must have alternative text — 1 node on http://127.0.0.1:4173/about.html (https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright)
+::error title=a11y/image-alt::Images must have alternative text — 1 node on http://127.0.0.1:4173/orphan.html (https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright)
+```
+
+A clean run prints nothing at all and exits `0`.
+
+There is no file or line to anchor an annotation to, because the finding is
+about a URL rather than a source file. The annotation names the page and the
+rule, and the reader follows the help URL from there. The command level is the
+finding's severity, so `::error`, `::warning`, and `::notice` are the three you
+will see. axe's four impact levels are folded onto that scale when the page is
+read, and the [map is in the reference](/manni/a11y/reference/cli/#output-formats).
+
+For a dashboard rather than annotations, use `-f json`. The
+[JSON shape](/manni/a11y/reference/cli/#output-formats) carries every finding,
+every failing element, and a `summary` object with the counts.
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Every page loaded and none has a violation at or above the severity floor. |
+| `1` | At least one page keeps a violation, or a crawled page failed to load. |
+| `2` | The run could not happen. A bad flag value, a URL that is not `http(s)`, no URLs and no config, a seed that would not load, or no browser. |
+
+Wire `1` to the gate and `2` to a loud failure. That is the same split
+[`manni meta validate`](/manni/meta/ci/exit-codes-and-annotations/) uses. Keep
+them apart, because `2` means nothing was checked. A job that treats every
+non-zero code as "violations found" reports a broken runner as a red site.
+
+A seed that will not load is exit `2`, because the run never started. A page
+found during the crawl that will not load is recorded against that page, the
+crawl continues, and the page counts as failed. That is exit `1`.
+
+## When the crawl runs long
+
+Pages are checked one at a time, in a real browser, so the wall clock is roughly
+a second or two per page. A few hundred pages is a coffee break. Four things
+shorten it, in the order worth trying.
+
+**Bound the run.** `--max-pages <n>` stops once that many pages have been
+checked. Whatever is still queued is reported as skipped rather than failed, so
+the exit code still reflects what was actually looked at:
+
+```
+Checked 2 of 3 pages (sitemap: http://127.0.0.1:4173/sitemap.xml)
+✗ http://127.0.0.1:4173/about.html  score 78  4 errors
+    error  button-name (axe: critical)  1 node  Buttons must have discernible text  https://dequeuniversity.com/rules/axe/4.13/button-name?application=playwright
+      button  → Fix any of the following: Element does not have inner text that is visible to screen readers; …
+    error  color-contrast (axe: serious)  1 node  Elements must meet minimum color contrast ratio thresholds  https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright
+      p  → Fix any of the following: Element has insufficient color contrast of 2.84 (foreground color: #999999, background color: #ffffff, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1
+    error  html-has-lang (axe: serious)  1 node  <html> element must have a lang attribute  https://dequeuniversity.com/rules/axe/4.13/html-has-lang?application=playwright
+      html  → Fix any of the following: The <html> element does not have a lang attribute
+    error  image-alt (axe: critical)  1 node  Images must have alternative text  https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
+      img  → Fix any of the following: Element does not have an alt attribute; …
+
+4 violations on 1 of 2 pages; 1 skipped (--max-pages)
+```
+
+The cap is on the pull request job, where the wait matters. The scheduled run
+has all night, so leave it uncapped there and let it see the whole site.
+
+**Narrow the seeds.** A repository that declares its documents as
+[collections](/manni/meta/reference/configuration/#collections) can give each
+one a `url:`, then check one at a time with `--collection guides`. Crawl scope
+is still the host, so this changes where the crawl starts rather than where it
+may go.
+
+**Check exactly what changed.** `--no-crawl` skips the sitemap lookup and the
+link following, and checks only the URLs you name. A job that maps changed files
+to published URLs can hand them straight to the command.
+
+**Narrow the rule set.** `--tags wcag2a,wcag2aa,wcag21aa` restricts axe to rules
+carrying any of those tags, so the gate is "WCAG 2.1 AA and nothing else". It
+saves less time than the other three, and it makes the gate mean something
+specific, which is the better reason to reach for it.
+
+`--timeout <ms>` is the one that does not shorten a run. It raises the per-page
+navigation limit, and the default is 30 seconds. Raise it when a page is slow to
+render rather than when the crawl as a whole is long.
+
+## Move the settings into config
+
+Every flag above has a config key, so the workflow step stays one line while the
+settings live in the repository beside `meta:`:
+
+```yaml title="manni.config.yaml"
+a11y:
+  urls: ["https://docs.example.com/"]
+  maxPages: 200
+  tags: ["wcag2a", "wcag2aa", "wcag21aa"]
+  severity: error
+  timeout: 30000
+```
+
+```yaml
+      - run: npx @hawkeyexl/manni a11y check -f github --progress
+```
+
+A flag on the command line wins over the same key in config, and config wins
+over the default. The full table of keys, types and defaults is in the
+[CLI reference](/manni/a11y/reference/cli/#configuration).
+
+<Aside type="tip" title="Choosing the floor">
+`severity: error` is the usual first gate. It counts axe's `critical` and
+`serious` findings and drops the rest before the score and the exit code are
+decided. Lower the floor once the errors are at zero and staying there.
+</Aside>
+
+<CardGrid>
+  <LinkCard
+    title="Get started"
+    href="/manni/a11y/get-started/"
+    description="Install a browser, crawl a local build, read the score and the findings, and fix one before you wire the gate."
+  />
+  <LinkCard
+    title="Fix a failing check"
+    href="/manni/a11y/fix/"
+    description="What a contributor does with the annotation your job produced. One violation end to end, and the local run that proves the fix."
+  />
+  <LinkCard
+    title="CLI reference"
+    href="/manni/a11y/reference/cli/"
+    description="Every argument and flag of manni a11y check, the three output formats, exit codes, and the config keys."
+  />
+  <LinkCard
+    title="manni meta in CI"
+    href="/manni/meta/ci/"
+    description="The metadata gate that shares the bin, the config file, and the exit-code contract this page follows."
+  />
+</CardGrid>

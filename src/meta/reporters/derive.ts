@@ -14,7 +14,7 @@ import { DocmetaError, type RunSummary, type ValidationResult } from "../types.j
 import type { DeriveFileResult, DeriveRun } from "../commands/derive.js";
 import type { DerivedField } from "../core/derive/types.js";
 import { toJsonText } from "../core/json-text.js";
-import { palette } from "./color.js";
+import { palette } from "../../shared/color.js";
 import { formatList, render, type ReportOptions } from "./index.js";
 
 /**

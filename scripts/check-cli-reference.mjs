@@ -32,6 +32,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PAGES = new Map([
   ["meta", "docs/src/content/docs/meta/reference/cli.mdx"],
   ["a11y", "docs/src/content/docs/a11y/reference/cli.mdx"],
+  ["cite", "docs/src/content/docs/cite/reference/cli.mdx"],
+  ["key", "docs/src/content/docs/key/reference/cli.mdx"],
 ]);
 
 const requested = process.argv.slice(2);

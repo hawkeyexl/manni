@@ -52,6 +52,46 @@ export function removeTempRepo(dir: string | undefined): void {
 /** A minimal document that parses; the content is never what is under test. */
 export const DOC = "---\ntitle: t\n---\n\n# t\n";
 
+/**
+ * Whether a `git` binary answers on this machine. Suites that build a real
+ * repository pair this with `it.skipIf`, so a box without git skips rather
+ * than fails for a reason unrelated to the code under test.
+ */
+export function gitAvailable(): boolean {
+  try {
+    execFileSync("git", ["--version"], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Stage everything under `dir` and commit it. Returns the new commit's full
+ * sha. Identity, signing, CRLF conversion and hooks are all pinned on the
+ * command line so the result does not depend on the machine's global git
+ * config: a signing key that prompts, an `autocrlf=true` that rewrites the
+ * bytes a hash test depends on, or a global hooks path would each make this
+ * helper flaky somewhere.
+ */
+export function commitAll(dir: string, message: string): string {
+  const noHooks = mkdtempSync(join(tmpdir(), "docmeta-nohooks-"));
+  const config = [
+    "-c", "user.name=t",
+    "-c", "user.email=t@example.invalid",
+    "-c", "commit.gpgsign=false",
+    "-c", "core.autocrlf=false",
+    "-c", `core.hooksPath=${noHooks}`,
+  ];
+  try {
+    execFileSync("git", [...config, "add", "-A"], { cwd: dir, stdio: "ignore" });
+    execFileSync("git", [...config, "commit", "-q", "-m", message], { cwd: dir, stdio: "ignore" });
+    return execFileSync("git", ["rev-parse", "HEAD"], { cwd: dir, encoding: "utf8" }).trim();
+  } finally {
+    rmSync(noHooks, { recursive: true, force: true });
+  }
+}
+
 /** Run one git command in `dir` and return its trimmed stdout. */
 export function git(dir: string, args: string[]): string {
   return execFileSync("git", args, {

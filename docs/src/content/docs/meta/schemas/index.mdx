@@ -280,6 +280,22 @@ A relative file path like `./schemas/metadata.schema.json` resolves from the **w
 Naming the schema inside a document is the most self-contained option. You can also apply a schema to a whole directory from config, or set one from the command line. When several could apply to one file, a fixed precedence order decides which wins. The next guide, [How schema resolution works](/manni/meta/schemas/resolution/), lays out that order and the three kinds of schema reference (built-in, file, and URL).
 </Aside>
 
+## Keep a value encrypted on the page
+
+Some fields your standard requires are not for publishing. An `owner`, an
+internal ticket, a service name. Mark the property `x-manni-encrypt`, and the
+page has to hold that value encrypted:
+
+```json title="schemas/page.json"
+"owner": { "type": "string", "enum": ["platform", "billing"], "x-manni-encrypt": true }
+```
+
+The field stays required and your `enum` still holds, because validation checks
+the decrypted value against the property's whole schema. [Require a field and
+keep its value private](/manni/meta/schemas/encrypted-fields/) follows one such
+value through every command that touches it. [Put the key where every tool
+finds it](/manni/key/set-up/) settles where the key lives first.
+
 ## Where to go next
 
 <CardGrid>

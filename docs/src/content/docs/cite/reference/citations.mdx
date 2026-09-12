@@ -1,0 +1,490 @@
+---
+title: Citations reference
+description: "The citations vocabulary as manni cite implements it: the two ends of an entry, body lines against file lines, the file grammar and encrypted sources, the hashing rule, markers, the sidecar manifest, and every status and rule with its default severity."
+sidebar:
+  order: 3
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+A citation pins a sentence on a page to the source lines it was written from.
+Both ends are pinned the same way, by a line range and a hash. This page is
+the vocabulary as the tool ships it. The schema it implements is
+`manni:citations:1.0.0-proposal.3`, which pins the claim and encrypts
+`source.file` as a value. The metadata tool publishes citations as the tenth
+member of its vocabulary family, and every draft is open for review. The
+earlier drafts and their design notes are on the
+[proposal page](/manni/meta/proposals/citations/).
+
+## Where citations live
+
+An entry lives in one of two places, and nothing on the page repeats it.
+
+- **Frontmatter.** A `citations` list, one entry per pinned range. The
+  metadata tool's `validate` sees this channel, and validates it when the
+  schema is in the page's set.
+- **A sidecar manifest.** A collection can declare an external-metadata
+  manifest that owns the `citations` key, and then the page's entries live
+  there. See [The sidecar](#the-sidecar).
+
+The body carries no entries. It may carry a [marker](#markers), which is one
+comment naming an entry by id. A marker is an anchor, never a record of a
+source.
+
+```yaml title="docs/limits.md (frontmatter)"
+citations:
+  - id: fetch-timeout
+    claim:
+      lines: 3
+      integrity: sha256-c41f09aa8ba1a04a3d5a0a0dbb1d9c1e8e9e26a1c5f0b2dd4e9a0c17f4f19aab
+    source:
+      file: lib/limits.ts
+      lines: 2
+      integrity: sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f
+      commit-sha: 3f9c2a1e7b0d4c5a6f8e9d0b1a2c3d4e5f607182
+  - source:
+      file: lib/limits.ts
+      integrity: sha256-aebba92fe4cddf100cc781281d1f24ad7c234b6189413e2130d5fe71ed86e023
+```
+
+The second entry is a **bare pin**. It has no claim, no anchor and no quote.
+It is legal, and it is checked source-side only. It says this page rests on
+this file, tell me when it changes, which is `source-of-truth` from the
+stewardship vocabulary at line granularity. The two exist because they answer
+at different grains.
+
+## Page keys
+
+| Key | Type | Description |
+|---|---|---|
+| `citations` | non-empty list of entries | One entry per pinned range. A page with no citations omits the key; an empty list is not a declaration. Ids are unique within the page, and a duplicate is `entry-invalid`. |
+
+Any other key at the page root that starts with `citation-` is rejected by the
+schema. So a misspelled `citation-comit` fails the way a closed container
+would make it. The root stays open for sibling vocabularies. The page-level
+`citation-commit` of earlier drafts is gone, and each entry records its own
+`source.commit-sha`.
+
+## The two ends
+
+An entry is a closed object with one required block, `source`. The `claim`
+block is the other end, and both carry a line range and a hash.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | `^[a-z0-9][a-z0-9-]*$`, unique per page | no; yes when a marker names the entry | What a marker names, what a finding is reported under, and what `update --only` selects. Allowed on a bare pin, so an unanchored entry can still be named. |
+| `claim` | block | no | The page text the citation supports. Absent, the entry is a bare pin, or a marker with no drift check on its sentence. |
+| `claim.lines` | `L` or `"L1-L2"` | yes, unless a marker names the entry | Lines of the page **body**. See [Body lines and file lines](#body-lines-and-file-lines). |
+| `claim.integrity` | `sha256-` and 64 lowercase hex digits | yes, inside `claim` | The claimed lines hashed under [the one rule](#the-hashing-rule). With a marker, the lines the marker anchors. Always plain, never keyed, because the page is public. |
+| `source` | block | yes | The lines the claim rests on. |
+| `source.file` | root-relative posix path, or `~` and 82 or more base64url characters | yes | The file. A `~` value is the path encrypted with the family key. See [the file grammar](#the-file-grammar). |
+| `source.lines` | `L` or `"L1-L2"` | no | File lines, 1-based and inclusive. Absent pins the whole file. Readable even when `file` is encrypted. |
+| `source.integrity` | `sha256-` or `hmac-sha256-`, and 64 lowercase hex digits | yes | The pin. `hmac-sha256-` exactly when `file` is encrypted, so the page carries no verifier for a guessed private line. |
+| `source.commit-sha` | 7 to 64 lowercase hex digits | no | The git commit hash the source pin was taken at. Sixty-four covers a SHA-256 repository. With it, `check` tells `source-changed` from `source-never-true` and can show the diff. |
+| `quote` | boolean, default `false` | no | The claim is a fenced block that reproduces the source. See [Quotes](#quotes). |
+
+Earlier drafts spelled the source as one `src` string and kept the pin beside
+it at the entry root. They stored the claim as a copy of the sentence. All
+three are gone. So is `commit`, which `source.commit-sha` replaces.
+
+The metadata tool's `validate` checks the shape; it cannot check either pin.
+Whether a hash still holds is a comparison against the page and the source,
+and that is what `manni cite check` adds.
+
+## Body lines and file lines
+
+`claim.lines` counts the page **body**. The body starts on the first line
+after the closing frontmatter fence, and on line 1 for a page with no
+frontmatter. So editing the frontmatter never moves a claim.
+
+**What people see stays file lines.** The command line takes
+`cite add docs/limits.md:9`, every `(line N)` is a file line, and every
+report translates. Only someone reading the YAML sees the difference.
+
+The reason is that the entry often lives in the file it numbers. With file
+lines, adding a tag by hand or with `meta fill` would move every claim on the
+page. Two branches adding citations to one page would then conflict on every
+`lines:` value. Body lines never move for a frontmatter edit.
+
+<Aside type="note" title="A sidecar page counts the same way">
+An entry in a manifest still counts the page's body, not the manifest's
+lines. The page decides where its body starts, whoever keeps the entry.
+</Aside>
+
+## The file grammar
+
+`source.file` is a path or a ciphertext, and nothing else. The line range is
+its own field, so no colon is read out of the value.
+
+```
+path/to/file.ts
+~CIPHERTEXT
+```
+
+A path is relative to the
+[root](/manni/cite/reference/cli/#where-sources-resolve-from), posix-separated,
+and free of `.` and `..` segments. Segments may hold spaces and dots, so
+`docs/release notes/v1.2.md` is a file. The grammar rejects a leading `/`, a
+drive letter, a backslash, an empty segment and a URL. It also rejects a
+ciphertext shorter than 82 characters, or one holding a character outside
+base64url. So a source that could never resolve fails at the schema rather
+than resolving to nothing.
+
+The pattern, as the schema spells it:
+
+```
+^(?:~[A-Za-z0-9_-]{82,}|(?!~)(?:(?!\.\.?(?:/|$))[^/\\:\r\n\t]+)(?:/(?:(?!\.\.?(?:/|$))[^/\\:\r\n\t]+))*)$
+```
+
+Lines are 1-based and inclusive, in both blocks. That the end line is not
+before the start line is the tool's rule, since a pattern cannot compare two
+numbers. `lines: "9-3"` is refused by `add` and is `entry-invalid` on a page.
+
+On the command line and in every report, a source is still spelled as one
+string: `lib/limits.ts`, `lib/limits.ts:2` or `lib/limits.ts:1-3`. That is a
+spelling of the two fields, not a third field.
+
+### Encrypted sources
+
+`~` followed by at least 82 base64url characters is an **encrypted** source.
+It is the path, encrypted under the family encryption key, in the same token
+format a `manni meta` value uses. `source.lines` sits beside it in plain
+text, and stays readable. Examples on these pages shorten the token to
+`~AQm4…`, and the real value is longer. The key is a top-level
+`encryptionKey:` in `manni.config.yaml`, or `MANNI_ENCRYPTION_KEY`, which
+wins. [`manni key`](/manni/key/) sets it and rotates it.
+
+The encryption is deterministic AES-256-GCM, so one path under one key always
+gives one ciphertext.
+[Proposal 0045](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0045-family-encryption-key.md)
+states the construction. One thing stays apart from a metadata value, and
+only internally. A citation source carries its own encryption context, so a
+metadata tool cannot re-encrypt a source without also re-keying its pin. That
+would break every encrypted citation after a rotation.
+
+`source.file` never carries the `x-manni-encrypt` mark a schema puts on an
+encrypted metadata value. A plain path is the ordinary case, and a mark would
+fail every one of them under `meta validate`.
+
+A checkout that has the key decrypts the path, then checks it against the
+tracked files as it would a plain one. So a public docs repository can cite a
+private code repository without publishing its paths. The pin over an
+encrypted source reads `hmac-sha256-`, as [the hashing
+rule](#the-hashing-rule) says. So the page also publishes no verifier a
+reader could run against a guessed line.
+
+Two things follow from the encryption being deterministic. A ciphertext is
+stable across pages, so a public site does reveal how often one private file
+is cited and when it moves. That is recorded as accepted. And `update` can
+recognise one file across pages, because its ciphertext does not change. The
+path is padded before encryption, so a ciphertext's length reveals only a
+size class.
+
+Without the key, `check` reports an encrypted citation `missing`, an error,
+unless `--no-check-sources` skips it. Under another key it is `missing` too,
+because the ciphertext does not decrypt.
+
+## The hashing rule
+
+Stated once, in the schema's `source.integrity` description, and implemented
+once for both ends:
+
+> Decode as UTF-8. Drop one leading byte-order mark. Turn CRLF into LF. Split
+> on LF and discard the empty element a trailing LF leaves. Take lines L1 to
+> L2 inclusive, or every line for a whole file. Join with LF and no trailing
+> LF. Keep trailing whitespace. A plain `file` is pinned `sha256-` over that
+> text. An encrypted `file` is pinned `hmac-sha256-`: the HMAC-SHA256 of that
+> text under a key derived from the encryption key.
+
+A claim is always pinned `sha256-`, because the page is public and there is
+nothing to hide. The prefix follows `source.file`, and any other pairing is
+`entry-invalid`:
+
+```
+fetch-timeout: an encrypted source is pinned with hmac-sha256-, not sha256-.
+fetch-timeout: a plain source is pinned with sha256-, not hmac-sha256-.
+```
+
+Two consequences are worth knowing. A file's trailing newline is not a line,
+so `lines: "1-7"` and a whole-file pin over a seven-line file are one pin. And
+CRLF and a byte-order mark are not changes, so a Windows checkout under
+`core.autocrlf` reads every pin as current. A trailing space is a change,
+because it is one.
+
+## Markers
+
+A marker is one comment in the body, naming an entry by id, written in the
+format's own comment syntax. It is the second way to anchor a claim, and the
+easier one to keep true, because it travels with its text.
+
+| Format | Forms |
+|---|---|
+| markdown, mdx | `<!-- cite ID -->`, `{/* cite ID */}`, `[comment]: # (cite ID)` |
+| html, xml | `<!-- cite ID -->` |
+| asciidoc | `// (cite ID)` |
+| rst | `.. (cite ID)` |
+
+The payload is an id and nothing else. `cite true` names the id `true`. A
+payload that is not an id is `marker-invalid`, and a JSON payload hears what
+replaced it:
+
+```
+A marker names an entry by id. Write the entry in frontmatter or the sidecar.
+```
+
+Earlier drafts let a marker carry a whole entry as JSON. That is removed. An
+entry lives in frontmatter or the sidecar, so a source is never written into
+the body. A public page never carries a private path twice.
+
+The scanner looks for the open and close delimiters over the **body only**,
+so a `cite` inside the frontmatter is never a marker. It also reads code as
+code. An opener inside a fenced block or a backtick span is text, which is
+how this page can show the syntax without carrying it. It reads at most 500
+markers per page; past that, the rest are not read and the page carries one
+`marker-invalid` saying so.
+
+```md title="A marker in markdown"
+<!-- cite fetch-timeout -->
+The fetch timeout is 10 seconds, and it is
+not configurable.
+```
+
+```adoc title="A marker in asciidoc"
+// (cite fetch-timeout)
+The fetch timeout is 10 seconds.
+```
+
+```rst title="A marker in reStructuredText"
+.. (cite fetch-timeout)
+The fetch timeout is 10 seconds.
+```
+
+<Aside type="note" title="MDX pages">
+An MDX page can use the `<!-- -->` form and the `{/* */}` form alike; the
+tool treats `.md` and `.mdx` as one format. The JSX comment is the one MDX
+itself accepts everywhere, so it is the safer choice on a page that renders.
+</Aside>
+
+## Anchoring
+
+An entry has exactly one anchor, and that is the line a finding reports.
+
+| Anchor | How it works |
+|---|---|
+| Claim lines | `claim.lines` names the body lines, and `claim.integrity` pins them. The pinned text is searched for when it is not where it was, so the claim can be `claim-moved` or `claim-changed`. |
+| A marker | The entry has an `id`, a marker in the body names it, and `claim.lines` is absent. The marker anchors the rest of its own line when that carries text, else the paragraph after it. It moves with its text, so a marker-anchored claim is never `claim-moved`. |
+| Neither | A bare pin, checked source-side only. A finding on it reports the entry's own line. |
+
+A `claim` under a marker is optional. With one, its `integrity` pins the text
+the marker anchors, and an edit there is `claim-changed`. Without one, the
+marker still anchors the entry. There is then no drift check on the
+sentence.
+
+Claim lines and a marker together are `anchor-invalid`, because neither
+anchor can be trusted:
+
+```
+fetch-timeout has claim lines and a marker. Keep one.
+```
+
+`cite add --marker` writes both halves, the marker and the claim pin. A
+hand-written marker over an entry with no `claim` is legal.
+
+### Quotes
+
+`quote: true` says the claim is a fenced block that reproduces the source.
+The pin covers the whole block, fences included, and the lines inside the
+fences are compared with the source. So a quoted snippet that drifts from its
+source is `quote-drift` even while the pin still holds.
+
+A quote needs an anchor. Under claim lines, those lines must still be a fenced
+block. Under a marker, the block is the next fence after the marker. Neither
+is `anchor-invalid`:
+
+```
+fetch-timeout: quote needs a claim or a marker.
+fetch-timeout: the quote's claim lines 14-18 are no longer a fenced block.
+```
+
+The fence is ```` ``` ```` or `~~~` in markdown and MDX, and `----` in
+asciidoc. `html`, `xml` and `rst` have no fence the tool can locate.
+
+## The sidecar
+
+A collection can keep its pages' citations in an external-metadata manifest
+instead of in each page's frontmatter. There is no new config key. The
+mechanism is the one the metadata tool already has, and the manifest owns the
+`citations` key:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: site
+    paths: ["docs/**/*.{md,mdx}"]
+    externalMetadata:
+      - file: docs-citations.yaml   # relative to the config file
+        keys: [citations]
+```
+
+The manifest is keyed by page path, or by a page field under `join:`:
+
+```yaml title="docs-citations.yaml"
+docs/limits.md:
+  citations:
+    - id: fetch-timeout
+      claim: { lines: 3, integrity: sha256-c41f09aa… }
+      source: { file: lib/limits.ts, lines: 2, integrity: sha256-78af1d33…, commit-sha: 3f9c2a1e… }
+```
+
+**Reading.** `check`, `update`, `add` and `manni key rotate` read a page's
+citations from the manifest that owns them, through the metadata tool's merge.
+Which manifest owns a page is decided by every collection in the config,
+whatever `--collection` or the positional paths select. So a page checked by
+path still finds its sidecar. `--no-config` reads frontmatter only.
+
+**Writing.** `add`, `update` and `manni key rotate` edit the manifest in
+place. They splice only that page's `citations` value, so every other byte of
+the file is unchanged, and they read the file back to confirm it. `update`
+writes each manifest once per run. These are the first writers of a manifest.
+`meta fill` and `meta query` stay read-only.
+
+**Where findings sit.** A claim finding or a marker finding sits on the page
+line, where a reviewer reads it. A finding about the entry itself sits on the
+manifest and the entry's own line, which is `entry-invalid` or a bare pin
+whose source changed. SARIF drops a location outside the repository, so a
+manifest outside it is reported on the page instead.
+
+Refusals follow the metadata tool's rules, and each is exit 2:
+
+| Refusal | Why |
+|---|---|
+| A URL manifest that owns `citations`. | cite writes citations, and a URL manifest cannot be written. It would also put private paths in public CI output. |
+| A page in two collections whose manifests both own `citations`. | Two owners for one key, with nothing to say which writes. |
+| Two pages sharing one `join:` value. | The metadata tool's duplicate rule. |
+| A manifest entry naming a page that is gone. | The metadata tool's orphan rule, on a whole-collection run. A `git mv` is the usual cause. |
+
+A page that still carries its own `citations:` while a manifest owns the key
+is `external:owned` in `meta validate`, and `entry-invalid` in `cite check`.
+
+```
+manni: manni.config.yaml: collection site: citations cannot come from a URL manifest, because cite writes them.
+manni: docs/limits.md is in collections site and api, and both keep citations in a manifest.
+manni: A page read from stdin has no path, and its citations live in docs-citations.yaml, which is keyed by path.
+```
+
+The sidecar is what makes the two-repository layout comfortable. The manifest
+sits in the docs repository with `source.file` encrypted, and no page carries
+a line of citation YAML. See [Public docs, private
+code](/manni/cite/set-up/public-docs-private-code/).
+
+## Statuses and rules
+
+`check` classifies **each end** of a citation, then applies the severity
+table. A status is a finding when its rule's severity is not `off`; the
+anchoring rules are findings in their own right.
+
+A severity is one of the family's three levels, or `off`. The defaults are in
+the tables below, and
+[`severity:`](/manni/cite/reference/configuration/#severity) in config moves
+any of them.
+
+| Severity | Reported | Fails the run | `github` | SARIF `level` | JUnit |
+|---|---|---|---|---|---|
+| `error` | yes | yes, exit `1`, unless baselined | `::error` | `error` | a `failure` |
+| `warning` | yes | no | `::warning` | `warning` | a passing testcase |
+| `notice` | yes | no | `::notice` | `note` | a passing testcase |
+| `off` | no | no | nothing | nothing | nothing |
+
+### Two statuses that are not rules
+
+`current` and `skipped` are statuses, per end, and neither is a finding.
+`current` says the end hashes to its pin. `skipped` says the end was not read,
+which happens to every source end under `--no-check-sources`. Neither can be
+named in `severity:`, which takes the fourteen rule names below.
+
+### Source-end rules
+
+| Rule | Meaning | Message | Default |
+|---|---|---|---|
+| `source-moved` | The pin does not hold at its range, and exactly one window of the same length elsewhere in the file hashes to it. `update` rewrites `source.lines`. A whole-file citation never moves. | `moved -> lib/limits.ts:4` | `warning` |
+| `source-moved-ambiguous` | Two or more windows hash to the pin; the tool will not guess which. Widen the range. | `moved, 2 candidates (lib/limits.ts:4, lib/limits.ts:11); widen the range` | `error` |
+| `source-changed` | No window hashes to the pin. With a commit and history: since when, and how many commits touched the path. With a commit git cannot show: `history unavailable`, plus one run notice about `fetch-depth: 0`. Where git is not available, a bare `changed`, plus one run warning. | `changed since 3f9c2a1, 2 commits` | `error` |
+| `source-never-true` | No window of the range's length anywhere in the file at the recorded commit hashes to the pin, or the path was absent there. Asserted only when git can show that commit. | `never true: the pin does not match at 3f9c2a1` | `error` |
+| `source-missing` | The path is not a tracked file under the root (without git, not a file under it), or an encrypted source cannot be decrypted. A rename is `missing`; `add` is the remedy. | `missing`, and for an encrypted source one of `missing (no encryption key is available to decrypt it)`, `missing (does not decrypt under the current key)` or `missing (no tracked file matches; wrong --root?)` | `error` |
+
+The move search runs whenever the pin does not hold, and history decides only
+what a non-match is called. With the original text (git could show the
+commit), candidates are the lines where the first line matches. Each
+candidate is compared lexically and hashed on a full match. Without it, a
+window of 2,000 lines either side of the pinned range comes first. Then the
+rest of the file follows, under a 64 MiB hashing budget. Past the budget the
+entry is `source-changed` with `truncatedSearch` set, and the run says so
+once. A range longer than 5,000 lines is `entry-invalid`.
+
+### Claim-end rules
+
+| Rule | Meaning | Message | Default |
+|---|---|---|---|
+| `claim-moved` | The pinned page text is found verbatim at other lines, so nothing drifted. `update` rewrites `claim.lines`. | `fetch-timeout: the claim moved from line 9 to line 11.` | `notice` |
+| `claim-moved-ambiguous` | The pinned text is found verbatim at several places. `update` skips it. | `fetch-timeout: the claim at line 9 now appears at lines 11 and 30.` | `warning` |
+| `claim-changed` | The pinned page text is gone, so the sentence was edited. `update --accept` re-pins it. | `fetch-timeout: the claim at line 9 has changed since it was pinned.` | `warning` |
+
+`claim-changed` defaults to a **warning**, not an error. It fires on any edit
+to a pinned paragraph, including a typo fix beside the cited sentence, and
+that would block prose work for nothing. A team that wants every edit to a
+cited sentence reviewed sets it to `error`.
+
+There is no `claim-ambiguous`. A pinned range cannot be ambiguous on the page
+it was taken from. That is the whole gain of pinning the claim rather than
+copying it.
+
+### Anchoring and entry rules
+
+| Rule | Meaning | Default |
+|---|---|---|
+| `marker-orphan` | A marker names an id no entry has. | `error` |
+| `marker-invalid` | A malformed marker, including a JSON payload, or more than 500 markers on a page. | `error` |
+| `marker-repeated` | Two markers name one id; the first anchors it. | `warning` |
+| `anchor-invalid` | The anchor cannot work. Three cases reach it. Claim lines and a marker together, `quote` with no claim and no marker, and a quote whose claim lines are no longer fenced. | `error` |
+| `entry-invalid` | A schema failure, a range that ends before it starts, or a duplicate id. Also a pin prefix that does not match `file`, a reserved `citation-*` page key, and a page `citations:` a manifest owns. | `error` |
+| `quote-drift` | The quoted block no longer reproduces the source, or no fenced block follows the marker. | `error` |
+
+A fourth `anchor-invalid` case was planned and cannot happen. Claim lines
+inside the frontmatter are unreachable, because body-relative lines never
+point there. That case survives only as an `add` refusal.
+
+Every rule reports under the id `manni:cite/<rule>`, which is the SARIF rule
+id and the JUnit failure type. A baseline fingerprint is built from that
+schema, the rule, the entry's position and a subject. The position is
+`/citations/N`. The subject is the `id`, or the `source.integrity` when there
+is none, never the claim's pin. So accepting a changed claim does not reopen
+a baselined finding. The subject survives a move and a line shift, and
+changes only when the source pin is re-minted. A key rotation is the
+exception. Over an encrypted source the `source.integrity` is the keyed pin,
+which `manni key rotate` changes. Give such a citation an `id`, or re-record
+the baseline after a rotation.
+
+## The output rule
+
+**Output never says more than the page did.** A finding, in every format,
+spells a source exactly as the entry spelled it: `~AQm4…:4`, never the path
+it decrypts to. The decrypted path, the diff since the commit and the commit
+subjects live on the result and reach output through the `pretty` reporter
+only, under [`--reveal`](/manni/cite/reference/cli/#cite-check) and
+`--show-diff`. `json`, `github`, `sarif` and `junit` never carry them, so a
+public CI job can upload a SARIF log from a run that decrypted private
+sources. A sentinel test runs every reporter against a fixture whose key and
+private path are known strings, and asserts neither appears.
+
+## Terms
+
+| Term | Meaning |
+|---|---|
+| **citation** | One entry, with a source end, optionally a claim end, and optionally an id and a quote flag. Lives in a page's `citations` list or in a sidecar manifest. |
+| **claim** | The page text a citation supports, pinned by body lines and a hash. Not a copy of the sentence. |
+| **source** | The file, the lines, the pin and the commit the claim rests on. |
+| **pin** | An `integrity` value: the hash of an end's lines under the rule, at the moment it was minted. A record of the past, not a copy of the present, which is why it is stored rather than recomputed. |
+| **marker** | A `cite <id>` comment in the body, in the format's own syntax. It names an entry and anchors it. It never holds a source. |
+| **sidecar** | An external-metadata manifest that owns the `citations` key for a collection's pages. |
+| **encrypted source** | A `~` and at least 82 base64url characters in `source.file`: the path, encrypted under the encryption key. Readable only where both the key and the files are. |
+| **encryption key** | The family secret that encrypts private source paths and keys the pins over them. From `MANNI_ENCRYPTION_KEY`, else a top-level `encryptionKey:` in config. A `salt:` under `cite:` is refused. [`manni key`](/manni/key/) sets and rotates it. |
+| **drift** | The gap between what a page says and what its source now holds. A `source-changed` citation is drift at the sentence; `quote-drift` is a reproduced block that no longer matches. |

@@ -1,0 +1,248 @@
+---
+title: Configuration reference
+description: "Every key of the cite section in manni.config.yaml (root, baseline, checkSources, severity), with types, defaults, where the document set is declared, when git is used, discovery rules, the refused salt key, and the severity table."
+sidebar:
+  order: 2
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The citation tool reads two keys of the family's one config file,
+`manni.config.yaml`. The top-level `collections:` list says which pages exist,
+and the `cite:` section holds the tool's own settings. Together they let CI
+run a bare `manni cite check`. The config is optional. Every key has a default. The tool runs without a
+config when two things hold. You pass paths on the command line, and the
+sources sit in the same repository as the pages.
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: docs-pages
+    paths: ["docs/**/*.md"]      # the document set, read by every tool
+meta:
+  schemas: ["./page.schema.json"] # the metadata tool's section; cite never reads it
+cite:
+  baseline: .manni-cite-baseline.json
+```
+
+## Document sets
+
+The pages a bare `manni cite check` or `manni cite update` covers come from
+the top-level `collections:` list, declared once for every tool. Each
+collection names its `paths` and `exclude` globs, relative to the config
+file. The keys, their rules and the `--collection` flag that narrows a run to
+one are on the metadata tool's
+[configuration reference](/manni/meta/reference/configuration/#collections).
+A family file that declares `collections:` and no `cite:` section is still
+this tool's config: the documents are declared, and every cite key takes its
+default.
+
+### The citations manifest
+
+A collection may keep its pages' citations in a sidecar instead of in each
+page's frontmatter. There is no `cite:` key for it. The collection declares an
+`externalMetadata:` manifest that owns the `citations` key, and cite reads and
+writes that file:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: site
+    paths: ["docs/**/*.{md,mdx}"]
+    externalMetadata:
+      - file: docs-citations.yaml   # relative to the config file
+        keys: [citations]
+```
+
+Which manifest owns a page is decided by every collection in the file,
+whatever `--collection` or the positional paths select. So a page checked by
+path still finds its sidecar, and `--no-config` reads frontmatter only. A URL
+manifest that owns `citations` is refused (exit 2), because cite writes them.
+[The sidecar](/manni/cite/reference/citations/#the-sidecar) has the manifest
+shape and every refusal.
+
+`paths` and `exclude` are not `cite:` keys. Each is refused with an error
+that says where it went (exit 2):
+
+```
+manni.config.yaml: "paths" is no longer a cite key. Document sets are declared once for every tool, under a top-level collections: list. See https://hawkeyexl.github.io/manni/meta/reference/configuration/#collections
+manni.config.yaml: "exclude" is no longer a cite key. Document sets are declared once for every tool, under a top-level collections: list. See https://hawkeyexl.github.io/manni/meta/reference/configuration/#collections
+```
+
+## Keys
+
+| Key | Type | Default | Mirrors | Description |
+|---|---|---|---|---|
+| `allowEmpty` | `boolean` | `false` | `--allow-empty` | Treat an input set that resolves to zero files as success instead of an error (exit 2). |
+| `respectGitignore` | `boolean` | `true` | `--no-gitignore` | Skip files `.gitignore` covers when expanding directories and globs. `--no-gitignore` overrides it for one run. |
+| `root` | `string` | git root | `--root` | The directory `source.file` paths resolve from, relative to the config file. It may point outside the repository, at a second checkout. `--root` overrides it for one run. |
+| `baseline` | `string` | none | `--baseline` | Path to a [citation baseline](/manni/cite/reference/cli/#baselines), relative to the config file. Setting it turns on `--baseline` for every run; `--no-baseline` suppresses it for one. A bare `--write-baseline` records into this same file. |
+| `checkSources` | `boolean` | `true` | `--no-check-sources` | Check citations against their sources. `false` runs the page-side rules only, including every claim end, and reports every source status as `skipped`, which is not a finding. `update` refuses it. `--no-check-sources` turns it off for one run. |
+| `severity` | mapping | the [defaults](#severity) | none | Per-rule severity: `error`, `warning`, `notice` or `off`. Only the rules named are changed. |
+
+The section must be a YAML mapping; an empty `cite:` is the same as no keys.
+The booleans must be booleans, so a quoted `"false"` is rejected rather than
+read as on. A type error names the key and the type it wanted, and nothing
+else.
+
+### Git is used when it is available
+
+No key turns git on or off. The tool uses it whenever git is on `PATH` and the
+root is inside a work tree. Sources are then indexed by `git ls-files`, so
+only tracked files can be cited. `add` records `HEAD`, and history tells
+`source-changed` from `source-never-true`. Otherwise the sources are indexed by a directory
+walk. A run that would have used git then warns once on stderr:
+
+```
+manni: git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.
+manni: git is not available here, so the citation records no commit.
+```
+
+`check`, `update` and `manni key rotate` print the first, when a citation
+carries a commit or `--show-diff` was given. `add` and `update --accept` print
+the second, when a commit would have been recorded.
+
+### Unknown keys are errors
+
+Any key outside the table above is an operational error (exit 2) naming the
+key it did not recognize and listing the ones it accepts. The same rule holds
+inside `severity`: a rule the tool does not have, or a level other than
+`error`, `warning`, `notice` and `off`, is an error naming the supported set.
+
+A dropped `allowEmtpy:` would otherwise leave a config that reads as
+configured and is not. The rule also means a config written for a newer manni
+is rejected outright when it carries a key this version does not know. So pin
+the version wherever the gate runs.
+
+One former key is refused by name rather than as a typo. `salt` keyed cited
+sources before they were encrypted with the family's encryption key, a
+top-level `encryptionKey:` that every tool reads. A config that still carries
+it hears what replaced it (exit 2), and the message never quotes the value:
+
+```
+manni.config.yaml: "salt" is no longer a cite key. Values are encrypted with a family key: a top-level encryptionKey:, or MANNI_ENCRYPTION_KEY. Run `manni key set`.
+```
+
+<Aside type="note" title="Values are never echoed">
+An error about a key says which key and what type it wanted. It never quotes
+the offending value, because a value can be a secret and a CI log is where these
+messages end up. A misspelled severity **level** is the one exception: a level
+is not a secret, so `eror` is quoted back as the typo it is.
+</Aside>
+
+## Discovery
+
+The tool looks for `manni.config.yaml` (then `manni.config.yml`) in the
+working directory and each ancestor, stopping at the nearest `.git` boundary.
+The first file found wins; ancestor files are never merged. A family file with
+neither a `cite:` key nor a `collections:` list belongs to a sibling tool, and
+discovery keeps looking up the tree. There is no pre-family filename for this
+tool, so nothing else is read.
+
+`-c <path>` names the file outright and must exist. `--no-config` skips
+discovery and runs on the defaults alone. When a config governs the run,
+`pretty` output says so on stderr; the machine formats stay clean.
+
+### What relative paths are relative to
+
+| Path | Relative to |
+|---|---|
+| a collection's `paths:` and `exclude:` | the config file's directory |
+| `root:` and `baseline:` | the config file's directory |
+| positional `[paths...]` | the working directory |
+| `--root` and `--baseline <path>` | the working directory |
+
+So `cd docs && manni cite check` reaches the same files, the same root and the
+same baseline as a run from the repository root. Baseline fingerprints match
+whichever directory the command ran from.
+
+## The encryption key
+
+Encrypted sources and their keyed pins use the family encryption key, which is
+not a `cite:` key. It is the top-level `encryptionKey:` of `manni.config.yaml`,
+or `MANNI_ENCRYPTION_KEY`, which wins over it. With a key available, `add`
+encrypts every source it writes, and `check` decrypts each one to check it.
+The [configuration reference](/manni/meta/reference/configuration/#encryption-key)
+has the key itself, and [`manni key`](/manni/key/) sets and rotates it.
+Rotation re-encrypts every `source.file` and re-keys its pin with it, in frontmatter and in a citations manifest alike.
+
+## Example
+
+The two-checkout layout, which is the reason `root` and `checkSources` exist. The
+pages are in the public docs repository, so SARIF locations resolve. The
+sources are reached through `--root` from a private CI job that checks out
+both. The file is public, so it carries no `encryptionKey:`. The key lives in
+the CI secret `MANNI_ENCRYPTION_KEY` instead, and the public job runs without
+it:
+
+```yaml title="manni.config.yaml (public docs repository)"
+collections:
+  - name: site
+    paths: ["src/content/docs/**/*.{md,mdx}"]
+cite:
+  severity:
+    source-moved: error   # this repo wants a moved pin to block, not warn
+```
+
+```sh
+# Public CI, no access to the code or the key: page-side rules only.
+manni cite check --no-check-sources
+
+# Private CI: docs and code checked out side by side; from the docs checkout.
+MANNI_ENCRYPTION_KEY="$ENCRYPTION_KEY" manni cite check --root ../code -f sarif > cite.sarif
+```
+
+The public job passes the flag rather than setting `checkSources: false`. The
+private job reads the same file, and needs the sources.
+
+A single-repository setup needs none of that:
+
+```yaml title="manni.config.yaml (pages and sources in one repository)"
+collections:
+  - name: docs-pages
+    paths: ["docs/**/*.md"]
+cite:
+  baseline: .manni-cite-baseline.json
+```
+
+## Severity
+
+Every rule has a default severity, and `severity:` moves any of them. `error`
+counts toward exit 1. `warning` and `notice` are reported and never move the
+exit code. `off` is not reported at all. The rules themselves are defined on the
+[citations reference](/manni/cite/reference/citations/#statuses-and-rules).
+
+`severity:` takes exactly these fourteen names. `current` and `skipped` are
+statuses, per end, and neither is a rule, so neither can be named here.
+
+| Rule | Default | Why |
+|---|---|---|
+| `source-moved` | `warning` | `update` fixes it mechanically, and a PR job that failed on a two-line insert above a cited line would make the ratchet noisy. |
+| `source-moved-ambiguous` | `error` | Two or more copies of the cited lines; the tool will not guess. |
+| `source-changed` | `error` | The lines the sentence rests on are gone from where they were. |
+| `source-never-true` | `error` | The pin did not match even at the commit it records. |
+| `source-missing` | `error` | The path is not a tracked file under the root, or the ciphertext resolves to nothing. |
+| `claim-moved` | `notice` | The pinned page text is found verbatim elsewhere, so nothing drifted. `update` rewrites the lines. |
+| `claim-moved-ambiguous` | `warning` | The pinned text sits in more than one place, and the tool will not guess. |
+| `claim-changed` | `warning` | It fires on any edit to a pinned paragraph, a typo fix beside the cited sentence included. Set it to `error` to have every such edit reviewed. |
+| `marker-orphan` | `error` | A marker names an id no entry has. |
+| `marker-invalid` | `error` | A marker the tool cannot read, including one carrying JSON. |
+| `marker-repeated` | `warning` | Two markers name one id; the first anchors it. |
+| `anchor-invalid` | `error` | The anchor cannot work, so neither end can be judged. |
+| `entry-invalid` | `error` | An entry the schema refuses, a duplicate id, or a pin prefix that does not match the source. |
+| `quote-drift` | `error` | The fenced block does not reproduce the cited lines. |
+
+```yaml title="manni.config.yaml"
+cite:
+  severity:
+    source-moved: error       # a moved pin blocks until update runs
+    claim-changed: error      # every edit to a cited sentence gets reviewed
+    marker-repeated: off      # not reported at all
+```
+
+A rule set to `off` produces no finding in any format and never enters a
+baseline. A rule set to `warning` renders as `↕` in `pretty`, `::warning` in
+`github`, `level: warning` in SARIF, and a passing testcase in JUnit, exactly
+as the metadata tool's
+[severity](/manni/meta/reference/output-and-exit-codes/#severity-across-the-family)
+does. A rule
+set to `notice` is reported one level lower: `::notice` in `github`,
+`level: note` in SARIF, and never a JUnit failure.

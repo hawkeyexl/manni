@@ -99,6 +99,39 @@ export default tseslint.config(
   },
 
   {
+    // The import rule for sibling tools (proposal 0044, §7). A tool under
+    // `src/<tool>/` reaches the metadata library through two doors only:
+    // `../meta/index.js`, the public API, and `../meta/internal.js`, the
+    // family-internal barrel. Reaching into `core/`, `extractors/` or
+    // `reporters/` directly would make every private reshuffle inside meta a
+    // change to a sibling, and would let a sibling depend on something the
+    // package never promised. `docevals` is named so the rule is already in
+    // place when that branch merges; the glob is harmless while it is absent.
+    files: ["src/{cite,docevals,key}/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "../meta/core/*",
+                "../meta/extractors/*",
+                "../meta/reporters/*",
+                "../../meta/core/*",
+                "../../meta/extractors/*",
+                "../../meta/reporters/*",
+              ],
+              message:
+                "Sibling tools import ../meta/index.js (public API) or ../meta/internal.js (family-internal) only.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  {
     files: ["test/**/*.ts"],
     extends: [tseslint.configs.strictTypeChecked],
     languageOptions: {

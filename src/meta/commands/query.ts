@@ -96,14 +96,33 @@ import {
 } from "../core/derive/table.js";
 import { derivableFields, type DeriveInput } from "../core/derive/types.js";
 import type { FingerprintContext } from "../core/baseline.js";
-import { stringFormatNames, validatesFormat } from "../core/validator.js";
+import {
+  Validator,
+  stringFormatNames,
+  validatesFormat,
+} from "../core/validator.js";
 import {
   classifyRef,
   isPublishedBuiltinUrl,
   loadSchema,
   publishedBuiltins,
+  schemaLoadOptions,
   type SchemaPin,
 } from "../core/schema-registry.js";
+import {
+  ENCRYPTED_PLACEHOLDER,
+  EncryptionRefusal,
+  META_CONTEXT,
+  lazyKey,
+  pointerOf,
+  type KeyGetter,
+} from "../core/encrypted.js";
+import {
+  decryptValue,
+  encryptValue,
+  isEncryptedValue,
+} from "../../shared/encryption.js";
+import { ensureEncryptionKey, type Confirm } from "../../shared/prompt.js";
 import { parseDocument, isMap, isSeq, isScalar } from "yaml";
 import { errorMessage } from "../../shared/errors.js";
 
@@ -189,6 +208,19 @@ export interface QueryOptions {
    * applied — a flag that would silently mean nothing must refuse.
    */
   schemas?: string[];
+  /**
+   * How to ask for a new encryption key when an `UPDATE` or `INSERT` writes
+   * a column its schema marks `x-manni-encrypt` and no key is available
+   * (proposal 0045). The CLI passes `terminalConfirm()`, which is
+   * `undefined` off a terminal; absent, such a write refuses (exit 2). A dry
+   * run never asks: it writes nothing.
+   */
+  confirm?: Confirm;
+  /**
+   * The environment `MANNI_ENCRYPTION_KEY` is read from. Defaults to
+   * `process.env`; tests pass their own.
+   */
+  env?: NodeJS.ProcessEnv;
   /** The clock an uncommitted body change is dated by. Test seam; default `new Date()`. */
   now?: () => Date;
 }
@@ -314,6 +346,7 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
     collections,
     declaredCollections,
     fromCollections,
+    configFile,
   } = await resolveRunConfig({
       cwd,
       configPath: opts.configPath,
@@ -384,6 +417,42 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
     offline: opts.offline ?? config?.offline ?? false,
   });
 
+  // Proposal 0045. The run's key, resolved when first needed; the one prompt
+  // a write that needs a key asks; and the validator that finds which columns
+  // a written file's schema set marks, built only when a statement writes.
+  const configuredKey = lazyKey(configFile, opts.env);
+  let ensuredKey: string | undefined;
+  const currentKey: KeyGetter = () => ensuredKey ?? configuredKey();
+  let markValidator: Validator | undefined;
+  const encryption: QueryEncryption = {
+    key: currentKey,
+    ensure: async (subject) => {
+      const have = currentKey();
+      if (have !== undefined) return have;
+      const { key } = await ensureEncryptionKey({
+        subject,
+        cwd,
+        file: configFile ?? null,
+        env: opts.env,
+        confirm: opts.confirm,
+        notice: (message) => opts.onNotice?.(message),
+        toError: (message) => new EncryptionRefusal(message),
+      });
+      ensuredKey = key;
+      return key;
+    },
+    validator: () =>
+      (markValidator ??= new Validator(
+        schemaLoadOptions({
+          root: configDir ?? cwd,
+          fileBase: cwd,
+          ttlHours: config?.schemaCache?.ttlHours,
+          offline: opts.offline ?? config?.offline,
+          pins: collectSchemaPins(config),
+        }),
+      )),
+  };
+
   const readOne = (label: string, content: string, extension: string): void => {
     const extractor = forced ?? extractorForExtension(extension);
     if (!extractor) {
@@ -395,7 +464,9 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
     const own = extractor.extract(content, label, {
       elements: resolveElements(label, config, members),
     });
-    const extracted = mergeExternalMetadata(label, own, externalMetadata, members, base).extracted;
+    const extracted = mergeExternalMetadata(label, own, externalMetadata, members, base, {
+      encryptionKey: currentKey,
+    }).extracted;
     entries.push({ label, extracted, extractor, own, content });
   };
 
@@ -450,6 +521,7 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
     memberships: membersFor,
     managed: new Set(config?.derive?.fields ?? []),
     onNotice: opts.onNotice,
+    encryption,
   });
   // The same frame `runValidate` returns, built from query's own run context:
   // fingerprints and canonical paths must not depend on where the command was
@@ -546,6 +618,18 @@ interface RunContext {
   managed: ReadonlySet<string>;
   /** Diagnostics for the user; the CLI writes these to stderr. */
   onNotice?: (message: string) => void;
+  /** Encrypted values (proposal 0045): the key, the prompt, the marks. */
+  encryption: QueryEncryption;
+}
+
+/** What a run needs to read and write encrypted values (proposal 0045). */
+interface QueryEncryption {
+  /** The run's key, or `undefined` when none is available. */
+  key: KeyGetter;
+  /** The key a write encrypts with, asking for one when there is none. */
+  ensure: (subject: string) => Promise<string>;
+  /** The validator a written file's marks are read with. */
+  validator: () => Validator;
 }
 
 /**
@@ -962,6 +1046,7 @@ async function runSql(
         ...(schemaPlan?.changes ?? []),
         ...buildChanges(diff, entries, sentinel, ctx, renameHints, booleanAdds),
       ];
+      await sealMarkedWrites(changes, entries, ctx);
       if (ctx.write) await applyChanges(changes, entries, ctx, schemaPlan);
       return { columns, rows, changes, ...(dbInfo ? { db: dbInfo } : {}) };
     };
@@ -2777,7 +2862,7 @@ function refuseExternalMetadataWrites(
       // A rename, by contrast, is exactly what a field join permits.
       const byValue = index.byField.get(key);
       if (byValue === undefined) continue;
-      const raw = data.get(c.file)?.[key];
+      const raw = readableJoinValue(data.get(c.file)?.[key], ctx);
       const value =
         typeof raw === "string"
           ? raw
@@ -2791,6 +2876,135 @@ function refuseExternalMetadataWrites(
           `"${c.file}": "${key}" is the field manifest ${manifest} joins on, and this document has an entry; change the manifest first.`,
         );
       }
+    }
+  }
+}
+
+/**
+ * A join field as a manifest entry is keyed: its plaintext, when the page
+ * holds it encrypted and the key can read it (proposal 0045).
+ */
+function readableJoinValue(held: unknown, ctx: RunContext): unknown {
+  if (!isEncryptedValue(held)) return held;
+  const key = ctx.encryption.key();
+  if (key === undefined) return held;
+  const opened = decryptValue(held, key, META_CONTEXT);
+  return opened.ok ? opened.value : held;
+}
+
+/**
+ * What a write puts in a file where it differs from what its change reports:
+ * the ciphertext of a value the change prints as `(encrypted)` (proposal
+ * 0045). Keyed by change and key, because a created file's one change can
+ * carry several such values. Kept off the change objects so `json` output,
+ * which prints them whole, never carries it.
+ */
+const sealedWrites = new WeakMap<QueryChange, Map<string, unknown>>();
+
+function writtenValue(change: QueryChange, key: string, value: unknown): unknown {
+  const sealed = sealedWrites.get(change)?.get(key);
+  return sealed === undefined ? value : sealed;
+}
+
+/**
+ * Encrypt what a statement writes into a column its schema marks
+ * `x-manni-encrypt`, and print `(encrypted)` for it (proposal 0045).
+ *
+ * Each written file's schema set is resolved exactly as `validate` resolves
+ * it — config `schemas:`, overrides, the file's `$schema`, `-s` — over the
+ * data the file will hold, so the marks are the ones the next `validate` will
+ * read. A value that is already a ciphertext is written as it is. A dry run
+ * encrypts nothing and asks for no key: it writes nothing. Whatever the page
+ * held as a ciphertext prints as `(encrypted)` too.
+ */
+async function sealMarkedWrites(
+  changes: QueryChange[],
+  entries: readonly QueryEntry[],
+  ctx: RunContext,
+): Promise<void> {
+  const original = new Map(entries.map((e) => [e.label, e.extracted.data]));
+  interface FileWrites {
+    after: Record<string, unknown>;
+    /**
+     * The `$schema` the file is resolved with: the one it holds as the run
+     * read it, or a created file's own. Not a `$schema` the statement writes:
+     * a DDL fork repoints `$schema` cells at a schema that is written only
+     * when the statement applies, and a fork of a built-in marks nothing.
+     */
+    fileSchema: unknown;
+    writes: { change: QueryChange; key: string; value: unknown }[];
+  }
+  const files = new Map<string, FileWrites>();
+  const slot = (file: string, from: Record<string, unknown>): FileWrites => {
+    let found = files.get(file);
+    if (found === undefined) {
+      found = { after: { ...from }, fileSchema: from[FILE_SCHEMA_KEY], writes: [] };
+      files.set(file, found);
+    }
+    return found;
+  };
+  // `$schema` is the run's wiring, never metadata a schema could mark.
+  const writable = (key: string, value: unknown): boolean =>
+    key !== FILE_SCHEMA_KEY && value !== null && value !== undefined;
+  for (const c of changes) {
+    if ("schema" in c || "config" in c || "cleared" in c || "renamed" in c) continue;
+    if ("created" in c) {
+      const f = slot(c.file, c.to);
+      for (const [key, value] of Object.entries(c.to)) {
+        if (writable(key, value)) f.writes.push({ change: c, key, value });
+      }
+      continue;
+    }
+    const f = slot(c.file, original.get(c.file) ?? {});
+    if ("deleted" in c) {
+      Reflect.deleteProperty(f.after, c.key);
+      continue;
+    }
+    if ("renamedFrom" in c) Reflect.deleteProperty(f.after, c.renamedFrom);
+    f.after[c.key] = c.to;
+    if (writable(c.key, c.to)) f.writes.push({ change: c, key: c.key, value: c.to });
+  }
+
+  for (const [file, f] of files) {
+    if (f.writes.length === 0) continue;
+    const refs = resolveSchemaSetWithSource({
+      filePath: file,
+      fileSchema: f.fileSchema,
+      cliSchemas: ctx.cliSchemas,
+      config: ctx.config,
+      memberOf: [...ctx.memberships(file)],
+      fileBase: ctx.cwd,
+      trustRoot: ctx.trustRoot,
+      onNotice: ctx.onNotice,
+    }).schemas;
+    const marks = await ctx.encryption.validator().markedPointers(f.after, refs);
+    for (const w of f.writes) {
+      const pointer = pointerOf(w.key);
+      const already = isEncryptedValue(w.value);
+      if (!already && !marks.has(pointer)) continue;
+      if (ctx.write) {
+        const sealed = already
+          ? w.value
+          : encryptValue(w.value, await ctx.encryption.ensure(pointer), META_CONTEXT);
+        const byKey = sealedWrites.get(w.change) ?? new Map<string, unknown>();
+        byKey.set(w.key, sealed);
+        sealedWrites.set(w.change, byKey);
+      }
+      if ("created" in w.change) w.change.to[w.key] = ENCRYPTED_PLACEHOLDER;
+      else if ("to" in w.change) w.change.to = ENCRYPTED_PLACEHOLDER;
+    }
+  }
+
+  for (const c of changes) {
+    if ("cleared" in c) {
+      c.from = Object.fromEntries(
+        Object.entries(c.from).map(([k, v]) => [
+          k,
+          isEncryptedValue(v) ? ENCRYPTED_PLACEHOLDER : v,
+        ]),
+      );
+    } else if ("from" in c && !("config" in c) && isEncryptedValue(c.from)) {
+      c.from = ENCRYPTED_PLACEHOLDER;
     }
   }
 }
@@ -2820,14 +3034,18 @@ async function applyChanges(
     }
     if ("schema" in c || "config" in c) continue; // satisfied by schemaWrites
     const group = grouped.get(c.file) ?? { patch: {}, deletions: [] };
+    // A value the change prints as `(encrypted)` writes its ciphertext.
     if ("cleared" in c) group.cleared = true;
-    else if ("created" in c) group.created = c.to;
-    else if ("renamed" in c) group.renamedTo = c.renamed;
+    else if ("created" in c) {
+      group.created = Object.fromEntries(
+        Object.entries(c.to).map(([k, v]) => [k, writtenValue(c, k, v)]),
+      );
+    } else if ("renamed" in c) group.renamedTo = c.renamed;
     else if ("deleted" in c) group.deletions.push(c.key);
     else if ("renamedFrom" in c) {
-      group.patch[c.key] = c.to;
+      group.patch[c.key] = writtenValue(c, c.key, c.to);
       group.deletions.push(c.renamedFrom);
-    } else group.patch[c.key] = c.to;
+    } else group.patch[c.key] = writtenValue(c, c.key, c.to);
     grouped.set(c.file, group);
   }
 
@@ -2896,6 +3114,7 @@ async function applyChanges(
       ctx.externalMetadata,
       members,
       ctx.base,
+      { encryptionKey: ctx.encryption.key },
     ).extracted;
 
     if (ops.cleared) {
@@ -2946,6 +3165,7 @@ async function applyChanges(
         ctx.externalMetadata,
         members,
         ctx.base,
+        { encryptionKey: ctx.encryption.key },
       ).extracted;
       for (const key of ops.deletions) {
         if (check.data[key] !== undefined) {

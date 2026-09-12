@@ -1,0 +1,10 @@
+# The strict half of docs/src/content/docs/cite/set-up/require-citations.mdx:
+# a team that wants every edit to a cited sentence reviewed rather than
+# reported. Only the severity moves; nothing else about the run changes.
+#
+# It declares no collections, because the page runs it against named paths.
+# `root` is the fixture directory one level up, where `src/` sits.
+cite:
+  root: ..
+  severity:
+    claim-changed: error

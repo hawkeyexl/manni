@@ -215,7 +215,9 @@ describe("runQuery DDL — -s names the contract (0030)", () => {
       }),
     ).rejects.toThrow(/--db export was still written/);
     expect(existsSync(dbPath)).toBe(true);
-  });
+    // A fixture copy and a SQLite export: past the 5 s default on a slow
+    // Windows runner.
+  }, 60000);
 
   it("the core refuses schemas and params on an export-only run — the API seam", async () => {
     // The CLI gates catch the flag spellings, but a library caller passing

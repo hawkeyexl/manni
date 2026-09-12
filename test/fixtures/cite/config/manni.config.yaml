@@ -1,0 +1,24 @@
+# The family encryption key (proposal 0045), top level beside collections:.
+# The same fixed test key pages/encrypted.md was encrypted with; never a real one.
+encryptionKey: cite-fixture-key-0123456789abcdef
+# Every `cite:` key, once, so a test can prove each one round-trips. The
+# document set is the family's `collections:` list (proposal 0041), which the
+# citation tool reads as every tool does. The sibling `meta:` section is here
+# to show the tool reads its own key only.
+collections:
+  - name: pages
+    paths: ["pages/**/*.md", "guides/*.mdx"]
+    exclude: ["**/drafts/**"]
+meta:
+  schemas: ["./docs.schema.json"]
+cite:
+  allowEmpty: true
+  respectGitignore: false
+  root: ../src
+  baseline: .cite-baseline.json
+  checkSources: false
+  severity:
+    source-moved: error
+    source-changed: warning
+    claim-changed: notice
+    marker-repeated: off

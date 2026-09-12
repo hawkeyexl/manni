@@ -1,0 +1,15 @@
+# The `site` collection's private manifest: what the public pages must not
+# carry. `manni key rotate` re-encrypts `owner` here as it does on a page,
+# and leaves `citations` to cite, which re-keys a source with its pin.
+#
+# Every ciphertext below is under the rotate suite's OLD test key,
+# "rotate-old-key-0123456789abcdef01234567". Never a real key.
+
+docs/handbook.md:
+  # Plain, and a rotation must not touch it.
+  jira: PLAT-1
+  owner: ~AZ1ghNL1g_PHS1wiSqfjKH8fXpIhDNSSvSrWrsWSJrSC_NL_ugizfZcrL5PU-FW4ZZVvoYf6GXo5lWz9MA
+  citations:
+    - id: fetch-timeout
+      src: ~ARz4rqLJZsdZeNZmr5ZmbKngAMAi5I_uZOdXUb_6DLyiLsUsUpdg2VNHT_vZqEgMjl_1ZZRj-2DAmxP2Xg:2
+      claim: The fetch timeout is 10 seconds.

@@ -28,6 +28,14 @@ const META: ConfigFileOptions = {
   toError: (message) => new Error(message),
 };
 
+const CITE: ConfigFileOptions = {
+  section: "cite",
+  legacyNames: [],
+  toError: (message) => new Error(message),
+};
+
+const KEY = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08";
+
 describe("family config discovery", () => {
   let tmp: string | undefined;
   let stderr: string[];
@@ -151,6 +159,92 @@ describe("family config discovery", () => {
     );
   });
 
+  it("parses the top-level encryptionKey once, for every tool", async () => {
+    const root = await tree({
+      "manni.config.yaml": `encryptionKey: ${KEY}\nmeta:\n  allowEmpty: true\n`,
+    });
+    const found = await findConfigFile(root, META);
+    expect(found?.encryptionKey).toBe(KEY);
+    expect(found?.value).toEqual({ allowEmpty: true });
+  });
+
+  it("a family file with encryptionKey: and no section is still the tool's config (0045)", async () => {
+    const root = await tree({
+      "manni.config.yaml": `encryptionKey: ${KEY}\n`,
+      "docmeta.config.yaml": "paths: [legacy]\n",
+    });
+    const found = await findConfigFile(root, META);
+    expect(found?.kind).toBe("manni");
+    expect(found?.wrapped).toBe(true);
+    expect(found?.value).toBeNull();
+    expect(found?.encryptionKey).toBe(KEY);
+    expect(found?.collections).toEqual([]);
+  });
+
+  it("a key-only family file stops the walk up the tree", async () => {
+    const root = await tree({
+      "manni.config.yaml": "meta:\n  allowEmpty: true\n",
+      "docs/manni.config.yaml": `encryptionKey: ${KEY}\n`,
+      "docs/api/.keep": "",
+    });
+    const found = await findConfigFile(join(root, "docs", "api"), META);
+    expect(found?.dir).toBe(join(root, "docs"));
+    expect(found?.value).toBeNull();
+  });
+
+  it("a file with no encryptionKey carries none", async () => {
+    const root = await tree({ "manni.config.yaml": "meta:\n  allowEmpty: true\n" });
+    expect((await findConfigFile(root, META))?.encryptionKey).toBeUndefined();
+  });
+
+  it.each([
+    ["too short", "encryptionKey: hunter2\n"],
+    ["not a string", "encryptionKey: 12345678901234567890123456789012345\n"],
+    ["empty", "encryptionKey:\n"],
+    ["a mapping", "encryptionKey:\n  value: x\n"],
+  ])("a malformed encryptionKey (%s) is refused without echoing it", async (_label, text) => {
+    class MyError extends Error {}
+    const root = await tree({ "manni.config.yaml": `${text}meta: {}\n` });
+    const run = findConfigFile(root, { ...META, toError: (m) => new MyError(m) });
+    await expect(run).rejects.toBeInstanceOf(MyError);
+    await expect(run).rejects.toThrow(
+      'manni.config.yaml: "encryptionKey" must be at least 32 hex or base64url characters. Run `manni key set` to generate one.',
+    );
+    await expect(run).rejects.not.toThrow(/hunter2|value: x/);
+  });
+
+  it("parses encryptionKeyPrevious, present only while a rotation is unfinished (0045)", async () => {
+    const previous = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    const root = await tree({
+      "manni.config.yaml": `encryptionKey: ${KEY}\nencryptionKeyPrevious: ${previous}\nmeta: {}\n`,
+    });
+    const found = await findConfigFile(root, META);
+    expect(found?.encryptionKey).toBe(KEY);
+    expect(found?.encryptionKeyPrevious).toBe(previous);
+  });
+
+  it("a malformed encryptionKeyPrevious is refused without echoing it", async () => {
+    class MyError extends Error {}
+    const root = await tree({
+      "manni.config.yaml": `encryptionKey: ${KEY}\nencryptionKeyPrevious: hunter2\nmeta: {}\n`,
+    });
+    const run = findConfigFile(root, { ...META, toError: (m) => new MyError(m) });
+    await expect(run).rejects.toBeInstanceOf(MyError);
+    await expect(run).rejects.toThrow(
+      'manni.config.yaml: "encryptionKeyPrevious" must be at least 32 hex or base64url characters.',
+    );
+    await expect(run).rejects.not.toThrow(/hunter2/);
+  });
+
+  it("a legacy file's encryptionKey is not read: its whole document is the tool's section", async () => {
+    const root = await tree({
+      "docmeta.config.yaml": `encryptionKey: ${KEY}\npaths: [old]\n`,
+    });
+    const found = await findConfigFile(root, META);
+    expect(found?.kind).toBe("legacy");
+    expect(found?.encryptionKey).toBeUndefined();
+  });
+
   it("a legacy per-tool file carries no collections", async () => {
     const root = await tree({ "docmeta.config.yaml": "paths: [old]\n" });
     const found = await findConfigFile(root, META);
@@ -271,6 +365,31 @@ describe("family config discovery", () => {
       expect(read.wrapped).toBe(true);
       expect(read.value).toEqual({ allowEmpty: true });
       expect(read.collections.map((c) => c.name)).toEqual(["guides"]);
+    });
+
+    it("a file with encryptionKey: and a section hands over the section and the key", async () => {
+      const root = await tree({
+        "anything.yaml": `encryptionKey: ${KEY}\ncite:\n  sources: [src]\n`,
+      });
+      const read = await readConfigFile("anything.yaml", root, CITE);
+      expect(read.wrapped).toBe(true);
+      expect(read.value).toEqual({ sources: ["src"] });
+      expect(read.encryptionKey).toBe(KEY);
+    });
+
+    it("a file with encryptionKey: alone is a family file with an empty section", async () => {
+      const root = await tree({ "anything.yaml": `encryptionKey: ${KEY}\n` });
+      const read = await readConfigFile("anything.yaml", root, CITE);
+      expect(read.wrapped).toBe(true);
+      expect(read.value).toBeNull();
+      expect(read.encryptionKey).toBe(KEY);
+    });
+
+    it("a malformed encryptionKey is refused by the spelling the user typed", async () => {
+      const root = await tree({ "anything.yaml": "encryptionKey: nope\n" });
+      await expect(readConfigFile("anything.yaml", root, CITE)).rejects.toThrow(
+        'anything.yaml: "encryptionKey" must be at least 32 hex or base64url characters.',
+      );
     });
 
     it("takes the whole document, and no collections, for a legacy shape", async () => {

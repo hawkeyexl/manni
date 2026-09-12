@@ -37,6 +37,7 @@ import {
   isMap,
   isNode,
   isScalar,
+  isSeq,
   parseDocument,
   type Node,
 } from "yaml";
@@ -48,8 +49,10 @@ import { FILE_SCHEMA_KEY } from "./resolve-schema.js";
 import { classifyRef } from "./schema-registry.js";
 import { fetchExternalMetadata } from "./external-metadata-fetch.js";
 import { STDIN_LABEL } from "./load-files.js";
-import { escapePointerSegment } from "../extractors/pointer.js";
+import { escapePointerSegment, positionForFactory } from "../extractors/pointer.js";
 import { DocmetaError, type ExtractedMetadata } from "../types.js";
+import { decryptValue, isEncryptedValue } from "../../shared/encryption.js";
+import { EncryptionRefusal, META_CONTEXT } from "./encrypted.js";
 
 /**
  * The `schema` ref a collision finding carries, and so its baseline and rule
@@ -84,6 +87,14 @@ export interface ExternalMetadataValue {
   file: string;
   /** 1-based line of the key in the manifest, when known. */
   line?: number;
+  /**
+   * 1-based manifest line of every node inside `value`, keyed by the JSON
+   * Pointer relative to `value` (`/2/source/file`). A mapping member sits on
+   * its key's line, and a list item on the line its node starts. Present only
+   * when `value` is a mapping or a list with members; `line` answers for the
+   * value itself.
+   */
+  lines?: ReadonlyMap<string, number>;
 }
 
 /** One manifest entry, for the orphan checks. */
@@ -155,7 +166,14 @@ export interface ExternalMetadataCollision {
 /** A field-joined entry a document matched (0039). */
 export interface ExternalMetadataJoin {
   field: string;
+  /** The value matched: the field's plaintext, decrypted first when the page holds it encrypted. */
   value: string;
+  /**
+   * The field as the page holds it, when that differs from `value`: the
+   * ciphertext of an encrypted join field (proposal 0045). A finding about
+   * the join names this, never the plaintext.
+   */
+  pageValue?: string;
   /** The manifest, as the run reports it. */
   file: string;
   /** The collection that manifest belongs to (proposal 0041). */
@@ -179,6 +197,11 @@ export interface MergedMetadata {
    * manifest supplied — a bare key or its `/key` pointer, and anything
    * beneath it — and `undefined` for everything the document owns, which is
    * what `lineFor` is for.
+   *
+   * The line is the deepest manifest node the pointer reaches, so
+   * `/citations/2` is the third item's line and `/citations/2/source/file`
+   * that member's. A pointer past what the manifest holds falls back to the
+   * nearest ancestor that exists, and at worst to the owned key's line.
    */
   locate: (pointer: string) => SourceLocation | undefined;
 }
@@ -364,11 +387,13 @@ function parseManifest(
           ? null
           : (kv.value as Node).toJS(doc, { maxAliasCount: 100 });
       const line = lineAt(kv.key);
+      const lines = nodeLines(kv.value, lineAt);
       values.set(key, {
         value,
         collection,
         file,
         ...(line === undefined ? {} : { line }),
+        ...(lines.size === 0 ? {} : { lines }),
       });
     }
     target.set(indexKey, values);
@@ -381,6 +406,41 @@ function parseManifest(
       ...(entryLine === undefined ? {} : { line: entryLine }),
     });
   }
+}
+
+/**
+ * The line of every node inside one manifest value, keyed by the JSON Pointer
+ * relative to that value, RFC 6901 escaped as Ajv's `instancePath` is.
+ *
+ * A mapping member is recorded at its key's line, the same rule the owned key
+ * itself follows, and a list item at the line its node starts: for a block
+ * item that is the `- ` line, for a flow item the line its `{` or scalar is
+ * on. An alias is recorded where it is written and not followed, so a pointer
+ * beneath it falls back to the alias's own line.
+ */
+function nodeLines(
+  node: unknown,
+  lineAt: (node: unknown) => number | undefined,
+  prefix = "",
+  out = new Map<string, number>(),
+): Map<string, number> {
+  if (isMap(node)) {
+    for (const kv of node.items) {
+      const seg = isScalar(kv.key) ? String(kv.key.value) : String(kv.key);
+      const pointer = `${prefix}/${escapePointerSegment(seg)}`;
+      const line = lineAt(kv.key) ?? lineAt(kv.value);
+      if (line !== undefined) out.set(pointer, line);
+      nodeLines(kv.value, lineAt, pointer, out);
+    }
+  } else if (isSeq(node)) {
+    node.items.forEach((item, i) => {
+      const pointer = `${prefix}/${String(i)}`;
+      const line = lineAt(item);
+      if (line !== undefined) out.set(pointer, line);
+      nodeLines(item, lineAt, pointer, out);
+    });
+  }
+  return out;
 }
 
 /** The string a document's join field compares as; undefined when it cannot. */
@@ -408,6 +468,11 @@ function joinValue(raw: unknown): string | undefined {
  * `present`, `format` and the document's own positions are untouched. A
  * manifest key is not in the document, so `lineFor` keeps answering
  * `undefined` for it, and `locate` answers instead.
+ *
+ * A join field the page holds encrypted (proposal 0045) is decrypted with
+ * `options.encryptionKey` before it is matched. With no key, and a manifest
+ * of this document's collections joining on that field, the run cannot match
+ * and refuses. A ciphertext that does not decrypt matches nothing.
  */
 export function mergeExternalMetadata(
   label: string,
@@ -415,6 +480,7 @@ export function mergeExternalMetadata(
   index: ExternalMetadataIndex | null,
   memberOf: readonly string[],
   base: string,
+  options: { encryptionKey?: () => string | undefined } = {},
 ): MergedMetadata {
   const none = (): undefined => undefined;
   // A file that belongs to no collection gets nothing merged, and carries no
@@ -441,7 +507,27 @@ export function mergeExternalMetadata(
     if (byPath) sources.push(byPath);
   }
   for (const [field, byValue] of index.byField) {
-    const value = joinValue(extracted.data[field]);
+    const raw = extracted.data[field];
+    let value: string | undefined;
+    let pageValue: string | undefined;
+    if (isEncryptedValue(raw)) {
+      const joinsHere = [...byValue.values()].some((supplied) =>
+        [...supplied.values()].some((sv) => mine(sv.collection)),
+      );
+      if (!joinsHere) continue;
+      const key = options.encryptionKey?.();
+      if (key === undefined) {
+        throw new EncryptionRefusal(
+          `externalMetadata join field "${field}" is encrypted on these pages, and no encryption key is available to match them.`,
+        );
+      }
+      const opened = decryptValue(raw, key, META_CONTEXT);
+      if (!opened.ok) continue;
+      value = joinValue(opened.value);
+      pageValue = raw;
+    } else {
+      value = joinValue(raw);
+    }
     if (value === undefined) continue;
     const hit = byValue.get(value);
     if (!hit) continue;
@@ -451,7 +537,13 @@ export function mergeExternalMetadata(
     // second entry for one document would read as a second document.
     const first = [...hit.values()].find((sv) => mine(sv.collection));
     if (first) {
-      joins.push({ field, value, file: first.file, collection: first.collection });
+      joins.push({
+        field,
+        value,
+        ...(pageValue === undefined ? {} : { pageValue }),
+        file: first.file,
+        collection: first.collection,
+      });
     }
   }
 
@@ -493,21 +585,39 @@ export function mergeExternalMetadata(
     }
   }
   const locate = (pointer: string): SourceLocation | undefined => {
-    const top = topLevelKey(pointer);
-    if (top === undefined) return undefined;
-    const sv = merged.get(top);
+    const split = splitTopLevel(pointer);
+    if (split === undefined) return undefined;
+    const sv = merged.get(split.key);
     if (!sv) return undefined;
-    return { file: sv.file, ...(sv.line === undefined ? {} : { line: sv.line }) };
+    const line = manifestLine(sv, split.rest);
+    return { file: sv.file, ...(line === undefined ? {} : { line }) };
   };
   return { extracted: { ...extracted, data }, collisions, joins, locate };
 }
 
-/** The top-level key a pointer (or bare key) addresses; undefined for the root. */
-function topLevelKey(pointer: string): string | undefined {
+/**
+ * The manifest line of `rest`, a pointer inside one supplied value: the
+ * deepest node it reaches, else the nearest recorded ancestor, else the owned
+ * key's own line. The same walk-up rule a document's `lineFor` follows.
+ */
+function manifestLine(sv: ExternalMetadataValue, rest: string): number | undefined {
+  if (rest === "" || sv.lines === undefined) return sv.line;
+  return positionForFactory(sv.lines)(rest) ?? sv.line;
+}
+
+/**
+ * The top-level key a pointer (or bare key) addresses, unescaped, and the
+ * still-escaped pointer beneath it. Undefined for the root.
+ */
+function splitTopLevel(pointer: string): { key: string; rest: string } | undefined {
   if (pointer === "") return undefined;
-  if (!pointer.startsWith("/")) return pointer;
-  const seg = pointer.slice(1).split("/")[0] ?? "";
-  return seg.replace(/~1/g, "/").replace(/~0/g, "~");
+  if (!pointer.startsWith("/")) return { key: pointer, rest: "" };
+  const slash = pointer.indexOf("/", 1);
+  const seg = slash < 0 ? pointer.slice(1) : pointer.slice(1, slash);
+  return {
+    key: seg.replace(/~1/g, "/").replace(/~0/g, "~"),
+    rest: slash < 0 ? "" : pointer.slice(slash),
+  };
 }
 
 /** The `/key` pointer for an external-metadata finding, RFC 6901 escaped. */

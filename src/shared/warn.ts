@@ -16,6 +16,17 @@ export function warn(message: string): void {
   process.stderr.write(`${programName()}: ${message}\n`);
 }
 
+/**
+ * Diagnostics from a command core. Always stderr, never stdout: `json` and
+ * `github` output has to stay parseable, and a note is not the report.
+ * Unlike `warn`, said every time: a notice reports what a run did, not a
+ * condition that holds.
+ */
+export function notice(message: string): void {
+  process.stderr.write(`${programName()}: ${message}
+`);
+}
+
 /** Forget what has been said, so a test can assert a warning fires again. */
 export function resetWarnings(): void {
   said.clear();

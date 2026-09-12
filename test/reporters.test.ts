@@ -47,6 +47,7 @@ import { runValidate } from "../src/meta/commands/validate.js";
 import { makeTempRepo, removeTempRepo } from "./helpers/temp-repo.js";
 import type {
   BaselineSummary,
+  FieldError,
   RunSummary,
   ValidationResult,
 } from "../src/meta/types.js";
@@ -1231,6 +1232,184 @@ describe("reporters: the common format pair", () => {
 
   it("leaves the five-value validate list reading as it always did", () => {
     expect(REPORT_FORMAT_LIST).toBe("pretty, json, github, sarif, or junit");
+  });
+});
+
+// A finding may carry a severity. The invariant lives on `FieldError`: a
+// result is `ok` iff no entry of `errors` has severity `error`, and an absent
+// severity means `error`. Nothing in meta sets `warning` yet; a sibling tool
+// does, and its findings ride these reporters.
+describe("reporters: warning severity", () => {
+  const warning: FieldError = {
+    schema: "manni:cite",
+    instancePath: "/citations/0",
+    message: "moved -> lib/limits.ts:4",
+    keyword: "moved",
+    subject: "fetch-timeout",
+    line: 9,
+    severity: "warning",
+  };
+  const error: FieldError = {
+    ...warning,
+    keyword: "changed",
+    message: "changed since 3f9c2a1",
+    severity: "error",
+  };
+  const warnOnly: ValidationResult = {
+    file: "warn.md",
+    format: "markdown",
+    ok: true,
+    schemas: ["manni:cite"],
+    errors: [warning],
+  };
+  const mixed: ValidationResult = {
+    file: "mixed.md",
+    format: "markdown",
+    ok: false,
+    schemas: ["manni:cite"],
+    errors: [warning, error],
+  };
+  const both = [warnOnly, mixed];
+  const sum: RunSummary = {
+    files: 2,
+    passed: 1,
+    failed: 1,
+    errors: 1,
+    warnings: 2,
+  };
+
+  it("pretty marks a warning-only file with ⚠, not ✗, and does not fail it", () => {
+    const out = renderPretty(both, sum, { color: false });
+    expect(out).toContain("⚠ warn.md");
+    expect(out).not.toContain("✗ warn.md");
+    expect(out).not.toContain("✓ warn.md");
+    expect(out).toContain("✗ mixed.md");
+    expect(out).toContain("moved -> lib/limits.ts:4");
+  });
+
+  it("pretty counts warnings on the summary line, and only when there are any", () => {
+    const out = renderPretty(both, sum, { color: false });
+    expect(out).toContain("2 files checked, 1 passed, 1 failed, 1 error, 2 warnings");
+    const none = renderPretty(results, summary, { color: false });
+    expect(none).not.toContain("warning");
+  });
+
+  it("pretty quiet mode keeps a warning-only file: it has something to say", () => {
+    const out = renderPretty(both, sum, { color: false, quiet: true });
+    expect(out).toContain("⚠ warn.md");
+  });
+
+  it("github emits ::warning for a warning and ::error for an error", () => {
+    const out = renderGithub(both);
+    const lines = out.split("\n");
+    expect(lines).toHaveLength(3);
+    expect(lines[0]).toMatch(/^::warning file=warn\.md,line=9::/);
+    expect(lines[1]).toMatch(/^::warning file=mixed\.md,line=9::/);
+    expect(lines[2]).toMatch(/^::error file=mixed\.md,line=9::/);
+  });
+
+  it("sarif reports level warning for a warning and error otherwise", () => {
+    const run = sarifRun(renderSarif(both));
+    expect(run.results.map((r) => r.level)).toEqual(["warning", "warning", "error"]);
+    expectValidSarif(renderSarif(both));
+  });
+
+  it("junit: a warning is not a <failure>, and a warning-only file passes", () => {
+    const doc = parseXml(renderJunit(both));
+    expect(attr(doc.documentElement, "tests")).toBe("2");
+    expect(attr(doc.documentElement, "failures")).toBe("1");
+    const cases = doc.getElementsByTagName("testcase");
+    expect(cases[0]?.getElementsByTagName("failure").length).toBe(0);
+    expect(cases[1]?.getElementsByTagName("failure").length).toBe(1);
+    expect(attr(cases[1]?.getElementsByTagName("failure")[0], "type")).toBe(
+      "manni:cite/changed",
+    );
+  });
+
+  it("json carries severity through untouched", () => {
+    const parsed = JSON.parse(renderJson(both, sum));
+    expect(parsed.results[0].errors[0].severity).toBe("warning");
+    expect(parsed.summary.warnings).toBe(2);
+  });
+});
+
+// The family's third level. A notice is reported like a warning and never
+// fails anything, and each sink spells it in its own word: GitHub's
+// `::notice`, SARIF's `note`. JUnit has no level below failure, so a notice
+// is a passing testcase there, as a warning is.
+describe("reporters: notice severity", () => {
+  const notice: FieldError = {
+    schema: "manni:cite",
+    instancePath: "/citations/0",
+    message: "changed since 3f9c2a1",
+    keyword: "changed",
+    subject: "fetch-timeout",
+    line: 9,
+    severity: "notice",
+  };
+  const warning: FieldError = {
+    ...notice,
+    keyword: "moved",
+    message: "moved -> lib/limits.ts:4",
+    severity: "warning",
+  };
+  const noticeOnly: ValidationResult = {
+    file: "note.md",
+    format: "markdown",
+    ok: true,
+    schemas: ["manni:cite"],
+    errors: [notice],
+  };
+  const mixed: ValidationResult = {
+    file: "mixed.md",
+    format: "markdown",
+    ok: true,
+    schemas: ["manni:cite"],
+    errors: [warning, notice],
+  };
+  const both = [noticeOnly, mixed];
+  const sum: RunSummary = {
+    files: 2,
+    passed: 2,
+    failed: 0,
+    errors: 0,
+    warnings: 1,
+    notices: 2,
+  };
+
+  it("github emits ::notice for a notice, beside ::warning for a warning", () => {
+    const levels = renderGithub(both)
+      .split("\n")
+      .map((line) => line.slice(0, line.indexOf(" ")));
+    expect(levels).toEqual(["::notice", "::warning", "::notice"]);
+  });
+
+  it("sarif reports level note for a notice, and stays valid", () => {
+    const run = sarifRun(renderSarif(both));
+    expect(run.results.map((r) => r.level)).toEqual(["note", "warning", "note"]);
+    expectValidSarif(renderSarif(both));
+  });
+
+  it("junit: a notice is not a <failure>", () => {
+    const doc = parseXml(renderJunit(both));
+    expect(attr(doc.documentElement, "tests")).toBe("2");
+    expect(attr(doc.documentElement, "failures")).toBe("0");
+    expect(doc.getElementsByTagName("failure").length).toBe(0);
+  });
+
+  it("pretty names the level and counts notices apart from warnings", () => {
+    const out = renderPretty(both, sum, { color: false });
+    expect(out).toContain("notice changed since 3f9c2a1");
+    expect(out).toContain("2 files checked, 2 passed, 0 failed, 0 errors, 1 warning, 2 notices");
+  });
+
+  it("json carries a notice through untouched", () => {
+    const parsed = JSON.parse(renderJson(both, sum)) as {
+      results: { errors: { severity: string }[] }[];
+      summary: RunSummary;
+    };
+    expect(parsed.results[0]?.errors[0]?.severity).toBe("notice");
+    expect(parsed.summary.notices).toBe(2);
   });
 });
 

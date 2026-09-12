@@ -26,6 +26,9 @@
 # What a bare `manni meta validate` checks: the published docs pages. Named
 # `site` rather than `docs`, which `collections:` refuses — `docs` is the table
 # every `manni meta query` reads, and a view of that name would shadow it.
+# The citation tool reads it too: a bare `manni cite check` checks these same
+# pages against this checkout, and every other cite key is a default, so it
+# needs no section of its own.
 collections:
   - name: site
     paths:

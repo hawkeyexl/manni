@@ -12,6 +12,8 @@
 import { Command } from "commander";
 import pkg from "../package.json" with { type: "json" };
 import { buildProgram as buildA11y } from "./a11y/cli.js";
+import { buildProgram as buildCite } from "./cite/cli.js";
+import { buildProgram as buildKey } from "./key/cli.js";
 import { buildProgram as buildMeta } from "./meta/cli.js";
 import { runIfMain } from "./shared/run.js";
 
@@ -57,6 +59,19 @@ export function buildProgram(): Command {
       .description(
         "Crawl a site and check every page for accessibility violations with axe-core",
       ),
+  );
+  program.addCommand(
+    buildCite()
+      .name("cite")
+      .description(
+        "Track citations from doc claims to source lines and check them for drift",
+      ),
+  );
+  // Not a tool but a family resource with verbs (proposal 0045).
+  program.addCommand(
+    buildKey()
+      .name("key")
+      .description("Set and rotate the family key that encrypted values are encrypted with."),
   );
   return program;
 }

@@ -60,6 +60,8 @@ These came out of a review of the shipped product against the intent recorded in
 | [0041](0041-collections.md) | `collections:`, the family-level home for document sets and their external metadata; `sidecars` becomes `externalMetadata` on a collection and `--collection <name>` scopes a run | Maya · M1, M2 / Devin · D1, D4 / Sara · S1 | Implemented |
 | [0042](0042-command-source.md) | The `command` source: a managed field derived by an argv the config names, so `verified-against` can be checked against the product's own version | Maya · M1, M2 / Devin · D4 / Sara · S2 | Implemented (#21) |
 | [0043](0043-resolved-reads.md) | Resolved reads, where a third read-only view `resolved` holds the asserted value or the derived one, with `_origin` naming which. `get` derives by default | Maya · M1, M2 / Devin · D4 / Theo · T1 | Implemented (#22) |
+| [0044](0044-citations-and-drift.md) | Citations and drift, which pin a claim to source lines so `manni cite` can check the pin | Devin · D4 / Theo · T1 / Maya · M2 / Sara · S1 | Implemented (#17) |
+| [0045](0045-family-encryption-key.md) | A family encryption key: `encryptionKey:`, `manni key`, and `x-manni-encrypt` for metadata that must not appear in plain text | Sara · S1 / Devin · D5 / Maya · M5 | Implemented (#17) |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -116,11 +118,20 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
                           config-trusts-the-operator line 0026 and 0038 drew)
 0042 ──> 0043            (the derived channel gave a value two possible origins;
                           `resolved` is the view that says which one a read got)
+
+0023 ──┬─> 0044          (the family the citations vocabulary joins as its tenth id;
+       │                  source-of-truth is the page-grain anchor it refines to the line)
+0033 ──┤                 (the umbrella a sibling domain mounts under, and the import rule)
+0034 ──┤                 (the command grammar: no default subcommand, one separator per list)
+0026 ──┘                 (a finding no Ajv keyword produced, riding the reporters and baseline)
+
+0041 ──┬─> 0045          (encryptionKey: joins collections: as a family key, and stops discovery)
+0044 ──┘                 (cite's salted hashes, which the family key and encryption replace)
 ```
 
 The four `Proposed` SQL items (0026–0029) are independent of each other, with one exception. 0026 and 0029 both grow `query`'s `-f` value list. Each specifies the combined six-value surface, and whichever is implemented second merges into the one const. Recommended implementation order is 0026 → 0029 → 0027 → 0028, which is impact-first. The two config-touching ones (0026, 0027) land apart, so the second rebases trivially.
 
-**Safe to start in any order, no blockers:** 0031. Its dependencies are all shipped, and the arrows above record which rules it inherits, not what it waits on. 0011 held this slot until it shipped. 0023, the only other `Proposed` entry, is not in this bucket. It waits on public review rather than on an implementation slot.
+**Safe to start in any order, no blockers:** 0031. Its dependencies are all shipped, and the arrows above record which rules it inherits, not what it waits on. 0011 held this slot until it shipped. 0023, another `Proposed` entry, is not in this bucket. It waits on public review rather than on an implementation slot. 0044 shipped alongside its own record on `tool/cite`; its vocabulary still waits on 0023's review, its tool does not.
 
 **Shipped so far:** everything the table above marks `Implemented`. Through 0025 that is all but 0023 (`Proposed`), 0016 and 0019 (`Accepted`, nothing to ship), and the superseded or rejected halves the Status column records. It also includes the standalone false-green guard called out in [0008 § Problem](0008-remote-schema-durability.md#problem). The dependency graph above is kept as the record of why the early set landed in the order it did.
 

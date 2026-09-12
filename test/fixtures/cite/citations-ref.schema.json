@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/manni/citations-ref.schema.json",
+  "title": "The composition that does not work, kept so the docs can prove it",
+  "description": "docs/src/content/docs/cite/set-up/require-citations.mdx says a house schema cannot reach the citations vocabulary through $ref, because only the bundled built-ins are registered for reference resolution and citations is not one of them. This file is that attempt. Validating anything against it is exit 2 with a compile error, which is the page's evidence.",
+  "type": "object",
+  "allOf": [{ "$ref": "manni:citations:1.0.0-proposal.3" }],
+  "required": ["citations"]
+}

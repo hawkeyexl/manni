@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manni:citations:1.0.0-proposal.1",
+  "title": "manni citations vocabulary (1.0.0-proposal.1)",
+  "description": "What do this page's claims rest on: for each one, the source lines it was written from, a hash of those lines, and the commit the hash was taken at. A manni common vocabulary: any drift check can implement it, and other schemas may compose on top of it. The family's principle 4 says a derivable fact lies, and a pin looks derivable, since the source is right there to hash again. It is not. A pin is a record of the past, not a copy of the present: it says what the lines were when the sentence was written, and the check is the comparison between that record and the file as it is now. Recompute it on every run and there is nothing to compare against. That is the same object as evals' `generated-assertion-hash` and the `integrity` pins on a config's schema entries, and it lives here under the same spelling. `source-of-truth` (manni:stewardship) names the file a page answers to; a citation names the lines a sentence answers to. Both exist because they answer at different grains: a page can name its source without anyone having pinned a single claim yet. The page root stays open so sibling tools' keys pass untouched, but the `citation-` prefix is reserved and enforced here: an unrecognized `citation-*` key is rejected, giving the open root the loud-typo property a closed container would have.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "citations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/citationEntry"
+      },
+      "description": "The page's citations, one entry per pinned range. An empty list is not a declaration; a page with no citations omits the key. Ids are unique within a page: two entries claiming one id is an error, not a last-one-wins override. JSON Schema cannot say that over a list whose members may omit the id, so it is a requirement on implementations, stated here so every tool agrees on the rule."
+    },
+    "citation-commit": {
+      "$ref": "#/$defs/commit",
+      "description": "The commit every entry that omits its own `commit` was pinned at. A page whose citations were all minted in one sitting writes it once here instead of forty times below. An entry's own `commit` wins for that entry."
+    }
+  },
+  "patternProperties": {
+    "^citation-(?!commit$)": false
+  },
+  "$defs": {
+    "citationEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "src",
+        "integrity"
+      ],
+      "properties": {
+        "src": {
+          "$ref": "#/$defs/srcRef",
+          "description": "The cited lines: `path`, `path:L` or `path:L1-L2`, where `path` is repo-root-relative, posix-separated, and free of `.` and `..` segments, and lines are 1-based and inclusive. `path:L` is the canonical spelling of one line; `path:L-L` is accepted but not written. A bare `path` pins the whole file. In place of the path, `~` followed by sixteen lowercase hex digits is an obfuscated source: the first sixteen hex digits of sha256 over the salt, one LF, and the path spelled exactly as a plain `src` would spell it. Only a checkout that has the salt and the files can resolve it, so a public docs repo can cite a private code repo without publishing its paths. The line forms are the same after the token. `L1 <= L2` is a rule on implementations, since a pattern cannot compare two numbers."
+        },
+        "integrity": {
+          "type": "string",
+          "pattern": "^sha256-[0-9a-f]{64}$",
+          "description": "The pin: `sha256-` and sixty-four lowercase hex digits over the cited lines under one rule. Decode as UTF-8; drop one leading byte-order mark; turn CRLF into LF; split on LF and discard the empty element a trailing LF leaves; take lines L1 to L2 inclusive, or every line for a bare path; join with LF and no trailing LF; keep trailing whitespace. A plain `src` hashes that text alone. An obfuscated `src` hashes the salt, one LF, and the text, so a public page carries no verifier a reader could run against a guessed private line. Spelled `integrity` with an algorithm prefix, as the config's schema pins are and as Subresource Integrity is, so a second algorithm can arrive without a second field. Hex rather than SRI's base64 because the family's other hash, `generated-assertion-hash`, is hex, and one page should not carry two encodings of one idea."
+        },
+        "commit": {
+          "$ref": "#/$defs/commit",
+          "description": "The commit this pin was minted at. Overrides the page's `citation-commit` for this entry. Without either, a check can still say the lines changed; with one it can say since when, and whether the pin was ever true."
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "description": "A kebab-case name for this citation, unique within the page. What an in-body reference names, and what a finding is reported under. Optional because a bare pin needs no name; required in practice the moment the body points at the entry or the same claim occurs twice."
+        },
+        "claim": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The sentence the citation supports, verbatim. An implementer finds it in the body, compared with whitespace collapsed so a soft-wrapped sentence still matches, and reports the citation at that line. A claim that occurs nowhere is an error: the pin has nothing to hold up."
+        },
+        "quote": {
+          "type": "boolean",
+          "default": false,
+          "description": "The page reproduces the cited lines in a fenced block, and that block is the anchor. An implementer compares the block's content with the source under the same rule the pin uses, so a quoted snippet that drifts from its source is a finding even while the pin still holds. Default false."
+        }
+      }
+    },
+    "srcRef": {
+      "type": "string",
+      "pattern": "^(?:~[0-9a-f]{16}|(?!~)(?:(?!\\.\\.?(?:/|:|$))[^/\\\\:\\r\\n\\t]+)(?:/(?:(?!\\.\\.?(?:/|:|$))[^/\\\\:\\r\\n\\t]+))*)(?::[1-9][0-9]*(?:-[1-9][0-9]*)?)?$",
+      "description": "A source reference: an obfuscated token or a relative posix path, then an optional `:L` or `:L1-L2`. Segments may hold spaces and dots but not `/`, `\\`, `:` or a line break, so a URL, a drive letter, a Windows path and an absolute path all fail here rather than resolving to nothing. `.` and `..` segments fail because a path that walks out of the root is not a source. Line numbers start at 1; there is no line 0 to cite."
+    },
+    "commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{7,40}$",
+      "description": "A git commit as lowercase hex: at least the seven digits git abbreviates to, at most the full forty. A tool writes all forty, because an abbreviation that is unique today need not be next year; a person may type seven."
+    }
+  }
+}

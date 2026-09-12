@@ -1,0 +1,14 @@
+# One managed field, `owner`, that the schema also marks `x-manni-encrypt`
+# (proposals 0040 and 0045). Only the CODEOWNERS source is consulted, so no
+# run needs gh or glab.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+
+meta:
+  schemas:
+    - ./owner.schema.json
+  derive:
+    fields: [owner]
+    sources: [codeowners]

@@ -1,17 +1,22 @@
 import { describe, it, expect } from "vitest";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import {
   BASELINE_VERSION,
   DEFAULT_BASELINE_PATH,
+  LEGACY_BASELINE_PATH,
   applyBaseline,
   buildBaseline,
   diffBaselines,
   fingerprint,
   parseBaseline,
+  resolveBaselineRequest,
   serializeBaseline,
+  settleBaseline,
   writeBaselineFile,
 } from "../src/meta/core/baseline.js";
+import { resetWarnings } from "../src/shared/warn.js";
 import { DocmetaError, type FieldError, type ValidationResult } from "../src/meta/types.js";
 
 const err = (over: Partial<FieldError> = {}): FieldError => ({
@@ -296,6 +301,43 @@ describe("applyBaseline", () => {
   });
 });
 
+describe("applyBaseline: warning severity", () => {
+  const warning = err({ keyword: "moved", severity: "warning" });
+  const failing = err({ keyword: "changed", severity: "error" });
+  const empty = {
+    version: BASELINE_VERSION,
+    generatedWith: "t",
+    entries: { "a.md": [] },
+  };
+
+  it("leaves a warning-only file ok, because a warning never fails a run", () => {
+    const applied = applyBaseline([result("a.md", [warning])], empty);
+    expect(applied.results[0]?.ok).toBe(true);
+    expect(applied.results[0]?.errors).toEqual([warning]);
+  });
+
+  it("fails a file once an unbaselined error-severity finding remains", () => {
+    const applied = applyBaseline([result("a.md", [warning, failing])], empty);
+    expect(applied.results[0]?.ok).toBe(false);
+  });
+
+  it("passes a file whose only error-severity finding is baselined, warnings or not", () => {
+    const recorded = buildBaseline([result("a.md", [failing])], "t");
+    const applied = applyBaseline([result("a.md", [warning, failing])], recorded);
+    expect(applied.results[0]?.ok).toBe(true);
+    expect(applied.results[0]?.baselined).toBe(1);
+  });
+});
+
+describe("fingerprint: severity", () => {
+  it("is excluded, so a rule that changes severity does not re-open every finding", () => {
+    expect(fingerprint(err({ severity: "warning" }))).toBe(
+      fingerprint(err({ severity: "error" })),
+    );
+    expect(fingerprint(err({ severity: "warning" }))).toBe(fingerprint(err()));
+  });
+});
+
 describe("diffBaselines", () => {
   const a = buildBaseline([result("docs/a.md", [err({ subject: "type" })])], "3.4.2");
   const b = buildBaseline(
@@ -412,5 +454,142 @@ describe("entry keys that collide with Object.prototype", () => {
     expect(() => applyBaseline(results, built)).not.toThrow();
     const applied = applyBaseline(results, built);
     expect(applied.results.find((r) => r.file === "toString")?.ok).toBe(true);
+  });
+});
+
+describe("resolveBaselineRequest", () => {
+  // Lifted out of `validate` so a sibling tool can run the same ratchet under
+  // its own file name. Meta keeps its legacy fallback; a sibling passes none.
+  const metaDefaults = {
+    current: DEFAULT_BASELINE_PATH,
+    legacy: LEGACY_BASELINE_PATH,
+  };
+  const cwd = "/work";
+
+  it("returns null when nothing asked for a baseline", () => {
+    expect(
+      resolveBaselineRequest({}, undefined, undefined, cwd, metaDefaults),
+    ).toBeNull();
+  });
+
+  it("resolves a typed path against cwd, and reads it", () => {
+    const req = resolveBaselineRequest(
+      { baseline: "ci/base.json" },
+      undefined,
+      "/work/docs",
+      cwd,
+      metaDefaults,
+    );
+    expect(req).toEqual({
+      absPath: resolve(cwd, "ci/base.json"),
+      label: "ci/base.json",
+      write: false,
+    });
+  });
+
+  it("uses the caller's default name when --baseline is bare", () => {
+    const req = resolveBaselineRequest(
+      { baseline: true },
+      undefined,
+      undefined,
+      cwd,
+      { current: ".manni-cite-baseline.json" },
+    );
+    expect(req).toEqual({
+      absPath: resolve(cwd, ".manni-cite-baseline.json"),
+      label: ".manni-cite-baseline.json",
+      write: false,
+    });
+  });
+
+  it("resolves an implied path against the config's directory, not cwd", () => {
+    const req = resolveBaselineRequest(
+      { writeBaseline: true },
+      "custom.json",
+      "/work/docs",
+      cwd,
+      metaDefaults,
+    );
+    expect(req).toEqual({
+      absPath: resolve("/work/docs", "custom.json"),
+      label: "custom.json",
+      write: true,
+    });
+  });
+
+  it("honours --no-baseline over a configured baseline", () => {
+    expect(
+      resolveBaselineRequest(
+        { baseline: false },
+        "custom.json",
+        undefined,
+        cwd,
+        metaDefaults,
+      ),
+    ).toBeNull();
+  });
+
+  it("falls back to the legacy file only when a legacy name was given", () => {
+    resetWarnings();
+    const dir = mkdtempSync(join(tmpdir(), "manni-baseline-legacy-"));
+    writeFileSync(join(dir, LEGACY_BASELINE_PATH), "{}");
+    const withLegacy = resolveBaselineRequest(
+      { baseline: true },
+      undefined,
+      dir,
+      dir,
+      metaDefaults,
+    );
+    expect(withLegacy?.label).toBe(LEGACY_BASELINE_PATH);
+
+    // A sibling tool with no legacy name never looks at the old file, even
+    // when one is sitting right there.
+    const without = resolveBaselineRequest(
+      { baseline: true },
+      undefined,
+      dir,
+      dir,
+      { current: DEFAULT_BASELINE_PATH },
+    );
+    expect(without?.label).toBe(DEFAULT_BASELINE_PATH);
+  });
+});
+
+describe("settleBaseline", () => {
+  const ctx = { cwd: "/work", base: "/work" };
+
+  it("passes results through untouched when there is no request", async () => {
+    const results = [result("a.md", [err()])];
+    const settled = await settleBaseline(results, null, ctx);
+    expect(settled).toEqual({ results });
+  });
+
+  it("names the missing file when asked to read one that is not there", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "manni-baseline-missing-"));
+    await expect(
+      settleBaseline(
+        [result("a.md", [err()])],
+        { absPath: join(dir, "nope.json"), label: "nope.json", write: false },
+        ctx,
+      ),
+    ).rejects.toThrow(/Baseline "nope.json" not found/);
+  });
+
+  it("records, then applies, so a written run reports clean", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "manni-baseline-write-"));
+    const settled = await settleBaseline(
+      [result("a.md", [err()])],
+      { absPath: join(dir, "b.json"), label: "b.json", write: true },
+      ctx,
+    );
+    expect(settled.results[0]?.ok).toBe(true);
+    expect(settled.baseline).toMatchObject({
+      path: "b.json",
+      written: true,
+      recorded: 1,
+      suppressed: 1,
+      added: 1,
+      removed: 0,
+    });
   });
 });

@@ -43,6 +43,15 @@
 # principle: each carries its own `manni.config.yaml`, and its pages are
 # shaped for what that config tests — a `FROM <collection>` check, a file in
 # two collections — not for the default schema set.
+# `test/fixtures/external-metadata-items/` joins them. Its two pages exist to
+# be located: a finding on a value its manifest supplies must report the
+# manifest line of that list item, in block style and in flow style. They
+# carry no `type:`, because nothing there is about the default schema set.
+# `test/fixtures/cite-sidecar/` joins them, and carries four configs of its
+# own. Its pages exist so that `cite` can keep their citations in an
+# external-metadata manifest (0044) and refuse the shapes it cannot write
+# to; one of them is deliberately a member of two collections at once, and
+# none of them is about the default schema set.
 #
 # `test/fixtures/platform/` is excluded on the same principle, and it is the
 # clearest case of it. Every file there exists to be judged against the platform
@@ -124,7 +133,11 @@ jobs:
             --exclude "test/fixtures/external-metadata/**" \
             --exclude "test/fixtures/external-metadata-join/**" \
             --exclude "test/fixtures/external-metadata-overlap/**" \
+            --exclude "test/fixtures/external-metadata-items/**" \
             --exclude "test/fixtures/checks-collections/**" \
+            --exclude "test/fixtures/cite/**" \
+            --exclude "test/fixtures/cite-sidecar/**" \
+            --exclude "test/fixtures/encrypted/**" \
             --exclude "test/fixtures/derive/**" \
             --allow-empty -f sarif > manni.sarif
           echo "results=$(jq '.runs[0].results | length' manni.sarif)" >> "$GITHUB_OUTPUT"
@@ -166,7 +179,11 @@ jobs:
             --exclude "test/fixtures/external-metadata/**" \
             --exclude "test/fixtures/external-metadata-join/**" \
             --exclude "test/fixtures/external-metadata-overlap/**" \
+            --exclude "test/fixtures/external-metadata-items/**" \
             --exclude "test/fixtures/checks-collections/**" \
+            --exclude "test/fixtures/cite-sidecar/**" \
+            --exclude "test/fixtures/cite/**" \
+            --exclude "test/fixtures/encrypted/**" \
             --exclude "test/fixtures/derive/**" \
             --allow-empty -f junit > manni-junit.xml
 

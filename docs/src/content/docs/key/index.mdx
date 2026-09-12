@@ -1,0 +1,234 @@
+---
+title: manni key
+description: "Set and rotate the family encryption key, the one key every manni tool encrypts values with."
+tableOfContents: false
+hero:
+  tagline: Set and rotate the family key that encrypted values are encrypted with.
+  actions:
+    - text: CLI reference
+      link: /manni/key/reference/cli/
+      icon: right-arrow
+      variant: primary
+    - text: Where the key lives
+      link: /manni/key/#where-the-key-lives
+      icon: setting
+      variant: minimal
+---
+
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+Some values have to be on every page and must never be readable there. manni
+encrypts them with one key, the family encryption key. `manni meta` encrypts a
+frontmatter value whose schema marks it `x-manni-encrypt`, and `manni cite`
+encrypts the path of a private source. Both write the same ciphertext: `~`
+followed by at least 82 base64url characters. It decrypts under the current key
+and under no other. Anyone with the key can check which value a page holds,
+and anyone without it learns nothing from the page.
+
+`manni key` makes that key and replaces it. It is not a document tool. It
+manages a resource the whole family shares, and it re-encrypts what every tool
+has encrypted.
+
+## What it is for
+
+**A field every page must carry, whose value must stay private.** A metadata
+standard can require `owner` or `internal-ticket` on every page while the docs
+are public and the organization is not. Mark the property in the schema:
+
+```json title="schemas/page.schema.json"
+{
+  "properties": {
+    "owner": { "type": "string", "enum": ["platform", "billing"], "x-manni-encrypt": true }
+  },
+  "required": ["owner"]
+}
+```
+
+A page that publishes a plain `owner` then fails `manni meta validate` with
+`encrypted:plain/encrypted`. Wherever the key is available, an encrypted
+`owner` is decrypted and validated against the property's whole schema, so
+`enum`, `pattern` and `format` still apply to the real value. Where no key is
+available, findings on the encrypted value are dropped, and one warning on
+stderr says how many values went unverified. The
+[schema resolution reference](/manni/meta/reference/schema-resolution/) has the
+keyword's rules.
+
+**Private source paths in public docs.** A sentence on a public page can cite a
+line in a private repository. With a key available, `manni cite add` encrypts
+`source.file`, so the entry carries a ciphertext where the path would be, and
+its pin reads `hmac-sha256-`. The entry may sit in the page's frontmatter or
+in a citations manifest, and the key covers both. The public CI job checks the
+pages without the sources. The private job has the key, decrypts each path,
+and checks the cited lines. The
+[cite CLI reference](/manni/cite/reference/cli/) has the flags.
+
+## Two commands
+
+| Command | Does |
+| --- | --- |
+| `manni key set [value]` | Writes `encryptionKey:` to `manni.config.yaml`, and creates the file when there is none. Without a value it generates 64 random hex characters, 256 bits. It never prints the key. |
+| `manni key rotate [paths...]` | Re-encrypts every encrypted value under a new key, in pages and in citation manifests alike, then writes the new key. Nothing is written unless every value re-encrypts, and a run cut off part of the way finishes when you run it again. |
+
+There is no default subcommand. `manni key` alone prints usage and exits `2`.
+
+## A 30-second proof
+
+Generate a key. Most repositories commit their `manni.config.yaml`, so the
+command warns before it writes:
+
+```console
+$ manni key set
+manni: manni.config.yaml is not ignored by git: once committed, anyone who can read the repository can decrypt every encrypted value. Prefer MANNI_ENCRYPTION_KEY for a shared repository.
+Encryption key written to manni.config.yaml.
+```
+
+Wire the schema above to `docs/` in `manni.config.yaml`. From then on,
+`manni meta fill` and a `manni meta query` `UPDATE` write `owner` encrypted, and
+the page holds the ciphertext alone:
+
+```yaml title="docs/auth.md"
+---
+title: Authentication
+owner: ~AQx7Vb2…
+---
+```
+
+The real value is 82 characters or more, shortened here. Validation decrypts it
+to `platform`, finds that in the `enum`, and passes:
+
+```console
+$ manni meta validate docs/auth.md
+✓ docs/auth.md
+
+1 file checked, 1 passed, 0 failed, 0 errors
+```
+
+Now rotate the key. Every encrypted value is re-encrypted under a new one, and
+the new key replaces the old one in the config:
+
+```console
+$ manni key rotate
+docs/auth.md: /owner  ~AQx7…  -> ~AQp2…
+1 value re-encrypted in 1 file, 0 skipped
+Encryption key written to manni.config.yaml.
+```
+
+The page changed and the key changed, and `manni meta validate` still passes.
+An `owner: platform` typed in by hand fails it, exit `1`.
+
+The new key reaches the config before the first page does, with the old key
+beside it until the last page is written. A rotation cut off part of the way
+therefore loses no key and no value. Run `manni key rotate` again and it
+finishes. The
+[CLI reference](/manni/key/reference/cli/#an-interrupted-rotation) has the
+order of the writes.
+
+## Where the key lives
+
+At the top of `manni.config.yaml`, beside `collections:` and outside every
+tool's section, because every tool reads it:
+
+```yaml title="manni.config.yaml"
+encryptionKey: 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+collections:
+  - name: site
+    paths: ["docs/src/content/docs/**/*.{md,mdx}"]
+```
+
+- **`MANNI_ENCRYPTION_KEY` wins.** When the environment variable is set, the
+  config's key is not read. An empty variable counts as unset, which is what a
+  missing CI secret expands to.
+- **A key is at least 32 hex or base64url characters.** Anything else is
+  refused with exit `2`, and the error never repeats the value:
+
+  ```
+  manni: manni.config.yaml: "encryptionKey" must be at least 32 hex or base64url characters. Run `manni key set` to generate one.
+  manni: MANNI_ENCRYPTION_KEY must be at least 32 hex or base64url characters.
+  ```
+
+- **A file that holds only a key is still a config file.** Discovery stops at
+  the first `manni.config.yaml` that carries the running tool's section,
+  `collections:`, or `encryptionKey:`. The next run finds a file the key prompt
+  created.
+- **Strength is yours to provide.** The configured value is used as key
+  material as it is. It is expanded, not stretched, so a value picked by hand is
+  only as strong as it is random. `manni key set` generates 256 random bits, and
+  that is the value to use.
+
+The [configuration reference](/manni/meta/reference/configuration/#encryption-key)
+has the full contract.
+
+## Keep the key out of a shared repository
+
+<Aside type="caution" title="A committed key decrypts every value">
+Encryption protects a value from everyone who does not have the key. A key
+committed beside the pages is readable by everyone who can read the
+repository, and so is every value it encrypts.
+</Aside>
+
+`manni key set` and the write prompt warn when the file they are about to write
+is not ignored by git. They warn rather than refuse, because a private
+repository may keep its key in its config. In a repository other people can
+read, keep the key in the environment instead:
+
+1. Generate 256 random bits, the same size `manni key set` makes:
+
+   ```sh
+   openssl rand -hex 32
+   ```
+
+2. Store the value as a CI secret named `MANNI_ENCRYPTION_KEY`, and export it
+   in your own shell.
+3. Leave `encryptionKey:` out of `manni.config.yaml`. `manni key set` refuses
+   while the variable is set, because a key written to config would never be
+   read.
+
+A job without the secret still runs. `manni meta validate` drops findings on
+the encrypted values it cannot decrypt and says so once on stderr, and
+`manni cite check --no-check-sources` skips the encrypted sources. To rotate a key
+that lives in the environment, pass the new one with `--to`, then update the
+secret to that value. See
+[a key from the environment](/manni/key/reference/cli/#a-key-from-the-environment).
+
+## When a write needs a key
+
+`manni meta fill`, a `manni meta query` write, and `manni cite add` create
+encrypted values, so each needs the key before it writes. When none is
+available and the command runs on a terminal, it offers to make one and then
+carries on:
+
+```console
+$ manni meta fill docs/auth.md
+manni: /owner must be encrypted, and no encryption key is available.
+manni: manni.config.yaml is not ignored by git: once committed, anyone who can read the repository can decrypt every encrypted value. Prefer MANNI_ENCRYPTION_KEY for a shared repository.
+Generate a key and write it to manni.config.yaml? [y/N] y
+Encryption key written to manni.config.yaml.
+```
+
+`N`, an empty answer, or the end of input stops the command with exit `2`, and
+so does any run off a terminal. The message says to run `manni key set` or set
+`MANNI_ENCRYPTION_KEY`. `manni meta validate`, `manni cite check`,
+`manni cite update` and `manni key rotate` never ask.
+
+<CardGrid>
+  <LinkCard
+    title="CLI reference"
+    href="/manni/key/reference/cli/"
+    description="Every argument and flag of set and rotate, how rotation finds encrypted values, every refusal, and the examples from minimal to maximal."
+  />
+  <LinkCard
+    title="Encryption key configuration"
+    href="/manni/meta/reference/configuration/#encryption-key"
+    description="The top-level encryptionKey: key, the environment variable that wins over it, and what the key changes about config discovery."
+  />
+  <LinkCard
+    title="Schema resolution"
+    href="/manni/meta/reference/schema-resolution/"
+    description="The x-manni-encrypt keyword: where a mark counts, how an encrypted value is validated, and what happens with no key."
+  />
+  <LinkCard
+    title="cite CLI reference"
+    href="/manni/cite/reference/cli/"
+    description="Encrypted source paths: what add writes with a key available, and what check does with and without one."
+  />
+</CardGrid>

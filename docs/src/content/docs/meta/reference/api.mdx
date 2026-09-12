@@ -34,21 +34,21 @@ exit code is the caller's.
 | Export | Purpose |
 |---|---|
 | `runValidate` | Run the validation pipeline over the resolved inputs. Backs `manni meta validate`. |
-| `ValidateOptions` (type) | Input to `runValidate`. Mirrors the CLI: `inputs`, `cliSchemas`, `exts`, `exclude`, `as`, `configPath`, `stdinContent`, baseline and offline settings. |
+| `ValidateOptions` (type) | Input to `runValidate`. Mirrors the CLI: `inputs`, `cliSchemas`, `exts`, `exclude`, `as`, `configPath`, `stdinContent`, baseline and offline settings. An optional `env` is the environment `MANNI_ENCRYPTION_KEY` is read from, which defaults to `process.env`. |
 | `ValidateRun` (type) | What `runValidate` resolves to: `results`, `summary`, and the `frame` describing where the run stood. |
 | `runGet` | Read named metadata fields from each input. Backs `manni meta get`. Always returns every file it saw, since `--quiet` filtering lives in the reporter. |
 | `GetOptions` (type) | Input to `runGet`: the same input model plus the `fields` to read. |
 | `GetFileResult` (type) | One `runGet` result. The file, whether metadata was `present`, the resolved `values`, and an optional `error` when the metadata block could not be read at all. |
 | `runQuery` | Run one SQL statement over an in-memory table built from every input's metadata. Backs `manni meta query`. Returns every row. The `--check` verdict is the CLI's exit code, not the result's. |
-| `QueryOptions` (type) | Input to `runQuery`. The same input model plus the `sql` to run. Optional named-parameter `params`, with values encoded like stored cells: booleans as `1`/`0`, arrays and objects as JSON text. Optional `schemas` naming the set a DDL statement evolves (the CLI's `-s`). A run that produces no schema-evolving effects then refuses, export-only runs included. An optional `db` export path makes `sql` optional. |
+| `QueryOptions` (type) | Input to `runQuery`. The same input model plus the `sql` to run. Optional named-parameter `params`, with values encoded like stored cells: booleans as `1`/`0`, arrays and objects as JSON text. Optional `schemas` naming the set a DDL statement evolves (the CLI's `-s`). A run that produces no schema-evolving effects then refuses, export-only runs included. An optional `db` export path makes `sql` optional. An optional `confirm` is how a write to a column marked `x-manni-encrypt` asks for an encryption key when there is none; absent, that write refuses. An optional `env` is the environment `MANNI_ENCRYPTION_KEY` is read from. |
 | `QueryRun` (type) | What `runQuery` resolves to. Result `columns` (present even for zero rows), `rows`, and a mutating statement's `changes`. The `frame` describing where the run stood, which is what SARIF and JUnit rendering need. When `db` was written, its path and size. |
 | `QueryChange` (type) | One thing a mutating statement changed, as a union of kinds. A cell set (`key`/`from`/`to`), a key deletion (`deleted`), or a key rename (`renamedFrom`). A stripped block (`cleared`), a created file (`created`), or a file move (`renamed`). A schema edit (`schema`) carries the op, the type/`format`/`enum`/required intent, 0028's fields included, and any `forkedFrom`. A DDL side effect on the governing config (`config`), which is either a fork's `schemas:` repoint or a refreshed `integrity:` pin, as one change object each. Every kind records whether it was `written` or previewed. |
 | `runFill` | Propose and write missing metadata with an inference provider. Backs `manni meta fill`. |
-| `FillOptions` (type) | Input to `runFill`: provider, model, confidence threshold, cost ceiling, concurrency, and whether to write. |
+| `FillOptions` (type) | Input to `runFill`: provider, model, confidence threshold, cost ceiling, concurrency, and whether to write. An optional `confirm` is how a run asks for an encryption key. It is used when a field marked `x-manni-encrypt` is to be written and there is none. Absent, the run refuses before its first model request. An optional `env` is the environment `MANNI_ENCRYPTION_KEY` is read from. |
 | `FillRun` (type) | What `runFill` resolves to: per-file results plus the run summary. |
 | `FillFileResult` (type) | One file's fill outcome: the fields considered and whether the document was rewritten. |
 | `FillSummary` (type) | Aggregate fill counts, including cost and the required fields left unfilled. |
-| `FilledField` (type) | One proposed field: JSON Pointer, `required`, `confidence`, `reasoning`, the `value`, and whether it was `written`. |
+| `FilledField` (type) | One proposed field: JSON Pointer, `required`, `confidence`, `reasoning`, the `value`, and whether it was `written`. `encrypted` is set when the value was written encrypted, and `value` then reads `(encrypted)`. |
 | `SkipReason` (type) | Why a proposal was not written: `low-confidence`, `schema-mismatch`, or `no-proposal`. |
 | `runDerive` | Stamp the managed stewardship fields from git history, CODEOWNERS, GitHub and GitLab. Backs `manni meta derive`. Writes a `stale` or `unset` field unless `dryRun` or `check`; leaves `current` and `unknown` alone. Throws `DocmetaError` for stdin, a field or source it does not know, nothing to derive, and a consulted source that cannot answer. |
 | `DeriveOptions` (type) | Input to `runDerive`: the same input model minus stdin, plus `fields` and `sources` (config `derive:` otherwise), `dryRun`, `check`, `cache`, a `now` clock, and a `reviews` client to inject. |
@@ -73,10 +73,11 @@ caller and a subprocess caller are reading the same data model.
 
 | Export | Purpose |
 |---|---|
-| `Validator` | The Ajv-backed engine. Validate already-extracted metadata against a schema set without going through the file pipeline. `validate` takes the data, the schema refs, a `lineFor` callback, an optional `colFor`, and an optional fifth `locate` callback. `locate` says where a merged value lives when it is not in the document (an [external-metadata](#external-metadata) manifest's file and line). |
+| `Validator` | The Ajv-backed engine. Validate already-extracted metadata against a schema set without going through the file pipeline. `validate` takes the data, the schema refs, a `lineFor` callback, an optional `colFor`, and an optional fifth `locate` callback. `locate` says where a merged value lives when it is not in the document (an [external-metadata](#external-metadata) manifest's file and line). `markedPointers` takes the data and the schema refs, and resolves to the instance pointers that carry `x-manni-encrypt: true`, wherever validation evaluates the mark. |
 | `ValidationResult` (type) | One file's outcome: the file label, `ok`, the schemas applied, the `errors`, and how many findings a baseline suppressed. |
-| `FieldError` (type) | One violation. The JSON Pointer, the message, the failing keyword, and the schema that produced it. An optional `file` names the file `line` and `col` refer to when it is not the result's own. It is set only for a value an external-metadata manifest supplied. |
-| `RunSummary` (type) | Aggregate counts for a run. Files, passed, failed, errors, plus optional `gitignoreSkipped` and `baseline` blocks. |
+| `FieldError` (type) | One violation. The JSON Pointer, the message, the failing keyword, and the schema that produced it. An optional `file` names the file `line` and `col` refer to when it is not the result's own. It is set only for a value an external-metadata manifest supplied. An optional `severity`, on the family scale, is set by producers whose findings are advisory. |
+| `isErrorSeverity` | Whether a `FieldError` counts against `ok`: true for `error` and for an absent severity, false for `warning` and `notice`. The one reading of the severity invariant; derive `ok` through it. |
+| `RunSummary` (type) | Aggregate counts for a run. Files, passed, failed, errors, plus optional `warnings`, `gitignoreSkipped` and `baseline` blocks. |
 | `BaselineSummary` (type) | How a baseline shaped the run. Its path, whether it was written, and the recorded, suppressed, and stale counts. |
 | `FingerprintContext` (type) | The `frame` a `ValidateRun` returns: the working directory, the directory canonical paths are measured from, and the directory result labels are relative to. Pass it back into `render` for SARIF. |
 
@@ -130,13 +131,13 @@ table](#the-sidecar-rename) below maps each old name to its new one.
 | `EXTERNAL_METADATA_FETCH_TIMEOUT_MS`, `EXTERNAL_METADATA_FETCH_MAX_BYTES` | The fetch's defaults, 10 000 ms and 5 MB, matching the schema fetch. |
 | `ExternalMetadataIndex` (type) | Every manifest of a run. `owners` maps each owned key to **every** collection that owns it, with the manifest that does. It is a list rather than one entry, because two collections may each legitimately supply the same key. `byPath` maps an absolute document path to its supplied values. `byField` maps a [join field](/manni/meta/reference/configuration/#external-metadata) to its values and each value to the supplied values. `entries` lists every manifest entry for the orphan checks. |
 | `ExternalMetadataEntry` (type) | One manifest entry. `collection` is the collection whose manifest declared it. `join` is `path` or the field it is keyed by, and `abs` is the absolute document path of a path entry, absent for a field entry. It also carries the key as spelled, the manifest's reported path, and the entry's line when known. |
-| `ExternalMetadataValue` (type) | One supplied value, with the `collection` whose manifest supplied it, the manifest's reported path, and the key's line when known. |
+| `ExternalMetadataValue` (type) | One supplied value, with the `collection` whose manifest supplied it, the manifest's reported path, and the key's line when known. For a list or mapping value, `lines` maps each node inside it to its manifest line, keyed by the pointer relative to the value. |
 | `externalMetadataJoin` | The join an `ExternalMetadataConfig` asks for: its `join`, or `PATH_JOIN` when absent. |
 | `PATH_JOIN` | The join that names documents by path, `path`, and the default. |
-| `mergeExternalMetadata` | Merge the index's values for one document into its `ExtractedMetadata`. Takes the collections the document belongs to, a [`memberOf`](#collections) result, and consults only their manifests. A file that is a member of nothing therefore merges nothing. Returns the merged object, the `collisions` (owned keys the document itself carried, which the caller files as findings), the `joins`, and a `locate` callback. Throws `DocmetaError` when two of the document's collections own one key. There is nothing about the document to fix, and a precedence rule would be a tiebreak. Stdin never merges by path. |
-| `MergedMetadata` (type) | What `mergeExternalMetadata` returns: `extracted`, `collisions`, `joins`, and `locate`. |
+| `mergeExternalMetadata` | Merge the index's values for one document into its `ExtractedMetadata`. Takes the collections the document belongs to, a [`memberOf`](#collections) result, and consults only their manifests. A file that is a member of nothing therefore merges nothing. Returns the merged object, the `collisions` (owned keys the document itself carried, which the caller files as findings), the `joins`, and a `locate` callback. Throws `DocmetaError` when two of the document's collections own one key. There is nothing about the document to fix, and a precedence rule would be a tiebreak. Stdin never merges by path. An optional sixth argument, `{ encryptionKey }`, returns the run's key. A join field the page holds encrypted is decrypted with it before matching. With no key, the call throws `DocmetaError`. |
+| `MergedMetadata` (type) | What `mergeExternalMetadata` returns: `extracted`, `collisions`, `joins`, and `locate`. `locate` answers with the line of the deepest manifest node a pointer reaches, so `/citations/2` is the third item's line. |
 | `ExternalMetadataCollision` (type) | One key a document carries that a manifest owns, with the owning manifest and its `collection`. `MergedMetadata.collisions` is a list of these. |
-| `ExternalMetadataJoin` (type) | One field-joined entry a document matched: the `field`, the `value`, the manifest `file`, and its `collection`. `MergedMetadata.joins` is a list of these, one per manifest at most. |
+| `ExternalMetadataJoin` (type) | One field-joined entry a document matched: the `field`, the `value`, the manifest `file`, and its `collection`. `MergedMetadata.joins` is a list of these, one per manifest at most. When the page holds the field encrypted, `value` is the decrypted value it matched on and `pageValue` is the ciphertext, which is what a finding names. |
 | `SourceLocation` (type) | What `locate` answers with: a `file`, and optionally `line` and `col`. |
 | `externalMetadataPointer` | The `/<key>` instance path for a collision or duplicate finding, RFC 6901 escaped. |
 | `orphanEntries` | The path entries naming no loaded document, given the run's file labels. Empty when the index is `null`. |
@@ -175,6 +176,20 @@ find-and-replace:
 `SourceLocation` keep their names and their signatures. The two finding
 identities are renamed with the vocabulary, which
 [costs a baseline a regeneration](/manni/meta/reference/output-and-exit-codes/#the-rename-invalidates-two-baselined-findings).
+
+## Encrypted values
+
+A property whose schema marks it
+[`x-manni-encrypt`](/manni/meta/reference/schema-resolution/#encrypted-values)
+is held encrypted on the page, under the family's
+[encryption key](/manni/meta/reference/configuration/#encryption-key).
+`reencryptMetadata` is the metadata tool's half of changing that key.
+
+| Export | Purpose |
+|---|---|
+| `reencryptMetadata` | Re-encrypt every encrypted value in one page's metadata from `fromKey` to `toKey`. Takes the page's `file`, its `content` and an optional `format` (an extractor name; the file's extension otherwise). Values are found by their ciphertext at any depth, not through schema marks, and the `citations` subtree is left to the citation tool. A value under `fromKey` is rewritten. One already under `toKey` is done, so an interrupted rotation can run again. One under neither is skipped with `does not decrypt under the current key`. A nested value rewrites its top-level key through the format's writer, and everything else is kept. Pure: the caller reads and writes the file. |
+| `ReencryptMetadataResult` (type) | What `reencryptMetadata` returns: the new `content` (the input itself when nothing changed), the `rewritten` values, and the `skipped` ones, each a `pointer` and a `message`. |
+| `ReencryptedValue` (type) | One rewritten value. It carries the JSON `pointer`, and the ciphertext `from` and `to`. |
 
 ## Derived metadata
 
@@ -299,11 +314,11 @@ its exports are under [Collections](#collections).
 |---|---|
 | `loadConfig` | Discover (or take an explicit path to) a config file and parse it. Resolves to `null` when discovery finds none. |
 | `parseConfig` | Parse config text that you already have, with a source label for error messages. |
-| `LoadedConfig` (type) | A parsed config plus where it came from. It carries the file's `path`, its `dir`, and the `source` label every config message spells it as. It also carries the family-file `section` it was read from under, and every `collections` the family file declares. |
+| `LoadedConfig` (type) | A parsed config plus where it came from. It carries the file's `path`, its `dir`, and the `source` label every config message spells it as. It also carries the family-file `section` it was read from under, and every `collections` the family file declares. `encryptionKey` is the file's top-level key when it has one, and `configFile` is the file as family discovery found it. |
 | `DocmetaConfig` (type) | The `meta:` section itself: `schemas`, `overrides`, `checks`, `elements`, `derive`, `fill`, `baseline`, `schemaTrust`, `schemaCache`, and the rest. It no longer carries `paths`, `exclude` or `sidecars`; the document set and its external metadata are [collections](#collections), which every tool reads. |
 | `resolveRunConfig` | Merge config with the run's inputs and flags into the settings a core actually uses. This is the precedence chain, in one place. |
 | `RunConfigOptions` (type) | Input to `resolveRunConfig`: cwd, `configPath`, `noConfig`, the positional `inputs`, the `collections` names `--collection` gave (empty or absent means every declared one), and a load callback. |
-| `RunConfig` (type) | The merged result. It carries the rebased config, the effective `inputs`, and the `base` those are relative to. The inputs are the positional ones, or the selected collections' `paths` concatenated in declaration order. It names the `configDir`/`configPath`/`configSection` that governed the run and the `collections` the run covers. It lists every `declaredCollections` the config declares, each of which is a SQL view whether the run selected it or not. And it carries `fromCollections`, the corpus invariant every scoped check reads. |
+| `RunConfig` (type) | The merged result. It carries the rebased config, the effective `inputs`, and the `base` those are relative to. The inputs are the positional ones, or the selected collections' `paths` concatenated in declaration order. It names the `configDir`/`configPath`/`configSection` that governed the run and the `collections` the run covers. It lists every `declaredCollections` the config declares, each of which is a SQL view whether the run selected it or not. And it carries `fromCollections`, the corpus invariant every scoped check reads. `configFile` is the governing file, which the run's encryption key resolves from. |
 | `ConfigNotice` (type) | Told to the caller once when a run turns out to be governed by a config: its path and directory. |
 | `SchemaEntry` (type) | A `schemas:` entry, either a bare reference string or a `SchemaRefEntry`. |
 | `SchemaRefEntry` (type) | The object form. A reference plus its integrity pin. |
@@ -396,3 +411,14 @@ and reStructuredText.
 | Export | Purpose |
 |---|---|
 | `DocmetaError` | The operational/usage failure the CLI maps to exit code `2`. Catch it to distinguish "manni meta could not run" from "the documents did not pass". |
+
+## Sibling tools
+
+Each other tool in the family is one namespace export. Its API cannot collide
+with the flat surface above, and a consumer can see which tool a name belongs
+to. Each namespace is documented on its own tool's pages.
+
+| Export | Purpose |
+|---|---|
+| `cite` | The citation tool's programmatic API. It carries the command cores `runCheck`, `runAdd` and `runUpdate`; the per-page check `checkCitations`, the minter `mintCitation` and the re-encrypter `reencryptCitations`; and the primitives `hashRange`, `parseSrc` and `parseStatements`. `toValidationResult` turns a page report into the `ValidationResult` above, so the reporters and the baseline work unchanged. `CiteError` is its exit-2 failure. `import { cite } from "@hawkeyexl/manni"`. See [the cite reference](/manni/cite/reference/cli/). |
+| `key` | The family encryption key's API. It carries the command cores `runKeySet` and `runKeyRotate` with their option and result types, and the family's encryption primitives: `encryptValue`, `decryptValue`, `isEncryptedValue`, and `resolveEncryptionKey` with its `KeySource`. `KeyError` is its exit-2 failure. `import { key } from "@hawkeyexl/manni"`. See [the key reference](/manni/key/reference/cli/). |

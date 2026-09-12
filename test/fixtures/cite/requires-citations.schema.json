@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/manni/reference-page.schema.json",
+  "title": "A house rule: a reference page must carry at least one citation",
+  "description": "The fixture behind docs/src/content/docs/cite/set-up/require-citations.mdx. It is the house half of the pair a schema author ships: `citations` is required and `title` is required, and the entry shape itself is left to the citations vocabulary, which is validated alongside this file rather than restated inside it. Two definitions of one key is the drift the pairing avoids.",
+  "type": "object",
+  "required": ["title", "citations"],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": true
+}

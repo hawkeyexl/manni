@@ -41,6 +41,7 @@ import {
   type DerivedValue,
   type DeriveInput,
 } from "../core/derive/types.js";
+import { lazyKey } from "../core/encrypted.js";
 
 export interface GetOptions {
   fields: string[];
@@ -156,7 +157,7 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
 
   // Explicit CLI inputs win, else config `paths:`; `base` is whichever of the
   // two directories those inputs were written relative to.
-  const { config, inputs, base, configDir, collections, fromCollections } =
+  const { config, inputs, base, configDir, collections, fromCollections, configFile } =
     await resolveRunConfig({
       cwd,
       configPath: opts.configPath,
@@ -167,6 +168,9 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
         : {}),
       onConfigLoaded: opts.onConfigLoaded,
     });
+  // `get` prints what the page holds, ciphertext included; only an encrypted
+  // join field is decrypted, to match its manifest entry (proposal 0045).
+  const joinKey = lazyKey(configFile, undefined);
   const usingStdin = inputs.includes(STDIN_TOKEN);
 
   if (inputs.length === 0) {
@@ -265,7 +269,9 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
           extracted: own,
         });
       }
-      extracted = mergeExternalMetadata(label, own, externalMetadata, members, base).extracted;
+      extracted = mergeExternalMetadata(label, own, externalMetadata, members, base, {
+        encryptionKey: joinKey,
+      }).extracted;
     } catch (err) {
       // A `DocmetaError` is already operational and already carries a message
       // written for a person — rethrow it untouched, exactly as `validate`

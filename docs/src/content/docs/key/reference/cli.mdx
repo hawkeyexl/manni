@@ -1,0 +1,495 @@
+---
+title: CLI reference
+description: "Every manni key command, argument, and flag (set and rotate), with exit codes, how rotation finds encrypted values and survives an interruption, every refusal, and the examples."
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+{/* The command, argument, and option tables on this page are drift-checked
+    against src/key/cli.ts by scripts/check-cli-reference.mjs (npm run
+    docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
+    sync with the code; descriptions are free-form. */}
+
+manni key exposes two verbs, [`set`](#key-set) and [`rotate`](#key-rotate).
+Both act on one thing, the family encryption key. That is the top-level
+`encryptionKey:` of `manni.config.yaml`, or `MANNI_ENCRYPTION_KEY`, which wins
+over it. `key` has no config section of its own and no default subcommand. A
+bare `manni key` prints usage and exits `2`. `set` writes the config, and
+`rotate` writes pages and the config. Neither prints the key.
+
+```sh
+manni key [options] <command> [command options] [arguments]
+```
+
+## Global options
+
+Global options are accepted before the subcommand.
+
+| Option | Description |
+|---|---|
+| `-V, --version` | Print the manni version and exit. |
+| `-h, --help` | Print help for the program or a subcommand. |
+
+## `key`
+
+The family encryption key, as a domain with two verbs. Every command on this
+page lives under it. `key` accepts its own `-V, --version`, which reports the
+manni version, and `-h, --help`. Run with no subcommand it prints usage, exit
+`2`.
+
+```sh
+manni key [options] <command> [command options] [arguments]
+```
+
+### Options
+
+| Option | Description |
+|---|---|
+| `--no-color` | Disable colored output. Color applies to the `pretty` output of `rotate` only, on a TTY, and never under `NO_COLOR`; the same [rules](/manni/meta/reference/output-and-exit-codes/#color-behavior) as the metadata tool. |
+
+## `key set`
+
+Write `encryptionKey:` at the top level of a manni config file. The file is the
+one `-c` names, else the nearest `manni.config.yaml`, whatever sections it
+carries. When there is none, `manni.config.yaml` is created at the git root, or
+in the working directory outside git. An existing file is edited in place, and
+every other key in it survives. With no `[value]`, 64 random hex characters
+are generated. The key is never printed. The report names the file it went to,
+and nothing else.
+
+A file `-c` names must exist. It is read as a family file when it is named
+`manni.config.yaml`, carries a top-level `encryptionKey:` or `collections:`,
+or is empty. Any other file, such as a `docmeta.config.yaml`, is one tool's
+whole section. `set` refuses it, because a top-level key would turn its whole
+document into a family file.
+
+When the file is not ignored by git, a warning on stderr says so before the
+write. It is a warning, not a refusal: a private repository may keep its key
+in its config. See
+[keep the key out of a shared repository](/manni/key/#keep-the-key-out-of-a-shared-repository).
+
+```sh
+manni key set [value] [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|---|---|---|
+| `[value]` | no | The key to write, at least 32 hex or base64url characters. Omitted: 64 random hex characters (256 bits). A value you pick is used as it is, so it is only as strong as it is random. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | the nearest `manni.config.yaml`, whatever it carries | The config file to write. Created at the git root (else the working directory) when none is found. |
+| `--dry-run` | n/a | off | Say what would be written; write nothing. |
+
+`set` refuses, exit `2`, when a key is already configured, when the value has
+the wrong shape, when `MANNI_ENCRYPTION_KEY` is set, and while a rotation is
+[unfinished](#an-interrupted-rotation). It also refuses to create
+`manni.config.yaml` beside a `docmeta.config.yaml` or `docmeta.config.yml`.
+Discovery reads the family file first, so the new file would hide the old one
+from `manni meta`, and every option in it would stop being read. See
+[refusals](#refusals).
+
+## `key rotate`
+
+Re-encrypt every encrypted value in the given pages, else the selected
+collections, under a new key. It finds values by their ciphertext, not through
+schema marks. Every string in a page's metadata that has the ciphertext shape
+and decrypts under the current key is re-encrypted. So is every encrypted
+citation's `source.file`, with its `hmac-sha256-` pin, wherever the entry
+sits. A page's frontmatter and a collection's citations manifest are both
+rewritten, and the manifest is spliced one page's `citations` value at a time.
+It re-encrypts every other encrypted value in those collections' local
+[external-metadata manifests](/manni/meta/reference/configuration/#external-metadata)
+as well. Everything is re-encrypted in memory first, and nothing is written
+unless every
+value could be. See [how rotation finds values](#how-rotation-finds-values).
+
+A whole run writes the new key to the config, beside the old one, before the
+first page. It removes the old one after the last. An interruption at any
+point loses nothing: run `manni key rotate` again and it finishes the job. See
+[an interrupted rotation](#an-interrupted-rotation).
+
+A narrowed run (positional paths or `--collection`) can cover only part of the
+family, so it requires `--to` and never writes the key. Run it per area, then
+finish with a whole run under the same `--to`. See
+[a narrowed run](#a-narrowed-run).
+
+```sh
+manni key rotate [paths...] [options]
+```
+
+<Aside type="caution" title="rotate writes pages and the key by default">
+`rotate` writes to your pages, your local manifests and your config by default.
+Pass `--dry-run` to see every change first, and run it on a clean working tree.
+It reads the cited lines to re-key citation pins, so run it where the sources
+are reachable.
+</Aside>
+
+### Arguments
+
+| Argument | Required | Description |
+|---|---|---|
+| `[paths...]` | no | Files, directories or globs. Without them, every collection. Giving any makes the run [narrowed](#a-narrowed-run). |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--to` | `<value>` | 64 random hex | The new key, at least 32 hex or base64url characters. Required for a [narrowed](#a-narrowed-run) run and when the current key comes from `MANNI_ENCRYPTION_KEY`. While a rotation is [unfinished](#an-interrupted-rotation), only the key it was rotating to is accepted. |
+| `--collection` | `<name>` | every collection | Configured [collection](/manni/meta/reference/configuration/#collections) to run over; repeatable, one name per occurrence. Naming one makes the run narrowed. |
+| `--ext` | `<list>` | supported extensions | Comma-separated extensions for directory walks, given once. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude; repeatable, one glob per occurrence. |
+| `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) for every input. |
+| `-c, --config` | `<path>` | discovered | Path to a manni config file. The current key is read from it, and the new key is written to it. |
+| `--allow-empty` | n/a | off | Treat zero matched files as success. |
+| `--no-gitignore` | n/a | on | Include files `.gitignore` covers. |
+| `--root` | `<dir>` | `cite.root`, else the git root | Where cited sources resolve from, to re-key citation pins. `cite.root` resolves from the config file's directory, and `--root` from the working directory. |
+| `--dry-run` | n/a | off | Print what would change; write nothing. |
+| `-f, --format` | `<format>` | `pretty` | `pretty` or `json`. The JSON shape is in the [examples](#examples). Any other value is refused (exit 2). |
+
+There is no `--no-config`. The current key comes from the config or the
+environment, and the new one is written to the config. `rotate` reads no
+stdin, because it writes the files it reads; `-` is refused.
+
+## Exit codes
+
+| Code | `key set` | `key rotate` |
+|---|---|---|
+| `0` | The key was written, or under `--dry-run` would have been. | Every encrypted value was re-encrypted, or already decrypted under the new key. The pages and manifests were written, and the key too unless the run was narrowed or the key comes from `MANNI_ENCRYPTION_KEY`. Under `--dry-run`, nothing was written. |
+| `1` | n/a | At least one value could not be re-encrypted. Nothing was written, not even the files that re-encrypted cleanly. |
+| `2` | Refused. Nothing was written. See [refusals](#refusals). | Operational or usage error. See [refusals](#refusals). |
+
+## How rotation finds values
+
+### By ciphertext, not by schema
+
+`rotate` resolves no schema. It reads each page's metadata and takes every
+string with the ciphertext shape, `~` and at least 82 base64url characters.
+Each one that decrypts under the current key is re-encrypted under the new one.
+So is every encrypted citation's `source.file`, and the `hmac-sha256-` pin
+over its cited lines is re-keyed with it. Entries a citations manifest owns
+are found the same way, through the collection that declares it.
+
+The authentication tag proves a value was encrypted under the current key, so
+no schema has to say where the values are. A mark that lives in a `-s` schema,
+or behind a remote `$ref` the run cannot reach, cannot hide a value from
+rotation.
+
+### In manifests as well as pages
+
+A value does not have to sit in a page. An
+[external-metadata manifest](/manni/meta/reference/configuration/#external-metadata)
+holds the private half of a document, which is where an encrypted value most
+often lives. So `rotate` re-encrypts the local manifests of every collection
+it covers, alongside the pages.
+
+The rule inside a manifest is the rule inside a page. Every string with the
+ciphertext shape, at any depth of an owned value, is a candidate, and the
+authentication tag decides. Only the value's own text is replaced: the
+comments, the key order, the quoting and the line endings all survive.
+
+Two things are left alone.
+
+- A manifest whose `file` is a URL is read-only, so it is never loaded.
+  Rotation reaches no network. Rotate the file at its source, then update the
+  key.
+- The `citations` key belongs to `manni cite`, which re-keys a citation's
+  source together with its pin. Re-encrypting the source on its own would
+  break the pin, so rotation does not touch that key in a manifest or on a
+  page.
+
+A narrowed run covers the manifests of the collections it selected.
+`--collection` names them. Positional paths select the collections those files
+belong to, so a page and its private half move together.
+
+### Every value, or none
+
+Every page and every manifest is re-encrypted in memory first. A value with the
+ciphertext shape that decrypts under neither the current key nor the new one is
+skipped. A single skip means nothing is written, not a page, not a manifest and
+not the key. The run exits `1`, and everything stays under the current key
+until the value is fixed. The new key is never written beside a value it cannot
+decrypt.
+
+### The order of the writes
+
+A whole run whose key lives in the config writes in three steps:
+
+1. The config: `encryptionKey:` becomes the new key, and
+   `encryptionKeyPrevious:` holds the old one, in one atomic write.
+2. The pages, then the manifests.
+3. The config again, without `encryptionKeyPrevious:`.
+
+The key goes first so that it is never lost. A key the command generated for
+itself reaches the config before any value is encrypted under it. The old key
+stays beside it until nothing needs it.
+
+### An interrupted rotation
+
+A run stopped between the first write and the last leaves the config holding
+both keys:
+
+```yaml title="manni.config.yaml"
+encryptionKey: <the new key>
+encryptionKeyPrevious: <the old key>
+```
+
+| Key | Type | Meaning |
+|---|---|---|
+| `encryptionKeyPrevious` | string of at least 32 hex or base64url characters | The key an unfinished rotation is replacing. Present only while a rotation is unfinished. `manni key rotate` writes it and removes it, and no other command reads it. A value of the wrong shape is refused, and the error never repeats it. |
+
+Every value decrypts under one of the two keys. Run `manni key rotate` with no
+`--to` and it finishes the job. It re-encrypts from the previous key to the
+current one, counts the values already under the current key as done, and
+removes `encryptionKeyPrevious:`. Its report says so before the counts:
+
+```console
+$ manni key rotate
+blog/post.md: /owner  ~AQc3…  -> ~AQn8…
+Finished the interrupted rotation in manni.config.yaml.
+1 value re-encrypted in 1 file, 0 skipped
+# exit 0
+```
+
+Until then, the pages the stopped run did not reach are under the old key, and
+`manni meta validate` reports each of their values as
+`encrypted:unreadable/encrypted`. `--to` is accepted only when it names the key
+the config already holds. `key set`, a narrowed run and any other `--to` are
+refused with one line:
+
+```
+manni: A rotation is unfinished in manni.config.yaml. Run `manni key rotate` with no --to to finish it.
+```
+
+### Running it again
+
+A value that already decrypts under the new key counts as done. That one rule
+lets a narrowed run compose with a whole run, and lets a stopped run finish.
+
+### A narrowed run
+
+Positional paths or `--collection` cover part of the family, pages and
+manifests alike. Writing the key after such a run would leave everything
+outside it encrypted under a key the config no longer holds. So a narrowed run
+requires `--to` and never writes the key, and its last line says how to
+finish:
+
+```
+Key not written: this run covered part of the family. Finish with a whole run under the same key: `manni key rotate --to <the same value>`.
+```
+
+Run it area by area with the same `--to`, then finish with a whole run under
+that `--to`. Every value already under the new key counts as done, and the key
+is written in the [order above](#the-order-of-the-writes):
+
+```sh
+manni key rotate --collection site --to "$NEW_KEY"
+manni key rotate --collection blog --to "$NEW_KEY"
+manni key rotate --to "$NEW_KEY"
+```
+
+### A key from the environment
+
+When the current key comes from `MANNI_ENCRYPTION_KEY`, the tool cannot update
+the secret. `--to` is required, the pages are re-encrypted under it, and the
+config is never touched. The last line of the report says the secret is yours
+to update. Until it holds the new value, a run with the old secret finds values
+that do not decrypt under the current key. `manni meta validate` reports each
+one as `encrypted:unreadable/encrypted`, exit `1`. Update the secret when the
+rotated pages merge.
+
+### A dry run
+
+`--dry-run` re-encrypts every page and manifest in memory and reports what
+would change. It writes nothing at all, not a page, not a manifest and not the
+config. Its last line is `Dry run: nothing written.` A value it would skip
+still exits `1`.
+
+### The citation baseline
+
+A citation baseline fingerprints a citation that has no id by its
+`source.integrity`, and a new key changes every keyed pin. When a baseline exists, a run that wrote pages ends
+with this line:
+
+```
+The citation baseline fingerprints id-less encrypted citations by their pin; re-record it with `manni cite check --write-baseline`.
+```
+
+The baseline is the file `cite.baseline` names, else
+`.manni-cite-baseline.json` beside the config. Under `-f json` the line goes to
+stderr, prefixed `manni: `, so the JSON stays parseable.
+
+## Refusals
+
+Each refusal is one line on stderr, prefixed `manni: `, and nothing is written.
+All of them exit `2` except the skipped value, which exits `1`.
+
+```console
+$ manni key
+Usage: manni key [options] [command]
+# exit 2
+
+$ manni key set
+manni: An encryption key is already configured in manni.config.yaml. Run `manni key rotate` to replace it and re-encrypt every value.
+# exit 2
+
+$ manni key set tooshort
+manni: The key must be at least 32 hex or base64url characters. Run `manni key set` with no value to generate one.
+# exit 2
+
+$ MANNI_ENCRYPTION_KEY=… manni key set
+manni: MANNI_ENCRYPTION_KEY is set, so a key written to config would never be read. Unset it, or keep the key in the secret.
+# exit 2
+
+$ manni key set                        # docmeta.config.yaml here, no family file
+manni: docmeta.config.yaml is a single-tool config; a manni.config.yaml beside it would hide it. Move its keys under meta: in manni.config.yaml first.
+# exit 2
+
+$ manni key set                        # a rotation is unfinished
+manni: A rotation is unfinished in manni.config.yaml. Run `manni key rotate` with no --to to finish it.
+# exit 2
+
+$ manni key rotate
+manni: No encryption key is available, so nothing can be re-encrypted. Run `manni key set` first.
+# exit 2
+
+$ MANNI_ENCRYPTION_KEY=… manni key rotate
+manni: The key comes from MANNI_ENCRYPTION_KEY; pass --to <value>, re-encrypt with it, then update the secret. Nothing is written to config.
+# exit 2
+
+$ manni key rotate docs/
+manni: A run over part of the family needs --to, and never writes the key.
+# exit 2
+
+$ manni key rotate --to "$OTHER_KEY"   # a rotation is unfinished
+manni: A rotation is unfinished in manni.config.yaml. Run `manni key rotate` with no --to to finish it.
+# exit 2
+
+$ manni key rotate --to tooshort
+manni: --to must be at least 32 hex or base64url characters.
+# exit 2
+
+$ manni key rotate - --to "$NEW_KEY"
+manni: key rotate reads and writes files, so it takes no stdin (`-`). Name the files instead.
+# exit 2
+
+$ manni key rotate
+docs/auth.md: /owner  skipped: does not decrypt under the current key
+0 values re-encrypted in 0 files, 1 skipped
+Key not written: 1 value could not be re-encrypted. Fix it and rotate again.
+# exit 1
+
+$ manni key rotate -f sarif
+manni: Unknown --format "sarif". Use pretty or json.
+# exit 2
+```
+
+`set` refuses a configured key because replacing it in place would leave every
+encrypted value unreadable. `rotate` is the command that replaces it. Every
+command refuses a key of the wrong shape, in the config or the environment. The
+error never repeats the value:
+
+```
+manni: manni.config.yaml: "encryptionKey" must be at least 32 hex or base64url characters. Run `manni key set` to generate one.
+manni: manni.config.yaml: "encryptionKeyPrevious" must be at least 32 hex or base64url characters.
+manni: MANNI_ENCRYPTION_KEY must be at least 32 hex or base64url characters.
+```
+
+## Examples
+
+From the bare minimum to every option at once. Each rung shows the command,
+what it prints, and the exit code.
+
+```console
+$ manni key set
+Encryption key written to manni.config.yaml.
+# exit 0
+
+$ manni key set --dry-run
+Would write encryptionKey to manni.config.yaml.
+# exit 0
+
+$ manni key set -c ops/manni.config.yaml 0123456789abcdef0123456789abcdef
+manni: ops/manni.config.yaml is not ignored by git: once committed, anyone who can read the repository can decrypt every encrypted value. Prefer MANNI_ENCRYPTION_KEY for a shared repository.
+Encryption key written to ops/manni.config.yaml.
+# exit 0
+
+$ manni key rotate
+docs/auth.md: /owner  ~AQx7…  -> ~AQp2…
+docs/limits.md: fetch-timeout  ~AQm4…:2 -> ~AQr9…:2
+private/site.yaml: docs/handbook.md/owner  ~AQb1…  -> ~AQt6…
+3 values re-encrypted in 3 files, 0 skipped
+Encryption key written to manni.config.yaml.
+# exit 0
+
+$ manni key rotate --collection site --to "$NEW_KEY"
+docs/auth.md: /owner  ~AQx7…  -> ~AQp2…
+1 value re-encrypted in 1 file, 0 skipped
+Key not written: this run covered part of the family. Finish with a whole run under the same key: `manni key rotate --to <the same value>`.
+# exit 0
+
+$ MANNI_ENCRYPTION_KEY=… manni key rotate --to "$NEW_KEY"
+docs/auth.md: /owner  ~AQx7…  -> ~AQp2…
+1 value re-encrypted in 1 file, 0 skipped
+Key not written: it comes from MANNI_ENCRYPTION_KEY. Update the secret to the value you passed.
+# exit 0
+
+$ manni key rotate --to 0123456789abcdef0123456789abcdef --collection site --ext md,mdx --exclude "docs/drafts/**" --as markdown -c manni.config.yaml --allow-empty --no-gitignore --root . --dry-run -f json
+{
+  "pages": [
+    {
+      "file": "docs/auth.md",
+      "rewritten": [
+        {
+          "kind": "metadata",
+          "pointer": "/owner",
+          "from": "~AQx7…",
+          "to": "~AQp2…"
+        }
+      ],
+      "skipped": [],
+      "written": false
+    }
+  ],
+  "manifests": [
+    {
+      "file": "private/site.yaml",
+      "collection": "site",
+      "rewritten": [
+        {
+          "entry": "docs/handbook.md",
+          "pointer": "/owner",
+          "from": "~AQb1…",
+          "to": "~AQt6…"
+        }
+      ],
+      "skipped": [],
+      "written": false
+    }
+  ],
+  "reencrypted": 2,
+  "skipped": 0,
+  "keyWritten": false
+}
+# exit 0
+```
+
+The ciphertexts above are shortened. In `pretty` output each one shows as `~`
+and its first four characters; `-f json` carries every one whole. A metadata
+value is named by its JSON pointer, `/owner`. A citation is named by its id,
+and keeps its `source.lines` after the ciphertext. A citation with no id is
+named by where it sits, `/citations/0`, and by the manifest when one owns it.
+In JSON a citation row carries `kind: "citation"`, its `id` or `index`, and
+`from` and `to`; a skipped row carries `kind` and `message` in place of `from`
+and `to`.
+
+`manifests` lists the local manifests, one row each, in the order the selected
+collections declare them. A URL manifest is read-only and never appears. Each
+row names the manifest as the run reports it and the `collection` that
+declared it. A value in one is named by the document entry it belongs to and
+the JSON pointer inside that entry. So `docs/handbook.md/owner` reads as one
+name in `pretty`, and as two fields, `entry` and `pointer`, in JSON.
