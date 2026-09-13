@@ -13,8 +13,9 @@
 import { DocmetaError, type RunSummary, type ValidationResult } from "../types.js";
 import type { DeriveFileResult, DeriveRun } from "../commands/derive.js";
 import type { DerivedField } from "../core/derive/types.js";
+import type { RangeResult } from "../core/derive/provenance.js";
 import { toJsonText } from "../core/json-text.js";
-import { palette } from "../../shared/color.js";
+import { palette, type Colors } from "../../shared/color.js";
 import { formatList, render, type ReportOptions } from "./index.js";
 
 /**
@@ -109,16 +110,32 @@ export function renderDerivePretty(run: DeriveRun, opts: DeriveReportOptions = {
       lines.push(`${result.file}  ${c.dim("current")}${unknownNote(result, c.dim)}`);
       continue;
     }
-    lines.push(result.file);
-    const nameWidth = Math.max(...pending.map((f) => f.field.length));
-    const changeWidth = Math.max(...pending.map((f) => change(f).length));
+    // One row per stale or unset field, and for `provenance` one per range
+    // that is not current (proposal 0046). A record a manifest holds gets
+    // the manifest's own header, since that is the file that changes.
+    const page: Row[] = [];
+    const held = new Map<string, Row[]>();
     for (const f of pending) {
-      const name = c.cyan(f.field.padEnd(nameWidth));
-      const from = f.status === "unset" ? c.dim("(unset)") : c.dim(fmt(f.asserted));
-      const to = c.green(fmt(f.derived));
-      const pad = " ".repeat(changeWidth - change(f).length);
-      const trail = c.dim(`(${f.source ?? "a source"}: ${f.evidence ?? "no evidence"})`);
-      lines.push(`    ${name}  ${from} → ${to}${pad}  ${trail}`);
+      if (f.ranges === undefined) {
+        page.push(fieldRow(f, c));
+        continue;
+      }
+      const rows = f.ranges.filter((r) => r.status !== "current").map((r) => rangeRow(f, r, c));
+      if (f.manifest === undefined) page.push(...rows);
+      else held.set(f.manifest, [...(held.get(f.manifest) ?? []), ...rows]);
+    }
+    const all = [...page, ...[...held.values()].flat()];
+    const nameWidth = Math.max(...all.map((r) => r.name.length));
+    const changeWidth = Math.max(...all.map((r) => r.plain.length));
+    const print = (row: Row): void => {
+      const pad = " ".repeat(changeWidth - row.plain.length);
+      lines.push(`    ${c.cyan(row.name.padEnd(nameWidth))}  ${row.change}${pad}  ${row.trail}`);
+    };
+    if (page.length > 0 || held.size === 0) lines.push(result.file);
+    page.forEach(print);
+    for (const [manifest, rows] of held) {
+      lines.push(`${manifest} ${c.dim(`(for ${result.file})`)}`);
+      rows.forEach(print);
     }
     const note = unknownNote(result, c.dim);
     if (note !== "") lines.push(`   ${note}`);
@@ -126,10 +143,21 @@ export function renderDerivePretty(run: DeriveRun, opts: DeriveReportOptions = {
 
   const s = run.summary;
   const parts = [plural(s.files, "file")];
+  // `provenance` counts ranges beside the fields it would otherwise hide in.
+  const provenance = run.results.flatMap((r) => r.fields.filter((f) => f.ranges !== undefined));
+  const provenanceFields = provenance.filter((f) => (run.dryRun ? f.status === "stale" || f.status === "unset" : f.written)).length;
   if (run.dryRun) {
-    parts.push(`${s.changed} would change`, plural(s.stale + s.unset, "field"));
+    const ranges = provenance.reduce((n, f) => n + (f.ranges ?? []).filter((r) => r.status !== "current").length, 0);
+    const fields = s.stale + s.unset - provenanceFields;
+    parts.push(`${s.changed} would change`);
+    if (fields > 0 || ranges === 0) parts.push(plural(fields, "field"));
+    if (ranges > 0) parts.push(plural(ranges, "range"));
   } else {
-    parts.push(`${s.changed} changed`, `${plural(s.written, "field")} written`);
+    const ranges = s.ranges ?? 0;
+    const fields = s.written - provenanceFields;
+    parts.push(`${s.changed} changed`);
+    if (fields > 0 || ranges === 0) parts.push(`${plural(fields, "field")} written`);
+    if (ranges > 0) parts.push(`${plural(ranges, "range")} written`);
   }
   if (s.errors > 0) parts.push(plural(s.errors, "error"));
   let footer = parts.join(", ");
@@ -140,10 +168,62 @@ export function renderDerivePretty(run: DeriveRun, opts: DeriveReportOptions = {
   return lines.join("\n");
 }
 
-/** `from → to` uncolored, for measuring the column. */
-function change(f: DerivedField): string {
+/** One printed change: the field, the change colored and plain (for the column), and the evidence. */
+interface Row {
+  name: string;
+  change: string;
+  plain: string;
+  trail: string;
+}
+
+function fieldRow(f: DerivedField, c: Colors): Row {
   const from = f.status === "unset" ? "(unset)" : fmt(f.asserted);
-  return `${from} → ${fmt(f.derived)}`;
+  const to = fmt(f.derived);
+  return {
+    name: f.field,
+    change: `${c.dim(from)} → ${c.green(to)}`,
+    plain: `${from} → ${to}`,
+    trail: c.dim(`(${f.source ?? "a source"}: ${f.evidence ?? "no evidence"})`),
+  };
+}
+
+/**
+ * A `provenance` range, in file lines: `(unset) → machine` for lines no
+ * record covered, `old → new` for a machine the evidence contradicts,
+ * `moved from 12-31` for a pin found elsewhere, and `machine → re-derived`
+ * for a pin whose text changed.
+ */
+function rangeRow(f: DerivedField, r: RangeResult, c: Colors): Row {
+  const head = `lines ${r.lines}: `;
+  const machine = r["generated-by"];
+  let from: string;
+  let to: string;
+  switch (r.status) {
+    case "moved":
+      from = "";
+      to = `moved from ${r.from?.lines ?? r.lines}`;
+      break;
+    case "stale":
+      from = r.from?.["generated-by"] ?? "(unset)";
+      to = machine;
+      break;
+    case "changed":
+      from = machine;
+      to = "re-derived";
+      break;
+    case "unset":
+    case "current":
+      from = "(unset)";
+      to = machine;
+      break;
+  }
+  const arrow = from === "" ? "" : `${from} → `;
+  return {
+    name: f.field,
+    change: `${head}${from === "" ? "" : `${c.dim(from)} → `}${c.green(to)}`,
+    plain: `${head}${arrow}${to}`,
+    trail: c.dim(`(${f.source ?? "git"}: ${r.evidence})`),
+  };
 }
 
 /** Which of a file's fields no source could answer, so silence is not mistaken for agreement. */

@@ -16,7 +16,7 @@
  * current — the false green the whole channel exists to end.
  */
 import { readFile } from "node:fs/promises";
-import { extname, resolve } from "node:path";
+import { extname, relative, resolve, sep } from "node:path";
 import {
   DocmetaError,
   type FieldError,
@@ -71,18 +71,43 @@ import { ensureEncryptionKey, type Confirm } from "../../shared/prompt.js";
 import { writeFileAtomic } from "../core/write-file.js";
 import { errorMessage } from "../../shared/errors.js";
 import { assertSourcesAvailable, deriveMetadata } from "../core/derive/index.js";
-import { commandsOf } from "../core/derive/config.js";
+import { commandsOf, machinesOf } from "../core/derive/config.js";
+import { provenanceFenced } from "../core/derive/git.js";
+import {
+  compareProvenance,
+  parseProvenanceTarget,
+  planProvenanceWrite,
+  provenanceEntries,
+  provenanceFindings,
+  rangeResults,
+  readProvenancePage,
+  type ProvenanceComparison,
+  type ProvenanceDerivation,
+  type ProvenanceEntry,
+} from "../core/derive/provenance.js";
+import {
+  provenanceManifests,
+  provenancePlace,
+  type ProvenanceManifest,
+  type ProvenancePlace,
+} from "../core/derive/provenance-place.js";
+import { loadExternalMetadata, mergeExternalMetadata } from "../core/external-metadata.js";
+import { spliceManifestValue } from "../core/external-metadata-write.js";
+import { lineSpec, parseLines } from "../../shared/pin.js";
 import {
   compareDerived,
   DERIVABLE_FIELDS,
   DERIVE_SOURCES,
   isBuiltinField,
   isDeriveSource,
+  PROVENANCE_FIELD,
   staleFindings,
   type DerivableField,
   type DeriveCommand,
   type DerivedField,
   type DerivedRecord,
+  type DerivedStatus,
+  type DerivedValue,
   type DeriveInput,
   type DeriveSource,
   type ReviewClient,
@@ -143,7 +168,16 @@ export interface DeriveOptions {
    * `process.env`; tests pass their own.
    */
   env?: NodeJS.ProcessEnv;
+  /**
+   * `--generated-by <name>` (proposal 0046): the machine uncommitted body
+   * lines go to, or the lines a `<path>:L1-L2` positional names. Absent reads
+   * `MANNI_GENERATED_BY` from `env`; an empty value is unset either way.
+   */
+  generatedBy?: string;
 }
+
+/** The variable `--generated-by` defaults to (proposal 0046). */
+export const GENERATED_BY_ENV = "MANNI_GENERATED_BY";
 
 export interface DeriveFileResult {
   file: string;
@@ -172,6 +206,12 @@ export interface DeriveSummary {
   changed: number;
   /** Fields whose write reached the disk: always 0 under `dryRun` and `check`. */
   written: number;
+  /**
+   * `provenance` ranges whose write reached the disk (proposal 0046): always
+   * 0 under `dryRun` and `check`. Present only when the run derives
+   * `provenance`.
+   */
+  ranges?: number;
   stale: number;
   unset: number;
   unknown: number;
@@ -194,6 +234,23 @@ const SOURCE_HINT = "narrow --sources or --fields";
 
 export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   const cwd = opts.cwd ?? process.cwd();
+  // Proposal 0046: `<path>:L` and `<path>:L1-L2` scope `--generated-by` to
+  // file lines of one page. Split before anything resolves the inputs, so the
+  // walk sees the page, and a range on stdin (`-:9`) is stdin all the same.
+  const targets: { target: string; page: string }[] = [];
+  const typedInputs = opts.inputs.map((arg) => {
+    if (arg === STDIN_TOKEN) return arg;
+    const { page, lines } = parseProvenanceTarget(arg);
+    if (lines === undefined) return arg;
+    if (page === STDIN_TOKEN) return STDIN_TOKEN;
+    targets.push({ target: arg, page });
+    return page;
+  });
+  const env = opts.env ?? process.env;
+  const flagGeneratedBy = opts.generatedBy === "" ? undefined : opts.generatedBy;
+  const envGeneratedBy = env[GENERATED_BY_ENV];
+  const generatedBy = flagGeneratedBy ?? (envGeneratedBy === "" ? undefined : envGeneratedBy);
+
   const {
     config,
     inputs,
@@ -207,7 +264,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       cwd,
       configPath: opts.configPath,
       noConfig: opts.noConfig,
-      inputs: opts.inputs,
+      inputs: typedInputs,
       ...(opts.collections !== undefined ? { collections: opts.collections } : {}),
       onConfigLoaded: opts.onConfigLoaded,
     });
@@ -229,11 +286,27 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   // built-in field, and the source runs them where the config lives.
   const commands = commandsOf(config?.derive);
   const fields = resolveFields(opts.fields, config?.derive?.fields, commands);
+  const wantsProvenance = fields.includes(PROVENANCE_FIELD);
+  const firstTarget = targets[0];
+  if (firstTarget !== undefined && generatedBy === undefined) {
+    throw new DocmetaError(
+      `${firstTarget.target} names lines, which only --generated-by uses. Pass --generated-by, or drop the range.`,
+    );
+  }
+  // The variable alone never refuses: an agent session exports it once, and
+  // a run that manages other fields has nothing for it to attribute.
+  if ((flagGeneratedBy !== undefined || firstTarget !== undefined) && !wantsProvenance) {
+    throw new DocmetaError(
+      "--generated-by attributes provenance, which is not in --fields. Add provenance, or drop --generated-by.",
+    );
+  }
   // `loadConfig` refuses a `derive.fields` entry a manifest owns; the same
   // rule holds for `--fields`, which bypasses the config. Every declared
   // collection counts, not only the selected ones, and the config's `keys:`
-  // list is the whole claim, so no manifest is loaded.
+  // list is the whole claim, so no manifest is loaded. `provenance` is the
+  // exception (0046): a manifest that owns it is where its stamp is kept.
   for (const field of fields) {
+    if (field === PROVENANCE_FIELD) continue;
     const owner = manifestOwning(field, declaredCollections);
     if (owner !== undefined) {
       throw new DocmetaError(
@@ -333,13 +406,9 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   // A document that will not parse is that file's error, not the run's: the
   // rest of the corpus still gets its stamps. Only the parseable ones go to
   // the sources.
-  interface Loaded {
-    label: string;
-    absPath: string;
-    content: string;
+  interface Loaded extends DeriveInput {
     format: string;
     elements: string[];
-    extracted: DeriveInput["extracted"];
     apply: MetadataExtractor["apply"];
   }
   const loaded = new Map<string, Loaded>();
@@ -371,6 +440,55 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     }
   }
 
+  // ---- Provenance (0046): where each record lives, and what it says --------
+  const provenanceRoot = configDir ?? cwd;
+  const manifests = wantsProvenance
+    ? provenanceManifests(declaredCollections, provenanceRoot, base)
+    : [];
+  // Only the manifests that own `provenance` are read, as cite reads only
+  // the ones that own `citations`: a sibling manifest is none of derive's
+  // business, and a URL one is never fetched here.
+  const provenanceCollections = declaredCollections
+    .map((c) => ({
+      ...c,
+      externalMetadata: c.externalMetadata.filter((m) => m.keys.includes(PROVENANCE_FIELD)),
+    }))
+    .filter((c) => c.externalMetadata.length > 0);
+  const provenanceIndex =
+    manifests.length === 0
+      ? null
+      : await loadExternalMetadata(provenanceCollections, { configDir: provenanceRoot, base });
+  const byTarget = new Map(
+    targets.map((t) => [relative(base, resolve(base, t.page)).split(sep).join("/"), t.target]),
+  );
+  const places = new Map<string, ProvenancePlace>();
+  for (const doc of loaded.values()) {
+    if (!wantsProvenance) break;
+    const place = provenancePlace(
+      doc.label,
+      doc.extracted.data,
+      manifests,
+      declaredCollections,
+      provenanceRoot,
+      base,
+    );
+    if (place !== undefined) {
+      places.set(doc.label, place);
+      doc.provenanceManifest = { absPath: place.absPath, entry: place.entry, join: place.join };
+    }
+    const target = byTarget.get(doc.label);
+    if (target !== undefined && generatedBy !== undefined) {
+      doc.attribution = { target, generatedBy };
+    }
+  }
+  /** The page's `provenance` as its record holds it: the manifest's, or the page's own. */
+  const stampOf = (doc: Loaded): unknown => {
+    if (!places.has(doc.label)) return doc.extracted.data[PROVENANCE_FIELD];
+    const members = memberOf(provenanceCollections, provenanceRoot, base, doc.label);
+    return mergeExternalMetadata(doc.label, doc.extracted, provenanceIndex, members, base).extracted
+      .data[PROVENANCE_FIELD];
+  };
+
   // ---- Derive --------------------------------------------------------------
   const derived = await deriveMetadata([...loaded.values()], {
     cwd,
@@ -383,6 +501,8 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     cache: opts.cache ?? true,
     now: opts.now ?? (() => new Date()),
     reviews: opts.reviews,
+    machines: machinesOf(config?.derive),
+    ...(generatedBy !== undefined ? { generatedBy } : {}),
   });
   assertSourcesAvailable(derived.sources, SOURCE_HINT);
   // A source that answered, with a caveat worth one line: a repository with
@@ -481,6 +601,23 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   };
 
   // ---- Compare, and write ----------------------------------------------------
+  /** Each manifest this run writes, read once and spliced in memory (as cite holds them). */
+  const heldManifests = new Map<string, { path: string; before: string; text: string }>();
+  const holdManifest = async (
+    manifest: ProvenanceManifest,
+  ): Promise<{ path: string; before: string; text: string }> => {
+    const already = heldManifests.get(manifest.absPath);
+    if (already !== undefined) return already;
+    let before: string;
+    try {
+      before = await readFile(manifest.absPath, "utf8");
+    } catch (err) {
+      throw new DocmetaError(`Manifest ${manifest.file} could not be read: ${errorMessage(err)}`);
+    }
+    const held = { path: manifest.absPath, before, text: before };
+    heldManifests.set(manifest.absPath, held);
+    return held;
+  };
   const results: DeriveFileResult[] = [];
   for (const label of files) {
     const failure = errors.get(label);
@@ -504,18 +641,79 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       const at = pointerOf(field);
       return marks.marked.some((p) => isAtOrUnder(p, at));
     };
+    // Proposal 0046: `provenance` is judged range by range against the
+    // record wherever it lives, never by `compareDerived`.
+    const place = places.get(label);
+    const provenance = wantsProvenance
+      ? judgeProvenance(stampOf(doc), derived.provenance?.get(label), record?.fields[PROVENANCE_FIELD] ?? null, place)
+      : undefined;
     const compared = fields.map((field) =>
-      compareDerived(field, marks.data[field], record?.fields[field]),
+      field === PROVENANCE_FIELD && provenance !== undefined
+        ? provenance.field
+        : compareDerived(field, marks.data[field], record?.fields[field]),
     );
     // Read when reporting, after `written` is set on `compared` below.
     const shown = (): DerivedField[] =>
-      compared.map((f) => (isMarked(f.field) ? redactedDerived(f) : f));
-    const pending = compared.filter((f) => f.status === "stale" || f.status === "unset");
+      compared.map((f) =>
+        f.field !== PROVENANCE_FIELD && isMarked(f.field) ? redactedDerived(f) : f,
+      );
+    const findingsOf = (reported: readonly DerivedField[]): FieldError[] =>
+      reported.flatMap((f) =>
+        f.field === PROVENANCE_FIELD && provenance?.judged !== undefined
+          ? provenanceFindings(provenance.judged.comparisons, provenance.judged.derivation.page.bodyLine)
+          : staleFindings([f], doc.extracted.lineFor),
+      );
+    if (
+      provenance?.judged !== undefined &&
+      opts.generatedBy !== undefined &&
+      opts.generatedBy !== "" &&
+      doc.attribution === undefined &&
+      ![...provenance.judged.derivation.evidenceByLine.values()].some((e) => e.rule === 1)
+    ) {
+      opts.onNotice?.(
+        `${label}: no uncommitted body lines; --generated-by attributes only what is not yet committed.`,
+      );
+    }
+    const stale = (f: DerivedField): boolean => f.status === "stale" || f.status === "unset";
+    // A manifest-held record is written into the manifest, not the page.
+    const toManifest =
+      provenance !== undefined && place !== undefined && stale(provenance.field) ? provenance : undefined;
+    const pending = compared.filter((f) => stale(f) && !(f.field === PROVENANCE_FIELD && toManifest !== undefined));
+    const onPage = pending.find((f) => f.field === PROVENANCE_FIELD);
+    // Stress test 8: where the metadata is part of the body, a stamp on the
+    // page would change the very lines it pins.
+    if (onPage !== undefined && !provenanceFenced(doc.extracted)) {
+      results.push(
+        errorResult(
+          label,
+          doc.format,
+          `provenance cannot be stamped into the page: in the "${doc.format}" format the metadata is part of the body it pins. Keep provenance in an externalMetadata manifest.`,
+          check,
+          shown(),
+        ),
+      );
+      continue;
+    }
     // `changed` is what the writer would do, not what the comparison found:
     // as in `fill`, the patch is applied and the result compared with the
     // document, so a field is `written` only when bytes went to disk. Under
     // `dryRun` the same patch is computed and nothing is written.
     let changed = false;
+    if (toManifest?.judged !== undefined && place !== undefined) {
+      const held = await holdManifest(place.manifest);
+      const before = held.text;
+      held.text = spliceManifestValue(held.text, {
+        entry: place.entry,
+        key: PROVENANCE_FIELD,
+        value: toManifest.judged.plan,
+        join: place.join,
+        file: place.manifest.file,
+      }).text;
+      if (held.text !== before) {
+        changed = true;
+        if (!dryRun) markWritten(toManifest.field);
+      }
+    }
     if (pending.length > 0) {
       // Same writer `fill` and `query` use, so a format they cannot write is
       // refused here the same way — and refused loudly, as this file's error,
@@ -538,22 +736,44 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         changed = true;
       } else {
         const patch: MetadataPatch = {};
+        const deletions: string[] = [];
         for (const f of pending) {
+          if (f.field === PROVENANCE_FIELD) {
+            // An empty record is no record: `provenance` has `minItems: 1`.
+            if (Array.isArray(f.derived) && f.derived.length === 0) deletions.push(f.field);
+            else patch[f.field] = f.derived;
+            continue;
+          }
           patch[f.field] = isMarked(f.field)
             ? await sealField(f.field, f.derived, marks.marked)
             : f.derived;
         }
+        const apply = doc.apply;
+        const write = (value: MetadataPatch): string =>
+          apply(doc.content, value, {
+            filePath: label,
+            elements: doc.elements,
+            ...(deletions.length > 0 ? { deletions } : {}),
+          });
         let next: string;
         try {
-          next = doc.apply(doc.content, patch, { filePath: label, elements: doc.elements });
+          next = write(patch);
+          // A page with no block yet gets one, and the writer may leave a
+          // blank line after it: the body then starts a line later, and every
+          // body line the stamp names moves with it.
+          const plan = patch[PROVENANCE_FIELD];
+          const shift = bodyShift(doc.content, next);
+          if (shift > 0 && Array.isArray(plan)) {
+            next = write({ ...patch, [PROVENANCE_FIELD]: shiftEntries(provenanceEntries(plan), shift) });
+          }
         } catch (err) {
           results.push(errorResult(label, doc.format, errorMessage(err), check, shown()));
           continue;
         }
-        changed = next !== doc.content;
-        if (changed && !dryRun) {
+        changed = changed || next !== doc.content;
+        if (next !== doc.content && !dryRun) {
           await writeFileAtomic(doc.absPath, next);
-          for (const f of pending) f.written = true;
+          for (const f of pending) markWritten(f);
         }
       }
     }
@@ -564,13 +784,21 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       format: doc.format,
       fields: reported,
       changed,
-      ...(check ? { findings: staleFindings(reported, doc.extracted.lineFor) } : {}),
+      ...(check ? { findings: findingsOf(reported) } : {}),
     });
   }
 
+  // One write per manifest, after every page that touches it is settled.
+  if (!dryRun) {
+    for (const held of heldManifests.values()) {
+      if (held.text !== held.before) await writeFileAtomic(held.path, held.text);
+    }
+  }
+
+  const summary = summarize(results);
   return {
     results,
-    summary: summarize(results),
+    summary: wantsProvenance ? { ...summary, ranges: countRanges(results) } : summary,
     dryRun,
     check,
     sources: derived.sources,
@@ -673,4 +901,88 @@ function summarize(results: DeriveFileResult[]): DeriveSummary {
     }
   }
   return summary;
+}
+
+/** A field marked written, and for `provenance` every range that was not already current. */
+function markWritten(field: DerivedField): void {
+  field.written = true;
+  for (const range of field.ranges ?? []) {
+    if (range.status !== "current") range.written = true;
+  }
+}
+
+/** Ranges written across the run. */
+function countRanges(results: readonly DeriveFileResult[]): number {
+  let n = 0;
+  for (const r of results) {
+    for (const f of r.fields) n += (f.ranges ?? []).filter((range) => range.written).length;
+  }
+  return n;
+}
+
+interface JudgedProvenance {
+  derivation: ProvenanceDerivation;
+  comparisons: ProvenanceComparison[];
+  /** What `derive` writes: current entries kept, moved ones re-lined, the rest re-derived. */
+  plan: ProvenanceEntry[];
+}
+
+/**
+ * One page's `provenance` as a `DerivedField`: the record against the
+ * derivation, range by range (proposal 0046). `status` is `current` when
+ * every range is, and otherwise `unset` for a page with no record or
+ * `stale` for one whose record is wrong; `unknown` when git had nothing to
+ * say about the page at all.
+ */
+function judgeProvenance(
+  asserted: unknown,
+  derivation: ProvenanceDerivation | undefined,
+  value: DerivedValue | null,
+  place: ProvenancePlace | undefined,
+): { field: DerivedField; judged?: JudgedProvenance } {
+  const base = {
+    field: PROVENANCE_FIELD,
+    ...(asserted !== undefined ? { asserted } : {}),
+    ...(place !== undefined ? { manifest: place.manifest.file } : {}),
+  };
+  if (derivation === undefined) {
+    return { field: { ...base, derived: null, status: "unknown", written: false } };
+  }
+  const comparisons = compareProvenance(provenanceEntries(asserted), derivation);
+  const plan = planProvenanceWrite(comparisons, derivation);
+  const settled = comparisons.every((c) => c.status === "current");
+  const status: DerivedStatus = settled ? "current" : asserted === undefined ? "unset" : "stale";
+  return {
+    field: {
+      ...base,
+      derived: plan,
+      source: "git",
+      ...(value !== null ? { evidence: value.evidence } : {}),
+      status,
+      written: false,
+      ranges: rangeResults(comparisons, derivation.page.bodyLine),
+    },
+    judged: { derivation, comparisons, plan },
+  };
+}
+
+/**
+ * How many lines further down the body starts after a write: a writer that
+ * adds a block may leave a blank line after it. Zero when the body is the
+ * same, and when it changed in some other way.
+ */
+function bodyShift(before: string, after: string): number {
+  const was = readProvenancePage(before).body;
+  const now = readProvenancePage(after).body;
+  const shift = now.length - was.length;
+  if (shift <= 0) return 0;
+  return now.slice(shift).join("\n") === was.join("\n") ? shift : 0;
+}
+
+function shiftEntries(entries: readonly ProvenanceEntry[], shift: number): ProvenanceEntry[] {
+  return entries.map((e) => {
+    const span = parseLines(e.lines);
+    if (span === undefined) return e;
+    return { ...e, lines: lineSpec({ start: span.start + shift, end: span.end + shift }) };
+  });
 }

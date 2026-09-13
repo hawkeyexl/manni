@@ -18,7 +18,7 @@
 import type { DatabaseSync } from "node:sqlite";
 import type { DocmetaConfig } from "../config.js";
 import { bindValue, quoteIdent, RESERVED } from "../projection.js";
-import { commandsOf } from "./config.js";
+import { commandsOf, machinesOf } from "./config.js";
 import { assertSourcesAvailable, deriveMetadata } from "./index.js";
 import {
   DERIVE_SOURCES,
@@ -301,6 +301,7 @@ export async function deriveForTable(
     ...(commands !== undefined ? { commands } : {}),
     cache: ctx.cache,
     now: ctx.now ?? (() => new Date()),
+    machines: machinesOf(derive),
   });
   assertSourcesAvailable(result.sources, hint);
   return result.records;

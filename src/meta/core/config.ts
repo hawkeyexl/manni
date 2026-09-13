@@ -31,6 +31,7 @@ import {
   DERIVE_SOURCES,
   isBuiltinField,
   isDeriveSource,
+  PROVENANCE_FIELD,
   type BuiltinDerivableField,
   type DerivableField,
   type DeriveSource,
@@ -223,10 +224,18 @@ export interface DeriveConfig {
    * is never a built-in field, `$schema`, or a key a manifest owns.
    */
   commands?: Record<string, DeriveCommandConfig>;
+  /**
+   * Trailer identities that are machines (proposal 0046), as globs matched
+   * case-sensitively against a trailer's name and its email, with literal
+   * brackets. A match names a machine for `provenance` and is left out of
+   * `authors`. Absent means `["*[bot]"]`, which is 0040's rule; read it
+   * through `machinesOf`.
+   */
+  machines?: string[];
 }
 
 /** The keys a `derive:` mapping may carry. */
-const DERIVE_KEYS = ["fields", "sources", "codeowners", "commands"] as const;
+const DERIVE_KEYS = ["fields", "sources", "codeowners", "commands", "machines"] as const;
 
 /** The keys one `derive.commands` entry may carry. */
 const DERIVE_COMMAND_KEYS = ["run", "timeout"] as const;
@@ -239,6 +248,7 @@ const BUILTIN_CLAIMED_BY: Readonly<Record<BuiltinDerivableField, string>> = {
   owner: "codeowners",
   "reviewed-by": "GitHub or GitLab",
   "last-reviewed": "GitHub or GitLab",
+  provenance: "git",
 };
 
 /**
@@ -830,6 +840,10 @@ function assertManagedFieldsUnowned(
     if (owner !== undefined) refuse(`derive.commands.${key}`, owner);
   }
   for (const [i, field] of (config.derive?.fields ?? []).entries()) {
+    // Proposal 0046: a `provenance` entry is a pin a tool mints, never a
+    // hand-curated value, so a manifest that owns it is where `derive` stores
+    // the stamp rather than a second authority.
+    if (field === PROVENANCE_FIELD) continue;
     const owner = manifestOwning(field, collections);
     if (owner !== undefined) refuse(`derive.fields[${i}] "${field}"`, owner);
   }
@@ -870,10 +884,11 @@ function parseDerive(
     e.fields === undefined &&
     e.sources === undefined &&
     e.codeowners === undefined &&
-    e.commands === undefined
+    e.commands === undefined &&
+    e.machines === undefined
   ) {
     throw new DocmetaError(
-      `${source}: "derive" sets nothing. Give it \`fields:\` to manage, \`commands:\` to derive from a command, or \`sources:\` or \`codeowners:\` to shape the reads.`,
+      `${source}: "derive" sets nothing. Give it \`fields:\` to manage, \`commands:\` to derive from a command, or \`sources:\`, \`codeowners:\` or \`machines:\` to shape the reads.`,
     );
   }
 
@@ -939,6 +954,29 @@ function parseDerive(
   }
 
   if (commands !== undefined) derive.commands = commands;
+
+  if (e.machines !== undefined) {
+    if (
+      !Array.isArray(e.machines) ||
+      e.machines.length === 0 ||
+      e.machines.some((m) => typeof m !== "string")
+    ) {
+      throw new DocmetaError(
+        `${source}: derive.machines must be a non-empty list of globs, matched against a trailer's name and its email. Default: ["*[bot]"].`,
+      );
+    }
+    const machines: string[] = [];
+    (e.machines as string[]).forEach((m, i) => {
+      if (m.trim() === "") {
+        throw new DocmetaError(`${source}: derive.machines[${i}] is blank; a glob must name something.`);
+      }
+      if (machines.includes(m)) {
+        throw new DocmetaError(`${source}: derive.machines lists "${m}" twice.`);
+      }
+      machines.push(m);
+    });
+    derive.machines = machines;
+  }
 
   return derive;
 }

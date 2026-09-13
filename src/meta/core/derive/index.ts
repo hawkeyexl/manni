@@ -36,6 +36,7 @@ import { deriveFromCodeowners } from "./codeowners.js";
 import { deriveFromCommands } from "./command.js";
 import { createReviewClient, deriveFromReviews, type ReviewFacts } from "./reviews.js";
 import { deriveFromGit, type GitFacts } from "./git.js";
+import type { ProvenanceDerivation } from "./provenance.js";
 import { isBuiltinField } from "./types.js";
 import type {
   BuiltinDerivableField,
@@ -59,6 +60,7 @@ export const FIELD_SOURCES: Readonly<Record<BuiltinDerivableField, readonly Deri
   owner: ["codeowners"],
   "reviewed-by": ["github", "gitlab", "git"],
   "last-reviewed": ["github", "gitlab", "git"],
+  provenance: ["git"],
 };
 
 /** The sources that read a host's review record; one per host, named for it. */
@@ -81,6 +83,12 @@ export interface DeriveResult {
    * not point at. Absent means not applicable here, never unavailable.
    */
   sources: Partial<Record<DeriveSource, SourceStatus>>;
+  /**
+   * The provenance derivation per input label (proposal 0046), for the
+   * comparison with a page's stamp: present only when `provenance` was
+   * requested and the git source answered.
+   */
+  provenance?: ReadonlyMap<string, ProvenanceDerivation>;
 }
 
 /**
@@ -138,9 +146,19 @@ export async function deriveMetadata(
   // git: the walk every other source builds on.
   let git: Map<string, GitFacts> = new Map();
   if (consulted.has("git")) {
-    const result = await deriveFromGit(inputs, { cwd: ctx.cwd, now: ctx.now });
+    const result = await deriveFromGit(inputs, {
+      cwd: ctx.cwd,
+      now: ctx.now,
+      fields: ctx.fields,
+      ...(ctx.generatedBy !== undefined ? { generatedBy: ctx.generatedBy } : {}),
+      ...(ctx.machines !== undefined ? { machines: ctx.machines } : {}),
+    });
     sources.git = result.status;
     git = result.records;
+  }
+  const provenance = new Map<string, ProvenanceDerivation>();
+  for (const [label, facts] of git) {
+    if (facts.provenanceDerivation !== undefined) provenance.set(label, facts.provenanceDerivation);
   }
 
   // Repository root per input: git's answer where it gave one, the .git walk otherwise.
@@ -239,7 +257,7 @@ export async function deriveMetadata(
     }
     records.set(input.label, { file: input.label, fields });
   }
-  return { records, sources };
+  return { records, sources, ...(provenance.size > 0 ? { provenance } : {}) };
 }
 
 function valueFrom(

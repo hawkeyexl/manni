@@ -114,6 +114,7 @@ describe("resolved: the view's shape", () => {
       "authors",
       "reviewed-by",
       "last-reviewed",
+      "provenance",
       "verified-against",
       "_origin",
       "_sources",

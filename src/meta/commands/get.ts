@@ -31,10 +31,19 @@ import {
   assertSourcesAvailable,
   deriveMetadata,
 } from "../core/derive/index.js";
-import { commandsOf } from "../core/derive/config.js";
+import { commandsOf, machinesOf } from "../core/derive/config.js";
+import { provenanceFenced } from "../core/derive/git.js";
+import {
+  compareProvenance,
+  provenanceEntries,
+  readProvenancePage,
+  type ProvenanceDerivation,
+} from "../core/derive/provenance.js";
+import { readerManifests, readerPlace } from "../core/derive/provenance-place.js";
 import {
   DERIVE_SOURCES,
   isBuiltinField,
+  PROVENANCE_FIELD,
   type DerivableField,
   type DeriveCommand,
   type DerivedRecord,
@@ -147,6 +156,14 @@ export interface GetFileResult {
    * one. A run carrying any `error` exits 1.
    */
   error?: string;
+  /**
+   * `provenance` only (proposal 0046), present when it was requested and the
+   * file parsed. `bodyLine` is the file line body line 1 sits on, which the
+   * record's body lines are shown against. `current` is whether the record
+   * agrees with git as `validate` judges it, range by range; absent when
+   * nothing was derived.
+   */
+  provenance?: { bodyLine: number; current?: boolean };
 }
 
 export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
@@ -157,7 +174,7 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
 
   // Explicit CLI inputs win, else config `paths:`; `base` is whichever of the
   // two directories those inputs were written relative to.
-  const { config, inputs, base, configDir, collections, fromCollections, configFile } =
+  const { config, inputs, base, configDir, collections, declaredCollections, fromCollections, configFile } =
     await resolveRunConfig({
       cwd,
       configPath: opts.configPath,
@@ -243,10 +260,17 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
     ? opts.fields.filter((f) => isBuiltinField(f) || Object.hasOwn(commands, f))
     : [];
   const deriveInputs: DeriveInput[] = [];
+  // The manifests that hold a page's `provenance` record (0046), for evidence rule 2.
+  const wantsProvenance = opts.fields.includes(PROVENANCE_FIELD);
+  const provenanceManifests = deriving && derivableFields.includes(PROVENANCE_FIELD)
+    ? readerManifests(declaredCollections, configDir ?? cwd, base)
+    : [];
   // Which requested fields each parsed file **carries**, keyed by label. It
   // is the resolution rule's whole input, and it is collected here because
   // only `readOne` holds the extracted data.
   const carried = new Map<string, Record<string, boolean>>();
+  /** Where each parsed file's body starts, for `provenance` (0046). */
+  const bodyLines = new Map<string, number>();
 
   const readOne = (label: string, content: string, extension: string): void => {
     const extractor = forced ?? extractorForExtension(extension);
@@ -262,12 +286,19 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
         elements: resolveElements(label, config, members),
       });
       if (deriving && label !== STDIN_LABEL) {
+        const place = provenanceManifests.length === 0
+          ? undefined
+          : readerPlace(label, own.data, provenanceManifests, declaredCollections, configDir ?? cwd, base);
         deriveInputs.push({
           label,
           absPath: resolve(base, label),
           content,
           extracted: own,
+          ...(place !== undefined ? { provenanceManifest: place } : {}),
         });
+      }
+      if (wantsProvenance) {
+        bodyLines.set(label, readProvenancePage(content, { fenced: provenanceFenced(own) }).bodyLine);
       }
       extracted = mergeExternalMetadata(label, own, externalMetadata, members, base, {
         encryptionKey: joinKey,
@@ -298,7 +329,13 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
       carries[f] = carriesField(extracted.data, f);
     }
     carried.set(label, carries);
-    out.push({ file: label, present: extracted.present, values });
+    const bodyLine = bodyLines.get(label);
+    out.push({
+      file: label,
+      present: extracted.present,
+      values,
+      ...(bodyLine !== undefined ? { provenance: { bodyLine } } : {}),
+    });
   };
 
   if (usingStdin) {
@@ -372,6 +409,7 @@ async function attachResolved(
 ): Promise<void> {
   const { run } = opts;
   const derive = run.config?.derive;
+  let provenance: ReadonlyMap<string, ProvenanceDerivation> = new Map();
   const commands = commandsOf(derive);
   const records: ReadonlyMap<string, DerivedRecord> =
     opts.derivable.length === 0 || inputs.length === 0
@@ -389,11 +427,13 @@ async function attachResolved(
             ...(commands !== undefined ? { commands } : {}),
             cache: run.cache,
             now: run.now,
+            machines: machinesOf(derive),
           });
           assertSourcesAvailable(
             result.sources,
             "pass --no-derived, or narrow derive.sources",
           );
+          if (result.provenance !== undefined) provenance = result.provenance;
           return result.records;
         })();
   for (const r of out) {
@@ -427,6 +467,14 @@ async function attachResolved(
     if (opts.derivable.length > 0) r.derived = derived;
     r.resolved = resolved;
     r.origin = origin;
+    // Agreement for `provenance` is the provenance comparator's (0046): a
+    // record git has nothing against is current, however its entries compare
+    // with the derivation as values.
+    const derivation = provenance.get(r.file);
+    if (r.provenance !== undefined && derivation !== undefined) {
+      const comparisons = compareProvenance(provenanceEntries(r.values[PROVENANCE_FIELD]), derivation);
+      r.provenance.current = comparisons.every((c) => c.status === "current");
+    }
   }
 }
 

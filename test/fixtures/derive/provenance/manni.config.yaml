@@ -1,0 +1,16 @@
+# A corpus for `provenance` (proposal 0046): one page whose body lines a
+# machine may write. The tests copy it into a temp repository and build the
+# history they need there; nothing here carries a commit of its own.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+
+meta:
+  schemas:
+    - ./permissive.schema.json
+  derive:
+    fields: [provenance]
+    # git alone: the corpus has no CODEOWNERS and no GitHub or GitLab origin.
+    sources: [git]
+    machines: ["*[bot]", "noreply@anthropic.com"]

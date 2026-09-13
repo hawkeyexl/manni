@@ -143,7 +143,7 @@ describe("manni meta derive (built bin)", { timeout: 60_000 }, () => {
     const r = run(["derive", "--fields", "stakeholders"], dir);
     expect(r.status).toBe(2);
     expect(r.stderr).toContain(
-      '"stakeholders" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed, or any key with an entry in derive.commands',
+      '"stakeholders" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed, provenance, or any key with an entry in derive.commands',
     );
   });
 
@@ -308,5 +308,57 @@ describe("manni meta derive with a command source (built bin)", { timeout: 60_00
 
     const after = run(["validate"], dir);
     expect(after.status).toBe(0);
+  });
+});
+
+/**
+ * `provenance` through the built bin (proposal 0046): `MANNI_GENERATED_BY`
+ * stamps an agent's uncommitted edit and `validate` then passes, and a range
+ * with no `--generated-by` is a usage error on stderr, exit 2.
+ */
+describe("manni meta derive provenance (built bin)", { timeout: 60_000 }, () => {
+  const PROVENANCE = resolve(here, "fixtures", "derive", "provenance");
+
+  function withEnv(args: string[], cwd: string, extra: Record<string, string>): Run {
+    const env: NodeJS.ProcessEnv = { ...process.env, NO_COLOR: "1", ...extra };
+    if (extra.MANNI_GENERATED_BY === undefined) delete env.MANNI_GENERATED_BY;
+    const r = spawnText(spawnSync("node", [bin, "meta", ...args], { cwd, encoding: "utf8", env }));
+    return { stdout: r.stdout ?? "", stderr: r.stderr ?? "", status: r.status ?? 1 };
+  }
+
+  function stage(): string {
+    const dir = makeTempRepo({ files: {} });
+    dirs.push(dir);
+    cpSync(PROVENANCE, dir, { recursive: true });
+    commit(dir, "add docs", { authorDate: D1 });
+    const page = readFileSync(join(dir, "docs", "limits.md"), "utf8");
+    writeFile(dir, "docs/limits.md", page.replace("100 requests", "120 requests"));
+    return dir;
+  }
+
+  it("stamps an agent's uncommitted edit from MANNI_GENERATED_BY, exit 0", () => {
+    const dir = stage();
+    const r = withEnv(["derive"], dir, { MANNI_GENERATED_BY: "claude-fable-5" });
+    expect(r.stderr).not.toContain("manni: docs/limits.md");
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("docs/limits.md\n    provenance  lines 9: (unset) → claude-fable-5  (git: uncommitted)");
+    expect(r.stdout).toContain("1 file, 1 changed, 1 range written");
+    expect(readFileSync(join(dir, "docs", "limits.md"), "utf8")).toContain("generated-by: claude-fable-5");
+    expect(withEnv(["validate"], dir, {}).status).toBe(0);
+  });
+
+  it("refuses a range without --generated-by on stderr, exit 2", () => {
+    const dir = stage();
+    const r = withEnv(["derive", "docs/limits.md:9-11"], dir, {});
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain(
+      "manni: docs/limits.md:9-11 names lines, which only --generated-by uses. Pass --generated-by, or drop the range.",
+    );
+  });
+
+  it("names --generated-by and MANNI_GENERATED_BY in help", () => {
+    const r = withEnv(["derive", "--help"], root, {});
+    expect(r.stdout).toContain("--generated-by <name>");
+    expect(r.stdout).toContain("MANNI_GENERATED_BY");
   });
 });

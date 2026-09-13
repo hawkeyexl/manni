@@ -21,16 +21,38 @@
  */
 import { constants as bufferConstants } from "node:buffer";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { dirname, extname, relative, sep } from "node:path";
+import { dirname, extname, isAbsolute, posix, relative, sep } from "node:path";
+import { parse as parseYaml } from "yaml";
 import { findGitRoot } from "../../../shared/git-root.js";
 import { locateFrontmatter } from "../../extractors/frontmatter.js";
 import {
   extractorByName,
   extractorForExtension,
 } from "../../extractors/index.js";
-import type { MetadataExtractor } from "../../types.js";
+import type { ExtractedMetadata, MetadataExtractor } from "../../types.js";
 import { toJsonText } from "../json-text.js";
-import type { DeriveInput, DerivedValue, SourceStatus } from "./types.js";
+import { splitLines } from "../../../shared/pin.js";
+import {
+  attributeRange,
+  DEFAULT_MACHINES,
+  deriveProvenance,
+  machineIdentity,
+  parseLinePorcelain,
+  parseProvenanceTarget,
+  provenanceEntries,
+  ZERO_SHA,
+  type BlameLine,
+  type CommitEvidence,
+  type ProvenanceDerivation,
+  type ProvenanceEntry,
+} from "./provenance.js";
+import {
+  PROVENANCE_FIELD,
+  type DeriveInput,
+  type DerivedValue,
+  type ProvenanceManifestRef,
+  type SourceStatus,
+} from "./types.js";
 
 /** Facts git can state about one document. Every field is null when git answered but has no fact. */
 export interface GitFacts {
@@ -41,6 +63,17 @@ export interface GitFacts {
   "reviewed-by": DerivedValue | null;
   /** From `Reviewed-by` trailers only. */
   "last-reviewed": DerivedValue | null;
+  /**
+   * The machine-written body ranges (proposal 0046), from blame and the
+   * commits it names: the entry list as a page would carry it, or null when
+   * no line names a machine, and when provenance was not requested.
+   */
+  provenance: DerivedValue | null;
+  /**
+   * The derivation behind `provenance`, per body line, which the comparison
+   * with a page's stamp reads. Present exactly when provenance was requested.
+   */
+  provenanceDerivation?: ProvenanceDerivation;
   /** Full sha of the newest body-changing commit, for the review sources; null when uncommitted or none. */
   lastBodyCommit: string | null;
   /** Repository root the document lives in, absolute, native separators. */
@@ -57,6 +90,15 @@ export interface GitSourceOptions {
    * reported too large to read. Test seam; default `MAX_GIT_OUTPUT_BYTES`.
    */
   maxOutputBytes?: number;
+  /**
+   * The fields the run asks for. Blame runs only when it names
+   * `provenance`, which is the per-field gating 0040 already has.
+   */
+  fields?: readonly string[];
+  /** `--generated-by` or `MANNI_GENERATED_BY`: the machine uncommitted lines go to (rule 1). */
+  generatedBy?: string;
+  /** `derive.machines`; `DEFAULT_MACHINES` when absent. */
+  machines?: readonly string[];
 }
 
 export interface GitSourceResult {
@@ -95,6 +137,17 @@ class BlobsUnreadable extends Error {
   }
 }
 
+/**
+ * `git blame` exited non-zero for a file that has history. A file with
+ * none (untracked, or in a repository with no commits yet) is not this: all
+ * of its lines are uncommitted, and blame has nothing to add.
+ */
+class BlameUnreadable extends Error {
+  constructor(readonly rel: string) {
+    super(rel);
+  }
+}
+
 /** One commit that touched a document, as either walk form reports it. */
 interface FileHistory {
   sha: string;
@@ -106,6 +159,8 @@ interface FileHistory {
   coAuthors: string[];
   /** `Reviewed-by` trailer values, as written. */
   reviewedBy: string[];
+  /** `Generated-by` trailer values, as written (proposal 0046). */
+  generatedBy: string[];
   oldBlob: string | null;
   newBlob: string | null;
   pathAtCommit: string;
@@ -150,6 +205,8 @@ export async function deriveFromGit(
   }
 
   const threshold = opts.bulkThreshold ?? DEFAULT_BULK_THRESHOLD;
+  const machines = opts.machines ?? DEFAULT_MACHINES;
+  const wantsProvenance = opts.fields?.includes(PROVENANCE_FIELD) ?? false;
   const maxBytes = opts.maxOutputBytes ?? MAX_GIT_OUTPUT_BYTES;
   const reasons: string[] = [];
   for (const [root, bucket] of byRoot) {
@@ -172,10 +229,8 @@ export async function deriveFromGit(
       continue;
     }
 
-    let histories: Map<string, FileHistory[]> | null;
-    let blobs: Map<string, string>;
     try {
-      histories =
+      const histories =
         bucket.length <= threshold
           ? await perFileHistories(run, bucket)
           : await bulkHistories(run, bucket);
@@ -183,23 +238,33 @@ export async function deriveFromGit(
         reasons.push(`git could not read the history at ${root}`);
         continue;
       }
-      blobs = await fetchBlobs(run, neededBlobs(histories));
+      const blobs = await fetchBlobs(run, neededBlobs(histories));
+
+      for (const entry of bucket) {
+        const history = histories.get(entry.rel) ?? [];
+        const facts = judge(entry.input, root, history, blobs, opts.now, machines);
+        if (wantsProvenance) {
+          const derived = await provenanceFor(run, root, entry, history, blobs, {
+            machines,
+            ...(opts.generatedBy !== undefined ? { generatedBy: opts.generatedBy } : {}),
+          });
+          facts.provenance = derived.value;
+          facts.provenanceDerivation = derived.derivation;
+        }
+        records.set(entry.input.label, facts);
+      }
     } catch (err) {
       if (err instanceof BlobsUnreadable) {
         reasons.push(`git cat-file could not read the history (${root}): ${err.detail}`);
         continue;
       }
+      if (err instanceof BlameUnreadable) {
+        reasons.push(`git blame could not read ${err.rel} (${root})`);
+        continue;
+      }
       if (!(err instanceof HistoryTooLarge)) throw err;
       reasons.push(`git history is too large to read in one pass (${root})`);
       continue;
-    }
-
-    for (const entry of bucket) {
-      const history = histories.get(entry.rel) ?? [];
-      records.set(
-        entry.input.label,
-        judge(entry.input, root, history, blobs, opts.now),
-      );
     }
   }
 
@@ -256,7 +321,8 @@ function groupByRoot(inputs: readonly DeriveInput[]): Map<string, RootEntry[]> {
 const RECORD_FORMAT =
   "--format=%x1e%H%x00%aI%x00%an%x00%ae%x00" +
   "%(trailers:key=Co-authored-by,valueonly,unfold,separator=%x1f)%x00" +
-  "%(trailers:key=Reviewed-by,valueonly,unfold,separator=%x1f)";
+  "%(trailers:key=Reviewed-by,valueonly,unfold,separator=%x1f)%x00" +
+  "%(trailers:key=Generated-by,valueonly,unfold,separator=%x1f)";
 
 const LOG_ARGS = [
   "-c",
@@ -332,6 +398,7 @@ interface LogRecord {
   authorEmail: string;
   coAuthors: string[];
   reviewedBy: string[];
+  generatedBy: string[];
   raw: RawEntry[];
 }
 
@@ -358,6 +425,7 @@ function parseLog(text: string): LogRecord[] {
       authorEmail: fields[3] ?? "",
       coAuthors: splitTrailers(fields[4]),
       reviewedBy: splitTrailers(fields[5]),
+      generatedBy: splitTrailers(fields[6]),
       raw,
     });
   }
@@ -462,6 +530,7 @@ function attribute(
         authorEmail: record.authorEmail,
         coAuthors: record.coAuthors,
         reviewedBy: record.reviewedBy,
+        generatedBy: record.generatedBy,
         oldBlob: entry.oldBlob === NULL_SHA ? null : entry.oldBlob,
         newBlob: entry.newBlob === NULL_SHA ? null : entry.newBlob,
         pathAtCommit: entry.newPath,
@@ -534,6 +603,7 @@ function judge(
   history: readonly FileHistory[],
   blobs: Map<string, string>,
   now: () => Date,
+  machines: readonly string[],
 ): GitFacts {
   const fenced = input.extracted.fenced;
   const extractor = extractorFor(input);
@@ -583,7 +653,7 @@ function judge(
     );
   }
 
-  const authors = bodyChanging.length === 0 ? null : authorsOf(bodyChanging);
+  const authors = bodyChanging.length === 0 ? null : authorsOf(bodyChanging, machines);
 
   let reviewedBy: DerivedValue | null = null;
   let lastReviewed: DerivedValue | null = null;
@@ -599,6 +669,7 @@ function judge(
     authors,
     "reviewed-by": reviewedBy,
     "last-reviewed": lastReviewed,
+    provenance: null,
     lastBodyCommit,
     root,
   };
@@ -632,14 +703,17 @@ function lastUpdatedOf(
 /**
  * Distinct people behind the body-changing commits, oldest first, each
  * commit's author ahead of its co-authors, deduplicated by lowercase email
- * (by lowercase name when a co-author trailer carries none). A name ending
- * `[bot]` is a machine and is left out.
+ * (by lowercase name when a co-author trailer carries none). An identity
+ * whose name or email matches `derive.machines` is a machine and is left
+ * out (proposal 0046); the default, `*[bot]`, is a name ending `[bot]`.
  */
-function authorsOf(bodyChanging: readonly FileHistory[]): DerivedValue {
+function authorsOf(bodyChanging: readonly FileHistory[], machines: readonly string[]): DerivedValue {
   const seen = new Set<string>();
   const names: string[] = [];
   const add = (name: string, email: string | null): void => {
-    if (name === "" || name.endsWith("[bot]")) return;
+    if (name === "") return;
+    const identity = email === null || email === "" ? name : `${name} <${email}>`;
+    if (machineIdentity(identity, machines) !== undefined) return;
     const key = email === null || email === "" ? `name:${name.toLowerCase()}` : email.toLowerCase();
     if (seen.has(key)) return;
     seen.add(key);
@@ -651,6 +725,285 @@ function authorsOf(bodyChanging: readonly FileHistory[]): DerivedValue {
   }
   const n = bodyChanging.length;
   return git(names, `${n} body-changing ${n === 1 ? "commit" : "commits"}`);
+}
+
+// ---------------------------------------------------------------------------
+// provenance (proposal 0046)
+
+/**
+ * Whether a page's metadata is a leading fenced block for provenance's
+ * purposes: extracted from one, or a format whose metadata can only ever be
+ * one (a Markdown or MDX page with no block yet gets a fenced one when it is
+ * stamped). Everywhere else the metadata is part of the body it would pin,
+ * so the page cannot carry the stamp itself (stress test 8).
+ */
+export function provenanceFenced(extracted: Pick<ExtractedMetadata, "fenced" | "format">): boolean {
+  return extracted.fenced === true || extracted.format === "markdown" || extracted.format === "mdx";
+}
+
+/**
+ * The sha an out-of-range uncommitted line is given under a ranged
+ * attribution: a commit with no trailers and no blob, so it resolves to no
+ * evidence. With a range, `--generated-by` names those lines only; the
+ * other uncommitted lines are not its to attribute.
+ */
+const OUTSIDE_RANGE = "outside-the-attributed-range";
+
+/** The suffix a ranged attribution keys a committed line's commit under; the sha stays its prefix. */
+const ATTRIBUTED = ":attributed";
+
+interface ProvenanceRun {
+  machines: readonly string[];
+  generatedBy?: string;
+}
+
+/**
+ * One page's provenance: blame once, then each blamed commit's trailers and
+ * the page (or manifest) blob at it, then the evidence rules.
+ */
+async function provenanceFor(
+  run: GitRun,
+  root: string,
+  entry: RootEntry,
+  history: readonly FileHistory[],
+  blobs: ReadonlyMap<string, string>,
+  opts: ProvenanceRun,
+): Promise<{ value: DerivedValue | null; derivation: ProvenanceDerivation }> {
+  const { input, rel } = entry;
+  const fenced = provenanceFenced(input.extracted);
+  const blame = await blameOf(run, rel, input.content, history.length === 0);
+  const commits = await commitEvidence(run, root, blame, history, blobs, input.provenanceManifest);
+  const base = { content: input.content, commits, machines: opts.machines, fenced };
+
+  let derivation: ProvenanceDerivation;
+  const attribution = input.attribution;
+  if (attribution !== undefined) {
+    // Refused in 0046's words when the range runs past the end, reaches into
+    // the frontmatter, or evidence names another machine for any of its lines.
+    attributeRange({ ...base, blame, target: attribution.target, generatedBy: attribution.generatedBy });
+    const range = parseProvenanceTarget(attribution.target).lines;
+    const inRange = (line: BlameLine): boolean =>
+      range !== undefined && line.finalLine >= range.start && line.finalLine <= range.end;
+    // The attribution is evidence of its own, and nothing contradicts it (the
+    // refusal above made sure). A committed line in the range is read as its
+    // commit naming the machine, under a key that keeps the commit's sha for
+    // the evidence text and leaves the commit's other lines as they were; an
+    // uncommitted one is rule 1's. An uncommitted line outside the range has
+    // no evidence: the range is what --generated-by names.
+    const attributed = new Map(commits);
+    const trailers = { generatedBy: [attribution.generatedBy], coAuthoredBy: [] };
+    attributed.set(OUTSIDE_RANGE, { sha: OUTSIDE_RANGE, trailers: { generatedBy: [], coAuthoredBy: [] } });
+    const rekeyed = blame.map((line): BlameLine => {
+      if (inRange(line)) {
+        if (line.uncommitted) return line;
+        const sha = `${line.sha}${ATTRIBUTED}`;
+        attributed.set(sha, { sha, trailers });
+        return { ...line, sha };
+      }
+      return line.uncommitted ? { ...line, sha: OUTSIDE_RANGE, uncommitted: false } : line;
+    });
+    derivation = deriveProvenance({
+      ...base,
+      commits: attributed,
+      generatedBy: attribution.generatedBy,
+      blame: rekeyed,
+    });
+  } else {
+    derivation = deriveProvenance({
+      ...base,
+      blame,
+      ...(opts.generatedBy !== undefined ? { generatedBy: opts.generatedBy } : {}),
+    });
+  }
+
+  const entries: ProvenanceEntry[] = derivation.derived.map((d) => d.entry);
+  return {
+    value: entries.length === 0 ? null : git(entries, provenanceEvidence(derivation)),
+    derivation,
+  };
+}
+
+/**
+ * `blame 9b0e2c1`, `blame 9b0e2c1, 2 commits`, or `uncommitted`: the commits
+ * behind the machine-attributed lines, the first in line order named, and
+ * `uncommitted` when rule 1 answered for any of them.
+ */
+function provenanceEvidence(derivation: ProvenanceDerivation): string {
+  const shas: string[] = [];
+  let uncommitted = false;
+  for (const range of derivation.derived) {
+    for (let n = range.span.start; n <= range.span.end; n++) {
+      const evidence = derivation.evidenceByLine.get(n);
+      if (evidence?.machine === undefined) continue;
+      if (evidence.rule === 1) uncommitted = true;
+      else if (!shas.includes(evidence.sha)) shas.push(evidence.sha);
+    }
+  }
+  const first = shas[0];
+  if (first === undefined) return "uncommitted";
+  const parts = [`blame ${short(first)}`];
+  if (shas.length > 1) parts.push(`${String(shas.length)} commits`);
+  if (uncommitted) parts.push("uncommitted");
+  return parts.join(", ");
+}
+
+/**
+ * `git blame --line-porcelain` over the working file. A file with no history
+ * has nothing to blame, so every line is uncommitted; blame failing on a file
+ * that has history is the root's failure.
+ */
+async function blameOf(
+  run: GitRun,
+  rel: string,
+  content: string,
+  noHistory: boolean,
+): Promise<BlameLine[]> {
+  const out = await run(["-c", "core.quotePath=false", "blame", "--line-porcelain", "--", rel]);
+  if (out.tooLarge) throw new HistoryTooLarge();
+  if (out.code !== 0) {
+    if (noHistory) {
+      return splitLines(content).map((line, i) => ({
+        sha: ZERO_SHA,
+        origLine: i + 1,
+        finalLine: i + 1,
+        author: "Not Committed Yet",
+        authorMail: "not.committed.yet",
+        filename: rel,
+        boundary: false,
+        uncommitted: true,
+        content: line,
+      }));
+    }
+    throw new BlameUnreadable(rel);
+  }
+  return parseLinePorcelain(text(out));
+}
+
+/**
+ * What each blamed commit offers: its trailers, from the history already
+ * read or one `git log --no-walk` for a commit it lacks, and the page's text
+ * at that commit, from the blobs already read or one `git cat-file --batch`
+ * by `<sha>:<path>`. When a manifest holds the record, the stamp is read from
+ * the manifest's blob at the same commit, under the page's entry.
+ */
+async function commitEvidence(
+  run: GitRun,
+  root: string,
+  blame: readonly BlameLine[],
+  history: readonly FileHistory[],
+  blobs: ReadonlyMap<string, string>,
+  manifest: ProvenanceManifestRef | undefined,
+): Promise<Map<string, CommitEvidence>> {
+  const pathAt = new Map<string, string>();
+  for (const line of blame) {
+    if (!line.uncommitted && !pathAt.has(line.sha)) pathAt.set(line.sha, unquotePath(line.filename));
+  }
+  const shas = [...pathAt.keys()];
+  const commits = new Map<string, CommitEvidence>();
+  if (shas.length === 0) return commits;
+
+  const trailers = new Map<string, CommitEvidence["trailers"]>();
+  const pageBlob = new Map<string, string>();
+  for (const h of history) {
+    trailers.set(h.sha, { generatedBy: h.generatedBy, coAuthoredBy: h.coAuthors });
+    const blob = h.newBlob === null ? undefined : blobs.get(h.newBlob);
+    if (blob !== undefined) pageBlob.set(h.sha, blob);
+  }
+  const unlogged = shas.filter((sha) => !trailers.has(sha));
+  if (unlogged.length > 0) {
+    const out = await run(["log", "--no-walk=unsorted", RECORD_FORMAT, ...unlogged]);
+    if (out.tooLarge) throw new HistoryTooLarge();
+    if (out.code !== 0) throw new BlobsUnreadable(`git log exit ${String(out.code)}`);
+    for (const record of parseLog(text(out))) {
+      trailers.set(record.sha, { generatedBy: record.generatedBy, coAuthoredBy: record.coAuthors });
+    }
+  }
+
+  const manifestRel = manifest === undefined ? undefined : insideRoot(root, manifest.absPath);
+  const specs: string[] = [];
+  for (const sha of shas) {
+    if (!pageBlob.has(sha)) specs.push(`${sha}:${pathAt.get(sha) ?? ""}`);
+    if (manifestRel !== undefined) specs.push(`${sha}:${manifestRel}`);
+  }
+  const fetched = await fetchSpecs(run, specs);
+
+  for (const sha of shas) {
+    const blob = pageBlob.get(sha) ?? fetched.get(`${sha}:${pathAt.get(sha) ?? ""}`);
+    commits.set(sha, {
+      sha,
+      trailers: trailers.get(sha) ?? { generatedBy: [], coAuthoredBy: [] },
+      ...(blob !== undefined ? { blob } : {}),
+      ...(manifest !== undefined
+        ? {
+            stamp:
+              manifestRel === undefined
+                ? []
+                : manifestStamp(fetched.get(`${sha}:${manifestRel}`), manifest),
+          }
+        : {}),
+    });
+  }
+  return commits;
+}
+
+/** A path under the root as git names it, or undefined outside the root. */
+function insideRoot(root: string, abs: string): string | undefined {
+  const rel = relative(root, abs);
+  if (rel === "" || rel.startsWith("..") || isAbsolute(rel)) return undefined;
+  return rel.split(sep).join("/");
+}
+
+/**
+ * The `provenance` entries a manifest's text holds for one page. A manifest
+ * that does not parse, or has no entry for the page, holds none.
+ */
+function manifestStamp(text: string | undefined, ref: ProvenanceManifestRef): ProvenanceEntry[] {
+  if (text === undefined) return [];
+  let data: unknown;
+  try {
+    data = parseYaml(text);
+  } catch {
+    return [];
+  }
+  if (!isRecord(data)) return [];
+  for (const [key, value] of Object.entries(data)) {
+    const same =
+      ref.join === "path" ? posix.normalize(key) === posix.normalize(ref.entry) : key === ref.entry;
+    if (same && isRecord(value)) return provenanceEntries(value[PROVENANCE_FIELD]);
+  }
+  return [];
+}
+
+function isRecord(x: unknown): x is Record<string, unknown> {
+  return typeof x === "object" && x !== null && !Array.isArray(x);
+}
+
+/**
+ * `git cat-file --batch` by `<rev>:<path>`, keyed by the spec. The output
+ * header names the object, not the spec, so it is read in input order; a
+ * spec that names nothing answers `<spec> missing` and yields nothing.
+ */
+async function fetchSpecs(run: GitRun, specs: readonly string[]): Promise<Map<string, string>> {
+  const found = new Map<string, string>();
+  if (specs.length === 0) return found;
+  const out = await run(["cat-file", "--batch"], `${specs.join("\n")}\n`);
+  if (out.tooLarge) throw new HistoryTooLarge();
+  if (out.code !== 0) throw new BlobsUnreadable(`exit ${String(out.code)}`);
+  const buf = out.raw;
+  let cursor = 0;
+  for (const spec of specs) {
+    const nl = buf.indexOf(0x0a, cursor);
+    if (nl === -1) break;
+    const header = buf.toString("utf8", cursor, nl);
+    cursor = nl + 1;
+    if (header.endsWith(" missing") || header.endsWith(" ambiguous")) continue;
+    const parts = header.split(" ");
+    const size = Number(parts[2]);
+    if (!Number.isFinite(size)) break;
+    if (parts[1] === "blob") found.set(spec, buf.toString("utf8", cursor, cursor + size));
+    cursor += size + 1;
+  }
+  return found;
 }
 
 // ---------------------------------------------------------------------------

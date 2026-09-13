@@ -19,6 +19,9 @@ import { runQuery } from "../src/meta/commands/query.js";
 import { renderDerive } from "../src/meta/reporters/derive.js";
 import { DocmetaError } from "../src/meta/types.js";
 import { markdownExtractor } from "../src/meta/extractors/markdown.js";
+import { hashLines } from "../src/shared/pin.js";
+import { STDIN_LINES_MARKER } from "../src/shared/run.js";
+import { parse as parseYaml } from "yaml";
 import {
   commit,
   git,
@@ -297,13 +300,13 @@ describe("runDerive", () => {
     ).rejects.toThrow(new DocmetaError("cannot derive <stdin>: no history behind it"));
   });
 
-  it("refuses a field that is not derivable, naming the six that are", async () => {
+  it("refuses a field that is not derivable, naming the seven that are", async () => {
     const { dir } = stageCorpus();
     await expect(
       runDerive({ inputs: [], cwd: dir, fields: ["stakeholders"] }),
     ).rejects.toThrow(
       new DocmetaError(
-        '"stakeholders" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed, or any key with an entry in derive.commands',
+        '"stakeholders" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed, provenance, or any key with an entry in derive.commands',
       ),
     );
   });
@@ -653,5 +656,346 @@ describe("runDerive with a command source", () => {
     await expect(failure).rejects.toBeInstanceOf(DocmetaError);
     await expect(failure).rejects.toThrow(/^command source unavailable: /);
     await expect(failure).rejects.toThrow("manni-no-such-program-0042");
+  });
+});
+
+/**
+ * `provenance` through `runDerive` (proposal 0046). `test/fixtures/derive/provenance/`
+ * is one page, `docs/limits.md`, whose body starts at file line 4; the tests
+ * commit it as a person wrote it and then play the agent, the person and the
+ * squash against it in a temp repository.
+ */
+describe("runDerive: provenance (0046)", () => {
+  const PROVENANCE = resolve(here, "fixtures", "derive", "provenance");
+  const LIMITS = "docs/limits.md";
+  const FABLE = "claude-fable-5";
+  const SONNET = "claude-sonnet-5";
+  const HUMAN = [
+    "The limit is 100 requests a minute.",
+    "Bursts of 20 are allowed.",
+    "A 429 response carries Retry-After.",
+  ];
+  const AGENT = [
+    "The limit is 120 requests a minute.",
+    "Bursts of 30 are allowed.",
+    "A 429 response names the wait in Retry-After.",
+  ];
+  const PIN = hashLines(AGENT.join("\n"));
+
+  function stageProvenance(): string {
+    const dir = makeTempRepo({ files: {} });
+    dirs.push(dir);
+    cpSync(PROVENANCE, dir, { recursive: true });
+    commit(dir, "add docs", { authorDate: D1 });
+    return dir;
+  }
+  const read = (dir: string, rel = LIMITS): string => readFileSync(join(dir, rel), "utf8");
+  /** The agent's rewrite of file lines 9-11, left uncommitted. */
+  const agentEdit = (dir: string): void => {
+    writeFile(dir, LIMITS, read(dir).replace(HUMAN.join("\n"), AGENT.join("\n")));
+  };
+  /** The agent's edit stamped and committed together, as the hook leaves it. */
+  async function agentCommit(dir: string): Promise<string> {
+    agentEdit(dir);
+    await runDerive({ inputs: [], cwd: dir, generatedBy: FABLE, env: {} });
+    return commit(dir, "docs: rewrite the limits", { authorDate: D2 });
+  }
+  const provenanceOf = (run: DeriveRun, file = LIMITS) => {
+    const field = fieldsOf(run, file).fields.find((f) => f.field === "provenance");
+    if (!field) throw new Error(`no provenance for ${file}`);
+    return field;
+  };
+
+  it("stamps the uncommitted lines --generated-by names, and a second run is current", async () => {
+    const dir = stageProvenance();
+    agentEdit(dir);
+
+    const run = await runDerive({ inputs: [], cwd: dir, generatedBy: FABLE, env: {} });
+    const result = fieldsOf(run, LIMITS);
+    expect(result.changed).toBe(true);
+    expect(result.fields).toEqual([
+      {
+        field: "provenance",
+        derived: [{ "generated-by": FABLE, lines: "6-8", integrity: PIN }],
+        source: "git",
+        evidence: "uncommitted",
+        status: "unset",
+        written: true,
+        ranges: [
+          { lines: "9-11", "generated-by": FABLE, integrity: PIN, status: "unset", evidence: "uncommitted", written: true },
+        ],
+      },
+    ]);
+    expect(run.summary).toEqual({
+      files: 1,
+      changed: 1,
+      written: 1,
+      stale: 0,
+      unset: 1,
+      unknown: 0,
+      errors: 0,
+      ranges: 1,
+    });
+    expect(extract(dir, LIMITS).provenance).toEqual([
+      { "generated-by": FABLE, lines: "6-8", integrity: PIN },
+    ]);
+
+    const text = renderDerive(run, "pretty", { color: false });
+    expect(text).toContain(
+      `docs/limits.md\n    provenance  lines 9-11: (unset) → ${FABLE}  (git: uncommitted)`,
+    );
+    expect(text.trimEnd().endsWith("1 file, 1 changed, 1 range written")).toBe(true);
+    const json = JSON.parse(renderDerive(run, "json")) as DeriveRun;
+    expect(json.results[0]?.fields[0]?.ranges?.[0]).toEqual({
+      lines: "9-11",
+      "generated-by": FABLE,
+      integrity: PIN,
+      status: "unset",
+      evidence: "uncommitted",
+      written: true,
+    });
+
+    // The stamp now reads as current: the edit and its stamp can be committed.
+    const again = await runDerive({ inputs: [], cwd: dir, generatedBy: FABLE, env: {} });
+    expect(fieldsOf(again, LIMITS).changed).toBe(false);
+    expect(provenanceOf(again)).toMatchObject({
+      status: "current",
+      written: false,
+      ranges: [{ lines: "13-15", status: "current", evidence: "pin", written: false }],
+    });
+  });
+
+  it("reads MANNI_GENERATED_BY when --generated-by is not given, and an empty one is unset", async () => {
+    const dir = stageProvenance();
+    agentEdit(dir);
+
+    const unset = await runDerive({ inputs: [], cwd: dir, env: { MANNI_GENERATED_BY: "" } });
+    expect(provenanceOf(unset)).toMatchObject({ status: "current", derived: [], ranges: [] });
+    expect(extract(dir, LIMITS)).not.toHaveProperty("provenance");
+
+    await runDerive({ inputs: [], cwd: dir, env: { MANNI_GENERATED_BY: FABLE } });
+    expect(extract(dir, LIMITS).provenance).toEqual([
+      { "generated-by": FABLE, lines: "6-8", integrity: PIN },
+    ]);
+  });
+
+  it("says so when --generated-by finds no uncommitted body lines", async () => {
+    const dir = stageProvenance();
+    const notices: string[] = [];
+    await runDerive({ inputs: [], cwd: dir, generatedBy: FABLE, env: {}, onNotice: (m) => notices.push(m) });
+    expect(notices).toContain(
+      "docs/limits.md: no uncommitted body lines; --generated-by attributes only what is not yet committed.",
+    );
+  });
+
+  it("files a changed finding for a person's edit inside the range, and derive re-derives it", async () => {
+    const dir = stageProvenance();
+    await agentCommit(dir);
+    const clean = await runDerive({ inputs: [], cwd: dir, check: true, env: {} });
+    expect(fieldsOf(clean, LIMITS).findings).toEqual([]);
+
+    writeFile(dir, LIMITS, read(dir).replace("Bursts of 30 are allowed.", "Bursts of 25 are allowed."));
+    const check = await runDerive({ inputs: [], cwd: dir, check: true, env: {} });
+    expect(fieldsOf(check, LIMITS).findings).toEqual([
+      {
+        schema: "derived:stale",
+        keyword: "derived",
+        subject: `provenance ${PIN}`,
+        instancePath: "/provenance",
+        message: `provenance lines 13-15 changed since ${FABLE} wrote them — run manni meta derive`,
+        line: 13,
+      },
+    ]);
+    expect(renderDerive(check, "github")).toContain(
+      `::error file=docs/limits.md,line=13::[derived:stale] /provenance provenance lines 13-15 changed since ${FABLE} wrote them — run manni meta derive`,
+    );
+
+    const run = await runDerive({ inputs: [], cwd: dir, env: {} });
+    const field = provenanceOf(run);
+    expect(field.status).toBe("stale");
+    expect(field.ranges).toEqual([
+      { lines: "13-15", "generated-by": FABLE, integrity: PIN, status: "changed", evidence: "pin", written: true },
+    ]);
+    // Lines 13 and 15 still come from the agent's commit, whose blob carried the stamp.
+    expect(extract(dir, LIMITS).provenance).toEqual([
+      { "generated-by": FABLE, lines: 6, integrity: hashLines(AGENT[0] ?? "") },
+      { "generated-by": FABLE, lines: 8, integrity: hashLines(AGENT[2] ?? "") },
+    ]);
+    expect(renderDerive(run, "pretty", { color: false })).toContain(
+      `provenance  lines 13-15: ${FABLE} → re-derived  (git: pin)`,
+    );
+  });
+
+  it("rewrites lines for a moved pin, with no finding", async () => {
+    const dir = stageProvenance();
+    await agentCommit(dir);
+    writeFile(
+      dir,
+      LIMITS,
+      read(dir).replace("Requests are limited per token.\n", "Requests are limited per token.\n\nTokens are issued per project.\n"),
+    );
+    const check = await runDerive({ inputs: [], cwd: dir, check: true, env: {} });
+    expect(fieldsOf(check, LIMITS).findings).toEqual([]);
+
+    const run = await runDerive({ inputs: [], cwd: dir, env: {} });
+    expect(provenanceOf(run).ranges).toEqual([
+      {
+        lines: "15-17",
+        "generated-by": FABLE,
+        integrity: PIN,
+        status: "moved",
+        evidence: "pin",
+        from: { lines: "13-15", "generated-by": FABLE },
+        written: true,
+      },
+    ]);
+    expect(extract(dir, LIMITS).provenance).toEqual([
+      { "generated-by": FABLE, lines: "8-10", integrity: PIN },
+    ]);
+    expect(renderDerive(run, "pretty", { color: false })).toContain(
+      "provenance  lines 15-17: moved from 13-15  (git: pin)",
+    );
+  });
+
+  it("re-attributes a stamp the evidence contradicts", async () => {
+    const dir = stageProvenance();
+    agentEdit(dir);
+    const sha = commit(dir, "docs: rewrite the limits", { authorDate: D2, trailers: [`Generated-by: ${SONNET}`] });
+    // A person claims the lines for another machine, by hand.
+    writeFile(
+      dir,
+      LIMITS,
+      read(dir).replace(
+        "title: Rate limits\n",
+        `title: Rate limits\nprovenance:\n  - generated-by: ${FABLE}\n    lines: 6-8\n    integrity: ${PIN}\n`,
+      ),
+    );
+    const check = await runDerive({ inputs: [], cwd: dir, check: true, env: {} });
+    expect(fieldsOf(check, LIMITS).findings?.map((f) => f.message)).toEqual([
+      `provenance lines 13-15 say ${FABLE}; blame says ${SONNET} (${short(sha)}) — run manni meta derive`,
+    ]);
+
+    const run = await runDerive({ inputs: [], cwd: dir, env: {} });
+    expect(provenanceOf(run).ranges).toEqual([
+      {
+        lines: "13-15",
+        "generated-by": SONNET,
+        integrity: PIN,
+        status: "stale",
+        evidence: `blame ${short(sha)}`,
+        from: { lines: "13-15", "generated-by": FABLE },
+        written: true,
+      },
+    ]);
+    expect(extract(dir, LIMITS).provenance).toEqual([
+      { "generated-by": SONNET, lines: "6-8", integrity: PIN },
+    ]);
+    expect(renderDerive(run, "pretty", { color: false })).toContain(
+      `provenance  lines 13-15: ${FABLE} → ${SONNET}  (git: blame ${short(sha)})`,
+    );
+  });
+
+  it("writes into the manifest that owns provenance, and leaves the page alone", async () => {
+    const dir = stageProvenance();
+    agentEdit(dir);
+    const page = read(dir);
+    const configPath = "manifest.config.yaml";
+
+    const dry = await runDerive({ inputs: [], cwd: dir, configPath, generatedBy: FABLE, env: {}, dryRun: true });
+    expect(provenanceOf(dry)).toMatchObject({ manifest: "private/provenance.yaml", status: "unset", written: false });
+    expect(read(dir, "private/provenance.yaml")).toBe("# Provenance for pages that keep their record out of the page.\n");
+
+    const run = await runDerive({ inputs: [], cwd: dir, configPath, generatedBy: FABLE, env: {} });
+    expect(fieldsOf(run, LIMITS).changed).toBe(true);
+    expect(provenanceOf(run)).toMatchObject({ manifest: "private/provenance.yaml", status: "unset", written: true });
+    expect(read(dir)).toBe(page);
+    const manifest = read(dir, "private/provenance.yaml");
+    expect(manifest.startsWith("# Provenance for pages that keep their record out of the page.\n")).toBe(true);
+    expect(parseYaml(manifest)).toEqual({
+      "docs/limits.md": { provenance: [{ "generated-by": FABLE, lines: "6-8", integrity: PIN }] },
+    });
+    expect(renderDerive(run, "pretty", { color: false })).toContain(
+      `private/provenance.yaml (for docs/limits.md)\n    provenance  lines 9-11: (unset) → ${FABLE}  (git: uncommitted)`,
+    );
+
+    // Current from the manifest; and after a commit, rule 2 reads it back from there.
+    const again = await runDerive({ inputs: [], cwd: dir, configPath, generatedBy: FABLE, env: {} });
+    expect(provenanceOf(again).status).toBe("current");
+    commit(dir, "docs: rewrite the limits", { authorDate: D2 });
+    const committed = await runDerive({ inputs: [], cwd: dir, configPath, check: true, env: {} });
+    expect(fieldsOf(committed, LIMITS).findings).toEqual([]);
+    expect(provenanceOf(committed)).toMatchObject({ status: "current" });
+  });
+
+  it("refuses to stamp provenance into a page whose metadata is part of its body, as that file's error", async () => {
+    const dir = stageProvenance();
+    const html = read(dir, "docs/page.html");
+    writeFile(dir, "docs/page.html", html.replace("100 requests", "120 requests"));
+
+    const run = await runDerive({ inputs: ["docs/page.html"], cwd: dir, generatedBy: FABLE, env: {} });
+    expect(fieldsOf(run, "docs/page.html").error).toBe(
+      'provenance cannot be stamped into the page: in the "html" format the metadata is part of the body it pins. Keep provenance in an externalMetadata manifest.',
+    );
+    expect(run.summary.errors).toBe(1);
+    expect(read(dir, "docs/page.html")).toBe(html.replace("100 requests", "120 requests"));
+
+    // A manifest pin over the same page works: the manifest is not part of it.
+    const manifested = await runDerive({
+      inputs: [],
+      cwd: dir,
+      configPath: "manifest.config.yaml",
+      generatedBy: FABLE,
+      env: {},
+    });
+    expect(fieldsOf(manifested, "docs/page.html").error).toBeUndefined();
+    expect(provenanceOf(manifested, "docs/page.html")).toMatchObject({ status: "unset", written: true });
+  });
+
+  it("attributes a named range, committed or not", async () => {
+    const dir = stageProvenance();
+    agentEdit(dir);
+    const sha = commit(dir, "docs: rewrite the limits", { authorDate: D2 });
+
+    const run = await runDerive({ inputs: [`${LIMITS}:9-11`], cwd: dir, generatedBy: FABLE, env: {} });
+    expect(run.results.map((r) => r.file)).toEqual([LIMITS]);
+    expect(provenanceOf(run).ranges).toEqual([
+      { lines: "9-11", "generated-by": FABLE, integrity: PIN, status: "unset", evidence: `blame ${short(sha)}`, written: true },
+    ]);
+    expect(extract(dir, LIMITS).provenance).toEqual([
+      { "generated-by": FABLE, lines: "6-8", integrity: PIN },
+    ]);
+  });
+
+  it("refuses each misuse of a range or --generated-by in 0046's words, exit 2", async () => {
+    const dir = stageProvenance();
+    const refuse = (message: string, opts: Partial<Parameters<typeof runDerive>[0]>) =>
+      expect(runDerive({ inputs: [], cwd: dir, env: {}, ...opts })).rejects.toThrow(new DocmetaError(message));
+
+    await refuse(
+      "docs/limits.md:9-11 names lines, which only --generated-by uses. Pass --generated-by, or drop the range.",
+      { inputs: [`${LIMITS}:9-11`] },
+    );
+    await refuse(
+      "--generated-by attributes provenance, which is not in --fields. Add provenance, or drop --generated-by.",
+      { generatedBy: FABLE, fields: ["last-updated"] },
+    );
+    await refuse("docs/limits.md:11-9 ends before it starts.", { inputs: [`${LIMITS}:11-9`], generatedBy: FABLE });
+    await refuse("docs/limits.md has no lines 9-99: the file ends at line 13.", {
+      inputs: [`${LIMITS}:9-99`],
+      generatedBy: FABLE,
+    });
+    await refuse(
+      "docs/limits.md:2-5 reaches into the frontmatter; provenance pins body lines, which start at line 4.",
+      { inputs: [`${LIMITS}:2-5`], generatedBy: FABLE },
+    );
+    await refuse("cannot derive <stdin>: no history behind it", { inputs: [`${STDIN_LINES_MARKER}:3`], generatedBy: FABLE });
+
+    agentEdit(dir);
+    const sha = commit(dir, "docs: rewrite the limits", { authorDate: D2, trailers: [`Generated-by: ${SONNET}`] });
+    await refuse(
+      `docs/limits.md:9-11: blame attributes these lines to ${SONNET} (${short(sha)}); --generated-by cannot overrule a recorded machine.`,
+      { inputs: [`${LIMITS}:9-11`], generatedBy: FABLE },
+    );
+    expect(extract(dir, LIMITS)).not.toHaveProperty("provenance");
   });
 });

@@ -21,6 +21,7 @@ import {
 } from "../src/meta/core/derive/git.js";
 import type { DeriveInput } from "../src/meta/core/derive/types.js";
 import { markdownExtractor } from "../src/meta/extractors/markdown.js";
+import { hashLines } from "../src/shared/pin.js";
 import {
   commit,
   git,
@@ -387,6 +388,164 @@ describe.each(forms)("deriveFromGit ($name)", ({ opts }) => {
     );
     expect(result.status).toEqual({ available: true });
     expect([...result.records.keys()]).toEqual(["a.md"]);
+  });
+});
+
+/**
+ * `provenance` from blame (proposal 0046). Blame runs only when the field is
+ * requested, and each case below reads the evidence rules through the git
+ * source's own I/O: blame, the trailers of the commits it names, and the
+ * page (or manifest) blob at each of them.
+ */
+describe.each(forms)("deriveFromGit provenance ($name)", ({ opts }) => {
+  const FABLE = "claude-fable-5";
+  const SONNET = "claude-sonnet-5";
+  const pin = (...lines: string[]): string => hashLines(lines.join("\n"));
+  const withProvenance = (dir: string, extra: Partial<GitSourceOptions> = {}): GitSourceOptions => ({
+    ...opts(dir),
+    fields: ["provenance"],
+    ...extra,
+  });
+
+  it("derives nothing, and runs no blame, when provenance is not requested", async () => {
+    const dir = tempRepo({ "a.md": doc("title: t", "one") });
+    commit(dir, "add", { authorDate: D1, trailers: [`Generated-by: ${SONNET}`] });
+    const facts = await factsFor(dir, "a.md", opts(dir));
+    expect(facts.provenance).toBeNull();
+  });
+
+  it("attributes uncommitted body lines to --generated-by (rule 1)", async () => {
+    const dir = tempRepo({ "a.md": doc("title: t", "one\ntwo\nthree") });
+    commit(dir, "add", { authorDate: D1 });
+    writeFile(dir, "a.md", doc("title: t", "one\nTWO\nthree"));
+
+    const facts = await factsFor(dir, "a.md", withProvenance(dir, { generatedBy: FABLE }));
+    expect(facts.provenance).toEqual({
+      value: [{ "generated-by": FABLE, lines: 3, integrity: pin("TWO") }],
+      source: "git",
+      evidence: "uncommitted",
+    });
+    // Without a name, an uncommitted line has no evidence at all.
+    expect((await factsFor(dir, "a.md", withProvenance(dir))).provenance).toBeNull();
+  });
+
+  it("attributes every line of a file with no history yet", async () => {
+    const dir = tempRepo({ "a.md": doc("title: t", "one") });
+    commit(dir, "add", { authorDate: D1 });
+    writeFile(dir, "b.md", doc("title: t", "x\ny"));
+    const facts = await factsFor(dir, "b.md", withProvenance(dir, { generatedBy: FABLE }));
+    expect(facts.provenance?.value).toEqual([
+      { "generated-by": FABLE, lines: "1-3", integrity: pin("", "x", "y") },
+    ]);
+  });
+
+  it("reads a Generated-by trailer on the commit that wrote the lines (rule 3)", async () => {
+    const dir = tempRepo({ "a.md": doc("title: t", "one\ntwo") });
+    commit(dir, "add", { authorDate: D1 });
+    writeFile(dir, "a.md", doc("title: t", "one\nTWO"));
+    const sha = commit(dir, "edit", { authorDate: D2, trailers: [`generated-by: ${SONNET}`] });
+
+    const facts = await factsFor(dir, "a.md", withProvenance(dir));
+    expect(facts.provenance).toEqual({
+      value: [{ "generated-by": SONNET, lines: 3, integrity: pin("TWO") }],
+      source: "git",
+      evidence: `blame ${sha.slice(0, 7)}`,
+    });
+  });
+
+  it("counts the commits behind the ranges in the evidence", async () => {
+    const dir = tempRepo({ "a.md": doc("title: t", "one\ntwo\nthree") });
+    commit(dir, "add", { authorDate: D1 });
+    writeFile(dir, "a.md", doc("title: t", "ONE\ntwo\nthree"));
+    const first = commit(dir, "edit", { authorDate: D2, trailers: [`Generated-by: ${SONNET}`] });
+    writeFile(dir, "a.md", doc("title: t", "ONE\ntwo\nTHREE"));
+    commit(dir, "edit again", { authorDate: D3, trailers: [`Generated-by: ${FABLE}`] });
+
+    const facts = await factsFor(dir, "a.md", withProvenance(dir));
+    expect(facts.provenance?.value).toEqual([
+      { "generated-by": SONNET, lines: 2, integrity: pin("ONE") },
+      { "generated-by": FABLE, lines: 4, integrity: pin("THREE") },
+    ]);
+    expect(facts.provenance?.evidence).toBe(`blame ${first.slice(0, 7)}, 2 commits`);
+  });
+
+  it("names a Co-authored-by machine only when derive.machines matches it (rule 4), and leaves it out of authors", async () => {
+    const dir = tempRepo({ "a.md": doc("title: t", "one") });
+    commit(dir, "add", { authorDate: D1 });
+    writeFile(dir, "a.md", doc("title: t", "ONE"));
+    commit(dir, "edit", {
+      authorDate: D2,
+      trailers: ["Co-authored-by: Claude Opus 5 <noreply@anthropic.com>"],
+    });
+
+    const machines = ["*[bot]", "noreply@anthropic.com"];
+    const matched = await factsFor(dir, "a.md", withProvenance(dir, { machines }));
+    expect(matched.provenance?.value).toEqual([
+      { "generated-by": "Claude Opus 5", lines: 2, integrity: pin("ONE") },
+    ]);
+    expect(matched.authors?.value).toEqual(["Ada"]);
+
+    // The default is 0040's `[bot]` suffix: the same trailer is a person.
+    const unmatched = await factsFor(dir, "a.md", withProvenance(dir));
+    expect(unmatched.provenance).toBeNull();
+    expect(unmatched.authors?.value).toEqual(["Ada", "Claude Opus 5"]);
+  });
+
+  it("reads the stamp a squash commit carried (rule 2, stress test 10)", async () => {
+    const dir = tempRepo({ "a.md": doc("title: t", "one\ntwo\nthree") });
+    commit(dir, "add", { authorDate: D1 });
+    const main = git(dir, ["rev-parse", "--abbrev-ref", "HEAD"]);
+    git(dir, ["checkout", "-q", "-b", "agent"]);
+
+    // The agent's edit and its stamp, committed together on the branch.
+    writeFile(dir, "a.md", doc("title: t", "one\nTWO\nTHREE"));
+    const stamped = await factsFor(dir, "a.md", withProvenance(dir, { generatedBy: FABLE }));
+    const value = stamped.provenance?.value;
+    expect(value).toEqual([{ "generated-by": FABLE, lines: "3-4", integrity: pin("TWO", "THREE") }]);
+    const page = readFileSync(join(dir, "a.md"), "utf8");
+    writeFile(dir, "a.md", markdownExtractor.apply?.(page, { provenance: value }) ?? page);
+    commit(dir, "agent edit", { authorDate: D2, author: { name: "Agent", email: "agent@example.com" } });
+
+    git(dir, ["checkout", "-q", main]);
+    git(dir, ["merge", "--squash", "agent"]);
+    const squash = commit(dir, "squash", { authorDate: D3, author: { name: "Merger", email: "m@example.com" } });
+
+    const facts = await factsFor(dir, "a.md", withProvenance(dir));
+    expect(facts.provenance).toEqual({
+      value,
+      source: "git",
+      evidence: `blame ${squash.slice(0, 7)}`,
+    });
+  });
+
+  it("reads the stamp from a manifest's blob at the commit when the record lives there", async () => {
+    const dir = tempRepo({
+      "a.md": doc("title: t", "one\ntwo"),
+      "private/provenance.yaml": "# records\n",
+    });
+    commit(dir, "add", { authorDate: D1 });
+    writeFile(dir, "a.md", doc("title: t", "one\nTWO"));
+    writeFile(
+      dir,
+      "private/provenance.yaml",
+      `a.md:\n  provenance:\n    - generated-by: ${FABLE}\n      lines: 3\n      integrity: ${pin("TWO")}\n`,
+    );
+    const sha = commit(dir, "agent edit", { authorDate: D2 });
+
+    const manifest = { absPath: join(dir, "private", "provenance.yaml"), entry: "a.md", join: "path" };
+    const result = await deriveFromGit(
+      [{ ...input(dir, "a.md"), provenanceManifest: manifest }],
+      withProvenance(dir),
+    );
+    expect(result.status).toEqual({ available: true });
+    expect(result.records.get("a.md")?.provenance).toEqual({
+      value: [{ "generated-by": FABLE, lines: 3, integrity: pin("TWO") }],
+      source: "git",
+      evidence: `blame ${sha.slice(0, 7)}`,
+    });
+    // The page's own frontmatter is not read when a manifest holds the record.
+    const onPage = await factsFor(dir, "a.md", withProvenance(dir));
+    expect(onPage.provenance).toBeNull();
   });
 });
 

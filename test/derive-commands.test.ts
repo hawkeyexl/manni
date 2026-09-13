@@ -25,6 +25,8 @@ import { runValidate } from "../src/meta/commands/validate.js";
 import { runGet, type GetFileResult } from "../src/meta/commands/get.js";
 import { runQuery } from "../src/meta/commands/query.js";
 import { runFill } from "../src/meta/commands/fill.js";
+import { runDerive } from "../src/meta/commands/derive.js";
+import { hashLines } from "../src/shared/pin.js";
 import { renderGet } from "../src/meta/reporters/get.js";
 import { loadSqlite } from "../src/meta/core/projection.js";
 import {
@@ -1003,12 +1005,12 @@ describe("the derived table's reading of a statement", () => {
     ).toEqual(["created", "last-updated", "reviewed-by"]);
     expect(fieldsForSql("SELECT _path FROM derived", all)).toEqual([]);
     // `*` and `_sources` read every column.
-    expect(fieldsForSql("SELECT * FROM derived", all)).toHaveLength(6);
-    expect(fieldsForSql("SELECT _sources FROM derived", all)).toHaveLength(6);
+    expect(fieldsForSql("SELECT * FROM derived", all)).toHaveLength(7);
+    expect(fieldsForSql("SELECT _sources FROM derived", all)).toHaveLength(7);
     // `_origin` spans every field as `_sources` does. Deriving none of them
     // would leave every row saying `asserted` or nothing, which reads as an
     // answer rather than a gap.
-    expect(fieldsForSql("SELECT _path, _origin FROM resolved", all)).toHaveLength(6);
+    expect(fieldsForSql("SELECT _path, _origin FROM resolved", all)).toHaveLength(7);
     // Word boundaries: `owner` is not `owners`, `created` is not `recreated`.
     expect(fieldsForSql("SELECT owners, recreated FROM derived", all)).toEqual([]);
   });
@@ -1185,5 +1187,133 @@ describe("fill never proposes a managed field", () => {
     expect(JSON.stringify(provider.requests[0]?.schema)).not.toContain(
       "last-updated",
     );
+  });
+});
+
+/**
+ * `provenance` as the readers see it (proposal 0046): `validate` files the
+ * range findings at the range's line, `get` renders the record in file lines
+ * and judges agreement with the provenance comparator, and `query` reads the
+ * entry array with its evidence in `_sources`.
+ */
+describe("provenance in validate, get and query (0046)", () => {
+  const PROVENANCE = resolve(__dirname, "fixtures", "derive", "provenance");
+  const LIMITS = "docs/limits.md";
+  const FABLE = "claude-fable-5";
+  const HUMAN = "The limit is 100 requests a minute.\nBursts of 20 are allowed.\nA 429 response carries Retry-After.";
+  const AGENT = "The limit is 120 requests a minute.\nBursts of 30 are allowed.\nA 429 response names the wait in Retry-After.";
+  const PIN = hashLines(AGENT);
+
+  function provenanceFiles(): Record<string, string> {
+    const read = (rel: string): string => readFileSync(join(PROVENANCE, rel), "utf8");
+    return {
+      "manni.config.yaml": read("manni.config.yaml"),
+      "permissive.schema.json": read("permissive.schema.json"),
+      [LIMITS]: read(LIMITS),
+    };
+  }
+  const page = (dir: string): string => readFileSync(join(dir, LIMITS), "utf8");
+
+  /** The page as a person wrote it, then the agent's edit stamped and committed. */
+  async function stamped(): Promise<{ dir: string; sha: string }> {
+    const dir = repo(provenanceFiles());
+    writeFile(dir, LIMITS, page(dir).replace(HUMAN, AGENT));
+    await runDerive({ inputs: [], cwd: dir, generatedBy: FABLE, env: {} });
+    const sha = commit(dir, "docs: rewrite the limits", { authorDate: D_EDIT });
+    return { dir, sha };
+  }
+
+  it("validate is clean over a current stamp, and files a changed finding at the range's line", async () => {
+    const { dir } = await stamped();
+    const clean = await runValidate({ inputs: [], cwd: dir });
+    expect(clean.summary.failed).toBe(0);
+
+    writeFile(dir, LIMITS, page(dir).replace("Bursts of 30 are allowed.", "Bursts of 25 are allowed."));
+    const { results, summary } = await runValidate({ inputs: [], cwd: dir });
+    const limits = resultFor(results, LIMITS);
+    expect(limits.ok).toBe(false);
+    expect(derivedFindings(limits)).toEqual([
+      {
+        schema: "derived:stale",
+        keyword: "derived",
+        subject: `provenance ${PIN}`,
+        instancePath: "/provenance",
+        message: `provenance lines 13-15 changed since ${FABLE} wrote them — run manni meta derive`,
+        line: 13,
+      },
+    ]);
+    expect(summary.failed).toBe(1);
+    // --no-derive still skips it.
+    expect((await runValidate({ inputs: [], cwd: dir, derive: false })).summary.failed).toBe(0);
+  });
+
+  it("validate files an unset finding for machine lines no record covers", async () => {
+    const dir = repo(provenanceFiles());
+    writeFile(dir, LIMITS, page(dir).replace(HUMAN, AGENT));
+    const sha = commit(dir, "docs: rewrite the limits", {
+      authorDate: D_EDIT,
+      trailers: ["Co-authored-by: Claude Opus 5 <noreply@anthropic.com>"],
+    });
+    const { results } = await runValidate({ inputs: [], cwd: dir });
+    expect(derivedFindings(resultFor(results, LIMITS))).toEqual([
+      {
+        schema: "derived:stale",
+        keyword: "derived",
+        subject: `provenance ${PIN}`,
+        instancePath: "/provenance",
+        message: `provenance is unset for lines 9-11; blame says Claude Opus 5 (${sha.slice(0, 7)}) — run manni meta derive`,
+        line: 9,
+      },
+    ]);
+  });
+
+  it("get renders the record in file lines, and says whether git agrees", async () => {
+    const { dir, sha } = await stamped();
+    const fields = ["provenance"];
+    const asserted = await runGet({ fields, inputs: [LIMITS], cwd: dir });
+    expect(asserted[0]?.values.provenance).toEqual([{ "generated-by": FABLE, lines: "6-8", integrity: PIN }]);
+    expect(asserted[0]?.derived?.provenance).toEqual({
+      value: [{ "generated-by": FABLE, lines: "6-8", integrity: PIN }],
+      source: "git",
+      evidence: `blame ${sha.slice(0, 7)}`,
+    });
+    expect(renderGet(asserted, fields)).toBe(`${LIMITS}: provenance=lines 13-15 ${FABLE} (asserted)`);
+
+    writeFile(dir, LIMITS, page(dir).replace("Bursts of 30 are allowed.", "Bursts of 25 are allowed."));
+    const drifted = await runGet({ fields, inputs: [LIMITS], cwd: dir });
+    expect(renderGet(drifted, fields)).toBe(
+      `${LIMITS}: provenance=lines 13-15 ${FABLE} (asserted; git says lines 13 ${FABLE}; lines 15 ${FABLE})`,
+    );
+
+    // A page with no record shows what git derives, and where from.
+    const bare = repo(provenanceFiles());
+    writeFile(bare, LIMITS, page(bare).replace(HUMAN, AGENT));
+    const trailer = commit(bare, "docs: rewrite the limits", { authorDate: D_EDIT, trailers: [`Generated-by: ${FABLE}`] });
+    const derived = await runGet({ fields, inputs: [LIMITS], cwd: bare });
+    expect(renderGet(derived, fields)).toBe(
+      `${LIMITS}: provenance=lines 9-11 ${FABLE} (derived, git: blame ${trailer.slice(0, 7)})`,
+    );
+  });
+
+  it("query reads the entry array from derived and resolved, with its evidence in _sources", async () => {
+    const { dir, sha } = await stamped();
+    const run = await runQuery({
+      sql: "SELECT d._path, d.provenance, d._sources, r.provenance AS resolved FROM derived d JOIN resolved r ON r._path = d._path",
+      inputs: [],
+      cwd: dir,
+    });
+    expect(run.rows).toHaveLength(1);
+    const row = run.rows[0];
+    const entries = [{ "generated-by": FABLE, lines: "6-8", integrity: PIN }];
+    expect(row?._path).toBe(LIMITS);
+    expect(JSON.parse(String(row?.provenance))).toEqual(entries);
+    expect(JSON.parse(String(row?.resolved))).toEqual(entries);
+    expect(JSON.parse(String(row?._sources))).toMatchObject({
+      provenance: { source: "git", evidence: `blame ${sha.slice(0, 7)}` },
+    });
+
+    const star = await runQuery({ sql: "SELECT * FROM derived", inputs: [], cwd: dir });
+    expect(star.rows).toHaveLength(1);
+    expect(JSON.parse(String(star.rows[0]?.provenance))).toEqual(entries);
   });
 });

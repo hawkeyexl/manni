@@ -13,7 +13,8 @@
  * affects text a person is reading.
  */
 import type { GetFileResult } from "../commands/get.js";
-import { compareDerived, type DerivedValue } from "../core/derive/types.js";
+import { compareDerived, PROVENANCE_FIELD, type DerivedValue } from "../core/derive/types.js";
+import { provenanceEntries, renderProvenanceValue } from "../core/derive/provenance.js";
 import { palette } from "../../shared/color.js";
 
 export interface GetReportOptions {
@@ -27,6 +28,22 @@ export function stringifyValue(value: unknown): string {
   if (value === undefined) return "(unset)";
   if (typeof value === "string") return value;
   return JSON.stringify(value);
+}
+
+/**
+ * A value as the line prints it. `provenance` (0046) prints its entries in
+ * file lines, `lines 12-31 claude-fable-5; lines 44 claude-sonnet-5`, since
+ * the record stores body lines and a person reads the file; a value that is
+ * not a well-formed record prints as any other.
+ */
+function valueOf(r: GetFileResult, field: string, value: unknown): string {
+  if (field !== PROVENANCE_FIELD || r.provenance === undefined) return stringifyValue(value);
+  if (value === undefined || value === null) return "(unset)";
+  const entries = provenanceEntries(value);
+  if (!Array.isArray(value) || entries.length !== value.length || entries.length === 0) {
+    return stringifyValue(value);
+  }
+  return renderProvenanceValue(entries, r.provenance.bodyLine);
 }
 
 /**
@@ -67,6 +84,12 @@ function annotation(r: GetFileResult, field: string): string {
     // source answered — but the record is public API, so a caller that built
     // one by hand gets a plain line rather than a crash.
     return d == null ? "" : ` (derived, ${d.source}: ${evidenceOf(d)})`;
+  }
+  // `provenance` (0046) is judged by the provenance comparator, never as a
+  // value: a record git has nothing against is current.
+  if (field === PROVENANCE_FIELD && r.provenance !== undefined) {
+    if (r.provenance.current !== false) return " (asserted)";
+    return ` (asserted; ${d?.source ?? "git"} says ${valueOf(r, field, d?.value)})`;
   }
   if (d == null) return " (asserted)";
   // Judged as `validate` judges it, with lists as multisets, so the two can
@@ -116,7 +139,7 @@ export function renderGet(
       const note = annotation(r, f);
       const suffix = note === "" ? "" : c.dim(note);
       lines.push(
-        `${c.dim(`${r.file}:`)} ${f}=${stringifyValue(effective[f])}${suffix}`,
+        `${c.dim(`${r.file}:`)} ${f}=${valueOf(r, f, effective[f])}${suffix}`,
       );
     }
   }
