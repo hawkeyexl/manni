@@ -75,8 +75,8 @@ refine the assertions, not the grader.
 
 ## Self-preference
 
-A model grading its own output favors it. So before an ai eval is judged, manni docevals asks
-whether the judge's model is among the machines the page records, for what that eval grades. The
+A model grading its own output favors it. So manni docevals checks each ai eval before it is judged.
+Is the judge's model among the machines the page records for what that eval grades? The
 model compared is the one that judges *this eval*, after its own `provider:` and `model:` and any
 `--model` flag, not the run's default.
 
@@ -92,7 +92,7 @@ the eval reads. Which record answers that depends on the eval's
 | `{source: file, path}` | none; a companion file carries its own record if it is a page |
 
 The check covers the whole body, because `target` has no form that names lines. The second is
-**criterion**: a `meta-provenance` entry for the judge's model lists this eval's id under `evals`,
+**criterion**. A `meta-provenance` entry for the judge's model lists this eval's id under `evals`,
 so the judge proposed the assertion it is grading. When both hold, content is reported.
 
 Each case warns on stderr, once per page and eval:

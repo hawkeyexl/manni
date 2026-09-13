@@ -54,8 +54,8 @@ Attribution follows proposal 0046:
 
 ### Consequences
 
-- Good, because the draft under review is the thing pages are validated against, byte for byte,
-  and a change to the draft reaches docevals in the same commit.
+- Good, because pages are validated against the draft under review, byte for byte. A change to
+  the draft reaches docevals in the same commit.
 - Good, because one record serves both fill commands and the check that reads it.
 - Bad, because a consumer who wants `manni meta validate` to check eval declarations has to copy
   the draft into their repository, as the citations vocabulary's consumers do. No URL serves it

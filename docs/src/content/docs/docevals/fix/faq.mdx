@@ -54,7 +54,7 @@ The judge was not confident enough either way. **You cannot clear it.** Someone 
 ## I ran it locally and got a different result
 
 Most likely a different judge graded it. Under `provider: auto`, the default, a missing API key does
-not skip the AI evals. Detection moves on: to the Claude CLI if it is installed, and otherwise to a
+not skip the AI evals. Detection moves on to the Claude CLI if it is installed. Otherwise it picks a
 local `llama-cpp` model, which installs its runtime and downloads its weights on first use. Your
 verdicts then come from a different model than CI's. The run names the provider it picked on stderr,
 `inference: provider "auto" — auto-selected "claude-cli"`, so compare that line with CI's log.
