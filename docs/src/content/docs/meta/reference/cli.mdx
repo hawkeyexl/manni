@@ -760,6 +760,36 @@ The format is available whether or not `--dry-run` is set. Annotations describe
 what is still missing, which is as useful on a run that writes as on one that
 previews.
 
+### The meta-provenance entry
+
+For each file where `fill` writes at least one field, it records those fields
+in `meta-provenance` in the same write. `--dry-run` reports the entry it would
+write. The entry names the run's model, the JSON Pointer of each field
+written, and each one's confidence. A pointer is escaped per RFC 6901, so a
+key `a/b` is `/a~1b`. Where the page already has an entry for the model, the
+new pointers are appended to it. A person deletes the entry once the values are
+reviewed.
+
+```
+✓ docs/limits.md
+    /description  How many requests a token may send, and how bursts work.  0.91
+    /intent  Stay under the rate limit  0.84
+    meta-provenance  claude-sonnet-4-5: /description, /intent
+```
+
+The entry is a side record. It never changes the summary or the exit code.
+Three cases leave it out while the fields are still written:
+
+| Case | pretty line | `metaProvenance` in `json` |
+|---|---|---|
+| The page's schemas, checked with the entry in place, reject it. | `meta-provenance not written: this page's schemas do not allow it` | `{"written": false, "skipReason": "schema-mismatch"}` |
+| A manifest in one of the page's collections owns `meta-provenance`. | `meta-provenance not written: owned by manifest private/meta.yaml, which manni meta fill does not write` | `{"written": false, "skipReason": "manifest-owned", "manifest": "private/meta.yaml"}` |
+| The format's writer cannot hold a list of entries, as in an HTML or XML attribute. | `meta-provenance not written: html metadata cannot hold it` | `{"written": false, "skipReason": "unwritable"}` |
+
+A written entry is `{"written": true, "entry": {...}}`. The key is absent when
+no field was written. Neither `provenance` nor `meta-provenance` is ever a
+candidate, and `fill` leaves both out of what it sends a model.
+
 ### Examples
 
 ```sh
@@ -783,6 +813,11 @@ Which fields are managed comes from config
 `--fields` for one run. `derive` is the only command that writes a managed
 field. `validate` is what reports a stamp that has gone stale.
 
+One managed field is a list rather than a value. `provenance` records which
+body lines a machine wrote, as ranges pinned by an integrity hash. It has its
+own option and positional form, below, and its own
+[journey](/manni/meta/set-up/machine-authorship/).
+
 ```sh
 manni meta derive [paths...] [options]
 ```
@@ -797,15 +832,15 @@ finding without touching anything.
 
 | Argument | Description |
 |---|---|
-| `[paths...]` | Files, directories, or globs to stamp. Optional, and falls back to the configured [collections](#collections-as-inputs). See the [shared input model](#shared-input-model). `-` is refused (exit 2), because a piped document has no history behind it: `cannot derive <stdin>: no history behind it`. |
+| `[paths...]` | Files, directories, or globs to stamp. Optional, and falls back to the configured [collections](#collections-as-inputs). See the [shared input model](#shared-input-model). `-` is refused (exit 2), because a piped document has no history behind it: `cannot derive <stdin>: no history behind it`. A file may carry a range, `<path>:L` or `<path>:L1-L2`, in **file** lines. The range names the lines `--generated-by` attributes, and is legal only beside it. It is split as `manni cite add` splits a page argument, at the last `:L` suffix, so a Windows drive letter is not a range. The refusals are in [exit 2 from a derive source](/manni/meta/reference/output-and-exit-codes/#exit-2-from-a-derive-source). |
 
 ### Options
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
-| `--fields` | `<list>` | config `derive.fields` | Comma-separated managed fields to stamp this run. Each must be one of the six [derivable fields](/manni/meta/reference/configuration/#the-derivable-fields) or a key with an entry in config [`derive.commands`](/manni/meta/reference/configuration/#commands). An unknown or non-derivable name is an error (exit 2) listing the six and pointing at `derive.commands`. A field a collection's [external-metadata](/manni/meta/reference/configuration/#external-metadata) manifest owns is refused (exit 2), the same way loading the config refuses it in `derive.fields`. The message is `"owner" is owned by the manifest ./owners.yaml on collection guides; a managed field has one authority, and a manifest key already has one.` No config `derive.fields` and no flag is an error (exit 2): `nothing to derive: set derive.fields in manni.config.yaml or pass --fields`. |
+| `--fields` | `<list>` | config `derive.fields` | Comma-separated managed fields to stamp this run. Each must be one of the seven [derivable fields](/manni/meta/reference/configuration/#the-derivable-fields) or a key with an entry in config [`derive.commands`](/manni/meta/reference/configuration/#commands). An unknown or non-derivable name is an error (exit 2) listing the seven and pointing at `derive.commands`. A field a collection's [external-metadata](/manni/meta/reference/configuration/#external-metadata) manifest owns is refused (exit 2), the same way loading the config refuses it in `derive.fields`. The message is `"owner" is owned by the manifest ./owners.yaml on collection guides; a managed field has one authority, and a manifest key already has one.` No config `derive.fields` and no flag is an error (exit 2): `nothing to derive: set derive.fields in manni.config.yaml or pass --fields`. |
 | `--sources` | `<list>` | config `derive.sources`, else all five | Comma-separated sources to consult: `git`, `codeowners`, `github`, `gitlab`, `command`. Only the one of `github` and `gitlab` that matches the origin remote is consulted. `command` covers every field with an entry in config [`derive.commands`](/manni/meta/reference/configuration/#commands). A field whose only sources are excluded derives null and is left alone. This is the opt-out for a checkout that cannot answer a source, such as a shallow clone. |
-| `--generated-by` | `<name>` | none | Attributes uncommitted body lines to `<name>` in `provenance`, or the lines a `<path>:L1-L2` positional names, committed or not; absent, `MANNI_GENERATED_BY` is read, and an empty value is unset. |
+| `--generated-by` | `<name>` | `MANNI_GENERATED_BY` | The machine that wrote the uncommitted body lines, recorded in [`provenance`](/manni/meta/reference/configuration/#the-derivable-fields). With a `<path>:L1-L2` positional, it attributes those lines instead, committed or not, unless git evidence names another machine for any of them (exit 2). Without the flag, `MANNI_GENERATED_BY` is read, and an empty value is unset either way. The flag, or a range, is an error (exit 2) on a run whose fields leave out `provenance`. The message is `--generated-by attributes provenance, which is not in --fields. Add provenance, or drop --generated-by.` The variable alone never is, so an agent session can export it once. A file where the flag finds no uncommitted body lines gets a notice on stderr, and the exit code is unaffected. The notice is `docs/limits.md: no uncommitted body lines; --generated-by attributes only what is not yet committed.` |
 | `--dry-run` | n/a | off | Report what would change and write nothing. |
 | `--check` | n/a | off | Implies `--dry-run`. A managed field that is stale or unset is a finding, and the run exits 1 if there is any. This is the CI spelling. |
 | `-f, --format` | `<pretty\|json\|github\|sarif\|junit>` | `pretty` | [Output format](/manni/meta/reference/output-and-exit-codes/). `github`, `sarif`, and `junit` describe findings, so they are legal only with `--check`. Without it they are an error (exit 2): `sarif is a findings format, which only --check produces`. An unknown value is an error (exit 2). |
@@ -830,6 +865,16 @@ through the same comment-preserving writer `fill` uses, so a format `fill`
 cannot write is reported as a per-file error here too. The rules for each
 field are in [the derivable
 fields](/manni/meta/reference/configuration/#the-derivable-fields).
+
+`provenance` is judged range by range. A range whose pinned text changed, a
+range git attributes to another machine, and machine lines with no entry are
+each re-derived and written. A range that only moved gets its `lines`
+rewritten. A range nothing contradicts is kept. Where an
+[external-metadata](/manni/meta/reference/configuration/#external-metadata)
+manifest owns `provenance`, the entries go into that manifest and the page is
+not touched. A format whose metadata is not a fenced block, such as HTML, XML
+or DITA, cannot hold the record on the page. That file is a per-file error,
+exit 1, and the manifest is where its record goes.
 
 ### A source that cannot answer
 
@@ -862,9 +907,34 @@ In `pretty` format, each changed file lists its fields as
 With `--dry-run` the summary says so. With `--check` a stale or unset field
 renders as a finding in the chosen format, under the rule id
 `derived:stale/derived`, at the field's line. In `json` format the run is
-`{ results, summary, dryRun, check, sources }`, where each result carries
-its fields with `asserted`, `derived`, `source`, `evidence`, `status`, and
-`written`.
+`{ results, summary, dryRun, check, sources, frame }`, where each result
+carries its fields with `asserted`, `derived`, `source`, `evidence`, `status`,
+and `written`.
+
+`provenance` prints one line per range that changes. The lines are file lines
+of the file as `derive` read it:
+
+```
+docs/limits.md
+    provenance  lines 9-11: (unset) → claude-fable-5  (git: uncommitted)
+    provenance  lines 21: moved from 19  (git: pin)
+    provenance  lines 29: claude-sonnet-5 → Claude Opus 5  (git: blame 6683e73)
+    provenance  lines 16-18: claude-fable-5 → re-derived  (git: pin)
+```
+
+The four shapes are a new range, a moved one, one git attributes to another
+machine, and one whose pinned text changed. When a manifest holds the record,
+the file header names it, as `private/provenance.yaml (for docs/limits.md)`.
+The summary counts ranges rather than fields when `provenance` is among the
+fields, as `1 file, 1 changed, 1 range written`. Under `--check`, each changed,
+stale or unset range is its own finding at the range's first file line.
+
+In `json` format the `provenance` field adds `ranges`, one object per range.
+Each has `lines` in file lines, `generated-by`, `integrity`, `status`,
+`evidence` and `written`. `status` is `current`, `moved`, `changed`, `stale`
+or `unset`, and a moved or stale range adds `from`. The field adds `manifest`
+when a manifest holds the record, and `summary` adds `ranges`, the count of
+ranges written.
 
 ```
 $ manni meta derive
@@ -876,8 +946,9 @@ docs/faq.md  current
 ```
 
 Exit `0` means the run applied, or had nothing to do. Exit `1` means a file
-could not be read or written (an unparseable document, a read-only format),
-with or without `--check`. Under `--check` alone, it also means a managed
+could not be read or written (an unparseable document, a read-only format, or
+`provenance` on a page whose metadata is not fenced), with or without
+`--check`. Under `--check` alone, it also means a managed
 field is stale or unset. Exit `2` is usage or operational, including every
 source that could not answer.
 
@@ -892,6 +963,8 @@ manni meta derive --fields reviewed-by,last-reviewed   # after an approval, stam
 manni meta derive --sources git,codeowners         # no gh on this machine
 manni meta derive --fields owner --no-cache docs/  # re-read GitHub or GitLab
 manni meta derive --fields verified-against        # stamp the version a config command reads
+MANNI_GENERATED_BY=claude-fable-5 manni meta derive --fields provenance   # attribute what an agent just wrote
+manni meta derive docs/limits.md:12-31 --generated-by claude-fable-5      # attribute named lines, committed or not
 ```
 
 ## `meta schemas`

@@ -1508,10 +1508,11 @@ is the journey. This section is the contract.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `fields` | `string[]` | no, but a `derive:` must set one of the four keys | The managed fields. Non-empty when present, unique, and each one of [the derivable fields](#the-derivable-fields) or a key with an entry in [`commands`](#commands). Each violation is a config error (exit 2) naming `derive.fields`. Never a key a collection's [external-metadata](#external-metadata) manifest owns, because the two channels would disagree about where the value lives. See [a field a manifest owns](#a-field-a-manifest-owns). Absent means nothing is managed and `validate` compares nothing; `sources`, `codeowners` or `commands` alone still shape the reads. |
+| `fields` | `string[]` | no, but a `derive:` must set one of the five keys | The managed fields. Non-empty when present, unique, and each one of [the derivable fields](#the-derivable-fields) or a key with an entry in [`commands`](#commands). Each violation is a config error (exit 2) naming `derive.fields`. Never a key a collection's [external-metadata](#external-metadata) manifest owns, because the two channels would disagree about where the value lives. `provenance` is the one exception. See [a field a manifest owns](#a-field-a-manifest-owns). Absent means nothing is managed and `validate` compares nothing; `sources`, `codeowners`, `commands` or `machines` alone still shape the reads. |
 | `sources` | `string[]` | no | Which of `git`, `codeowners`, `github`, `gitlab` and `command` to consult. Non-empty and unique. The default is all five. Only the one of `github` and `gitlab` that matches the origin remote is consulted; see [the review sources](#the-review-sources). A field whose only sources are excluded derives null, and can never be stale. |
 | `codeowners` | `string` | no | Path to the CODEOWNERS file, relative to the config file's directory. The default is GitHub's or GitLab's own search order, below. When `codeowners` is an active source, the file must exist (exit 2). |
-| `commands` | map | no | One entry per field a program derives, keyed by the frontmatter key. Each entry has `run`, an argv list, and an optional `timeout` in seconds. The key may not be one of the six built-in fields, a manifest-owned key, or `$schema` (exit 2). See [Commands](#commands). |
+| `commands` | map | no | One entry per field a program derives, keyed by the frontmatter key. Each entry has `run`, an argv list, and an optional `timeout` in seconds. The key may not be one of the seven built-in fields, a manifest-owned key, or `$schema` (exit 2). See [Commands](#commands). |
+| `machines` | `string[]` | no | Trailer identities that are machines. Each entry is a glob matched against an identity's name and against its email. A `Co-authored-by:` trailer that matches names a machine for [`provenance`](#provenance). Any identity that matches, author or co-author, is left out of `authors`. Globs match case-sensitively, and brackets are literal, so `*[bot]` means a name ending in `[bot]`. Non-empty when present, unique, and no entry blank (exit 2). The default is `["*[bot]"]`. Prefer exact addresses, because `*noreply*` also matches the GitHub no-reply addresses people commit with. |
 
 ```yaml
 # manni.config.yaml
@@ -1527,6 +1528,7 @@ meta:
     commands:                                          # optional; a program per field
       verified-against:
         run: ["jq", "-r", ".version", "package.json"]
+    machines: ["*[bot]", "noreply@anthropic.com"]     # optional; default ["*[bot]"]
 ```
 
 `derive:` absent is exactly the behaviour every config had before the key
@@ -1549,10 +1551,27 @@ manifest-owned name the same way for one run. A [`commands`](#commands) key a
 manifest owns is refused when the config loads too, and the message names
 `meta.derive.commands.<key>` in place of the field's index.
 
+`provenance` is the exception. A pin is minted by the tool, never curated by
+hand, so a manifest that owns `provenance` is where `derive` stores the record.
+`derive` writes the page's entries into the manifest with a comment-preserving
+splice, and never into the page. Every other managed field keeps the refusal.
+Three manifests cannot hold the record, and each is exit 2 when `derive` runs:
+
+| Situation | Message |
+|---|---|
+| The manifest that owns `provenance` is a URL. `derive` writes the record, and a URL is not somewhere to write. | `collection site: provenance cannot come from a URL manifest, because manni meta derive writes it.` |
+| A page belongs to two collections whose manifests both own `provenance`. | `docs/limits.md is in collections site and limits, and both keep provenance in a manifest.` |
+| The manifest [joins on a field](#external-metadata), and the page does not carry it. | `docs/limits.md carries no id, which private/by-id.yaml joins on, so its provenance has no entry there.` |
+
+`validate` and `get` only read the record, so a URL manifest is not refused
+there. Its copy at a past commit is simply not read as evidence.
+
 #### The derivable fields
 
 Six fields of the [stewardship
-vocabulary](/manni/meta/proposals/stewardship/) have a built-in source. The
+vocabulary](/manni/meta/proposals/stewardship/) have a built-in source, and so
+does `provenance` from the [ai-context
+vocabulary](/manni/meta/proposals/ai-context/). The
 other four, `stakeholders`, `review-interval`, `verified-against` and
 `source-of-truth`, are judgments a person makes, and no built-in reads them.
 Naming one of them in `fields` is a config error unless a
@@ -1563,10 +1582,11 @@ against the product's own version file.
 |---|---|---|---|
 | `created` | git | The stamp set by the commit that added the path (rename-followed), if it set one. Otherwise that commit's author date as `YYYY-MM-DD` in the author's offset | `added in 7a0d424 (2026-08-26)` / `stamped in 7a0d424` |
 | `last-updated` | git | The stamp set by the newest body-changing commit if it set one; else its author date. With an uncommitted body change: the working value if it differs from HEAD's, else today (the one place derive reads a clock) | `body changed in 424f71a (2026-09-07)` / `uncommitted body change` |
-| `authors` | git | Names of authors of body-changing commits plus their `Co-authored-by` trailers, oldest first, deduplicated by email, names ending `[bot]` excluded | `4 body-changing commits` |
+| `authors` | git | Names of authors of body-changing commits plus their `Co-authored-by` trailers, oldest first, deduplicated by email. An identity [`machines`](#derive) matches is excluded, which by default is a name ending `[bot]` | `4 body-changing commits` |
 | `owner` | codeowners | Owners matching the path, `@` kept. GitHub: last matching line wins, first file found of `.github/CODEOWNERS`, `CODEOWNERS`, `docs/CODEOWNERS`. GitLab adds `.gitlab/CODEOWNERS` and sections: every section applies, last match wins per section, union of owners | `.github/CODEOWNERS:12` |
 | `reviewed-by` | `github` or `gitlab`, then `git` | Logins with an `APPROVED` review on the merged PR/MR containing the newest body-changing commit, `[bot]` suffix stripped for dedupe. Fallback: `Reviewed-by:` trailers on that commit | `github PR #18` / `Reviewed-by trailer in 424f71a` |
 | `last-reviewed` | `github` or `gitlab`, then `git` | Date of the latest `APPROVED` review on that PR/MR. Trailer fallback: the commit's author date | as above |
+| `provenance` | git | A list of pins, one per contiguous range of body lines one machine wrote: `generated-by`, `lines` in body lines, and `integrity`. Read from `git blame` and commit evidence, per line; see [Provenance](#provenance) | `uncommitted` / `blame 9b0e2c1` / `blame 9b0e2c1, 2 commits` |
 
 #### The review sources
 
@@ -1594,11 +1614,79 @@ request's answer never changes, so it is cached under
 open pull request's answer is never cached, because the next approval changes
 it. `--no-cache` bypasses the cache for one run.
 
+#### Provenance
+
+`provenance` records which body lines a machine wrote. Each entry is a pin, as
+a [citation's](/manni/meta/proposals/citations/) claim end is. `lines` is
+where the pin was last seen, counted in body lines from the first line after
+the metadata block. `integrity` is a `sha256-` hash of those lines, and the
+entry's identity. [See which lines a machine
+wrote](/manni/meta/set-up/machine-authorship/) is the journey.
+
+```yaml
+provenance:
+  - generated-by: claude-fable-5
+    lines: 6-8
+    integrity: sha256-537bc424c34e7cbbd04cc73c49df009628e35a3ab292f6da30ad1f071bfe8b62
+```
+
+Blame runs only when `provenance` is managed. It reads the history of every
+line, which costs more than the per-file log the other git fields read.
+Nothing about it is cached. Each body line takes the first evidence that
+answers:
+
+1. **Uncommitted, with a name.** The line is not committed, and
+   `--generated-by` or `MANNI_GENERATED_BY` names a machine. The line is that
+   machine's. A range on the command line names committed lines too.
+2. **A stamp in the commit that wrote it.** That commit's copy of the page
+   carries an entry covering the line, and the entry's integrity matches that
+   copy. Where a manifest holds the record, the manifest's copy is read. The entry's machine wrote it. A
+   squash merge keeps this evidence, because the squash commit carries the
+   stamp.
+3. **A `Generated-by:` trailer** on that commit names the machine.
+4. **A `Co-authored-by:` trailer** on that commit matches
+   [`machines`](#derive). The machine is the trailer's name as written, or its
+   email when the name is empty.
+5. **Otherwise, no evidence.**
+
+Trailer keys compare without case. Among several trailers of one kind, the first that names a machine wins.
+Contiguous lines one machine wrote form one entry.
+
+Each stamped entry is then matched with what the evidence derives, by
+integrity first:
+
+| Status | When | Finding | What `derive` does |
+|---|---|---|---|
+| `current` | The pin matches at its recorded lines, and no evidence names another machine | none | keeps it |
+| `moved` | The pin matches at other lines | none | rewrites `lines` |
+| `changed` | The pinned text is found nowhere in the body | `derived:stale` | re-derives the range from evidence, and drops it when none remains |
+| `stale` | The evidence names a different machine for the pinned lines | `derived:stale` | re-derives the range |
+| `unset` | The evidence names a machine for lines no entry covers | `derived:stale` | adds an entry |
+
+No evidence is not a contradiction. A pin over lines whose commit names no
+machine stands for as long as its text matches. That is how a person can
+attribute lines after the fact. When two ranges hold identical text, the nearest `lines` value
+takes the match.
+
+The three findings read, in file lines:
+
+```
+provenance lines 16-18 changed since claude-fable-5 wrote them — run manni meta derive
+provenance lines 29 say claude-sonnet-5; blame says Claude Opus 5 (6683e73) — run manni meta derive
+provenance is unset for lines 26; blame says Claude Opus 5 (ecb9b0a) — run manni meta derive
+```
+
+`--generated-by` with a range, `<path>:L1-L2`, attributes those file lines
+whether or not they are committed. It is refused when evidence rules 2 to 4
+name a different machine for any of them. Without a range it attributes
+uncommitted lines only. Every refusal is listed in [exit 2 from a derive
+source](/manni/meta/reference/output-and-exit-codes/#exit-2-from-a-derive-source).
+
 #### Commands
 
 `commands` names a program per field, for a field no built-in source
 claims. The trimmed stdout is the derived value, and the field is then
-managed exactly as the six built-ins are. `derive` stamps it, `validate`
+managed exactly as the seven built-ins are. `derive` stamps it, `validate`
 reports a stamp that disagrees, `fill` and `query` refuse to write it, and
 `get --derived` and the [`derived` table](/manni/meta/reference/query/#the-derived-table)
 show it with the argv as evidence.
@@ -1705,16 +1793,26 @@ label from the corpus walk, not a value the document carries. Review
    [checks](#when-checks-run), it is a per-file fact, so a pre-commit hook
    passing staged files judges them too. The baseline records a stale stamp
    like any other finding.
+7. **`provenance` needs a fenced metadata block to live on the page.** In
+   HTML, XML and DITA the metadata is part of the body a pin hashes, so a
+   stamp would change the lines it pins. `derive` refuses that file, exit 1:
+   `provenance cannot be stamped into the page: in the "html" format the
+   metadata is part of the body it pins. Keep provenance in an
+   externalMetadata manifest.` A [manifest](#a-field-a-manifest-owns) holds
+   the record for those pages.
+8. **An emptied record stays in its manifest.** When every range of a
+   page loses its evidence, `derive` removes `provenance` from the page. In a
+   manifest it writes `provenance: []` under the page's entry.
 
 #### What each command does
 
 | Command | With `derive:` |
 |---|---|
-| `validate` | Derives once for the run, then compares each file's managed fields. A stamp that disagrees with a non-null derived value is a `derived:stale` finding at the field's line, exit 1. `--no-derive` skips the comparison for one run. |
-| `derive` | Stamps every managed field whose derived value is non-null and differs from the document, through the same writer `fill` uses. `--dry-run` reports without writing. `--check` implies the dry run, and a stale or unset field is a finding, exit 1. See [`meta derive`](/manni/meta/reference/cli/#meta-derive). |
-| `get` | Prints the resolved value of each field, with its origin on the same line. `manni meta get owner docs/install.md` prints `docs/install.md: owner=@platform-docs  (derived, codeowners: .github/CODEOWNERS:12)`. Derivation is on by default, and `--no-derived` prints only what the document stores. `--derived` is accepted and inert. |
+| `validate` | Derives once for the run, then compares each file's managed fields. A stamp that disagrees with a non-null derived value is a `derived:stale` finding at the field's line, exit 1. `provenance` files one finding per changed, stale or unset range, at the range's first file line. `--no-derive` skips the comparison for one run. |
+| `derive` | Stamps every managed field whose derived value is non-null and differs from the document, through the same writer `fill` uses. `provenance` is written range by range, into the manifest when one owns it. `--generated-by` and a `<path>:L1-L2` range attribute lines to a machine. `--dry-run` reports without writing. `--check` implies the dry run, and a stale or unset field is a finding, exit 1. See [`meta derive`](/manni/meta/reference/cli/#meta-derive). |
+| `get` | Prints the resolved value of each field, with its origin on the same line. `manni meta get owner docs/install.md` prints `docs/install.md: owner=@platform-docs  (derived, codeowners: .github/CODEOWNERS:12)`. `provenance` prints its ranges in file lines, as `provenance=lines 12-31 claude-fable-5; lines 44 claude-sonnet-5 (derived, git: blame 9b0e2c1)`. Derivation is on by default, and `--no-derived` prints only what the document stores. `--derived` is accepted and inert. |
 | `query` | Two read-only tables, [`derived`](/manni/meta/reference/query/#the-derived-table) and [`resolved`](/manni/meta/reference/query/#the-resolved-table), each built when a statement names it. `derived` is what the evidence says; `resolved` is the asserted value where there is one and the derived value otherwise, with `_origin` naming which. A write to a managed key through `docs` is refused (exit 2) before any file is written. |
-| `fill` | A managed field is never a candidate. It is reported with `skipReason: "managed"`, so the omission is visible in the report. |
+| `fill` | A managed field is never a candidate. It is reported with `skipReason: "managed"`, so the omission is visible in the report. `provenance` and `meta-provenance` are never candidates either, and are not reported. `fill` removes both from what it sends a model, and writes [`meta-provenance`](/manni/meta/reference/cli/#the-meta-provenance-entry) for the fields it fills. |
 
 A run over a page whose body moved after its stamp:
 
@@ -1760,6 +1858,23 @@ and `/<field>` as its instance path, at the field's line in the document:
 }
 ```
 
+A `provenance` finding differs in two ways. Its `line` is the first file line
+of the range, so the `github` and `sarif` formats annotate the prose. Its
+`subject` is `provenance <integrity>`, carrying the recorded pin, or the
+derived one for an unset range. A baseline that forgives one range therefore
+does not forgive the others.
+
+```json
+{
+  "schema": "derived:stale",
+  "keyword": "derived",
+  "subject": "provenance sha256-537bc424c34e7cbbd04cc73c49df009628e35a3ab292f6da30ad1f071bfe8b62",
+  "instancePath": "/provenance",
+  "message": "provenance lines 16-18 changed since claude-fable-5 wrote them — run manni meta derive",
+  "line": 16
+}
+```
+
 The ref is shaped like `check:<name>`, so the rule id everywhere, in SARIF,
 JUnit and the baseline, is the ordinary join `derived:stale/derived`. The
 `derived` segment is reserved as a first segment beside `check` and
@@ -1771,8 +1886,8 @@ finding's `file` is never set, because a managed value lives in the document.
 
 | Exit | When |
 |---|---|
-| `2` | The config's `derive:` is malformed. `fields` is empty, repeats a name, names a field that is not derivable, or names a key a collection's manifest owns. `sources` is empty or repeats a source. `codeowners` names a file that is not there. A `commands` entry targets a built-in field, a manifest-owned key or `$schema`, or has no `run`. A requested source cannot answer: no `git`, no repository, a shallow clone, `gh` or `glab` missing or not logged in. A command failed, timed out or is not on `PATH`. `derive` was given `-`, a non-derivable or manifest-owned `--fields` name, no fields at all, or a findings format without `--check`. A `query` write would touch a managed key. |
-| `1` | `validate` found a managed field whose stamp disagrees with the evidence. `derive --check` found a stale or unset managed field. |
+| `2` | The config's `derive:` is malformed. `fields` is empty, repeats a name, names a field that is not derivable, or names a key a collection's manifest owns. `sources` is empty or repeats a source. `codeowners` names a file that is not there. A `commands` entry targets a built-in field, a manifest-owned key or `$schema`, or has no `run`. `machines` is empty, not a list of strings, repeats a glob or holds a blank one. A requested source cannot answer: no `git`, no repository, a shallow clone, `gh` or `glab` missing or not logged in. A command failed, timed out or is not on `PATH`. `derive` was given `-`, a non-derivable or manifest-owned `--fields` name, no fields at all, or a findings format without `--check`. `--generated-by` or a range came without `provenance` in the fields, or a range came without `--generated-by`. A range is reversed, past the end, inside the frontmatter, or contradicted by evidence. A manifest that owns `provenance` cannot hold the record. A `query` write would touch a managed key. |
+| `1` | `validate` found a managed field whose stamp disagrees with the evidence. `derive --check` found a stale or unset managed field. `derive` could not stamp `provenance` on a page whose metadata is not fenced. |
 
 The split is the one every command already follows. Exit 2 means the run
 could not establish the facts and produced no verdict. Exit 1 means it did,

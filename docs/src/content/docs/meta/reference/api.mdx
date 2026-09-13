@@ -38,7 +38,7 @@ exit code is the caller's.
 | `ValidateRun` (type) | What `runValidate` resolves to: `results`, `summary`, and the `frame` describing where the run stood. |
 | `runGet` | Read named metadata fields from each input. Backs `manni meta get`. Always returns every file it saw, since `--quiet` filtering lives in the reporter. |
 | `GetOptions` (type) | Input to `runGet`: the same input model plus the `fields` to read. |
-| `GetFileResult` (type) | One `runGet` result. The file, whether metadata was `present`, the resolved `values`, and an optional `error` when the metadata block could not be read at all. |
+| `GetFileResult` (type) | One `runGet` result. The file, whether metadata was `present`, the resolved `values`, and an optional `error` when the metadata block could not be read at all. When `provenance` was requested, `provenance` carries `bodyLine`, the file line body line 1 sits on, and `current`, whether the record agrees with git as `validate` judges it. `current` is absent when nothing was derived. |
 | `runQuery` | Run one SQL statement over an in-memory table built from every input's metadata. Backs `manni meta query`. Returns every row. The `--check` verdict is the CLI's exit code, not the result's. |
 | `QueryOptions` (type) | Input to `runQuery`. The same input model plus the `sql` to run. Optional named-parameter `params`, with values encoded like stored cells: booleans as `1`/`0`, arrays and objects as JSON text. Optional `schemas` naming the set a DDL statement evolves (the CLI's `-s`). A run that produces no schema-evolving effects then refuses, export-only runs included. An optional `db` export path makes `sql` optional. An optional `confirm` is how a write to a column marked `x-manni-encrypt` asks for an encryption key when there is none; absent, that write refuses. An optional `env` is the environment `MANNI_ENCRYPTION_KEY` is read from. |
 | `QueryRun` (type) | What `runQuery` resolves to. Result `columns` (present even for zero rows), `rows`, and a mutating statement's `changes`. The `frame` describing where the run stood, which is what SARIF and JUnit rendering need. When `db` was written, its path and size. |
@@ -46,15 +46,15 @@ exit code is the caller's.
 | `runFill` | Propose and write missing metadata with an inference provider. Backs `manni meta fill`. |
 | `FillOptions` (type) | Input to `runFill`: provider, model, confidence threshold, cost ceiling, concurrency, and whether to write. An optional `confirm` is how a run asks for an encryption key. It is used when a field marked `x-manni-encrypt` is to be written and there is none. Absent, the run refuses before its first model request. An optional `env` is the environment `MANNI_ENCRYPTION_KEY` is read from. |
 | `FillRun` (type) | What `runFill` resolves to: per-file results plus the run summary. |
-| `FillFileResult` (type) | One file's fill outcome: the fields considered and whether the document was rewritten. |
+| `FillFileResult` (type) | One file's fill outcome: the fields considered and whether the document was rewritten. `metaProvenance` reports the [`meta-provenance` entry](/manni/meta/reference/cli/#the-meta-provenance-entry): `{written: true, entry}`, or `{written: false, skipReason}` with `schema-mismatch`, `manifest-owned` (plus the `manifest` path) or `unwritable`. It is absent when no field was written. |
 | `FillSummary` (type) | Aggregate fill counts, including cost and the required fields left unfilled. |
 | `FilledField` (type) | One proposed field: JSON Pointer, `required`, `confidence`, `reasoning`, the `value`, and whether it was `written`. `encrypted` is set when the value was written encrypted, and `value` then reads `(encrypted)`. |
 | `SkipReason` (type) | Why a proposal was not written: `low-confidence`, `schema-mismatch`, or `no-proposal`. |
 | `runDerive` | Stamp the managed stewardship fields from git history, CODEOWNERS, GitHub and GitLab. Backs `manni meta derive`. Writes a `stale` or `unset` field unless `dryRun` or `check`; leaves `current` and `unknown` alone. Throws `DocmetaError` for stdin, a field or source it does not know, nothing to derive, and a consulted source that cannot answer. |
-| `DeriveOptions` (type) | Input to `runDerive`: the same input model minus stdin, plus `fields` and `sources` (config `derive:` otherwise), `dryRun`, `check`, `cache`, a `now` clock, and a `reviews` client to inject. |
+| `DeriveOptions` (type) | Input to `runDerive`: the same input model minus stdin, plus `fields` and `sources` (config `derive:` otherwise), `dryRun`, `check`, `cache`, a `now` clock, and a `reviews` client to inject. `generatedBy` is `--generated-by`, read from `MANNI_GENERATED_BY` in `env` when absent, and an input may carry a `<path>:L1-L2` range. |
 | `DeriveRun` (type) | What `runDerive` resolves to: per-file `results`, the `summary`, whether it was a `dryRun` or a `check`, the `sources` consulted with each one's status, and the `frame` SARIF needs. |
 | `DeriveFileResult` (type) | One file's outcome: its `fields` as `DerivedField`s, whether it `changed`, an `error` when it could not be derived or written, and under `check` its `findings`. |
-| `DeriveSummary` (type) | The aggregate counts. They cover files, changed files, fields written, how many fields were stale, unset, or unknown, and errors. |
+| `DeriveSummary` (type) | The aggregate counts. They cover files, changed files, fields written, how many fields were stale, unset, or unknown, and errors. `ranges`, present when `provenance` is among the fields, counts the `provenance` ranges written. |
 | `getSchemasInfo` | The built-in schema registry and the supported input formats, as data. Backs `manni meta schemas`. |
 | `runVendorSchema` | Fetch a remote schema, write it into the repository, and record its integrity pin. Backs `manni meta schemas vendor`. |
 | `VendorOptions` (type) | Input to `runVendorSchema`: the URL, the destination directory, and whether to update the config. |
@@ -201,10 +201,10 @@ below are the shared vocabulary and the two pure steps every source feeds.
 
 | Export | Purpose |
 |---|---|
-| `DERIVABLE_FIELDS` | The six built-in fields: `created`, `last-updated`, `authors`, `owner`, `reviewed-by`, `last-reviewed`. |
+| `DERIVABLE_FIELDS` | The seven built-in fields: `created`, `last-updated`, `authors`, `owner`, `reviewed-by`, `last-reviewed`, `provenance`. |
 | `BuiltinDerivableField` (type) | The union of those names. |
 | `DerivableField` (type) | A managed field name, which is one of the built-ins or a key with an entry in `derive.commands`. The config parser guarantees one or the other, so it is `string` to the type system. |
-| `isBuiltinField` | Type guard for a user-supplied field name: whether it is one of the six built-ins. It answers `false` for a key with a `derive.commands` entry, which is derivable but not built in; ask `isBuiltinField(f) \|\| Object.hasOwn(commands, f)` for the wider question. |
+| `isBuiltinField` | Type guard for a user-supplied field name: whether it is one of the seven built-ins. It answers `false` for a key with a `derive.commands` entry, which is derivable but not built in; ask `isBuiltinField(f) \|\| Object.hasOwn(commands, f)` for the wider question. |
 | `DERIVE_SOURCES` | The sources `derive.sources` may name: `git`, `codeowners`, `github`, `gitlab`, `command`. Absent in config means all five, of which only the `github` or `gitlab` the origin remote matches is consulted. |
 | `DeriveSource` (type) | The union of those names. |
 | `DeriveCommand` (type) | One `derive.commands` entry as the derive context carries it: the `run` argv, the program first, and the `timeoutMs` to wait for it. |
@@ -236,7 +236,7 @@ below are the shared vocabulary and the two pure steps every source feeds.
 | `DeriveInput` (type) | One document as the sources see it, with its `label`, `absPath`, `content`, and `extracted` metadata. |
 | `DeriveContext` (type) | What a derive run holds constant: `cwd`, `base`, `configDir`, the `sources` and `fields` in play, an optional `codeowners` path, the optional `commands` table, whether to `cache`, a `now` clock, and an optional `reviews` client. |
 | `DerivedStatus` (type) | How an asserted value stands against the derived one: `current`, `stale`, `unset`, or `unknown`. |
-| `DerivedField` (type) | One compared field. It carries the `field`, the `asserted` value when the document carries one, the `derived` value or `null`, its `source` and `evidence`, the `status`, and whether `derive` has `written` it. |
+| `DerivedField` (type) | One compared field. It carries the `field`, the `asserted` value when the document carries one, the `derived` value or `null`, its `source` and `evidence`, the `status`, and whether `derive` has `written` it. For `provenance` it adds `ranges`, one verdict per range in file lines, each with `lines`, `generated-by`, `integrity`, `status` (`current`, `moved`, `changed`, `stale` or `unset`), `evidence`, `written`, and `from` on a moved or stale range. It adds `manifest` when a manifest holds the record. |
 | `compareDerived` | Compare what a document asserts with what a source derived. Pure. Lists compare as sets, so a reordered `authors:` is current, not stale. A missing or `null` derived value is `unknown`. |
 | `staleFindings` | The findings `validate` files for a document's managed fields. Each `stale` or `unset` field gets one `FieldError`, on the line the asserted key sits on. The message names both values and the evidence. |
 | `DERIVED_STALE_SCHEMA` | The `schema` ref a derived finding carries: `derived:stale`. |
@@ -327,7 +327,7 @@ its exports are under [Collections](#collections).
 | `FillConfig` (type) | Config defaults for `fill`: provider, model, confidence threshold, cost ceiling, concurrency. |
 | `SchemaCacheConfig` (type) | Config for the remote-schema cache, currently `ttlHours`. |
 | `CheckConfig` (type) | One named [corpus check](/manni/meta/reference/configuration/#checks). Its `name` (the durable half of its findings' identity) and the SQL `query`. |
-| `DeriveConfig` (type) | The [derived channel](/manni/meta/reference/configuration/#derive), made of the managed `fields`, the optional `sources` to consult, an optional `codeowners` path relative to the config's directory, and the optional `commands` table. The parser has already asserted the fields are non-empty, unique, and each one of `DERIVABLE_FIELDS` or a key of `commands`. `loadConfig` has also asserted that no field and no `commands` key is a key an [external-metadata](#external-metadata) manifest owns on any collection. |
+| `DeriveConfig` (type) | The [derived channel](/manni/meta/reference/configuration/#derive). It is made of the managed `fields`, the optional `sources` to consult, and an optional `codeowners` path relative to the config's directory. The optional `commands` table and `machines` globs complete it. The parser has already asserted the fields are non-empty, unique, and each one of `DERIVABLE_FIELDS` or a key of `commands`. `loadConfig` has also asserted that no field and no `commands` key is a key an [external-metadata](#external-metadata) manifest owns on any collection. `provenance` is the one field a manifest may own. |
 | `DeriveCommandConfig` (type) | One `derive.commands` entry as the config spells it, with the `run` argv, the program first, and an optional `timeout` in seconds. The parser has already asserted `run` is a non-empty list of non-empty strings and `timeout` a positive whole number. It has also refused a key that is a built-in field or `$schema`, and `loadConfig` refuses one a manifest owns. |
 
 ## Reporters

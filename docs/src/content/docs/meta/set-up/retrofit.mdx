@@ -222,6 +222,7 @@ manni meta fill docs/reference/ --dry-run
 ```
 ✓ docs/reference/api.md
     /description  Reference for the public HTTP API.  0.93
+    meta-provenance  claude-sonnet-4-5: /description
     below 0.7: /resource 0.41
 
 anthropic/claude-sonnet-4-5 · Threshold 0.7 · 12 files · 9 fields would be written · 7 skipped
@@ -236,6 +237,8 @@ manni meta fill docs/reference/ && git diff
 <Aside type="caution">
 `fill` writes to your files by default. `--dry-run` is the flag that holds it back. Run it on a clean working tree so `git diff` shows exactly what changed, and keep the blast radius to one folder per commit.
 </Aside>
+
+Each page `fill` writes to also gains a `meta-provenance` entry, naming the model and the fields it wrote. That is the review list. Delete a page's entry once a person has checked its values, so a surviving entry always means machine metadata nobody has read. A schema that does not allow the key gets the fields without the entry, and the report says so.
 
 Values below the threshold are skipped, and the report lists each one by name and score. Those pages genuinely need a human, and now you have a short list of them to work through. Raise `--confidence` when you want only near-certain values:
 

@@ -132,10 +132,11 @@ a stated reason) carry its weight? And are the per-session `human`
 semantics documented clearly enough that implementers will not try to
 cache verdicts?
 
-Proposal 0046 would rename `metadata.eval-provenance` to
+Proposal 0046 renames `metadata.eval-provenance` to
 `metadata.meta-provenance`, in draft `1.0.0-proposal.3`. Its entries take the
 same shape as the page-level `meta-provenance` in
-[ai-context](/manni/meta/proposals/ai-context/). They sit one level down,
+[ai-context](/manni/meta/proposals/ai-context/), which `manni meta fill`
+already writes on a page. They sit one level down,
 because an artifact's top level still belongs to its host tool. The `eval-` guard inside
 `metadata` no longer excepts `provenance`, so `metadata.eval-provenance` is
 rejected like any other unknown `eval-*` key. The same draft renames the `info`

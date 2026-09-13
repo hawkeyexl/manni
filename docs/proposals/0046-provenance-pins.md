@@ -1,6 +1,6 @@
 # 0046: provenance pins the lines a machine wrote; meta-provenance keeps the fields
 
-- **Status:** Proposed
+- **Status:** Implemented (#34)
 - **Serves:** Maya · M8 · Sara · S1 · Devin · D4
 - **Depends on:** [0040](0040-derived-metadata.md), the derived channel this
   field rides. `manni meta derive` stamps it, and `validate` reports a stale
@@ -329,7 +329,8 @@ instructions.
 export MANNI_GENERATED_BY=claude-fable-5
 # …the agent rewrites lines 12-31 of docs/limits.md…
 manni meta derive
-# docs/limits.md: provenance lines 12-31: claude-fable-5 (uncommitted)
+# docs/limits.md
+#     provenance  lines 12-31: (unset) → claude-fable-5  (git: uncommitted)
 git commit -am "docs: rewrite the install steps"
 ```
 
@@ -338,7 +339,8 @@ back from that commit from then on. No trailer is ever needed. This is the path
 the docs lead with.
 
 **A person, precisely.** A range on the path scopes the attribution, in the
-spelling `cite add` uses:
+spelling `cite add` uses. Both commands split it with one parser,
+`splitPageArgument` in `src/shared/pin.ts`:
 
 ```bash
 manni meta derive docs/limits.md:12-31 --generated-by claude-fable-5
@@ -355,8 +357,9 @@ that commits without running `derive`. Every later run picks it up.
 **`derive.machines`, so history attributes itself.** Many repositories already
 end agent commits with a `Co-authored-by:` naming the model, and this one does.
 The tool cannot tell that trailer from a person's, so this is a key rather than
-a detection. A match counts as a machine for `provenance` and is excluded from
-`authors`. That also fixes the weakness 0040 records, where a bot with an
+a detection. A matching `Co-authored-by:` trailer counts as a machine for
+`provenance`. Any matching identity, a commit's author included, is excluded
+from `authors`. That also fixes the weakness 0040 records, where a bot with an
 ordinary name lands in `authors`.
 
 ## In an external manifest
@@ -383,6 +386,22 @@ the manifest is where the stamp is stored rather than a second authority.
 `derive` writes into it with the same comment-preserving splice `cite update`
 uses. Every other managed field keeps the refusal.
 
+Three manifests cannot hold the record, and `derive` refuses each, exit 2. The
+implementation found them; the first draft did not name them.
+
+| Manifest | Message |
+|---|---|
+| A URL, which `derive` cannot write | `collection site: provenance cannot come from a URL manifest, because manni meta derive writes it.` |
+| One of two, when a page is in two collections whose manifests both own `provenance` | `docs/limits.md is in collections site and limits, and both keep provenance in a manifest.` |
+| Joined on a field the page does not carry | `docs/limits.md carries no id, which private/by-id.yaml joins on, so its provenance has no entry there.` |
+
+`validate` and `get` only read the record, so they refuse none of the three. A
+URL manifest's copy at a past commit is simply not evidence.
+
+When every range of a page loses its evidence, `derive` removes the key from a
+page. In a manifest it writes `provenance: []` under the page's entry, keeping
+the entry in place.
+
 ## The tool
 
 No new verb. `manni meta derive` gains one option and one positional form, and
@@ -393,7 +412,13 @@ No new verb. `manni meta derive` gains one option and one positional form, and
 | Change | Spelling | Meaning |
 |---|---|---|
 | New option | `--generated-by <name>` | Attributes uncommitted body lines, or the lines a range names, to `<name>`. Defaults to `MANNI_GENERATED_BY`; an empty value is unset |
-| New positional form | `<path>:L`, `<path>:L1-L2` | File lines of one file, scoping `--generated-by`. Parsed as `cite add` parses a page argument: the last `:L` suffix, so a drive letter is not a range. Legal only with `--generated-by` |
+| New positional form | `<path>:L`, `<path>:L1-L2` | File lines of one file, scoping `--generated-by`. Split by `splitPageArgument` in `src/shared/pin.ts`, the parser `cite add` uses: the last `:L` suffix, so a drive letter is not a range. Legal only with `--generated-by` |
+
+The variable and the option differ in one way. `MANNI_GENERATED_BY` alone never
+refuses a run and never prints a notice. An agent session exports it once, and
+a run that manages other fields has nothing for it to attribute. Only the
+option, or a range, meets the "not in `--fields`" refusal and the "no
+uncommitted body lines" notice.
 
 Every other `derive` flag is unchanged, including `-` refusing stdin.
 
@@ -443,15 +468,19 @@ that never writes the key changes nothing. `meta-provenance` needs no config.
 | `validate`, a pinned range changed | `provenance lines 12-31 changed since claude-fable-5 wrote them — run manni meta derive` | 1 |
 | `validate`, the evidence names another machine | `provenance lines 12-31 say claude-fable-5; blame says claude-sonnet-5 (9b0e2c1) — run manni meta derive` | 1 |
 | `validate`, machine lines with no entry | `provenance is unset for lines 44-52; blame says claude-sonnet-5 (4c1d2e0) — run manni meta derive` | 1 |
-| `derive`, written | `docs/limits.md: provenance lines 12-31: claude-fable-5 (blame: 9b0e2c1)` | 0 |
-| `derive`, written from `--generated-by` | `docs/limits.md: provenance lines 12-31: claude-fable-5 (uncommitted)` | 0 |
-| `derive`, a moved pin | `docs/limits.md: provenance lines 15-34: claude-fable-5 (moved from 12-31)` | 0 |
-| `derive`, into a manifest | `private/provenance.yaml: docs/limits.md provenance lines 12-31: claude-fable-5 (uncommitted)` | 0 |
-| `derive`, nothing uncommitted | `docs/limits.md: no uncommitted body lines; --generated-by attributes only what is not yet committed.` | 0 |
+| `derive`, written | `    provenance  lines 44: (unset) → claude-sonnet-5  (git: blame 9b0e2c1)`, under the file | 0 |
+| `derive`, written from `--generated-by` | `    provenance  lines 12-31: (unset) → claude-fable-5  (git: uncommitted)` | 0 |
+| `derive`, the evidence names another machine | `    provenance  lines 12-31: claude-fable-5 → claude-sonnet-5  (git: blame 9b0e2c1)` | 0 |
+| `derive`, a changed pin | `    provenance  lines 13-15: claude-fable-5 → re-derived  (git: pin)` | 0 |
+| `derive`, a moved pin | `    provenance  lines 15-34: moved from 12-31  (git: pin)` | 0 |
+| `derive`, into a manifest | the file header reads `private/provenance.yaml (for docs/limits.md)`, and the range lines follow | 0 |
+| `derive`, the footer | `1 file, 1 changed, 1 range written`, counting ranges when `provenance` is among the fields | 0 |
+| `derive --generated-by`, nothing uncommitted | `manni: docs/limits.md: no uncommitted body lines; --generated-by attributes only what is not yet committed.`, a notice on stderr | unchanged |
 | `derive --check` | the three `validate` findings, nothing written | 1 |
-| `derive`, a non-fenced format on the page | `docs/page.html: provenance cannot be stamped into the page: in the "html" format the metadata is part of the body it pins. Keep provenance in an externalMetadata manifest.` | 1 |
-| `get` | `provenance  lines 12-31: claude-fable-5  (derived, blame: 9b0e2c1)` | 0 |
-| `query` | `derived._sources` holds `{"provenance": {"source": "git", "evidence": "blame: 9b0e2c1"}}` | 0 |
+| `derive`, a non-fenced format on the page | under `✗ docs/page.html`: `provenance cannot be stamped into the page: in the "html" format the metadata is part of the body it pins. Keep provenance in an externalMetadata manifest.` | 1 |
+| `get` | `docs/limits.md: provenance=lines 12-31 claude-fable-5; lines 44 claude-sonnet-5 (derived, git: blame 9b0e2c1)` | 0 |
+| `get -f json` | the result adds `provenance: {bodyLine, current}` when `provenance` is requested | 0 |
+| `query` | `derived._sources` holds `{"provenance": {"source": "git", "evidence": "blame 9b0e2c1"}}`; with several commits, `blame 9b0e2c1, 2 commits` | 0 |
 | `query UPDATE` | `"provenance" is managed by derive; run manni meta derive instead.` | 2 |
 | a range the evidence contradicts | `docs/limits.md:12-31: blame attributes these lines to claude-sonnet-5 (9b0e2c1); --generated-by cannot overrule a recorded machine.` | 2 |
 | a range without the option | `docs/limits.md:12-31 names lines, which only --generated-by uses. Pass --generated-by, or drop the range.` | 2 |
@@ -459,20 +488,28 @@ that never writes the key changes nothing. `meta-provenance` needs no config.
 | a range past the end | `docs/limits.md has no lines 12-99: the file ends at line 40.` | 2 |
 | a range into the frontmatter | `docs/limits.md:2-5 reaches into the frontmatter; provenance pins body lines, which start at line 8.` | 2 |
 | a range that ends before it starts | `docs/limits.md:31-12 ends before it starts.` | 2 |
+| a manifest that cannot hold the record | the three messages in [In an external manifest](#in-an-external-manifest) | 2 |
 | a shallow clone | 0040's message, unchanged | 2 |
+
+In `derive -f json`, the `provenance` field adds `ranges`, one object per range
+with `lines` in file lines, `generated-by`, `integrity`, `status`, `evidence`,
+`written`, and `from` on a moved or stale range. It adds `manifest` when a
+manifest holds the record. `summary` adds `ranges`.
 
 The three findings keep 0040's rule id, `derived:stale/derived`, and instance
 path, `/provenance`. They add one thing 0040's findings do not carry, the file
 line of the range. With it, the `github` and `sarif` formats annotate the prose
 rather than line 1. Diagnostics carry the `manni:` prefix on stderr; report
-lines do not.
+lines do not. The finding's `subject` is `provenance <integrity>`, so a baseline
+that forgives one range does not forgive the others.
 
 ### From the minimum to every option
 
 ```bash
 # 1. Attribute what I just wrote
 MANNI_GENERATED_BY=claude-fable-5 manni meta derive --fields provenance
-# docs/limits.md: provenance lines 12-31: claude-fable-5 (uncommitted)
+# docs/limits.md
+#     provenance  lines 12-31: (unset) → claude-fable-5  (git: uncommitted)
 
 # 2. Precisely, for committed or mixed work
 manni meta derive docs/limits.md:12-31 --generated-by claude-fable-5 --fields provenance
@@ -482,12 +519,12 @@ manni meta derive
 
 # 4. The gate
 manni meta validate
-# docs/limits.md
-#   line 12  /provenance  provenance lines 12-31 changed since claude-fable-5 wrote them — run manni meta derive
+# ✗ docs/limits.md
+#     /provenance  provenance lines 12-31 changed since claude-fable-5 wrote them — run manni meta derive  (line 12)  [derived:stale]
 
 # 5. CI, without writing
 manni meta derive --check -f github
-# ::error file=docs/limits.md,line=12,title=derived:stale/derived::provenance lines 12-31 changed since claude-fable-5 wrote them
+# ::error file=docs/limits.md,line=12::[derived:stale] /provenance provenance lines 12-31 changed since claude-fable-5 wrote them — run manni meta derive
 
 # 6. Scripting: every range one family of models wrote
 manni meta query "SELECT _path, e.value FROM resolved, json_each(resolved.provenance) AS e WHERE json_extract(e.value, '$.generated-by') LIKE 'claude-%'" -f json
@@ -542,15 +579,18 @@ invent hashes and to attribute itself.
 the document root, which is where `additionalProperties` reports, so the entry
 is checked on its own. It is not written when any error sits at or under
 `/meta-provenance` or a root error names it. Nor is it written when a manifest
-owns `meta-provenance`, since `fill` writes no manifest. Neither changes the
-exit code: failing a file for its side record would block filling.
+owns `meta-provenance`, since `fill` writes no manifest. Nor is it written where
+the format's writer cannot hold a list of entries, as in an HTML or XML
+attribute. None of the three changes the exit code: failing a file for its side
+record would block filling.
 
 | Surface | Addition |
 |---|---|
 | pretty, written | `    meta-provenance  claude-sonnet-4-5: /intent, /title`, under the file, after its fields |
 | pretty, schema | `    meta-provenance not written: this page's schemas do not allow it` |
 | pretty, manifest | `    meta-provenance not written: owned by manifest private/meta.yaml, which manni meta fill does not write` |
-| JSON, `FillFileResult.metaProvenance` | `{"written": true, "entry": {"generated-by": "claude-sonnet-4-5", "fields": ["/intent"], "confidence": {"/intent": 0.9}}}`, or `{"written": false, "skipReason": "schema-mismatch"}`, or the same with `"manifest-owned"`. Absent when no field was written |
+| pretty, format | `    meta-provenance not written: html metadata cannot hold it` |
+| JSON, `FillFileResult.metaProvenance` | `{"written": true, "entry": {"generated-by": "claude-sonnet-4-5", "fields": ["/intent"], "confidence": {"/intent": 0.9}}}`, or `{"written": false, "skipReason": "schema-mismatch"}`, or `{"written": false, "skipReason": "manifest-owned", "manifest": "private/meta.yaml"}`, or `{"written": false, "skipReason": "unwritable"}`. Absent when no field was written |
 | `github` | nothing new; it is not an error |
 | summary and exit codes | unchanged; the entry is not counted in `written` |
 
@@ -588,7 +628,7 @@ A second hook joins `manni-meta` in `.pre-commit-hooks.yaml`, with the same
 - id: manni-meta-derive
   name: manni meta derive
   description: Stamp managed metadata, including provenance, before a commit
-  entry: npx --yes @hawkeyexl/manni@0 meta derive
+  entry: npx --yes @hawkeyexl/manni@latest meta derive
   language: system
   files: '(?i)\.(adoc|asciidoc|dita|ditamap|htm|html|markdown|md|mdx|rst|xml)$'
 ```
@@ -619,7 +659,8 @@ git commit -am "docs: rewrite the install steps"
 # manni meta derive........................................................Failed
 # - hook id: manni-meta-derive
 # - files were modified by this hook
-# docs/limits.md: provenance lines 12-31: claude-fable-5 (uncommitted)
+# docs/limits.md
+#     provenance  lines 12-31: (unset) → claude-fable-5  (git: uncommitted)
 git add -u && git commit -m "docs: rewrite the install steps"
 # manni meta derive........................................................Passed
 # manni meta validate......................................................Passed
@@ -771,16 +812,18 @@ reports a `meta-provenance` pointer under `/kg/sections`, `/kg/revision-of` or
 with, and remove them from `authors`.
 
 **Changed as a result:** the default stays `["*[bot]"]`, the example uses an
-exact address, and the configuration reference will recommend exact addresses.
+exact address, and the configuration reference recommends exact addresses.
 
 ### 15. Cost
 
 0040 reads each file's history only back to its first body-changing commit.
 Blame reads every line's history, and there is no shortcut for it.
 
-**Changed as a result:** blame runs only when `provenance` is managed. Its
-results are to go through `derive`'s existing cache, with `--no-cache` as the
-escape. The `derive` reference will state the cost.
+**Changed as a result:** blame runs only when `provenance` is managed. The
+implementation caches nothing for it. `derive`'s existing cache holds merged
+review answers, which never change, and a blame answer changes with every
+commit. `--no-cache` still governs the review cache alone. The configuration
+reference states the cost.
 
 ### 16. `*[bot]` was a character class
 

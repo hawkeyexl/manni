@@ -212,6 +212,7 @@ in the view.
 | `owner` | TEXT | A JSON array, even for one owner, because a CODEOWNERS line can name several. |
 | `reviewed-by` | TEXT | A JSON array. |
 | `last-reviewed` | TEXT | A date. |
+| `provenance` | TEXT | A JSON array of pins, one per range a machine wrote, each `{"generated-by", "lines", "integrity"}`. `lines` counts body lines, as the stamp does: a number for one line, a string such as `"6-8"` for a range. `NULL` when no line has machine evidence. Its `_sources` evidence is `uncommitted`, `blame 4a6f60b`, or `blame 4a6f60b, 2 commits` when several commits wrote the machine lines. |
 | one per key in `derive.commands` | TEXT | The command's trimmed stdout. A list or object is JSON text, as in `docs`. `verified-against` from `jq -r .version package.json` is `1.4.2`; from a script printing `{"name":"operator","version":"1.4.2"}` it is that object's JSON text. |
 | `_sources` | TEXT | JSON text, `{field: {source, evidence}}`, saying where each non-null value came from and why. For a command column the source is `command` and the evidence is the argv, `{path}` already substituted. |
 
@@ -305,6 +306,23 @@ The first prints each page's owner and where it came from. The second lists
 the pages CODEOWNERS covers that nobody wrote an `owner` into. The third is
 the drift question, and it stays a `docs` to `derived` join, because that is
 the comparison `resolved` deliberately does not make.
+
+`provenance` is a list, so `json_each` turns it into one row per range. Every
+range on every page, with the machine that wrote it:
+
+```
+$ manni meta query "SELECT _path, json_extract(e.value, '\$.generated-by') AS machine, json_extract(e.value, '\$.lines') AS lines FROM resolved, json_each(resolved.provenance) AS e"
+_path           machine          lines
+docs/limits.md  claude-fable-5   8
+docs/limits.md  claude-fable-5   10
+docs/limits.md  claude-sonnet-5  12
+docs/limits.md  Claude Opus 5    13
+4 rows
+```
+
+The `lines` column counts body lines, because that is what the record stores.
+A range attributed by hand after its lines were committed appears here and not
+in `derived`. The commit that wrote those lines names no machine.
 
 Every write to `resolved` is refused, and the refusal names both ways
 forward:
