@@ -1,0 +1,20 @@
+---
+title: Versions fixture page
+description: One stale pin of each kind, and the ones that are left alone.
+---
+
+```yaml
+steps:
+  - uses: actions/checkout@v4 # a trailing comment stays
+  - uses: actions/setup-node@v4
+    with:
+      node-version: '22'
+  - uses: github/codeql-action/upload-sarif@v3
+  - uses: hawkeyexl/manni@v2
+```
+
+```yaml
+repos:
+  - repo: https://github.com/hawkeyexl/manni
+    rev: v2
+```

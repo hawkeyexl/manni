@@ -1,0 +1,13 @@
+# The test rewrites this file with CRLF line endings. .gitattributes stores
+# every text file as LF, so a committed CRLF fixture would not stay CRLF.
+jobs:
+  check:
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+      - run: npx -y @hawkeyexl/manni@1 meta validate
+repos:
+  - repo: https://github.com/hawkeyexl/manni
+    rev: v1.0.0

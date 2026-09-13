@@ -448,6 +448,8 @@ npm run test:coverage  # vitest with v8 coverage; reported, not gated
 npm run docs:check-cli  # CLI reference must match src/cli.ts
 npm run docs:check-action  # Action reference must match action.yml
 npm run docs:check-api  # API reference must match the built dist/index.d.ts
+npm run docs:check-versions  # version pins copied into README, examples and docs are current
+npm run docs:sync-versions   # rewrite the stale ones; the release runs the same rewrite
 npm run docs:check-links  # every internal link and anchor in the built site
                         # resolves. Reads docs/dist, so it needs
                         # `cd docs && npm run build` first.

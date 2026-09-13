@@ -125,7 +125,7 @@ function runAction(env: Record<string, string>, npxExit = 0): RunResult {
           MANNI_SCHEMA: "",
           MANNI_CONFIG: "",
           MANNI_FORMAT: "",
-          MANNI_VERSION: "0",
+          MANNI_VERSION: "latest",
           MANNI_ARGS: "",
           ...env,
         },
@@ -246,7 +246,7 @@ describe.skipIf(!hasBash)("action.yml input wiring", () => {
     const args = argsFor({ MANNI_PATHS: "docs/my notes/*.md\nREADME.md" });
     expect(args).toEqual([
       "--yes",
-      "@hawkeyexl/manni@0",
+      "@hawkeyexl/manni@latest",
       "meta",
       "validate",
       "docs/my notes/*.md",
@@ -298,5 +298,17 @@ describe.skipIf(!hasBash)("action.yml input wiring", () => {
     const res = runAction({});
     expect(res.stdout).toContain("manni meta validate\n");
     expect(res.stdout).not.toContain("validate ''");
+  });
+});
+
+describe("action.yml version input", () => {
+  it("defaults version to latest", () => {
+    // A major pinned here goes stale at the next major release, and nobody
+    // bumps it by hand: it sat at `"0"` through 1.0.0 and 2.0.0, so every
+    // consumer on the default ran the 0.x CLI. `latest` cannot go stale.
+    const doc = parseYaml(readFileSync(join(repoRoot, "action.yml"), "utf8")) as {
+      inputs?: { version?: { default?: unknown } };
+    };
+    expect(doc.inputs?.version?.default).toBe("latest");
   });
 });

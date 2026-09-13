@@ -68,6 +68,13 @@ describe("the published pre-commit hook", () => {
     expect(re.test("Guide.DITA")).toBe(true);
   });
 
+  it("runs the newest published CLI", () => {
+    // A major pinned in `entry` goes stale at the next major release. It sat at
+    // `@0` through 1.0.0 and 2.0.0, so every consumer ran the 0.x CLI.
+    if (!docmetaHook) throw new Error("no docmeta hook");
+    expect(docmetaHook.entry).toBe("npx --yes @hawkeyexl/manni@latest meta validate");
+  });
+
   it("declares the case-insensitive flag pre-commit needs", () => {
     // The JS translation above would pass whether or not the shipped pattern
     // carries `(?i)`, because it forces `i`. pre-commit gets no such help.

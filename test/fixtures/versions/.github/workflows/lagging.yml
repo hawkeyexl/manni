@@ -1,0 +1,9 @@
+# Dependabot has not reached this one yet. The highest major across the
+# workflows is what the docs follow, so this does not pull them back to v4.
+name: Lagging
+on: pull_request
+jobs:
+  prose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4

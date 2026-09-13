@@ -10,15 +10,15 @@ jobs:
   manni:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
 
       # Validate all Markdown. `--format github` turns failures into inline PR
       # annotations; the nonzero exit code fails the job.
       - name: Validate frontmatter
-        run: npx -y @hawkeyexl/manni@0 meta validate "**/*.md" --format github
+        run: npx -y @hawkeyexl/manni meta validate "**/*.md" --format github
 
       # Or, with a manni.config.yaml at the repo root, simply:
-      # - run: npx -y @hawkeyexl/manni@0 meta validate --format github
+      # - run: npx -y @hawkeyexl/manni meta validate --format github
