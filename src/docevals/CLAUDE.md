@@ -159,8 +159,12 @@ and Node touch.
   confidence zones, the response cache, and the price table all live in the
   library. What stays here is this tool's own work. That is the prompts and
   `PROMPT_VERSION`, the page-worded verdict schema, and the cache-key
-  composition (`cache.ts`). It is also the config → `ProviderSpec` mapping
-  (`provider.ts`) and the orchestration in `judge.ts`. The orchestration covers bounded concurrency
+  composition (`cache.ts`). It is also `provider.ts`, which picks the provider
+  and model (flag, then the eval's own `provider:`/`model:`, then the config)
+  and maps `docevals.providers` onto the library's `ProviderSpec`, and the
+  orchestration in `judge.ts`. The provider names, the `auto` detection and the
+  two refusals are `src/shared/providers.ts`, the code `manni meta fill` runs;
+  never grow a docevals-only copy. The orchestration covers bounded concurrency
   across targets, the turn budget, the self-judgment warning, and human-review
   resolution. The turn budget is claimed *before* dispatch and a cached
   ensemble spends nothing; the dollar ceiling it replaced could not do that
@@ -249,8 +253,10 @@ and Node touch.
   The warning in `src/docevals/commands/run.ts` is `!options.deterministicOnly`
   and nothing else. Commander defaults a `--no-generate` key to `true`, so any
   condition reading `options.generate === true` fires on every invocation that
-  is not `--no-generate`. Generation's own need for a provider is reported by
-  the engine as an `error` result naming the eval.
+  is not `--no-generate`. Under `--deterministic-only` the provider is resolved
+  lazily, only when generation first needs a script, so a deterministic run
+  never detects a provider. Generation's own need for a provider is reported
+  by the engine as an `error` result naming the eval.
 - Script generation must leave the page byte-identical outside the edited
   frontmatter node.
 - **Never truncate content sent to a model.** Long content is split at line
@@ -335,8 +341,8 @@ root stays permissive because sibling keys are not ours. Don't "fix" it.
   default, so downstream code receives a fully-populated `DocevalsConfig` and
   never re-applies one.
 - CLI options are overlaid at the read site with `??`
-  (`options.runs ?? config.judge.ensembleRuns`), so an unset flag falls
-  through to config.
+  (`options.runs ?? ev.runs ?? config.judge.ensembleRuns`), so an unset flag
+  falls through to the eval's own value and then to config.
 - Runtime code reads the resolved config and options, never raw `argv`.
 
 Tests build configs through `test/docevals/helpers/config.ts`
