@@ -113,24 +113,44 @@ jobs:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         run: npx semantic-release
 
-      # Action consumers write `uses: hawkeyexl/manni@v0` and expect it to
-      # track the newest 4.x. That only works because someone force-updates a
-      # `v4` tag; semantic-release creates immutable `v4.0.0` tags and nothing
-      # else, so without this step the reference resolves to nothing.
+      # Action consumers write `uses: hawkeyexl/manni@vN` and expect it to
+      # track the newest release of that major. That only works because someone
+      # force-updates the `vN` tag; semantic-release creates immutable `vN.N.N`
+      # tags and nothing else, so without this step the reference resolves to
+      # nothing.
       #
-      # Two gates, and the second is the one that is easy to miss. `main` alone
-      # is not enough: a push with no releasable commits still runs this job and
-      # releases nothing, and moving `v4` then would point it at a tree that was
-      # never published. So the step also refuses a prerelease version --
-      # `.releaserc.json` gives `next` and `feat/**` prerelease identifiers,
-      # which must never claim the major tag.
+      # It runs unless the job was cancelled, not only when Release succeeded.
+      # The 2.0.0 release published to npm, pushed `v2.0.0` and created the
+      # GitHub release, then failed in a post-publish plugin step; gated on
+      # success, this step was skipped and `v2` was never created. Running after
+      # a failure means the step can no longer assume a release happened, so it
+      # proves it, and each gate below closes one way of aiming the tag at a
+      # tree nobody can install:
+      #
+      # - `before` recorded a version. A failure before that step leaves it
+      #   empty, which would otherwise read as "the version changed".
+      # - The version changed. A push with only `chore:`/`docs:` commits runs
+      #   this job and releases nothing.
+      # - It is not a prerelease. `.releaserc.json` gives `next` and `feat/**`
+      #   prerelease identifiers, which must never claim the major tag.
+      # - npm serves exactly that version. semantic-release bumps package.json
+      #   in `prepare`, before `publish`, so a failed publish still changes the
+      #   version. The printed version is compared rather than the exit status
+      #   trusted, because older npm exits 0 with no output for a missing
+      #   version. Retried briefly, for the registry catching up after publish.
+      # - The `v$version` tag is on the remote. The major tag is moved to that
+      #   tag, so a release that failed before pushing it has nothing to aim at.
+      #
+      # A release that changed the version but fails one of the last two gates
+      # is a half-published release, so the step fails loudly rather than
+      # skipping quietly.
       #
       # The token is passed explicitly because `checkout` above sets
       # `persist-credentials: false`: the job holds `contents: write`, but no
       # credential is in git's config, and this App is also the only actor
       # allowed to bypass the `main` ruleset.
       - name: Move the major tag
-        if: github.ref == 'refs/heads/main'
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           # Through the environment, not `${{ }}`. `action.yml` documents why:
@@ -142,6 +162,10 @@ jobs:
           VERSION_BEFORE: ${{ steps.before.outputs.version }}
         run: |
           set -euo pipefail
+          if [ -z "$VERSION_BEFORE" ]; then
+            echo "::notice::The release never recorded a starting version; leaving the major tag alone."
+            exit 0
+          fi
           version="$(node -p "require('./package.json').version")"
           if [ "$version" = "$VERSION_BEFORE" ]; then
             echo "::notice::No release was produced; leaving the major tag alone."
@@ -153,12 +177,26 @@ jobs:
               exit 0
               ;;
           esac
+          name="$(node -p "require('./package.json').name")"
+          served=""
+          for attempt in 1 2 3 4 5; do
+            served="$(npm view "$name@$version" version 2>/dev/null || true)"
+            if [ "$served" = "$version" ]; then break; fi
+            if [ "$attempt" -lt 5 ]; then sleep 10; fi
+          done
+          if [ "$served" != "$version" ]; then
+            echo "::error::package.json says $version, but npm does not serve $name@$version; leaving the major tag alone. The release is half-published."
+            exit 1
+          fi
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if ! git ls-remote --exit-code --tags "$remote" "refs/tags/v$version" >/dev/null 2>&1; then
+            echo "::error::npm serves $name@$version, but the remote has no v$version tag; leaving the major tag alone. The release is half-published."
+            exit 1
+          fi
           major="v${version%%.*}"
           # Anchored to the concrete version tag semantic-release just created,
           # not to HEAD: semantic-release commits the changelog and version bump
           # itself, so HEAD here is not necessarily what it tagged.
           echo "Moving $major to v$version"
           git tag -f "$major" "v$version"
-          git push --force \
-            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
-            "refs/tags/${major}"
+          git push --force "$remote" "refs/tags/${major}"

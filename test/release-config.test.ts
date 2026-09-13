@@ -81,6 +81,24 @@ describe("the release commit guard", () => {
     expect(guard).toContain("github.event_name != 'push'");
   });
 
+  it("does not let a closing reference in a commit message fail a published release", () => {
+    // @semantic-release/github's success step parses closing keywords out of
+    // every released commit message and PR body, then resolves all of them in
+    // one GraphQL query. One number that does not exist in this repo throws
+    // before any per-issue handling, so a commit body that quoted an issue
+    // from docmeta's tracker failed the 2.0.0 release after it had published.
+    // `successCommentCondition: false` skips that parse entirely; a condition
+    // template cannot help, because it is evaluated after the query.
+    const github = releaserc.plugins.find(
+      (p): p is [string, Record<string, unknown>] =>
+        Array.isArray(p) && p[0] === "@semantic-release/github",
+    );
+    expect(github, "@semantic-release/github has no options entry").toBeDefined();
+    expect(github?.[1]["successCommentCondition"]).toBe(false);
+    // The failure issue is still wanted: it is how a broken release gets seen.
+    expect(github?.[1]["failCommentCondition"]).toBeUndefined();
+  });
+
   it("keeps the release commit message free of a CI-skip marker", () => {
     // The marker is inherited by squash merges. Nothing in this repo can stop
     // that, so the message must not carry one.
