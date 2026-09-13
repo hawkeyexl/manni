@@ -76,10 +76,13 @@ export { LEGACY_CONFIG_NAMES } from "./core/config.js";
 // `meta-provenance` (proposal 0046) is written by `manni meta fill` for the
 // fields it writes and by `manni docevals fill` for the evals it writes, and
 // read by docevals's self-preference check beside `provenance`.
-export { mergeMetaProvenance } from "./core/meta-provenance.js";
+export { mergeMetaProvenance, metaProvenanceEntries } from "./core/meta-provenance.js";
 export type {
   MergedMetaProvenance,
   MergedMetaProvenanceEntry,
   MetaProvenanceKey,
   MetaProvenanceProposal,
+  MetaProvenanceRecord,
 } from "./core/meta-provenance.js";
+export { provenanceEntries } from "./core/derive/provenance.js";
+export type { ProvenanceEntry } from "./core/derive/provenance.js";

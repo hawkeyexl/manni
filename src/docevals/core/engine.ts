@@ -33,6 +33,7 @@ import { realExec } from "../graders/exec.js";
 import { groupTargetsByEval, type ExecFn, type GraderTarget } from "../graders/types.js";
 import { sha256 } from "../judge/cache.js";
 import { isTurnBudgetSkip } from "../judge/budget.js";
+import { selfPreferenceOf } from "../judge/self-preference.js";
 import { errorMessage } from "../../shared/errors.js";
 import { resolve } from "node:path";
 
@@ -1148,21 +1149,18 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
   stampSuites(results, plans);
 
   // Self-preference reaches the reporters as a problem, not just as a field on
-  // the result: a run whose verdicts were formed by the model that wrote the
-  // pages should say so where anyone reads it. One per affected eval — the
-  // earlier stderr warning deduped by model name and so named only the first
-  // page, leaving every other page with the same problem silent.
+  // the result: a run whose verdicts were formed by the model that wrote what
+  // they grade should say so where anyone reads it. One per affected eval, in
+  // the judge's own sentence, which is recomputed from the plan because the
+  // result carries only the axis and the model.
   for (const r of results) {
     if (!r.selfPreference) continue;
-    const { axis, model } = r.selfPreference;
-    problems.push({
-      file: r.file,
-      level: "warning",
-      message:
-        axis === "content"
-          ? `Eval "${r.evalName}" was judged by ${model}, which also generated this page (generated-by). A model favors its own output — judge with a different model, or set \`model:\` on the eval.`
-          : `Eval "${r.evalName}" was judged by ${model}, which also proposed the assertion (eval-provenance). Have a human confirm the assertion before trusting the verdict.`,
-    });
+    const plan = plans.find((p) => p.page.file === r.file);
+    const ev = plan?.evals.find((e) => e.name === r.evalName);
+    const finding =
+      plan && ev ? selfPreferenceOf(plan, ev, r.selfPreference.model) : undefined;
+    if (!finding) continue;
+    problems.push({ file: r.file, level: "warning", message: finding.message });
   }
 
   // A scoped run measured part of the corpus, which is the same claim-from-a-

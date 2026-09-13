@@ -156,11 +156,13 @@ describe("the self-judgment warning", () => {
   // Driven through `makeJudge` rather than the engine: the warning compares
   // against the model that actually judged the eval, which only the judge
   // stage knows. An engine test with an injected judge would assert nothing.
-  const judgePage = async (generatedBy: string | undefined, judgeModel: string) => {
+  const judgePage = async (author: string | undefined, judgeModel: string) => {
     const content = [
       "---",
       "title: x",
-      ...(generatedBy === undefined ? [] : [`generated-by: ${generatedBy}`]),
+      ...(author === undefined
+        ? []
+        : ["meta-provenance:", `  - generated-by: ${author}`, "    evals: [claim-check]"]),
       "evals:",
       "  - id: claim-check",
       "    assertion: The page satisfies the claim.",
@@ -190,13 +192,12 @@ describe("the self-judgment warning", () => {
     vi.restoreAllMocks();
   });
 
-  it("warns when the page's generating model is also the judge model", async () => {
+  it("warns when the page's record names the judge model", async () => {
     resetWarnings();
     const warn = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     await judgePage("mock-model", "mock-model");
     const said = warn.mock.calls.map((c) => String(c[0])).join("\n");
-    expect(said).toContain("manni: docs/page.md declares generated-by");
-    expect(said).toContain("docs/page.md");
+    expect(said).toContain('manni: docs/page.md: meta-provenance says mock-model proposed "claim-check"');
   });
 
   it("stays quiet when a different model judges", async () => {
@@ -204,7 +205,7 @@ describe("the self-judgment warning", () => {
     const warn = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     await judgePage("some-other-model", "mock-model");
     const said = warn.mock.calls.map((c) => String(c[0])).join("\n");
-    expect(said).not.toContain("generated-by");
+    expect(said).not.toContain("meta-provenance");
   });
 
   it("stays quiet when the page records no author", async () => {
@@ -213,6 +214,6 @@ describe("the self-judgment warning", () => {
     const warn = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     await judgePage(undefined, "mock-model");
     const said = warn.mock.calls.map((c) => String(c[0])).join("\n");
-    expect(said).not.toContain("generated-by");
+    expect(said).not.toContain("meta-provenance");
   });
 });

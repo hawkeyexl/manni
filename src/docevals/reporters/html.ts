@@ -99,8 +99,9 @@ function evalBlock(r: EvalResult): string {
     bits.push(
       `<p class="warn">Judged by <code>${esc(r.selfPreference.model)}</code>, which also ` +
         (r.selfPreference.axis === "content"
-          ? "generated this page. A model favors its own output."
-          : "proposed this assertion. Have a human confirm it before trusting the verdict.") +
+          ? "wrote what this eval grades, by the page's provenance or meta-provenance."
+          : "proposed this eval, by the page's meta-provenance.") +
+        " Self-judging favors the author; give the eval a model: of its own." +
         "</p>",
     );
   }

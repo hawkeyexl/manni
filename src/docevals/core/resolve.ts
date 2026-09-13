@@ -72,26 +72,11 @@ export interface PageProblem {
   line?: number;
 }
 
-/** One model's claim about evals it proposed, and how sure it was. */
-export interface EvalProvenance {
-  generatedBy: string;
-  evals?: string[];
-  confidence?: Record<string, number>;
-}
-
 export interface ResolvedPagePlan {
   page: PageFile;
   /** Page-level skip (`eval-skip: true`). */
   skip: boolean;
   suite: string | null;
-  /**
-   * Model that generated this page's content, read from the page's top-level
-   * `generated-by` (manni:ai-context). The judge warns when it matches the
-   * judging model — self-preference bias.
-   */
-  generatedBy?: string;
-  /** Unretired machine-proposal trail from `eval-provenance`. */
-  provenance: EvalProvenance[];
   evals: ResolvedEval[];
   problems: PageProblem[];
 }
@@ -135,19 +120,11 @@ type FrontmatterEvalEntry =
   | FrontmatterEvalRef
   | (RawEvalDef & { id: string; skip?: boolean });
 
-interface RawProvenanceEntry {
-  "generated-by": string;
-  evals?: string[];
-  confidence?: Record<string, number>;
-}
-
-/** The four page keys this vocabulary claims, plus the one it borrows. */
+/** The three page keys this vocabulary claims. */
 interface EvalFrontmatter {
   evals?: string | FrontmatterEvalEntry[];
   "eval-suite"?: string;
   "eval-skip"?: boolean;
-  "eval-provenance"?: RawProvenanceEntry[];
-  "generated-by"?: string;
 }
 
 /**
@@ -246,7 +223,6 @@ export function resolvePage(
     page,
     skip: false,
     suite: null,
-    provenance: [],
     evals: [],
     problems,
   };
@@ -273,11 +249,6 @@ export function resolvePage(
 
   const fm = data as EvalFrontmatter;
   const pageSkip = fm["eval-skip"] ?? false;
-  const provenance: EvalProvenance[] = (fm["eval-provenance"] ?? []).map((p) => ({
-    generatedBy: p["generated-by"],
-    evals: p.evals,
-    confidence: p.confidence,
-  }));
 
   const declaredSuite = fm["eval-suite"];
   const suiteName = declaredSuite ?? config.defaults.suite;
@@ -287,7 +258,7 @@ export function resolvePage(
       level: "error",
       line: page.frontmatter.lineFor("/eval-suite") ?? 1,
     });
-    return { ...empty, skip: pageSkip, provenance };
+    return { ...empty, skip: pageSkip };
   }
 
   const resolved = new Map<string, ResolvedEval>();
@@ -392,8 +363,6 @@ export function resolvePage(
     page,
     skip: pageSkip,
     suite: suiteName,
-    generatedBy: fm["generated-by"],
-    provenance,
     evals: [...resolved.values()],
     problems,
   };

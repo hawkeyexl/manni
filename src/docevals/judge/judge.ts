@@ -35,6 +35,7 @@ import {
 } from "./prompt.js";
 import { splitBody } from "../core/split.js";
 import { readTarget } from "../core/target.js";
+import { selfPreferenceOf } from "./self-preference.js";
 import { makeProvider, selectProvider, assertProviderSelection } from "./provider.js";
 import { DocevalsError } from "../types.js";
 import type { ResolvedEval } from "../core/resolve.js";
@@ -151,41 +152,6 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
         : config.defaults.concurrency;
     let index = 0;
 
-    /**
-     * Safeguard layer 1: a model judging its own output shows self-preference
-     * bias.
-     *
-     * Two axes, deliberately reported apart because the remedy differs. The
-     * *content* axis is the page's `generated-by` (manni:ai-context) — the
-     * model wrote the prose it is now grading, and the fix is to judge with a
-     * different model. The *criterion* axis is `eval-provenance` — the model
-     * proposed the assertion it is now grading, and the fix is for a human to
-     * confirm the assertion, which is what `calibrate`'s `reviewed` bit is for.
-     *
-     * Marked on the result rather than written to stderr: a verdict formed
-     * under self-preference must not look identical to any other in JSON,
-     * SARIF, JUnit or the HTML report. It stays a warning, not a failure —
-     * bias skews a verdict, it does not prevent one forming, so ADR 01022's
-     * "no verdict fails" rule does not apply, and erroring would punish a
-     * single-model corpus with no second provider to reach for.
-     */
-    const selfPreferenceFor = (
-      target: GraderTarget,
-      judgeModel: string,
-    ): EvalResult["selfPreference"] => {
-      const { plan, eval: ev } = target;
-      if (plan.generatedBy && plan.generatedBy === judgeModel) {
-        return { axis: "content", model: judgeModel };
-      }
-      const proposed = plan.provenance.some(
-        (p) =>
-          p.generatedBy === judgeModel &&
-          (p.evals === undefined || p.evals.includes(ev.name)),
-      );
-      if (proposed) return { axis: "criterion", model: judgeModel };
-      return undefined;
-    };
-
     const judgeTarget = async (target: GraderTarget): Promise<EvalResult> => {
       const { plan, eval: ev } = target;
       const start = Date.now();
@@ -209,20 +175,15 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
         };
       }
 
-      // Self-preference: the model that wrote the page is the model grading
-      // it. Compared against the model that judged *this eval*, not the run's
-      // default — an eval naming its own provider or model is exactly the
-      // case a run-wide comparison would miss. Per page rather than
-      // deduplicated by model name, so a corpus with several affected pages
-      // names each one instead of only the first.
-      const by = plan.generatedBy;
-      if (by !== undefined && by === judgeProvider.modelName()) {
-        warn(
-          `${plan.page.file} declares generated-by: ${by}, ` +
-            `which is also the model judging it. Self-judging favors the ` +
-            `author — run this eval with a different model.`,
-        );
-      }
+      // Self-preference, compared against the model that judges *this eval*,
+      // not the run's default: an eval naming its own provider or model is
+      // exactly the case a run-wide comparison would miss. Said per page and
+      // eval rather than deduplicated by model name, so a corpus with several
+      // affected pages names each one instead of only the first. Marked on the
+      // result too: a verdict formed under self-preference must not look
+      // identical to any other in JSON, SARIF, JUnit or the HTML report.
+      const preference = selfPreferenceOf(plan, ev, judgeProvider.modelName());
+      if (preference) warn(`${plan.page.file}: ${preference.message}`);
 
       // Read what the eval asked to be graded. A target that cannot be served
       // errors here rather than falling back to the page body: a verdict about
@@ -370,11 +331,6 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
         }
       }
 
-      const selfPreference = selfPreferenceFor(
-        target,
-        judgeProvider.modelName(),
-      );
-
       return {
         evalName: ev.name,
         type: ev.type,
@@ -383,7 +339,9 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
         outcome,
         consensus,
         via,
-        ...(selfPreference ? { selfPreference } : {}),
+        ...(preference
+          ? { selfPreference: { axis: preference.axis, model: preference.model } }
+          : {}),
         durationMs: Date.now() - start,
       };
     };

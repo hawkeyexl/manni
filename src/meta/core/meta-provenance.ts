@@ -80,3 +80,35 @@ export function mergeMetaProvenance(
   else list[at] = entry;
   return { list, entry, names };
 }
+
+/** One `meta-provenance` entry as read: the model, and the names it proposed. */
+export interface MetaProvenanceRecord {
+  "generated-by": string;
+  /** JSON Pointers, strings only; empty when the entry names none. */
+  fields: string[];
+  /** Eval ids, strings only; empty when the entry names none. */
+  evals: string[];
+}
+
+/**
+ * The readable entries of a `meta-provenance` value, in order. As with
+ * `provenanceEntries`, an entry the schema would reject for its identity (not
+ * a mapping, no model) is skipped rather than guessed at, and a malformed list
+ * under `fields` or `evals` reads as naming nothing: the schema finding speaks
+ * for it. A reader never throws on what a page holds.
+ */
+export function metaProvenanceEntries(value: unknown): MetaProvenanceRecord[] {
+  if (!Array.isArray(value)) return [];
+  const strings = (list: unknown): string[] =>
+    Array.isArray(list)
+      ? (list as unknown[]).filter((s): s is string => typeof s === "string")
+      : [];
+  const out: MetaProvenanceRecord[] = [];
+  for (const item of value as unknown[]) {
+    if (!isPlainRecord(item)) continue;
+    const machine = item["generated-by"];
+    if (typeof machine !== "string" || machine === "") continue;
+    out.push({ "generated-by": machine, fields: strings(item.fields), evals: strings(item.evals) });
+  }
+  return out;
+}

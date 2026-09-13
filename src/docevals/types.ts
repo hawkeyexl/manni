@@ -104,9 +104,11 @@ export interface EvalResult {
   /**
    * Set when the model that judged this eval also produced what it graded.
    *
-   * `content` — the page declares `generated-by: <this model>`: the judge
-   * wrote the prose. `criterion` — `eval-provenance` records this model
-   * proposing this assertion: the judge wrote the question. Both bias a
+   * `content` — the machines attributed for what the eval's `target` reads
+   * name this model (`provenance` for the body, the `fields` of
+   * `meta-provenance` for the frontmatter, both for `raw`): the judge wrote
+   * what it grades. `criterion` — a `meta-provenance` entry for this model
+   * lists this eval under `evals`: the judge wrote the question. Both bias a
    * verdict without invalidating it, so this rides along with a real outcome
    * rather than replacing it, and reaches every reporter instead of stderr.
    */
