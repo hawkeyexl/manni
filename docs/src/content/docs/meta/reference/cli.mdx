@@ -621,14 +621,16 @@ changes are easy to review.
 one**, taking the first of these that your machine can actually use:
 
 1. `anthropic`, when `ANTHROPIC_API_KEY` is set.
-2. `openai`, when `OPENAI_API_KEY` is set.
+2. `openai`, when `OPENAI_API_KEY` is set or the config gives
+   `providers.openai.baseUrl` a value.
 3. `claude-cli`, when a `claude` CLI on your `PATH` runs and `claude --version`
    succeeds. Sign-in is not checked, so an unauthenticated CLI is still selected
    and fails at the first call.
 4. `llama-cpp`, a local model that needs no key and costs nothing.
 
-Pass `--provider` to pin one instead. `fill` reports which provider and model it
-used, in both output formats.
+Pass `--provider` to pin one instead, or set it once for every tool in
+[`providers:`](/manni/meta/reference/configuration/#providers). `fill` reports
+which provider and model it used, in both output formats.
 
 <Aside type="caution" title="The local fallback downloads">
   If detection gets all the way to `llama-cpp`, the first run fetches model
@@ -660,9 +662,9 @@ used, in both output formats.
 | `--confidence` | `<n>` | `0.7` | Minimum self-reported confidence, from 0 to 1, needed to write a value. A non-numeric or out-of-range value is an error (exit 2). |
 | `--dry-run` | n/a | off | Report proposals without writing them. |
 | `--provider` | `<name>` | `auto` | Inference provider: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. `auto` detects one; see [above](#meta-fill). An unknown name is an error (exit 2). |
-| `--model` | `<model>` | provider default | Model override. **Needs a named provider**, from either `--provider` or config `fill.provider`. A model name does not say which provider owns it, so pairing it with `auto` (including the default) is an error (exit 2). |
+| `--model` | `<model>` | provider default | Model override. **Needs a named provider**, from `--provider`, config `fill.provider` or the family's [`providers.provider`](/manni/meta/reference/configuration/#providers). A model name does not say which provider owns it, so pairing it with `auto` (including the default) is an error (exit 2). |
 | `--no-cache` | n/a | cache on | Bypass the proposal cache in `.manni/meta/cache`. |
-| `--local` | n/a | off | Run inference on this machine with `llama-cpp`, over config `fill.provider` and the family's `providers.provider`. A `--provider` other than `llama-cpp` or `auto` is a usage error (exit 2), and so is `claude-cli`, whose binary is local but whose inference is not. Errors (exit 2) if no local model is available. |
+| `--local` | n/a | off | Run inference on this machine with `llama-cpp`, overriding config `fill.provider` and the family's `providers.provider` rather than refusing them. Each replaced choice is named once on stderr, as in `--local: using llama-cpp instead of "anthropic" from fill.provider.` A `--provider` other than `llama-cpp` or `auto` is a usage error (exit 2). That includes `claude-cli`, whose binary is local but whose inference is not. Detection never runs, and a missing local model is an error rather than a fallback. See [Local inference](/manni/meta/reference/configuration/#local-inference). |
 | `--max-turns` | `<n>` | n/a | Stop after this many inference calls. Counts **calls, not files**: a document too long for one call is split across several. |
 | `--chunk-chars` | `<n>` | `12000` | Characters of document sent per call. The whole file is always sent; this decides how many calls that takes. |
 | `--concurrency` | `<n>` | `4` | Files inferred in parallel. |

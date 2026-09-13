@@ -28,6 +28,12 @@ inference library rather than by manni.
 Detection is convenient on a laptop and surprising in a gate, because what it finds depends on the
 machine. Name the provider in a committed config, so every runner judges with the same one.
 
+Name it under `docevals:` for this tool alone, or once for every manni tool in the family's
+top-level `providers:` map. `docevals.provider` wins where both are set. Connection settings, such
+as an endpoint or a key's variable, always go in `providers:`. The
+[configuration reference for providers](/manni/meta/reference/configuration/#providers) has every
+key and the full precedence.
+
 :::caution[Detection can reach a local model]
 On a machine with no key and no Claude CLI, `auto` ends at `llama-cpp`. That provider downloads
 gigabytes of weights on first use. A CI job that should never do that names its provider.
@@ -36,11 +42,12 @@ gigabytes of weights on first use. A CI job that should never do that names its 
 ## `anthropic`
 
 ```yaml
+providers:
+  anthropic:
+    apiKeyEnv: ANTHROPIC_API_KEY
+
 docevals:
   provider: anthropic
-  providers:
-    anthropic:
-      apiKeyEnv: ANTHROPIC_API_KEY
 ```
 
 Structured output via forced tool use, so verdicts arrive as validated JSON rather than prose to
@@ -52,18 +59,22 @@ The `baseUrl` is the interesting field. It points at any OpenAI-compatible serve
 Azure, Groq, LM Studio, or an internal gateway.
 
 ```yaml
+providers:
+  openai:
+    baseUrl: http://localhost:11434/v1   # Ollama
+    apiKeyEnv: OPENAI_API_KEY
+
 docevals:
   provider: openai
   model: llama3.1:8b                     # whatever the server serves
-  providers:
-    openai:
-      baseUrl: http://localhost:11434/v1   # Ollama
-      apiKeyEnv: OPENAI_API_KEY
 ```
 
 ```yaml
-      baseUrl: https://llm-gateway.internal.example.com/v1
+    baseUrl: https://llm-gateway.internal.example.com/v1
 ```
+
+A key held under another variable name is read only when the provider is named, as it is here.
+Under `auto`, detection looks for `OPENAI_API_KEY` alone.
 
 Uses strict `json_schema` structured output where the endpoint supports it, falling back to
 `json_object` automatically where it does not, so smaller local models still work.
@@ -74,11 +85,12 @@ Uses strict `json_schema` structured output where the endpoint supports it, fall
 ## `claude-cli` needs no API key
 
 ```yaml
+providers:
+  claude-cli:
+    command: claude
+
 docevals:
   provider: claude-cli
-  providers:
-    claude-cli:
-      command: claude
 ```
 
 Shells out to the local `claude` CLI and uses its existing auth. Useful when:
@@ -93,12 +105,14 @@ local work than for a fresh CI runner.
 ## `llama-cpp` keeps everything on the machine
 
 ```yaml
+providers:
+  llama-cpp:
+    modelsDir: .models    # relative to the config file; unset, the library's own directory
+    thoughtTokens: 0
+
 docevals:
   provider: llama-cpp
   model: balanced         # fast | balanced | quality, or a pinned reference
-  providers:
-    llama-cpp:
-      thoughtTokens: 0
 ```
 
 Runs GGUF weights in-process. No API key, no CLI, and, once the weights are on disk, no network
@@ -129,6 +143,45 @@ A smaller judge is not automatically a worse one. It is not automatically a good
 [Calibrate](/manni/docevals/judge/calibrate/) it against your own golden set before trusting it.
 That is what the command is for, and it now refuses to certify on a one-sided set.
 :::
+
+## Keep pages on this machine
+
+`--local` runs inference with `llama-cpp` on the machine running the command, whatever the config
+or a page names. The `run`, `generate`, `fill`, `promote` and `calibrate` commands all take it.
+
+It is the CI recipe for a job whose pages must never leave the runner. The committed config keeps
+its hosted judge for everyday runs, and the restricted job adds one flag and no secret:
+
+```yaml
+- name: manni docevals, judged on the runner
+  run: npx @hawkeyexl/manni docevals run --local --model balanced --format github
+```
+
+- **It overrides rather than refuses.** `docevals.provider`, the family's `providers.provider` and
+  each eval's own `provider:` are set aside. Each replaced choice is named once on stderr:
+
+  ```text
+  manni: --local: using llama-cpp instead of "anthropic" from docevals.provider.
+  manni: --local: using llama-cpp instead of "openai" from eval "names-openai" in guide.md.
+  ```
+
+- **Detection never runs.** A key left in the runner's environment cannot send a page anywhere.
+- **`claude-cli` never qualifies.** Its binary runs on the machine, and its inference does not.
+- **A configured model survives only where its level named `llama-cpp`.** A `--model` flag always
+  applies, which is why the recipe names a tier on the command line.
+- **A contradicting `--provider` is exit 2.** Beside `--local`, the flag may name `llama-cpp` or
+  `auto` and nothing else:
+
+  ```text
+  manni: --local and --provider anthropic contradict each other: --local runs inference on this machine with llama-cpp. Drop one of them.
+  ```
+
+- **`--deterministic-only` judges nothing**, so a run with both flags says nothing about providers.
+
+The runner still needs `node-llama-cpp` and the weights, as
+[`llama-cpp`](#llama-cpp-keeps-everything-on-the-machine) describes. Point
+`providers.llama-cpp.modelsDir` at a directory your CI cache restores, and a fresh job skips the
+download.
 
 ## Pin the model in a gate
 
@@ -167,8 +220,9 @@ npx @hawkeyexl/manni docevals run --provider openai --model llama3.1:8b
 npx @hawkeyexl/manni docevals run --provider llama-cpp --model quality
 ```
 
-`--provider` wins over `docevals.provider`, and `--model` over `docevals.model`. A `--model` still
-needs a provider, from the flag or the config.
+`--provider` wins over `docevals.provider` and `providers.provider`, and `--model` over the
+configured model. A `--model` still needs a provider, from the flag or the config. `--local` wins
+over every configured and eval-level choice, as [Keep pages on this machine](#keep-pages-on-this-machine) describes.
 
 Handy for comparing a cheaper model against your golden set before committing to it:
 

@@ -108,35 +108,46 @@ corpus](/manni/docevals/adopt/retrofit-a-legacy-corpus/#the-ratchet); the file's
 | `defaults.failFast` | boolean | `false` | |
 | `defaults.concurrency` | integer ≥ 1 | `4` | Bounded concurrency across targets. |
 
-## `provider`, `model` and `providers`
+## `provider` and `model`
 
 ```yaml
 docevals:
   provider: auto        # auto | anthropic | openai | claude-cli | llama-cpp
   model: <model-id>     # needs a named provider; unset takes the provider's default
-  providers:            # connection settings only
-    anthropic:  { apiKeyEnv: ANTHROPIC_API_KEY }
-    openai:     { baseUrl: https://api.openai.com/v1, apiKeyEnv: OPENAI_API_KEY }
-    claude-cli: { command: claude }
-    llama-cpp:  { modelsDir: weights, thoughtTokens: 0 }
 ```
 
 | Key | Type | Default | Notes |
 |---|---|---|---|
-| `provider` | `auto` \| `anthropic` \| `openai` \| `claude-cli` \| `llama-cpp` | `auto` | Which provider judges, generates, fills and promotes. `auto` detects one exactly as `manni meta fill` does: an Anthropic key, then an OpenAI key, then the Claude CLI, then a local model. `--provider` wins over it. An unknown name is **exit 2**. |
-| `model` | string | none | The model within `provider`. manni sets no default: unset, the inference library's default for the provider is used. It needs a named provider, here or from `--provider`, because a model name does not say which provider owns it. `--model` wins over it. |
-| `providers.anthropic.apiKeyEnv` | string | `ANTHROPIC_API_KEY` | Environment variable holding the key. |
-| `providers.openai.baseUrl` | string | `https://api.openai.com/v1` | Any OpenAI-compatible endpoint. |
-| `providers.openai.apiKeyEnv` | string | `OPENAI_API_KEY` | Environment variable holding the key. |
-| `providers.claude-cli.command` | string | `claude` | The Claude CLI executable. |
-| `providers.llama-cpp.modelsDir` | string | none | Where GGUF weights live. Unset, the inference library's own directory. |
-| `providers.llama-cpp.thoughtTokens` | integer ≥ 0 | `0` | Thinking budget before the JSON. |
+| `provider` | `auto` \| `anthropic` \| `openai` \| `claude-cli` \| `llama-cpp` | the family's `providers.provider`, else `auto` | Which provider judges, generates, fills and promotes. `auto` detects one exactly as `manni meta fill` does: an Anthropic key, then an OpenAI key, then the Claude CLI, then a local model. `--provider` wins over it, and so does `--local`. An unknown name is **exit 2**. |
+| `model` | string | none | The model within `provider`. manni sets no default: unset, the inference library's default for the provider is used. It needs a provider named here, by `--provider` or in `providers.provider`, because a model name does not say which provider owns it. `--model` wins over it. |
+
+The connection settings are not `docevals:` keys. An endpoint, a key's
+environment variable, the Claude CLI command and the local model's settings
+live in the family's top-level `providers:` map. `manni meta fill` reads the
+same map. The [configuration reference for
+providers](/manni/meta/reference/configuration/#providers) lists every key, the
+full precedence and the limits of detection:
+
+```yaml
+providers:
+  provider: anthropic   # what every tool falls back to
+  openai:
+    baseUrl: http://localhost:11434/v1
+
+docevals:
+  provider: openai      # wins over providers.provider for docevals
+```
 
 An `ai` eval's own `provider:` and `model:` sit between the flags and these
-keys, and follow the same rules. The config's `model` belongs to the config's
-`provider`. An eval that names a different provider therefore takes that
-provider's default. An eval naming an unknown provider, or a model with no provider to own
-it, reports as an `error` for that eval. The run then exits 1.
+keys, and follow the same rules. A model belongs to the provider its own level
+names. So an eval that names a different provider takes that provider's
+default, not the config's `model`. An eval naming an unknown provider, or a
+model with no provider to own it, reports as an `error` for that eval. The run
+then exits 1.
+
+`--local` runs inference on this machine with `llama-cpp`, over each of these
+levels. It names each provider it replaced once on stderr. See
+[Keep pages on this machine](/manni/docevals/judge/choose-a-provider/#keep-pages-on-this-machine).
 
 :::caution[The old `provider:` object is refused]
 `provider.default` and the per-provider sections under `provider:` are gone.
@@ -144,11 +155,13 @@ A config still carrying them fails with **exit 2**, naming the key:
 
 ```text
 manni: Invalid config in /path/to/manni.config.yaml:
-  /docevals/provider: must be string; "provider" is now a provider name; per-provider settings moved to "providers"
+  /docevals/provider: must be string; "provider" is now a provider name; per-provider settings moved to the top-level providers: map
 ```
 
-Move the name to `provider:`, the connection settings to `providers:`, and a
-model you want pinned to `model:`.
+Move the name to `provider:`, the connection settings to the top-level
+`providers:` map, and a model you want pinned to `model:`. A `providers:` key
+under `docevals:` is refused by name too, with exit 2 and a link to the family
+map.
 :::
 
 Which provider to pick, and what each one implies about where your pages go, is covered in
