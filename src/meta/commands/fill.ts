@@ -24,8 +24,6 @@ import { resolve, extname, join } from "node:path";
 import {
   completeValidatedJSON,
   makeProvider,
-  resolveProviderIdentityAsync,
-  DEFAULT_MODELS,
   JsonCache,
   buildCacheKey,
   sha256,
@@ -33,7 +31,6 @@ import {
   costOfUsage,
   InferenceError,
   type InferenceProvider,
-  type ProviderName,
   type ProviderSelector,
   type ProviderSpec,
   type TokenUsage,
@@ -104,6 +101,12 @@ import type {
   ProposalSet,
 } from "./fill-types.js";
 import { errorMessage } from "../../shared/errors.js";
+import {
+  DEFAULT_PROVIDER,
+  assertKnownProvider as assertKnownProviderFor,
+  assertModelHasProvider as assertModelHasProviderFor,
+  resolveIdentity as resolveIdentityFor,
+} from "../../shared/providers.js";
 
 export type {
   Candidate,
@@ -129,14 +132,6 @@ const PROVENANCE_KEYS: ReadonlySet<string> = new Set(["provenance", META_PROVENA
 
 const DEFAULT_THRESHOLD = 0.7;
 const DEFAULT_CONCURRENCY = 4;
-/**
- * `auto` detects the highest-priority provider this machine can actually use —
- * an Anthropic key, then an OpenAI key, then the Claude CLI, then a local model
- * that needs no credentials at all. Defaulting to a named provider instead meant
- * `manni meta fill` failed outright for anyone who did not happen to hold that
- * vendor's key.
- */
-const DEFAULT_PROVIDER = "auto";
 const CACHE_DIR = ".manni/meta/cache";
 
 /**
@@ -1659,13 +1654,6 @@ function requireNumber(
 }
 
 /**
- * Provider names the inference layer accepts, taken from the library rather
- * than copied. A hardcoded list here silently went stale when `llama-cpp` was
- * added upstream; deriving it means a new provider works the day it ships.
- */
-const PROVIDERS = new Set<string>([...Object.keys(DEFAULT_MODELS), "auto"]);
-
-/**
  * Refuse a provider that would send content off the machine.
  *
  * `claude-cli` is the one that has to be named. The binary runs locally, so it
@@ -1684,53 +1672,22 @@ function assertLocalProvider(name: string): void {
   );
 }
 
+/** The shared refusals, in meta's error class and naming meta's config key. */
+const toDocmetaError = (message: string): Error => new DocmetaError(message);
+
 function assertKnownProvider(name: string): void {
-  if (PROVIDERS.has(name)) return;
-  throw new DocmetaError(
-    `Unknown provider "${name}". Available: ${[...PROVIDERS].join(", ")}.`,
-  );
+  assertKnownProviderFor(name, toDocmetaError);
 }
 
-/**
- * A model name belongs to exactly one provider, so it cannot be handed to
- * whichever provider detection picks: `--model gpt-4o-mini` on a machine with an
- * Anthropic key selected anthropic and then 404'd mid-run, after file discovery
- * had already been paid for.
- *
- * The library enforces this too. It is repeated here to name the flags rather
- * than the API fields, since that is what the user typed.
- *
- * `name` is the EFFECTIVE provider, so a `fill.provider` in config satisfies
- * this just as `--provider` does; only an unresolved `auto` is ambiguous.
- */
 function assertModelHasProvider(
   name: ProviderSelector,
   model: string | undefined,
 ): void {
-  if (name !== "auto" || model == null) return;
-  throw new DocmetaError(
-    `Model "${model}" was given without a provider: a model name does not say ` +
-      `which provider owns it. Set --provider or fill.provider to one of ` +
-      `${Object.keys(DEFAULT_MODELS).join(", ")}, or drop the model to take the ` +
-      `detected provider's default.`,
-  );
+  assertModelHasProviderFor(name, model, "fill.provider", toDocmetaError);
 }
 
-async function resolveIdentity(spec: {
-  provider: ProviderSelector;
-  model: string | null;
-}): Promise<{ provider: ProviderName; model: string }> {
-  try {
-    return await resolveProviderIdentityAsync(spec);
-  } catch (err) {
-    // Detection failing with nothing available is operational, not per-file:
-    // the aggregate message names every provider it tried and why each was out.
-    throw new DocmetaError(
-      err instanceof InferenceError
-        ? err.message
-        : `Could not resolve provider "${spec.provider}": ${errorMessage(err)}`,
-    );
-  }
+function resolveIdentity(spec: ProviderSpec): ReturnType<typeof resolveIdentityFor> {
+  return resolveIdentityFor(spec, toDocmetaError);
 }
 
 function summarize(
