@@ -18,8 +18,6 @@ collections:
       - "docs/**/*.{md,mdx}"
 
 docevals:
-  version: 1
-
   defaults:
     # Suite applied to pages without an eval-suite frontmatter key. Naming the
     # suite defined at the bottom of this file is what makes a fresh corpus
@@ -27,35 +25,35 @@ docevals:
     # resolves zero evals, and a run over zero evals is a usage error rather
     # than a green build (ADR 01041).
     suite: default
-    fail-fast: false
+    failFast: false
     concurrency: 4
 
   provider:
     default: anthropic
     anthropic:
       model: claude-sonnet-4-5 # pin your judge model; never "latest"
-      api-key-env: ANTHROPIC_API_KEY
+      apiKeyEnv: ANTHROPIC_API_KEY
     # openai:
-    #   base-url: http://localhost:11434/v1   # any OpenAI-compatible server
+    #   baseUrl: http://localhost:11434/v1    # any OpenAI-compatible server
     #   model: llama3.1:8b
     # claude-cli:
     #   model: claude-sonnet-4-5             # uses local CLI auth, no API key
 
   judge:
-    ensemble-runs: 3 # 3 isolated runs per eval; agreement is signal
+    ensembleRuns: 3 # 3 isolated runs per eval; agreement is signal
     # NOTE: defaults.suite attaches an ai eval to every discovered page, so a
-    # keyed run on a large corpus issues ensemble-runs x pages requests. Set
-    # max-turns once you know what a full pass costs you — deliberately, and
+    # keyed run on a large corpus issues ensembleRuns x pages requests. Set
+    # maxTurns once you know what a full pass costs you — deliberately, and
     # high enough to cover the corpus. A budget set *below* what a full pass
     # needs stops early, reports the remaining pages as skipped, and still exits
     # 0 (ADR 01019): partial coverage that reads as success. Start with
     # --deterministic-only, which needs no provider at all.
     temperature: 0
     zones:
-      auto-pass: 0.8 # unanimous pass + mean confidence >= 0.8
-      auto-fail: 0.8
-    false-positive-alert: 0.15
-    cache-dir: .manni/docevals/cache
+      autoPass: 0.8 # unanimous pass + mean confidence >= 0.8
+      autoFail: 0.8
+    falsePositiveAlert: 0.15
+    cacheDir: .manni/docevals/cache
 
   execution:
     # Default deny. Grant only what this corpus needs, and only if you trust
@@ -66,7 +64,7 @@ docevals:
 
   scripts:
     dir: "{docDir}/manni-docevals" # generated check scripts live beside the docs
-    config-dir: manni-docevals-scripts
+    configDir: manni-docevals-scripts
 
   evals:
     no-future-promises:

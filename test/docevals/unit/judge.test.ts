@@ -107,7 +107,7 @@ function makeTarget(body: string, name = "claim-check"): GraderTarget {
     body: stripFrontmatterBlock(content),
     frontmatter: extractFrontmatter(content, "markdown"),
   };
-  const config = parseDocevalsConfig("version: 1\n", "/fake/manni.config.yaml");
+  const config = parseDocevalsConfig("", "/fake/manni.config.yaml");
   const plan = resolvePage(page, config);
   return { plan, eval: plan.evals[0]! };
 }
@@ -117,7 +117,7 @@ function tempRoot(): string {
 }
 
 describe("makeJudge", () => {
-  const config = parseDocevalsConfig("version: 1\n", "/fake/manni.config.yaml");
+  const config = parseDocevalsConfig("", "/fake/manni.config.yaml");
 
   it("runs the ensemble and auto-passes unanimous confident verdicts", async () => {
     const provider = new MockProvider([mockVerdict("pass", 0.95)]);

@@ -78,7 +78,6 @@ describe("updateConfigEval", () => {
   it("rewrites a named eval in place", () => {
     const config = [
       "docevals:",
-      "  version: 1",
       "  evals:",
       "    check-links:",
       "      assertion: All links resolve.",
@@ -91,7 +90,7 @@ describe("updateConfigEval", () => {
     });
     expect(updated).toContain("manni-docevals-scripts/check-links.mjs");
     expect(updated).toContain("generated-assertion-hash: xyz");
-    expect(updated).toContain("version: 1");
+    expect(updated).toContain("  suites: {}");
     expect(updated).toContain("docevals:");
   });
 });
@@ -116,7 +115,7 @@ function tempWorkspace(): { root: string; pagePath: string } {
     // A generated script becomes a `command` eval on the page, so running it
     // needs the execution grant — without it these tests assert on a skip.
     'collections:\n  - name: pages\n    paths: ["docs/**/*.md"]\n' +
-      nestUnderDocevals("version: 1\nexecution:\n  allow: [frontmatter-commands]\n"),
+      nestUnderDocevals("execution:\n  allow: [frontmatter-commands]\n"),
   );
   return { root, pagePath };
 }
@@ -214,7 +213,6 @@ describe("makeGenerateScripts", () => {
     const { root, pagePath } = tempWorkspace();
     const config = parseDocevalsConfig(
       [
-        "version: 1",
         "evals:",
         "  central-check:",
         "    assertion: Something deterministic.",

@@ -25,7 +25,6 @@ import type { GraderTarget } from "../../../src/docevals/graders/types.js";
 
 const CONFIG = parseDocevalsConfig(
   [
-    "version: 1",
     "evals:",
     "  fm-bare:",
     "    assertion: Frontmatter validates.",
@@ -101,7 +100,6 @@ describe("tool:docmeta without options.schemas", () => {
  */
 describe("a grader that throws mid-run", () => {
   const CONFIG_TEXT = [
-    "version: 1",
     "evals:",
     "  bad-schema-path:",
     "    assertion: Frontmatter validates.",

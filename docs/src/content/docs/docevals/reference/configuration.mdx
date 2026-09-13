@@ -13,13 +13,23 @@ so **every setting on this page lives under `docevals:`**:
 
 ```yaml
 docevals:
-  version: 1
   judge:
-    ensemble-runs: 3
+    ensembleRuns: 3
 ```
 
-The key names in the tables below are written relative to that namespace: `judge.ensemble-runs`
-means `docevals.judge.ensemble-runs` in the file.
+The key names in the tables below are written relative to that namespace: `judge.ensembleRuns`
+means `docevals.judge.ensembleRuns` in the file.
+
+The section's own keys are camelCase, as every manni tool's are. The entries under `evals`,
+`criteria`, and `suites` keep the kebab-case spelling of the
+[frontmatter vocabulary](/manni/docevals/reference/frontmatter/), because they are the same entries a
+page carries: `judge.ensembleRuns` beside `target-pass-rate`. A kebab-case spelling of a section key
+is an unknown key, and the message names the key it meant:
+
+```console
+manni: Invalid config in /repo/manni.config.yaml:
+  /docevals/judge: unknown key "ensemble-runs"; did you mean "ensembleRuns"?
+```
 
 Root keys manni docevals does not recognize belong to sibling tools and are ignored. Another
 tool's settings can sit beside yours in the same file. Inside `docevals:`, unknown keys are rejected
@@ -33,10 +43,6 @@ key correctly; if a run reports far fewer evals than you expect, check that spel
 With no config file present, every default below applies and there are no named evals or suites. A
 file left over from before the rename, `docevals.config.yaml`, is not read. manni docevals stops
 and tells you to migrate rather than silently running on defaults.
-
-## `version`
-
-Required. Must be `1`.
 
 ## Which pages a run reads
 
@@ -52,7 +58,6 @@ collections:
     exclude: ["docs/drafts/**"]
 
 docevals:
-  version: 1
 ```
 
 - With no positional paths, `run`, `list`, `generate`, `fill`, and `promote` read every declared
@@ -78,7 +83,6 @@ directory. A run from a subdirectory therefore finds the same file. `null` means
 
 ```yaml
 docevals:
-  version: 1
   baseline: .manni-docevals-baseline.json
 ```
 
@@ -99,7 +103,7 @@ corpus](/manni/docevals/adopt/retrofit-a-legacy-corpus/#the-ratchet); the file's
 | Key | Type | Default | Notes |
 |---|---|---|---|
 | `defaults.suite` | string \| null | `null` | Suite applied to pages that name none. Must be a defined suite or startup fails. |
-| `defaults.fail-fast` | boolean | `false` | |
+| `defaults.failFast` | boolean | `false` | |
 | `defaults.concurrency` | integer ≥ 1 | `4` | Bounded concurrency across targets. |
 
 ## `provider`
@@ -108,15 +112,15 @@ corpus](/manni/docevals/adopt/retrofit-a-legacy-corpus/#the-ratchet); the file's
 |---|---|---|
 | `provider.default` | `anthropic` \| `openai` \| `claude-cli` \| `llama-cpp` | `anthropic` |
 | `provider.anthropic.model` | string | `claude-sonnet-4-5` |
-| `provider.anthropic.api-key-env` | string | `ANTHROPIC_API_KEY` |
-| `provider.openai.base-url` | string | `https://api.openai.com/v1` |
+| `provider.anthropic.apiKeyEnv` | string | `ANTHROPIC_API_KEY` |
+| `provider.openai.baseUrl` | string | `https://api.openai.com/v1` |
 | `provider.openai.model` | string | `gpt-4o-mini` |
-| `provider.openai.api-key-env` | string | `OPENAI_API_KEY` |
+| `provider.openai.apiKeyEnv` | string | `OPENAI_API_KEY` |
 | `provider.claude-cli.model` | string | `claude-sonnet-4-5` |
 | `provider.claude-cli.command` | string | `claude` |
 | `provider.llama-cpp.model` | string | `balanced` |
-| `provider.llama-cpp.models-dir` | string \| null | `null` |
-| `provider.llama-cpp.thought-tokens` | integer ≥ 0 | `0` |
+| `provider.llama-cpp.modelsDir` | string \| null | `null` |
+| `provider.llama-cpp.thoughtTokens` | integer ≥ 0 | `0` |
 
 Which of the three to pick, and what each one implies about where your pages go, is covered in
 [Choose a provider](/manni/docevals/judge/choose-a-provider/).
@@ -125,15 +129,15 @@ Which of the three to pick, and what each one implies about where your pages go,
 
 | Key | Type | Default | Notes |
 |---|---|---|---|
-| `judge.ensemble-runs` | integer ≥ 1 | `3` | Independent runs aggregated by consensus. |
+| `judge.ensembleRuns` | integer ≥ 1 | `3` | Independent runs aggregated by consensus. |
 | `judge.temperature` | number ≥ 0 | `0` | |
-| `judge.zones.auto-pass` | number 0–1 | `0.8` | Confidence at or above which a passing consensus auto-passes. |
-| `judge.zones.auto-fail` | number 0–1 | `0.8` | Confidence at or above which a failing consensus auto-fails. |
-| `judge.false-positive-alert` | number 0–1 | `0.15` | Calibration alerts above this false-positive rate. |
-| `judge.cache-dir` | string | `.manni/docevals/cache` | |
+| `judge.zones.autoPass` | number 0–1 | `0.8` | Confidence at or above which a passing consensus auto-passes. |
+| `judge.zones.autoFail` | number 0–1 | `0.8` | Confidence at or above which a failing consensus auto-fails. |
+| `judge.falsePositiveAlert` | number 0–1 | `0.15` | Calibration alerts above this false-positive rate. |
+| `judge.cacheDir` | string | `.manni/docevals/cache` | |
 | `judge.concurrency` | integer ≥ 1 | `defaults.concurrency` | Pages judged in parallel. Separate from `defaults.concurrency` because a local `llama-cpp` model runs in-process against one GPU and serves one context at a time. Deterministic graders are happy at 4. |
-| `judge.max-turns` | integer ≥ 1 \| null | `null` | Stop judging after this many uncached inference calls. One ai eval spends `judge.ensemble-runs` turns; a cached ensemble spends none. `null` is unbounded. |
-| `judge.chunk-chars` | integer ≥ 1 | `12000` | Characters of page per judge call. A longer page is read in parts. Each part contributes the passages bearing on the assertion, and one judge then answers against the collected evidence. Content that fits is judged in a single call, exactly as before. |
+| `judge.maxTurns` | integer ≥ 1 \| null | `null` | Stop judging after this many uncached inference calls. One ai eval spends `judge.ensembleRuns` turns; a cached ensemble spends none. `null` is unbounded. |
+| `judge.chunkChars` | integer ≥ 1 | `12000` | Characters of page per judge call. A longer page is read in parts. Each part contributes the passages bearing on the assertion, and one judge then answers against the collected evidence. Content that fits is judged in a single call, exactly as before. |
 
 Anything between the two zone thresholds lands in human review. See
 [How judging works](/manni/docevals/judge/).
@@ -143,8 +147,8 @@ Anything between the two zone thresholds lands in human review. See
 | Key | Type | Default | Notes |
 |---|---|---|---|
 | `scripts.dir` | string | `{docDir}/manni docevals` | Where generated scripts go. `{docDir}` expands to the page's directory. |
-| `scripts.config-dir` | string | `manni-docevals-scripts` | Used when `scripts.dir` has no `{docDir}`; resolved relative to the config file. |
-| `scripts.timeout-ms` | integer ≥ 1 | `30000` | |
+| `scripts.configDir` | string | `manni-docevals-scripts` | Used when `scripts.dir` has no `{docDir}`; resolved relative to the config file. |
+| `scripts.timeoutMs` | integer ≥ 1 | `30000` | |
 
 ## `execution` controls what content is allowed to run
 
@@ -179,12 +183,12 @@ pull requests instead. See [Untrusted pull requests](/manni/docevals/ci/untruste
 
 | Key | Type | Default |
 |---|---|---|
-| `fill.confidence-threshold` | number 0–1 | `0.7` |
-| `fill.max-evals-per-page` | integer ≥ 1 | `3` |
+| `fill.confidenceThreshold` | number 0–1 | `0.7` |
+| `fill.maxEvalsPerPage` | integer ≥ 1 | `3` |
 | `fill.temperature` | number ≥ 0 | `0` |
-| `fill.cache-dir` | string | `.manni/docevals/cache/fill` |
-| `fill.max-turns` | integer ≥ 1 \| null | `null` |
-| `fill.chunk-chars` | integer ≥ 1 | `12000` | Characters of page per fill call. A longer page is proposed against in parts and the proposals merged by id, keeping the highest confidence. |
+| `fill.cacheDir` | string | `.manni/docevals/cache/fill` |
+| `fill.maxTurns` | integer ≥ 1 \| null | `null` |
+| `fill.chunkChars` | integer ≥ 1 | `12000` | Characters of page per fill call. A longer page is proposed against in parts and the proposals merged by id, keeping the highest confidence. |
 
 ## `evals`
 

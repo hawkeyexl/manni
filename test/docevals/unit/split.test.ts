@@ -80,7 +80,7 @@ describe("looksLikeOverflow", () => {
 // --- the judge's two-stage path ---
 
 const config = parseDocevalsConfig(
-  ["version: 1", "judge:", "  ensemble-runs: 1", "  chunk-chars: 200"].join("\n"),
+  ["judge:", "  ensembleRuns: 1", "  chunkChars: 200"].join("\n"),
   "/fake/manni.config.yaml",
 );
 const tempRoot = () => mkdtempSync(join(tmpdir(), "manni-docevals-split-"));

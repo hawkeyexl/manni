@@ -23,7 +23,7 @@ Same inputs, same answer.
 
 ## The ensemble
 
-Each ai eval runs **N times independently** (`judge.ensemble-runs`, default 3). Each run is a
+Each ai eval runs **N times independently** (`judge.ensembleRuns`, default 3). Each run is a
 separate request with **no shared context**, so they cannot reinforce one another. That is three
 independent opinions, not one opinion repeated.
 
@@ -41,8 +41,8 @@ Consensus plus mean confidence decides the zone:
 
 | Zone | Condition | Outcome |
 |---|---|---|
-| auto-pass | passing consensus, mean confidence ≥ `judge.zones.auto-pass` (default `0.8`) | `pass` |
-| auto-fail | failing consensus, mean confidence ≥ `judge.zones.auto-fail` (default `0.8`) | `fail` |
+| auto-pass | passing consensus, mean confidence ≥ `judge.zones.autoPass` (default `0.8`) | `pass` |
+| auto-fail | failing consensus, mean confidence ≥ `judge.zones.autoFail` (default `0.8`) | `fail` |
 | human review | anything between | `needs-review` |
 
 This is the reframe that makes the design make sense: **the judge is not being asked to be right

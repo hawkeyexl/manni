@@ -23,7 +23,7 @@ afterEach(() => {
 describe("providerSpecFor", () => {
   it("maps the anthropic section and keeps a verdict-shaped tool name", () => {
     const config = parseDocevalsConfig(
-      "version: 1\nprovider:\n  default: anthropic\n  anthropic:\n    model: claude-haiku-4-5\n    api-key-env: MY_KEY\n",
+      "provider:\n  default: anthropic\n  anthropic:\n    model: claude-haiku-4-5\n    apiKeyEnv: MY_KEY\n",
       PATH,
     );
     const spec = providerSpecFor(config);
@@ -37,7 +37,7 @@ describe("providerSpecFor", () => {
 
   it("maps the openai section including baseUrl", () => {
     const config = parseDocevalsConfig(
-      "version: 1\nprovider:\n  openai:\n    base-url: http://localhost:11434/v1\n    model: qwen2.5\n",
+      "provider:\n  openai:\n    baseUrl: http://localhost:11434/v1\n    model: qwen2.5\n",
       PATH,
     );
     const spec = providerSpecFor(config, { provider: "openai" });
@@ -47,7 +47,7 @@ describe("providerSpecFor", () => {
 
   it("maps the claude-cli section including the command", () => {
     const config = parseDocevalsConfig(
-      "version: 1\nprovider:\n  claude-cli:\n    command: claude-next\n",
+      "provider:\n  claude-cli:\n    command: claude-next\n",
       PATH,
     );
     expect(providerSpecFor(config, { provider: "claude-cli" }).command).toBe(
@@ -56,12 +56,12 @@ describe("providerSpecFor", () => {
   });
 
   it("lets a CLI --model override the configured model", () => {
-    const config = parseDocevalsConfig("version: 1\n", PATH);
+    const config = parseDocevalsConfig("", PATH);
     expect(providerSpecFor(config, { model: "gpt-4o" }).model).toBe("gpt-4o");
   });
 
   it("rejects an unknown provider name", () => {
-    const config = parseDocevalsConfig("version: 1\n", PATH);
+    const config = parseDocevalsConfig("", PATH);
     expect(() => providerSpecFor(config, { provider: "gemini" })).toThrow(
       DocevalsError,
     );
@@ -71,7 +71,7 @@ describe("providerSpecFor", () => {
 describe("resolveProviderIdentity", () => {
   it("resolves identity without constructing the provider or needing a key", () => {
     delete process.env["ANTHROPIC_API_KEY"];
-    const config = parseDocevalsConfig("version: 1\n", PATH);
+    const config = parseDocevalsConfig("", PATH);
     expect(resolveProviderIdentity(config)).toEqual({
       provider: "anthropic",
       model: "claude-sonnet-4-5",
@@ -79,7 +79,7 @@ describe("resolveProviderIdentity", () => {
   });
 
   it("agrees with the library's resolver for every configured provider", () => {
-    const config = parseDocevalsConfig("version: 1\n", PATH);
+    const config = parseDocevalsConfig("", PATH);
     for (const name of ["anthropic", "openai", "claude-cli"] as const) {
       const spec = providerSpecFor(config, { provider: name });
       expect(resolveProviderIdentity(config, { provider: name })).toEqual(
@@ -92,13 +92,13 @@ describe("resolveProviderIdentity", () => {
 describe("makeProvider", () => {
   it("constructs the configured provider", () => {
     process.env["ANTHROPIC_API_KEY"] = "test-key";
-    const config = parseDocevalsConfig("version: 1\n", PATH);
+    const config = parseDocevalsConfig("", PATH);
     expect(makeProvider(config).provider()).toBe("anthropic");
   });
 
   it("surfaces a missing API key rather than failing later mid-run", () => {
     delete process.env["ANTHROPIC_API_KEY"];
-    const config = parseDocevalsConfig("version: 1\n", PATH);
+    const config = parseDocevalsConfig("", PATH);
     expect(() => makeProvider(config)).toThrow(/ANTHROPIC_API_KEY/);
   });
 
@@ -109,12 +109,12 @@ describe("makeProvider", () => {
     // turns "no API key configured" from a warning into an unhandled stack
     // trace on the standard `manni docevals run --deterministic-only` CI path.
     delete process.env["ANTHROPIC_API_KEY"];
-    const config = parseDocevalsConfig("version: 1\n", PATH);
+    const config = parseDocevalsConfig("", PATH);
     expect(() => makeProvider(config)).toThrow(DocevalsError);
   });
 
   it("raises a DocevalsError for an unknown provider too", () => {
-    const config = parseDocevalsConfig("version: 1\n", PATH);
+    const config = parseDocevalsConfig("", PATH);
     expect(() =>
       makeProvider(config, { provider: "gemini" }),
     ).toThrow(DocevalsError);
@@ -124,7 +124,7 @@ describe("makeProvider", () => {
     delete process.env["ANTHROPIC_API_KEY"];
     process.env["MY_KEY"] = "test-key";
     const config = parseDocevalsConfig(
-      "version: 1\nprovider:\n  anthropic:\n    api-key-env: MY_KEY\n",
+      "provider:\n  anthropic:\n    apiKeyEnv: MY_KEY\n",
       PATH,
     );
     expect(makeProvider(config).provider()).toBe("anthropic");

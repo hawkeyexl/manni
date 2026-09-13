@@ -73,8 +73,8 @@ Two things will bite, and both have their own page:
 - **Fork pull requests can execute their author's code**, and the obvious-looking config flag does
   not prevent it. Read [Untrusted pull requests](/manni/docevals/ci/untrusted-pull-requests/) before this
   job runs on a public repo.
-- **Every uncached ai eval is live model calls**, `judge.ensemble-runs` of them. Bound a run with
-  `judge.max-turns` or `--max-turns`: evals past the budget are skipped and reported, and evals
+- **Every uncached ai eval is live model calls**, `judge.ensembleRuns` of them. Bound a run with
+  `judge.maxTurns` or `--max-turns`: evals past the budget are skipped and reported, and evals
   served from cache never count against it. See
   [Caching and turn budgets](/manni/docevals/ci/cost-and-caching/).
 

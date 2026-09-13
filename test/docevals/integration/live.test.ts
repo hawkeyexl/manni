@@ -69,7 +69,7 @@ describe.skipIf(!LIVE)("live smoke via Claude CLI", () => {
     writeFileSync(
       join(root, "manni.config.yaml"),
       'collections:\n  - name: pages\n    paths: ["docs/**/*.md"]\n' +
-        nestUnderDocevals("version: 1\n"),
+        nestUnderDocevals(""),
     );
     const report = await runEvals({
       cwd: root,

@@ -13,8 +13,6 @@ collections:
       - "blog"
 
 docevals:
-  version: 1
-
   defaults:
     suite: default
 

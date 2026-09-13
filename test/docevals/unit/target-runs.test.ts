@@ -22,7 +22,7 @@ import { extractFrontmatter } from "../../../src/meta/index.js";
 import type { GraderTarget } from "../../../src/docevals/graders/types.js";
 
 const config = parseDocevalsConfig(
-  ["version: 1", "judge:", "  ensemble-runs: 3"].join("\n"),
+  ["judge:", "  ensembleRuns: 3"].join("\n"),
   "/fake/manni.config.yaml",
 );
 

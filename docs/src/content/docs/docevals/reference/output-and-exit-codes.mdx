@@ -221,8 +221,9 @@ covered, so a narrowed scope silently forgives everything it did not see. See
 code](/manni/docevals/ci/exit-codes-and-annotations/#a-baselined-finding-does-not-affect-the-exit-code).
 
 :::note[JSON keys are camelCase]
-Every *file* key, in config and frontmatter alike, is kebab-case. The JSON report is not a file you write;
-it is the runtime shape, so `targetPassRate` here corresponds to `target-pass-rate` in the config.
+An eval, criterion, or suite entry is kebab-case in every file, config and frontmatter alike. The JSON
+report is not a file you write; it is the runtime shape, so `targetPassRate` here corresponds to
+`target-pass-rate` in the config.
 :::
 
 ## `--format markdown`

@@ -46,7 +46,6 @@ const CONFIG = `collections:
   - name: pages
     paths: ["docs/**/*.md"]
 docevals:
-  version: 1
 `;
 
 function scaffold(): string {

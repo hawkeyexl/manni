@@ -36,44 +36,42 @@ collections:
       - "src/content/docs/docevals/**/*.{md,mdx}"
 
 docevals:
-  version: 1
-
   defaults:
     # Every docs page gets this suite without repeating it in frontmatter. Pages
     # add an `evals:` block only when they need something page-specific.
     suite: docs-page
-    fail-fast: false
+    failFast: false
     concurrency: 4
 
   provider:
     default: anthropic
     anthropic:
       model: claude-sonnet-4-5
-      api-key-env: ANTHROPIC_API_KEY
+      apiKeyEnv: ANTHROPIC_API_KEY
     claude-cli:
       model: claude-sonnet-4-5
 
   judge:
-    ensemble-runs: 3
+    ensembleRuns: 3
     temperature: 0
     zones:
-      auto-pass: 0.8
-      auto-fail: 0.8
-    false-positive-alert: 0.15
+      autoPass: 0.8
+      autoFail: 0.8
+    falsePositiveAlert: 0.15
     # Below the family cache directory, which .gitignore excludes. Nothing in
     # the default suite reaches the judge, so nothing lands here on a green
     # run.
-    cache-dir: .manni/docevals/docs-cache
-    max-turns: 600
+    cacheDir: .manni/docevals/docs-cache
+    maxTurns: 600
 
   fill:
-    cache-dir: .manni/docevals/docs-cache/fill
-    max-turns: 200
+    cacheDir: .manni/docevals/docs-cache/fill
+    maxTurns: 200
 
   scripts:
     dir: "{docDir}/manni-docevals"
-    config-dir: manni-docevals-scripts
-    timeout-ms: 60000
+    configDir: manni-docevals-scripts
+    timeoutMs: 60000
 
   evals:
     # --- Deterministic. Runs offline with no provider. ---

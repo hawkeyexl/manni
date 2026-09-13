@@ -64,8 +64,8 @@ decides the zone:
 
 | Zone | Condition | Outcome |
 |---|---|---|
-| auto-pass | passing consensus, mean confidence ≥ `judge.zones.auto-pass` | `pass` |
-| auto-fail | failing consensus, mean confidence ≥ `judge.zones.auto-fail` | `fail` |
+| auto-pass | passing consensus, mean confidence ≥ `judge.zones.autoPass` | `pass` |
+| auto-fail | failing consensus, mean confidence ≥ `judge.zones.autoFail` | `fail` |
 | human review | anything between | `needs-review` |
 
 Two asymmetries are deliberate. A `partial` verdict counts as a **fail**, and an errored run counts

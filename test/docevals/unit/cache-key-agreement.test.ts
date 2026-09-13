@@ -59,7 +59,7 @@ function target(body: string): { t: GraderTarget; config: ReturnType<typeof pars
     body: stripFrontmatterBlock(content),
     frontmatter: extractFrontmatter(content, "markdown"),
   };
-  const config = parseDocevalsConfig("version: 1\n", "/fake/manni.config.yaml");
+  const config = parseDocevalsConfig("", "/fake/manni.config.yaml");
   const plan = resolvePage(page, config);
   return { t: { plan, eval: plan.evals[0]! }, config };
 }

@@ -1,5 +1,5 @@
 /**
- * Loads and validates `manni.config.yaml`. The file is shared by the moose
+ * Loads and validates `manni.config.yaml`. The file is shared by the manni
  * family of documentation tools: manni docevals reads its own `docevals:`
  * namespace and leaves every sibling key alone. It carries provider and judge
  * settings plus the central library of named evals and suites that page
@@ -39,11 +39,14 @@ export const EXECUTION_GRANTS: readonly ExecutionGrant[] = [
 /**
  * One eval definition, as the rest of the codebase sees it.
  *
- * Files — config and page frontmatter alike — spell these keys in kebab-case,
- * because that is the vocabulary docmeta publishes and a field should mean one
- * thing wherever it is written. TypeScript keeps camelCase, because that is
- * what TypeScript reads like. `normalizeEvalDef` is the single boundary
- * between the two; nothing downstream should ever see a kebab key.
+ * An eval entry spells these keys in kebab-case wherever it is written, in the
+ * config's `evals:` and in page frontmatter alike, because that is the
+ * vocabulary the metadata tool publishes and a field should mean one thing
+ * wherever it is written. TypeScript keeps camelCase, because that is what
+ * TypeScript reads like. `normalizeEvalDef` is the single boundary between
+ * the two; nothing downstream should ever see a kebab key. The config's own
+ * section keys (`judge.ensembleRuns`) are camelCase, as every manni tool's
+ * are, and need no boundary.
  */
 export interface EvalDef {
   assertion?: string;
@@ -161,7 +164,6 @@ export interface CriterionDef {
 }
 
 export interface DocevalsConfig {
-  version: 1;
   /**
    * The family's document sets, from the file's top-level `collections:`
    * (proposal 0041). `[]` when the key is absent or no file governs the run.
@@ -232,7 +234,7 @@ export interface DocevalsConfig {
   configDir: string;
 }
 
-/** Top-level key manni docevals owns inside the shared moose config. */
+/** Top-level key manni docevals owns inside the shared manni config. */
 const NAMESPACE = "docevals";
 
 export const DEFAULT_CONFIG_FILENAME = "manni.config.yaml";
@@ -241,7 +243,7 @@ export const DEFAULT_CONFIG_FILENAME = "manni.config.yaml";
 const LEGACY_CONFIG_FILENAME = `${NAMESPACE}.config.yaml`;
 
 /**
- * Root keys that only a pre-rename config has. A moose config namespaces every
+ * Root keys that only a pre-rename config has. A manni config namespaces every
  * tool, so finding these at the root means the file was never migrated.
  */
 const PRE_RENAME_ROOT_KEYS = [
@@ -256,7 +258,9 @@ const PRE_RENAME_ROOT_KEYS = [
   "suites",
 ];
 
-const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true });
+// `verbose` puts the parent schema on each error, so an unknown key can be
+// checked against the keys its section does have.
+const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true, verbose: true });
 const validateConfig = ajv.compile(configSchema);
 
 /**
@@ -271,15 +275,14 @@ const validateConfig = ajv.compile(configSchema);
 interface RawProviderSection {
   model?: string;
   command?: string;
-  "base-url"?: string;
-  "api-key-env"?: string;
+  baseUrl?: string;
+  apiKeyEnv?: string;
 }
 
 interface RawDocevalsConfig {
-  version?: 1;
   defaults?: {
     suite?: string | null;
-    "fail-fast"?: boolean;
+    failFast?: boolean;
     concurrency?: number;
   };
   provider?: {
@@ -289,34 +292,34 @@ interface RawDocevalsConfig {
     "claude-cli"?: RawProviderSection;
     "llama-cpp"?: {
       model?: string;
-      "models-dir"?: string;
-      "thought-tokens"?: number;
+      modelsDir?: string;
+      thoughtTokens?: number;
     };
   };
   baseline?: string | null;
   judge?: {
-    "ensemble-runs"?: number;
+    ensembleRuns?: number;
     concurrency?: number;
     temperature?: number;
-    zones?: { "auto-pass"?: number; "auto-fail"?: number };
-    "false-positive-alert"?: number;
-    "cache-dir"?: string;
-    "max-turns"?: number | null;
-    "chunk-chars"?: number;
+    zones?: { autoPass?: number; autoFail?: number };
+    falsePositiveAlert?: number;
+    cacheDir?: string;
+    maxTurns?: number | null;
+    chunkChars?: number;
   };
   execution?: { allow?: ExecutionGrant[] };
   scripts?: {
     dir?: string;
-    "config-dir"?: string;
-    "timeout-ms"?: number;
+    configDir?: string;
+    timeoutMs?: number;
   };
   fill?: {
-    "confidence-threshold"?: number;
-    "max-evals-per-page"?: number;
+    confidenceThreshold?: number;
+    maxEvalsPerPage?: number;
     temperature?: number;
-    "cache-dir"?: string;
-    "max-turns"?: number | null;
-    "chunk-chars"?: number;
+    cacheDir?: string;
+    maxTurns?: number | null;
+    chunkChars?: number;
   };
   evals?: Record<string, RawEvalDef>;
   criteria?: Record<string, RawCriterionDef>;
@@ -388,6 +391,24 @@ function findPreKebabKeys(
   return found;
 }
 
+/** The section keys whose entries are the frontmatter vocabulary's, in kebab-case. */
+const ENTRY_SECTIONS = ["evals", "criteria", "suites"] as const;
+
+/**
+ * `; did you mean "failFast"?` when `key` is the kebab spelling of a key its
+ * section has. Only the exact counterpart: a guess at a near miss is advice
+ * that can be wrong, and the kebab spelling is the one mistake a reader of
+ * the frontmatter vocabulary is likely to make here.
+ */
+function camelCaseHint(key: string, parentSchema: unknown): string {
+  const camel = key.replace(/-([a-z0-9])/g, (_, c: string) => c.toUpperCase());
+  if (camel === key || parentSchema === null || typeof parentSchema !== "object") return "";
+  const properties = (parentSchema as { properties?: unknown }).properties;
+  return properties !== null && typeof properties === "object" && Object.hasOwn(properties, camel)
+    ? `; did you mean "${camel}"?`
+    : "";
+}
+
 /** Parse and validate config YAML text. `configPath` is used for messages and path resolution. */
 export function parseConfig(text: string, configPath: string): DocevalsConfig {
   let raw: unknown;
@@ -455,8 +476,10 @@ export function parseConfigSection(
 ): DocevalsConfig {
   // The rest of this function reads `raw` as the document shape the checks
   // below were written against: a mapping with the section under NAMESPACE.
+  // An empty `docevals:` is a section with nothing set, so every default
+  // applies. It has no required key to write in it.
   const raw: Record<string, unknown> = wrapped
-    ? { [NAMESPACE]: value }
+    ? { [NAMESPACE]: value ?? {} }
     : (value as Record<string, unknown> | null) ?? {};
   if (typeof raw !== "object" || Array.isArray(raw)) {
     throw new DocevalsError(`Invalid config in ${configPath}: root must be an object`);
@@ -489,20 +512,23 @@ export function parseConfigSection(
     );
   }
 
-  // Every config key is kebab-case now. Ajv would reject a leftover camelCase
-  // spelling as "must NOT have additional properties", which names the parent
-  // object and leaves the reader to guess which key. Name the key and its
-  // replacement instead — this is a migration, and a migration that makes you
-  // guess is one people work around.
-  const preKebab = findPreKebabKeys(
-    raw[NAMESPACE],
-    NAMESPACE,
+  // Eval, criterion and suite entries are kebab-case, the spelling a page
+  // uses for the same entries. Ajv would reject a camelCase spelling there as
+  // "must NOT have additional properties", which names the parent object and
+  // leaves the reader to guess which key. Name the key and its kebab spelling
+  // instead. The section's own keys are camelCase and are not walked: a kebab
+  // spelling of one is an unknown key, and the Ajv message below names the
+  // camelCase key it meant.
+  const preKebab = ENTRY_SECTIONS.flatMap((name) =>
+    section !== null && typeof section === "object" && !Array.isArray(section)
+      ? findPreKebabKeys((section as Record<string, unknown>)[name], `${NAMESPACE}.${name}`)
+      : [],
   );
   if (preKebab.length > 0) {
     throw new DocevalsError(
-      `Invalid config in ${configPath}: camelCase keys are no longer read.\n` +
+      `Invalid config in ${configPath}: camelCase keys are not read in eval, criterion or suite entries.\n` +
         preKebab.map((p) => `  ${p.at} -> ${p.becomes}`).join("\n") +
-        `\nEvery manni docevals key is kebab-case, matching the frontmatter vocabulary.`,
+        `\nThose entries are kebab-case, matching the frontmatter vocabulary.`,
     );
   }
 
@@ -546,7 +572,7 @@ export function parseConfigSection(
             ? (e.params as { additionalProperty?: string }).additionalProperty
             : undefined;
         if (extra !== undefined) {
-          return `  ${e.instancePath || "/"}: unknown key "${extra}"`;
+          return `  ${e.instancePath || "/"}: unknown key "${extra}"${camelCaseHint(extra, e.parentSchema)}`;
         }
         return `  ${e.instancePath || "/"}: ${e.message ?? "is invalid"}`;
       })
@@ -580,24 +606,23 @@ export function parseConfigSection(
   }
 
   const config: DocevalsConfig = {
-    version: 1,
     collections: file.collections,
     configSource: file.source,
     defaults: {
       suite: r.defaults?.suite ?? null,
-      failFast: r.defaults?.["fail-fast"] ?? false,
+      failFast: r.defaults?.failFast ?? false,
       concurrency: r.defaults?.concurrency ?? 4,
     },
     provider: {
       default: r.provider?.default ?? "anthropic",
       anthropic: {
         model: r.provider?.anthropic?.model ?? "claude-sonnet-4-5",
-        apiKeyEnv: r.provider?.anthropic?.["api-key-env"] ?? "ANTHROPIC_API_KEY",
+        apiKeyEnv: r.provider?.anthropic?.apiKeyEnv ?? "ANTHROPIC_API_KEY",
       },
       openai: {
-        baseUrl: r.provider?.openai?.["base-url"] ?? "https://api.openai.com/v1",
+        baseUrl: r.provider?.openai?.baseUrl ?? "https://api.openai.com/v1",
         model: r.provider?.openai?.model ?? "gpt-4o-mini",
-        apiKeyEnv: r.provider?.openai?.["api-key-env"] ?? "OPENAI_API_KEY",
+        apiKeyEnv: r.provider?.openai?.apiKeyEnv ?? "OPENAI_API_KEY",
       },
       "claude-cli": {
         model: r.provider?.["claude-cli"]?.model ?? "claude-sonnet-4-5",
@@ -608,13 +633,13 @@ export function parseConfigSection(
         // this machine's memory, but a named one, so two contributors reading
         // the config see the same intent.
         model: r.provider?.["llama-cpp"]?.model ?? "balanced",
-        modelsDir: r.provider?.["llama-cpp"]?.["models-dir"] ?? null,
-        thoughtTokens: r.provider?.["llama-cpp"]?.["thought-tokens"] ?? 0,
+        modelsDir: r.provider?.["llama-cpp"]?.modelsDir ?? null,
+        thoughtTokens: r.provider?.["llama-cpp"]?.thoughtTokens ?? 0,
       },
     },
     baseline: r.baseline ?? null,
     judge: {
-      ensembleRuns: r.judge?.["ensemble-runs"] ?? 3,
+      ensembleRuns: r.judge?.ensembleRuns ?? 3,
       // Falls back to the corpus-wide setting, so an unset value behaves
       // exactly as it did before this knob existed. It is separable because
       // the judge's right parallelism is not the deterministic graders': a
@@ -622,27 +647,27 @@ export function parseConfigSection(
       concurrency: r.judge?.concurrency ?? r.defaults?.concurrency ?? 4,
       temperature: r.judge?.temperature ?? 0,
       zones: {
-        autoPass: r.judge?.zones?.["auto-pass"] ?? 0.8,
-        autoFail: r.judge?.zones?.["auto-fail"] ?? 0.8,
+        autoPass: r.judge?.zones?.autoPass ?? 0.8,
+        autoFail: r.judge?.zones?.autoFail ?? 0.8,
       },
-      falsePositiveAlert: r.judge?.["false-positive-alert"] ?? 0.15,
-      cacheDir: r.judge?.["cache-dir"] ?? ".manni/docevals/cache",
-      maxTurns: r.judge?.["max-turns"] ?? null,
-      chunkChars: r.judge?.["chunk-chars"] ?? DEFAULT_CHUNK_CHARS,
+      falsePositiveAlert: r.judge?.falsePositiveAlert ?? 0.15,
+      cacheDir: r.judge?.cacheDir ?? ".manni/docevals/cache",
+      maxTurns: r.judge?.maxTurns ?? null,
+      chunkChars: r.judge?.chunkChars ?? DEFAULT_CHUNK_CHARS,
     },
     scripts: {
       dir: r.scripts?.dir ?? "{docDir}/manni-docevals",
-      configDir: r.scripts?.["config-dir"] ?? "manni-docevals-scripts",
-      timeoutMs: r.scripts?.["timeout-ms"] ?? 30000,
+      configDir: r.scripts?.configDir ?? "manni-docevals-scripts",
+      timeoutMs: r.scripts?.timeoutMs ?? 30000,
     },
     execution: { allow: r.execution?.allow ?? [] },
     fill: {
-      confidenceThreshold: r.fill?.["confidence-threshold"] ?? 0.7,
-      maxEvalsPerPage: r.fill?.["max-evals-per-page"] ?? 3,
+      confidenceThreshold: r.fill?.confidenceThreshold ?? 0.7,
+      maxEvalsPerPage: r.fill?.maxEvalsPerPage ?? 3,
       temperature: r.fill?.temperature ?? 0,
-      cacheDir: r.fill?.["cache-dir"] ?? ".manni/docevals/cache/fill",
-      maxTurns: r.fill?.["max-turns"] ?? null,
-      chunkChars: r.fill?.["chunk-chars"] ?? DEFAULT_CHUNK_CHARS,
+      cacheDir: r.fill?.cacheDir ?? ".manni/docevals/cache/fill",
+      maxTurns: r.fill?.maxTurns ?? null,
+      chunkChars: r.fill?.chunkChars ?? DEFAULT_CHUNK_CHARS,
     },
     evals: Object.fromEntries(
       Object.entries(r.evals ?? {}).map(([name, def]) => [

@@ -7,7 +7,6 @@ import { stripFrontmatterBlock } from "../../../src/docevals/core/discover.js";
 
 const CONFIG = parseDocevalsConfig(
   [
-    "version: 1",
     "evals:",
     "  central-ai:",
     "    assertion: Central claim holds.",
@@ -234,7 +233,6 @@ describe("resolvePage", () => {
   it("uses defaults.suite for pages without a manni docevals key", () => {
     const cfg = parseDocevalsConfig(
       [
-        "version: 1",
         "defaults: { suite: ref }",
         "evals:",
         "  central-ai:",

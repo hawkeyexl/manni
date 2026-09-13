@@ -43,7 +43,7 @@ function makeTarget(body: string, file = "docs/page.md"): GraderTarget {
     body: stripFrontmatterBlock(content),
     frontmatter: extractFrontmatter(content, "markdown"),
   };
-  const config = parseDocevalsConfig("version: 1\n", "/fake/manni.config.yaml");
+  const config = parseDocevalsConfig("", "/fake/manni.config.yaml");
   const plan = resolvePage(page, config);
   return { plan, eval: plan.evals[0]! };
 }
@@ -56,7 +56,7 @@ const targets = (n: number): GraderTarget[] =>
 const skipped = (r: { outcome: string }) => r.outcome === "skipped";
 
 describe("judge turn budget", () => {
-  const config = parseDocevalsConfig("version: 1\n");
+  const config = parseDocevalsConfig("");
 
   it("spends no turns on a fully cached ensemble", async () => {
     const root = tempRoot();
@@ -116,7 +116,7 @@ describe("judge turn budget", () => {
   // call, so the budget is claimed synchronously and the cap is exact.
   it("holds the cap exactly under concurrent workers", async () => {
     const concurrent = parseDocevalsConfig(
-      ["version: 1", "defaults:", "  concurrency: 4"].join("\n"),
+      ["defaults:", "  concurrency: 4"].join("\n"),
     );
     const provider = new MockProvider([mockVerdict("pass", 0.95)]);
     const results = await makeJudge({ provider, root: tempRoot() })(
@@ -143,7 +143,7 @@ describe("judge turn budget", () => {
 
   it("falls back to judge.max-turns, and the option overrides it", async () => {
     const bounded = parseDocevalsConfig(
-      ["version: 1", "judge:", "  max-turns: 3"].join("\n"),
+      ["judge:", "  maxTurns: 3"].join("\n"),
     );
 
     const fromConfig = new MockProvider([mockVerdict("pass", 0.95)]);

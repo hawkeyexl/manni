@@ -9,7 +9,7 @@ needs.
 | Provider | Credential | Content goes to |
 |---|---|---|
 | `anthropic` | `ANTHROPIC_API_KEY` | Anthropic's API |
-| `openai` | `OPENAI_API_KEY` | Whatever `base-url` points at, including your own server |
+| `openai` | `OPENAI_API_KEY` | Whatever `baseUrl` points at, including your own server |
 | `claude-cli` | None; uses local CLI auth | Anthropic, via the local `claude` CLI |
 | `llama-cpp` | None | Nowhere. The model runs in-process on your machine. |
 
@@ -21,7 +21,7 @@ docevals:
     default: anthropic
     anthropic:
       model: claude-sonnet-4-5
-      api-key-env: ANTHROPIC_API_KEY
+      apiKeyEnv: ANTHROPIC_API_KEY
 ```
 
 Structured output via forced tool use, so verdicts arrive as validated JSON rather than prose to
@@ -29,7 +29,7 @@ parse.
 
 ## `openai` and anything that speaks its API
 
-The `base-url` is the interesting field. It points at any OpenAI-compatible server: Ollama, vLLM,
+The `baseUrl` is the interesting field. It points at any OpenAI-compatible server: Ollama, vLLM,
 Azure, Groq, LM Studio, or an internal gateway.
 
 ```yaml
@@ -37,20 +37,20 @@ docevals:
   provider:
     default: openai
     openai:
-      base-url: http://localhost:11434/v1   # Ollama
+      baseUrl: http://localhost:11434/v1   # Ollama
       model: llama3.1:8b
-      api-key-env: OPENAI_API_KEY
+      apiKeyEnv: OPENAI_API_KEY
 ```
 
 ```yaml
-    base-url: https://llm-gateway.internal.example.com/v1
+    baseUrl: https://llm-gateway.internal.example.com/v1
 ```
 
 Uses strict `json_schema` structured output where the endpoint supports it, falling back to
 `json_object` automatically where it does not, so smaller local models still work.
 
 **This is the answer to a security review.** If page content cannot leave your infrastructure, point
-`base-url` at a model that runs inside it. Nothing else about manni docevals changes.
+`baseUrl` at a model that runs inside it. Nothing else about manni docevals changes.
 
 ## `claude-cli` needs no API key
 
@@ -80,7 +80,7 @@ docevals:
     default: llama-cpp
     llama-cpp:
       model: balanced       # auto | fast | balanced | quality, or a pinned reference
-      thought-tokens: 0
+      thoughtTokens: 0
 ```
 
 Runs GGUF weights in-process. No API key, no CLI, and, once the weights are on disk, no network
@@ -92,7 +92,7 @@ a named tier to `auto` in a committed config, so two contributors reading it see
 Note too that the library resolves a tier to a *concrete* model before building any cache key. Two
 machines never share a verdict under one tier name.
 
-`thought-tokens` defaults to `0`. A grammar constrains generation from the first token, so an
+`thoughtTokens` defaults to `0`. A grammar constrains generation from the first token, so an
 unbudgeted thinking model starts reasoning and gets cut off mid-thought. Raise it only if you want
 reasoning before the JSON.
 

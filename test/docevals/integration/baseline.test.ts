@@ -43,7 +43,6 @@ function scaffold(extraConfig: string[] = []): string {
       "  - name: pages",
       '    paths: ["docs/**/*.md"]',
       "docevals:",
-      "  version: 1",
       ...extraConfig,
       "  evals:",
       "    fresh-enough:",

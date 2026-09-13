@@ -22,7 +22,7 @@ import { stripFrontmatterBlock, type PageFile } from "../../../src/docevals/core
 import { parseDocevalsConfig } from "../helpers/config.js";
 
 const judgeConfig = parseDocevalsConfig(
-  ["version: 1", "judge:", "  ensemble-runs: 1"].join("\n"),
+  ["judge:", "  ensembleRuns: 1"].join("\n"),
   "/fake/manni.config.yaml",
 );
 
@@ -57,7 +57,6 @@ function scaffold(extra: string[], configExtra: string[] = []): string {
       "  - name: pages",
       '    paths: ["docs/**/*.md"]',
       "docevals:",
-      "  version: 1",
       "",
     ].join("\n"),
   );
@@ -135,7 +134,6 @@ describe("target on a deterministic grader", () => {
         "  - name: pages",
         '    paths: ["docs/**/*.md"]',
         "docevals:",
-        "  version: 1",
         "",
       ].join("\n"),
     );

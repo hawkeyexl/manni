@@ -9,7 +9,7 @@ import { resolvePage } from "../../../src/docevals/core/resolve.js";
 import { loadConfig } from "../../../src/docevals/core/config.js";
 import { nestUnderDocevals } from "../helpers/config.js";
 
-const BASE_CONFIG = "version: 1\n";
+const BASE_CONFIG = "";
 
 /** The document set every workspace reads, declared at the family level. */
 const COLLECTIONS = 'collections:\n  - name: pages\n    paths: ["docs/**/*.md"]\n';
@@ -97,7 +97,6 @@ describe("runFill", () => {
 
   it("drops proposals that duplicate inline or suite-referenced evals", async () => {
     const config = [
-      "version: 1",
       "evals:",
       "  suite-eval:",
       "    assertion: Suite level assertion.",
@@ -221,7 +220,7 @@ describe("runFill", () => {
   });
 
   it("truncates proposals to maxEvalsPerPage", async () => {
-    const config = `${BASE_CONFIG}fill:\n  max-evals-per-page: 1\n`;
+    const config = `${BASE_CONFIG}fill:\n  maxEvalsPerPage: 1\n`;
     const root = workspace({ "page.md": PLAIN_PAGE }, config);
     const provider = new MockProvider([
       { json: { evals: [proposal("first-check", 0.9), proposal("second-check", 0.9)] } },
@@ -235,7 +234,7 @@ describe("runFill", () => {
   it("does not let duplicates consume the per-page cap", async () => {
     // maxEvalsPerPage 1, and the model leads with a duplicate of an existing
     // eval. The duplicate must not crowd out the fresh proposal behind it.
-    const config = `${BASE_CONFIG}fill:\n  max-evals-per-page: 1\n`;
+    const config = `${BASE_CONFIG}fill:\n  maxEvalsPerPage: 1\n`;
     const page = [
       "---",
       "evals:",

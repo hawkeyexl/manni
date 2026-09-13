@@ -19,7 +19,7 @@ import { resolvePage } from "../../../src/docevals/core/resolve.js";
 import { remarkGrader } from "../../../src/docevals/graders/tools/remark.js";
 import type { ExecFn, ExecResult, GraderTarget } from "../../../src/docevals/graders/types.js";
 
-const CONFIG = parseDocevalsConfig("version: 1\n", "/fake/manni.config.yaml");
+const CONFIG = parseDocevalsConfig("", "/fake/manni.config.yaml");
 const FIXTURES = join(import.meta.dirname, "..", "fixtures", "tool-output");
 const captured = (name: string) => readFileSync(join(FIXTURES, name), "utf8");
 

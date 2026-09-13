@@ -51,7 +51,6 @@ function scaffold(weights: { passes?: number; fails?: number } = {}): string {
       "  - name: pages",
       '    paths: ["docs/**/*.md"]',
       "docevals:",
-      "  version: 1",
       "  defaults:",
       "    suite: reference",
       "  evals:",

@@ -51,7 +51,6 @@ function scaffold({ evalLines, files = [] }: Case): string {
       "  - name: pages",
       '    paths: ["docs/**/*.md"]',
       "docevals:",
-      "  version: 1",
       "  evals:",
       "    subject:",
       ...evalLines,

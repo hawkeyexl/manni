@@ -68,7 +68,6 @@ function scaffold(opts: ScaffoldOptions = {}): string {
       "  - name: pages",
       '    paths: ["docs/**/*.md"]',
       "docevals:",
-      "  version: 1",
       ...(opts.configEvals ?? []),
       "",
     ].join("\n"),

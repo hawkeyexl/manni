@@ -22,7 +22,7 @@ import { stripFrontmatterBlock, type PageFile } from "../../../src/docevals/core
 import { extractFrontmatter } from "../../../src/meta/index.js";
 import type { GraderTarget } from "../../../src/docevals/graders/types.js";
 
-const config = parseDocevalsConfig("version: 1\n", "/fake/manni.config.yaml");
+const config = parseDocevalsConfig("", "/fake/manni.config.yaml");
 const tempRoot = () => mkdtempSync(join(tmpdir(), "manni-docevals-selfpref-"));
 
 /** MockProvider reports its model name as whatever it is constructed with. */

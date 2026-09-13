@@ -93,29 +93,27 @@ a11y:
 # a bare `manni meta validate` and `manni cite check` read every collection
 # this file declares, and the fixture pages are not docs pages.
 docevals:
-  version: 1
-
   defaults:
     suite: null
-    fail-fast: false
+    failFast: false
     concurrency: 4
 
   provider:
     default: anthropic
     anthropic:
       model: claude-sonnet-4-5
-      api-key-env: ANTHROPIC_API_KEY
+      apiKeyEnv: ANTHROPIC_API_KEY
     claude-cli:
       model: claude-sonnet-4-5
 
   judge:
-    ensemble-runs: 3
+    ensembleRuns: 3
     temperature: 0
     zones:
-      auto-pass: 0.8
-      auto-fail: 0.8
-    false-positive-alert: 0.15
-    cache-dir: .manni/docevals/cache
+      autoPass: 0.8
+      autoFail: 0.8
+    falsePositiveAlert: 0.15
+    cacheDir: .manni/docevals/cache
 
   # The fixture corpus declares command evals in page frontmatter
   # (installation.mdx, find.mdx), so this run grants that capability. It does
@@ -125,8 +123,8 @@ docevals:
 
   scripts:
     dir: "{docDir}/manni-docevals"
-    config-dir: manni-docevals-scripts
-    timeout-ms: 30000
+    configDir: manni-docevals-scripts
+    timeoutMs: 30000
 
   evals:
     no-future-promises:

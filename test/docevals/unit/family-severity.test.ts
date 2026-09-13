@@ -30,13 +30,12 @@ function page(frontmatterYaml: string): PageFile {
   };
 }
 
-const EMPTY = parseDocevalsConfig("version: 1");
+const EMPTY = parseDocevalsConfig("");
 
 describe("severity in the config", () => {
   it("accepts notice on an eval and in a severity-map", () => {
     const config = parseDocevalsConfig(
       [
-        "version: 1",
         "evals:",
         "  style:",
         "    grader: tool:vale",
@@ -51,7 +50,7 @@ describe("severity in the config", () => {
   it("rejects info on an eval as an ordinary schema error", () => {
     expect(() =>
       parseDocevalsConfig(
-        ["version: 1", "evals:", "  style:", "    grader: tool:vale", "    severity: info"].join(
+        ["evals:", "  style:", "    grader: tool:vale", "    severity: info"].join(
           "\n",
         ),
       ),
@@ -67,7 +66,6 @@ describe("severity in the config", () => {
     expect(() =>
       parseDocevalsConfig(
         [
-          "version: 1",
           "evals:",
           "  style:",
           "    grader: tool:vale",
@@ -116,7 +114,7 @@ describe("severity fill proposes", () => {
 describe("vale's default severity map", () => {
   it("maps a suggestion to notice", async () => {
     const config = parseDocevalsConfig(
-      ["version: 1", "evals:", "  style:", "    grader: tool:vale", "suites:", "  s: { evals: [style] }"].join(
+      ["evals:", "  style:", "    grader: tool:vale", "suites:", "  s: { evals: [style] }"].join(
         "\n",
       ),
     );

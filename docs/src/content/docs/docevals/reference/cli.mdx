@@ -94,12 +94,12 @@ manni docevals run [paths...] [options]
 | `--fail-on-review` | n/a | off | Exit 1 when any eval lands in the human-review zone. |
 | `--provider` | `<name>` | config `provider.default` | Judge provider: `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
 | `--model` | `<model>` | config | Judge model override. |
-| `--runs` | `<n>` | config `judge.ensemble-runs` | Ensemble runs per eval. Overrides the config default of 3, and an eval's own `runs`. |
-| `--chunk-chars` | `<n>` | config `judge.chunk-chars` | Characters of page per judge call. A longer page is read in parts and judged once against the collected evidence. The config default is 12000. |
+| `--runs` | `<n>` | config `judge.ensembleRuns` | Ensemble runs per eval. Overrides the config default of 3, and an eval's own `runs`. |
+| `--chunk-chars` | `<n>` | config `judge.chunkChars` | Characters of page per judge call. A longer page is read in parts and judged once against the collected evidence. The config default is 12000. |
 | `--eval` | `<name>` | n/a | Run only this eval. Repeat the flag for more than one (`--eval a --eval b`). Names are **not** space-separated, because a variadic flag would swallow the following glob. **Suite targets are not evaluated while a filter is active**; see below. A name that matches nothing is a usage error: **exit 2**. |
 | `--suite` | `<name>` | n/a | Run only the evals the named suite lists. Same suspension of suite targets. A suite the config does not define is **exit 2**, with the defined names in the message. |
 | `--since` | `<ref>` | n/a | Evaluate only the pages that differ between `<ref>` and `HEAD`. Corpus-wide graders still see every page. Suite targets are suspended **when the scope leaves pages out**. Nothing changed is **exit 0**, not an error; see below. |
-| `--max-turns` | `<n>` | config `judge.max-turns` | Stop judging after this many uncached **ensemble runs**. One ai eval spends `judge.ensemble-runs` turns; a cached ensemble spends none. A run may make a second provider call when the first response fails schema validation. This is therefore a floor on API calls rather than an exact count. Unbounded by default. |
+| `--max-turns` | `<n>` | config `judge.maxTurns` | Stop judging after this many uncached **ensemble runs**. One ai eval spends `judge.ensembleRuns` turns; a cached ensemble spends none. A run may make a second provider call when the first response fails schema validation. This is therefore a floor on API calls rather than an exact count. Unbounded by default. |
 | `--baseline` | `[path]` | n/a | Fail only on findings a recorded baseline does not already hold. With no path, the configured `baseline:`, then `.manni-docevals-baseline.json`. |
 | `--no-baseline` | n/a | off | Ignore the configured `baseline:` for this run, so the full backlog reports again. |
 | `--write-baseline` | `[path]` | n/a | Record this run's findings as the baseline. **With no path, the configured one**; see below. |
@@ -345,8 +345,8 @@ manni docevals fill [paths...] [options]
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. An unknown value is rejected before any work is done (exit 2). |
 | `--dry-run` | n/a | off | Report proposals without writing frontmatter. Run this first. You see every proposal, and how many inference calls the pass made, before anything touches the repo. |
-| `--confidence` | `<n>` | config `fill.confidence-threshold` | Minimum confidence to write, 0 to 1. The config default is `0.7`. Values above 1 are a usage error. |
-| `--max-turns` | `<n>` | config `fill.max-turns` | Stop after this many uncached inference calls, exactly one per page filled. Unbounded by default. |
+| `--confidence` | `<n>` | config `fill.confidenceThreshold` | Minimum confidence to write, 0 to 1. The config default is `0.7`. Values above 1 are a usage error. |
+| `--max-turns` | `<n>` | config `fill.maxTurns` | Stop after this many uncached inference calls, exactly one per page filled. Unbounded by default. |
 | `--no-cache` | n/a | off | Bypass the proposal cache. |
 | `--chunk-chars` | `<n>` | config | Characters of page per fill call. A longer page is proposed in parts. |
 | `--provider` | `<name>` | config `provider.default` | Provider: `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
@@ -400,8 +400,8 @@ manni docevals calibrate [options]
 | `--seed` | n/a | off | Write golden candidates from recorded reviews into `<golden>/from-reviews.yaml`, then exit. Judges nothing and constructs no provider, so it runs with no API key. Idempotent on `(file, eval)`: re-running updates rather than duplicates, and never un-reviews a confirmed case. Every new case lands `reviewed: false`. |
 | `--provider` | `<name>` | config `provider.default` | Provider: `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
 | `--model` | `<model>` | config | Model override. |
-| `--runs` | `<n>` | config `judge.ensemble-runs` | Ensemble runs per case. |
-| `--max-turns` | `<n>` | config `judge.max-turns` | Stop judging after this many uncached **ensemble runs**, the same unit as `run`, since calibration goes through the same judge. One case spends `judge.ensemble-runs` turns. Run-wide, not per case: every case is judged in one batched call. A cached case spends none. |
+| `--runs` | `<n>` | config `judge.ensembleRuns` | Ensemble runs per case. |
+| `--max-turns` | `<n>` | config `judge.maxTurns` | Stop judging after this many uncached **ensemble runs**, the same unit as `run`, since calibration goes through the same judge. One case spends `judge.ensembleRuns` turns. Run-wide, not per case: every case is judged in one batched call. A cached case spends none. |
 | `--no-cache` | n/a | off | Bypass the judge response cache. |
 
 Exits 1 when agreement is below the threshold. Unreviewed and stale cases are

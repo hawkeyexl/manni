@@ -1,0 +1,5 @@
+# A docevals section written with a kebab-case section key. Section keys are
+# camelCase, so this is an unknown key, and the message names `ensembleRuns`.
+docevals:
+  judge:
+    ensemble-runs: 3

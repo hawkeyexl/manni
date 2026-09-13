@@ -46,7 +46,7 @@ at what each admits.
 npx @hawkeyexl/manni docevals fill --max-turns 40 docs/
 ```
 
-`--max-turns` (and `fill.max-turns`) counts uncached inference calls, exactly one per page filled. Pages
+`--max-turns` (and `fill.maxTurns`) counts uncached inference calls, exactly one per page filled. Pages
 already in the cache do not count against it, and a page the budget cannot cover is reported as
 `skipped` with `(turn budget exhausted)` rather than silently dropped. Set it even when you are
 confident; the run you regret is the one you did not bound. See
@@ -60,7 +60,7 @@ Drop `--dry-run`:
 npx @hawkeyexl/manni docevals fill docs/
 ```
 
-Only proposals at or above the threshold (default `0.7`, config `fill.confidence-threshold`) are
+Only proposals at or above the threshold (default `0.7`, config `fill.confidenceThreshold`) are
 appended to the page's frontmatter. The rest are reported so you can see what was nearly good enough.
 
 What `fill` will **not** do:
@@ -70,7 +70,7 @@ What `fill` will **not** do:
   whether that plan is inline, referenced, or suite-expanded.
 - **Touch a skipped page.** `evals: {skip: true}` is respected.
 
-`fill.max-evals-per-page` (default 3) bounds how many it proposes per page.
+`fill.maxEvalsPerPage` (default 3) bounds how many it proposes per page.
 
 ## Then review what landed
 

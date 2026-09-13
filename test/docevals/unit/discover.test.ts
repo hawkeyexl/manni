@@ -29,7 +29,7 @@ describe("stripFrontmatterBlock", () => {
 describe("discoverPages", () => {
   const config = parseConfig(
     'collections:\n  - name: pages\n    paths: ["test/docevals/fixtures/pages/**/*.{md,mdx}"]\n' +
-      nestUnderDocevals("version: 1\n"),
+      nestUnderDocevals(""),
     resolve(ROOT, "manni.config.yaml"),
   );
 

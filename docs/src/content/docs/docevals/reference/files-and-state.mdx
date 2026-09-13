@@ -28,7 +28,7 @@ docs/
 
 The path is `<scripts.dir>/<page-basename>.<eval-name>.mjs`, with `{docDir}` in `scripts.dir`
 expanding to the page's directory. When `scripts.dir` contains no `{docDir}`, scripts go to
-`scripts.config-dir` relative to the config file, named `<eval-name>.mjs`.
+`scripts.configDir` relative to the config file, named `<eval-name>.mjs`.
 
 Frontmatter records the reference and a hash of the assertion that produced it:
 
@@ -123,7 +123,7 @@ So an unchanged page with an unchanged assertion never re-judges, and **changing
 invalidates the entry** rather than serving a stale verdict. That is what makes repeat runs
 approximately free. See [Caching and turn budgets](/manni/docevals/ci/cost-and-caching/).
 
-`fill` caches raw proposals in `fill.cache-dir` **before** the confidence gate is applied, keyed with
+`fill` caches raw proposals in `fill.cacheDir` **before** the confidence gate is applied, keyed with
 `FILL_PROMPT_VERSION`. Re-running at a different `--confidence` therefore costs nothing.
 
 ## `.manni/docevals/reviews.yaml`

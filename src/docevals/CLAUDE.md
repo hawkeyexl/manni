@@ -298,10 +298,15 @@ and Node touch.
 - **A bare string in the eval list is an assertion, not a reference.**
   `resolvePage` warns when a shorthand matches a defined eval id and
   deliberately does not reinterpret it.
-- **Every key in a file is kebab-case**; TypeScript stays camelCase
-  (ADR 01010). `normalizeEvalDef` in `src/docevals/core/config.ts` is the only
-  boundary between them. `parseConfig` names any camelCase key it finds and the
-  kebab it should be.
+- **Config section keys are camelCase; eval, criterion and suite entries are
+  kebab-case.** The `docevals:` section spells its own keys as every manni
+  tool does (`judge.ensembleRuns`), and a kebab spelling of one is an unknown
+  key whose message names the camelCase key. The entries under `evals:`,
+  `criteria:` and `suites:` are the same entries a page carries, so they keep
+  the vocabulary's kebab-case (ADR 01010); `normalizeEvalDef` in
+  `src/docevals/core/config.ts` is the only boundary between that spelling
+  and TypeScript's. `parseConfig` names any camelCase key it finds in an
+  entry and the kebab it should be.
 - **`tool:docmeta` requires `options.schemas`** (ADR 01013). Passing
   `cliSchemas: undefined` would inherit the metadata tool's own
   `DEFAULT_SCHEMAS`, and a bare eval's meaning would then change whenever that

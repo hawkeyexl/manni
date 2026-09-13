@@ -14,9 +14,9 @@ it. The turn budget is the backstop for when the cache does not apply.
 ```yaml
 docevals:
   judge:
-    max-turns: 60
+    maxTurns: 60
   fill:
-    max-turns: 40
+    maxTurns: 40
 ```
 
 ```bash
@@ -26,14 +26,14 @@ npx @hawkeyexl/manni docevals fill --max-turns 40
 
 A **turn** is one unit of uncached inference work. Under `fill` that is exactly one call per page. Under `judge` it is one *ensemble run*, and a run may make a second call when the first response fails schema validation. The judge budget is therefore a floor on API calls, not an exact ceiling. Either way the budget counts work, not pages:
 
-- One ai-graded eval spends `judge.ensemble-runs` turns, three by default, because the ensemble is
+- One ai-graded eval spends `judge.ensembleRuns` turns, three by default, because the ensemble is
   three independent calls.
 - One page filled by `fill` spends one turn.
 - **A cache hit spends nothing.** A fully-cached run completes under `--max-turns 1`.
 
 Unset, which is the default, means unbounded.
 
-`judge.max-turns` bounds the judge stage and `fill.max-turns` bounds `fill`. Script generation calls
+`judge.maxTurns` bounds the judge stage and `fill.maxTurns` bounds `fill`. Script generation calls
 the model too and is not counted against either; `run --no-generate` is what keeps it out of a run.
 
 ### The budget is claimed, not tallied
@@ -95,8 +95,8 @@ is why re-running at a different `--confidence` spends no turns.
 
 | Path | Default | Commit? |
 |---|---|---|
-| `judge.cache-dir` | `.manni/docevals/cache` | No |
-| `fill.cache-dir` | `.manni/docevals/cache/fill` | No |
+| `judge.cacheDir` | `.manni/docevals/cache` | No |
+| `fill.cacheDir` | `.manni/docevals/cache/fill` | No |
 
 ## Cache persistence is a correctness concern
 
@@ -151,7 +151,7 @@ on:
 **Run deterministic on every push, judged on pull requests.** `--deterministic-only` makes no
 inference calls at all and catches most regressions.
 
-**Lower `judge.ensemble-runs` deliberately, or not at all.** Three runs is the calibrated default.
+**Lower `judge.ensembleRuns` deliberately, or not at all.** Three runs is the calibrated default.
 Dropping to one cuts each eval from three turns to one, and removes the consensus signal that makes
 the human-review zone meaningful. Measure with [calibrate](/manni/docevals/judge/calibrate/) before
 you decide that trade is worth it.

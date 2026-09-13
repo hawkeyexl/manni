@@ -16,7 +16,7 @@ import { parseMarkdownlintOutput } from "../../../src/docevals/graders/tools/mar
 import { docDetectiveGrader, lastJsonBlob } from "../../../src/docevals/graders/tools/doc-detective.js";
 import type { ExecFn, ExecResult, GraderTarget } from "../../../src/docevals/graders/types.js";
 
-const CONFIG = parseDocevalsConfig("version: 1\n", "/fake/manni.config.yaml");
+const CONFIG = parseDocevalsConfig("", "/fake/manni.config.yaml");
 
 function makeTarget(frontmatterYaml: string, body = "Body."): GraderTarget {
   const content = `---\n${frontmatterYaml}\n---\n${body}`;
@@ -122,7 +122,6 @@ describe("freshnessGrader", () => {
   const exec = fakeExec({}).exec;
   const graderConfig = parseDocevalsConfig(
     [
-      "version: 1",
       "evals:",
       "  fresh:",
       "    grader: tool:freshness",
@@ -228,7 +227,6 @@ describe("reading level", () => {
   it("grader flags pages above maxGrade", async () => {
     const graderConfig = parseDocevalsConfig(
       [
-        "version: 1",
         "evals:",
         "  readable:",
         "    grader: tool:reading-level",
@@ -266,7 +264,6 @@ describe("reading level", () => {
 describe("docDetectiveGrader", () => {
   const ddConfig = parseDocevalsConfig(
     [
-      "version: 1",
       "evals:",
       "  commands-work:",
       "    assertion: Documented commands run.",

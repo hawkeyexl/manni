@@ -41,7 +41,6 @@ const CONFIG = [
   "  - name: pages",
   '    paths: ["docs/**/*.md"]',
   "docevals:",
-  "  version: 1",
   "  defaults:",
   "    suite: null",
   "  evals:",

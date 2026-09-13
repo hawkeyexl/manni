@@ -54,7 +54,6 @@ function scaffold(): string {
       "  - name: pages",
       '    paths: ["docs/**/*.md"]',
       "docevals:",
-      "  version: 1",
       "  evals:",
       "    fresh-enough:",
       "      assertion: The page was reviewed within the last century.",

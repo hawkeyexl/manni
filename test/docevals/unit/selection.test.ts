@@ -45,7 +45,6 @@ function scaffold(): string {
       "  - name: pages",
       '    paths: ["docs/**/*.md"]',
       "docevals:",
-      "  version: 1",
       "  defaults:",
       "    suite: reference",
       "  evals:",

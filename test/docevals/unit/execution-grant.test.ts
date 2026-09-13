@@ -49,7 +49,6 @@ function scaffold(allow: string[]): string {
       "  - name: pages",
       '    paths: ["docs/**/*.md"]',
       "docevals:",
-      "  version: 1",
       "  execution:",
       `    allow: [${allow.join(", ")}]`,
       "",
@@ -136,7 +135,6 @@ describe("the removed boolean", () => {
       parseConfig(
         [
           "docevals:",
-          "  version: 1",
           "  scripts:",
           "    allow-frontmatter-commands: true",
         ].join("\n"),
@@ -196,7 +194,6 @@ describe("the options.command bypass", () => {
         "  - name: pages",
         '    paths: ["docs/**/*.md"]',
         "docevals:",
-        "  version: 1",
         ...configEval,
         "  execution:",
         `    allow: [${allow.join(", ")}]`,

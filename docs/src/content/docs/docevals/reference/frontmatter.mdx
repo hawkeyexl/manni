@@ -126,7 +126,7 @@ from position, because a position-derived name orphans every cached verdict as s
 | `grader` | string | `ai` | `ai`, `command`, `human`, or `tool:<name>`. It is `ai`, not `llm`, because the judge may be an agent rather than a bare model. |
 | `provider` | string | config default | Which configured provider or agent judges this `ai` eval. |
 | `model` | string | config default | Which model judges this `ai` eval, within `provider`. A CLI `--model` still wins. Use it to name a stronger judge for an eval that matters, or a judge other than the model that wrote the page. |
-| `runs` | integer 1–50 | `judge.ensemble-runs` | Ensemble runs for this eval alone. A CLI `--runs` still wins. Capped because it multiplies judge cost directly. |
+| `runs` | integer 1–50 | `judge.ensembleRuns` | Ensemble runs for this eval alone. A CLI `--runs` still wins. Capped because it multiplies judge cost directly. |
 | `evidence` | string | none | Scopes what the judge looks at **within** what is graded. A hint, not a selector; see `target`. |
 | `target` | see below | `body` | Which bytes the grader receives. |
 | `examples.pass` / `examples.fail` | string or string[] | none | Pins the boundary; one anchor or several. An inline ai eval without them raises a warning. |

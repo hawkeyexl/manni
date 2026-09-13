@@ -4,6 +4,7 @@ import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { parseConfig, loadConfig } from "../../../src/docevals/core/config.js";
 import { DocevalsError } from "../../../src/docevals/types.js";
+import configSchema from "../../../src/docevals/core/config-schema.json" with { type: "json" };
 
 const PATH = "/fake/manni.config.yaml";
 
@@ -17,7 +18,7 @@ function moose(...lines: string[]): string {
 
 describe("parseConfig", () => {
   it("applies defaults for a minimal config", () => {
-    const c = parseConfig(moose("version: 1"), PATH);
+    const c = parseConfig(moose(), PATH);
     // No document set of its own: those are the family's `collections:`.
     expect(c.collections).toEqual([]);
     expect(c.defaults.concurrency).toBe(4);
@@ -43,7 +44,6 @@ describe("parseConfig", () => {
         "  enabled: true",
         "  anything: { at: all }",
         "docevals:",
-        "  version: 1",
         "  defaults:",
         "    concurrency: 9",
       ].join("\n"),
@@ -54,7 +54,6 @@ describe("parseConfig", () => {
 
   it("falls back to defaults when the file configures only other tools", () => {
     const c = parseConfig("some-other-tool:\n  enabled: true\n", PATH);
-    expect(c.version).toBe(1);
     expect(c.defaults.concurrency).toBe(4);
     expect(c.evals).toEqual({});
   });
@@ -64,7 +63,7 @@ describe("parseConfig", () => {
   // pre-rename config passed with -c parses to pure defaults: zero evals, zero
   // suites, exit 0 — a green run that checked nothing.
   it("rejects a pre-rename config whose keys sit at the root", () => {
-    const flat = ["version: 1", "files:", '  include: ["docs/**"]'].join("\n");
+    const flat = ["files:", '  include: ["docs/**"]'].join("\n");
     expect(() => parseConfig(flat, PATH)).toThrow(DocevalsError);
     expect(() => parseConfig(flat, PATH)).toThrow(/docevals:/);
   });
@@ -90,19 +89,24 @@ describe("parseConfig", () => {
   });
 
   it("rejects unknown keys inside the docevals namespace", () => {
-    expect(() => parseConfig(moose("version: 1", "runners: {}"), PATH)).toThrow(
+    expect(() => parseConfig(moose("runners: {}"), PATH)).toThrow(
       /Invalid config/,
     );
   });
 
-  it("rejects a missing version", () => {
-    expect(() => parseConfig(moose("defaults: {}"), PATH)).toThrow(/version/);
+  it("needs no version key", () => {
+    expect(parseConfig(moose("defaults: {}"), PATH).defaults.concurrency).toBe(4);
+  });
+
+  it("rejects version, which the section no longer carries", () => {
+    expect(() => parseConfig(moose("version: 1"), PATH)).toThrow(
+      new DocevalsError(`Invalid config in ${PATH}:\n  /docevals: unknown key "version"`),
+    );
   });
 
   it("parses evals and suites, defaulting targetPassRate to 1.0", () => {
     const c = parseConfig(
       moose(
-        "version: 1",
         "evals:",
         "  my-eval:",
         "    assertion: Something is true.",
@@ -126,7 +130,6 @@ describe("parseConfig", () => {
   it("parses criteria, defaulting combine to all and weight to 1", () => {
     const c = parseConfig(
       moose(
-        "version: 1",
         "evals:",
         "  a:",
         "    assertion: A.",
@@ -153,7 +156,7 @@ describe("parseConfig", () => {
   it("rejects a criterion referencing an undefined eval", () => {
     expect(() =>
       parseConfig(
-        moose("version: 1", "criteria:", "  broken:", "    evals: [ghost]"),
+        moose("criteria:", "  broken:", "    evals: [ghost]"),
         PATH,
       ),
     ).toThrow(/criterion "broken" references undefined eval "ghost"/);
@@ -162,7 +165,7 @@ describe("parseConfig", () => {
   it("rejects a suite referencing an undefined criterion", () => {
     expect(() =>
       parseConfig(
-        moose("version: 1", "suites:", "  ref:", "    criteria: [ghost]"),
+        moose("suites:", "  ref:", "    criteria: [ghost]"),
         PATH,
       ),
     ).toThrow(/suite "ref" references undefined criterion "ghost"/);
@@ -172,7 +175,6 @@ describe("parseConfig", () => {
     expect(() =>
       parseConfig(
         moose(
-          "version: 1",
           "evals:",
           "  a:",
           "    assertion: A.",
@@ -186,7 +188,7 @@ describe("parseConfig", () => {
   it("rejects a runs count past the cap", () => {
     expect(() =>
       parseConfig(
-        moose("version: 1", "evals:", "  a:", "    assertion: A.", "    runs: 51"),
+        moose("evals:", "  a:", "    assertion: A.", "    runs: 51"),
         PATH,
       ),
     ).toThrow();
@@ -195,7 +197,7 @@ describe("parseConfig", () => {
   it("defaults the local provider to a named tier, not auto", () => {
     // A tier the library resolves against this machine, but a *named* one, so
     // two contributors reading the config see the same intent.
-    const c = parseConfig(moose("version: 1"), PATH);
+    const c = parseConfig(moose(), PATH);
     expect(c.provider["llama-cpp"]).toEqual({
       model: "balanced",
       modelsDir: null,
@@ -206,12 +208,11 @@ describe("parseConfig", () => {
   it("accepts llama-cpp as the default provider", () => {
     const c = parseConfig(
       moose(
-        "version: 1",
         "provider:",
         "  default: llama-cpp",
         "  llama-cpp:",
         "    model: quality",
-        "    thought-tokens: 256",
+        "    thoughtTokens: 256",
       ),
       PATH,
     );
@@ -223,7 +224,7 @@ describe("parseConfig", () => {
   it("rejects an unknown key inside the local provider section", () => {
     expect(() =>
       parseConfig(
-        moose("version: 1", "provider:", "  llama-cpp:", "    modle: quality"),
+        moose("provider:", "  llama-cpp:", "    modle: quality"),
         PATH,
       ),
     ).toThrow(/Invalid config/);
@@ -231,13 +232,13 @@ describe("parseConfig", () => {
 
   it("rejects a suite referencing an undefined eval", () => {
     expect(() =>
-      parseConfig(moose("version: 1", "suites:", "  ref:", "    evals: [ghost]"), PATH),
+      parseConfig(moose("suites:", "  ref:", "    evals: [ghost]"), PATH),
     ).toThrow(/references undefined eval "ghost"/);
   });
 
   it("rejects an undefined defaults.suite", () => {
     expect(() =>
-      parseConfig(moose("version: 1", "defaults:", "  suite: ghost"), PATH),
+      parseConfig(moose("defaults:", "  suite: ghost"), PATH),
     ).toThrow(/defaults\.suite "ghost"/);
   });
 
@@ -245,9 +246,9 @@ describe("parseConfig", () => {
   // corpus's: a local in-process model serves one context at a time, while
   // deterministic graders are happy at 4. Unset, it follows defaults.
   it("defaults judge.concurrency to defaults.concurrency", () => {
-    expect(parseConfig(moose("version: 1"), PATH).judge.concurrency).toBe(4);
+    expect(parseConfig(moose(), PATH).judge.concurrency).toBe(4);
     const c = parseConfig(
-      moose("version: 1", "defaults:", "  concurrency: 8"),
+      moose("defaults:", "  concurrency: 8"),
       PATH,
     );
     expect(c.judge.concurrency).toBe(8);
@@ -256,7 +257,6 @@ describe("parseConfig", () => {
   it("lets judge.concurrency be set independently of defaults.concurrency", () => {
     const c = parseConfig(
       moose(
-        "version: 1",
         "defaults:",
         "  concurrency: 4",
         "judge:",
@@ -270,12 +270,12 @@ describe("parseConfig", () => {
 
   it("rejects a judge.concurrency below 1", () => {
     expect(() =>
-      parseConfig(moose("version: 1", "judge:", "  concurrency: 0"), PATH),
+      parseConfig(moose("judge:", "  concurrency: 0"), PATH),
     ).toThrow(/Invalid config/);
   });
 
   it("applies fill defaults for a minimal config", () => {
-    const c = parseConfig(moose("version: 1"), PATH);
+    const c = parseConfig(moose(), PATH);
     expect(c.fill).toEqual({
       confidenceThreshold: 0.7,
       maxEvalsPerPage: 3,
@@ -289,13 +289,12 @@ describe("parseConfig", () => {
   it("respects explicit fill values", () => {
     const c = parseConfig(
       moose(
-        "version: 1",
         "fill:",
-        "  confidence-threshold: 0.9",
-        "  max-evals-per-page: 1",
+        "  confidenceThreshold: 0.9",
+        "  maxEvalsPerPage: 1",
         "  temperature: 0.5",
-        "  cache-dir: .cache/fill",
-        "  max-turns: 2",
+        "  cacheDir: .cache/fill",
+        "  maxTurns: 2",
       ),
       PATH,
     );
@@ -310,14 +309,14 @@ describe("parseConfig", () => {
   });
 
   it("rejects unknown fill keys", () => {
-    expect(() => parseConfig(moose("version: 1", "fill:", "  bogus: true"), PATH)).toThrow(
+    expect(() => parseConfig(moose("fill:", "  bogus: true"), PATH)).toThrow(
       /Invalid config/,
     );
   });
 
   it("rejects an out-of-range fill confidenceThreshold", () => {
     expect(() =>
-      parseConfig(moose("version: 1", "fill:", "  confidence-threshold: 1.5"), PATH),
+      parseConfig(moose("fill:", "  confidenceThreshold: 1.5"), PATH),
     ).toThrow(/Invalid config/);
   });
 
@@ -327,7 +326,7 @@ describe("parseConfig", () => {
   // pointing at a section with a dozen keys in it — true, and useless.
   it("names the offending key, not just the section holding it", () => {
     expect(() =>
-      parseConfig(moose("version: 1", "judge:", "  nonsense: 1"), PATH),
+      parseConfig(moose("judge:", "  nonsense: 1"), PATH),
     ).toThrow(/\/docevals\/judge: unknown key "nonsense"/);
   });
 
@@ -337,14 +336,14 @@ describe("parseConfig", () => {
   it("rejects a max-turns below the floor of 1", () => {
     for (const section of ["judge", "fill"] as const) {
       expect(() =>
-        parseConfig(moose("version: 1", `${section}:`, "  max-turns: 0"), PATH),
+        parseConfig(moose(`${section}:`, "  maxTurns: 0"), PATH),
       ).toThrow(/Invalid config/);
     }
   });
 
   it("rejects invalid eval names", () => {
     expect(() =>
-      parseConfig(moose("version: 1", "evals:", "  Bad_Name:", "    assertion: x"), PATH),
+      parseConfig(moose("evals:", "  Bad_Name:", "    assertion: x"), PATH),
     ).toThrow(/Invalid config/);
   });
 });
@@ -356,13 +355,13 @@ describe("loadConfig", () => {
 
   it("discovers manni.config.yaml in the working directory", () => {
     const root = dir();
-    writeFileSync(join(root, "manni.config.yaml"), moose("version: 1", "defaults:", "  concurrency: 7"));
+    writeFileSync(join(root, "manni.config.yaml"), moose("defaults:", "  concurrency: 7"));
     expect(loadConfig(undefined, root).defaults.concurrency).toBe(7);
   });
 
   it("returns built-in defaults when no config file is present", () => {
     const c = loadConfig(undefined, dir());
-    expect(c.version).toBe(1);
+    expect(c.configSource).toBeNull();
     expect(c.evals).toEqual({});
   });
 
@@ -380,7 +379,7 @@ describe("loadConfig", () => {
     writeFileSync(join(root, LEGACY), "version: 1\n");
     writeFileSync(
       join(root, "manni.config.yaml"),
-      moose("version: 1", "defaults:", "  concurrency: 5"),
+      moose("defaults:", "  concurrency: 5"),
     );
     expect(loadConfig(undefined, root).defaults.concurrency).toBe(5);
   });
@@ -412,7 +411,6 @@ describe("loadConfig discovery", () => {
 
   const SIMPLE = [
     "docevals:",
-    "  version: 1",
     "  evals:",
     "    from-root:",
     "      assertion: Something.",
@@ -431,7 +429,7 @@ describe("loadConfig discovery", () => {
     writeConfig(root, SIMPLE);
     writeConfig(
       join(root, "docs"),
-      ["docevals:", "  version: 1", "  evals:", "    from-docs:", "      assertion: Nearer."].join("\n"),
+      ["docevals:", "  evals:", "    from-docs:", "      assertion: Nearer."].join("\n"),
     );
     const config = loadConfig(undefined, join(root, "docs", "deep"));
     expect(Object.keys(config.evals)).toEqual(["from-docs"]);
@@ -464,7 +462,7 @@ describe("loadConfig discovery", () => {
 
   it("still resolves to defaults when no config exists anywhere", () => {
     const config = loadConfig(undefined, join(root, "docs", "deep"));
-    expect(config.version).toBe(1);
+    expect(config.configSource).toBeNull();
     expect(config.evals).toEqual({});
   });
 });
@@ -479,7 +477,7 @@ describe("parseConfig rejects the removed cost ceiling", () => {
   for (const section of ["judge", "fill"] as const) {
     it(`rejects ${section}.max-cost-usd instead of ignoring it`, () => {
       const parse = () =>
-        parseConfig(moose("version: 1", `${section}:`, "  max-cost-usd: 2"), PATH);
+        parseConfig(moose(`${section}:`, "  max-cost-usd: 2"), PATH);
       // DocevalsError is the exit-2 path: a stale config aborts the run.
       expect(parse).toThrow(DocevalsError);
       // And names the retired key, so the message carries the migration.
@@ -501,7 +499,6 @@ describe("parseConfig camelCase guard", () => {
     expect(() =>
       parseConfig(
         moose(
-          "version: 1",
           "evals:",
           "  e:",
           "    assertion: x",
@@ -518,7 +515,6 @@ describe("parseConfig camelCase guard", () => {
   it("leaves a grader option named `generated` alone", () => {
     const c = parseConfig(
       moose(
-        "version: 1",
         "evals:",
         "  e:",
         "    assertion: x",
@@ -535,7 +531,6 @@ describe("parseConfig camelCase guard", () => {
     expect(() =>
       parseConfig(
         moose(
-          "version: 1",
           "evals:",
           "  e:",
           "    assertion: x",
@@ -546,5 +541,156 @@ describe("parseConfig camelCase guard", () => {
         PATH,
       ),
     ).toThrow(/max-age-days/);
+  });
+});
+
+/**
+ * Section keys are camelCase, as every manni tool's are. The entries under
+ * `evals:`, `criteria:` and `suites:` stay kebab-case: they are the same
+ * entries a page carries, in the vocabulary's spelling.
+ */
+describe("parseConfig camelCase section keys", () => {
+  const RENAMED: readonly [string[], string, string][] = [
+    [["defaults:"], "fail-fast: true", "failFast"],
+    [["provider:", "  anthropic:"], "api-key-env: KEY", "apiKeyEnv"],
+    [["provider:", "  openai:"], "api-key-env: KEY", "apiKeyEnv"],
+    [["provider:", "  openai:"], "base-url: http://localhost", "baseUrl"],
+    [["provider:", "  llama-cpp:"], "models-dir: models", "modelsDir"],
+    [["provider:", "  llama-cpp:"], "thought-tokens: 64", "thoughtTokens"],
+    [["judge:"], "ensemble-runs: 5", "ensembleRuns"],
+    [["judge:", "  zones:"], "auto-pass: 0.9", "autoPass"],
+    [["judge:", "  zones:"], "auto-fail: 0.9", "autoFail"],
+    [["judge:"], "false-positive-alert: 0.2", "falsePositiveAlert"],
+    [["judge:"], "cache-dir: .cache", "cacheDir"],
+    [["judge:"], "max-turns: 3", "maxTurns"],
+    [["judge:"], "chunk-chars: 100", "chunkChars"],
+    [["scripts:"], "config-dir: scripts", "configDir"],
+    [["scripts:"], "timeout-ms: 100", "timeoutMs"],
+    [["fill:"], "confidence-threshold: 0.9", "confidenceThreshold"],
+    [["fill:"], "max-evals-per-page: 2", "maxEvalsPerPage"],
+    [["fill:"], "cache-dir: .cache", "cacheDir"],
+    [["fill:"], "max-turns: 3", "maxTurns"],
+    [["fill:"], "chunk-chars: 100", "chunkChars"],
+  ];
+
+  for (const [parents, line, camel] of RENAMED) {
+    const kebab = line.slice(0, line.indexOf(":"));
+    const at = `/docevals/${parents.map((p) => p.trim().replace(/:$/, "")).join("/")}`;
+    const indent = "  ".repeat(parents.length);
+
+    it(`reads ${at}/${camel}`, () => {
+      const c = parseConfig(moose(...parents, `${indent}${camel}${line.slice(kebab.length)}`), PATH);
+      expect(c.configSource).toBe(PATH);
+    });
+
+    it(`rejects ${kebab} under ${at}, naming ${camel}`, () => {
+      expect(() => parseConfig(moose(...parents, `${indent}${line}`), PATH)).toThrow(
+        new DocevalsError(
+          `Invalid config in ${PATH}:\n  ${at}: unknown key "${kebab}"; did you mean "${camel}"?`,
+        ),
+      );
+    });
+  }
+
+  it("resolves every camelCase key to its value", () => {
+    const c = parseConfig(
+      moose(
+        "defaults:",
+        "  failFast: true",
+        "provider:",
+        "  anthropic:",
+        "    apiKeyEnv: A_KEY",
+        "  openai:",
+        "    baseUrl: http://localhost:11434/v1",
+        "    apiKeyEnv: O_KEY",
+        "  llama-cpp:",
+        "    modelsDir: models",
+        "    thoughtTokens: 64",
+        "judge:",
+        "  ensembleRuns: 5",
+        "  zones:",
+        "    autoPass: 0.9",
+        "    autoFail: 0.7",
+        "  falsePositiveAlert: 0.2",
+        "  cacheDir: .cache/judge",
+        "  maxTurns: 40",
+        "  chunkChars: 8000",
+        "scripts:",
+        "  configDir: checks",
+        "  timeoutMs: 5000",
+        "fill:",
+        "  confidenceThreshold: 0.9",
+        "  maxEvalsPerPage: 2",
+        "  cacheDir: .cache/fill",
+        "  maxTurns: 10",
+        "  chunkChars: 6000",
+      ),
+      PATH,
+    );
+    expect(c.defaults.failFast).toBe(true);
+    expect(c.provider.anthropic.apiKeyEnv).toBe("A_KEY");
+    expect(c.provider.openai).toMatchObject({ baseUrl: "http://localhost:11434/v1", apiKeyEnv: "O_KEY" });
+    expect(c.provider["llama-cpp"]).toMatchObject({ modelsDir: "models", thoughtTokens: 64 });
+    expect(c.judge).toMatchObject({
+      ensembleRuns: 5,
+      zones: { autoPass: 0.9, autoFail: 0.7 },
+      falsePositiveAlert: 0.2,
+      cacheDir: ".cache/judge",
+      maxTurns: 40,
+      chunkChars: 8000,
+    });
+    expect(c.scripts).toMatchObject({ configDir: "checks", timeoutMs: 5000 });
+    expect(c.fill).toMatchObject({
+      confidenceThreshold: 0.9,
+      maxEvalsPerPage: 2,
+      cacheDir: ".cache/fill",
+      maxTurns: 10,
+      chunkChars: 6000,
+    });
+  });
+
+  it("gives no hint for an unknown key with no camelCase counterpart", () => {
+    expect(() => parseConfig(moose("judge:", "  max-cost-usd: 2"), PATH)).toThrow(
+      new DocevalsError(`Invalid config in ${PATH}:\n  /docevals/judge: unknown key "max-cost-usd"`),
+    );
+  });
+
+  it("keeps eval, criterion and suite entries kebab-case", () => {
+    const c = parseConfig(
+      moose(
+        "evals:",
+        "  run-it:",
+        "    grader: command",
+        '    command: ["node", "check.mjs"]',
+        "    success-exit-codes: [0, 3]",
+        "    timeout-ms: 900",
+        "    severity-map: { warning: notice }",
+        "suites:",
+        "  ref:",
+        "    target-pass-rate: 0.5",
+        "    evals: [run-it]",
+      ),
+      PATH,
+    );
+    expect(c.evals["run-it"]).toMatchObject({ successExitCodes: [0, 3], timeoutMs: 900 });
+    expect(c.suites.ref?.targetPassRate).toBe(0.5);
+  });
+
+  it("still names a camelCase key inside an eval entry and its kebab spelling", () => {
+    expect(() =>
+      parseConfig(
+        moose("evals:", "  run-it:", "    grader: command", '    command: ["a"]', "    timeoutMs: 900"),
+        PATH,
+      ),
+    ).toThrow(/docevals\.evals\.run-it\.timeoutMs -> timeout-ms/);
+    expect(() =>
+      parseConfig(moose("suites:", "  ref:", "    targetPassRate: 0.5"), PATH),
+    ).toThrow(/docevals\.suites\.ref\.targetPassRate -> target-pass-rate/);
+  });
+});
+
+describe("config schema", () => {
+  it("carries a manni $id", () => {
+    expect(configSchema.$id).toBe("manni:config:docevals");
   });
 });

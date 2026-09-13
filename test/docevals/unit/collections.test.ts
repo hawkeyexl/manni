@@ -44,7 +44,7 @@ describe("docevals.files is no longer a key", () => {
   it("is refused by name when parsed", () => {
     expect(() =>
       parseConfig(
-        'docevals:\n  version: 1\n  files:\n    include: ["docs/**"]\n',
+        'docevals:\n  files:\n    include: ["docs/**"]\n',
         "some/manni.config.yaml",
       ),
     ).toThrow(FILES_REFUSAL("some/manni.config.yaml"));

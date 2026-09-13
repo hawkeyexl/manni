@@ -88,7 +88,6 @@ describe("differentiation", () => {
 
   const DIFF_CONFIG = parseDocevalsConfig(
     [
-      "version: 1",
       "evals:",
       "  distinct:",
       "    grader: tool:differentiation",
@@ -126,7 +125,6 @@ describe("valeGrader", () => {
   it("parses vale JSON and applies the severity map", async () => {
     const config = parseDocevalsConfig(
       [
-        "version: 1",
         "evals:",
         "  style:",
         "    grader: tool:vale",

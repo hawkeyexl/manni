@@ -38,7 +38,6 @@ function scaffold(): string {
       "  - name: pages",
       '    paths: ["docs/**/*.md"]',
       "docevals:",
-      "  version: 1",
       "  evals:",
       "    no-future-promises:",
       "      assertion: The page makes no claims about unreleased functionality.",

@@ -22,7 +22,7 @@ describe("full run with mock judge", () => {
     // The repo's own config file is already a complete moose config, so it
     // parses as-is rather than through the nesting helper.
     const config = parseConfig(
-      configText.replace("cache-dir: .manni/docevals/cache", `cache-dir: ${JSON.stringify(join(cacheRoot, "cache"))}`),
+      configText.replace("cacheDir: .manni/docevals/cache", `cacheDir: ${JSON.stringify(join(cacheRoot, "cache"))}`),
       join(ROOT, "manni.config.yaml"),
     );
 

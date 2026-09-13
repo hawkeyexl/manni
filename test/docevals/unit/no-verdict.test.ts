@@ -40,7 +40,6 @@ function targetFor(grader: string, extra: string[] = []): {
 } {
   const config = parseDocevalsConfig(
     [
-      "version: 1",
       "evals:",
       "  check:",
       "    assertion: The page holds up.",

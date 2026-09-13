@@ -111,7 +111,6 @@ function scaffold(kind: string, evalNames: string[]): string {
       "  - name: pages",
       '    paths: ["docs/**/*.md"]',
       "docevals:",
-      "  version: 1",
       "  evals:",
       ...evalNames.flatMap((n) => [
         `    ${n}:`,
