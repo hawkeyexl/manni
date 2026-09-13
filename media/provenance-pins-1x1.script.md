@@ -1,11 +1,11 @@
 # Video script: Provenance pins (`provenance`, `--generated-by`)
 
 **Objective:** Show that `manni meta derive` pins the lines an agent wrote to
-the machine that wrote them, before they are committed; that a person editing
-inside that range breaks the pin and `manni meta validate` fails with
-`derived:stale`, exit 1; and that `derive` re-attributes from git, so the
-agent keeps its untouched lines, the edited line is attributed to no machine,
-and `validate` passes, exit 0.
+the machine that wrote them, before they are committed. A person editing inside
+that range breaks the pin, and `manni meta validate` fails with
+`derived:stale`, exit 1. Then `derive` re-attributes from git. The agent keeps
+its untouched lines, the edited line is attributed to no machine, and
+`validate` passes, exit 0.
 **Format:** 1080x1080, 30 fps, silent, captions burned in (LinkedIn autoplays muted).
 **Duration:** 43.1 s (spec: 20-45 s).
 **Audience:** docs engineers who let agents write prose (Maya) and CI
@@ -26,16 +26,16 @@ typed command reads `manni` through the shim on PATH (`media/bin/manni`) that
 execs the built CLI.
 
 - **A Remotion replay of real bytes, as in the earlier sidecar and
-  collections videos.** VHS *does* record on this machine now (re-checked this
-  run: a one-line tape rendered a GIF), so this was a choice, not a
-  workaround. A real terminal hard-wraps at the column edge. The validate
-  finding here is 131 characters, so a VHS capture at any legible size splits
-  a token across rows, which design.md check 2 forbids. The replay wraps at
-  spaces only. So the CLI was run under the preload that makes stdout/stderr
-  report as a TTY (`media/capture/tty.cjs`), the bytes were saved verbatim
-  (`media/capture-provenance/*.ans`), and the composition `ProvenanceDemo`
-  (`media/remotion/src/provenance/beats.ts`, shared `src/Demo.tsx`) replays
-  them. Typing runs at 35 ms/char, then Enter, then the output after the
+  collections videos.** VHS *does* record on this machine now. This run
+  re-checked it, and a one-line tape rendered a GIF. So the replay was a
+  choice, not a workaround. A real terminal hard-wraps at the column edge. The
+  validate finding here is 131 characters. A VHS capture at any legible size
+  would split a token across rows, and design.md check 2 forbids that. The
+  replay wraps at spaces only. So the CLI was run under the preload that makes
+  stdout/stderr report as a TTY (`media/capture/tty.cjs`), and the bytes were
+  saved verbatim (`media/capture-provenance/*.ans`). The composition
+  `ProvenanceDemo` (`media/remotion/src/provenance/beats.ts`, shared
+  `src/Demo.tsx`) replays them. Typing runs at 35 ms/char, then Enter, then the output after the
   command's **measured** latency. No output byte is edited.
 - **`git diff` is captured as `git -c color.ui=always --no-pager diff`.** An
   interactive terminal colours `git diff` and, for 14 lines, prints it without
@@ -44,9 +44,9 @@ execs the built CLI.
   `git init`, because `media/` is gitignored in manni. Nothing was committed
   to manni. One pinned author, `Sam Rivera <sam@example.com>`, makes all three
   commits, with pinned dates (2026-09-10, -11, -12). That is deliberate. Blame
-  names a person for every line, so the agent attribution in beat 5 can only
-  come from the stamp inside the agent's commit (0046 evidence rule 2), not
-  from an author name or a trailer. There are no trailers and no
+  names a person for every line. So the agent attribution in beat 5 can only
+  come from the stamp inside the agent's commit (0046 evidence rule 2). It
+  cannot come from an author name or a trailer. There are no trailers and no
   `derive.machines`.
 - **Input staged from `test/fixtures/derive/provenance/`.**
   `permissive.schema.json` is copied. `manni.config.yaml` is the fixture's
@@ -65,7 +65,7 @@ execs the built CLI.
   captions avoid line numbers for that reason.
 - **Row highlight is chrome.** A faint accent ground (`#58a6ff` at 16%) sits
   behind the rows a caption is about. The bytes in those rows are untouched.
-  In beat 1 the added blank line (`+` alone) is part of the agent's range but
+  In beat 1 the added blank line (`+` alone) is part of the agent's range. It
   is not highlighted, because the substring match cannot tell it from `+++`.
 
 ## Derived font size
@@ -91,10 +91,10 @@ sits at x=1053 of 1080. Line height is 32 px. The tallest beat (5) is 18 rows,
 | 5 | derive re-attributes | `manni meta derive`, `manni meta get provenance docs/limits.md`, `manni meta validate`, `echo $?` | The agent keeps its untouched lines. The edited line is attributed to no machine. Exit 0. | 12.8 s |
 
 Every beat starts on a cleared terminal and cuts to the next, with no
-transitions. The highlighted rows are these. Beat 1: the three added prose
-lines. Beat 2: the derive report row, plus `generated-by`, `lines` and
-`integrity`. Beat 3: the `-`/`+` pair. Beat 4: the `/provenance` finding.
-Beat 5: the `get` row.
+transitions. Beat 1 highlights the three added prose lines. Beat 2 highlights
+the derive report row, plus `generated-by`, `lines` and `integrity`. Beat 3
+highlights the `-`/`+` pair, beat 4 the `/provenance` finding, and beat 5 the
+`get` row.
 
 Thumbnail (`.thumb.png`): frame 455, the end of beat 2, with the stamp on
 screen.

@@ -1,14 +1,14 @@
 # Video script: Sidecar metadata
 
 **Objective:** Show that a private YAML manifest can supply frontmatter keys for
-public pages, so private values are validated against public docs without ever
-appearing in the public repo.
+public pages. The private values are validated against public docs and never
+appear in the public repo.
 **Format:** 1080x1080, 30 fps, silent, captions burned in (LinkedIn autoplays muted).
 **Duration:** target 36-40 s (spec: 20-45 s).
 **Audience:** docs engineers and CI engineers who keep a public docset next to a
 private one (personas Maya and Devin, CUJs M2 / D1).
 **Material:** `test/fixtures/sidecars/`, run from inside that directory. Every
-line of output is a real run of `node dist/cli.js` on this branch; the typed
+line of output is a real run of `node dist/cli.js` on this branch. The typed
 command reads `manni` through a shim on PATH that execs the built CLI.
 
 Visual spec: `docs/content-strategy/design.md`. Accent `#58a6ff` (blue; never
