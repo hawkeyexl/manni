@@ -69,6 +69,29 @@ describe("manni docevals --format", () => {
   });
 });
 
+describe("manni docevals usage errors", () => {
+  // Commander's own parse errors exit 1 unless the program overrides its exit,
+  // which reads as "the corpus failed" to a CI job. Every other domain maps
+  // them to 2; docevals must too.
+  it("refuses a flag the verb does not take, exit 2", () => {
+    const run = manni(["list", PAGE, "--since", "main"]);
+    expect(run.status).toBe(2);
+    expect(run.stdout).toBe("");
+    expect(run.stderr).toBe("error: unknown option '--since'\n(add --help for usage)\n");
+  });
+
+  it("refuses an option with its argument missing, exit 2", () => {
+    const run = manni(["run", PAGE, "--deterministic-only", "--since"]);
+    expect(run.status).toBe(2);
+    expect(run.stderr).toBe("error: option '--since <ref>' argument missing\n(add --help for usage)\n");
+  });
+
+  it("still exits 0 for --help and --version", () => {
+    expect(manni(["list", "--help"]).status).toBe(0);
+    expect(manni(["--version"]).status).toBe(0);
+  });
+});
+
 describe("manni docevals configuration", () => {
   it("refuses a kebab-case section key, naming its camelCase spelling", () => {
     const run = manni(["list", "docs/page.md"], join(ROOT, "test/docevals/fixtures/kebab-section-key"));

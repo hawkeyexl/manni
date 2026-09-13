@@ -39,7 +39,15 @@ program
   .description(
     "Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter.",
   )
-  .version(pkg.version);
+  .version(pkg.version)
+  // A pointer, not the whole help screen: the message that precedes it
+  // already names the offending flag.
+  .showHelpAfterError("(add --help for usage)")
+  // MUST come before the `.command()` calls below. `copyInheritedSettings`
+  // copies `_exitCallback` by value at subcommand-creation time, so an
+  // `exitOverride()` installed afterwards leaves every subcommand calling
+  // `process.exit(1)` on a parse error, which is a usage error owed exit 2.
+  .exitOverride();
 
 /**
  * Repeatable execution grant, validated on the way in.
