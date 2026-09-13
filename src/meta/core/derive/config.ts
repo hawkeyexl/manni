@@ -10,6 +10,7 @@
  * tables.
  */
 import type { DeriveConfig } from "../config.js";
+import { DEFAULT_MACHINES } from "./provenance.js";
 import type { DeriveCommand } from "./types.js";
 
 /** How long a configured command may run when its entry says nothing: 60 s. */
@@ -34,4 +35,13 @@ export function commandsOf(
     };
   }
   return out;
+}
+
+/**
+ * `derive.machines` as the sources read it (proposal 0046): the configured
+ * globs, or `["*[bot]"]` when the config sets none, which is exactly the
+ * `[bot]` suffix rule `authors` followed before the key existed.
+ */
+export function machinesOf(config?: DeriveConfig): readonly string[] {
+  return config?.machines ?? DEFAULT_MACHINES;
 }

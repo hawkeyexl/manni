@@ -1,0 +1,2 @@
+Using manni.config.yaml (.)
+manni: "docs/guides/authentication.md": "id" is the field sidecar docs-meta.yaml joins on, and this document has an entry; change the manifest first.

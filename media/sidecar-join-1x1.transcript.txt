@@ -1,0 +1,65 @@
+Sidecar join by frontmatter field, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 39.8 s. Every terminal line is real output of
+`node dist/cli.js meta ...` run inside media/scratch-join/, a copy of
+test/fixtures/sidecars-join/ with docs/auth.md renamed on camera.
+
+[0:00-0:09] Title: join: id (1 / 5)
+$ cat manni.config.yaml
+meta:
+  paths: ["docs/**/*.md"]
+  sidecars:
+    - file: ./docs-meta.yaml
+      keys: [source, jira]
+      join: id
+  overrides:
+    - files: "docs/**/*.md"
+      schemas: [./private.schema.json]
+$ cat docs-meta.yaml
+# Keyed by each page's id, so a rename never orphans an entry.
+auth-guide:
+  source: internal/auth-design.md
+  jira: PLAT-412
+billing-guide:
+  jira: not-a-ticket
+shared:
+  jira: PLAT-7
+Highlighted rows: lines containing "join: id", "auth-guide:", "billing-guide:", "shared:"
+Caption: The manifest names pages by their id field, not their path. join: id says which field.
+
+[0:09-0:21] Title: Rename the page (2 / 5)
+$ mkdir -p docs/guides && mv docs/auth.md docs/guides/authentication.md
+$ manni meta validate
+Using manni.config.yaml (.)
+✗ docs/billing.md   (red cross)
+    /jira  must match pattern "^PLAT-[0-9]+$"  (docs-meta.yaml:6)  [./private.schema.json]
+✗ docs/dup-a.md   (red cross)
+    /id  2 documents carry id "shared"; docs-meta.yaml cannot tell them apart (docs/dup-b.md)  (line 3)  [sidecar:duplicate]
+✗ docs/dup-b.md   (red cross)
+    /id  2 documents carry id "shared"; docs-meta.yaml cannot tell them apart (docs/dup-a.md)  (line 3)  [sidecar:duplicate]
+✓ docs/guides/authentication.md   (green check)
+
+4 files checked, 1 passed, 3 failed, 3 errors   (red)
+$ echo $?
+1
+Highlighted rows: lines containing "✓ docs/guides/authentication.md"
+Caption: The page moved; its entry did not. The values arrive by id, and the new path passes.
+
+[0:21-0:26] Title: One id, two pages (3 / 5)
+(same screen as the previous step)
+Highlighted rows: lines containing "docs/dup-a.md", "docs/dup-b.md"
+Caption: dup-a and dup-b both say id: shared. That is a finding on both, and each names the other.
+
+[0:26-0:35] Title: The id is the join (4 / 5)
+$ manni meta query "UPDATE docs SET id = 'other' WHERE _path = 'docs/guides/authentication.md'"
+Using manni.config.yaml (.)
+manni: "docs/guides/authentication.md": "id" is the field sidecar docs-meta.yaml joins on, and this document has an entry; change the manifest first.
+Highlighted rows: lines containing "manni: "
+Caption: query refuses to change the id of a page the manifest matched. Change the manifest first.
+
+[0:35-0:40] Title: Exit codes for CI (5 / 5)
+(same screen as the previous step)
+$ echo $?
+2
+Caption: 1 for findings. 2 for the refusal. A rename is neither: nothing to edit, nothing orphaned.
+

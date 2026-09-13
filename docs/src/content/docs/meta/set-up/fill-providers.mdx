@@ -16,7 +16,7 @@ Per inference call, `fill` transmits:
 | What | Exactly what goes |
 |---|---|
 | The file path | The path **as it was matched**, interpolated into the prompt. In a docs repo, paths often name products that are not public yet. |
-| The existing metadata | The entire metadata block already in the file, serialized as JSON, **unfiltered**. `--fields` narrows what `fill` *proposes*; it does not narrow what is sent. |
+| The existing metadata | The metadata block already in the file, serialized as JSON. `--fields` narrows what `fill` *proposes*; it does not narrow what is sent. Two keys are removed: `provenance` and `meta-provenance`, the record of what machines wrote. |
 | The document text | The whole file. See [how much of the document](#how-much-of-the-document) below. |
 | One subschema per property being filled | Each candidate property's own subschema, lifted **verbatim** out of your schema. That includes its `description`, which is written for your team and now travels with the request. |
 | Every `$defs` and `definitions` block | From **every schema in the resolved set**, whether or not anything being filled references them. An internal schema's private definitions leave in full. |
@@ -37,7 +37,7 @@ All of it.
 
 A file longer than the chunk budget is split and sent across several calls. The per-chunk proposals are merged by keeping the **most confident value for each property**. `--chunk-chars` sets that budget, defaulting to 12,000 characters per call. Every character of the file reaches the provider; the budget only decides how many calls that takes.
 
-The text sent is the **whole file, front matter included**, rather than the body after it. So the metadata block travels twice: once as the JSON in the prompt's own metadata section, and again inside the document text.
+The text sent is the **whole file, front matter included**, rather than the body after it. So the metadata block travels twice: once as the JSON in the prompt's own metadata section, and again inside the document text. `provenance` and `meta-provenance` are removed from that copy as well, wherever the format's writer can remove a key. A model is never shown the hashes it would be asked to invent, or its own attribution.
 
 <Aside type="tip" title="If fill did badly on your long pages">
 Before chunking, `fill` sent only the first 12,000 characters and replaced the rest with a truncation marker. A long reference page was then described from its introduction, and its own conclusion was never read. That is the usual explanation for a weak `description` on a long page filled with an older version. Re-running on a current version is the fix.

@@ -215,6 +215,121 @@ export function spliceManifestValue(
   return { text: out, line };
 }
 
+/**
+ * Remove `options.key` from `options.entry` in the manifest `text`, and change
+ * no other byte. An entry left with no keys goes too, since the loader refuses
+ * an entry that is not a mapping, along with the blank line that spaced it.
+ * A manifest, entry or key that is absent is left as it was.
+ *
+ * Throws `DocmetaError` where `spliceManifestValue` would: invalid YAML, a top
+ * level or entry that is not a mapping, an entry named twice, a key set twice.
+ * It also refuses a key in a flow mapping with other members, and a result
+ * that does not read back with only that key gone.
+ */
+export function removeManifestKey(
+  text: string,
+  options: Omit<SpliceManifestOptions, "value">,
+): { text: string } {
+  const { entry, key, file } = options;
+  const join = options.join ?? PATH_JOIN;
+  const at = (line?: number): string => {
+    const name = file === undefined ? "Manifest" : `Manifest ${file}`;
+    if (line === undefined) return name;
+    return file === undefined ? `${name} line ${String(line)}` : `${name}:${String(line)}`;
+  };
+
+  const eol = detectEol(text);
+  const lc = new LineCounter();
+  const doc = parseDocument(text, { lineCounter: lc, uniqueKeys: false });
+  const problem = doc.errors[0];
+  if (problem) {
+    throw new DocmetaError(`${at()} is not valid YAML: ${problem.message}`);
+  }
+  const keyLine = (node: unknown): number | undefined => {
+    const r = rangeOf(node);
+    return r ? lc.linePos(r[0]).line : undefined;
+  };
+  const root = doc.contents;
+  if (root === null || (isScalar(root) && root.value === null)) return { text };
+  if (!isMap(root)) {
+    throw new DocmetaError(
+      `${at()}: the manifest must be a mapping from document ${join === PATH_JOIN ? "path" : `"${join}"`} to owned keys.`,
+    );
+  }
+  const same =
+    join === PATH_JOIN
+      ? (a: string, b: string) => posix.normalize(a) === posix.normalize(b)
+      : (a: string, b: string) => a === b;
+  const matches = root.items.filter((p) => same(keyString(p.key), entry));
+  const [first, second] = matches;
+  if (first && second) {
+    throw new DocmetaError(
+      `${at(keyLine(second.key))}: "${keyString(second.key)}" is named twice (first at line ${String(keyLine(first.key) ?? "?")}). Merge the two entries into one.`,
+    );
+  }
+  if (first === undefined) return { text };
+  const spelled = keyString(first.key);
+  const where = at(keyLine(first.key));
+  const v = first.value;
+  if (!isMap(v)) {
+    throw new DocmetaError(`${where}: "${spelled}" must be a mapping of owned keys to values.`);
+  }
+  const hits = v.items.filter((kv) => keyString(kv.key) === key);
+  const [hit, again] = hits;
+  if (hit && again) {
+    throw new DocmetaError(
+      `${at(keyLine(again.key))}: "${spelled}" sets "${key}" twice (first at line ${String(keyLine(hit.key) ?? "?")}). Remove one.`,
+    );
+  }
+  if (hit === undefined) return { text };
+
+  const whole = v.items.length === 1;
+  if (!whole && v.flow === true) {
+    throw new DocmetaError(
+      `${where}: "${spelled}" is a flow mapping ({ … }), which this writer does not remove keys from. Rewrite the entry in block style.`,
+    );
+  }
+  // The lines to cut: from the start of the key's line (the entry's, when
+  // the entry goes) through the line break after the value's last line.
+  const from = rangeOf(whole ? first.key : hit.key);
+  const to = whole ? contentEnd(text, v) : (contentEnd(text, hit.value) ?? contentEnd(text, hit.key));
+  if (!from || to === undefined) {
+    throw new DocmetaError(
+      `${where}: "${spelled}" writes a key in a form this writer does not edit. Write it as "${key}: …".`,
+    );
+  }
+  let start = text.lastIndexOf("\n", from[0] - 1) + 1;
+  let end = lineEnd(text, to);
+  if (text.startsWith(eol, end)) end += eol.length;
+  else if (start >= eol.length) start -= eol.length; // the last line, with no break after it
+  if (whole) {
+    // The blank line that spaced the entry from the one before goes with it;
+    // for a first entry, the one after it does.
+    if (text.slice(start - 2 * eol.length, start) === eol + eol) start -= eol.length;
+    else if (start === 0 && text.startsWith(eol, end)) end += eol.length;
+  }
+  const out = text.slice(0, start) + text.slice(end);
+
+  const after = parseDocument(out, { uniqueKeys: false });
+  const fail = (why: string) =>
+    new DocmetaError(
+      `${at()}: removing "${key}" for "${entry}" did not read back as removed, so nothing was written. ${why}`,
+    );
+  if (after.errors[0]) throw fail(`The result is not valid YAML: ${after.errors[0].message}`);
+  const was: unknown = doc.toJS({ maxAliasCount: 100 });
+  const wasRoot = isRecord(was) ? was : {};
+  const wasEntry = wasRoot[spelled];
+  const rest = Object.fromEntries(
+    Object.entries(isRecord(wasEntry) ? wasEntry : {}).filter(([k]) => k !== key),
+  );
+  const kept = Object.entries(wasRoot).filter(([k]) => k !== spelled);
+  if (Object.keys(rest).length > 0) kept.push([spelled, rest]);
+  const now: unknown = after.toJS({ maxAliasCount: 100 });
+  const expected = kept.length === 0 ? null : Object.fromEntries(kept);
+  if (!deepEqual(now ?? null, expected)) throw fail("Another value in the manifest would have changed.");
+  return { text: out };
+}
+
 /** An empty manifest (no text, only comments, or a bare `---`): the first entry. */
 function startManifest(text: string, entry: string, key: string, value: unknown, eol: string): Edit {
   const style: Style = { step: 2, indentSeq: true, eol };

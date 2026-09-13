@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:05.867
+A public page: The public page carries a title and nothing else. Its ticket and source file must not ship with it.
+
+2
+00:00:05.867 --> 00:00:15.933
+The sidecar: A private manifest supplies source and jira per page. Two lines of config declare which keys it owns.
+
+3
+00:00:15.933 --> 00:00:26.500
+validate sees one object: auth passes on the merged values. billing's bad ticket is reported at docs-meta.yaml:6, not in the page.
+
+4
+00:00:26.500 --> 00:00:35.233
+The page stays clean: query refuses to write a sidecar-owned key into the public file.
+
+5
+00:00:35.233 --> 00:00:40.833
+Exit codes for CI: 1 for findings, 2 for the refusal. Nothing private reaches the public repo.
+

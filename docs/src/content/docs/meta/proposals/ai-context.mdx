@@ -81,3 +81,18 @@ Two questions. Do `generated-by` and `provenance` belong here or in
 both read `generated-by`, which argues for the one vocabulary that is
 always present. And is `risks` the right name for a field that carries
 assurances (`read-only`) alongside cautions?
+
+Proposal 0046 changes both production records, in draft
+`1.0.0-proposal.2`. `provenance` becomes a record of which machine wrote
+which body lines. Each entry names the machine, a line range, and an integrity
+hash that pins those lines.
+[`manni meta derive`](/manni/meta/set-up/machine-authorship/) stamps it from git,
+and `validate` reports a pin whose text has changed. Both commands do that
+today, while the drafts stay under review. The per-model field
+attribution described above is renamed `meta-provenance`, with the same
+review semantics. Its `fields` become JSON Pointers, so `/kg/label` reaches
+into a block. It also takes over the kg block's `provenance` and the eval
+vocabularies' `eval-provenance`. After review, the page-level `generated-by`
+would be dropped, since `provenance` names the machines per range.
+`manni meta fill` already writes `meta-provenance` for the fields it fills.
+Both records would stay in ai-context, which answers the first question.

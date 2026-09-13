@@ -273,7 +273,10 @@ A [managed field](/manni/meta/reference/configuration/#derive) whose stamp
 disagrees with the evidence reports `derived:stale/derived`, with the field
 as its instance path. Its `rules[]` entry reads "The document's stamp for a
 managed field disagrees with the evidence; run manni meta derive." `derived`
-is the third reserved first segment, beside `check` and `external`.
+is the third reserved first segment, beside `check` and `external`. A
+`provenance` finding keeps the same id and instance path, `/provenance`. It
+adds the first file line of the range, and the subject `provenance
+<integrity>`, so each range has its own fingerprint.
 
 The `-` (stdin) input produces **no** SARIF result. `<stdin>` is not a path any
 consumer can resolve, and a location pointing at one would be dropped anyway.
@@ -652,17 +655,37 @@ The deliberate opt-outs are `--no-derive` on `validate`, `--no-derived` on
 | Config `derive.commands` names a field a built-in source already derives. | `derive.commands.last-updated targets a field git already derives; a command may only derive a field no built-in source claims`. `$schema` is refused the same way, and a manifest-owned key when the config loads. |
 | Config `derive.commands` names `_path` or `_sources`. | `derive.commands._path collides with a column of the derived table a query builds (_path, _sources). Pick another field name.` |
 | `derive` was given `-`. | `cannot derive <stdin>: no history behind it` |
-| `derive` was given a field that is not derivable. | `"stakeholders" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed, or any key with an entry in derive.commands` |
+| `derive` was given a field that is not derivable. | `"stakeholders" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed, provenance, or any key with an entry in derive.commands` |
 | Config `derive.fields` names a key a collection's [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. The config is refused when it loads. | `manni.config.yaml: meta.derive.fields[3] "owner" is owned by collections[0].externalMetadata[0] (./owners.yaml) — a managed field has one authority, and a manifest key already has one. Drop it from one side.` |
 | Config `derive.commands` names a key a collection's [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. The config is refused when it loads. | `manni.config.yaml: meta.derive.commands.verified-against is owned by collections[0].externalMetadata[0] (./versions.yaml) — a managed field has one authority, and a manifest key already has one. Drop it from one side.` |
 | `derive --fields` named a key a collection's [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. | `"owner" is owned by the manifest ./owners.yaml on collection guides; a managed field has one authority, and a manifest key already has one.` |
 | `derive` has no `derive.fields` in config and no `--fields`. | `nothing to derive: set derive.fields in manni.config.yaml or pass --fields` |
+| Config `derive.machines` is empty or not a list of strings. | `manni.config.yaml: meta.derive.machines must be a non-empty list of globs, matched against a trailer's name and its email. Default: ["*[bot]"].` |
+| Config `derive.machines` holds a blank entry. | `manni.config.yaml: meta.derive.machines[0] is blank; a glob must name something.` |
+| Config `derive.machines` repeats a glob. | `manni.config.yaml: meta.derive.machines lists "*[bot]" twice.` |
+| `derive` was given a `<path>:L1-L2` range without `--generated-by` or `MANNI_GENERATED_BY`. | `docs/limits.md:12-31 names lines, which only --generated-by uses. Pass --generated-by, or drop the range.` |
+| `derive` was given `--generated-by`, or a range, on a run whose fields leave out `provenance`. `MANNI_GENERATED_BY` alone is never refused. | `--generated-by attributes provenance, which is not in --fields. Add provenance, or drop --generated-by.` |
+| A range ends before it starts. | `docs/limits.md:31-12 ends before it starts.` |
+| A range names a directory or a glob, or no file the run reads. | `docs:12 does not name one file that derive reads; a range names lines of one file.` |
+| A range runs past the end of the file. | `docs/limits.md has no lines 12-99: the file ends at line 40.` |
+| A range reaches into the frontmatter. | `docs/limits.md:2-5 reaches into the frontmatter; provenance pins body lines, which start at line 8.` |
+| Git evidence names a different machine for a line in the range. | `docs/limits.md:12-31: blame attributes these lines to claude-sonnet-5 (9b0e2c1); --generated-by cannot overrule a recorded machine.` |
+| The manifest that owns `provenance` is a URL, which `derive` cannot write. | `collection site: provenance cannot come from a URL manifest, because manni meta derive writes it.` |
+| A page belongs to two collections whose manifests both own `provenance`. | `docs/limits.md is in collections site and limits, and both keep provenance in a manifest.` |
+| The manifest that owns `provenance` joins on a field the page does not carry. | `docs/limits.md carries no id, which private/by-id.yaml joins on, so its provenance has no entry there.` |
 | `derive` was given a findings format without `--check`. | `sarif is a findings format, which only --check produces` |
 | A `query` write would touch a managed key. | `"last-updated" is managed by derive; run manni meta derive instead.` |
 | A `query` write names the `resolved` table. | ``cannot modify resolved because it is a view; the resolved table is read-only — it is `docs` and the evidence joined, so write to docs, or stamp the evidence with manni meta derive.`` |
 
 A stamp that disagrees with the evidence is exit 1, from `validate` and from
 `derive --check`. That is a verdict about the document.
+
+`--generated-by` that finds no uncommitted body lines in a file is not an
+error. It is a notice on stderr, and the exit code comes from the run:
+
+```
+manni: docs/limits.md: no uncommitted body lines; --generated-by attributes only what is not yet committed.
+```
 
 ### Per-command meaning of exit 1
 
@@ -671,7 +694,7 @@ A stamp that disagrees with the evidence is exit 1, from `validate` and from
 | `validate` | One or more files failed validation. |
 | `get` | One or more files had a metadata block that could not be read. That means frontmatter that is not valid YAML, or that parses to something other than a mapping. A requested field that is merely *absent* is reported as unset and is **not** a failure. An absent **file** is different again: that is an operational error and exits 2. |
 | [`fill`](/manni/meta/reference/cli/#meta-fill) | A property the schema lists as `required` could not be filled confidently, or a file errored. Skipped **optional** properties leave the exit code at `0`. A file whose missing property an [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns is refused as a per-file error, so it counts here. |
-| [`derive`](/manni/meta/reference/cli/#meta-derive) | A file the run could not read or write, such as an unparseable document or a read-only format it could not stamp. That fails the run with or without `--check`, as it does for `fill`, because a stamp that was never applied must not read as done. Under `--check` a stale or unset managed field fails it too. A run that writes cleanly exits `0` whatever it changed, because the work is done rather than pending. |
+| [`derive`](/manni/meta/reference/cli/#meta-derive) | A file the run could not read or write, such as an unparseable document or a read-only format it could not stamp. That fails the run with or without `--check`, as it does for `fill`. A stamp that was never applied must not read as done. `provenance` on a page whose metadata is not a fenced block, such as HTML, is one such file. Its message ends `Keep provenance in an externalMetadata manifest.` Under `--check` any finding fails it too, such as a stale or unset managed field. A `provenance` range that only moved files no finding and passes. A run that writes cleanly exits `0` whatever it changed, because the work is done rather than pending. |
 | `schemas` | Never. |
 
 The rule behind `fill`'s version is the same as `validate`'s: exit 1 means the

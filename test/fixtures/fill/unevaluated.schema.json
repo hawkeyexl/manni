@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "A schema closed by unevaluatedProperties that does not define meta-provenance",
+  "type": "object",
+  "properties": {
+    "title": { "type": "string" },
+    "description": { "type": "string" }
+  },
+  "required": ["description"],
+  "unevaluatedProperties": false
+}

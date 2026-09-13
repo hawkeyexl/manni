@@ -140,3 +140,15 @@ graders and the open `tool:*` namespace the right one? (Its artifact-side
 counterpart is a [fully open list](/manni/meta/proposals/artifact-evals/),
 for reasons stated there.) And should a page be able to set `runs` and
 `model` inline at all, given that a `use:` reference cannot?
+
+Proposal 0046 removes `eval-provenance`, in draft `1.0.0-proposal.3`.
+Machine-proposed eval ids move to the page-level `meta-provenance` in
+[ai-context](/manni/meta/proposals/ai-context/), under its `evals` list, so one
+trail covers fields and evals alike. The `eval-` prefix guard no longer
+excepts `provenance`, so an `eval-provenance` key at the page root is rejected
+like any other unknown `eval-*` key. `manni meta derive` already records the
+machine behind each range of a body, in ai-context's `provenance`. The self-preference warning
+would read them there for a `body` target, `meta-provenance`
+for `frontmatter`, and both for `raw`, rather than one page-level
+`generated-by`. The same draft renames the `info` severity to `notice`, the level
+manni's other tools already use.

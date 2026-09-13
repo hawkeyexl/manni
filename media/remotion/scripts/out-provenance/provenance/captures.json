@@ -1,0 +1,17 @@
+{
+  "git diff": "\u001b[1mdiff --git a/docs/limits.md b/docs/limits.md\u001b[m\n\u001b[1mindex 0e4dfeb..da424a6 100644\u001b[m\n\u001b[1m--- a/docs/limits.md\u001b[m\n\u001b[1m+++ b/docs/limits.md\u001b[m\n\u001b[36m@@ -6,4 +6,8 @@\u001b[m \u001b[mtitle: Rate limits\u001b[m\n \u001b[m\n Requests are limited per token.\u001b[m\n \u001b[m\n\u001b[32m+\u001b[m\u001b[32mThe limit is 100 requests a minute.\u001b[m\n\u001b[32m+\u001b[m\u001b[32mBursts of 20 are allowed.\u001b[m\n\u001b[32m+\u001b[m\u001b[32mA 429 response carries Retry-After.\u001b[m\n\u001b[32m+\u001b[m\n Contact support to raise it.\u001b[m\n",
+  "derive uncommitted": "Using manni.config.yaml (.)\ndocs/limits.md\n    \u001b[36mprovenance\u001b[39m  lines 9-12: \u001b[2m(unset)\u001b[22m → \u001b[32mclaude-fable-5\u001b[39m  \u001b[2m(git: uncommitted)\u001b[22m\n\n1 file, 1 changed, 1 range written\n",
+  "head -7": "---\ntitle: Rate limits\nprovenance:\n  - generated-by: claude-fable-5\n    lines: 6-9\n    integrity: sha256-76646ebddee80b427f77f919e4bcde3463a971a929c8b776fc7be0ef477f60ec\n---\n",
+  "git diff -U0": "\u001b[1mdiff --git a/docs/limits.md b/docs/limits.md\u001b[m\n\u001b[1mindex 0804423..bd59dd7 100644\u001b[m\n\u001b[1m--- a/docs/limits.md\u001b[m\n\u001b[1m+++ b/docs/limits.md\u001b[m\n\u001b[36m@@ -14 +14 @@\u001b[m \u001b[mThe limit is 100 requests a minute.\u001b[m\n\u001b[31m-Bursts of 20 are allowed.\u001b[m\n\u001b[32m+\u001b[m\u001b[32mBursts of 50 are allowed.\u001b[m\n",
+  "validate stale": "Using manni.config.yaml (.)\n\u001b[31m✗\u001b[39m docs/limits.md\n    \u001b[36m/provenance\u001b[39m  provenance lines 13-16 changed since claude-fable-5 wrote them — run manni meta derive\u001b[2m  (line 13)\u001b[22m  \u001b[2m[derived:stale]\u001b[22m\n\n\u001b[31m1 file checked, 0 passed, 1 failed, 1 error\u001b[39m\n",
+  "derive again": "Using manni.config.yaml (.)\ndocs/limits.md\n    \u001b[36mprovenance\u001b[39m  lines 13-16: \u001b[2mclaude-fable-5\u001b[22m → \u001b[32mre-derived\u001b[39m  \u001b[2m(git: pin)\u001b[22m\n\n1 file, 1 changed, 1 range written\n",
+  "get provenance": "Using manni.config.yaml (.)\n\u001b[2mdocs/limits.md:\u001b[22m provenance=lines 16 claude-fable-5; lines 18-19 claude-fable-5\u001b[2m (asserted)\u001b[22m\n",
+  "validate clean": "Using manni.config.yaml (.)\n\u001b[32m✓\u001b[39m docs/limits.md\n\n\u001b[32m1 file checked, 1 passed, 0 failed, 0 errors\u001b[39m\n",
+  "exits": {
+    "derive1": "0",
+    "validate1": "1",
+    "derive2": "0",
+    "get": "0",
+    "validate2": "0"
+  }
+}

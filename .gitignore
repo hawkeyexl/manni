@@ -15,9 +15,13 @@ coverage/
 # The family cache directory: `.manni/meta/…` for the metadata tool. Same rule.
 .manni/
 
-# Feature demo videos (see CLAUDE.md). Generated per feature, handed to the
-# user or attached to the PR — never committed, since binaries bloat history.
-media/
+# Feature demo videos (see CLAUDE.md). The sources, scripts, captions, GIFs
+# and thumbnails under media/ are committed; the rendered MP4s are not, and
+# neither are the Remotion install or the scratch demo repos, which carry
+# their own .git and can only be recorded as empty embedded-repo pointers.
+media/**/*.mp4
+media/remotion/node_modules/
+media/scratch-*/
 
 # Baseline written by the Doc Detective steps in set-up/new-required-field.mdx.
 # Run output, not a source file.

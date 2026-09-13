@@ -1,0 +1,64 @@
+Sidecar metadata, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 40.8 s. Every terminal line is real output of
+`node dist/cli.js meta ...` run inside test/fixtures/sidecars/.
+
+[0:00-0:06] Title: A public page (1 / 5)
+$ cat docs/auth.md
+---
+title: Auth
+---
+
+# Auth
+Caption: The public page carries a title and nothing else. Its ticket and source file must not ship with it.
+
+[0:06-0:16] Title: The sidecar (2 / 5)
+$ cat docs-meta.yaml
+# Keys are document paths relative to this config's directory.
+docs/auth.md:
+  source: internal/auth-design.md
+  jira: PLAT-412
+docs/billing.md:
+  jira: not-a-ticket
+docs/ops.md:
+  jira: PLAT-9
+$ cat manni.config.yaml
+# Sidecar fixture (proposal 0034): the private half of a public docset.
+meta:
+  paths:
+    - "docs/**/*.md"
+  sidecars:
+    - file: ./docs-meta.yaml
+      keys: [source, jira]
+  overrides:
+    - files: "docs/**/*.md"
+      schemas:
+        - ./private.schema.json
+Caption: A private manifest supplies source and jira per page. Two lines of config declare which keys it owns.
+
+[0:16-0:26] Title: validate sees one object (3 / 5)
+$ manni meta validate
+Using manni.config.yaml (.)
+✓ docs/auth.md                                  (green check)
+✗ docs/billing.md                               (red cross)
+    /jira  must match pattern "^PLAT-[0-9]+$"  (docs-meta.yaml:6)  [./private.schema.json]
+✗ docs/new.md
+    (root)  must have required property 'jira'  (line 1)  [./private.schema.json]
+✗ docs/ops.md
+    /jira  "jira" is owned by sidecar docs-meta.yaml; remove it from the document  (line 3)  [sidecar:owned]
+
+4 files checked, 1 passed, 3 failed, 3 errors   (red)
+$ echo $?
+1
+Caption: auth passes on the merged values. billing's bad ticket is reported at docs-meta.yaml:6, not in the page.
+
+[0:26-0:35] Title: The page stays clean (4 / 5)
+$ manni meta query "UPDATE docs SET jira = 'PLAT-1' WHERE _path = 'docs/auth.md'"
+Using manni.config.yaml (.)
+manni: "docs/auth.md": "jira" is owned by sidecar docs-meta.yaml; edit the sidecar file instead.
+Caption: query refuses to write a sidecar-owned key into the public file.
+
+[0:35-0:41] Title: Exit codes for CI (5 / 5)
+$ echo $?
+2
+Caption: 1 for findings, 2 for the refusal. Nothing private reaches the public repo.

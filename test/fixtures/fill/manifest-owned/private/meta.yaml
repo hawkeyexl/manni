@@ -1,0 +1,4 @@
+docs/limits.md:
+  meta-provenance:
+    - generated-by: someone-else
+      fields: [/type]

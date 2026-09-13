@@ -375,10 +375,12 @@ If a skill is genuinely unavailable in the session, say so plainly. Hand over
 the script plus the exact commands to run, rather than silently skipping the
 step or substituting a screenshot.
 
-**Where it goes.** Write to `media/` (gitignored). **Do not commit video or GIF
-binaries.** They bloat the history permanently, and this repo publishes a docs
-site that does not need them. Attach the file to the PR, or hand the path to the
-user.
+**Where it goes.** Write to `media/`. **Commit everything there except the MP4.**
+The script, transcript, captions, thumbnail, GIF, capture sources and the
+Remotion project are the record of how the video was made, and they are small.
+The rendered MP4 stays out of git (`.gitignore` covers `media/**/*.mp4`), as do
+`media/remotion/node_modules/` and the `media/scratch-*` demo repos, which carry
+their own `.git`. Attach the MP4 to the PR, or hand the path to the user.
 
 **Posting is a human action.** Generate the asset and hand it over; never post
 to LinkedIn or any other account, and never draft-and-send on someone's behalf.

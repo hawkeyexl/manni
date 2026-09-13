@@ -1,0 +1,9 @@
+collections:
+  - name: guides
+    paths:
+      - "guides/**/*.md"
+    url: http://127.0.0.1:4321/
+
+meta:
+  schemas:
+    - ./house.schema.json

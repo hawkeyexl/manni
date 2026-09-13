@@ -239,7 +239,7 @@ describe("deriveMetadata with the command source", () => {
 });
 
 describe("deriveMetadata", () => {
-  it("resolves all six fields, each from its source", async () => {
+  it("resolves all seven fields, each from its source", async () => {
     const { dir, first, second } = repo();
     const reviews = fakeReviews();
     const result = await deriveMetadata([input(dir, "docs/a.md"), input(dir, "docs/b.md")], ctx(dir, { reviews }));
@@ -260,6 +260,8 @@ describe("deriveMetadata", () => {
       owner: { value: ["@platform-docs", "@maya"], source: "codeowners", evidence: ".github/CODEOWNERS:1" },
       "reviewed-by": { value: ["maya", "devin"], source: "github", evidence: "github PR #18" },
       "last-reviewed": { value: "2026-02-21", source: "github", evidence: "github PR #18" },
+      // No commit names a machine, so blame has no range to offer.
+      provenance: null,
     });
     // b.md was never edited after its first commit, and that commit is the
     // one the host is asked about.
@@ -466,6 +468,7 @@ describe("deriveMetadata", () => {
       owner: null,
       "reviewed-by": null,
       "last-reviewed": null,
+      provenance: null,
     });
     expect(result.records.get("docs/a.md")?.fields.created).not.toBeNull();
   });

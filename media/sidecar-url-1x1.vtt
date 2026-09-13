@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:06.100
+file: is a URL now: The manifest lives in another repo. A public one needs no token: a URL and the keys it owns.
+
+2
+00:00:06.100 --> 00:00:16.267
+validate fetches it: The merged object is checked. billing's bad ticket is reported at the URL, line 6, not in the page.
+
+3
+00:00:16.267 --> 00:00:28.900
+Private: add tokenEnv: tokenEnv names the variable holding the token. Unset, the run stops with exit 2 and names the variable.
+
+4
+00:00:28.900 --> 00:00:35.233
+--offline refuses it: A remote manifest is fetched every run, never cached. With no network there is nothing to check, so it stops.
+
+5
+00:00:35.233 --> 00:00:40.233
+Exit codes for CI: 1 for findings, 2 when the manifest cannot be reached. The message names the variable, never the token.
+

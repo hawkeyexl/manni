@@ -1,0 +1,2 @@
+Using manni.config.yaml (.)
+manni: Sidecar manifest http://127.0.0.1:8765/docs-meta.yaml is remote and the run is offline. Vendor it to a path, or drop --offline.

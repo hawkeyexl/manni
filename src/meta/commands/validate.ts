@@ -73,7 +73,13 @@ import {
   deriveMetadata,
   type DeriveResult,
 } from "../core/derive/index.js";
-import { commandsOf } from "../core/derive/config.js";
+import { commandsOf, machinesOf } from "../core/derive/config.js";
+import {
+  compareProvenance,
+  provenanceEntries,
+  provenanceFindings,
+} from "../core/derive/provenance.js";
+import { readerManifests, readerPlace } from "../core/derive/provenance-place.js";
 import {
   fieldsForSql,
   mentionsDerived,
@@ -83,6 +89,7 @@ import {
   compareDerived,
   derivableFields,
   DERIVE_SOURCES,
+  PROVENANCE_FIELD,
   staleFindings,
   type DerivedRecord,
   type DeriveInput,
@@ -450,6 +457,10 @@ export async function runValidate(
   const deriveFields = new Set<string>(deriveWillRun ? deriveConfig.fields : []);
   const readable = derivableFields(deriveCommands);
   for (const c of derivedChecks) for (const f of fieldsForSql(c.query, readable)) deriveFields.add(f);
+  // The manifests that hold a page's `provenance` record (0046), for evidence rule 2.
+  const provenanceManifests = keepDeriveInputs && deriveFields.has(PROVENANCE_FIELD)
+    ? readerManifests(declaredCollections, configDir ?? cwd, base)
+    : [];
   const derivedOnce = once(async (): Promise<DeriveResult> => {
     const derived = await deriveMetadata(deriveInputs, {
       cwd,
@@ -463,6 +474,7 @@ export async function runValidate(
       ...(deriveCommands !== undefined ? { commands: deriveCommands } : {}),
       cache: opts.cache ?? true,
       now: opts.now ?? (() => new Date()),
+      machines: machinesOf(deriveConfig),
     });
     assertSourcesAvailable(
       derived.sources,
@@ -521,8 +533,19 @@ export async function runValidate(
     // OWN extraction, from before the merge: a managed key can never be
     // manifest-owned (`loadConfig` refuses the overlap), so the asserted
     // value is the document's, and `lineFor` must answer for its own lines.
+    // `provenance` is the exception (0046): its record may live in a
+    // manifest, which the git source then reads at each commit.
     if (keepDeriveInputs && label !== STDIN_LABEL) {
-      deriveInputs.push({ label, absPath: resolve(base, label), content, extracted });
+      const place = provenanceManifests.length === 0
+        ? undefined
+        : readerPlace(label, extracted.data, provenanceManifests, declaredCollections, configDir ?? cwd, base);
+      deriveInputs.push({
+        label,
+        absPath: resolve(base, label),
+        content,
+        extracted,
+        ...(place !== undefined ? { provenanceManifest: place } : {}),
+      });
     }
     const merged = mergeExternalMetadata(label, extracted, externalMetadata, members, base, {
       encryptionKey,
@@ -790,18 +813,26 @@ export async function runValidate(
         }
         marked = [...managed.marked, ...(await validator.markedPointers(stamped, managed.refs))];
       }
-      const findings = staleFindings(
-        fields.map((field) => {
-          const compared = compareDerived(
-            field,
-            managed !== undefined ? managed.data[field] : input.extracted.data[field],
-            record.fields[field],
+      const asserted = (field: string): unknown =>
+        managed !== undefined ? managed.data[field] : input.extracted.data[field];
+      const findings = fields.flatMap((field) => {
+        // Proposal 0046: `provenance` is judged range by range, against the
+        // record wherever it lives, and each finding lands on its range's line.
+        if (field === PROVENANCE_FIELD) {
+          const derivation = derived.provenance?.get(input.label);
+          if (derivation === undefined) return [];
+          return provenanceFindings(
+            compareProvenance(provenanceEntries(asserted(field)), derivation),
+            derivation.page.bodyLine,
           );
-          const at = pointerOf(field);
-          return marked.some((p) => isAtOrUnder(p, at)) ? redactedDerived(compared) : compared;
-        }),
-        input.extracted.lineFor,
-      );
+        }
+        const compared = compareDerived(field, asserted(field), record.fields[field]);
+        const at = pointerOf(field);
+        return staleFindings(
+          [marked.some((p) => isAtOrUnder(p, at)) ? redactedDerived(compared) : compared],
+          input.extracted.lineFor,
+        );
+      });
       if (findings.length === 0) continue;
       result.errors.push(...findings);
       result.ok = false;

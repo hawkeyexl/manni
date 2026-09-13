@@ -50,6 +50,11 @@ config](#derive-a-field-with-a-command) reads it. Who has a stake in a page
 is a judgment no history holds. For that, `required` in the schema is the
 whole enforcement, and the finding it produces is the reminder.
 
+A seventh managed field answers a question the vocabulary does not ask. Which
+lines of the page did a machine write? `provenance` records them as pinned
+ranges, from the same git history. [See which lines a machine
+wrote](/manni/meta/set-up/machine-authorship/) is that journey.
+
 ## Configure it
 
 Name the fields you want managed. Everything else is optional.
@@ -451,7 +456,9 @@ manni: "last-updated" is managed by derive; run manni meta derive instead.
 ```
 
 `fill` never proposes a managed field, and reports the skip so the omission
-is visible. A managed field can still be read everywhere. `get` prints it,
+is visible. It never proposes `provenance` or `meta-provenance` either, and
+leaves both out of what it sends a model. It writes `meta-provenance` itself,
+listing the fields it filled, so a reviewer knows which values to check. A managed field can still be read everywhere. `get` prints it,
 and a [corpus check](/manni/meta/ci/query-gates/) can phrase a rule over it.
 `query` gains two read-only tables. [`derived`](/manni/meta/reference/query/#the-derived-table)
 holds what the evidence says, one row per page, and
@@ -499,6 +506,11 @@ holds the page to the evidence. What it can do is change the body and run
     title="Roll out a new required field"
     href="/manni/meta/set-up/new-required-field/"
     description="The baseline ratchet a stale-stamp backlog rides on."
+  />
+  <LinkCard
+    title="See which lines a machine wrote"
+    href="/manni/meta/set-up/machine-authorship/"
+    description="The seventh managed field: provenance pins over the lines an agent wrote."
   />
 </CardGrid>
 

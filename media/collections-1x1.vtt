@@ -1,0 +1,23 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:05.500
+One set, named twice: One document set, spelled twice: a glob under meta:, a URL under a11y:. Move the docs and one goes stale.
+
+2
+00:00:05.500 --> 00:00:15.000
+0.3.0 refuses it: Exit 2, and the message names where the key went: a top-level collections: list.
+
+3
+00:00:15.000 --> 00:00:21.700
+Declared once: One collection: the paths, and the url those pages are published at. No tool owns it.
+
+4
+00:00:21.700 --> 00:00:27.433
+meta reads it: A bare validate checks the collection's files. Nothing typed on the command line.
+
+5
+00:00:27.433 --> 00:00:37.900
+a11y reads it too: --collection guides seeds the crawl from that same url:. No URL typed, no second key.

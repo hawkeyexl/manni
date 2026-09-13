@@ -49,7 +49,7 @@ problem, in this shape:
 
 ## Common failures
 
-These cover the overwhelming majority of red checks. The first four are problems
+These cover the overwhelming majority of red checks. The first five are problems
 in your document; the last, [Schema not found](#schema-not-found), is a setup
 problem rather than something in your file. Each shows the error, the cause, and
 a fix.
@@ -188,6 +188,47 @@ flavor's fences and syntax.
   It's the fastest clue.
 </Aside>
 
+### A stale provenance stamp
+
+```
+✗ docs/limits.md
+    /provenance  provenance lines 16-18 changed since claude-fable-5 wrote them — run manni meta derive  (line 16)  [derived:stale]
+```
+
+The repository records which lines of each page a machine wrote, in a
+[`provenance`](/manni/meta/set-up/machine-authorship/) list. Each entry pins a
+range with a hash of its text. Your change edited lines an agent was credited
+with, so the pin no longer matches. `(line 16)` is where the range starts. Two
+more messages come from the same record:
+
+```
+    /provenance  provenance lines 29 say claude-sonnet-5; blame says Claude Opus 5 (6683e73) — run manni meta derive  (line 29)  [derived:stale]
+    /provenance  provenance is unset for lines 26; blame says Claude Opus 5 (ecb9b0a) — run manni meta derive  (line 26)  [derived:stale]
+```
+
+The first says git names a different machine for the range than the record
+does. The second says a commit credited a machine for lines the record does
+not cover yet.
+
+**Fix.** Do what the message says, then commit the result:
+
+```sh
+npx @hawkeyexl/manni meta derive docs/limits.md
+```
+
+```
+docs/limits.md
+    provenance  lines 16-18: claude-fable-5 → re-derived  (git: pin)
+
+1 file, 1 changed, 1 range written
+```
+
+`derive` reads git blame again. Lines the agent's commit still owns keep the
+agent's name, and the lines you rewrote drop out of the record. Do not edit
+the `provenance` entries by hand. The hash has to match the text, and `derive`
+is the tool that computes it. Text that only moved, because a paragraph was
+added above it, is never a finding.
+
 ### Schema not found
 
 Sometimes manni meta stops before validating any file and prints a single line to
@@ -265,6 +306,7 @@ manni meta fill docs/intro.md --dry-run
 ```
 ✓ docs/intro.md
     /description  A tour of the CLI and its four commands.  0.91
+    meta-provenance  claude-sonnet-4-5: /description
     below 0.7: /resource 0.38
 
 anthropic/claude-sonnet-4-5 · Threshold 0.7 · 1 file · 1 field would be written · 1 skipped
@@ -295,7 +337,9 @@ each call transmits, and what the cache keeps. `--local` is the flag that keeps
 inference on your own hardware.
 
 Anything below the confidence threshold is skipped and named, so you still get a
-short list of what needs you. `fill` leaves any field that is already present and
+short list of what needs you. The `meta-provenance` line records which fields
+the model wrote, in the page itself. A reviewer deletes that entry once the
+values are checked. `fill` leaves any field that is already present and
 valid exactly as it is, and its confidence scores stay in the report.
 
 `fill` won't help with a **malformed** value it can't improve on, or with a

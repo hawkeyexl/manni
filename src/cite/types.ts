@@ -12,6 +12,7 @@ import type { ValidationResult } from "../meta/index.js";
 import type { CollectionConfig } from "../shared/collections.js";
 import type { ConfigFile } from "../shared/config-file.js";
 import type { KeySource } from "../shared/encryption-key.js";
+import type { LineSpec, PageLines } from "../shared/pin.js";
 import type { Confirm } from "../shared/prompt.js";
 import type { Severity } from "../shared/severity.js";
 
@@ -26,8 +27,8 @@ export interface SourceRange {
   end?: number;
 }
 
-/** Lines as an entry writes them: an integer for one line, `"L1-L2"` for several. */
-export type LineSpec = number | string;
+// The line shapes are the shared pin engine's, re-exported so cite's imports and its namespace keep them.
+export type { LineSpec, PageLines };
 
 /** The page text a citation supports. */
 export interface CitationClaim {
@@ -391,11 +392,6 @@ export interface CheckRun {
   notices: number;
 }
 
-/** Page lines as an editor numbers them, 1-based and inclusive. */
-export interface PageLines {
-  start: number;
-  end: number;
-}
 
 export interface AddOptions {
   page: string;

@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:04.733
+An agent wrote part of it: An agent just wrote these lines. Once they are committed, nothing records which were its.
+
+2
+00:00:04.733 --> 00:00:15.400
+Stamp before committing: derive pins the uncommitted lines to claude-fable-5: a body range and a hash of their text.
+
+3
+00:00:15.400 --> 00:00:23.100
+A person edits one line: A person changes one line inside the agent's range, and commits it.
+
+4
+00:00:23.100 --> 00:00:30.367
+validate: the pin broke: The pinned text changed since claude-fable-5 wrote it. validate names the range: exit 1.
+
+5
+00:00:30.367 --> 00:00:43.133
+derive re-attributes: The agent keeps its untouched lines. The edited line is attributed to no machine. Exit 0.
+

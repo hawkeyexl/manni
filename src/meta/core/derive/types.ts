@@ -13,8 +13,9 @@
 import type { ExtractedMetadata, FieldError } from "../../types.js";
 import { escapePointerSegment } from "../../extractors/pointer.js";
 import { toJsonText } from "../json-text.js";
+import type { RangeResult } from "./provenance.js";
 
-/** The six built-in fields, in the order messages list them. */
+/** The seven built-in fields, in the order messages list them. */
 export const DERIVABLE_FIELDS = [
   "created",
   "last-updated",
@@ -22,12 +23,20 @@ export const DERIVABLE_FIELDS = [
   "owner",
   "reviewed-by",
   "last-reviewed",
+  "provenance",
 ] as const;
+
+/**
+ * The one built-in field that is a list of pins rather than a value
+ * (proposal 0046): compared by `compareProvenance`, never `compareDerived`,
+ * and the one managed field a manifest may own.
+ */
+export const PROVENANCE_FIELD = "provenance";
 
 export type BuiltinDerivableField = (typeof DERIVABLE_FIELDS)[number];
 
 /**
- * A managed field name: one of the six built-ins, or a key with an entry in
+ * A managed field name: one of the seven built-ins, or a key with an entry in
  * `derive.commands`. The config parser guarantees one or the other.
  */
 export type DerivableField = string;
@@ -136,6 +145,30 @@ export interface DeriveInput {
   absPath: string;
   content: string;
   extracted: ExtractedMetadata;
+  /**
+   * Where the page's `provenance` record lives when a manifest owns it
+   * (proposal 0046), so evidence rule 2 reads the manifest's blob at each
+   * commit rather than the page's frontmatter. Absent: the page's own.
+   */
+  provenanceManifest?: ProvenanceManifestRef;
+  /**
+   * `manni meta derive <path>:L1-L2 --generated-by <name>`: the file lines
+   * each target names go to `generatedBy`, committed or not, unless evidence
+   * names another machine, and no other uncommitted line does. Ranges that
+   * overlap attribute their union. Each target is a positional as typed,
+   * which every refusal quotes.
+   */
+  attribution?: { targets: string[]; generatedBy: string };
+}
+
+/** A manifest that holds one page's `provenance`, as the git source reads it at a commit. */
+export interface ProvenanceManifestRef {
+  /** The manifest file, absolute. */
+  absPath: string;
+  /** The page's key there: its path relative to the config directory, or its join value. */
+  entry: string;
+  /** `path`, or the page field the manifest joins on. */
+  join: string;
 }
 
 /** What a derive run holds constant across every document it visits. */
@@ -155,6 +188,10 @@ export interface DeriveContext {
   now: () => Date;
   /** The review client for every repository in the run; the built-in `gh` / `glab` clients when absent. */
   reviews?: ReviewClient;
+  /** `--generated-by` or `MANNI_GENERATED_BY` (proposal 0046): who uncommitted body lines go to. */
+  generatedBy?: string;
+  /** `derive.machines`: trailer identities that are machines; `["*[bot]"]` when absent. */
+  machines?: readonly string[];
 }
 
 /**
@@ -181,6 +218,17 @@ export interface DerivedField {
   status: DerivedStatus;
   /** Whether `derive` wrote the value into the document. */
   written: boolean;
+  /**
+   * `provenance` only (proposal 0046): one verdict per range, in file lines.
+   * The field's own `status` is `current` when every range is, and
+   * otherwise `stale`, or `unset` when the page carries no record at all.
+   */
+  ranges?: RangeResult[];
+  /**
+   * `provenance` only: the manifest that holds the page's record, as the run
+   * reports it, when one does. `derive` writes there, never into the page.
+   */
+  manifest?: string;
 }
 
 /**

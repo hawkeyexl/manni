@@ -94,7 +94,8 @@ import {
   mentionsResolved,
   RESOLVED_VIEW,
 } from "../core/derive/table.js";
-import { derivableFields, type DeriveInput } from "../core/derive/types.js";
+import { readerManifests, readerPlace } from "../core/derive/provenance-place.js";
+import { derivableFields, PROVENANCE_FIELD, type DeriveInput } from "../core/derive/types.js";
 import type { FingerprintContext } from "../core/baseline.js";
 import {
   Validator,
@@ -813,17 +814,33 @@ async function runSql(
     // handle closes (see the `finally` below).
     const buildDerived = async (): Promise<void> => {
       if (derivedTable.built) return;
-      const inputs: DeriveInput[] = entries
-        .filter((e) => e.label !== STDIN_LABEL)
-        .map((e) => ({
-          label: e.label,
-          absPath: resolve(ctx.base, e.label),
-          content: e.content,
-          extracted: e.own,
-        }));
       // The run's columns: the built-ins and the configured command keys
       // (0042), so a statement reading a command's field runs the command.
       const commands = commandsOf(ctx.config?.derive);
+      const fields = fieldsForSql(sql, derivableFields(commands));
+      // The manifests that hold a page's `provenance` record (0046), for
+      // evidence rule 2, as `validate` and `get` hand them to the git source.
+      // Only when provenance is derived: named, or managed by `derive.fields`.
+      const provenanceDerived =
+        fields.includes(PROVENANCE_FIELD) || ctx.config?.derive?.fields.includes(PROVENANCE_FIELD) === true;
+      const manifestRoot = ctx.configDir ?? ctx.cwd;
+      const manifests = provenanceDerived
+        ? readerManifests(ctx.declaredCollections, manifestRoot, ctx.base)
+        : [];
+      const inputs: DeriveInput[] = entries
+        .filter((e) => e.label !== STDIN_LABEL)
+        .map((e) => {
+          const place = manifests.length === 0
+            ? undefined
+            : readerPlace(e.label, e.own.data, manifests, ctx.declaredCollections, manifestRoot, ctx.base);
+          return {
+            label: e.label,
+            absPath: resolve(ctx.base, e.label),
+            content: e.content,
+            extracted: e.own,
+            ...(place !== undefined ? { provenanceManifest: place } : {}),
+          };
+        });
       const records = await deriveForTable(
         inputs,
         {
@@ -835,7 +852,7 @@ async function runSql(
           ...(ctx.now !== undefined ? { now: ctx.now } : {}),
         },
         "narrow derive.sources in manni.config.yaml",
-        fieldsForSql(sql, derivableFields(commands)),
+        fields,
       );
       createDerivedView(db, records, derivedColumns(commands));
       // `resolved` (0040) is the join of the two, so it is built from the

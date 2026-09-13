@@ -62,6 +62,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0043](0043-resolved-reads.md) | Resolved reads, where a third read-only view `resolved` holds the asserted value or the derived one, with `_origin` naming which. `get` derives by default | Maya · M1, M2 / Devin · D4 / Theo · T1 | Implemented (#22) |
 | [0044](0044-citations-and-drift.md) | Citations and drift, which pin a claim to source lines so `manni cite` can check the pin | Devin · D4 / Theo · T1 / Maya · M2 / Sara · S1 | Implemented (#17) |
 | [0045](0045-family-encryption-key.md) | A family encryption key: `encryptionKey:`, `manni key`, and `x-manni-encrypt` for metadata that must not appear in plain text | Sara · S1 / Devin · D5 / Maya · M5 | Implemented (#17) |
+| [0046](0046-provenance-pins.md) | Provenance pins, where `provenance` records which machine wrote which body lines as a range and an integrity hash stamped by `manni meta derive`. Field attribution becomes one `meta-provenance` shape across the family | Maya · M8 / Sara · S1 / Devin · D4 | Implemented (#34) |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -127,6 +128,10 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
 
 0041 ──┬─> 0045          (encryptionKey: joins collections: as a family key, and stops discovery)
 0044 ──┘                 (cite's salted hashes, which the family key and encryption replace)
+
+0040 ──┬─> 0046          (provenance rides the derived channel; decision 2 generalized to a range)
+0044 ──┤                 (the pin: body lines and an integrity hash, one hashing rule)
+0023 ──┘                 (the four provenance shapes it redraws, as new drafts beside the old)
 ```
 
 The four `Proposed` SQL items (0026–0029) are independent of each other, with one exception. 0026 and 0029 both grow `query`'s `-f` value list. Each specifies the combined six-value surface, and whichever is implemented second merges into the one const. Recommended implementation order is 0026 → 0029 → 0027 → 0028, which is impact-first. The two config-touching ones (0026, 0027) land apart, so the second rebases trivially.

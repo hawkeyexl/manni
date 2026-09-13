@@ -11,8 +11,12 @@
  * `path:L1-L2` (`SRC_PATTERN`), and reports spell it that way too.
  */
 import { isEncryptedValue } from "../../shared/encryption.js";
+import { lineSpec, parseLines } from "../../shared/pin.js";
 import { CiteError } from "../errors.js";
-import type { CitationSource, LineSpec, PageLines, SourceRange } from "../types.js";
+import type { CitationSource, LineSpec, SourceRange } from "../types.js";
+
+// The line grammar is the shared pin engine's; this path keeps cite's imports working.
+export { lineSpec, parseLines, spellLines } from "../../shared/pin.js";
 
 /** The schema's `$defs.fileRef.pattern`, as a RegExp. */
 export const FILE_PATTERN =
@@ -21,13 +25,6 @@ export const FILE_PATTERN =
 /** A source on the command line: a `file`, then an optional `:L` or `:L1-L2`. */
 export const SRC_PATTERN =
   /^(?:~[A-Za-z0-9_-]{82,}|(?!~)(?:(?!\.\.?(?:\/|:|$))[^/\\:\r\n\t]+)(?:\/(?:(?!\.\.?(?:\/|:|$))[^/\\:\r\n\t]+))*)(?::[1-9][0-9]*(?:-[1-9][0-9]*)?)?$/;
-
-/**
- * `"L1-L2"`, the only string form an entry may write, and `"L"`, which no
- * entry writes but every report spells (`spellLines`), so a spelling reads
- * back as the lines it names.
- */
-const RANGE_SPEC = /^([1-9][0-9]*)(?:-([1-9][0-9]*))?$/;
 
 /**
  * Parse a command-line source. Throws `CiteError` on bad grammar or an end
@@ -64,34 +61,6 @@ export function formatSrc(range: SourceRange): string {
   if (start === undefined) return path;
   if (end === undefined || end === start) return `${path}:${start}`;
   return `${path}:${start}-${end}`;
-}
-
-/**
- * The lines an entry's `lines` names. Undefined for a value that is neither
- * a positive integer nor `"L1-L2"` with `L1 <= L2`: the schema refuses the
- * first, and `readPage` reports the second.
- */
-export function parseLines(spec: LineSpec): PageLines | undefined {
-  if (typeof spec === "number") {
-    return Number.isInteger(spec) && spec >= 1 ? { start: spec, end: spec } : undefined;
-  }
-  const m = RANGE_SPEC.exec(spec);
-  const startText = m?.[1];
-  if (startText === undefined) return undefined;
-  const start = Number(startText);
-  const endText = m?.[2];
-  const end = endText === undefined ? start : Number(endText);
-  return end < start ? undefined : { start, end };
-}
-
-/** Lines as an entry writes them: the integer for one line, `"L1-L2"` otherwise. */
-export function lineSpec(lines: PageLines): LineSpec {
-  return lines.start === lines.end ? lines.start : `${String(lines.start)}-${String(lines.end)}`;
-}
-
-/** Lines as a report spells them: `"9"` or `"9-12"`. */
-export function spellLines(lines: PageLines): string {
-  return String(lineSpec(lines));
 }
 
 /** An entry's source as a range. Its lines must already be valid (see `parseLines`). */

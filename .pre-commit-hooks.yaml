@@ -27,3 +27,16 @@
   entry: npx --yes @hawkeyexl/manni@latest meta validate
   language: system
   files: '(?i)\.(adoc|asciidoc|dita|ditamap|htm|html|markdown|md|mdx|rst|xml)$'
+
+# Stamps managed metadata before a commit, including `provenance` (proposal
+# 0046): with MANNI_GENERATED_BY exported, the lines an agent wrote are
+# attributed to it, so the edit and its stamp land in one commit. When derive
+# changes a file, pre-commit stops the commit as it does for any formatter;
+# re-stage and commit again. List it ahead of `manni-meta`. Only useful where
+# the config sets `derive.fields`.
+- id: manni-meta-derive
+  name: manni meta derive
+  description: Stamp managed metadata, including provenance, before a commit
+  entry: npx --yes @hawkeyexl/manni@latest meta derive
+  language: system
+  files: '(?i)\.(adoc|asciidoc|dita|ditamap|htm|html|markdown|md|mdx|rst|xml)$'

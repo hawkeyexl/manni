@@ -35,7 +35,7 @@ import {
   runVendorSchema,
 } from "./commands/schemas.js";
 import { runFill } from "./commands/fill.js";
-import { runDerive } from "./commands/derive.js";
+import { deriveFailed, runDerive } from "./commands/derive.js";
 import { supportedExtensions } from "./extractors/index.js";
 import {
   COMMON_FORMATS,
@@ -628,6 +628,12 @@ interface DeriveCliOptions extends InputCliOptions {
   allowEmpty?: boolean;
   /** `--no-gitignore`; commander's `true` default, see `explicitFalse`. */
   gitignore: boolean;
+  /**
+   * `--generated-by <name>` (proposal 0046). No commander default: the core
+   * reads `MANNI_GENERATED_BY` when it is absent, so help and the CLI
+   * reference stay the same whatever the environment holds.
+   */
+  generatedBy?: string;
 }
 
 interface SchemasCliOptions {
@@ -1417,10 +1423,17 @@ export function buildProgram(): Command {
     .description(
       "Stamp the managed stewardship fields from git history, CODEOWNERS and GitHub or GitLab reviews",
     )
-    .argument("[paths...]", "files, directories, or globs to stamp")
+    .argument(
+      "[paths...]",
+      "files, directories, or globs to stamp; <path>:L1-L2 names lines for --generated-by",
+    )
     .option(
       "--fields <list>",
       "comma-separated managed fields to stamp; config derive.fields otherwise",
+    )
+    .option(
+      "--generated-by <name>",
+      "attribute uncommitted body lines, or a <path>:L1-L2 range, to this machine in provenance; MANNI_GENERATED_BY otherwise",
     )
     .option(
       "--sources <list>",
@@ -1461,6 +1474,8 @@ export function buildProgram(): Command {
         "  manni meta derive --check -f github              # CI: a stale stamp is an annotation, exit 1",
         "  manni meta derive --fields reviewed-by,last-reviewed",
         "  manni meta derive --sources git,codeowners       # no gh on this machine",
+        "  MANNI_GENERATED_BY=claude-fable-5 manni meta derive --fields provenance",
+        "  manni meta derive docs/limits.md:12-31 --generated-by claude-fable-5",
       ].join("\n"),
     )
     .action(async (paths: string[], options: DeriveCliOptions, command: Command) => {
@@ -1490,6 +1505,7 @@ export function buildProgram(): Command {
           inputs: paths,
           fields: options.fields ? splitList(options.fields) : undefined,
           sources: options.sources ? splitList(options.sources) : undefined,
+          ...(options.generatedBy !== undefined ? { generatedBy: options.generatedBy } : {}),
           dryRun: Boolean(options.dryRun),
           check: Boolean(options.check),
           cache: options.cache,
@@ -1516,13 +1532,8 @@ export function buildProgram(): Command {
         if (text.length > 0 || !OMITTED_WHEN_CLEAN.has(format)) {
           process.stdout.write(`${text}\n`);
         }
-        // A file the run could not read or write fails the run whether or
-        // not it wrote the rest, as it does for `fill`: a stamp that was
-        // never applied must not read as done. A stale or unset field is
-        // `--check`'s failure alone — an applied run is the work done.
-        const { stale, unset, errors } = run.summary;
-        const failed = errors > 0 || (options.check && stale + unset > 0);
-        process.exitCode = failed ? 1 : 0;
+        // A file error fails any run; a finding fails `--check`. See `deriveFailed`.
+        process.exitCode = deriveFailed(run) ? 1 : 0;
       } catch (err) {
         fail(err);
       }

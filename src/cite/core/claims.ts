@@ -15,9 +15,7 @@ import type {
   PageCitations,
   PageLines,
 } from "../types.js";
-import { findWindows } from "./classify.js";
-import { hashLines } from "./hash.js";
-import { parseLines, spellLines } from "./range.js";
+import { findWindows, parseLines, pinOfLines, spellLines, toFileLines } from "../../shared/pin.js";
 import {
   anchoredLines,
   fenceSpanAt,
@@ -27,11 +25,19 @@ import {
   paragraphAfter,
 } from "./statements.js";
 
+// The line translation and the claim pin are the shared pin engine's; this path keeps cite's imports working.
+export { pinOfLines, toBodyLines, toFileLines } from "../../shared/pin.js";
+
 export function normalizeWhitespace(text: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
-/** The hashing rule's normalization: one BOM, CRLF → LF, one trailing LF. */
+/**
+ * The hashing rule's normalization for a whole quoted block: one BOM, CRLF →
+ * LF, and one trailing LF dropped. It differs from the shared `normalizeText`
+ * only in that last step, because a quote is compared as one joined block
+ * rather than split into lines first.
+ */
 function normalizeBlock(text: string): string {
   let out = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
   out = out.replace(/\r\n/g, "\n");
@@ -43,25 +49,9 @@ export function blockMatches(blockText: string, citedJoined: string): boolean {
   return normalizeBlock(blockText) === normalizeBlock(citedJoined);
 }
 
-/** Body lines as file lines: body line 1 is the first line after the frontmatter. */
-export function toFileLines(lines: PageLines, bodyLine: number): PageLines {
-  return { start: bodyLine + lines.start - 1, end: bodyLine + lines.end - 1 };
-}
-
-/** File lines as body lines. */
-export function toBodyLines(lines: PageLines, bodyLine: number): PageLines {
-  return { start: lines.start - bodyLine + 1, end: lines.end - bodyLine + 1 };
-}
-
 /** The page lines a range covers, as far as the page reaches. */
 function textAt(lines: readonly string[], range: PageLines): string[] {
   return lines.slice(range.start - 1, Math.min(range.end, lines.length));
-}
-
-/** The pin of a page range, under the claim rule: always plain. */
-export function pinOfLines(lines: readonly string[], range: PageLines): string | undefined {
-  if (range.start < 1 || range.end > lines.length) return undefined;
-  return hashLines(lines.slice(range.start - 1, range.end).join("\n"));
 }
 
 /** The first file line of a classified claim: where its findings sit. */

@@ -16,7 +16,7 @@ import type { Candidate, ProposalSet } from "./fill-types.js";
  * Part of the cache key: bump whenever the prompt wording or the envelope
  * schema construction changes, so stale proposals are not replayed.
  */
-export const FILL_PROMPT_VERSION = 3;
+export const FILL_PROMPT_VERSION = 4;
 
 /**
  * Characters of document sent per inference call.

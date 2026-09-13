@@ -82,3 +82,27 @@ describe("the published pre-commit hook", () => {
     expect(docmetaHook.files.startsWith("(?i)")).toBe(true);
   });
 });
+
+describe("the published derive hook", () => {
+  // Proposal 0046: an agent that exports MANNI_GENERATED_BY gets its lines
+  // attributed without remembering a command, because this hook runs derive on
+  // the staged files and the stamp lands in the same commit as the edit.
+  const deriveHook = hooks.find((h) => h.id === "manni-meta-derive");
+
+  it("declares a derive hook", () => {
+    expect(deriveHook).toBeDefined();
+  });
+
+  it("runs derive from the newest published CLI", () => {
+    if (!deriveHook) throw new Error("no derive hook");
+    expect(deriveHook.entry).toBe("npx --yes @hawkeyexl/manni@latest meta derive");
+    expect(deriveHook.language).toBe("system");
+  });
+
+  it("watches exactly the files the validate hook watches", () => {
+    // One pattern, so the two hooks cannot drift apart; the exact-set checks
+    // above already pin it against supportedExtensions().
+    if (!deriveHook || !docmetaHook) throw new Error("missing hook");
+    expect(deriveHook.files).toBe(docmetaHook.files);
+  });
+});

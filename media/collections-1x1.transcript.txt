@@ -1,0 +1,93 @@
+collections:, the family-level home for document sets — demo video transcript
+(silent video; the text below describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 37.90 s. Every terminal line is real output of
+`node dist/cli.js meta ...` and `node dist/cli.js a11y ...` run inside
+media/scratch-collections/, a purpose-built repository with two guides and a
+static site served on 127.0.0.1:4321.
+
+[0:00-0:05] Title: One set, named twice (1 / 5)
+Caption: One document set, spelled twice: a glob under meta:, a URL under
+a11y:. Move the docs and one goes stale.
+
+$ cat manni.config.yaml
+meta:
+  paths:
+    - "guides/**/*.md"
+  schemas:
+    - ./house.schema.json
+
+a11y:
+  urls:
+    - http://127.0.0.1:4321/
+
+The glob under meta: and the URL under a11y: are highlighted. They name the
+same document set, in each tool's own words.
+
+[0:05-0:15] Title: 0.3.0 refuses it (2 / 5)
+Caption: Exit 2, and the message names where the key went: a top-level
+collections: list.
+
+$ manni meta validate
+manni: manni.config.yaml: "paths" is no longer a meta key. Document sets are
+declared once for every tool, under a top-level collections: list. See
+https://hawkeyexl.github.io/manni/meta/reference/configuration/#collections
+$ echo $?
+2
+
+The refusal is one logical line; the break above is the frame's wrap. It is
+highlighted. `paths:` is not aliased or deprecated — it is refused, and the
+message carries the remedy and a link to the configuration reference.
+
+[0:15-0:22] Title: Declared once (3 / 5)
+Caption: One collection: the paths, and the url those pages are published at.
+No tool owns it.
+
+$ cat manni.config.yaml
+collections:
+  - name: guides
+    paths:
+      - "guides/**/*.md"
+    url: http://127.0.0.1:4321/
+
+meta:
+  schemas:
+    - ./house.schema.json
+
+`collections:` and the `url:` line are highlighted. The list sits at the top
+level, beside `meta:` rather than inside it. `meta:` now carries only what is
+genuinely the metadata tool's: the schema set.
+
+[0:22-0:27] Title: meta reads it (4 / 5)
+Caption: A bare validate checks the collection's files. Nothing typed on the
+command line.
+
+$ manni meta validate
+Using manni.config.yaml (.)
+✓ guides/auth.md
+✓ guides/install.md
+
+2 files checked, 2 passed, 0 failed, 0 errors
+
+The two file paths are highlighted. Both `✓` marks and the summary line are
+green. No paths were given on the command line: the collection supplied them.
+
+[0:27-0:38] Title: a11y reads it too (5 / 5)
+Caption: --collection guides seeds the crawl from that same url:. No URL typed,
+no second key.
+
+$ manni a11y check --collection guides --no-progress
+Checked 3 of 3 pages (no sitemap; followed links)
+✓ http://127.0.0.1:4321/  score 100
+✓ http://127.0.0.1:4321/install.html  score 100
+✓ http://127.0.0.1:4321/auth.html  score 100
+
+0 violations on 0 of 3 pages
+
+The three page URLs are highlighted; in the frame they are cyan, manni's colour
+for a URL, and the `✓` marks and summary are green. The screen still carries
+the `meta validate` output from beat 4 above, so both tools' results are
+visible at once: file paths from one, URLs from the other, out of the same six
+lines of YAML.
+
+The video ends on that screen. No end card.

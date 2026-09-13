@@ -13,6 +13,7 @@ import {
   isBuiltinField,
   isDeriveSource,
 } from "../src/meta/core/derive/types.js";
+import { machinesOf } from "../src/meta/core/derive/config.js";
 
 const parse = (lines: string[]) =>
   parseConfig(lines.join("\n"), "manni.config.yaml");
@@ -80,7 +81,7 @@ describe("derive: config parsing", () => {
 
   it("refuses a derive: that sets nothing, naming commands: among the ways to set something", () => {
     expect(() => parse(["derive: {}"])).toThrow(
-      /"derive" sets nothing\. Give it `fields:` to manage, `commands:` to derive from a command, or `sources:` or `codeowners:` to shape the reads\./,
+      /"derive" sets nothing\. Give it `fields:` to manage, `commands:` to derive from a command, or `sources:`, `codeowners:` or `machines:` to shape the reads\./,
     );
   });
 
@@ -120,7 +121,7 @@ describe("derive: config parsing", () => {
 
   it("rejects a field that is not derivable, naming the derivable ones and the commands way in", () => {
     expect(() => parse(["derive:", "  fields: [created, title]"])).toThrow(
-      /derive\.fields\[1\] "title" is not derivable\. Derivable fields: created, last-updated, authors, owner, reviewed-by, last-reviewed, or any key with an entry in derive\.commands\./,
+      /derive\.fields\[1\] "title" is not derivable\. Derivable fields: created, last-updated, authors, owner, reviewed-by, last-reviewed, provenance, or any key with an entry in derive\.commands\./,
     );
   });
 
@@ -134,7 +135,7 @@ describe("derive: config parsing", () => {
     ]);
     expect(cfg.derive?.fields).toEqual(["verified-against"]);
     expect(() => parse(["derive:", "  fields: [verified-against]"])).toThrow(
-      /derive\.fields\[0\] "verified-against" is not derivable\. Derivable fields: created, last-updated, authors, owner, reviewed-by, last-reviewed, or any key with an entry in derive\.commands\./,
+      /derive\.fields\[0\] "verified-against" is not derivable\. Derivable fields: created, last-updated, authors, owner, reviewed-by, last-reviewed, provenance, or any key with an entry in derive\.commands\./,
     );
   });
 
@@ -177,6 +178,48 @@ describe("derive: config parsing", () => {
     expect(() =>
       parse(["derive:", "  fields: [created]", "  codeowners: 3"]),
     ).toThrow(/derive\.codeowners must be a non-empty path/);
+  });
+
+  it("parses machines, and leaves it absent when not written (0046)", () => {
+    expect(
+      parse(["derive:", "  fields: [provenance]", '  machines: ["*[bot]", "noreply@anthropic.com"]']).derive,
+    ).toEqual({ fields: ["provenance"], machines: ["*[bot]", "noreply@anthropic.com"] });
+    expect(parse(["derive:", "  fields: [provenance]"]).derive).not.toHaveProperty("machines");
+  });
+
+  it("lets machines alone carry the block, as sources and codeowners can", () => {
+    expect(parse(["derive:", '  machines: ["*[bot]"]']).derive).toEqual({
+      fields: [],
+      machines: ["*[bot]"],
+    });
+  });
+
+  it("rejects a machines value that is not a non-empty list of strings", () => {
+    for (const value of ["[]", '"*[bot]"', "[1]"]) {
+      expect(() => parse(["derive:", "  fields: [provenance]", `  machines: ${value}`])).toThrow(
+        `manni.config.yaml: derive.machines must be a non-empty list of globs, matched against a trailer's name and its email. Default: ["*[bot]"].`,
+      );
+    }
+  });
+
+  it("rejects a blank machines glob, by index", () => {
+    expect(() => parse(["derive:", "  fields: [provenance]", '  machines: ["*[bot]", " "]'])).toThrow(
+      "manni.config.yaml: derive.machines[1] is blank; a glob must name something.",
+    );
+  });
+
+  it("rejects a repeated machines glob", () => {
+    expect(() =>
+      parse(["derive:", "  fields: [provenance]", '  machines: ["*[bot]", "*[bot]"]']),
+    ).toThrow('manni.config.yaml: derive.machines lists "*[bot]" twice.');
+  });
+
+  it("machinesOf falls back to the [bot] suffix when the config says nothing", () => {
+    expect(machinesOf(undefined)).toEqual(["*[bot]"]);
+    expect(machinesOf({ fields: [] })).toEqual(["*[bot]"]);
+    expect(machinesOf({ fields: [], machines: ["noreply@anthropic.com"] })).toEqual([
+      "noreply@anthropic.com",
+    ]);
   });
 
   it("names the section when the config came from the family file", () => {
@@ -373,6 +416,41 @@ describe("derive: a field a collection's manifest owns (0041)", () => {
     );
   });
 
+  it("accepts provenance a manifest owns: the manifest is where the stamp is stored (0046)", async () => {
+    const root = await repo([
+      "collections:",
+      "  - name: pages",
+      '    paths: ["docs/**/*.md"]',
+      "    externalMetadata:",
+      "      - file: ./private/provenance.yaml",
+      "        keys: [provenance]",
+      "meta:",
+      "  derive:",
+      "    fields: [created, provenance]",
+      "",
+    ]);
+    const loaded = await loadConfig(undefined, root);
+    expect(loaded?.config.derive?.fields).toEqual(["created", "provenance"]);
+  });
+
+  it("still refuses every other managed field beside an owned provenance", async () => {
+    const root = await repo([
+      "collections:",
+      "  - name: pages",
+      '    paths: ["docs/**/*.md"]',
+      "    externalMetadata:",
+      "      - file: ./private/provenance.yaml",
+      "        keys: [provenance, owner]",
+      "meta:",
+      "  derive:",
+      "    fields: [provenance, owner]",
+      "",
+    ]);
+    await expect(loadConfig(undefined, root)).rejects.toThrow(
+      'manni.config.yaml: meta.derive.fields[1] "owner" is owned by collections[0].externalMetadata[0] (./private/provenance.yaml) — a managed field has one authority, and a manifest key already has one. Drop it from one side.',
+    );
+  });
+
   it("accepts a field no manifest owns", async () => {
     const root = await repo(withFields("[created, last-updated]"));
     const loaded = await loadConfig(undefined, root);
@@ -413,7 +491,7 @@ describe("derive: reserved check name", () => {
 });
 
 describe("derive: field and source vocabularies", () => {
-  it("lists the six derivable fields in order", () => {
+  it("lists the seven derivable fields in order", () => {
     expect([...DERIVABLE_FIELDS]).toEqual([
       "created",
       "last-updated",
@@ -421,6 +499,7 @@ describe("derive: field and source vocabularies", () => {
       "owner",
       "reviewed-by",
       "last-reviewed",
+      "provenance",
     ]);
     expect([...DERIVE_SOURCES]).toEqual(["git", "codeowners", "github", "gitlab", "command"]);
   });

@@ -1,0 +1,17 @@
+# The same corpus with the record kept out of the page: `provenance` lives in
+# an external-metadata manifest, which `derive` writes into (0046 § In an
+# external manifest). Passed with `-c`, so discovery still finds the other.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+      - "docs/**/*.html"
+    externalMetadata:
+      - file: ./private/provenance.yaml
+        keys: [provenance]
+
+meta:
+  schemas:
+    - ./permissive.schema.json
+  derive:
+    fields: [provenance]
