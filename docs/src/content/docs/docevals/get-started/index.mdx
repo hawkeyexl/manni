@@ -91,8 +91,10 @@ npx @hawkeyexl/manni docevals run docs/installation.mdx
 Each ai eval runs three times independently; agreement decides the verdict, and anything the judge
 is unsure about routes to [human review](/manni/docevals/judge/human-review/) rather than guessing.
 
-No API key, or a security review to satisfy? The `claude-cli` provider uses local CLI auth and needs
-no key, and the `openai` provider takes any OpenAI-compatible `baseUrl` including a self-hosted one.
+With no provider configured, manni docevals detects one: the key above, an OpenAI key, the Claude
+CLI, or a local model, in that order. No API key, or a security review to satisfy? The `claude-cli`
+provider uses local CLI auth and needs no key, and the `openai` provider takes any
+OpenAI-compatible `baseUrl` including a self-hosted one.
 See [Choose a provider](/manni/docevals/judge/choose-a-provider/).
 
 ## 5. Gate a pull request

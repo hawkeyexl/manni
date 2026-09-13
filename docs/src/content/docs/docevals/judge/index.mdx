@@ -13,8 +13,9 @@ This section exists to answer it with mechanics and a number, not reassurance.
 The sharpest form of the objection is "nondeterminism has no place in CI". Four things address it:
 
 - **Temperature 0.**
-- **Pinned models.** `provider.anthropic.model: claude-sonnet-4-5`, never a floating alias. A model
-  that changes under you is a verdict that changes under you.
+- **Pinned models.** A named `docevals.provider` and `docevals.model` in a committed config, never a
+  floating alias. A model that changes under you is a verdict that changes under you. See
+  [Pin the model in a gate](/manni/docevals/judge/choose-a-provider/#pin-the-model-in-a-gate).
 - **Structured verdicts.** The judge returns JSON against a fixed schema, not prose someone parses.
 - **Content-addressed caching.** The same page and the same assertion return the same verdict without
   another call.

@@ -13,14 +13,33 @@ needs.
 | `claude-cli` | None; uses local CLI auth | Anthropic, via the local `claude` CLI |
 | `llama-cpp` | None | Nowhere. The model runs in-process on your machine. |
 
-## `anthropic` (default)
+## `auto` (default)
 
 ```yaml
 docevals:
-  provider:
-    default: anthropic
+  provider: auto
+```
+
+With no provider named, manni docevals detects one exactly as `manni meta fill` does. It takes the
+first that this machine can use: an `ANTHROPIC_API_KEY`, then an `OPENAI_API_KEY`, then an
+installed Claude CLI, then a local model. The model is that provider's default, chosen by the
+inference library rather than by manni.
+
+Detection is convenient on a laptop and surprising in a gate, because what it finds depends on the
+machine. Name the provider in a committed config, so every runner judges with the same one.
+
+:::caution[Detection can reach a local model]
+On a machine with no key and no Claude CLI, `auto` ends at `llama-cpp`, which downloads gigabytes
+of weights on first use. A CI job that should never do that names its provider.
+:::
+
+## `anthropic`
+
+```yaml
+docevals:
+  provider: anthropic
+  providers:
     anthropic:
-      model: claude-sonnet-4-5
       apiKeyEnv: ANTHROPIC_API_KEY
 ```
 
@@ -34,16 +53,16 @@ Azure, Groq, LM Studio, or an internal gateway.
 
 ```yaml
 docevals:
-  provider:
-    default: openai
+  provider: openai
+  model: llama3.1:8b                     # whatever the server serves
+  providers:
     openai:
       baseUrl: http://localhost:11434/v1   # Ollama
-      model: llama3.1:8b
       apiKeyEnv: OPENAI_API_KEY
 ```
 
 ```yaml
-    baseUrl: https://llm-gateway.internal.example.com/v1
+      baseUrl: https://llm-gateway.internal.example.com/v1
 ```
 
 Uses strict `json_schema` structured output where the endpoint supports it, falling back to
@@ -56,10 +75,9 @@ Uses strict `json_schema` structured output where the endpoint supports it, fall
 
 ```yaml
 docevals:
-  provider:
-    default: claude-cli
+  provider: claude-cli
+  providers:
     claude-cli:
-      model: claude-sonnet-4-5
       command: claude
 ```
 
@@ -76,10 +94,10 @@ local work than for a fresh CI runner.
 
 ```yaml
 docevals:
-  provider:
-    default: llama-cpp
+  provider: llama-cpp
+  model: balanced         # fast | balanced | quality, or a pinned reference
+  providers:
     llama-cpp:
-      model: balanced       # auto | fast | balanced | quality, or a pinned reference
       thoughtTokens: 0
 ```
 
@@ -87,8 +105,9 @@ Runs GGUF weights in-process. No API key, no CLI, and, once the weights are on d
 at judge time at all. That is the one property the other three cannot offer. It makes judged evals
 reachable for a contributor with no credentials, or a corpus whose pages may not leave the building.
 
-The named tiers (`fast`, `balanced`, `quality`) are resolved against your machine's memory. Prefer
-a named tier to `auto` in a committed config, so two contributors reading it see the same intent.
+The named tiers (`fast`, `balanced`, `quality`) are resolved against your machine's memory. With no
+`model`, the library sizes one itself. Prefer a named tier in a committed config, so two
+contributors reading it see the same intent.
 Note too that the library resolves a tier to a *concrete* model before building any cache key. Two
 machines never share a verdict under one tier name.
 
@@ -105,24 +124,30 @@ Install it alongside manni docevals when you want local judging:
 npm i -D node-llama-cpp
 ```
 
-:::note
+:::note[Calibrate a smaller judge]
 A smaller judge is not automatically a worse one. It is not automatically a good one either.
 [Calibrate](/manni/docevals/judge/calibrate/) it against your own golden set before trusting it.
 That is what the command is for, and it now refuses to certify on a one-sided set.
 :::
 
-## Pin the model. Always.
+## Pin the model in a gate
 
 ```yaml
-    model: claude-sonnet-4-5     # not an alias that floats
+docevals:
+  provider: anthropic
+  model: <model-id>     # a dated model ID, not an alias that floats
 ```
 
-A floating alias means your verdicts change when the alias moves, silently, with no commit to point
-at. That is the one thing guaranteed to destroy trust in the gate.
+Leave `model` unset and the provider's default is used, which is the inference library's choice
+and moves when the library does. That is fine for trying manni docevals out. A gate that blocks
+merges wants a model named in a commit, so a change of judge is a change someone reviewed.
 
-Changing models deliberately invalidates every cached verdict, because the model is part of the
-cache key. It also invalidates your calibration. [Re-calibrate](/manni/docevals/judge/calibrate/)
-before trusting the new one.
+A `model` needs a named `provider`. A model name does not say which provider owns it, so a model
+under `auto` is refused with **exit 2** rather than handed to whichever provider detection finds.
+
+Either way the cache key names the model that actually ran, the default included. A new judge
+invalidates every cached verdict, and it invalidates your calibration too.
+[Re-calibrate](/manni/docevals/judge/calibrate/) before trusting it.
 
 ## There is no price table
 
@@ -141,6 +166,9 @@ npx @hawkeyexl/manni docevals run --provider claude-cli
 npx @hawkeyexl/manni docevals run --provider openai --model llama3.1:8b
 npx @hawkeyexl/manni docevals run --provider llama-cpp --model quality
 ```
+
+`--provider` wins over `docevals.provider`, and `--model` over `docevals.model`. A `--model` still
+needs a provider, from the flag or the config.
 
 Handy for comparing a cheaper model against your golden set before committing to it:
 

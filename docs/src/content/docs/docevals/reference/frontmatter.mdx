@@ -124,8 +124,8 @@ from position, because a position-derived name orphans every cached verdict as s
 | `assertion` | string | none | Required when `grader` is set. The claim about the page that is true or false. |
 | `type` | `regression` \| `capability` | `regression` | Most evals guard behavior that must keep working. |
 | `grader` | string | `ai` | `ai`, `command`, `human`, or `tool:<name>`. It is `ai`, not `llm`, because the judge may be an agent rather than a bare model. |
-| `provider` | string | config default | Which configured provider or agent judges this `ai` eval. |
-| `model` | string | config default | Which model judges this `ai` eval, within `provider`. A CLI `--model` still wins. Use it to name a stronger judge for an eval that matters, or a judge other than the model that wrote the page. |
+| `provider` | string | `docevals.provider` | Which provider judges this `ai` eval: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. A CLI `--provider` still wins. An unknown name makes this eval an `error`. |
+| `model` | string | `docevals.model` | Which model judges this `ai` eval, within `provider`. A CLI `--model` still wins. It needs a named provider, from this eval, `--provider` or `docevals.provider`; a model under `auto` makes this eval an `error`. Use it to name a stronger judge for an eval that matters, or a judge other than the model that wrote the page. |
 | `runs` | integer 1–50 | `judge.ensembleRuns` | Ensemble runs for this eval alone. A CLI `--runs` still wins. Capped because it multiplies judge cost directly. |
 | `evidence` | string | none | Scopes what the judge looks at **within** what is graded. A hint, not a selector; see `target`. |
 | `target` | see below | `body` | Which bytes the grader receives. |

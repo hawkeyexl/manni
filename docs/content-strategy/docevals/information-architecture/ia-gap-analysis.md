@@ -175,7 +175,7 @@ Keys are written fully qualified so this table is greppable against
 | `files.include`, `files.exclude` | `reference/configuration.mdx`, `adopt/retrofit-a-legacy-corpus.mdx` |
 | `defaults.suite` | `evals/named-evals-and-suites.mdx` |
 | `defaults.fail-fast`, `defaults.concurrency` | `reference/configuration.mdx` |
-| `provider.default`, `provider.anthropic`, `provider.openai`, `provider.claude-cli`, `provider.llama-cpp` | `judge/choose-a-provider.mdx`, `reference/configuration.mdx` |
+| `provider`, `model`, `providers.anthropic`, `providers.openai`, `providers.claude-cli`, `providers.llama-cpp` | `judge/choose-a-provider.mdx`, `reference/configuration.mdx` |
 | `judge.ensemble-runs`, `judge.temperature`, `judge.zones` | `judge/index.mdx` |
 | `judge.concurrency` | `reference/configuration.mdx` |
 | `judge.false-positive-alert` | `judge/calibrate.mdx` |

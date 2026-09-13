@@ -33,8 +33,8 @@ collections is **exit 2**. `node_modules` and `.git` are never read.
 | `--collection <name>` | same as above | Read only this configured collection. Repeatable, one name per occurrence, never comma-separated. Cannot be combined with positional paths, and needs a config file to select from: **exit 2** for both, and for a name the config does not declare. |
 | `--exclude <glob>` | same as above | Glob to exclude. Repeatable. Applies to typed paths and collections alike. A collection's own `exclude:` applies only when the run reads that collection. |
 | `-f, --format <format>` | `list`, `run`, `fill` | Output format. `run` accepts `pretty`, `json`, `markdown`, `github`, `sarif`, `junit`, `html`; `list` and `fill` accept `pretty` and `json`. Anything else is a usage error: **exit 2**, allowed set in the message. That includes `run`'s `markdown` passed to `list`. See [Output and exit codes](/manni/docevals/reference/output-and-exit-codes/#which-formats-each-command-accepts). |
-| `--provider <name>` | `run`, `generate`, `fill`, `promote`, `calibrate` | `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. Overrides `provider.default`. |
-| `--model <model>` | same as above | Overrides the model for the selected provider. |
+| `--provider <name>` | `run`, `generate`, `fill`, `promote`, `calibrate` | `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. Overrides `docevals.provider`, and an eval's own `provider:`. `auto`, the default, detects a provider exactly as `manni meta fill` does. An unknown name is **exit 2**. |
+| `--model <model>` | same as above | The model within the provider. Overrides `docevals.model`, and an eval's own `model:`. It needs a named provider, from `--provider` or `docevals.provider`, because a model name does not say which provider owns it: a model under `auto` is **exit 2**. Unset, the provider's own default model is used. |
 
 Flags override config; they do not bypass it. An unset flag falls through to
 the resolved config value, so a config file and the CLI reach the same code
@@ -92,8 +92,8 @@ manni docevals run [paths...] [options]
 | `--no-generate` | n/a | off | Do not generate scripts for command evals that lack a `command`. |
 | `--no-cache` | n/a | off | Bypass the judge response cache. |
 | `--fail-on-review` | n/a | off | Exit 1 when any eval lands in the human-review zone. |
-| `--provider` | `<name>` | config `provider.default` | Judge provider: `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
-| `--model` | `<model>` | config | Judge model override. |
+| `--provider` | `<name>` | config `provider`, else `auto` | Judge provider: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
+| `--model` | `<model>` | config `model`, else the provider's default | Judge model. Needs a named provider. |
 | `--runs` | `<n>` | config `judge.ensembleRuns` | Ensemble runs per eval. Overrides the config default of 3, and an eval's own `runs`. |
 | `--chunk-chars` | `<n>` | config `judge.chunkChars` | Characters of page per judge call. A longer page is read in parts and judged once against the collected evidence. The config default is 12000. |
 | `--eval` | `<name>` | n/a | Run only this eval. Repeat the flag for more than one (`--eval a --eval b`). Names are **not** space-separated, because a variadic flag would swallow the following glob. **Suite targets are not evaluated while a filter is active**; see below. A name that matches nothing is a usage error: **exit 2**. |
@@ -317,8 +317,8 @@ Exits 1 if any target failed to generate.
 | `--no-config` | n/a | off | Ignore any discovered config file. See [Common conventions](#common-conventions). |
 | `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. See [Common conventions](#common-conventions). |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
-| `--provider` | `<name>` | config `provider.default` | Provider that writes the scripts: `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
-| `--model` | `<model>` | config | Model override. |
+| `--provider` | `<name>` | config `provider`, else `auto` | Provider that writes the scripts: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
+| `--model` | `<model>` | config `model`, else the provider's default | Model. Needs a named provider. |
 
 ## `docevals fill`
 
@@ -349,8 +349,8 @@ manni docevals fill [paths...] [options]
 | `--max-turns` | `<n>` | config `fill.maxTurns` | Stop after this many uncached inference calls, exactly one per page filled. Unbounded by default. |
 | `--no-cache` | n/a | off | Bypass the proposal cache. |
 | `--chunk-chars` | `<n>` | config | Characters of page per fill call. A longer page is proposed in parts. |
-| `--provider` | `<name>` | config `provider.default` | Provider: `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
-| `--model` | `<model>` | config | Model override. |
+| `--provider` | `<name>` | config `provider`, else `auto` | Provider: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
+| `--model` | `<model>` | config `model`, else the provider's default | Model. Needs a named provider. |
 
 Raw proposals are cached **before** the confidence gate, so re-running at a
 different `--confidence` spends no turns.
@@ -380,8 +380,8 @@ manni docevals promote [paths...] [options]
 | `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. See [Common conventions](#common-conventions). |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--write` | n/a | off | Apply promotions: write the scripts and rewrite the evals. |
-| `--provider` | `<name>` | config `provider.default` | Provider: `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
-| `--model` | `<model>` | config | Model override. |
+| `--provider` | `<name>` | config `provider`, else `auto` | Provider: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
+| `--model` | `<model>` | config `model`, else the provider's default | Model. Needs a named provider. |
 
 ## `docevals calibrate`
 
@@ -398,8 +398,8 @@ manni docevals calibrate [options]
 | `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. See [Common conventions](#common-conventions). |
 | `--golden` | `<dir>` | `.manni/docevals/golden` | Golden set directory. |
 | `--seed` | n/a | off | Write golden candidates from recorded reviews into `<golden>/from-reviews.yaml`, then exit. Judges nothing and constructs no provider, so it runs with no API key. Idempotent on `(file, eval)`: re-running updates rather than duplicates, and never un-reviews a confirmed case. Every new case lands `reviewed: false`. |
-| `--provider` | `<name>` | config `provider.default` | Provider: `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
-| `--model` | `<model>` | config | Model override. |
+| `--provider` | `<name>` | config `provider`, else `auto` | Provider: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
+| `--model` | `<model>` | config `model`, else the provider's default | Model. Needs a named provider. |
 | `--runs` | `<n>` | config `judge.ensembleRuns` | Ensemble runs per case. |
 | `--max-turns` | `<n>` | config `judge.maxTurns` | Stop judging after this many uncached **ensemble runs**, the same unit as `run`, since calibration goes through the same judge. One case spends `judge.ensembleRuns` turns. Run-wide, not per case: every case is judged in one batched call. A cached case spends none. |
 | `--no-cache` | n/a | off | Bypass the judge response cache. |
@@ -467,6 +467,10 @@ Full detail in
 {/* step {"description":"run exposes the three baseline flags.","runShell":{"command":"manni docevals run --help","exitCodes":[0],"stdio":"/--baseline[\\s\\S]*--no-baseline[\\s\\S]*--write-baseline/"}} */}
 
 {/* step {"description":"--seed with nothing recorded names the command that records one, and exits 0 without a provider.","runShell":{"command":"manni docevals calibrate --seed","exitCodes":[0],"stdio":"No recorded reviews to seed from"}} */}
+
+{/* step {"description":"An unknown --provider is a usage error before anything runs (exit 2).","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --no-generate --provider gemini","exitCodes":[2],"stdio":"Unknown provider \"gemini\""}} */}
+
+{/* step {"description":"A model under auto names no provider to own it (exit 2).","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --no-generate --provider auto --model some-model","exitCodes":[2],"stdio":"docevals.provider"}} */}
 
 {/* step {"description":"`list` prints the resolved plan with grader, type, and source, and runs nothing.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages/docs/actions/goTo.mdx","exitCodes":[0],"stdio":", regression, config]"}} */}
 

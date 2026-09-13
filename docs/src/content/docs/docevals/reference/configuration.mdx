@@ -106,23 +106,50 @@ corpus](/manni/docevals/adopt/retrofit-a-legacy-corpus/#the-ratchet); the file's
 | `defaults.failFast` | boolean | `false` | |
 | `defaults.concurrency` | integer ≥ 1 | `4` | Bounded concurrency across targets. |
 
-## `provider`
+## `provider`, `model` and `providers`
 
-| Key | Type | Default |
-|---|---|---|
-| `provider.default` | `anthropic` \| `openai` \| `claude-cli` \| `llama-cpp` | `anthropic` |
-| `provider.anthropic.model` | string | `claude-sonnet-4-5` |
-| `provider.anthropic.apiKeyEnv` | string | `ANTHROPIC_API_KEY` |
-| `provider.openai.baseUrl` | string | `https://api.openai.com/v1` |
-| `provider.openai.model` | string | `gpt-4o-mini` |
-| `provider.openai.apiKeyEnv` | string | `OPENAI_API_KEY` |
-| `provider.claude-cli.model` | string | `claude-sonnet-4-5` |
-| `provider.claude-cli.command` | string | `claude` |
-| `provider.llama-cpp.model` | string | `balanced` |
-| `provider.llama-cpp.modelsDir` | string \| null | `null` |
-| `provider.llama-cpp.thoughtTokens` | integer ≥ 0 | `0` |
+```yaml
+docevals:
+  provider: auto        # auto | anthropic | openai | claude-cli | llama-cpp
+  model: <model-id>     # needs a named provider; unset takes the provider's default
+  providers:            # connection settings only
+    anthropic:  { apiKeyEnv: ANTHROPIC_API_KEY }
+    openai:     { baseUrl: https://api.openai.com/v1, apiKeyEnv: OPENAI_API_KEY }
+    claude-cli: { command: claude }
+    llama-cpp:  { modelsDir: weights, thoughtTokens: 0 }
+```
 
-Which of the three to pick, and what each one implies about where your pages go, is covered in
+| Key | Type | Default | Notes |
+|---|---|---|---|
+| `provider` | `auto` \| `anthropic` \| `openai` \| `claude-cli` \| `llama-cpp` | `auto` | Which provider judges, generates, fills and promotes. `auto` detects one exactly as `manni meta fill` does: an Anthropic key, then an OpenAI key, then the Claude CLI, then a local model. `--provider` wins over it. An unknown name is **exit 2**. |
+| `model` | string | none | The model within `provider`. manni sets no default: unset, the inference library's default for the provider is used. It needs a named provider, here or from `--provider`, because a model name does not say which provider owns it. `--model` wins over it. |
+| `providers.anthropic.apiKeyEnv` | string | `ANTHROPIC_API_KEY` | Environment variable holding the key. |
+| `providers.openai.baseUrl` | string | `https://api.openai.com/v1` | Any OpenAI-compatible endpoint. |
+| `providers.openai.apiKeyEnv` | string | `OPENAI_API_KEY` | Environment variable holding the key. |
+| `providers.claude-cli.command` | string | `claude` | The Claude CLI executable. |
+| `providers.llama-cpp.modelsDir` | string \| null | `null` | Where GGUF weights live. `null` is the inference library's own directory. |
+| `providers.llama-cpp.thoughtTokens` | integer ≥ 0 | `0` | Thinking budget before the JSON. |
+
+An `ai` eval's own `provider:` and `model:` sit between the flags and these
+keys, and follow the same rules. The config's `model` belongs to the config's
+`provider`, so an eval that names a different provider takes that provider's
+default. An eval naming an unknown provider, or a model with no provider to own
+it, reports as an `error` for that eval and the run exits 1.
+
+:::caution[The old `provider:` object is refused]
+`provider.default` and the per-provider sections under `provider:` are gone.
+A config still carrying them fails with **exit 2**, naming the key:
+
+```text
+manni: Invalid config in /path/to/manni.config.yaml:
+  /docevals/provider: must be string; "provider" is now a provider name; per-provider settings moved to "providers"
+```
+
+Move the name to `provider:`, the connection settings to `providers:`, and a
+model you want pinned to `model:`.
+:::
+
+Which provider to pick, and what each one implies about where your pages go, is covered in
 [Choose a provider](/manni/docevals/judge/choose-a-provider/).
 
 ## `judge`
