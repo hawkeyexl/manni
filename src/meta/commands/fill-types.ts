@@ -62,6 +62,36 @@ export interface FilledField {
   encrypted?: boolean;
 }
 
+/**
+ * One `meta-provenance` entry as `fill` writes it (proposal 0046): the model,
+ * the JSON Pointers of the fields it proposed, escaped per RFC 6901, and the
+ * confidence each was written at. Keys are the page's own spelling, so the
+ * JSON report shows exactly what landed in the document. An entry `fill`
+ * merged into keeps whatever else it held.
+ */
+export interface MetaProvenanceEntry {
+  "generated-by": string;
+  fields: string[];
+  confidence: Record<string, number>;
+  [other: string]: unknown;
+}
+
+/**
+ * What became of this file's `meta-provenance` entry. It is never a failure:
+ * neither outcome changes the summary or the exit code.
+ */
+export type MetaProvenanceReport =
+  | { written: true; entry: MetaProvenanceEntry }
+  /** The page's schemas, checked with the entry in place, reject it. */
+  | { written: false; skipReason: "schema-mismatch" }
+  /** A manifest in one of the page's collections owns the key. */
+  | { written: false; skipReason: "manifest-owned"; manifest: string }
+  /**
+   * The format's writer cannot hold a list of entries (an HTML or XML
+   * attribute holds one line), so the fields were written without it.
+   */
+  | { written: false; skipReason: "unwritable" };
+
 export interface FillFileResult {
   file: string;
   format: string;
@@ -73,6 +103,12 @@ export interface FillFileResult {
   error?: string;
   /** The filled document. Populated only when the caller asks for it. */
   content?: string;
+  /**
+   * The `meta-provenance` entry recording the fields this run wrote
+   * (proposal 0046). Absent when no field was written; reported, not written,
+   * under `--dry-run`.
+   */
+  metaProvenance?: MetaProvenanceReport;
 }
 
 export interface FillSummary {

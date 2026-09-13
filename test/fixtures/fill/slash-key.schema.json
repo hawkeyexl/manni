@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "A property name that needs RFC 6901 escaping",
+  "type": "object",
+  "properties": {
+    "a/b~c": { "type": "string" }
+  }
+}

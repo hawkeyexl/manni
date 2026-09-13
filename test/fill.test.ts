@@ -6,11 +6,12 @@
  * run inside a fresh mkdtemp copy — the shared fixtures stay read-only.
  */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, rm, readFile, writeFile, mkdir } from "node:fs/promises";
+import { mkdtemp, rm, readFile, writeFile, mkdir, cp } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parse as parseYaml } from "yaml";
 import {
   DEFAULT_MODELS,
   MockProvider,
@@ -402,6 +403,19 @@ describe("collectCandidates", () => {
     );
   });
 
+  it("never proposes either provenance key (0046)", () => {
+    const schema = {
+      type: "object",
+      properties: {
+        provenance: { type: "array" },
+        "meta-provenance": { type: "array" },
+        title: { type: "string" },
+      },
+    };
+    const keys = collectCandidates([schema], {}, []).map((c) => c.key);
+    expect(keys).toEqual(["title"]);
+  });
+
   it("never proposes the $schema wiring key", () => {
     const schema = {
       type: "object",
@@ -455,7 +469,11 @@ describe("runFill — the confidence gate", () => {
       }),
     });
     const written = await readFile(join(dir, file), "utf8");
-    expect(written).not.toContain("confidence");
+    // The confidence belongs to the meta-provenance entry (0046), appended
+    // last, and appears nowhere before it.
+    const entryAt = written.indexOf("meta-provenance:");
+    expect(entryAt).toBeGreaterThan(-1);
+    expect(written.slice(0, entryAt)).not.toContain("confidence");
     expect(written).not.toContain("stated in the page");
   });
 
@@ -1540,4 +1558,282 @@ describe("the llama-cpp provider", () => {
     ).rejects.toThrow(DocmetaError);
   });
 
+});
+
+describe("runFill — meta-provenance (0046)", () => {
+  const MODEL = "claude-sonnet-4-5";
+
+  const proposeAs = (
+    fields: Record<string, { value: unknown; confidence: number }>,
+  ): MockProvider =>
+    new MockProvider(
+      [
+        {
+          json: Object.fromEntries(
+            Object.entries(fields).map(([k, v]) => [
+              k,
+              { ...v, reasoning: "stated in the page" },
+            ]),
+          ),
+        },
+      ],
+      MODEL,
+    );
+
+  /** The page's frontmatter, parsed. */
+  const frontmatterOf = (text: string): Record<string, unknown> => {
+    const block = /^---\n([\s\S]*?)\n---/.exec(text)?.[1];
+    if (block === undefined) throw new Error("expected a frontmatter block");
+    return parseYaml(block) as Record<string, unknown>;
+  };
+
+  it("records the fields it wrote on a page with no entry", async () => {
+    const file = await stage("missing-keys.md");
+    const { results, summary } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      fields: ["description", "resource"],
+      inferenceProvider: proposeAs({
+        description: { value: "A summary.", confidence: 0.9 },
+        resource: { value: "https://example.com/x", confidence: 0.95 },
+      }),
+    });
+    const entry = {
+      "generated-by": MODEL,
+      fields: ["/description", "/resource"],
+      confidence: { "/description": 0.9, "/resource": 0.95 },
+    };
+    expect(results[0]?.metaProvenance).toEqual({ written: true, entry });
+    // The entry is a side record, not a field: the summary does not count it.
+    expect(summary.written).toBe(2);
+    const data = frontmatterOf(await readFile(join(dir, file), "utf8"));
+    expect(data["meta-provenance"]).toEqual([entry]);
+  });
+
+  it("reports nothing when no field was written", async () => {
+    const file = await stage("missing-keys.md");
+    const before = await readFile(join(dir, file), "utf8");
+    const { results } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      fields: ["description"],
+      inferenceProvider: proposeAs({
+        description: { value: "A summary.", confidence: 0.1 },
+      }),
+    });
+    expect(results[0]).not.toHaveProperty("metaProvenance");
+    expect(await readFile(join(dir, file), "utf8")).toBe(before);
+  });
+
+  it("merges into the first entry for the model and leaves the rest untouched", async () => {
+    const file = await stage("with-meta-provenance.md");
+    const { results } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      // `description` is present and valid, so it is not refilled: a pointer
+      // a reviewer removed does not come back on its own.
+      fields: ["description", "resource"],
+      inferenceProvider: proposeAs({
+        resource: { value: "https://example.com/x", confidence: 0.75 },
+      }),
+    });
+    const merged = {
+      "generated-by": MODEL,
+      fields: ["/title", "/resource"],
+      evals: ["hello-works"],
+      confidence: { "/title": 0.8, "/resource": 0.75 },
+    };
+    expect(results[0]?.metaProvenance).toEqual({ written: true, entry: merged });
+    const data = frontmatterOf(await readFile(join(dir, file), "utf8"));
+    expect(data["meta-provenance"]).toEqual([
+      { "generated-by": "other-model", fields: ["/tags"] },
+      merged,
+      { "generated-by": MODEL, fields: ["/type"] },
+    ]);
+  });
+
+  it("re-adds a pointer a reviewer removed only when it writes that field again", async () => {
+    const text = fixture("with-meta-provenance.md").replace(
+      "description: A reviewer removed this one from the entry.\n",
+      "",
+    );
+    await writeFile(join(dir, "page.md"), text, "utf8");
+    const { results } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: ["page.md"],
+      fields: ["description"],
+      inferenceProvider: proposeAs({
+        description: { value: "A new summary.", confidence: 0.9 },
+      }),
+    });
+    expect(results[0]?.metaProvenance).toEqual({
+      written: true,
+      entry: {
+        "generated-by": MODEL,
+        fields: ["/title", "/description"],
+        evals: ["hello-works"],
+        confidence: { "/title": 0.8, "/description": 0.9 },
+      },
+    });
+  });
+
+  it("does not write the entry a closed schema forbids, and still writes the field", async () => {
+    const file = await stage("no-block.md");
+    const { results, summary } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      cliSchemas: [join(here, "fixtures", "fill", "closed.schema.json")],
+      fields: ["description"],
+      inferenceProvider: proposeAs({
+        description: { value: "A summary.", confidence: 0.9 },
+      }),
+    });
+    expect(results[0]?.metaProvenance).toEqual({
+      written: false,
+      skipReason: "schema-mismatch",
+    });
+    expect(results[0]?.fields[0]?.written).toBe(true);
+    expect(summary.written).toBe(1);
+    expect(summary.errors).toBe(0);
+    const out = await readFile(join(dir, file), "utf8");
+    expect(out).toContain("description: A summary.");
+    expect(out).not.toContain("meta-provenance");
+  });
+
+  it("does not write an entry a manifest owns for this page's collection", async () => {
+    await cp(join(here, "fixtures", "fill", "manifest-owned"), dir, {
+      recursive: true,
+    });
+    const { results, summary } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: ["docs/limits.md", "other/page.md"],
+      fields: ["title"],
+      concurrency: 1,
+      inferenceProvider: new MockProvider(
+        [
+          { json: { title: { value: "Limits", confidence: 0.9, reasoning: "h1" } } },
+          { json: { title: { value: "Other", confidence: 0.9, reasoning: "h1" } } },
+        ],
+        MODEL,
+      ),
+    });
+    const byFile = Object.fromEntries(results.map((r) => [r.file, r]));
+    expect(byFile["docs/limits.md"]?.error).toBeUndefined();
+    expect(byFile["docs/limits.md"]?.metaProvenance).toEqual({
+      written: false,
+      skipReason: "manifest-owned",
+      manifest: "private/meta.yaml",
+    });
+    const limits = await readFile(join(dir, "docs", "limits.md"), "utf8");
+    expect(limits).toContain("title: Limits");
+    expect(limits).not.toContain("meta-provenance");
+    // The manifest belongs to `pages`; a page outside it records as usual.
+    expect(byFile["other/page.md"]?.metaProvenance).toMatchObject({ written: true });
+    expect(summary.errors).toBe(0);
+    expect(summary.written).toBe(2);
+  });
+
+  it("never asks the model for either provenance key", async () => {
+    const file = await stage("no-block.md");
+    const provider = proposeAs({ title: { value: "Hello", confidence: 0.9 } });
+    const { results } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      cliSchemas: [join(here, "fixtures", "fill", "provenance-keys.schema.json")],
+      inferenceProvider: provider,
+    });
+    expect(results[0]?.fields.map((f) => f.field)).toEqual(["/title"]);
+    expect(provider.requests).toHaveLength(1);
+    expect(JSON.stringify(provider.requests)).not.toContain("provenance");
+  });
+
+  it("never sends the model either provenance key the page holds", async () => {
+    const file = await stage("with-provenance-keys.md");
+    const provider = proposeAs({ title: { value: "Page", confidence: 0.9 } });
+    await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      cliSchemas: [join(here, "fixtures", "fill", "provenance-keys.schema.json")],
+      inferenceProvider: provider,
+    });
+    expect(provider.requests).toHaveLength(1);
+    // Neither in the existing metadata nor in the page text the model reads.
+    expect(JSON.stringify(provider.requests)).not.toContain("sentinel");
+  });
+
+  it("escapes a field's pointer per RFC 6901, in the field and in the entry", async () => {
+    const file = await stage("no-block.md");
+    const { results } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      cliSchemas: [join(here, "fixtures", "fill", "slash-key.schema.json")],
+      inferenceProvider: proposeAs({ "a/b~c": { value: "x", confidence: 0.9 } }),
+    });
+    expect(results[0]?.fields).toEqual([
+      expect.objectContaining({ field: "/a~1b~0c", written: true, value: "x" }),
+    ]);
+    expect(results[0]?.metaProvenance).toEqual({
+      written: true,
+      entry: {
+        "generated-by": MODEL,
+        fields: ["/a~1b~0c"],
+        confidence: { "/a~1b~0c": 0.9 },
+      },
+    });
+    const data = frontmatterOf(await readFile(join(dir, file), "utf8"));
+    expect(data["a/b~c"]).toBe("x");
+  });
+
+  it("still writes the fields where the format cannot hold the entry", async () => {
+    const file = await stage("head-with-meta.html");
+    const { results, summary } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      inferenceProvider: proposeAs({
+        description: { value: "A short summary.", confidence: 0.95 },
+      }),
+    });
+    expect(results[0]?.error).toBeUndefined();
+    expect(results[0]?.metaProvenance).toEqual({ written: false, skipReason: "unwritable" });
+    expect(summary.errors).toBe(0);
+    const after = await readFile(join(dir, file), "utf8");
+    expect(after).toContain('<meta name="description" content="A short summary.">');
+    expect(after).not.toContain("meta-provenance");
+  });
+
+  it("reports the entry under --dry-run and writes nothing", async () => {
+    const file = await stage("missing-keys.md");
+    const before = await readFile(join(dir, file), "utf8");
+    const { results } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      fields: ["description"],
+      dryRun: true,
+      includeContent: true,
+      inferenceProvider: proposeAs({
+        description: { value: "A summary.", confidence: 0.9 },
+      }),
+    });
+    expect(results[0]?.metaProvenance).toEqual({
+      written: true,
+      entry: {
+        "generated-by": MODEL,
+        fields: ["/description"],
+        confidence: { "/description": 0.9 },
+      },
+    });
+    expect(results[0]?.content).toContain("meta-provenance");
+    expect(await readFile(join(dir, file), "utf8")).toBe(before);
+  });
 });

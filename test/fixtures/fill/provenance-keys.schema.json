@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "A schema that defines, and requires, both provenance keys",
+  "type": "object",
+  "required": ["title", "provenance", "meta-provenance"],
+  "properties": {
+    "title": { "type": "string" },
+    "provenance": { "type": "array" },
+    "meta-provenance": { "type": "array" }
+  }
+}

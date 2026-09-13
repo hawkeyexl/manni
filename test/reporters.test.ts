@@ -1197,6 +1197,111 @@ describe("reporters: fill", () => {
     expect(out.split("\n")).toHaveLength(1);
   });
 
+  describe("meta-provenance (0046)", () => {
+    type Report = NonNullable<FillFileResult["metaProvenance"]>;
+    const filled = (metaProvenance: Report): FillRun => ({
+      ...run,
+      results: [
+        {
+          file: "docs/limits.md",
+          format: "markdown",
+          schemas: ["house:1.0"],
+          changed: true,
+          fields: [
+            field({ field: "/intent", value: "Set request limits" }),
+            field({ field: "/title", value: "Limits", confidence: 0.8 }),
+            field({
+              field: "/description",
+              written: false,
+              confidence: 0.4,
+              skipReason: "low-confidence",
+            }),
+          ],
+          metaProvenance,
+        },
+      ],
+    });
+    const written: Report = {
+      written: true,
+      entry: {
+        "generated-by": "claude-sonnet-4-5",
+        fields: ["/intent", "/title"],
+        confidence: { "/intent": 0.9, "/title": 0.8 },
+      },
+    };
+
+    it("pretty prints the entry under the file, after its written fields", () => {
+      const lines = renderFillPretty(filled(written), { color: false }).split("\n");
+      expect(lines.slice(0, 4)).toEqual([
+        "✓ docs/limits.md",
+        "    /intent  Set request limits  0.90",
+        "    /title  Limits  0.80",
+        "    meta-provenance  claude-sonnet-4-5: /intent, /title",
+      ]);
+    });
+
+    it("pretty says why a schema kept the entry out", () => {
+      const out = renderFillPretty(
+        filled({ written: false, skipReason: "schema-mismatch" }),
+        { color: false },
+      );
+      expect(out.split("\n")).toContain(
+        "    meta-provenance not written: this page's schemas do not allow it",
+      );
+    });
+
+    it("pretty names the manifest that owns the entry", () => {
+      const out = renderFillPretty(
+        filled({
+          written: false,
+          skipReason: "manifest-owned",
+          manifest: "private/meta.yaml",
+        }),
+        { color: false },
+      );
+      expect(out.split("\n")).toContain(
+        "    meta-provenance not written: owned by manifest private/meta.yaml, which manni meta fill does not write",
+      );
+    });
+
+    it("pretty says when the format cannot hold the entry", () => {
+      const run = filled({ written: false, skipReason: "unwritable" });
+      const html: FillRun = {
+        ...run,
+        results: run.results.map((r) => ({ ...r, file: "page.html", format: "html" })),
+      };
+      expect(renderFillPretty(html, { color: false }).split("\n")).toContain(
+        "    meta-provenance not written: html metadata cannot hold it",
+      );
+    });
+
+    it("json carries the entry under metaProvenance, with the page's own key names", () => {
+      const parsed = JSON.parse(renderFillJson(filled(written))) as FillRun;
+      expect(parsed.results[0]?.metaProvenance).toEqual({
+        written: true,
+        entry: {
+          "generated-by": "claude-sonnet-4-5",
+          fields: ["/intent", "/title"],
+          confidence: { "/intent": 0.9, "/title": 0.8 },
+        },
+      });
+      const skipped = JSON.parse(
+        renderFillJson(filled({ written: false, skipReason: "schema-mismatch" })),
+      ) as FillRun;
+      expect(skipped.results[0]?.metaProvenance).toEqual({
+        written: false,
+        skipReason: "schema-mismatch",
+      });
+    });
+
+    it("github adds nothing for it, written or not", () => {
+      expect(
+        renderFillGithub(filled({ written: false, skipReason: "schema-mismatch" })),
+      ).toBe("");
+      expect(renderFillGithub(filled(written))).toBe("");
+    });
+  });
+
   it("routes every fill format to its own renderer, and rejects the rest", () => {
     expect(renderFill("json", run)).toBe(renderFillJson(run));
     expect(renderFill("github", run)).toBe(renderFillGithub(run));

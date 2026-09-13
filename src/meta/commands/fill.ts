@@ -77,6 +77,7 @@ import {
   lazyKey,
   pointerOf,
   redactForModel,
+  isAtOrUnder,
   settleFindings,
   topLevelKeyOf,
   type EncryptionView,
@@ -98,6 +99,8 @@ import type {
   FillOptions,
   FillRun,
   FilledField,
+  MetaProvenanceEntry,
+  MetaProvenanceReport,
   Proposal,
   ProposalSet,
 } from "./fill-types.js";
@@ -110,9 +113,21 @@ export type {
   FillRun,
   FillSummary,
   FilledField,
+  MetaProvenanceEntry,
+  MetaProvenanceReport,
   Proposal,
   SkipReason,
 } from "./fill-types.js";
+
+/** The key `fill` records the fields it wrote in (proposal 0046). */
+const META_PROVENANCE_KEY = "meta-provenance";
+const META_PROVENANCE_POINTER = `/${META_PROVENANCE_KEY}`;
+/**
+ * Machine attribution, never proposed and never shown to the model (0046). A
+ * schema that defines either would otherwise ask a model to invent hashes and
+ * to attribute itself.
+ */
+const PROVENANCE_KEYS: ReadonlySet<string> = new Set(["provenance", META_PROVENANCE_KEY]);
 
 const DEFAULT_THRESHOLD = 0.7;
 const DEFAULT_CONCURRENCY = 4;
@@ -578,7 +593,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     const managedSkips: FilledField[] = proposed
       .filter((c) => managed.has(c.key))
       .map((c) => ({
-        field: `/${c.key}`,
+        field: pointerOf(c.key),
         required: c.required,
         confidence: 0,
         reasoning: "managed by derive",
@@ -617,6 +632,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     const inPlace = view.plain.flatMap((pointer) => {
       const key = topLevelKeyOf(pointer);
       if (key === undefined || (only !== undefined && !only.has(key))) return [];
+      if (PROVENANCE_KEYS.has(key)) return [];
       if (externalMetadata?.owners.has(key) === true) return [];
       if (candidates.some((c) => c.key === key)) return [];
       return [{ key, pointer, value: extracted.data[key] }];
@@ -678,8 +694,13 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     const hit = candidates.length > 0 ? cache?.get(cacheKey) : undefined;
 
     // What the model is told the page already holds: neither the plaintext
-    // nor the ciphertext of a marked field (0017's egress rule).
-    const existing = redactForModel(extracted.data, [...view.marked, ...probeMarks]);
+    // nor the ciphertext of a marked field (0017's egress rule), and neither
+    // provenance key (0046).
+    const existing = Object.fromEntries(
+      Object.entries(redactForModel(extracted.data, [...view.marked, ...probeMarks])).filter(
+        ([key]) => !PROVENANCE_KEYS.has(key),
+      ),
+    );
 
     // No candidates means the only work is encrypting what the page holds.
     let proposals: ProposalSet = {};
@@ -878,9 +899,10 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     // Proposal 0045: a marked value is written encrypted and reported as
     // `(encrypted)`. The marks are read again over the values about to land,
     // since a proposal can take an `if` branch the page did not.
+    const plainPatch = patchOf(writable);
     const finalMarks: ReadonlySet<string> =
       writable.length > 0
-        ? await validator.markedPointers({ ...view.data, ...patchOf(writable) }, schemaSet)
+        ? await validator.markedPointers({ ...view.data, ...plainPatch }, schemaSet)
         : new Set<string>();
     const patch: MetadataPatch = {};
     for (const f of writable) {
@@ -908,6 +930,47 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       });
     }
 
+    // ---- meta-provenance (0046) --------------------------------------------
+    // The fields this run proposed, in the same write. Re-encrypting in place
+    // is not a proposal, so a run that only did that records nothing. Nothing
+    // here fails the file: a side record that could block filling would be
+    // worse than none.
+    let metaProvenance: MetaProvenanceReport | undefined;
+    if (writable.length > 0) {
+      // Only a manifest in one of this page's own collections owns it here.
+      const owner = externalMetadata?.owners
+        .get(META_PROVENANCE_KEY)
+        ?.find((o) => members.includes(o.collection));
+      const merged =
+        owner === undefined
+          ? mergeMetaProvenance(extracted.data[META_PROVENANCE_KEY], identity.model, writable)
+          : undefined;
+      if (owner !== undefined) {
+        metaProvenance = { written: false, skipReason: "manifest-owned", manifest: owner.file };
+      } else if (
+        merged === undefined ||
+        rejectsMetaProvenance(
+          settleFindings(
+            await validator.validate(
+              { ...view.data, ...plainPatch, [META_PROVENANCE_KEY]: merged.list },
+              schemaSet,
+              extracted.lineFor,
+              extracted.colFor,
+            ),
+            view,
+            extracted,
+          ),
+        )
+      ) {
+        // The re-check above ignores root errors, which is where
+        // `additionalProperties` reports, so the entry is checked on its own.
+        metaProvenance = { written: false, skipReason: "schema-mismatch" };
+      } else {
+        patch[META_PROVENANCE_KEY] = merged.list;
+        metaProvenance = { written: true, entry: merged.entry };
+      }
+    }
+
     let next: string;
     try {
       next = extractor.apply(content, patch, {
@@ -915,13 +978,25 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         elements,
       });
     } catch (err) {
-      return errorResult(
-        label,
-        extractor.name,
-        errorMessage(err),
-        schemaSet,
-        fields,
-      );
+      // A format whose writer cannot hold the entry (an HTML attribute holds
+      // one line) still gets its fields.
+      const withoutEntry = metaProvenance?.written === true
+        ? tryApply(extractor, content, withoutKey(patch, META_PROVENANCE_KEY), {
+            filePath: label,
+            elements,
+          })
+        : undefined;
+      if (withoutEntry === undefined) {
+        return errorResult(
+          label,
+          extractor.name,
+          errorMessage(err),
+          schemaSet,
+          fields,
+        );
+      }
+      next = withoutEntry;
+      metaProvenance = { written: false, skipReason: "unwritable" };
     }
 
     const changed = next !== content;
@@ -935,6 +1010,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       fields,
       changed,
       ...(opts.includeContent ? { content: next } : {}),
+      ...(metaProvenance === undefined ? {} : { metaProvenance }),
     };
   };
 
@@ -981,7 +1057,75 @@ function topKey(instancePath: string): string {
   return seg.replace(/~1/g, "/").replace(/~0/g, "~");
 }
 
-const keyOf = (f: FilledField): string => f.field.slice(1);
+/** The top-level key a field's pointer names, un-escaped (RFC 6901). */
+const keyOf = (f: FilledField): string => topKey(f.field);
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * The page's `meta-provenance` list with this run's fields merged in
+ * (proposal 0046). The first entry for `model` gains the new pointers after
+ * its own, and their confidences; everything else in it, and every other
+ * entry, is kept. Without one, a new entry is appended. `undefined` when the
+ * page holds something other than a list, which there is no merging into.
+ */
+function mergeMetaProvenance(
+  held: unknown,
+  model: string,
+  written: readonly FilledField[],
+): { list: unknown[]; entry: MetaProvenanceEntry } | undefined {
+  if (held !== undefined && !Array.isArray(held)) return undefined;
+  const list: unknown[] = held === undefined ? [] : [...(held as unknown[])];
+  const at = list.findIndex((e) => isPlainRecord(e) && e["generated-by"] === model);
+  const prior = list[at];
+  const kept = isPlainRecord(prior) ? prior : {};
+  const fields = Array.isArray(kept.fields)
+    ? (kept.fields as unknown[]).filter((p): p is string => typeof p === "string")
+    : [];
+  const confidence: Record<string, number> = {};
+  if (isPlainRecord(kept.confidence)) {
+    for (const [k, v] of Object.entries(kept.confidence)) {
+      if (typeof v === "number") confidence[k] = v;
+    }
+  }
+  for (const f of written) {
+    if (!fields.includes(f.field)) fields.push(f.field);
+    confidence[f.field] = f.confidence;
+  }
+  const entry: MetaProvenanceEntry = { ...kept, "generated-by": model, fields, confidence };
+  if (at === -1) list.push(entry);
+  else list[at] = entry;
+  return { list, entry };
+}
+
+/** Whether a finding keeps the `meta-provenance` entry out of the page. */
+function rejectsMetaProvenance(errors: readonly FieldError[]): boolean {
+  return errors.some(
+    (e) =>
+      isAtOrUnder(e.instancePath, META_PROVENANCE_POINTER) ||
+      (e.instancePath === "" && e.subject === META_PROVENANCE_KEY),
+  );
+}
+
+function withoutKey(patch: MetadataPatch, key: string): MetadataPatch {
+  return Object.fromEntries(Object.entries(patch).filter(([k]) => k !== key));
+}
+
+/** `apply`, or `undefined` where the writer refuses. */
+function tryApply(
+  extractor: MetadataExtractor,
+  content: string,
+  patch: MetadataPatch,
+  options: ApplyOptions,
+): string | undefined {
+  try {
+    return extractor.apply?.(content, patch, options);
+  } catch {
+    return undefined;
+  }
+}
 
 /** Why a value fill did not propose was written: it was encrypted where it stood. */
 const IN_PLACE_REASONING =
@@ -1011,10 +1155,18 @@ function contentForModel(
     if (!Object.hasOwn(held, key) || supplied(pointerOf(key))) continue;
     if (toJsonText(value) !== toJsonText(held[key])) patch[key] = value;
   }
+  // The provenance keys (0046) are removed from the text as from `existing`.
+  // A writer that cannot remove a key ignores the option.
+  const deletions = [...PROVENANCE_KEYS].filter(
+    (key) => Object.hasOwn(held, key) && !supplied(pointerOf(key)),
+  );
   let text = content;
-  if (Object.keys(patch).length > 0 && extractor.apply !== undefined) {
+  if (
+    (Object.keys(patch).length > 0 || deletions.length > 0) &&
+    extractor.apply !== undefined
+  ) {
     try {
-      text = extractor.apply(content, patch, options);
+      text = extractor.apply(content, patch, { ...options, deletions });
     } catch {
       // The text pass below still hides every ciphertext.
     }
@@ -1083,8 +1235,9 @@ export function collectCandidates(
     for (const [key, raw] of Object.entries(
       properties as Record<string, unknown>,
     )) {
-      // `$schema` is docmeta's schema wiring, not document metadata.
-      if (key === FILE_SCHEMA_KEY) continue;
+      // `$schema` is docmeta's schema wiring, not document metadata, and the
+      // provenance keys are machine attribution (0046).
+      if (key === FILE_SCHEMA_KEY || PROVENANCE_KEYS.has(key)) continue;
       if (only && !only.has(key)) continue;
       if (typeof raw !== "object" || raw === null || Array.isArray(raw)) continue;
 
@@ -1428,7 +1581,7 @@ function gate(
     const proposal: Proposal | undefined = proposals[c.key];
     if (proposal == null) {
       return {
-        field: `/${c.key}`,
+        field: pointerOf(c.key),
         required: c.required,
         confidence: 0,
         reasoning: "",
@@ -1438,7 +1591,7 @@ function gate(
     }
     const passes = proposal.confidence >= threshold;
     return {
-      field: `/${c.key}`,
+      field: pointerOf(c.key),
       required: c.required,
       confidence: proposal.confidence,
       reasoning: proposal.reasoning,

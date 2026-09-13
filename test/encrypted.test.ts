@@ -367,6 +367,12 @@ describe("meta fill with a marked property", () => {
     }
     expect(renderFill("json", run)).toContain("(encrypted)");
     expect(renderFill("pretty", run)).toContain("(encrypted)");
+    // 0046: recorded by pointer; the value never appears in the entry.
+    expect(run.results[0]?.metaProvenance).toEqual({
+      written: true,
+      entry: { "generated-by": "mock-model", fields: ["/owner"], confidence: { "/owner": 0.9 } },
+    });
+    expect(JSON.stringify(written["meta-provenance"])).not.toContain("platform");
   });
 
   it("sends the model neither the plaintext nor the ciphertext of a marked field", async () => {
@@ -395,6 +401,9 @@ describe("meta fill with a marked property", () => {
     expect(provider.requests).toHaveLength(0);
     expect(decrypts(frontmatter("auth.md").owner)).toBe("platform");
     expect(run.results[0]?.changed).toBe(true);
+    // 0046: re-encrypting in place is not a proposal, so nothing is recorded.
+    expect(run.results[0]).not.toHaveProperty("metaProvenance");
+    expect(frontmatter("auth.md")).not.toHaveProperty("meta-provenance");
     expect(run.results[0]?.fields).toEqual([
       expect.objectContaining({ field: "/owner", written: true, value: "(encrypted)", encrypted: true }),
     ]);

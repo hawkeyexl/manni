@@ -1,0 +1,11 @@
+# A manifest owns meta-provenance for the pages collection only.
+collections:
+  - name: pages
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./private/meta.yaml
+        keys: [meta-provenance]
+  - name: other
+    paths:
+      - "other/**/*.md"

@@ -93,6 +93,26 @@ export function renderFillPretty(
         `    ${c.cyan(f.field)}  ${formatValue(f.value)}  ${c.dim(score(f.confidence))}`,
       );
     }
+    const record = result.metaProvenance;
+    if (record?.written === true) {
+      lines.push(
+        `    ${c.cyan("meta-provenance")}  ${record.entry["generated-by"]}: ${record.entry.fields.join(", ")}`,
+      );
+    } else if (record?.skipReason === "schema-mismatch") {
+      lines.push(
+        c.dim("    meta-provenance not written: this page's schemas do not allow it"),
+      );
+    } else if (record?.skipReason === "manifest-owned") {
+      lines.push(
+        c.dim(
+          `    meta-provenance not written: owned by manifest ${record.manifest}, which manni meta fill does not write`,
+        ),
+      );
+    } else if (record?.skipReason === "unwritable") {
+      lines.push(
+        c.dim(`    meta-provenance not written: ${result.format} metadata cannot hold it`),
+      );
+    }
     if (low.length > 0) {
       lines.push(
         c.dim(
