@@ -1,4 +1,5 @@
 ---
+type: concept
 provenance:
   - generated-by: sentinel-lines-machine
 meta-provenance:
