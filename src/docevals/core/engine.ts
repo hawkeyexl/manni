@@ -33,6 +33,7 @@ import { realExec } from "../graders/exec.js";
 import { groupTargetsByEval, type ExecFn, type GraderTarget } from "../graders/types.js";
 import { sha256 } from "../judge/cache.js";
 import { isTurnBudgetSkip } from "../judge/budget.js";
+import { errorMessage } from "../../shared/errors.js";
 import { resolve } from "node:path";
 
 export interface RunProblem {
@@ -293,7 +294,7 @@ function resolveBaseline(
       if (!wants) throw e;
       problems.push({
         file: from,
-        message: `${e instanceof Error ? e.message : String(e)} — re-recording over it.`,
+        message: `${errorMessage(e)} — re-recording over it.`,
         level: "warning",
       });
       return null;
@@ -990,7 +991,7 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
       try {
         findings = await grader.grade({ targets: group, config, root: cwd, exec });
       } catch (e) {
-        const reason = e instanceof Error ? e.message : String(e);
+        const reason = errorMessage(e);
         for (const target of group) {
           results.push({
             evalName: target.eval.name,

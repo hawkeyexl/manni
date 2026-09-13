@@ -22,6 +22,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runRun } from "../../../src/docevals/commands/run.js";
 import { DocevalsError } from "../../../src/docevals/types.js";
+import { resetWarnings } from "../../../src/shared/warn.js";
 
 const ORIGINAL_ENV = { ...process.env };
 
@@ -69,23 +70,26 @@ function scaffold(): string {
   return root;
 }
 
-let warn: ReturnType<typeof vi.spyOn>;
+let stderr: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
   // No key at all: `makeProvider` raises a DocevalsError, which is the branch
   // every case below travels through.
   delete process.env["ANTHROPIC_API_KEY"];
-  warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  // The family's `warn()`: stderr, prefixed, said once per process. Forget
+  // what was said, so each case sees its own run.
+  resetWarnings();
+  stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
 });
 
 afterEach(() => {
-  warn.mockRestore();
+  stderr.mockRestore();
   process.env = { ...ORIGINAL_ENV };
 });
 
 const warned = (): boolean =>
-  warn.mock.calls.some((c: unknown[]) =>
-    String(c[0]).includes("provider unavailable"),
+  stderr.mock.calls.some((c: unknown[]) =>
+    String(c[0]).startsWith("manni: provider unavailable — "),
   );
 
 /**

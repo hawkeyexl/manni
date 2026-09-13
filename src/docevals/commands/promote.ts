@@ -28,6 +28,7 @@ import {
   scriptLocationFor,
 } from "../graders/scriptgen.js";
 import type { GraderTarget } from "../graders/types.js";
+import { errorMessage } from "../../shared/errors.js";
 
 const PROMOTE_SCHEMA = {
   type: "object",
@@ -107,7 +108,7 @@ async function assess(
   } catch (e) {
     return {
       promotable: false,
-      rationale: `assessment failed: ${e instanceof Error ? e.message : String(e)}`,
+      rationale: `assessment failed: ${errorMessage(e)}`,
     };
   }
 }

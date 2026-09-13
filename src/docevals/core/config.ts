@@ -21,6 +21,7 @@ import { DocevalsError, type EvalType, type Severity } from "../types.js";
 // erased at compile time rather than existing at runtime.
 import type { EvalTarget } from "./target.js";
 import { DEFAULT_CHUNK_CHARS } from "./split.js";
+import { errorMessage } from "../../shared/errors.js";
 
 export type ProviderName =
   | "anthropic"
@@ -416,7 +417,7 @@ export function parseConfig(text: string, configPath: string): DocevalsConfig {
     raw = parseYaml(text);
   } catch (e) {
     throw new DocevalsError(
-      `Invalid YAML in ${configPath}: ${e instanceof Error ? e.message : "parse error"}`,
+      `Invalid YAML in ${configPath}: ${errorMessage(e)}`,
     );
   }
   if (raw == null || typeof raw !== "object" || Array.isArray(raw)) {

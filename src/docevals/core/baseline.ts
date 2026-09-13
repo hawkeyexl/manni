@@ -20,6 +20,7 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
 import { DocevalsError, type EvalResult, type Finding } from "../types.js";
+import { errorMessage } from "../../shared/errors.js";
 
 /** Where `--baseline` / `--write-baseline` / `baseline:` point when unspecified. */
 export const DEFAULT_BASELINE_PATH = ".manni-docevals-baseline.json";
@@ -125,7 +126,7 @@ export function parseBaseline(text: string, source: string): Baseline {
     // is purely a parsing concession.
     raw = JSON.parse(text.replace(/^﻿/, ""));
   } catch (err) {
-    bad(source, `invalid JSON: ${(err as Error).message}`);
+    bad(source, `invalid JSON: ${errorMessage(err)}`);
   }
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     bad(source, "top level must be an object.");
@@ -186,7 +187,7 @@ export function readBaseline(absPath: string, source: string): Baseline | null {
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
     throw new DocevalsError(
-      `Baseline "${source}" could not be read: ${(err as Error).message}`,
+      `Baseline "${source}" could not be read: ${errorMessage(err)}`,
     );
   }
   return parseBaseline(text, source);
@@ -211,7 +212,7 @@ export function writeBaselineFile(
     renameSync(tmp, absPath);
   } catch (err) {
     throw new DocevalsError(
-      `Baseline "${source}" could not be written: ${(err as Error).message}`,
+      `Baseline "${source}" could not be written: ${errorMessage(err)}`,
     );
   }
 }

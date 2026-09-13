@@ -10,6 +10,8 @@ import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { sha256 } from "../judge/cache.js";
 import { FILL_PROMPT_VERSION, isValidProposal } from "./prompt.js";
+import { warn } from "../../shared/warn.js";
+import { errorMessage } from "../../shared/errors.js";
 
 export function fillCacheKey(
   provider: string,
@@ -74,8 +76,8 @@ export class FillCache {
     } catch (e) {
       if (!this.warned) {
         this.warned = true;
-        console.warn(
-          `manni docevals: could not write the fill cache at ${this.dir} (${e instanceof Error ? e.message : String(e)}). Continuing without caching.`,
+        warn(
+          `could not write the fill cache at ${this.dir} (${errorMessage(e)}). Continuing without caching.`,
         );
       }
     }

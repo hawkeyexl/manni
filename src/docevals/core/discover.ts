@@ -9,6 +9,7 @@ import { resolve, relative, extname } from "node:path";
 import fg from "fast-glob";
 import { extractFrontmatter, type ExtractedMetadata } from "../../meta/index.js";
 import { selectCollections } from "../../shared/collections.js";
+import { errorMessage } from "../../shared/errors.js";
 import { DocevalsError } from "../types.js";
 import {
   assertCollectionWithoutPaths,
@@ -103,7 +104,7 @@ export function readPage(absPath: string, root: string): PageFile {
         format,
         lineFor: () => undefined,
       },
-      extractError: e instanceof Error ? e.message : String(e),
+      extractError: errorMessage(e),
     };
   }
 }

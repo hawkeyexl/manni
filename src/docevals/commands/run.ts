@@ -14,6 +14,7 @@ import type { GenerateFn } from "../core/engine.js";
 import { DocevalsError } from "../types.js";
 import { EXECUTION_GRANTS } from "../core/config.js";
 import type { ExecutionGrant } from "../core/config.js";
+import { warn } from "../../shared/warn.js";
 
 export interface RunCommandOptions extends DocumentInputOptions {
   format?: ReportFormat;
@@ -113,9 +114,7 @@ export async function runRun(
       // eval and exiting 1. That is a louder signal than this line, not a
       // quieter one.
       if (!options.deterministicOnly) {
-        console.warn(
-          `manni docevals: provider unavailable — ${e.message}. Running deterministic evals only.`,
-        );
+        warn(`provider unavailable — ${e.message}. Running deterministic evals only.`);
       }
     }
   }

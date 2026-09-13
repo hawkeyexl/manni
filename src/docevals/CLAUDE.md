@@ -176,8 +176,11 @@ and Node touch.
   write LLM-generated check scripts to `{docDir}/manni-docevals/`, with the
   command reference persisted via surgical YAML edits.
 - `src/docevals/cli.ts` exports `buildProgram()` and has no entry point; the
-  umbrella mounts it as `docevals`. `fail` comes from `src/shared/run.js` and
-  the stderr prefix from `programName()`.
+  umbrella mounts it as `docevals`. Usage and operational errors leave through
+  `fail` from `src/shared/run.ts` (exit 2), warnings through `warn()` from
+  `src/shared/warn.ts`, and a caught value's text through `errorMessage()`
+  from `src/shared/errors.ts`. Both writers prefix stderr with
+  `programName()`; nothing in the tool spells `manni docevals:` by hand.
 
 ## Invariants
 

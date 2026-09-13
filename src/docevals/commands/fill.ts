@@ -34,6 +34,7 @@ import {
   PROPOSAL_SCHEMA,
 } from "../fill/prompt.js";
 import { looksLikeOverflow, splitBody } from "../core/split.js";
+import { errorMessage } from "../../shared/errors.js";
 
 export interface FillOptions extends DocumentInputOptions {
   cwd?: string;
@@ -256,7 +257,7 @@ export async function runFill(
               temperature,
             });
           } catch (e) {
-            const message = e instanceof Error ? e.message : String(e);
+            const message = errorMessage(e);
             failure = message;
             if (looksLikeOverflow(message)) overflowed = true;
             break;
@@ -358,7 +359,7 @@ export async function runFill(
       return {
         ...result,
         status: "error",
-        error: e instanceof Error ? e.message : String(e),
+        error: errorMessage(e),
         written: [],
       };
     }

@@ -20,6 +20,7 @@ import { makeJudge } from "../../../src/docevals/judge/judge.js";
 import { resolvePage } from "../../../src/docevals/core/resolve.js";
 import { stripFrontmatterBlock, type PageFile } from "../../../src/docevals/core/discover.js";
 import { parseDocevalsConfig } from "../helpers/config.js";
+import { resetWarnings } from "../../../src/shared/warn.js";
 
 const judgeConfig = parseDocevalsConfig(
   ["judge:", "  ensembleRuns: 1"].join("\n"),
@@ -190,15 +191,17 @@ describe("the self-judgment warning", () => {
   });
 
   it("warns when the page's generating model is also the judge model", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    resetWarnings();
+    const warn = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     await judgePage("mock-model", "mock-model");
     const said = warn.mock.calls.map((c) => String(c[0])).join("\n");
-    expect(said).toContain("generated-by");
+    expect(said).toContain("manni: docs/page.md declares generated-by");
     expect(said).toContain("docs/page.md");
   });
 
   it("stays quiet when a different model judges", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    resetWarnings();
+    const warn = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     await judgePage("some-other-model", "mock-model");
     const said = warn.mock.calls.map((c) => String(c[0])).join("\n");
     expect(said).not.toContain("generated-by");
@@ -206,7 +209,8 @@ describe("the self-judgment warning", () => {
 
   it("stays quiet when the page records no author", async () => {
     // Absent provenance is "unknown", not evidence of self-judgment.
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    resetWarnings();
+    const warn = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     await judgePage(undefined, "mock-model");
     const said = warn.mock.calls.map((c) => String(c[0])).join("\n");
     expect(said).not.toContain("generated-by");

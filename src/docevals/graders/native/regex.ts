@@ -22,6 +22,7 @@ import {
   type Options,
 } from "../options.js";
 import { readTarget } from "../../core/target.js";
+import { errorMessage } from "../../../shared/errors.js";
 
 interface RegexOptions {
   pattern?: string;
@@ -67,9 +68,7 @@ export const regexGrader: Grader = {
           new RegExp(options.pattern, (options.flags as string | undefined) ?? "");
           return undefined;
         } catch (err) {
-          return `options.pattern is not a valid regular expression (${
-            err instanceof Error ? err.message : String(err)
-          })`;
+          return `options.pattern is not a valid regular expression (${errorMessage(err)})`;
         }
       })(),
     );

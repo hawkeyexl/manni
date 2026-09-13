@@ -38,6 +38,8 @@ import { readTarget } from "../core/target.js";
 import { makeProvider } from "./provider.js";
 import type { ResolvedEval } from "../core/resolve.js";
 import { resolve as resolvePath } from "node:path";
+import { warn } from "../../shared/warn.js";
+import { errorMessage } from "../../shared/errors.js";
 
 /**
  * manni docevals' own verdict wording. Structurally identical to the library's
@@ -196,8 +198,8 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
       // names each one instead of only the first.
       const by = plan.generatedBy;
       if (by !== undefined && by === judgeProvider.modelName()) {
-        console.warn(
-          `manni docevals: ${plan.page.file} declares generated-by: ${by}, ` +
+        warn(
+          `${plan.page.file} declares generated-by: ${by}, ` +
             `which is also the model judging it. Self-judging favors the ` +
             `author — run this eval with a different model.`,
         );
@@ -287,7 +289,7 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
               grader: ev.grader,
               file: plan.page.file,
               outcome: "error",
-              skipReason: `gathering evidence from part ${String(i + 1)} of ${String(chunks.length)} failed: ${e instanceof Error ? e.message : String(e)}`,
+              skipReason: `gathering evidence from part ${String(i + 1)} of ${String(chunks.length)} failed: ${errorMessage(e)}`,
               durationMs: Date.now() - start,
             };
           }

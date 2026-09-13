@@ -4,7 +4,7 @@
  */
 import { Command } from "commander";
 import pkg from "../../package.json" with { type: "json" };
-import { programName } from "../shared/program-name.js";
+import { fail } from "../shared/run.js";
 import { collect, configOption } from "../shared/cli-options.js";
 import type { DocumentInputOptions } from "./core/discover.js";
 import pc from "picocolors";
@@ -40,14 +40,6 @@ program
     "Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter.",
   )
   .version(pkg.version);
-
-function fail(e: unknown): never {
-  if (e instanceof DocevalsError) {
-    console.error(pc.red(`${programName()}: ${e.message}`));
-    process.exit(2);
-  }
-  throw e;
-}
 
 /**
  * Repeatable execution grant, validated on the way in.
