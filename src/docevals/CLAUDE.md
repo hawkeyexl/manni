@@ -159,11 +159,12 @@ and Node touch.
   and model: flag, then the eval's own `provider:`/`model:`, then
   `docevals.provider`/`model`, then the family's top-level `providers:`. It
   adds the verdict-shaped options to the spec. And it is
-  the orchestration in `judge.ts`. The provider names, the `auto` detection, the
-  two refusals, the level-bound precedence (a model is carried only to the
-  provider its own level names) and the mapping of `providers:` connection
-  settings onto `ProviderSpec` are `src/shared/providers.ts`, the code `manni meta fill` runs;
-  never grow a docevals-only copy. The orchestration covers bounded concurrency
+  the orchestration in `judge.ts`. Shared provider code lives in
+  `src/shared/providers.ts`, the code `manni meta fill` runs. That covers the
+  provider names, the `auto` detection and the two refusals. It also covers the
+  level-bound precedence, where a model goes only to the provider its own level
+  names, and the mapping of `providers:` settings onto `ProviderSpec`. Never
+  grow a docevals-only copy. The orchestration covers bounded concurrency
   across targets, the turn budget, the self-judgment warning, and human-review
   resolution. The turn budget is claimed *before* dispatch and a cached
   ensemble spends nothing; the dollar ceiling it replaced could not do that
