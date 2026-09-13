@@ -62,6 +62,8 @@ interface Scenario {
   after: string;
   /** The version `npm view` prints, or null when npm does not serve it. */
   npmServes: string | null;
+  /** The first `npm view` attempt that serves it; earlier ones fail. Default 1. */
+  npmServesFromAttempt?: number;
   /** Whether `git ls-remote` finds `refs/tags/v<after>` on the remote. */
   tagOnRemote: boolean;
 }
@@ -95,9 +97,16 @@ function runStep(s: Scenario): Result {
       `    *.version*) echo ${shellQuote(s.after)} ;;`,
       "  esac",
       "}",
+      // Each `npm view` runs in a command substitution, a subshell, so the
+      // attempt count comes from the call log rather than a shell variable.
       "npm() {",
       '  __log "npm $*"',
-      s.npmServes === null ? "  return 1" : `  echo ${shellQuote(s.npmServes)}`,
+      ...(s.npmServes === null
+        ? ["  return 1"]
+        : [
+            `  if [ "$(grep -c '^npm ' ${shellQuote(log.replace(/\\/g, "/"))})" -lt ${String(s.npmServesFromAttempt ?? 1)} ]; then return 1; fi`,
+            `  echo ${shellQuote(s.npmServes)}`,
+          ]),
       "}",
       "git() {",
       '  __log "git $*"',
@@ -182,10 +191,29 @@ describe.skipIf(!hasBash)("the major tag step's script", () => {
     expect(r.status).toBe(1);
     expect(moved(r)).toBe(false);
     expect(r.stdout).toContain("::error::");
-    expect(r.calls.filter((c) => c.startsWith("npm view")).length).toBe(5);
-    // Four waits between five tries, all stubbed: a real `sleep` here is what
-    // timed these tests out on the Windows runners.
-    expect(r.calls.filter((c) => c.startsWith("sleep")).length).toBe(4);
+    // Thirty tries ten seconds apart, about five minutes. The 2.0.1 release
+    // published at 13:34:58 and npm still did not serve it when five tries over
+    // forty seconds ran out, so the step refused a version that was already
+    // released and `v2` was never created.
+    expect(r.calls.filter((c) => c.startsWith("npm view")).length).toBe(30);
+    // The waits are all stubbed: a real `sleep` here is what timed these tests
+    // out on the Windows runners.
+    const waits = r.calls.filter((c) => c.startsWith("sleep"));
+    expect(waits).toHaveLength(29);
+    expect(new Set(waits)).toEqual(new Set(["sleep 10"]));
+  });
+
+  it("moves the tag once npm starts serving the version partway through the wait", () => {
+    const r = runStep({
+      before: "2.0.0",
+      after: "2.0.1",
+      npmServes: "2.0.1",
+      npmServesFromAttempt: 7,
+      tagOnRemote: true,
+    });
+    expect(r.status, r.stdout).toBe(0);
+    expect(r.calls.filter((c) => c.startsWith("npm view")).length).toBe(7);
+    expect(r.calls).toContain("git tag -f v2 v2.0.1");
   });
 
   it("fails without moving the tag when npm serves a different version", () => {
