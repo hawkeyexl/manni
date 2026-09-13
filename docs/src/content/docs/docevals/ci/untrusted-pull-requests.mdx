@@ -98,13 +98,13 @@ tempted toward the unsafe workaround above.
 
 ## A checklist before going public
 
-- [ ] The job that can execute content code is gated to same-repo pull requests.
-- [ ] Forks run a separate `--deterministic-only` job with no secrets.
-- [ ] `execution.allow` grants only what the corpus needs, and nothing on a fork-facing job.
-      That is defence in depth, not the defence.
-- [ ] Third-party actions pinned to a full commit SHA, not a tag.
-- [ ] `permissions:` set to least privilege (`contents: read` for a check job).
-- [ ] A turn budget set (`judge.maxTurns`), so a malicious or accidental change cannot run up a bill.
+- The job that can execute content code is gated to same-repo pull requests.
+- Forks run a separate `--deterministic-only` job with no secrets.
+- `execution.allow` grants only what the corpus needs, and nothing on a fork-facing job.
+  That is defence in depth, not the defence.
+- Third-party actions pinned to a full commit SHA, not a tag.
+- `permissions:` set to least privilege (`contents: read` for a check job).
+- A turn budget set (`judge.maxTurns`), so a malicious or accidental change cannot run up a bill.
 
 ## Reviewing changes to the gate itself
 

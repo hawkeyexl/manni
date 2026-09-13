@@ -51,7 +51,7 @@ JSON report. Unlike markdownlint it parses **MDX**, so JSX expressions, `{/* com
 Findings carry the rule id as `<source>/<rule>`, for example `remark-lint/no-undefined-references`,
 with line and column when the message has a position. Default timeout 120000 ms.
 
-:::caution[`command` is a *partial* override]
+:::caution[remark's `command` is a *partial* override]
 The page list is appended to whatever you supply, and two of the default flags are load-bearing.
 `--no-stdout` stops remark printing the *reformatted document* where the report should be, and
 `--report json` produces what the adapter parses, on **stderr**, not stdout. `--frail` is
@@ -130,7 +130,7 @@ reading test their own commands. See [Test your commands](/manni/docevals/evals/
 |---|---|
 | `command` | `["npx", "--no-install", "doc-detective"]` |
 
-:::caution[`command` is a *partial* override]
+:::caution[Doc Detective's `command` is a *partial* override]
 `--input <page>` and `--exit-on-fail` are appended to whatever you supply. `--exit-on-fail` is not
 optional. Doc Detective exits 0 even when steps fail, and 4.x keeps its results JSON out of stdout.
 Without the flag a failing doc test is undetectable and passes silently. Your array is the
