@@ -28,7 +28,7 @@ line, and it does not become an empty flag.
 | `schema` | none | One `-s` per entry. |
 | `config` | none | `-c` |
 | `format` | `github` | `--format`. One of `pretty`, `json`, `github`, `sarif`, `junit`. |
-| `version` | `0` | The npm version range fetched, as `@hawkeyexl/manni@<version>`. Also accepts a path or tarball. |
+| `version` | `latest` | The npm version range fetched, as `@hawkeyexl/manni@<version>`. Also accepts a path or tarball. |
 | `args` | none | Appended verbatim after everything else, for anything the inputs above do not cover. [`--collection`](#selecting-a-collection) reaches the Action this way. |
 | `node-version` | `24` | Passed to `actions/setup-node`. manni meta needs 24 or newer. |
 
@@ -119,14 +119,14 @@ Action itself.
 
 ## Versioning
 
-`@v4` is a moving tag that tracks the newest 4.x release; it is force-updated by
-the release job on each stable release. Pin `@v4.1.2` instead when you want an
-immutable reference. That is the usual trade between getting fixes automatically
-and knowing exactly what runs.
+`@vN` is a moving tag. On each stable release, the release job moves it to the
+newest release of that major. Pin a full tag such as `@v2.0.0` instead when you
+want an immutable Action. That is the usual trade between getting fixes
+automatically and knowing exactly what runs.
 
-The `version` input is separate, and controls which npm version the Action
-fetches rather than which Action code runs. Leave it unset unless you are pinning
-the CLI independently of the Action.
+The Action tag chooses the Action's code. The `version` input chooses the CLI
+it runs, and defaults to `latest`, the newest published CLI. Set `version: 2`,
+or an exact version, when you want a reproducible CLI.
 
 ## The equivalent by hand
 
