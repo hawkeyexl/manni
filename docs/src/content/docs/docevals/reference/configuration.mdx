@@ -18,8 +18,8 @@ docevals:
     ensemble-runs: 3
 ```
 
-The key names in the tables below are written relative to that namespace: `files.include` means
-`docevals.files.include` in the file.
+The key names in the tables below are written relative to that namespace: `judge.ensemble-runs`
+means `docevals.judge.ensemble-runs` in the file.
 
 Root keys manni docevals does not recognize belong to sibling tools and are ignored. Another
 tool's settings can sit beside yours in the same file. Inside `docevals:`, unknown keys are rejected
@@ -38,14 +38,34 @@ and tells you to migrate rather than silently running on defaults.
 
 Required. Must be `1`.
 
-## `files`
+## Which pages a run reads
 
-| Key | Type | Default |
-|---|---|---|
-| `files.include` | string[] | `["**/*.{md,mdx}"]` |
-| `files.exclude` | string[] | `["**/node_modules/**"]` |
+The pages are not a `docevals:` key. They are declared once for every manni tool, in the top-level
+`collections:` list beside `docevals:`, and the
+[configuration reference for collections](/manni/meta/reference/configuration/#collections) lists
+every key a collection takes:
 
-Positional globs on the CLI override `files.include` for that run.
+```yaml
+collections:
+  - name: site
+    paths: ["docs/**/*.{md,mdx}"]
+    exclude: ["docs/drafts/**"]
+
+docevals:
+  version: 1
+```
+
+- With no positional paths, `run`, `list`, `generate`, `fill`, and `promote` read every declared
+  collection, or the ones `--collection <name>` names. A collection's `paths` and `exclude` resolve
+  from the config file's directory, so a run from a subdirectory reads the same pages.
+- Positional paths replace the collections for that run and resolve from the working directory.
+- `node_modules` and `.git` are never read, whichever of the two supplied the pages.
+- No paths and no collections is **exit 2**. There is no default set, so a run never evaluates
+  everything beneath the working directory by accident.
+
+A `files:` key under `docevals:` is refused by name, with the message pointing here, rather than
+reported as an unknown key. Move its `include` globs to a collection's `paths` and its `exclude`
+globs to that collection's `exclude`.
 
 ## `baseline`
 

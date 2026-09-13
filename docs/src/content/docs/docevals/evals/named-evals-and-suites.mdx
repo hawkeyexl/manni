@@ -207,6 +207,6 @@ behaves unlike its neighbours.
 
 {/* step {"description":"A suite below its target pass rate fails the run.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate","exitCodes":[1],"stdio":"below target"}} */}
 
-{/* step {"description":"--suite narrows `list` to the evals that suite is composed of.","runShell":{"command":"manni docevals list --suite reference","exitCodes":[0],"stdio":"evals resolved"}} */}
+{/* step {"description":"--suite narrows `list` to the evals that suite is composed of.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages --suite reference","exitCodes":[0],"stdio":"evals resolved"}} */}
 
-{/* step {"description":"A --suite run reports the suite as partial rather than measuring its target, and a real failure inside the filter still exits 1.","runShell":{"command":"manni docevals run --deterministic-only --no-generate --suite reference","exitCodes":[1],"stdio":"filtered run, target not evaluated"}} */}
+{/* step {"description":"A --suite run reports the suite as partial rather than measuring its target, and a real failure inside the filter still exits 1.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --no-generate --suite reference","exitCodes":[1],"stdio":"filtered run, target not evaluated"}} */}

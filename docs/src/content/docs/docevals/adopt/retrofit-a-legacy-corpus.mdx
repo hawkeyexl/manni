@@ -129,7 +129,7 @@ Baseline .manni-docevals-baseline.json: recorded 1 finding(s) (+0, -1).
 
 `removed` is the load-bearing number. A baseline's failure mode is over-forgiveness, and it is silent
 by construction. The whole job of the file is to make a red run green. An accidental
-`--write-baseline` over a narrowed glob, a mistyped `files.exclude`, a run from the wrong directory:
+`--write-baseline` over a narrowed glob, a mistyped collection `exclude`, a run with the wrong `--collection`:
 each forgives everything it did not see. The fingerprints are opaque hashes, so a diff dropping
 200 of them reads as noise unless a number names it.
 
@@ -157,12 +157,14 @@ Triage before you record. Deprecated sections, generated reference, and archives
 **excluded**, not baselined. A baseline entry is a promise to come back, and nobody is coming back
 for `docs/archive/`.
 
+Exclude them from the [collection](/manni/docevals/reference/configuration/#which-pages-a-run-reads)
+the run reads. `node_modules` is never read, so it needs no entry:
+
 ```yaml
-docevals:
-  files:
-    include: ["docs/**/*.{md,mdx}"]
+collections:
+  - name: site
+    paths: ["docs/**/*.{md,mdx}"]
     exclude:
-      - "**/node_modules/**"
       - "docs/archive/**"
       - "docs/api/generated/**"
 ```
@@ -244,7 +246,7 @@ which claims you will come back.
 |---|---|
 | Existing findings you intend to fix eventually | Baseline |
 | A whole finding class you will never gate on | `severity: warning` |
-| Content that should never have been in scope | `files.exclude` / `eval-skip` |
+| Content that should never have been in scope | A collection's `exclude` / `eval-skip` |
 | A judged eval the corpus does not meet yet | `target-pass-rate` below `1.0` |
 
 Severity still ratchets per page and per section while you work, which is the fine-grained companion

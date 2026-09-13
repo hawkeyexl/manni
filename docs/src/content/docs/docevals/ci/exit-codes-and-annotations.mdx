@@ -66,8 +66,8 @@ Baseline .manni-docevals-baseline.json: recorded 411 finding(s) (+0, -1).
 ```
 
 **The second form is the one to watch, and `removed` is the number.** A re-record rewrites the whole
-file from what that run covered. A narrowed glob, a mistyped `files.exclude`, or a job that ran
-from the wrong directory silently forgives everything it did not see. Nothing else in the log says
+file from what that run covered. A narrowed glob, a mistyped collection `exclude`, or a job that
+passed the wrong `--collection` silently forgives everything it did not see. Nothing else in the log says
 so: the fingerprints are opaque hashes, and a diff that drops 200 of them reads as noise. A
 `removed` above zero prints a warning beneath the line; treat it as a review gate on the pull
 request, not a log entry.
@@ -179,4 +179,4 @@ Full behavior in
 
 {/* step {"description":"github format emits an ::error with file and line for a finding with a known line.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate --format github","exitCodes":[1],"stdio":"/::error file=.*,line=4,/"}} */}
 
-{/* step {"description":"An eval renamed out from under a pipeline exits 2, so the job stops rather than passing over nothing.","runShell":{"command":"manni docevals run --deterministic-only --eval renamed-away","exitCodes":[2],"stdio":"matched no evals"}} */}
+{/* step {"description":"An eval renamed out from under a pipeline exits 2, so the job stops rather than passing over nothing.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --eval renamed-away","exitCodes":[2],"stdio":"matched no evals"}} */}

@@ -19,8 +19,10 @@ npm i -D @hawkeyexl/manni
 npx @hawkeyexl/manni docevals init
 ```
 
-`init` writes a starter `manni.config.yaml`: a `files.include` glob, a pinned judge model, and a
-few named evals to start from, including `no-future-promises` and `fresh-enough`.
+`init` writes a starter `manni.config.yaml`: a `site` collection covering `docs/**/*.{md,mdx}`, a
+pinned judge model, and a few named evals to start from, including `no-future-promises` and
+`fresh-enough`. The collection is the family's `collections:` list, which every manni tool reads,
+so edit its `paths` if your pages live somewhere else.
 
 ## 2. Get a finding without spending anything
 

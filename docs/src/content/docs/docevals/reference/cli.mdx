@@ -18,12 +18,20 @@ manni docevals [command] [command options] [arguments]
 
 ## Common conventions
 
-Commands that operate on pages take **positional globs**. With none given, the
-config's `files.include` applies.
+The commands that read pages, `run`, `list`, `generate`, `fill`, and `promote`,
+take **positional paths**: files, directories, and globs, relative to the
+working directory. With none given, they read every
+[collection](/manni/meta/reference/configuration/#collections) the config
+declares, or the ones `--collection` names. A collection's `paths` resolve from
+the config file's directory, wherever the command runs. No paths and no
+collections is **exit 2**. `node_modules` and `.git` are never read.
 
 | Flag | Commands | Meaning |
 |---|---|---|
-| `-c, --config <path>` | all except `init` and `review` | Path to `manni.config.yaml`. Without it, manni docevals looks for that file from the working directory up to the repository root and reads its `docevals:` key. With no file at all, built-in defaults apply and there are no named evals or suites. |
+| `-c, --config <path>` | all except `init` and `review` | Path to `manni.config.yaml`. Without it, manni docevals looks for that file from the working directory up to the repository root and reads its `docevals:` key and its top-level `collections:`. With no file at all, built-in defaults apply and there are no named evals, suites, or collections. |
+| `--no-config` | `run`, `list`, `generate`, `fill`, `promote` | Ignore any discovered config file and run on built-in defaults. `-c` and `--no-config` set the same option, so the one written later wins. |
+| `--collection <name>` | same as above | Read only this configured collection. Repeatable, one name per occurrence, never comma-separated. Cannot be combined with positional paths, and needs a config file to select from: **exit 2** for both, and for a name the config does not declare. |
+| `--exclude <glob>` | same as above | Glob to exclude. Repeatable. Applies to typed paths and collections alike. A collection's own `exclude:` applies only when the run reads that collection. |
 | `-f, --format <format>` | `list`, `run`, `fill` | Output format. `run` accepts `human`, `json`, `markdown`, `github`, `sarif`, `junit`, `html`; `list` and `fill` accept `human` and `json`. Anything else is a usage error: **exit 2**, allowed set in the message. That includes `run`'s `markdown` passed to `list`. See [Output and exit codes](/manni/docevals/reference/output-and-exit-codes/#which-formats-each-command-accepts). |
 | `--provider <name>` | `run`, `generate`, `fill`, `promote`, `calibrate` | `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. Overrides `provider.default`. |
 | `--model <model>` | same as above | Overrides the model for the selected provider. |
@@ -59,20 +67,23 @@ Runs every resolved eval. Deterministic graders come first (cheapest first),
 then the AI judge, then human-review resolution.
 
 ```sh
-manni docevals run [globs...] [options]
+manni docevals run [paths...] [options]
 ```
 
 ### Arguments
 
 | Argument | Description |
 |---|---|
-| `[globs...]` | File globs to evaluate. Optional, and falls back to config `files.include`. |
+| `[paths...]` | Files, directories, or globs to evaluate, relative to the working directory. Optional; without them, the configured collections. |
 
 ### Options
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. See [Common conventions](#common-conventions). |
+| `--no-config` | n/a | off | Ignore any discovered config file. See [Common conventions](#common-conventions). |
+| `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. See [Common conventions](#common-conventions). |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `-f, --format` | `<human\|json\|markdown\|github\|sarif\|junit\|html>` | `human` | Output format. An unknown value is a usage error (exit 2). |
 | `--deterministic-only` | n/a | off | Run only `command` and `tool:*` graders. AI-graded evals report as `skipped`. No provider needed. This is the offline path. |
 | `--ai-only` | n/a | off | Run only AI-judged evals; skip deterministic graders. |
@@ -241,7 +252,7 @@ Use it when a page's frontmatter, a referenced eval, and a suite could each
 contribute the same name.
 
 ```sh
-manni docevals list [globs...] [options]
+manni docevals list [paths...] [options]
 ```
 
 ```console
@@ -262,13 +273,16 @@ Each line is `name [grader, type, source]`, where source is `config` or
 
 | Argument | Description |
 |---|---|
-| `[globs...]` | File globs to plan. Optional, and falls back to config `files.include`. |
+| `[paths...]` | Files, directories, or globs to list, relative to the working directory. Optional; without them, the configured collections. |
 
 ### Options
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. See [Common conventions](#common-conventions). |
+| `--no-config` | n/a | off | Ignore any discovered config file. See [Common conventions](#common-conventions). |
+| `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. See [Common conventions](#common-conventions). |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `-f, --format` | `<human\|json>` | `human` | Output format. `run`'s wider set is rejected here rather than falling back to `human` (exit 2). |
 | `--eval` | `<name>` | n/a | Show only this eval. Repeatable, like the `run` flag. |
 | `--suite` | `<name>` | n/a | Show only the evals the named suite lists. |
@@ -284,7 +298,7 @@ assertion but no `command`, then records the command in frontmatter. See
 [Deterministic checks](/manni/docevals/evals/deterministic-checks/).
 
 ```sh
-manni docevals generate [globs...] [options]
+manni docevals generate [paths...] [options]
 ```
 
 Exits 1 if any target failed to generate.
@@ -293,13 +307,16 @@ Exits 1 if any target failed to generate.
 
 | Argument | Description |
 |---|---|
-| `[globs...]` | File globs to generate for. Optional, and falls back to config `files.include`. |
+| `[paths...]` | Files, directories, or globs to read, relative to the working directory. Optional; without them, the configured collections. |
 
 ### Options
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. See [Common conventions](#common-conventions). |
+| `--no-config` | n/a | off | Ignore any discovered config file. See [Common conventions](#common-conventions). |
+| `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. See [Common conventions](#common-conventions). |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--provider` | `<name>` | config `provider.default` | Provider that writes the scripts: `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
 | `--model` | `<model>` | config | Model override. |
 
@@ -309,20 +326,23 @@ Proposes evals for each page from its content, gated on a self-reported
 confidence.
 
 ```sh
-manni docevals fill [globs...] [options]
+manni docevals fill [paths...] [options]
 ```
 
 ### Arguments
 
 | Argument | Description |
 |---|---|
-| `[globs...]` | File globs to propose for. Optional, and falls back to config `files.include`. |
+| `[paths...]` | Files, directories, or globs to fill, relative to the working directory. Optional; without them, the configured collections. |
 
 ### Options
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. See [Common conventions](#common-conventions). |
+| `--no-config` | n/a | off | Ignore any discovered config file. See [Common conventions](#common-conventions). |
+| `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. See [Common conventions](#common-conventions). |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `-f, --format` | `<human\|json>` | `human` | Output format. An unknown value is rejected before any work is done (exit 2). |
 | `--dry-run` | n/a | off | Report proposals without writing frontmatter. Run this first. You see every proposal, and how many inference calls the pass made, before anything touches the repo. |
 | `--confidence` | `<n>` | config `fill.confidence-threshold` | Minimum confidence to write, 0 to 1. The config default is `0.7`. Values above 1 are a usage error. |
@@ -342,20 +362,23 @@ checks. **Report-only by default**; `--write` applies the conversions. See
 [Promote to deterministic](/manni/docevals/adopt/promote-to-deterministic/).
 
 ```sh
-manni docevals promote [globs...] [options]
+manni docevals promote [paths...] [options]
 ```
 
 ### Arguments
 
 | Argument | Description |
 |---|---|
-| `[globs...]` | File globs to review. Optional, and falls back to config `files.include`. |
+| `[paths...]` | Files, directories, or globs to read, relative to the working directory. Optional; without them, the configured collections. |
 
 ### Options
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. See [Common conventions](#common-conventions). |
+| `--no-config` | n/a | off | Ignore any discovered config file. See [Common conventions](#common-conventions). |
+| `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. See [Common conventions](#common-conventions). |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--write` | n/a | off | Apply promotions: write the scripts and rewrite the evals. |
 | `--provider` | `<name>` | config `provider.default` | Provider: `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
 | `--model` | `<model>` | config | Model override. |
@@ -463,20 +486,24 @@ Full detail in
 
 {/* step {"description":"fill rejects an unknown --format before doing any work.","runShell":{"command":"manni docevals fill --dry-run --format xml","exitCodes":[2]}} */}
 
-{/* step {"description":"A filtered run reports its suites as partial instead of passing their targets.","runShell":{"command":"manni docevals run --deterministic-only --no-generate --eval readable","exitCodes":[0],"stdio":"filtered run, target not evaluated"}} */}
+{/* step {"description":"A filtered run reports its suites as partial instead of passing their targets.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --no-generate --eval readable","exitCodes":[0],"stdio":"filtered run, target not evaluated"}} */}
 
-{/* step {"description":"An --eval name that matches nothing is a usage error, not a green run over zero evals.","runShell":{"command":"manni docevals run --deterministic-only --eval no-such-eval","exitCodes":[2],"stdio":"matched no evals"}} */}
+{/* step {"description":"An --eval name that matches nothing is a usage error, not a green run over zero evals.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --eval no-such-eval","exitCodes":[2],"stdio":"matched no evals"}} */}
 
-{/* step {"description":"An undefined --suite is a usage error, and the message names the suites that are defined.","runShell":{"command":"manni docevals run --deterministic-only --suite no-such-suite","exitCodes":[2],"stdio":"is not a defined suite"}} */}
+{/* step {"description":"An undefined --suite is a usage error, and the message names the suites that are defined.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --suite no-such-suite","exitCodes":[2],"stdio":"is not a defined suite"}} */}
 
-{/* step {"description":"list takes the same filters and rejects an unmatched name the same way.","runShell":{"command":"manni docevals list --eval no-such-eval","exitCodes":[2]}} */}
+{/* step {"description":"list takes the same filters and rejects an unmatched name the same way.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages --eval no-such-eval","exitCodes":[2]}} */}
 
 {/* step {"description":"run exposes --since.","runShell":{"command":"manni docevals run --help","exitCodes":[0],"stdio":"--since <ref>"}} */}
 
-{/* step {"description":"Nothing changed since HEAD, so the run exits 0 and says nothing was evaluated, not a usage error.","runShell":{"command":"manni docevals run --deterministic-only --no-generate --since HEAD","exitCodes":[0],"stdio":"nothing was evaluated"}} */}
+{/* step {"description":"Nothing changed since HEAD, so the run exits 0 and says nothing was evaluated, not a usage error.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --no-generate --since HEAD","exitCodes":[0],"stdio":"nothing was evaluated"}} */}
 
-{/* step {"description":"A ref git cannot resolve is exit 2, and the message names the shallow clone that causes it in CI.","runShell":{"command":"manni docevals run --deterministic-only --since no/such/ref","exitCodes":[2],"stdio":"shallow clone"}} */}
+{/* step {"description":"A ref git cannot resolve is exit 2, and the message names the shallow clone that causes it in CI.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --since no/such/ref","exitCodes":[2],"stdio":"shallow clone"}} */}
 
-{/* step {"description":"--since cannot be combined with --write-baseline: the re-record would forgive every finding the scope excluded.","runShell":{"command":"manni docevals run --deterministic-only --since HEAD --write-baseline","exitCodes":[2],"stdio":"cannot be combined"}} */}
+{/* step {"description":"--since cannot be combined with --write-baseline: the re-record would forgive every finding the scope excluded.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --since HEAD --write-baseline","exitCodes":[2],"stdio":"cannot be combined"}} */}
+
+{/* step {"description":"--collection cannot be combined with positional paths.","runShell":{"command":"manni docevals list --collection site test/docevals/fixtures/pages","exitCodes":[2],"stdio":"cannot be combined with paths"}} */}
+
+{/* step {"description":"A collection the config does not declare is exit 2, and the message names the declared ones.","runShell":{"command":"manni docevals list --collection no-such-collection","exitCodes":[2],"stdio":"no collection named \"no-such-collection\""}} */}
 
 {/* step {"description":"list takes no --since.","runShell":{"command":"manni docevals list --since HEAD","exitCodes":[1],"stdio":"unknown option"}} */}
