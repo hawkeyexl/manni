@@ -47,6 +47,18 @@ const posix = (p) => p.split(path.sep).join("/");
 // ---------------------------------------------------------------------------
 
 /**
+ * The engines.node forms a node-version pin is judged against: one lower bound,
+ * written N, >=N, >=N.M or >=N.M.P, or N / N.M / N.M.P after ^ or ~, with
+ * optional whitespace around it. Group 1 is its major.
+ *
+ * A compound range (>=20.9.0 || >=22, >=20 <25, 20 - 24) or a wildcard (*,
+ * 24.x) has no single major to pin to, and picking one is a guess. The first
+ * digit run of >=20.9.0 || >=22 is 20, which is not what that range means. So
+ * anything else is a setup error, not a guess.
+ */
+const SINGLE_LOWER_BOUND = /^\s*(?:>=|\^|~)?(\d+)(?:\.\d+){0,2}\s*$/;
+
+/**
  * Reads package.json and the workflows under `root`.
  * `version` overrides package.json's version, which is how the release plugin
  * syncs to the release it is making.
@@ -66,10 +78,15 @@ export function loadSources(root, { version } = {}) {
   }
 
   const enginesNode = pkg.engines?.node;
-  const nodeMajor = typeof enginesNode === "string" ? enginesNode.match(/\d+/)?.[0] : undefined;
-  if (nodeMajor === undefined) {
+  if (typeof enginesNode !== "string") {
     throw new VersionsSetupError(
       "package.json has no engines.node to check node-version against",
+    );
+  }
+  const nodeMajor = enginesNode.match(SINGLE_LOWER_BOUND)?.[1];
+  if (nodeMajor === undefined) {
+    throw new VersionsSetupError(
+      `package.json engines.node "${enginesNode}" is not a single lower bound; node-version pins cannot be checked against it`,
     );
   }
 
@@ -112,6 +129,7 @@ export function scannedFiles(root) {
   const walk = (rel, keep) => {
     const abs = path.join(root, rel);
     if (!existsSync(abs) || !statSync(abs).isDirectory()) return;
+    // `Dirent.parentPath` needs Node 20+; package.json engines.node requires >=24.
     for (const entry of readdirSync(abs, { recursive: true, withFileTypes: true })) {
       if (!entry.isFile()) continue;
       const file = posix(path.relative(root, path.join(entry.parentPath, entry.name)));

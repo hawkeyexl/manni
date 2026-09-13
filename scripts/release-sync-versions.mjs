@@ -18,7 +18,7 @@
  * directory and imports it. With no default export it uses the named exports,
  * so this exports `prepare` and nothing else a lifecycle step would call.
  */
-import { REPO_ROOT, plural, syncVersions } from "./version-pins.mjs";
+import { REPO_ROOT, VersionsSetupError, plural, syncVersions } from "./version-pins.mjs";
 
 export async function prepare(_pluginConfig, context) {
   const { nextRelease, logger } = context;
@@ -29,7 +29,19 @@ export async function prepare(_pluginConfig, context) {
     return;
   }
 
-  const { edits, files } = syncVersions(context.cwd ?? REPO_ROOT, { version });
+  // A setup error (no version, no usable engines.node) fails the release step
+  // rather than skipping the sync. This runs in `prepare`, before `publish`, so
+  // failing publishes nothing, while skipping would publish a release whose
+  // docs carry stale pins. The same error already turns `docs:check-versions`
+  // red in CI before merge. It is rethrown as one line, not a stack trace.
+  let result;
+  try {
+    result = syncVersions(context.cwd ?? REPO_ROOT, { version });
+  } catch (err) {
+    if (!(err instanceof VersionsSetupError)) throw err;
+    throw new Error(`Version sync could not run: ${err.message}`, { cause: err });
+  }
+  const { edits, files } = result;
   logger.log(
     `Synced ${plural(edits.length, "version pin")} in ${plural(files, "file")} for ${version}`,
   );

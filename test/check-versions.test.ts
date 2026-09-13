@@ -34,11 +34,18 @@ const GUIDE = "docs/src/content/docs/guide.mdx";
 interface Run {
   stdout: string;
   stderr: string;
-  status: number | null;
+  status: number;
 }
 
 function run(script: string, root: string): Run {
   const r = spawnSync("node", [script, root], { encoding: "utf8", cwd: repoRoot });
+  // A null status means the process never exited on its own (a signal, or it
+  // could not be spawned). Say so, rather than let an assertion compare null
+  // with an exit code.
+  if (r.status === null) {
+    const why = r.error?.message ?? `killed by ${r.signal ?? "an unknown signal"}`;
+    throw new Error(`node ${script} did not exit: ${why}`);
+  }
   return { stdout: r.stdout, stderr: r.stderr, status: r.status };
 }
 
@@ -72,6 +79,14 @@ beforeEach(() => {
 afterEach(() => {
   rmSync(root, { recursive: true, force: true });
 });
+
+/** Rewrites the temp copy's package.json with `engines.node` set to `range`. */
+const setEnginesNode = (range: string): void => {
+  writeFileSync(
+    join(root, "package.json"),
+    JSON.stringify({ name: "versions-fixture", version: "2.0.1", engines: { node: range } }),
+  );
+};
 
 const original = (rel: string): string => {
   const text = originals.get(rel);
@@ -138,6 +153,32 @@ describe("docs:check-versions", () => {
       "versions: package.json has no engines.node to check node-version against",
     ]);
   });
+
+  // `>=20.9.0 || >=22` once read as 20: the first digit run won, and every
+  // node-version pin was judged against a major the range does not require.
+  it.each([">=20.9.0 || >=22", ">=20 <25", "20 - 24", "*", "24.x", "<=24"])(
+    "exits 2 on engines.node %j, which is not a single lower bound, and writes nothing",
+    (range) => {
+      setEnginesNode(range);
+      const { stderr, status } = run(checkScript, root);
+      expect(status).toBe(2);
+      expect(lines(stderr)).toEqual([
+        `versions: package.json engines.node "${range}" is not a single lower bound; node-version pins cannot be checked against it`,
+      ]);
+      for (const [rel, text] of originals) expect(read(rel), rel).toBe(text);
+    },
+  );
+
+  it.each([">=24.1.0", "^24", "24", "~24.2", " >=24 "])(
+    "takes engines.node %j as major 24",
+    (range) => {
+      setEnginesNode(range);
+      const { stdout, status } = run(syncScript, root);
+      expect(status).toBe(0);
+      expect(lines(stdout)).toContain(`${GUIDE}:11: node-version: '22' -> node-version: '24'`);
+      expect(lines(stdout)).toContain("examples/crlf.yml:9: node-version: 20 -> node-version: 24");
+    },
+  );
 });
 
 describe("docs:sync-versions", () => {
@@ -274,5 +315,26 @@ describe("the release plugin", () => {
     expect(read("README.md")).toContain("`uses: hawkeyexl/manni@v3`");
     expect(read("README.md")).toContain("rev: v3.0.0 # the hook definition");
     expect(read(GUIDE)).toContain("actions/checkout@v7");
+  });
+
+  it("fails the release step with one clear line when the sources are missing", async () => {
+    const { prepare } = await load();
+    writeFileSync(
+      join(root, "package.json"),
+      JSON.stringify({ name: "versions-fixture", version: "2.0.1" }),
+    );
+    const ctx = context("3.0.0", null);
+    const failure: unknown = await prepare({}, ctx.value).then(
+      () => undefined,
+      (err: unknown) => err,
+    );
+    expect(failure).toBeInstanceOf(Error);
+    const { message, constructor } = failure as Error;
+    expect(constructor).toBe(Error);
+    expect(message).toBe(
+      "Version sync could not run: package.json has no engines.node to check node-version against",
+    );
+    expect(message).not.toContain("\n");
+    for (const [rel, text] of originals) expect(read(rel), rel).toBe(text);
   });
 });
