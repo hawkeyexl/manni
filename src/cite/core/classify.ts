@@ -24,13 +24,14 @@
  * `moved`, not `never-true`; the search sees the file as it is.
  */
 import type { GitClient, PageCitation, SourceEnd, SourceIndex, SourceRange } from "../types.js";
+import { findWindows, type FindWindowsOptions } from "../../shared/pin.js";
 import { hashLines, sliceLines, splitLines } from "./hash.js";
 import { formatSrc, lineSpec, sourceRange, spellSource } from "./range.js";
 import { readSource } from "./sources.js";
 
-export const MOVE_WINDOW_LINES = 2000;
-export const MOVE_BUDGET_BYTES = 64 * 1024 * 1024;
-export const MAX_RANGE_LINES = 5000;
+// The move search is the shared pin engine's; this path keeps cite's imports working.
+export { MAX_RANGE_LINES, MOVE_BUDGET_BYTES, MOVE_WINDOW_LINES, findWindows } from "../../shared/pin.js";
+export type { FindWindowsOptions } from "../../shared/pin.js";
 
 export interface ClassifyOptions {
   root: string;
@@ -41,73 +42,6 @@ export interface ClassifyOptions {
   key?: string;
   /** Hashing budget for the blind move search, in bytes. Default `MOVE_BUDGET_BYTES`. */
   budget?: number;
-}
-
-export interface FindWindowsOptions {
-  /** The 1-based start line the range was pinned at: the blind search begins around it. */
-  around?: number;
-  /** The cited lines at the commit, when git could show them: enables the first-line filter. */
-  original?: readonly string[];
-  /** Hashing budget for the blind search, in bytes. Default `MOVE_BUDGET_BYTES`. */
-  budget?: number;
-}
-
-/**
- * Pure move search over normalized lines: the 1-based start lines where a
- * window of `length` lines hashes to `pin`. `original` (the cited lines at the
- * commit, when known) enables the first-line filter. `key` keys the hash for
- * an encrypted source's pin and is `undefined` for a plain one.
- */
-export function findWindows(
-  lines: readonly string[],
-  length: number,
-  pin: string,
-  key: string | undefined,
-  opts?: FindWindowsOptions,
-): { starts: number[]; truncated: boolean } {
-  const starts: number[] = [];
-  const lastStart = lines.length - length + 1;
-  if (length < 1 || lastStart < 1) return { starts, truncated: false };
-
-  const joined = (start: number): string => lines.slice(start - 1, start - 1 + length).join("\n");
-
-  const original = opts?.original;
-  if (original !== undefined) {
-    const first = original[0];
-    for (let start = 1; start <= lastStart; start++) {
-      if (lines[start - 1] !== first) continue;
-      let same = true;
-      for (let i = 1; i < length; i++) {
-        if (lines[start - 1 + i] !== original[i]) {
-          same = false;
-          break;
-        }
-      }
-      if (same && hashLines(joined(start), key) === pin) starts.push(start);
-    }
-    return { starts, truncated: false };
-  }
-
-  // Blind: the band around the original position first, then the rest, so the
-  // common small shift is found before the budget is anywhere near spent.
-  const budget = opts?.budget ?? MOVE_BUDGET_BYTES;
-  const around = opts?.around ?? 1;
-  const bandStart = Math.max(1, around - MOVE_WINDOW_LINES);
-  const bandEnd = Math.min(lastStart, around + MOVE_WINDOW_LINES);
-  const order: number[] = [];
-  for (let start = bandStart; start <= bandEnd; start++) order.push(start);
-  for (let start = 1; start < bandStart; start++) order.push(start);
-  for (let start = bandEnd + 1; start <= lastStart; start++) order.push(start);
-
-  let spent = 0;
-  for (const start of order) {
-    const text = joined(start);
-    const bytes = Buffer.byteLength(text, "utf8");
-    if (spent + bytes > budget) return { starts, truncated: true };
-    spent += bytes;
-    if (hashLines(text, key) === pin) starts.push(start);
-  }
-  return { starts, truncated: false };
 }
 
 /**

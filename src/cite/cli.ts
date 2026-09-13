@@ -18,8 +18,9 @@ import {
   splitList,
 } from "../shared/cli-options.js";
 import { shouldColor } from "../shared/color.js";
+import { splitPageArgument as splitSharedPageArgument } from "../shared/pin.js";
 import { terminalConfirm } from "../shared/prompt.js";
-import { STDIN_LINES_MARKER, fail } from "../shared/run.js";
+import { fail } from "../shared/run.js";
 import { notice } from "../shared/warn.js";
 import {
   COMMON_FORMAT_LIST,
@@ -32,7 +33,7 @@ import { REPORT_FORMATS, isReportFormat, render } from "../meta/index.js";
 import { runAdd } from "./commands/add.js";
 import { runCheck } from "./commands/check.js";
 import { runUpdate } from "./commands/update.js";
-import { CiteError } from "./errors.js";
+import { CiteError, asCiteError } from "./errors.js";
 import { spellSource } from "./core/range.js";
 import { shortCommit, shortPin, shortSrc } from "./core/spell.js";
 import { renderCheckGithub } from "./reporters/github.js";
@@ -153,24 +154,11 @@ interface UpdateCliOptions extends InputCliOptions {
 
 /**
  * Split `docs/limits.md:9` or `docs/limits.md:14-18` into the page and the
- * claim's lines. Only a trailing `:L` or `:L1-L2` is read as lines, so a path
- * that carries a colon keeps it, and `-:9` still reads the page from stdin.
+ * claim's lines, under cite's error contract. The parsing is the shared pin
+ * engine's (`splitPageArgument` in `src/shared/pin.ts`).
  */
 export function splitPageArgument(arg: string): { page: string; lines?: PageLines } {
-  // `-:9` reaches commander as an operand only after the bin rewrites its
-  // leading `-`; both spellings name stdin and the same lines.
-  const text = arg.startsWith(STDIN_LINES_MARKER)
-    ? `${STDIN_TOKEN}${arg.slice(STDIN_LINES_MARKER.length)}`
-    : arg;
-  const m = /:([1-9][0-9]*)(?:-([1-9][0-9]*))?$/.exec(text);
-  const head = m === null ? text : text.slice(0, m.index);
-  if (m === null || head === "") return { page: arg };
-  const start = Number(m[1]);
-  const end = m[2] === undefined ? start : Number(m[2]);
-  if (end < start) {
-    throw new CiteError(`Invalid range "${arg}": end line ${end} is before start line ${start}.`);
-  }
-  return { page: head, lines: { start, end } };
+  return asCiteError(() => splitSharedPageArgument(arg));
 }
 
 /** `line 9`, or `lines 14-18` for a range. */
