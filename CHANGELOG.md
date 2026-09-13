@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [2.1.0](https://github.com/hawkeyexl/manni/compare/v2.0.1...v2.1.0) (2026-09-13)
+
+
+### Features
+
+* **meta:** provenance pins, meta-provenance from fill, and the derive hook (0046) ([#34](https://github.com/hawkeyexl/manni/issues/34)) ([8291827](https://github.com/hawkeyexl/manni/commit/829182775c1941ba9c6863c5caf219b977ff39ab))
+
 ## [2.0.1](https://github.com/hawkeyexl/manni/compare/v2.0.0...v2.0.1) (2026-09-13)
 
 
