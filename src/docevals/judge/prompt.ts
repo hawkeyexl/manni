@@ -38,14 +38,14 @@ export function cleanBody(body: string): string {
   const out: string[] = [];
   let fence: string | null = null;
   for (const line of body.split("\n")) {
-    const open = /^(\s*)(```+|~~~+)/.exec(line);
+    const marker = /^(\s*)(```+|~~~+)/.exec(line)?.[2];
     if (fence) {
       out.push(line);
-      if (open && open[2]!.startsWith(fence)) fence = null;
+      if (marker?.startsWith(fence)) fence = null;
       continue;
     }
-    if (open) {
-      fence = open[2]!;
+    if (marker !== undefined) {
+      fence = marker;
       out.push(line);
       continue;
     }

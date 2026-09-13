@@ -330,7 +330,8 @@ function resolveBaseline(
     stale = applied.stale;
   }
 
-  if (!wants) {
+  // `writeTo` is null exactly when nothing is being recorded.
+  if (!wants || writeTo === null) {
     return {
       results: out,
       summary: { path: configured, recorded, suppressed, stale },
@@ -341,7 +342,7 @@ function resolveBaseline(
   // corpus contains now, not what this run happened to still be complaining
   // about after the previous baseline was subtracted.
   const next = buildBaseline(results, options.toolVersion ?? "unknown", ctx);
-  writeBaselineFile(resolve(config.configDir, writeTo!), next, writeTo!);
+  writeBaselineFile(resolve(config.configDir, writeTo), next, writeTo);
   const { added, removed } = diffBaselines(overwriting, next);
   // Apply the baseline this run just wrote, not the one it replaced. Recording
   // today's findings *is* declaring them the accepted state, so a recording run
@@ -357,11 +358,11 @@ function resolveBaseline(
   // the config does not name.
   if (config.baseline !== writeTo) {
     problems.push({
-      file: writeTo!,
+      file: writeTo,
       message:
-        `Recorded ${writeTo!}, but \`baseline:\` in ${config.configPath} is ` +
+        `Recorded ${writeTo}, but \`baseline:\` in ${config.configPath} is ` +
         `${config.baseline === null ? "not set" : `"${config.baseline}"`}. ` +
-        `An ordinary run will not read this file — point the key at it, or pass --baseline ${writeTo!}.`,
+        `An ordinary run will not read this file — point the key at it, or pass --baseline ${writeTo}.`,
       level: "warning",
     });
   }
@@ -1086,9 +1087,10 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
   // this corpus gate exists to prevent. Warning, not error: the cap was asked
   // for, so tripping it is expected; going quiet about it is not (ADR 01019).
   const budgetSkipped = results.filter((r) => isTurnBudgetSkip(r.skipReason));
-  if (budgetSkipped.length > 0) {
+  const firstBudgetSkipped = budgetSkipped[0];
+  if (firstBudgetSkipped !== undefined) {
     problems.push({
-      file: budgetSkipped[0]!.file,
+      file: firstBudgetSkipped.file,
       message:
         `${budgetSkipped.length} eval(s) were not judged: the turn budget ran out. ` +
         `This run covered less than it was asked to — raise --max-turns or narrow the run.`,
@@ -1200,8 +1202,8 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
     suites,
     usage: {
       totalTokens,
-      cachedEvals: judged.filter((r) =>
-        r.consensus!.runs.every((run) => run.cached),
+      cachedEvals: judged.filter(
+        (r) => r.consensus?.runs.every((run) => run.cached) === true,
       ).length,
       judgedEvals: judged.length,
     },

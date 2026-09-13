@@ -62,12 +62,12 @@ function scaffold(allow: string[]): string {
  * a suite that shells out to check whether it shelled out is no test at all.
  * Every granted command resolves through this instead.
  */
-const fakeExec = async (): Promise<{
+const fakeExec = (): Promise<{
   code: number;
   stdout: string;
   stderr: string;
   timedOut: boolean;
-}> => ({ code: 0, stdout: "[]", stderr: "", timedOut: false });
+}> => Promise.resolve({ code: 0, stdout: "[]", stderr: "", timedOut: false });
 
 const skipReasons = async (
   allow: string[],

@@ -66,7 +66,10 @@ async function gradeGroup(
   ctx: GraderContext,
   targets: GraderTarget[],
 ): Promise<Finding[]> {
-  const first = targets[0]!;
+  const first = targets[0];
+  // Groups come from `groupTargetsByEval` and are never empty; an empty one
+  // has nothing to grade.
+  if (first === undefined) return [];
   const commandOverride = first.eval.options.command as string[] | undefined;
   const files = [...new Set(targets.map((t) => t.plan.page.file))];
   const cmd = [...(commandOverride ?? DEFAULT_COMMAND), ...files];

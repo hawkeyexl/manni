@@ -47,7 +47,8 @@ describe("resolvePage", () => {
 
   it("defaults type to regression and grader to ai", () => {
     const plan = resolvePage(page("eval-suite: ref"), CONFIG);
-    const ai = plan.evals.find((e) => e.name === "central-ai")!;
+    const ai = plan.evals.find((e) => e.name === "central-ai");
+    if (ai === undefined) throw new Error("central-ai did not resolve");
     expect(ai.type).toBe("regression");
     expect(ai.grader).toBe("ai");
     expect(ai.severity).toBe("error");
@@ -103,7 +104,8 @@ describe("resolvePage", () => {
       ),
       CONFIG,
     );
-    const tool = plan.evals.find((e) => e.name === "central-tool")!;
+    const tool = plan.evals.find((e) => e.name === "central-tool");
+    if (tool === undefined) throw new Error("central-tool did not resolve");
     expect(tool.severity).toBe("error");
     expect(tool.type).toBe("capability");
     expect(tool.options).toEqual({ "max-age-days": 30 });
@@ -127,7 +129,8 @@ describe("resolvePage", () => {
       ),
       CONFIG,
     );
-    const tool = plan.evals.find((e) => e.name === "central-tool")!;
+    const tool = plan.evals.find((e) => e.name === "central-tool");
+    if (tool === undefined) throw new Error("central-tool did not resolve");
     expect(tool.weight).toBe(3);
   });
 

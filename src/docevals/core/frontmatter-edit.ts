@@ -11,6 +11,9 @@ import { leadingFrontmatterFormat } from "./discover.js";
 /** Top-level key manni docevals owns inside the shared manni config. */
 const NAMESPACE = "docevals";
 
+/** The byte-order mark a page may open with, carried through edits untouched. */
+const BOM = "\uFEFF";
+
 export interface EvalUpdates {
   grader?: string;
   command?: string[];
@@ -30,7 +33,7 @@ interface Split {
 }
 
 function splitYamlFrontmatter(content: string, path: string): Split {
-  const bom = content.charCodeAt(0) === 0xfeff ? content[0]! : "";
+  const bom = content.startsWith(BOM) ? BOM : "";
   const body = bom ? content.slice(1) : content;
   const openMatch = /^---(\r?\n)/.exec(body);
   if (!openMatch) {
@@ -39,20 +42,21 @@ function splitYamlFrontmatter(content: string, path: string): Split {
     );
   }
   const eol: "\n" | "\r\n" = openMatch[1] === "\r\n" ? "\r\n" : "\n";
-  const lines = body.split(/(?<=\n)/); // keep line endings
-  let offset = lines[0]!.length;
-  for (let i = 1; i < lines.length; i++) {
-    const stripped = lines[i]!.replace(/\r?\n$/, "");
+  // Keep line endings. The match above guarantees an opening line.
+  const [openLine = "", ...rest] = body.split(/(?<=\n)/);
+  let offset = openLine.length;
+  for (const line of rest) {
+    const stripped = line.replace(/\r?\n$/, "");
     if (stripped === "---" || stripped === "...") {
       const blockEnd = offset;
       return {
-        open: bom + lines[0]!,
-        block: body.slice(lines[0]!.length, blockEnd),
+        open: bom + openLine,
+        block: body.slice(openLine.length, blockEnd),
         suffix: body.slice(blockEnd),
         eol,
       };
     }
-    offset += lines[i]!.length;
+    offset += line.length;
   }
   throw new DocevalsError(`${path}: unterminated frontmatter block`);
 }
@@ -288,7 +292,7 @@ export function appendPageEvals(
     );
   }
 
-  const bom = content.charCodeAt(0) === 0xfeff ? content[0]! : "";
+  const bom = content.startsWith(BOM) ? BOM : "";
   const stripped = bom ? content.slice(1) : content;
   const eol: "\n" | "\r\n" = stripped.includes("\r\n") ? "\r\n" : "\n";
 

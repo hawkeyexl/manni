@@ -43,7 +43,8 @@ describe("discoverPages", () => {
 
   it("extracts frontmatter data and strips it from body", () => {
     const pages = discoverPages(config, {}, ROOT);
-    const install = pages.find((p) => p.file.endsWith("installation.mdx"))!;
+    const install = pages.find((p) => p.file.endsWith("installation.mdx"));
+    if (install === undefined) throw new Error("installation.mdx was not discovered");
     expect(install.frontmatter.data.title).toBe("Installation");
     expect(install.frontmatter.present).toBe(true);
     expect(install.body).not.toContain("last-reviewed:");

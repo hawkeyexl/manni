@@ -83,7 +83,9 @@ describe("differentiation", () => {
       frontmatter: extractFrontmatter(content, "markdown"),
     };
     const plan = resolvePage(page, config);
-    return { plan, eval: plan.evals[0]! };
+    const ev = plan.evals[0];
+    if (ev === undefined) throw new Error("fixture resolved no evals");
+    return { plan, eval: ev };
   }
 
   const DIFF_CONFIG = parseDocevalsConfig(
@@ -151,8 +153,10 @@ describe("valeGrader", () => {
     });
     const exec: ExecFn = () =>
       Promise.resolve({ code: 1, stdout: valeOutput, stderr: "", timedOut: false });
+    const ev = plan.evals[0];
+    if (ev === undefined) throw new Error("fixture resolved no evals");
     const findings = await valeGrader.grade({
-      targets: [{ plan, eval: plan.evals[0]! }],
+      targets: [{ plan, eval: ev }],
       config,
       root: "/fake",
       exec,
@@ -228,24 +232,26 @@ describe("calibrate", () => {
     expect(cases.length).toBeGreaterThanOrEqual(4);
 
     // Scripted judge: passes everything → full agreement (all cases expect pass).
-    const passJudge = async (targets: GraderTarget[]) =>
-      targets.map(
-        (t): EvalResult => ({
-          evalName: t.eval.name,
-          type: t.eval.type,
-          grader: t.eval.grader,
-          file: t.plan.page.file,
-          outcome: "pass",
-          consensus: {
-            runs: [],
-            votes: { pass: 3, fail: 0, partial: 0, error: 0 },
-            verdict: "pass",
-            agreement: 1,
-            meanConfidence: 0.95,
-            zone: "auto-pass",
-          },
-          durationMs: 1,
-        }),
+    const passJudge = (targets: GraderTarget[]) =>
+      Promise.resolve(
+        targets.map(
+          (t): EvalResult => ({
+            evalName: t.eval.name,
+            type: t.eval.type,
+            grader: t.eval.grader,
+            file: t.plan.page.file,
+            outcome: "pass",
+            consensus: {
+              runs: [],
+              votes: { pass: 3, fail: 0, partial: 0, error: 0 },
+              verdict: "pass",
+              agreement: 1,
+              meanConfidence: 0.95,
+              zone: "auto-pass",
+            },
+            durationMs: 1,
+          }),
+        ),
       );
     const report = await runCalibrate({
       cwd: ROOT,
@@ -259,24 +265,26 @@ describe("calibrate", () => {
   });
 
   it("flags disagreement and false positives with a failing judge", async () => {
-    const failJudge = async (targets: GraderTarget[]) =>
-      targets.map(
-        (t): EvalResult => ({
-          evalName: t.eval.name,
-          type: t.eval.type,
-          grader: t.eval.grader,
-          file: t.plan.page.file,
-          outcome: "fail",
-          consensus: {
-            runs: [],
-            votes: { pass: 0, fail: 3, partial: 0, error: 0 },
-            verdict: "fail",
-            agreement: 1,
-            meanConfidence: 0.9,
-            zone: "auto-fail",
-          },
-          durationMs: 1,
-        }),
+    const failJudge = (targets: GraderTarget[]) =>
+      Promise.resolve(
+        targets.map(
+          (t): EvalResult => ({
+            evalName: t.eval.name,
+            type: t.eval.type,
+            grader: t.eval.grader,
+            file: t.plan.page.file,
+            outcome: "fail",
+            consensus: {
+              runs: [],
+              votes: { pass: 0, fail: 3, partial: 0, error: 0 },
+              verdict: "fail",
+              agreement: 1,
+              meanConfidence: 0.9,
+              zone: "auto-fail",
+            },
+            durationMs: 1,
+          }),
+        ),
       );
     const report = await runCalibrate({
       cwd: ROOT,

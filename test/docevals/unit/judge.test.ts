@@ -109,7 +109,9 @@ function makeTarget(body: string, name = "claim-check"): GraderTarget {
   };
   const config = parseDocevalsConfig("", "/fake/manni.config.yaml");
   const plan = resolvePage(page, config);
-  return { plan, eval: plan.evals[0]! };
+  const ev = plan.evals[0];
+  if (ev === undefined) throw new Error("fixture resolved no evals");
+  return { plan, eval: ev };
 }
 
 function tempRoot(): string {
@@ -134,7 +136,8 @@ describe("makeJudge", () => {
     const provider = new MockProvider([mockVerdict("pass", 0.95)]);
     const judge = makeJudge({ provider, root: tempRoot() });
     await judge([makeTarget("Distinctive body text.")], config, {});
-    const req = provider.requests[0]!;
+    const req = provider.requests[0];
+    if (req === undefined) throw new Error("the provider received no request");
     expect(req.user).toContain("The page satisfies the claim.");
     expect(req.user).toContain("Distinctive body text.");
     expect(req.user).toContain("A passing page: yes");

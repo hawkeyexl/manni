@@ -46,49 +46,53 @@ export const freshnessGrader: Grader = {
     );
   },
   mode: "per-file",
-  async grade(ctx) {
-    const findings: Finding[] = [];
-    for (const { plan, eval: ev } of ctx.targets) {
-      const opts = ev.options as FreshnessOptions;
-      const field = opts.field ?? "last-reviewed";
-      const maxAgeDays = opts["max-age-days"] ?? 365;
-      const raw = plan.page.frontmatter.data[field];
+  grade(ctx) {
+    // Synchronous work behind an async contract: `.then` keeps a throw a
+    // rejection, as it was when this method was `async`.
+    return Promise.resolve().then(() => {
+      const findings: Finding[] = [];
+      for (const { plan, eval: ev } of ctx.targets) {
+        const opts = ev.options as FreshnessOptions;
+        const field = opts.field ?? "last-reviewed";
+        const maxAgeDays = opts["max-age-days"] ?? 365;
+        const raw = plan.page.frontmatter.data[field];
 
-      if (raw == null) {
-        findings.push({
-          evalName: ev.name,
-          file: plan.page.file,
-          ruleId: "freshness/missing",
-          message: `Missing "${field}" frontmatter field`,
-          severity: ev.severity,
-          line: 1,
-        });
-        continue;
+        if (raw == null) {
+          findings.push({
+            evalName: ev.name,
+            file: plan.page.file,
+            ruleId: "freshness/missing",
+            message: `Missing "${field}" frontmatter field`,
+            severity: ev.severity,
+            line: 1,
+          });
+          continue;
+        }
+        const date = raw instanceof Date ? raw : new Date(describe(raw));
+        if (Number.isNaN(date.getTime())) {
+          findings.push({
+            evalName: ev.name,
+            file: plan.page.file,
+            ruleId: "freshness/invalid",
+            message: `Unparseable "${field}" date: ${describe(raw)}`,
+            severity: ev.severity,
+            line: plan.page.frontmatter.lineFor(`/${field}`),
+          });
+          continue;
+        }
+        const ageDays = Math.floor((Date.now() - date.getTime()) / MS_PER_DAY);
+        if (ageDays > maxAgeDays) {
+          findings.push({
+            evalName: ev.name,
+            file: plan.page.file,
+            ruleId: "freshness/stale",
+            message: `Page last reviewed ${ageDays} days ago (max ${maxAgeDays})`,
+            severity: ev.severity,
+            line: plan.page.frontmatter.lineFor(`/${field}`),
+          });
+        }
       }
-      const date = raw instanceof Date ? raw : new Date(describe(raw));
-      if (Number.isNaN(date.getTime())) {
-        findings.push({
-          evalName: ev.name,
-          file: plan.page.file,
-          ruleId: "freshness/invalid",
-          message: `Unparseable "${field}" date: ${describe(raw)}`,
-          severity: ev.severity,
-          line: plan.page.frontmatter.lineFor(`/${field}`),
-        });
-        continue;
-      }
-      const ageDays = Math.floor((Date.now() - date.getTime()) / MS_PER_DAY);
-      if (ageDays > maxAgeDays) {
-        findings.push({
-          evalName: ev.name,
-          file: plan.page.file,
-          ruleId: "freshness/stale",
-          message: `Page last reviewed ${ageDays} days ago (max ${maxAgeDays})`,
-          severity: ev.severity,
-          line: plan.page.frontmatter.lineFor(`/${field}`),
-        });
-      }
-    }
-    return findings;
+      return findings;
+    });
   },
 };

@@ -45,7 +45,9 @@ function makeTarget(body: string, file = "docs/page.md"): GraderTarget {
   };
   const config = parseDocevalsConfig("", "/fake/manni.config.yaml");
   const plan = resolvePage(page, config);
-  return { plan, eval: plan.evals[0]! };
+  const ev = plan.evals[0];
+  if (ev === undefined) throw new Error("fixture resolved no evals");
+  return { plan, eval: ev };
 }
 
 const tempRoot = () => mkdtempSync(join(tmpdir(), "manni-docevals-turns-"));
@@ -187,16 +189,18 @@ describe("a run truncated by its turn budget", () => {
       config,
       paths: ["test/docevals/fixtures/pages/docs/actions/goTo.mdx"],
       generate: false,
-      judge: async (aiTargets) =>
-        aiTargets.map((t) => ({
-          evalName: t.eval.name,
-          type: t.eval.type,
-          grader: t.eval.grader,
-          file: t.plan.page.file,
-          outcome: "skipped" as const,
-          skipReason,
-          durationMs: 0,
-        })),
+      judge: (aiTargets) =>
+        Promise.resolve(
+          aiTargets.map((t) => ({
+            evalName: t.eval.name,
+            type: t.eval.type,
+            grader: t.eval.grader,
+            file: t.plan.page.file,
+            outcome: "skipped" as const,
+            skipReason,
+            durationMs: 0,
+          })),
+        ),
     });
   }
 

@@ -64,8 +64,9 @@ Body.`;
     frontmatter: extractFrontmatter(content, "markdown"),
   };
   const plan: ResolvedPagePlan = resolvePage(page, config);
-  if (plan.evals.length === 0) throw new Error(`no eval resolved for ${grader}`);
-  return { target: { plan, eval: plan.evals[0]! }, config };
+  const ev = plan.evals[0];
+  if (ev === undefined) throw new Error(`no eval resolved for ${grader}`);
+  return { target: { plan, eval: ev }, config };
 }
 
 const fakeExec =

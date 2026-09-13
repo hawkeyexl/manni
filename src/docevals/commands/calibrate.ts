@@ -373,7 +373,12 @@ export async function runCalibrate(
       maxTurns: options.maxTurns,
     });
     for (const [i, at] of targetIndex.entries()) {
-      const slot = results[at]!;
+      const slot = results[at];
+      if (slot === undefined) {
+        throw new DocevalsError(
+          `calibrate: no golden case at index ${at} for judged target ${i}`,
+        );
+      }
       const consensus = judged[i]?.consensus;
       if (!consensus) {
         // Distinguish "the budget ran out" from "the judge failed": the

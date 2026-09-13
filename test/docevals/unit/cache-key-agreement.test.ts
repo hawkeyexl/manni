@@ -63,7 +63,9 @@ function target(body: string): { t: GraderTarget; config: ReturnType<typeof pars
   // rather than whatever detection finds on the machine running the suite.
   const config = parseDocevalsConfig("provider: anthropic", "/fake/manni.config.yaml");
   const plan = resolvePage(page, config);
-  return { t: { plan, eval: plan.evals[0]! }, config };
+  const ev = plan.evals[0];
+  if (ev === undefined) throw new Error("fixture resolved no evals");
+  return { t: { plan, eval: ev }, config };
 }
 
 describe("the judge and an outside caller agree on the cache key", () => {

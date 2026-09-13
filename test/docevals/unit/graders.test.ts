@@ -28,8 +28,9 @@ function makeTarget(frontmatterYaml: string, body = "Body."): GraderTarget {
     frontmatter: extractFrontmatter(content, "markdown"),
   };
   const plan = resolvePage(page, CONFIG);
-  if (plan.evals.length === 0) throw new Error("fixture resolved no evals");
-  return { plan, eval: plan.evals[0]! };
+  const ev = plan.evals[0];
+  if (ev === undefined) throw new Error("fixture resolved no evals");
+  return { plan, eval: ev };
 }
 
 function fakeExec(result: Partial<ExecResult>): { exec: ExecFn; calls: string[][] } {
@@ -153,7 +154,9 @@ describe("freshnessGrader", () => {
       frontmatter: extractFrontmatter(content, "markdown"),
     };
     const plan = resolvePage(page, graderConfig);
-    return { plan, eval: plan.evals[0]! };
+    const ev = plan.evals[0];
+    if (ev === undefined) throw new Error("fixture resolved no evals");
+    return { plan, eval: ev };
   }
 
   it("passes for a recent date", async () => {
@@ -228,8 +231,9 @@ describe("reading level", () => {
         "Notwithstanding organizational considerations, comprehensive implementation methodologies necessitate extraordinarily sophisticated administrative infrastructure.",
       )
       .join(" ");
-    const simpleGrade = fleschKincaidGrade(simple)!;
-    const complexGrade = fleschKincaidGrade(complex)!;
+    const simpleGrade = fleschKincaidGrade(simple);
+    const complexGrade = fleschKincaidGrade(complex);
+    if (simpleGrade == null || complexGrade == null) throw new Error("prose too short to score");
     expect(simpleGrade).toBeLessThan(6);
     expect(complexGrade).toBeGreaterThan(12);
   });
@@ -261,8 +265,10 @@ describe("reading level", () => {
       frontmatter: extractFrontmatter(content, "markdown"),
     };
     const plan = resolvePage(page, graderConfig);
+    const ev = plan.evals[0];
+    if (ev === undefined) throw new Error("fixture resolved no evals");
     const findings = await readingLevelGrader.grade({
-      targets: [{ plan, eval: plan.evals[0]! }],
+      targets: [{ plan, eval: ev }],
       config: graderConfig,
       root: "/fake",
       exec: fakeExec({}).exec,
@@ -296,7 +302,9 @@ describe("docDetectiveGrader", () => {
       frontmatter: extractFrontmatter(content, "markdown"),
     };
     const plan = resolvePage(page, ddConfig);
-    return { plan, eval: plan.evals[0]! };
+    const ev = plan.evals[0];
+    if (ev === undefined) throw new Error("fixture resolved no evals");
+    return { plan, eval: ev };
   }
 
   // Doc Detective 4.x runs tests as its *default* command and rejects a `run`

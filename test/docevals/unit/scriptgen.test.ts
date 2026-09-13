@@ -134,7 +134,9 @@ describe("makeGenerateScripts", () => {
     );
     const page = readPage(pagePath, root);
     const plan = resolvePage(page, config);
-    const target: GraderTarget = { plan, eval: plan.evals[0]! };
+    const ev = plan.evals[0];
+    if (ev === undefined) throw new Error("fixture resolved no evals");
+    const target: GraderTarget = { plan, eval: ev };
 
     const provider = new MockProvider([{ json: { code: SCRIPT_CODE } }]);
     const generate = makeGenerateScripts({ provider, root });
@@ -232,8 +234,10 @@ describe("makeGenerateScripts", () => {
       { ...page, frontmatter: { ...page.frontmatter, data: { "eval-suite": "s" } } },
       config,
     );
+    const ev = plan.evals[0];
+    if (ev === undefined) throw new Error("fixture resolved no evals");
     const location = scriptLocationFor(
-      { plan, eval: plan.evals[0]! },
+      { plan, eval: ev },
       config,
       root,
     );

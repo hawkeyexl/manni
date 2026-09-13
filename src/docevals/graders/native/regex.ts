@@ -74,65 +74,69 @@ export const regexGrader: Grader = {
     );
   },
   mode: "per-file",
-  async grade(ctx) {
-    const findings: Finding[] = [];
-    for (const { plan, eval: ev } of ctx.targets) {
-      const opts = ev.options as RegexOptions;
-      const pattern = opts.pattern ?? "";
-      const flags = opts.flags ?? "";
-      const match = opts.match ?? "contains";
+  grade(ctx) {
+    // Synchronous work behind an async contract: `.then` keeps a throw a
+    // rejection, as it was when this method was `async`.
+    return Promise.resolve().then(() => {
+      const findings: Finding[] = [];
+      for (const { plan, eval: ev } of ctx.targets) {
+        const opts = ev.options as RegexOptions;
+        const pattern = opts.pattern ?? "";
+        const flags = opts.flags ?? "";
+        const match = opts.match ?? "contains";
 
-      const selected = readTarget(ev.target, plan);
-      if (!selected.ok) {
-        findings.push({
-          evalName: ev.name,
-          file: plan.page.file,
-          ruleId: "regex/unreadable-target",
-          message: selected.reason,
-          severity: ev.severity,
-          line: 1,
-        });
-        continue;
-      }
-
-      const text = selected.text;
-      // Always count with /g so `count:N` is a count and not a boolean, then
-      // read the first match's offset for the line number.
-      const all = [...text.matchAll(new RegExp(pattern, flags.includes("g") ? flags : `${flags}g`))];
-      const first = all[0];
-
-      if (match === "contains" && all.length === 0) {
-        findings.push({
-          evalName: ev.name,
-          file: plan.page.file,
-          ruleId: "regex/not-found",
-          message: `Pattern /${pattern}/${flags} not found in ${selected.label}`,
-          severity: ev.severity,
-          line: 1,
-        });
-      } else if (match === "not-contains" && all.length > 0) {
-        findings.push({
-          evalName: ev.name,
-          file: plan.page.file,
-          ruleId: "regex/found",
-          message: `Pattern /${pattern}/${flags} found in ${selected.label}, expected absent`,
-          severity: ev.severity,
-          line: lineAt(text, first?.index ?? 0),
-        });
-      } else if (match.startsWith("count:")) {
-        const want = Number(match.slice("count:".length));
-        if (all.length !== want) {
+        const selected = readTarget(ev.target, plan);
+        if (!selected.ok) {
           findings.push({
             evalName: ev.name,
             file: plan.page.file,
-            ruleId: "regex/count",
-            message: `Pattern /${pattern}/${flags} matched ${String(all.length)} time(s) in ${selected.label}, expected ${String(want)}`,
+            ruleId: "regex/unreadable-target",
+            message: selected.reason,
             severity: ev.severity,
-            line: all.length > 0 ? lineAt(text, first?.index ?? 0) : 1,
+            line: 1,
           });
+          continue;
+        }
+
+        const text = selected.text;
+        // Always count with /g so `count:N` is a count and not a boolean, then
+        // read the first match's offset for the line number.
+        const all = [...text.matchAll(new RegExp(pattern, flags.includes("g") ? flags : `${flags}g`))];
+        const first = all[0];
+
+        if (match === "contains" && all.length === 0) {
+          findings.push({
+            evalName: ev.name,
+            file: plan.page.file,
+            ruleId: "regex/not-found",
+            message: `Pattern /${pattern}/${flags} not found in ${selected.label}`,
+            severity: ev.severity,
+            line: 1,
+          });
+        } else if (match === "not-contains" && all.length > 0) {
+          findings.push({
+            evalName: ev.name,
+            file: plan.page.file,
+            ruleId: "regex/found",
+            message: `Pattern /${pattern}/${flags} found in ${selected.label}, expected absent`,
+            severity: ev.severity,
+            line: lineAt(text, first?.index ?? 0),
+          });
+        } else if (match.startsWith("count:")) {
+          const want = Number(match.slice("count:".length));
+          if (all.length !== want) {
+            findings.push({
+              evalName: ev.name,
+              file: plan.page.file,
+              ruleId: "regex/count",
+              message: `Pattern /${pattern}/${flags} matched ${String(all.length)} time(s) in ${selected.label}, expected ${String(want)}`,
+              severity: ev.severity,
+              line: all.length > 0 ? lineAt(text, first?.index ?? 0) : 1,
+            });
+          }
         }
       }
-    }
-    return findings;
+      return findings;
+    });
   },
 };

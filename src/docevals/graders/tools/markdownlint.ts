@@ -36,12 +36,14 @@ export function parseMarkdownlintOutput(output: string): {
   for (const raw of output.split(/\r?\n/)) {
     const m = LINE.exec(raw.trim());
     if (!m) continue;
+    const [, file, line, col, ruleId, message] = m;
+    if (file === undefined || ruleId === undefined || message === undefined) continue;
     results.push({
-      file: m[1]!.replace(/\\/g, "/"),
-      line: Number(m[2]),
-      col: m[3] ? Number(m[3]) : undefined,
-      ruleId: m[4]!,
-      message: m[5]!,
+      file: file.replace(/\\/g, "/"),
+      line: Number(line),
+      col: col ? Number(col) : undefined,
+      ruleId,
+      message,
     });
   }
   return results;
@@ -51,7 +53,10 @@ async function gradeGroup(
   ctx: GraderContext,
   targets: GraderTarget[],
 ): Promise<Finding[]> {
-  const first = targets[0]!;
+  const first = targets[0];
+  // Groups come from `groupTargetsByEval` and are never empty; an empty one
+  // has nothing to grade.
+  if (first === undefined) return [];
   const commandOverride = first.eval.options.command as string[] | undefined;
   const files = [...new Set(targets.map((t) => t.plan.page.file))];
   const cmd = [

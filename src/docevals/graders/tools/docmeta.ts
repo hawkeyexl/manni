@@ -20,7 +20,10 @@ async function gradeGroup(
   ctx: GraderContext,
   targets: GraderTarget[],
 ): Promise<Finding[]> {
-  const first = targets[0]!;
+  const first = targets[0];
+  // Groups come from `groupTargetsByEval` and are never empty; an empty one
+  // has nothing to grade.
+  if (first === undefined) return [];
   const schemas = first.eval.options.schemas as string[] | undefined;
   const byFile = new Map(targets.map((t) => [t.plan.page.file, t.eval] as const));
   const files = [...byFile.keys()];

@@ -56,25 +56,27 @@ function writeGolden(root: string, name: string, body: string): string {
 }
 
 /** A judge that always agrees with the page passing, without a provider. */
-const alwaysPass = async (targets: { plan: { page: { file: string } }; eval: { name: string } }[]) =>
-  targets.map(
-    (t) =>
-      ({
-        evalName: t.eval.name,
-        type: "regression",
-        grader: "ai",
-        file: t.plan.page.file,
-        outcome: "pass",
-        consensus: {
-          verdict: "pass",
-          agreement: 1,
-          meanConfidence: 0.95,
-          votes: { pass: 3, fail: 0, partial: 0, error: 0 },
-          runs: [],
-          zone: "auto-pass",
-        },
-        durationMs: 0,
-      }) as unknown as EvalResult,
+const alwaysPass = (targets: { plan: { page: { file: string } }; eval: { name: string } }[]) =>
+  Promise.resolve(
+    targets.map(
+      (t) =>
+        ({
+          evalName: t.eval.name,
+          type: "regression",
+          grader: "ai",
+          file: t.plan.page.file,
+          outcome: "pass",
+          consensus: {
+            verdict: "pass",
+            agreement: 1,
+            meanConfidence: 0.95,
+            votes: { pass: 3, fail: 0, partial: 0, error: 0 },
+            runs: [],
+            zone: "auto-pass",
+          },
+          durationMs: 0,
+        }) as unknown as EvalResult,
+    ),
   );
 
 afterEach(() => {
@@ -120,7 +122,7 @@ describe("loadGoldenCases: the reviewed gate", () => {
 });
 
 describe("calibrate --seed", () => {
-  it("writes one unreviewed candidate per recorded review", async () => {
+  it("writes one unreviewed candidate per recorded review", () => {
     const root = scaffold();
     recordReview(root, {
       file: "docs/install.md",
@@ -354,18 +356,20 @@ describe("calibrate --seed: the confirmed bit across a re-review", () => {
 
 describe("runCalibrate: a truncated run cannot certify the judge", () => {
   /** A judge that skips every target the way the turn budget does. */
-  const budgetExhausted = async (targets: { plan: { page: { file: string } }; eval: { name: string } }[]) =>
-    targets.map(
-      (t) =>
-        ({
-          evalName: t.eval.name,
-          type: "regression",
-          grader: "ai",
-          file: t.plan.page.file,
-          outcome: "skipped",
-          skipReason: "judge turn budget exhausted (3)",
-          durationMs: 0,
-        }) as unknown as EvalResult,
+  const budgetExhausted = (targets: { plan: { page: { file: string } }; eval: { name: string } }[]) =>
+    Promise.resolve(
+      targets.map(
+        (t) =>
+          ({
+            evalName: t.eval.name,
+            type: "regression",
+            grader: "ai",
+            file: t.plan.page.file,
+            outcome: "skipped",
+            skipReason: "judge turn budget exhausted (3)",
+            durationMs: 0,
+          }) as unknown as EvalResult,
+      ),
     );
 
   // Budget-skipped cases carry no consensus, so they used to drop out of the
@@ -475,14 +479,16 @@ describe("runCalibrate: coverage is separate from agreement", () => {
       "cases.yaml",
       ["- file: docs/install.md", "  eval: no-future-promises", "  expected: pass", "  reviewed: true", ""].join("\n"),
     );
-    const budgetOnly = async (targets: { plan: { page: { file: string } }; eval: { name: string } }[]) =>
-      targets.map(
-        (t) =>
-          ({
-            evalName: t.eval.name, type: "regression", grader: "ai",
-            file: t.plan.page.file, outcome: "skipped",
-            skipReason: "judge turn budget exhausted (3)", durationMs: 0,
-          }) as unknown as EvalResult,
+    const budgetOnly = (targets: { plan: { page: { file: string } }; eval: { name: string } }[]) =>
+      Promise.resolve(
+        targets.map(
+          (t) =>
+            ({
+              evalName: t.eval.name, type: "regression", grader: "ai",
+              file: t.plan.page.file, outcome: "skipped",
+              skipReason: "judge turn budget exhausted (3)", durationMs: 0,
+            }) as unknown as EvalResult,
+        ),
       );
     const report = await runCalibrate({ cwd: root, judge: budgetOnly });
     expect(report.budgetSkipped).toBe(1);

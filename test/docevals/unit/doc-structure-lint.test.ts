@@ -42,8 +42,9 @@ function makeTarget(
     frontmatter: extractFrontmatter(content, "markdown"),
   };
   const plan = resolvePage(page, CONFIG);
-  if (plan.evals.length === 0) throw new Error("fixture resolved no evals");
-  return { plan, eval: plan.evals[0]! };
+  const ev = plan.evals[0];
+  if (ev === undefined) throw new Error("fixture resolved no evals");
+  return { plan, eval: ev };
 }
 
 function fakeExec(result: Partial<ExecResult>): { exec: ExecFn; calls: string[][] } {

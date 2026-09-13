@@ -74,23 +74,27 @@ export const readingLevelGrader: Grader = {
     );
   },
   mode: "per-file",
-  async grade(ctx) {
-    const findings: Finding[] = [];
-    for (const { plan, eval: ev } of ctx.targets) {
-      const maxGrade =
-        (ev.options as ReadingLevelOptions)["max-grade"] ?? 10;
-      const grade = fleschKincaidGrade(extractProse(plan.page.body));
-      if (grade == null) continue; // Too little prose to score meaningfully.
-      if (grade > maxGrade) {
-        findings.push({
-          evalName: ev.name,
-          file: plan.page.file,
-          ruleId: "reading-level/grade",
-          message: `Flesch-Kincaid grade ${grade.toFixed(1)} exceeds max ${maxGrade}`,
-          severity: ev.severity,
-        });
+  grade(ctx) {
+    // Synchronous work behind an async contract: `.then` keeps a throw a
+    // rejection, as it was when this method was `async`.
+    return Promise.resolve().then(() => {
+      const findings: Finding[] = [];
+      for (const { plan, eval: ev } of ctx.targets) {
+        const maxGrade =
+          (ev.options as ReadingLevelOptions)["max-grade"] ?? 10;
+        const grade = fleschKincaidGrade(extractProse(plan.page.body));
+        if (grade == null) continue; // Too little prose to score meaningfully.
+        if (grade > maxGrade) {
+          findings.push({
+            evalName: ev.name,
+            file: plan.page.file,
+            ruleId: "reading-level/grade",
+            message: `Flesch-Kincaid grade ${grade.toFixed(1)} exceeds max ${maxGrade}`,
+            severity: ev.severity,
+          });
+        }
       }
-    }
-    return findings;
+      return findings;
+    });
   },
 };

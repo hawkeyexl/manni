@@ -44,46 +44,50 @@ export const fileExistsGrader: Grader = {
     );
   },
   mode: "per-file",
-  async grade(ctx) {
-    const findings: Finding[] = [];
-    for (const { plan, eval: ev } of ctx.targets) {
-      const opts = ev.options as FileExistsOptions;
-      const pattern = opts.path ?? "";
-      const wantExists = opts.exists ?? true;
-      const pageDir = dirname(resolve(ctx.root, plan.page.file));
+  grade(ctx) {
+    // Synchronous work behind an async contract: `.then` keeps a throw a
+    // rejection, as it was when this method was `async`.
+    return Promise.resolve().then(() => {
+      const findings: Finding[] = [];
+      for (const { plan, eval: ev } of ctx.targets) {
+        const opts = ev.options as FileExistsOptions;
+        const pattern = opts.path ?? "";
+        const wantExists = opts.exists ?? true;
+        const pageDir = dirname(resolve(ctx.root, plan.page.file));
 
-      if (relative(pageDir, resolve(pageDir, pattern)).startsWith("..")) {
-        findings.push({
-          evalName: ev.name,
-          file: plan.page.file,
-          ruleId: "file-exists/escapes",
-          message: `options.path "${pattern}" resolves outside the page's directory`,
-          severity: ev.severity,
-          line: 1,
-        });
-        continue;
+        if (relative(pageDir, resolve(pageDir, pattern)).startsWith("..")) {
+          findings.push({
+            evalName: ev.name,
+            file: plan.page.file,
+            ruleId: "file-exists/escapes",
+            message: `options.path "${pattern}" resolves outside the page's directory`,
+            severity: ev.severity,
+            line: 1,
+          });
+          continue;
+        }
+
+        // A glob so a page can assert "some example still ships" without naming
+        // one; a literal path is just a glob that matches at most itself, and
+        // `existsSync` covers the case where the literal names a directory,
+        // which fast-glob's default onlyFiles would miss.
+        const matches = fg.sync(pattern, { cwd: pageDir, dot: false, onlyFiles: false });
+        const found = matches.length > 0 || existsSync(join(pageDir, pattern));
+
+        if (found !== wantExists) {
+          findings.push({
+            evalName: ev.name,
+            file: plan.page.file,
+            ruleId: wantExists ? "file-exists/missing" : "file-exists/present",
+            message: wantExists
+              ? `No file matching "${pattern}" beside this page`
+              : `File matching "${pattern}" still exists beside this page, expected absent`,
+            severity: ev.severity,
+            line: 1,
+          });
+        }
       }
-
-      // A glob so a page can assert "some example still ships" without naming
-      // one; a literal path is just a glob that matches at most itself, and
-      // `existsSync` covers the case where the literal names a directory,
-      // which fast-glob's default onlyFiles would miss.
-      const matches = fg.sync(pattern, { cwd: pageDir, dot: false, onlyFiles: false });
-      const found = matches.length > 0 || existsSync(join(pageDir, pattern));
-
-      if (found !== wantExists) {
-        findings.push({
-          evalName: ev.name,
-          file: plan.page.file,
-          ruleId: wantExists ? "file-exists/missing" : "file-exists/present",
-          message: wantExists
-            ? `No file matching "${pattern}" beside this page`
-            : `File matching "${pattern}" still exists beside this page, expected absent`,
-          severity: ev.severity,
-          line: 1,
-        });
-      }
-    }
-    return findings;
+      return findings;
+    });
   },
 };

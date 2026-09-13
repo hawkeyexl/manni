@@ -135,10 +135,13 @@ describe("runPromote", () => {
       }),
     });
 
-    const proposal = proposals[0]!;
+    const proposal = proposals[0];
+    if (proposal === undefined) throw new Error("promote returned no proposal");
     expect(proposal.applied).toBe(true);
     expect(proposal.scriptPath).toBeDefined();
-    expect(existsSync(join(root, proposal.scriptPath!))).toBe(true);
+    const { scriptPath } = proposal;
+    if (scriptPath === undefined) throw new Error("the applied proposal names no script");
+    expect(existsSync(join(root, scriptPath))).toBe(true);
 
     const after = readFileSync(pagePath(root), "utf8");
     expect(after).not.toBe(before);

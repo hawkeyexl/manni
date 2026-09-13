@@ -35,8 +35,9 @@ const validateFrontmatter = ajv.compile(frontmatterSchema);
 /** Parse the frontmatter block of `content` and validate it against the published schema. */
 function frontmatterOf(content: string): Record<string, unknown> {
   const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/.exec(content);
-  expect(match, "output has a frontmatter block").toBeTruthy();
-  const data = parseYaml(match![1]!) as Record<string, unknown>;
+  const block = match?.[1];
+  if (block === undefined) throw new Error("output has no frontmatter block");
+  const data = parseYaml(block) as Record<string, unknown>;
   expect(
     validateFrontmatter(data),
     JSON.stringify(validateFrontmatter.errors),

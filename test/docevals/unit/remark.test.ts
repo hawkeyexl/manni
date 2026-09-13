@@ -42,8 +42,9 @@ function makeTarget(file = "docs/page.mdx", extra: string[] = []): GraderTarget 
     frontmatter: extractFrontmatter(content, "markdown"),
   };
   const plan = resolvePage(page, CONFIG);
-  if (plan.evals.length === 0) throw new Error("fixture resolved no evals");
-  return { plan, eval: plan.evals[0]! };
+  const ev = plan.evals[0];
+  if (ev === undefined) throw new Error("fixture resolved no evals");
+  return { plan, eval: ev };
 }
 
 function fakeExec(result: Partial<ExecResult>): { exec: ExecFn; calls: string[][] } {
@@ -71,7 +72,8 @@ describe("remarkGrader", () => {
   it("asks remark for a JSON report and not a reformatted document", async () => {
     const { exec, calls } = fakeExec({ code: 0, stderr: "[]" });
     await grade(exec);
-    const cmd = calls[0]!;
+    const cmd = calls[0];
+    if (cmd === undefined) throw new Error("remark was never invoked");
     expect(cmd).toContain("--no-stdout");
     expect(cmd).toContain("--report");
     expect(cmd[cmd.indexOf("--report") + 1]).toBe("json");
@@ -93,7 +95,8 @@ describe("remarkGrader", () => {
       "remark-lint/no-literal-urls",
       "remark-lint/no-undefined-references",
     ]);
-    const literal = byRule.get("remark-lint/no-literal-urls")!;
+    const literal = byRule.get("remark-lint/no-literal-urls");
+    if (literal === undefined) throw new Error("no finding for remark-lint/no-literal-urls");
     expect(literal.line).toBe(5);
     expect(literal.col).toBe(7);
     expect(literal.message).toMatch(/autolink/i);

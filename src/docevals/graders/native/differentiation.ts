@@ -55,7 +55,8 @@ export function cosineSimilarity(
 
 function gradeGroup(targets: GraderTarget[]): Finding[] {
   const findings: Finding[] = [];
-  const first = targets[0]!;
+  const first = targets[0];
+  if (first === undefined) return [];
   const opts = first.eval.options as DifferentiationOptions;
   const maxSimilarity = opts["max-similarity"] ?? 0.85;
   const inScope = opts.scope ? picomatch(opts.scope) : () => true;
@@ -69,22 +70,22 @@ function gradeGroup(targets: GraderTarget[]): Finding[] {
     return { target: t, freq, norm: magnitude(freq) };
   });
 
-  for (let i = 0; i < vectors.length; i++) {
+  for (const self of vectors) {
     let worst = { similarity: 0, other: "" };
-    for (let j = 0; j < vectors.length; j++) {
-      if (i === j) continue;
+    for (const sibling of vectors) {
+      if (sibling === self) continue;
       const similarity = cosineSimilarity(
-        vectors[i]!.freq,
-        vectors[j]!.freq,
-        vectors[i]!.norm,
-        vectors[j]!.norm,
+        self.freq,
+        sibling.freq,
+        self.norm,
+        sibling.norm,
       );
       if (similarity > worst.similarity) {
-        worst = { similarity, other: vectors[j]!.target.plan.page.file };
+        worst = { similarity, other: sibling.target.plan.page.file };
       }
     }
     if (worst.similarity > maxSimilarity) {
-      const { target } = vectors[i]!;
+      const { target } = self;
       findings.push({
         evalName: target.eval.name,
         file: target.plan.page.file,
@@ -107,11 +108,15 @@ export const differentiationGrader: Grader = {
     );
   },
   mode: "corpus",
-  async grade(ctx) {
-    const findings: Finding[] = [];
-    for (const group of groupTargetsByEval(ctx.targets)) {
-      findings.push(...gradeGroup(group));
-    }
-    return findings;
+  grade(ctx) {
+    // Synchronous work behind an async contract: `.then` keeps a throw a
+    // rejection, as it was when this method was `async`.
+    return Promise.resolve().then(() => {
+      const findings: Finding[] = [];
+      for (const group of groupTargetsByEval(ctx.targets)) {
+        findings.push(...gradeGroup(group));
+      }
+      return findings;
+    });
   },
 };

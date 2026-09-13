@@ -11,30 +11,35 @@ import { describe, it, expect } from "vitest";
 import { render } from "../../../src/docevals/reporters/index.js";
 import { REPORT_FORMATS } from "../../../src/docevals/reporters/format.js";
 import type { EngineReport } from "../../../src/docevals/core/engine.js";
+import type { EvalResult, Finding } from "../../../src/docevals/types.js";
+
+/** The one finding in REPORT, which the variants below restyle. */
+const STALE: Finding = {
+  evalName: "fresh-enough",
+  file: "docs/goTo.mdx",
+  ruleId: "freshness/stale",
+  message: "Reviewed 900 days ago",
+  severity: "error",
+  line: 4,
+  col: 1,
+};
+
+/** The failing result in REPORT that carries STALE. */
+const FAILING: EvalResult = {
+  evalName: "fresh-enough",
+  suite: "reference",
+  type: "regression",
+  grader: "tool:freshness",
+  file: "docs/goTo.mdx",
+  outcome: "fail",
+  findings: [STALE],
+  durationMs: 3,
+};
 
 const REPORT: EngineReport = {
   pages: 2,
   evalResults: [
-    {
-      evalName: "fresh-enough",
-      suite: "reference",
-      type: "regression",
-      grader: "tool:freshness",
-      file: "docs/goTo.mdx",
-      outcome: "fail",
-      findings: [
-        {
-          evalName: "fresh-enough",
-          file: "docs/goTo.mdx",
-          ruleId: "freshness/stale",
-          message: "Reviewed 900 days ago",
-          severity: "error",
-          line: 4,
-          col: 1,
-        },
-      ],
-      durationMs: 3,
-    },
+    FAILING,
     {
       evalName: "readable",
       suite: "reference",
@@ -141,10 +146,10 @@ describe("sarif reporter", () => {
       ...REPORT,
       evalResults: [
         {
-          ...REPORT.evalResults[0]!,
+          ...FAILING,
           findings: [
-            { ...REPORT.evalResults[0]!.findings![0]!, severity: "warning" },
-            { ...REPORT.evalResults[0]!.findings![0]!, severity: "notice" },
+            { ...STALE, severity: "warning" },
+            { ...STALE, severity: "notice" },
           ],
         },
       ],
@@ -182,10 +187,10 @@ describe("junit reporter", () => {
       ...REPORT,
       evalResults: [
         {
-          ...REPORT.evalResults[0]!,
+          ...FAILING,
           findings: [
             {
-              ...REPORT.evalResults[0]!.findings![0]!,
+              ...STALE,
               message: 'Expected <h1> & got "h2" \'x\'',
             },
           ],
@@ -209,8 +214,8 @@ describe("junit reporter: hostile characters", () => {
     ...REPORT,
     evalResults: [
       {
-        ...REPORT.evalResults[0]!,
-        findings: [{ ...REPORT.evalResults[0]!.findings![0]!, message }],
+        ...FAILING,
+        findings: [{ ...STALE, message }],
       },
     ],
   });

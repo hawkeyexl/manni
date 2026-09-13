@@ -395,7 +395,9 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
       async () => {
         while (index < targets.length) {
           const i = index++;
-          results[i] = await judgeTarget(targets[i]!);
+          const target = targets[i];
+          if (target === undefined) break;
+          results[i] = await judgeTarget(target);
         }
       },
     );

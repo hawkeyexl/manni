@@ -160,10 +160,10 @@ describe("judging a page too long for one call", () => {
     const flaky = {
       provider: () => "mock",
       modelName: () => "m",
-      completeJSON: async () => {
+      completeJSON: () => {
         calls++;
-        if (calls > 1) throw new Error("provider exploded");
-        return { json: { supports: ["a quoted line"], contradicts: [] } };
+        if (calls > 1) return Promise.reject(new Error("provider exploded"));
+        return Promise.resolve({ json: { supports: ["a quoted line"], contradicts: [] } });
       },
     } as unknown as MockProvider;
 
