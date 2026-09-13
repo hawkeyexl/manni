@@ -48,7 +48,7 @@ The step runs unless the job was cancelled, including after the Release step
 fails. The 2.0.0 release published to npm, pushed `v2.0.0` and created the
 GitHub release, then failed in a post-publish step of `@semantic-release/github`.
 The tag step was gated on success, so it was skipped and `v2` was never created.
-Running after a failure means the step cannot assume a release happened, so it
+Running after a failure means the step cannot assume a release happened. So it
 checks, and each gate closes a distinct way of aiming the tag at something
 nobody can install:
 

@@ -189,7 +189,7 @@ jobs:
             exit 1
           fi
           remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          if ! git ls-remote --exit-code --tags "$remote" "refs/tags/v$version" > /dev/null; then
+          if ! git ls-remote --exit-code --tags "$remote" "refs/tags/v$version" >/dev/null 2>&1; then
             echo "::error::npm serves $name@$version, but the remote has no v$version tag; leaving the major tag alone. The release is half-published."
             exit 1
           fi

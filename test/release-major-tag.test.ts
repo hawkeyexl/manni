@@ -11,20 +11,13 @@
  * So the step runs unless the job was cancelled, and proves for itself what the
  * old gate assumed: that a release happened, that it is stable, that npm serves
  * the version, and that its tag is on the remote. These tests run the step's
- * own script, extracted from the workflow, against stub `node`, `npm`, `git`
- * and `sleep`, so they cannot pass against a script the workflow no longer
- * ships.
+ * own script, extracted from the workflow, with `node`, `npm`, `git` and
+ * `sleep` stubbed as shell functions, so they cannot pass against a script the
+ * workflow no longer ships.
  */
 import { describe, it, expect } from "vitest";
 import { execFileSync, spawnSync } from "node:child_process";
-import {
-  chmodSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -80,60 +73,62 @@ interface Result {
   calls: string[];
 }
 
+/** A value as one single-quoted shell word, whatever it contains. */
+const shellQuote = (value: string): string => `'${value.replace(/'/g, "'\\''")}'`;
+
 function runStep(s: Scenario): Result {
   const dir = mkdtempSync(join(tmpdir(), "manni-major-tag-"));
-  const bin = join(dir, "bin");
-  mkdirSync(bin);
-  const log = join(dir, "calls");
+  try {
+    const log = join(dir, "calls");
+    // Stubs are shell functions defined ahead of the step's script, not
+    // executables on PATH. A function wins over any PATH lookup, and PATH order
+    // cannot be trusted: on the Windows runners `bash` is Git for Windows'
+    // launcher, which puts its own `/usr/bin` and `/mingw64/bin` ahead of
+    // anything the test prepends, so a PATH stub named `git` or `sleep` lost to
+    // the real one. The script under test is still the workflow's own.
+    const prelude = [
+      `__log() { printf '%s\\n' "$*" >> ${shellQuote(log.replace(/\\/g, "/"))}; }`,
+      "node() {",
+      '  __log "node $*"',
+      '  case "$*" in',
+      `    *.name*) echo ${shellQuote("@hawkeyexl/manni")} ;;`,
+      `    *.version*) echo ${shellQuote(s.after)} ;;`,
+      "  esac",
+      "}",
+      "npm() {",
+      '  __log "npm $*"',
+      s.npmServes === null ? "  return 1" : `  echo ${shellQuote(s.npmServes)}`,
+      "}",
+      "git() {",
+      '  __log "git $*"',
+      `  if [ "$1" = ls-remote ]; then return ${s.tagOnRemote ? "0" : "2"}; fi`,
+      "}",
+      'sleep() { __log "sleep $*"; }',
+      "",
+    ].join("\n");
 
-  const stub = (name: string, body: string[]): void => {
-    const file = join(bin, name);
-    writeFileSync(
-      file,
-      ["#!/bin/sh", `echo "${name} $*" >> "${log.replace(/\\/g, "/")}"`, ...body, ""].join("\n"),
-      "utf8",
+    writeFileSync(join(dir, "run.sh"), prelude + (tagStep().run ?? ""), "utf8");
+    const res = spawnText(
+      spawnSync("bash", ["--noprofile", "--norc", "-eo", "pipefail", join(dir, "run.sh")], {
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          VERSION_BEFORE: s.before,
+          GH_TOKEN: "token",
+          GITHUB_REPOSITORY: "hawkeyexl/manni",
+        },
+      }),
     );
-    chmodSync(file, 0o755);
-  };
-
-  stub("node", [
-    'case "$*" in',
-    "  *.name*) echo '@hawkeyexl/manni' ;;",
-    `  *.version*) echo '${s.after}' ;;`,
-    "esac",
-  ]);
-  stub(
-    "npm",
-    s.npmServes === null ? ["exit 1"] : [`echo '${s.npmServes}'`],
-  );
-  stub("git", [
-    'case "$1" in',
-    `  ls-remote) exit ${s.tagOnRemote ? 0 : 2} ;;`,
-    "esac",
-    "exit 0",
-  ]);
-  stub("sleep", ["exit 0"]);
-
-  writeFileSync(join(dir, "run.sh"), tagStep().run ?? "", "utf8");
-  const res = spawnText(
-    spawnSync("bash", ["--noprofile", "--norc", "-eo", "pipefail", join(dir, "run.sh")], {
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        PATH: `${bin}:${process.env.PATH ?? ""}`,
-        VERSION_BEFORE: s.before,
-        GH_TOKEN: "token",
-        GITHUB_REPOSITORY: "hawkeyexl/manni",
-      },
-    }),
-  );
-  return {
-    status: res.status ?? -1,
-    stdout: `${res.stdout ?? ""}${res.stderr ?? ""}`,
-    calls: existsSync(log)
-      ? readFileSync(log, "utf8").split("\n").filter((l) => l !== "")
-      : [],
-  };
+    return {
+      status: res.status ?? -1,
+      stdout: `${res.stdout ?? ""}${res.stderr ?? ""}`,
+      calls: existsSync(log)
+        ? readFileSync(log, "utf8").split("\n").filter((l) => l !== "")
+        : [],
+    };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 /** Whether the script moved a tag: a `git tag -f` or a push. */
@@ -187,7 +182,10 @@ describe.skipIf(!hasBash)("the major tag step's script", () => {
     expect(r.status).toBe(1);
     expect(moved(r)).toBe(false);
     expect(r.stdout).toContain("::error::");
-    expect(r.calls.filter((c) => c.startsWith("npm view")).length).toBeGreaterThan(1);
+    expect(r.calls.filter((c) => c.startsWith("npm view")).length).toBe(5);
+    // Four waits between five tries, all stubbed: a real `sleep` here is what
+    // timed these tests out on the Windows runners.
+    expect(r.calls.filter((c) => c.startsWith("sleep")).length).toBe(4);
   });
 
   it("fails without moving the tag when npm serves a different version", () => {
