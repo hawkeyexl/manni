@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.0.1](https://github.com/hawkeyexl/manni/compare/v2.0.0...v2.0.1) (2026-09-13)
+
+
+### Bug Fixes
+
+* run the newest CLI from the hook and the Action, and keep copied versions current ([#33](https://github.com/hawkeyexl/manni/issues/33)) ([28994e7](https://github.com/hawkeyexl/manni/commit/28994e7e097ebdd80ea310009ac7777baff19e85))
+
 # [2.0.0](https://github.com/hawkeyexl/manni/compare/v1.1.1...v2.0.0) (2026-09-12)
 
 
