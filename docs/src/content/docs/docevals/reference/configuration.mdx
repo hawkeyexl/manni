@@ -125,12 +125,12 @@ docevals:
 |---|---|---|---|
 | `provider` | `auto` \| `anthropic` \| `openai` \| `claude-cli` \| `llama-cpp` | `auto` | Which provider judges, generates, fills and promotes. `auto` detects one exactly as `manni meta fill` does: an Anthropic key, then an OpenAI key, then the Claude CLI, then a local model. `--provider` wins over it. An unknown name is **exit 2**. |
 | `model` | string | none | The model within `provider`. manni sets no default: unset, the inference library's default for the provider is used. It needs a named provider, here or from `--provider`, because a model name does not say which provider owns it. `--model` wins over it. |
-| <code>providers.<wbr/>anthropic.<wbr/>apiKeyEnv</code> | string | <code>ANTHROPIC_<wbr/>API_KEY</code> | Environment variable holding the key. |
-| <code>providers.<wbr/>openai.<wbr/>baseUrl</code> | string | <code>https://<wbr/>api.openai.com/<wbr/>v1</code> | Any OpenAI-compatible endpoint. |
-| <code>providers.<wbr/>openai.<wbr/>apiKeyEnv</code> | string | <code>OPENAI_<wbr/>API_KEY</code> | Environment variable holding the key. |
-| <code>providers.<wbr/>claude-cli.<wbr/>command</code> | string | `claude` | The Claude CLI executable. |
-| <code>providers.<wbr/>llama-cpp.<wbr/>modelsDir</code> | string | none | Where GGUF weights live. Unset, the inference library's own directory. |
-| <code>providers.<wbr/>llama-cpp.<wbr/>thoughtTokens</code> | integer ≥ 0 | `0` | Thinking budget before the JSON. |
+| `providers.anthropic.apiKeyEnv` | string | `ANTHROPIC_API_KEY` | Environment variable holding the key. |
+| `providers.openai.baseUrl` | string | `https://api.openai.com/v1` | Any OpenAI-compatible endpoint. |
+| `providers.openai.apiKeyEnv` | string | `OPENAI_API_KEY` | Environment variable holding the key. |
+| `providers.claude-cli.command` | string | `claude` | The Claude CLI executable. |
+| `providers.llama-cpp.modelsDir` | string | none | Where GGUF weights live. Unset, the inference library's own directory. |
+| `providers.llama-cpp.thoughtTokens` | integer ≥ 0 | `0` | Thinking budget before the JSON. |
 
 An `ai` eval's own `provider:` and `model:` sit between the flags and these
 keys, and follow the same rules. The config's `model` belongs to the config's
@@ -158,14 +158,14 @@ Which provider to pick, and what each one implies about where your pages go, is 
 
 | Key | Type | Default | Notes |
 |---|---|---|---|
-| <code>judge.<wbr/>ensembleRuns</code> | integer ≥ 1 | `3` | Independent runs aggregated by consensus. |
+| `judge.ensembleRuns` | integer ≥ 1 | `3` | Independent runs aggregated by consensus. |
 | `judge.temperature` | number ≥ 0 | `0` | |
-| <code>judge.<wbr/>zones.<wbr/>autoPass</code> | number 0–1 | `0.8` | Confidence at or above which a passing consensus auto-passes. |
-| <code>judge.<wbr/>zones.<wbr/>autoFail</code> | number 0–1 | `0.8` | Confidence at or above which a failing consensus auto-fails. |
-| <code>judge.<wbr/>falsePositiveAlert</code> | number 0–1 | `0.15` | Calibration alerts above this false-positive rate. |
-| `judge.cacheDir` | string | <code>.manni/<wbr/>docevals/<wbr/>cache</code> | |
-| `judge.concurrency` | integer ≥ 1 | <code>defaults.<wbr/>concurrency</code> | Pages judged in parallel. Separate from <code>defaults.<wbr/>concurrency</code> because a local `llama-cpp` model runs in-process against one GPU and serves one context at a time. Deterministic graders are happy at 4. |
-| `judge.maxTurns` | integer ≥ 1 \| null | `null` | Stop judging after this many uncached ensemble runs. One ai eval spends <code>judge.<wbr/>ensembleRuns</code> turns; a cached ensemble spends none. `null` is unbounded. |
+| `judge.zones.autoPass` | number 0–1 | `0.8` | Confidence at or above which a passing consensus auto-passes. |
+| `judge.zones.autoFail` | number 0–1 | `0.8` | Confidence at or above which a failing consensus auto-fails. |
+| `judge.falsePositiveAlert` | number 0–1 | `0.15` | Calibration alerts above this false-positive rate. |
+| `judge.cacheDir` | string | `.manni/docevals/cache` | |
+| `judge.concurrency` | integer ≥ 1 | `defaults.concurrency` | Pages judged in parallel. Separate from `defaults.concurrency` because a local `llama-cpp` model runs in-process against one GPU and serves one context at a time. Deterministic graders are happy at 4. |
+| `judge.maxTurns` | integer ≥ 1 \| null | `null` | Stop judging after this many uncached ensemble runs. One ai eval spends `judge.ensembleRuns` turns; a cached ensemble spends none. `null` is unbounded. |
 | `judge.chunkChars` | integer ≥ 1 | `12000` | Characters of page per judge call. A longer page is read in parts. Each part contributes the passages bearing on the assertion, and one judge then answers against the collected evidence. Content that fits is judged in a single call, exactly as before. |
 
 Anything between the two zone thresholds lands in human review. See
@@ -212,10 +212,10 @@ pull requests instead. See [Untrusted pull requests](/manni/docevals/ci/untruste
 
 | Key | Type | Default | Notes |
 |---|---|---|---|
-| <code>fill.<wbr/>confidenceThreshold</code> | number 0–1 | `0.7` | |
-| <code>fill.<wbr/>maxEvalsPerPage</code> | integer ≥ 1 | `3` | |
+| `fill.confidenceThreshold` | number 0–1 | `0.7` | |
+| `fill.maxEvalsPerPage` | integer ≥ 1 | `3` | |
 | `fill.temperature` | number ≥ 0 | `0` | |
-| `fill.cacheDir` | string | <code>.manni/<wbr/>docevals/<wbr/>cache/<wbr/>fill</code> | |
+| `fill.cacheDir` | string | `.manni/docevals/cache/fill` | |
 | `fill.maxTurns` | integer ≥ 1 \| null | `null` | Stop after this many uncached inference calls, one per page filled. |
 | `fill.chunkChars` | integer ≥ 1 | `12000` | Characters of page per fill call. A longer page is proposed against in parts and the proposals merged by id, keeping the highest confidence. |
 
