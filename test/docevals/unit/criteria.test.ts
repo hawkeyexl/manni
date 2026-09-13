@@ -5,7 +5,7 @@
  * one aggregate score. Ours is an *eval*: one assertion, one grader. A
  * criterion is the missing middle — "these three checks together are one
  * thing" — and it lives in `manni.config.yaml` rather than the page
- * vocabulary, because the vocabulary is docmeta's and this is our scoring
+ * vocabulary, because the vocabulary is the metadata tool's and this is our scoring
  * model, not a fact about a page.
  *
  * The rule that matters: a criterion contributes **one** weighted outcome to

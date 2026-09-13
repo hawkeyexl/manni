@@ -1,7 +1,7 @@
 /**
  * The published frontmatter schema — manni docevals' implementation of the
- * common vocabulary docmeta proposes as `manni:evals:1.0.0-proposal.2`
- * (docmeta proposal 0023). docmeta publishes the vocabulary; this repo ships a
+ * common vocabulary the metadata tool proposes as `manni:evals:1.0.0-proposal.2`
+ * (proposal 0023). The metadata tool publishes the vocabulary; this repo ships a
  * schema for it and implements the graders behind it. Consumers point their
  * validator at the shipped file (or import the object directly).
  *

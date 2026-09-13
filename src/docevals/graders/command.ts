@@ -38,7 +38,7 @@ async function gradeOne(
   const result = await ctx.exec(substitute(ev.command, plan.page.absPath), {
     cwd,
     timeoutMs: ev.timeoutMs ?? ctx.config.scripts.timeoutMs,
-    env: { MOOSE_DOCEVALS_FILE: plan.page.absPath },
+    env: { MANNI_DOCEVALS_FILE: plan.page.absPath },
   });
 
   if (result.spawnError) {

@@ -4,8 +4,8 @@
  * The engine grouped deterministic targets by grader *kind* and wrapped the
  * whole `grade()` call in one try/catch — while batch graders loop
  * `groupTargetsByEval` **inside** `grade()`
- * (`src/graders/tools/markdownlint.ts`, `src/graders/tools/docmeta.ts`,
- * `src/graders/tools/vale.ts`, `src/graders/native/differentiation.ts`). So a
+ * (`src/docevals/graders/tools/markdownlint.ts`, `src/docevals/graders/tools/docmeta.ts`,
+ * `src/docevals/graders/tools/vale.ts`, `src/docevals/graders/native/differentiation.ts`). So a
  * throw while processing the second group unwound the entire function and
  * discarded the first group's already-computed findings.
  *

@@ -68,6 +68,16 @@ describe("commandGrader", () => {
     expect(calls[0]).toEqual(["node", "check.mjs", "/fake/docs/page.md"]);
   });
 
+  it("hands the command the page path as MANNI_DOCEVALS_FILE", async () => {
+    const envs: unknown[] = [];
+    const exec: ExecFn = (_cmd, opts) => {
+      envs.push(opts?.env);
+      return Promise.resolve({ code: 0, stdout: "", stderr: "", timedOut: false });
+    };
+    await commandGrader.grade({ targets: [makeTarget(fm)], config: CONFIG, root: "/fake", exec });
+    expect(envs).toEqual([{ MANNI_DOCEVALS_FILE: "/fake/docs/page.md" }]);
+  });
+
   it("fails on nonzero exit with the output tail", async () => {
     const { exec } = fakeExec({ code: 1, stderr: "missing heading" });
     const findings = await commandGrader.grade({

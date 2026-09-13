@@ -221,7 +221,7 @@ export async function runFill(
       }
       // A page longer than the budget is proposed against in parts rather
       // than truncated. Each part is its own call; the results merge by eval
-      // id, keeping the highest confidence — docmeta's `mergeProposals`.
+      // id, keeping the highest confidence — the metadata tool's `mergeProposals`.
       let budget = chunkChars;
       // This page's own parts. `turns` is the run-wide budget counter and
       // includes every earlier page, so reporting it as "N of M parts" names

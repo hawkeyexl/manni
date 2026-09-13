@@ -6,9 +6,9 @@
  * 500-page cleanup: the standard tightens immediately, the backlog is recorded,
  * and nothing regresses past the recorded state.
  *
- * Ported from docmeta's `src/core/baseline.ts`, which solved this first.
+ * Ported from the metadata tool's `src/meta/core/baseline.ts`, which solved this first.
  * `manni.config.yaml` is shared by the family (ADR 01008), so the two tools
- * spell the idea the same way. What differs is the fingerprint: docmeta has a
+ * spell the idea the same way. What differs is the fingerprint: the metadata tool has a
  * JSON Pointer into structured metadata, and we grade prose. See `fingerprint`.
  *
  * Scope: **findings**, which means deterministic graders. An ai-graded eval's

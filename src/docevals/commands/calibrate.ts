@@ -238,7 +238,7 @@ export function seedGoldenCases(options: CalibrateOptions = {}): SeedResult {
         .map(normalizeGoldenCase)
     : [];
 
-  // NUL-separated, as docmeta's fingerprint keys are, and for the same reason:
+  // NUL-separated, as the metadata tool's fingerprint keys are, and for the same reason:
   // a printable separator lets ("a b", "c") and ("a", "b c") collide into one
   // key. A file path may contain a space; nothing may contain a NUL.
   const byKey = new Map(existing.map((c) => [`${c.file}\0${c.eval}`, c]));

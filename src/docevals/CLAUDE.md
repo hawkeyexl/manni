@@ -326,7 +326,8 @@ manni.config.yaml  →  `docevals:` key (src/shared/config-file.ts)  →  Ajv va
 ```
 
 The family loader finds the file and hands this tool the value under
-`docevals:`; a legacy `docevals.config.yaml` is read whole, with a warning.
+`docevals:`. There is no per-tool legacy file name: a `docevals.config.yaml` is
+not read.
 Inside the section `additionalProperties: false` catches typos; the schema's
 root stays permissive because sibling keys are not ours. Don't "fix" it.
 

@@ -142,7 +142,7 @@ describe("docStructureLintGrader: output it could not read is a diagnostic", () 
   // ADR 01022 is the live rule: the finding keeps the eval's severity for
   // display and carries `diagnostic: true`, and the engine fails on the flag.
   // So assert the flag, and assert severity is *not* rewritten. That the flag
-  // fails the eval is pinned end-to-end in `test/unit/diagnostic.test.ts`.
+  // fails the eval is pinned end-to-end in `test/docevals/unit/diagnostic.test.ts`.
   const warningTarget = () =>
     makeTarget('options: { template: "how-to" }', ["    severity: warning"]);
 

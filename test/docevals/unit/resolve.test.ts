@@ -261,7 +261,7 @@ describe("resolvePage", () => {
  * The 0.1 → 1.0.0 semantic trap.
  *
  * In 0.1 a bare string in the eval list was a *reference* to a config-defined
- * eval. In the docmeta vocabulary it is an *assertion* — so a page that still
+ * eval. In the manni:evals vocabulary it is an *assertion* — so a page that still
  * says `- fresh-enough` no longer runs the freshness grader. It quietly sends
  * the words "fresh-enough" to the judge instead, and reports a pass or a fail
  * on that. Nothing errors, and the eval a maintainer thought was guarding the

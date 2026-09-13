@@ -8,7 +8,7 @@ import { parseDocument, Document, YAMLMap, YAMLSeq, isMap, isScalar } from "yaml
 import { DocevalsError } from "../types.js";
 import { leadingFrontmatterFormat } from "./discover.js";
 
-/** Top-level key manni docevals owns inside the shared moose config. */
+/** Top-level key manni docevals owns inside the shared manni config. */
 const NAMESPACE = "docevals";
 
 export interface EvalUpdates {

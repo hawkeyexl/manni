@@ -170,7 +170,7 @@ export function renderSarif(report: EngineReport): string {
         tool: {
           driver: {
             name: "manni-docevals",
-            informationUri: "https://hawkeyexl.github.io/manni docevals/",
+            informationUri: "https://hawkeyexl.github.io/manni/docevals/",
             rules: [...rules.values()],
           },
         },

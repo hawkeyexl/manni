@@ -1,5 +1,5 @@
 /**
- * SARIF and JUnit reporters (docmeta proposal 0003).
+ * SARIF and JUnit reporters (proposal 0003).
  *
  * `github` already annotates a pull request, but it only reaches GitHub
  * Actions. SARIF is what a code-scanning dashboard ingests — findings survive

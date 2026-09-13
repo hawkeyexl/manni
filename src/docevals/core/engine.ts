@@ -116,7 +116,7 @@ export interface RunOptions {
    */
   since?: string;
   /**
-   * Baseline in four states, like docmeta's: `undefined` leaves the config in
+   * Baseline in four states, like the metadata tool's: `undefined` leaves the config in
    * charge, a string names a file, `true` means "use the resolved path even if
    * the config names none", and `false` disables it outright.
    */
@@ -244,7 +244,7 @@ export interface BaselineOutcome {
  * deliberate: a bare `--write-baseline` must record into the *configured* path,
  * because a repo that points `baseline:` somewhere custom would otherwise
  * record into a file nothing ever reads — and the ratchet would silently do
- * nothing at all. docmeta names this exact trap.
+ * nothing at all. The metadata tool names this exact trap.
  */
 function resolveBaseline(
   results: EvalResult[],
@@ -700,8 +700,8 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
   // And read over the pages the author did **not** skip. A page carrying
   // `eval-skip: true` and no suite resolves *zero* evals rather than evals
   // that are then skipped, so counting over every page turned a deliberate,
-  // documented skip into a usage error — `test/fixtures/pages/index.mdx` is
-  // exactly that page, and `docs/src/content/docs/evals/index.mdx` runs it
+  // documented skip into a usage error — `test/docevals/fixtures/pages/index.mdx`
+  // is exactly that page, and `docs/src/content/docs/docevals/evals/index.mdx` runs it
   // expecting exit 0. "Nothing is configured to check the pages you asked
   // about" is the claim; a skipped page is not one of those pages.
   const unskipped = plans.filter((p) => !p.skip);

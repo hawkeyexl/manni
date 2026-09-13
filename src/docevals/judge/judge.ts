@@ -154,7 +154,7 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
      * bias.
      *
      * Two axes, deliberately reported apart because the remedy differs. The
-     * *content* axis is the page's `generated-by` (docmeta:ai-context) — the
+     * *content* axis is the page's `generated-by` (manni:ai-context) — the
      * model wrote the prose it is now grading, and the fix is to judge with a
      * different model. The *criterion* axis is `eval-provenance` — the model
      * proposed the assertion it is now grading, and the fix is for a human to

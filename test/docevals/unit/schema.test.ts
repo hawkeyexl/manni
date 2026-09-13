@@ -2,10 +2,10 @@
  * The frontmatter schema is published from this repo (shipped in the package
  * under schemas/), not registered as a built-in inside a validator. These
  * tests pin the published artifact: it must be resolvable by path, usable by
- * docmeta as a plain schema file, and it must accept the fixture corpus.
+ * manni meta as a plain schema file, and it must accept the fixture corpus.
  *
  * They also pin the *vocabulary* — manni docevals implements
- * `docmeta:evals:1.0.0-proposal.1` (docmeta proposal 0023), so the ladder below
+ * the `manni:evals` vocabulary (proposal 0023), so the ladder below
  * is ported from that proposal's own `ladders/evals-examples.cjs`. The
  * negatives are the migration guard: every 0.1 spelling has to fail loudly,
  * because a page that silently resolves to defaults is the failure mode this
@@ -62,7 +62,7 @@ describe("published frontmatter schema", () => {
     expect(FRONTMATTER_SCHEMA_ID).toMatch(/frontmatter-\d+\.\d+\.\d+\.json$/);
   });
 
-  it("validates the fixture corpus when passed to docmeta as a file path", async () => {
+  it("validates the fixture corpus when passed to manni meta as a file path", async () => {
     const run = await runValidate({
       inputs: ["test/docevals/fixtures/pages/**/*.{md,mdx}"],
       cliSchemas: [frontmatterSchemaPath()],
@@ -92,7 +92,7 @@ describe("published frontmatter schema", () => {
 });
 
 /**
- * The vocabulary ladder, ported from docmeta proposal 0023.
+ * The vocabulary ladder, ported from proposal 0023.
  *
  * Each case is [name, expectedValid, yaml]. The YAML is a whole page's
  * frontmatter, not just the `evals` key — the `eval-` prefix reservation is a
@@ -339,8 +339,8 @@ evals:
     generated-assertion-hash: 07d185732a48ace07056e847b0fadd72fa35f830f7b793f2790db1a59182fd7a`,
   ],
 
-  // Beyond docmeta's ladder: the prefix reservation is this repo's addition.
-  // docmeta's root is `additionalProperties: true`, so a typo'd settings key
+  // Beyond the proposal's ladder: the prefix reservation is this repo's addition.
+  // The vocabulary's root is `additionalProperties: true`, so a typo'd settings key
   // would sail through it; reserving the prefix restores the loud-typo
   // property the closed 0.1 `evals:` object used to have.
   ["N11 a typo'd settings key is caught by the eval- reservation", false, `eval-sute: how-to`],
@@ -362,7 +362,7 @@ evals:
   ["N15 an empty eval list is not a declaration", false, `evals: []`],
 ];
 
-describe("docmeta:evals vocabulary ladder", () => {
+describe("manni:evals vocabulary ladder", () => {
   it.each(cases)("%s", (_name, expectedValid, yaml) => {
     const parsed: unknown = parseYaml(yaml);
     const actual = validate(parsed);

@@ -3,8 +3,8 @@ title: Configuration reference
 description: Every manni.config.yaml key, its type, and its default.
 ---
 
-Every key, verified against `src/core/config-schema.json` and the defaults applied in
-`src/core/config.ts`.
+Every key, verified against `src/docevals/core/config-schema.json` and the defaults applied in
+`src/docevals/core/config.ts`.
 
 ## The `docevals` namespace
 
@@ -40,9 +40,9 @@ One consequence is worth knowing. Because the root is permissive, misspelling th
 defaults, with no named evals, no suites, and a passing exit code. `manni docevals init` writes the
 key correctly; if a run reports far fewer evals than you expect, check that spelling first.
 
-With no config file present, every default below applies and there are no named evals or suites. A
-file left over from before the rename, `docevals.config.yaml`, is not read. manni docevals stops
-and tells you to migrate rather than silently running on defaults.
+With no config file present, every default below applies and there are no named evals or suites.
+The family file is the only one read: a `docevals.config.yaml` is not a config file, however it is
+spelled, so move its settings under `docevals:` in `manni.config.yaml`.
 
 ## Which pages a run reads
 

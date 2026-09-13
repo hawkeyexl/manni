@@ -106,13 +106,13 @@ not 16 lowercase hex characters can never match a real finding. The symptom woul
 came back" with nothing to explain it. The parser rejects it instead, naming the entry:
 
 ```console
-manni docevals: Baseline ".manni-docevals-baseline.json": entries["docs/install.md"] contains
+manni: Baseline ".manni-docevals-baseline.json": entries["docs/install.md"] contains
 "not-a-fingerprint", which is not a fingerprint (16 lowercase hex characters).
 ```
 
 ## Judge cache
 
-Content-addressed. The key is composed in `src/judge/cache.ts` from, among other things:
+Content-addressed. The key is composed in `src/docevals/judge/cache.ts` from, among other things:
 
 - `PROMPT_VERSION`, the judge prompt revision
 - a hash of the page body

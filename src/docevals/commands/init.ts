@@ -6,7 +6,7 @@ import { DEFAULT_CONFIG_FILENAME } from "../core/config.js";
 
 const STARTER_CONFIG = `# manni.config.yaml — shared configuration for the manni family of tools.
 # Each tool reads its own top-level key; manni docevals reads "docevals:".
-# Docs: https://github.com/hawkeyexl/manni docevals
+# Docs: https://hawkeyexl.github.io/manni/docevals/
 
 # The documents every manni tool reads, declared once. A bare
 # \`manni docevals run\` evaluates every collection listed here; pass

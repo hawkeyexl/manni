@@ -55,7 +55,7 @@ describe("splitBody", () => {
     expect(chunks.join("")).toBe(body);
   });
 
-  it("defaults to docmeta's budget, so the family agrees", () => {
+  it("defaults to the metadata tool's budget, so the family agrees", () => {
     expect(DEFAULT_CHUNK_CHARS).toBe(12000);
   });
 });

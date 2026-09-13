@@ -1,5 +1,5 @@
 /**
- * Test helper for building configs against the shared moose config file.
+ * Test helper for building configs against the shared manni config file.
  *
  * `manni.config.yaml` is shared by the whole tool family, so a docevals config
  * lives under a `docevals:` key rather than at the root. Tests care about the
@@ -7,7 +7,7 @@
  * indents it into place. Keeping that in one spot means the namespace can move
  * without touching every test.
  *
- * `test/unit/config.test.ts` deliberately does *not* use this — it pins the
+ * `test/docevals/unit/config.test.ts` deliberately does *not* use this — it pins the
  * file contract itself, including the root-level behavior.
  */
 import { parseConfig, type DocevalsConfig } from "../../../src/docevals/core/config.js";

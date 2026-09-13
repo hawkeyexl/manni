@@ -86,7 +86,7 @@ export interface ResolvedPagePlan {
   suite: string | null;
   /**
    * Model that generated this page's content, read from the page's top-level
-   * `generated-by` (docmeta:ai-context). The judge warns when it matches the
+   * `generated-by` (manni:ai-context). The judge warns when it matches the
    * judging model — self-preference bias.
    */
   generatedBy?: string;

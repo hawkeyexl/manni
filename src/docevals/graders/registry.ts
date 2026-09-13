@@ -1,6 +1,6 @@
 /**
  * Grader registry: maps grader kinds to implementations. Same pattern as
- * docmeta's schema registry — a static map, one entry per built-in.
+ * the metadata tool's schema registry — a static map, one entry per built-in.
  */
 import type { Grader } from "./types.js";
 import { commandGrader } from "./command.js";

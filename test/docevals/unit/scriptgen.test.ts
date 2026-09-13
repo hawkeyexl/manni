@@ -7,7 +7,11 @@ import {
   updateConfigEval,
   hasEditableEval,
 } from "../../../src/docevals/core/frontmatter-edit.js";
-import { makeGenerateScripts, scriptLocationFor } from "../../../src/docevals/graders/scriptgen.js";
+import {
+  makeGenerateScripts,
+  scriptLocationFor,
+  SCRIPTGEN_SYSTEM_PROMPT,
+} from "../../../src/docevals/graders/scriptgen.js";
 import { MockProvider } from "@hawkeyexl/inference";
 import { parseConfig } from "../../../src/docevals/core/config.js";
 import { parseDocevalsConfig, nestUnderDocevals } from "../helpers/config.js";
@@ -123,7 +127,7 @@ function tempWorkspace(): { root: string; pagePath: string } {
 describe("makeGenerateScripts", () => {
   it("writes the script parallel to the doc and persists the command reference", async () => {
     const { root, pagePath } = tempWorkspace();
-    // Already a complete moose config on disk, so it parses as written.
+    // Already a complete manni config on disk, so it parses as written.
     const config = parseConfig(
       readFileSync(join(root, "manni.config.yaml"), "utf8"),
       join(root, "manni.config.yaml"),
@@ -140,6 +144,7 @@ describe("makeGenerateScripts", () => {
     const scriptPath = join(root, "docs", "manni-docevals", "sample.gen-me.mjs");
     expect(existsSync(scriptPath)).toBe(true);
     expect(readFileSync(scriptPath, "utf8")).toContain("manni docevals generated check");
+    expect(SCRIPTGEN_SYSTEM_PROMPT).toContain("(also MANNI_DOCEVALS_FILE)");
 
     // Frontmatter now references the script; hash matches the assertion.
     const updated = readFileSync(pagePath, "utf8");

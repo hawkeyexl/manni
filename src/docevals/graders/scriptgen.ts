@@ -15,7 +15,7 @@ import { sha256 } from "../judge/cache.js";
 import type { InferenceProvider } from "@hawkeyexl/inference";
 import type { GraderTarget } from "./types.js";
 
-export const SCRIPTGEN_VERSION = 1;
+export const SCRIPTGEN_VERSION = 2;
 
 export const SCRIPTGEN_SYSTEM_PROMPT = [
   "You write small, self-contained Node.js check scripts that verify a",
@@ -23,7 +23,7 @@ export const SCRIPTGEN_SYSTEM_PROMPT = [
   "",
   "Contract for every script:",
   "- ES module (.mjs) using only Node.js built-in modules. No dependencies.",
-  "- The page's absolute path arrives as process.argv[2] (also MOOSE_DOCEVALS_FILE).",
+  "- The page's absolute path arrives as process.argv[2] (also MANNI_DOCEVALS_FILE).",
   "- Exit 0 when the assertion holds, 1 when it fails, 2 on operational error.",
   "- On failure, print a short human-readable reason to stderr.",
   "- Deterministic: no network access, no spawning processes, no randomness.",

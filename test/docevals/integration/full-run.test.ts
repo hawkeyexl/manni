@@ -19,7 +19,7 @@ describe("full run with mock judge", () => {
     // Cache dir isolated per test run.
     const cacheRoot = mkdtempSync(join(tmpdir(), "manni docevals-e2e-"));
     const configText = readFileSync(join(ROOT, "manni.config.yaml"), "utf8");
-    // The repo's own config file is already a complete moose config, so it
+    // The repo's own config file is already a complete manni config, so it
     // parses as-is rather than through the nesting helper.
     const config = parseConfig(
       configText.replace("cacheDir: .manni/docevals/cache", `cacheDir: ${JSON.stringify(join(cacheRoot, "cache"))}`),

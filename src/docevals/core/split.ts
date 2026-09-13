@@ -6,7 +6,7 @@
  * over the cap was therefore filled and script-generated from its first half,
  * silently — the model never saw the rest and had no way to say so.
  *
- * Ported from docmeta's `fill`, which solved this first (`splitBody` /
+ * Ported from the metadata tool's `fill`, which solved this first (`splitBody` /
  * `mergeProposals`). The contract, in full:
  *
  *   - chunks are greedy and cut at the last newline before the boundary, so a
@@ -19,12 +19,12 @@
  *     once, because the right chunk size depends on the model, not on us.
  *
  * The chunk budget belongs in every cache key that covers chunked output.
- * docmeta documents why at its own call site: halve-and-retry makes two runs
+ * The metadata tool documents why at its own call site: halve-and-retry makes two runs
  * at different budgets produce genuinely different results, and without the
  * budget in the key the second silently replays the first.
  */
 
-/** Characters of content per inference call. Matches docmeta's default. */
+/** Characters of content per inference call. Matches the metadata tool's default. */
 export const DEFAULT_CHUNK_CHARS = 12000;
 
 /**

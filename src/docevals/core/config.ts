@@ -155,7 +155,7 @@ export interface SuiteDef {
  * Several evals scored as one unit.
  *
  * The grouping lives here rather than in page frontmatter because the page
- * vocabulary is docmeta's and this is our scoring model — a criterion is a
+ * vocabulary is the metadata tool's and this is our scoring model — a criterion is a
  * statement about how a corpus is graded, not a fact about a page.
  */
 export interface CriterionDef {
@@ -239,9 +239,6 @@ export interface DocevalsConfig {
 const NAMESPACE = "docevals";
 
 export const DEFAULT_CONFIG_FILENAME = "manni.config.yaml";
-
-/** The pre-rename filename, kept only to raise a migration error. Never read. */
-const LEGACY_CONFIG_FILENAME = `${NAMESPACE}.config.yaml`;
 
 /**
  * Root keys that only a pre-rename config has. A manni config namespaces every
@@ -345,7 +342,7 @@ interface RawSuiteDef {
  *
  *   severity-map — keyed by the *tool's* own severity names
  *   options      — no: grader options are ours, and they kebab with everything
- *                  else (docmeta proposal 0023 leaves this call to each tool)
+ *                  else (proposal 0023 leaves this call to each tool)
  */
 const FOREIGN_KEY_SPACES = new Set(["severity-map"]);
 
@@ -720,10 +717,9 @@ export function parseConfigSection(
 
 /**
  * Load config from an explicit path, or discover the family file from the
- * working directory upward (`src/shared/config-file.ts`: `manni.config.yaml`
- * read at its `docevals:` key, the pre-rename `manni.config.yaml` with a
- * warning, then `docevals.config.yaml` whole). With no config file present,
- * built-in defaults apply (no named evals or suites).
+ * working directory upward (`src/shared/config-file.ts`: the family file,
+ * read at its `docevals:` key). With no config file present, built-in
+ * defaults apply (no named evals or suites).
  */
 export function loadConfig(path?: string, cwd = process.cwd()): DocevalsConfig {
   const file = path
@@ -785,7 +781,9 @@ export function assertCollectionWithoutPaths(
 
 const CONFIG_FILE: ConfigFileOptions = {
   section: NAMESPACE,
-  legacyNames: [LEGACY_CONFIG_FILENAME],
+  // docevals never shipped a file of its own under manni, so, like cite and
+  // a11y, it has no pre-family name to read.
+  legacyNames: [],
   toError: (message) => new DocevalsError(message),
 };
 

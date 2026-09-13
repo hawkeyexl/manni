@@ -1,7 +1,7 @@
 /**
  * Grader option validation.
  *
- * `options` is deliberately open in the published vocabulary — docmeta
+ * `options` is deliberately open in the published vocabulary — proposal 0023
  * describes it as "grader-specific options; validated by the grader at run
  * time", because a grader's options evolve on the grader's schedule and a
  * closed schema would version on every one. The cost of that openness is that
@@ -10,7 +10,7 @@
  * wrote. This module is the "validated by the grader" half actually happening.
  *
  * Ported from moose-tracevals' `src/graders/util.ts`, which solved it first —
- * the same reason `src/core/baseline.ts` was ported from docmeta. Combinators
+ * the same reason `src/docevals/core/baseline.ts` was ported from the metadata tool. Combinators
  * rather than a JSON Schema per grader: they give messages that name the key,
  * and they express the cross-field constraints (ordered bounds, a criterion
  * that can never pass) that JSON Schema states badly.

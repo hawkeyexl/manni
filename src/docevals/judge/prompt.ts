@@ -75,7 +75,7 @@ export function buildUserContent(
   }
   if (ev.examples?.pass || ev.examples?.fail) {
     parts.push("", "# Anchors");
-    // Anchors widened to lists with the docmeta vocabulary. Interpolating
+    // Anchors widened to lists with the manni:evals vocabulary. Interpolating
     // the array would join it with commas and present several distinct
     // examples to the judge as one run-on sentence.
     for (const anchor of ev.examples.pass ?? []) {

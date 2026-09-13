@@ -3,7 +3,7 @@ title: Output and exit codes
 description: The pretty, json, markdown, github, sarif, junit, and html report shapes, and what each exit code means.
 ---
 
-Verified against `src/reporters/` and `src/types.ts`, with samples captured from real runs against
+Verified against `src/docevals/reporters/` and `src/docevals/types.ts`, with samples captured from real runs against
 the fixture corpus.
 
 ## Exit codes
@@ -242,7 +242,7 @@ the format for a person rather than a machine. It shows which pages failed, what
 quoted, and whether each suite met its target.
 
 ```bash
-npx @hawkeyexl/manni docevals run --format html > manni docevals.html
+npx @hawkeyexl/manni docevals run --format html > docevals.html
 ```
 
 Self-containment is the point. The file is meant to survive being attached to a pull request,
@@ -263,7 +263,7 @@ finding, on which line, first seen when, still open or not. Upload it with
 `github/codeql-action/upload-sarif`.
 
 ```bash
-npx @hawkeyexl/manni docevals run --format sarif > manni docevals.sarif
+npx @hawkeyexl/manni docevals run --format sarif > docevals.sarif
 ```
 
 Two properties are load-bearing, and both are asserted in CI:
@@ -285,7 +285,7 @@ page and `name` as the eval. That is the grouping JUnit viewers offer, so you ex
 its checks.
 
 ```bash
-npx @hawkeyexl/manni docevals run --format junit > manni docevals.junit.xml
+npx @hawkeyexl/manni docevals run --format junit > docevals.junit.xml
 ```
 
 | Outcome | Element |

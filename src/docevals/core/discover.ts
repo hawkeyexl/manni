@@ -1,8 +1,8 @@
 /**
  * Page discovery: resolve the run's document set (positional paths, or the
  * family `collections:`), read each file, and extract frontmatter using
- * docmeta's shared extractor (identical fence handling and JSON-Pointer ->
- * line maps as `docmeta validate`).
+ * the metadata tool's shared extractor (identical fence handling and JSON-Pointer ->
+ * line maps as `manni meta validate`).
  */
 import { readFileSync, statSync } from "node:fs";
 import { resolve, relative, extname } from "node:path";
@@ -51,7 +51,7 @@ export function leadingFrontmatterFormat(
   return FENCES.find((f) => f.open.test(body))?.format;
 }
 
-/** Remove a leading fenced frontmatter block, mirroring docmeta's fence rules. */
+/** Remove a leading fenced frontmatter block, mirroring the metadata tool's fence rules. */
 export function stripFrontmatterBlock(content: string): string {
   const body =
     content.charCodeAt(0) === 0xfeff ? content.slice(1) : content;
