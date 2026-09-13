@@ -10,7 +10,7 @@
 import type { ResolvedEval } from "../core/resolve.js";
 import { partLabel } from "../core/split.js";
 
-export const PROMPT_VERSION = 3;
+export const PROMPT_VERSION = 4;
 
 export const JUDGE_SYSTEM_PROMPT = [
   "You are a meticulous technical documentation judge. You evaluate whether a",

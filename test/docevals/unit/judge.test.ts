@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { computeConsensus, zoneFor } from "@hawkeyexl/inference";
 import { makeJudge } from "../../../src/docevals/judge/judge.js";
+import { PROMPT_VERSION } from "../../../src/docevals/judge/prompt.js";
 import { MockProvider, mockVerdict } from "@hawkeyexl/inference";
 import { parseDocevalsConfig } from "../helpers/config.js";
 import { resolvePage } from "../../../src/docevals/core/resolve.js";
@@ -142,6 +143,19 @@ describe("makeJudge", () => {
     expect(req.user).toContain("Distinctive body text.");
     expect(req.user).toContain("A passing page: yes");
     expect(req.temperature).toBe(0);
+  });
+
+  it("sends the verdict schema under its manni name, at prompt version 4", async () => {
+    // The schema is part of what the model is sent, so renaming it is a prompt
+    // change: PROMPT_VERSION moves with it, and no verdict cached against the
+    // old name replays.
+    expect(PROMPT_VERSION).toBe(4);
+    const provider = new MockProvider([mockVerdict("pass", 0.95)]);
+    await makeJudge({ provider, root: tempRoot() })([makeTarget("Body.")], config, {});
+    expect(provider.requests[0]?.schema).toMatchObject({
+      $id: "manni:docevals:verdict",
+      title: "manni docevals judge verdict",
+    });
   });
 
   it("caches ensembles and replays them", async () => {

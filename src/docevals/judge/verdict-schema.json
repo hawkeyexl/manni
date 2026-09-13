@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "moose-docevals:verdict:0.1",
-  "title": "moose-docevals judge verdict",
+  "$id": "manni:docevals:verdict",
+  "title": "manni docevals judge verdict",
   "type": "object",
   "required": ["claim", "observed", "match", "confidence", "reasoning"],
   "properties": {
