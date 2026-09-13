@@ -1209,6 +1209,6 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
     exitCode: hasFailure ? 1 : 0,
     problems,
     ...(baselineOutcome.summary ? { baseline: baselineOutcome.summary } : {}),
-    ...(scope ? { since: { ...scope, pagesTotal: plans.length } } : {}),
+    ...(scope ? { since: scope } : {}),
   };
 }
