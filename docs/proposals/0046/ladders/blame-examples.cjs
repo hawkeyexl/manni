@@ -89,7 +89,11 @@ function readPage(content) {
   const all = lines(text);
   const m = FRONTMATTER.exec(text);
   if (m === null) return { all, bodyLine: 1, body: all, front: null };
-  const bodyLine = m[0].split("\n").length - (m[0].endsWith("\n") ? 0 : -1);
+  // The body starts on the line after the frontmatter block: one line per
+  // newline the block contains, plus one, plus one more when the closing fence
+  // has no newline after it (the file ends at the fence).
+  const newlines = m[0].split("\n").length - 1;
+  const bodyLine = newlines + (m[0].endsWith("\n") ? 1 : 2);
   let front = null;
   try {
     front = YAML.parse(m[1]) ?? null;
@@ -277,6 +281,11 @@ function trailerValues(commit, key) {
  * and would count "Scott" and "Matt" as machines and drop them from
  * `authors`; today's rule is `name.endsWith("[bot]")`. Matching is otherwise
  * picomatch's default, so case-sensitive.
+ *
+ * For the implementation: `derive.machines` must be matched with this same
+ * option. Proposal 0046 states the rule (its config table and stress test 16),
+ * and this ladder's "Scott and Matt are people" check is the case that fails
+ * without it.
  */
 function machineIdentity(value, machines) {
   const m = /^(.*?)\s*<([^>]*)>\s*$/.exec(value);
