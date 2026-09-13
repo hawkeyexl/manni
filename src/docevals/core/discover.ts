@@ -51,17 +51,26 @@ export function leadingFrontmatterFormat(
   return FENCES.find((f) => f.open.test(body))?.format;
 }
 
-/** Remove a leading fenced frontmatter block, mirroring the metadata tool's fence rules. */
+/**
+ * Remove a leading fenced frontmatter block, mirroring the metadata tool's fence rules.
+ *
+ * The body is sliced out of the page rather than rebuilt from its lines, so it
+ * keeps the page's own line endings. `target: raw` reads the file as written,
+ * and `target: body` has to read the same bytes past the fence; a CRLF page
+ * whose body came back LF would show a regex eval two different pages.
+ */
 export function stripFrontmatterBlock(content: string): string {
   const body =
     content.charCodeAt(0) === 0xfeff ? content.slice(1) : content;
   const fence = FENCES.find((f) => f.open.test(body));
   if (!fence) return body;
-  const lines = body.split(/\r?\n/);
-  for (let i = 1; i < lines.length; i++) {
-    if (fence.isClose(lines[i] ?? "")) {
-      return lines.slice(i + 1).join("\n");
-    }
+  // Split after each newline, so every line keeps its own ending. The fence
+  // test above guarantees an opening line.
+  const [openLine = "", ...rest] = body.split(/(?<=\n)/);
+  let offset = openLine.length;
+  for (const line of rest) {
+    offset += line.length;
+    if (fence.isClose(line.replace(/\r?\n$/, ""))) return body.slice(offset);
   }
   return body;
 }

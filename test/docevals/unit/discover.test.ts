@@ -20,6 +20,27 @@ describe("stripFrontmatterBlock", () => {
     expect(stripFrontmatterBlock("# Heading\nBody")).toBe("# Heading\nBody");
   });
 
+  it("keeps a CRLF page's line endings in the body", () => {
+    // `target: raw` reads the file as written, so `target: body` has to read
+    // the same bytes past the fence, or a regex eval sees two different pages.
+    expect(
+      stripFrontmatterBlock("---\r\ntitle: x\r\n---\r\n# Heading\r\n\r\nBody\r\n"),
+    ).toBe("# Heading\r\n\r\nBody\r\n");
+  });
+
+  it("keeps an LF page's body as written", () => {
+    expect(stripFrontmatterBlock("---\ntitle: x\n---\n# Heading\n\nBody\n")).toBe(
+      "# Heading\n\nBody\n",
+    );
+  });
+
+  it("gives a CRLF page a body that is a suffix of its content", () => {
+    const content = "﻿---\r\ntitle: x\r\n---\r\nOne\r\nTwo";
+    const body = stripFrontmatterBlock(content);
+    expect(body).toBe("One\r\nTwo");
+    expect(content.endsWith(body)).toBe(true);
+  });
+
   it("returns content unchanged for an unclosed fence", () => {
     const s = "---\ntitle: x\nBody without close";
     expect(stripFrontmatterBlock(s)).toBe(s);
