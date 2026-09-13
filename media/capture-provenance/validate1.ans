@@ -1,0 +1,5 @@
+Using manni.config.yaml (.)
+[31m✗[39m docs/limits.md
+    [36m/provenance[39m  provenance lines 13-16 changed since claude-fable-5 wrote them — run manni meta derive[2m  (line 13)[22m  [2m[derived:stale][22m
+
+[31m1 file checked, 0 passed, 1 failed, 1 error[39m

@@ -1,0 +1,12 @@
+{
+  "cat manni.config.yaml (old)": "meta:\n  paths:\n    - \"guides/**/*.md\"\n  schemas:\n    - ./house.schema.json\n\na11y:\n  urls:\n    - http://127.0.0.1:4321/\n",
+  "cat manni.config.yaml (new)": "collections:\n  - name: guides\n    paths:\n      - \"guides/**/*.md\"\n    url: http://127.0.0.1:4321/\n\nmeta:\n  schemas:\n    - ./house.schema.json\n",
+  "manni meta validate (refused)": "manni: manni.config.yaml: \"paths\" is no longer a meta key. Document sets are declared once for every tool, under a top-level collections: list. See https://hawkeyexl.github.io/manni/meta/reference/configuration/#collections\n",
+  "manni meta validate": "Using manni.config.yaml (.)\n\u001b[32m✓\u001b[39m guides/auth.md\n\u001b[32m✓\u001b[39m guides/install.md\n\n\u001b[32m2 files checked, 2 passed, 0 failed, 0 errors\u001b[39m\n",
+  "manni a11y check --collection guides": "Checked 3 of 3 pages (no sitemap; followed links)\n\u001b[32m✓\u001b[39m \u001b[36mhttp://127.0.0.1:4321/\u001b[39m  score 100\n\u001b[32m✓\u001b[39m \u001b[36mhttp://127.0.0.1:4321/install.html\u001b[39m  score 100\n\u001b[32m✓\u001b[39m \u001b[36mhttp://127.0.0.1:4321/auth.html\u001b[39m  score 100\n\n\u001b[32m0 violations on 0 of 3 pages\u001b[39m\n",
+  "exits": {
+    "refused": "2",
+    "validate": "0",
+    "a11y": "0"
+  }
+}

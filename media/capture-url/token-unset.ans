@@ -1,0 +1,2 @@
+Using manni.config.yaml (.)
+manni: Sidecar manifest http://127.0.0.1:8765/docs-meta.yaml: the environment variable PRIVATE_DOCS_TOKEN named by "tokenEnv" is not set.

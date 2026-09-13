@@ -1,0 +1,9 @@
+meta:
+  paths: ["docs/**/*.md"]
+  sidecars:
+    - file: ./docs-meta.yaml
+      keys: [source, jira]
+      join: id
+  overrides:
+    - files: "docs/**/*.md"
+      schemas: [./private.schema.json]

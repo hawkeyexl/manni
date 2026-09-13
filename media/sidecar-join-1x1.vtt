@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:08.867
+join: id: The manifest names pages by their id field, not their path. join: id says which field.
+
+2
+00:00:08.867 --> 00:00:21.133
+Rename the page: The page moved; its entry did not. The values arrive by id, and the new path passes.
+
+3
+00:00:21.133 --> 00:00:26.067
+One id, two pages: dup-a and dup-b both say id: shared. That is a finding on both, and each names the other.
+
+4
+00:00:26.067 --> 00:00:35.067
+The id is the join: query refuses to change the id of a page the manifest matched. Change the manifest first.
+
+5
+00:00:35.067 --> 00:00:39.833
+Exit codes for CI: 1 for findings. 2 for the refusal. A rename is neither: nothing to edit, nothing orphaned.
+

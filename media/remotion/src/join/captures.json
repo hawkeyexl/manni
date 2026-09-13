@@ -1,0 +1,10 @@
+{
+  "cat manni.config.yaml": "meta:\n  paths: [\"docs/**/*.md\"]\n  sidecars:\n    - file: ./docs-meta.yaml\n      keys: [source, jira]\n      join: id\n  overrides:\n    - files: \"docs/**/*.md\"\n      schemas: [./private.schema.json]\n",
+  "cat docs-meta.yaml": "# Keyed by each page's id, so a rename never orphans an entry.\nauth-guide:\n  source: internal/auth-design.md\n  jira: PLAT-412\nbilling-guide:\n  jira: not-a-ticket\nshared:\n  jira: PLAT-7\n",
+  "manni meta validate": "Using manni.config.yaml (.)\n\u001b[31m✗\u001b[39m docs/billing.md\n    \u001b[36m/jira\u001b[39m  must match pattern \"^PLAT-[0-9]+$\"\u001b[2m  (docs-meta.yaml:6)\u001b[22m  \u001b[2m[./private.schema.json]\u001b[22m\n\u001b[31m✗\u001b[39m docs/dup-a.md\n    \u001b[36m/id\u001b[39m  2 documents carry id \"shared\"; docs-meta.yaml cannot tell them apart (docs/dup-b.md)\u001b[2m  (line 3)\u001b[22m  \u001b[2m[sidecar:duplicate]\u001b[22m\n\u001b[31m✗\u001b[39m docs/dup-b.md\n    \u001b[36m/id\u001b[39m  2 documents carry id \"shared\"; docs-meta.yaml cannot tell them apart (docs/dup-a.md)\u001b[2m  (line 3)\u001b[22m  \u001b[2m[sidecar:duplicate]\u001b[22m\n\u001b[32m✓\u001b[39m docs/guides/authentication.md\n\n\u001b[31m4 files checked, 1 passed, 3 failed, 3 errors\u001b[39m\n",
+  "manni meta query": "Using manni.config.yaml (.)\nmanni: \"docs/guides/authentication.md\": \"id\" is the field sidecar docs-meta.yaml joins on, and this document has an entry; change the manifest first.\n",
+  "exits": {
+    "validate": "validate exit=1",
+    "query": "query exit=2"
+  }
+}

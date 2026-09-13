@@ -1,0 +1,12 @@
+{
+  "cat manni.config.yaml (public)": "meta:\n  paths: [\"docs/**/*.md\"]\n  sidecars:\n    - file: http://127.0.0.1:8765/docs-meta.yaml\n      keys: [source, jira]\n  overrides:\n    - files: \"docs/**/*.md\"\n      schemas: [./private.schema.json]\n",
+  "cat manni.config.yaml (private)": "meta:\n  paths: [\"docs/**/*.md\"]\n  sidecars:\n    - file: http://127.0.0.1:8765/docs-meta.yaml\n      keys: [source, jira]\n      tokenEnv: PRIVATE_DOCS_TOKEN\n  overrides:\n    - files: \"docs/**/*.md\"\n      schemas: [./private.schema.json]\n",
+  "manni meta validate": "Using manni.config.yaml (.)\n\u001b[32m✓\u001b[39m docs/auth.md\n\u001b[31m✗\u001b[39m docs/billing.md\n    \u001b[36m/jira\u001b[39m  must match pattern \"^PLAT-[0-9]+$\"\u001b[2m  (http://127.0.0.1:8765/docs-meta.yaml:6)\u001b[22m  \u001b[2m[./private.schema.json]\u001b[22m\n\u001b[31m✗\u001b[39m docs/new.md\n    \u001b[36m(root)\u001b[39m  must have required property 'jira'\u001b[2m  (line 1)\u001b[22m  \u001b[2m[./private.schema.json]\u001b[22m\n\u001b[31m✗\u001b[39m docs/ops.md\n    \u001b[36m/jira\u001b[39m  \"jira\" is owned by sidecar http://127.0.0.1:8765/docs-meta.yaml; remove it from the document\u001b[2m  (line 3)\u001b[22m  \u001b[2m[sidecar:owned]\u001b[22m\n\n\u001b[31m4 files checked, 1 passed, 3 failed, 3 errors\u001b[39m\n",
+  "manni meta validate (token unset)": "Using manni.config.yaml (.)\nmanni: Sidecar manifest http://127.0.0.1:8765/docs-meta.yaml: the environment variable PRIVATE_DOCS_TOKEN named by \"tokenEnv\" is not set.\n",
+  "manni meta validate --offline": "Using manni.config.yaml (.)\nmanni: Sidecar manifest http://127.0.0.1:8765/docs-meta.yaml is remote and the run is offline. Vendor it to a path, or drop --offline.\n",
+  "exits": {
+    "validate": "validate exit=1",
+    "tokenUnset": "token-unset exit=2",
+    "offline": "offline-private exit=2"
+  }
+}

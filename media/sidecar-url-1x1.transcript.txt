@@ -1,0 +1,64 @@
+Sidecar URL manifests, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 40.2 s. Every terminal line is real output of
+`node dist/cli.js meta ...` run inside media/scratch-url/, with the manifest served
+from http://127.0.0.1:8765/ by a local static server.
+
+[0:00-0:06] Title: file: is a URL now (1 / 5)
+$ cat manni.config.yaml
+meta:
+  paths: ["docs/**/*.md"]
+  sidecars:
+    - file: http://127.0.0.1:8765/docs-meta.yaml
+      keys: [source, jira]
+  overrides:
+    - files: "docs/**/*.md"
+      schemas: [./private.schema.json]
+Caption: The manifest lives in another repo. A public one needs no token: a URL and the keys it owns.
+
+[0:06-0:16] Title: validate fetches it (2 / 5)
+$ manni meta validate
+Using manni.config.yaml (.)
+✓ docs/auth.md   (green check)
+✗ docs/billing.md   (red cross)
+    /jira  must match pattern "^PLAT-[0-9]+$"  (http://127.0.0.1:8765/docs-meta.yaml:6)  [./private.schema.json]
+✗ docs/new.md   (red cross)
+    (root)  must have required property 'jira'  (line 1)  [./private.schema.json]
+✗ docs/ops.md   (red cross)
+    /jira  "jira" is owned by sidecar http://127.0.0.1:8765/docs-meta.yaml; remove it from the document  (line 3)  [sidecar:owned]
+
+4 files checked, 1 passed, 3 failed, 3 errors   (red)
+$ echo $?
+1
+Caption: The merged object is checked. billing's bad ticket is reported at the URL, line 6, not in the page.
+
+[0:16-0:29] Title: Private: add tokenEnv (3 / 5)
+$ cat manni.config.yaml
+meta:
+  paths: ["docs/**/*.md"]
+  sidecars:
+    - file: http://127.0.0.1:8765/docs-meta.yaml
+      keys: [source, jira]
+      tokenEnv: PRIVATE_DOCS_TOKEN
+  overrides:
+    - files: "docs/**/*.md"
+      schemas: [./private.schema.json]
+$ manni meta validate
+Using manni.config.yaml (.)
+manni: Sidecar manifest http://127.0.0.1:8765/docs-meta.yaml: the environment variable PRIVATE_DOCS_TOKEN named by "tokenEnv" is not set.
+$ echo $?
+2
+Caption: tokenEnv names the variable holding the token. Unset, the run stops with exit 2 and names the variable.
+
+[0:29-0:35] Title: --offline refuses it (4 / 5)
+$ manni meta validate --offline
+Using manni.config.yaml (.)
+manni: Sidecar manifest http://127.0.0.1:8765/docs-meta.yaml is remote and the run is offline. Vendor it to a path, or drop --offline.
+Caption: A remote manifest is fetched every run, never cached. With no network there is nothing to check, so it stops.
+
+[0:35-0:40] Title: Exit codes for CI (5 / 5)
+(same screen as the previous step)
+$ echo $?
+2
+Caption: 1 for findings, 2 when the manifest cannot be reached. The message names the variable, never the token.
+

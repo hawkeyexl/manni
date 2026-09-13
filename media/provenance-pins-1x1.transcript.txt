@@ -1,0 +1,89 @@
+Provenance pins, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 43.1 s. Every terminal line is real output of git and of
+`node dist/cli.js meta ...` (typed as manni) run inside media/scratch-provenance/,
+a git repository built from test/fixtures/derive/provenance/.
+
+[0:00-0:05] Title: An agent wrote part of it (1 / 5)
+$ git diff
+diff --git a/docs/limits.md b/docs/limits.md
+index 0e4dfeb..da424a6 100644
+--- a/docs/limits.md
++++ b/docs/limits.md
+@@ -6,4 +6,8 @@ title: Rate limits
+ 
+ Requests are limited per token.
+ 
++The limit is 100 requests a minute.   (green, added)
++Bursts of 20 are allowed.   (green, added)
++A 429 response carries Retry-After.   (green, added)
++   (green, added)
+ Contact support to raise it.
+Highlighted rows: lines containing "+The limit", "+Bursts", "+A 429"
+Caption: An agent just wrote these lines. Once they are committed, nothing records which were its.
+
+[0:05-0:15] Title: Stamp before committing (2 / 5)
+$ MANNI_GENERATED_BY=claude-fable-5 manni meta derive
+Using manni.config.yaml (.)
+docs/limits.md
+    provenance  lines 9-12: (unset) → claude-fable-5  (git: uncommitted)
+
+1 file, 1 changed, 1 range written
+$ head -7 docs/limits.md
+---
+title: Rate limits
+provenance:
+  - generated-by: claude-fable-5
+    lines: 6-9
+    integrity: sha256-76646ebddee80b427f77f919e4bcde3463a971a929c8b776fc7be0ef477f60ec
+---
+$ git commit -qam "docs: add the limits"
+Highlighted rows: lines containing "provenance  lines 9-12", "- generated-by:", "lines: 6-9", "integrity:"
+Caption: derive pins the uncommitted lines to claude-fable-5: a body range and a hash of their text.
+
+[0:15-0:23] Title: A person edits one line (3 / 5)
+$ sed -i 's/of 20/of 50/' docs/limits.md
+$ git diff -U0
+diff --git a/docs/limits.md b/docs/limits.md
+index 0804423..bd59dd7 100644
+--- a/docs/limits.md
++++ b/docs/limits.md
+@@ -14 +14 @@ The limit is 100 requests a minute.
+-Bursts of 20 are allowed.   (red, removed)
++Bursts of 50 are allowed.   (green, added)
+$ git commit -qam "docs: raise the burst"
+Highlighted rows: lines containing "-Bursts of 20", "+Bursts of 50"
+Caption: A person changes one line inside the agent's range, and commits it.
+
+[0:23-0:30] Title: validate: the pin broke (4 / 5)
+$ manni meta validate
+Using manni.config.yaml (.)
+✗ docs/limits.md   (red cross)
+    /provenance  provenance lines 13-16 changed since claude-fable-5 wrote them — run manni meta derive  (line 13)  [derived:stale]
+
+1 file checked, 0 passed, 1 failed, 1 error   (red)
+$ echo $?
+1
+Highlighted rows: lines containing "/provenance"
+Caption: The pinned text changed since claude-fable-5 wrote it. validate names the range: exit 1.
+
+[0:30-0:43] Title: derive re-attributes (5 / 5)
+$ manni meta derive
+Using manni.config.yaml (.)
+docs/limits.md
+    provenance  lines 13-16: claude-fable-5 → re-derived  (git: pin)
+
+1 file, 1 changed, 1 range written
+$ manni meta get provenance docs/limits.md
+Using manni.config.yaml (.)
+docs/limits.md: provenance=lines 16 claude-fable-5; lines 18-19 claude-fable-5 (asserted)
+$ manni meta validate
+Using manni.config.yaml (.)
+✓ docs/limits.md   (green check)
+
+1 file checked, 1 passed, 0 failed, 0 errors   (green)
+$ echo $?
+0
+Highlighted rows: lines containing "provenance=lines"
+Caption: The agent keeps its untouched lines. The edited line is attributed to no machine. Exit 0.
+

@@ -1,0 +1,9 @@
+meta:
+  paths:
+    - "guides/**/*.md"
+  schemas:
+    - ./house.schema.json
+
+a11y:
+  urls:
+    - http://127.0.0.1:4321/
