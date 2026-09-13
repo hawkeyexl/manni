@@ -135,7 +135,7 @@ cache verdicts?
 Proposal 0046 would rename `metadata.eval-provenance` to
 `metadata.meta-provenance`, in draft `1.0.0-proposal.3`. Its entries take the
 same shape as the page-level `meta-provenance` in
-[ai-context](/manni/meta/proposals/ai-context/), one level down, because an
-artifact's top level still belongs to its host tool. The `eval-` guard inside
+[ai-context](/manni/meta/proposals/ai-context/). They sit one level down,
+because an artifact's top level still belongs to its host tool. The `eval-` guard inside
 `metadata` no longer excepts `provenance`, so `metadata.eval-provenance` is
 rejected like any other unknown `eval-*` key.
