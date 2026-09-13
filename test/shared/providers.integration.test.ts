@@ -13,7 +13,8 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { PROVIDERS } from "../../src/shared/providers.js";
+/** The providers a message lists: every one a user would pick, and not the test double. */
+const LISTED = "anthropic, openai, claude-cli, llama-cpp, auto";
 import { startSchemaServer, type SchemaServer } from "../helpers/schema-server.js";
 
 const ROOT = resolve(import.meta.dirname, "../..");
@@ -136,7 +137,7 @@ describe("providers: refusals", () => {
     // Were `providers:` not a family key, discovery would pass over this file
     // and both runs would go ahead on defaults.
     const dir = project({ "manni.config.yaml": "providers:\n  provider: gemini\n" });
-    const expected = `manni: manni.config.yaml: Unknown provider "gemini". Available: ${[...PROVIDERS].join(", ")}.\n`;
+    const expected = `manni: manni.config.yaml: Unknown provider "gemini". Available: ${LISTED}.\n`;
     const fill = await manni(["meta", "fill", "missing.md", "--dry-run"], dir);
     expect(fill.stderr).toBe(expected);
     expect(fill.status).toBe(2);

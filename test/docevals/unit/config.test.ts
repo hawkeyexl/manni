@@ -244,7 +244,7 @@ describe("parseConfig", () => {
   it("refuses an unknown provider name with the shared message", () => {
     expect(() => parseConfig(inDocevals("provider: gemini"), PATH)).toThrow(
       new DocevalsError(
-        'Unknown provider "gemini". Available: anthropic, openai, claude-cli, mock, llama-cpp, auto.',
+        'Unknown provider "gemini". Available: anthropic, openai, claude-cli, llama-cpp, auto.',
       ),
     );
   });

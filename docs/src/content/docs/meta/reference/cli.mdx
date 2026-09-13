@@ -659,7 +659,7 @@ used, in both output formats.
 | `--fields` | `<list>` | all candidates | Comma-separated top-level fields to fill. Everything else is left alone. |
 | `--confidence` | `<n>` | `0.7` | Minimum self-reported confidence, from 0 to 1, needed to write a value. A non-numeric or out-of-range value is an error (exit 2). |
 | `--dry-run` | n/a | off | Report proposals without writing them. |
-| `--provider` | `<name>` | `auto` | Inference provider: `auto`, `anthropic`, `openai`, `claude-cli`, `llama-cpp`, or `mock`. `auto` detects one; see [above](#meta-fill). An unknown name is an error (exit 2). |
+| `--provider` | `<name>` | `auto` | Inference provider: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. `auto` detects one; see [above](#meta-fill). An unknown name is an error (exit 2). |
 | `--model` | `<model>` | provider default | Model override. **Needs a named provider**, from either `--provider` or config `fill.provider`. A model name does not say which provider owns it, so pairing it with `auto` (including the default) is an error (exit 2). |
 | `--no-cache` | n/a | cache on | Bypass the proposal cache in `.manni/meta/cache`. |
 | `--local` | n/a | off | Run inference on this machine with `llama-cpp`, over config `fill.provider` and the family's `providers.provider`. A `--provider` other than `llama-cpp` or `auto` is a usage error (exit 2), and so is `claude-cli`, whose binary is local but whose inference is not. Errors (exit 2) if no local model is available. |

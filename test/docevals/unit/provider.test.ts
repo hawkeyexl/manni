@@ -31,7 +31,8 @@ afterEach(() => {
   process.env = { ...ORIGINAL_ENV };
 });
 
-const NAMES = Object.keys(DEFAULT_MODELS).join(", ");
+const NAMES = "anthropic, openai, claude-cli, llama-cpp";
+const LISTED = `${NAMES}, auto`;
 
 /** A family file: the top-level `providers:` body, and a `docevals:` body. */
 function family(providers: string[], docevals: string[] = []) {
@@ -217,7 +218,7 @@ describe("assertProviderSelection", () => {
     const refuse = (): void => { assertProviderSelection({ provider: "gemini", model: undefined }); };
     expect(refuse).toThrow(DocevalsError);
     expect(refuse).toThrow(
-      `Unknown provider "gemini". Available: ${[...PROVIDERS].join(", ")}.`,
+      `Unknown provider "gemini". Available: ${LISTED}.`,
     );
   });
 

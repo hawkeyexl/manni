@@ -327,7 +327,7 @@ describe("per-eval provider selection", () => {
     expect(result?.skipReason).toBe(
       'Model "some-model" was given without a provider: a model name does not say ' +
         "which provider owns it. Set --provider or docevals.provider to one of " +
-        "anthropic, openai, claude-cli, mock, llama-cpp, or drop the model to take " +
+        "anthropic, openai, claude-cli, llama-cpp, or drop the model to take " +
         "the detected provider's default.",
     );
     expect(built).toEqual([]);

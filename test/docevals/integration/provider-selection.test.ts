@@ -18,11 +18,11 @@ const MANNI = join(ROOT, "dist", "cli.js");
 const PAGE = "test/docevals/fixtures/pages/docs/actions/find.mdx";
 
 const UNKNOWN =
-  'manni: Unknown provider "gemini". Available: anthropic, openai, claude-cli, mock, llama-cpp, auto.\n';
+  'manni: Unknown provider "gemini". Available: anthropic, openai, claude-cli, llama-cpp, auto.\n';
 const NO_PROVIDER =
   'manni: Model "some-model" was given without a provider: a model name does not say ' +
   "which provider owns it. Set --provider or docevals.provider to one of anthropic, " +
-  "openai, claude-cli, mock, llama-cpp, or drop the model to take the detected " +
+  "openai, claude-cli, llama-cpp, or drop the model to take the detected " +
   "provider's default.\n";
 
 function manni(args: string[], cwd = ROOT): { stdout: string; stderr: string; status: number | null } {

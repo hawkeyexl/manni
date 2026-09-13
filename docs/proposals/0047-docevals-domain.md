@@ -338,11 +338,7 @@ and the log's README carries a closing note.
    `manni.config.yaml` says why. Scoping which collections a tool reads by
    default is a question for a future proposal, not one this domain should
    answer for every tool.
-2. **`mock` appears in the provider list.** `Unknown provider "x". Available: …`
-   lists every key of the inference library's `DEFAULT_MODELS`, and `mock` is
-   one of them. meta's message has the same list. Filtering it belongs in
-   `src/shared/providers.ts`, for both tools at once.
-3. **Registering the 0023 drafts is 0023's question.** Until the evals
+2. **Registering the 0023 drafts is 0023's question.** Until the evals
    vocabulary is registered, no URL serves it, and a page cannot point
    `$schema` at it.
 

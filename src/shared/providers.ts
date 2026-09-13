@@ -42,6 +42,15 @@ export const PROVIDERS: ReadonlySet<string> = new Set<string>([
   DEFAULT_PROVIDER,
 ]);
 
+/**
+ * The providers a user can name for a model, which is what every message lists.
+ * `mock` is the library's test double: accepted when asked for by name, so the
+ * suite and the docs' own tests can run without a provider, but never offered.
+ */
+const NAMEABLE_PROVIDERS: readonly string[] = Object.keys(DEFAULT_MODELS).filter(
+  (name) => name !== "mock",
+);
+
 /** Refuse a name the library does not offer. */
 export function assertKnownProvider(
   name: string,
@@ -49,7 +58,7 @@ export function assertKnownProvider(
 ): asserts name is ProviderSelector {
   if (PROVIDERS.has(name)) return;
   throw toError(
-    `Unknown provider "${name}". Available: ${[...PROVIDERS].join(", ")}.`,
+    `Unknown provider "${name}". Available: ${[...NAMEABLE_PROVIDERS, DEFAULT_PROVIDER].join(", ")}.`,
   );
 }
 
@@ -76,7 +85,7 @@ export function assertModelHasProvider(
   throw toError(
     `Model "${model}" was given without a provider: a model name does not say ` +
       `which provider owns it. Set --provider or ${configKey} to one of ` +
-      `${Object.keys(DEFAULT_MODELS).join(", ")}, or drop the model to take the ` +
+      `${NAMEABLE_PROVIDERS.join(", ")}, or drop the model to take the ` +
       `detected provider's default.`,
   );
 }
@@ -118,12 +127,6 @@ type ConnectionName = keyof typeof CONNECTION_KEYS;
 const CONNECTION_NAMES = Object.keys(CONNECTION_KEYS) as ConnectionName[];
 
 const TOP_LEVEL_KEYS: readonly string[] = ["provider", "model", ...CONNECTION_NAMES];
-
-/**
- * The providers a user can name for a model. `mock` is the library's test
- * double, answered only when asked for by name, so it is not advice.
- */
-const NAMEABLE_PROVIDERS = Object.keys(DEFAULT_MODELS).filter((name) => name !== "mock");
 
 function isMapping(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

@@ -1069,6 +1069,17 @@ describe("cli fill", () => {
     expect(r.stderr).toContain("auto");
   });
 
+  it("lists every provider but the test double, and still accepts --provider mock", () => {
+    const refused = run(["fill", "test/fixtures/valid.md", "--provider", "antropic"]);
+    expect(refused.stderr).toContain(
+      'Unknown provider "antropic". Available: anthropic, openai, claude-cli, llama-cpp, auto.\n',
+    );
+    const help = run(["fill", "--help"]);
+    expect(help.stdout).not.toContain("mock");
+    const accepted = run(["fill", "test/fixtures/valid.md", "--provider", "mock", "--dry-run", "--no-cache"]);
+    expect(accepted.status).toBe(0);
+  });
+
   it("exits 2 on --model without --provider", () => {
     // A model name does not say which provider owns it. Carried into a detected
     // provider it 404'd mid-run; this fails before any file is read.

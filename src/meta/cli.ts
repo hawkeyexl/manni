@@ -1269,7 +1269,7 @@ export function buildProgram(): Command {
     .option("--dry-run", "report proposals without writing them")
     .option(
       "--provider <name>",
-      "provider: auto (default), anthropic, openai, claude-cli, llama-cpp, mock",
+      "provider: auto (default), anthropic, openai, claude-cli, llama-cpp",
     )
     .option(
       "--model <model>",

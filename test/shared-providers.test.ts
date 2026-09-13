@@ -27,6 +27,9 @@ import {
 class ToolFailure extends Error {}
 const toError = (message: string): Error => new ToolFailure(message);
 
+/** The providers a message lists: every one a user would pick, and not the test double. */
+const LISTED = "anthropic, openai, claude-cli, llama-cpp, auto";
+
 describe("PROVIDERS", () => {
   it("is the library's provider names plus auto", () => {
     expect([...PROVIDERS]).toEqual([...Object.keys(DEFAULT_MODELS), "auto"]);
@@ -47,8 +50,13 @@ describe("assertKnownProvider", () => {
   it("refuses an unknown name in the caller's error class, listing the names", () => {
     expect(() => { assertKnownProvider("gemini", toError); }).toThrow(ToolFailure);
     expect(() => { assertKnownProvider("gemini", toError); }).toThrow(
-      `Unknown provider "gemini". Available: ${[...PROVIDERS].join(", ")}.`,
+      `Unknown provider "gemini". Available: ${LISTED}.`,
     );
+  });
+
+  it("accepts mock by name, and never lists it", () => {
+    expect(() => { assertKnownProvider("mock", toError); }).not.toThrow();
+    expect(() => { assertKnownProvider("gemini", toError); }).toThrow(/^(?!.*mock)/);
   });
 });
 
@@ -59,7 +67,7 @@ describe("assertModelHasProvider", () => {
   });
 
   it("refuses a model under auto, naming the caller's config key", () => {
-    const names = Object.keys(DEFAULT_MODELS).join(", ");
+    const names = "anthropic, openai, claude-cli, llama-cpp";
     for (const key of ["fill.provider", "docevals.provider"]) {
       expect(() => { assertModelHasProvider("auto", "some-model", key, toError); }).toThrow(
         `Model "some-model" was given without a provider: a model name does not say ` +
@@ -208,7 +216,7 @@ describe("parseProviders", () => {
 
   it("refuses an unknown provider name with the shared message", () => {
     expect(refusal({ provider: "gemini" })).toBe(
-      `${SOURCE}: Unknown provider "gemini". Available: ${[...PROVIDERS].join(", ")}.`,
+      `${SOURCE}: Unknown provider "gemini". Available: ${LISTED}.`,
     );
   });
 
