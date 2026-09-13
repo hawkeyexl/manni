@@ -10,8 +10,8 @@ is specific to this tool.
 
 Imported from [hawkeyexl/moose-docevals](https://github.com/hawkeyexl/moose-docevals)
 at 670e62b. Its sources live under `src/docevals/`, its tests under
-`test/docevals/{unit,integration,fixtures,helpers}`, its ADR log under
-`docs/proposals/docevals/`, and its site under
+`test/docevals/{unit,integration,fixtures,helpers}`, its imported ADR log
+(closed at 01045) under `docs/proposals/docevals/`, and its site under
 `docs/src/content/docs/docevals/`. Its content strategy is the family's, in
 `docs/content-strategy/`. It ships no schema file: pages validate against the
 evals draft in `docs/proposals/0023/schemas/`, bundled into the build. The metadata tool is a sibling in this
@@ -94,21 +94,17 @@ The rules that follow from it:
 The strategy is an evidence-based *hypothesis*, not validated research. Re-derive
 it from real call evidence when there are users, and expect it to change.
 
-## Architecture Decision Records
+## Decision records
 
-Every **behavior change** ships with an ADR in [MADR](https://adr.github.io/madr/)
-format under `docs/proposals/docevals/`, beside the ones imported from the
-source repository. The root's supersede-never-amend rule applies.
+A docevals decision goes in the family series, as a proposal under
+`docs/proposals/NNNN-*.md` in that series' format, like any other domain's.
+Proposal 0047 is the first.
 
-- **Format**: MADR 4.0.0. Front matter carries `status`, `date`, and
-  `decision-makers`. The body carries *Context and Problem Statement*,
-  *Decision Drivers*, *Considered Options*, *Decision Outcome* (with
-  *Consequences* and *Confirmation*), and *Pros and Cons of the Options*.
-- **Filename**: `NNNNN-kebab-case-title.md`, 5-digit zero-padded, continuing
-  from the highest number in the directory. `00001`–`00999` is the backfill
-  range for pre-rule decisions; do not take a number from it for new work.
-- **Scope**: decisions (behavior, contracts, trade-offs), not mechanical
-  changes.
+The imported ADR log, `docs/proposals/docevals/`, is **closed at 01045**
+(proposal 0047). It stays as the record, and the ADR numbers cited below still
+resolve there. Do not add an ADR to it. When a new decision replaces one of
+its ADRs, the proposal says so. The ADR's `status:` line is then the only
+edit, under the root's supersede-never-amend rule.
 
 ## Testing behavior
 
@@ -160,9 +156,9 @@ and Node touch.
   library. What stays here is this tool's own work. That is the prompts and
   `PROMPT_VERSION`, the page-worded verdict schema, and the cache-key
   composition (`cache.ts`). It is also `provider.ts`, which picks the provider
-  and model (flag, then the eval's own `provider:`/`model:`, then the config)
-  and maps `docevals.providers` onto the library's `ProviderSpec`, and the
-  orchestration in `judge.ts`. The provider names, the `auto` detection and the
+  and model: flag, then the eval's own `provider:`/`model:`, then the config.
+  It maps `docevals.providers` onto the library's `ProviderSpec`. And it is
+  the orchestration in `judge.ts`. The provider names, the `auto` detection and the
   two refusals are `src/shared/providers.ts`, the code `manni meta fill` runs;
   never grow a docevals-only copy. The orchestration covers bounded concurrency
   across targets, the turn budget, the self-judgment warning, and human-review
@@ -313,15 +309,14 @@ and Node touch.
 - **A bare string in the eval list is an assertion, not a reference.**
   `resolvePage` warns when a shorthand matches a defined eval id and
   deliberately does not reinterpret it.
-- **Config section keys are camelCase; eval, criterion and suite entries are
-  kebab-case.** The `docevals:` section spells its own keys as every manni
-  tool does (`judge.ensembleRuns`), and a kebab spelling of one is an unknown
-  key whose message names the camelCase key. The entries under `evals:`,
-  `criteria:` and `suites:` are the same entries a page carries, so they keep
-  the vocabulary's kebab-case (ADR 01010); `normalizeEvalDef` in
-  `src/docevals/core/config.ts` is the only boundary between that spelling
-  and TypeScript's. `parseConfig` names any camelCase key it finds in an
-  entry and the kebab it should be.
+- **Section keys are camelCase; entries are kebab-case.** Every manni tool
+  spells its own section keys in camelCase, and so does this one. A kebab
+  spelling of one is an unknown key, and its message names the camelCase key.
+  The entries under `evals:`, `criteria:` and `suites:` are the entries a page
+  carries. So they keep the vocabulary's kebab-case, per ADR 01010 and
+  proposal 0047. The one boundary between that spelling and TypeScript's is
+  `normalizeEvalDef` in `src/docevals/core/config.ts`. For any camelCase key
+  in an entry, `parseConfig` names the kebab spelling it should have.
 - **`tool:docmeta` requires `options.schemas`** (ADR 01013). Passing
   `cliSchemas: undefined` would inherit the metadata tool's own
   `DEFAULT_SCHEMAS`, and a bare eval's meaning would then change whenever that

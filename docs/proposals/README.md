@@ -63,6 +63,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0044](0044-citations-and-drift.md) | Citations and drift, which pin a claim to source lines so `manni cite` can check the pin | Devin · D4 / Theo · T1 / Maya · M2 / Sara · S1 | Implemented (#17) |
 | [0045](0045-family-encryption-key.md) | A family encryption key: `encryptionKey:`, `manni key`, and `x-manni-encrypt` for metadata that must not appear in plain text | Sara · S1 / Devin · D5 / Maya · M5 | Implemented (#17) |
 | [0046](0046-provenance-pins.md) | Provenance pins, where `provenance` records which machine wrote which body lines as a range and an integrity hash stamped by `manni meta derive`. Field attribution becomes one `meta-provenance` shape across the family | Maya · M8 / Sara · S1 / Devin · D4 | Implemented (#34) |
+| [0047](0047-docevals-domain.md) | The `docevals` domain, where moose-docevals folds in as `manni docevals` and takes the family's collections, severity, formats, providers, the 0023 draft and 0046's records. Its content strategy joins the family's, and its ADR log closes at 01045 | Devin · D8, D9 / Sara · S6–S9 / Maya · M9–M13 / Theo · T4 | Proposed |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -132,6 +133,12 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
 0040 ──┬─> 0046          (provenance rides the derived channel; decision 2 generalized to a range)
 0044 ──┤                 (the pin: body lines and an integrity hash, one hashing rule)
 0023 ──┘                 (the four provenance shapes it redraws, as new drafts beside the old)
+
+0033 ──┬─> 0047          (the umbrella and the import recipe docevals follows)
+0034 ──┤                 (eight spelled verbs, no default subcommand)
+0041 ──┤                 (collections: replaces docevals.files)
+0046 ──┤                 (the records the self-preference check reads and fill writes)
+0023 ──┘                 (the evals draft pages validate against, with no copy shipped)
 ```
 
 The four `Proposed` SQL items (0026–0029) are independent of each other, with one exception. 0026 and 0029 both grow `query`'s `-f` value list. Each specifies the combined six-value surface, and whichever is implemented second merges into the one const. Recommended implementation order is 0026 → 0029 → 0027 → 0028, which is impact-first. The two config-touching ones (0026, 0027) land apart, so the second rebases trivially.
@@ -169,4 +176,4 @@ commit. The supersede-never-amend rule applies to them as it does here.
 
 | Directory | Source |
 |---|---|
-| [`docevals/`](docevals/) | moose-docevals at 670e62b (00001-00004 and 01000+). |
+| [`docevals/`](docevals/) | moose-docevals at 670e62b (00001-00004 and 01000-01045). Closed at 01045 by [0047](0047-docevals-domain.md); later docevals decisions are in this series. |
