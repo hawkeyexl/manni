@@ -40,18 +40,30 @@ and breaks the publish.
 
 ## The moving major tag
 
-`uses: hawkeyexl/manni@v0` works because the release job force-updates a `v0`
+`uses: hawkeyexl/manni@vN` works because the release job force-updates the `vN`
 tag on each stable release. semantic-release creates immutable `vX.Y.Z` tags and
 nothing else, so without that step the reference resolves to nothing.
 
-The step is gated three ways, and each gate closes a distinct way of aiming the
-tag at something unreleased:
+The step runs unless the job was cancelled, including after the Release step
+fails. The 2.0.0 release published to npm, pushed `v2.0.0` and created the
+GitHub release, then failed in a post-publish step of `@semantic-release/github`.
+The tag step was gated on success, so it was skipped and `v2` was never created.
+Running after a failure means the step cannot assume a release happened, so it
+checks, and each gate closes a distinct way of aiming the tag at something
+nobody can install:
 
 | Gate | Without it |
 |---|---|
 | `github.ref == 'refs/heads/main'` | a `next` or `feat/**` prerelease claims the major tag |
+| the `before` step recorded a version | a failure before that step reads as a changed version |
 | the version changed during the run | a push of only `chore:`/`docs:` commits releases nothing, and the tag moves to an unpublished tree |
 | the version has no `-` suffix | belt and braces on the first, since prerelease identifiers come from the branch name |
+| npm serves exactly that version | a publish that failed after `prepare` bumped `package.json` moves the tag to an unpublished tree |
+| the `vX.Y.Z` tag is on the remote | the major tag is aimed at a tag that was never pushed |
+
+A version that changed but fails either of the last two gates is a
+half-published release. The step fails with an `::error::` annotation rather
+than skipping, so someone looks.
 
 It tags `v$version` rather than `HEAD`, because semantic-release commits the
 changelog and version bump itself, so `HEAD` is not necessarily what it tagged.
@@ -61,8 +73,20 @@ step sets `persist-credentials: false`. The job holds `contents: write`, but no
 credential sits in git's config. The App is also the only actor allowed to
 bypass the `main` ruleset.
 
-Consumers wanting an immutable reference pin `@v4.1.0` instead; that is the usual
-trade and needs nothing here.
+Consumers wanting an immutable reference pin a full tag such as `@vX.Y.Z`
+instead; that is the usual trade and needs nothing here.
+
+## Why the release does not comment on issues
+
+`.releaserc.json` sets `successCommentCondition: false` on
+`@semantic-release/github`. Its success step parses closing keywords out of
+every released commit message and PR body, then resolves all the numbers in one
+GraphQL query. A single number that does not exist in this repository throws
+before any per-issue handling. The 2.0.0 release failed that way after
+publishing, because a commit body quoted an issue number from docmeta's tracker.
+A condition template cannot avoid it, since the query runs before the template
+is evaluated. Failure issues are unaffected: the fail step still opens one when
+a release breaks.
 
 ## Pushing the release commit past branch protection
 
@@ -79,8 +103,8 @@ a **GitHub App** that is the sole bypass actor on the ruleset.
    - Uncheck **Webhook → Active**.
    - **Repository permissions:**
      - Contents: **Read and write** (release commit, tag, GitHub Release)
-     - Issues: **Read and write** (comment on released issues)
-     - Pull requests: **Read and write** (comment on released PRs)
+     - Issues: **Read and write** (open and close the release-failure issue)
+     - Pull requests: **Read and write** (used only by release comments, which are off; see [why](#why-the-release-does-not-comment-on-issues))
    - Where can this App be installed: **Only on this account**.
 
 2. **Generate a private key** for the App (App settings → Private keys →
