@@ -185,7 +185,7 @@ describe("a run truncated by its turn budget", () => {
     return runEvals({
       cwd: REPO,
       config,
-      globs: ["test/docevals/fixtures/pages/docs/actions/goTo.mdx"],
+      paths: ["test/docevals/fixtures/pages/docs/actions/goTo.mdx"],
       generate: false,
       judge: async (aiTargets) =>
         aiTargets.map((t) => ({

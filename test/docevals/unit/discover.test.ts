@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { resolve } from "node:path";
-import { parseDocevalsConfig } from "../helpers/config.js";
+import { nestUnderDocevals } from "../helpers/config.js";
+import { parseConfig } from "../../../src/docevals/core/config.js";
 import { discoverPages, stripFrontmatterBlock } from "../../../src/docevals/core/discover.js";
 import { DocevalsError } from "../../../src/docevals/types.js";
 
@@ -26,13 +27,14 @@ describe("stripFrontmatterBlock", () => {
 });
 
 describe("discoverPages", () => {
-  const config = parseDocevalsConfig(
-    'version: 1\nfiles:\n  include: ["test/docevals/fixtures/pages/**/*.{md,mdx}"]\n',
+  const config = parseConfig(
+    'collections:\n  - name: pages\n    paths: ["test/docevals/fixtures/pages/**/*.{md,mdx}"]\n' +
+      nestUnderDocevals("version: 1\n"),
     resolve(ROOT, "manni.config.yaml"),
   );
 
   it("finds the fixture pages with relative forward-slash paths", () => {
-    const pages = discoverPages(config, [], ROOT);
+    const pages = discoverPages(config, {}, ROOT);
     expect(pages.length).toBeGreaterThanOrEqual(13);
     const files = pages.map((p) => p.file);
     expect(files).toContain("test/docevals/fixtures/pages/docs/get-started/installation.mdx");
@@ -40,7 +42,7 @@ describe("discoverPages", () => {
   });
 
   it("extracts frontmatter data and strips it from body", () => {
-    const pages = discoverPages(config, [], ROOT);
+    const pages = discoverPages(config, {}, ROOT);
     const install = pages.find((p) => p.file.endsWith("installation.mdx"))!;
     expect(install.frontmatter.data.title).toBe("Installation");
     expect(install.frontmatter.present).toBe(true);
@@ -49,7 +51,7 @@ describe("discoverPages", () => {
   });
 
   it("throws DocevalsError when nothing matches", () => {
-    expect(() => discoverPages(config, ["no/such/dir/**/*.md"], ROOT)).toThrow(
+    expect(() => discoverPages(config, { paths: ["no/such/dir/**/*.md"] }, ROOT)).toThrow(
       DocevalsError,
     );
   });

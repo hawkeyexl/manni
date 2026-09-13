@@ -16,7 +16,7 @@ import { DocevalsError } from "../../../src/docevals/types.js";
 
 const dir = () => mkdtempSync(join(tmpdir(), "manni-docevals-init-"));
 
-/** A page in the shape the scaffold's `files.include` looks for. */
+/** A page in the shape the scaffold's `site` collection looks for. */
 function page(root: string, name: string, frontmatter: string[] = []): void {
   mkdirSync(join(root, "docs"), { recursive: true });
   writeFileSync(
@@ -59,6 +59,10 @@ describe("runInit", () => {
     expect(Object.keys(config.evals)).toContain("no-future-promises");
     expect(config.suites.default?.evals).toContain("fresh-enough");
     expect(config.judge.ensembleRuns).toBe(3);
+    // The document set is the family's, not a docevals key (proposal 0041).
+    expect(config.collections.map((c) => [c.name, c.paths])).toEqual([
+      ["site", ["docs/**/*.{md,mdx}"]],
+    ]);
   });
 
   // The defect this pins: the scaffold defined a suite named `default` and

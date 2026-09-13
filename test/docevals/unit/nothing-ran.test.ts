@@ -37,10 +37,11 @@ const OK: ExecResult = { code: 0, stdout: "", stderr: "", timedOut: false };
  * exactly what `init` scaffolded, and the state every corpus is in on day one.
  */
 const CONFIG = [
+  "collections:",
+  "  - name: pages",
+  '    paths: ["docs/**/*.md"]',
   "docevals:",
   "  version: 1",
-  "  files:",
-  '    include: ["docs/**/*.md"]',
   "  defaults:",
   "    suite: null",
   "  evals:",

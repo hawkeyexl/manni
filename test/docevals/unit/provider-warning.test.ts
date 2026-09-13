@@ -50,10 +50,11 @@ function scaffold(): string {
   writeFileSync(
     join(root, "manni.config.yaml"),
     [
+      "collections:",
+      "  - name: pages",
+      '    paths: ["docs/**/*.md"]',
       "docevals:",
       "  version: 1",
-      "  files:",
-      '    include: ["docs/**/*.md"]',
       "  evals:",
       "    fresh-enough:",
       "      assertion: The page was reviewed within the last century.",

@@ -9,7 +9,10 @@ import { resolvePage } from "../../../src/docevals/core/resolve.js";
 import { loadConfig } from "../../../src/docevals/core/config.js";
 import { nestUnderDocevals } from "../helpers/config.js";
 
-const BASE_CONFIG = 'version: 1\nfiles:\n  include: ["docs/**/*.md"]\n';
+const BASE_CONFIG = "version: 1\n";
+
+/** The document set every workspace reads, declared at the family level. */
+const COLLECTIONS = 'collections:\n  - name: pages\n    paths: ["docs/**/*.md"]\n';
 
 const PLAIN_PAGE = ["---", "title: Sample", "---", "", "# Heading", "", "Body.", ""].join("\n");
 
@@ -19,7 +22,7 @@ function workspace(pages: Record<string, string>, config = BASE_CONFIG): string 
   for (const [name, content] of Object.entries(pages)) {
     writeFileSync(join(root, "docs", name), content);
   }
-  writeFileSync(join(root, "manni.config.yaml"), nestUnderDocevals(config));
+  writeFileSync(join(root, "manni.config.yaml"), COLLECTIONS + nestUnderDocevals(config));
   return root;
 }
 
@@ -95,8 +98,6 @@ describe("runFill", () => {
   it("drops proposals that duplicate inline or suite-referenced evals", async () => {
     const config = [
       "version: 1",
-      "files:",
-      '  include: ["docs/**/*.md"]',
       "evals:",
       "  suite-eval:",
       "    assertion: Suite level assertion.",

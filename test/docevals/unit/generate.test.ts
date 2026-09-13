@@ -65,10 +65,11 @@ function scaffold(frontmatter: string[]): string {
   writeFileSync(
     join(root, "manni.config.yaml"),
     [
+      "collections:",
+      "  - name: pages",
+      '    paths: ["docs/**/*.md"]',
       "docevals:",
       "  version: 1",
-      "  files:",
-      '    include: ["docs/**/*.md"]',
       // Generated scripts are `command` evals declared in page frontmatter, so
       // running them at all needs the grant. Without it these tests would
       // assert on a skip, not on generation.
@@ -268,10 +269,11 @@ describe("runGenerate: a config eval shared by several pages", () => {
     writeFileSync(
       join(root, "manni.config.yaml"),
       [
+        "collections:",
+        "  - name: pages",
+        '    paths: ["docs/**/*.md"]',
         "docevals:",
         "  version: 1",
-        "  files:",
-        '    include: ["docs/**/*.md"]',
         "  evals:",
         "    has-heading:",
         `      assertion: ${ASSERTION}`,
@@ -300,10 +302,11 @@ describe("runGenerate: a config eval shared by several pages", () => {
     writeFileSync(
       join(root, "manni.config.yaml"),
       [
+        "collections:",
+        "  - name: pages",
+        '    paths: ["docs/**/*.md"]',
         "docevals:",
         "  version: 1",
-        "  files:",
-        '    include: ["docs/**/*.md"]',
         "  evals:",
         "    central-check:",
         `      assertion: ${ASSERTION}`,

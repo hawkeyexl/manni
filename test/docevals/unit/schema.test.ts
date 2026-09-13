@@ -79,6 +79,7 @@ describe("published frontmatter schema", () => {
     const { runEvals } = await import("../../../src/docevals/core/engine.js");
     const report = await runEvals({
       cwd: ROOT,
+      paths: ["test/docevals/fixtures/pages"],
       deterministicOnly: true,
       generate: false,
     });

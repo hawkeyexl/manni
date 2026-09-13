@@ -18,7 +18,8 @@ function moose(...lines: string[]): string {
 describe("parseConfig", () => {
   it("applies defaults for a minimal config", () => {
     const c = parseConfig(moose("version: 1"), PATH);
-    expect(c.files.include).toEqual(["**/*.{md,mdx}"]);
+    // No document set of its own: those are the family's `collections:`.
+    expect(c.collections).toEqual([]);
     expect(c.defaults.concurrency).toBe(4);
     expect(c.provider.default).toBe("anthropic");
     expect(c.judge.ensembleRuns).toBe(3);
@@ -95,7 +96,7 @@ describe("parseConfig", () => {
   });
 
   it("rejects a missing version", () => {
-    expect(() => parseConfig(moose("files: {}"), PATH)).toThrow(/version/);
+    expect(() => parseConfig(moose("defaults: {}"), PATH)).toThrow(/version/);
   });
 
   it("parses evals and suites, defaulting targetPassRate to 1.0", () => {

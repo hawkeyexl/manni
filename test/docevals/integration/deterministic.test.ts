@@ -12,6 +12,7 @@ describe("deterministic run over fixtures", () => {
   it("produces the expected outcomes", async () => {
     const report = await runEvals({
       cwd: ROOT,
+      paths: ["test/docevals/fixtures/pages"],
       deterministicOnly: true,
       generate: false,
     });
@@ -65,6 +66,7 @@ describe("deterministic run over fixtures", () => {
   it("skips frontmatter commands when disabled", async () => {
     const report = await runEvals({
       cwd: ROOT,
+      paths: ["test/docevals/fixtures/pages"],
       deterministicOnly: true,
       generate: false,
       execution: false,

@@ -3,8 +3,13 @@
  * have a plain-language assertion but no command yet (or whose assertion
  * changed since generation), without running any evals.
  */
-import { loadConfig } from "../core/config.js";
-import { discoverPages } from "../core/discover.js";
+import { loadRunConfig } from "../core/config.js";
+import {
+  discoverPages,
+  documentSet,
+  runConfigOptions,
+  type DocumentInputOptions,
+} from "../core/discover.js";
 import { resolvePages } from "../core/resolve.js";
 import { makeGenerateScripts } from "../graders/scriptgen.js";
 import { makeProvider } from "../judge/provider.js";
@@ -12,8 +17,7 @@ import { sha256 } from "../judge/cache.js";
 import type { InferenceProvider } from "@hawkeyexl/inference";
 import type { GraderTarget } from "../graders/types.js";
 
-export interface GenerateOptions {
-  config?: string;
+export interface GenerateOptions extends DocumentInputOptions {
   provider?: string;
   model?: string;
   cwd?: string;
@@ -27,12 +31,12 @@ export interface GenerateRun {
 }
 
 export async function runGenerate(
-  globs: string[],
+  paths: string[],
   options: GenerateOptions = {},
 ): Promise<GenerateRun> {
   const cwd = options.cwd ?? process.cwd();
-  const config = loadConfig(options.config, cwd);
-  const pages = discoverPages(config, globs, cwd);
+  const config = loadRunConfig(runConfigOptions(paths, options), cwd);
+  const pages = discoverPages(config, documentSet(paths, options, "read"), cwd);
   const plans = resolvePages(pages, config);
 
   const targets: GraderTarget[] = [];

@@ -7,14 +7,18 @@ import { DEFAULT_CONFIG_FILENAME } from "../core/config.js";
 const STARTER_CONFIG = `# manni.config.yaml — shared configuration for the manni family of tools.
 # Each tool reads its own top-level key; manni docevals reads "docevals:".
 # Docs: https://github.com/hawkeyexl/manni docevals
+
+# The documents every manni tool reads, declared once. A bare
+# \`manni docevals run\` evaluates every collection listed here; pass
+# --collection <name> to pick one, or name paths on the command line instead.
+# node_modules and .git are never read.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.{md,mdx}"
+
 docevals:
   version: 1
-
-  files:
-    include:
-      - "docs/**/*.{md,mdx}"
-    exclude:
-      - "**/node_modules/**"
 
   defaults:
     # Suite applied to pages without an eval-suite frontmatter key. Naming the

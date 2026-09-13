@@ -53,10 +53,11 @@ function scaffold(extra: string[], configExtra: string[] = []): string {
   writeFileSync(
     join(root, "manni.config.yaml"),
     [
+      "collections:",
+      "  - name: pages",
+      '    paths: ["docs/**/*.md"]',
       "docevals:",
       "  version: 1",
-      "  files:",
-      '    include: ["docs/**/*.md"]',
       "",
     ].join("\n"),
   );
@@ -130,10 +131,11 @@ describe("target on a deterministic grader", () => {
     writeFileSync(
       join(root, "manni.config.yaml"),
       [
+        "collections:",
+        "  - name: pages",
+        '    paths: ["docs/**/*.md"]',
         "docevals:",
         "  version: 1",
-        "  files:",
-        '    include: ["docs/**/*.md"]',
         "",
       ].join("\n"),
     );

@@ -27,7 +27,7 @@ describe.skipIf(!LIVE)("live smoke via Claude CLI", () => {
     const judge = makeJudge({ provider, root: ROOT });
     const report = await runEvals({
       cwd: ROOT,
-      globs: ["test/docevals/fixtures/pages/docs/get-started/concepts.md"],
+      paths: ["test/docevals/fixtures/pages/docs/get-started/concepts.md"],
       generate: false,
       judgeOptions: { runs: 1, noCache: true },
       judge,
@@ -68,7 +68,8 @@ describe.skipIf(!LIVE)("live smoke via Claude CLI", () => {
     );
     writeFileSync(
       join(root, "manni.config.yaml"),
-      nestUnderDocevals('version: 1\nfiles:\n  include: ["docs/**/*.md"]\n'),
+      'collections:\n  - name: pages\n    paths: ["docs/**/*.md"]\n' +
+        nestUnderDocevals("version: 1\n"),
     );
     const report = await runEvals({
       cwd: root,

@@ -115,9 +115,8 @@ function tempWorkspace(): { root: string; pagePath: string } {
     join(root, "manni.config.yaml"),
     // A generated script becomes a `command` eval on the page, so running it
     // needs the execution grant — without it these tests assert on a skip.
-    nestUnderDocevals(
-      'version: 1\nfiles:\n  include: ["docs/**/*.md"]\nexecution:\n  allow: [frontmatter-commands]\n',
-    ),
+    'collections:\n  - name: pages\n    paths: ["docs/**/*.md"]\n' +
+      nestUnderDocevals("version: 1\nexecution:\n  allow: [frontmatter-commands]\n"),
   );
   return { root, pagePath };
 }

@@ -8,8 +8,14 @@
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import pc from "picocolors";
-import { loadConfig } from "../core/config.js";
-import { discoverPages, leadingFrontmatterFormat } from "../core/discover.js";
+import { loadRunConfig } from "../core/config.js";
+import {
+  discoverPages,
+  documentSet,
+  leadingFrontmatterFormat,
+  runConfigOptions,
+  type DocumentInputOptions,
+} from "../core/discover.js";
 import { resolvePages, type ResolvedPagePlan } from "../core/resolve.js";
 import { appendPageEvals, type NewEvalEntry } from "../core/frontmatter-edit.js";
 import {
@@ -28,8 +34,7 @@ import {
 } from "../fill/prompt.js";
 import { looksLikeOverflow, splitBody } from "../core/split.js";
 
-export interface FillOptions {
-  config?: string;
+export interface FillOptions extends DocumentInputOptions {
   cwd?: string;
   /** Characters of page per inference call; longer pages are split. */
   chunkChars?: number;
@@ -107,12 +112,12 @@ function toEntry(p: ProposedEval): NewEvalEntry {
 }
 
 export async function runFill(
-  globs: string[],
+  paths: string[],
   options: FillOptions = {},
 ): Promise<FillReport> {
   const cwd = options.cwd ?? process.cwd();
-  const config = loadConfig(options.config, cwd);
-  const pages = discoverPages(config, globs, cwd);
+  const config = loadRunConfig(runConfigOptions(paths, options), cwd);
+  const pages = discoverPages(config, documentSet(paths, options, "fill"), cwd);
   const plans = resolvePages(pages, config);
 
   const threshold = options.confidence ?? config.fill.confidenceThreshold;

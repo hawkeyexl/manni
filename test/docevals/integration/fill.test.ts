@@ -15,6 +15,12 @@ import { resolvePages } from "../../../src/docevals/core/resolve.js";
 
 const REPO = resolve(import.meta.dirname, "../../..");
 
+/**
+ * The corpus, named as a path: the repository's config runs it but declares no
+ * collection for it, because every bare `manni meta validate` would read one.
+ */
+const CORPUS = "test/docevals/fixtures/pages";
+
 const PROPOSAL = {
   id: "fill-added-check",
   assertion: "The page states what problem it solves before how to solve it.",
@@ -41,7 +47,7 @@ describe("fill over the fixture corpus", () => {
   it("appends proposals across every frontmatter shape and stays resolvable", async () => {
     const root = copyCorpus();
     const provider = new MockProvider([{ json: { evals: [PROPOSAL] } }]);
-    const report = await runFill([], {
+    const report = await runFill([CORPUS], {
       cwd: root,
       providerInstance: provider,
       noCache: true,
@@ -80,7 +86,7 @@ describe("fill over the fixture corpus", () => {
     // The rewritten corpus still resolves without errors, and every filled
     // page's plan now includes the new eval with grader ai.
     const config = loadConfig(undefined, root);
-    const plans = resolvePages(discoverPages(config, [], root), config);
+    const plans = resolvePages(discoverPages(config, { paths: [CORPUS] }, root), config);
     for (const plan of plans) {
       expect(
         plan.problems.filter((p) => p.level === "error"),

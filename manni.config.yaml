@@ -87,14 +87,13 @@ a11y:
 # `manni docevals run`). Its own key, its own settings; the metadata tool
 # above never reads them. Carried over from moose-docevals with the fixture
 # paths moved under test/docevals/.
+#
+# The corpus is named on the command line, `manni docevals run
+# test/docevals/fixtures/pages`, rather than declared as a collection:
+# a bare `manni meta validate` and `manni cite check` read every collection
+# this file declares, and the fixture pages are not docs pages.
 docevals:
   version: 1
-
-  files:
-    include:
-      - "test/docevals/fixtures/pages/**/*.{md,mdx}"
-    exclude:
-      - "**/node_modules/**"
 
   defaults:
     suite: null

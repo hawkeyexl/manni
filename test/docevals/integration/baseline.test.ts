@@ -39,10 +39,11 @@ function scaffold(extraConfig: string[] = []): string {
   writeFileSync(
     join(root, "manni.config.yaml"),
     [
+      "collections:",
+      "  - name: pages",
+      '    paths: ["docs/**/*.md"]',
       "docevals:",
       "  version: 1",
-      "  files:",
-      '    include: ["docs/**/*.md"]',
       ...extraConfig,
       "  evals:",
       "    fresh-enough:",
@@ -149,7 +150,7 @@ describe("the baseline ratchet", () => {
 
     const narrowed = await run(root, {
       writeBaseline: true,
-      globs: ["docs/does-not-match-*.md"],
+      paths: ["docs/does-not-match-*.md"],
     }).catch((e: unknown) => e);
 
     // An empty input set is an operational error before it can silently

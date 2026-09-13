@@ -1,14 +1,21 @@
 /**
- * Page discovery: glob the configured include/exclude patterns, read each
- * file, and extract frontmatter using docmeta's shared extractor (identical
- * fence handling and JSON-Pointer -> line maps as `docmeta validate`).
+ * Page discovery: resolve the run's document set (positional paths, or the
+ * family `collections:`), read each file, and extract frontmatter using
+ * docmeta's shared extractor (identical fence handling and JSON-Pointer ->
+ * line maps as `docmeta validate`).
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { resolve, relative, extname } from "node:path";
 import fg from "fast-glob";
 import { extractFrontmatter, type ExtractedMetadata } from "../../meta/index.js";
+import { selectCollections } from "../../shared/collections.js";
 import { DocevalsError } from "../types.js";
-import type { DocevalsConfig } from "./config.js";
+import {
+  assertCollectionWithoutPaths,
+  DEFAULT_CONFIG_FILENAME,
+  type DocevalsConfig,
+  type RunConfigOptions,
+} from "./config.js";
 
 export interface PageFile {
   /** Path relative to the discovery root, forward slashes. */
@@ -102,24 +109,155 @@ export function readPage(absPath: string, root: string): PageFile {
 }
 
 /**
- * Discover pages. Explicit `globs` (CLI args) override the config's include
- * patterns; the config's exclude patterns always apply.
+ * What every tool in the family never reads, whatever it was asked for. The
+ * same pair meta's file walk and cite's source index ignore; it replaced
+ * docevals' own `files.exclude` default (proposal 0041).
  */
-export function discoverPages(
-  config: DocevalsConfig,
-  globs: string[] = [],
-  root = process.cwd(),
-): PageFile[] {
-  const patterns = globs.length > 0 ? globs : config.files.include;
-  const entries = fg.sync(patterns, {
-    cwd: root,
-    ignore: config.files.exclude,
+const FAMILY_EXCLUDE = ["**/node_modules/**", "**/.git/**"];
+
+/** The word the empty-input message uses for what the command would do. */
+export type DocumentVerb = "evaluate" | "list" | "fill" | "read";
+
+export interface DocumentSetOptions {
+  /**
+   * Positional paths: files, directories and globs, relative to the working
+   * directory. Empty or absent means the selected collections' `paths:`.
+   */
+  paths?: string[];
+  /**
+   * `--collection <name>`, repeatable. Empty or absent means every declared
+   * collection, because commander's collector hands `[]` over when the flag
+   * was never typed (see `selectCollections`).
+   */
+  collection?: string[];
+  /** `--exclude <glob>`, repeatable. Applies to paths and collections alike. */
+  exclude?: string[];
+  /** Defaults to `evaluate`. */
+  verb?: DocumentVerb;
+}
+
+/**
+ * The document-set options every command that reads pages takes beside its
+ * positional paths: `-c`, `--no-config`, `--collection` and `--exclude`.
+ */
+export interface DocumentInputOptions
+  extends Pick<DocumentSetOptions, "collection" | "exclude"> {
+  /** `-c/--config`. */
+  config?: string;
+  /** `--no-config`: skip discovery and run on the built-in defaults. */
+  noConfig?: boolean;
+}
+
+/** A command's inputs as `loadRunConfig` reads them. */
+export function runConfigOptions(
+  paths: string[],
+  options: DocumentInputOptions,
+): RunConfigOptions {
+  return {
+    paths,
+    ...(options.config === undefined ? {} : { configPath: options.config }),
+    ...(options.noConfig === undefined ? {} : { noConfig: options.noConfig }),
+    ...(options.collection === undefined ? {} : { collection: options.collection }),
+  };
+}
+
+/** A command's inputs as `discoverPages` reads them. */
+export function documentSet(
+  paths: string[],
+  options: DocumentInputOptions,
+  verb: DocumentVerb,
+): DocumentSetOptions {
+  return {
+    paths,
+    verb,
+    ...(options.collection === undefined ? {} : { collection: options.collection }),
+    ...(options.exclude === undefined ? {} : { exclude: options.exclude }),
+  };
+}
+
+/**
+ * One input as fast-glob patterns: a glob as written, an existing file as its
+ * escaped literal, and an existing directory as everything beneath it. Only
+ * the glob is left for fast-glob to interpret, so a literal path with `(` or
+ * `[` in its name still means itself.
+ */
+function toPatterns(input: string, base: string): string[] {
+  if (fg.isDynamicPattern(input)) return [input.replace(/\\/g, "/")];
+  let isDirectory: boolean;
+  try {
+    isDirectory = statSync(resolve(base, input)).isDirectory();
+  } catch {
+    // Missing: kept as written, so it matches nothing and the empty-match
+    // error below names it.
+    return [input.replace(/\\/g, "/")];
+  }
+  const literal = fg.convertPathToPattern(input);
+  return [isDirectory ? `${literal.replace(/\/$/, "")}/**/*` : literal];
+}
+
+/** Every supported page `patterns` match beneath `base`, as absolute paths. */
+function glob(patterns: string[], base: string, ignore: string[]): string[] {
+  return fg.sync(patterns.flatMap((p) => toPatterns(p, base)), {
+    cwd: base,
+    ignore,
     absolute: true,
     dot: false,
     onlyFiles: true,
   });
-  const supported = new Set([".md", ".markdown", ".mdx"]);
-  const files = entries.filter((p) => supported.has(extname(p).toLowerCase()));
+}
+
+const SUPPORTED_EXTENSIONS = new Set([".md", ".markdown", ".mdx"]);
+
+/**
+ * Discover pages (proposal 0041). Positional `paths` are what the operator
+ * typed, resolved from `root` (the working directory). Without them the run
+ * reads the selected collections, each collection's `paths:` resolved from the
+ * config file's directory and narrowed by its own `exclude:`. The family-wide
+ * exclusions and `--exclude` apply to both. Page labels stay relative to
+ * `root` either way.
+ */
+export function discoverPages(
+  config: DocevalsConfig,
+  options: DocumentSetOptions = {},
+  root = process.cwd(),
+): PageFile[] {
+  const paths = options.paths ?? [];
+  const wanted = options.collection ?? [];
+  assertCollectionWithoutPaths(wanted, paths);
+  if (wanted.length > 0 && config.configSource === null) {
+    throw new DocevalsError("--collection needs a config file to select from.");
+  }
+  const collections = selectCollections(
+    config.collections,
+    wanted,
+    config.configSource ?? DEFAULT_CONFIG_FILENAME,
+    (message) => new DocevalsError(message),
+  );
+
+  const exclude = [...FAMILY_EXCLUDE, ...(options.exclude ?? [])];
+  let entries: string[];
+  let patterns: string[];
+  if (paths.length > 0) {
+    patterns = paths;
+    entries = glob(paths, root, exclude);
+  } else {
+    // A collection's `exclude:` shapes that collection only, so each is walked
+    // with its own and the results are joined: a file excluded from one
+    // collection is still read when another collection holds it.
+    patterns = collections.flatMap((c) => c.paths);
+    if (patterns.length === 0) {
+      throw new DocevalsError(
+        `No files to ${options.verb ?? "evaluate"}. Pass paths/globs, or declare a collection under \`collections:\` in manni.config.yaml.`,
+      );
+    }
+    entries = collections.flatMap((c) =>
+      glob(c.paths, config.configDir, [...exclude, ...c.exclude]),
+    );
+  }
+
+  const files = [
+    ...new Set(entries.filter((p) => SUPPORTED_EXTENSIONS.has(extname(p).toLowerCase()))),
+  ];
   if (files.length === 0) {
     throw new DocevalsError(
       `No documentation pages found (patterns: ${patterns.join(", ")})`,

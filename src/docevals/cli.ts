@@ -5,6 +5,8 @@
 import { Command } from "commander";
 import pkg from "../../package.json" with { type: "json" };
 import { programName } from "../shared/program-name.js";
+import { collect, configOption } from "../shared/cli-options.js";
+import type { DocumentInputOptions } from "./core/discover.js";
 import pc from "picocolors";
 import { DocevalsError } from "./types.js";
 import { EXECUTION_GRANTS } from "./core/config.js";
@@ -114,11 +116,50 @@ function parseFormatArg<T extends string>(name: string, allowed: readonly T[]) {
   };
 }
 
-program
-  .command("list")
-  .description("Show the resolved eval plan per page without running anything")
-  .argument("[globs...]", "File globs (default: config files.include)")
-  .option("-c, --config <path>", "Path to manni.config.yaml")
+/**
+ * The document-set surface every verb that reads pages shares (proposal
+ * 0041): positional `[paths...]`, `--collection` and `--exclude` (each one
+ * value per occurrence), and `-c`/`--no-config`. Declared once so the five
+ * verbs cannot drift apart on a name or a description.
+ */
+function documentInputs(command: Command, verb: string): Command {
+  return command
+    .argument(
+      "[paths...]",
+      `Files, directories, or globs to ${verb} (default: the configured collections)`,
+    )
+    .option(
+      "--collection <name>",
+      "Configured collection to read (repeatable)",
+      collect,
+      [],
+    )
+    .option("--exclude <glob>", "Glob to exclude (repeatable)", collect, [])
+    .option("-c, --config <path>", "Path to manni.config.yaml")
+    .option("--no-config", "Ignore any discovered config file");
+}
+
+/** The shared options as the command cores take them. */
+function documentOptions(opts: {
+  collection?: string[];
+  exclude?: string[];
+  config?: string | boolean;
+}): DocumentInputOptions {
+  const { configPath, noConfig } = configOption(opts.config);
+  return {
+    ...(configPath === undefined ? {} : { config: configPath }),
+    ...(noConfig === true ? { noConfig } : {}),
+    ...(opts.collection === undefined ? {} : { collection: opts.collection }),
+    ...(opts.exclude === undefined ? {} : { exclude: opts.exclude }),
+  };
+}
+
+documentInputs(
+  program
+    .command("list")
+    .description("Show the resolved eval plan per page without running anything"),
+  "list",
+)
   .option(
     "-f, --format <format>",
     "Output format: human | json",
@@ -129,17 +170,19 @@ program
   .option("--suite <name>", "Show only evals in this suite")
   .action(
     (
-      globs: string[],
+      paths: string[],
       opts: {
-        config?: string;
+        config?: string | boolean;
+        collection?: string[];
+        exclude?: string[];
         format: SummaryFormat;
         eval?: string[];
         suite?: string;
       },
     ) => {
     try {
-      const run = runList(globs, {
-        config: opts.config,
+      const run = runList(paths, {
+        ...documentOptions(opts),
         format: opts.format,
         evalNames: opts.eval,
         suite: opts.suite,
@@ -151,11 +194,10 @@ program
     }
   });
 
-program
-  .command("run")
-  .description("Run evals against documentation pages")
-  .argument("[globs...]", "File globs (default: config files.include)")
-  .option("-c, --config <path>", "Path to manni.config.yaml")
+documentInputs(
+  program.command("run").description("Run evals against documentation pages"),
+  "evaluate",
+)
   .option(
     "-f, --format <format>",
     "Output format: human | json | markdown | github",
@@ -166,7 +208,7 @@ program
   .option("--ai-only", "Run only AI-judged evals, skip deterministic graders")
   .option(
     // `<kind>`, not `<kind...>`: a variadic option greedily eats the
-    // positional `[globs...]` that follow it, so `--allow-execution
+    // positional `[paths...]` that follow it, so `--allow-execution
     // frontmatter-commands docs/**` would silently swallow the glob and run
     // over the default file set instead. Repeat the flag to grant twice.
     "--allow-execution <kind>",
@@ -211,10 +253,14 @@ program
     "--write-baseline [path]",
     "Record this run's findings as the baseline; without a path, the configured one",
   )
-  .action(async (globs: string[], opts: Record<string, unknown>) => {
+  .action(async (paths: string[], opts: Record<string, unknown>) => {
     try {
-      const report = await runRun(globs, {
-        config: opts.config as string | undefined,
+      const report = await runRun(paths, {
+        ...documentOptions({
+          config: opts.config as string | boolean | undefined,
+          collection: opts.collection as string[] | undefined,
+          exclude: opts.exclude as string[] | undefined,
+        }),
         // parseFormatArg validated this at parse time; the cast only re-narrows
         // from the `unknown` that the Record-typed options bag erases it to.
         format: opts.format as ReportFormat,
@@ -246,22 +292,33 @@ program
     }
   });
 
-program
-  .command("generate")
-  .description(
-    "Generate check scripts for command evals with a plain-language assertion but no command",
-  )
-  .argument("[globs...]", "File globs (default: config files.include)")
-  .option("-c, --config <path>", "Path to manni.config.yaml")
+documentInputs(
+  program
+    .command("generate")
+    .description(
+      "Generate check scripts for command evals with a plain-language assertion but no command",
+    ),
+  "read",
+)
   .option("--provider <name>", "Provider: anthropic | openai | claude-cli | llama-cpp")
   .option("--model <model>", "Model override")
   .action(
     async (
-      globs: string[],
-      opts: { config?: string; provider?: string; model?: string },
+      paths: string[],
+      opts: {
+        config?: string | boolean;
+        collection?: string[];
+        exclude?: string[];
+        provider?: string;
+        model?: string;
+      },
     ) => {
       try {
-        const result = await runGenerate(globs, opts);
+        const result = await runGenerate(paths, {
+          ...documentOptions(opts),
+          provider: opts.provider,
+          model: opts.model,
+        });
         if (result.targets === 0) {
           console.log("Nothing to generate — every command eval has a command.");
           return;
@@ -279,13 +336,14 @@ program
     },
   );
 
-program
-  .command("fill")
-  .description(
-    "Propose frontmatter evals for pages with an LLM; writes proposals at or above the confidence threshold",
-  )
-  .argument("[globs...]", "File globs (default: config files.include)")
-  .option("-c, --config <path>", "Path to manni.config.yaml")
+documentInputs(
+  program
+    .command("fill")
+    .description(
+      "Propose frontmatter evals for pages with an LLM; writes proposals at or above the confidence threshold",
+    ),
+  "fill",
+)
   .option(
     "-f, --format <format>",
     "Output format: human | json",
@@ -311,14 +369,18 @@ program
   )
   .option("--provider <name>", "Provider: anthropic | openai | claude-cli | llama-cpp")
   .option("--model <model>", "Model override")
-  .action(async (globs: string[], opts: Record<string, unknown>) => {
+  .action(async (paths: string[], opts: Record<string, unknown>) => {
     try {
       const confidence = opts.confidence as number | undefined;
       if (confidence !== undefined && confidence > 1) {
         fail(new DocevalsError(`--confidence must be between 0 and 1, got ${confidence}`));
       }
-      const report = await runFill(globs, {
-        config: opts.config as string | undefined,
+      const report = await runFill(paths, {
+        ...documentOptions({
+          config: opts.config as string | boolean | undefined,
+          collection: opts.collection as string[] | undefined,
+          exclude: opts.exclude as string[] | undefined,
+        }),
         dryRun: opts.dryRun as boolean | undefined,
         confidence,
         maxTurns: opts.maxTurns as number | undefined,
@@ -336,23 +398,36 @@ program
     }
   });
 
-program
-  .command("promote")
-  .description(
-    "Find ai-graded evals expressible as deterministic checks; --write converts them",
-  )
-  .argument("[globs...]", "File globs (default: config files.include)")
-  .option("-c, --config <path>", "Path to manni.config.yaml")
+documentInputs(
+  program
+    .command("promote")
+    .description(
+      "Find ai-graded evals expressible as deterministic checks; --write converts them",
+    ),
+  "read",
+)
   .option("--write", "Apply promotions (write scripts and rewrite evals)")
   .option("--provider <name>", "Provider: anthropic | openai | claude-cli | llama-cpp")
   .option("--model <model>", "Model override")
   .action(
     async (
-      globs: string[],
-      opts: { config?: string; write?: boolean; provider?: string; model?: string },
+      paths: string[],
+      opts: {
+        config?: string | boolean;
+        collection?: string[];
+        exclude?: string[];
+        write?: boolean;
+        provider?: string;
+        model?: string;
+      },
     ) => {
       try {
-        const proposals = await runPromote(globs, opts);
+        const proposals = await runPromote(paths, {
+          ...documentOptions(opts),
+          write: opts.write,
+          provider: opts.provider,
+          model: opts.model,
+        });
         if (proposals.length === 0) {
           console.log("No ai-graded evals found.");
           return;

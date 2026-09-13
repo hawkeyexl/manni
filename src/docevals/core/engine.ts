@@ -12,7 +12,7 @@ import type {
   RunReport,
   SuiteSummary,
 } from "../types.js";
-import { loadConfig, type DocevalsConfig, type ExecutionGrant } from "./config.js";
+import { loadRunConfig, type DocevalsConfig, type ExecutionGrant } from "./config.js";
 import { discoverPages } from "./discover.js";
 import { resolvePages, type ResolvedPagePlan } from "./resolve.js";
 import {
@@ -90,7 +90,14 @@ export interface RunOptions {
   configPath?: string;
   /** Preloaded config; skips loading/validating configPath a second time. */
   config?: DocevalsConfig;
-  globs?: string[];
+  /** `--no-config`: skip discovery and run on the built-in defaults. */
+  noConfig?: boolean;
+  /** Files, directories and globs, cwd-relative; empty means the collections. */
+  paths?: string[];
+  /** `--collection <name>`, repeatable (proposal 0041). */
+  collection?: string[];
+  /** `--exclude <glob>`, repeatable. */
+  exclude?: string[];
   cwd?: string;
   deterministicOnly?: boolean;
   aiOnly?: boolean;
@@ -617,9 +624,29 @@ function summarizeSuites(
 
 export async function runEvals(options: RunOptions = {}): Promise<EngineReport> {
   const cwd = options.cwd ?? process.cwd();
-  const config = options.config ?? loadConfig(options.configPath, cwd);
+  const paths = options.paths ?? [];
+  const config =
+    options.config ??
+    loadRunConfig(
+      {
+        paths,
+        ...(options.configPath === undefined ? {} : { configPath: options.configPath }),
+        ...(options.noConfig === undefined ? {} : { noConfig: options.noConfig }),
+        ...(options.collection === undefined ? {} : { collection: options.collection }),
+      },
+      cwd,
+    );
   const exec = options.exec ?? realExec;
-  const pages = discoverPages(config, options.globs ?? [], cwd);
+  const pages = discoverPages(
+    config,
+    {
+      paths,
+      verb: "evaluate",
+      ...(options.collection === undefined ? {} : { collection: options.collection }),
+      ...(options.exclude === undefined ? {} : { exclude: options.exclude }),
+    },
+    cwd,
+  );
   // Refused up front, not at the end: a re-record rebuilds the file from this
   // run's findings, so recording from a filtered run would drop every
   // fingerprint the filter excluded. Deciding it here costs nothing; deciding

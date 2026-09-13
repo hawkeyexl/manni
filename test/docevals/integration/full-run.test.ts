@@ -31,6 +31,7 @@ describe("full run with mock judge", () => {
 
     const report = await runEvals({
       cwd: ROOT,
+      paths: ["test/docevals/fixtures/pages"],
       generate: false,
       judge: async (targets, _config, options) =>
         judge(targets, config, options),

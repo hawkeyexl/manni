@@ -42,10 +42,11 @@ evals:
 Body.
 `;
 
-const CONFIG = `docevals:
+const CONFIG = `collections:
+  - name: pages
+    paths: ["docs/**/*.md"]
+docevals:
   version: 1
-  files:
-    include: ["docs/**/*.md"]
 `;
 
 function scaffold(): string {

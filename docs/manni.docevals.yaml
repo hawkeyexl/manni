@@ -26,14 +26,17 @@
 #   by not carrying the directory. The AI-graded evals stay defined below and
 #   out of the default suite, as they were, until a target for `docs-page-full`
 #   is decided and `manni docevals calibrate` has been run against it.
+#
+# The pages come from a collection, whose paths resolve from this file's
+# directory (docs/), not from where the command runs. This file is reached only
+# by `-c`, so the collection is invisible to a bare `manni meta validate`.
+collections:
+  - name: docevals-pages
+    paths:
+      - "src/content/docs/docevals/**/*.{md,mdx}"
+
 docevals:
   version: 1
-
-  files:
-    include:
-      - "docs/src/content/docs/docevals/**/*.{md,mdx}"
-    exclude:
-      - "**/node_modules/**"
 
   defaults:
     # Every docs page gets this suite without repeating it in frontmatter. Pages

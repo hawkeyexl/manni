@@ -45,10 +45,11 @@ function scaffold(allow: string[]): string {
   writeFileSync(
     join(root, "manni.config.yaml"),
     [
+      "collections:",
+      "  - name: pages",
+      '    paths: ["docs/**/*.md"]',
       "docevals:",
       "  version: 1",
-      "  files:",
-      '    include: ["docs/**/*.md"]',
       "  execution:",
       `    allow: [${allow.join(", ")}]`,
       "",
@@ -191,10 +192,11 @@ describe("the options.command bypass", () => {
     writeFileSync(
       join(root, "manni.config.yaml"),
       [
+        "collections:",
+        "  - name: pages",
+        '    paths: ["docs/**/*.md"]',
         "docevals:",
         "  version: 1",
-        "  files:",
-        '    include: ["docs/**/*.md"]',
         ...configEval,
         "  execution:",
         `    allow: [${allow.join(", ")}]`,

@@ -4,7 +4,8 @@
  * available and not disabled.
  */
 import { runEvals, type EngineReport, type JudgeFn, type RunOptions } from "../core/engine.js";
-import { loadConfig, type DocevalsConfig } from "../core/config.js";
+import { loadRunConfig, type DocevalsConfig } from "../core/config.js";
+import { runConfigOptions, type DocumentInputOptions } from "../core/discover.js";
 import { render, type ReportFormat } from "../reporters/index.js";
 import { makeJudge } from "../judge/judge.js";
 import { makeProvider } from "../judge/provider.js";
@@ -14,8 +15,7 @@ import { DocevalsError } from "../types.js";
 import { EXECUTION_GRANTS } from "../core/config.js";
 import type { ExecutionGrant } from "../core/config.js";
 
-export interface RunCommandOptions {
-  config?: string;
+export interface RunCommandOptions extends DocumentInputOptions {
   format?: ReportFormat;
   deterministicOnly?: boolean;
   aiOnly?: boolean;
@@ -66,7 +66,7 @@ function asGrants(values: string[] | undefined): ExecutionGrant[] | undefined {
 }
 
 export async function runRun(
-  globs: string[],
+  paths: string[],
   options: RunCommandOptions = {},
   engineOverrides: Partial<RunOptions> = {},
 ): Promise<EngineReport> {
@@ -82,7 +82,7 @@ export async function runRun(
 
   // Loaded once and passed through to the engine — a run must not validate
   // the config twice or observe two different versions of it.
-  const config: DocevalsConfig = loadConfig(options.config, cwd);
+  const config: DocevalsConfig = loadRunConfig(runConfigOptions(paths, options), cwd);
 
   // Build the judge and generation stages unless deterministic-only or an
   // override supplies them. Both share one provider.
@@ -125,7 +125,10 @@ export async function runRun(
     generateScripts,
     config,
     configPath: options.config,
-    globs,
+    noConfig: options.noConfig,
+    paths,
+    collection: options.collection,
+    exclude: options.exclude,
     cwd: options.cwd,
     deterministicOnly: options.deterministicOnly,
     aiOnly: options.aiOnly,

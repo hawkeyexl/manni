@@ -1,0 +1,33 @@
+# docevals reading its document set from the family `collections:` list
+# (proposal 0041). Two collections, so selection has something to narrow:
+# `guides` is a glob with an `exclude:`, `blog` is a bare directory.
+# `outside/` belongs to neither, so only a typed path reaches it.
+collections:
+  - name: guides
+    paths:
+      - "docs/**/*.md"
+    exclude:
+      - "docs/drafts/**"
+  - name: blog
+    paths:
+      - "blog"
+
+docevals:
+  version: 1
+
+  defaults:
+    suite: default
+
+  evals:
+    fresh-enough:
+      assertion: Page was reviewed within the last century.
+      grader: tool:freshness
+      options:
+        field: last-reviewed
+        max-age-days: 36500
+      severity: error
+
+  suites:
+    default:
+      target-pass-rate: 1.0
+      evals: [fresh-enough]

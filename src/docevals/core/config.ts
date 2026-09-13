@@ -12,6 +12,7 @@ import {
   readConfigFileSync,
   type ConfigFileOptions,
 } from "../../shared/config-file.js";
+import { parseCollections, type CollectionConfig } from "../../shared/collections.js";
 import { parse as parseYaml } from "yaml";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import configSchema from "./config-schema.json" with { type: "json" };
@@ -161,7 +162,16 @@ export interface CriterionDef {
 
 export interface DocevalsConfig {
   version: 1;
-  files: { include: string[]; exclude: string[] };
+  /**
+   * The family's document sets, from the file's top-level `collections:`
+   * (proposal 0041). `[]` when the key is absent or no file governs the run.
+   */
+  collections: CollectionConfig[];
+  /**
+   * The config file as the user would name it, for messages; `null` when no
+   * file governs the run and every value is a built-in default.
+   */
+  configSource: string | null;
   defaults: { suite: string | null; failFast: boolean; concurrency: number };
   provider: {
     default: ProviderName;
@@ -267,7 +277,6 @@ interface RawProviderSection {
 
 interface RawDocevalsConfig {
   version?: 1;
-  files?: { include?: string[]; exclude?: string[] };
   defaults?: {
     suite?: string | null;
     "fail-fast"?: boolean;
@@ -392,24 +401,57 @@ export function parseConfig(text: string, configPath: string): DocevalsConfig {
   if (raw == null || typeof raw !== "object" || Array.isArray(raw)) {
     throw new DocevalsError(`Invalid config in ${configPath}: root must be an object`);
   }
-  const wrapped = NAMESPACE in raw;
-  return parseConfigSection(
-    wrapped ? (raw as Record<string, unknown>)[NAMESPACE] : raw,
-    configPath,
-    wrapped,
-  );
+  const doc = raw as Record<string, unknown>;
+  const wrapped = NAMESPACE in doc;
+  // The family key, parsed as the shared loader parses it, so a config built
+  // from text selects from the same collections a discovered file would.
+  const collections = Object.hasOwn(doc, COLLECTIONS_KEY)
+    ? parseCollections(doc[COLLECTIONS_KEY], configPath, (message) => new DocevalsError(message))
+    : [];
+  return parseConfigSection(wrapped ? doc[NAMESPACE] : doc, configPath, wrapped, {
+    source: configPath,
+    collections,
+  });
+}
+
+/** The family's top-level key for document sets (proposal 0041). */
+const COLLECTIONS_KEY = "collections";
+
+/**
+ * Where the metadata tool's configuration reference documents `collections:`.
+ * The literal cite's and meta's `config.ts` carry, repeated because those
+ * modules are theirs.
+ */
+const CONFIG_REF = "https://hawkeyexl.github.io/manni/meta/reference/configuration/";
+
+/**
+ * The key proposal 0041 moved out of `docevals:` and up to the family level.
+ * Refused rather than aliased, as meta and cite refuse theirs: an alias would
+ * be a second place to declare a document set that is meant to be declared
+ * once. Checked before Ajv, which would call it an unknown key.
+ */
+const MOVED_KEY = "files";
+
+/** What the file the section came from carries beside it. */
+export interface ConfigFileContext {
+  /** The file as the user would name it, for messages. */
+  source: string;
+  /** The file's top-level `collections:`. */
+  collections: CollectionConfig[];
 }
 
 /**
  * Validate the tool's section. `value` is what sat under `docevals:` when
  * `wrapped`, and the whole document otherwise (a legacy file, or an explicit
  * path with no wrapper key). Messages name `configPath`; relative paths in
- * the config resolve against its directory.
+ * the config resolve against its directory. `file` carries the family keys;
+ * absent, the section is its own source and declares no collections.
  */
 export function parseConfigSection(
   value: unknown,
   configPath: string,
   wrapped: boolean,
+  file: ConfigFileContext = { source: configPath, collections: [] },
 ): DocevalsConfig {
   // The rest of this function reads `raw` as the document shape the checks
   // below were written against: a mapping with the section under NAMESPACE.
@@ -435,6 +477,18 @@ export function parseConfigSection(
       );
     }
   }
+  const section = raw[NAMESPACE];
+  if (
+    section !== null &&
+    typeof section === "object" &&
+    !Array.isArray(section) &&
+    Object.hasOwn(section, MOVED_KEY)
+  ) {
+    throw new DocevalsError(
+      `${file.source}: "${MOVED_KEY}" is no longer a docevals key. Document sets are declared once for every tool, under a top-level collections: list. See ${CONFIG_REF}#collections`,
+    );
+  }
+
   // Every config key is kebab-case now. Ajv would reject a leftover camelCase
   // spelling as "must NOT have additional properties", which names the parent
   // object and leaves the reader to guess which key. Name the key and its
@@ -527,10 +581,8 @@ export function parseConfigSection(
 
   const config: DocevalsConfig = {
     version: 1,
-    files: {
-      include: r.files?.include ?? ["**/*.{md,mdx}"],
-      exclude: r.files?.exclude ?? ["**/node_modules/**"],
-    },
+    collections: file.collections,
+    configSource: file.source,
     defaults: {
       suite: r.defaults?.suite ?? null,
       failFast: r.defaults?.["fail-fast"] ?? false,
@@ -651,10 +703,58 @@ export function loadConfig(path?: string, cwd = process.cwd()): DocevalsConfig {
   const file = path
     ? readConfigFileSync(path, cwd, CONFIG_FILE)
     : findConfigFileSync(cwd, CONFIG_FILE);
-  if (file === null) {
-    return parseConfig("{}", resolve(cwd, DEFAULT_CONFIG_FILENAME));
+  if (file === null) return defaultConfig(cwd);
+  return parseConfigSection(file.value, file.path, file.wrapped, {
+    source: file.source,
+    collections: file.collections,
+  });
+}
+
+/**
+ * Every built-in default, with no file behind it: what a run gets when
+ * discovery finds nothing, or under `--no-config`. It declares no collections,
+ * so such a run reads only the paths it was given.
+ */
+export function defaultConfig(cwd = process.cwd()): DocevalsConfig {
+  return {
+    ...parseConfigSection(null, resolve(cwd, DEFAULT_CONFIG_FILENAME), false),
+    configSource: null,
+  };
+}
+
+export interface RunConfigOptions {
+  /** `-c/--config`. */
+  configPath?: string;
+  /** `--no-config`: skip discovery and run on the built-in defaults. */
+  noConfig?: boolean;
+  /** Positional paths; checked here only for how they combine with `collection`. */
+  paths?: string[];
+  /** `--collection <name>`, repeatable. */
+  collection?: string[];
+}
+
+/**
+ * The config a command runs under. `--collection` names something only a
+ * config can define and selects a set the operator did not type, so pairing it
+ * with paths is refused before discovery, and the message is about the flags
+ * rather than about whatever the walk found. The missing-config refusal is
+ * `discoverPages`', which every command reaches next.
+ */
+export function loadRunConfig(opts: RunConfigOptions, cwd = process.cwd()): DocevalsConfig {
+  assertCollectionWithoutPaths(opts.collection, opts.paths);
+  return opts.noConfig ? defaultConfig(cwd) : loadConfig(opts.configPath, cwd);
+}
+
+/** The message meta and cite give, in docevals' error class. */
+export function assertCollectionWithoutPaths(
+  collection: readonly string[] | undefined,
+  paths: readonly string[] | undefined,
+): void {
+  if ((collection ?? []).length > 0 && (paths ?? []).length > 0) {
+    throw new DocevalsError(
+      "--collection selects a configured collection; it cannot be combined with paths.",
+    );
   }
-  return parseConfigSection(file.value, file.path, file.wrapped);
 }
 
 const CONFIG_FILE: ConfigFileOptions = {

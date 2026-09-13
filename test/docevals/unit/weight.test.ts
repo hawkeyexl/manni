@@ -47,10 +47,11 @@ function scaffold(weights: { passes?: number; fails?: number } = {}): string {
   writeFileSync(
     join(root, "manni.config.yaml"),
     [
+      "collections:",
+      "  - name: pages",
+      '    paths: ["docs/**/*.md"]',
       "docevals:",
       "  version: 1",
-      "  files:",
-      '    include: ["docs/**/*.md"]',
       "  defaults:",
       "    suite: reference",
       "  evals:",

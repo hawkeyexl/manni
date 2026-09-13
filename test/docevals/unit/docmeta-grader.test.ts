@@ -102,7 +102,6 @@ describe("tool:docmeta without options.schemas", () => {
 describe("a grader that throws mid-run", () => {
   const CONFIG_TEXT = [
     "version: 1",
-    'files: { include: ["test/docevals/fixtures/pages/docs/actions/find.mdx"] }',
     "evals:",
     "  bad-schema-path:",
     "    assertion: Frontmatter validates.",
@@ -126,6 +125,7 @@ describe("a grader that throws mid-run", () => {
     const report = await runEvals({
       cwd: process.cwd(),
       config,
+      paths: ["test/docevals/fixtures/pages/docs/actions/find.mdx"],
       deterministicOnly: true,
       generate: false,
     });
@@ -141,6 +141,7 @@ describe("a grader that throws mid-run", () => {
     const report = await runEvals({
       cwd: process.cwd(),
       config,
+      paths: ["test/docevals/fixtures/pages/docs/actions/find.mdx"],
       deterministicOnly: true,
       generate: false,
     });
@@ -164,6 +165,7 @@ describe("a grader that throws mid-run", () => {
     const report = await runEvals({
       cwd: process.cwd(),
       config,
+      paths: ["test/docevals/fixtures/pages/docs/actions/find.mdx"],
       deterministicOnly: true,
       generate: false,
     });

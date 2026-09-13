@@ -4,8 +4,13 @@
  * resolution.
  */
 import pc from "picocolors";
-import { loadConfig } from "../core/config.js";
-import { discoverPages } from "../core/discover.js";
+import { loadRunConfig } from "../core/config.js";
+import {
+  discoverPages,
+  documentSet,
+  runConfigOptions,
+  type DocumentInputOptions,
+} from "../core/discover.js";
 import { resolvePages, type ResolvedPagePlan } from "../core/resolve.js";
 import { applySelection } from "../core/engine.js";
 import {
@@ -14,8 +19,7 @@ import {
   type SummaryFormat,
 } from "../reporters/format.js";
 
-export interface ListOptions {
-  config?: string;
+export interface ListOptions extends DocumentInputOptions {
   format?: SummaryFormat;
   /** Show only these evals by name (ADR 01018). */
   evalNames?: string[];
@@ -30,10 +34,10 @@ export interface ListRun {
   exitCode: 0 | 1;
 }
 
-export function runList(globs: string[], options: ListOptions = {}): ListRun {
+export function runList(paths: string[], options: ListOptions = {}): ListRun {
   const cwd = options.cwd ?? process.cwd();
-  const config = loadConfig(options.config, cwd);
-  const pages = discoverPages(config, globs, cwd);
+  const config = loadRunConfig(runConfigOptions(paths, options), cwd);
+  const pages = discoverPages(config, documentSet(paths, options, "list"), cwd);
   const plans = resolvePages(pages, config);
   // `false`: list executes nothing, so an eval that resolves but is skipped is
   // a legitimate answer here — and this is the command `run`'s empty-match

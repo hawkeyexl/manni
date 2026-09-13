@@ -6,8 +6,13 @@
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, relative } from "node:path";
-import { loadConfig } from "../core/config.js";
-import { discoverPages } from "../core/discover.js";
+import { loadRunConfig } from "../core/config.js";
+import {
+  discoverPages,
+  documentSet,
+  runConfigOptions,
+  type DocumentInputOptions,
+} from "../core/discover.js";
 import { resolvePages } from "../core/resolve.js";
 import {
   hasEditableEval,
@@ -54,8 +59,7 @@ const PROMOTE_SYSTEM = [
   "(omit code when not promotable).",
 ].join("\n");
 
-export interface PromoteOptions {
-  config?: string;
+export interface PromoteOptions extends DocumentInputOptions {
   write?: boolean;
   provider?: string;
   model?: string;
@@ -109,12 +113,12 @@ async function assess(
 }
 
 export async function runPromote(
-  globs: string[],
+  paths: string[],
   options: PromoteOptions = {},
 ): Promise<PromoteProposal[]> {
   const cwd = options.cwd ?? process.cwd();
-  const config = loadConfig(options.config, cwd);
-  const pages = discoverPages(config, globs, cwd);
+  const config = loadRunConfig(runConfigOptions(paths, options), cwd);
+  const pages = discoverPages(config, documentSet(paths, options, "read"), cwd);
   const plans = resolvePages(pages, config);
 
   // Built on first use, not up front. A corpus with no ai-graded evals has

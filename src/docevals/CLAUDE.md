@@ -125,8 +125,10 @@ and Node touch.
 
 ## Commands
 
-- `node dist/cli.js docevals run --deterministic-only`, a dogfood run against
-  the fixture corpus through the repository's `manni.config.yaml`
+- `node dist/cli.js docevals run test/docevals/fixtures/pages --deterministic-only`,
+  a dogfood run against the fixture corpus through the repository's
+  `manni.config.yaml`. The corpus is named as a path, not declared as a
+  collection, because a bare `manni meta validate` reads every collection.
 - `npm run docs:check-docevals`, the tool over its own docs section
 - `MANNI_DOCEVALS_LIVE=1 npm test`, adding the live smoke test via the Claude CLI
 - The root `CLAUDE.md` lists the rest: build, test, typecheck, lint, the docs

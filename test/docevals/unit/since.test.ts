@@ -296,12 +296,13 @@ function scaffold(configDir = ""): { root: string; cwd: string } {
   writeFileSync(
     join(cwd, "manni.config.yaml"),
     [
+      "collections:",
+      "  - name: pages",
+      '    paths: ["docs/**/*.md"]',
+      '    exclude: ["docs/draft.md"]',
       "docevals:",
       "  version: 1",
       "  baseline: .manni-docevals-baseline.json",
-      "  files:",
-      '    include: ["docs/**/*.md"]',
-      '    exclude: ["docs/draft.md"]',
       "  defaults:",
       "    suite: reference",
       ...CONFIG_EVALS,
@@ -345,10 +346,11 @@ function corpusScaffold(): string {
   writeFileSync(
     join(root, "manni.config.yaml"),
     [
+      "collections:",
+      "  - name: pages",
+      '    paths: ["docs/**/*.md"]',
       "docevals:",
       "  version: 1",
-      "  files:",
-      '    include: ["docs/**/*.md"]',
       "  defaults:",
       "    suite: reference",
       "  evals:",
