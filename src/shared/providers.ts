@@ -8,8 +8,10 @@
  * caller passes in: the config key its user writes, and its own error class,
  * which is what maps the refusal to exit 2.
  */
+import { resolve } from "node:path";
 import {
   DEFAULT_MODELS,
+  DEFAULT_OPENAI_BASE_URL,
   InferenceError,
   resolveProviderIdentityAsync,
   type ProviderName,
@@ -77,6 +79,265 @@ export function assertModelHasProvider(
       `${Object.keys(DEFAULT_MODELS).join(", ")}, or drop the model to take the ` +
       `detected provider's default.`,
   );
+}
+
+/**
+ * Connection settings, per provider, as the family's top-level `providers:`
+ * map states them. Only what the user wrote: `providerSpecFor` supplies the
+ * defaults, so detection can tell a configured value from a default one.
+ */
+export interface ProviderConnections {
+  anthropic?: { apiKeyEnv?: string };
+  openai?: { baseUrl?: string; apiKeyEnv?: string };
+  "claude-cli"?: { command?: string };
+  /** `modelsDir` is absolute: resolved against the config file's directory. */
+  "llama-cpp"?: { modelsDir?: string; thoughtTokens?: number };
+}
+
+/** The family's top-level `providers:` map, parsed. */
+export interface ProvidersConfig extends ProviderConnections {
+  /** Absent when not written. */
+  provider?: ProviderSelector;
+  /** Absent when not written. Never present without a named `provider`. */
+  model?: string;
+}
+
+/** The family's top-level key for provider settings. */
+export const PROVIDERS_KEY = "providers";
+
+/** What each provider's section may carry, in the order messages list it. */
+const CONNECTION_KEYS = {
+  anthropic: ["apiKeyEnv"],
+  openai: ["baseUrl", "apiKeyEnv"],
+  "claude-cli": ["command"],
+  "llama-cpp": ["modelsDir", "thoughtTokens"],
+} as const;
+
+type ConnectionName = keyof typeof CONNECTION_KEYS;
+
+const CONNECTION_NAMES = Object.keys(CONNECTION_KEYS) as ConnectionName[];
+
+const TOP_LEVEL_KEYS: readonly string[] = ["provider", "model", ...CONNECTION_NAMES];
+
+/**
+ * The providers a user can name for a model. `mock` is the library's test
+ * double, answered only when asked for by name, so it is not advice.
+ */
+const NAMEABLE_PROVIDERS = Object.keys(DEFAULT_MODELS).filter((name) => name !== "mock");
+
+function isMapping(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function rejectUnknown(
+  raw: Record<string, unknown>,
+  allowed: readonly string[],
+  label: string,
+  source: string,
+  toError: ToErrorFn,
+): void {
+  for (const key of Object.keys(raw)) {
+    if (!allowed.includes(key)) {
+      throw toError(
+        `${source}: "${label}" has unknown key "${key}". Supported keys: ${allowed.join(", ")}.`,
+      );
+    }
+  }
+}
+
+/**
+ * Parse the family's `providers:` map. Every message names `source`, and a
+ * relative `llama-cpp.modelsDir` resolves from `dir`, the directory holding
+ * the file, as every other path written in the config does.
+ */
+export function parseProviders(
+  value: unknown,
+  source: string,
+  dir: string,
+  toError: ToErrorFn,
+): ProvidersConfig {
+  if (value == null) return {};
+  if (!isMapping(value)) {
+    throw toError(`${source}: "${PROVIDERS_KEY}" must be a mapping.`);
+  }
+  rejectUnknown(value, TOP_LEVEL_KEYS, PROVIDERS_KEY, source, toError);
+
+  const string = (raw: Record<string, unknown>, key: string, label: string): string | undefined => {
+    const v = raw[key];
+    if (v === undefined) return undefined;
+    if (typeof v !== "string") {
+      throw toError(`${source}: "${label}" must be a string.`);
+    }
+    return v;
+  };
+
+  const parsed: ProvidersConfig = {};
+  const provider = string(value, "provider", `${PROVIDERS_KEY}.provider`);
+  if (provider !== undefined) {
+    assertKnownProvider(provider, (message) => toError(`${source}: ${message}`));
+    parsed.provider = provider;
+  }
+  const model = string(value, "model", `${PROVIDERS_KEY}.model`);
+  if (model !== undefined) {
+    if (provider === undefined || provider === DEFAULT_PROVIDER) {
+      throw toError(
+        `${source}: "${PROVIDERS_KEY}.model" was given without a provider: a model name does not ` +
+          `say which provider owns it. Set ${PROVIDERS_KEY}.provider to one of ` +
+          `${NAMEABLE_PROVIDERS.join(", ")}, or drop the model to take the detected provider's default.`,
+      );
+    }
+    parsed.model = model;
+  }
+
+  for (const name of CONNECTION_NAMES) {
+    const section = value[name];
+    if (section == null) continue;
+    const label = `${PROVIDERS_KEY}.${name}`;
+    if (!isMapping(section)) {
+      throw toError(`${source}: "${label}" must be a mapping.`);
+    }
+    rejectUnknown(section, CONNECTION_KEYS[name], label, source, toError);
+    const field = (key: string): string | undefined => string(section, key, `${label}.${key}`);
+    switch (name) {
+      case "anthropic": {
+        const apiKeyEnv = field("apiKeyEnv");
+        parsed.anthropic = apiKeyEnv === undefined ? {} : { apiKeyEnv };
+        break;
+      }
+      case "openai": {
+        const baseUrl = field("baseUrl");
+        const apiKeyEnv = field("apiKeyEnv");
+        parsed.openai = {
+          ...(baseUrl !== undefined ? { baseUrl } : {}),
+          ...(apiKeyEnv !== undefined ? { apiKeyEnv } : {}),
+        };
+        break;
+      }
+      case "claude-cli": {
+        const command = field("command");
+        parsed["claude-cli"] = command === undefined ? {} : { command };
+        break;
+      }
+      case "llama-cpp": {
+        const modelsDir = field("modelsDir");
+        const thoughtTokens = section["thoughtTokens"];
+        if (
+          thoughtTokens !== undefined &&
+          (typeof thoughtTokens !== "number" || !Number.isInteger(thoughtTokens) || thoughtTokens < 0)
+        ) {
+          throw toError(
+            `${source}: "${label}.thoughtTokens" must be a whole number of 0 or more, got ${JSON.stringify(thoughtTokens)}.`,
+          );
+        }
+        parsed["llama-cpp"] = {
+          ...(modelsDir !== undefined ? { modelsDir: resolve(dir, modelsDir) } : {}),
+          ...(thoughtTokens !== undefined ? { thoughtTokens } : {}),
+        };
+        break;
+      }
+    }
+  }
+  return parsed;
+}
+
+/** A provider and a model as one level states them; either half may be absent. */
+export interface ProviderChoice {
+  provider?: string;
+  model?: string;
+}
+
+/** The effective choice, before it is checked or detected. */
+export interface ProviderSelection {
+  provider: string;
+  model: string | undefined;
+}
+
+/**
+ * The provider and model in force.
+ *
+ * `flag` is the command line. `levels` are the config's statements, highest
+ * precedence first: for docevals an eval's own choice, then `docevals.provider`,
+ * then the family's `providers:`; for `meta fill`, `meta.fill`, then the
+ * family's. The provider is the flag's, else the first level that names one,
+ * else `auto`.
+ *
+ * A model belongs to the provider its level names, so it is carried only to
+ * that provider: a level whose provider lost does not lend its model to the
+ * winner, which could not run it. A level naming no provider gives its model
+ * to whichever provider is in force, which is how `--provider` supplies the
+ * provider a configured model needs. The flag's model applies to whatever
+ * wins.
+ */
+export function selectProvider(
+  flag: ProviderChoice,
+  levels: readonly ProviderChoice[],
+): ProviderSelection {
+  const provider =
+    flag.provider ?? levels.find((level) => level.provider !== undefined)?.provider ?? DEFAULT_PROVIDER;
+  const model =
+    flag.model ??
+    levels.find(
+      (level) =>
+        level.model !== undefined && (level.provider === undefined || level.provider === provider),
+    )?.model;
+  return { provider, model };
+}
+
+/**
+ * The library's spec for a selection, with the connection settings from
+ * `connections` for the provider it names.
+ *
+ * A named provider gets its own section, defaults filled. Under `auto` the
+ * spec carries every setting detection reads, but only as the user wrote it:
+ * the library counts a `baseUrl` as a reason openai is usable, so the default
+ * endpoint must not reach detection. `apiKeyEnv` is left out there: the spec
+ * has one for every provider, and detection looks for the default variables.
+ */
+export function providerSpecFor(
+  connections: ProviderConnections,
+  selection: { provider: ProviderSelector; model: string | null },
+): ProviderSpec {
+  const { provider, model } = selection;
+  const local = connections["llama-cpp"] ?? {};
+  const llamaCpp = {
+    thoughtTokens: local.thoughtTokens ?? 0,
+    ...(local.modelsDir !== undefined ? { modelsDirectory: local.modelsDir } : {}),
+  };
+  switch (provider) {
+    case "anthropic":
+      return {
+        provider,
+        model,
+        apiKeyEnv: connections.anthropic?.apiKeyEnv ?? "ANTHROPIC_API_KEY",
+      };
+    case "openai":
+      return {
+        provider,
+        model,
+        apiKeyEnv: connections.openai?.apiKeyEnv ?? "OPENAI_API_KEY",
+        baseUrl: connections.openai?.baseUrl ?? DEFAULT_OPENAI_BASE_URL,
+      };
+    case "claude-cli":
+      return { provider, model, command: connections["claude-cli"]?.command ?? "claude" };
+    case "llama-cpp":
+      // Local weights, in-process: no API key, and no network once they are
+      // downloaded.
+      return { provider, model, llamaCpp };
+    case "mock":
+      return { provider, model };
+    case "auto": {
+      const baseUrl = connections.openai?.baseUrl;
+      const command = connections["claude-cli"]?.command;
+      const configuredLocal = local.thoughtTokens !== undefined || local.modelsDir !== undefined;
+      return {
+        provider,
+        model,
+        ...(baseUrl !== undefined ? { baseUrl } : {}),
+        ...(command !== undefined ? { command } : {}),
+        ...(configuredLocal ? { llamaCpp } : {}),
+      };
+    }
+  }
 }
 
 /**

@@ -17,6 +17,19 @@ collections:
     paths:
       - "docs/**/*.{md,mdx}"
 
+# The inference provider, declared once for every manni tool that sends
+# content to a model: manni docevals and manni meta fill. auto detects what
+# this machine can use: an Anthropic key, then an OpenAI key, then the Claude
+# CLI, then a local model. Name one to pin it. A tool's own provider key, or
+# --provider, still wins for that tool.
+providers:
+  provider: auto # auto | anthropic | openai | claude-cli | llama-cpp
+  # model: <id>  # needs a named provider; unset takes that provider's default
+  # anthropic: { apiKeyEnv: ANTHROPIC_API_KEY }
+  # openai: { baseUrl: http://localhost:11434/v1, apiKeyEnv: OPENAI_API_KEY }
+  # claude-cli: { command: claude } # uses local CLI auth, no API key
+  # llama-cpp: { modelsDir: .manni/models, thoughtTokens: 0 } # modelsDir is relative to this file
+
 docevals:
   defaults:
     # Suite applied to pages without an eval-suite frontmatter key. Naming the
@@ -27,15 +40,6 @@ docevals:
     suite: default
     failFast: false
     concurrency: 4
-
-  # auto detects what this machine can use: an Anthropic key, then an OpenAI
-  # key, then the Claude CLI, then a local model. Name one to pin it.
-  provider: auto # auto | anthropic | openai | claude-cli | llama-cpp
-  # model: <id>  # needs a named provider; unset takes that provider's default
-  # providers:   # connection settings only
-  #   anthropic: { apiKeyEnv: ANTHROPIC_API_KEY }
-  #   openai: { baseUrl: http://localhost:11434/v1, apiKeyEnv: OPENAI_API_KEY }
-  #   claude-cli: { command: claude } # uses local CLI auth, no API key
 
   judge:
     ensembleRuns: 3 # 3 isolated runs per eval; agreement is signal

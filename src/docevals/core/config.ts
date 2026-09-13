@@ -22,8 +22,13 @@ import { DocevalsError, type EvalType, type Severity } from "../types.js";
 import type { EvalTarget } from "./target.js";
 import { DEFAULT_CHUNK_CHARS } from "./split.js";
 import { errorMessage } from "../../shared/errors.js";
-import { DEFAULT_PROVIDER, assertKnownProvider } from "../../shared/providers.js";
-import { DEFAULT_OPENAI_BASE_URL, type ProviderSelector } from "@hawkeyexl/inference";
+import {
+  PROVIDERS_KEY,
+  assertKnownProvider,
+  parseProviders,
+  type ProvidersConfig,
+} from "../../shared/providers.js";
+import type { ProviderSelector } from "@hawkeyexl/inference";
 
 /** A provider `docevals.provider` or `--provider` may name, `auto` included. */
 export type ProviderName = ProviderSelector;
@@ -175,21 +180,23 @@ export interface DocevalsConfig {
    */
   configSource: string | null;
   defaults: { suite: string | null; failFast: boolean; concurrency: number };
-  /** The provider, `auto` (detect) by default. Shared with `manni meta fill`. */
-  provider: ProviderName;
+  /**
+   * `docevals.provider`, or `null` when unset: the family's
+   * `providers.provider` decides then, and `auto` (detect) after it.
+   */
+  provider: ProviderName | null;
   /**
    * The model within the provider, or `null` for the provider's own default.
    * manni pins no model: the inference library chooses, and the model it
    * resolves to is what every cache key names.
    */
   model: string | null;
-  /** Connection settings only; no model lives here. */
-  providers: {
-    anthropic: { apiKeyEnv: string };
-    openai: { baseUrl: string; apiKeyEnv: string };
-    "claude-cli": { command: string };
-    "llama-cpp": { modelsDir: string | null; thoughtTokens: number };
-  };
+  /**
+   * The family's top-level `providers:`: the provider and model every tool
+   * falls back to, and the connection settings for each provider. `{}` when
+   * the file declares none, or no file governs the run.
+   */
+  providers: ProvidersConfig;
   /** Findings baseline path, resolved against the config's directory (ADR 01017). */
   baseline: string | null;
   judge: {
@@ -277,12 +284,6 @@ interface RawDocevalsConfig {
   };
   provider?: string;
   model?: string;
-  providers?: {
-    anthropic?: { apiKeyEnv?: string };
-    openai?: { baseUrl?: string; apiKeyEnv?: string };
-    "claude-cli"?: { command?: string };
-    "llama-cpp"?: { modelsDir?: string; thoughtTokens?: number };
-  };
   baseline?: string | null;
   judge?: {
     ensembleRuns?: number;
@@ -399,13 +400,14 @@ function camelCaseHint(key: string, parentSchema: unknown): string {
 /**
  * The hint on an old `provider:` object. The key used to hold a `default` and
  * a section per provider; it is now the provider's name, as `fill.provider` is
- * in the metadata tool, and the connection settings moved to `providers`.
+ * in the metadata tool, and the connection settings moved to the family's
+ * top-level `providers:` map, which every tool reads.
  * Ajv's own message names the key and says it must be a string, which is true
  * and leaves the reader to find out where the settings went.
  */
 function movedProviderHint(instancePath: string, keyword: string): string {
   return instancePath === `/${NAMESPACE}/provider` && keyword === "type"
-    ? `; "provider" is now a provider name; per-provider settings moved to "providers"`
+    ? `; "provider" is now a provider name; per-provider settings moved to the top-level providers: map`
     : "";
 }
 
@@ -424,14 +426,20 @@ export function parseConfig(text: string, configPath: string): DocevalsConfig {
   }
   const doc = raw as Record<string, unknown>;
   const wrapped = NAMESPACE in doc;
-  // The family key, parsed as the shared loader parses it, so a config built
-  // from text selects from the same collections a discovered file would.
+  const toError = (message: string): Error => new DocevalsError(message);
+  // The family keys, parsed as the shared loader parses them, so a config
+  // built from text selects from the same collections, and the same
+  // providers, a discovered file would.
   const collections = Object.hasOwn(doc, COLLECTIONS_KEY)
-    ? parseCollections(doc[COLLECTIONS_KEY], configPath, (message) => new DocevalsError(message))
+    ? parseCollections(doc[COLLECTIONS_KEY], configPath, toError)
     : [];
+  const providers = Object.hasOwn(doc, PROVIDERS_KEY)
+    ? parseProviders(doc[PROVIDERS_KEY], configPath, dirname(resolve(configPath)), toError)
+    : {};
   return parseConfigSection(wrapped ? doc[NAMESPACE] : doc, configPath, wrapped, {
     source: configPath,
     collections,
+    providers,
   });
 }
 
@@ -453,12 +461,22 @@ const CONFIG_REF = "https://hawkeyexl.github.io/manni/meta/reference/configurati
  */
 const MOVED_KEY = "files";
 
+/**
+ * The key the family's top-level `providers:` map replaced. Refused rather
+ * than aliased, for the reason `files` is: the settings are declared once, for
+ * every tool, and a second place to declare them is a second answer to which
+ * one wins. Checked before Ajv, which would call it an unknown key.
+ */
+const MOVED_PROVIDERS_KEY = "providers";
+
 /** What the file the section came from carries beside it. */
 export interface ConfigFileContext {
   /** The file as the user would name it, for messages. */
   source: string;
   /** The file's top-level `collections:`. */
   collections: CollectionConfig[];
+  /** The file's top-level `providers:`; `{}` when it declares none. */
+  providers?: ProvidersConfig;
 }
 
 /**
@@ -509,6 +527,16 @@ export function parseConfigSection(
   ) {
     throw new DocevalsError(
       `${file.source}: "${MOVED_KEY}" is no longer a docevals key. Document sets are declared once for every tool, under a top-level collections: list. See ${CONFIG_REF}#collections`,
+    );
+  }
+  if (
+    section !== null &&
+    typeof section === "object" &&
+    !Array.isArray(section) &&
+    Object.hasOwn(section, MOVED_PROVIDERS_KEY)
+  ) {
+    throw new DocevalsError(
+      `${file.source}: "${MOVED_PROVIDERS_KEY}" is no longer a docevals key. Provider settings are declared once for every tool, under a top-level providers: map. See ${CONFIG_REF}#providers`,
     );
   }
 
@@ -590,9 +618,10 @@ export function parseConfigSection(
   // The name is checked here, with the message `manni meta fill` gives, so a
   // typo is caught by every verb and not only the ones that reach a model.
   // Whether a model has a provider to own it waits for the flags: a
-  // `--provider` can supply the provider a configured model needs.
-  const provider = r.provider ?? DEFAULT_PROVIDER;
-  assertKnownProvider(provider, (message) => new DocevalsError(message));
+  // `--provider`, or the family's `providers.provider`, can supply the
+  // provider a configured model needs.
+  const provider = r.provider ?? null;
+  if (provider !== null) assertKnownProvider(provider, (message) => new DocevalsError(message));
 
   const suites: Record<string, SuiteDef> = {};
   for (const [name, def] of Object.entries(r.suites ?? {})) {
@@ -622,22 +651,7 @@ export function parseConfigSection(
     },
     provider,
     model: r.model ?? null,
-    providers: {
-      anthropic: {
-        apiKeyEnv: r.providers?.anthropic?.apiKeyEnv ?? "ANTHROPIC_API_KEY",
-      },
-      openai: {
-        baseUrl: r.providers?.openai?.baseUrl ?? DEFAULT_OPENAI_BASE_URL,
-        apiKeyEnv: r.providers?.openai?.apiKeyEnv ?? "OPENAI_API_KEY",
-      },
-      "claude-cli": {
-        command: r.providers?.["claude-cli"]?.command ?? "claude",
-      },
-      "llama-cpp": {
-        modelsDir: r.providers?.["llama-cpp"]?.modelsDir ?? null,
-        thoughtTokens: r.providers?.["llama-cpp"]?.thoughtTokens ?? 0,
-      },
-    },
+    providers: file.providers ?? {},
     baseline: r.baseline ?? null,
     judge: {
       ensembleRuns: r.judge?.ensembleRuns ?? 3,
@@ -732,7 +746,9 @@ export function loadConfig(path?: string, cwd = process.cwd()): DocevalsConfig {
   return parseConfigSection(file.value, file.path, file.wrapped, {
     source: file.source,
     collections: file.collections,
+    providers: file.providers ?? {},
   });
+
 }
 
 /**

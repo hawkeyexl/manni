@@ -103,6 +103,12 @@ docevals:
   # instead of picking up whatever this machine happens to have (the Claude CLI,
   # a local model). No model is pinned; the inference library's default for the
   # provider is used, and every cache key names the model it resolved to.
+  #
+  # Pinned here, under docevals:, rather than in a top-level providers: map.
+  # That map is every tool's default, and this file is ambient for every run
+  # beneath the repository, the metadata tool's fill tests included, which
+  # expect detection. The pin is a fact about the fixture corpus, not about
+  # the family.
   provider: anthropic
 
   judge:

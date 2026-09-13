@@ -9,9 +9,10 @@
  * This module only finds the file and hands a tool its slice. What the slice
  * may contain is the tool's business; it validates the value with its own
  * parser and its own error class, which is why `toError` is an option rather
- * than an import. Two top-level keys belong to the family rather than to a
+ * than an import. Three top-level keys belong to the family rather than to a
  * tool, and are parsed here once for every tool: `collections:` (proposal
- * 0041) and `encryptionKey:` (proposal 0045).
+ * 0041), `encryptionKey:` (proposal 0045) and `providers:`, the inference
+ * provider settings every tool that sends content to a model reads.
  *
  * Two older spellings are still read, each with a warning on discovery:
  *
@@ -43,6 +44,7 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { parseCollections, type CollectionConfig } from "./collections.js";
 import { isValidEncryptionKey } from "./encryption.js";
+import { PROVIDERS_KEY, parseProviders, type ProvidersConfig } from "./providers.js";
 import { searchPath } from "./git-root.js";
 import { warn } from "./warn.js";
 import { errorMessage } from "./errors.js";
@@ -124,6 +126,12 @@ export interface ConfigFile {
    * only by `manni key rotate`, which finishes it.
    */
   encryptionKeyPrevious?: string;
+  /**
+   * The document's top-level `providers:`, parsed here with a relative
+   * `llama-cpp.modelsDir` resolved against `dir`. Absent when the key is, and
+   * always absent for a `legacy` file, for the same reason as `collections`.
+   */
+  providers?: ProvidersConfig;
 }
 
 type ToError = (message: string) => Error;
@@ -175,7 +183,7 @@ function parseMapping(
 const COLLECTIONS_KEY = "collections";
 
 /** The keys that belong to the family, not to any one tool. */
-const FAMILY_KEYS: readonly string[] = [COLLECTIONS_KEY, ENCRYPTION_KEY_FIELD];
+const FAMILY_KEYS: readonly string[] = [COLLECTIONS_KEY, ENCRYPTION_KEY_FIELD, PROVIDERS_KEY];
 
 function slice(
   document: Document,
@@ -186,9 +194,10 @@ function slice(
     return { value: doc[opts.section] ?? null, wrapped: true };
   }
   // A family file carrying a family key and no section is still this tool's
-  // config: the documents are declared (0041), or the key is (0045), and the
-  // tool just has no options of its own. Handing back an empty section is
-  // what stops discovery walking past it. For the key that matters twice: a
+  // config: the documents are declared (0041), or the key is (0045), or the
+  // provider settings are, and the tool just has no options of its own.
+  // Handing back an empty section is what stops discovery walking past it.
+  // For the key that matters twice: a
   // file the key prompt created holds nothing else, and the next run must
   // find it.
   if (doc !== null && FAMILY_KEYS.some((key) => Object.hasOwn(doc, key))) {
@@ -246,6 +255,21 @@ function encryptionKeyOf(
     keys.encryptionKeyPrevious = value;
   }
   return keys;
+}
+
+/**
+ * The document's provider settings, as a spreadable field. Parsed with the
+ * tool's own `toError`, and a relative path in them resolves from `dir`.
+ */
+function providersOf(
+  document: Document,
+  source: string,
+  dir: string,
+  toError: ToError,
+): { providers?: ProvidersConfig } {
+  const { doc } = document;
+  if (doc === null || !Object.hasOwn(doc, PROVIDERS_KEY)) return {};
+  return { providers: parseProviders(doc[PROVIDERS_KEY], source, dir, toError) };
 }
 
 /**
@@ -308,6 +332,7 @@ export function findConfigFileSync(
           kind,
           collections: collectionsOf(document, source, opts.toError),
           ...encryptionKeyOf(document, source, opts.toError),
+          ...providersOf(document, source, dir, opts.toError),
           ...found,
         };
       }
@@ -365,6 +390,7 @@ export function readConfigFileSync(
     // An unwrapped document carries no family key (else it would be wrapped),
     // so this only ever reads a family file's key.
     ...encryptionKeyOf(document, explicitPath, opts.toError),
+    ...providersOf(document, explicitPath, dirname(path), opts.toError),
     ...found,
   };
 }

@@ -46,6 +46,9 @@ docevals:
   # Named rather than detected, so the docs corpus behaves the same on every
   # machine. No model is pinned: the inference library's default for the
   # provider is used, and every cache key names the model it resolved to.
+  # Under docevals: rather than a top-level providers: map, because only
+  # docevals reads this file: the pin is this job's, and it keeps the job
+  # pinned whatever a providers: map would add beside it later.
   provider: anthropic
 
   judge:

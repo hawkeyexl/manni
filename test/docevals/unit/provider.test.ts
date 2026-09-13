@@ -1,14 +1,18 @@
 /**
  * Choosing the provider and model, and mapping the connection settings onto
  * the library's `ProviderSpec`. The providers themselves are the shared
- * inference library's and are tested there; the names, refusals and detection
- * are `src/shared/providers.ts`, shared with `manni meta fill`. What manni
- * docevals still owns is the precedence (flag, eval, config) and which of its
- * config keys mean what, so that is what these pin.
+ * inference library's and are tested there; the names, refusals, detection,
+ * the level-bound precedence and the settings mapping are
+ * `src/shared/providers.ts`, shared with `manni meta fill`. What manni
+ * docevals still owns is which levels it reads (flag, eval, `docevals`, the
+ * family's `providers:`) and the judge-shaped options, so that is what these
+ * pin.
  */
 import { afterEach, describe, expect, it } from "vitest";
+import { resolve } from "node:path";
 import { DEFAULT_MODELS } from "@hawkeyexl/inference";
 import { parseDocevalsConfig } from "../helpers/config.js";
+import { parseConfig } from "../../../src/docevals/core/config.js";
 import {
   assertProviderSelection,
   makeProvider,
@@ -28,6 +32,20 @@ afterEach(() => {
 
 const NAMES = Object.keys(DEFAULT_MODELS).join(", ");
 
+/** A family file: the top-level `providers:` body, and a `docevals:` body. */
+function family(providers: string[], docevals: string[] = []) {
+  return parseConfig(
+    [
+      "providers:",
+      ...providers.map((l) => `  ${l}`),
+      "docevals:",
+      ...(docevals.length === 0 ? ["  {}"] : docevals.map((l) => `  ${l}`)),
+      "",
+    ].join("\n"),
+    PATH,
+  );
+}
+
 describe("selectProvider", () => {
   it("defaults to auto with no model", () => {
     const config = parseDocevalsConfig("", PATH);
@@ -39,10 +57,14 @@ describe("selectProvider", () => {
     expect(selectProvider(config)).toEqual({ provider: "openai", model: "some-model" });
   });
 
-  it("lets a flag beat the config, each half on its own", () => {
+  it("lets a flag beat the config, and carries the config's model only to its own provider", () => {
     const config = parseDocevalsConfig("provider: openai\nmodel: some-model\n", PATH);
     expect(selectProvider(config, { provider: "anthropic" })).toEqual({
       provider: "anthropic",
+      model: undefined,
+    });
+    expect(selectProvider(config, { provider: "openai" })).toEqual({
+      provider: "openai",
       model: "some-model",
     });
     expect(selectProvider(config, { model: "other" })).toEqual({
@@ -75,6 +97,38 @@ describe("selectProvider", () => {
       model: "a-model",
     });
   });
+
+  it("falls back to the family's providers.provider and its model", () => {
+    const config = family(["provider: openai", "model: family-model"]);
+    expect(selectProvider(config)).toEqual({ provider: "openai", model: "family-model" });
+  });
+
+  it("lets docevals.provider beat the family's, without the family's model", () => {
+    const config = family(["provider: openai", "model: family-model"], ["provider: anthropic"]);
+    expect(selectProvider(config)).toEqual({ provider: "anthropic", model: undefined });
+  });
+
+  it("lets an explicit docevals.provider: auto beat a named family provider", () => {
+    const config = family(["provider: openai"], ["provider: auto"]);
+    expect(selectProvider(config)).toEqual({ provider: "auto", model: undefined });
+  });
+
+  it("gives docevals.model to the family's provider when docevals names none", () => {
+    const config = family(["provider: openai", "model: family-model"], ["model: tool-model"]);
+    expect(selectProvider(config)).toEqual({ provider: "openai", model: "tool-model" });
+  });
+
+  it("lets an eval beat the family's provider, and a flag beat both", () => {
+    const config = family(["provider: openai", "model: family-model"]);
+    expect(selectProvider(config, {}, { provider: "claude-cli" })).toEqual({
+      provider: "claude-cli",
+      model: undefined,
+    });
+    expect(selectProvider(config, { provider: "anthropic" }, { provider: "claude-cli" })).toEqual({
+      provider: "anthropic",
+      model: undefined,
+    });
+  });
 });
 
 describe("assertProviderSelection", () => {
@@ -104,11 +158,8 @@ describe("assertProviderSelection", () => {
 });
 
 describe("providerSpecFor", () => {
-  it("maps anthropic's connection settings and keeps a verdict-shaped tool name", () => {
-    const config = parseDocevalsConfig(
-      "providers:\n  anthropic:\n    apiKeyEnv: MY_KEY\n",
-      PATH,
-    );
+  it("maps anthropic's connection settings from providers: and keeps a verdict-shaped tool name", () => {
+    const config = family(["anthropic:", "  apiKeyEnv: MY_KEY"]);
     const spec = providerSpecFor(config, { provider: "anthropic", model: "m" });
     expect(spec.provider).toBe("anthropic");
     expect(spec.model).toBe("m");
@@ -118,32 +169,27 @@ describe("providerSpecFor", () => {
     expect(spec.anthropic?.toolName).toBe("record_verdict");
   });
 
-  it("maps openai's baseUrl and apiKeyEnv", () => {
-    const config = parseDocevalsConfig(
-      "providers:\n  openai:\n    baseUrl: http://localhost:11434/v1\n    apiKeyEnv: O_KEY\n",
-      PATH,
-    );
+  it("maps openai's baseUrl and apiKeyEnv, and names the schema a verdict", () => {
+    const config = family(["openai:", "  baseUrl: http://localhost:11434/v1", "  apiKeyEnv: O_KEY"]);
     const spec = providerSpecFor(config, { provider: "openai", model: null });
     expect(spec.baseUrl).toBe("http://localhost:11434/v1");
     expect(spec.apiKeyEnv).toBe("O_KEY");
     expect(spec.model).toBeNull();
+    expect(spec.openai?.schemaName).toBe("verdict");
   });
 
   it("maps claude-cli's command", () => {
-    const config = parseDocevalsConfig("providers:\n  claude-cli:\n    command: claude-next\n", PATH);
+    const config = family(["claude-cli:", "  command: claude-next"]);
     expect(providerSpecFor(config, { provider: "claude-cli", model: null }).command).toBe(
       "claude-next",
     );
   });
 
-  it("maps llama-cpp's modelsDir and thoughtTokens", () => {
-    const config = parseDocevalsConfig(
-      "providers:\n  llama-cpp:\n    modelsDir: weights\n    thoughtTokens: 64\n",
-      PATH,
-    );
+  it("maps llama-cpp's modelsDir, resolved from the config's directory, and thoughtTokens", () => {
+    const config = family(["llama-cpp:", "  modelsDir: weights", "  thoughtTokens: 64"]);
     expect(providerSpecFor(config, { provider: "llama-cpp", model: null }).llamaCpp).toEqual({
       thoughtTokens: 64,
-      modelsDirectory: "weights",
+      modelsDirectory: resolve("/fake", "weights"),
     });
   });
 });
@@ -167,6 +213,18 @@ describe("resolveProviderIdentity", () => {
     process.env["ANTHROPIC_API_KEY"] = "";
     process.env["OPENAI_API_KEY"] = "x";
     const config = parseDocevalsConfig("", PATH);
+    await expect(resolveProviderIdentity(config)).resolves.toEqual({
+      provider: "openai",
+      model: DEFAULT_MODELS.openai,
+    });
+  });
+
+  it("hands detection the family's connection settings", async () => {
+    // No key for either hosted provider: only a configured baseUrl makes
+    // openai usable, so `openai` can only come from detection seeing it.
+    process.env["ANTHROPIC_API_KEY"] = "";
+    process.env["OPENAI_API_KEY"] = "";
+    const config = family(["openai:", "  baseUrl: http://127.0.0.1:1/v1"]);
     await expect(resolveProviderIdentity(config)).resolves.toEqual({
       provider: "openai",
       model: DEFAULT_MODELS.openai,
@@ -201,13 +259,10 @@ describe("makeProvider", () => {
     await expect(makeProvider(config)).rejects.toThrow(/ANTHROPIC_API_KEY/);
   });
 
-  it("honours a custom apiKeyEnv", async () => {
+  it("honours a custom apiKeyEnv from providers:", async () => {
     delete process.env["ANTHROPIC_API_KEY"];
     process.env["MY_KEY"] = "test-key";
-    const config = parseDocevalsConfig(
-      "provider: anthropic\nproviders:\n  anthropic:\n    apiKeyEnv: MY_KEY\n",
-      PATH,
-    );
+    const config = family(["anthropic:", "  apiKeyEnv: MY_KEY"], ["provider: anthropic"]);
     expect((await makeProvider(config)).provider()).toBe("anthropic");
   });
 

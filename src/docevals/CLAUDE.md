@@ -156,10 +156,13 @@ and Node touch.
   library. What stays here is this tool's own work. That is the prompts and
   `PROMPT_VERSION`, the page-worded verdict schema, and the cache-key
   composition (`cache.ts`). It is also `provider.ts`, which picks the provider
-  and model: flag, then the eval's own `provider:`/`model:`, then the config.
-  It maps `docevals.providers` onto the library's `ProviderSpec`. And it is
-  the orchestration in `judge.ts`. The provider names, the `auto` detection and the
-  two refusals are `src/shared/providers.ts`, the code `manni meta fill` runs;
+  and model: flag, then the eval's own `provider:`/`model:`, then
+  `docevals.provider`/`model`, then the family's top-level `providers:`. It
+  adds the verdict-shaped options to the spec. And it is
+  the orchestration in `judge.ts`. The provider names, the `auto` detection, the
+  two refusals, the level-bound precedence (a model is carried only to the
+  provider its own level names) and the mapping of `providers:` connection
+  settings onto `ProviderSpec` are `src/shared/providers.ts`, the code `manni meta fill` runs;
   never grow a docevals-only copy. The orchestration covers bounded concurrency
   across targets, the turn budget, the self-judgment warning, and human-review
   resolution. The turn budget is claimed *before* dispatch and a cached

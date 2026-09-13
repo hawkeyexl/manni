@@ -105,7 +105,9 @@ import {
   DEFAULT_PROVIDER,
   assertKnownProvider as assertKnownProviderFor,
   assertModelHasProvider as assertModelHasProviderFor,
+  providerSpecFor,
   resolveIdentity as resolveIdentityFor,
+  selectProvider,
 } from "../../shared/providers.js";
 
 export type {
@@ -272,21 +274,28 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   /** The managed fields (0040): read everywhere, written only by `derive`. */
   const managed = new Set<string>(config?.derive?.fields ?? []);
 
-  const requestedProvider = (opts.provider ??
-    config?.fill?.provider ??
-    DEFAULT_PROVIDER) as ProviderSelector;
+  // The flag, then `meta.fill`, then the family's `providers:`, then `auto`,
+  // each level's model carried only to the provider that level names.
+  const family = configFile?.providers ?? {};
+  const selection = selectProvider(
+    { provider: opts.provider, model: opts.model },
+    [
+      { provider: config?.fill?.provider, model: config?.fill?.model },
+      { provider: family.provider, model: family.model },
+    ],
+  );
+  const requestedProvider = selection.provider;
   // `--local` with no explicit provider *is* the choice: resolve to the local
   // one directly rather than letting detection pick a hosted provider and then
   // refusing it. Detection would otherwise announce `auto-selected "openai"`
   // immediately before the refusal, which reads as though it had been used.
   // An explicit `--provider` is left alone so a contradictory pair still errors
   // by name rather than being quietly overridden.
-  const providerName: ProviderSelector =
-    opts.local === true && requestedProvider === "auto"
+  const providerName =
+    opts.local === true && requestedProvider === DEFAULT_PROVIDER
       ? "llama-cpp"
       : requestedProvider;
-  const model = opts.model ?? config?.fill?.model;
-  const spec = { provider: providerName, model: model ?? null };
+  const model = selection.model;
 
   // Check the name up front, and regardless of whether a provider was injected:
   // it costs nothing, and construction is lazy, so a typo would otherwise exit 0
@@ -294,6 +303,9 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   assertKnownProvider(providerName);
   assertModelHasProvider(providerName, model);
   if (opts.local === true) assertLocalProvider(providerName);
+  // Connection settings are the family's, for whichever provider is in force,
+  // and under `auto` they are what detection reads.
+  const spec = providerSpecFor(family, { provider: providerName, model: model ?? null });
 
   // Resolve targets BEFORE identity. Under `auto`, resolving identity probes the
   // environment, the Claude CLI and the local runtime, and that last probe is
@@ -367,11 +379,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     // rightly refuses to guess. Detection has already run, so the concrete name
     // is known — which keeps construction synchronous and lazy, and that is what
     // lets a fully cached run finish without a key.
-    const concrete: ProviderSpec = {
-      ...spec,
-      provider: resolved.provider,
-      model: resolved.model,
-    };
+    const concrete: ProviderSpec = providerSpecFor(family, resolved);
     construct = () => makeProvider(concrete);
   }
 
@@ -1640,7 +1648,7 @@ function assertLocalProvider(name: string): void {
 /** The shared refusals, in meta's error class and naming meta's config key. */
 const toDocmetaError = (message: string): Error => new DocmetaError(message);
 
-function assertKnownProvider(name: string): void {
+function assertKnownProvider(name: string): asserts name is ProviderSelector {
   assertKnownProviderFor(name, toDocmetaError);
 }
 

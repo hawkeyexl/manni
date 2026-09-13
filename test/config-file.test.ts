@@ -192,6 +192,58 @@ describe("family config discovery", () => {
     expect(found?.value).toBeNull();
   });
 
+  it("parses the top-level providers: once, for every tool, resolving modelsDir from the file", async () => {
+    const root = await tree({
+      "manni.config.yaml":
+        "providers:\n  provider: openai\n  model: gpt-x\n  openai:\n    baseUrl: http://127.0.0.1:1/v1\n  llama-cpp:\n    modelsDir: weights\nmeta:\n  allowEmpty: true\n",
+      "docs/.keep": "",
+    });
+    const found = await findConfigFile(join(root, "docs"), META);
+    expect(found?.value).toEqual({ allowEmpty: true });
+    expect(found?.providers).toEqual({
+      provider: "openai",
+      model: "gpt-x",
+      openai: { baseUrl: "http://127.0.0.1:1/v1" },
+      "llama-cpp": { modelsDir: join(root, "weights") },
+    });
+  });
+
+  it("a family file with providers: and no section is still the tool's config", async () => {
+    const root = await tree({
+      "manni.config.yaml": "providers:\n  provider: anthropic\n",
+      "docmeta.config.yaml": "paths: [legacy]\n",
+    });
+    const found = await findConfigFile(root, META);
+    expect(found?.kind).toBe("manni");
+    expect(found?.wrapped).toBe(true);
+    expect(found?.value).toBeNull();
+    expect(found?.providers).toEqual({ provider: "anthropic" });
+  });
+
+  it("an explicit path carries providers: too", async () => {
+    const root = await tree({
+      "conf/any.yaml": "providers:\n  llama-cpp:\n    modelsDir: ../weights\n",
+    });
+    const found = await readConfigFile("conf/any.yaml", root, META);
+    expect(found.wrapped).toBe(true);
+    expect(found.providers).toEqual({ "llama-cpp": { modelsDir: join(root, "weights") } });
+  });
+
+  it("a file with no providers: carries none, and a legacy file never does", async () => {
+    const root = await tree({ "manni.config.yaml": "meta:\n  allowEmpty: true\n" });
+    expect((await findConfigFile(root, META))?.providers).toBeUndefined();
+    const legacy = await tree({ "docmeta.config.yaml": "providers:\n  provider: gemini\n" });
+    expect((await findConfigFile(legacy, META))?.providers).toBeUndefined();
+  });
+
+  it("a malformed providers: is refused in the tool's error class", async () => {
+    class MyError extends Error {}
+    const root = await tree({ "manni.config.yaml": "providers:\n  provider: gemini\n" });
+    const run = findConfigFile(root, { ...META, toError: (m) => new MyError(m) });
+    await expect(run).rejects.toBeInstanceOf(MyError);
+    await expect(run).rejects.toThrow('manni.config.yaml: Unknown provider "gemini".');
+  });
+
   it("a file with no encryptionKey carries none", async () => {
     const root = await tree({ "manni.config.yaml": "meta:\n  allowEmpty: true\n" });
     expect((await findConfigFile(root, META))?.encryptionKey).toBeUndefined();
