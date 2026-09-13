@@ -36,7 +36,12 @@ import {
 import { splitBody } from "../core/split.js";
 import { readTarget } from "../core/target.js";
 import { selfPreferenceOf } from "./self-preference.js";
-import { makeProvider, selectProvider, assertProviderSelection } from "./provider.js";
+import {
+  announceSelection,
+  assertProviderSelection,
+  makeProvider,
+  selectProvider,
+} from "./provider.js";
 import { DocevalsError } from "../types.js";
 import type { ResolvedEval } from "../core/resolve.js";
 import { resolve as resolvePath } from "node:path";
@@ -94,8 +99,17 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
     const keyOf = (s: { provider: string; model: string | undefined }): string =>
       `${s.provider}:${s.model ?? ""}`;
     const defaultKey = keyOf(selectProvider(config, options));
-    const providerFor = (ev: ResolvedEval): Promise<InferenceProvider> => {
-      const selection = selectProvider(config, options, ev);
+    const providerFor = (ev: ResolvedEval, file: string): Promise<InferenceProvider> => {
+      // Only the eval's own two fields: a `ResolvedEval` carries a `source` of
+      // its own, and the origin a `--local` notice names is the page's.
+      const selection = selectProvider(config, options, {
+        ...(ev.provider !== undefined ? { provider: ev.provider } : {}),
+        ...(ev.model !== undefined ? { model: ev.model } : {}),
+        origin: `eval "${ev.name}" in ${file}`,
+      });
+      // Said before the short-circuit: under `--local` an eval naming a hosted
+      // provider resolves to the run's own selection, and is still replaced.
+      announceSelection(selection);
       const key = keyOf(selection);
       if (key === defaultKey) return Promise.resolve(provider);
       let p = overridden.get(key);
@@ -161,7 +175,7 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
       // verdicts, and the run exits 1 rather than stopping.
       let judgeProvider: InferenceProvider;
       try {
-        judgeProvider = await providerFor(ev);
+        judgeProvider = await providerFor(ev, plan.page.file);
       } catch (e) {
         if (!(e instanceof DocevalsError)) throw e;
         return {

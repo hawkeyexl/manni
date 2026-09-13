@@ -132,6 +132,8 @@ export interface CalibrateOptions {
   golden?: string;
   provider?: string;
   model?: string;
+  /** Run inference on this machine, with llama-cpp, over any configured or eval-level provider. */
+  local?: boolean;
   runs?: number;
   maxTurns?: number | null;
   noCache?: boolean;
@@ -314,7 +316,7 @@ export async function runCalibrate(
 ): Promise<CalibrationReport> {
   const cwd = options.cwd ?? process.cwd();
   const config = loadConfig(options.config, cwd);
-  const flags = { provider: options.provider, model: options.model };
+  const flags = { provider: options.provider, model: options.model, local: options.local };
   // Checked before the golden set is read: a typo is a usage error on every run.
   assertProviderSelection(selectProvider(config, flags));
   const goldenDir = resolve(cwd, options.golden ?? GOLDEN_DIR);

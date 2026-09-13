@@ -68,6 +68,8 @@ export interface PromoteOptions extends DocumentInputOptions {
   write?: boolean;
   provider?: string;
   model?: string;
+  /** Run inference on this machine, with llama-cpp, over any configured or eval-level provider. */
+  local?: boolean;
   cwd?: string;
   /** Injectable provider for tests and programmatic use. */
   providerInstance?: InferenceProvider;
@@ -123,7 +125,7 @@ export async function runPromote(
 ): Promise<PromoteProposal[]> {
   const cwd = options.cwd ?? process.cwd();
   const config = loadRunConfig(runConfigOptions(paths, options), cwd);
-  const flags = { provider: options.provider, model: options.model };
+  const flags = { provider: options.provider, model: options.model, local: options.local };
   // Checked before discovery, and even when nothing is ai-graded.
   assertProviderSelection(selectProvider(config, flags));
   const pages = discoverPages(config, documentSet(paths, options, "read"), cwd);

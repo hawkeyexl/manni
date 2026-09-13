@@ -1532,6 +1532,60 @@ describe("provider selection from the family's providers:", () => {
     });
   });
 
+  describe("under --local", () => {
+    // A concrete llama-cpp model: the default is a selector, and resolving a
+    // selector probes this machine's GPU memory.
+    const LOCAL_MODEL = "granite-4.1-3b-q2";
+
+    it("runs llama-cpp over a hosted meta.fill.provider, saying so once", async () => {
+      const notices: string[] = [];
+      await expect(
+        identity("meta:\n  fill:\n    provider: anthropic\n    model: claude-x\n", {
+          local: true,
+          model: LOCAL_MODEL,
+          onNotice: (m) => notices.push(m),
+        }),
+      ).resolves.toEqual({ provider: "llama-cpp", model: LOCAL_MODEL });
+      expect(notices).toEqual([
+        '--local: using llama-cpp instead of "anthropic" from fill.provider.',
+      ]);
+    });
+
+    it("runs llama-cpp over providers.provider, naming it", async () => {
+      const notices: string[] = [];
+      await expect(
+        identity("providers:\n  provider: claude-cli\n", {
+          local: true,
+          model: LOCAL_MODEL,
+          onNotice: (m) => notices.push(m),
+        }),
+      ).resolves.toEqual({ provider: "llama-cpp", model: LOCAL_MODEL });
+      expect(notices).toEqual([
+        '--local: using llama-cpp instead of "claude-cli" from providers.provider.',
+      ]);
+    });
+
+    it("keeps a configured model only from a level that named llama-cpp", async () => {
+      const notices: string[] = [];
+      await expect(
+        identity(
+          `providers:\n  provider: openai\n  model: gpt-x\nmeta:\n  fill:\n    provider: llama-cpp\n    model: ${LOCAL_MODEL}\n`,
+          { local: true, onNotice: (m) => notices.push(m) },
+        ),
+      ).resolves.toEqual({ provider: "llama-cpp", model: LOCAL_MODEL });
+      expect(notices).toEqual([]);
+    });
+
+    it("refuses --provider naming a hosted provider as a contradiction", async () => {
+      await writeFile(join(dir, "manni.config.yaml"), "{}\n", "utf8");
+      await expect(
+        runFill({ ...base, cwd: dir, inputs: ["missing.md"], allowEmpty: true, local: true, provider: "claude-cli" }),
+      ).rejects.toThrow(
+        "--local and --provider claude-cli contradict each other: --local runs inference on this machine with llama-cpp. Drop one of them.",
+      );
+    });
+  });
+
   it("hands detection the configured connection settings", async () => {
     // No key for either hosted provider: only a configured baseUrl makes
     // openai usable, so `openai` can only come from detection seeing it.

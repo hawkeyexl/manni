@@ -13,7 +13,9 @@ import {
   DEFAULT_PROVIDER,
   PROVIDERS,
   assertKnownProvider,
+  assertLocalFlag,
   assertModelHasProvider,
+  localNotice,
   parseProviders,
   providerSpecFor,
   resolveIdentity,
@@ -286,6 +288,146 @@ describe("selectProvider", () => {
     expect(
       selectProvider({ model: "flag-model" }, [{}, { provider: "anthropic", model: "family-model" }]),
     ).toEqual({ provider: "anthropic", model: "flag-model" });
+  });
+
+  it("reports nothing replaced without --local", () => {
+    const selection = selectProvider({}, [{ provider: "openai", origin: "docevals.provider" }]);
+    expect(selection.replaced).toBeUndefined();
+  });
+});
+
+describe("selectProvider under --local", () => {
+  const EVAL = { provider: "openai", model: "gpt-4o", origin: 'eval "clear" in docs/a.md' };
+  const TOOL = { provider: "anthropic", model: "claude-x", origin: "docevals.provider" };
+  const FAMILY = { provider: "claude-cli", origin: "providers.provider" };
+
+  it("is llama-cpp when nothing is stated", () => {
+    expect(selectProvider({ local: true }, [{}, {}])).toEqual({
+      provider: "llama-cpp",
+      model: undefined,
+    });
+  });
+
+  it("overrides the provider at every level", () => {
+    expect(selectProvider({ local: true }, [{}, {}, FAMILY]).provider).toBe("llama-cpp");
+    expect(selectProvider({ local: true }, [{}, TOOL, FAMILY]).provider).toBe("llama-cpp");
+    expect(selectProvider({ local: true }, [EVAL, TOOL, FAMILY]).provider).toBe("llama-cpp");
+  });
+
+  it("resolves a flag's auto or llama-cpp to llama-cpp", () => {
+    expect(selectProvider({ local: true, provider: "auto" }, [TOOL]).provider).toBe("llama-cpp");
+    expect(selectProvider({ local: true, provider: "llama-cpp" }, [TOOL]).provider).toBe(
+      "llama-cpp",
+    );
+  });
+
+  it("keeps the mock test seam a flag names", () => {
+    expect(selectProvider({ local: true, provider: "mock" }, [TOOL])).toEqual({
+      provider: "mock",
+      model: undefined,
+    });
+  });
+
+  it("applies the flag's model", () => {
+    expect(selectProvider({ local: true, model: "granite" }, [EVAL, TOOL]).model).toBe("granite");
+  });
+
+  it("carries a level's model only when that level named llama-cpp", () => {
+    expect(
+      selectProvider({ local: true }, [
+        EVAL,
+        { provider: "llama-cpp", model: "local-model", origin: "docevals.provider" },
+      ]).model,
+    ).toBe("local-model");
+    // A hosted level's model belongs to the hosted provider.
+    expect(selectProvider({ local: true }, [EVAL, TOOL]).model).toBeUndefined();
+    // A level naming no provider has not named llama-cpp either.
+    expect(selectProvider({ local: true }, [{ model: "unowned" }, TOOL]).model).toBeUndefined();
+  });
+
+  it("reports the configured choice it replaced, with the level's source", () => {
+    expect(selectProvider({ local: true }, [{}, {}, FAMILY]).replaced).toEqual({
+      provider: "claude-cli",
+      source: "providers.provider",
+    });
+    expect(selectProvider({ local: true }, [{}, TOOL, FAMILY]).replaced).toEqual({
+      provider: "anthropic",
+      source: "docevals.provider",
+    });
+    expect(selectProvider({ local: true }, [EVAL, TOOL, FAMILY]).replaced).toEqual({
+      provider: "openai",
+      source: 'eval "clear" in docs/a.md',
+    });
+  });
+
+  it("reports nothing replaced for auto, llama-cpp, or a flag's provider", () => {
+    expect(
+      selectProvider({ local: true }, [{ provider: "auto", origin: "fill.provider" }, FAMILY])
+        .replaced,
+    ).toBeUndefined();
+    expect(
+      selectProvider({ local: true }, [{ provider: "llama-cpp", origin: "fill.provider" }]).replaced,
+    ).toBeUndefined();
+    expect(selectProvider({ local: true, provider: "mock" }, [TOOL]).replaced).toBeUndefined();
+    expect(selectProvider({ local: true }, [{}, {}]).replaced).toBeUndefined();
+  });
+});
+
+describe("assertLocalFlag", () => {
+  it("accepts --local alone, or with auto, llama-cpp or the mock seam", () => {
+    for (const provider of [undefined, "auto", "llama-cpp", "mock"]) {
+      expect(() => {
+        assertLocalFlag({ local: true, provider }, toError);
+      }).not.toThrow();
+    }
+  });
+
+  it("accepts any provider without --local", () => {
+    expect(() => {
+      assertLocalFlag({ provider: "anthropic" }, toError);
+    }).not.toThrow();
+  });
+
+  it("refuses a flag naming another provider as a contradiction", () => {
+    for (const provider of ["anthropic", "openai", "claude-cli"]) {
+      expect(() => {
+        assertLocalFlag({ local: true, provider }, toError);
+      }).toThrow(
+        new ToolFailure(
+          `--local and --provider ${provider} contradict each other: --local runs inference ` +
+            "on this machine with llama-cpp. Drop one of them.",
+        ),
+      );
+    }
+  });
+
+  it("refuses an unknown flag as unknown, not as a contradiction", () => {
+    expect(() => {
+      assertLocalFlag({ local: true, provider: "gemini" }, toError);
+    }).toThrow(/^Unknown provider "gemini"/);
+  });
+});
+
+describe("localNotice", () => {
+  it("names the provider replaced and where it was chosen", () => {
+    expect(
+      localNotice({
+        provider: "llama-cpp",
+        model: undefined,
+        replaced: { provider: "openai", source: 'eval "clear" in docs/a.md' },
+      }),
+    ).toBe('--local: using llama-cpp instead of "openai" from eval "clear" in docs/a.md.');
+    expect(
+      localNotice({
+        provider: "llama-cpp",
+        model: undefined,
+        replaced: { provider: "anthropic", source: "fill.provider" },
+      }),
+    ).toBe('--local: using llama-cpp instead of "anthropic" from fill.provider.');
+  });
+
+  it("is nothing when nothing was replaced", () => {
+    expect(localNotice({ provider: "llama-cpp", model: undefined })).toBeUndefined();
   });
 });
 

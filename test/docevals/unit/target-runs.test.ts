@@ -9,7 +9,7 @@
  * is CLI > eval > config: the flag is an explicit operator act ("run cheap
  * right now"), so it wins over a page that asked for more.
  */
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -21,6 +21,7 @@ import { stripFrontmatterBlock, type PageFile } from "../../../src/docevals/core
 import { extractFrontmatter } from "../../../src/meta/index.js";
 import type { GraderTarget } from "../../../src/docevals/graders/types.js";
 import { DocevalsError } from "../../../src/docevals/types.js";
+import { resetWarnings } from "../../../src/shared/warn.js";
 
 const config = parseDocevalsConfig(
   ["judge:", "  ensembleRuns: 3"].join("\n"),
@@ -303,7 +304,10 @@ describe("judge provider memoization", () => {
  * rest of the corpus still gets its verdicts, and the run exits 1.
  */
 describe("per-eval provider selection", () => {
-  const judgeOne = async (extra: string[], cli: { provider?: string; model?: string } = {}) => {
+  const judgeOne = async (
+    extra: string[],
+    cli: { provider?: string; model?: string; local?: boolean } = {},
+  ) => {
     const built: string[] = [];
     const p = provider();
     const results = await makeJudge({
@@ -339,6 +343,43 @@ describe("per-eval provider selection", () => {
     const { result, built } = await judgeOne(["    model: some-model"], { provider: "mock" });
     expect(result?.outcome).toBe("pass");
     expect(built).toEqual([":some-model"]);
+  });
+
+  describe("under --local", () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+      resetWarnings();
+    });
+
+    const captureStderr = (): string[] => {
+      resetWarnings();
+      const written: string[] = [];
+      vi.spyOn(process.stderr, "write").mockImplementation((chunk: string | Uint8Array) => {
+        written.push(String(chunk));
+        return true;
+      });
+      return written;
+    };
+
+    it("judges an eval naming a hosted provider on the run's local provider, saying so once", async () => {
+      const written = captureStderr();
+      const { result, built } = await judgeOne(["    provider: openai", "    model: gpt-x"], {
+        local: true,
+      });
+      expect(result?.outcome).toBe("pass");
+      // The eval resolves to the run's own selection, so nothing is built for it.
+      expect(built).toEqual([]);
+      expect(written.filter((w) => w.includes("--local:"))).toEqual([
+        'manni: --local: using llama-cpp instead of "openai" from eval "claim-check" in docs/page.md.\n',
+      ]);
+    });
+
+    it("says nothing for an eval naming llama-cpp or auto", async () => {
+      const written = captureStderr();
+      await judgeOne(["    provider: llama-cpp"], { local: true });
+      await judgeOne(["    provider: auto"], { local: true });
+      expect(written.filter((w) => w.includes("--local:"))).toEqual([]);
+    });
   });
 
   it("errors an eval whose provider cannot be built, without failing the run", async () => {

@@ -66,6 +66,8 @@ export interface EngineReport extends RunReport {
 export interface JudgeOptions {
   provider?: string;
   model?: string;
+  /** Run inference on this machine, with llama-cpp, over any configured or eval-level provider. */
+  local?: boolean;
   runs?: number;
   noCache?: boolean;
   /** Stop after this many uncached inference calls (ADR 01019). */

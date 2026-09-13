@@ -2,8 +2,8 @@
  * Choosing an inference provider and model, for every tool that sends content
  * to one: `manni meta fill` and `manni docevals`.
  *
- * The names a tool accepts, the two refusals and the detection call are one
- * implementation, so a provider added upstream reaches both tools on the same
+ * The names a tool accepts, the refusals, what `--local` overrides and the
+ * detection call are one implementation, so a provider added upstream reaches both tools on the same
  * day and a message reads the same in both. What differs is only what the
  * caller passes in: the config key its user writes, and its own error class,
  * which is what maps the refusal to exit 2.
@@ -244,12 +244,65 @@ export function parseProviders(
 export interface ProviderChoice {
   provider?: string;
   model?: string;
+  /**
+   * Where the level's provider was written, as a `--local` notice names it:
+   * `providers.provider`, `docevals.provider`, `fill.provider`, or
+   * `eval "<id>" in <file>`.
+   */
+  origin?: string;
+}
+
+/** The command line's say: `--provider`, `--model` and `--local`. */
+export interface ProviderFlags {
+  provider?: string;
+  model?: string;
+  /** Run inference on this machine, with llama-cpp, whatever a level asks for. */
+  local?: boolean;
+}
+
+/** A configured choice that `--local` set aside. */
+export interface ReplacedChoice {
+  provider: string;
+  source: string;
 }
 
 /** The effective choice, before it is checked or detected. */
 export interface ProviderSelection {
   provider: string;
   model: string | undefined;
+  /** Under `--local`, the configured provider that would otherwise have run. */
+  replaced?: ReplacedChoice;
+}
+
+/**
+ * The provider `--local` runs. `claude-cli` does not qualify: the binary runs
+ * on this machine, the inference does not (proposal 0017).
+ */
+export const LOCAL_PROVIDER = "llama-cpp";
+
+/** `--local`'s help, one wording on every command that takes the flag. */
+export const LOCAL_FLAG_HELP =
+  "run inference on this machine (llama-cpp); overrides any configured or eval-level provider";
+
+/**
+ * Names `--provider` may carry beside `--local`. `auto` under `--local` can
+ * only mean the local provider, and `mock` is the library's test double, which
+ * sends nothing anywhere.
+ */
+const LOCAL_COMPATIBLE: ReadonlySet<string> = new Set([LOCAL_PROVIDER, DEFAULT_PROVIDER, "mock"]);
+
+/**
+ * Refuse `--local` beside a `--provider` it contradicts. An unknown name is
+ * refused as unknown first: `--local` would otherwise set it aside unread.
+ */
+export function assertLocalFlag(flag: ProviderFlags, toError: ToErrorFn): void {
+  if (flag.local !== true || flag.provider === undefined) return;
+  assertKnownProvider(flag.provider, toError);
+  if (LOCAL_COMPATIBLE.has(flag.provider)) return;
+  throw toError(
+    `--local and --provider ${flag.provider} contradict each other: --local runs inference ` +
+      `on this machine with ${LOCAL_PROVIDER}. Drop one of them.`,
+  );
 }
 
 /**
@@ -267,11 +320,18 @@ export interface ProviderSelection {
  * to whichever provider is in force, which is how `--provider` supplies the
  * provider a configured model needs. The flag's model applies to whatever
  * wins.
+ *
+ * `--local` makes the provider llama-cpp, over every level. A level's model
+ * then applies only where that level named llama-cpp, and the level whose
+ * provider would otherwise have run is returned as `replaced`, unless it was
+ * `auto`, which chose no hosted provider. Check the flag with
+ * `assertLocalFlag` first: a contradicting `--provider` is not selected here.
  */
 export function selectProvider(
-  flag: ProviderChoice,
+  flag: ProviderFlags,
   levels: readonly ProviderChoice[],
 ): ProviderSelection {
+  if (flag.local === true) return selectLocal(flag, levels);
   const provider =
     flag.provider ?? levels.find((level) => level.provider !== undefined)?.provider ?? DEFAULT_PROVIDER;
   const model =
@@ -281,6 +341,32 @@ export function selectProvider(
         level.model !== undefined && (level.provider === undefined || level.provider === provider),
     )?.model;
   return { provider, model };
+}
+
+function selectLocal(flag: ProviderFlags, levels: readonly ProviderChoice[]): ProviderSelection {
+  // The mock seam survives, so a test can drive `--local` without a runtime.
+  const provider = flag.provider === "mock" ? "mock" : LOCAL_PROVIDER;
+  const model =
+    flag.model ??
+    levels.find((level) => level.model !== undefined && level.provider === provider)?.model;
+  // A flag's provider is the command line's own choice, never a replaced one.
+  const chosen =
+    flag.provider === undefined ? levels.find((level) => level.provider !== undefined) : undefined;
+  const replaced =
+    chosen?.provider !== undefined &&
+    chosen.origin !== undefined &&
+    chosen.provider !== provider &&
+    chosen.provider !== DEFAULT_PROVIDER
+      ? { provider: chosen.provider, source: chosen.origin }
+      : undefined;
+  return replaced === undefined ? { provider, model } : { provider, model, replaced };
+}
+
+/** What a selection's `--local` notice says, if it replaced anything. */
+export function localNotice(selection: ProviderSelection): string | undefined {
+  const { replaced } = selection;
+  if (replaced === undefined) return undefined;
+  return `--local: using ${LOCAL_PROVIDER} instead of "${replaced.provider}" from ${replaced.source}.`;
 }
 
 /**

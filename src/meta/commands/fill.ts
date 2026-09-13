@@ -102,9 +102,10 @@ import type {
 import { mergeMetaProvenance } from "../core/meta-provenance.js";
 import { errorMessage } from "../../shared/errors.js";
 import {
-  DEFAULT_PROVIDER,
   assertKnownProvider as assertKnownProviderFor,
+  assertLocalFlag,
   assertModelHasProvider as assertModelHasProviderFor,
+  localNotice,
   providerSpecFor,
   resolveIdentity as resolveIdentityFor,
   selectProvider,
@@ -276,33 +277,26 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
 
   // The flag, then `meta.fill`, then the family's `providers:`, then `auto`,
   // each level's model carried only to the provider that level names.
+  //
+  // `--local` is llama-cpp over every level, so detection never runs under it
+  // and never announces a hosted provider it found. A `--provider` it
+  // contradicts is refused by name; a configured one is set aside, and said.
+  const flags = { provider: opts.provider, model: opts.model, local: opts.local };
+  assertLocalFlag(flags, toDocmetaError);
   const family = configFile?.providers ?? {};
-  const selection = selectProvider(
-    { provider: opts.provider, model: opts.model },
-    [
-      { provider: config?.fill?.provider, model: config?.fill?.model },
-      { provider: family.provider, model: family.model },
-    ],
-  );
-  const requestedProvider = selection.provider;
-  // `--local` with no explicit provider *is* the choice: resolve to the local
-  // one directly rather than letting detection pick a hosted provider and then
-  // refusing it. Detection would otherwise announce `auto-selected "openai"`
-  // immediately before the refusal, which reads as though it had been used.
-  // An explicit `--provider` is left alone so a contradictory pair still errors
-  // by name rather than being quietly overridden.
-  const providerName =
-    opts.local === true && requestedProvider === DEFAULT_PROVIDER
-      ? "llama-cpp"
-      : requestedProvider;
-  const model = selection.model;
+  const selection = selectProvider(flags, [
+    { provider: config?.fill?.provider, model: config?.fill?.model, origin: "fill.provider" },
+    { provider: family.provider, model: family.model, origin: "providers.provider" },
+  ]);
+  const { provider: providerName, model } = selection;
 
   // Check the name up front, and regardless of whether a provider was injected:
   // it costs nothing, and construction is lazy, so a typo would otherwise exit 0
   // on any run where no file happened to need inference.
   assertKnownProvider(providerName);
   assertModelHasProvider(providerName, model);
-  if (opts.local === true) assertLocalProvider(providerName);
+  const replaced = localNotice(selection);
+  if (replaced !== undefined) opts.onNotice?.(replaced);
   // Connection settings are the family's, for whichever provider is in force,
   // and under `auto` they are what detection reads.
   const spec = providerSpecFor(family, { provider: providerName, model: model ?? null });
@@ -370,9 +364,6 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     construct = () => injected;
   } else {
     const resolved = await resolveIdentity(spec);
-    // `--local` under `auto` can only be enforced here: detection is what picks
-    // the provider, so the check has to sit after it rather than on the spec.
-    if (opts.local === true) assertLocalProvider(resolved.provider);
     identity = resolved;
     // Build from the RESOLVED identity, never the spec we started with: under
     // `auto` that spec still says "auto", and the synchronous `makeProvider`
@@ -1624,25 +1615,6 @@ function requireNumber(
     );
   }
   return value;
-}
-
-/**
- * Refuse a provider that would send content off the machine.
- *
- * `claude-cli` is the one that has to be named. The binary runs locally, so it
- * reads as local; the inference does not, so it is not. It sits third in the
- * detection order, which makes it exactly the fallback `--local` would
- * otherwise pick up by accident — the flag would keep working and stop meaning
- * anything.
- */
-function assertLocalProvider(name: string): void {
-  if (name === "llama-cpp" || name === "mock") return;
-  if (name === "auto") return; // narrowed below, once detection has run
-  throw new DocmetaError(
-    name === "claude-cli"
-      ? `--local cannot use "claude-cli": the CLI runs on this machine but its inference does not. Use --provider llama-cpp.`
-      : `--local cannot use "${name}", which sends document content to a hosted API. Use --provider llama-cpp, or drop --local.`,
-  );
 }
 
 /** The shared refusals, in meta's error class and naming meta's config key. */

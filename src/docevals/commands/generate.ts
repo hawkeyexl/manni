@@ -24,6 +24,8 @@ import type { GraderTarget } from "../graders/types.js";
 export interface GenerateOptions extends DocumentInputOptions {
   provider?: string;
   model?: string;
+  /** Run inference on this machine, with llama-cpp, over any configured or eval-level provider. */
+  local?: boolean;
   cwd?: string;
   /** Injectable provider for tests and programmatic use. */
   providerInstance?: InferenceProvider;
@@ -40,7 +42,7 @@ export async function runGenerate(
 ): Promise<GenerateRun> {
   const cwd = options.cwd ?? process.cwd();
   const config = loadRunConfig(runConfigOptions(paths, options), cwd);
-  const flags = { provider: options.provider, model: options.model };
+  const flags = { provider: options.provider, model: options.model, local: options.local };
   // Checked before discovery, and even when nothing needs generating: a typo
   // is a usage error on every run, not only on the runs that reach a model.
   assertProviderSelection(selectProvider(config, flags));

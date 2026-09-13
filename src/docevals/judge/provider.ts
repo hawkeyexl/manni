@@ -22,16 +22,20 @@ import { DocevalsError } from "../types.js";
 import type { DocevalsConfig } from "../core/config.js";
 import {
   assertKnownProvider,
+  assertLocalFlag,
   assertModelHasProvider,
+  localNotice,
   providerSpecFor as sharedProviderSpecFor,
   resolveIdentity,
   selectProvider as selectFromLevels,
   type ProviderChoice,
+  type ProviderFlags,
   type ProviderSelection,
 } from "../../shared/providers.js";
 import { errorMessage } from "../../shared/errors.js";
+import { noticeOnce } from "../../shared/warn.js";
 
-export type { ProviderChoice, ProviderSelection };
+export type { ProviderChoice, ProviderFlags, ProviderSelection };
 
 /** The key a docevals user writes, named by the refusal a bare model gets. */
 const CONFIG_KEY = "docevals.provider";
@@ -44,23 +48,44 @@ const toDocevalsError = (message: string): Error => new DocevalsError(message);
  * then `auto`. A model is carried only to the provider its own level names,
  * so an eval that names a different provider takes that provider's default
  * instead of a model it cannot run (`selectProvider` in the shared module).
+ *
+ * `--local` runs llama-cpp over all of them. A `--provider` it contradicts is
+ * refused here, so no path selects past it. `ev.origin` names the eval in the
+ * notice for a provider `--local` replaced; the caller knows its page.
  */
 export function selectProvider(
   config: DocevalsConfig,
-  flags: ProviderChoice = {},
+  flags: ProviderFlags = {},
   ev: ProviderChoice = {},
 ): ProviderSelection {
+  assertLocalFlag(flags, toDocevalsError);
   return selectFromLevels(flags, [
-    ev,
+    {
+      ...(ev.provider !== undefined ? { provider: ev.provider } : {}),
+      ...(ev.model !== undefined ? { model: ev.model } : {}),
+      ...(ev.origin !== undefined ? { origin: ev.origin } : {}),
+    },
     {
       ...(config.provider !== null ? { provider: config.provider } : {}),
       ...(config.model !== null ? { model: config.model } : {}),
+      origin: CONFIG_KEY,
     },
     {
       ...(config.providers.provider !== undefined ? { provider: config.providers.provider } : {}),
       ...(config.providers.model !== undefined ? { model: config.providers.model } : {}),
+      origin: "providers.provider",
     },
   ]);
+}
+
+/**
+ * Say what `--local` set aside, once per source. Called where a selection is
+ * about to be used, never where it is only checked, so a run that sends
+ * nothing to a model says nothing.
+ */
+export function announceSelection(selection: ProviderSelection): void {
+  const message = localNotice(selection);
+  if (message !== undefined) noticeOnce(message);
 }
 
 /**
@@ -105,12 +130,14 @@ export function providerSpecFor(
  */
 export async function resolveProviderIdentity(
   config: DocevalsConfig,
-  flags: ProviderChoice = {},
+  flags: ProviderFlags = {},
   ev: ProviderChoice = {},
 ): Promise<{ provider: ConcreteProvider; model: string }> {
-  const { provider, model } = selectProvider(config, flags, ev);
+  const selection = selectProvider(config, flags, ev);
+  const { provider, model } = selection;
   assertKnownProvider(provider, toDocevalsError);
   assertModelHasProvider(provider, model, CONFIG_KEY, toDocevalsError);
+  announceSelection(selection);
   return resolveIdentity(providerSpecFor(config, { provider, model: model ?? null }), toDocevalsError);
 }
 
@@ -134,7 +161,7 @@ export function constructProvider(
 /** Select, check, detect and construct: the provider a verb sends pages to. */
 export async function makeProvider(
   config: DocevalsConfig,
-  flags: ProviderChoice = {},
+  flags: ProviderFlags = {},
   ev: ProviderChoice = {},
 ): Promise<InferenceProvider> {
   return constructProvider(config, await resolveProviderIdentity(config, flags, ev));

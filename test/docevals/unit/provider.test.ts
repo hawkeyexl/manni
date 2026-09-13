@@ -8,7 +8,8 @@
  * family's `providers:`) and the judge-shaped options, so that is what these
  * pin.
  */
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetWarnings } from "../../../src/shared/warn.js";
 import { resolve } from "node:path";
 import { DEFAULT_MODELS } from "@hawkeyexl/inference";
 import { parseDocevalsConfig } from "../helpers/config.js";
@@ -128,6 +129,80 @@ describe("selectProvider", () => {
       provider: "anthropic",
       model: undefined,
     });
+  });
+});
+
+describe("selectProvider under --local", () => {
+  it("overrides docevals.provider, naming it as the source replaced", () => {
+    const config = parseDocevalsConfig("provider: anthropic\nmodel: claude-x\n", PATH);
+    expect(selectProvider(config, { local: true })).toEqual({
+      provider: "llama-cpp",
+      model: undefined,
+      replaced: { provider: "anthropic", source: "docevals.provider" },
+    });
+  });
+
+  it("overrides the family's providers.provider, naming it", () => {
+    const config = family(["provider: openai"]);
+    expect(selectProvider(config, { local: true })).toEqual({
+      provider: "llama-cpp",
+      model: undefined,
+      replaced: { provider: "openai", source: "providers.provider" },
+    });
+  });
+
+  it("overrides an eval's own provider, naming the origin the caller gives", () => {
+    const config = parseDocevalsConfig("provider: anthropic\n", PATH);
+    expect(
+      selectProvider(
+        config,
+        { local: true },
+        { provider: "openai", origin: 'eval "clear" in docs/a.md' },
+      ).replaced,
+    ).toEqual({ provider: "openai", source: 'eval "clear" in docs/a.md' });
+  });
+
+  it("keeps docevals.model when docevals.provider is llama-cpp", () => {
+    const config = parseDocevalsConfig("provider: llama-cpp\nmodel: granite-4.1-3b-q2\n", PATH);
+    expect(selectProvider(config, { local: true })).toEqual({
+      provider: "llama-cpp",
+      model: "granite-4.1-3b-q2",
+    });
+  });
+
+  it("refuses --provider naming a hosted provider, as a DocevalsError", () => {
+    const config = parseDocevalsConfig("", PATH);
+    expect(() => selectProvider(config, { local: true, provider: "anthropic" })).toThrow(
+      new DocevalsError(
+        "--local and --provider anthropic contradict each other: --local runs inference on " +
+          "this machine with llama-cpp. Drop one of them.",
+      ),
+    );
+  });
+
+  it("resolves to llama-cpp without detecting, naming the replaced choice once", async () => {
+    const written: string[] = [];
+    resetWarnings();
+    const spy = vi.spyOn(process.stderr, "write").mockImplementation((chunk: string | Uint8Array) => {
+      written.push(String(chunk));
+      return true;
+    });
+    try {
+      process.env["ANTHROPIC_API_KEY"] = "test-key";
+      const config = parseDocevalsConfig("provider: anthropic\n", PATH);
+      const flags = { local: true, model: "granite-4.1-3b-q2" };
+      await expect(resolveProviderIdentity(config, flags)).resolves.toEqual({
+        provider: "llama-cpp",
+        model: "granite-4.1-3b-q2",
+      });
+      await resolveProviderIdentity(config, flags);
+      expect(written).toEqual([
+        'manni: --local: using llama-cpp instead of "anthropic" from docevals.provider.\n',
+      ]);
+    } finally {
+      spy.mockRestore();
+      resetWarnings();
+    }
   });
 });
 

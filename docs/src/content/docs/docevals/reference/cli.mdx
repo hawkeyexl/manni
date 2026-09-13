@@ -94,6 +94,7 @@ manni docevals run [paths...] [options]
 | `--fail-on-review` | n/a | off | Exit 1 when any eval lands in the human-review zone. |
 | `--provider` | `<name>` | config `provider`, else `auto` | Judge provider: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
 | `--model` | `<model>` | config `model`, else the provider's default | Judge model. Needs a named provider. |
+| `--local` | n/a | off | Run inference on this machine with `llama-cpp`, over `docevals.provider`, the family's `providers.provider` and an eval's own `provider:`. A `--provider` other than `llama-cpp` or `auto` is a usage error (exit 2). |
 | `--runs` | `<n>` | config `judge.ensembleRuns` | Ensemble runs per eval. Overrides the config default of 3, and an eval's own `runs`. |
 | `--chunk-chars` | `<n>` | config `judge.chunkChars` | Characters of page per judge call. A longer page is read in parts and judged once against the collected evidence. The config default is 12000. |
 | `--eval` | `<name>` | n/a | Run only this eval. Repeat the flag for more than one (`--eval a --eval b`). Names are **not** space-separated, because a variadic flag would swallow the following glob. **Suite targets are not evaluated while a filter is active**; see below. A name that matches nothing is a usage error: **exit 2**. |
@@ -321,6 +322,7 @@ Exits 1 if any target failed to generate.
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--provider` | `<name>` | config `provider`, else `auto` | Provider that writes the scripts: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
 | `--model` | `<model>` | config `model`, else the provider's default | Model. Needs a named provider. |
+| `--local` | n/a | off | Run inference on this machine with `llama-cpp`, over `docevals.provider`, the family's `providers.provider` and an eval's own `provider:`. A `--provider` other than `llama-cpp` or `auto` is a usage error (exit 2). |
 
 ## `docevals fill`
 
@@ -353,6 +355,7 @@ manni docevals fill [paths...] [options]
 | `--chunk-chars` | `<n>` | config `fill.chunkChars` | Characters of page per fill call. A longer page is proposed in parts. |
 | `--provider` | `<name>` | config `provider`, else `auto` | Provider: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
 | `--model` | `<model>` | config `model`, else the provider's default | Model. Needs a named provider. |
+| `--local` | n/a | off | Run inference on this machine with `llama-cpp`, over `docevals.provider`, the family's `providers.provider` and an eval's own `provider:`. A `--provider` other than `llama-cpp` or `auto` is a usage error (exit 2). |
 
 Raw proposals are cached **before** the confidence gate, so re-running at a
 different `--confidence` spends no turns.
@@ -429,6 +432,7 @@ manni docevals promote [paths...] [options]
 | `--write` | n/a | off | Apply promotions. It writes the scripts and rewrites the evals. |
 | `--provider` | `<name>` | config `provider`, else `auto` | Provider: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
 | `--model` | `<model>` | config `model`, else the provider's default | Model. Needs a named provider. |
+| `--local` | n/a | off | Run inference on this machine with `llama-cpp`, over `docevals.provider`, the family's `providers.provider` and an eval's own `provider:`. A `--provider` other than `llama-cpp` or `auto` is a usage error (exit 2). |
 
 ## `docevals calibrate`
 
@@ -447,6 +451,7 @@ manni docevals calibrate [options]
 | `--seed` | n/a | off | Write golden candidates from recorded reviews into `<golden>/from-reviews.yaml`, then exit. Judges nothing and constructs no provider, so it runs with no API key. Idempotent on `(file, eval)`: re-running updates rather than duplicates, and never un-reviews a confirmed case. Every new case lands `reviewed: false`. |
 | `--provider` | `<name>` | config `provider`, else `auto` | Provider: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
 | `--model` | `<model>` | config `model`, else the provider's default | Model. Needs a named provider. |
+| `--local` | n/a | off | Run inference on this machine with `llama-cpp`, over `docevals.provider`, the family's `providers.provider` and an eval's own `provider:`. A `--provider` other than `llama-cpp` or `auto` is a usage error (exit 2). |
 | `--runs` | `<n>` | config `judge.ensembleRuns` | Ensemble runs per case. |
 | `--max-turns` | `<n>` | config `judge.maxTurns` | Stop judging after this many uncached **ensemble runs**, the same unit as `run`, since calibration goes through the same judge. One case spends `judge.ensembleRuns` turns. Run-wide, not per case: every case is judged in one batched call. A cached case spends none. |
 | `--no-cache` | n/a | off | Bypass the judge response cache. |

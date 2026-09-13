@@ -34,6 +34,8 @@ export interface RunCommandOptions extends DocumentInputOptions {
   failOnReview?: boolean;
   provider?: string;
   model?: string;
+  /** Run inference on this machine, with llama-cpp, over any configured or eval-level provider. */
+  local?: boolean;
   runs?: number;
   chunkChars?: number;
   maxTurns?: number;
@@ -80,6 +82,7 @@ export async function runRun(
   const judgeOptions = {
     provider: options.provider,
     model: options.model,
+    local: options.local,
     runs: options.runs,
     chunkChars: options.chunkChars,
     noCache: options.cache === false,

@@ -6,6 +6,7 @@ import { Command } from "commander";
 import pkg from "../../package.json" with { type: "json" };
 import { fail } from "../shared/run.js";
 import { collect, configOption } from "../shared/cli-options.js";
+import { LOCAL_FLAG_HELP } from "../shared/providers.js";
 import type { DocumentInputOptions } from "./core/discover.js";
 import pc from "picocolors";
 import { DocevalsError } from "./types.js";
@@ -222,6 +223,7 @@ export function buildProgram(): Command {
     .option("--fail-on-review", "Exit 1 when any eval lands in the human-review zone")
     .option("--provider <name>", "Judge provider: auto (default) | anthropic | openai | claude-cli | llama-cpp")
     .option("--model <model>", "Model override; needs a named provider, from here or config")
+    .option("--local", LOCAL_FLAG_HELP)
     .option("--runs <n>", "Ensemble runs per eval", parseIntArg("--runs"))
     .option(
       "--chunk-chars <n>",
@@ -273,6 +275,7 @@ export function buildProgram(): Command {
           failOnReview: opts.failOnReview as boolean | undefined,
           provider: opts.provider as string | undefined,
           model: opts.model as string | undefined,
+          local: opts.local as boolean | undefined,
           runs: opts.runs as number | undefined,
           chunkChars: opts.chunkChars as number | undefined,
           maxTurns: opts.maxTurns as number | undefined,
@@ -302,6 +305,7 @@ export function buildProgram(): Command {
   )
     .option("--provider <name>", "Provider: auto (default) | anthropic | openai | claude-cli | llama-cpp")
     .option("--model <model>", "Model override; needs a named provider, from here or config")
+    .option("--local", LOCAL_FLAG_HELP)
     .action(
       async (
         paths: string[],
@@ -311,6 +315,7 @@ export function buildProgram(): Command {
           exclude?: string[];
           provider?: string;
           model?: string;
+          local?: boolean;
         },
       ) => {
         try {
@@ -318,6 +323,7 @@ export function buildProgram(): Command {
             ...documentOptions(opts),
             provider: opts.provider,
             model: opts.model,
+            local: opts.local,
           });
           if (result.targets === 0) {
             console.log("Nothing to generate — every command eval has a command.");
@@ -369,6 +375,7 @@ export function buildProgram(): Command {
     )
     .option("--provider <name>", "Provider: auto (default) | anthropic | openai | claude-cli | llama-cpp")
     .option("--model <model>", "Model override; needs a named provider, from here or config")
+    .option("--local", LOCAL_FLAG_HELP)
     .action(async (paths: string[], opts: Record<string, unknown>) => {
       try {
         const confidence = opts.confidence as number | undefined;
@@ -387,6 +394,7 @@ export function buildProgram(): Command {
           noCache: opts.cache === false ? true : undefined,
           provider: opts.provider as string | undefined,
           model: opts.model as string | undefined,
+          local: opts.local as boolean | undefined,
         });
         // As in `run`: parseFormatArg validated this at parse time, and the cast
         // only re-narrows from the `unknown` the Record-typed options bag erases
@@ -409,6 +417,7 @@ export function buildProgram(): Command {
     .option("--write", "Apply promotions (write scripts and rewrite evals)")
     .option("--provider <name>", "Provider: auto (default) | anthropic | openai | claude-cli | llama-cpp")
     .option("--model <model>", "Model override; needs a named provider, from here or config")
+    .option("--local", LOCAL_FLAG_HELP)
     .action(
       async (
         paths: string[],
@@ -419,6 +428,7 @@ export function buildProgram(): Command {
           write?: boolean;
           provider?: string;
           model?: string;
+          local?: boolean;
         },
       ) => {
         try {
@@ -427,6 +437,7 @@ export function buildProgram(): Command {
             write: opts.write,
             provider: opts.provider,
             model: opts.model,
+            local: opts.local,
           });
           if (proposals.length === 0) {
             console.log("No ai-graded evals found.");
@@ -464,6 +475,7 @@ export function buildProgram(): Command {
     )
     .option("--provider <name>", "Provider: auto (default) | anthropic | openai | claude-cli | llama-cpp")
     .option("--model <model>", "Model override; needs a named provider, from here or config")
+    .option("--local", LOCAL_FLAG_HELP)
     .option("--runs <n>", "Ensemble runs per case", parseIntArg("--runs"))
     .option(
       "--max-turns <n>",
@@ -478,6 +490,7 @@ export function buildProgram(): Command {
         seed?: boolean;
         provider?: string;
         model?: string;
+        local?: boolean;
         runs?: number;
         maxTurns?: number;
         cache?: boolean;
@@ -519,6 +532,7 @@ export function buildProgram(): Command {
             golden: opts.golden,
             provider: opts.provider,
             model: opts.model,
+            local: opts.local,
             runs: opts.runs,
             maxTurns: opts.maxTurns,
             noCache: opts.cache === false,

@@ -58,6 +58,8 @@ export interface FillOptions extends DocumentInputOptions {
   noCache?: boolean;
   provider?: string;
   model?: string;
+  /** Run inference on this machine, with llama-cpp, over any configured or eval-level provider. */
+  local?: boolean;
   /** Test seam: bypasses provider construction entirely. */
   providerInstance?: InferenceProvider;
 }
@@ -156,7 +158,7 @@ export async function runFill(
 ): Promise<FillReport> {
   const cwd = options.cwd ?? process.cwd();
   const config = loadRunConfig(runConfigOptions(paths, options), cwd);
-  const flags = { provider: options.provider, model: options.model };
+  const flags = { provider: options.provider, model: options.model, local: options.local };
   // Checked up front, and regardless of an injected provider: it costs nothing,
   // and a typo must fail on a run where no page needs a model too.
   assertProviderSelection(selectProvider(config, flags));
