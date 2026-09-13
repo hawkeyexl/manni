@@ -182,80 +182,8 @@ function entryObject(entry: NewEvalEntry): Record<string, unknown> {
   return obj;
 }
 
-/**
- * One model's claim about the evals it proposed, written to
- * `eval-provenance`. A human deletes the entry once those evals are reviewed,
- * so a surviving entry means unreviewed machine-proposed evals — which is the
- * whole point: before this, `fill` reported confidence to the terminal and
- * wrote nothing durable, so a page could not say which of its evals a model
- * had written or how sure it had been.
- */
-export interface ProvenanceUpdate {
-  generatedBy: string;
-  evals: string[];
-  confidence: Record<string, number>;
-}
-
-/**
- * Merge a provenance entry into `eval-provenance`, by `generated-by`.
- *
- * One entry per model, so a second `fill` run with the same model extends the
- * existing entry rather than stacking a near-duplicate a reviewer then has to
- * reconcile.
- */
-function mergeProvenance(
-  doc: Document,
-  path: string,
-  update: ProvenanceUpdate,
-): void {
-  let seq = doc.get("eval-provenance", true);
-  if (seq !== undefined && !(seq instanceof YAMLSeq)) {
-    // Replacing it would destroy someone's attribution trail without a word.
-    // `fill` never reaches this — it refuses a page with schema errors first —
-    // but `appendPageEvals` is a public export, so the guard belongs here, the
-    // same way the `evals` string shorthand is refused rather than rewritten.
-    throw new DocevalsError(
-      `${path}: eval-provenance is not a list — fix or remove it before writing a new trail`,
-    );
-  }
-  if (seq === undefined) {
-    seq = doc.createNode([]);
-    doc.set("eval-provenance", seq);
-  }
-  const existing = (seq as YAMLSeq).items.find(
-    (i) => isMap(i) && i.get("generated-by") === update.generatedBy,
-  );
-  if (existing === undefined) {
-    (seq as YAMLSeq).add(
-      doc.createNode({
-        "generated-by": update.generatedBy,
-        evals: update.evals,
-        confidence: update.confidence,
-      }),
-    );
-    return;
-  }
-  const node = existing as YAMLMap;
-  const prior = node.get("evals", true);
-  const priorIds =
-    prior instanceof YAMLSeq
-      ? prior.items.filter(isScalar).map((s) => String(s.value))
-      : [];
-  const merged = [...new Set([...priorIds, ...update.evals])];
-  node.set("evals", doc.createNode(merged));
-
-  const priorConfidence = node.get("confidence", true);
-  const confidence: Record<string, number> = {};
-  if (isMap(priorConfidence)) {
-    for (const item of priorConfidence.items) {
-      if (isScalar(item.key) && isScalar(item.value)) {
-        confidence[String(item.key.value)] = Number(item.value.value);
-      }
-    }
-  }
-  Object.assign(confidence, update.confidence);
-  node.set("confidence", doc.createNode(confidence));
-}
+/** The page-level key `fill` records machine-proposed evals in (proposal 0046). */
+const META_PROVENANCE_KEY = "meta-provenance";
 
 function assertNoCollision(seq: YAMLSeq, name: string, path: string): void {
   for (const item of seq.items) {
@@ -276,12 +204,17 @@ function assertNoCollision(seq: YAMLSeq, name: string, path: string): void {
  * Append inline evals to a page's YAML frontmatter, creating the `evals` key
  * — or the frontmatter block itself — when missing. The body stays
  * byte-identical; existing evals are never modified or reordered.
+ *
+ * `metaProvenance`, when given, is the page's whole `meta-provenance` list with
+ * the new evals already merged in, written in the same edit. The merge is the
+ * caller's, as `manni meta fill`'s is, so both tools record attribution one
+ * way.
  */
 export function appendPageEvals(
   content: string,
   path: string,
   entries: NewEvalEntry[],
-  provenance?: ProvenanceUpdate,
+  metaProvenance?: readonly unknown[],
 ): string {
   const format = leadingFrontmatterFormat(content);
   if (format === "toml" || format === "json") {
@@ -299,7 +232,7 @@ export function appendPageEvals(
   if (format === undefined) {
     // No frontmatter: synthesize a block above the untouched body.
     const doc = new Document({ evals: entries.map(entryObject) });
-    if (provenance) mergeProvenance(doc, path, provenance);
+    if (metaProvenance) doc.set(META_PROVENANCE_KEY, doc.createNode(metaProvenance));
     let block = doc.toString();
     if (eol === "\r\n") block = block.replace(/(?<!\r)\n/g, "\r\n");
     return `${bom}---${eol}${block}---${eol}${stripped}`;
@@ -332,7 +265,7 @@ export function appendPageEvals(
     assertNoCollision(seq, entry.id, path);
     seq.add(doc.createNode(entryObject(entry)));
   }
-  if (provenance) mergeProvenance(doc, path, provenance);
+  if (metaProvenance) doc.set(META_PROVENANCE_KEY, doc.createNode(metaProvenance));
   let newBlock = doc.toString();
   if (blockEol === "\r\n") newBlock = newBlock.replace(/(?<!\r)\n/g, "\r\n");
   return open + newBlock + suffix;

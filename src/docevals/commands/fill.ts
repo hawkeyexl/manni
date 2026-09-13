@@ -40,6 +40,10 @@ import {
 } from "../fill/prompt.js";
 import { looksLikeOverflow, splitBody } from "../core/split.js";
 import { errorMessage } from "../../shared/errors.js";
+import { mergeMetaProvenance } from "../../meta/internal.js";
+
+/** The key `fill` records the evals it wrote in (proposal 0046). */
+const META_PROVENANCE_KEY = "meta-provenance";
 
 export interface FillOptions extends DocumentInputOptions {
   cwd?: string;
@@ -77,6 +81,29 @@ export interface ProposedEval {
   rationale?: string;
 }
 
+/**
+ * One `meta-provenance` entry after `fill` merged into it: the model, the ids
+ * of the evals it proposed, and the confidence each was written at. An entry
+ * `fill` merged into keeps whatever else it held, `fields` included.
+ */
+export interface EvalsMetaProvenanceEntry {
+  "generated-by": string;
+  evals: string[];
+  confidence: Record<string, number>;
+  [other: string]: unknown;
+}
+
+/**
+ * What became of this page's `meta-provenance` entry. Never a failure. The
+ * shape is `manni meta fill`'s; of its three reasons for not writing, only
+ * `schema-mismatch` can happen here, because docevals writes no manifest and
+ * fills YAML frontmatter only.
+ */
+export type EvalsMetaProvenanceReport =
+  | { written: true; entry: EvalsMetaProvenanceEntry }
+  /** The page's `meta-provenance` is not a list, so there is nothing to merge into. */
+  | { written: false; skipReason: "schema-mismatch" };
+
 export interface FillPageResult {
   file: string;
   status: FillStatus;
@@ -90,6 +117,11 @@ export interface FillPageResult {
   duplicates: string[];
   cached: boolean;
   error?: string;
+  /**
+   * The `meta-provenance` entry recording the evals this run wrote. Absent
+   * when none was written; reported, not written, under `--dry-run`.
+   */
+  metaProvenance?: EvalsMetaProvenanceReport;
 }
 
 export interface FillReport {
@@ -102,7 +134,7 @@ export interface FillReport {
 
 /**
  * Proposals become inline evals with explicit grader/type. Confidence is no
- * longer report-only — it is written to `eval-provenance` alongside the model
+ * longer report-only — it is written to `meta-provenance` alongside the model
  * that proposed it, so the page itself records what a machine wrote and how
  * sure it was, and a reviewer retires the entry when they have checked it.
  */
@@ -352,18 +384,24 @@ export async function runFill(
       cached,
     };
     if (written.length === 0) return result;
+    // The evals this run proposed, recorded in the same write. A record that
+    // cannot be merged is reported rather than failing the page: a side
+    // record that could block filling would be worse than none.
+    const merged = mergeMetaProvenance(
+      plan.page.frontmatter.data[META_PROVENANCE_KEY],
+      identity.model,
+      "evals",
+      written.map((p) => ({ name: p.id, confidence: p.confidence })),
+    );
+    const metaProvenance: EvalsMetaProvenanceReport = merged
+      ? { written: true, entry: { ...merged.entry, evals: merged.names } }
+      : { written: false, skipReason: "schema-mismatch" };
     try {
       const updated = appendPageEvals(
         plan.page.content,
         plan.page.file,
         written.map(toEntry),
-        {
-          generatedBy: identity.model,
-          evals: written.map((p) => p.id),
-          confidence: Object.fromEntries(
-            written.map((p) => [p.id, p.confidence]),
-          ),
-        },
+        merged?.list,
       );
       if (!options.dryRun) writeFileSync(plan.page.absPath, updated);
     } catch (e) {
@@ -374,7 +412,7 @@ export async function runFill(
         written: [],
       };
     }
-    return { ...result, status: options.dryRun ? "proposed" : "filled" };
+    return { ...result, status: options.dryRun ? "proposed" : "filled", metaProvenance };
   }
 }
 
@@ -423,6 +461,16 @@ export function renderFill(
       case "error":
         lines.push(`${pc.red(label)} ${r.file}: ${r.error ?? "unknown error"}`);
         break;
+    }
+    const record = r.metaProvenance;
+    if (record?.written === true) {
+      lines.push(
+        `    ${pc.cyan("meta-provenance")}  ${record.entry["generated-by"]}: ${record.entry.evals.join(", ")}`,
+      );
+    } else if (record?.skipReason === "schema-mismatch") {
+      lines.push(
+        pc.dim("    meta-provenance not written: this page's schemas do not allow it"),
+      );
     }
     if (r.belowThreshold.length > 0) {
       lines.push(

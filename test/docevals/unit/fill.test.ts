@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { stripVTControlCharacters } from "node:util";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -361,5 +362,99 @@ describe("the fill cache under halve-and-retry", () => {
     ]);
     await runFill([], { cwd: root, providerInstance: second, chunkChars: 400 });
     expect(second.requests).toHaveLength(0);
+  });
+});
+
+/**
+ * `fill` records the evals it writes in `meta-provenance` (proposal 0046),
+ * merged by `generated-by` exactly as `manni meta fill` merges the fields it
+ * writes, so a page carries one attribution record for both.
+ */
+describe("runFill: meta-provenance", () => {
+  const FIXTURE = join(
+    import.meta.dirname,
+    "../fixtures/provenance/docs/fill-meta-provenance.md",
+  );
+  const pageData = (root: string): Record<string, unknown> =>
+    readPage(join(root, "docs", "page.md"), root).frontmatter.data;
+
+  it("writes an entry for the model with the ids and confidences it wrote", async () => {
+    const root = workspace({ "page.md": PLAIN_PAGE });
+    const provider = new MockProvider([
+      { json: { evals: [proposal("strong-check", 0.9), proposal("weak-check", 0.6)] } },
+    ]);
+    const report = await runFill([], { cwd: root, providerInstance: provider, noCache: true });
+    const entry = {
+      "generated-by": "mock-model",
+      evals: ["strong-check"],
+      confidence: { "strong-check": 0.9 },
+    };
+    expect(pageData(root)["meta-provenance"]).toEqual([entry]);
+    expect(report.results[0]?.metaProvenance).toEqual({ written: true, entry });
+  });
+
+  it("merges into the model's existing entry and keeps every other one", async () => {
+    const root = workspace({ "page.md": readFileSync(FIXTURE, "utf8") });
+    const provider = new MockProvider([
+      { json: { evals: [proposal("links-resolve", 0.8)] } },
+    ]);
+    const report = await runFill([], { cwd: root, providerInstance: provider, noCache: true });
+    const merged = {
+      "generated-by": "mock-model",
+      fields: ["/description"],
+      evals: ["retry-named", "links-resolve"],
+      confidence: { "/description": 0.9, "retry-named": 0.75, "links-resolve": 0.8 },
+    };
+    expect(pageData(root)["meta-provenance"]).toEqual([
+      { "generated-by": "claude-sonnet-5", evals: ["limits-stated"] },
+      merged,
+    ]);
+    expect(report.results[0]?.metaProvenance).toEqual({ written: true, entry: merged });
+  });
+
+  it("writes the evals but not the record when meta-provenance is not a list", async () => {
+    const page = ["---", "title: Sample", "meta-provenance: reviewed", "---", "Body.", ""].join("\n");
+    const root = workspace({ "page.md": page });
+    const provider = new MockProvider([{ json: { evals: [proposal("strong-check", 0.9)] } }]);
+    const report = await runFill([], { cwd: root, providerInstance: provider, noCache: true });
+    expect(report.results[0]?.status).toBe("filled");
+    expect(report.results[0]?.metaProvenance).toEqual({ written: false, skipReason: "schema-mismatch" });
+    expect(pageData(root)["meta-provenance"]).toBe("reviewed");
+    expect(readFileSync(join(root, "docs", "page.md"), "utf8")).toContain("strong-check");
+  });
+
+  it("reports the record under --dry-run without writing it", async () => {
+    const root = workspace({ "page.md": PLAIN_PAGE });
+    const provider = new MockProvider([{ json: { evals: [proposal("strong-check", 0.9)] } }]);
+    const report = await runFill([], { cwd: root, providerInstance: provider, noCache: true, dryRun: true });
+    expect(report.results[0]?.metaProvenance?.written).toBe(true);
+    expect(readFileSync(join(root, "docs", "page.md"), "utf8")).toBe(PLAIN_PAGE);
+  });
+
+  it("omits the record when nothing was written", async () => {
+    const root = workspace({ "page.md": PLAIN_PAGE });
+    const provider = new MockProvider([{ json: { evals: [proposal("weak-check", 0.6)] } }]);
+    const report = await runFill([], { cwd: root, providerInstance: provider, noCache: true });
+    expect(report.results[0]).not.toHaveProperty("metaProvenance");
+    expect(pageData(root)).not.toHaveProperty("meta-provenance");
+  });
+
+  it("prints the record under the page line", async () => {
+    const root = workspace({ "page.md": readFileSync(FIXTURE, "utf8") });
+    const provider = new MockProvider([{ json: { evals: [proposal("links-resolve", 0.8)] } }]);
+    const report = await runFill([], { cwd: root, providerInstance: provider, noCache: true });
+    expect(stripVTControlCharacters(renderFill(report, "pretty")).split("\n")).toContain(
+      "    meta-provenance  mock-model: retry-named, links-resolve",
+    );
+  });
+
+  it("prints why the record was not written", async () => {
+    const page = ["---", "title: Sample", "meta-provenance: reviewed", "---", "Body.", ""].join("\n");
+    const root = workspace({ "page.md": page });
+    const provider = new MockProvider([{ json: { evals: [proposal("strong-check", 0.9)] } }]);
+    const report = await runFill([], { cwd: root, providerInstance: provider, noCache: true });
+    expect(stripVTControlCharacters(renderFill(report, "pretty")).split("\n")).toContain(
+      "    meta-provenance not written: this page's schemas do not allow it",
+    );
   });
 });

@@ -4,7 +4,6 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import {
   appendPageEvals,
   type NewEvalEntry,
-  type ProvenanceUpdate,
 } from "../../../src/docevals/core/frontmatter-edit.js";
 import { frontmatterSchema } from "../../../src/docevals/schema.js";
 import { DocevalsError } from "../../../src/docevals/types.js";
@@ -167,112 +166,51 @@ describe("appendPageEvals", () => {
 });
 
 /**
- * `eval-provenance` is the durable machine-proposal trail. Before it, `fill`
- * printed confidence to the terminal and wrote nothing — so a page could not
- * say which of its evals a model had written, or how sure that model was, and
- * a reviewer had no way to tell a human-authored eval from a proposed one.
+ * `meta-provenance` is the durable machine-proposal trail (proposal 0046).
+ * `appendPageEvals` writes the list it is handed in the same edit as the evals;
+ * the merge by `generated-by` is the caller's, shared with `manni meta fill`.
  */
-describe("appendPageEvals: eval-provenance", () => {
-  const TRAIL: ProvenanceUpdate = {
-    generatedBy: "claude-fable-5",
-    evals: ["has-overview"],
-    confidence: { "has-overview": 0.88 },
-  };
+describe("appendPageEvals: meta-provenance", () => {
+  const LIST = [
+    {
+      "generated-by": "claude-fable-5",
+      evals: ["has-overview"],
+      confidence: { "has-overview": 0.88 },
+    },
+  ];
 
-  it("records the model, the ids it proposed, and its confidence", () => {
+  it("writes the list beside the evals", () => {
     const page = ["---", "title: Page", "---", "body", ""].join("\n");
-    const data = frontmatterOf(appendPageEvals(page, PATH, [ENTRY], TRAIL));
-    expect(data["eval-provenance"]).toEqual([
-      {
-        "generated-by": "claude-fable-5",
-        evals: ["has-overview"],
-        confidence: { "has-overview": 0.88 },
-      },
-    ]);
+    const data = frontmatterOf(appendPageEvals(page, PATH, [ENTRY], LIST));
+    expect(data["meta-provenance"]).toEqual(LIST);
+    expect(idsOf(data)).toEqual(["has-overview"]);
   });
 
-  it("merges a second run by the same model into one entry", () => {
-    // One entry per model. Two near-duplicate entries would leave a reviewer
-    // reconciling them by hand to answer "has anyone checked these?".
-    const page = ["---", "title: Page", "---", "body", ""].join("\n");
-    const once = appendPageEvals(page, PATH, [ENTRY], TRAIL);
-    const twice = appendPageEvals(once, PATH, [SECOND], {
-      generatedBy: "claude-fable-5",
-      evals: ["links-resolve"],
-      confidence: { "links-resolve": 0.71 },
-    });
-    const trail = frontmatterOf(twice)["eval-provenance"] as Record<
-      string,
-      unknown
-    >[];
-    expect(trail).toHaveLength(1);
-    expect(trail[0]?.evals).toEqual(["has-overview", "links-resolve"]);
-    expect(trail[0]?.confidence).toEqual({
-      "has-overview": 0.88,
-      "links-resolve": 0.71,
-    });
+  it("writes it into a synthesized block too", () => {
+    const data = frontmatterOf(appendPageEvals("body\n", PATH, [ENTRY], LIST));
+    expect(data["meta-provenance"]).toEqual(LIST);
   });
 
-  it("keeps a different model's trail separate", () => {
-    const page = ["---", "title: Page", "---", "body", ""].join("\n");
-    const once = appendPageEvals(page, PATH, [ENTRY], TRAIL);
-    const twice = appendPageEvals(once, PATH, [SECOND], {
-      generatedBy: "gpt-5",
-      evals: ["links-resolve"],
-      confidence: { "links-resolve": 0.6 },
-    });
-    const trail = frontmatterOf(twice)["eval-provenance"] as Record<
-      string,
-      unknown
-    >[];
-    expect(trail).toHaveLength(2);
-    expect(trail.map((e) => e["generated-by"])).toEqual([
-      "claude-fable-5",
-      "gpt-5",
-    ]);
-  });
-
-  it("writes no trail when none is supplied", () => {
-    const page = ["---", "title: Page", "---", "body", ""].join("\n");
-    const data = frontmatterOf(appendPageEvals(page, PATH, [ENTRY]));
-    expect(data["eval-provenance"]).toBeUndefined();
-  });
-});
-
-/**
- * `appendPageEvals` is a public export, so it is reachable without the schema
- * check `fill` runs first. A malformed `eval-provenance` must not be silently
- * overwritten — that is someone's attribution trail, and the same function
- * already refuses to rewrite an `evals` string shorthand for the same reason.
- */
-describe("appendPageEvals: malformed eval-provenance", () => {
-  const TRAIL: ProvenanceUpdate = {
-    generatedBy: "m",
-    evals: ["has-overview"],
-    confidence: { "has-overview": 0.9 },
-  };
-
-  it("refuses rather than replacing a non-list trail", () => {
+  it("replaces the page's list, leaving every other key", () => {
     const page = [
       "---",
-      "title: P",
-      "eval-provenance:",
-      "  generated-by: someone",
+      "title: Page",
+      "meta-provenance:",
+      "  - generated-by: gpt-5",
+      "    fields: [/title]",
       "---",
       "body",
       "",
     ].join("\n");
-    expect(() => appendPageEvals(page, PATH, [ENTRY], TRAIL)).toThrow(
-      /eval-provenance/,
-    );
+    const next = [{ "generated-by": "gpt-5", fields: ["/title"] }, ...LIST];
+    const data = frontmatterOf(appendPageEvals(page, PATH, [ENTRY], next));
+    expect(data["meta-provenance"]).toEqual(next);
+    expect(data.title).toBe("Page");
   });
 
-  it("leaves the page untouched when it refuses", () => {
-    const page = ["---", "eval-provenance: nonsense", "---", "body", ""].join(
-      "\n",
-    );
-    expect(() => appendPageEvals(page, PATH, [ENTRY], TRAIL)).toThrow(
-      DocevalsError,
-    );
+  it("writes no record when none is supplied", () => {
+    const page = ["---", "title: Page", "---", "body", ""].join("\n");
+    const data = frontmatterOf(appendPageEvals(page, PATH, [ENTRY]));
+    expect(data["meta-provenance"]).toBeUndefined();
   });
 });
