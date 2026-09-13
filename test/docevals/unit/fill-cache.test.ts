@@ -21,23 +21,23 @@ function tempDir(): string {
 
 describe("fillCacheKey", () => {
   const base = () =>
-    fillCacheKey("anthropic", "claude-sonnet-4-5", 0, 3, "body", ["a"], 12000);
+    fillCacheKey("anthropic", "a-model", 0, 3, "body", ["a"], 12000);
 
   it("is stable for identical inputs", () => {
     expect(base()).toBe(base());
   });
 
   it("changes with any input", () => {
-    expect(fillCacheKey("openai", "claude-sonnet-4-5", 0, 3, "body", ["a"], 12000)).not.toBe(base());
+    expect(fillCacheKey("openai", "a-model", 0, 3, "body", ["a"], 12000)).not.toBe(base());
     expect(fillCacheKey("anthropic", "other-model", 0, 3, "body", ["a"], 12000)).not.toBe(base());
-    expect(fillCacheKey("anthropic", "claude-sonnet-4-5", 1, 3, "body", ["a"], 12000)).not.toBe(base());
-    expect(fillCacheKey("anthropic", "claude-sonnet-4-5", 0, 5, "body", ["a"], 12000)).not.toBe(base());
-    expect(fillCacheKey("anthropic", "claude-sonnet-4-5", 0, 3, "other", ["a"], 12000)).not.toBe(base());
-    expect(fillCacheKey("anthropic", "claude-sonnet-4-5", 0, 3, "body", ["a", "b"], 12000)).not.toBe(base());
+    expect(fillCacheKey("anthropic", "a-model", 1, 3, "body", ["a"], 12000)).not.toBe(base());
+    expect(fillCacheKey("anthropic", "a-model", 0, 5, "body", ["a"], 12000)).not.toBe(base());
+    expect(fillCacheKey("anthropic", "a-model", 0, 3, "other", ["a"], 12000)).not.toBe(base());
+    expect(fillCacheKey("anthropic", "a-model", 0, 3, "body", ["a", "b"], 12000)).not.toBe(base());
     // The chunk budget decides how the page was split and so which proposals
     // came back. Halve-and-retry makes two budgets a real collision, not a
     // hypothetical one, so it has to be in the key.
-    expect(fillCacheKey("anthropic", "claude-sonnet-4-5", 0, 3, "body", ["a"], 6000)).not.toBe(base());
+    expect(fillCacheKey("anthropic", "a-model", 0, 3, "body", ["a"], 6000)).not.toBe(base());
   });
 });
 

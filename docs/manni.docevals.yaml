@@ -43,13 +43,10 @@ docevals:
     failFast: false
     concurrency: 4
 
-  provider:
-    default: anthropic
-    anthropic:
-      model: claude-sonnet-4-5
-      apiKeyEnv: ANTHROPIC_API_KEY
-    claude-cli:
-      model: claude-sonnet-4-5
+  # Named rather than detected, so the docs corpus behaves the same on every
+  # machine. No model is pinned: the inference library's default for the
+  # provider is used, and every cache key names the model it resolved to.
+  provider: anthropic
 
   judge:
     ensembleRuns: 3

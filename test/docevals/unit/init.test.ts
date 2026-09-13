@@ -59,6 +59,9 @@ describe("runInit", () => {
     expect(Object.keys(config.evals)).toContain("no-future-promises");
     expect(config.suites.default?.evals).toContain("fresh-enough");
     expect(config.judge.ensembleRuns).toBe(3);
+    // Detected, and no model pinned: the library picks the provider's default.
+    expect(config.provider).toBe("auto");
+    expect(config.model).toBeNull();
     // The document set is the family's, not a docevals key (proposal 0041).
     expect(config.collections.map((c) => [c.name, c.paths])).toEqual([
       ["site", ["docs/**/*.{md,mdx}"]],

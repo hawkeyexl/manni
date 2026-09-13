@@ -14,6 +14,7 @@ import { updateConfigEval, updatePageEval } from "../core/frontmatter-edit.js";
 import { sha256 } from "../judge/cache.js";
 import type { InferenceProvider } from "@hawkeyexl/inference";
 import type { GraderTarget } from "./types.js";
+import { DocevalsError } from "../types.js";
 
 export const SCRIPTGEN_VERSION = 2;
 
@@ -116,7 +117,12 @@ function header(assertion: string, evalName: string): string {
 }
 
 export interface ScriptgenDeps {
-  provider: InferenceProvider;
+  /**
+   * The provider, or how to get one. A function is called only when a target
+   * actually needs a script, so a run with nothing to generate never resolves
+   * (and, under `auto`, never detects) a provider.
+   */
+  provider: InferenceProvider | (() => Promise<InferenceProvider>);
   root: string;
 }
 
@@ -130,16 +136,29 @@ export function makeGenerateScripts(deps: ScriptgenDeps): GenerateFn {
     const generatedPaths: string[] = [];
     // Config-sourced evals generate once even when used by many pages.
     const doneConfigEvals = new Set<string>();
+    let provider: InferenceProvider | undefined;
 
     for (const target of targets) {
       const ev = target.eval;
       if (!ev.assertion) continue; // Nothing to generate from.
       if (ev.source === "config" && doneConfigEvals.has(ev.name)) continue;
 
+      if (provider === undefined) {
+        try {
+          provider =
+            typeof deps.provider === "function" ? await deps.provider() : deps.provider;
+        } catch (e) {
+          // No provider for any target: say why once, and let the engine
+          // report each eval it could not generate for.
+          if (!(e instanceof DocevalsError)) throw e;
+          return { generatedPaths, unavailable: e.message };
+        }
+      }
+
       const location = scriptLocationFor(target, config, deps.root);
       let code: string;
       try {
-        const response = await deps.provider.completeJSON({
+        const response = await provider.completeJSON({
           system: SCRIPTGEN_SYSTEM_PROMPT,
           user: buildScriptgenUser(
             ev.assertion,

@@ -27,14 +27,14 @@ import { resolveProviderIdentity } from "../../../src/docevals/judge/provider.js
 import { parseDocevalsConfig } from "../helpers/config.js";
 import { resolvePage } from "../../../src/docevals/core/resolve.js";
 import { stripFrontmatterBlock, type PageFile } from "../../../src/docevals/core/discover.js";
-import type { InferenceProvider } from "@hawkeyexl/inference";
+import { DEFAULT_MODELS, type InferenceProvider } from "@hawkeyexl/inference";
 import type { GraderTarget } from "../../../src/docevals/graders/types.js";
 
 /** A provider that fails the test if the judge ever reaches it. */
 function neverCalled(): InferenceProvider {
   return {
     provider: () => "anthropic",
-    modelName: () => "claude-sonnet-4-5",
+    modelName: () => DEFAULT_MODELS.anthropic,
     completeJSON: () => {
       throw new Error("cache miss: the judge did not find the precomputed key");
     },
@@ -59,7 +59,9 @@ function target(body: string): { t: GraderTarget; config: ReturnType<typeof pars
     body: stripFrontmatterBlock(content),
     frontmatter: extractFrontmatter(content, "markdown"),
   };
-  const config = parseDocevalsConfig("", "/fake/manni.config.yaml");
+  // A named provider, so the identity is the library's default model for it
+  // rather than whatever detection finds on the machine running the suite.
+  const config = parseDocevalsConfig("provider: anthropic", "/fake/manni.config.yaml");
   const plan = resolvePage(page, config);
   return { t: { plan, eval: plan.evals[0]! }, config };
 }
@@ -70,10 +72,7 @@ describe("the judge and an outside caller agree on the cache key", () => {
     const { t, config } = target("Body under test.");
 
     // Exactly what scripts/check-docs-cache.mjs does, through the same exports.
-    const identity = resolveProviderIdentity(config, {
-      provider: t.eval.provider,
-      model: t.eval.model,
-    });
+    const identity = await resolveProviderIdentity(config, {}, t.eval);
     const selected = readTarget(t.eval.target, t.plan);
     expect(selected.ok).toBe(true);
     const key = cacheKey(

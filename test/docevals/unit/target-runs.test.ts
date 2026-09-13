@@ -20,6 +20,7 @@ import { resolvePage } from "../../../src/docevals/core/resolve.js";
 import { stripFrontmatterBlock, type PageFile } from "../../../src/docevals/core/discover.js";
 import { extractFrontmatter } from "../../../src/meta/index.js";
 import type { GraderTarget } from "../../../src/docevals/graders/types.js";
+import { DocevalsError } from "../../../src/docevals/types.js";
 
 const config = parseDocevalsConfig(
   ["judge:", "  ensembleRuns: 3"].join("\n"),
@@ -293,5 +294,61 @@ describe("judge provider memoization", () => {
     );
     await go();
     expect(built).toEqual([]);
+  });
+});
+
+/**
+ * An eval's own `provider:`/`model:` follows the run's rules. A choice that
+ * cannot be right is that eval's error, as a target it cannot serve is: the
+ * rest of the corpus still gets its verdicts, and the run exits 1.
+ */
+describe("per-eval provider selection", () => {
+  const judgeOne = async (extra: string[], cli: { provider?: string; model?: string } = {}) => {
+    const built: string[] = [];
+    const p = provider();
+    const results = await makeJudge({
+      provider: p,
+      root: tempRoot(),
+      providerFor: (ev) => {
+        built.push(`${ev.provider ?? ""}:${ev.model ?? ""}`);
+        return provider();
+      },
+    })([makeTarget(extra)], config, cli);
+    return { result: results[0], built, requests: p.requests.length };
+  };
+
+  it("errors an eval naming a model with no provider to own it", async () => {
+    const { result, built } = await judgeOne(["    model: some-model"]);
+    expect(result?.outcome).toBe("error");
+    expect(result?.skipReason).toBe(
+      'Model "some-model" was given without a provider: a model name does not say ' +
+        "which provider owns it. Set --provider or docevals.provider to one of " +
+        "anthropic, openai, claude-cli, mock, llama-cpp, or drop the model to take " +
+        "the detected provider's default.",
+    );
+    expect(built).toEqual([]);
+  });
+
+  it("errors an eval naming an unknown provider", async () => {
+    const { result } = await judgeOne(["    provider: gemini"]);
+    expect(result?.outcome).toBe("error");
+    expect(result?.skipReason).toMatch(/^Unknown provider "gemini"\. Available: /);
+  });
+
+  it("lets a --provider flag supply the provider an eval's model needs", async () => {
+    const { result, built } = await judgeOne(["    model: some-model"], { provider: "mock" });
+    expect(result?.outcome).toBe("pass");
+    expect(built).toEqual([":some-model"]);
+  });
+
+  it("errors an eval whose provider cannot be built, without failing the run", async () => {
+    const p = provider();
+    const results = await makeJudge({
+      provider: p,
+      root: tempRoot(),
+      providerFor: () => Promise.reject(new DocevalsError("ANTHROPIC_API_KEY is not set")),
+    })([makeTarget(["    provider: anthropic"])], config, {});
+    expect(results[0]?.outcome).toBe("error");
+    expect(results[0]?.skipReason).toBe("ANTHROPIC_API_KEY is not set");
   });
 });

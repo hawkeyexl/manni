@@ -212,8 +212,8 @@ documentInputs(
   .option("--no-generate", "Do not generate scripts for command evals missing a command")
   .option("--no-cache", "Bypass the judge response cache")
   .option("--fail-on-review", "Exit 1 when any eval lands in the human-review zone")
-  .option("--provider <name>", "Judge provider: anthropic | openai | claude-cli | llama-cpp")
-  .option("--model <model>", "Judge model override")
+  .option("--provider <name>", "Judge provider: auto (default) | anthropic | openai | claude-cli | llama-cpp")
+  .option("--model <model>", "Model override; needs a named provider, from here or config")
   .option("--runs <n>", "Ensemble runs per eval", parseIntArg("--runs"))
   .option(
     "--chunk-chars <n>",
@@ -292,8 +292,8 @@ documentInputs(
     ),
   "read",
 )
-  .option("--provider <name>", "Provider: anthropic | openai | claude-cli | llama-cpp")
-  .option("--model <model>", "Model override")
+  .option("--provider <name>", "Provider: auto (default) | anthropic | openai | claude-cli | llama-cpp")
+  .option("--model <model>", "Model override; needs a named provider, from here or config")
   .action(
     async (
       paths: string[],
@@ -359,8 +359,8 @@ documentInputs(
     "Characters of page per fill call; longer pages are proposed in parts",
     parseIntArg("--chunk-chars"),
   )
-  .option("--provider <name>", "Provider: anthropic | openai | claude-cli | llama-cpp")
-  .option("--model <model>", "Model override")
+  .option("--provider <name>", "Provider: auto (default) | anthropic | openai | claude-cli | llama-cpp")
+  .option("--model <model>", "Model override; needs a named provider, from here or config")
   .action(async (paths: string[], opts: Record<string, unknown>) => {
     try {
       const confidence = opts.confidence as number | undefined;
@@ -399,8 +399,8 @@ documentInputs(
   "read",
 )
   .option("--write", "Apply promotions (write scripts and rewrite evals)")
-  .option("--provider <name>", "Provider: anthropic | openai | claude-cli | llama-cpp")
-  .option("--model <model>", "Model override")
+  .option("--provider <name>", "Provider: auto (default) | anthropic | openai | claude-cli | llama-cpp")
+  .option("--model <model>", "Model override; needs a named provider, from here or config")
   .action(
     async (
       paths: string[],
@@ -454,8 +454,8 @@ program
     "--seed",
     "Write golden candidates from recorded reviews and exit; judges nothing, needs no provider",
   )
-  .option("--provider <name>", "Provider: anthropic | openai | claude-cli | llama-cpp")
-  .option("--model <model>", "Model override")
+  .option("--provider <name>", "Provider: auto (default) | anthropic | openai | claude-cli | llama-cpp")
+  .option("--model <model>", "Model override; needs a named provider, from here or config")
   .option("--runs <n>", "Ensemble runs per case", parseIntArg("--runs"))
   .option(
     "--max-turns <n>",

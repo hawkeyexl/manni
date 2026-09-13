@@ -8,7 +8,12 @@ import { loadRunConfig, type DocevalsConfig } from "../core/config.js";
 import { runConfigOptions, type DocumentInputOptions } from "../core/discover.js";
 import { render, type ReportFormat } from "../reporters/index.js";
 import { makeJudge } from "../judge/judge.js";
-import { makeProvider } from "../judge/provider.js";
+import {
+  assertProviderSelection,
+  makeProvider,
+  selectProvider,
+} from "../judge/provider.js";
+import type { InferenceProvider } from "@hawkeyexl/inference";
 import { makeGenerateScripts } from "../graders/scriptgen.js";
 import type { GenerateFn } from "../core/engine.js";
 import { DocevalsError } from "../types.js";
@@ -85,37 +90,48 @@ export async function runRun(
   // the config twice or observe two different versions of it.
   const config: DocevalsConfig = loadRunConfig(runConfigOptions(paths, options), cwd);
 
+  // A selection that cannot be right is a usage error, exit 2, whatever else
+  // the run was asked to do: an unknown name or a model with no provider to
+  // own it is a typo to fix, not a missing provider to degrade around.
+  assertProviderSelection(selectProvider(config, judgeOptions));
+
   // Build the judge and generation stages unless deterministic-only or an
-  // override supplies them. Both share one provider.
+  // override supplies them. Both share one provider, resolved at most once.
   let judge: JudgeFn | undefined;
   let generateScripts: GenerateFn | undefined;
+  let resolving: Promise<InferenceProvider> | undefined;
+  const provider = (): Promise<InferenceProvider> =>
+    (resolving ??= makeProvider(config, judgeOptions));
   if (!("judge" in engineOverrides) || !("generateScripts" in engineOverrides)) {
-    try {
-      const provider = makeProvider(config, judgeOptions);
-      if (!options.deterministicOnly) judge = makeJudge({ provider, root: cwd });
-      if (options.generate !== false) {
-        generateScripts = makeGenerateScripts({ provider, root: cwd });
-      }
-    } catch (e) {
-      if (options.aiOnly || !(e instanceof DocevalsError)) throw e;
-      // The warning is about the *judge*, and only the judge (ADR 01043).
-      //
-      // It used to read `|| options.generate === true`, meaning to fire when
-      // generation had been explicitly requested. Commander cannot express
-      // that: there is no `--generate` flag, so it defaults a `--no-generate`
-      // key to `true` and the clause held on every invocation that was not
-      // `--no-generate`. The only silent combination was the accidental
-      // `--deterministic-only --no-generate`, and the standard no-key CI run
-      // warned about the provider it had just been told to skip.
-      //
-      // Generation's own need for a provider is not knowable here — it depends
-      // on whether the corpus holds a command eval with no command — so it is
-      // reported by the engine, where it is, as an `error` result naming the
-      // eval and exiting 1. That is a louder signal than this line, not a
-      // quieter one.
-      if (!options.deterministicOnly) {
+    if (!options.deterministicOnly) {
+      try {
+        const resolved = await provider();
+        judge = makeJudge({ provider: resolved, root: cwd });
+        if (options.generate !== false) {
+          generateScripts = makeGenerateScripts({ provider: resolved, root: cwd });
+        }
+      } catch (e) {
+        if (options.aiOnly || !(e instanceof DocevalsError)) throw e;
+        // The warning is about the *judge*, and only the judge (ADR 01043).
+        //
+        // It used to read `|| options.generate === true`, meaning to fire when
+        // generation had been explicitly requested. Commander cannot express
+        // that: there is no `--generate` flag, so it defaults a `--no-generate`
+        // key to `true` and the clause held on every invocation that was not
+        // `--no-generate`. The only silent combination was the accidental
+        // `--deterministic-only --no-generate`, and the standard no-key CI run
+        // warned about the provider it had just been told to skip.
         warn(`provider unavailable — ${e.message}. Running deterministic evals only.`);
       }
+    } else if (options.generate !== false) {
+      // No judge, so the provider is wanted only if the corpus holds a command
+      // eval with no command, which is not knowable here. It is resolved when
+      // generation first needs it, so a deterministic run never detects a
+      // provider — never probes the machine, never spawns the Claude CLI — to
+      // generate nothing. Generation's own need for a provider it cannot have
+      // is reported by the engine, where it is, as an `error` result naming
+      // the eval and exiting 1.
+      generateScripts = makeGenerateScripts({ provider, root: cwd });
     }
   }
 

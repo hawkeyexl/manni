@@ -81,11 +81,19 @@ export type JudgeFn = (
 ) => Promise<EvalResult[]>;
 
 /** Injected script-generation stage (Phase 4); absent → missing commands error. */
+/** Why a command eval with no command was not generated for: no provider. */
+const GENERATION_UNAVAILABLE =
+  "no command and script generation unavailable (configure a provider or run `manni docevals generate`)";
+
 export type GenerateFn = (
   targets: GraderTarget[],
   config: DocevalsConfig,
   options: JudgeOptions,
-) => Promise<{ generatedPaths: string[] }>;
+) => Promise<{
+  generatedPaths: string[];
+  /** Why no provider could be had, when generation needed one and got none. */
+  unavailable?: string;
+}>;
 
 export interface RunOptions {
   configPath?: string;
@@ -908,7 +916,17 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
       generatedPaths.push(...gen.generatedPaths);
       // Re-read the targets' evals: generateScripts mutates eval.command in place.
       for (const t of generationTargets) {
-        if (t.eval.command) {
+        if (!t.eval.command && gen.unavailable !== undefined) {
+          results.push({
+            evalName: t.eval.name,
+            type: t.eval.type,
+            grader: t.eval.grader,
+            file: t.plan.page.file,
+            outcome: "error",
+            skipReason: `${GENERATION_UNAVAILABLE}: ${gen.unavailable}`,
+            durationMs: 0,
+          });
+        } else if (t.eval.command) {
           deterministicTargets.push(t);
           // Surfaced by the reporters as "(generated)" on this run's result.
           generatedThisRun.add(resultKey(t.plan.page.file, t.eval.name));
@@ -933,8 +951,7 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
           grader: t.eval.grader,
           file: t.plan.page.file,
           outcome: "error",
-          skipReason:
-            "no command and script generation unavailable (configure a provider or run `manni docevals generate`)",
+          skipReason: GENERATION_UNAVAILABLE,
           durationMs: 0,
         });
       }

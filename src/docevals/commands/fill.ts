@@ -24,7 +24,12 @@ import {
   SUMMARY_FORMATS,
   type SummaryFormat,
 } from "../reporters/format.js";
-import { makeProvider, resolveProviderIdentity } from "../judge/provider.js";
+import {
+  assertProviderSelection,
+  constructProvider,
+  resolveProviderIdentity,
+  selectProvider,
+} from "../judge/provider.js";
 import type { InferenceProvider } from "@hawkeyexl/inference";
 import { FillCache, fillCacheKey } from "../fill/cache.js";
 import {
@@ -119,6 +124,10 @@ export async function runFill(
 ): Promise<FillReport> {
   const cwd = options.cwd ?? process.cwd();
   const config = loadRunConfig(runConfigOptions(paths, options), cwd);
+  const flags = { provider: options.provider, model: options.model };
+  // Checked up front, and regardless of an injected provider: it costs nothing,
+  // and a typo must fail on a run where no page needs a model too.
+  assertProviderSelection(selectProvider(config, flags));
   const pages = discoverPages(config, documentSet(paths, options, "fill"), cwd);
   const plans = resolvePages(pages, config);
 
@@ -132,20 +141,20 @@ export async function runFill(
     !options.noCache,
   );
 
-  // Identity is resolved without constructing the provider, so fully-cached
-  // or all-skipped runs need no API key.
-  let provider = options.providerInstance;
-  const identity = provider
-    ? { provider: provider.provider(), model: provider.modelName() }
-    : resolveProviderIdentity(config, {
-        provider: options.provider,
-        model: options.model,
-      });
-  const getProvider = () =>
-    (provider ??= makeProvider(config, {
-      provider: options.provider,
-      model: options.model,
-    }));
+  // Identity is resolved without constructing the provider, so a fully cached
+  // run needs no API key, and on first use, so an all-skipped run never detects
+  // a provider under `auto`. Resolved once, and shared by every page.
+  const injected = options.providerInstance;
+  let resolving: ReturnType<typeof resolveProviderIdentity> | undefined;
+  const resolveOnce = (): ReturnType<typeof resolveProviderIdentity> =>
+    (resolving ??= resolveProviderIdentity(config, flags));
+  const getIdentity = async (): Promise<{ provider: string; model: string }> =>
+    injected
+      ? { provider: injected.provider(), model: injected.modelName() }
+      : resolveOnce();
+  let provider = injected;
+  const getProvider = async (): Promise<InferenceProvider> =>
+    (provider ??= constructProvider(config, await resolveOnce()));
   let turns = 0;
   const results: FillPageResult[] = [];
 
@@ -190,6 +199,8 @@ export async function runFill(
       assertion: e.assertion,
     }));
     const existingNames = existing.map((e) => e.id).sort();
+    // The RESOLVED model, so a provider default that changes changes the key.
+    const identity = await getIdentity();
     // Keyed on the budget the proposals were actually produced at, not the
     // one the run asked for. Halve-and-retry means those differ: the split
     // boundaries move, so the parts differ, so the proposals differ. Storing
@@ -244,7 +255,7 @@ export async function runFill(
           partsRead += 1;
           let response;
           try {
-            response = await getProvider().completeJSON({
+            response = await (await getProvider()).completeJSON({
               system: FILL_SYSTEM_PROMPT,
               user: buildFillUser(
                 plan.page.file,

@@ -35,7 +35,8 @@ import {
 } from "./prompt.js";
 import { splitBody } from "../core/split.js";
 import { readTarget } from "../core/target.js";
-import { makeProvider } from "./provider.js";
+import { makeProvider, selectProvider, assertProviderSelection } from "./provider.js";
+import { DocevalsError } from "../types.js";
 import type { ResolvedEval } from "../core/resolve.js";
 import { resolve as resolvePath } from "node:path";
 import { warn } from "../../shared/warn.js";
@@ -62,7 +63,7 @@ export interface JudgeStageDeps {
    * and `model` would validate, appear in the schema, and do nothing, which is
    * worse than not offering them.
    */
-  providerFor?: (ev: ResolvedEval) => InferenceProvider;
+  providerFor?: (ev: ResolvedEval) => InferenceProvider | Promise<InferenceProvider>;
 }
 
 /** Build the engine's judge stage around a concrete provider. */
@@ -74,35 +75,36 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
   ): Promise<EvalResult[]> => {
     const { provider, root } = deps;
 
-    // CLI > eval > config, the same precedence `runsFor` uses. Providers are
-    // memoized on their resolved identity: a corpus where fifty evals name one
-    // stronger judge builds it once.
-    const overridden = new Map<string, InferenceProvider>();
+    // CLI > eval > config, the same precedence `runsFor` uses, settled by
+    // `selectProvider` so the run's provider and an eval's are chosen by one
+    // rule. Providers are memoized on the selection an eval *resolves to*, not
+    // on what it wrote: with `--provider anthropic` in force, an eval naming
+    // `openai` and one naming `mock` both resolve to the same provider, and
+    // keying on the authored value would build it twice. The effective pair is
+    // also what decides the short-circuit — an eval whose selection is the
+    // run's own needs no provider of its own.
+    //
+    // Memoized as a promise, so a selection that detects or fails does so
+    // once, and every eval sharing it gets the same provider or the same error.
+    const overridden = new Map<string, Promise<InferenceProvider>>();
     const buildProvider =
       deps.providerFor ??
-      ((ev: ResolvedEval): InferenceProvider =>
-        makeProvider(config, {
-          ...options,
-          provider: options.provider ?? ev.provider,
-          model: options.model ?? ev.model,
-        }));
-    // Keyed on what the eval *resolves to*, not on what it wrote. With
-    // `--provider anthropic` in force, an eval naming `openai` and one naming
-    // `mock` both resolve to the same provider: keying on the authored value
-    // builds it twice and stores two entries for one identity. The effective
-    // pair is also what decides the short-circuit — once a flag has overridden
-    // both halves, every eval resolves to the run's default and none of them
-    // needs a provider of its own.
-    const defaultIdentity = `${options.provider ?? ""}:${options.model ?? ""}`;
-    const providerFor = (ev: ResolvedEval): InferenceProvider => {
-      const effProvider = options.provider ?? ev.provider;
-      const effModel = options.model ?? ev.model;
-      if (effProvider === undefined && effModel === undefined) return provider;
-      const key = `${effProvider ?? ""}:${effModel ?? ""}`;
-      if (key === defaultIdentity) return provider;
+      ((ev: ResolvedEval): Promise<InferenceProvider> => makeProvider(config, options, ev));
+    const keyOf = (s: { provider: string; model: string | undefined }): string =>
+      `${s.provider}:${s.model ?? ""}`;
+    const defaultKey = keyOf(selectProvider(config, options));
+    const providerFor = (ev: ResolvedEval): Promise<InferenceProvider> => {
+      const selection = selectProvider(config, options, ev);
+      const key = keyOf(selection);
+      if (key === defaultKey) return Promise.resolve(provider);
       let p = overridden.get(key);
       if (p === undefined) {
-        p = buildProvider(ev);
+        // The eval's own choice follows the run's rules: an unknown name or a
+        // model with no provider to own it is refused before anything is built.
+        p = (async () => {
+          assertProviderSelection(selection);
+          return buildProvider(ev);
+        })();
         overridden.set(key, p);
       }
       return p;
@@ -188,7 +190,24 @@ export function makeJudge(deps: JudgeStageDeps): JudgeFn {
       const { plan, eval: ev } = target;
       const start = Date.now();
       const runsPerEval = runsFor(ev);
-      const judgeProvider = providerFor(ev);
+      // A provider the eval chose that cannot be had is that eval's error, as a
+      // target it cannot serve is below: the rest of the corpus still gets its
+      // verdicts, and the run exits 1 rather than stopping.
+      let judgeProvider: InferenceProvider;
+      try {
+        judgeProvider = await providerFor(ev);
+      } catch (e) {
+        if (!(e instanceof DocevalsError)) throw e;
+        return {
+          evalName: ev.name,
+          type: ev.type,
+          grader: ev.grader,
+          file: plan.page.file,
+          outcome: "error",
+          skipReason: e.message,
+          durationMs: Date.now() - start,
+        };
+      }
 
       // Self-preference: the model that wrote the page is the model grading
       // it. Compared against the model that judged *this eval*, not the run's

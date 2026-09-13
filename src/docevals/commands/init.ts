@@ -28,16 +28,14 @@ docevals:
     failFast: false
     concurrency: 4
 
-  provider:
-    default: anthropic
-    anthropic:
-      model: claude-sonnet-4-5 # pin your judge model; never "latest"
-      apiKeyEnv: ANTHROPIC_API_KEY
-    # openai:
-    #   baseUrl: http://localhost:11434/v1    # any OpenAI-compatible server
-    #   model: llama3.1:8b
-    # claude-cli:
-    #   model: claude-sonnet-4-5             # uses local CLI auth, no API key
+  # auto detects what this machine can use: an Anthropic key, then an OpenAI
+  # key, then the Claude CLI, then a local model. Name one to pin it.
+  provider: auto # auto | anthropic | openai | claude-cli | llama-cpp
+  # model: <id>  # needs a named provider; unset takes that provider's default
+  # providers:   # connection settings only
+  #   anthropic: { apiKeyEnv: ANTHROPIC_API_KEY }
+  #   openai: { baseUrl: http://localhost:11434/v1, apiKeyEnv: OPENAI_API_KEY }
+  #   claude-cli: { command: claude } # uses local CLI auth, no API key
 
   judge:
     ensembleRuns: 3 # 3 isolated runs per eval; agreement is signal

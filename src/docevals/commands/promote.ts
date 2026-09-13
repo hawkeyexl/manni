@@ -20,7 +20,11 @@ import {
   updatePageEval,
 } from "../core/frontmatter-edit.js";
 import { sha256 } from "../judge/cache.js";
-import { makeProvider } from "../judge/provider.js";
+import {
+  assertProviderSelection,
+  makeProvider,
+  selectProvider,
+} from "../judge/provider.js";
 import type { InferenceProvider } from "@hawkeyexl/inference";
 import {
   SCRIPTGEN_SYSTEM_PROMPT,
@@ -119,6 +123,9 @@ export async function runPromote(
 ): Promise<PromoteProposal[]> {
   const cwd = options.cwd ?? process.cwd();
   const config = loadRunConfig(runConfigOptions(paths, options), cwd);
+  const flags = { provider: options.provider, model: options.model };
+  // Checked before discovery, and even when nothing is ai-graded.
+  assertProviderSelection(selectProvider(config, flags));
   const pages = discoverPages(config, documentSet(paths, options, "read"), cwd);
   const plans = resolvePages(pages, config);
 
@@ -126,11 +133,8 @@ export async function runPromote(
   // nothing to assess, and demanding an API key to be told so is the same
   // needless gate `fill` already avoids by resolving identity lazily.
   let provider: InferenceProvider | undefined = options.providerInstance;
-  const getProvider = (): InferenceProvider =>
-    (provider ??= makeProvider(config, {
-      provider: options.provider,
-      model: options.model,
-    }));
+  const getProvider = async (): Promise<InferenceProvider> =>
+    (provider ??= await makeProvider(config, flags));
 
   const proposals: PromoteProposal[] = [];
   const seenConfigEvals = new Set<string>();
@@ -145,7 +149,7 @@ export async function runPromote(
       }
 
       const target: GraderTarget = { plan, eval: ev };
-      const assessment = await assess(getProvider(), target);
+      const assessment = await assess(await getProvider(), target);
       const proposal: PromoteProposal = {
         file: plan.page.file,
         evalName: ev.name,

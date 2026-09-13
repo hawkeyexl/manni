@@ -114,7 +114,9 @@ describe("self-preference", () => {
       provider: p,
       root: tempRoot(),
       providerFor: () => provider("page-author"),
-    })([{ ...target, eval: { ...target.eval, model: "page-author" } }], config, {});
+      // A provider as well as the model: a model alone, under the default
+      // `auto`, names no provider to own it and is refused.
+    })([{ ...target, eval: { ...target.eval, provider: "mock", model: "page-author" } }], config, {});
     expect(results[0]?.selfPreference).toEqual({
       axis: "content",
       model: "page-author",

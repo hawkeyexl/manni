@@ -55,6 +55,9 @@ function scaffold(): string {
       "  - name: pages",
       '    paths: ["docs/**/*.md"]',
       "docevals:",
+      // Named, so every case below is about a missing key rather than about
+      // what detection finds on the machine running the suite.
+      "  provider: anthropic",
       "  evals:",
       "    fresh-enough:",
       "      assertion: The page was reviewed within the last century.",
@@ -138,6 +141,23 @@ describe("run: the missing-provider warning", () => {
   // warning — unchanged, and pinned here so the table is complete.
   it("raises rather than warns under --ai-only", async () => {
     await expect(run({ aiOnly: true })).rejects.toThrow(DocevalsError);
+    expect(warned()).toBe(false);
+  });
+
+  // A selection that cannot be right is a usage error before anything runs,
+  // not a missing provider to degrade around.
+  it("raises rather than warns on an unknown --provider", async () => {
+    await expect(run({ provider: "gemini" })).rejects.toThrow(
+      /^Unknown provider "gemini"\. Available: /,
+    );
+    expect(warned()).toBe(false);
+  });
+
+  it("raises rather than warns on a --model with no provider", async () => {
+    await expect(run({ provider: "auto", model: "some-model" })).rejects.toThrow(DocevalsError);
+    await expect(run({ provider: "auto", model: "some-model" })).rejects.toThrow(
+      /Set --provider or docevals\.provider/,
+    );
     expect(warned()).toBe(false);
   });
 

@@ -12,7 +12,11 @@ import {
 } from "../core/discover.js";
 import { resolvePages } from "../core/resolve.js";
 import { makeGenerateScripts } from "../graders/scriptgen.js";
-import { makeProvider } from "../judge/provider.js";
+import {
+  assertProviderSelection,
+  makeProvider,
+  selectProvider,
+} from "../judge/provider.js";
 import { sha256 } from "../judge/cache.js";
 import type { InferenceProvider } from "@hawkeyexl/inference";
 import type { GraderTarget } from "../graders/types.js";
@@ -36,6 +40,10 @@ export async function runGenerate(
 ): Promise<GenerateRun> {
   const cwd = options.cwd ?? process.cwd();
   const config = loadRunConfig(runConfigOptions(paths, options), cwd);
+  const flags = { provider: options.provider, model: options.model };
+  // Checked before discovery, and even when nothing needs generating: a typo
+  // is a usage error on every run, not only on the runs that reach a model.
+  assertProviderSelection(selectProvider(config, flags));
   const pages = discoverPages(config, documentSet(paths, options, "read"), cwd);
   const plans = resolvePages(pages, config);
 
@@ -71,11 +79,7 @@ export async function runGenerate(
   if (targets.length === 0) return { generatedPaths: [], targets: 0 };
 
   const provider: InferenceProvider =
-    options.providerInstance ??
-    makeProvider(config, {
-      provider: options.provider,
-      model: options.model,
-    });
+    options.providerInstance ?? (await makeProvider(config, flags));
   const generate = makeGenerateScripts({ provider, root: cwd });
   const { generatedPaths } = await generate(targets, config, {});
   return { generatedPaths, targets: targets.length };

@@ -23,7 +23,15 @@ describe("parseConfig", () => {
     // No document set of its own: those are the family's `collections:`.
     expect(c.collections).toEqual([]);
     expect(c.defaults.concurrency).toBe(4);
-    expect(c.provider.default).toBe("anthropic");
+    expect(c.provider).toBe("auto");
+    expect(c.model).toBeNull();
+    // Connection settings only; no model is manni's to choose.
+    expect(c.providers).toEqual({
+      anthropic: { apiKeyEnv: "ANTHROPIC_API_KEY" },
+      openai: { baseUrl: "https://api.openai.com/v1", apiKeyEnv: "OPENAI_API_KEY" },
+      "claude-cli": { command: "claude" },
+      "llama-cpp": { modelsDir: null, thoughtTokens: 0 },
+    });
     expect(c.judge.ensembleRuns).toBe(3);
     expect(c.judge.temperature).toBe(0);
     expect(c.judge.zones).toEqual({ autoPass: 0.8, autoFail: 0.8 });
@@ -195,37 +203,60 @@ describe("parseConfig", () => {
     ).toThrow();
   });
 
-  it("defaults the local provider to a named tier, not auto", () => {
-    // A tier the library resolves against this machine, but a *named* one, so
-    // two contributors reading the config see the same intent.
-    const c = parseConfig(inDocevals(), PATH);
-    expect(c.provider["llama-cpp"]).toEqual({
-      model: "balanced",
-      modelsDir: null,
-      thoughtTokens: 0,
-    });
-  });
-
-  it("accepts llama-cpp as the default provider", () => {
+  it("reads a provider name and a model", () => {
     const c = parseConfig(
       inDocevals(
-        "provider:",
-        "  default: llama-cpp",
+        "provider: llama-cpp",
+        "model: quality",
+        "providers:",
         "  llama-cpp:",
-        "    model: quality",
         "    thoughtTokens: 256",
       ),
       PATH,
     );
-    expect(c.provider.default).toBe("llama-cpp");
-    expect(c.provider["llama-cpp"].model).toBe("quality");
-    expect(c.provider["llama-cpp"].thoughtTokens).toBe(256);
+    expect(c.provider).toBe("llama-cpp");
+    expect(c.model).toBe("quality");
+    expect(c.providers["llama-cpp"].thoughtTokens).toBe(256);
+  });
+
+  it("accepts auto by name", () => {
+    expect(parseConfig(inDocevals("provider: auto"), PATH).provider).toBe("auto");
+  });
+
+  it("refuses an unknown provider name with the shared message", () => {
+    expect(() => parseConfig(inDocevals("provider: gemini"), PATH)).toThrow(
+      new DocevalsError(
+        'Unknown provider "gemini". Available: anthropic, openai, claude-cli, mock, llama-cpp, auto.',
+      ),
+    );
+  });
+
+  it("refuses the old provider object, saying where its settings went", () => {
+    const hint = `; "provider" is now a provider name; per-provider settings moved to "providers"`;
+    for (const body of [
+      ["provider:", "  default: anthropic"],
+      ["provider:", "  anthropic:", "    apiKeyEnv: KEY"],
+    ]) {
+      expect(() => parseConfig(inDocevals(...body), PATH)).toThrow(
+        new DocevalsError(`Invalid config in ${PATH}:\n  /docevals/provider: must be string${hint}`),
+      );
+    }
+  });
+
+  it("rejects a model inside a provider's connection settings", () => {
+    expect(() =>
+      parseConfig(inDocevals("providers:", "  anthropic:", "    model: m"), PATH),
+    ).toThrow(
+      new DocevalsError(
+        `Invalid config in ${PATH}:\n  /docevals/providers/anthropic: unknown key "model"`,
+      ),
+    );
   });
 
   it("rejects an unknown key inside the local provider section", () => {
     expect(() =>
       parseConfig(
-        inDocevals("provider:", "  llama-cpp:", "    modle: quality"),
+        inDocevals("providers:", "  llama-cpp:", "    modle: quality"),
         PATH,
       ),
     ).toThrow(/Invalid config/);
@@ -559,11 +590,11 @@ describe("parseConfig camelCase guard", () => {
 describe("parseConfig camelCase section keys", () => {
   const RENAMED: readonly [string[], string, string][] = [
     [["defaults:"], "fail-fast: true", "failFast"],
-    [["provider:", "  anthropic:"], "api-key-env: KEY", "apiKeyEnv"],
-    [["provider:", "  openai:"], "api-key-env: KEY", "apiKeyEnv"],
-    [["provider:", "  openai:"], "base-url: http://localhost", "baseUrl"],
-    [["provider:", "  llama-cpp:"], "models-dir: models", "modelsDir"],
-    [["provider:", "  llama-cpp:"], "thought-tokens: 64", "thoughtTokens"],
+    [["providers:", "  anthropic:"], "api-key-env: KEY", "apiKeyEnv"],
+    [["providers:", "  openai:"], "api-key-env: KEY", "apiKeyEnv"],
+    [["providers:", "  openai:"], "base-url: http://localhost", "baseUrl"],
+    [["providers:", "  llama-cpp:"], "models-dir: models", "modelsDir"],
+    [["providers:", "  llama-cpp:"], "thought-tokens: 64", "thoughtTokens"],
     [["judge:"], "ensemble-runs: 5", "ensembleRuns"],
     [["judge:", "  zones:"], "auto-pass: 0.9", "autoPass"],
     [["judge:", "  zones:"], "auto-fail: 0.9", "autoFail"],
@@ -604,7 +635,7 @@ describe("parseConfig camelCase section keys", () => {
       inDocevals(
         "defaults:",
         "  failFast: true",
-        "provider:",
+        "providers:",
         "  anthropic:",
         "    apiKeyEnv: A_KEY",
         "  openai:",
@@ -635,9 +666,9 @@ describe("parseConfig camelCase section keys", () => {
       PATH,
     );
     expect(c.defaults.failFast).toBe(true);
-    expect(c.provider.anthropic.apiKeyEnv).toBe("A_KEY");
-    expect(c.provider.openai).toMatchObject({ baseUrl: "http://localhost:11434/v1", apiKeyEnv: "O_KEY" });
-    expect(c.provider["llama-cpp"]).toMatchObject({ modelsDir: "models", thoughtTokens: 64 });
+    expect(c.providers.anthropic.apiKeyEnv).toBe("A_KEY");
+    expect(c.providers.openai).toMatchObject({ baseUrl: "http://localhost:11434/v1", apiKeyEnv: "O_KEY" });
+    expect(c.providers["llama-cpp"]).toMatchObject({ modelsDir: "models", thoughtTokens: 64 });
     expect(c.judge).toMatchObject({
       ensembleRuns: 5,
       zones: { autoPass: 0.9, autoFail: 0.7 },

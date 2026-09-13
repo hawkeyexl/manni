@@ -22,12 +22,11 @@ import { DocevalsError, type EvalType, type Severity } from "../types.js";
 import type { EvalTarget } from "./target.js";
 import { DEFAULT_CHUNK_CHARS } from "./split.js";
 import { errorMessage } from "../../shared/errors.js";
+import { DEFAULT_PROVIDER, assertKnownProvider } from "../../shared/providers.js";
+import { DEFAULT_OPENAI_BASE_URL, type ProviderSelector } from "@hawkeyexl/inference";
 
-export type ProviderName =
-  | "anthropic"
-  | "openai"
-  | "claude-cli"
-  | "llama-cpp";
+/** A provider `docevals.provider` or `--provider` may name, `auto` included. */
+export type ProviderName = ProviderSelector;
 
 /** One capability the operator can grant to content-authored code. */
 export type ExecutionGrant = "frontmatter-commands" | "page-embedded-steps";
@@ -176,20 +175,20 @@ export interface DocevalsConfig {
    */
   configSource: string | null;
   defaults: { suite: string | null; failFast: boolean; concurrency: number };
-  provider: {
-    default: ProviderName;
-    anthropic: { model: string; apiKeyEnv: string };
-    openai: {
-      baseUrl: string;
-      model: string;
-      apiKeyEnv: string;
-    };
-    "claude-cli": { model: string; command: string };
-    "llama-cpp": {
-      model: string;
-      modelsDir: string | null;
-      thoughtTokens: number;
-    };
+  /** The provider, `auto` (detect) by default. Shared with `manni meta fill`. */
+  provider: ProviderName;
+  /**
+   * The model within the provider, or `null` for the provider's own default.
+   * manni pins no model: the inference library chooses, and the model it
+   * resolves to is what every cache key names.
+   */
+  model: string | null;
+  /** Connection settings only; no model lives here. */
+  providers: {
+    anthropic: { apiKeyEnv: string };
+    openai: { baseUrl: string; apiKeyEnv: string };
+    "claude-cli": { command: string };
+    "llama-cpp": { modelsDir: string | null; thoughtTokens: number };
   };
   /** Findings baseline path, resolved against the config's directory (ADR 01017). */
   baseline: string | null;
@@ -270,29 +269,19 @@ const validateConfig = ajv.compile(configSchema);
  * would be the worst place for one, since every default in the tool flows
  * through this function.
  */
-interface RawProviderSection {
-  model?: string;
-  command?: string;
-  baseUrl?: string;
-  apiKeyEnv?: string;
-}
-
 interface RawDocevalsConfig {
   defaults?: {
     suite?: string | null;
     failFast?: boolean;
     concurrency?: number;
   };
-  provider?: {
-    default?: ProviderName;
-    anthropic?: RawProviderSection;
-    openai?: RawProviderSection;
-    "claude-cli"?: RawProviderSection;
-    "llama-cpp"?: {
-      model?: string;
-      modelsDir?: string;
-      thoughtTokens?: number;
-    };
+  provider?: string;
+  model?: string;
+  providers?: {
+    anthropic?: { apiKeyEnv?: string };
+    openai?: { baseUrl?: string; apiKeyEnv?: string };
+    "claude-cli"?: { command?: string };
+    "llama-cpp"?: { modelsDir?: string; thoughtTokens?: number };
   };
   baseline?: string | null;
   judge?: {
@@ -404,6 +393,19 @@ function camelCaseHint(key: string, parentSchema: unknown): string {
   const properties = (parentSchema as { properties?: unknown }).properties;
   return properties !== null && typeof properties === "object" && Object.hasOwn(properties, camel)
     ? `; did you mean "${camel}"?`
+    : "";
+}
+
+/**
+ * The hint on an old `provider:` object. The key used to hold a `default` and
+ * a section per provider; it is now the provider's name, as `fill.provider` is
+ * in the metadata tool, and the connection settings moved to `providers`.
+ * Ajv's own message names the key and says it must be a string, which is true
+ * and leaves the reader to find out where the settings went.
+ */
+function movedProviderHint(instancePath: string, keyword: string): string {
+  return instancePath === `/${NAMESPACE}/provider` && keyword === "type"
+    ? `; "provider" is now a provider name; per-provider settings moved to "providers"`
     : "";
 }
 
@@ -572,7 +574,7 @@ export function parseConfigSection(
         if (extra !== undefined) {
           return `  ${e.instancePath || "/"}: unknown key "${extra}"${camelCaseHint(extra, e.parentSchema)}`;
         }
-        return `  ${e.instancePath || "/"}: ${e.message ?? "is invalid"}`;
+        return `  ${e.instancePath || "/"}: ${e.message ?? "is invalid"}${movedProviderHint(e.instancePath, e.keyword)}`;
       })
       .join("\n");
     throw new DocevalsError(`Invalid config in ${configPath}:\n${details}`);
@@ -584,6 +586,13 @@ export function parseConfigSection(
     {}) as RawDocevalsConfig;
   const abs = resolve(configPath);
   const dir = dirname(abs);
+
+  // The name is checked here, with the message `manni meta fill` gives, so a
+  // typo is caught by every verb and not only the ones that reach a model.
+  // Whether a model has a provider to own it waits for the flags: a
+  // `--provider` can supply the provider a configured model needs.
+  const provider = r.provider ?? DEFAULT_PROVIDER;
+  assertKnownProvider(provider, (message) => new DocevalsError(message));
 
   const suites: Record<string, SuiteDef> = {};
   for (const [name, def] of Object.entries(r.suites ?? {})) {
@@ -611,28 +620,22 @@ export function parseConfigSection(
       failFast: r.defaults?.failFast ?? false,
       concurrency: r.defaults?.concurrency ?? 4,
     },
-    provider: {
-      default: r.provider?.default ?? "anthropic",
+    provider,
+    model: r.model ?? null,
+    providers: {
       anthropic: {
-        model: r.provider?.anthropic?.model ?? "claude-sonnet-4-5",
-        apiKeyEnv: r.provider?.anthropic?.apiKeyEnv ?? "ANTHROPIC_API_KEY",
+        apiKeyEnv: r.providers?.anthropic?.apiKeyEnv ?? "ANTHROPIC_API_KEY",
       },
       openai: {
-        baseUrl: r.provider?.openai?.baseUrl ?? "https://api.openai.com/v1",
-        model: r.provider?.openai?.model ?? "gpt-4o-mini",
-        apiKeyEnv: r.provider?.openai?.apiKeyEnv ?? "OPENAI_API_KEY",
+        baseUrl: r.providers?.openai?.baseUrl ?? DEFAULT_OPENAI_BASE_URL,
+        apiKeyEnv: r.providers?.openai?.apiKeyEnv ?? "OPENAI_API_KEY",
       },
       "claude-cli": {
-        model: r.provider?.["claude-cli"]?.model ?? "claude-sonnet-4-5",
-        command: r.provider?.["claude-cli"]?.command ?? "claude",
+        command: r.providers?.["claude-cli"]?.command ?? "claude",
       },
       "llama-cpp": {
-        // `balanced` rather than `auto`: a tier the library resolves against
-        // this machine's memory, but a named one, so two contributors reading
-        // the config see the same intent.
-        model: r.provider?.["llama-cpp"]?.model ?? "balanced",
-        modelsDir: r.provider?.["llama-cpp"]?.modelsDir ?? null,
-        thoughtTokens: r.provider?.["llama-cpp"]?.thoughtTokens ?? 0,
+        modelsDir: r.providers?.["llama-cpp"]?.modelsDir ?? null,
+        thoughtTokens: r.providers?.["llama-cpp"]?.thoughtTokens ?? 0,
       },
     },
     baseline: r.baseline ?? null,

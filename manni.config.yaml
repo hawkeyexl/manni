@@ -98,13 +98,12 @@ docevals:
     failFast: false
     concurrency: 4
 
-  provider:
-    default: anthropic
-    anthropic:
-      model: claude-sonnet-4-5
-      apiKeyEnv: ANTHROPIC_API_KEY
-    claude-cli:
-      model: claude-sonnet-4-5
+  # Named rather than detected, so a run over the fixtures behaves the same on
+  # every machine: without ANTHROPIC_API_KEY it degrades to deterministic evals
+  # instead of picking up whatever this machine happens to have (the Claude CLI,
+  # a local model). No model is pinned; the inference library's default for the
+  # provider is used, and every cache key names the model it resolved to.
+  provider: anthropic
 
   judge:
     ensembleRuns: 3

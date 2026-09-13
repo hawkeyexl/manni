@@ -24,7 +24,11 @@ import { resolvePage } from "../core/resolve.js";
 import { contentHash, loadReviews } from "../core/reviews.js";
 import { makeJudge } from "../judge/judge.js";
 import { isTurnBudgetSkip } from "../judge/budget.js";
-import { makeProvider } from "../judge/provider.js";
+import {
+  assertProviderSelection,
+  makeProvider,
+  selectProvider,
+} from "../judge/provider.js";
 import type { JudgeFn } from "../core/engine.js";
 import type { GraderTarget } from "../graders/types.js";
 
@@ -310,6 +314,9 @@ export async function runCalibrate(
 ): Promise<CalibrationReport> {
   const cwd = options.cwd ?? process.cwd();
   const config = loadConfig(options.config, cwd);
+  const flags = { provider: options.provider, model: options.model };
+  // Checked before the golden set is read: a typo is a usage error on every run.
+  assertProviderSelection(selectProvider(config, flags));
   const goldenDir = resolve(cwd, options.golden ?? GOLDEN_DIR);
   const cases = loadGoldenCases(goldenDir);
 
@@ -354,13 +361,13 @@ export async function runCalibrate(
     const judge =
       options.judge ??
       makeJudge({
-        provider: makeProvider(config, {
-          provider: options.provider,
-          model: options.model,
-        }),
+        provider: await makeProvider(config, flags),
         root: cwd,
       });
     const judged = await judge(targets, config, {
+      // The flags reach the judge too, so a golden case whose eval names its
+      // own provider or model is overridden by them as it is under `run`.
+      ...flags,
       runs: options.runs,
       noCache: options.noCache,
       maxTurns: options.maxTurns,

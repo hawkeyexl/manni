@@ -41,24 +41,25 @@
           "additionalProperties": false
         },
         "provider": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Which provider judges, generates, fills and promotes: auto | anthropic | openai | claude-cli | llama-cpp. Default auto, detected exactly as manni meta fill detects: an Anthropic key, then an OpenAI key, then the Claude CLI, then a local model. --provider wins over it, and an ai eval's own provider wins over it for that eval."
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The model, within the provider. Requires a provider other than auto, from here or --provider, because a model name does not say which provider owns it. Unset (the default) takes the provider's default model from the inference library; manni pins none. --model wins over it."
+        },
+        "providers": {
           "type": "object",
+          "description": "Connection settings per provider. No model lives here: the model is chosen once, by model.",
           "properties": {
-            "default": {
-              "enum": [
-                "anthropic",
-                "openai",
-                "claude-cli",
-                "llama-cpp"
-              ]
-            },
             "anthropic": {
               "type": "object",
               "properties": {
-                "model": {
-                  "type": "string"
-                },
                 "apiKeyEnv": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Environment variable holding the API key. Default ANTHROPIC_API_KEY."
                 }
               },
               "additionalProperties": false
@@ -67,13 +68,12 @@
               "type": "object",
               "properties": {
                 "baseUrl": {
-                  "type": "string"
-                },
-                "model": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Any OpenAI-compatible endpoint. Default https://api.openai.com/v1."
                 },
                 "apiKeyEnv": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Environment variable holding the API key. Default OPENAI_API_KEY."
                 }
               },
               "additionalProperties": false
@@ -81,11 +81,9 @@
             "claude-cli": {
               "type": "object",
               "properties": {
-                "model": {
-                  "type": "string"
-                },
                 "command": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "The Claude CLI executable. Default claude."
                 }
               },
               "additionalProperties": false
@@ -94,10 +92,6 @@
               "type": "object",
               "additionalProperties": false,
               "properties": {
-                "model": {
-                  "type": "string",
-                  "description": "A tier the library resolves against this machine (auto | fast | balanced | quality), or a pinned model reference. A tier is convenient but is not a stable cache key on its own - the library resolves it to a concrete model before any key is built, so two machines never share a verdict under one tier name."
-                },
                 "modelsDir": {
                   "type": "string",
                   "description": "Where GGUF weights are downloaded and looked for. Defaults to the inference library's own directory."
@@ -109,7 +103,7 @@
                   "description": "Thinking budget before the JSON. Zero by default: a grammar constrains generation from the first token, so an unbudgeted thinking model starts reasoning and is cut off mid-thought."
                 }
               },
-              "description": "Local inference over GGUF weights, in-process. No API key and no network at judge time once the weights are on disk - which is what lets a contributor without provider credentials regenerate the docs cache."
+              "description": "Local inference over GGUF weights, in-process. No API key and no network at judge time once the weights are on disk."
             }
           },
           "additionalProperties": false

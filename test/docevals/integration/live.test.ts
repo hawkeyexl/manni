@@ -4,6 +4,10 @@
  *
  *   MANNI_DOCEVALS_LIVE=1 npm test
  *
+ * The model is the Claude CLI provider's default from the inference library,
+ * so the test follows the library rather than a model name copied here. Set
+ * MANNI_DOCEVALS_LIVE_MODEL to try a specific one.
+ *
  * Asserts only shape and zone membership, never exact verdicts — live model
  * output is nondeterministic by nature.
  */
@@ -15,13 +19,16 @@ import { runEvals } from "../../../src/docevals/core/engine.js";
 import { nestUnderDocevals } from "../helpers/config.js";
 import { makeJudge } from "../../../src/docevals/judge/judge.js";
 import { makeGenerateScripts } from "../../../src/docevals/graders/scriptgen.js";
-import { ClaudeCliProvider } from "@hawkeyexl/inference";
+import { makeProvider } from "@hawkeyexl/inference";
 
 const ROOT = resolve(import.meta.dirname, "../../..");
 const LIVE = process.env.MANNI_DOCEVALS_LIVE === "1";
 
 describe.skipIf(!LIVE)("live smoke via Claude CLI", () => {
-  const provider = new ClaudeCliProvider("claude-sonnet-4-5");
+  const provider = makeProvider({
+    provider: "claude-cli",
+    model: process.env.MANNI_DOCEVALS_LIVE_MODEL ?? null,
+  });
 
   it("judges one fixture eval end-to-end", async () => {
     const judge = makeJudge({ provider, root: ROOT });
