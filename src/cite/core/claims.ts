@@ -32,7 +32,12 @@ export function normalizeWhitespace(text: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
-/** The hashing rule's normalization: one BOM, CRLF → LF, one trailing LF. */
+/**
+ * The hashing rule's normalization for a whole quoted block: one BOM, CRLF →
+ * LF, and one trailing LF dropped. It differs from the shared `normalizeText`
+ * only in that last step, because a quote is compared as one joined block
+ * rather than split into lines first.
+ */
 function normalizeBlock(text: string): string {
   let out = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
   out = out.replace(/\r\n/g, "\n");

@@ -388,8 +388,18 @@ const assertions = [
     JSON.stringify(Object.keys(schemas["ai-context"].properties).sort()) ===
       JSON.stringify(["meta-provenance", "provenance", "risks", "sample-questions"])],
   ["evals proposal.3 and artifact-evals proposal.3 use the family severity scale",
-    [schemas.evals, schemas["artifact-evals"]].every((schema) =>
-      JSON.stringify(schema).includes('"enum":["error","warning","notice"]') && !JSON.stringify(schema).includes('"info"'))],
+    [schemas.evals, schemas["artifact-evals"]].every((schema) => {
+      // Every severity enum in the draft, compared as a set, wherever it sits.
+      const enums = [];
+      const walk = (node) => {
+        if (Array.isArray(node)) return node.forEach(walk);
+        if (node === null || typeof node !== "object") return;
+        if (Array.isArray(node.enum) && node.enum.includes("error")) enums.push([...node.enum].sort());
+        Object.values(node).forEach(walk);
+      };
+      walk(schema);
+      return enums.length > 0 && enums.every((e) => isDeepStrictEqual(e, ["error", "notice", "warning"]));
+    })],
   ["no new draft still defines a provenanceEntry for field attribution",
     !("provenanceEntry" in schemas.evals.$defs) && !("provenanceEntry" in schemas["artifact-evals"].$defs) &&
       schemas["ai-context"].$defs.provenanceEntry.required.includes("integrity")],

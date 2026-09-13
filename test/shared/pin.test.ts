@@ -71,6 +71,14 @@ describe("sliceLines", () => {
     );
     expect(() => sliceLines(lines, { start: 9 })).toThrow("the source has 7 lines; line 9 is out of range.");
   });
+
+  it("throws LineRangeError for a range that ends before it starts, instead of slicing nothing", () => {
+    // Both bounds in range, so the past-the-end check alone let this through as "".
+    expect(() => sliceLines(lines, { start: 5, end: 3 }, "src/limits.ts")).toThrow(LineRangeError);
+    expect(() => sliceLines(lines, { start: 5, end: 3 }, "src/limits.ts")).toThrow(
+      "src/limits.ts range 5-3 ends before it starts.",
+    );
+  });
 });
 
 describe("hashLines, hashRange and isKeyedPin", () => {
@@ -104,6 +112,12 @@ describe("pinOfLines", () => {
     expect(pinOfLines(lines, { start: 2, end: 2 })).toBe(PIN_L2);
     expect(pinOfLines(lines, { start: 1, end: 8 })).toBeUndefined();
     expect(pinOfLines(lines, { start: 0, end: 1 })).toBeUndefined();
+  });
+
+  it("is undefined for a reversed range rather than the pin of an empty span", () => {
+    const lines = splitLines(SOURCE);
+    expect(pinOfLines(lines, { start: 5, end: 3 })).toBeUndefined();
+    expect(pinOfLines(lines, { start: 5, end: 3 })).not.toBe(PIN_EMPTY);
   });
 });
 

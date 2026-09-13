@@ -64,6 +64,11 @@ export function sliceLines(lines: readonly string[], range?: LineRange, label?: 
   const start = range?.start;
   if (start === undefined) return lines.join("\n");
   const end = range?.end ?? start;
+  if (end < start) {
+    // Both bounds can be in range, so without this a reversed range sliced
+    // nothing and hashed as the pin of an empty span.
+    throw new LineRangeError(`${label ?? "the source"} range ${String(start)}-${String(end)} ends before it starts.`);
+  }
   if (start > lines.length || end > lines.length) {
     const first = start > lines.length ? start : end;
     throw new LineRangeError(`${label ?? "the source"} has ${lines.length} lines; line ${first} is out of range.`);
@@ -90,9 +95,9 @@ export function isKeyedPin(pin: string): boolean {
   return pin.startsWith(KEYED_PIN_PREFIX);
 }
 
-/** The plain pin of a range of lines; undefined when the range falls outside them. */
+/** The plain pin of a range of lines; undefined when the range falls outside them or ends before it starts. */
 export function pinOfLines(lines: readonly string[], range: PageLines): string | undefined {
-  if (range.start < 1 || range.end > lines.length) return undefined;
+  if (range.start < 1 || range.end > lines.length || range.end < range.start) return undefined;
   return hashLines(lines.slice(range.start - 1, range.end).join("\n"));
 }
 
