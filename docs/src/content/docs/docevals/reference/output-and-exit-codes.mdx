@@ -160,6 +160,7 @@ One object, for programmatic consumers.
 | `findings` | Present for command/tool evals that produced findings. |
 | `generated` | True when this run generated the eval's check script. |
 | `via` | `"human-review"` when a persisted review resolved the outcome. |
+| `selfPreference` | `{axis, model}` when the model that judged the eval also produced what it graded (`axis: "content"`) or proposed the eval (`axis: "criterion"`). Absent otherwise. See [Self-preference](/manni/docevals/judge/#self-preference). |
 | `suite`, `weight` | The suite the result reports under, and its weight in that suite's rate. |
 | `baselined` | Count of findings a [baseline](#baseline) suppressed on this eval. Present only when a baseline was in effect, so its absence means "no baseline", not "nothing was forgiven". |
 | `skipReason`, `durationMs` | |

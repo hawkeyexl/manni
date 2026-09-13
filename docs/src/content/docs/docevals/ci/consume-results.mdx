@@ -75,15 +75,17 @@ capability suite's rate is the actual measure of a quality goal spreading. See
 
 ## The TypeScript API
 
-The package exports the frontmatter schema for consumers that validate pages themselves:
+The package exports the page vocabulary for consumers that validate pages themselves:
 
 ```js
 import { docevals } from "@hawkeyexl/manni";
-const { frontmatterSchema, frontmatterSchemaPath } = docevals;
+const { frontmatterSchema, FRONTMATTER_SCHEMA_ID } = docevals;
 ```
 
-`frontmatterSchema` is the parsed schema object; `frontmatterSchemaPath` is its resolved path on
-disk, for handing to another validator.
+`frontmatterSchema` is the parsed schema object, the evals draft `manni docevals run` validates
+every page against. `FRONTMATTER_SCHEMA_ID` is its `$id`, `manni:evals:1.0.0-proposal.3`. No file
+copy ships; see
+[Validating the frontmatter itself](/manni/docevals/reference/frontmatter/#validating-the-frontmatter-itself).
 
 ## For a person rather than a pipeline
 
@@ -111,4 +113,4 @@ code rather than re-deriving pass/fail from the report. Keep `1` and `2` distinc
 
 {/* step {"description":"--format json emits a parseable object carrying summary counts and the exit code.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate --format json","exitCodes":[1],"stdio":"/\"exitCode\": 1/"}} */}
 
-{/* step {"description":"The documented import specifier resolves and exports both schema symbols.","runShell":{"command":"node --input-type=module -e \"import('@hawkeyexl/manni').then(({docevals:m})=>{if(!m.frontmatterSchema||!m.frontmatterSchemaPath)throw new Error('missing export');console.log('exports ok')}).catch(e=>{console.error(e);process.exit(2)})\"","exitCodes":[0],"stdio":"exports ok"}} */}
+{/* step {"description":"The documented import specifier resolves and exports both schema symbols.","runShell":{"command":"node --input-type=module -e \"import('@hawkeyexl/manni').then(({docevals:m})=>{if(!m.frontmatterSchema||m.FRONTMATTER_SCHEMA_ID!=='manni:evals:1.0.0-proposal.3')throw new Error('missing export');console.log('exports ok')}).catch(e=>{console.error(e);process.exit(2)})\"","exitCodes":[0],"stdio":"exports ok"}} */}

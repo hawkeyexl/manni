@@ -10,10 +10,11 @@ is specific to this tool.
 
 Imported from [hawkeyexl/moose-docevals](https://github.com/hawkeyexl/moose-docevals)
 at 670e62b. Its sources live under `src/docevals/`, its tests under
-`test/docevals/{unit,integration,fixtures,helpers}`, its published schemas
-under `schemas/docevals/`, its ADR log under `docs/proposals/docevals/`, its
-site under `docs/src/content/docs/docevals/`, and its content strategy under
-`docs/content-strategy/docevals/`. The metadata tool is a sibling in this
+`test/docevals/{unit,integration,fixtures,helpers}`, its ADR log under
+`docs/proposals/docevals/`, and its site under
+`docs/src/content/docs/docevals/`. Its content strategy is the family's, in
+`docs/content-strategy/`. It ships no schema file: pages validate against the
+evals draft in `docs/proposals/0023/schemas/`, bundled into the build. The metadata tool is a sibling in this
 repository, imported by relative path (`../meta/index.js`), not a dependency.
 
 ## Fixtures (required)
@@ -61,29 +62,28 @@ and skipped by default.
 ## Content & documentation work (required)
 
 Before drafting or editing any page under `docs/src/content/docs/docevals/**`,
-consult `docs/content-strategy/docevals/`. **Read on demand; do not inline it
+consult the family's content strategy. **Read on demand; do not inline it
 here.**
 
-- `README.md`, the index, the ID-linking model, and the evidence caveat (start here)
-- `audiences/`, six target segments (`aud-*`)
-- `personas/`, one minimal persona per audience (`persona-*`)
-- `journeys/`, twelve critical user journeys (`cuj-*`), steps → real doc paths
-- `information-architecture/`, the CUJ-first IA and its gap analysis
+- `docs/content-strategy/personas.md`, the four personas. docevals folded its
+  own six into them: Priya, Nate and Iris are Maya's entry now.
+- `docs/content-strategy/cujs.md`, the journeys. docevals's are M9–M13, D8–D9,
+  S6–S9 and T4.
+- `docs/content-strategy/information-architecture.md`, the content set, with
+  the `docevals/` section's tree.
 
 The rules that follow from it:
 
-1. **Identify the persona** the page serves: Priya (corpus owner), Nate (solo
-   owner), Devin (pipeline owner), Sara (standard owner), Theo (contributor),
-   or Iris (retrofitter).
+1. **Identify the persona** the page serves: Maya, Devin, Sara or Theo.
 2. **Find the matching CUJ** and structure the page around reaching that
    outcome, not by document type.
 3. **Link into `reference/`** for exhaustive detail. Journey pages explain the
    path; they do not duplicate flag tables or config keys.
-4. **Record the page in `proposed-ia.md`.** A page that is not in the content
-   set does not get written.
+4. **Record the page in `information-architecture.md`.** A page that is not in
+   the content set does not get written.
 5. **Pages that present commands carry inline Doc Detective steps** against the
-   committed fixtures, spelled `manni docevals …`. See "Authoring convention"
-   in `proposed-ia.md`. The docs-as-tests workflow runs them.
+   committed fixtures, spelled `manni docevals …`. The docs-as-tests workflow
+   runs them.
 6. **`reference/cli.mdx` is drift-checked** by `npm run docs:check-cli`: one
    `` ## `docevals <command>` `` section per command, with Option/Argument/Default
    tables that match `src/docevals/cli.ts`.
@@ -139,7 +139,7 @@ and Node touch.
 - One concept, the **eval**. Graders are `ai`, `command`, `tool:<name>`, and
   `human`. There are no "runners". The AI grader is spelled `ai` everywhere a
   user or the code can see it: `GraderKind` in `src/docevals/types.ts`, the
-  published frontmatter schema, and every docs page.
+  evals draft, and every docs page.
 - `src/docevals/core/engine.ts` holds the pipeline. It runs discover → resolve →
   **empty-plan check** → generation pass → deterministic graders → LLM judge →
   reviews → aggregate. Deterministic graders go cheapest first, one `grade()`
@@ -291,19 +291,25 @@ and Node touch.
   to execute", and a fork's pages are not this corpus. The only complete
   control is restricting the job to same-repo pull requests; the
   docs-as-tests workflow carries that gate. Never remove it.
-- The frontmatter schemas (`schemas/docevals/`) are **published artifacts**,
-  not internal source. They ship in the package (`files`/`exports`), and
-  consumers point their validator at them by path *or by their `$id` URL*.
-  Three-segment semver, and the bytes are frozen once published, so a
-  `description` fix is a new version rather than an edit.
-  `docs/public/docevals/schemas/` carries the served copy; keep the two
-  identical.
-- The page vocabulary is **`manni:evals:1.0.0-proposal.2`**, published by the
-  metadata tool (proposal 0023) and implemented here (ADR 01009). Four flat
-  page keys: `evals`, `eval-suite`, `eval-skip`, and `eval-provenance`, plus a
-  reserved `eval-` prefix, so an unrecognized `eval-*` key is an error. Don't
-  diverge `schemas/docevals/frontmatter-1.1.0.json` from it without recording
-  why. 1.0.0 stays shipped and byte-frozen for consumers who pinned it.
+- The page vocabulary is **`manni:evals:1.0.0-proposal.3`**, proposed by the
+  metadata tool (proposal 0023) and implemented here (ADRs 01009 and 01045).
+  `src/docevals/schema.ts` imports the draft from
+  `docs/proposals/0023/schemas/evals/` and tsup bundles it, so `dist` never
+  reads `docs/`. **Never ship a copy or patch it in memory**: the copies this
+  tool used to publish drifted from the draft twice. Three flat page keys:
+  `evals`, `eval-suite` and `eval-skip`, plus a reserved `eval-` prefix, so an
+  unrecognized `eval-*` key, `eval-provenance` included, is a page error.
+- **Machine attribution is ai-context's, not this vocabulary's** (proposal
+  0046). `provenance` pins the body lines a machine wrote, and
+  `meta-provenance` names the fields and evals a machine proposed. There is no
+  page-level `generated-by`. The self-preference check
+  (`src/docevals/judge/self-preference.ts`) reads `provenance` for
+  `target: body`, the `fields` of `meta-provenance` for `frontmatter`, both
+  for `raw`, and nothing for a companion file. The criterion axis is a
+  `meta-provenance` entry listing the eval's id. It stays a warning. `fill`
+  writes `meta-provenance` through `mergeMetaProvenance` from
+  `src/meta/internal.ts`, the merge `manni meta fill` uses; never grow a
+  docevals copy of it.
 - **A bare string in the eval list is an assertion, not a reference.**
   `resolvePage` warns when a shorthand matches a defined eval id and
   deliberately does not reinterpret it.
@@ -378,8 +384,8 @@ The ADR is the record; these are the map.
   differentiation. This repository's own corpora lint with `tool:remark`, not
   `tool:markdownlint`, because they are MDX (ADR 01024).
 - **The metadata tool publishes the vocabulary; this tool implements the
-  behavior** (ADR 01009). The field names come from proposal 0023; the schema
-  file ships from here so its versioning is not gated on the sibling's.
+  behavior** (ADR 01009). The field names and the schema both come from
+  proposal 0023's draft, which pages validate against directly (ADR 01045).
 - **Conceptual source.** The *Docs as Tests with AI* manuscript (draft 4). The
   grader hierarchy, eval sketch fields, 3-run ensemble, confidence zones, 70%
   calibration threshold, and 15% false-positive alert all come from it.

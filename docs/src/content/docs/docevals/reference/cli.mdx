@@ -357,6 +357,51 @@ manni docevals fill [paths...] [options]
 Raw proposals are cached **before** the confidence gate, so re-running at a
 different `--confidence` spends no turns.
 
+### What `fill` records
+
+The evals `fill` writes are recorded in the page's `meta-provenance`, in the
+same edit, merged into the entry for the run's model. See
+[`provenance` and `meta-provenance`](/manni/docevals/reference/frontmatter/#provenance-and-meta-provenance).
+The pretty report prints the entry under the page's line, with every id it now
+holds:
+
+```text
+filled   docs/limits.md  +1 evals (links-resolve 0.80)
+    meta-provenance  claude-fable-5: retry-named, links-resolve
+```
+
+A page whose `meta-provenance` is not a list still gets its evals, and the
+entry is not written:
+
+```text
+filled   docs/limits.md  +1 evals (links-resolve 0.80)
+    meta-provenance not written: this page's schemas do not allow it
+```
+
+With `-f json`, each result carries `metaProvenance` in `manni meta fill`'s
+shape. It is reported under `--dry-run` too, and absent on a page where
+nothing was written:
+
+```json
+{
+  "file": "docs/limits.md",
+  "status": "proposed",
+  "metaProvenance": {
+    "written": true,
+    "entry": {
+      "generated-by": "claude-fable-5",
+      "fields": ["/description"],
+      "evals": ["retry-named", "links-resolve"],
+      "confidence": { "/description": 0.9, "retry-named": 0.75, "links-resolve": 0.8 }
+    }
+  }
+}
+```
+
+An entry that was not written reads `{"written": false, "skipReason": "schema-mismatch"}`.
+`fill` never sends a page's frontmatter to the model, so neither record can be
+proposed.
+
 ## `docevals promote`
 
 Reviews ai-graded evals and reports which are expressible as deterministic
@@ -512,4 +557,4 @@ Full detail in
 
 {/* step {"description":"A collection the config does not declare is exit 2, and the message names the declared ones.","runShell":{"command":"manni docevals list --collection no-such-collection","exitCodes":[2],"stdio":"no collection named \"no-such-collection\""}} */}
 
-{/* step {"description":"list takes no --since.","runShell":{"command":"manni docevals list --since HEAD","exitCodes":[1],"stdio":"unknown option"}} */}
+{/* step {"description":"list takes no --since.","runShell":{"command":"manni docevals list --since HEAD","exitCodes":[2],"stdio":"unknown option"}} */}

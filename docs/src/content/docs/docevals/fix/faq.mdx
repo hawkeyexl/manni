@@ -53,20 +53,32 @@ The judge was not confident enough either way. **You cannot clear it.** Someone 
 
 ## I ran it locally and got a different result
 
-Most likely you ran without a provider key, so AI-graded evals reported as `skipped` rather than running.
-That is expected. `--deterministic-only` is the local check for everything except judged evals.
+Most likely a different judge graded it. Under `provider: auto`, the default, a missing API key does
+not skip the AI evals. Detection moves on: to the Claude CLI if it is installed, and otherwise to a
+local `llama-cpp` model, which installs its runtime and downloads its weights on first use. Your
+verdicts then come from a different model than CI's. The run names the provider it picked on stderr,
+`inference: provider "auto" — auto-selected "claude-cli"`, so compare that line with CI's log.
 
-Also check you are running against the same config. CI may pass `-c` with a specific path.
+AI evals report `skipped` only when no provider can be had at all. The run then warns
+`provider unavailable — …. Running deterministic evals only.` That happens when the config names
+`anthropic` or `openai` and its key is not set. It also happens under `auto` when there is no key, no
+Claude CLI, and the local model is ruled out, for example with `INFERENCE_NO_AUTO_INSTALL` set.
+See [Choose a provider](/manni/docevals/judge/choose-a-provider/).
+
+`--deterministic-only` is the local check for everything except judged evals. Also check you are
+running against the same config. CI may pass `-c` with a specific path.
 
 ## It asked for an API key. Do I need one?
 
-No. Use:
+No. The config names `anthropic` or `openai`, and that provider's key is not set, so the judge was
+skipped and the deterministic evals ran. To say so on purpose, and skip the judge without the
+warning, use:
 
 ```bash
 npx @hawkeyexl/manni docevals run docs/your-page.mdx --deterministic-only
 ```
 
-That skips the judge entirely and needs no credential.
+That needs no credential. To get AI verdicts without a key, name `claude-cli` or `llama-cpp` instead.
 
 ## The build is red but every eval says `pass`
 

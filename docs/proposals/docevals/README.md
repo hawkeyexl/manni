@@ -31,7 +31,7 @@ Numbering starts at `01000`. The `00001`–`00999` range holds decisions that pr
 | [01008](01008-rename-to-moose-docevals-and-share-one-family-config.md) | Rename to `moose-docevals`, and read config from a shared `moose.config.yaml` | accepted |
 | [01009](01009-implement-the-docmeta-evals-vocabulary.md) | Implement `docmeta:evals` as the frontmatter vocabulary, and publish a schema for it | accepted |
 | [01010](01010-kebab-case-is-the-file-vocabulary.md) | Kebab-case is the file vocabulary, frontmatter, config, and grader options alike | accepted |
-| [01011](01011-fill-writes-a-durable-provenance-trail.md) | `fill` writes a durable `eval-provenance` trail | accepted |
+| [01011](01011-fill-writes-a-durable-provenance-trail.md) | `fill` writes a durable `eval-provenance` trail | superseded by [01045](01045-validate-pages-against-the-evals-draft-and-attribute-in-meta-provenance.md) |
 | [01012](01012-config-discovery-walks-up-to-the-repository-root.md) | Config discovery walks up to the repository root | accepted |
 | [01013](01013-track-docmeta-4x-and-name-the-schema-set.md) | Track docmeta 4.x, and make `tool:docmeta` name its own schema set | accepted |
 | [01014](01014-sarif-and-junit-reporters.md) | SARIF and JUnit reporters, and a suite stamped on every result | accepted |
@@ -55,7 +55,7 @@ Numbering starts at `01000`. The `00001`–`00999` range holds decisions that pr
 | [01032](01032-criteria-group-evals-in-config-not-the-vocabulary.md) | Criteria group evals in config, not in the page vocabulary | accepted |
 | [01033](01033-target-selects-the-graded-bytes.md) | `target` selects the graded bytes, and it is called `target`, not `focus` | accepted |
 | [01034](01034-self-preference-is-reported-not-warned-to-stderr.md) | Self-preference is reported on the result, not warned to stderr | accepted |
-| [01035](01035-publish-frontmatter-1-1-0-for-the-proposal-2-vocabulary.md) | Publish `frontmatter-1.1.0.json` for the proposal.2 vocabulary | accepted |
+| [01035](01035-publish-frontmatter-1-1-0-for-the-proposal-2-vocabulary.md) | Publish `frontmatter-1.1.0.json` for the proposal.2 vocabulary | superseded by [01045](01045-validate-pages-against-the-evals-draft-and-attribute-in-meta-provenance.md) |
 | [01036](01036-a-self-contained-html-report.md) | A self-contained HTML report | accepted |
 | [01037](01037-a-local-llama-cpp-judge-provider.md) | A local `llama-cpp` judge provider | accepted |
 | [01038](01038-an-errored-ensemble-is-never-cached.md) | An ensemble containing an errored run is never cached | accepted |
@@ -65,6 +65,7 @@ Numbering starts at `01000`. The `00001`–`00999` range holds decisions that pr
 | [01042](01042-grader-isolation-is-per-eval-group-not-per-kind.md) | Grader isolation is per eval group, and the engine owns the partition | accepted |
 | [01043](01043-the-missing-provider-warning-is-about-the-judge.md) | The missing-provider warning is about the judge; generation reports its own need | accepted |
 | [01044](01044-the-prose-gate-blocks-and-the-fixture-corpus-is-exempt.md) | The prose gate blocks on the whole corpus, and the vendored fixtures are exempt | accepted |
+| [01045](01045-validate-pages-against-the-evals-draft-and-attribute-in-meta-provenance.md) | Validate pages against the evals draft itself, and attribute machine work in `provenance` and `meta-provenance` | accepted |
 
 ## The backfilled range
 

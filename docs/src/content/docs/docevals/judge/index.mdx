@@ -73,6 +73,47 @@ review is telling you it is ambiguous.
 `calibrate` enforces this: below the agreement threshold it exits 1, and the correct response is to
 refine the assertions, not the grader.
 
+## Self-preference
+
+A model grading its own output favors it. So before an ai eval is judged, manni docevals asks
+whether the judge's model is among the machines the page records, for what that eval grades. The
+model compared is the one that judges *this eval*, after its own `provider:` and `model:` and any
+`--model` flag, not the run's default.
+
+There are two ways the judge can be grading its own work. The first is **content**: it wrote what
+the eval reads. Which record answers that depends on the eval's
+[`target`](/manni/docevals/reference/frontmatter/#target-selects-which-bytes-are-graded):
+
+| `target` | Machines compared against |
+|---|---|
+| `body` (the default) | the `generated-by` of every `provenance` entry |
+| `frontmatter` | the `generated-by` of every `meta-provenance` entry that names `fields` |
+| `raw` | both |
+| `{source: file, path}` | none; a companion file carries its own record if it is a page |
+
+The check covers the whole body, because `target` has no form that names lines. The second is
+**criterion**: a `meta-provenance` entry for the judge's model lists this eval's id under `evals`,
+so the judge proposed the assertion it is grading. When both hold, content is reported.
+
+Each case warns on stderr, once per page and eval:
+
+```text
+manni: docs/limits.md: provenance names claude-fable-5 for the body this eval grades, and it is also the judge. Self-judging favors the author; give "limits-stated" a model: of its own.
+manni: docs/limits.md: meta-provenance names claude-fable-5 for the fields this eval grades, and it is also the judge. Self-judging favors the author; give "description-matches" a model: of its own.
+manni: docs/limits.md: meta-provenance says claude-fable-5 proposed "limits-stated", and it is also the judge. Self-judging favors the author; give "limits-stated" a model: of its own.
+```
+
+A `raw` eval whose match is only in `meta-provenance` gets the second sentence. The same sentence
+is a warning-level problem in every report format, and the result carries
+`selfPreference: {axis: "content" | "criterion", model}`.
+
+:::note[A warning, never a failure]
+Bias skews a verdict. It does not stop one forming, so the verdict stands, and the exit code is
+unchanged. The fix the sentence names is to give the eval a `model:` other than the page's
+author. For a criterion match, a person reviewing the eval and deleting its id from
+`meta-provenance` also clears it.
+:::
+
 ## What runs where
 
 - `--deterministic-only` skips the judge entirely. No provider, no cost, and the right default for

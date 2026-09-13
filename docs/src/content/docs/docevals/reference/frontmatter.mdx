@@ -3,13 +3,16 @@ title: Frontmatter reference
 description: Every field an eval can carry, and how page evals resolve against config evals and suites.
 ---
 
-Eval declarations live in page frontmatter under four keys, validated by the JSON Schema this
-package publishes at `schemas/frontmatter-1.0.0.json`. That schema implements
-`manni:evals:1.0.0-proposal.1`, the common vocabulary manni meta proposes for per-page quality
-assertions. manni meta publishes the vocabulary, and manni docevals implements the graders behind it.
-Verified against that schema and `src/docevals/core/resolve.ts`.
+Eval declarations live in page frontmatter under three keys, validated against
+[`manni:evals:1.0.0-proposal.3`](/manni/meta/proposals/evals/), the common vocabulary manni meta
+proposes for per-page quality assertions. manni docevals validates against that draft itself,
+bundled into the CLI, and implements the graders behind it. Which machines wrote the page and
+proposed its evals is recorded in two keys from
+[`manni:ai-context:1.0.0-proposal.2`](/manni/meta/proposals/ai-context/), described
+[below](#provenance-and-meta-provenance). Verified against those drafts and
+`src/docevals/core/resolve.ts`.
 
-## The four page keys
+## The three page keys
 
 Settings are page-level facts, not an enclosing object. The page root stays open, so a sibling
 tool's keys pass untouched. But the **`eval-` prefix is reserved**: an unrecognized `eval-*` key is
@@ -20,11 +23,19 @@ an error, not something silently ignored.
 | `evals` | string, or non-empty list | One assertion, or the list of entries |
 | `eval-suite` | string | Named suite from the config whose evals apply. An unknown name is a page error. |
 | `eval-skip` | boolean (`false`) | Skip this page entirely; it reports as skipped. |
-| `eval-provenance` | list | The machine-proposal trail `fill` writes. See below. |
 
-The page's own top-level `generated-by`, which is not an `eval-*` key, records the model that wrote
-the page's content. The judge reads it to warn about self-preference bias when it matches the judging
-model.
+Any other `eval-*` key is a page error, exit `1`, and the message lists the two settings that
+exist:
+
+```text
+error docs/limits.md:3 frontmatter/eval-provenance: unknown key "eval-provenance". The "eval-" prefix is reserved, and the only settings under it are eval-suite, eval-skip — so a typo is an error here rather than a key nothing reads.
+```
+
+:::caution[`eval-provenance` is gone]
+An earlier draft had a fourth key, `eval-provenance`, for the evals a machine proposed. That record
+is now `meta-provenance`, and a page that still carries `eval-provenance` gets the error above.
+Rename the key; each entry keeps its `generated-by`, `evals` and `confidence`.
+:::
 
 ```yaml
 ---
@@ -162,26 +173,35 @@ These are reported per page rather than thrown, so one bad page does not stop th
 | Frontmatter fails schema validation | error |
 | Unknown suite name | error |
 | Unknown eval reference | error |
-| Duplicate eval id on one page | warning |
-| Unrecognized `eval-*` page key | error |
+| Duplicate eval id on one page | error |
+| Unrecognized `eval-*` page key, `eval-provenance` included | error |
 | String shorthand matching a config eval id | warning |
 | Inline ai eval with no `examples` | warning |
 
 Errors carry the source line, resolved through manni meta's JSON-Pointer line map.
 
-## `eval-provenance`
+## `provenance` and `meta-provenance`
 
-The durable record of which evals a machine proposed, and how sure it was. `manni docevals fill`
-writes one entry per model; a **human deletes the entry** once those evals are reviewed, so a
-surviving entry means unreviewed machine-proposed evals.
+Two page-level keys say what machines did to a page. manni docevals reads both, and `fill` writes
+the second. Neither is an `eval-*` key, so the prefix reservation does not apply to them.
+
+| Key | Records | Written by | Read by |
+|---|---|---|---|
+| `provenance` | The body lines each machine wrote, as `generated-by`, `lines` and an `integrity` pin | [`manni meta derive`](/manni/meta/set-up/machine-authorship/) | the [self-preference check](/manni/docevals/judge/#self-preference), for `target: body` and `raw` |
+| `meta-provenance` | The metadata each machine proposed: `fields` as JSON Pointers, `evals` as ids, and a `confidence` for each | `manni meta fill` for fields, `manni docevals fill` for evals | the self-preference check: `fields` for `target: frontmatter` and `raw`, `evals` for the eval itself |
+
+A **human deletes a `meta-provenance` entry** once its fields and evals are reviewed, so a surviving
+entry means unreviewed machine-proposed metadata.
 
 ```yaml
 ---
 title: Install the operator
-eval-provenance:
+meta-provenance:
   - generated-by: claude-fable-5
+    fields: [/description]
     evals: [install-verified, eks-coverage]
     confidence:
+      /description: 0.9
       install-verified: 0.88
       eks-coverage: 0.74
 evals:
@@ -192,19 +212,28 @@ evals:
 
 | Field | Type | Meaning |
 |---|---|---|
-| `generated-by` | string | Required. The model or agent that proposed the evals. |
-| `evals` | string[] | Ids it proposed. |
-| `confidence` | object | 0–1 per eval, keyed by the same ids. |
+| `generated-by` | string | Required. The model that proposed them. |
+| `fields` | string[] | JSON Pointers of the fields it proposed. One of `fields` or `evals` is required. |
+| `evals` | string[] | Ids of the evals it proposed. |
+| `confidence` | object | 0–1 per field or eval, keyed by the pointer or the id. A pointer starts with `/` and an id cannot, so the two never collide. |
 
-A second `fill` run by the same model extends its existing entry rather than adding a near-duplicate.
-A different model gets its own.
+`manni docevals fill` merges into the first entry whose `generated-by` is the run's model. It appends
+the ids it wrote after the entry's own and sets their confidence. Everything else in that entry, and
+every other entry, is kept. Without an entry for the model, it appends one. That is the merge
+`manni meta fill` does for `fields`, so a page has one entry per model whichever command proposed
+what. The field definitions themselves are the
+[ai-context draft's](/manni/meta/proposals/ai-context/).
 
 ## Validating the frontmatter itself
 
-The schema ships in the package, so any JSON Schema validator can check your pages:
+No copy of the evals draft ships in the package, and no URL serves it while it is
+[open for review](/manni/meta/proposals/evals/). To check declarations with `manni meta validate`,
+copy
+[`1.0.0-proposal.3.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/evals/1.0.0-proposal.3.json)
+into your repository beside your own schemas, and commit it:
 
 ```bash
-manni meta validate --schema node_modules/@hawkeyexl/manni/schemas/docevals/frontmatter-1.0.0.json docs/
+manni meta validate --schema schema/evals-1.0.0-proposal.3.json docs/
 ```
 
 Or wire it in as an eval, so bad declarations fail the run like any other check:
@@ -213,16 +242,20 @@ Or wire it in as an eval, so bad declarations fail the run like any other check:
 docevals:
   evals:
     frontmatter-valid:
-      assertion: Page frontmatter matches the manni docevals schema.
+      assertion: Page frontmatter matches the evals vocabulary.
       grader: tool:docmeta
       options:
-        schemas: ["node_modules/@hawkeyexl/manni/schemas/docevals/frontmatter-1.0.0.json"]
+        schemas: ["schema/evals-1.0.0-proposal.3.json"]
       severity: error
 ```
 
-Programmatic consumers can import the schema object or its resolved path:
+`manni docevals run` needs neither. It validates every page against the same draft before it
+grades anything, and reports a declaration the draft rejects as a page error.
+
+Programmatic consumers can import the draft as an object:
 
 ```js
 import { docevals } from "@hawkeyexl/manni";
-const { frontmatterSchema, frontmatterSchemaPath } = docevals;
+const { frontmatterSchema, FRONTMATTER_SCHEMA_ID } = docevals;
+// FRONTMATTER_SCHEMA_ID is "manni:evals:1.0.0-proposal.3"
 ```
