@@ -452,8 +452,8 @@ the building would need its own config file.
 What stays a refusal is the contradiction on one command line.
 `--local --provider openai` states two incompatible intents in one breath, and
 guessing which one was meant is exactly what an egress control must not do.
-The notice keeps the override visible: a run never silently ignores what the
-config says.
+The notice keeps the override visible, so a run never silently ignores what
+the config says.
 
 ## Consequences
 
