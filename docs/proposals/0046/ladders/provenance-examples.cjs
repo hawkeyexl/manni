@@ -26,6 +26,7 @@
 // Every invalid rung names the reason it must fail for: an ajv keyword and
 // the instance path it must be reported at. A rung that fails for some other
 // reason is as wrong as one that passes.
+const { isDeepStrictEqual } = require("node:util");
 const fs = require("fs");
 const crypto = require("crypto");
 const { createRequire } = require("module");
@@ -367,11 +368,12 @@ for (const [name, key, expectValid, yamlText, reason] of cases) {
 // Structural assertions: what the rungs cannot see from a document.
 console.log("\nstructural assertions");
 const assertions = [
-  ["$defs.metaProvenanceEntry is byte-identical in ai-context and artifact-evals",
-    JSON.stringify(schemas["ai-context"].$defs.metaProvenanceEntry) ===
-      JSON.stringify(schemas["artifact-evals"].$defs.metaProvenanceEntry)],
+  // Compared as values, not as serialized text: the promise is one definition,
+  // and a reformat that only reorders keys must not read as drift.
+  ["$defs.metaProvenanceEntry is the same definition in ai-context and artifact-evals",
+    isDeepStrictEqual(schemas["ai-context"].$defs.metaProvenanceEntry, schemas["artifact-evals"].$defs.metaProvenanceEntry)],
   ["ai-context $defs.lines is citations proposal.3's $defs.lines",
-    JSON.stringify(schemas["ai-context"].$defs.lines) === JSON.stringify(read(CITATIONS).$defs.lines)],
+    isDeepStrictEqual(schemas["ai-context"].$defs.lines, read(CITATIONS).$defs.lines)],
   ["provenance integrity is citations proposal.3's claim integrity pattern",
     schemas["ai-context"].$defs.provenanceEntry.properties.integrity.pattern ===
       read(CITATIONS).$defs.claim.properties.integrity.pattern],
@@ -385,6 +387,9 @@ const assertions = [
   ["ai-context proposal.2 defines exactly meta-provenance, provenance, risks and sample-questions",
     JSON.stringify(Object.keys(schemas["ai-context"].properties).sort()) ===
       JSON.stringify(["meta-provenance", "provenance", "risks", "sample-questions"])],
+  ["evals proposal.3 and artifact-evals proposal.3 use the family severity scale",
+    [schemas.evals, schemas["artifact-evals"]].every((schema) =>
+      JSON.stringify(schema).includes('"enum":["error","warning","notice"]') && !JSON.stringify(schema).includes('"info"'))],
   ["no new draft still defines a provenanceEntry for field attribution",
     !("provenanceEntry" in schemas.evals.$defs) && !("provenanceEntry" in schemas["artifact-evals"].$defs) &&
       schemas["ai-context"].$defs.provenanceEntry.required.includes("integrity")],

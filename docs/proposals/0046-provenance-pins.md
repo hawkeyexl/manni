@@ -220,11 +220,17 @@ What the new drafts change against the drafts under review:
 | artifact-evals `metadata.eval-provenance` | `metadata.meta-provenance`, the same entry one level down |
 | evals root guard `^eval-(?!suite$\|skip$\|provenance$)` | `^eval-(?!suite$\|skip$)` |
 | artifact-evals `metadata` guard `^eval-(?!skip$\|provenance$)` | `^eval-(?!skip$)` |
+| evals and artifact-evals `severity`: `error \| warning \| info` | `error \| warning \| notice`, the family scale |
 
 The artifact side keeps its record under `metadata` for the reason 0023 gave.
 An artifact's top level is its host tool's contract, and `metadata` is the
-extension bag. The entry definition appears in both drafts byte for byte, and
-the ladder asserts that it does.
+extension bag. Both drafts carry the same entry definition, and the ladder
+asserts that they do.
+
+The new eval drafts also rename one severity level. Both enumerated
+`error | warning | info`, while the family scale in manni's shared severity is
+`notice | warning | error`. Shared concepts use shared values, so the
+drafts say `notice`.
 
 Two changes to the entry are deliberate. Pointers replace bare names, because
 a pointer is the location `validate` already reports and a bare name cannot

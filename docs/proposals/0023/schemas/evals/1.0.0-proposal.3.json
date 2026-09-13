@@ -363,10 +363,10 @@
       "enum": [
         "error",
         "warning",
-        "info"
+        "notice"
       ],
       "default": "error",
-      "description": "Only error-severity failures fail the run; warning and info report but pass. Default error — the string shorthand implies it."
+      "description": "Only error-severity failures fail the run; warning and notice report but pass. The three levels are the family scale in manni's shared severity, so a finding reads the same in every tool. Default error — the string shorthand implies it."
     },
     "weight": {
       "type": "number",

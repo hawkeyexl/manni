@@ -170,7 +170,10 @@ ai-context `1.0.0-proposal.2`, because `provenance` names the machines per
 range. The self-preference-bias check reads `provenance` for a `body` target,
 `meta-provenance` for `frontmatter`, and both for `raw`. `manni meta fill`
 writes `meta-provenance` for the fields it writes. Both keys stay in
-ai-context, which closes open question 7 for them.
+ai-context, which closes open question 7 for them. The same pull request
+renames the eval drafts' `info` severity to `notice`, in evals
+`1.0.0-proposal.3` and artifact-evals `1.0.0-proposal.3`, so both use the
+family scale.
 
 **2026-08-26 correction: the whole family is default.** All nine append to
 `DEFAULT_SCHEMAS`, superseding the core-only intent below wherever it
