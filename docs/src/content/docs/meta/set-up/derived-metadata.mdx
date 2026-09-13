@@ -335,7 +335,7 @@ To annotate what `derive` *would* write, rather than only what is stale, add
 a second step. `--check` implies a dry run, so it never touches the checkout:
 
 ```yaml
-      - run: npx -y @hawkeyexl/manni@0 meta derive --check -f github
+      - run: npx -y @hawkeyexl/manni meta derive --check -f github
         env:
           GH_TOKEN: ${{ github.token }}
 ```
@@ -362,7 +362,7 @@ validate-metadata:
   before_script:
     - apt-get update && apt-get install -y glab
   script:
-    - npx -y @hawkeyexl/manni@0 meta validate
+    - npx -y @hawkeyexl/manni meta validate
 ```
 
 ## After approval
@@ -392,7 +392,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: npx -y @hawkeyexl/manni@0 meta derive --fields reviewed-by,last-reviewed
+      - run: npx -y @hawkeyexl/manni meta derive --fields reviewed-by,last-reviewed
         env:
           GH_TOKEN: ${{ github.token }}
       - run: |

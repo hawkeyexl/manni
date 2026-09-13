@@ -187,7 +187,7 @@ which `upload-sarif` rejects.
     {
       "tool": {
         "driver": {
-          "name": "manni meta",
+          "name": "manni",
           "version": "3.5.0",
           "informationUri": "https://hawkeyexl.github.io/manni/meta/",
           "rules": [
@@ -226,7 +226,7 @@ which `upload-sarif` rejects.
 
 | Field | Type | Description |
 |---|---|---|
-| `runs[].tool.driver.name` | string | Always `manni meta`. |
+| `runs[].tool.driver.name` | string | Always `manni`. |
 | `runs[].tool.driver.version` | string | The manni meta version that produced the log. |
 | `runs[].tool.driver.rules` | object[] | Only the rules this run actually **hit**, deduplicated. manni meta does not enumerate every keyword of every schema. |
 | `results[].ruleId` | string | `<schema-ref>/<keyword>`, for example `google:okf:0.1/required`. Built from `keyword`, never from the message, so an Ajv rewording cannot close and reopen every historical alert. |
@@ -346,7 +346,7 @@ JUnit XML, which Jenkins, GitLab, CircleCI, and Azure render natively in their
 
 | Attribute | On | Description |
 |---|---|---|
-| `name` | `testsuites`, `testsuite` | Always `manni meta`. |
+| `name` | `testsuites`, `testsuite` | Always `manni`. |
 | `tests` | `testsuites`, `testsuite` | Files checked, as **one test per file** rather than per violation. |
 | `failures` | `testsuites`, `testsuite` | Files with at least one error-severity violation. A warning or a notice is not a `<failure>`, because JUnit has no level below failure. A file holding only warnings or notices is a passing testcase, matching the exit code. |
 | `errors` | `testsuites`, `testsuite` | Always `0`. Every violation is a `<failure>`; `errors` is reserved for a test that could not run, which has no analogue here. |

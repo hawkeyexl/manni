@@ -100,12 +100,12 @@ With neither, the run covers every declared collection, which is what the
 non-zero code has already failed the step, so there is nothing left to read:
 
 ```yaml
-- id: manni meta
+- id: manni
   uses: hawkeyexl/manni@v0
   continue-on-error: true
   with:
     paths: "docs/**/*.md"
-- if: steps.manni meta.outputs.exit-code == '1'
+- if: steps.manni.outputs.exit-code == '1'
   run: echo "Metadata problems found, but not blocking this job."
 ```
 
@@ -120,13 +120,14 @@ Action itself.
 ## Versioning
 
 `@vN` is a moving tag. On each stable release, the release job moves it to the
-newest release of that major. Pin a full tag such as `@v2.0.0` instead when you
-want an immutable Action. That is the usual trade between getting fixes
-automatically and knowing exactly what runs.
+newest release of that major. Pin a full tag such as
+`uses: hawkeyexl/manni@v2.0.0` instead when you want an immutable Action. That
+is the usual trade between getting fixes automatically and knowing exactly what
+runs.
 
 The Action tag chooses the Action's code. The `version` input chooses the CLI
-it runs, and defaults to `latest`, the newest published CLI. Set `version: 2`,
-or an exact version, when you want a reproducible CLI.
+it runs, and defaults to `latest`, the newest published CLI. Set `version` to a
+major such as `2`, or to an exact version, when you want a reproducible CLI.
 
 ## The equivalent by hand
 
@@ -139,11 +140,11 @@ shows:
 - uses: actions/setup-node@v4
   with:
     node-version: 24
-- run: npx -y @hawkeyexl/manni@0 validate "docs/**/*.md" --format github
+- run: npx -y @hawkeyexl/manni meta validate "docs/**/*.md" --format github
 ```
 
 Use the hand-written form on a runner that cannot use a composite action, or
 when you need to control the Node setup yourself. Everything else moves inside
-the Action, including the pin, the `--format github` default, and the Node
-version. So changing the recommended invocation is a tag move, rather than an
+the Action, including the CLI version it fetches, the `--format github` default,
+and the Node version. So changing the recommended invocation is a tag move, rather than an
 edit in every repository.

@@ -56,9 +56,9 @@ jobs:
       # continue-on-error is load-bearing: validate exits 1 when there are
       # findings, and the findings are precisely what is worth uploading.
       - name: Validate metadata
-        id: manni meta
+        id: manni
         continue-on-error: true
-        run: npx -y @hawkeyexl/manni meta validate "docs/**/*.md" -f sarif > manni meta.sarif
+        run: npx -y @hawkeyexl/manni meta validate "docs/**/*.md" -f sarif > manni.sarif
 
       # if: always() so the upload still runs when the step above reported
       # findings. Without both of these, nothing is ever uploaded.
@@ -66,13 +66,13 @@ jobs:
         if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: manni meta.sarif
-          category: manni meta
+          sarif_file: manni.sarif
+          category: manni
 
       # Optional: keep the job red so the gate still blocks the merge. Drop
       # this step to make code scanning purely informational.
       - name: Fail on findings
-        if: steps.manni meta.outcome == 'failure'
+        if: steps.manni.outcome == 'failure'
         run: exit 1
 ```
 
@@ -130,7 +130,7 @@ validate-metadata:
 
 <Aside type="tip" title="Pin the version">
 `npx -y @hawkeyexl/manni meta` resolves the latest published version on each run. Pin a
-major for reproducible pipelines: `npx -y @hawkeyexl/manni@0 validate ...`.
+major for reproducible pipelines: `npx -y @hawkeyexl/manni@0 meta validate ...`.
 </Aside>
 
 If you collect machine-readable reports, capture the JSON output as an artifact:
@@ -255,7 +255,7 @@ repos:
   - repo: https://github.com/hawkeyexl/manni
     rev: v4.0.0
     hooks:
-      - id: manni meta
+      - id: manni-meta
 ```
 
 `rev` has to be a concrete tag, because pre-commit does not follow a floating
@@ -263,6 +263,10 @@ major the way `uses: hawkeyexl/manni@v0` does. So this is one place a copied
 snippet really will go stale. Take the tag from [the latest
 release](https://github.com/hawkeyexl/manni/releases/latest), and let
 `pre-commit autoupdate` move it for you afterwards.
+
+What `rev` pins is the hook definition, meaning its file pattern and its entry.
+It does not pin the CLI. The published hook runs the newest published CLI,
+`@hawkeyexl/manni@latest`, so a newer CLI reaches you without a `rev` bump.
 
 The hook fails the commit when manni meta returns a non-zero exit code. It already
 knows which files to look at, covering every extension manni meta reads, matched
@@ -293,7 +297,7 @@ pattern, so keep it in step with the formats you actually use.
 repos:
   - repo: local
     hooks:
-      - id: manni meta
+      - id: manni-meta
         name: manni meta validate
         entry: npx -y @hawkeyexl/manni meta validate
         language: system
@@ -314,7 +318,7 @@ Node.js 24+ must be installed locally.
 repos:
   - repo: local
     hooks:
-      - id: manni meta
+      - id: manni-meta
         name: manni meta validate
         entry: npx -y @hawkeyexl/manni meta validate "docs/**/*.md"
         language: system
@@ -333,7 +337,7 @@ Install and test the hook:
 
 ```sh
 pre-commit install              # wire the hook into git
-pre-commit run manni meta --all-files   # run it across the repo once
+pre-commit run manni-meta --all-files   # run it across the repo once
 ```
 
 <Aside type="tip" title="Prefer a documented one-liner?">
