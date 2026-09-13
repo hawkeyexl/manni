@@ -95,11 +95,11 @@ import type {
   FillOptions,
   FillRun,
   FilledField,
-  MetaProvenanceEntry,
   MetaProvenanceReport,
   Proposal,
   ProposalSet,
 } from "./fill-types.js";
+import { mergeMetaProvenance } from "../core/meta-provenance.js";
 import { errorMessage } from "../../shared/errors.js";
 import {
   DEFAULT_PROVIDER,
@@ -936,7 +936,12 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         ?.find((o) => members.includes(o.collection));
       const merged =
         owner === undefined
-          ? mergeMetaProvenance(extracted.data[META_PROVENANCE_KEY], identity.model, writable)
+          ? mergeMetaProvenance(
+              extracted.data[META_PROVENANCE_KEY],
+              identity.model,
+              "fields",
+              writable.map((f) => ({ name: f.field, confidence: f.confidence })),
+            )
           : undefined;
       if (owner !== undefined) {
         metaProvenance = { written: false, skipReason: "manifest-owned", manifest: owner.file };
@@ -957,7 +962,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         metaProvenance = { written: false, skipReason: "schema-mismatch" };
       } else {
         patch[META_PROVENANCE_KEY] = merged.list;
-        metaProvenance = { written: true, entry: merged.entry };
+        metaProvenance = { written: true, entry: { ...merged.entry, fields: merged.names } };
       }
     }
 
@@ -1049,46 +1054,6 @@ function topKey(instancePath: string): string {
 
 /** The top-level key a field's pointer names, un-escaped (RFC 6901). */
 const keyOf = (f: FilledField): string => topKey(f.field);
-
-function isPlainRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-/**
- * The page's `meta-provenance` list with this run's fields merged in
- * (proposal 0046). The first entry for `model` gains the new pointers after
- * its own, and their confidences; everything else in it, and every other
- * entry, is kept. Without one, a new entry is appended. `undefined` when the
- * page holds something other than a list, which there is no merging into.
- */
-function mergeMetaProvenance(
-  held: unknown,
-  model: string,
-  written: readonly FilledField[],
-): { list: unknown[]; entry: MetaProvenanceEntry } | undefined {
-  if (held !== undefined && !Array.isArray(held)) return undefined;
-  const list: unknown[] = held === undefined ? [] : [...(held as unknown[])];
-  const at = list.findIndex((e) => isPlainRecord(e) && e["generated-by"] === model);
-  const prior = list[at];
-  const kept = isPlainRecord(prior) ? prior : {};
-  const fields = Array.isArray(kept.fields)
-    ? (kept.fields as unknown[]).filter((p): p is string => typeof p === "string")
-    : [];
-  const confidence: Record<string, number> = {};
-  if (isPlainRecord(kept.confidence)) {
-    for (const [k, v] of Object.entries(kept.confidence)) {
-      if (typeof v === "number") confidence[k] = v;
-    }
-  }
-  for (const f of written) {
-    if (!fields.includes(f.field)) fields.push(f.field);
-    confidence[f.field] = f.confidence;
-  }
-  const entry: MetaProvenanceEntry = { ...kept, "generated-by": model, fields, confidence };
-  if (at === -1) list.push(entry);
-  else list[at] = entry;
-  return { list, entry };
-}
 
 /**
  * Whether the `meta-provenance` entry brings a finding the same metadata

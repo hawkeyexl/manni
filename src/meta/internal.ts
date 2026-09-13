@@ -73,3 +73,13 @@ export type { ReencryptDataResult } from "./core/reencrypt.js";
 // `manni key set` refuses to create a family file beside one of these, which
 // the new file would hide from the metadata tool's discovery.
 export { LEGACY_CONFIG_NAMES } from "./core/config.js";
+// `meta-provenance` (proposal 0046) is written by `manni meta fill` for the
+// fields it writes and by `manni docevals fill` for the evals it writes, and
+// read by docevals's self-preference check beside `provenance`.
+export { mergeMetaProvenance } from "./core/meta-provenance.js";
+export type {
+  MergedMetaProvenance,
+  MergedMetaProvenanceEntry,
+  MetaProvenanceKey,
+  MetaProvenanceProposal,
+} from "./core/meta-provenance.js";
