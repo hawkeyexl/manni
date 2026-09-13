@@ -181,7 +181,9 @@ export function makeGenerateScripts(deps: ScriptgenDeps): GenerateFn {
       mkdirSync(dirname(location.scriptAbsPath), { recursive: true });
       writeFileSync(
         location.scriptAbsPath,
-        header(ev.assertion, ev.name) + code.trimStart(),
+        // Exactly one final newline, whatever the model sent: the script is
+        // committed and reviewed, and a missing one shows in every diff.
+        `${header(ev.assertion, ev.name)}${code.trim()}\n`,
       );
       generatedPaths.push(
         relative(deps.root, location.scriptAbsPath).replace(/\\/g, "/"),

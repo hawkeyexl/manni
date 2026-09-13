@@ -162,6 +162,28 @@ describe("makeGenerateScripts", () => {
     ]);
   });
 
+  it.each([
+    ["no final newline", "process.exit(0);"],
+    ["several final newlines", "process.exit(0);\n\n\n"],
+  ])("ends the written script with exactly one newline (%s)", async (_label, code) => {
+    const { root } = tempWorkspace();
+    const config = parseConfig(
+      readFileSync(join(root, "manni.config.yaml"), "utf8"),
+      join(root, "manni.config.yaml"),
+    );
+    const plan = resolvePage(readPage(join(root, "docs", "sample.md"), root), config);
+    const ev = plan.evals[0];
+    if (ev === undefined) throw new Error("fixture resolved no evals");
+    const provider = new MockProvider([{ json: { code } }]);
+    await makeGenerateScripts({ provider, root })([{ plan, eval: ev }], config, {});
+
+    const script = readFileSync(
+      join(root, "docs", "manni-docevals", "sample.gen-me.mjs"),
+      "utf8",
+    );
+    expect(script.endsWith("process.exit(0);\n")).toBe(true);
+  });
+
   it("engine generates then executes the fresh script in one run", async () => {
     const { root } = tempWorkspace();
     const provider = new MockProvider([{ json: { code: SCRIPT_CODE } }]);
