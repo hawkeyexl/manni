@@ -302,8 +302,8 @@ jobs:
   public:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
       - run: npx -y @hawkeyexl/manni cite check --no-check-sources -f github
@@ -315,16 +315,16 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: docs
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: your-org/code
           token: ${{ secrets.CODE_READ_TOKEN }}
           path: code
           fetch-depth: 0   # never-true and diffs need the pin's commit
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
       - working-directory: docs

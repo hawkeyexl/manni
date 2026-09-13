@@ -311,10 +311,10 @@ jobs:
   manni:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: hawkeyexl/manni@v0
+      - uses: hawkeyexl/manni@v2
         env:
           GH_TOKEN: ${{ github.token }}
 ```
@@ -326,7 +326,7 @@ you need to pass reaches it through `args`, and the one flag worth knowing is
 the opt-out:
 
 ```yaml
-      - uses: hawkeyexl/manni@v0
+      - uses: hawkeyexl/manni@v2
         with:
           args: --no-derive
 ```
@@ -385,11 +385,11 @@ jobs:
       contents: write
       pull-requests: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
       - run: npx -y @hawkeyexl/manni meta derive --fields reviewed-by,last-reviewed

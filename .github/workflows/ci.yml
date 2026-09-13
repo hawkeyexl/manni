@@ -94,6 +94,12 @@ jobs:
       # src/types.ts becomes published API without the entry point being edited,
       # so the surface can grow with nobody deciding to grow it.
       - run: npm run docs:check-api
+      # Every version a reader copies out of the docs was typed by hand, so each
+      # one went stale at the next release: sixteen snippets said `@v0` while
+      # npm served 2.0.0. The release now rewrites them; this catches the rest,
+      # above all a Dependabot bump to a workflow's action, whose PR goes red
+      # here with the command that fixes it.
+      - run: npm run docs:check-versions
       # A GFM table row has to be one source line. #154 reflowed fifteen of
       # them onto a second line and every gate here stayed green, because the
       # site still built and every link still resolved — the cells just

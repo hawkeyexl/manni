@@ -133,11 +133,11 @@ an unpacked archive.
      cite:
        runs-on: ubuntu-latest
        steps:
-         - uses: actions/checkout@v4
+         - uses: actions/checkout@v7
            with:
              fetch-depth: 0   # never-true and --show-diff need the pin's commit
 
-         - uses: actions/setup-node@v4
+         - uses: actions/setup-node@v6
            with:
              node-version: 24
 
@@ -161,7 +161,7 @@ an unpacked archive.
 
 <Aside type="note" title="Pin the version for reproducible runs">
   `npx -y @hawkeyexl/manni` resolves the latest published version each run.
-  Pin the major, as in `npx -y @hawkeyexl/manni@0 cite check …`, and bump it
+  Pin the major, as in `npx -y @hawkeyexl/manni@2 cite check …`, and bump it
   deliberately.
 </Aside>
 

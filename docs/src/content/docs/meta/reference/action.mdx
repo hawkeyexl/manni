@@ -11,8 +11,8 @@ unavailable from the CLI. It exists so the invocation lives in one place,
 instead of being copy-pasted into every repository that wants it.
 
 ```yaml
-- uses: actions/checkout@v4
-- uses: hawkeyexl/manni@v0
+- uses: actions/checkout@v7
+- uses: hawkeyexl/manni@v2
   with:
     paths: "docs/**/*.md"
 ```
@@ -43,7 +43,7 @@ Use one item per line whenever a value contains a space. The Action emits a
 workflow warning if it sees a quote character in a single-line value.
 
 ```yaml
-- uses: hawkeyexl/manni@v0
+- uses: hawkeyexl/manni@v2
   with:
     paths: |
       docs/**/*.md
@@ -69,7 +69,7 @@ There is no `collection` input. `--collection` reaches the Action through `args`
 the documented escape hatch for every flag the inputs above do not name:
 
 ```yaml
-- uses: hawkeyexl/manni@v0
+- uses: hawkeyexl/manni@v2
   with:
     args: --collection guides
 ```
@@ -78,7 +78,7 @@ The flag repeats rather than splitting on commas, so two collections are two
 occurrences on the same line:
 
 ```yaml
-- uses: hawkeyexl/manni@v0
+- uses: hawkeyexl/manni@v2
   with:
     args: --collection guides --collection blog
 ```
@@ -101,7 +101,7 @@ non-zero code has already failed the step, so there is nothing left to read:
 
 ```yaml
 - id: manni
-  uses: hawkeyexl/manni@v0
+  uses: hawkeyexl/manni@v2
   continue-on-error: true
   with:
     paths: "docs/**/*.md"
@@ -136,8 +136,8 @@ The Action replaces this, which remains supported and is what
 shows:
 
 ```yaml
-- uses: actions/checkout@v4
-- uses: actions/setup-node@v4
+- uses: actions/checkout@v7
+- uses: actions/setup-node@v6
   with:
     node-version: 24
 - run: npx -y @hawkeyexl/manni meta validate "docs/**/*.md" --format github

@@ -301,8 +301,8 @@ jobs:
   manni:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: hawkeyexl/manni@v0
+      - uses: actions/checkout@v7
+      - uses: hawkeyexl/manni@v2
 ```
 
 The private repository checks out its submodule and runs from its own root.
@@ -317,11 +317,11 @@ jobs:
   manni:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
           token: ${{ secrets.PUBLIC_DOCS_READ_TOKEN }}
-      - uses: hawkeyexl/manni@v0
+      - uses: hawkeyexl/manni@v2
 ```
 
 The Action passes no paths, so the targets come from the private config's
@@ -393,11 +393,11 @@ jobs:
   manni:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
           token: ${{ secrets.PUBLIC_DOCS_READ_TOKEN }}
-      - uses: hawkeyexl/manni@v0
+      - uses: hawkeyexl/manni@v2
         env:
           PRIVATE_DOCS_TOKEN: ${{ secrets.PRIVATE_DOCS_TOKEN }}
 ```

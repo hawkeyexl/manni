@@ -24,10 +24,19 @@
       }
     ],
     "@semantic-release/npm",
+    "./scripts/release-sync-versions.mjs",
     [
       "@semantic-release/git",
       {
-        "assets": ["CHANGELOG.md", "package.json", "package-lock.json"],
+        "assets": [
+          "CHANGELOG.md",
+          "package.json",
+          "package-lock.json",
+          "README.md",
+          "examples/**",
+          "docs/src/content/docs/**/*.md",
+          "docs/src/content/docs/**/*.mdx"
+        ],
         "message": "chore(release): ${nextRelease.version}\n\n${nextRelease.notes}"
       }
     ],

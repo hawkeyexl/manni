@@ -48,7 +48,7 @@ The metadata tool used to be the whole package. Three things changed:
 - **The config file.** `manni.config.yaml`, shared by every tool in the
   family, with the metadata tool's keys under `meta:`. A `docmeta.config.yaml`
   is still read, with a warning.
-- **The GitHub Action.** `uses: hawkeyexl/manni@v0`, same inputs.
+- **The GitHub Action.** `uses: hawkeyexl/manni@v2`, same inputs.
 
 Everything else is the same: the exit codes, the output formats, the built-in
 schemas and their published URLs (the old `…/docmeta/schemas/` URLs stay
@@ -78,8 +78,8 @@ On GitHub Actions, use the packaged action. It sets up Node, pins the CLI, and
 defaults to inline PR annotations:
 
 ```yaml
-- uses: actions/checkout@v4
-- uses: hawkeyexl/manni@v0
+- uses: actions/checkout@v7
+- uses: hawkeyexl/manni@v2
   with:
     paths: "docs/**/*.md"
 ```
@@ -98,7 +98,7 @@ actually reads rather than hand-written:
 ```yaml
 repos:
   - repo: https://github.com/hawkeyexl/manni
-    rev: v0.1.0
+    rev: v2.0.0
     hooks:
       - id: manni-meta
 ```
