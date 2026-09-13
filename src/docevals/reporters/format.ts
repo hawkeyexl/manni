@@ -4,14 +4,14 @@
  * Both the allowed sets and the type are declared here, so the constant a
  * command validates against and the type its renderer accepts cannot drift.
  * Every command taking `--format` parses through `parseFormat`; an unknown
- * value is a usage error (exit 2), never a silent fallback to the human
+ * value is a usage error (exit 2), never a silent fallback to the pretty
  * renderer.
  */
 import { DocevalsError } from "../types.js";
 
 /** Formats `run` can emit — one per module in this directory. */
 export const REPORT_FORMATS = [
-  "human",
+  "pretty",
   "json",
   "markdown",
   "github",
@@ -21,7 +21,7 @@ export const REPORT_FORMATS = [
 ] as const;
 
 /** Formats the summary commands (`list`, `fill`) can emit. */
-export const SUMMARY_FORMATS = ["human", "json"] as const;
+export const SUMMARY_FORMATS = ["pretty", "json"] as const;
 
 export type ReportFormat = (typeof REPORT_FORMATS)[number];
 export type SummaryFormat = (typeof SUMMARY_FORMATS)[number];

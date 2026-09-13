@@ -86,7 +86,7 @@ describe("a diagnostic finding fails its eval at warning severity", () => {
     const result = report.evalResults[0];
     expect(result?.findings?.[0]?.severity).toBe("warning");
     expect(result?.findings?.[0]?.diagnostic).toBeUndefined();
-    // Reported, not fatal: warnings and info report but pass. Whatever the
+    // Reported, not fatal: warnings and notices report but pass. Whatever the
     // flag does, it must not have cost severity its meaning.
     expect(result?.outcome).toBe("pass");
     expect(report.exitCode).toBe(0);

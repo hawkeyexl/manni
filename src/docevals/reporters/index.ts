@@ -1,6 +1,6 @@
 /** Reporter dispatch. */
 import type { EngineReport } from "../core/engine.js";
-import { renderHuman } from "./human.js";
+import { renderPretty } from "./pretty.js";
 import { renderJson } from "./json.js";
 import { renderMarkdown } from "./markdown.js";
 import { renderGithub } from "./github.js";
@@ -28,8 +28,8 @@ export function render(report: EngineReport, format: ReportFormat): string {
   // message here drifts from parseFormat's the first time either is reworded.
   parseFormat(format, REPORT_FORMATS, "format");
   switch (format) {
-    case "human":
-      return renderHuman(report);
+    case "pretty":
+      return renderPretty(report);
     case "json":
       return renderJson(report);
     case "markdown":

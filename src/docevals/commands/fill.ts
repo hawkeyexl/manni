@@ -8,6 +8,7 @@
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import pc from "picocolors";
+import type { Severity } from "../types.js";
 import { loadRunConfig } from "../core/config.js";
 import {
   discoverPages,
@@ -66,7 +67,7 @@ export interface ProposedEval {
   examples: { pass: string; fail: string };
   type?: "capability" | "regression";
   evidence?: string;
-  severity?: "error" | "warning" | "info";
+  severity?: Severity;
   rationale?: string;
 }
 

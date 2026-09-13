@@ -381,9 +381,9 @@
         },
         "severity": {
           "enum": [
-            "error",
+            "notice",
             "warning",
-            "info"
+            "error"
           ]
         },
         "weight": {
@@ -396,9 +396,9 @@
           "type": "object",
           "additionalProperties": {
             "enum": [
-              "error",
+              "notice",
               "warning",
-              "info"
+              "error"
             ]
           }
         }

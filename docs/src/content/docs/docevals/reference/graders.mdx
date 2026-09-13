@@ -17,7 +17,7 @@ explicable wins; see [How manni docevals works](/manni/docevals/get-started/how-
 | `ai` | The judge | Yes |
 | `human` | A person | No |
 
-Deterministic evals fail only on **`error`**-severity findings. Warnings and info report and pass.
+Deterministic evals fail only on **`error`**-severity findings. Warnings and notices report and pass.
 
 One exception. A finding marked **`diagnostic`** fails the eval at any severity. A grader emits one
 when it could not reach a verdict. The tool is missing, timed out, exited without readable output,
@@ -99,7 +99,7 @@ Vale's own severities map through the eval's `severity-map`, defaulting to:
 |---|---|
 | `error` | `error` |
 | `warning` | `warning` |
-| `suggestion` | `info` |
+| `suggestion` | `notice` |
 
 ## `tool:docmeta`
 

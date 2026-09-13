@@ -1,6 +1,6 @@
 /**
  * `--format` validation (ADR 01007). An unrecognized format is a usage error —
- * exit 2 via DocevalsError — not a silent fallback to the human renderer.
+ * exit 2 via DocevalsError — not a silent fallback to the pretty renderer.
  */
 import { describe, it, expect } from "vitest";
 import {
@@ -28,7 +28,7 @@ const EMPTY_REPORT: EngineReport = {
 describe("parseFormat", () => {
   it("exposes the full reporter set for run", () => {
     expect([...REPORT_FORMATS]).toEqual([
-      "human",
+      "pretty",
       "json",
       "markdown",
       "github",
@@ -38,8 +38,8 @@ describe("parseFormat", () => {
     ]);
   });
 
-  it("exposes the human/json pair for list and fill", () => {
-    expect([...SUMMARY_FORMATS]).toEqual(["human", "json"]);
+  it("exposes the pretty/json pair for list and fill", () => {
+    expect([...SUMMARY_FORMATS]).toEqual(["pretty", "json"]);
   });
 
   it("accepts every value in the allowed set", () => {
@@ -59,10 +59,21 @@ describe("parseFormat", () => {
 
   it("names the flag, the received value, and the allowed set", () => {
     expect(() => parseFormat("xml", SUMMARY_FORMATS, "--format")).toThrow(
-      '--format must be one of human | json, got "xml"',
+      '--format must be one of pretty | json, got "xml"',
     );
     expect(() => parseFormat("xml", REPORT_FORMATS, "--format")).toThrow(
-      '--format must be one of human | json | markdown | github | sarif | junit | html, got "xml"',
+      '--format must be one of pretty | json | markdown | github | sarif | junit | html, got "xml"',
+    );
+  });
+
+  it("rejects human, the name pretty had before the family's format names", () => {
+    // The family spells the terminal report `pretty` (a11y, cite, meta). No
+    // alias: `human` is an unknown format like any other.
+    expect(() => parseFormat("human", REPORT_FORMATS, "--format")).toThrow(
+      '--format must be one of pretty | json | markdown | github | sarif | junit | html, got "human"',
+    );
+    expect(() => parseFormat("human", SUMMARY_FORMATS, "--format")).toThrow(
+      '--format must be one of pretty | json, got "human"',
     );
   });
 
@@ -105,7 +116,7 @@ describe("render dispatch", () => {
     // One generator, three call sites. A hand-written message here would drift
     // from parseFormat's the first time either is reworded.
     expect(() => render(EMPTY_REPORT, "xml" as never)).toThrow(
-      'format must be one of human | json | markdown | github | sarif | junit | html, got "xml"',
+      'format must be one of pretty | json | markdown | github | sarif | junit | html, got "xml"',
     );
   });
 });
@@ -113,7 +124,7 @@ describe("render dispatch", () => {
 /**
  * renderList, renderFill, and render are all exported from src/index.ts, so a
  * library caller reaches them without the CLI parser in front. All three must
- * reject an unknown format — a silent fall-through to the human renderer is
+ * reject an unknown format — a silent fall-through to the pretty renderer is
  * the exact defect ADR 01007 exists to remove, and it does not stop being one
  * because the caller is a library instead of the CLI.
  */
@@ -138,11 +149,11 @@ describe("summary renderers reject an unknown format", () => {
     }
   });
 
-  it("renderList throws rather than silently emitting human output", () => {
+  it("renderList throws rather than silently emitting pretty output", () => {
     expect(() => renderList(EMPTY_LIST, "xml" as never)).toThrow(DocevalsError);
   });
 
-  it("renderFill throws rather than silently emitting human output", () => {
+  it("renderFill throws rather than silently emitting pretty output", () => {
     expect(() => renderFill(EMPTY_FILL, "xml" as never)).toThrow(DocevalsError);
   });
 
@@ -151,14 +162,14 @@ describe("summary renderers reject an unknown format", () => {
   // differs; asserting the literal here is what pins that.
   it("uses render's message template with the parameter name, not the flag", () => {
     expect(() => renderList(EMPTY_LIST, "xml" as never)).toThrow(
-      'format must be one of human | json, got "xml"',
+      'format must be one of pretty | json, got "xml"',
     );
     expect(() => renderFill(EMPTY_FILL, "xml" as never)).toThrow(
-      'format must be one of human | json, got "xml"',
+      'format must be one of pretty | json, got "xml"',
     );
   });
 
-  it("rejects a run-only format, which would otherwise render as human", () => {
+  it("rejects a run-only format, which would otherwise render as pretty", () => {
     expect(() => renderList(EMPTY_LIST, "markdown" as never)).toThrow(
       DocevalsError,
     );

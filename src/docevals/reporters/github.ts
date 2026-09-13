@@ -17,7 +17,8 @@ export function renderGithub(report: EngineReport): string {
   const lines: string[] = [];
   for (const r of report.evalResults) {
     for (const f of r.findings ?? []) {
-      const level = f.severity === "error" ? "error" : f.severity === "warning" ? "warning" : "notice";
+      // The family scale is GitHub's annotation levels, word for word.
+      const level = f.severity;
       const props = [
         `file=${escapeProperty(f.file)}`,
         f.line != null ? `line=${f.line}` : undefined,

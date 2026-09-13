@@ -188,7 +188,7 @@ describe("runFill", () => {
     expect(report.exitCode).toBe(0);
     // The renderer’s own wording for the status, which moved units with it —
     // a skipped page has to say *why* or it reads as an unexplained gap.
-    expect(renderFill(report, "human")).toContain("(turn budget exhausted)");
+    expect(renderFill(report, "pretty")).toContain("(turn budget exhausted)");
   });
 
   it("contains per-page provider failures without aborting the run", async () => {
@@ -263,20 +263,20 @@ describe("runFill", () => {
     expect(report.exitCode).toBe(0);
   });
 
-  it("renders human and json reports", async () => {
+  it("renders pretty and json reports", async () => {
     const root = workspace({ "page.md": PLAIN_PAGE });
     const provider = new MockProvider([
       { json: { evals: [proposal("strong-check", 0.9), proposal("weak-check", 0.6)] } },
     ]);
     const report = await runFill([], { cwd: root, providerInstance: provider, noCache: true });
 
-    const human = renderFill(report, "human");
-    expect(human).toContain("filled");
-    expect(human).toContain("docs/page.md");
-    expect(human).toContain("strong-check 0.90");
-    expect(human).toContain("below 0.7: weak-check 0.60");
-    expect(human).toContain("Threshold: 0.7");
-    expect(human).toMatch(/inference calls: \d+/);
+    const pretty = renderFill(report, "pretty");
+    expect(pretty).toContain("filled");
+    expect(pretty).toContain("docs/page.md");
+    expect(pretty).toContain("strong-check 0.90");
+    expect(pretty).toContain("below 0.7: weak-check 0.60");
+    expect(pretty).toContain("Threshold: 0.7");
+    expect(pretty).toMatch(/inference calls: \d+/);
 
     const json = JSON.parse(renderFill(report, "json")) as typeof report;
     expect(json.results[0]?.written[0]?.id).toBe("strong-check");

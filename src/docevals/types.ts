@@ -7,6 +7,7 @@
  * binary judgments, they are never assigned per item.
  */
 import { ToolError } from "../shared/errors.js";
+import type { Severity } from "../shared/severity.js";
 
 // The judge vocabulary is shared with the inference layer and is re-exported
 // here so manni docevals code and its consumers keep one import site. A second local
@@ -33,8 +34,12 @@ export type {
  */
 export type EvalType = "capability" | "regression";
 
-/** Finding severity for deterministically graded evals. Only `error` affects exit codes. */
-export type Severity = "error" | "warning" | "info";
+/**
+ * Finding severity for deterministically graded evals: the family scale,
+ * `notice | warning | error`, from `src/shared/severity.ts`. Only `error`
+ * affects exit codes.
+ */
+export type { Severity };
 
 /** How an eval is graded. `tool:*` kinds are built-in adapters for external tools. */
 export type GraderKind = "ai" | "command" | "human" | `tool:${string}`;

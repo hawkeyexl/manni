@@ -190,7 +190,7 @@ blockquote{margin:.4rem 0;padding:.3rem .7rem;border-left:2px solid var(--line);
 .note{color:var(--muted);margin:.3rem 0}
 .finding{margin:.2rem 0}
 .sev{font-size:.75rem;text-transform:uppercase;font-weight:600;margin-right:.35rem}
-.sev.error{color:var(--bad)}.sev.warning{color:var(--warn)}.sev.info{color:var(--muted)}
+.sev.error{color:var(--bad)}.sev.warning{color:var(--warn)}.sev.notice{color:var(--muted)}
 .v.ok{color:var(--ok)}.v.bad{color:var(--bad)}.v.partial{color:var(--muted)}
 .problems li.error{color:var(--bad)}.problems li.warning{color:var(--warn)}
 </style></head><body><main>

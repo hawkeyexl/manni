@@ -136,7 +136,7 @@ describe("sarif reporter", () => {
     }
   });
 
-  it("maps warning and info onto SARIF levels rather than dropping them", () => {
+  it("maps warning and notice onto SARIF levels rather than dropping them", () => {
     const warned: EngineReport = {
       ...REPORT,
       evalResults: [
@@ -144,7 +144,7 @@ describe("sarif reporter", () => {
           ...REPORT.evalResults[0]!,
           findings: [
             { ...REPORT.evalResults[0]!.findings![0]!, severity: "warning" },
-            { ...REPORT.evalResults[0]!.findings![0]!, severity: "info" },
+            { ...REPORT.evalResults[0]!.findings![0]!, severity: "notice" },
           ],
         },
       ],

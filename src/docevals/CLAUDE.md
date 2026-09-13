@@ -183,7 +183,7 @@ and Node touch.
 
 - Errored judge runs count against consensus. They may push an eval to
   human-review, never to a silent pass.
-- Deterministic evals fail only on `error`-severity findings; warnings and info
+- Deterministic evals fail only on `error`-severity findings; warnings and notices
   report but pass.
 - Exit codes: `0` pass, `1` any fail/error/suite-miss, `2` operational
   (`DocevalsError`, which extends the family's `ToolError`).

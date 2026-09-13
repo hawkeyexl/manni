@@ -32,7 +32,7 @@ collections is **exit 2**. `node_modules` and `.git` are never read.
 | `--no-config` | `run`, `list`, `generate`, `fill`, `promote` | Ignore any discovered config file and run on built-in defaults. `-c` and `--no-config` set the same option, so the one written later wins. |
 | `--collection <name>` | same as above | Read only this configured collection. Repeatable, one name per occurrence, never comma-separated. Cannot be combined with positional paths, and needs a config file to select from: **exit 2** for both, and for a name the config does not declare. |
 | `--exclude <glob>` | same as above | Glob to exclude. Repeatable. Applies to typed paths and collections alike. A collection's own `exclude:` applies only when the run reads that collection. |
-| `-f, --format <format>` | `list`, `run`, `fill` | Output format. `run` accepts `human`, `json`, `markdown`, `github`, `sarif`, `junit`, `html`; `list` and `fill` accept `human` and `json`. Anything else is a usage error: **exit 2**, allowed set in the message. That includes `run`'s `markdown` passed to `list`. See [Output and exit codes](/manni/docevals/reference/output-and-exit-codes/#which-formats-each-command-accepts). |
+| `-f, --format <format>` | `list`, `run`, `fill` | Output format. `run` accepts `pretty`, `json`, `markdown`, `github`, `sarif`, `junit`, `html`; `list` and `fill` accept `pretty` and `json`. Anything else is a usage error: **exit 2**, allowed set in the message. That includes `run`'s `markdown` passed to `list`. See [Output and exit codes](/manni/docevals/reference/output-and-exit-codes/#which-formats-each-command-accepts). |
 | `--provider <name>` | `run`, `generate`, `fill`, `promote`, `calibrate` | `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. Overrides `provider.default`. |
 | `--model <model>` | same as above | Overrides the model for the selected provider. |
 
@@ -84,7 +84,7 @@ manni docevals run [paths...] [options]
 | `--no-config` | n/a | off | Ignore any discovered config file. See [Common conventions](#common-conventions). |
 | `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. See [Common conventions](#common-conventions). |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
-| `-f, --format` | `<human\|json\|markdown\|github\|sarif\|junit\|html>` | `human` | Output format. An unknown value is a usage error (exit 2). |
+| `-f, --format` | `<pretty\|json\|markdown\|github\|sarif\|junit\|html>` | `pretty` | Output format. An unknown value is a usage error (exit 2). |
 | `--deterministic-only` | n/a | off | Run only `command` and `tool:*` graders. AI-graded evals report as `skipped`. No provider needed. This is the offline path. |
 | `--ai-only` | n/a | off | Run only AI-judged evals; skip deterministic graders. |
 | `--allow-execution` | `<kind>` | n/a | Grant content-authored execution for this run: `frontmatter-commands` or `page-embedded-steps`. Repeat the flag to grant both. Adds to `execution.allow`. |
@@ -283,7 +283,7 @@ Each line is `name [grader, type, source]`, where source is `config` or
 | `--no-config` | n/a | off | Ignore any discovered config file. See [Common conventions](#common-conventions). |
 | `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. See [Common conventions](#common-conventions). |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
-| `-f, --format` | `<human\|json>` | `human` | Output format. `run`'s wider set is rejected here rather than falling back to `human` (exit 2). |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `run`'s wider set is rejected here rather than falling back to `pretty` (exit 2). |
 | `--eval` | `<name>` | n/a | Show only this eval. Repeatable, like the `run` flag. |
 | `--suite` | `<name>` | n/a | Show only the evals the named suite lists. |
 
@@ -343,7 +343,7 @@ manni docevals fill [paths...] [options]
 | `--no-config` | n/a | off | Ignore any discovered config file. See [Common conventions](#common-conventions). |
 | `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. See [Common conventions](#common-conventions). |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
-| `-f, --format` | `<human\|json>` | `human` | Output format. An unknown value is rejected before any work is done (exit 2). |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. An unknown value is rejected before any work is done (exit 2). |
 | `--dry-run` | n/a | off | Report proposals without writing frontmatter. Run this first. You see every proposal, and how many inference calls the pass made, before anything touches the repo. |
 | `--confidence` | `<n>` | config `fill.confidence-threshold` | Minimum confidence to write, 0 to 1. The config default is `0.7`. Values above 1 are a usage error. |
 | `--max-turns` | `<n>` | config `fill.max-turns` | Stop after this many uncached inference calls, exactly one per page filled. Unbounded by default. |
@@ -478,11 +478,11 @@ Full detail in
 
 {/* step {"description":"--confidence above 1 is a usage error.","runShell":{"command":"manni docevals fill --confidence 5 --dry-run","exitCodes":[2]}} */}
 
-{/* step {"description":"An unknown --format is a usage error on run, and the message names the allowed set.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/find.mdx --deterministic-only --format xml","exitCodes":[2],"stdio":"/must be one of human \\| json \\| markdown \\| github/"}} */}
+{/* step {"description":"An unknown --format is a usage error on run, and the message names the allowed set.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/find.mdx --deterministic-only --format xml","exitCodes":[2],"stdio":"/must be one of pretty \\| json \\| markdown \\| github/"}} */}
 
-{/* step {"description":"list rejects an unknown --format the same way, with its own narrower set.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages/docs/actions/find.mdx --format xml","exitCodes":[2],"stdio":"/must be one of human \\| json/"}} */}
+{/* step {"description":"list rejects an unknown --format the same way, with its own narrower set.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages/docs/actions/find.mdx --format xml","exitCodes":[2],"stdio":"/must be one of pretty \\| json/"}} */}
 
-{/* step {"description":"list rejects a format that is valid only for run, rather than falling back to human.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages/docs/actions/find.mdx --format markdown","exitCodes":[2]}} */}
+{/* step {"description":"list rejects a format that is valid only for run, rather than falling back to pretty.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages/docs/actions/find.mdx --format markdown","exitCodes":[2]}} */}
 
 {/* step {"description":"fill rejects an unknown --format before doing any work.","runShell":{"command":"manni docevals fill --dry-run --format xml","exitCodes":[2]}} */}
 

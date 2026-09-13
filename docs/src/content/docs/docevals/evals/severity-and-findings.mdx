@@ -12,9 +12,9 @@ the mechanism behind adopting a new check without breaking everyone.
 |---|---|---|
 | `error` | Yes | **Yes** |
 | `warning` | Yes | No |
-| `info` | Yes | No |
+| `notice` | Yes | No |
 
-An eval fails only if it produced at least one `error`-severity finding. `warning` and `info` show up
+An eval fails only if it produced at least one `error`-severity finding. `warning` and `notice` show up
 in the report and in PR annotations, and pass.
 
 ```yaml
@@ -86,7 +86,7 @@ Tools have their own vocabulary. `severity-map` translates it:
     severity-map:
       error: error
       warning: warning
-      suggestion: info       # Vale suggestions report but never block
+      suggestion: notice     # Vale suggestions report but never block
 ```
 
 Vale defaults to exactly that mapping. Any tool severity you do not map falls back to `warning`.
@@ -114,7 +114,7 @@ Vale defaults to exactly that mapping. Any tool severity you do not map falls ba
 `ruleId`, `line`, and `col` are present when the grader can supply them. Most tool graders can,
 which is what makes `--format github` able to annotate the exact line.
 
-Severity also maps onto annotation levels: `error` → `::error`, `warning` → `::warning`, `info` →
+Severity also maps onto annotation levels: `error` → `::error`, `warning` → `::warning`, `notice` →
 `::notice`. See [Output and exit codes](/manni/docevals/reference/output-and-exit-codes/).
 
 ## Severity is not the judge's

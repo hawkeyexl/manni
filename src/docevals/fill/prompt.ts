@@ -8,9 +8,10 @@
  */
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { partLabel } from "../core/split.js";
+import { SEVERITIES } from "../../shared/severity.js";
 
 /** Part of the cache key: bump whenever the prompt or schema changes. */
-export const FILL_PROMPT_VERSION = 3;
+export const FILL_PROMPT_VERSION = 4;
 
 export const FILL_SYSTEM_PROMPT = [
   "You propose evals for documentation pages. An eval is a plain-language",
@@ -69,7 +70,7 @@ export const PROPOSAL_SCHEMA = {
             },
             additionalProperties: false,
           },
-          severity: { enum: ["error", "warning", "info"] },
+          severity: { enum: SEVERITIES },
           confidence: { type: "number", minimum: 0, maximum: 1 },
           rationale: { type: "string" },
         },

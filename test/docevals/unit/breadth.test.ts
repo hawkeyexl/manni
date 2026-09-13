@@ -130,7 +130,7 @@ describe("valeGrader", () => {
         "evals:",
         "  style:",
         "    grader: tool:vale",
-        "    severity-map: { error: warning, suggestion: info }",
+        "    severity-map: { error: warning, suggestion: notice }",
         "suites:",
         "  s: { evals: [style] }",
       ].join("\n"),
@@ -161,7 +161,7 @@ describe("valeGrader", () => {
     });
     expect(findings).toHaveLength(2);
     expect(findings[0]).toMatchObject({ ruleId: "Vale.Spelling", severity: "warning", line: 3 });
-    expect(findings[1]).toMatchObject({ severity: "info" });
+    expect(findings[1]).toMatchObject({ severity: "notice" });
   });
 });
 

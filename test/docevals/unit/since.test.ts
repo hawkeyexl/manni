@@ -26,7 +26,7 @@ import { join, resolve } from "node:path";
 import { changedFilesSince, changedKey } from "../../../src/docevals/core/since.js";
 import { runEvals, type EngineReport } from "../../../src/docevals/core/engine.js";
 import { runRun } from "../../../src/docevals/commands/run.js";
-import { renderHuman } from "../../../src/docevals/reporters/human.js";
+import { renderPretty } from "../../../src/docevals/reporters/pretty.js";
 import { renderMarkdown } from "../../../src/docevals/reporters/markdown.js";
 import { renderGithub } from "../../../src/docevals/reporters/github.js";
 import { DocevalsError } from "../../../src/docevals/types.js";
@@ -613,7 +613,7 @@ describe("--since: an unresolvable ref reaches the caller", () => {
 describe("--since: the human report says what was scoped", () => {
   it("names the scope on a run that evaluated something", async () => {
     const { cwd } = scaffold();
-    const out = renderHuman(
+    const out = renderPretty(
       await run(cwd, ["docs/alpha.md"], { since: "main" }).report,
     );
     expect(out).toContain("1 of 3");
@@ -624,7 +624,7 @@ describe("--since: the human report says what was scoped", () => {
   // exit code, same empty body, no statement that nothing ran.
   it("says outright when nothing was evaluated", async () => {
     const { cwd } = scaffold();
-    const out = renderHuman(await run(cwd, [], { since: "main" }).report);
+    const out = renderPretty(await run(cwd, [], { since: "main" }).report);
     expect(out).toContain("No pages changed since main — nothing was evaluated.");
   });
 });
@@ -673,7 +673,7 @@ describe("--since: the CI reporters say what was scoped", () => {
   it("says nothing at all when --since was not used", () => {
     expect(renderMarkdown(base)).not.toContain("changed since");
     expect(renderGithub(base)).not.toContain("::notice");
-    expect(renderHuman(base)).not.toContain("changed since");
+    expect(renderPretty(base)).not.toContain("changed since");
   });
 });
 

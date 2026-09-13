@@ -173,7 +173,7 @@ docevals:
       grader: tool:file-exists
       options:
         path: "*.mdx"
-      severity: info
+      severity: notice
     fresh-enough:
       assertion: Page was reviewed within the last year.
       grader: tool:freshness

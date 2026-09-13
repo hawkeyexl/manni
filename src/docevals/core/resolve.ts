@@ -19,6 +19,7 @@ import type { ErrorObject } from "ajv";
 // byte-frozen for consumers who pinned it; every page valid against it is
 // valid against this.
 import frontmatterSchema from "../../../schemas/docevals/frontmatter-1.1.0.json" with { type: "json" };
+import { SEVERITIES } from "../../shared/severity.js";
 import type { EvalType, GraderKind, Severity } from "../types.js";
 import {
   normalizeEvalDef,
@@ -96,7 +97,24 @@ export interface ResolvedPagePlan {
 }
 
 const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true });
-const validateFrontmatter = ajv.compile(frontmatterSchema);
+/**
+ * The published 1.1.0 schema, with its severity values replaced by the
+ * family's scale (`src/shared/severity.ts`).
+ *
+ * The published file still spells the lowest severity `info`, and its bytes
+ * are frozen, so the family scale cannot be written into it. Validating
+ * against it unchanged would reject `notice` on every page while the config
+ * accepts it. The override is in memory and touches only `$defs/severity`;
+ * every other rule is the published file's.
+ */
+const pageSchema = {
+  ...frontmatterSchema,
+  $defs: {
+    ...frontmatterSchema.$defs,
+    severity: { ...frontmatterSchema.$defs.severity, enum: [...SEVERITIES] },
+  },
+};
+const validateFrontmatter = ajv.compile(pageSchema);
 
 interface FrontmatterEvalRef {
   use: string;

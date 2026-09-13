@@ -51,7 +51,7 @@ export function runList(paths: string[], options: ListOptions = {}): ListRun {
 
 export function renderList(run: ListRun, format: SummaryFormat): string {
   // Exported from src/index.ts, so library callers reach this without the CLI
-  // parser in front. Falling through to the human renderer is the silent
+  // parser in front. Falling through to the pretty renderer is the silent
   // degradation ADR 01007 removes; it is no less silent off the CLI path.
   parseFormat(format, SUMMARY_FORMATS, "format");
   if (format === "json") {

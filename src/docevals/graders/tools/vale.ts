@@ -3,7 +3,7 @@
  * --output=JSON:
  *   { "path.md": [{ Check, Message, Line, Span, Severity }, ...], ... }
  * Vale's own severities map through the eval's severityMap
- * (default: error→error, warning→warning, suggestion→info).
+ * (default: error→error, warning→warning, suggestion→notice).
  */
 import type { Finding, Severity } from "../../types.js";
 import { groupTargetsByEval, type Grader, type GraderContext, type GraderTarget } from "../types.js";
@@ -26,7 +26,7 @@ interface ValeIssue {
 const DEFAULT_SEVERITY_MAP: Record<string, Severity> = {
   error: "error",
   warning: "warning",
-  suggestion: "info",
+  suggestion: "notice",
 };
 
 async function gradeGroup(

@@ -1,4 +1,4 @@
-/** Human (terminal) reporter. */
+/** Pretty (terminal) reporter: `--format pretty`, the default. */
 import pc from "picocolors";
 import type { EvalResult } from "../types.js";
 import type { EngineReport } from "../core/engine.js";
@@ -18,7 +18,7 @@ function outcomeTag(r: EvalResult): string {
   }
 }
 
-export function renderHuman(report: EngineReport): string {
+export function renderPretty(report: EngineReport): string {
   const lines: string[] = [];
 
   const byFile = new Map<string, EvalResult[]>();

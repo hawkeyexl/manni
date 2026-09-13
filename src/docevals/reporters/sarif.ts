@@ -21,14 +21,14 @@ import type { Finding, Severity } from "../types.js";
 const SARIF_SCHEMA =
   "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json";
 
-/** SARIF has three levels; `info` is `note`, not a dropped finding. */
+/** SARIF has three levels; `notice` is `note`, not a dropped finding. */
 function levelFor(severity: Severity): "error" | "warning" | "note" {
   switch (severity) {
     case "error":
       return "error";
     case "warning":
       return "warning";
-    default:
+    case "notice":
       return "note";
   }
 }

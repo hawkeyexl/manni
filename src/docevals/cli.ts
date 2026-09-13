@@ -162,9 +162,9 @@ documentInputs(
 )
   .option(
     "-f, --format <format>",
-    "Output format: human | json",
+    `Output format: ${SUMMARY_FORMATS.join(" | ")}`,
     parseFormatArg("--format", SUMMARY_FORMATS),
-    "human" as SummaryFormat,
+    "pretty" as SummaryFormat,
   )
   .option("--eval <name>", "Show only this eval (repeatable)", collectArg, [])
   .option("--suite <name>", "Show only evals in this suite")
@@ -200,9 +200,9 @@ documentInputs(
 )
   .option(
     "-f, --format <format>",
-    "Output format: human | json | markdown | github",
+    `Output format: ${REPORT_FORMATS.join(" | ")}`,
     parseFormatArg("--format", REPORT_FORMATS),
-    "human" as ReportFormat,
+    "pretty" as ReportFormat,
   )
   .option("--deterministic-only", "Run only command/tool graders, skip the AI judge")
   .option("--ai-only", "Run only AI-judged evals, skip deterministic graders")
@@ -346,9 +346,9 @@ documentInputs(
 )
   .option(
     "-f, --format <format>",
-    "Output format: human | json",
+    `Output format: ${SUMMARY_FORMATS.join(" | ")}`,
     parseFormatArg("--format", SUMMARY_FORMATS),
-    "human" as SummaryFormat,
+    "pretty" as SummaryFormat,
   )
   .option("--dry-run", "Report proposals without writing frontmatter")
   .option(

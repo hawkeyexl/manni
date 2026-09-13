@@ -1,6 +1,6 @@
 ---
 title: Output and exit codes
-description: The human, json, markdown, github, sarif, junit, and html report shapes, and what each exit code means.
+description: The pretty, json, markdown, github, sarif, junit, and html report shapes, and what each exit code means.
 ---
 
 Verified against `src/reporters/` and `src/types.ts`, with samples captured from real runs against
@@ -46,13 +46,13 @@ only thing you have to go on.
 
 ## Which formats each command accepts
 
-`-f/--format` is not one shared set. `run` has four reporters; `list` and `fill` render only two.
+`-f/--format` is not one shared set. `run` has seven reporters; `list` and `fill` render only two.
 
 | Command | Accepted formats |
 |---|---|
-| `run` | `human`, `json`, `markdown`, `github`, `sarif`, `junit`, `html` |
-| `list` | `human`, `json` |
-| `fill` | `human`, `json` |
+| `run` | `pretty`, `json`, `markdown`, `github`, `sarif`, `junit`, `html` |
+| `list` | `pretty`, `json` |
+| `fill` | `pretty`, `json` |
 
 Anything else is a **usage error**, giving **exit 2**, with the allowed set in the message. Matching
 is exact, so `JSON` and `Json` are rejected rather than folded, and a typo surfaces instead of being
@@ -61,15 +61,15 @@ Passing `run`'s `markdown` to `list` is rejected for the same reason.
 
 ```console
 $ manni docevals list docs/ --format xml
-manni docevals: --format must be one of human | json, got "xml"
+manni: --format must be one of pretty | json, got "xml"
 $ echo $?
 2
 ```
 
 That matters most in CI, where `--format json` is piped into a parser. Exit 2 stops the pipeline;
-silently falling back to the human report would hand `jq` ANSI colour codes and still exit 0.
+silently falling back to the pretty report would hand `jq` ANSI colour codes and still exit 0.
 
-## `--format human`
+## `--format pretty`
 
 The default. Per page, one line per eval; then per-suite aggregates.
 
@@ -308,7 +308,7 @@ a human-review queue as a broken build is the wrong signal for the person readin
 | reference | 2 | 1 | 0 | 67% | 100% | ❌ |
 ```
 
-Severity maps to the annotation level: `error` → `::error`, `warning` → `::warning`, `info` →
+Severity maps to the annotation level: `error` → `::error`, `warning` → `::warning`, `notice` →
 `::notice`. Values are escaped per GitHub's rules. That covers `%`, CR, and LF in data, plus `:` and
 `,` in properties, which is why the title reads `manni docevals%3A`.
 

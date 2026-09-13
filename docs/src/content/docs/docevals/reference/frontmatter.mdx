@@ -135,7 +135,7 @@ from position, because a position-derived name orphans every cached verdict as s
 | `timeout-ms` | integer ≥ 1 | grader-specific | |
 | `generated-assertion-hash` | string | none | Written by script generation, always beside `command`; a mismatch means the script is stale. |
 | `options` | object | `{}` | Grader-specific. See [Graders](/manni/docevals/reference/graders/). |
-| `severity` | `error` \| `warning` \| `info` | `error` | Only `error` findings fail the build. |
+| `severity` | `error` \| `warning` \| `notice` | `error` | Only `error` findings fail the build. |
 | `weight` | number > 0 | `1` | How much this eval moves its suite's pass rate. It does **not** change the eval's own pass/fail. Zero is rejected, because a weightless eval is a silent disable, and `skip` already means that, loudly. |
 | `severity-map` | object | none | Maps a tool's own severities onto manni docevals severities. |
 
