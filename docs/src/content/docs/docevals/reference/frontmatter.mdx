@@ -109,7 +109,7 @@ focus, it has a target.
 |---|---|
 | `body` (default) | The page body, frontmatter stripped and MDX noise removed. |
 | `raw` | The file verbatim, frontmatter included. |
-| `frontmatter` | The parsed frontmatter alone. |
+| `frontmatter` | The parsed frontmatter alone, written back out as YAML. The fences and any comments are not included, so use `raw` for the literal text. |
 | `{source: file, path: <rel>}` | A companion file, resolved against the page's directory. |
 
 ```yaml
