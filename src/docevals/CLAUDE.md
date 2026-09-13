@@ -156,15 +156,18 @@ and Node touch.
   library. What stays here is this tool's own work. That is the prompts and
   `PROMPT_VERSION`, the page-worded verdict schema, and the cache-key
   composition (`cache.ts`). It is also `provider.ts`, which picks the provider
-  and model: flag, then the eval's own `provider:`/`model:`, then
-  `docevals.provider`/`model`, then the family's top-level `providers:`. It
-  adds the verdict-shaped options to the spec. And it is
+  and model: `--local`, then the flag, then the eval's own `provider:`/`model:`.
+  Then come `docevals.provider`/`model`, then the family's top-level
+  `providers:` map. It adds the verdict-shaped options to the spec. And it is
   the orchestration in `judge.ts`. Shared provider code lives in
   `src/shared/providers.ts`, the code `manni meta fill` runs. That covers the
-  provider names, the `auto` detection and the two refusals. It also covers the
+  provider names, the `auto` detection and the refusals. It also covers the
   level-bound precedence, where a model goes only to the provider its own level
-  names, and the mapping of `providers:` settings onto `ProviderSpec`. Never
-  grow a docevals-only copy. The orchestration covers bounded concurrency
+  names, and the mapping of `providers:` settings onto `ProviderSpec`.
+  `--local` lives there too. It overrides every configured or eval-level
+  choice with `llama-cpp` and names each one it replaced. A contradicting
+  `--provider` is exit 2. Connection settings are never a `docevals:` key.
+  Never grow a docevals-only copy. The orchestration covers bounded concurrency
   across targets, the turn budget, the self-judgment warning, and human-review
   resolution. The turn budget is claimed *before* dispatch and a cached
   ensemble spends nothing; the dollar ceiling it replaced could not do that

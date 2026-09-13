@@ -11,6 +11,7 @@ Internal design docs for changes that are bigger than a single PR's commit messa
 | `Implemented` | Shipped. The doc stays as the rationale record. |
 | `Rejected` | Considered and declined. The doc stays; the reason is the value. |
 | `Superseded by NNNN` | Replaced. |
+| `Superseded in part by NNNN` | Partly replaced. The later proposal names the sections that no longer hold. |
 
 ## The set
 
@@ -34,7 +35,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0014](0014-empty-input-is-not-success.md) | An empty input set is not success | correctness | Implemented |
 | [0015](0015-schema-trust-boundary.md) | A trust boundary for document-supplied schemas | Devin · D2 / Sara · S3 | Implemented |
 | [0016](0016-flag-ownership.md) | Which command owns a flag, and where it may be written | all (CLI surface) | Accepted |
-| [0017](0017-fill-egress-and-bounds.md) | What `fill` sends, and how to bound it | Maya · M4 / Devin · D1 | Implemented (#102) |
+| [0017](0017-fill-egress-and-bounds.md) | What `fill` sends, and how to bound it | Maya · M4 / Devin · D1 | Superseded in part by [0047](0047-docevals-domain.md) |
 | [0018](0018-write-support-shipped-for-all-three.md) | Write support shipped for HTML, XML **and** DITA | Maya · M1, M4 / Theo · T1 | Superseded by [0020](0020-element-metadata.md) |
 | [0019](0019-no-docmeta-init.md) | `docmeta init` is rejected, not deferred | Maya · M1 | Accepted |
 | [0020](0020-element-metadata.md) | Element metadata in XML and HTML, and the DITA schema it unblocks | Sara · S1 / Maya · M1, M4 | Implemented |

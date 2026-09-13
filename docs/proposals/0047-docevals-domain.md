@@ -11,10 +11,9 @@
   whose evals draft is the page vocabulary
 - **Relates to:** [0035](0035-a11y-domain.md) and
   [0044](0044-citations-and-drift.md), the two domains folded in before this
-  one, whose choices this one copies. [0017](0017-fill-egress-and-bounds.md),
-  for `meta fill --local`, which docevals does not take.
-  [0045](0045-family-encryption-key.md), the family-key precedent for a shared
-  concept defined once under `src/shared/`
+  one, whose choices this one copies. [0045](0045-family-encryption-key.md),
+  the family-key precedent for a shared concept defined once under
+  `src/shared/`
 - **Supersedes:** docevals [ADR 01003](docevals/01003-cuj-first-docs-site-and-content-strategy.md),
   the co-located content strategy. Its Status line is the only edit
 - **Supersedes, in part:** docevals [ADR 01010](docevals/01010-kebab-case-is-the-file-vocabulary.md),
@@ -22,20 +21,26 @@
   entries and grader options stay kebab-case as it decided. docevals
   [ADR 01008](docevals/01008-rename-to-moose-docevals-and-share-one-family-config.md),
   for its migration error on a `docevals.config.yaml`, which is gone. Neither
-  is edited
+  ADR is edited. [0017](0017-fill-egress-and-bounds.md) § 3, for `--local`
+  refusing a configured hosted provider. It now overrides one, in both tools.
+  Its `llama-cpp`-only meaning stands. Its Status line is the only edit
 - **Touches:** `src/docevals/**` (new), `src/cli.ts`, `src/index.ts`,
-  `src/shared/{providers,config-file}.ts`, `src/meta/core/meta-provenance.ts`
-  (lifted from `src/meta/commands/fill.ts`), `src/meta/internal.ts`,
+  `src/shared/{providers,config-file,warn}.ts`, `src/meta/core/meta-provenance.ts`
+  (lifted from `src/meta/commands/fill.ts`), `src/meta/commands/fill.ts`,
+  `src/meta/cli.ts`, `src/meta/internal.ts`,
   `package.json`, `package-lock.json`, `manni.config.yaml`,
   `scripts/check-cli-reference.mjs`, `test/docevals/**`,
-  `docs/src/content/docs/docevals/**` (new), `docs/manni.docevals.yaml`,
+  `docs/src/content/docs/docevals/**` (new), `docs/src/content/docs/meta/**`,
+  `docs/manni.docevals.yaml`, `README.md`, `SECURITY.md`,
   `docs/content-strategy/{personas,audiences,cujs,information-architecture}.md`,
-  `docs/proposals/docevals/**` (new), `docs/astro.config.mjs`
+  `docs/proposals/docevals/**` (new), `docs/proposals/0017-fill-egress-and-bounds.md`,
+  `docs/astro.config.mjs`
 - **Verdict:** Fold moose-docevals in as `manni docevals`, eight spelled verbs
   and no default. Make it speak the family's values rather than its own. That
   means `collections:`, the severity scale and the format names. It means
-  camelCase section keys and shared provider selection. And it means the 0023
-  draft itself and 0046's records.
+  camelCase section keys, and one top-level `providers:` map that `meta fill`
+  reads too. `--local` overrides a configured provider in both tools. And it
+  means the 0023 draft itself and 0046's records.
   Its content strategy joins the family's files. Its ADR log closes at 01045,
   and later docevals decisions go in this series.
 
@@ -153,7 +158,7 @@ family's and drops its own (d1c5103, fa246c6, 4d56c1b, 3f8cf54, 11de1d6).
   `MANNI_DOCEVALS_FILE`. `MOOSE_DOCEVALS_FILE` is not set. The script
   generation prompt says the new name, so `SCRIPTGEN_VERSION` is 2.
 
-### 3. Providers are chosen as `meta fill` chooses them
+### 3. Providers are declared once, for every tool
 
 The imported config had `provider.default: anthropic` and a pinned `model:`
 per provider. `claude-sonnet-4-5` was already stale. A default that names a
@@ -165,15 +170,31 @@ caller passes its own error class and the config key its user writes, so
 meta's messages are unchanged and docevals's messages name
 `docevals.provider`.
 
+**The settings are a family key** (f78b8fb). On this branch they were first
+`docevals.providers`, a map under the tool's own section. But `meta fill`
+sends content to a model too, and it read no connection settings at all. A
+second map under `meta.fill` would declare one gateway twice. `collections:`
+(0041) and `encryptionKey:` (0045) set the pattern for a concept every tool
+shares. That is one top-level key, parsed once in `src/shared/config-file.ts`.
+`providers:` is the third such key.
+
 ```yaml
-docevals:
+providers:              # top level, beside collections:; read by meta fill and docevals
   provider: auto        # auto | anthropic | openai | claude-cli | llama-cpp; default auto
   model: <id>           # optional; needs a named provider; manni sets no default
-  providers:            # connection settings detection cannot know
-    anthropic:  { apiKeyEnv: ANTHROPIC_API_KEY }
-    openai:     { baseUrl: https://api.openai.com/v1, apiKeyEnv: OPENAI_API_KEY }
-    claude-cli: { command: claude }
-    llama-cpp:  { modelsDir: ~/.models, thoughtTokens: 0 }
+  anthropic:  { apiKeyEnv: ANTHROPIC_API_KEY }
+  openai:     { baseUrl: https://api.openai.com/v1, apiKeyEnv: OPENAI_API_KEY }
+  claude-cli: { command: claude }
+  llama-cpp:  { modelsDir: .models, thoughtTokens: 0 }   # modelsDir resolves from the config file
+
+docevals:
+  provider: <name>      # optional; wins over providers.provider for docevals
+  model: <id>
+
+meta:
+  fill:
+    provider: <name>    # optional; wins over providers.provider for meta fill
+    model: <id>
 ```
 
 - `auto` detects exactly as `meta fill` does: an Anthropic key, then an OpenAI
@@ -181,11 +202,28 @@ docevals:
 - `model` has no manni default. The inference library picks the provider's
   own, and the cache key names the resolved model, so a changed library
   default changes the key.
-- Precedence is the flag, then the eval's own `provider:`/`model:`, then the
-  config.
+- **Precedence** runs from `--local` to `--provider`, then to the eval's own
+  `provider:` (docevals only). Then come `docevals.provider` or
+  `meta.fill.provider`, then `providers.provider`, then `auto`.
+- **A model goes only to the provider its own level names.** A `--provider`
+  that differs from the provider beside a configured model does not inherit
+  that model, which the winner could not run. A level naming no provider lends
+  its model to the provider in force. `--model` applies to whichever provider
+  wins.
+- **Connection settings always come from the family map**, whichever level
+  chose the provider. Under `auto`, a configured `baseUrl`, `command` and
+  llama-cpp section reach detection. `meta fill` honours them now, which it
+  never did before.
+- **A file holding only `providers:` is config** for every tool, as a file
+  holding only `collections:` is.
 - An unknown provider and a model under `auto` are meta's refusals, exit 2:
   `Unknown provider "x". Available: …` and
   `Model "x" was given without a provider: … Set --provider or docevals.provider to one of …`.
+  `providers.model` without `providers.provider` is refused in the same words,
+  naming `providers.provider`.
+- **`docevals.providers` is refused by name**, as `docevals.files` is in § 1,
+  exit 2:
+  `manni: manni.config.yaml: "providers" is no longer a docevals key. Provider settings are declared once for every tool, under a top-level providers: map. See https://hawkeyexl.github.io/manni/meta/reference/configuration/#providers`
 - **An eval's own choice fails that eval.** A per-eval provider that cannot be
   built gives that eval an error result. The run exits 1, and the rest of it
   still grades. The run's own selection is checked before any page is read.
@@ -197,16 +235,40 @@ docevals:
 - Under `--deterministic-only`, the provider is resolved only when a command
   eval needs a script generated. A deterministic run never probes the machine.
 
-**No `--local`.** `meta fill --local` refuses any hosted provider (0017). Its
-value is the refusal: it keeps a config-named hosted provider from receiving
-content. In docevals the flag already outranks both the eval and the config,
-so `--provider llama-cpp` sends every judged eval to the local model, whatever
-the config says. A run that must send nothing at all has
-`--deterministic-only`. `--local` would be a third spelling of one of those
-two, and its only new behaviour would be refusing
-`--local --provider anthropic`. This is a parity gap with `meta fill`, taken
-knowingly. Adding the flag later is additive, and its refusal sentences would
-move to `src/shared/providers.ts` beside the other two.
+**`--local` overrides, in both tools** (77410ed). 0017 § 3 gave
+`meta fill --local` refusal semantics. It refused a hosted provider wherever
+one was named, config included. This branch first left docevals without the
+flag, since `--provider llama-cpp` already outranks the eval and the config.
+The family map breaks both positions. Once `providers.provider` names a hosted
+provider for every tool, a refusing `--local` fails in every repository that
+commits one. The job that must keep content in the building would have to
+rewrite the config first. So `--local` now means `llama-cpp` over every level
+that can name a provider.
+
+- It is on `meta fill` and on docevals `run`, `generate`, `fill`, `promote`
+  and `calibrate`. One implementation in `src/shared/providers.ts` serves both
+  tools.
+- A configured or eval-level choice is set aside, and each replaced choice is
+  said once on stderr through `warn()`:
+  `--local: using llama-cpp instead of "<name>" from <source>.` The source is
+  `providers.provider`, `docevals.provider`, `fill.provider`, or
+  `eval "<id>" in <file>`.
+- A `--provider` other than `llama-cpp` or `auto` beside it is exit 2:
+  `--local and --provider <x> contradict each other: --local runs inference on this machine with llama-cpp. Drop one of them.`
+  A command line that contradicts itself is a usage error. A config the job
+  did not write is not.
+- `claude-cli` never qualifies, as 0017 § 3 decided. Its binary runs locally
+  and its inference does not.
+- A configured model applies only where its level named `llama-cpp`, and
+  `--model` always applies.
+- Detection never runs under `--local`. The old `--local cannot use …`
+  refusals and the check after detection are gone.
+- Under `--deterministic-only` nothing is judged, and `--local` says nothing.
+
+This supersedes 0017 § 3 in part. Its `llama-cpp`-only meaning and its
+`claude-cli` exclusion stand, and its refusal of a configured hosted provider
+does not. 0017's Status line records that, and nothing else in it changes.
+`--deterministic-only` is still the run that needs no provider at all.
 
 ### 4. No legacy config names
 
@@ -336,6 +398,13 @@ and the log's README carries a closing note.
 2. **Registering the 0023 drafts is 0023's question.** Until the evals
    vocabulary is registered, no URL serves it, and a page cannot point
    `$schema` at it.
+3. **Two `providers:` settings do not steer detection under `auto`.** The
+   inference library looks only for `ANTHROPIC_API_KEY` and `OPENAI_API_KEY`.
+   A custom `apiKeyEnv` neither makes a provider detectable nor reaches the
+   provider detection picks. And `llama-cpp` counts as usable when
+   `node-llama-cpp` can start, whatever `modelsDir` holds. Both are the
+   library's rules, and a fix belongs upstream. Naming the provider is the
+   workaround, and the configuration reference says so.
 
 ## Stress test
 
@@ -366,6 +435,26 @@ camelCase, and a user who writes `meta.fill.maxTurns` and
 The boundary is now the one a reader can see: an entry a page could carry is
 kebab, and a setting is camel.
 
+### 4. Why does `--local` override a configured provider rather than refuse it?
+
+Because the refusal protected against the wrong author. 0017 feared a stray
+key, or a config nobody checked, sending internal pages to a hosted provider.
+Under `--local` detection never runs, so no stray key can choose anything. A
+configured hosted provider is a choice the repository made for ordinary runs.
+The person typing `--local` is making a narrower choice for this run, and the
+narrower choice should win.
+
+The refusal also had a cost that grew with the family map. A repository that
+commits `providers.provider: anthropic` for every tool would make `--local`
+exit 2 on every command that takes it. The one job that must keep content in
+the building would need its own config file.
+
+What stays a refusal is the contradiction on one command line.
+`--local --provider openai` states two incompatible intents in one breath, and
+guessing which one was meant is exactly what an egress control must not do.
+The notice keeps the override visible: a run never silently ignores what the
+config says.
+
 ## Consequences
 
 - `manni --help` lists `docevals`. `npm i -D @hawkeyexl/manni` is the install
@@ -375,8 +464,14 @@ kebab, and a setting is camel.
   (`npm run docs:check-docevals`).
 - `package.json` records `node-llama-cpp` as an optional peer dependency.
 - Nothing here was released, so no rename is breaking for anyone: `info`,
-  `human`, the kebab section keys, `docevals.files`, `MOOSE_DOCEVALS_FILE`, the
-  schema copies and `eval-provenance` existed only on the unmerged branch.
+  `human`, the kebab section keys, `docevals.files`, `docevals.providers`,
+  `MOOSE_DOCEVALS_FILE`, the schema copies and `eval-provenance` existed only
+  on the unmerged branch.
+- `meta fill` changes in two released behaviours, both additive. It reads
+  connection settings from `providers:`, where it read none before. And
+  `--local` beside a hosted `fill.provider` now runs locally with a notice,
+  where it exited 2. A run that succeeded before behaves the same, and nothing
+  that `--local` kept on the machine leaves it now.
 
 ## Release
 
