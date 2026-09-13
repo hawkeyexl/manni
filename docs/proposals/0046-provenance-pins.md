@@ -452,6 +452,7 @@ that never writes the key changes nothing. `meta-provenance` needs no config.
 | the option without the field | `--generated-by attributes provenance, which is not in --fields. Add provenance, or drop --generated-by.` | 2 |
 | a range past the end | `docs/limits.md has no lines 12-99: the file ends at line 40.` | 2 |
 | a range into the frontmatter | `docs/limits.md:2-5 reaches into the frontmatter; provenance pins body lines, which start at line 8.` | 2 |
+| a range that ends before it starts | `docs/limits.md:31-12 ends before it starts.` | 2 |
 | a shallow clone | 0040's message, unchanged | 2 |
 
 The three findings keep 0040's rule id, `derived:stale/derived`, and instance

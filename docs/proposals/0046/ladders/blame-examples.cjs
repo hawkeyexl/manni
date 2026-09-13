@@ -25,13 +25,13 @@
 //   - §2 step 4, contiguous body lines resolved to one machine are one entry.
 //   - §2's comparison table: current, moved, changed, stale, unset, and the
 //     "no evidence, pin matches" row that reads current. Duplicate text is
-//     tied by the nearest `lines` (stress test 5).
+//     tied by the nearest `lines` (stress test 12).
 //   - §2's write rule: keep current and moved (moved rewrites `lines`),
 //     rewrite changed and stale, add unset, drop nothing uncontradicted.
 //   - §3a and §3b: an uncommitted edit under --generated-by, and a named range
 //     that attributes committed lines unless rules 2-4 name another machine.
-//   - Stress tests 2 (a human edit inside an agent's range), 3 (a squash) and
-//     5 (duplicate text) are cases E, D and G.
+//   - Stress tests 9 (a human edit inside an agent's range), 10 (a squash) and
+//     12 (duplicate text) are cases E, D and G.
 //
 // Where the proposal left a choice open, the choice made here is marked
 // RESOLVED in a comment beside the code that makes it.
@@ -134,7 +134,10 @@ function parseSrc(src) {
   const m = /^(.*?)(?::([1-9][0-9]*)(?:-([1-9][0-9]*))?)?$/.exec(src);
   const start = m[2] === undefined ? undefined : Number(m[2]);
   const end = m[3] === undefined ? start : Number(m[3]);
-  return { path: m[1], start, end };
+  // RESOLVED: L2 >= L1 is the tool's rule. A reversed range keeps both numbers
+  // so the caller can refuse it by name, instead of slicing an empty span and
+  // minting a pin that matches nothing.
+  return { path: m[1], start, end, reversed: start !== undefined && end < start };
 }
 
 /** The `provenance` entries a page's frontmatter carries, well-formed ones only. */
@@ -410,7 +413,7 @@ function entriesOf(derivation) {
 // ---------------------------------------------------------------------------
 
 /**
- * The candidate nearest a recorded span (stress test 5). RESOLVED: distance
+ * The candidate nearest a recorded span (stress test 12). RESOLVED: distance
  * is between start lines; an equal distance goes to the earlier candidate.
  */
 function nearest(candidates, recorded) {
@@ -559,7 +562,7 @@ function statusesOf(results) {
  * the derivation found; every derived group not already kept is added.
  * Nothing uncontradicted is dropped: a current entry with no evidence stays.
  * RESOLVED: a changed entry whose lines no machine now answers for is dropped
- * with nothing in its place (stress test 4: the bytes are gone). The output is
+ * with nothing in its place (stress test 11: the bytes are gone). The output is
  * ordered by start line.
  * NOT MODELLED: a derived group that partly overlaps a kept entry of the same
  * machine is added beside it.
@@ -601,7 +604,8 @@ class UsageError extends Error {
  * Evidence naming the same machine, or none, lets the range through.
  */
 function attributeRange(scenario, target, opts) {
-  const { path, start, end } = parseSrc(target);
+  const { path, start, end, reversed } = parseSrc(target);
+  if (reversed) throw new UsageError(`${target} ends before it starts.`);
   const machines = opts.machines ?? DEFAULT_MACHINES;
   const page = readPage(scenario.working);
   const spec = start === end ? String(start) : `${start}-${end}`;
@@ -814,7 +818,7 @@ function run() {
   assert.strictEqual(pinOfLines(DUP, { start: 8, end: 9 }), PIN_DUP, "identical ranges share a pin");
   assert.strictEqual(pinOfLines(lines(pageText(FRONT_PLAIN, BODY, "\r\n")), { start: 6, end: 11 }), PIN_3_8,
     "a CRLF copy hashes as its LF twin");
-  assert.strictEqual(pinOfLines(lines("FEFF" + pageText(FRONT_PLAIN, BODY)), { start: 6, end: 11 }), PIN_3_8,
+  assert.strictEqual(pinOfLines(lines("\uFEFF" + pageText(FRONT_PLAIN, BODY)), { start: 6, end: 11 }), PIN_3_8,
     "a BOM does not enter the hash");
   assert.notStrictEqual(pinOfLines(BODY.map((l, i) => (i === 3 ? l + " " : l)), { start: 3, end: 8 }), PIN_3_8,
     "trailing whitespace is kept");
@@ -913,7 +917,7 @@ function run() {
   check("...where picomatch's default reads [bot] as a class and would take Scott",
     picomatch.isMatch("Scott", "*[bot]"), true);
 
-  console.log("\nD. a squash merge (stress test 3, rule 2)");
+  console.log("\nD. a squash merge (stress test 10, rule 2)");
   const d = deriveProvenance(D);
   check("the squash has no trailers, and its own blob's stamp attributes the lines", entriesOf(d), [fable("3-8", PIN_3_8)]);
   check("...by rule 2, at the squash", d.derived[0].first, { machine: "claude-fable-5", rule: 2, sha: SQUASH.sha });
@@ -921,7 +925,7 @@ function run() {
     [{ status: "current", lines: "3-8" }]);
   check("a stamp that does not verify against its commit's blob is not evidence", entriesOf(deriveProvenance(D_UNVERIFIED)), []);
 
-  console.log("\nE. a human edit inside an agent's range (stress test 2)");
+  console.log("\nE. a human edit inside an agent's range (stress test 9)");
   const e = deriveProvenance(E);
   check("the untouched lines stay with the agent, renumbered to current body lines; the edited line loses attribution",
     entriesOf(e), [fable("3-4", PIN_3_4), fable("6-8", PIN_6_8)]);
@@ -941,7 +945,7 @@ function run() {
   check("same integrity and machine, other lines: moved", statusesOf(fResults), [{ status: "moved", lines: "3-8", newLines: "5-10" }]);
   check("derive rewrites lines and nothing else", writeProvenance(fResults, f), [fable("5-10", PIN_3_8)]);
 
-  console.log("\nG. duplicate text (stress test 5)");
+  console.log("\nG. duplicate text (stress test 12)");
   const g = deriveProvenance(G);
   check("two agent ranges, one pin", entriesOf(g), [fable("5-6", PIN_DUP), fable("10-11", PIN_DUP)]);
   const gResults = compareProvenance(stampOf(g.page), g);
@@ -983,6 +987,9 @@ function run() {
     { entry: sonnet("3-8", PIN_3_8) });
   check("a range past the file", refusal(() => attributeRange(I_RANGE, `${PATH}:6-99`, { generatedBy: "claude-fable-5" })),
     { exit: 2, message: "docs/limits.md has no lines 6-99: the file ends at line 13." });
+  check("a range that ends before it starts is refused, not hashed as an empty span",
+    refusal(() => attributeRange(I_RANGE, `${PATH}:11-6`, { generatedBy: "claude-fable-5" })),
+    { exit: 2, message: "docs/limits.md:11-6 ends before it starts." });
   const i2 = deriveProvenance(I2);
   check("rule order: a verified stamp in the commit outranks that commit's own trailer", entriesOf(i2), [fable("3-8", PIN_3_8)]);
 
