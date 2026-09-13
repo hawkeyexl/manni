@@ -4,7 +4,7 @@ description: Wrap the linters you already run, add the native checks, and let ma
 ---
 
 Deterministic graders are free, fast, and arguable in a pull request. Prefer them. This page covers
-folding in the tools you already run, the three native checks, and arbitrary `command` evals,
+folding in the tools you already run, the native checks, and arbitrary `command` evals,
 including the ones manni docevals writes for you.
 
 ## manni docevals orchestrates; it does not reimplement
@@ -50,8 +50,9 @@ Vale's own severities map through `severity-map`, defaulting to `error`→`error
 
 ## The native checks
 
-Three checks exist natively because nothing else covers them. They are not the start of a homegrown
-linter.
+These checks exist natively because nothing else covers them. They are not the start of a homegrown
+linter. Two more, `tool:regex` and `tool:file-exists`, are in
+[Graders](/manni/docevals/reference/graders/#toolregex).
 
 ```yaml
   fresh-enough:
@@ -104,8 +105,7 @@ frontmatter:
       assertion: The page contains a bash code block with `npm i -g doc-detective`.
       grader: command
       command: [node, manni-docevals/installation.install-command-present.mjs, "{file}"]
-      generated:
-        assertion-hash: aefaa89e…
+      generated-assertion-hash: aefaa89e…
 ```
 
 The model is used **once**, at generation time. After that the check is fully deterministic, with no model
@@ -116,7 +116,7 @@ Three consequences worth internalising:
 - **The script is ordinary source.** It lands in the repo beside the page, shows up in pull requests,
   and you can edit it by hand. Review it. A generated script that passes for the wrong reason is
   worse than the ai eval it replaced, because it is now silent and cheap.
-- **`assertion-hash` keeps them honest.** Edit the assertion and the hash no longer matches, so the
+- **`generated-assertion-hash` keeps them honest.** Edit the assertion and the hash no longer matches, so the
   script regenerates rather than quietly checking the old thing.
 - **`--no-generate` turns it off**, which is what you want in CI where generation should not happen
   implicitly.

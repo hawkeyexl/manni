@@ -68,7 +68,7 @@ What `fill` will **not** do:
 - **Modify an existing eval.** Ever. It only appends.
 - **Create duplicates.** A proposal whose name collides with the page's resolved plan is dropped,
   whether that plan is inline, referenced, or suite-expanded.
-- **Touch a skipped page.** `evals: {skip: true}` is respected.
+- **Touch a skipped page.** `eval-skip: true` is respected.
 
 `fill.maxEvalsPerPage` (default 3) bounds how many it proposes per page.
 

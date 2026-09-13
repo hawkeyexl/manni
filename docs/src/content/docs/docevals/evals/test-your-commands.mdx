@@ -44,7 +44,7 @@ about the convention rather than using it, you will hit this too.
 | `description` | What the step proves. Appears in the finding when it fails, so write it for the person who has to fix it. |
 | `runShell.command` | The command, exactly as the page presents it. |
 | `runShell.exitCodes` | Accepted exit codes. |
-| `runShell.stdout` | Optional. A substring, or a `/regex/` to match. |
+| `runShell.stdio` | Optional. A substring, or a `/regex/` to match. |
 
 Point them at **committed fixtures**, never at a scratch file or a network resource. A doc test that
 depends on the environment is a flaky doc test, and a flaky gate gets disabled.
@@ -80,7 +80,7 @@ silently. Your array is the prefix of the argv, not the whole of it.
 
 ### It executes code from page bodies
 
-:::danger
+:::danger[Grant page-embedded steps separately]
 This grader needs its own grant: `execution.allow: [page-embedded-steps]`. Granting
 `frontmatter-commands` does **not** grant it, because trusting a repo's frontmatter is not the same
 as trusting arbitrary steps written in its prose. On a fork pull request, an attacker controls both.
@@ -95,7 +95,7 @@ If your CLI is unpublished, or you want to test the build rather than the releas
 build on `PATH` before running:
 
 ```bash
-npm run build && npm link && npm link manni docevals
+npm run build && npm link && npm link @hawkeyexl/manni
 ```
 
 Otherwise `npx <your-cli>` in a documented command resolves to whatever is installed globally, or

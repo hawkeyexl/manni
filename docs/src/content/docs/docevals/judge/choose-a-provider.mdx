@@ -1,6 +1,6 @@
 ---
 title: Choose a provider
-description: Three ways to reach a judge, including one that needs no API key and one that stays on your own infrastructure.
+description: Four ways to reach a judge, including ones that need no API key and ones that keep pages on your own infrastructure.
 ---
 
 Four providers. The differences that matter are where your page content goes and what credential CI
@@ -29,8 +29,8 @@ Detection is convenient on a laptop and surprising in a gate, because what it fi
 machine. Name the provider in a committed config, so every runner judges with the same one.
 
 :::caution[Detection can reach a local model]
-On a machine with no key and no Claude CLI, `auto` ends at `llama-cpp`, which downloads gigabytes
-of weights on first use. A CI job that should never do that names its provider.
+On a machine with no key and no Claude CLI, `auto` ends at `llama-cpp`. That provider downloads
+gigabytes of weights on first use. A CI job that should never do that names its provider.
 :::
 
 ## `anthropic`
@@ -142,8 +142,8 @@ Leave `model` unset and the provider's default is used, which is the inference l
 and moves when the library does. That is fine for trying manni docevals out. A gate that blocks
 merges wants a model named in a commit, so a change of judge is a change someone reviewed.
 
-A `model` needs a named `provider`. A model name does not say which provider owns it, so a model
-under `auto` is refused with **exit 2** rather than handed to whichever provider detection finds.
+A `model` needs a named `provider`. A model name does not say which provider owns it. A model
+under `auto` is therefore refused with **exit 2** rather than handed to whichever provider detection finds.
 
 Either way the cache key names the model that actually ran, the default included. A new judge
 invalidates every cached verdict, and it invalidates your calibration too.

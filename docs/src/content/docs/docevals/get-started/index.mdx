@@ -19,9 +19,9 @@ npm i -D @hawkeyexl/manni
 npx @hawkeyexl/manni docevals init
 ```
 
-`init` writes a starter `manni.config.yaml`: a `site` collection covering `docs/**/*.{md,mdx}`, a
-pinned judge model, and a few named evals to start from, including `no-future-promises` and
-`fresh-enough`. The collection is the family's `collections:` list, which every manni tool reads,
+`init` writes a starter `manni.config.yaml`: a `site` collection covering `docs/**/*.{md,mdx}`,
+`provider: auto`, and two named evals, `no-future-promises` and `fresh-enough`, in a `default`
+suite that `defaults.suite` applies to every page. The collection is the family's `collections:` list, which every manni tool reads,
 so edit its `paths` if your pages live somewhere else.
 
 ## 2. Get a finding without spending anything
@@ -41,12 +41,14 @@ test/docevals/fixtures/pages/docs/actions/goTo.mdx
   skip no-future-promises
        judge skipped (--deterministic-only)
   FAIL fresh-enough
-       error:4 [freshness/stale] Page last reviewed 937 days ago (max 365)
+       error:4 [freshness/stale] Page last reviewed 977 days ago (max 365)
   pass readable
   pass frontmatter-valid
+  pass names-an-action
+  pass ships-a-schema
 
 Suites
-  reference: 2/3 passed — 67% vs target 100% below target (1 skipped)
+  reference: 4/5 passed — 60% vs target 100% below target (1 skipped)
 ```
 
 Read the finding line as `severity:line [ruleId] message`. The exit code is `1`, a finding rather than an
@@ -100,7 +102,7 @@ See [Choose a provider](/manni/docevals/judge/choose-a-provider/).
 ## 5. Gate a pull request
 
 ```yaml
-- id: manni docevals
+- name: manni docevals
   run: npx @hawkeyexl/manni docevals run --format github
   env:
     ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

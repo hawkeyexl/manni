@@ -30,15 +30,20 @@ the step.
 Route them separately:
 
 ```yaml
-      - id: manni docevals
-        id: manni docevals
+      - name: manni docevals
+        id: docevals
         continue-on-error: true
-        run: npx @hawkeyexl/manni docevals run --format github
-
-      - id: Fail the PR on findings
-        if: steps.manni/docevals.outcome == 'failure'
         run: |
-          code=${{ steps.manni/docevals.outputs.exit-code || '1' }}
+          set +e
+          npx @hawkeyexl/manni docevals run --format github
+          code=$?
+          echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+          exit $code
+
+      - name: Fail the PR on findings
+        if: steps.docevals.outcome == 'failure'
+        run: |
+          code=${{ steps.docevals.outputs.exit-code }}
           if [ "$code" = "2" ]; then
             echo "::error::manni docevals could not run — this is a pipeline problem, not a docs problem."
           fi
@@ -104,7 +109,7 @@ converts a rotting queue into blocked contributors. See
 annotates the diff and produces a job summary.
 
 ```text
-::error file=docs/actions/goTo.mdx,line=4,title=manni docevals%3A fresh-enough::Page last reviewed 937 days ago (max 365)
+::error file=docs/actions/goTo.mdx,line=4,title=manni docevals%3A fresh-enough::Page last reviewed 977 days ago (max 365)
 ```
 
 Severity maps to the annotation level:
@@ -134,7 +139,7 @@ That reasoning is what a contributor acts on. It is only as good as the assertio
 
 ```console
 Suites
-  reference: 2/3 passed — 67% vs target 100% below target (1 skipped)
+  reference: 4/5 passed — 60% vs target 100% below target (1 skipped)
 ```
 
 Exit `1`, even if no individual eval errored. A capability suite left at the default target of `1.0`
@@ -148,7 +153,7 @@ a CI invocation: **while either is active, suite targets are reported but not en
 
 ```console
 Suites
-  reference: 4/4 passed — 100% vs target 100% partial — filtered run, target not evaluated
+  reference: 4/4 passed — 100% vs target 100% partial — filtered run, target not evaluated (1 skipped)
 ```
 
 That is deliberate. A run narrowed to one passing eval out of a suite of twelve would otherwise

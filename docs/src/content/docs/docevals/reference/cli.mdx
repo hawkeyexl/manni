@@ -28,9 +28,9 @@ collections is **exit 2**. `node_modules` and `.git` are never read.
 
 | Flag | Commands | Meaning |
 |---|---|---|
-| `-c, --config <path>` | all except `init` and `review` | Path to `manni.config.yaml`. Without it, manni docevals looks for that file from the working directory up to the repository root and reads its `docevals:` key and its top-level `collections:`. With no file at all, built-in defaults apply and there are no named evals, suites, or collections. |
+| `-c, --config <path>` | all except `init` and `review` | Path to `manni.config.yaml`. Without it, manni docevals looks for that file from the working directory up to the repository root. It reads the file's `docevals:` key and its top-level `collections:`. With no file at all, built-in defaults apply and there are no named evals, suites, or collections. |
 | `--no-config` | `run`, `list`, `generate`, `fill`, `promote` | Ignore any discovered config file and run on built-in defaults. `-c` and `--no-config` set the same option, so the one written later wins. |
-| `--collection <name>` | same as above | Read only this configured collection. Repeatable, one name per occurrence, never comma-separated. Cannot be combined with positional paths, and needs a config file to select from: **exit 2** for both, and for a name the config does not declare. |
+| `--collection <name>` | same as above | Read only this configured collection. Repeatable, one name per occurrence, never comma-separated. Cannot be combined with positional paths, and needs a config file to select from. Each of those is **exit 2**, as is a name the config does not declare. |
 | `--exclude <glob>` | same as above | Glob to exclude. Repeatable. Applies to typed paths and collections alike. A collection's own `exclude:` applies only when the run reads that collection. |
 | `-f, --format <format>` | `list`, `run`, `fill` | Output format. `run` accepts `pretty`, `json`, `markdown`, `github`, `sarif`, `junit`, `html`; `list` and `fill` accept `pretty` and `json`. Anything else is a usage error: **exit 2**, allowed set in the message. That includes `run`'s `markdown` passed to `list`. See [Output and exit codes](/manni/docevals/reference/output-and-exit-codes/#which-formats-each-command-accepts). |
 | `--provider <name>` | `run`, `generate`, `fill`, `promote`, `calibrate` | `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. Overrides `docevals.provider`, and an eval's own `provider:`. `auto`, the default, detects a provider exactly as `manni meta fill` does. An unknown name is **exit 2**. |
@@ -97,7 +97,7 @@ manni docevals run [paths...] [options]
 | `--runs` | `<n>` | config `judge.ensembleRuns` | Ensemble runs per eval. Overrides the config default of 3, and an eval's own `runs`. |
 | `--chunk-chars` | `<n>` | config `judge.chunkChars` | Characters of page per judge call. A longer page is read in parts and judged once against the collected evidence. The config default is 12000. |
 | `--eval` | `<name>` | n/a | Run only this eval. Repeat the flag for more than one (`--eval a --eval b`). Names are **not** space-separated, because a variadic flag would swallow the following glob. **Suite targets are not evaluated while a filter is active**; see below. A name that matches nothing is a usage error: **exit 2**. |
-| `--suite` | `<name>` | n/a | Run only the evals the named suite lists. Same suspension of suite targets. A suite the config does not define is **exit 2**, with the defined names in the message. |
+| `--suite` | `<name>` | n/a | Run only the evals that report under the named suite. Same suspension of suite targets. A suite the config does not define is **exit 2**, with the defined names in the message. |
 | `--since` | `<ref>` | n/a | Evaluate only the pages that differ between `<ref>` and `HEAD`. Corpus-wide graders still see every page. Suite targets are suspended **when the scope leaves pages out**. Nothing changed is **exit 0**, not an error; see below. |
 | `--max-turns` | `<n>` | config `judge.maxTurns` | Stop judging after this many uncached **ensemble runs**. One ai eval spends `judge.ensembleRuns` turns; a cached ensemble spends none. A run may make a second provider call when the first response fails schema validation. This is therefore a floor on API calls rather than an exact count. Unbounded by default. |
 | `--baseline` | `[path]` | n/a | Fail only on findings a recorded baseline does not already hold. With no path, the configured `baseline:`, then `.manni-docevals-baseline.json`. |
@@ -154,7 +154,7 @@ $ manni docevals run --deterministic-only --no-generate --eval readable
 ...
 Suites
   how-to: 2/2 passed — 100% vs target 100% partial — filtered run, target not evaluated
-  reference: 4/4 passed — 100% vs target 100% partial — filtered run, target not evaluated
+  reference: 4/4 passed — 100% vs target 100% partial — filtered run, target not evaluated (1 skipped)
 ```
 
 What still holds:
@@ -163,9 +163,9 @@ What still holds:
 - An `error`-level resolution problem exits **1**.
 - A filter matching no evals exits **2**. A green run over zero evals is never
   the answer.
-- `--suite` filters, it does not redefine. It selects the evals the named suite
-  lists, wherever those evals resolve. Each result still reports under the
-  suite its own page resolved to, and `target-pass-rate` is untouched.
+- `--suite` filters, it does not redefine. It selects the evals that report
+  under the named suite, which a page takes from its `eval-suite` or
+  `defaults.suite`. `target-pass-rate` is untouched.
 
 This is why `--eval` is a local debugging flag and not a CI invocation. See
 [Exit codes and annotations](/manni/docevals/ci/exit-codes-and-annotations/#a-filtered-run-is-not-a-gate)
@@ -262,8 +262,10 @@ test/docevals/fixtures/pages/docs/actions/goTo.mdx (suite: reference)
   - fresh-enough [tool:freshness, regression, config]
   - readable [tool:reading-level, regression, config]
   - frontmatter-valid [tool:docmeta, regression, config]
+  - names-an-action [tool:regex, regression, config]
+  - ships-a-schema [tool:file-exists, regression, config]
 
-1 pages, 4 evals resolved
+1 pages, 6 evals resolved
 ```
 
 Each line is `name [grader, type, source]`, where source is `config` or
@@ -285,7 +287,7 @@ Each line is `name [grader, type, source]`, where source is `config` or
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `run`'s wider set is rejected here rather than falling back to `pretty` (exit 2). |
 | `--eval` | `<name>` | n/a | Show only this eval. Repeatable, like the `run` flag. |
-| `--suite` | `<name>` | n/a | Show only the evals the named suite lists. |
+| `--suite` | `<name>` | n/a | Show only the evals that report under the named suite. |
 
 These are the same two filters `run` takes, and they fail the same way: a
 name that matches nothing is **exit 2**. Reach for them to answer "what would
@@ -348,7 +350,7 @@ manni docevals fill [paths...] [options]
 | `--confidence` | `<n>` | config `fill.confidenceThreshold` | Minimum confidence to write, 0 to 1. The config default is `0.7`. Values above 1 are a usage error. |
 | `--max-turns` | `<n>` | config `fill.maxTurns` | Stop after this many uncached inference calls, exactly one per page filled. Unbounded by default. |
 | `--no-cache` | n/a | off | Bypass the proposal cache. |
-| `--chunk-chars` | `<n>` | config | Characters of page per fill call. A longer page is proposed in parts. |
+| `--chunk-chars` | `<n>` | config `fill.chunkChars` | Characters of page per fill call. A longer page is proposed in parts. |
 | `--provider` | `<name>` | config `provider`, else `auto` | Provider: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
 | `--model` | `<model>` | config `model`, else the provider's default | Model. Needs a named provider. |
 
@@ -379,7 +381,7 @@ manni docevals promote [paths...] [options]
 | `--no-config` | n/a | off | Ignore any discovered config file. See [Common conventions](#common-conventions). |
 | `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. See [Common conventions](#common-conventions). |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
-| `--write` | n/a | off | Apply promotions: write the scripts and rewrite the evals. |
+| `--write` | n/a | off | Apply promotions. It writes the scripts and rewrites the evals. |
 | `--provider` | `<name>` | config `provider`, else `auto` | Provider: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
 | `--model` | `<model>` | config `model`, else the provider's default | Model. Needs a named provider. |
 

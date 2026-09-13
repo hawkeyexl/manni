@@ -17,7 +17,7 @@ Find your CI output in the left column.
 | A message with a **file and line**, like `error:4 [freshness/stale] …` | A script-based check | [Fix the line](#a-finding-with-a-line) |
 | A message with **reasoning but no line**, mentioning "AI judge" | An AI verdict | [Read the assertion](#an-ai-verdict) |
 | **`needs-review`** | Waiting on a person | [Not yours to fix](#needs-review) |
-| Something about a **stale `assertion-hash`** | A generated script is out of date | [Not yours to fix](#stale-generated-script) |
+| An **assertion changed since its script was generated** | A generated script is out of date | [Not yours to fix](#stale-generated-script) |
 | **Exit code 2**, or "could not run" / missing key / bad config | The tool itself failed | [Not your fault](#exit-2) |
 
 The distinction that matters most is this. **Exit 1 means a docs problem, exit 2 means a pipeline problem.**
@@ -30,7 +30,7 @@ If you are looking at exit 2, stop and tell whoever owns CI.
 ```text
 docs/actions/goTo.mdx
   FAIL fresh-enough
-       error:4 [freshness/stale] Page last reviewed 937 days ago (max 365)
+       error:4 [freshness/stale] Page last reviewed 977 days ago (max 365)
 ```
 
 Read it as `severity:line [rule] message`. A script found something specific at line 4.
@@ -50,7 +50,7 @@ the build red. Keep reading the log.
 ## An AI verdict
 
 ```text
-::error file=docs/tutorial.mdx,title=manni docevals: no-future-promises::AI judge: fail (confidence 0.93). The "Coming in v3" section describes unreleased functionality.
+::error file=docs/tutorial.mdx,title=manni docevals%3A no-future-promises::AI judge: fail (confidence 0.93). The "Coming in v3" section describes unreleased functionality.
 ```
 
 No line number, because the judgement is about the page rather than a character position.

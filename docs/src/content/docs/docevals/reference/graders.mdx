@@ -13,7 +13,7 @@ explicable wins; see [How manni docevals works](/manni/docevals/get-started/how-
 |---|---|---|
 | `command` | Any CLI check you supply | No |
 | `tool:remark` · `tool:markdownlint` · `tool:vale` · `tool:docmeta` · `tool:doc-structure-lint` · `tool:doc-detective` | An existing tool | No |
-| `tool:freshness` · `tool:reading-level` · `tool:differentiation` | Native checks nothing else covers | No |
+| `tool:freshness` · `tool:reading-level` · `tool:differentiation` · `tool:regex` · `tool:file-exists` | Native checks nothing else covers | No |
 | `ai` | The judge | Yes |
 | `human` | A person | No |
 
@@ -26,7 +26,8 @@ eval's configured severity.
 
 ## `command`
 
-Runs any executable. `{file}` in an argument expands to the page's absolute path.
+Runs any executable. `{file}` in an argument expands to the page's absolute path, and the command
+also receives that path in the `MANNI_DOCEVALS_FILE` environment variable.
 
 | Option | Default | Notes |
 |---|---|---|
@@ -108,7 +109,7 @@ no subprocess, so behavior is identical to `manni meta validate`.
 
 | Option | Default | Notes |
 |---|---|---|
-| `schemas` | manni meta's default | Array of schema refs. Built-in ids, file paths, and URLs all work. |
+| `schemas` | none | **Required.** Array of schema refs. Built-in ids, file paths, and URLs all work. Missing it is a `diagnostic` finding, not manni meta's default set. |
 
 ## `tool:doc-structure-lint`
 
@@ -139,7 +140,7 @@ Without the flag a failing doc test is undetectable and passes silently. Your ar
 A timeout is reported distinctly from a failure. Default timeout 600000 ms, since this grader may
 drive a browser.
 
-:::danger
+:::danger[Page bodies can run commands]
 This grader executes shell commands embedded in page **bodies**, and needs its own grant:
 `execution.allow: [page-embedded-steps]`. Granting `frontmatter-commands` does not grant it. On
 untrusted pull requests the job itself must still be gated. A grant says *this corpus* is trusted,
@@ -203,7 +204,7 @@ express an assertion is the one to reach for; this is the rung below the AI judg
   assertion: The install command names the current package.
   grader: tool:regex
   options:
-    pattern: "npm i -g manni docevals"
+    pattern: "npm i -D @hawkeyexl/manni"
 ```
 
 Rule ids `regex/not-found`, `regex/found`, `regex/count`. A pattern that does not compile is a

@@ -31,9 +31,9 @@ Do this **before** recording. `baseline:` is what makes an ordinary run read the
 recording run writes a file nothing will ever load, and says so:
 
 ```console
-warn .manni-docevals-baseline.json Recorded .manni-docevals-baseline.json, but no `baseline:` is set
-in /repo/manni.config.yaml. Until it is, an ordinary run ignores this file — add the key, or pass
---baseline.
+warn .manni-docevals-baseline.json Recorded .manni-docevals-baseline.json, but `baseline:` in
+/repo/manni.config.yaml is not set. An ordinary run will not read this file — point the key at it,
+or pass --baseline .manni-docevals-baseline.json.
 ```
 
 ### 2. Record today's findings

@@ -26,8 +26,7 @@ Frontmatter records the reference and the hash of the assertion that produced it
 
 ```yaml
       command: [node, manni-docevals/installation.install-command-present.mjs, "{file}"]
-      generated:
-        assertion-hash: aefaa89e…
+      generated-assertion-hash: aefaa89e…
 ```
 
 ## What to look for
@@ -57,7 +56,7 @@ script that throws reports as a failure, which looks like a docs problem and is 
 
 They are yours. Fix a bad regex, tighten a match, add a comment explaining a non-obvious rule. Hand
 edits survive. Regeneration only happens when the **assertion** changes, which is what
-`assertion-hash` tracks.
+`generated-assertion-hash` tracks.
 
 If you change the assertion, the hash stops matching, the script is stale, and manni docevals regenerates
 it, discarding your edits. That is intended: the assertion is the contract, the script is an

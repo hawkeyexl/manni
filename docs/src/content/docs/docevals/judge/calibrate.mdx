@@ -31,7 +31,7 @@ npx @hawkeyexl/manni docevals calibrate --seed
 ```
 
 ```console
-Wrote 12 golden candidate(s) to /home/priya/acme-docs/.manni/docevals/golden/from-reviews.yaml (12 new, 0 updated).
+Wrote 12 golden candidate(s) to /home/priya/acme-docs/.manni/docevals/golden/from-reviews.yaml (12 new, 0 updated; 12 total).
 12 case(s) are `reviewed: false`. Read them and set `reviewed: true` — a golden set assembled without a human is not one.
 ```
 
@@ -50,7 +50,7 @@ so it runs with no API key set. A CI runner that has none can run it.
 
 **It is idempotent on `(file, eval)`.** Re-run it as reviews accumulate. An existing case is updated
 in place rather than duplicated, and if a later review reversed the verdict, `expected` follows. The
-`added` / `updated` counts in the output tell you which happened.
+`new` / `updated` counts in the output tell you which happened.
 
 **It never un-reviews a case.** If you already set `reviewed: true`, re-seeding leaves it true.
 Confirming a case is a one-way act; the tool does not quietly take it back.
@@ -155,7 +155,7 @@ npx @hawkeyexl/manni docevals calibrate --golden .manni/docevals/golden --runs 3
 ```
 
 Every case is judged in a single batched call, so cases run concurrently under
-`defaults.concurrency`. `--max-turns` bounds the whole run in ensemble runs, the same unit and the
+`judge.concurrency`. `--max-turns` bounds the whole run in ensemble runs, the same unit and the
 same run-wide meaning it has on `run`. It is not a per-case budget, and a cached case spends none.
 See [Caching and turn budgets](/manni/docevals/ci/cost-and-caching/) and the full flag list in
 [the CLI reference](/manni/docevals/reference/cli/).
@@ -173,8 +173,10 @@ agree docs/roadmap.md no-future-promises: judge=fail human=fail
 agree docs/api.md explains-why-before-how [unreviewed]: judge=pass human=pass
 DISAGREE docs/cli.md explains-why-before-how [stale]: judge=fail human=pass — human: Motivation is in the intro paragraph.
 
-Agreement: 3/4 (75%) — threshold 70%
+Agreement: 3/4 judged (75%) — threshold 70%
 False positives: 1 (33% of human-passes), false negatives: 0
+
+False-positive rate exceeds judge.falsePositiveAlert — the judge is flagging content humans accept. Consider tightening assertions or examples.
 
 1 of 4 case(s) are unreviewed — they count toward the rate above, but no human has confirmed they belong in the golden set. Read them and set `reviewed: true`.
 

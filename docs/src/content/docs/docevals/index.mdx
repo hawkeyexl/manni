@@ -1,7 +1,7 @@
 ---
 title: manni docevals
 description: Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter.
-template: splash
+tableOfContents: false
 hero:
   tagline: Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter.
   actions:
@@ -40,13 +40,17 @@ Run it:
 ```console
 $ npx @hawkeyexl/manni docevals run docs/ --deterministic-only
 docs/actions/goTo.mdx
+  skip no-future-promises
+       judge skipped (--deterministic-only)
   FAIL fresh-enough
-       error:4 [freshness/stale] Page last reviewed 937 days ago (max 365)
+       error:4 [freshness/stale] Page last reviewed 977 days ago (max 365)
   pass readable
   pass frontmatter-valid
+  pass names-an-action
+  pass ships-a-schema
 
 Suites
-  reference: 2/3 passed — 67% vs target 100% below target (1 skipped)
+  reference: 4/5 passed — 60% vs target 100% below target (1 skipped)
 ```
 
 Exit `1`. That's a docs regression, caught the way a test would catch a code one. This run
@@ -69,15 +73,15 @@ needed no API key.
 
 **It orchestrates; it doesn't reimplement.** remark, markdownlint, Vale, manni meta,
 doc-structure-lint, and Doc Detective keep doing their jobs. Their findings arrive as named evals
-with severities, in one report with one exit code. Three native checks fill gaps nothing else
-covers: freshness, reading level, and cross-page differentiation.
+with severities, in one report with one exit code. Native checks fill the gaps nothing else
+covers, such as freshness, reading level, and cross-page differentiation.
 
 **The judge is the last resort, not the pitch.** If a criterion can be expressed as code, it should be.
 `manni docevals promote` finds ai evals that could be deterministic, and `manni docevals generate` writes the
 scripts as reviewable files beside your docs, never inline in frontmatter.
 
-**The judge has safeguards, and you can audit them.** Temperature 0, pinned models, a 3-run ensemble,
-and confidence zones that route the uncertain cases to a person instead of guessing. `manni docevals
+**The judge has safeguards, and you can audit them.** Temperature 0, a model you pin in config, and a 3-run ensemble.
+Confidence zones route the uncertain cases to a person instead of guessing. `manni docevals
 calibrate` scores the judge against your own human-verified set, so "is this trustworthy?" has a
 number rather than an opinion.
 

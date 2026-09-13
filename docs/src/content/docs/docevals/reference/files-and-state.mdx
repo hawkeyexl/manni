@@ -3,7 +3,7 @@ title: Files and state
 description: What manni docevals writes, where, and which of it belongs in version control.
 ---
 
-manni docevals writes to five places. Only one of them is source you review.
+manni docevals writes to six places. Only one of them is source you review.
 
 | Path | Default | Commit it? |
 |---|---|---|
@@ -37,8 +37,7 @@ Frontmatter records the reference and a hash of the assertion that produced it:
       assertion: The page contains a bash code block with `npm i -g doc-detective`.
       grader: command
       command: [node, manni-docevals/installation.install-command-present.mjs, "{file}"]
-      generated:
-        assertion-hash: aefaa89e…
+      generated-assertion-hash: aefaa89e…
 ```
 
 Edit the assertion and the hash no longer matches, so the script is stale and regenerates rather
@@ -46,7 +45,7 @@ than quietly checking the old thing.
 
 ## Findings baseline
 
-Written only when `baseline:` is set or a `--baseline` / `--write-baseline` flag asks for it. Default
+Read when `baseline:` is set or `--baseline` is passed, and written only by `--write-baseline`. Default
 path `.manni-docevals-baseline.json`, resolved **relative to the config file** so a run from a
 subdirectory reads the same one.
 

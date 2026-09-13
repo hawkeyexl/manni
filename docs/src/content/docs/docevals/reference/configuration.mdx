@@ -37,17 +37,19 @@ at every level, so a typo there is a startup error rather than a silently ignore
 
 One consequence is worth knowing. Because the root is permissive, misspelling the namespace itself
 (`docevlas:`) is not an error. manni docevals reads it as another tool's config and runs on pure
-defaults, with no named evals, no suites, and a passing exit code. `manni docevals init` writes the
-key correctly; if a run reports far fewer evals than you expect, check that spelling first.
+defaults, with no named evals and no suites. Pages that carry their own `evals` still run. A corpus
+that relied on the config's suites stops with exit 2 and `No evals resolved`. `manni docevals init`
+writes the key correctly; if a run reports far fewer evals than you expect, check that spelling
+first.
 
 With no config file present, every default below applies and there are no named evals or suites.
-The family file is the only one read: a `docevals.config.yaml` is not a config file, however it is
+The family file is the only one read. A `docevals.config.yaml` is not a config file, however it is
 spelled, so move its settings under `docevals:` in `manni.config.yaml`.
 
 ## Which pages a run reads
 
 The pages are not a `docevals:` key. They are declared once for every manni tool, in the top-level
-`collections:` list beside `docevals:`, and the
+`collections:` list beside `docevals:`. The
 [configuration reference for collections](/manni/meta/reference/configuration/#collections) lists
 every key a collection takes:
 
@@ -68,8 +70,8 @@ docevals:
 - No paths and no collections is **exit 2**. There is no default set, so a run never evaluates
   everything beneath the working directory by accident.
 
-A `files:` key under `docevals:` is refused by name, with the message pointing here, rather than
-reported as an unknown key. Move its `include` globs to a collection's `paths` and its `exclude`
+A `files:` key under `docevals:` is refused by name with exit 2, its message pointing to the
+collections reference, rather than reported as an unknown key. Move its `include` globs to a collection's `paths` and its `exclude`
 globs to that collection's `exclude`.
 
 ## `baseline`
@@ -127,14 +129,14 @@ docevals:
 | `providers.openai.baseUrl` | string | `https://api.openai.com/v1` | Any OpenAI-compatible endpoint. |
 | `providers.openai.apiKeyEnv` | string | `OPENAI_API_KEY` | Environment variable holding the key. |
 | `providers.claude-cli.command` | string | `claude` | The Claude CLI executable. |
-| `providers.llama-cpp.modelsDir` | string \| null | `null` | Where GGUF weights live. `null` is the inference library's own directory. |
+| `providers.llama-cpp.modelsDir` | string | none | Where GGUF weights live. Unset, the inference library's own directory. |
 | `providers.llama-cpp.thoughtTokens` | integer ≥ 0 | `0` | Thinking budget before the JSON. |
 
 An `ai` eval's own `provider:` and `model:` sit between the flags and these
 keys, and follow the same rules. The config's `model` belongs to the config's
-`provider`, so an eval that names a different provider takes that provider's
-default. An eval naming an unknown provider, or a model with no provider to own
-it, reports as an `error` for that eval and the run exits 1.
+`provider`. An eval that names a different provider therefore takes that
+provider's default. An eval naming an unknown provider, or a model with no provider to own
+it, reports as an `error` for that eval. The run then exits 1.
 
 :::caution[The old `provider:` object is refused]
 `provider.default` and the per-provider sections under `provider:` are gone.
@@ -163,7 +165,7 @@ Which provider to pick, and what each one implies about where your pages go, is 
 | `judge.falsePositiveAlert` | number 0–1 | `0.15` | Calibration alerts above this false-positive rate. |
 | `judge.cacheDir` | string | `.manni/docevals/cache` | |
 | `judge.concurrency` | integer ≥ 1 | `defaults.concurrency` | Pages judged in parallel. Separate from `defaults.concurrency` because a local `llama-cpp` model runs in-process against one GPU and serves one context at a time. Deterministic graders are happy at 4. |
-| `judge.maxTurns` | integer ≥ 1 \| null | `null` | Stop judging after this many uncached inference calls. One ai eval spends `judge.ensembleRuns` turns; a cached ensemble spends none. `null` is unbounded. |
+| `judge.maxTurns` | integer ≥ 1 \| null | `null` | Stop judging after this many uncached ensemble runs. One ai eval spends `judge.ensembleRuns` turns; a cached ensemble spends none. `null` is unbounded. |
 | `judge.chunkChars` | integer ≥ 1 | `12000` | Characters of page per judge call. A longer page is read in parts. Each part contributes the passages bearing on the assertion, and one judge then answers against the collected evidence. Content that fits is judged in a single call, exactly as before. |
 
 Anything between the two zone thresholds lands in human review. See
@@ -173,7 +175,7 @@ Anything between the two zone thresholds lands in human review. See
 
 | Key | Type | Default | Notes |
 |---|---|---|---|
-| `scripts.dir` | string | `{docDir}/manni docevals` | Where generated scripts go. `{docDir}` expands to the page's directory. |
+| `scripts.dir` | string | `{docDir}/manni-docevals` | Where generated scripts go. `{docDir}` expands to the page's directory. |
 | `scripts.configDir` | string | `manni-docevals-scripts` | Used when `scripts.dir` has no `{docDir}`; resolved relative to the config file. |
 | `scripts.timeoutMs` | integer ≥ 1 | `30000` | |
 
@@ -197,10 +199,10 @@ Grant only what the corpus needs. Granting `frontmatter-commands` does not grant
 `page-embedded-steps`: trusting a repo's frontmatter is not the same as trusting arbitrary steps in
 its prose.
 
-`--allow-execution <kind...>` adds a grant for one run; `--no-execution` clears every grant for one
-run.
+`--allow-execution <kind>` adds a grant for one run, one kind per flag; `--no-execution` clears every
+grant for one run.
 
-:::caution
+:::caution[A grant is not a fork defence]
 A grant says *this corpus* is trusted to execute. A fork's pages are not this corpus, so no
 combination of grants makes a run over untrusted contributions safe. Restrict the job to same-repo
 pull requests instead. See [Untrusted pull requests](/manni/docevals/ci/untrusted-pull-requests/).
@@ -208,13 +210,13 @@ pull requests instead. See [Untrusted pull requests](/manni/docevals/ci/untruste
 
 ## `fill`
 
-| Key | Type | Default |
-|---|---|---|
-| `fill.confidenceThreshold` | number 0–1 | `0.7` |
-| `fill.maxEvalsPerPage` | integer ≥ 1 | `3` |
-| `fill.temperature` | number ≥ 0 | `0` |
-| `fill.cacheDir` | string | `.manni/docevals/cache/fill` |
-| `fill.maxTurns` | integer ≥ 1 \| null | `null` |
+| Key | Type | Default | Notes |
+|---|---|---|---|
+| `fill.confidenceThreshold` | number 0–1 | `0.7` | |
+| `fill.maxEvalsPerPage` | integer ≥ 1 | `3` | |
+| `fill.temperature` | number ≥ 0 | `0` | |
+| `fill.cacheDir` | string | `.manni/docevals/cache/fill` | |
+| `fill.maxTurns` | integer ≥ 1 \| null | `null` | Stop after this many uncached inference calls, one per page filled. |
 | `fill.chunkChars` | integer ≥ 1 | `12000` | Characters of page per fill call. A longer page is proposed against in parts and the proposals merged by id, keeping the highest confidence. |
 
 ## `evals`

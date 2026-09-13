@@ -34,7 +34,7 @@ Executed by the `tool:doc-detective` grader, and gated **separately** by
 `execution.allow: [page-embedded-steps]`. Granting frontmatter commands does not grant this:
 trusting a repo's frontmatter is not the same as trusting arbitrary steps written in its prose.
 
-:::danger
+:::danger[Grants do not make a fork safe]
 **No combination of grants makes a run over untrusted contributions safe.**
 
 A grant says *this corpus* is trusted to execute. A fork's pages are not this corpus. A fork
@@ -104,7 +104,7 @@ tempted toward the unsafe workaround above.
       That is defence in depth, not the defence.
 - [ ] Third-party actions pinned to a full commit SHA, not a tag.
 - [ ] `permissions:` set to least privilege (`contents: read` for a check job).
-- [ ] A spend ceiling set, so a malicious or accidental loop cannot run up a bill.
+- [ ] A turn budget set (`judge.maxTurns`), so a malicious or accidental change cannot run up a bill.
 
 ## Reviewing changes to the gate itself
 

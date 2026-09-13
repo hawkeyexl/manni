@@ -79,12 +79,14 @@ test/docevals/fixtures/pages/docs/actions/goTo.mdx
   skip no-future-promises
        judge skipped (--deterministic-only)
   FAIL fresh-enough
-       error:4 [freshness/stale] Page last reviewed 937 days ago (max 365)
+       error:4 [freshness/stale] Page last reviewed 977 days ago (max 365)
   pass readable
   pass frontmatter-valid
+  pass names-an-action
+  pass ships-a-schema
 
 Suites
-  reference: 2/3 passed — 67% vs target 100% below target (1 skipped)
+  reference: 4/5 passed — 60% vs target 100% below target (1 skipped)
 ```
 
 The finding line is `severity:line [ruleId] message`. Colour is applied only on a TTY.
@@ -94,8 +96,9 @@ means the grader could not reach a verdict, because its tool was missing, timed 
 output it could not read. The eval fails whatever its severity says. Consumers that gate on
 severity alone will miss these; read the eval's `outcome` instead.
 
-Note the suite line: the skipped eval is excluded from the denominator, so the rate is 2/3 rather
-than 2/4.
+Note the suite line. The skipped eval is excluded, so the count is 4/5 rather than 4/6. The rate is
+weighted and the count is not. `fresh-enough` and `names-an-action` form a failing criterion of
+weight 2, so 3 of 5 weight passed, which is 60%.
 
 ## `--format json`
 
@@ -116,31 +119,35 @@ One object, for programmatic consumers.
           "evalName": "fresh-enough",
           "file": "test/docevals/fixtures/pages/docs/actions/goTo.mdx",
           "ruleId": "freshness/stale",
-          "message": "Page last reviewed 937 days ago (max 365)",
+          "message": "Page last reviewed 977 days ago (max 365)",
           "severity": "error",
           "line": 4
         }
       ],
-      "durationMs": 0
+      "durationMs": 1,
+      "suite": "reference",
+      "weight": 1
     }
   ],
   "suites": [
     {
       "suite": "reference",
-      "total": 4,
-      "passed": 2,
+      "total": 6,
+      "passed": 4,
       "failed": 1,
       "needsReview": 0,
       "skipped": 1,
       "errored": 0,
-      "passRate": 0.6666666666666666,
+      "passRate": 0.6,
       "targetPassRate": 1,
-      "meetsTarget": false
+      "meetsTarget": false,
+      "criteria": { "total": 1, "passed": 0, "failed": 1, "suspended": 0 }
     }
   ],
   "usage": { "totalTokens": 0, "cachedEvals": 0, "judgedEvals": 0 },
   "generated": [],
-  "exitCode": 1
+  "exitCode": 1,
+  "problems": []
 }
 ```
 
@@ -153,15 +160,19 @@ One object, for programmatic consumers.
 | `findings` | Present for command/tool evals that produced findings. |
 | `generated` | True when this run generated the eval's check script. |
 | `via` | `"human-review"` when a persisted review resolved the outcome. |
+| `suite`, `weight` | The suite the result reports under, and its weight in that suite's rate. |
 | `baselined` | Count of findings a [baseline](#baseline) suppressed on this eval. Present only when a baseline was in effect, so its absence means "no baseline", not "nothing was forgiven". |
 | `skipReason`, `durationMs` | |
 
 ### `suites[]`
 
-`passRate` is `passed / (total - skipped)`, and `1` when nothing ran. `meetsTarget` compares it to
-the suite's `target-pass-rate` from the config.
+`passRate` is the weighted share of graded evals (pass, fail, and error) that passed, and `1` when
+nothing was graded. A scored criterion counts once, by its own weight, in place of its members.
+`meetsTarget` compares it to the suite's `target-pass-rate` from the config. `criteria` is present
+when the suite lists criteria.
 
-`partial` is present, and `true`, only when `--eval` or `--suite` filtered the run. It says the run
+`partial` is present, and `true`, only when `--eval` or `--suite` filtered the run, or `--since`
+left pages out. It says the run
 measured part of the suite, so the summary carries numbers but no verdict:
 
 ```json
@@ -176,7 +187,8 @@ measured part of the suite, so the summary carries numbers but no verdict:
   "passRate": 1,
   "targetPassRate": 1,
   "meetsTarget": false,
-  "partial": true
+  "partial": true,
+  "criteria": { "total": 0, "passed": 0, "failed": 0, "suspended": 0 }
 }
 ```
 
@@ -234,6 +246,32 @@ The suite table plus per-page findings, suitable for a PR comment or a job summa
 
 Workflow commands for inline annotations, followed by the markdown summary. The same output
 both annotates the diff and works as `$GITHUB_STEP_SUMMARY`.
+
+```text
+::error file=test/docevals/fixtures/pages/docs/actions/goTo.mdx,line=4,title=manni docevals%3A fresh-enough::Page last reviewed 977 days ago (max 365)
+
+## manni docevals results
+
+| Suite | Passed | Failed | Review | Pass rate | Target | |
+|---|---|---|---|---|---|---|
+| reference | 4 | 1 | 0 | 60% | 100% | ❌ |
+
+### Findings
+
+- ❌ **fresh-enough** — `test/docevals/fixtures/pages/docs/actions/goTo.mdx`
+  - error:4: Page last reviewed 977 days ago (max 365)
+```
+
+Severity maps to the annotation level: `error` → `::error`, `warning` → `::warning`, `notice` →
+`::notice`. Values are escaped per GitHub's rules. That covers `%`, CR, and LF in data, plus `:` and
+`,` in properties, which is why the title reads `manni docevals%3A`.
+
+A failing **ai** eval annotates the file with the mean confidence and the judge's reasoning, since
+it has no line to point at:
+
+```text
+::error file=...,title=manni docevals%3A no-future-promises::AI judge: fail (confidence 0.93). <reasoning>
+```
 
 ## `--format html`
 
@@ -298,24 +336,3 @@ npx @hawkeyexl/manni docevals run --format junit > docevals.junit.xml
 
 `needs-review` is a skip rather than a failure on purpose. JUnit has no third state, and reporting
 a human-review queue as a broken build is the wrong signal for the person reading it.
-
-```text
-::error file=test/docevals/fixtures/pages/docs/actions/goTo.mdx,line=4,title=manni docevals%3A fresh-enough::Page last reviewed 937 days ago (max 365)
-
-## manni docevals results
-
-| Suite | Passed | Failed | Review | Pass rate | Target | |
-|---|---|---|---|---|---|---|
-| reference | 2 | 1 | 0 | 67% | 100% | ❌ |
-```
-
-Severity maps to the annotation level: `error` → `::error`, `warning` → `::warning`, `notice` →
-`::notice`. Values are escaped per GitHub's rules. That covers `%`, CR, and LF in data, plus `:` and
-`,` in properties, which is why the title reads `manni docevals%3A`.
-
-A failing **ai** eval annotates the file with the mean confidence and the judge's reasoning, since
-it has no line to point at:
-
-```text
-::error file=...,title=manni docevals%3A no-future-promises::AI judge: fail (confidence 0.93). <reasoning>
-```

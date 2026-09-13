@@ -27,6 +27,7 @@ docevals:
     frontmatter-valid:
       assertion: Page frontmatter validates.
       grader: tool:docmeta
+      options: { schemas: ["schemas/page.json"] }
       severity: error          # blocks
 ```
 
@@ -46,7 +47,7 @@ The move is **not** to weaken the assertion. It is to lower the severity:
 Weakening the assertion instead permanently encodes the corpus's current state as your standard, and
 nobody ever tightens it back.
 
-:::note
+:::note[A baseline usually beats the ratchet]
 On an existing corpus, prefer a **[findings
 baseline](/manni/docevals/adopt/retrofit-a-legacy-corpus/#the-ratchet)** to this sequence. It lets you
 turn the check on at `error` today and fail only on *new* findings. Nothing waits on a burndown
@@ -95,7 +96,7 @@ Vale defaults to exactly that mapping. Any tool severity you do not map falls ba
 
 ```console
   FAIL fresh-enough
-       error:4 [freshness/stale] Page last reviewed 937 days ago (max 365)
+       error:4 [freshness/stale] Page last reviewed 977 days ago (max 365)
 ```
 
 `severity:line [ruleId] message`. In JSON:
@@ -105,7 +106,7 @@ Vale defaults to exactly that mapping. Any tool severity you do not map falls ba
   "evalName": "fresh-enough",
   "file": "docs/actions/goTo.mdx",
   "ruleId": "freshness/stale",
-  "message": "Page last reviewed 937 days ago (max 365)",
+  "message": "Page last reviewed 977 days ago (max 365)",
   "severity": "error",
   "line": 4
 }

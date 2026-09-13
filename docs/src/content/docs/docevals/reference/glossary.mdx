@@ -1,6 +1,6 @@
 ---
 title: Glossary
-description: The ten terms that recur across every section of these docs.
+description: The terms that recur across every section of these docs.
 ---
 
 **Assertion**
@@ -58,7 +58,8 @@ description: The ten terms that recur across every section of these docs.
   admission of failure. It is what makes a binary verdict acceptable.
 
 **Pass rate**
-: `passed / (total - skipped)` for a suite. Verdicts are binary; the nuance lives here, which is why
+: The weighted share of a suite's graded evals (pass, fail, and error) that passed. Each eval or
+  criterion counts by its `weight`. Verdicts are binary; the nuance lives here, which is why
   a suite carries a target and an individual eval does not.
 
 **Regression suite**

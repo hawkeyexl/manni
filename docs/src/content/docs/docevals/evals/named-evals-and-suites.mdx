@@ -75,14 +75,15 @@ Individual verdicts are binary. The nuance lives in the **rate across a suite**:
 
 ```console
 Suites
-  reference: 2/3 passed — 67% vs target 100% below target (1 skipped)
+  reference: 4/5 passed — 60% vs target 100% below target (1 skipped)
 ```
 
 A suite below target fails the run. Leaving a capability suite at the default 1.0 turns every
 capability finding into a build break. That is the most common way to conclude the tool is unusable.
 
 Skipped evals are excluded from the rate entirely, and so are evals awaiting human review. The
-rate is computed over the **graded** set, which is pass, fail, and error.
+rate is computed over the **graded** set, which is pass, fail, and error. The rate is weighted and
+the count is not, which is why `4/5` above reads `60%`. Weights and criteria come next.
 
 ### Not every eval has to count the same
 
@@ -128,7 +129,7 @@ A group measured in part has numbers but no verdict.
 
 ## Run one suite
 
-`--suite <name>` narrows `run` and `list` to the evals a suite is composed of:
+`--suite <name>` narrows `run` and `list` to the evals that report under a suite:
 
 ```bash
 npx @hawkeyexl/manni docevals list --suite reference
@@ -146,10 +147,10 @@ the corpus, so the summary comes back `partial`, printing its numbers and withho
 
 ```console
 Suites
-  reference: 14/15 passed — 93% vs target 100% partial — filtered run, target not evaluated (6 skipped)
+  reference: 24/25 passed — 92% vs target 100% partial — filtered run, target not evaluated (6 skipped)
 ```
 
-That run still exits `1`, because one of the fifteen genuinely failed. Suspending the *target* does
+That run still exits `1`, because one of the twenty-five genuinely failed. Suspending the *target* does
 not suspend the findings. A filtered run stops claiming that the suite as a whole is in good
 standing. It does not stop reporting that something it looked at was wrong.
 
@@ -194,8 +195,10 @@ test/docevals/fixtures/pages/docs/actions/goTo.mdx (suite: reference)
   - fresh-enough [tool:freshness, regression, config]
   - readable [tool:reading-level, regression, config]
   - frontmatter-valid [tool:docmeta, regression, config]
+  - names-an-action [tool:regex, regression, config]
+  - ships-a-schema [tool:file-exists, regression, config]
 
-1 pages, 4 evals resolved
+1 pages, 6 evals resolved
 ```
 
 `source`, the third item, is `config` or `page`, which is exactly what you need when one page

@@ -49,7 +49,7 @@ judge turn budget exhausted (60)
 `fill` does the same per page, and marks it `(turn budget exhausted)`.
 
 Claiming before dispatch is what makes the cap exact rather than approximate. Judging runs
-`defaults.concurrency` targets at once, four by default. The number of calls an eval will make
+`judge.concurrency` targets at once, which falls back to `defaults.concurrency`, four by default. The number of calls an eval will make
 is knowable before the provider is touched, because it *is* the ensemble size. There is no window
 between deciding to spend and spending, so concurrent workers cannot both clear an almost-exhausted
 budget and then both spend.
