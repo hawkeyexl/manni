@@ -107,7 +107,7 @@ focus, it has a target.
 
 | Value | What the grader receives |
 |---|---|
-| `body` (default) | The page body, frontmatter stripped and MDX noise removed. |
+| `body` (default) | The page after its frontmatter block, byte for byte. MDX imports and components stay in. |
 | `raw` | The file verbatim, frontmatter included. |
 | `frontmatter` | The parsed frontmatter alone, written back out as YAML. The fences and any comments are not included, so use `raw` for the literal text. |
 | `{source: file, path: <rel>}` | A companion file, resolved against the page's directory. |
