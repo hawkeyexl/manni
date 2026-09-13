@@ -356,6 +356,38 @@ describe("manni meta derive provenance (built bin)", { timeout: 60_000 }, () => 
     );
   });
 
+  it("passes --check over a moved pin, as validate does, exit 0", () => {
+    const dir = stage();
+    expect(withEnv(["derive", "--generated-by", "claude-fable-5"], dir, {}).status).toBe(0);
+    commit(dir, "docs: raise the limit", { authorDate: D2 });
+    const page = readFileSync(join(dir, "docs", "limits.md"), "utf8");
+    writeFile(dir, "docs/limits.md", page.replace("# Rate limits\n", "# Rate limits\n\nRead this first.\n"));
+
+    expect(withEnv(["validate"], dir, {}).status).toBe(0);
+    const check = withEnv(["derive", "--check"], dir, {});
+    expect(check.status).toBe(0);
+    const github = withEnv(["derive", "--check", "-f", "github"], dir, {});
+    expect(github).toMatchObject({ status: 0, stdout: "" });
+  });
+
+  it("lets an empty --generated-by win over MANNI_GENERATED_BY, exit 0", () => {
+    const dir = stage();
+    const r = withEnv(["derive", "--generated-by", ""], dir, { MANNI_GENERATED_BY: "claude-fable-5" });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("docs/limits.md  current");
+    expect(readFileSync(join(dir, "docs", "limits.md"), "utf8")).not.toContain("generated-by");
+  });
+
+  it("refuses a range that names a directory on stderr, exit 2", () => {
+    const dir = stage();
+    const r = withEnv(["derive", "docs:9", "--generated-by", "claude-fable-5"], dir, {});
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain(
+      "manni: docs:9 does not name one file that derive reads; a range names lines of one file.",
+    );
+    expect(readFileSync(join(dir, "docs", "limits.md"), "utf8")).not.toContain("generated-by");
+  });
+
   it("names --generated-by and MANNI_GENERATED_BY in help", () => {
     const r = withEnv(["derive", "--help"], root, {});
     expect(r.stdout).toContain("--generated-by <name>");

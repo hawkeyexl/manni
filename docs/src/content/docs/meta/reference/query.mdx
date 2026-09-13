@@ -203,6 +203,10 @@ selects `*`, or reads `_sources`, derives every column and consults every
 source `derive.sources` allows. A column the statement never names is `NULL`
 in the view.
 
+`provenance` is the exception, because it costs a `git blame` per page. It is
+derived only when the statement names `provenance` or `derive.fields` lists
+it, so `SELECT *` and `SELECT count(*)` show it `NULL` otherwise.
+
 | Column | Type | Value |
 |---|---|---|
 | `_path` | TEXT, primary key | The file's label, exactly as in `docs`, so the two tables join on it. |

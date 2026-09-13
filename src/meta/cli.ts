@@ -35,7 +35,7 @@ import {
   runVendorSchema,
 } from "./commands/schemas.js";
 import { runFill } from "./commands/fill.js";
-import { runDerive } from "./commands/derive.js";
+import { deriveFailed, runDerive } from "./commands/derive.js";
 import { supportedExtensions } from "./extractors/index.js";
 import {
   COMMON_FORMATS,
@@ -1532,13 +1532,8 @@ export function buildProgram(): Command {
         if (text.length > 0 || !OMITTED_WHEN_CLEAN.has(format)) {
           process.stdout.write(`${text}\n`);
         }
-        // A file the run could not read or write fails the run whether or
-        // not it wrote the rest, as it does for `fill`: a stamp that was
-        // never applied must not read as done. A stale or unset field is
-        // `--check`'s failure alone — an applied run is the work done.
-        const { stale, unset, errors } = run.summary;
-        const failed = errors > 0 || (options.check && stale + unset > 0);
-        process.exitCode = failed ? 1 : 0;
+        // A file error fails any run; a finding fails `--check`. See `deriveFailed`.
+        process.exitCode = deriveFailed(run) ? 1 : 0;
       } catch (err) {
         fail(err);
       }

@@ -167,7 +167,7 @@ shows.
 
 A run that manages other fields, and not `provenance`, ignores the variable.
 `--generated-by <name>` is the same setting as a flag, and it wins over the
-variable.
+variable. It wins even when empty, and an empty or blank name is unset.
 
 ## Attribute lines by hand
 
@@ -196,7 +196,9 @@ manni: docs/limits.md:13-15: blame attributes these lines to claude-fable-5 (9ba
 
 That is exit 2, and nothing is written. So is a range with no
 `--generated-by`, a range past the end of the file, and a range that reaches
-into the frontmatter. The [output reference](/manni/meta/reference/output-and-exit-codes/#exit-2-from-a-derive-source)
+into the frontmatter. A range on a directory or a glob is refused too, since a
+range names lines of one file. Pass several ranges of one file to attribute
+each. The [output reference](/manni/meta/reference/output-and-exit-codes/#exit-2-from-a-derive-source)
 lists every message.
 
 A `Generated-by: claude-fable-5` trailer in a commit message works too. It is
@@ -250,8 +252,8 @@ provenance:
 Commit that, and `validate` passes again.
 
 A range that only moved is not a finding. When someone adds a paragraph above
-the agent's text, every pin still matches somewhere below. `validate` passes,
-and the next `derive` updates `lines`:
+the agent's text, every pin still matches somewhere below. `validate` and
+`derive --check` pass, and the next `derive` updates `lines`:
 
 ```
 docs/limits.md
@@ -321,7 +323,8 @@ docs/limits.md:
 The page is untouched, so its body lines are its file lines minus the
 frontmatter it already had. Commit the page and the manifest together, and the
 manifest's copy at that commit is the evidence from then on. When every range
-of a page loses its evidence, `derive` leaves the entry as `provenance: []`.
+of a page loses its evidence, `derive` removes `provenance` from the entry, as
+it does on a page. An entry left with no keys goes too.
 
 The manifest must be a file in the repository, never a URL, because `derive`
 writes to it. Each page's record has to live in one manifest.

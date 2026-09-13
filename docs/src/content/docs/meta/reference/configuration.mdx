@@ -1678,7 +1678,9 @@ provenance is unset for lines 26; blame says Claude Opus 5 (ecb9b0a) — run man
 
 `--generated-by` with a range, `<path>:L1-L2`, attributes those file lines
 whether or not they are committed. It is refused when evidence rules 2 to 4
-name a different machine for any of them. Without a range it attributes
+name a different machine for any of them. Several ranges of one file each
+attribute their lines. A range must name one file the run reads, never a
+directory or a glob. Without a range it attributes
 uncommitted lines only. Every refusal is listed in [exit 2 from a derive
 source](/manni/meta/reference/output-and-exit-codes/#exit-2-from-a-derive-source).
 
@@ -1800,16 +1802,17 @@ label from the corpus walk, not a value the document carries. Review
    metadata is part of the body it pins. Keep provenance in an
    externalMetadata manifest.` A [manifest](#a-field-a-manifest-owns) holds
    the record for those pages.
-8. **An emptied record stays in its manifest.** When every range of a
-   page loses its evidence, `derive` removes `provenance` from the page. In a
-   manifest it writes `provenance: []` under the page's entry.
+8. **An emptied record is removed.** When every range of a page loses its
+   evidence, `derive` removes `provenance` from the page. In a manifest it
+   removes the key from the page's entry, and an entry left with no keys goes
+   too. `provenance` has `minItems: 1`, so `[]` would fail its schema.
 
 #### What each command does
 
 | Command | With `derive:` |
 |---|---|
 | `validate` | Derives once for the run, then compares each file's managed fields. A stamp that disagrees with a non-null derived value is a `derived:stale` finding at the field's line, exit 1. `provenance` files one finding per changed, stale or unset range, at the range's first file line. `--no-derive` skips the comparison for one run. |
-| `derive` | Stamps every managed field whose derived value is non-null and differs from the document, through the same writer `fill` uses. `provenance` is written range by range, into the manifest when one owns it. `--generated-by` and a `<path>:L1-L2` range attribute lines to a machine. `--dry-run` reports without writing. `--check` implies the dry run, and a stale or unset field is a finding, exit 1. See [`meta derive`](/manni/meta/reference/cli/#meta-derive). |
+| `derive` | Stamps every managed field whose derived value is non-null and differs from the document, through the same writer `fill` uses. `provenance` is written range by range, into the manifest when one owns it. `--generated-by` and a `<path>:L1-L2` range attribute lines to a machine. `--dry-run` reports without writing. `--check` implies the dry run, and a stale or unset field is a finding, exit 1. A `provenance` range that only moved is not a finding. See [`meta derive`](/manni/meta/reference/cli/#meta-derive). |
 | `get` | Prints the resolved value of each field, with its origin on the same line. `manni meta get owner docs/install.md` prints `docs/install.md: owner=@platform-docs  (derived, codeowners: .github/CODEOWNERS:12)`. `provenance` prints its ranges in file lines, as `provenance=lines 12-31 claude-fable-5; lines 44 claude-sonnet-5 (derived, git: blame 9b0e2c1)`. Derivation is on by default, and `--no-derived` prints only what the document stores. `--derived` is accepted and inert. |
 | `query` | Two read-only tables, [`derived`](/manni/meta/reference/query/#the-derived-table) and [`resolved`](/manni/meta/reference/query/#the-resolved-table), each built when a statement names it. `derived` is what the evidence says; `resolved` is the asserted value where there is one and the derived value otherwise, with `_origin` naming which. A write to a managed key through `docs` is refused (exit 2) before any file is written. |
 | `fill` | A managed field is never a candidate. It is reported with `skipReason: "managed"`, so the omission is visible in the report. `provenance` and `meta-provenance` are never candidates either, and are not reported. `fill` removes both from what it sends a model, and writes [`meta-provenance`](/manni/meta/reference/cli/#the-meta-provenance-entry) for the fields it fills. |
@@ -1886,7 +1889,7 @@ finding's `file` is never set, because a managed value lives in the document.
 
 | Exit | When |
 |---|---|
-| `2` | The config's `derive:` is malformed. `fields` is empty, repeats a name, names a field that is not derivable, or names a key a collection's manifest owns. `sources` is empty or repeats a source. `codeowners` names a file that is not there. A `commands` entry targets a built-in field, a manifest-owned key or `$schema`, or has no `run`. `machines` is empty, not a list of strings, repeats a glob or holds a blank one. A requested source cannot answer: no `git`, no repository, a shallow clone, `gh` or `glab` missing or not logged in. A command failed, timed out or is not on `PATH`. `derive` was given `-`, a non-derivable or manifest-owned `--fields` name, no fields at all, or a findings format without `--check`. `--generated-by` or a range came without `provenance` in the fields, or a range came without `--generated-by`. A range is reversed, past the end, inside the frontmatter, or contradicted by evidence. A manifest that owns `provenance` cannot hold the record. A `query` write would touch a managed key. |
+| `2` | The config's `derive:` is malformed. `fields` is empty, repeats a name, names a field that is not derivable, or names a key a collection's manifest owns. `sources` is empty or repeats a source. `codeowners` names a file that is not there. A `commands` entry targets a built-in field, a manifest-owned key or `$schema`, or has no `run`. `machines` is empty, not a list of strings, repeats a glob or holds a blank one. A requested source cannot answer: no `git`, no repository, a shallow clone, `gh` or `glab` missing or not logged in. A command failed, timed out or is not on `PATH`. `derive` was given `-`, a non-derivable or manifest-owned `--fields` name, no fields at all, or a findings format without `--check`. `--generated-by` or a range came without `provenance` in the fields, or a range came without `--generated-by`. A range is reversed, past the end, inside the frontmatter, or contradicted by evidence, or does not name one file the run reads. A manifest that owns `provenance` cannot hold the record. A `query` write would touch a managed key. |
 | `1` | `validate` found a managed field whose stamp disagrees with the evidence. `derive --check` found a stale or unset managed field. `derive` could not stamp `provenance` on a page whose metadata is not fenced. |
 
 The split is the one every command already follows. Exit 2 means the run

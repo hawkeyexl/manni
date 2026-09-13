@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "A schema whose propertyNames pattern refuses the meta-provenance key",
+  "type": "object",
+  "properties": {
+    "title": { "type": "string" },
+    "description": { "type": "string" }
+  },
+  "required": ["description"],
+  "propertyNames": { "pattern": "^[a-z]+$" }
+}

@@ -20,7 +20,10 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { parse } from "yaml";
-import { spliceManifestValue } from "../src/meta/core/external-metadata-write.js";
+import {
+  removeManifestKey,
+  spliceManifestValue,
+} from "../src/meta/core/external-metadata-write.js";
 import { DocmetaError } from "../src/meta/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -256,5 +259,54 @@ describe("spliceManifestValue: refusals", () => {
 
   it("refuses an undefined value", () => {
     expect(splice("docs/a.md:\n  jira: A\n", { value: undefined })).toThrow(/no value/);
+  });
+});
+
+describe("removeManifestKey", () => {
+  const remove = (text: string, over: Partial<Parameters<typeof removeManifestKey>[1]> = {}) =>
+    removeManifestKey(text, { entry: "docs/a.md", key: "provenance", file: "prov.yaml", ...over }).text;
+
+  it("removes the key and its value, and leaves the entry's other keys", () => {
+    expect(
+      remove("docs/a.md:\n  jira: A  # kept\n  provenance:  # managed\n    - lines: 4\n    # inside\n    - lines: 6\n  owner: x\n"),
+    ).toBe("docs/a.md:\n  jira: A  # kept\n  owner: x\n");
+  });
+
+  it("removes the entry when the key was its only one, with the blank line before it", () => {
+    expect(remove("# head\n\ndocs/z.md:\n  jira: Z\n\ndocs/a.md:\n  provenance:\n    - lines: 4\n")).toBe(
+      "# head\n\ndocs/z.md:\n  jira: Z\n",
+    );
+    expect(remove("docs/z.md:\n  jira: Z\n\ndocs/a.md:\n  provenance: []\n\ndocs/c.md:\n  jira: C\n")).toBe(
+      "docs/z.md:\n  jira: Z\n\ndocs/c.md:\n  jira: C\n",
+    );
+    expect(remove("# head\ndocs/a.md:\n  provenance:\n    - lines: 4\n")).toBe("# head\n");
+    expect(remove("docs/a.md: { provenance: [] }\ndocs/c.md:\n  jira: C\n")).toBe("docs/c.md:\n  jira: C\n");
+  });
+
+  it("matches a path entry however it is spelled, and preserves CRLF", () => {
+    expect(remove("./docs/a.md:\r\n  jira: A\r\n  provenance:\r\n    - lines: 4\r\n")).toBe(
+      "./docs/a.md:\r\n  jira: A\r\n",
+    );
+  });
+
+  it("changes nothing when the manifest, the entry or the key is absent", () => {
+    for (const text of ["", "# only a comment\n", "docs/b.md:\n  provenance: []\n", "docs/a.md:\n  jira: A\n"]) {
+      expect(remove(text)).toBe(text);
+    }
+  });
+
+  it("refuses what the splice refuses, and a flow entry with other members", () => {
+    expect(() => remove("docs/a.md: [\n")).toThrow(/^Manifest prov\.yaml is not valid YAML/);
+    expect(() => remove("docs/a.md: PLAT-1\n")).toThrow(
+      /^Manifest prov\.yaml:1: "docs\/a\.md" must be a mapping of owned keys to values/,
+    );
+    expect(() => remove("docs/a.md:\n  provenance: []\n  provenance: []\n")).toThrow(
+      /^Manifest prov\.yaml:3: "docs\/a\.md" sets "provenance" twice \(first at line 2\)/,
+    );
+    expect(() => remove("docs/a.md: { jira: A, provenance: [] }\n")).toThrow(
+      new DocmetaError(
+        'Manifest prov.yaml:1: "docs/a.md" is a flow mapping ({ … }), which this writer does not remove keys from. Rewrite the entry in block style.',
+      ),
+    );
   });
 });

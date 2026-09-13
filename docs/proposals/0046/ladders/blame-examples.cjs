@@ -146,7 +146,8 @@ function stampOf(page) {
   if (!Array.isArray(list)) return [];
   // RESOLVED: an entry the schema would reject (no machine, unreadable lines,
   // a pin that is not sha256-) is not evidence and is not compared. The schema
-  // finding speaks for it.
+  // finding speaks for it. A key outside the closed set does not exclude an
+  // entry: the schema reports the key, and the entry is still compared.
   return list.filter(
     (e) =>
       e !== null &&
@@ -161,7 +162,7 @@ function stampOf(page) {
 
 // ---------------------------------------------------------------------------
 // `git blame --line-porcelain` (§2 step 2). Per final line: a header
-// `<40-hex sha> <orig-line> <final-line>[ <group-count>]`, where the count
+// `<sha> <orig-line> <final-line>[ <group-count>]` (40 hex, or 64 in a SHA-256 repository), where the count
 // appears on the first line of a group only; then `author`, `author-mail`,
 // `author-time`, `author-tz`, `committer`, `committer-mail`, `committer-time`,
 // `committer-tz`, `summary`, optionally `previous <sha> <path>` or
@@ -171,7 +172,10 @@ function stampOf(page) {
 // ---------------------------------------------------------------------------
 
 const ZERO_SHA = "0000000000000000000000000000000000000000";
-const HEADER = /^([0-9a-f]{40}) ([1-9][0-9]*) ([1-9][0-9]*)(?: ([1-9][0-9]*))?$/;
+// RESOLVED: a SHA-256 repository (objectFormat=sha256) writes 64-hex shas and
+// 64 zeros for an uncommitted line. Both widths are read, and any all-zero sha
+// is uncommitted.
+const HEADER = /^([0-9a-f]{40}(?:[0-9a-f]{24})?) ([1-9][0-9]*) ([1-9][0-9]*)(?: ([1-9][0-9]*))?$/;
 
 function parsePorcelain(text) {
   const out = [];
@@ -197,7 +201,7 @@ function parsePorcelain(text) {
       throw new Error(`porcelain: line ${record.finalLine} has no full header; run blame with --line-porcelain`);
     }
     record.content = rows[i].slice(1);
-    record.uncommitted = record.sha === ZERO_SHA;
+    record.uncommitted = /^0+$/.test(record.sha);
     out.push(record);
     i++;
   }
@@ -284,6 +288,9 @@ function trailerValues(commit, key) {
  * and would count "Scott" and "Matt" as machines and drop them from
  * `authors`; today's rule is `name.endsWith("[bot]")`. Matching is otherwise
  * picomatch's default, so case-sensitive.
+ * RESOLVED: with `dot` and `bash` too. An identity is not a path, so `*`
+ * crosses a `/` and matches a leading `.`: `ci/deploy[bot]` and
+ * `.hidden[bot]` are machines, as `endsWith("[bot]")` had them.
  *
  * For the implementation: `derive.machines` must be matched with this same
  * option. Proposal 0046 states the rule (its config table and stress test 16),
@@ -294,7 +301,7 @@ function machineIdentity(value, machines) {
   const m = /^(.*?)\s*<([^>]*)>\s*$/.exec(value);
   const name = m === null ? value.trim() : m[1];
   const email = m === null ? "" : m[2];
-  const match = (s) => s !== "" && machines.some((glob) => picomatch.isMatch(s, glob, { literalBrackets: true }));
+  const match = (s) => s !== "" && machines.some((glob) => picomatch.isMatch(s, glob, { literalBrackets: true, dot: true, bash: true }));
   if (!match(name) && !match(email)) return undefined;
   // RESOLVED: "that trailer's name" is written verbatim ("Claude Opus 5"), not
   // slugged into a model id; the email stands in only when the name is empty.
@@ -438,9 +445,29 @@ function windowsOf(body, width, integrity) {
 const sameSpan = (a, b) => a.start === b.start && a.end === b.end;
 const short = (sha) => sha.slice(0, 7);
 
+/** Over a span: the first line resolved to a machine other than `machine`, and whether any line names one. */
+function scanEvidence(byLine, span, machine) {
+  let anyMachine = false;
+  for (let n = span.start; n <= span.end; n++) {
+    const res = byLine.get(n);
+    if (res === undefined || res.machine === undefined) continue;
+    anyMachine = true;
+    if (res.machine !== machine) return { contradiction: res, anyMachine };
+  }
+  return { contradiction: undefined, anyMachine };
+}
+
 /**
  * Compare stamped entries with a fresh derivation. Returns one result per
  * stamped entry, in order, then one `unset` per uncovered derived group.
+ *
+ * Step 0, the recorded lines: the pin holds there and no line there resolves
+ * to a different machine. The entry is current, at its recorded lines, and it
+ * claims only a derived group over exactly those lines.
+ * RESOLVED: the recorded lines outrank a nearer derived group. Without this, a
+ * stamp whose text an unrelated machine's range repeats elsewhere was judged by
+ * that range (stale, and its intact entry dropped), and two identical stamped
+ * ranges with evidence on one only swapped their lines.
  *
  * Step 1, by integrity: a derived group with the stamp's pin, nearest by
  * lines, not already claimed by an earlier stamped entry. Its machine is the
@@ -472,6 +499,20 @@ function compareProvenance(stamped, derivation) {
     const recorded = parseLines(entry.lines);
     const width = recorded.end - recorded.start + 1;
     const machine = entry["generated-by"];
+    const takenHere = [...claimed].some((d) => sameSpan(d.span, recorded));
+    if (!takenHere && pinOfLines(page.body, recorded) === entry.integrity) {
+      const here = scanEvidence(byLine, recorded, machine);
+      if (here.contradiction === undefined) {
+        const exact = derived.find(
+          (d) => !claimed.has(d) && sameSpan(d.span, recorded) && d.entry.integrity === entry.integrity,
+        );
+        if (exact !== undefined) claimed.add(exact);
+        const result = { status: "current", entry, span: recorded };
+        if (!here.anyMachine) result.noEvidence = true;
+        results.push(result);
+        continue;
+      }
+    }
     const pool = derived.filter((d) => !claimed.has(d) && d.entry.integrity === entry.integrity);
     const hit = nearest(pool, recorded);
     if (hit !== undefined) {
@@ -499,17 +540,7 @@ function compareProvenance(stamped, derivation) {
       results.push({ status: "changed", entry, span: recorded });
       continue;
     }
-    let contradiction;
-    let anyMachine = false;
-    for (let n = found.span.start; n <= found.span.end; n++) {
-      const res = byLine.get(n);
-      if (res === undefined || res.machine === undefined) continue;
-      anyMachine = true;
-      if (res.machine !== machine) {
-        contradiction = res;
-        break;
-      }
-    }
+    const { contradiction, anyMachine } = scanEvidence(byLine, found.span, machine);
     if (contradiction !== undefined) {
       results.push({
         status: "stale",
@@ -571,9 +602,9 @@ function writeProvenance(results, derivation) {
   const kept = [];
   for (const r of results) {
     if (r.status === "current") kept.push(r.entry);
-    else if (r.status === "moved") {
-      kept.push({ "generated-by": r.entry["generated-by"], lines: r.newLines, integrity: r.entry.integrity });
-    }
+    // RESOLVED: a kept entry keeps a key outside the closed set. The schema
+    // reports that key; the write does not delete it silently.
+    else if (r.status === "moved") kept.push({ ...r.entry, lines: r.newLines });
   }
   const same = (a, b) =>
     a["generated-by"] === b["generated-by"] && String(a.lines) === String(b.lines) && a.integrity === b.integrity;
@@ -996,6 +1027,56 @@ function run() {
   console.log("\nJ. line endings");
   check("a CRLF checkout derives the same entries as its LF twin", entriesOf(deriveProvenance(J)), entriesOf(deriveProvenance(B)));
   check("...and blame's content rows carried the CR", parsePorcelain(J.blame)[5].content, BODY[2] + "\r");
+
+  console.log("\nK. the recorded lines come first");
+  const abc = ["a", "b", "c"];
+  const PIN_ABC = pinOfLines(abc, { start: 1, end: 3 });
+  const machineA = (l) => ({ "generated-by": "claude-a", lines: l, integrity: PIN_ABC });
+  const byShaK = (list) => Object.fromEntries(list.map((c) => [c.sha, c]));
+  // K1: body a,b,c,-,a,b,c. Lines 1-4 from a person, 5-7 from a commit with
+  // Generated-by: claude-b. The stamp names claude-a at 1-3; its frontmatter is
+  // seven lines, so body 1 is file 8.
+  const K_HUMAN = commit("1111111111111111111111111111111111111111", ADA, "docs: abc", [], pageText(FRONT_PLAIN, [...abc, "-"]));
+  const K_BOT = commit("2222222222222222222222222222222222222222", GRACE, "docs: abc again",
+    [["Generated-by", "claude-b"]], pageText(FRONT_PLAIN, [...abc, "-", ...abc]));
+  const K1 = scenario(pageText(stampFront([machineA("1-3")]), [...abc, "-", ...abc]),
+    [[Z, 1, 7], [K_HUMAN.sha, 4, 4], [K_BOT.sha, 8, 3]], byShaK([K_HUMAN, K_BOT]));
+  const k1 = deriveProvenance(K1);
+  const k1Results = compareProvenance(stampOf(k1.page), k1);
+  check("the pin holds at 1-3 and nothing there names another machine: current; claude-b's copy is unset",
+    statusesOf(k1Results), [{ status: "current", lines: "1-3", noEvidence: true }, { status: "unset", lines: "5-7" }]);
+  check("derive keeps claude-a's entry and adds claude-b's", writeProvenance(k1Results, k1),
+    [machineA("1-3"), { "generated-by": "claude-b", lines: "5-7", integrity: PIN_ABC }]);
+  // K2: body a,b,c,d..i,a,b,c. Two identical stamped ranges, and only 10-12
+  // has evidence (Generated-by: claude-a). Ten-line frontmatter.
+  const filler = ["d", "e", "f", "g", "h", "i"];
+  const K2_HUMAN = commit("3333333333333333333333333333333333333333", ADA, "docs: abc", [], pageText(FRONT_PLAIN, [...abc, ...filler]));
+  const K2_AGENT = commit("4444444444444444444444444444444444444444", GRACE, "docs: abc again",
+    [["Generated-by", "claude-a"]], pageText(FRONT_PLAIN, [...abc, ...filler, ...abc]));
+  const K2 = scenario(pageText(stampFront([machineA("1-3"), machineA("10-12")]), [...abc, ...filler, ...abc]),
+    [[Z, 1, 10], [K2_HUMAN.sha, 4, 9], [K2_AGENT.sha, 13, 3]], byShaK([K2_HUMAN, K2_AGENT]));
+  const k2 = deriveProvenance(K2);
+  const k2Results = compareProvenance(stampOf(k2.page), k2);
+  check("two identical stamped ranges, evidence on one: both current, not swapped", statusesOf(k2Results),
+    [{ status: "current", lines: "1-3", noEvidence: true }, { status: "current", lines: "10-12" }]);
+  check("derive leaves both as they are", writeProvenance(k2Results, k2), [machineA("1-3"), machineA("10-12")]);
+  check("a machine named at the recorded lines still makes them stale (I again)",
+    statusesOf(compareProvenance(stampOf(i.page), i)), [{ status: "stale", lines: "3-8", blame: "claude-sonnet-5 (9b0e2c1)" }]);
+
+  console.log("\nL. identities, shas and open keys");
+  check("*[bot] matches a name with a slash or a leading dot; Robert is a person",
+    ["ci/deploy[bot] <d@x.y>", ".hidden[bot] <h@x.y>", "Robert <r@x.y>"].map((v) => machineIdentity(v, DEFAULT_MACHINES)),
+    ["ci/deploy[bot]", ".hidden[bot]", undefined]);
+  check("a SHA-256 repository's 64-hex shas parse, and 64 zeros are uncommitted",
+    parsePorcelain([`${"ab".repeat(32)} 1 1 1`, "author A", "filename f.md", "\tone",
+      `${"0".repeat(64)} 2 2 1`, "author Not Committed Yet", "filename f.md", "\ttwo", ""].join("\n"))
+      .map((r) => [r.sha.length, r.uncommitted]),
+    [[64, false], [64, true]]);
+  const noted = { ...machineA("1-3"), note: "reviewed" };
+  const shifted = { page: readPage(pageText(FRONT_PLAIN, ["-", ...abc])), byLine: new Map(), derived: [] };
+  check("a key outside the closed set is compared, and survives a move",
+    writeProvenance(compareProvenance(stampOf({ front: { provenance: [noted] } }), shifted), shifted),
+    [{ ...noted, lines: "2-4" }]);
 
   console.log(bad ? `\n${bad} UNEXPECTED` : "\nall verdicts held");
   process.exit(bad ? 1 : 0);

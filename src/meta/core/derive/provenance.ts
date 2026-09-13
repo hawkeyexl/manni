@@ -35,7 +35,11 @@ import {
 } from "../../../shared/pin.js";
 import { DERIVED_KEYWORD, DERIVED_STALE_SCHEMA } from "./types.js";
 
-/** The sha blame reports for a line that is not committed yet. */
+/**
+ * The sha blame reports for a line that is not committed yet, in a SHA-1
+ * repository. A SHA-256 repository reports 64 zeros; `parseLinePorcelain`
+ * reads any all-zero sha as uncommitted.
+ */
 export const ZERO_SHA = "0000000000000000000000000000000000000000";
 
 /** `derive.machines` when the config does not set it: 0040's `[bot]` suffix. */
@@ -55,14 +59,15 @@ export interface ProvenanceEntry {
   integrity: string;
 }
 
-const ENTRY_KEYS = new Set(["generated-by", "lines", "integrity"]);
 const PLAIN_PIN = /^sha256-[0-9a-f]{64}$/;
 
 /**
  * The well-formed entries of a `provenance` value, in order. An entry the
- * schema would reject — no machine, unreadable lines, a pin that is not
- * `sha256-`, a key the closed entry does not allow — is neither evidence nor
- * compared: the schema finding speaks for it.
+ * schema would reject for its three keys (no machine, unreadable lines, a pin
+ * that is not `sha256-`) is neither evidence nor compared: the schema finding
+ * speaks for it. A key outside the closed set does not make an entry
+ * unreadable. The schema reports that key, and the entry keeps it, so a write
+ * that keeps the entry does not delete it silently.
  */
 export function provenanceEntries(value: unknown): ProvenanceEntry[] {
   if (!Array.isArray(value)) return [];
@@ -70,7 +75,6 @@ export function provenanceEntries(value: unknown): ProvenanceEntry[] {
   for (const item of value as unknown[]) {
     if (typeof item !== "object" || item === null || Array.isArray(item)) continue;
     const record = item as Record<string, unknown>;
-    if (Object.keys(record).some((k) => !ENTRY_KEYS.has(k))) continue;
     const machine = record["generated-by"];
     const lines = record.lines;
     const integrity = record.integrity;
@@ -78,7 +82,7 @@ export function provenanceEntries(value: unknown): ProvenanceEntry[] {
     if (typeof lines !== "string" && typeof lines !== "number") continue;
     if (parseLines(lines) === undefined) continue;
     if (typeof integrity !== "string" || !PLAIN_PIN.test(integrity)) continue;
-    out.push({ "generated-by": machine, lines, integrity });
+    out.push({ ...record, "generated-by": machine, lines, integrity });
   }
   return out;
 }
@@ -155,7 +159,9 @@ export interface BlameLine {
   content: string;
 }
 
-const HEADER = /^([0-9a-f]{40}) ([1-9][0-9]*) ([1-9][0-9]*)(?: ([1-9][0-9]*))?$/;
+/** A SHA-1 sha is 40 hex digits, and a SHA-256 repository's (`objectFormat=sha256`) is 64. */
+const HEADER = /^([0-9a-f]{40}(?:[0-9a-f]{24})?) ([1-9][0-9]*) ([1-9][0-9]*)(?: ([1-9][0-9]*))?$/;
+const ALL_ZERO = /^0+$/;
 
 /**
  * Parse `git blame --line-porcelain`. Throws a plain `Error` on anything
@@ -209,7 +215,7 @@ export function parseLinePorcelain(text: string): BlameLine[] {
         ? { previous: { sha: previous.slice(0, space), filename: previous.slice(space + 1) } }
         : {}),
       boundary: fields.get("boundary") === true,
-      uncommitted: sha === ZERO_SHA,
+      uncommitted: ALL_ZERO.test(sha),
       content: contentRow.slice(1),
     });
     i++;
@@ -261,20 +267,24 @@ export interface LineEvidence {
   sha: string;
 }
 
+const IDENTITY_GLOB = { literalBrackets: true, dot: true, bash: true } as const;
+
 /**
  * The machine a `Name <email>` trailer value names, when its name or its
  * email matches a `derive.machines` glob; undefined for a person. Globs are
  * picomatch's, case-sensitive, with literal brackets, so `*[bot]` is a name
  * ending in `[bot]` and not "anything ending in b, o or t" (stress test 16).
- * The machine is the name as written, and the email only when the name is
- * empty.
+ * An identity is not a path: `dot` and `bash` let `*` cross a `/` and match a
+ * leading `.`, so `ci/deploy[bot]` and `.hidden[bot]` are machines, as
+ * `endsWith("[bot]")` had them. The machine is the name as written, and the
+ * email only when the name is empty.
  */
 export function machineIdentity(value: string, machines: readonly string[]): string | undefined {
   const m = /^(.*?)\s*<([^>]*)>\s*$/.exec(value);
   const name = m === null ? value.trim() : (m[1] ?? "");
   const email = m === null ? "" : (m[2] ?? "");
   const match = (s: string): boolean =>
-    s !== "" && machines.some((glob) => picomatch.isMatch(s, glob, { literalBrackets: true }));
+    s !== "" && machines.some((glob) => picomatch.isMatch(s, glob, IDENTITY_GLOB));
   if (!match(name) && !match(email)) return undefined;
   return name !== "" ? name : email;
 }
@@ -466,11 +476,35 @@ function nearest<T extends { span: PageLines }>(candidates: readonly T[], record
 const sameSpan = (a: PageLines, b: PageLines): boolean => a.start === b.start && a.end === b.end;
 
 /**
+ * What the evidence over a span says about a stamp's machine: the first line
+ * that names a different machine, and whether any line names a machine.
+ */
+function scanEvidence(
+  evidenceByLine: ReadonlyMap<number, LineEvidence>,
+  span: PageLines,
+  machine: string,
+): { contradiction?: LineEvidence; anyMachine: boolean } {
+  let anyMachine = false;
+  for (let n = span.start; n <= span.end; n++) {
+    const evidence = evidenceByLine.get(n);
+    if (evidence?.machine === undefined) continue;
+    anyMachine = true;
+    if (evidence.machine !== machine) return { contradiction: evidence, anyMachine };
+  }
+  return { anyMachine };
+}
+
+/**
  * Compare a page's stamped entries with a fresh derivation: one result per
  * well-formed stamped entry, in order, then one `unset` per derived range
  * nothing covers.
  *
- * By integrity first: an unclaimed derived range with the stamp's pin,
+ * The recorded lines first: when the pin holds there and no line there names
+ * a different machine, the entry is current, and it claims only a derived
+ * range over exactly those lines. The same text elsewhere, even another
+ * machine's, is not this entry's.
+ *
+ * Otherwise by integrity: an unclaimed derived range with the stamp's pin,
  * nearest by lines. The same machine is current at the recorded lines and
  * moved elsewhere; another machine is stale. Each derived range is taken once.
  *
@@ -495,6 +529,20 @@ export function compareProvenance(
     const recorded = parseLines(entry.lines);
     if (recorded === undefined) continue; // unreachable: provenanceEntries checked it
     const machine = entry["generated-by"];
+
+    const takenHere = [...claimed].some((d) => sameSpan(d.span, recorded));
+    if (!takenHere && pinOfLines(page.body, recorded) === entry.integrity) {
+      const here = scanEvidence(evidenceByLine, recorded, machine);
+      if (here.contradiction === undefined) {
+        const exact = derived.find(
+          (d) => !claimed.has(d) && sameSpan(d.span, recorded) && d.entry.integrity === entry.integrity,
+        );
+        if (exact !== undefined) claimed.add(exact);
+        results.push({ status: "current", entry, span: recorded, ...(here.anyMachine ? {} : { noEvidence: true as const }) });
+        continue;
+      }
+    }
+
     const pool = derived.filter((d) => !claimed.has(d) && d.entry.integrity === entry.integrity);
     const hit = nearest(pool, recorded);
     if (hit !== undefined) {
@@ -509,7 +557,9 @@ export function compareProvenance(
 
     const width = recorded.end - recorded.start + 1;
     const claimedSpans = [...claimed].map((d) => d.span);
-    const windows = findWindows(page.body, width, entry.integrity, undefined, { around: recorded.start })
+    // No budget: a truncated search would call an intact range changed, and
+    // the band-first order keeps the common small shift fast.
+    const windows = findWindows(page.body, width, entry.integrity, undefined, { around: recorded.start, budget: Infinity })
       .starts.map((start) => ({ span: { start, end: start + width - 1 } }))
       .filter((w) => !claimedSpans.some((s) => sameSpan(s, w.span)));
     const found = nearest(windows, recorded);
@@ -517,17 +567,7 @@ export function compareProvenance(
       results.push({ status: "changed", entry, span: recorded });
       continue;
     }
-    let contradiction: LineEvidence | undefined;
-    let anyMachine = false;
-    for (let n = found.span.start; n <= found.span.end; n++) {
-      const evidence = evidenceByLine.get(n);
-      if (evidence?.machine === undefined) continue;
-      anyMachine = true;
-      if (evidence.machine !== machine) {
-        contradiction = evidence;
-        break;
-      }
-    }
+    const { contradiction, anyMachine } = scanEvidence(evidenceByLine, found.span, machine);
     if (contradiction !== undefined) {
       results.push({ status: "stale", entry, span: found.span, evidence: contradiction });
       continue;
@@ -557,8 +597,8 @@ export function compareProvenance(
  * moved entries stay with `lines` rewritten, and every derived range not
  * already kept is added, which re-derives changed and stale entries and adds
  * unset ones. A changed entry no machine now answers for is dropped (stress
- * test 11: the bytes are gone); an entry nothing contradicts never is. Ordered
- * by start line, stably.
+ * test 11: the bytes are gone); an entry nothing contradicts never is. A kept
+ * entry keeps any key outside the closed set. Ordered by start line, stably.
  */
 export function planProvenanceWrite(
   comparisons: readonly ProvenanceComparison[],
@@ -567,12 +607,7 @@ export function planProvenanceWrite(
   const kept: { entry: ProvenanceEntry; start: number }[] = [];
   for (const r of comparisons) {
     if (r.status === "current") kept.push({ entry: r.entry, start: r.span.start });
-    else if (r.status === "moved") {
-      kept.push({
-        entry: { "generated-by": r.entry["generated-by"], lines: lineSpec(r.span), integrity: r.entry.integrity },
-        start: r.span.start,
-      });
-    }
+    else if (r.status === "moved") kept.push({ entry: { ...r.entry, lines: lineSpec(r.span) }, start: r.span.start });
   }
   const same = (a: ProvenanceEntry, b: ProvenanceEntry): boolean =>
     a["generated-by"] === b["generated-by"] && String(a.lines) === String(b.lines) && a.integrity === b.integrity;

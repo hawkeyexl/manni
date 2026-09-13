@@ -547,6 +547,93 @@ describe.each(forms)("deriveFromGit provenance ($name)", ({ opts }) => {
     const onPage = await factsFor(dir, "a.md", withProvenance(dir));
     expect(onPage.provenance).toBeNull();
   });
+
+  it("reads a manifest stamp written under the page's path before a rename", async () => {
+    const stampOf = (key: string): string =>
+      `${key}:\n  provenance:\n    - generated-by: ${FABLE}\n      lines: 3\n      integrity: ${pin("TWO")}\n`;
+    // Two manifests, one keyed from the repository root and one from `docs/`,
+    // so the key at each commit is re-expressed from where the config sits.
+    const dir = tempRepo({
+      "docs/old.md": doc("title: t", "one\ntwo"),
+      "private/provenance.yaml": "# records\n",
+      "docs/provenance.yaml": "# records\n",
+    });
+    commit(dir, "add", { authorDate: D1 });
+    writeFile(dir, "docs/old.md", doc("title: t", "one\nTWO"));
+    writeFile(dir, "private/provenance.yaml", stampOf("docs/old.md"));
+    writeFile(dir, "docs/provenance.yaml", stampOf("old.md"));
+    const sha = commit(dir, "agent edit", { authorDate: D2 });
+    git(dir, ["mv", "docs/old.md", "docs/new.md"]);
+    writeFile(dir, "private/provenance.yaml", stampOf("docs/new.md"));
+    writeFile(dir, "docs/provenance.yaml", stampOf("new.md"));
+    commit(dir, "rename", { authorDate: D3 });
+    // The record is dropped: only history can say who wrote line 3 now.
+    writeFile(dir, "private/provenance.yaml", "# records\n");
+    writeFile(dir, "docs/provenance.yaml", "# records\n");
+
+    const refs = [
+      { absPath: join(dir, "private", "provenance.yaml"), entry: "docs/new.md", join: "path" },
+      { absPath: join(dir, "docs", "provenance.yaml"), entry: "new.md", join: "path" },
+    ];
+    for (const manifest of refs) {
+      const result = await deriveFromGit(
+        [{ ...input(dir, "docs/new.md"), provenanceManifest: manifest }],
+        withProvenance(dir),
+      );
+      expect(result.status).toEqual({ available: true });
+      expect(result.records.get("docs/new.md")?.provenance).toEqual({
+        value: [{ "generated-by": FABLE, lines: 3, integrity: pin("TWO") }],
+        source: "git",
+        evidence: `blame ${sha.slice(0, 7)}`,
+      });
+    }
+  });
+
+  it("attributes every line of a file deleted from history and recreated uncommitted", async () => {
+    const dir = tempRepo({ "a.md": doc("title: t", "one"), "docs/b.md": doc("title: t", "old") });
+    commit(dir, "add", { authorDate: D1 });
+    git(dir, ["rm", "-q", "docs/b.md"]);
+    commit(dir, "delete", { authorDate: D2 });
+    writeFile(dir, "docs/b.md", doc("title: t", "x"));
+
+    const result = await deriveFromGit(
+      [input(dir, "a.md"), input(dir, "docs/b.md")],
+      withProvenance(dir, { generatedBy: FABLE }),
+    );
+    expect(result.status).toEqual({ available: true });
+    expect(result.records.get("docs/b.md")?.provenance?.value).toEqual([
+      { "generated-by": FABLE, lines: "1-2", integrity: pin("", "x") },
+    ]);
+    // The other page keeps its facts.
+    expect(result.records.get("a.md")?.created?.value).toBe("2020-01-02");
+  });
+
+  it("ignores a blame.ignoreRevsFile setting, so attribution does not depend on the machine", async () => {
+    const dir = tempRepo({ "a.md": doc("title: t", "one") });
+    commit(dir, "add", { authorDate: D1 });
+    writeFile(dir, "a.md", doc("title: t", "ONE"));
+    const sha = commit(dir, "edit", { authorDate: D2, trailers: [`Generated-by: ${SONNET}`] });
+    // Named but absent, as a global setting reads in a repository without the file.
+    git(dir, ["config", "blame.ignoreRevsFile", ".git-blame-ignore-revs"]);
+
+    const facts = await factsFor(dir, "a.md", withProvenance(dir));
+    expect(facts.provenance).toEqual({
+      value: [{ "generated-by": SONNET, lines: 2, integrity: pin("ONE") }],
+      source: "git",
+      evidence: `blame ${sha.slice(0, 7)}`,
+    });
+  });
+
+  it("names git's own complaint when blame fails on a committed file", async () => {
+    const dir = tempRepo({ "a.md": doc("title: t", "one") });
+    commit(dir, "add", { authorDate: D1 });
+    git(dir, ["config", "blame.date", "bogus"]);
+
+    const result = await deriveFromGit([input(dir, "a.md")], withProvenance(dir));
+    expect(result.status.available).toBe(false);
+    expect(result.status.reason).toContain("git blame could not read a.md");
+    expect(result.status.reason).toContain("unknown date format bogus");
+  });
 });
 
 describe("bodyOf", () => {

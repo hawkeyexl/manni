@@ -152,12 +152,13 @@ export interface DeriveInput {
    */
   provenanceManifest?: ProvenanceManifestRef;
   /**
-   * `manni meta derive <path>:L1-L2 --generated-by <name>`: those file lines
-   * go to `generatedBy`, committed or not, unless evidence names another
-   * machine, and no other uncommitted line does. `target` is the positional
-   * as typed, which every refusal quotes.
+   * `manni meta derive <path>:L1-L2 --generated-by <name>`: the file lines
+   * each target names go to `generatedBy`, committed or not, unless evidence
+   * names another machine, and no other uncommitted line does. Ranges that
+   * overlap attribute their union. Each target is a positional as typed,
+   * which every refusal quotes.
    */
-  attribution?: { target: string; generatedBy: string };
+  attribution?: { targets: string[]; generatedBy: string };
 }
 
 /** A manifest that holds one page's `provenance`, as the git source reads it at a commit. */

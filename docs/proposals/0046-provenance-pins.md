@@ -270,7 +270,9 @@ How the evidence is read, where the list above leaves room:
   fresh stamp as current with no evidence, not as stale.
 - **Rule 2 checks a stamp only at its recorded lines,** converted to that
   commit's own body numbering. The same text elsewhere in that blob does not
-  count. An entry that fails the schema is not evidence. When two valid entries
+  count. An entry whose machine, lines or pin fails the schema is not evidence.
+  A key outside the closed entry does not change that, since the schema
+  reports the key and the entry still counts. When two valid entries
   cover one line, the first in the list wins. Where the record lives in a
   manifest, rule 2 reads the manifest's blob at that commit, under the page's
   path. That is where the stamp landed when edit and stamp were committed
@@ -283,14 +285,19 @@ How the evidence is read, where the list above leaves room:
   machine is the trailer's name as written, such as `Claude Opus 5`, and the
   email only when the name is empty.
 
-**Comparing the stamp with the present.** Each stamped entry is matched to the
-freshly derived entries by integrity. Position only breaks a tie between
-ranges of identical text. The nearest start line wins, and an equal distance
-goes to the earlier range. Each derived entry is taken by one stamp at most. A
-stamp that matches no derived entry is searched for anywhere in the current
-body. Found nowhere, it is `changed`. Found, it is `stale` if any line in the
-window names a different machine, and otherwise current or moved. A window of
-lines that name the same machine or none is not a contradiction.
+**Comparing the stamp with the present.** Each stamped entry is checked at its
+recorded lines first. When its pin holds there and no line there names a
+different machine, it is current. It then takes only a derived entry over
+exactly those lines. The same text elsewhere, even another machine's, is not
+this entry's. Otherwise the entry is matched to the freshly derived entries by
+integrity. Position only breaks a tie between ranges of identical text. The
+nearest start line wins, and an equal distance goes to the earlier range. Each
+derived entry is taken by one stamp at most. A stamp that matches no derived
+entry is searched for anywhere in the current body. The search covers the whole
+body, because stopping early would call an intact range `changed`. Found
+nowhere, it is `changed`. Found, it is `stale` if any line in the window names
+a different machine, and otherwise current or moved. A window of lines that
+name the same machine or none is not a contradiction.
 
 | Case | Status | Finding |
 |---|---|---|
@@ -399,8 +406,8 @@ implementation found them; the first draft did not name them.
 URL manifest's copy at a past commit is simply not evidence.
 
 When every range of a page loses its evidence, `derive` removes the key from a
-page. In a manifest it writes `provenance: []` under the page's entry, keeping
-the entry in place.
+page. In a manifest it removes the key from the page's entry the same way, and
+an entry left with no keys goes too. `provenance: []` would fail `minItems: 1`.
 
 ## The tool
 
@@ -411,8 +418,8 @@ No new verb. `manni meta derive` gains one option and one positional form, and
 
 | Change | Spelling | Meaning |
 |---|---|---|
-| New option | `--generated-by <name>` | Attributes uncommitted body lines, or the lines a range names, to `<name>`. Defaults to `MANNI_GENERATED_BY`; an empty value is unset |
-| New positional form | `<path>:L`, `<path>:L1-L2` | File lines of one file, scoping `--generated-by`. Split by `splitPageArgument` in `src/shared/pin.ts`, the parser `cite add` uses: the last `:L` suffix, so a drive letter is not a range. Legal only with `--generated-by` |
+| New option | `--generated-by <name>` | Attributes uncommitted body lines, or the lines a range names, to `<name>`. Defaults to `MANNI_GENERATED_BY`. The option wins once given, even empty. Both are trimmed, and a blank value is unset |
+| New positional form | `<path>:L`, `<path>:L1-L2` | File lines of one file, scoping `--generated-by`. Split by `splitPageArgument` in `src/shared/pin.ts`, the parser `cite add` uses: the last `:L` suffix, so a drive letter is not a range. Legal only with `--generated-by`. The file must be one the run reads, never a directory or a glob. Several ranges of one file each attribute their lines |
 
 The variable and the option differ in one way. `MANNI_GENERATED_BY` alone never
 refuses a run and never prints a notice. An agent session exports it once, and
@@ -476,7 +483,7 @@ that never writes the key changes nothing. `meta-provenance` needs no config.
 | `derive`, into a manifest | the file header reads `private/provenance.yaml (for docs/limits.md)`, and the range lines follow | 0 |
 | `derive`, the footer | `1 file, 1 changed, 1 range written`, counting ranges when `provenance` is among the fields | 0 |
 | `derive --generated-by`, nothing uncommitted | `manni: docs/limits.md: no uncommitted body lines; --generated-by attributes only what is not yet committed.`, a notice on stderr | unchanged |
-| `derive --check` | the three `validate` findings, nothing written | 1 |
+| `derive --check` | the three `validate` findings, nothing written; a record whose ranges only moved passes | 1 |
 | `derive`, a non-fenced format on the page | under `✗ docs/page.html`: `provenance cannot be stamped into the page: in the "html" format the metadata is part of the body it pins. Keep provenance in an externalMetadata manifest.` | 1 |
 | `get` | `docs/limits.md: provenance=lines 12-31 claude-fable-5; lines 44 claude-sonnet-5 (derived, git: blame 9b0e2c1)` | 0 |
 | `get -f json` | the result adds `provenance: {bodyLine, current}` when `provenance` is requested | 0 |
@@ -488,6 +495,7 @@ that never writes the key changes nothing. `meta-provenance` needs no config.
 | a range past the end | `docs/limits.md has no lines 12-99: the file ends at line 40.` | 2 |
 | a range into the frontmatter | `docs/limits.md:2-5 reaches into the frontmatter; provenance pins body lines, which start at line 8.` | 2 |
 | a range that ends before it starts | `docs/limits.md:31-12 ends before it starts.` | 2 |
+| a range on a directory, a glob, or no file the run reads | `docs:12 does not name one file that derive reads; a range names lines of one file.` | 2 |
 | a manifest that cannot hold the record | the three messages in [In an external manifest](#in-an-external-manifest) | 2 |
 | a shallow clone | 0040's message, unchanged | 2 |
 
@@ -793,8 +801,10 @@ after attribution, not between an edit and its stamp.
 
 A repeated admonition or a duplicated step has one integrity for two places.
 
-**Changed as a result:** the tie rule. Integrity matches first, then the nearest
-`lines` value. The ladder reproduces it.
+**Changed as a result:** the tie rule. A stamp whose pin still holds at its
+recorded lines keeps them, when no line there names another machine. Otherwise
+integrity matches first, then the nearest `lines` value. The ladder reproduces
+it.
 
 ### 13. kg loses a guard
 

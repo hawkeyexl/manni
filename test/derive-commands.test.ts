@@ -1004,13 +1004,14 @@ describe("the derived table's reading of a statement", () => {
       ),
     ).toEqual(["created", "last-updated", "reviewed-by"]);
     expect(fieldsForSql("SELECT _path FROM derived", all)).toEqual([]);
-    // `*` and `_sources` read every column.
-    expect(fieldsForSql("SELECT * FROM derived", all)).toHaveLength(7);
-    expect(fieldsForSql("SELECT _sources FROM derived", all)).toHaveLength(7);
+    // `*` and `_sources` read every column but `provenance`, whose blame is
+    // paid only when it is named (test/query-provenance.test.ts).
+    expect(fieldsForSql("SELECT * FROM derived", all)).toHaveLength(6);
+    expect(fieldsForSql("SELECT _sources FROM derived", all)).toHaveLength(6);
     // `_origin` spans every field as `_sources` does. Deriving none of them
     // would leave every row saying `asserted` or nothing, which reads as an
     // answer rather than a gap.
-    expect(fieldsForSql("SELECT _path, _origin FROM resolved", all)).toHaveLength(7);
+    expect(fieldsForSql("SELECT _path, _origin FROM resolved", all)).toHaveLength(6);
     // Word boundaries: `owner` is not `owners`, `created` is not `recreated`.
     expect(fieldsForSql("SELECT owners, recreated FROM derived", all)).toEqual([]);
   });

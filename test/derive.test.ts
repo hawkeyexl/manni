@@ -12,7 +12,7 @@ import { cpSync, mkdtempSync, readFileSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { runDerive, type DeriveRun } from "../src/meta/commands/derive.js";
+import { deriveFailed, runDerive, type DeriveRun } from "../src/meta/commands/derive.js";
 import { runGet } from "../src/meta/commands/get.js";
 import { runValidate } from "../src/meta/commands/validate.js";
 import { runQuery } from "../src/meta/commands/query.js";
@@ -779,6 +779,99 @@ describe("runDerive: provenance (0046)", () => {
     ]);
   });
 
+  it("lets an empty --generated-by win over the variable, and trims both", async () => {
+    const dir = stageProvenance();
+    agentEdit(dir);
+    const dry = { inputs: [] as string[], cwd: dir, dryRun: true };
+
+    // Given, even empty or blank, the option wins, and empty is unset.
+    for (const generatedBy of ["", "  "]) {
+      const run = await runDerive({ ...dry, generatedBy, env: { MANNI_GENERATED_BY: FABLE } });
+      expect(provenanceOf(run)).toMatchObject({ status: "current", derived: [], ranges: [] });
+    }
+    const blankEnv = await runDerive({ ...dry, env: { MANNI_GENERATED_BY: " " } });
+    expect(provenanceOf(blankEnv)).toMatchObject({ status: "current", derived: [] });
+
+    const padded = await runDerive({ ...dry, env: { MANNI_GENERATED_BY: ` ${FABLE} ` } });
+    expect(provenanceOf(padded).derived).toEqual([{ "generated-by": FABLE, lines: "6-8", integrity: PIN }]);
+
+    // A trailer naming the same machine agrees with a padded option.
+    const sha = commit(dir, "docs: rewrite the limits", { authorDate: D2, trailers: [`Generated-by: ${FABLE}`] });
+    const ranged = await runDerive({ inputs: [`${LIMITS}:9-11`], cwd: dir, generatedBy: `${FABLE} `, env: {} });
+    expect(provenanceOf(ranged).ranges).toEqual([
+      { lines: "9-11", "generated-by": FABLE, integrity: PIN, status: "unset", evidence: `blame ${short(sha)}`, written: true },
+    ]);
+  });
+
+  it("calls a record unset when every range is unset", async () => {
+    const dir = stageProvenance();
+    writeFile(dir, LIMITS, read(dir).replace("title: Rate limits\n", "title: Rate limits\nprovenance: []\n"));
+    commit(dir, "empty record", { authorDate: D2 });
+    agentEdit(dir);
+
+    const run = await runDerive({ inputs: [], cwd: dir, generatedBy: FABLE, env: {}, dryRun: true });
+    // The added key moves the body a line down: file lines 10-12.
+    expect(provenanceOf(run)).toMatchObject({ status: "unset", ranges: [{ lines: "10-12", status: "unset" }] });
+    expect(run.summary).toMatchObject({ stale: 0, unset: 1 });
+  });
+
+  it("attributes every range named for one page, merging ranges that touch", async () => {
+    const dir = stageProvenance();
+    // File line 7 and 9-10 are apart: line 8, a blank line, is not theirs.
+    const apart = await runDerive({ inputs: [`${LIMITS}:7`, `${LIMITS}:9-10`], cwd: dir, generatedBy: FABLE, env: {} });
+    expect(deriveFailed(apart)).toBe(false);
+    expect(extract(dir, LIMITS).provenance).toEqual([
+      { "generated-by": FABLE, lines: 4, integrity: hashLines("Requests are limited per token.") },
+      { "generated-by": FABLE, lines: "6-7", integrity: hashLines(HUMAN.slice(0, 2).join("\n")) },
+    ]);
+
+    const other = stageProvenance();
+    await runDerive({ inputs: [`${LIMITS}:10-11`, `${LIMITS}:9-10`], cwd: other, generatedBy: FABLE, env: {} });
+    expect(extract(other, LIMITS).provenance).toEqual([
+      { "generated-by": FABLE, lines: "6-8", integrity: hashLines(HUMAN.join("\n")) },
+    ]);
+  });
+
+  it("refuses a range that does not name one file the run reads, and attributes nothing", async () => {
+    const dir = stageProvenance();
+    agentEdit(dir);
+    const page = read(dir);
+    const refuse = (target: string, opts: Partial<Parameters<typeof runDerive>[0]> = {}) =>
+      expect(
+        runDerive({ inputs: [target], cwd: dir, generatedBy: FABLE, env: {}, ...opts }),
+      ).rejects.toThrow(new DocmetaError(`${target} does not name one file that derive reads; a range names lines of one file.`));
+
+    await refuse("docs:7");
+    await refuse("docs/*.md:9");
+    // A walk that --ext narrows to no file at all still names the range.
+    await refuse("docs:9", { exts: [".html"] });
+    expect(read(dir)).toBe(page);
+
+    // A file typed by name is never filtered, so --exclude leaves it in the run.
+    const named = await runDerive({ inputs: [`${LIMITS}:9`], cwd: dir, generatedBy: FABLE, env: {}, exclude: [LIMITS] });
+    expect(provenanceOf(named).ranges?.map((r) => r.lines)).toEqual(["9"]);
+  });
+
+  it("removes the manifest's provenance when nothing is left to attribute, as on the page", async () => {
+    const dir = stageProvenance();
+    const configPath = "manifest.config.yaml";
+    const header = "# Provenance for pages that keep their record out of the page.\n";
+    agentEdit(dir);
+    await runDerive({ inputs: [], cwd: dir, configPath, sources: ["git"], generatedBy: FABLE, env: {} });
+    expect(parseYaml(read(dir, "private/provenance.yaml"))).toHaveProperty(["docs/limits.md", "provenance"]);
+    commit(dir, "docs: rewrite the limits", { authorDate: D2 });
+
+    // A person rewrites the agent's lines, uncommitted, with no machine named.
+    writeFile(dir, LIMITS, read(dir).replace(AGENT.join("\n"), "Limits are listed per plan."));
+    const run = await runDerive({ inputs: [], cwd: dir, configPath, sources: ["git"], env: {} });
+    expect(provenanceOf(run)).toMatchObject({ status: "stale", derived: [], written: true });
+    expect(read(dir, "private/provenance.yaml")).toBe(header);
+
+    const again = await runDerive({ inputs: [], cwd: dir, configPath, sources: ["git"], check: true, env: {} });
+    expect(provenanceOf(again).status).toBe("current");
+    expect(deriveFailed(again)).toBe(false);
+  });
+
   it("says so when --generated-by finds no uncommitted body lines", async () => {
     const dir = stageProvenance();
     const notices: string[] = [];
@@ -809,6 +902,7 @@ describe("runDerive: provenance (0046)", () => {
     expect(renderDerive(check, "github")).toContain(
       `::error file=docs/limits.md,line=13::[derived:stale] /provenance provenance lines 13-15 changed since ${FABLE} wrote them — run manni meta derive`,
     );
+    expect(deriveFailed(check)).toBe(true);
 
     const run = await runDerive({ inputs: [], cwd: dir, env: {} });
     const field = provenanceOf(run);
@@ -836,8 +930,11 @@ describe("runDerive: provenance (0046)", () => {
     );
     const check = await runDerive({ inputs: [], cwd: dir, check: true, env: {} });
     expect(fieldsOf(check, LIMITS).findings).toEqual([]);
+    // No finding, so --check passes: exit 0, as validate is clean.
+    expect(deriveFailed(check)).toBe(false);
 
     const run = await runDerive({ inputs: [], cwd: dir, env: {} });
+    expect(deriveFailed(run)).toBe(false);
     expect(provenanceOf(run).ranges).toEqual([
       {
         lines: "15-17",

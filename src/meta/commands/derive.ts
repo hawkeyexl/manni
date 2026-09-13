@@ -92,7 +92,7 @@ import {
   type ProvenancePlace,
 } from "../core/derive/provenance-place.js";
 import { loadExternalMetadata, mergeExternalMetadata } from "../core/external-metadata.js";
-import { spliceManifestValue } from "../core/external-metadata-write.js";
+import { removeManifestKey, spliceManifestValue } from "../core/external-metadata-write.js";
 import { lineSpec, parseLines } from "../../shared/pin.js";
 import {
   compareDerived,
@@ -247,9 +247,12 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     return page;
   });
   const env = opts.env ?? process.env;
-  const flagGeneratedBy = opts.generatedBy === "" ? undefined : opts.generatedBy;
-  const envGeneratedBy = env[GENERATED_BY_ENV];
-  const generatedBy = flagGeneratedBy ?? (envGeneratedBy === "" ? undefined : envGeneratedBy);
+  // The option, once given, wins over the variable even when it is empty.
+  // Either is trimmed, since trailer evidence is compared trimmed, and a
+  // value that is blank after trimming is unset.
+  const flagGeneratedBy = machineName(opts.generatedBy);
+  const generatedBy =
+    opts.generatedBy !== undefined ? flagGeneratedBy : machineName(env[GENERATED_BY_ENV]);
 
   const {
     config,
@@ -391,6 +394,22 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   // would shape its SQL view and not what a bare run stamps. Skipped for
   // typed paths: those are the operator's (rule 3).
   const files = fromCollections ? retainMembers(walked, membersFor) : walked;
+  // A range names lines of one file, and that file must be one this run
+  // reads. A directory, a glob, or a file --ext, --exclude or .gitignore
+  // dropped would otherwise leave the range unused, and --generated-by would
+  // attribute every uncommitted line of every page instead.
+  const rangesByPage = new Map<string, string[]>();
+  for (const t of targets) {
+    const label = relative(base, resolve(base, t.page)).split(sep).join("/");
+    if (!files.includes(label)) {
+      throw new DocmetaError(
+        `${t.target} does not name one file that derive reads; a range names lines of one file.`,
+      );
+    }
+    const named = rangesByPage.get(label) ?? [];
+    if (!named.includes(t.target)) named.push(t.target);
+    rangesByPage.set(label, named);
+  }
   assertNonEmpty({
     files,
     inputs,
@@ -458,9 +477,6 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     manifests.length === 0
       ? null
       : await loadExternalMetadata(provenanceCollections, { configDir: provenanceRoot, base });
-  const byTarget = new Map(
-    targets.map((t) => [relative(base, resolve(base, t.page)).split(sep).join("/"), t.target]),
-  );
   const places = new Map<string, ProvenancePlace>();
   for (const doc of loaded.values()) {
     if (!wantsProvenance) break;
@@ -476,9 +492,11 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       places.set(doc.label, place);
       doc.provenanceManifest = { absPath: place.absPath, entry: place.entry, join: place.join };
     }
-    const target = byTarget.get(doc.label);
-    if (target !== undefined && generatedBy !== undefined) {
-      doc.attribution = { target, generatedBy };
+    // Every range named for the page, each refused on its own terms; ranges
+    // that overlap attribute their union.
+    const named = rangesByPage.get(doc.label);
+    if (named !== undefined && generatedBy !== undefined) {
+      doc.attribution = { targets: named, generatedBy };
     }
   }
   /** The page's `provenance` as its record holds it: the manifest's, or the page's own. */
@@ -665,8 +683,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       );
     if (
       provenance?.judged !== undefined &&
-      opts.generatedBy !== undefined &&
-      opts.generatedBy !== "" &&
+      flagGeneratedBy !== undefined &&
       doc.attribution === undefined &&
       ![...provenance.judged.derivation.evidenceByLine.values()].some((e) => e.rule === 1)
     ) {
@@ -702,13 +719,13 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     if (toManifest?.judged !== undefined && place !== undefined) {
       const held = await holdManifest(place.manifest);
       const before = held.text;
-      held.text = spliceManifestValue(held.text, {
-        entry: place.entry,
-        key: PROVENANCE_FIELD,
-        value: toManifest.judged.plan,
-        join: place.join,
-        file: place.manifest.file,
-      }).text;
+      const where = { entry: place.entry, key: PROVENANCE_FIELD, join: place.join, file: place.manifest.file };
+      // An empty record is no record, as on the page: `provenance` has
+      // `minItems: 1`, so the key leaves the entry rather than holding `[]`.
+      held.text =
+        toManifest.judged.plan.length === 0
+          ? removeManifestKey(held.text, where).text
+          : spliceManifestValue(held.text, { ...where, value: toManifest.judged.plan }).text;
       if (held.text !== before) {
         changed = true;
         if (!dryRun) markWritten(toManifest.field);
@@ -804,6 +821,25 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     sources: derived.sources,
     frame: { cwd, base: configDir ?? cwd, runBase: base },
   };
+}
+
+/**
+ * Whether the run fails, exit 1. A file the run could not read or write fails
+ * it whether or not it wrote the rest, as it does for `fill`: a stamp that was
+ * never applied must not read as done. Under `check`, any finding fails it,
+ * which is exactly what `validate` would file. A moved `provenance` pin is
+ * `stale` so that `derive` rewrites its lines, but it files no finding and
+ * does not fail `--check`. An applied run is the work done.
+ */
+export function deriveFailed(run: Pick<DeriveRun, "results" | "summary" | "check">): boolean {
+  if (run.summary.errors > 0) return true;
+  return run.check && run.results.some((r) => (r.findings ?? []).length > 0);
+}
+
+/** A `--generated-by` or `MANNI_GENERATED_BY` value, trimmed; blank is unset. */
+function machineName(value: string | undefined): string | undefined {
+  const name = value?.trim();
+  return name === undefined || name === "" ? undefined : name;
 }
 
 /**
@@ -951,7 +987,11 @@ function judgeProvenance(
   const comparisons = compareProvenance(provenanceEntries(asserted), derivation);
   const plan = planProvenanceWrite(comparisons, derivation);
   const settled = comparisons.every((c) => c.status === "current");
-  const status: DerivedStatus = settled ? "current" : asserted === undefined ? "unset" : "stale";
+  const status: DerivedStatus = settled
+    ? "current"
+    : asserted === undefined || comparisons.every((c) => c.status === "unset")
+      ? "unset"
+      : "stale";
   return {
     field: {
       ...base,

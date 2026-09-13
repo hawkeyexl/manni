@@ -402,12 +402,16 @@ describe("readProvenancePage", () => {
         { "generated-by": "x", lines: "8-3", integrity: PIN_3_8 },
         { "generated-by": "x", lines: 0, integrity: PIN_3_8 },
         { "generated-by": "x", lines: 4, integrity: "sha256-abc" },
-        { "generated-by": "x", lines: 4, integrity: PIN_3_8, extra: 1 },
         null,
         "3-8",
       ]),
     ).toEqual([FABLE_3_8]);
     expect(provenanceEntries({ not: "a list" })).toEqual([]);
+  });
+
+  it("reads an entry with a key outside the closed set, and keeps the key: the schema reports it", () => {
+    const noted = { "generated-by": "x", lines: 4, integrity: PIN_3_8, note: "reviewed" };
+    expect(provenanceEntries([noted])).toEqual([noted]);
   });
 
   it("reads a page whose frontmatter does not parse as carrying no stamp", () => {
@@ -470,6 +474,20 @@ describe("parseLinePorcelain", () => {
     );
   });
 
+  it("reads a SHA-256 repository's 64-hex shas, the all-zero one uncommitted", () => {
+    const committed = "ab".repeat(32);
+    const zero = "0".repeat(64);
+    const text = [
+      `${committed} 1 1 1`, "author Ada", "author-mail <ada@example.com>", "summary init", "filename f.md", "\tone",
+      `${zero} 2 2 1`, "author Not Committed Yet", "author-mail <not.committed.yet>", "summary Version of f.md from f.md", "filename f.md", "\ttwo",
+      "",
+    ].join("\n");
+    expect(parseLinePorcelain(text).map((r) => [r.sha, r.uncommitted, r.content])).toEqual([
+      [committed, false, "one"],
+      [zero, true, "two"],
+    ]);
+  });
+
   it("refuses a row where a header should be", () => {
     expect(() => parseLinePorcelain("not a header\n")).toThrow('porcelain: expected a header at row 1, got "not a header"');
   });
@@ -504,6 +522,12 @@ describe("machineIdentity and trailers", () => {
 
   it("matches a bare name with no email", () => {
     expect(machineIdentity("renovate[bot]", DEFAULT_MACHINES)).toBe("renovate[bot]");
+  });
+
+  it("*[bot] matches a name with a slash or a leading dot, as endsWith('[bot]') did", () => {
+    expect(
+      ["ci/deploy[bot] <d@x.y>", ".hidden[bot] <h@x.y>", "Robert <r@x.y>"].map((v) => machineIdentity(v, DEFAULT_MACHINES)),
+    ).toEqual(["ci/deploy[bot]", ".hidden[bot]", undefined]);
   });
 
   it("collects trailers by key without case, trimmed, in message order", () => {
@@ -955,5 +979,119 @@ describe("renderProvenanceValue", () => {
 describe("splitLines sanity for the fixture pages", () => {
   it("the E page has an eight-line frontmatter", () => {
     expect(splitLines(E.working).indexOf("---", 1)).toBe(7);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Review findings on PR #34: recorded lines first, unbudgeted move search,
+// open entry keys.
+// ---------------------------------------------------------------------------
+
+const machineA = (lines: string | number, integrity: string): ProvenanceEntry => ({ "generated-by": "claude-a", lines, integrity });
+const machineB = (lines: string | number, integrity: string): ProvenanceEntry => ({ "generated-by": "claude-b", lines, integrity });
+const ABC = ["a", "b", "c"];
+const PIN_ABC = String(pinOfLines(ABC, { start: 1, end: 3 }));
+
+describe("the stamp's own lines come first", () => {
+  // Body a,b,c,-,a,b,c. Lines 1-4 from a person; 5-7 from a commit with Generated-by: claude-b.
+  const R_HUMAN = commit("1111111111111111111111111111111111111111", ADA, "docs: abc", [], pageText(FRONT_PLAIN, [...ABC, "-"]));
+  const R_BOT = commit("2222222222222222222222222222222222222222", GRACE, "docs: abc again",
+    [["Generated-by", "claude-b"]], pageText(FRONT_PLAIN, [...ABC, "-", ...ABC]));
+  // The stamp's frontmatter is seven lines, so body 1 is file 8.
+  const REPRO_A = scenario(pageText(stampFront([machineA("1-3", PIN_ABC)]), [...ABC, "-", ...ABC]),
+    [[Z, 1, 7], [R_HUMAN.sha, 4, 4], [R_BOT.sha, 8, 3]], byShaOf([R_HUMAN, R_BOT]));
+
+  it("A. the pin holds at the recorded lines and nothing there contradicts: current, and the other machine's copy is unset", () => {
+    const d = derive(REPRO_A);
+    const results = compareProvenance(d.page.stamp, d);
+    expect(statusesOf(results)).toEqual([
+      { status: "current", lines: "1-3", noEvidence: true },
+      { status: "unset", lines: "5-7" },
+    ]);
+    expect(planProvenanceWrite(results, d)).toEqual([machineA("1-3", PIN_ABC), machineB("5-7", PIN_ABC)]);
+  });
+
+  // Body a,b,c,d..i,a,b,c. Lines 1-9 from a person; 10-12 from a commit with Generated-by: claude-a.
+  const FILLER = ["d", "e", "f", "g", "h", "i"];
+  const S_HUMAN = commit("3333333333333333333333333333333333333333", ADA, "docs: abc", [], pageText(FRONT_PLAIN, [...ABC, ...FILLER]));
+  const S_AGENT = commit("4444444444444444444444444444444444444444", GRACE, "docs: abc again",
+    [["Generated-by", "claude-a"]], pageText(FRONT_PLAIN, [...ABC, ...FILLER, ...ABC]));
+  // Two entries: a ten-line frontmatter, body 1 is file 11.
+  const REPRO_B = scenario(pageText(stampFront([machineA("1-3", PIN_ABC), machineA("10-12", PIN_ABC)]), [...ABC, ...FILLER, ...ABC]),
+    [[Z, 1, 10], [S_HUMAN.sha, 4, 9], [S_AGENT.sha, 13, 3]], byShaOf([S_HUMAN, S_AGENT]));
+
+  it("B. two identical stamped ranges, evidence on one: both current, neither swapped", () => {
+    const d = derive(REPRO_B);
+    const results = compareProvenance(d.page.stamp, d);
+    expect(statusesOf(results)).toEqual([
+      { status: "current", lines: "1-3", noEvidence: true },
+      { status: "current", lines: "10-12" },
+    ]);
+    expect(planProvenanceWrite(results, d)).toEqual([machineA("1-3", PIN_ABC), machineA("10-12", PIN_ABC)]);
+  });
+
+  it("the ladder agrees on both", () => {
+    agreesWithLadder(REPRO_A);
+    agreesWithLadder(REPRO_B);
+  });
+
+  it("a machine named at the recorded lines still makes them stale", () => {
+    // I's recorded lines hold the pin, and the trailer there names claude-sonnet-5.
+    const i = derive(I);
+    expect(statusesOf(compareProvenance(i.page.stamp, i))).toEqual([{ status: "stale", lines: "3-8", blame: "claude-sonnet-5 (9b0e2c1)" }]);
+  });
+});
+
+describe("a large page", () => {
+  const WIDE = Array.from({ length: 2600 }, (_, i) => String(i).padStart(200, "x"));
+  const pinWide = String(pinOfLines(WIDE, { start: 2100, end: 2499 }));
+  const noBlame = (body: readonly string[]): ProvenanceDerivation =>
+    deriveProvenance({ content: pageText(FRONT_PLAIN, body), blame: [], commits: new Map() });
+
+  it("a correct pin at its recorded lines, past the search budget from the band's start, is current", () => {
+    const d = noBlame(WIDE);
+    const entry = machineA("2100-2499", pinWide);
+    const results = compareProvenance([entry], d);
+    expect(statusesOf(results)).toEqual([{ status: "current", lines: "2100-2499", noEvidence: true }]);
+    expect(planProvenanceWrite(results, d)).toEqual([entry]);
+  });
+
+  it("the same range moved one line down is still found: the search has no budget", () => {
+    const narrow = Array.from({ length: 2600 }, (_, i) => String(i).padStart(100, "x"));
+    const pin = String(pinOfLines(narrow, { start: 2100, end: 2499 }));
+    const d = noBlame(["inserted", ...narrow]);
+    expect(statusesOf(compareProvenance([machineA("2100-2499", pin)], d))).toEqual([
+      { status: "moved", lines: "2100-2499", newLines: "2101-2500", noEvidence: true },
+    ]);
+  });
+});
+
+describe("an entry key outside the closed set", () => {
+  const T_HUMAN = commit("5555555555555555555555555555555555555555", ADA, "docs: abc", [], pageText(FRONT_PLAIN, [...ABC, "-"]));
+  const T_BOT = commit("6666666666666666666666666666666666666666", GRACE, "docs: xy",
+    [["Generated-by", "claude-b"]], pageText(FRONT_PLAIN, [...ABC, "-", "x", "y"]));
+  const front = ["---", "title: Rate limits", "provenance:", "  - generated-by: claude-a", "    lines: 1-3",
+    `    integrity: ${PIN_ABC}`, "    note: reviewed", "---"];
+  const NOTED = scenario(pageText(front, [...ABC, "-", "x", "y"]),
+    [[Z, 1, 8], [T_HUMAN.sha, 4, 4], [T_BOT.sha, 8, 2]], byShaOf([T_HUMAN, T_BOT]));
+  const noted = { ...machineA("1-3", PIN_ABC), note: "reviewed" };
+
+  it("is compared, and survives the write beside a new range", () => {
+    const d = derive(NOTED);
+    expect(d.page.stamp).toEqual([noted]);
+    const results = compareProvenance(d.page.stamp, d);
+    expect(statusesOf(results)).toEqual([
+      { status: "current", lines: "1-3", noEvidence: true },
+      { status: "unset", lines: "5-6" },
+    ]);
+    expect(planProvenanceWrite(results, d)).toEqual([noted, machineB("5-6", String(pinOfLines(["x", "y"], { start: 1, end: 2 })))]);
+    agreesWithLadder(NOTED);
+  });
+
+  it("survives a move, with only lines rewritten", () => {
+    const d = deriveProvenance({ content: pageText(FRONT_PLAIN, ["-", ...ABC]), blame: [], commits: new Map() });
+    const results = compareProvenance([noted], d);
+    expect(statusesOf(results)).toEqual([{ status: "moved", lines: "1-3", newLines: "2-4", noEvidence: true }]);
+    expect(planProvenanceWrite(results, d)).toEqual([{ ...noted, lines: "2-4" }]);
   });
 });

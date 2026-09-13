@@ -138,12 +138,16 @@ class BlobsUnreadable extends Error {
 }
 
 /**
- * `git blame` exited non-zero for a file that has history. A file with
- * none (untracked, or in a repository with no commits yet) is not this: all
- * of its lines are uncommitted, and blame has nothing to add.
+ * `git blame` exited non-zero for a file that HEAD has. A file HEAD lacks
+ * (untracked, deleted and recreated, or in a repository with no commits yet)
+ * is not this: all of its lines are uncommitted, and blame has nothing to add.
+ * `detail` is git's own stderr.
  */
 class BlameUnreadable extends Error {
-  constructor(readonly rel: string) {
+  constructor(
+    readonly rel: string,
+    readonly detail: string,
+  ) {
     super(rel);
   }
 }
@@ -259,7 +263,8 @@ export async function deriveFromGit(
         continue;
       }
       if (err instanceof BlameUnreadable) {
-        reasons.push(`git blame could not read ${err.rel} (${root})`);
+        const why = err.detail === "" ? "" : `: ${err.detail}`;
+        reasons.push(`git blame could not read ${err.rel} (${root})${why}`);
         continue;
       }
       if (!(err instanceof HistoryTooLarge)) throw err;
@@ -771,19 +776,22 @@ async function provenanceFor(
 ): Promise<{ value: DerivedValue | null; derivation: ProvenanceDerivation }> {
   const { input, rel } = entry;
   const fenced = provenanceFenced(input.extracted);
-  const blame = await blameOf(run, rel, input.content, history.length === 0);
-  const commits = await commitEvidence(run, root, blame, history, blobs, input.provenanceManifest);
+  const blame = await blameOf(run, rel, input.content);
+  const commits = await commitEvidence(run, root, entry, blame, history, blobs, input.provenanceManifest);
   const base = { content: input.content, commits, machines: opts.machines, fenced };
 
   let derivation: ProvenanceDerivation;
   const attribution = input.attribution;
   if (attribution !== undefined) {
-    // Refused in 0046's words when the range runs past the end, reaches into
+    // Refused in 0046's words when a range runs past the end, reaches into
     // the frontmatter, or evidence names another machine for any of its lines.
-    attributeRange({ ...base, blame, target: attribution.target, generatedBy: attribution.generatedBy });
-    const range = parseProvenanceTarget(attribution.target).lines;
+    const ranges = attribution.targets.flatMap((target) => {
+      attributeRange({ ...base, blame, target, generatedBy: attribution.generatedBy });
+      const range = parseProvenanceTarget(target).lines;
+      return range === undefined ? [] : [range];
+    });
     const inRange = (line: BlameLine): boolean =>
-      range !== undefined && line.finalLine >= range.start && line.finalLine <= range.end;
+      ranges.some((range) => line.finalLine >= range.start && line.finalLine <= range.end);
     // The attribution is evidence of its own, and nothing contradicts it (the
     // refusal above made sure). A committed line in the range is read as its
     // commit naming the machine, under a key that keeps the commit's sha for
@@ -848,20 +856,33 @@ function provenanceEvidence(derivation: ProvenanceDerivation): string {
 }
 
 /**
- * `git blame --line-porcelain` over the working file. A file with no history
- * has nothing to blame, so every line is uncommitted; blame failing on a file
- * that has history is the root's failure.
+ * `git blame --line-porcelain` over the working file. A path HEAD does not
+ * have has nothing to blame, so every line is uncommitted: that covers an
+ * untracked file, a repository with no commits, and a file deleted in history
+ * and recreated, which has history but no blob in HEAD. Blame failing on a
+ * path HEAD has is the root's failure, and git's stderr says why.
+ *
+ * `--no-ignore-revs-file` because a `blame.ignoreRevsFile` in someone's
+ * global config would otherwise move lines onto other commits (or, naming a
+ * file the repository lacks, fail blame outright), and attribution must not
+ * depend on the machine it runs on. An empty `-c blame.ignoreRevsFile=` does
+ * not clear the setting; the flag does.
  */
-async function blameOf(
-  run: GitRun,
-  rel: string,
-  content: string,
-  noHistory: boolean,
-): Promise<BlameLine[]> {
-  const out = await run(["-c", "core.quotePath=false", "blame", "--line-porcelain", "--", rel]);
+async function blameOf(run: GitRun, rel: string, content: string): Promise<BlameLine[]> {
+  const out = await run([
+    "-c",
+    "core.quotePath=false",
+    "blame",
+    "--no-ignore-revs-file",
+    "--line-porcelain",
+    "--",
+    rel,
+  ]);
   if (out.tooLarge) throw new HistoryTooLarge();
   if (out.code !== 0) {
-    if (noHistory) {
+    // Asked only once blame has failed, so a page that blames cleanly pays nothing.
+    const inHead = await run(["cat-file", "-e", `HEAD:${rel}`]);
+    if (inHead.code !== 0) {
       return splitLines(content).map((line, i) => ({
         sha: ZERO_SHA,
         origLine: i + 1,
@@ -874,7 +895,7 @@ async function blameOf(
         content: line,
       }));
     }
-    throw new BlameUnreadable(rel);
+    throw new BlameUnreadable(rel, out.stderr.trim());
   }
   return parseLinePorcelain(text(out));
 }
@@ -884,11 +905,14 @@ async function blameOf(
  * read or one `git log --no-walk` for a commit it lacks, and the page's text
  * at that commit, from the blobs already read or one `git cat-file --batch`
  * by `<sha>:<path>`. When a manifest holds the record, the stamp is read from
- * the manifest's blob at the same commit, under the page's entry.
+ * the manifest's blob at the same commit, under the page's entry as it was
+ * keyed then: for a `path` join, the page's path at that commit, so a stamp
+ * written before a rename is still found under the old key.
  */
 async function commitEvidence(
   run: GitRun,
   root: string,
+  entry: RootEntry,
   blame: readonly BlameLine[],
   history: readonly FileHistory[],
   blobs: ReadonlyMap<string, string>,
@@ -938,7 +962,13 @@ async function commitEvidence(
             stamp:
               manifestRel === undefined
                 ? []
-                : manifestStamp(fetched.get(`${sha}:${manifestRel}`), manifest),
+                : manifestStamp(
+                    fetched.get(`${sha}:${manifestRel}`),
+                    manifest.join === "path"
+                      ? entryAt(manifest.entry, entry.rel, pathAt.get(sha) ?? entry.rel)
+                      : manifest.entry,
+                    manifest.join,
+                  ),
           }
         : {}),
     });
@@ -954,10 +984,29 @@ function insideRoot(root: string, abs: string): string | undefined {
 }
 
 /**
- * The `provenance` entries a manifest's text holds for one page. A manifest
- * that does not parse, or has no entry for the page, holds none.
+ * A `path` join's key for the page as it was named at one commit. `entry` is
+ * the current path relative to the config directory and `rel` the current
+ * path relative to the root, so the path at the commit (root-relative, as
+ * blame names it) is re-expressed from the current file's directory and
+ * joined onto the entry's. That holds for an entry that climbs out of the
+ * config directory with `..`, and needs no config directory of its own.
  */
-function manifestStamp(text: string | undefined, ref: ProvenanceManifestRef): ProvenanceEntry[] {
+function entryAt(entry: string, rel: string, relAtCommit: string): string {
+  if (relAtCommit === rel) return entry;
+  const fromHere = posix.relative(posix.dirname(rel), relAtCommit);
+  return posix.join(posix.dirname(entry), fromHere);
+}
+
+/**
+ * The `provenance` entries a manifest's text holds for one page, under `key`
+ * (joined on `join`). A manifest that does not parse, or has no entry for the
+ * page, holds none.
+ */
+function manifestStamp(
+  text: string | undefined,
+  key: string,
+  join: ProvenanceManifestRef["join"],
+): ProvenanceEntry[] {
   if (text === undefined) return [];
   let data: unknown;
   try {
@@ -966,9 +1015,9 @@ function manifestStamp(text: string | undefined, ref: ProvenanceManifestRef): Pr
     return [];
   }
   if (!isRecord(data)) return [];
-  for (const [key, value] of Object.entries(data)) {
+  for (const [candidate, value] of Object.entries(data)) {
     const same =
-      ref.join === "path" ? posix.normalize(key) === posix.normalize(ref.entry) : key === ref.entry;
+      join === "path" ? posix.normalize(candidate) === posix.normalize(key) : candidate === key;
     if (same && isRecord(value)) return provenanceEntries(value[PROVENANCE_FIELD]);
   }
   return [];
@@ -1081,7 +1130,12 @@ interface GitOutput {
   missing: boolean;
   /** True when stdout passed the byte cap; `raw` is then empty. */
   tooLarge: boolean;
+  /** The start of stderr, decoded, for a failure message; `MAX_STDERR_BYTES` at most. */
+  stderr: string;
 }
+
+/** How much of a git process's stderr is kept: enough for its `fatal:` line. */
+const MAX_STDERR_BYTES = 16 * 1024;
 
 /** One git command in a fixed root, with the run's byte cap bound in. */
 type GitRun = (args: string[], stdin?: string) => Promise<GitOutput>;
@@ -1129,6 +1183,7 @@ function runGit(
       raw: Buffer.alloc(0),
       missing,
       tooLarge: false,
+      stderr: "",
     });
 
     let child: ChildProcessWithoutNullStreams;
@@ -1153,8 +1208,16 @@ function runGit(
       }
       chunks.push(chunk);
     });
-    // Drain stderr so a chatty git cannot fill the pipe and stall.
-    child.stderr.resume();
+    // Drain stderr so a chatty git cannot fill the pipe and stall, keeping
+    // its start for the message a failure reports.
+    const errChunks: Buffer[] = [];
+    let errTotal = 0;
+    child.stderr.on("data", (chunk: Buffer) => {
+      if (errTotal >= MAX_STDERR_BYTES) return;
+      const kept = chunk.subarray(0, MAX_STDERR_BYTES - errTotal);
+      errTotal += kept.length;
+      errChunks.push(kept);
+    });
     // No binary on PATH lands here rather than throwing from spawn().
     child.on("error", (err: NodeJS.ErrnoException) => {
       finish(failed(err.code === "ENOENT"));
@@ -1164,7 +1227,8 @@ function runGit(
     child.on("close", (code) => {
       try {
         const raw = tooLarge ? Buffer.alloc(0) : Buffer.concat(chunks);
-        finish({ code, raw, missing: false, tooLarge });
+        const stderr = Buffer.concat(errChunks).toString("utf8");
+        finish({ code, raw, missing: false, tooLarge, stderr });
       } catch (err) {
         fail(err);
       }

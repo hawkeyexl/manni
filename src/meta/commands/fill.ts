@@ -77,7 +77,6 @@ import {
   lazyKey,
   pointerOf,
   redactForModel,
-  isAtOrUnder,
   settleFindings,
   topLevelKeyOf,
   type EncryptionView,
@@ -121,7 +120,6 @@ export type {
 
 /** The key `fill` records the fields it wrote in (proposal 0046). */
 const META_PROVENANCE_KEY = "meta-provenance";
-const META_PROVENANCE_POINTER = `/${META_PROVENANCE_KEY}`;
 /**
  * Machine attribution, never proposed and never shown to the model (0046). A
  * schema that defines either would otherwise ask a model to invent hashes and
@@ -949,21 +947,18 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         metaProvenance = { written: false, skipReason: "manifest-owned", manifest: owner.file };
       } else if (
         merged === undefined ||
-        rejectsMetaProvenance(
-          settleFindings(
-            await validator.validate(
-              { ...view.data, ...plainPatch, [META_PROVENANCE_KEY]: merged.list },
-              schemaSet,
-              extracted.lineFor,
-              extracted.colFor,
-            ),
-            view,
-            extracted,
-          ),
-        )
+        (await addsFindings(
+          (data) =>
+            validator
+              .validate(data, schemaSet, extracted.lineFor, extracted.colFor)
+              .then((errors) => settleFindings(errors, view, extracted)),
+          { ...view.data, ...plainPatch },
+          merged.list,
+        ))
       ) {
         // The re-check above ignores root errors, which is where
-        // `additionalProperties` reports, so the entry is checked on its own.
+        // `additionalProperties`, `unevaluatedProperties` and `propertyNames`
+        // report, so the entry is checked on its own.
         metaProvenance = { written: false, skipReason: "schema-mismatch" };
       } else {
         patch[META_PROVENANCE_KEY] = merged.list;
@@ -1100,13 +1095,33 @@ function mergeMetaProvenance(
   return { list, entry };
 }
 
-/** Whether a finding keeps the `meta-provenance` entry out of the page. */
-function rejectsMetaProvenance(errors: readonly FieldError[]): boolean {
-  return errors.some(
-    (e) =>
-      isAtOrUnder(e.instancePath, META_PROVENANCE_POINTER) ||
-      (e.instancePath === "" && e.subject === META_PROVENANCE_KEY),
-  );
+/**
+ * Whether the `meta-provenance` entry brings a finding the same metadata
+ * without it does not have: then the schema does not allow it, whichever
+ * keyword says so (`additionalProperties`, `unevaluatedProperties`,
+ * `propertyNames`, or a rule under the key). Findings are counted, not just
+ * matched, so a root error the page already had does not hide a second one
+ * of the same kind that the entry adds.
+ */
+async function addsFindings(
+  validate: (data: Record<string, unknown>) => Promise<readonly FieldError[]>,
+  without: Record<string, unknown>,
+  list: unknown,
+): Promise<boolean> {
+  const identity = (e: FieldError): string =>
+    JSON.stringify([e.schema, e.instancePath, e.keyword, e.subject ?? null, e.message]);
+  const before = new Map<string, number>();
+  for (const e of await validate(without)) {
+    const key = identity(e);
+    before.set(key, (before.get(key) ?? 0) + 1);
+  }
+  for (const e of await validate({ ...without, [META_PROVENANCE_KEY]: list })) {
+    const key = identity(e);
+    const left = before.get(key) ?? 0;
+    if (left === 0) return true;
+    before.set(key, left - 1);
+  }
+  return false;
 }
 
 function withoutKey(patch: MetadataPatch, key: string): MetadataPatch {

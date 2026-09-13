@@ -26,6 +26,7 @@ import {
 import { buildEnvelopeSchema } from "../src/meta/commands/fill-prompt.js";
 import { loadSchema } from "../src/meta/core/schema-registry.js";
 import { compileWithFormats } from "../src/meta/core/validator.js";
+import { runValidate } from "../src/meta/commands/validate.js";
 import { DocmetaError } from "../src/meta/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -1703,6 +1704,60 @@ describe("runFill — meta-provenance (0046)", () => {
     const out = await readFile(join(dir, file), "utf8");
     expect(out).toContain("description: A summary.");
     expect(out).not.toContain("meta-provenance");
+  });
+
+  it.each([
+    ["unevaluatedProperties: false", "unevaluated.schema.json"],
+    ["a propertyNames pattern", "property-names.schema.json"],
+  ])("does not write the entry %s refuses, and the page still validates", async (_, schema) => {
+    const file = await stage("no-block.md");
+    const schemaPath = join(here, "fixtures", "fill", schema);
+    const { results, summary } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      cliSchemas: [schemaPath],
+      fields: ["description"],
+      inferenceProvider: proposeAs({
+        description: { value: "A summary.", confidence: 0.9 },
+      }),
+    });
+    expect(results[0]?.metaProvenance).toEqual({
+      written: false,
+      skipReason: "schema-mismatch",
+    });
+    expect(results[0]?.fields[0]?.written).toBe(true);
+    expect(summary.written).toBe(1);
+    const out = await readFile(join(dir, file), "utf8");
+    expect(out).toContain("description: A summary.");
+    expect(out).not.toContain("meta-provenance");
+    const { results: after } = await runValidate({
+      inputs: [file],
+      cwd: dir,
+      cliSchemas: [schemaPath],
+    });
+    expect(after[0]?.errors).toEqual([]);
+  });
+
+  it("does not write the entry when the page already has a root error of the same keyword", async () => {
+    // `extra` is unevaluated before the run and after it; the entry would add
+    // a second finding of the same keyword, which is still a new finding.
+    const text = "---\nextra: x\n---\n\n# Hello\n";
+    await writeFile(join(dir, "page.md"), text, "utf8");
+    const { results } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: ["page.md"],
+      cliSchemas: [join(here, "fixtures", "fill", "unevaluated.schema.json")],
+      fields: ["description"],
+      inferenceProvider: proposeAs({
+        description: { value: "A summary.", confidence: 0.9 },
+      }),
+    });
+    expect(results[0]?.metaProvenance).toEqual({
+      written: false,
+      skipReason: "schema-mismatch",
+    });
   });
 
   it("does not write an entry a manifest owns for this page's collection", async () => {

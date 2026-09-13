@@ -22,6 +22,7 @@ import { commandsOf, machinesOf } from "./config.js";
 import { assertSourcesAvailable, deriveMetadata } from "./index.js";
 import {
   DERIVE_SOURCES,
+  PROVENANCE_FIELD,
   derivableFields,
   type DerivableField,
   type DeriveCommand,
@@ -62,7 +63,10 @@ export function mentionsDerived(sql: string): boolean {
  * own list, see `derivableFields`: every one of them when it selects `*`, or
  * reads `_sources` or `_origin` (the evidence and the origin map span them
  * all), otherwise the field names
- * it spells out, quoted or not. `owner` is not `owners` and `created` is
+ * it spells out, quoted or not. `provenance` is the exception to the first
+ * half: it costs a blame per page, which proposal 0046 confines to runs that
+ * ask for it, so only its name brings it in here (`derive.fields` is the
+ * other way, which `deriveForTable` adds). `owner` is not `owners` and `created` is
  * not `recreated`, and the hyphen inside `last-updated` counts as part of
  * the name; a command key is matched as written, whatever it contains.
  * Over-triggering costs one source consulted for nothing; under-triggering
@@ -70,10 +74,12 @@ export function mentionsDerived(sql: string): boolean {
  * text — a literal, a comment — is derived.
  */
 export function fieldsForSql(sql: string, fields: readonly DerivableField[]): DerivableField[] {
-  if (sql.includes("*") || /\b_(?:sources|origin)\b/i.test(sql)) return [...fields];
-  return fields.filter((field) =>
-    new RegExp(`(?<![\\w-])${escapeRegExp(field)}(?![\\w-])`, "i").test(sql),
-  );
+  const named = (field: string): boolean =>
+    new RegExp(`(?<![\\w-])${escapeRegExp(field)}(?![\\w-])`, "i").test(sql);
+  if (sql.includes("*") || /\b_(?:sources|origin)\b/i.test(sql)) {
+    return fields.filter((field) => field !== PROVENANCE_FIELD || named(field));
+  }
+  return fields.filter(named);
 }
 
 function escapeRegExp(s: string): string {
@@ -274,7 +280,7 @@ export interface DeriveTableContext {
 
 /**
  * Derive the table's rows: `fields` — what the caller's statements can read,
- * see `fieldsForSql` — from the sources the config allows (all five when it
+ * see `fieldsForSql`, plus `provenance` when `derive.fields` manages it — from the sources the config allows (all five when it
  * says nothing), with the review cache on. The view keeps every column, and
  * a field not derived is NULL in it; only a source some named field needs
  * is consulted, so a statement reading `owner` never spawns `gh`, and a
@@ -291,12 +297,16 @@ export async function deriveForTable(
 ): Promise<Map<string, DerivedRecord>> {
   const derive = ctx.config?.derive;
   const commands = commandsOf(derive);
+  // `*` does not read `provenance` (its blame per page is paid only when
+  // asked for), so a run whose `derive.fields` manages it asks here.
+  const managesProvenance =
+    derive?.fields.includes(PROVENANCE_FIELD) === true && !fields.includes(PROVENANCE_FIELD);
   const result = await deriveMetadata(inputs, {
     cwd: ctx.cwd,
     base: ctx.base,
     ...(ctx.configDir !== undefined ? { configDir: ctx.configDir } : {}),
     sources: derive?.sources ?? [...DERIVE_SOURCES],
-    fields,
+    fields: managesProvenance ? [...fields, PROVENANCE_FIELD] : fields,
     ...(derive?.codeowners !== undefined ? { codeowners: derive.codeowners } : {}),
     ...(commands !== undefined ? { commands } : {}),
     cache: ctx.cache,
