@@ -64,6 +64,19 @@ Key layers:
   - `src/cite/reporters/`: output formatting (pretty / json / github).
   - `src/cite/cli.ts`: thin commander wrapper exported as `buildProgram()` and
     mounted by `src/cli.ts`. No entry point of its own.
+- `src/docevals/`: the evals tool, `manni docevals run`, `list`, `generate`,
+  `fill`, `promote`, `calibrate`, `init` and `review` (proposal 0047). It runs
+  deterministic and LLM-as-judge evals declared in page frontmatter. Its own
+  `src/docevals/CLAUDE.md` holds the tool's invariants.
+  - `src/docevals/core/`: discovery, page resolution against the evals draft,
+    the engine pipeline and the `docevals:` config loader.
+  - `src/docevals/graders/` and `src/docevals/judge/`: the deterministic
+    graders and the LLM judge, which takes its providers from
+    `src/shared/providers.ts`.
+  - `src/docevals/commands/` and `src/docevals/reporters/`: the command cores
+    and the output formats.
+  - `src/docevals/cli.ts`: thin commander wrapper exported as `buildProgram()`
+    and mounted by `src/cli.ts`. No entry point of its own.
 - `src/key/`: the family key's domain, `manni key set` and `manni key rotate`
   (proposal 0045). It owns no cryptography. `rotate` orchestrates meta's and
   cite's re-encryption, and the one ciphertext format lives in
