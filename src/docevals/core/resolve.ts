@@ -4,22 +4,16 @@
  * them (with overrides) or define inline evals. Page entries win on id
  * collision.
  *
- * The page vocabulary is `manni:evals:1.0.0-proposal.2` — four flat
- * page-level keys (`evals`, `eval-suite`, `eval-skip`, `eval-provenance`) and a
- * reserved `eval-` prefix, rather than the closed `evals:` object 0.1 used. The
+ * The page vocabulary is `manni:evals:1.0.0-proposal.3` — three flat
+ * page-level keys (`evals`, `eval-suite`, `eval-skip`) and a reserved `eval-`
+ * prefix, rather than the closed `evals:` object 0.1 used. The
  * whole frontmatter object is validated, not a synthetic `{evals}`: the prefix
  * reservation is a claim about the page root, and it cannot be enforced from a
  * fragment.
  */
 import { Ajv2020 } from "ajv/dist/2020.js";
 import type { ErrorObject } from "ajv";
-// Pages validate against the current schema, not the oldest one still shipped:
-// 1.1.0 adds `weight`, `target`, `runs` and `model`, and validating against
-// 1.0.0 would reject every page that uses them. 1.0.0 stays published and
-// byte-frozen for consumers who pinned it; every page valid against it is
-// valid against this.
-import frontmatterSchema from "../../../schemas/docevals/frontmatter-1.1.0.json" with { type: "json" };
-import { SEVERITIES } from "../../shared/severity.js";
+import { frontmatterSchema } from "../schema.js";
 import type { EvalType, GraderKind, Severity } from "../types.js";
 import {
   normalizeEvalDef,
@@ -82,24 +76,9 @@ export interface ResolvedPagePlan {
 }
 
 const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true });
-/**
- * The published 1.1.0 schema, with its severity values replaced by the
- * family's scale (`src/shared/severity.ts`).
- *
- * The published file still spells the lowest severity `info`, and its bytes
- * are frozen, so the family scale cannot be written into it. Validating
- * against it unchanged would reject `notice` on every page while the config
- * accepts it. The override is in memory and touches only `$defs/severity`;
- * every other rule is the published file's.
- */
-const pageSchema = {
-  ...frontmatterSchema,
-  $defs: {
-    ...frontmatterSchema.$defs,
-    severity: { ...frontmatterSchema.$defs.severity, enum: [...SEVERITIES] },
-  },
-};
-const validateFrontmatter = ajv.compile(pageSchema);
+// The draft as published: its severity is the family scale, so nothing is
+// patched in memory.
+const validateFrontmatter = ajv.compile(frontmatterSchema);
 
 interface FrontmatterEvalRef {
   use: string;
@@ -190,7 +169,7 @@ function shorthandName(index: number, taken: ReadonlySet<string>): string {
 }
 
 /** The page-level keys this vocabulary claims, for the reservation message. */
-const RESERVED_KEYS = ["eval-suite", "eval-skip", "eval-provenance"] as const;
+const RESERVED_KEYS = ["eval-suite", "eval-skip"] as const;
 
 /**
  * A schema error, in words.

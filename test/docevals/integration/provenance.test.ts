@@ -80,3 +80,14 @@ describe("manni docevals fill records meta-provenance", () => {
     });
   });
 });
+
+describe("the reserved eval- prefix", () => {
+  it("reports eval-provenance as a page problem, exit 1", () => {
+    const dir = workspace("eval-provenance-typo.md");
+    const r = manni(["run", "docs/eval-provenance-typo.md", "--deterministic-only", "--no-generate"], dir);
+    expect(r.status).toBe(1);
+    expect(r.stdout).toContain(
+      'frontmatter/eval-provenance: unknown key "eval-provenance". The "eval-" prefix is reserved, and the only settings under it are eval-suite, eval-skip — so a typo is an error here rather than a key nothing reads.',
+    );
+  });
+});

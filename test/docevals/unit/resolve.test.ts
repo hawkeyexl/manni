@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { parseDocevalsConfig } from "../helpers/config.js";
 import { resolvePage } from "../../../src/docevals/core/resolve.js";
 import { extractFrontmatter } from "../../../src/meta/index.js";
@@ -311,8 +313,44 @@ describe("resolvePage: the eval- prefix reservation", () => {
     const plan = resolvePage(page("eval-suit: ref"), CONFIG);
     const err = plan.problems.find((p) => p.level === "error");
     expect(err?.message).toMatch(/eval-suit/);
-    expect(err?.message).toMatch(/eval-suite|eval-skip|eval-provenance/);
+    expect(err?.message).toMatch(/eval-suite, eval-skip —/);
     expect(err?.message).not.toMatch(/boolean schema/);
+  });
+
+  it("refuses eval-provenance, which no draft defines any more (proposal 0046)", () => {
+    const file = join(import.meta.dirname, "../fixtures/provenance/docs/eval-provenance-typo.md");
+    const content = readFileSync(file, "utf8");
+    const plan = resolvePage(
+      {
+        file: "docs/eval-provenance-typo.md",
+        absPath: file,
+        content,
+        body: stripFrontmatterBlock(content),
+        frontmatter: extractFrontmatter(content, "markdown"),
+      },
+      CONFIG,
+    );
+    expect(plan.problems).toEqual([
+      {
+        message:
+          'frontmatter/eval-provenance: unknown key "eval-provenance". The "eval-" prefix is reserved, and the only settings under it are eval-suite, eval-skip — so a typo is an error here rather than a key nothing reads.',
+        level: "error",
+        line: 3,
+      },
+    ]);
+    expect(plan.evals).toEqual([]);
+  });
+
+  it("accepts notice and refuses info, the family scale (proposal 0046)", () => {
+    const at = (severity: string) =>
+      resolvePage(
+        page(`evals:\n  - id: x\n    assertion: A claim.\n    examples: { pass: yes, fail: no }\n    severity: ${severity}`),
+        CONFIG,
+      ).problems.filter((p) => p.level === "error");
+    expect(at("notice")).toEqual([]);
+    expect(at("info")[0]?.message).toBe(
+      "frontmatter/evals/0/severity: must be equal to one of the allowed values",
+    );
   });
 
   it("points at the offending line", () => {

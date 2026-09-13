@@ -1,71 +1,50 @@
 /**
- * The frontmatter schema is published from this repo (shipped in the package
- * under schemas/), not registered as a built-in inside a validator. These
- * tests pin the published artifact: it must be resolvable by path, usable by
- * manni meta as a plain schema file, and it must accept the fixture corpus.
+ * Pages are validated against the evals draft proposal 0023 publishes for
+ * review, `manni:evals:1.0.0-proposal.3`, read from `docs/proposals/` and
+ * bundled into the build. docevals ships no schema copy of its own: a copy
+ * would be a second artifact to keep in step with the draft, and it drifted
+ * once (its severity scale and its `eval-provenance` outlived the draft).
  *
- * They also pin the *vocabulary* — manni docevals implements
- * the `manni:evals` vocabulary (proposal 0023), so the ladder below
- * is ported from that proposal's own `ladders/evals-examples.cjs`. The
- * negatives are the migration guard: every 0.1 spelling has to fail loudly,
- * because a page that silently resolves to defaults is the failure mode this
- * whole rename exists to avoid.
+ * These tests also pin the *vocabulary*, so the ladder below is ported from
+ * that proposal's own `ladders/evals-examples.cjs`. The negatives are the
+ * migration guard: every 0.1 spelling has to fail loudly, because a page that
+ * silently resolves to defaults is the failure mode this whole rename exists
+ * to avoid.
  */
 import { describe, it, expect } from "vitest";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { parse as parseYaml } from "yaml";
 import { runValidate } from "../../../src/meta/index.js";
 import {
   frontmatterSchema,
-  frontmatterSchemaPath,
   FRONTMATTER_SCHEMA_ID,
-  FRONTMATTER_SCHEMA_VERSIONS,
 } from "../../../src/docevals/schema.js";
 
 const ROOT = resolve(import.meta.dirname, "../../..");
+const DRAFT = "docs/proposals/0023/schemas/evals/1.0.0-proposal.3.json";
 
-describe("published frontmatter schema", () => {
-  it("ships at a resolvable path", () => {
-    const path = frontmatterSchemaPath();
-    expect(existsSync(path)).toBe(true);
-    expect(JSON.parse(readFileSync(path, "utf8"))).toEqual(frontmatterSchema);
+describe("the page schema", () => {
+  it("is the evals draft, byte for byte", () => {
+    expect(frontmatterSchema).toEqual(JSON.parse(readFileSync(resolve(ROOT, DRAFT), "utf8")));
+    expect(FRONTMATTER_SCHEMA_ID).toBe("manni:evals:1.0.0-proposal.3");
   });
 
-  it("is listed in the package files so it reaches consumers", () => {
+  it("ships no copy of its own", () => {
     const pkg = JSON.parse(
       readFileSync(resolve(ROOT, "package.json"), "utf8"),
     ) as { files: string[]; exports: Record<string, unknown> };
-    expect(pkg.files).toContain("schemas");
-    // Every shipped version, not just the current one. `exports` is a closed
-    // map: a file inside a `files` directory is unreachable by subpath import
-    // unless it is listed, so publishing 1.1.0 while exporting only 1.0.0
-    // ships bytes that no consumer can `import` or resolve by path. Driving
-    // this from the version list means the next version cannot be forgotten.
-    for (const version of FRONTMATTER_SCHEMA_VERSIONS) {
-      const subpath = `./schemas/docevals/frontmatter-${version}.json`;
-      expect(pkg.exports, subpath).toHaveProperty(subpath);
-      expect(existsSync(resolve(ROOT, subpath))).toBe(true);
-    }
-  });
-
-  it("carries a resolvable $id, not a validator-internal registry id", () => {
-    expect(FRONTMATTER_SCHEMA_ID).toMatch(/^https?:\/\//);
-  });
-
-  it("versions with three segments, because its bytes are frozen once published", () => {
-    // A published schema may never change in place — a consumer's `$schema` URL
-    // has to keep meaning what it meant. With two segments the only way to fix
-    // a `description` typo is a minor bump, which announces new fields when
-    // none were added. See CLAUDE.md, "The published schema".
-    expect(FRONTMATTER_SCHEMA_ID).toMatch(/frontmatter-\d+\.\d+\.\d+\.json$/);
+    expect(pkg.files).not.toContain("schemas");
+    expect(Object.keys(pkg.exports).filter((k) => k.startsWith("./schemas/"))).toEqual([]);
+    expect(existsSync(resolve(ROOT, "schemas/docevals"))).toBe(false);
+    expect(existsSync(resolve(ROOT, "docs/public/docevals/schemas"))).toBe(false);
   });
 
   it("validates the fixture corpus when passed to manni meta as a file path", async () => {
     const run = await runValidate({
       inputs: ["test/docevals/fixtures/pages/**/*.{md,mdx}"],
-      cliSchemas: [frontmatterSchemaPath()],
+      cliSchemas: [resolve(ROOT, DRAFT)],
       cwd: ROOT,
     });
     expect(run.results.length).toBeGreaterThan(0);
@@ -218,8 +197,8 @@ evals:
     options:
       command: ["vale", "--output=JSON", "--config", ".vale.ini"]
     severity-map:
-      suggestion: info
-      warning: info
+      suggestion: notice
+      warning: notice
   - id: distinct-from-siblings
     grader: tool:differentiation
     options:
@@ -227,9 +206,9 @@ evals:
       max-similarity: 0.8`,
   ],
   [
-    "13 eval-provenance: fill's trail, retired by humans as they review",
+    "13 meta-provenance: fill's trail, retired by humans as they review",
     true,
-    `eval-provenance:
+    `meta-provenance:
   - generated-by: claude-fable-5
     evals: [install-verified, eks-coverage]
     confidence:
@@ -304,10 +283,19 @@ evals:
   ],
   ["N6 eval-skip must be a boolean, not a string", false, `eval-skip: "true"`],
   [
-    "N7 an eval-provenance entry without generated-by",
+    "N7 eval-provenance is gone, so the eval- reservation refuses it",
     false,
     `eval-provenance:
-  - evals: [something]`,
+  - generated-by: claude-fable-5
+    evals: [something]`,
+  ],
+  [
+    "N7b info is not a severity; the family scale says notice",
+    false,
+    `evals:
+  - id: quiet-check
+    assertion: Something.
+    severity: info`,
   ],
   [
     "N8 the old generated wrapper now fails (flattened to generated-assertion-hash)",
@@ -371,53 +359,5 @@ describe("manni:evals vocabulary ladder", () => {
       actual,
       actual ? "expected invalid, got valid" : JSON.stringify(validate.errors),
     ).toBe(expectedValid);
-  });
-});
-
-/**
- * The `$id` is a URL, and consumers are invited to point `$schema` or a
- * `tool:docmeta` eval at it. Nothing checked that the URL served anything: the
- * schema lived only in `schemas/`, the docs site had no `public/` directory,
- * and every existing test passed against a 404. These are the local half of
- * that promise — that the copy the site publishes is byte-identical to the one
- * the package ships. The other half, that the URL is actually reachable, can
- * only be answered by fetching it (see scripts/check-published-schemas.mjs).
- */
-describe("published schema is served at its $id", () => {
-  const PUBLIC_DIR = resolve(ROOT, "docs/public/docevals/schemas");
-
-  /** Path under docs/public that `$id` resolves to, given the site's base. */
-  function servedPathFor(id: string): string {
-    const url = new URL(id);
-    const base = "/manni"; // docs/astro.config.mjs
-    expect(url.pathname.startsWith(`${base}/`), `$id is under ${base}`).toBe(
-      true,
-    );
-    return resolve(ROOT, "docs/public", url.pathname.slice(base.length + 1));
-  }
-
-  it("ships a copy under the site's public directory", () => {
-    const served = servedPathFor(FRONTMATTER_SCHEMA_ID);
-    expect(
-      existsSync(served),
-      `${served} is what ${FRONTMATTER_SCHEMA_ID} resolves to`,
-    ).toBe(true);
-  });
-
-  it("serves bytes identical to the package copy", () => {
-    // Byte-identical, not merely equivalent: a published schema's bytes are
-    // frozen, so "same JSON, different formatting" is still a second artifact.
-    const served = servedPathFor(FRONTMATTER_SCHEMA_ID);
-    expect(readFileSync(served)).toEqual(readFileSync(frontmatterSchemaPath()));
-  });
-
-  it("publishes nothing under public/schemas that the package does not ship", () => {
-    // A stale copy of a retired version would keep resolving forever.
-    const shipped = new Set(readdirSync(resolve(ROOT, "schemas/docevals")));
-    for (const name of readdirSync(PUBLIC_DIR)) {
-      expect(shipped.has(name), `${name} has no counterpart in schemas/`).toBe(
-        true,
-      );
-    }
   });
 });

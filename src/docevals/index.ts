@@ -97,11 +97,7 @@ export {
   appendPageEvals,
 } from "./core/frontmatter-edit.js";
 export type { NewEvalEntry } from "./core/frontmatter-edit.js";
-export {
-  frontmatterSchema,
-  frontmatterSchemaPath,
-  FRONTMATTER_SCHEMA_ID,
-} from "./schema.js";
+export { frontmatterSchema, FRONTMATTER_SCHEMA_ID } from "./schema.js";
 // The judge cache key and the exact body it hashes. Exported so that anything
 // asking "is this verdict already cached?" — `scripts/check-docs-cache.mjs`
 // above all — computes it with the judge's own code instead of reproducing the

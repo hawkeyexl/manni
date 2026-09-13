@@ -76,7 +76,7 @@ docevals:
       assertion: Page frontmatter validates against the docevals frontmatter schema.
       grader: tool:docmeta
       options:
-        schemas: ["schemas/docevals/frontmatter-1.0.0.json"]
+        schemas: ["docs/proposals/0023/schemas/evals/1.0.0-proposal.3.json"]
       severity: error
 
     # --- LLM-graded. Defined and named, but NOT in the docs-page suite. ---
