@@ -1483,12 +1483,12 @@ export function schemaTrustRoot(
  *
  * Discovery checks cwd and then each ancestor up to and including the nearest
  * `.git` boundary. Within a directory the order is the family file
- * (`manni.config.yaml`, then `.yml`, read at its `meta:` key), the pre-rename
- * family file (`moose.config.yaml`), then `docmeta.config.yaml` and `.yml`
- * whole. The **first file found wins** and the walk stops there — ancestor
- * configs are never merged, because `schemas:` is a set a file must satisfy in
- * full and `overrides:` is first-match-wins ordered, so a partial merge would
- * silently redefine what "the contract" means. See src/shared/config-file.ts
+ * (`manni.config.yaml`, then `.yml`, read at its `meta:` key), then
+ * `docmeta.config.yaml` and `.yml` whole. The **first file found wins** and
+ * the walk stops there — ancestor configs are never merged, because
+ * `schemas:` is a set a file must satisfy in full and `overrides:` is
+ * first-match-wins ordered, so a partial merge would silently redefine what
+ * "the contract" means. See src/shared/config-file.ts
  * for the rest of the rules, the deprecation warnings included.
  *
  * Returns null when no config is found via discovery.

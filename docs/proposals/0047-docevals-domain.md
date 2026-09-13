@@ -220,11 +220,6 @@ was ever written against those names. `CLAUDE.md` says not to add an alias to
 soften a rename unless asked. An alias here would soften nothing, and it would
 be a permanent second surface. cite and a11y read no pre-family name either.
 
-`moose.config.yaml` is a different case. It is the family file's pre-rename
-name, and `src/shared/config-file.ts` still discovers it, with a warning, for
-every tool, docevals included. That is the shared loader's rule, not
-docevals's, and this proposal leaves it alone.
-
 ### 5. Pages validate against the 0023 draft, and no copy ships
 
 docevals shipped `schemas/docevals/frontmatter-1.0.0.json` and `1.1.0.json`,

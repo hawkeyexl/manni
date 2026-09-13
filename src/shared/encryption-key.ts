@@ -16,7 +16,6 @@ import {
   ENCRYPTION_KEY_FIELD,
   ENCRYPTION_KEY_PREVIOUS_FIELD,
   FAMILY_CONFIG_NAMES,
-  MOOSE_CONFIG_NAMES,
   type ConfigFile,
 } from "./config-file.js";
 import { isValidEncryptionKey } from "./encryption.js";
@@ -119,7 +118,7 @@ async function fileTarget(file: ConfigFile, toError: ToError): Promise<Target> {
  */
 async function defaultTarget(cwd: string): Promise<Target> {
   const root = findGitRoot(cwd) ?? resolve(cwd);
-  for (const name of [...FAMILY_CONFIG_NAMES, ...MOOSE_CONFIG_NAMES]) {
+  for (const name of FAMILY_CONFIG_NAMES) {
     const path = join(root, name);
     const text = await readIfPresent(path);
     if (text !== null) return { path, source: relativeSource(cwd, path), text };

@@ -1962,10 +1962,7 @@ for these files, in order:
    hands the tool an empty section plus the collections and the key. A family
    file with none of the three belongs to a sibling tool and is skipped, so the
    search continues.
-2. `moose.config.yaml`, then `moose.config.yml`: the family file under its
-   pre-rename name. Same shape, read the same way, with a warning on stderr to
-   rename it.
-3. `docmeta.config.yaml`, then `docmeta.config.yml`: the metadata tool's own
+2. `docmeta.config.yaml`, then `docmeta.config.yml`: the metadata tool's own
    file from before the family file. Its **whole document** is the `meta:`
    section, with no wrapper key, so it can carry no `collections:` at all. A
    legacy file that still says `paths:` is refused with the same

@@ -14,14 +14,11 @@
  * 0041), `encryptionKey:` (proposal 0045) and `providers:`, the inference
  * provider settings every tool that sends content to a model reads.
  *
- * Two older spellings are still read, each with a warning on discovery:
+ * One older spelling is still read, with a warning on discovery: each tool's
+ * pre-family file (`docmeta.config.yaml` for the metadata tool), whose whole
+ * document is the tool's section with no wrapper key.
  *
- * - `moose.config.yaml`, the family file under the pre-rename name. Same
- *   shape, so only the filename is wrong.
- * - each tool's pre-family file (`docmeta.config.yaml` for the metadata
- *   tool), whose whole document is the tool's section with no wrapper key.
- *
- * Within one directory the order is manni, moose, then the legacy names, and
+ * Within one directory the order is manni, then the legacy names, and
  * `.yaml` before `.yml`. A family file that exists but has neither a key for
  * this tool nor a family key is not this tool's config: discovery keeps
  * looking, first at the legacy names beside it (a repository mid-migration,
@@ -53,12 +50,6 @@ import { errorMessage } from "./errors.js";
 export const FAMILY_CONFIG_NAMES: readonly string[] = [
   "manni.config.yaml",
   "manni.config.yml",
-];
-
-/** The family filenames before the rename, still read with a warning. */
-export const MOOSE_CONFIG_NAMES: readonly string[] = [
-  "moose.config.yaml",
-  "moose.config.yml",
 ];
 
 /** The top-level key holding the family encryption key (proposal 0045). */
@@ -105,7 +96,7 @@ export interface ConfigFile {
   /** Whether `value` came from under `section:`. */
   wrapped: boolean;
   /** How the file was found. Explicit paths are never warned about. */
-  kind: "manni" | "moose" | "legacy" | "explicit";
+  kind: "manni" | "legacy" | "explicit";
   /**
    * The document's top-level `collections:` (proposal 0041), parsed once here
    * because every tool reads the same declaration. `[]` when the key is
@@ -292,18 +283,6 @@ function relativeSource(cwd: string, path: string): string {
   return relative(cwd, path).replace(/\\/g, "/");
 }
 
-function mooseWarning(name: string): string {
-  return `"${name}" is the pre-rename name of the family config file. Rename it to "${FAMILY_CONFIG_NAMES[0] ?? "manni.config.yaml"}".`;
-}
-
-const FAMILY_FILES: readonly {
-  names: readonly string[];
-  kind: "manni" | "moose";
-}[] = [
-  { names: FAMILY_CONFIG_NAMES, kind: "manni" },
-  { names: MOOSE_CONFIG_NAMES, kind: "moose" },
-];
-
 /**
  * Discover the tool's config from `cwd` upward. `null` when nothing exists.
  */
@@ -313,29 +292,26 @@ export function findConfigFileSync(
 ): ConfigFile | null {
   const start = resolve(cwd);
   for (const dir of searchPath(start)) {
-    for (const { names, kind } of FAMILY_FILES) {
-      for (const name of names) {
-        const path = join(dir, name);
-        const source = relativeSource(start, path);
-        const document = readDocument(path, source, opts.toError);
-        if (document === null) continue;
-        const found = slice(document, opts);
-        // A family file without this tool's key belongs to a sibling. Keep
-        // looking, rather than treating the file as an empty config.
-        if (found === null) continue;
-        if (kind === "moose") warn(mooseWarning(name));
-        return {
-          path,
-          dir,
-          source,
-          text: document.text,
-          kind,
-          collections: collectionsOf(document, source, opts.toError),
-          ...encryptionKeyOf(document, source, opts.toError),
-          ...providersOf(document, source, dir, opts.toError),
-          ...found,
-        };
-      }
+    for (const name of FAMILY_CONFIG_NAMES) {
+      const path = join(dir, name);
+      const source = relativeSource(start, path);
+      const document = readDocument(path, source, opts.toError);
+      if (document === null) continue;
+      const found = slice(document, opts);
+      // A family file without this tool's key belongs to a sibling. Keep
+      // looking, rather than treating the file as an empty config.
+      if (found === null) continue;
+      return {
+        path,
+        dir,
+        source,
+        text: document.text,
+        kind: "manni",
+        collections: collectionsOf(document, source, opts.toError),
+        ...encryptionKeyOf(document, source, opts.toError),
+        ...providersOf(document, source, dir, opts.toError),
+        ...found,
+      };
     }
     for (const name of opts.legacyNames) {
       const path = join(dir, name);
@@ -438,25 +414,22 @@ function findFamilyConfigFileSync(
 ): ConfigFile | null {
   const start = resolve(cwd);
   for (const dir of searchPath(start)) {
-    for (const { names, kind } of FAMILY_FILES) {
-      for (const name of names) {
-        const path = join(dir, name);
-        const source = relativeSource(start, path);
-        const document = readDocument(path, source, toError);
-        if (document === null) continue;
-        if (kind === "moose") warn(mooseWarning(name));
-        return {
-          path,
-          dir,
-          source,
-          text: document.text,
-          value: null,
-          wrapped: true,
-          kind,
-          collections: collectionsOf(document, source, toError),
-          ...tolerantKeysOf(document),
-        };
-      }
+    for (const name of FAMILY_CONFIG_NAMES) {
+      const path = join(dir, name);
+      const source = relativeSource(start, path);
+      const document = readDocument(path, source, toError);
+      if (document === null) continue;
+      return {
+        path,
+        dir,
+        source,
+        text: document.text,
+        value: null,
+        wrapped: true,
+        kind: "manni",
+        collections: collectionsOf(document, source, toError),
+        ...tolerantKeysOf(document),
+      };
     }
   }
   return null;
@@ -467,7 +440,7 @@ function findFamilyConfigFileSync(
  * the family's key and so belongs to no one tool's section.
  *
  * The file is a family file when it is empty, carries a family key, or is
- * named as one (`manni.config.yaml`, `moose.config.yaml`): its top-level keys
+ * named as one (`manni.config.yaml`, `manni.config.yml`): its top-level keys
  * are then sections, whatever they are, and `value` is `null`. Anything else
  * is read whole as one tool's section (`wrapped: false`), which the key writer
  * refuses rather than turn into a family file under that tool's feet. Missing
@@ -495,7 +468,7 @@ function readFamilyConfigFileSync(
     throw toError(`Config file not found: "${explicitPath}".`);
   }
   const { doc } = document;
-  const named = [...FAMILY_CONFIG_NAMES, ...MOOSE_CONFIG_NAMES].includes(basename(path));
+  const named = FAMILY_CONFIG_NAMES.includes(basename(path));
   const family =
     doc === null || named || FAMILY_KEYS.some((key) => Object.hasOwn(doc, key));
   return {
