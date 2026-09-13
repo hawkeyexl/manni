@@ -68,6 +68,60 @@ Maya's older pages predate the standard, so the fields her gate now requires are
 
 ---
 
+### M9 · Stand up a first eval gate
+
+**Outcome.** A pull request in Maya's own repo goes red because a page stopped meeting a named, written-down assertion. Its author can see which one and why.
+
+**Steps.** She decides from the overview whether the tool fits. She installs the package she already has, runs `manni docevals init`, and gets a real finding on one of her own pages with `manni docevals run --deterministic-only`, no provider key needed. Only then does she read how an eval, a grader and a verdict fit together. She declares evals in page frontmatter, writes one assertion a judge can decide, and adds a deterministic check beside it, so not everything is judged. She reads the output and its exit code, then lands the CI step.
+
+This is the backbone of the docevals section. It is the only journey that crosses every layer: the frontmatter contract, the grader hierarchy, the judge, the output and CI. The quickstart gets a reader to a finding with the minimum vocabulary, and the concepts page sits straight after it. Concepts first loses the reader with ten minutes; no concepts loses the one committing a team. The step that decides adoption is the deterministic check. A reader who leaves believing docevals means "a model grades my docs" will lose the cost and explicability arguments.
+
+**What success looks like.** One page, one assertion, one run, one CI step, and a red check whose reason a person can read, argue with and fix.
+
+---
+
+### M10 · Keep one eval library the whole corpus shares
+
+**Outcome.** Pages name a suite and a few evals, the assertions live once in `manni.config.yaml`, and changing one changes every page that uses it.
+
+**Steps.** She moves a repeated assertion into a named eval under `docevals.evals`, and groups evals into a suite per page type. She learns what wins when a page and the config collide: on a name collision the page wins. She decides regression or capability per eval and gives each suite a `target-pass-rate`. Before running anything she confirms the resolved plan per page with `manni docevals list`.
+
+**What success looks like.** Nobody asks "what do we actually check on a how-to?", because the suite answers it. A capability finding is not treated as a build break, because the suite's target says what it measures.
+
+---
+
+### M11 · Report the linters we already run through one gate
+
+**Outcome.** Vale, markdownlint, manni meta and a structure linter report through one `manni docevals run`, as evals with names and severities in one output format. Their separate CI steps are gone.
+
+**Steps.** She sees why code comes first in the grader hierarchy. She wraps each existing linter as a `tool:*` eval and looks up its options. She adds the native checks nothing else covers: freshness, reading level and cross-page differentiation. She runs any other CLI check as a `command` eval. She decides per eval what fails the build and what only reports, entering a newly wrapped linter at `warning`. Last, she makes the commands her pages present testable through `tool:doc-detective`.
+
+The claim this journey carries is that docevals orchestrates and does not reimplement. A reader who expects it to replace Vale is judging it against the wrong tools.
+
+**What success looks like.** One report, one exit code, and a pipeline where most evals are code and only a handful are judged.
+
+---
+
+### M12 · Propose evals for a corpus nobody annotated
+
+**Outcome.** Every page in a directory carries evals nobody hand-wrote. Maya knew how much work the pass would do before it ran, and she reviewed what landed rather than assuming it is right.
+
+**Steps.** She runs `manni docevals fill --dry-run` over one directory and reads the proposals. That dry run is where the inference calls are spent, and the write pass after it is a cache hit. Proposals are cached before the confidence gate, so re-running at a different `--confidence` costs nothing. `fill` spends one call per uncached page, so the page count of a batch is its size, and `--max-turns` caps it before the first call. She writes the proposals, reviews them like any other change, and converts the good ones into cheap deterministic checks (S9).
+
+**What success looks like.** A directory covered in an afternoon, a call count she predicted, and a review step rather than a claim that the corpus is now covered.
+
+---
+
+### M13 · Get a legacy corpus onto the eval ratchet without a wall of red
+
+**Outcome.** Every eval is on at `error` from day one. Today's findings are recorded in a committed baseline, and CI fails only on new ones. The recorded count is falling, and no assertion was weakened to get there.
+
+**Steps.** First she decides what should not be evaluated at all, and excludes it from the collection before anything is recorded. Narrowing scope afterwards produces an alarming `removed` count. She sets `baseline:` in the config so a recorded file is actually read. She records today's findings with `manni docevals run --write-baseline` and commits the file. She gates CI on new findings only. On every re-record she reads the `(+added, -removed)` line, `removed` above all. A baseline forgives silently by construction. She learns what it does not cover. A finding's identity is per rule per file, not per occurrence, and it holds deterministic findings only, not judged verdicts. She proposes evals one directory at a time (M12). Judged evals go in a capability suite with a target below 1.0. She burns down one section and re-records so the baseline shrinks. `severity: warning` is kept for a finding class the team will never gate on.
+
+**What success looks like.** At the end of a quarter, one section is gated at `error` with no baseline entries. The burn-down is going the right way, and nobody weakened the standard.
+
+---
+
 ## Devin, Platform / CI Engineer
 
 ### D1 · Add the gate to our CI platform
@@ -116,6 +170,28 @@ Per-file schema validation cannot see a dangling cross-reference, a duplicate sl
 
 ---
 
+### D8 · Gate evals in CI
+
+**Outcome.** One parameterized job, identical across repos, blocks a pull request on findings, annotates the offending lines, and routes operational failures somewhere other than the author.
+
+**Steps.** Devin adds the job on his platform, then takes the same recipe for GitLab CI, Jenkins and pre-commit. He routes on the exit code. `0` passes, and `1` is findings and blocks the author. `2` is operational, such as a missing credential, an unreachable provider or a malformed config, and it is his. He runs `-f github` so each finding annotates its line. He supplies the provider credential from a secret, naming `provider` in config rather than leaving it to whatever the runner's environment detects. He persists the response cache between runs, keyed on what invalidates it. A cold cache re-judges the corpus on every push and spends turns a warm one would not. He feeds `-f json` into the tooling he already has. The fork problem first appears at the credential step, and this journey hands it to D9 rather than half-answering it.
+
+**What success looks like.** A recipe he pastes into four repos unchanged, which never wakes him up, and whose inference calls he can point at on a graph.
+
+---
+
+### D9 · Bound what the eval gate can spend and what it can execute
+
+**Outcome.** A fork pull request cannot execute its author's code on a runner or reach a provider credential. No run makes more inference calls than a budget set in config.
+
+**Steps.** He learns the two paths from a content file to code on the runner. Frontmatter-declared commands are granted by `execution.allow: [frontmatter-commands]`, and steps embedded in page bodies, run by `tool:doc-detective`, by `page-embedded-steps`. He learns that no grant makes a run over a fork safe. So he gates the job that executes anything to same-repo pull requests, and gives forks a separate `--deterministic-only --no-execution` job with no secret. He sets `judge.maxTurns` and `fill.maxTurns`. A turn is an uncached call, one ai eval spends `judge.ensembleRuns` of them, and a cache hit spends none. He knows that exhausting the budget skips the remaining evals and still exits `0`. The tool reports no dollar figure, so the conversion is his provider's rate card. He looks up the flags and keys on the reference shelf.
+
+This is the highest-stakes journey in the section. It is the only one where a plausible wrong answer causes real harm. Any page presenting a grant as sufficient is worse than no page.
+
+**What success looks like.** A fork gets freshness, lint and frontmatter checks with nothing executed. A finance question gets answered with a call count.
+
+---
+
 ## Sara, Schema Author
 
 ### S1 · Define our metadata standard as a schema
@@ -152,6 +228,46 @@ Sara needs to ship a stricter version of the schema without immediately breaking
 
 ---
 
+### S6 · Write assertions the judge can decide
+
+**Outcome.** Two people reading the same page agree on the assertion, and so does the judge. Its failure tells the author which sentence to change.
+
+**Steps.** Sara's trigger is an eval that flips between pass and fail, or fails pages that are obviously fine. Her first hypothesis is a broken grader, and it is usually a vague assertion. She rewrites `assertion` as a claim that is true or false, scopes what the judge reads with `evidence`, and pins the boundary with `examples.pass` and `examples.fail`. She decides whether the eval guards behaviour (regression, the default) or measures reach (capability), because that changes how strictly it is worded. She asks whether it should be an `ai` eval at all. The cheapest moment to notice an assertion is really a grep is while writing it. She checks the wording against how it is judged: the ensemble, consensus where `partial` counts as a fail, and the confidence zones.
+
+**What success looks like.** An eval that stops landing in human review, and a failure Theo can act on from the assertion and its failing example.
+
+---
+
+### S7 · Prove the judge is trustworthy enough to gate a build
+
+**Outcome.** A calibration report shows agreement above the threshold and a false-positive rate below the alert. Sara can hand it to a skeptic and be believed.
+
+**Steps.** She learns what makes a verdict reproducible: temperature 0, a pinned model, structured verdicts and a content-addressed cache. She learns how an ensemble becomes one verdict, and that an errored run counts against consensus. Variance can therefore only push an eval toward human review, never toward a silent pass. She learns where auto-pass and auto-fail end and review begins. She builds a golden set of twenty to fifty human-verified cases under `.manni/docevals/golden/`, seeded from recorded reviews with `calibrate --seed`. She runs `manni docevals calibrate`. Below 70% agreement it exits `1`, and the right response is to refine the assertions, not the grader. She watches the false-positive rate against `judge.falsePositiveAlert`. She chooses a provider and pins a model, including a self-hosted OpenAI-compatible endpoint or `claude-cli` with no key.
+
+**What success looks like.** A report showing 88% agreement and a 6% false-positive rate, and an engineering director who stops asking whether the check is trustworthy.
+
+---
+
+### S8 · Clear the human-review queue
+
+**Outcome.** A recorded verdict with a reviewer and a note unblocks the pull request. It persists for later runs and expires on its own when the page changes.
+
+**Steps.** She lists what is waiting with `manni docevals review`, no arguments. She reads why this eval landed in the review zone. She records a verdict with `manni docevals review <file> <eval> pass|fail --reviewer <name>`. She knows the verdict holds only while the reviewed page body is unchanged, which is what makes persistence safe. She decides, as a policy question rather than a default, whether `--fail-on-review` blocks the build. The deciding question is whether someone owns the queue. An eval that lands in review every run is a diagnosis, and its repair is S6, not answering it faster forever.
+
+**What success looks like.** A queue somebody clears, a review zone nobody wants turned off, and Theo told to escalate rather than left to guess.
+
+---
+
+### S9 · Move evals down the grader hierarchy
+
+**Outcome.** Evals that could always have been code are `command` evals with committed, reviewable scripts. The next run makes measurably fewer inference calls with no loss of coverage.
+
+**Steps.** She runs `manni docevals promote` to find the `ai` evals whose criterion can be expressed as code. It reports by default, and converting with `--write` is a deliberate act, because it changes what is checked. For a plain-language `command` eval with no command, `manni docevals generate` writes a script to a file beside the page, never inline in frontmatter. She reviews that script like any other source, because one that passes for the wrong reason is worse than the judged eval it replaced. She learns that editing the assertion makes the script stale, so it regenerates rather than quietly checking the old thing. She confirms the saving from the run's judged and cached counts, never from a dollar figure.
+
+**What success looks like.** A corpus whose run time and call count stopped growing with it.
+
+---
+
 ## Theo, Contributor
 
 ### T1 · Fix a failing metadata check fast
@@ -179,3 +295,15 @@ Theo's failure is usually a *missing* field rather than a malformed one, so `fil
 **Steps.** He reads the annotation, which names the rule, the element it fired on, and one sentence saying what to change. The fix page maps the rule to the change, and the help URL explains the rule itself. He edits the template or the page, rebuilds, and runs the same command locally until it exits `0`. There is no `--fix`, because no tool can know the words that belong in an alt attribute.
 
 **What success looks like.** A rule id he can act on, and a local run that proves it before he pushes.
+
+---
+
+### T4 · Fix a failing eval
+
+**Outcome.** Theo's pull request is red on an eval he did not write. He identifies which check failed, makes the smallest correct change or escalates to the right person, and confirms locally, having read one page.
+
+**Steps.** He works out which kind of failure it is from the triage table on the fix page's first screen. A finding with a file and line is a deterministic check, and he fixes the line. A rationale with no line is an AI verdict, and he reads the assertion and its `examples.fail` beside the rationale to find the sentence. A needs-review verdict is not his to resolve, so he escalates to whoever owns the queue. A generated script that no longer matches its assertion wants regeneration, not an edit. An exit `2` is operational and goes to the platform team. He reproduces locally with `npx @hawkeyexl/manni docevals run --deterministic-only <file>`, which needs neither the key nor the cache CI had. The FAQ answers the recurring questions.
+
+This is the highest-traffic journey in the section and the shallowest. The fix page has no subject dependencies, because it is reached cold from an annotation.
+
+**What success looks like.** Four minutes from annotation to green, and he never learns what a capability suite is.

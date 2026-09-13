@@ -165,8 +165,8 @@ export default defineConfig({
             },
           ],
         },
-        // The evals tool. Section order and labels follow its CUJ-first IA
-        // (docs/content-strategy/docevals/information-architecture/proposed-ia.md).
+        // The evals tool. Section order and labels follow its content set in
+        // docs/content-strategy/information-architecture.md (`docevals/`).
         {
           label: "docevals",
           collapsed: true,

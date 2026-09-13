@@ -20,7 +20,7 @@ Before drafting or editing any user-facing documentation:
 
 1. **Identify the relevant persona.** Is this page for Maya (docs engineer), Devin (CI engineer), Sara (schema author), or Theo (contributor hitting a red check)? A page may serve more than one, but there is usually a primary.
 
-2. **Find the matching CUJ in `cujs.md`.** Each persona has 1–3 numbered journeys (M1–M3, D1–D3, S1–S3, T1). Understand the end-to-end outcome the persona needs to reach.
+2. **Find the matching CUJ in `cujs.md`.** Each persona has a numbered series of journeys across the tools (M1–M13, D1–D9, S1–S9, T1–T4). Understand the end-to-end outcome the persona needs to reach.
 
 3. **Structure content around that journey, not by document type.** Do not impose a Diátaxis-style tutorial/how-to/explanation/reference split as the organizing principle. Ask: "What does this persona need to know, and in what order, to reach the outcome?" Let the journey sequence the content.
 
@@ -42,12 +42,18 @@ manni meta docs document a real CLI. Every flag, exit code, output string, and s
 
 ## Per-tool strategy
 
-The files above are the metadata tool's. Each sibling tool that joins the
-family brings its own audiences, personas, journeys and IA. They live in a
-subdirectory named for the tool, beside the pages they govern under
-`docs/src/content/docs/<tool>/`. `design.md` is shared: one site, one palette,
-one set of capture rules.
+The files above are the whole family's. A tool that joins the family does not
+bring a strategy directory of its own. Its readers are these four personas, its
+journeys are numbered into their series in `cujs.md`, and its pages get a
+content set in `information-architecture.md`. A persona is added only when no
+existing one does the job. a11y added none, and neither did docevals, whose six
+imported personas were three of these four by name, plus three situations of
+Maya's.
 
-| Directory | Tool |
-|---|---|
-| `docevals/` | `manni docevals`, carried over from moose-docevals with its ID-linked audience, persona and journey files. |
+docevals arrived with an ID-linked strategy directory (audiences, personas,
+journeys and IA). What was strategy moved into the files above. Its IA gap
+analysis, a delivery record of how the section was built, moved to
+`docs/proposals/docevals/ia-gap-analysis.md` beside the tool's ADRs. Like
+every persona here, docevals's were reasoned from the tool's own surface and a
+sibling's adopters rather than from call evidence. The tool had no users yet. Treat its pains as claims to re-test when it does. `design.md` is
+shared: one site, one palette, one set of capture rules.

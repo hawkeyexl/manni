@@ -73,3 +73,7 @@ Numbering starts at `01000`. The `00001`–`00999` range holds decisions that pr
 They are backfills, not reconstructions of a debate nobody had. The options and consequences are the ones visible in the shipped code, which is the honest limit of what a backfill can claim. Treat them as accepted decisions with an unusually thin provenance, and supersede them the same way as any other.
 
 The rest of `00005`–`00999` stays reserved. If another pre-rule decision surfaces, it goes here rather than at the end of the `01xxx` sequence.
+
+## Not an ADR
+
+[`ia-gap-analysis.md`](ia-gap-analysis.md) is the delivery record of the docs section this tool brought with it. It says where each README section went, what was built in which priority order, and how the surface-coverage check last stood. It moved here from the tool's content-strategy directory when that strategy was folded into the family's (`docs/content-strategy/`). It is history rather than strategy, so it sits beside the decisions it records. Its links to the strategy files it once sat next to no longer resolve.
