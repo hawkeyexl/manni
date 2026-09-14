@@ -50,7 +50,7 @@ export interface CitationSource {
   "commit-sha"?: string;
 }
 
-/** One entry of `citations`, as the schema (`manni:citations:1.0.0-proposal.3`) spells it. */
+/** One entry of `citations`, as the schema (`manni:citations:1.0.0-proposal.4`) spells it. */
 export interface Citation {
   id?: string;
   claim?: CitationClaim;

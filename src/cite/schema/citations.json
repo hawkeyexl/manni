@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "manni:citations:1.0.0-proposal.3",
-  "title": "manni citations vocabulary (1.0.0-proposal.3)",
+  "$id": "manni:citations:1.0.0-proposal.4",
+  "title": "manni citations vocabulary (1.0.0-proposal.4)",
   "description": "What do this page's claims rest on? For each claim, the page lines that make it, the source lines it was written from, and a hash of each. A manni common vocabulary: any drift check can implement it, and other schemas may compose on top of it. A pin is a record of the past, not a copy of the present. It says what the lines were when the sentence was written. The check compares that record with the files as they are now. Recompute it on every run and there is nothing to compare against. `source-of-truth` (manni:stewardship) names the file a page answers to; a citation names the lines a sentence answers to. The page root stays open so sibling tools' keys pass untouched. The `citation-` prefix is reserved, so an unrecognized `citation-*` key is rejected and a typo fails loudly.",
   "type": "object",
   "additionalProperties": true,
@@ -12,7 +12,8 @@
       "items": {
         "$ref": "#/$defs/citationEntry"
       },
-      "description": "The page's citations, one entry per claim or pin. An empty list is not a declaration; a page with no citations omits the key. Ids are unique within a page, and two entries claiming one id is an error. JSON Schema cannot say that over a list whose members may omit the id. So it is a requirement on implementations, stated here so every tool agrees."
+      "description": "The page's citations, one entry per claim or pin. An empty list is not a declaration; a page with no citations omits the key. Ids are unique within a page, and two entries claiming one id is an error. JSON Schema cannot say that over a list whose members may omit the id. So it is a requirement on implementations, stated here so every tool agrees.",
+      "x-manni-location": "external"
     }
   },
   "patternProperties": {

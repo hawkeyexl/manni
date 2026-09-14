@@ -16,13 +16,16 @@ last-reviewed: 2026-08-20
 review-interval: P90D
 verified-against: operator 1.4.2
 source-of-truth: https://github.com/example/operator/tree/main/helm
-generated-by: claude-fable-5
 provenance:
   - generated-by: claude-fable-5
-    fields: [intent, sample-questions]
+    lines: 2
+    integrity: sha256-6278d3a037f5835bad3160defe9795ac3eec09f98aed34292190fded1978a007
+meta-provenance:
+  - generated-by: claude-fable-5
+    fields: [/intent, /sample-questions]
     confidence:
-      intent: 0.9
-      sample-questions: 0.84
+      /intent: 0.9
+      /sample-questions: 0.84
 
 audiences: [administrators]
 personas: [persona-platform-admin]
