@@ -18,6 +18,8 @@ const OWNER_PAGE = join(fixtures, "owner-page.schema.json");
 const BAD_VALUE = join(fixtures, "bad-value.schema.json");
 const SCHEMA_EXTERNAL = join(fixtures, "schema-external.schema.json");
 const CONFLICT = join(fixtures, "conflict.schema.json");
+const CONFLICT_REF = join(fixtures, "conflict-ref.schema.json");
+const ANYOF = join(fixtures, "anyof.schema.json");
 
 /** The map as a plain object, for readable equality. */
 async function prefs(
@@ -101,12 +103,43 @@ describe("x-manni-location: the keyword", () => {
     });
   });
 
-  it("refuses one schema that says both values for one key", async () => {
+  it("refuses one schema that says both values for one key through allOf", async () => {
     const run = new Validator().locationPreferences({ owner: "o" }, [CONFLICT]);
     await expect(run).rejects.toThrow(DocmetaError);
     await expect(run).rejects.toThrow(
       `${CONFLICT}: "x-manni-location" says both "page" and "external" for "owner".`,
     );
+    await expect(run).rejects.toMatchObject({ exitCode: 2 });
+  });
+
+  it("refuses the contradiction when the schema compiles, whatever the document holds", async () => {
+    const message = `${CONFLICT}: "x-manni-location" says both "page" and "external" for "owner".`;
+    await expect(new Validator().locationPreferences({}, [CONFLICT])).rejects.toThrow(message);
+    await expect(new Validator().validate({ title: "t" }, [CONFLICT], () => undefined)).rejects.toThrow(
+      message,
+    );
+  });
+
+  it("refuses a contradiction reached through a local $ref and its allOf", async () => {
+    await expect(new Validator().locationPreferences({}, [CONFLICT_REF])).rejects.toThrow(
+      `${CONFLICT_REF}: "x-manni-location" says both "page" and "external" for "owner".`,
+    );
+  });
+
+  it("accepts marks that differ across anyOf branches, whatever the value", async () => {
+    const validator = new Validator();
+    for (const owner of ["platform", 5, true]) {
+      await expect(validator.locationPreferences({ owner }, [ANYOF])).resolves.toBeInstanceOf(Map);
+    }
+    // Both branches are evaluated for a string, so this ref decides nothing.
+    expect(await prefs(validator, { owner: "platform" }, [ANYOF])).toEqual({});
+    expect(await validator.validate({ owner: "platform" }, [ANYOF], () => undefined)).toEqual([]);
+  });
+
+  it("keeps an earlier ref's preference when a later ref says both at evaluation", async () => {
+    expect(await prefs(new Validator(), { owner: "platform" }, [OWNER_PAGE, ANYOF])).toEqual({
+      owner: { location: "page", schema: OWNER_PAGE },
+    });
   });
 
   it("refuses a value other than page or external at compile, exit 2", async () => {

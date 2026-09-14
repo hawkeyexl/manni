@@ -176,6 +176,118 @@ describe("fill: a field a local manifest owns", () => {
   });
 });
 
+describe("fill: a manifest of a collection --collection leaves out", () => {
+  /** Two collections over the same pages; only b has the manifest. */
+  const twoCollections = (dir: string, keys: string): void => {
+    writeFileSync(
+      join(dir, "manni.config.yaml"),
+      [
+        "collections:",
+        "  - name: a",
+        '    paths: ["docs/**/*.md"]',
+        "  - name: b",
+        '    paths: ["docs/**/*.md"]',
+        "    externalMetadata:",
+        "      - file: ./site-meta.yaml",
+        `        keys: [${keys}]`,
+        "meta:",
+        "  schemas: [./steward.schema.json]",
+        "",
+      ].join("\n"),
+    );
+  };
+
+  it("reads b's manifest, so a curated value is present and never overwritten", async () => {
+    const dir = copy("fill-owned");
+    twoCollections(dir, "owner");
+    const log: string[] = [];
+    const run = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [],
+      collections: ["a"],
+      inferenceProvider: owners(["platform", "hijack"], log),
+    });
+    expect(run.summary.errors).toBe(0);
+    expect(log).toEqual(["model"]);
+    expect(parseYaml(read(dir, "site-meta.yaml"))).toEqual({
+      "docs/faq.md": { owner: "support" },
+      "docs/install.md": { owner: "platform" },
+    });
+  });
+
+  it("merges meta-provenance with the list b's manifest already holds", async () => {
+    const dir = copy("fill-owned");
+    twoCollections(dir, "owner, meta-provenance");
+    writeFileSync(
+      join(dir, "site-meta.yaml"),
+      'docs/faq.md:\n  meta-provenance:\n    - generated-by: earlier-model\n      fields: ["/title"]\n',
+    );
+    const run = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [],
+      collections: ["a"],
+      inferenceProvider: owners(["platform", "support"]),
+    });
+    expect(run.summary.errors).toBe(0);
+    const entry = (parseYaml(read(dir, "site-meta.yaml")) as Record<string, Record<string, unknown>>)["docs/faq.md"];
+    expect(entry?.owner).toBe("platform");
+    expect(entry?.["meta-provenance"]).toEqual([
+      { "generated-by": "earlier-model", fields: ["/title"] },
+      expect.objectContaining({ "generated-by": MODEL, fields: ["/owner"] }),
+    ]);
+  });
+});
+
+describe("fill: a run that aborts after pages were written", () => {
+  it("still saves the manifest edits of the pages it finished", async () => {
+    const dir = copy("fill-owned");
+    writeFileSync(
+      join(dir, "secret.schema.json"),
+      JSON.stringify({
+        type: "object",
+        required: ["owner", "secret"],
+        properties: { owner: { type: "string" }, secret: { type: "string", "x-manni-encrypt": true } },
+      }),
+    );
+    writeFileSync(join(dir, "docs/zz.md"), "---\ntitle: Z\n$schema: ./secret.schema.json\n---\n# Z\n");
+    await expect(
+      runFill({ ...base, cwd: dir, inputs: [], env: {}, inferenceProvider: owners(["platform"]) }),
+    ).rejects.toThrow(/encrypt/i);
+    expect(parseYaml(read(dir, "site-meta.yaml"))).toEqual({
+      "docs/faq.md": { owner: "support" },
+      "docs/install.md": { owner: "platform" },
+    });
+  });
+});
+
+describe("fill: schema notices", () => {
+  it("says each once, even when an accepted relocation prepares the pages again", async () => {
+    const dir = copy("fill-external");
+    writeFileSync(
+      join(dir, "manni.config.yaml"),
+      read(dir, "manni.config.yaml").replace(/^meta:\n/m, "meta:\n  schemaTrust:\n    documentRefs: none\n"),
+    );
+    writeFileSync(
+      join(dir, "docs/faq.md"),
+      read(dir, "docs/faq.md").replace("---\n", "---\n$schema: ./other.schema.json\n"),
+    );
+    const notices: string[] = [];
+    await runFill({
+      ...base,
+      cwd: dir,
+      inputs: ["docs"],
+      onNotice: (m) => notices.push(m),
+      confirm: () => Promise.resolve(true),
+      inferenceProvider: owners(["platform", "support"]),
+    });
+    expect(notices.filter((m) => m.includes("is ignored"))).toEqual([
+      expect.stringContaining("docs/faq.md:"),
+    ]);
+  });
+});
+
 describe("fill: a field its schema prefers in external metadata, with no manifest", () => {
   const W1 =
     "manni: wrote owner to 2 pages in collection site; the schema prefers external metadata, and no manifest owns it. Run manni meta relocate to move it.\n";

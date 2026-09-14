@@ -1051,7 +1051,9 @@ root, else the working directory. Config edits keep comments and key order.
 
 A change to a manifest's `keys:` moves that key for **every** page in the
 collection, including pages outside the paths you named. The output says how
-many. A field join's own field never moves. When the page and the manifest
+many. A path appended to `paths:` moves every key the manifest owns out of the
+pages it brings in, whatever `--fields` names. A key leaving `keys:` stays on
+a page that already carries it. A field join's own field never moves. When the page and the manifest
 both hold a value and the two agree, the copy on the wrong side is dropped. If
 a write fails, relocate puts back every file it already wrote, so the run
 lands whole or not at all.
@@ -1073,7 +1075,7 @@ lands whole or not at all.
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. Anything else is an error (exit 2): `relocate --format must be pretty or json; got "sarif".` |
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. |
-| `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) (extractor name, e.g. `markdown`). |
+| `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) (extractor name, e.g. `markdown`) for the files your paths match. Other pages a `keys:` or `paths:` change reaches are read by extension. |
 | `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/meta/reference/configuration/). When set, the file must exist or manni meta exits 2. |
 | `--no-config` | n/a | off | Refused (exit 2), because relocate writes the config: `relocate writes collections: and externalMetadata: to the config file, and --no-config rules one out.` |
 | `--allow-empty` | n/a | off | Treat zero matched files as success instead of an error (exit 2). See [empty input sets](#empty-input-sets). |
@@ -1084,7 +1086,8 @@ lands whole or not at all.
 In `pretty` format, the first lines say what the config gains or loses. Then
 each page lists its values as `<key>  → <manifest>:<line>` (out of the page),
 `<key>  ← <manifest>` (into the page), or `<key>  stays: <reason>`. A page
-reached only through a `keys:` change is counted, not listed. The last line
+reached only through a `keys:` change is counted, not listed, unless a value on
+it stays. The last line
 counts files and values.
 
 ```
@@ -1119,6 +1122,11 @@ A value that stays names its reason:
 | `no-join-value` | `owner    stays: this document has no id, which api-meta.yaml joins on` |
 | `values-differ` | `owner    stays: the page and docs-meta.yaml hold different values` |
 | `url-manifest` | `owner    stays: https://example.com/owners.yaml is fetched and cannot be written`, in either direction |
+| `unreadable` | `owner    stays: this document could not be parsed: Invalid YAML frontmatter: <parser message>` |
+
+Only a page outside the paths you named stays as `unreadable`. A named page
+that cannot be parsed stops the run with exit 2. A key cannot leave `keys:`
+while an `unreadable` page may still take its value from the manifest.
 
 In `json` format the run is one object:
 

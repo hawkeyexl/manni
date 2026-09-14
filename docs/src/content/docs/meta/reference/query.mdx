@@ -397,7 +397,7 @@ Constraints on a DML statement:
   | `DELETE FROM docs WHERE …` | Strips the block and removes the document's entry. |
   | `ALTER TABLE docs DROP COLUMN k` | Also removes `k` from each document's entry. `keys:` is unchanged. |
 
-  An encrypted column writes its ciphertext into the manifest. Three writes
+  An encrypted column writes its ciphertext into the manifest. Five writes
   still refuse, before any file is written:
 
   - A key a URL manifest owns: `"owner" is owned by manifest
@@ -414,6 +414,15 @@ Constraints on a DML statement:
     an owned key on a page with no join value refuses too:
     `"docs/new.md": "jira" is owned by manifest docs-meta.yaml, which joins
     on "id", and this document has no id; set id first.`
+  - An `UPDATE` or `INSERT` that gives a document a join value naming an
+    entry it did not already match, because the write would take over that
+    entry: `"docs/noid.md": "id" "auth-guide" names the entry of another
+    document in manifest docs-meta.yaml; choose another value.`
+  - A write to a key owned by a manifest of a collection `--collection`
+    leaves out. The rows were read without that manifest, so the statement
+    never saw its values: `"docs/auth.md": "owner" is owned by manifest
+    docs-meta.yaml of collection b, which --collection leaves out; include it
+    or edit the manifest.`
 - **A key its schema prefers in external metadata**, marked
   `x-manni-location: external`, with no manifest to hold it, is offered one.
   On a terminal the statement asks once per collection whether to run

@@ -408,9 +408,15 @@ export async function runValidate(
     const preferences = await validator.locationPreferences(data, refs);
     if (preferences.size === 0) return [];
     const owned = new Set(merged.collisions.map((c) => c.key));
+    // Every declared collection the page is in, as relocate reads them: a
+    // `--collection` run that leaves one out still leaves its join in place.
+    const declaredMembers =
+      declaredCollections === collections
+        ? members
+        : memberOf(declaredCollections, configDir ?? cwd, base, label);
     const joins = new Set(
-      collections
-        .filter((c) => members.includes(c.name))
+      declaredCollections
+        .filter((c) => declaredMembers.includes(c.name))
         .flatMap((c) => c.externalMetadata.map(externalMetadataJoin))
         .filter((join) => join !== PATH_JOIN),
     );
@@ -434,9 +440,12 @@ export async function runValidate(
           schema: LOCATION_EXTERNAL_SCHEMA,
           ...common,
           // relocate refuses --no-config (U2), so it is no answer there.
+          // Nor is it one for stdin, which relocate refuses: no advice there.
           message: opts.noConfig
             ? `"${key}" is stored in the page; ${ref} prefers external metadata, and --no-config leaves it no manifest.`
-            : none > 0
+            : label === STDIN_LABEL
+              ? `"${key}" is stored in the page; ${ref} prefers external metadata.`
+              : none > 0
               ? `"${key}" is stored in the page; ${ref} prefers external metadata, and this document is in none of the ${String(none)} collections.`
               : `"${key}" is stored in the page; ${ref} prefers external metadata. Run manni meta relocate.`,
           ...(line != null ? { line } : {}),
@@ -682,6 +691,19 @@ export async function runValidate(
     // manifest supplied (proposal 0047).
     const own = extracted.data;
     extracted = merged.extracted;
+    // The merged data before any schema is known, so a document whose schema
+    // set fails still asserts what its manifest supplies. No refs means no
+    // marks, which is exactly what the encryption view below would find.
+    // Replaced by that view once it is built.
+    if (deriveWillRun && label !== STDIN_LABEL) {
+      managedViews.set(label, {
+        data: extracted.data,
+        marked: [],
+        hidden: [],
+        refs: [],
+        locate: merged.locate,
+      });
+    }
     for (const j of merged.joins) {
       const byValue =
         joinHits.get(j.field) ??

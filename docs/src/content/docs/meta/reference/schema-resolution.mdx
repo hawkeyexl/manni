@@ -488,8 +488,13 @@ steward.schema.json: "x-manni-location" says both "page" and "external" for "own
 ```
 
 The second is a mark of `external` on `$schema`, which a manifest may not
-hold. The third is one schema marking a key both ways, for instance in two
-branches of an `allOf`.
+hold. The third is one schema marking a key both ways on paths every document
+takes. Those paths are the schema's own `properties`, its `allOf` entries, and
+a local `$ref` reached from them. A remote `$ref` is not followed.
+
+Marks that differ across `anyOf`, `oneOf`, `if`/`then`/`else` or `not`
+branches are not an error. When the validator evaluates both, that schema has
+no preference for the key. An earlier schema's mark still applies.
 
 What `manni meta validate` does with a marked property. Both findings are
 warnings, so neither moves the exit code:
@@ -499,6 +504,7 @@ warnings, so neither moves the exit code:
 | The page holds a key its schema prefers `external` | Finding `location:external/location` at the page line: `"owner" is stored in the page; steward.schema.json prefers external metadata. Run manni meta relocate.` |
 | The same, and the page is in none of several collections | The same finding, ending `…prefers external metadata, and this document is in none of the 2 collections.` |
 | The same, under `--no-config` | The same finding, ending `…prefers external metadata, and --no-config leaves it no manifest.` |
+| The same, read from stdin (`-`) | The same finding, ending `…prefers external metadata.` It names no command, because `relocate` refuses stdin. |
 | The page holds a key a manifest owns | No location finding. `external:owned` already fails there, whatever the mark. |
 | A manifest supplies a key its schema prefers `page` | Finding `location:page/location` at the manifest line: `"title" is stored in manifest docs-meta.yaml; steward.schema.json prefers the page. Run manni meta relocate.` |
 | The key sits where its mark says, or carries no mark | Nothing. |

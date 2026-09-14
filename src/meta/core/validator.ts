@@ -206,6 +206,78 @@ function marksSchemaExternal(schema: Record<string, unknown>): boolean {
   return (own as Record<string, unknown>)[LOCATION_KEYWORD] === "external";
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * The first top-level key this schema marks both `page` and `external` on
+ * paths every document takes; else undefined.
+ *
+ * Unconditional means the schema's own `properties`, its `allOf` entries, and
+ * a local `$ref` reached from those, applied again inside a property's
+ * subschema. `anyOf`, `oneOf`, `if`/`then`/`else` and `not` are conditional,
+ * so marks that differ across them are not a contradiction. A remote `$ref`
+ * is not chased, and neither is a local one inside an embedded `$id`, whose
+ * `#` names another resource.
+ */
+function definiteLocationConflict(root: Record<string, unknown>): string | undefined {
+  const marks = new Map<string, Set<FieldLocation>>();
+  /** The target of a `#/...` pointer from the root, if it resolves. */
+  const localRef = (node: Record<string, unknown>, embedded: boolean): unknown => {
+    const ref = node["$ref"];
+    if (embedded || typeof ref !== "string" || !ref.startsWith("#")) return undefined;
+    const pointer = ref.slice(1);
+    if (pointer === "") return root;
+    if (!pointer.startsWith("/")) return undefined;
+    let at: unknown = root;
+    for (const raw of pointer.slice(1).split("/")) {
+      let segment: string;
+      try {
+        segment = decodeURIComponent(raw).replace(/~1/g, "/").replace(/~0/g, "~");
+      } catch {
+        return undefined;
+      }
+      if (Array.isArray(at)) at = at[Number(segment)] as unknown;
+      else if (isRecord(at)) at = at[segment];
+      else return undefined;
+    }
+    return at;
+  };
+  const isEmbedded = (node: Record<string, unknown>, embedded: boolean): boolean =>
+    embedded || (node !== root && typeof node["$id"] === "string");
+  const allOf = (node: Record<string, unknown>): unknown[] =>
+    Array.isArray(node["allOf"]) ? (node["allOf"] as unknown[]) : [];
+
+  const property = (key: string, node: unknown, embedded: boolean, visited: Set<unknown>): void => {
+    if (!isRecord(node) || visited.has(node)) return;
+    visited.add(node);
+    const inner = isEmbedded(node, embedded);
+    const mark = node[LOCATION_KEYWORD];
+    if (isFieldLocation(mark)) {
+      const seen = marks.get(key);
+      if (seen) seen.add(mark);
+      else marks.set(key, new Set([mark]));
+    }
+    for (const entry of allOf(node)) property(key, entry, inner, visited);
+    property(key, localRef(node, inner), inner, visited);
+  };
+  const object = (node: unknown, embedded: boolean, visited: Set<unknown>): void => {
+    if (!isRecord(node) || visited.has(node)) return;
+    visited.add(node);
+    const inner = isEmbedded(node, embedded);
+    const properties = node["properties"];
+    if (isRecord(properties)) {
+      for (const [key, sub] of Object.entries(properties)) property(key, sub, inner, new Set());
+    }
+    for (const entry of allOf(node)) object(entry, inner, visited);
+    object(localRef(node, inner), inner, visited);
+  };
+  object(root, false, new Set());
+  for (const [key, seen] of marks) if (seen.size > 1) return key;
+  return undefined;
+}
+
 /**
  * Make every built-in resolvable as a `$ref` target, under both of its names.
  *
@@ -392,6 +464,12 @@ export class Validator {
         `${ref}: "${FILE_SCHEMA_KEY}" cannot be stored in external metadata.`,
       );
     }
+    const contradicted = definiteLocationConflict(schema);
+    if (contradicted !== undefined) {
+      throw new DocmetaError(
+        `${ref}: "${LOCATION_KEYWORD}" says both "page" and "external" for "${contradicted}".`,
+      );
+    }
     try {
       const ajv = this.ajvFor(dialectOf(schema));
       // This cache is keyed on the ref string, but Ajv's registry is keyed on
@@ -489,8 +567,9 @@ export class Validator {
    * about to write belongs passes `data` that already holds the candidate
    * value. `$schema` is stripped first, as validation does.
    *
-   * Refs are evaluated in order and a later ref's mark wins. One ref saying
-   * both values for one key is a DocmetaError.
+   * Refs are evaluated in order and a later ref's mark wins. A ref that says
+   * both values for one key unconditionally is refused when it compiles; one
+   * whose evaluated branches say both gives that key no preference.
    */
   async locationPreferences(
     data: Record<string, unknown>,
@@ -510,12 +589,11 @@ export class Validator {
       }
       for (const [key, locations] of seen) {
         const [location, ...others] = [...locations];
-        if (location === undefined) continue;
-        if (others.length > 0) {
-          throw new DocmetaError(
-            `${ref}: "${LOCATION_KEYWORD}" says both "page" and "external" for "${key}".`,
-          );
-        }
+        // Both values seen at evaluation can only come from conditional
+        // branches: `compileUncached` refuses the unconditional kind. With
+        // `allErrors`, Ajv evaluates failing branches too, so neither value
+        // is this ref's answer, and an earlier ref's stands.
+        if (location === undefined || others.length > 0) continue;
         preferences.set(key, { location, schema: ref });
       }
     }

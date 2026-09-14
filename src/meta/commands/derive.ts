@@ -623,6 +623,18 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     /** Each top-level key's `x-manni-location`, read over the page as it would be stamped (0047). */
     prefs: ReadonlyMap<string, FieldLocation>;
   }
+  // A schema notice names its file. Each page's marks are read for the P1
+  // offer and again for its write, and relocation reads the same schemas, so
+  // each notice is said once.
+  const noticed = new Set<string>();
+  const noticeOnce =
+    opts.onNotice === undefined
+      ? undefined
+      : (message: string): void => {
+          if (noticed.has(message)) return;
+          noticed.add(message);
+          opts.onNotice?.(message);
+        };
   const markFields = async (
     doc: Loaded,
     record: DerivedRecord | undefined,
@@ -655,7 +667,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         // `$schema`, since that schema decides what gets encrypted.
         fileBase: cwd,
         trustRoot,
-        onNotice: opts.onNotice,
+        onNotice: noticeOnce,
       });
     } catch (err) {
       return { error: errorMessage(err) };
@@ -735,7 +747,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     validator,
     ...(opts.noConfig === true ? { noConfig: true } : {}),
     ...(opts.env !== undefined ? { env: opts.env } : {}),
-    ...(opts.onNotice !== undefined ? { onNotice: opts.onNotice } : {}),
+    ...(noticeOnce !== undefined ? { onNotice: noticeOnce } : {}),
   });
   const externalWrites = async (): Promise<ExternalWrite[]> => {
     const out: ExternalWrite[] = [];
@@ -769,13 +781,16 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   const { loaded, errors, places, derived } = prepared;
 
   // ---- Compare, and write ----------------------------------------------------
-  /** Each manifest this run writes, read once and spliced in memory (as cite holds them). */
-  const heldManifests = new Map<string, { path: string; before: string; text: string }>();
+  /**
+   * Each manifest this run writes, read once and spliced in memory (as cite
+   * holds them). `text` holds every committed edit; `written` is what is on disk.
+   */
+  const heldManifests = new Map<string, { path: string; written: string; text: string }>();
   /** A field written into a manifest, whose line the report names once the manifest is settled. */
   const lineRequests: { field: DerivedField; absPath: string; entry: string; join: string }[] = [];
   const holdManifest = async (
     manifest: Pick<ProvenanceManifest, "absPath" | "file">,
-  ): Promise<{ path: string; before: string; text: string }> => {
+  ): Promise<{ path: string; written: string; text: string }> => {
     const already = heldManifests.get(manifest.absPath);
     if (already !== undefined) return already;
     let before: string;
@@ -784,241 +799,281 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     } catch (err) {
       throw new DocmetaError(`Manifest ${manifest.file} could not be read: ${errorMessage(err)}`);
     }
-    const held = { path: manifest.absPath, before, text: before };
+    const held = { path: manifest.absPath, written: before, text: before };
     heldManifests.set(manifest.absPath, held);
     return held;
   };
   const results: DeriveFileResult[] = [];
-  for (const label of files) {
-    const failure = errors.get(label);
-    if (failure) {
-      results.push(errorResult(label, failure.format, failure.message, check));
-      continue;
+  /** Save every held manifest a committed edit changed. */
+  const saveManifests = async (): Promise<void> => {
+    for (const held of heldManifests.values()) {
+      if (held.text !== held.written) {
+        await writeFileAtomic(held.path, held.text);
+        held.written = held.text;
+      }
     }
-    const doc = loaded.get(label);
-    /* c8 ignore next -- every file is in exactly one of the two maps. */
-    if (!doc) continue;
+  };
+  // A run that aborts part-way (a declined key prompt on a later file) still
+  // saves the manifest edits of the pages it already wrote; a dry run saves
+  // nothing either way.
+  let settled = false;
+  try {
+    for (const label of files) {
+      const failure = errors.get(label);
+      if (failure) {
+        results.push(errorResult(label, failure.format, failure.message, check));
+        continue;
+      }
+      const doc = loaded.get(label);
+      /* c8 ignore next -- every file is in exactly one of the two maps. */
+      if (!doc) continue;
 
-    const record = derived.records.get(label);
-    // A marked field (0045) is compared by its plaintext, stamped encrypted,
-    // and reported as `(encrypted)`, as `fill` and `query` report one.
-    const marks = await markFields(doc, record);
-    if ("error" in marks) {
-      results.push(errorResult(label, doc.format, marks.error, check));
-      continue;
-    }
-    const isMarked = (field: string): boolean => {
-      const at = pointerOf(field);
-      return marks.marked.some((p) => isAtOrUnder(p, at));
-    };
-    // Proposal 0046: `provenance` is judged range by range against the
-    // record wherever it lives, never by `compareDerived`.
-    const place = places.get(label);
-    const provenance = wantsProvenance
-      ? judgeProvenance(stampOf(doc), derived.provenance?.get(label), record?.fields[PROVENANCE_FIELD] ?? null, place)
-      : undefined;
-    const compared = fields.map((field) =>
-      field === PROVENANCE_FIELD && provenance !== undefined
-        ? provenance.field
-        : compareDerived(field, marks.data[field], record?.fields[field]),
-    );
-    // Read when reporting, after `written` is set on `compared` below.
-    const shown = (): DerivedField[] =>
-      compared.map((f) =>
-        f.field !== PROVENANCE_FIELD && isMarked(f.field) ? redactedDerived(f) : f,
-      );
-    const findingsOf = (reported: readonly DerivedField[]): FieldError[] =>
-      reported.flatMap((f) =>
-        f.field === PROVENANCE_FIELD && provenance?.judged !== undefined
-          ? provenanceFindings(provenance.judged.comparisons, provenance.judged.derivation.page.bodyLine)
-          : staleFindings([f], doc.extracted.lineFor, marks.locate),
-      );
-    if (
-      provenance?.judged !== undefined &&
-      flagGeneratedBy !== undefined &&
-      doc.attribution === undefined &&
-      ![...provenance.judged.derivation.evidenceByLine.values()].some((e) => e.rule === 1)
-    ) {
-      opts.onNotice?.(
-        `${label}: no uncommitted body lines; --generated-by attributes only what is not yet committed.`,
-      );
-    }
-    // A manifest-held record is written into the manifest, not the page.
-    const toManifest =
-      provenance !== undefined && place !== undefined && stale(provenance.field) ? provenance : undefined;
-    const due = compared.filter((f) => stale(f) && !(f.field === PROVENANCE_FIELD && toManifest !== undefined));
-    // Proposal 0047: a field a manifest of the page's collections owns is
-    // written into the page's entry there, whatever its schema prefers; the
-    // config's ownership decides where a write lands. A URL manifest cannot
-    // be written, and a field join the page lacks has no entry to write to.
-    const toEntries: { f: DerivedField; home: Extract<KeyHome, { kind: "manifest" }>; entry: string }[] = [];
-    let refusal: string | undefined;
-    for (const f of due) {
-      if (f.field === PROVENANCE_FIELD) continue;
-      const home = keyHome(ctx, label, doc.extracted.data, f.field);
-      if (home.kind === "url") {
-        refusal = urlManifestMessage(f.field, home.file);
-        break;
+      const record = derived.records.get(label);
+      // A marked field (0045) is compared by its plaintext, stamped encrypted,
+      // and reported as `(encrypted)`, as `fill` and `query` report one.
+      const marks = await markFields(doc, record);
+      if ("error" in marks) {
+        results.push(errorResult(label, doc.format, marks.error, check));
+        continue;
       }
-      if (home.kind !== "manifest") continue;
-      if (home.entry === undefined) {
-        refusal = `${label} carries no ${home.join}, which ${home.file} joins on, so its ${f.field} has no entry there.`;
-        break;
-      }
-      f.destination = home.file;
-      toEntries.push({ f, home, entry: home.entry });
-    }
-    if (refusal !== undefined) {
-      results.push(errorResult(label, doc.format, refusal, check, shown()));
-      continue;
-    }
-    const pending = due.filter((f) => !toEntries.some((t) => t.f === f));
-    const onPage = pending.find((f) => f.field === PROVENANCE_FIELD);
-    // Stress test 8: where the metadata is part of the body, a stamp on the
-    // page would change the very lines it pins.
-    if (onPage !== undefined && !provenanceFenced(doc.extracted)) {
-      results.push(
-        errorResult(
-          label,
-          doc.format,
-          `provenance cannot be stamped into the page: in the "${doc.format}" format the metadata is part of the body it pins. Keep provenance in an externalMetadata manifest.`,
-          check,
-          shown(),
-        ),
+      const isMarked = (field: string): boolean => {
+        const at = pointerOf(field);
+        return marks.marked.some((p) => isAtOrUnder(p, at));
+      };
+      // Proposal 0046: `provenance` is judged range by range against the
+      // record wherever it lives, never by `compareDerived`.
+      const place = places.get(label);
+      const provenance = wantsProvenance
+        ? judgeProvenance(stampOf(doc), derived.provenance?.get(label), record?.fields[PROVENANCE_FIELD] ?? null, place)
+        : undefined;
+      const compared = fields.map((field) =>
+        field === PROVENANCE_FIELD && provenance !== undefined
+          ? provenance.field
+          : compareDerived(field, marks.data[field], record?.fields[field]),
       );
-      continue;
-    }
-    // `changed` is what the writer would do, not what the comparison found:
-    // as in `fill`, the patch is applied and the result compared with the
-    // document, so a field is `written` only when bytes went to disk. Under
-    // `dryRun` the same patch is computed and nothing is written.
-    let changed = false;
-    if (toManifest?.judged !== undefined && place !== undefined) {
-      const held = await holdManifest(place.manifest);
-      const before = held.text;
-      const where = { entry: place.entry, key: PROVENANCE_FIELD, join: place.join, file: place.manifest.file };
-      // An empty record is no record, as on the page: `provenance` has
-      // `minItems: 1`, so the key leaves the entry rather than holding `[]`.
-      held.text =
-        toManifest.judged.plan.length === 0
-          ? removeManifestKey(held.text, where).text
-          : spliceManifestValue(held.text, { ...where, value: toManifest.judged.plan }).text;
-      if (held.text !== before) {
-        changed = true;
-        if (!dryRun) markWritten(toManifest.field);
+      // Read when reporting, after `written` is set on `compared` below.
+      const shown = (): DerivedField[] =>
+        compared.map((f) =>
+          f.field !== PROVENANCE_FIELD && isMarked(f.field) ? redactedDerived(f) : f,
+        );
+      const findingsOf = (reported: readonly DerivedField[]): FieldError[] =>
+        reported.flatMap((f) =>
+          f.field === PROVENANCE_FIELD && provenance?.judged !== undefined
+            ? provenanceFindings(provenance.judged.comparisons, provenance.judged.derivation.page.bodyLine)
+            : staleFindings([f], doc.extracted.lineFor, marks.locate),
+        );
+      if (
+        provenance?.judged !== undefined &&
+        flagGeneratedBy !== undefined &&
+        doc.attribution === undefined &&
+        ![...provenance.judged.derivation.evidenceByLine.values()].some((e) => e.rule === 1)
+      ) {
+        opts.onNotice?.(
+          `${label}: no uncommitted body lines; --generated-by attributes only what is not yet committed.`,
+        );
       }
-    }
-    const entryWritten: DerivedField[] = [];
-    try {
-      for (const { f, home, entry } of toEntries) {
-        const held = await holdManifest(home);
-        const before = held.text;
-        const value = isMarked(f.field) ? await sealField(f.field, f.derived, marks.marked) : f.derived;
-        held.text = spliceManifestValue(held.text, {
-          entry,
-          key: f.field,
-          value,
-          join: home.join,
-          file: home.file,
-        }).text;
-        if (held.text !== before) {
+      // A manifest-held record is written into the manifest, not the page.
+      const toManifest =
+        provenance !== undefined && place !== undefined && stale(provenance.field) ? provenance : undefined;
+      const due = compared.filter((f) => stale(f) && !(f.field === PROVENANCE_FIELD && toManifest !== undefined));
+      // Proposal 0047: a field a manifest of the page's collections owns is
+      // written into the page's entry there, whatever its schema prefers; the
+      // config's ownership decides where a write lands. A URL manifest cannot
+      // be written, and a field join the page lacks has no entry to write to.
+      const toEntries: { f: DerivedField; home: Extract<KeyHome, { kind: "manifest" }>; entry: string }[] = [];
+      let refusal: string | undefined;
+      for (const f of due) {
+        if (f.field === PROVENANCE_FIELD) continue;
+        const home = keyHome(ctx, label, doc.extracted.data, f.field);
+        if (home.kind === "url") {
+          refusal = urlManifestMessage(f.field, home.file);
+          break;
+        }
+        if (home.kind !== "manifest") continue;
+        if (home.entry === undefined) {
+          refusal = `${label} carries no ${home.join}, which ${home.file} joins on, so its ${f.field} has no entry there.`;
+          break;
+        }
+        f.destination = home.file;
+        toEntries.push({ f, home, entry: home.entry });
+      }
+      if (refusal !== undefined) {
+        results.push(errorResult(label, doc.format, refusal, check, shown()));
+        continue;
+      }
+      const pending = due.filter((f) => !toEntries.some((t) => t.f === f));
+      const onPage = pending.find((f) => f.field === PROVENANCE_FIELD);
+      // Stress test 8: where the metadata is part of the body, a stamp on the
+      // page would change the very lines it pins.
+      if (onPage !== undefined && !provenanceFenced(doc.extracted)) {
+        results.push(
+          errorResult(
+            label,
+            doc.format,
+            `provenance cannot be stamped into the page: in the "${doc.format}" format the metadata is part of the body it pins. Keep provenance in an externalMetadata manifest.`,
+            check,
+            shown(),
+          ),
+        );
+        continue;
+      }
+      // `changed` is what the writer would do, not what the comparison found:
+      // as in `fill`, the patch is applied and the result compared with the
+      // document, so a field is `written` only when bytes went to disk. Under
+      // `dryRun` the same patch is computed and nothing is written.
+      let changed = false;
+      // This file's manifest edits are staged over the held texts and committed
+      // only once its page write has succeeded (or it had none to make), so a
+      // file that fails contributes no manifest edit.
+      const staged = new Map<string, string>();
+      const stage = async (
+        manifest: Pick<ProvenanceManifest, "absPath" | "file">,
+        edit: (text: string) => string,
+      ): Promise<boolean> => {
+        const held = await holdManifest(manifest);
+        const before = staged.get(held.path) ?? held.text;
+        const after = edit(before);
+        staged.set(held.path, after);
+        return after !== before;
+      };
+      /** Fields a staged manifest edit writes, marked written at the commit. */
+      const manifestWritten: DerivedField[] = [];
+      const entryWritten: DerivedField[] = [];
+      if (toManifest?.judged !== undefined && place !== undefined) {
+        const where = { entry: place.entry, key: PROVENANCE_FIELD, join: place.join, file: place.manifest.file };
+        const plan = toManifest.judged.plan;
+        // An empty record is no record, as on the page: `provenance` has
+        // `minItems: 1`, so the key leaves the entry rather than holding `[]`.
+        const edited = await stage(place.manifest, (text) =>
+          plan.length === 0
+            ? removeManifestKey(text, where).text
+            : spliceManifestValue(text, { ...where, value: plan }).text,
+        );
+        if (edited) {
           changed = true;
-          if (!dryRun) {
-            markWritten(f);
+          manifestWritten.push(toManifest.field);
+        }
+      }
+      try {
+        for (const { f, home, entry } of toEntries) {
+          const value = isMarked(f.field) ? await sealField(f.field, f.derived, marks.marked) : f.derived;
+          const edited = await stage(home, (text) =>
+            spliceManifestValue(text, {
+              entry,
+              key: f.field,
+              value,
+              join: home.join,
+              file: home.file,
+            }).text,
+          );
+          if (edited) {
+            changed = true;
+            manifestWritten.push(f);
             entryWritten.push(f);
           }
         }
+      } catch (err) {
+        if (err instanceof EncryptionRefusal || !(err instanceof DocmetaError)) throw err;
+        results.push(errorResult(label, doc.format, err.message, check, shown()));
+        continue;
       }
-    } catch (err) {
-      if (err instanceof EncryptionRefusal || !(err instanceof DocmetaError)) throw err;
-      results.push(errorResult(label, doc.format, err.message, check, shown()));
-      continue;
-    }
-    if (pending.length > 0) {
-      // Same writer `fill` and `query` use, so a format they cannot write is
-      // refused here the same way — and refused loudly, as this file's error,
-      // rather than by leaving a stale stamp in place with exit 0. Under
-      // `check` a read-only format still gets its findings, since nothing was
-      // going to be written anyway.
-      if (typeof doc.apply !== "function") {
-        if (!dryRun) {
-          results.push(
-            errorResult(
-              label,
-              doc.format,
-              `The "${doc.format}" format is read-only; manni meta derive cannot write metadata back to it.`,
-              check,
-              shown(),
-            ),
-          );
-          continue;
-        }
-        changed = true;
-      } else {
-        const patch: MetadataPatch = {};
-        const deletions: string[] = [];
-        for (const f of pending) {
-          if (f.field === PROVENANCE_FIELD) {
-            // An empty record is no record: `provenance` has `minItems: 1`.
-            if (Array.isArray(f.derived) && f.derived.length === 0) deletions.push(f.field);
-            else patch[f.field] = f.derived;
+      if (pending.length > 0) {
+        // Same writer `fill` and `query` use, so a format they cannot write is
+        // refused here the same way — and refused loudly, as this file's error,
+        // rather than by leaving a stale stamp in place with exit 0. Under
+        // `check` a read-only format still gets its findings, since nothing was
+        // going to be written anyway.
+        if (typeof doc.apply !== "function") {
+          if (!dryRun) {
+            results.push(
+              errorResult(
+                label,
+                doc.format,
+                `The "${doc.format}" format is read-only; manni meta derive cannot write metadata back to it.`,
+                check,
+                shown(),
+              ),
+            );
             continue;
           }
-          patch[f.field] = isMarked(f.field)
-            ? await sealField(f.field, f.derived, marks.marked)
-            : f.derived;
-        }
-        const apply = doc.apply;
-        const write = (value: MetadataPatch): string =>
-          apply(doc.content, value, {
-            filePath: label,
-            elements: doc.elements,
-            ...(deletions.length > 0 ? { deletions } : {}),
-          });
-        let next: string;
-        try {
-          next = write(patch);
-          // A page with no block yet gets one, and the writer may leave a
-          // blank line after it: the body then starts a line later, and every
-          // body line the stamp names moves with it.
-          const plan = patch[PROVENANCE_FIELD];
-          const shift = bodyShift(doc.content, next);
-          if (shift > 0 && Array.isArray(plan)) {
-            next = write({ ...patch, [PROVENANCE_FIELD]: shiftEntries(provenanceEntries(plan), shift) });
+          changed = true;
+        } else {
+          const patch: MetadataPatch = {};
+          const deletions: string[] = [];
+          for (const f of pending) {
+            if (f.field === PROVENANCE_FIELD) {
+              // An empty record is no record: `provenance` has `minItems: 1`.
+              if (Array.isArray(f.derived) && f.derived.length === 0) deletions.push(f.field);
+              else patch[f.field] = f.derived;
+              continue;
+            }
+            patch[f.field] = isMarked(f.field)
+              ? await sealField(f.field, f.derived, marks.marked)
+              : f.derived;
           }
-        } catch (err) {
-          results.push(errorResult(label, doc.format, errorMessage(err), check, shown()));
-          continue;
-        }
-        changed = changed || next !== doc.content;
-        if (next !== doc.content && !dryRun) {
-          await writeFileAtomic(doc.absPath, next);
-          for (const f of pending) markWritten(f);
+          const apply = doc.apply;
+          const write = (value: MetadataPatch): string =>
+            apply(doc.content, value, {
+              filePath: label,
+              elements: doc.elements,
+              ...(deletions.length > 0 ? { deletions } : {}),
+            });
+          let next: string;
+          try {
+            next = write(patch);
+            // A page with no block yet gets one, and the writer may leave a
+            // blank line after it: the body then starts a line later, and every
+            // body line the stamp names moves with it.
+            const plan = patch[PROVENANCE_FIELD];
+            const shift = bodyShift(doc.content, next);
+            if (shift > 0 && Array.isArray(plan)) {
+              next = write({ ...patch, [PROVENANCE_FIELD]: shiftEntries(provenanceEntries(plan), shift) });
+            }
+          } catch (err) {
+            results.push(errorResult(label, doc.format, errorMessage(err), check, shown()));
+            continue;
+          }
+          changed = changed || next !== doc.content;
+          if (next !== doc.content && !dryRun) {
+            await writeFileAtomic(doc.absPath, next);
+            for (const f of pending) markWritten(f);
+          }
         }
       }
-    }
 
-    const reported = shown();
-    for (const { f, home, entry } of toEntries) {
-      const shownField = reported.find((r) => r.field === f.field);
-      if (shownField !== undefined && entryWritten.includes(f)) {
-        lineRequests.push({ field: shownField, absPath: home.absPath, entry, join: home.join });
+      // The page is written (or needed no write): commit this file's manifest
+      // edits to the held texts.
+      for (const [path, text] of staged) {
+        const held = heldManifests.get(path);
+        if (held !== undefined) held.text = text;
       }
+      if (!dryRun) for (const f of manifestWritten) markWritten(f);
+
+      const reported = shown();
+      for (const { f, home, entry } of toEntries) {
+        const shownField = reported.find((r) => r.field === f.field);
+        if (shownField !== undefined && entryWritten.includes(f)) {
+          lineRequests.push({ field: shownField, absPath: home.absPath, entry, join: home.join });
+        }
+      }
+      results.push({
+        file: label,
+        format: doc.format,
+        fields: reported,
+        changed,
+        ...(check ? { findings: findingsOf(reported) } : {}),
+      });
     }
-    results.push({
-      file: label,
-      format: doc.format,
-      fields: reported,
-      changed,
-      ...(check ? { findings: findingsOf(reported) } : {}),
-    });
+    settled = true;
+  } finally {
+    if (!dryRun && !settled) {
+      await saveManifests().catch(() => undefined);
+    }
   }
 
   // One write per manifest, after every page that touches it is settled.
   if (!dryRun) {
-    for (const held of heldManifests.values()) {
-      if (held.text !== held.before) await writeFileAtomic(held.path, held.text);
-    }
+    await saveManifests();
     for (const req of lineRequests) {
       const held = heldManifests.get(req.absPath);
       const line = held === undefined ? undefined : manifestKeyLine(held.text, req.entry, req.field.field, req.join);

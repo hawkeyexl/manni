@@ -440,6 +440,159 @@ describe("relocate: usage refusals", () => {
   });
 });
 
+describe("relocate: a key leaving keys: while another page carries it", () => {
+  async function planIn(dir: string, files: string[]) {
+    const run = await resolveRunConfig({ cwd: dir, inputs: [] });
+    const ctx = relocationContext(run, {
+      cwd: dir,
+      targets: [],
+      validator: new Validator(schemaLoadOptions({ root: dir, fileBase: dir })),
+    });
+    return { ctx, plan: await planRelocation(ctx, { files }) };
+  }
+
+  it("leaves the unmarked page's copy on the page, in either order", async () => {
+    for (const order of [["docs/a.md", "docs/b.md"], ["docs/b.md", "docs/a.md"]]) {
+      const dir = copy("relocate-removed-owned");
+      const { ctx, plan } = await planIn(dir, order);
+      expect(plan.result.manifests).toMatchObject([
+        { file: "docs-meta.yaml", keysAdded: [], keysRemoved: ["title"], keys: ["team"] },
+      ]);
+      expect(plan.result.files).toEqual([
+        {
+          file: "docs/a.md",
+          moved: [{ key: "title", to: "page", from: "docs-meta.yaml", reason: "preferred" }],
+          stayed: [],
+          beyond: false,
+        },
+      ]);
+      await applyRelocation(ctx, plan);
+      expect(read(dir, "docs/b.md")).toBe("---\ntitle: B\n---\n# B\n");
+      expect(yamlOf(dir, "docs-meta.yaml")).toEqual({ "docs/a.md": { team: "writers" } });
+      expect(read(dir, "docs/a.md")).toContain("title: A");
+    }
+  });
+
+  it("leaves the copy on the page when the manifest is undeclared", async () => {
+    const dir = copy("relocate-removed-owned");
+    writeFileSync(
+      join(dir, "manni.config.yaml"),
+      read(dir, "manni.config.yaml").replace("keys: [title, team]", "keys: [title]"),
+    );
+    writeFileSync(join(dir, "docs-meta.yaml"), "docs/a.md:\n  title: A\n");
+    const result = await runRelocate({ inputs: [], cwd: dir });
+    expect(result.manifests).toMatchObject([{ keysRemoved: ["title"], undeclared: true }]);
+    expect(relocateFailed(result)).toBe(false);
+    expect(read(dir, "docs/b.md")).toBe("---\ntitle: B\n---\n# B\n");
+    expect(read(dir, "docs-meta.yaml")).toBe("docs/a.md:\n  title: A\n");
+  });
+
+  it("moves the manifest's value for the unmarked page in, or names a disagreement", async () => {
+    const dir = copy("relocate-removed-owned");
+    writeFileSync(join(dir, "docs-meta.yaml"), "docs/a.md:\n  title: A\n  team: writers\ndocs/b.md:\n  title: B\n");
+    const same = await runRelocate({ inputs: [], cwd: dir, dryRun: true });
+    expect(same.files.find((f) => f.file === "docs/b.md")?.moved).toEqual([
+      { key: "title", to: "page", from: "docs-meta.yaml", reason: "preferred" },
+    ]);
+
+    writeFileSync(join(dir, "docs-meta.yaml"), "docs/a.md:\n  title: A\n  team: writers\ndocs/b.md:\n  title: Other\n");
+    const differ = await runRelocate({ inputs: [], cwd: dir, dryRun: true });
+    expect(differ.files.find((f) => f.file === "docs/b.md")?.stayed).toMatchObject([
+      { key: "title", reason: "values-differ" },
+    ]);
+    expect(relocateFailed(differ)).toBe(true);
+  });
+
+  it("moves the copy out again when a page blocks the removal", async () => {
+    const dir = copy("relocate-removed-owned");
+    writeFileSync(join(dir, "docs", "c.rst"), "Body text.\n");
+    writeFileSync(join(dir, "docs-meta.yaml"), "docs/a.md:\n  title: A\n  team: writers\ndocs/c.rst:\n  title: C\n");
+    for (const order of [["docs/a.md", "docs/b.md", "docs/c.rst"], ["docs/c.rst", "docs/b.md", "docs/a.md"]]) {
+      const { plan } = await planIn(dir, order);
+      expect(plan.result.manifests).toMatchObject([{ keysRemoved: [], keys: ["title", "team"] }]);
+      expect(plan.result.files).toMatchObject([
+        { file: "docs/b.md", moved: [{ key: "title", to: "manifest", reason: "owned" }], stayed: [] },
+        { file: "docs/c.rst", moved: [], stayed: [{ key: "title", reason: "read-only-format" }] },
+      ]);
+    }
+  });
+});
+
+describe("relocate: fixes from review", () => {
+  it("moves every key the manifest owns out of a page a paths: change covers, whatever --fields names", async () => {
+    const dir = copy("relocate-outside");
+    const result = await runRelocate({ inputs: ["notes/"], fields: ["authors"], cwd: dir });
+    expect(result.files).toMatchObject([
+      {
+        file: "notes/stray.md",
+        moved: [
+          { key: "authors", to: "manifest", reason: "preferred" },
+          { key: "owner", to: "manifest", reason: "preferred" },
+        ],
+        stayed: [],
+      },
+    ]);
+    expect(relocateFailed(result)).toBe(false);
+    expect(read(dir, "notes/stray.md")).toBe("---\ntitle: Stray\n---\n# Stray\n");
+  });
+
+  it("reads a page the run never named with its own extractor, not --as", async () => {
+    const dir = copy("relocate-as-sibling");
+    const result = await runRelocate({ inputs: ["docs/a.md"], as: "markdown", cwd: dir });
+    expect(relocateFailed(result)).toBe(false);
+    const html = read(dir, "docs/b.html");
+    expect(html).not.toContain("---");
+    expect(html).toContain('<meta name="title" content="B">');
+    expect(read(dir, "docs/a.md")).toContain("title: A");
+  });
+
+  it("names a sibling it cannot parse as unreadable, rather than refusing the run", async () => {
+    const dir = copy("relocate-narrow");
+    writeFileSync(join(dir, "docs", "broken.md"), "---\nowner: [unclosed\n---\n# Broken\n");
+    const result = await runRelocate({ inputs: ["docs/install.md"], fields: ["owner"], cwd: dir });
+    const broken = result.files.find((f) => f.file === "docs/broken.md");
+    expect(broken).toMatchObject({ beyond: true, moved: [], stayed: [{ key: "owner", reason: "unreadable" }] });
+    expect(broken?.stayed[0]?.detail).toMatch(/^this document could not be parsed: Invalid YAML frontmatter: [^\n]*[^:\n]$/);
+    expect(pretty(result)).toContain("docs/broken.md\n    owner    stays: this document could not be parsed: Invalid YAML frontmatter: ");
+    expect(relocateFailed(result)).toBe(true);
+    expect(read(dir, "docs/install.md")).not.toContain("owner:");
+    expect(JSON.parse(renderRelocate(result, "json"))).toMatchObject({
+      files: expect.arrayContaining([{ file: "docs/broken.md", moved: [], stayed: [{ key: "owner", reason: "unreadable" }] }]),
+    });
+  });
+
+  it("keeps a key in keys: while an unreadable sibling's manifest entry sets it", async () => {
+    const dir = copy("relocate-both");
+    writeFileSync(join(dir, "docs", "broken.md"), "---\ntitle: [unclosed\n---\n# Broken\n");
+    writeFileSync(join(dir, "docs-meta.yaml"), `${read(dir, "docs-meta.yaml")}docs/broken.md:\n  title: Broken\n`);
+    const result = await runRelocate({ inputs: ["docs/faq.md"], cwd: dir, fields: ["title"], dryRun: true });
+    // The removal is held back, so no title moves into any page.
+    expect(result.manifests).toEqual([]);
+    expect(result.files).toMatchObject([
+      { file: "docs/broken.md", moved: [], stayed: [{ key: "title", reason: "unreadable" }], beyond: true },
+    ]);
+    expect(relocateFailed(result)).toBe(true);
+  });
+
+  it("resolves a glob target with .. or an absolute base against the working directory", async () => {
+    const dir = copy("relocate-default");
+    await runRelocate({
+      inputs: ["../guides/*.md"],
+      cwd: join(dir, "docs"),
+      configPath: join(dir, "manni.config.yaml"),
+    });
+    expect(yamlOf(dir, "manni.config.yaml")).toMatchObject({
+      collections: [{ name: "default", paths: ["guides/*.md"] }],
+    });
+
+    const abs = copy("relocate-default");
+    await runRelocate({ inputs: [`${abs.replace(/\\/g, "/")}/guides/*.md`], cwd: abs });
+    expect(yamlOf(abs, "manni.config.yaml")).toMatchObject({
+      collections: [{ name: "default", paths: ["guides/*.md"] }],
+    });
+  });
+});
+
 describe("relocation core: the API later commands use", () => {
   async function context(dir: string, inputs: string[] = []) {
     const run = await resolveRunConfig({ cwd: dir, inputs });

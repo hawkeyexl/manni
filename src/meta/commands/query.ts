@@ -2942,6 +2942,35 @@ function refuseJoinFieldChanges(
       }
     }
   }
+  // A join value this statement sets, or an INSERT gives a new page, that
+  // names an entry the document did not already match would take that entry
+  // over: the page would merge another document's values, and a write to an
+  // owned key would overwrite them.
+  for (const c of changes) {
+    if ("schema" in c || "config" in c || "cleared" in c || "renamed" in c || "deleted" in c) continue;
+    const set: [string, unknown][] = "created" in c ? Object.entries(c.to) : [[c.key, c.to]];
+    const members = ctx.memberships(c.file);
+    for (const [key, to] of set) {
+      const value = joinString(to);
+      if (value === undefined) continue;
+      if (!("created" in c) && joinString(readableJoinValue(data.get(c.file)?.[key], ctx)) === value) continue;
+      const taken = index.entries.find(
+        (e) => e.join === key && e.spelled === value && members.includes(e.collection),
+      );
+      if (taken !== undefined) {
+        throw new DocmetaError(
+          `"${c.file}": "${key}" "${value}" names the entry of another document in manifest ${taken.file}; choose another value.`,
+        );
+      }
+    }
+  }
+}
+
+/** The string a join field's value matches entries by, as the merge compares it. */
+function joinString(raw: unknown): string | undefined {
+  if (typeof raw === "string") return raw;
+  if (typeof raw === "number" || typeof raw === "boolean") return String(raw);
+  return undefined;
 }
 
 /**
@@ -3061,6 +3090,14 @@ async function planManifestEdits(
     if (file === STDIN_LABEL || key === FILE_SCHEMA_KEY) return undefined;
     const home = homeOf(file, key, data);
     if (home.kind === "unowned") return undefined;
+    // The rows were merged from the selected collections' manifests only, so
+    // a manifest of a collection `--collection` left out was never read: a
+    // write there would act on a value the statement could not see.
+    if (!ctx.memberships(file).includes(home.collection)) {
+      throw new DocmetaError(
+        `"${file}": "${key}" is owned by manifest ${home.file} of collection ${home.collection}, which --collection leaves out; include it or edit the manifest.`,
+      );
+    }
     if (home.kind === "url") return fetched(key, home.file);
     if (home.entry === undefined) {
       if (!strict) return undefined;

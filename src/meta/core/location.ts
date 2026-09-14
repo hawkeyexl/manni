@@ -9,6 +9,11 @@
  * branches Ajv takes. Only top-level properties carry a preference; a nested
  * mark is accepted and ignored. `Validator.locationPreferences` is the one
  * question commands ask of it.
+ *
+ * One schema marking one key both ways is judged twice. Through `properties`,
+ * `allOf` and local `$ref` alone, it is refused when the schema compiles.
+ * Across conditional branches it is not an error: Ajv evaluates failing
+ * branches too, so that schema gives the key no preference.
  */
 
 /** The schema keyword. */

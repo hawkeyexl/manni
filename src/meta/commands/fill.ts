@@ -77,7 +77,8 @@ import {
   FILE_SCHEMA_KEY,
   resolveElements,
 } from "../core/resolve-schema.js";
-import { loadSchema, schemaLoadOptions } from "../core/schema-registry.js";
+import { classifyRef, loadSchema, schemaLoadOptions } from "../core/schema-registry.js";
+import type { CollectionConfig } from "../../shared/collections.js";
 import { Validator, compileWithFormats } from "../core/validator.js";
 import { toJsonText } from "../core/json-text.js";
 import { writeFileAtomic } from "../core/write-file.js";
@@ -468,13 +469,43 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   // External metadata (0037), read once per run, and again after an accepted
   // relocation (0047) declares a manifest. Merged so the schema sees one
   // object; a candidate a local manifest owns is written into that manifest.
+  //
+  // Every declared collection's local manifests are read, not only the ones
+  // `--collection` selects: a write lands in whichever manifest owns the key
+  // for the page (0047), so what the page already holds, and the
+  // `meta-provenance` list a write extends, must be read from that manifest
+  // too. Otherwise a curated value in a collection the run left out reads as
+  // missing and is overwritten. A URL manifest of an unselected collection is
+  // not fetched: fill cannot write one, and refuses the file that would.
+  const mergedCollections = (): CollectionConfig[] => {
+    const selected = new Set(collections.map((c) => c.name));
+    return runConfig.declaredCollections.map((c) =>
+      selected.has(c.name)
+        ? c
+        : { ...c, externalMetadata: c.externalMetadata.filter((m) => classifyRef(m.file).kind !== "url") },
+    );
+  };
   const loadManifests = () =>
-    loadExternalMetadata(collections, {
+    loadExternalMetadata(mergedCollections(), {
       configDir: configDir ?? cwd,
       base,
       offline: opts.offline ?? config?.offline ?? false,
     });
+  /** The declared collections one label belongs to, for the merge. */
+  const mergeMembersFor = (label: string): string[] =>
+    memberOf(runConfig.declaredCollections, configDir ?? cwd, base, label);
   let externalMetadata = await loadManifests();
+  // A schema notice names its file. Preparing runs again after an accepted
+  // relocation, and relocation reads the same schemas, so each is said once.
+  const noticed = new Set<string>();
+  const noticeOnce =
+    opts.onNotice === undefined
+      ? undefined
+      : (message: string): void => {
+          if (noticed.has(message)) return;
+          noticed.add(message);
+          opts.onNotice?.(message);
+        };
   const ctx = relocationContext(runConfig, {
     cwd,
     targets: fromCollections ? [] : fileInputs,
@@ -484,17 +515,38 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     ...(opts.as !== undefined ? { as: opts.as } : {}),
     ...(opts.respectGitignore !== undefined ? { respectGitignore: opts.respectGitignore } : {}),
     ...(opts.env !== undefined ? { env: opts.env } : {}),
-    ...(opts.onNotice !== undefined ? { onNotice: opts.onNotice } : {}),
+    ...(noticeOnce !== undefined ? { onNotice: noticeOnce } : {}),
   });
-  /** Each manifest this run writes, read once and spliced in memory, written after every file. */
-  const heldManifests = new Map<string, { path: string; before: string; text: string }>();
-  const holding = new Map<string, Promise<{ path: string; before: string; text: string }>>();
+  /**
+   * Each manifest this run writes, read once and spliced in memory. It is
+   * saved after each file that changes it, once that file's page is written,
+   * so a run that aborts on a later file keeps the entries of the pages it
+   * already wrote. `written` is the text on disk; `saving` serializes the
+   * saves, each of which writes the latest text.
+   */
+  interface HeldManifest {
+    path: string;
+    text: string;
+    written: string;
+    saving: Promise<void>;
+  }
+  const heldManifests = new Map<string, HeldManifest>();
+  const holding = new Map<string, Promise<HeldManifest>>();
+  const saveManifest = (held: HeldManifest): Promise<void> => {
+    held.saving = held.saving.then(async () => {
+      const text = held.text;
+      if (text === held.written) return;
+      await writeFileAtomic(held.path, text);
+      held.written = text;
+    });
+    return held.saving;
+  };
   const holdManifest = (home: { absPath: string; file: string }) => {
     let held = holding.get(home.absPath);
     if (held === undefined) {
       held = readFile(home.absPath, "utf8").then(
         (before) => {
-          const h = { path: home.absPath, before, text: before };
+          const h: HeldManifest = { path: home.absPath, text: before, written: before, saving: Promise.resolve() };
           heldManifests.set(home.absPath, h);
           return h;
         },
@@ -571,8 +623,9 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     // Resolved once per file. It walks every `overrides:` entry and dedupes,
     // and the three call sites below — extract, the write pre-flight, and the
     // write itself — all want the same answer for the same file.
-    // The collections this file belongs to, computed once per file: the merge
-    // and both resolution calls below ask the same question of it.
+    // The selected collections this file belongs to, computed once per file:
+    // both resolution calls below ask the same question of it. The merge
+    // reads every declared collection's manifests (see `loadManifests`).
     const members = membersFor(label);
     const elements = resolveElements(label, config, members);
 
@@ -583,7 +636,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         label,
         extractor.extract(content, label, { elements }),
         externalMetadata,
-        members,
+        mergeMembersFor(label),
         base,
         { encryptionKey: currentKey },
       );
@@ -607,7 +660,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         // gets written — if anything, a stronger reason to guard it.
         fileBase: cwd,
         trustRoot,
-        onNotice: opts.onNotice,
+        onNotice: noticeOnce,
       });
     } catch (err) {
       return errorResult(label, extractor.name, errorMessage(err));
@@ -1155,45 +1208,61 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       metaProvenance = { written: false, skipReason: "unwritable" };
     }
 
-    // Every manifest this file writes is held first; from there to the
-    // commit nothing awaits, so no other file's splice can interleave.
-    let manifestChanged = false;
-    if (entryWrites.length > 0) {
-      const helds = await Promise.all(entryWrites.map((w) => holdManifest(w.home)));
+    // Every manifest this file writes is held first. The splices are computed
+    // once to refuse the file before its page is written, then again over the
+    // held text once the page is: from that splice to the commit nothing
+    // awaits, so no other file's splice can interleave, and a page that was
+    // never written leaves no entry behind.
+    const helds = await Promise.all(entryWrites.map((w) => holdManifest(w.home)));
+    const splice = (): Map<string, string> => {
       const texts = new Map<string, string>();
-      try {
-        for (const [i, w] of entryWrites.entries()) {
-          const held = helds[i];
-          /* c8 ignore next -- one hold per write, by construction. */
-          if (held === undefined) continue;
-          const text = texts.get(held.path) ?? held.text;
-          texts.set(
-            held.path,
-            spliceManifestValue(text, {
-              entry: w.home.entry,
-              key: w.key,
-              value: w.value,
-              join: w.home.join,
-              file: w.home.file,
-            }).text,
-          );
-        }
-      } catch (err) {
-        if (!(err instanceof DocmetaError)) throw err;
-        return errorResult(label, extractor.name, err.message, schemaSet, fields);
+      for (const [i, w] of entryWrites.entries()) {
+        const held = helds[i];
+        /* c8 ignore next -- one hold per write, by construction. */
+        if (held === undefined) continue;
+        const text = texts.get(held.path) ?? held.text;
+        texts.set(
+          held.path,
+          spliceManifestValue(text, {
+            entry: w.home.entry,
+            key: w.key,
+            value: w.value,
+            join: w.home.join,
+            file: w.home.file,
+          }).text,
+        );
       }
-      for (const [path, text] of texts) {
-        const held = heldManifests.get(path);
-        if (held !== undefined && held.text !== text) {
-          held.text = text;
-          manifestChanged = true;
-        }
-      }
+      return texts;
+    };
+    let manifestChanged = false;
+    try {
+      manifestChanged = [...splice()].some(([path, text]) => heldManifests.get(path)?.text !== text);
+    } catch (err) {
+      if (!(err instanceof DocmetaError)) throw err;
+      return errorResult(label, extractor.name, err.message, schemaSet, fields);
     }
 
     const changed = next !== content || manifestChanged;
     if (next !== content && !dryRun && label !== "<stdin>") {
       await writeFileAtomic(resolve(base, label), next);
+    }
+    if (manifestChanged) {
+      let texts: Map<string, string>;
+      try {
+        texts = splice();
+      } catch (err) {
+        /* c8 ignore next 2 -- the same splices succeeded before the page write. */
+        if (!(err instanceof DocmetaError)) throw err;
+        return errorResult(label, extractor.name, err.message, schemaSet, fields);
+      }
+      const saves: Promise<void>[] = [];
+      for (const [path, text] of texts) {
+        const held = heldManifests.get(path);
+        if (held === undefined || held.text === text) continue;
+        held.text = text;
+        if (!dryRun) saves.push(saveManifest(held));
+      }
+      await Promise.all(saves);
     }
     return {
       file: label,
@@ -1248,12 +1317,9 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   if (prepared.stdin !== undefined) results.push(await finish(prepared.stdin));
   results.push(...(await mapConcurrent(prepared.files, concurrency, finish)));
 
-  // One write per manifest, after every file that touches it is settled.
-  if (!dryRun) {
-    for (const held of heldManifests.values()) {
-      if (held.text !== held.before) await writeFileAtomic(held.path, held.text);
-    }
-  }
+  // Each manifest was saved after each file that changed it; wait for the
+  // last save of each.
+  await Promise.all([...heldManifests.values()].map((held) => held.saving));
 
   // W1 and W2 (0047): a value its schema prefers in external metadata that
   // went to the page, or would have. One line per collection, not per page.

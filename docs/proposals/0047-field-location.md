@@ -94,8 +94,11 @@ The keyword follows `x-manni-encrypt` (0045).
 - **Shape.** A value other than `"page"` or `"external"` is a compile error,
   exit 2. So is `external` on `$schema`, which a manifest may not hold.
 - **Two schemas disagree.** The later schema in the file's resolved set wins,
-  so a house schema listed after a vocabulary refines it. Two values for one
-  key within one schema are a compile error, exit 2.
+  so a house schema listed after a vocabulary refines it. One schema can also
+  mark one key both ways. Through `properties`, `allOf` and local `$ref`
+  alone, that is a compile error, exit 2. Across `anyOf`, `oneOf`, `if` or
+  `not` branches it is not an error. Ajv evaluates failing branches too, so
+  a schema whose evaluated branches say both has no preference for that key.
 - **A field join's own field stays in the page.** Under `join: id` the
   manifest's entries are keyed by `id` values, and the page's `id` is the only
   thing that says which entry is its. The glob says which collection a page is

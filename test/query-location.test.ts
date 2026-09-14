@@ -228,6 +228,35 @@ describe("query on a path-joined manifest", () => {
   });
 });
 
+describe("query: a manifest of a collection --collection leaves out", () => {
+  it("refuses to write into it at plan time, and writes nothing", async () => {
+    const dir = copy("query-path");
+    writeFileSync(
+      join(dir, "manni.config.yaml"),
+      [
+        "meta:",
+        "  schemas: [./steward.schema.json]",
+        "collections:",
+        "  - name: a",
+        '    paths: ["docs/**/*.md"]',
+        "  - name: b",
+        '    paths: ["docs/**/*.md"]',
+        "    externalMetadata:",
+        "      - file: ./docs-meta.yaml",
+        "        keys: [owner, team]",
+        "",
+      ].join("\n"),
+    );
+    await expect(
+      q(dir, "UPDATE docs SET owner = 'x' WHERE owner IS NULL", { collections: ["a"] }),
+    ).rejects.toThrow(
+      '"docs/auth.md": "owner" is owned by manifest docs-meta.yaml of collection b, which --collection leaves out; include it or edit the manifest.',
+    );
+    expect(read(dir, "docs-meta.yaml")).toBe(read(join(fixtures, "query-path"), "docs-meta.yaml"));
+    expect(read(dir, "docs/billing.md")).toBe(read(join(fixtures, "query-path"), "docs/billing.md"));
+  });
+});
+
 describe("query on a field-joined manifest", () => {
   it("UPDATE SET writes the entry keyed by the page's join value", async () => {
     const dir = copy("query-join");
@@ -249,6 +278,37 @@ describe("query on a field-joined manifest", () => {
     await q(dir, "DELETE FROM docs WHERE _path = 'docs/auth.md'");
     expect(read(dir, "docs/auth.md")).toBe("# Auth\n");
     expect(yamlOf(dir, "docs-meta.yaml")).toBeNull();
+  });
+
+  it("refuses a new join value that names another document's entry, and writes nothing", async () => {
+    const dir = copy("query-join");
+    await expect(
+      q(dir, "UPDATE docs SET id = 'auth-guide', owner = 'hijack' WHERE _path = 'docs/noid.md'"),
+    ).rejects.toThrow(
+      '"docs/noid.md": "id" "auth-guide" names the entry of another document in manifest docs-meta.yaml; choose another value.',
+    );
+    await expect(q(dir, "UPDATE docs SET id = 'auth-guide' WHERE _path = 'docs/noid.md'")).rejects.toThrow(
+      '"docs/noid.md": "id" "auth-guide" names the entry of another document in manifest docs-meta.yaml; choose another value.',
+    );
+    expect(read(dir, "docs-meta.yaml")).toBe("auth-guide:\n  owner: platform\n");
+    expect(read(dir, "docs/noid.md")).toBe("---\ntitle: No id\n---\n# No id\n");
+  });
+
+  it("refuses an INSERT whose join value names an existing entry", async () => {
+    const dir = copy("query-join");
+    await expect(
+      q(dir, "INSERT INTO docs (_path, id, owner) VALUES ('docs/new.md', 'auth-guide', 'hijack')"),
+    ).rejects.toThrow(
+      '"docs/new.md": "id" "auth-guide" names the entry of another document in manifest docs-meta.yaml; choose another value.',
+    );
+    expect(read(dir, "docs-meta.yaml")).toBe("auth-guide:\n  owner: platform\n");
+    expect(existsSync(join(dir, "docs/new.md"))).toBe(false);
+  });
+
+  it("a new join value no entry names gets a new entry", async () => {
+    const dir = copy("query-join");
+    await q(dir, "UPDATE docs SET id = 'fresh', owner = 'web' WHERE _path = 'docs/noid.md'");
+    expect(yamlOf(dir, "docs-meta.yaml")).toEqual({ "auth-guide": { owner: "platform" }, fresh: { owner: "web" } });
   });
 
   it("still refuses changing the join field of a document with an entry", async () => {

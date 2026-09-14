@@ -1,0 +1,11 @@
+meta:
+  schemas: [./plain.schema.json]
+  overrides:
+    - files: "docs/a.md"
+      schemas: [./marked.schema.json]
+collections:
+  - name: site
+    paths: ["docs/**"]
+    externalMetadata:
+      - file: ./docs-meta.yaml
+        keys: [title, team]

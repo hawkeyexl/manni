@@ -134,6 +134,22 @@ describe("derive: a managed field a local manifest owns", () => {
     const stale = validated.results[0]?.errors.find((e) => e.schema === "derived:stale" && e.subject === "owner");
     expect(stale).toMatchObject({ file: "site-meta.yaml", line: 2 });
   });
+
+  it("validate reads the manifest value when the page's own schema fails to load", async () => {
+    const dir = stage("derive-owned");
+    writeFile(dir, "docs/faq.md", "---\ntitle: FAQ\n$schema: ./missing.schema.json\n---\n\n# FAQ\n");
+    writeFile(
+      dir,
+      "site-meta.yaml",
+      'docs/install.md:\n  owner: ["@old-team"]\ndocs/faq.md:\n  owner: ["@platform-docs"]\n',
+    );
+    commit(dir, "faq", { authorDate: D1 });
+    const validated = await runValidate({ inputs: ["docs/faq.md"], cwd: dir });
+    const errors = validated.results[0]?.errors ?? [];
+    expect(errors[0]).toMatchObject({ schema: "(parse)", keyword: "schema" });
+    // The manifest supplies the current owner, so it is not "not set".
+    expect(errors.filter((e) => e.subject === "owner")).toEqual([]);
+  });
 });
 
 describe("derive: a managed field a URL manifest owns", () => {
@@ -243,5 +259,54 @@ describe("derive: a field its schema prefers in external metadata, with no manif
     expect(stderr.filter((l) => l.includes("external metadata"))).toEqual([
       "manni: wrote owner to 1 page that is in none of the 2 collections; the schema prefers external metadata, and only a collection has a manifest.\n",
     ]);
+  });
+});
+
+describe("derive: manifest edits follow the page write", () => {
+  it("a file whose page write fails leaves no entry in the manifest", async () => {
+    const dir = stage("derive-owned");
+    writeFile(dir, "manni.config.yaml", read(dir, "manni.config.yaml").replace('"docs/**/*.md"', '"docs/**"'));
+    writeFile(dir, "docs/guide.rst", "Guide\n=====\n\nBody.\n");
+    commit(dir, "guide", { authorDate: D1 });
+    const run = await runDerive({ inputs: [], cwd: dir });
+    expect(run.results.find((r) => r.file === "docs/guide.rst")?.error).toContain("no fenced front matter block");
+    expect(parseYaml(read(dir, "site-meta.yaml"))).toEqual({
+      "docs/install.md": { owner: ["@platform-docs"] },
+      "docs/faq.md": { owner: ["@platform-docs"] },
+    });
+  });
+
+  it("a run that aborts on a later file still saves the entries of the pages it wrote", async () => {
+    const dir = stage("derive-owned");
+    writeFile(
+      dir,
+      "secret.schema.json",
+      JSON.stringify({ type: "object", properties: { created: { type: "string", "x-manni-encrypt": true } } }),
+    );
+    writeFile(dir, "docs/zz.md", "---\ntitle: Z\n$schema: ./secret.schema.json\n---\n\n# Z\n");
+    commit(dir, "zz", { authorDate: D1 });
+    const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => k !== "MANNI_ENCRYPTION_KEY"));
+    await expect(runDerive({ inputs: [], cwd: dir, env })).rejects.toThrow(/encrypt/i);
+    expect(pageData(dir, "docs/install.md")).toMatchObject({ created: "2026-08-20" });
+    expect(parseYaml(read(dir, "site-meta.yaml"))).toEqual({
+      "docs/install.md": { owner: ["@platform-docs"] },
+      "docs/faq.md": { owner: ["@platform-docs"] },
+    });
+  });
+});
+
+describe("derive: schema notices", () => {
+  it("says each once per file under --dry-run", async () => {
+    const dir = stage("derive-owned");
+    writeFile(
+      dir,
+      "manni.config.yaml",
+      read(dir, "manni.config.yaml").replace(/^meta:\n/m, "meta:\n  schemaTrust:\n    documentRefs: none\n"),
+    );
+    writeFile(dir, "docs/faq.md", "---\ntitle: FAQ\n$schema: ./other.schema.json\n---\n\n# FAQ\n");
+    commit(dir, "trust", { authorDate: D1 });
+    const notices: string[] = [];
+    await runDerive({ inputs: [], cwd: dir, dryRun: true, onNotice: (m) => notices.push(m) });
+    expect(notices.filter((m) => m.includes("is ignored"))).toEqual([expect.stringContaining("docs/faq.md:")]);
   });
 });

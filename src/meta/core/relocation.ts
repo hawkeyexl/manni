@@ -87,7 +87,8 @@ export type RelocateStayReason =
   | "read-only-format"
   | "no-join-value"
   | "values-differ"
-  | "url-manifest";
+  | "url-manifest"
+  | "unreadable";
 
 /** One value that moved, or would under `dryRun`. */
 export type RelocateMove =
@@ -114,7 +115,7 @@ export interface RelocateFileResult {
   file: string;
   moved: RelocateMove[];
   stayed: RelocateStay[];
-  /** A member page outside the paths the run named, reached through a `keys:` change. */
+  /** A member page outside the paths the run named, reached through a `keys:` or `paths:` change. */
   beyond: boolean;
 }
 
@@ -498,11 +499,12 @@ function bare(path: string): CollectionConfig {
 function collectionPath(target: string, cwd: string, configDir: string): string | undefined {
   if (target === STDIN_TOKEN) return undefined;
   const posix = target.replace(/\\/g, "/");
-  if (picomatch.scan(posix).isGlob) {
-    const prefix = toPosix(relative(configDir, cwd));
-    if (isAbsolute(prefix) || prefix.startsWith("..")) return undefined;
-    const glob = posix.replace(/^\.\//, "");
-    return prefix === "" ? glob : `${prefix}/${glob}`;
+  const scanned = picomatch.scan(posix);
+  if (scanned.isGlob) {
+    // The glob's literal base resolves like a file target; the magic part rides along.
+    const rel = toPosix(relative(configDir, resolve(cwd, scanned.base === "" ? "." : scanned.base)));
+    if (isAbsolute(rel) || rel === ".." || rel.startsWith("../")) return undefined;
+    return rel === "" ? scanned.glob : `${rel}/${scanned.glob}`;
   }
   const abs = resolve(cwd, posix);
   const rel = toPosix(relative(configDir, abs));
@@ -622,7 +624,15 @@ export interface RelocationRequest {
 type Intent =
   | { kind: "out"; manifest: ManifestRef; reason: RelocateMoveReason; drop: boolean; entry: string }
   | { kind: "in"; manifest: ManifestRef; drop: boolean; entry: string; value: unknown }
-  | { kind: "stay"; reason: RelocateStayReason; detail: string; blocks?: ManifestRef };
+  | {
+      kind: "stay";
+      reason: RelocateStayReason;
+      detail: string;
+      /** A manifest whose key removal this stay holds back. */
+      blocks?: ManifestRef;
+      /** The manifest the value was on its way out to. */
+      toward?: ManifestRef;
+    };
 
 interface Page {
   label: string;
@@ -633,6 +643,8 @@ interface Page {
   extractor: MetadataExtractor;
   own: Record<string, unknown>;
   beyond: boolean;
+  /** Why a page reached only beyond the named paths could not be read. Its `own` is empty. */
+  unreadable?: string;
   intents: Map<string, Intent>;
   /** The page's text afterwards, when it changes. */
   text?: string;
@@ -712,19 +724,35 @@ export async function planRelocation(
   const load = async (label: string, beyond: boolean): Promise<Page | undefined> => {
     const have = pages.get(label);
     if (have !== undefined) return have;
-    const extractor = forced ?? extractorForExtension(extname(label));
+    // `--as` names how the run's own files are read; a sibling reached through a
+    // keys: or paths: change is read by its extension, like any walk.
+    const extractor = (beyond ? undefined : forced) ?? extractorForExtension(extname(label));
     if (extractor === undefined) {
       if (beyond) return undefined;
       throw new DocmetaError(`Unsupported file type "${extname(label)}" for "${label}". Use --as to override.`);
     }
     const absPath = resolve(ctx.base, label);
-    const content = await readFile(absPath, "utf8");
     const elements = resolveElements(label, ctx.config, currentMembers(label));
-    let own: Record<string, unknown>;
-    try {
-      own = extractor.extract(content, label, { elements }).data;
-    } catch (err) {
-      throw new DocmetaError(`${label}: ${errorMessage(err)}`);
+    let content = "";
+    let own: Record<string, unknown> = {};
+    let unreadable: string | undefined;
+    // A named page that will not load refuses the run. A sibling is one page
+    // among many the change reaches, so its values stay, with the reason.
+    if (beyond) {
+      try {
+        content = await readFile(absPath, "utf8");
+        own = extractor.extract(content, label, { elements }).data;
+      } catch (err) {
+        // The first line: a parser's excerpt of the source would break the report's one line per value.
+        unreadable = (errorMessage(err).split("\n")[0] ?? "").replace(/:\s*$/, "");
+      }
+    } else {
+      content = await readFile(absPath, "utf8");
+      try {
+        own = extractor.extract(content, label, { elements }).data;
+      } catch (err) {
+        throw new DocmetaError(`${label}: ${errorMessage(err)}`);
+      }
     }
     const page: Page = {
       label,
@@ -735,6 +763,7 @@ export async function planRelocation(
       extractor,
       own,
       beyond,
+      ...(unreadable !== undefined ? { unreadable } : {}),
       intents: new Map(),
     };
     pages.set(label, page);
@@ -754,26 +783,33 @@ export async function planRelocation(
     return sv !== undefined && sv.collection === m.collection && sv.file === m.file ? sv : undefined;
   };
 
-  const stay = (page: Page, key: string, reason: RelocateStayReason, detail: string, blocks?: ManifestRef): void => {
-    page.intents.set(key, { kind: "stay", reason, detail, ...(blocks !== undefined ? { blocks } : {}) });
+  const stay = (
+    page: Page,
+    key: string,
+    reason: RelocateStayReason,
+    detail: string,
+    links: { blocks?: ManifestRef; toward?: ManifestRef } = {},
+  ): void => {
+    page.intents.set(key, { kind: "stay", reason, detail, ...links });
   };
   const urlDetail = (m: ManifestRef): string => `${m.file} is fetched and cannot be written`;
+  const unreadableDetail = (page: Page): string => `this document could not be parsed: ${page.unreadable ?? ""}`;
 
   /** Out of the page, into `m`. */
   const planOut = (page: Page, m: ManifestRef, key: string, reason: RelocateMoveReason): void => {
     if (page.intents.has(key)) return;
     if (m.url) {
-      stay(page, key, "url-manifest", urlDetail(m));
+      stay(page, key, "url-manifest", urlDetail(m), { toward: m });
       return;
     }
     const entry = entryFor(m, page.label, page.own, configDir, ctx.base, encryptionKey);
     if (entry === undefined) {
-      stay(page, key, "no-join-value", `this document has no ${m.join}, which ${m.file} joins on`);
+      stay(page, key, "no-join-value", `this document has no ${m.join}, which ${m.file} joins on`, { toward: m });
       return;
     }
     const held = supplied(m, page, key);
     if (held !== undefined && !deepEqual(held.value, page.own[key])) {
-      stay(page, key, "values-differ", `the page and ${m.file} hold different values`);
+      stay(page, key, "values-differ", `the page and ${m.file} hold different values`, { toward: m });
       return;
     }
     page.intents.set(key, { kind: "out", manifest: m, reason, drop: held !== undefined, entry });
@@ -789,7 +825,7 @@ export async function planRelocation(
     if (entry === undefined) return;
     if (Object.hasOwn(page.own, key)) {
       if (!deepEqual(held.value, page.own[key])) {
-        stay(page, key, "values-differ", `the page and ${m.file} hold different values`, m);
+        stay(page, key, "values-differ", `the page and ${m.file} hold different values`, { blocks: m });
         return;
       }
       page.intents.set(key, { kind: "in", manifest: m, drop: true, entry, value: held.value });
@@ -898,6 +934,26 @@ export async function planRelocation(
     }
   }
 
+  // ---- A key leaving keys: is headed for the page ---------------------------
+  // A page planned before (or after) another page's mark removed the key would
+  // otherwise send its copy to a manifest that no longer owns it. The move is
+  // set aside, and put back if a page blocks the removal below.
+  const suspended: { page: Page; manifest: ManifestRef; key: string; reason: RelocateMoveReason }[] = [];
+  for (const page of pages.values()) {
+    for (const [key, intent] of [...page.intents]) {
+      const m = intent.kind === "out" ? intent.manifest : intent.kind === "stay" ? intent.toward : undefined;
+      if (m === undefined || !m.keysRemoved.includes(key)) continue;
+      page.intents.delete(key);
+      const prefs = preferencesOf.get(page.label);
+      suspended.push({
+        page,
+        manifest: m,
+        key,
+        reason: intent.kind === "out" ? intent.reason : prefs?.get(key) === "external" ? "preferred" : "owned",
+      });
+    }
+  }
+
   // ---- A keys: or paths: change reaches every member page -------------------
   const grown = new Set(model.pathsAdded.map((p) => p.collection));
   const affected = new Set<string>(grown);
@@ -925,11 +981,31 @@ export async function planRelocation(
       const page = await load(label, !runSet.has(label));
       if (page === undefined) continue;
       const prefs = preferencesOf.get(label);
+      // A page the paths: change brings in is covered for every key the
+      // manifest owns, as a keys: change covers every page: --fields cannot
+      // leave an owned key behind on it.
+      const covered = grown.has(name) && !currentMembers(label).includes(name);
       for (const m of model.manifestsOf(name)) {
         const out = dedupe([
           ...m.keysAdded,
           ...(grown.has(name) ? m.keysBefore.filter((k) => !m.keysRemoved.includes(k)) : []),
-        ]).filter(wanted);
+        ]).filter((k) => (covered ? k !== FILE_SCHEMA_KEY : wanted(k)));
+        if (page.unreadable !== undefined) {
+          const detail = unreadableDetail(page);
+          // The keys whose home this run changes for the page: added ones, and
+          // every owned one when the page is newly covered.
+          const changing = covered ? out : out.filter((k) => m.keysAdded.includes(k));
+          for (const key of changing) if (!page.intents.has(key)) stay(page, key, "unreadable", detail);
+          for (const key of m.keysRemoved) {
+            // Whether the manifest sets the key for this page is known only
+            // for a path join; a field join needs the page's own value.
+            const held =
+              m.join !== PATH_JOIN ||
+              (!m.created && index?.byPath.get(page.absPath)?.get(key)?.file === m.file);
+            if (held && !page.intents.has(key)) stay(page, key, "unreadable", detail, { blocks: m });
+          }
+          continue;
+        }
         for (const key of out) {
           if (!Object.hasOwn(page.own, key)) continue;
           const reason = m.keysAdded.includes(key) || prefs?.get(key) === "external" ? "preferred" : "owned";
@@ -959,6 +1035,10 @@ export async function planRelocation(
         for (const other of pages.values()) {
           const i = other.intents.get(key);
           if (i?.kind === "in" && i.manifest === m) other.intents.delete(key);
+        }
+        // The manifest keeps the key, so a copy set aside for the page goes to it after all.
+        for (const s of suspended) {
+          if (s.manifest === m && s.key === key) planOut(s.page, m, key, s.reason);
         }
         changed = true;
       }

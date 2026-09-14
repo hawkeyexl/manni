@@ -151,7 +151,25 @@ describe("validate: location findings", () => {
       cwd: dir,
       env: noKey,
     });
-    expect(errorsOf(results, "<stdin>").map((e) => [e.schema, e.line])).toEqual([["location:external", 2]]);
+    // relocate refuses `-`, so the finding names no command to run.
+    expect(errorsOf(results, "<stdin>").map((e) => [e.schema, e.message, e.line])).toEqual([
+      [
+        "location:external",
+        '"owner" is stored in the page; steward.schema.json prefers external metadata.',
+        2,
+      ],
+    ]);
+  });
+
+  it("skips a field join's own field when --collection narrows the run to another collection", async () => {
+    const { results } = await runValidate({
+      inputs: [],
+      collections: ["site"],
+      cwd: fixture("validate-narrow-join"),
+      env: noKey,
+    });
+    expect(results.map((r) => r.file)).toEqual(["docs/api/joined.md"]);
+    expect(errorsOf(results, "docs/api/joined.md")).toEqual([]);
   });
 
   it("says a fetched manifest cannot be written when a URL manifest holds a page-preferring value", async () => {

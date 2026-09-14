@@ -360,6 +360,7 @@ with the destination, as in `/owner  platform  0.92  → site-meta.yaml`.
 |---|---|
 | Owned by a local manifest | Written into the manifest. This holds even when its schema prefers the page, and `validate` then reports `location:page`. |
 | Owned by a URL manifest | Refused: `"owner" is owned by manifest https://example.com/owners.yaml, which is fetched and cannot be written; set it in that repository.` |
+| Owned by a local manifest of a collection `--collection` leaves out | `derive` and `fill` read that manifest too, so a value it holds is never taken for missing, and write there. `query` refuses: `"docs/auth.md": "owner" is owned by manifest docs-meta.yaml of collection b, which --collection leaves out; include it or edit the manifest.` |
 | Prefers `external`, and no manifest owns it | Offered a manifest on a terminal. Otherwise written to the page, with one warning. |
 | Prefers `page`, or carries no mark, and is not owned | Written to the page, as always. |
 

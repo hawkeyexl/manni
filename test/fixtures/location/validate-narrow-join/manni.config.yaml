@@ -1,0 +1,13 @@
+# --collection site narrows the run; the page is also in api, whose manifest
+# joins on id, so id stays on the page and is never a location finding.
+meta:
+  schemas: [./steward.schema.json]
+collections:
+  - name: site
+    paths: ["docs/**"]
+  - name: api
+    paths: ["docs/api/**"]
+    externalMetadata:
+      - file: ./api-meta.yaml
+        join: id
+        keys: [team]
