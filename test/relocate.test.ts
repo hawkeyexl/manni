@@ -31,6 +31,7 @@ import {
 import { resolveRunConfig } from "../src/meta/core/config.js";
 import { Validator } from "../src/meta/core/validator.js";
 import { schemaLoadOptions } from "../src/meta/core/schema-registry.js";
+import { writeFileAtomic } from "../src/meta/core/write-file.js";
 import { DocmetaError } from "../src/meta/types.js";
 import { startSchemaServer } from "./helpers/schema-server.js";
 
@@ -460,6 +461,91 @@ describe("relocation core: the API later commands use", () => {
       { file: "./site.metadata.yaml", keys: ["owner", "authors"] },
     ]);
     expect(ctx.collections[0]).toBe(docs);
+  });
+
+  /** A writer that fails `path`'s `nth` write (1-based) and writes everything else. */
+  function failing(
+    fails: { path: string; nth: number; reason: string }[],
+  ): (path: string, text: string) => Promise<void> {
+    const seen = new Map<string, number>();
+    return async (path, text) => {
+      const n = (seen.get(path) ?? 0) + 1;
+      seen.set(path, n);
+      const fail = fails.find((f) => f.path === path && f.nth === n);
+      if (fail !== undefined) throw new Error(fail.reason);
+      await writeFileAtomic(path, text);
+    };
+  }
+  const snapshot = (dir: string, files: string[]): Record<string, string | null> =>
+    Object.fromEntries(files.map((f) => [f, existsSync(join(dir, f)) ? read(dir, f) : null]));
+
+  it("rolls a reverse move back when a page write fails, so the value is never lost", async () => {
+    const dir = copy("relocate-both");
+    const files = ["docs-meta.yaml", "manni.config.yaml", "docs/faq.md", "docs/install.md"];
+    const before = snapshot(dir, files);
+    const ctx = await context(dir);
+    // title leaves the manifest for the pages; the manifest and config writes land first.
+    const plan = await planRelocation(ctx, { files: ["docs/faq.md", "docs/install.md"] });
+    expect(plan.writes.map((w) => w.kind)).toEqual(["manifest", "config", "page", "page"]);
+    const [site] = ctx.declaredCollections;
+    const declared = structuredClone(site?.externalMetadata);
+
+    const write = failing([{ path: join(dir, "docs", "faq.md"), nth: 1, reason: "disk full" }]);
+    const run = applyRelocation(ctx, plan, { write });
+    await expect(run).rejects.toBeInstanceOf(DocmetaError);
+    await expect(run).rejects.toThrow(
+      "Could not write docs/faq.md: disk full. Nothing was changed: the 2 files already written were restored.",
+    );
+    expect(snapshot(dir, files)).toEqual(before);
+    // The run's collections are left as the config still declares them.
+    expect(site?.externalMetadata).toEqual(declared);
+  });
+
+  it("removes a manifest it created when a later page write fails", async () => {
+    const dir = copy("relocate-create");
+    const files = ["site.metadata.yaml", "manni.config.yaml", "docs/faq.md", "docs/install.md"];
+    const before = snapshot(dir, files);
+    expect(before["site.metadata.yaml"]).toBeNull();
+    const ctx = await context(dir);
+    const plan = await planRelocation(ctx, { files: ["docs/faq.md", "docs/install.md"] });
+    expect(plan.writes.map((w) => w.kind)).toEqual(["manifest", "config", "page", "page"]);
+
+    const write = failing([{ path: join(dir, "docs", "install.md"), nth: 1, reason: "disk full" }]);
+    await expect(applyRelocation(ctx, plan, { write })).rejects.toThrow(
+      "Could not write docs/install.md: disk full. Nothing was changed: the 3 files already written were restored.",
+    );
+    expect(snapshot(dir, files)).toEqual(before);
+    expect(ctx.declaredCollections[0]?.externalMetadata).toEqual([]);
+  });
+
+  it("names a file it could not restore", async () => {
+    const dir = copy("relocate-create");
+    const ctx = await context(dir);
+    const plan = await planRelocation(ctx, { files: ["docs/faq.md", "docs/install.md"] });
+    const write = failing([
+      { path: join(dir, "docs", "install.md"), nth: 1, reason: "disk full" },
+      { path: join(dir, "manni.config.yaml"), nth: 2, reason: "read-only file system" },
+    ]);
+    await expect(applyRelocation(ctx, plan, { write })).rejects.toThrow(
+      "Could not write docs/install.md: disk full. The run was rolled back, but manni.config.yaml could not be restored: read-only file system. Restore it from version control.",
+    );
+    // What could be restored was.
+    expect(existsSync(join(dir, "site.metadata.yaml"))).toBe(false);
+    expect(read(dir, "docs/faq.md")).toContain("owner: platform");
+  });
+
+  it("refuses to apply a plan over a file that changed since it was planned", async () => {
+    const dir = copy("relocate-create");
+    const ctx = await context(dir);
+    const plan = await planRelocation(ctx, { files: ["docs/faq.md", "docs/install.md"] });
+    writeFileSync(join(dir, "docs", "install.md"), "---\ntitle: Install\nowner: docs\n---\n# Install\n");
+    const run = applyRelocation(ctx, plan);
+    await expect(run).rejects.toBeInstanceOf(DocmetaError);
+    await expect(run).rejects.toThrow(
+      "docs/install.md changed after the relocation was planned, so nothing was written. Run the command again.",
+    );
+    expect(existsSync(join(dir, "site.metadata.yaml"))).toBe(false);
+    expect(read(dir, "docs/faq.md")).toContain("owner: platform");
   });
 
   it("words the writers' offer (P1) and validate's (P2) from the plan", async () => {

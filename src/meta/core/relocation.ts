@@ -22,14 +22,15 @@
  *  - **Applying** (`applyRelocation`). The texts are written, manifests first,
  *    then the config, then the pages, and the caller's in-memory collections
  *    are brought up to date, so a writer can put a value into the manifest the
- *    plan just declared.
+ *    plan just declared. A write that fails puts back the files already
+ *    written, so a run lands whole or not at all.
  *
  * A value never moves by being re-read. The page's own extraction and the
  * manifest's parsed value are what move, so an encrypted value goes as its
  * ciphertext, verbatim.
  */
 import { existsSync, statSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { readFile, unlink } from "node:fs/promises";
 import { basename, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import picomatch from "picomatch";
 import {
@@ -642,6 +643,18 @@ export interface RelocationWrite {
   path: string;
   text: string;
   kind: "manifest" | "config" | "page";
+  /**
+   * The file's text on disk when the plan was made, or null when it did not
+   * exist. Applying refuses a file that no longer matches, and a failed run
+   * puts this text back.
+   */
+  before: string | null;
+}
+
+/** How `applyRelocation` changes the disk. Tests replace it; the default is atomic writes and `unlink`. */
+export interface RelocationIo {
+  write?: (path: string, text: string) => Promise<void>;
+  remove?: (path: string) => Promise<void>;
 }
 
 /** A complete, validated plan: every text computed, nothing written. */
@@ -984,7 +997,10 @@ export async function planRelocation(
       const line = found.get(entryId(o.entry, m.join))?.get(o.key);
       if (line !== undefined) lines.set(lineId(o.page, m.file, o.key), line);
     }
-    if (m.created || text !== before) writes.push({ path: m.absPath, text, kind: "manifest" });
+    if (m.created || text !== before) {
+      // A created manifest's path does not exist: planning refuses one that does (U6).
+      writes.push({ path: m.absPath, text, kind: "manifest", before: m.created ? null : before });
+    }
   }
 
   // ---- Config text ---------------------------------------------------------------
@@ -1003,13 +1019,13 @@ export async function planRelocation(
     }
     const text = editConfig(target.text, model, configSource(target.path, ctx.cwd));
     verifyConfig(target.text, text, finalCollections, configSource(target.path, ctx.cwd));
-    writes.push({ path: target.path, text, kind: "config" });
+    writes.push({ path: target.path, text, kind: "config", before: target.disk });
     configCreated = target.text === null;
   }
 
   for (const page of orderedPages()) {
     if (page.text !== undefined && page.text !== page.content) {
-      writes.push({ path: page.absPath, text: page.text, kind: "page" });
+      writes.push({ path: page.absPath, text: page.text, kind: "page", before: page.content });
     }
   }
 
@@ -1159,7 +1175,8 @@ async function readManifestText(m: ManifestRef): Promise<string> {
 const entryId = (entry: string, join: string): string =>
   join === PATH_JOIN ? toPosix(entry).replace(/^\.\//, "").replace(/\/+/g, "/") : entry;
 /** A move's line, keyed by page label, manifest and key. */
-// NUL separates the parts: unambiguous because no supported OS allows NUL in a file path.
+// NUL separates the parts, which assumes none of them holds a NUL. No supported OS allows one
+// in a page label or manifest path, and YAML frontmatter does not produce one in a key in practice.
 const lineId = (page: string, manifest: string, key: string): string => `${page}\0${manifest}\0${key}`;
 
 /** Entry -> key -> 1-based line of the key, in a manifest's text. */
@@ -1183,34 +1200,40 @@ function keyLines(text: string, join: string): Map<string, Map<string, number>> 
   return out;
 }
 
-/** The config file a plan edits: the run's, else the family file at the git root or cwd. */
+/**
+ * The config file a plan edits: the run's, else the family file at the git
+ * root or cwd. `text` is what the edit starts from; `disk` is what the file
+ * holds now, or null when there is no file.
+ */
 async function configTarget(
   ctx: RelocationContext,
   configDir: string,
-): Promise<{ path: string; text: string | null }> {
+): Promise<{ path: string; text: string | null; disk: string | null }> {
   if (ctx.configPath !== undefined) {
     // Re-read rather than trust discovery's copy: an edit made since must not be written over.
     // Only a file removed since falls back to that copy; any other failure is refused.
     try {
-      return { path: ctx.configPath, text: await readFile(ctx.configPath, "utf8") };
+      const text = await readFile(ctx.configPath, "utf8");
+      return { path: ctx.configPath, text, disk: text };
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
         throw new DocmetaError(
           `Config file ${configSource(ctx.configPath, ctx.cwd)} could not be read: ${errorMessage(err)}`,
         );
       }
-      return { path: ctx.configPath, text: ctx.configFile?.text ?? null };
+      return { path: ctx.configPath, text: ctx.configFile?.text ?? null, disk: null };
     }
   }
   for (const name of [...FAMILY_CONFIG_NAMES, ...MOOSE_CONFIG_NAMES]) {
     const path = join(configDir, name);
     try {
-      return { path, text: await readFile(path, "utf8") };
+      const text = await readFile(path, "utf8");
+      return { path, text, disk: text };
     } catch {
       // Not this one.
     }
   }
-  return { path: join(configDir, FAMILY_CONFIG_NAMES[0] ?? "manni.config.yaml"), text: null };
+  return { path: join(configDir, FAMILY_CONFIG_NAMES[0] ?? "manni.config.yaml"), text: null, disk: null };
 }
 
 /** The config text with the model's changes, comments and key order kept. */
@@ -1429,12 +1452,76 @@ function buildResult(input: {
  * holds) declare what the config now declares, a created collection is
  * appended to both lists, and a created config sets `configDir` and
  * `configPath`. Returns the report with each manifest line.
+ *
+ * The run is all or nothing, as far as the disk allows. A file that changed
+ * since planning is refused before anything is written. A write that fails
+ * puts every file already written back as planning found it, removing the
+ * ones this run created, and the context is left untouched. Without that, a
+ * value leaving a manifest could be in neither the manifest nor the page.
+ *
+ * Throws `DocmetaError` for a changed or unreadable file and for a failed
+ * write, naming any file that could not be put back.
  */
 export async function applyRelocation(
   ctx: RelocationContext,
   plan: RelocationPlan,
+  io: RelocationIo = {},
 ): Promise<RelocateResult> {
-  for (const w of plan.writes) await writeFileAtomic(w.path, w.text);
+  const write = io.write ?? ((path: string, text: string) => writeFileAtomic(path, text));
+  const remove = io.remove ?? ((path: string) => unlink(path));
+  const label = (w: RelocationWrite): string =>
+    w.kind === "config" ? configSource(w.path, ctx.cwd) : reported(w.path, ctx.base);
+
+  for (const w of plan.writes) {
+    let now: string | null;
+    try {
+      now = await readFile(w.path, "utf8");
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+        throw new DocmetaError(`${label(w)} could not be read: ${errorMessage(err)}`);
+      }
+      now = null;
+    }
+    if (now !== w.before) {
+      throw new DocmetaError(
+        `${label(w)} changed after the relocation was planned, so nothing was written. Run the command again.`,
+      );
+    }
+  }
+
+  // Put back what `done` wrote, last first, and word the error the run throws.
+  const rollBack = async (done: RelocationWrite[], head: string): Promise<DocmetaError> => {
+    const failed: { file: string; reason: string }[] = [];
+    for (const w of [...done].reverse()) {
+      try {
+        if (w.before === null) await remove(w.path);
+        else await write(w.path, w.before);
+      } catch (err) {
+        failed.push({ file: label(w), reason: errorMessage(err) });
+      }
+    }
+    const [first] = failed;
+    if (first === undefined) {
+      if (done.length === 0) return new DocmetaError(`${head} Nothing was changed.`);
+      const files = done.length === 1 ? "the file already written was" : `the ${String(done.length)} files already written were`;
+      return new DocmetaError(`${head} Nothing was changed: ${files} restored.`);
+    }
+    const one = failed.length === 1;
+    return new DocmetaError(
+      `${head} The run was rolled back, but ${list(failed.map((f) => f.file))} could not be restored: ${first.reason}. Restore ${one ? "it" : "them"} from version control.`,
+    );
+  };
+
+  const written: RelocationWrite[] = [];
+  for (const w of plan.writes) {
+    try {
+      await write(w.path, w.text);
+    } catch (err) {
+      throw await rollBack(written, `Could not write ${label(w)}: ${errorMessage(err)}.`);
+    }
+    written.push(w);
+  }
+
   if (plan.writes.some((w) => w.kind === "config")) {
     const narrowed = ctx.collections.length < ctx.declaredCollections.length;
     for (const next of plan.collections) {

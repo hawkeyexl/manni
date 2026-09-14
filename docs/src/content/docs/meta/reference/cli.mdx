@@ -1052,7 +1052,9 @@ root, else the working directory. Config edits keep comments and key order.
 A change to a manifest's `keys:` moves that key for **every** page in the
 collection, including pages outside the paths you named. The output says how
 many. A field join's own field never moves. When the page and the manifest
-both hold a value and the two agree, the copy on the wrong side is dropped.
+both hold a value and the two agree, the copy on the wrong side is dropped. If
+a write fails, relocate puts back every file it already wrote, so the run
+lands whole or not at all.
 
 ### Arguments
 
@@ -1143,6 +1145,9 @@ for an operational error:
 | A format other than `pretty` or `json` | `manni: relocate --format must be pretty or json; got "sarif".` |
 | The manifest path to create exists and is not declared | `manni: site.metadata.yaml already exists and is not a manifest of collection site; declare it under externalMetadata, or move it.` |
 | No paths and no collections | ``manni: No files to relocate. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.`` |
+| A file changed between planning and writing, for example while a writer's prompt waited | `manni: docs/install.md changed after the relocation was planned, so nothing was written. Run the command again.` |
+| A write failed, and every file already written was put back | `manni: Could not write docs/faq.md: <reason>. Nothing was changed: the 2 files already written were restored.` |
+| A write failed, and a file could not be put back | `manni: Could not write docs/faq.md: <reason>. The run was rolled back, but manni.config.yaml could not be restored: <reason>. Restore it from version control.` |
 
 ### Examples
 
