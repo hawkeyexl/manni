@@ -229,6 +229,14 @@ export interface DerivedField {
    * reports it, when one does. `derive` writes there, never into the page.
    */
   manifest?: string;
+  /**
+   * Proposal 0047: the manifest a field other than `provenance` is written
+   * into, as the run reports it, when a manifest of the page's collections
+   * owns the key. Absent when the value goes to the page.
+   */
+  destination?: string;
+  /** The 1-based line of the key in `destination` after the write. Absent under `dryRun` and `check`. */
+  destinationLine?: number;
 }
 
 /**
@@ -284,17 +292,21 @@ export function compareDerived(
  * field that is `stale` or `unset`. Current and unknown fields file nothing.
  *
  * `lineFor` is the document's own pointer lookup, so a finding lands on the
- * line the asserted key sits on; an unset field has no line.
+ * line the asserted key sits on; an unset field has no line. `locate` answers
+ * for a value a manifest supplied (proposal 0047): the finding then names the
+ * manifest and its line, as every other manifest finding does.
  */
 export function staleFindings(
   fields: readonly DerivedField[],
   lineFor: (pointer: string) => number | undefined,
+  locate?: (pointer: string) => { file: string; line?: number } | undefined,
 ): FieldError[] {
   const findings: FieldError[] = [];
   for (const f of fields) {
     if (f.status !== "stale" && f.status !== "unset") continue;
     const instancePath = `/${escapePointerSegment(f.field)}`;
-    const line = lineFor(instancePath);
+    const at = locate?.(instancePath);
+    const line = at !== undefined ? at.line : lineFor(instancePath);
     const says = `${f.source ?? "a source"} says ${fmt(f.derived)}`;
     const trail = f.evidence === undefined ? "" : ` (${f.evidence})`;
     const head =
@@ -307,6 +319,7 @@ export function staleFindings(
       subject: f.field,
       instancePath,
       message: `${head}; ${says}${trail} — run manni meta derive`,
+      ...(at !== undefined ? { file: at.file } : {}),
       ...(line !== undefined ? { line } : {}),
     });
   }

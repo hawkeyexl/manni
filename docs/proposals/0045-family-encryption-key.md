@@ -1,6 +1,6 @@
 # 0045: a family encryption key: `encryptionKey:`, `manni key`, and `x-manni-encrypt`
 
-- **Status:** Implemented (#17)
+- **Status:** Implemented (#17); superseded in part by [0047](0047-field-location.md)
 - **Serves:** Three journeys.
   - Sara · S1, "Define our metadata standard as a schema". Her standard can
     require a field whose value never appears in plain text.

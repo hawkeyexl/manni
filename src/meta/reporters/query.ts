@@ -113,54 +113,71 @@ function renderChanges(
   opts: QueryReportOptions,
 ): string {
   const lines = changes.map((ch) => {
-    if ("config" in ch) {
-      return `${c.dim(`config ${ch.file}:`)} ${ch.key}: ${cellFrom(ch.from)} -> ${cell(ch.to)}`;
-    }
-    if ("schema" in ch) {
-      const fork = ch.forkedFrom ? ` ${c.dim(`(forked from ${ch.forkedFrom})`)}` : "";
-      if (ch.op === "rename") {
-        return `${c.dim(`schema ${ch.file}:`)} ${ch.key} -> ${ch.renamedTo ?? ch.key}${fork}`;
-      }
-      if (ch.op === "drop") {
-        return `${c.dim(`schema ${ch.file}:`)} - ${ch.key}${fork}`;
-      }
-      // The whole resulting property, format and enum included, so a
-      // near-miss (`DUE-DATE` mapping to nothing) is visible as an
-      // unconstrained `+ key` before anything is written (0028).
-      const detail = [
-        ch.type,
-        ch.format !== undefined ? `format ${ch.format}` : undefined,
-        // JSON spellings, so the numeric enum [1] and the string enum ["1"]
-        // read as the distinct properties they are.
-        ch.enum !== undefined
-          ? `enum [${ch.enum.map((v) => JSON.stringify(v)).join(", ")}]`
-          : undefined,
-        ch.required ? "required" : undefined,
-      ]
-        .filter(Boolean)
-        .join(", ");
-      return `${c.dim(`schema ${ch.file}:`)} + ${ch.key}${detail ? ` (${detail})` : ""}${fork}`;
-    }
-    if ("cleared" in ch) {
-      return `${c.dim(`${ch.file}:`)} (frontmatter removed: ${Object.keys(ch.from).join(", ")})`;
-    }
-    if ("created" in ch) {
-      const kv = Object.entries(ch.to)
-        .map(([k, v]) => `${k}=${cell(v)}`)
-        .join(", ");
-      return `${c.dim(`${ch.file}:`)} (created: ${kv})`;
-    }
-    if ("renamed" in ch) {
-      return `${c.dim(`${ch.file} ->`)} ${ch.renamed} ${c.dim("(moved)")}`;
-    }
-    if ("renamedFrom" in ch) {
-      return `${c.dim(`${ch.file}:`)} ${ch.renamedFrom} -> ${ch.key} ${c.dim("(key renamed)")}`;
-    }
-    if ("deleted" in ch) {
-      return `${c.dim(`${ch.file}:`)} ${ch.key}: ${cellFrom(ch.from)} -> (deleted)`;
-    }
-    return `${c.dim(`${ch.file}:`)} ${ch.key}: ${cellFrom(ch.from)} -> ${cell(ch.to)}`;
+    const line = changeLine(ch, c);
+    // 0047: a change that lands in a manifest names it.
+    return ch.manifest === undefined ? line : `${line}  ${c.dim(`[${ch.manifest}]`)}`;
   });
+  return finish(lines, changes, c, opts);
+}
+
+/** One change as its report line, before any manifest suffix. */
+function changeLine(ch: QueryChange, c: Colors): string {
+  if ("config" in ch) {
+    return `${c.dim(`config ${ch.file}:`)} ${ch.key}: ${cellFrom(ch.from)} -> ${cell(ch.to)}`;
+  }
+  if ("schema" in ch) {
+    const fork = ch.forkedFrom ? ` ${c.dim(`(forked from ${ch.forkedFrom})`)}` : "";
+    if (ch.op === "rename") {
+      return `${c.dim(`schema ${ch.file}:`)} ${ch.key} -> ${ch.renamedTo ?? ch.key}${fork}`;
+    }
+    if (ch.op === "drop") {
+      return `${c.dim(`schema ${ch.file}:`)} - ${ch.key}${fork}`;
+    }
+    // The whole resulting property, format and enum included, so a
+    // near-miss (`DUE-DATE` mapping to nothing) is visible as an
+    // unconstrained `+ key` before anything is written (0028).
+    const detail = [
+      ch.type,
+      ch.format !== undefined ? `format ${ch.format}` : undefined,
+      // JSON spellings, so the numeric enum [1] and the string enum ["1"]
+      // read as the distinct properties they are.
+      ch.enum !== undefined
+        ? `enum [${ch.enum.map((v) => JSON.stringify(v)).join(", ")}]`
+        : undefined,
+      ch.required ? "required" : undefined,
+    ]
+      .filter(Boolean)
+      .join(", ");
+    return `${c.dim(`schema ${ch.file}:`)} + ${ch.key}${detail ? ` (${detail})` : ""}${fork}`;
+  }
+  if ("cleared" in ch) {
+    return `${c.dim(`${ch.file}:`)} (frontmatter removed: ${Object.keys(ch.from).join(", ")})`;
+  }
+  if ("created" in ch) {
+    const kv = Object.entries(ch.to)
+      .map(([k, v]) => `${k}=${cell(v)}`)
+      .join(", ");
+    return `${c.dim(`${ch.file}:`)} (created: ${kv})`;
+  }
+  if ("renamed" in ch) {
+    return `${c.dim(`${ch.file} ->`)} ${ch.renamed} ${c.dim("(moved)")}`;
+  }
+  if ("renamedFrom" in ch) {
+    return `${c.dim(`${ch.file}:`)} ${ch.renamedFrom} -> ${ch.key} ${c.dim("(key renamed)")}`;
+  }
+  if ("deleted" in ch) {
+    return `${c.dim(`${ch.file}:`)} ${ch.key}: ${cellFrom(ch.from)} -> (deleted)`;
+  }
+  return `${c.dim(`${ch.file}:`)} ${ch.key}: ${cellFrom(ch.from)} -> ${cell(ch.to)}`;
+}
+
+/** The count and verdict line after the changes. */
+function finish(
+  lines: string[],
+  changes: QueryChange[],
+  c: Colors,
+  opts: QueryReportOptions,
+): string {
   const n = changes.length;
   // Deliberately counts every file the run touches — schema and config
   // included: they are writes the user is approving, and a pure DDL edit

@@ -1,0 +1,11 @@
+# derive (0047): two collections, and notes/stray.md is in neither.
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+  - name: api
+    paths: ["api/**/*.md"]
+meta:
+  schemas: [./steward.schema.json]
+  derive:
+    fields: [owner]
+    sources: [git, codeowners]

@@ -26,6 +26,7 @@ import {
   type ValidationResult,
 } from "./types.js";
 import { runValidate } from "./commands/validate.js";
+import { offerRelocation } from "./commands/validate-offer.js";
 import { runGet } from "./commands/get.js";
 import { runQuery } from "./commands/query.js";
 import {
@@ -69,6 +70,12 @@ import {
   isDeriveFormat,
   renderDerive,
 } from "./reporters/derive.js";
+import { relocateFailed, runRelocate } from "./commands/relocate.js";
+import {
+  RELOCATE_FORMATS,
+  isRelocateFormat,
+  renderRelocate,
+} from "./reporters/relocate.js";
 import { renderGet } from "./reporters/get.js";
 import { renderQuery, renderQueryCsv } from "./reporters/query.js";
 import { renderInfer } from "./reporters/infer.js";
@@ -636,6 +643,22 @@ interface DeriveCliOptions extends InputCliOptions {
   generatedBy?: string;
 }
 
+/**
+ * Not `RunCliOptions`: `relocate` declares no `-q/--quiet` and no `--offline`.
+ * It reads every page it moves, so there is nothing quiet to hide, and it
+ * takes `-s` for the marks alone.
+ */
+interface RelocateCliOptions extends InputCliOptions {
+  /** `--fields <list>`; the command splits it. */
+  fields?: string;
+  /** `-s, --schema <ref>`, repeatable — commander's default value is `[]`. */
+  schema: string[];
+  dryRun?: boolean;
+  allowEmpty?: boolean;
+  /** `--no-gitignore`; commander's `true` default, see `explicitFalse`. */
+  gitignore: boolean;
+}
+
 interface SchemasCliOptions {
   format: string;
 }
@@ -847,6 +870,26 @@ export function buildProgram(): Command {
             process.stdout.write(`${text}\n`);
           }
           process.exitCode = summary.failed > 0 ? 1 : 0;
+          // P2 (proposal 0047): on a terminal, after the report, offer to move
+          // what the location findings named. On stderr, so the report stays
+          // machine-readable, and the exit code stays the report's. Never with
+          // stdin among the inputs: it is not a terminal to ask on.
+          await offerRelocation({
+            results,
+            inputs: paths,
+            cliSchemas: options.schema,
+            as: options.as,
+            collections: options.collection,
+            ...configOption(options.config),
+            respectGitignore: explicitFalse(options.gitignore),
+            offline: options.offline ? true : undefined,
+            confirm: paths.includes(STDIN) ? undefined : terminalConfirm(),
+            output: process.stderr,
+            color: shouldColor({
+              noColor: (command.parent ?? command).opts().color === false,
+              isTTY: process.stderr.isTTY,
+            }),
+          });
         } catch (err) {
           fail(err);
         }
@@ -1169,7 +1212,16 @@ export function buildProgram(): Command {
             onNotice: notice,
             // A write to a column marked x-manni-encrypt with no key asks
             // for one on a terminal, and refuses off one (proposal 0045).
+            // The same Confirm asks P1 (proposal 0047).
             confirm: terminalConfirm(),
+            // An accepted P1 offer prints relocate's report: on stdout
+            // beside a pretty report, on stderr when stdout must parse.
+            onRelocated: (result) => {
+              const text = renderRelocate(result, "pretty", {
+                color: format === "pretty" && resolveColor(command.parent ?? command),
+              });
+              (format === "pretty" ? process.stdout : process.stderr).write(`${text}\n`);
+            },
           });
           // With SQL, the rows own stdout and the export is a diagnostic;
           // export-only, the export summary IS the report.
@@ -1391,8 +1443,17 @@ export function buildProgram(): Command {
           includeContent: usingStdin,
           // A field marked x-manni-encrypt with no key asks for one on a
           // terminal, and refuses off one (proposal 0045). Reading the page
-          // from stdin leaves no terminal to ask on.
+          // from stdin leaves no terminal to ask on. The same Confirm asks
+          // P1 (proposal 0047).
           confirm: usingStdin ? undefined : terminalConfirm(),
+          // An accepted P1 offer prints relocate's report: on stdout beside a
+          // pretty report, on stderr when stdout must parse.
+          onRelocated: (result) => {
+            const text = renderRelocate(result, "pretty", {
+              color: format === "pretty" && resolveColor(command.parent ?? command),
+            });
+            (format === "pretty" ? process.stdout : process.stderr).write(`${text}\n`);
+          },
         });
 
         const color = resolveColor(command.parent ?? command);
@@ -1519,8 +1580,17 @@ export function buildProgram(): Command {
           respectGitignore: explicitFalse(options.gitignore),
           onNotice: notice,
           // A field its schema marks x-manni-encrypt (proposal 0045) with no
-          // key yet: asked on a terminal, refused off one.
+          // key yet: asked on a terminal, refused off one. The same Confirm
+          // asks P1 (proposal 0047).
           confirm: terminalConfirm(),
+          // An accepted P1 offer prints relocate's report: on stdout beside a
+          // pretty report, on stderr when stdout must parse.
+          onRelocated: (result) => {
+            const text = renderRelocate(result, "pretty", {
+              color: format === "pretty" && resolveColor(command.parent ?? command),
+            });
+            (format === "pretty" ? process.stdout : process.stderr).write(`${text}\n`);
+          },
         });
 
         const text = renderDerive(run, format, {
@@ -1534,6 +1604,90 @@ export function buildProgram(): Command {
         }
         // A file error fails any run; a finding fails `--check`. See `deriveFailed`.
         process.exitCode = deriveFailed(run) ? 1 : 0;
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  program
+    .command("relocate")
+    .description(
+      "Move each value to where its schema's x-manni-location and the config's manifests say it belongs",
+    )
+    .argument(
+      "[paths...]",
+      "files, directories, or globs to relocate (stdin is refused)",
+    )
+    .option(
+      "--fields <list>",
+      "comma-separated fields to move; each must be marked x-manni-location or manifest-owned",
+    )
+    .option(
+      "--collection <name>",
+      "configured collection to run over; repeatable",
+      collect,
+      [],
+    )
+    .option(
+      "-s, --schema <ref>",
+      "schema to judge preferences against; repeatable; overrides $schema/config",
+      collect,
+      [],
+    )
+    .option("--dry-run", "report what would move and be created, and write nothing")
+    .option(
+      "-f, --format <format>",
+      `output: ${RELOCATE_FORMATS.join(" | ")}`,
+      "pretty",
+    )
+    .option("--ext <list>", "comma-separated extensions for directory walks")
+    .option("--exclude <glob>", "glob to exclude; repeatable", collect, [])
+    .option("--as <format>", "force an input format (e.g. markdown, mdx)")
+    .option("-c, --config <path>", "path to a manni config file")
+    .option("--no-config", "ignore any discovered config file (refused: relocate writes the config)")
+    .option("--allow-empty", "treat zero matched files as success")
+    .option("--no-gitignore", "relocate files .gitignore covers")
+    .addHelpText(
+      "after",
+      [
+        "",
+        "Examples:",
+        "  manni meta relocate                              # every collection, as config declares it",
+        "  manni meta relocate --dry-run                    # what would move and be created",
+        "  manni meta relocate docs/install.md --fields owner",
+        "  manni meta relocate docs/ guides/intro.md        # no collections yet: creates collection default",
+        "  manni meta relocate -f json --dry-run            # the scripting form",
+      ].join("\n"),
+    )
+    .action(async (paths: string[], options: RelocateCliOptions, command: Command) => {
+      try {
+        const format = options.format;
+        if (!isRelocateFormat(format)) {
+          throw new DocmetaError(
+            `relocate --format must be pretty or json; got "${format}".`,
+          );
+        }
+        const result = await runRelocate({
+          inputs: paths,
+          fields: options.fields ? splitList(options.fields) : undefined,
+          collections: options.collection,
+          cliSchemas: options.schema,
+          dryRun: Boolean(options.dryRun),
+          exts: options.ext ? splitList(options.ext) : undefined,
+          exclude: options.exclude,
+          as: options.as,
+          ...configOption(options.config),
+          onConfigLoaded: reportConfig(format === "pretty", process.cwd()),
+          allowEmpty: options.allowEmpty ? true : undefined,
+          respectGitignore: explicitFalse(options.gitignore),
+          onNotice: notice,
+        });
+        const text = renderRelocate(result, format, {
+          color: resolveColor(command.parent ?? command),
+        });
+        process.stdout.write(`${text}\n`);
+        // A value left on the wrong side is work undone. See `relocateFailed`.
+        process.exitCode = relocateFailed(result) ? 1 : 0;
       } catch (err) {
         fail(err);
       }

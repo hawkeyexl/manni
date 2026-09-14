@@ -381,18 +381,48 @@ Constraints on a DML statement:
   `_path` already loaded is refused by the table's primary key.
 - **A write cannot touch `<stdin>`**, because there is no file behind it.
 - **A key a [manifest](/manni/meta/reference/configuration/#external-metadata)
-  owns is read-only.** Its value is in every row. A set, remove, rename,
-  `INSERT` or `DELETE` that would touch it refuses by file and key, before any
-  file is written. The refusal reads `"docs/auth.md": "jira" is owned by manifest
-  docs-meta.yaml; edit the manifest instead.` A document a path-joined
-  manifest names cannot be moved out from under its entry either. That
-  refusal reads `"docs/auth.md": manifest docs-meta.yaml names it; rename the
-  manifest entry first.` A manifest
-  [joined by a field](/manni/meta/reference/configuration/#joining-by-a-field)
-  allows the rename, because the page carries its key with it. What it
-  refuses is an `UPDATE` of the join field on a document that has an entry.
-  That one reads `"docs/auth.md": "id" is the field manifest docs-meta.yaml
-  joins on, and this document has an entry; change the manifest first.`
+  owns is written to the manifest.** Its value is in every row, and a write
+  to it lands in the document's manifest entry, not the page. The manifest
+  edits are planned with the page edits, so a refusal anywhere in the
+  statement writes nothing.
+
+  | Statement | On a manifest-owned key |
+  |---|---|
+  | `UPDATE docs SET k = v` | Sets `k` in the document's entry, creating the entry if it is missing. |
+  | `UPDATE docs SET k = NULL` | Removes `k` from the entry, and the entry once it is empty. |
+  | `UPDATE docs SET k = explicit_null()` | Writes `k: null` in the entry. |
+  | `UPDATE docs SET b = a, a = NULL` | Carries the value across page and manifest, whichever side owns each name. |
+  | `UPDATE docs SET _path = '…'` | Renames the document's entry in a path-joined manifest. |
+  | `INSERT INTO docs …` | Owned keys go to a new entry, and the rest to the new page. |
+  | `DELETE FROM docs WHERE …` | Strips the block and removes the document's entry. |
+  | `ALTER TABLE docs DROP COLUMN k` | Also removes `k` from each document's entry. `keys:` is unchanged. |
+
+  An encrypted column writes its ciphertext into the manifest. Three writes
+  still refuse, before any file is written:
+
+  - A key a URL manifest owns: `"owner" is owned by manifest
+    https://…/owners.yaml, which is fetched and cannot be written; set it in
+    that repository.`
+  - `ALTER TABLE … RENAME COLUMN` of an owned key, because the manifest's
+    `keys:` would need renaming: `"docs/auth.md": "jira" is owned by manifest
+    docs-meta.yaml; edit the manifest instead.`
+  - An `UPDATE` of the join field on a document that has an entry in a
+    manifest [joined by a field](/manni/meta/reference/configuration/#joining-by-a-field):
+    `"docs/auth.md": "id" is the field manifest docs-meta.yaml joins on, and
+    this document has an entry; change the manifest first.` A `_path` move is
+    fine there, because the page carries its join value with it. A write to
+    an owned key on a page with no join value refuses too:
+    `"docs/new.md": "jira" is owned by manifest docs-meta.yaml, which joins
+    on "id", and this document has no id; set id first.`
+- **A key its schema prefers in external metadata**, marked
+  `x-manni-location: external`, with no manifest to hold it, is offered one.
+  On a terminal the statement asks once per collection whether to run
+  [relocate](/manni/meta/reference/cli/#meta-relocate) for those keys, and on
+  yes the write lands in the manifest. Off a terminal, on a no, or under
+  `--dry-run`, the value is written to the page and one warning per
+  collection says so: `manni: wrote reviewer to 2 pages in collection site;
+  the schema prefers external metadata, and no manifest owns it. Run
+  manni meta relocate to move it.`
 - **A key config [`derive.fields`](/manni/meta/reference/configuration/#derive)
   manages is read-only.** Its value is computed from evidence, and
   `manni meta derive` is the one command that writes it. A `SET`, remove,
@@ -712,7 +742,10 @@ An edit's `json` output is an array of change objects. Every object carries
   `type`/`format`/`enum`/`required`).
 - A config side effect (`config`, `key`, `from`, `to`).
 
-In any of these, `from` is omitted when the file had no previous value.
+In any of these, `from` is omitted when the file had no previous value. A
+change that lands in an external-metadata manifest also carries `manifest`,
+the manifest as the run reports it. The `pretty` line ends with the same name
+in brackets: `docs/auth.md: owner: (unset) -> platform  [docs-meta.yaml]`.
 
 ```json
 [
@@ -722,6 +755,13 @@ In any of these, `from` is omitted when the file had no previous value.
     "from": "Beta",
     "to": "X",
     "written": false
+  },
+  {
+    "file": "docs/auth.md",
+    "key": "owner",
+    "to": "platform",
+    "written": false,
+    "manifest": "docs-meta.yaml"
   }
 ]
 ```

@@ -1760,7 +1760,7 @@ describe("runFill — meta-provenance (0046)", () => {
     });
   });
 
-  it("does not write an entry a manifest owns for this page's collection", async () => {
+  it("writes the entry into the manifest that owns it for this page's collection (0047)", async () => {
     await cp(join(here, "fixtures", "fill", "manifest-owned"), dir, {
       recursive: true,
     });
@@ -1781,13 +1781,22 @@ describe("runFill — meta-provenance (0046)", () => {
     const byFile = Object.fromEntries(results.map((r) => [r.file, r]));
     expect(byFile["docs/limits.md"]?.error).toBeUndefined();
     expect(byFile["docs/limits.md"]?.metaProvenance).toEqual({
-      written: false,
-      skipReason: "manifest-owned",
-      manifest: "private/meta.yaml",
+      written: true,
+      destination: "private/meta.yaml",
+      entry: { "generated-by": MODEL, fields: ["/title"], confidence: { "/title": 0.9 } },
     });
     const limits = await readFile(join(dir, "docs", "limits.md"), "utf8");
     expect(limits).toContain("title: Limits");
     expect(limits).not.toContain("meta-provenance");
+    // Merged into the manifest's own list: the other model's entry stays.
+    expect(parseYaml(await readFile(join(dir, "private", "meta.yaml"), "utf8"))).toEqual({
+      "docs/limits.md": {
+        "meta-provenance": [
+          { "generated-by": "someone-else", fields: ["/type"] },
+          { "generated-by": MODEL, fields: ["/title"], confidence: { "/title": 0.9 } },
+        ],
+      },
+    });
     // The manifest belongs to `pages`; a page outside it records as usual.
     expect(byFile["other/page.md"]?.metaProvenance).toMatchObject({ written: true });
     expect(summary.errors).toBe(0);

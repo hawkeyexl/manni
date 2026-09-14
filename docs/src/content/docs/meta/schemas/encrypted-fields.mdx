@@ -193,8 +193,8 @@ Using manni.config.yaml (.)
 | `sarif` | `"ruleId": "encrypted:plain/encrypted"` at `"level": "error"`. |
 | `junit` | `<failure type="encrypted:plain/encrypted" message="/owner /owner holds a plain value; its schema marks it x-manni-encrypt. (line 3)"/>` |
 
-Every one of them is an error, because `manni meta validate` emits no other
-severity. [Severity across the
+Every one of them is an error. The only warnings `manni meta validate` emits
+are the `location:external` and `location:page` findings. [Severity across the
 family](/manni/meta/reference/output-and-exit-codes/#severity-across-the-family)
 says which tools emit the lower two.
 

@@ -409,10 +409,29 @@ describe("derive: a field a collection's manifest owns (0041)", () => {
     "",
   ];
 
-  it("rejects it at load, naming the collection and the manifest", async () => {
+  it("accepts a managed field a local manifest owns: the manifest is where derive writes it (0047)", async () => {
     const root = await repo(withFields("[created, owner]"));
+    const loaded = await loadConfig(undefined, root);
+    expect(loaded?.config.derive?.fields).toEqual(["created", "owner"]);
+  });
+
+  it("refuses a managed field a URL manifest owns, since a fetched manifest cannot be written (0047 M6)", async () => {
+    const root = await repo([
+      "collections:",
+      "  - name: pages",
+      '    paths: ["docs/**/*.md"]',
+      "    externalMetadata:",
+      "      - file: ./a.yaml",
+      "        keys: [jira]",
+      "      - file: https://example.com/owners.yaml",
+      "        keys: [owner]",
+      "meta:",
+      "  derive:",
+      "    fields: [created, owner]",
+      "",
+    ]);
     await expect(loadConfig(undefined, root)).rejects.toThrow(
-      'manni.config.yaml: meta.derive.fields[1] "owner" is owned by collections[1].externalMetadata[1] (./owners.yaml) — a managed field has one authority, and a manifest key already has one. Drop it from one side.',
+      'manni.config.yaml: meta.derive.fields[1] "owner" is owned by manifest https://example.com/owners.yaml, which is fetched and cannot be written; set it in that repository.',
     );
   });
 
@@ -433,7 +452,7 @@ describe("derive: a field a collection's manifest owns (0041)", () => {
     expect(loaded?.config.derive?.fields).toEqual(["created", "provenance"]);
   });
 
-  it("still refuses every other managed field beside an owned provenance", async () => {
+  it("accepts every managed field beside an owned provenance", async () => {
     const root = await repo([
       "collections:",
       "  - name: pages",
@@ -446,9 +465,8 @@ describe("derive: a field a collection's manifest owns (0041)", () => {
       "    fields: [provenance, owner]",
       "",
     ]);
-    await expect(loadConfig(undefined, root)).rejects.toThrow(
-      'manni.config.yaml: meta.derive.fields[1] "owner" is owned by collections[0].externalMetadata[0] (./private/provenance.yaml) — a managed field has one authority, and a manifest key already has one. Drop it from one side.',
-    );
+    const loaded = await loadConfig(undefined, root);
+    expect(loaded?.config.derive?.fields).toEqual(["provenance", "owner"]);
   });
 
   it("accepts a field no manifest owns", async () => {
@@ -457,16 +475,12 @@ describe("derive: a field a collection's manifest owns (0041)", () => {
     expect(loaded?.config.derive?.fields).toEqual(["created", "last-updated"]);
   });
 
-  it("rejects a command whose key a manifest owns, naming the collection and the manifest", async () => {
+  it("accepts a command whose key a local manifest owns", async () => {
     const root = await repo([
       "collections:",
-      "  - name: guides",
-      '    paths: ["guides/**/*.md"]',
       "  - name: pages",
       '    paths: ["docs/**/*.md"]',
       "    externalMetadata:",
-      "      - file: ./a.yaml",
-      "        keys: [jira]",
       "      - file: ./versions.yaml",
       "        keys: [verified-against]",
       "meta:",
@@ -476,8 +490,31 @@ describe("derive: a field a collection's manifest owns (0041)", () => {
       "        run: [./bin/version]",
       "",
     ]);
+    const loaded = await loadConfig(undefined, root);
+    expect(Object.keys(loaded?.config.derive?.commands ?? {})).toEqual(["verified-against"]);
+  });
+
+  it("refuses a command whose key a URL manifest owns", async () => {
+    const root = await repo([
+      "collections:",
+      "  - name: guides",
+      '    paths: ["guides/**/*.md"]',
+      "  - name: pages",
+      '    paths: ["docs/**/*.md"]',
+      "    externalMetadata:",
+      "      - file: ./a.yaml",
+      "        keys: [jira]",
+      "      - file: https://example.com/versions.yaml",
+      "        keys: [verified-against]",
+      "meta:",
+      "  derive:",
+      "    commands:",
+      "      verified-against:",
+      "        run: [./bin/version]",
+      "",
+    ]);
     await expect(loadConfig(undefined, root)).rejects.toThrow(
-      "manni.config.yaml: meta.derive.commands.verified-against is owned by collections[1].externalMetadata[1] (./versions.yaml) — a managed field has one authority, and a manifest key already has one. Drop it from one side.",
+      'manni.config.yaml: meta.derive.commands.verified-against is owned by manifest https://example.com/versions.yaml, which is fetched and cannot be written; set it in that repository.',
     );
   });
 });

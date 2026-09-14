@@ -1,0 +1,7 @@
+Using manni.config.yaml (.)
+Created site.metadata.yaml; collections[site].externalMetadata[0] owns owner, stakeholders, review-interval.
+docs/install.md
+    [36mowner          [39m  → site.metadata.yaml:2
+    [36mstakeholders   [39m  → site.metadata.yaml:3
+    [36mreview-interval[39m  → site.metadata.yaml:6
+1 file, 3 values moved to 1 manifest

@@ -1,5 +1,5 @@
 ---
-title: "manni:structure:1.0.0-proposal.1"
+title: "manni:structure:1.0.0-proposal.2"
 description: "The proposed structure vocabulary, covering what a page connects to, including products, concepts, and other pages."
 sidebar:
   order: 5
@@ -9,7 +9,7 @@ sidebar:
 :::caution[Proposal under review]
 Part of the [metadata vocabularies proposal](/manni/meta/proposals/frontmatter-vocabularies/),
 open for community review. Draft schema:
-[`docs/proposals/0023/schemas/structure/1.0.0-proposal.1.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/structure/1.0.0-proposal.1.json).
+[`docs/proposals/0023/schemas/structure/1.0.0-proposal.2.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/structure/1.0.0-proposal.2.json).
 :::
 
 **The question it answers: what does this page connect to?** This
@@ -19,16 +19,26 @@ generator does. There is no ordering, no parent, and no nav title here.
 
 ## Fields
 
-| Field | Type | Notes |
-|---|---|---|
-| `applies-to` | string or list | Flat product, variant, or version labels: `operator-1.4`, `kubernetes` |
-| `not-applicable-to` | string or list | The exclusion `applies-to` alone cannot state: `operator-1.4` yes, `operator-1.4-fips` no |
-| `concepts` | string or list | Controlled glossary terms. Core's `keywords` is free words; this is the curated list |
-| `prerequisites` | string or list | Pages, ids, or capabilities the reader needs first |
-| `next-steps` | string or list | Sensible follow-ons, unordered. Several are allowed, unlike the generator's single `next`. A more advanced page on the same topic goes here |
-| `related-pages` | string or list | Related pages, ids, or URLs. A site renders this list as "See also" |
+| Field | Type | Location | Notes |
+|---|---|---|---|
+| `applies-to` | string or list | `page` | Flat product, variant, or version labels: `operator-1.4`, `kubernetes` |
+| `not-applicable-to` | string or list | `page` | The exclusion `applies-to` alone cannot state: `operator-1.4` yes, `operator-1.4-fips` no |
+| `concepts` | string or list | `page` | Controlled glossary terms. Core's `keywords` is free words; this is the curated list |
+| `prerequisites` | string or list | `page` | Pages, ids, or capabilities the reader needs first |
+| `next-steps` | string or list | `page` | Sensible follow-ons, unordered. Several are allowed, unlike the generator's single `next`. A more advanced page on the same topic goes here |
+| `related-pages` | string or list | `page` | Related pages, ids, or URLs. A site renders this list as "See also" |
 
 Every field accepts one string or a non-empty list without duplicates.
+
+The Location column is the `x-manni-location` mark each field carries in
+`manni:structure:1.0.0-proposal.2`. `page` means the value belongs in the
+document's own metadata and is meant to reach delivered output. `external`
+means it belongs in the collection's external-metadata manifest. A field is
+`page` when a third-party or user-owned agent fetching the page would act on
+it. Every structure field passes that test, because each is context an agent
+assembles, or a link it follows, from one page to the next. See
+[field location](/manni/meta/schemas/field-location/) for how the marks are
+used.
 
 ## Example
 

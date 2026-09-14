@@ -1,0 +1,8 @@
+---
+title: Install
+description: Install manni and run it.
+owner: platform
+stakeholders: [ada, grace]
+review-interval: 90d
+---
+# Install

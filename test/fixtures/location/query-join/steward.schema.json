@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "x-manni-location": "page" },
+    "title": { "type": "string", "x-manni-location": "page" },
+    "owner": { "type": "string", "x-manni-location": "external" }
+  }
+}

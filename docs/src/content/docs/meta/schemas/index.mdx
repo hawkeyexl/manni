@@ -296,6 +296,21 @@ keep its value private](/manni/meta/schemas/encrypted-fields/) follows one such
 value through every command that touches it. [Put the key where every tool
 finds it](/manni/key/set-up/) settles where the key lives first.
 
+## Say where each field lives
+
+Some fields are for whoever fetches the page, and some only serve the people
+and the CI that maintain it. Mark a property `x-manni-location` to say which:
+
+```json title="schemas/page.json"
+"owner": { "type": "string", "x-manni-location": "external" }
+```
+
+`page` keeps a value in the document, and `external` keeps it in the
+collection's external-metadata manifest. `validate` warns about a value on the
+wrong side, and `manni meta relocate` moves it. [Keep maintainer metadata out
+of delivered pages](/manni/meta/schemas/field-location/) follows the mark
+through every command.
+
 ## Where to go next
 
 <CardGrid>

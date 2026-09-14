@@ -3,8 +3,8 @@
  * of an external-metadata manifest (proposal 0037), and change no other byte.
  *
  * `manni cite` keeps a page's `citations` in a manifest and is the first
- * writer of one. `meta fill` and `meta query` stay read-only on manifests and
- * never call this. It is text in, text out: the caller reads and writes the
+ * writer of one. Since proposal 0047, `meta query` routes a write to an
+ * owned key here too, and `renameManifestEntry` follows a `_path` move. It is text in, text out: the caller reads and writes the
  * file.
  *
  * The design is the one `frontmatter-write.ts` uses for TOML. The document is
@@ -327,6 +327,92 @@ export function removeManifestKey(
   const now: unknown = after.toJS({ maxAliasCount: 100 });
   const expected = kept.length === 0 ? null : Object.fromEntries(kept);
   if (!deepEqual(now ?? null, expected)) throw fail("Another value in the manifest would have changed.");
+  return { text: out };
+}
+
+/**
+ * Rename the document entry `options.entry` to `options.to` in the manifest
+ * `text`, and change no other byte: only the entry's key is replaced, so its
+ * values, comments and position stay. `meta query` uses it when a `_path`
+ * move renames a document a path-joined manifest names (proposal 0047). A
+ * manifest or entry that is absent is left as it was.
+ *
+ * Throws `DocmetaError` where `spliceManifestValue` would (invalid YAML, a top
+ * level that is not a mapping, an entry named twice), when `to` already has
+ * an entry, for a key written as an explicit `? key`, and for a result that
+ * does not read back with only the entry's name changed.
+ */
+export function renameManifestEntry(
+  text: string,
+  options: { entry: string; to: string; join?: string; file?: string },
+): { text: string } {
+  const { entry, to, file } = options;
+  const join = options.join ?? PATH_JOIN;
+  const at = (line?: number): string => {
+    const name = file === undefined ? "Manifest" : `Manifest ${file}`;
+    if (line === undefined) return name;
+    return file === undefined ? `${name} line ${String(line)}` : `${name}:${String(line)}`;
+  };
+  const lc = new LineCounter();
+  const doc = parseDocument(text, { lineCounter: lc, uniqueKeys: false });
+  const problem = doc.errors[0];
+  if (problem) {
+    throw new DocmetaError(`${at()} is not valid YAML: ${problem.message}`);
+  }
+  const keyLine = (node: unknown): number | undefined => {
+    const r = rangeOf(node);
+    return r ? lc.linePos(r[0]).line : undefined;
+  };
+  const root = doc.contents;
+  if (root === null || (isScalar(root) && root.value === null)) return { text };
+  if (!isMap(root)) {
+    throw new DocmetaError(
+      `${at()}: the manifest must be a mapping from document ${join === PATH_JOIN ? "path" : `"${join}"`} to owned keys.`,
+    );
+  }
+  const same =
+    join === PATH_JOIN
+      ? (a: string, b: string) => posix.normalize(a) === posix.normalize(b)
+      : (a: string, b: string) => a === b;
+  const [first, second] = root.items.filter((p) => same(keyString(p.key), entry));
+  if (first && second) {
+    throw new DocmetaError(
+      `${at(keyLine(second.key))}: "${keyString(second.key)}" is named twice (first at line ${String(keyLine(first.key) ?? "?")}). Merge the two entries into one.`,
+    );
+  }
+  if (first === undefined) return { text };
+  const taken = root.items.find((p) => same(keyString(p.key), to));
+  if (taken !== undefined) {
+    throw new DocmetaError(
+      `${at(keyLine(taken.key))}: "${keyString(taken.key)}" already has an entry, so "${keyString(first.key)}" cannot be renamed to it. Merge the two entries into one.`,
+    );
+  }
+  const spelled = keyString(first.key);
+  const r = rangeOf(first.key);
+  const end = contentEnd(text, first.key);
+  if (!r || end === undefined || colonEnd(text, first) === undefined) {
+    throw new DocmetaError(
+      `${at(keyLine(first.key))}: "${spelled}" is written in a form this writer does not edit. Write it as "${spelled}: …".`,
+    );
+  }
+  const quoted = isScalar(first.key) && (first.key.type === "QUOTE_DOUBLE" || first.key.type === "QUOTE_SINGLE");
+  const plain = stringify(to, { lineWidth: 0 }).replace(/\n$/, "");
+  const insert = quoted || plain.includes("\n") ? JSON.stringify(to) : plain;
+  const out = text.slice(0, r[0]) + insert + text.slice(end);
+
+  const after = parseDocument(out, { uniqueKeys: false });
+  const fail = (why: string) =>
+    new DocmetaError(
+      `${at()}: renaming "${spelled}" to "${to}" did not read back as renamed, so nothing was written. ${why}`,
+    );
+  if (after.errors[0]) throw fail(`The result is not valid YAML: ${after.errors[0].message}`);
+  const was: unknown = doc.toJS({ maxAliasCount: 100 });
+  const wasRoot = isRecord(was) ? was : {};
+  const expected = Object.fromEntries(
+    Object.entries(wasRoot).map(([k, v]) => [k === spelled ? to : k, v]),
+  );
+  const now: unknown = after.toJS({ maxAliasCount: 100 });
+  if (!deepEqual(now, expected)) throw fail("Another value in the manifest would have changed.");
   return { text: out };
 }
 

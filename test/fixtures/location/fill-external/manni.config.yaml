@@ -1,0 +1,6 @@
+# fill (0047): owner prefers external metadata and no manifest owns it.
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+meta:
+  schemas: [./steward.schema.json]

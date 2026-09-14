@@ -1,5 +1,5 @@
 ---
-title: "manni:ai-context:1.0.0-proposal.1"
+title: "manni:ai-context:1.0.0-proposal.3"
 description: "The proposed AI-context vocabulary: how machines made a page, and how they may use it."
 sidebar:
   order: 6
@@ -9,25 +9,39 @@ sidebar:
 :::caution[Proposal under review]
 Part of the [metadata vocabularies proposal](/manni/meta/proposals/frontmatter-vocabularies/),
 open for community review. Draft schema:
-[`docs/proposals/0023/schemas/ai-context/1.0.0-proposal.1.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/ai-context/1.0.0-proposal.1.json).
+[`docs/proposals/0023/schemas/ai-context/1.0.0-proposal.3.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/ai-context/1.0.0-proposal.3.json).
 :::
 
 **The question it answers: how did machines make this page, and how may
-they use it?** Two production fields (`generated-by`, `provenance`) and
+they use it?** Two production fields (`provenance`, `meta-provenance`) and
 two consumption fields (`risks`, `sample-questions`).
 
 ## Fields
 
-| Field | Type | Notes |
-|---|---|---|
-| `generated-by` | string, non-empty | The model, agent, or tool that generated the page's content |
-| `provenance` | list of entries | Per-model attribution of machine-proposed metadata: which fields, at what confidence |
-| `risks` | string or list; open list | Pre-flight flags for agents and reviewers. Recommended: `cost-incurring` · `destructive` · `irreversible` · `privileged` · `open-world` · `read-only` · `idempotent`. Any other non-empty string is legal |
-| `sample-questions` | string or list | Questions this page should answer. Retrieval evals use them |
+| Field | Type | Location | Notes |
+|---|---|---|---|
+| `provenance` | list of entries | `external` | Which body lines a machine wrote: one entry per range, each naming the machine, the lines, and an integrity hash that pins them. Managed by `manni meta derive` |
+| `meta-provenance` | list of entries | `external` | Per-model attribution of machine-proposed metadata: which fields and evals, at what confidence |
+| `risks` | string or list; open list | `page` | Pre-flight flags for agents and reviewers. Recommended: `cost-incurring` · `destructive` · `irreversible` · `privileged` · `open-world` · `read-only` · `idempotent`. Any other non-empty string is legal |
+| `sample-questions` | string or list | `page` | Questions this page should answer. Retrieval evals use them |
 
-A provenance entry has `generated-by` (required), `fields` (the
-frontmatter keys it proposed, non-empty and unique), and `confidence` (a
-number from 0 to 1 per field).
+A `provenance` entry has `generated-by`, `lines` (one body line, or a range
+such as `"12-30"`), and `integrity` (`sha256-` and 64 hex digits over those
+lines), all required. A `meta-provenance` entry has `generated-by` (required),
+`fields` (JSON Pointers to the values it proposed, such as `/intent` or
+`/kg/label`), `evals` (the ids of the evals it proposed), and `confidence` (a
+number from 0 to 1 per pointer or eval id). It needs at least one of `fields`
+or `evals`.
+
+The Location column is the `x-manni-location` mark each field carries in
+`manni:ai-context:1.0.0-proposal.3`. `page` means the value belongs in the
+document's own metadata and is meant to reach delivered output. `external`
+means it belongs in the collection's external-metadata manifest. A field is
+`page` when a third-party or user-owned agent fetching the page would act on
+it. `risks` and `sample-questions` are addressed to an agent at read time,
+while both provenance records describe how the page was made. See
+[field location](/manni/meta/schemas/field-location/) for how the marks are
+used.
 
 ## Example
 
@@ -35,11 +49,14 @@ number from 0 to 1 per field).
 ---
 title: Install the operator on Kubernetes
 description: Deploy the operator with Helm and verify the rollout.
-generated-by: claude-fable-5
 provenance:
   - generated-by: claude-fable-5
-    fields: [intent, sample-questions]
-    confidence: { intent: 0.9, sample-questions: 0.84 }
+    lines: 4-18
+    integrity: sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f
+meta-provenance:
+  - generated-by: claude-fable-5
+    fields: [/intent, /sample-questions]
+    confidence: { /intent: 0.9, /sample-questions: 0.84 }
 risks: [privileged, cost-incurring]
 sample-questions:
   - How do I install the operator on EKS?
@@ -49,16 +66,18 @@ sample-questions:
 
 ## Design decisions
 
-- **Machines propose; humans retire the provenance.** A provenance entry is the
-  review trail for machine-filled metadata. A human deletes the entry once its
-  fields are reviewed, so a surviving entry means machine metadata nobody has
-  checked. The same pattern appears in the [kg](/manni/meta/proposals/kg/) block,
-  and in both [eval](/manni/meta/proposals/evals/) vocabularies. So the whole
-  family has one answer to "which of this metadata did a machine write, and has
-  anyone checked?"
-- **`generated-by` attributes the content; `provenance` attributes the
-  metadata.** They record different facts. Consumers also use
-  `generated-by` for self-preference-bias checks: a judge should know
+- **Machines propose; humans retire the provenance.** A `meta-provenance`
+  entry is the review trail for machine-filled metadata. A human deletes the
+  entry once its fields are reviewed, so a surviving entry means machine
+  metadata nobody has checked. The same key serves the
+  [kg](/manni/meta/proposals/kg/) block and both
+  [eval](/manni/meta/proposals/evals/) vocabularies. So the whole family has one
+  answer to "which of this metadata did a machine write, and has anyone
+  checked?"
+- **`provenance` attributes the prose; `meta-provenance` attributes the
+  metadata.** They record different facts. The machines that wrote a page
+  are the distinct `generated-by` values across its `provenance` entries.
+  Consumers use them for self-preference-bias checks: a judge should know
   when it is grading its own author.
 - **`risks` is an open list.** Seven flags are recommended.
   `cost-incurring`, `destructive`, `irreversible`, and `privileged` cover
@@ -89,7 +108,7 @@ hash that pins those lines.
 [`manni meta derive`](/manni/meta/set-up/machine-authorship/) stamps it from git,
 and `validate` reports a pin whose text has changed. Both commands do that
 today, while the drafts stay under review. The per-model field
-attribution described above is renamed `meta-provenance`, with the same
+attribution that `1.0.0-proposal.1` called `provenance` is renamed `meta-provenance`, with the same
 review semantics. Its `fields` become JSON Pointers, so `/kg/label` reaches
 into a block. It also takes over the kg block's `provenance` and the eval
 vocabularies' `eval-provenance`. After review, the page-level `generated-by`

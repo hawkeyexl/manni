@@ -1,0 +1,4 @@
+# Owners, by page.
+docs/auth.md:
+  owner: platform
+  team: identity

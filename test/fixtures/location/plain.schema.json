@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "title": { "type": "string", "x-manni-location": "page" },
+    "owner": { "type": "string", "x-manni-location": "external" },
+    "a/b": { "type": "string", "x-manni-location": "external" },
+    "tags": { "type": "array" }
+  }
+}

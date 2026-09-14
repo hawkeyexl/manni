@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:08.133
+Maintainer data on the page: owner, stakeholders and review-interval ship with the page. The schema marks them external.
+
+2
+00:00:08.133 --> 00:00:16.700
+validate: warn, don't fail: validate flags each misplaced value as location:external. Exit 0, so CI never blocks.
+
+3
+00:00:16.700 --> 00:00:25.133
+relocate moves them: relocate creates site.metadata.yaml and moves the three values into it, keyed by page.
+
+4
+00:00:25.133 --> 00:00:31.500
+The page slims down: The page drops three lines. manni.config.yaml now says the manifest owns those keys.
+
+5
+00:00:31.500 --> 00:00:38.167
+validate: clean: Same values, now in the manifest. validate is clean: no warnings, exit 0.
+

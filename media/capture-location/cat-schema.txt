@@ -1,0 +1,9 @@
+{
+  "properties": {
+    "title": { "x-manni-location": "page" },
+    "description": { "x-manni-location": "page" },
+    "owner": { "x-manni-location": "external" },
+    "stakeholders": { "x-manni-location": "external" },
+    "review-interval": { "x-manni-location": "external" }
+  }
+}

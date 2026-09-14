@@ -785,20 +785,20 @@ export interface ManifestOwner {
 }
 
 /**
- * The manifest that owns `key`, if any declared collection has one.
+ * The URL manifest that owns `key`, if any declared collection has one.
  *
  * Every declared collection counts, not only the ones a run selected: a
  * manifest's `keys:` list is a claim about the key everywhere, not about one
  * run. No manifest is read, because the config's own `keys:` list is the whole
  * claim.
  */
-export function manifestOwning(
+export function urlManifestOwning(
   key: string,
   collections: readonly CollectionConfig[],
 ): ManifestOwner | undefined {
   for (const [c, collection] of collections.entries()) {
     for (const [e, manifest] of collection.externalMetadata.entries()) {
-      if (manifest.keys.includes(key)) {
+      if (manifest.keys.includes(key) && classifyRef(manifest.file).kind === "url") {
         return { collection: c, name: collection.name, entry: e, file: manifest.file };
       }
     }
@@ -807,14 +807,23 @@ export function manifestOwning(
 }
 
 /**
- * Refuse a `derive.fields` entry or a `derive.commands` key that some manifest
- * owns (proposals 0040 and 0042).
+ * The sentence for a write that would land in a URL manifest (proposal 0047,
+ * M6): `derive`, `fill` and `query` all say it the same way.
+ */
+export function urlManifestMessage(key: string, file: string): string {
+  return `"${key}" is owned by manifest ${file}, which is fetched and cannot be written; set it in that repository.`;
+}
+
+/**
+ * Refuse a `derive.fields` entry or a `derive.commands` key that a URL
+ * manifest owns (proposal 0047, message M6).
  *
- * A managed field has one authority, and a manifest key already has one. The
- * rule needs both halves of the family file, `meta.derive` and the top-level
- * `collections:`, so it runs here for the same reason
- * `assertOverrideCollections` does. `manni meta derive --fields` asks
- * `manifestOwning` directly, because that flag never passes through here.
+ * A local manifest that owns a managed field is where `derive` writes it,
+ * which generalizes 0046's `provenance` exception; a URL manifest is fetched
+ * and cannot be written. The rule needs both halves of the family file,
+ * `meta.derive` and the top-level `collections:`, so it runs here for the same
+ * reason `assertOverrideCollections` does. `manni meta derive --fields` asks
+ * `urlManifestOwning` directly, because that flag never passes through here.
  *
  * The message goes through `inSection`, as `assertOverrideCollections` does, so
  * it reads `meta.derive.fields[1]` the way the configuration reference says a
@@ -828,7 +837,7 @@ function assertManagedFieldsUnowned(
   section: string | undefined,
 ): void {
   const refuse = (path: string, owner: ManifestOwner): never => {
-    const message = `${source}: ${path} is owned by collections[${owner.collection}].externalMetadata[${owner.entry}] (${owner.file}) — a managed field has one authority, and a manifest key already has one. Drop it from one side.`;
+    const message = `${source}: ${path} is owned by manifest ${owner.file}, which is fetched and cannot be written; set it in that repository.`;
     throw new DocmetaError(
       inSection(message, source, section),
     );
@@ -836,15 +845,14 @@ function assertManagedFieldsUnowned(
   // Commands first, as the parser reads them: a command's key is where a
   // field outside the built-ins is claimed, so that is the line to name.
   for (const key of Object.keys(config.derive?.commands ?? {})) {
-    const owner = manifestOwning(key, collections);
+    const owner = urlManifestOwning(key, collections);
     if (owner !== undefined) refuse(`derive.commands.${key}`, owner);
   }
   for (const [i, field] of (config.derive?.fields ?? []).entries()) {
-    // Proposal 0046: a `provenance` entry is a pin a tool mints, never a
-    // hand-curated value, so a manifest that owns it is where `derive` stores
-    // the stamp rather than a second authority.
+    // Proposal 0046: `provenance` keeps its own refusal, raised where derive
+    // places the record, so a reader (`validate`, `get`) still loads.
     if (field === PROVENANCE_FIELD) continue;
-    const owner = manifestOwning(field, collections);
+    const owner = urlManifestOwning(field, collections);
     if (owner !== undefined) refuse(`derive.fields[${i}] "${field}"`, owner);
   }
 }
@@ -860,7 +868,7 @@ function assertManagedFieldsUnowned(
  * `sources` for its reads without inventing a managed field.
  * A field is refused when it is not derivable (nothing could ever fill it)
  * or repeated. `$schema` falls out of the derivable list, so it never needs a
- * rule of its own there. A field a manifest owns is refused as well, by
+ * rule of its own there. A field a URL manifest owns is refused as well, by
  * `assertManagedFieldsUnowned` in `loadConfig`, because manifests are declared
  * on the top-level `collections:` this parser never sees.
  *
@@ -984,8 +992,8 @@ function parseDerive(
 /**
  * Parse `derive.commands`: a mapping of field name to command. A key is
  * refused when it is empty, `$schema`, or a built-in field (a command may
- * only derive a field no built-in source claims). A key a manifest owns is
- * refused too, by `assertManagedFieldsUnowned` in `loadConfig`. Each command
+ * only derive a field no built-in source claims). A key a URL manifest owns
+ * is refused too, by `assertManagedFieldsUnowned` in `loadConfig`. Each command
  * carries `run`, the argv with the program first, and an optional `timeout`
  * in seconds.
  */

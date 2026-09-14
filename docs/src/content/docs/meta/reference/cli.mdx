@@ -1,6 +1,6 @@
 ---
 title: CLI reference
-description: Every manni meta command, argument, and flag (validate, get, query, fill, derive, and schemas), with the shared input model and default ignores.
+description: Every manni meta command, argument, and flag (validate, get, query, fill, derive, relocate, and schemas), with the shared input model and default ignores.
 ---
 
 import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
@@ -10,9 +10,10 @@ import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
     enforced in CI. Keep flags, arguments, and defaults in sync with the code;
     descriptions are free-form. */}
 
-manni meta exposes six subcommands: [`validate`](#meta-validate) (the default),
+manni meta exposes seven subcommands: [`validate`](#meta-validate) (the default),
 [`get`](#meta-get), [`query`](#meta-query), [`fill`](#meta-fill),
-[`derive`](#meta-derive), and [`schemas`](#meta-schemas), the last of which is
+[`derive`](#meta-derive), [`relocate`](#meta-relocate), and
+[`schemas`](#meta-schemas), the last of which is
 a group with its own [`infer`](#meta-schemas-infer) and
 [`vendor`](#meta-schemas-vendor) subcommands. Every one of them but
 `schemas vendor` takes paths. They share an [input model](#shared-input-model)
@@ -108,6 +109,21 @@ guides-meta.yaml (collection guides); remove it from the document`. On a
 config-corpus run it refuses (exit 2) a manifest entry naming a document the
 run did not load. That last check runs on the same invariant the corpus checks
 use and has no flag of its own. A positional path is what turns it off.
+
+When a schema marks a top-level property
+[`x-manni-location`](/manni/meta/reference/schema-resolution/#field-location),
+`validate` reports a value stored on the other side as a warning. The exit
+code does not move. `location:external/location` sits at the page line of a
+key whose schema prefers external metadata: `"owner" is stored in the page;
+steward.schema.json prefers external metadata. Run manni meta relocate.` A key
+a manifest owns is skipped there, because `external:owned` already fails it.
+`location:page/location` sits at the manifest line of a key a manifest supplies
+and whose schema prefers the page. On a terminal, after the report, `validate`
+asks once per collection whether to move them, and on yes runs
+[`relocate`](#meta-relocate) with its output on stderr. Nothing is asked off a
+terminal, under `--no-config`, or for stdin, and a baselined finding is never
+offered. [Keep maintainer metadata out of delivered
+pages](/manni/meta/schemas/field-location/) is the journey.
 
 With [`derive:`](/manni/meta/reference/configuration/#derive) in config,
 `validate` derives every managed field once for the run and compares each
@@ -534,10 +550,16 @@ bridge](/manni/meta/reference/query/#the-type-bridge) that turns formats and
 
 A key an [external-metadata
 manifest](/manni/meta/reference/configuration/#external-metadata) owns is
-readable in every row and writable in none. `UPDATE`, `DELETE`, `INSERT` and a
-rename that would touch it refuse by name (exit 2), before any file is written:
-`"docs/auth.md": "jira" is owned by manifest docs-meta.yaml; edit the manifest
-instead.`
+readable in every row and written to that manifest. The page is left alone,
+and the pretty line names the manifest: `docs/auth.md: owner: platform ->
+identity  [docs-meta.yaml]`. Three writes still refuse (exit 2) before any file
+is written: an `ALTER TABLE … RENAME COLUMN` of an owned key, a change to the
+join field of a document that has an entry, and any write to a key a URL
+manifest owns. A key whose schema prefers external metadata and that no
+manifest owns is written to the page with one warning on stderr, or offered to
+[`relocate`](#meta-relocate) on a terminal. The [query
+reference](/manni/meta/reference/query/#dml-statements-edit-files) has each statement's
+manifest meaning.
 
 ### Rows as findings
 
@@ -682,10 +704,18 @@ metadata, or **present but invalid**. A property that is already present and
 valid is never touched, and neither is `$schema`, which is schema wiring, not
 metadata. A candidate an [external-metadata
 manifest](/manni/meta/reference/configuration/#external-metadata) owns is
-refused for the whole file, as a per-file error rather than a skip. The error
-reads `"jira" is owned by manifest guides-meta.yaml; manni meta fill cannot
-write a manifest key. Add it to the manifest instead.` The manifest is the only
-place the value may go, and `fill` does not edit manifests.
+written into that manifest's entry for the page, and the page is left alone.
+The pretty line ends with the manifest, `/owner  platform  0.92  →
+site-meta.yaml`, and `json` adds `destination`. A candidate a URL manifest owns
+is a per-file error, because a fetched file cannot be written: `"owner" is
+owned by manifest https://example.com/owners.yaml, which is fetched and cannot
+be written; set it in that repository.`
+
+A candidate whose schema prefers external metadata
+([`x-manni-location`](/manni/meta/reference/schema-resolution/#field-location))
+and that no manifest owns is written to the page, with one warning on stderr
+naming [`relocate`](#meta-relocate). On a terminal, `fill` first offers to give
+it a manifest, before its first model request.
 
 ### The confidence gate
 
@@ -783,10 +813,13 @@ Three cases leave it out while the fields are still written:
 | Case | pretty line | `metaProvenance` in `json` |
 |---|---|---|
 | Checked with the entry and without it, the page's schemas report an error only the entry brings, such as `additionalProperties`, `unevaluatedProperties` or `propertyNames`. | `meta-provenance not written: this page's schemas do not allow it` | `{"written": false, "skipReason": "schema-mismatch"}` |
-| A manifest in one of the page's collections owns `meta-provenance`. | `meta-provenance not written: owned by manifest private/meta.yaml, which manni meta fill does not write` | `{"written": false, "skipReason": "manifest-owned", "manifest": "private/meta.yaml"}` |
+| A URL manifest in one of the page's collections owns `meta-provenance`. | `meta-provenance not written: owned by manifest https://example.com/meta.yaml, which is fetched and cannot be written` | `{"written": false, "skipReason": "manifest-owned", "manifest": "https://example.com/meta.yaml"}` |
 | The format's writer cannot hold a list of entries, as in an HTML or XML attribute. | `meta-provenance not written: html metadata cannot hold it` | `{"written": false, "skipReason": "unwritable"}` |
 
-A written entry is `{"written": true, "entry": {...}}`. The key is absent when
+A written entry is `{"written": true, "entry": {...}}`. When a local manifest
+owns `meta-provenance`, the entry is merged into the page's entry there, the
+pretty line ends with `→ private/meta.yaml`, and `json` adds
+`"destination": "private/meta.yaml"`. The key is absent when
 no field was written. Neither `provenance` nor `meta-provenance` is ever a
 candidate, and `fill` leaves both out of what it sends a model.
 
@@ -838,7 +871,7 @@ finding without touching anything.
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
-| `--fields` | `<list>` | config `derive.fields` | Comma-separated managed fields to stamp this run. Each must be one of the seven [derivable fields](/manni/meta/reference/configuration/#the-derivable-fields) or a key with an entry in config [`derive.commands`](/manni/meta/reference/configuration/#commands). An unknown or non-derivable name is an error (exit 2) listing the seven and pointing at `derive.commands`. A field a collection's [external-metadata](/manni/meta/reference/configuration/#external-metadata) manifest owns is refused (exit 2), the same way loading the config refuses it in `derive.fields`. The message is `"owner" is owned by the manifest ./owners.yaml on collection guides; a managed field has one authority, and a manifest key already has one.` No config `derive.fields` and no flag is an error (exit 2): `nothing to derive: set derive.fields in manni.config.yaml or pass --fields`. |
+| `--fields` | `<list>` | config `derive.fields` | Comma-separated managed fields to stamp this run. Each must be one of the seven [derivable fields](/manni/meta/reference/configuration/#the-derivable-fields) or a key with an entry in config [`derive.commands`](/manni/meta/reference/configuration/#commands). An unknown or non-derivable name is an error (exit 2) listing the seven and pointing at `derive.commands`. A field a collection's local [external-metadata](/manni/meta/reference/configuration/#external-metadata) manifest owns is written into that manifest, and the pretty report ends its line with `→ docs-meta.yaml:14` (`json` adds `destination` and `destinationLine`). A field a URL manifest owns is refused (exit 2), the same way loading the config refuses it in `derive.fields`: `"owner" is owned by manifest https://example.com/owners.yaml, which is fetched and cannot be written; set it in that repository.` No config `derive.fields` and no flag is an error (exit 2): `nothing to derive: set derive.fields in manni.config.yaml or pass --fields`. |
 | `--sources` | `<list>` | config `derive.sources`, else all five | Comma-separated sources to consult: `git`, `codeowners`, `github`, `gitlab`, `command`. Only the one of `github` and `gitlab` that matches the origin remote is consulted. `command` covers every field with an entry in config [`derive.commands`](/manni/meta/reference/configuration/#commands). A field whose only sources are excluded derives null and is left alone. This is the opt-out for a checkout that cannot answer a source, such as a shallow clone. |
 | `--generated-by` | `<name>` | `MANNI_GENERATED_BY` | The machine that wrote the uncommitted body lines, recorded in [`provenance`](/manni/meta/reference/configuration/#the-derivable-fields). With a `<path>:L1-L2` positional, it attributes those lines instead, committed or not, unless git evidence names another machine for any of them (exit 2). Without the flag, `MANNI_GENERATED_BY` is read. The flag wins whenever it is given, even empty. Both values are trimmed, and a blank one is unset. The flag, or a range, is an error (exit 2) on a run whose fields leave out `provenance`. The message is `--generated-by attributes provenance, which is not in --fields. Add provenance, or drop --generated-by.` The variable alone never is, so an agent session can export it once. A file where the flag finds no uncommitted body lines gets a notice on stderr, and the exit code is unaffected. The notice is `docs/limits.md: no uncommitted body lines; --generated-by attributes only what is not yet committed.` |
 | `--dry-run` | n/a | off | Report what would change and write nothing. |
@@ -875,6 +908,24 @@ manifest owns `provenance`, the entries go into that manifest and the page is
 not touched. A format whose metadata is not a fenced block, such as HTML, XML
 or DITA, cannot hold the record on the page. That file is a per-file error,
 exit 1, and the manifest is where its record goes.
+
+Every other managed field works the same way. A field a local manifest owns is
+compared against the manifest's value and written there, and the pretty line
+ends with the destination:
+
+```
+docs/install.md
+    created  (unset) → 2026-09-13                (git: added in a32e411 (2026-09-13))
+    owner    ["@old-team"] → ["@platform-docs"]  (codeowners: .github/CODEOWNERS:1)  → site-meta.yaml:2
+```
+
+A field whose schema prefers external metadata
+([`x-manni-location`](/manni/meta/reference/schema-resolution/#field-location))
+and that no manifest owns is stamped on the page, with one warning on stderr:
+`manni: wrote owner to 2 pages in collection site; the schema prefers
+external metadata, and no manifest owns it. Run manni meta relocate to move
+it.` On a terminal, and outside `--dry-run` and `--check`, `derive` first
+offers to create the manifest.
 
 ### A source that cannot answer
 
@@ -966,6 +1017,139 @@ manni meta derive --fields owner --no-cache docs/  # re-read GitHub or GitLab
 manni meta derive --fields verified-against        # stamp the version a config command reads
 MANNI_GENERATED_BY=claude-fable-5 manni meta derive --fields provenance   # attribute what an agent just wrote
 manni meta derive docs/limits.md:12-31 --generated-by claude-fable-5      # attribute named lines, committed or not
+```
+
+## `meta relocate`
+
+Move each value to where it belongs. A schema says where with
+`x-manni-location`: `page` keeps a top-level key in the document's own
+metadata, and `external` keeps it in a collection's
+[external-metadata](/manni/meta/reference/configuration/#external-metadata)
+manifest. Out of the page go the values a schema prefers external and the
+values a manifest already owns. Into the page go the manifest values a schema
+prefers on the page, and the key leaves the manifest's `keys:`.
+
+```sh
+manni meta relocate [paths...] [options]
+```
+
+<Aside type="caution" title="relocate writes by default">
+`relocate` **writes to your pages, manifests and config by default**. Pass
+`--dry-run` to see what would move and what would be created.
+</Aside>
+
+A value with no manifest gets one. A page in a collection uses the first one it
+belongs to. With no collections, `relocate` creates one named `default` whose
+`paths:` are the targets you typed (`docs/` becomes `docs/**`). With exactly
+one collection, the target naming the page is appended to its `paths:`. With
+several, and the page in none, the value stays. The manifest is the
+collection's first local `file:` entry, or `<collection>.metadata.yaml` beside
+the config file. With no config file, `manni.config.yaml` is created at the git
+root, else the working directory. Config edits keep comments and key order.
+
+A change to a manifest's `keys:` moves that key for **every** page in the
+collection, including pages outside the paths you named, and the output says
+how many. A field join's own field never moves. When the page and the manifest
+both hold a value and the two agree, the copy on the wrong side is dropped.
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to relocate. Optional, and falls back to the configured [collections](#collections-as-inputs). See the [shared input model](#shared-input-model). `-` is refused (exit 2): `relocate moves values between documents and a collection's manifest, and stdin is not a document on disk.` |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--fields` | `<list>` | every field | Comma-separated fields to move. Each must carry an `x-manni-location` mark, or be manifest-owned, for some file in the run; otherwise exit 2: `"nope" has no x-manni-location mark and no owning manifest for any file in this run.` |
+| `--collection` | `<name>` | every collection | Run over a configured [collection](/manni/meta/reference/configuration/#collections). Repeatable, one name per occurrence. Cannot be combined with positional paths (exit 2). |
+| `-s, --schema` | `<ref>` | n/a | Schema whose marks decide each preference. Repeatable. When given, it overrides `$schema` and config for every file. |
+| `--dry-run` | n/a | off | Report what would move and what would be created, and write nothing. Manifest lines are omitted. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. Anything else is an error (exit 2): `relocate --format must be pretty or json; got "sarif".` |
+| `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. |
+| `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) (extractor name, e.g. `markdown`). |
+| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/meta/reference/configuration/). When set, the file must exist or manni meta exits 2. |
+| `--no-config` | n/a | off | Refused (exit 2), because relocate writes the config: `relocate writes collections: and externalMetadata: to the config file, and --no-config rules one out.` |
+| `--allow-empty` | n/a | off | Treat zero matched files as success instead of an error (exit 2). See [empty input sets](#empty-input-sets). |
+| `--no-gitignore` | n/a | on | Relocate files `.gitignore` covers as well. Overrides config `respectGitignore:`. |
+
+### Output and exit codes
+
+In `pretty` format, the first lines say what the config gains or loses, then
+each page lists its values as `<key>  → <manifest>:<line>` (out of the page),
+`<key>  ← <manifest>` (into the page), or `<key>  stays: <reason>`. A page
+reached only through a `keys:` change is counted, not listed. The last line
+counts files and values.
+
+```
+Using manni.config.yaml (.)
+Created site.metadata.yaml; collections[site].externalMetadata[0] owns owner, authors.
+docs/faq.md
+    owner    → site.metadata.yaml:2
+docs/install.md
+    authors  → site.metadata.yaml:4
+    owner    → site.metadata.yaml:6
+2 files, 3 values moved to 1 manifest
+```
+
+Under `--dry-run` the verbs read `Would create`, `would own` and `would move`,
+and no manifest line is printed. The first lines take one of these shapes:
+
+| Config change | Line |
+|---|---|
+| A manifest is created | `Created site.metadata.yaml; collections[site].externalMetadata[0] owns owner, authors.` |
+| A collection is created (no collections before) | `Created collection default (paths: docs/**, guides/intro.md) and default.metadata.yaml; it owns authors, owner.` |
+| A target is added to the one collection's `paths:` | `Added notes/** to collection site's paths; docs-meta.yaml now owns owner, authors.` |
+| A key is added to `keys:` | `Adding owner to docs-meta.yaml's keys moves it out of every page in collection site, 2 beyond the paths you named.` The count after the comma appears only when there are such pages. |
+| A key is removed from `keys:` | `Removing title from docs-meta.yaml's keys moves it into every page in collection site.` |
+| `keys:` is left empty | `docs-meta.yaml no longer owns any keys and is no longer declared; delete it when you are ready.` The file is left on disk. |
+
+A value that stays names its reason:
+
+| `reason` in `json` | `pretty` line |
+|---|---|
+| `no-home` | `owner    stays: this document is in none of the 2 collections, so it has no manifest` |
+| `read-only-format` | `owner    stays: the rst format cannot write this document's metadata` |
+| `no-join-value` | `owner    stays: this document has no id, which api-meta.yaml joins on` |
+| `values-differ` | `owner    stays: the page and docs-meta.yaml hold different values` |
+| `url-manifest` | `owner    stays: https://example.com/owners.yaml is fetched and cannot be written`, in either direction |
+
+In `json` format the run is one object:
+
+| Field | Shape |
+|---|---|
+| `dryRun` | boolean |
+| `config` | `{ file, created, collectionsCreated, pathsAdded }` |
+| `manifests[]` | `{ file, collection, created, keysAdded, keysRemoved, undeclared }` |
+| `files[].moved[]` | `{ key, to, reason }` plus `manifest` and `line` when `to` is `manifest`, or `from` when `to` is `page`. `to` is `page` or `manifest`. `reason` is `preferred` (a mark) or `owned` (a manifest already owns the key). `line` is omitted under `--dry-run`. |
+| `files[].stayed[]` | `{ key, reason }`, with a reason from the table above |
+| `summary` | `{ files, moved, stayed, manifestsCreated }` |
+
+Exit 0 when every value is where it belongs afterwards, or there was nothing to
+do (`0 files, nothing to move`). Exit 1 when at least one value stayed. Exit 2
+for an operational error:
+
+| Cause | stderr |
+|---|---|
+| `-` among the paths | `manni: relocate moves values between documents and a collection's manifest, and stdin is not a document on disk.` |
+| `--no-config` | `manni: relocate writes collections: and externalMetadata: to the config file, and --no-config rules one out.` |
+| A `--fields` name nothing marks or owns | `manni: "nope" has no x-manni-location mark and no owning manifest for any file in this run.` |
+| An unknown `--collection` | `manni: no collection named "nope" in manni.config.yaml. Configured: site.` |
+| `--collection` with paths | `manni: --collection selects a configured collection; it cannot be combined with paths.` |
+| A format other than `pretty` or `json` | `manni: relocate --format must be pretty or json; got "sarif".` |
+| The manifest path to create exists and is not declared | `manni: site.metadata.yaml already exists and is not a manifest of collection site; declare it under externalMetadata, or move it.` |
+| No paths and no collections | ``manni: No files to relocate. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.`` |
+
+### Examples
+
+```sh
+manni meta relocate                              # every collection, as config declares it
+manni meta relocate --dry-run                    # what would move and be created
+manni meta relocate docs/install.md --fields owner
+manni meta relocate docs/ guides/intro.md        # no collections yet: creates collection default
+manni meta relocate -f json --dry-run            # the scripting form
 ```
 
 ## `meta schemas`
