@@ -142,7 +142,8 @@ export async function offerRelocation(opts: ValidateOfferOptions): Promise<Reloc
       continue;
     }
     if (plan.writes.length === 0) continue;
-    const offer = plan.offers.find((o) => o.collection === collection) ?? plan.offers[0];
+    // Only this collection's offer: another's would word changes this question does not cover.
+    const offer = plan.offers.find((o) => o.collection === collection);
     if (offer === undefined) continue;
     const { notice, question } = offerPrompt(offer, "validate");
     say(notice);

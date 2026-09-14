@@ -39,6 +39,25 @@ describe("externalWriteWarning", () => {
     );
   });
 
+  it("W1 where relocate would only add a path to a collection whose manifest exists", () => {
+    const grown: ProposedHome = {
+      kind: "collection",
+      collection: "site",
+      manifest: "docs-meta.yaml",
+      createsManifest: false,
+      createsCollection: false,
+      addsPath: "notes/**",
+    };
+    expect(externalWriteWarning({ verb: "wrote", keys: ["owner"], pages: 1, home: grown, createsHome: true })).toBe(
+      "wrote owner to 1 page; the schema prefers external metadata. Run manni meta relocate to add it to collection site.",
+    );
+    expect(
+      externalWriteWarning({ verb: "would write", keys: ["owner", "team"], pages: 2, home: grown, createsHome: true }),
+    ).toBe(
+      "would write owner, team to 2 pages; their schemas prefer external metadata. Run manni meta relocate to add them to collection site.",
+    );
+  });
+
   it("W2 under --no-config", () => {
     expect(externalWriteWarning({ verb: "wrote", keys: ["owner"], pages: 1, home: noConfig, createsHome: false })).toBe(
       "wrote owner to 1 page; the schema prefers external metadata, and --no-config leaves it no manifest.",

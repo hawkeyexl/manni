@@ -1159,6 +1159,7 @@ async function readManifestText(m: ManifestRef): Promise<string> {
 const entryId = (entry: string, join: string): string =>
   join === PATH_JOIN ? toPosix(entry).replace(/^\.\//, "").replace(/\/+/g, "/") : entry;
 /** A move's line, keyed by page label, manifest and key. */
+// NUL separates the parts: unambiguous because no supported OS allows NUL in a file path.
 const lineId = (page: string, manifest: string, key: string): string => `${page}\0${manifest}\0${key}`;
 
 /** Entry -> key -> 1-based line of the key, in a manifest's text. */
@@ -1189,9 +1190,15 @@ async function configTarget(
 ): Promise<{ path: string; text: string | null }> {
   if (ctx.configPath !== undefined) {
     // Re-read rather than trust discovery's copy: an edit made since must not be written over.
+    // Only a file removed since falls back to that copy; any other failure is refused.
     try {
       return { path: ctx.configPath, text: await readFile(ctx.configPath, "utf8") };
-    } catch {
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+        throw new DocmetaError(
+          `Config file ${configSource(ctx.configPath, ctx.cwd)} could not be read: ${errorMessage(err)}`,
+        );
+      }
       return { path: ctx.configPath, text: ctx.configFile?.text ?? null };
     }
   }

@@ -808,13 +808,15 @@ reviewed.
 ```
 
 The entry is a side record. It never changes the summary or the exit code.
-Three cases leave it out while the fields are still written:
+Three cases leave it out while the fields are still written. In `json`,
+`metaProvenance` is then `{"written": false, "skipReason": "<reason>"}`, and
+`manifest-owned` adds `"manifest"` with the manifest's URL:
 
-| Case | pretty line | `metaProvenance` in `json` |
+| Case | pretty line | `skipReason` |
 |---|---|---|
-| Checked with the entry and without it, the page's schemas report an error only the entry brings, such as `additionalProperties`, `unevaluatedProperties` or `propertyNames`. | `meta-provenance not written: this page's schemas do not allow it` | `{"written": false, "skipReason": "schema-mismatch"}` |
-| A URL manifest in one of the page's collections owns `meta-provenance`. | `meta-provenance not written: owned by manifest https://example.com/meta.yaml, which is fetched and cannot be written` | `{"written": false, "skipReason": "manifest-owned", "manifest": "https://example.com/meta.yaml"}` |
-| The format's writer cannot hold a list of entries, as in an HTML or XML attribute. | `meta-provenance not written: html metadata cannot hold it` | `{"written": false, "skipReason": "unwritable"}` |
+| Checked with the entry and without it, the page's schemas report an error only the entry brings, such as `additionalProperties`, `unevaluatedProperties` or `propertyNames`. | `meta-provenance not written: this page's schemas do not allow it` | `schema-mismatch` |
+| A URL manifest in one of the page's collections owns `meta-provenance`. | `meta-provenance not written: owned by manifest https://example.com/meta.yaml, which is fetched and cannot be written` | `manifest-owned` |
+| The format's writer cannot hold a list of entries, as in an HTML or XML attribute. | `meta-provenance not written: html metadata cannot hold it` | `unwritable` |
 
 A written entry is `{"written": true, "entry": {...}}`. When a local manifest
 owns `meta-provenance`, the entry is merged into the page's entry there, the

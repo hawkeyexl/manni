@@ -131,7 +131,9 @@ export function externalWriteWarnings(
  * One W1 or W2 line, without the `manni: ` prefix: `keys` were written (or
  * would be) to `pages` pages whose home is `home`. `createsHome` says
  * relocate would create the collection, manifest or path that gives them a
- * manifest. One key reads in the singular, several in the plural.
+ * manifest. Where it would only add a path to a collection whose manifest
+ * already exists, the line says so rather than promising a manifest. One key
+ * reads in the singular, several in the plural.
  */
 export function externalWriteWarning(line: {
   verb: "wrote" | "would write";
@@ -146,9 +148,13 @@ export function externalWriteWarning(line: {
   const prefer = one ? "the schema prefers external metadata" : "their schemas prefer external metadata";
   const them = one ? "it" : "them";
   if (home.kind === "collection") {
-    return line.createsHome
+    if (!line.createsHome) {
+      return `${head} in collection ${home.collection}; ${prefer}, and no manifest owns ${them}. Run manni meta relocate to move ${them}.`;
+    }
+    // Whether the collection has a manifest is the collection's, so any write in the group answers it.
+    return home.createsCollection || home.createsManifest
       ? `${head}; ${prefer}. Run manni meta relocate to give ${them} a manifest.`
-      : `${head} in collection ${home.collection}; ${prefer}, and no manifest owns ${them}. Run manni meta relocate to move ${them}.`;
+      : `${head}; ${prefer}. Run manni meta relocate to add ${them} to collection ${home.collection}.`;
   }
   return home.reason === "no-config"
     ? `${head}; ${prefer}, and --no-config leaves ${them} no manifest.`

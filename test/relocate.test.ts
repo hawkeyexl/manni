@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   cpSync,
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -527,6 +528,26 @@ describe("relocation core: the API later commands use", () => {
     expect(widened === undefined ? undefined : offerPrompt(widened, "write").notice).toBe(
       "collection site has no manifest for owner, which the schema prefers in external metadata.",
     );
+  });
+
+  it("refuses a config that exists but cannot be read, rather than planning on discovery's copy", async () => {
+    const dir = copy("relocate-default");
+    const ctx = await context(dir, ["docs/"]);
+    rmSync(join(dir, "manni.config.yaml"));
+    mkdirSync(join(dir, "manni.config.yaml"));
+    const plan = planRelocation(ctx, { files: ["docs/install.md"] });
+    await expect(plan).rejects.toBeInstanceOf(DocmetaError);
+    await expect(planRelocation(ctx, { files: ["docs/install.md"] })).rejects.toThrow(
+      /^Config file manni\.config\.yaml could not be read: /,
+    );
+
+    // A config removed since discovery is planned on discovery's copy.
+    const gone = copy("relocate-default");
+    const goneCtx = await context(gone, ["docs/"]);
+    rmSync(join(gone, "manni.config.yaml"));
+    await expect(planRelocation(goneCtx, { files: ["docs/install.md"] })).resolves.toMatchObject({
+      configPath: join(gone, "manni.config.yaml"),
+    });
   });
 
   it("plans a home for a key a writer is about to set, before any page holds it", async () => {
