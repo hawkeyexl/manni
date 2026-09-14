@@ -729,8 +729,8 @@ whole by the message:
 |---|---|
 | `validate` | Merges, validates the merged object, and files a finding for every owned key a document carries. Runs the orphan check on a corpus run, including one narrowed with `--collection`. |
 | `get` | Reads the merged value. `manni meta get jira docs/auth.md` prints `docs/auth.md: jira=PLAT-412` from the manifest as readily as it would from the document. It does not yet say which of the two supplied it. |
-| `query` | Every row holds the merged values, so `SELECT _path, jira FROM docs` and a [corpus check](#checks) see the manifest's keys. A write to an owned key lands in the document's manifest entry, and the change names the manifest. A write to a key a URL manifest owns, a `RENAME COLUMN` of an owned key, or a change to the join field of a matched document refuses (exit 2) before any file is written. |
-| `fill` | A candidate property a local manifest owns is written into the document's entry there. One a URL manifest owns is a per-file error (exit 1) rather than a skip, so a missing owned key is never quietly left missing. |
+| `query` | Every row holds the merged values, so `SELECT _path, jira FROM docs` and a [corpus check](#checks) see the manifest's keys. A write to an owned key lands in the document's manifest entry, and the change names the manifest. Three writes refuse (exit 2) before any file is written. They write a key a URL manifest owns, `RENAME COLUMN` an owned key, or change a matched document's join field. |
+| `fill` | A candidate property a local manifest owns is written into the document's entry there. One a URL manifest owns is a per-file error (exit 1) rather than a skip. A missing owned key is never quietly left missing. |
 | `derive` | A managed field a local manifest owns is compared against the manifest's value and stamped there. One a URL manifest owns is refused when the config loads (exit 2). See [a field a manifest owns](#a-field-a-manifest-owns). |
 | `relocate` | Moves values between the pages and the manifest, and edits `keys:`, `paths:` and `collections:` to match. See [what relocate writes](#what-relocate-writes). |
 
@@ -771,12 +771,12 @@ docs/auth.md -> docs/auth2.md (moved)  [docs-meta.yaml]
 
 `fill` writes the same way. `source` is missing from `billing.md`, `new.md`
 and `ops.md`, and the schema lists it, so it is a candidate on each. A
-candidate a manifest owns has exactly one honest destination, so a proposal
+candidate a manifest owns has exactly one honest destination. So a proposal
 `fill` accepts is spliced into the document's entry in `docs-meta.yaml`, and
 the page is left as it was. The report names the manifest after the value:
 `/source  runbooks/billing  0.92  → docs-meta.yaml`. A candidate a URL
 manifest owns refuses the file (exit 1), because a fetched manifest cannot be
-written: `"source" is owned by manifest https://example.com/docs-meta.yaml,
+written. The message is `"source" is owned by manifest https://example.com/docs-meta.yaml,
 which is fetched and cannot be written; set it in that repository.` `auth.md`
 has both keys in the manifest and is left alone.
 

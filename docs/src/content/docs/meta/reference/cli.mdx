@@ -553,11 +553,11 @@ manifest](/manni/meta/reference/configuration/#external-metadata) owns is
 readable in every row and written to that manifest. The page is left alone,
 and the pretty line names the manifest: `docs/auth.md: owner: platform ->
 identity  [docs-meta.yaml]`. Three writes still refuse (exit 2) before any file
-is written: an `ALTER TABLE … RENAME COLUMN` of an owned key, a change to the
-join field of a document that has an entry, and any write to a key a URL
-manifest owns. A key whose schema prefers external metadata and that no
-manifest owns is written to the page with one warning on stderr, or offered to
-[`relocate`](#meta-relocate) on a terminal. The [query
+is written. One is an `ALTER TABLE … RENAME COLUMN` of an owned key. One is a
+change to the join field of a document that has an entry. The third is any
+write to a key a URL manifest owns. A key whose schema prefers external
+metadata and that no manifest owns is written to the page with one warning on
+stderr. On a terminal, it is offered to [`relocate`](#meta-relocate). The [query
 reference](/manni/meta/reference/query/#dml-statements-edit-files) has each statement's
 manifest meaning.
 
@@ -871,7 +871,7 @@ finding without touching anything.
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
-| `--fields` | `<list>` | config `derive.fields` | Comma-separated managed fields to stamp this run. Each must be one of the seven [derivable fields](/manni/meta/reference/configuration/#the-derivable-fields) or a key with an entry in config [`derive.commands`](/manni/meta/reference/configuration/#commands). An unknown or non-derivable name is an error (exit 2) listing the seven and pointing at `derive.commands`. A field a collection's local [external-metadata](/manni/meta/reference/configuration/#external-metadata) manifest owns is written into that manifest, and the pretty report ends its line with `→ docs-meta.yaml:14` (`json` adds `destination` and `destinationLine`). A field a URL manifest owns is refused (exit 2), the same way loading the config refuses it in `derive.fields`: `"owner" is owned by manifest https://example.com/owners.yaml, which is fetched and cannot be written; set it in that repository.` No config `derive.fields` and no flag is an error (exit 2): `nothing to derive: set derive.fields in manni.config.yaml or pass --fields`. |
+| `--fields` | `<list>` | config `derive.fields` | Comma-separated managed fields to stamp this run. Each must be one of the seven [derivable fields](/manni/meta/reference/configuration/#the-derivable-fields) or a key with an entry in config [`derive.commands`](/manni/meta/reference/configuration/#commands). An unknown or non-derivable name is an error (exit 2) listing the seven and pointing at `derive.commands`. A field a collection's local [external-metadata](/manni/meta/reference/configuration/#external-metadata) manifest owns is written into that manifest, and the pretty report ends its line with `→ docs-meta.yaml:14` (`json` adds `destination` and `destinationLine`). A field a URL manifest owns is refused (exit 2), the same way loading the config refuses it in `derive.fields`. The message is `"owner" is owned by manifest https://example.com/owners.yaml, which is fetched and cannot be written; set it in that repository.` No config `derive.fields` and no flag is an error (exit 2): `nothing to derive: set derive.fields in manni.config.yaml or pass --fields`. |
 | `--sources` | `<list>` | config `derive.sources`, else all five | Comma-separated sources to consult: `git`, `codeowners`, `github`, `gitlab`, `command`. Only the one of `github` and `gitlab` that matches the origin remote is consulted. `command` covers every field with an entry in config [`derive.commands`](/manni/meta/reference/configuration/#commands). A field whose only sources are excluded derives null and is left alone. This is the opt-out for a checkout that cannot answer a source, such as a shallow clone. |
 | `--generated-by` | `<name>` | `MANNI_GENERATED_BY` | The machine that wrote the uncommitted body lines, recorded in [`provenance`](/manni/meta/reference/configuration/#the-derivable-fields). With a `<path>:L1-L2` positional, it attributes those lines instead, committed or not, unless git evidence names another machine for any of them (exit 2). Without the flag, `MANNI_GENERATED_BY` is read. The flag wins whenever it is given, even empty. Both values are trimmed, and a blank one is unset. The flag, or a range, is an error (exit 2) on a run whose fields leave out `provenance`. The message is `--generated-by attributes provenance, which is not in --fields. Add provenance, or drop --generated-by.` The variable alone never is, so an agent session can export it once. A file where the flag finds no uncommitted body lines gets a notice on stderr, and the exit code is unaffected. The notice is `docs/limits.md: no uncommitted body lines; --generated-by attributes only what is not yet committed.` |
 | `--dry-run` | n/a | off | Report what would change and write nothing. |
@@ -921,7 +921,7 @@ docs/install.md
 
 A field whose schema prefers external metadata
 ([`x-manni-location`](/manni/meta/reference/schema-resolution/#field-location))
-and that no manifest owns is stamped on the page, with one warning on stderr:
+and that no manifest owns is stamped on the page. One warning goes to stderr:
 `manni: wrote owner to 2 pages in collection site; the schema prefers
 external metadata, and no manifest owns it. Run manni meta relocate to move
 it.` On a terminal, and outside `--dry-run` and `--check`, `derive` first
@@ -1022,7 +1022,7 @@ manni meta derive docs/limits.md:12-31 --generated-by claude-fable-5      # attr
 ## `meta relocate`
 
 Move each value to where it belongs. A schema says where with
-`x-manni-location`: `page` keeps a top-level key in the document's own
+`x-manni-location`. `page` keeps a top-level key in the document's own
 metadata, and `external` keeps it in a collection's
 [external-metadata](/manni/meta/reference/configuration/#external-metadata)
 manifest. Out of the page go the values a schema prefers external and the
@@ -1048,8 +1048,8 @@ the config file. With no config file, `manni.config.yaml` is created at the git
 root, else the working directory. Config edits keep comments and key order.
 
 A change to a manifest's `keys:` moves that key for **every** page in the
-collection, including pages outside the paths you named, and the output says
-how many. A field join's own field never moves. When the page and the manifest
+collection, including pages outside the paths you named. The output says how
+many. A field join's own field never moves. When the page and the manifest
 both hold a value and the two agree, the copy on the wrong side is dropped.
 
 ### Arguments
@@ -1077,7 +1077,7 @@ both hold a value and the two agree, the copy on the wrong side is dropped.
 
 ### Output and exit codes
 
-In `pretty` format, the first lines say what the config gains or loses, then
+In `pretty` format, the first lines say what the config gains or loses. Then
 each page lists its values as `<key>  → <manifest>:<line>` (out of the page),
 `<key>  ← <manifest>` (into the page), or `<key>  stays: <reason>`. A page
 reached only through a `keys:` change is counted, not listed. The last line

@@ -407,8 +407,8 @@ Constraints on a DML statement:
     `keys:` would need renaming: `"docs/auth.md": "jira" is owned by manifest
     docs-meta.yaml; edit the manifest instead.`
   - An `UPDATE` of the join field on a document that has an entry in a
-    manifest [joined by a field](/manni/meta/reference/configuration/#joining-by-a-field):
-    `"docs/auth.md": "id" is the field manifest docs-meta.yaml joins on, and
+    manifest [joined by a field](/manni/meta/reference/configuration/#joining-by-a-field).
+    It refuses with `"docs/auth.md": "id" is the field manifest docs-meta.yaml joins on, and
     this document has an entry; change the manifest first.` A `_path` move is
     fine there, because the page carries its join value with it. A write to
     an owned key on a page with no join value refuses too:

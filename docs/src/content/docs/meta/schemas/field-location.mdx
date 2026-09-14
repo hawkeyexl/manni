@@ -278,10 +278,13 @@ Removing a key moves it back into every member page for the same reason.
 | One collection, and the target is outside it | The target, appended to that collection's `paths:` |
 | Several collections, and the page is in none | Nothing. The value stays |
 
-With no collections, `manni meta relocate docs/ guides/intro.md` prints
-`Created collection default (paths: docs/**, guides/intro.md) and default.metadata.yaml; it owns authors, owner.`
-With one collection and a target outside it, `manni meta relocate notes/`
-prints `Added notes/** to collection site's paths; docs-meta.yaml now owns owner, authors.`
+Each change to `collections:` gets a line of its own:
+
+- With no collections, `manni meta relocate docs/ guides/intro.md` prints
+  `Created collection default (paths: docs/**, guides/intro.md) and default.metadata.yaml; it owns authors, owner.`
+- With one collection and a target outside it, `manni meta relocate notes/`
+  prints `Added notes/** to collection site's paths; docs-meta.yaml now owns owner, authors.`
+
 Growing a collection's `paths:` also grows what `manni cite` and `manni a11y`
 see for it, which is why the line always names the path. The [configuration
 reference](/manni/meta/reference/configuration/#what-relocate-writes) shows each
@@ -315,7 +318,7 @@ page carrying an owned key fails `external:owned` whatever the schema says.
 `docs/differ.md` holds one owner and the manifest another. Moving either copy
 would silently change what validation sees, so the value stays until someone
 decides. The other two reasons are a page in none of several collections, and
-a manifest that is a URL, which a run fetches and cannot write.
+a manifest that is a URL. A run fetches a URL manifest and cannot write it.
 
 ## What the writers do
 

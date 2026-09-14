@@ -596,8 +596,8 @@ docs/auth.md: jira: PLAT-412 -> PLAT-1  [docs-meta.yaml]
 The bracket names the manifest the change lands in. `fill` writes a proposal
 for an owned key into the page's entry the same way, and `derive` stamps a
 managed field there, `owner` or `last-reviewed` included. Each splice keeps the
-manifest's comments. A corpus check still sees every key the manifest supplies,
-so "every guide has a ticket in the open state" is a
+manifest's comments. A corpus check still sees every key the manifest supplies.
+So "every guide has a ticket in the open state" is a
 [SQL rule](/manni/meta/ci/query-gates/) like any other.
 
 Three writes are still refused. `query` refuses each before any file is

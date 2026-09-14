@@ -79,10 +79,10 @@ states the construction of both the ciphertext and the keyed pin.
 
 ## Markers
 
-A citation can be anchored from the body by a marker, one comment naming an
-entry by id, written in the format's own comment syntax. It anchors the rest
-of its own line when that carries text, else the paragraph that follows it,
-or with `quote: true` the fenced block that follows it. The payload is an id
+A citation can be anchored from the body by a marker. A marker is one comment
+naming an entry by id, written in the format's own comment syntax. It anchors
+the rest of its own line when that carries text, else the paragraph that
+follows it. With `quote: true` it anchors the fenced block that follows it. The payload is an id
 and nothing else. The entry itself lives in the frontmatter or a sidecar
 manifest, never in the body.
 

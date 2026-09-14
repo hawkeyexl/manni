@@ -13,26 +13,26 @@ Afterwards the page is slim and `validate` is clean.
 engineers who own the pages (Maya).
 **Feature:** proposal 0047, `docs/proposals/0047-field-location.md`.
 
-Visual spec: `docs/content-strategy/design.md`. Accent `#58a6ff` (blue; never
-red, green, yellow or cyan, which manni's and git's output use: the warning
+Visual spec: `docs/content-strategy/design.md`. Accent `#58a6ff` (blue). Never
+red, green, yellow or cyan, which manni's and git's output use. The warning
 sign and `warning` are yellow, field names cyan, the summary green, the diff
-red and green). Terminal `#171717`, bands `#0d0d0d`, JetBrains Mono
+red and green. Terminal `#171717`, bands `#0d0d0d`, JetBrains Mono
 throughout. Title band 112 px, 2 px accent rules, caption band 86 px.
 
 ## How it was made, and what is staged
 
 Everything printed in the terminal is a real run of `cat`, git, or
-`node dist/cli.js` built by `npm run build` from this branch's working tree
-(`claude/schema-field-location-prefs-705019`, the uncommitted 0047
+`node dist/cli.js`. The CLI was built by `npm run build` from this branch's
+working tree (`claude/schema-field-location-prefs-705019`, the uncommitted 0047
 implementation on top of `88b303a`). The typed command reads `manni`, the name
 the shim `media/bin/manni` gives the built CLI.
 
 - **A Remotion replay of real bytes, as in the provenance, collections and
   sidecar videos.** The `location:external` warning is 170 characters. A real
   terminal at any phone-legible size hard-wraps it inside a token, which
-  design.md check 2 forbids; the replay wraps at spaces only. So the CLI ran
+  design.md check 2 forbids. The replay wraps at spaces only. So the CLI ran
   under the preload that makes stdout/stderr report as a TTY
-  (`media/capture/tty.cjs`), which keeps the colour, and the bytes were saved
+  (`media/capture/tty.cjs`), which keeps the colour. The bytes were saved
   verbatim to `media/capture-location/`. The composition `LocationDemo`
   (`media/remotion/src/location/beats.ts`, shared `src/Demo.tsx`) replays them.
   Typing runs at 35 ms/char, then Enter, then the output after the command's
@@ -71,8 +71,8 @@ from 30 px down. The longest real line is 170 characters (the `/review-interval`
 warning), and it wraps at spaces. The longest token plus indent is only 37
 (`collections[site].externalMetadata[0]`), so height decides the size. The
 tallest beat is beat 4, 21 rows. **28 px / 61 columns, 39 px line height** is
-the largest size at which it fits the 838 px terminal (819 px), with no orphan
-rows. At 29 px it would need 861 px. The read-back from the render is that the
+the largest size at which it fits the 838 px terminal (819 px). It leaves no
+orphan rows. At 29 px it would need 861 px. The read-back from the render is that the
 widest row (beat 2, `the page; page.schema.json prefers external metadata. Run`,
 exactly 61 characters) ends at x=1045 of 1080.
 
@@ -165,9 +165,9 @@ Using manni.config.yaml (.)
 - Typing 35 ms per character (spec: 35-70 ms). The cursor is a solid block
   and does not blink.
 - Output appears after the command's real measured latency, from the capture
-  run plus three timing runs (`media/capture-location/latency.txt`): validate
-  536-558 ms, relocate 571-584 ms, validate after relocate 532-552 ms, git diff
-  37-38 ms. The replay uses 0.56, 0.58 and 0.55 s, and 2 frames for git and cat.
+  run plus three timing runs (`media/capture-location/latency.txt`). Validate
+  took 536-558 ms and relocate 571-584 ms in those runs. Validate after relocate
+  took 532-552 ms and git diff 37-38 ms in the same runs. The replay uses 0.56, 0.58 and 0.55 s, and 2 frames for git and cat.
 - Beats run 6.4-8.6 s. Each holds 3.0-5.0 s after its main output, so the
   72-91 character caption can be read on it.
 - No narration, so no loudness pass. The AAC 48 kHz track is silence

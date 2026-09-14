@@ -20,17 +20,17 @@ two consumption fields (`risks`, `sample-questions`).
 
 | Field | Type | Location | Notes |
 |---|---|---|---|
-| `provenance` | list of entries | `external` | Which body lines a machine wrote: one entry per range, each naming the machine, the lines, and an integrity hash that pins them. Managed by `manni meta derive` |
+| `provenance` | list of entries | `external` | Which body lines a machine wrote, as one entry per range. Each entry names the machine, the lines, and an integrity hash that pins them. Managed by `manni meta derive` |
 | `meta-provenance` | list of entries | `external` | Per-model attribution of machine-proposed metadata: which fields and evals, at what confidence |
 | `risks` | string or list; open list | `page` | Pre-flight flags for agents and reviewers. Recommended: `cost-incurring` · `destructive` · `irreversible` · `privileged` · `open-world` · `read-only` · `idempotent`. Any other non-empty string is legal |
 | `sample-questions` | string or list | `page` | Questions this page should answer. Retrieval evals use them |
 
 A `provenance` entry has `generated-by`, `lines` (one body line, or a range
 such as `"12-30"`), and `integrity` (`sha256-` and 64 hex digits over those
-lines), all required. A `meta-provenance` entry has `generated-by` (required),
-`fields` (JSON Pointers to the values it proposed, such as `/intent` or
-`/kg/label`), `evals` (the ids of the evals it proposed), and `confidence` (a
-number from 0 to 1 per pointer or eval id). It needs at least one of `fields`
+lines), all required. A `meta-provenance` entry requires `generated-by`. Its
+`fields` are JSON Pointers to the values it proposed, such as `/intent` or
+`/kg/label`. Its `evals` are the ids of the evals it proposed. Its
+`confidence` is a number from 0 to 1 per pointer or eval id. It needs at least one of `fields`
 or `evals`.
 
 The Location column is the `x-manni-location` mark each field carries in

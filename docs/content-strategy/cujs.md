@@ -122,7 +122,7 @@ Per-file schema validation cannot see a dangling cross-reference, a duplicate sl
 
 Sara needs to encode her metadata standard as a JSON Schema. That means defining required and recommended fields, and specifying value formats such as `uri`, `date-time`, and enum. She also needs to understand what the built-in OKF schema already provides, so she can start from it or deviate deliberately.
 
-Her standard also says where each field lives. A field an agent fetching the page would act on stays in the page, and a field that only serves maintainers and CI goes to the collection's external-metadata manifest. She marks each property `x-manni-location` (proposal 0047), and `manni meta relocate` moves the values to match.
+Her standard also says where each field lives. A field an agent fetching the page would act on stays in the page. A field that only serves maintainers and CI goes to the collection's external-metadata manifest. She marks each property `x-manni-location` (proposal 0047), and `manni meta relocate` moves the values to match.
 
 ### S2 · Wire schemas to the right documents
 

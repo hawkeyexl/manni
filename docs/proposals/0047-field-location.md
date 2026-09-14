@@ -178,12 +178,12 @@ entry is an identity change. `RENAME COLUMN` of an owned key would need
 
 ### 4. Where a missing location comes from
 
-1. The page is in a collection: use it, or the first in `collections:` order.
-2. No collections are defined: create one named `default`, whose `paths:` are
-   the run's targets as typed.
-3. Exactly one collection exists and the page is outside it: add the run's
+1. If the page is in a collection, use it, or the first in `collections:` order.
+2. If no collections are defined, create one named `default`, whose `paths:`
+   are the run's targets as typed.
+3. If exactly one collection exists and the page is outside it, add the run's
    target to that collection's `paths:`.
-4. Several collections exist and the page is in none: there is no home. The
+4. If several collections exist and the page is in none, there is no home. The
    value stays and the run says why.
 
 The keys go to the collection's first local manifest. With none, the run
@@ -283,7 +283,7 @@ A value stays when:
 17. **The pre-commit hook and the Action** are never a terminal. Both see
     warnings and unchanged exit codes.
 18. **One page blocks a removal.** Removing a key from `keys:` moves it into
-    every member page, so a single page that cannot take the value back
+    every member page. So a single page that cannot take the value back
     (different values, a read-only format) cancels that removal for the whole
     collection. Only the blocking pages are named as stayed. The alternative,
     removing the key anyway, would silently stop reading the values of the
@@ -293,7 +293,7 @@ A value stays when:
     `external:owned` until someone settles which value is right, which is the
     finding that says so.
 20. **An `INSERT` creates a page that prefers external metadata.** `relocate`
-    reads pages from disk, and the new page is not there yet, so it gets the
+    reads pages from disk, and the new page is not there yet. So it gets the
     warning rather than the offer, unless another page in the same statement
     triggers the relocation.
 21. **`DROP COLUMN` on an owned key** removes it from the manifest entries of
@@ -302,9 +302,9 @@ A value stays when:
 22. **A collection named `docs`.** The config parser already refuses it,
     because `docs` is the query table. The offers never create one: the
     created collection is `default`.
-23. **A writer's offer for pages that do not hold the value yet** asks only to
-    create the manifest or add the key, without "move them out of N pages",
-    because nothing moves.
+23. **A writer's offer for pages that do not hold the value yet.** It asks only
+    to create the manifest or add the key, without "move them out of N pages".
+    Nothing moves.
 
 ## Verification
 
