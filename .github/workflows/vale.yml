@@ -41,7 +41,8 @@ jobs:
           # exercise, and holding those to a house voice would gate the
           # dedicated fixture CLAUDE.md asks for with every feature. Excluding
           # the tree covers both, and never needs updating as fixtures are
-          # added. Every other file in the repo is linted.
-          vale_flags: "--glob=!test/fixtures/**"
+          # added. Each tool keeps its own tree under test/<tool>/fixtures/,
+          # and the glob covers those too. Every other file is linted.
+          vale_flags: "--glob=!**/fixtures/**"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -76,13 +76,34 @@ The fix is to stop leaving the choice to the environment. Pin the provider expli
 manni meta fill docs/internal/ --provider anthropic
 ```
 
-Or pin it once for the whole repo, so nobody's local shell decides:
+Or pin it once for the whole repo, so nobody's local shell decides. The family's
+`providers:` map is read by every manni tool that calls a model, so one line
+covers `manni docevals` as well:
 
 ```yaml title="manni.config.yaml"
-meta:
-  fill:
-    provider: anthropic
+providers:
+  provider: anthropic
 ```
+
+`meta.fill.provider` still works, and wins over `providers.provider` for `fill`
+alone.
+
+When content may go only to your own infrastructure, point the provider there
+instead. An OpenAI-compatible gateway or a self-hosted server takes a
+`baseUrl`, and its key can live under a variable of your choosing:
+
+```yaml title="manni.config.yaml"
+providers:
+  provider: openai
+  openai:
+    baseUrl: https://llm-gateway.internal.example.com/v1
+    apiKeyEnv: GATEWAY_API_KEY
+```
+
+A custom `apiKeyEnv` is read only when the provider is named, as it is here.
+Detection looks for the default variables alone. Every key of the map, and the
+order in which the flag, `fill` and `providers:` apply, is in the
+[configuration reference](/manni/meta/reference/configuration/#providers).
 
 In CI, pin it without exception. An unpinned runner with no keys at all falls through to the local model and downloads gigabytes on every fresh agent.
 
@@ -90,15 +111,29 @@ And if the answer is that this content may not go to a hosted provider at all, t
 
 ## Keeping content on this machine
 
-`--local` runs inference on this machine and **refuses a hosted provider**, even when detection would have picked one:
+`--local` runs inference on this machine with `llama-cpp`, **whatever the config names**:
 
 ```sh
 manni meta fill docs/internal/ --local
 ```
 
-If the environment holds an `OPENAI_API_KEY`, `--local` overrides it rather than following it. If no local model is available, the run fails with exit 2 instead of quietly falling back to something hosted. The refusal is the point.
+It overrides every other choice. Detection never runs, so an `OPENAI_API_KEY` in the environment cannot redirect the run. A hosted provider in `meta.fill.provider` or `providers.provider` is set aside, and `fill` says so once on stderr:
 
-`--local` also refuses **`claude-cli`**, and that is the part to internalize. The rest of the CLI treats `claude-cli` as the local-ish option: no API key, no per-token bill, just a binary on your `PATH`. But the binary is what runs locally; the inference does not. It is the one provider where "local" is true of the process and false of the thing your policy is about. `--local` means `llama-cpp`, and nothing else.
+```
+manni: --local: using llama-cpp instead of "anthropic" from fill.provider.
+```
+
+So a committed config can pin a hosted provider for everyday runs. A job that must keep content in the building adds `--local` and changes nothing else. If no local model can run, the run fails rather than falling back to something hosted.
+
+A `--provider` that names anything but `llama-cpp` or `auto` contradicts the flag, and the run stops before it reads a file:
+
+```
+manni: --local and --provider openai contradict each other: --local runs inference on this machine with llama-cpp. Drop one of them.
+```
+
+That is exit 2. Drop whichever of the two you did not mean.
+
+`--local` never picks **`claude-cli`**, and that is the part to internalize. The rest of the CLI treats `claude-cli` as the local-ish option: no API key, no per-token bill, just a binary on your `PATH`. But the binary is what runs locally; the inference does not. It is the one provider where "local" is true of the process and false of the thing your policy is about. `--local` means `llama-cpp`, and nothing else.
 
 <Aside type="caution" title="Two flags, two boundaries">
 `--offline` means *never fetch a remote schema*. It says nothing about inference. `--local` means *never send document content off this machine*. It says nothing about schema fetching. Neither implies the other, so pass both when you want the run to touch no network service at all:
@@ -110,9 +145,17 @@ manni meta fill docs/internal/ --local --offline
 
 ### The first local run downloads
 
-Choosing `--local` trades egress for a one-time install. On its first run the local provider fetches model weights, under 10 GB and sized to your machine. If the `node-llama-cpp` binding is missing, it installs that too, roughly 700 MB more. Both warn once before starting, and both land in `~/.hawkeyexl-inference/`, never in your project.
+Choosing `--local` trades egress for a one-time install. On its first run the local provider fetches model weights, under 10 GB and sized to your machine. If the `node-llama-cpp` binding is missing, it installs that too, roughly 700 MB more. Both warn once before starting, and both land in `~/.hawkeyexl-inference/` by default, never in your project.
 
-Set `INFERENCE_NO_AUTO_INSTALL=1` to refuse the binding install if a native install needs approval in your environment. On a CI runner, either pin a provider or expect that download on every fresh agent.
+The weights can live somewhere you choose, such as a directory your CI runner caches between jobs:
+
+```yaml title="manni.config.yaml"
+providers:
+  llama-cpp:
+    modelsDir: /opt/models
+```
+
+A relative `modelsDir` resolves from the config file's directory. Set `INFERENCE_NO_AUTO_INSTALL=1` to refuse the binding install if a native install needs approval in your environment. On a CI runner, either pin a provider or expect that download on every fresh agent.
 
 ## Bounding a large run
 

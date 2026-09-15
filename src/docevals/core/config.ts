@@ -1,0 +1,808 @@
+/**
+ * Loads and validates `manni.config.yaml`. The file is shared by the manni
+ * family of documentation tools: manni docevals reads its own `docevals:`
+ * namespace and leaves every sibling key alone. It carries provider and judge
+ * settings plus the central library of named evals and suites that page
+ * frontmatter references. Validation is JSON Schema (2020-12) via Ajv; defaults
+ * are applied in code afterward so the resolved shape is fully typed.
+ */
+import { resolve, dirname } from "node:path";
+import {
+  findConfigFileSync,
+  readConfigFileSync,
+  type ConfigFileOptions,
+} from "../../shared/config-file.js";
+import { parseCollections, type CollectionConfig } from "../../shared/collections.js";
+import { parse as parseYaml } from "yaml";
+import { Ajv2020 } from "ajv/dist/2020.js";
+import configSchema from "./config-schema.json" with { type: "json" };
+import { DocevalsError, type EvalType, type Severity } from "../types.js";
+// Type-only, so the cycle with target.ts (which needs ResolvedPagePlan) is
+// erased at compile time rather than existing at runtime.
+import type { EvalTarget } from "./target.js";
+import { DEFAULT_CHUNK_CHARS } from "./split.js";
+import { errorMessage } from "../../shared/errors.js";
+import {
+  PROVIDERS_KEY,
+  assertKnownProvider,
+  parseProviders,
+  type ProvidersConfig,
+} from "../../shared/providers.js";
+import type { ProviderSelector } from "@hawkeyexl/inference";
+
+/** A provider `docevals.provider` or `--provider` may name, `auto` included. */
+export type ProviderName = ProviderSelector;
+
+/** One capability the operator can grant to content-authored code. */
+export type ExecutionGrant = "frontmatter-commands" | "page-embedded-steps";
+
+export const EXECUTION_GRANTS: readonly ExecutionGrant[] = [
+  "frontmatter-commands",
+  "page-embedded-steps",
+] as const;
+
+/**
+ * One eval definition, as the rest of the codebase sees it.
+ *
+ * An eval entry spells these keys in kebab-case wherever it is written, in the
+ * config's `evals:` and in page frontmatter alike, because that is the
+ * vocabulary the metadata tool publishes and a field should mean one thing
+ * wherever it is written. TypeScript keeps camelCase, because that is what
+ * TypeScript reads like. `normalizeEvalDef` is the single boundary between
+ * the two; nothing downstream should ever see a kebab key. The config's own
+ * section keys (`judge.ensembleRuns`) are camelCase, as every manni tool's
+ * are, and need no boundary.
+ */
+export interface EvalDef {
+  assertion?: string;
+  type?: EvalType;
+  grader?: string;
+  /** Provider or agent judging an `ai` eval; omit for the config default. */
+  provider?: string;
+  evidence?: string;
+  /** Anchor examples. One or several each — a bare string normalizes to a list. */
+  examples?: { pass?: string[]; fail?: string[] };
+  command?: string[];
+  successExitCodes?: number[];
+  timeoutMs?: number;
+  /** sha256 of the assertion when the check script was generated. */
+  generatedAssertionHash?: string;
+  options?: Record<string, unknown>;
+  severity?: Severity;
+  severityMap?: Record<string, Severity>;
+  /** Relative contribution to the suite pass rate. Never changes the outcome. */
+  weight?: number;
+  /** Which bytes the grader receives. Defaults to the page body. */
+  target?: EvalTarget;
+  /** Judge model for this eval; a CLI --model still wins. */
+  model?: string;
+  /** Ensemble runs for this eval; a CLI --runs still wins. */
+  runs?: number;
+}
+
+/** The file-side spelling of an eval definition. Kebab, exactly as authored. */
+export interface RawEvalDef {
+  assertion?: string;
+  type?: EvalType;
+  grader?: string;
+  provider?: string;
+  evidence?: string;
+  examples?: { pass?: string | string[]; fail?: string | string[] };
+  command?: string[];
+  "success-exit-codes"?: number[];
+  "timeout-ms"?: number;
+  "generated-assertion-hash"?: string;
+  options?: Record<string, unknown>;
+  severity?: Severity;
+  "severity-map"?: Record<string, Severity>;
+  target?: EvalTarget;
+  model?: string;
+  runs?: number;
+  // One word, so kebab and camel are the same string — it still passes through
+  // normalizeEvalDef, because that is the only boundary between the two
+  // spellings and a field that skips it is a field the next reader has to
+  // check for.
+  weight?: number;
+}
+
+/** One anchor example, or several, as a list. */
+function anchorList(v: string | string[] | undefined): string[] | undefined {
+  if (v === undefined) return undefined;
+  return Array.isArray(v) ? v : [v];
+}
+
+/**
+ * Kebab file keys in, camelCase `EvalDef` out. Used for config-defined evals
+ * and for page inline evals, so both reach the engine in one shape.
+ */
+export function normalizeEvalDef(raw: RawEvalDef): EvalDef {
+  const examples =
+    raw.examples === undefined
+      ? undefined
+      : {
+          ...(anchorList(raw.examples.pass) !== undefined && {
+            pass: anchorList(raw.examples.pass),
+          }),
+          ...(anchorList(raw.examples.fail) !== undefined && {
+            fail: anchorList(raw.examples.fail),
+          }),
+        };
+  return {
+    assertion: raw.assertion,
+    type: raw.type,
+    grader: raw.grader,
+    provider: raw.provider,
+    evidence: raw.evidence,
+    examples,
+    command: raw.command,
+    successExitCodes: raw["success-exit-codes"],
+    timeoutMs: raw["timeout-ms"],
+    generatedAssertionHash: raw["generated-assertion-hash"],
+    options: raw.options,
+    severity: raw.severity,
+    severityMap: raw["severity-map"],
+    weight: raw.weight,
+    target: raw.target,
+    model: raw.model,
+    runs: raw.runs,
+  };
+}
+
+export interface SuiteDef {
+  targetPassRate: number;
+  evals: string[];
+  /** Criteria scored in this suite, alongside `evals`. */
+  criteria: string[];
+}
+
+/**
+ * Several evals scored as one unit.
+ *
+ * The grouping lives here rather than in page frontmatter because the page
+ * vocabulary is the metadata tool's and this is our scoring model — a criterion is a
+ * statement about how a corpus is graded, not a fact about a page.
+ */
+export interface CriterionDef {
+  evals: string[];
+  combine: "all" | "any";
+  weight: number;
+}
+
+export interface DocevalsConfig {
+  /**
+   * The family's document sets, from the file's top-level `collections:`
+   * (proposal 0041). `[]` when the key is absent or no file governs the run.
+   */
+  collections: CollectionConfig[];
+  /**
+   * The config file as the user would name it, for messages; `null` when no
+   * file governs the run and every value is a built-in default.
+   */
+  configSource: string | null;
+  defaults: { suite: string | null; failFast: boolean; concurrency: number };
+  /**
+   * `docevals.provider`, or `null` when unset: the family's
+   * `providers.provider` decides then, and `auto` (detect) after it.
+   */
+  provider: ProviderName | null;
+  /**
+   * The model within the provider, or `null` for the provider's own default.
+   * manni pins no model: the inference library chooses, and the model it
+   * resolves to is what every cache key names.
+   */
+  model: string | null;
+  /**
+   * The family's top-level `providers:`: the provider and model every tool
+   * falls back to, and the connection settings for each provider. `{}` when
+   * the file declares none, or no file governs the run.
+   */
+  providers: ProvidersConfig;
+  /** Findings baseline path, resolved against the config's directory (ADR 01017). */
+  baseline: string | null;
+  judge: {
+    ensembleRuns: number;
+    /** Judge-stage parallelism. Falls back to `defaults.concurrency` (ADR 01039). */
+    concurrency: number;
+    temperature: number;
+    zones: { autoPass: number; autoFail: number };
+    falsePositiveAlert: number;
+    cacheDir: string;
+    maxTurns: number | null;
+    chunkChars: number;
+  };
+  scripts: {
+    dir: string;
+    configDir: string;
+    timeoutMs: number;
+  };
+  /**
+   * What content-authored code this run may execute. Default deny.
+   *
+   * Two paths reach a shell from a page: a `command` eval declared in
+   * frontmatter, and `tool:doc-detective` running steps embedded in a page
+   * *body*. The old `scripts.allow-frontmatter-commands` boolean covered the
+   * first and defaulted to true; nothing covered the second at all.
+   */
+  execution: { allow: ExecutionGrant[] };
+  fill: {
+    confidenceThreshold: number;
+    maxEvalsPerPage: number;
+    temperature: number;
+    cacheDir: string;
+    maxTurns: number | null;
+    chunkChars: number;
+  };
+  evals: Record<string, EvalDef>;
+  criteria: Record<string, CriterionDef>;
+  suites: Record<string, SuiteDef>;
+  /** Absolute path of the loaded config file. */
+  configPath: string;
+  /** Directory containing the config file; relative paths resolve against it. */
+  configDir: string;
+}
+
+/** Top-level key manni docevals owns inside the shared manni config. */
+const NAMESPACE = "docevals";
+
+export const DEFAULT_CONFIG_FILENAME = "manni.config.yaml";
+
+/**
+ * Root keys that only a pre-rename config has. A manni config namespaces every
+ * tool, so finding these at the root means the file was never migrated.
+ */
+const PRE_RENAME_ROOT_KEYS = [
+  "version",
+  "files",
+  "defaults",
+  "provider",
+  "judge",
+  "scripts",
+  "fill",
+  "evals",
+  "suites",
+];
+
+// `verbose` puts the parent schema on each error, so an unknown key can be
+// checked against the keys its section does have.
+const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true, verbose: true });
+const validateConfig = ajv.compile(configSchema);
+
+/**
+ * The config file's own shape, in its own spelling.
+ *
+ * Ajv has already validated `raw` against `config-schema.json` by the time this
+ * is used, so the optionality here is the schema's, not a guess. Declaring it
+ * is what lets `parseConfig` read the file without an `any` — and an `any` here
+ * would be the worst place for one, since every default in the tool flows
+ * through this function.
+ */
+interface RawDocevalsConfig {
+  defaults?: {
+    suite?: string | null;
+    failFast?: boolean;
+    concurrency?: number;
+  };
+  provider?: string;
+  model?: string;
+  baseline?: string | null;
+  judge?: {
+    ensembleRuns?: number;
+    concurrency?: number;
+    temperature?: number;
+    zones?: { autoPass?: number; autoFail?: number };
+    falsePositiveAlert?: number;
+    cacheDir?: string;
+    maxTurns?: number | null;
+    chunkChars?: number;
+  };
+  execution?: { allow?: ExecutionGrant[] };
+  scripts?: {
+    dir?: string;
+    configDir?: string;
+    timeoutMs?: number;
+  };
+  fill?: {
+    confidenceThreshold?: number;
+    maxEvalsPerPage?: number;
+    temperature?: number;
+    cacheDir?: string;
+    maxTurns?: number | null;
+    chunkChars?: number;
+  };
+  evals?: Record<string, RawEvalDef>;
+  criteria?: Record<string, RawCriterionDef>;
+  suites?: Record<string, RawSuiteDef>;
+}
+
+interface RawCriterionDef {
+  evals?: string[];
+  combine?: "all" | "any";
+  weight?: number;
+}
+
+interface RawSuiteDef {
+  "target-pass-rate"?: number;
+  evals?: string[];
+  criteria?: string[];
+}
+
+/**
+ * Object keys whose sub-keys are names chosen by something other than this
+ * schema, so a capital letter in them is not a stale spelling:
+ *
+ *   severity-map — keyed by the *tool's* own severity names
+ *   options      — no: grader options are ours, and they kebab with everything
+ *                  else (proposal 0023 leaves this call to each tool)
+ */
+const FOREIGN_KEY_SPACES = new Set(["severity-map"]);
+
+/** The 0.1 `generated: {assertionHash}` wrapper, as opposed to any other key of that name. */
+function isAssertionHashWrapper(value: unknown): boolean {
+  return (
+    value != null &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    "assertionHash" in value
+  );
+}
+
+/** Walk `node`, reporting every camelCase key with the kebab it should be. */
+function findPreKebabKeys(
+  node: unknown,
+  path: string,
+): { at: string; becomes: string }[] {
+  if (node == null || typeof node !== "object" || Array.isArray(node)) return [];
+  const found: { at: string; becomes: string }[] = [];
+  for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+    if (/[a-z0-9][A-Z]/.test(key)) {
+      found.push({
+        at: `${path}.${key}`,
+        becomes: key.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(),
+      });
+    }
+    // `generated: {assertionHash}` flattened rather than renamed, so the
+    // generic rule above would suggest the wrong thing for the wrapper itself.
+    //
+    // Matched on shape, not on the name alone: `options` is a grader’s open
+    // runtime contract, so a key called `generated` there is legal config and
+    // an error naming `generated-assertion-hash` would be advice nobody can
+    // follow. Only the 0.1 wrapper — an object carrying `assertionHash` — is
+    // the thing this rule is about.
+    if (key === "generated" && isAssertionHashWrapper(value)) {
+      found.push({ at: `${path}.generated`, becomes: "generated-assertion-hash" });
+      continue;
+    }
+    if (!FOREIGN_KEY_SPACES.has(key)) {
+      found.push(...findPreKebabKeys(value, `${path}.${key}`));
+    }
+  }
+  return found;
+}
+
+/** The section keys whose entries are the frontmatter vocabulary's, in kebab-case. */
+const ENTRY_SECTIONS = ["evals", "criteria", "suites"] as const;
+
+/**
+ * `; did you mean "failFast"?` when `key` is the kebab spelling of a key its
+ * section has. Only the exact counterpart: a guess at a near miss is advice
+ * that can be wrong, and the kebab spelling is the one mistake a reader of
+ * the frontmatter vocabulary is likely to make here.
+ */
+function camelCaseHint(key: string, parentSchema: unknown): string {
+  const camel = key.replace(/-([a-z0-9])/g, (_, c: string) => c.toUpperCase());
+  if (camel === key || parentSchema === null || typeof parentSchema !== "object") return "";
+  const properties = (parentSchema as { properties?: unknown }).properties;
+  return properties !== null && typeof properties === "object" && Object.hasOwn(properties, camel)
+    ? `; did you mean "${camel}"?`
+    : "";
+}
+
+/**
+ * The hint on an old `provider:` object. The key used to hold a `default` and
+ * a section per provider; it is now the provider's name, as `fill.provider` is
+ * in the metadata tool, and the connection settings moved to the family's
+ * top-level `providers:` map, which every tool reads.
+ * Ajv's own message names the key and says it must be a string, which is true
+ * and leaves the reader to find out where the settings went.
+ */
+function movedProviderHint(instancePath: string, keyword: string): string {
+  return instancePath === `/${NAMESPACE}/provider` && keyword === "type"
+    ? `; "provider" is now a provider name; per-provider settings moved to the top-level providers: map`
+    : "";
+}
+
+/** Parse and validate config YAML text. `configPath` is used for messages and path resolution. */
+export function parseConfig(text: string, configPath: string): DocevalsConfig {
+  let raw: unknown;
+  try {
+    raw = parseYaml(text);
+  } catch (e) {
+    throw new DocevalsError(
+      `Invalid YAML in ${configPath}: ${errorMessage(e)}`,
+    );
+  }
+  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) {
+    throw new DocevalsError(`Invalid config in ${configPath}: root must be an object`);
+  }
+  const doc = raw as Record<string, unknown>;
+  const wrapped = NAMESPACE in doc;
+  const toError = (message: string): Error => new DocevalsError(message);
+  // The family keys, parsed as the shared loader parses them, so a config
+  // built from text selects from the same collections, and the same
+  // providers, a discovered file would.
+  const collections = Object.hasOwn(doc, COLLECTIONS_KEY)
+    ? parseCollections(doc[COLLECTIONS_KEY], configPath, toError)
+    : [];
+  const providers = Object.hasOwn(doc, PROVIDERS_KEY)
+    ? parseProviders(doc[PROVIDERS_KEY], configPath, dirname(resolve(configPath)), toError)
+    : {};
+  return parseConfigSection(wrapped ? doc[NAMESPACE] : doc, configPath, wrapped, {
+    source: configPath,
+    collections,
+    providers,
+  });
+}
+
+/** The family's top-level key for document sets (proposal 0041). */
+const COLLECTIONS_KEY = "collections";
+
+/**
+ * Where the metadata tool's configuration reference documents `collections:`.
+ * The literal cite's and meta's `config.ts` carry, repeated because those
+ * modules are theirs.
+ */
+const CONFIG_REF = "https://hawkeyexl.github.io/manni/meta/reference/configuration/";
+
+/**
+ * The key proposal 0041 moved out of `docevals:` and up to the family level.
+ * Refused rather than aliased, as meta and cite refuse theirs: an alias would
+ * be a second place to declare a document set that is meant to be declared
+ * once. Checked before Ajv, which would call it an unknown key.
+ */
+const MOVED_KEY = "files";
+
+/**
+ * The key the family's top-level `providers:` map replaced. Refused rather
+ * than aliased, for the reason `files` is: the settings are declared once, for
+ * every tool, and a second place to declare them is a second answer to which
+ * one wins. Checked before Ajv, which would call it an unknown key.
+ */
+const MOVED_PROVIDERS_KEY = "providers";
+
+/** What the file the section came from carries beside it. */
+export interface ConfigFileContext {
+  /** The file as the user would name it, for messages. */
+  source: string;
+  /** The file's top-level `collections:`. */
+  collections: CollectionConfig[];
+  /** The file's top-level `providers:`; `{}` when it declares none. */
+  providers?: ProvidersConfig;
+}
+
+/**
+ * Validate the tool's section. `value` is what sat under `docevals:` when
+ * `wrapped`, and the whole document otherwise (a legacy file, or an explicit
+ * path with no wrapper key). Messages name `configPath`; relative paths in
+ * the config resolve against its directory. `file` carries the family keys;
+ * absent, the section is its own source and declares no collections.
+ */
+export function parseConfigSection(
+  value: unknown,
+  configPath: string,
+  wrapped: boolean,
+  file: ConfigFileContext = { source: configPath, collections: [] },
+): DocevalsConfig {
+  // The rest of this function reads `raw` as the document shape the checks
+  // below were written against: a mapping with the section under NAMESPACE.
+  // An empty `docevals:` is a section with nothing set, so every default
+  // applies. It has no required key to write in it.
+  const raw: Record<string, unknown> = wrapped
+    ? { [NAMESPACE]: value ?? {} }
+    : (value as Record<string, unknown> | null) ?? {};
+  if (typeof raw !== "object" || Array.isArray(raw)) {
+    throw new DocevalsError(`Invalid config in ${configPath}: root must be an object`);
+  }
+
+  // `--config <path>` reaches here without passing loadConfig's filename check,
+  // so a pre-rename file named anything at all would otherwise parse to pure
+  // defaults — no evals, no suites, exit 0. Catch it by shape instead.
+  if (!(NAMESPACE in raw)) {
+    const stray = PRE_RENAME_ROOT_KEYS.filter((k) => k in raw);
+    if (stray.length > 0) {
+      throw new DocevalsError(
+        `Invalid config in ${configPath}: found ${stray.join(", ")} at the root, ` +
+          `but no "${NAMESPACE}:" key.\n` +
+          `manni.config.yaml is shared across the manni family, so every docevals ` +
+          `setting belongs under a top-level "${NAMESPACE}:" key. Indent the file's ` +
+          `contents one level and add that key.`,
+      );
+    }
+  }
+  const section = raw[NAMESPACE];
+  if (
+    section !== null &&
+    typeof section === "object" &&
+    !Array.isArray(section) &&
+    Object.hasOwn(section, MOVED_KEY)
+  ) {
+    throw new DocevalsError(
+      `${file.source}: "${MOVED_KEY}" is no longer a docevals key. Document sets are declared once for every tool, under a top-level collections: list. See ${CONFIG_REF}#collections`,
+    );
+  }
+  if (
+    section !== null &&
+    typeof section === "object" &&
+    !Array.isArray(section) &&
+    Object.hasOwn(section, MOVED_PROVIDERS_KEY)
+  ) {
+    throw new DocevalsError(
+      `${file.source}: "${MOVED_PROVIDERS_KEY}" is no longer a docevals key. Provider settings are declared once for every tool, under a top-level providers: map. See ${CONFIG_REF}#providers`,
+    );
+  }
+
+  // Eval, criterion and suite entries are kebab-case, the spelling a page
+  // uses for the same entries. Ajv would reject a camelCase spelling there as
+  // "must NOT have additional properties", which names the parent object and
+  // leaves the reader to guess which key. Name the key and its kebab spelling
+  // instead. The section's own keys are camelCase and are not walked: a kebab
+  // spelling of one is an unknown key, and the Ajv message below names the
+  // camelCase key it meant.
+  const preKebab = ENTRY_SECTIONS.flatMap((name) =>
+    section !== null && typeof section === "object" && !Array.isArray(section)
+      ? findPreKebabKeys((section as Record<string, unknown>)[name], `${NAMESPACE}.${name}`)
+      : [],
+  );
+  if (preKebab.length > 0) {
+    throw new DocevalsError(
+      `Invalid config in ${configPath}: camelCase keys are not read in eval, criterion or suite entries.\n` +
+        preKebab.map((p) => `  ${p.at} -> ${p.becomes}`).join("\n") +
+        `\nThose entries are kebab-case, matching the frontmatter vocabulary.`,
+    );
+  }
+
+  // The removed key would otherwise surface as "must NOT have additional
+  // properties" against `scripts`, which names the parent and leaves the
+  // reader to find the child — the same failure the camelCase check above
+  // exists to avoid. It also flipped default: it was `true`, and the grant is
+  // default-deny, so a silent migration would quietly stop running checks.
+  const ns = raw[NAMESPACE];
+  const scriptsSection =
+    ns && typeof ns === "object"
+      ? (ns as Record<string, unknown>).scripts
+      : undefined;
+  if (
+    scriptsSection &&
+    typeof scriptsSection === "object" &&
+    "allow-frontmatter-commands" in scriptsSection
+  ) {
+    throw new DocevalsError(
+      `Invalid config in ${configPath}: scripts.allow-frontmatter-commands has been replaced by ` +
+        `execution.allow.
+` +
+        `  Write \`execution: { allow: [frontmatter-commands] }\` to keep running them.
+` +
+        `The grant is default-deny and also covers page-embedded-steps, which nothing gated before.`,
+    );
+  }
+
+  if (!validateConfig(raw)) {
+    const details = (validateConfig.errors ?? [])
+      .map((e) => {
+        // Ajv reports an unknown key against the *parent* object, so the bare
+        // message ("must NOT have additional properties") leaves the reader to
+        // diff their file against the schema to find which key it meant. Name
+        // it, for the same reason findPreKebabKeys above names a camelCase
+        // spelling: the common case is a removed key in an unmigrated config
+        // -- `judge.max-cost-usd` after ADR 01019, say -- and a migration
+        // error that makes you guess is one people work around.
+        const extra =
+          e.keyword === "additionalProperties"
+            ? (e.params as { additionalProperty?: string }).additionalProperty
+            : undefined;
+        if (extra !== undefined) {
+          return `  ${e.instancePath || "/"}: unknown key "${extra}"${camelCaseHint(extra, e.parentSchema)}`;
+        }
+        return `  ${e.instancePath || "/"}: ${e.message ?? "is invalid"}${movedProviderHint(e.instancePath, e.keyword)}`;
+      })
+      .join("\n");
+    throw new DocevalsError(`Invalid config in ${configPath}:\n${details}`);
+  }
+
+  // Sibling tools own the other root keys; this reads only its own namespace.
+  // A file that configures no docevals at all leaves every default in place.
+  const r = (raw[NAMESPACE] ??
+    {}) as RawDocevalsConfig;
+  const abs = resolve(configPath);
+  const dir = dirname(abs);
+
+  // The name is checked here, with the message `manni meta fill` gives, so a
+  // typo is caught by every verb and not only the ones that reach a model.
+  // Whether a model has a provider to own it waits for the flags: a
+  // `--provider`, or the family's `providers.provider`, can supply the
+  // provider a configured model needs.
+  const provider = r.provider ?? null;
+  if (provider !== null) assertKnownProvider(provider, (message) => new DocevalsError(message));
+
+  const suites: Record<string, SuiteDef> = {};
+  for (const [name, def] of Object.entries(r.suites ?? {})) {
+    suites[name] = {
+      targetPassRate: def["target-pass-rate"] ?? 1.0,
+      evals: def.evals ?? [],
+      criteria: def.criteria ?? [],
+    };
+  }
+
+  const criteria: Record<string, CriterionDef> = {};
+  for (const [name, def] of Object.entries(r.criteria ?? {})) {
+    criteria[name] = {
+      evals: def.evals ?? [],
+      combine: def.combine ?? "all",
+      weight: def.weight ?? 1,
+    };
+  }
+
+  const config: DocevalsConfig = {
+    collections: file.collections,
+    configSource: file.source,
+    defaults: {
+      suite: r.defaults?.suite ?? null,
+      failFast: r.defaults?.failFast ?? false,
+      concurrency: r.defaults?.concurrency ?? 4,
+    },
+    provider,
+    model: r.model ?? null,
+    providers: file.providers ?? {},
+    baseline: r.baseline ?? null,
+    judge: {
+      ensembleRuns: r.judge?.ensembleRuns ?? 3,
+      // Falls back to the corpus-wide setting, so an unset value behaves
+      // exactly as it did before this knob existed. It is separable because
+      // the judge's right parallelism is not the deterministic graders': a
+      // local in-process model serves one context at a time (ADR 01039).
+      concurrency: r.judge?.concurrency ?? r.defaults?.concurrency ?? 4,
+      temperature: r.judge?.temperature ?? 0,
+      zones: {
+        autoPass: r.judge?.zones?.autoPass ?? 0.8,
+        autoFail: r.judge?.zones?.autoFail ?? 0.8,
+      },
+      falsePositiveAlert: r.judge?.falsePositiveAlert ?? 0.15,
+      cacheDir: r.judge?.cacheDir ?? ".manni/docevals/cache",
+      maxTurns: r.judge?.maxTurns ?? null,
+      chunkChars: r.judge?.chunkChars ?? DEFAULT_CHUNK_CHARS,
+    },
+    scripts: {
+      dir: r.scripts?.dir ?? "{docDir}/manni-docevals",
+      configDir: r.scripts?.configDir ?? "manni-docevals-scripts",
+      timeoutMs: r.scripts?.timeoutMs ?? 30000,
+    },
+    execution: { allow: r.execution?.allow ?? [] },
+    fill: {
+      confidenceThreshold: r.fill?.confidenceThreshold ?? 0.7,
+      maxEvalsPerPage: r.fill?.maxEvalsPerPage ?? 3,
+      temperature: r.fill?.temperature ?? 0,
+      cacheDir: r.fill?.cacheDir ?? ".manni/docevals/cache/fill",
+      maxTurns: r.fill?.maxTurns ?? null,
+      chunkChars: r.fill?.chunkChars ?? DEFAULT_CHUNK_CHARS,
+    },
+    evals: Object.fromEntries(
+      Object.entries(r.evals ?? {}).map(([name, def]) => [
+        name,
+        normalizeEvalDef(def),
+      ]),
+    ),
+    criteria,
+    suites,
+    configPath: abs,
+    configDir: dir,
+  };
+
+  // Referential integrity: suites may only reference defined evals.
+  for (const [suiteName, suite] of Object.entries(config.suites)) {
+    for (const evalName of suite.evals) {
+      if (!(evalName in config.evals)) {
+        throw new DocevalsError(
+          `Invalid config in ${configPath}: suite "${suiteName}" references undefined eval "${evalName}"`,
+        );
+      }
+    }
+  }
+  for (const [critName, crit] of Object.entries(config.criteria)) {
+    for (const evalName of crit.evals) {
+      if (!(evalName in config.evals)) {
+        throw new DocevalsError(
+          `Invalid config in ${configPath}: criterion "${critName}" references undefined eval "${evalName}"`,
+        );
+      }
+    }
+  }
+  for (const [suiteName, suite] of Object.entries(config.suites)) {
+    for (const critName of suite.criteria) {
+      if (!(critName in config.criteria)) {
+        throw new DocevalsError(
+          `Invalid config in ${configPath}: suite "${suiteName}" references undefined criterion "${critName}"`,
+        );
+      }
+    }
+  }
+  if (config.defaults.suite && !(config.defaults.suite in config.suites)) {
+    throw new DocevalsError(
+      `Invalid config in ${configPath}: defaults.suite "${config.defaults.suite}" is not a defined suite`,
+    );
+  }
+  return config;
+}
+
+/**
+ * Load config from an explicit path, or discover the family file from the
+ * working directory upward (`src/shared/config-file.ts`: the family file,
+ * read at its `docevals:` key). With no config file present, built-in
+ * defaults apply (no named evals or suites).
+ */
+export function loadConfig(path?: string, cwd = process.cwd()): DocevalsConfig {
+  const file = path
+    ? readConfigFileSync(path, cwd, CONFIG_FILE)
+    : findConfigFileSync(cwd, CONFIG_FILE);
+  if (file === null) return defaultConfig(cwd);
+  return parseConfigSection(file.value, file.path, file.wrapped, {
+    source: file.source,
+    collections: file.collections,
+    providers: file.providers ?? {},
+  });
+
+}
+
+/**
+ * Every built-in default, with no file behind it: what a run gets when
+ * discovery finds nothing, or under `--no-config`. It declares no collections,
+ * so such a run reads only the paths it was given.
+ */
+export function defaultConfig(cwd = process.cwd()): DocevalsConfig {
+  return {
+    ...parseConfigSection(null, resolve(cwd, DEFAULT_CONFIG_FILENAME), false),
+    configSource: null,
+  };
+}
+
+export interface RunConfigOptions {
+  /** `-c/--config`. */
+  configPath?: string;
+  /** `--no-config`: skip discovery and run on the built-in defaults. */
+  noConfig?: boolean;
+  /** Positional paths; checked here only for how they combine with `collection`. */
+  paths?: string[];
+  /** `--collection <name>`, repeatable. */
+  collection?: string[];
+}
+
+/**
+ * The config a command runs under. `--collection` names something only a
+ * config can define and selects a set the operator did not type, so pairing it
+ * with paths is refused before discovery, and the message is about the flags
+ * rather than about whatever the walk found. The missing-config refusal is
+ * `discoverPages`', which every command reaches next.
+ */
+export function loadRunConfig(opts: RunConfigOptions, cwd = process.cwd()): DocevalsConfig {
+  assertCollectionWithoutPaths(opts.collection, opts.paths);
+  return opts.noConfig ? defaultConfig(cwd) : loadConfig(opts.configPath, cwd);
+}
+
+/** The message meta and cite give, in docevals' error class. */
+export function assertCollectionWithoutPaths(
+  collection: readonly string[] | undefined,
+  paths: readonly string[] | undefined,
+): void {
+  if ((collection ?? []).length > 0 && (paths ?? []).length > 0) {
+    throw new DocevalsError(
+      "--collection selects a configured collection; it cannot be combined with paths.",
+    );
+  }
+}
+
+const CONFIG_FILE: ConfigFileOptions = {
+  section: NAMESPACE,
+  // docevals never shipped a file of its own under manni, so, like cite and
+  // a11y, it has no pre-family name to read.
+  legacyNames: [],
+  toError: (message) => new DocevalsError(message),
+};
+

@@ -133,15 +133,16 @@ reaches your document.
 diff.
 
 It picks an LLM provider by detecting one. The order is `ANTHROPIC_API_KEY`,
-then `OPENAI_API_KEY`, then a signed-in `claude` CLI, then a local model that
+then `OPENAI_API_KEY`, then a `claude` CLI that runs, then a local model that
 needs no credentials at all. That means it works with whatever you have, and it
 reports which provider it used. Pass `--provider` to pin one. That is worth
 doing in CI. Left to detect, a runner that loses its key falls back to the local
 model, and downloads it rather than failing the build.
 
 Pass `--local` when the document must not leave the machine. It runs inference
-on-device and **refuses every hosted provider**, a signed-in `claude` CLI
-included. That CLI runs locally, but its inference does not. See the [`fill`
+on-device with `llama-cpp` and **overrides any provider the config names**,
+saying which one it set aside. It never picks the `claude` CLI, which runs
+locally while its inference does not. See the [`fill`
 reference](https://hawkeyexl.github.io/manni/meta/reference/cli/#meta-fill) for every
 flag and for what the local fallback costs.
 

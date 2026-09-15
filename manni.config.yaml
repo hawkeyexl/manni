@@ -82,3 +82,141 @@ a11y:
   # site carries no finding at any level. It is a ratchet: lower it as
   # findings are fixed, never raise it.
   severity: notice
+
+# The docevals tool validating its own fixture corpus (the dogfood for
+# `manni docevals run`). Its own key, its own settings; the metadata tool
+# above never reads them. Carried over from moose-docevals with the fixture
+# paths moved under test/docevals/.
+#
+# The corpus is named on the command line, `manni docevals run
+# test/docevals/fixtures/pages`, rather than declared as a collection:
+# a bare `manni meta validate` and `manni cite check` read every collection
+# this file declares, and the fixture pages are not docs pages.
+docevals:
+  defaults:
+    suite: null
+    failFast: false
+    concurrency: 4
+
+  # Named rather than detected, so a run over the fixtures behaves the same on
+  # every machine: without ANTHROPIC_API_KEY it degrades to deterministic evals
+  # instead of picking up whatever this machine happens to have (the Claude CLI,
+  # a local model). No model is pinned; the inference library's default for the
+  # provider is used, and every cache key names the model it resolved to.
+  #
+  # Pinned here, under docevals:, rather than in a top-level providers: map.
+  # That map is every tool's default, and this file is ambient for every run
+  # beneath the repository, the metadata tool's fill tests included, which
+  # expect detection. The pin is a fact about the fixture corpus, not about
+  # the family.
+  provider: anthropic
+
+  judge:
+    ensembleRuns: 3
+    temperature: 0
+    zones:
+      autoPass: 0.8
+      autoFail: 0.8
+    falsePositiveAlert: 0.15
+    cacheDir: .manni/docevals/cache
+
+  # The fixture corpus declares command evals in page frontmatter
+  # (installation.mdx, find.mdx), so this run grants that capability. It does
+  # NOT grant page-embedded-steps: nothing here runs doc-detective.
+  execution:
+    allow: [frontmatter-commands]
+
+  scripts:
+    dir: "{docDir}/manni-docevals"
+    configDir: manni-docevals-scripts
+    timeoutMs: 30000
+
+  evals:
+    no-future-promises:
+      type: regression
+      assertion: The page makes no claims about unreleased or future functionality.
+      grader: ai
+      evidence: All prose sections
+      examples:
+        pass: Describes only shipped behavior.
+        fail: Says "coming soon" or references an unreleased version.
+    explains-why-before-how:
+      type: capability
+      assertion: >
+        The page explains why a reader would use the feature before explaining
+        how to use it.
+      grader: ai
+      evidence: Introduction and first section
+      examples:
+        pass: Opens with the problem the feature solves, then gives steps.
+        fail: Jumps straight into syntax with no motivation.
+    frontmatter-valid:
+      assertion: Page frontmatter validates against the docevals built-in schema.
+      grader: tool:docmeta
+      options:
+        schemas: ["docs/proposals/0023/schemas/evals/1.0.0-proposal.3.json"]
+      severity: error
+    remark:
+      assertion: Page parses as MDX and passes remark lint rules.
+      grader: tool:remark
+      severity: warning
+    names-an-action:
+      # The cheap rung below the judge: a verifiable fact, matched rather than
+      # argued about three times.
+      assertion: The page documents at least one Doc Detective action.
+      grader: tool:regex
+      options:
+        pattern: "(goTo|find|click|checkLink|httpRequest)"
+      severity: warning
+      # Secondary to the judged assertions on the same page: it is a spec
+      # literal, so it reports without dominating the suite's rate.
+      weight: 0.5
+    ships-a-schema:
+      assertion: The actions corpus still ships the schema files it references.
+      grader: tool:file-exists
+      options:
+        path: "*.mdx"
+      severity: notice
+    fresh-enough:
+      assertion: Page was reviewed within the last year.
+      grader: tool:freshness
+      options:
+        field: last-reviewed
+        max-age-days: 365
+      severity: warning
+    readable:
+      assertion: Page prose reads below grade 12.
+      grader: tool:reading-level
+      options:
+        max-grade: 12
+      severity: warning
+    distinct-action-pages:
+      assertion: >
+        Action reference pages describe behaviors unique to their action,
+        distinct from related actions.
+      grader: tool:differentiation
+      options:
+        scope: "test/docevals/fixtures/pages/docs/actions/**"
+        max-similarity: 0.85
+      severity: error
+
+  criteria:
+    # Two checks that only mean something together: a page claiming to
+    # document an action should both name it and be fresh enough to trust.
+    # Scored once, so the pair cannot outvote a standalone eval.
+    action-page-is-trustworthy:
+      evals: [names-an-action, fresh-enough]
+      combine: all
+      weight: 2
+
+  suites:
+    reference:
+      target-pass-rate: 1.0
+      evals: [no-future-promises, fresh-enough, readable, frontmatter-valid, names-an-action, ships-a-schema]
+      criteria: [action-page-is-trustworthy]
+    tutorial:
+      target-pass-rate: 0.7
+      evals: [explains-why-before-how, no-future-promises]
+    how-to:
+      target-pass-rate: 1.0
+      evals: [no-future-promises, readable]

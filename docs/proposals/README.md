@@ -11,6 +11,7 @@ Internal design docs for changes that are bigger than a single PR's commit messa
 | `Implemented` | Shipped. The doc stays as the rationale record. |
 | `Rejected` | Considered and declined. The doc stays; the reason is the value. |
 | `Superseded by NNNN` | Replaced. |
+| `Superseded in part by NNNN` | Partly replaced. The later proposal names the sections that no longer hold. |
 
 ## The set
 
@@ -34,7 +35,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0014](0014-empty-input-is-not-success.md) | An empty input set is not success | correctness | Implemented |
 | [0015](0015-schema-trust-boundary.md) | A trust boundary for document-supplied schemas | Devin · D2 / Sara · S3 | Implemented |
 | [0016](0016-flag-ownership.md) | Which command owns a flag, and where it may be written | all (CLI surface) | Accepted |
-| [0017](0017-fill-egress-and-bounds.md) | What `fill` sends, and how to bound it | Maya · M4 / Devin · D1 | Implemented (#102) |
+| [0017](0017-fill-egress-and-bounds.md) | What `fill` sends, and how to bound it | Maya · M4 / Devin · D1 | Superseded in part by [0048](0048-docevals-domain.md) |
 | [0018](0018-write-support-shipped-for-all-three.md) | Write support shipped for HTML, XML **and** DITA | Maya · M1, M4 / Theo · T1 | Superseded by [0020](0020-element-metadata.md) |
 | [0019](0019-no-docmeta-init.md) | `docmeta init` is rejected, not deferred | Maya · M1 | Accepted |
 | [0020](0020-element-metadata.md) | Element metadata in XML and HTML, and the DITA schema it unblocks | Sara · S1 / Maya · M1, M4 | Implemented |
@@ -64,6 +65,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0045](0045-family-encryption-key.md) | A family encryption key: `encryptionKey:`, `manni key`, and `x-manni-encrypt` for metadata that must not appear in plain text | Sara · S1 / Devin · D5 / Maya · M5 | Implemented (#17); superseded in part by 0047 |
 | [0046](0046-provenance-pins.md) | Provenance pins, where `provenance` records which machine wrote which body lines as a range and an integrity hash stamped by `manni meta derive`. Field attribution becomes one `meta-provenance` shape across the family | Maya · M8 / Sara · S1 / Devin · D4 | Implemented (#34) |
 | [0047](0047-field-location.md) | A field's preferred location, `x-manni-location` set to `page` or `external`, marked on every vocabulary field. `manni meta relocate` moves values between the pages and a collection's manifest, and every writer follows the manifest | Sara · S1 / Maya · M4 | Implemented (#37) |
+| [0048](0048-docevals-domain.md) | The `docevals` domain, where moose-docevals folds in as `manni docevals` and takes the family's collections, severity, formats, providers, the 0023 draft and 0046's records. Its content strategy joins the family's, and its ADR log closes at 01045 | Devin · D8, D9 / Sara · S6–S9 / Maya · M9–M13 / Theo · T4 | Proposed |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -138,6 +140,12 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
 0041 ──┤                 (the manifest on a collection, whose keys: every move edits)
 0045 ──┤                 (a schema keyword Ajv evaluates, and the one prompt the family asks)
 0046 ──┘                 (provenance kept in a manifest, the exception this generalizes)
+
+0033 ──┬─> 0048          (the umbrella and the import recipe docevals follows)
+0034 ──┤                 (eight spelled verbs, no default subcommand)
+0041 ──┤                 (collections: replaces docevals.files)
+0046 ──┤                 (the records the self-preference check reads and fill writes)
+0023 ──┘                 (the evals draft pages validate against, with no copy shipped)
 ```
 
 The four `Proposed` SQL items (0026–0029) are independent of each other, with one exception. 0026 and 0029 both grow `query`'s `-f` value list. Each specifies the combined six-value surface, and whichever is implemented second merges into the one const. Recommended implementation order is 0026 → 0029 → 0027 → 0028, which is impact-first. The two config-touching ones (0026, 0027) land apart, so the second rebases trivially.
@@ -165,3 +173,14 @@ npm ci && npm run build
 
 Then follow the transcript in the proposal. Sandboxes are disposable temp dirs;
 nothing in this repo is mutated.
+
+## Sibling tools' logs
+
+Each tool that joins the family brings its own ADR log. It lives in a
+subdirectory named for the tool, numbered as the tool numbered it. The files
+are the record as written in the source repository, cited by SHA in the import
+commit. The supersede-never-amend rule applies to them as it does here.
+
+| Directory | Source |
+|---|---|
+| [`docevals/`](docevals/) | moose-docevals at 670e62b (00001-00004 and 01000-01045). Closed at 01045 by [0048](0048-docevals-domain.md); later docevals decisions are in this series. |

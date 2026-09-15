@@ -2,9 +2,8 @@
  * The family config file, shared by every tool under the `manni` umbrella.
  *
  * One file, `manni.config.yaml`, with one top-level key per tool. A tool reads
- * its own key and leaves its siblings alone. Two older spellings are still
- * discovered, each with a warning: the pre-rename family name
- * (`moose.config.yaml`) and each tool's own pre-family name
+ * its own key and leaves its siblings alone. One older spelling is still
+ * discovered, with a warning: each tool's own pre-family name
  * (`docmeta.config.yaml` for the metadata tool), whose whole document *is*
  * the tool's section.
  *
@@ -192,6 +191,58 @@ describe("family config discovery", () => {
     expect(found?.value).toBeNull();
   });
 
+  it("parses the top-level providers: once, for every tool, resolving modelsDir from the file", async () => {
+    const root = await tree({
+      "manni.config.yaml":
+        "providers:\n  provider: openai\n  model: gpt-x\n  openai:\n    baseUrl: http://127.0.0.1:1/v1\n  llama-cpp:\n    modelsDir: weights\nmeta:\n  allowEmpty: true\n",
+      "docs/.keep": "",
+    });
+    const found = await findConfigFile(join(root, "docs"), META);
+    expect(found?.value).toEqual({ allowEmpty: true });
+    expect(found?.providers).toEqual({
+      provider: "openai",
+      model: "gpt-x",
+      openai: { baseUrl: "http://127.0.0.1:1/v1" },
+      "llama-cpp": { modelsDir: join(root, "weights") },
+    });
+  });
+
+  it("a family file with providers: and no section is still the tool's config", async () => {
+    const root = await tree({
+      "manni.config.yaml": "providers:\n  provider: anthropic\n",
+      "docmeta.config.yaml": "paths: [legacy]\n",
+    });
+    const found = await findConfigFile(root, META);
+    expect(found?.kind).toBe("manni");
+    expect(found?.wrapped).toBe(true);
+    expect(found?.value).toBeNull();
+    expect(found?.providers).toEqual({ provider: "anthropic" });
+  });
+
+  it("an explicit path carries providers: too", async () => {
+    const root = await tree({
+      "conf/any.yaml": "providers:\n  llama-cpp:\n    modelsDir: ../weights\n",
+    });
+    const found = await readConfigFile("conf/any.yaml", root, META);
+    expect(found.wrapped).toBe(true);
+    expect(found.providers).toEqual({ "llama-cpp": { modelsDir: join(root, "weights") } });
+  });
+
+  it("a file with no providers: carries none, and a legacy file never does", async () => {
+    const root = await tree({ "manni.config.yaml": "meta:\n  allowEmpty: true\n" });
+    expect((await findConfigFile(root, META))?.providers).toBeUndefined();
+    const legacy = await tree({ "docmeta.config.yaml": "providers:\n  provider: gemini\n" });
+    expect((await findConfigFile(legacy, META))?.providers).toBeUndefined();
+  });
+
+  it("a malformed providers: is refused in the tool's error class", async () => {
+    class MyError extends Error {}
+    const root = await tree({ "manni.config.yaml": "providers:\n  provider: gemini\n" });
+    const run = findConfigFile(root, { ...META, toError: (m) => new MyError(m) });
+    await expect(run).rejects.toBeInstanceOf(MyError);
+    await expect(run).rejects.toThrow('manni.config.yaml: Unknown provider "gemini".');
+  });
+
   it("a file with no encryptionKey carries none", async () => {
     const root = await tree({ "manni.config.yaml": "meta:\n  allowEmpty: true\n" });
     expect((await findConfigFile(root, META))?.encryptionKey).toBeUndefined();
@@ -261,14 +312,21 @@ describe("family config discovery", () => {
     expect(stderr).toEqual([]);
   });
 
-  it("reads moose.config.yaml and warns once to rename it", async () => {
+  it("does not discover moose.config.yaml, and says nothing about it", async () => {
     const root = await tree({ "moose.config.yaml": "meta:\n  paths: [m]\n" });
-    const found = await findConfigFile(root, META);
-    expect(found?.kind).toBe("moose");
-    expect(found?.value).toEqual({ paths: ["m"] });
-    await findConfigFile(root, META);
-    expect(stderr).toHaveLength(1);
-    expect(stderr[0]).toMatch(/^manni: "moose\.config\.yaml" .*"manni\.config\.yaml"/);
+    expect(await findConfigFile(root, META)).toBeNull();
+    expect(stderr).toEqual([]);
+  });
+
+  it("walks past a moose.config.yaml to the family file above it", async () => {
+    const root = await tree({
+      "manni.config.yaml": "meta:\n  paths: [root]\n",
+      "docs/moose.config.yaml": "meta:\n  paths: [moose]\n",
+    });
+    const found = await findConfigFile(join(root, "docs"), META);
+    expect(found?.path).toBe(join(root, "manni.config.yaml"));
+    expect(found?.value).toEqual({ paths: ["root"] });
+    expect(stderr).toEqual([]);
   });
 
   it("reads a legacy file and warns once, naming the section to move to", async () => {
@@ -284,12 +342,14 @@ describe("family config discovery", () => {
     );
   });
 
-  it("orders manni, then moose, then legacy within one directory", async () => {
+  it("passes over a moose.config.yaml to the legacy file beside it", async () => {
     const root = await tree({
       "moose.config.yaml": "meta:\n  paths: [moose]\n",
       "docmeta.config.yaml": "paths: [legacy]\n",
     });
-    expect((await findConfigFile(root, META))?.value).toEqual({ paths: ["moose"] });
+    const found = await findConfigFile(root, META);
+    expect(found?.kind).toBe("legacy");
+    expect(found?.value).toEqual({ paths: ["legacy"] });
   });
 
   it("walks up to the git boundary, nearest directory first", async () => {
@@ -336,6 +396,14 @@ describe("family config discovery", () => {
       expect(read.kind).toBe("explicit");
       expect(read.wrapped).toBe(true);
       expect(read.value).toEqual({ paths: ["x"] });
+    });
+
+    it("reads a moose.config.yaml named with -c as any other explicit file", async () => {
+      const root = await tree({ "moose.config.yaml": "meta:\n  paths: [x]\n" });
+      const read = await readConfigFile("moose.config.yaml", root, META);
+      expect(read.kind).toBe("explicit");
+      expect(read.value).toEqual({ paths: ["x"] });
+      expect(stderr).toEqual([]);
     });
 
     it("takes the whole document when the section is absent", async () => {

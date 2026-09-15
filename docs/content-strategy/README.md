@@ -20,7 +20,7 @@ Before drafting or editing any user-facing documentation:
 
 1. **Identify the relevant persona.** Is this page for Maya (docs engineer), Devin (CI engineer), Sara (schema author), or Theo (contributor hitting a red check)? A page may serve more than one, but there is usually a primary.
 
-2. **Find the matching CUJ in `cujs.md`.** Each persona has 1–3 numbered journeys (M1–M3, D1–D3, S1–S3, T1). Understand the end-to-end outcome the persona needs to reach.
+2. **Find the matching CUJ in `cujs.md`.** Each persona has a numbered series of journeys across the tools (M1–M13, D1–D9, S1–S9, T1–T4). Understand the end-to-end outcome the persona needs to reach.
 
 3. **Structure content around that journey, not by document type.** Do not impose a Diátaxis-style tutorial/how-to/explanation/reference split as the organizing principle. Ask: "What does this persona need to know, and in what order, to reach the outcome?" Let the journey sequence the content.
 
@@ -39,3 +39,21 @@ manni meta docs document a real CLI. Every flag, exit code, output string, and s
 - **Source files are the contract for behavior** (`src/cli.ts` for flags, `src/core/` for config and schema resolution, `src/extractors/` for formats).
 - **The test suite is the contract for *exact emitted strings*.** Type definitions in `src/types.ts` describe the *shape* of output, but they over-promise. An optional field is declared once on the shape, and populated by only some of the paths that produce it. `col` is on every `FieldError`, but only the `html` and `xml` extractors supply one. Even they omit it for a `required` violation. So "the type has `col`" and "this annotation shows a column" are different claims, and only the second is what a reader will see. The same asymmetry runs the other way in SARIF, where the format defines `region.startColumn` and manni meta never emits it. Before documenting concrete output, verify the literal strings against the assertions in `test/*.test.ts`. That covers pretty lines, JSON values, and `github` annotations, and the files to start from are `test/reporters.test.ts`, `test/commands.test.ts`, and `test/cli.integration.test.ts`, among others. The tests encode what the tool actually prints.
 - **To capture real sample output**, build once (`npm run build` at the repo root). Then run the built binary against a fixture, rather than hand-writing output. One example is `node dist/cli.js validate test/fixtures/missing-type.md`. Reuse `test/fixtures/` as worked examples so docs and CI stay in lockstep.
+
+## Per-tool strategy
+
+The files above are the whole family's. A tool that joins the family does not
+bring a strategy directory of its own. Its readers are these four personas, its
+journeys are numbered into their series in `cujs.md`, and its pages get a
+content set in `information-architecture.md`. A persona is added only when no
+existing one does the job. a11y added none, and neither did docevals, whose six
+imported personas were three of these four by name, plus three situations of
+Maya's.
+
+docevals arrived with an ID-linked strategy directory (audiences, personas,
+journeys and IA). What was strategy moved into the files above. Its IA gap
+analysis, a delivery record of how the section was built, moved to
+`docs/proposals/docevals/ia-gap-analysis.md` beside the tool's ADRs. Like
+every persona here, docevals's were reasoned from the tool's own surface and a
+sibling's adopters rather than from call evidence. The tool had no users yet. Treat its pains as claims to re-test when it does. `design.md` is
+shared: one site, one palette, one set of capture rules.

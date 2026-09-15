@@ -1,0 +1,133 @@
+---
+title: Write good assertions
+description: Why most assertions are unjudgeable, and the three fields that fix them.
+---
+
+If an eval keeps flipping between pass and fail, or fails pages your team considers fine, the grader
+is almost certainly not the problem. **A flaky eval is a vague assertion.**
+
+This is the most consequential page on this site. Everything else works only if the assertions do.
+
+## The test
+
+> Would two careful reviewers, reading the same page, reach the same verdict?
+
+If not, no grader will be consistent either, and tuning the model is the wrong repair.
+
+| Unjudgeable | Judgeable |
+|---|---|
+| The page is well-written. | The page states its prerequisites before the first command. |
+| The examples are good. | Every code block specifies a language. |
+| The page is up to date. | The page documents no flag that `--help` does not list. |
+| The tone is appropriate. | The page addresses the reader as "you", not "the user". |
+
+The left column is not a quality bar; it is a *feeling* about one. The right column can be decided
+by anyone, repeatedly, including a model.
+
+## The three fields
+
+They are one mechanism, not three optional properties.
+
+```yaml
+- id: prerequisites-first
+  assertion: >
+    The page states any required tools or accounts before the first command
+    the reader is asked to run.
+  grader: ai
+  evidence: Everything above the first fenced code block
+  examples:
+    pass: Lists "Node.js 24+" in a prerequisites section before the install command.
+    fail: Opens with `npm i` and mentions the Node version afterwards, or not at all.
+```
+
+**`assertion`** states a claim that is true or false. Write it as something you could check, not
+something you want.
+
+**`evidence`** scopes what the judge looks at. Without it, the judge reasons over the whole page and
+finds a reason to fail on a section your assertion was never about. Narrow evidence is the cheapest
+accuracy improvement available.
+
+**`examples.pass` / `examples.fail`** pin the boundary. This is where a borderline case gets decided
+**once, in writing**, instead of differently on every run. They matter far more than they look:
+an inline ai eval without them raises a warning for exactly this reason.
+
+## Write the failing example first
+
+The `fail` example is the one that does the work. It forces you to say what violating the assertion
+actually looks like. If you cannot write one, the assertion is not judgeable yet.
+
+It also pays off later. When a contributor hits this eval in CI, the judge's rationale tells them
+*what* is wrong. Your `examples.fail` shows them *what it looks like*. Between them, the offending
+sentence is usually obvious. See [Fix a failing eval](/manni/docevals/fix/).
+
+## Ask whether it should be an ai eval at all
+
+The cheapest moment to notice that an assertion is really a grep is while writing it.
+
+> The page contains a bash code block with `npm i -g doc-detective`.
+
+That is `tool:regex`, which is deterministic, free, and unarguable:
+
+```yaml
+- id: names-the-install-command
+  assertion: The page shows the current global install command.
+  grader: tool:regex
+  options:
+    pattern: "npm i -g doc-detective"
+```
+
+Reach for the judge when the criterion genuinely needs interpretation, not because it is easier to
+write. Three ensemble calls and a confidence zone to check a string is the expensive way to be less
+sure. See [Deterministic checks](/manni/docevals/evals/deterministic-checks/), and
+[promote](/manni/docevals/adopt/promote-to-deterministic/) for evals already on the wrong tier.
+
+## Common failure modes
+
+**Two claims in one assertion.** "The page explains why and gives a working example" fails ambiguously,
+because you cannot tell which half broke. Split it.
+
+**Assertions about the reader.** "The page is easy to follow for a beginner" asks the judge to
+simulate a person. Assert about the *page*: what it contains, states, or orders.
+
+**Negations without scope.** "The page does not mention deprecated APIs" invites the judge to hunt
+the whole page for anything deprecated-adjacent. Scope it with `evidence`.
+
+**Assertions that encode the current corpus.** "Every page has a Prerequisites heading" written
+because that is what today's pages happen to do is a snapshot, not a standard. It will be weakened
+the first time it is inconvenient.
+
+**Aspirational severity.** An assertion you believe in but that fails half your corpus should enter
+at `severity: warning` and ratchet up. *Keep the assertion honest and lower the severity*, never the
+reverse. See [Retrofit a legacy corpus](/manni/docevals/adopt/retrofit-a-legacy-corpus/).
+
+**Restating the page.** An assertion derived from the page's own headings, or lifted from your
+style guide, passes by construction and keeps passing however the page rots. It measures that the
+page still contains what it contained when you read it, which is not a standard. Anchor on what a
+*reader* would notice if it broke.
+
+**Spec literals as the only guard.** A check copied from a style rule is legitimate, but it is
+secondary. Put it in at `severity: warning`, or give it a `weight` below 1. Pair it with an
+assertion about what the page is actually for. A page whose only eval is a formatting rule is a
+page nobody is checking.
+
+**Softening until it always passes.** An eval that cannot fail is a vanity metric. It reports
+coverage and asserts nothing. If you cannot state a version that would catch a real regression, the
+honest move is to delete it rather than weaken it. The same instinct is why
+[`calibrate`](/manni/docevals/judge/calibrate/) refuses to certify a golden set with no failing
+case. A measurement that could only ever come out one way is not a measurement.
+
+## Regression or capability?
+
+It changes how strictly to phrase the assertion.
+
+- **Regression** guards behavior that must keep working. Target 1.0. Phrase strictly.
+- **Capability** measures reach across a corpus. Target ~0.7. Phrase for the good case; some
+  pages will not meet it yet, and that is the measurement.
+
+`type` defaults to `regression`. See [Regression vs capability](/manni/docevals/evals/regression-vs-capability/).
+
+## When an eval keeps landing in review
+
+That is a diagnosis, not a chore. An eval that reaches the human-review zone on every run is telling
+you its assertion is ambiguous. Fix the wording rather than answering it faster forever. If you
+are unsure whether a rewrite helped, [calibrate](/manni/docevals/judge/calibrate/) will tell you.

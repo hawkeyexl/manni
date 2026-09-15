@@ -1,0 +1,39 @@
+{
+  "_comment": "Captured from doc-detective 4.37.1 (`npx doc-detective --input <page>`) against a page with one runShell step asserting exitCodes [0] on a command that exits 7. Trimmed to the fields the adapter reads. Note the FAIL status repeats at every nesting level — spec, test, context, step, and assertion — which is what collectFailures must not double-count.",
+  "summary": {
+    "specs": { "pass": 0, "fail": 1, "warning": 0, "skipped": 0 },
+    "tests": { "pass": 0, "fail": 1, "warning": 0, "skipped": 0 },
+    "contexts": { "pass": 0, "fail": 1, "warning": 0, "skipped": 0 },
+    "steps": { "pass": 0, "fail": 1, "warning": 0, "skipped": 0 }
+  },
+  "specs": [
+    {
+      "result": "FAIL",
+      "tests": [
+        {
+          "result": "FAIL",
+          "contexts": [
+            {
+              "result": "FAIL",
+              "steps": [
+                {
+                  "stepId": "fail.md~47c1194d~sfecbf61a",
+                  "description": "A step that fails on purpose.",
+                  "result": "FAIL",
+                  "resultDescription": "Returned exit code 7. Expected one of [0]",
+                  "assertions": [
+                    {
+                      "statement": "$$outputs.exitCode oneOf [0]",
+                      "source": "implicit",
+                      "result": "FAIL"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

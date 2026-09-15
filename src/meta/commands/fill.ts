@@ -35,8 +35,6 @@ import { resolve, extname, join } from "node:path";
 import {
   completeValidatedJSON,
   makeProvider,
-  resolveProviderIdentityAsync,
-  DEFAULT_MODELS,
   JsonCache,
   buildCacheKey,
   sha256,
@@ -44,7 +42,6 @@ import {
   costOfUsage,
   InferenceError,
   type InferenceProvider,
-  type ProviderName,
   type ProviderSelector,
   type ProviderSpec,
   type TokenUsage,
@@ -112,12 +109,21 @@ import type {
   FillOptions,
   FillRun,
   FilledField,
-  MetaProvenanceEntry,
   MetaProvenanceReport,
   Proposal,
   ProposalSet,
 } from "./fill-types.js";
+import { mergeMetaProvenance } from "../core/meta-provenance.js";
 import { errorMessage } from "../../shared/errors.js";
+import {
+  assertKnownProvider as assertKnownProviderFor,
+  assertLocalFlag,
+  assertModelHasProvider as assertModelHasProviderFor,
+  localNotice,
+  providerSpecFor,
+  resolveIdentity as resolveIdentityFor,
+  selectProvider,
+} from "../../shared/providers.js";
 
 export type {
   Candidate,
@@ -143,14 +149,6 @@ const PROVENANCE_KEYS: ReadonlySet<string> = new Set(["provenance", META_PROVENA
 
 const DEFAULT_THRESHOLD = 0.7;
 const DEFAULT_CONCURRENCY = 4;
-/**
- * `auto` detects the highest-priority provider this machine can actually use —
- * an Anthropic key, then an OpenAI key, then the Claude CLI, then a local model
- * that needs no credentials at all. Defaulting to a named provider instead meant
- * `manni meta fill` failed outright for anyone who did not happen to hold that
- * vendor's key.
- */
-const DEFAULT_PROVIDER = "auto";
 const CACHE_DIR = ".manni/meta/cache";
 
 /**
@@ -322,28 +320,31 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   /** The managed fields (0040): read everywhere, written only by `derive`. */
   const managed = new Set<string>(config?.derive?.fields ?? []);
 
-  const requestedProvider = (opts.provider ??
-    config?.fill?.provider ??
-    DEFAULT_PROVIDER) as ProviderSelector;
-  // `--local` with no explicit provider *is* the choice: resolve to the local
-  // one directly rather than letting detection pick a hosted provider and then
-  // refusing it. Detection would otherwise announce `auto-selected "openai"`
-  // immediately before the refusal, which reads as though it had been used.
-  // An explicit `--provider` is left alone so a contradictory pair still errors
-  // by name rather than being quietly overridden.
-  const providerName: ProviderSelector =
-    opts.local === true && requestedProvider === "auto"
-      ? "llama-cpp"
-      : requestedProvider;
-  const model = opts.model ?? config?.fill?.model;
-  const spec = { provider: providerName, model: model ?? null };
+  // The flag, then `meta.fill`, then the family's `providers:`, then `auto`,
+  // each level's model carried only to the provider that level names.
+  //
+  // `--local` is llama-cpp over every level, so detection never runs under it
+  // and never announces a hosted provider it found. A `--provider` it
+  // contradicts is refused by name; a configured one is set aside, and said.
+  const flags = { provider: opts.provider, model: opts.model, local: opts.local };
+  assertLocalFlag(flags, toDocmetaError);
+  const family = configFile?.providers ?? {};
+  const selection = selectProvider(flags, [
+    { provider: config?.fill?.provider, model: config?.fill?.model, origin: "fill.provider" },
+    { provider: family.provider, model: family.model, origin: "providers.provider" },
+  ]);
+  const { provider: providerName, model } = selection;
 
   // Check the name up front, and regardless of whether a provider was injected:
   // it costs nothing, and construction is lazy, so a typo would otherwise exit 0
   // on any run where no file happened to need inference.
   assertKnownProvider(providerName);
   assertModelHasProvider(providerName, model);
-  if (opts.local === true) assertLocalProvider(providerName);
+  const replaced = localNotice(selection);
+  if (replaced !== undefined) opts.onNotice?.(replaced);
+  // Connection settings are the family's, for whichever provider is in force,
+  // and under `auto` they are what detection reads.
+  const spec = providerSpecFor(family, { provider: providerName, model: model ?? null });
 
   // Resolve targets BEFORE identity. Under `auto`, resolving identity probes the
   // environment, the Claude CLI and the local runtime, and that last probe is
@@ -408,20 +409,13 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     construct = () => injected;
   } else {
     const resolved = await resolveIdentity(spec);
-    // `--local` under `auto` can only be enforced here: detection is what picks
-    // the provider, so the check has to sit after it rather than on the spec.
-    if (opts.local === true) assertLocalProvider(resolved.provider);
     identity = resolved;
     // Build from the RESOLVED identity, never the spec we started with: under
     // `auto` that spec still says "auto", and the synchronous `makeProvider`
     // rightly refuses to guess. Detection has already run, so the concrete name
     // is known — which keeps construction synchronous and lazy, and that is what
     // lets a fully cached run finish without a key.
-    const concrete: ProviderSpec = {
-      ...spec,
-      provider: resolved.provider,
-      model: resolved.model,
-    };
+    const concrete: ProviderSpec = providerSpecFor(family, resolved);
     construct = () => makeProvider(concrete);
   }
 
@@ -1135,7 +1129,12 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       const merged =
         metaHome?.kind === "url" || (metaManifest !== undefined && metaEntry === undefined)
           ? undefined
-          : mergeMetaProvenance(extracted.data[META_PROVENANCE_KEY], identity.model, writable);
+          : mergeMetaProvenance(
+              extracted.data[META_PROVENANCE_KEY],
+              identity.model,
+              "fields",
+              writable.map((f) => ({ name: f.field, confidence: f.confidence })),
+            );
       if (metaHome?.kind === "url") {
         metaProvenance = { written: false, skipReason: "manifest-owned", manifest: metaHome.file };
       } else if (metaManifest !== undefined && metaEntry === undefined) {
@@ -1158,10 +1157,14 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         metaProvenance = { written: false, skipReason: "schema-mismatch" };
       } else if (metaManifest !== undefined && metaEntry !== undefined) {
         metaWrite = { value: merged.list, home: { ...metaManifest, entry: metaEntry } };
-        metaProvenance = { written: true, entry: merged.entry, destination: metaManifest.file };
+        metaProvenance = {
+          written: true,
+          entry: { ...merged.entry, fields: merged.names },
+          destination: metaManifest.file,
+        };
       } else {
         patch[META_PROVENANCE_KEY] = merged.list;
-        metaProvenance = { written: true, entry: merged.entry };
+        metaProvenance = { written: true, entry: { ...merged.entry, fields: merged.names } };
       }
     }
 
@@ -1360,46 +1363,6 @@ function topKey(instancePath: string): string {
 
 /** The top-level key a field's pointer names, un-escaped (RFC 6901). */
 const keyOf = (f: FilledField): string => topKey(f.field);
-
-function isPlainRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-/**
- * The page's `meta-provenance` list with this run's fields merged in
- * (proposal 0046). The first entry for `model` gains the new pointers after
- * its own, and their confidences; everything else in it, and every other
- * entry, is kept. Without one, a new entry is appended. `undefined` when the
- * page holds something other than a list, which there is no merging into.
- */
-function mergeMetaProvenance(
-  held: unknown,
-  model: string,
-  written: readonly FilledField[],
-): { list: unknown[]; entry: MetaProvenanceEntry } | undefined {
-  if (held !== undefined && !Array.isArray(held)) return undefined;
-  const list: unknown[] = held === undefined ? [] : [...(held as unknown[])];
-  const at = list.findIndex((e) => isPlainRecord(e) && e["generated-by"] === model);
-  const prior = list[at];
-  const kept = isPlainRecord(prior) ? prior : {};
-  const fields = Array.isArray(kept.fields)
-    ? (kept.fields as unknown[]).filter((p): p is string => typeof p === "string")
-    : [];
-  const confidence: Record<string, number> = {};
-  if (isPlainRecord(kept.confidence)) {
-    for (const [k, v] of Object.entries(kept.confidence)) {
-      if (typeof v === "number") confidence[k] = v;
-    }
-  }
-  for (const f of written) {
-    if (!fields.includes(f.field)) fields.push(f.field);
-    confidence[f.field] = f.confidence;
-  }
-  const entry: MetaProvenanceEntry = { ...kept, "generated-by": model, fields, confidence };
-  if (at === -1) list.push(entry);
-  else list[at] = entry;
-  return { list, entry };
-}
 
 /**
  * Whether the `meta-provenance` entry brings a finding the same metadata
@@ -1964,79 +1927,22 @@ function requireNumber(
   return value;
 }
 
-/**
- * Provider names the inference layer accepts, taken from the library rather
- * than copied. A hardcoded list here silently went stale when `llama-cpp` was
- * added upstream; deriving it means a new provider works the day it ships.
- */
-const PROVIDERS = new Set<string>([...Object.keys(DEFAULT_MODELS), "auto"]);
+/** The shared refusals, in meta's error class and naming meta's config key. */
+const toDocmetaError = (message: string): Error => new DocmetaError(message);
 
-/**
- * Refuse a provider that would send content off the machine.
- *
- * `claude-cli` is the one that has to be named. The binary runs locally, so it
- * reads as local; the inference does not, so it is not. It sits third in the
- * detection order, which makes it exactly the fallback `--local` would
- * otherwise pick up by accident — the flag would keep working and stop meaning
- * anything.
- */
-function assertLocalProvider(name: string): void {
-  if (name === "llama-cpp" || name === "mock") return;
-  if (name === "auto") return; // narrowed below, once detection has run
-  throw new DocmetaError(
-    name === "claude-cli"
-      ? `--local cannot use "claude-cli": the CLI runs on this machine but its inference does not. Use --provider llama-cpp.`
-      : `--local cannot use "${name}", which sends document content to a hosted API. Use --provider llama-cpp, or drop --local.`,
-  );
+function assertKnownProvider(name: string): asserts name is ProviderSelector {
+  assertKnownProviderFor(name, toDocmetaError);
 }
 
-function assertKnownProvider(name: string): void {
-  if (PROVIDERS.has(name)) return;
-  throw new DocmetaError(
-    `Unknown provider "${name}". Available: ${[...PROVIDERS].join(", ")}.`,
-  );
-}
-
-/**
- * A model name belongs to exactly one provider, so it cannot be handed to
- * whichever provider detection picks: `--model gpt-4o-mini` on a machine with an
- * Anthropic key selected anthropic and then 404'd mid-run, after file discovery
- * had already been paid for.
- *
- * The library enforces this too. It is repeated here to name the flags rather
- * than the API fields, since that is what the user typed.
- *
- * `name` is the EFFECTIVE provider, so a `fill.provider` in config satisfies
- * this just as `--provider` does; only an unresolved `auto` is ambiguous.
- */
 function assertModelHasProvider(
   name: ProviderSelector,
   model: string | undefined,
 ): void {
-  if (name !== "auto" || model == null) return;
-  throw new DocmetaError(
-    `Model "${model}" was given without a provider: a model name does not say ` +
-      `which provider owns it. Set --provider or fill.provider to one of ` +
-      `${Object.keys(DEFAULT_MODELS).join(", ")}, or drop the model to take the ` +
-      `detected provider's default.`,
-  );
+  assertModelHasProviderFor(name, model, "fill.provider", toDocmetaError);
 }
 
-async function resolveIdentity(spec: {
-  provider: ProviderSelector;
-  model: string | null;
-}): Promise<{ provider: ProviderName; model: string }> {
-  try {
-    return await resolveProviderIdentityAsync(spec);
-  } catch (err) {
-    // Detection failing with nothing available is operational, not per-file:
-    // the aggregate message names every provider it tried and why each was out.
-    throw new DocmetaError(
-      err instanceof InferenceError
-        ? err.message
-        : `Could not resolve provider "${spec.provider}": ${errorMessage(err)}`,
-    );
-  }
+function resolveIdentity(spec: ProviderSpec): ReturnType<typeof resolveIdentityFor> {
+  return resolveIdentityFor(spec, toDocmetaError);
 }
 
 function summarize(

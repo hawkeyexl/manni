@@ -1,0 +1,240 @@
+---
+title: Choose a provider
+description: Four ways to reach a judge, including ones that need no API key and ones that keep pages on your own infrastructure.
+---
+
+Four providers. The differences that matter are where your page content goes and what credential CI
+needs.
+
+| Provider | Credential | Content goes to |
+|---|---|---|
+| `anthropic` | `ANTHROPIC_API_KEY` | Anthropic's API |
+| `openai` | `OPENAI_API_KEY` | Whatever `baseUrl` points at, including your own server |
+| `claude-cli` | None; uses local CLI auth | Anthropic, via the local `claude` CLI |
+| `llama-cpp` | None | Nowhere. The model runs in-process on your machine. |
+
+## `auto` (default)
+
+```yaml
+docevals:
+  provider: auto
+```
+
+With no provider named, manni docevals detects one exactly as `manni meta fill` does. It takes the
+first that this machine can use: an `ANTHROPIC_API_KEY`, then an `OPENAI_API_KEY`, then an
+installed Claude CLI, then a local model. The model is that provider's default, chosen by the
+inference library rather than by manni.
+
+Detection is convenient on a laptop and surprising in a gate, because what it finds depends on the
+machine. Name the provider in a committed config, so every runner judges with the same one.
+
+Name it under `docevals:` for this tool alone, or once for every manni tool in the family's
+top-level `providers:` map. `docevals.provider` wins where both are set. Connection settings, such
+as an endpoint or a key's variable, always go in `providers:`. The
+[configuration reference for providers](/manni/meta/reference/configuration/#providers) has every
+key and the full precedence.
+
+:::caution[Detection can reach a local model]
+On a machine with no key and no Claude CLI, `auto` ends at `llama-cpp`. That provider downloads
+gigabytes of weights on first use. A CI job that should never do that names its provider.
+:::
+
+## `anthropic`
+
+```yaml
+providers:
+  anthropic:
+    apiKeyEnv: ANTHROPIC_API_KEY
+
+docevals:
+  provider: anthropic
+```
+
+Structured output via forced tool use, so verdicts arrive as validated JSON rather than prose to
+parse.
+
+## `openai` and anything that speaks its API
+
+The `baseUrl` is the interesting field. It points at any OpenAI-compatible server: Ollama, vLLM,
+Azure, Groq, LM Studio, or an internal gateway.
+
+```yaml
+providers:
+  openai:
+    baseUrl: http://localhost:11434/v1   # Ollama
+    apiKeyEnv: OPENAI_API_KEY
+
+docevals:
+  provider: openai
+  model: llama3.1:8b                     # whatever the server serves
+```
+
+```yaml
+    baseUrl: https://llm-gateway.internal.example.com/v1
+```
+
+A key held under another variable name is read only when the provider is named, as it is here.
+Under `auto`, detection looks for `OPENAI_API_KEY` alone.
+
+Uses strict `json_schema` structured output where the endpoint supports it, falling back to
+`json_object` automatically where it does not, so smaller local models still work.
+
+**This is the answer to a security review.** If page content cannot leave your infrastructure, point
+`baseUrl` at a model that runs inside it. Nothing else about manni docevals changes.
+
+## `claude-cli` needs no API key
+
+```yaml
+providers:
+  claude-cli:
+    command: claude
+
+docevals:
+  provider: claude-cli
+```
+
+Shells out to the local `claude` CLI and uses its existing auth. Useful when:
+
+- You are evaluating manni docevals and do not want to provision a key.
+- Developers have CLI access but the team has no shared API key.
+- You would rather not put a long-lived key in CI.
+
+It depends on the CLI being installed and authenticated on the machine, which makes it better for
+local work than for a fresh CI runner.
+
+## `llama-cpp` keeps everything on the machine
+
+```yaml
+providers:
+  llama-cpp:
+    modelsDir: .models    # relative to the config file; unset, the library's own directory
+    thoughtTokens: 0
+
+docevals:
+  provider: llama-cpp
+  model: balanced         # fast | balanced | quality, or a pinned reference
+```
+
+Runs GGUF weights in-process. No API key, no CLI, and, once the weights are on disk, no network
+at judge time at all. That is the one property the other three cannot offer. It makes judged evals
+reachable for a contributor with no credentials, or a corpus whose pages may not leave the building.
+
+The named tiers (`fast`, `balanced`, `quality`) are resolved against your machine's memory. With no
+`model`, the library sizes one itself. Prefer a named tier in a committed config, so two
+contributors reading it see the same intent.
+Note too that the library resolves a tier to a *concrete* model before building any cache key. Two
+machines never share a verdict under one tier name.
+
+`thoughtTokens` defaults to `0`. A grammar constrains generation from the first token, so an
+unbudgeted thinking model starts reasoning and gets cut off mid-thought. Raise it only if you want
+reasoning before the JSON.
+
+Two costs to know about. It owns weights, which means gigabytes downloaded on first use and held in
+RAM once loaded. And it needs `node-llama-cpp`, a native module declared here as an **optional peer
+dependency**. Nobody who does not choose this provider pays the install cost or the toolchain risk.
+Install it alongside manni docevals when you want local judging:
+
+```bash
+npm i -D node-llama-cpp
+```
+
+:::note[Calibrate a smaller judge]
+A smaller judge is not automatically a worse one. It is not automatically a good one either.
+[Calibrate](/manni/docevals/judge/calibrate/) it against your own golden set before trusting it.
+That is what the command is for, and it now refuses to certify on a one-sided set.
+:::
+
+## Keep pages on this machine
+
+`--local` runs inference with `llama-cpp` on the machine running the command, whatever the config
+or a page names. The `run`, `generate`, `fill`, `promote` and `calibrate` commands all take it.
+
+It is the CI recipe for a job whose pages must never leave the runner. The committed config keeps
+its hosted judge for everyday runs, and the restricted job adds one flag and no secret:
+
+```yaml
+- name: manni docevals, judged on the runner
+  run: npx @hawkeyexl/manni docevals run --local --model balanced --format github
+```
+
+- **It overrides rather than refuses.** `docevals.provider`, the family's `providers.provider` and
+  each eval's own `provider:` are set aside. Each replaced choice is named once on stderr:
+
+  ```text
+  manni: --local: using llama-cpp instead of "anthropic" from docevals.provider.
+  manni: --local: using llama-cpp instead of "openai" from eval "names-openai" in guide.md.
+  ```
+
+- **Detection never runs.** A key left in the runner's environment cannot send a page anywhere.
+- **`claude-cli` never qualifies.** Its binary runs on the machine, and its inference does not.
+- **A configured model survives only where its level named `llama-cpp`.** A `--model` flag always
+  applies, which is why the recipe names a tier on the command line.
+- **A contradicting `--provider` is exit 2.** Beside `--local`, the flag may name `llama-cpp` or
+  `auto` and nothing else:
+
+  ```text
+  manni: --local and --provider anthropic contradict each other: --local runs inference on this machine with llama-cpp. Drop one of them.
+  ```
+
+- **`--deterministic-only` judges nothing**, so a run with both flags says nothing about providers.
+
+The runner still needs `node-llama-cpp` and the weights, as
+[`llama-cpp`](#llama-cpp-keeps-everything-on-the-machine) describes. Point
+`providers.llama-cpp.modelsDir` at a directory your CI cache restores, and a fresh job skips the
+download.
+
+## Pin the model in a gate
+
+```yaml
+docevals:
+  provider: anthropic
+  model: <model-id>     # a dated model ID, not an alias that floats
+```
+
+Leave `model` unset and the provider's default is used, which is the inference library's choice
+and moves when the library does. That is fine for trying manni docevals out. A gate that blocks
+merges wants a model named in a commit, so a change of judge is a change someone reviewed.
+
+A `model` needs a named `provider`. A model name does not say which provider owns it. A model
+under `auto` is therefore refused with **exit 2** rather than handed to whichever provider detection finds.
+
+Either way the cache key names the model that actually ran, the default included. A new judge
+invalidates every cached verdict, and it invalidates your calibration too.
+[Re-calibrate](/manni/docevals/judge/calibrate/) before trusting it.
+
+## There is no price table
+
+manni docevals reports token counts and inference calls. It never reports a dollar figure, and there
+is no pricing to configure for an unusual or self-hosted model. A bundled price table could not stay
+current, and `claude-cli` and self-hosted endpoints report no usage to price in the first place.
+
+Bound a run with `--max-turns` instead. It counts calls, so it behaves identically whoever runs the
+model. A model that is free to run simply makes the budget irrelevant rather than misreported.
+See [Caching and turn budgets](/manni/docevals/ci/cost-and-caching/).
+
+## Overriding per run
+
+```bash
+npx @hawkeyexl/manni docevals run --provider claude-cli
+npx @hawkeyexl/manni docevals run --provider openai --model llama3.1:8b
+npx @hawkeyexl/manni docevals run --provider llama-cpp --model quality
+```
+
+`--provider` wins over `docevals.provider` and `providers.provider`, and `--model` over the
+configured model. A `--model` still needs a provider, from the flag or the config. `--local` wins
+over every configured and eval-level choice, as [Keep pages on this machine](#keep-pages-on-this-machine) describes.
+
+Handy for comparing a cheaper model against your golden set before committing to it:
+
+```bash
+npx @hawkeyexl/manni docevals calibrate --provider openai --model llama3.1:8b
+```
+
+## No provider at all
+
+`--deterministic-only` skips the judge entirely. Freshness, lint, structure, frontmatter validation,
+and generated checks all still run.
+
+This is the right configuration for fork pull requests, pre-commit hooks, and anyone evaluating
+manni docevals before deciding about model access. See
+[Untrusted pull requests](/manni/docevals/ci/untrusted-pull-requests/).

@@ -19,6 +19,7 @@ import {
 } from "../shared/cli-options.js";
 import { fail } from "../shared/run.js";
 import { notice } from "../shared/warn.js";
+import { LOCAL_FLAG_HELP } from "../shared/providers.js";
 import { terminalConfirm } from "../shared/prompt.js";
 import {
   DocmetaError,
@@ -1320,17 +1321,14 @@ export function buildProgram(): Command {
     .option("--dry-run", "report proposals without writing them")
     .option(
       "--provider <name>",
-      "provider: auto (default), anthropic, openai, claude-cli, llama-cpp, mock",
+      "provider: auto (default), anthropic, openai, claude-cli, llama-cpp",
     )
     .option(
       "--model <model>",
       "model override; needs a named provider, from here or config",
     )
     .option("--no-cache", "bypass the proposal cache")
-    .option(
-      "--local",
-      "run inference on this machine; refuses any hosted provider, claude-cli included",
-    )
+    .option("--local", LOCAL_FLAG_HELP)
     .option("--max-turns <n>", "stop after this many inference calls", parseFloat)
     .option(
       "--chunk-chars <n>",

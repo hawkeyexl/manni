@@ -29,6 +29,22 @@ const focusableCodeBlocks = {
   },
 };
 
+/**
+ * Rehype plugin: put every content table in the tab order, for the same axe
+ * rule as the code blocks above. Starlight's markdown styles give a table
+ * `display: block; overflow: auto`, so a table wider than the content column
+ * is itself the scroll box, with no wrapper to carry the attribute. Only
+ * `tabindex` is added: a `role` or `aria-label` would replace the table's own
+ * semantics for screen readers.
+ */
+function rehypeFocusableTables() {
+  return (tree) => {
+    for (const table of elements(tree, "table")) {
+      table.properties.tabIndex = 0;
+    }
+  };
+}
+
 export default defineConfig({
   site: "https://hawkeyexl.github.io",
   base: "/manni",
@@ -43,6 +59,10 @@ export default defineConfig({
   // notes and pull requests link to the old URL, so it must not 404.
   redirects: {
     "/meta/set-up/sidecar-metadata": "/manni/meta/set-up/external-metadata",
+  },
+  // MDX inherits this list, so `.md` and `.mdx` pages both get it.
+  markdown: {
+    rehypePlugins: [rehypeFocusableTables],
   },
   integrations: [
     starlight({
@@ -162,6 +182,50 @@ export default defineConfig({
               label: "Reference",
               collapsed: true,
               items: [{ autogenerate: { directory: "cite/reference" } }],
+            },
+          ],
+        },
+        // The evals tool. Section order and labels follow its content set in
+        // docs/content-strategy/information-architecture.md (`docevals/`).
+        {
+          label: "docevals",
+          collapsed: true,
+          items: [
+            { label: "Overview", link: "/docevals/" },
+            {
+              label: "Get started",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "docevals/get-started" } }],
+            },
+            {
+              label: "Write evals",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "docevals/evals" } }],
+            },
+            {
+              label: "Adopt at scale",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "docevals/adopt" } }],
+            },
+            {
+              label: "Run it in CI",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "docevals/ci" } }],
+            },
+            {
+              label: "Trust the judge",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "docevals/judge" } }],
+            },
+            {
+              label: "Fix a failing eval",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "docevals/fix" } }],
+            },
+            {
+              label: "Reference",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "docevals/reference" } }],
             },
           ],
         },

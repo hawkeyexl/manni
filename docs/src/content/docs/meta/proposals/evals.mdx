@@ -160,8 +160,10 @@ Machine-proposed eval ids move to the page-level `meta-provenance` in
 trail covers fields and evals alike. The `eval-` prefix guard no longer
 excepts `provenance`, so an `eval-provenance` key at the page root is rejected
 like any other unknown `eval-*` key. `manni meta derive` already records the
-machine behind each range of a body, in ai-context's `provenance`. The self-preference warning
-would read them there for a `body` target, `meta-provenance`
+machine behind each range of a body, in ai-context's `provenance`.
+[`manni docevals`](/manni/docevals/judge/#self-preference) reads them there for
+its self-preference warning: `provenance` for a `body` target, `meta-provenance`
 for `frontmatter`, and both for `raw`, rather than one page-level
-`generated-by`. The same draft renames the `info` severity to `notice`, the level
+`generated-by`. It validates pages against this draft, and `manni docevals fill`
+records the evals it proposes under `meta-provenance`. The same draft renames the `info` severity to `notice`, the level
 manni's other tools already use.

@@ -1,0 +1,11 @@
+# An eval at `severity: info`, the scale docevals was imported with. The
+# family scale is notice | warning | error, so this is a schema error.
+docevals:
+  evals:
+    fresh-enough:
+      assertion: Page was reviewed within the last year.
+      grader: tool:freshness
+      options:
+        field: last-reviewed
+        max-age-days: 365
+      severity: info

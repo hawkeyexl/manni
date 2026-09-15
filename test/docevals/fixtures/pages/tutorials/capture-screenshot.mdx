@@ -1,0 +1,85 @@
+---
+title: Capture screenshot
+description: Run a test that fills all fields in a form, then captures a screenshot of the result.
+last-reviewed: 2026-04-20
+eval-suite: tutorial
+---
+
+This example fills in all of the fields on the Watson and Holmes Intake Form, then captures a screenshot of the result for posterity.
+
+The test spec is hosted online as a Markdown file, so you don't need to download it. You pass its URL to Doc Detective with the `--input` argument, and Doc Detective fetches and runs it.
+
+To run the test:
+
+1. [Set up your test environment](/docs/ci/set-up-environment) so the sample form is served at `http://localhost:8080/watson_and_holmes_intake_form.html`.
+2. Run the hosted _form-filler2.md_ test spec with Doc Detective:
+
+   <Tabs>
+     <Tab title="NPX" language="npx">
+
+   ```shell
+   npx doc-detective --input https://raw.githubusercontent.com/doc-detective/doc-detective/main/docs/examples/watson-and-holmes/form-filler2.md
+   ```
+
+     </Tab>
+     <Tab title="Docker" language="docker">
+
+   ```shell
+   docker run docdetective/docdetective --input https://raw.githubusercontent.com/doc-detective/doc-detective/main/docs/examples/watson-and-holmes/form-filler2.md
+   ```
+
+   <Note>
+   The `-v` argument isn't necessary for remotely hosted tests, since Docker doesn't need access to local files.
+   </Note>
+
+     </Tab>
+   </Tabs>
+
+While the form is too large to fit on the computer screen, increasing the window and viewport settings allows you to capture the entire form in a single image.
+
+![All fields completed.](./img/form-filled-2-complete.png)
+
+## Code walkthrough
+
+{/* This tutorial drives a browser against a locally served sample form; it needs the tutorial harness, which the docs-test CI job doesn't provide, so it's skipped there. */}
+{/* test ignore start */}
+
+These are the notable additions to the spec used in the [Fill in fields](fill-fields) tutorial.
+
+To capture the full form, this example runs in _headless_ mode. The screenshot can then capture the entire virtual viewport.
+
+```md
+{/* test {"testId":"form-filler2","detectSteps":false,"runOn":[{"platforms":["windows","mac","linux"],"browsers":{"name":"chrome","headless":true,"window":{"width":1200,"height":1500},"viewport":{"width":1180,"height":1480}}}]} */}
+```
+
+Filling in most of the fields is the same as filling in the First and Last Name values in the previous example. You find an element by its label, click the element, then type a value.
+
+```md
+{/* step {"description":"Type in the Street Address","find":{"elementText":"Street Address:","click":true,"type":"123 Broadberry Lane"}} */}
+```
+
+You use the same syntax to enter the value in a drop-down menu; for example, the Type of Case.
+
+```md
+{/* step {"description":"Select the Type of Case","find":{"elementText":"Type of Case:","click":true,"type":"Blackmail"}} */}
+```
+
+You can click a radio button directly by name.
+
+```md
+{/* step {"description":"Click the Postal Mail button","click":"Postal Mail"} */}
+```
+
+Use the screenshot action with an output path to capture the state of the form once the fields are complete.
+
+```md
+{/* step {"description":"Capture a screenshot of the completed form.","screenshot":"./output/form-filled-2-complete.png"} */}
+```
+
+{/* test ignore end */}
+
+## Complete test spec
+
+View the complete spec at [form-filler2.md](https://github.com/doc-detective/doc-detective/blob/main/docs/examples/watson-and-holmes/form-filler2.md).
+
+Next step: see [Record video](/docs/test-docs/record-video)

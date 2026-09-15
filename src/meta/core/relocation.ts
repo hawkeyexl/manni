@@ -47,7 +47,7 @@ import {
   parseCollections,
   type CollectionConfig,
 } from "../../shared/collections.js";
-import { FAMILY_CONFIG_NAMES, MOOSE_CONFIG_NAMES, type ConfigFile } from "../../shared/config-file.js";
+import { FAMILY_CONFIG_NAMES, type ConfigFile } from "../../shared/config-file.js";
 import { findGitRoot } from "../../shared/git-root.js";
 import { errorMessage } from "../../shared/errors.js";
 import { decryptValue, isEncryptedValue } from "../../shared/encryption.js";
@@ -1338,7 +1338,7 @@ async function configTarget(
       return { path: ctx.configPath, text: ctx.configFile?.text ?? null, disk: null };
     }
   }
-  for (const name of [...FAMILY_CONFIG_NAMES, ...MOOSE_CONFIG_NAMES]) {
+  for (const name of FAMILY_CONFIG_NAMES) {
     const path = join(configDir, name);
     try {
       const text = await readFile(path, "utf8");
