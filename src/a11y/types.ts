@@ -110,7 +110,11 @@ export interface CheckSummary {
    * never entered the frontier. `0` on a run that excludes nothing.
    */
   excluded: number;
-  /** Pages with ≥1 remaining violation or an `error`. Drives exit 1. */
+  /**
+   * Pages with ≥1 remaining violation, whatever its severity, or an `error`.
+   * Drives exit 1. The floor is the gate here, unlike `meta` and `cite`, which
+   * fail on error-severity findings alone; proposal 0064.
+   */
   failed: number;
   /** Total remaining violations across pages (rules, not nodes). */
   violations: number;

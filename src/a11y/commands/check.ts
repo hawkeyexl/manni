@@ -143,6 +143,23 @@ function finishPage(page: Omit<PageResult, "score">, floor: Severity): PageResul
   return { ...page, violations, score };
 }
 
+/**
+ * Does this page fail the run?
+ *
+ * The level is not read here, and that is the decision rather than an
+ * oversight. `--severity` is the floor, and the floor is the gate: anything
+ * `finishPage` kept fails the page, whatever its level. `manni meta validate`
+ * and `manni cite check` fail on error-severity findings alone, because a
+ * user decides there what becomes an error, through the schema or through
+ * `cite.severity.<rule>`. axe assigns a11y's severities and nothing in the
+ * config moves one, so the floor is the only lever this domain's shape
+ * allows. Proposal 0064 records why, and supersedes the one paragraph of
+ * 0035 that described the two as separable.
+ */
+function fails(page: PageResult): boolean {
+  return page.error !== undefined || page.violations.length > 0;
+}
+
 function summarize(
   results: PageResult[],
   { discovered, skipped, duplicates, excluded }: CrawlOutcome,
@@ -154,7 +171,7 @@ function summarize(
   let failed = 0;
   let violations = 0;
   for (const page of results) {
-    if (page.error !== undefined || page.violations.length > 0) failed += 1;
+    if (fails(page)) failed += 1;
     for (const violation of page.violations) {
       violations += 1;
       bySeverity[violation.severity] += 1;
