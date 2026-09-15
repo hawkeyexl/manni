@@ -494,6 +494,81 @@ describe("runCheck summary", () => {
   });
 });
 
+/**
+ * The floor is the gate.
+ *
+ * `manni meta validate` and `manni cite check` fix their exit code to
+ * error-severity findings, so a warning is reported and the run still passes.
+ * a11y does not: every violation the floor keeps fails the page, whatever its
+ * level. It is the one lever the domain's shape allows, because axe assigns
+ * the severity and no config can move a rule the way `cite.severity.<rule>`
+ * can. Proposal 0048 records the decision; these are the cases that would
+ * change if it were ever revisited.
+ */
+describe("runCheck: the severity floor is the gate", () => {
+  it("fails a page whose worst remaining violation is a warning", async () => {
+    const run = await runCheck(opts({}), {
+      analyzer: fakeAnalyzer({ [`${S}/`]: { violations: [violation("region", "warning")] } }),
+      fetcher: noSitemap(),
+    });
+    expect(run.summary).toMatchObject({
+      failed: 1,
+      violations: 1,
+      bySeverity: { notice: 0, warning: 1, error: 0 },
+    });
+  });
+
+  it("fails a page whose worst remaining violation is a notice", async () => {
+    const run = await runCheck(opts({}), {
+      analyzer: fakeAnalyzer({
+        [`${S}/`]: { violations: [violation("landmark-one-main", "notice")] },
+      }),
+      fetcher: noSitemap(),
+    });
+    expect(run.summary).toMatchObject({
+      failed: 1,
+      violations: 1,
+      bySeverity: { notice: 1, warning: 0, error: 0 },
+    });
+  });
+
+  it("passes the same page once the floor is raised above its findings", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: {
+        violations: [violation("region", "warning"), violation("landmark-one-main", "notice")],
+      },
+    };
+    const run = await runCheck(opts({ severity: "error" }), {
+      analyzer: fakeAnalyzer(site),
+      fetcher: noSitemap(),
+    });
+    expect(run.results[0]?.violations).toEqual([]);
+    expect(run.summary).toMatchObject({
+      failed: 0,
+      violations: 0,
+      bySeverity: { notice: 0, warning: 0, error: 0 },
+    });
+  });
+
+  it("gates at the floor, not above it: a warning floor keeps the warning and drops the notice", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: {
+        violations: [violation("region", "warning"), violation("landmark-one-main", "notice")],
+      },
+    };
+    const run = await runCheck(opts({ severity: "warning" }), {
+      analyzer: fakeAnalyzer(site),
+      fetcher: noSitemap(),
+    });
+    expect(run.results[0]?.violations.map((v) => v.id)).toEqual(["region"]);
+    expect(run.summary).toMatchObject({
+      failed: 1,
+      violations: 1,
+      bySeverity: { notice: 0, warning: 1, error: 0 },
+    });
+  });
+});
+
 describe("runCheck closes the analyzer", () => {
   it("after a successful run", async () => {
     const analyzer = fakeAnalyzer({ [`${S}/`]: {} });
