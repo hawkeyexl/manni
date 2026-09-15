@@ -397,7 +397,7 @@ Constraints on a DML statement:
   | `DELETE FROM docs WHERE …` | Strips the block and removes the document's entry. |
   | `ALTER TABLE docs DROP COLUMN k` | Also removes `k` from each document's entry. `keys:` is unchanged. |
 
-  An encrypted column writes its ciphertext into the manifest. Five writes
+  An encrypted column writes its ciphertext into the manifest. Six writes
   still refuse, before any file is written:
 
   - A key a URL manifest owns: `"owner" is owned by manifest
@@ -423,6 +423,11 @@ Constraints on a DML statement:
     never saw its values: `"docs/auth.md": "owner" is owned by manifest
     docs-meta.yaml of collection b, which --collection leaves out; include it
     or edit the manifest.`
+  - A `_path` move or a `DELETE` of a page that such a manifest names. The
+    move would leave a path entry behind. A `DELETE` would keep the entry, or
+    strip the join value it matches: `"docs/x.md": manifest b-meta.yaml of
+    collection b names it, which --collection leaves out; include it or
+    rename the entry first.` A `DELETE` ends `remove the entry first.`
 - **A key its schema prefers in external metadata**, marked
   `x-manni-location: external`, with no manifest to hold it, is offered one.
   On a terminal the statement asks once per collection whether to run

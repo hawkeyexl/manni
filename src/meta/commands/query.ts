@@ -3129,10 +3129,62 @@ async function planManifestEdits(
     file: home.file,
   });
 
+  // The local manifests of the collections `--collection` left out. The rows
+  // were merged without them, so the rename and DELETE handling below never
+  // sees their entries; loaded only when a statement moves or clears a page.
+  const selected = new Set(ctx.collections.map((col) => col.name));
+  let leftOut: Promise<ExternalMetadataIndex | null> | undefined;
+  /**
+   * An entry for `file` in a local manifest of a collection the file belongs
+   * to that `--collection` left out: a path entry, or with `joins` also a
+   * field entry the page's own join value matches. Moving the page would
+   * orphan a path entry, and stripping its block would orphan either.
+   */
+  const leftOutEntry = async (
+    file: string,
+    own: ExtractedMetadata | undefined,
+    joins: boolean,
+  ): Promise<{ file: string; collection: string } | undefined> => {
+    if (file === STDIN_LABEL) return undefined;
+    const excluded = memberOf(ctx.declaredCollections, ctx.configDir ?? ctx.cwd, ctx.base, file).filter(
+      (name) => !selected.has(name),
+    );
+    if (excluded.length === 0) return undefined;
+    leftOut ??= loadExternalMetadata(
+      ctx.declaredCollections
+        .filter((col) => !selected.has(col.name))
+        .map((col) => ({
+          ...col,
+          externalMetadata: col.externalMetadata.filter((m) => classifyRef(m.file).kind !== "url"),
+        })),
+      { configDir: ctx.configDir ?? ctx.cwd, base: ctx.base },
+    );
+    const index = await leftOut;
+    if (index === null) return undefined;
+    const abs = resolve(ctx.base, file);
+    const named = index.entries.find(
+      (e) => e.join === PATH_JOIN && e.abs === abs && excluded.includes(e.collection),
+    );
+    if (named !== undefined) return named;
+    if (!joins || own === undefined) return undefined;
+    return mergeExternalMetadata(file, own, index, excluded, ctx.base, { encryptionKey: ctx.encryption.key })
+      .joins[0];
+  };
+
   for (const c of changes) {
     if ("schema" in c || "config" in c) continue;
     const entry = byLabel.get(c.file);
     const own = entry?.own.data ?? {};
+
+    if ("cleared" in c || "renamed" in c) {
+      const cleared = "cleared" in c;
+      const named = await leftOutEntry(c.file, entry?.own, cleared);
+      if (named !== undefined) {
+        throw new DocmetaError(
+          `"${c.file}": manifest ${named.file} of collection ${named.collection} names it, which --collection leaves out; include it or ${cleared ? "remove" : "rename"} the entry first.`,
+        );
+      }
+    }
 
     if ("cleared" in c) {
       // Every key the document has: the ones a manifest supplies lose their

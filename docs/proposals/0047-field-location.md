@@ -1,6 +1,6 @@
 # 0047: a field's preferred location, `x-manni-location`, and `manni meta relocate`
 
-- **Status:** Proposed
+- **Status:** Implemented (#37)
 - **Serves:** Two journeys.
   - Sara · S1, "Define our metadata standard as a schema". Her standard says
     which fields a page carries into delivered output and which it keeps
@@ -308,6 +308,30 @@ A value stays when:
 23. **A writer's offer for pages that do not hold the value yet.** It asks only
     to create the manifest or add the key, without "move them out of N pages".
     Nothing moves.
+24. **A write fails halfway through a relocation.** A move into a page removes
+    the value from the manifest first. So every write keeps the file's
+    original text, and a failed write restores the files already written and
+    deletes the ones the run created. A file that cannot be restored is named.
+25. **A file changes between planning and writing.** The run refuses and
+    writes nothing, rather than overwrite an edit it never saw.
+26. **A key leaves `keys:` while another page carries a colliding copy.** The
+    copy stays in its page, whatever order the pages are planned in. Moving it
+    into a manifest that no longer owns the key would lose it.
+27. **A sibling page cannot be parsed.** A `keys:` change reaches pages the run
+    never named. One that cannot be parsed stays, with the reason
+    `unreadable`, instead of aborting the run or a writer's offer.
+28. **`--as` and sibling pages.** The forced format applies only to the pages
+    the run named. Siblings are read by their extension.
+29. **Marks that differ across `anyOf` branches.** Only a contradiction on
+    paths every document takes is a compile error. Marks that differ across
+    conditional branches give that schema no preference for the key.
+30. **A `--collection` run and a manifest outside it.** `fill` reads every
+    declared local manifest, so it cannot overwrite a value it never saw.
+    `query` refuses the write instead, because reading those manifests would
+    change what a narrowed `SELECT` returns. It also refuses a `_path` move or
+    a `DELETE` of a page such a manifest names, which would orphan the entry.
+31. **A join value that names another document's entry.** `query` refuses it.
+    Taking over the entry would silently overwrite another page's values.
 
 ## Verification
 

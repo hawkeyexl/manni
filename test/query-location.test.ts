@@ -255,6 +255,49 @@ describe("query: a manifest of a collection --collection leaves out", () => {
     expect(read(dir, "docs-meta.yaml")).toBe(read(join(fixtures, "query-path"), "docs-meta.yaml"));
     expect(read(dir, "docs/billing.md")).toBe(read(join(fixtures, "query-path"), "docs/billing.md"));
   });
+
+  it("refuses a _path move of a page that manifest names, and moves nothing", async () => {
+    const dir = copy("query-narrow-path");
+    await expect(
+      q(dir, "UPDATE docs SET _path = 'docs/moved.md' WHERE _path = 'docs/x.md'", { collections: ["a"] }),
+    ).rejects.toThrow(
+      '"docs/x.md": manifest b-meta.yaml of collection b names it, which --collection leaves out; include it or rename the entry first.',
+    );
+    expect(existsSync(join(dir, "docs/x.md"))).toBe(true);
+    expect(existsSync(join(dir, "docs/moved.md"))).toBe(false);
+    expect(read(dir, "b-meta.yaml")).toBe(read(join(fixtures, "query-narrow-path"), "b-meta.yaml"));
+  });
+
+  it("moves a page that manifest does not name", async () => {
+    const dir = copy("query-narrow-path");
+    await q(dir, "UPDATE docs SET _path = 'docs/moved.md' WHERE _path = 'docs/y.md'", { collections: ["a"] });
+    expect(existsSync(join(dir, "docs/moved.md"))).toBe(true);
+    expect(read(dir, "b-meta.yaml")).toBe(read(join(fixtures, "query-narrow-path"), "b-meta.yaml"));
+  });
+
+  it("refuses a DELETE of a page that manifest names by path, and strips nothing", async () => {
+    const dir = copy("query-narrow-path");
+    await expect(q(dir, "DELETE FROM docs WHERE _path = 'docs/x.md'", { collections: ["a"] })).rejects.toThrow(
+      '"docs/x.md": manifest b-meta.yaml of collection b names it, which --collection leaves out; include it or remove the entry first.',
+    );
+    expect(read(dir, "docs/x.md")).toBe(read(join(fixtures, "query-narrow-path"), "docs/x.md"));
+    expect(read(dir, "b-meta.yaml")).toBe(read(join(fixtures, "query-narrow-path"), "b-meta.yaml"));
+  });
+
+  it("refuses a DELETE that would strip the join value that manifest matches", async () => {
+    const dir = copy("query-narrow-join");
+    await expect(q(dir, "DELETE FROM docs WHERE _path = 'docs/x.md'", { collections: ["a"] })).rejects.toThrow(
+      '"docs/x.md": manifest b-meta.yaml of collection b names it, which --collection leaves out; include it or remove the entry first.',
+    );
+    expect(read(dir, "docs/x.md")).toBe(read(join(fixtures, "query-narrow-join"), "docs/x.md"));
+  });
+
+  it("moves a page that manifest names by a field, which the page carries with it", async () => {
+    const dir = copy("query-narrow-join");
+    await q(dir, "UPDATE docs SET _path = 'docs/moved.md' WHERE _path = 'docs/x.md'", { collections: ["a"] });
+    expect(read(dir, "docs/moved.md")).toBe(read(join(fixtures, "query-narrow-join"), "docs/x.md"));
+    expect(read(dir, "b-meta.yaml")).toBe(read(join(fixtures, "query-narrow-join"), "b-meta.yaml"));
+  });
 });
 
 describe("query on a field-joined manifest", () => {

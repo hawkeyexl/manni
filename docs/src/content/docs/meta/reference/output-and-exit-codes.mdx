@@ -601,6 +601,8 @@ the entry's line:
 | A `query` write would change the join field of a document that has an entry. | `"docs/auth.md": "id" is the field manifest docs-meta.yaml joins on, and this document has an entry; change the manifest first.` |
 | A `query` `UPDATE` or `INSERT` would give a document a join value that names an entry it did not already match. | `"docs/noid.md": "id" "auth-guide" names the entry of another document in manifest docs-meta.yaml; choose another value.` |
 | A `query` write would touch a key owned by a manifest of a collection `--collection` leaves out. | `"docs/auth.md": "owner" is owned by manifest docs-meta.yaml of collection b, which --collection leaves out; include it or edit the manifest.` |
+| A `query` `_path` move would leave an entry behind in a manifest of a collection `--collection` leaves out. | `"docs/x.md": manifest b-meta.yaml of collection b names it, which --collection leaves out; include it or rename the entry first.` |
+| A `query` `DELETE` would keep, or orphan, an entry in a manifest of a collection `--collection` leaves out. | `"docs/x.md": manifest b-meta.yaml of collection b names it, which --collection leaves out; include it or remove the entry first.` |
 | One document is a member of two collections whose manifests both own one key. | `docs/api/auth.md: "owner" is owned by manifests in two of its collections, guides (guides-meta.yaml) and api (api-meta.yaml); a key has one manifest per file. Narrow one collection's paths or exclude.` |
 
 A schema violation on a value the manifest supplied, and a document carrying a
