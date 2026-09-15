@@ -154,6 +154,22 @@ A seed that will not load is exit `2`, because the run never started. A page
 found during the crawl that will not load is recorded against that page, the
 crawl continues, and the page counts as failed. That is exit `1`.
 
+### The floor is the gate
+
+Every violation the floor keeps fails the run, whatever its level. A page whose
+worst finding is a `warning` exits `1`, and so does one whose worst finding is a
+`notice`. `--severity` is the only thing that changes that.
+
+This is the one place a11y reads the family scale differently from
+[`manni meta validate`](/manni/meta/ci/exit-codes-and-annotations/) and
+`manni cite check`, which fail on error-severity findings alone. Those two let
+you move a finding onto the level you want, so pinning their exit code to
+`error` costs nothing. axe decides a11y's severities from its own `impact`, and
+no config moves one. A fixed gate would leave no way to fail a build on an axe
+`moderate` finding, so `--severity` does both jobs here.
+[Proposal 0048](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0048-severity-and-the-exit-code.md)
+is the record.
+
 ## When the crawl runs long
 
 Pages are checked one at a time, in a real browser, so the wall clock is roughly
@@ -226,7 +242,9 @@ over the default. The full table of keys, types and defaults is in the
 <Aside type="tip" title="Choosing the floor">
 `severity: error` is the usual first gate. It counts axe's `critical` and
 `serious` findings and drops the rest before the score and the exit code are
-decided. Lower the floor once the errors are at zero and staying there.
+decided. Treat it as a ratchet: lower it to `warning`, then to `notice`, as
+each level reaches zero and stays there. Raising it back to get a build green
+buys the same silence as deleting the job.
 </Aside>
 
 <CardGrid>
