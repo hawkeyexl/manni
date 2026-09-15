@@ -29,8 +29,7 @@
  * manifest's parsed value are what move, so an encrypted value goes as its
  * ciphertext, verbatim.
  */
-import { existsSync, statSync } from "node:fs";
-import { readFile, unlink } from "node:fs/promises";
+import { access, readFile, stat, unlink } from "node:fs/promises";
 import { basename, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import picomatch from "picomatch";
 import {
@@ -308,6 +307,7 @@ class Model {
   readonly manifests: ManifestRef[] = [];
   readonly created: { name: string; paths: string[] }[] = [];
   readonly pathsAdded: { collection: string; path: string }[] = [];
+  private targets: Promise<(string | undefined)[]> | undefined;
 
   constructor(
     private readonly ctx: RelocationContext,
@@ -339,6 +339,12 @@ class Model {
     return memberOf(this.collections, this.configDir, this.ctx.base, label);
   }
 
+  /** The run's targets as `paths:` entries, in target order; resolved once, on first use. */
+  private targetPaths(): Promise<(string | undefined)[]> {
+    this.targets ??= Promise.all(this.ctx.targets.map((t) => collectionPath(t, this.ctx.cwd, this.configDir)));
+    return this.targets;
+  }
+
   manifestsOf(collection: string): ManifestRef[] {
     return this.manifests.filter((m) => m.collection === collection);
   }
@@ -361,7 +367,10 @@ class Model {
    * collection, an appended path, a new manifest), which planning wants and a
    * lookup does not.
    */
-  home(label: string, commit: boolean): { manifest: ManifestRef; proposed: ProposedHome } | { proposed: ProposedHome } {
+  async home(
+    label: string,
+    commit: boolean,
+  ): Promise<{ manifest: ManifestRef; proposed: ProposedHome } | { proposed: ProposedHome }> {
     if (this.ctx.noConfig) {
       return { proposed: { kind: "none", reason: "no-config", collections: this.collections.length } };
     }
@@ -373,10 +382,7 @@ class Model {
       const rel = this.relative(label);
       if (this.collections.length === 0) {
         const paths = dedupe(
-          this.ctx.targets.flatMap((t) => {
-            const p = collectionPath(t, this.ctx.cwd, this.configDir);
-            return p === undefined ? [] : [p];
-          }),
+          (await this.targetPaths()).flatMap((p) => (p === undefined ? [] : [p])),
         );
         if (rel === undefined || !paths.some((p) => isMember(bare(p), rel))) {
           return { proposed: { kind: "none", reason: "collections", collections: 0 } };
@@ -389,9 +395,9 @@ class Model {
         }
       } else if (this.collections.length === 1 && this.collections[0] !== undefined) {
         const only = this.collections[0];
-        const target = this.ctx.targets
-          .map((t) => collectionPath(t, this.ctx.cwd, this.configDir))
-          .find((p) => p !== undefined && rel !== undefined && isMember(bare(p), rel));
+        const target = (await this.targetPaths()).find(
+          (p) => p !== undefined && rel !== undefined && isMember(bare(p), rel),
+        );
         if (target === undefined) {
           return { proposed: { kind: "none", reason: "collections", collections: 1 } };
         }
@@ -421,7 +427,7 @@ class Model {
     const absPath = join(this.configDir, fileName);
     const file = reported(absPath, this.ctx.base);
     if (!commit) return { proposed: proposedOf({ file, created: true }) };
-    if (existsSync(absPath)) {
+    if (await exists(absPath, file)) {
       throw new DocmetaError(
         `${file} already exists and is not a manifest of collection ${name}; declare it under externalMetadata, or move it.`,
       );
@@ -496,7 +502,7 @@ function bare(path: string): CollectionConfig {
  * `docs/**`, a glob and a file stay themselves. Undefined for stdin and for a
  * target outside the config directory, which no collection can hold.
  */
-function collectionPath(target: string, cwd: string, configDir: string): string | undefined {
+async function collectionPath(target: string, cwd: string, configDir: string): Promise<string | undefined> {
   if (target === STDIN_TOKEN) return undefined;
   const posix = target.replace(/\\/g, "/");
   const scanned = picomatch.scan(posix);
@@ -512,13 +518,27 @@ function collectionPath(target: string, cwd: string, configDir: string): string 
   let directory = posix.endsWith("/");
   if (!directory) {
     try {
-      directory = statSync(abs).isDirectory();
+      directory = (await stat(abs)).isDirectory();
     } catch {
       directory = false;
     }
   }
   if (!directory) return rel;
   return rel === "" ? "**" : `${rel}/**`;
+}
+
+/**
+ * Whether `absPath` exists. Only a missing file is `false`: any other failure
+ * to look is refused, rather than read as room to create the file.
+ */
+async function exists(absPath: string, file: string): Promise<boolean> {
+  try {
+    await access(absPath);
+    return true;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return false;
+    throw new DocmetaError(`${file} could not be checked: ${errorMessage(err)}`);
+  }
 }
 
 /** The directory a config is (or will be) in: the loaded one, else the git root, else cwd. */
@@ -553,12 +573,12 @@ export type KeyHome =
  * nothing. `data` is the page's own metadata, for a field join; an encrypted
  * join value is decrypted with the run's key.
  */
-export function keyHome(
+export async function keyHome(
   ctx: RelocationContext,
   label: string,
   data: Readonly<Record<string, unknown>>,
   key: string,
-): KeyHome {
+): Promise<KeyHome> {
   const model = new Model(ctx, plannedConfigDir(ctx));
   const owner = model.ownerOf(key, model.members(label));
   if (owner !== undefined) {
@@ -574,7 +594,7 @@ export function keyHome(
       entry: entryFor(owner, label, data, model.configDir, ctx.base, lazyKey(ctx.configFile, ctx.env)),
     };
   }
-  return { kind: "unowned", home: model.home(label, false).proposed };
+  return { kind: "unowned", home: (await model.home(label, false)).proposed };
 }
 
 /** A page's entry in a manifest: its path from the config directory, or its join value. */
@@ -899,7 +919,7 @@ export async function planRelocation(
         continue;
       }
       if (pref !== "external" || !(inPage || required.includes(key))) continue;
-      const chosen = model.home(label, true);
+      const chosen = await model.home(label, true);
       if ("manifest" in chosen) {
         model.addKey(chosen.manifest, key);
         continue;
@@ -1023,10 +1043,19 @@ export async function planRelocation(
     const beyond = all.filter((p) => p.beyond).sort((a, b) => compare(a.label, b.label));
     return [...run, ...beyond];
   };
-  for (;;) {
-    for (const page of pages.values()) planPageText(page);
-    let changed = false;
-    for (const page of pages.values()) {
+  // A worklist. Planning a page's text reads only that page's intents, so a
+  // page whose intents did not change since its last planning would plan the
+  // same text. The first pass plans every page; each later pass re-plans only
+  // the pages the previous pass's unblocked removals touched, and looks among
+  // them for new blocks. A block found earlier is settled: keysRemoved only
+  // shrinks, so it cannot fire twice.
+  let dirty = new Set<Page>(pages.values());
+  while (dirty.size > 0) {
+    // In the pages' own order, as every page was planned before.
+    const pass = [...pages.values()].filter((p) => dirty.has(p));
+    for (const page of pass) planPageText(page);
+    const touched = new Set<Page>();
+    for (const page of pass) {
       for (const [key, intent] of page.intents) {
         if (intent.kind !== "stay" || intent.blocks === undefined) continue;
         const m = intent.blocks;
@@ -1034,16 +1063,21 @@ export async function planRelocation(
         m.keysRemoved.splice(m.keysRemoved.indexOf(key), 1);
         for (const other of pages.values()) {
           const i = other.intents.get(key);
-          if (i?.kind === "in" && i.manifest === m) other.intents.delete(key);
+          if (i?.kind === "in" && i.manifest === m) {
+            other.intents.delete(key);
+            touched.add(other);
+          }
         }
         // The manifest keeps the key, so a copy set aside for the page goes to it after all.
         for (const s of suspended) {
-          if (s.manifest === m && s.key === key) planOut(s.page, m, key, s.reason);
+          if (s.manifest === m && s.key === key) {
+            planOut(s.page, m, key, s.reason);
+            touched.add(s.page);
+          }
         }
-        changed = true;
       }
     }
-    if (!changed) break;
+    dirty = touched;
   }
 
   // ---- Manifest texts --------------------------------------------------------

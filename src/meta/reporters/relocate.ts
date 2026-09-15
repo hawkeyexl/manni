@@ -122,11 +122,12 @@ export function renderRelocatePretty(result: RelocateResult, opts: RelocateRepor
       continue;
     }
     const beyond = m.beyond > 0 ? `, ${m.beyond} beyond the paths you named` : "";
-    const moves = (n: number): string => `${dry ? "would move" : "moves"} ${n === 1 ? "it" : "them"}`;
+    const pronoun = (n: number): string => (n === 1 ? "it" : "them");
     if (m.keysRemoved.length > 0) {
-      lines.push(
-        `Removing ${list(m.keysRemoved)} from ${m.file}'s keys ${moves(m.keysRemoved.length)} into every page in collection ${m.collection}${beyond}.`,
-      );
+      const what = `${list(m.keysRemoved)} from ${m.file}'s keys`;
+      const it = pronoun(m.keysRemoved.length);
+      const where = `into every page in collection ${m.collection}${beyond}`;
+      lines.push(dry ? `Would remove ${what}, moving ${it} ${where}.` : `Removing ${what} moves ${it} ${where}.`);
     }
     if (added.length > 0) {
       lines.push(
@@ -135,9 +136,10 @@ export function renderRelocatePretty(result: RelocateResult, opts: RelocateRepor
           : `Added ${list(added)} to collection ${m.collection}'s paths; ${m.file} now owns ${keys}.`,
       );
     } else if (m.keysAdded.length > 0) {
-      lines.push(
-        `Adding ${list(m.keysAdded)} to ${m.file}'s keys ${moves(m.keysAdded.length)} out of every page in collection ${m.collection}${beyond}.`,
-      );
+      const what = `${list(m.keysAdded)} to ${m.file}'s keys`;
+      const it = pronoun(m.keysAdded.length);
+      const where = `out of every page in collection ${m.collection}${beyond}`;
+      lines.push(dry ? `Would add ${what}, moving ${it} ${where}.` : `Adding ${what} moves ${it} ${where}.`);
     }
     if (m.undeclared) {
       lines.push(

@@ -748,7 +748,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       if (!Object.hasOwn(located, META_PROVENANCE_KEY)) located[META_PROVENANCE_KEY] = [];
       const prefs = await validator.locationPreferences(located, schemaSet);
       for (const key of [...candidates.map((c) => c.key), META_PROVENANCE_KEY]) {
-        const home = keyHome(ctx, label, extracted.data, key);
+        const home = await keyHome(ctx, label, extracted.data, key);
         const meta = key === META_PROVENANCE_KEY;
         if (meta) metaHome = home;
         if (home.kind === "url") {

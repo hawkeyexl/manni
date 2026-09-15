@@ -1101,8 +1101,11 @@ docs/install.md
 2 files, 3 values moved to 1 manifest
 ```
 
-Under `--dry-run` the verbs read `Would create`, `would own` and `would move`,
-and no manifest line is printed. The first lines take one of these shapes:
+Under `--dry-run` a config line leads with `Would create`, `Would add` or
+`Would remove`, and says `would own`. The summary says `would move`, and no
+manifest line is printed. A dry `keys:` change reads
+`Would add owner to docs-meta.yaml's keys, moving it out of every page in collection site.`
+The first lines take one of these shapes:
 
 | Config change | Line |
 |---|---|

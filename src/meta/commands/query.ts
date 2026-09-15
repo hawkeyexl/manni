@@ -3060,11 +3060,11 @@ async function planManifestEdits(
   const ddlRenames = new Set(renameHints.map((h) => `${h.from}\0${h.to}`));
 
   const homes = new Map<string, KeyHome>();
-  const homeOf = (file: string, key: string, data: Readonly<Record<string, unknown>>): KeyHome => {
+  const homeOf = async (file: string, key: string, data: Readonly<Record<string, unknown>>): Promise<KeyHome> => {
     const id = `${file}\0${key}`;
     let home = homes.get(id);
     if (home === undefined) {
-      home = keyHome(loc, file, data, key);
+      home = await keyHome(loc, file, data, key);
       homes.set(id, home);
     }
     return home;
@@ -3081,14 +3081,14 @@ async function planManifestEdits(
    * which a value being written needs; a removal only needs to know there is
    * no entry to remove it from.
    */
-  const owned = (
+  const owned = async (
     file: string,
     key: string,
     data: Readonly<Record<string, unknown>>,
     strict: boolean,
-  ): Owned | undefined => {
+  ): Promise<Owned | undefined> => {
     if (file === STDIN_LABEL || key === FILE_SCHEMA_KEY) return undefined;
-    const home = homeOf(file, key, data);
+    const home = await homeOf(file, key, data);
     if (home.kind === "unowned") return undefined;
     // The rows were merged from the selected collections' manifests only, so
     // a manifest of a collection `--collection` left out was never read: a
@@ -3190,7 +3190,7 @@ async function planManifestEdits(
       // Every key the document has: the ones a manifest supplies lose their
       // entry with the block, and a URL manifest refuses.
       for (const key of Object.keys(c.from)) {
-        const home = owned(c.file, key, own, false);
+        const home = await owned(c.file, key, own, false);
         if (home === undefined) continue;
         c.manifest ??= home.file;
         await edit(home, (t) => removeManifestKey(t, { ...where(home), key }).text);
@@ -3203,7 +3203,7 @@ async function planManifestEdits(
       const page: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(c.to)) {
         const written = writtenValue(c, key, value);
-        const home = owned(c.file, key, c.to, true);
+        const home = await owned(c.file, key, c.to, true);
         if (home === undefined) {
           page[key] = written;
           continue;
@@ -3223,14 +3223,14 @@ async function planManifestEdits(
       for (const [key, sv] of supplied ?? []) {
         if (seen.has(sv.file) || !ctx.memberships(c.file).includes(sv.collection)) continue;
         seen.add(sv.file);
-        const home = homeOf(c.file, key, own);
+        const home = await homeOf(c.file, key, own);
         if (home.kind === "url") {
           throw new DocmetaError(
             `"${c.file}": manifest ${home.file} names it, which is fetched and cannot be written; rename the entry in that repository.`,
           );
         }
         if (home.kind !== "manifest" || home.join !== PATH_JOIN || home.entry === undefined) continue;
-        const moved = keyHome(loc, c.renamed, own, key);
+        const moved = await keyHome(loc, c.renamed, own, key);
         if (moved.kind !== "manifest" || moved.absPath !== home.absPath || moved.entry === undefined) {
           throw new DocmetaError(
             `"${c.file}" -> "${c.renamed}": manifest ${home.file} names it, and the new path is not a page of collection ${home.collection}; keep the move inside the collection, or edit the manifest first.`,
@@ -3253,7 +3253,7 @@ async function planManifestEdits(
     if ("renamedFrom" in c) {
       if (ddlRenames.has(`${c.renamedFrom}\0${c.key}`)) {
         for (const key of [c.renamedFrom, c.key]) {
-          const home = homeOf(c.file, key, data);
+          const home = await homeOf(c.file, key, data);
           if (home.kind !== "unowned") {
             throw new DocmetaError(
               `"${c.file}": "${key}" is owned by manifest ${home.file}; edit the manifest instead.`,
@@ -3261,12 +3261,12 @@ async function planManifestEdits(
           }
         }
       }
-      const source = owned(c.file, c.renamedFrom, own, false);
+      const source = await owned(c.file, c.renamedFrom, own, false);
       if (source !== undefined) {
         await edit(source, (t) => removeManifestKey(t, { ...where(source), key: c.renamedFrom }).text);
       }
       dropFromPage(c.renamedFrom);
-      const target = owned(c.file, c.key, data, true);
+      const target = await owned(c.file, c.key, data, true);
       const written = writtenValue(c, c.key, c.to);
       if (target === undefined) {
         ops.patch[c.key] = written;
@@ -3276,14 +3276,14 @@ async function planManifestEdits(
       const manifest = target?.file ?? source?.file;
       if (manifest !== undefined) c.manifest = manifest;
     } else if ("deleted" in c) {
-      const home = owned(c.file, c.key, own, false);
+      const home = await owned(c.file, c.key, own, false);
       if (home !== undefined) {
         c.manifest = home.file;
         await edit(home, (t) => removeManifestKey(t, { ...where(home), key: c.key }).text);
       }
       dropFromPage(c.key);
     } else {
-      const home = owned(c.file, c.key, data, true);
+      const home = await owned(c.file, c.key, data, true);
       const written = writtenValue(c, c.key, c.to);
       if (home === undefined) {
         ops.patch[c.key] = written;
@@ -3355,7 +3355,7 @@ async function unhomedWrites(
     );
     for (const key of new Set(w.keys)) {
       if (prefs.get(key)?.location !== "external" || joins.has(key)) continue;
-      const home = keyHome(loc, file, data, key);
+      const home = await keyHome(loc, file, data, key);
       if (home.kind === "unowned") out.push({ file, key, home: home.home, created: w.created });
     }
   }

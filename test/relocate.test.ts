@@ -163,6 +163,14 @@ describe("relocate: narrowed to one page, widened to the collection (rung 3, R2)
       expect(read(dir, page)).not.toContain("owner:");
     }
   });
+
+  it("leads the keys: line with Would under --dry-run", async () => {
+    const dir = copy("relocate-narrow");
+    const result = await runRelocate({ inputs: ["docs/install.md"], fields: ["owner"], cwd: dir, dryRun: true });
+    expect(pretty(result).split("\n")[0]).toBe(
+      "Would add owner to docs-meta.yaml's keys, moving it out of every page in collection site, 2 beyond the paths you named.",
+    );
+  });
 });
 
 describe("relocate: both directions in one run (rung 4, R3)", () => {
@@ -214,6 +222,15 @@ describe("relocate: both directions in one run (rung 4, R3)", () => {
       meta: { schemas: ["./steward.schema.json"] },
       collections: [{ name: "site", paths: ["docs/**/*.md"] }],
     });
+  });
+
+  it("leads both keys: lines with Would under --dry-run", async () => {
+    const dir = copy("relocate-both");
+    const result = await runRelocate({ inputs: [], cwd: dir, dryRun: true });
+    expect(pretty(result).split("\n").slice(0, 2)).toEqual([
+      "Would remove title from docs-meta.yaml's keys, moving it into every page in collection site.",
+      "Would add owner to docs-meta.yaml's keys, moving it out of every page in collection site.",
+    ]);
   });
 
   it("renders the scripting form (rung 8)", async () => {
@@ -516,6 +533,52 @@ describe("relocate: a key leaving keys: while another page carries it", () => {
       ]);
     }
   });
+
+  it("converges the same way when blocked removals span several pages and keys", async () => {
+    const dir = copy("relocate-removed-owned");
+    writeFileSync(
+      join(dir, "marked.schema.json"),
+      read(dir, "marked.schema.json").replace('"team": { "type": "string" }', '"team": { "type": "string", "x-manni-location": "page" }'),
+    );
+    writeFileSync(join(dir, "docs", "b.md"), "---\ntitle: B\nteam: docs\n---\n# B\n");
+    writeFileSync(join(dir, "docs", "e.md"), "---\nteam: docs\n---\n# E\n");
+    writeFileSync(join(dir, "docs", "c.rst"), "Body text.\n");
+    writeFileSync(join(dir, "docs", "d.rst"), "Body text.\n");
+    writeFileSync(
+      join(dir, "docs-meta.yaml"),
+      "docs/a.md:\n  title: A\n  team: writers\ndocs/c.rst:\n  title: C\ndocs/d.rst:\n  team: D\n",
+    );
+    const results = [];
+    for (const order of [
+      ["docs/a.md", "docs/b.md", "docs/c.rst", "docs/d.rst", "docs/e.md"],
+      ["docs/e.md", "docs/d.rst", "docs/c.rst", "docs/b.md", "docs/a.md"],
+    ]) {
+      const { plan } = await planIn(dir, order);
+      results.push(plan);
+      expect(plan.result.manifests).toMatchObject([{ keysRemoved: [], keys: ["title", "team"] }]);
+      expect(plan.result.files).toEqual([
+        {
+          file: "docs/b.md",
+          moved: [
+            { key: "title", to: "manifest", manifest: "docs-meta.yaml", reason: "owned" },
+            { key: "team", to: "manifest", manifest: "docs-meta.yaml", reason: "owned" },
+          ],
+          stayed: [],
+          beyond: false,
+        },
+        { file: "docs/c.rst", moved: [], stayed: [expect.objectContaining({ key: "title", reason: "read-only-format" })], beyond: false },
+        { file: "docs/d.rst", moved: [], stayed: [expect.objectContaining({ key: "team", reason: "read-only-format" })], beyond: false },
+        {
+          file: "docs/e.md",
+          moved: [{ key: "team", to: "manifest", manifest: "docs-meta.yaml", reason: "owned" }],
+          stayed: [],
+          beyond: false,
+        },
+      ]);
+    }
+    const [first, second] = results;
+    expect(second?.writes).toEqual(first?.writes);
+  });
 });
 
 describe("relocate: fixes from review", () => {
@@ -806,21 +869,21 @@ describe("relocation core: the API later commands use", () => {
   it("answers where a key lives, or where it would go", async () => {
     const dir = copy("relocate-stays");
     const ctx = await context(dir, ["docs/", "api/", "notes/"]);
-    expect(keyHome(ctx, "docs/same.md", { owner: "platform" }, "owner")).toMatchObject({
+    expect(await keyHome(ctx, "docs/same.md", { owner: "platform" }, "owner")).toMatchObject({
       kind: "manifest",
       collection: "site",
       file: "docs-meta.yaml",
       join: "path",
       entry: "docs/same.md",
     });
-    expect(keyHome(ctx, "api/joined.md", { id: "auth" }, "owner")).toMatchObject({
+    expect(await keyHome(ctx, "api/joined.md", { id: "auth" }, "owner")).toMatchObject({
       kind: "manifest",
       collection: "api",
       join: "id",
       entry: "auth",
     });
-    expect(keyHome(ctx, "api/nojoin.md", {}, "owner")).toMatchObject({ kind: "manifest", entry: undefined });
-    expect(keyHome(ctx, "docs/same.md", {}, "authors")).toEqual({
+    expect(await keyHome(ctx, "api/nojoin.md", {}, "owner")).toMatchObject({ kind: "manifest", entry: undefined });
+    expect(await keyHome(ctx, "docs/same.md", {}, "authors")).toEqual({
       kind: "unowned",
       home: {
         kind: "collection",
@@ -830,7 +893,7 @@ describe("relocation core: the API later commands use", () => {
         createsCollection: false,
       },
     });
-    expect(keyHome(ctx, "notes/stray.md", {}, "owner")).toEqual({
+    expect(await keyHome(ctx, "notes/stray.md", {}, "owner")).toEqual({
       kind: "unowned",
       home: { kind: "none", reason: "collections", collections: 2 },
     });

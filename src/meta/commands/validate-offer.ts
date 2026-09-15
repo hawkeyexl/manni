@@ -111,7 +111,7 @@ export async function offerRelocation(opts: ValidateOfferOptions): Promise<Reloc
   // `location:external` one. A page with no possible home is not offered.
   const groups = new Map<string, Group>();
   for (const f of findings) {
-    const home = keyHome(ctx, f.file, {}, f.key);
+    const home = await keyHome(ctx, f.file, {}, f.key);
     let collection: string | undefined;
     if (f.schema === LOCATION_PAGE_SCHEMA) {
       if (home.kind === "manifest") collection = home.collection;

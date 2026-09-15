@@ -435,7 +435,7 @@ export async function runValidate(
       if (Object.hasOwn(own, key)) {
         if (preference.location !== "external" || owned.has(key) || joins.has(key)) continue;
         const line = lineFor(key);
-        const none = homeless(label, own, key);
+        const none = await homeless(label, own, key);
         findings.push({
           schema: LOCATION_EXTERNAL_SCHEMA,
           ...common,
@@ -477,9 +477,9 @@ export async function runValidate(
    * and `--no-config` is V1 too: the finding says what to run, and relocate's
    * own refusal says why it cannot. Stdin is never homeless.
    */
-  const homeless = (label: string, own: Readonly<Record<string, unknown>>, key: string): number => {
+  const homeless = async (label: string, own: Readonly<Record<string, unknown>>, key: string): Promise<number> => {
     if (label === STDIN_LABEL) return 0;
-    const home = keyHome(relocationCtx(), label, own, key);
+    const home = await keyHome(relocationCtx(), label, own, key);
     return home.kind === "unowned" &&
       home.home.kind === "none" &&
       home.home.reason === "collections" &&

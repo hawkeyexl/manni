@@ -758,7 +758,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       for (const field of fields) {
         if (field === PROVENANCE_FIELD || marks.prefs.get(field) !== "external") continue;
         if (!stale(compareDerived(field, marks.data[field], record?.fields[field]))) continue;
-        const home = keyHome(ctx, doc.label, doc.extracted.data, field);
+        const home = await keyHome(ctx, doc.label, doc.extracted.data, field);
         if (home.kind === "unowned") out.push({ label: doc.label, key: field, home: home.home });
       }
     }
@@ -884,7 +884,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       let refusal: string | undefined;
       for (const f of due) {
         if (f.field === PROVENANCE_FIELD) continue;
-        const home = keyHome(ctx, label, doc.extracted.data, f.field);
+        const home = await keyHome(ctx, label, doc.extracted.data, f.field);
         if (home.kind === "url") {
           refusal = urlManifestMessage(f.field, home.file);
           break;
