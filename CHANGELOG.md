@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [2.2.0](https://github.com/hawkeyexl/manni/compare/v2.1.0...v2.2.0) (2026-09-15)
+
+
+### Features
+
+* **meta:** x-manni-location and manni meta relocate (0047) ([#37](https://github.com/hawkeyexl/manni/issues/37)) ([221970e](https://github.com/hawkeyexl/manni/commit/221970edbe879b72de398bf08b1aa96cfd1d8ecb))
+
 # [2.1.0](https://github.com/hawkeyexl/manni/compare/v2.0.1...v2.1.0) (2026-09-13)
 
 
