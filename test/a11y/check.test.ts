@@ -502,7 +502,7 @@ describe("runCheck summary", () => {
  * a11y does not: every violation the floor keeps fails the page, whatever its
  * level. It is the one lever the domain's shape allows, because axe assigns
  * the severity and no config can move a rule the way `cite.severity.<rule>`
- * can. Proposal 0048 records the decision; these are the cases that would
+ * can. Proposal 0064 records the decision; these are the cases that would
  * change if it were ever revisited.
  */
 describe("runCheck: the severity floor is the gate", () => {

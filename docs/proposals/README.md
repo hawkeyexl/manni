@@ -74,6 +74,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0059](0059-a11y-crawl-exclusions.md) | Keeping the a11y crawl out of part of a site: `--exclude <glob>` repeatable, an `a11y.exclude:` key, globs matched against the URL path, and `summary.excluded` | Devin · D1, D3 | Proposed |
 | [0060](0060-a-manifest-per-page-as-built.md) | A manifest per page, as built. 0058 with its four review questions answered. Two refusal rows dropped, because main had them. Two refusals added, for two pages resolving one file and for a `query` rename of a page whose values live in its per-page manifest | Maya · M6 / Devin · D5 | Implemented (#117) |
 | [0063](0063-the-graph-vocabulary.md) | The `graph` vocabulary. The page block `kg:` becomes `graph:`, defined by `manni:graph:1.0.0-proposal.1`, which is the kg draft renamed. `manni term` reads `graph.concepts`, and the kg drafts stay as the family's history | Sara · S1 / Maya · M1 | Proposed |
+| [0064](0064-severity-and-the-exit-code.md) | a11y's severity floor is also its exit-code gate, deliberately, because axe assigns the level and no config moves one | Devin · D7 | Implemented |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -166,6 +167,9 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
        │                  new rule joins; its no-model promise narrows to `check`)
 0017 ──┤                 (the egress analysis, and fill's provider flags reused as they are)
 0036 ──┘                 (the fill-shaped proposal it asked for, with the model outside the gate)
+
+0035 ──┬─> 0064          (a11y's exit-code contract, whose floor this confirms as the gate)
+0044 ──┘                 (cite's per-rule severity, the second reading of the scale)
 ```
 
 The four `Proposed` SQL items (0026–0029) are independent of each other, with one exception. 0026 and 0029 both grow `query`'s `-f` value list. Each specifies the combined six-value surface, and whichever is implemented second merges into the one const. Recommended implementation order is 0026 → 0029 → 0027 → 0028, which is impact-first. The two config-touching ones (0026, 0027) land apart, so the second rebases trivially.
