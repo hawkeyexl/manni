@@ -1,5 +1,5 @@
 ---
-title: "manni:evals:1.0.0-proposal.2"
+title: "manni:evals:1.0.0-proposal.4"
 description: "The proposed page-eval vocabulary: named, testable assertions about a page, graded by AI, a command, a human, or a tool."
 sidebar:
   order: 7
@@ -9,10 +9,13 @@ sidebar:
 :::caution[Proposal under review]
 Part of the [metadata vocabularies proposal](/manni/meta/proposals/frontmatter-vocabularies/),
 open for community review. Draft schema:
-[`docs/proposals/0023/schemas/evals/1.0.0-proposal.2.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/evals/1.0.0-proposal.2.json).
+[`docs/proposals/0023/schemas/evals/1.0.0-proposal.4.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/evals/1.0.0-proposal.4.json).
 Review round 6 took evals from `proposal.1` to `proposal.2`: it added
 `weight`, `target`, `runs` and `model`, and moved the `eval-` prefix guard
-from prose into the schema.
+from prose into the schema. Proposal 0046 took it to `proposal.3` by removing
+`eval-provenance` and renaming `info` to `notice`, as the end of this page
+describes. Proposal 0047 took it to `proposal.4` by marking each key's
+preferred location, and changed no key.
 :::
 
 **The question it answers: what must be true of this page?** A common
@@ -21,16 +24,25 @@ can implement it, and other schemas can compose on top of it.
 
 ## Keys
 
-Four page-level keys. Three carry the reserved `eval-` prefix, and the
-fourth is `evals` itself. Any other `eval-*` key at the page root is
+Three page-level keys. Two carry the reserved `eval-` prefix, and the
+third is `evals` itself. Any other `eval-*` key at the page root is
 rejected.
 
-| Key | Type | Notes |
-|---|---|---|
-| `evals` | string, or non-empty list of entries | One assertion, or the list |
-| `eval-suite` | string, non-empty | A named suite from the implementer's config. On an id collision, the page's entry wins |
-| `eval-skip` | boolean (default false) | Skip the page's evals. Tooling reports the skip |
-| `eval-provenance` | list of entries | The machine-proposal trail, one entry per model |
+| Key | Type | Location | Notes |
+|---|---|---|---|
+| `evals` | string, or non-empty list of entries | `external` | One assertion, or the list |
+| `eval-suite` | string, non-empty | `external` | A named suite from the implementer's config. On an id collision, the page's entry wins |
+| `eval-skip` | boolean (default false) | `external` | Skip the page's evals. Tooling reports the skip |
+
+The Location column is the `x-manni-location` mark each key carries in
+`manni:evals:1.0.0-proposal.4`. `page` means the value belongs in the
+document's own metadata and is meant to reach delivered output. `external`
+means it belongs in the collection's external-metadata manifest. A key is
+`page` when a third-party or user-owned agent fetching the page would act on
+it. All three keys are `external`, because evals are CI's and an agent reading
+the page does not act on them. The fields inside an entry carry no mark of
+their own. See [field location](/manni/meta/schemas/field-location/) for how
+the marks are used.
 
 An entry takes one of three forms. It can be a string shorthand, meaning an
 AI-judged assertion at error severity. It can be a `use:` reference to an eval
@@ -50,7 +62,7 @@ carry:
 - `evidence`, and `examples` with one or several pass/fail anchors
 - the command family: `command`, `success-exit-codes`, `timeout-ms`,
   `generated-assertion-hash`
-- `options`, `severity` (`error`, `warning`, or `info`; default `error`),
+- `options`, `severity` (`error`, `warning`, or `notice`; default `error`),
   `severity-map`, and `skip`
 
 A `use:` reference may override `skip`, `type`, `severity`, `options`, and
@@ -101,7 +113,7 @@ evals:
 - **Flat, like the rest of the family.** There is no settings object. The
   list is the value, and the settings are page-level `eval-*` keys.
   Because the page root is open, the schema rejects any `eval-*` key other
-  than the three above. That gives the root the property a closed
+  than the two above. That gives the root the property a closed
   container would have: a misspelled key fails instead of being ignored.
   In `proposal.1` this was a request to implementers; one implementer
   honoured it and one did not, so `proposal.2` encodes it.
@@ -125,9 +137,10 @@ evals:
   `runs` and `model` legal only with the `ai` grader. `runs` is capped at 50
   because runs multiply cost directly. `model` also lets an eval name a judge
   other than the model that wrote the page. That turns the self-preference
-  warning that `generated-by` in [ai-context](/manni/meta/proposals/ai-context/)
+  warning that `provenance` in [ai-context](/manni/meta/proposals/ai-context/)
   enables into something a tool can act on.
-- **`eval-provenance` is the family's machine-proposal trail** (see
+- **Machine-proposed evals go in the family's one trail.** Their ids sit
+  under `evals` in a `meta-provenance` entry (see
   [ai-context](/manni/meta/proposals/ai-context/)). Entries are deleted
   under human review, and a surviving entry means machine-proposed evals
   nobody has checked.

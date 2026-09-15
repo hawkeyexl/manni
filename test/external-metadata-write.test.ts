@@ -22,6 +22,7 @@ import { dirname, resolve } from "node:path";
 import { parse } from "yaml";
 import {
   removeManifestKey,
+  renameManifestEntry,
   spliceManifestValue,
 } from "../src/meta/core/external-metadata-write.js";
 import { DocmetaError } from "../src/meta/types.js";
@@ -307,6 +308,29 @@ describe("removeManifestKey", () => {
       new DocmetaError(
         'Manifest prov.yaml:1: "docs/a.md" is a flow mapping ({ … }), which this writer does not remove keys from. Rewrite the entry in block style.',
       ),
+    );
+  });
+});
+
+describe("renameManifestEntry", () => {
+  const text = '# Owners.\ndocs/a.md: # the first page\n  owner: web\n\n"docs/b.md":\n  owner: api\n';
+
+  it("replaces only the entry's key, keeping its quoting, comments and values", () => {
+    expect(renameManifestEntry(text, { entry: "./docs/a.md", to: "docs/c.md" }).text).toBe(
+      '# Owners.\ndocs/c.md: # the first page\n  owner: web\n\n"docs/b.md":\n  owner: api\n',
+    );
+    expect(renameManifestEntry(text, { entry: "docs/b.md", to: "docs/d.md" }).text).toBe(
+      '# Owners.\ndocs/a.md: # the first page\n  owner: web\n\n"docs/d.md":\n  owner: api\n',
+    );
+  });
+
+  it("leaves a manifest with no such entry as it was", () => {
+    expect(renameManifestEntry(text, { entry: "docs/z.md", to: "docs/c.md" }).text).toBe(text);
+  });
+
+  it("refuses a name another entry already has", () => {
+    expect(() => renameManifestEntry(text, { entry: "docs/a.md", to: "docs/b.md", file: "m.yaml" })).toThrow(
+      'Manifest m.yaml:5: "docs/b.md" already has an entry, so "docs/a.md" cannot be renamed to it. Merge the two entries into one.',
     );
   });
 });

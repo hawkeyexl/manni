@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "$defs": {
+    "private": { "allOf": [{ "x-manni-location": "external" }] }
+  },
+  "properties": {
+    "owner": { "$ref": "#/$defs/private", "x-manni-location": "page" }
+  }
+}

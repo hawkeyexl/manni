@@ -52,8 +52,24 @@ export const ENCRYPTED_UNREADABLE_RULE = "encrypted:unreadable/encrypted";
  */
 export const DERIVED_STALE_RULE = "derived:stale/derived";
 
+/**
+ * A key the page holds that its schemas mark `x-manni-location: external`
+ * (proposal 0047). A warning, builtin-shaped like `external:owned`.
+ */
+export const LOCATION_EXTERNAL_RULE = "location:external/location";
+
+/**
+ * A key a manifest supplies that its schemas mark `x-manni-location: page`
+ * (proposal 0047). A warning, filed at the manifest line.
+ */
+export const LOCATION_PAGE_RULE = "location:page/location";
+
 /** What each reserved rule means, for the consumer's rule listing. */
 export const RESERVED_RULES: Record<string, string> = {
+  [LOCATION_EXTERNAL_RULE]:
+    "The page stores a key its schema prefers external metadata for; run `manni meta relocate` to move it to the collection's manifest.",
+  [LOCATION_PAGE_RULE]:
+    "A manifest stores a key its schema prefers the page for; run `manni meta relocate` to move it into the page.",
   [ENCRYPTED_PLAIN_RULE]:
     "A property the schema marks x-manni-encrypt holds a plain value; the page must hold it encrypted.",
   [ENCRYPTED_UNREADABLE_RULE]:

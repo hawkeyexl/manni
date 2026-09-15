@@ -3270,17 +3270,15 @@ describe("cli external metadata (0037, built bin)", () => {
     expect(q.stdout).toContain("docs/auth.md");
   });
 
-  it("refuses to write a manifest-owned key, exit 2", () => {
+  it("previews a write to a manifest-owned key as landing in the manifest (0047)", () => {
     const r = run(
-      ["query", "UPDATE docs SET jira = 'PLAT-1' WHERE _path = 'docs/auth.md'", "--dry-run"],
+      ["query", "UPDATE docs SET jira = 'PLAT-1' WHERE _path = 'docs/auth.md'", "--dry-run", "--no-color"],
       undefined,
       undefined,
       corpus,
     );
-    expect(r.status).toBe(2);
-    expect(r.stderr).toMatch(
-      /"jira" is owned by manifest docs-meta\.yaml; edit the manifest instead/,
-    );
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("docs/auth.md: jira: PLAT-412 -> PLAT-1  [docs-meta.yaml]");
   });
 
   it("exits 2 when a manifest entry names a document the corpus run did not load", () => {
@@ -3666,5 +3664,103 @@ describe("cli --collection (0041, built bin)", () => {
     const vendor = runIn(["schemas", "vendor", "--help"]);
     expect(vendor.status).toBe(0);
     expect(vendor.stdout).not.toContain("--collection");
+  });
+});
+
+describe("cli relocate (0047, built bin)", () => {
+  beforeAll(() => {
+    if (!existsSync(bin)) execSync("npm run build", { cwd: root, stdio: "ignore" });
+  }, 180000);
+
+  const fixture = (name: string): string => {
+    const dir = mkdtempSync(join(tmpdir(), `docmeta-cli-${name}-`));
+    cpSync(resolve(root, "test", "fixtures", "location", name), dir, { recursive: true });
+    return dir;
+  };
+
+  it("refuses stdin (U1), exit 2", () => {
+    const r = run(["relocate", "-"], "---\nowner: x\n---\n");
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain(
+      "relocate moves values between documents and a collection's manifest, and stdin is not a document on disk.",
+    );
+  });
+
+  it("refuses --no-config (U2), exit 2", () => {
+    const r = run(["relocate", "--no-config", "test/fixtures/valid.md"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain(
+      "relocate writes collections: and externalMetadata: to the config file, and --no-config rules one out.",
+    );
+  });
+
+  it("refuses a findings format (U5), exit 2", () => {
+    const r = run(["relocate", "-f", "sarif"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain('relocate --format must be pretty or json; got "sarif".');
+  });
+
+  it("exits 1 when a value stays on the wrong side", () => {
+    const dir = fixture("relocate-stays");
+    try {
+      const r = run(["relocate", "notes/stray.md"], undefined, undefined, dir);
+      expect(r.status).toBe(1);
+      expect(r.stdout).toBe(
+        [
+          "Using manni.config.yaml (.)",
+          "notes/stray.md",
+          "    owner    stays: this document is in none of the 2 collections, so it has no manifest",
+          "1 file, 0 values moved, 1 stayed",
+          "",
+        ].join("\n"),
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("previews the scripting form and writes nothing", () => {
+    const dir = fixture("relocate-create");
+    try {
+      const r = run(["relocate", "-f", "json", "--dry-run"], undefined, undefined, dir);
+      expect(r.status).toBe(0);
+      const out = JSON.parse(r.stdout) as { dryRun: boolean; summary: unknown; manifests: unknown };
+      expect(out.dryRun).toBe(true);
+      expect(out.summary).toEqual({ files: 2, moved: 3, stayed: 0, manifestsCreated: 1 });
+      expect(out.manifests).toEqual([
+        {
+          file: "site.metadata.yaml",
+          collection: "site",
+          created: true,
+          keysAdded: ["owner", "authors"],
+          keysRemoved: [],
+          undeclared: false,
+        },
+      ]);
+      expect(existsSync(join(dir, "site.metadata.yaml"))).toBe(false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("cli validate location warnings (0047, built bin)", () => {
+  beforeAll(() => {
+    if (!existsSync(bin)) execSync("npm run build", { cwd: root, stdio: "ignore" });
+  }, 180000);
+
+  it("exits 0 on warnings alone, and off a terminal asks nothing and moves nothing", () => {
+    const dir = resolve(root, "test", "fixtures", "location", "validate-both");
+    const before = readFileSync(join(dir, "docs", "install.md"), "utf8");
+    // spawnSync, not `run`: a successful execFileSync drops stderr, and the
+    // absence of a prompt on stderr is the point.
+    const r = spawnSync("node", [bin, "validate"], { cwd: dir, encoding: "utf8" });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("[location:external]");
+    expect(r.stdout).toContain("[location:page]");
+    expect(r.stdout).toContain("0 failed, 0 errors, 3 warnings");
+    expect(r.stderr).not.toContain("Move them");
+    expect(r.stderr).not.toContain("in collection site");
+    expect(readFileSync(join(dir, "docs", "install.md"), "utf8")).toBe(before);
   });
 });

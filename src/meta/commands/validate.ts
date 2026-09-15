@@ -10,11 +10,24 @@ import {
   orphanEntries,
   orphanError,
   orphanJoins,
+  externalMetadataJoin,
   externalMetadataPointer,
   EXTERNAL_DUPLICATE_SCHEMA,
   EXTERNAL_KEYWORD,
   EXTERNAL_OWNED_SCHEMA,
+  PATH_JOIN,
+  type MergedMetadata,
 } from "../core/external-metadata.js";
+import {
+  LOCATION_EXTERNAL_SCHEMA,
+  LOCATION_FINDING_KEYWORD,
+  LOCATION_PAGE_SCHEMA,
+} from "../core/location.js";
+import {
+  keyHome,
+  relocationContext,
+  type RelocationContext,
+} from "../core/relocation.js";
 import { resolve, extname } from "node:path";
 import {
   DocmetaError,
@@ -24,6 +37,7 @@ import {
   type ValidationResult,
 } from "../types.js";
 import {
+  canonicalSchemaRef,
   DEFAULT_BASELINE_PATH,
   LEGACY_BASELINE_PATH,
   type FingerprintContext,
@@ -227,6 +241,8 @@ interface ManagedView {
   hidden: readonly string[];
   /** The file's schema set, to read the mark of a field the page lacks. */
   refs: string[];
+  /** Where a value a manifest supplied lives, so a stale finding names its line (0047). */
+  locate: (pointer: string) => { file: string; line?: number } | undefined;
 }
 
 /**
@@ -249,6 +265,16 @@ export async function runValidate(
 
   // Explicit CLI inputs win, else config `paths:`; `base` is whichever of the
   // two directories those inputs were written relative to.
+  const run = await resolveRunConfig({
+    cwd,
+    configPath: opts.configPath,
+    noConfig: opts.noConfig,
+    inputs: opts.inputs,
+    ...(opts.collections !== undefined
+      ? { collections: opts.collections }
+      : {}),
+    onConfigLoaded: opts.onConfigLoaded,
+  });
   const {
     config,
     inputs,
@@ -258,17 +284,7 @@ export async function runValidate(
     declaredCollections,
     fromCollections,
     configFile,
-  } =
-    await resolveRunConfig({
-      cwd,
-      configPath: opts.configPath,
-      noConfig: opts.noConfig,
-      inputs: opts.inputs,
-      ...(opts.collections !== undefined
-        ? { collections: opts.collections }
-        : {}),
-      onConfigLoaded: opts.onConfigLoaded,
-    });
+  } = run;
   /** The collections one label belongs to, computed once per file. */
   const membersFor = (label: string): string[] =>
     memberOf(collections, configDir ?? cwd, base, label);
@@ -351,6 +367,127 @@ export async function runValidate(
       pins: collectSchemaPins(config),
     }),
   );
+  // Where a misplaced value could go (proposal 0047), asked only to word a
+  // `location:external` finding. Built on first use: most runs mark nothing.
+  let relocation: RelocationContext | undefined;
+  const relocationCtx = (): RelocationContext =>
+    (relocation ??= relocationContext(run, {
+      cwd,
+      targets: fromCollections ? [] : opts.inputs,
+      validator,
+      ...(opts.noConfig !== undefined ? { noConfig: opts.noConfig } : {}),
+      ...(opts.env !== undefined ? { env: opts.env } : {}),
+    }));
+  // Schema refs in a location message are named the way a rule id names them,
+  // not by the absolute path a rebased config holds.
+  const refFrame: FingerprintContext = { cwd, base: configDir ?? cwd, runBase: base };
+
+  /**
+   * The `location:external` and `location:page` warnings for one document
+   * (proposal 0047), judged over `data`, the merged metadata validation saw.
+   *
+   * - `location:external`: a key the page itself holds, which its schemas
+   *   prefer in external metadata. Not for a key a manifest of the page's
+   *   collections owns (`external:owned` already errors there), and not for
+   *   the join field of a field-joined manifest, which is how the page names
+   *   its entry and so has to stay in the page.
+   * - `location:page`: a key a manifest supplied, which its schemas prefer on
+   *   the page. Filed at the manifest line, as manifest findings are.
+   *
+   * In the merged data's key order, the page's own keys first.
+   */
+  const locationFindings = async (
+    label: string,
+    own: Readonly<Record<string, unknown>>,
+    data: Record<string, unknown>,
+    refs: string[],
+    members: readonly string[],
+    merged: MergedMetadata,
+    lineFor: (pointer: string) => number | undefined,
+  ): Promise<FieldError[]> => {
+    const preferences = await validator.locationPreferences(data, refs);
+    if (preferences.size === 0) return [];
+    const owned = new Set(merged.collisions.map((c) => c.key));
+    // Every declared collection the page is in, as relocate reads them: a
+    // `--collection` run that leaves one out still leaves its join in place.
+    const declaredMembers =
+      declaredCollections === collections
+        ? members
+        : memberOf(declaredCollections, configDir ?? cwd, base, label);
+    const joins = new Set(
+      declaredCollections
+        .filter((c) => declaredMembers.includes(c.name))
+        .flatMap((c) => c.externalMetadata.map(externalMetadataJoin))
+        .filter((join) => join !== PATH_JOIN),
+    );
+    const findings: FieldError[] = [];
+    for (const key of Object.keys(data)) {
+      const preference = preferences.get(key);
+      if (preference === undefined) continue;
+      const ref = canonicalSchemaRef(preference.schema, refFrame);
+      const pointer = externalMetadataPointer(key);
+      const common = {
+        keyword: LOCATION_FINDING_KEYWORD,
+        subject: key,
+        instancePath: pointer,
+        severity: "warning" as const,
+      };
+      if (Object.hasOwn(own, key)) {
+        if (preference.location !== "external" || owned.has(key) || joins.has(key)) continue;
+        const line = lineFor(key);
+        const none = await homeless(label, own, key);
+        findings.push({
+          schema: LOCATION_EXTERNAL_SCHEMA,
+          ...common,
+          // relocate refuses --no-config (U2), so it is no answer there.
+          // Nor is it one for stdin, which relocate refuses: no advice there.
+          message: opts.noConfig
+            ? `"${key}" is stored in the page; ${ref} prefers external metadata, and --no-config leaves it no manifest.`
+            : label === STDIN_LABEL
+              ? `"${key}" is stored in the page; ${ref} prefers external metadata.`
+              : none > 0
+              ? `"${key}" is stored in the page; ${ref} prefers external metadata, and this document is in none of the ${String(none)} collections.`
+              : `"${key}" is stored in the page; ${ref} prefers external metadata. Run manni meta relocate.`,
+          ...(line != null ? { line } : {}),
+        });
+        continue;
+      }
+      if (preference.location !== "page") continue;
+      const at = merged.locate(pointer);
+      if (at === undefined) continue;
+      findings.push({
+        schema: LOCATION_PAGE_SCHEMA,
+        ...common,
+        // A fetched manifest cannot give a value up, so relocate is no
+        // answer; the value moves in the repository that serves it.
+        message: /^https?:\/\//.test(at.file)
+          ? `"${key}" is stored in manifest ${at.file}; ${ref} prefers the page, and a fetched manifest cannot be written. Move it in that repository.`
+          : `"${key}" is stored in manifest ${at.file}; ${ref} prefers the page. Run manni meta relocate.`,
+        file: at.file,
+        ...(at.line != null ? { line: at.line } : {}),
+      });
+    }
+    return findings;
+  };
+
+  /**
+   * How many collections a page is in none of, when that leaves `key` no
+   * possible home (several declared, the page in none); otherwise 0. With no
+   * collections, or one the page is outside, relocate can still give it one,
+   * and `--no-config` is V1 too: the finding says what to run, and relocate's
+   * own refusal says why it cannot. Stdin is never homeless.
+   */
+  const homeless = async (label: string, own: Readonly<Record<string, unknown>>, key: string): Promise<number> => {
+    if (label === STDIN_LABEL) return 0;
+    const home = await keyHome(relocationCtx(), label, own, key);
+    return home.kind === "unowned" &&
+      home.home.kind === "none" &&
+      home.home.reason === "collections" &&
+      home.home.collections > 1
+      ? home.home.collections
+      : 0;
+  };
+
   const results: ValidationResult[] = [];
   // Field-joined entries each document matched (0039), keyed by field then
   // value: the duplicate finding and the post-loop orphan check both need
@@ -529,12 +666,12 @@ export async function runValidate(
     // every read below — resolution, validation, the collision loop — sees
     // the one merged object.
     //
-    // The derived comparison is the one reader that takes the document's
-    // OWN extraction, from before the merge: a managed key can never be
-    // manifest-owned (`loadConfig` refuses the overlap), so the asserted
-    // value is the document's, and `lineFor` must answer for its own lines.
-    // `provenance` is the exception (0046): its record may live in a
-    // manifest, which the git source then reads at each commit.
+    // The derive sources take the document's OWN extraction, from before the
+    // merge, so `lineFor` answers for its own lines. The comparison itself
+    // reads the merged view below: a managed key a local manifest owns
+    // (0047) is asserted by the manifest, and `merged.locate` points its
+    // finding at the manifest's line. `provenance`'s record may live in a
+    // manifest too (0046), which the git source then reads at each commit.
     if (keepDeriveInputs && label !== STDIN_LABEL) {
       const place = provenanceManifests.length === 0
         ? undefined
@@ -550,7 +687,23 @@ export async function runValidate(
     const merged = mergeExternalMetadata(label, extracted, externalMetadata, members, base, {
       encryptionKey,
     });
+    // The page's own keys, for telling a value the page holds from one a
+    // manifest supplied (proposal 0047).
+    const own = extracted.data;
     extracted = merged.extracted;
+    // The merged data before any schema is known, so a document whose schema
+    // set fails still asserts what its manifest supplies. No refs means no
+    // marks, which is exactly what the encryption view below would find.
+    // Replaced by that view once it is built.
+    if (deriveWillRun && label !== STDIN_LABEL) {
+      managedViews.set(label, {
+        data: extracted.data,
+        marked: [],
+        hidden: [],
+        refs: [],
+        locate: merged.locate,
+      });
+    }
     for (const j of merged.joins) {
       const byValue =
         joinHits.get(j.field) ??
@@ -612,6 +765,7 @@ export async function runValidate(
           marked: view.marked,
           hidden: [...view.unreadable, ...view.unverified],
           refs: schemaSet,
+          locate: merged.locate,
         });
       }
       errors = [
@@ -628,6 +782,9 @@ export async function runValidate(
           merged.locate,
         ),
         ...encryptionFindings(view, extracted, merged.locate),
+        // Over the decrypted view, the object validation evaluated: a mark
+        // counts where Ajv takes a branch, and a branch may read a value.
+        ...(await locationFindings(label, own, view.data, schemaSet, members, merged, extracted.lineFor)),
       ];
     } catch (err) {
       // A schema the *document* chose failing to load — unparseable, missing,
@@ -831,6 +988,7 @@ export async function runValidate(
         return staleFindings(
           [marked.some((p) => isAtOrUnder(p, at)) ? redactedDerived(compared) : compared],
           input.extracted.lineFor,
+          managed?.locate,
         );
       });
       if (findings.length === 0) continue;
@@ -862,8 +1020,9 @@ export async function runValidate(
     passed: reported.length - failed,
     failed,
     errors: count(isErrorSeverity),
-    // Omitted at zero, like `gitignoreSkipped` below: nothing meta validates
-    // produces a warning today, so the summary stays as it was.
+    // Omitted at zero, like `gitignoreSkipped` below: only the location
+    // findings (proposal 0047) are warnings, so a run with no
+    // `x-manni-location` marks keeps the summary as it was.
     ...(warnings > 0 ? { warnings } : {}),
     ...(notices > 0 ? { notices } : {}),
     // Omitted when nothing was skipped: there is nothing to audit, and the

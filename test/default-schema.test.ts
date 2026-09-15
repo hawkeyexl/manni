@@ -36,6 +36,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
 import { readdir, readFile } from "node:fs/promises";
 import { runValidate } from "../src/meta/commands/validate.js";
+import type { ValidationResult } from "../src/meta/types.js";
 import { loadSchema } from "../src/meta/core/schema-registry.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -56,13 +57,22 @@ const DRAFTS = "./docs/proposals/0023/schemas";
  * fields; bumping the rest alongside would announce a revision none of them
  * made and leave pairs of byte-identical files to explain. `ref()` keeps the
  * mapping in one table, so a family's next bump is still a one-line edit.
+ * Proposal 0047's `x-manni-location` mark is a change every family made, so
+ * each one took a revision for it. ai-context's proposal.2 (0046) replaced
+ * the page-level `generated-by` with `provenance` line pins and moved field
+ * attribution to `meta-provenance`, and proposal.3 is that plus the mark.
  */
 const DRAFT_V = "1.0.0-proposal.1";
 const VERSIONS: Record<string, string> = {
-  core: "1.0.0-proposal.3",
-  stewardship: "1.0.0-proposal.2",
-  evals: "1.0.0-proposal.2",
-  "artifact-evals": "1.0.0-proposal.2",
+  core: "1.0.0-proposal.4",
+  stewardship: "1.0.0-proposal.3",
+  audience: "1.0.0-proposal.2",
+  lifecycle: "1.0.0-proposal.2",
+  structure: "1.0.0-proposal.2",
+  "ai-context": "1.0.0-proposal.3",
+  evals: "1.0.0-proposal.4",
+  kg: "1.0.0-proposal.3",
+  "artifact-evals": "1.0.0-proposal.4",
 };
 const ref = (family: string): string =>
   `${DRAFTS}/${family}/${VERSIONS[family] ?? DRAFT_V}.json`;
@@ -123,11 +133,22 @@ const FIELDS: Record<string, string[]> = {
     "prerequisites",
     "related-pages",
   ],
-  "ai-context": ["generated-by", "provenance", "risks", "sample-questions"],
+  "ai-context": ["meta-provenance", "provenance", "risks", "sample-questions"],
 };
 
 /** The schema's short name, from its draft path. */
 const nameOf = (ref: string): string => ref.split("/").at(-2) ?? ref;
+
+/**
+ * The result without validate's `location:external` and `location:page`
+ * warnings (proposal 0047). Every draft marks where each field belongs, so a
+ * page exercising a vocabulary carries external-preferring fields by design;
+ * those warnings are validate-location.test.ts's subject, and this file's is
+ * what the vocabularies accept and refuse.
+ */
+function withoutLocation(r: ValidationResult): ValidationResult {
+  return { ...r, errors: r.errors.filter((e) => e.keyword !== "location") };
+}
 
 /** Validate one fixture against an explicit schema set. */
 async function check(fixture: string, cliSchemas: string[] = HOUSE) {
@@ -141,7 +162,7 @@ async function check(fixture: string, cliSchemas: string[] = HOUSE) {
   });
   const r = results[0];
   if (!r) throw new Error(`no result for ${fixture}`);
-  return r;
+  return withoutLocation(r);
 }
 
 /** Validate inline frontmatter against an explicit schema set. */
@@ -156,7 +177,7 @@ async function checkStdin(yaml: string, cliSchemas: string[] = HOUSE) {
   });
   const r = results[0];
   if (!r) throw new Error("no result for stdin");
-  return r;
+  return withoutLocation(r);
 }
 
 describe("the six house vocabularies", () => {
@@ -513,15 +534,120 @@ describe("the six house vocabularies", () => {
     expect(emptyList.errors[0]?.instancePath).toBe("/risks");
   });
 
-  it("records machine-proposed metadata in provenance entries", async () => {
-    const ok = await checkStdin(
+  it("pins machine-written body lines in provenance entries", async () => {
+    const PIN = {
+      "generated-by": "claude-fable-5",
+      lines: "12-31",
+      integrity: "sha256-6278d3a037f5835bad3160defe9795ac3eec09f98aed34292190fded1978a007",
+    };
+    const page = (entry: Record<string, string>): string =>
+      "title: T\ndescription: D\nprovenance:\n" +
+      Object.entries(entry)
+        .map(([k, v], i) => `${i === 0 ? "  - " : "    "}${k}: ${v}`)
+        .join("\n");
+
+    const ok = await checkStdin(page(PIN));
+    expect(ok.errors).toEqual([]);
+    expect(ok.ok).toBe(true);
+
+    // One line is an integer; a range is "L1-L2". There is no line 0.
+    expect((await checkStdin(page({ ...PIN, lines: "7" }))).ok).toBe(true);
+    expect((await checkStdin(page({ ...PIN, lines: "0-3" }))).ok).toBe(false);
+
+    // A pin names the machine, the lines and the hash; none is optional.
+    for (const missing of Object.keys(PIN)) {
+      const without = Object.fromEntries(
+        Object.entries(PIN).filter(([k]) => k !== missing),
+      );
+      const r = await checkStdin(page(without));
+      expect(r.ok, missing).toBe(false);
+      expect(
+        r.errors.some(
+          (e) =>
+            e.keyword === "required" &&
+            e.subject === missing &&
+            e.instancePath === "/provenance/0",
+        ),
+        missing,
+      ).toBe(true);
+    }
+
+    const badHash = await checkStdin(
+      "title: T\ndescription: D\nprovenance:\n  - generated-by: claude-fable-5\n    lines: 3\n    integrity: sha256-abc",
+    );
+    expect(badHash.ok).toBe(false);
+    expect(
+      badHash.errors.some(
+        (e) => e.keyword === "pattern" && e.instancePath === "/provenance/0/integrity",
+      ),
+    ).toBe(true);
+
+    // proposal.1's field attribution is meta-provenance's now, so its
+    // `fields` and `confidence` are strangers on a pin.
+    const oldShape = await checkStdin(
       "title: T\ndescription: D\nprovenance:\n  - generated-by: claude-fable-5\n    fields: [intent]\n    confidence:\n      intent: 0.9",
     );
+    expect(oldShape.ok).toBe(false);
+    expect(
+      oldShape.errors.some(
+        (e) => e.keyword === "additionalProperties" && e.instancePath === "/provenance/0",
+      ),
+    ).toBe(true);
+  });
+
+  it("records machine-proposed metadata in meta-provenance, by pointer and eval id", async () => {
+    const ok = await checkStdin(
+      "title: T\ndescription: D\nmeta-provenance:\n  - generated-by: claude-fable-5\n    fields: [/intent, /kg/label]\n    evals: [install-verified]\n    confidence:\n      /intent: 0.9\n      install-verified: 0.7",
+    );
+    expect(ok.errors).toEqual([]);
     expect(ok.ok).toBe(true);
+
+    const evalsOnly = await checkStdin(
+      "title: T\ndescription: D\nmeta-provenance:\n  - generated-by: claude-fable-5\n    evals: [install-verified]",
+    );
+    expect(evalsOnly.ok).toBe(true);
+
+    // Fields are JSON Pointers; the bare key names of proposal.1 fail.
+    const bareKey = await checkStdin(
+      "title: T\ndescription: D\nmeta-provenance:\n  - generated-by: claude-fable-5\n    fields: [intent]",
+    );
+    expect(bareKey.ok).toBe(false);
+    expect(
+      bareKey.errors.some(
+        (e) => e.keyword === "pattern" && e.instancePath === "/meta-provenance/0/fields/0",
+      ),
+    ).toBe(true);
+
     const anonymous = await checkStdin(
-      "title: T\ndescription: D\nprovenance:\n  - fields: [intent]",
+      "title: T\ndescription: D\nmeta-provenance:\n  - fields: [/intent]",
     );
     expect(anonymous.ok).toBe(false);
+    expect(
+      anonymous.errors.some(
+        (e) => e.keyword === "required" && e.subject === "generated-by",
+      ),
+    ).toBe(true);
+
+    // An entry naming neither fields nor evals says nothing.
+    const empty = await checkStdin(
+      "title: T\ndescription: D\nmeta-provenance:\n  - generated-by: claude-fable-5\n    confidence:\n      /intent: 0.9",
+    );
+    expect(empty.ok).toBe(false);
+    expect(
+      empty.errors.some(
+        (e) => e.keyword === "anyOf" && e.instancePath === "/meta-provenance/0",
+      ),
+    ).toBe(true);
+
+    const outOfRange = await checkStdin(
+      "title: T\ndescription: D\nmeta-provenance:\n  - generated-by: claude-fable-5\n    fields: [/intent]\n    confidence:\n      /intent: 1.5",
+    );
+    expect(outOfRange.ok).toBe(false);
+    expect(
+      outOfRange.errors.some(
+        (e) => e.keyword === "maximum" && e.instancePath.startsWith("/meta-provenance/0/confidence"),
+      ),
+    ).toBe(true);
   });
 
   it("accepts flat applies-to labels and rejects non-label values", async () => {

@@ -1,6 +1,6 @@
 # 0037: sidecar metadata, a private manifest joined to public documents
 
-- **Status:** Implemented
+- **Status:** Implemented; superseded in part by [0047](0047-field-location.md)
 - **Serves:** Maya · M1, M2 · Devin · D1, D4 · Sara · S1
 - **Depends on:** Five earlier proposals, one per rule this one relies on.
   - [0004](0004-config-upward-discovery.md) makes paths config-relative. The

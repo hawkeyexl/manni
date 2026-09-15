@@ -1250,18 +1250,23 @@ describe("reporters: fill", () => {
       );
     });
 
-    it("pretty names the manifest that owns the entry", () => {
+    it("pretty names the URL manifest that owns the entry", () => {
       const out = renderFillPretty(
         filled({
           written: false,
           skipReason: "manifest-owned",
-          manifest: "private/meta.yaml",
+          manifest: "https://example.com/meta.yaml",
         }),
         { color: false },
       );
       expect(out.split("\n")).toContain(
-        "    meta-provenance not written: owned by manifest private/meta.yaml, which manni meta fill does not write",
+        "    meta-provenance not written: owned by manifest https://example.com/meta.yaml, which is fetched and cannot be written",
       );
+    });
+
+    it("pretty names the manifest an entry was written into (0047)", () => {
+      const out = renderFillPretty(filled({ ...written, destination: "private/meta.yaml" }), { color: false });
+      expect(out).toMatch(/^ {4}meta-provenance {2}.+ {2}→ private\/meta\.yaml$/m);
     });
 
     it("pretty says when the format cannot hold the entry", () => {

@@ -1,0 +1,9 @@
+meta:
+  schemas: [./steward.schema.json]
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: ./docs-meta.yaml
+        join: id
+        keys: [owner]

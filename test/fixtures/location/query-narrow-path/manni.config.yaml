@@ -1,0 +1,8 @@
+collections:
+  - name: a
+    paths: ["docs/**/*.md"]
+  - name: b
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: ./b-meta.yaml
+        keys: [owner]

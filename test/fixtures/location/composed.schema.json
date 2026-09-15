@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "$defs": {
+    "private": { "type": "string", "x-manni-location": "external" }
+  },
+  "allOf": [
+    { "properties": { "owner": { "$ref": "#/$defs/private" } } },
+    { "properties": { "team": { "type": "string", "x-manni-location": "external" } } }
+  ],
+  "if": { "properties": { "kind": { "const": "internal" } }, "required": ["kind"] },
+  "then": { "properties": { "ticket": { "x-manni-location": "external" } } },
+  "properties": {
+    "kind": { "type": "string" },
+    "review": {
+      "type": "object",
+      "properties": {
+        "notes": { "type": "string", "x-manni-location": "external" }
+      }
+    }
+  }
+}

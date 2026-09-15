@@ -1,0 +1,6 @@
+validate1 0 558ms
+relocate 0 578ms
+validate2 0 552ms
+timing1 validate 544ms relocate 584ms git-diff 37ms validate-clean 532ms
+timing2 validate 541ms relocate 575ms git-diff 37ms validate-clean 534ms
+timing3 validate 538ms relocate 575ms git-diff 38ms validate-clean 536ms

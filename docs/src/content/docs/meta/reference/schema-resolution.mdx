@@ -442,3 +442,78 @@ Two consequences of that last row:
 Validation reads a copy of the metadata with every readable value decrypted.
 The page itself is never changed. A finding inside an encrypted value is filed
 at the value's own pointer, so it never names a key of an encrypted object.
+
+## Field location
+
+`x-manni-location` on a property says where the property's value is kept.
+`"page"` keeps it in the document's own metadata: frontmatter, HTML `<meta>`,
+a DITA `<prolog>`. That is the value meant to reach delivered output, and the
+agents that fetch it. `"external"` keeps it in the collection's
+[external-metadata manifest](/manni/meta/reference/configuration/#external-metadata).
+No keyword is no preference, and every command behaves as it did before the
+keyword existed.
+
+```json title="steward.schema.json"
+{
+  "properties": {
+    "title": { "type": "string", "x-manni-location": "page" },
+    "owner": { "type": "string", "x-manni-location": "external" }
+  }
+}
+```
+
+- **Where a mark counts.** Wherever the validator evaluates it, exactly as for
+  [`x-manni-encrypt`](#encrypted-values). That includes a `$ref`, an `allOf`,
+  a referenced built-in, and the `anyOf`, `oneOf` and `if`/`then` branches the
+  validator takes. A mark behind a failing `if` does not count, and neither
+  does a mark on a property the document does not have.
+- **Top-level properties only.** A manifest owns top-level keys, so only a
+  top-level property's mark has an effect. A nested mark, such as one under
+  `review.notes`, is accepted and ignored.
+- **The later schema wins.** When two schemas in a file's resolved set mark
+  one key differently, the one later in the set decides. A house schema listed
+  after a vocabulary refines it. Listed before, the vocabulary wins.
+- **A field join's own field stays in the page.** Under `join: id`, the page's
+  `id` is the only thing that says which manifest entry is its. So that one
+  field is never treated as external, whatever its mark. A path join, the
+  default, has no such field.
+- **Encrypted and external.** A property marked both keeps its ciphertext in
+  the manifest.
+- **Three schema errors**, each at compile time, exit 2:
+
+```
+steward.schema.json: "x-manni-location" must be "page" or "external".
+steward.schema.json: "$schema" cannot be stored in external metadata.
+steward.schema.json: "x-manni-location" says both "page" and "external" for "owner".
+```
+
+The second is a mark of `external` on `$schema`, which a manifest may not
+hold. The third is one schema marking a key both ways on paths every document
+takes. Those paths are the schema's own `properties`, its `allOf` entries, and
+a local `$ref` reached from them. A remote `$ref` is not followed.
+
+Marks that differ across `anyOf`, `oneOf`, `if`/`then`/`else` or `not`
+branches are not an error. When the validator evaluates both, that schema has
+no preference for the key. An earlier schema's mark still applies.
+
+What `manni meta validate` does with a marked property. Both findings are
+warnings, so neither moves the exit code:
+
+| Situation | Outcome |
+|---|---|
+| The page holds a key its schema prefers `external` | Finding `location:external/location` at the page line: `"owner" is stored in the page; steward.schema.json prefers external metadata. Run manni meta relocate.` |
+| The same, and the page is in none of several collections | The same finding, ending `…prefers external metadata, and this document is in none of the 2 collections.` |
+| The same, under `--no-config` | The same finding, ending `…prefers external metadata, and --no-config leaves it no manifest.` |
+| The same, read from stdin (`-`) | The same finding, ending `…prefers external metadata.` It names no command, because `relocate` refuses stdin. |
+| The page holds a key a manifest owns | No location finding. `external:owned` already fails there, whatever the mark. |
+| A manifest supplies a key its schema prefers `page` | Finding `location:page/location` at the manifest line: `"title" is stored in manifest docs-meta.yaml; steward.schema.json prefers the page. Run manni meta relocate.` |
+| The key sits where its mark says, or carries no mark | Nothing. |
+
+The writers follow the manifest rather than the mark. A key a local manifest
+owns is written there by `derive`, `fill` and `query`, even when its schema
+prefers the page. A key its schema prefers `external` and no manifest owns is
+offered a manifest on a terminal. Otherwise it is written to the page, with a
+warning naming
+[`manni meta relocate`](/manni/meta/reference/cli/#meta-relocate), the command
+that moves values to where their marks say. [Keep maintainer metadata out of
+delivered pages](/manni/meta/schemas/field-location/) is the journey.

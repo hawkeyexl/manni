@@ -1,5 +1,5 @@
 ---
-title: "manni:artifact-evals:1.0.0-proposal.2"
+title: "manni:artifact-evals:1.0.0-proposal.4"
 description: "The proposed artifact-eval vocabulary: session assertions for skills, agent definitions, and project rules, under metadata.evals."
 sidebar:
   order: 9
@@ -9,11 +9,15 @@ sidebar:
 :::caution[Proposal under review]
 Part of the [metadata vocabularies proposal](/manni/meta/proposals/frontmatter-vocabularies/),
 open for community review. Draft schema:
-[`docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.2.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.2.json).
+[`docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.4.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.4.json).
 Review round 6 took artifact-evals from `proposal.1` to `proposal.2`: it
 added `weight`, `target`, `runs` and `model`, made `assertion`
 conditional, and moved the `eval-` prefix guard from prose into the
-schema.
+schema. Proposal 0046 took it to `proposal.3` by renaming
+`metadata.eval-provenance` to `metadata.meta-provenance` and `info` to
+`notice`, as the end of this page describes. Proposal 0047 took it to
+`proposal.4` by marking the preferred location of its top-level key, and
+changed no key.
 :::
 
 **The question it answers: what must a session that used this artifact
@@ -28,11 +32,22 @@ artifact's top-level frontmatter is the host tool's contract, and
 `metadata` is the host's sanctioned extension bag. Any other `eval-*` key
 inside `metadata` is rejected.
 
-| Key | Type | Notes |
-|---|---|---|
-| `metadata.evals` | string, or non-empty list of entries | One assertion, or the list |
-| `metadata.eval-skip` | boolean (default false) | Skip the artifact's evals. Tooling reports the skip |
-| `metadata.eval-provenance` | list of entries | The machine-proposal trail |
+| Key | Type | Location | Notes |
+|---|---|---|---|
+| `metadata.evals` | string, or non-empty list of entries | `external` | One assertion, or the list |
+| `metadata.eval-skip` | boolean (default false) | `external` | Skip the artifact's evals. Tooling reports the skip |
+| `metadata.meta-provenance` | list of entries | `external` | The machine-proposal trail, in the shape of the page-level `meta-provenance` in [ai-context](/manni/meta/proposals/ai-context/) |
+
+The Location column comes from the one mark in
+`manni:artifact-evals:1.0.0-proposal.4`, which sets
+`"x-manni-location": "external"` on the top-level `metadata` key. The keys
+inside it carry no mark of their own, so each row takes its parent's. `page`
+means the value belongs in the document's own metadata and is meant to reach
+delivered output. `external` means it belongs in the collection's
+external-metadata manifest. A key is `page` when a third-party or user-owned
+agent fetching the page would act on it. Artifact evals are CI's, so the block
+is `external`. See [field location](/manni/meta/schemas/field-location/) for
+how the marks are used.
 
 Entries share the page-side shape. `id` is required on the object form.
 `assertion` is required for `ai`, for `human`, and for entries with no
@@ -87,7 +102,7 @@ metadata:
       assertion: The final message names the root cause in one sentence.
       target: last-message
     - Reproduce the bug with a failing test before applying the fix.
-  eval-provenance:
+  meta-provenance:
     - generated-by: claude-fable-5
       evals: [used-read, honored-tdd]
       confidence: { used-read: 0.91, honored-tdd: 0.86 }

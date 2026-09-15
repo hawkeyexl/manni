@@ -1,0 +1,98 @@
+Field location, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 38.2 s. Every terminal line is real output of cat, git and of
+`node dist/cli.js meta ...` (typed as manni) run inside media/scratch-location/,
+a git repository built from test/fixtures/location/relocate-create/ by
+media/capture-location/capture.sh.
+
+[0:00-0:08] Title: Maintainer data on the page (1 / 5)
+$ cat docs/install.md
+---
+title: Install
+description: Install manni and run it.
+owner: platform
+stakeholders: [ada, grace]
+review-interval: 90d
+---
+# Install
+$ cat page.schema.json
+{
+  "properties": {
+    "title": { "x-manni-location": "page" },
+    "description": { "x-manni-location": "page" },
+    "owner": { "x-manni-location": "external" },
+    "stakeholders": { "x-manni-location": "external" },
+    "review-interval": { "x-manni-location": "external" }
+  }
+}
+Highlighted rows: lines containing "owner: platform", "stakeholders: [", "review-interval: 90d", "\"external\""
+Caption: owner, stakeholders and review-interval ship with the page. The schema marks them external.
+
+[0:08-0:17] Title: validate: warn, don't fail (2 / 5)
+$ manni meta validate
+Using manni.config.yaml (.)
+⚠ docs/install.md   (yellow warning sign)
+    /owner  warning "owner" is stored in the page; page.schema.json prefers external metadata. Run manni meta relocate.  (line 4)  [location:external]
+    /stakeholders  warning "stakeholders" is stored in the page; page.schema.json prefers external metadata. Run manni meta relocate.  (line 5)  [location:external]
+    /review-interval  warning "review-interval" is stored in the page; page.schema.json prefers external metadata. Run manni meta relocate.  (line 6)  [location:external]
+
+1 file checked, 1 passed, 0 failed, 0 errors, 3 warnings   (green)
+$ echo $?
+0
+Highlighted rows: lines containing "[location:external]"
+Caption: validate flags each misplaced value as location:external. Exit 0, so CI never blocks.
+
+[0:17-0:25] Title: relocate moves them (3 / 5)
+$ manni meta relocate
+Using manni.config.yaml (.)
+Created site.metadata.yaml; collections[site].externalMetadata[0] owns owner, stakeholders, review-interval.
+docs/install.md
+    owner            → site.metadata.yaml:2
+    stakeholders     → site.metadata.yaml:3
+    review-interval  → site.metadata.yaml:6
+1 file, 3 values moved to 1 manifest
+$ cat site.metadata.yaml
+docs/install.md:
+  owner: platform
+  stakeholders:
+    - ada
+    - grace
+  review-interval: 90d
+Highlighted rows: lines containing "→ site.metadata.yaml"
+Caption: relocate creates site.metadata.yaml and moves the three values into it, keyed by page.
+
+[0:25-0:32] Title: The page slims down (4 / 5)
+$ git diff -U1
+diff --git a/docs/install.md b/docs/install.md
+index fa8f624..c98a640 100644
+--- a/docs/install.md
++++ b/docs/install.md
+@@ -3,5 +3,2 @@ title: Install
+ description: Install manni and run it.
+-owner: platform   (red, removed)
+-stakeholders: [ada, grace]   (red, removed)
+-review-interval: 90d   (red, removed)
+ ---
+diff --git a/manni.config.yaml b/manni.config.yaml
+index 4c7510f..f60e623 100644
+--- a/manni.config.yaml
++++ b/manni.config.yaml
+@@ -5 +5,4 @@ collections:
+     paths: ["docs/**/*.md"]
++    externalMetadata:   (green, added)
++      - file: ./site.metadata.yaml   (green, added)
++        keys: [owner, stakeholders, review-interval]   (green, added)
+Highlighted rows: lines containing "-owner:", "-stakeholders:", "-review-interval:", "externalMetadata:", "file: ./site.metadata.yaml", "keys: [owner"
+Caption: The page drops three lines. manni.config.yaml now says the manifest owns those keys.
+
+[0:32-0:38] Title: validate: clean (5 / 5)
+$ manni meta validate
+Using manni.config.yaml (.)
+✓ docs/install.md   (green check)
+
+1 file checked, 1 passed, 0 failed, 0 errors   (green)
+$ echo $?
+0
+Highlighted rows: lines containing "1 file checked"
+Caption: Same values, now in the manifest. validate is clean: no warnings, exit 0.
+

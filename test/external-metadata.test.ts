@@ -536,41 +536,42 @@ describe("external metadata: get and query see the merged object", () => {
     expect(r.rows).toEqual([{ _path: "docs/auth.md", jira: "PLAT-412" }]);
   });
 
-  it("query refuses to write a manifest-owned key", async () => {
-    await expect(
-      runQuery({
-        cwd: corpus,
-        configPath: resolve(corpus, "manni.config.yaml"),
-        inputs: [],
-        sql: "UPDATE docs SET jira = 'PLAT-1' WHERE _path = 'docs/auth.md'",
-        dryRun: true,
-      }),
-    ).rejects.toThrow(
-      /"docs\/auth\.md": "jira" is owned by manifest docs-meta\.yaml; edit the manifest instead/,
-    );
+  // Proposal 0047 lifted 0037 rule 6: a write to an owned key lands in the
+  // manifest. test/query-location.test.ts covers each statement end to end.
+  it("query plans a write to a manifest-owned key into the manifest", async () => {
+    const r = await runQuery({
+      cwd: corpus,
+      configPath: resolve(corpus, "manni.config.yaml"),
+      inputs: [],
+      sql: "UPDATE docs SET jira = 'PLAT-1' WHERE _path = 'docs/auth.md'",
+      dryRun: true,
+    });
+    expect(r.changes).toEqual([
+      { file: "docs/auth.md", key: "jira", from: "PLAT-412", to: "PLAT-1", written: false, manifest: "docs-meta.yaml" },
+    ]);
   });
 
-  it("query refuses to delete a row whose keys a manifest owns", async () => {
-    await expect(
-      runQuery({
-        cwd: corpus,
-        configPath: resolve(corpus, "manni.config.yaml"),
-        inputs: [],
-        sql: "DELETE FROM docs WHERE _path = 'docs/auth.md'",
-        dryRun: true,
-      }),
-    ).rejects.toThrow(/owned by manifest/);
+  it("query plans a DELETE of a manifest-covered row to remove its entry too", async () => {
+    const r = await runQuery({
+      cwd: corpus,
+      configPath: resolve(corpus, "manni.config.yaml"),
+      inputs: [],
+      sql: "DELETE FROM docs WHERE _path = 'docs/auth.md'",
+      dryRun: true,
+    });
+    expect(r.changes?.[0]).toMatchObject({ file: "docs/auth.md", cleared: true, manifest: "docs-meta.yaml" });
   });
 
-  it("query refuses to rename a document that has a manifest entry", async () => {
-    await expect(
-      runQuery({
-        cwd: corpus,
-        configPath: resolve(corpus, "manni.config.yaml"),
-        inputs: [],
-        sql: "UPDATE docs SET _path = 'docs/auth2.md' WHERE _path = 'docs/auth.md'",
-        dryRun: true,
-      }),
-    ).rejects.toThrow(/docs-meta\.yaml names it/);
+  it("query plans a rename of a document with a manifest entry to rename the entry", async () => {
+    const r = await runQuery({
+      cwd: corpus,
+      configPath: resolve(corpus, "manni.config.yaml"),
+      inputs: [],
+      sql: "UPDATE docs SET _path = 'docs/auth2.md' WHERE _path = 'docs/auth.md'",
+      dryRun: true,
+    });
+    expect(r.changes).toEqual([
+      { file: "docs/auth.md", renamed: "docs/auth2.md", written: false, manifest: "docs-meta.yaml" },
+    ]);
   });
 });

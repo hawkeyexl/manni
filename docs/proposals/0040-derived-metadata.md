@@ -1,6 +1,6 @@
 # 0040: derived metadata, evidence from git, CODEOWNERS, GitHub and GitLab
 
-- **Status:** Implemented (#19)
+- **Status:** Implemented (#19); superseded in part by [0047](0047-field-location.md)
 - **Serves:** Maya · M1, M2 · Devin · D4 · Theo · T1
 - **Depends on:** Three earlier proposals.
   - [0021](0021-frontmatter-as-a-database.md) is the query engine. The

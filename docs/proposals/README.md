@@ -53,16 +53,17 @@ These came out of a review of the shipped product against the intent recorded in
 | [0034](0034-command-grammar.md) | The command grammar: `manni <domain> <subcommand> [<subcommand>] [<arguments>]`, one separator per list, and what a plan must show | all (CLI surface) | Accepted |
 | [0035](0035-a11y-domain.md) | The `a11y` domain: `manni a11y check` crawls a site and scores every page with axe-core, in a browser it finds rather than downloads | Devin · D1, D3 | Implemented |
 | [0036](0036-a11y-fix.md) | `manni a11y fix`: deterministic repairs to local HTML for the rules that need no human decision; the rest reported as manual | Theo · T1 / Maya · M1 | Proposed |
-| [0037](0037-sidecar-metadata.md) | Sidecar metadata, a private manifest joined to public documents | Maya · M1, M2 / Devin · D1, D4 / Sara · S1 | Implemented |
+| [0037](0037-sidecar-metadata.md) | Sidecar metadata, a private manifest joined to public documents | Maya · M1, M2 / Devin · D1, D4 / Sara · S1 | Implemented; superseded in part by 0047 |
 | [0038](0038-sidecar-url-manifests.md) | A URL form of `sidecars[].file`, fetched every run with a bearer token from the environment | Devin · D1, D2 / Maya · M1 | Implemented |
 | [0039](0039-sidecar-join.md) | `join`: a sidecar keyed by a frontmatter field, so a rename cannot orphan an entry; two pages sharing a value is a finding on both | Maya · M1, M2 / Devin · D4 / Sara · S3 | Implemented |
-| [0040](0040-derived-metadata.md) | Derived metadata, with managed stewardship fields stamped from git, CODEOWNERS, GitHub and GitLab by `manni meta derive`, and a stale stamp reported by `validate` | Maya · M1, M2 / Devin · D4 / Theo · T1 | Implemented (#19) |
+| [0040](0040-derived-metadata.md) | Derived metadata, with managed stewardship fields stamped from git, CODEOWNERS, GitHub and GitLab by `manni meta derive`, and a stale stamp reported by `validate` | Maya · M1, M2 / Devin · D4 / Theo · T1 | Implemented (#19); superseded in part by 0047 |
 | [0041](0041-collections.md) | `collections:`, the family-level home for document sets and their external metadata; `sidecars` becomes `externalMetadata` on a collection and `--collection <name>` scopes a run | Maya · M1, M2 / Devin · D1, D4 / Sara · S1 | Implemented |
-| [0042](0042-command-source.md) | The `command` source: a managed field derived by an argv the config names, so `verified-against` can be checked against the product's own version | Maya · M1, M2 / Devin · D4 / Sara · S2 | Implemented (#21) |
+| [0042](0042-command-source.md) | The `command` source: a managed field derived by an argv the config names, so `verified-against` can be checked against the product's own version | Maya · M1, M2 / Devin · D4 / Sara · S2 | Implemented (#21); superseded in part by 0047 |
 | [0043](0043-resolved-reads.md) | Resolved reads, where a third read-only view `resolved` holds the asserted value or the derived one, with `_origin` naming which. `get` derives by default | Maya · M1, M2 / Devin · D4 / Theo · T1 | Implemented (#22) |
 | [0044](0044-citations-and-drift.md) | Citations and drift, which pin a claim to source lines so `manni cite` can check the pin | Devin · D4 / Theo · T1 / Maya · M2 / Sara · S1 | Implemented (#17) |
-| [0045](0045-family-encryption-key.md) | A family encryption key: `encryptionKey:`, `manni key`, and `x-manni-encrypt` for metadata that must not appear in plain text | Sara · S1 / Devin · D5 / Maya · M5 | Implemented (#17) |
+| [0045](0045-family-encryption-key.md) | A family encryption key: `encryptionKey:`, `manni key`, and `x-manni-encrypt` for metadata that must not appear in plain text | Sara · S1 / Devin · D5 / Maya · M5 | Implemented (#17); superseded in part by 0047 |
 | [0046](0046-provenance-pins.md) | Provenance pins, where `provenance` records which machine wrote which body lines as a range and an integrity hash stamped by `manni meta derive`. Field attribution becomes one `meta-provenance` shape across the family | Maya · M8 / Sara · S1 / Devin · D4 | Implemented (#34) |
+| [0047](0047-field-location.md) | A field's preferred location, `x-manni-location` set to `page` or `external`, marked on every vocabulary field. `manni meta relocate` moves values between the pages and a collection's manifest, and every writer follows the manifest | Sara · S1 / Maya · M4 | Implemented (#37) |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -132,6 +133,11 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
 0040 ──┬─> 0046          (provenance rides the derived channel; decision 2 generalized to a range)
 0044 ──┤                 (the pin: body lines and an integrity hash, one hashing rule)
 0023 ──┘                 (the four provenance shapes it redraws, as new drafts beside the old)
+
+0023 ──┬─> 0047          (every vocabulary field marked page or external, as new drafts beside the old)
+0041 ──┤                 (the manifest on a collection, whose keys: every move edits)
+0045 ──┤                 (a schema keyword Ajv evaluates, and the one prompt the family asks)
+0046 ──┘                 (provenance kept in a manifest, the exception this generalizes)
 ```
 
 The four `Proposed` SQL items (0026–0029) are independent of each other, with one exception. 0026 and 0029 both grow `query`'s `-f` value list. Each specifies the combined six-value surface, and whichever is implemented second merges into the one const. Recommended implementation order is 0026 → 0029 → 0027 → 0028, which is impact-first. The two config-touching ones (0026, 0027) land apart, so the second rebases trivially.

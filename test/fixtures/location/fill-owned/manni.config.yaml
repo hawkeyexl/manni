@@ -1,0 +1,9 @@
+# fill (0047): a local manifest owns owner, so fill writes it there.
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: ./site-meta.yaml
+        keys: [owner]
+meta:
+  schemas: [./steward.schema.json]

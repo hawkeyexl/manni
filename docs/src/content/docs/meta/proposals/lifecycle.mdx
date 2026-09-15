@@ -1,5 +1,5 @@
 ---
-title: "manni:lifecycle:1.0.0-proposal.1"
+title: "manni:lifecycle:1.0.0-proposal.2"
 description: "The proposed lifecycle vocabulary, covering where a page is in its life, and what a deprecated page owes its readers."
 sidebar:
   order: 4
@@ -9,7 +9,7 @@ sidebar:
 :::caution[Proposal under review]
 Part of the [metadata vocabularies proposal](/manni/meta/proposals/frontmatter-vocabularies/),
 open for community review. Draft schema:
-[`docs/proposals/0023/schemas/lifecycle/1.0.0-proposal.1.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/lifecycle/1.0.0-proposal.1.json).
+[`docs/proposals/0023/schemas/lifecycle/1.0.0-proposal.2.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/lifecycle/1.0.0-proposal.2.json).
 :::
 
 **The question it answers: where is this page in its life?** It carries
@@ -18,12 +18,22 @@ successor, a removal date, or both.
 
 ## Fields
 
-| Field | Type | Notes |
-|---|---|---|
-| `lifecycle` | enum | `draft` · `published` · `deprecated` · `archived` |
-| `replaced-by` | string, non-empty | The page, id, or URL that supersedes this one |
-| `supersedes` | string or list | Pages this one replaced. The record survives after the old page is deleted |
-| `remove-by` | W3CDTF date | The date the page should be removed by |
+| Field | Type | Location | Notes |
+|---|---|---|---|
+| `lifecycle` | enum | `page` | `draft` · `published` · `deprecated` · `archived` |
+| `replaced-by` | string, non-empty | `page` | The page, id, or URL that supersedes this one |
+| `supersedes` | string or list | `external` | Pages this one replaced. The record survives after the old page is deleted |
+| `remove-by` | W3CDTF date | `external` | The date the page should be removed by |
+
+The Location column is the `x-manni-location` mark each field carries in
+`manni:lifecycle:1.0.0-proposal.2`. `page` means the value belongs in the
+document's own metadata and is meant to reach delivered output. `external`
+means it belongs in the collection's external-metadata manifest. A field is
+`page` when a third-party or user-owned agent fetching the page would act on
+it. An agent must see `lifecycle: deprecated` and follow `replaced-by`.
+`supersedes` and `remove-by` are the maintainers' side of the same record. See
+[field location](/manni/meta/schemas/field-location/) for how the marks are
+used.
 
 **The conditional:** `lifecycle: deprecated` requires `replaced-by` or
 `remove-by` (or both). A page can reach end of life without a successor,

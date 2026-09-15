@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "anyOf": [
+    { "properties": { "owner": { "type": "number", "x-manni-location": "page" } } },
+    { "properties": { "owner": { "type": "string", "x-manni-location": "external" } } }
+  ]
+}
