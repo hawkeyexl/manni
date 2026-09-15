@@ -446,11 +446,29 @@ notices`, and `manni cite check` prints the counts in parentheses, as
 |---|---|
 | `manni meta validate` | A file with at least one error-severity finding. |
 | `manni cite check` | A file with at least one unbaselined error-severity finding. Warnings and notices never move it. |
-| `manni a11y check` | A page that failed to load, or one with any remaining violation. Severity is not consulted, so raising `--severity` is what stops a lower level failing the run. |
+| `manni a11y check` | A page that failed to load, or one with any remaining violation. The floor is the gate, so `--severity` is what stops a lower level failing the run. |
 
 There is no `--fail-on` and no `--min-severity` anywhere in the family. A tool
 either fixes its levels, as this one does, or exposes the one lever its shape
 allows.
+
+`manni a11y check` is the one tool whose floor is also its gate, and that is
+deliberate. Here and in `manni cite check` you can move a finding
+onto the level you want. A rule you care about becomes an error, through
+`cite.severity.<rule>` or by writing it as a requirement in the schema. The
+exit code can sit at `error` and stay useful. axe assigns a11y's severities
+from its own `impact`, and no config moves one. Pinning that exit code to
+`error` would leave the domain with no way to gate on an axe `moderate`
+finding. So `--severity` does both jobs there, and the floor a run reports at
+is the floor it fails at. pa11y and Vale, the two linters this scale was
+borrowed from, read their own level the same way.
+
+The practical shape is a ratchet. Set `severity: error` to gate on axe's
+`critical` and `serious` alone, fix what it finds, then lower the floor to
+`warning` and to `notice` as each level reaches zero. Lower it as findings are
+fixed; never raise it to get a build green.
+[Proposal 0048](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0048-severity-and-the-exit-code.md)
+is the record.
 
 ### How a domain maps its own scale on
 

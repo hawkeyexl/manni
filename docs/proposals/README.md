@@ -64,6 +64,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0045](0045-family-encryption-key.md) | A family encryption key: `encryptionKey:`, `manni key`, and `x-manni-encrypt` for metadata that must not appear in plain text | Sara · S1 / Devin · D5 / Maya · M5 | Implemented (#17); superseded in part by 0047 |
 | [0046](0046-provenance-pins.md) | Provenance pins, where `provenance` records which machine wrote which body lines as a range and an integrity hash stamped by `manni meta derive`. Field attribution becomes one `meta-provenance` shape across the family | Maya · M8 / Sara · S1 / Devin · D4 | Implemented (#34) |
 | [0047](0047-field-location.md) | A field's preferred location, `x-manni-location` set to `page` or `external`, marked on every vocabulary field. `manni meta relocate` moves values between the pages and a collection's manifest, and every writer follows the manifest | Sara · S1 / Maya · M4 | Implemented (#37) |
+| [0048](0048-severity-and-the-exit-code.md) | a11y's severity floor is also its exit-code gate, deliberately, because axe assigns the level and no config moves one | Devin · D7 | Implemented |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -138,6 +139,9 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
 0041 ──┤                 (the manifest on a collection, whose keys: every move edits)
 0045 ──┤                 (a schema keyword Ajv evaluates, and the one prompt the family asks)
 0046 ──┘                 (provenance kept in a manifest, the exception this generalizes)
+
+0035 ──┬─> 0048          (a11y's exit-code contract, whose floor this confirms as the gate)
+0044 ──┘                 (cite's per-rule severity, the second reading of the scale)
 ```
 
 The four `Proposed` SQL items (0026–0029) are independent of each other, with one exception. 0026 and 0029 both grow `query`'s `-f` value list. Each specifies the combined six-value surface, and whichever is implemented second merges into the one const. Recommended implementation order is 0026 → 0029 → 0027 → 0028, which is impact-first. The two config-touching ones (0026, 0027) land apart, so the second rebases trivially.
