@@ -419,8 +419,8 @@ docs/limits.md:
 `manni cite check`, `add` and `update`, and `manni key rotate`, read a page's
 citations from the manifest that owns them, through the merge above. `add`,
 `update` and `key rotate` also write it, splicing only that page's `citations`
-value and reading the file back to confirm. `meta fill` and `meta query` stay
-read-only, on this key as on every other.
+value and reading the file back to confirm. A `meta fill` or `meta query`
+write to it lands in the manifest too, as for any owned key.
 
 Two rules are particular to this key:
 
@@ -707,11 +707,22 @@ whole by the message:
    file stays the document, because that is its baseline identity. The error
    carries the manifest file and line as where the *value* is, and every
    reporter prints it.
-7. **The first increment is read-only.** `fill`, and `query`'s `UPDATE`,
-   `DELETE`, `INSERT` and rename, refuse an owned key by name. A value
-   is written back to the place it was read from, and an owned key is read
-   from the manifest. When the manifest is private, writing the key into a
-   public document would also leak the value.
+7. **An owned key is written where it is read.** `derive`, `fill` and
+   `query`'s `UPDATE`, `DELETE`, `INSERT` and key rename write an owned key
+   into the document's entry in its local manifest, and never into the page.
+   When the manifest is private, writing the key into a public document would
+   leak the value. A URL manifest is fetched and cannot be written, so a write
+   to a key it owns is refused: `"owner" is owned by manifest
+   https://example.com/owners.yaml, which is fetched and cannot be written; set
+   it in that repository.` So is `ALTER TABLE … RENAME COLUMN` of an owned key,
+   since `keys:` would need renaming too.
+8. **`relocate` edits `keys:` and moves the values with it.** Adding a key to
+   `keys:` moves it out of every member page, and removing one moves it back
+   in. [`manni meta relocate`](/manni/meta/reference/cli/#meta-relocate) does
+   both halves, following each property's
+   [`x-manni-location`](/manni/meta/reference/schema-resolution/#field-location)
+   mark, and writes what a move needs into this file. See [what relocate
+   writes](#what-relocate-writes).
 
 #### What each command does
 
@@ -719,8 +730,10 @@ whole by the message:
 |---|---|
 | `validate` | Merges, validates the merged object, and files a finding for every owned key a document carries. Runs the orphan check on a corpus run, including one narrowed with `--collection`. |
 | `get` | Reads the merged value. `manni meta get jira docs/auth.md` prints `docs/auth.md: jira=PLAT-412` from the manifest as readily as it would from the document. It does not yet say which of the two supplied it. |
-| `query` | Every row holds the merged values, so `SELECT _path, jira FROM docs` and a [corpus check](#checks) see the manifest's keys. A write that would touch an owned key, or change the join field of a matched document, refuses (exit 2) before any file is written. |
-| `fill` | A candidate property a manifest owns is refused for the file, as a per-file error (exit 1) rather than a skip. A missing owned key is therefore never quietly left missing. |
+| `query` | Every row holds the merged values, so `SELECT _path, jira FROM docs` and a [corpus check](#checks) see the manifest's keys. A write to an owned key lands in the document's manifest entry, and the change names the manifest. Three writes refuse (exit 2) before any file is written. They write a key a URL manifest owns, `RENAME COLUMN` an owned key, or change a matched document's join field. |
+| `fill` | A candidate property a local manifest owns is written into the document's entry there. One a URL manifest owns is a per-file error (exit 1) rather than a skip. A missing owned key is never quietly left missing. |
+| `derive` | A managed field a local manifest owns is compared against the manifest's value and stamped there. One a URL manifest owns is refused when the config loads (exit 2). See [a field a manifest owns](#a-field-a-manifest-owns). |
+| `relocate` | Moves values between the pages and the manifest, and edits `keys:`, `paths:` and `collections:` to match. See [what relocate writes](#what-relocate-writes). |
 
 The `validate` run over `test/fixtures/external-metadata/`, whose
 `docs-meta.yaml` supplies `jira` for three of four pages and one page carries
@@ -745,31 +758,82 @@ entry surfaces as a finding the baseline, SARIF and the ratchet already
 understand. `ops.md` is rule 2, and its message names `pages`, the collection
 whose manifest owns the key.
 
-The write refusals, on the same corpus:
+The writes, on the same corpus. `query` writes an owned key, and a moved
+document's entry, to the manifest:
 
 ```
 $ manni meta query "UPDATE docs SET jira = 'PLAT-1' WHERE _path = 'docs/auth.md'" --dry-run
-manni: "docs/auth.md": "jira" is owned by manifest docs-meta.yaml; edit the manifest instead.
-                                                                                    exit 2
+docs/auth.md: jira: PLAT-412 -> PLAT-1  [docs-meta.yaml]
+1 change across 1 file — dry run; run again without --dry-run to apply
 $ manni meta query "UPDATE docs SET _path = 'docs/auth2.md' WHERE _path = 'docs/auth.md'" --dry-run
-manni: "docs/auth.md": manifest docs-meta.yaml names it; rename the manifest entry first.
-                                                                                    exit 2
-$ manni meta fill --dry-run
-✗ docs/billing.md
-    "source" is owned by manifest docs-meta.yaml; manni meta fill cannot write a manifest key. Add it to the manifest instead.
-✗ docs/new.md
-    "source" is owned by manifest docs-meta.yaml; manni meta fill cannot write a manifest key. Add it to the manifest instead.
-✗ docs/ops.md
-    "source" is owned by manifest docs-meta.yaml; manni meta fill cannot write a manifest key. Add it to the manifest instead.
-
-4 files · 0 fields would be written · 0 skipped · 3 errored
-                                                                                    exit 1
+docs/auth.md -> docs/auth2.md (moved)  [docs-meta.yaml]
+1 change across 1 file — dry run; run again without --dry-run to apply
 ```
 
-`fill` refuses those three because `source` is missing from each and the
-schema lists it, so it is a candidate. A candidate a manifest owns has exactly
-one honest destination. `auth.md` has both keys in the manifest and is left
-alone.
+`fill` writes the same way. `source` is missing from `billing.md`, `new.md`
+and `ops.md`, and the schema lists it, so it is a candidate on each. A
+candidate a manifest owns has exactly one honest destination. So a proposal
+`fill` accepts is spliced into the document's entry in `docs-meta.yaml`, and
+the page is left as it was. The report names the manifest after the value:
+`/source  runbooks/billing  0.92  → docs-meta.yaml`. A candidate a URL
+manifest owns refuses the file (exit 1), because a fetched manifest cannot be
+written. The message is `"source" is owned by manifest https://example.com/docs-meta.yaml,
+which is fetched and cannot be written; set it in that repository.` `auth.md`
+has both keys in the manifest and is left alone.
+
+#### What relocate writes
+
+[`manni meta relocate`](/manni/meta/reference/cli/#meta-relocate), and the
+offers `validate`, `derive`, `fill` and `query` make on a terminal, are the
+only commands that edit `collections:`. Config gains no new key: each edit is
+to `paths:`, `externalMetadata:` or `keys:`, through the same
+comment-preserving writer `schemas vendor` uses. Keys are listed in the order
+the run first met them.
+
+| Situation | Edit |
+|---|---|
+| The page's collection has a local manifest | The keys are appended to that entry's `keys:`. With several collections, the first in `collections:` order is used. |
+| The collection has no local manifest | `<collection>.metadata.yaml` is created beside the config file, and an entry owning the keys is added. A file already at that path that is not declared is an error (exit 2). |
+| No collections are defined | A collection named `default` is added. Its `paths:` are the run's targets as typed: `docs/` becomes `docs/**`, and a file or glob stays itself. |
+| Exactly one collection, and the page is outside it | The run's target is appended to that collection's `paths:`. What `manni a11y` and `manni cite` see for the collection grows with it. |
+| Several collections, and the page is in none | Nothing is edited. The value stays and is named. |
+| A key moves back into the pages | It is removed from `keys:`. An entry left with no keys is removed, and so is an empty `externalMetadata:`. The manifest file stays on disk. |
+| No config file | `manni.config.yaml` is created at the git root, else the working directory. `--no-config` is refused. |
+
+One collection with no manifest, `manni meta relocate`:
+
+```yaml title="manni.config.yaml, after"
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: ./site.metadata.yaml
+        keys: [owner, authors]
+```
+
+No collections, `manni meta relocate docs/ guides/intro.md`:
+
+```yaml title="manni.config.yaml, after"
+meta:
+  schemas: [./steward.schema.json]
+collections:
+  - name: default
+    paths: ["docs/**", "guides/intro.md"]
+    externalMetadata:
+      - file: ./default.metadata.yaml
+        keys: [authors, owner]
+```
+
+One collection and a target outside it, `manni meta relocate notes/`:
+
+```yaml title="manni.config.yaml, after"
+collections:
+  - name: site
+    paths: ["docs/**/*.md", "notes/**"]
+    externalMetadata:
+      - file: ./docs-meta.yaml
+        keys: [owner, authors]
+```
 
 #### Finding identity
 
@@ -1640,10 +1704,10 @@ is the journey. This section is the contract.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `fields` | `string[]` | no, but a `derive:` must set one of the five keys | The managed fields. Non-empty when present, unique, and each one of [the derivable fields](#the-derivable-fields) or a key with an entry in [`commands`](#commands). Each violation is a config error (exit 2) naming `derive.fields`. Never a key a collection's [external-metadata](#external-metadata) manifest owns, because the two channels would disagree about where the value lives. `provenance` is the one exception. See [a field a manifest owns](#a-field-a-manifest-owns). Absent means nothing is managed and `validate` compares nothing; `sources`, `codeowners`, `commands` or `machines` alone still shape the reads. |
+| `fields` | `string[]` | no, but a `derive:` must set one of the five keys | The managed fields. Non-empty when present, unique, and each one of [the derivable fields](#the-derivable-fields) or a key with an entry in [`commands`](#commands). Each violation is a config error (exit 2) naming `derive.fields`. A key a collection's local [external-metadata](#external-metadata) manifest owns is compared and stamped in that manifest. A key a URL manifest owns is refused (exit 2), because a fetched file cannot be written. See [a field a manifest owns](#a-field-a-manifest-owns). Absent means nothing is managed and `validate` compares nothing; `sources`, `codeowners`, `commands` or `machines` alone still shape the reads. |
 | `sources` | `string[]` | no | Which of `git`, `codeowners`, `github`, `gitlab` and `command` to consult. Non-empty and unique. The default is all five. Only the one of `github` and `gitlab` that matches the origin remote is consulted; see [the review sources](#the-review-sources). A field whose only sources are excluded derives null, and can never be stale. |
 | `codeowners` | `string` | no | Path to the CODEOWNERS file, relative to the config file's directory. The default is GitHub's or GitLab's own search order, below. When `codeowners` is an active source, the file must exist (exit 2). |
-| `commands` | map | no | One entry per field a program derives, keyed by the frontmatter key. Each entry has `run`, an argv list, and an optional `timeout` in seconds. The key may not be one of the seven built-in fields, a manifest-owned key, or `$schema` (exit 2). See [Commands](#commands). |
+| `commands` | map | no | One entry per field a program derives, keyed by the frontmatter key. Each entry has `run`, an argv list, and an optional `timeout` in seconds. The key may not be one of the seven built-in fields, a key a URL manifest owns, or `$schema` (exit 2). See [Commands](#commands). |
 | `machines` | `string[]` | no | Trailer identities that are machines. Each entry is a glob matched against an identity's name and against its email. A `Co-authored-by:` trailer that matches names a machine for [`provenance`](#provenance). Any identity that matches, author or co-author, is left out of `authors`. Globs match case-sensitively, and brackets are literal, so `*[bot]` means a name ending in `[bot]`. Non-empty when present, unique, and no entry blank (exit 2). The default is `["*[bot]"]`. Prefer exact addresses, because `*noreply*` also matches the GitHub no-reply addresses people commit with. |
 
 ```yaml
@@ -1669,24 +1733,27 @@ no field is managed.
 
 #### A field a manifest owns
 
-A managed field has one authority, and a manifest key already has one. So a
-`derive.fields` entry that any collection's
-[`externalMetadata`](#external-metadata) manifest owns is refused when the
-config loads (exit 2). The message names both sides:
+A managed field that a collection's [`externalMetadata`](#external-metadata)
+manifest owns is kept in that manifest. `derive` compares the manifest's value,
+writes the page's entry there with a comment-preserving splice, and never
+touches the page. `derive --check` and `validate` point a stale finding at the
+manifest's line. A [`commands`](#commands) key works the same way.
+
+A URL manifest is fetched, so it cannot be written. A `derive.fields` entry or
+a `commands` key that a URL manifest owns is refused when the config loads
+(exit 2):
 
 ```
-manni.config.yaml: meta.derive.fields[3] "owner" is owned by collections[0].externalMetadata[0] (./owners.yaml) — a managed field has one authority, and a manifest key already has one. Drop it from one side.
+manni.config.yaml: meta.derive.fields[3] "owner" is owned by manifest https://example.com/owners.yaml, which is fetched and cannot be written; set it in that repository.
 ```
 
-[`derive --fields`](/manni/meta/reference/cli/#meta-derive) refuses a
-manifest-owned name the same way for one run. A [`commands`](#commands) key a
-manifest owns is refused when the config loads too, and the message names
+[`derive --fields`](/manni/meta/reference/cli/#meta-derive) refuses such a name
+the same way for one run, and a `commands` key names
 `meta.derive.commands.<key>` in place of the field's index.
 
-`provenance` is the exception. A pin is minted by the tool, never curated by
-hand, so a manifest that owns `provenance` is where `derive` stores the record.
-`derive` writes the page's entries into the manifest with a comment-preserving
-splice, and never into the page. Every other managed field keeps the refusal.
+`provenance` was the first field kept this way. A pin is minted by the tool,
+never curated by hand, so a manifest that owns `provenance` is where `derive`
+stores the record.
 Three manifests cannot hold the record, and each is exit 2 when `derive` runs:
 
 | Situation | Message |
@@ -1854,7 +1921,7 @@ The rules:
   runs once, and the one value is copied to every document.
 - **A command may only derive a field no built-in source claims.** A
   command for `last-updated` is a config error (exit 2): `derive.commands.last-updated targets a field git already derives; a command may only derive a field no built-in source claims`.
-  A manifest-owned key and `$schema` are refused the same way. `fields` may
+  A key a URL manifest owns and `$schema` are refused the same way. `fields` may
   name any key that has a command, and a `derive:` with only `commands:` is
   valid.
 - **The source is `command`, once.** `sources` lists it beside the other
@@ -2021,7 +2088,7 @@ finding's `file` is never set, because a managed value lives in the document.
 
 | Exit | When |
 |---|---|
-| `2` | The config's `derive:` is malformed. `fields` is empty, repeats a name, names a field that is not derivable, or names a key a collection's manifest owns. `sources` is empty or repeats a source. `codeowners` names a file that is not there. A `commands` entry targets a built-in field, a manifest-owned key or `$schema`, or has no `run`. `machines` is empty, not a list of strings, repeats a glob or holds a blank one. A requested source cannot answer: no `git`, no repository, a shallow clone, `gh` or `glab` missing or not logged in. A command failed, timed out or is not on `PATH`. `derive` was given `-`, a non-derivable or manifest-owned `--fields` name, no fields at all, or a findings format without `--check`. `--generated-by` or a range came without `provenance` in the fields, or a range came without `--generated-by`. A range is reversed, past the end, inside the frontmatter, or contradicted by evidence, or does not name one file the run reads. A manifest that owns `provenance` cannot hold the record. A `query` write would touch a managed key. |
+| `2` | The config's `derive:` is malformed. `fields` is empty, repeats a name, names a field that is not derivable, or names a key a collection's URL manifest owns. `sources` is empty or repeats a source. `codeowners` names a file that is not there. A `commands` entry targets a built-in field, a key a URL manifest owns or `$schema`, or has no `run`. `machines` is empty, not a list of strings, repeats a glob or holds a blank one. A requested source cannot answer: no `git`, no repository, a shallow clone, `gh` or `glab` missing or not logged in. A command failed, timed out or is not on `PATH`. `derive` was given `-`, a non-derivable `--fields` name or one a URL manifest owns, no fields at all, or a findings format without `--check`. `--generated-by` or a range came without `provenance` in the fields, or a range came without `--generated-by`. A range is reversed, past the end, inside the frontmatter, or contradicted by evidence, or does not name one file the run reads. A manifest that owns `provenance` cannot hold the record. A `query` write would touch a managed key. |
 | `1` | `validate` found a managed field whose stamp disagrees with the evidence. `derive --check` found a stale or unset managed field. `derive` could not stamp `provenance` on a page whose metadata is not fenced. |
 
 The split is the one every command already follows. Exit 2 means the run

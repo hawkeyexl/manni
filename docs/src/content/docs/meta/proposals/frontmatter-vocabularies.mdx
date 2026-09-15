@@ -43,22 +43,28 @@ reviewers:
 
 | Id | The question it answers | Fields |
 |---|---|---|
-| [`manni:core:1.0.0-proposal.3`](/manni/meta/proposals/core/) | What is this page? | `title`* · `description`* · `id` · `type` · `keywords` · `language` · `locale` |
-| [`manni:stewardship:1.0.0-proposal.2`](/manni/meta/proposals/stewardship/) | Is it cared for? | `authors` · `owner` · `stakeholders` · `reviewed-by` · `created` · `last-updated` · `last-reviewed` · `review-interval` · `verified-against` · `source-of-truth` |
-| [`manni:audience:1.0.0-proposal.1`](/manni/meta/proposals/audience/) | Who does it serve, and who may see it? | `audiences` · `personas` · `journeys` · `intent` · `visibility` |
-| [`manni:lifecycle:1.0.0-proposal.1`](/manni/meta/proposals/lifecycle/) | Where is it in its life? | `lifecycle` · `replaced-by` · `supersedes` · `remove-by` |
-| [`manni:structure:1.0.0-proposal.1`](/manni/meta/proposals/structure/) | What does it connect to? | `applies-to` · `not-applicable-to` · `concepts` · `prerequisites` · `next-steps` · `related-pages` |
-| [`manni:ai-context:1.0.0-proposal.1`](/manni/meta/proposals/ai-context/) | How did machines make it, and how may they use it? | `generated-by` · `provenance` · `risks` · `sample-questions` |
-| [`manni:evals:1.0.0-proposal.2`](/manni/meta/proposals/evals/) | What must be true of this page? | `evals` · `eval-suite` · `eval-skip` · `eval-provenance` |
-| [`manni:kg:1.0.0-proposal.1`](/manni/meta/proposals/kg/) | What does the knowledge graph know about it? | `kg`, one closed block: SKOS concepts, iiRDS typing, PROV provenance |
-| [`manni:artifact-evals:1.0.0-proposal.2`](/manni/meta/proposals/artifact-evals/) | What must a session using this artifact have done? | `metadata.evals` · `metadata.eval-skip` · `metadata.eval-provenance` |
-| [`manni:citations:1.0.0-proposal.2`](/manni/meta/proposals/citations/) | What do its claims rest on? | `citations` · `citation-commit` |
+| [`manni:core:1.0.0-proposal.4`](/manni/meta/proposals/core/) | What is this page? | `title`* · `description`* · `id` · `type` · `keywords` · `language` · `locale` |
+| [`manni:stewardship:1.0.0-proposal.3`](/manni/meta/proposals/stewardship/) | Is it cared for? | `authors` · `owner` · `stakeholders` · `reviewed-by` · `created` · `last-updated` · `last-reviewed` · `review-interval` · `verified-against` · `source-of-truth` |
+| [`manni:audience:1.0.0-proposal.2`](/manni/meta/proposals/audience/) | Who does it serve, and who may see it? | `audiences` · `personas` · `journeys` · `intent` · `visibility` |
+| [`manni:lifecycle:1.0.0-proposal.2`](/manni/meta/proposals/lifecycle/) | Where is it in its life? | `lifecycle` · `replaced-by` · `supersedes` · `remove-by` |
+| [`manni:structure:1.0.0-proposal.2`](/manni/meta/proposals/structure/) | What does it connect to? | `applies-to` · `not-applicable-to` · `concepts` · `prerequisites` · `next-steps` · `related-pages` |
+| [`manni:ai-context:1.0.0-proposal.3`](/manni/meta/proposals/ai-context/) | How did machines make it, and how may they use it? | `provenance` · `meta-provenance` · `risks` · `sample-questions` |
+| [`manni:evals:1.0.0-proposal.4`](/manni/meta/proposals/evals/) | What must be true of this page? | `evals` · `eval-suite` · `eval-skip` |
+| [`manni:kg:1.0.0-proposal.3`](/manni/meta/proposals/kg/) | What does the knowledge graph know about it? | `kg`, one closed block: SKOS concepts, iiRDS typing, PROV provenance |
+| [`manni:artifact-evals:1.0.0-proposal.4`](/manni/meta/proposals/artifact-evals/) | What must a session using this artifact have done? | `metadata.evals` · `metadata.eval-skip` · `metadata.meta-provenance` |
+| [`manni:citations:1.0.0-proposal.4`](/manni/meta/proposals/citations/) | What do its claims rest on? | `citations` |
 
-Five families have moved past `1.0.0-proposal.1`. Those are core (now
-`1.0.0-proposal.3`), evals and artifact-evals from review round 6,
-stewardship from round 9, and citations, whose private sources are now
-encrypted. The other five stay where they started, because a bump would
-announce a revision none of them made.
+Every family has moved past `1.0.0-proposal.1`. Core moved in review rounds 6
+and 8, evals and artifact-evals in round 6, and stewardship in round 9.
+Citations moved when its private sources were encrypted, and again when its
+claims were pinned by lines. Proposal 0046 moved ai-context, evals, kg and
+artifact-evals, when page provenance became line pins and the machine-proposal
+trails merged into `meta-provenance`. Proposal 0047 then gave all ten a new
+revision that marks every top-level field with `x-manni-location`, `page` or
+`external`, and changes no field. The mark says whether a field is meant to
+reach delivered output or belongs in the collection's external-metadata
+manifest. See [field location](/manni/meta/schemas/field-location/) for how
+the marks are used.
 
 All ten are intended for manni meta's default set, the schemas a run uses
 when no schema is configured. Such a run would then require every page
@@ -93,11 +99,14 @@ applies-to: [operator-1.4, kubernetes]
 concepts: [Operator, Helm chart]
 prerequisites: [create-api-token]
 related-pages: [operator-architecture]
-generated-by: claude-fable-5
 provenance:
   - generated-by: claude-fable-5
-    fields: [intent, sample-questions]
-    confidence: { intent: 0.9, sample-questions: 0.84 }
+    lines: 12-31
+    integrity: sha256-5d41402abc4b2a76b9719d911017c592ae2b8f1c6e0d3a4b7c9e8f1a2b3c4d5e
+meta-provenance:
+  - generated-by: claude-fable-5
+    fields: [/intent, /sample-questions]
+    confidence: { /intent: 0.9, /sample-questions: 0.84 }
 risks: [privileged, cost-incurring]
 sample-questions:
   - How do I install the operator on EKS?
@@ -106,12 +115,16 @@ evals:
     assertion: The Helm install steps produce a Ready operator pod.
     grader: human
     severity: warning
-citation-commit: 3f9c2a1e7b0d4c5a6f8e9d0b1a2c3d4e5f607182
 citations:
   - id: chart-version
-    src: helm/operator/Chart.yaml:3
-    integrity: sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f
-    claim: The chart installs operator 1.4.2.
+    claim:
+      lines: 8
+      integrity: sha256-2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
+    source:
+      file: helm/operator/Chart.yaml
+      lines: 3
+      integrity: sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f
+      commit-sha: 3f9c2a1e7b0d4c5a6f8e9d0b1a2c3d4e5f607182
 kg:
   label: Operator installation
   broader: [Operator]
@@ -121,7 +134,9 @@ kg:
 
 Every key above is optional except `title` and `description`. A page
 that carries only those two is valid. Each further key is a step you
-take when you are ready for it.
+take when you are ready for it. The block shows the whole family on one
+page. So validating it also warns about each field marked `external`,
+which a real collection would keep in its manifest instead.
 
 ## The principles behind every field
 
@@ -166,12 +181,13 @@ take when you are ready for it.
 8. **Deeper wins.** Where the `kg` block and a page field describe the
    same fact (`type`, `concepts`, `applies-to`), the declaration inside
    the block wins and the page-level field is the fallback.
-9. **Machines propose; humans retire the provenance.** A `provenance`
-   entry names the model that proposed some fields and its confidence in
-   each. Humans delete the entry once they have reviewed those fields.
-   The pattern appears at page level, in the graph block, and in both
-   eval vocabularies. A surviving entry means machine-written metadata
-   that nobody has checked yet.
+9. **Machines propose; humans retire the provenance.** A `meta-provenance`
+   entry names the model that proposed some fields or evals and its
+   confidence in each. Humans delete the entry once they have reviewed
+   them. One key covers the whole family, on the page and under an
+   artifact's `metadata`. A surviving entry means machine-written metadata
+   that nobody has checked yet. Prose is different: `provenance` pins the
+   body lines a machine wrote, and `manni meta derive` keeps those pins.
 
 ## Quality contracts, on pages and on agent artifacts
 

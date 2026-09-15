@@ -1,0 +1,14 @@
+meta:
+  schemas: [./steward.schema.json]
+collections:
+  - name: site
+    paths: ["docs/**"]
+    externalMetadata:
+      - file: ./docs-meta.yaml
+        keys: [owner, team]
+  - name: api
+    paths: ["api/**"]
+    externalMetadata:
+      - file: ./api-meta.yaml
+        join: id
+        keys: [owner]

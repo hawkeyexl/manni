@@ -106,7 +106,7 @@ Machine-readable. Prints a single JSON object with a run `summary` and a
 | `summary.passed` | number | Files that passed. |
 | `summary.failed` | number | Files that failed. |
 | `summary.errors` | number | Error-severity findings reported across all files. Findings a [baseline](/manni/meta/reference/cli/#baselines) forgave are **not** counted here, and neither are warnings or notices. |
-| `summary.warnings` | number | Warning-severity findings reported across all files. A warning never fails a file or the run. **Omitted** when there are none, which is every run of `manni meta validate` today. |
+| `summary.warnings` | number | Warning-severity findings reported across all files. A warning never fails a file or the run. **Omitted** when there are none, which is every run whose schemas carry no `x-manni-location` marks. |
 | `summary.notices` | number | Notice-severity findings reported across all files. A notice never fails a file or the run. **Omitted** when there are none, which is every run of `manni meta validate` today. |
 | `summary.gitignoreSkipped` | number | Candidate documents [`.gitignore`](/manni/meta/reference/cli/#gitignore) removed from the walk. Counted after the extension filter, and excluding `--exclude` removals. **Omitted** when none were skipped. |
 | `summary.baseline` | object | Present only when a baseline governed the run. See [baseline fields](#baseline-fields). |
@@ -121,7 +121,7 @@ Machine-readable. Prints a single JSON object with a run `summary` and a
 | `results[].errors[].keyword` | string | The JSON Schema keyword that failed (`required`, `format`, `pattern`, `type`, …), or `parse` / `schema` for manni meta's own errors. |
 | `results[].errors[].subject` | string | The identifier within that keyword, which is the missing property, the additional property, the format name, or the expected type. Omitted for keywords whose parameter is a schema-authored *value*, such as `pattern`'s regex or `minLength`'s number. |
 | `results[].errors[].line` | number | 1-based source line. Omitted when unknown. |
-| `results[].errors[].severity` | string | `error`, `warning` or `notice`. **Omitted** when `error`, which is every finding `manni meta validate` produces; sibling tools in the family report advisory findings as `warning` or `notice` through the same shape. A file is `ok` iff none of its errors has severity `error`, and a warning or a notice never moves the exit code. |
+| `results[].errors[].severity` | string | `error`, `warning` or `notice`. **Omitted** when `error`, which is every finding `manni meta validate` produces except the `location:external` and `location:page` warnings; sibling tools in the family report advisory findings as `warning` or `notice` through the same shape. A file is `ok` iff none of its errors has severity `error`, and a warning or a notice never moves the exit code. |
 | `results[].errors[].col` | number | 1-based column. Supplied by the `html` and `xml` extractors, from the `content=` attribute of a `<meta>` tag or the value of an XML attribute. Omitted for every other format, and for a `required` violation in any format. That error reports the parent object, and a missing property has no column. |
 | `results[].errors[].file` | string | The file `line` and `col` refer to, when it is not `results[].file`. Set only for a value an [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) supplied, spelled the way the run spells file labels (`docs-meta.yaml`). Omitted for every violation whose value is in the document, which is every violation a run with no `externalMetadata:` on any collection produces. The finding's subject file stays `results[].file`; this names where the value was written. |
 
@@ -310,7 +310,8 @@ still track as separate alerts. GitHub derives alert identity from fingerprint
 SARIF's `level` is its main triage axis, and a finding's `severity` maps onto
 it directly. A finding is `error` by default, `warning` for a warning, and
 `note` for a notice, since SARIF has no level named notice. Every finding manni meta's own
-validation produces is an `error`. The lower levels exist for sibling tools in
+validation produces is an `error`, except the `location:external` and
+`location:page` warnings. The other levels exist for sibling tools in
 the family whose advisory findings ride this reporter, and it is what closes
 [issue #78](https://github.com/hawkeyexl/manni/issues/78).
 
@@ -407,19 +408,20 @@ GitHub annotations, ESLint, Vale and pa11y all use exactly these three words.
 
 | Tool | Levels it emits | How a level is decided |
 |---|---|---|
-| `manni meta validate` | `error` only | Every finding this tool's own validation produces is an error. The reporters carry the other two for sibling tools. |
+| `manni meta validate` | `error` and `warning` | Every finding is an error except `location:external` and `location:page`, the warnings for a value stored on the side its schema's `x-manni-location` does not prefer. The reporters carry `notice` for sibling tools. |
 | `manni cite check` | all three | Per rule. Each rule has a default, and [`cite.severity.<rule>`](/manni/cite/reference/configuration/#severity) moves any of them, or sets it to `off`. |
 | `manni a11y check` | all three | Mapped from axe's `impact` when a page is read. Its [`--severity`](/manni/a11y/reference/cli/) flag then drops everything below a floor. |
 | `manni key rotate` | none | It has no findings model. A value either re-encrypts or is skipped, and a skip exits `1`. |
 
-So a repository that runs only `manni meta validate` sees one level, and adding
-a second tool is what puts the other two on screen.
+So a repository that runs only `manni meta validate` sees errors, and warnings
+once its schemas carry `x-manni-location` marks. Adding a second tool is what
+puts notices on screen.
 
 ### How each level renders
 
 | Format | `notice` | `warning` | `error` |
 |---|---|---|---|
-| `pretty`, this tool | the word `notice`, dim, before the message | the word `warning`, yellow | no word; the file line is `✗` |
+| `pretty`, this tool | the word `notice`, dim, before the message | the word `warning`, yellow; a file with warnings and no errors is marked `⚠` | no word; the file line is `✗` |
 | `pretty`, `cite` | `ℹ`, dim | `↕`, yellow | `✗`, red |
 | `pretty`, `a11y` | the word `notice`, dim | the word `warning`, yellow | the word `error`, red |
 | `json` | `"severity": "notice"` | `"severity": "warning"` | the field is absent in `meta`, and `"error"` in `cite` and `a11y` |
@@ -593,8 +595,14 @@ the entry's line:
 | A [remote manifest](/manni/meta/reference/configuration/#external-metadata) could not be fetched. The status is named, the token never. | `Manifest https://…/docs-meta.yaml could not be fetched: HTTP 404 (a private file answers 404 without a token; set "tokenEnv").` |
 | The variable `tokenEnv` names is not set. | `Manifest https://…/docs-meta.yaml: the environment variable PRIVATE_DOCS_TOKEN named by "tokenEnv" is not set.` |
 | The manifest is remote and the run is `--offline`. | `Manifest https://…/docs-meta.yaml is remote and the run is offline. Vendor it to a path, or drop --offline.` |
-| A `query` write would touch an owned key. | `"docs/auth.md": "jira" is owned by manifest docs-meta.yaml; edit the manifest instead.` |
+| A `query` `ALTER TABLE … RENAME COLUMN` would rename an owned key. | `"docs/auth.md": "jira" is owned by manifest docs-meta.yaml; edit the manifest instead.` |
+| A `query` write would touch a key a URL manifest owns. | `"owner" is owned by manifest https://…/owners.yaml, which is fetched and cannot be written; set it in that repository.` |
+| A `query` write would set an owned key on a page with no value for the field its manifest joins on. | `"docs/new.md": "jira" is owned by manifest docs-meta.yaml, which joins on "id", and this document has no id; set id first.` |
 | A `query` write would change the join field of a document that has an entry. | `"docs/auth.md": "id" is the field manifest docs-meta.yaml joins on, and this document has an entry; change the manifest first.` |
+| A `query` `UPDATE` or `INSERT` would give a document a join value that names an entry it did not already match. | `"docs/noid.md": "id" "auth-guide" names the entry of another document in manifest docs-meta.yaml; choose another value.` |
+| A `query` write would touch a key owned by a manifest of a collection `--collection` leaves out. | `"docs/auth.md": "owner" is owned by manifest docs-meta.yaml of collection b, which --collection leaves out; include it or edit the manifest.` |
+| A `query` `_path` move would leave an entry behind in a manifest of a collection `--collection` leaves out. | `"docs/x.md": manifest b-meta.yaml of collection b names it, which --collection leaves out; include it or rename the entry first.` |
+| A `query` `DELETE` would keep, or orphan, an entry in a manifest of a collection `--collection` leaves out. | `"docs/x.md": manifest b-meta.yaml of collection b names it, which --collection leaves out; include it or remove the entry first.` |
 | One document is a member of two collections whose manifests both own one key. | `docs/api/auth.md: "owner" is owned by manifests in two of its collections, guides (guides-meta.yaml) and api (api-meta.yaml); a key has one manifest per file. Narrow one collection's paths or exclude.` |
 
 A schema violation on a value the manifest supplied, and a document carrying a
@@ -652,13 +660,13 @@ The deliberate opt-outs are `--no-derive` on `validate`, `--no-derived` on
 | A configured command's program is not on `PATH`. | ``command source unavailable: `jq` is not on PATH (derive.commands.verified-against); narrow --sources or --fields`` |
 | A configured command ran past its `timeout`. | ``command source unavailable: `node scripts/source-for.mjs docs/install.md` timed out after 60s; narrow --sources or --fields`` |
 | A configured command wrote more than 8 MiB on stdout or stderr. | ``command source unavailable: `cat big.log` wrote more than 8 MiB; a command reports one field's value (derive.commands.notes)``. The command is killed rather than read to the end. |
-| Config `derive.commands` names a field a built-in source already derives. | `derive.commands.last-updated targets a field git already derives; a command may only derive a field no built-in source claims`. `$schema` is refused the same way, and a manifest-owned key when the config loads. |
+| Config `derive.commands` names a field a built-in source already derives. | `derive.commands.last-updated targets a field git already derives; a command may only derive a field no built-in source claims`. `$schema` is refused the same way, and a key a URL manifest owns when the config loads. |
 | Config `derive.commands` names `_path` or `_sources`. | `derive.commands._path collides with a column of the derived table a query builds (_path, _sources). Pick another field name.` |
 | `derive` was given `-`. | `cannot derive <stdin>: no history behind it` |
 | `derive` was given a field that is not derivable. | `"stakeholders" is not derivable; derivable fields are created, last-updated, authors, owner, reviewed-by, last-reviewed, provenance, or any key with an entry in derive.commands` |
-| Config `derive.fields` names a key a collection's [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. The config is refused when it loads. | `manni.config.yaml: meta.derive.fields[3] "owner" is owned by collections[0].externalMetadata[0] (./owners.yaml) — a managed field has one authority, and a manifest key already has one. Drop it from one side.` |
-| Config `derive.commands` names a key a collection's [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. The config is refused when it loads. | `manni.config.yaml: meta.derive.commands.verified-against is owned by collections[0].externalMetadata[0] (./versions.yaml) — a managed field has one authority, and a manifest key already has one. Drop it from one side.` |
-| `derive --fields` named a key a collection's [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. | `"owner" is owned by the manifest ./owners.yaml on collection guides; a managed field has one authority, and a manifest key already has one.` |
+| Config `derive.fields` names a key a collection's URL [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. The config is refused when it loads. A local manifest is where `derive` writes the field. | `manni.config.yaml: meta.derive.fields[3] "owner" is owned by manifest https://example.com/owners.yaml, which is fetched and cannot be written; set it in that repository.` |
+| Config `derive.commands` names a key a collection's URL [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. The config is refused when it loads. | `manni.config.yaml: meta.derive.commands.verified-against is owned by manifest https://example.com/versions.yaml, which is fetched and cannot be written; set it in that repository.` |
+| `derive --fields` named a key a collection's URL [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. | `"owner" is owned by manifest https://example.com/owners.yaml, which is fetched and cannot be written; set it in that repository.` |
 | `derive` has no `derive.fields` in config and no `--fields`. | `nothing to derive: set derive.fields in manni.config.yaml or pass --fields` |
 | Config `derive.machines` is empty or not a list of strings. | `manni.config.yaml: meta.derive.machines must be a non-empty list of globs, matched against a trailer's name and its email. Default: ["*[bot]"].` |
 | Config `derive.machines` holds a blank entry. | `manni.config.yaml: meta.derive.machines[0] is blank; a glob must name something.` |
@@ -693,9 +701,15 @@ manni: docs/limits.md: no uncommitted body lines; --generated-by attributes only
 |---|---|
 | `validate` | One or more files failed validation. |
 | `get` | One or more files had a metadata block that could not be read. That means frontmatter that is not valid YAML, or that parses to something other than a mapping. A requested field that is merely *absent* is reported as unset and is **not** a failure. An absent **file** is different again: that is an operational error and exits 2. |
-| [`fill`](/manni/meta/reference/cli/#meta-fill) | A property the schema lists as `required` could not be filled confidently, or a file errored. Skipped **optional** properties leave the exit code at `0`. A file whose missing property an [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns is refused as a per-file error, so it counts here. |
+| [`fill`](/manni/meta/reference/cli/#meta-fill) | A property the schema lists as `required` could not be filled confidently, or a file errored. Skipped **optional** properties leave the exit code at `0`. A file whose missing property a URL [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns is refused as a per-file error, so it counts here. A property a local manifest owns is written there and does not. |
 | [`derive`](/manni/meta/reference/cli/#meta-derive) | A file the run could not read or write, such as an unparseable document or a read-only format it could not stamp. That fails the run with or without `--check`, as it does for `fill`. A stamp that was never applied must not read as done. `provenance` on a page whose metadata is not a fenced block, such as HTML, is one such file. Its message ends `Keep provenance in an externalMetadata manifest.` Under `--check` any finding fails it too, such as a stale or unset managed field. A `provenance` range that only moved files no finding and passes. A run that writes cleanly exits `0` whatever it changed, because the work is done rather than pending. |
+| [`relocate`](/manni/meta/reference/cli/#meta-relocate) | At least one value stayed on the side its schema's `x-manni-location` does not prefer, or on the page while a manifest owns its key. Each is named with its reason: `no-home`, `read-only-format`, `no-join-value`, `values-differ`, `url-manifest` or `unreadable`. A run that moved everything, or found nothing to move, exits `0`. Its exit 2 causes, `-`, `--no-config`, an unmarked `--fields` name and an undeclared file at the manifest path among them, are listed under [`meta relocate`](/manni/meta/reference/cli/#meta-relocate). |
 | `schemas` | Never. |
+
+A `location:external` or `location:page` finding from `validate` is a warning,
+so on its own it exits `0`. On a terminal, `validate` then asks whether to move
+the values. The question, and relocate's report after a yes, go to stderr, and
+the exit code is still the report's.
 
 The rule behind `fill`'s version is the same as `validate`'s: exit 1 means the
 documents still need work, not that manni meta malfunctioned.

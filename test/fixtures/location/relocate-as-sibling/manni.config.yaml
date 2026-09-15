@@ -1,0 +1,8 @@
+meta:
+  schemas: [./steward.schema.json]
+collections:
+  - name: site
+    paths: ["docs/**"]
+    externalMetadata:
+      - file: ./docs-meta.yaml
+        keys: [title]

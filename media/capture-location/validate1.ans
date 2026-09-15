@@ -1,0 +1,7 @@
+Using manni.config.yaml (.)
+[33m⚠[39m docs/install.md
+    [36m/owner[39m  [33mwarning[39m "owner" is stored in the page; page.schema.json prefers external metadata. Run manni meta relocate.[2m  (line 4)[22m  [2m[location:external][22m
+    [36m/stakeholders[39m  [33mwarning[39m "stakeholders" is stored in the page; page.schema.json prefers external metadata. Run manni meta relocate.[2m  (line 5)[22m  [2m[location:external][22m
+    [36m/review-interval[39m  [33mwarning[39m "review-interval" is stored in the page; page.schema.json prefers external metadata. Run manni meta relocate.[2m  (line 6)[22m  [2m[location:external][22m
+
+[32m1 file checked, 1 passed, 0 failed, 0 errors, 3 warnings[39m

@@ -65,7 +65,7 @@ Key layers:
   - `src/cite/cli.ts`: thin commander wrapper exported as `buildProgram()` and
     mounted by `src/cli.ts`. No entry point of its own.
 - `src/docevals/`: the evals tool, `manni docevals run`, `list`, `generate`,
-  `fill`, `promote`, `calibrate`, `init` and `review` (proposal 0047). It runs
+  `fill`, `promote`, `calibrate`, `init` and `review` (proposal 0048). It runs
   deterministic and LLM-as-judge evals declared in page frontmatter. Its own
   `src/docevals/CLAUDE.md` holds the tool's invariants.
   - `src/docevals/core/`: discovery, page resolution against the evals draft,

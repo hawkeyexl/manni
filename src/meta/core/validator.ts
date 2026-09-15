@@ -43,6 +43,12 @@ import {
 } from "./schema-registry.js";
 import { FILE_SCHEMA_KEY } from "./resolve-schema.js";
 import { ENCRYPT_KEYWORD } from "./encrypted.js";
+import {
+  LOCATION_KEYWORD,
+  isFieldLocation,
+  type FieldLocation,
+  type LocationPreference,
+} from "./location.js";
 import { errorMessage } from "../../shared/errors.js";
 
 type Dialect = "2020" | "2019" | "draft7" | "draft4";
@@ -85,6 +91,7 @@ function buildAjv(dialect: Dialect): InstanceType<AjvCtor> {
   // schemas compile too rather than erroring on an unknown `$schema`.
   if (dialect === "draft7") ajv.addMetaSchema(draft06MetaSchema);
   registerEncryptKeyword(ajv);
+  registerLocationKeyword(ajv);
   registerBuiltins(ajv, dialect);
   return ajv;
 }
@@ -134,6 +141,141 @@ function registerEncryptKeyword(ajv: InstanceType<AjvCtor>): void {
 /** Ajv's compile error for a non-boolean mark names the keyword. */
 function isMarkShapeError(err: unknown): boolean {
   return err instanceof Error && err.message.includes(`"${ENCRYPT_KEYWORD}"`);
+}
+
+/**
+ * Where `x-manni-location` records what it says for each top-level key it is
+ * evaluated at, while `locationPreferences` is running: key name to the set of
+ * values seen, so one schema saying both is detectable. `undefined` the rest
+ * of the time, for the same reason and with the same safety as
+ * `markRecorder`.
+ */
+let locationRecorder: Map<string, Set<FieldLocation>> | undefined;
+
+/** A depth-1 instance pointer (`/owner`), as its unescaped key; else undefined. */
+function topLevelKey(instancePath: string): string | undefined {
+  if (!instancePath.startsWith("/") || instancePath.indexOf("/", 1) !== -1) {
+    return undefined;
+  }
+  return instancePath.slice(1).replace(/~1/g, "/").replace(/~0/g, "~");
+}
+
+/**
+ * `x-manni-location` (proposal 0047), on every Ajv meta builds. Like
+ * `x-manni-encrypt`, it never fails a value; it says where it was evaluated,
+ * so a mark counts wherever Ajv's resolution takes the validator. Only a mark
+ * evaluated at a top-level property is recorded; a nested one is accepted and
+ * ignored. The enum meta-schema refuses any other value at compile time, and
+ * `compileUncached` turns Ajv's wording into the plan's message.
+ */
+function registerLocationKeyword(ajv: InstanceType<AjvCtor>): void {
+  ajv.addKeyword({
+    keyword: LOCATION_KEYWORD,
+    metaSchema: { type: "string", enum: ["page", "external"] },
+    errors: false,
+    validate: (
+      schema: unknown,
+      _data: unknown,
+      _parent?: unknown,
+      cxt?: { instancePath: string },
+    ): boolean => {
+      if (locationRecorder !== undefined && isFieldLocation(schema)) {
+        const key = topLevelKey(cxt?.instancePath ?? "");
+        if (key !== undefined) {
+          const seen = locationRecorder.get(key);
+          if (seen) seen.add(schema);
+          else locationRecorder.set(key, new Set([schema]));
+        }
+      }
+      return true;
+    },
+  });
+}
+
+/** Ajv's compile error for a mark outside the enum names the keyword. */
+function isLocationShapeError(err: unknown): boolean {
+  return err instanceof Error && err.message.includes(`"${LOCATION_KEYWORD}"`);
+}
+
+/** Does this schema mark its own top-level `$schema` property external? */
+function marksSchemaExternal(schema: Record<string, unknown>): boolean {
+  const properties = schema["properties"];
+  if (typeof properties !== "object" || properties === null) return false;
+  const own: unknown = (properties as Record<string, unknown>)[FILE_SCHEMA_KEY];
+  if (typeof own !== "object" || own === null) return false;
+  return (own as Record<string, unknown>)[LOCATION_KEYWORD] === "external";
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * The first top-level key this schema marks both `page` and `external` on
+ * paths every document takes; else undefined.
+ *
+ * Unconditional means the schema's own `properties`, its `allOf` entries, and
+ * a local `$ref` reached from those, applied again inside a property's
+ * subschema. `anyOf`, `oneOf`, `if`/`then`/`else` and `not` are conditional,
+ * so marks that differ across them are not a contradiction. A remote `$ref`
+ * is not chased, and neither is a local one inside an embedded `$id`, whose
+ * `#` names another resource.
+ */
+function definiteLocationConflict(root: Record<string, unknown>): string | undefined {
+  const marks = new Map<string, Set<FieldLocation>>();
+  /** The target of a `#/...` pointer from the root, if it resolves. */
+  const localRef = (node: Record<string, unknown>, embedded: boolean): unknown => {
+    const ref = node["$ref"];
+    if (embedded || typeof ref !== "string" || !ref.startsWith("#")) return undefined;
+    const pointer = ref.slice(1);
+    if (pointer === "") return root;
+    if (!pointer.startsWith("/")) return undefined;
+    let at: unknown = root;
+    for (const raw of pointer.slice(1).split("/")) {
+      let segment: string;
+      try {
+        segment = decodeURIComponent(raw).replace(/~1/g, "/").replace(/~0/g, "~");
+      } catch {
+        return undefined;
+      }
+      if (Array.isArray(at)) at = at[Number(segment)] as unknown;
+      else if (isRecord(at)) at = at[segment];
+      else return undefined;
+    }
+    return at;
+  };
+  const isEmbedded = (node: Record<string, unknown>, embedded: boolean): boolean =>
+    embedded || (node !== root && typeof node["$id"] === "string");
+  const allOf = (node: Record<string, unknown>): unknown[] =>
+    Array.isArray(node["allOf"]) ? (node["allOf"] as unknown[]) : [];
+
+  const property = (key: string, node: unknown, embedded: boolean, visited: Set<unknown>): void => {
+    if (!isRecord(node) || visited.has(node)) return;
+    visited.add(node);
+    const inner = isEmbedded(node, embedded);
+    const mark = node[LOCATION_KEYWORD];
+    if (isFieldLocation(mark)) {
+      const seen = marks.get(key);
+      if (seen) seen.add(mark);
+      else marks.set(key, new Set([mark]));
+    }
+    for (const entry of allOf(node)) property(key, entry, inner, visited);
+    property(key, localRef(node, inner), inner, visited);
+  };
+  const object = (node: unknown, embedded: boolean, visited: Set<unknown>): void => {
+    if (!isRecord(node) || visited.has(node)) return;
+    visited.add(node);
+    const inner = isEmbedded(node, embedded);
+    const properties = node["properties"];
+    if (isRecord(properties)) {
+      for (const [key, sub] of Object.entries(properties)) property(key, sub, inner, new Set());
+    }
+    for (const entry of allOf(node)) object(entry, inner, visited);
+    object(localRef(node, inner), inner, visited);
+  };
+  object(root, false, new Set());
+  for (const [key, seen] of marks) if (seen.size > 1) return key;
+  return undefined;
 }
 
 /**
@@ -315,6 +457,19 @@ export class Validator {
 
   private async compileUncached(ref: string): Promise<ValidateFunction> {
     const schema = await loadSchema(ref, this.schemaOptions);
+    // `$schema` is how a page names its schema; external metadata is found
+    // through that schema, so the directive cannot live there.
+    if (marksSchemaExternal(schema)) {
+      throw new DocmetaError(
+        `${ref}: "${FILE_SCHEMA_KEY}" cannot be stored in external metadata.`,
+      );
+    }
+    const contradicted = definiteLocationConflict(schema);
+    if (contradicted !== undefined) {
+      throw new DocmetaError(
+        `${ref}: "${LOCATION_KEYWORD}" says both "page" and "external" for "${contradicted}".`,
+      );
+    }
     try {
       const ajv = this.ajvFor(dialectOf(schema));
       // This cache is keyed on the ref string, but Ajv's registry is keyed on
@@ -358,6 +513,11 @@ export class Validator {
           `${ref}: "${ENCRYPT_KEYWORD}" must be true or false.`,
         );
       }
+      if (isLocationShapeError(err)) {
+        throw new DocmetaError(
+          `${ref}: "${LOCATION_KEYWORD}" must be "page" or "external".`,
+        );
+      }
       throw new DocmetaError(
         `Schema "${ref}" failed to compile: ${errorMessage(err)}`,
       );
@@ -393,6 +553,51 @@ export class Validator {
       }
     }
     return marks;
+  }
+
+  /**
+   * The location each top-level key of `data` prefers under `refs`: `page` or
+   * `external`, and the ref whose `x-manni-location` mark decided it. A key no
+   * schema marks has no entry.
+   *
+   * A first pass with the recording keyword, as `markedPointers` runs, so a
+   * mark counts exactly where validation would evaluate it, and a nested mark
+   * is ignored. Only present values are marked: Ajv applies a property's
+   * subschema to a property that exists. A caller asking where a key it is
+   * about to write belongs passes `data` that already holds the candidate
+   * value. `$schema` is stripped first, as validation does.
+   *
+   * Refs are evaluated in order and a later ref's mark wins. A ref that says
+   * both values for one key unconditionally is refused when it compiles; one
+   * whose evaluated branches say both gives that key no preference.
+   */
+  async locationPreferences(
+    data: Record<string, unknown>,
+    refs: string[],
+  ): Promise<Map<string, LocationPreference>> {
+    const { [FILE_SCHEMA_KEY]: _omit, ...subject } = data;
+    void _omit;
+    const preferences = new Map<string, LocationPreference>();
+    for (const ref of refs) {
+      const fn = await this.compile(ref);
+      const seen = new Map<string, Set<FieldLocation>>();
+      locationRecorder = seen;
+      try {
+        fn(subject);
+      } finally {
+        locationRecorder = undefined;
+      }
+      for (const [key, locations] of seen) {
+        const [location, ...others] = [...locations];
+        // Both values seen at evaluation can only come from conditional
+        // branches: `compileUncached` refuses the unconditional kind. With
+        // `allErrors`, Ajv evaluates failing branches too, so neither value
+        // is this ref's answer, and an earlier ref's stands.
+        if (location === undefined || others.length > 0) continue;
+        preferences.set(key, { location, schema: ref });
+      }
+    }
+    return preferences;
   }
 
   /**

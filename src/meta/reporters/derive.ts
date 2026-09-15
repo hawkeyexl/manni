@@ -183,8 +183,17 @@ function fieldRow(f: DerivedField, c: Colors): Row {
     name: f.field,
     change: `${c.dim(from)} → ${c.green(to)}`,
     plain: `${from} → ${to}`,
-    trail: c.dim(`(${f.source ?? "a source"}: ${f.evidence ?? "no evidence"})`),
+    trail: `${c.dim(`(${f.source ?? "a source"}: ${f.evidence ?? "no evidence"})`)}${destinationOf(f)}`,
   };
+}
+
+/**
+ * Where a field kept in a manifest was written (proposal 0047):
+ * `  → docs-meta.yaml:14`, without the line under a dry run.
+ */
+function destinationOf(f: DerivedField): string {
+  if (f.destination === undefined) return "";
+  return `  → ${f.destination}${f.destinationLine === undefined ? "" : `:${String(f.destinationLine)}`}`;
 }
 
 /**

@@ -1,0 +1,6 @@
+docs/install.md:
+  owner: platform
+  stakeholders:
+    - ada
+    - grace
+  review-interval: 90d

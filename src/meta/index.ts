@@ -20,6 +20,10 @@ export type {
   DeriveFileResult,
   DeriveSummary,
 } from "./commands/derive.js";
+// Put each value where its schema's x-manni-location and the manifests say
+// it belongs (proposal 0047).
+export { runRelocate } from "./commands/relocate.js";
+export type { RelocateOptions, RelocateResult } from "./commands/relocate.js";
 export type {
   FillOptions,
   FillRun,
@@ -29,6 +33,10 @@ export type {
   SkipReason,
 } from "./commands/fill.js";
 export { Validator } from "./core/validator.js";
+// Where a schema would like a top-level key stored (proposal 0047), as
+// `Validator.locationPreferences` reports it.
+export { LOCATION_KEYWORD } from "./core/location.js";
+export type { FieldLocation, LocationPreference } from "./core/location.js";
 // Meta's half of `manni key rotate` (proposal 0045): re-encrypt one page's
 // metadata values, found by their ciphertext, under a new key.
 export { reencryptMetadata } from "./core/reencrypt.js";

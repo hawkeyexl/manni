@@ -1,0 +1,19 @@
+[1mdiff --git a/docs/install.md b/docs/install.md[m
+[1mindex fa8f624..c98a640 100644[m
+[1m--- a/docs/install.md[m
+[1m+++ b/docs/install.md[m
+[36m@@ -3,5 +3,2 @@[m [mtitle: Install[m
+ description: Install manni and run it.[m
+[31m-owner: platform[m
+[31m-stakeholders: [ada, grace][m
+[31m-review-interval: 90d[m
+ ---[m
+[1mdiff --git a/manni.config.yaml b/manni.config.yaml[m
+[1mindex 4c7510f..f60e623 100644[m
+[1m--- a/manni.config.yaml[m
+[1m+++ b/manni.config.yaml[m
+[36m@@ -5 +5,4 @@[m [mcollections:[m
+     paths: ["docs/**/*.md"][m
+[32m+[m[32m    externalMetadata:[m
+[32m+[m[32m      - file: ./site.metadata.yaml[m
+[32m+[m[32m        keys: [owner, stakeholders, review-interval][m

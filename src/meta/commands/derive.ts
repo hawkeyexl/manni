@@ -24,9 +24,10 @@ import {
   type MetadataPatch,
 } from "../types.js";
 import {
-  manifestOwning,
   resolveRunConfig,
   schemaTrustRoot,
+  urlManifestMessage,
+  urlManifestOwning,
   type ConfigNotice,
 } from "../core/config.js";
 import type { FingerprintContext } from "../core/baseline.js";
@@ -91,7 +92,28 @@ import {
   type ProvenanceManifest,
   type ProvenancePlace,
 } from "../core/derive/provenance-place.js";
-import { loadExternalMetadata, mergeExternalMetadata } from "../core/external-metadata.js";
+import {
+  loadExternalMetadata,
+  mergeExternalMetadata,
+  type ExternalMetadataIndex,
+  type SourceLocation,
+} from "../core/external-metadata.js";
+import { classifyRef } from "../core/schema-registry.js";
+import type { FieldLocation } from "../core/location.js";
+import type { CollectionConfig } from "../../shared/collections.js";
+import { warn } from "../../shared/warn.js";
+import {
+  keyHome,
+  relocationContext,
+  type KeyHome,
+  type RelocateResult,
+} from "../core/relocation.js";
+import {
+  externalWriteWarnings,
+  manifestKeyLine,
+  offerExternalHomes,
+  type ExternalWrite,
+} from "../core/location-writes.js";
 import { removeManifestKey, spliceManifestValue } from "../core/external-metadata-write.js";
 import { lineSpec, parseLines } from "../../shared/pin.js";
 import {
@@ -174,6 +196,11 @@ export interface DeriveOptions {
    * `MANNI_GENERATED_BY` from `env`; an empty value is unset either way.
    */
   generatedBy?: string;
+  /**
+   * Called with relocate's result after the user accepts a P1 offer
+   * (proposal 0047), so the CLI can print what moved before the report.
+   */
+  onRelocated?: (result: RelocateResult) => void;
 }
 
 /** The variable `--generated-by` defaults to (proposal 0046). */
@@ -254,23 +281,18 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   const generatedBy =
     opts.generatedBy !== undefined ? flagGeneratedBy : machineName(env[GENERATED_BY_ENV]);
 
-  const {
-    config,
-    inputs,
-    base,
-    configDir,
-    collections,
-    declaredCollections,
-    fromCollections,
-    configFile,
-  } = await resolveRunConfig({
-      cwd,
-      configPath: opts.configPath,
-      noConfig: opts.noConfig,
-      inputs: typedInputs,
-      ...(opts.collections !== undefined ? { collections: opts.collections } : {}),
-      onConfigLoaded: opts.onConfigLoaded,
-    });
+  const runConfig = await resolveRunConfig({
+    cwd,
+    configPath: opts.configPath,
+    noConfig: opts.noConfig,
+    inputs: typedInputs,
+    ...(opts.collections !== undefined ? { collections: opts.collections } : {}),
+    onConfigLoaded: opts.onConfigLoaded,
+  });
+  const { config, inputs, base, collections, declaredCollections, fromCollections, configFile } =
+    runConfig;
+  // Reassigned when an accepted relocation (0047) creates the config file.
+  let configDir = runConfig.configDir;
   // Refused before any file is read: every other command takes `-`
   // as one more input, but a piped document has no commits, no path a
   // CODEOWNERS rule could match, and no pull request. There is nothing to
@@ -303,19 +325,16 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       "--generated-by attributes provenance, which is not in --fields. Add provenance, or drop --generated-by.",
     );
   }
-  // `loadConfig` refuses a `derive.fields` entry a manifest owns; the same
-  // rule holds for `--fields`, which bypasses the config. Every declared
-  // collection counts, not only the selected ones, and the config's `keys:`
-  // list is the whole claim, so no manifest is loaded. `provenance` is the
-  // exception (0046): a manifest that owns it is where its stamp is kept.
+  // `loadConfig` refuses a `derive.fields` entry a URL manifest owns (0047,
+  // M6); the same rule holds for `--fields`, which bypasses the config. A
+  // local manifest that owns a field is where derive writes it. Every
+  // declared collection counts, not only the selected ones, and the config's
+  // `keys:` list is the whole claim, so no manifest is loaded. `provenance`
+  // keeps its own refusal, raised where its record is placed (0046).
   for (const field of fields) {
     if (field === PROVENANCE_FIELD) continue;
-    const owner = manifestOwning(field, declaredCollections);
-    if (owner !== undefined) {
-      throw new DocmetaError(
-        `"${field}" is owned by the manifest ${owner.file} on collection ${owner.name}; a managed field has one authority, and a manifest key already has one.`,
-      );
-    }
+    const owner = urlManifestOwning(field, declaredCollections);
+    if (owner !== undefined) throw new DocmetaError(urlManifestMessage(field, owner.file));
   }
   const sources = resolveSources(opts.sources, config?.derive?.sources);
   const check = Boolean(opts.check);
@@ -430,106 +449,161 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     elements: string[];
     apply: MetadataExtractor["apply"];
   }
-  const loaded = new Map<string, Loaded>();
-  const errors = new Map<string, { format: string; message: string }>();
-  for (const label of files) {
-    const absPath = resolve(base, label);
-    const extractor = forcedExtractor ?? extractorForExtension(extname(label));
-    if (!extractor) {
-      errors.set(label, {
-        format: "unknown",
-        message: `Unsupported file type "${extname(label)}". Supported: ${supportedExtensions().join(", ")}. Use --as to override.`,
-      });
-      continue;
-    }
-    const content = await readFile(absPath, "utf8");
-    const elements = resolveElements(label, config, membersFor(label));
-    try {
-      loaded.set(label, {
-        label,
-        absPath,
-        content,
-        format: extractor.name,
-        elements,
-        extracted: extractor.extract(content, label, { elements }),
-        apply: extractor.apply,
-      });
-    } catch (err) {
-      errors.set(label, { format: extractor.name, message: errorMessage(err) });
-    }
+  interface Prepared {
+    loaded: Map<string, Loaded>;
+    errors: Map<string, { format: string; message: string }>;
+    places: Map<string, ProvenancePlace>;
+    provenanceCollections: CollectionConfig[];
+    provenanceIndex: ExternalMetadataIndex | null;
+    /** Collections with a local manifest owning a managed field other than `provenance` (0047). */
+    ownedCollections: CollectionConfig[];
+    ownedIndex: ExternalMetadataIndex | null;
+    derived: Awaited<ReturnType<typeof deriveMetadata>>;
   }
+  let sourcesNoted = false;
+  /**
+   * Read every page, place each `provenance` record, load the manifests that
+   * own a managed field, and derive. Run again after an accepted relocation
+   * (0047) moves values and declares manifests, so nothing below reads a page
+   * or a config from before the move.
+   */
+  const prepare = async (): Promise<Prepared> => {
+    const loaded = new Map<string, Loaded>();
+    const errors = new Map<string, { format: string; message: string }>();
+    for (const label of files) {
+      const absPath = resolve(base, label);
+      const extractor = forcedExtractor ?? extractorForExtension(extname(label));
+      if (!extractor) {
+        errors.set(label, {
+          format: "unknown",
+          message: `Unsupported file type "${extname(label)}". Supported: ${supportedExtensions().join(", ")}. Use --as to override.`,
+        });
+        continue;
+      }
+      const content = await readFile(absPath, "utf8");
+      const elements = resolveElements(label, config, membersFor(label));
+      try {
+        loaded.set(label, {
+          label,
+          absPath,
+          content,
+          format: extractor.name,
+          elements,
+          extracted: extractor.extract(content, label, { elements }),
+          apply: extractor.apply,
+        });
+      } catch (err) {
+        errors.set(label, { format: extractor.name, message: errorMessage(err) });
+      }
+    }
 
-  // ---- Provenance (0046): where each record lives, and what it says --------
-  const provenanceRoot = configDir ?? cwd;
-  const manifests = wantsProvenance
-    ? provenanceManifests(declaredCollections, provenanceRoot, base)
-    : [];
-  // Only the manifests that own `provenance` are read, as cite reads only
-  // the ones that own `citations`: a sibling manifest is none of derive's
-  // business, and a URL one is never fetched here.
-  const provenanceCollections = declaredCollections
-    .map((c) => ({
-      ...c,
-      externalMetadata: c.externalMetadata.filter((m) => m.keys.includes(PROVENANCE_FIELD)),
-    }))
-    .filter((c) => c.externalMetadata.length > 0);
-  const provenanceIndex =
-    manifests.length === 0
-      ? null
-      : await loadExternalMetadata(provenanceCollections, { configDir: provenanceRoot, base });
-  const places = new Map<string, ProvenancePlace>();
-  for (const doc of loaded.values()) {
-    if (!wantsProvenance) break;
-    const place = provenancePlace(
-      doc.label,
-      doc.extracted.data,
-      manifests,
-      declaredCollections,
-      provenanceRoot,
+    // ---- Provenance (0046): where each record lives, and what it says ------
+    const provenanceRoot = configDir ?? cwd;
+    const manifests = wantsProvenance
+      ? provenanceManifests(declaredCollections, provenanceRoot, base)
+      : [];
+    // Only the manifests that own `provenance` are read, as cite reads only
+    // the ones that own `citations`: a sibling manifest is none of derive's
+    // business, and a URL one is never fetched here.
+    const provenanceCollections = declaredCollections
+      .map((c) => ({
+        ...c,
+        externalMetadata: c.externalMetadata.filter((m) => m.keys.includes(PROVENANCE_FIELD)),
+      }))
+      .filter((c) => c.externalMetadata.length > 0);
+    const provenanceIndex =
+      manifests.length === 0
+        ? null
+        : await loadExternalMetadata(provenanceCollections, { configDir: provenanceRoot, base });
+    const places = new Map<string, ProvenancePlace>();
+    for (const doc of loaded.values()) {
+      if (!wantsProvenance) break;
+      const place = provenancePlace(
+        doc.label,
+        doc.extracted.data,
+        manifests,
+        declaredCollections,
+        provenanceRoot,
+        base,
+      );
+      if (place !== undefined) {
+        places.set(doc.label, place);
+        doc.provenanceManifest = { absPath: place.absPath, entry: place.entry, join: place.join };
+      }
+      // Every range named for the page, each refused on its own terms; ranges
+      // that overlap attribute their union.
+      const named = rangesByPage.get(doc.label);
+      if (named !== undefined && generatedBy !== undefined) {
+        doc.attribution = { targets: named, generatedBy };
+      }
+    }
+
+    // ---- Manifests that own a managed field (0047) ---------------------------
+    // Read so a field kept in a manifest is compared by the manifest's value.
+    // Only local manifests owning one of this run's fields: a URL manifest
+    // cannot own one (the config and `--fields` refuse it), and a sibling
+    // manifest is none of derive's business.
+    const ownedCollections = declaredCollections
+      .map((c) => ({
+        ...c,
+        externalMetadata: c.externalMetadata.filter(
+          (m) =>
+            classifyRef(m.file).kind !== "url" &&
+            m.keys.some((k) => k !== PROVENANCE_FIELD && fields.includes(k)),
+        ),
+      }))
+      .filter((c) => c.externalMetadata.length > 0);
+    const ownedIndex =
+      ownedCollections.length === 0
+        ? null
+        : await loadExternalMetadata(ownedCollections, { configDir: provenanceRoot, base });
+
+    // ---- Derive ------------------------------------------------------------
+    const derived = await deriveMetadata([...loaded.values()], {
+      cwd,
       base,
-    );
-    if (place !== undefined) {
-      places.set(doc.label, place);
-      doc.provenanceManifest = { absPath: place.absPath, entry: place.entry, join: place.join };
+      configDir,
+      sources,
+      fields,
+      codeowners: config?.derive?.codeowners,
+      commands,
+      cache: opts.cache ?? true,
+      now: opts.now ?? (() => new Date()),
+      reviews: opts.reviews,
+      machines: machinesOf(config?.derive),
+      ...(generatedBy !== undefined ? { generatedBy } : {}),
+    });
+    assertSourcesAvailable(derived.sources, SOURCE_HINT);
+    // A source that answered, with a caveat worth one line: a repository with
+    // no CODEOWNERS file derives null owners rather than failing.
+    if (!sourcesNoted) {
+      sourcesNoted = true;
+      for (const [name, status] of Object.entries(derived.sources)) {
+        if (status.available && status.reason !== undefined) {
+          opts.onNotice?.(`${name}: ${status.reason}`);
+        }
+      }
     }
-    // Every range named for the page, each refused on its own terms; ranges
-    // that overlap attribute their union.
-    const named = rangesByPage.get(doc.label);
-    if (named !== undefined && generatedBy !== undefined) {
-      doc.attribution = { targets: named, generatedBy };
-    }
-  }
+    return {
+      loaded,
+      errors,
+      places,
+      provenanceCollections,
+      provenanceIndex,
+      ownedCollections,
+      ownedIndex,
+      derived,
+    };
+  };
+  let prepared = await prepare();
   /** The page's `provenance` as its record holds it: the manifest's, or the page's own. */
   const stampOf = (doc: Loaded): unknown => {
-    if (!places.has(doc.label)) return doc.extracted.data[PROVENANCE_FIELD];
-    const members = memberOf(provenanceCollections, provenanceRoot, base, doc.label);
-    return mergeExternalMetadata(doc.label, doc.extracted, provenanceIndex, members, base).extracted
-      .data[PROVENANCE_FIELD];
+    if (!prepared.places.has(doc.label)) return doc.extracted.data[PROVENANCE_FIELD];
+    const root = configDir ?? cwd;
+    const members = memberOf(prepared.provenanceCollections, root, base, doc.label);
+    return mergeExternalMetadata(doc.label, doc.extracted, prepared.provenanceIndex, members, base)
+      .extracted.data[PROVENANCE_FIELD];
   };
-
-  // ---- Derive --------------------------------------------------------------
-  const derived = await deriveMetadata([...loaded.values()], {
-    cwd,
-    base,
-    configDir,
-    sources,
-    fields,
-    codeowners: config?.derive?.codeowners,
-    commands,
-    cache: opts.cache ?? true,
-    now: opts.now ?? (() => new Date()),
-    reviews: opts.reviews,
-    machines: machinesOf(config?.derive),
-    ...(generatedBy !== undefined ? { generatedBy } : {}),
-  });
-  assertSourcesAvailable(derived.sources, SOURCE_HINT);
-  // A source that answered, with a caveat worth one line: a repository with
-  // no CODEOWNERS file derives null owners rather than failing.
-  for (const [name, status] of Object.entries(derived.sources)) {
-    if (status.available && status.reason !== undefined) {
-      opts.onNotice?.(`${name}: ${status.reason}`);
-    }
-  }
 
   // ---- Encryption (0045) -----------------------------------------------------
   /**
@@ -541,10 +615,47 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
    * holding a ciphertext no key can read cannot be compared, so it is the
    * file's error rather than a guess either way.
    */
+  interface Marks {
+    data: Record<string, unknown>;
+    marked: string[];
+    /** Where a value a manifest supplied lives (0047), for a finding's line. */
+    locate: (pointer: string) => SourceLocation | undefined;
+    /** Each top-level key's `x-manni-location`, read over the page as it would be stamped (0047). */
+    prefs: ReadonlyMap<string, FieldLocation>;
+  }
+  // A schema notice names its file. Each page's marks are read for the P1
+  // offer and again for its write, and relocation reads the same schemas, so
+  // each notice is said once.
+  const noticed = new Set<string>();
+  const noticeOnce =
+    opts.onNotice === undefined
+      ? undefined
+      : (message: string): void => {
+          if (noticed.has(message)) return;
+          noticed.add(message);
+          opts.onNotice?.(message);
+        };
   const markFields = async (
     doc: Loaded,
     record: DerivedRecord | undefined,
-  ): Promise<{ data: Record<string, unknown>; marked: string[] } | { error: string }> => {
+  ): Promise<Marks | { error: string }> => {
+    // Proposal 0047: a managed field a manifest owns is compared by the
+    // manifest's value, so the page's own metadata is merged with it first.
+    let own = doc.extracted;
+    let locate: Marks["locate"] = () => undefined;
+    if (prepared.ownedIndex !== null) {
+      try {
+        const members = memberOf(prepared.ownedCollections, configDir ?? cwd, base, doc.label);
+        const merged = mergeExternalMetadata(doc.label, doc.extracted, prepared.ownedIndex, members, base, {
+          encryptionKey: currentKey,
+        });
+        own = merged.extracted;
+        locate = merged.locate;
+      } catch (err) {
+        if (err instanceof EncryptionRefusal || !(err instanceof DocmetaError)) throw err;
+        return { error: err.message };
+      }
+    }
     let resolved: ResolvedSchemaSet;
     try {
       resolved = resolveSchemaSetWithSource({
@@ -556,17 +667,18 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         // `$schema`, since that schema decides what gets encrypted.
         fileBase: cwd,
         trustRoot,
-        onNotice: opts.onNotice,
+        onNotice: noticeOnce,
       });
     } catch (err) {
       return { error: errorMessage(err) };
     }
     try {
       const view = await encryptionView({
-        data: doc.extracted.data,
+        data: own.data,
         refs: resolved.schemas,
         validator,
         key: currentKey,
+        locate,
       });
       for (const field of fields) {
         const at = pointerOf(field);
@@ -584,7 +696,11 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         if (d != null) stamped[field] = d.value;
       }
       const marks = await validator.markedPointers(stamped, resolved.schemas);
-      return { data: view.data, marked: [...new Set([...view.marked, ...marks])] };
+      const prefs = new Map<string, FieldLocation>();
+      for (const [key, p] of await validator.locationPreferences(stamped, resolved.schemas)) {
+        prefs.set(key, p.location);
+      }
+      return { data: view.data, marked: [...new Set([...view.marked, ...marks])], locate, prefs };
     } catch (err) {
       if (err instanceof EncryptionRefusal) throw err;
       // As in `validate` and `fill`: a schema the document chose failing to
@@ -618,12 +734,63 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     return holder[field];
   };
 
+  const stale = (f: DerivedField): boolean => f.status === "stale" || f.status === "unset";
+
+  // ---- Location (0047): a field that prefers external metadata -------------
+  // A stale or unset field whose schema prefers external metadata, and which
+  // no manifest owns, is offered a manifest on a terminal (P1) before anything
+  // is written. A yes relocates, and the run re-reads what the move changed.
+  // Otherwise the value goes to the page, and W1 or W2 says so afterwards.
+  const ctx = relocationContext(runConfig, {
+    cwd,
+    targets: fromCollections ? [] : typedInputs,
+    validator,
+    ...(opts.noConfig === true ? { noConfig: true } : {}),
+    ...(opts.env !== undefined ? { env: opts.env } : {}),
+    ...(noticeOnce !== undefined ? { onNotice: noticeOnce } : {}),
+  });
+  const externalWrites = async (): Promise<ExternalWrite[]> => {
+    const out: ExternalWrite[] = [];
+    for (const doc of prepared.loaded.values()) {
+      const record = prepared.derived.records.get(doc.label);
+      const marks = await markFields(doc, record);
+      if ("error" in marks) continue;
+      for (const field of fields) {
+        if (field === PROVENANCE_FIELD || marks.prefs.get(field) !== "external") continue;
+        if (!stale(compareDerived(field, marks.data[field], record?.fields[field]))) continue;
+        const home = await keyHome(ctx, doc.label, doc.extracted.data, field);
+        if (home.kind === "unowned") out.push({ label: doc.label, key: field, home: home.home });
+      }
+    }
+    return out;
+  };
+  // `--check` judges; it neither asks nor warns about where a write would go.
+  let flagged = check ? [] : await externalWrites();
+  if (flagged.length > 0 && !dryRun && opts.confirm !== undefined) {
+    const applied = await offerExternalHomes(ctx, flagged, {
+      confirm: opts.confirm,
+      ...(opts.onNotice !== undefined ? { onNotice: opts.onNotice } : {}),
+      ...(opts.onRelocated !== undefined ? { onRelocated: opts.onRelocated } : {}),
+    });
+    if (applied.size > 0) {
+      configDir = ctx.configDir ?? configDir;
+      prepared = await prepare();
+      flagged = flagged.filter((w) => !(w.home.kind === "collection" && applied.has(w.home.collection)));
+    }
+  }
+  const { loaded, errors, places, derived } = prepared;
+
   // ---- Compare, and write ----------------------------------------------------
-  /** Each manifest this run writes, read once and spliced in memory (as cite holds them). */
-  const heldManifests = new Map<string, { path: string; before: string; text: string }>();
+  /**
+   * Each manifest this run writes, read once and spliced in memory (as cite
+   * holds them). `text` holds every committed edit; `written` is what is on disk.
+   */
+  const heldManifests = new Map<string, { path: string; written: string; text: string }>();
+  /** A field written into a manifest, whose line the report names once the manifest is settled. */
+  const lineRequests: { field: DerivedField; absPath: string; entry: string; join: string }[] = [];
   const holdManifest = async (
-    manifest: ProvenanceManifest,
-  ): Promise<{ path: string; before: string; text: string }> => {
+    manifest: Pick<ProvenanceManifest, "absPath" | "file">,
+  ): Promise<{ path: string; written: string; text: string }> => {
     const already = heldManifests.get(manifest.absPath);
     if (already !== undefined) return already;
     let before: string;
@@ -632,184 +799,298 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     } catch (err) {
       throw new DocmetaError(`Manifest ${manifest.file} could not be read: ${errorMessage(err)}`);
     }
-    const held = { path: manifest.absPath, before, text: before };
+    const held = { path: manifest.absPath, written: before, text: before };
     heldManifests.set(manifest.absPath, held);
     return held;
   };
   const results: DeriveFileResult[] = [];
-  for (const label of files) {
-    const failure = errors.get(label);
-    if (failure) {
-      results.push(errorResult(label, failure.format, failure.message, check));
-      continue;
-    }
-    const doc = loaded.get(label);
-    /* c8 ignore next -- every file is in exactly one of the two maps. */
-    if (!doc) continue;
-
-    const record = derived.records.get(label);
-    // A marked field (0045) is compared by its plaintext, stamped encrypted,
-    // and reported as `(encrypted)`, as `fill` and `query` report one.
-    const marks = await markFields(doc, record);
-    if ("error" in marks) {
-      results.push(errorResult(label, doc.format, marks.error, check));
-      continue;
-    }
-    const isMarked = (field: string): boolean => {
-      const at = pointerOf(field);
-      return marks.marked.some((p) => isAtOrUnder(p, at));
-    };
-    // Proposal 0046: `provenance` is judged range by range against the
-    // record wherever it lives, never by `compareDerived`.
-    const place = places.get(label);
-    const provenance = wantsProvenance
-      ? judgeProvenance(stampOf(doc), derived.provenance?.get(label), record?.fields[PROVENANCE_FIELD] ?? null, place)
-      : undefined;
-    const compared = fields.map((field) =>
-      field === PROVENANCE_FIELD && provenance !== undefined
-        ? provenance.field
-        : compareDerived(field, marks.data[field], record?.fields[field]),
-    );
-    // Read when reporting, after `written` is set on `compared` below.
-    const shown = (): DerivedField[] =>
-      compared.map((f) =>
-        f.field !== PROVENANCE_FIELD && isMarked(f.field) ? redactedDerived(f) : f,
-      );
-    const findingsOf = (reported: readonly DerivedField[]): FieldError[] =>
-      reported.flatMap((f) =>
-        f.field === PROVENANCE_FIELD && provenance?.judged !== undefined
-          ? provenanceFindings(provenance.judged.comparisons, provenance.judged.derivation.page.bodyLine)
-          : staleFindings([f], doc.extracted.lineFor),
-      );
-    if (
-      provenance?.judged !== undefined &&
-      flagGeneratedBy !== undefined &&
-      doc.attribution === undefined &&
-      ![...provenance.judged.derivation.evidenceByLine.values()].some((e) => e.rule === 1)
-    ) {
-      opts.onNotice?.(
-        `${label}: no uncommitted body lines; --generated-by attributes only what is not yet committed.`,
-      );
-    }
-    const stale = (f: DerivedField): boolean => f.status === "stale" || f.status === "unset";
-    // A manifest-held record is written into the manifest, not the page.
-    const toManifest =
-      provenance !== undefined && place !== undefined && stale(provenance.field) ? provenance : undefined;
-    const pending = compared.filter((f) => stale(f) && !(f.field === PROVENANCE_FIELD && toManifest !== undefined));
-    const onPage = pending.find((f) => f.field === PROVENANCE_FIELD);
-    // Stress test 8: where the metadata is part of the body, a stamp on the
-    // page would change the very lines it pins.
-    if (onPage !== undefined && !provenanceFenced(doc.extracted)) {
-      results.push(
-        errorResult(
-          label,
-          doc.format,
-          `provenance cannot be stamped into the page: in the "${doc.format}" format the metadata is part of the body it pins. Keep provenance in an externalMetadata manifest.`,
-          check,
-          shown(),
-        ),
-      );
-      continue;
-    }
-    // `changed` is what the writer would do, not what the comparison found:
-    // as in `fill`, the patch is applied and the result compared with the
-    // document, so a field is `written` only when bytes went to disk. Under
-    // `dryRun` the same patch is computed and nothing is written.
-    let changed = false;
-    if (toManifest?.judged !== undefined && place !== undefined) {
-      const held = await holdManifest(place.manifest);
-      const before = held.text;
-      const where = { entry: place.entry, key: PROVENANCE_FIELD, join: place.join, file: place.manifest.file };
-      // An empty record is no record, as on the page: `provenance` has
-      // `minItems: 1`, so the key leaves the entry rather than holding `[]`.
-      held.text =
-        toManifest.judged.plan.length === 0
-          ? removeManifestKey(held.text, where).text
-          : spliceManifestValue(held.text, { ...where, value: toManifest.judged.plan }).text;
-      if (held.text !== before) {
-        changed = true;
-        if (!dryRun) markWritten(toManifest.field);
+  /** Save every held manifest a committed edit changed. */
+  const saveManifests = async (): Promise<void> => {
+    for (const held of heldManifests.values()) {
+      if (held.text !== held.written) {
+        await writeFileAtomic(held.path, held.text);
+        held.written = held.text;
       }
     }
-    if (pending.length > 0) {
-      // Same writer `fill` and `query` use, so a format they cannot write is
-      // refused here the same way — and refused loudly, as this file's error,
-      // rather than by leaving a stale stamp in place with exit 0. Under
-      // `check` a read-only format still gets its findings, since nothing was
-      // going to be written anyway.
-      if (typeof doc.apply !== "function") {
-        if (!dryRun) {
-          results.push(
-            errorResult(
-              label,
-              doc.format,
-              `The "${doc.format}" format is read-only; manni meta derive cannot write metadata back to it.`,
-              check,
-              shown(),
-            ),
-          );
-          continue;
+  };
+  // A run that aborts part-way (a declined key prompt on a later file) still
+  // saves the manifest edits of the pages it already wrote; a dry run saves
+  // nothing either way.
+  let settled = false;
+  try {
+    for (const label of files) {
+      const failure = errors.get(label);
+      if (failure) {
+        results.push(errorResult(label, failure.format, failure.message, check));
+        continue;
+      }
+      const doc = loaded.get(label);
+      /* c8 ignore next -- every file is in exactly one of the two maps. */
+      if (!doc) continue;
+
+      const record = derived.records.get(label);
+      // A marked field (0045) is compared by its plaintext, stamped encrypted,
+      // and reported as `(encrypted)`, as `fill` and `query` report one.
+      const marks = await markFields(doc, record);
+      if ("error" in marks) {
+        results.push(errorResult(label, doc.format, marks.error, check));
+        continue;
+      }
+      const isMarked = (field: string): boolean => {
+        const at = pointerOf(field);
+        return marks.marked.some((p) => isAtOrUnder(p, at));
+      };
+      // Proposal 0046: `provenance` is judged range by range against the
+      // record wherever it lives, never by `compareDerived`.
+      const place = places.get(label);
+      const provenance = wantsProvenance
+        ? judgeProvenance(stampOf(doc), derived.provenance?.get(label), record?.fields[PROVENANCE_FIELD] ?? null, place)
+        : undefined;
+      const compared = fields.map((field) =>
+        field === PROVENANCE_FIELD && provenance !== undefined
+          ? provenance.field
+          : compareDerived(field, marks.data[field], record?.fields[field]),
+      );
+      // Read when reporting, after `written` is set on `compared` below.
+      const shown = (): DerivedField[] =>
+        compared.map((f) =>
+          f.field !== PROVENANCE_FIELD && isMarked(f.field) ? redactedDerived(f) : f,
+        );
+      const findingsOf = (reported: readonly DerivedField[]): FieldError[] =>
+        reported.flatMap((f) =>
+          f.field === PROVENANCE_FIELD && provenance?.judged !== undefined
+            ? provenanceFindings(provenance.judged.comparisons, provenance.judged.derivation.page.bodyLine)
+            : staleFindings([f], doc.extracted.lineFor, marks.locate),
+        );
+      if (
+        provenance?.judged !== undefined &&
+        flagGeneratedBy !== undefined &&
+        doc.attribution === undefined &&
+        ![...provenance.judged.derivation.evidenceByLine.values()].some((e) => e.rule === 1)
+      ) {
+        opts.onNotice?.(
+          `${label}: no uncommitted body lines; --generated-by attributes only what is not yet committed.`,
+        );
+      }
+      // A manifest-held record is written into the manifest, not the page.
+      const toManifest =
+        provenance !== undefined && place !== undefined && stale(provenance.field) ? provenance : undefined;
+      const due = compared.filter((f) => stale(f) && !(f.field === PROVENANCE_FIELD && toManifest !== undefined));
+      // Proposal 0047: a field a manifest of the page's collections owns is
+      // written into the page's entry there, whatever its schema prefers; the
+      // config's ownership decides where a write lands. A URL manifest cannot
+      // be written, and a field join the page lacks has no entry to write to.
+      const toEntries: { f: DerivedField; home: Extract<KeyHome, { kind: "manifest" }>; entry: string }[] = [];
+      let refusal: string | undefined;
+      for (const f of due) {
+        if (f.field === PROVENANCE_FIELD) continue;
+        const home = await keyHome(ctx, label, doc.extracted.data, f.field);
+        if (home.kind === "url") {
+          refusal = urlManifestMessage(f.field, home.file);
+          break;
         }
-        changed = true;
-      } else {
-        const patch: MetadataPatch = {};
-        const deletions: string[] = [];
-        for (const f of pending) {
-          if (f.field === PROVENANCE_FIELD) {
-            // An empty record is no record: `provenance` has `minItems: 1`.
-            if (Array.isArray(f.derived) && f.derived.length === 0) deletions.push(f.field);
-            else patch[f.field] = f.derived;
+        if (home.kind !== "manifest") continue;
+        if (home.entry === undefined) {
+          refusal = `${label} carries no ${home.join}, which ${home.file} joins on, so its ${f.field} has no entry there.`;
+          break;
+        }
+        f.destination = home.file;
+        toEntries.push({ f, home, entry: home.entry });
+      }
+      if (refusal !== undefined) {
+        results.push(errorResult(label, doc.format, refusal, check, shown()));
+        continue;
+      }
+      const pending = due.filter((f) => !toEntries.some((t) => t.f === f));
+      const onPage = pending.find((f) => f.field === PROVENANCE_FIELD);
+      // Stress test 8: where the metadata is part of the body, a stamp on the
+      // page would change the very lines it pins.
+      if (onPage !== undefined && !provenanceFenced(doc.extracted)) {
+        results.push(
+          errorResult(
+            label,
+            doc.format,
+            `provenance cannot be stamped into the page: in the "${doc.format}" format the metadata is part of the body it pins. Keep provenance in an externalMetadata manifest.`,
+            check,
+            shown(),
+          ),
+        );
+        continue;
+      }
+      // `changed` is what the writer would do, not what the comparison found:
+      // as in `fill`, the patch is applied and the result compared with the
+      // document, so a field is `written` only when bytes went to disk. Under
+      // `dryRun` the same patch is computed and nothing is written.
+      let changed = false;
+      // This file's manifest edits are staged over the held texts and committed
+      // only once its page write has succeeded (or it had none to make), so a
+      // file that fails contributes no manifest edit.
+      const staged = new Map<string, string>();
+      const stage = async (
+        manifest: Pick<ProvenanceManifest, "absPath" | "file">,
+        edit: (text: string) => string,
+      ): Promise<boolean> => {
+        const held = await holdManifest(manifest);
+        const before = staged.get(held.path) ?? held.text;
+        const after = edit(before);
+        staged.set(held.path, after);
+        return after !== before;
+      };
+      /** Fields a staged manifest edit writes, marked written at the commit. */
+      const manifestWritten: DerivedField[] = [];
+      const entryWritten: DerivedField[] = [];
+      if (toManifest?.judged !== undefined && place !== undefined) {
+        const where = { entry: place.entry, key: PROVENANCE_FIELD, join: place.join, file: place.manifest.file };
+        const plan = toManifest.judged.plan;
+        // An empty record is no record, as on the page: `provenance` has
+        // `minItems: 1`, so the key leaves the entry rather than holding `[]`.
+        const edited = await stage(place.manifest, (text) =>
+          plan.length === 0
+            ? removeManifestKey(text, where).text
+            : spliceManifestValue(text, { ...where, value: plan }).text,
+        );
+        if (edited) {
+          changed = true;
+          manifestWritten.push(toManifest.field);
+        }
+      }
+      try {
+        for (const { f, home, entry } of toEntries) {
+          const value = isMarked(f.field) ? await sealField(f.field, f.derived, marks.marked) : f.derived;
+          const edited = await stage(home, (text) =>
+            spliceManifestValue(text, {
+              entry,
+              key: f.field,
+              value,
+              join: home.join,
+              file: home.file,
+            }).text,
+          );
+          if (edited) {
+            changed = true;
+            manifestWritten.push(f);
+            entryWritten.push(f);
+          }
+        }
+      } catch (err) {
+        if (err instanceof EncryptionRefusal || !(err instanceof DocmetaError)) throw err;
+        results.push(errorResult(label, doc.format, err.message, check, shown()));
+        continue;
+      }
+      if (pending.length > 0) {
+        // Same writer `fill` and `query` use, so a format they cannot write is
+        // refused here the same way — and refused loudly, as this file's error,
+        // rather than by leaving a stale stamp in place with exit 0. Under
+        // `check` a read-only format still gets its findings, since nothing was
+        // going to be written anyway.
+        if (typeof doc.apply !== "function") {
+          if (!dryRun) {
+            results.push(
+              errorResult(
+                label,
+                doc.format,
+                `The "${doc.format}" format is read-only; manni meta derive cannot write metadata back to it.`,
+                check,
+                shown(),
+              ),
+            );
             continue;
           }
-          patch[f.field] = isMarked(f.field)
-            ? await sealField(f.field, f.derived, marks.marked)
-            : f.derived;
-        }
-        const apply = doc.apply;
-        const write = (value: MetadataPatch): string =>
-          apply(doc.content, value, {
-            filePath: label,
-            elements: doc.elements,
-            ...(deletions.length > 0 ? { deletions } : {}),
-          });
-        let next: string;
-        try {
-          next = write(patch);
-          // A page with no block yet gets one, and the writer may leave a
-          // blank line after it: the body then starts a line later, and every
-          // body line the stamp names moves with it.
-          const plan = patch[PROVENANCE_FIELD];
-          const shift = bodyShift(doc.content, next);
-          if (shift > 0 && Array.isArray(plan)) {
-            next = write({ ...patch, [PROVENANCE_FIELD]: shiftEntries(provenanceEntries(plan), shift) });
+          changed = true;
+        } else {
+          const patch: MetadataPatch = {};
+          const deletions: string[] = [];
+          for (const f of pending) {
+            if (f.field === PROVENANCE_FIELD) {
+              // An empty record is no record: `provenance` has `minItems: 1`.
+              if (Array.isArray(f.derived) && f.derived.length === 0) deletions.push(f.field);
+              else patch[f.field] = f.derived;
+              continue;
+            }
+            patch[f.field] = isMarked(f.field)
+              ? await sealField(f.field, f.derived, marks.marked)
+              : f.derived;
           }
-        } catch (err) {
-          results.push(errorResult(label, doc.format, errorMessage(err), check, shown()));
-          continue;
-        }
-        changed = changed || next !== doc.content;
-        if (next !== doc.content && !dryRun) {
-          await writeFileAtomic(doc.absPath, next);
-          for (const f of pending) markWritten(f);
+          const apply = doc.apply;
+          const write = (value: MetadataPatch): string =>
+            apply(doc.content, value, {
+              filePath: label,
+              elements: doc.elements,
+              ...(deletions.length > 0 ? { deletions } : {}),
+            });
+          let next: string;
+          try {
+            next = write(patch);
+            // A page with no block yet gets one, and the writer may leave a
+            // blank line after it: the body then starts a line later, and every
+            // body line the stamp names moves with it.
+            const plan = patch[PROVENANCE_FIELD];
+            const shift = bodyShift(doc.content, next);
+            if (shift > 0 && Array.isArray(plan)) {
+              next = write({ ...patch, [PROVENANCE_FIELD]: shiftEntries(provenanceEntries(plan), shift) });
+            }
+          } catch (err) {
+            results.push(errorResult(label, doc.format, errorMessage(err), check, shown()));
+            continue;
+          }
+          changed = changed || next !== doc.content;
+          if (next !== doc.content && !dryRun) {
+            await writeFileAtomic(doc.absPath, next);
+            for (const f of pending) markWritten(f);
+          }
         }
       }
-    }
 
-    const reported = shown();
-    results.push({
-      file: label,
-      format: doc.format,
-      fields: reported,
-      changed,
-      ...(check ? { findings: findingsOf(reported) } : {}),
-    });
+      // The page is written (or needed no write): commit this file's manifest
+      // edits to the held texts.
+      for (const [path, text] of staged) {
+        const held = heldManifests.get(path);
+        if (held !== undefined) held.text = text;
+      }
+      if (!dryRun) for (const f of manifestWritten) markWritten(f);
+
+      const reported = shown();
+      for (const { f, home, entry } of toEntries) {
+        const shownField = reported.find((r) => r.field === f.field);
+        if (shownField !== undefined && entryWritten.includes(f)) {
+          lineRequests.push({ field: shownField, absPath: home.absPath, entry, join: home.join });
+        }
+      }
+      results.push({
+        file: label,
+        format: doc.format,
+        fields: reported,
+        changed,
+        ...(check ? { findings: findingsOf(reported) } : {}),
+      });
+    }
+    settled = true;
+  } finally {
+    if (!dryRun && !settled) {
+      await saveManifests().catch(() => undefined);
+    }
   }
 
   // One write per manifest, after every page that touches it is settled.
   if (!dryRun) {
-    for (const held of heldManifests.values()) {
-      if (held.text !== held.before) await writeFileAtomic(held.path, held.text);
+    await saveManifests();
+    for (const req of lineRequests) {
+      const held = heldManifests.get(req.absPath);
+      const line = held === undefined ? undefined : manifestKeyLine(held.text, req.entry, req.field.field, req.join);
+      if (line !== undefined) req.field.destinationLine = line;
     }
+  }
+
+  // W1 and W2 (0047): a value its schema prefers in external metadata that
+  // went to the page, or would have. One line per collection, not per page.
+  if (flagged.length > 0) {
+    const landed = flagged.filter((w) => {
+      const r = results.find((x) => x.file === w.label);
+      const f = r?.fields.find((x) => x.field === w.key);
+      if (r === undefined || r.error !== undefined || f === undefined || f.destination !== undefined) return false;
+      return dryRun ? stale(f) && r.changed : f.written;
+    });
+    for (const line of externalWriteWarnings(landed, dryRun)) warn(line);
   }
 
   const summary = summarize(results);

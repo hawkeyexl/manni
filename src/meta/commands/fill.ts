@@ -18,7 +18,18 @@
  * report-only — it is never written into the document.
  */
 import { readFile } from "node:fs/promises";
-import { loadExternalMetadata, mergeExternalMetadata } from "../core/external-metadata.js";
+import {
+  loadExternalMetadata,
+  mergeExternalMetadata,
+  type MergedMetadata,
+} from "../core/external-metadata.js";
+import { keyHome, relocationContext, type KeyHome } from "../core/relocation.js";
+import {
+  externalWriteWarnings,
+  offerExternalHomes,
+  type ExternalWrite,
+} from "../core/location-writes.js";
+import { warn } from "../../shared/warn.js";
 import { memberOf, retainMembers } from "../core/collections.js";
 import { resolve, extname, join } from "node:path";
 import {
@@ -38,11 +49,12 @@ import {
 import {
   DocmetaError,
   type ApplyOptions,
+  type ExtractedMetadata,
   type FieldError,
   type MetadataExtractor,
   type MetadataPatch,
 } from "../types.js";
-import { resolveRunConfig, schemaTrustRoot } from "../core/config.js";
+import { resolveRunConfig, schemaTrustRoot, urlManifestMessage } from "../core/config.js";
 import {
   assertNonEmpty,
   gitignoreOptions,
@@ -62,7 +74,8 @@ import {
   FILE_SCHEMA_KEY,
   resolveElements,
 } from "../core/resolve-schema.js";
-import { loadSchema, schemaLoadOptions } from "../core/schema-registry.js";
+import { classifyRef, loadSchema, schemaLoadOptions } from "../core/schema-registry.js";
+import type { CollectionConfig } from "../../shared/collections.js";
 import { Validator, compileWithFormats } from "../core/validator.js";
 import { toJsonText } from "../core/json-text.js";
 import { writeFileAtomic } from "../core/write-file.js";
@@ -80,6 +93,7 @@ import {
 } from "../core/encrypted.js";
 import { encryptValue } from "../../shared/encryption.js";
 import { ensureEncryptionKey } from "../../shared/prompt.js";
+import { spliceManifestValue } from "../core/external-metadata-write.js";
 import {
   FILL_PROMPT_VERSION,
   FILL_SYSTEM_PROMPT,
@@ -185,6 +199,35 @@ function addUsage(
   };
 }
 
+/** A manifest a write lands in, with the page's entry there (proposal 0047). */
+type ManifestHome = Extract<KeyHome, { kind: "manifest" }> & { entry: string };
+
+/** One file read, validated and given its candidates, before any model request. */
+interface ReadyFile {
+  ready: true;
+  label: string;
+  content: string;
+  extractor: MetadataExtractor;
+  apply: NonNullable<MetadataExtractor["apply"]>;
+  elements: string[];
+  extracted: ExtractedMetadata;
+  merged: MergedMetadata;
+  schemaSet: string[];
+  schemas: Record<string, unknown>[];
+  view: EncryptionView;
+  managedSkips: FilledField[];
+  candidates: Candidate[];
+  inPlace: { key: string; pointer: string; value: unknown }[];
+  probeMarks: ReadonlySet<string>;
+  sealedCandidates: Candidate[];
+  /** Candidates a local manifest owns, and where each is written. */
+  destinations: ReadonlyMap<string, ManifestHome>;
+  /** Where `meta-provenance` lives for this page. */
+  metaHome: KeyHome | undefined;
+  /** Candidates that prefer external metadata and have no manifest. */
+  flags: ExternalWrite[];
+}
+
 /** What the cache stores: the raw, *pre-gating* proposal for one file. */
 interface CachedProposal {
   proposals: ProposalSet;
@@ -195,17 +238,19 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   const cwd = opts.cwd ?? process.cwd();
   // Explicit CLI inputs win, else config `paths:`; `base` is whichever of the
   // two directories those inputs were written relative to.
-  const { config, inputs, base, configDir, collections, fromCollections, configFile } =
-    await resolveRunConfig({
-      cwd,
-      configPath: opts.configPath,
-      noConfig: opts.noConfig,
-      inputs: opts.inputs,
-      ...(opts.collections !== undefined
-        ? { collections: opts.collections }
-        : {}),
-      onConfigLoaded: opts.onConfigLoaded,
-    });
+  const runConfig = await resolveRunConfig({
+    cwd,
+    configPath: opts.configPath,
+    noConfig: opts.noConfig,
+    inputs: opts.inputs,
+    ...(opts.collections !== undefined
+      ? { collections: opts.collections }
+      : {}),
+    onConfigLoaded: opts.onConfigLoaded,
+  });
+  const { config, inputs, base, collections, fromCollections, configFile } = runConfig;
+  // Reassigned when an accepted relocation (0047) creates the config file.
+  let configDir = runConfig.configDir;
   // How every schema in this run is loaded: the cross-run cache and
   // `--offline`. `fill` calls `loadSchema` directly as well as through the
   // validator, so both have to be handed the same settings.
@@ -415,14 +460,98 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   const turnsExhausted = (): boolean =>
     maxTurns != null && turnsUsed + inFlight >= maxTurns;
 
-  // External metadata (0037), read once per run. Merged so the schema sees
-  // one object; an owned key is never a fill candidate, since the manifest
-  // is the only place it may be written and fill does not write manifests.
-  const externalMetadata = await loadExternalMetadata(collections, {
-    configDir: configDir ?? cwd,
-    base,
-    offline: opts.offline ?? config?.offline ?? false,
+  // External metadata (0037), read once per run, and again after an accepted
+  // relocation (0047) declares a manifest. Merged so the schema sees one
+  // object; a candidate a local manifest owns is written into that manifest.
+  //
+  // Every declared collection's local manifests are read, not only the ones
+  // `--collection` selects: a write lands in whichever manifest owns the key
+  // for the page (0047), so what the page already holds, and the
+  // `meta-provenance` list a write extends, must be read from that manifest
+  // too. Otherwise a curated value in a collection the run left out reads as
+  // missing and is overwritten. A URL manifest of an unselected collection is
+  // not fetched: fill cannot write one, and refuses the file that would.
+  const mergedCollections = (): CollectionConfig[] => {
+    const selected = new Set(collections.map((c) => c.name));
+    return runConfig.declaredCollections.map((c) =>
+      selected.has(c.name)
+        ? c
+        : { ...c, externalMetadata: c.externalMetadata.filter((m) => classifyRef(m.file).kind !== "url") },
+    );
+  };
+  const loadManifests = () =>
+    loadExternalMetadata(mergedCollections(), {
+      configDir: configDir ?? cwd,
+      base,
+      offline: opts.offline ?? config?.offline ?? false,
+    });
+  /** The declared collections one label belongs to, for the merge. */
+  const mergeMembersFor = (label: string): string[] =>
+    memberOf(runConfig.declaredCollections, configDir ?? cwd, base, label);
+  let externalMetadata = await loadManifests();
+  // A schema notice names its file. Preparing runs again after an accepted
+  // relocation, and relocation reads the same schemas, so each is said once.
+  const noticed = new Set<string>();
+  const noticeOnce =
+    opts.onNotice === undefined
+      ? undefined
+      : (message: string): void => {
+          if (noticed.has(message)) return;
+          noticed.add(message);
+          opts.onNotice?.(message);
+        };
+  const ctx = relocationContext(runConfig, {
+    cwd,
+    targets: fromCollections ? [] : fileInputs,
+    validator,
+    ...(opts.noConfig === true ? { noConfig: true } : {}),
+    ...(opts.cliSchemas !== undefined && opts.cliSchemas.length > 0 ? { cliSchemas: opts.cliSchemas } : {}),
+    ...(opts.as !== undefined ? { as: opts.as } : {}),
+    ...(opts.respectGitignore !== undefined ? { respectGitignore: opts.respectGitignore } : {}),
+    ...(opts.env !== undefined ? { env: opts.env } : {}),
+    ...(noticeOnce !== undefined ? { onNotice: noticeOnce } : {}),
   });
+  /**
+   * Each manifest this run writes, read once and spliced in memory. It is
+   * saved after each file that changes it, once that file's page is written,
+   * so a run that aborts on a later file keeps the entries of the pages it
+   * already wrote. `written` is the text on disk; `saving` serializes the
+   * saves, each of which writes the latest text.
+   */
+  interface HeldManifest {
+    path: string;
+    text: string;
+    written: string;
+    saving: Promise<void>;
+  }
+  const heldManifests = new Map<string, HeldManifest>();
+  const holding = new Map<string, Promise<HeldManifest>>();
+  const saveManifest = (held: HeldManifest): Promise<void> => {
+    held.saving = held.saving.then(async () => {
+      const text = held.text;
+      if (text === held.written) return;
+      await writeFileAtomic(held.path, text);
+      held.written = text;
+    });
+    return held.saving;
+  };
+  const holdManifest = (home: { absPath: string; file: string }) => {
+    let held = holding.get(home.absPath);
+    if (held === undefined) {
+      held = readFile(home.absPath, "utf8").then(
+        (before) => {
+          const h: HeldManifest = { path: home.absPath, text: before, written: before, saving: Promise.resolve() };
+          heldManifests.set(home.absPath, h);
+          return h;
+        },
+        (err: unknown) => {
+          throw new DocmetaError(`Manifest ${home.file} could not be read: ${errorMessage(err)}`);
+        },
+      );
+      holding.set(home.absPath, held);
+    }
+    return held;
+  };
 
   // Proposal 0045. The key encrypted values are read and written with: the
   // configured one, resolved when first needed, or the one this run's prompt
@@ -463,11 +592,11 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     return encryptValue(value, await writeKey(pointer), META_CONTEXT);
   };
 
-  const processOne = async (
+  const prepareOne = async (
     label: string,
     content: string,
     extension: string,
-  ): Promise<FillFileResult> => {
+  ): Promise<FillFileResult | ReadyFile> => {
     const extractor = forcedExtractor ?? extractorForExtension(extension);
     if (!extractor) {
       return errorResult(
@@ -476,7 +605,8 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         `Unsupported file type "${extension}". Supported: ${supportedExtensions().join(", ")}. Use --as to override.`,
       );
     }
-    if (typeof extractor.apply !== "function") {
+    const apply = extractor.apply;
+    if (typeof apply !== "function") {
       return errorResult(
         label,
         extractor.name,
@@ -487,8 +617,9 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     // Resolved once per file. It walks every `overrides:` entry and dedupes,
     // and the three call sites below — extract, the write pre-flight, and the
     // write itself — all want the same answer for the same file.
-    // The collections this file belongs to, computed once per file: the merge
-    // and both resolution calls below ask the same question of it.
+    // The selected collections this file belongs to, computed once per file:
+    // both resolution calls below ask the same question of it. The merge
+    // reads every declared collection's manifests (see `loadManifests`).
     const members = membersFor(label);
     const elements = resolveElements(label, config, members);
 
@@ -499,7 +630,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         label,
         extractor.extract(content, label, { elements }),
         externalMetadata,
-        members,
+        mergeMembersFor(label),
         base,
         { encryptionKey: currentKey },
       );
@@ -523,7 +654,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         // gets written — if anything, a stronger reason to guard it.
         fileBase: cwd,
         trustRoot,
-        onNotice: opts.onNotice,
+        onNotice: noticeOnce,
       });
     } catch (err) {
       return errorResult(label, extractor.name, errorMessage(err));
@@ -593,28 +724,46 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         skipReason: "managed",
       }));
     const candidates = proposed.filter((c) => !managed.has(c.key));
-    // Readable, loudly unwritable (0037 rule 6): a candidate a manifest owns
-    // could only be satisfied by editing the manifest, which fill does not
-    // do — and writing it into the document would be the one thing 0018
-    // forbids. Refused for the file rather than skipped, so a missing private
-    // key is never quietly left missing.
-    // One owner is enough to refuse, and naming the first is the whole
-    // message: a key two of this file's collections own is a run-time error
-    // (0041 rule 5) long before fill picks candidates.
-    const ownedCandidates = externalMetadata
-      ? candidates.flatMap((c) => {
-          const owner = externalMetadata.owners.get(c.key)?.[0];
-          return owner === undefined ? [] : [{ key: c.key, file: owner.file }];
-        })
-      : [];
-    const firstOwned = ownedCandidates[0];
-    if (firstOwned) {
-      return errorResult(
-        label,
-        extractor.name,
-        `"${firstOwned.key}" is owned by manifest ${firstOwned.file}; manni meta fill cannot write a manifest key. Add it to the manifest instead.`,
-        schemaSet,
-      );
+    // Proposal 0047: a candidate a manifest of this page's collections owns
+    // is written into the page's entry there. A URL manifest cannot be
+    // written, and a field join the page lacks has no entry, so either
+    // refuses the file before any model request. A candidate its schema
+    // prefers in external metadata that no manifest owns is flagged, for the
+    // P1 offer or the W1 and W2 warnings. `meta-provenance` follows its own
+    // location the same way, and never fails the file.
+    const destinations = new Map<string, ManifestHome>();
+    const flags: ExternalWrite[] = [];
+    let metaHome: KeyHome | undefined;
+    if (label !== "<stdin>" && candidates.length > 0) {
+      const located: Record<string, unknown> = { ...view.data };
+      for (const c of candidates) {
+        if (!Object.hasOwn(located, c.key)) located[c.key] = "";
+      }
+      if (!Object.hasOwn(located, META_PROVENANCE_KEY)) located[META_PROVENANCE_KEY] = [];
+      const prefs = await validator.locationPreferences(located, schemaSet);
+      for (const key of [...candidates.map((c) => c.key), META_PROVENANCE_KEY]) {
+        const home = await keyHome(ctx, label, extracted.data, key);
+        const meta = key === META_PROVENANCE_KEY;
+        if (meta) metaHome = home;
+        if (home.kind === "url") {
+          if (meta) continue;
+          return errorResult(label, extractor.name, urlManifestMessage(key, home.file), schemaSet);
+        }
+        if (home.kind === "manifest") {
+          if (home.entry === undefined) {
+            if (meta) continue;
+            return errorResult(
+              label,
+              extractor.name,
+              `${label} carries no ${home.join}, which ${home.file} joins on, so its ${key} has no entry there.`,
+              schemaSet,
+            );
+          }
+          if (!meta) destinations.set(key, { ...home, entry: home.entry });
+          continue;
+        }
+        if (prefs.get(key)?.location === "external") flags.push({ label, key, home: home.home });
+      }
     }
     // Proposal 0045: which of this file's writes must be encrypted. A valid
     // value the page holds in plain text in a marked property is encrypted
@@ -657,11 +806,54 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     // metadata syntax, and finding that out afterwards means the call is
     // billed for a file that could never have been written.
     try {
-      extractor.apply(content, {}, { filePath: label, elements });
+      apply(content, {}, { filePath: label, elements });
     } catch (err) {
       return errorResult(label, extractor.name, errorMessage(err), schemaSet);
     }
 
+    return {
+      ready: true,
+      label,
+      content,
+      extractor,
+      apply,
+      elements,
+      extracted,
+      merged,
+      schemaSet,
+      schemas,
+      view,
+      managedSkips,
+      candidates,
+      inPlace,
+      probeMarks,
+      sealedCandidates,
+      destinations,
+      metaHome,
+      flags,
+    };
+  };
+
+  const finishOne = async (ready: ReadyFile): Promise<FillFileResult> => {
+    const {
+      label,
+      content,
+      extractor,
+      apply,
+      elements,
+      extracted,
+      merged,
+      schemaSet,
+      schemas,
+      view,
+      managedSkips,
+      candidates,
+      inPlace,
+      probeMarks,
+      sealedCandidates,
+      destinations,
+      metaHome,
+    } = ready;
     // The key before the first model request, so a refused prompt never
     // wastes a paid run. A dry run writes nothing, so it needs no key.
     const firstSealed =
@@ -928,22 +1120,26 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     // here fails the file: a side record that could block filling would be
     // worse than none.
     let metaProvenance: MetaProvenanceReport | undefined;
+    /** The `meta-provenance` list, when a manifest owns it (0047). */
+    let metaWrite: { value: unknown; home: ManifestHome } | undefined;
     if (writable.length > 0) {
-      // Only a manifest in one of this page's own collections owns it here.
-      const owner = externalMetadata?.owners
-        .get(META_PROVENANCE_KEY)
-        ?.find((o) => members.includes(o.collection));
+      const metaManifest = metaHome?.kind === "manifest" ? metaHome : undefined;
+      const metaEntry = metaManifest?.entry;
+      // The merged metadata: the manifest's list when one owns the key.
       const merged =
-        owner === undefined
-          ? mergeMetaProvenance(
+        metaHome?.kind === "url" || (metaManifest !== undefined && metaEntry === undefined)
+          ? undefined
+          : mergeMetaProvenance(
               extracted.data[META_PROVENANCE_KEY],
               identity.model,
               "fields",
               writable.map((f) => ({ name: f.field, confidence: f.confidence })),
-            )
-          : undefined;
-      if (owner !== undefined) {
-        metaProvenance = { written: false, skipReason: "manifest-owned", manifest: owner.file };
+            );
+      if (metaHome?.kind === "url") {
+        metaProvenance = { written: false, skipReason: "manifest-owned", manifest: metaHome.file };
+      } else if (metaManifest !== undefined && metaEntry === undefined) {
+        // A field join the page lacks: the manifest has no entry to hold it.
+        metaProvenance = { written: false, skipReason: "unwritable" };
       } else if (
         merged === undefined ||
         (await addsFindings(
@@ -959,23 +1155,45 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         // `additionalProperties`, `unevaluatedProperties` and `propertyNames`
         // report, so the entry is checked on its own.
         metaProvenance = { written: false, skipReason: "schema-mismatch" };
+      } else if (metaManifest !== undefined && metaEntry !== undefined) {
+        metaWrite = { value: merged.list, home: { ...metaManifest, entry: metaEntry } };
+        metaProvenance = {
+          written: true,
+          entry: { ...merged.entry, fields: merged.names },
+          destination: metaManifest.file,
+        };
       } else {
         patch[META_PROVENANCE_KEY] = merged.list;
         metaProvenance = { written: true, entry: { ...merged.entry, fields: merged.names } };
       }
     }
 
+    // Proposal 0047: a value a manifest owns leaves the page's patch for the
+    // page's entry in that manifest, ciphertext and all.
+    const entryWrites: { key: string; value: unknown; home: ManifestHome }[] = [];
+    for (const f of fields) {
+      const key = keyOf(f);
+      const home = destinations.get(key);
+      if (!f.written || home === undefined || !Object.hasOwn(patch, key)) continue;
+      entryWrites.push({ key, value: patch[key], home });
+      f.destination = home.file;
+    }
+    if (metaWrite !== undefined) entryWrites.push({ key: META_PROVENANCE_KEY, ...metaWrite });
+    const pagePatch: MetadataPatch = Object.fromEntries(
+      Object.entries(patch).filter(([key]) => !destinations.has(key)),
+    );
+
     let next: string;
     try {
-      next = extractor.apply(content, patch, {
+      next = apply(content, pagePatch, {
         filePath: label,
         elements,
       });
     } catch (err) {
       // A format whose writer cannot hold the entry (an HTML attribute holds
       // one line) still gets its fields.
-      const withoutEntry = metaProvenance?.written === true
-        ? tryApply(extractor, content, withoutKey(patch, META_PROVENANCE_KEY), {
+      const withoutEntry = metaProvenance?.written === true && metaWrite === undefined
+        ? tryApply(extractor, content, withoutKey(pagePatch, META_PROVENANCE_KEY), {
             filePath: label,
             elements,
           })
@@ -993,9 +1211,61 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       metaProvenance = { written: false, skipReason: "unwritable" };
     }
 
-    const changed = next !== content;
-    if (changed && !dryRun && label !== "<stdin>") {
+    // Every manifest this file writes is held first. The splices are computed
+    // once to refuse the file before its page is written, then again over the
+    // held text once the page is: from that splice to the commit nothing
+    // awaits, so no other file's splice can interleave, and a page that was
+    // never written leaves no entry behind.
+    const helds = await Promise.all(entryWrites.map((w) => holdManifest(w.home)));
+    const splice = (): Map<string, string> => {
+      const texts = new Map<string, string>();
+      for (const [i, w] of entryWrites.entries()) {
+        const held = helds[i];
+        /* c8 ignore next -- one hold per write, by construction. */
+        if (held === undefined) continue;
+        const text = texts.get(held.path) ?? held.text;
+        texts.set(
+          held.path,
+          spliceManifestValue(text, {
+            entry: w.home.entry,
+            key: w.key,
+            value: w.value,
+            join: w.home.join,
+            file: w.home.file,
+          }).text,
+        );
+      }
+      return texts;
+    };
+    let manifestChanged = false;
+    try {
+      manifestChanged = [...splice()].some(([path, text]) => heldManifests.get(path)?.text !== text);
+    } catch (err) {
+      if (!(err instanceof DocmetaError)) throw err;
+      return errorResult(label, extractor.name, err.message, schemaSet, fields);
+    }
+
+    const changed = next !== content || manifestChanged;
+    if (next !== content && !dryRun && label !== "<stdin>") {
       await writeFileAtomic(resolve(base, label), next);
+    }
+    if (manifestChanged) {
+      let texts: Map<string, string>;
+      try {
+        texts = splice();
+      } catch (err) {
+        /* c8 ignore next 2 -- the same splices succeeded before the page write. */
+        if (!(err instanceof DocmetaError)) throw err;
+        return errorResult(label, extractor.name, err.message, schemaSet, fields);
+      }
+      const saves: Promise<void>[] = [];
+      for (const [path, text] of texts) {
+        const held = heldManifests.get(path);
+        if (held === undefined || held.text === text) continue;
+        held.text = text;
+        if (!dryRun) saves.push(saveManifest(held));
+      }
+      await Promise.all(saves);
     }
     return {
       file: label,
@@ -1009,25 +1279,65 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   };
 
   // ---- Drive ---------------------------------------------------------------
-  const results: FillFileResult[] = [];
-  if (usingStdin) {
-    results.push(
-      await processOne(
-        "<stdin>",
-        opts.stdinContent ?? "",
-        forcedExtractor?.extensions[0] ?? "",
-      ),
-    );
+  // Files are prepared and inferred in parallel — one network round trip each
+  // would make a large retrofit unusable in series — but collected by index so
+  // the report is deterministic regardless of completion order. Preparing
+  // reads, validates and picks candidates and spends no model request, so
+  // P1 (0047) is asked between the two, before the first request.
+  const prepareAll = async (): Promise<{
+    stdin: FillFileResult | ReadyFile | undefined;
+    files: (FillFileResult | ReadyFile)[];
+  }> => ({
+    stdin: usingStdin
+      ? await prepareOne("<stdin>", opts.stdinContent ?? "", forcedExtractor?.extensions[0] ?? "")
+      : undefined,
+    files: await mapConcurrent(files, concurrency, async (file) => {
+      const content = await readFile(resolve(base, file), "utf8");
+      return prepareOne(file, content, extname(file));
+    }),
+  });
+  const flagsOf = (all: (FillFileResult | ReadyFile)[]): ExternalWrite[] =>
+    all.flatMap((p) => ("ready" in p ? p.flags : []));
+  let prepared = await prepareAll();
+  let flagged = flagsOf(prepared.files);
+  if (flagged.length > 0 && !dryRun && opts.confirm !== undefined) {
+    const applied = await offerExternalHomes(ctx, flagged, {
+      confirm: opts.confirm,
+      ...(opts.onNotice !== undefined ? { onNotice: opts.onNotice } : {}),
+      ...(opts.onRelocated !== undefined ? { onRelocated: opts.onRelocated } : {}),
+    });
+    if (applied.size > 0) {
+      configDir = ctx.configDir ?? configDir;
+      externalMetadata = await loadManifests();
+      prepared = await prepareAll();
+      flagged = flagsOf(prepared.files);
+    }
   }
 
-  // Files are inferred in parallel — one network round trip each would make a
-  // large retrofit unusable in series — but collected by index so the report is
-  // deterministic regardless of completion order.
-  const fileResults = await mapConcurrent(files, concurrency, async (file) => {
-    const content = await readFile(resolve(base, file), "utf8");
-    return processOne(file, content, extname(file));
-  });
-  results.push(...fileResults);
+  const finish = (p: FillFileResult | ReadyFile): Promise<FillFileResult> =>
+    "ready" in p ? finishOne(p) : Promise.resolve(p);
+  const results: FillFileResult[] = [];
+  if (prepared.stdin !== undefined) results.push(await finish(prepared.stdin));
+  results.push(...(await mapConcurrent(prepared.files, concurrency, finish)));
+
+  // Each manifest was saved after each file that changed it; wait for the
+  // last save of each.
+  await Promise.all([...heldManifests.values()].map((held) => held.saving));
+
+  // W1 and W2 (0047): a value its schema prefers in external metadata that
+  // went to the page, or would have. One line per collection, not per page.
+  if (flagged.length > 0) {
+    const landed = flagged.filter((w) => {
+      const r = results.find((x) => x.file === w.label);
+      if (r === undefined || r.error !== undefined) return false;
+      if (w.key === META_PROVENANCE_KEY) {
+        return r.metaProvenance?.written === true && r.metaProvenance.destination === undefined;
+      }
+      const f = r.fields.find((x) => keyOf(x) === w.key);
+      return f !== undefined && f.written && f.destination === undefined;
+    });
+    for (const line of externalWriteWarnings(landed, dryRun)) warn(line);
+  }
 
   return {
     results,

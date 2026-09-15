@@ -324,7 +324,7 @@ describe("runDerive", () => {
         "  - name: site",
         '    paths: ["docs/**/*.md"]',
         "    externalMetadata:",
-        "      - file: ./owners.yaml",
+        "      - file: https://example.com/owners.yaml",
         "        keys: [owner]",
         "  - name: faq",
         '    paths: ["docs/faq.md"]',
@@ -337,7 +337,7 @@ describe("runDerive", () => {
       ].join("\n"),
     );
     const owned = new DocmetaError(
-      '"owner" is owned by the manifest ./owners.yaml on collection site; a managed field has one authority, and a manifest key already has one.',
+      '"owner" is owned by manifest https://example.com/owners.yaml, which is fetched and cannot be written; set it in that repository.',
     );
     await expect(
       runDerive({ inputs: [], cwd: dir, fields: ["owner"] }),

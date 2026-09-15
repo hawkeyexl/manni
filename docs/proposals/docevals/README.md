@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-> **Closed at 01045.** [Proposal 0047](../0047-docevals-domain.md) folded docevals into the manni family, and later docevals decisions go in the family series, `docs/proposals/NNNN-*.md`. The files below stay as the record. Their `status:` lines still follow the supersede rule, and no new ADR is added here. The conventions that follow describe the log as it was kept.
+> **Closed at 01045.** [Proposal 0048](../0048-docevals-domain.md) folded docevals into the manni family, and later docevals decisions go in the family series, `docs/proposals/NNNN-*.md`. The files below stay as the record. Their `status:` lines still follow the supersede rule, and no new ADR is added here. The conventions that follow describe the log as it was kept.
 
 Every **behavior change** in moose-docevals ships with an ADR here. The ADR records the intended behavior and the reasoning. Write it before or alongside the code, so it is the reviewable source of truth rather than an afterthought. The full rule lives in [CLAUDE.md](../CLAUDE.md#architecture-decision-records-required).
 
@@ -25,7 +25,7 @@ Numbering starts at `01000`. The `00001`–`00999` range holds decisions that pr
 | [01000](01000-publish-the-frontmatter-schema-from-this-repo.md) | Publish the frontmatter schema from this repo | superseded by [01009](01009-implement-the-docmeta-evals-vocabulary.md) |
 | [01001](01001-fill-proposes-llm-evals-with-confidence-gating.md) | `fill` proposes llm-graded evals with a confidence gate | superseded by [01011](01011-fill-writes-a-durable-provenance-trail.md) |
 | [01002](01002-take-inference-from-the-shared-library.md) | Take the inference layer from `@hawkeyexl/inference` | accepted |
-| [01003](01003-cuj-first-docs-site-and-content-strategy.md) | A CUJ-first documentation site, driven by a co-located content strategy | superseded by [0047](../0047-docevals-domain.md) |
+| [01003](01003-cuj-first-docs-site-and-content-strategy.md) | A CUJ-first documentation site, driven by a co-located content strategy | superseded by [0048](../0048-docevals-domain.md) |
 | [01004](01004-test-the-docs-through-moose-docevals-itself.md) | Test the docs site through moose-docevals itself, with committed cache fixtures | accepted |
 | [01005](01005-fix-the-doc-detective-adapter-invocation-and-finding-granularity.md) | Fix the Doc Detective adapter's invocation, failure detection, and finding granularity | accepted |
 | [01006](01006-publish-the-docs-site-to-github-pages.md) | Publish the docs site to GitHub Pages, gated on moose-docevals evaluating itself | accepted |

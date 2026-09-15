@@ -1,5 +1,5 @@
 ---
-status: "superseded by proposal 0047"
+status: "superseded by proposal 0048"
 date: 2026-08-03
 decision-makers: [hawkeyexl]
 ---

@@ -98,10 +98,10 @@ it from real call evidence when there are users, and expect it to change.
 
 A docevals decision goes in the family series, as a proposal under
 `docs/proposals/NNNN-*.md` in that series' format, like any other domain's.
-Proposal 0047 is the first.
+Proposal 0048 is the first.
 
 The imported ADR log, `docs/proposals/docevals/`, is **closed at 01045**
-(proposal 0047). It stays as the record, and the ADR numbers cited below still
+(proposal 0048). It stays as the record, and the ADR numbers cited below still
 resolve there. Do not add an ADR to it. When a new decision replaces one of
 its ADRs, the proposal says so. The ADR's `status:` line is then the only
 edit, under the root's supersede-never-amend rule.
@@ -321,7 +321,7 @@ and Node touch.
   spelling of one is an unknown key, and its message names the camelCase key.
   The entries under `evals:`, `criteria:` and `suites:` are the entries a page
   carries. So they keep the vocabulary's kebab-case, per ADR 01010 and
-  proposal 0047. The one boundary between that spelling and TypeScript's is
+  proposal 0048. The one boundary between that spelling and TypeScript's is
   `normalizeEvalDef` in `src/docevals/core/config.ts`. For any camelCase key
   in an entry, `parseConfig` names the kebab spelling it should have.
 - **`tool:docmeta` requires `options.schemas`** (ADR 01013). Passing

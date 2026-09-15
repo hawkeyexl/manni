@@ -6,6 +6,7 @@ import { beats as urlBeats, totalFrames as urlTotalFrames } from "./url/beats";
 import { beats as joinBeats, totalFrames as joinTotalFrames, TYPING_MS as joinTypingMs } from "./join/beats";
 import { beats as provenanceBeats, totalFrames as provenanceTotalFrames, TYPING_MS as provenanceTypingMs } from "./provenance/beats";
 import { beats as collectionsBeats, totalFrames as collectionsTotalFrames } from "./collections/beats";
+import { beats as locationBeats, totalFrames as locationTotalFrames, TYPING_MS as locationTypingMs } from "./location/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -18,6 +19,9 @@ const DemoCollections: React.FC = () => <DemoView beats={collectionsBeats} fontP
 
 /** provenance-pins-1x1: 23 px / 75 columns, derived in media/provenance-pins-1x1.script.md (media/capture-provenance/cols.mjs). */
 const DemoProvenance: React.FC = () => <DemoView beats={provenanceBeats} fontPx={23} linePx={32} cols={75} typingMs={provenanceTypingMs} />;
+
+/** field-location-1x1: 28 px / 61 columns, derived in media/field-location-1x1.script.md (media/capture-location/cols.mjs). */
+const DemoLocation: React.FC = () => <DemoView beats={locationBeats} fontPx={28} linePx={39} cols={61} typingMs={locationTypingMs} />;
 
 export const Root: React.FC = () => (
   <>
@@ -60,6 +64,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={provenanceTotalFrames}
+    />
+    <Composition
+      id="LocationDemo"
+      component={DemoLocation}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={locationTotalFrames}
     />
   </>
 );

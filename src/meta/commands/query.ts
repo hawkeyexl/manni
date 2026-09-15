@@ -10,6 +10,8 @@ import { existsSync } from "node:fs";
 import { mkdir, open, readFile, rename, rm } from "node:fs/promises";
 import type { CollectionConfig } from "../../shared/collections.js";
 import {
+  PATH_JOIN,
+  externalMetadataJoin,
   loadExternalMetadata,
   mergeExternalMetadata,
   type ExternalMetadataIndex,
@@ -126,6 +128,24 @@ import {
 import { ensureEncryptionKey, type Confirm } from "../../shared/prompt.js";
 import { parseDocument, isMap, isSeq, isScalar } from "yaml";
 import { errorMessage } from "../../shared/errors.js";
+import { warn } from "../../shared/warn.js";
+import {
+  removeManifestKey,
+  renameManifestEntry,
+  spliceManifestValue,
+} from "../core/external-metadata-write.js";
+import {
+  applyRelocation,
+  keyHome,
+  offerPrompt,
+  planRelocation,
+  relocationContext,
+  type KeyHome,
+  type ProposedHome,
+  type RelocateResult,
+  type RelocationContext,
+} from "../core/relocation.js";
+import { externalWriteWarning } from "../core/location-writes.js";
 
 export interface QueryOptions {
   /**
@@ -218,6 +238,11 @@ export interface QueryOptions {
    */
   confirm?: Confirm;
   /**
+   * Called with relocate's result when a write's P1 offer was accepted and
+   * the values moved (proposal 0047), so the CLI can print relocate's report.
+   */
+  onRelocated?: (result: RelocateResult) => void;
+  /**
    * The environment `MANNI_ENCRYPTION_KEY` is read from. Defaults to
    * `process.env`; tests pass their own.
    */
@@ -232,8 +257,13 @@ export interface QueryOptions {
  * key rename); file-level kinds carry the whole event (`cleared` — the block
  * stripped by DELETE; `created` — a file INSERT made; `renamed` — a `_path`
  * move). Exactly one kind per object.
+ *
+ * `manifest` (proposal 0047) names the external-metadata manifest the change
+ * lands in, as the run reports it, when it lands in one: an owned key's set,
+ * removal or rename, a created file's owned keys, a stripped document's
+ * entry, or a moved document's entry.
  */
-export type QueryChange = { file: string; written: boolean } & (
+export type QueryChange = { file: string; written: boolean; manifest?: string } & (
   | { key: string; from: unknown; to: unknown }
   | { key: string; from: unknown; deleted: true }
   | { key: string; renamedFrom: string; to: unknown }
@@ -337,6 +367,16 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
 
   // Explicit CLI inputs win, else config `paths:`; `base` is whichever of the
   // two directories those inputs were written relative to.
+  const runConfig = await resolveRunConfig({
+    cwd,
+    configPath: opts.configPath,
+    noConfig: opts.noConfig,
+    inputs: opts.inputs,
+    ...(opts.collections !== undefined
+      ? { collections: opts.collections }
+      : {}),
+    onConfigLoaded: opts.onConfigLoaded,
+  });
   const {
     config,
     inputs,
@@ -348,16 +388,7 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
     declaredCollections,
     fromCollections,
     configFile,
-  } = await resolveRunConfig({
-      cwd,
-      configPath: opts.configPath,
-      noConfig: opts.noConfig,
-      inputs: opts.inputs,
-      ...(opts.collections !== undefined
-        ? { collections: opts.collections }
-        : {}),
-      onConfigLoaded: opts.onConfigLoaded,
-    });
+  } = runConfig;
   /** The collections one label belongs to, computed once per file. */
   const membersFor = (label: string): string[] =>
     memberOf(collections, configDir ?? cwd, base, label);
@@ -454,6 +485,32 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
       )),
   };
 
+  // Proposal 0047. Where a written key lands (a local manifest that owns it,
+  // or the page), and the P1 offer for a value its schema prefers in external
+  // metadata with no manifest. The context is built on first use, so a read,
+  // or a write on a corpus with no manifests, pays nothing for it.
+  let relocation: RelocationContext | undefined;
+  const location: QueryLocation = {
+    context: () =>
+      (relocation ??= relocationContext(runConfig, {
+        cwd,
+        targets: opts.inputs,
+        validator: encryption.validator(),
+        noConfig: opts.noConfig ?? false,
+        ...(opts.schemas !== undefined && opts.schemas.length > 0 ? { cliSchemas: opts.schemas } : {}),
+        ...(opts.as !== undefined ? { as: opts.as } : {}),
+        ...(opts.respectGitignore !== undefined ? { respectGitignore: opts.respectGitignore } : {}),
+        ...(opts.env !== undefined ? { env: opts.env } : {}),
+        ...(opts.onNotice !== undefined ? { onNotice: opts.onNotice } : {}),
+      })),
+    // No question under stdin input or a dry run (0047 prompting rules).
+    ...(opts.confirm !== undefined && !usingStdin && opts.dryRun !== true
+      ? { confirm: opts.confirm }
+      : {}),
+    ...(opts.onRelocated !== undefined ? { onRelocated: opts.onRelocated } : {}),
+    offline: opts.offline ?? config?.offline ?? false,
+  };
+
   const readOne = (label: string, content: string, extension: string): void => {
     const extractor = forced ?? extractorForExtension(extension);
     if (!extractor) {
@@ -523,6 +580,7 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
     managed: new Set(config?.derive?.fields ?? []),
     onNotice: opts.onNotice,
     encryption,
+    location,
   });
   // The same frame `runValidate` returns, built from query's own run context:
   // fingerprints and canonical paths must not depend on where the command was
@@ -621,6 +679,20 @@ interface RunContext {
   onNotice?: (message: string) => void;
   /** Encrypted values (proposal 0045): the key, the prompt, the marks. */
   encryption: QueryEncryption;
+  /** Manifest-owned writes and the P1 offer (proposal 0047). */
+  location: QueryLocation;
+}
+
+/** What a run needs to route a write to a manifest, and to offer one (proposal 0047). */
+interface QueryLocation {
+  /** The relocation context `keyHome` and the P1 plan read, built on first use. */
+  context: () => RelocationContext;
+  /** P1's question. Absent off a terminal, under stdin input, and on a dry run. */
+  confirm?: Confirm;
+  /** Relocate's result, after an accepted P1 offer. */
+  onRelocated?: (result: RelocateResult) => void;
+  /** Whether a URL manifest is refused rather than fetched, for the reload after a relocation. */
+  offline: boolean;
 }
 
 /** What a run needs to read and write encrypted values (proposal 0045). */
@@ -1064,7 +1136,18 @@ async function runSql(
         ...buildChanges(diff, entries, sentinel, ctx, renameHints, booleanAdds),
       ];
       await sealMarkedWrites(changes, entries, ctx);
-      if (ctx.write) await applyChanges(changes, entries, ctx, schemaPlan);
+      // 0047: an owned key's write lands in its manifest. Planned once for
+      // its refusals (a URL manifest, a page with no join value, an owned
+      // RENAME COLUMN) before anything can be asked or written; then the
+      // P1 offer, which may move values and declare a manifest; then planned
+      // again against what the offer changed.
+      let manifestWrites = await planManifestEdits(changes, entries, ctx, renameHints);
+      const offered = await offerRelocation(changes, entries, ctx);
+      if (offered.relocated) {
+        manifestWrites = await planManifestEdits(changes, entries, ctx, renameHints);
+      }
+      if (ctx.write) await applyChanges(changes, entries, ctx, schemaPlan, manifestWrites);
+      for (const line of offered.warnings) warn(line);
       return { columns, rows, changes, ...(dbInfo ? { db: dbInfo } : {}) };
     };
 
@@ -2674,11 +2757,20 @@ function buildChanges(
     });
   }
 
-  // DELETE: a removed row strips the block. A file that had none is a no-op.
+  // DELETE: a removed row strips the block. A file that had none is a no-op,
+  // unless a manifest supplies its metadata: then its entry goes (0047).
   const extractorOf = new Map(entries.map((e) => [e.label, e.extractor]));
+  const ownOf = new Map(entries.map((e) => [e.label, e.own.data]));
   for (const file of diff.clearedRows) {
     const extracted = meta.get(file);
-    if (!extracted?.present) continue;
+    if (!extracted) continue;
+    if (!extracted.present) {
+      const own = ownOf.get(file) ?? {};
+      if (Object.keys(extracted.data).some((k) => !Object.hasOwn(own, k))) {
+        changes.push({ file, cleared: true, from: extracted.data, written: false });
+      }
+      continue;
+    }
     // Refused at plan time, not discovered at apply: this extraction did not
     // come from a fenced block — element-backed metadata, or an RST/AsciiDoc
     // file read through its native-header fallback — so there is nothing
@@ -2750,7 +2842,7 @@ function buildChanges(
     changes.push({ file: from, renamed: to, written: false });
   }
 
-  refuseExternalMetadataWrites(changes, entries, ctx);
+  refuseJoinFieldChanges(changes, entries, ctx);
   refuseManagedWrites(changes, entries, ctx);
   return changes;
 }
@@ -2814,69 +2906,24 @@ function validateNewPath(p: string, base: string): void {
  */
 
 /**
- * The first increment of external metadata is read-only (0037 rule 6): a write to a
- * key a manifest owns has exactly one honest destination, the manifest, and
- * writing it into the document instead would be the thing 0018 forbids. So
- * every change kind that would touch an owned key refuses at plan time, by
- * name, the way an RST native header does — and a document a manifest names
- * cannot be renamed out from under its entry.
+ * The join field of a document that matched a field entry (0039) cannot
+ * change: the entry would be orphaned, which the next corpus run reports. A
+ * `_path` move, by contrast, is exactly what a field join permits. Refused at
+ * plan time, before anything is written. Every other write to a key a
+ * manifest owns is planned into the manifest by `planManifestEdits` (0047).
  */
-function refuseExternalMetadataWrites(
+function refuseJoinFieldChanges(
   changes: readonly QueryChange[],
   entries: readonly QueryEntry[],
   ctx: RunContext,
 ): void {
   const index = ctx.externalMetadata;
   if (!index) return;
-  // One manifest is enough to refuse, and naming the first owner is the whole
-  // message: a key owned by two collections' manifests is a run-time error
-  // long before a write reaches here (0041 rule 5).
-  const owned = (key: string): string | undefined =>
-    index.owners.get(key)?.[0]?.file;
-  const refuse = (file: string, key: string, owner: string): never => {
-    throw new DocmetaError(
-      `"${file}": "${key}" is owned by manifest ${owner}; edit the manifest instead.`,
-    );
-  };
   const data = new Map(entries.map((e) => [e.label, e.extracted.data]));
   for (const c of changes) {
-    if ("schema" in c || "config" in c) continue;
-    if ("cleared" in c) {
-      // `data` is the *merged* object, so this refuses whenever the document
-      // is manifest-covered — a manifest supplies a key for it, or it carries
-      // an owned key itself — not only on a collision. Clearing a covered
-      // document would leave its manifest entry an orphan, which the next
-      // corpus run reports as exit 2; refusing here says so up front.
-      for (const key of Object.keys(data.get(c.file) ?? {})) {
-        const owner = owned(key);
-        if (owner !== undefined) refuse(c.file, key, owner);
-      }
-      continue;
-    }
-    if ("created" in c) {
-      for (const key of Object.keys(c.to)) {
-        const owner = owned(key);
-        if (owner !== undefined) refuse(c.file, key, owner);
-      }
-      continue;
-    }
-    if ("renamed" in c) {
-      const entry = index.byPath.get(resolve(ctx.base, c.file));
-      if (entry !== undefined && entry.size > 0) {
-        const manifest = [...entry.values()][0]?.file ?? "manifest";
-        throw new DocmetaError(
-          `"${c.file}": manifest ${manifest} names it; rename the manifest entry first.`,
-        );
-      }
-      continue;
-    }
+    if ("schema" in c || "config" in c || "cleared" in c || "created" in c || "renamed" in c) continue;
     const keys = "renamedFrom" in c ? [c.key, c.renamedFrom] : [c.key];
     for (const key of keys) {
-      const owner = owned(key);
-      if (owner !== undefined) refuse(c.file, key, owner);
-      // The join field of a document that matched a field entry (0039):
-      // changing it orphans the entry, which the next corpus run reports.
-      // A rename, by contrast, is exactly what a field join permits.
       const byValue = index.byField.get(key);
       if (byValue === undefined) continue;
       const raw = readableJoinValue(data.get(c.file)?.[key], ctx);
@@ -2895,6 +2942,511 @@ function refuseExternalMetadataWrites(
       }
     }
   }
+  // A join value this statement sets, or an INSERT gives a new page, that
+  // names an entry the document did not already match would take that entry
+  // over: the page would merge another document's values, and a write to an
+  // owned key would overwrite them.
+  for (const c of changes) {
+    if ("schema" in c || "config" in c || "cleared" in c || "renamed" in c || "deleted" in c) continue;
+    const set: [string, unknown][] = "created" in c ? Object.entries(c.to) : [[c.key, c.to]];
+    const members = ctx.memberships(c.file);
+    for (const [key, to] of set) {
+      const value = joinString(to);
+      if (value === undefined) continue;
+      if (!("created" in c) && joinString(readableJoinValue(data.get(c.file)?.[key], ctx)) === value) continue;
+      const taken = index.entries.find(
+        (e) => e.join === key && e.spelled === value && members.includes(e.collection),
+      );
+      if (taken !== undefined) {
+        throw new DocmetaError(
+          `"${c.file}": "${key}" "${value}" names the entry of another document in manifest ${taken.file}; choose another value.`,
+        );
+      }
+    }
+  }
+}
+
+/** The string a join field's value matches entries by, as the merge compares it. */
+function joinString(raw: unknown): string | undefined {
+  if (typeof raw === "string") return raw;
+  if (typeof raw === "number" || typeof raw === "boolean") return String(raw);
+  return undefined;
+}
+
+/**
+ * What a change does to its page once the keys a manifest owns are routed to
+ * the manifest (proposal 0047). Kept off the change objects, as the sealed
+ * values are, so `json` output never carries it. A change with no entry here
+ * writes its page the way it always did.
+ */
+interface PageOps {
+  patch: MetadataPatch;
+  deletions: string[];
+  /** A created file's page keys: the ones no manifest owns. */
+  created?: Record<string, unknown>;
+  /** Whether a DELETE strips the page's block; false when only manifest entries go. */
+  strip?: boolean;
+}
+
+const pageRoutes = new WeakMap<QueryChange, PageOps>();
+
+/** One manifest a statement edits: its new text, and the text that was computed from. */
+interface ManifestWrite {
+  path: string;
+  /** As the run reports it. */
+  display: string;
+  text: string;
+  expected: string;
+}
+
+/**
+ * Each written file's metadata as the statement leaves it: the merged data,
+ * with every set, removal and rename applied, or a created file's own.
+ */
+function postChangeData(
+  changes: readonly QueryChange[],
+  entries: readonly QueryEntry[],
+): Map<string, Record<string, unknown>> {
+  const original = new Map(entries.map((e) => [e.label, e.extracted.data]));
+  const out = new Map<string, Record<string, unknown>>();
+  for (const c of changes) {
+    if ("schema" in c || "config" in c || "cleared" in c || "renamed" in c) continue;
+    if ("created" in c) {
+      out.set(c.file, { ...c.to });
+      continue;
+    }
+    let data = out.get(c.file);
+    if (data === undefined) {
+      data = { ...(original.get(c.file) ?? {}) };
+      out.set(c.file, data);
+    }
+    if ("deleted" in c) {
+      Reflect.deleteProperty(data, c.key);
+      continue;
+    }
+    if ("renamedFrom" in c) Reflect.deleteProperty(data, c.renamedFrom);
+    data[c.key] = c.to;
+  }
+  return out;
+}
+
+/**
+ * Plan every manifest edit the statement makes (proposal 0047), in phase one:
+ * each change to a key a local manifest owns is routed to the document's
+ * entry, `pageRoutes` records what is left for the page, and `manifest` is set
+ * on the change. Every manifest's new text is computed, composed across the
+ * statement and read back by the writers; nothing is written.
+ *
+ * Refuses, before anything is written: any write a URL manifest would have to
+ * take (M6), an owned key on a field-joined page with no join value, an
+ * `ALTER TABLE … RENAME COLUMN` of an owned key (`keys:` would need renaming),
+ * and a `_path` move that takes a named document out of its manifest's
+ * collection.
+ */
+async function planManifestEdits(
+  changes: readonly QueryChange[],
+  entries: readonly QueryEntry[],
+  ctx: RunContext,
+  renameHints: readonly { from: string; to: string }[],
+): Promise<ManifestWrite[]> {
+  for (const c of changes) {
+    delete c.manifest;
+    pageRoutes.delete(c);
+  }
+  if (!ctx.declaredCollections.some((col) => col.externalMetadata.length > 0)) return [];
+  const loc = ctx.location.context();
+  const byLabel = new Map(entries.map((e) => [e.label, e]));
+  const after = postChangeData(changes, entries);
+  const ddlRenames = new Set(renameHints.map((h) => `${h.from}\0${h.to}`));
+
+  const homes = new Map<string, KeyHome>();
+  const homeOf = async (file: string, key: string, data: Readonly<Record<string, unknown>>): Promise<KeyHome> => {
+    const id = `${file}\0${key}`;
+    let home = homes.get(id);
+    if (home === undefined) {
+      home = await keyHome(loc, file, data, key);
+      homes.set(id, home);
+    }
+    return home;
+  };
+  const fetched: (key: string, url: string) => never = (key, url) => {
+    throw new DocmetaError(
+      `"${key}" is owned by manifest ${url}, which is fetched and cannot be written; set it in that repository.`,
+    );
+  };
+  type Owned = Extract<KeyHome, { kind: "manifest" }> & { entry: string };
+  /**
+   * The local manifest entry a key of `file` lives in, or undefined when the
+   * page holds it. `strict` refuses an owned key on a page with no join value,
+   * which a value being written needs; a removal only needs to know there is
+   * no entry to remove it from.
+   */
+  const owned = async (
+    file: string,
+    key: string,
+    data: Readonly<Record<string, unknown>>,
+    strict: boolean,
+  ): Promise<Owned | undefined> => {
+    if (file === STDIN_LABEL || key === FILE_SCHEMA_KEY) return undefined;
+    const home = await homeOf(file, key, data);
+    if (home.kind === "unowned") return undefined;
+    // The rows were merged from the selected collections' manifests only, so
+    // a manifest of a collection `--collection` left out was never read: a
+    // write there would act on a value the statement could not see.
+    if (!ctx.memberships(file).includes(home.collection)) {
+      throw new DocmetaError(
+        `"${file}": "${key}" is owned by manifest ${home.file} of collection ${home.collection}, which --collection leaves out; include it or edit the manifest.`,
+      );
+    }
+    if (home.kind === "url") return fetched(key, home.file);
+    if (home.entry === undefined) {
+      if (!strict) return undefined;
+      throw new DocmetaError(
+        `"${file}": "${key}" is owned by manifest ${home.file}, which joins on "${home.join}", and this document has no ${home.join}; set ${home.join} first.`,
+      );
+    }
+    return { ...home, entry: home.entry };
+  };
+
+  const texts = new Map<string, ManifestWrite>();
+  const edit = async (home: Owned, change: (text: string) => string): Promise<void> => {
+    let write = texts.get(home.absPath);
+    if (write === undefined) {
+      let text: string;
+      try {
+        text = await readFile(home.absPath, "utf8");
+      } catch (err) {
+        throw new DocmetaError(`Manifest ${home.file} could not be read: ${errorMessage(err)}`);
+      }
+      write = { path: home.absPath, display: home.file, text, expected: text };
+      texts.set(home.absPath, write);
+    }
+    write.text = change(write.text);
+  };
+  const where = (home: Owned): { entry: string; join: string; file: string } => ({
+    entry: home.entry,
+    join: home.join,
+    file: home.file,
+  });
+
+  // The local manifests of the collections `--collection` left out. The rows
+  // were merged without them, so the rename and DELETE handling below never
+  // sees their entries; loaded only when a statement moves or clears a page.
+  const selected = new Set(ctx.collections.map((col) => col.name));
+  let leftOut: Promise<ExternalMetadataIndex | null> | undefined;
+  /**
+   * An entry for `file` in a local manifest of a collection the file belongs
+   * to that `--collection` left out: a path entry, or with `joins` also a
+   * field entry the page's own join value matches. Moving the page would
+   * orphan a path entry, and stripping its block would orphan either.
+   */
+  const leftOutEntry = async (
+    file: string,
+    own: ExtractedMetadata | undefined,
+    joins: boolean,
+  ): Promise<{ file: string; collection: string } | undefined> => {
+    if (file === STDIN_LABEL) return undefined;
+    const excluded = memberOf(ctx.declaredCollections, ctx.configDir ?? ctx.cwd, ctx.base, file).filter(
+      (name) => !selected.has(name),
+    );
+    if (excluded.length === 0) return undefined;
+    leftOut ??= loadExternalMetadata(
+      ctx.declaredCollections
+        .filter((col) => !selected.has(col.name))
+        .map((col) => ({
+          ...col,
+          externalMetadata: col.externalMetadata.filter((m) => classifyRef(m.file).kind !== "url"),
+        })),
+      { configDir: ctx.configDir ?? ctx.cwd, base: ctx.base },
+    );
+    const index = await leftOut;
+    if (index === null) return undefined;
+    const abs = resolve(ctx.base, file);
+    const named = index.entries.find(
+      (e) => e.join === PATH_JOIN && e.abs === abs && excluded.includes(e.collection),
+    );
+    if (named !== undefined) return named;
+    if (!joins || own === undefined) return undefined;
+    return mergeExternalMetadata(file, own, index, excluded, ctx.base, { encryptionKey: ctx.encryption.key })
+      .joins[0];
+  };
+
+  for (const c of changes) {
+    if ("schema" in c || "config" in c) continue;
+    const entry = byLabel.get(c.file);
+    const own = entry?.own.data ?? {};
+
+    if ("cleared" in c || "renamed" in c) {
+      const cleared = "cleared" in c;
+      const named = await leftOutEntry(c.file, entry?.own, cleared);
+      if (named !== undefined) {
+        throw new DocmetaError(
+          `"${c.file}": manifest ${named.file} of collection ${named.collection} names it, which --collection leaves out; include it or ${cleared ? "remove" : "rename"} the entry first.`,
+        );
+      }
+    }
+
+    if ("cleared" in c) {
+      // Every key the document has: the ones a manifest supplies lose their
+      // entry with the block, and a URL manifest refuses.
+      for (const key of Object.keys(c.from)) {
+        const home = await owned(c.file, key, own, false);
+        if (home === undefined) continue;
+        c.manifest ??= home.file;
+        await edit(home, (t) => removeManifestKey(t, { ...where(home), key }).text);
+      }
+      pageRoutes.set(c, { patch: {}, deletions: [], strip: entry?.extracted.present === true });
+      continue;
+    }
+
+    if ("created" in c) {
+      const page: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(c.to)) {
+        const written = writtenValue(c, key, value);
+        const home = await owned(c.file, key, c.to, true);
+        if (home === undefined) {
+          page[key] = written;
+          continue;
+        }
+        c.manifest ??= home.file;
+        await edit(home, (t) => spliceManifestValue(t, { ...where(home), key, value: written }).text);
+      }
+      pageRoutes.set(c, { patch: {}, deletions: [], created: page });
+      continue;
+    }
+
+    if ("renamed" in c) {
+      // A path-joined manifest names the document by path: its entry moves
+      // with it. A field join has nothing to rename.
+      const supplied = ctx.externalMetadata?.byPath.get(resolve(ctx.base, c.file));
+      const seen = new Set<string>();
+      for (const [key, sv] of supplied ?? []) {
+        if (seen.has(sv.file) || !ctx.memberships(c.file).includes(sv.collection)) continue;
+        seen.add(sv.file);
+        const home = await homeOf(c.file, key, own);
+        if (home.kind === "url") {
+          throw new DocmetaError(
+            `"${c.file}": manifest ${home.file} names it, which is fetched and cannot be written; rename the entry in that repository.`,
+          );
+        }
+        if (home.kind !== "manifest" || home.join !== PATH_JOIN || home.entry === undefined) continue;
+        const moved = await keyHome(loc, c.renamed, own, key);
+        if (moved.kind !== "manifest" || moved.absPath !== home.absPath || moved.entry === undefined) {
+          throw new DocmetaError(
+            `"${c.file}" -> "${c.renamed}": manifest ${home.file} names it, and the new path is not a page of collection ${home.collection}; keep the move inside the collection, or edit the manifest first.`,
+          );
+        }
+        const from = { ...home, entry: home.entry };
+        const to = moved.entry;
+        c.manifest ??= home.file;
+        await edit(from, (t) => renameManifestEntry(t, { entry: from.entry, to, join: from.join, file: from.file }).text);
+      }
+      continue;
+    }
+
+    const data = after.get(c.file) ?? {};
+    const ops: PageOps = { patch: {}, deletions: [] };
+    const dropFromPage = (key: string): void => {
+      if (Object.hasOwn(own, key)) ops.deletions.push(key);
+    };
+
+    if ("renamedFrom" in c) {
+      if (ddlRenames.has(`${c.renamedFrom}\0${c.key}`)) {
+        for (const key of [c.renamedFrom, c.key]) {
+          const home = await homeOf(c.file, key, data);
+          if (home.kind !== "unowned") {
+            throw new DocmetaError(
+              `"${c.file}": "${key}" is owned by manifest ${home.file}; edit the manifest instead.`,
+            );
+          }
+        }
+      }
+      const source = await owned(c.file, c.renamedFrom, own, false);
+      if (source !== undefined) {
+        await edit(source, (t) => removeManifestKey(t, { ...where(source), key: c.renamedFrom }).text);
+      }
+      dropFromPage(c.renamedFrom);
+      const target = await owned(c.file, c.key, data, true);
+      const written = writtenValue(c, c.key, c.to);
+      if (target === undefined) {
+        ops.patch[c.key] = written;
+      } else {
+        await edit(target, (t) => spliceManifestValue(t, { ...where(target), key: c.key, value: written }).text);
+      }
+      const manifest = target?.file ?? source?.file;
+      if (manifest !== undefined) c.manifest = manifest;
+    } else if ("deleted" in c) {
+      const home = await owned(c.file, c.key, own, false);
+      if (home !== undefined) {
+        c.manifest = home.file;
+        await edit(home, (t) => removeManifestKey(t, { ...where(home), key: c.key }).text);
+      }
+      dropFromPage(c.key);
+    } else {
+      const home = await owned(c.file, c.key, data, true);
+      const written = writtenValue(c, c.key, c.to);
+      if (home === undefined) {
+        ops.patch[c.key] = written;
+      } else {
+        c.manifest = home.file;
+        await edit(home, (t) => spliceManifestValue(t, { ...where(home), key: c.key, value: written }).text);
+        // A page that carries the key too would still win at merge.
+        dropFromPage(c.key);
+      }
+    }
+    pageRoutes.set(c, ops);
+  }
+  return [...texts.values()].filter((w) => w.text !== w.expected);
+}
+
+/** One key a statement writes to a page that its schema prefers in external metadata, with no manifest. */
+interface Unhomed {
+  file: string;
+  key: string;
+  home: ProposedHome;
+  /** The page is one an INSERT creates, so it is not on disk for relocate to read. */
+  created: boolean;
+}
+
+/**
+ * The keys a statement writes whose schemas prefer external metadata and
+ * that no manifest owns (proposal 0047), with the home §3 would give each.
+ * Preferences are read over the data each file will hold, from the schema set
+ * `validate` would resolve for it. A field join's own field stays in the page.
+ */
+async function unhomedWrites(
+  changes: readonly QueryChange[],
+  entries: readonly QueryEntry[],
+  ctx: RunContext,
+): Promise<Unhomed[]> {
+  const written = new Map<string, { keys: string[]; created: boolean }>();
+  for (const c of changes) {
+    if (c.file === STDIN_LABEL) continue;
+    if ("schema" in c || "config" in c || "cleared" in c || "renamed" in c || "deleted" in c) continue;
+    const slot = written.get(c.file) ?? { keys: [], created: "created" in c };
+    slot.keys.push(...("created" in c ? Object.keys(c.to) : [c.key]).filter((k) => k !== FILE_SCHEMA_KEY));
+    written.set(c.file, slot);
+  }
+  if (written.size === 0) return [];
+  const after = postChangeData(changes, entries);
+  const original = new Map(entries.map((e) => [e.label, e.extracted.data]));
+  const loc = ctx.location.context();
+  const validator = ctx.encryption.validator();
+  const out: Unhomed[] = [];
+  for (const [file, w] of written) {
+    const data = after.get(file) ?? {};
+    const refs = resolveSchemaSetWithSource({
+      filePath: file,
+      fileSchema: w.created ? data[FILE_SCHEMA_KEY] : original.get(file)?.[FILE_SCHEMA_KEY],
+      cliSchemas: ctx.cliSchemas,
+      config: ctx.config,
+      memberOf: [...ctx.memberships(file)],
+      fileBase: ctx.cwd,
+      trustRoot: ctx.trustRoot,
+    }).schemas;
+    if (refs.length === 0) continue;
+    const prefs = await validator.locationPreferences(data, refs);
+    const joins = new Set(
+      memberOf(loc.declaredCollections, loc.configDir ?? ctx.cwd, ctx.base, file).flatMap((name) =>
+        (loc.declaredCollections.find((col) => col.name === name)?.externalMetadata ?? [])
+          .map((m) => externalMetadataJoin(m))
+          .filter((j) => j !== PATH_JOIN),
+      ),
+    );
+    for (const key of new Set(w.keys)) {
+      if (prefs.get(key)?.location !== "external" || joins.has(key)) continue;
+      const home = await keyHome(loc, file, data, key);
+      if (home.kind === "unowned") out.push({ file, key, home: home.home, created: w.created });
+    }
+  }
+  return out;
+}
+
+/**
+ * P1, then W1 and W2 (proposal 0047). On a terminal and not a dry run, each
+ * collection the unhomed keys would join is offered once; on yes relocate
+ * runs for those keys, over every member page, and the run's collections and
+ * manifests are brought up to date so the statement's write lands in the
+ * manifest. What is still unhomed afterwards (declined, off a terminal, a
+ * dry run, an INSERT's page with no page on disk yet, or no possible home)
+ * is written to the page, and the returned lines say so, one per collection.
+ */
+async function offerRelocation(
+  changes: readonly QueryChange[],
+  entries: readonly QueryEntry[],
+  ctx: RunContext,
+): Promise<{ relocated: boolean; warnings: string[] }> {
+  let unhomed = await unhomedWrites(changes, entries, ctx);
+  let relocated = false;
+  const { confirm } = ctx.location;
+  if (unhomed.length > 0 && ctx.write && confirm !== undefined) {
+    const loc = ctx.location.context();
+    const groups = new Map<string, Unhomed[]>();
+    for (const u of unhomed) {
+      if (u.home.kind !== "collection" || u.created) continue;
+      const group = groups.get(u.home.collection) ?? [];
+      group.push(u);
+      groups.set(u.home.collection, group);
+    }
+    for (const group of groups.values()) {
+      const require = new Map<string, string[]>();
+      for (const u of group) require.set(u.file, [...(require.get(u.file) ?? []), u.key]);
+      const plan = await planRelocation(loc, {
+        files: [...require.keys()],
+        fields: [...new Set(group.map((u) => u.key))],
+        require,
+      });
+      if (plan.offers.length === 0) continue;
+      let accepted = true;
+      for (const offer of plan.offers) {
+        const { notice, question } = offerPrompt(offer, "write");
+        ctx.onNotice?.(notice);
+        if (!(await confirm(question))) {
+          accepted = false;
+          break;
+        }
+      }
+      if (!accepted) continue;
+      const result = await applyRelocation(loc, plan);
+      ctx.location.onRelocated?.(result);
+      relocated = true;
+    }
+    if (relocated) {
+      ctx.externalMetadata = await loadExternalMetadata(loc.collections, {
+        configDir: loc.configDir ?? ctx.cwd,
+        base: ctx.base,
+        offline: ctx.location.offline,
+      });
+      ctx.memberships = (label) => memberOf(loc.collections, loc.configDir ?? ctx.cwd, ctx.base, label);
+      unhomed = await unhomedWrites(changes, entries, ctx);
+    }
+  }
+  return { relocated, warnings: unhomedWarnings(unhomed, ctx.write) };
+}
+
+/** W1 and W2: one line per collection (or per reason there is none) for what was written to pages. */
+function unhomedWarnings(unhomed: readonly Unhomed[], write: boolean): string[] {
+  const verb = write ? "wrote" : "would write";
+  const groups = new Map<string, { home: ProposedHome; keys: Set<string>; files: Set<string> }>();
+  for (const u of unhomed) {
+    const id =
+      u.home.kind === "collection"
+        ? `c\0${u.home.collection}\0${String(u.home.createsCollection || u.home.addsPath !== undefined)}`
+        : `n\0${u.home.reason}\0${String(u.home.collections)}`;
+    const group = groups.get(id) ?? { home: u.home, keys: new Set<string>(), files: new Set<string>() };
+    group.keys.add(u.key);
+    group.files.add(u.file);
+    groups.set(id, group);
+  }
+  return [...groups.values()].map(({ home, keys, files }) =>
+    externalWriteWarning({
+      verb,
+      keys: [...keys],
+      pages: files.size,
+      home,
+      createsHome: home.kind === "collection" && (home.createsCollection || home.addsPath !== undefined),
+    }),
+  );
 }
 
 /**
@@ -3031,6 +3583,8 @@ async function applyChanges(
   entries: QueryEntry[],
   ctx: RunContext,
   schemaPlan?: SchemaPlan,
+  /** The manifest texts `planManifestEdits` computed (0047), written with the pages. */
+  manifestWrites: readonly ManifestWrite[] = [],
 ): Promise<void> {
   const schemaWrites = schemaPlan?.writes ?? [];
   if (changes.length === 0 && schemaWrites.length === 0) return;
@@ -3051,19 +3605,29 @@ async function applyChanges(
     }
     if ("schema" in c || "config" in c) continue; // satisfied by schemaWrites
     const group = grouped.get(c.file) ?? { patch: {}, deletions: [] };
+    grouped.set(c.file, group);
+    // What is left for the page once the manifest-owned keys were routed to
+    // their manifest (0047); values it writes are already the written ones.
+    const route = pageRoutes.get(c);
     // A value the change prints as `(encrypted)` writes its ciphertext.
-    if ("cleared" in c) group.cleared = true;
-    else if ("created" in c) {
-      group.created = Object.fromEntries(
-        Object.entries(c.to).map(([k, v]) => [k, writtenValue(c, k, v)]),
-      );
+    if ("cleared" in c) {
+      if (route?.strip !== false) group.cleared = true;
+    } else if ("created" in c) {
+      group.created =
+        route?.created ??
+        Object.fromEntries(
+          Object.entries(c.to).map(([k, v]) => [k, writtenValue(c, k, v)]),
+        );
     } else if ("renamed" in c) group.renamedTo = c.renamed;
+    else if (route !== undefined) {
+      Object.assign(group.patch, route.patch);
+      group.deletions.push(...route.deletions);
+    }
     else if ("deleted" in c) group.deletions.push(c.key);
     else if ("renamedFrom" in c) {
       group.patch[c.key] = writtenValue(c, c.key, c.to);
       group.deletions.push(c.renamedFrom);
     } else group.patch[c.key] = writtenValue(c, c.key, c.to);
-    grouped.set(c.file, group);
   }
 
   const pendingWrites: { path: string; content: string; ensureDir?: boolean }[] =
@@ -3114,6 +3678,12 @@ async function applyChanges(
         }),
         ensureDir: true,
       });
+      continue;
+    }
+
+    // Every change to this document landed in a manifest (0047): the page
+    // itself is not written, and so need not be writable.
+    if (!ops.cleared && Object.keys(ops.patch).length === 0 && ops.deletions.length === 0) {
       continue;
     }
 
@@ -3174,16 +3744,12 @@ async function applyChanges(
     if (ops.deletions.length > 0) {
       // `deletions` is advisory in the ApplyOptions contract — a writer that
       // cannot remove a key ignores it. Certainty comes from reading back.
-      const check = mergeExternalMetadata(
-        label,
-        entry.extractor.extract(applied, label, {
-          elements: resolveElements(label, ctx.config, members),
-        }),
-        ctx.externalMetadata,
-        members,
-        ctx.base,
-        { encryptionKey: ctx.encryption.key },
-      ).extracted;
+      // The page's own extraction, not the merge: a key a manifest also
+      // supplies (0047) is gone from the page even while the manifest,
+      // edited in the same apply, still holds it on the old index.
+      const check = entry.extractor.extract(applied, label, {
+        elements: resolveElements(label, ctx.config, members),
+      });
       for (const key of ops.deletions) {
         if (check.data[key] !== undefined) {
           throw new DocmetaError(
@@ -3219,6 +3785,20 @@ async function applyChanges(
       );
     }
   }
+  // The same re-check for every manifest the statement edits (0047).
+  for (const m of manifestWrites) {
+    let now: string | undefined;
+    try {
+      now = await readFile(m.path, "utf8");
+    } catch {
+      now = undefined;
+    }
+    if (now !== m.expected) {
+      throw new DocmetaError(
+        `"${m.display}" changed on disk since it was read; re-run the query.`,
+      );
+    }
+  }
   // Parent directories once each, and only where one can be missing: a
   // fork's schemas/ dir, an INSERT into a new subtree, a rename into one.
   // Files that were read from disk this run prove their directories exist.
@@ -3243,6 +3823,9 @@ async function applyChanges(
   // With renames last, a write failure leaves every file under its old name
   // with some new values — the statement re-runs to convergence — instead of
   // a completed rename whose "already exists" guard blocks the re-run.
+  // Manifests first (0047), as relocate writes them: a page that lost a key
+  // to its manifest never lands before the manifest holds it.
+  for (const m of manifestWrites) await writeFileAtomic(m.path, m.text);
   for (const p of pendingWrites) await writeFileAtomic(p.path, p.content);
   for (const r of pendingRenames) {
     try {

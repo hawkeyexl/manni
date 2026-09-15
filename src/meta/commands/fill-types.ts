@@ -2,6 +2,7 @@
 import type { InferenceProvider } from "@hawkeyexl/inference";
 import type { ConfigNotice } from "../core/config.js";
 import type { Confirm } from "../../shared/prompt.js";
+import type { RelocateResult } from "../core/relocation.js";
 
 /** A schema property `fill` may propose a value for. */
 export interface Candidate {
@@ -60,6 +61,12 @@ export interface FilledField {
    * `x-manni-encrypt`. Absent otherwise.
    */
   encrypted?: boolean;
+  /**
+   * Proposal 0047: the manifest the value was written into, as the run
+   * reports it, when a manifest of the page's collections owns the key.
+   * Absent when the value went to the page.
+   */
+  destination?: string;
 }
 
 /**
@@ -81,10 +88,15 @@ export interface MetaProvenanceEntry {
  * neither outcome changes the summary or the exit code.
  */
 export type MetaProvenanceReport =
-  | { written: true; entry: MetaProvenanceEntry }
+  | {
+      written: true;
+      entry: MetaProvenanceEntry;
+      /** The manifest the entry was written into, when one owns `meta-provenance` (0047). */
+      destination?: string;
+    }
   /** The page's schemas, checked with the entry in place, reject it. */
   | { written: false; skipReason: "schema-mismatch" }
-  /** A manifest in one of the page's collections owns the key. */
+  /** A URL manifest in one of the page's collections owns the key, and cannot be written (0047). */
   | { written: false; skipReason: "manifest-owned"; manifest: string }
   /**
    * The format's writer cannot hold a list of entries (an HTML or XML
@@ -212,4 +224,9 @@ export interface FillOptions {
    * `process.env`; tests pass their own.
    */
   env?: NodeJS.ProcessEnv;
+  /**
+   * Called with relocate's result after the user accepts a P1 offer
+   * (proposal 0047), so the CLI can print what moved before the report.
+   */
+  onRelocated?: (result: RelocateResult) => void;
 }

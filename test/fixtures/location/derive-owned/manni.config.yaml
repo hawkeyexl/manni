@@ -1,0 +1,13 @@
+# derive (0047): owner is managed and a local manifest owns it, so derive
+# writes it into site-meta.yaml; created stays on the page.
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: ./site-meta.yaml
+        keys: [owner]
+meta:
+  schemas: [./steward.schema.json]
+  derive:
+    fields: [created, owner]
+    sources: [git, codeowners]

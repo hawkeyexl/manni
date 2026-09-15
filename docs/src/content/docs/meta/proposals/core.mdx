@@ -1,5 +1,5 @@
 ---
-title: "manni:core:1.0.0-proposal.3"
+title: "manni:core:1.0.0-proposal.4"
 description: "The proposed descriptive minimum, covering what the page is called, what it is for, and the shared keys every generator recognizes."
 sidebar:
   order: 1
@@ -9,10 +9,11 @@ sidebar:
 :::caution[Proposal under review]
 Part of the [metadata vocabularies proposal](/manni/meta/proposals/frontmatter-vocabularies/),
 open for community review. Draft schema:
-[`docs/proposals/0023/schemas/core/1.0.0-proposal.3.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/core/1.0.0-proposal.3.json).
+[`docs/proposals/0023/schemas/core/1.0.0-proposal.4.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/core/1.0.0-proposal.4.json).
 Review round 6 took core from `proposal.1` to `proposal.2` by moving
 `authors` to stewardship. Round 8 took it to `proposal.3` by adding
-`locale` beside `language`.
+`locale` beside `language`. Proposal 0047 took it to `proposal.4` by marking
+each field's preferred location, and changed no field.
 :::
 
 **The question it answers: what is this page?** Core is the minimum
@@ -23,15 +24,24 @@ requires anything.
 
 ## Fields
 
-| Field | Type | Required | Notes |
-|---|---|---|---|
-| `title` | string, non-empty | **yes** | A single non-empty string. An array is rejected |
-| `description` | string, non-empty | **yes** | One full sentence. It becomes the search snippet and is the first thing retrieval reads |
-| `id` | string, non-empty | no | A stable identifier that does not change when the file moves. `related-pages`, `prerequisites`, and `replaced-by` point at it |
-| `type` | string, non-empty | no | What kind of content this is. Taxonomy schemas (Diátaxis, TGDP) narrow it; `kg.type` holds the same fact in iiRDS terms |
-| `keywords` | string or list of non-empty strings | no | Search words. A comma-separated string is the AsciiDoc form Antora reads |
-| `language` | string, non-empty | no | The natural language the text is written in, as one BCP 47 tag, region and script subtags included (`pt-BR`, `zh-Hant-TW`). Recommended, not enforced. The same fact `lang` and `dc:language` carry |
-| `locale` | string, non-empty | no | The international preferences the content follows: how its dates, numbers, currency, calendar and sorted lists are written. One Unicode locale identifier (`en-IN`, `th-TH-u-ca-buddhist`), recommended, not enforced. Set only where it differs from what `language` implies |
+| Field | Type | Required | Location | Notes |
+|---|---|---|---|---|
+| `title` | string, non-empty | **yes** | `page` | A single non-empty string. An array is rejected |
+| `description` | string, non-empty | **yes** | `page` | One full sentence. It becomes the search snippet and is the first thing retrieval reads |
+| `id` | string, non-empty | no | `page` | A stable identifier that does not change when the file moves. `related-pages`, `prerequisites`, and `replaced-by` point at it |
+| `type` | string, non-empty | no | `page` | What kind of content this is. Taxonomy schemas (Diátaxis, TGDP) narrow it; `kg.type` holds the same fact in iiRDS terms |
+| `keywords` | string or list of non-empty strings | no | `page` | Search words. A comma-separated string is the AsciiDoc form Antora reads |
+| `language` | string, non-empty | no | `page` | The natural language the text is written in, as one BCP 47 tag, region and script subtags included (`pt-BR`, `zh-Hant-TW`). Recommended, not enforced. The same fact `lang` and `dc:language` carry |
+| `locale` | string, non-empty | no | `page` | The international preferences the content follows: how its dates, numbers, currency, calendar and sorted lists are written. One Unicode locale identifier (`en-IN`, `th-TH-u-ca-buddhist`), recommended, not enforced. Set only where it differs from what `language` implies |
+
+The Location column is the `x-manni-location` mark each field carries in
+`manni:core:1.0.0-proposal.4`. `page` means the value belongs in the
+document's own metadata and is meant to reach delivered output. `external`
+means it belongs in the collection's external-metadata manifest. A field is
+`page` when a third-party or user-owned agent fetching the page would act on
+it. Every core field passes that test, because each one says what the page is.
+See [field location](/manni/meta/schemas/field-location/) for how the marks
+are used.
 
 ## Examples
 

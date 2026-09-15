@@ -90,13 +90,13 @@ export function renderFillPretty(
     lines.push(`${mark} ${result.file}`);
     for (const f of written) {
       lines.push(
-        `    ${c.cyan(f.field)}  ${formatValue(f.value)}  ${c.dim(score(f.confidence))}`,
+        `    ${c.cyan(f.field)}  ${formatValue(f.value)}  ${c.dim(score(f.confidence))}${f.destination === undefined ? "" : `  → ${f.destination}`}`,
       );
     }
     const record = result.metaProvenance;
     if (record?.written === true) {
       lines.push(
-        `    ${c.cyan("meta-provenance")}  ${record.entry["generated-by"]}: ${record.entry.fields.join(", ")}`,
+        `    ${c.cyan("meta-provenance")}  ${record.entry["generated-by"]}: ${record.entry.fields.join(", ")}${record.destination === undefined ? "" : `  → ${record.destination}`}`,
       );
     } else if (record?.skipReason === "schema-mismatch") {
       lines.push(
@@ -105,7 +105,7 @@ export function renderFillPretty(
     } else if (record?.skipReason === "manifest-owned") {
       lines.push(
         c.dim(
-          `    meta-provenance not written: owned by manifest ${record.manifest}, which manni meta fill does not write`,
+          `    meta-provenance not written: owned by manifest ${record.manifest}, which is fetched and cannot be written`,
         ),
       );
     } else if (record?.skipReason === "unwritable") {

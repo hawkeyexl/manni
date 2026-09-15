@@ -1,6 +1,6 @@
 # 0042: the `command` source, a managed field derived by a program the config names
 
-- **Status:** Implemented (#21)
+- **Status:** Implemented (#21); superseded in part by [0047](0047-field-location.md)
 - **Serves:** Maya · M1, M2 · Devin · D4 · Sara · S2
 - **Depends on:** One earlier proposal.
   - [0040](0040-derived-metadata.md) is the derived channel. A managed field

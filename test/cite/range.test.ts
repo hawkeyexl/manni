@@ -27,7 +27,7 @@ const schema = require("../../src/cite/schema/citations.json") as {
   $id: string;
   $defs: { fileRef: { pattern: string } };
 };
-const draft = require("../../docs/proposals/0044/schemas/citations/1.0.0-proposal.3.json") as unknown;
+const draft = require("../../docs/proposals/0044/schemas/citations/1.0.0-proposal.4.json") as unknown;
 
 /** Ciphertext-shaped: `~` and 84 base64url characters. The grammar checks shape, not keys. */
 const TOKEN = "~" + "AQx7Vb2_Kp-9Qm".repeat(6);
@@ -38,9 +38,9 @@ const SHORTEST = TOKEN.slice(0, 83);
 const SCHEMA_FILE_PATTERN = new RegExp(schema.$defs.fileRef.pattern);
 
 describe("the bundled schema", () => {
-  it("is the proposal.3 draft, byte for byte", () => {
+  it("is the proposal.4 draft, byte for byte", () => {
     expect(schema).toEqual(draft);
-    expect(schema.$id).toBe("manni:citations:1.0.0-proposal.3");
+    expect(schema.$id).toBe("manni:citations:1.0.0-proposal.4");
   });
 });
 
