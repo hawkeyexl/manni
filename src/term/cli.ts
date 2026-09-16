@@ -11,7 +11,7 @@
  */
 import { Command } from "commander";
 import pkg from "../../package.json" with { type: "json" };
-import { collect, readStdin } from "../shared/cli-options.js";
+import { collect, readStdin, splitList } from "../shared/cli-options.js";
 import { shouldColor } from "../shared/color.js";
 import { fail } from "../shared/run.js";
 import { notice } from "../shared/warn.js";
@@ -40,8 +40,14 @@ import {
 /** What commander hands every verb that reads terms. */
 interface InputCliOptions {
   as?: string;
+  /** `--ext <list>`, comma-separated and given once. */
+  ext?: string;
   /** `--exclude <glob>`, repeatable; commander's default value is `[]`. */
   exclude: string[];
+  /** `--allow-empty`. */
+  allowEmpty?: boolean;
+  /** `--no-gitignore`: `false` when given. */
+  gitignore: boolean;
   /** `--collection <name>`, repeatable; commander's default value is `[]`. */
   collection: string[];
   config?: string;
@@ -75,8 +81,11 @@ async function coreOptions(paths: string[], options: InputCliOptions): Promise<T
     inputs: paths,
     ...(paths.includes(STDIN_TOKEN) ? { stdin: await readStdin() } : {}),
     ...(options.as === undefined ? {} : { as: options.as }),
+    ...(options.ext === undefined ? {} : { exts: splitList(options.ext) }),
     exclude: options.exclude,
     collection: options.collection,
+    ...(options.allowEmpty === true ? { allowEmpty: true } : {}),
+    ...(options.gitignore ? {} : { noGitignore: true }),
     ...(options.config === undefined ? {} : { configPath: options.config }),
     onNotice: notice,
   };
@@ -86,8 +95,11 @@ async function coreOptions(paths: string[], options: InputCliOptions): Promise<T
 function withInputs(command: Command): Command {
   return command
     .option("--as <format>", "input format for stdin (-)")
+    .option("--ext <list>", "comma-separated extensions for directory walks")
     .option("--exclude <glob>", "glob to exclude; repeatable", collect, [])
     .option("--collection <name>", "configured collection to read; repeatable", collect, [])
+    .option("--allow-empty", "treat zero matched files as success")
+    .option("--no-gitignore", "read files .gitignore covers")
     .option("-c, --config <path>", "path to a manni config file")
     .option("--no-color", "disable colored output");
 }

@@ -23,6 +23,12 @@ export interface TermCommandOptions {
   as?: string;
   /** `--exclude <glob>`, repeatable. */
   exclude?: string[];
+  /** `--ext <list>`, already split. */
+  exts?: string[];
+  /** `--allow-empty`. */
+  allowEmpty?: boolean;
+  /** `--no-gitignore`. */
+  noGitignore?: boolean;
   /** `--collection <name>`, repeatable. */
   collection?: string[];
   /** `-c, --config <path>`. */
@@ -63,6 +69,9 @@ async function loadSet(run: TermRun, opts: TermCommandOptions): Promise<TermSet>
   const set = await loadTermSet({
     run,
     exclude,
+    ...(opts.exts === undefined ? {} : { exts: opts.exts }),
+    ...(opts.allowEmpty === true ? { allowEmpty: true } : {}),
+    ...(opts.noGitignore === true ? { noGitignore: true } : {}),
     ...(opts.stdin === undefined ? {} : { stdin: opts.stdin }),
     ...(opts.as === undefined ? {} : { as: opts.as }),
     ...(opts.onNotice === undefined ? {} : { onNotice: opts.onNotice }),

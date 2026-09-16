@@ -146,6 +146,26 @@ describe("loadTermSet", () => {
     expect(set.terms).toEqual([]);
   });
 
+  it("walks only the extensions --ext names", async () => {
+    const root = await tree({
+      "terms/pal.md": "---\ntype: term\nlabel: progressive lens\n---\n",
+      "terms/bifocal.html":
+        '<html><head><meta name="type" content="term"><meta name="label" content="bifocal"></head></html>',
+    });
+    const set = await loadTermSet({ run: runFor(root, ["terms"]), exts: ["md"], readers: [standIn] });
+    expect(set.terms.map((t) => t.record.label)).toEqual(["progressive lens"]);
+  });
+
+  it("lets --allow-empty win over a config that does not allow it", async () => {
+    const root = await tree({ "guides/fitting.md": "---\ntitle: Fitting\n---\n" });
+    const set = await loadTermSet({
+      run: runFor(root, ["guides"], { config: { allowEmpty: false } }),
+      allowEmpty: true,
+      readers: [standIn],
+    });
+    expect(set.terms).toEqual([]);
+  });
+
   it("is an error when there is nothing to read at all", async () => {
     const root = await tree({});
     await expect(loadTermSet({ run: runFor(root, []), readers: [standIn] })).rejects.toThrow(

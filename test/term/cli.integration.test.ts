@@ -75,7 +75,16 @@ describe("manni term (grammar)", () => {
     for (const verb of ["list", "check", "lint", "write"]) {
       const help = term([verb, "--help"]).stdout;
       expect(help).toMatch(new RegExp(`^Usage: manni term ${verb} \\[options\\] \\[paths\\.\\.\\.\\]$`, "m"));
-      for (const flag of ["--as <format>", "--exclude <glob>", "--collection <name>", "-c, --config <path>", "--no-color"]) {
+      for (const flag of [
+        "--as <format>",
+        "--ext <list>",
+        "--exclude <glob>",
+        "--collection <name>",
+        "--allow-empty",
+        "--no-gitignore",
+        "-c, --config <path>",
+        "--no-color",
+      ]) {
         expect(help).toContain(flag);
       }
     }
@@ -84,6 +93,26 @@ describe("manni term (grammar)", () => {
     expect(term(["check", "--help"]).stdout).toContain("--baseline");
     const write = term(["write", "--help"]).stdout;
     for (const flag of ["-o, --out <path>", "--check", "--dry-run"]) expect(write).toContain(flag);
+  });
+});
+
+describe("manni term (flags shared with meta and cite)", () => {
+  it("--ext keeps only the named extensions in a walk", () => {
+    writeFileSync(
+      join(work, "clean", "docs", "terms", "bifocal.html"),
+      '<html><head><meta name="type" content="term"><meta name="label" content="bifocal"><meta name="definition" content="Two powers."></head></html>',
+    );
+    expect(term(["list", "docs"]).stdout).toContain("bifocal");
+    const r = term(["list", "docs", "--ext", "md"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).not.toContain("bifocal");
+  });
+
+  it("--allow-empty turns an empty set into success", () => {
+    mkdirSync(join(work, "empty"));
+    writeFileSync(join(work, "empty", "page.md"), "---\ntitle: Page\n---\n");
+    expect(term(["check", "page.md"], { cwd: join(work, "empty") }).status).toBe(2);
+    expect(term(["check", "page.md", "--allow-empty"], { cwd: join(work, "empty") }).status).toBe(0);
   });
 });
 

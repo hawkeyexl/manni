@@ -38,6 +38,10 @@ export interface LoadTermSetOptions {
   as?: string;
   /** `--exclude <glob>`, repeatable. */
   exclude?: string[];
+  /** `--ext <list>`: the extensions a directory or glob walk keeps. */
+  exts?: string[];
+  /** `--allow-empty`: wins over `term.allowEmpty`. */
+  allowEmpty?: boolean;
   /** `--no-gitignore`. */
   noGitignore?: boolean;
   onNotice?: (message: string) => void;
@@ -108,7 +112,7 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
   const { run } = opts;
   const readers = opts.readers ?? TERM_READERS;
   const exclude = opts.exclude ?? [];
-  const allowEmpty = run.config?.allowEmpty === true;
+  const allowEmpty = opts.allowEmpty ?? run.config?.allowEmpty === true;
 
   const usingStdin = run.inputs.includes(STDIN_TOKEN);
   const inputs = run.inputs.filter((input) => input !== STDIN_TOKEN);
@@ -128,6 +132,7 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
       inputs,
       cwd: run.base,
       exclude,
+      ...(opts.exts === undefined ? {} : { exts: opts.exts }),
       allowEmpty,
       ...gitignoreOptions({
         ...(opts.noGitignore === true ? { flag: false } : {}),
@@ -137,7 +142,16 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
         ...(opts.onNotice ? { onNotice: opts.onNotice } : {}),
       }),
     });
-    assertNonEmpty({ files, inputs, usingStdin, allowEmpty, exclude, gitignoreSkipped, action: "read" });
+    assertNonEmpty({
+      files,
+      inputs,
+      usingStdin,
+      allowEmpty,
+      exclude,
+      ...(opts.exts === undefined ? {} : { exts: opts.exts }),
+      gitignoreSkipped,
+      action: "read",
+    });
 
     for (const file of files) {
       const path = resolve(run.base, file);
