@@ -384,11 +384,17 @@ describe("sarif and junit", () => {
     expect(run?.results.map((r) => r.message.text)).toEqual(["Too long."]);
   });
 
-  it("carries a lint finding's field into instancePath, and leaves a check finding's out", async () => {
+  it("carries a finding's field into instancePath, for check and lint alike", async () => {
     const lint = await lintReport();
     expect(lint.results.flatMap((r) => r.errors).map((e) => e.instancePath)).toEqual(["/definition"]);
     const check = await runCheck({ cwd: await danglingCwd(), inputs: [] });
     expect(check.findings.map((f) => f.field)).toEqual(["related-terms"]);
+    expect(check.results.flatMap((r) => r.errors).map((e) => e.instancePath)).toEqual(["/related-terms"]);
+  });
+
+  it("leaves instancePath empty for a check finding about no one field", async () => {
+    const check = await checkReport();
+    expect(check.findings.map((f) => [f.rule, f.field])).toEqual([["undefined-term", undefined]]);
     expect(check.results.flatMap((r) => r.errors).map((e) => e.instancePath)).toEqual([""]);
   });
 
@@ -403,14 +409,11 @@ describe("sarif and junit", () => {
     "",
   ].join("\n");
 
-  /** The fingerprint of BIFOCAL's dangling related-terms, as a baseline recorded it before check findings named a field. */
-  const RECORDED = "4744d8dcc9ed836f";
-
   async function danglingCwd(): Promise<string> {
     return lenses("progressive lens, corrective lens, bifocal", { "docs/terms/bifocal.md": BIFOCAL });
   }
 
-  it("names a check finding's field, and keeps its fingerprint and its SARIF and JUnit text", async () => {
+  it("names a check finding's field, and keeps its SARIF and JUnit text", async () => {
     const report = await runCheck({ cwd: await danglingCwd(), inputs: [] });
     expect(report.findings.map((f) => [f.rule, f.field])).toEqual([["dangling-reference", "related-terms"]]);
     const json = JSON.parse(renderFindingsJson(report)) as { findings: Record<string, unknown>[] };
@@ -419,21 +422,21 @@ describe("sarif and junit", () => {
     const sarif = JSON.parse(renderFindingsSarif(report)) as {
       runs: { results: { message: { text: string }; partialFingerprints: Record<string, string> }[] }[];
     };
-    expect(sarif.runs[0]?.results.map((r) => [r.message.text, r.partialFingerprints["docmetaViolation/v1"]])).toEqual([
-      ['related-terms: "trifocal" names no entry', RECORDED],
-    ]);
+    const results = sarif.runs[0]?.results ?? [];
+    expect(results.map((r) => r.message.text)).toEqual(['related-terms: "trifocal" names no entry']);
+    expect(results[0]?.partialFingerprints["docmetaViolation/v1"]).toMatch(/^[0-9a-f]{16}$/);
     expect(renderFindingsJunit(report)).toContain(
       '<failure type="manni:term/dangling-reference" message="related-terms: &quot;trifocal&quot; names no entry (line 5)"/>',
     );
   });
 
-  it("still matches a baseline recorded before check findings named a field", async () => {
+  it("matches a baseline it recorded, once check findings name their field", async () => {
     const cwd = await danglingCwd();
-    const recorded = { version: 1, generatedWith: "2.2.0", entries: { "docs/terms/bifocal.md": [RECORDED] } };
-    await writeFile(join(cwd, ".manni-term-baseline.json"), `${JSON.stringify(recorded, null, 2)}\n`, "utf8");
-    const report = await runCheck({ cwd, inputs: [], baseline: true });
-    expect(report.findings).toEqual([]);
-    expect(report.summary.failed).toBe(0);
+    const recorded = await runCheck({ cwd, inputs: [], baseline: true });
+    expect(recorded.found).toBe(1);
+    const again = await runCheck({ cwd, inputs: [], baseline: true });
+    expect(again.findings).toEqual([]);
+    expect(again.summary.failed).toBe(0);
   });
 
   it("gives a JUnit failure the rule id and the finding's own message", async () => {

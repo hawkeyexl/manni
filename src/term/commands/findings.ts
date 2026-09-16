@@ -5,16 +5,12 @@
  *
  * FieldError: schema `manni:term` (a builtin-shaped ref, so fingerprints and
  * rule ids never depend on where the command ran), keyword = the rule id after
- * `manni:term/`, instancePath `/<field>` for a lint finding and `""` otherwise.
- * The subject is the entry and what the finding says about it, with any
+ * `manni:term/`, instancePath `/<field>` when the finding concerns one field
+ * and `""` when it concerns none (`undefined-term`, `duplicate-id`,
+ * `unused-term`). A check finding and a lint finding carry the field the same
+ * way. The subject is the entry, the field, and what the finding says, with any
  * `file:line` taken out: a line moves when a page is edited above the entry,
  * and a moved finding is not a new one.
- *
- * A check finding names its field too, but the field stays out of its
- * instancePath and subject. Both are hashed into the fingerprint, and baselines
- * recorded a check finding's fingerprint before it named a field. Its message
- * already opens with the field, and SARIF and JUnit text drop meta's field
- * label, so nothing a reader sees is lost.
  */
 import {
   isErrorSeverity,
@@ -59,7 +55,7 @@ function toFieldError(finding: TermFinding): FieldError {
   const keyword = finding.ruleId.startsWith(`${RULE_ID_PREFIX}/`)
     ? finding.ruleId.slice(RULE_ID_PREFIX.length + 1)
     : finding.ruleId;
-  const field = finding.tool === undefined ? undefined : finding.field;
+  const { field } = finding;
   const subject = [finding.id ?? "", field ?? "", finding.message.replace(LINE_REFERENCE, "")].join("\u0000");
   const error: FieldError = {
     schema: RULE_ID_PREFIX,
