@@ -22,7 +22,7 @@ export interface HistoryEntry {
   project: string;
   summary: RunReport["summary"];
   exitCode: number;
-  costUsd: number;
+  turns: number;
   evals: HistoryEval[];
 }
 
@@ -44,7 +44,7 @@ export function entryFor(report: RunReport): HistoryEntry {
     project: report.trace.cwd,
     summary: report.summary,
     exitCode: report.exitCode,
-    costUsd: report.costUsd,
+    turns: report.turns,
     evals: report.evalResults.map((r) => ({
       artifact: r.artifact,
       evalName: r.evalName,

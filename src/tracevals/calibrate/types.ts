@@ -116,7 +116,7 @@ export interface CalibrationReport {
   warnings: string[];
   /** `0` measured cleanly; `1` a threshold was exceeded or a trace was lost. */
   exitCode: 0 | 1;
-  costUsd: number;
+  turns: number;
   durationMs: number;
 }
 

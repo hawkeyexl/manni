@@ -16,16 +16,12 @@ import { discoverConfig } from "../core/config.js";
 import { loadGraderPlugins } from "../graders/plugins.js";
 import { TracevalsError } from "../types.js";
 import {
-  costOfUsage,
-  pricingFor,
+  assertProviderSelection,
+  constructProvider,
   resolveProviderIdentity,
-  type ProviderName,
-} from "@hawkeyexl/inference";
-import {
-  makeJudgeProvider,
-  pricingOverrideFor,
-  providerSpecFor,
+  selectProvider,
 } from "../judge/provider.js";
+import { TURN_BUDGET_SKIP } from "../../docevals/judge/budget.js";
 import { FillCache, fillCacheKey } from "../fill/cache.js";
 import { artifactFacts } from "../fill/facts.js";
 import {
@@ -64,10 +60,13 @@ export interface FillOptions {
   confidence?: number;
   /** Ceiling on an artifact's total evals, existing ones included. */
   maxEvals?: number;
-  maxCostUsd?: number;
+  /** `--max-turns`: inference calls for the whole invocation, one per artifact. */
+  maxTurns?: number;
   noCache?: boolean;
   provider?: string;
   model?: string;
+  /** `--local`: run inference on this machine, over every configured choice. */
+  local?: boolean;
   /** `--require`: grader plugins to load *in addition to* `config.plugins`. */
   require?: string[];
   /** Test seam: bypasses provider construction entirely. */
@@ -166,10 +165,20 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
     configDir,
   });
 
+  // The command line's say over every configured level, checked up front and
+  // regardless of an injected provider: it costs nothing, and a typo must fail
+  // on a run where no artifact needs a model too.
+  const flags = {
+    ...(options.provider !== undefined ? { provider: options.provider } : {}),
+    ...(options.model !== undefined ? { model: options.model } : {}),
+    ...(options.local !== undefined ? { local: options.local } : {}),
+  };
+  assertProviderSelection(selectProvider(config, flags));
+
   const threshold = options.confidence ?? config.fill.confidenceThreshold;
   const maxEvals = options.maxEvals ?? config.fill.maxEvalsPerArtifact;
   const temperature = config.fill.temperature;
-  const maxCostUsd = options.maxCostUsd ?? config.fill.maxCostUsd;
+  const maxTurns = options.maxTurns ?? config.fill.maxTurns;
   const cache = new FillCache(
     resolve(configDir, config.fill.cacheDir),
     options.noCache !== true,
@@ -184,51 +193,31 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
   const vocabulary = buildVocabulary(discovery.artifacts);
   const knownSkills = [...vocabulary.skills].sort();
 
-  // Constructed lazily so a fully-cached or all-skipped run needs no API key.
-  let provider = options.providerInstance;
-  const getProvider = (): InferenceProvider =>
-    (provider ??= makeJudgeProvider(config, {
-      ...(options.provider !== undefined ? { provider: options.provider } : {}),
-      ...(options.model !== undefined ? { model: options.model } : {}),
+  // Identity is resolved without constructing the provider, so a fully cached
+  // run needs no API key, and on first use, so an all-skipped run never detects
+  // a provider under `auto`. Resolved once, and shared by every artifact.
+  //
+  // Going through the shared resolver rather than reading config by hand
+  // matters: it applies the same per-provider model default construction would,
+  // so the model in the cache key is the model that actually produced the
+  // proposal.
+  const injected = options.providerInstance;
+  let resolving: ReturnType<typeof resolveProviderIdentity> | undefined;
+  const resolveOnce = (): ReturnType<typeof resolveProviderIdentity> =>
+    (resolving ??= resolveProviderIdentity(config, flags));
+  const getIdentity = async (): Promise<{ provider: string; model: string }> =>
+    injected !== undefined
+      ? { provider: injected.provider(), model: injected.modelName() }
+      : resolveOnce();
+  let provider = injected;
+  const getProvider = async (): Promise<InferenceProvider> =>
+    (provider ??= constructProvider(config, await resolveOnce(), {
       // The default mock response is judge-shaped and would fail this
-      // command's schema, so seed the mock with a proposal instead.
+      // command's schema, so seed the mock seam with a proposal instead.
       mockResponses: [mockFillProposal()],
     }));
-  // Identity is resolved without constructing the provider so a fully-cached
-  // run needs no API key. Going through the library's resolver rather than
-  // reading config by hand matters: it applies the same per-provider model
-  // default makeProvider would, so the model in the cache key is the model
-  // that actually produced the proposal.
-  const providerName = (options.provider ??
-    config.provider.default ??
-    "claude-cli") as ProviderName;
-  const identity = provider
-    ? { name: provider.provider(), model: provider.modelName() }
-    : (() => {
-        const resolved = resolveProviderIdentity(
-          providerSpecFor(config, providerName, {
-            ...(options.model !== undefined ? { model: options.model } : {}),
-          }),
-        );
-        return { name: resolved.provider, model: resolved.model };
-      })();
-  // The configured override belongs to the *configured* provider. An injected
-  // instance (the test seam, or programmatic use) may be an entirely different
-  // provider and model, so applying the override to it would invent a price
-  // for something it was never written for — a mock run would report non-zero
-  // cost. Fall back to the built-in table in that case.
-  const pricing = pricingFor(
-    identity.model,
-    options.providerInstance
-      ? undefined
-      : pricingOverrideFor(config, {
-          ...(options.provider !== undefined
-            ? { provider: options.provider }
-            : {}),
-        }),
-  );
 
-  let costUsd = 0;
+  let turns = 0;
   const results: FillArtifactResult[] = [];
 
   for (const discovered of discovery.artifacts) {
@@ -269,8 +258,9 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
     if (discovered.skip) return { ...base, status: "skipped" };
 
     const facts = artifactFacts(artifact);
+    const identity = await getIdentity();
     const key = fillCacheKey({
-      provider: identity.name,
+      provider: identity.provider,
       model: identity.model,
       temperature,
       maxEvals,
@@ -284,11 +274,15 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
     let raw = cache.get(key);
     const cached = raw !== undefined;
     if (raw === undefined) {
-      if (maxCostUsd !== undefined && costUsd >= maxCostUsd) {
-        return { ...base, status: "skipped", error: "cost budget exhausted" };
+      // Claimed before the call, not tallied after it (docevals ADR 01019). A
+      // cache hit never reaches here, so replaying a cached corpus spends no
+      // turns.
+      if (maxTurns !== null && turns >= maxTurns) {
+        return { ...base, status: "skipped", error: `${TURN_BUDGET_SKIP} exhausted` };
       }
+      turns += 1;
       try {
-        const response = await getProvider().completeJSON({
+        const response = await (await getProvider()).completeJSON({
           system: systemPromptFor(artifact.type),
           user: buildFillUser({
             artifact,
@@ -300,7 +294,6 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
           schema: PROPOSAL_SCHEMA,
           temperature,
         });
-        costUsd += costOfUsage(response.usage, pricing);
         if (!isValidProposal(response.json)) {
           return {
             ...base,
@@ -359,8 +352,8 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
         // unreviewed suggestion from an eval someone actually signed off on.
         {
           generatedBy: identity.model
-            ? `${identity.name}:${identity.model}`
-            : identity.name,
+            ? `${identity.provider}:${identity.model}`
+            : identity.provider,
           confidence: Object.fromEntries(
             gated.accepted.map((c) => [c.name, c.confidence]),
           ),

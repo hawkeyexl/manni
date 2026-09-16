@@ -110,44 +110,81 @@ describe("makeTraceJudge", () => {
     expect(result?.consensus?.runs.every((r) => r.cached)).toBe(true);
   });
 
-  it("skips evals once the cost budget is exhausted", async () => {
+  // An ensemble carrying an errored run says something about the machine, not
+  // about the session. Caching one turns a transient outage into a permanent
+  // answer that only --no-cache can dislodge (docevals ADR 01038).
+  it("never caches an ensemble in which a run errored", async () => {
+    const cacheDir = join(tmpDir, "errored-cache");
+    const failing = new MockProvider([{ error: "VRAM exhausted" }]);
+    const first = makeTraceJudge({ provider: failing, runs: 1, cacheDir });
+    await first([plan], () => "errored trace");
+
+    const second = new MockProvider([mockVerdict("pass", 0.95)]);
+    const [result] = await makeTraceJudge({ provider: second, runs: 1, cacheDir })(
+      [plan],
+      () => "errored trace",
+    );
+    // A replayed error would have left the second provider unasked.
+    expect(second.requests.length).toBe(1);
+    expect(result?.outcome).toBe("pass");
+  });
+
+  it("skips evals once the turn budget is exhausted, and says which budget", async () => {
     const judge = makeTraceJudge({
       provider: new MockProvider([mockVerdict("pass", 0.95)]),
       runs: 1,
       noCache: true,
-      maxCostUsd: 0,
+      maxTurns: 0,
     });
     const [result] = await judge([plan], () => "trace text");
     expect(result?.outcome).toBe("skipped");
-    expect(result?.skipReason).toContain("budget");
+    expect(result?.skipReason).toBe("judge turn budget exhausted (0)");
+    expect(result?.turns).toBe(0);
   });
 
-  // The batch's money bug (ADR 01018). A judge instance is called once per
-  // trace, so a per-call budget is no budget at all: 50 traces would cost 50x
+  // The batch's budget bug (ADR 01018). A judge instance is called once per
+  // trace, so a per-call budget is no budget at all: 50 traces would spend 50x
   // the configured cap and every run would look like it respected it.
   it("spends one budget across successive calls, not one per call", async () => {
-    const priced = (match: "pass" | "fail") => ({
-      ...mockVerdict(match, 0.95),
-      // 1M input tokens at $1/MTok, so exactly one call exhausts a $1 budget.
-      usage: { inputTokens: 1_000_000, outputTokens: 0 },
-    });
     const judge = makeTraceJudge({
-      provider: new MockProvider([priced("pass"), priced("pass")]),
+      provider: new MockProvider([
+        mockVerdict("pass", 0.95),
+        mockVerdict("pass", 0.95),
+      ]),
       runs: 1,
       noCache: true,
-      maxCostUsd: 1,
-      pricing: { inputPerMTok: 1, outputPerMTok: 0 },
+      maxTurns: 1,
     });
 
     const [first] = await judge([plan], () => "trace one");
     expect(first?.outcome).toBe("pass");
-    expect(first?.costUsd).toBeCloseTo(1, 5);
+    expect(first?.turns).toBe(1);
 
     // Second trace, same judge. The budget is already gone.
     const [second] = await judge([plan], () => "trace two");
     expect(second?.outcome).toBe("skipped");
-    expect(second?.skipReason).toContain("budget");
-    expect(second?.costUsd).toBe(0);
+    expect(second?.skipReason).toBe("judge turn budget exhausted (1)");
+    expect(second?.turns).toBe(0);
+  });
+
+  it("charges a cached ensemble no turns at all", async () => {
+    const cacheDir = join(tmpDir, "budget-cache");
+    const seed = makeTraceJudge({
+      provider: new MockProvider([mockVerdict("pass", 0.95)]),
+      runs: 1,
+      cacheDir,
+    });
+    await seed([plan], () => "cached trace");
+
+    const judge = makeTraceJudge({
+      provider: new MockProvider([mockVerdict("fail", 0.95)]),
+      runs: 1,
+      cacheDir,
+      maxTurns: 0,
+    });
+    const [result] = await judge([plan], () => "cached trace");
+    expect(result?.outcome).toBe("pass");
+    expect(result?.turns).toBe(0);
   });
 });
 
@@ -192,7 +229,7 @@ describe("cacheKey", () => {
       const judge = makeTraceJudge({
         // The default would pass; the override must be what actually runs.
         provider: new MockProvider([mockVerdict("pass", 0.95)]),
-        providerFor: () => ({ provider: named }),
+        providerFor: () => Promise.resolve(named),
         runs: 3,
         noCache: true,
       });
@@ -207,9 +244,7 @@ describe("cacheKey", () => {
     it("errors rather than silently judging with the wrong model", async () => {
       const judge = makeTraceJudge({
         provider: new MockProvider([mockVerdict("pass", 0.95)]),
-        providerFor: () => {
-          throw new Error("no such provider");
-        },
+        providerFor: () => Promise.reject(new Error("no such provider")),
         runs: 3,
         noCache: true,
       });

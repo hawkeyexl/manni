@@ -142,8 +142,8 @@ export function renderPretty(report: RunReport): string {
       pc.dim(`weighted pass rate ${(s.passRate * 100).toFixed(0)}%`),
     );
   }
-  if (report.costUsd > 0) {
-    lines.push(pc.dim(`judge cost $${report.costUsd.toFixed(4)}`));
+  if (report.turns > 0) {
+    lines.push(pc.dim(`judge turns ${report.turns}`));
   }
   return lines.join("\n");
 }

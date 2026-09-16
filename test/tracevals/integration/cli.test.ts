@@ -824,24 +824,24 @@ describe.skipIf(!built)("built CLI", () => {
     const trace = "test/tracevals/fixtures/traces/claude-session.jsonl";
     const judged = ["--project", "test/tracevals/fixtures/project", "--provider", "mock"];
 
-    it("rejects a --max-cost-usd that is not a number", async () => {
-      for (const bad of ["abc", ""]) {
+    it("rejects a --max-turns that is not a whole number above zero", async () => {
+      for (const bad of ["abc", "0", "1.5", "-1"]) {
         const { code, stderr } = await runCli(
-          ["run", trace, ...judged, "--max-cost-usd", bad],
+          ["run", trace, ...judged, `--max-turns=${bad}`],
           home,
         );
         expect(code).toBe(2);
-        expect(stderr).toMatch(/--max-cost-usd/);
+        expect(stderr).toMatch(/--max-turns/);
       }
     });
 
-    it("rejects a negative --max-cost-usd", async () => {
+    it("no longer accepts the dollar budget it replaced", async () => {
       const { code, stderr } = await runCli(
-        ["run", trace, ...judged, "--max-cost-usd=-1"],
+        ["run", trace, ...judged, "--max-cost-usd", "2"],
         home,
       );
       expect(code).toBe(2);
-      expect(stderr).toMatch(/--max-cost-usd/);
+      expect(stderr).toMatch(/unknown option '--max-cost-usd'/);
     });
 
     it("rejects a --limit that would silently drop the oldest trace", async () => {
@@ -895,8 +895,8 @@ describe.skipIf(!built)("built CLI", () => {
           "--no-cache",
           "--runs",
           "1",
-          "--max-cost-usd",
-          "0.5",
+          "--max-turns",
+          "50",
           "--format",
           "json",
         ],
@@ -904,6 +904,55 @@ describe.skipIf(!built)("built CLI", () => {
       );
       // 1 because of the engineered deterministic failure, never 2.
       expect(code).toBe(1);
+    });
+  });
+
+  /**
+   * Provider selection is the shared layer's (`src/shared/providers.ts`), so
+   * what these pin is that every verb reaches it: the same refusals, the same
+   * names offered, and no model id of tracevals' own.
+   */
+  describe("provider selection", () => {
+    const home = { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home" };
+    const trace = "test/tracevals/fixtures/traces/claude-session.jsonl";
+
+    it("refuses --local beside a hosted --provider, on every verb that takes both", async () => {
+      for (const verb of ["run", "calibrate", "fill"]) {
+        const { code, stderr } = await runCli(
+          [verb, trace, "--local", "--provider", "anthropic"],
+          home,
+        );
+        expect(code).toBe(2);
+        expect(stderr).toContain(
+          "--local and --provider anthropic contradict each other: --local runs " +
+            "inference on this machine with llama-cpp. Drop one of them.",
+        );
+      }
+    });
+
+    it("refuses an unknown provider without offering the mock seam", async () => {
+      const { code, stderr } = await runCli(["run", trace, "--provider", "gemini"], home);
+      expect(code).toBe(2);
+      expect(stderr).toContain(
+        'Unknown provider "gemini". Available: anthropic, openai, claude-cli, llama-cpp, auto.',
+      );
+    });
+
+    it("refuses a model with no provider to own it", async () => {
+      const { code, stderr } = await runCli(["run", trace, "--model", "x"], home);
+      expect(code).toBe(2);
+      expect(stderr).toContain('Model "x" was given without a provider');
+      expect(stderr).toContain("tracevals.provider");
+    });
+
+    it("offers --local and --max-turns in help, and neither mock nor a dollar budget", async () => {
+      for (const verb of ["run", "calibrate", "fill"]) {
+        const { stdout } = await runCli([verb, "--help"]);
+        expect(stdout).toContain("--local");
+        expect(stdout).toContain("--max-turns");
+        expect(stdout).not.toContain("mock");
+        expect(stdout).not.toContain("--max-cost-usd");
+      }
     });
   });
 

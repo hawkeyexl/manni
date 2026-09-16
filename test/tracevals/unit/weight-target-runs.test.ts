@@ -242,55 +242,61 @@ describe("the judge prompt under target", () => {
   });
 });
 
-describe("per-eval model", () => {
-  /** Records what the judge asked the factory to build. */
-  const spyJudge = (planModel?: string, cliModel?: string) => {
-    const asked: Array<{ name: string; model?: string }> = [];
+describe("per-eval provider and model", () => {
+  /**
+   * What the judge hands the resolver. Which provider that choice *wins* is
+   * `judge/provider.ts`'s question, not this one's: the ladder from flag to
+   * eval to config is one rule, and a second copy inside the judge is how a
+   * run and an eval come to disagree about which model answered.
+   */
+  const spyJudge = (plan: { provider?: string; model?: string }) => {
+    const asked: Array<{ provider?: string; model?: string; origin?: string }> = [];
     const judge = makeTraceJudge({
       provider: new MockProvider(
         Array.from({ length: 6 }, () => mockVerdict("pass", 0.95)),
         "default-model",
       ),
-      providerFor: (name, model) => {
-        asked.push({ name, ...(model === undefined ? {} : { model }) });
-        return {
-          provider: new MockProvider(
+      providerFor: (choice) => {
+        asked.push(choice);
+        return Promise.resolve(
+          new MockProvider(
             Array.from({ length: 6 }, () => mockVerdict("pass", 0.95)),
-            model ?? "default-model",
+            choice.model ?? "default-model",
           ),
-        };
+        );
       },
-      ...(cliModel === undefined ? {} : { model: cliModel }),
       cacheDir: undefined,
       noCache: true,
     });
-    const plan = makeRulesPlan({
+    const evalPlan = makeRulesPlan({
       grader: "ai",
       assertion: "The session behaved.",
-      ...(planModel === undefined ? {} : { model: planModel }),
+      ...plan,
     });
     return {
       asked,
-      go: () => judge([plan], () => "transcript", { trace: makeTrace({}) }),
+      go: () => judge([evalPlan], () => "transcript", { trace: makeTrace({}) }),
     };
   };
 
-  it("builds a provider at the model the eval named", async () => {
-    const { asked, go } = spyJudge("claude-opus-4-5");
+  it("passes the model the eval named, with the eval as the origin", async () => {
+    const { asked, go } = spyJudge({ model: "claude-opus-4-5" });
     await go();
-    expect(asked).toEqual([{ name: "mock", model: "claude-opus-4-5" }]);
+    expect(asked.length).toBe(1);
+    expect(asked[0]?.model).toBe("claude-opus-4-5");
+    expect(asked[0]?.provider).toBeUndefined();
+    // The origin a `--local` notice names: the eval, inside its artifact.
+    expect(asked[0]?.origin).toContain('eval "demo-eval" in ');
   });
 
-  it("does not build anything when the eval names the running model", async () => {
-    const { asked, go } = spyJudge("default-model");
+  it("passes the provider the eval named", async () => {
+    const { asked, go } = spyJudge({ provider: "mock" });
     await go();
-    expect(asked).toEqual([]);
+    expect(asked[0]).toMatchObject({ provider: "mock" });
   });
 
-  it("lets an explicit --model outrank the eval", async () => {
-    // CLI > eval > default. The flag is already applied to the run's provider,
-    // so honouring the eval here would silently undo what the operator typed.
-    const { asked, go } = spyJudge("claude-opus-4-5", "claude-haiku-4-5");
+  it("asks nothing when the eval names neither", async () => {
+    const { asked, go } = spyJudge({});
     await go();
     expect(asked).toEqual([]);
   });

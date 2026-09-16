@@ -5,6 +5,7 @@
  * a proportion. Everything here is pure — reports in, rows out — so the shape
  * of the aggregate is testable without running anything.
  */
+import { isTurnBudgetSkip } from "../docevals/judge/budget.js";
 import type {
   AggregateCounts,
   AggregateRow,
@@ -20,17 +21,6 @@ export type BatchOutcome =
   | { file: string; report: RunReport }
   | { file: string; error: string; durationMs: number };
 
-/**
- * The prefix `src/judge/trace-judge.ts` writes on an eval it declined to judge
- * because the shared budget was gone.
- *
- * Matching on the reason string rather than on a flag is deliberate, and it is
- * the narrowest seam available: the budget lives inside one judge instance,
- * the skip is the only trace of it that reaches a report, and the wording is
- * already load-bearing — the reason is what a reader sees and what the CI
- * dogfood step greps for.
- */
-const BUDGET_EXHAUSTED = /^judge cost budget exhausted/;
 
 /**
  * What an exhausted budget cost this batch: how many evals it left unjudged,
@@ -189,7 +179,7 @@ export function aggregate(
     tracesFailed: 0,
     tracesErrored: 0,
   };
-  let costUsd = 0;
+  let turns = 0;
   // Weighted over every trace's evals, not an average of the per-trace rates.
   // Averaging would give a 2-eval trace the same say as a 40-eval one, which
   // is the opposite of what a batch is for.
@@ -206,7 +196,7 @@ export function aggregate(
         error: outcome.error,
         warnings: [],
         exitCode: 1,
-        costUsd: 0,
+        turns: 0,
         durationMs: outcome.durationMs,
       });
       summary.tracesErrored += 1;
@@ -222,12 +212,12 @@ export function aggregate(
       summary: report.summary,
       warnings: report.warnings,
       exitCode: report.exitCode,
-      costUsd: report.costUsd,
+      turns: report.turns,
       durationMs: report.durationMs,
     });
     if (report.exitCode === 1) summary.tracesFailed += 1;
     else summary.tracesPassed += 1;
-    costUsd += report.costUsd;
+    turns += report.turns;
 
     summary.total += report.summary.total;
     summary.pass += report.summary.pass;
@@ -239,8 +229,7 @@ export function aggregate(
     for (const result of report.evalResults) {
       if (
         result.outcome === "skipped" &&
-        result.skipReason !== undefined &&
-        BUDGET_EXHAUSTED.test(result.skipReason)
+        isTurnBudgetSkip(result.skipReason)
       ) {
         budgetSkips += 1;
         budgetTraces.add(outcome.file);
@@ -284,7 +273,7 @@ export function aggregate(
   if (budget !== undefined) {
     warnings.push(
       `${budget.reason}: ${budget.skippedEvals} eval(s) across ${budget.traces} of ` +
-        `${outcomes.length} trace(s) were never judged — raise judge.maxCostUsd or narrow the corpus`,
+        `${outcomes.length} trace(s) were never judged — raise judge.maxTurns or narrow the corpus`,
     );
   }
 
@@ -308,7 +297,7 @@ export function aggregate(
         ? 1
         : 0,
     ...(budget !== undefined ? { budget } : {}),
-    costUsd,
+    turns,
     durationMs: options.durationMs,
   };
 }

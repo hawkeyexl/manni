@@ -15,6 +15,7 @@
 import { writeFile } from "node:fs/promises";
 import { basename, resolve } from "node:path";
 import { discoverConfig } from "../core/config.js";
+import { assertProviderSelection, selectProvider } from "../judge/provider.js";
 import { renderCalibration, type ReportFormat } from "../reporters/index.js";
 import { TracevalsError, type EvalResult } from "../types.js";
 import { loadLabels, type EvalLabel } from "../calibrate/labels.js";
@@ -62,6 +63,18 @@ export async function runCalibrate(
       ...(options.config === undefined ? {} : { configPath: options.config }),
       ...(options.noConfig === undefined ? {} : { noConfig: options.noConfig }),
     },
+  );
+
+  // Before the labels file is read: a contradictory `--local --provider`, an
+  // unknown provider name, or a model with no provider to own it is a usage
+  // error, and a usage error must not arrive behind an unrelated one about a
+  // file the run would never have needed.
+  assertProviderSelection(
+    selectProvider(config, {
+      ...(options.provider !== undefined ? { provider: options.provider } : {}),
+      ...(options.model !== undefined ? { model: options.model } : {}),
+      ...(options.local !== undefined ? { local: options.local } : {}),
+    }),
   );
 
   // A flag overrides the config rather than bypassing it (CLAUDE.md,
@@ -179,7 +192,7 @@ export async function runCalibrate(
       measuredNothing
         ? 1
         : 0,
-    costUsd: batch.report.costUsd,
+    turns: batch.report.turns,
     durationMs: Date.now() - start,
   };
 

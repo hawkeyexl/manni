@@ -37,7 +37,11 @@ export interface EvalResult {
   consensus?: ConsensusResult;
   error?: string;
   skipReason?: string;
-  costUsd?: number;
+  /**
+   * Judged evals only: uncached ensemble runs this eval spent. `0` when the
+   * ensemble came from cache, or when the turn budget stopped it.
+   */
+  turns?: number;
   /**
    * Set when the model that judged this eval also produced what it graded.
    *
@@ -111,7 +115,8 @@ export interface RunReport {
   summary: RunSummary;
   /** 0 pass, 1 any fail/error (and needs-review when failOnNeedsReview). */
   exitCode: 0 | 1;
-  costUsd: number;
+  /** Uncached ensemble runs this run spent. See `judge.maxTurns`. */
+  turns: number;
   durationMs: number;
 }
 
@@ -187,7 +192,8 @@ export interface BatchTraceEntry {
   summary?: RunSummary;
   warnings: string[];
   exitCode: 0 | 1;
-  costUsd: number;
+  /** Judge turns spent on that trace. */
+  turns: number;
   durationMs: number;
 }
 
@@ -213,6 +219,7 @@ export interface BatchReport {
   warnings: string[];
   /** `1` when any trace failed or errored. */
   exitCode: 0 | 1;
-  costUsd: number;
+  /** Judge turns spent across the batch. The budget spans it, not each trace. */
+  turns: number;
   durationMs: number;
 }

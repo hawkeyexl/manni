@@ -219,18 +219,15 @@ labels:
    * same incompleteness that already makes a lost trace exit 1.
    */
   it("fails when the shared judge budget cut the corpus short", async () => {
-    const priced = () => ({
-      ...mockVerdict("pass", 0.95),
-      usage: { inputTokens: 1_000_000, outputTokens: 0 },
-    });
     const { report } = await calibrate({
       judge: makeTraceJudge({
-        provider: new MockProvider(Array.from({ length: 40 }, priced)),
+        provider: new MockProvider(
+          Array.from({ length: 40 }, () => mockVerdict("pass", 0.95)),
+        ),
         runs: 1,
         noCache: true,
-        // Enough for exactly one judged eval at $1 apiece.
-        maxCostUsd: 1,
-        pricing: { inputPerMTok: 1, outputPerMTok: 0 },
+        // Enough for exactly one judged eval at one run apiece.
+        maxTurns: 1,
       }),
     });
     // Deterministic labels still scored, so this is not the empty-denominator

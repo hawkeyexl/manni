@@ -36,14 +36,39 @@ describe("parseConfig", () => {
 
   it("keeps explicit values", () => {
     const config = parseConfig({
-      judge: { ensembleRuns: 5, maxCostUsd: 1.5 },
+      judge: { ensembleRuns: 5, maxTurns: 40 },
       failOnNeedsReview: false,
     });
     expect(config.judge.ensembleRuns).toBe(5);
-    expect(config.judge.maxCostUsd).toBe(1.5);
+    expect(config.judge.maxTurns).toBe(40);
     expect(config.failOnNeedsReview).toBe(false);
     // Untouched sections still get defaults.
     expect(config.judge.temperature).toBe(0);
+  });
+
+  // The budget is turns, not dollars (docevals ADR 01019). Nothing was ever
+  // registered under the old name, so it is refused rather than aliased.
+  it("leaves the turn budget unset by default and refuses the dollar budget", () => {
+    expect(parseConfig({}).judge.maxTurns).toBeNull();
+    expect(() => parseConfig({ judge: { maxCostUsd: 2 } })).toThrow(
+      /unknown key "maxCostUsd"/,
+    );
+    expect(() => parseConfig({ fill: { maxCostUsd: 1 } })).toThrow(
+      /unknown key "maxCostUsd"/,
+    );
+    expect(() => parseConfig({ judge: { maxTurns: 0 } })).toThrow(TracevalsError);
+  });
+
+  it("names the camelCase key a kebab spelling meant", () => {
+    expect(() => parseConfig({ judge: { "ensemble-runs": 3 } })).toThrow(
+      /unknown key "ensemble-runs"; did you mean "ensembleRuns"\?/,
+    );
+  });
+
+  it("names the file a bad key came from", () => {
+    expect(() =>
+      parseConfig({ judge: { maxCostUsd: 2 } }, { source: "/repo/manni.config.yaml" }),
+    ).toThrow(/^\/repo\/manni\.config\.yaml: unknown key "maxCostUsd"/);
   });
 
   it("fills fill defaults and honours explicit ones", () => {
@@ -52,11 +77,11 @@ describe("parseConfig", () => {
     expect(config.fill.maxEvalsPerArtifact).toBe(8);
     expect(config.fill.temperature).toBe(0);
     expect(config.fill.cacheDir).toBe(".manni/tracevals/cache/fill");
-    expect(config.fill.maxCostUsd).toBeUndefined();
+    expect(config.fill.maxTurns).toBeNull();
 
-    const explicit = parseConfig({ fill: { confidenceThreshold: 0.5, maxCostUsd: 2 } });
+    const explicit = parseConfig({ fill: { confidenceThreshold: 0.5, maxTurns: 20 } });
     expect(explicit.fill.confidenceThreshold).toBe(0.5);
-    expect(explicit.fill.maxCostUsd).toBe(2);
+    expect(explicit.fill.maxTurns).toBe(20);
     expect(explicit.fill.maxEvalsPerArtifact).toBe(8);
   });
 
@@ -146,75 +171,44 @@ describe("parseConfig", () => {
     });
   });
 
-  describe("provider section", () => {
-    it("defaults to claude-cli so a fresh checkout needs no API key", () => {
+  describe("provider and model", () => {
+    it("names no provider and no model of its own", () => {
       const config = parseConfig({});
-      expect(config.provider.default).toBe("claude-cli");
-      expect(config.provider["claude-cli"]).toEqual({
-        model: "claude-sonnet-4-5",
-        command: "claude",
-      });
+      expect(config.provider).toBeNull();
+      expect(config.model).toBeNull();
+      expect(config.providers).toEqual({});
     });
 
-    it("fills per-provider defaults for sections that were not configured", () => {
-      const config = parseConfig({ provider: { default: "anthropic" } });
-      expect(config.provider.anthropic).toEqual({
-        model: "claude-sonnet-4-5",
-        apiKeyEnv: "ANTHROPIC_API_KEY",
-      });
-      expect(config.provider.openai.baseUrl).toBe("https://api.openai.com/v1");
+    it("keeps the two strings a user writes", () => {
+      const config = parseConfig({ provider: "anthropic", model: "claude-x" });
+      expect(config.provider).toBe("anthropic");
+      expect(config.model).toBe("claude-x");
     });
 
-    it("keeps explicit provider values, including a pricing override", () => {
-      const config = parseConfig({
-        provider: {
-          default: "openai",
-          openai: {
-            baseUrl: "http://localhost:11434/v1",
-            model: "qwen2.5",
-            pricing: { inputPerMTok: 0, outputPerMTok: 0 },
-          },
-        },
-      });
-      expect(config.provider.openai.baseUrl).toBe("http://localhost:11434/v1");
-      expect(config.provider.openai.model).toBe("qwen2.5");
-      expect(config.provider.openai.pricing).toEqual({
-        inputPerMTok: 0,
-        outputPerMTok: 0,
-      });
-      // Untouched sections still get their defaults.
-      expect(config.provider.anthropic.model).toBe("claude-sonnet-4-5");
-    });
-
-    it("rejects a typo'd provider name instead of silently defaulting", () => {
-      // This section used to be an untyped passthrough, so `default: antropic`
-      // or a misspelled section name sailed through validation and the run
-      // quietly used a different provider than the author intended.
-      expect(() => parseConfig({ provider: { default: "antropic" } })).toThrow(
-        TracevalsError,
+    it("refuses a typo'd provider name instead of silently defaulting", () => {
+      expect(() => parseConfig({ provider: "antropic" })).toThrow(TracevalsError);
+      expect(() => parseConfig({ provider: "antropic" })).toThrow(
+        /Unknown provider "antropic"/,
       );
-      expect(() =>
-        parseConfig({ provider: { anthropc: { model: "x" } } }),
-      ).toThrow(TracevalsError);
     });
 
-    it("rejects a typo'd key inside a provider section", () => {
+    // The key used to hold a `default` and a section per provider. Ajv's own
+    // message says it must be a string, which is true and leaves the reader to
+    // find out where the settings went.
+    it("says where the old provider object's settings went", () => {
       expect(() =>
-        parseConfig({ provider: { anthropic: { modl: "x" } } }),
-      ).toThrow(TracevalsError);
+        parseConfig(
+          { provider: { default: "anthropic" } },
+          { source: "/repo/manni.config.yaml" },
+        ),
+      ).toThrow(
+        /\/repo\/manni\.config\.yaml: \/tracevals\/provider must be string; "provider" is now a provider name; per-provider settings moved to the top-level providers: map/,
+      );
     });
 
-    it("rejects an empty apiKeyEnv", () => {
+    it("refuses pricing, which is no longer a key anywhere", () => {
       expect(() =>
-        parseConfig({ provider: { anthropic: { apiKeyEnv: "" } } }),
-      ).toThrow(TracevalsError);
-    });
-
-    it("rejects a half-specified pricing override", () => {
-      expect(() =>
-        parseConfig({
-          provider: { anthropic: { pricing: { inputPerMTok: 3 } } },
-        }),
+        parseConfig({ judge: { pricing: { inputPerMTok: 3, outputPerMTok: 5 } } }),
       ).toThrow(TracevalsError);
     });
   });
@@ -380,15 +374,32 @@ describe("loadConfig", () => {
     expect(found.dir).toBe(dir);
   });
 
-  it("reads a legacy moose-tracevals.config.yaml whole, with a warning", async () => {
-    // The tool's own file from before the family config carries the section
-    // with no wrapper key. Still read, so an unmigrated project keeps its
-    // settings; the warning says where they should move.
+  it("does not look for a file named after the tool, and says nothing about one", async () => {
+    // A per-tool config file is not read however it is spelled: the family
+    // file is the only one, so nothing warns about this because nothing
+    // looks for it.
     await write("moose-tracevals.config.yaml", "judge:\n  ensembleRuns: 5\n");
     const config = await loadConfig(dir);
-    expect(config.judge.ensembleRuns).toBe(5);
-    expect(stderr.join("")).toMatch(/moose-tracevals\.config\.yaml.*deprecated/);
-    expect(stderr.join("")).toMatch(/`tracevals:`/);
+    expect(config.judge.ensembleRuns).toBe(3);
+    expect(stderr.join("")).toBe("");
+  });
+
+  it("reads the family's top-level providers: beside the section", async () => {
+    await write(
+      "manni.config.yaml",
+      [
+        "providers:",
+        "  provider: openai",
+        "  openai:",
+        "    baseUrl: http://localhost:11434/v1",
+        "tracevals:",
+        "  judge:",
+        "    ensembleRuns: 5",
+      ].join("\n") + "\n",
+    );
+    const config = await loadConfig(dir);
+    expect(config.providers.provider).toBe("openai");
+    expect(config.providers.openai?.baseUrl).toBe("http://localhost:11434/v1");
   });
 
   it("validates the tracevals section", async () => {

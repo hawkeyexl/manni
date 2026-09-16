@@ -4,6 +4,7 @@ import {
   renderBatch,
   renderCalibration,
 } from "../../../src/tracevals/reporters/index.js";
+import { turnBudgetSkipReason } from "../../../src/docevals/judge/budget.js";
 import { aggregate } from "../../../src/tracevals/aggregate.js";
 import type { BatchReport, RunReport } from "../../../src/tracevals/types.js";
 import type { CalibrationReport } from "../../../src/tracevals/calibrate/types.js";
@@ -61,7 +62,7 @@ const report: RunReport = {
       implicit: true,
       outcome: "pass",
       durationMs: 5,
-      costUsd: 0.01,
+      turns: 3,
     },
   ],
   availability: {
@@ -80,7 +81,7 @@ const report: RunReport = {
     passRate: 0.5,
   },
   exitCode: 1,
-  costUsd: 0.01,
+  turns: 3,
   durationMs: 100,
 };
 
@@ -517,7 +518,7 @@ describe("batch reporters", () => {
                 ...report.evalResults[0]!,
                 outcome: "skipped",
                 findings: [],
-                skipReason: "judge cost budget exhausted ($0.5)",
+                skipReason: turnBudgetSkipReason(2),
               },
             ],
             summary: {
@@ -546,7 +547,7 @@ describe("batch reporters", () => {
     it("markdown carries it in the header block", () => {
       const out = renderBatch(cutShort, "markdown");
       expect(out).toContain("- **Budget**:");
-      expect(out).toContain("judge cost budget exhausted ($0.5)");
+      expect(out).toContain("judge turn budget exhausted (2)");
     });
 
     it("says nothing at all when the budget held", () => {
@@ -672,7 +673,7 @@ const emptyBatch: BatchReport = {
   },
   warnings: [],
   exitCode: 0,
-  costUsd: 0.02,
+  turns: 6,
   durationMs: 10,
 };
 
@@ -759,7 +760,7 @@ const calibration: CalibrationReport = {
   batch: emptyBatch,
   warnings: ["1 unparseable JSONL line(s) were skipped"],
   exitCode: 1,
-  costUsd: 0.02,
+  turns: 6,
   durationMs: 12,
 };
 

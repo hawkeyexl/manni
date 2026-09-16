@@ -16,6 +16,10 @@ import {
   readConfigFileSync,
   type ConfigFileOptions,
 } from "../../shared/config-file.js";
+import {
+  assertKnownProvider,
+  type ProvidersConfig,
+} from "../../shared/providers.js";
 import { compileRedactPatterns } from "../judge/redact.js";
 import { DEFAULT_CAPTURE_DIR } from "../capture/types.js";
 import { DEFAULT_LABELS_FILE } from "../calibrate/labels.js";
@@ -33,48 +37,47 @@ export const DEFAULT_CONFIG_FILENAME =
 export const CONFIG_SECTION_KEY = "tracevals";
 
 /**
- * The tool's own file from before the family config. Still read, whole, with
- * a warning from the shared discovery.
+ * The section key as an error's instance path spells it. The schema describes
+ * the section rather than the file, so Ajv's own paths start below it; a
+ * message that said `/provider` would name a key nobody writes at the root.
  */
-const LEGACY_CONFIG_FILENAME = "moose-tracevals.config.yaml";
+const CONFIG_SECTION_KEY_PATH = `/${CONFIG_SECTION_KEY}`;
 
+/**
+ * No legacy filename. The family file is the only one read, so a file named
+ * for the tool is not config however it is spelled, and nothing warns about
+ * one because nothing looks for it.
+ */
 const CONFIG_FILE: ConfigFileOptions = {
   section: CONFIG_SECTION_KEY,
-  legacyNames: [LEGACY_CONFIG_FILENAME],
+  legacyNames: [],
   toError: (message) => new TracevalsError(message),
 };
 
-/** USD per million tokens; overrides the inference library's built-in table. */
-export interface Pricing {
-  inputPerMTok: number;
-  outputPerMTok: number;
-}
-
-/**
- * Per-provider settings. Configure as many as you like and select one with
- * `provider.default` or `--provider`; only the selected section is mapped onto
- * the inference library's `ProviderSpec` (see judge/provider.ts).
- */
-export interface ProviderConfig {
-  default: "anthropic" | "openai" | "claude-cli" | "mock";
-  anthropic: { model: string; apiKeyEnv: string; pricing?: Pricing };
-  openai: {
-    baseUrl: string;
-    model: string;
-    apiKeyEnv: string;
-    pricing?: Pricing;
-  };
-  "claude-cli": { model: string; command: string };
-}
-
 export interface TracevalsConfig {
-  provider: ProviderConfig;
+  /**
+   * Which provider judges, as `tracevals.provider` names it. `null` when the
+   * key is absent, which defers to the family's `providers.provider`. The
+   * connection settings are never here: they are `providers` below.
+   */
+  provider: string | null;
+  /** The model within `provider`; `null` when unset. manni pins none. */
+  model: string | null;
+  /** The family's top-level `providers:` map, parsed by the shared loader. */
+  providers: ProvidersConfig;
+  /** The file as the user would name it, for messages. */
+  configSource: string;
   judge: {
     ensembleRuns: number;
     temperature: number;
     zones: { autoPass: number; autoFail: number };
     cacheDir: string;
-    maxCostUsd?: number;
+    /**
+     * Ensemble runs this invocation may spend, or `null` for unbounded. A
+     * cached ensemble spends none, and an eval the budget cannot cover is
+     * `skipped` with the `turn budget` reason rather than dropped.
+     */
+    maxTurns: number | null;
     /**
      * Extra patterns scrubbed from the session digest before it reaches a
      * provider, applied *on top of* the built-in secret shapes (ADR 01020).
@@ -115,7 +118,8 @@ export interface TracevalsConfig {
     maxEvalsPerArtifact: number;
     temperature: number;
     cacheDir: string;
-    maxCostUsd?: number;
+    /** Inference calls this invocation may spend, or `null` for unbounded. */
+    maxTurns: number | null;
   };
   /**
    * `calibrate` — measuring the judge against a human's answers (ADR 01022).
@@ -147,8 +151,43 @@ export interface TracevalsConfig {
   reportUnusedArtifacts: boolean;
 }
 
-const ajv = new Ajv2020({ allErrors: true });
+// `verbose` puts the parent schema on each error, so an unknown key can be
+// checked against the keys its section does have.
+const ajv = new Ajv2020({ allErrors: true, verbose: true });
 const validate = ajv.compile(configSchema);
+
+/**
+ * `; did you mean "ensembleRuns"?` when `key` is the kebab spelling of a key
+ * its section has. Only the exact counterpart: a guess at a near miss is
+ * advice that can be wrong, and the kebab spelling is the one mistake a
+ * reader of the frontmatter vocabulary is likely to make here.
+ */
+function camelCaseHint(key: string, parentSchema: unknown): string {
+  const camel = key.replace(/-([a-z0-9])/g, (_, c: string) => c.toUpperCase());
+  if (camel === key || parentSchema === null || typeof parentSchema !== "object") {
+    return "";
+  }
+  const properties = (parentSchema as { properties?: unknown }).properties;
+  return properties !== null &&
+    typeof properties === "object" &&
+    Object.hasOwn(properties, camel)
+    ? `; did you mean "${camel}"?`
+    : "";
+}
+
+/**
+ * The hint on an old `provider:` object. The key used to hold a `default` and
+ * a section per provider; it is now the provider's name, as `docevals.provider`
+ * and `fill.provider` are, and the connection settings moved to the family's
+ * top-level `providers:` map, which every tool reads. Ajv's own message says
+ * it must be a string, which is true and leaves the reader to find out where
+ * the settings went.
+ */
+function movedProviderHint(instancePath: string, keyword: string): string {
+  return instancePath === "/provider" && keyword === "type"
+    ? `; "provider" is now a provider name; per-provider settings moved to the top-level providers: map`
+    : "";
+}
 
 /**
  * The section as the schema admits it: every key optional, because
@@ -157,23 +196,14 @@ const validate = ajv.compile(configSchema);
  * where the validated document becomes a typed one.
  */
 interface RawConfig {
-  provider?: {
-    default?: ProviderConfig["default"];
-    anthropic?: { model?: string; apiKeyEnv?: string; pricing?: Pricing };
-    openai?: {
-      baseUrl?: string;
-      model?: string;
-      apiKeyEnv?: string;
-      pricing?: Pricing;
-    };
-    "claude-cli"?: { model?: string; command?: string };
-  };
+  provider?: string;
+  model?: string;
   judge?: {
     ensembleRuns?: number;
     temperature?: number;
     zones?: { autoPass?: number; autoFail?: number };
     cacheDir?: string;
-    maxCostUsd?: number;
+    maxTurns?: number;
     redact?: string[];
   };
   render?: { maxBlockChars?: number; maxTotalChars?: number };
@@ -185,7 +215,7 @@ interface RawConfig {
     maxEvalsPerArtifact?: number;
     temperature?: number;
     cacheDir?: string;
-    maxCostUsd?: number;
+    maxTurns?: number;
   };
   calibrate?: {
     labels?: string;
@@ -199,39 +229,55 @@ interface RawConfig {
   reportUnusedArtifacts?: boolean;
 }
 
-export function parseConfig(raw: unknown): TracevalsConfig {
+/** What the file the section came from carries beside it. */
+export interface ConfigFileContext {
+  /** The file as the user would name it, for messages. */
+  source?: string;
+  /** The file's top-level `providers:`; `{}` when it declares none. */
+  providers?: ProvidersConfig;
+}
+
+export function parseConfig(
+  raw: unknown,
+  file: ConfigFileContext = {},
+): TracevalsConfig {
+  const source = file.source ?? DEFAULT_CONFIG_FILENAME;
   if (!validate(raw)) {
     const detail = (validate.errors ?? [])
-      .map((e) => `${e.instancePath || "/"} ${e.message ?? "invalid"}`)
+      .map((e) => {
+        // Ajv reports an unknown key against the *parent* object, so the bare
+        // message ("must NOT have additional properties") leaves the reader to
+        // diff their file against the schema to find which key it meant. Name
+        // it: the common case is a removed key in an unmigrated config —
+        // `judge.maxCostUsd` after the turn budget landed, say — and a
+        // migration error that makes you guess is one people work around.
+        const extra =
+          e.keyword === "additionalProperties"
+            ? (e.params as { additionalProperty?: string }).additionalProperty
+            : undefined;
+        return extra !== undefined
+          ? `unknown key "${extra}"${camelCaseHint(extra, e.parentSchema)}`
+          : `${CONFIG_SECTION_KEY_PATH}${e.instancePath} ${e.message ?? "is invalid"}` +
+              movedProviderHint(e.instancePath, e.keyword);
+      })
       .join("; ");
-    throw new TracevalsError(`invalid config: ${detail}`);
+    throw new TracevalsError(`${source}: ${detail}`);
   }
   const r = raw as RawConfig;
+  // Checked here, with the message every other tool in the family gives, so a
+  // typo is caught by every verb and not only the ones that reach a model.
+  // Whether a model has a provider to own it waits for the flags: a
+  // `--provider`, or the family's `providers.provider`, can supply the
+  // provider a configured model needs.
+  const provider = r.provider ?? null;
+  if (provider !== null) {
+    assertKnownProvider(provider, (message) => new TracevalsError(message));
+  }
   const config: TracevalsConfig = {
-    provider: {
-      // claude-cli by default: it uses the local Claude CLI's own auth, so a
-      // fresh checkout judges without anyone provisioning an API key.
-      default: r.provider?.default ?? "claude-cli",
-      anthropic: {
-        model: r.provider?.anthropic?.model ?? "claude-sonnet-4-5",
-        apiKeyEnv: r.provider?.anthropic?.apiKeyEnv ?? "ANTHROPIC_API_KEY",
-        ...(r.provider?.anthropic?.pricing
-          ? { pricing: r.provider.anthropic.pricing }
-          : {}),
-      },
-      openai: {
-        baseUrl: r.provider?.openai?.baseUrl ?? "https://api.openai.com/v1",
-        model: r.provider?.openai?.model ?? "gpt-4o-mini",
-        apiKeyEnv: r.provider?.openai?.apiKeyEnv ?? "OPENAI_API_KEY",
-        ...(r.provider?.openai?.pricing
-          ? { pricing: r.provider.openai.pricing }
-          : {}),
-      },
-      "claude-cli": {
-        model: r.provider?.["claude-cli"]?.model ?? "claude-sonnet-4-5",
-        command: r.provider?.["claude-cli"]?.command ?? "claude",
-      },
-    },
+    provider,
+    model: r.model ?? null,
+    providers: file.providers ?? {},
+    configSource: source,
     judge: {
       ensembleRuns: r.judge?.ensembleRuns ?? 3,
       temperature: r.judge?.temperature ?? 0,
@@ -240,6 +286,9 @@ export function parseConfig(raw: unknown): TracevalsConfig {
         autoFail: r.judge?.zones?.autoFail ?? 0.8,
       },
       cacheDir: r.judge?.cacheDir ?? ".manni/tracevals/cache",
+      // `null`, not a number: unbounded is a state, and any number here would
+      // be a ceiling nobody asked for.
+      maxTurns: r.judge?.maxTurns ?? null,
       // Always a list: the render site concatenates nothing onto it, but a
       // hole here would be a special case in every consumer.
       redact: [...(r.judge?.redact ?? [])],
@@ -267,6 +316,7 @@ export function parseConfig(raw: unknown): TracevalsConfig {
       temperature: r.fill?.temperature ?? 0,
       // Separate from the judge cache: different key scheme and value shape.
       cacheDir: r.fill?.cacheDir ?? ".manni/tracevals/cache/fill",
+      maxTurns: r.fill?.maxTurns ?? null,
     },
     calibrate: {
       labels: r.calibrate?.labels ?? DEFAULT_LABELS_FILE,
@@ -295,12 +345,6 @@ export function parseConfig(raw: unknown): TracevalsConfig {
   // compile must fail here rather than at the moment a digest is about to be
   // sent — a dropped redaction pattern is a silent leak.
   compileRedactPatterns(config.judge.redact);
-  if (typeof r.judge?.maxCostUsd === "number") {
-    config.judge.maxCostUsd = r.judge.maxCostUsd;
-  }
-  if (typeof r.fill?.maxCostUsd === "number") {
-    config.fill.maxCostUsd = r.fill.maxCostUsd;
-  }
   // Left absent rather than defaulted to a number: `0` is a meaningful limit
   // ("no false pass at all"), so it cannot double as "unset".
   for (const key of ["maxFalsePass", "maxFalseFail", "maxReview"] as const) {
@@ -333,10 +377,9 @@ export interface ConfigLookup {
 /**
  * Discover the family config from `dir` (cwd by default) upward to the
  * repository root and return this tool's section (`src/shared/config-file.ts`:
- * `manni.config.yaml` read at its `tracevals:` key, the pre-rename
- * `manni.config.yaml` with a warning, then `moose-tracevals.config.yaml`
- * whole). An absent file — or one that carries only other tools' sections —
- * yields defaults.
+ * `manni.config.yaml` read at its `tracevals:` key, with the family's
+ * top-level `providers:` beside it). An absent file — or one that carries only
+ * other tools' sections — yields defaults.
  *
  * `-c` names a file and skips the walk; `--no-config` skips the file
  * altogether and runs on the built-in defaults, with `dir` still anchoring
@@ -353,7 +396,13 @@ export async function discoverConfig(
       : readConfigFileSync(lookup.configPath, dir, CONFIG_FILE),
   );
   if (file === null) return { config: parseConfig({}), dir };
-  return { config: parseConfig(file.value ?? {}), dir: file.dir };
+  return {
+    config: parseConfig(file.value ?? {}, {
+      source: file.source,
+      ...(file.providers !== undefined ? { providers: file.providers } : {}),
+    }),
+    dir: file.dir,
+  };
 }
 
 /** `discoverConfig`, for callers that only want the settings. */
