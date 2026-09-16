@@ -81,14 +81,19 @@ describe("numeric options are range-checked", () => {
       "--limit expects a number",
     ],
     [
-      "a --min-confidence above 1",
-      ["fill", "--min-confidence", "5"],
-      "--min-confidence must be 0..1",
+      "a --confidence above 1",
+      ["fill", "--confidence", "5"],
+      "--confidence must be 0..1",
     ],
     [
-      "a negative --max-cost",
-      ["fill", "--max-cost", "-1"],
-      "--max-cost must be >= 0",
+      "a zero --max-turns",
+      ["fill", "--max-turns", "0"],
+      "--max-turns must be >= 1",
+    ],
+    [
+      "a fractional --max-turns",
+      ["fill", "--max-turns", "1.5"],
+      "--max-turns expects a whole number",
     ],
     // The one this sweep first missed. NaN here is worse than a wrong number:
     // `pct < NaN` is false for every field, so the coverage gate silently
@@ -121,27 +126,65 @@ describe("numeric options are range-checked", () => {
   });
 });
 
-describe("enum options are checked against the same list config is", () => {
-  it("refuses an unknown --provider, naming the valid ones", () => {
-    // `fill.provider` is Ajv-validated against the schema enum, but the CLI
-    // override was an arbitrary string cast straight to ProviderName. The
-    // documented precedence is config → Ajv → CLI override, so the override
-    // has to be held to the same list.
+describe("the provider flags are the family's", () => {
+  it("refuses an unknown --provider, naming the ones on offer", () => {
+    // `assertKnownProvider` from src/shared/providers.ts, the message
+    // `manni meta fill` and `manni docevals` give. `mock` is accepted by name
+    // and never listed (proposal 0051 §3).
     const { status, stderr } = runCli(["fill", "--provider", "bogus"]);
-    expect(stderr).toContain("--provider must be one of");
-    expect(stderr).toContain("llama-cpp");
+    expect(stderr).toContain(
+      'Unknown provider "bogus". Available: anthropic, openai, claude-cli, llama-cpp, auto.',
+    );
+    expect(stderr).not.toContain("mock");
     expect(status).toBe(2);
   });
 
-  it("still accepts a real provider name", () => {
-    const { stderr, status } = runCli(["fill", "--provider", "mock"]);
-    // This assertion was vacuous until `runCli` captured stderr for real: the
-    // helper hardcoded `stderr: ""` on the success path, so `not.toContain`
-    // held no matter what the CLI wrote. The run does write to stderr — an
-    // unpriceable-cap warning — so the empty string was not even close to
-    // the truth, and it is now checked against what actually came back.
-    expect(stderr).toContain("Cost cap of 5 USD cannot be enforced");
-    expect(stderr).not.toContain("--provider must be one of");
+  it("refuses a --model with no provider to own it, naming kg.provider", () => {
+    const { status, stderr } = runCli(["fill", "--model", "some-model"]);
+    expect(stderr).toContain(
+      'Model "some-model" was given without a provider',
+    );
+    expect(stderr).toContain("Set --provider or kg.provider to one of");
+    expect(status).toBe(2);
+  });
+
+  it("refuses --local beside a hosted --provider", () => {
+    const { status, stderr } = runCli([
+      "fill",
+      "x.md",
+      "--local",
+      "--provider",
+      "anthropic",
+    ]);
+    expect(stderr).toContain(
+      "--local and --provider anthropic contradict each other: --local runs inference on " +
+        "this machine with llama-cpp. Drop one of them.",
+    );
+    expect(status).toBe(2);
+  });
+
+  it("refuses an unknown --fields value, naming the fillable ones", () => {
+    const { status, stderr } = runCli(["fill", "--fields", "label,bogus"]);
+    expect(stderr).toContain("--fields must be one of");
+    expect(stderr).toContain("alt-labels");
+    expect(status).toBe(2);
+  });
+
+  it("names the local flag and the turn budget in fill's help, and not the mock", () => {
+    const { stdout, status } = runCli(["fill", "--help"]);
     expect(status).toBe(0);
+    expect(stdout).toContain("--local");
+    expect(stdout).toContain("run inference on this machine (llama-cpp)");
+    expect(stdout).toContain("--max-turns <n>");
+    expect(stdout).toContain("--confidence <n>");
+    expect(stdout).toContain("--fields <list>");
+    // commander wraps the option column, so compare on collapsed whitespace.
+    expect(stdout.replace(/\s+/g, " ")).toContain(
+      "auto (default) | anthropic | openai | claude-cli | llama-cpp",
+    );
+    expect(stdout).not.toContain("--max-cost");
+    expect(stdout).not.toContain("--min-confidence");
+    // The test double is accepted by name and never offered (#10's rule).
+    expect(stdout).not.toContain("mock");
   });
 });

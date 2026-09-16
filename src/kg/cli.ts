@@ -16,7 +16,8 @@ import { shouldColor } from "../shared/color.js";
 import { fail } from "../shared/run.js";
 import { warn } from "../shared/warn.js";
 import { KgError } from "./types.js";
-import { PROVIDER_NAMES } from "./core/config.js";
+import { LOCAL_FLAG_HELP } from "../shared/providers.js";
+import { ALL_FILL_FIELDS, type FillField } from "./core/config.js";
 import { KG_FORMATS, KG_FORMAT_LIST, type KgFormat } from "./reporters/index.js";
 import { runBuild } from "./commands/build.js";
 import { renderCheck, runCheck } from "./commands/check.js";
@@ -160,6 +161,14 @@ function choiceOption<T extends string>(flag: string, allowed: readonly T[]) {
 
 /** `-f, --format`: every verb's list is `pretty | json` (0051 §2). */
 const formatOption = choiceOption("--format", KG_FORMATS);
+
+/**
+ * `--fields <list>`: comma-separated and given once, never repeatable — one
+ * separator per list (proposal 0034), and the spelling `meta fill --fields`
+ * already uses. Each value is held to the same list `fill.fields` is.
+ */
+const fieldsOption = (raw: string): FillField[] =>
+  splitList(raw).map((value) => enumOption("--fields", ALL_FILL_FIELDS)(value));
 
 /**
  * The document-set surface the verbs that read documents share (proposals
@@ -360,21 +369,29 @@ documentInputs(
   .option("--no-validate-graph", "Skip the SHACL graph guardrail on proposals")
   .option("--sections", "Also propose per-section metadata")
   .option(
-    "--max-cost <usd>",
-    "Stop proposing past this cost",
-    numericOption("--max-cost", { min: 0 }),
+    "--max-turns <n>",
+    "Stop after this many inference calls (a cached page costs none)",
+    countOption("--max-turns"),
   )
   .option(
-    "--min-confidence <n>",
+    "--confidence <n>",
     "Minimum model confidence (0..1) to write a field (default: config, 0.7)",
-    numericOption("--min-confidence", { min: 0, max: 1 }),
+    numericOption("--confidence", { min: 0, max: 1 }),
   )
+  .option(
+    // Comma-separated and given once: one separator per list (proposal 0034).
+    "--fields <list>",
+    `Fields to propose (comma-separated; default: config, then every field)`,
+    fieldsOption,
+  )
+  // The nameable providers, and `auto`. `mock` is the library's test double:
+  // accepted when asked for by name, never offered.
   .option(
     "--provider <name>",
-    `Provider: ${PROVIDER_NAMES.join(" | ")}`,
-    enumOption("--provider", PROVIDER_NAMES),
+    "Provider: auto (default) | anthropic | openai | claude-cli | llama-cpp",
   )
-  .option("--model <model>", "Model override")
+  .option("--model <model>", "Model override; needs a named provider, from here or config")
+  .option("--local", LOCAL_FLAG_HELP)
   .action(async (paths: string[], opts: Record<string, unknown>) => {
     try {
       const report = await runFill({
@@ -385,10 +402,12 @@ documentInputs(
         noCache: opts.cache === false,
         noValidateGraph: opts.validateGraph === false,
         sections: opts.sections as boolean | undefined,
-        maxCost: opts.maxCost as number | undefined,
-        minConfidence: opts.minConfidence as number | undefined,
+        maxTurns: opts.maxTurns as number | undefined,
+        confidence: opts.confidence as number | undefined,
+        fields: opts.fields as FillField[] | undefined,
         provider: opts.provider as string | undefined,
         model: opts.model as string | undefined,
+        local: opts.local as boolean | undefined,
       });
       // Same channel discipline as build: warnings on stderr, so stdout stays
       // the report, and a warning never changes the exit code.

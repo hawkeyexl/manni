@@ -5,6 +5,16 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
+    "provider": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Which provider `manni kg fill` sends pages to: auto | anthropic | openai | claude-cli | llama-cpp. Unset, the family's top-level providers.provider decides, then auto, detected exactly as manni meta fill detects: an Anthropic key, then an OpenAI key, then the Claude CLI, then a local model. --provider wins over it, and --local overrides both. Connection settings live in the family's top-level providers: map."
+    },
+    "model": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The model, within the provider named beside it. A model is carried only to the provider its own level names: a differing --provider or providers.provider takes its own default instead. With no provider here, it goes to whichever provider is in force, which must not be auto, because a model name does not say which provider owns it. Unset (the default) takes the provider's default model from the inference library; manni pins none. --model wins over it. This is not `embed.model`, which is a local embedding model id."
+    },
     "baseIri": {
       "type": "string",
       "minLength": 1
@@ -188,42 +198,25 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "provider": {
-          "enum": ["anthropic", "openai", "claude-cli", "llama-cpp", "mock"]
-        },
-        "model": {
-          "type": "string",
-          "minLength": 1
-        },
-        "apiKeyEnv": {
-          "type": "string",
-          "minLength": 1
-        },
-        "baseUrl": {
-          "type": "string",
-          "minLength": 1
-        },
-        "command": {
-          "type": "string",
-          "minLength": 1
-        },
         "temperature": {
           "type": "number",
           "minimum": 0,
           "maximum": 2
         },
-        "maxCostUsd": {
-          "type": ["number", "null"],
-          "minimum": 0
+        "maxTurns": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Stop after this many inference calls. One page is one turn, and a cached proposal spends none. Null (the default) is unbounded. Replaces the maxCostUsd ceiling, which read as zero for every model outside the library's price table — see kg ADR 01027 and docevals ADR 01019."
         },
         "cacheDir": {
           "type": "string",
           "minLength": 1
         },
-        "minConfidence": {
+        "confidenceThreshold": {
           "type": "number",
           "minimum": 0,
-          "maximum": 1
+          "maximum": 1,
+          "description": "Minimum model self-confidence (0..1) to write a proposed field; below it the field is reported and not written. Default 0.7. `--confidence` wins over it."
         },
         "writeProvenance": {
           "type": "boolean"
@@ -249,21 +242,6 @@
               "not-applicable-to",
               "not-about-product-aspect"
             ]
-          }
-        },
-        "pricing": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["inputPerMTok", "outputPerMTok"],
-          "properties": {
-            "inputPerMTok": {
-              "type": "number",
-              "minimum": 0
-            },
-            "outputPerMTok": {
-              "type": "number",
-              "minimum": 0
-            }
           }
         },
         "sections": {

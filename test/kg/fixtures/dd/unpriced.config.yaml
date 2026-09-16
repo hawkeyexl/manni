@@ -1,7 +1,11 @@
-# Corpus for the unenforceable-cost-cap message on build/backfill.mdx
-# (ADR 01027). The model name is deliberately absent from the price table, so
-# `fill` cannot total spend and must say the cap does not apply rather than
-# reporting a confident $0.0000.
+# Corpus for the turn-budget message on the fill docs page.
+#
+# It used to demonstrate the unenforceable-cost-cap warning (kg ADR 01027):
+# the model name is deliberately absent from the inference library's price
+# table, so nothing could be totalled and a 5 USD cap could not be applied.
+# Proposal 0051 §3 removed the dollar and counts turns instead, which every
+# model can be counted making — so what this corpus now shows is a page the
+# budget skipped, and the reason printed beside it.
 #
 # Separate from dockg.config.yaml so this fill.* block does not perturb the
 # counts the get-started steps assert.
@@ -13,7 +17,7 @@ collections:
 kg:
   baseIri: https://example.com/dd/
   out: .tmp/dd/unpriced.ttl
+  provider: mock
+  model: no-such-model-in-the-price-table
   fill:
-    provider: mock
-    model: no-such-model-in-the-price-table
-    maxCostUsd: 5
+    maxTurns: 1

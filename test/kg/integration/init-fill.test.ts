@@ -75,15 +75,40 @@ describe("manni kg fill --provider mock (CLI smoke)", () => {
       dir,
     );
     expect(status).toBe(0);
-    // Not "$0.0000". The mock has no price-table entry, so the default 5 USD
-    // cap cannot be applied and nothing can be totalled — which is a different
-    // statement from "this run was free" (ADR 01027). This assertion used to
-    // pin the misleading version.
-    expect(stdout).toContain("LLM cost: unpriceable");
+    // No cost line at all. The dollar total went with the cap kg ADR 01027
+    // found unenforceable, and nothing replaced it in the per-run summary: a
+    // turn budget reports itself on the pages it skipped.
+    expect(stdout).not.toContain("LLM cost");
+    expect(stdout).not.toContain("$0.0000");
     expect(readFileSync(join(dir, "a.md"), "utf8")).toBe(doc);
   });
 
-  it("accepts --min-confidence and still exits 0", () => {
+  it("stops at --max-turns and says which page the budget skipped", () => {
+    const dir = mkdtempSync(join(tmpdir(), "dockg-fillturns-"));
+    writeFileSync(
+      join(dir, "manni.config.yaml"),
+      'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n',
+    );
+    writeFileSync(join(dir, "a.md"), "---\ntitle: A\n---\n\n# A\n");
+    writeFileSync(join(dir, "b.md"), "---\ntitle: B\n---\n\n# B\n");
+    const { stdout, status } = run(
+      [
+        "fill",
+        "--dry-run",
+        "--provider",
+        "mock",
+        "--no-cache",
+        "--max-turns",
+        "1",
+      ],
+      dir,
+    );
+    expect(status).toBe(0);
+    expect(stdout).toContain("(turn budget)");
+    expect(stdout).toContain("--max-turns reached (1)");
+  });
+
+  it("accepts --confidence and still exits 0", () => {
     const dir = mkdtempSync(join(tmpdir(), "dockg-fillconf-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
@@ -97,8 +122,30 @@ describe("manni kg fill --provider mock (CLI smoke)", () => {
         "--provider",
         "mock",
         "--no-cache",
-        "--min-confidence",
+        "--confidence",
         "0.9",
+      ],
+      dir,
+    );
+    expect(status).toBe(0);
+  });
+
+  it("--fields narrows what is proposed", () => {
+    const dir = mkdtempSync(join(tmpdir(), "dockg-fillfields-"));
+    writeFileSync(
+      join(dir, "manni.config.yaml"),
+      'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n  fill:\n    fields: [label]\n',
+    );
+    writeFileSync(join(dir, "a.md"), "---\ntitle: T\n---\n\n# T\n");
+    const { status } = run(
+      [
+        "fill",
+        "--dry-run",
+        "--provider",
+        "mock",
+        "--no-cache",
+        "--fields",
+        "label,concepts",
       ],
       dir,
     );

@@ -33,9 +33,14 @@ describe("parseConfig", () => {
     // configure.
     expect(c.provenance).toEqual({ qualified: true });
     expect(c.fill.writeProvenance).toBe(true);
-    expect(c.fill.provider).toBe("anthropic");
+    // No provider is named by default: `auto` detects one, and a default that
+    // names a vendor fails for everyone without that vendor's key (0051 §3).
+    expect(c.provider).toBeNull();
+    expect(c.model).toBeNull();
+    expect(c.providers).toEqual({});
     expect(c.fill.temperature).toBe(0);
-    expect(c.fill.maxCostUsd).toBe(5);
+    // Turns, not dollars. Unset is unbounded (0051 §3, docevals ADR 01019).
+    expect(c.fill.maxTurns).toBeNull();
     expect(c.fill.cacheDir).toBe(".manni/kg/cache");
     // Fill proposes every field now; confidence gates what is written (ADR 01015).
     expect(c.fill.fields).toEqual([
@@ -52,7 +57,7 @@ describe("parseConfig", () => {
       "not-applicable-to",
       "not-about-product-aspect",
     ]);
-    expect(c.fill.minConfidence).toBe(0.7);
+    expect(c.fill.confidenceThreshold).toBe(0.7);
     // Local embeddings default to granite, configurable (ADR 01020).
     expect(c.embed.model).toContain("granite-embedding-small-english-r2");
     expect(c.embed.dtype).toBe("q8");
@@ -215,22 +220,68 @@ describe("parseConfig", () => {
     ).toThrow(KgError);
   });
 
-  it("rejects an unknown fill provider", () => {
+  it("rejects an unknown kg.provider, with the family's message", () => {
     expect(() =>
-      parseConfig(
-        "fill:\n  provider: gemini\n",
-        "/tmp/manni.config.yaml",
-      ),
+      parseConfig("provider: gemini\n", "/tmp/manni.config.yaml"),
     ).toThrow(KgError);
+    expect(() =>
+      parseConfig("provider: gemini\n", "/tmp/manni.config.yaml"),
+    ).toThrow(
+      'Unknown provider "gemini". Available: anthropic, openai, claude-cli, llama-cpp, auto.',
+    );
   });
 
-  it("accepts the local llama-cpp provider", () => {
+  it("accepts the local llama-cpp provider at the section level", () => {
     const c = parseConfig(
-      "fill:\n  provider: llama-cpp\n  model: granite-4.1-3b-q2\n",
+      "provider: llama-cpp\nmodel: granite-4.1-3b-q2\n",
       "/tmp/manni.config.yaml",
     );
-    expect(c.fill.provider).toBe("llama-cpp");
-    expect(c.fill.model).toBe("granite-4.1-3b-q2");
+    expect(c.provider).toBe("llama-cpp");
+    expect(c.model).toBe("granite-4.1-3b-q2");
+  });
+
+  it("reads the family providers: map beside its own section", () => {
+    const c = parseConfig(
+      "providers:\n  provider: openai\n  openai:\n    baseUrl: http://localhost:11434/v1\nkg:\n  out: g.ttl\n",
+      "/tmp/manni.config.yaml",
+    );
+    expect(c.providers.provider).toBe("openai");
+    expect(c.providers.openai?.baseUrl).toBe("http://localhost:11434/v1");
+  });
+
+  // Connection settings are declared once, for every tool, in the family's
+  // top-level `providers:` map (0051 §3). The keys that used to carry them
+  // under `kg.fill` are unknown keys now, and the message names each one
+  // rather than saying the object "must NOT have additional properties".
+  it.each([
+    ["provider", "provider: openai"],
+    ["model", "model: some-model"],
+    ["apiKeyEnv", "apiKeyEnv: MY_KEY"],
+    ["baseUrl", "baseUrl: http://localhost:11434/v1"],
+    ["command", "command: my-claude"],
+    ["maxCostUsd", "maxCostUsd: 5"],
+    ["pricing", "pricing:\n    inputPerMTok: 1\n    outputPerMTok: 2"],
+    ["minConfidence", "minConfidence: 0.5"],
+  ])("refuses the removed fill.%s by name", (key, yaml) => {
+    const parse = (): unknown =>
+      parseConfig(`fill:\n  ${yaml}\n`, "/tmp/manni.config.yaml");
+    expect(parse).toThrow(KgError);
+    expect(parse).toThrow(`/kg/fill: unknown key "${key}"`);
+  });
+
+  it("accepts fill.maxTurns and fill.confidenceThreshold", () => {
+    const c = parseConfig(
+      "fill:\n  maxTurns: 3\n  confidenceThreshold: 0.5\n",
+      "/tmp/manni.config.yaml",
+    );
+    expect(c.fill.maxTurns).toBe(3);
+    expect(c.fill.confidenceThreshold).toBe(0.5);
+  });
+
+  it("rejects a fill.maxTurns below one", () => {
+    expect(() =>
+      parseConfig("fill:\n  maxTurns: 0\n", "/tmp/manni.config.yaml"),
+    ).toThrow(KgError);
   });
 
   it("defaults fill.sections to off", () => {

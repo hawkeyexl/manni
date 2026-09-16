@@ -12,7 +12,6 @@ import {
   SECTION_COVERAGE_FIELDS,
   UNMEASURED_BY_DESIGN,
 } from "../../../src/kg/core/coverage.js";
-import { PROVIDER_NAMES } from "../../../src/kg/core/config.js";
 import {
   IIRDS_HAS_SUBJECT,
   IIRDS_HAS_TOPIC_TYPE,
@@ -272,36 +271,11 @@ describe("documented bundled defaults ↔ pkg.ts", () => {
   });
 });
 
-describe("PROVIDER_NAMES ↔ config schema", () => {
-  it("names exactly the providers the schema accepts", () => {
-    // One source of truth for the provider list. `--provider` is validated
-    // against PROVIDER_NAMES and `fill.provider` against the JSON schema enum;
-    // if the two drift, one path admits a name the other refuses, and
-    // `providerSpecFor`'s cast to ProviderName stops being sound.
-    const schema = JSON.parse(
-      readFileSync(
-        join(
-          dirname(fileURLToPath(import.meta.url)),
-          "..",
-          "..",
-          "..",
-          "src",
-        "kg",
-          "core",
-          "config-schema.json",
-        ),
-        "utf8",
-      ),
-    ) as {
-      properties: {
-        fill: { properties: { provider: { enum: string[] } } };
-      };
-    };
-    expect([...PROVIDER_NAMES].sort()).toEqual(
-      [...schema.properties.fill.properties.provider.enum].sort(),
-    );
-  });
-});
+// There is no "PROVIDER_NAMES ↔ config schema" guard any more. kg keeps no
+// provider list of its own since proposal 0051 §3: `kg.provider`, the
+// `--provider` flag and the family's `providers.provider` are all checked by
+// `assertKnownProvider` in `src/shared/providers.ts`, against the names the
+// inference library offers. One list cannot drift from itself.
 
 describe("coverage IRIs ↔ iirds.ts", () => {
   it("measures the same iiRDS predicates the emitter mints", () => {

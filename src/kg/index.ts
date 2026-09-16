@@ -8,7 +8,6 @@ export {
   type DockgConfig,
   type DeriveSource,
   type FillField,
-  type Pricing,
 } from "./core/config.js";
 export {
   COVERAGE_FIELDS,
@@ -188,8 +187,13 @@ export {
   type MockResponse,
 } from "@hawkeyexl/inference";
 export {
+  assertProviderSelection,
+  constructProvider,
   makeProvider,
   providerSpecFor,
   resolveProviderIdentity,
-  type ProviderOptions,
+  selectProvider,
+  type ProviderChoice,
+  type ProviderFlags,
+  type ProviderSelection,
 } from "./llm/provider.js";

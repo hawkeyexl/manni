@@ -15,35 +15,18 @@ import {
 } from "../../shared/config-file.js";
 import type { CollectionConfig } from "../../shared/collections.js";
 import { parseCollections } from "../../shared/collections.js";
+import {
+  PROVIDERS_KEY,
+  assertKnownProvider,
+  parseProviders,
+  type ProvidersConfig,
+} from "../../shared/providers.js";
 import { errorMessage } from "../../shared/errors.js";
 import { KgError } from "../types.js";
 import { resolveBaseIri } from "./iri.js";
 import { COVERAGE_FIELD_NAMES } from "./coverage.js";
 // Pure data module (no transformers import), so config stays Node-light.
 import { DEFAULT_MODEL as DEFAULT_EMBED_MODEL } from "../embed/types.js";
-
-/**
- * Every provider `fill` accepts, as data.
- *
- * A runtime list, not just a type: `fill.provider` is validated by Ajv against
- * the schema enum, but the `--provider` CLI override is a raw string, and
- * `providerSpecFor` casts whichever arrives to `ProviderName`. That cast is
- * only sound if both paths are checked against the same list — so the CLI
- * checks against this one, and `test/unit/schema-sync.test.ts` pins it to the
- * schema enum so the two cannot drift.
- *
- * `llama-cpp` is an in-process local model via node-llama-cpp: no key, no
- * network, no spend.
- */
-export const PROVIDER_NAMES = [
-  "anthropic",
-  "openai",
-  "claude-cli",
-  "llama-cpp",
-  "mock",
-] as const;
-
-export type ProviderName = (typeof PROVIDER_NAMES)[number];
 
 export type DeriveSource =
   | "frontmatter"
@@ -86,11 +69,6 @@ export const ALL_FILL_FIELDS: FillField[] = [
   "not-about-product-aspect",
 ];
 
-export interface Pricing {
-  inputPerMTok: number;
-  outputPerMTok: number;
-}
-
 /** Maps published-site routes back to source files. */
 export interface RouteMapping {
   /** Site prefix, normalized: leading `/`, no trailing `/`; `""` = site root. */
@@ -121,6 +99,25 @@ export interface DockgConfig {
    * file governs the run and every value is a built-in default.
    */
   configSource: string | null;
+  /**
+   * `kg.provider`, or `null` when unset: the family's `providers.provider`
+   * decides then, and `auto` (detect) after it. `--provider` wins over it and
+   * `--local` overrides both (proposal 0051 §3).
+   */
+  provider: string | null;
+  /**
+   * The model within the provider, or `null` for the provider's own default.
+   * manni pins no model: the inference library chooses, and the model it
+   * resolves to is what every cache key names. Not `embed.model`, which is a
+   * local embedding model id and has nothing to do with a provider.
+   */
+  model: string | null;
+  /**
+   * The family's top-level `providers:`: the provider and model every tool
+   * falls back to, and the connection settings for each provider. `{}` when
+   * the file declares none, or no file governs the run.
+   */
+  providers: ProvidersConfig;
   /** Normalized base IRI (trailing slash for http(s); `urn:dockg:` default). */
   baseIri: string;
   /** Output path of the built Turtle file, relative to configDir. */
@@ -146,30 +143,28 @@ export interface DockgConfig {
     qualified: boolean;
   };
   fill: {
-    provider: ProviderName;
-    /** Model override; null = provider default. */
-    model: string | null;
-    /** Env var NAME holding the API key; null = provider default. */
-    apiKeyEnv: string | null;
-    baseUrl: string;
-    /** Executable for the claude-cli provider. */
-    command: string;
     temperature: number;
-    maxCostUsd: number | null;
+    /**
+     * Stop after this many inference calls; `null` (the default) is
+     * unbounded. One page is one turn, and a cached proposal spends none.
+     * Replaces the dollar cap kg ADR 01027 found unenforceable, as docevals
+     * ADR 01019 replaced its own (proposal 0051 §3).
+     */
+    maxTurns: number | null;
     cacheDir: string;
     fields: FillField[];
     /**
      * Minimum model self-confidence (0..1) to write a proposed field; below
-     * this it is reported but not written (ADR 01015). Default 0.7.
+     * this it is reported but not written (ADR 01015). Default 0.7. Named as
+     * meta, docevals and tracevals name it (proposal 0051 §3).
      */
-    minConfidence: number;
+    confidenceThreshold: number;
     /** Record kg.provenance on filled docs. */
     writeProvenance: boolean;
     /** Reject proposals that would violate the SHACL shapes contract. */
     validateGraph: boolean;
     /** Also propose per-section metadata (ADR 01032). Opt-in: more output. */
     sections: boolean;
-    pricing?: Pricing;
   };
   stats: {
     /**
@@ -276,9 +271,13 @@ const validateConfig = ajv.compile(configSchema);
  * Ajv reports an unknown key against the *parent* object, so the bare message
  * ("must NOT have additional properties") leaves the reader to diff their file
  * against the schema to find which key it meant. Name it, as docevals does
- * (PR #10): the common case here is a key that was removed — `version:` and
- * `provenance.git:` after proposal 0051 — and a message that makes you guess
- * is one people work around.
+ * (PR #10): the common case here is a key that was removed — `version:`,
+ * `provenance.git:` and `fill.provider:` after proposal 0051 — and a message
+ * that makes you guess is one people work around.
+ *
+ * The path is the one the user writes. Ajv validates the `kg:` section on its
+ * own, so its `instancePath` starts inside it; `/kg` goes back on the front,
+ * so a reader can find `/kg/fill` in `manni.config.yaml` without translating.
  */
 function configErrorLine(e: {
   instancePath: string;
@@ -290,7 +289,7 @@ function configErrorLine(e: {
     e.keyword === "additionalProperties"
       ? (e.params as { additionalProperty?: string }).additionalProperty
       : undefined;
-  const where = e.instancePath || "/";
+  const where = `/${CONFIG_SECTION}${e.instancePath}`;
   return extra === undefined
     ? `  ${where}: ${e.message ?? "is invalid"}`
     : `  ${where}: unknown key "${extra}"`;
@@ -317,6 +316,8 @@ export interface ConfigFileContext {
   source: string;
   /** The file's top-level `collections:`. */
   collections: CollectionConfig[];
+  /** The file's top-level `providers:`; `{}` when it declares none. */
+  providers?: ProvidersConfig;
 }
 
 /**
@@ -339,16 +340,25 @@ export function parseConfig(text: string, configPath: string): DockgConfig {
   }
   const doc = raw as Record<string, unknown>;
   const wrapped = Object.hasOwn(doc, CONFIG_SECTION);
+  const toError = (message: string): Error => new KgError(message);
+  // The family keys, parsed as the shared loader parses them, so a config
+  // built from text selects from the same collections, and the same
+  // providers, a discovered file would.
   const collections = Object.hasOwn(doc, COLLECTIONS_KEY)
-    ? parseCollections(
-        doc[COLLECTIONS_KEY],
-        configPath,
-        (message) => new KgError(message),
-      )
+    ? parseCollections(doc[COLLECTIONS_KEY], configPath, toError)
     : [];
+  const providers = Object.hasOwn(doc, PROVIDERS_KEY)
+    ? parseProviders(
+        doc[PROVIDERS_KEY],
+        configPath,
+        dirname(resolve(configPath)),
+        toError,
+      )
+    : {};
   return parseConfigSection(wrapped ? doc[CONFIG_SECTION] : doc, configPath, {
     source: configPath,
     collections,
+    providers,
   });
 }
 
@@ -394,9 +404,22 @@ export function parseConfigSection(
   const abs = resolve(configPath);
   const dir = dirname(abs);
 
+  // The name is checked here, with the message `manni meta fill` gives, so a
+  // typo is caught by every verb and not only the one that reaches a model.
+  // Whether a model has a provider to own it waits for the flags: a
+  // `--provider`, or the family's `providers.provider`, can supply the
+  // provider a configured model needs.
+  const provider: string | null = r.provider ?? null;
+  if (provider !== null) {
+    assertKnownProvider(provider, (message) => new KgError(message));
+  }
+
   return {
     collections: file.collections,
     configSource: file.source,
+    provider,
+    model: r.model ?? null,
+    providers: file.providers ?? {},
     baseIri: resolveBaseIri(r.baseIri),
     out: r.out ?? "kg/graph.ttl",
     routes: ((r.routes ?? []) as Array<Record<string, any>>).map((m) => ({
@@ -427,20 +450,14 @@ export function parseConfigSection(
       coverageThreshold: resolveCoverageThreshold(r.stats?.coverageThreshold),
     },
     fill: {
-      provider: r.fill?.provider ?? "anthropic",
-      model: r.fill?.model ?? null,
-      apiKeyEnv: r.fill?.apiKeyEnv ?? null,
-      baseUrl: r.fill?.baseUrl ?? "https://api.openai.com/v1",
-      command: r.fill?.command ?? "claude",
       temperature: r.fill?.temperature ?? 0,
-      maxCostUsd: r.fill?.maxCostUsd === undefined ? 5 : r.fill.maxCostUsd,
+      maxTurns: r.fill?.maxTurns ?? null,
       cacheDir: r.fill?.cacheDir ?? ".manni/kg/cache",
       fields: r.fill?.fields ?? [...ALL_FILL_FIELDS],
-      minConfidence: r.fill?.minConfidence ?? 0.7,
+      confidenceThreshold: r.fill?.confidenceThreshold ?? 0.7,
       writeProvenance: r.fill?.writeProvenance ?? true,
       validateGraph: r.fill?.validateGraph ?? true,
       sections: r.fill?.sections ?? false,
-      pricing: r.fill?.pricing,
     },
     embed: {
       model: r.embed?.model ?? DEFAULT_EMBED_MODEL,
@@ -483,6 +500,7 @@ export function loadConfig(path?: string, cwd = process.cwd()): DockgConfig {
   return parseConfigSection(file.value, file.path, {
     source: file.source,
     collections: file.collections,
+    ...(file.providers === undefined ? {} : { providers: file.providers }),
   });
 }
 
