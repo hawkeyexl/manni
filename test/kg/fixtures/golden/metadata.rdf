@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+  xmlns:dcterms="http://purl.org/dc/terms/"
+  xmlns:iirds="http://iirds.tekom.de/iirds#"
+  xmlns:iirdsSft="http://iirds.tekom.de/iirds/domain/software#"
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:vcard="http://www.w3.org/2006/vcard/ns#">
+  <rdf:Description rdf:about="https://example.com/kg/doc/docs/configuration.md">
+    <iirds:has-rendition rdf:resource="https://example.com/kg/doc/docs/configuration.md/rendition"/>
+    <iirds:has-subject rdf:resource="http://iirds.tekom.de/iirds/domain/software#Interface"/>
+    <iirds:has-topic-type rdf:resource="http://iirds.tekom.de/iirds#GenericReference"/>
+    <iirds:is-part-of-package rdf:resource="https://example.com/kg/package"/>
+    <iirds:relates-to-product-variant rdf:resource="https://example.com/kg/product/sp-x100"/>
+    <iirds:relates-to-product-variant rdf:resource="https://example.com/kg/product/sp-x200"/>
+    <iirds:title>Configuration Reference</iirds:title>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Topic"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/kg/doc/docs/configuration.md/rendition">
+    <iirds:format>text/markdown</iirds:format>
+    <iirds:source>content/docs/configuration.md</iirds:source>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Rendition"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/kg/doc/docs/de/getting-started.md">
+    <iirds:has-rendition rdf:resource="https://example.com/kg/doc/docs/de/getting-started.md/rendition"/>
+    <iirds:is-part-of-package rdf:resource="https://example.com/kg/package"/>
+    <iirds:language>de</iirds:language>
+    <iirds:title>Erste Schritte</iirds:title>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Topic"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/kg/doc/docs/de/getting-started.md/rendition">
+    <iirds:format>text/markdown</iirds:format>
+    <iirds:source>content/docs/de/getting-started.md</iirds:source>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Rendition"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/kg/doc/docs/de/regional.md">
+    <iirds:has-rendition rdf:resource="https://example.com/kg/doc/docs/de/regional.md/rendition"/>
+    <iirds:is-part-of-package rdf:resource="https://example.com/kg/package"/>
+    <iirds:language>de-AT</iirds:language>
+    <iirds:title>Regionale Hinweise</iirds:title>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Topic"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/kg/doc/docs/de/regional.md/rendition">
+    <iirds:format>text/markdown</iirds:format>
+    <iirds:source>content/docs/de/regional.md</iirds:source>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Rendition"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/kg/doc/docs/fr/getting-started.md">
+    <iirds:has-rendition rdf:resource="https://example.com/kg/doc/docs/fr/getting-started.md/rendition"/>
+    <iirds:is-part-of-package rdf:resource="https://example.com/kg/package"/>
+    <iirds:language>fr</iirds:language>
+    <iirds:title>Premiers pas</iirds:title>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Topic"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/kg/doc/docs/fr/getting-started.md/rendition">
+    <iirds:format>text/markdown</iirds:format>
+    <iirds:source>content/docs/fr/getting-started.md</iirds:source>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Rendition"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/kg/doc/docs/getting-started.md">
+    <iirds:has-rendition rdf:resource="https://example.com/kg/doc/docs/getting-started.md/rendition"/>
+    <iirds:has-topic-type rdf:resource="http://iirds.tekom.de/iirds#GenericTask"/>
+    <iirds:is-part-of-package rdf:resource="https://example.com/kg/package"/>
+    <iirds:relates-to-product-lifecycle-phase rdf:resource="http://iirds.tekom.de/iirds/domain/software#Deployment"/>
+    <iirds:title>Getting Started</iirds:title>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Topic"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/kg/doc/docs/getting-started.md/rendition">
+    <iirds:format>text/markdown</iirds:format>
+    <iirds:source>content/docs/getting-started.md</iirds:source>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Rendition"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/kg/doc/docs/harvest.md">
+    <iirds:has-rendition rdf:resource="https://example.com/kg/doc/docs/harvest.md/rendition"/>
+    <iirds:has-topic-type rdf:resource="http://iirds.tekom.de/iirds#GenericTask"/>
+    <iirds:is-part-of-package rdf:resource="https://example.com/kg/package"/>
+    <iirds:relates-to-product-variant rdf:resource="https://example.com/kg/product/sp-x100"/>
+    <iirds:title>Upgrading</iirds:title>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Topic"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/kg/doc/docs/harvest.md/rendition">
+    <iirds:format>text/markdown</iirds:format>
+    <iirds:source>content/docs/harvest.md</iirds:source>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Rendition"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/kg/doc/docs/no-frontmatter.md">
+    <iirds:has-rendition rdf:resource="https://example.com/kg/doc/docs/no-frontmatter.md/rendition"/>
+    <iirds:is-part-of-package rdf:resource="https://example.com/kg/package"/>
+    <iirds:title>Loose Notes</iirds:title>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Topic"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/kg/doc/docs/no-frontmatter.md/rendition">
+    <iirds:format>text/markdown</iirds:format>
+    <iirds:source>content/docs/no-frontmatter.md</iirds:source>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Rendition"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/kg/doc/docs/windows-notes.md">
+    <iirds:has-rendition rdf:resource="https://example.com/kg/doc/docs/windows-notes.md/rendition"/>
+    <iirds:is-part-of-package rdf:resource="https://example.com/kg/package"/>
+    <iirds:title>Windows Notes</iirds:title>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Topic"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/kg/doc/docs/windows-notes.md/rendition">
+    <iirds:format>text/markdown</iirds:format>
+    <iirds:source>content/docs/windows-notes.md</iirds:source>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Rendition"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/kg/package">
+    <iirds:iiRDSVersion>1.3</iirds:iiRDSVersion>
+    <iirds:title>dockg export</iirds:title>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Package"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/kg/product/sp-x100">
+    <dcterms:title>SP-X100</dcterms:title>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#ProductVariant"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/kg/product/sp-x200">
+    <dcterms:title>SP-X200</dcterms:title>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#ProductVariant"/>
+  </rdf:Description>
+</rdf:RDF>

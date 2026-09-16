@@ -1,0 +1,28 @@
+kg:
+  version: 1
+  baseIri: https://example.com/kg/
+  inputs:
+    - "docs/**/*.md"
+  out: graph.ttl
+  routes:
+    # Inert for link resolution — no corpus document writes a root-absolute
+    # link — and present for the one thing they now also carry: the language
+    # labelling every document under `root` (ADR 01037). The unlocalized `docs`
+    # route declares none, so the English pages stay unlabelled and the golden
+    # keeps covering the no-language path.
+    - root: docs
+      basePath: /
+    - root: docs/de
+      basePath: /de
+      language: de
+    - root: docs/fr
+      basePath: /fr
+      language: fr
+  provenance:
+    # Pinned off, deliberately (ADR 01010). The golden is the derivation
+    # regression gate, not a capture of this repo's commit state: under the
+    # shipped default ("auto") the build activity would carry HEAD's committer
+    # date in prov:endedAtTime, and the golden would fail on every commit.
+    # Git-derived provenance is covered by the temp-repo tests in
+    # test/integration/build.test.ts instead.
+    git: false

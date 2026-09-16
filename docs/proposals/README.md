@@ -66,6 +66,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0046](0046-provenance-pins.md) | Provenance pins, where `provenance` records which machine wrote which body lines as a range and an integrity hash stamped by `manni meta derive`. Field attribution becomes one `meta-provenance` shape across the family | Maya · M8 / Sara · S1 / Devin · D4 | Implemented (#34) |
 | [0047](0047-field-location.md) | A field's preferred location, `x-manni-location` set to `page` or `external`, marked on every vocabulary field. `manni meta relocate` moves values between the pages and a collection's manifest, and every writer follows the manifest | Sara · S1 / Maya · M4 | Implemented (#37) |
 | [0048](0048-docevals-domain.md) | The `docevals` domain, where moose-docevals folds in as `manni docevals` and takes the family's collections, severity, formats, providers, the 0023 draft and 0046's records. Its content strategy joins the family's, and its ADR log closes at 01045 | Devin · D8, D9 / Sara · S6–S9 / Maya · M9–M13 / Theo · T4 | Proposed |
+| [0051](0051-kg-domain.md) | The `kg` domain, where moose-kg folds in as `manni kg` and takes the family's collections, severity, formats, providers and turn budget, the 0023 draft at proposal.3 and `meta-provenance`. `x-manni-kg-output` says which fields a published graph carries, `kg validate` gives way to `manni meta validate`, the `dockg` identity becomes `manni`, and its ADR log closes at 01040 | Maya · M18–M20 / Devin · D12, D13 / Sara · S12 / Theo · T6 | Proposed |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -184,3 +185,4 @@ commit. The supersede-never-amend rule applies to them as it does here.
 | Directory | Source |
 |---|---|
 | [`docevals/`](docevals/) | moose-docevals at 670e62b (00001-00004 and 01000-01045). Closed at 01045 by [0048](0048-docevals-domain.md); later docevals decisions are in this series. |
+| [`kg/`](kg/) | moose-kg at 9f14ba6 (01000-01040). Closed at 01040 by [0051](0051-kg-domain.md); later kg decisions are in this series. |

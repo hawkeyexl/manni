@@ -1,0 +1,10 @@
+# One page whose language is written as free text rather than a BCP-47 tag, so
+# the localization page can show `dockg check` rejecting it (ADR 01037).
+# Repo-root-relative inputs; see the note in dockg.config.yaml beside this file.
+version: 1
+baseIri: https://example.com/dd/
+inputs:
+  - "test/kg/fixtures/dd/l10n-invalid/**/*.md"
+out: .tmp/dd/l10n-invalid.ttl
+provenance:
+  git: false

@@ -1,0 +1,10 @@
+# A corpus that deliberately violates the SHACL shapes, so the docs can show what
+# `dockg check` catches and prove it exits 1. Repo-root-relative inputs; see the
+# note in dockg.config.yaml beside this file.
+version: 1
+baseIri: https://example.com/dd/
+inputs:
+  - "test/kg/fixtures/dd/violations/**/*.md"
+out: .tmp/dd/violations.ttl
+provenance:
+  git: false

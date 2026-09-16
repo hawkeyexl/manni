@@ -1,0 +1,19 @@
+# Fixture corpus for the Doc Detective inline tests in docs/src/content/docs/.
+#
+# `inputs` is written relative to the REPO ROOT, not to this file, because input
+# globs resolve against the working directory and the doc tests all run from the
+# repo root. That is deliberate: doc-detective's runShell does not honor a
+# working directory, and a glob on the command line cannot be used either — the
+# sequence inside `**/*` closes the JSX comment the tests live in.
+#
+# Kept separate from test/kg/fixtures/corpus/, which feeds the golden determinism
+# gate and must not gain files.
+version: 1
+baseIri: https://example.com/dd/
+inputs:
+  - "test/kg/fixtures/dd/docs/**/*.md"
+out: .tmp/dd/graph.ttl
+
+# Pinned off so the fixture's output does not carry this repo's committer dates.
+provenance:
+  git: false

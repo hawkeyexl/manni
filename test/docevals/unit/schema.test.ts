@@ -35,7 +35,9 @@ describe("the page schema", () => {
     const pkg = JSON.parse(
       readFileSync(resolve(ROOT, "package.json"), "utf8"),
     ) as { files: string[]; exports: Record<string, unknown> };
-    expect(pkg.files).not.toContain("schemas");
+    // `schemas` is in `files` because kg ships `schemas/kg`. What has to stay
+    // absent is a docevals copy, asserted by the two `existsSync` lines below.
+    expect(pkg.files).not.toContain("schemas/docevals");
     expect(Object.keys(pkg.exports).filter((k) => k.startsWith("./schemas/"))).toEqual([]);
     expect(existsSync(resolve(ROOT, "schemas/docevals"))).toBe(false);
     expect(existsSync(resolve(ROOT, "docs/public/docevals/schemas"))).toBe(false);

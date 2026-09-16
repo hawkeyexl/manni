@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "https://example.com/kg/concept/administration",
+      "type": "skos:Concept",
+      "title": "Administration",
+      "labels": "Administration"
+    },
+    {
+      "id": "https://example.com/kg/concept/configuration",
+      "type": "skos:Concept",
+      "title": "Configuration",
+      "labels": "Configuration config settings"
+    },
+    {
+      "id": "https://example.com/kg/concept/installation",
+      "type": "skos:Concept",
+      "title": "Installation",
+      "labels": "Installation"
+    },
+    {
+      "id": "https://example.com/kg/concept/reference",
+      "type": "skos:Concept",
+      "title": "reference",
+      "labels": "reference"
+    },
+    {
+      "id": "https://example.com/kg/concept/setup",
+      "type": "skos:Concept",
+      "title": "setup",
+      "labels": "setup"
+    },
+    {
+      "id": "https://example.com/kg/concept/upgrade",
+      "type": "skos:Concept",
+      "title": "upgrade",
+      "labels": "upgrade"
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/configuration.md",
+      "type": "dockg:Document",
+      "title": "Configuration Reference"
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/configuration.md#advanced",
+      "type": "dockg:Section",
+      "title": "Advanced",
+      "text": "### Advanced\n\nDeep section under Options."
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/configuration.md#configuration",
+      "type": "dockg:Section",
+      "title": "Configuration",
+      "text": "# Configuration\n\nBack to [install](getting-started.md#install), or the whole\n[getting started guide](getting-started.md).\n\nExternal docs: [JSON Schema](https://json-schema.org/)."
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/configuration.md#options",
+      "type": "dockg:Section",
+      "title": "Options",
+      "text": "## Options"
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/getting-started.md",
+      "type": "dockg:Document",
+      "title": "Getting Started",
+      "description": "Install and configure the tool."
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/getting-started.md#getting-started",
+      "type": "dockg:Section",
+      "title": "Getting Started",
+      "text": "# Getting Started\n\nWelcome. See the [configuration reference](configuration.md)."
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/getting-started.md#install",
+      "type": "dockg:Section",
+      "title": "Install",
+      "text": "## Install\n\nRun the installer:\n\n```bash\nnpm install -g dockg\n```\n\n```python\nprint(\"hello\")\n```\n\n![architecture](img/arch.png)"
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/getting-started.md#install-1",
+      "type": "dockg:Section",
+      "title": "Install",
+      "text": "## Install\n\nSecond install section with a duplicate heading."
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/harvest.md",
+      "type": "dockg:Document",
+      "title": "Upgrading",
+      "description": "Move an existing install to the current release."
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/harvest.md#upgrading",
+      "type": "dockg:Section",
+      "title": "Upgrading",
+      "text": "# Upgrading\n\nPage-level metadata only — no `kg` block. The harvest rule (ADR 01024) feeds\nthis document's graph from the page's own fields: `type` derives the iiRDS\ntopic type, `applies-to` mints the product variant (here in single-string\nshorthand), `concepts` becomes the subject, and `supersedes` becomes the\nrevision edge to [the getting started guide](getting-started.md)."
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/no-frontmatter.md",
+      "type": "dockg:Document",
+      "title": "Loose Notes"
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/no-frontmatter.md#loose-notes",
+      "type": "dockg:Section",
+      "title": "Loose Notes",
+      "text": "# Loose Notes\n\nNo frontmatter here. A [broken link](missing.md) and an\n[external one](https://example.org/page)."
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/windows-notes.md",
+      "type": "dockg:Document",
+      "title": "Windows Notes"
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/windows-notes.md#windows-notes",
+      "type": "dockg:Section",
+      "title": "Windows Notes",
+      "text": "# Windows Notes\n\nA CRLF file linking to [config](configuration.md)."
+    }
+  ]
+}

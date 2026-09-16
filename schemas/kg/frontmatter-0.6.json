@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dockg.dev/schemas/frontmatter-0.6.json",
+  "title": "dockg knowledge-graph frontmatter (0.6)",
+  "description": "SKOS concept fields plus PROV-O provenance plus iiRDS Core/Software typing under the top-level `kg` key, consumed by dockg build and fill. 0.6 adds kg.sections: a slug-keyed map attaching iiRDS typing + subjects to individual heading sections. Earlier 0.x forms remain accepted. Files without a `kg` key pass.",
+  "type": "object",
+  "properties": {
+    "kg": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "prefLabel": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Preferred label of the concept this document is primarily about."
+        },
+        "altLabels": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Alternative labels (synonyms, abbreviations) for the primary concept."
+        },
+        "broader": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Labels of broader (parent) concepts."
+        },
+        "narrower": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Labels of narrower (child) concepts."
+        },
+        "related": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Labels of associatively related concepts."
+        },
+        "subjects": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Subject labels for this document; behaves like tags."
+        },
+        "topicType": {
+          "enum": [
+            "task",
+            "concept",
+            "reference",
+            "learning",
+            "troubleshooting",
+            "form"
+          ],
+          "description": "iiRDS Core topic type (iirds:has-topic-type -> iirds:Generic*)."
+        },
+        "appliesTo": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Product/variant labels this document applies to (iirds:relates-to-product-variant -> minted iirds:ProductVariant nodes)."
+        },
+        "softwareLifecyclePhase": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "administration",
+              "customization",
+              "update",
+              "deployment",
+              "integration",
+              "deinstallation"
+            ]
+          },
+          "uniqueItems": true,
+          "description": "iiRDS Software-domain product lifecycle phases (iirds:relates-to-product-lifecycle-phase)."
+        },
+        "softwareSubject": {
+          "type": "array",
+          "items": {
+            "enum": ["architecture", "interface", "system-requirement"]
+          },
+          "uniqueItems": true,
+          "description": "iiRDS Software-domain information subjects (iirds:has-subject)."
+        },
+        "sections": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/sectionMetadata" },
+          "description": "Per-section iiRDS typing, keyed by GitHub-style heading slug. A key matching no heading derives dockg:brokenSectionRef."
+        },
+        "revisionOf": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Repo-relative paths or URLs of earlier documents this one revises (prov:wasRevisionOf)."
+        },
+        "derivedFrom": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Repo-relative paths or URLs this document was derived from (prov:wasDerivedFrom)."
+        },
+        "generatedBy": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Model or tool that generated this document's content (prov:wasGeneratedBy)."
+        },
+        "provenance": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": { "$ref": "#/$defs/provenanceEntry" },
+              "description": "One attribution entry per model (written by dockg fill)."
+            },
+            { "$ref": "#/$defs/provenanceEntry" }
+          ],
+          "description": "Attribution for machine-proposed kg fields; humans delete entries they have reviewed. The single-object form is the deprecated 0.2/0.3 shape."
+        }
+      },
+      "dependentRequired": {
+        "altLabels": ["prefLabel"],
+        "broader": ["prefLabel"],
+        "narrower": ["prefLabel"],
+        "related": ["prefLabel"]
+      }
+    }
+  },
+  "$defs": {
+    "sectionMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "iiRDS typing for one heading section. Fields mirror the document-level kg fields; both are pinned to src/core/iirds.ts by a drift guard.",
+      "properties": {
+        "topicType": {
+          "enum": [
+            "task",
+            "concept",
+            "reference",
+            "learning",
+            "troubleshooting",
+            "form"
+          ],
+          "description": "iiRDS Core topic type for this section (iirds:has-topic-type)."
+        },
+        "appliesTo": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Product/variant labels this section applies to (iirds:relates-to-product-variant)."
+        },
+        "softwareLifecyclePhase": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "administration",
+              "customization",
+              "update",
+              "deployment",
+              "integration",
+              "deinstallation"
+            ]
+          },
+          "uniqueItems": true,
+          "description": "iiRDS Software-domain product lifecycle phases (iirds:relates-to-product-lifecycle-phase)."
+        },
+        "softwareSubject": {
+          "type": "array",
+          "items": {
+            "enum": ["architecture", "interface", "system-requirement"]
+          },
+          "uniqueItems": true,
+          "description": "iiRDS Software-domain information subjects (iirds:has-subject)."
+        },
+        "subjects": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Subject labels for this section (dcterms:subject)."
+        }
+      }
+    },
+    "provenanceEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generatedBy"],
+      "properties": {
+        "generatedBy": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Model that proposed the machine-filled kg fields."
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "enum": ["prefLabel", "altLabels", "broader", "narrower", "related", "subjects"]
+          },
+          "uniqueItems": true,
+          "description": "Which kg fields this model proposed (written by dockg fill)."
+        }
+      }
+    }
+  }
+}

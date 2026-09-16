@@ -53,7 +53,7 @@ describe("manni (built bin)", () => {
     }
   }, 180000);
 
-  it("lists meta, cite, key and docevals as subcommands", () => {
+  it("lists meta, cite, key, docevals and kg as subcommands", () => {
     const r = run(manni, ["--help"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^Usage: manni /m);
@@ -61,6 +61,24 @@ describe("manni (built bin)", () => {
     expect(r.stdout).toMatch(/^\s+cite\b/m);
     expect(r.stdout).toMatch(/^\s+key\b/m);
     expect(r.stdout).toMatch(/^\s+docevals\b/m);
+    expect(r.stdout).toMatch(/^\s+kg\b/m);
+  });
+
+  it("runs kg under its name, reading its own key of the family config", () => {
+    expect(run(manni, ["kg", "--help"]).stdout).toMatch(/^Usage: manni kg /m);
+    expect(run(manni, ["kg", "--version"]).stdout.trim()).toBe(version);
+    // `validate` resolves its inputs from the repository's own manni.config.yaml
+    // (the `kg:` section, pointed at the tool's fixture corpus) and checks
+    // their frontmatter against the bundled vocabulary.
+    const r = run(manni, ["kg", "validate"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/files checked/);
+  });
+
+  it("prefixes kg diagnostics with the bin that ran", () => {
+    const r = run(manni, ["kg", "build", "-c", "does-not-exist.yaml"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/^manni: Config file not found/);
   });
 
   it("mounts the key domain under key, with no default command", () => {

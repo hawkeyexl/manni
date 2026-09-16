@@ -1,0 +1,394 @@
+# dockg graph shapes 0.1 — the published SHACL contract for graphs emitted by
+# `dockg build`. Consumed by `dockg check` (and the `dockg fill` guardrail).
+#
+# This file is immutable once published: evolve by adding a new version file
+# (dockg-0.2.ttl), never by editing this one. Every shape has a named IRI —
+# the only anonymous nodes are the sh:ignoredProperties lists the SHACL
+# vocabulary requires — so the file diffs cleanly.
+#
+# Severity contract: sh:Violation → exit 1; sh:Warning / sh:Info → reported,
+# exit 0. Cycle detection (skos:broader loops) and broaderTransitive/related
+# disjointness cannot be expressed in core SHACL and are enforced by dockg's
+# check core alongside these shapes.
+
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix dockg: <https://dockg.dev/ns#> .
+@prefix dsh: <https://dockg.dev/shapes/0.1#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix schema: <https://schema.org/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# --- Documents ---------------------------------------------------------------
+# Closed over the full derived predicate set: an unexpected predicate from a
+# new derive source fails loudly (same stance as additionalProperties: false).
+
+dsh:DocumentShape
+  a sh:NodeShape ;
+  sh:targetClass dockg:Document ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:Document-path ,
+    dsh:Document-title ,
+    dsh:Document-description ,
+    dsh:Document-creator ,
+    dsh:Document-created ,
+    dsh:Document-modified ,
+    dsh:Document-language ,
+    dsh:Document-primaryTopic ,
+    dsh:Document-subject ,
+    dsh:Document-hasPart ,
+    dsh:Document-references ,
+    dsh:Document-brokenLink ,
+    dsh:Document-image ,
+    dsh:Document-codeLanguage ,
+    dsh:Document-wasAttributedTo ,
+    dsh:Document-qualifiedAttribution ,
+    dsh:Document-generatedAtTime ,
+    dsh:Document-wasDerivedFrom ,
+    dsh:Document-wasRevisionOf ,
+    dsh:Document-wasGeneratedBy .
+
+dsh:Document-path
+  a sh:PropertyShape ;
+  sh:path dockg:path ;
+  sh:datatype xsd:string ;
+  sh:minCount 1 ;
+  sh:maxCount 1 .
+
+dsh:Document-title
+  a sh:PropertyShape ;
+  sh:path dcterms:title ;
+  sh:maxCount 1 .
+
+dsh:Document-description
+  a sh:PropertyShape ;
+  sh:path dcterms:description ;
+  sh:maxCount 1 .
+
+# Literal when the provenance derive source is off, agent IRI when it is on —
+# both are valid output, so no nodeKind constraint.
+dsh:Document-creator
+  a sh:PropertyShape ;
+  sh:path dcterms:creator .
+
+dsh:Document-created
+  a sh:PropertyShape ;
+  sh:path dcterms:created ;
+  sh:maxCount 1 .
+
+dsh:Document-modified
+  a sh:PropertyShape ;
+  sh:path dcterms:modified ;
+  sh:maxCount 1 .
+
+dsh:Document-language
+  a sh:PropertyShape ;
+  sh:path dcterms:language ;
+  sh:maxCount 1 .
+
+dsh:Document-primaryTopic
+  a sh:PropertyShape ;
+  sh:path foaf:primaryTopic ;
+  sh:nodeKind sh:IRI ;
+  sh:class skos:Concept ;
+  sh:maxCount 1 .
+
+# Warning, not Violation: a dcterms:subject pointing at an untyped node is a
+# half-built concept — worth surfacing, but merged external data may
+# legitimately use other subject vocabularies.
+dsh:Document-subject
+  a sh:PropertyShape ;
+  sh:path dcterms:subject ;
+  sh:nodeKind sh:IRI ;
+  sh:class skos:Concept ;
+  sh:severity sh:Warning .
+
+dsh:Document-hasPart
+  a sh:PropertyShape ;
+  sh:path dcterms:hasPart ;
+  sh:nodeKind sh:IRI ;
+  sh:class dockg:Section .
+
+dsh:Document-references
+  a sh:PropertyShape ;
+  sh:path dcterms:references ;
+  sh:nodeKind sh:IRI .
+
+dsh:Document-brokenLink
+  a sh:PropertyShape ;
+  sh:path dockg:brokenLink ;
+  sh:datatype xsd:string .
+
+dsh:Document-image
+  a sh:PropertyShape ;
+  sh:path schema:image ;
+  sh:nodeKind sh:IRI .
+
+dsh:Document-codeLanguage
+  a sh:PropertyShape ;
+  sh:path dockg:codeLanguage ;
+  sh:datatype xsd:string .
+
+dsh:Document-wasAttributedTo
+  a sh:PropertyShape ;
+  sh:path prov:wasAttributedTo ;
+  sh:nodeKind sh:IRI .
+
+dsh:Document-qualifiedAttribution
+  a sh:PropertyShape ;
+  sh:path prov:qualifiedAttribution ;
+  sh:nodeKind sh:IRI ;
+  sh:class prov:Attribution .
+
+dsh:Document-generatedAtTime
+  a sh:PropertyShape ;
+  sh:path prov:generatedAtTime ;
+  sh:maxCount 1 .
+
+dsh:Document-wasDerivedFrom
+  a sh:PropertyShape ;
+  sh:path prov:wasDerivedFrom ;
+  sh:nodeKind sh:IRI .
+
+dsh:Document-wasRevisionOf
+  a sh:PropertyShape ;
+  sh:path prov:wasRevisionOf ;
+  sh:nodeKind sh:IRI .
+
+dsh:Document-wasGeneratedBy
+  a sh:PropertyShape ;
+  sh:path prov:wasGeneratedBy ;
+  sh:nodeKind sh:IRI ;
+  sh:class prov:Activity .
+
+# --- Sections ----------------------------------------------------------------
+
+dsh:SectionShape
+  a sh:NodeShape ;
+  sh:targetClass dockg:Section ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:Section-title ,
+    dsh:Section-level ,
+    dsh:Section-order ,
+    dsh:Section-hasPart .
+
+dsh:Section-title
+  a sh:PropertyShape ;
+  sh:path dcterms:title ;
+  sh:minCount 1 ;
+  sh:maxCount 1 .
+
+dsh:Section-level
+  a sh:PropertyShape ;
+  sh:path dockg:level ;
+  sh:datatype xsd:integer ;
+  sh:minCount 1 ;
+  sh:maxCount 1 .
+
+dsh:Section-order
+  a sh:PropertyShape ;
+  sh:path dockg:order ;
+  sh:datatype xsd:integer ;
+  sh:minCount 1 ;
+  sh:maxCount 1 .
+
+dsh:Section-hasPart
+  a sh:PropertyShape ;
+  sh:path dcterms:hasPart ;
+  sh:nodeKind sh:IRI ;
+  sh:class dockg:Section .
+
+# --- Concepts ----------------------------------------------------------------
+
+dsh:ConceptShape
+  a sh:NodeShape ;
+  sh:targetClass skos:Concept ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:Concept-prefLabel ,
+    dsh:Concept-prefLabel-collision ,
+    dsh:Concept-inScheme ,
+    dsh:Concept-altLabel ,
+    dsh:Concept-broader ,
+    dsh:Concept-narrower ,
+    dsh:Concept-related .
+
+dsh:Concept-prefLabel
+  a sh:PropertyShape ;
+  sh:path skos:prefLabel ;
+  sh:minCount 1 .
+
+# Warning, not Violation: concept IRIs deliberately converge on slugified
+# labels (dockg's design), so "Configuration" and "configuration" merge into
+# one concept carrying both spellings. SKOS wants exactly one prefLabel —
+# surface the collision so authors can settle on a spelling, but don't fail
+# the build over the convergence feature working as designed.
+dsh:Concept-prefLabel-collision
+  a sh:PropertyShape ;
+  sh:path skos:prefLabel ;
+  sh:maxCount 1 ;
+  sh:severity sh:Warning ;
+  sh:message "concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling" .
+
+dsh:Concept-inScheme
+  a sh:PropertyShape ;
+  sh:path skos:inScheme ;
+  sh:nodeKind sh:IRI ;
+  sh:minCount 1 .
+
+dsh:Concept-altLabel
+  a sh:PropertyShape ;
+  sh:path skos:altLabel .
+
+dsh:Concept-broader
+  a sh:PropertyShape ;
+  sh:path skos:broader ;
+  sh:nodeKind sh:IRI ;
+  sh:class skos:Concept .
+
+dsh:Concept-narrower
+  a sh:PropertyShape ;
+  sh:path skos:narrower ;
+  sh:nodeKind sh:IRI ;
+  sh:class skos:Concept .
+
+# One-hop related/broader disjointness; the transitive form lives in the
+# check core's TypeScript walk.
+dsh:Concept-related
+  a sh:PropertyShape ;
+  sh:path skos:related ;
+  sh:nodeKind sh:IRI ;
+  sh:class skos:Concept ;
+  sh:disjoint skos:broader .
+
+dsh:SchemeShape
+  a sh:NodeShape ;
+  sh:targetClass skos:ConceptScheme ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property dsh:Scheme-title .
+
+dsh:Scheme-title
+  a sh:PropertyShape ;
+  sh:path dcterms:title ;
+  sh:maxCount 1 .
+
+# --- Provenance --------------------------------------------------------------
+
+dsh:PersonShape
+  a sh:NodeShape ;
+  sh:targetClass prov:Person ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property dsh:Agent-name .
+
+dsh:OrganizationShape
+  a sh:NodeShape ;
+  sh:targetClass prov:Organization ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property dsh:Agent-name .
+
+dsh:SoftwareAgentShape
+  a sh:NodeShape ;
+  sh:targetClass prov:SoftwareAgent ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:Agent-name ,
+    dsh:SoftwareAgent-version .
+
+dsh:Agent-name
+  a sh:PropertyShape ;
+  sh:path foaf:name ;
+  sh:minCount 1 .
+
+dsh:SoftwareAgent-version
+  a sh:PropertyShape ;
+  sh:path dockg:version ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 .
+
+dsh:ActivityShape
+  a sh:NodeShape ;
+  sh:targetClass prov:Activity ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:Activity-wasAssociatedWith ,
+    dsh:Activity-qualifiedAssociation ,
+    dsh:Activity-filledField ,
+    dsh:Activity-generated ,
+    dsh:Activity-used ,
+    dsh:Activity-endedAtTime .
+
+dsh:Activity-wasAssociatedWith
+  a sh:PropertyShape ;
+  sh:path prov:wasAssociatedWith ;
+  sh:nodeKind sh:IRI .
+
+dsh:Activity-qualifiedAssociation
+  a sh:PropertyShape ;
+  sh:path prov:qualifiedAssociation ;
+  sh:nodeKind sh:IRI ;
+  sh:class prov:Association .
+
+dsh:Activity-filledField
+  a sh:PropertyShape ;
+  sh:path dockg:filledField ;
+  sh:datatype xsd:string .
+
+dsh:Activity-generated
+  a sh:PropertyShape ;
+  sh:path prov:generated ;
+  sh:nodeKind sh:IRI .
+
+dsh:Activity-used
+  a sh:PropertyShape ;
+  sh:path prov:used ;
+  sh:nodeKind sh:IRI .
+
+dsh:Activity-endedAtTime
+  a sh:PropertyShape ;
+  sh:path prov:endedAtTime ;
+  sh:datatype xsd:dateTime ;
+  sh:maxCount 1 .
+
+dsh:AttributionShape
+  a sh:NodeShape ;
+  sh:targetClass prov:Attribution ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:Qualification-agent ,
+    dsh:Qualification-hadRole .
+
+dsh:AssociationShape
+  a sh:NodeShape ;
+  sh:targetClass prov:Association ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property
+    dsh:Qualification-agent ,
+    dsh:Qualification-hadRole .
+
+dsh:Qualification-agent
+  a sh:PropertyShape ;
+  sh:path prov:agent ;
+  sh:nodeKind sh:IRI ;
+  sh:minCount 1 ;
+  sh:maxCount 1 .
+
+dsh:Qualification-hadRole
+  a sh:PropertyShape ;
+  sh:path prov:hadRole ;
+  sh:nodeKind sh:IRI ;
+  sh:maxCount 1 .

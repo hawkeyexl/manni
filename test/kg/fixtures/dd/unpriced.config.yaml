@@ -1,0 +1,18 @@
+# Corpus for the unenforceable-cost-cap message on build/backfill.mdx
+# (ADR 01027). The model name is deliberately absent from the price table, so
+# `fill` cannot total spend and must say the cap does not apply rather than
+# reporting a confident $0.0000.
+#
+# Separate from dockg.config.yaml so this fill.* block does not perturb the
+# counts the get-started steps assert.
+version: 1
+baseIri: https://example.com/dd/
+inputs:
+  - "test/kg/fixtures/dd/unpriced/**/*.md"
+out: .tmp/dd/unpriced.ttl
+provenance:
+  git: false
+fill:
+  provider: mock
+  model: no-such-model-in-the-price-table
+  maxCostUsd: 5
