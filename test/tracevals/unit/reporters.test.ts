@@ -92,8 +92,8 @@ describe("reporters", () => {
     expect(parsed.evalResults).toHaveLength(2);
   });
 
-  it("human output shows outcomes, findings, coverage, and warnings", () => {
-    const out = render(report, "human");
+  it("pretty output shows outcomes, findings, coverage, and warnings", () => {
+    const out = render(report, "pretty");
     expect(out).toContain("FAIL");
     expect(out).toContain("forbidden-tool");
     expect(out).toContain("Bash");
@@ -132,8 +132,8 @@ describe("reporters", () => {
       expect(out).toContain("| yes | project-rules | project rules |  |  |");
     });
 
-    it("human renders an empty location, never the string undefined", () => {
-      const out = render(aggregated, "human");
+    it("pretty renders an empty location, never the string undefined", () => {
+      const out = render(aggregated, "pretty");
       expect(out).not.toContain("undefined");
     });
 
@@ -184,7 +184,7 @@ describe("reporters", () => {
       expect(render(withNote, "markdown")).toContain(
         "| yes | project-rules | project rules |  | several files |",
       );
-      expect(render(withNote, "human")).toContain("several files");
+      expect(render(withNote, "pretty")).toContain("several files");
     });
   });
 
@@ -192,7 +192,7 @@ describe("reporters", () => {
   // (ADR 01016), and collapsing any pair sends a reader to the wrong place.
   describe("availability", () => {
     it("summarises the roster without listing it", () => {
-      const out = render(report, "human");
+      const out = render(report, "pretty");
       expect(out).toContain("4 skill(s) offered, 1 used, 3 never used");
       expect(out).toContain("2 agent(s) offered, 0 used, 2 never used");
       expect(out).toContain("--report-unused-artifacts");
@@ -214,7 +214,7 @@ describe("reporters", () => {
           listed: false,
         },
       };
-      for (const format of ["human", "markdown"] as const) {
+      for (const format of ["pretty", "markdown"] as const) {
         const out = render(none, format);
         expect(out).toContain("unknown");
         expect(out).not.toContain("0 skill(s) offered");
@@ -228,7 +228,7 @@ describe("reporters", () => {
           { ref: "ghost", kind: "skill", resolved: false, tried: [], availability: "not-offered" },
         ],
       };
-      expect(render(missing, "human")).toContain("not offered");
+      expect(render(missing, "pretty")).toContain("not offered");
       expect(render(missing, "markdown")).toContain("not-offered");
     });
 
@@ -249,10 +249,10 @@ describe("reporters", () => {
           },
         ],
       };
-      const human = render(unused, "human");
-      expect(human).toContain("offered, never used — Fan-out web searches.");
-      expect(human).not.toContain("not found");
-      expect(human).not.toContain("--report-unused-artifacts");
+      const pretty = render(unused, "pretty");
+      expect(pretty).toContain("offered, never used — Fan-out web searches.");
+      expect(pretty).not.toContain("not found");
+      expect(pretty).not.toContain("--report-unused-artifacts");
       const markdown = render(unused, "markdown");
       expect(markdown).toContain("| n/a | skill | deep-research |");
       expect(markdown).not.toContain("not found");
@@ -277,8 +277,8 @@ describe("reporters", () => {
       ],
     };
 
-    it("human marks the row and keeps the path", () => {
-      const out = render(stale, "human");
+    it("pretty marks the row and keeps the path", () => {
+      const out = render(stale, "pretty");
       expect(out).toContain("C:\\work\\demo\\SKILL.md");
       expect(out).toContain("modified after the session ended");
       expect(out).toContain("2026-07-01T00:00:00.000Z");
@@ -299,7 +299,7 @@ describe("reporters", () => {
     });
 
     it("says nothing when the entry is not stale", () => {
-      expect(render(report, "human")).not.toContain(
+      expect(render(report, "pretty")).not.toContain(
         "modified after the session ended",
       );
       expect(render(report, "markdown")).not.toContain(
@@ -356,16 +356,16 @@ describe("reporters", () => {
       },
     });
 
-    it("human names content identity, not mtime, for an exact mismatch", () => {
-      const out = render(changed, "human");
+    it("pretty names content identity, not mtime, for an exact mismatch", () => {
+      const out = render(changed, "pretty");
       expect(out).toContain("changed since the session started");
       expect(out).not.toContain("modified after the session ended");
       // The path still leads the row: a flagged row is the one to open.
       expect(out).toContain("C:\\work\\demo\\SKILL.md");
     });
 
-    it("human reports the manifest it consulted", () => {
-      const out = render(changed, "human");
+    it("pretty reports the manifest it consulted", () => {
+      const out = render(changed, "pretty");
       expect(out).toContain("Session manifest");
       expect(out).toContain(".manni/tracevals/sessions/abc.json");
       expect(out).toContain("0123456789ab");
@@ -399,7 +399,7 @@ describe("reporters", () => {
           },
         ],
       });
-      const out = render(unchanged, "human");
+      const out = render(unchanged, "pretty");
       expect(out).not.toContain("modified after the session ended");
       expect(out).not.toContain("changed since the session started");
       expect(out).toContain("1 artifact(s) unchanged");
@@ -408,7 +408,7 @@ describe("reporters", () => {
     it("says nothing at all when no manifest was found", () => {
       // Silence is the default: a line on every run of every project that has
       // not adopted `capture` is noise.
-      expect(render(report, "human")).not.toContain("Session manifest");
+      expect(render(report, "pretty")).not.toContain("Session manifest");
       expect(render(report, "markdown")).not.toContain("## Session manifest");
     });
 
@@ -423,7 +423,7 @@ describe("reporters", () => {
           unrecorded: 2,
         },
       });
-      const out = render(partial, "human");
+      const out = render(partial, "pretty");
       expect(out).toContain("2 not recorded");
       expect(out).toContain("keep the mtime heuristic");
     });
@@ -478,8 +478,8 @@ describe("batch reporters", () => {
     expect(parsed.evals.some((e) => e.evalName === "forbidden-tool")).toBe(true);
   });
 
-  it("human output shows rates, outliers, and the unreadable trace", () => {
-    const out = renderBatch(batch, "human");
+  it("pretty output shows rates, outliers, and the unreadable trace", () => {
+    const out = renderBatch(batch, "pretty");
     expect(out).toContain("3 trace(s)");
     expect(out).toContain("50%");
     expect(out).toContain("forbidden-tool");
@@ -536,8 +536,8 @@ describe("batch reporters", () => {
       { durationMs: 1 },
     );
 
-    it("human flags it beside the headline, not only in the warnings", () => {
-      const out = renderBatch(cutShort, "human");
+    it("pretty flags it beside the headline, not only in the warnings", () => {
+      const out = renderBatch(cutShort, "pretty");
       const head = out.slice(0, out.indexOf("Eval pass rates"));
       expect(head).toContain("BUDGET EXHAUSTED");
       expect(head).toContain("1 eval(s) across 1 trace(s)");
@@ -550,7 +550,7 @@ describe("batch reporters", () => {
     });
 
     it("says nothing at all when the budget held", () => {
-      expect(renderBatch(batch, "human")).not.toContain("BUDGET EXHAUSTED");
+      expect(renderBatch(batch, "pretty")).not.toContain("BUDGET EXHAUSTED");
       expect(renderBatch(batch, "markdown")).not.toContain("- **Budget**:");
     });
   });
@@ -580,7 +580,7 @@ describe("batch reporters", () => {
       { durationMs: 1 },
     );
     expect(renderBatch(reviewed, "markdown")).toContain("review: one.jsonl");
-    expect(renderBatch(reviewed, "human")).toContain("review: one.jsonl");
+    expect(renderBatch(reviewed, "pretty")).toContain("review: one.jsonl");
   });
 
   it("says nothing was graded rather than printing 0% for an all-skipped row", () => {
@@ -618,8 +618,8 @@ describe("batch reporters", () => {
     expect(row.skipReasons).toEqual(["judge cost budget exhausted ($1)"]);
     // An exhausted budget has to be visible in the report, not inferable from
     // a missing row — it is the difference between "held" and "never checked".
-    expect(renderBatch(skipped, "human")).toContain("budget exhausted");
-    expect(renderBatch(skipped, "human")).toContain("—");
+    expect(renderBatch(skipped, "pretty")).toContain("budget exhausted");
+    expect(renderBatch(skipped, "pretty")).toContain("—");
   });
 
   it("escapes pipes so an aggregate row keeps its column count", () => {
@@ -768,7 +768,7 @@ const lines = (text: string): string[] => text.split(/\r?\n/);
 
 describe("calibration reporters", () => {
   it("leads with the two mistakes and the review volume, not a pass rate", () => {
-    const text = renderCalibration(calibration, "human");
+    const text = renderCalibration(calibration, "pretty");
     expect(text).toContain("Agreement 3/5 (60%)");
     expect(text).toMatch(/1\s+false passes/);
     expect(text).toMatch(/1\s+false fails/);
@@ -776,7 +776,7 @@ describe("calibration reporters", () => {
   });
 
   it("names the eval behind each count and carries its note", () => {
-    const text = renderCalibration(calibration, "human");
+    const text = renderCalibration(calibration, "pretty");
     expect(text).toContain("AGENTS.md › eval-1");
     expect(text).toContain("Sprawled across four | packages");
     // The arithmetic travels with a judged disagreement.
@@ -786,13 +786,13 @@ describe("calibration reporters", () => {
   });
 
   it("keeps the unscored rows visible and apart from disagreement", () => {
-    const text = renderCalibration(calibration, "human");
+    const text = renderCalibration(calibration, "pretty");
     expect(text).toContain("Unscored (no evidence either way)");
     expect(text).toContain("trigger not met");
   });
 
   it("says a sweep cost nothing extra, and shows every cell", () => {
-    const text = renderCalibration(calibration, "human");
+    const text = renderCalibration(calibration, "pretty");
     expect(text).toContain("no further model calls");
     expect(text).toContain("runs=3 autoPass=0.95 autoFail=0.8");
   });
@@ -804,7 +804,7 @@ describe("calibration reporters", () => {
    * from too few cached runs is a number that was quietly not measured.
    */
   it("shows the denominator behind every sweep row, and what it could not score", () => {
-    const text = renderCalibration(calibration, "human");
+    const text = renderCalibration(calibration, "pretty");
     const header = lines(text).find(
       (l) => l.includes("axis") && l.includes("false-pass"),
     )!;
@@ -845,7 +845,7 @@ describe("calibration reporters", () => {
       warnings: ["no labelled eval produced evidence: 2 label(s)"],
       exitCode: 1,
     };
-    for (const format of ["human", "markdown"] as const) {
+    for (const format of ["pretty", "markdown"] as const) {
       const text = renderCalibration(vacuous, format);
       expect(text).not.toContain("Measured cleanly");
       expect(text).toContain("nothing was scored");
@@ -853,7 +853,7 @@ describe("calibration reporters", () => {
   });
 
   it("reports a threshold that was exceeded", () => {
-    expect(renderCalibration(calibration, "human")).toContain(
+    expect(renderCalibration(calibration, "pretty")).toContain(
       "falsePass: 1 of at most 0",
     );
   });

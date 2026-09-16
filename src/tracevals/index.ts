@@ -120,11 +120,15 @@ export {
   render,
   renderBatch,
   renderCalibration,
+  parseFormat,
+  REPORT_FORMATS,
+  SUMMARY_FORMATS,
   type ReportFormat,
+  type SummaryFormat,
 } from "./reporters/index.js";
-export { renderBatchHuman, renderBatchMarkdown } from "./reporters/batch.js";
+export { renderBatchPretty, renderBatchMarkdown } from "./reporters/batch.js";
 export {
-  renderCalibrationHuman,
+  renderCalibrationPretty,
   renderCalibrationMarkdown,
 } from "./reporters/calibration.js";
 export { aggregate, type BatchOutcome } from "./aggregate.js";

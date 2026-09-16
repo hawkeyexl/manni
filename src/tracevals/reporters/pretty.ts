@@ -42,7 +42,7 @@ function coverageMark(entry: CoverageEntry): string {
   return pc.yellow("○");
 }
 
-export function renderHuman(report: RunReport): string {
+export function renderPretty(report: RunReport): string {
   const lines: string[] = [];
   const t = report.trace;
   lines.push(pc.bold(`manni tracevals — ${t.file}`));

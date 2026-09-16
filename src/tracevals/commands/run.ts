@@ -60,6 +60,10 @@ export interface RunSharedOptions {
   manifest?: string;
   /** Directory holding manni.config.yaml; defaults to cwd. */
   configDir?: string;
+  /** `-c/--config`: read this file instead of discovering one. */
+  config?: string;
+  /** `--no-config`: skip discovery and run on the built-in defaults. */
+  noConfig?: boolean;
   env?: Record<string, string | undefined>;
   /** Test seam: overrides judge construction entirely. */
   judge?: TraceJudge;
@@ -99,6 +103,10 @@ export async function prepareRun(
 ): Promise<RunContext> {
   const { config: loaded, dir: configDir } = await discoverConfig(
     options.configDir ?? process.cwd(),
+    {
+      ...(options.config === undefined ? {} : { configPath: options.config }),
+      ...(options.noConfig === undefined ? {} : { noConfig: options.noConfig }),
+    },
   );
   // Flags override the config rather than bypassing it, so the engine still
   // reads one fully-resolved value (CLAUDE.md, "Config <-> CLI flags").
@@ -230,8 +238,8 @@ export async function runRun(
   const context = await prepareRun(options);
   const { report, comparison } = await runOne(options, context);
 
-  let rendered = render(report, options.format ?? "human");
-  if (comparison && (options.format ?? "human") !== "json") {
+  let rendered = render(report, options.format ?? "pretty");
+  if (comparison && (options.format ?? "pretty") !== "json") {
     rendered += `\n\n${renderComparison(comparison)}`;
   }
   if (options.output) {

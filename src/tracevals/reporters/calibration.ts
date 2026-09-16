@@ -83,7 +83,7 @@ const KIND_LABEL: Record<Disagreement["kind"], string> = {
   skipped: "SKIPPED",
 };
 
-export function renderCalibrationHuman(report: CalibrationReport): string {
+export function renderCalibrationPretty(report: CalibrationReport): string {
   const lines: string[] = [];
   const c = report.counts;
   lines.push(

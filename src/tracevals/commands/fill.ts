@@ -49,6 +49,15 @@ export interface FillOptions {
   /** Project root; defaults to cwd. */
   project?: string;
   configDir?: string;
+  /** `-c/--config`: read this file instead of discovering one. */
+  config?: string;
+  /** `--no-config`: skip discovery and run on the built-in defaults. */
+  noConfig?: boolean;
+  /**
+   * `--exclude <glob>`, repeatable. Removes matching artifacts from whatever
+   * the scan would otherwise have found, positional paths included.
+   */
+  exclude?: string[];
   cwd?: string;
   /** Report proposals without writing. */
   dryRun?: boolean;
@@ -131,6 +140,10 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
   const root = resolve(options.project ?? cwd);
   const { config: loaded, dir: configDir } = await discoverConfig(
     options.configDir ?? cwd,
+    {
+      ...(options.config === undefined ? {} : { configPath: options.config }),
+      ...(options.noConfig === undefined ? {} : { noConfig: options.noConfig }),
+    },
   );
   // `--require` is folded into the resolved config, the same way `run` does it,
   // rather than merged inline at the load call. Downstream code reads one
@@ -166,6 +179,7 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
     root,
     cwd,
     ...(options.paths !== undefined ? { paths: options.paths } : {}),
+    ...(options.exclude !== undefined ? { exclude: options.exclude } : {}),
   });
   const vocabulary = buildVocabulary(discovery.artifacts);
   const knownSkills = [...vocabulary.skills].sort();

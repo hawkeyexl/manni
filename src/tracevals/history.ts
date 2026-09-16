@@ -6,7 +6,8 @@
 import { appendFile, mkdir, readFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import type { EvalResult, RunReport } from "./types.js";
-import { programName } from "../shared/program-name.js";
+import { errorMessage } from "../shared/errors.js";
+import { warn } from "../shared/warn.js";
 
 export interface HistoryEval {
   artifact: string;
@@ -60,8 +61,8 @@ export async function appendHistory(
     await mkdir(dirname(file), { recursive: true });
     await appendFile(file, `${JSON.stringify(entryFor(report))}\n`, "utf-8");
   } catch (err) {
-    console.warn(
-      `${programName()}: could not write history at ${file} (${(err as Error).message}). Continuing.`,
+    warn(
+      `could not write history at ${file} (${errorMessage(err)}). Continuing.`,
     );
   }
 }

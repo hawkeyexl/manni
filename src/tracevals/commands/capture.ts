@@ -25,6 +25,7 @@ import { buildManifest } from "../capture/build.js";
 import { manifestPathFor, writeManifest } from "../capture/manifest.js";
 import type { SessionManifest } from "../capture/types.js";
 import { parseHookPayload, readStdin } from "../capture/hook.js";
+import type { SummaryFormat } from "../reporters/index.js";
 import { TracevalsError } from "../types.js";
 
 export interface CaptureCommandOptions {
@@ -41,7 +42,11 @@ export interface CaptureCommandOptions {
   out?: string;
   /** Directory holding manni.config.yaml; defaults to the project root. */
   configDir?: string;
-  format?: "human" | "json";
+  /** `-c/--config`: read this file instead of discovering one. */
+  config?: string;
+  /** `--no-config`: skip discovery and run on the built-in defaults. */
+  noConfig?: boolean;
+  format?: SummaryFormat;
   /**
    * Version recorded in the manifest. Passed in rather than read from
    * package.json here: this module is bundled into an unpredictable chunk
@@ -81,7 +86,10 @@ export async function runCapture(
   }
 
   const root = resolve(options.project ?? payload.cwd ?? process.cwd());
-  const config = await loadConfig(options.configDir ?? root);
+  const config = await loadConfig(options.configDir ?? root, {
+    ...(options.config === undefined ? {} : { configPath: options.config }),
+    ...(options.noConfig === undefined ? {} : { noConfig: options.noConfig }),
+  });
 
   const manifest = await buildManifest({
     sessionId,
