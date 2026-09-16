@@ -293,14 +293,28 @@ describe("manni:kg:1.0.0-proposal.4", () => {
     expect(p4.$id).toBe("manni:kg:1.0.0-proposal.4");
     expect(p4.title).toBe(p3.title.replace("proposal.3", "proposal.4"));
 
-    // Everything outside kg's properties and dependencies is unchanged.
+    // Everything outside kg's properties and dependencies is unchanged, except
+    // the top-level description, which gains one sentence naming the seven
+    // facts terminology's root fields are now the fallback for.
     const strip = (d: KgDraft): Record<string, unknown> => {
-      const { $id: _id, title: _title, properties, ...rest } = d;
+      const {
+        $id: _id,
+        title: _title,
+        description: _description,
+        properties,
+        ...rest
+      } = d;
       const { properties: _props, dependentRequired: _deps, ...kg } =
         properties.kg;
       return { ...rest, kg };
     };
     expect(strip(p4)).toEqual(strip(p3));
+    const fallback =
+      " The root fields of manni:terminology:1.0.0-proposal.1 are the fallback for seven more: `label`, `alt-labels`, `broader`, `narrower`, `related-concepts` (from `related-terms`), `definition` and `abstract`.";
+    const anchor = "the page-level field is the harvest fallback.";
+    expect(p4.description).toBe(
+      p3.description.replace(anchor, `${anchor}${fallback}`),
+    );
 
     const old = p3.properties.kg.properties;
     const added = p4.properties.kg.properties;

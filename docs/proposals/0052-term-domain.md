@@ -137,7 +137,7 @@ through `if`, which adds no property and keeps 0023's disjointness rule intact.
 | Field | Type | Required | Maps to |
 |---|---|---|---|
 | `label` | string | yes | `skos:prefLabel` |
-| `definition` | string | yes | `skos:definition` |
+| `definition` | string | yes, unless `see` is set | `skos:definition` |
 | `abstract` | string | no | the short form, for a tooltip |
 | `alt-labels` | string or list | no | `skos:altLabel` |
 | `hidden-labels` | string or list | no | `skos:hiddenLabel` |
