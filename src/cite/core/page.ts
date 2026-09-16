@@ -161,7 +161,7 @@ function subjectOf(entry: unknown): Pick<FindingExtra, "id" | "src"> {
 export function pickExtractor(file: string, format: string | undefined): MetadataExtractor {
   if (format !== undefined) {
     const forced = extractorByName(format);
-    if (!forced?.implemented) {
+    if (forced === undefined) {
       throw new CiteError(
         `Unknown format "${format}". Supported extensions: ${supportedExtensions().join(", ")}.`,
       );
