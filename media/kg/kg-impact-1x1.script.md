@@ -1,12 +1,12 @@
 # Video script: `manni kg` (impact, and a CI gate)
 
-**Objective:** Show the one question a docset cannot answer by being read —
-*what breaks if I change this page?* — and show `manni kg` answering it. `kg
-build` derives an RDF graph from the documents. `kg traverse --impact` walks
-inbound references transitively, so it finds the page that depends on a page
-that depends on the one being changed; `grep` finds only the first hop. The
-same graph then carries every dead link, and `kg stats --check` exits 1 on
-them, so CI has something to fail on.
+**Objective:** A docset cannot answer one question by being read. *What breaks
+if I change this page?* Show `manni kg` answering it. `kg build` derives an RDF
+graph from the documents. `kg traverse --impact` walks inbound references
+transitively, so it finds the page that depends on a page that depends on the
+one being changed. `grep` finds only the first hop. The same graph then carries
+every dead link, and `kg stats --check` exits 1 on them, so CI has something to
+fail on.
 
 **Format:** 1080x1080, 30 fps, silent, captions burned in (LinkedIn autoplays muted).
 **Duration:** 32.2 s (spec: 20-45 s).
@@ -19,8 +19,8 @@ red, green, yellow or cyan. Terminal `#171717`, bands `#0d0d0d`, JetBrains Mono
 throughout. Title band 112 px, 2 px accent rules, caption band 86 px.
 
 One thing about the reserved-colour rule is specific to this video and worth
-recording: **`manni kg`'s pretty reporters emit no ANSI at all.** Checked with
-`cat -v` over every file in `media/kg/capture/` — not one escape sequence, and
+recording: **`manni kg`'s pretty reporters emit no ANSI at all.** A `cat -v`
+over every file in `media/kg/capture/` finds not one escape sequence, and
 `grep -rn 'colors\.\|pc\.\|chalk' src/kg/reporters/` returns nothing. So unlike
 the `meta` videos, this frame has no product colour to collide with, and the
 blue accent carries the chrome and the row highlights alone. That is also why
@@ -35,7 +35,7 @@ command reads `manni`, the name `media/bin/manni` gives the built CLI.
 - **A Remotion replay of real bytes**, as in the location, provenance,
   collections and sidecar videos. The CLI ran under the preload that makes
   stdout/stderr report as a TTY (`media/capture/tty.cjs`), so nothing is
-  suppressed by the non-TTY path; the bytes were saved verbatim to
+  suppressed by the non-TTY path. The bytes were saved verbatim to
   `media/kg/capture/`. The composition `KgDemo`
   (`media/remotion/src/kg/beats.ts`, shared `src/Demo.tsx`) replays them.
   Typing runs at 35 ms/char, then Enter, then the output after the command's
@@ -45,21 +45,21 @@ command reads `manni`, the name `media/bin/manni` gives the built CLI.
 - **The demo repository is `C:\kgdemo`, outside this checkout.** Two reasons,
   both about what would otherwise be on screen. `kg build` reads git history,
   so a corpus sitting inside the manni worktree stamps *manni's* commits into
-  the graph; and a corpus with no git at all makes `build` print
+  the graph. A corpus with no git at all makes `build` print
   `manni: the graph has no revision history or commit agents ...` on stderr.
   So the demo repo gets its own `git init`, one commit, pinned author and date.
   The path is short because `kg build` prints the **absolute** path it wrote
-  (`src/kg/cli.ts:282`) — from a temp directory that line is 120 characters.
+  (`src/kg/cli.ts:282`). From a temp directory that line is 120 characters.
 - **Documents are `test/kg/fixtures/corpus/` verbatim**, the eight the kg
   determinism tests run against. Not one byte of a document is changed.
 - **One line of the staged config is changed:** `baseIri`, from
   `https://example.com/kg/` to `https://acme.dev/`. `baseIri` is a per-site
-  setting that every real user picks; it changes no count and no relationship
+  setting that every real user picks. It changes no count and no relationship
   in the graph, only the length of the IRIs on screen. Without it the traverse
   rows run 75 characters before the title even starts.
 - **Latency is disclosed, not trimmed.** `beats.ts` holds each output for the
-  slowest of four measured runs (`media/kg/capture/latency.txt`): build
-  823-864 ms, traverse 757-793 ms, query 754-794 ms, `stats --check`
+  slowest of four measured runs (`media/kg/capture/latency.txt`). Those are
+  build 823-864 ms, traverse 757-793 ms, query 754-794 ms, `stats --check`
   754-855 ms, grep 27-29 ms. Nothing is sped up; there is no speed-up factor
   in this video at all.
 
@@ -68,7 +68,8 @@ command reads `manni`, the name `media/bin/manni` gives the built CLI.
 `kg check` runs the bundled SHACL shapes and, on this corpus, reports **2
 warnings and 0 errors, exiting 0**. It is not in the video, and no beat claims
 SHACL fails here. The CI gate shown is `kg stats --check`, which exits 1 on
-broken internal links — which this corpus really has, and which really exits 1.
+broken internal links. This corpus really has them, and the command really
+exits 1.
 
 ## Type and geometry
 
@@ -77,16 +78,16 @@ Derived with `node kg/cols.mjs 23 72`, run from `media/`.
 | Property | Value | Why |
 |---|---|---|
 | Font size | **23 px** | line height 32 px |
-| Columns | **72** | the floor, not the ceiling — see below |
+| Columns | **72** | the floor, not the ceiling. See below |
 | Tallest beat | 13 rows, 416 px of 878 | fits without a crop |
 | Filled row | 994 px wide, **66 px** from the frame edge | design check 2 |
 
 The column count is the interesting number. The font-size sweep in `cols.mjs`
-says 23 px *allows* 75 columns, and the first cut used that — but the wrapper
+says 23 px *allows* 75 columns, and the first cut used that. But the wrapper
 fills every long row to exactly `cols`, so `cols` is what sets the right margin
 whatever the font size. At 75 the wrapped `traverse` command ended 25 px from
 the frame edge. 72 is the floor: the two `kg query` rows are 72 characters
-each, and wrapping either one orphans a bare `"missing.md"` onto its own row,
+each. Wrapping either one orphans a bare `"missing.md"` onto its own row,
 which reads as a broken renderer. 72 exactly is therefore both the minimum and
 the choice, and it buys 66 px of margin for free.
 
@@ -98,7 +99,7 @@ capture script runs the order that is filmed.
 
 One change was needed in the shared component. Captions are now rendered one
 `white-space: nowrap` span per word, because CSS breaks after a hyphen by
-default and the beat 3 caption rendered `--check` as `--` / `check`, reading as
+default. The beat 3 caption rendered `--check` as `--` / `check`, reading as
 two flags. Design check 2 forbids a token split across a line break; this makes
 it hold for every video, not just this one.
 
@@ -133,11 +134,11 @@ CALLOUT: the indented `harvest.md` row and the `3 nodes, 4 hops` summary.
 CAPTION: harvest.md is reached through windows-notes.md. Two hops out, where
 grep never looked.
 
-The indent is the whole point of the beat: the first two rows are what grep
-found, and the third is one hop further, reachable only because
+The indent is the whole point of the beat. The first two rows are what grep
+found, and the third is one hop further. It is reachable only because
 `windows-notes.md` references `configuration.md` and `harvest.md` references
-`windows-notes.md`. `--predicates dcterms:references` is not decoration —
-without it the walk also follows the `prov:used` edges from the build activity,
+`windows-notes.md`. `--predicates dcterms:references` is not decoration.
+Without it the walk also follows the `prov:used` edges from the build activity,
 which touch every document in the corpus and drown the answer.
 
 ### 3. The build fails on it (0:20-0:32)
@@ -158,7 +159,7 @@ has something to fail on.
 
 The redirect is there because `kg stats` prints a 49-line report and the beat
 is about the status, not the report. It is what a person types when they care
-about the exit code — and the exit code is real: `media/kg/capture/stats-check.exit`
+about the exit code. The exit code is real: `media/kg/capture/stats-check.exit`
 holds `1`.
 
 ## Reproducing
@@ -199,4 +200,4 @@ ffmpeg -y -ss 18.5 -i "$M" -frames:v 1 kg/kg-impact-1x1.thumb.png
 5. **Loudness.** Not applicable: the video is silent. Remotion writes an empty
    AAC track; there is no mix to normalise.
 6. **Accent is not red, green, yellow or cyan.** `#58a6ff`. And in this video
-   there is no product colour on screen at all — see the note at the top.
+   there is no product colour on screen at all. See the note at the top.

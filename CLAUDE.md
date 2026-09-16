@@ -273,8 +273,8 @@ Before any user-facing writing or docs task, consult `docs/content-strategy/`:
 
 1. Identify the **persona** the page serves: Maya (docs engineer), Devin (CI engineer), Sara (schema author), or Theo (contributor fixing a failure). See `personas.md`.
 2. Find the matching **CUJ** in `cujs.md` (M1–M13 and M18–M20, D1–D9 and
-   D12–D13, S1–S9 and S12, T1–T4 and T6; the gaps are reserved for the tool
-   branches still in flight). Structure the content around reaching that outcome, not by document type or Diátaxis category.
+   D12–D13, S1–S9 and S12, T1–T4 and T6). The gaps are reserved for the tool
+   branches still in flight. Structure the content around reaching that outcome, not by document type or Diátaxis category.
 3. Link into the **Reference shelf** (`reference/`) for exhaustive detail (flag tables, config keys, precedence chain). Journey pages explain the path; they don't duplicate reference.
 4. Check `information-architecture.md` for the page's place in the content set and its ★ launch status.
 5. Every page in `docs/src/content/docs/**` needs `title` and `description` frontmatter.
