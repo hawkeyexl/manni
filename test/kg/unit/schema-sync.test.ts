@@ -30,19 +30,19 @@ import {
 
 /**
  * Drift guard: fill's proposal field schemas must stay a subset of the
- * bundled frontmatter schema's kg properties, or `manni kg fill` writes
+ * bundled frontmatter schema's graph properties, or `manni kg fill` writes
  * frontmatter the page vocabulary rejects.
  */
 describe("prompt FIELD_SCHEMAS ↔ bundled schema", () => {
   const schema = frontmatterSchema as unknown as {
-    properties: { kg: { properties: Record<string, unknown> } };
+    properties: { graph: { properties: Record<string, unknown> } };
   };
-  const kgProperties = schema.properties.kg.properties;
+  const graphProperties = schema.properties.graph.properties;
 
   it("every fillable field exists in the bundled schema", () => {
     for (const field of Object.keys(FIELD_SCHEMAS)) {
       expect(
-        kgProperties,
+        graphProperties,
         `schema is missing fill field "${field}"`,
       ).toHaveProperty(field);
     }
@@ -50,19 +50,19 @@ describe("prompt FIELD_SCHEMAS ↔ bundled schema", () => {
 
   /**
    * The property the guard exists for, tested directly rather than through a
-   * proxy: a `kg` block shaped the way fill proposes must validate. Comparing
+   * proxy: a `graph` block shaped the way fill proposes must validate. Comparing
    * declared `type` strings stopped working once docmeta:kg put every field
    * behind a $ref — and it was always the weaker check, since it never proved
    * a proposed *value* was legal.
    */
-  it("a kg block shaped like fill's proposal validates", () => {
+  it("a graph block shaped like fill's proposal validates", () => {
     const sample = (fieldSchema: Record<string, unknown>): unknown => {
       if (Array.isArray(fieldSchema.enum)) return fieldSchema.enum[0];
       if (fieldSchema.type === "string") return "Sample";
       const items = fieldSchema.items as { enum?: string[] } | undefined;
       return [items?.enum ? items.enum[0] : "Sample"];
     };
-    const kg = Object.fromEntries(
+    const graph = Object.fromEntries(
       Object.entries(FIELD_SCHEMAS).map(([field, fieldSchema]) => [
         field,
         sample(fieldSchema),
@@ -70,14 +70,14 @@ describe("prompt FIELD_SCHEMAS ↔ bundled schema", () => {
     );
 
     // `strict: false`, as `manni meta` compiles (src/meta/core/validator.ts):
-    // proposal.3 marks the `kg` block `x-manni-location: page` (proposal 0047),
+    // the draft marks the `graph` block `x-manni-location: page` (proposal 0047),
     // which Ajv has no vocabulary for and refuses under strict mode.
     const validate = new Ajv2020({
       allErrors: true,
       allowUnionTypes: true,
       strict: false,
     }).compile(schema);
-    expect(validate({ kg }), JSON.stringify(validate.errors)).toBe(true);
+    expect(validate({ graph }), JSON.stringify(validate.errors)).toBe(true);
   });
 
   // There is no "provenance fields enum ↔ FIELD_SCHEMAS" guard any more.
@@ -149,16 +149,16 @@ describe("iiRDS enums ↔ bundled schema", () => {
     else?: { enum?: string[] };
   };
   const parsed = frontmatterSchema as unknown as {
-    properties: { kg: { properties: Record<string, Node> } };
+    properties: { graph: { properties: Record<string, Node> } };
     $defs: Record<string, Node> & {
       sectionMetadata: { properties: Record<string, Node> };
     };
   };
-  const kg = parsed.properties.kg.properties;
+  const graph = parsed.properties.graph.properties;
   const sec = parsed.$defs.sectionMetadata.properties;
 
   /**
-   * Follow the one $ref level docmeta:kg uses. Resolving rather than reading
+   * Follow the one $ref level manni:graph uses. Resolving rather than reading
    * `$defs` directly is deliberate: it catches a field repointed at the wrong
    * definition, which reading the definition by name never would.
    */
@@ -188,15 +188,15 @@ describe("iiRDS enums ↔ bundled schema", () => {
   // fields are pinned to the same iirds.ts maps, so they cannot diverge from
   // the source of truth — or from each other. ADR 01012/01013.
   it.each([
-    ["kg.type", () => valuesOf(kg["type"]), TOPIC_TYPE_IRIS],
+    ["graph.type", () => valuesOf(graph["type"]), TOPIC_TYPE_IRIS],
     [
-      "kg.about-product-lifecycle",
-      () => valuesOf(kg["about-product-lifecycle"]),
+      "graph.about-product-lifecycle",
+      () => valuesOf(graph["about-product-lifecycle"]),
       SOFTWARE_LIFECYCLE_IRIS,
     ],
     [
-      "kg.about-product-aspect",
-      () => valuesOf(kg["about-product-aspect"]),
+      "graph.about-product-aspect",
+      () => valuesOf(graph["about-product-aspect"]),
       SOFTWARE_SUBJECT_IRIS,
     ],
     ["section.type", () => valuesOf(sec["type"]), TOPIC_TYPE_IRIS],
@@ -212,8 +212,8 @@ describe("iiRDS enums ↔ bundled schema", () => {
     ],
     // Negative-scope subject enums share the same value set (ADR 01014).
     [
-      "kg.not-about-product-aspect",
-      () => valuesOf(kg["not-about-product-aspect"]),
+      "graph.not-about-product-aspect",
+      () => valuesOf(graph["not-about-product-aspect"]),
       SOFTWARE_SUBJECT_IRIS,
     ],
     [
@@ -226,13 +226,13 @@ describe("iiRDS enums ↔ bundled schema", () => {
   });
 
   /**
-   * The page-type derivation (ADR 01024) targets `kg.type`, so every value it
+   * The page-type derivation (ADR 01024) targets `graph.type`, so every value it
    * can produce must be a legal one — otherwise a derived type would silently
    * emit no triple.
    */
-  it("every derived page type is a legal kg.type value", () => {
+  it("every derived page type is a legal graph.type value", () => {
     for (const derived of Object.values(PAGE_TYPE_TO_TOPIC_TYPE)) {
-      expect(valuesOf(kg["type"])).toContain(derived);
+      expect(valuesOf(graph["type"])).toContain(derived);
     }
   });
 });

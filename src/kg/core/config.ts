@@ -125,7 +125,7 @@ export interface KgConfig {
   /**
    * The schema set a page's frontmatter is judged by: where `manni kg build`
    * reads `x-manni-kg-output` from, deciding which fields a published graph may
-   * carry. Empty = the `kg` page vocabulary bundled into manni
+   * carry. Empty = the `graph` page vocabulary bundled into manni
    * (`src/kg/schema.ts`). Spelled as meta spells its own `schemas:`; it sat
    * under a `validate:` wrapper while `manni kg validate` existed (0051 §8).
    */
@@ -482,7 +482,7 @@ export function parseConfigSection(
     providers: file.providers ?? {},
     baseIri: resolveBaseIri(r.baseIri),
     out: r.out ?? "kg/graph.ttl",
-    // Empty means: use the `kg` page vocabulary built into manni (see
+    // Empty means: use the `graph` page vocabulary built into manni (see
     // src/kg/schema.ts).
     schemas: r.schemas ?? [],
     routes: (r.routes ?? []).map((m) => ({

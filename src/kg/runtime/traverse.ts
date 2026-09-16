@@ -38,7 +38,7 @@ export type Direction = "out" | "in" | "both";
 export interface ScopeFilter {
   /** Product variant: an IRI, a `dcterms:title` (e.g. "SP-X100"), or a slug. */
   variant?: string;
-  /** Software subject: an IRI or a `kg.about-product-aspect` value (e.g. "architecture"). */
+  /** Software subject: an IRI or a `graph.about-product-aspect` value (e.g. "architecture"). */
   subject?: string;
   /**
    * BCP-47 tag (ADR 01037). Matched exactly against `dcterms:language`, with no

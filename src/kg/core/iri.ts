@@ -55,7 +55,7 @@ export function mintConceptIri(base: string, label: string): string {
 }
 
 /**
- * `{base}product/{slug(label)}` — iiRDS ProductVariant nodes (kg.applies-to).
+ * `{base}product/{slug(label)}` — iiRDS ProductVariant nodes (graph.applies-to).
  * Separate `product/` segment so a product and a concept sharing a label
  * cannot converge on one IRI.
  */

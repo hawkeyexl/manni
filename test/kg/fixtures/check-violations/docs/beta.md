@@ -1,6 +1,6 @@
 ---
 title: Beta
-kg:
+graph:
   label: Beta
   broader: [Alpha, Gamma]
 ---

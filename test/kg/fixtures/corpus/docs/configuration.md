@@ -1,7 +1,7 @@
 ---
 title: Configuration Reference
 tags: [configuration]
-kg:
+graph:
   label: Configuration
   alt-labels: [config, settings]
   broader: [Administration]

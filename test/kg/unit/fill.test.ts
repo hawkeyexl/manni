@@ -85,7 +85,7 @@ describe("runFill", () => {
     const dir = setup(
       {
         "a.md":
-          "---\nkg:\n  label: X\n  alt-labels: [y]\n  related-concepts: [z]\n  concepts: [s]\n---\n",
+          "---\ngraph:\n  label: X\n  alt-labels: [y]\n  related-concepts: [z]\n  concepts: [s]\n---\n",
       },
       SKOS_FIELDS,
     );
@@ -255,22 +255,22 @@ describe("runFill", () => {
     const report = await runFill({ cwd: dir, providerInstance: provider });
     expect(report.results[0]).toMatchObject({ status: "filled" });
     const data = pageData(dir);
-    // Top level, not under `kg` — the `kg` block has no `provenance` any more.
-    expect(data["kg"]).not.toHaveProperty("provenance");
+    // Top level, not under `graph` — the `graph` block has no `provenance`.
+    expect(data["graph"]).not.toHaveProperty("provenance");
     expect(data["meta-provenance"]).toEqual([
       {
         "generated-by": "test-model",
         fields: [
-          "/kg/alt-labels",
-          "/kg/concepts",
-          "/kg/label",
-          "/kg/related-concepts",
+          "/graph/alt-labels",
+          "/graph/concepts",
+          "/graph/label",
+          "/graph/related-concepts",
         ],
         confidence: {
-          "/kg/alt-labels": 0.9,
-          "/kg/concepts": 0.9,
-          "/kg/label": 0.95,
-          "/kg/related-concepts": 0.85,
+          "/graph/alt-labels": 0.9,
+          "/graph/concepts": 0.9,
+          "/graph/label": 0.95,
+          "/graph/related-concepts": 0.85,
         },
       },
     ]);
@@ -303,8 +303,8 @@ describe("runFill", () => {
     expect(pageData(dir)["meta-provenance"]).toEqual([
       {
         "generated-by": "m1",
-        fields: ["/kg/label", "/kg/concepts"],
-        confidence: { "/kg/label": 0.95, "/kg/concepts": 0.95 },
+        fields: ["/graph/label", "/graph/concepts"],
+        confidence: { "/graph/label": 0.95, "/graph/concepts": 0.95 },
       },
     ]);
   });
@@ -330,13 +330,13 @@ describe("runFill", () => {
     expect(pageData(dir)["meta-provenance"]).toEqual([
       {
         "generated-by": "m1",
-        fields: ["/kg/label"],
-        confidence: { "/kg/label": 0.95 },
+        fields: ["/graph/label"],
+        confidence: { "/graph/label": 0.95 },
       },
       {
         "generated-by": "m2",
-        fields: ["/kg/concepts"],
-        confidence: { "/kg/concepts": 0.95 },
+        fields: ["/graph/concepts"],
+        confidence: { "/graph/concepts": 0.95 },
       },
     ]);
   });
@@ -364,8 +364,8 @@ describe("runFill", () => {
       },
       {
         "generated-by": "m1",
-        fields: ["/kg/label"],
-        confidence: { "/kg/label": 0.95 },
+        fields: ["/graph/label"],
+        confidence: { "/graph/label": 0.95 },
       },
     ]);
   });
@@ -374,7 +374,7 @@ describe("runFill", () => {
     // meta's merge touches only the running model's entry (proposal 0046, "The
     // merge"). kg's own record used to strip the overwritten field from every
     // other entry; that rule was kg's and does not survive the move. Both
-    // entries now name /kg/label, and a reviewer deletes the stale one.
+    // entries now name /graph/label, and a reviewer deletes the stale one.
     const dir = setup(
       { "a.md": "---\ntitle: T\n---\n" },
       "fill:\n  fields: [label]\n",
@@ -392,13 +392,13 @@ describe("runFill", () => {
     expect(pageData(dir)["meta-provenance"]).toEqual([
       {
         "generated-by": "m1",
-        fields: ["/kg/label"],
-        confidence: { "/kg/label": 0.95 },
+        fields: ["/graph/label"],
+        confidence: { "/graph/label": 0.95 },
       },
       {
         "generated-by": "m2",
-        fields: ["/kg/label"],
-        confidence: { "/kg/label": 0.95 },
+        fields: ["/graph/label"],
+        confidence: { "/graph/label": 0.95 },
       },
     ]);
   });
@@ -415,26 +415,30 @@ describe("runFill", () => {
     );
   });
 
-  it("refuses a doc that still carries kg.provenance", async () => {
-    // Proposal 0046 closed the `kg` block on fifteen properties and dropped
-    // `provenance` from it. Filling would leave an unreviewable record behind
-    // that nothing reads and the page vocabulary rejects — name the migration.
-    const legacy =
-      "---\ntitle: T\nkg:\n  provenance:\n    - generated-by: old-model\n      fields: [label]\n---\n";
-    const dir = setup({ "a.md": legacy, "b.md": "---\ntitle: OK\n---\n" });
-    const provider = new MockProvider([{ json: PROPOSAL }, { json: PROPOSAL }]);
+  it("fills beside a leftover kg block, which it neither reads nor refuses", async () => {
+    // The block was `kg:` before it was `graph:`, and both were unregistered
+    // drafts. Under manni:graph a `kg` key is one more page key the open root
+    // allows, so fill treats it like any other: left alone, never a reason to
+    // stop, and never a source of fields already present.
+    const leftover = {
+      label: "Old Label",
+      provenance: [{ "generated-by": "old-model", fields: ["label"] }],
+    };
+    const dir = setup({
+      "a.md":
+        "---\ntitle: T\nkg:\n  label: Old Label\n  provenance:\n    - generated-by: old-model\n      fields: [label]\n---\n",
+    });
+    const provider = new MockProvider([{ json: PROPOSAL }], "test-model");
     const report = await runFill({ cwd: dir, providerInstance: provider });
 
-    const a = report.results.find((r) => r.path === "a.md");
-    expect(a).toMatchObject({ status: "error" });
-    expect(a?.error).toMatch(/meta-provenance/);
-    // Untouched: the old attribution is still there to migrate by hand.
-    expect(readFileSync(join(dir, "a.md"), "utf8")).toBe(legacy);
-    // One bad doc does not abort the run.
-    expect(report.results.find((r) => r.path === "b.md")?.status).toBe(
-      "filled",
-    );
-    expect(report.exitCode).toBe(1);
+    expect(report.results[0]).toMatchObject({ status: "filled" });
+    expect(report.exitCode).toBe(0);
+    const data = pageData(dir);
+    expect(data["kg"]).toEqual(leftover);
+    expect(data["graph"]).toMatchObject({ label: "Query Syntax" });
+    expect(data["meta-provenance"]).toMatchObject([
+      { "generated-by": "test-model" },
+    ]);
   });
 
   it("reports TOML-frontmatter docs as per-doc errors without corrupting them", async () => {
@@ -456,7 +460,7 @@ describe("runFill", () => {
   it("contains per-doc frontmatter errors instead of aborting the run", async () => {
     const dir = setup({
       "a.md": "---\ntitle: unterminated\n", // no closing fence
-      "b.md": "---\nkg: not-a-map\n---\n",
+      "b.md": "---\ngraph: not-a-map\n---\n",
       "c.md": "---\ntitle: fine\n---\n",
     });
     const provider = new MockProvider([{ json: PROPOSAL }]);
@@ -471,7 +475,7 @@ describe("runFill", () => {
 
   it("needs no provider credentials when every doc is complete", async () => {
     const dir = setup(
-      { "a.md": "---\nkg:\n  label: X\n---\n" },
+      { "a.md": "---\ngraph:\n  label: X\n---\n" },
       "provider: anthropic\nfill:\n  fields: [label]\n",
     );
     delete process.env["ANTHROPIC_API_KEY"];
@@ -528,7 +532,7 @@ describe("runFill", () => {
 
   it("respects config fill.fields (asks only for missing, allowed fields)", async () => {
     const dir = setup(
-      { "a.md": "---\nkg:\n  label: Kept\n---\n" },
+      { "a.md": "---\ngraph:\n  label: Kept\n---\n" },
       "fill:\n  fields: [label, concepts]\n",
     );
     const provider = new MockProvider([conf({ concepts: ["search"] })]);
@@ -681,8 +685,8 @@ describe("runFill confidence gate (ADR 01015)", () => {
     expect(pageData(dir)["meta-provenance"]).toEqual([
       {
         "generated-by": "m1",
-        fields: ["/kg/label"],
-        confidence: { "/kg/label": 0.91 },
+        fields: ["/graph/label"],
+        confidence: { "/graph/label": 0.91 },
       },
     ]);
   });
@@ -786,7 +790,7 @@ describe("runFill confidence gate (ADR 01015)", () => {
 
   it("the guardrail rejects a variant proposed as both applicable and not-applicable", async () => {
     const dir = setup(
-      { "a.md": "---\ntitle: T\nkg:\n  applies-to: [SP-X1]\n---\n\n# T\n" },
+      { "a.md": "---\ntitle: T\ngraph:\n  applies-to: [SP-X1]\n---\n\n# T\n" },
       "fill:\n  fields: [not-applicable-to]\n  confidenceThreshold: 0\n",
     );
     // The model (over)proposes excluding the same variant the doc applies to.
@@ -812,7 +816,7 @@ describe("runFill graph guardrail (fill.validateGraph)", () => {
       {
         // Human-set hierarchy: Alpha is below Beta.
         "a.md":
-          "---\ntitle: A\nkg:\n  label: Alpha\n  broader: [Beta]\n---\n\n# A\n",
+          "---\ntitle: A\ngraph:\n  label: Alpha\n  broader: [Beta]\n---\n\n# A\n",
         "b.md": "---\ntitle: B\n---\n\n# B\n",
       },
       HIERARCHY_CONFIG,
@@ -889,7 +893,7 @@ describe("runFill graph guardrail (fill.validateGraph)", () => {
     const dir = setup(
       {
         "a.md":
-          "---\ntitle: A\nkg:\n  label: Alpha\n  broader: [Beta]\n---\n\n# A\n",
+          "---\ntitle: A\ngraph:\n  label: Alpha\n  broader: [Beta]\n---\n\n# A\n",
         "b.md": "---\ntitle: B\n---\n\n# B\n",
       },
       HIERARCHY_CONFIG,
@@ -913,7 +917,7 @@ describe("runFill graph guardrail (fill.validateGraph)", () => {
     const dir = setup(
       {
         "a.md":
-          "---\ntitle: A\nkg:\n  label: Alpha\n  broader: [Beta]\n---\n\n# A\n",
+          "---\ntitle: A\ngraph:\n  label: Alpha\n  broader: [Beta]\n---\n\n# A\n",
         "b.md": "---\ntitle: B\n---\n\n# B\n",
       },
       "fill:\n  fields: [label, broader, related-concepts]\n  validateGraph: false\n  confidenceThreshold: 0\n",
@@ -933,7 +937,7 @@ describe("runFill graph guardrail (fill.validateGraph)", () => {
     const dir = setup(
       {
         "a.md":
-          "---\ntitle: A\nkg:\n  label: Alpha\n  broader: [Beta]\n---\n\n# A\n",
+          "---\ntitle: A\ngraph:\n  label: Alpha\n  broader: [Beta]\n---\n\n# A\n",
         "b.md": "---\ntitle: B\n---\n\n# B\n",
       },
       HIERARCHY_CONFIG,

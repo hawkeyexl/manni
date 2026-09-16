@@ -29,7 +29,7 @@
         "type": "string",
         "minLength": 1
       },
-      "description": "The schema set that judges a page's frontmatter: where `manni kg build` reads x-manni-kg-output from, to decide which fields a published graph may carry. Check the same pages against the same set with `manni meta validate`. Empty (the default) means the kg page vocabulary bundled into manni, manni:kg:1.0.0-proposal.3. A ref is anything manni meta resolves: a built-in id, a file path, or a URL. Named `schemas` as meta names its own; it was `validate.schemas` while `manni kg validate` existed."
+      "description": "The schema set that judges a page's frontmatter: where `manni kg build` reads x-manni-kg-output from, to decide which fields a published graph may carry. Check the same pages against the same set with `manni meta validate`. Empty (the default) means the graph page vocabulary bundled into manni, manni:graph:1.0.0-proposal.1. A ref is anything manni meta resolves: a built-in id, a file path, or a URL. Named `schemas` as meta names its own; it was `validate.schemas` while `manni kg validate` existed."
     },
     "routes": {
       "type": "array",

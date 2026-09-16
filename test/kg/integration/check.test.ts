@@ -187,17 +187,17 @@ describe("manni kg check", () => {
         // mapping (proposal 0051 §2): it is a SHACL-side `violation`.
         "error",
         "docs/lineage.md",
-        "meta-provenance attributes /kg/derived-from to m2 — derived-from is curated by hand, never filled by a machine",
+        "meta-provenance attributes /graph/derived-from to m2 — derived-from is curated by hand, never filled by a machine",
       ],
       [
         "error",
         "docs/lineage.md",
-        "meta-provenance attributes /kg/revision-of to m2 — revision-of is curated by hand, never filled by a machine",
+        "meta-provenance attributes /graph/revision-of to m2 — revision-of is curated by hand, never filled by a machine",
       ],
       [
         "error",
         "docs/sections.md",
-        "meta-provenance attributes /kg/sections to m1 — sections is curated by hand, never filled by a machine",
+        "meta-provenance attributes /graph/sections to m1 — sections is curated by hand, never filled by a machine",
       ],
     ]);
     // docs/clean.md names only fillable pointers, so nothing is said about it.

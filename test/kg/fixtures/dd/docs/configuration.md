@@ -2,7 +2,7 @@
 title: Configuration
 tags:
   - reference
-kg:
+graph:
   label: installation
   type: reference
 ---

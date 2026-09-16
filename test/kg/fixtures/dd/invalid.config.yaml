@@ -1,5 +1,5 @@
 # A document that fails the frontmatter JSON Schema, so the fix page can show a
-# real `manni meta validate` failure against the kg page vocabulary. Collection
+# real `manni meta validate` failure against the graph page vocabulary. Collection
 # paths resolve from this file's directory; see the note in docs.config.yaml
 # beside it.
 collections:

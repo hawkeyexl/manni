@@ -140,7 +140,7 @@ describe("harvestWarnings", () => {
       expect(warnings).toHaveLength(1);
       expect(warnings[0]).toContain('page type "how to"');
       expect(warnings[0]).toContain('looks like "how-to"');
-      expect(warnings[0]).toContain("no kg.type was derived");
+      expect(warnings[0]).toContain("no graph.type was derived");
     });
 
     it("accepts every mapped type without complaint", () => {

@@ -1,6 +1,6 @@
 ---
 title: Gamma
-kg:
+graph:
   label: Gamma
   narrower:
     - Alpha

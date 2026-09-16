@@ -64,7 +64,7 @@
   dcterms:subject <https://example.com/kg/concept/configuration>, <https://example.com/kg/concept/reference> ;
   dcterms:title "Configuration Reference" ;
   foaf:primaryTopic <https://example.com/kg/concept/configuration> ;
-  kg:contentHash "e88c7b22551fb5d196119d7aac223763ad552a519a3d79343174612bdf3c2c4f" ;
+  kg:contentHash "622c6730fb6a6474c056b1ef92dab07c3ae9babc1e6ea01a72a249d71652bf0e" ;
   kg:notApplicableToVariant <https://example.com/kg/product/sp-x300> ;
   kg:path "docs/configuration.md" .
 
@@ -149,7 +149,7 @@
   prov:wasAttributedTo <https://example.com/kg/agent/person/jane-doe> ;
   kg:brokenSectionRef "missing-heading" ;
   kg:codeLanguage "bash", "python" ;
-  kg:contentHash "66f24eeacabd5e796fd06f74035e27ea7f64a92bb22c02d861465e82b1fca260" ;
+  kg:contentHash "9a29131d69ffea8a4ad9108d1cddb23898b545f08933ce046cb10a1be39c5728" ;
   kg:path "docs/getting-started.md" ;
   schema:image <https://example.com/kg/file/docs/img/arch.png> ;
   schema:workTranslation <https://example.com/kg/doc/docs/de/getting-started.md>, <https://example.com/kg/doc/docs/fr/getting-started.md> .

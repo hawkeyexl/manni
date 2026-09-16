@@ -2,7 +2,7 @@
  * Surgical YAML edits (ported from docevals). Only the frontmatter block is
  * re-serialized via the `yaml` Document API — the page body is carried over
  * byte-for-byte, and untouched YAML keeps its comments and ordering. When a
- * file has no frontmatter, a new block holding only the `kg` key is created.
+ * file has no frontmatter, a new block holding only the `graph` key is created.
  * YAML frontmatter only; TOML/JSON frontmatter cannot be edited in place.
  */
 import { Document, YAMLMap, YAMLSeq, isMap, parseDocument } from "yaml";
@@ -79,23 +79,23 @@ function flowSeqs(node: unknown): void {
   }
 }
 
-/** Set `value` on the kg map; arrays (incl. nested) render flow-style. */
+/** Set `value` on a map in the graph block; arrays (incl. nested) render flow. */
 function setField(
   doc: Document,
-  kg: YAMLMap,
+  map: YAMLMap,
   field: string,
   value: unknown,
 ): void {
   const node = doc.createNode(value);
   flowSeqs(node);
-  kg.set(field, node);
+  map.set(field, node);
 }
 
 export interface KgApplyOptions {
   /** Overwrite values a human already set. */
   force?: boolean;
   /**
-   * Keys to write at the TOP level of the frontmatter, beside `kg` rather
+   * Keys to write at the TOP level of the frontmatter, beside `graph` rather
    * than inside it — `meta-provenance` is the one caller (proposal 0046).
    * They are always overwritten, because the caller computes each value
    * whole, and they are written even when `values` is empty. Kept in this
@@ -106,9 +106,9 @@ export interface KgApplyOptions {
 }
 
 /**
- * Apply proposed values to the top-level `kg` map of a doc's frontmatter, plus
- * any `options.page` keys beside it. Existing field values win unless `force`.
- * The body after the closing fence is byte-identical to the input.
+ * Apply proposed values to the top-level `graph` map of a doc's frontmatter,
+ * plus any `options.page` keys beside it. Existing field values win unless
+ * `force`. The body after the closing fence is byte-identical to the input.
  */
 export function applyKgFields(
   content: string,
@@ -134,8 +134,8 @@ export function applyKgFields(
   const split = splitYamlFrontmatter(content, path);
 
   if (split === null) {
-    // No frontmatter — create a block holding only the kg key. Dotted names
-    // nest here too, or `sections.intro.type` would become a literal key.
+    // No frontmatter — create a block holding only the graph key. Dotted
+    // names nest here too, or `sections.intro.type` would become a literal key.
     const eol: "\n" | "\r\n" = content.includes("\r\n") ? "\r\n" : "\n";
     const nested: Record<string, unknown> = {};
     for (const [field, value] of entries) {
@@ -151,10 +151,10 @@ export function applyKgFields(
     }
     const doc = new Document({
       ...Object.fromEntries(pageEntries),
-      ...(entries.length > 0 ? { kg: nested } : {}),
+      ...(entries.length > 0 ? { graph: nested } : {}),
     });
-    const kg = doc.get("kg", true);
-    if (isMap(kg)) flowSeqs(kg);
+    const graph = doc.get("graph", true);
+    if (isMap(graph)) flowSeqs(graph);
     let block = doc.toString();
     if (eol === "\r\n") block = block.replace(/(?<!\r)\n/g, "\r\n");
     return {
@@ -171,28 +171,28 @@ export function applyKgFields(
     );
   }
 
-  let kg = doc.get("kg", true);
-  if (kg !== undefined && !isMap(kg)) {
-    throw new KgError(`${path}: frontmatter key "kg" is not a map`);
+  let graph = doc.get("graph", true);
+  if (graph !== undefined && !isMap(graph)) {
+    throw new KgError(`${path}: frontmatter key "graph" is not a map`);
   }
-  if (kg === undefined && entries.length > 0) {
-    kg = doc.createNode({});
-    doc.set("kg", kg);
+  if (graph === undefined && entries.length > 0) {
+    graph = doc.createNode({});
+    doc.set("graph", graph);
   }
-  const kgMap = (kg ?? doc.createNode({})) as YAMLMap;
+  const graphMap = (graph ?? doc.createNode({})) as YAMLMap;
 
   const applied: string[] = [];
   const skipped: string[] = [];
   for (const [field, value] of entries) {
     // A dotted name addresses a nested field — `sections.<slug>.type` writes
-    // into kg.sections.<slug>.type (ADR 01032). Preservation is decided at the
-    // *leaf*, so filling one section's type never disturbs a value a human set
-    // on the section beside it.
+    // into graph.sections.<slug>.type (ADR 01032). Preservation is decided at
+    // the *leaf*, so filling one section's type never disturbs a value a human
+    // set on the section beside it.
     const segments = field.split(".");
     // An undotted field is its own leaf, so `field` is the right fallback
     // rather than a stand-in: `split(".")` cannot return an empty list.
     const leaf = segments.at(-1) ?? field;
-    let target = kgMap;
+    let target = graphMap;
     let missingParent = false;
     for (const segment of segments.slice(0, -1)) {
       const existing = target.get(segment, true);
@@ -221,7 +221,8 @@ export function applyKgFields(
     applied.push(field);
   }
 
-  // Top-level keys, after the kg map so a new `kg` sorts where it always did.
+  // Top-level keys, after the graph map so a new `graph` sorts where it always
+  // did.
   // Block style, not `flowSeqs`: this is a record a reviewer reads and edits
   // by hand, one entry per line, not a value the graph derives from.
   for (const [key, value] of pageEntries) {
@@ -250,26 +251,6 @@ function frontmatterData(content: string): Record<string, unknown> {
 }
 
 /**
- * True when the doc still carries a `kg.provenance` key, in any shape.
- *
- * Proposal 0046 closed the `kg` block on fifteen properties and `provenance`
- * is not one of them: field attribution is the page-level `meta-provenance`
- * now. A page holding the old key validates nowhere and is read by nothing, so
- * a fill that wrote beside it would leave an outstanding review record no
- * review queue lists. Callers use this to refuse the file and name the
- * migration instead.
- */
-export function hasKgProvenance(content: string): boolean {
-  const kg = frontmatterData(content)["kg"];
-  return (
-    kg !== null &&
-    typeof kg === "object" &&
-    !Array.isArray(kg) &&
-    (kg as Record<string, unknown>)["provenance"] !== undefined
-  );
-}
-
-/**
  * The doc's page-level `meta-provenance` value, exactly as held — `undefined`
  * when the page has none. Uncoerced on purpose: `mergeMetaProvenance` decides
  * what a non-list means, and every key of an entry it does not know is carried
@@ -279,15 +260,15 @@ export function existingMetaProvenance(content: string): unknown {
   return frontmatterData(content)["meta-provenance"];
 }
 
-/** Fields already present on the doc's `kg` map ([] when none). */
+/** Fields already present on the doc's `graph` map ([] when none). */
 export function existingKgFields(content: string): string[] {
   const split = splitYamlFrontmatter(content, "");
   if (split === null) return [];
   const doc = parseDocument(split.block);
   if (doc.errors.length > 0) return [];
-  const kg = doc.get("kg", true);
-  if (!isMap(kg)) return [];
-  return kg.items
+  const graph = doc.get("graph", true);
+  if (!isMap(graph)) return [];
+  return graph.items
     .map((item) => {
       const value = (item.key as { value?: unknown }).value;
       return typeof value === "string" || typeof value === "number"

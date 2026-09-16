@@ -99,7 +99,7 @@ export const FIELD_SCHEMAS: Record<FillField, Record<string, unknown>> = {
 const schemaCache = new Map<string, Record<string, unknown>>();
 
 /**
- * The `kg` fields a section block accepts (ADR 01013). `label` is absent
+ * The `graph` fields a section block accepts (ADR 01013). `label` is absent
  * deliberately — a "primary topic per section" is meaningless, so it is not
  * proposable either.
  */
@@ -119,7 +119,7 @@ export const SECTION_FILL_FIELDS: readonly FillField[] = [
  * @param options.sections  Section-level fields to offer, or absent for no
  *   section half. Passed **separately and unnarrowed** on purpose: section
  *   presence is independent of document presence (ADR 01032), so a page whose
- *   `kg.type` is already set must still be able to type its sections. Deriving
+ *   `graph.type` is already set must still be able to type its sections. Deriving
  *   this list from `fields` handed a strictly-constrained provider a section
  *   item with no data properties at all.
  */

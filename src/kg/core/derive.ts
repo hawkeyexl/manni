@@ -38,9 +38,9 @@ import {
 } from "./iirds.js";
 
 /**
- * Resolve a provenance target (`kg.derived-from` / `kg.revision-of` entry) to a
- * corpus doc path: doc-relative first, then repo-relative; null when neither
- * names a discovered doc.
+ * Resolve a provenance target (a `graph.derived-from` / `graph.revision-of`
+ * entry) to a corpus doc path: doc-relative first, then repo-relative; null
+ * when neither names a discovered doc.
  */
 function resolveProvDocPath(
   docPath: string,
@@ -139,34 +139,34 @@ const AGENT_KIND: Record<ProvAgentClass, AgentKind> = {
   SoftwareAgent: "software",
 };
 
-/** The `kg` sub-map of frontmatter, or undefined. */
-function kgObject(
+/** The `graph` block of frontmatter, or undefined. */
+function graphBlock(
   fm: Record<string, unknown>,
 ): Record<string, unknown> | undefined {
-  const kg = fm["kg"];
-  return kg && typeof kg === "object" && !Array.isArray(kg)
-    ? (kg as Record<string, unknown>)
+  const block = fm["graph"];
+  return block && typeof block === "object" && !Array.isArray(block)
+    ? (block as Record<string, unknown>)
     : undefined;
 }
 
 /**
  * The harvest rule (ADR 01024): **deeper wins; the page level is the fallback**
- * — per fact, not per page. A `kg` block that speaks to a fact owns it
+ * — per fact, not per page. A `graph` block that speaks to a fact owns it
  * outright; where the block is silent, the page-level twin feeds the graph.
  *
- * Only the facts the `kg` block has a twin for are resolved here. Page-level
+ * Only the facts the `graph` block has a twin for are resolved here. Page-level
  * `prerequisites` / `next-steps` / `related-pages` belong to `docmeta:structure`
  * and are deliberately not harvested — that is a separate vocabulary, not this
  * one's fallback.
  *
- * Returns a kg-shaped object even when the page carries no `kg` block at all,
- * so a page typed only at the top level still derives its iiRDS typing.
+ * Returns a graph-shaped object even when the page carries no `graph` block at
+ * all, so a page typed only at the top level still derives its iiRDS typing.
  */
-function resolveKg(
-  kg: Record<string, unknown> | undefined,
+function resolveGraph(
+  block: Record<string, unknown> | undefined,
   fm: Record<string, unknown>,
 ): Record<string, unknown> {
-  const k: Record<string, unknown> = { ...(kg ?? {}) };
+  const k: Record<string, unknown> = { ...(block ?? {}) };
 
   const fallback = (key: string, pageKeys: string[]) => {
     if (k[key] !== undefined && k[key] !== null) return;
@@ -180,14 +180,14 @@ function resolveKg(
   fallback("revision-of", ["supersedes"]);
 
   // `type` is the one fact whose two altitudes speak different vocabularies:
-  // the page's is open (docmeta:core), `kg.type` is the closed iiRDS enum. A
+  // the page's is open (docmeta:core), `graph.type` is the closed iiRDS enum. A
   // page type with no iiRDS counterpart derives nothing rather than inventing
   // one.
   if (k["type"] === undefined || k["type"] === null) {
     const pageType = asString(fmValue(fm, ["type"]));
     // hasOwn guards the prototype chain: `type: constructor` would otherwise
     // resolve to Object and pass the truthiness check below, writing a
-    // function into kg.type.
+    // function into graph.type.
     const derived =
       pageType && Object.hasOwn(PAGE_TYPE_TO_TOPIC_TYPE, pageType)
         ? PAGE_TYPE_TO_TOPIC_TYPE[pageType]
@@ -259,9 +259,9 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
   /**
    * Emit the iiRDS typing fields (type, applies-to, about-product-lifecycle,
    * about-product-aspect) plus the negative-scope fields (not-applicable-to,
-   * not-about-product-aspect) for `subjectIri` from a kg-like object. Shared by the
-   * document `kg` block and the per-section `kg.sections` block so the mapping
-   * cannot drift between them (ADR 01012/01013/01014).
+   * not-about-product-aspect) for `subjectIri` from a graph-like object. Shared
+   * by the document `graph` block and the per-section `graph.sections` block so
+   * the mapping cannot drift between them (ADR 01012/01013/01014).
    */
   const emitIirdsTyping = (subjectIri: string, k: Record<string, unknown>) => {
     const topicType = asString(k["type"]);
@@ -352,8 +352,8 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
   };
 
   /**
-   * Shared mapping for kg.derived-from / kg.revision-of / page `translation-of`
-   * entries.
+   * Shared mapping for graph.derived-from / graph.revision-of / page
+   * `translation-of` entries.
    *
    * `inverse`, when given, is also emitted back from the resolved target — but
    * only for a target inside the corpus. A URL names a resource dockg has not
@@ -388,10 +388,11 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
   for (const doc of docs) {
     const docIri = mintDocIri(baseIri, doc.path);
     const fm = doc.frontmatter;
-    const kg = kgObject(fm);
-    // `kg` is the block as written (block-only facts: sections, provenance,
-    // the SKOS hierarchy); `kgHarvested` folds in the page-level fallbacks.
-    const kgHarvested = resolveKg(kg, fm);
+    const block = graphBlock(fm);
+    // `block` is the `graph` block as written (block-only facts: sections,
+    // provenance, the SKOS hierarchy); `harvested` folds in the page-level
+    // fallbacks.
+    const harvested = resolveGraph(block, fm);
     let createdEmitted = false;
     let modifiedEmitted = false;
 
@@ -441,7 +442,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
         asString(fmValue(fm, ["lang", "language"])) ?? doc.routeLanguage;
       if (language) add(docIri, `${NS.dcterms}language`, lit(language));
 
-      // Page-level only: docmeta's `kg` block is closed and carries no
+      // Page-level only: the `graph` block is closed and carries no
       // translation key, so this fact lives at the altitude `lang` already
       // does (ADR 01023, ADR 01037). Both directions are materialized, so
       // "every localization of this page" is one lookup for a consumer with no
@@ -456,14 +457,14 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
         );
       }
 
-      // kg sub-key: the SKOS hierarchy has no page-level twin, so it reads the
-      // block as written (frontmatter key `kg`, RDF ns `kg:`).
-      if (kg) {
-        const label = asString(kg["label"]);
+      // The graph block: the SKOS hierarchy has no page-level twin, so it reads
+      // the block as written (frontmatter key `graph`, RDF prefix `kg:`).
+      if (block) {
+        const label = asString(block["label"]);
         if (label) {
           const topic = concept(label);
           add(docIri, `${NS.foaf}primaryTopic`, iri(topic));
-          for (const alt of asStringArray(kg["alt-labels"])) {
+          for (const alt of asStringArray(block["alt-labels"])) {
             add(topic, `${NS.skos}altLabel`, lit(alt));
           }
           // Frontmatter key → SKOS predicate. `related-concepts` is spelled for
@@ -474,7 +475,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
             ["narrower", "narrower"],
             ["related-concepts", "related"],
           ] as const) {
-            for (const value of asStringArray(kg[key])) {
+            for (const value of asStringArray(block[key])) {
               add(topic, `${NS.skos}${predicate}`, iri(concept(value)));
             }
           }
@@ -483,17 +484,17 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
 
       // iiRDS Core + Software typing (ADR 01012), over the harvested block so a
       // page typed only at the top level still types its document (ADR 01024).
-      emitIirdsTyping(docIri, kgHarvested);
+      emitIirdsTyping(docIri, harvested);
     }
 
     if (sources.has("tags")) {
       // Two distinct facts, both landing on dcterms:subject: dockg's own
       // tag harvest (`tags`/`keywords`), and the concepts fact — where
-      // `kg.concepts` beats the page-level `concepts` outright rather than
+      // `graph.concepts` beats the page-level `concepts` outright rather than
       // adding to it (ADR 01024).
       const labels = [
         ...asStringArray(fmValue(fm, ["tags", "keywords"])),
-        ...asStringArray(kgHarvested["concepts"]),
+        ...asStringArray(harvested["concepts"]),
       ];
       for (const label of labels) {
         add(docIri, `${NS.dcterms}subject`, iri(concept(label)));
@@ -501,9 +502,9 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
     }
 
     if (sources.has("sections")) {
-      // kg.sections: slug-keyed iiRDS typing attached to section nodes
+      // graph.sections: slug-keyed iiRDS typing attached to section nodes
       // (ADR 01013). Explicit-only — a section gets nothing from the doc.
-      const sectionMeta = asRecord(kg?.["sections"]);
+      const sectionMeta = asRecord(block?.["sections"]);
       const sectionSlugs = new Set(doc.sections.map((s) => s.slug));
 
       for (const section of doc.sections) {
@@ -532,8 +533,8 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
         }
       }
 
-      // A kg.sections key naming no heading is a broken reference (surfaced by
-      // stats, gated by stats --check) — never a silent drop.
+      // A graph.sections key naming no heading is a broken reference (surfaced
+      // by stats, gated by stats --check) — never a silent drop.
       for (const slug of Object.keys(sectionMeta)) {
         if (!sectionSlugs.has(slug)) {
           add(docIri, `${NS.kg}brokenSectionRef`, lit(slug));
@@ -588,14 +589,14 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
     }
 
     if (prov) {
-      // kg.derived-from / kg.revision-of: doc-relative path, repo-relative
-      // path, or URL — one shared resolution. `derived-from` is block-only
+      // graph.derived-from / graph.revision-of: doc-relative path,
+      // repo-relative path, or URL — one shared resolution. `derived-from` is block-only
       // (document lineage is curated by hand); `revision-of` harvests the
       // page-level `supersedes` when the block is silent (ADR 01024).
-      for (const raw of kg ? asStringArray(kg["derived-from"]) : []) {
+      for (const raw of block ? asStringArray(block["derived-from"]) : []) {
         provTargetEdge(doc, docIri, raw, `${NS.prov}wasDerivedFrom`);
       }
-      for (const raw of asStringArray(kgHarvested["revision-of"])) {
+      for (const raw of asStringArray(harvested["revision-of"])) {
         provTargetEdge(doc, docIri, raw, `${NS.prov}wasRevisionOf`);
       }
 
@@ -656,15 +657,15 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
         const model = asString(entry["generated-by"]);
         if (!model) continue;
         // A pointer names a value anywhere on the page, so only the ones under
-        // `/kg/` are kg's business. The filled field is the first segment
-        // after it: `/kg/sections/install/type` attributes `sections`, the
+        // `/graph/` are kg's business. The filled field is the first segment
+        // after it: `/graph/sections/install/type` attributes `sections`, the
         // field a reviewer would look at. First pointer wins on confidence,
         // which 0046 keys by the whole pointer rather than by the field.
         const pointers = asStringArray(entry["fields"]);
         const confidence = asRecord(entry["confidence"]);
         const filled = new Map<string, string>();
         for (const pointer of pointers) {
-          if (!pointer.startsWith("/kg/")) continue;
+          if (!pointer.startsWith("/graph/")) continue;
           const field = pointerSegments(pointer)[1];
           if (field === undefined || field === "") continue;
           if (!filled.has(field)) filled.set(field, pointer);
@@ -691,7 +692,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
             );
           }
         }
-        const label = kg ? asString(kg["label"]) : undefined;
+        const label = block ? asString(block["label"]) : undefined;
         if (label && filled.has("label")) {
           add(
             activity,

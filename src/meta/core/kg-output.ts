@@ -10,7 +10,7 @@
  * resolution is the walker, so a mark counts through `$ref`, `allOf` and a
  * referenced built-in, and inside the `anyOf`, `oneOf` and `if`/`then` branches
  * Ajv takes. Absent means `true`: every field is harvested unless a schema says
- * otherwise. Only a top-level property's mark counts; a mark nested inside `kg`
+ * otherwise. Only a top-level property's mark counts; a mark nested inside `graph`
  * is accepted and ignored, as 0047 rule 2 ignores a nested `x-manni-location`.
  * `Validator.kgOutputPreferences` is the one question a tool asks of it.
  *

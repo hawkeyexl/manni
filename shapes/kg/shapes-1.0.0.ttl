@@ -222,7 +222,7 @@ dsh:Document-brokenLink
   sh:path kg:brokenLink ;
   sh:datatype xsd:string .
 
-# A kg.sections key that named no heading (surfaced by stats, gated by --check).
+# A graph.sections key that named no heading (surfaced by stats, gated by --check).
 dsh:Document-brokenSectionRef
   a sh:PropertyShape ;
   sh:path kg:brokenSectionRef ;
@@ -338,7 +338,7 @@ dsh:Document-wasGeneratedBy
   sh:class prov:Activity .
 
 # --- Product variants --------------------------------------------------------
-# Minted from kg.appliesTo. manni kg references iiRDS ProductVariant as a class
+# Minted from graph.applies-to. manni kg references iiRDS ProductVariant as a class
 # but only labels the node — the iiRDS vocabulary itself is never re-emitted.
 
 dsh:ProductVariantShape

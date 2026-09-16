@@ -35,7 +35,7 @@ Other things.
 
 const LOOSE_MD = `---
 title: Loose
-kg:
+graph:
   label: Marmalade
 ---
 
