@@ -268,10 +268,32 @@ escaped, because a workflow command reads `:` as a separator:
 ::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "PAL" names no entry. "progressive lens" lists it as an alt-label.
 ```
 
-`sarif` and `junit` are the metadata tool's
-[renderers](/manni/meta/reference/output-and-exit-codes/) over the same
-findings, under the rule id `manni:term/<rule>`. JUnit testcases carry the
-classname `manni.term`, one per file read.
+`sarif` and `junit` carry the same findings under the rule id
+`manni:term/<rule>`, in the envelope, paths and fingerprints of the metadata
+tool's [renderers](/manni/meta/reference/output-and-exit-codes/). Each message
+is the finding's own. A SARIF rule's `shortDescription` is the rule's line from
+the [rules reference](/manni/term/reference/rules/), and its `helpUri` is the
+rule's section of that page:
+
+```json
+{
+  "id": "manni:term/undefined-term",
+  "shortDescription": {
+    "text": "A page's concepts: names a label no entry claims as its preferred label."
+  },
+  "helpUri": "https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term"
+}
+```
+
+```xml
+<testcase name="docs/guides/fitting.md" classname="manni.term">
+  <failure type="manni:term/undefined-term" message="concepts: &quot;PAL&quot; names no entry. &quot;progressive lens&quot; lists it as an alt-label. (line 3)"/>
+</testcase>
+```
+
+JUnit testcases carry the classname `manni.term`, one per file read. A `lint`
+rule, `manni:term/prose/<Style.Rule>`, is Vale's, so its SARIF description
+names the Vale rule and it has no `helpUri`.
 
 ### Baselines
 
@@ -410,7 +432,7 @@ clean working tree so the change is easy to review.
 | `-f, --format` | `<markdown\|mdx\|asciidoc\|rst\|html\|dita\|docbook\|tbx\|skos\|csv\|json\|vale>` | each entry's own, in place | What to render. |
 | `-o, --out` | `<path>` | see below | The file or directory to render into. A trailing `/` means a directory. |
 | `--check` | n/a | off | Write nothing. Exit `1` when the target differs from the render. |
-| `--dry-run` | n/a | off | Write nothing. Print what would change, and exit `0`. |
+| `--dry-run` | n/a | off | Write nothing. Print what would change, then the dropped and skipped lines a write prints, and exit `0`. |
 
 `-o` depends on `-f`:
 
@@ -423,8 +445,10 @@ clean working tree so the change is easy to review.
 
 ### Output
 
-A render names the target and the number of entries. A render into one file
-per entry says so. Dropped fields follow on an indented line:
+A render names the target and the number of entries written. A render into
+one file per entry says so. Dropped fields follow on an indented line. An entry
+the target construct could not read back is left out, and named on the line
+after:
 
 ```
 Wrote 3 terms to docs/terms/, one file each
@@ -435,14 +459,25 @@ Wrote 3 terms to build/glossary.xml
   dropped from a DocBook glossary: abstract on 1 term, hidden-labels on 1, scope-note on 1
 ```
 
-`-f vale` lists each style file and what it holds. When no section of Vale's
+```
+Wrote 2 terms to glossary.md
+  dropped from a definition list: abstract on 1 term, hidden-labels on 1, related-terms on 1, scope-note on 1
+  skipped 1 term a definition list cannot read without a definition: varifocal
+```
+
+A Markdown or MDX definition list, an AsciiDoc `[glossary]` list, a
+`.. glossary::` and an HTML `<dl>` skip an entry with no definition, such as a
+`see` redirect.
+
+`-f vale` lists each style file and what it holds. `Casing.yml` and
+`Lowercase.yml` count the labels and alt-labels they swap. When no section of Vale's
 configuration uses the `Terms` style, a notice on stderr names the line to
 add:
 
 ```
 Wrote 3 terms to .vale/styles/Terms
-  Casing.yml      2 terms
-  Lowercase.yml   3 terms
+  Casing.yml      2 labels
+  Lowercase.yml   3 labels
   Deprecated.yml  2 swaps
   PAL.yml         1 acronym
 notice: no section of .vale.ini uses the Terms style. Add it to BasedOnStyles:
@@ -452,7 +487,8 @@ notice: no section of .vale.ini uses the Terms style. Add it to BasedOnStyles:
 
 `--check` and `--dry-run` print each file that differs, with what would happen
 to it: `would change`, `would be created` or `would be removed`. When nothing
-differs they print that the target is up to date:
+differs they print that the target is up to date. `--dry-run` then prints the
+dropped and skipped lines a write would:
 
 ```
 .vale/styles/Terms/Deprecated.yml would change
@@ -460,6 +496,12 @@ differs they print that the target is up to date:
 
 ```
 .vale/styles/Terms is up to date
+```
+
+```
+glossary.md would be created
+  dropped from a definition list: abstract on 1 term, hidden-labels on 1, related-terms on 1, scope-note on 1
+  skipped 1 term a definition list cannot read without a definition: varifocal
 ```
 
 ### Exit codes
@@ -545,7 +587,8 @@ written.
 | `term check -c missing.yaml` | `manni: Config file not found: "missing.yaml".` |
 | `term check -f xml` | `manni: unknown format "xml". Expected pretty \| json \| github \| sarif \| junit.` |
 | `term check`, config `baseline:` names a missing file | ``manni: Baseline "term-baseline.json" not found. Record one with `manni term check --baseline`.`` |
-| `term get missing` | `manni: no term "missing". 2 terms; did you mean "progressive-lens"?` |
+| `term get missing` | `manni: no term "missing". 2 terms.` |
+| `term get progressive-lenz` | `manni: no term "progressive-lenz". 2 terms; did you mean "progressive-lens"?` |
 | `term write -f tmx -o x` | `manni: unknown format "tmx". Expected markdown \| mdx \| asciidoc \| rst \| html \| dita \| docbook \| tbx \| skos \| csv \| json \| vale.` |
 | `term write -f tbx` | `manni: -f tbx needs -o <path>.` |
 | `term write -f tbx -o build/tbx/` | `manni: -f tbx writes one file, not a directory. Pass -o <file>.` |

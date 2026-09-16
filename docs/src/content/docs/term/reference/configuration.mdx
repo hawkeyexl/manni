@@ -127,5 +127,12 @@ value. A `tools.vale.config` that names a missing file stops `lint` and
 manni: manni.config.yaml: tools.vale.config "nowhere.ini" does not exist.
 ```
 
+A `term.manifests` file that is not there stops every verb, named as the
+config spells it:
+
+```
+manni: manni.config.yaml: term.manifests "terms/missing.yaml" does not exist.
+```
+
 The other `tools:` refusals are on the metadata tool's
 [configuration reference](/manni/meta/reference/configuration/#tools).

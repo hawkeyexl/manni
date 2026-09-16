@@ -312,9 +312,16 @@ is § 4's asymmetry seen from the other side. A set with `scope-note` rendered t
 a Markdown definition list loses the scope notes. The run reports how many
 fields were dropped, and from which entries.
 
+A render never writes an entry its construct's reader would not read back. A
+Markdown or MDX definition list, an AsciiDoc `[glossary]` list and a
+`.. glossary::` skip an entry with no definition. A `<dl>` folds a `<dt>` with
+no `<dd>` into the next entry. So a `see` redirect rendered to one of them
+is left out, and the run names it after the dropped fields.
+
 `--check` renders without writing, and exits `1` when the target differs from
 what it would write. It is the drift gate `manni meta query --check` already is.
-`--dry-run` renders without writing and prints what would change.
+`--dry-run` renders without writing, and prints what would change followed by
+the dropped and skipped lines a write prints.
 
 ### 6. Vale in both directions
 
@@ -717,6 +724,10 @@ progressive lens                        docs/terms/progressive-lens.md:1
                  without the visible boundary a bifocal carries.
 ```
 
+`<term>` is matched as an id, then as a label, then as an alt-label, the last
+two without case. `manni term get PAL` prints the same entry. A miss names the
+closest id or label only when it is a few edits away.
+
 **4. The check that fails.**
 
 ```console
@@ -774,6 +785,23 @@ $ manni term check -f github
 The colon in the rule id is escaped, as it is in every domain's annotations,
 because a workflow command reads `:` as a separator.
 
+`-f sarif` and `-f junit` carry the same rule id and the finding's own message.
+A SARIF rule is described in the words of the rules reference, and a `check`
+rule's `helpUri` is its section of that page:
+
+```json
+{
+  "id": "manni:term/undefined-term",
+  "shortDescription": {
+    "text": "A page's concepts: names a label no entry claims as its preferred label."
+  },
+  "helpUri": "https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term"
+}
+```
+
+A `lint` rule is Vale's, so it is described by Vale's rule name and carries no
+`helpUri`.
+
 **7. Ramping in on a docset whose terms were never checked.**
 
 ```console
@@ -794,9 +822,13 @@ and back into a single Markdown definition list, which cannot hold every field:
 
 ```console
 $ manni term write docs/terms/ -f markdown -o glossary.md
-Wrote 34 terms to glossary.md
+Wrote 33 terms to glossary.md
   dropped from a definition list: scope-note on 3 terms, hidden-labels on 12
+  skipped 1 term a definition list cannot read without a definition: varifocal
 ```
+
+`varifocal` is a redirect. It has `see` and no definition, and a definition
+list would read it back as nothing.
 
 **9. The handoff.**
 
@@ -810,8 +842,8 @@ Wrote 34 terms to build/terms.tbx
 ```console
 $ manni term write -f vale
 Wrote 34 terms to .vale/styles/Terms
-  Casing.yml      6 terms
-  Lowercase.yml   21 terms
+  Casing.yml      6 labels
+  Lowercase.yml   21 labels
   Deprecated.yml  12 swaps
   PAL.yml         1 acronym
   ABS.yml         1 acronym
@@ -850,7 +882,8 @@ $ echo $?
 
 Each differing path is named with what would happen to it: `would change`,
 `would be created` or `would be removed`. `--dry-run` prints the same lines and
-writes nothing.
+writes nothing. A render that drops fields or skips entries adds the lines a
+write prints.
 
 **12. Scripting.**
 
@@ -908,7 +941,8 @@ what runs.
 | `term.paths` in config | `manni: manni.config.yaml: term does not carry "paths". Name a collection under collections:.` | 2 |
 | `term check -` with no `--as` | `manni: reading stdin needs --as <format>.` | 2 |
 | `term check nowhere/` | `manni: File not found: "nowhere/".` | 2 |
-| `term get missing` | `manni: no term "missing". 34 terms; did you mean "missing-lens"?` | 2 |
+| `term get missing` | `manni: no term "missing". 34 terms.` | 2 |
+| `term get progressive-lenz` | `manni: no term "progressive-lenz". 34 terms; did you mean "progressive-lens"?` | 2 |
 | `term write -f tmx` | `manni: unknown format "tmx". Expected markdown \| mdx \| asciidoc \| rst \| html \| dita \| docbook \| tbx \| skos \| csv \| json \| vale.` | 2 |
 | `term write -f tbx` with no `-o` | `manni: -f tbx needs -o <path>.` | 2 |
 | `term write -o out.md` with no `-f` | `manni: -o needs -f <format>.` | 2 |
@@ -921,6 +955,7 @@ what runs.
 | `term write -f vale`, an acronym named like a rule file | `manni: the acronym "CASING" would replace Terms/Casing.yml. Rename the alt-label.` | 2 |
 | `term lint` with no Vale on PATH | `manni: vale is not on PATH. Install Vale to lint definitions.` | 2 |
 | `tools.vale.config: nowhere.ini` | `manni: manni.config.yaml: tools.vale.config "nowhere.ini" does not exist.` | 2 |
+| `term.manifests: [terms/missing.yaml]` | `manni: manni.config.yaml: term.manifests "terms/missing.yaml" does not exist.` | 2 |
 | `severity: {undefined-term: fatal}` | `manni: manni.config.yaml: term.severity.undefined-term "fatal" is not a level. Expected notice \| warning \| error \| off.` | 2 |
 
 Exit codes are the family's. `0` is clean, `1` is an error-severity finding or

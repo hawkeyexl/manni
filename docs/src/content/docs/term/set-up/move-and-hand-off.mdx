@@ -201,8 +201,9 @@ manni term write docs/terms/ -f markdown -o glossary.md
 ```
 
 ```
-Wrote 3 terms to glossary.md
-  dropped from a definition list: abstract on 1 term, hidden-labels on 1, related-terms on 1, see on 1, scope-note on 1
+Wrote 2 terms to glossary.md
+  dropped from a definition list: abstract on 1 term, hidden-labels on 1, related-terms on 1, scope-note on 1
+  skipped 1 term a definition list cannot read without a definition: varifocal
 ```
 
 ```markdown title="glossary.md"
@@ -216,24 +217,27 @@ bifocal
 progressive lens
 PAL
 :   Corrective lenses whose optical power increases continuously from the top of the lens to the bottom.
-
-varifocal
-:
 ```
 
 <Aside type="caution" title="A redirect needs a target that holds see">
-A definition list has no place for `see`, so `varifocal` is written with an
-empty definition. Reading the file back skips that entry, with a notice:
-
-```
-manni: glossary.md:12: skipped a definition list entry with no definition.
-```
-
-Keep redirects in pages, a manifest, DocBook, SKOS, CSV or JSON.
+A definition list has no place for `see`, and an entry with no definition
+reads back as nothing. So `varifocal` is left out, and the run names it. The
+same goes for an AsciiDoc `[glossary]` list, a `.. glossary::` and an HTML
+`<dl>`. Keep redirects in pages, a manifest, DITA, DocBook, TBX, SKOS, CSV or
+JSON.
 </Aside>
 
-`--dry-run` prints the files a render would create or change, and writes
-nothing. `--check` does the same, and exits `1` when a file differs.
+`--dry-run` prints the files a render would create or change, then the same
+dropped and skipped lines a write prints, and writes nothing:
+
+```console
+$ manni term write docs/terms/ -f markdown -o glossary.md --dry-run
+glossary.md would be created
+  dropped from a definition list: abstract on 1 term, hidden-labels on 1, related-terms on 1, scope-note on 1
+  skipped 1 term a definition list cannot read without a definition: varifocal
+```
+
+`--check` prints only the files, and exits `1` when one differs.
 
 ## What each render holds
 
