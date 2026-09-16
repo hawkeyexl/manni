@@ -79,8 +79,9 @@ Key layers:
     and mounted by `src/cli.ts`. No entry point of its own.
 - `src/tracevals/`: the session-adherence tool, `manni tracevals run`,
   `calibrate`, `fill`, `capture` and `list` (proposal 0049). It grades a
-  Claude Code session against the artifacts that governed it — `CLAUDE.md`,
-  skills, subagents and slash commands — using the 0023 artifact-evals draft.
+  Claude Code session against the artifacts that governed it, using the 0023
+  artifact-evals draft. Those artifacts are `CLAUDE.md`, skills, subagents and
+  slash commands.
   Its own `src/tracevals/CLAUDE.md` holds the tool's invariants.
   - `src/tracevals/trace/` and `src/tracevals/artifacts/`: reading a session
     transcript and finding the artifacts it ran under.
