@@ -360,8 +360,8 @@ A skipped file is not a result. It is a `toolExecutionNotification` at level
 working, not the tool failing.
 
 **`junit`** prints a JUnit XML suite for the CI "Tests" tab. One `testcase`
-per file, `classname="manni.lint"`, and one `<failure>` per finding whose
-`type` attribute is the rule id:
+per linted file, `classname="manni.lint"`, and one `<failure>` per finding
+whose `type` attribute is the rule id:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -374,10 +374,13 @@ per file, `classname="manni.lint"`, and one `<failure>` per finding whose
 </testsuites>
 ```
 
-`tests` counts files, not findings, and a skipped file rides along as a passing
-testcase. A finding below `error` severity is not a `<failure>`, because a
-failure that did not fail the run would make the tab disagree with the exit
-code.
+`tests` counts the files that were checked, not the findings, and matches the
+`N files checked` of the pretty report. A skipped file is not a testcase. JUnit
+offers a pass or a failure and nothing else, so a file nothing looked at would
+arrive as a green test. The skip is reported where there is somewhere to put
+it. `pretty` says so in words, and `sarif` files a `toolExecutionNotification`.
+A finding below `error` severity is not a `<failure>`, because a failure that
+did not fail the run would make the tab disagree with the exit code.
 
 Only `github` may print nothing on a clean run, because an empty annotation
 stream *is* a clean check. Every other format owes its envelope: an empty JSON

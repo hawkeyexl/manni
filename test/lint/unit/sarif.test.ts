@@ -449,6 +449,31 @@ describe("renderSarif URIs", () => {
     });
   });
 
+  /**
+   * The walker reports a target outside the run root as a `../` path, not as an
+   * absolute one - so this is the shape the escaping case actually arrives in,
+   * and the absolute fallback below it never ran. A `../` URI under `SRCROOT`
+   * is the format's headline failure: it uploads, resolves to nothing in the
+   * checkout, and annotates no file.
+   */
+  it("resolves a `../` path that escapes the root to an absolute file URI", () => {
+    expect(uriOf("../sibling/docs/guide.md")).toEqual({
+      uri: "file:///C:/sibling/docs/guide.md",
+    });
+  });
+
+  it("resolves the same escape against a posix root", () => {
+    expect(uriOf("../sibling/guide.md", "/srv/repo")).toEqual({
+      uri: "file:///srv/sibling/guide.md",
+    });
+  });
+
+  it("counts every `..` step, not just the first", () => {
+    expect(uriOf("..\\..\\stray.md", "C:\\repo\\docs")).toEqual({
+      uri: "file:///C:/stray.md",
+    });
+  });
+
   it("does not mistake a sibling directory with a shared prefix for a child", () => {
     expect(uriOf("C:\\repository\\stray.md")).toEqual({
       uri: "file:///C:/repository/stray.md",

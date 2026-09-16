@@ -145,7 +145,7 @@ to meet another.
 | `github` | GitHub Actions annotations. | `::error` workflow commands, one per finding, `title=manni:lint/<job>/<rule>`. Nothing at all on a clean run. |
 | `json` | Scripts and dashboards. | A top-level array, one object per file, each with `file`, `success`, and `errors[]` carrying `type`, `ruleId`, `tool`, `heading`, `message` and `position`. |
 | `sarif` | GitHub code scanning and any SARIF consumer. | One result per finding with `ruleId: manni:lint/<job>/<rule>`, `level`, and the full line/column span. Skipped files ride along as tool notifications, never as results. |
-| `junit` | The CI "Tests" tab. | One `testcase` per file, `classname="manni.lint"`, one `failure` per finding whose `type` is the rule id. |
+| `junit` | The CI "Tests" tab. | One `testcase` per linted file, `classname="manni.lint"`, one `failure` per finding whose `type` is the rule id. |
 
 Every shape is in the [CLI
 reference](/manni/lint/reference/cli/#output-formats). `templates` and `tools`

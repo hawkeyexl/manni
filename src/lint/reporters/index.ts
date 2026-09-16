@@ -3,12 +3,17 @@
  * diagnostics go to stderr separately, so a report is never interleaved with
  * anything a consumer has to parse around.
  */
-import type { Finding } from "../types.js";
+import { LintError, type Finding } from "../types.js";
 import type { LintRun } from "../commands/lint.js";
 import type { FormatInfo, ToolInfo } from "../commands/tools.js";
 import type { TemplateInfo, TemplatesInfo } from "../commands/templates.js";
 import { palette, type Colors } from "../../shared/color.js";
+import {
+  escapeWorkflowCommandMessage,
+  escapeWorkflowCommandProperty,
+} from "../../shared/github.js";
 import type { ReportFormat as FamilyFormat } from "../../meta/index.js";
+import { REPORT_FORMAT_LIST } from "../../meta/internal.js";
 import { ruleId, TOOL_NAME } from "../core/rule-id.js";
 import { renderJunit } from "./junit.js";
 import { renderSarif } from "./sarif.js";
@@ -126,36 +131,6 @@ export function renderJson(run: LintRun): string {
 }
 
 /**
- * Escape the data half of a workflow command - everything after the `::`.
- *
- * `%` is the format's escape character, so a message quoting a literal
- * percentage makes GitHub read the two characters after it as a hex code and
- * swallow them. A raw line break ends the command outright, spilling the rest
- * of the message into the log as plain text that no annotation carries.
- *
- * `%` has to be replaced first. Replacing it last would rewrite the `%` of a
- * `%0A` this function had just introduced, and the reader would see a literal
- * `%250A` where the line break belonged.
- */
-function escapeData(value: string): string {
-  return value.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
-}
-
-/**
- * Escape a property value - the `file=...` half, which is stricter than data.
- *
- * Properties are comma-separated and the list ends at the next `::`, so a raw
- * `,` or `:` inside a value redraws those boundaries. That is not a corner
- * case: every absolute path on Windows carries a drive-letter colon, and
- * `file=C:\docs\a.md` is enough for GitHub to mis-parse the command and drop
- * the annotation - the entire report silently empty on a Windows runner, with
- * the run still exiting 1 as if it had been posted.
- */
-function escapeProperty(value: string): string {
-  return escapeData(value).replace(/:/g, "%3A").replace(/,/g, "%2C");
-}
-
-/**
  * GitHub workflow commands: one annotation per finding, shaped as cite's are -
  * `::<severity> file=…,line=…,col=…,title=<ruleId>::<message>`.
  *
@@ -174,18 +149,24 @@ function escapeProperty(value: string): string {
  * annotation, so the message arrives whole; collapsing threw away the author's
  * line breaks to solve a problem the escape already solves, and its `\r?\n`
  * pattern let a bare carriage return through into the command untouched.
+ *
+ * The escaping itself is the family's, from `src/shared/github.ts`. It lives
+ * there precisely so a second renderer cannot re-derive it: the replacements
+ * are order-dependent (`%` first, or the escape sequences get escaped again),
+ * and a local copy that got the order wrong would look identical in review and
+ * only show itself on a message carrying a literal `%`.
  */
 export function renderGithub(run: LintRun): string {
   const lines: string[] = [];
   for (const result of run.results) {
     for (const finding of result.findings) {
       const params = [
-        `file=${escapeProperty(result.file)}`,
+        `file=${escapeWorkflowCommandProperty(result.file)}`,
         `line=${finding.position.start.line}`,
         `col=${finding.position.start.column}`,
-        `title=${escapeProperty(ruleId(finding.type))}`,
+        `title=${escapeWorkflowCommandProperty(ruleId(finding.type))}`,
       ];
-      const message = escapeData(describeFinding(finding));
+      const message = escapeWorkflowCommandMessage(describeFinding(finding));
       lines.push(`::${finding.severity} ${params.join(",")}::${message}`);
     }
   }
@@ -270,8 +251,18 @@ export function render(
     case "explain":
       return renderExplain(run, opts);
     case "pretty":
-    default:
       return renderPretty(run, opts);
+    default: {
+      // Exhaustive, and the guard is what makes the claim true: sharing an arm
+      // with `pretty` narrowed nothing, so a format added to meta's
+      // `REPORT_FORMATS` - which is what the CLI validates `-f` against - was
+      // accepted here and silently rendered as a human report. Now it is a
+      // compile error, and this is its runtime half for library callers.
+      const unreachable: never = format;
+      throw new LintError(
+        `Unknown report format ${JSON.stringify(unreachable)}. Use ${REPORT_FORMAT_LIST}.`,
+      );
+    }
   }
 }
 

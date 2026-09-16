@@ -215,6 +215,35 @@ function fileUri(posix: string): string {
   return `file:///${encoded}`; // Drive: file:///C:/repo
 }
 
+/** A relative path that climbs out of the directory it is relative to. */
+function escapesRoot(posix: string): boolean {
+  return posix === ".." || posix.startsWith("../");
+}
+
+/**
+ * `C:/repo/` + `../sibling/a.md` -> `C:/sibling/a.md`.
+ *
+ * String-level, like everything else here, and one step per `..` rather than a
+ * single strip: `../a.md` and `../../a.md` name two different files, and a
+ * reporter that collapsed them would point an alert at the wrong one. The first
+ * segment is never popped - it is the drive, the empty segment before a posix
+ * root, or the first half of a UNC share - so a path cannot climb past the
+ * filesystem root.
+ */
+function resolveFromRoot(root: string, rel: string): string {
+  const parts = root.replace(/\/+$/, "").split("/");
+  for (const segment of rel.split("/")) {
+    if (segment === "" || segment === ".") continue;
+    if (segment === "..") {
+      if (parts.length > 1) parts.pop();
+      continue;
+    }
+    parts.push(segment);
+  }
+  const joined = parts.join("/");
+  return joined === "" ? "/" : joined;
+}
+
 /**
  * Forward-slashed with exactly one trailing slash, so a prefix match on it can
  * only ever land on a segment boundary.
@@ -230,12 +259,19 @@ function normalizeRoot(root: string): string {
  * SARIF URIs are URI references, not native paths. Relative plus `uriBaseId`
  * is what GitHub resolves against the checkout, so that is the default; a
  * backslashed path, or a bare absolute one, uploads fine and matches no file.
- * `resolveTargets` already emits cwd-relative posix paths for anything under
- * cwd and an absolute path for anything outside it, so both cases arrive here.
+ *
+ * A target outside the run root arrives as a **relative** path too - a `../`
+ * chain, which is how `resolveTargets` reports it - and that is the one shape
+ * a `uriBaseId` cannot carry. `SRCROOT` is the checkout, and code scanning
+ * will not resolve above it: `../sibling/docs/a.md` uploads and annotates
+ * nothing, which is this format's whole failure mode. So it is resolved
+ * against the root and emitted the way the genuinely-absolute case below is,
+ * with no base to resolve against.
  */
 function artifactLocation(file: string, root: string): ArtifactLocation {
   const posix = toPosix(file);
   if (!isAbsolutePath(posix)) {
+    if (escapesRoot(posix)) return { uri: fileUri(resolveFromRoot(root, posix)) };
     return { uri: encodePath(posix), uriBaseId: URI_BASE_ID };
   }
   const rel = underRoot(posix, root);

@@ -5,10 +5,16 @@ import {
   renderJson,
   renderJunit,
   renderPretty,
+  toValidationResults,
+  type ReportFormat,
 } from "../../../src/lint/reporters/index.js";
 import { renderSarif } from "../../../src/lint/reporters/sarif.js";
+import {
+  escapeWorkflowCommandMessage,
+  escapeWorkflowCommandProperty,
+} from "../../../src/shared/github.js";
 import type { LintRun } from "../../../src/lint/commands/lint.js";
-import type { Finding } from "../../../src/lint/types.js";
+import { LintError, type Finding } from "../../../src/lint/types.js";
 
 const ESC = String.fromCharCode(27);
 
@@ -330,6 +336,17 @@ describe("github reporter", () => {
     const out = annotationFor({ message: "first line\r\nsecond line" });
     expect(out).toContain("first line%0D%0Asecond line");
   });
+
+  // Through the family's own escapers, not a local pair that happens to agree
+  // today. The ordering is the part a second copy re-derives wrong, and a
+  // wrong one is invisible until a message carrying a `%` reaches a runner.
+  it("escapes through the shared workflow-command rule", () => {
+    const file = "C:\\docs\\a,b.md";
+    const message = "50%\nof files";
+    const out = annotationFor({ file, message });
+    expect(out).toContain(`file=${escapeWorkflowCommandProperty(file)}`);
+    expect(out.endsWith(`::${escapeWorkflowCommandMessage(message)}`)).toBe(true);
+  });
 });
 
 /**
@@ -354,10 +371,25 @@ describe("junit reporter", () => {
 
   it("names the suite and counts files, not findings", () => {
     const xml = renderJunit(run);
-    // Three files in, three testcases: the skipped one is a testcase too, or
-    // a file that was never linted would vanish from the tab.
-    expect(xml).toContain('tests="3"');
+    expect(xml).toContain('tests="2"');
     expect(xml).toContain('failures="1"');
+  });
+
+  /**
+   * A skipped file is not a passing test.
+   *
+   * JUnit's only two verdicts here are "testcase" and "testcase with a
+   * failure", so a file nothing looked at can only enter the tab as a green
+   * one - a pass claimed on evidence that was never gathered, and a `tests`
+   * count that disagrees with the `2 files checked, 1 skipped` the same run
+   * prints. The skip is still reported everywhere that has somewhere to put
+   * it: pretty says so in words, SARIF as a `toolExecutionNotification`.
+   */
+  it("leaves a skipped file out rather than passing it", () => {
+    const xml = renderJunit(run);
+    expect(xml).not.toContain("guide.adoc");
+    // The counts are the run's own, not the length of the result list.
+    expect(xml).toContain('tests="2"');
   });
 
   it("owes its envelope on a clean run", () => {
@@ -365,6 +397,46 @@ describe("junit reporter", () => {
     expect(xml).toContain('tests="2"');
     expect(xml).toContain('failures="0"');
     expect(xml).not.toContain("<failure");
+  });
+});
+
+/**
+ * `toValidationResults` is exported, so meta's own renderers are legitimate
+ * consumers - and they read `ok` by meta's definition of it, which is about
+ * severity and not about whether anything was found.
+ */
+describe("toValidationResults", () => {
+  function runOf(...findings: Finding[]): LintRun {
+    return {
+      results: [
+        { file: "a.md", success: findings.length === 0, findings, template: "how-to" },
+      ],
+      summary: {
+        checked: 1,
+        passed: findings.length === 0 ? 1 : 0,
+        failed: findings.length === 0 ? 0 : 1,
+        skipped: 0,
+      },
+    };
+  }
+
+  // `ok` is "no error-severity finding", not "no findings". Counted the other
+  // way, a file whose only finding is a warning renders as a `✗` through
+  // meta's pretty reporter while lint's own exit code says the run passed.
+  it("calls a file with only warnings ok", () => {
+    const [result] = toValidationResults(runOf(finding({ severity: "warning" })));
+    expect(result?.ok).toBe(true);
+    expect(result?.errors).toHaveLength(1);
+  });
+
+  it("calls a file with an error-severity finding not ok", () => {
+    const [result] = toValidationResults(runOf(finding({ severity: "error" })));
+    expect(result?.ok).toBe(false);
+  });
+
+  it("calls a file with no findings ok", () => {
+    const [result] = toValidationResults(runOf());
+    expect(result?.ok).toBe(true);
   });
 });
 
@@ -405,5 +477,18 @@ describe("render", () => {
     // while under the process cwd the same file is outside the root and falls
     // back to an absolute `file:` URI.
     expect(render(absolute, "sarif", { root })).not.toBe(renderSarif(absolute));
+  });
+
+  /**
+   * The findings formats are meta's, not lint's. So the day one is added
+   * there, `-f <it>` passes the CLI's check - which is meta's `isReportFormat`
+   * - and arrives here with no case of its own. Falling through to pretty
+   * would hand a machine reader a human report, quietly; the `never` guard
+   * makes the addition a compile error, and this is its runtime half.
+   */
+  it("refuses a format it has no case for, rather than rendering pretty", () => {
+    const unknown = "toml" as ReportFormat;
+    expect(() => render(run, unknown)).toThrow(LintError);
+    expect(() => render(run, unknown)).toThrow(/toml/);
   });
 });
