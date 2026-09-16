@@ -5,8 +5,8 @@
  */
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadGraderPlugins } from "../../../../src/tracevals/graders/plugins.js";
 import {
@@ -219,9 +219,13 @@ describe("loadGraderPlugins", () => {
         "utf-8",
       );
       // Re-exports the committed fixture rather than restating it: what is
-      // under test here is resolution, not the grader.
-      const back = relative(pkg, fixture("bare-probe.mjs")).replace(/\\/g, "/");
-      await writeFile(join(pkg, "index.mjs"), `export { register } from "${back}";\n`, "utf-8");
+      // under test here is resolution, not the grader. The package lives in the
+      // OS temp directory and the fixture in the checkout, so it names the
+      // fixture by file URL: a relative path breaks when the two sit on
+      // different Windows drives, or when the temp directory is reached
+      // through a symlink, as macOS's /var is.
+      const probe = pathToFileURL(fixture("bare-probe.mjs")).href;
+      await writeFile(join(pkg, "index.mjs"), `export { register } from "${probe}";\n`, "utf-8");
 
       await loadGraderPlugins({
         plugins: ["fixture-grader-plugin"],
