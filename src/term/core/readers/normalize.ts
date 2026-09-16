@@ -89,9 +89,12 @@ export function idFor(record: TermRecord, recordId: unknown, constructId?: unkno
   return textOf(recordId) ?? textOf(constructId) ?? slugOf(record.label);
 }
 
-/** `language` from the file's metadata, when it carries one. */
+/**
+ * `language` from the file's metadata, when it carries one. An XML file says
+ * it with `xml:lang` on its root, which is where DITA and DocBook put it.
+ */
 export function languageOf(input: TermInput): string | undefined {
-  return textOf(input.metadata["language"]);
+  return textOf(input.metadata["language"]) ?? textOf(input.metadata["xml:lang"]);
 }
 
 /** Whether the file's metadata channel declares `type: <type>`. */

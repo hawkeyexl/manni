@@ -24,6 +24,16 @@ import {
 
 type Construct = "dita-glossentry" | "dita-glossgroup";
 
+/** A glossdef's prose: its `<p>`s with a blank line between, or its text when it has none. */
+function definitionOf(glossdef: XmlElement): string {
+  const paragraphs = childrenOf(glossdef, "p");
+  if (paragraphs.length === 0) return textOfElement(glossdef);
+  return paragraphs
+    .map(textOfElement)
+    .filter((text) => text !== "")
+    .join("\n\n");
+}
+
 function readEntry(
   input: TermInput,
   xml: ParsedXml,
@@ -40,7 +50,7 @@ function readEntry(
   }
   const [glossdef] = childrenOf(entry, "glossdef");
   if (glossdef !== undefined) {
-    raw.definition = textOfElement(glossdef);
+    raw.definition = definitionOf(glossdef);
     lines.definition = lineOfElement(glossdef);
   }
   const alts: string[] = [];

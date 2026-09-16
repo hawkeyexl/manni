@@ -28,8 +28,10 @@ function referenceOf(el: XmlElement): string | undefined {
 
 /** A glossdef's prose: each paragraph's text, a blank line between, cross-references left out. */
 function definitionOf(glossdef: XmlElement): string {
-  const blocks = childrenOf(glossdef).filter((child) => nameOf(child) !== "glossseealso");
-  if (blocks.length === 0) return textOfElement(glossdef);
+  const children = childrenOf(glossdef);
+  const blocks = children.filter((child) => nameOf(child) !== "glossseealso");
+  // Only cross-references: a glossdef with no prose of its own.
+  if (blocks.length === 0) return children.length === 0 ? textOfElement(glossdef) : "";
   return blocks
     .map(textOfElement)
     .filter((text) => text !== "")
