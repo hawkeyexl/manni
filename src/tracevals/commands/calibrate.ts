@@ -58,6 +58,10 @@ export async function runCalibrate(
   const start = Date.now();
   const { config, dir: configDir } = await discoverConfig(
     options.configDir ?? process.cwd(),
+    {
+      ...(options.config === undefined ? {} : { configPath: options.config }),
+      ...(options.noConfig === undefined ? {} : { noConfig: options.noConfig }),
+    },
   );
 
   // A flag overrides the config rather than bypassing it (CLAUDE.md,
@@ -179,7 +183,7 @@ export async function runCalibrate(
     durationMs: Date.now() - start,
   };
 
-  const rendered = renderCalibration(report, options.format ?? "human");
+  const rendered = renderCalibration(report, options.format ?? "pretty");
   if (options.output) await writeFile(options.output, rendered, "utf-8");
   return { report, rendered };
 }

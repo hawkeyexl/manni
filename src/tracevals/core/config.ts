@@ -13,6 +13,7 @@ import configSchemaJson from "./config-schema.json" with { type: "json" };
 import {
   FAMILY_CONFIG_NAMES,
   findConfigFileSync,
+  readConfigFileSync,
   type ConfigFileOptions,
 } from "../../shared/config-file.js";
 import { compileRedactPatterns } from "../judge/redact.js";
@@ -321,6 +322,14 @@ export interface LoadedConfig {
   dir: string;
 }
 
+/** How a command was told to find its config: `-c` and `--no-config`. */
+export interface ConfigLookup {
+  /** `-c/--config`: read this file instead of discovering one. */
+  configPath?: string;
+  /** `--no-config`: skip discovery and run on the built-in defaults. */
+  noConfig?: boolean;
+}
+
 /**
  * Discover the family config from `dir` (cwd by default) upward to the
  * repository root and return this tool's section (`src/shared/config-file.ts`:
@@ -328,16 +337,29 @@ export interface LoadedConfig {
  * `manni.config.yaml` with a warning, then `moose-tracevals.config.yaml`
  * whole). An absent file — or one that carries only other tools' sections —
  * yields defaults.
+ *
+ * `-c` names a file and skips the walk; `--no-config` skips the file
+ * altogether and runs on the built-in defaults, with `dir` still anchoring
+ * whatever the config would otherwise have anchored.
  */
-export async function discoverConfig(dir = process.cwd()): Promise<LoadedConfig> {
+export async function discoverConfig(
+  dir = process.cwd(),
+  lookup: ConfigLookup = {},
+): Promise<LoadedConfig> {
+  if (lookup.noConfig === true) return { config: parseConfig({}), dir };
   const file = await Promise.resolve().then(() =>
-    findConfigFileSync(dir, CONFIG_FILE),
+    lookup.configPath === undefined
+      ? findConfigFileSync(dir, CONFIG_FILE)
+      : readConfigFileSync(lookup.configPath, dir, CONFIG_FILE),
   );
   if (file === null) return { config: parseConfig({}), dir };
   return { config: parseConfig(file.value ?? {}), dir: file.dir };
 }
 
 /** `discoverConfig`, for callers that only want the settings. */
-export async function loadConfig(dir = process.cwd()): Promise<TracevalsConfig> {
-  return (await discoverConfig(dir)).config;
+export async function loadConfig(
+  dir = process.cwd(),
+  lookup: ConfigLookup = {},
+): Promise<TracevalsConfig> {
+  return (await discoverConfig(dir, lookup)).config;
 }

@@ -17,8 +17,10 @@ import {
   join,
   relative,
   resolve,
+  sep,
 } from "node:path";
 import { stat } from "node:fs/promises";
+import picomatch from "picomatch";
 import { extractEvals } from "../evals/extract.js";
 import { TracevalsError } from "../types.js";
 import { listInTree, safeRead, segments } from "./fs.js";
@@ -56,6 +58,36 @@ export interface DiscoverOptions {
   paths?: string[];
   /** Base for relative `paths`; defaults to the process working directory. */
   cwd?: string;
+  /**
+   * `--exclude <glob>`, repeatable and never split on commas. Applied to
+   * everything the scan found — an explicitly named file as much as a walked
+   * directory — so one flag means the same thing however the artifact was
+   * reached.
+   */
+  exclude?: string[];
+}
+
+/**
+ * Whether `path` is excluded by any of `globs`.
+ *
+ * Matched against the path as the user would write it, relative to `cwd` with
+ * posix separators, so an exclude written against `test/fixtures` reads the
+ * same on Windows as on Linux. A target outside `cwd` has no such spelling,
+ * so the absolute posix path is offered too rather than a `../../` one no
+ * glob would be written against.
+ */
+function excluder(
+  globs: readonly string[] | undefined,
+  cwd: string,
+): (path: string) => boolean {
+  if (globs === undefined || globs.length === 0) return () => false;
+  const isMatch = picomatch([...globs], { dot: true });
+  return (path) => {
+    const posix = resolve(path).split(sep).join("/");
+    const rel = relative(cwd, resolve(path)).split(sep).join("/");
+    const inside = rel !== "" && !rel.startsWith("../") && !isAbsolute(rel);
+    return isMatch(posix) || (inside && isMatch(rel));
+  };
 }
 
 const SKILL_DIRS = ["skills", join("src", "skills"), join(".claude", "skills")];
@@ -247,6 +279,14 @@ export async function discoverArtifacts(
       const type = classify(path);
       if (type !== undefined) files.set(path, type);
     }
+  }
+
+  // After the walk rather than inside it: a `--exclude` is about the artifact
+  // set, and applying it to directory names during the walk would make
+  // `**/fixtures/**` and `**/fixtures` mean different things.
+  const excluded = excluder(options.exclude, cwd);
+  for (const path of [...files.keys()]) {
+    if (excluded(path)) files.delete(path);
   }
 
   const artifacts: DiscoveredArtifact[] = [];

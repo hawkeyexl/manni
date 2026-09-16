@@ -2,24 +2,36 @@
 import type { BatchReportWithBudget } from "../aggregate.js";
 import type { CalibrationReport } from "../calibrate/types.js";
 import type { RunReport } from "../types.js";
-import { renderBatchHuman, renderBatchMarkdown } from "./batch.js";
+import { renderBatchMarkdown, renderBatchPretty } from "./batch.js";
 import {
-  renderCalibrationHuman,
   renderCalibrationMarkdown,
+  renderCalibrationPretty,
 } from "./calibration.js";
-import { renderHuman } from "./human.js";
+import { renderPretty } from "./pretty.js";
 import { renderMarkdown } from "./markdown.js";
+import { REPORT_FORMATS, parseFormat, type ReportFormat } from "./format.js";
 
-export type ReportFormat = "human" | "json" | "markdown";
+export {
+  REPORT_FORMATS,
+  SUMMARY_FORMATS,
+  parseFormat,
+  type ReportFormat,
+  type SummaryFormat,
+} from "./format.js";
 
 export function render(report: RunReport, format: ReportFormat): string {
+  // The same entry guard the sibling entry points carry, and for docevals'
+  // reason: these are exported from `src/index.ts`, so a library caller
+  // arrives with no CLI parser in front of them. A `default:` branch would
+  // silently render pretty for a misspelt format instead of saying so.
+  parseFormat(format, REPORT_FORMATS, "format");
   switch (format) {
     case "json":
       return JSON.stringify(report, null, 2);
     case "markdown":
       return renderMarkdown(report);
-    default:
-      return renderHuman(report);
+    case "pretty":
+      return renderPretty(report);
   }
 }
 
@@ -35,13 +47,14 @@ export function renderBatch(
   report: BatchReportWithBudget,
   format: ReportFormat,
 ): string {
+  parseFormat(format, REPORT_FORMATS, "format");
   switch (format) {
     case "json":
       return JSON.stringify(report, null, 2);
     case "markdown":
       return renderBatchMarkdown(report);
-    default:
-      return renderBatchHuman(report);
+    case "pretty":
+      return renderBatchPretty(report);
   }
 }
 
@@ -55,12 +68,13 @@ export function renderCalibration(
   report: CalibrationReport,
   format: ReportFormat,
 ): string {
+  parseFormat(format, REPORT_FORMATS, "format");
   switch (format) {
     case "json":
       return JSON.stringify(report, null, 2);
     case "markdown":
       return renderCalibrationMarkdown(report);
-    default:
-      return renderCalibrationHuman(report);
+    case "pretty":
+      return renderCalibrationPretty(report);
   }
 }

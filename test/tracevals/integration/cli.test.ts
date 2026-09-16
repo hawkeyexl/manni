@@ -91,15 +91,136 @@ describe.skipIf(!built)("built CLI", () => {
     expect(judged.length).toBeGreaterThan(0);
   });
 
-  it("list --json enumerates the fixture session store", async () => {
+  it("list -f json enumerates the fixture session store", async () => {
     const { code, stdout } = await runCli(
-      ["list", "--all-projects", "--json", "--limit", "5"],
+      ["list", "--all-projects", "-f", "json", "--limit", "5"],
       { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home" },
     );
     expect(code).toBe(0);
     const { traces } = JSON.parse(stdout);
     expect(Array.isArray(traces)).toBe(true);
     expect(traces.length).toBeGreaterThan(0);
+  });
+
+  /**
+   * Proposal 0034 and the family's one format flag. Each of these is a rung of
+   * the plan's usage ladder: the bare domain, the grandfathered default verb,
+   * the renamed format, and `list`'s replaced `--json`.
+   */
+  describe("usage errors", () => {
+    it("a bare domain prints help and exits 2", async () => {
+      const { code, stdout, stderr } = await runCli([]);
+      expect(code).toBe(2);
+      expect(stdout).toBe("");
+      expect(stderr).toMatch(/^Usage: manni tracevals /m);
+      expect(stderr).toContain("run [options] [traces...]");
+    });
+
+    it("a trace path with no verb is an unknown command, not a default run", async () => {
+      const { code, stderr } = await runCli([
+        "test/tracevals/fixtures/traces/claude-session.jsonl",
+      ]);
+      expect(code).toBe(2);
+      expect(stderr).toContain(
+        "error: unknown command 'test/tracevals/fixtures/traces/claude-session.jsonl'",
+      );
+      expect(stderr).toContain("(add --help for usage)");
+    });
+
+    it("refuses the old `human` format on run", async () => {
+      const { code, stderr } = await runCli([
+        "run",
+        "x.jsonl",
+        "-f",
+        "human",
+      ]);
+      expect(code).toBe(2);
+      expect(stderr).toContain(
+        'manni: --format must be one of pretty | json | markdown, got "human"',
+      );
+    });
+
+    it("refuses the old `human` format on fill, capture and calibrate", async () => {
+      for (const verb of ["fill", "capture", "calibrate"]) {
+        const { code, stderr } = await runCli([verb, "-f", "human"]);
+        expect(code).toBe(2);
+        expect(stderr).toContain("--format must be one of");
+        expect(stderr).toContain('got "human"');
+      }
+    });
+
+    it("refuses list --json, which -f json replaced", async () => {
+      const { code, stderr } = await runCli(["list", "--json"]);
+      expect(code).toBe(2);
+      expect(stderr).toContain("error: unknown option '--json'");
+      expect(stderr).toContain("(add --help for usage)");
+    });
+
+    it("drops list's -p/-a/-l short forms, keeping the long ones", async () => {
+      for (const short of ["-p", "-a", "-l"]) {
+        const { code, stderr } = await runCli(["list", short]);
+        expect(code).toBe(2);
+        expect(stderr).toContain(`error: unknown option '${short}'`);
+      }
+    });
+  });
+
+  /**
+   * `-c`/`--no-config` on every verb that reads config. `list` reads none, so
+   * it has neither — asserted above by way of its short forms and here by the
+   * flag's absence.
+   */
+  describe("config flags", () => {
+    it("-c names the file `run` reads", async () => {
+      const { code, stderr } = await runCli([
+        "run",
+        "test/tracevals/fixtures/traces/claude-session.jsonl",
+        "-c",
+        "does-not-exist.yaml",
+        "--deterministic-only",
+      ]);
+      expect(code).toBe(2);
+      expect(stderr).toContain('manni: Config file not found: "does-not-exist.yaml".');
+    });
+
+    // `capture` reads stdin before anything else, so its own `-c` is asserted
+    // in the capture block below, where the runner closes stdin.
+    it("-c is accepted by fill and calibrate too", async () => {
+      for (const args of [
+        ["fill", "test/tracevals/fixtures/project"],
+        ["calibrate", "test/tracevals/fixtures/traces/claude-session.jsonl"],
+      ]) {
+        const { code, stderr } = await runCli([...args, "-c", "does-not-exist.yaml"]);
+        expect(code).toBe(2);
+        expect(stderr).toContain('manni: Config file not found: "does-not-exist.yaml".');
+      }
+    });
+
+    it("--no-config runs on the built-in defaults", async () => {
+      const { code, stdout } = await runCli(
+        [
+          "run",
+          "test/tracevals/fixtures/traces/claude-session.jsonl",
+          "--project",
+          "test/tracevals/fixtures/project",
+          "--deterministic-only",
+          "--no-config",
+          "-f",
+          "json",
+        ],
+        { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home" },
+      );
+      expect(code).toBe(1);
+      expect(JSON.parse(stdout).evalResults.length).toBeGreaterThan(0);
+    });
+
+    it("list takes neither -c nor --no-config", async () => {
+      for (const flag of [["-c", "x.yaml"], ["--no-config"]]) {
+        const { code, stderr } = await runCli(["list", ...flag]);
+        expect(code).toBe(2);
+        expect(stderr).toMatch(/error: unknown option '(-c|--no-config)'/);
+      }
+    });
   });
 
   it("exits 2 with guidance when no trace is given off-TTY", async () => {
@@ -153,6 +274,39 @@ describe.skipIf(!built)("built CLI", () => {
         (r: { needsSharpening: unknown[] }) => r.needsSharpening.length > 0,
       ),
     ).toBe(true);
+  });
+
+  it("fill --exclude drops the artifacts it matches", async () => {
+    const args = (extra: string[]) => [
+      "fill",
+      "test/tracevals/fixtures/project",
+      "--provider",
+      "mock",
+      "--dry-run",
+      "--no-cache",
+      "-f",
+      "json",
+      ...extra,
+    ];
+    const home = { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home" };
+    const paths = (stdout: string): string[] =>
+      JSON.parse(stdout).results.map((r: { artifact: string }) =>
+        r.artifact.replace(/\\/g, "/"),
+      );
+
+    const before = paths((await runCli(args([]), home)).stdout);
+    expect(before.some((p) => p.endsWith("fix-bug/SKILL.md"))).toBe(true);
+
+    // Repeatable, one value per occurrence, and never split on commas.
+    const { code, stdout } = await runCli(
+      args(["--exclude", "**/skills/**", "--exclude", "**/agents/**"]),
+      home,
+    );
+    expect(code).toBe(0);
+    const after = paths(stdout);
+    expect(after.some((p) => p.endsWith("fix-bug/SKILL.md"))).toBe(false);
+    expect(after.some((p) => p.endsWith("doc-writer.md"))).toBe(false);
+    expect(after.some((p) => p.endsWith("CLAUDE.md"))).toBe(true);
   });
 
   it("fill exits 2 for a path that does not exist", async () => {
@@ -494,6 +648,17 @@ describe.skipIf(!built)("built CLI", () => {
       const { code, stderr } = await runCliStdin(["capture"], "{}");
       expect(code).toBe(2);
       expect(stderr).toMatch(/no session id/);
+    });
+
+    it("takes -c, because it reads capture.dir", async () => {
+      const { code, stderr } = await runCliStdin(
+        ["capture", "--session-id", "x", "-c", "does-not-exist.yaml"],
+        "{}",
+      );
+      expect(code).toBe(2);
+      expect(stderr).toContain(
+        'manni: Config file not found: "does-not-exist.yaml".',
+      );
     });
 
     it("makes staleness exact for `run`, and does nothing to the verdicts", async () => {

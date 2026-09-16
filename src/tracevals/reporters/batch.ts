@@ -78,7 +78,7 @@ function outliers(row: AggregateRow): string {
   return parts.join("; ");
 }
 
-export function renderBatchHuman(report: Report): string {
+export function renderBatchPretty(report: Report): string {
   const lines: string[] = [];
   const s = report.summary;
   lines.push(pc.bold(`manni tracevals — ${s.traces} trace(s)`));

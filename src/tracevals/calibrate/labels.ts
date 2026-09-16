@@ -14,6 +14,7 @@ import { dirname, resolve } from "node:path";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { parse as parseYaml } from "yaml";
 import labelsSchemaJson from "./labels-schema.json" with { type: "json" };
+import { errorMessage } from "../../shared/errors.js";
 import { TracevalsError } from "../types.js";
 import type { ArtifactType } from "../artifacts/types.js";
 
@@ -75,7 +76,7 @@ export function parseLabels(text: string, file: string): EvalLabel[] {
     raw = parseYaml(text);
   } catch (err) {
     throw new TracevalsError(
-      `could not parse ${file}: ${(err as Error).message}`,
+      `could not parse ${file}: ${errorMessage(err)}`,
     );
   }
   if (raw === null || raw === undefined) {
@@ -136,7 +137,7 @@ export async function loadLabels(file: string): Promise<EvalLabel[]> {
     text = await readFile(file, "utf-8");
   } catch (err) {
     throw new TracevalsError(
-      `could not read labels file ${file}: ${(err as Error).message}`,
+      `could not read labels file ${file}: ${errorMessage(err)}`,
     );
   }
   return parseLabels(text, file);

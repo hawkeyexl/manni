@@ -5,11 +5,20 @@
  */
 import { Command } from "commander";
 import pkg from "../../package.json" with { type: "json" };
+import { collect, configOption } from "../shared/cli-options.js";
+import { fail } from "../shared/run.js";
+import { notice } from "../shared/warn.js";
 import { renderList, runList } from "./commands/list.js";
 import { runFill } from "./commands/fill.js";
 import { runRun } from "./commands/run.js";
 import { TracevalsError } from "./types.js";
-import type { ReportFormat } from "./reporters/index.js";
+import {
+  REPORT_FORMATS,
+  SUMMARY_FORMATS,
+  parseFormat,
+  type ReportFormat,
+  type SummaryFormat,
+} from "./reporters/index.js";
 
 const { version } = pkg;
 
@@ -21,9 +30,22 @@ program
   .description(
     "Deterministic and LLM-as-judge adherence evals for AI agent session traces.",
   )
-  .version(version);
+  .version(version)
+  // A pointer, not the whole help screen: the message that precedes it
+  // already names the offending flag.
+  .showHelpAfterError("(add --help for usage)")
+  // MUST come before the `.command()` calls below. `copyInheritedSettings`
+  // copies `_exitCallback` by value at subcommand-creation time, so an
+  // `exitOverride()` installed afterwards leaves every subcommand calling
+  // `process.exit(1)` on a parse error, which is a usage error owed exit 2.
+  .exitOverride();
 
-interface RunFlags {
+interface ConfigFlags {
+  /** `-c <path>` gives a string, `--no-config` gives false, neither gives undefined. */
+  config?: string | boolean;
+}
+
+interface RunFlags extends ConfigFlags {
   project?: string;
   provider?: string;
   model?: string;
@@ -31,7 +53,7 @@ interface RunFlags {
   deterministicOnly?: boolean;
   cache?: boolean;
   maxCostUsd?: number;
-  format?: string;
+  format?: ReportFormat;
   output?: string;
   history?: boolean;
   failOnNeedsReview?: boolean;
@@ -44,9 +66,46 @@ interface RunFlags {
   limit?: number;
 }
 
-/** Repeatable option collector — commander keeps only the last value otherwise. */
-function collect(value: string, previous: string[] = []): string[] {
-  return [...previous, value];
+/**
+ * `-c, --config <path>` and `--no-config`, on every verb that reads config.
+ *
+ * Declared once so the four cannot drift apart on a name or a description,
+ * the way docevals' `documentInputs()` does it. `list` is the one verb without
+ * them: it enumerates the session store and reads no config at all, and an
+ * accepted flag that quietly does nothing is worse than an absent one.
+ */
+function addConfigFlags(cmd: Command): Command {
+  return cmd
+    .option("-c, --config <path>", "Path to manni.config.yaml")
+    .option("--no-config", "Ignore any discovered config file");
+}
+
+/** The config flags as the command cores take them. */
+function configOptions(opts: ConfigFlags): {
+  config?: string;
+  noConfig?: boolean;
+} {
+  const { configPath, noConfig } = configOption(opts.config);
+  return {
+    ...(configPath === undefined ? {} : { config: configPath }),
+    ...(noConfig === true ? { noConfig } : {}),
+  };
+}
+
+/**
+ * Commander argument parser for `-f/--format`. Routes through `fail()` for the
+ * reason the numeric checks below do: commander only special-cases
+ * InvalidArgumentError, so any other exception escapes `program.parse()`
+ * uncaught — a stack trace and exit 1, when a bad flag owes exit 2.
+ */
+function parseFormatArg<T extends string>(name: string, allowed: readonly T[]) {
+  return (value: string): T => {
+    try {
+      return parseFormat(value, allowed, name);
+    } catch (e) {
+      fail(e);
+    }
+  };
 }
 
 const range = (min: number, max: number): string =>
@@ -111,6 +170,7 @@ function sharedRunOptions(opts: RunFlags) {
   numeric("--max-cost-usd", opts.maxCostUsd, 0);
 
   return {
+    ...configOptions(opts),
     project: opts.project,
     provider: opts.provider,
     model: opts.model,
@@ -118,7 +178,7 @@ function sharedRunOptions(opts: RunFlags) {
     deterministicOnly: opts.deterministicOnly,
     noCache: opts.cache === false,
     maxCostUsd: opts.maxCostUsd,
-    format: (opts.format as ReportFormat | undefined) ?? "human",
+    format: opts.format ?? "pretty",
     output: opts.output,
     // Undefined when neither spelling is passed, so the config still decides.
     // Both spellings are declared for precisely that reason: commander
@@ -193,7 +253,7 @@ async function executeRun(traces: string[], opts: RunFlags) {
  */
 function addRunFlags(cmd: Command, options: { history?: boolean } = {}): Command {
   const withHistory = options.history !== false;
-  const base = cmd
+  const base = addConfigFlags(cmd)
     .option(
       "--project <dir>",
       "artifact-lookup root (overrides the trace's recorded cwd)",
@@ -207,7 +267,12 @@ function addRunFlags(cmd: Command, options: { history?: boolean } = {}): Command
     .option("--deterministic-only", "skip LLM-judged evals")
     .option("--no-cache", "bypass the judge cache")
     .option("--max-cost-usd <usd>", "judge cost budget", (v) => parseFloat(v))
-    .option("-f, --format <format>", "human | json | markdown", "human")
+    .option(
+      "-f, --format <format>",
+      `Output format: ${REPORT_FORMATS.join(" | ")}`,
+      parseFormatArg("--format", REPORT_FORMATS),
+      "pretty" as ReportFormat,
+    )
     .option("-o, --output <file>", "also write the report to a file")
     .option(
       "--report-unused-artifacts",
@@ -229,6 +294,7 @@ function addRunFlags(cmd: Command, options: { history?: boolean } = {}): Command
       "--require <module>",
       "load a grader plugin; repeatable, and added to config plugins",
       collect,
+      [],
     )
     .option("--all-projects", "evaluate every project's traces in the session store")
     .option("--since <duration>", "only traces newer than e.g. 30m, 24h, 7d, 2w")
@@ -242,8 +308,11 @@ function addRunFlags(cmd: Command, options: { history?: boolean } = {}): Command
 }
 
 addRunFlags(
+  // No `isDefault` (proposal 0034): `run` is a verb, so a bare
+  // `manni tracevals` prints the help and exits 2, and a trace path with no
+  // verb is commander's unknown-command refusal rather than a silent run.
   program
-    .command("run [traces...]", { isDefault: true })
+    .command("run [traces...]")
     .description(
       "Evaluate one or more traces against the skills and instructions they used",
     ),
@@ -255,7 +324,13 @@ addRunFlags(
     "--manifest <file>",
     "session manifest to compare artifacts against; without it one is looked for beside the trace and under the project",
   )
-  .action(executeRun);
+  .action(async (traces: string[], opts: RunFlags) => {
+    try {
+      await executeRun(traces, opts);
+    } catch (e) {
+      fail(e);
+    }
+  });
 
 // `calibrate` shares `run`'s flags because it *is* a run — plus the labels it
 // is measured against. Kept a separate command rather than a flag on `run`:
@@ -298,37 +373,47 @@ addRunFlags(
       maxReview?: number;
     },
   ) => {
-    const shared = sharedRunOptions(opts);
-    // A threshold that never trips looks exactly like a threshold that held.
-    whole("--max-false-pass", opts.maxFalsePass, 0);
-    whole("--max-false-fail", opts.maxFalseFail, 0);
-    whole("--max-review", opts.maxReview, 0);
+    try {
+      const shared = sharedRunOptions(opts);
+      // A threshold that never trips looks exactly like a threshold that held.
+      whole("--max-false-pass", opts.maxFalsePass, 0);
+      whole("--max-false-fail", opts.maxFalseFail, 0);
+      whole("--max-review", opts.maxReview, 0);
 
-    const { runCalibrate } = await import("./commands/calibrate.js");
-    const { report, rendered } = await runCalibrate({
-      ...shared,
-      ...(traces.length > 0 ? { traces } : {}),
-      ...(opts.labels !== undefined ? { labels: opts.labels } : {}),
-      ...(opts.sweep !== undefined ? { sweep: opts.sweep } : {}),
-      ...(opts.maxFalsePass !== undefined
-        ? { maxFalsePass: opts.maxFalsePass }
-        : {}),
-      ...(opts.maxFalseFail !== undefined
-        ? { maxFalseFail: opts.maxFalseFail }
-        : {}),
-      ...(opts.maxReview !== undefined ? { maxReview: opts.maxReview } : {}),
-    });
-    console.log(rendered);
-    process.exitCode = report.exitCode;
+      const { runCalibrate } = await import("./commands/calibrate.js");
+      const { report, rendered } = await runCalibrate({
+        ...shared,
+        ...(traces.length > 0 ? { traces } : {}),
+        ...(opts.labels !== undefined ? { labels: opts.labels } : {}),
+        ...(opts.sweep !== undefined ? { sweep: opts.sweep } : {}),
+        ...(opts.maxFalsePass !== undefined
+          ? { maxFalsePass: opts.maxFalsePass }
+          : {}),
+        ...(opts.maxFalseFail !== undefined
+          ? { maxFalseFail: opts.maxFalseFail }
+          : {}),
+        ...(opts.maxReview !== undefined ? { maxReview: opts.maxReview } : {}),
+      });
+      console.log(rendered);
+      process.exitCode = report.exitCode;
+    } catch (e) {
+      fail(e);
+    }
   },
 );
 
-program
-  .command("fill [paths...]")
-  .description(
-    "Propose evals for skills, agent definitions, and project rules, and write those above the confidence threshold",
-  )
+addConfigFlags(
+  program
+    .command("fill [paths...]")
+    .description(
+      "Propose evals for skills, agent definitions, and project rules, and write those above the confidence threshold",
+    ),
+)
   .option("--project <dir>", "project root to scan (default: current directory)")
+  // Repeatable, one value per occurrence, never split on commas — the family's
+  // one-separator-per-list rule. It narrows what `fill` scans; there is no
+  // `--collection`, because a docs collection is not an artifact set.
+  .option("--exclude <glob>", "Glob to exclude (repeatable)", collect, [])
   .option("--dry-run", "report proposals without writing them")
   .option(
     "--confidence <n>",
@@ -348,10 +433,17 @@ program
     "--require <module>",
     "load a grader plugin; repeatable, and added to config plugins",
     collect,
+    [],
   )
-  .option("-f, --format <format>", "human | json", "human")
-  .action(async (paths: string[], opts: {
+  .option(
+    "-f, --format <format>",
+    `Output format: ${SUMMARY_FORMATS.join(" | ")}`,
+    parseFormatArg("--format", SUMMARY_FORMATS),
+    "pretty" as SummaryFormat,
+  )
+  .action(async (paths: string[], opts: ConfigFlags & {
     project?: string;
+    exclude?: string[];
     dryRun?: boolean;
     confidence?: number;
     maxEvals?: number;
@@ -360,89 +452,124 @@ program
     provider?: string;
     model?: string;
     require?: string[];
-    format?: string;
+    format?: SummaryFormat;
   }) => {
-    numeric("--confidence", opts.confidence, 0, 1);
-    whole("--max-evals", opts.maxEvals, 1);
-    numeric("--max-cost-usd", opts.maxCostUsd, 0);
+    try {
+      numeric("--confidence", opts.confidence, 0, 1);
+      whole("--max-evals", opts.maxEvals, 1);
+      numeric("--max-cost-usd", opts.maxCostUsd, 0);
 
-    const { report, rendered } = await runFill({
-      ...(paths.length > 0 ? { paths } : {}),
-      ...(opts.project !== undefined ? { project: opts.project } : {}),
-      ...(opts.dryRun !== undefined ? { dryRun: opts.dryRun } : {}),
-      ...(opts.confidence !== undefined ? { confidence: opts.confidence } : {}),
-      ...(opts.maxEvals !== undefined ? { maxEvals: opts.maxEvals } : {}),
-      ...(opts.maxCostUsd !== undefined ? { maxCostUsd: opts.maxCostUsd } : {}),
-      ...(opts.cache === false ? { noCache: true } : {}),
-      ...(opts.provider !== undefined ? { provider: opts.provider } : {}),
-      ...(opts.model !== undefined ? { model: opts.model } : {}),
-      ...(opts.require !== undefined ? { require: opts.require } : {}),
-    });
-    console.log(
-      opts.format === "json" ? JSON.stringify(report, null, 2) : rendered,
-    );
-    process.exitCode = report.exitCode;
+      const { report, rendered } = await runFill({
+        ...configOptions(opts),
+        ...(paths.length > 0 ? { paths } : {}),
+        ...(opts.project !== undefined ? { project: opts.project } : {}),
+        ...(opts.exclude !== undefined ? { exclude: opts.exclude } : {}),
+        ...(opts.dryRun !== undefined ? { dryRun: opts.dryRun } : {}),
+        ...(opts.confidence !== undefined ? { confidence: opts.confidence } : {}),
+        ...(opts.maxEvals !== undefined ? { maxEvals: opts.maxEvals } : {}),
+        ...(opts.maxCostUsd !== undefined ? { maxCostUsd: opts.maxCostUsd } : {}),
+        ...(opts.cache === false ? { noCache: true } : {}),
+        ...(opts.provider !== undefined ? { provider: opts.provider } : {}),
+        ...(opts.model !== undefined ? { model: opts.model } : {}),
+        ...(opts.require !== undefined ? { require: opts.require } : {}),
+      });
+      console.log(
+        opts.format === "json" ? JSON.stringify(report, null, 2) : rendered,
+      );
+      process.exitCode = report.exitCode;
+    } catch (e) {
+      fail(e);
+    }
   });
 
 // The one write path `run` never takes (ADR 01024). Meant for a `SessionStart`
 // hook, which is why it reads its payload on stdin and — in that mode — writes
 // its report to stderr: a SessionStart hook's stdout becomes model context.
-program
-  .command("capture")
-  .description(
-    "Record a session manifest: sha256 of every instruction artifact plus the git SHA, read from a Claude Code hook payload on stdin",
-  )
+addConfigFlags(
+  program
+    .command("capture")
+    .description(
+      "Record a session manifest: sha256 of every instruction artifact plus the git SHA, read from a Claude Code hook payload on stdin",
+    ),
+)
   .option("--project <dir>", "project root to scan (default: the payload's cwd)")
   .option("--session-id <id>", "session id (default: the payload's session_id)")
   .option("-o, --out <file>", "write here instead of the configured directory")
-  .option("-f, --format <format>", "human | json", "human")
-  .action(async (opts: {
+  .option(
+    "-f, --format <format>",
+    `Output format: ${SUMMARY_FORMATS.join(" | ")}`,
+    parseFormatArg("--format", SUMMARY_FORMATS),
+    "pretty" as SummaryFormat,
+  )
+  .action(async (opts: ConfigFlags & {
     project?: string;
     sessionId?: string;
     out?: string;
-    format?: string;
+    format?: SummaryFormat;
   }) => {
-    const { runCapture } = await import("./commands/capture.js");
-    const result = await runCapture({
-      version,
-      ...(opts.project !== undefined ? { project: opts.project } : {}),
-      ...(opts.sessionId !== undefined ? { sessionId: opts.sessionId } : {}),
-      ...(opts.out !== undefined ? { out: opts.out } : {}),
-      format: opts.format === "json" ? "json" : "human",
-    });
-    if (result.stdout !== "") console.log(result.stdout);
-    if (result.stderr !== "") console.error(result.stderr);
-    process.exitCode = result.exitCode;
+    try {
+      const { runCapture } = await import("./commands/capture.js");
+      const result = await runCapture({
+        version,
+        ...configOptions(opts),
+        ...(opts.project !== undefined ? { project: opts.project } : {}),
+        ...(opts.sessionId !== undefined ? { sessionId: opts.sessionId } : {}),
+        ...(opts.out !== undefined ? { out: opts.out } : {}),
+        format: opts.format ?? "pretty",
+      });
+      if (result.stdout !== "") console.log(result.stdout);
+      // Hook mode's report, through the family's stderr writer rather than
+      // `console.error`, so the `manni: ` prefix comes from `programName()`
+      // and is never hand-spelled. `notice`, not `warn`: the report says what
+      // this run did, so it is said every time rather than deduplicated.
+      if (result.stderr !== "") notice(result.stderr);
+      process.exitCode = result.exitCode;
+    } catch (e) {
+      fail(e);
+    }
   });
 
 program
   .command("list")
   .description("List discoverable traces (Claude Code session files)")
+  // The long spellings only, matching `run`: a short form that exists on one
+  // verb and not on its sibling is exactly the drift "commands must have
+  // parallel behaviors" exists to prevent.
   .option(
-    "-p, --project <dir>",
+    "--project <dir>",
     "project directory to scope to (default: current directory)",
   )
-  .option("-a, --all-projects", "scan every project in the session store")
-  .option("-l, --limit <n>", "maximum traces to list", (v) => Number(v))
-  .option("--json", "emit JSON instead of a table")
+  .option("--all-projects", "scan every project in the session store")
+  .option("--limit <n>", "maximum traces to list", (v) => Number(v))
+  .option(
+    "-f, --format <format>",
+    `Output format: ${SUMMARY_FORMATS.join(" | ")}`,
+    parseFormatArg("--format", SUMMARY_FORMATS),
+    "pretty" as SummaryFormat,
+  )
+  // No `-c`/`--no-config`: `list` enumerates the session store and reads no
+  // config at all, and an accepted flag that quietly does nothing is worse
+  // than an absent one.
   .action(async (opts: {
     project?: string;
     allProjects?: boolean;
     limit?: number;
-    json?: boolean;
+    format?: SummaryFormat;
   }) => {
-    // The same footgun as `run --limit`: `slice(0, -1)` lists everything but
-    // the oldest, and reads as a shorter store rather than as a bad flag.
-    whole("--limit", opts.limit, 1);
-    const run = await runList({
-      project: opts.project,
-      allProjects: opts.allProjects,
-      limit: opts.limit,
-    });
-    if (opts.json) {
-      console.log(JSON.stringify(run, null, 2));
-    } else {
-      console.log(renderList(run));
+    try {
+      // The same footgun as `run --limit`: `slice(0, -1)` lists everything but
+      // the oldest, and reads as a shorter store rather than as a bad flag.
+      whole("--limit", opts.limit, 1);
+      const run = await runList({
+        project: opts.project,
+        allProjects: opts.allProjects,
+        limit: opts.limit,
+      });
+      console.log(
+        opts.format === "json" ? JSON.stringify(run, null, 2) : renderList(run),
+      );
+    } catch (e) {
+      fail(e);
     }
   });
 

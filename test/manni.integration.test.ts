@@ -131,12 +131,47 @@ describe("manni (built bin)", () => {
     // `list` enumerates the session store without judging anything; the
     // fixture store stands in for the user's home, so this needs no
     // credentials and no network.
-    const r = run(manni, ["tracevals", "list", "--all-projects", "--json"], {
+    const r = run(manni, ["tracevals", "list", "--all-projects", "-f", "json"], {
       MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home",
     });
     expect(r.status).toBe(0);
     const { traces } = JSON.parse(r.stdout) as { traces: unknown[] };
     expect(traces.length).toBeGreaterThan(0);
+  });
+
+  it("mounts tracevals with no default command", () => {
+    // Proposal 0034: `run` is a verb, not the domain's fallback, so a bare
+    // `manni tracevals` prints the help on stderr and exits 2.
+    const bare = run(manni, ["tracevals"]);
+    expect(bare.status).toBe(2);
+    expect(bare.stdout).toBe("");
+    expect(bare.stderr).toMatch(/^Usage: manni tracevals /m);
+    expect(bare.stderr).toContain("run [options] [traces...]");
+  });
+
+  it("refuses the grandfathered default-verb invocation", () => {
+    const r = run(manni, [
+      "tracevals",
+      "test/tracevals/fixtures/traces/claude-session.jsonl",
+    ]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain(
+      "error: unknown command 'test/tracevals/fixtures/traces/claude-session.jsonl'",
+    );
+    expect(r.stderr).toContain("(add --help for usage)");
+  });
+
+  it("refuses the renamed `human` format and the replaced `list --json`", () => {
+    const format = run(manni, ["tracevals", "run", "x.jsonl", "-f", "human"]);
+    expect(format.status).toBe(2);
+    expect(format.stderr).toContain(
+      'manni: --format must be one of pretty | json | markdown, got "human"',
+    );
+
+    const json = run(manni, ["tracevals", "list", "--json"]);
+    expect(json.status).toBe(2);
+    expect(json.stderr).toContain("error: unknown option '--json'");
+    expect(json.stderr).toContain("(add --help for usage)");
   });
 
   it("prefixes tracevals diagnostics with the bin that ran", () => {
