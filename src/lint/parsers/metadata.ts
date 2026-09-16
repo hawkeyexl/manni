@@ -34,7 +34,9 @@ export function fencedPosition(content: string): Position | null {
       // end is just past the delimiter - which `offset` already said, so a
       // fixed column contradicted it and pointed a reader's caret at the start
       // of the fence line instead of its end.
-      column: lines[lines.length - 1]!.length + 1,
+      // `split` always yields at least one entry, so the fallback is
+      // unreachable; an empty last line is column 1 either way.
+      column: (lines.at(-1) ?? "").length + 1,
       offset: loc.closeEnd,
     },
   };

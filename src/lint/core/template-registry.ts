@@ -145,7 +145,14 @@ async function loadBuiltin(id: string): Promise<Template> {
   const cached = builtinCache.get(id);
   if (cached) return cached;
 
-  const entry = BUILTINS.get(id)!;
+  // Every caller checks `BUILTINS.has` first, so this is an internal
+  // invariant rather than a user error - but it fails loudly all the same,
+  // because the alternative is a `TypeError` several lines later on a field
+  // of `undefined`.
+  const entry = BUILTINS.get(id);
+  if (!entry) {
+    throw new LintError(`No built-in template is registered under "${id}".`);
+  }
   const raw = await readBuiltinFile(id, entry.file);
 
   const file = validateTemplateFile(
@@ -531,15 +538,19 @@ export async function loadTemplate(
     // nothing. The bad fragment therefore produced silence rather than an
     // error: the page was reported as passing, not as naming a template that
     // does not exist.
-    if (!Object.hasOwn(templates, fragment)) {
+    const named = Object.hasOwn(templates, fragment)
+      ? templates[fragment]
+      : undefined;
+    if (named === undefined) {
       throw new LintError(
         `${base} has no template named "${fragment}". Available: ${names.join(", ") || "(none)"}.`,
       );
     }
-    return templates[fragment]!;
+    return named;
   }
 
-  if (names.length === 1) return templates[names[0]!]!;
+  const [only] = Object.values(templates);
+  if (names.length === 1 && only !== undefined) return only;
   if (names.length === 0) throw new LintError(`${base} defines no templates.`);
   throw new LintError(
     `${base} defines ${names.length} templates; name one with a "#" fragment ` +

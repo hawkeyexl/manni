@@ -21,6 +21,7 @@ import { PARSERS } from "../../../src/lint/parsers/index.js";
 import { loadTemplate } from "../../../src/lint/core/template-registry.js";
 import { validateDocument } from "../../../src/lint/core/validator.js";
 import type { DocumentParser, Finding } from "../../../src/lint/types.js";
+import { defined } from "../helpers.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixtures = join(here, "..", "fixtures", "formats");
@@ -60,7 +61,10 @@ describe.each(implemented.map((p) => [p.name, p] as const))(
   "%s against tgdp:how-to:1.6",
   (_name, parser) => {
     it("lints the conforming fixture clean", async () => {
-      const path = fixtureFor(parser, "how-to")!;
+      const path = defined(
+        fixtureFor(parser, "how-to"),
+        `${parser.name} conforming fixture`,
+      );
       const template = await loadTemplate("tgdp:how-to:1.6");
       expect(
         lint(parser, path, template).map((f) => `${f.type}: ${f.message}`),
@@ -72,7 +76,10 @@ describe.each(implemented.map((p) => [p.name, p] as const))(
     // format that reports it differently has leaked its own vocabulary into a
     // layer that is supposed to know nothing about formats.
     it("reports the same single finding on the non-conforming fixture", async () => {
-      const path = fixtureFor(parser, "how-to-broken")!;
+      const path = defined(
+        fixtureFor(parser, "how-to-broken"),
+        `${parser.name} non-conforming fixture`,
+      );
       const template = await loadTemplate("tgdp:how-to:1.6");
       const findings = lint(parser, path, template);
 
@@ -84,8 +91,11 @@ describe.each(implemented.map((p) => [p.name, p] as const))(
       });
     });
 
-    it("routes by the type its fixture declares", async () => {
-      const path = fixtureFor(parser, "how-to")!;
+    it("routes by the type its fixture declares", () => {
+      const path = defined(
+        fixtureFor(parser, "how-to"),
+        `${parser.name} conforming fixture`,
+      );
       const tree = parser.parse(readFileSync(path, "utf8"), path);
       expect(tree.format).toBe(parser.name);
       expect(tree.frontmatter?.["type"]).toBe("how-to");

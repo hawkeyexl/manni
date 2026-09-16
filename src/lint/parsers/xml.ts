@@ -370,7 +370,7 @@ function chooseVocabulary(
   const ns = (root.namespaceURI ?? "").toLowerCase();
   const rootName = localName(root);
 
-  let best = compiled[0]!;
+  let best: Compiled | undefined;
   let bestScore = -1;
   for (const c of compiled) {
     let score = 0;
@@ -386,6 +386,12 @@ function chooseVocabulary(
       best = c;
       bestScore = score;
     }
+  }
+  if (!best) {
+    // The vocabulary list is the registry's own and is never empty; the loop
+    // assigns on its first pass, because every score beats the -1 it starts
+    // from. Saying so out loud beats returning a vocabulary nobody chose.
+    throw new LintError("No XML vocabularies are registered.");
   }
   return { best, score: bestScore };
 }
@@ -418,7 +424,9 @@ class SourceMap {
         this.lineStarts.push(i + 1);
       }
     }
-    const lastStart = this.lineStarts[this.lineStarts.length - 1]!;
+    // `lineStarts` opens with 0 and is only ever appended to, so the fallback
+    // is unreachable - and it is the start of the one and only line anyway.
+    const lastStart = this.lineStarts.at(-1) ?? 0;
     this.docEnd = {
       line: this.lineStarts.length,
       column: this.body.length - lastStart + 1,
@@ -693,9 +701,10 @@ function parseDocument(source: string, filePath: string): XmlElement {
     );
   }
 
-  if (problems.length > 0) {
+  const [firstProblem] = problems;
+  if (firstProblem !== undefined) {
     throw new LintError(
-      `${filePath}: could not parse as XML: ${firstLine(problems[0]!)}`,
+      `${filePath}: could not parse as XML: ${firstLine(firstProblem)}`,
     );
   }
 
@@ -708,7 +717,8 @@ function parseDocument(source: string, filePath: string): XmlElement {
 
 /** xmldom appends the offending source to some messages; one line is enough. */
 function firstLine(message: string): string {
-  return message.split("\n")[0]!.trim();
+  const [first] = message.split("\n");
+  return (first ?? message).trim();
 }
 
 /**

@@ -3,10 +3,12 @@ import { markdownParser } from "../../../src/lint/parsers/markdown.js";
 import { matchSections } from "../../../src/lint/core/match.js";
 import { validateDocument } from "../../../src/lint/core/validator.js";
 import type { Template, TemplateSection } from "../../../src/lint/core/template.js";
+import { at } from "../helpers.js";
 
 /** Sibling sections one level below a single H1, the common template shape. */
 function subsectionsOf(md: string) {
-  return markdownParser.parse(md, "t.md").sections[0]!.sections;
+  const tree = markdownParser.parse(md, "t.md");
+  return at(tree.sections, 0, "top-level section").sections;
 }
 
 const heading = (
@@ -55,7 +57,7 @@ describe("matchSections", () => {
     });
     expect(findings).toHaveLength(1);
     expect(findings[0]).toMatchObject({ type: "missing_section" });
-    expect(findings[0]!.message).toContain("Before you start");
+    expect(at(findings, 0, "finding").message).toContain("Before you start");
   });
 
   // Degrading a simple one-for-one mismatch into missing + unexpected would
@@ -66,7 +68,7 @@ describe("matchSections", () => {
       sections: { intro: heading("Introduction") },
     });
     expect(findings).toHaveLength(1);
-    expect(findings[0]!.message).toBe(
+    expect(at(findings, 0, "finding").message).toBe(
       'Expected title "Introduction", but found "Wrong Heading"',
     );
   });
@@ -84,7 +86,7 @@ describe("matchSections", () => {
     });
     // One absent section, one finding - not a heading error plus a missing slot.
     expect(findings.map((f) => f.type)).toEqual(["missing_section"]);
-    expect(findings[0]!.message).toContain("Overview");
+    expect(at(findings, 0, "finding").message).toContain("Overview");
     expect(matches.map((m) => [m.name, m.section.title])).toEqual([
       ["task", "Install it"],
       ["see also", "See also"],
@@ -111,7 +113,7 @@ describe("matchSections", () => {
     const { findings } = matchSections(doc, { overview: heading("Overview") });
     expect(findings).toHaveLength(1);
     expect(findings[0]).toMatchObject({ type: "unexpected_section" });
-    expect(findings[0]!.message).toContain("Surprise");
+    expect(at(findings, 0, "finding").message).toContain("Surprise");
   });
 
   it("allows undescribed sections when additionalSections is set", () => {
@@ -243,7 +245,7 @@ describe("slot rules", () => {
     ]);
     // Only the genuine extra is reported.
     expect(findings.map((f) => f.type)).toEqual(["unexpected_section"]);
-    expect(findings[0]!.message).toContain("Overview");
+    expect(at(findings, 0, "finding").message).toContain("Overview");
   });
 
   it("stops a slot at an anchored rule further down the template", () => {
@@ -292,7 +294,7 @@ describe("slot rules", () => {
     const findings = validateDocument(tree, template);
     // Only the second step is missing its paragraph.
     expect(findings).toHaveLength(1);
-    expect(findings[0]!.heading).toBe("Step two");
+    expect(at(findings, 0, "finding").heading).toBe("Step two");
   });
 });
 

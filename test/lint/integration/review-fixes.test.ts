@@ -23,6 +23,7 @@ import { refRelativeTo } from "../../../src/lint/core/template-registry.js";
 import { fencedPosition } from "../../../src/lint/parsers/metadata.js";
 import type { Template } from "../../../src/lint/core/template.js";
 import type { DocumentTree, ListItemNode } from "../../../src/lint/types.js";
+import { at, defined } from "../helpers.js";
 
 let dir: string;
 
@@ -45,7 +46,8 @@ afterEach(async () => {
 
 describe("the matcher does not strand sections a later rule needs", () => {
   const subsectionsOf = (md: string) =>
-    markdownParser.parse(md, "t.md").sections[0]!.sections;
+    at(markdownParser.parse(md, "t.md").sections, 0, "top-level section")
+      .sections;
 
   // An optional rule's forward scan used to run unbounded, marking everything
   // between the cursor and its match as extra - including the section a later
@@ -66,7 +68,9 @@ describe("the matcher does not strand sections a later rule needs", () => {
     });
 
     expect(findings.map((f) => f.type)).toEqual(["unexpected_section"]);
-    expect(findings[0]!.message).toContain("Before you start");
+    expect(at(findings, 0, "unexpected_section finding").message).toContain(
+      "Before you start",
+    );
   });
 
   // The anchored `repeat` loop omitted the `claimedLater` guard the slot branch
@@ -180,11 +184,18 @@ describe("a broken template is contained, not fatal", () => {
     await file("b.md", `---\ntype: how-to\n---\n\n${HOW_TO}`);
 
     const run = await runLint({ inputs: [dir], templates, cwd: dir });
-    const bad = run.results.find((r) => r.file.endsWith("a.md"))!;
-    const good = run.results.find((r) => r.file.endsWith("b.md"))!;
+    const bad = defined(
+      run.results.find((r) => r.file.endsWith("a.md")),
+      "result for a.md",
+    );
+    const good = defined(
+      run.results.find((r) => r.file.endsWith("b.md")),
+      "result for b.md",
+    );
 
-    expect(bad.findings[0]!.type).toBe("template_error");
-    expect(bad.findings[0]!.message).toContain("Invalid pattern");
+    const badFinding = at(bad.findings, 0, "finding on a.md");
+    expect(badFinding.type).toBe("template_error");
+    expect(badFinding.message).toContain("Invalid pattern");
     // The point: the other page still got linted.
     expect(good.success).toBe(true);
   });
@@ -248,7 +259,7 @@ describe("template refs resolve against the file that declared them", () => {
       templates: child,
       cwd: process.cwd(),
     });
-    expect(run.results[0]!.findings).toEqual([]);
+    expect(at(run.results, 0, "result for page.md").findings).toEqual([]);
   });
 
   // A template inheriting `types` through `extends` declares none of its own,
@@ -277,8 +288,9 @@ describe("template refs resolve against the file that declared them", () => {
       templates,
       cwd: dir,
     });
-    expect(run.results[0]!.template).toBe(`${templates}#house`);
-    expect(run.results[0]!.findings).toEqual([]);
+    const result = at(run.results, 0, "result for page.md");
+    expect(result.template).toBe(`${templates}#house`);
+    expect(result.findings).toEqual([]);
   });
 });
 
@@ -302,10 +314,15 @@ describe("a bare list item counts the same in every format", () => {
   // paragraph and the nested list.
   it("counts an item's own prose even when the item also nests a list", () => {
     const paragraphsOfFirstItem = (tree: DocumentTree): number => {
-      const list = tree.sections[0]!.sections[0]!.content.find(
+      const title = at(tree.sections, 0, "top-level section");
+      const list = at(title.sections, 0, "Steps section").content.find(
         (c) => c.kind === "list",
       );
-      const item = (list as { items: ListItemNode[] }).items[0]!;
+      const item = at(
+        (list as { items: ListItemNode[] }).items,
+        0,
+        "first list item",
+      );
       return item.children.filter((c) => c.kind === "paragraph").length;
     };
 
@@ -335,10 +352,15 @@ describe("a bare list item counts the same in every format", () => {
   // list's, so pushing it wholesale would count "nested" as the parent's prose.
   it("does not fold a nested item's text into the parent's paragraph", () => {
     const parentProse = (tree: DocumentTree): string => {
-      const list = tree.sections[0]!.sections[0]!.content.find(
+      const title = at(tree.sections, 0, "top-level section");
+      const list = at(title.sections, 0, "Steps section").content.find(
         (c) => c.kind === "list",
       );
-      const item = (list as { items: ListItemNode[] }).items[0]!;
+      const item = at(
+        (list as { items: ListItemNode[] }).items,
+        0,
+        "first list item",
+      );
       const paragraph = item.children.find((c) => c.kind === "paragraph");
       return (paragraph as { text: string }).text;
     };
@@ -432,8 +454,14 @@ describe("the span of a metadata fence", () => {
     const withNewline = "---\ntype: how-to\n---\n";
     const withoutNewline = "---\ntype: how-to\n---";
 
-    const a = fencedPosition(withNewline)!;
-    const b = fencedPosition(withoutNewline)!;
+    const a = defined(
+      fencedPosition(withNewline),
+      "fence position, file ending with a newline",
+    );
+    const b = defined(
+      fencedPosition(withoutNewline),
+      "fence position, file ending without a newline",
+    );
 
     expect(a.end.offset).toBe(withNewline.length);
     expect(a.end).toMatchObject({ line: 4, column: 1 });
@@ -490,8 +518,9 @@ describe("a bare --template filename names a file", () => {
       templates: routes,
       cwd: dir,
     });
-    expect(run.results[0]!.template).toBe(custom);
-    expect(run.results[0]!.findings).toEqual([]);
+    const result = at(run.results, 0, "result for page.md");
+    expect(result.template).toBe(custom);
+    expect(result.findings).toEqual([]);
   });
 });
 
@@ -543,13 +572,19 @@ describe("a file no parser claims is skipped without being opened", () => {
         cwd: dir,
       });
 
-      const skipped = run.results.find((r) => r.file.endsWith("notes.xyz"))!;
+      const skipped = defined(
+        run.results.find((r) => r.file.endsWith("notes.xyz")),
+        "result for notes.xyz",
+      );
       expect(skipped.skipped).toBe("unsupported-format");
       expect(skipped.reason).toContain('no parser is registered for ".xyz"');
       // The point: the run got past it.
-      expect(run.results.find((r) => r.file.endsWith("page.md"))!.success).toBe(
-        true,
-      );
+      expect(
+        defined(
+          run.results.find((r) => r.file.endsWith("page.md")),
+          "result for page.md",
+        ).success,
+      ).toBe(true);
       expect(run.summary).toMatchObject({ checked: 1, passed: 1, skipped: 1 });
     } finally {
       vi.doUnmock("node:fs/promises");

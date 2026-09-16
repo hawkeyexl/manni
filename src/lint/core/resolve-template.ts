@@ -167,19 +167,36 @@ function suggestTypes(unknown: string, known: Iterable<string>): string[] {
     .map((s) => s.type);
 }
 
-/** Levenshtein, two rows. Inputs here are doctype slugs, so size is not a concern. */
+/**
+ * Levenshtein, two rows. Inputs here are doctype slugs, so size is not a
+ * concern.
+ *
+ * Each cell needs three neighbours: the one to its left, the one above, and
+ * the one above-left. Only the one above is read out of the previous row; the
+ * other two are carried in locals from the cell just written and the previous
+ * `above`. So the loop reads no array slot back by a computed index, which is
+ * what `noUncheckedIndexedAccess` cannot prove is filled.
+ */
 function editDistance(a: string, b: string): number {
   if (a === b) return 0;
   let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 1; i <= a.length; i++) {
-    const row = [i];
-    for (let j = 1; j <= b.length; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      row[j] = Math.min(row[j - 1]! + 1, prev[j]! + 1, prev[j - 1]! + cost);
+  // The answer when `a` is empty: every character of `b` is an insertion.
+  let last = b.length;
+  for (let i = 0; i < a.length; i++) {
+    const row = [i + 1];
+    let left = i + 1;
+    let diagonal = i;
+    for (const [j, above] of prev.slice(1).entries()) {
+      const cost = a[i] === b[j] ? 0 : 1;
+      const cell = Math.min(left + 1, above + 1, diagonal + cost);
+      row.push(cell);
+      diagonal = above;
+      left = cell;
     }
     prev = row;
+    last = left;
   }
-  return prev[b.length]!;
+  return last;
 }
 
 /** A frontmatter value that should be a template ref. Non-strings are ignored. */

@@ -190,9 +190,8 @@ function isBlank(line: string | undefined): boolean {
  */
 function adornmentOf(line: string | undefined): { char: string; length: number } | null {
   const trimmed = (line ?? "").replace(/[ \t]+$/, "");
-  if (trimmed.length < 1) return null;
-  const char = trimmed[0]!;
-  if (!ADORNMENT_CHARS.has(char)) return null;
+  const char = trimmed[0];
+  if (char === undefined || !ADORNMENT_CHARS.has(char)) return null;
   for (let i = 1; i < trimmed.length; i++) {
     if (trimmed[i] !== char) return null;
   }
@@ -546,8 +545,11 @@ function parseList(
   ordered: boolean,
 ): { node: ContentNode; next: number } {
   const pattern = ordered ? ENUM : BULLET;
-  const firstMatch = pattern.exec(src.text[from] ?? "")!;
-  const markerChar = ordered ? (firstMatch[3] ?? ".") : (firstMatch[2] ?? "*");
+  // `parseList` is only entered on a line that already matched, so the miss
+  // falls through to the same defaults a matched line with no marker group
+  // would have taken.
+  const firstMatch = pattern.exec(src.text[from] ?? "");
+  const markerChar = ordered ? (firstMatch?.[3] ?? ".") : (firstMatch?.[2] ?? "*");
   const items: ListItemNode[] = [];
   // Where the list ends, excluding the blank lines between items - those belong
   // to whatever follows, so a list before a heading does not swallow the gap.

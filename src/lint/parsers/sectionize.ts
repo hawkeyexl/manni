@@ -53,13 +53,16 @@ export function sectionize(blocks: Block[], docEnd: Position["end"]): SectionNod
 
   /** Close every open section at `level` or deeper, ending it at `end`. */
   const closeTo = (level: number, end: Position["end"]): void => {
-    while (stack.length > 0 && stack[stack.length - 1]!.node.level >= level) {
-      const open = stack.pop()!;
-      open.node.position.end = { ...end };
+    let top = stack.at(-1);
+    while (top !== undefined && top.node.level >= level) {
+      stack.pop();
+      top.node.position.end = { ...end };
+      top = stack.at(-1);
     }
   };
 
-  const push = (node: SectionNode): void => {
+  /** Pushes `node` onto the stack and hands back the section it opened. */
+  const push = (node: SectionNode): OpenSection => {
     const parent = stack[stack.length - 1];
     if (parent) {
       node.parentSlug = parent.node.slug;
@@ -70,14 +73,16 @@ export function sectionize(blocks: Block[], docEnd: Position["end"]): SectionNod
       node.order = roots.length + 1;
       roots.push(node);
     }
-    stack.push({ node, lastEnd: node.position.end });
+    const open: OpenSection = { node, lastEnd: node.position.end };
+    stack.push(open);
+    return open;
   };
 
   /**
    * The implicit lead section. `level: 0` is below every real heading, so the
    * headings that follow nest inside it instead of closing it.
    */
-  const openLead = (start: Position["start"]): void => {
+  const openLead = (start: Position["start"]): OpenSection =>
     push({
       slug: slugger.slug("(lead)"),
       title: "",
@@ -89,7 +94,6 @@ export function sectionize(blocks: Block[], docEnd: Position["end"]): SectionNod
       content: [],
       sections: [],
     });
-  };
 
   for (const block of blocks) {
     if (block.type === "heading") {
@@ -108,8 +112,7 @@ export function sectionize(blocks: Block[], docEnd: Position["end"]): SectionNod
       continue;
     }
 
-    if (stack.length === 0) openLead(block.node.position.start);
-    const current = stack[stack.length - 1]!;
+    const current = stack.at(-1) ?? openLead(block.node.position.start);
     current.node.content.push(block.node);
     current.lastEnd = block.node.position.end;
     // Every enclosing section grows with its descendants, so a parent's span

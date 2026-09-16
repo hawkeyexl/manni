@@ -15,6 +15,7 @@ import {
 } from "../../../src/lint/core/template-registry.js";
 import { isRequired, isSlot, type Template } from "../../../src/lint/core/template.js";
 import { LintError } from "../../../src/lint/types.js";
+import { at, defined } from "../helpers.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixtures = join(here, "..", "fixtures", "templates");
@@ -89,15 +90,15 @@ describe("built-ins", () => {
   });
 
   it("loads a built-in through the same schema validation as a user file", async () => {
-    const [first] = listBuiltins();
-    const template = await loadTemplate(first!.id);
-    expect(template.types).toEqual(first!.types);
+    const first = at(listBuiltins(), 0, "built-in");
+    const template = await loadTemplate(first.id);
+    expect(template.types).toEqual(first.types);
     expect(Object.keys(template.sections ?? {}).length).toBeGreaterThan(0);
   });
 
   it("caches a built-in rather than re-reading it", async () => {
-    const [first] = listBuiltins();
-    expect(await loadTemplate(first!.id)).toBe(await loadTemplate(first!.id));
+    const first = at(listBuiltins(), 0, "built-in");
+    expect(await loadTemplate(first.id)).toBe(await loadTemplate(first.id));
   });
 
   it("errors on an unknown built-in id, listing what is available", async () => {
@@ -138,7 +139,7 @@ describe("loadTemplateFile", () => {
     // wins the `extends` merge and would reset an inherited `required: false`.
     // "Required unless stated" is `isRequired`'s job, not the loader's.
     expect(overview?.required).toBeUndefined();
-    expect(isRequired(overview!)).toBe(true);
+    expect(isRequired(defined(overview, "the overview section"))).toBe(true);
     expect(file.templates?.["how-to"]?.sections?.["before you start"]?.required).toBe(false);
   });
 
@@ -424,19 +425,32 @@ describe("resolveExtends", () => {
     },
   };
 
-  const load: TemplateResolver = async (ref) => {
-    const template = library[ref];
-    if (!template) throw new LintError(`no such template: ${ref}`);
-    return template;
-  };
+  /**
+   * A resolver over a template map. A `TemplateResolver` returns a promise, so
+   * a missing ref has to *reject* rather than throw where the caller is not
+   * awaiting yet - which is what an `async` function throwing used to give.
+   */
+  const resolverFor =
+    (map: Record<string, Template>): TemplateResolver =>
+    (ref) => {
+      const template = map[ref];
+      return template
+        ? Promise.resolve(template)
+        : Promise.reject(new LintError(`no such template: ${ref}`));
+    };
+
+  const load: TemplateResolver = resolverFor(library);
 
   it("returns a template with no `extends` unchanged", async () => {
-    const base = library["base"]!;
+    const base = defined(library["base"], "the base template");
     expect(await resolveExtends(base, load)).toBe(base);
   });
 
   it("overrides sections by key and inherits every key the child omits", async () => {
-    const merged = await resolveExtends(library["child"]!, load);
+    const merged = await resolveExtends(
+      defined(library["child"], "the child template"),
+      load,
+    );
 
     expect(merged.sections?.["overview"]?.heading?.const).toBe("Introduction");
     expect(merged.sections?.["see also"]?.heading?.const).toBe("See also");
@@ -469,9 +483,11 @@ describe("resolveExtends", () => {
         sections: { task: { sections: { steps: { lists: { min: 2 } } } } },
       },
     };
-    const loadDeep: TemplateResolver = async (ref) => deep[ref]!;
+    const loadDeep: TemplateResolver = resolverFor(deep);
 
-    const task = (await resolveExtends(deep["narrower"]!, loadDeep)).sections?.["task"];
+    const task = (
+      await resolveExtends(defined(deep["narrower"], "the narrower template"), loadDeep)
+    ).sections?.["task"];
 
     expect(task?.additionalSections).toBe(true);
     expect(task?.sections?.["steps"]?.lists).toEqual({ min: 2 });
@@ -483,7 +499,10 @@ describe("resolveExtends", () => {
   // tightening one nested section silently discarded every sibling the parent
   // declared - which is the opposite of what `extends` is for.
   it("merges nested sections instead of replacing the branch", async () => {
-    const merged = await resolveExtends(library["child"]!, load);
+    const merged = await resolveExtends(
+      defined(library["child"], "the child template"),
+      load,
+    );
     const task = merged.sections?.["task"];
 
     expect(Object.keys(task?.sections ?? {})).toEqual(["steps", "caveats"]);
@@ -495,12 +514,18 @@ describe("resolveExtends", () => {
   // A section's own rules stay units: overriding `paragraphs` replaces it
   // rather than merging a child `min` into a parent `max`.
   it("replaces a content rule rather than merging into it", async () => {
-    const merged = await resolveExtends(library["child"]!, load);
+    const merged = await resolveExtends(
+      defined(library["child"], "the child template"),
+      load,
+    );
     expect(merged.sections?.["overview"]?.paragraphs).toEqual({ min: 2 });
   });
 
   it("keeps the parent's section order, with child-only additions last", async () => {
-    const merged = await resolveExtends(library["child"]!, load);
+    const merged = await resolveExtends(
+      defined(library["child"], "the child template"),
+      load,
+    );
     expect(Object.keys(merged.sections ?? {})).toEqual([
       "overview",
       "see also",
@@ -523,7 +548,7 @@ describe("resolveExtends", () => {
   });
 
   it("leaves the parent untouched", async () => {
-    await resolveExtends(library["child"]!, load);
+    await resolveExtends(defined(library["child"], "the child template"), load);
     expect(library["base"]?.sections?.["overview"]?.heading?.const).toBe("Overview");
     expect(Object.keys(library["base"]?.sections ?? {})).toEqual([
       "overview",
@@ -552,9 +577,11 @@ describe("resolveExtends", () => {
       a: { extends: "b" },
       b: { extends: "a" },
     };
-    const loadCyclic: TemplateResolver = async (ref) => cyclic[ref]!;
+    const loadCyclic: TemplateResolver = resolverFor(cyclic);
 
-    const message = await rejectionMessage(resolveExtends(cyclic["a"]!, loadCyclic));
+    const message = await rejectionMessage(
+      resolveExtends(defined(cyclic["a"], 'template "a"'), loadCyclic),
+    );
     expect(message).toContain('Template "extends" cycle');
     expect(message).toContain("b -> a -> b");
   });
@@ -562,7 +589,7 @@ describe("resolveExtends", () => {
   it("detects a template that extends itself", async () => {
     const selfish: Record<string, Template> = { me: { extends: "me" } };
     const message = await rejectionMessage(
-      resolveExtends(selfish["me"]!, async (ref) => selfish[ref]!),
+      resolveExtends(defined(selfish["me"], 'template "me"'), resolverFor(selfish)),
     );
     expect(message).toContain("me -> me");
   });
@@ -576,10 +603,13 @@ describe("the template schema", () => {
       { templates: { "how-to": { sections: { task: {} } } } },
       "empty.yaml",
     );
-    const task = file.templates?.["how-to"]?.sections?.["task"];
-    expect(isRequired(task!)).toBe(true);
-    expect(isSlot(task!)).toBe(true);
-    expect(task?.heading).toBeUndefined();
+    const task = defined(
+      file.templates?.["how-to"]?.sections?.["task"],
+      "the task section",
+    );
+    expect(isRequired(task)).toBe(true);
+    expect(isSlot(task)).toBe(true);
+    expect(task.heading).toBeUndefined();
   });
 
   it("accepts `repeat` on a section rule", () => {

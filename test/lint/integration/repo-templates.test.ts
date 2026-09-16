@@ -22,6 +22,7 @@ import {
   resolveExtends,
 } from "../../../src/lint/core/template-registry.js";
 import type { Template } from "../../../src/lint/core/template.js";
+import { at, defined } from "../helpers.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const examples = join(here, "..", "..", "..", "examples", "lint");
@@ -36,7 +37,7 @@ const templates = parse(readFileSync(TEMPLATES, "utf8")).templates as Record<
 const lint = (docPath: string, templateName: string) =>
   validateDocument(
     markdownParser.parse(readFileSync(docPath, "utf8"), docPath),
-    templates[templateName]!,
+    defined(templates[templateName], `template "${templateName}"`),
   );
 
 describe("the repository's own templates", () => {
@@ -80,7 +81,7 @@ describe("the repository's own templates", () => {
     );
     expect(tree.frontmatter).toMatchObject({ title: "Sample" });
 
-    const root = tree.sections[0]!;
+    const root = at(tree.sections, 0, "top-level section");
     expect(root.level).toBe(1);
     expect(root.title).toBe("Sample");
     // Anchored on the frontmatter, which is where the title actually is.
@@ -93,8 +94,9 @@ describe("the repository's own templates", () => {
       "Intro prose.\n\n## Prerequisites\n\nMore.\n",
       "headless.md",
     );
-    expect(tree.sections[0]!.level).toBe(0);
-    expect(tree.sections[0]!.sections.map((s) => s.title)).toEqual([
+    const lead = at(tree.sections, 0, "implicit lead section");
+    expect(lead.level).toBe(0);
+    expect(lead.sections.map((s) => s.title)).toEqual([
       "Prerequisites",
     ]);
   });

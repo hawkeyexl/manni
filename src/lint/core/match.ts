@@ -105,8 +105,7 @@ function claimedLater(
   section: SectionNode,
   requiredOnly = false,
 ): boolean {
-  for (let i = from; i < rules.length; i++) {
-    const { rule } = rules[i]!;
+  for (const { rule } of rules.slice(from)) {
     if (isSlot(rule)) continue;
     if (requiredOnly && !isRequired(rule)) continue;
     if (headingMatches(section.title, rule)) return true;
@@ -134,8 +133,8 @@ function enoughSectionsRemain(
   sectionsRemaining: number,
 ): boolean {
   let required = 0;
-  for (let i = from; i < rules.length; i++) {
-    if (isRequired(rules[i]!.rule)) required++;
+  for (const { rule } of rules.slice(from)) {
+    if (isRequired(rule)) required++;
   }
   return sectionsRemaining >= required;
 }
@@ -160,14 +159,14 @@ function findForward(
   ri: number,
 ): number {
   const requiredOnly = isRequired(rule);
-  for (let i = from; i < sections.length; i++) {
+  for (const [offset, section] of sections.slice(from).entries()) {
     // The later claim is tested first, because a section can satisfy both
     // rules and only one of them can have it. A loose rule reaching a section
     // a stricter later rule names exactly - `^Symptom` reaching `Symptom
     // summary` - would otherwise take it and leave that rule missing, which is
     // the same cascade the bounded scan exists to prevent, one section earlier.
-    if (claimedLater(rules, ri + 1, sections[i]!, requiredOnly)) return -1;
-    if (headingMatches(sections[i]!.title, rule)) return i;
+    if (claimedLater(rules, ri + 1, section, requiredOnly)) return -1;
+    if (headingMatches(section.title, rule)) return from + offset;
   }
   return -1;
 }
@@ -199,16 +198,13 @@ export function matchSections(
   const extras: SectionNode[] = [];
   let cursor = 0;
 
-  for (let ri = 0; ri < rules.length; ri++) {
-    const { name, rule } = rules[ri]!;
-
+  for (const [ri, { name, rule }] of rules.entries()) {
     if (isSlot(rule)) {
       const consumed: SectionNode[] = [];
-      while (
-        cursor < sections.length &&
-        !claimedLater(rules, ri + 1, sections[cursor]!)
-      ) {
-        consumed.push(sections[cursor]!);
+      while (cursor < sections.length) {
+        const next = sections[cursor];
+        if (next === undefined || claimedLater(rules, ri + 1, next)) break;
+        consumed.push(next);
         cursor++;
         if (!rule.repeat) break;
       }
@@ -248,30 +244,37 @@ export function matchSections(
     // rule loose enough to match a heading a later rule names exactly took it
     // whenever it happened to sit at the cursor, and the bounded scan below,
     // which does check, was never consulted.
+    const atCursor = sections[cursor];
     const at =
-      cursor < sections.length &&
-      headingMatches(sections[cursor]!.title, rule) &&
-      !claimedLater(rules, ri + 1, sections[cursor]!, isRequired(rule))
+      atCursor !== undefined &&
+      headingMatches(atCursor.title, rule) &&
+      !claimedLater(rules, ri + 1, atCursor, isRequired(rule))
         ? cursor
         : findForward(sections, cursor, rule, rules, ri);
 
     if (at !== -1) {
-      for (let i = cursor; i < at; i++) extras.push(sections[i]!);
+      extras.push(...sections.slice(cursor, at));
       cursor = at;
-      do {
-        matches.push({ name, rule, section: sections[cursor]!, coerced: false });
+      // `at` is an index into `sections`, so the first pass always has one.
+      for (let section = sections[at]; section !== undefined; ) {
+        matches.push({ name, rule, section, coerced: false });
         cursor++;
-      } while (
-        rule.repeat === true &&
-        cursor < sections.length &&
-        headingMatches(sections[cursor]!.title, rule) &&
-        // The same guard the slot branch applies. Without it a repeating rule
-        // whose pattern also matches a later rule's heading consumes that
-        // section too, and then validates it against the wrong subsections -
-        // so the later rule reports missing and the stolen section reports
-        // whatever the repeating rule required of it.
-        !claimedLater(rules, ri + 1, sections[cursor]!)
-      );
+        const next = sections[cursor];
+        if (
+          rule.repeat !== true ||
+          next === undefined ||
+          !headingMatches(next.title, rule) ||
+          // The same guard the slot branch applies. Without it a repeating rule
+          // whose pattern also matches a later rule's heading consumes that
+          // section too, and then validates it against the wrong subsections -
+          // so the later rule reports missing and the stolen section reports
+          // whatever the repeating rule required of it.
+          claimedLater(rules, ri + 1, next)
+        ) {
+          break;
+        }
+        section = next;
+      }
       continue;
     }
 
@@ -302,7 +305,7 @@ export function matchSections(
     );
   }
 
-  for (let i = cursor; i < sections.length; i++) extras.push(sections[i]!);
+  extras.push(...sections.slice(cursor));
 
   if (!allowExtra) {
     for (const section of extras) {

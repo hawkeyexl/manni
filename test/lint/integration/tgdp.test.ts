@@ -19,12 +19,14 @@ import { markdownParser } from "../../../src/lint/parsers/markdown.js";
 import { validateDocument } from "../../../src/lint/core/validator.js";
 import { listBuiltins, loadTemplate } from "../../../src/lint/core/template-registry.js";
 import manifest from "../../../templates/lint/tgdp/manifest.json" with { type: "json" };
+import { at } from "../helpers.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const vendored = join(here, "..", "fixtures", "tgdp");
 
 /** `how-to/template_how-to.md` -> `template_how-to.md`. */
-const basename = (source: string) => source.split("/").pop()!;
+const basename = (source: string) =>
+  at(source.split("/"), -1, `last segment of "${source}"`);
 
 describe("TGDP built-ins", () => {
   it("registers every manifest entry", () => {

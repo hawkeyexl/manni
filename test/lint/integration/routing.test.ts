@@ -13,6 +13,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { runLint } from "../../../src/lint/commands/lint.js";
 import { render } from "../../../src/lint/reporters/index.js";
+import { at, defined } from "../helpers.js";
 
 let dir: string;
 
@@ -74,10 +75,9 @@ describe("routing a directory of mixed doctypes", () => {
     const run = await runLint({ inputs: [dir], cwd: dir });
     // One structural problem, one finding. The pre-rewrite matcher turned this
     // into a cascade, and a too-eager coercion turned it into two.
-    expect(run.results[0]!.findings.map((f) => f.type)).toEqual([
-      "missing_section",
-    ]);
-    expect(run.results[0]!.findings[0]!.message).toContain("Overview");
+    const result = at(run.results, 0, "result for guide.md");
+    expect(result.findings.map((f) => f.type)).toEqual(["missing_section"]);
+    expect(at(result.findings, 0, "finding").message).toContain("Overview");
   });
 });
 
@@ -110,7 +110,7 @@ describe("a page with no type", () => {
     await file("untyped.md", "# Just a page\n");
     const run = await runLint({ inputs: [dir], explain: true, cwd: dir });
     expect(run.summary).toMatchObject({ checked: 0, skipped: 1 });
-    expect(run.results[0]!.resolution?.cause).toBe("no-type");
+    expect(at(run.results, 0, "result").resolution?.cause).toBe("no-type");
   });
 
   // The point of skipping: a repo that has typed three pages out of two hundred
@@ -130,7 +130,11 @@ describe("a page whose type resolves to nothing", () => {
     const run = await runLint({ inputs: [dir], cwd: dir });
 
     expect(run.summary).toMatchObject({ checked: 1, failed: 1, skipped: 0 });
-    const finding = run.results[0]!.findings[0]!;
+    const finding = at(
+      at(run.results, 0, "result for typo.md").findings,
+      0,
+      "finding",
+    );
     expect(finding.type).toBe("unknown_type");
     expect(finding.message).toContain("how-to");
   });
@@ -138,7 +142,12 @@ describe("a page whose type resolves to nothing", () => {
   it("anchors the finding on the frontmatter that declared it", async () => {
     await file("typo.md", typed("how-two", "# Typo\n"));
     const run = await runLint({ inputs: [dir], cwd: dir });
-    expect(run.results[0]!.findings[0]!.position.start.line).toBe(1);
+    const finding = at(
+      at(run.results, 0, "result for typo.md").findings,
+      0,
+      "finding",
+    );
+    expect(finding.position.start.line).toBe(1);
   });
 });
 
@@ -167,8 +176,9 @@ describe("user templates", () => {
 
     const run = await runLint({ inputs: [join(dir, "guide.md")], templates, cwd: dir });
 
-    expect(run.results[0]!.template).toBe(`${templates}#house-how-to`);
-    expect(run.results[0]!.findings).toEqual([]);
+    const result = at(run.results, 0, "result for guide.md");
+    expect(result.template).toBe(`${templates}#house-how-to`);
+    expect(result.findings).toEqual([]);
   });
 
   it("leave doctypes they do not declare on the built-in", async () => {
@@ -176,7 +186,9 @@ describe("user templates", () => {
     await file("notes.md", typed("release-notes", "# Release notes - Widget 1.0\n"));
 
     const run = await runLint({ inputs: [join(dir, "notes.md")], templates, cwd: dir });
-    expect(run.results[0]!.template).toBe("tgdp:release-notes:1.6");
+    expect(at(run.results, 0, "result for notes.md").template).toBe(
+      "tgdp:release-notes:1.6",
+    );
   });
 });
 
@@ -188,7 +200,9 @@ describe("overrides in the chain", () => {
       template: "tgdp:reference:1.6",
       cwd: dir,
     });
-    expect(run.results[0]!.template).toBe("tgdp:reference:1.6");
+    expect(at(run.results, 0, "result for guide.md").template).toBe(
+      "tgdp:reference:1.6",
+    );
   });
 
   it("let a page name its own template with $template", async () => {
@@ -197,7 +211,9 @@ describe("overrides in the chain", () => {
       `---\ntype: how-to\n$template: tgdp:reference:1.6\n---\n\n${HOW_TO}`,
     );
     const run = await runLint({ inputs: [dir], cwd: dir });
-    expect(run.results[0]!.template).toBe("tgdp:reference:1.6");
+    expect(at(run.results, 0, "result for guide.md").template).toBe(
+      "tgdp:reference:1.6",
+    );
   });
 });
 
@@ -206,7 +222,8 @@ describe("--explain", () => {
     await file("guide.md", typed("how-to"));
     const run = await runLint({ inputs: [dir], explain: true, cwd: dir });
 
-    const steps = run.results[0]!.resolution?.steps ?? [];
+    const result = at(run.results, 0, "result for guide.md");
+    const steps = result.resolution?.steps ?? [];
     expect(steps.map((s) => s.stage)).toEqual([
       "cli",
       "frontmatter-template",
@@ -218,7 +235,7 @@ describe("--explain", () => {
   it("is absent unless asked for, so results stay small", async () => {
     await file("guide.md", typed("how-to"));
     const run = await runLint({ inputs: [dir], cwd: dir });
-    expect(run.results[0]!.resolution).toBeUndefined();
+    expect(at(run.results, 0, "result for guide.md").resolution).toBeUndefined();
   });
 
   // The flag says it lints nothing, and it used to validate every document
@@ -229,12 +246,18 @@ describe("--explain", () => {
     await file("guide.md", "---\ntype: how-to\n---\n\n# A\n\n## Nope\n");
 
     const linted = await runLint({ inputs: [dir], cwd: dir });
-    expect(linted.results[0]!.findings.length).toBeGreaterThan(0);
+    const lintedResult = at(linted.results, 0, "linted result for guide.md");
+    expect(lintedResult.findings.length).toBeGreaterThan(0);
 
     const explained = await runLint({ inputs: [dir], explain: true, cwd: dir });
-    expect(explained.results[0]!.findings).toEqual([]);
-    expect(explained.results[0]!.success).toBe(true);
-    expect(explained.results[0]!.template).toBe("tgdp:how-to:1.6");
+    const explainedResult = at(
+      explained.results,
+      0,
+      "explained result for guide.md",
+    );
+    expect(explainedResult.findings).toEqual([]);
+    expect(explainedResult.success).toBe(true);
+    expect(explainedResult.template).toBe("tgdp:how-to:1.6");
   });
 
   // A typo with no near miss - which is most of them, since a near miss needs
@@ -243,7 +266,10 @@ describe("--explain", () => {
   it("offers the known doctypes when no near miss is close enough", async () => {
     await file("guide.md", "---\ntype: zzzzzzzz\n---\n\n# A\n");
     const run = await runLint({ inputs: [dir], explain: true, cwd: dir });
-    const resolution = run.results[0]!.resolution!;
+    const resolution = defined(
+      at(run.results, 0, "result for guide.md").resolution,
+      "resolution",
+    );
 
     expect(resolution.cause).toBe("unknown-type");
     expect(resolution.suggestions ?? []).toEqual([]);
@@ -261,7 +287,8 @@ describe("--explain", () => {
     await file("guide.md", `---\n$template: ./missing.yaml#nope\n---\n\n# A\n`);
     const run = await runLint({ inputs: [dir], explain: true, cwd: dir });
 
-    expect(run.results[0]!.findings[0]!.type).toBe("template_error");
+    const result = at(run.results, 0, "result for guide.md");
+    expect(at(result.findings, 0, "finding").type).toBe("template_error");
   });
 });
 
@@ -278,7 +305,11 @@ describe("a $template naming a URL", () => {
       "---\n$template: https://example.invalid/evil.yaml\n---\n\n# A\n",
     );
     const run = await runLint({ inputs: [dir], cwd: dir });
-    const finding = run.results[0]!.findings[0]!;
+    const finding = at(
+      at(run.results, 0, "result for guide.md").findings,
+      0,
+      "finding",
+    );
 
     expect(finding.type).toBe("template_error");
     expect(finding.message).toContain("$template may not name a URL");
@@ -295,10 +326,9 @@ describe("a $template naming a URL", () => {
       template: "tgdp:how-to:1.6",
       cwd: dir,
     });
-    expect(run.results[0]!.template).toBe("tgdp:how-to:1.6");
-    expect(
-      run.results[0]!.findings.some((f) => f.type === "template_error"),
-    ).toBe(false);
+    const result = at(run.results, 0, "result for guide.md");
+    expect(result.template).toBe("tgdp:how-to:1.6");
+    expect(result.findings.some((f) => f.type === "template_error")).toBe(false);
   });
 
   // A relative `$template` is a path inside the docset, not a network origin,
@@ -318,7 +348,7 @@ describe("a $template naming a URL", () => {
     await file("guide.md", "---\n$template: ./house.yaml#house\n---\n\n# A\n");
 
     const run = await runLint({ inputs: [join(dir, "guide.md")], cwd: dir });
-    expect(run.results[0]!.findings).toEqual([]);
+    expect(at(run.results, 0, "result for guide.md").findings).toEqual([]);
   });
 });
 
@@ -328,7 +358,8 @@ describe("an unloadable template", () => {
     await file("guide.md", `---\n$template: ./missing.yaml#nope\n---\n\n# A\n`);
     const run = await runLint({ inputs: [dir], cwd: dir });
 
-    expect(run.results[0]!.findings[0]!.type).toBe("template_error");
+    const result = at(run.results, 0, "result for guide.md");
+    expect(at(result.findings, 0, "finding").type).toBe("template_error");
     expect(run.summary.failed).toBe(1);
   });
 });

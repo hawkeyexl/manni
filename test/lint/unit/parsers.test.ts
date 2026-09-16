@@ -7,34 +7,47 @@ import {
   supportedExtensions,
 } from "../../../src/lint/parsers/index.js";
 import { LintError } from "../../../src/lint/types.js";
-import type { SectionNode } from "../../../src/lint/types.js";
+import type { DocumentTree, SectionNode } from "../../../src/lint/types.js";
+import { at, defined } from "../helpers.js";
 
 const parse = (md: string) => markdownParser.parse(md, "test.md");
 
 /** Depth-first section lookup by title, for asserting on nested trees. */
 function find(sections: SectionNode[], title: string): SectionNode | undefined {
-  for (const section of sections) {
-    if (section.title === title) return section;
-    const nested = find(section.sections, title);
+  for (const candidate of sections) {
+    if (candidate.title === title) return candidate;
+    const nested = find(candidate.sections, title);
     if (nested) return nested;
   }
   return undefined;
+}
+
+/** The same lookup, for the far more common case where it must find one. */
+function section(sections: SectionNode[], title: string): SectionNode {
+  return defined(find(sections, title), `section "${title}"`);
+}
+
+/** The first top-level section, which nearly every test here indexes into. */
+function firstSection(tree: DocumentTree): SectionNode {
+  return at(tree.sections, 0, "top-level section");
 }
 
 describe("markdown parser", () => {
   it("nests sections by heading depth", () => {
     const tree = parse("# A\n\n## B\n\ntext\n\n### C\n\n## D\n");
     expect(tree.sections.map((s) => s.title)).toEqual(["A"]);
-    expect(tree.sections[0]!.sections.map((s) => s.title)).toEqual(["B", "D"]);
-    expect(find(tree.sections, "B")!.sections.map((s) => s.title)).toEqual(["C"]);
+    expect(firstSection(tree).sections.map((s) => s.title)).toEqual(["B", "D"]);
+    expect(section(tree.sections, "B").sections.map((s) => s.title)).toEqual([
+      "C",
+    ]);
   });
 
   it("records order and parentSlug", () => {
     const tree = parse("# A\n\n## B\n\n## D\n");
-    const d = find(tree.sections, "D")!;
+    const d = section(tree.sections, "D");
     expect(d.order).toBe(2);
     expect(d.parentSlug).toBe("a");
-    expect(tree.sections[0]!.parentSlug).toBeNull();
+    expect(firstSection(tree).parentSlug).toBeNull();
   });
 
   it("disambiguates repeated headings in slugs", () => {
@@ -46,29 +59,32 @@ describe("markdown parser", () => {
   // is undefined for anything but a text node, so inline markup vanished.
   it("flattens inline markup in a heading title", () => {
     const tree = parse("# Use the `lint` *command*\n");
-    expect(tree.sections[0]!.title).toBe("Use the lint command");
-    expect(tree.sections[0]!.slug).toBe("use-the-lint-command");
+    const a = firstSection(tree);
+    expect(a.title).toBe("Use the lint command");
+    expect(a.slug).toBe("use-the-lint-command");
   });
 
   it("ends a section where the next sibling heading begins, not at its last child", () => {
     const md = "# A\n\npara\n\n\n\n# B\n";
     const tree = parse(md);
-    const a = tree.sections[0]!;
-    const b = tree.sections[1]!;
+    const a = at(tree.sections, 0, "section A");
+    const b = at(tree.sections, 1, "section B");
     expect(a.position.end.offset).toBe(b.position.start.offset);
     // The last child ends well before the section does.
-    expect(a.content[0]!.position.end.offset).toBeLessThan(a.position.end.offset);
+    expect(
+      at(a.content, 0, "first child of A").position.end.offset,
+    ).toBeLessThan(a.position.end.offset);
   });
 
   it("ends the final section at the end of the document", () => {
     const md = "# A\n\npara\n";
     const tree = parse(md);
-    expect(tree.sections[0]!.position.end.offset).toBe(md.length);
+    expect(firstSection(tree).position.end.offset).toBe(md.length);
   });
 
   it("classifies content into generic kinds, in document order", () => {
     const tree = parse("# A\n\npara\n\n```js\ncode\n```\n\n- one\n- two\n");
-    expect(tree.sections[0]!.content.map((n) => n.kind)).toEqual([
+    expect(firstSection(tree).content.map((n) => n.kind)).toEqual([
       "paragraph",
       "code",
       "list",
@@ -77,7 +93,7 @@ describe("markdown parser", () => {
 
   it("keeps code language and list ordering", () => {
     const tree = parse("# A\n\n```bash\nls\n```\n\n1. one\n2. two\n");
-    const [code, list] = tree.sections[0]!.content;
+    const [code, list] = firstSection(tree).content;
     expect(code).toMatchObject({ kind: "code", lang: "bash", text: "ls" });
     expect(list).toMatchObject({ kind: "list", ordered: true });
     expect((list as { items: unknown[] }).items).toHaveLength(2);
@@ -85,20 +101,23 @@ describe("markdown parser", () => {
 
   it("nests content inside list items so item rules can run", () => {
     const tree = parse("# A\n\n- item text\n\n  ```js\n  x\n  ```\n");
-    const list = tree.sections[0]!.content[0] as { items: { children: { kind: string }[] }[] };
-    expect(list.items[0]!.children.map((c) => c.kind)).toEqual(["paragraph", "code"]);
+    const list = firstSection(tree).content[0] as { items: { children: { kind: string }[] }[] };
+    expect(at(list.items, 0, "first list item").children.map((c) => c.kind)).toEqual([
+      "paragraph",
+      "code",
+    ]);
   });
 
   // A blockquote is not a paragraph and a table is not a list; counting them as
   // one would make `paragraphs: {max: N}` fail documents that satisfy it.
   it("ignores block types the DSL does not describe", () => {
     const tree = parse("# A\n\n> quoted\n\n---\n\n| a | b |\n| - | - |\n| 1 | 2 |\n");
-    expect(tree.sections[0]!.content).toHaveLength(0);
+    expect(firstSection(tree).content).toHaveLength(0);
   });
 
   it("puts content before any heading in an implicit lead section", () => {
     const tree = parse("intro prose\n\n## Prerequisites\n\nmore\n");
-    const lead = tree.sections[0]!;
+    const lead = firstSection(tree);
     expect(lead.level).toBe(0);
     expect(lead.headingPosition).toBeNull();
     expect(lead.content).toHaveLength(1);
@@ -111,7 +130,9 @@ describe("markdown parser", () => {
     expect(tree.frontmatter).toEqual({ type: "how-to", tags: ["a", "b"] });
     expect(tree.frontmatterPosition?.start.line).toBe(1);
     // The old line-splitting parser produced the string "- a\n- b" here.
-    expect(Array.isArray(tree.frontmatter!.tags)).toBe(true);
+    expect(Array.isArray(defined(tree.frontmatter, "frontmatter").tags)).toBe(
+      true,
+    );
   });
 
   // Docusaurus, Hugo, and Starlight render the page title from frontmatter, so
@@ -120,7 +141,7 @@ describe("markdown parser", () => {
   describe("a frontmatter title standing in for a missing H1", () => {
     it("becomes the top-level section", () => {
       const tree = parse("---\ntitle: Install the widget\n---\n\n## Overview\n\nWhy.\n");
-      const root = tree.sections[0]!;
+      const root = firstSection(tree);
       expect(root.level).toBe(1);
       expect(root.title).toBe("Install the widget");
       expect(root.sections.map((s) => s.title)).toEqual(["Overview"]);
@@ -128,8 +149,9 @@ describe("markdown parser", () => {
 
     it("is anchored on the frontmatter, where the title actually is", () => {
       const tree = parse("---\ntitle: A\n---\n\n## Overview\n");
-      expect(tree.sections[0]!.headingPosition?.start.line).toBe(1);
-      expect(tree.sections[0]!.headingPosition?.start.offset).toBe(0);
+      const root = firstSection(tree);
+      expect(root.headingPosition?.start.line).toBe(1);
+      expect(root.headingPosition?.start.offset).toBe(0);
     });
 
     it("does not displace a real H1", () => {
@@ -139,30 +161,33 @@ describe("markdown parser", () => {
 
     it("is not synthesized without a title", () => {
       const tree = parse("---\ntype: how-to\n---\n\n## Overview\n");
-      expect(tree.sections[0]!.title).toBe("Overview");
-      expect(tree.sections[0]!.level).toBe(2);
+      const root = firstSection(tree);
+      expect(root.title).toBe("Overview");
+      expect(root.level).toBe(2);
     });
 
     it("ignores a non-string or empty title", () => {
-      expect(parse("---\ntitle: []\n---\n\n## A\n").sections[0]!.level).toBe(2);
-      expect(parse('---\ntitle: ""\n---\n\n## A\n').sections[0]!.level).toBe(2);
+      expect(firstSection(parse("---\ntitle: []\n---\n\n## A\n")).level).toBe(2);
+      expect(firstSection(parse('---\ntitle: ""\n---\n\n## A\n')).level).toBe(2);
     });
 
     // A blank title is as absent as no title. Admitting it gave the document a
     // top-level section with an empty heading, which every template then
     // reported as the wrong title while naming nothing to search for.
     it("ignores a title that is only whitespace", () => {
-      expect(parse('---\ntitle: "   "\n---\n\n## A\n').sections[0]!.level).toBe(2);
+      expect(firstSection(parse('---\ntitle: "   "\n---\n\n## A\n')).level).toBe(
+        2,
+      );
     });
 
     it("trims the title it does use", () => {
       const tree = parse('---\ntitle: "  Install the widget  "\n---\n\n## A\n');
-      expect(tree.sections[0]!.title).toBe("Install the widget");
+      expect(firstSection(tree).title).toBe("Install the widget");
     });
 
     it("takes the content before the first heading with it", () => {
       const tree = parse("---\ntitle: A\n---\n\nLead prose.\n\n## Overview\n");
-      const root = tree.sections[0]!;
+      const root = firstSection(tree);
       expect(root.content.map((n) => n.kind)).toEqual(["paragraph"]);
       expect(root.sections.map((s) => s.title)).toEqual(["Overview"]);
     });
@@ -176,7 +201,7 @@ describe("markdown parser", () => {
 
   it("excludes the frontmatter block from section content", () => {
     const tree = parse("---\ntype: how-to\n---\n\n# A\n\npara\n");
-    expect(tree.sections[0]!.content.map((n) => n.kind)).toEqual(["paragraph"]);
+    expect(firstSection(tree).content.map((n) => n.kind)).toEqual(["paragraph"]);
   });
 });
 
@@ -184,14 +209,17 @@ describe("mdx parser", () => {
   it("parses MDX expressions that plain Markdown would not", () => {
     const tree = mdxParser.parse("# A\n\n<Note>hi</Note>\n", "test.mdx");
     expect(tree.format).toBe("mdx");
-    expect(tree.sections[0]!.title).toBe("A");
+    expect(firstSection(tree).title).toBe("A");
   });
 
   // remark-mdx reads `{` as an expression delimiter, so the two formats need
   // separate processors selected by extension.
   it("leaves a literal brace alone in Markdown", () => {
     const tree = parse("# A\n\nUse {placeholder} here.\n");
-    expect(tree.sections[0]!.content[0]!.text).toBe("Use {placeholder} here.");
+    const content = firstSection(tree).content;
+    expect(at(content, 0, "first content node").text).toBe(
+      "Use {placeholder} here.",
+    );
   });
 
   it("reports a malformed MDX file as an operational error naming the file", () => {
@@ -230,9 +258,10 @@ describe("parser registry", () => {
   it("registers roadmap formats and reports them as not implemented", () => {
     const planned = listFormats().filter((f) => !f.implemented);
     for (const format of planned) {
-      const parser = parserForExtension(format.extensions[0]!)!;
+      const ext = at(format.extensions, 0, `${format.name} extension`);
+      const parser = defined(parserForExtension(ext), `parser for "${ext}"`);
       expect(parser.implemented).toBe(false);
-      expect(() => parser.parse("anything", `a${format.extensions[0] ?? ""}`)).toThrow(
+      expect(() => parser.parse("anything", `a${ext}`)).toThrow(
         new RegExp(`${format.label} is not implemented yet`),
       );
     }

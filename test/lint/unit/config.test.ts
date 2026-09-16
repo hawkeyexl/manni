@@ -70,8 +70,11 @@ function captureStderr(): { text: () => string; restore: () => void } {
   };
 }
 
-/** The message of the LintError `run` throws. Fails if it throws nothing. */
-async function messageOf(run: () => Promise<unknown>): Promise<string> {
+/**
+ * The message of the LintError `run` throws, for a `run` that is either
+ * synchronous or asynchronous. Fails if it throws nothing.
+ */
+async function messageOf(run: () => unknown): Promise<string> {
   try {
     await run();
   } catch (err) {
@@ -118,7 +121,7 @@ describe("parseConfig", () => {
   describe("the keys that moved to collections:", () => {
     for (const key of ["paths", "exclude"]) {
       it(`refuses "${key}" and points at collections:`, async () => {
-        const message = await messageOf(async () =>
+        const message = await messageOf(() =>
           parseConfig(`lint:\n  ${key}: ["docs/**/*.md"]\n`, "manni.config.yaml"),
         );
         expect(message).toBe(
@@ -136,7 +139,7 @@ describe("parseConfig", () => {
     });
 
     it("rejects a tool nothing implements", async () => {
-      const message = await messageOf(async () =>
+      const message = await messageOf(() =>
         parseConfig("lint:\n  structure:\n    tool: vale\n", "manni.config.yaml"),
       );
       expect(message).toBe(
@@ -145,7 +148,7 @@ describe("parseConfig", () => {
     });
 
     it("rejects an unknown key under it, naming the ones it takes", async () => {
-      const message = await messageOf(async () =>
+      const message = await messageOf(() =>
         parseConfig("lint:\n  structure:\n    tools: manni\n", "manni.config.yaml"),
       );
       expect(message).toBe(
@@ -192,7 +195,7 @@ describe("parseConfig", () => {
   });
 
   it("rejects a non-mapping root", async () => {
-    const message = await messageOf(async () =>
+    const message = await messageOf(() =>
       parseConfig("- lint\n- docevals\n", "manni.config.yaml"),
     );
     expect(message).toContain("manni.config.yaml");
@@ -200,14 +203,14 @@ describe("parseConfig", () => {
   });
 
   it("rejects unparseable YAML", async () => {
-    const message = await messageOf(async () =>
+    const message = await messageOf(() =>
       parseConfig("lint:\n  paths: [unclosed\n", "manni.config.yaml"),
     );
     expect(message).toContain("manni.config.yaml: invalid YAML:");
   });
 
   it("names the path of an invalid value inside the section", async () => {
-    const message = await messageOf(async () =>
+    const message = await messageOf(() =>
       parseConfig(
         ["lint:", "  overrides:", '    - files: "docs/**"', "      template: 7"].join(
           "\n",
@@ -224,7 +227,7 @@ describe("parseConfig", () => {
   // silence would let `allowEmtpy: true` read as configured and be nothing.
   // The message names every key the section takes, which is cite's wording.
   it("rejects an unknown key inside the section, and names it", async () => {
-    const message = await messageOf(async () =>
+    const message = await messageOf(() =>
       parseConfig('lint:\n  path: ["docs"]\n', "manni.config.yaml"),
     );
     expect(message).toBe(
@@ -233,7 +236,7 @@ describe("parseConfig", () => {
   });
 
   it("rejects an unknown key nested inside an override", async () => {
-    const message = await messageOf(async () =>
+    const message = await messageOf(() =>
       parseConfig(
         ["lint:", "  overrides:", '    - files: "docs/**"', "      schemas: [okf]"].join(
           "\n",
@@ -247,7 +250,7 @@ describe("parseConfig", () => {
 
   describe("the un-nested config", () => {
     it("names the stray keys and the key they belong under", async () => {
-      const message = await messageOf(async () =>
+      const message = await messageOf(() =>
         parseConfig(
           [
             'templates: ["./templates.yaml"]',
@@ -270,7 +273,7 @@ describe("parseConfig", () => {
       const keys = Object.keys(configSchema.properties);
       expect(keys.length).toBeGreaterThan(0);
       for (const key of keys) {
-        const message = await messageOf(async () =>
+        const message = await messageOf(() =>
           parseConfig(`${key}: {}\n`, "manni.config.yaml"),
         );
         expect(message, `root "${key}:" should be reported`).toContain(`"${key}:"`);
@@ -285,7 +288,7 @@ describe("parseConfig", () => {
     // read, so someone running `-c my-custom.yaml` was told about a file they
     // had not mentioned and went looking for the wrong one.
     it("names the file it read, not the conventional one", async () => {
-      const message = await messageOf(async () =>
+      const message = await messageOf(() =>
         parseConfig('templates: ["./templates.yaml"]\n', "my-custom.yaml"),
       );
       expect(message).toContain("my-custom.yaml");
@@ -297,7 +300,7 @@ describe("parseConfig", () => {
     // The stray-key check cannot see this one: its keys are nested, not at the
     // top level, so nothing this tool owns appears at the root.
     it("rejects a top-level key matching lint only case-insensitively", async () => {
-      const message = await messageOf(async () =>
+      const message = await messageOf(() =>
         parseConfig('Lint:\n  paths: ["docs/**/*.md"]\n', "manni.config.yaml"),
       );
       expect(message).toContain('"Lint:"');
@@ -306,7 +309,7 @@ describe("parseConfig", () => {
     });
 
     it("rejects an all-caps wrapper too", async () => {
-      const message = await messageOf(async () =>
+      const message = await messageOf(() =>
         parseConfig("LINT:\n  template: tgdp:how-to:1.6\n", "x"),
       );
       expect(message).toContain('"LINT:"');

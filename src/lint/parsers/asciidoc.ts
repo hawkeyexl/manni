@@ -140,14 +140,21 @@ function lineIndex(content: string): LineIndex {
   const clamp = (line: number): number =>
     Math.min(Math.max(Math.trunc(line) || 1, 1), starts.length);
 
+  /**
+   * Offset of column 1 of a clamped line. `starts` opens with 0 and `clamp`
+   * keeps the index inside it, so the fallback is unreachable - and 0 is where
+   * a line clamped to 1 starts anyway.
+   */
+  const startOf = (n: number): number => starts[n - 1] ?? 0;
+
   return {
     start(line) {
       const n = clamp(line);
-      return { line: n, column: 1, offset: starts[n - 1]! };
+      return { line: n, column: 1, offset: startOf(n) };
     },
     endOfLine(line) {
       const n = clamp(line);
-      const from = starts[n - 1]!;
+      const from = startOf(n);
       const next = starts[n];
       let stop = next === undefined ? content.length : next - 1;
       if (stop > from && content[stop - 1] === "\r") stop -= 1;
@@ -156,7 +163,7 @@ function lineIndex(content: string): LineIndex {
     documentEnd() {
       return {
         line: starts.length,
-        column: content.length - starts[starts.length - 1]! + 1,
+        column: content.length - startOf(starts.length) + 1,
         offset: content.length,
       };
     },
