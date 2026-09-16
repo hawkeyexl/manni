@@ -3,10 +3,11 @@ extends: substitution
 message: "Use '%s' instead of '%s'."
 level: error
 ignorecase: true
+nonword: true
 vocab: false
 swap:
-  kubernetes: Kubernetes
-  k8s: K8s
-  c\+\+: C\+\+
-  gleitsichtglas: Gleitsichtglas
-  gleitsichtbrille: Gleitsichtbrille
+  \bkubernetes\b: Kubernetes
+  \bk8s\b: K8s
+  \bc\+\+\B: C\+\+
+  \bgleitsichtglas\b: Gleitsichtglas
+  \bgleitsichtbrille\b: Gleitsichtbrille

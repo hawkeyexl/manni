@@ -3,7 +3,8 @@ extends: substitution
 message: "Use '%s' instead of '%s'."
 level: warning
 ignorecase: true
+nonword: true
 matchcase: true
 swap:
-  no-line bifocal: progressive lens
-  Kubernates: Kubernetes
+  \bno-line bifocal\b: progressive lens
+  \bKubernates\b: Kubernetes

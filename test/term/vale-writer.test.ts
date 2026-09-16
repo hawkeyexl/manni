@@ -4,6 +4,7 @@
  * produced the right findings with.
  */
 import { join, resolve } from "node:path";
+import { parse as parseYaml } from "yaml";
 import { describe, expect, it } from "vitest";
 import { writerFor } from "../../src/term/core/writers/index.js";
 import { INTERCHANGE_WRITERS } from "../../src/term/core/writers/interchange.js";
@@ -29,7 +30,42 @@ function byName(result: TermRender): Record<string, string> {
   return Object.fromEntries(result.files.map((f) => [f.path.slice(TERMS.length + 1), f.content]));
 }
 
+/** The `swap` keys of a substitution file, and whether it sets `nonword`. */
+function swapsOf(content: string): { nonword: boolean; keys: string[] } {
+  const parsed: unknown = parseYaml(content);
+  if (typeof parsed !== "object" || parsed === null) throw new Error("not a mapping");
+  const rule = parsed as { nonword?: unknown; swap?: unknown };
+  const swap = typeof rule.swap === "object" && rule.swap !== null ? rule.swap : {};
+  return { nonword: rule.nonword === true, keys: Object.keys(swap) };
+}
+
 describe("vale writer", () => {
+  // Vale wraps a key in `\b…\b` unless `nonword` is set, and Go's `\b` only
+  // knows ASCII word characters, so a term ending in a symbol (`C++`) or a
+  // non-ASCII letter (`Café`) never matched. A real Vale 3.20.0 run found
+  // `c++` unflagged; with computed edges it flags `c++` and leaves `c++x` and
+  // `kubernetesish` alone.
+  it("writes each swap key's own word boundaries, and sets nonword", () => {
+    const files = byName(
+      render([
+        term("cpp", { label: "C++" }),
+        term("kubernetes", { label: "Kubernetes", "hidden-labels": ["Kubernates"] }),
+        term("cafe", { label: "Café" }),
+        term("progressive-lens", { label: "progressive lens" }),
+        term("dotnet", { label: ".Net" }),
+      ]),
+    );
+    const casing = swapsOf(files["Casing.yml"] ?? "");
+    expect(casing.nonword).toBe(true);
+    expect(casing.keys).toEqual(["\\bc\\+\\+\\B", "\\bkubernetes\\b", "\\bcafé\\B", "\\B\\.net\\b"]);
+    const lowercase = swapsOf(files["Lowercase.yml"] ?? "");
+    expect(lowercase.nonword).toBe(true);
+    expect(lowercase.keys).toEqual(["\\bprogressive lens\\b"]);
+    const deprecated = swapsOf(files["Deprecated.yml"] ?? "");
+    expect(deprecated.nonword).toBe(true);
+    expect(deprecated.keys).toEqual(["\\bKubernates\\b"]);
+  });
+
   it("holds labels, alt-labels and hidden-labels", () => {
     expect(vale().holds("directory")).toEqual(["label", "alt-labels", "hidden-labels"]);
   });
@@ -97,10 +133,11 @@ describe("vale writer", () => {
     expect(pal[0]?.content).toContain("'progressive lens (PAL)'");
   });
 
-  it("quotes a key YAML would misread and escapes regex metacharacters", () => {
+  it("quotes a key or value YAML would misread, and escapes regex metacharacters", () => {
     const files = byName(render([term("yes", { label: "yes" }), term("net", { label: ".NET: Core" })]));
-    expect(files["Lowercase.yml"]).toContain('  "yes": "[Yy]es"\n');
-    expect(files["Casing.yml"]).toContain('  "\\\\.net: core": "\\\\.NET: Core"\n');
+    // A bounded key is never a bare YAML boolean; its value still needs quotes.
+    expect(files["Lowercase.yml"]).toContain('  \\byes\\b: "[Yy]es"\n');
+    expect(files["Casing.yml"]).toContain('  "\\\\B\\\\.net: core\\\\b": "\\\\.NET: Core"\n');
   });
 
   it("removes a marked file the set no longer produces", () => {

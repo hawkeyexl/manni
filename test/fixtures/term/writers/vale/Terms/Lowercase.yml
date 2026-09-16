@@ -3,9 +3,10 @@ extends: substitution
 message: "Write '%[2]s' in lowercase, except to start a sentence."
 level: error
 ignorecase: true
+nonword: true
 vocab: false
 swap:
-  progressive lens: "[Pp]rogressive lens"
-  graduated lens: "[Gg]raduated lens"
-  spectacle lens: "[Ss]pectacle lens"
-  application programming interface: "[Aa]pplication programming interface"
+  \bprogressive lens\b: "[Pp]rogressive lens"
+  \bgraduated lens\b: "[Gg]raduated lens"
+  \bspectacle lens\b: "[Ss]pectacle lens"
+  \bapplication programming interface\b: "[Aa]pplication programming interface"

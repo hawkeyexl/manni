@@ -104,6 +104,24 @@ class Swaps {
   }
 }
 
+/**
+ * A swap key with its own word boundaries. Vale wraps every key in `\b…\b`
+ * unless a rule sets `nonword`, and Go regular expressions give `\b` ASCII
+ * word semantics. So a term whose first or last character is not an ASCII word
+ * character never matched: `c++` before a space, `Café` before a full stop. A
+ * real Vale 3.20.0 run confirmed `c++` went unflagged. Each edge is `\b` beside
+ * an ASCII word character and `\B` beside anything else, which is exactly
+ * Vale's default for an ordinary word and the right boundary for the rest.
+ */
+const ASCII_WORD = /^[A-Za-z0-9_]$/;
+
+function bounded(pattern: string, text: string): string {
+  const chars = Array.from(text);
+  const edge = (char: string | undefined): string =>
+    char !== undefined && ASCII_WORD.test(char) ? "\\b" : "\\B";
+  return `${edge(chars[0])}${pattern}${edge(chars.at(-1))}`;
+}
+
 function substitution(message: string, level: string, options: string[], swaps: Swaps): string {
   return [
     VALE_MARKER,
@@ -111,6 +129,7 @@ function substitution(message: string, level: string, options: string[], swaps: 
     `message: ${doubleQuoted(message)}`,
     `level: ${level}`,
     "ignorecase: true",
+    "nonword: true",
     ...options,
     "swap:",
     ...swaps.lines(),
@@ -174,8 +193,8 @@ export const valeWriter: TermWriter = {
       const labelIsAllCaps = casingOf(label) === "all-caps";
       for (const designation of [label, ...(term.record["alt-labels"] ?? [])]) {
         const kind = casingOf(designation);
-        if (kind === "lowercase") lowercase.add(escapeRegex(designation), sentenceStartPattern(designation));
-        if (kind === "mixed") casing.add(escapeRegex(designation.toLowerCase()), swapValue(designation));
+        if (kind === "lowercase") lowercase.add(bounded(escapeRegex(designation), designation), sentenceStartPattern(designation));
+        if (kind === "mixed") casing.add(bounded(escapeRegex(designation.toLowerCase()), designation), swapValue(designation));
         if (kind !== "all-caps" || designation === label || labelIsAllCaps || labels.has(designation)) continue;
         const name = acronymFileName(designation);
         const own = OWN_FILES.find((file) => file.toLowerCase() === name.toLowerCase());
@@ -186,7 +205,7 @@ export const valeWriter: TermWriter = {
         acronyms.push({ name, content: acronymRule(designation, label) });
       }
       for (const hidden of term.record["hidden-labels"] ?? []) {
-        deprecated.add(escapeRegex(hidden), swapValue(label));
+        deprecated.add(bounded(escapeRegex(hidden), hidden), swapValue(label));
       }
     }
 

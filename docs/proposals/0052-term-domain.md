@@ -360,11 +360,12 @@ extends: substitution
 message: "Write '%[2]s' in lowercase, except to start a sentence."
 level: error
 ignorecase: true
+nonword: true
 vocab: false
 swap:
-  progressive lens: "[Pp]rogressive lens"
-  graduated lens: "[Gg]raduated lens"
-  application programming interface: "[Aa]pplication programming interface"
+  \bprogressive lens\b: "[Pp]rogressive lens"
+  \bgraduated lens\b: "[Gg]raduated lens"
+  \bapplication programming interface\b: "[Aa]pplication programming interface"
 ```
 
 ```yaml
@@ -395,6 +396,15 @@ a term, and nothing from the term set stops it.
 prints what the writer wrote, so the message never shows a pattern. Only a
 label that is entirely lowercase goes there. `iPhone` starts lowercase but is not
 lowercase, so it goes to `Casing.yml` with its exact form.
+
+**Every key carries its own word boundaries.** Vale wraps a swap key in
+`\b…\b` unless the rule sets `nonword`, and a Go `\b` knows only ASCII word
+characters. So a term ending in a symbol never matched. A real run left `c++`
+unflagged beside `C++` in the term set, and a term ending in `é` fails the same
+way. The rules set `nonword: true`, and manni writes each edge itself: `\b`
+beside an ASCII word character, `\B` beside anything else. For an ordinary word
+that is exactly Vale's own wrapping. With it, the same run flagged `c++` and
+left `c++x` and `kubernetesish` alone.
 
 **All-caps terms get no casing rule.** Case-enforcing a three-letter string fires
 on ordinary words, and at two letters (`IT`, `US`) it fires on nearly every
