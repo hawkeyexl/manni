@@ -15,7 +15,7 @@
  *   0  every file linted clean
  *   1  the run produced findings
  *   2  the tool could not do its job - bad usage, missing template, unreadable
- *      input. A MooseLintError is always this, never a lint failure.
+ *      input. A LintError is always this, never a lint failure.
  *
  * The 1/2 split is what lets a workflow tell "the docs are wrong" apart from
  * "the linter is misconfigured", which a single non-zero exit cannot.
@@ -30,10 +30,20 @@ import {
   reportConfig,
   splitList,
 } from "../shared/cli-options.js";
+import { shouldColor } from "../shared/color.js";
 import { fail } from "../shared/run.js";
 import { notice } from "../shared/warn.js";
-import { STDIN_TOKEN } from "../meta/internal.js";
-import { MooseLintError } from "./types.js";
+import {
+  OMITTED_WHEN_CLEAN,
+  REPORT_FORMAT_LIST,
+  STDIN_TOKEN,
+} from "../meta/internal.js";
+import {
+  REPORT_FORMATS,
+  isReportFormat,
+  type ReportFormat as FamilyFormat,
+} from "../meta/index.js";
+import { LintError } from "./types.js";
 import { runLint } from "./commands/lint.js";
 import { runTemplates } from "./commands/templates.js";
 import { runTools } from "./commands/tools.js";
@@ -45,7 +55,6 @@ import {
   type ListFormat,
   type ReportFormat,
 } from "./reporters/index.js";
-import { shouldColor } from "./reporters/color.js";
 
 /** The options `check` and `structure` share, in the family's spelling. */
 interface InputCliOptions {
@@ -94,8 +103,9 @@ interface ToolsCommandOptions {
 
 // `explain` is reachable through `--explain`, not `-f`: it reports on
 // configuration rather than on documents, and offering it as a format would
-// invite `-f explain` alongside a lint that then never happens.
-const REPORT_FORMATS = new Set<string>(["pretty", "json", "github", "sarif"]);
+// invite `-f explain` alongside a lint that then never happens. The `-f` set
+// itself is the family's, from meta, rather than a fourth hand-kept copy of
+// the same five words.
 const LIST_FORMATS = new Set<string>(["pretty", "json"]);
 
 /** The heading the tool's own options print under, after the shared ones. */
@@ -107,20 +117,33 @@ function resolveColor(program: Command): boolean {
   return shouldColor({ noColor, isTTY: process.stdout.isTTY });
 }
 
-function reportFormat(value: unknown): ReportFormat {
+function reportFormat(value: unknown): FamilyFormat {
   const format = String(value);
-  if (!REPORT_FORMATS.has(format)) {
-    throw new MooseLintError(
-      `Unknown --format "${format}". Use pretty, json, github, or sarif.`,
+  if (!isReportFormat(format)) {
+    throw new LintError(
+      `Unknown --format "${format}". Use ${REPORT_FORMAT_LIST}.`,
     );
   }
-  return format as ReportFormat;
+  return format;
+}
+
+/**
+ * Whether a clean run may print nothing at all in this format.
+ *
+ * Only `github` may: an empty annotation stream is a clean check. Every other
+ * format owes its envelope - an empty JSON array, a SARIF log with no results,
+ * a JUnit suite of passing testcases - because a consumer parsing stdout must
+ * not have to treat "no output" as a third outcome. `explain` is never clean
+ * or dirty; it always has something to say.
+ */
+function omittedWhenClean(format: ReportFormat): boolean {
+  return format !== "explain" && OMITTED_WHEN_CLEAN.has(format);
 }
 
 function listFormat(value: unknown): ListFormat {
   const format = String(value);
   if (!LIST_FORMATS.has(format)) {
-    throw new MooseLintError(
+    throw new LintError(
       `Unknown --format "${format}". Use pretty or json.`,
     );
   }
@@ -135,7 +158,7 @@ function listFormat(value: unknown): ListFormat {
 function assertTool(job: "structure", value: string | undefined): void {
   const tools = TOOLS_BY_JOB[job];
   if (value === undefined || (tools as readonly string[]).includes(value)) return;
-  throw new MooseLintError(
+  throw new LintError(
     `Unknown --tool "${value}" for ${job}. Use ${tools.join(", ")}.`,
   );
 }
@@ -158,7 +181,7 @@ function withInputOptions(command: Command): Command {
     .option("--as <format>", "force an input format (e.g. markdown, mdx)")
     .option(
       "-f, --format <format>",
-      "output: pretty | json | github | sarif",
+      `output: ${REPORT_FORMATS.join(" | ")}`,
       "pretty",
     )
     .option("-c, --config <path>", "path to a manni config file")
@@ -243,8 +266,11 @@ export function buildProgram(): Command {
     });
 
     const color = resolveColor(command.parent ?? command);
-    const text = render(run, explain ? "explain" : format, { color });
-    if (text.length > 0) process.stdout.write(`${text}\n`);
+    const chosen: ReportFormat = explain ? "explain" : format;
+    const text = render(run, chosen, { color });
+    if (text.length > 0 || !omittedWhenClean(chosen)) {
+      process.stdout.write(`${text}\n`);
+    }
     // `--explain` answers a question about configuration, so its exit code
     // reports whether it could answer it - not whether the docs are clean.
     //

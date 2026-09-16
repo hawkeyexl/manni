@@ -10,18 +10,20 @@
  */
 
 import { ToolError } from "../shared/errors.js";
+import type { Severity } from "../shared/severity.js";
 
 /**
  * Operational/usage failure. Exits 2; never used for lint findings.
  *
  * Extends the umbrella's `ToolError`, which is what the shared bin runner
  * matches on; the subclass stays so this tool's tests and library callers can
- * match on it by name.
+ * match on it by name. Named for its domain, as `A11yError`, `CiteError` and
+ * `KeyError` are.
  */
-export class MooseLintError extends ToolError {
+export class LintError extends ToolError {
   constructor(message: string) {
     super(message);
-    this.name = "MooseLintError";
+    this.name = "LintError";
   }
 }
 
@@ -155,8 +157,19 @@ export interface DocumentParser {
   parse(content: string, filePath: string): DocumentTree;
 }
 
-/** Severity of a finding. Reserved for future rule-level configuration. */
-export type Severity = "error" | "warning";
+/**
+ * How much a finding weighs, on the one scale every manni tool speaks
+ * (`src/shared/severity.ts`): `notice | warning | error`.
+ *
+ * Every structural finding is an `error` today - a template either describes a
+ * document or it does not - so the scale is here for the jobs to come rather
+ * than for a choice this one makes. It is the family's and not this tool's
+ * private pair, because a flag or config key two domains both have carries the
+ * same name *and* the same values, and a prose job's warnings have to mean
+ * what cite's and a11y's do. Re-exported so `lint.Severity` names the same
+ * type a caller already has.
+ */
+export type { Severity };
 
 /**
  * One structural violation.

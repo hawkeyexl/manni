@@ -120,11 +120,14 @@ describe("renderSarif rule descriptors", () => {
     file({ file: "b.md", findings: [finding()] }),
   ];
 
+  // The descriptor id is the family rule id, not the internal `type`: it is
+  // what a code-scanning alert is filed and de-duplicated under, and it has to
+  // be the same string the JSON, JUnit and GitHub reporters use.
   it("declares one descriptor per distinct type, in first-seen order", () => {
     const rules = theRun(sarif(mixed)).tool.driver.rules;
     expect(rules.map((r: { id: string }) => r.id)).toEqual([
-      "missing_section",
-      "lists_count_error",
+      "manni:lint/structure/missing-section",
+      "manni:lint/structure/lists-count",
     ]);
   });
 
@@ -132,7 +135,8 @@ describe("renderSarif rule descriptors", () => {
     const rules = theRun(sarif(mixed)).tool.driver.rules;
     expect(rules[0].name).toBe("MissingSection");
     expect(rules[0].shortDescription.text).toBe("Missing section");
-    expect(rules[1].name).toBe("ListsCountError");
+    expect(rules[1].name).toBe("ListsCount");
+    expect(rules[1].shortDescription.text).toBe("Lists count");
   });
 
   it("points every result's ruleIndex at the descriptor its ruleId names", () => {
@@ -168,18 +172,25 @@ describe("renderSarif rule descriptors", () => {
 });
 
 describe("renderSarif results", () => {
-  it("maps severity onto the SARIF level", () => {
+  // The family scale is `notice | warning | error`; SARIF spells the lowest
+  // one `note`. Meta's reporter maps it the same way.
+  it("maps every family severity onto the SARIF level", () => {
     const run = theRun(
       sarif([
         file({
           findings: [
             finding({ severity: "error" }),
             finding({ type: "lists_count_error", severity: "warning" }),
+            finding({ type: "heading_const_error", severity: "notice" }),
           ],
         }),
       ]),
     );
-    expect(run.results.map((r: { level: string }) => r.level)).toEqual(["error", "warning"]);
+    expect(run.results.map((r: { level: string }) => r.level)).toEqual([
+      "error",
+      "warning",
+      "note",
+    ]);
   });
 
   it("copies the region across unchanged - both ends are 1-based and endColumn is exclusive on both sides", () => {

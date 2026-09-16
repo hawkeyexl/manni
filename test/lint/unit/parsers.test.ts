@@ -6,7 +6,7 @@ import {
   parserForExtension,
   supportedExtensions,
 } from "../../../src/lint/parsers/index.js";
-import { MooseLintError } from "../../../src/lint/types.js";
+import { LintError } from "../../../src/lint/types.js";
 import type { SectionNode } from "../../../src/lint/types.js";
 
 const parse = (md: string) => markdownParser.parse(md, "test.md");
@@ -196,7 +196,7 @@ describe("mdx parser", () => {
 
   it("reports a malformed MDX file as an operational error naming the file", () => {
     expect(() => mdxParser.parse("# A\n\n{unclosed\n", "broken.mdx")).toThrow(
-      MooseLintError,
+      LintError,
     );
   });
 });

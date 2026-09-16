@@ -10,8 +10,9 @@
  */
 import { readFile } from "node:fs/promises";
 import { extname, resolve } from "node:path";
+import { errorMessage } from "../../shared/errors.js";
 import {
-  MooseLintError,
+  LintError,
   type DocumentParser,
   type DocumentTree,
   type FileResult,
@@ -272,7 +273,7 @@ async function lintOne(
 ): Promise<LintFileResult> {
   if (!parser.implemented) {
     // Roadmap parsers are registered on purpose, and their `parse()` throws a
-    // MooseLintError that already names the format. Harvesting that message
+    // LintError that already names the format. Harvesting that message
     // keeps the wording in one place instead of restating it here.
     let reason = `${parser.label} is not implemented yet.`;
     try {
@@ -280,7 +281,7 @@ async function lintOne(
     } catch (err) {
       // The parser prefixes its message with the file path. Every report names
       // the file already, and these paths are long, so drop the duplicate.
-      const message = (err as Error).message;
+      const message = errorMessage(err);
       reason = message.startsWith(`${label}: `)
         ? message.slice(label.length + 2)
         : message;
@@ -298,7 +299,7 @@ async function lintOne(
     return {
       file: label,
       success: false,
-      findings: [parseFinding((err as Error).message)],
+      findings: [parseFinding(errorMessage(err))],
       template: null,
     };
   }
@@ -354,7 +355,7 @@ async function lintOne(
         {
           type: "template_error",
           heading: null,
-          message: (err as Error).message,
+          message: errorMessage(err),
           position: metaPosition,
           severity: "error",
         },
@@ -384,7 +385,7 @@ async function lintOne(
     classifyRef(resolution.ref).kind === "url"
   ) {
     return brokenTemplate(
-      new MooseLintError(
+      new LintError(
         `${FILE_TEMPLATE_KEY} may not name a URL ("${resolution.ref}"): a document ` +
           `must not choose what the linter fetches. Declare it in manni.config.yaml ` +
           `under "templates:" or "types:", or pass it with --template.`,
@@ -439,7 +440,7 @@ async function lintOne(
     // Without this the raise escapes `runLint` and kills the run, so one bad
     // pattern hides the findings in every other page, which is the outcome the
     // load path above exists to prevent.
-    if (err instanceof MooseLintError) return brokenTemplate(err);
+    if (err instanceof LintError) return brokenTemplate(err);
     throw err;
   }
 
@@ -467,7 +468,7 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
   const cwd = run.base;
 
   if (run.inputs.length === 0) {
-    throw new MooseLintError(
+    throw new LintError(
       "No files to check. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.",
     );
   }
@@ -476,7 +477,7 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
   // not after walking a tree of files it was going to mis-parse anyway.
   const forcedParser = opts.as != null ? parserByName(opts.as) : undefined;
   if (opts.as != null && !forcedParser) {
-    throw new MooseLintError(
+    throw new LintError(
       `Unknown format "${opts.as}". Run "manni lint tools" to see the registered formats.`,
     );
   }
@@ -567,7 +568,7 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
 
   if (usingStdin) {
     if (!forcedParser) {
-      throw new MooseLintError(
+      throw new LintError(
         "Reading from stdin (-) requires --as <format> to choose a parser.",
       );
     }
@@ -636,7 +637,7 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
       .filter((line): line is string => line !== null)
       .join(" ");
 
-    throw new MooseLintError(
+    throw new LintError(
       `Nothing was checked: all ${skipped} file(s) were skipped. ${advice} ` +
         `Run "manni lint structure <paths> --explain" to see how each file resolved.`,
     );

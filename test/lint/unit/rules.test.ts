@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { MooseLintError } from "../../../src/lint/types.js";
+import { LintError } from "../../../src/lint/types.js";
 import type {
   CodeNode,
   ContentNode,
@@ -289,7 +289,7 @@ describe("checkParagraphs", () => {
   it("treats an uncompilable pattern as a broken template, not a finding", () => {
     expect(() =>
       checkParagraphs(section([paragraph("one")]), { patterns: ["("] })
-    ).toThrow(MooseLintError);
+    ).toThrow(LintError);
     expect(() =>
       checkParagraphs(section([paragraph("one")]), { patterns: ["("] })
     ).toThrow(/Invalid pattern "\("/);
@@ -712,7 +712,7 @@ describe("compilePattern", () => {
   });
 
   it("still names the template's own bad pattern, and does not memo it", () => {
-    expect(() => compilePattern("Step (")).toThrow(MooseLintError);
+    expect(() => compilePattern("Step (")).toThrow(LintError);
     expect(() => compilePattern("Step (")).toThrow(/Invalid pattern "Step \("/);
   });
 

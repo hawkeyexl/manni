@@ -3,6 +3,7 @@ import {
   render,
   renderGithub,
   renderJson,
+  renderJunit,
   renderPretty,
 } from "../../../src/lint/reporters/index.js";
 import { renderSarif } from "../../../src/lint/reporters/sarif.js";
@@ -97,10 +98,14 @@ describe("json reporter", () => {
     expect(parsed[1].errors).toHaveLength(2);
   });
 
-  it("uses exactly the error keys { type, heading, message, position }", () => {
+  // `type` keeps its place and its spelling. `ruleId` and `tool` join it:
+  // additive keys are safe, a rename is not.
+  it("uses exactly the error keys { type, ruleId, tool, heading, message, position }", () => {
     const error: Record<string, unknown> = JSON.parse(renderJson(run))[1].errors[0];
     expect(Object.keys(error)).toEqual([
       "type",
+      "ruleId",
+      "tool",
       "heading",
       "message",
       "position",
@@ -108,6 +113,12 @@ describe("json reporter", () => {
     expect(error.type).toBe("missing_section");
     expect(error.heading).toBe("Prerequisites");
     expect(error.message).toBe("Required section is missing");
+  });
+
+  it("carries the namespaced rule id and the tool that produced it", () => {
+    const error: Record<string, unknown> = JSON.parse(renderJson(run))[1].errors[0];
+    expect(error.ruleId).toBe("manni:lint/structure/missing-section");
+    expect(error.tool).toBe("manni");
   });
 
   it("nests source location as position.start / position.end", () => {
@@ -182,10 +193,12 @@ describe("pretty reporter", () => {
     const out = renderPretty(run, { color: false });
     expect(out).toContain("✗ bad.md");
     expect(out).toContain("3:1");
-    expect(out).toContain("missing_section");
+    // The namespaced id, not the bare `type`: it is what a reader searches
+    // for, and what every other reporter files the finding under.
+    expect(out).toContain("manni:lint/structure/missing-section");
     expect(out).toContain("Prerequisites: Required section is missing");
     expect(out).toContain("9:3");
-    expect(out).toContain("paragraph_count");
+    expect(out).toContain("manni:lint/structure/paragraph-count");
     // `checked` counts linted files only; the skipped one is counted apart.
     expect(out).toContain("2 files checked, 1 passed, 1 failed, 1 skipped");
   });
@@ -209,7 +222,11 @@ describe("github reporter", () => {
    * not about which of several lines it landed on. Anything not overridden
    * matches the shared fixture.
    */
-  function annotationFor(over: { file?: string; message?: string }): string {
+  function annotationFor(over: {
+    file?: string;
+    message?: string;
+    severity?: Finding["severity"];
+  }): string {
     const single: LintRun = {
       results: [
         {
@@ -219,6 +236,7 @@ describe("github reporter", () => {
             finding({
               heading: null,
               message: over.message ?? "Required section is missing",
+              ...(over.severity === undefined ? {} : { severity: over.severity }),
             }),
           ],
           template: "how-to",
@@ -229,12 +247,22 @@ describe("github reporter", () => {
     return renderGithub(single);
   }
 
-  it("emits one ::error annotation per finding, with file, line and col", () => {
+  // `title=<ruleId>` rather than a `[type]` prefix inside the message, which
+  // is where cite puts it: GitHub renders the title as the alert's heading,
+  // and repeating it in the body says the rule's name twice.
+  it("emits one annotation per finding, with file, line, col and the rule id as title", () => {
     const out = renderGithub(run);
     expect(out.split("\n")).toEqual([
-      "::error file=bad.md,line=3,col=1::[missing_section] Prerequisites: Required section is missing",
-      "::error file=bad.md,line=9,col=3::[paragraph_count] Overview: Expected at least 2 paragraphs, found 1",
+      "::error file=bad.md,line=3,col=1,title=manni%3Alint/structure/missing-section::Prerequisites: Required section is missing",
+      "::error file=bad.md,line=9,col=3,title=manni%3Alint/structure/paragraph-count::Overview: Expected at least 2 paragraphs, found 1",
     ]);
+  });
+
+  // The family scale is GitHub's, so the level *is* the severity. Every
+  // structural finding is an error today; a warning must not fail the check.
+  it("uses the finding's severity as the annotation level", () => {
+    const out = annotationFor({ severity: "warning" });
+    expect(out.startsWith("::warning ")).toBe(true);
   });
 
   it("annotates nothing for passing or skipped files", () => {
@@ -250,7 +278,7 @@ describe("github reporter", () => {
   it("escapes a colon in the file property so a Windows path still parses", () => {
     const out = annotationFor({ file: "C:\\docs\\a.md" });
     expect(out).toBe(
-      "::error file=C%3A\\docs\\a.md,line=3,col=1::[missing_section] Required section is missing",
+      "::error file=C%3A\\docs\\a.md,line=3,col=1,title=manni%3Alint/structure/missing-section::Required section is missing",
     );
   });
 
@@ -258,7 +286,7 @@ describe("github reporter", () => {
   // half and leaves the remainder parsed as a nameless second property.
   it("escapes a comma in the file property so the path stays one property", () => {
     const out = annotationFor({ file: "docs/a,b.md" });
-    expect(out).toContain("file=docs/a%2Cb.md,line=3,col=1::");
+    expect(out).toContain("file=docs/a%2Cb.md,line=3,col=1,title=");
   });
 
   // A literal `%` is the escape character: left alone it makes GitHub read the
@@ -304,10 +332,47 @@ describe("github reporter", () => {
   });
 });
 
+/**
+ * JUnit rides meta's renderer over adapted results, exactly as cite's does, so
+ * the family ships one XML writer and one escaping rule. What is lint's is the
+ * classname and the `<failure type>`, which is the namespaced rule id.
+ */
+describe("junit reporter", () => {
+  it("emits one testcase per file and one failure per finding", () => {
+    const xml = renderJunit(run);
+    expect(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);
+    expect(xml).toContain('<testcase name="ok.md" classname="manni.lint"/>');
+    expect(xml).toContain('<testcase name="bad.md" classname="manni.lint">');
+    expect([...xml.matchAll(/<failure /g)]).toHaveLength(2);
+  });
+
+  it("files each failure under the namespaced rule id", () => {
+    const xml = renderJunit(run);
+    expect(xml).toContain('type="manni:lint/structure/missing-section"');
+    expect(xml).toContain('type="manni:lint/structure/paragraph-count"');
+  });
+
+  it("names the suite and counts files, not findings", () => {
+    const xml = renderJunit(run);
+    // Three files in, three testcases: the skipped one is a testcase too, or
+    // a file that was never linted would vanish from the tab.
+    expect(xml).toContain('tests="3"');
+    expect(xml).toContain('failures="1"');
+  });
+
+  it("owes its envelope on a clean run", () => {
+    const xml = renderJunit(cleanRun);
+    expect(xml).toContain('tests="2"');
+    expect(xml).toContain('failures="0"');
+    expect(xml).not.toContain("<failure");
+  });
+});
+
 describe("render", () => {
   it("dispatches on the format and defaults to pretty", () => {
     expect(render(run, "json")).toBe(renderJson(run));
     expect(render(run, "github")).toBe(renderGithub(run));
+    expect(render(run, "junit")).toBe(renderJunit(run));
     expect(render(run, "pretty", { color: false })).toBe(
       renderPretty(run, { color: false }),
     );

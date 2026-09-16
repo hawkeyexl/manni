@@ -7,10 +7,25 @@ import type { Finding } from "../types.js";
 import type { LintRun } from "../commands/lint.js";
 import type { FormatInfo, ToolInfo } from "../commands/tools.js";
 import type { TemplateInfo, TemplatesInfo } from "../commands/templates.js";
-import { palette, type Colors } from "./color.js";
+import { palette, type Colors } from "../../shared/color.js";
+import type { ReportFormat as FamilyFormat } from "../../meta/index.js";
+import { ruleId, TOOL_NAME } from "../core/rule-id.js";
+import { renderJunit } from "./junit.js";
 import { renderSarif } from "./sarif.js";
 
-export type ReportFormat = "pretty" | "json" | "github" | "explain" | "sarif";
+export { renderJunit, toValidationResults } from "./junit.js";
+
+/**
+ * Every `-f` value, plus `--explain`.
+ *
+ * The findings formats are the family's, taken from meta rather than restated,
+ * so a format added there is available here the moment lint's `render` grows a
+ * case for it - and a value lint does not handle is a compile error instead of
+ * a silent fall-through to pretty. `explain` is lint's own: it is reachable
+ * through `--explain` and never through `-f`, because it reports on
+ * configuration rather than on documents.
+ */
+export type ReportFormat = FamilyFormat | "explain";
 
 /** Listing commands have nothing to annotate, so they offer no `github`. */
 export type ListFormat = "pretty" | "json";
@@ -64,8 +79,11 @@ export function renderPretty(run: LintRun, opts: ReportOptions = {}): string {
     }
     lines.push(`${c.red("✗")} ${result.file}`);
     for (const finding of result.findings) {
+      // The namespaced id rather than the bare `type`: it is what SARIF,
+      // JUnit and the GitHub annotation file the finding under, so the string
+      // a reader copies out of the terminal is the one they can search for.
       lines.push(
-        `    ${c.dim(locate(finding))}  ${c.cyan(finding.type)}  ${describeFinding(finding)}`,
+        `    ${c.dim(locate(finding))}  ${c.cyan(ruleId(finding.type))}  ${describeFinding(finding)}`,
       );
     }
   }
@@ -93,6 +111,12 @@ export function renderJson(run: LintRun): string {
     success: result.success,
     errors: result.findings.map((finding) => ({
       type: finding.type,
+      // Additive, and deliberately beside `type` rather than instead of it.
+      // `ruleId` is the family id every other reporter files this finding
+      // under; `tool` names which tool produced it, the question a second
+      // lint job makes worth asking.
+      ruleId: ruleId(finding.type),
+      tool: TOOL_NAME,
       heading: finding.heading,
       message: finding.message,
       position: finding.position,
@@ -132,7 +156,18 @@ function escapeProperty(value: string): string {
 }
 
 /**
- * GitHub workflow commands: one `::error` annotation per finding.
+ * GitHub workflow commands: one annotation per finding, shaped as cite's are -
+ * `::<severity> file=…,line=…,col=…,title=<ruleId>::<message>`.
+ *
+ * The rule id is a `title=` property rather than a `[type]` prefix inside the
+ * message. GitHub renders the title as the alert's own heading, so the prefix
+ * spelled the rule's name a second time; and `title` is the field a reader can
+ * group and filter on, which prose can never be.
+ *
+ * The level is the severity, not a constant `error`. The family scale was
+ * chosen to be GitHub's for exactly this: `::warning` and `::notice` render
+ * inline like `::error` but do not fail the check, which is the severity
+ * invariant in GitHub's terms. Every structural finding is an `error` today.
  *
  * Line breaks are escaped rather than collapsed to spaces, as this once did.
  * `%0A` is the format's own answer and GitHub renders it as a multi-line
@@ -148,11 +183,10 @@ export function renderGithub(run: LintRun): string {
         `file=${escapeProperty(result.file)}`,
         `line=${finding.position.start.line}`,
         `col=${finding.position.start.column}`,
+        `title=${escapeProperty(ruleId(finding.type))}`,
       ];
-      const message = escapeData(
-        `[${finding.type}] ${describeFinding(finding)}`,
-      );
-      lines.push(`::error ${params.join(",")}::${message}`);
+      const message = escapeData(describeFinding(finding));
+      lines.push(`::${finding.severity} ${params.join(",")}::${message}`);
     }
   }
   return lines.join("\n");
@@ -231,6 +265,8 @@ export function render(
       return renderGithub(run);
     case "sarif":
       return renderSarif(run, opts.root === undefined ? {} : { root: opts.root });
+    case "junit":
+      return renderJunit(run);
     case "explain":
       return renderExplain(run, opts);
     case "pretty":

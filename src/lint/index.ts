@@ -90,6 +90,7 @@ export {
   renderPretty,
   renderJson,
   renderGithub,
+  renderJunit,
   renderTemplates,
   renderTools,
 } from "./reporters/index.js";
@@ -98,5 +99,13 @@ export type {
   ReportOptions,
   ListFormat,
 } from "./reporters/index.js";
-export { palette, shouldColor } from "./reporters/color.js";
+export { renderSarif } from "./reporters/sarif.js";
+export type { SarifOptions } from "./reporters/sarif.js";
+// A finding's durable identity, so a caller filing or correlating findings
+// spells the id the same way every reporter does.
+export { RULE_ID_PREFIX, TOOL_NAME, ruleId, ruleName } from "./core/rule-id.js";
+// Colour is the family's decision, made once in `src/shared/color.js`. These
+// are re-exported here so a library caller building lint's reports does not
+// have to reach for another tool's entry point to turn ANSI on or off.
+export { palette, shouldColor } from "../shared/color.js";
 export * from "./types.js";

@@ -88,7 +88,7 @@ semantics (`--as`, `--exclude`, `-c/--config`, `-f/--format`, `--no-color`). Do
 not introduce per-command input conventions.
 
 Exit codes follow clig.dev and are load-bearing for CI: **0** clean, **1** lint
-findings, **2** operational or usage error. A `MooseLintError` always means 2.
+findings, **2** operational or usage error. A `LintError` always means 2.
 
 ### The JSON reporter's shape is an API
 

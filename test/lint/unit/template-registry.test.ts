@@ -14,29 +14,29 @@ import {
   type TemplateResolver,
 } from "../../../src/lint/core/template-registry.js";
 import { isRequired, isSlot, type Template } from "../../../src/lint/core/template.js";
-import { MooseLintError } from "../../../src/lint/types.js";
+import { LintError } from "../../../src/lint/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixtures = join(here, "..", "fixtures", "templates");
 const repoRoot = join(here, "..", "..", "..");
 
-/** The message of the `MooseLintError` a rejected promise carries. */
+/** The message of the `LintError` a rejected promise carries. */
 async function rejectionMessage(promise: Promise<unknown>): Promise<string> {
   try {
     await promise;
   } catch (err) {
-    expect(err).toBeInstanceOf(MooseLintError);
+    expect(err).toBeInstanceOf(LintError);
     return (err as Error).message;
   }
   throw new Error("expected the call to reject, but it resolved");
 }
 
-/** The message of the `MooseLintError` a synchronous call throws. */
+/** The message of the `LintError` a synchronous call throws. */
 function thrownMessage(fn: () => unknown): string {
   try {
     fn();
   } catch (err) {
-    expect(err).toBeInstanceOf(MooseLintError);
+    expect(err).toBeInstanceOf(LintError);
     return (err as Error).message;
   }
   throw new Error("expected the call to throw, but it returned");
@@ -426,7 +426,7 @@ describe("resolveExtends", () => {
 
   const load: TemplateResolver = async (ref) => {
     const template = library[ref];
-    if (!template) throw new MooseLintError(`no such template: ${ref}`);
+    if (!template) throw new LintError(`no such template: ${ref}`);
     return template;
   };
 

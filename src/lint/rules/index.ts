@@ -12,7 +12,7 @@
  * item's `children`, which is why `lists.items` can recurse.
  */
 
-import { MooseLintError } from "../types.js";
+import { LintError } from "../types.js";
 import type {
   CodeNode,
   ContentNode,
@@ -161,7 +161,7 @@ export function compilePattern(pattern: string): RegExp {
     return regex;
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
-    throw new MooseLintError(`Invalid pattern "${pattern}": ${reason}`);
+    throw new LintError(`Invalid pattern "${pattern}": ${reason}`);
   }
 }
 

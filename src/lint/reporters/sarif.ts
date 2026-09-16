@@ -14,6 +14,7 @@
  */
 import type { Finding, Position, Severity, SkipReason } from "../types.js";
 import type { LintFileResult, LintRun } from "../commands/lint.js";
+import { ruleId, ruleName } from "../core/rule-id.js";
 import pkg from "../../../package.json" with { type: "json" };
 
 const SARIF_VERSION = "2.1.0";
@@ -116,13 +117,18 @@ export interface SarifOptions {
 }
 
 /**
- * `Severity` -> SARIF `level`. A total map rather than a ternary, so a third
- * severity fails to compile here instead of quietly becoming `error`. SARIF's
- * `note` and `none` have no `Severity` that means them.
+ * The family scale -> SARIF `level`. A total map rather than a ternary, so a
+ * fourth severity fails to compile here instead of quietly becoming `error`.
+ *
+ * The family's three values were chosen to be GitHub's, and SARIF agrees on
+ * two of them; it spells the lowest one `note`. meta's reporter folds
+ * `notice` onto `note` the same way, so a repository uploading both tools'
+ * reports sees one scale. SARIF's `none` has no `Severity` that means it.
  */
 const LEVELS: Record<Severity, SarifLevel> = {
-  error: "error",
+  notice: "note",
   warning: "warning",
+  error: "error",
 };
 
 /**
@@ -354,17 +360,23 @@ function buildRules(run: LintRun): RuleIndex {
     }
   }
 
-  const descriptors = order.map((id) => {
+  const descriptors = order.map((type) => {
+    // The descriptor id is the **family** rule id, not the internal `type`:
+    // it is what an alert is filed and de-duplicated under, and it has to be
+    // the string every other reporter uses for the same finding. `name` and
+    // `shortDescription` are derived from the rule half alone, so GitHub's
+    // rule list reads "MissingSection", not "ManniLintStructureMissingSection".
+    const rule = ruleName(type);
     const descriptor: ReportingDescriptor = {
-      id,
-      name: pascalCase(id),
-      shortDescription: { text: humanize(id) },
+      id: ruleId(type),
+      name: pascalCase(rule),
+      shortDescription: { text: humanize(rule) },
     };
     // Only when every finding of this type agreed on a severity. Severity is
     // per finding, not per rule, so a type that appeared as both an error and
     // a warning has no honest default - and every result states its own
     // `level` regardless, which is what a consumer actually reads.
-    const [only, ...rest] = [...(severities.get(id) ?? [])];
+    const [only, ...rest] = [...(severities.get(type) ?? [])];
     if (only !== undefined && rest.length === 0) {
       descriptor.defaultConfiguration = { level: LEVELS[only] };
     }
@@ -381,7 +393,7 @@ function toResult(
   root: string,
 ): SarifResult {
   return {
-    ruleId: finding.type,
+    ruleId: ruleId(finding.type),
     // Always populated in practice, since the index is built from these same
     // findings. Omitted rather than faked if it ever is not: a wrong index
     // points the alert at somebody else's rule, which is worse than none.

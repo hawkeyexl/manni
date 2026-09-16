@@ -19,7 +19,7 @@ import { describe, expect, it } from "vitest";
 import { asciidocParser } from "../../../src/lint/parsers/asciidoc.js";
 import { validateDocument } from "../../../src/lint/core/validator.js";
 import { loadTemplate } from "../../../src/lint/core/template-registry.js";
-import { MooseLintError } from "../../../src/lint/types.js";
+import { LintError } from "../../../src/lint/types.js";
 import type { ListNode, SectionNode } from "../../../src/lint/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -341,7 +341,7 @@ describe("a metadata title standing in for a missing document title", () => {
 // stack trace out of Opal.
 it("reports input Asciidoctor cannot load as an operational error naming the file", () => {
   const notAString = 42 as unknown as string;
-  expect(() => asciidocParser.parse(notAString, "broken.adoc")).toThrow(MooseLintError);
+  expect(() => asciidocParser.parse(notAString, "broken.adoc")).toThrow(LintError);
   expect(() => asciidocParser.parse(notAString, "broken.adoc")).toThrow(
     /broken\.adoc: could not parse as asciidoc/,
   );

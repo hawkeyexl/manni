@@ -36,7 +36,8 @@ import type {
   Point,
   Position,
 } from "../types.js";
-import { MooseLintError } from "../types.js";
+import { LintError } from "../types.js";
+import { errorMessage } from "../../shared/errors.js";
 import type { Block } from "./sectionize.js";
 import { sectionize } from "./sectionize.js";
 import {
@@ -509,8 +510,8 @@ function load(content: string, filePath: string): AdocDocument {
     // Asciidoctor recovers from malformed *documents* - it warns about an
     // unterminated block and carries on - so this fires when the loader itself
     // refuses the input. Either way it is the file's problem, not a crash.
-    throw new MooseLintError(
-      `${filePath}: could not parse as asciidoc: ${(err as Error).message}`,
+    throw new LintError(
+      `${filePath}: could not parse as asciidoc: ${errorMessage(err)}`,
     );
   }
 }

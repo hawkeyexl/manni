@@ -90,7 +90,8 @@ import type {
   Point,
   Position,
 } from "../types.js";
-import { MooseLintError } from "../types.js";
+import { LintError } from "../types.js";
+import { errorMessage } from "../../shared/errors.js";
 import type { Block } from "./sectionize.js";
 import { sectionize } from "./sectionize.js";
 
@@ -686,21 +687,21 @@ function parseDocument(source: string, filePath: string): XmlElement {
       },
     }).parseFromString(source, "text/xml");
   } catch (err) {
-    const detail = problems[0] ?? (err as Error).message;
-    throw new MooseLintError(
+    const detail = problems[0] ?? errorMessage(err);
+    throw new LintError(
       `${filePath}: could not parse as XML: ${firstLine(detail)}`,
     );
   }
 
   if (problems.length > 0) {
-    throw new MooseLintError(
+    throw new LintError(
       `${filePath}: could not parse as XML: ${firstLine(problems[0]!)}`,
     );
   }
 
   const root = doc.documentElement;
   if (!root) {
-    throw new MooseLintError(`${filePath}: could not parse as XML: no root element`);
+    throw new LintError(`${filePath}: could not parse as XML: no root element`);
   }
   return root;
 }
@@ -746,8 +747,8 @@ function readMetadata(
     const meta = extractor.extract(content, filePath);
     return meta.present ? meta.data : null;
   } catch (err) {
-    throw new MooseLintError(
-      `${filePath}: could not read XML metadata: ${firstLine((err as Error).message)}`,
+    throw new LintError(
+      `${filePath}: could not read XML metadata: ${firstLine(errorMessage(err))}`,
     );
   }
 }
@@ -786,7 +787,7 @@ export function parseXml(
 
   const compiled = vocabularies.map(compile);
   if (compiled.length === 0) {
-    throw new MooseLintError(`${filePath}: no XML vocabularies are configured.`);
+    throw new LintError(`${filePath}: no XML vocabularies are configured.`);
   }
 
   const { best, score } = chooseVocabulary(root, compiled);
@@ -797,7 +798,7 @@ export function parseXml(
   // for - a cascade of findings that says nothing about the page and points
   // nowhere useful. The gap is in the mapping, and this is where to say so.
   if (score <= 0) {
-    throw new MooseLintError(
+    throw new LintError(
       `${filePath}: no known XML vocabulary matched <${localName(root)}>. ` +
         `manni lint understands ${names}; add an entry to XML_VOCABULARIES ` +
         `in src/parsers/xml.ts to describe another schema.`,
@@ -809,7 +810,7 @@ export function parseXml(
   const blocks = flattener.blocks;
 
   if (!blocks.some((b) => b.type === "heading")) {
-    throw new MooseLintError(
+    throw new LintError(
       `${filePath}: read as ${best.vocab.label}, but no titled section was found. ` +
         `A ${best.vocab.label} section is one of <${best.vocab.sections.join(">, <")}> ` +
         `carrying a <${best.vocab.titles.join(">/<")}>; without one the document has ` +

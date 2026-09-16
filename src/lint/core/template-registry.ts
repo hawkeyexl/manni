@@ -29,7 +29,8 @@ import { parse as parseYaml } from "yaml";
 import { dereference } from "@apidevtools/json-schema-ref-parser";
 import * as AjvNs from "ajv";
 import type { ErrorObject, SchemaObject, ValidateFunction } from "ajv";
-import { MooseLintError } from "../types.js";
+import { LintError } from "../types.js";
+import { errorMessage } from "../../shared/errors.js";
 import type { Template, TemplateFile, TemplateSection } from "./template.js";
 import templateFileSchema from "../../../schemas/lint/template.json" with { type: "json" };
 import tgdpManifest from "../../../templates/lint/tgdp/manifest.json" with { type: "json" };
@@ -126,8 +127,8 @@ async function readBuiltinFile(id: string, file: string): Promise<string> {
   try {
     return await readFile(path, "utf8");
   } catch (err) {
-    throw new MooseLintError(
-      `Built-in template "${id}" is registered but its file could not be read (${path}): ${(err as Error).message}`,
+    throw new LintError(
+      `Built-in template "${id}" is registered but its file could not be read (${path}): ${errorMessage(err)}`,
     );
   }
 }
@@ -157,7 +158,7 @@ async function loadBuiltin(id: string): Promise<Template> {
   const names = Object.keys(file.templates ?? {});
   const template = file.templates?.[names[0] ?? ""];
   if (!template || names.length !== 1) {
-    throw new MooseLintError(
+    throw new LintError(
       `Built-in template "${id}" must define exactly one template, found ${names.length}.`,
     );
   }
@@ -328,20 +329,20 @@ function describeError(error: ErrorObject): string {
 /**
  * Validate a parsed, dereferenced template file, filling in rule defaults.
  *
- * Throws `MooseLintError` naming `source` and the offending instance path. The
+ * Throws `LintError` naming `source` and the offending instance path. The
  * pre-rewrite loader threw a bare "Template is invalid" and passed the real
  * detail as `new Error(msg, {message: ...})` - an options bag that only
  * understands `cause` - so every schema error reached the user as four words.
  */
 export function validateTemplateFile(data: unknown, source: string): TemplateFile {
   const instructions = findInstructions(data);
-  if (instructions) throw new MooseLintError(instructionsMessage(source, instructions));
+  if (instructions) throw new LintError(instructionsMessage(source, instructions));
 
   const validate = fileValidator();
   if (!validate(data)) {
     const errors = validate.errors ?? [];
     const detail = errors.map(describeError).join("; ") || "does not match the template schema";
-    throw new MooseLintError(`${source} is not a valid template file: ${detail}.`);
+    throw new LintError(`${source} is not a valid template file: ${detail}.`);
   }
   return data as TemplateFile;
 }
@@ -377,13 +378,13 @@ function parseTemplateFile(raw: string, source: string, kind: RefKind): unknown 
     try {
       return JSON.parse(raw) as unknown;
     } catch (err) {
-      throw new MooseLintError(`${source} is not valid JSON: ${(err as Error).message}`);
+      throw new LintError(`${source} is not valid JSON: ${errorMessage(err)}`);
     }
   }
   try {
     return parseYaml(raw) as unknown;
   } catch (err) {
-    throw new MooseLintError(`${source} is not valid YAML: ${(err as Error).message}`);
+    throw new LintError(`${source} is not valid YAML: ${errorMessage(err)}`);
   }
 }
 
@@ -391,7 +392,7 @@ async function readText(ref: string): Promise<string> {
   try {
     return await readFile(ref, "utf8");
   } catch {
-    throw new MooseLintError(`Template file not found: "${ref}".`);
+    throw new LintError(`Template file not found: "${ref}".`);
   }
 }
 
@@ -420,14 +421,14 @@ async function fetchText(ref: string, timeoutMs: number): Promise<string> {
   } catch (err) {
     const e = err as Error;
     if (e.name === "TimeoutError" || e.name === "AbortError") {
-      throw new MooseLintError(
+      throw new LintError(
         `Failed to fetch template file "${ref}": timed out after ${timeoutMs}ms.`,
       );
     }
-    throw new MooseLintError(`Failed to fetch template file "${ref}": ${e.message}`);
+    throw new LintError(`Failed to fetch template file "${ref}": ${e.message}`);
   }
   if (!res.ok) {
-    throw new MooseLintError(`Failed to fetch template file "${ref}": HTTP ${res.status}.`);
+    throw new LintError(`Failed to fetch template file "${ref}": HTTP ${res.status}.`);
   }
   return await res.text();
 }
@@ -440,7 +441,7 @@ async function dereferenceTemplates(
   try {
     return await dereference<Record<string, unknown>>(data, DEREFERENCE_OPTIONS);
   } catch (err) {
-    throw new MooseLintError(`${source}: could not resolve a "$ref": ${(err as Error).message}`);
+    throw new LintError(`${source}: could not resolve a "$ref": ${errorMessage(err)}`);
   }
 }
 
@@ -451,7 +452,7 @@ export async function loadTemplateFile(
 ): Promise<TemplateFile> {
   const { kind } = classifyRef(ref);
   if (kind === "builtin") {
-    throw new MooseLintError(
+    throw new LintError(
       `"${ref}" is a built-in template id, not a template file. Load it with loadTemplate().`,
     );
   }
@@ -466,7 +467,7 @@ export async function loadTemplateFile(
 
   const parsed = parseTemplateFile(raw, ref, kind);
   if (!isRecord(parsed)) {
-    throw new MooseLintError(
+    throw new LintError(
       `${ref} is not a template file: expected an object at the top level, got ${
         parsed === null ? "null" : Array.isArray(parsed) ? "an array" : typeof parsed
       }.`,
@@ -501,7 +502,7 @@ export async function loadTemplate(
     // template than the author wrote and nothing says so. A built-in id names
     // exactly one template, so there is nothing a fragment could select.
     if (fragment !== null) {
-      throw new MooseLintError(
+      throw new LintError(
         `"${ref}" adds a "#${fragment}" fragment to a built-in template id. ` +
           `A built-in id names one template on its own - drop the fragment and ` +
           `use "${base}". Fragments name a template inside a file, as in ` +
@@ -510,7 +511,7 @@ export async function loadTemplate(
     }
     if (!BUILTINS.has(base)) {
       const available = [...BUILTINS.keys()].join(", ");
-      throw new MooseLintError(
+      throw new LintError(
         `Unknown built-in template "${base}". Available: ${available || "(none)"}.`,
       );
     }
@@ -531,7 +532,7 @@ export async function loadTemplate(
     // error: the page was reported as passing, not as naming a template that
     // does not exist.
     if (!Object.hasOwn(templates, fragment)) {
-      throw new MooseLintError(
+      throw new LintError(
         `${base} has no template named "${fragment}". Available: ${names.join(", ") || "(none)"}.`,
       );
     }
@@ -539,8 +540,8 @@ export async function loadTemplate(
   }
 
   if (names.length === 1) return templates[names[0]!]!;
-  if (names.length === 0) throw new MooseLintError(`${base} defines no templates.`);
-  throw new MooseLintError(
+  if (names.length === 0) throw new LintError(`${base} defines no templates.`);
+  throw new LintError(
     `${base} defines ${names.length} templates; name one with a "#" fragment ` +
       `(e.g. "${base}#${names[0] ?? ""}"). Available: ${names.join(", ")}.`,
   );
@@ -620,7 +621,7 @@ export async function resolveExtends(
   if (parentRef === undefined) return template;
 
   if (chain.includes(parentRef)) {
-    throw new MooseLintError(
+    throw new LintError(
       `Template "extends" cycle: ${[...chain, parentRef].join(" -> ")}.`,
     );
   }
@@ -687,7 +688,7 @@ export async function loadResolvedTemplate(
 
   const absolute = refRelativeTo(ref, parentRef);
   if (chain.includes(absolute)) {
-    throw new MooseLintError(
+    throw new LintError(
       `Template "extends" cycle: ${[...chain, absolute].join(" -> ")}.`,
     );
   }

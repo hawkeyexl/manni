@@ -20,7 +20,7 @@ import {
   resolveLintRun,
 } from "../../../src/lint/core/config.js";
 import configSchema from "../../../schemas/lint/config.json" with { type: "json" };
-import { MooseLintError } from "../../../src/lint/types.js";
+import { LintError } from "../../../src/lint/types.js";
 import { resetWarnings } from "../../../src/shared/warn.js";
 
 const FIXTURES = resolve(
@@ -70,15 +70,15 @@ function captureStderr(): { text: () => string; restore: () => void } {
   };
 }
 
-/** The message of the MooseLintError `run` throws. Fails if it throws nothing. */
+/** The message of the LintError `run` throws. Fails if it throws nothing. */
 async function messageOf(run: () => Promise<unknown>): Promise<string> {
   try {
     await run();
   } catch (err) {
-    expect(err).toBeInstanceOf(MooseLintError);
+    expect(err).toBeInstanceOf(LintError);
     return (err as Error).message;
   }
-  throw new Error("expected a MooseLintError, but nothing was thrown");
+  throw new Error("expected a LintError, but nothing was thrown");
 }
 
 describe("parseConfig", () => {

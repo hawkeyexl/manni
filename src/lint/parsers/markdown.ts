@@ -14,7 +14,8 @@ import remarkFrontmatter from "remark-frontmatter";
 import remarkMdx from "remark-mdx";
 import { extractFrontmatter } from "../../meta/index.js";
 import type { DocumentParser, DocumentTree } from "../types.js";
-import { MooseLintError } from "../types.js";
+import { LintError } from "../types.js";
+import { errorMessage } from "../../shared/errors.js";
 import { documentEnd, toBlocks } from "./mdast.js";
 import { sectionize } from "./sectionize.js";
 import { fencedPosition as frontmatterPosition, withMetadataTitle as withFrontmatterTitle } from "./metadata.js";
@@ -51,8 +52,8 @@ function parseWith(
   } catch (err) {
     // MDX raises on malformed expressions; a parse failure is the file's
     // problem, not a crash, so it surfaces as an operational error naming it.
-    throw new MooseLintError(
-      `${filePath}: could not parse as ${format}: ${(err as Error).message}`,
+    throw new LintError(
+      `${filePath}: could not parse as ${format}: ${errorMessage(err)}`,
     );
   }
 

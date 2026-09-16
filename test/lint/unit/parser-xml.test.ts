@@ -13,7 +13,7 @@ import { parseXml, xmlParser, XML_VOCABULARIES } from "../../../src/lint/parsers
 import type { XmlVocabulary } from "../../../src/lint/parsers/xml.js";
 import { validateDocument } from "../../../src/lint/core/validator.js";
 import { loadTemplate } from "../../../src/lint/core/template-registry.js";
-import { MooseLintError } from "../../../src/lint/types.js";
+import { LintError } from "../../../src/lint/types.js";
 import type { SectionNode } from "../../../src/lint/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -422,9 +422,9 @@ describe("xml parser: metadata", () => {
 });
 
 describe("xml parser: failure modes", () => {
-  it("raises MooseLintError naming the file for malformed XML", () => {
+  it("raises LintError naming the file for malformed XML", () => {
     expect(() => parse("<topic><title>T</topic>", "broken.xml")).toThrow(
-      MooseLintError,
+      LintError,
     );
     expect(() => parse("<topic><title>T</topic>", "broken.xml")).toThrow(
       /broken\.xml: could not parse as XML/,
@@ -433,12 +433,12 @@ describe("xml parser: failure modes", () => {
 
   it("raises for an unclosed root element", () => {
     expect(() => parse("<topic><title>T</title>", "unclosed.xml")).toThrow(
-      MooseLintError,
+      LintError,
     );
   });
 
   it("raises for content that is not XML at all", () => {
-    expect(() => parse("just some prose", "prose.xml")).toThrow(MooseLintError);
+    expect(() => parse("just some prose", "prose.xml")).toThrow(LintError);
   });
 
   it("raises on an error xmldom recovered from by guessing", () => {
@@ -446,7 +446,7 @@ describe("xml parser: failure modes", () => {
     // carries on. In XML the element tree *is* the structure, so linting a
     // repaired tree would report on a document nobody wrote.
     expect(() => parse("<topic><title>a &lt; b</title><p>x < y</p></topic>")).toThrow(
-      MooseLintError,
+      LintError,
     );
   });
 
@@ -459,7 +459,7 @@ describe("xml parser: failure modes", () => {
 
   it("names the gap when no vocabulary recognizes the document", () => {
     const xml = `<invoice><customer>Acme</customer><total>10</total></invoice>`;
-    expect(() => parse(xml, "invoice.xml")).toThrow(MooseLintError);
+    expect(() => parse(xml, "invoice.xml")).toThrow(LintError);
     expect(() => parse(xml, "invoice.xml")).toThrow(
       /invoice\.xml: no known XML vocabulary matched <invoice>.*DITA, DocBook.*XML_VOCABULARIES/s,
     );

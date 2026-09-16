@@ -47,7 +47,8 @@ import {
   type ConfigFile,
   type ConfigFileOptions,
 } from "../../shared/config-file.js";
-import { MooseLintError } from "../types.js";
+import { LintError } from "../types.js";
+import { errorMessage } from "../../shared/errors.js";
 import type { TemplateOverride } from "./resolve-template.js";
 import { refRelativeTo } from "./template-registry.js";
 
@@ -121,7 +122,7 @@ export const CONFIG_FILENAMES: readonly string[] = FAMILY_CONFIG_NAMES;
 const CONFIG_FILE: ConfigFileOptions = {
   section: SECTION_KEY,
   legacyNames: [],
-  toError: (message) => new MooseLintError(message),
+  toError: (message) => new LintError(message),
 };
 
 /**
@@ -162,7 +163,7 @@ const MOVED_KEYS: readonly string[] = ["paths", "exclude"];
 function assertNoMovedKeys(raw: Record<string, unknown>, source: string): void {
   for (const key of MOVED_KEYS) {
     if (Object.hasOwn(raw, key)) {
-      throw new MooseLintError(
+      throw new LintError(
         `${source}: "${key}" is no longer a ${SECTION_KEY} key. Document sets are declared once for every tool, under a top-level collections: list. See ${CONFIG_REF}#collections`,
       );
     }
@@ -183,7 +184,7 @@ function rejectUnknownKeys(
 ): void {
   for (const key of Object.keys(obj)) {
     if (!allowed.includes(key)) {
-      throw new MooseLintError(
+      throw new LintError(
         `Unknown key "${key}" under ${where}: in ${source}. Supported keys: ${allowed.join(", ")}.`,
       );
     }
@@ -204,7 +205,7 @@ function checkJobs(section: Record<string, unknown>, source: string): void {
     const tool = value.tool;
     if (tool === undefined) continue;
     if (typeof tool !== "string" || !TOOLS_BY_JOB[job].includes(tool as LintTool)) {
-      throw new MooseLintError(
+      throw new LintError(
         `${source}: ${SECTION_KEY}.${job}.tool must be one of: ${TOOLS_BY_JOB[job].join(", ")}.`,
       );
     }
@@ -250,7 +251,7 @@ function rejectUnNested(root: Record<string, unknown>, source: string): void {
   // describe the file the user actually passed: telling someone who ran
   // `-c my-custom.yaml` about `manni.config.yaml` reads as a complaint about a
   // file they never mentioned, and sends them looking for the wrong one.
-  throw new MooseLintError(
+  throw new LintError(
     `${source}: found ${stray.map((key) => `"${key}:"`).join(", ")} at the top level, ` +
       `but no "${SECTION_KEY}:" key. This file is shared across the manni family, ` +
       `so every manni lint setting belongs under a top-level "${SECTION_KEY}:" key. ` +
@@ -270,7 +271,7 @@ function rejectMiscasedWrapper(
     (key) => key !== SECTION_KEY && key.toLowerCase() === SECTION_KEY,
   );
   if (miscased === undefined) return;
-  throw new MooseLintError(
+  throw new LintError(
     `${source}: found "${miscased}:" at the top level, but the key is case-sensitive ` +
       `and manni lint reads "${SECTION_KEY}:" exactly. Rename "${miscased}:" to "${SECTION_KEY}:".`,
   );
@@ -299,7 +300,7 @@ export function parseConfigSection(section: unknown, source: string): LintConfig
     const detail =
       (validate.errors ?? []).map(describeError).join("; ") ||
       `does not match the ${SECTION_KEY} config schema`;
-    throw new MooseLintError(
+    throw new LintError(
       `${source}: invalid "${SECTION_KEY}" section: ${detail}.`,
     );
   }
@@ -319,15 +320,15 @@ export function parseConfig(text: string, source: string): LintConfig {
   try {
     raw = parseYaml(text);
   } catch (err) {
-    throw new MooseLintError(
-      `${source}: invalid YAML: ${(err as Error).message}`,
+    throw new LintError(
+      `${source}: invalid YAML: ${errorMessage(err)}`,
     );
   }
 
   // An empty file configures nothing; it is not a broken one.
   if (raw == null) return {};
   if (!isRecord(raw)) {
-    throw new MooseLintError(
+    throw new LintError(
       `${source}: top level must be a mapping of tool name to that tool's settings, ` +
         `with manni lint's under "${SECTION_KEY}:".`,
     );
@@ -491,14 +492,14 @@ export async function resolveLintRun(
   // is one more input rather than a path, so it rides beside the flag.
   const wanted = opts.collection ?? [];
   if (wanted.length > 0 && opts.inputs.some((input) => input !== STDIN)) {
-    throw new MooseLintError(
+    throw new LintError(
       "--collection selects a configured collection; it cannot be combined with paths.",
     );
   }
 
   const file = opts.noConfig ? null : await readLintConfigFile(opts.configPath, cwd);
   if (wanted.length > 0 && file === null) {
-    throw new MooseLintError("--collection needs a config file to select from.");
+    throw new LintError("--collection needs a config file to select from.");
   }
   if (file !== null) opts.onConfigLoaded?.({ path: file.path, dir: file.dir });
 
@@ -514,7 +515,7 @@ export async function resolveLintRun(
           file.collections,
           wanted,
           file.source,
-          (message) => new MooseLintError(message),
+          (message) => new LintError(message),
         );
 
   const fromCollections = opts.inputs.length === 0;
