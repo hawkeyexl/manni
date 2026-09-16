@@ -105,5 +105,11 @@ Pointer under `/kg/`, such as `/kg/broader`. `manni meta fill` already writes
 `meta-provenance` by pointer for the fields it fills, while the draft stays
 under review. The block's closed field list
 kept `sections`, `revision-of` and `derived-from` out of the trail, and a
-pointer cannot. That guard would move to the graph layer, where the harvest
-reports a machine attribution on those fields.
+pointer cannot.
+
+That guard has moved to the graph layer, as
+[0051](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0051-kg-domain.md)
+settled. `manni kg fill` writes `meta-provenance` through the same merge
+`manni meta fill` uses, and `manni kg check` reports an entry that attributes
+`/kg/sections`, `/kg/revision-of` or `/kg/derived-from` to a model: those three
+are curated by hand.
