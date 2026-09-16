@@ -1,0 +1,8 @@
+grep 0 28ms
+build 0 864ms
+traverse 0 773ms
+query 0 765ms
+stats-check 1 762ms
+timing1 build 823ms traverse 764ms query 754ms stats 754ms grep 27ms
+timing2 build 832ms traverse 757ms query 794ms stats 855ms grep 29ms
+timing3 build 858ms traverse 793ms query 782ms stats 837ms grep 27ms

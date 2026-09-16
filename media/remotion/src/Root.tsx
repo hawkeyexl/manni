@@ -11,6 +11,7 @@ import { beats as termBeats, totalFrames as termTotalFrames, TYPING_MS as termTy
 import { beats as a11yBeats, totalFrames as a11yTotalFrames, TYPING_MS as a11yTypingMs } from "./a11y/beats";
 import { beats as lintBeats, totalFrames as lintTotalFrames, TYPING_MS as lintTypingMs } from "./lint/beats";
 import { beats as graphBeats, totalFrames as graphTotalFrames, TYPING_MS as graphTypingMs } from "./graph/beats";
+import { beats as kgBeats, totalFrames as kgTotalFrames, TYPING_MS as kgTypingMs } from "./kg/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -46,6 +47,9 @@ const DemoLint: React.FC = () => <DemoView beats={lintBeats} fontPx={22} linePx=
  * (media/graph/capture/cols.mjs). Ligatures off: the frontmatter fences are `---`.
  */
 const DemoGraph: React.FC = () => <DemoView beats={graphBeats} fontPx={22} linePx={31} cols={78} typingMs={graphTypingMs} ligatures={false} />;
+
+/** kg-impact-1x1: 23 px / 72 columns, derived in media/kg/kg-impact-1x1.script.md (media/kg/cols.mjs). */
+const DemoKg: React.FC = () => <DemoView beats={kgBeats} fontPx={23} linePx={32} cols={72} typingMs={kgTypingMs} />;
 
 export const Root: React.FC = () => (
   <>
@@ -128,6 +132,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={graphTotalFrames}
+    />
+    <Composition
+      id="KgDemo"
+      component={DemoKg}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={kgTotalFrames}
     />
   </>
 );

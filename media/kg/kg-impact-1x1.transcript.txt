@@ -1,0 +1,36 @@
+manni kg, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 32.2 s. Every terminal line is real output of grep and of
+`node dist/cli.js kg ...` (typed as manni) run inside C:\kgdemo, a git repository
+built from test/kg/fixtures/corpus/ by media/kg/capture.sh.
+
+[0:00-0:05] Title: Two pages mention it (1 / 3)
+$ grep -rl configuration.md docs/
+docs/getting-started.md
+docs/windows-notes.md
+Highlighted rows: lines containing "docs/getting-started.md", "docs/windows-notes.md"
+Caption: grep finds the pages that name configuration.md. It cannot find the pages that depend on those.
+
+[0:05-0:20] Title: manni kg finds three (2 / 3)
+$ manni kg build docs/
+Wrote C:\kgdemo\graph.ttl (8 docs, 292 triples)
+$ manni kg traverse https://acme.dev/doc/docs/configuration.md --predicates dcterms:references --impact -d 2
+  https://acme.dev/doc/docs/getting-started.md — Getting Started
+  https://acme.dev/doc/docs/windows-notes.md — Windows Notes
+    https://acme.dev/doc/docs/harvest.md — Upgrading
+
+3 nodes, 4 hops, 0 excluded
+Highlighted rows: lines containing "harvest.md", "3 nodes"
+Caption: harvest.md is reached through windows-notes.md. Two hops out, where grep never looked.
+
+[0:20-0:32] Title: The build fails on it (3 / 3)
+$ manni kg query --p kg:brokenLink
+<https://acme.dev/doc/docs/de/regional.md> kg:brokenLink "../missing.md"
+<https://acme.dev/doc/docs/no-frontmatter.md> kg:brokenLink "missing.md"
+
+2 match(es)
+$ manni kg stats --check > /dev/null; echo $?
+1
+Highlighted rows: lines containing "missing.md", "1"
+Caption: The same graph carries every dead link, and stats --check exits 1. CI has something to fail on.
+

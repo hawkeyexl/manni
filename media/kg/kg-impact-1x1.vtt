@@ -1,0 +1,16 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:05.433
+Two pages mention it: grep finds the pages that name configuration.md. It cannot find the pages that depend on those.
+
+2
+00:00:05.433 --> 00:00:19.767
+manni kg finds three: harvest.md is reached through windows-notes.md. Two hops out, where grep never looked.
+
+3
+00:00:19.767 --> 00:00:32.233
+The build fails on it: The same graph carries every dead link, and stats --check exits 1. CI has something to fail on.
+

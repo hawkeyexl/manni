@@ -1,0 +1,13 @@
+{
+  "grep": "docs/getting-started.md\ndocs/windows-notes.md\n",
+  "build": "Wrote C:\\kgdemo\\graph.ttl (8 docs, 292 triples)\n",
+  "traverse": "  https://acme.dev/doc/docs/getting-started.md — Getting Started\n  https://acme.dev/doc/docs/windows-notes.md — Windows Notes\n    https://acme.dev/doc/docs/harvest.md — Upgrading\n\n3 nodes, 4 hops, 0 excluded\n",
+  "query": "<https://acme.dev/doc/docs/de/regional.md> kg:brokenLink \"../missing.md\"\n<https://acme.dev/doc/docs/no-frontmatter.md> kg:brokenLink \"missing.md\"\n\n2 match(es)\n",
+  "exits": {
+    "grep": "0",
+    "build": "0",
+    "traverse": "0",
+    "query": "0",
+    "statsCheck": "1"
+  }
+}
