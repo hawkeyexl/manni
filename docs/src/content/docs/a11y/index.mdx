@@ -109,11 +109,10 @@ A 404, a network error, or an unparseable body all mean "no sitemap". None of
 them fails the run. The crawl falls back to same-host links from each checked
 page, breadth first, and the header reads `(no sitemap; followed links)`.
 
-### What it does not do yet
+### Scope
 
-Two gaps are recorded as deferred in proposal 0035. `Disallow` rules in
-`robots.txt` are not honoured, and gzipped sitemaps (`.xml.gz`) are not
-decompressed.
+`Disallow` rules in `robots.txt` are not honoured. Gzipped sitemaps (`.xml.gz`)
+are not decompressed.
 
 ## What the score means
 

@@ -448,7 +448,7 @@ copying it.
 | `entry-invalid` | A schema failure, a range that ends before it starts, or a duplicate id. Also a pin prefix that does not match `file`, a reserved `citation-*` page key, and a page `citations:` a manifest owns. | `error` |
 | `quote-drift` | The quoted block no longer reproduces the source, or no fenced block follows the marker. | `error` |
 
-A fourth `anchor-invalid` case was planned and cannot happen. Claim lines
+A fourth `anchor-invalid` case cannot arise. Claim lines
 inside the frontmatter are unreachable, because body-relative lines never
 point there. That case survives only as an `add` refusal.
 

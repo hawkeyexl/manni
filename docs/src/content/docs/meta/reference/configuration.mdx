@@ -728,7 +728,7 @@ whole by the message:
 | Command | With external metadata |
 |---|---|
 | `validate` | Merges, validates the merged object, and files a finding for every owned key a document carries. Runs the orphan check on a corpus run, including one narrowed with `--collection`. |
-| `get` | Reads the merged value. `manni meta get jira docs/auth.md` prints `docs/auth.md: jira=PLAT-412` from the manifest as readily as it would from the document. It does not yet say which of the two supplied it. |
+| `get` | Reads the merged value. `manni meta get jira docs/auth.md` prints `docs/auth.md: jira=PLAT-412` from the manifest as readily as it would from the document. It does not say which of the two supplied it. |
 | `query` | Every row holds the merged values, so `SELECT _path, jira FROM docs` and a [corpus check](#checks) see the manifest's keys. A write to an owned key lands in the document's manifest entry, and the change names the manifest. Three writes refuse (exit 2) before any file is written. They write a key a URL manifest owns, `RENAME COLUMN` an owned key, or change a matched document's join field. |
 | `fill` | A candidate property a local manifest owns is written into the document's entry there. One a URL manifest owns is a per-file error (exit 1) rather than a skip. A missing owned key is never quietly left missing. |
 | `derive` | A managed field a local manifest owns is compared against the manifest's value and stamped there. One a URL manifest owns is refused when the config loads (exit 2). See [a field a manifest owns](#a-field-a-manifest-owns). |
@@ -2037,8 +2037,7 @@ for these files, in order:
    section, with no wrapper key, so it can carry no `collections:` at all. A
    legacy file that still says `paths:` is refused with the same
    [message](#migrating-a-0x-config) `meta.paths` gets, which is how its owner
-   learns to migrate. Read with a warning that the name is deprecated and will
-   stop being read in a future major version.
+   learns to migrate. Read with a warning that the name is deprecated.
 
 The **first file found wins** and the search stops there, and that now includes
 a file whose only relevant key is `collections:`. A repository mid-migration,
