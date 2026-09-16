@@ -11,7 +11,7 @@ import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runCheck } from "../../src/term/commands/check.js";
 import { listFormats } from "../../src/term/commands/formats.js";
-import { closestId, findTerm, runGet } from "../../src/term/commands/get.js";
+import { closestName, findTerm, runGet } from "../../src/term/commands/get.js";
 import { runLint } from "../../src/term/commands/lint.js";
 import { runList } from "../../src/term/commands/list.js";
 import { formatChoice } from "../../src/term/commands/run.js";
@@ -157,6 +157,23 @@ describe("get", () => {
     expect((await runGet({ cwd, inputs: [], term: "Corrective Lens" })).id).toBe("corrective-lens");
   });
 
+  it("finds by alt-label without case, after ids and labels", async () => {
+    const cwd = await lenses();
+    expect((await runGet({ cwd, inputs: [], term: "PAL" })).id).toBe("progressive-lens");
+    expect((await runGet({ cwd, inputs: [], term: "Graduated Lens" })).id).toBe("progressive-lens");
+  });
+
+  it("prefers a label to another entry's alt-label, and the first entry in set order", () => {
+    const entry = (id: string, label: string, alts: string[] = []): Term => ({
+      id,
+      record: { label, ...(alts.length === 0 ? {} : { "alt-labels": alts }) },
+      location: { file: `${id}.md`, construct: "page", line: 1, fieldLines: {} },
+    });
+    const terms = [entry("a", "alpha", ["lens"]), entry("b", "lens"), entry("c", "gamma", ["shared"]), entry("d", "delta", ["Shared"])];
+    expect(findTerm(terms, "LENS")?.id).toBe("b");
+    expect(findTerm(terms, "shared")?.id).toBe("c");
+  });
+
   it("says how many terms there are and the nearest id when nothing matches", async () => {
     const cwd = await lenses();
     await expect(runGet({ cwd, inputs: [], term: "progresive-lens" })).rejects.toThrow(
@@ -164,9 +181,29 @@ describe("get", () => {
     );
   });
 
-  it("picks the closest id and none for an empty list", () => {
-    expect(closestId("bifcal", ["bifocal", "trifocal"])).toBe("bifocal");
-    expect(closestId("x", [])).toBeUndefined();
+  it("suggests a near label as well as a near id", async () => {
+    const cwd = await lenses();
+    await expect(runGet({ cwd, inputs: [], term: "corective lens" })).rejects.toThrow(
+      new TermError('no term "corective lens". 2 terms; did you mean "corrective lens"?'),
+    );
+  });
+
+  it("suggests nothing when no name is near", async () => {
+    const cwd = await lenses();
+    await expect(runGet({ cwd, inputs: [], term: "missing" })).rejects.toThrow(
+      new TermError('no term "missing". 2 terms.'),
+    );
+  });
+
+  it("names the closest name within max(2, floor(length / 3)) edits, and none further", () => {
+    expect(closestName("bifcal", ["bifocal", "trifocal"])).toBe("bifocal");
+    // Two edits are always near, even for a short value.
+    expect(closestName("xy", ["ab"])).toBe("ab");
+    expect(closestName("x", ["abc"])).toBeUndefined();
+    // Nine characters allow three edits; four is too far.
+    expect(closestName("abcdefghi", ["abcdefxyz"])).toBe("abcdefxyz");
+    expect(closestName("abcdefghi", ["abcdewxyz"])).toBeUndefined();
+    expect(closestName("x", [])).toBeUndefined();
     expect(findTerm([], "x")).toBeUndefined();
   });
 

@@ -138,6 +138,12 @@ describe("manni term (the ladder)", () => {
     expect(r.status).toBe(0);
   });
 
+  it("3. shows one term by its alt-label", () => {
+    const r = term(["get", "PAL"]);
+    expect(r.stdout.split("\n")[0]).toBe("progressive lens                        docs/terms/progressive-lens.md:1");
+    expect(r.status).toBe(0);
+  });
+
   it("4. fails on an undefined term, exit 1", () => {
     const r = term(["check"], { cwd: join(work, "failing") });
     expect(r.stdout).toBe(
@@ -294,6 +300,12 @@ describe("manni term (usage errors)", () => {
   it("get with no such term", () => {
     const r = term(["get", "progressive-lenz"]);
     expect(r.stderr).toBe('manni: no term "progressive-lenz". 2 terms; did you mean "progressive-lens"?\n');
+    expect(r.status).toBe(2);
+  });
+
+  it("get with a name nothing is near", () => {
+    const r = term(["get", "missing"]);
+    expect(r.stderr).toBe('manni: no term "missing". 2 terms.\n');
     expect(r.status).toBe(2);
   });
 

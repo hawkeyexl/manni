@@ -179,7 +179,7 @@ export function buildProgram(): Command {
     program
       .command("get")
       .description("Show one entry")
-      .argument("<term>", "the entry's id, or its label in any case")
+      .argument("<term>", "the entry's id, or its label or an alt-label in any case")
       .argument("[paths...]", "files, directories, or globs to read (use - for stdin)"),
   )
     .option("-f, --format <format>", `output: ${GET_FORMATS.join(" | ")}`, "pretty")

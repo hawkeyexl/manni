@@ -139,7 +139,7 @@ manni term get <term> [paths...] [options]
 
 | Argument | Description |
 |---|---|
-| `<term>` | The entry's `id`, or its preferred `label` in any case. An alt-label does not find the entry. |
+| `<term>` | The entry's `id`, else its preferred `label` in any case, else one of its `alt-labels` in any case. When several entries share an alt-label, the first one read is shown. |
 | `[paths...]` | Files, directories, or globs to read, exactly as on [`list`](#term-list). |
 
 ### Options
