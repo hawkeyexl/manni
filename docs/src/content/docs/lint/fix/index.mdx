@@ -28,14 +28,13 @@ Four parts:
 
 | Part | What it tells you |
 | --- | --- |
-| `5:1` | Line and column. It points at the heading that opens the section the finding is about, not at the missing thing — a thing that is missing has no line. |
+| `5:1` | Line and column. It points at the heading that opens the section the finding is about, not at the missing thing. A thing that is missing has no line. |
 | `manni:lint/structure/…` | The rule id. `manni:lint`, then the job, then the rule. Find it in the [table below](#every-rule). |
 | `Rotate an API key:` | The section, named by its heading. A whole-file finding has no prefix here. |
 | `Missing section "See also"` | What to change, in one sentence. |
 
 Every structural finding is an `error`. There is no severity dial to turn one
-down, so a finding on the page is a finding that must be resolved or a template
-that must change.
+down. A finding must be resolved, or the template that produced it must change.
 
 ## Prove the fix locally
 

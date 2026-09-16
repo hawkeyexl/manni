@@ -76,9 +76,9 @@ report:
 Checked: structure.
 ```
 
-`check` takes the shared input options and nothing else. A template ref, an
-explain mode, a tool name — anything a job owns — belongs to the job verb, so
-`check` cannot accumulate every job's flags.
+`check` takes the shared input options and nothing else. Anything a job owns
+belongs to the job verb, a template ref, an explain mode and a tool name
+included. That way `check` cannot accumulate every job's flags.
 
 ### Arguments
 
@@ -136,7 +136,7 @@ the job itself.
 | `--no-gitignore` | n/a | off | Lint files `.gitignore` covers. |
 | `--tool` | `<name>` | `manni` | Which tool performs the job. `manni` is the only value today; anything else is an error naming the known set (exit 2). Mirrors config `structure.tool:`. |
 | `-t, --template` | `<ref>` | | Apply one [template ref](/manni/lint/reference/templates/#template-refs) to every file, overriding type routing. The first rung of the [resolution chain](/manni/lint/reference/configuration/#how-a-template-is-chosen). |
-| `--templates` | `<path>` | | Template file to route by: its templates' `types:` outrank the built-ins. Repeatable, one path per occurrence, never comma-separated. Mirrors config `templates:`. |
+| `--templates` | `<path>` | | Template file to route by. Its templates' `types:` outrank the built-ins. Repeatable, one path per occurrence, never comma-separated. Mirrors config `templates:`. |
 | `--explain` | n/a | off | Print how each file's template was chosen and lint nothing. [Always exits 0](#explain), unrouted pages included. |
 
 <Aside type="note" title="One separator per list">
@@ -151,8 +151,8 @@ that is what argv is.
 
 List the templates that can be applied, and the doctypes each serves. It is the
 answer to "what could route a page?", so it loads exactly the template files a
-lint would: the built-ins, plus everything config `templates:` names, plus
-anything `--templates` adds.
+lint would. That is the built-ins, plus everything config `templates:` names,
+plus anything `--templates` adds.
 
 ```sh
 manni lint templates [options]
@@ -210,9 +210,9 @@ tool can run here. `config:` names the file the tool read, or
 `built-in defaults` when there was none.
 
 This is what to run when two machines disagree. A difference between a
-developer's laptop and CI is usually one of two things: a different version of
-one tool, or a config file found in one place and not the other. Both are on
-this screen.
+developer's laptop and CI is usually one of two things. It is a different
+version of one tool, or a config file found in one place and not the other.
+Both are on this screen.
 
 <Aside type="note" title="It replaced `formats`">
 The imported tool spelled this verb `formats`. It was renamed because a
@@ -316,7 +316,8 @@ worth one line.
           "end": { "line": 22, "column": 1, "offset": 307 }
         }
       }
-    ]
+    ],
+    "skipped": null
   }
 ]
 ```
@@ -331,6 +332,7 @@ worth one line.
 | `errors[].heading` | string \| `null` | The section heading the finding is about, or `null` for a whole-file finding. |
 | `errors[].message` | string | What to change, in one sentence. |
 | `errors[].position` | object | `start` and `end`, each with `line`, `column` and `offset`. |
+| `skipped` | string \| `null` | Why the file was not linted. One of `no-template`, `unsupported-format` or `unreadable`. It is `null` when the file was linted, so a skip and an older version of this reporter are never the same reading. |
 
 The envelope is a top-level array and `type` keeps its value, whatever else is
 added beside it.
@@ -354,8 +356,9 @@ declared once under `tool.driver.rules`, with `defaultConfiguration.level` of
 `SRCROOT` base, so the upload resolves against the repository root.
 
 A skipped file is not a result. It is a `toolExecutionNotification` at level
-`note`, declared under `tool.driver.notifications` as `no-template` or
-`unsupported-format`, so code scanning does not read "not linted" as "clean".
+`note`, declared under `tool.driver.notifications` as `no-template`,
+`unsupported-format` or `unreadable`. Code scanning therefore does not read
+"not linted" as "clean".
 `invocations[0].executionSuccessful` is always `true`: findings are the tool
 working, not the tool failing.
 
@@ -392,8 +395,8 @@ outcome.
 
 `--explain` prints the routing table and lints nothing. Each file gets one block
 listing every rung of the [resolution
-chain](/manni/lint/reference/configuration/#how-a-template-is-chosen), with `·`
-for a rung that did not decide, `→` for the one that did, and `✗` for a page
+chain](/manni/lint/reference/configuration/#how-a-template-is-chosen). A `·`
+marks a rung that did not decide, `→` the one that did, and `✗` a page
 that fell off the end:
 
 ```
@@ -415,7 +418,7 @@ that fell off the end:
 ```
 
 It **always exits `0`**, unrouted pages included. That is counterintuitive
-enough to be worth stating: `--explain` answers a question about configuration,
+enough to be worth stating. `--explain` answers a question about configuration,
 so its exit code says whether it could answer, not whether the docs are clean.
 A page that routes nowhere is an answered question. Automation reads the
 ordinary run for the verdict.
@@ -425,8 +428,8 @@ ordinary run for the verdict.
 | Code | Meaning |
 |---|---|
 | `0` | Every linted file was clean. Also every `--explain` run, and every `templates` or `tools` listing. |
-| `1` | At least one `error`-level finding. Today every structural finding is an error, so this is "the run produced findings"; it is defined on severity so that a later job's warnings cannot silently change what CI does. |
-| `2` | Usage or operational error: an unknown flag value, an unknown `--tool`, an unresolvable template, a config carrying a moved key, no inputs and no config, or a run in which every file was skipped. One line on stderr, prefixed `manni: `. |
+| `1` | At least one `error`-level finding. Today every structural finding is an error, so this is "the run produced findings". It is defined on severity so that a later job's warnings cannot silently change what CI does. |
+| `2` | Usage or operational error. That covers an unknown flag value, an unknown `--tool`, an unresolvable template, or a config carrying a moved key. It also covers no inputs and no config, and a run in which every file was skipped. One line on stderr, prefixed `manni: `. |
 
 The `1`/`2` split is what lets a workflow tell "the docs are wrong" apart from
 "the linter is misconfigured". A single non-zero exit cannot.
@@ -511,7 +514,25 @@ manni lint structure docs/ -t nope:x:1
 
 manni lint structure docs/notes.md
 # manni: Nothing was checked: all 1 file(s) were skipped. 1 had no template: give a page a "type:" that a template serves, pass -t/--template <ref>, or set "lint.template" as a default. Run "manni lint structure <paths> --explain" to see how each file resolved.
+
+manni lint structure docs/ --as notebook
+# manni: Format "notebook" is not implemented yet. Run "manni lint tools" to see which formats are implemented.
+
+manni lint structure docs/ --as nonsense
+# manni: Unknown format "nonsense". Run "manni lint tools" to see the registered formats.
 ```
+
+A file the run cannot open is that file's problem, not the run's. It is skipped
+with the reason the operating system gave, the rest of the run continues, and
+the exit code still reports the findings:
+
+```
+- docs/private.md  skipped: could not be read: EACCES: permission denied, open 'docs/private.md'
+```
+
+When every file was unreadable, the "Nothing was checked" message says so
+instead of talking about templates: `N could not be read: check the permissions
+on those paths, or drop them from the run with --exclude <glob>.`
 
 ## Configuration
 

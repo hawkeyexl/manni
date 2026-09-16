@@ -6,8 +6,8 @@ description: Run manni lint check on every pull request with inline annotations,
 import { Steps, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 You already run `manni meta validate` over these pages. Structure is the other
-half of the same question — metadata says what a page *is*, structure says
-whether it is shaped like one — and this page wires it into the same job,
+half of the same question. Metadata says what a page *is*, and structure says
+whether it is shaped like one. This page wires that into the same job,
 reading the same config file, over the same collections.
 
 Nothing is installed into the repository. The recipes run `npx`, which fetches
@@ -24,10 +24,10 @@ this tool's.
 | --- | --- |
 | `0` | Every linted file was clean. |
 | `1` | At least one `error`-level finding. |
-| `2` | The run could not happen: a bad flag value, an unknown tool, an unresolvable template, a config carrying a moved key, no inputs and no config, or a run in which every file was skipped. The message goes to stderr, prefixed `manni:`. |
+| `2` | The run could not happen. That covers a bad flag value, an unknown tool, an unresolvable template, or a config carrying a moved key. It also covers no inputs and no config, and a run in which every file was skipped. The message goes to stderr, prefixed `manni:`. |
 
 Keep `1` and `2` apart. A job that treats every non-zero code as "the docs are
-wrong" reports a misconfigured linter as a failing docset, and the two need
+wrong" reports a misconfigured linter as a failing docset. The two need
 opposite responses. That is the same split
 [`manni meta validate`](/manni/meta/ci/exit-codes-and-annotations/) and
 [`manni a11y check`](/manni/a11y/ci/#exit-codes) use.
@@ -201,7 +201,7 @@ For a dashboard that already reads JUnit, or a runner whose UI has a tests tab:
 ```
 
 One `testcase` per file, so the tab counts pages rather than findings. A
-skipped page rides along as a passing testcase, and the `<failure>` element's
+skipped page rides along as a passing testcase. The `<failure>` element's
 `type` attribute is the rule id, which is what groups a recurring failure
 across runs.
 
@@ -219,8 +219,8 @@ Nothing was linted, so this is an error rather than a pass.
 Pass --allow-empty (or set allowEmpty: true) if matching nothing is expected.
 ```
 
-`--allow-empty` is for the case where an empty list is legitimate, such as a
-shared CI template or a pre-commit hook run over changed files only.
+`--allow-empty` is for the case where an empty list is legitimate. A shared CI
+template does that, and so does a pre-commit hook run over changed files only.
 
 **Every file was skipped.** Pages were found, and none of them routed to a
 template:
@@ -235,7 +235,7 @@ yet. Run `manni lint structure --explain` to see the routing, then either add
 
 ## Ramp it in
 
-There is no baseline file yet — `manni meta` and `manni cite` have one, and
+There is no baseline file yet. `manni meta` and `manni cite` have one, and
 `manni lint` has never had one. Two things work in the meantime, and both are
 plain configuration rather than a mode.
 

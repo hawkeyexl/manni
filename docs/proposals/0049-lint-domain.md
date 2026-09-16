@@ -2,9 +2,9 @@
 
 - **Status:** Proposed
 - **Serves:** Three journeys, assigned the next free numbers on this branch.
-  If [0048](0048-docevals-domain.md) lands first it takes ranges of its own and
-  these three shift up by however many it claims; they are the numbers as
-  written in `docs/content-strategy/cujs.md` here.
+  If [0048](0048-docevals-domain.md) lands first it takes ranges of its own, and
+  these three shift up by however many it claims. The numbers here are the ones
+  written in `docs/content-strategy/cujs.md`.
   - Maya · M9, "Hold every page to the shape its doctype promises". Her how-tos
     are supposed to carry prerequisites and numbered steps. Nothing checks that
     but a reviewer's eye.
@@ -45,14 +45,14 @@
 ## Problem
 
 `doc-structure-lint` checks that a document has the structure its doctype
-template expects: the sections, in order, with the paragraphs, lists and code
-blocks the template asks for. It is deterministic, it is fast, and it is a
-separate npm package with a separate config file.
+template expects. That means the sections, in order, with the paragraphs, lists
+and code blocks the template asks for. It is deterministic, it is fast, and it
+is a separate npm package with a separate config file.
 
 Maya already runs `manni meta validate` over the same docset, out of the same
 `manni.config.yaml`, in the same CI job. Structure is the other half of the same
-question — metadata says what a page *is*, structure says whether it is shaped
-like one — and answering it costs her a second install, a second config, and a
+question. Metadata says what a page *is*, and structure says whether it is shaped
+like one. Answering it costs her a second install, a second config, and a
 second set of flags whose names almost but not quite match.
 
 Folding the tool in answers that. The obstacle is that the imported CLI predates
@@ -81,12 +81,12 @@ A **job** is what is being checked. The **tool** that answers it is an
 implementation the user can swap. Today `structure` is answered by lint's own
 engine, named `manni`; a later `prose` job will be answered by Vale and a
 `format` job by remark-lint. Naming the verbs after the jobs means swapping the
-tool underneath does not change the command anyone types, and running exactly
-one kind of check is one word, not a flag.
+tool underneath does not change the command anyone types. It also means running
+exactly one kind of check is one word, not a flag.
 
-`check` takes the shared options and nothing else. Anything job-specific — a
-template ref, an explain mode — belongs to a job verb. That keeps `check` from
-accumulating every job's flags as jobs are added.
+`check` takes the shared options and nothing else. Anything job-specific belongs
+to a job verb, a template ref and an explain mode included. That keeps `check`
+from accumulating every job's flags as jobs are added.
 
 ### The tool is named in config, and reachable from the CLI
 
@@ -113,7 +113,7 @@ imported tool: `templates`, `template`, `types`, `overrides`.
 
 An outside tool's settings do **not** go under `lint:`. When the first one lands
 it gets a namespace of its own under a new top-level `tools:` key, beside
-`collections:` and `encryptionKey:`, with the discovery rule 0041 and 0045
+`collections:` and `encryptionKey:`. Discovery follows the rule 0041 and 0045
 already established:
 
 ```yaml
@@ -124,10 +124,10 @@ tools:
 
 The reason to put it at the top level rather than under `lint:` is that a tool
 is not lint's. docevals already runs Vale through a grader; when the two meet,
-they should read one description of where Vale's config is. The reason to give
-each tool its own namespace rather than a shared `{tool, config}` shape is that
-tools do not have the same settings, and a lowest-common-denominator shape would
-either lie or grow a `passthrough:` blob.
+they should read one description of where Vale's config is. Each tool gets its
+own namespace rather than a shared `{tool, config}` shape, because tools do not
+have the same settings. A lowest-common-denominator shape would either lie or
+grow a `passthrough:` blob.
 
 ### Document sets come from `collections:`
 
@@ -148,8 +148,8 @@ Rule ids gain a job segment: `manni:lint/<job>/<rule>`, so
 `heading_pattern_error` becomes `manni:lint/structure/heading-pattern`. A prose
 finding will read `manni:lint/prose/Google.Passive`, keeping the tool's own rule
 name, because that is the name the tool's documentation uses. The JSON
-reporter's existing `type` field is unchanged — docevals' grader parses it —
-and `ruleId` and `tool` join it.
+reporter's existing `type` field is unchanged, because docevals' grader parses
+it. `ruleId` and `tool` join it.
 
 Exit codes keep the family contract: `0` clean, `1` findings, `2` operational
 or usage error. Exit 1 is defined as **at least one `error`-level finding**
@@ -176,16 +176,17 @@ findings.
 
 Because the tool is the part meant to be swappable. A repo that moves from Vale
 to something else would have to change its CI command, its docs and its
-muscle memory, for a change that does not alter what is being checked. Naming
+muscle memory. None of that alters what is being checked. Naming
 the job also gives `check` something to mean: run them all.
 
 ### 2. Then why is the tool in the config at all?
 
-Because "what ran" is not always inferable, and a disagreement between a
-developer's machine and CI usually turns out to be two versions of one tool, or
-a config file found in one place and not the other. `manni lint tools` answers
-that in one command. Naming the tool in config is also what makes the swap a
-one-line change rather than a flag on every invocation.
+Because "what ran" is not always inferable. A disagreement between a
+developer's machine and CI usually turns out to be two versions of one tool. It
+can also be a config file found in one place and not the other.
+`manni lint tools` answers that in one command. Naming the tool in config is
+also what makes the swap a one-line change rather than a flag on every
+invocation.
 
 ### 3. Does `check` need `-t/--template`?
 
@@ -216,19 +217,19 @@ The envelope stays a top-level array and `type` keeps its value, so the grader
 keeps working; `ruleId` and `tool` are additive. The follow-up that switches
 that grader to call `runLint` in-process removes the contract altogether.
 
-### 7. Where does prose actually belong — here or in docevals?
+### 7. Where does prose actually belong, here or in docevals?
 
 lint's own ADR 01003 drew the line as "this tool checks structure, docevals
 judges prose". That line was about determinism: docevals was the thing with a
 language model in it. Vale is deterministic, so the line does not settle where
-it goes. This proposal reserves the `prose` verb and the id segment and leaves
-the question to the proposal that implements it, which will have to supersede
-01003's sentence rather than quietly contradict it.
+it goes. This proposal reserves the `prose` verb and the id segment, and leaves
+the question to the proposal that implements it. That proposal will have to
+supersede 01003's sentence rather than quietly contradict it.
 
 ### 8. Why does `--explain` still exit 0?
 
 Unchanged from the imported tool, and worth restating because it is
-counterintuitive: `--explain` answers a question about configuration, so its
+counterintuitive. `--explain` answers a question about configuration, so its
 exit code says whether it could answer, not whether the docs are clean. A page
 that routes to no template is an answered question. Automation reads the
 ordinary run for that.
@@ -238,10 +239,10 @@ ordinary run for that.
 Mostly. `src/lint/` imports meta only through `../meta/index.js` and
 `../meta/internal.js`, its `cli.ts` exports `buildProgram()` with no entry
 point, and its error class extends `ToolError` (renamed `MooseLintError` →
-`LintError`). Three things the recipe does not cover came up: the tool ships
+`LintError`). Three things the recipe does not cover came up. The tool ships
 built-in templates (`templates/lint/tgdp/**`) and JSON schemas, which need
-`package.json` `files` entries; it brings a `src/shared/package-root.ts` helper
-that tracevals and kg will also want; and its `asciidoctor` dependency is the
+`package.json` `files` entries. It brings a `src/shared/package-root.ts` helper
+that tracevals and kg will also want. Its `asciidoctor` dependency is the
 meta-package, which drags in a CLI and four template engines for a parser that
 needs `@asciidoctor/core`.
 
@@ -267,9 +268,9 @@ deleted, not inherited.
 
 ## Not breaking
 
-`manni lint` has never shipped. Every rename here — the verb, the removed
-`paths:`/`exclude:` keys, the dropped legacy config names, `formats` →
-`tools` — is a change to an unreleased surface. The published
+`manni lint` has never shipped. Every rename here is a change to an unreleased
+surface. That covers the verb, the removed `paths:`/`exclude:` keys, the dropped
+legacy config names, and `formats` → `tools`. The published
 `doc-structure-lint` package is unaffected; it is archived separately, with a
 migration note in the docs.
 

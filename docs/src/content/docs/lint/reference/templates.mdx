@@ -5,10 +5,10 @@ description: "The template file format, the seven built-in TGDP doctypes, templa
 
 import { Aside } from '@astrojs/starlight/components';
 
-A **template** describes the shape a doctype promises: which sections a page of
-that kind has, in what order, and what has to be inside each one. `manni lint
-structure` resolves one template per page and matches the page's section tree
-against it.
+A **template** describes the shape a doctype promises. That is which sections a
+page of that kind has, in what order, and what has to be inside each one. `manni
+lint structure` resolves one template per page and matches the page's section
+tree against it.
 
 Templates are data, not code. There is no language model anywhere in this, and
 no network call except fetching a template you pointed at yourself.
@@ -35,7 +35,7 @@ So the doctype vocabulary a page can declare out of the box is `concept`,
 from your own checkout, including whatever your config adds.
 
 The version in an id is a claim about which upstream revision it mirrors.
-Upstream is the authority: the project's own published Markdown templates are
+Upstream is the authority. The project's own published Markdown templates are
 vendored and linted against these files, so the two cannot drift. Where they
 disagree, the template here is wrong.
 
@@ -49,9 +49,9 @@ said what it is, and `lint` checks it is shaped like it.
 
 ## Template refs
 
-Everywhere a template is named — `-t/--template`, `lint.template`,
-`lint.types` values, `lint.overrides[].template`, and `extends` — the value is a
-**ref**. Three kinds:
+Everywhere a template is named, the value is a **ref**. That covers
+`-t/--template`, `lint.template`, `lint.types` values,
+`lint.overrides[].template`, and `extends`. There are three kinds:
 
 | Kind | Looks like | Notes |
 |---|---|---|
@@ -127,11 +127,11 @@ declared order is the order the document must use.
 | `description` | string | none | Prose about the section's purpose. Never validated against. |
 | `heading` | object | none | `const` for exact heading text, `pattern` for a regular expression. A rule constraining neither is a **slot**: it matches any heading. |
 | `required` | boolean | required | Whether the section must be present. **Absent means required.** |
-| `repeat` | boolean | `false` | On an anchored rule, claim the run of consecutive sections whose headings satisfy it — how a doctype says "one or more `Symptom N` sections". On a slot, claim every section up to the next anchored rule that could claim one. |
+| `repeat` | boolean | `false` | On an anchored rule, claim the run of consecutive sections whose headings satisfy it. That is how a doctype says "one or more `Symptom N` sections". On a slot, claim every section up to the next anchored rule that could claim one. |
 | `sequence` | array | none | Ordered runs of content the section must contain. Each item sets exactly one of `paragraphs`, `code_blocks` or `lists`. |
-| `paragraphs` | object | none | `min`, `max`, and `patterns[]` — regular expressions applied to paragraphs in order, cycled when exhausted. |
+| `paragraphs` | object | none | `min`, `max`, and `patterns[]`. The patterns are regular expressions applied to paragraphs in order, cycled when exhausted. |
 | `code_blocks` | object | none | `min`, `max`. |
-| `lists` | object | none | `min`, `max`, and `items` — `min`, `max`, plus `paragraphs`, `code_blocks` and `lists` applied to every item of every list, recursing arbitrarily deep. |
+| `lists` | object | none | `min`, `max`, and `items`. Inside `items` are `min`, `max`, plus `paragraphs`, `code_blocks` and `lists`, applied to every item of every list and recursing arbitrarily deep. |
 | `additionalSections` | boolean | `false` | Allow subsections this template does not describe. |
 | `sections` | object | none | Nested section rules, one heading level down. |
 
@@ -144,16 +144,16 @@ manni: ./templates.yaml is not a valid template file: /templates/how-to/sections
 
 <Aside type="caution" title="A section name may not be all digits">
 `^(?![0-9]+$)[A-Za-z0-9-_ ]+$` is the name pattern. JavaScript enumerates
-integer-like object keys first, in ascending numeric order, so a section named
-`2024` would silently reorder the rules relative to how the template declares
-them — and declared order is most of what a section rule asserts. Prefix such
-a name: `v2024`, `step-1`.
+integer-like object keys first, in ascending numeric order. A section named
+`2024` would therefore silently reorder the rules relative to how the template
+declares them. Declared order is most of what a section rule asserts.
+Prefix such a name: `v2024`, `step-1`.
 </Aside>
 
 <Aside type="caution" title="`required` and `repeat` carry no schema default">
 Neither is given a JSON Schema `default`, deliberately. A written-in default is
-indistinguishable from a value the author typed, and a written-in value wins an
-[`extends`](#extends) merge — so a child that tightens one nested rule would
+indistinguishable from a value the author typed. A written-in value also wins an
+[`extends`](#extends) merge, so a child that tightens one nested rule would
 silently reset its parent's `required: false`. The code reads "absent" as
 required, and "absent" as not repeating.
 </Aside>
@@ -183,7 +183,7 @@ templates:
 ```
 
 Only same-document pointers are followed. A `$ref` at a path or a URL is
-refused, not fetched: a template file must not decide what the linter reads off
+refused, not fetched. A template file must not decide what the linter reads off
 the disk or off the network. Cross-file reuse is [`extends`](#extends), which
 goes through the same ref rules as everything else.
 
@@ -283,8 +283,8 @@ no page is edited.
 ## Formats a template can be matched against
 
 The template is format-agnostic. Every parser flattens its own syntax into the
-same section tree, and the rules run over that tree, so one template describes
-a how-to whether it is written in Markdown or DITA.
+same section tree, and the rules run over that tree. One template therefore
+describes a how-to whether it is written in Markdown or DITA.
 
 | Format | Extensions |
 |---|---|
@@ -305,7 +305,7 @@ also holds `pom.xml` and `sitemap.xml`. Name such a file directly, or pass
 
 `doc-structure-lint` templates could carry an `instructions:` key, evaluated by
 a language model. Structure checking here is deterministic, so the key is
-refused outright rather than silently ignored — and the message quotes your own
+refused outright rather than silently ignored. The message quotes your own
 instruction back, in the shape the eval takes:
 
 ```
@@ -320,8 +320,8 @@ manni: ./templates.yaml: "templates.how-to.sections.title" uses `instructions`, 
 
 ## Related
 
-- [Configuration reference](/manni/lint/reference/configuration/) — where
+- [Configuration reference](/manni/lint/reference/configuration/). Where
   templates are named, and the full resolution chain.
-- [CLI reference](/manni/lint/reference/cli/) — `--templates`, `-t`,
+- [CLI reference](/manni/lint/reference/cli/). `--templates`, `-t`,
   `--explain`, and `manni lint templates`.
-- [Fix a failing check](/manni/lint/fix/) — each rule, and what to change.
+- [Fix a failing check](/manni/lint/fix/). Each rule, and what to change.

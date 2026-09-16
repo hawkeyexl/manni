@@ -17,7 +17,7 @@ Maya owns a 2,000-page docs-as-code repo for a platform product. She is comforta
 
 **How she uses manni meta.** She installs it, writes or adopts a schema, adds a CI step, then mostly operates it hands-off. She returns when the standard needs tightening.
 
-**Which tools she owns work in.** She owns work in meta, lint, cite and a11y, standing up the metadata gate, holding each page to the shape its doctype promises, pinning claims on her pages, and checking the published site.
+**Which tools she owns work in.** She owns work in meta, lint, cite and a11y. She stands up the metadata gate and holds each page to the shape its doctype promises. She pins the claims on her pages, and she checks the published site.
 
 **The one decision she is not equipped for.** `fill` is the only part of manni meta that sends her documents to a third party. Clearing the retrofit backlog (M4) therefore makes her choose a provider, or refuse hosted inference entirely and run it on her own hardware. She does not own her organization's data-egress policy, but she is the one who has to answer to it. And the default is detected from her environment rather than chosen.
 

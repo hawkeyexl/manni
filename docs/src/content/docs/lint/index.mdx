@@ -52,8 +52,8 @@ that gates the pull request.
 A **job** is what is being checked. The **tool** that answers it is an
 implementation you can swap. `structure` is the job that ships; it is answered
 by this package's own engine, named `manni`. Naming the verbs after the jobs
-means swapping the tool underneath does not change the command anyone types,
-and running exactly one kind of check is one word rather than a flag.
+means swapping the tool underneath does not change the command anyone types.
+It also means running exactly one kind of check is one word rather than a flag.
 
 There is no default subcommand. `manni lint docs/` is a usage error that lists
 the verbs, because a domain with one verb still spells the verb.
@@ -67,15 +67,15 @@ says so.
 
 ## What a template is
 
-A template describes the shape a doctype promises: which sections a page of
-that kind has, in what order, and what has to be inside each one — paragraphs,
-lists, code blocks, or an exact heading.
+A template describes the shape a doctype promises. That is which sections a page
+of that kind has, in what order, and what has to be inside each one. Inside can
+mean paragraphs, lists, code blocks, or an exact heading.
 
 Seven ship, derived from [The Good Docs
 Project](https://thegooddocsproject.dev/) at `v1.6.0`, covering `how-to`,
 `tutorial`, `reference`, `concept` and `explanation`, `troubleshooting`,
 `release-notes` and `readme`. A page routes to one by its own `type:`
-frontmatter — the same key `manni meta` already validates — so a repository that
+frontmatter, the same key `manni meta` already validates. A repository that
 declares doctypes gets structure checking with no per-page change at all.
 
 Your own templates are one config entry away, and they outrank the built-ins

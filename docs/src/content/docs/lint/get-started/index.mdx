@@ -17,7 +17,7 @@ in this repository.
 
 - **Node.js 24 or newer.** Check with `node --version`.
 - **A page that says what it is.** Structure routing reads the `type:`
-  frontmatter key. A page without one is skipped rather than failed, so you can
+  frontmatter key. A page without one is skipped rather than failed. You can
   point the tool at a whole tree and lint only what has opted in.
 
 manni lint ships in the same package as manni meta. If you have one, you have
@@ -166,12 +166,12 @@ Checked: structure.
 ```
 
 Today `structure` is the only job, so the two commands report the same thing.
-Use `check` in CI anyway: a step written once keeps running every job as jobs
+Use `check` in CI anyway. A step written once keeps running every job as jobs
 are added, and `check` is deliberately kept free of any one job's flags.
 
 ## Ask why a page routed where it did
 
-When a page is held to a template you did not expect — or to none at all —
+A page can be held to a template you did not expect, or to none at all.
 `--explain` prints the routing table and lints nothing:
 
 ```sh
@@ -193,8 +193,8 @@ one that did. Here the page's own `type: how-to` picked the built-in template,
 which is the ordinary case.
 
 <Aside type="caution" title="`--explain` always exits 0">
-  It answers a question about configuration, so its exit code says whether it
-  could answer — not whether the docs are clean. A page that routes nowhere is
+  It answers a question about configuration. Its exit code says whether it
+  could answer, not whether the docs are clean. A page that routes nowhere is
   an answered question. Read the ordinary run for the verdict.
 </Aside>
 
@@ -210,8 +210,8 @@ skipped, counted apart, and never mistaken for passes:
 1 file checked, 1 passed, 0 failed, 1 skipped
 ```
 
-A page that declares a `type:` **nothing serves** is different: that is an
-assertion the tool could not honour, so it is a finding, and the message
+A page that declares a `type:` **nothing serves** is different. That is an
+assertion the tool could not honour, so it is a finding. The message
 suggests the nearest doctype it knows.
 
 ```
