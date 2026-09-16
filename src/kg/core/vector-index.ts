@@ -5,7 +5,7 @@
  * Layout, fixed and little-endian throughout:
  *
  * ```
- *   0  magic "DKGV"            4 bytes
+ *   0  magic "MKGV"            4 bytes
  *   4  format version (u32)    4 bytes
  *   8  header length (u32)     4 bytes
  *  12  header JSON (UTF-8)     headerLength bytes
@@ -26,8 +26,11 @@
  */
 import { byCodeUnit } from "./sort.js";
 
-/** "DKGV" — dockg vectors. */
-const MAGIC = 0x44_4b_47_56;
+/**
+ * "MKGV", manni kg vectors. It read "DKGV" while the tool was dockg; nothing was
+ * published under that name, so no sidecar in the wild carries the old bytes.
+ */
+const MAGIC = 0x4d_4b_47_56;
 // 2 since ADR 01038: the header names the language its vectors cover, so a
 // consumer cannot pair a sidecar with the wrong locale's index. A version-1
 // file is refused by `decodeVectorIndex` rather than read as if it had one.
