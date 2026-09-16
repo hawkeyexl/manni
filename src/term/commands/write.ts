@@ -267,6 +267,44 @@ function inputFor(content: string, path: string, construct: TermConstruct, file:
   return extractInput(content, file, path, extractor.name);
 }
 
+/**
+ * The caller's records carried onto `current`, the entries a construct's reader
+ * read from content an earlier construct rewrote. An entry is matched by `id`;
+ * where the id repeats in either list, by its position within the construct.
+ * An entry the caller left out keeps the record it was read with.
+ */
+function carryRecords(current: readonly Term[], edited: readonly Term[]): Term[] {
+  const count = (terms: readonly Term[], id: string): number => terms.filter((t) => t.id === id).length;
+  return current.map((entry, index) => {
+    const unique = count(current, entry.id) === 1 && count(edited, entry.id) === 1;
+    const match = unique ? edited.find((t) => t.id === entry.id) : edited[index];
+    return match?.id === entry.id ? { ...entry, record: match.record } : entry;
+  });
+}
+
+/** One file's content with each construct's entries written back through its reader, in order. */
+export function applyInPlace(
+  original: string,
+  path: string,
+  file: string,
+  constructs: ReadonlyMap<TermConstruct, readonly Term[]>,
+  readers: readonly TermReader[],
+): string {
+  let content = original;
+  let first = true;
+  for (const [construct, terms] of constructs) {
+    const reader = readerForConstruct(construct, readers);
+    if (reader?.apply === undefined) continue;
+    const input = inputFor(content, path, construct, file);
+    // The loaded terms carry offsets into the file as it was read. Once an
+    // earlier construct has rewritten it, this one's entries are read again for
+    // offsets that are the content's own, and the caller's records carried over.
+    content = reader.apply(input, first ? terms : carryRecords(reader.read(input).terms, terms));
+    first = false;
+  }
+  return content;
+}
+
 async function writeInPlace(
   opts: WriteOptions & { cwd: string; readers: readonly TermReader[] },
   check: boolean,
@@ -304,19 +342,7 @@ async function writeInPlace(
       throw new TermError(`${file}: could not be read: ${errorMessage(error)}`);
     }
     existing.set(path, original);
-    let content = original;
-    let first = true;
-    for (const [construct, terms] of constructs) {
-      const reader = readerForConstruct(construct, readers);
-      if (reader?.apply === undefined) continue;
-      const input = inputFor(content, path, construct, file);
-      // The loaded terms carry offsets into the file as it was read. Once an
-      // earlier construct has rewritten it, this one's entries are read again
-      // from the new content, so their offsets are the content's own.
-      content = reader.apply(input, first ? terms : reader.read(input).terms);
-      first = false;
-    }
-    files.push({ path, content });
+    files.push({ path, content: applyInPlace(original, path, file, constructs, readers) });
   }
 
   const changes = await applyChanges(files, [], existing, cwd, !check && !dryRun);

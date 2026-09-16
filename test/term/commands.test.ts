@@ -15,7 +15,7 @@ import { closestName, findTerm, runGet } from "../../src/term/commands/get.js";
 import { runLint } from "../../src/term/commands/lint.js";
 import { runList } from "../../src/term/commands/list.js";
 import { formatChoice } from "../../src/term/commands/run.js";
-import { MAX_EXISTING_FILE_BYTES, runWrite, writeFormats } from "../../src/term/commands/write.js";
+import { MAX_EXISTING_FILE_BYTES, applyInPlace, runWrite, writeFormats } from "../../src/term/commands/write.js";
 import { MANIFEST_FORMAT } from "../../src/term/core/load-set.js";
 import { TERM_READERS } from "../../src/term/core/readers/index.js";
 import { VALE_MARKER } from "../../src/term/core/writers/vale.js";
@@ -32,7 +32,7 @@ import {
 import { renderListCsv } from "../../src/term/reporters/csv.js";
 import { renderFindingsJunit } from "../../src/term/reporters/junit.js";
 import { renderFindingsSarif } from "../../src/term/reporters/sarif.js";
-import type { Term, TermReader } from "../../src/term/types.js";
+import type { Term, TermConstruct, TermReader } from "../../src/term/types.js";
 
 const PROGRESSIVE = [
   "---",
@@ -599,6 +599,114 @@ describe("write in place", () => {
   it("refuses -o without -f", async () => {
     const cwd = await lenses();
     await expect(runWrite({ cwd, inputs: [], out: "x" })).rejects.toThrow(new TermError("-o needs -f <format>."));
+  });
+});
+
+describe("write in place, two constructs in one file", () => {
+  /**
+   * A stand-in body construct: every line `<prefix> <id> <label>` is an entry,
+   * and apply rewrites each entry's span from its record, so a longer label
+   * moves every offset after it.
+   */
+  function lineReader(construct: TermConstruct, prefix: string): TermReader {
+    return {
+      construct,
+      label: prefix,
+      formats: ["markdown"],
+      read(input) {
+        const terms: Term[] = [];
+        let offset = 0;
+        input.content.split("\n").forEach((line, index) => {
+          const [head, id, ...label] = line.split(" ");
+          if (head === prefix && id !== undefined) {
+            terms.push({
+              id,
+              record: { label: label.join(" ") },
+              location: {
+                file: input.file,
+                construct,
+                line: index + 1,
+                fieldLines: {},
+                span: { start: offset, end: offset + line.length },
+              },
+            });
+          }
+          offset += line.length + 1;
+        });
+        return { terms, notices: [] };
+      },
+      apply(input, terms) {
+        let content = input.content;
+        const bySpan = [...terms].sort((a, b) => (b.location.span?.start ?? 0) - (a.location.span?.start ?? 0));
+        for (const t of bySpan) {
+          const span = t.location.span;
+          if (span === undefined) continue;
+          content = `${content.slice(0, span.start)}${prefix} ${t.id} ${t.record.label}${content.slice(span.end)}`;
+        }
+        return content;
+      },
+    };
+  }
+
+  const dl = lineReader("html-dl", "dl");
+  const dfn = lineReader("html-dfn", "dfn");
+  const readers = [dl, dfn];
+  const CONTENT = ["dl bifocal bifocal", "dfn trifocal trifocal", "dl monocle monocle", "dfn lorgnette lorgnette", ""].join("\n");
+  const path = join(tmpdir(), "glossary.md");
+
+  function read(reader: TermReader): Term[] {
+    return reader.read({ content: CONTENT, file: "glossary.md", path, format: "markdown", metadata: {}, lineFor: () => undefined })
+      .terms;
+  }
+
+  function relabel(terms: readonly Term[], id: string, label: string): Term[] {
+    return terms.map((t) => (t.id === id ? { ...t, record: { ...t.record, label } } : t));
+  }
+
+  it("lands an edit to an entry of each construct", () => {
+    const constructs = new Map<TermConstruct, Term[]>([
+      ["html-dl", relabel(read(dl), "bifocal", "bifocal lens, with two powers")],
+      ["html-dfn", relabel(read(dfn), "lorgnette", "lorgnette on a handle")],
+    ]);
+    expect(applyInPlace(CONTENT, path, "glossary.md", constructs, readers)).toBe(
+      [
+        "dl bifocal bifocal lens, with two powers",
+        "dfn trifocal trifocal",
+        "dl monocle monocle",
+        "dfn lorgnette lorgnette on a handle",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("keeps the current record of an entry the caller omitted", () => {
+    const edited = relabel(read(dfn), "lorgnette", "lorgnette on a handle").filter((t) => t.id !== "trifocal");
+    const constructs = new Map<TermConstruct, Term[]>([
+      ["html-dl", relabel(read(dl), "bifocal", "bifocal lens, with two powers")],
+      ["html-dfn", edited],
+    ]);
+    expect(applyInPlace(CONTENT, path, "glossary.md", constructs, readers)).toBe(
+      [
+        "dl bifocal bifocal lens, with two powers",
+        "dfn trifocal trifocal",
+        "dl monocle monocle",
+        "dfn lorgnette lorgnette on a handle",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("matches entries that share an id by their position within the construct", () => {
+    const twice = ["dl lens bifocal", "dfn lens trifocal", "dfn lens monocle", ""].join("\n");
+    const input = { content: twice, file: "glossary.md", path, format: "markdown", metadata: {}, lineFor: () => undefined };
+    const dfnTerms = dfn.read(input).terms.map((t, i) => (i === 1 ? { ...t, record: { label: "quizzing glass" } } : t));
+    const constructs = new Map<TermConstruct, Term[]>([
+      ["html-dl", relabel(dl.read(input).terms, "lens", "bifocal lens")],
+      ["html-dfn", dfnTerms],
+    ]);
+    expect(applyInPlace(twice, path, "glossary.md", constructs, readers)).toBe(
+      ["dl lens bifocal lens", "dfn lens trifocal", "dfn lens quizzing glass", ""].join("\n"),
+    );
   });
 });
 
