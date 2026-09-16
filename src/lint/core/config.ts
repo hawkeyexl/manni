@@ -518,11 +518,20 @@ export async function resolveLintRun(
           (message) => new LintError(message),
         );
 
-  const fromCollections = opts.inputs.length === 0;
-  const inputs = fromCollections
-    ? collections.flatMap((c) => c.paths)
-    : opts.inputs;
-  const base = fromCollections && inputs.length > 0 && file ? file.dir : cwd;
+  // Stdin is not a path, so it cannot be what makes the collection fallback
+  // stand down: counting it made `- --collection guides` lint the piped
+  // document and open not one file of `guides`, exiting 0 over a docset
+  // nothing read. It is filtered out for the emptiness test and put back, so
+  // the run still knows it was asked to read stdin.
+  const paths = opts.inputs.filter((input) => input !== STDIN);
+  const usingStdin = paths.length !== opts.inputs.length;
+  const fromCollections = paths.length === 0;
+  const resolved = fromCollections ? collections.flatMap((c) => c.paths) : paths;
+  const inputs = usingStdin ? [STDIN, ...resolved] : resolved;
+  // The collections' globs were written beside the config, so they resolve
+  // there. `resolved`, not `inputs`: stdin must not move the base of a run
+  // whose collections contributed no paths at all.
+  const base = fromCollections && resolved.length > 0 && file ? file.dir : cwd;
 
   return {
     config,

@@ -542,6 +542,31 @@ describe("resolveLintRun", () => {
     expect(run.collections.map((c) => c.name)).toEqual(["api"]);
   });
 
+  // `-` is one more input rather than a path, which is what lets it ride
+  // beside `--collection`. Counting it as a path made that pairing lint the
+  // stdin document and nothing else: not one file of the collection was
+  // opened, and the run exited 0 - a silent green over a docset nothing read.
+  it("still falls back to the collections when the only input is stdin", async () => {
+    await write("manni.config.yaml", COLLECTIONS);
+    const run = await resolveLintRun({
+      cwd: dir,
+      inputs: ["-"],
+      collection: ["guides"],
+    });
+    expect(run.inputs).toEqual(["-", "docs/guides/**/*.md"]);
+    expect(run.fromCollections).toBe(true);
+    // The collection's globs were written beside the config, so the base has
+    // to follow them there even though stdin was typed from somewhere else.
+    expect(run.base).toBe(dir);
+  });
+
+  it("keeps a typed path beside stdin rather than falling back", async () => {
+    await write("manni.config.yaml", COLLECTIONS);
+    const run = await resolveLintRun({ cwd: dir, inputs: ["-", "a.md"] });
+    expect(run.inputs).toEqual(["-", "a.md"]);
+    expect(run.fromCollections).toBe(false);
+  });
+
   it("resolves typed paths from the working directory, not the config's", async () => {
     await write("manni.config.yaml", COLLECTIONS);
     const run = await resolveLintRun({ cwd: join(dir, "docs"), inputs: ["a.md"] });

@@ -18,11 +18,17 @@ import { htmlParser } from "../../../src/lint/parsers/html.js";
 import { xmlParser } from "../../../src/lint/parsers/xml.js";
 import { asciidocParser } from "../../../src/lint/parsers/asciidoc.js";
 import { rstParser } from "../../../src/lint/parsers/rst.js";
+import { supportedExtensions } from "../../../src/lint/parsers/index.js";
 import { validateDocument } from "../../../src/lint/core/validator.js";
 import { refRelativeTo } from "../../../src/lint/core/template-registry.js";
 import { fencedPosition } from "../../../src/lint/parsers/metadata.js";
 import type { Template } from "../../../src/lint/core/template.js";
-import type { DocumentTree, ListItemNode } from "../../../src/lint/types.js";
+import { LintError } from "../../../src/lint/types.js";
+import type {
+  DocumentParser,
+  DocumentTree,
+  ListItemNode,
+} from "../../../src/lint/types.js";
 import { at, defined } from "../helpers.js";
 
 let dir: string;
@@ -588,6 +594,152 @@ describe("a file no parser claims is skipped without being opened", () => {
       expect(run.summary).toMatchObject({ checked: 1, passed: 1, skipped: 1 });
     } finally {
       vi.doUnmock("node:fs/promises");
+      vi.resetModules();
+    }
+  });
+});
+
+describe("a directory walk keeps to the formats lint can parse", () => {
+  // The walk fell through to the *metadata* tool's extractor extensions the
+  // moment neither --ext nor --as was given, so it swept in every extension
+  // that tool reads - `.xml` among them. The XML parser deliberately walks
+  // `.dita` and not `.xml`, because an ordinary `pom.xml` is not a document
+  // and failing an otherwise clean tree on one is worse than missing a
+  // hand-written `.xml` page nobody pointed at.
+  it("does not sweep a pom.xml into an otherwise clean tree", async () => {
+    await file("page.md", `---\ntype: how-to\n---\n\n${HOW_TO}`);
+    await file("pom.xml", "<project><modelVersion>4.0.0</modelVersion></project>\n");
+
+    const run = await runLint({ inputs: [dir], cwd: dir });
+
+    expect(run.results.map((r) => r.file)).toEqual(["page.md"]);
+    expect(run.summary).toMatchObject({
+      checked: 1,
+      passed: 1,
+      failed: 0,
+      skipped: 0,
+    });
+  });
+
+  // The same value has to reach `assertNonEmpty`, or the note it prints names
+  // a filter that was never applied and sends the reader after the wrong
+  // extension.
+  it("names its own extension set when nothing matched", async () => {
+    await file("map.ditamap", "<map><topicref href='a.dita'/></map>\n");
+
+    const message = await runLint({ inputs: [dir], cwd: dir }).then(
+      () => "resolved",
+      (err: unknown) => (err as Error).message,
+    );
+
+    expect(message).toContain("No files matched");
+    expect(message).toContain(
+      `extensions: ${supportedExtensions().join(", ")}`,
+    );
+    expect(message).not.toContain(".xml");
+  });
+});
+
+describe("stdin is one more input, not a path", () => {
+  const COLLECTIONS = [
+    "collections:",
+    "  - name: guides",
+    '    paths: ["docs/**/*.md"]',
+    "",
+  ].join("\n");
+
+  // `--collection` beside `-` counted the stdin token as a positional path, so
+  // the collection fallback never ran: the run linted the piped document, read
+  // not one file of `guides`, and exited 0. A false green in CI.
+  it("lints the collection as well when --collection rides beside stdin", async () => {
+    await file("manni.config.yaml", COLLECTIONS);
+    await file(".git", "gitdir: elsewhere\n");
+    await file("docs/page.md", `---\ntype: how-to\n---\n\n${HOW_TO}`);
+
+    const run = await runLint({
+      inputs: ["-"],
+      collection: ["guides"],
+      as: "markdown",
+      stdinContent: `---\ntype: how-to\n---\n\n${HOW_TO}`,
+      cwd: dir,
+    });
+
+    expect(run.results.map((r) => r.file).sort()).toEqual([
+      "<stdin>",
+      "docs/page.md",
+    ]);
+    expect(run.summary).toMatchObject({ checked: 2, passed: 2 });
+  });
+
+  // The stdin guard ran after the targets were resolved, so a mistyped path
+  // beside `-` reported the path rather than the flag that was missing.
+  it("names the missing --as before it resolves a path", async () => {
+    const message = await runLint({
+      inputs: ["-", join(dir, "typo.md")],
+      cwd: dir,
+    }).then(
+      () => "resolved",
+      (err: unknown) => (err as Error).message,
+    );
+
+    expect(message).toContain(
+      "Reading from stdin (-) requires --as <format> to choose a parser.",
+    );
+    expect(message).not.toContain("typo.md");
+  });
+});
+
+describe("--as names a format the tool can actually parse", () => {
+  // `parserByName` returns roadmap stubs too, so `--as <planned>` passed the
+  // guard and then skipped every file it was given, surfacing as "Nothing was
+  // checked" (exit 2) instead of naming the flag that caused it.
+  //
+  // The stub is injected rather than staged: every registered parser is
+  // implemented today, so there is no real format that reproduces this, and
+  // registering one for the test would put a fake format in `manni lint tools`.
+  it("refuses a registered but unimplemented parser by name", async () => {
+    await file("page.md", `---\ntype: how-to\n---\n\n${HOW_TO}`);
+
+    const planned: DocumentParser = {
+      name: "planned",
+      label: "Planned Format",
+      extensions: [".planned"],
+      implemented: false,
+      parse: () => {
+        throw new LintError("Planned Format is not implemented yet.");
+      },
+    };
+
+    vi.resetModules();
+    vi.doMock("../../../src/lint/parsers/index.js", async () => {
+      const real =
+        await vi.importActual<typeof import("../../../src/lint/parsers/index.js")>(
+          "../../../src/lint/parsers/index.js",
+        );
+      return {
+        ...real,
+        parserByName: (name: string) =>
+          name === "planned" ? planned : real.parserByName(name),
+      };
+    });
+
+    try {
+      const { runLint: lintWithStub } = await import(
+        "../../../src/lint/commands/lint.js"
+      );
+      const message = await lintWithStub({
+        inputs: [dir],
+        as: "planned",
+        cwd: dir,
+      }).then(
+        () => "resolved",
+        (err: unknown) => (err as Error).message,
+      );
+
+      expect(message).toContain('Unknown format "planned"');
+      expect(message).not.toContain("Nothing was checked");
+    } finally {
+      vi.doUnmock("../../../src/lint/parsers/index.js");
       vi.resetModules();
     }
   });

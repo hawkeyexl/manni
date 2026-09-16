@@ -475,10 +475,25 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
 
   // Resolve `--as` before anything is read: a typo should fail immediately,
   // not after walking a tree of files it was going to mis-parse anyway.
+  //
+  // `implemented`, not merely registered: `parserByName` hands back roadmap
+  // stubs too, so a planned format passed this guard and then skipped every
+  // file it was pointed at - reported as "Nothing was checked", which sends
+  // the reader after the documents rather than the flag.
   const forcedParser = opts.as != null ? parserByName(opts.as) : undefined;
-  if (opts.as != null && !forcedParser) {
+  if (opts.as != null && forcedParser?.implemented !== true) {
     throw new LintError(
       `Unknown format "${opts.as}". Run "manni lint tools" to see the registered formats.`,
+    );
+  }
+
+  // Before the targets are resolved, as cite does: a mistyped path beside `-`
+  // was reported as "File not found", which names the wrong mistake when the
+  // run could not have read stdin either way.
+  const usingStdin = run.inputs.includes(STDIN_TOKEN);
+  if (usingStdin && !forcedParser) {
+    throw new LintError(
+      "Reading from stdin (-) requires --as <format> to choose a parser.",
     );
   }
 
@@ -527,9 +542,15 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
   // 200 pages and exiting 1 - which reads to CI as "the docs are wrong".
   if (ctx.cliTemplate != null) await getTemplate(ctx.cliTemplate);
 
-  const usingStdin = run.inputs.includes(STDIN_TOKEN);
   const fileInputs = run.inputs.filter((input) => input !== STDIN_TOKEN);
-  const exts = opts.exts ?? forcedParser?.extensions;
+  // Lint's own registry is the default, not the walker's. Left undefined, the
+  // family walker falls back to the *metadata* tool's extractor extensions,
+  // which sweep in every format that tool reads - `.xml` among them, where
+  // `supportedExtensions()` honours `walkExtensions` and deliberately walks
+  // `.dita` and not `.xml`, so an ordinary `pom.xml` cannot fail a clean tree.
+  // Resolved here rather than at the walk, so `assertNonEmpty` names the same
+  // set it filtered with.
+  const exts = opts.exts ?? forcedParser?.extensions ?? supportedExtensions();
   const allowEmpty = opts.allowEmpty ?? config.allowEmpty;
   // A collection's `exclude:` shapes the collection, so it applies when the
   // inputs came from the collections and never to a path the operator typed.
@@ -566,12 +587,10 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
 
   const results: LintFileResult[] = [];
 
-  if (usingStdin) {
-    if (!forcedParser) {
-      throw new LintError(
-        "Reading from stdin (-) requires --as <format> to choose a parser.",
-      );
-    }
+  // `forcedParser` is set whenever `usingStdin` is - the guard above refused
+  // the run otherwise - but only the guard knows that, so the pair is tested
+  // rather than asserted.
+  if (usingStdin && forcedParser) {
     results.push(
       await lintOne(STDIN_LABEL, opts.stdinContent ?? "", forcedParser, ctx),
     );
