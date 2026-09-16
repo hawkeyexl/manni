@@ -567,8 +567,10 @@ function parseList(
     if (indentOf(line) !== base) break;
     const match = pattern.exec(line);
     if (!match) break;
-    // docutils ends a list when the marker style changes; so do we.
-    const thisChar = ordered ? (match[3] ?? ".") : (match[2] ?? "");
+    // docutils ends a list when the marker style changes; so do we. The
+    // defaults match `markerChar`'s above: a different fallback here would end
+    // the list after its first item rather than read the style as unchanged.
+    const thisChar = ordered ? (match[3] ?? ".") : (match[2] ?? "*");
     if (thisChar !== markerChar) break;
     if (!bulletHasBody(match, src, start, to, base)) break;
 

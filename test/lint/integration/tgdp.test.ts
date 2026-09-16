@@ -25,8 +25,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 const vendored = join(here, "..", "fixtures", "tgdp");
 
 /** `how-to/template_how-to.md` -> `template_how-to.md`. */
-const basename = (source: string) =>
-  at(source.split("/"), -1, `last segment of "${source}"`);
+const basename = (source: string) => {
+  const segments = source.split("/");
+  return at(segments, segments.length - 1, `last segment of "${source}"`);
+};
 
 describe("TGDP built-ins", () => {
   it("registers every manifest entry", () => {

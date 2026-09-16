@@ -26,12 +26,19 @@ export function defined<T>(value: T, what = "value"): NonNullable<T> {
 
 /**
  * `items[index]`, or a failure naming the lookup when the slot is empty.
- * Negative indices count from the end, as `Array.prototype.at` does.
+ *
+ * A negative index fails rather than counting from the end. The `!` this
+ * replaces threw on `items[-1]`, and every caller computes its index from a
+ * 1-based position: `at(lines, span.start.line - 1)` on a line 0 would compare
+ * the last line of the file and quietly pass.
  */
 export function at<T>(
   items: readonly T[],
   index: number,
   what = "item",
 ): NonNullable<T> {
-  return defined(items.at(index), `${what} at index ${index}`);
+  if (index < 0) {
+    throw new Error(`expected ${what} at index ${index}, which is not a slot`);
+  }
+  return defined(items[index], `${what} at index ${index}`);
 }

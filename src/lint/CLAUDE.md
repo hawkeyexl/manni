@@ -1,10 +1,11 @@
 # CLAUDE.md
 
-Guidance for agents working in this repository.
+Guidance for agents working in `src/lint/`. The repository's own rules are in
+the root `CLAUDE.md`, and they win where the two disagree.
 
 ## What manni lint is
 
-A TypeScript CLI (published to npm) that validates the **structure** of a
+The structure domain of the `manni` package: it validates the **structure** of a
 document against a doctype template, routed by the page's own `type` frontmatter.
 The pipeline resolves targets, parses each to a generic section tree, resolves a
 template per file, matches sections to rules, runs content rules, and reports.
@@ -15,26 +16,31 @@ for inference, the answer belongs in `manni docevals`, not here.
 
 Key layers:
 
-- `src/parsers/` holds per-format parsing behind the `DocumentParser` interface
-  (`src/types.ts`). Each parser flattens its own AST into ordered `Block`s;
-  `sectionize.ts` folds those into the `SectionNode` tree once, for every format.
-  A new format is one file plus a line in `src/parsers/index.ts`.
-- `src/core/match.ts` decides which rule describes which section. Read the file
-  header before touching it; the decisions are subtle and each has a test.
-- `src/core/resolve-template.ts` decides which template describes which page.
-- `src/rules/` holds the content rules over the generic content model.
-- `src/commands/` holds the command cores (`lint`, `templates`, `tools`), kept
+- `src/lint/parsers/` holds per-format parsing behind the `DocumentParser`
+  interface (`src/lint/types.ts`). Each parser flattens its own AST into ordered
+  `Block`s; `sectionize.ts` folds those into the `SectionNode` tree once, for
+  every format. A new format is one file plus a line in `parsers/index.ts`.
+- `src/lint/core/match.ts` decides which rule describes which section. Read the
+  file header before touching it; the decisions are subtle and each has a test.
+- `src/lint/core/resolve-template.ts` decides which template describes which page.
+- `src/lint/rules/` holds the content rules over the generic content model.
+- `src/lint/commands/` holds the command cores (`lint`, `templates`, `tools`), kept
   free of CLI/IO plumbing so they can be unit-tested directly. `lint` and
   `tools` settle which config governs a run through `core/config.ts`'s
   `resolveLintRun`, as cite's cores do, and resolve their targets with the
   family's walker (`../meta/internal.js`) rather than one of their own.
-- `src/cli.ts` is a thin commander wrapper over the command cores. The verbs
+- `src/lint/cli.ts` is a thin commander wrapper over the command cores. The verbs
   are `check`, `structure`, `templates` and `tools`; there is no default
   subcommand (proposal 0034), and the document set is the family's
   `collections:` (proposal 0041), never a `lint.paths`.
-- `src/reporters/` formats output (pretty / json / github / sarif).
-- `src/templates/` holds the built-in doctype templates and the manifest that
-  registers them.
+- `src/lint/reporters/` formats output (pretty / json / github / sarif / junit).
+  Severity, color and the GitHub escapers come from `src/shared/`; junit rides
+  meta's renderer. A finding's id is `manni:lint/structure/<rule>`, built in
+  `core/rule-id.ts` (proposal 0049).
+- `templates/lint/tgdp/` holds the built-in doctype templates and the manifest
+  that registers them. They sit at the repository root, not under `src/`, because
+  they ship as package files rather than as bundled code — which is what
+  `npm run smoke:lint` exists to catch.
 
 ## Working agreements
 
@@ -76,7 +82,7 @@ add a smoke check. When a change affects matching, lint a real document with it.
 ### Test fixtures per feature
 
 When a feature needs sample input, add a **dedicated fixture** under
-`test/fixtures/` rather than embedding large literals in tests or reusing an
+`test/lint/fixtures/` rather than embedding large literals in tests or reusing an
 unrelated one. Name it for what it exercises. Inline strings are fine for small
 parse cases.
 
@@ -94,13 +100,14 @@ findings, **2** operational or usage error. A `LintError` always means 2.
 
 `manni docevals` parses `[{ file, success, errors: [...] }]` off stdout, and it
 *parses* rather than validates, so a renamed key yields zero findings instead of
-an error. Adding keys is safe; renaming or nesting is not. `test/unit/reporters.test.ts`
-pins it deliberately.
+an error. Adding keys is safe; renaming or nesting is not — which is why
+`ruleId` and `tool` joined an error object whose `type` stayed exactly as it was.
+`test/lint/unit/reporters.test.ts` pins it deliberately.
 
 ### Built-in templates are derived, not authored
 
-The templates under `src/templates/tgdp/` mirror The Good Docs Project at a
-pinned release. Upstream is the authority: `test/integration/tgdp.test.ts` lints
+The templates under `templates/lint/tgdp/` mirror The Good Docs Project at a
+pinned release. Upstream is the authority: `test/lint/integration/tgdp.test.ts` lints
 TGDP's own published template, vendored verbatim, against ours. **Never edit a
 vendored fixture to make a template pass.** If they disagree, the template is
 wrong. When moving the pin, bump the version in every id. A version in an id is
@@ -119,48 +126,39 @@ values in `extends` merges once already.
 
 ### Record decisions
 
-Non-obvious decisions go in `adrs/`, in the format the existing records use.
-Name the options you rejected and what was good about them. Write the
-Confirmation section naming the tests that would fail if the decision were
-reversed. See [`adrs/README.md`](adrs/README.md).
+lint's imported decision log lives at `docs/proposals/lint/` (records 01001
+through 01008) and stays as written. A decision made **inside manni** is a
+family proposal instead: `docs/proposals/NNNN-*.md`, following the root
+`CLAUDE.md` rule that a proposal is superseded, never amended. Proposal 0049 is
+this domain's record.
 
 ## Commands
 
 ```bash
-npm test                  # vitest
+npm test                  # vitest, the whole repo
 npm run typecheck         # tsc --noEmit
 npm run build             # tsup -> dist/
 npm run smoke:lint        # build, then exercise the real dist/cli.js
-npm run lint:prose        # the house voice, over this repo's own prose
 npm run check:tgdp-pin    # has upstream moved past the pinned TGDP release?
 ```
 
-The pre-commit hook runs `typecheck` and `test`.
+### Prose is linted too, by the repository's gate
 
-### Prose is linted too
+Vale runs from `.github/workflows/vale.yml` over the repository's own prose, at
+`fail_level: any` against a pinned rule package — the reasoning is in
+[01008](../../docs/proposals/lint/01008-gate-on-prose-lint-against-a-pinned-rule-set.md).
+There is no `npm run lint:prose` here; that script belonged to the standalone
+repository. `npm run lint` is ESLint.
 
-`npm run lint:prose` runs [Vale](https://vale.sh) against the house voice and
-fails on any alert at any severity, exactly as CI does. It needs `vale` on your
-PATH; the styles themselves are fetched by `vale sync` and are not committed.
-Pass `-- --no-sync` to skip the fetch offline.
+Everything under a `fixtures/` directory is exempt, `test/lint/fixtures/tgdp/`
+included, because those files are vendored verbatim from upstream and the rest
+are inputs chosen for what they parse to. Rewriting either to quiet an alert
+would break the test that reads it.
 
-The script exists because `vale`'s own exit status covers error-level alerts
-only, and one enabled rule is a warning. A bare `vale .` would pass locally
-what the gate fails.
+## Versioning
 
-The scope is this repo's own prose: README, ADRs, and this file. Test fixtures
-and `artifacts/` are exempt in `.vale.ini`, because `test/fixtures/tgdp/` is
-vendored verbatim from upstream and the rest is input chosen for what it parses
-to. Rewriting either to quiet an alert would break the test that reads it.
-
-The rule package is pinned in `.vale.ini`, for the reason the TGDP templates
-are. A gate whose rules arrive from `latest` can turn every open pull request
-red on a day nobody chose. Move the pin deliberately, and expect prose work.
-See [ADR 01008](adrs/01008-gate-on-prose-lint-against-a-pinned-rule-set.md).
-
-## Pre-1.0
-
-Breaking CLI and template-format changes are acceptable and do not need
-deprecated aliases. Commits follow Conventional Commits; `semantic-release`
-derives the version, so mark breaking changes with `!` and a `BREAKING CHANGE:`
-footer.
+`manni` is past 1.0 and published, so a breaking change costs a major release.
+Commits follow Conventional Commits and `semantic-release` derives the version:
+mark a breaking change `feat!:` with a `BREAKING CHANGE:` footer. Changes to
+`manni lint` itself have been free so far only because the domain has not
+shipped yet.
