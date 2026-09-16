@@ -16,11 +16,11 @@ import { NS } from "../core/vocab.js";
 import type { GraphIndex } from "./graph.js";
 import type { QueryTrace } from "./trace.js";
 
-const DOCKG_PATH = `${NS.dockg}path`;
+const KG_PATH = `${NS.kg}path`;
 const DCTERMS_TITLE = `${NS.dcterms}title`;
 const DCTERMS_HAS_PART = `${NS.dcterms}hasPart`;
-const DOCKG_LEVEL = `${NS.dockg}level`;
-const DOCKG_ORDER = `${NS.dockg}order`;
+const KG_LEVEL = `${NS.kg}level`;
+const KG_ORDER = `${NS.kg}order`;
 
 export interface ResolvedContent {
   iri: string;
@@ -39,7 +39,7 @@ type FetchLike = (
 ) => Promise<{ ok: boolean; status: number; text(): Promise<string> }>;
 
 export interface FetchResolverOptions {
-  /** Prefix joined to each `dockg:path`, e.g. "https://site/raw/". */
+  /** Prefix joined to each `kg:path`, e.g. "https://site/raw/". */
   baseUrl?: string;
   /** Full control over path → URL. Overrides `baseUrl`. */
   pathToUrl?: (path: string) => string;
@@ -96,7 +96,7 @@ function fencedLines(lines: string[]): boolean[] {
 
 /**
  * Sections of a document in true document order, reconstructed from the
- * `dcterms:hasPart` tree ordered by `dockg:order` within each parent.
+ * `dcterms:hasPart` tree ordered by `kg:order` within each parent.
  *
  * Needed because heading text is not unique: a document with two `## Install`
  * headings produces two section nodes, and matching by title alone would give
@@ -114,8 +114,8 @@ export function documentSectionOrder(
       .out(iri, DCTERMS_HAS_PART)
       .map((e) => e.target)
       .sort((a, b) => {
-        const oa = Number.parseInt(graph.literal(a, DOCKG_ORDER) ?? "", 10);
-        const ob = Number.parseInt(graph.literal(b, DOCKG_ORDER) ?? "", 10);
+        const oa = Number.parseInt(graph.literal(a, KG_ORDER) ?? "", 10);
+        const ob = Number.parseInt(graph.literal(b, KG_ORDER) ?? "", 10);
         if (Number.isNaN(oa) || Number.isNaN(ob) || oa === ob) {
           return a < b ? -1 : a > b ? 1 : 0;
         }
@@ -162,7 +162,7 @@ export function sectionOccurrences(
     // and `## install` gives both sections occurrence 0, and the second one
     // then slices the first heading: wrong content under a confident citation.
     const title = rawTitle.trim().toLowerCase();
-    const level = graph.literal(section, DOCKG_LEVEL) ?? "";
+    const level = graph.literal(section, KG_LEVEL) ?? "";
     let byLevel = counts.get(title);
     if (!byLevel) {
       byLevel = new Map();
@@ -296,7 +296,7 @@ function slice(
 
 /**
  * A resolver that fetches document sources over HTTP. Documents map through
- * `dockg:path`; sections slice their parent document by heading.
+ * `kg:path`; sections slice their parent document by heading.
  */
 export function createFetchResolver(
   graph: GraphIndex,
@@ -334,7 +334,7 @@ export function createFetchResolver(
   return {
     async resolve(iri: string): Promise<ResolvedContent | undefined> {
       const { doc, fragment } = splitFragment(iri);
-      const path = graph.literal(doc, DOCKG_PATH);
+      const path = graph.literal(doc, KG_PATH);
       if (!path) return undefined;
 
       const sourceUrl = toUrl(path);
@@ -353,7 +353,7 @@ export function createFetchResolver(
 
       let text = body;
       if (fragment) {
-        const levelText = graph.literal(iri, DOCKG_LEVEL);
+        const levelText = graph.literal(iri, KG_LEVEL);
         const level = levelText ? Number.parseInt(levelText, 10) : undefined;
         const slice =
           title === undefined

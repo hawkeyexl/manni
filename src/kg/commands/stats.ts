@@ -47,16 +47,16 @@ export interface StatsReport {
   sections: number;
   concepts: number;
   references: number;
-  /** dockg:path of docs with no in/out dcterms:references. */
+  /** kg:path of docs with no in/out dcterms:references. */
   orphans: string[];
   brokenLinks: Array<{ doc: string; target: string }>;
-  /** kg.sections keys that matched no heading (dockg:brokenSectionRef). */
+  /** kg.sections keys that matched no heading (kg:brokenSectionRef). */
   brokenSectionRefs: Array<{ doc: string; slug: string }>;
   mostConnected: Array<{ doc: string; degree: number }>;
   /** Per-field metadata coverage over documents, in report order. */
   coverage: CoverageRow[];
   /**
-   * Per-field coverage over `dockg:Section` nodes (ADR 01029). Reported, not
+   * Per-field coverage over `kg:Section` nodes (ADR 01029). Reported, not
    * gated: sections are explicit-only, so these start near zero on every corpus
    * and a default gate would fail every one of them.
    */
@@ -83,7 +83,7 @@ export interface LanguageReport {
   /** The same fields as `coverage`, scored over this language's documents. */
   coverage: CoverageRow[];
   /**
-   * `dockg:path` of source documents with no translation into this language,
+   * `kg:path` of source documents with no translation into this language,
    * sorted. A *source* is a document carrying no `schema:translationOfWork` —
    * so a translation is never its own backlog item — and a source already in
    * this language is excluded. Nothing here is inferred: a page counts as
@@ -129,13 +129,13 @@ export function runStats(opts: StatsOptions = {}): StatsReport {
   const store = loadGraph(resolve(cwd, opts.graph ?? config.out));
   const top = opts.top ?? 5;
 
-  const docIris = subjectsOfType(store, `${NS.dockg}Document`);
+  const docIris = subjectsOfType(store, `${NS.kg}Document`);
   const docSet = new Set(docIris);
   // One indexed scan for all paths instead of a per-doc lookup.
   const pathOf = new Map<string, string>(docIris.map((d) => [d, d]));
   for (const quad of store.getQuads(
     null,
-    namedNode(`${NS.dockg}path`),
+    namedNode(`${NS.kg}path`),
     null,
     null,
   )) {
@@ -163,7 +163,7 @@ export function runStats(opts: StatsOptions = {}): StatsReport {
     .sort();
 
   const brokenLinks = store
-    .getQuads(null, namedNode(`${NS.dockg}brokenLink`), null, null)
+    .getQuads(null, namedNode(`${NS.kg}brokenLink`), null, null)
     .map((q) => ({
       doc: pathOf.get(q.subject.value) ?? q.subject.value,
       target: q.object.value,
@@ -171,7 +171,7 @@ export function runStats(opts: StatsOptions = {}): StatsReport {
     .sort((a, b) => (a.doc + a.target < b.doc + b.target ? -1 : 1));
 
   const brokenSectionRefs = store
-    .getQuads(null, namedNode(`${NS.dockg}brokenSectionRef`), null, null)
+    .getQuads(null, namedNode(`${NS.kg}brokenSectionRef`), null, null)
     .map((q) => ({
       doc: pathOf.get(q.subject.value) ?? q.subject.value,
       slug: q.object.value,
@@ -208,7 +208,7 @@ export function runStats(opts: StatsOptions = {}): StatsReport {
 
   const coverage = coverageOver(docIris, COVERAGE_FIELDS);
   const sectionCoverage = coverageOver(
-    subjectsOfType(store, `${NS.dockg}Section`),
+    subjectsOfType(store, `${NS.kg}Section`),
     SECTION_COVERAGE_FIELDS,
   );
 
@@ -316,7 +316,7 @@ export function runStats(opts: StatsOptions = {}): StatsReport {
     sections: store.countQuads(
       null,
       namedNode(RDF_TYPE),
-      namedNode(`${NS.dockg}Section`),
+      namedNode(`${NS.kg}Section`),
       null,
     ),
     concepts: store.countQuads(

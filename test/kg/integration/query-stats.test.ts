@@ -30,7 +30,7 @@ function run(args: string[]): { stdout: string; status: number } {
 }
 
 beforeAll(() => {
-  graph = join(mkdtempSync(join(tmpdir(), "dockg-qs-")), "graph.ttl");
+  graph = join(mkdtempSync(join(tmpdir(), "manni-kg-qs-")), "graph.ttl");
   execFileSync(process.execPath, [cli, "kg", "build", "--out", graph], {
     encoding: "utf8",
     cwd: corpus,
@@ -68,7 +68,7 @@ describe("manni kg query", () => {
 
   it("matches literal objects", () => {
     const { stdout } = run(["query", "--o", "python", "-g", graph]);
-    expect(stdout).toContain("dockg:codeLanguage");
+    expect(stdout).toContain("kg:codeLanguage");
   });
 
   it("reports no matches cleanly", () => {
@@ -191,7 +191,7 @@ describe("manni kg stats", () => {
   });
 
   it("--check exits 1 for a broken section ref on an otherwise clean corpus", () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-secref-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-secref-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
       'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n',
@@ -220,7 +220,7 @@ describe("manni kg stats", () => {
 describe("manni kg stats — metadata coverage", () => {
   /** A clean one-doc corpus: no broken links, so --check isolates coverage. */
   function scratch(frontmatter: string, config = ""): string {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-cov-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-cov-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
       `collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n${config.replace(/^(?=.)/gm, "  ")}`,
@@ -422,7 +422,7 @@ describe("manni kg stats — metadata coverage", () => {
     // provenance supplies them. Needs a real repo: git is detected
     // (0051 §6), not switched on.
     const env = hermeticEnv();
-    const dir = mkdtempSync(join(tmpdir(), "dockg-cov-git-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-cov-git-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
       'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n',
@@ -548,7 +548,7 @@ describe("manni kg stats — localization", () => {
   it("omits the block entirely for a corpus with no languages", () => {
     // ADR 01029's lesson: a section that cannot say anything on most corpora
     // teaches readers to skip the whole report.
-    const dir = mkdtempSync(join(tmpdir(), "dockg-l10n-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-l10n-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
       'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n',

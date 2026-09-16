@@ -13,8 +13,8 @@ import {
 } from "../../../src/kg/core/iri.js";
 
 describe("resolveBaseIri", () => {
-  it("defaults to urn:dockg: when unset", () => {
-    expect(resolveBaseIri(undefined)).toBe("urn:dockg:");
+  it("defaults to urn:manni:kg: when unset", () => {
+    expect(resolveBaseIri(undefined)).toBe("urn:manni:kg:");
   });
 
   it("appends a trailing slash to http(s) bases missing one", () => {
@@ -77,8 +77,8 @@ describe("mintDocIri", () => {
   });
 
   it("works with the urn fallback base", () => {
-    expect(mintDocIri("urn:dockg:", "docs/intro.md")).toBe(
-      "urn:dockg:doc/docs/intro.md",
+    expect(mintDocIri("urn:manni:kg:", "docs/intro.md")).toBe(
+      "urn:manni:kg:doc/docs/intro.md",
     );
   });
 });

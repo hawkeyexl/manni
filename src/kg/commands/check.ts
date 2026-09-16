@@ -1,14 +1,17 @@
 /**
  * `manni kg check` — graph-level validation: run the published SHACL shapes
  * (plus the TS-side SKOS integrity checks) over the built graph and report
- * findings with the doc paths responsible. Violations exit 1; warnings and
- * info findings are reported but pass.
+ * findings with the doc paths responsible. Errors exit 1; warnings and
+ * notices are reported but pass.
  */
 import { resolve } from "node:path";
+import type { Severity } from "../../shared/severity.js";
 import { loadRunConfig } from "../core/config.js";
 import { loadGraph, compactIri } from "../core/load.js";
 import { bundledShapesPath } from "../core/pkg.js";
 import { validateGraph, type CheckFinding } from "../core/shacl.js";
+import { renderCheckGithub } from "../reporters/github.js";
+import type { CheckFormat } from "../reporters/index.js";
 
 export interface CheckOptions {
   config?: string;
@@ -23,8 +26,10 @@ export interface CheckOptions {
 
 export interface CheckReport {
   findings: CheckFinding[];
-  violations: number;
+  /** Counts on the family's scale, not SHACL's (proposal 0051 §2). */
+  errors: number;
   warnings: number;
+  notices: number;
   /** Shapes files used, as given (for reporting). */
   shapes: string[];
   exitCode: 0 | 1;
@@ -51,26 +56,33 @@ export async function runCheck(opts: CheckOptions = {}): Promise<CheckReport> {
       : [bundledShapesPath(import.meta.url)];
 
   const findings = await validateGraph(store, shapes);
-  const violations = findings.filter((f) => f.severity === "violation").length;
-  const warnings = findings.filter((f) => f.severity === "warning").length;
+  const count = (severity: Severity): number =>
+    findings.filter((f) => f.severity === severity).length;
+  const errors = count("error");
 
   return {
     findings,
-    violations,
-    warnings,
+    errors,
+    warnings: count("warning"),
+    notices: count("notice"),
     shapes,
-    exitCode: violations > 0 ? 1 : 0,
+    // Only an `error` fails the run; a warning and a notice are reported and
+    // pass, as they were when they were called violations and warnings.
+    exitCode: errors > 0 ? 1 : 0,
   };
 }
 
-export function renderCheck(
-  report: CheckReport,
-  format: "pretty" | "json",
-): string {
+/** `2 errors`, `1 warning`, `0 notices` — each count pluralized on its own. */
+function plural(n: number, word: string): string {
+  return `${String(n)} ${word}${n === 1 ? "" : "s"}`;
+}
+
+export function renderCheck(report: CheckReport, format: CheckFormat): string {
   if (format === "json") {
     const { exitCode: _exitCode, ...rest } = report;
     return JSON.stringify(rest, null, 2);
   }
+  if (format === "github") return renderCheckGithub(report);
   const lines: string[] = [];
   for (const f of report.findings) {
     const where = f.docs.length > 0 ? ` [${f.docs.join(", ")}]` : "";
@@ -82,7 +94,7 @@ export function renderCheck(
   }
   if (report.findings.length > 0) lines.push("");
   lines.push(
-    `${report.violations} violation${report.violations === 1 ? "" : "s"}, ${report.warnings} warning${report.warnings === 1 ? "" : "s"}`,
+    `${plural(report.errors, "error")}, ${plural(report.warnings, "warning")}, ${plural(report.notices, "notice")}`,
   );
   return lines.join("\n");
 }

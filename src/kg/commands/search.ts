@@ -120,7 +120,7 @@ function loadSearchIndex(indexPath: string): {
   const entries = (parsed as SearchIndexDoc | null)?.entries;
   if (!Array.isArray(entries)) {
     throw new KgError(
-      `Not a dockg search index: ${indexPath} — expected an \`entries\` array; re-run \`manni kg export search\`.`,
+      `Not a manni kg search index: ${indexPath} — expected an \`entries\` array; re-run \`manni kg export search\`.`,
     );
   }
   return {
@@ -151,7 +151,7 @@ function resolveLocalization(
   const manifest = parseLocalizations(readFileSync(manifestPath, "utf8"));
   if (!manifest) {
     throw new KgError(
-      `Not a dockg localization manifest: ${manifestPath} — re-run \`manni kg export search\`.`,
+      `Not a manni kg localization manifest: ${manifestPath} — re-run \`manni kg export search\`.`,
     );
   }
   const available = manifest.languages.map((l) => l.language);

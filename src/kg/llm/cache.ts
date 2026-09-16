@@ -39,6 +39,6 @@ export function cacheKey(
  */
 export class FillCache extends JsonCache<Record<string, unknown>> {
   constructor(dir: string, enabled: boolean = true) {
-    super(dir, enabled, "dockg");
+    super(dir, enabled, "manni");
   }
 }

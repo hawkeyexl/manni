@@ -112,7 +112,7 @@ export async function runBuild(opts: BuildOptions = {}): Promise<BuildResult> {
   const quads = deriveGraph(docs, {
     baseIri: config.baseIri,
     derive: config.build.derive,
-    // The package version, stamped on the build agent (dockg:version). One
+    // The package version, stamped on the build agent (kg:version). One
     // package, one version: the tool no longer has one of its own.
     toolVersion: pkg.version,
     gitHistory,

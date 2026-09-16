@@ -121,7 +121,7 @@ export function harvestWarnings(docs: readonly DocModel[]): string[] {
       // page carrying both `applies-to` and `applies_to` has made its choice.
       if (meant === undefined || present.has(meant)) continue;
       out.push(
-        `${doc.path}: page key "${key}" is not read by dockg and looks like "${meant}" — nothing was derived from it`,
+        `${doc.path}: page key "${key}" is not read by manni kg and looks like "${meant}" — nothing was derived from it`,
       );
     }
 

@@ -25,19 +25,19 @@ const INDEX: SearchIndexDoc = {
     },
     {
       id: DOC,
-      type: "dockg:Document",
+      type: "kg:Document",
       title: "A Document",
       description: "About installing.",
     },
     {
       id: SEC_INSTALL,
-      type: "dockg:Section",
+      type: "kg:Section",
       title: "Install",
       text: "## Install\n\nRun the installer. The default cache directory is marmalade.",
     },
     {
       id: SEC_OTHER,
-      type: "dockg:Section",
+      type: "kg:Section",
       title: "Other",
       text: "## Other\n\nUnrelated notes.",
     },

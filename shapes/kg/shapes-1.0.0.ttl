@@ -1,33 +1,71 @@
-# dockg graph shapes 0.6 — the published SHACL contract for graphs emitted by
-# `dockg build`. Consumed by `dockg check` (and the `dockg fill` guardrail).
+# manni kg graph shapes 1.0.0 — the published SHACL contract for graphs emitted
+# by `manni kg build`. Consumed by `manni kg check` (and the `manni kg fill`
+# guardrail).
 #
-# 0.6 changes no constraint. It exists because the dockg: namespace moved to a
-# location that resolves — https://hawkeyexl.github.io/dockg/ns# — alongside the
-# vocabulary document that now defines every term (ADR 01030). Published shapes
+# Three segments, per the versioning convention in CLAUDE.md, and the first
+# file that convention binds. The two-segment files whose history the notes
+# below record are gone; this is the only shapes file that ships. MAJOR,
+# because a graph that used to validate can now fail — see the language
+# pattern.
+#
+# 1.0.0 makes language a scope dimension and gives translations a relation
+# (ADR 01037):
+#
+#   - dcterms:language gains a BCP-47 sh:pattern. `lang: English` validated
+#     under 0.7 and does not here. The value is a partition key — scope
+#     filtering, per-language coverage, and the per-locale retrieval artifacts
+#     all group on it — so "a string" is not the contract, any more than it was
+#     for kg:contentHash. A free-text label silently partitions a corpus into
+#     buckets of one.
+#   - Document learns schema:translationOfWork and schema:workTranslation, the
+#     two directions manni kg materializes from one authored `translation-of` key.
+#     Without them the closed shape rejects every translated corpus, which is
+#     the mechanism working, not a bug to route around.
+#
+# There is deliberately no negative-language predicate, and so no sh:disjoint
+# pair as there is for variants and subjects (ADR 01014). A document has one
+# language, which sh:maxCount 1 already says; "not in German" is not a claim an
+# author makes.
+#
+# 0.7 required kg:contentHash on every Document: a lowercase sha256 hex
+# digest of the source file's content (ADR 01036). Required rather than
+# optional because the predicate is unconditional — it is intrinsic like
+# kg:path, not gated behind a derive source — so optional would let a
+# regression that stops emitting it pass `check` in silence. A graph built
+# before 0.7 therefore fails it until rebuilt. There is no older file to pin
+# check.shapes to any more: 0.1 through 0.7 were dockg's published history,
+# which nothing read and which went with that identity (proposal 0051 §7).
+#
+# 0.6 changed no constraint. It existed because the kg: namespace moved to a
+# location that resolves — https://hawkeyexl.github.io/manni/kg/ns# — alongside the
+# vocabulary document that defines every term (ADR 01030). Published shapes
 # are immutable, so a namespace change is a new file rather than an edit. The
-# shapes namespace moved with it: dsh: is now
-# https://hawkeyexl.github.io/dockg/shapes/0.6#.
+# shapes namespace moves with each version: dsh: is now
+# https://hawkeyexl.github.io/manni/kg/shapes/1.0.0#.
 #
 # 0.5 reified fill provenance (ADR 01015): the kg-fill activity now links to one
-# entry node per filled field via dockg:filledFieldEntry, and each entry carries
-# dockg:filledField + an optional dockg:confidence decimal (replacing the bare
-# dockg:filledField literal on the activity). 0.4 added negative scope (ADR
+# entry node per filled field via kg:filledFieldEntry, and each entry carries
+# kg:filledField + an optional kg:confidence decimal (replacing the bare
+# kg:filledField literal on the activity). 0.4 added negative scope (ADR
 # 01014); 0.3 added section-level iiRDS typing (ADR 01013); 0.2 added iiRDS
 # Core/Software typing on Documents (ADR 01012).
 #
 # This file is immutable once published: evolve by adding a new version file
-# (dockg-0.6.ttl), never by editing this one. Every shape has a named IRI — the
+# (shapes-1.1.0.ttl), never by editing this one. Every shape has a named IRI — the
 # only anonymous nodes are the sh:ignoredProperties and sh:in lists the SHACL
 # vocabulary requires — so the file diffs cleanly.
 #
-# Severity contract: sh:Violation → exit 1; sh:Warning / sh:Info → reported,
-# exit 0. Cycle detection (skos:broader loops) and broaderTransitive/related
-# disjointness cannot be expressed in core SHACL and are enforced by dockg's
-# check core alongside these shapes.
+# Severity contract: these three levels map onto the family scale every manni
+# tool speaks (proposal 0051 §2). sh:Violation → error, and errors exit 1;
+# sh:Warning → warning and sh:Info → notice, both reported at exit 0. Each
+# finding also keeps SHACL's own word, as `shaclSeverity`. Cycle detection
+# (skos:broader loops) and broaderTransitive/related disjointness cannot be
+# expressed in core SHACL and are enforced by kg's check core alongside these
+# shapes.
 
 @prefix dcterms: <http://purl.org/dc/terms/> .
-@prefix dockg: <https://hawkeyexl.github.io/dockg/ns#> .
-@prefix dsh: <https://hawkeyexl.github.io/dockg/shapes/0.6#> .
+@prefix kg: <https://hawkeyexl.github.io/manni/kg/ns#> .
+@prefix dsh: <https://hawkeyexl.github.io/manni/kg/shapes/1.0.0#> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix iirds: <http://iirds.tekom.de/iirds#> .
 @prefix iirdsSft: <http://iirds.tekom.de/iirds/domain/software#> .
@@ -44,11 +82,12 @@
 
 dsh:DocumentShape
   a sh:NodeShape ;
-  sh:targetClass dockg:Document ;
+  sh:targetClass kg:Document ;
   sh:closed true ;
   sh:ignoredProperties ( rdf:type ) ;
   sh:property
     dsh:Document-path ,
+    dsh:Document-contentHash ,
     dsh:Document-title ,
     dsh:Document-description ,
     dsh:Document-creator ,
@@ -69,6 +108,8 @@ dsh:DocumentShape
     dsh:Document-softwareSubject ,
     dsh:Document-notApplicableToVariant ,
     dsh:Document-notSoftwareSubject ,
+    dsh:Document-translationOfWork ,
+    dsh:Document-workTranslation ,
     dsh:Document-wasAttributedTo ,
     dsh:Document-qualifiedAttribution ,
     dsh:Document-generatedAtTime ,
@@ -78,8 +119,18 @@ dsh:DocumentShape
 
 dsh:Document-path
   a sh:PropertyShape ;
-  sh:path dockg:path ;
+  sh:path kg:path ;
   sh:datatype xsd:string ;
+  sh:minCount 1 ;
+  sh:maxCount 1 .
+
+# Pattern-checked, not merely typed: the value is a join key other systems index
+# on, so "a string" is not the contract — 64 lowercase hex characters is.
+dsh:Document-contentHash
+  a sh:PropertyShape ;
+  sh:path kg:contentHash ;
+  sh:datatype xsd:string ;
+  sh:pattern "^[0-9a-f]{64}$" ;
   sh:minCount 1 ;
   sh:maxCount 1 .
 
@@ -109,10 +160,34 @@ dsh:Document-modified
   sh:path dcterms:modified ;
   sh:maxCount 1 .
 
+# Pattern-checked for the same reason kg:contentHash is: the value is a
+# partition key, not prose. The grammar is BCP-47's common shape —
+# language(2-3) + optional script(4) + optional region(2 alpha or 3 digit) +
+# variants — which accepts de, de-DE, zh-Hans, zh-Hans-CN, pt-BR, und, and
+# rejects English and de_DE.
 dsh:Document-language
   a sh:PropertyShape ;
   sh:path dcterms:language ;
+  sh:datatype xsd:string ;
+  sh:pattern "^[A-Za-z]{2,3}(-[A-Za-z]{4})?(-([A-Za-z]{2}|[0-9]{3}))?(-([A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*$" ;
   sh:maxCount 1 .
+
+# The two directions of one authored `translation-of` (ADR 01037). No
+# sh:maxCount: a source document has as many translations as the corpus
+# carries, and a translation may itself be the source of another.
+# schema:translationOfWork accepts any IRI because a target outside the corpus
+# is a URL manni kg resolves but does not analyze; schema:workTranslation is only
+# ever minted at a corpus document, so it carries the class constraint.
+dsh:Document-translationOfWork
+  a sh:PropertyShape ;
+  sh:path schema:translationOfWork ;
+  sh:nodeKind sh:IRI .
+
+dsh:Document-workTranslation
+  a sh:PropertyShape ;
+  sh:path schema:workTranslation ;
+  sh:nodeKind sh:IRI ;
+  sh:class kg:Document .
 
 dsh:Document-primaryTopic
   a sh:PropertyShape ;
@@ -135,7 +210,7 @@ dsh:Document-hasPart
   a sh:PropertyShape ;
   sh:path dcterms:hasPart ;
   sh:nodeKind sh:IRI ;
-  sh:class dockg:Section .
+  sh:class kg:Section .
 
 dsh:Document-references
   a sh:PropertyShape ;
@@ -144,13 +219,13 @@ dsh:Document-references
 
 dsh:Document-brokenLink
   a sh:PropertyShape ;
-  sh:path dockg:brokenLink ;
+  sh:path kg:brokenLink ;
   sh:datatype xsd:string .
 
 # A kg.sections key that named no heading (surfaced by stats, gated by --check).
 dsh:Document-brokenSectionRef
   a sh:PropertyShape ;
-  sh:path dockg:brokenSectionRef ;
+  sh:path kg:brokenSectionRef ;
   sh:datatype xsd:string .
 
 dsh:Document-image
@@ -160,7 +235,7 @@ dsh:Document-image
 
 dsh:Document-codeLanguage
   a sh:PropertyShape ;
-  sh:path dockg:codeLanguage ;
+  sh:path kg:codeLanguage ;
   sh:datatype xsd:string .
 
 # iiRDS Core topic type: exactly the six published Generic* instances.
@@ -214,14 +289,14 @@ dsh:Document-softwareSubject
 # or subject asserted as both applicable and not-applicable on one node fails.
 dsh:Document-notApplicableToVariant
   a sh:PropertyShape ;
-  sh:path dockg:notApplicableToVariant ;
+  sh:path kg:notApplicableToVariant ;
   sh:nodeKind sh:IRI ;
   sh:class iirds:ProductVariant ;
   sh:disjoint iirds:relates-to-product-variant .
 
 dsh:Document-notSoftwareSubject
   a sh:PropertyShape ;
-  sh:path dockg:notSoftwareSubject ;
+  sh:path kg:notSoftwareSubject ;
   sh:nodeKind sh:IRI ;
   sh:disjoint iirds:has-subject ;
   sh:in (
@@ -263,7 +338,7 @@ dsh:Document-wasGeneratedBy
   sh:class prov:Activity .
 
 # --- Product variants --------------------------------------------------------
-# Minted from kg.appliesTo. dockg references iiRDS ProductVariant as a class
+# Minted from kg.appliesTo. manni kg references iiRDS ProductVariant as a class
 # but only labels the node — the iiRDS vocabulary itself is never re-emitted.
 
 dsh:ProductVariantShape
@@ -283,7 +358,7 @@ dsh:ProductVariant-title
 
 dsh:SectionShape
   a sh:NodeShape ;
-  sh:targetClass dockg:Section ;
+  sh:targetClass kg:Section ;
   sh:closed true ;
   sh:ignoredProperties ( rdf:type ) ;
   sh:property
@@ -307,14 +382,14 @@ dsh:Section-title
 
 dsh:Section-level
   a sh:PropertyShape ;
-  sh:path dockg:level ;
+  sh:path kg:level ;
   sh:datatype xsd:integer ;
   sh:minCount 1 ;
   sh:maxCount 1 .
 
 dsh:Section-order
   a sh:PropertyShape ;
-  sh:path dockg:order ;
+  sh:path kg:order ;
   sh:datatype xsd:integer ;
   sh:minCount 1 ;
   sh:maxCount 1 .
@@ -323,7 +398,7 @@ dsh:Section-hasPart
   a sh:PropertyShape ;
   sh:path dcterms:hasPart ;
   sh:nodeKind sh:IRI ;
-  sh:class dockg:Section .
+  sh:class kg:Section .
 
 # Section-level iiRDS typing (ADR 01013) — the same constraints the Document
 # shape carries for these predicates.
@@ -383,14 +458,14 @@ dsh:Section-softwareSubject
 # Section-level negative scope (ADR 01014), disjoint from the positive relation.
 dsh:Section-notApplicableToVariant
   a sh:PropertyShape ;
-  sh:path dockg:notApplicableToVariant ;
+  sh:path kg:notApplicableToVariant ;
   sh:nodeKind sh:IRI ;
   sh:class iirds:ProductVariant ;
   sh:disjoint iirds:relates-to-product-variant .
 
 dsh:Section-notSoftwareSubject
   a sh:PropertyShape ;
-  sh:path dockg:notSoftwareSubject ;
+  sh:path kg:notSoftwareSubject ;
   sh:nodeKind sh:IRI ;
   sh:disjoint iirds:has-subject ;
   sh:in (
@@ -421,7 +496,7 @@ dsh:Concept-prefLabel
   sh:minCount 1 .
 
 # Warning, not Violation: concept IRIs deliberately converge on slugified
-# labels (dockg's design), so "Configuration" and "configuration" merge into
+# labels (manni kg's design), so "Configuration" and "configuration" merge into
 # one concept carrying both spellings. SKOS wants exactly one prefLabel —
 # surface the collision so authors can settle on a spelling, but don't fail
 # the build over the convergence feature working as designed.
@@ -507,7 +582,7 @@ dsh:Agent-name
 
 dsh:SoftwareAgent-version
   a sh:PropertyShape ;
-  sh:path dockg:version ;
+  sh:path kg:version ;
   sh:datatype xsd:string ;
   sh:maxCount 1 .
 
@@ -538,7 +613,7 @@ dsh:Activity-qualifiedAssociation
 # The fill activity links to one entry node per filled field (ADR 01015).
 dsh:Activity-filledFieldEntry
   a sh:PropertyShape ;
-  sh:path dockg:filledFieldEntry ;
+  sh:path kg:filledFieldEntry ;
   sh:nodeKind sh:IRI .
 
 # Each filled-field entry carries the field name and (when fill recorded one)
@@ -546,7 +621,7 @@ dsh:Activity-filledFieldEntry
 # separately typed, keeping the node vocabulary at two classes.
 dsh:FilledFieldEntryShape
   a sh:NodeShape ;
-  sh:targetObjectsOf dockg:filledFieldEntry ;
+  sh:targetObjectsOf kg:filledFieldEntry ;
   sh:closed true ;
   sh:ignoredProperties ( rdf:type ) ;
   sh:property
@@ -555,14 +630,14 @@ dsh:FilledFieldEntryShape
 
 dsh:FilledFieldEntry-name
   a sh:PropertyShape ;
-  sh:path dockg:filledField ;
+  sh:path kg:filledField ;
   sh:datatype xsd:string ;
   sh:minCount 1 ;
   sh:maxCount 1 .
 
 dsh:FilledFieldEntry-confidence
   a sh:PropertyShape ;
-  sh:path dockg:confidence ;
+  sh:path kg:confidence ;
   sh:datatype xsd:decimal ;
   sh:maxCount 1 .
 

@@ -46,12 +46,12 @@ export const VCARD_ORGANIZATION = `${VCARD_NS}Organization`;
 export const VCARD_ORGANIZATION_NAME = `${VCARD_NS}organization-name`;
 
 /**
- * Negative-scope predicates (ADR 01014). Minted into `dockg:` — no standard
+ * Negative-scope predicates (ADR 01014). Minted into `kg:` — no standard
  * term exists, and OWL negative property assertions require blank nodes. Each
  * mirrors, and is SHACL-disjoint from, its positive counterpart above.
  */
-export const DOCKG_NOT_APPLICABLE_TO_VARIANT = `${NS.dockg}notApplicableToVariant`;
-export const DOCKG_NOT_SOFTWARE_SUBJECT = `${NS.dockg}notSoftwareSubject`;
+export const KG_NOT_APPLICABLE_TO_VARIANT = `${NS.kg}notApplicableToVariant`;
+export const KG_NOT_SOFTWARE_SUBJECT = `${NS.kg}notSoftwareSubject`;
 
 /**
  * Page-level `type` → `kg.type` (ADR 01024). The page's `type` is an open

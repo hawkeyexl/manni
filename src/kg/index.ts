@@ -1,11 +1,11 @@
-/** dockg public API. */
+/** The kg tool's public API. */
 export * from "./types.js";
 export {
   defaultConfig,
   loadConfig,
   loadRunConfig,
   parseConfig,
-  type DockgConfig,
+  type KgConfig,
   type DeriveSource,
   type FillField,
 } from "./core/config.js";
@@ -24,8 +24,8 @@ export {
   type DocumentSetOptions,
 } from "./core/discover.js";
 export {
-  DOCKG_NOT_APPLICABLE_TO_VARIANT,
-  DOCKG_NOT_SOFTWARE_SUBJECT,
+  KG_NOT_APPLICABLE_TO_VARIANT,
+  KG_NOT_SOFTWARE_SUBJECT,
   SOFTWARE_LIFECYCLE_IRIS,
   SOFTWARE_SUBJECT_IRIS,
   TOPIC_TYPE_IRIS,
@@ -74,7 +74,7 @@ export {
   storeToQuads,
 } from "./core/load.js";
 /**
- * The browser-native GraphRAG runtime is also published as the `dockg/runtime`
+ * The browser-native GraphRAG runtime is also published as the `@hawkeyexl/manni/kg/runtime`
  * subpath, which is the import to use in a browser: it has no `node:` imports
  * and no dependencies (ADR 01018).
  */

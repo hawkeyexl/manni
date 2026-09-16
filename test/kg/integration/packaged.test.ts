@@ -157,7 +157,7 @@ describe("the packaged tarball", () => {
   });
 
   it("builds the corpus byte-identically to the in-repo CLI", () => {
-    const out = mkdtempSync(join(tmpdir(), "dockg-packaged-"));
+    const out = mkdtempSync(join(tmpdir(), "manni-kg-packaged-"));
     const packedOut = join(out, "packed.ttl");
     const repoOut = join(out, "repo.ttl");
 
@@ -181,13 +181,13 @@ describe("the packaged tarball", () => {
     //
     // The graph goes to a temp path rather than the fixture's configured
     // `out`: test/kg/fixtures/ is byte-sensitive and nothing here may write into it.
-    const out = mkdtempSync(join(tmpdir(), "dockg-packaged-check-"));
+    const out = mkdtempSync(join(tmpdir(), "manni-kg-packaged-check-"));
     const graph = join(out, "graph.ttl");
     expect(cli(["build", "--out", graph], corpus).status).toBe(0);
 
     const { stdout, status } = cli(["check", "-g", graph], corpus);
     expect(status, stdout).toBe(0);
-    expect(stdout).toMatch(/\d+ violations?, \d+ warnings?/);
+    expect(stdout).toMatch(/\d+ errors?, \d+ warnings?, \d+ notices?/);
   });
 
   it("finds its bundled kg schema — the `validate` default resolves after packing", () => {
@@ -197,7 +197,7 @@ describe("the packaged tarball", () => {
   });
 
   it("exports every format from the packaged bytes", () => {
-    const out = mkdtempSync(join(tmpdir(), "dockg-packaged-fmt-"));
+    const out = mkdtempSync(join(tmpdir(), "manni-kg-packaged-fmt-"));
     const graph = join(out, "graph.ttl");
     expect(cli(["build", "--out", graph], corpus).status).toBe(0);
 

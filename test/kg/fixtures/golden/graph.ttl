@@ -1,8 +1,8 @@
 @prefix dcterms: <http://purl.org/dc/terms/> .
-@prefix dockg: <https://hawkeyexl.github.io/dockg/ns#> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix iirds: <http://iirds.tekom.de/iirds#> .
 @prefix iirdsSft: <http://iirds.tekom.de/iirds/domain/software#> .
+@prefix kg: <https://hawkeyexl.github.io/manni/kg/ns#> .
 @prefix prov: <http://www.w3.org/ns/prov#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix schema: <https://schema.org/> .
@@ -10,13 +10,13 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <https://example.com/kg/activity/build> a prov:Activity ;
-  prov:qualifiedAssociation <https://example.com/kg/activity/build.assoc.dockg> ;
+  prov:qualifiedAssociation <https://example.com/kg/activity/build.assoc.manni> ;
   prov:used <https://example.com/kg/doc/docs/configuration.md>, <https://example.com/kg/doc/docs/de/getting-started.md>, <https://example.com/kg/doc/docs/de/regional.md>, <https://example.com/kg/doc/docs/fr/getting-started.md>, <https://example.com/kg/doc/docs/getting-started.md>, <https://example.com/kg/doc/docs/harvest.md>, <https://example.com/kg/doc/docs/no-frontmatter.md>, <https://example.com/kg/doc/docs/windows-notes.md> ;
-  prov:wasAssociatedWith <https://example.com/kg/agent/software/dockg> .
+  prov:wasAssociatedWith <https://example.com/kg/agent/software/manni> .
 
-<https://example.com/kg/activity/build.assoc.dockg> a prov:Association ;
-  prov:agent <https://example.com/kg/agent/software/dockg> ;
-  prov:hadRole dockg:toolRole .
+<https://example.com/kg/activity/build.assoc.manni> a prov:Association ;
+  prov:agent <https://example.com/kg/agent/software/manni> ;
+  prov:hadRole kg:toolRole .
 
 <https://example.com/kg/agent/person/jane-doe> a prov:Person ;
   foaf:name "Jane Doe" .
@@ -24,9 +24,9 @@
 <https://example.com/kg/agent/software/claude-sonnet-4-5> a prov:SoftwareAgent ;
   foaf:name "claude-sonnet-4-5" .
 
-<https://example.com/kg/agent/software/dockg> a prov:SoftwareAgent ;
-  foaf:name "dockg" ;
-  dockg:version "0.1.0" .
+<https://example.com/kg/agent/software/manni> a prov:SoftwareAgent ;
+  foaf:name "manni" ;
+  kg:version "2.1.0" .
 
 <https://example.com/kg/concept/administration> a skos:Concept ;
   skos:inScheme <https://example.com/kg/scheme> ;
@@ -55,7 +55,7 @@
   skos:inScheme <https://example.com/kg/scheme> ;
   skos:prefLabel "upgrade" .
 
-<https://example.com/kg/doc/docs/configuration.md> a prov:Entity, dockg:Document ;
+<https://example.com/kg/doc/docs/configuration.md> a prov:Entity, kg:Document ;
   iirds:has-subject iirdsSft:Interface ;
   iirds:has-topic-type iirds:GenericReference ;
   iirds:relates-to-product-variant <https://example.com/kg/product/sp-x100>, <https://example.com/kg/product/sp-x200> ;
@@ -64,76 +64,76 @@
   dcterms:subject <https://example.com/kg/concept/configuration>, <https://example.com/kg/concept/reference> ;
   dcterms:title "Configuration Reference" ;
   foaf:primaryTopic <https://example.com/kg/concept/configuration> ;
-  dockg:contentHash "e88c7b22551fb5d196119d7aac223763ad552a519a3d79343174612bdf3c2c4f" ;
-  dockg:notApplicableToVariant <https://example.com/kg/product/sp-x300> ;
-  dockg:path "docs/configuration.md" .
+  kg:contentHash "e88c7b22551fb5d196119d7aac223763ad552a519a3d79343174612bdf3c2c4f" ;
+  kg:notApplicableToVariant <https://example.com/kg/product/sp-x300> ;
+  kg:path "docs/configuration.md" .
 
-<https://example.com/kg/doc/docs/configuration.md#advanced> a dockg:Section ;
+<https://example.com/kg/doc/docs/configuration.md#advanced> a kg:Section ;
   dcterms:title "Advanced" ;
-  dockg:level 3 ;
-  dockg:order 1 .
+  kg:level 3 ;
+  kg:order 1 .
 
-<https://example.com/kg/doc/docs/configuration.md#configuration> a dockg:Section ;
+<https://example.com/kg/doc/docs/configuration.md#configuration> a kg:Section ;
   dcterms:hasPart <https://example.com/kg/doc/docs/configuration.md#options> ;
   dcterms:title "Configuration" ;
-  dockg:level 1 ;
-  dockg:order 1 .
+  kg:level 1 ;
+  kg:order 1 .
 
-<https://example.com/kg/doc/docs/configuration.md#options> a dockg:Section ;
+<https://example.com/kg/doc/docs/configuration.md#options> a kg:Section ;
   dcterms:hasPart <https://example.com/kg/doc/docs/configuration.md#advanced> ;
   dcterms:title "Options" ;
-  dockg:level 2 ;
-  dockg:notSoftwareSubject iirdsSft:Architecture ;
-  dockg:order 1 .
+  kg:level 2 ;
+  kg:notSoftwareSubject iirdsSft:Architecture ;
+  kg:order 1 .
 
-<https://example.com/kg/doc/docs/de/getting-started.md> a prov:Entity, dockg:Document ;
+<https://example.com/kg/doc/docs/de/getting-started.md> a prov:Entity, kg:Document ;
   dcterms:description "Installieren und den ersten Graphen bauen." ;
   dcterms:hasPart <https://example.com/kg/doc/docs/de/getting-started.md#erste-schritte> ;
   dcterms:language "de" ;
   dcterms:title "Erste Schritte" ;
-  dockg:contentHash "ca7491427d71996b92cbbb13bff2e3af9bb5129547f2d20682fa160910138882" ;
-  dockg:path "docs/de/getting-started.md" ;
+  kg:contentHash "ca7491427d71996b92cbbb13bff2e3af9bb5129547f2d20682fa160910138882" ;
+  kg:path "docs/de/getting-started.md" ;
   schema:translationOfWork <https://example.com/kg/doc/docs/getting-started.md> .
 
-<https://example.com/kg/doc/docs/de/getting-started.md#erste-schritte> a dockg:Section ;
+<https://example.com/kg/doc/docs/de/getting-started.md#erste-schritte> a kg:Section ;
   dcterms:hasPart <https://example.com/kg/doc/docs/de/getting-started.md#install> ;
   dcterms:title "Erste Schritte" ;
-  dockg:level 1 ;
-  dockg:order 1 .
+  kg:level 1 ;
+  kg:order 1 .
 
-<https://example.com/kg/doc/docs/de/getting-started.md#install> a dockg:Section ;
+<https://example.com/kg/doc/docs/de/getting-started.md#install> a kg:Section ;
   dcterms:title "Install" ;
-  dockg:level 2 ;
-  dockg:order 1 .
+  kg:level 2 ;
+  kg:order 1 .
 
-<https://example.com/kg/doc/docs/de/regional.md> a prov:Entity, dockg:Document ;
+<https://example.com/kg/doc/docs/de/regional.md> a prov:Entity, kg:Document ;
   dcterms:hasPart <https://example.com/kg/doc/docs/de/regional.md#regionale-hinweise> ;
   dcterms:language "de-AT" ;
   dcterms:title "Regionale Hinweise" ;
-  dockg:brokenLink "../missing.md" ;
-  dockg:contentHash "7d6d58187c3af0e2de0f61ea68d30ce5d282ee89240b9f3135747055bed50626" ;
-  dockg:path "docs/de/regional.md" .
+  kg:brokenLink "../missing.md" ;
+  kg:contentHash "5483cfe047b73d54f42a4ee43a03624dea5547db5b9e11741c97fde5802f0859" ;
+  kg:path "docs/de/regional.md" .
 
-<https://example.com/kg/doc/docs/de/regional.md#regionale-hinweise> a dockg:Section ;
+<https://example.com/kg/doc/docs/de/regional.md#regionale-hinweise> a kg:Section ;
   dcterms:title "Regionale Hinweise" ;
-  dockg:level 1 ;
-  dockg:order 1 .
+  kg:level 1 ;
+  kg:order 1 .
 
-<https://example.com/kg/doc/docs/fr/getting-started.md> a prov:Entity, dockg:Document ;
+<https://example.com/kg/doc/docs/fr/getting-started.md> a prov:Entity, kg:Document ;
   dcterms:description "Installer et construire le premier graphe." ;
   dcterms:hasPart <https://example.com/kg/doc/docs/fr/getting-started.md#premiers-pas> ;
   dcterms:language "fr" ;
   dcterms:title "Premiers pas" ;
-  dockg:contentHash "d32594ff753ed0821c0bb855d0c7007aa52d1b5f4dce1393566bd46ae8255743" ;
-  dockg:path "docs/fr/getting-started.md" ;
+  kg:contentHash "d32594ff753ed0821c0bb855d0c7007aa52d1b5f4dce1393566bd46ae8255743" ;
+  kg:path "docs/fr/getting-started.md" ;
   schema:translationOfWork <https://example.com/kg/doc/docs/getting-started.md> .
 
-<https://example.com/kg/doc/docs/fr/getting-started.md#premiers-pas> a dockg:Section ;
+<https://example.com/kg/doc/docs/fr/getting-started.md#premiers-pas> a kg:Section ;
   dcterms:title "Premiers pas" ;
-  dockg:level 1 ;
-  dockg:order 1 .
+  kg:level 1 ;
+  kg:order 1 .
 
-<https://example.com/kg/doc/docs/getting-started.md> a prov:Entity, dockg:Document ;
+<https://example.com/kg/doc/docs/getting-started.md> a prov:Entity, kg:Document ;
   iirds:has-topic-type iirds:GenericTask ;
   iirds:relates-to-product-lifecycle-phase iirdsSft:Deployment ;
   dcterms:created "2026-05-01"^^xsd:date ;
@@ -147,37 +147,37 @@
   prov:generatedAtTime "2026-05-01"^^xsd:date ;
   prov:qualifiedAttribution <https://example.com/kg/doc/docs/getting-started.md#prov.attribution.jane-doe> ;
   prov:wasAttributedTo <https://example.com/kg/agent/person/jane-doe> ;
-  dockg:brokenSectionRef "missing-heading" ;
-  dockg:codeLanguage "bash", "python" ;
-  dockg:contentHash "ca0f8b746a617445b14578be774b5068419ac577cf2a4583b42fcc8c162ba67d" ;
-  dockg:path "docs/getting-started.md" ;
+  kg:brokenSectionRef "missing-heading" ;
+  kg:codeLanguage "bash", "python" ;
+  kg:contentHash "66f24eeacabd5e796fd06f74035e27ea7f64a92bb22c02d861465e82b1fca260" ;
+  kg:path "docs/getting-started.md" ;
   schema:image <https://example.com/kg/file/docs/img/arch.png> ;
   schema:workTranslation <https://example.com/kg/doc/docs/de/getting-started.md>, <https://example.com/kg/doc/docs/fr/getting-started.md> .
 
-<https://example.com/kg/doc/docs/getting-started.md#getting-started> a dockg:Section ;
+<https://example.com/kg/doc/docs/getting-started.md#getting-started> a kg:Section ;
   dcterms:hasPart <https://example.com/kg/doc/docs/getting-started.md#install>, <https://example.com/kg/doc/docs/getting-started.md#install-1> ;
   dcterms:title "Getting Started" ;
-  dockg:level 1 ;
-  dockg:order 1 .
+  kg:level 1 ;
+  kg:order 1 .
 
-<https://example.com/kg/doc/docs/getting-started.md#install> a dockg:Section ;
+<https://example.com/kg/doc/docs/getting-started.md#install> a kg:Section ;
   iirds:has-topic-type iirds:GenericReference ;
   iirds:relates-to-product-variant <https://example.com/kg/product/sp-x200> ;
   dcterms:subject <https://example.com/kg/concept/installation> ;
   dcterms:title "Install" ;
-  dockg:level 2 ;
-  dockg:order 1 .
+  kg:level 2 ;
+  kg:order 1 .
 
-<https://example.com/kg/doc/docs/getting-started.md#install-1> a dockg:Section ;
+<https://example.com/kg/doc/docs/getting-started.md#install-1> a kg:Section ;
   dcterms:title "Install" ;
-  dockg:level 2 ;
-  dockg:order 2 .
+  kg:level 2 ;
+  kg:order 2 .
 
 <https://example.com/kg/doc/docs/getting-started.md#prov.attribution.jane-doe> a prov:Attribution ;
   prov:agent <https://example.com/kg/agent/person/jane-doe> ;
-  prov:hadRole dockg:authorRole .
+  prov:hadRole kg:authorRole .
 
-<https://example.com/kg/doc/docs/harvest.md> a prov:Entity, dockg:Document ;
+<https://example.com/kg/doc/docs/harvest.md> a prov:Entity, kg:Document ;
   iirds:has-topic-type iirds:GenericTask ;
   iirds:relates-to-product-variant <https://example.com/kg/product/sp-x100> ;
   dcterms:description "Move an existing install to the current release." ;
@@ -187,8 +187,8 @@
   dcterms:title "Upgrading" ;
   prov:wasGeneratedBy <https://example.com/kg/doc/docs/harvest.md#prov.generation> ;
   prov:wasRevisionOf <https://example.com/kg/doc/docs/getting-started.md> ;
-  dockg:contentHash "d69d37d33f64a162e1bb9adc95b638e4025ab1d6e7ec3c6a6ecd17c0bb3636a0" ;
-  dockg:path "docs/harvest.md" .
+  kg:contentHash "d69d37d33f64a162e1bb9adc95b638e4025ab1d6e7ec3c6a6ecd17c0bb3636a0" ;
+  kg:path "docs/harvest.md" .
 
 <https://example.com/kg/doc/docs/harvest.md#prov.generation> a prov:Activity ;
   prov:qualifiedAssociation <https://example.com/kg/doc/docs/harvest.md#prov.generation.assoc.claude-sonnet-4-5> ;
@@ -196,37 +196,37 @@
 
 <https://example.com/kg/doc/docs/harvest.md#prov.generation.assoc.claude-sonnet-4-5> a prov:Association ;
   prov:agent <https://example.com/kg/agent/software/claude-sonnet-4-5> ;
-  prov:hadRole dockg:generatorRole .
+  prov:hadRole kg:generatorRole .
 
-<https://example.com/kg/doc/docs/harvest.md#upgrading> a dockg:Section ;
+<https://example.com/kg/doc/docs/harvest.md#upgrading> a kg:Section ;
   dcterms:title "Upgrading" ;
-  dockg:level 1 ;
-  dockg:order 1 .
+  kg:level 1 ;
+  kg:order 1 .
 
-<https://example.com/kg/doc/docs/no-frontmatter.md> a prov:Entity, dockg:Document ;
+<https://example.com/kg/doc/docs/no-frontmatter.md> a prov:Entity, kg:Document ;
   dcterms:hasPart <https://example.com/kg/doc/docs/no-frontmatter.md#loose-notes> ;
   dcterms:references <https://example.org/page> ;
   dcterms:title "Loose Notes" ;
-  dockg:brokenLink "missing.md" ;
-  dockg:contentHash "a1bed4d62ffe65581cb2d3465d701ee91a99640389f7564cca967f77f50a4d54" ;
-  dockg:path "docs/no-frontmatter.md" .
+  kg:brokenLink "missing.md" ;
+  kg:contentHash "a1bed4d62ffe65581cb2d3465d701ee91a99640389f7564cca967f77f50a4d54" ;
+  kg:path "docs/no-frontmatter.md" .
 
-<https://example.com/kg/doc/docs/no-frontmatter.md#loose-notes> a dockg:Section ;
+<https://example.com/kg/doc/docs/no-frontmatter.md#loose-notes> a kg:Section ;
   dcterms:title "Loose Notes" ;
-  dockg:level 1 ;
-  dockg:order 1 .
+  kg:level 1 ;
+  kg:order 1 .
 
-<https://example.com/kg/doc/docs/windows-notes.md> a prov:Entity, dockg:Document ;
+<https://example.com/kg/doc/docs/windows-notes.md> a prov:Entity, kg:Document ;
   dcterms:hasPart <https://example.com/kg/doc/docs/windows-notes.md#windows-notes> ;
   dcterms:references <https://example.com/kg/doc/docs/configuration.md> ;
   dcterms:title "Windows Notes" ;
-  dockg:contentHash "fd055b64091ce95eaaa5db80b19880422694c677dc23dd8084336237c5647272" ;
-  dockg:path "docs/windows-notes.md" .
+  kg:contentHash "fd055b64091ce95eaaa5db80b19880422694c677dc23dd8084336237c5647272" ;
+  kg:path "docs/windows-notes.md" .
 
-<https://example.com/kg/doc/docs/windows-notes.md#windows-notes> a dockg:Section ;
+<https://example.com/kg/doc/docs/windows-notes.md#windows-notes> a kg:Section ;
   dcterms:title "Windows Notes" ;
-  dockg:level 1 ;
-  dockg:order 1 .
+  kg:level 1 ;
+  kg:order 1 .
 
 <https://example.com/kg/graph> a prov:Entity ;
   prov:wasGeneratedBy <https://example.com/kg/activity/build> .
@@ -241,4 +241,4 @@
   dcterms:title "SP-X300" .
 
 <https://example.com/kg/scheme> a skos:ConceptScheme ;
-  dcterms:title "dockg concepts" .
+  dcterms:title "manni kg concepts" .

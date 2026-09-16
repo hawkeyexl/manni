@@ -1,0 +1,39 @@
+# One shapes file per SHACL severity level, so the mapping onto the family
+# scale (proposal 0051 §2) is exercised at each level rather than at the two
+# the bundled contract happens to use.
+#
+# `ex:` terms throughout: this fixture is about `sh:severity`, not about the kg
+# vocabulary, and a shape targeting a kg class would have to move every time
+# that class does.
+#
+# The fourth property names no severity on purpose. SHACL's default is
+# sh:Violation, and a finding that silently arrived as a notice because the
+# default was read wrong is the failure this case exists to catch.
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix ex: <https://example.com/severity#> .
+
+ex:ThingShape a sh:NodeShape ;
+    sh:targetClass ex:Thing ;
+    sh:property [
+        sh:path ex:violating ;
+        sh:maxCount 0 ;
+        sh:severity sh:Violation ;
+        sh:message "violation-level constraint" ;
+    ] ;
+    sh:property [
+        sh:path ex:warning ;
+        sh:maxCount 0 ;
+        sh:severity sh:Warning ;
+        sh:message "warning-level constraint" ;
+    ] ;
+    sh:property [
+        sh:path ex:info ;
+        sh:maxCount 0 ;
+        sh:severity sh:Info ;
+        sh:message "info-level constraint" ;
+    ] ;
+    sh:property [
+        sh:path ex:unstated ;
+        sh:maxCount 0 ;
+        sh:message "unstated-severity constraint" ;
+    ] .

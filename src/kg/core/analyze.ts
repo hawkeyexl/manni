@@ -119,7 +119,7 @@ const HAS_EXTENSION = /\.[a-z0-9]+$/i;
  * Whether a link target addresses a *document* at all (ADR 01033).
  *
  * An extension list declares what documents look like in a corpus. A target
- * carrying some other explicit extension — `/dockg/ns.ttl`, `./dist.zip`, a
+ * carrying some other explicit extension — `/manni/kg/ns.ttl`, `./dist.zip`, a
  * linked PDF — is a static asset the site serves, not a document dockg failed
  * to find, and reporting it as a broken link produces a finding the author
  * cannot act on: there is no `.md` they could add to fix it.

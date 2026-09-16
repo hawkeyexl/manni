@@ -32,7 +32,7 @@ describe("manni kg validate", () => {
   });
 
   it("takes kg.revision-of as a list or a bare string, and rejects an empty list", () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-revof-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-revof-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
       'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n',
@@ -71,7 +71,7 @@ describe("manni kg validate", () => {
   });
 
   it("accepts negative-scope fields and rejects an out-of-enum not-about-product-aspect", () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-negscope-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-negscope-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
       'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n',

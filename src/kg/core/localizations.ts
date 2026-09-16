@@ -34,7 +34,7 @@ export const UNDETERMINED = "und";
  * zh-Hans-CN, pt-BR and und; rejects English and de_DE.
  *
  * The same grammar appears in `config-schema.json` (for `routes[].language` and
- * `embed.byLanguage`) and in `shapes/dockg-1.0.0.ttl` (for `dcterms:language`).
+ * `embed.byLanguage`) and in `shapes/kg/shapes-1.0.0.ttl` (for `dcterms:language`).
  * This copy exists because a tag also becomes a **filename**, and the shapes
  * only run under `manni kg check` — an unvalidated literal from the graph would
  * otherwise reach `writeFileSync` as a path segment. `test/unit/schema-sync.test.ts`

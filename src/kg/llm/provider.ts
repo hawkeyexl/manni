@@ -21,7 +21,7 @@ import {
   type ProviderSelector,
   type ProviderSpec,
 } from "@hawkeyexl/inference";
-import type { DockgConfig } from "../core/config.js";
+import type { KgConfig } from "../core/config.js";
 import {
   assertKnownProvider,
   assertLocalFlag,
@@ -56,7 +56,7 @@ const toKgError = (message: string): Error => new KgError(message);
  * refused here, so no path selects past it.
  */
 export function selectProvider(
-  config: DockgConfig,
+  config: KgConfig,
   flags: ProviderFlags = {},
 ): ProviderSelection {
   assertLocalFlag(flags, toKgError);
@@ -108,7 +108,7 @@ export function assertProviderSelection(selection: ProviderSelection): void {
  * provider it names, and under `auto` the settings detection reads.
  */
 export function providerSpecFor(
-  config: DockgConfig,
+  config: KgConfig,
   selection: { provider: ProviderSelector; model: string | null },
 ): ProviderSpec {
   return sharedProviderSpecFor(config.providers, selection);
@@ -126,7 +126,7 @@ export function providerSpecFor(
  * from it.
  */
 export async function resolveProviderIdentity(
-  config: DockgConfig,
+  config: KgConfig,
   flags: ProviderFlags = {},
 ): Promise<{ provider: ConcreteProvider; model: string }> {
   const selection = selectProvider(config, flags);
@@ -142,7 +142,7 @@ export async function resolveProviderIdentity(
 
 /** Construct a provider for an identity already resolved. */
 export function constructProvider(
-  config: DockgConfig,
+  config: KgConfig,
   identity: { provider: ConcreteProvider; model: string },
 ): InferenceProvider {
   try {
@@ -158,7 +158,7 @@ export function constructProvider(
 
 /** Select, check, detect and construct: the provider `fill` sends pages to. */
 export async function makeProvider(
-  config: DockgConfig,
+  config: KgConfig,
   flags: ProviderFlags = {},
 ): Promise<InferenceProvider> {
   return constructProvider(config, await resolveProviderIdentity(config, flags));

@@ -1,5 +1,5 @@
 /**
- * The `dockg:` vocabulary document, and the guard that keeps it honest
+ * The `kg:` vocabulary document, and the guard that keeps it honest
  * (ADR 01030).
  *
  * A vocabulary rots the first time a phase mints a predicate and forgets the
@@ -32,7 +32,7 @@ function newestVocabulary(): string {
   const parse = (name: string): number[] =>
     (name.match(/(\d+)\.(\d+)\.(\d+)/) ?? []).slice(1).map(Number);
   const files = readdirSync(join(root, "ns", "kg"))
-    .filter((f) => /^dockg-\d+\.\d+\.\d+\.ttl$/.test(f))
+    .filter((f) => /^ns-\d+\.\d+\.\d+\.ttl$/.test(f))
     .sort((x, y) => {
       const [a, b] = [parse(x), parse(y)];
       for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i]! - b[i]!;
@@ -45,7 +45,7 @@ function newestVocabulary(): string {
 
 const VOCAB_FILE = newestVocabulary();
 const VOCAB = join(root, "ns", "kg", VOCAB_FILE);
-const ONTOLOGY = "https://hawkeyexl.github.io/dockg/ns";
+const ONTOLOGY = "https://hawkeyexl.github.io/manni/kg/ns";
 
 const store = new Store(
   new Parser().parse(readFileSync(VOCAB, "utf8")),
@@ -55,8 +55,8 @@ const store = new Store(
 function definedTerms(): Set<string> {
   const out = new Set<string>();
   for (const q of store.getQuads(null, null, null, null)) {
-    if (q.subject.value.startsWith(NS.dockg)) {
-      out.add(q.subject.value.slice(NS.dockg.length));
+    if (q.subject.value.startsWith(NS.kg)) {
+      out.add(q.subject.value.slice(NS.kg.length));
     }
   }
   return out;
@@ -64,7 +64,7 @@ function definedTerms(): Set<string> {
 
 /**
  * Local names the emitter can produce, read out of src/. Every mint goes
- * through the `${NS.dockg}name` template or the ROLE table, so one regex plus
+ * through the `${NS.kg}name` template or the ROLE table, so one regex plus
  * the table is exhaustive.
  */
 function mintedTerms(): Set<string> {
@@ -75,7 +75,7 @@ function mintedTerms(): Set<string> {
       if (entry.isDirectory()) walk(path);
       else if (entry.name.endsWith(".ts")) {
         for (const m of readFileSync(path, "utf8").matchAll(
-          /NS\.dockg\}([A-Za-z][A-Za-z0-9]*)/g,
+          /NS\.kg\}([A-Za-z][A-Za-z0-9]*)/g,
         )) {
           out.add(m[1]!);
         }
@@ -83,11 +83,11 @@ function mintedTerms(): Set<string> {
     }
   };
   walk(join(root, "src", "kg"));
-  for (const iri of Object.values(ROLE)) out.add(iri.slice(NS.dockg.length));
+  for (const iri of Object.values(ROLE)) out.add(iri.slice(NS.kg.length));
   return out;
 }
 
-describe("the dockg vocabulary document", () => {
+describe("the kg vocabulary document", () => {
   it("parses as Turtle", () => {
     expect(store.size).toBeGreaterThan(0);
   });
@@ -110,7 +110,7 @@ describe("the dockg vocabulary document", () => {
 
   it("gives every term a label, a comment, and a way home", () => {
     for (const term of definedTerms()) {
-      const s = namedNode(`${NS.dockg}${term}`);
+      const s = namedNode(`${NS.kg}${term}`);
       const has = (p: string): boolean =>
         store.countQuads(s, namedNode(p), null, null) > 0;
       expect(has("http://www.w3.org/2000/01/rdf-schema#label"), term).toBe(
@@ -148,9 +148,9 @@ describe("the dockg vocabulary document", () => {
         .value;
     expect(
       objectOf("http://purl.org/vocab/vann/preferredNamespacePrefix"),
-    ).toBe("dockg");
+    ).toBe("kg");
     expect(objectOf("http://purl.org/vocab/vann/preferredNamespaceUri")).toBe(
-      NS.dockg,
+      NS.kg,
     );
   });
 
@@ -158,7 +158,7 @@ describe("the dockg vocabulary document", () => {
     // rdfs:domain is an inference rule: it licenses a reasoner to type any
     // subject carrying the property. schema:domainIncludes documents the same
     // intent without entailing anything — which matters here, because ADR 01014
-    // exists to refuse inference dockg did not assert.
+    // exists to refuse inference kg did not assert.
     for (const p of [
       "http://www.w3.org/2000/01/rdf-schema#domain",
       "http://www.w3.org/2000/01/rdf-schema#range",
@@ -175,9 +175,14 @@ describe("the dockg vocabulary document", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("uses the namespace the emitter uses, not the retired one", () => {
-    expect(readFileSync(VOCAB, "utf8")).not.toContain("dockg.dev");
-    expect(NS.dockg).toBe("https://hawkeyexl.github.io/dockg/ns#");
+  it("uses the namespace the emitter uses, not a retired one", () => {
+    // Two retired hosts now: `dockg.dev`, which kg ADR 01030 left behind, and
+    // `hawkeyexl.github.io/dockg`, which proposal 0051 §7 did. Neither ever
+    // served this document; the manni site does.
+    const text = readFileSync(VOCAB, "utf8");
+    expect(text).not.toContain("dockg.dev");
+    expect(text).not.toContain("hawkeyexl.github.io/dockg");
+    expect(NS.kg).toBe("https://hawkeyexl.github.io/manni/kg/ns#");
   });
 
   // The guard above protects the copy that ships in the npm package. The one a
@@ -221,7 +226,6 @@ describe("no file points at a superseded vocabulary version", () => {
       join(root, "src", "kg"),
       join(root, "test", "kg"),
       join(root, "docs", "proposals", "kg"),
-      join(root, "schemas", "kg"),
       join(root, "shapes", "kg"),
     ]) {
       walk(dir);
@@ -241,7 +245,7 @@ describe("no file points at a superseded vocabulary version", () => {
     const stale: string[] = [];
     for (const file of trackedText()) {
       for (const m of readFileSync(file, "utf8").matchAll(
-        /ns\/(dockg-\d+\.\d+\.\d+\.ttl)/g,
+        /ns\/(ns-\d+\.\d+\.\d+\.ttl)/g,
       )) {
         if (m[1] !== VOCAB_FILE) {
           stale.push(`${file.slice(root.length + 1)} → ${m[1] ?? ""}`);

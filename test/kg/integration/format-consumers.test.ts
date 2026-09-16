@@ -42,7 +42,7 @@ const RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 
 /** Build the corpus into a fresh temp dir and return its graph path. */
 function buildGraph(): { dir: string; graph: string } {
-  const dir = mkdtempSync(join(tmpdir(), "dockg-consumers-"));
+  const dir = mkdtempSync(join(tmpdir(), "manni-kg-consumers-"));
   const graph = join(dir, "graph.ttl");
   execFileSync(process.execPath, [cli, "kg", "build", "--out", graph], {
     encoding: "utf8",

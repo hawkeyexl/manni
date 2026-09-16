@@ -10,7 +10,7 @@ import {
 import { createTrace, reachedNodes } from "../../../src/kg/runtime/trace.js";
 import { NS, RDF_TYPE } from "../../../src/kg/core/vocab.js";
 import {
-  DOCKG_NOT_APPLICABLE_TO_VARIANT,
+  KG_NOT_APPLICABLE_TO_VARIANT,
   IIRDS_RELATES_TO_PRODUCT_VARIANT,
 } from "../../../src/kg/core/iirds.js";
 
@@ -28,21 +28,21 @@ const REFERENCES = `${NS.dcterms}references`;
  */
 function fixture(): GraphIndex {
   return GraphIndex.fromQuads([
-    { s: A, p: RDF_TYPE, o: { kind: "iri", value: `${NS.dockg}Document` } },
+    { s: A, p: RDF_TYPE, o: { kind: "iri", value: `${NS.kg}Document` } },
     { s: A, p: REFERENCES, o: { kind: "iri", value: B } },
     {
       s: A,
       p: IIRDS_RELATES_TO_PRODUCT_VARIANT,
       o: { kind: "iri", value: X100 },
     },
-    { s: B, p: RDF_TYPE, o: { kind: "iri", value: `${NS.dockg}Document` } },
+    { s: B, p: RDF_TYPE, o: { kind: "iri", value: `${NS.kg}Document` } },
     { s: B, p: REFERENCES, o: { kind: "iri", value: C } },
     {
       s: B,
-      p: DOCKG_NOT_APPLICABLE_TO_VARIANT,
+      p: KG_NOT_APPLICABLE_TO_VARIANT,
       o: { kind: "iri", value: X100 },
     },
-    { s: C, p: RDF_TYPE, o: { kind: "iri", value: `${NS.dockg}Document` } },
+    { s: C, p: RDF_TYPE, o: { kind: "iri", value: `${NS.kg}Document` } },
     {
       s: X100,
       p: RDF_TYPE,
@@ -84,15 +84,15 @@ describe("traverse", () => {
     const g = fixture();
     const r = traverse(g, { seeds: [A], depth: 2 });
     // Without this guard every document would be two hops from every other
-    // via the shared dockg:Document class node — edge contamination.
-    expect(r.nodes.map((n) => n.iri)).not.toContain(`${NS.dockg}Document`);
+    // via the shared kg:Document class node — edge contamination.
+    expect(r.nodes.map((n) => n.iri)).not.toContain(`${NS.kg}Document`);
     expect(r.trace.hops.some((h) => h.predicate === RDF_TYPE)).toBe(false);
   });
 
   it("follows rdf:type when explicitly asked to", () => {
     const g = fixture();
     const r = traverse(g, { seeds: [A], depth: 1, includeTypeEdges: true });
-    expect(r.nodes.map((n) => n.iri)).toContain(`${NS.dockg}Document`);
+    expect(r.nodes.map((n) => n.iri)).toContain(`${NS.kg}Document`);
   });
 
   it("restricts to the requested predicates", () => {
@@ -138,7 +138,7 @@ describe("scope filtering", () => {
     });
     expect(r.nodes.map((n) => n.iri)).toEqual([A]);
     expect(r.trace.exclusions).toEqual([
-      { node: B, rule: DOCKG_NOT_APPLICABLE_TO_VARIANT, value: X100 },
+      { node: B, rule: KG_NOT_APPLICABLE_TO_VARIANT, value: X100 },
     ]);
   });
 
@@ -277,16 +277,16 @@ describe("scope filtering by language", () => {
 
   const localized = (): GraphIndex =>
     GraphIndex.fromQuads([
-      { s: DE, p: RDF_TYPE, o: { kind: "iri", value: `${NS.dockg}Document` } },
+      { s: DE, p: RDF_TYPE, o: { kind: "iri", value: `${NS.kg}Document` } },
       { s: DE, p: LANGUAGE, o: { kind: "literal", value: "de" } },
       { s: DE, p: REFERENCES, o: { kind: "iri", value: EN } },
-      { s: EN, p: RDF_TYPE, o: { kind: "iri", value: `${NS.dockg}Document` } },
+      { s: EN, p: RDF_TYPE, o: { kind: "iri", value: `${NS.kg}Document` } },
       { s: EN, p: LANGUAGE, o: { kind: "literal", value: "en" } },
       { s: EN, p: REFERENCES, o: { kind: "iri", value: NONE } },
       {
         s: NONE,
         p: RDF_TYPE,
-        o: { kind: "iri", value: `${NS.dockg}Document` },
+        o: { kind: "iri", value: `${NS.kg}Document` },
       },
     ]);
 
@@ -309,7 +309,7 @@ describe("scope filtering by language", () => {
 
   it("matches the tag exactly — de-AT is not de", () => {
     const graph = GraphIndex.fromQuads([
-      { s: DE, p: RDF_TYPE, o: { kind: "iri", value: `${NS.dockg}Document` } },
+      { s: DE, p: RDF_TYPE, o: { kind: "iri", value: `${NS.kg}Document` } },
       { s: DE, p: LANGUAGE, o: { kind: "literal", value: "de-AT" } },
     ]);
     expect(scopeExclusion(graph, DE, { language: "de" })?.rule).toBe(LANGUAGE);
@@ -331,7 +331,7 @@ describe("scope filtering by language", () => {
 
   it("composes with a variant filter rather than replacing it", () => {
     const graph = GraphIndex.fromQuads([
-      { s: A, p: RDF_TYPE, o: { kind: "iri", value: `${NS.dockg}Document` } },
+      { s: A, p: RDF_TYPE, o: { kind: "iri", value: `${NS.kg}Document` } },
       { s: A, p: LANGUAGE, o: { kind: "literal", value: "de" } },
       {
         s: A,
@@ -360,12 +360,12 @@ describe("scope filtering — sections inherit language, not applicability", () 
 
   const graph = (): GraphIndex =>
     GraphIndex.fromQuads([
-      { s: EN, p: RDF_TYPE, o: { kind: "iri", value: `${NS.dockg}Document` } },
+      { s: EN, p: RDF_TYPE, o: { kind: "iri", value: `${NS.kg}Document` } },
       { s: EN, p: LANGUAGE, o: { kind: "literal", value: "en" } },
       {
         s: EN_SECTION,
         p: RDF_TYPE,
-        o: { kind: "iri", value: `${NS.dockg}Section` },
+        o: { kind: "iri", value: `${NS.kg}Section` },
       },
       {
         s: EN,
@@ -414,10 +414,10 @@ describe("scope filtering — the seed is a starting point, not a result", () =>
 
   const graph = (): GraphIndex =>
     GraphIndex.fromQuads([
-      { s: EN, p: RDF_TYPE, o: { kind: "iri", value: `${NS.dockg}Document` } },
+      { s: EN, p: RDF_TYPE, o: { kind: "iri", value: `${NS.kg}Document` } },
       { s: EN, p: LANGUAGE, o: { kind: "literal", value: "en" } },
       { s: EN, p: WORK_TRANSLATION, o: { kind: "iri", value: DE } },
-      { s: DE, p: RDF_TYPE, o: { kind: "iri", value: `${NS.dockg}Document` } },
+      { s: DE, p: RDF_TYPE, o: { kind: "iri", value: `${NS.kg}Document` } },
       { s: DE, p: LANGUAGE, o: { kind: "literal", value: "de" } },
     ]);
 
@@ -482,13 +482,13 @@ describe("impact — limit means affected nodes, seed excluded or not", () => {
 
   const graph = (): GraphIndex =>
     GraphIndex.fromQuads([
-      { s: EN, p: RDF_TYPE, o: { kind: "iri", value: `${NS.dockg}Document` } },
+      { s: EN, p: RDF_TYPE, o: { kind: "iri", value: `${NS.kg}Document` } },
       { s: EN, p: LANGUAGE, o: { kind: "literal", value: "en" } },
       ...TRANSLATIONS.flatMap((t) => [
         {
           s: t,
           p: RDF_TYPE,
-          o: { kind: "iri" as const, value: `${NS.dockg}Document` },
+          o: { kind: "iri" as const, value: `${NS.kg}Document` },
         },
         { s: t, p: LANGUAGE, o: { kind: "literal" as const, value: "de" } },
         { s: t, p: TRANSLATION_OF, o: { kind: "iri" as const, value: EN } },

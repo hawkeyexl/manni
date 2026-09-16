@@ -8,7 +8,7 @@ import { KgError } from "../../../src/kg/types.js";
 describe("parseConfig", () => {
   it("applies defaults for a minimal config", () => {
     const c = parseConfig("", "/tmp/manni.config.yaml");
-    expect(c.baseIri).toBe("urn:dockg:");
+    expect(c.baseIri).toBe("urn:manni:kg:");
     // No document set of its own: `inputs` and `exclude` are the family's
     // `collections:` now (proposal 0041, 0051 §1), and a section on its own
     // declares none.
@@ -23,9 +23,9 @@ describe("parseConfig", () => {
       "code",
       "provenance",
     ]);
-    // empty = use the schema bundled with dockg (schemas/frontmatter-0.5.json)
+    // empty = use the page vocabulary bundled with manni
     expect(c.validate.schemas).toEqual([]);
-    // empty = use the shapes bundled with dockg (shapes/dockg-0.2.ttl)
+    // empty = use the shapes bundled with manni (shapes/kg/shapes-1.0.0.ttl)
     expect(c.check.shapes).toEqual([]);
     expect(c.fill.validateGraph).toBe(true);
     // Opinionated defaults (ADR 01009/01010), minus the switch 0051 §6
@@ -472,13 +472,13 @@ describe("parseConfig", () => {
 
 describe("loadConfig", () => {
   it("falls back to defaults when no config file exists", () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-config-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-config-"));
     const c = loadConfig(undefined, dir);
-    expect(c.baseIri).toBe("urn:dockg:");
+    expect(c.baseIri).toBe("urn:manni:kg:");
   });
 
   it("loads the kg: section of manni.config.yaml from cwd", () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-config-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-config-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
       "meta:\n  paths: [docs]\nkg:\n  out: graph.ttl\n",
@@ -489,7 +489,7 @@ describe("loadConfig", () => {
   });
 
   it("reads the family collections: beside its own section", () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-config-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-config-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
       'collections:\n  - name: site\n    paths: ["docs/**/*.md"]\nkg:\n  out: graph.ttl\n',
@@ -499,15 +499,15 @@ describe("loadConfig", () => {
   });
 
   it("treats an empty kg: section as the defaults", () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-config-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-config-"));
     writeFileSync(join(dir, "manni.config.yaml"), "meta:\n  paths: [docs]\nkg:\n");
-    expect(loadConfig(undefined, dir).baseIri).toBe("urn:dockg:");
+    expect(loadConfig(undefined, dir).baseIri).toBe("urn:manni:kg:");
   });
 
   it("does not read the pre-family dockg.config.yaml", () => {
     // Nothing was ever published under that name, so it gets no alias and no
     // migration (0051 §2, copying 0048 §4). It is simply not a config file.
-    const dir = mkdtempSync(join(tmpdir(), "dockg-config-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-config-"));
     writeFileSync(join(dir, "dockg.config.yaml"), "out: graph.ttl\n");
     const c = loadConfig(undefined, dir);
     expect(c.out).toBe("kg/graph.ttl");
@@ -515,7 +515,7 @@ describe("loadConfig", () => {
   });
 
   it("reads an explicit path with or without the kg: wrapper", () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-config-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-config-"));
     writeFileSync(join(dir, "wrapped.yaml"), "kg:\n  out: a.ttl\n");
     writeFileSync(join(dir, "bare.yaml"), "out: b.ttl\n");
     expect(loadConfig("wrapped.yaml", dir).out).toBe("a.ttl");

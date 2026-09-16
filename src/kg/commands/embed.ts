@@ -173,7 +173,7 @@ export async function runEmbed(opts: EmbedOptions = {}): Promise<EmbedReport> {
   const manifest = parseLocalizations(readFileSync(manifestPath, "utf8"));
   if (!manifest) {
     throw new KgError(
-      `Not a dockg localization manifest: ${manifestPath} — re-run \`manni kg export search\`.`,
+      `Not a manni kg localization manifest: ${manifestPath} — re-run \`manni kg export search\`.`,
     );
   }
 
@@ -232,7 +232,7 @@ export async function runEmbed(opts: EmbedOptions = {}): Promise<EmbedReport> {
     const entries = (parsed as SearchIndexDoc | null)?.entries;
     if (!Array.isArray(entries)) {
       throw new KgError(
-        `Not a dockg search index: ${indexPath} — expected an \`entries\` array.`,
+        `Not a manni kg search index: ${indexPath} — expected an \`entries\` array.`,
       );
     }
 

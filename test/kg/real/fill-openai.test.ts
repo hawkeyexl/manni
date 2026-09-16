@@ -27,7 +27,7 @@ const BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434/v1";
 const MODEL = process.env.OLLAMA_MODEL ?? "llama3.2:1b";
 
 function corpus(body: string): string {
-  const dir = mkdtempSync(join(tmpdir(), "dockg-fill-live-"));
+  const dir = mkdtempSync(join(tmpdir(), "manni-kg-fill-live-"));
   writeFileSync(
     join(dir, "manni.config.yaml"),
     [

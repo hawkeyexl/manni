@@ -35,11 +35,11 @@ import {
   sectionOwnText,
 } from "../runtime/resolve.js";
 
-const DOCKG_DOCUMENT = `${NS.dockg}Document`;
-const DOCKG_SECTION = `${NS.dockg}Section`;
+const KG_DOCUMENT = `${NS.kg}Document`;
+const KG_SECTION = `${NS.kg}Section`;
 const SKOS_CONCEPT = `${NS.skos}Concept`;
-const DOCKG_PATH = `${NS.dockg}path`;
-const DOCKG_LEVEL = `${NS.dockg}level`;
+const KG_PATH = `${NS.kg}path`;
+const KG_LEVEL = `${NS.kg}level`;
 const DCTERMS_TITLE = `${NS.dcterms}title`;
 const DCTERMS_DESCRIPTION = `${NS.dcterms}description`;
 const SKOS_PREF_LABEL = `${NS.skos}prefLabel`;
@@ -50,7 +50,7 @@ const DCTERMS_LANGUAGE = `${NS.dcterms}language`;
 export interface SearchEntry {
   /** Node IRI. */
   id: string;
-  /** Compacted class IRI, e.g. `dockg:Section`. */
+  /** Compacted class IRI, e.g. `kg:Section`. */
   type: string;
   title?: string;
   /** Space-joined alternative labels, deduped case-insensitively. */
@@ -132,7 +132,7 @@ export function buildSearchIndex(
   // Group sections by their parent document once. Re-scanning every section per
   // document is quadratic across the corpus, and the section loop below needs
   // the same grouping anyway.
-  const allSections = graph.instancesOf(DOCKG_SECTION);
+  const allSections = graph.instancesOf(KG_SECTION);
   const sectionsOf = new Map<string, string[]>();
   for (const section of allSections) {
     const hash = section.indexOf("#");
@@ -145,8 +145,8 @@ export function buildSearchIndex(
 
   // Documents. Sections resolve their slice from the parent's source, so read
   // each document once and remember it.
-  for (const doc of graph.instancesOf(DOCKG_DOCUMENT)) {
-    const path = graph.literal(doc, DOCKG_PATH);
+  for (const doc of graph.instancesOf(KG_DOCUMENT)) {
+    const path = graph.literal(doc, KG_PATH);
     const source = path === undefined ? undefined : readDoc(path);
     sourceOf.set(doc, source);
     if (path !== undefined && source === undefined) {
@@ -174,7 +174,7 @@ export function buildSearchIndex(
           : body;
 
     entries.push(
-      entry(doc, compactIri(DOCKG_DOCUMENT), {
+      entry(doc, compactIri(KG_DOCUMENT), {
         title: graph.literal(doc, DCTERMS_TITLE),
         description: graph.literal(doc, DCTERMS_DESCRIPTION),
         text,
@@ -190,7 +190,7 @@ export function buildSearchIndex(
     const doc = hash < 0 ? section : section.slice(0, hash);
     const title = graph.literal(section, DCTERMS_TITLE);
     const source = sourceOf.get(doc);
-    const levelText = graph.literal(section, DOCKG_LEVEL);
+    const levelText = graph.literal(section, KG_LEVEL);
     const parsed =
       levelText === undefined ? NaN : Number.parseInt(levelText, 10);
     const level = Number.isNaN(parsed) ? undefined : parsed;
@@ -208,7 +208,7 @@ export function buildSearchIndex(
         ? sectionOwnText(source, title, level, occurrences.get(section) ?? 0)
         : undefined;
 
-    entries.push(entry(section, compactIri(DOCKG_SECTION), { title, text }));
+    entries.push(entry(section, compactIri(KG_SECTION), { title, text }));
   }
 
   // Concepts: label surface only — they are index nodes with no body of their
@@ -256,8 +256,8 @@ export function partitionByLanguage(
   graph: GraphIndex,
   index: SearchIndexDoc,
 ): Map<string, SearchIndexDoc> {
-  const documentType = compactIri(DOCKG_DOCUMENT);
-  const sectionType = compactIri(DOCKG_SECTION);
+  const documentType = compactIri(KG_DOCUMENT);
+  const sectionType = compactIri(KG_SECTION);
 
   /** The language of an entry, or undefined when it belongs to every locale. */
   const languageOf = (entry: SearchEntry): string | undefined => {
@@ -296,7 +296,7 @@ export function partitionByLanguage(
 /** Documents (not sections) per language, for the manifest's counts. */
 export function documentsByLanguage(graph: GraphIndex): Map<string, number> {
   const out = new Map<string, number>();
-  for (const doc of graph.instancesOf(DOCKG_DOCUMENT)) {
+  for (const doc of graph.instancesOf(KG_DOCUMENT)) {
     const language = graph.literal(doc, DCTERMS_LANGUAGE) ?? UNDETERMINED;
     out.set(language, (out.get(language) ?? 0) + 1);
   }

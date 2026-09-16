@@ -21,7 +21,7 @@ const cli = join(root, "dist", "cli.js");
 // and a corpus built inside this checkout would carry HEAD's committer
 // date. See test/kg/helpers/corpus.ts.
 const corpus = detachedCorpus();
-const bundledShapes = join(root, "shapes", "kg", "dockg-1.0.0.ttl");
+const bundledShapes = join(root, "shapes", "kg", "shapes-1.0.0.ttl");
 
 const CONFIG_DOC = "https://example.com/kg/doc/docs/configuration.md";
 
@@ -96,8 +96,9 @@ describe("kg -f is the output format, and it is checked", () => {
   // Every verb that takes one. The check happens before the run, so none of
   // these needs a graph — and that is why a status-only assertion would be
   // worthless here: run from the corpus they would exit 2 anyway.
+  // `check` is not here: it is the CI gate, so its list also carries
+  // `github` (proposal 0051 §2) and it names its own refusal below.
   const verbs: Array<[string, string[]]> = [
-    ["check", ["check"]],
     ["validate", ["validate"]],
     ["query", ["query"]],
     ["stats", ["stats"]],
@@ -113,6 +114,14 @@ describe("kg -f is the output format, and it is checked", () => {
       expect(status).toBe(2);
     });
   }
+
+  it("names check's own list, which carries github", () => {
+    const { status, stderr } = run(["check", "-f", "xml"]);
+    expect(stderr).toContain(
+      'Unknown --format "xml". Use pretty | json | github.',
+    );
+    expect(status).toBe(2);
+  });
 
   it("still takes json", () => {
     const { status, stdout } = run([

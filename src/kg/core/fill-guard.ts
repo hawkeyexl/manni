@@ -11,15 +11,15 @@ import { resolve } from "node:path";
 import { DataFactory, Store } from "n3";
 import type { DocModel } from "../types.js";
 import { analyzeDoc } from "./analyze.js";
-import type { DeriveSource, DockgConfig } from "./config.js";
+import type { DeriveSource, KgConfig } from "./config.js";
 import { deriveGraph, type Quad } from "./derive.js";
 import { applyKgFields } from "./frontmatter-edit.js";
 import { validateGraph, type CheckFinding } from "./shacl.js";
 import { byCodeUnit } from "./sort.js";
 import { NS } from "./vocab.js";
 import {
-  DOCKG_NOT_APPLICABLE_TO_VARIANT,
-  DOCKG_NOT_SOFTWARE_SUBJECT,
+  KG_NOT_APPLICABLE_TO_VARIANT,
+  KG_NOT_SOFTWARE_SUBJECT,
 } from "./iirds.js";
 
 const { namedNode, literal, quad } = DataFactory;
@@ -46,7 +46,7 @@ const GUARDED_FIELDS = [
 /** Concept + iiRDS edges: the SKOS subgraph plus the applicability predicates.
  * `sections` is in because a section carries the same disjoint applicability
  * predicates a document does (ADR 01032) — without it the simulated store has
- * no `dockg:Section` node for the shapes to target, and a section-level
+ * no `kg:Section` node for the shapes to target, and a section-level
  * contradiction sails through. Links/provenance stay out to keep per-doc
  * simulation cheap and git-free. */
 const GUARD_SOURCES: DeriveSource[] = ["frontmatter", "tags", "sections"];
@@ -89,7 +89,7 @@ export class FillGuard {
 
   private constructor(
     private readonly allPaths: Set<string>,
-    private readonly routes: DockgConfig["routes"],
+    private readonly routes: KgConfig["routes"],
     private readonly baseIri: string,
     private readonly sources: DeriveSource[],
     private readonly shapesPaths: string[],
@@ -100,7 +100,7 @@ export class FillGuard {
   static create(
     files: string[],
     cwd: string,
-    config: DockgConfig,
+    config: KgConfig,
     shapesPaths: string[],
     force: boolean,
   ): FillGuard {
@@ -188,12 +188,12 @@ export class FillGuard {
     // Negative-scope disjointness (ADR 01014/01015): the finding sits on the
     // negative predicate's shape. Drop the proposed side of the conflict,
     // preferring the negative when both were proposed.
-    if (finding.path === DOCKG_NOT_APPLICABLE_TO_VARIANT) {
+    if (finding.path === KG_NOT_APPLICABLE_TO_VARIANT) {
       const negative = pick("not-applicable-to");
       if (negative.length > 0) return negative;
       return pick("applies-to");
     }
-    if (finding.path === DOCKG_NOT_SOFTWARE_SUBJECT) {
+    if (finding.path === KG_NOT_SOFTWARE_SUBJECT) {
       const negative = pick("not-about-product-aspect");
       if (negative.length > 0) return negative;
       return pick("about-product-aspect");
@@ -242,7 +242,7 @@ export class FillGuard {
       );
       const bad = introduced.filter(
         (f) =>
-          f.severity === "violation" ||
+          f.severity === "error" ||
           (f.severity === "warning" && f.path === `${NS.skos}prefLabel`),
       );
       if (bad.length === 0) break;

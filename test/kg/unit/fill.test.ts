@@ -8,7 +8,7 @@ import { resetWarnings } from "../../../src/shared/warn.js";
 import { MockProvider } from "@hawkeyexl/inference";
 
 function setup(files: Record<string, string>, config = ""): string {
-  const dir = mkdtempSync(join(tmpdir(), "dockg-fill-"));
+  const dir = mkdtempSync(join(tmpdir(), "manni-kg-fill-"));
   writeFileSync(
     join(dir, "manni.config.yaml"),
     `collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n${config.replace(/^(?=.)/gm, "  ")}`,

@@ -1,15 +1,15 @@
 /**
- * `dockg/embed` — local, in-browser-capable embeddings (ADR 01020).
+ * `@hawkeyexl/manni/kg/embed` — local, in-browser-capable embeddings (ADR 01020).
  *
- * A separate entry point from `dockg/runtime` on purpose: this module reaches
+ * A separate entry point from `@hawkeyexl/manni/kg/runtime` on purpose: this module reaches
  * `@huggingface/transformers`, which hard-depends on both ONNX runtimes plus
  * native `sharp`. Keeping it here means the ~24 KB runtime never grows a model
- * stack, and a consumer who never imports `dockg/embed` never resolves the
+ * stack, and a consumer who never imports `@hawkeyexl/manni/kg/embed` never resolves the
  * optional peer at all.
  *
  * ```js
- * import { createLocalEmbedder } from "dockg/embed";
- * import { createVectorIndex, findEntry } from "dockg/runtime";
+ * import { createLocalEmbedder } from "@hawkeyexl/manni/kg/embed";
+ * import { createVectorIndex, findEntry } from "@hawkeyexl/manni/kg/runtime";
  *
  * const embedder = await createLocalEmbedder({ role: "query" });
  * const vectors = createVectorIndex(new Uint8Array(await (await fetch("/kg/vectors.bin")).arrayBuffer()));

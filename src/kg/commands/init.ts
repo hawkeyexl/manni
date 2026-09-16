@@ -19,7 +19,7 @@ const HEADER = `# manni.config.yaml — shared configuration for the manni famil
 `;
 
 const STARTER = `# Base IRI for every minted node. Set this to a namespace you control;
-# without it, IRIs fall back to the urn:dockg: placeholder.
+# without it, IRIs fall back to the urn:manni:kg: placeholder.
 # baseIri: https://example.com/kg/
 
 # There is no document set here. \`manni kg build\` and \`manni kg fill\` read the
@@ -68,7 +68,7 @@ provenance:
 #   schemas: ["./my-schema.json"]
 
 # SHACL shapes \`manni kg check\` validates the built graph against. Default:
-# the shapes contract bundled with manni (shapes/kg/dockg-1.0.0.ttl).
+# the shapes contract bundled with manni (shapes/kg/shapes-1.0.0.ttl).
 # check:
 #   shapes: ["./my-shapes.ttl"]
 
@@ -119,7 +119,7 @@ fill:
 # Absent, a minimal valid package is still produced.
 # export:
 #   iirds:
-#     title: My Docs        # package title (default: "dockg export")
+#     title: My Docs        # package title (default: "manni kg export")
 #     creator: Acme Corp     # Creator iirds:Party + vcard:Organization
 #     version: "1.3"         # iiRDS version literal: "1.2" | "1.3"
 `;

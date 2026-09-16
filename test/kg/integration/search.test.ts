@@ -43,7 +43,7 @@ function buildIndexed(): {
   index: string;
   manifest: string;
 } {
-  const dir = mkdtempSync(join(tmpdir(), "dockg-search-"));
+  const dir = mkdtempSync(join(tmpdir(), "manni-kg-search-"));
   const graph = join(dir, "graph.ttl");
   execFileSync(process.execPath, [cli, "kg", "build", "--out", graph], {
     encoding: "utf8",
@@ -262,7 +262,7 @@ describe("manni kg search (integration)", () => {
 
   it("exits 2 when the index is unreadable or the wrong file", () => {
     const { dir, graph } = buildIndexed();
-    const bad = mkdtempSync(join(tmpdir(), "dockg-search-bad-"));
+    const bad = mkdtempSync(join(tmpdir(), "manni-kg-search-bad-"));
     // A manifest naming an index that is not JSON at all.
     writeFileSync(
       join(bad, "localizations.json"),
@@ -291,7 +291,7 @@ describe("manni kg search (integration)", () => {
     );
     const shape = run(["search", "anything", "-g", graph, "-i", bad], corpus);
     expect(shape.status).toBe(2);
-    expect(shape.stdout).toContain("Not a dockg search index");
+    expect(shape.stdout).toContain("Not a manni kg search index");
     expect(dir).toBeTruthy();
   });
 
@@ -334,7 +334,7 @@ describe("manni kg search (integration)", () => {
   });
 
   it("exits 2 when the search index is missing", () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-search-none-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-search-none-"));
     const graph = join(dir, "graph.ttl");
     execFileSync(process.execPath, [cli, "kg", "build", "--out", graph], {
       encoding: "utf8",
@@ -387,7 +387,7 @@ describe("manni kg search — artifact resolution (review fixes)", () => {
     // A truncated or hand-edited manifest used to crash at
     // `localization.search.path` with a Node stack trace and exit 1.
     const { graph } = buildIndexed();
-    const bad = mkdtempSync(join(tmpdir(), "dockg-search-manifest-"));
+    const bad = mkdtempSync(join(tmpdir(), "manni-kg-search-manifest-"));
     writeFileSync(
       join(bad, "localizations.json"),
       JSON.stringify({
@@ -401,14 +401,14 @@ describe("manni kg search — artifact resolution (review fixes)", () => {
       corpus,
     );
     expect(status).toBe(2);
-    expect(stdout).toContain("Not a dockg localization manifest");
+    expect(stdout).toContain("Not a manni kg localization manifest");
   });
 
   it("refuses a language tag it cannot safely turn into a filename", () => {
     // `export` does not run SHACL, so the BCP-47 pattern in the shapes never
     // sees this graph. Unchecked, `lang: ../escaped` reached writeFileSync as
     // a path segment and crashed with exit 1.
-    const dir = mkdtempSync(join(tmpdir(), "dockg-search-badlang-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-search-badlang-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
       'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n  baseIri: https://example.com/kg/\n',

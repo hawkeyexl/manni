@@ -23,7 +23,7 @@ function run(args: string[], cwd: string): { stdout: string; status: number } {
 
 describe("manni kg init", () => {
   it("scaffolds a valid config and refuses to overwrite", () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-init-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-init-"));
     const first = run(["init"], dir);
     expect(first.status).toBe(0);
     expect(existsSync(join(dir, "manni.config.yaml"))).toBe(true);
@@ -44,7 +44,7 @@ describe("manni kg init", () => {
     // The family file is shared: a repository that already configured another
     // tool gets a `kg:` key appended, and the sibling's bytes come out as they
     // went in — comments included.
-    const dir = mkdtempSync(join(tmpdir(), "dockg-init-sibling-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-init-sibling-"));
     const sibling =
       "# The metadata tool's settings.\nmeta:\n  paths:\n    - docs/**/*.md\n";
     writeFileSync(join(dir, "manni.config.yaml"), sibling);
@@ -63,7 +63,7 @@ describe("manni kg init", () => {
 
 describe("manni kg fill --provider mock (CLI smoke)", () => {
   it("runs offline end-to-end without writing anything", () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-fillcli-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-fillcli-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
       'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n',
@@ -84,7 +84,7 @@ describe("manni kg fill --provider mock (CLI smoke)", () => {
   });
 
   it("stops at --max-turns and says which page the budget skipped", () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-fillturns-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-fillturns-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
       'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n',
@@ -109,7 +109,7 @@ describe("manni kg fill --provider mock (CLI smoke)", () => {
   });
 
   it("accepts --confidence and still exits 0", () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-fillconf-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-fillconf-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
       'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n',
@@ -131,7 +131,7 @@ describe("manni kg fill --provider mock (CLI smoke)", () => {
   });
 
   it("--fields narrows what is proposed", () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-fillfields-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-fillfields-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
       'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n  fill:\n    fields: [label]\n',

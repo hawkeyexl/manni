@@ -18,7 +18,14 @@ import { warn } from "../shared/warn.js";
 import { KgError } from "./types.js";
 import { LOCAL_FLAG_HELP } from "../shared/providers.js";
 import { ALL_FILL_FIELDS, type FillField } from "./core/config.js";
-import { KG_FORMATS, KG_FORMAT_LIST, type KgFormat } from "./reporters/index.js";
+import {
+  CHECK_FORMATS,
+  CHECK_FORMAT_LIST,
+  KG_FORMATS,
+  KG_FORMAT_LIST,
+  type CheckFormat,
+  type KgFormat,
+} from "./reporters/index.js";
 import { runBuild } from "./commands/build.js";
 import { renderCheck, runCheck } from "./commands/check.js";
 import {
@@ -162,6 +169,9 @@ function choiceOption<T extends string>(flag: string, allowed: readonly T[]) {
 /** `-f, --format`: every verb's list is `pretty | json` (0051 §2). */
 const formatOption = choiceOption("--format", KG_FORMATS);
 
+/** `check`'s own, which adds `github` — the CI gate's annotation format. */
+const checkFormatOption = choiceOption("--format", CHECK_FORMATS);
+
 /**
  * `--fields <list>`: comma-separated and given once, never repeatable — one
  * separator per list (proposal 0034), and the spelling `meta fill --fields`
@@ -281,7 +291,7 @@ configInputs(
   program
     .command("check")
     .description(
-      "Validate the built graph against the bundled SHACL shapes (violations exit 1)",
+      "Validate the built graph against the bundled SHACL shapes (errors exit 1)",
     ),
 )
   .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
@@ -294,8 +304,8 @@ configInputs(
   )
   .option(
     "-f, --format <format>",
-    `Output: ${KG_FORMAT_LIST}`,
-    formatOption,
+    `Output: ${CHECK_FORMAT_LIST}`,
+    checkFormatOption,
     "pretty",
   )
   .action(
@@ -303,7 +313,7 @@ configInputs(
       config?: string | boolean;
       graph?: string;
       shapes: string[];
-      format: KgFormat;
+      format: CheckFormat;
     }) => {
       try {
         const report = await runCheck({ ...rest(opts), ...documentOptions(opts) });

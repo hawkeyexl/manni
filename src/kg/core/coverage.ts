@@ -1,6 +1,6 @@
 /**
  * Metadata coverage fields (ADR 01011). Coverage answers the ADR 01008
- * question — what can a graph-side consumer see — by counting `dockg:Document`
+ * question — what can a graph-side consumer see — by counting `kg:Document`
  * nodes that carry each predicate. The list is fixed and deliberate: a
  * predicate absent from every document still shows as 0%, which a dynamic
  * census could not surface. It is shared between the config parser (which
@@ -19,7 +19,7 @@ import {
 export interface CoverageField {
   /** Config/report key. */
   field: string;
-  /** Full predicate IRI counted against `dockg:Document` subjects. */
+  /** Full predicate IRI counted against `kg:Document` subjects. */
   iri: string;
 }
 
@@ -56,7 +56,7 @@ export const COVERAGE_FIELDS: readonly CoverageField[] = [
 
 /**
  * Section-level coverage: the fields a `kg.sections` block can attach
- * (ADR 01013), measured over `dockg:Section` nodes.
+ * (ADR 01013), measured over `kg:Section` nodes.
  *
  * Sections are explicit-only — a section gets exactly what its own block
  * declares and nothing from its document — so these numbers are low by
