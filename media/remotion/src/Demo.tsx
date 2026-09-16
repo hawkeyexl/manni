@@ -36,6 +36,12 @@ export interface DemoProps {
   cols: number;
   /** Per-video typing speed (design.md: 35-70 ms). Defaults to the shared TYPING_MS. */
   typingMs?: number;
+  /**
+   * JetBrains Mono draws `/=` as a slashed equals and `---` as one rule. A
+   * terminal prints the characters, so a video whose commands or output carry
+   * those sequences turns ligatures off. Default on, as the earlier videos rendered.
+   */
+  ligatures?: boolean;
 }
 
 // ---- Screen model -----------------------------------------------------------
@@ -87,7 +93,7 @@ function screenAt(beat: Beat, frame: number, prev: Line[], typingMs: number): Li
 
 // ---- Wrapping ---------------------------------------------------------------
 
-const sameStyle = (a: Span, b: Span) => a.fg === b.fg && a.dim === b.dim && a.bold === b.bold;
+const sameStyle = (a: Span, b: Span) => a.fg === b.fg && a.dim === b.dim && a.bold === b.bold && a.underline === b.underline;
 
 /** Collapse a run of one-character spans back into styled runs. */
 function merge(chars: Span[]): Span[] {
@@ -162,6 +168,7 @@ const TerminalLine: React.FC<{ line: Line; fontPx: number; linePx: number }> = (
         style={{
           color: s.fg ?? (s.dim ? tokens.dim : tokens.text),
           fontWeight: s.bold ? 700 : 400,
+          textDecoration: s.underline ? "underline" : "none",
         }}
       >
         {s.text}
@@ -186,7 +193,7 @@ interface BeatViewProps extends DemoProps {
   finals: Line[][];
 }
 
-const BeatView: React.FC<BeatViewProps> = ({ beats, index, finals, fontPx, linePx, cols, typingMs = TYPING_MS }) => {
+const BeatView: React.FC<BeatViewProps> = ({ beats, index, finals, fontPx, linePx, cols, typingMs = TYPING_MS, ligatures = true }) => {
   const frame = useCurrentFrame();
   const beat = beats[index];
   const lines = wrapScreen(markLines(screenAt(beat, frame, index > 0 ? finals[index - 1] : [], typingMs), beat.highlight), cols);
@@ -199,7 +206,7 @@ const BeatView: React.FC<BeatViewProps> = ({ beats, index, finals, fontPx, lineP
   const top = Math.max(TERMINAL_INSET, Math.round((TERMINAL_HEIGHT - rows * linePx) / 2));
 
   return (
-    <AbsoluteFill style={{ background: tokens.bg, fontFamily: mono }}>
+    <AbsoluteFill style={{ background: tokens.bg, fontFamily: mono, fontVariantLigatures: ligatures ? "normal" : "none" }}>
       {/* Title band */}
       <div
         style={{

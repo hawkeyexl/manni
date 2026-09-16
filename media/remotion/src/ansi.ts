@@ -1,11 +1,13 @@
 // Minimal SGR parser for what picocolors emits in manni meta's output:
 // 31 red, 32 green, 33 yellow, 36 cyan, 39 default fg, 1/22 bold, 2/22 dim, 0 reset.
+// Vale adds 34 blue (its suggestion count) and 4/24 underline (the file name).
 
 export interface Span {
   text: string;
   fg?: string;
   dim?: boolean;
   bold?: boolean;
+  underline?: boolean;
 }
 
 // Terminal palette on #171717. Red, green, yellow and cyan carry meaning in the
@@ -15,6 +17,9 @@ export const palette = {
   32: "#3fb950",
   33: "#d29922",
   36: "#39c5cf",
+  // Vale's suggestion count. A terminal blue on the violet side, so it never
+  // reads as the accent (#58a6ff) in the same frame. 5.4:1 on #171717.
+  34: "#8b7bff",
 } as const;
 
 export function parseAnsi(input: string): Span[][] {
@@ -22,13 +27,14 @@ export function parseAnsi(input: string): Span[][] {
   let fg: string | undefined;
   let dim = false;
   let bold = false;
+  let underline = false;
   for (const raw of input.replace(/\n$/, "").split("\n")) {
     const spans: Span[] = [];
     const re = /\x1b\[([0-9;]*)m/g;
     let last = 0;
     let m: RegExpExecArray | null;
     const push = (text: string) => {
-      if (text.length > 0) spans.push({ text, fg, dim, bold });
+      if (text.length > 0) spans.push({ text, fg, dim, bold, ...(underline ? { underline } : {}) });
     };
     while ((m = re.exec(raw)) !== null) {
       push(raw.slice(last, m.index));
@@ -39,7 +45,10 @@ export function parseAnsi(input: string): Span[][] {
           fg = undefined;
           dim = false;
           bold = false;
-        } else if (n === 1) bold = true;
+          underline = false;
+        } else if (n === 4) underline = true;
+        else if (n === 24) underline = false;
+        else if (n === 1) bold = true;
         else if (n === 2) dim = true;
         else if (n === 22) {
           bold = false;
