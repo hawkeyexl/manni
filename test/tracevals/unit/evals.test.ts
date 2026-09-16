@@ -364,21 +364,35 @@ describe("meta-provenance, read back", () => {
     expect(r.proposedBy.size).toBe(0);
   });
 
-  it("reads the artifact's own front matter, and only that (0047 limit)", () => {
-    // proposal.4 marks `metadata` `x-manni-location: external`, so a trail —
-    // and with it the whole `metadata` block — may legally live in a
-    // collection's external-metadata manifest instead of the artifact.
-    // tracevals reads no `collections:` (0049 §2) and therefore no manifest,
-    // so a relocated block reads here as no block at all: no evals, no
-    // provenance, and a criterion axis that stays silent. That is the current
-    // behavior, recorded rather than claimed otherwise; reading a manifest is
-    // not implemented.
-    const r = extractEvals(
-      artifact(["---", "name: demo", "---", "body"]),
-    );
-    expect(r.errors).toEqual([]);
-    expect(r.declared).toBe(false);
-    expect(r.evals).toEqual([]);
-    expect(r.proposedBy.size).toBe(0);
+  it("reads a trail a manifest supplied, not only the artifact's own", () => {
+    // proposal.4 marks `metadata` `x-manni-location: external`, so the whole
+    // block — evals, `eval-skip` and `meta-provenance` together — may live in
+    // a collection's manifest instead of the artifact. What arrives here is
+    // the merged extraction (`evals/external.ts`), and this vocabulary cannot
+    // tell the two apart, which is the point: a relocated artifact grades
+    // exactly as the same artifact would inline.
+    const page = artifact(["---", "name: demo", "---", "body"]);
+    const inline = extractEvals(page);
+    expect(inline.declared).toBe(false);
+    expect(inline.evals).toEqual([]);
+
+    const merged = extractEvals(page, {
+      present: true,
+      format: "yaml",
+      data: {
+        name: "demo",
+        metadata: {
+          evals: [{ id: "used-read", assertion: "The session read a file." }],
+          "meta-provenance": [
+            { "generated-by": "claude-opus-4-5", evals: ["used-read"] },
+          ],
+        },
+      },
+      lineFor: () => undefined,
+    });
+    expect(merged.errors).toEqual([]);
+    expect(merged.declared).toBe(true);
+    expect(merged.evals.map((e) => e.id)).toEqual(["used-read"]);
+    expect(merged.proposedBy.get("used-read")).toEqual(["claude-opus-4-5"]);
   });
 });

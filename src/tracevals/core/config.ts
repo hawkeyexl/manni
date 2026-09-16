@@ -16,6 +16,7 @@ import {
   readConfigFileSync,
   type ConfigFileOptions,
 } from "../../shared/config-file.js";
+import type { CollectionConfig } from "../../shared/collections.js";
 import {
   assertKnownProvider,
   type ProvidersConfig,
@@ -364,6 +365,16 @@ export interface LoadedConfig {
    * committed config means the same thing from any working directory.
    */
   dir: string;
+  /**
+   * The file's top-level `collections:` (proposal 0041); `[]` with no config.
+   *
+   * Collections never choose tracevals' inputs — `run` and `calibrate` take
+   * traces, `fill` detects artifacts under `--project` — and there is no
+   * `--collection`. What they say is *where a relocated `metadata` block
+   * lives*, so a declared manifest is read for the evals an artifact no longer
+   * carries inline (proposals 0047 and 0049 §1).
+   */
+  collections: CollectionConfig[];
 }
 
 /** How a command was told to find its config: `-c` and `--no-config`. */
@@ -389,19 +400,24 @@ export async function discoverConfig(
   dir = process.cwd(),
   lookup: ConfigLookup = {},
 ): Promise<LoadedConfig> {
-  if (lookup.noConfig === true) return { config: parseConfig({}), dir };
+  if (lookup.noConfig === true) {
+    // No config means no collections, so no manifest owns anything and every
+    // artifact's evals are its own front matter's — the same rule cite states.
+    return { config: parseConfig({}), dir, collections: [] };
+  }
   const file = await Promise.resolve().then(() =>
     lookup.configPath === undefined
       ? findConfigFileSync(dir, CONFIG_FILE)
       : readConfigFileSync(lookup.configPath, dir, CONFIG_FILE),
   );
-  if (file === null) return { config: parseConfig({}), dir };
+  if (file === null) return { config: parseConfig({}), dir, collections: [] };
   return {
     config: parseConfig(file.value ?? {}, {
       source: file.source,
       ...(file.providers !== undefined ? { providers: file.providers } : {}),
     }),
     dir: file.dir,
+    collections: file.collections,
   };
 }
 

@@ -52,13 +52,25 @@ metadata:
 `metadata` stays **open**, so other tools' members pass through untouched. Eval entries are closed,
 so a misspelled field inside one fails loudly instead of being ignored.
 
+### Or in an external-metadata manifest
+
+At `proposal.4` the whole top-level `metadata` key carries `x-manni-location: external`. The mark
+sits on the map, not on one field. So `evals`, `eval-skip` and `meta-provenance` move as one block,
+and they cannot be split across an artifact and a manifest.
+
+`manni meta relocate` moves that block into the external-metadata manifest a collection declares.
+The artifact then keeps only the front matter the tool running it reads. `run`, `calibrate` and
+`fill` read the block back from there, so a relocated artifact grades exactly as an inline one. The
+rules are in [Collections and a relocated
+block](/manni/tracevals/reference/configuration/#collections-and-a-relocated-block).
+
 ## The three keys
 
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `metadata.evals` | string, or non-empty list | none | One assertion, or the list of them. |
 | `metadata.eval-skip` | boolean | `false` | Skip this artifact's evals entirely. Reported as `skipped`, never silently dropped. |
-| `metadata.meta-provenance` | list | none | Which model proposed which evals, at what confidence. Written by [`fill`](/manni/tracevals/declare/fill/). |
+| `metadata.meta-provenance` | list | none | Which model proposed which evals, at what confidence. Written by [`fill`](/manni/tracevals/declare/fill/). It relocates with the rest of `metadata`, never on its own. |
 
 Because `metadata` must stay open, the schema alone cannot catch a typo like `eval-skpi`. So the
 **`eval-` prefix is reserved**, as `^eval-(?!skip$)`. `eval-skip` is the one member this vocabulary
@@ -253,6 +265,10 @@ Older spellings fail loudly rather than degrading, which is the point:
 - `metadata.evals.skip` is now `metadata.eval-skip`, a sibling of `evals` rather than nested in it.
 - `grader: llm` is now `grader: ai`. It passes the schema, because the grader enum is open. The
   grader registry rejects it at run time, with a message naming every kind it knows.
+
+One `proposal.4` change is not a migration. The whole `metadata` key is marked
+`x-manni-location: external`, and a block in front matter still validates. Relocating one moves
+every key under `metadata` at once, [as above](#or-in-an-external-metadata-manifest).
 </Aside>
 
 <Aside title="Only YAML frontmatter can be written">

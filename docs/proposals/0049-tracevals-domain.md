@@ -57,18 +57,49 @@ per-tool `packageRoot()`, a rewritten CLI-reference checker. All are dropped.
 Each already exists on main or arrived with 0048, and a tool that folds in
 adopts what is there rather than bringing its own.
 
-### 1. Traces are not documents
+### 1. Traces are not documents, and collections say where, not what
 
 `collections:` names document sets. `run` and `calibrate` take **traces**,
 which are session transcripts in Claude Code's own store, so they read no
 collection and take no `--collection`. 0041 said as much.
 
 `fill` is the one verb that reads files a person wrote, and it still does not
-read `collections:`. A docs collection is not a set of agent artifacts, and
-pointing `fill` at one would propose evals for prose no agent executes. It
-keeps its own detection — the artifacts a project actually has, under
-`--project` — and gains `--exclude <glob>`, repeatable, so a fixture tree can
-be kept out of a proposal run.
+read `collections:` **to choose its inputs**. A docs collection is not a set
+of agent artifacts, and pointing `fill` at one would propose evals for prose
+no agent executes. It keeps its own detection — the artifacts a project
+actually has, under `--project` — and gains `--exclude <glob>`, repeatable, so
+a fixture tree can be kept out of a proposal run.
+
+Every verb does read `collections:` for one other thing, and the distinction
+is the whole of it: **a collection never selects tracevals' inputs, but it
+does say where a relocated block lives.** 0047 marks the whole `metadata` key
+`x-manni-location: external` (§4), so `manni meta relocate` can move an
+artifact's `evals`, `eval-skip` and `meta-provenance` — together, as one block
+— into the external-metadata manifest a collection declares. A tool that read
+only front matter would then grade that artifact as declaring nothing: no
+evals, no trail, no error, and a clean gate over an artifact with a suite on
+it. So `run`, `calibrate` and `fill` load every declared collection's
+metadata-owning manifest and merge it through meta's own
+`mergeExternalMetadata`, which is what `manni cite` does with `citations`.
+
+Three rules follow cite's, for cite's reasons:
+
+- **Membership is computed against every declared collection**, never the
+  subset a run selected. An artifact `fill` was handed by path is still a
+  member of the collection that holds its manifest, and a run that decided
+  otherwise would report it as declaring nothing and then write a second copy.
+- **`fill` writes where the metadata lives.** A manifest that owns the block
+  receives the proposals through meta's splice writer; the artifact is not
+  touched. Where nothing owns it, the page is written as before, and the run
+  says so in the words `meta fill` and `meta derive` already use for a
+  homeless key.
+- **A URL manifest is readable and not writable.** `run` grades a hosted trail
+  happily. `fill` refuses to write into one, exit 2, the way cite refuses the
+  same thing. `--offline` refuses to fetch it at all, with meta's message.
+
+There is still no `--collection` and no config key of tracevals' own. A
+collection is read because it is already declared, not because tracevals asked
+for one.
 
 Detection is also why `run` has no switch naming the trace store. That
 location is Claude Code's to say, and it says it with `CLAUDE_CONFIG_DIR`.
@@ -118,9 +149,12 @@ proposal.4, not the proposal.2 the import carried. That crosses two renames:
 `severity: info` became `notice`, and `metadata.eval-provenance` became
 `metadata.meta-provenance` under a narrowed guard, `^eval-(?!skip$)`, which
 makes the old key a reserved-prefix error rather than a silently ignored
-member. proposal.4 then marks `meta-provenance` with
-`x-manni-location: external` (0047), so a trail can live outside the artifact
-a person reads.
+member. proposal.4 then marks the whole top-level **`metadata`** key with
+`x-manni-location: external` (0047), not `meta-provenance` alone. The mark
+sits on the map, so `evals`, `eval-skip` and `meta-provenance` relocate as one
+block and cannot be split across an artifact and a manifest. What lives
+outside the artifact a person reads is therefore the whole declaration, not
+only the trail, and §1 says how every verb reads it back.
 
 Nothing here needs a migration. The vocabulary is a draft under review, and
 the tool that wrote the old spellings was never published.
@@ -159,10 +193,20 @@ scales.
 
 - **A collection declared for one tool is read by every tool.** The family
   file is shared, so `manni meta validate` with no paths validates whatever
-  `collections:` names. tracevals adds no collection and reads none, which
-  sidesteps the problem here without fixing it.
+  `collections:` names. tracevals declares no collection of its own and reads
+  the declared ones only to find a relocated block (§1), so it never widens
+  what a run covers; it does inherit the shared declaration's blast radius.
+- **Two collections owning `metadata` for one artifact is refused by `fill`,
+  exit 2.** Reading two is meta's duplicate finding. Writing would be the
+  tiebreak 0020 refuses, so the writer stops instead.
 - **`fill` detects artifacts by convention.** An artifact in a location no
   convention names is never proposed for, and `--exclude` can only subtract.
+- **The homeless-key warning is silent when no collection is declared.**
+  proposal.4 marks `metadata` external unconditionally, so a repository with
+  no `collections:` at all would hear on every `fill` that the schema would
+  rather its evals lived somewhere it has not set up. The warning is kept for
+  the case a person can act on: collections exist, and none of them owns the
+  block.
 - **The judge digest is redacted best-effort** (ADR 01020) before it leaves
   the machine, and the verdict cache under `.manni/tracevals/cache` keeps the
   observed text in the clear. The family key (0045) covers schema-marked
@@ -189,6 +233,11 @@ for them, and a person does not choose their paths. Reading a docs collection
 would propose evals for prose that no agent ever executes. The parity rule
 asks the verbs to share a surface where that makes sense; here it does not,
 and `--exclude` covers the case a collection would have served.
+
+That is about **selection** only. A collection that contains an artifact still
+says where that artifact's `metadata` block lives, and `fill` reads and writes
+it there (§1). Ignoring the declaration would have meant proposing evals an
+artifact already declares, and writing a second copy of them to the page.
 
 ### 3. Why not keep `--max-cost-usd` as well, for people who budget money?
 

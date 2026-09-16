@@ -42,6 +42,71 @@ nothing warns about one, because nothing looks for it. Settings go under `tracev
 file.
 </Aside>
 
+## Collections and a relocated block
+
+`collections:` is a **top-level** key of `manni.config.yaml`, beside `tracevals:` rather than inside
+it. It names document sets, and every tool in the family reads it. tracevals reads it for exactly
+one thing.
+
+**A collection never selects tracevals' inputs.** `run` and `calibrate` take traces, which are
+session transcripts rather than documents. `fill` detects artifacts under `--project` and takes
+`[paths...]` and `--exclude`. There is no `--collection` flag on any command, no `collections:`
+fallback for inputs, and no key of tracevals' own for either.
+
+**A collection does say where a relocated `metadata` block lives.** The
+[artifact-evals vocabulary](/manni/tracevals/reference/evals-schema/) marks the whole `metadata` key
+`x-manni-location: external`. So `manni meta relocate` can move an artifact's `evals`, `eval-skip`
+and `meta-provenance` out of its front matter, together, into the external-metadata manifest a
+collection declares:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: agents
+    paths: [".claude/skills/**/SKILL.md"]
+    externalMetadata:
+      - file: artifact-evals.yaml     # relative to this config file
+        keys: [metadata]
+tracevals:
+  judge:
+    ensembleRuns: 3
+```
+
+`run`, `calibrate` and `fill` load every manifest that owns `metadata` and merge it through the
+metadata tool's own external-metadata merge. A relocated artifact then grades exactly as an inline
+one, with the same evals, the same `eval-skip`, and the same self-preference criterion axis. The
+manifest shape, the join rules and the ownership rules are the metadata tool's, in
+[external metadata](/manni/meta/set-up/external-metadata/) and its
+[configuration reference](/manni/meta/reference/configuration/#collections).
+
+Three rules are worth knowing before you rely on this:
+
+- **Membership is computed against every declared collection**, never the subset a run selected. An
+  artifact you hand `fill` by path is still a member of the collection holding its manifest.
+- **`--no-config` means no manifests.** With no config there are no collections, so an artifact's
+  evals are whatever its own front matter carries.
+- **Two collections owning `metadata` for one artifact is refused**, exit `2`. Choosing between them
+  would be a tiebreak, so the message names both instead.
+
+Where `fill` writes the block it proposed, and what it refuses to write into, is on
+[Fill in evals across a project](/manni/tracevals/declare/fill/#where-fill-writes).
+
+### `--offline`
+
+| Flag | Commands | Default | Config key |
+|---|---|---|---|
+| `--offline` | `run`, `calibrate`, `fill` | off | none |
+
+A manifest may be a `https://` URL. `run` and `calibrate` fetch a hosted block and grade it happily.
+`--offline` refuses to fetch one instead, with the metadata tool's message and **exit 2**:
+
+```
+manni: Manifest https://example.com/artifact-evals.yaml is remote and the run is offline. Vendor it to a path, or drop --offline.
+```
+
+It bounds the manifest, and nothing else. Inference is `--local`'s boundary, and the two draw
+different lines. `--local` keeps session content on this machine; `--offline` keeps the run off a
+remote manifest. Pass both when neither may cross the wire.
+
 ## How a value is resolved
 
 ```

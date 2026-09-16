@@ -67,10 +67,13 @@ quietly:
 | `metadata.eval-provenance` | `metadata.meta-provenance` | Rename the key. The old spelling is now a reserved-prefix error, not an ignored member. |
 | `severity: info` | `severity: notice` | Rename the value. Severity across the family is `error \| warning \| notice`. |
 
-`proposal.4` adds one thing, and it changes no artifact that validates today: `meta-provenance`
-carries `x-manni-location: external`. The mark says the field belongs outside the artifact itself,
-so `manni meta relocate` can move a trail into external storage and leave the instructions a person
-reads uncluttered. tracevals reads the field wherever it lives.
+`proposal.4` adds one thing, and it changes no artifact that validates today. The whole top-level
+`metadata` key carries `x-manni-location: external`. The mark sits on the map, not on one field, so
+`evals`, `eval-skip` and `meta-provenance` move as one block. They cannot be split across an
+artifact and a manifest. `manni meta relocate` moves that block into the external-metadata manifest
+a collection declares, which leaves the instructions a person reads uncluttered. tracevals reads the
+block wherever it lives. [Collections and a relocated
+block](/manni/tracevals/reference/configuration/#collections-and-a-relocated-block) has the rules.
 
 The provenance rename is worth a second look, because the guard changed under it. The reserved
 prefix inside `metadata` is `^eval-(?!skip$)`: every `eval-*` member is rejected except

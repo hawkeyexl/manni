@@ -87,7 +87,7 @@ stopped gating should say so.
 
 ## Stay offline
 
-Two flags cover every offline case, and they draw different boundaries:
+Three flags cover every offline case, and each draws a different boundary:
 
 - **`--deterministic-only`** makes no model call at all. Judged evals are reported as `skipped`
   instead of failed, so an artifact with only judged evals does not turn your build red for
@@ -96,9 +96,14 @@ Two flags cover every offline case, and they draw different boundaries:
   path runs and nothing leaves the runner. It wins over `tracevals.provider`, the family's
   `providers.provider`, and an eval's own `provider:`, naming each replaced choice once on stderr.
   A `--provider` other than `llama-cpp` or `auto` beside it is a usage error, exit `2`.
+- **`--offline`** never fetches a remote manifest, and reads external metadata from local manifests
+  only. It governs where a relocated `metadata` block is read from, not inference, so a hosted
+  manifest is refused rather than fetched, exit `2`. See
+  [collections and a relocated block](/manni/tracevals/reference/configuration/#collections-and-a-relocated-block).
 
 Reach for `--deterministic-only` when the gate should be fast and free. Reach for `--local` when
-you want the judged verdicts too, but the session content may not be sent anywhere.
+you want the judged verdicts too, but the session content may not be sent anywhere. Add `--offline`
+when the runner has no network at all.
 
 <Aside type="caution" title="If you do let a hosted judge run in CI">
 Set a ceiling with `judge.maxTurns` and provision the API key as a secret. The budget counts

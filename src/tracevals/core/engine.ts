@@ -9,7 +9,7 @@ import { findManifest, type FoundManifest } from "../capture/manifest.js";
 import { TracevalsError } from "../types.js";
 import type { CoverageEntry } from "../artifacts/types.js";
 import type { ManifestReport } from "../capture/types.js";
-import { planEvals, type EvalPlan } from "./plan.js";
+import { planEvals, type ArtifactMetadataFor, type EvalPlan } from "./plan.js";
 import { MAX_ARTIFACT_CHARS, artifactWasTruncated } from "../judge/prompt.js";
 import { graderFor, listGraderKinds } from "../graders/registry.js";
 import { windowFor } from "../graders/util.js";
@@ -39,6 +39,14 @@ export interface EngineOptions {
    * should be read, and they happened first, so they lead the list.
    */
   warnings?: string[];
+  /**
+   * Where each artifact's `metadata` block lives (`evals/external.ts`). A
+   * relocated artifact keeps its evals, its `eval-skip` and its
+   * `meta-provenance` in a collection's manifest, and without this the run
+   * would grade it as declaring nothing at all. Absent when no collection
+   * declares a manifest that owns `metadata`.
+   */
+  metadataFor?: ArtifactMetadataFor;
 }
 
 export async function runEvals(options: EngineOptions): Promise<RunReport> {
@@ -87,7 +95,7 @@ export async function runEvals(options: EngineOptions): Promise<RunReport> {
     reportUnusedArtifacts: config.reportUnusedArtifacts,
     ...(found !== null ? { manifest: found.manifest } : {}),
   });
-  const plans = planEvals(resolved.artifacts);
+  const plans = planEvals(resolved.artifacts, options.metadataFor);
 
   const results: EvalResult[] = [];
   const aiPlans: EvalPlan[] = [];

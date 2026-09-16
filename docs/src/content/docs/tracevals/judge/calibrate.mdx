@@ -32,8 +32,9 @@ It runs the corpus and joins the results against the answers you wrote down. The
 three things that matter: [false passes, false fails, and review volume](#the-three-numbers).
 
 `calibrate` takes the same inputs and the same flags as `run`, minus `--history` and `--manifest`:
-`-c, --config <path>`, `--no-config`, `--provider`, `--model`, `--local`, `--max-turns`,
-`--deterministic-only`, `--no-cache`, and `-f, --format <pretty | json | markdown>`. History and a
+`-c, --config <path>`, `--no-config`, `--provider`, `--model`, `--local`, `--offline`,
+`--max-turns`, `--deterministic-only`, `--no-cache`, and
+`-f, --format <pretty | json | markdown>`. History and a
 session manifest belong to a run you are recording, and a calibration corpus is neither.
 
 ## Write down what you decided
