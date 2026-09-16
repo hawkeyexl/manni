@@ -314,7 +314,9 @@ describe("family config discovery", () => {
     await findConfigFile(root, META);
     await findConfigFile(root, META);
     expect(stderr).toHaveLength(1);
-    expect(stderr[0]).toContain('"docmeta.config.yaml" is a deprecated config file name');
+    expect(stderr[0]).toContain(
+      '"docmeta.config.yaml" is a deprecated config file name. Move its keys under `meta:`',
+    );
     expect(stderr[0]).toContain("`meta:`");
     expect(stderr[0]).toContain('"manni.config.yaml"');
     expect(stderr[0]).toContain(
