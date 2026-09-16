@@ -1,0 +1,256 @@
+---
+title: Configuration reference
+description: "Every lint: key of manni.config.yaml, the collections: list the document set comes from, the template resolution chain, and the keys that moved."
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+manni lint reads one file, the shared `manni.config.yaml`, and one key of it,
+`lint:`. Sibling tools' keys cost it nothing: it neither reads nor validates
+them, and needs no registry of known tools to know that.
+
+The document set is not in `lint:`. It is declared once for the whole family in
+the top-level [`collections:`](#the-document-set) list, beside
+`encryptionKey:`.
+
+## The file
+
+```yaml title="manni.config.yaml"
+# The document set, shared by every tool.
+collections:
+  - name: guides
+    paths: ["docs/guides/**/*.md"]
+    exclude: ["**/drafts/**"]
+  - name: api
+    paths: ["docs/api/**/*.md"]
+
+# The metadata tool's key, for contrast. manni lint never reads it.
+meta:
+  schemas: [okf]
+
+# Everything manni lint reads.
+lint:
+  allowEmpty: false
+  structure:
+    tool: manni
+  templates:
+    - ./templates.yaml
+  template: tgdp:how-to:1.6
+  types:
+    api-operation: ./templates.yaml#api-operation
+  overrides:
+    - files: "docs/api/**"
+      template: tgdp:reference:1.6
+```
+
+Every key is optional. A repository whose pages all declare a `type:` a
+built-in template serves needs no `lint:` section at all, and an empty one is
+the same as none.
+
+Validation is strict, with `additionalProperties: false` at every level below
+`lint:`. A typo is a loud failure rather than a silent default.
+
+## Discovery
+
+The file is found by walking up from the working directory to the project
+boundary, exactly as `manni meta` finds it. `manni.config.yaml` and
+`manni.config.yml` are the names, and the nearest one wins; ancestors are never
+merged. `-c <path>` names one explicitly, and the file must then exist or the
+run exits `2`. `--no-config` ignores any discovered one.
+
+`doc-structure-lint.config.yaml`, the standalone tool's own file, is not
+discovered at all. See [Coming from
+`doc-structure-lint`](#coming-from-doc-structure-lint) for why, and what to do
+with one. `moose.config.yaml` is still read, with a warning saying to rename
+it: that is the family file's pre-rename name rather than this tool's.
+
+In `pretty` output the run says which file governed it, on stderr:
+
+```
+Using manni.config.yaml (.)
+```
+
+That line exists because discovery walks upward. An unexpected ancestor config
+is the difference between a five-minute diagnosis and an hour of confusion.
+
+Everything a config declares is resolved **relative to the config file's own
+directory**, not the working directory. So `templates: [./templates.yaml]`
+means the same file whether the command runs from the repository root or from
+`docs/api/`.
+
+## The document set
+
+Targets come from three places, in this order:
+
+1. Positional `[paths...]` on the command line, including `-` for stdin.
+2. The collections named by `--collection`, when no paths were given.
+3. Every declared collection, when neither was given.
+
+No paths, no `--collection` and no config is an operational error, not a
+silently clean run:
+
+```
+manni: No files to check. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.
+```
+
+A collection carries `name`, `paths`, and optionally `exclude`. Its `exclude`
+decides membership, so a file a collection excludes is not in the set at all
+rather than filtered out later. The full contract is on
+[meta's configuration page](/manni/meta/reference/configuration/#collections),
+because `collections:` belongs to the family rather than to any one tool.
+
+<Aside type="caution" title="`docs` is not a usable collection name">
+`docs` collides with the table every `manni meta query` reads, so it is
+refused. Name the collection for what it holds: `guides`, `site`, `pages`,
+`api`.
+</Aside>
+
+## `lint:` keys
+
+| Key | Type | Default | Required | What it does |
+|---|---|---|---|---|
+| `allowEmpty` | boolean | `false` | no | Treat a run that matched zero files as success rather than an operational error. For a shared CI template or a pre-commit hook whose file list may legitimately be empty. The same key, with the same meaning, as `cite.allowEmpty`. `--allow-empty` sets it for one run. |
+| `structure` | object | absent | no | The structure job. Declaring it with no keys is how a repository says the job applies. |
+| `structure.tool` | string, `manni` | `manni` | no | Which tool performs the job. `manni` is this package's own engine and the only value today. Anything else is refused by name. `--tool <name>` names the same thing for one run. |
+| `templates` | string[] | none | no | Template files to load. Their templates' `types:` join the doctype routing table and outrank the built-ins, so adopting a repository's own how-to shape is one entry here and no flag. Each entry is a [template ref](/manni/lint/reference/templates/#template-refs). `--templates <path>` adds more. |
+| `template` | string | none | no | Template ref applied to a page that declares no doctype and matches no override. The **last** rung of the chain, not an override. |
+| `types` | object | none | no | Explicit doctype → template ref map, for a doctype no template file claims with its own `types:`. Keys are the vocabulary your pages' `type:` frontmatter is written in, so they are your names rather than the tool's. |
+| `overrides` | array | none | no | Repository policy: everything under a glob is linted with one template, whatever the pages say they are. First matching entry wins, and an override outranks a page's own `type:`. |
+| `overrides[].files` | string | — | yes | Glob matched against each file's path, written with forward slashes whatever the platform uses. |
+| `overrides[].template` | string | — | yes | Template ref applied to the files the entry matches. |
+
+An entry naming no template, or no files, is refused: it is a line that
+silently does nothing.
+
+<Aside type="note" title="No `collection:` form in an override">
+An override is template policy over a glob, not a document set. A
+`collection:` key there would be a second way to spell membership, and
+`collections:` already owns that. Deferred deliberately in proposal 0049.
+</Aside>
+
+## How a template is chosen
+
+Five rungs, in order. The first that answers wins, and the rest are not
+consulted:
+
+| # | Rung | Source | Wins when |
+|---|---|---|---|
+| 1 | `cli` | `-t, --template <ref>` | The flag was given. It applies to **every** file in the run. |
+| 2 | `frontmatter-template` | `$template:` in the page's own frontmatter | The page names its template itself. |
+| 3 | `config-override` | `lint.overrides[]` | A `files:` glob matches the path. First matching entry wins. |
+| 4 | `type` | The page's `type:` frontmatter | A template's `types:` claims that doctype, or `lint.types` maps it. Template files outrank the built-ins. |
+| 5 | `config-default` | `lint.template` | The page declares no type and nothing above answered. |
+
+A page that falls off the end is **skipped**, not failed. A page that declares a
+`type:` nothing serves is a `manni:lint/structure/unknown-type` finding, because
+that is an assertion the page made and the tool could not honour.
+
+`manni lint structure --explain` prints this table per file, marking the rung
+that decided. It is the fastest way to answer "why did this page route there?",
+and it [always exits 0](/manni/lint/reference/cli/#explain).
+
+```
+▸ docs/rotate-key.md
+    · cli                  --template not given
+    · frontmatter-template no $template in frontmatter
+    · config-override      no overrides configured
+    → type                 tgdp:how-to:1.6  type: how-to -> builtin template
+```
+
+### Which `types:` wins
+
+Doctype routing reads three sources, later ones overwriting earlier:
+
+1. The built-in TGDP templates and the doctypes they serve.
+2. Every file in `lint.templates`, in order, then every `--templates` file, in
+   order. A later file's `types:` replaces an earlier one's for the same
+   doctype.
+3. `lint.types`, the explicit map, which is last and therefore decisive.
+
+So a repository that wants its own how-to shape adds a template file whose
+template declares `types: [how-to]`, and nothing else changes. A repository
+with a doctype no template file claims writes it in `lint.types` instead.
+
+## Keys that moved
+
+Two keys the imported tool carried are refused by name, so an upgrading
+repository is told rather than silently linting nothing:
+
+```
+manni: manni.config.yaml: "paths" is no longer a lint key. Document sets are declared once for every tool, under a top-level collections: list. See https://hawkeyexl.github.io/manni/meta/reference/configuration/#collections
+manni: manni.config.yaml: "exclude" is no longer a lint key. Document sets are declared once for every tool, under a top-level collections: list. See https://hawkeyexl.github.io/manni/meta/reference/configuration/#collections
+```
+
+Both exit `2`.
+
+## Coming from `doc-structure-lint`
+
+`manni lint structure` is the `doc-structure-lint` package, folded into the
+manni bin. The engine, the templates and the rules are the same. The surface
+around them is the family's.
+
+Nothing migrates automatically, and nothing is read from the old file. The
+changes are these:
+
+| Was | Now |
+|---|---|
+| `npx doc-structure-lint docs/` | `manni lint check docs/`, or `manni lint structure docs/` for that one job |
+| `doc-structure-lint.config.yaml` | The `lint:` key of `manni.config.yaml`. The old name is not read at all, not even to warn about it: its whole document was the `lint:` section, written in keys the section no longer takes. |
+| `moose.config.yaml` | Still discovered, with a warning on stderr: it is the family file's pre-rename name, not this tool's. Rename it to `manni.config.yaml`. |
+| `paths:` under the tool's config | A collection's `paths:` under the top-level `collections:` |
+| `exclude:` under the tool's config | The same collection's `exclude:` |
+| `doc-structure-lint lint` as a default subcommand | No default subcommand. `manni lint` alone lists the four verbs and exits `2`. |
+| `doc-structure-lint formats` | `manni lint tools`, which lists the formats under the tool that reads them |
+| `heading_pattern_error` in output | `manni:lint/structure/heading-pattern`. The JSON reporter still carries the old name as `type`, beside the new `ruleId`. |
+| `"error" \| "warning"` severities of its own | The [family scale](/manni/meta/reference/output-and-exit-codes/#severity-across-the-family). Every structural finding is `error`. |
+| `instructions:` in a template | Removed. Structure checking is deterministic; the loader refuses the key and prints the `manni docevals` eval to move it to. |
+
+The published `doc-structure-lint` package is unaffected by any of this. It is
+archived separately.
+
+### Moving one repository
+
+<Aside type="tip" title="Do the config first, then the command">
+Write the `collections:` list and the `lint:` section, run
+`manni lint structure --explain` to confirm every page still routes where it
+did, then change the CI command. Doing it in the other order makes a routing
+change look like a lint regression.
+</Aside>
+
+A `doc-structure-lint.config.yaml` that read:
+
+```yaml title="doc-structure-lint.config.yaml (old)"
+paths:
+  - "docs/**/*.md"
+exclude:
+  - "**/drafts/**"
+templates:
+  - ./templates.yaml
+```
+
+becomes:
+
+```yaml title="manni.config.yaml (new)"
+collections:
+  - name: guides
+    paths: ["docs/**/*.md"]
+    exclude: ["**/drafts/**"]
+
+lint:
+  templates:
+    - ./templates.yaml
+```
+
+and `npx doc-structure-lint` becomes `npx @hawkeyexl/manni lint check`, with no
+arguments, because the collection supplies them.
+
+## Related
+
+- [CLI reference](/manni/lint/reference/cli/) — every flag, and which config key
+  each mirrors.
+- [Templates reference](/manni/lint/reference/templates/) — the template file
+  format, the built-in TGDP set, and what a ref may be.
+- [`collections:`](/manni/meta/reference/configuration/#collections) — the
+  family-level document set.
+- [Severity across the family](/manni/meta/reference/output-and-exit-codes/#severity-across-the-family)
+  — the one scale every tool speaks.

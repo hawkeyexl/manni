@@ -68,6 +68,16 @@ Maya's older pages predate the standard, so the fields her gate now requires are
 
 ---
 
+### M9 · Hold every page to the shape its doctype promises
+
+**Outcome.** A page that says `type: how-to` carries what a how-to carries: an overview, the prerequisites, the steps, and somewhere to go next. Maya finds out when one does not, before a reader does.
+
+**Steps.** The package is the one she already has. She runs `manni lint templates` to see the seven built-in doctype templates, derived from The Good Docs Project, and the `type` values each serves. Those are the same `type` values `manni meta` already validates, so her pages route themselves with no per-page change. `manni lint check docs/` reports each page that is missing a section, with the rule id, the heading, and the line. A page with no `type:` is skipped rather than failed, so she can point the tool at the whole tree and gate only what has opted in. Where the built-in shape is not her shape, she writes her own template file, declares `types:` on it, and names it once under `lint.templates`; its doctypes then outrank the built-ins. When a page routes somewhere she did not expect, `manni lint structure --explain` prints the five rungs of the resolution chain and marks the one that decided.
+
+**What success looks like.** One command over the same collections the metadata gate runs over, out of the same `manni.config.yaml`, with no second tool to install and no second config to keep in step.
+
+---
+
 ## Devin, Platform / CI Engineer
 
 ### D1 · Add the gate to our CI platform
@@ -113,6 +123,16 @@ Per-file schema validation cannot see a dangling cross-reference, a duplicate sl
 **Steps.** For a pull request he builds the site, serves it, and waits for the port. Then he runs `manni a11y check` against it with `-f github`, so each violation is annotated on the diff. For the live site he schedules the same command against the public URL. He reads the exit code the way the family defines it, `0` clean, `1` violations, `2` something could not run. A crawl that takes too long is narrowed by the page limit and the scope in the `a11y:` config.
 
 **What success looks like.** The same command locally and in CI, one annotation per violation, and no second tool to configure.
+
+---
+
+### D8 · Gate document structure in CI
+
+**Outcome.** Every pull request reports which pages lost the shape their doctype promises, as annotations on the line of the heading. It runs in the job that already validates metadata, out of the one config file, over the one document set.
+
+**Steps.** Devin adds `manni lint check -f github` beside the metadata gate, with no paths, because `collections:` supplies them. He puts `if: always()` on the second step, so a metadata failure does not hide every structural finding. He learns the contract: exit `0` clean, `1` at least one `error`-level finding, `2` operational — a bad flag, an unresolvable template, a config carrying the moved `lint.paths` key, or a run in which every file was skipped. For code scanning he writes `-f sarif` to a file, with `continue-on-error` on the check and `if: always()` on the upload, since the run worth uploading is the failing one. For the tests tab he writes `-f junit`. Ramping in needs no baseline, because a page with no `type:` is skipped: he gates one collection, or one doctype, and reads `manni lint structure --explain` in a report-only step to watch the routed count climb. `manni lint tools` is what he runs when his machine and CI disagree, because it names the tool, its version, and the config file each actually read.
+
+**What success looks like.** One more step in a job he already has, four CI formats he already consumes, and an exit-code contract identical to the other three domains'.
 
 ---
 
@@ -181,3 +201,13 @@ Theo's failure is usually a *missing* field rather than a malformed one, so `fil
 **Steps.** He reads the annotation, which names the rule, the element it fired on, and one sentence saying what to change. The fix page maps the rule to the change, and the help URL explains the rule itself. He edits the template or the page, rebuilds, and runs the same command locally until it exits `0`. There is no `--fix`, because no tool can know the words that belong in an alt attribute.
 
 **What success looks like.** A rule id he can act on, and a local run that proves it before he pushes.
+
+---
+
+### T4 · Read a structure failure and fix it
+
+**Outcome.** Theo's pull request carries a `manni:lint/structure/missing-section` annotation on a page he edited, and he clears it without learning what a template is.
+
+**Steps.** He reads the one line: the file and line, the rule id, the section named by its heading, and one sentence saying what to change. The fix page maps the rule to the change. A missing or unexpected section, a heading that is not the exact text, too few paragraphs, lists or code blocks, content in an order the template does not allow — each says what to add or move. Three rules are not about prose at all: `unknown-type` means the page's own `type:` is a typo and the message suggests the nearest real one; `template` and `parse` mean the page and its template never met, which is usually a repository problem rather than his. Where the finding is right about the template and wrong about his page, `manni lint structure <page> --explain` shows which of the five rungs routed it, so he can say which lever moved it. He reproduces locally with `npx @hawkeyexl/manni lint structure <page>`, sees `✓` and exit `0`, and pushes.
+
+**What success looks like.** One rule id, one change, one re-run. He never has to read a template file.

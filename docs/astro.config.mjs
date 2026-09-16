@@ -190,6 +190,37 @@ export default defineConfig({
             },
           ],
         },
+        // `lint` is the structure tool. Same shape as `a11y`: three journey
+        // tracks and a reference shelf. No set-up track, because what a repo
+        // configures is templates, and those are reference material the
+        // journeys link into.
+        {
+          label: "lint",
+          collapsed: true,
+          items: [
+            { label: "Overview", link: "/lint/" },
+            {
+              label: "Get started",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "lint/get-started" } }],
+            },
+            {
+              label: "Run it in CI",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "lint/ci" } }],
+            },
+            {
+              label: "Fix a failing check",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "lint/fix" } }],
+            },
+            {
+              label: "Reference",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "lint/reference" } }],
+            },
+          ],
+        },
       ],
     }),
   ],

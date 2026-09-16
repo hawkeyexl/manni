@@ -1,15 +1,17 @@
 # 0049: The `lint` domain: `manni lint check`, jobs, and the tools behind them
 
 - **Status:** Proposed
-- **Serves:** Three journeys. The numbers assume [0048](0048-docevals-domain.md)'s
-  ranges land first; the docs change that assigns them is part of this work.
-  - Maya · M14, "Hold every page to the shape its doctype promises". Her how-tos
+- **Serves:** Three journeys, assigned the next free numbers on this branch.
+  If [0048](0048-docevals-domain.md) lands first it takes ranges of its own and
+  these three shift up by however many it claims; they are the numbers as
+  written in `docs/content-strategy/cujs.md` here.
+  - Maya · M9, "Hold every page to the shape its doctype promises". Her how-tos
     are supposed to carry prerequisites and numbered steps. Nothing checks that
     but a reviewer's eye.
-  - Devin · D10, "Gate document structure in CI". He already runs
+  - Devin · D8, "Gate document structure in CI". He already runs
     `manni meta validate`. A second tool with its own config file, its own
     flags and its own exit codes is a second thing to learn and maintain.
-  - Theo · T5, "Read a structure failure and fix it". A finding has to name the
+  - Theo · T4, "Read a structure failure and fix it". A finding has to name the
     template, the section and the line.
 - **Depends on:** Four proposals.
   - [0033](0033-manni-monorepo.md) folds one tool in at a time, and orders
