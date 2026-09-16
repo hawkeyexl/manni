@@ -1,5 +1,5 @@
 {
-  "$comment": "Built-in doctype templates derived from The Good Docs Project templates, pinned to release v1.6.0 (\"Iron\"): https://gitlab.com/tgdp/templates/-/tree/v1.6.0. Each entry's `file` is a YAML template beside this manifest; `source` is the upstream Markdown it was derived from, vendored under test/lint/fixtures/tgdp/ and linted against the derived template so the two cannot drift. Run `npm run lint:check-tgdp-pin` to see whether upstream has moved past the pin.",
+  "$comment": "Built-in doctype templates derived from The Good Docs Project templates, pinned to release v1.6.0 (\"Iron\"): https://gitlab.com/tgdp/templates/-/tree/v1.6.0. Each entry's `file` is a YAML template beside this manifest; `source` is the upstream Markdown it was derived from, vendored under test/lint/fixtures/tgdp/ and linted against the derived template so the two cannot drift. Run `npm run check:tgdp-pin` to see whether upstream has moved past the pin.",
   "vendor": "tgdp",
   "upstream": "https://gitlab.com/tgdp/templates",
   "pin": "v1.6.0",

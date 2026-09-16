@@ -469,6 +469,14 @@ npm run docs:sync-versions   # rewrite the stale ones; the release runs the same
 npm run docs:check-links  # every internal link and anchor in the built site
                         # resolves. Reads docs/dist, so it needs
                         # `cd docs && npm run build` first.
+npm run smoke:lint      # build, then exercise lint's built-in templates through
+                        # the real dist/cli.js. The templates are YAML files read
+                        # by path at runtime, so a path right in src/ can be wrong
+                        # in dist/ with every unit test green. Runs in PR CI.
+npm run check:tgdp-pin  # has upstream moved past the TGDP release lint's built-in
+                        # templates are pinned to? A report, not a gate — it hits
+                        # the network, so it runs weekly, not in PR CI. See
+                        # tgdp-pin.yml. Add `-- --strict` to exit 1 when behind.
 npm run schemas:check   # published built-in schemas immutable and in sync (local)
 npm run schemas:check-published  # ...and the live URLs still serve those bytes.
                         # Hits the network, so it runs on a daily schedule

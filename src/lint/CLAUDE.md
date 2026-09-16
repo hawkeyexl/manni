@@ -68,7 +68,7 @@ Both matter, and the second has repeatedly caught what the first could not:
   repo's own `templates.yaml`.
 - The `dist/` template-path bug passed every test, because the suite runs against
   `src/`, where the templates sit one directory deeper. That is why
-  `npm run smoke` exists and runs in CI.
+  `npm run smoke:lint` exists and runs in CI.
 
 So: when a change could behave differently in the built package than in the repo,
 add a smoke check. When a change affects matching, lint a real document with it.
@@ -130,7 +130,7 @@ reversed. See [`adrs/README.md`](adrs/README.md).
 npm test                  # vitest
 npm run typecheck         # tsc --noEmit
 npm run build             # tsup -> dist/
-npm run smoke             # build, then exercise the real dist/cli.js
+npm run smoke:lint        # build, then exercise the real dist/cli.js
 npm run lint:prose        # the house voice, over this repo's own prose
 npm run check:tgdp-pin    # has upstream moved past the pinned TGDP release?
 ```

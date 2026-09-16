@@ -10,8 +10,8 @@
  * It is a report, not a gate: upstream moving does not make the pinned
  * templates wrong, it makes them old. Run it in a scheduled job or by hand.
  *
- *   npm run lint:check-tgdp-pin              report; exit 0 even when behind
- *   npm run lint:check-tgdp-pin -- --strict  exit 1 when behind, for a nagging CI job
+ *   npm run check:tgdp-pin              report; exit 0 even when behind
+ *   npm run check:tgdp-pin -- --strict  exit 1 when behind, for a nagging CI job
  *
  * Exit status is set via `process.exitCode`, never `process.exit()`: calling the
  * latter while `fetch`'s handles are still unwinding aborts the process on
@@ -52,13 +52,13 @@ async function latestRelease(upstream) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const tag = (await res.json())[0]?.tag_name;
     if (!tag) {
-      console.error("lint:check-tgdp-pin: upstream reported no releases.");
+      console.error("check:tgdp-pin: upstream reported no releases.");
       return null;
     }
     return tag;
   } catch (err) {
     // A network problem is not a finding about the pin. Say so and stop.
-    console.error(`lint:check-tgdp-pin: could not reach ${upstream}: ${err.message}`);
+    console.error(`check:tgdp-pin: could not reach ${upstream}: ${err.message}`);
     return null;
   }
 }
@@ -66,7 +66,7 @@ async function latestRelease(upstream) {
 function howToMoveThePin(manifest, latest) {
   return [
     "",
-    `lint:check-tgdp-pin: upstream has moved to ${latest}.`,
+    `check:tgdp-pin: upstream has moved to ${latest}.`,
     "",
     "The pinned templates are not wrong, only older. To move the pin:",
     `  1. re-vendor each entry's \`source\` from ${manifest.upstream} at ${latest}`,
@@ -96,6 +96,6 @@ if (latest === null) {
     console.log(howToMoveThePin(manifest, latest));
     if (strict) process.exitCode = 1;
   } else {
-    console.log("\nlint:check-tgdp-pin: up to date.");
+    console.log("\ncheck:tgdp-pin: up to date.");
   }
 }

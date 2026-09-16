@@ -12,7 +12,7 @@
  * that only exist after a build: that built-ins load, that a page routes by its
  * `type`, and that exit codes are what CI will branch on.
  *
- * Usage: npm run lint:smoke   (runs `build` first)
+ * Usage: npm run smoke:lint   (runs `build` first)
  */
 import { execFile } from "node:child_process";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
