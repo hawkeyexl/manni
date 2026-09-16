@@ -41,7 +41,7 @@ function run(args: string[], cwd: string): { stdout: string; status: number } {
 }
 
 function buildGraph(): string {
-  const dir = mkdtempSync(join(tmpdir(), "dockg-traverse-"));
+  const dir = mkdtempSync(join(tmpdir(), "manni-kg-traverse-"));
   const graph = join(dir, "graph.ttl");
   execFileSync(process.execPath, [cli, "kg", "build", "--out", graph], {
     encoding: "utf8",
@@ -96,7 +96,7 @@ describe("manni kg traverse (integration)", () => {
     // configuration.md declares not-applicable-to: [SP-X300], so it is dropped
     // and the reason is reported, not silently omitted.
     expect(stdout).toContain("excluded by scope:");
-    expect(stdout).toContain("dockg:notApplicableToVariant");
+    expect(stdout).toContain("kg:notApplicableToVariant");
     expect(stdout).toContain("1 node, 1 hop, 1 excluded");
   });
 

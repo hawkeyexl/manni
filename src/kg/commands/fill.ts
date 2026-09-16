@@ -105,7 +105,7 @@ export interface FillDocResult {
   /**
    * Section slugs the model proposed that match no heading in the document.
    * Dropped rather than written: writing one would mint a
-   * dockg:brokenSectionRef, a finding fill must report and never manufacture
+   * kg:brokenSectionRef, a finding fill must report and never manufacture
    * (ADR 01032).
    */
   unknownSections?: string[];
@@ -347,7 +347,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     warnings.push(
       "Section metadata was written but is NOT recorded in meta-provenance: /kg/sections is " +
         "one of the three hand-curated pointers kg refuses, with /kg/revision-of and " +
-        "/kg/derived-from, so recording it would make `manni kg check` report a violation. " +
+        "/kg/derived-from, so recording it would make `manni kg check` report an error. " +
         "Review section values by hand — the review queue will not list them.",
     );
   }
@@ -479,7 +479,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
         : []) {
         const slug = typeof entry["slug"] === "string" ? entry["slug"] : "";
         // A slug matching no heading is dropped, never written. Writing it
-        // would mint a dockg:brokenSectionRef — a finding fill must report
+        // would mint a kg:brokenSectionRef — a finding fill must report
         // rather than manufacture.
         if (!realSlugs.has(slug)) {
           if (slug) unknownSlugs.push(slug);
@@ -598,7 +598,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       // Document-level names only. `sections.<slug>.<field>` is a pointer
       // under `/kg/sections`, and `sections` is one of the three fields
       // curated by hand — recording it is exactly what kg's harvest now
-      // reports as a `manni kg check` violation (0046 stress test 13). So the
+      // reports as a `manni kg check` error (0046 stress test 13). So the
       // rule stays, and the reason it stays is a different one.
       const recordable = realFields.filter((f) => !f.includes(".")).sort();
       // Loud, not silent: metadata a model wrote with no entry in the review

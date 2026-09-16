@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { discoverFiles } from "../../../src/kg/core/discover.js";
 
 function corpus(): string {
-  const dir = mkdtempSync(join(tmpdir(), "dockg-discover-"));
+  const dir = mkdtempSync(join(tmpdir(), "manni-kg-discover-"));
   mkdirSync(join(dir, "docs", "sub"), { recursive: true });
   mkdirSync(join(dir, "node_modules", "pkg"), { recursive: true });
   writeFileSync(join(dir, "docs", "b.md"), "# b\n");

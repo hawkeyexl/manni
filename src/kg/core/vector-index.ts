@@ -135,12 +135,12 @@ export function encodeVectorIndex(
 /** Decode a sidecar, rejecting anything malformed rather than mis-reading it. */
 export function decodeVectorIndex(bytes: Uint8Array): VectorIndexDoc {
   if (bytes.length < HEADER_OFFSET) {
-    throw new VectorIndexError("Not a dockg vector index: file is too short.");
+    throw new VectorIndexError("Not a manni kg vector index: file is too short.");
   }
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   if (view.getUint32(0, true) !== MAGIC) {
     throw new VectorIndexError(
-      "Not a dockg vector index: bad magic — is this the right file?",
+      "Not a manni kg vector index: bad magic — is this the right file?",
     );
   }
   const version = view.getUint32(4, true);

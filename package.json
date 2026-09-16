@@ -27,7 +27,6 @@
   },
   "files": [
     "dist",
-    "ns",
     "shapes"
   ],
   "repository": {

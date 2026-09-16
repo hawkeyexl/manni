@@ -1,7 +1,7 @@
 /**
  * Graph → iiRDS package projection (ADR 01017). Reads the built graph and emits
  * the metadata quads + content-file manifest for an unrestricted iiRDS package:
- * one `iirds:Package`, each `dockg:Document` re-typed as an `iirds:Topic` linked
+ * one `iirds:Package`, each `kg:Document` re-typed as an `iirds:Topic` linked
  * via `iirds:is-part-of-package`, each source file exposed as an `iirds:Rendition`
  * (`iirds:source` + `iirds:format`), and the Phase-2 iiRDS classification carried
  * across. This is a *projection* — it builds a fresh quad set (never the whole
@@ -42,7 +42,7 @@ import {
 } from "./iirds.js";
 
 const { namedNode } = DataFactory;
-const DOCKG_DOCUMENT = `${NS.dockg}Document`;
+const KG_DOCUMENT = `${NS.kg}Document`;
 const XSD_STRING = `${NS.xsd}string`;
 
 /** iiRDS classification edges carried from each Document verbatim. */
@@ -98,7 +98,7 @@ export function projectPackage(
   const pkg = `${opts.baseIri}package`;
   add(pkg, RDF_TYPE, iri(IIRDS_PACKAGE));
   add(pkg, IIRDS_IIRDS_VERSION, lit(opts.version));
-  add(pkg, IIRDS_TITLE, lit(opts.title ?? "dockg export"));
+  add(pkg, IIRDS_TITLE, lit(opts.title ?? "manni kg export"));
 
   if (opts.creator) {
     const party = `${opts.baseIri}party/creator`;
@@ -112,7 +112,7 @@ export function projectPackage(
   }
 
   const docs = store
-    .getQuads(null, namedNode(RDF_TYPE), namedNode(DOCKG_DOCUMENT), null)
+    .getQuads(null, namedNode(RDF_TYPE), namedNode(KG_DOCUMENT), null)
     .map((q) => q.subject.value)
     .sort(byCodeUnit);
 
@@ -126,7 +126,7 @@ export function projectPackage(
     const language = firstObject(store, doc, `${NS.dcterms}language`);
     if (language) add(doc, IIRDS_LANGUAGE, lit(language));
 
-    const path = firstObject(store, doc, `${NS.dockg}path`);
+    const path = firstObject(store, doc, `${NS.kg}path`);
     if (path) {
       const absPath = resolve(cwd, path);
       if (!existsSync(absPath)) {
@@ -143,7 +143,7 @@ export function projectPackage(
       contentFiles.push({ zipPath, absPath });
     } else {
       warnings.push(
-        `Document ${doc} has no dockg:path — no rendition emitted.`,
+        `Document ${doc} has no kg:path — no rendition emitted.`,
       );
     }
 

@@ -40,7 +40,7 @@ function run(
 }
 
 beforeAll(() => {
-  const dir = mkdtempSync(join(tmpdir(), "dockg-check-"));
+  const dir = mkdtempSync(join(tmpdir(), "manni-kg-check-"));
   corpusGraph = join(dir, "corpus.ttl");
   violationsGraph = join(dir, "violations.ttl");
   execFileSync(process.execPath, [cli, "kg", "build", "--out", corpusGraph], {
@@ -59,10 +59,10 @@ beforeAll(() => {
 });
 
 describe("manni kg check", () => {
-  it("passes the regression corpus (warnings allowed, no violations)", () => {
+  it("passes the regression corpus (warnings allowed, no errors)", () => {
     const { stdout, status } = run(["check", "-g", corpusGraph], corpus);
     expect(status).toBe(0);
-    expect(stdout).toContain("0 violations");
+    expect(stdout).toContain("0 errors");
   });
 
   it("exits 1 on the violating corpus, naming the offending docs", () => {
@@ -81,21 +81,68 @@ describe("manni kg check", () => {
     expect(stdout).toMatch(/warning:.*prefLabel/);
   });
 
-  it("emits parseable JSON with severities and blamed docs", () => {
+  it("emits parseable JSON with both severity scales and blamed docs", () => {
     const { stdout, status } = run(
       ["check", "-g", violationsGraph, "-f", "json"],
       violations,
     );
     expect(status).toBe(1);
     const parsed = JSON.parse(stdout) as {
-      findings: Array<{ severity: string; docs: string[] }>;
-      violations: number;
+      findings: Array<{
+        severity: string;
+        shaclSeverity: string;
+        docs: string[];
+      }>;
+      errors: number;
       warnings: number;
+      notices: number;
     };
-    expect(parsed.violations).toBeGreaterThan(0);
+    expect(parsed.errors).toBeGreaterThan(0);
     expect(parsed.warnings).toBeGreaterThan(0);
+    expect(parsed.notices).toBe(0);
+    // Every finding carries the family's word and SHACL's own.
+    expect(
+      parsed.findings.every(
+        (f) =>
+          ["notice", "warning", "error"].includes(f.severity) &&
+          ["info", "warning", "violation"].includes(f.shaclSeverity),
+      ),
+    ).toBe(true);
+    expect(
+      parsed.findings.some(
+        (f) => f.severity === "error" && f.shaclSeverity === "violation",
+      ),
+    ).toBe(true);
     expect(parsed.findings.some((f) => f.docs.includes("docs/alpha.md"))).toBe(
       true,
+    );
+  });
+
+  it("annotates each finding for GitHub, at the finding's level", () => {
+    const { stdout, status } = run(
+      ["check", "-g", violationsGraph, "-f", "github"],
+      violations,
+    );
+    expect(status).toBe(1);
+    const lines = stdout.trim().split("\n");
+    expect(lines.length).toBeGreaterThan(0);
+    for (const line of lines) {
+      expect(line).toMatch(/^::(error|warning|notice)( file=[^:]+)?::/);
+    }
+    expect(lines.some((l) => l.startsWith("::error file=docs/alpha.md::"))).toBe(
+      true,
+    );
+    expect(lines.some((l) => l.startsWith("::warning "))).toBe(true);
+  });
+
+  it("refuses an unknown --format in the family's words", () => {
+    const { status, stderr } = run(
+      ["check", "-g", corpusGraph, "-f", "sarif"],
+      corpus,
+    );
+    expect(status).toBe(2);
+    expect(stderr).toContain(
+      'Unknown --format "sarif". Use pretty | json | github.',
     );
   });
 
@@ -122,6 +169,7 @@ describe("manni kg check", () => {
     const parsed = JSON.parse(stdout) as {
       findings: Array<{
         severity: string;
+        shaclSeverity: string;
         message: string;
         path?: string;
         focusNode: string;
@@ -135,17 +183,19 @@ describe("manni kg check", () => {
       curatedFindings.map((f) => [f.severity, f.docs.join(","), f.message]),
     ).toEqual([
       [
-        "violation",
+        // The curated-field finding ships at the family's `error` after the
+        // mapping (proposal 0051 §2): it is a SHACL-side `violation`.
+        "error",
         "docs/lineage.md",
         "meta-provenance attributes /kg/derived-from to m2 — derived-from is curated by hand, never filled by a machine",
       ],
       [
-        "violation",
+        "error",
         "docs/lineage.md",
         "meta-provenance attributes /kg/revision-of to m2 — revision-of is curated by hand, never filled by a machine",
       ],
       [
-        "violation",
+        "error",
         "docs/sections.md",
         "meta-provenance attributes /kg/sections to m1 — sections is curated by hand, never filled by a machine",
       ],

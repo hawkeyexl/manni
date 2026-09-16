@@ -10,21 +10,21 @@ const DOC_B = `${BASE}doc/b.md`;
 const JSONLD = {
   "@context": {
     dcterms: NS.dcterms,
-    dockg: NS.dockg,
+    kg: NS.kg,
     xsd: NS.xsd,
   },
   "@graph": [
     {
       "@id": DOC_A,
-      "@type": ["dockg:Document", "prov:Entity"],
+      "@type": ["kg:Document", "prov:Entity"],
       "dcterms:title": "A",
       "dcterms:references": [{ "@id": DOC_B }],
-      "dockg:path": "docs/a.md",
-      "dockg:wordCount": { "@value": "42", "@type": "xsd:integer" },
+      "kg:path": "docs/a.md",
+      "kg:wordCount": { "@value": "42", "@type": "xsd:integer" },
     },
     {
       "@id": DOC_B,
-      "@type": "dockg:Document",
+      "@type": "kg:Document",
       "dcterms:title": "B",
     },
   ],
@@ -33,9 +33,9 @@ const JSONLD = {
 describe("GraphIndex.fromJsonLd", () => {
   it("expands CURIE keys and @type using the document's own @context", () => {
     const g = GraphIndex.fromJsonLd(JSONLD);
-    expect(g.types(DOC_A)).toContain(`${NS.dockg}Document`);
+    expect(g.types(DOC_A)).toContain(`${NS.kg}Document`);
     expect(g.literal(DOC_A, `${NS.dcterms}title`)).toBe("A");
-    expect(g.literal(DOC_A, `${NS.dockg}path`)).toBe("docs/a.md");
+    expect(g.literal(DOC_A, `${NS.kg}path`)).toBe("docs/a.md");
   });
 
   it("accepts a JSON string as well as a parsed object", () => {
@@ -51,7 +51,7 @@ describe("GraphIndex.fromJsonLd", () => {
 
   it("indexes typed literals with their expanded datatype", () => {
     const g = GraphIndex.fromJsonLd(JSONLD);
-    const [wc] = g.values(DOC_A, `${NS.dockg}wordCount`);
+    const [wc] = g.values(DOC_A, `${NS.kg}wordCount`);
     expect(wc).toEqual({
       kind: "literal",
       value: "42",
@@ -71,7 +71,7 @@ describe("GraphIndex.fromJsonLd", () => {
 
   it("indexes instances by class", () => {
     const g = GraphIndex.fromJsonLd(JSONLD);
-    expect(g.instancesOf(`${NS.dockg}Document`)).toEqual([DOC_A, DOC_B]);
+    expect(g.instancesOf(`${NS.kg}Document`)).toEqual([DOC_A, DOC_B]);
   });
 
   it("returns ids and edges in deterministic sorted order", () => {
@@ -98,7 +98,7 @@ describe("GraphIndex.fromJsonLd", () => {
 
 describe("GraphIndex.fromQuads", () => {
   const quads: Quad[] = [
-    { s: DOC_A, p: RDF_TYPE, o: { kind: "iri", value: `${NS.dockg}Document` } },
+    { s: DOC_A, p: RDF_TYPE, o: { kind: "iri", value: `${NS.kg}Document` } },
     { s: DOC_A, p: `${NS.dcterms}title`, o: { kind: "literal", value: "A" } },
     {
       s: DOC_A,
@@ -109,7 +109,7 @@ describe("GraphIndex.fromQuads", () => {
 
   it("builds an equivalent index from dockg quads", () => {
     const g = GraphIndex.fromQuads(quads);
-    expect(g.types(DOC_A)).toEqual([`${NS.dockg}Document`]);
+    expect(g.types(DOC_A)).toEqual([`${NS.kg}Document`]);
     expect(g.literal(DOC_A, `${NS.dcterms}title`)).toBe("A");
     expect(g.in(DOC_B, `${NS.dcterms}references`)).toHaveLength(1);
   });

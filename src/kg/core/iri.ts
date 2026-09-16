@@ -6,7 +6,7 @@
 import { slug as githubSlug } from "github-slugger";
 
 /** Default base when the config sets none: valid, deterministic, obviously placeholder. */
-export const DEFAULT_BASE_IRI = "urn:dockg:";
+export const DEFAULT_BASE_IRI = "urn:manni:kg:";
 
 /** Normalize a config base IRI; http(s) bases get a trailing slash. */
 export function resolveBaseIri(base: string | undefined): string {

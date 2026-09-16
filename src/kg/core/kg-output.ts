@@ -25,7 +25,7 @@ import { Validator } from "../../meta/index.js";
 import { errorMessage } from "../../shared/errors.js";
 import { FRONTMATTER_SCHEMA_ID, frontmatterSchema } from "../schema.js";
 import { KgError } from "../types.js";
-import type { DockgConfig } from "./config.js";
+import type { KgConfig } from "./config.js";
 import type { DocModel } from "../types.js";
 
 /**
@@ -37,7 +37,7 @@ import type { DocModel } from "../types.js";
  * `manni:kg:1.0.0-proposal.3` resolves to nothing a user could type — which is
  * exactly what `LoadSchemaOptions.inlineSchemas` is for.
  */
-function schemaRefs(config: DockgConfig): string[] {
+function schemaRefs(config: KgConfig): string[] {
   return config.validate.schemas.length > 0
     ? config.validate.schemas
     : [FRONTMATTER_SCHEMA_ID];
@@ -53,7 +53,7 @@ function schemaRefs(config: DockgConfig): string[] {
  */
 export async function suppressKgOutput(
   docs: readonly DocModel[],
-  config: DockgConfig,
+  config: KgConfig,
   cwd: string,
 ): Promise<DocModel[]> {
   const refs = schemaRefs(config);

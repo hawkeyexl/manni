@@ -39,19 +39,19 @@
     },
     {
       "id": "https://example.com/kg/doc/docs/de/getting-started.md",
-      "type": "dockg:Document",
+      "type": "kg:Document",
       "title": "Erste Schritte",
       "description": "Installieren und den ersten Graphen bauen."
     },
     {
       "id": "https://example.com/kg/doc/docs/de/getting-started.md#erste-schritte",
-      "type": "dockg:Section",
+      "type": "kg:Section",
       "title": "Erste Schritte",
       "text": "# Erste Schritte\n\nDiese Seite deklariert keine Sprache. Sie erbt `de` von der Route, die\n`docs/de` bedient (ADR 01037), und verweist über `translation-of` auf das\nenglische Original."
     },
     {
       "id": "https://example.com/kg/doc/docs/de/getting-started.md#install",
-      "type": "dockg:Section",
+      "type": "kg:Section",
       "title": "Install",
       "text": "## Install\n\nEin Abschnitt, dessen Slug im englischen Original ebenfalls vorkommt."
     }

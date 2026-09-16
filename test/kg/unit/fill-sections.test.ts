@@ -3,7 +3,7 @@
  *
  * The interesting cases are the refusals. Section metadata is explicit-only
  * (ADR 01013), so writing a block against a heading that does not exist would
- * mint a `dockg:brokenSectionRef` — a finding `stats` reports and `fill` must
+ * mint a `kg:brokenSectionRef` — a finding `stats` reports and `fill` must
  * never manufacture.
  */
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
@@ -36,7 +36,7 @@ const PAGE = [
 ].join("\n");
 
 function setup(fields = "[type]"): string {
-  const dir = mkdtempSync(join(tmpdir(), "dockg-fillsec-"));
+  const dir = mkdtempSync(join(tmpdir(), "manni-kg-fillsec-"));
   writeFileSync(
     join(dir, "manni.config.yaml"),
     `collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n  fill:\n    fields: ${fields}\n`,
@@ -99,7 +99,7 @@ describe("fill --sections", () => {
         json: proposal([
           { slug: "install-the-sdk", type: "task", confidence: { type: 0.95 } },
           // A heading that does not exist. Writing this would create a
-          // dockg:brokenSectionRef in the graph.
+          // kg:brokenSectionRef in the graph.
           { slug: "renamed-heading", type: "task", confidence: { type: 0.99 } },
         ]),
       },

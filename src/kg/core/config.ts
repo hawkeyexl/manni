@@ -88,7 +88,7 @@ export interface RouteMapping {
   language?: string;
 }
 
-export interface DockgConfig {
+export interface KgConfig {
   /**
    * The family's document sets, from the file's top-level `collections:`
    * (proposal 0041). `[]` when the key is absent or no file governs the run.
@@ -118,7 +118,7 @@ export interface DockgConfig {
    * the file declares none, or no file governs the run.
    */
   providers: ProvidersConfig;
-  /** Normalized base IRI (trailing slash for http(s); `urn:dockg:` default). */
+  /** Normalized base IRI (trailing slash for http(s); `urn:manni:kg:` default). */
   baseIri: string;
   /** Output path of the built Turtle file, relative to configDir. */
   out: string;
@@ -325,7 +325,7 @@ export interface ConfigFileContext {
  * file, so its top-level `collections:` is read too; anything else is the
  * tool's section on its own.
  */
-export function parseConfig(text: string, configPath: string): DockgConfig {
+export function parseConfig(text: string, configPath: string): KgConfig {
   let raw: unknown;
   try {
     raw = parseYaml(text);
@@ -376,7 +376,7 @@ export function parseConfigSection(
   raw: unknown,
   configPath: string,
   file: ConfigFileContext = { source: configPath, collections: [] },
-): DockgConfig {
+): KgConfig {
   if (raw == null) raw = {};
   if (typeof raw !== "object" || Array.isArray(raw)) {
     throw new KgError(
@@ -493,7 +493,7 @@ const CONFIG_FILE: ConfigFileOptions = {
  * read at its `kg:` key). With no config file present, built-in defaults
  * apply.
  */
-export function loadConfig(path?: string, cwd = process.cwd()): DockgConfig {
+export function loadConfig(path?: string, cwd = process.cwd()): KgConfig {
   const file = path
     ? readConfigFileSync(path, cwd, CONFIG_FILE)
     : findConfigFileSync(cwd, CONFIG_FILE);
@@ -510,7 +510,7 @@ export function loadConfig(path?: string, cwd = process.cwd()): DockgConfig {
  * discovery finds nothing, or under `--no-config`. It declares no collections,
  * so such a run reads only the paths it was given.
  */
-export function defaultConfig(cwd = process.cwd()): DockgConfig {
+export function defaultConfig(cwd = process.cwd()): KgConfig {
   return {
     ...parseConfigSection(null, resolve(cwd, DEFAULT_CONFIG_FILENAME)),
     configSource: null,
@@ -537,7 +537,7 @@ export interface RunConfigOptions {
 export function loadRunConfig(
   opts: RunConfigOptions,
   cwd = process.cwd(),
-): DockgConfig {
+): KgConfig {
   assertCollectionWithoutPaths(opts.collection, opts.paths);
   return opts.noConfig ? defaultConfig(cwd) : loadConfig(opts.configPath, cwd);
 }

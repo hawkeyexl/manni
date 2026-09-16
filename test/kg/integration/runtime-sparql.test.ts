@@ -34,7 +34,7 @@ describe("custom SPARQL over the runtime index", { timeout: 60_000 }, () => {
   it("answers a SELECT via an RDF/JS store built from rdfjsQuads", async () => {
     const engine = new QueryEngine();
     const stream = await engine.queryBindings(
-      `SELECT ?title WHERE { ?doc <${RDF_TYPE}> <${NS.dockg}Document> ;
+      `SELECT ?title WHERE { ?doc <${RDF_TYPE}> <${NS.kg}Document> ;
                                   <${NS.dcterms}title> ?title . }`,
       { sources: [sparqlSource(corpusIndex())] },
     );
@@ -57,7 +57,7 @@ describe("custom SPARQL over the runtime index", { timeout: 60_000 }, () => {
     const engine = new QueryEngine();
     const stream = await engine.queryBindings(
       `SELECT ?target WHERE {
-         ?doc <${NS.dockg}path> "docs/windows-notes.md" ;
+         ?doc <${NS.kg}path> "docs/windows-notes.md" ;
               <${NS.dcterms}references> ?target . }`,
       { sources: [sparqlSource(corpusIndex())] },
     );
@@ -88,7 +88,7 @@ describe("matchQuads", () => {
     expect(titles[0]!.object.value).toBe("Windows Notes");
     expect(titles[0]!.subject.termType).toBe("NamedNode");
 
-    const docs = matchQuads(graph, null, RDF_TYPE, `${NS.dockg}Document`);
+    const docs = matchQuads(graph, null, RDF_TYPE, `${NS.kg}Document`);
     expect(docs).toHaveLength(8);
   });
 });

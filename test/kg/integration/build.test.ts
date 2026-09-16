@@ -42,12 +42,59 @@ function build(outPath: string): string {
 /** The tool version is stamped into the graph; normalize it so release
  *  version bumps don't invalidate the golden. */
 function normalizeVersion(ttl: string): string {
-  return ttl.replace(/dockg:version "[^"]+"/g, 'dockg:version "X"');
+  return ttl.replace(/kg:version "[^"]+"/g, 'kg:version "X"');
 }
+
+/**
+ * One identity in the output (proposal 0051 §7).
+ *
+ * An IRI is the part of a graph a consumer stores and links to, so the old
+ * `dockg` host must not survive anywhere in what `build` writes — not in the
+ * namespace, not in the prefix, not in the tool agent's IRI. A grep is the
+ * right shape for this: it catches a spelling nothing else asserts on, in a
+ * place a golden diff would show but nobody would necessarily read.
+ */
+describe("the emitted graph carries manni's identity, not dockg's", () => {
+  it("names no dockg spelling anywhere, and does name the manni namespace", () => {
+    const out = join(
+      mkdtempSync(join(tmpdir(), "manni-kg-identity-")),
+      "graph.ttl",
+    );
+    build(out);
+    const ttl = readFileSync(out, "utf8");
+    expect(ttl).not.toMatch(/dockg/i);
+    expect(ttl).toContain(
+      "@prefix kg: <https://hawkeyexl.github.io/manni/kg/ns#> .",
+    );
+  });
+
+  it.each([
+    "graph.ttl",
+    "graph.jsonld",
+    "metadata.rdf",
+    "localizations.json",
+    "traverse.json",
+    "search.und.json",
+    "search.de.json",
+    "search.de-AT.json",
+    "search.fr.json",
+    // The sidecars carry a JSON header of ids and a model name, so a stale
+    // IRI can hide in a binary too.
+    "vectors.und.bin",
+    "vectors.de.bin",
+    "vectors.de-AT.bin",
+    "vectors.fr.bin",
+  ])("holds no dockg spelling in the %s golden", (name) => {
+    const bytes = readFileSync(
+      join(root, "test", "kg", "fixtures", "golden", name),
+    );
+    expect(bytes.toString("latin1")).not.toMatch(/dockg/i);
+  });
+});
 
 describe("manni kg build (integration)", () => {
   it("matches the golden output byte-for-byte (modulo tool version)", () => {
-    const out = join(mkdtempSync(join(tmpdir(), "dockg-build-")), "graph.ttl");
+    const out = join(mkdtempSync(join(tmpdir(), "manni-kg-build-")), "graph.ttl");
     build(out);
     expect(normalizeVersion(readFileSync(out, "utf8"))).toBe(
       normalizeVersion(readFileSync(golden, "utf8")),
@@ -55,7 +102,7 @@ describe("manni kg build (integration)", () => {
   });
 
   it("is byte-identical across two runs (determinism gate)", () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-build-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-build-"));
     const a = join(dir, "a.ttl");
     const b = join(dir, "b.ttl");
     build(a);
@@ -88,7 +135,7 @@ describe("manni kg build (integration)", () => {
     const pathOf = new Map<string, string>();
     for (const q of store.getQuads(
       null,
-      namedNode(`${NS.dockg}path`),
+      namedNode(`${NS.kg}path`),
       null,
       null,
     )) {
@@ -98,7 +145,7 @@ describe("manni kg build (integration)", () => {
     const docs = store.getQuads(
       null,
       namedNode(RDF_TYPE),
-      namedNode(`${NS.dockg}Document`),
+      namedNode(`${NS.kg}Document`),
       null,
     );
     expect(docs.length).toBe(8);
@@ -106,12 +153,12 @@ describe("manni kg build (integration)", () => {
     for (const { subject } of docs) {
       const hashes = store.getQuads(
         subject,
-        namedNode(`${NS.dockg}contentHash`),
+        namedNode(`${NS.kg}contentHash`),
         null,
         null,
       );
       const path = pathOf.get(subject.value) ?? "";
-      expect(path, `${subject.value} has no dockg:path`).not.toBe("");
+      expect(path, `${subject.value} has no kg:path`).not.toBe("");
       // Exactly one: the shape says maxCount 1, and a second would make the
       // join key ambiguous for a consumer.
       expect(hashes.length, `${path} carries ${hashes.length} hashes`).toBe(1);
@@ -124,7 +171,7 @@ describe("manni kg build (integration)", () => {
   });
 
   it("reports docs and triples on stdout", () => {
-    const out = join(mkdtempSync(join(tmpdir(), "dockg-build-")), "graph.ttl");
+    const out = join(mkdtempSync(join(tmpdir(), "manni-kg-build-")), "graph.ttl");
     const stdout = build(out);
     expect(stdout).toMatch(/8 docs, \d+ triples/);
   });
@@ -142,7 +189,7 @@ describe("manni kg build (integration)", () => {
     // a commit, or the build would fail for want of history and the test would
     // pass even while broken.
     const env = hermeticEnv();
-    const decoy = mkdtempSync(join(tmpdir(), "dockg-decoy-"));
+    const decoy = mkdtempSync(join(tmpdir(), "manni-kg-decoy-"));
     writeFileSync(join(decoy, "seed.md"), "# Seed\n");
     execFileSync("git", ["init", "-q"], { cwd: decoy, env });
     execFileSync(
@@ -165,7 +212,7 @@ describe("manni kg build (integration)", () => {
       { cwd: decoy, env },
     );
 
-    const dir = mkdtempSync(join(tmpdir(), "dockg-gitenv-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-gitenv-"));
     writeFileSync(join(dir, "a.md"), "# A\n");
 
     const out = join(dir, "g.ttl");
@@ -187,7 +234,7 @@ describe("manni kg build (integration)", () => {
     // kg ADR 01010's degradation, with the tri-state gone (0051 §6): one
     // command, one directory, and the only difference is whether git can run
     // over a repository.
-    const dir = mkdtempSync(join(tmpdir(), "dockg-gittime-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-gittime-"));
     writeFileSync(join(dir, "a.md"), "# A\n");
 
     const before = spawnSync(
@@ -248,7 +295,7 @@ describe("manni kg build (integration)", () => {
     // The switch is gone, and this is what is left of "skip the subprocess": a
     // corpus that derives no provenance asks git nothing, so there is nothing
     // to warn about.
-    const dir = mkdtempSync(join(tmpdir(), "dockg-gitoff-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-gitoff-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
       'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n  build:\n    derive: [frontmatter, sections, links, tags, images, code]\n',
@@ -269,7 +316,7 @@ describe("manni kg build (integration)", () => {
     // whose author declared four facts, none of which reached the graph. It
     // passed `manni kg validate` clean, because every one of those keys is a legal
     // page-level key — just not one dockg reads.
-    const dir = mkdtempSync(join(tmpdir(), "dockg-harvest-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-harvest-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
       'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n  baseIri: https://example.com/kg/\n',
@@ -308,7 +355,7 @@ describe("manni kg build (integration)", () => {
   });
 
   it("says nothing about a corpus that spells every harvest key correctly", () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-harvest-ok-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-harvest-ok-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
       'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n  baseIri: https://example.com/kg/\n',
@@ -328,7 +375,7 @@ describe("manni kg build (integration)", () => {
   });
 
   it("exits 2 when no inputs match", () => {
-    const empty = mkdtempSync(join(tmpdir(), "dockg-empty-"));
+    const empty = mkdtempSync(join(tmpdir(), "manni-kg-empty-"));
     let status = 0;
     try {
       execFileSync(process.execPath, [cli, "kg", "build"], {

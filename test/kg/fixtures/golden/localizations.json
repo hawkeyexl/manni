@@ -7,7 +7,7 @@
       "search": {
         "path": "search.de.json",
         "entries": 9,
-        "digest": "sha256:1ae93b2381b38ebbf072b2dadc11ad53feba62db6ae1a777470c74427c245240"
+        "digest": "sha256:cde68f572524dfe44bce429f0840b7938d55b5ded7ea7adbb434cadaa788ed0e"
       },
       "vectors": {
         "path": "vectors.de.bin",
@@ -23,7 +23,7 @@
       "search": {
         "path": "search.de-AT.json",
         "entries": 8,
-        "digest": "sha256:fde8b47c8be485a49bdcaf228e8e07a8da28b40c7b2d71e5475a20d7770874c9"
+        "digest": "sha256:d957f505ce1838d1a31565362a4a8801d11610b8befa43d0b55a89e10b3c4ff8"
       },
       "vectors": {
         "path": "vectors.de-AT.bin",
@@ -39,7 +39,7 @@
       "search": {
         "path": "search.fr.json",
         "entries": 8,
-        "digest": "sha256:d029407172c08dc35afaba90908670f07d03d4046c19975e269e6cc2273ad3b1"
+        "digest": "sha256:2978e865a5be96099638f7b823c239e8956ace67f76363b8d8aca89d3e94fb5f"
       },
       "vectors": {
         "path": "vectors.fr.bin",
@@ -55,7 +55,7 @@
       "search": {
         "path": "search.und.json",
         "entries": 20,
-        "digest": "sha256:11b5e340ec5d04cedc35a797b90dfcc0b72f569efcdab80dd8b4aadab2069cd2"
+        "digest": "sha256:dbefddf656cef4d0e1329bf2da534c9c2e494b9f7e4cc5a84e2032d5333c6563"
       },
       "vectors": {
         "path": "vectors.und.bin",

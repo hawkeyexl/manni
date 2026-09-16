@@ -29,13 +29,13 @@ const DOC = `${BASE}doc/docs/a.md`;
 const PKG = `${BASE}package`;
 
 const TTL = `
-@prefix dockg: <${NS.dockg}> .
+@prefix kg: <${NS.kg}> .
 @prefix dcterms: <${NS.dcterms}> .
 @prefix iirds: <${NS.iirds}> .
-<${DOC}> a dockg:Document ;
+<${DOC}> a kg:Document ;
   dcterms:title "A" ;
   dcterms:language "en" ;
-  dockg:path "docs/a.md" ;
+  kg:path "docs/a.md" ;
   iirds:has-topic-type iirds:GenericTask ;
   iirds:relates-to-product-variant <${BASE}product/widget> .
 <${BASE}product/widget> a iirds:ProductVariant ;
@@ -48,7 +48,7 @@ function storeOf(ttl: string): Store {
 
 /** A cwd containing the corpus source file the projection expects. */
 function cwdWithDoc(): string {
-  const dir = mkdtempSync(join(tmpdir(), "dockg-pkg-"));
+  const dir = mkdtempSync(join(tmpdir(), "manni-kg-pkg-"));
   mkdirSync(join(dir, "docs"), { recursive: true });
   writeFileSync(join(dir, "docs", "a.md"), "# A\n");
   return dir;
@@ -69,7 +69,7 @@ describe("projectPackage", () => {
     );
     expect(versions).toHaveLength(1);
     expect(versions[0]!.o.value).toBe("1.3");
-    expect(has(quads, PKG, IIRDS_TITLE, "dockg export")).toBe(true);
+    expect(has(quads, PKG, IIRDS_TITLE, "manni kg export")).toBe(true);
   });
 
   it("re-types each Document as an iirds:Topic linked to the package", () => {
@@ -78,7 +78,7 @@ describe("projectPackage", () => {
     expect(has(quads, DOC, IIRDS_IS_PART_OF_PACKAGE, PKG)).toBe(true);
     expect(has(quads, DOC, IIRDS_TITLE, "A")).toBe(true);
     // The dockg-internal Document type is NOT carried into the projection.
-    expect(has(quads, DOC, RDF_TYPE, `${NS.dockg}Document`)).toBe(false);
+    expect(has(quads, DOC, RDF_TYPE, `${NS.kg}Document`)).toBe(false);
   });
 
   it("exposes each source file as a Rendition and lists the content file", () => {
@@ -122,11 +122,11 @@ describe("projectPackage", () => {
     ).toBe(true);
   });
 
-  it("warns (not throws) for a Document with no dockg:path and emits no rendition", () => {
+  it("warns (not throws) for a Document with no kg:path and emits no rendition", () => {
     const ttl = `
-@prefix dockg: <${NS.dockg}> .
+@prefix kg: <${NS.kg}> .
 @prefix dcterms: <${NS.dcterms}> .
-<${BASE}doc/docs/b.md> a dockg:Document ;
+<${BASE}doc/docs/b.md> a kg:Document ;
   dcterms:title "B" .
 `;
     const { quads, contentFiles, warnings } = projectPackage(
@@ -134,7 +134,7 @@ describe("projectPackage", () => {
       OPTS,
       cwdWithDoc(),
     );
-    expect(warnings.some((w) => w.includes("no dockg:path"))).toBe(true);
+    expect(warnings.some((w) => w.includes("no kg:path"))).toBe(true);
     expect(contentFiles).toEqual([]);
     const doc = `${BASE}doc/docs/b.md`;
     expect(
@@ -143,7 +143,7 @@ describe("projectPackage", () => {
   });
 
   it("throws KgError when a Document's source file is missing", () => {
-    const emptyCwd = mkdtempSync(join(tmpdir(), "dockg-pkg-empty-"));
+    const emptyCwd = mkdtempSync(join(tmpdir(), "manni-kg-pkg-empty-"));
     expect(() => projectPackage(storeOf(TTL), OPTS, emptyCwd)).toThrow(
       KgError,
     );

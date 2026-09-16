@@ -71,12 +71,12 @@ function run(args: string[], cwd: string): { stdout: string; status: number } {
 /** The tool version is stamped into the graph; normalize it so release
  *  version bumps don't invalidate the golden. */
 function normalizeVersion(jsonld: string): string {
-  return jsonld.replace(/"dockg:version": "[^"]+"/g, '"dockg:version": "X"');
+  return jsonld.replace(/"kg:version": "[^"]+"/g, '"kg:version": "X"');
 }
 
 /** Build the corpus into a fresh temp dir and return its graph path. */
 function buildGraph(): { dir: string; graph: string } {
-  const dir = mkdtempSync(join(tmpdir(), "dockg-export-"));
+  const dir = mkdtempSync(join(tmpdir(), "manni-kg-export-"));
   const graph = join(dir, "graph.ttl");
   execFileSync(process.execPath, [cli, "kg", "build", "--out", graph], {
     encoding: "utf8",
@@ -117,7 +117,7 @@ describe("manni kg export (integration)", () => {
     );
     const doc = JSON.parse(readFileSync(out, "utf8"));
     expect(Array.isArray(doc["@graph"])).toBe(true);
-    expect(doc["@context"].dockg).toBe("https://hawkeyexl.github.io/dockg/ns#");
+    expect(doc["@context"].kg).toBe("https://hawkeyexl.github.io/manni/kg/ns#");
     const ids: string[] = doc["@graph"].map((n: { "@id": string }) => n["@id"]);
     expect(new Set(ids).size).toBe(ids.length);
     expect(stdout).toContain(`${ids.length} node`);
@@ -217,8 +217,8 @@ describe("manni kg export (integration)", () => {
   it("exits 2 when a Document's source content file is missing", () => {
     const { graph } = buildGraph();
     // Run from a directory that lacks the corpus `docs/` sources: the graph's
-    // dockg:path entries resolve to files that do not exist here → exit 2.
-    const elsewhere = mkdtempSync(join(tmpdir(), "dockg-export-nosrc-"));
+    // kg:path entries resolve to files that do not exist here → exit 2.
+    const elsewhere = mkdtempSync(join(tmpdir(), "manni-kg-export-nosrc-"));
     const { status, stdout } = run(
       ["export", "iirds", "-g", graph, "-o", join(elsewhere, "p.iirds")],
       elsewhere,
@@ -237,7 +237,7 @@ describe("manni kg export (integration)", () => {
   });
 
   it("exits 2 when the graph is missing", () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-export-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-export-"));
     const { status, stdout } = run(
       ["export", "jsonld", "-g", join(dir, "nope.ttl")],
       dir,

@@ -1,3 +1,5 @@
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { DataFactory, Store } from "n3";
 import { validateGraph } from "../../../src/kg/core/shacl.js";
@@ -41,11 +43,11 @@ function conformingTriples(): Array<
   const d = doc("docs/a.md");
   const c = concept("setup");
   return [
-    [d, RDF_TYPE, `${NS.dockg}Document`],
-    [d, `${NS.dockg}path`, { lit: "docs/a.md" }],
+    [d, RDF_TYPE, `${NS.kg}Document`],
+    [d, `${NS.kg}path`, { lit: "docs/a.md" }],
     // Required since shapes 0.7 (ADR 01036). Any well-formed digest will do —
     // these tests are about the shapes, not about hashing.
-    [d, `${NS.dockg}contentHash`, { lit: HASH }],
+    [d, `${NS.kg}contentHash`, { lit: HASH }],
     [d, `${NS.dcterms}title`, { lit: "A" }],
     [d, `${NS.dcterms}subject`, c],
     [c, RDF_TYPE, `${NS.skos}Concept`],
@@ -101,7 +103,10 @@ describe("validateGraph", () => {
       (f) => f.focusNode === c && f.path === `${NS.skos}inScheme`,
     );
     expect(hit).toBeDefined();
-    expect(hit!.severity).toBe("violation");
+    expect(hit!.severity).toBe("error");
+    // SHACL's own word survives beside the family's, as a11y keeps axe's
+    // `impact` (proposal 0035, stress test 10).
+    expect(hit!.shaclSeverity).toBe("violation");
     expect(hit!.docs).toEqual(["docs/a.md"]);
   });
 
@@ -118,7 +123,7 @@ describe("validateGraph", () => {
         (f) =>
           f.focusNode === c &&
           f.path === `${NS.skos}prefLabel` &&
-          f.severity === "violation",
+          f.severity === "error",
       ),
     ).toBe(true);
   });
@@ -136,20 +141,21 @@ describe("validateGraph", () => {
     );
     expect(hit).toBeDefined();
     expect(hit!.severity).toBe("warning");
+    expect(hit!.shaclSeverity).toBe("warning");
   });
 
   it("closed Document shape rejects unexpected predicates", async () => {
     const d = doc("docs/a.md");
     const store = build([
       ...conformingTriples(),
-      [d, `${NS.dockg}surprise`, { lit: "?" }],
+      [d, `${NS.kg}surprise`, { lit: "?" }],
     ]);
     const findings = await validateGraph(store, SHAPES);
     const hit = findings.find(
-      (f) => f.focusNode === d && f.path === `${NS.dockg}surprise`,
+      (f) => f.focusNode === d && f.path === `${NS.kg}surprise`,
     );
     expect(hit).toBeDefined();
-    expect(hit!.severity).toBe("violation");
+    expect(hit!.severity).toBe("error");
     expect(hit!.docs).toEqual(["docs/a.md"]);
   });
 
@@ -179,7 +185,7 @@ describe("validateGraph", () => {
       (f) => f.focusNode === d && f.path === `${NS.iirds}has-topic-type`,
     );
     expect(hit).toBeDefined();
-    expect(hit!.severity).toBe("violation");
+    expect(hit!.severity).toBe("error");
     expect(hit!.docs).toEqual(["docs/a.md"]);
   });
 
@@ -188,10 +194,10 @@ describe("validateGraph", () => {
     const v = `${BASE}product/sp-x200`;
     const store = build([
       ...conformingTriples(),
-      [s, RDF_TYPE, `${NS.dockg}Section`],
+      [s, RDF_TYPE, `${NS.kg}Section`],
       [s, `${NS.dcterms}title`, { lit: "Install" }],
-      [s, `${NS.dockg}level`, { lit: "2", dt: `${NS.xsd}integer` }],
-      [s, `${NS.dockg}order`, { lit: "1", dt: `${NS.xsd}integer` }],
+      [s, `${NS.kg}level`, { lit: "2", dt: `${NS.xsd}integer` }],
+      [s, `${NS.kg}order`, { lit: "1", dt: `${NS.xsd}integer` }],
       [s, `${NS.iirds}has-topic-type`, `${NS.iirds}GenericReference`],
       [s, `${NS.iirds}relates-to-product-variant`, v],
       [v, RDF_TYPE, `${NS.iirds}ProductVariant`],
@@ -205,10 +211,10 @@ describe("validateGraph", () => {
     const s = `${doc("docs/a.md")}#install`;
     const store = build([
       ...conformingTriples(),
-      [s, RDF_TYPE, `${NS.dockg}Section`],
+      [s, RDF_TYPE, `${NS.kg}Section`],
       [s, `${NS.dcterms}title`, { lit: "Install" }],
-      [s, `${NS.dockg}level`, { lit: "2", dt: `${NS.xsd}integer` }],
-      [s, `${NS.dockg}order`, { lit: "1", dt: `${NS.xsd}integer` }],
+      [s, `${NS.kg}level`, { lit: "2", dt: `${NS.xsd}integer` }],
+      [s, `${NS.kg}order`, { lit: "1", dt: `${NS.xsd}integer` }],
       [s, `${NS.iirds}has-topic-type`, `${NS.iirds}GenericNonsense`],
     ]);
     const findings = await validateGraph(store, SHAPES);
@@ -216,14 +222,14 @@ describe("validateGraph", () => {
       (f) => f.focusNode === s && f.path === `${NS.iirds}has-topic-type`,
     );
     expect(hit).toBeDefined();
-    expect(hit!.severity).toBe("violation");
+    expect(hit!.severity).toBe("error");
   });
 
-  it("accepts dockg:brokenSectionRef on a document", async () => {
+  it("accepts kg:brokenSectionRef on a document", async () => {
     const d = doc("docs/a.md");
     const store = build([
       ...conformingTriples(),
-      [d, `${NS.dockg}brokenSectionRef`, { lit: "missing-heading" }],
+      [d, `${NS.kg}brokenSectionRef`, { lit: "missing-heading" }],
     ]);
     expect(await validateGraph(store, SHAPES)).toEqual([]);
   });
@@ -233,10 +239,10 @@ describe("validateGraph", () => {
     const v = `${BASE}product/sp-x300`;
     const store = build([
       ...conformingTriples(),
-      [d, `${NS.dockg}notApplicableToVariant`, v],
+      [d, `${NS.kg}notApplicableToVariant`, v],
       [v, RDF_TYPE, `${NS.iirds}ProductVariant`],
       [v, `${NS.dcterms}title`, { lit: "SP-X300" }],
-      [d, `${NS.dockg}notSoftwareSubject`, `${NS.iirdsSft}Architecture`],
+      [d, `${NS.kg}notSoftwareSubject`, `${NS.iirdsSft}Architecture`],
       // A different subject on the positive side — no conflict.
       [d, `${NS.iirds}has-subject`, `${NS.iirdsSft}Interface`],
     ]);
@@ -249,17 +255,17 @@ describe("validateGraph", () => {
     const store = build([
       ...conformingTriples(),
       [d, `${NS.iirds}relates-to-product-variant`, v],
-      [d, `${NS.dockg}notApplicableToVariant`, v],
+      [d, `${NS.kg}notApplicableToVariant`, v],
       [v, RDF_TYPE, `${NS.iirds}ProductVariant`],
       [v, `${NS.dcterms}title`, { lit: "SP-X1" }],
     ]);
     const findings = await validateGraph(store, SHAPES);
     const hit = findings.find(
       (f) =>
-        f.focusNode === d && f.path === `${NS.dockg}notApplicableToVariant`,
+        f.focusNode === d && f.path === `${NS.kg}notApplicableToVariant`,
     );
     expect(hit).toBeDefined();
-    expect(hit!.severity).toBe("violation");
+    expect(hit!.severity).toBe("error");
     expect(hit!.docs).toEqual(["docs/a.md"]);
   });
 
@@ -268,14 +274,14 @@ describe("validateGraph", () => {
     const store = build([
       ...conformingTriples(),
       [d, `${NS.iirds}has-subject`, `${NS.iirdsSft}Interface`],
-      [d, `${NS.dockg}notSoftwareSubject`, `${NS.iirdsSft}Interface`],
+      [d, `${NS.kg}notSoftwareSubject`, `${NS.iirdsSft}Interface`],
     ]);
     const findings = await validateGraph(store, SHAPES);
     const hit = findings.find(
-      (f) => f.focusNode === d && f.path === `${NS.dockg}notSoftwareSubject`,
+      (f) => f.focusNode === d && f.path === `${NS.kg}notSoftwareSubject`,
     );
     expect(hit).toBeDefined();
-    expect(hit!.severity).toBe("violation");
+    expect(hit!.severity).toBe("error");
   });
 
   it("accepts a reified fill-field entry with confidence (ADR 01015)", async () => {
@@ -285,9 +291,9 @@ describe("validateGraph", () => {
       ...conformingTriples(),
       [activity, RDF_TYPE, `${NS.prov}Activity`],
       [activity, `${NS.prov}wasAssociatedWith`, `${BASE}agent/software/m1`],
-      [activity, `${NS.dockg}filledFieldEntry`, entry],
-      [entry, `${NS.dockg}filledField`, { lit: "label" }],
-      [entry, `${NS.dockg}confidence`, { lit: "0.9", dt: `${NS.xsd}decimal` }],
+      [activity, `${NS.kg}filledFieldEntry`, entry],
+      [entry, `${NS.kg}filledField`, { lit: "label" }],
+      [entry, `${NS.kg}confidence`, { lit: "0.9", dt: `${NS.xsd}decimal` }],
       [`${BASE}agent/software/m1`, RDF_TYPE, `${NS.prov}SoftwareAgent`],
       [`${BASE}agent/software/m1`, `${NS.foaf}name`, { lit: "m1" }],
     ]);
@@ -301,8 +307,8 @@ describe("validateGraph", () => {
     return [
       [activity, RDF_TYPE, `${NS.prov}Activity`],
       [activity, `${NS.prov}wasAssociatedWith`, `${BASE}agent/software/m1`],
-      [activity, `${NS.dockg}filledFieldEntry`, entry],
-      [entry, `${NS.dockg}filledField`, { lit: field }],
+      [activity, `${NS.kg}filledFieldEntry`, entry],
+      [entry, `${NS.kg}filledField`, { lit: field }],
       [`${BASE}agent/software/m1`, RDF_TYPE, `${NS.prov}SoftwareAgent`],
       [`${BASE}agent/software/m1`, `${NS.foaf}name`, { lit: "m1" }],
     ];
@@ -319,8 +325,8 @@ describe("validateGraph", () => {
         f.message.includes("curated by hand"),
       );
       expect(curated).toHaveLength(1);
-      expect(curated[0]?.severity).toBe("violation");
-      expect(curated[0]?.path).toBe(`${NS.dockg}filledField`);
+      expect(curated[0]?.severity).toBe("error");
+      expect(curated[0]?.path).toBe(`${NS.kg}filledField`);
       expect(curated[0]?.focusNode).toBe(
         `${BASE}doc/docs/a.md#prov.kg-fill.m1`,
       );
@@ -348,7 +354,7 @@ describe("validateGraph", () => {
     const findings = await validateGraph(store, SHAPES);
     const hit = findings.find((f) => f.message.includes("cycle"));
     expect(hit).toBeDefined();
-    expect(hit!.severity).toBe("violation");
+    expect(hit!.severity).toBe("error");
     expect(hit!.focusNode).toBe(concept("a"));
     expect(hit!.message).toContain(concept("b"));
   });
@@ -381,7 +387,7 @@ describe("validateGraph", () => {
     const findings = await validateGraph(store, SHAPES);
     expect(
       findings.some(
-        (f) => f.focusNode === concept("a") && f.severity === "violation",
+        (f) => f.focusNode === concept("a") && f.severity === "error",
       ),
     ).toBe(true);
   });
@@ -401,7 +407,7 @@ describe("validateGraph", () => {
       (f) => f.message.includes("related") && f.message.includes("broader"),
     );
     expect(hit).toBeDefined();
-    expect(hit!.severity).toBe("violation");
+    expect(hit!.severity).toBe("error");
   });
 
   it("blames every doc that references a bad shared concept, sorted", async () => {
@@ -413,10 +419,10 @@ describe("validateGraph", () => {
       [c, RDF_TYPE, `${NS.skos}Concept`],
       [c, `${NS.skos}prefLabel`, { lit: "shared" }],
       // missing inScheme → violation
-      [d2, RDF_TYPE, `${NS.dockg}Document`],
-      [d2, `${NS.dockg}path`, { lit: "docs/z.md" }],
-      [d3, RDF_TYPE, `${NS.dockg}Document`],
-      [d3, `${NS.dockg}path`, { lit: "docs/b.md" }],
+      [d2, RDF_TYPE, `${NS.kg}Document`],
+      [d2, `${NS.kg}path`, { lit: "docs/z.md" }],
+      [d3, RDF_TYPE, `${NS.kg}Document`],
+      [d3, `${NS.kg}path`, { lit: "docs/b.md" }],
       [d2, `${NS.dcterms}subject`, c],
       [d3, `${NS.dcterms}subject`, c],
     ]);
@@ -428,7 +434,7 @@ describe("validateGraph", () => {
     expect(hit!.docs).toEqual(["docs/b.md", "docs/z.md"]);
   });
 
-  it("orders findings: violations before warnings, then by focus node", async () => {
+  it("orders findings: errors before warnings, then by focus node", async () => {
     const store = build([
       ...conformingTriples(),
       // warning: collision on the conforming concept
@@ -439,8 +445,72 @@ describe("validateGraph", () => {
     const findings = await validateGraph(store, SHAPES);
     const severities = findings.map((f) => f.severity);
     const firstWarning = severities.indexOf("warning");
-    const lastViolation = severities.lastIndexOf("violation");
+    const lastViolation = severities.lastIndexOf("error");
     expect(lastViolation).toBeLessThan(firstWarning);
+  });
+});
+
+/**
+ * SHACL speaks `Violation | Warning | Info`; the family speaks
+ * `notice | warning | error` (src/shared/severity.ts). kg maps onto the
+ * family's and keeps SHACL's word in `shaclSeverity`, as a11y keeps axe's
+ * `impact` (proposal 0051 §2, 0035 stress test 10).
+ */
+describe("SHACL severity maps onto the family scale", () => {
+  const SEVERITY_SHAPES = [
+    join(
+      dirname(fileURLToPath(import.meta.url)),
+      "..",
+      "fixtures",
+      "severity-shapes.ttl",
+    ),
+  ];
+  const THING = "https://example.com/severity#thing";
+  const EX = "https://example.com/severity#";
+
+  async function findingsByMessage(): Promise<
+    Map<string, { severity: string; shaclSeverity: string }>
+  > {
+    const store = build([
+      [THING, RDF_TYPE, `${EX}Thing`],
+      [THING, `${EX}violating`, { lit: "x" }],
+      [THING, `${EX}warning`, { lit: "x" }],
+      [THING, `${EX}info`, { lit: "x" }],
+      [THING, `${EX}unstated`, { lit: "x" }],
+    ]);
+    const findings = await validateGraph(store, SEVERITY_SHAPES);
+    return new Map(
+      findings.map((f) => [
+        f.message,
+        { severity: f.severity, shaclSeverity: f.shaclSeverity },
+      ]),
+    );
+  }
+
+  it.each([
+    ["violation-level constraint", "error", "violation"],
+    ["warning-level constraint", "warning", "warning"],
+    ["info-level constraint", "notice", "info"],
+    // SHACL's default severity is sh:Violation.
+    ["unstated-severity constraint", "error", "violation"],
+  ])("maps %s to %s", async (message, severity, shaclSeverity) => {
+    const byMessage = await findingsByMessage();
+    expect(byMessage.get(message)).toEqual({ severity, shaclSeverity });
+  });
+
+  it("orders error, then warning, then notice", async () => {
+    const store = build([
+      [THING, RDF_TYPE, `${EX}Thing`],
+      [THING, `${EX}violating`, { lit: "x" }],
+      [THING, `${EX}warning`, { lit: "x" }],
+      [THING, `${EX}info`, { lit: "x" }],
+    ]);
+    const findings = await validateGraph(store, SEVERITY_SHAPES);
+    expect(findings.map((f) => f.severity)).toEqual([
+      "error",
+      "warning",
+      "notice",
+    ]);
   });
 });
 
@@ -449,13 +519,13 @@ describe("Document content hash (ADR 01036)", () => {
     // Required, not optional: the predicate is unconditional, so a regression
     // that stops emitting it must fail rather than pass quietly.
     const triples = conformingTriples().filter(
-      ([, p]) => p !== `${NS.dockg}contentHash`,
+      ([, p]) => p !== `${NS.kg}contentHash`,
     );
     return expect(
       validateGraph(build(triples), SHAPES).then((f) =>
         f.map((x) => x.path ?? ""),
       ),
-    ).resolves.toContain(`${NS.dockg}contentHash`);
+    ).resolves.toContain(`${NS.kg}contentHash`);
   });
 
   it("rejects a hash that is not 64 lowercase hex characters", async () => {
@@ -467,13 +537,13 @@ describe("Document content hash (ADR 01036)", () => {
     ]) {
       const triples = conformingTriples().map(
         ([s, p, o]): [string, string, string | { lit: string }] =>
-          p === `${NS.dockg}contentHash` ? [s, p, { lit: bad }] : [s, p, o],
+          p === `${NS.kg}contentHash` ? [s, p, { lit: bad }] : [s, p, o],
       );
       const findings = await validateGraph(build(triples), SHAPES);
       expect(
         findings.map((f) => f.path ?? ""),
         `expected "${bad}" to be rejected`,
-      ).toContain(`${NS.dockg}contentHash`);
+      ).toContain(`${NS.kg}contentHash`);
     }
   });
 
@@ -481,12 +551,12 @@ describe("Document content hash (ADR 01036)", () => {
     const triples = conformingTriples();
     triples.push([
       doc("docs/a.md"),
-      `${NS.dockg}contentHash`,
+      `${NS.kg}contentHash`,
       { lit: "b".repeat(64) },
     ]);
     const findings = await validateGraph(build(triples), SHAPES);
     expect(findings.map((f) => f.path ?? "")).toContain(
-      `${NS.dockg}contentHash`,
+      `${NS.kg}contentHash`,
     );
   });
 
@@ -504,9 +574,9 @@ describe("shapes 1.0.0 — localization", () => {
 
   const withLanguage = (tag: string) => {
     const triples = conformingTriples();
-    triples.push([D, RDF_TYPE, `${NS.dockg}Document`]);
-    triples.push([D, `${NS.dockg}path`, { lit: "docs/de/a.md" }]);
-    triples.push([D, `${NS.dockg}contentHash`, { lit: HASH }]);
+    triples.push([D, RDF_TYPE, `${NS.kg}Document`]);
+    triples.push([D, `${NS.kg}path`, { lit: "docs/de/a.md" }]);
+    triples.push([D, `${NS.kg}contentHash`, { lit: HASH }]);
     triples.push([D, `${NS.dcterms}language`, { lit: tag }]);
     return build(triples);
   };
@@ -541,9 +611,9 @@ describe("shapes 1.0.0 — localization", () => {
 
   it("accepts the two translation directions between corpus documents", async () => {
     const triples = conformingTriples();
-    triples.push([D, RDF_TYPE, `${NS.dockg}Document`]);
-    triples.push([D, `${NS.dockg}path`, { lit: "docs/de/a.md" }]);
-    triples.push([D, `${NS.dockg}contentHash`, { lit: HASH }]);
+    triples.push([D, RDF_TYPE, `${NS.kg}Document`]);
+    triples.push([D, `${NS.kg}path`, { lit: "docs/de/a.md" }]);
+    triples.push([D, `${NS.kg}contentHash`, { lit: HASH }]);
     triples.push([D, `${NS.schema}translationOfWork`, doc("docs/a.md")]);
     triples.push([doc("docs/a.md"), `${NS.schema}workTranslation`, D]);
     expect(await validateGraph(build(triples), SHAPES)).toEqual([]);

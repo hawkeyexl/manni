@@ -449,7 +449,7 @@ describe("BCP-47 pattern ↔ config schema ↔ shapes", () => {
   it("matches the dcterms:language pattern in the bundled shapes", () => {
     const shapes = readFileSync(bundledShapesPath(import.meta.url), "utf8");
     // The shape *definition*, not its mention in DocumentShape's sh:property
-    // list — slicing from the mention picks up dockg:contentHash's pattern.
+    // list — slicing from the mention picks up kg:contentHash's pattern.
     const start = shapes.indexOf("dsh:Document-language\n  a sh:PropertyShape");
     expect(
       start,

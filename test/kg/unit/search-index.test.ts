@@ -43,21 +43,21 @@ No headings besides the title. Mentions marmalade.
 
 function fixture(): GraphIndex {
   return GraphIndex.fromQuads([
-    { s: DOC, p: RDF_TYPE, o: iri(`${NS.dockg}Document`) },
-    { s: DOC, p: `${NS.dockg}path`, o: lit("docs/a.md") },
+    { s: DOC, p: RDF_TYPE, o: iri(`${NS.kg}Document`) },
+    { s: DOC, p: `${NS.kg}path`, o: lit("docs/a.md") },
     { s: DOC, p: `${NS.dcterms}title`, o: lit("A Document") },
     { s: DOC, p: `${NS.dcterms}description`, o: lit("About installing.") },
 
-    { s: SEC_INSTALL, p: RDF_TYPE, o: iri(`${NS.dockg}Section`) },
+    { s: SEC_INSTALL, p: RDF_TYPE, o: iri(`${NS.kg}Section`) },
     { s: SEC_INSTALL, p: `${NS.dcterms}title`, o: lit("Install") },
     {
       s: SEC_INSTALL,
-      p: `${NS.dockg}level`,
+      p: `${NS.kg}level`,
       o: lit("2", `${NS.xsd}integer`),
     },
 
-    { s: LOOSE, p: RDF_TYPE, o: iri(`${NS.dockg}Document`) },
-    { s: LOOSE, p: `${NS.dockg}path`, o: lit("docs/loose.md") },
+    { s: LOOSE, p: RDF_TYPE, o: iri(`${NS.kg}Document`) },
+    { s: LOOSE, p: `${NS.kg}path`, o: lit("docs/loose.md") },
     { s: LOOSE, p: `${NS.dcterms}title`, o: lit("Loose") },
 
     { s: CONCEPT, p: RDF_TYPE, o: iri(`${NS.skos}Concept`) },
@@ -87,8 +87,8 @@ function byId(entries: SearchEntry[], id: string): SearchEntry | undefined {
 describe("buildSearchIndex", () => {
   it("emits an entry per indexable node type with its compacted type", () => {
     const { entries } = build();
-    expect(byId(entries, DOC)?.type).toBe("dockg:Document");
-    expect(byId(entries, SEC_INSTALL)?.type).toBe("dockg:Section");
+    expect(byId(entries, DOC)?.type).toBe("kg:Document");
+    expect(byId(entries, SEC_INSTALL)?.type).toBe("kg:Section");
     expect(byId(entries, CONCEPT)?.type).toBe("skos:Concept");
   });
 
@@ -195,11 +195,11 @@ describe("partitionByLanguage", () => {
   /** One German doc with a section, one unlabelled doc, one shared concept. */
   function graph(labelEveryDoc: boolean): GraphIndex {
     const quads: Quad[] = [
-      { s: DE, p: RDF_TYPE, o: iri(`${NS.dockg}Document`) },
-      { s: DE, p: `${NS.dockg}path`, o: lit("docs/de.md") },
+      { s: DE, p: RDF_TYPE, o: iri(`${NS.kg}Document`) },
+      { s: DE, p: `${NS.kg}path`, o: lit("docs/de.md") },
       { s: DE, p: LANGUAGE, o: lit("de") },
-      { s: DOC, p: RDF_TYPE, o: iri(`${NS.dockg}Document`) },
-      { s: DOC, p: `${NS.dockg}path`, o: lit("docs/a.md") },
+      { s: DOC, p: RDF_TYPE, o: iri(`${NS.kg}Document`) },
+      { s: DOC, p: `${NS.kg}path`, o: lit("docs/a.md") },
       { s: CONCEPT, p: RDF_TYPE, o: iri(`${NS.skos}Concept`) },
       { s: CONCEPT, p: `${NS.skos}prefLabel`, o: lit("configuration") },
     ];

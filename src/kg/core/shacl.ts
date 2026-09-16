@@ -8,6 +8,7 @@ import { readFileSync } from "node:fs";
 import { DataFactory, Parser, Store } from "n3";
 import SHACLValidator from "rdf-validate-shacl";
 import { errorMessage } from "../../shared/errors.js";
+import type { Severity } from "../../shared/severity.js";
 import { KgError } from "../types.js";
 import { compactIri } from "./load.js";
 import { byCodeUnit } from "./sort.js";
@@ -15,21 +16,49 @@ import { NS } from "./vocab.js";
 
 const { namedNode } = DataFactory;
 
-export type CheckSeverity = "violation" | "warning" | "info";
+/** SHACL's own scale, as `sh:severity` spells it. */
+export type ShaclSeverity = "violation" | "warning" | "info";
 
 export interface CheckFinding {
-  severity: CheckSeverity;
+  /**
+   * The family's scale (`src/shared/severity.ts`). SHACL's three levels map
+   * onto it one for one — violation to error, warning to warning, info to
+   * notice — and the source value stays in {@link shaclSeverity}, the way
+   * a11y keeps axe's `impact` (proposal 0035, stress test 10).
+   */
+  severity: Severity;
+  /** SHACL's own word for the same finding, kept for lookup. */
+  shaclSeverity: ShaclSeverity;
   /** Human-readable description (IRIs compacted to prefixed names). */
   message: string;
   /** IRI of the node the finding is about. */
   focusNode: string;
   /** Predicate IRI involved, when the finding concerns one. */
   path?: string;
-  /** dockg:path of the docs responsible, sorted (empty when untraceable). */
+  /** kg:path of the docs responsible, sorted (empty when untraceable). */
   docs: string[];
 }
 
-const SEVERITY_RANK: Record<CheckSeverity, number> = {
+/**
+ * SHACL's scale onto the family's. The one place the translation happens, so
+ * no caller re-derives it: a finding is built through {@link finding} and
+ * carries both words from there on.
+ */
+const FAMILY_SEVERITY: Record<ShaclSeverity, Severity> = {
+  violation: "error",
+  warning: "warning",
+  info: "notice",
+};
+
+/** A finding at `shaclSeverity`, carrying the family severity it maps to. */
+function finding(
+  shaclSeverity: ShaclSeverity,
+  rest: Omit<CheckFinding, "severity" | "shaclSeverity">,
+): CheckFinding {
+  return { severity: FAMILY_SEVERITY[shaclSeverity], shaclSeverity, ...rest };
+}
+
+const SEVERITY_RANK: Record<ShaclSeverity, number> = {
   violation: 0,
   warning: 1,
   info: 2,
@@ -57,13 +86,13 @@ export function loadShapes(paths: string[]): Store {
 }
 
 /**
- * Trace a focus node back to the doc(s) responsible: its own dockg:path,
+ * Trace a focus node back to the doc(s) responsible: its own kg:path,
  * the path of its fragment-stripped base (sections, provenance fragments),
  * or — for shared nodes like concepts and agents — the paths of docs that
  * point at it, up to two hops back. Sorted and deduplicated.
  */
 export function blameDocs(store: Store, focus: string): string[] {
-  const pathPred = namedNode(`${NS.dockg}path`);
+  const pathPred = namedNode(`${NS.kg}path`);
   const pathOf = (iri: string): string | undefined =>
     store.getQuads(namedNode(iri), pathPred, null, null)[0]?.object.value;
 
@@ -253,29 +282,31 @@ function relatedConflicts(store: Store): CheckFinding[] {
     const conflict =
       broaderClosure(edges, s).has(o) || broaderClosure(edges, o).has(s);
     if (!conflict) continue;
-    findings.push({
-      severity: "violation",
-      message: `skos:related conflicts with skos:broaderTransitive between ${compactIri(s)} and ${compactIri(o)} — a concept cannot be both related to and an ancestor/descendant of another`,
-      focusNode: s,
-      path: `${NS.skos}related`,
-      docs: blameDocs(store, s),
-    });
+    findings.push(
+      finding("violation", {
+        message: `skos:related conflicts with skos:broaderTransitive between ${compactIri(s)} and ${compactIri(o)} — a concept cannot be both related to and an ancestor/descendant of another`,
+        focusNode: s,
+        path: `${NS.skos}related`,
+        docs: blameDocs(store, s),
+      }),
+    );
   }
   return findings;
 }
 
 function cycleFindings(store: Store): CheckFinding[] {
-  return broaderCycles(store).map((members) => ({
-    severity: "violation" as const,
-    message: `skos:broader cycle through ${members
-      .map((m) => compactIri(m))
-      .join(
-        ", ",
-      )} (${members.map((m) => m).join(" → ")}) — a concept cannot be its own ancestor`,
-    focusNode: members[0]!,
-    path: `${NS.skos}broader`,
-    docs: [...new Set(members.flatMap((m) => blameDocs(store, m)))].sort(),
-  }));
+  return broaderCycles(store).map((members) =>
+    finding("violation", {
+      message: `skos:broader cycle through ${members
+        .map((m) => compactIri(m))
+        .join(
+          ", ",
+        )} (${members.map((m) => m).join(" → ")}) — a concept cannot be its own ancestor`,
+      focusNode: members[0]!,
+      path: `${NS.skos}broader`,
+      docs: [...new Set(members.flatMap((m) => blameDocs(store, m)))].sort(),
+    }),
+  );
 }
 
 /**
@@ -292,12 +323,12 @@ const KG_FILL_FRAGMENT = "#prov.kg-fill.";
 /**
  * A machine attribution on a hand-curated field. `check` reads only the built
  * graph and `build` has no findings channel, so the store is where the fact is
- * read: the harvest has already put `dockg:filledField "sections"` on a field
+ * read: the harvest has already put `kg:filledField "sections"` on a field
  * node under a `#prov.kg-fill.` activity.
  */
 function curatedFieldFindings(store: Store): CheckFinding[] {
-  const filledField = `${NS.dockg}filledField`;
-  const pathPred = namedNode(`${NS.dockg}path`);
+  const filledField = `${NS.kg}filledField`;
+  const pathPred = namedNode(`${NS.kg}path`);
   const findings: CheckFinding[] = [];
   for (const q of store.getQuads(null, namedNode(filledField), null, null)) {
     if (q.object.termType !== "Literal") continue;
@@ -317,18 +348,19 @@ function curatedFieldFindings(store: Store): CheckFinding[] {
     const docIri = activity.slice(0, activity.indexOf("#"));
     const path = store.getQuads(namedNode(docIri), pathPred, null, null)[0]
       ?.object.value;
-    findings.push({
-      severity: "violation",
-      message: `meta-provenance attributes /kg/${field} to ${model} — ${field} is curated by hand, never filled by a machine`,
-      focusNode: activity,
-      path: filledField,
-      docs: path === undefined ? blameDocs(store, activity) : [path],
-    });
+    findings.push(
+      finding("violation", {
+        message: `meta-provenance attributes /kg/${field} to ${model} — ${field} is curated by hand, never filled by a machine`,
+        focusNode: activity,
+        path: filledField,
+        docs: path === undefined ? blameDocs(store, activity) : [path],
+      }),
+    );
   }
   return findings;
 }
 
-function severityOf(iri: string | undefined): CheckSeverity {
+function severityOf(iri: string | undefined): ShaclSeverity {
   if (iri === "http://www.w3.org/ns/shacl#Warning") return "warning";
   if (iri === "http://www.w3.org/ns/shacl#Info") return "info";
   return "violation";
@@ -364,13 +396,14 @@ export async function validateGraph(
       messages.length > 0
         ? messages.join("; ")
         : `constraint violated${path ? ` on ${compactIri(path)}` : ""}`;
-    findings.push({
-      severity: severityOf(result.severity?.value),
-      message,
-      focusNode: focus,
-      ...(path !== undefined ? { path } : {}),
-      docs: blameDocs(store, focus),
-    });
+    findings.push(
+      finding(severityOf(result.severity?.value), {
+        message,
+        focusNode: focus,
+        ...(path !== undefined ? { path } : {}),
+        docs: blameDocs(store, focus),
+      }),
+    );
   }
 
   findings.push(
@@ -381,7 +414,7 @@ export async function validateGraph(
 
   findings.sort(
     (a, b) =>
-      SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] ||
+      SEVERITY_RANK[a.shaclSeverity] - SEVERITY_RANK[b.shaclSeverity] ||
       byCodeUnit(a.focusNode, b.focusNode) ||
       byCodeUnit(a.path ?? "", b.path ?? "") ||
       byCodeUnit(a.message, b.message),

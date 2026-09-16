@@ -28,7 +28,7 @@ import {
 /**
  * Enough of an embedder to verify it against a vector index. Structural rather
  * than the `Embedder` interface itself, so the runtime stays independent of
- * `dockg/embed` — any object with these three fields works.
+ * `@hawkeyexl/manni/kg/embed` — any object with these three fields works.
  */
 export interface QueryEmbedder {
   readonly model: string;

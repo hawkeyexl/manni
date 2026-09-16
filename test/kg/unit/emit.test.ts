@@ -12,8 +12,8 @@ const DOC = "https://example.com/kg/doc/docs/a.md";
 function sample(): Quad[] {
   return [
     { s: DOC, p: `${NS.dcterms}title`, o: lit("Hello") },
-    { s: DOC, p: `${NS.rdf}type`, o: iri(`${NS.dockg}Document`) },
-    { s: DOC, p: `${NS.dockg}level`, o: lit("2", `${NS.xsd}integer`) },
+    { s: DOC, p: `${NS.rdf}type`, o: iri(`${NS.kg}Document`) },
+    { s: DOC, p: `${NS.kg}level`, o: lit("2", `${NS.xsd}integer`) },
     {
       s: DOC,
       p: `${NS.dcterms}subject`,
@@ -37,7 +37,7 @@ describe("emitTurtle", () => {
     const ttl = emitTurtle(sample());
     expect(ttl).toContain("@prefix dcterms: <http://purl.org/dc/terms/> .");
     expect(ttl).toContain(
-      "@prefix dockg: <https://hawkeyexl.github.io/dockg/ns#> .",
+      "@prefix kg: <https://hawkeyexl.github.io/manni/kg/ns#> .",
     );
     // concept subject sorts before doc subject
     const conceptAt = ttl.indexOf("<https://example.com/kg/concept/a>");
@@ -46,7 +46,7 @@ describe("emitTurtle", () => {
     expect(conceptAt).toBeLessThan(docAt);
     // rdf:type first within the doc block, as `a`
     expect(ttl).toMatch(
-      /<https:\/\/example\.com\/kg\/doc\/docs\/a\.md> a dockg:Document ;/,
+      /<https:\/\/example\.com\/kg\/doc\/docs\/a\.md> a kg:Document ;/,
     );
   });
 
@@ -59,8 +59,8 @@ describe("emitTurtle", () => {
 
   it("emits xsd:integer literals bare", () => {
     const ttl = emitTurtle(sample());
-    // dockg:level is the last predicate in the block (https:// sorts after http://)
-    expect(ttl).toContain("dockg:level 2 .");
+    // kg:level is the last predicate in the block (https:// sorts after http://)
+    expect(ttl).toContain("kg:level 2 .");
   });
 
   it("emits typed non-integer literals with a datatype suffix", () => {
@@ -117,8 +117,8 @@ describe("emitTurtle", () => {
 
   it("falls back to full IRIs when the local name is not a safe prefixed name", () => {
     const ttl = emitTurtle([
-      { s: DOC, p: `${NS.dcterms}title`, o: iri(`${NS.dockg}weird/local`) },
+      { s: DOC, p: `${NS.dcterms}title`, o: iri(`${NS.kg}weird/local`) },
     ]);
-    expect(ttl).toContain("<https://hawkeyexl.github.io/dockg/ns#weird/local>");
+    expect(ttl).toContain("<https://hawkeyexl.github.io/manni/kg/ns#weird/local>");
   });
 });

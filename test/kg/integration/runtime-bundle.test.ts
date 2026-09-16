@@ -1,7 +1,7 @@
 /**
  * The browser-safety contract as a regression test (ADR 01018).
  *
- * `dockg/runtime` must be loadable in a browser: no Node built-ins, no CommonJS
+ * `@hawkeyexl/manni/kg/runtime` must be loadable in a browser: no Node built-ins, no CommonJS
  * interop, no CLI shebang, no npm dependencies. tsup bundles the runtime's
  * whole module graph into dist/runtime.js, so scanning that one file catches a
  * `node:` import sneaking in through *any* transitive import.
@@ -15,7 +15,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const bundle = join(root, "dist", "kg", "runtime.js");
 const source = (): string => readFileSync(bundle, "utf8");
 
-describe("dockg/runtime package surface", () => {
+describe("@hawkeyexl/manni/kg/runtime package surface", () => {
   /**
    * Both tsup configs write to dist, and tsup builds an array config
    * concurrently — a config with `clean` deletes every .d.ts in the shared
@@ -41,7 +41,7 @@ describe("dockg/runtime package surface", () => {
   });
 });
 
-describe("dockg/runtime bundle purity", () => {
+describe("@hawkeyexl/manni/kg/runtime bundle purity", () => {
   it("imports no node: built-in", () => {
     const hits = [...source().matchAll(/["'`]node:[a-z_/]+["'`]/g)].map(
       (m) => m[0],
@@ -103,7 +103,7 @@ describe("dockg/runtime bundle purity", () => {
 
   it("keeps the embedder and its model stack out of the runtime", () => {
     // @huggingface/transformers hard-depends on both ONNX runtimes plus native
-    // sharp. It lives behind `dockg/embed` precisely so the runtime never grows
+    // sharp. It lives behind `@hawkeyexl/manni/kg/embed` precisely so the runtime never grows
     // a model stack (ADR 01020).
     const text = source();
     expect(text).not.toMatch(/@huggingface\/transformers/);
@@ -123,7 +123,7 @@ describe("dockg/runtime bundle purity", () => {
   });
 });
 
-describe("dockg/embed package surface", () => {
+describe("@hawkeyexl/manni/kg/embed package surface", () => {
   const embedBundle = join(root, "dist", "kg", "embed.js");
 
   it("emits every file the ./embed export names", () => {

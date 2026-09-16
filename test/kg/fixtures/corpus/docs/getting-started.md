@@ -26,7 +26,7 @@ Welcome. See the [configuration reference](configuration.md).
 Run the installer:
 
 ```bash
-npm install -g dockg
+npm install -g @hawkeyexl/manni
 ```
 
 ```python

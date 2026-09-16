@@ -279,7 +279,7 @@ export function buildUserPrompt(
   const tags = doc.frontmatter["tags"] ?? doc.frontmatter["keywords"];
   // With sections on, the outline carries each heading's slug: it is the key
   // the model must copy, and a slug it invents is dropped rather than written
-  // (which would otherwise mint a dockg:brokenSectionRef — a finding fill must
+  // (which would otherwise mint a kg:brokenSectionRef — a finding fill must
   // never manufacture).
   const withSections = options.sections === true && doc.sections.length > 0;
   const outline = doc.sections

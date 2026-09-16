@@ -18,7 +18,7 @@ import { KgError } from "../types.js";
 import {
   assertCollectionWithoutPaths,
   DEFAULT_CONFIG_FILENAME,
-  type DockgConfig,
+  type KgConfig,
 } from "./config.js";
 import { byCodeUnit } from "./sort.js";
 
@@ -128,7 +128,7 @@ function globAbsolute(
  * node's IRI is derived from the path the build was asked about.
  */
 export function resolveDocumentSet(
-  config: DockgConfig,
+  config: KgConfig,
   options: DocumentSetOptions = {},
   verb: DocumentVerb = "build",
   cwd = process.cwd(),
@@ -183,7 +183,7 @@ export function resolveDocumentSet(
 
 /** The patterns a run asked about, for the empty-match message. */
 export function documentSetPatterns(
-  config: DockgConfig,
+  config: KgConfig,
   options: DocumentSetOptions = {},
 ): string[] {
   const paths = options.paths ?? [];

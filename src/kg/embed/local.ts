@@ -31,7 +31,7 @@
  * `@huggingface/transformers` is an **optional peer dependency**, imported
  * dynamically: it hard-depends on both ONNX runtimes plus native `sharp`, and
  * most dockg users never enable embeddings. Behind this subpath, a consumer who
- * never imports `dockg/embed` never resolves it.
+ * never imports `@hawkeyexl/manni/kg/embed` never resolves it.
  */
 import { errorMessage } from "../../shared/errors.js";
 import {

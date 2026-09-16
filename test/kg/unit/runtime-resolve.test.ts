@@ -34,7 +34,7 @@ function fixture(): GraphIndex {
   return GraphIndex.fromQuads([
     {
       s: DOC,
-      p: `${NS.dockg}path`,
+      p: `${NS.kg}path`,
       o: { kind: "literal", value: "docs/a.md" },
     },
     { s: DOC, p: `${NS.dcterms}title`, o: { kind: "literal", value: "Title" } },
@@ -45,7 +45,7 @@ function fixture(): GraphIndex {
     },
     {
       s: SECTION,
-      p: `${NS.dockg}level`,
+      p: `${NS.kg}level`,
       o: { kind: "literal", value: "2", datatype: `${NS.xsd}integer` },
     },
   ]);
@@ -262,7 +262,7 @@ describe("repeated headings", () => {
   const SEC_2 = `${DUP_DOC}#install-1`;
   const ROOT = `${DUP_DOC}#doc`;
 
-  /** Doc → root section → two same-titled children, ordered by dockg:order. */
+  /** Doc → root section → two same-titled children, ordered by kg:order. */
   function dupGraph(secondTitle = "Install"): GraphIndex {
     const lit2 = (v: string) => ({
       kind: "literal" as const,
@@ -272,7 +272,7 @@ describe("repeated headings", () => {
     return GraphIndex.fromQuads([
       {
         s: DUP_DOC,
-        p: `${NS.dockg}path`,
+        p: `${NS.kg}path`,
         o: { kind: "literal", value: "docs/dup.md" },
       },
       {
@@ -285,8 +285,8 @@ describe("repeated headings", () => {
         p: `${NS.dcterms}title`,
         o: { kind: "literal", value: "Doc" },
       },
-      { s: ROOT, p: `${NS.dockg}level`, o: lit2("1") },
-      { s: ROOT, p: `${NS.dockg}order`, o: lit2("1") },
+      { s: ROOT, p: `${NS.kg}level`, o: lit2("1") },
+      { s: ROOT, p: `${NS.kg}order`, o: lit2("1") },
       { s: ROOT, p: `${NS.dcterms}hasPart`, o: { kind: "iri", value: SEC_1 } },
       { s: ROOT, p: `${NS.dcterms}hasPart`, o: { kind: "iri", value: SEC_2 } },
       {
@@ -294,15 +294,15 @@ describe("repeated headings", () => {
         p: `${NS.dcterms}title`,
         o: { kind: "literal", value: "Install" },
       },
-      { s: SEC_1, p: `${NS.dockg}level`, o: lit2("2") },
-      { s: SEC_1, p: `${NS.dockg}order`, o: lit2("1") },
+      { s: SEC_1, p: `${NS.kg}level`, o: lit2("2") },
+      { s: SEC_1, p: `${NS.kg}order`, o: lit2("1") },
       {
         s: SEC_2,
         p: `${NS.dcterms}title`,
         o: { kind: "literal", value: secondTitle },
       },
-      { s: SEC_2, p: `${NS.dockg}level`, o: lit2("2") },
-      { s: SEC_2, p: `${NS.dockg}order`, o: lit2("2") },
+      { s: SEC_2, p: `${NS.kg}level`, o: lit2("2") },
+      { s: SEC_2, p: `${NS.kg}order`, o: lit2("2") },
     ]);
   }
 
@@ -343,7 +343,7 @@ describe("repeated headings", () => {
     ).toContain("Second install.");
   });
 
-  it("orders sections depth-first by dockg:order", () => {
+  it("orders sections depth-first by kg:order", () => {
     expect(documentSectionOrder(dupGraph(), DUP_DOC)).toEqual([
       ROOT,
       SEC_1,

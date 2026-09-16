@@ -41,7 +41,7 @@ function prepare(withVectors = true): {
   graph: string;
   vectors: string;
 } {
-  const dir = mkdtempSync(join(tmpdir(), "dockg-embed-"));
+  const dir = mkdtempSync(join(tmpdir(), "manni-kg-embed-"));
   const graph = join(dir, "graph.ttl");
   // The undetermined bucket: the corpus's English tree declares no language,
   // so its 20 entries land in `und` (ADR 01038).
@@ -145,7 +145,7 @@ describe("manni kg embed (integration)", () => {
 
   it("serves repeat runs from the cache", () => {
     const { dir, graph } = prepare(false);
-    const cacheHome = mkdtempSync(join(tmpdir(), "dockg-embed-cache-"));
+    const cacheHome = mkdtempSync(join(tmpdir(), "manni-kg-embed-cache-"));
     const cfg = join(cacheHome, "dockg.config.yaml");
     writeFileSync(
       cfg,
@@ -214,7 +214,7 @@ describe("manni kg embed (integration)", () => {
   });
 
   it("exits 2 when the search index is missing", () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-embed-none-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-embed-none-"));
     const graph = join(dir, "graph.ttl");
     execFileSync(process.execPath, [cli, "kg", "build", "--out", graph], {
       encoding: "utf8",
@@ -356,7 +356,7 @@ describe("manni kg search with vectors (integration)", () => {
     };
     doc.entries.push({
       id: "https://example.com/kg/doc/docs/brand-new.md",
-      type: "dockg:Document",
+      type: "kg:Document",
       title: "Brand new",
       text: "content that did not exist when the vectors were built",
     });
@@ -391,7 +391,7 @@ describe("manni kg search with vectors (integration)", () => {
     };
     doc.entries.push({
       id: "https://example.com/kg/doc/docs/brand-new.md",
-      type: "dockg:Document",
+      type: "kg:Document",
       title: "Brand new",
       text: "content that did not exist when the vectors were built",
     });

@@ -11,7 +11,7 @@ function git(cwd: string, ...args: string[]): void {
 }
 
 function makeRepo(): string {
-  const dir = mkdtempSync(join(tmpdir(), "dockg-githist-"));
+  const dir = mkdtempSync(join(tmpdir(), "manni-kg-githist-"));
   git(dir, "init", "-q");
   git(dir, "config", "user.name", "Test Author");
   git(dir, "config", "user.email", "test@example.com");
@@ -60,7 +60,7 @@ describe("collectGitHistory (real repo)", () => {
   });
 
   it("keys paths relative to the collection cwd (monorepo subdirectory builds)", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-gitsub-"));
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-gitsub-"));
     git(dir, "init", "-q");
     git(dir, "config", "user.name", "Test Author");
     git(dir, "config", "user.email", "test@example.com");

@@ -106,7 +106,7 @@
   </rdf:Description>
   <rdf:Description rdf:about="https://example.com/kg/package">
     <iirds:iiRDSVersion>1.3</iirds:iiRDSVersion>
-    <iirds:title>dockg export</iirds:title>
+    <iirds:title>manni kg export</iirds:title>
     <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Package"/>
   </rdf:Description>
   <rdf:Description rdf:about="https://example.com/kg/product/sp-x100">

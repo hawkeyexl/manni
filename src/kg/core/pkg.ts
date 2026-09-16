@@ -14,5 +14,5 @@ import { packageRoot } from "../../shared/package-root.js";
 
 /** Absolute path of the bundled SHACL shapes `manni kg check` defaults to. */
 export function bundledShapesPath(moduleUrl: string): string {
-  return join(packageRoot(moduleUrl), "shapes", "kg", "dockg-1.0.0.ttl");
+  return join(packageRoot(moduleUrl), "shapes", "kg", "shapes-1.0.0.ttl");
 }
