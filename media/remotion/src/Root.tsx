@@ -7,6 +7,7 @@ import { beats as joinBeats, totalFrames as joinTotalFrames, TYPING_MS as joinTy
 import { beats as provenanceBeats, totalFrames as provenanceTotalFrames, TYPING_MS as provenanceTypingMs } from "./provenance/beats";
 import { beats as collectionsBeats, totalFrames as collectionsTotalFrames } from "./collections/beats";
 import { beats as locationBeats, totalFrames as locationTotalFrames, TYPING_MS as locationTypingMs } from "./location/beats";
+import { beats as kgBeats, totalFrames as kgTotalFrames, TYPING_MS as kgTypingMs } from "./kg/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -22,6 +23,9 @@ const DemoProvenance: React.FC = () => <DemoView beats={provenanceBeats} fontPx=
 
 /** field-location-1x1: 28 px / 61 columns, derived in media/field-location-1x1.script.md (media/capture-location/cols.mjs). */
 const DemoLocation: React.FC = () => <DemoView beats={locationBeats} fontPx={28} linePx={39} cols={61} typingMs={locationTypingMs} />;
+
+/** kg-impact-1x1: 23 px / 72 columns, derived in media/kg/kg-impact-1x1.script.md (media/kg/cols.mjs). */
+const DemoKg: React.FC = () => <DemoView beats={kgBeats} fontPx={23} linePx={32} cols={72} typingMs={kgTypingMs} />;
 
 export const Root: React.FC = () => (
   <>
@@ -72,6 +76,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={locationTotalFrames}
+    />
+    <Composition
+      id="KgDemo"
+      component={DemoKg}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={kgTotalFrames}
     />
   </>
 );
