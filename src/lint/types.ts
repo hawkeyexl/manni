@@ -188,8 +188,16 @@ export interface Finding {
   severity: Severity;
 }
 
-/** Why a file was not linted. */
-export type SkipReason = "no-template" | "unsupported-format";
+/**
+ * Why a file was not linted.
+ *
+ * `unreadable` is the one that is not about the document: the file was found,
+ * claimed by a parser, and then could not be opened - a denied permission, a
+ * symlink loop, a page a doc build moved between the walk and the read. It is a
+ * skip rather than a finding because nothing was checked, and calling it a
+ * finding would report the docs as wrong when the filesystem was.
+ */
+export type SkipReason = "no-template" | "unsupported-format" | "unreadable";
 
 /** Result of linting one file. */
 export interface FileResult {

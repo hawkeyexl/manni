@@ -176,6 +176,13 @@ function suggestTypes(unknown: string, known: Iterable<string>): string[] {
  * other two are carried in locals from the cell just written and the previous
  * `above`. So the loop reads no array slot back by a computed index, which is
  * what `noUncheckedIndexedAccess` cannot prove is filled.
+ *
+ * The characters are compared as code units for the same reason: `a[i]` is
+ * typed `string | undefined`, so comparing the two would either need an
+ * assertion or a guard for a case the loop bounds already rule out.
+ * `charCodeAt` returns `NaN` past the end and `NaN !== NaN`, so an index that
+ * did escape its bounds costs an edit rather than matching by accident - the
+ * invariant expressed rather than asserted.
  */
 function editDistance(a: string, b: string): number {
   if (a === b) return 0;
@@ -187,7 +194,7 @@ function editDistance(a: string, b: string): number {
     let left = i + 1;
     let diagonal = i;
     for (const [j, above] of prev.slice(1).entries()) {
-      const cost = a[i] === b[j] ? 0 : 1;
+      const cost = a.charCodeAt(i) === b.charCodeAt(j) ? 0 : 1;
       const cell = Math.min(left + 1, above + 1, diagonal + cost);
       row.push(cell);
       diagonal = above;

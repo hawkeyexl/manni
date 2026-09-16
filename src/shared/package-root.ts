@@ -11,6 +11,7 @@
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { ToolError } from "./errors.js";
 
 export function packageRoot(moduleUrl: string): string {
   let dir = dirname(fileURLToPath(moduleUrl));
@@ -18,7 +19,11 @@ export function packageRoot(moduleUrl: string): string {
     if (existsSync(join(dir, "package.json"))) return dir;
     const parent = dirname(dir);
     if (parent === dir) {
-      throw new Error(`No package.json above ${fileURLToPath(moduleUrl)}`);
+      // A `ToolError`, not a bare one: the bin runner renders anything else as
+      // "Unexpected error:" with a stack trace, which is what it says about a
+      // bug. A package whose files did not ship is an operational failure and
+      // reads as one line and exit 2, like every other.
+      throw new ToolError(`No package.json above ${fileURLToPath(moduleUrl)}`);
     }
     dir = parent;
   }

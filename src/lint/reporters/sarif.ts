@@ -139,6 +139,7 @@ const LEVELS: Record<Severity, SarifLevel> = {
 const SKIP_DESCRIPTIONS: Record<SkipReason, string> = {
   "no-template": "File was not linted: no template resolved for it.",
   "unsupported-format": "File was not linted: no parser handles its format.",
+  unreadable: "File was not linted: it could not be read.",
 };
 
 /** Matches a Windows drive prefix on an already-forward-slashed path. */

@@ -599,6 +599,139 @@ describe("a file no parser claims is skipped without being opened", () => {
   });
 });
 
+describe("a file the run cannot read is that file's problem, not the run's", () => {
+  // The read in the per-file loop had no try, so a denied permission, a
+  // symlink loop, or a file a doc build moved between the walk and the read
+  // threw straight out of `runLint`. Exit 2, no report, and every result
+  // already gathered discarded - the same failure the parser lookup above was
+  // moved before the read to avoid, one step further along.
+  //
+  // Injected rather than staged: `chmod` denies nothing on Windows, and a
+  // fixture that reproduced it on one runner would prove nothing on the other.
+  it("reports it as a skip and still lints its siblings", async () => {
+    const denied = await file("denied.md", `---\ntype: how-to\n---\n\n${HOW_TO}`);
+    const page = await file("page.md", `---\ntype: how-to\n---\n\n${HOW_TO}`);
+
+    vi.resetModules();
+    vi.doMock("node:fs/promises", async () => {
+      const real =
+        await vi.importActual<typeof import("node:fs/promises")>(
+          "node:fs/promises",
+        );
+      return {
+        ...real,
+        readFile: async (path: string | URL, encoding: "utf8") => {
+          // Only this one page is denied. The built-in template the sibling
+          // routes to is read through the same function and has to go
+          // through, or the test would pass for the wrong reason.
+          if (path === denied) {
+            throw Object.assign(
+              new Error(`EACCES: permission denied, open '${denied}'`),
+              { code: "EACCES" },
+            );
+          }
+          return real.readFile(path, encoding);
+        },
+      };
+    });
+
+    try {
+      const { runLint: lintWithDeniedRead } = await import(
+        "../../../src/lint/commands/lint.js"
+      );
+      const run = await lintWithDeniedRead({ inputs: [denied, page], cwd: dir });
+
+      const skipped = defined(
+        run.results.find((r) => r.file.endsWith("denied.md")),
+        "result for denied.md",
+      );
+      expect(skipped.skipped).toBe("unreadable");
+      // The OS message, not a guess: "permission denied" and "no such file"
+      // send the reader to different places.
+      expect(skipped.reason).toContain("EACCES");
+      // The point: the run got past it and still reported a verdict.
+      expect(
+        defined(
+          run.results.find((r) => r.file.endsWith("page.md")),
+          "result for page.md",
+        ).success,
+      ).toBe(true);
+      expect(run.summary).toMatchObject({ checked: 1, passed: 1, skipped: 1 });
+    } finally {
+      vi.doUnmock("node:fs/promises");
+      vi.resetModules();
+    }
+  });
+
+  // A run whose every file was unreadable is still a run that checked nothing,
+  // and the advice has to name the cause it actually hit rather than sending
+  // the reader after a `type:` key on a file nothing could open.
+  it("advises on the read when that is why nothing was checked", async () => {
+    const denied = await file("denied.md", `---\ntype: how-to\n---\n\n${HOW_TO}`);
+
+    vi.resetModules();
+    vi.doMock("node:fs/promises", async () => {
+      const real =
+        await vi.importActual<typeof import("node:fs/promises")>(
+          "node:fs/promises",
+        );
+      return {
+        ...real,
+        readFile: async (path: string | URL, encoding: "utf8") => {
+          if (path === denied) {
+            throw Object.assign(
+              new Error(`EACCES: permission denied, open '${denied}'`),
+              { code: "EACCES" },
+            );
+          }
+          return real.readFile(path, encoding);
+        },
+      };
+    });
+
+    try {
+      const { runLint: lintWithDeniedRead } = await import(
+        "../../../src/lint/commands/lint.js"
+      );
+      const message = await lintWithDeniedRead({
+        inputs: [denied],
+        cwd: dir,
+      }).then(
+        () => "resolved",
+        (err: unknown) => (err as Error).message,
+      );
+
+      expect(message).toContain("Nothing was checked");
+      expect(message).toContain("could not be read");
+      expect(message).not.toContain('"type:"');
+    } finally {
+      vi.doUnmock("node:fs/promises");
+      vi.resetModules();
+    }
+  });
+});
+
+describe("the family walker's failures reach a caller as this tool's error", () => {
+  // `runLint` is exported from `src/index.ts`, so a library caller catches
+  // `LintError` - and the family walker throws meta's `DocmetaError`, which is
+  // a sibling class, not a subclass. Such a caller therefore missed the two
+  // most ordinary operational failures there are: a mistyped path, and a
+  // pattern that matched nothing.
+  it("rethrows a path that does not exist", async () => {
+    const run = runLint({ inputs: [join(dir, "typo.md")], cwd: dir });
+    await expect(run).rejects.toBeInstanceOf(LintError);
+    // The message is the walker's own, not a summary of it.
+    await expect(run).rejects.toThrow(/File not found: .*typo\.md/);
+  });
+
+  it("rethrows a target set that resolved to nothing", async () => {
+    await mkdir(join(dir, "empty"), { recursive: true });
+    const run = runLint({ inputs: [join(dir, "empty")], cwd: dir });
+    await expect(run).rejects.toBeInstanceOf(LintError);
+    await expect(run).rejects.toThrow(/No files matched/);
+  });
+});
+
 describe("a directory walk keeps to the formats lint can parse", () => {
   // The walk fell through to the *metadata* tool's extractor extensions the
   // moment neither --ext nor --as was given, so it swept in every extension
@@ -697,7 +830,7 @@ describe("--as names a format the tool can actually parse", () => {
   // The stub is injected rather than staged: every registered parser is
   // implemented today, so there is no real format that reproduces this, and
   // registering one for the test would put a fake format in `manni lint tools`.
-  it("refuses a registered but unimplemented parser by name", async () => {
+  it("says a registered but unimplemented parser is not implemented yet", async () => {
     await file("page.md", `---\ntype: how-to\n---\n\n${HOW_TO}`);
 
     const planned: DocumentParser = {
@@ -736,11 +869,32 @@ describe("--as names a format the tool can actually parse", () => {
         (err: unknown) => (err as Error).message,
       );
 
-      expect(message).toContain('Unknown format "planned"');
+      // Not "Unknown": `manni lint tools` lists the format, so a reader told
+      // it is unknown goes looking for their own typo in a name that is
+      // spelled right.
+      expect(message).toContain('Format "planned" is not implemented yet.');
+      expect(message).not.toContain("Unknown format");
       expect(message).not.toContain("Nothing was checked");
     } finally {
       vi.doUnmock("../../../src/lint/parsers/index.js");
       vi.resetModules();
     }
+  });
+
+  // The genuinely unknown case keeps its own wording: there is nothing to look
+  // up, and "not implemented yet" would promise a format that was never named.
+  it("still calls a name no parser answers to unknown", async () => {
+    await file("page.md", `---\ntype: how-to\n---\n\n${HOW_TO}`);
+
+    const message = await runLint({
+      inputs: [dir],
+      as: "nosuchformat",
+      cwd: dir,
+    }).then(
+      () => "resolved",
+      (err: unknown) => (err as Error).message,
+    );
+
+    expect(message).toContain('Unknown format "nosuchformat"');
   });
 });

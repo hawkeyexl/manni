@@ -395,11 +395,27 @@ function parseTemplateFile(raw: string, source: string, kind: RefKind): unknown 
   }
 }
 
+/**
+ * Read a local template file, saying which way the read failed.
+ *
+ * Every failure used to be reported as "not found", which is the one wording
+ * that contradicts `ls -la`: a directory named `templates.yaml` (EISDIR), a
+ * file the user cannot open (EACCES), and a process out of descriptors
+ * (EMFILE) are three different problems with three different fixes, and the
+ * reader was sent after a path that is plainly there. Only ENOENT is a missing
+ * file; anything else keeps the OS's own message.
+ */
 async function readText(ref: string): Promise<string> {
   try {
     return await readFile(ref, "utf8");
-  } catch {
-    throw new LintError(`Template file not found: "${ref}".`);
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException | null)?.code;
+    if (code === "ENOENT") {
+      throw new LintError(`Template file not found: "${ref}".`);
+    }
+    throw new LintError(
+      `Template file "${ref}" could not be read: ${errorMessage(err)}`,
+    );
   }
 }
 
@@ -693,19 +709,25 @@ export async function loadResolvedTemplate(
   options: LoadTemplateOptions = {},
   chain: string[] = [],
 ): Promise<Template> {
+  // Seeded with this ref when the caller started here, so the reported cycle
+  // starts where the reader did. Chained from the parent only, `a -> b -> a`
+  // was reported as `b -> a -> b`: the file the run was pointed at never
+  // appeared in the cycle it was said to be part of, which is the one name in
+  // the message the reader can act on.
+  const seen = chain.length === 0 ? [ref] : chain;
   const template = await loadTemplate(ref, options);
   const parentRef = template.extends;
   if (parentRef === undefined) return template;
 
   const absolute = refRelativeTo(ref, parentRef);
-  if (chain.includes(absolute)) {
+  if (seen.includes(absolute)) {
     throw new LintError(
-      `Template "extends" cycle: ${[...chain, absolute].join(" -> ")}.`,
+      `Template "extends" cycle: ${[...seen, absolute].join(" -> ")}.`,
     );
   }
 
   const parent = await loadResolvedTemplate(absolute, options, [
-    ...chain,
+    ...seen,
     absolute,
   ]);
   return mergeTemplates(parent, template);

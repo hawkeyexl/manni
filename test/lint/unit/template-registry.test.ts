@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { readFile } from "node:fs/promises";
+import { afterAll, beforeAll, describe, it, expect } from "vitest";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
@@ -7,6 +8,7 @@ import { dereference } from "@apidevtools/json-schema-ref-parser";
 import {
   classifyRef,
   listBuiltins,
+  loadResolvedTemplate,
   loadTemplate,
   loadTemplateFile,
   resolveExtends,
@@ -678,5 +680,75 @@ describe("the template schema", () => {
     const message = thrownMessage(() => validateTemplateFile("nope", "scalar.yaml"));
     expect(message).toContain("scalar.yaml");
     expect(message).toContain("must be object");
+  });
+});
+
+/**
+ * Two failures a template author meets on disk, each of which used to describe
+ * itself as something else. Both need real files, so they share one temporary
+ * directory rather than a fixture: a directory standing in for a file cannot be
+ * committed, and a cycle wants two files that name each other by path.
+ */
+describe("what a template ref does on a real filesystem", () => {
+  let dir: string;
+
+  beforeAll(async () => {
+    dir = await mkdtemp(join(tmpdir(), "manni-lint-registry-"));
+  });
+  afterAll(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  // Every failed read was reported as "not found", which contradicts `ls -la`
+  // and sends the reader after a path that is plainly there. A permission
+  // denial, a directory named like a template, and a process out of file
+  // handles are three different problems with three different fixes.
+  it("reports a read that failed for any other reason with the OS message", async () => {
+    const asDirectory = join(dir, "adirectory.yaml");
+    await mkdir(asDirectory, { recursive: true });
+
+    const message = await rejectionMessage(loadTemplateFile(asDirectory));
+    expect(message).toContain(asDirectory);
+    expect(message).toContain("could not be read");
+    expect(message).toContain("EISDIR");
+    expect(message).not.toContain("not found");
+  });
+
+  it("still reports a ref that names nothing as not found", async () => {
+    const message = await rejectionMessage(
+      loadTemplateFile(join(dir, "absent.yaml")),
+    );
+    expect(message).toContain("Template file not found");
+  });
+
+  // The chain was seeded with the *parent*, so `a -> b -> a` was reported as
+  // `b -> a -> b`: the file the author pointed the tool at never appeared in
+  // the cycle it was said to be part of.
+  it("names a cycle from the template the run started at", async () => {
+    const a = join(dir, "cycle-a.yaml");
+    const b = join(dir, "cycle-b.yaml");
+    await writeFile(
+      a,
+      ["templates:", "  a:", "    extends: ./cycle-b.yaml#b", ""].join("\n"),
+    );
+    await writeFile(
+      b,
+      ["templates:", "  b:", "    extends: ./cycle-a.yaml#a", ""].join("\n"),
+    );
+
+    const message = await rejectionMessage(loadResolvedTemplate(`${a}#a`));
+    expect(message).toContain('Template "extends" cycle');
+
+    const chain = defined(
+      /cycle: (.+)\.$/.exec(message),
+      "the reported cycle chain",
+    )[1];
+    const steps = defined(chain, "the chain text").split(" -> ");
+    expect(steps).toHaveLength(3);
+    // A cycle starts and ends at the same place, and that place is where the
+    // reader started.
+    expect(at(steps, 0, "first step")).toBe(`${a}#a`);
+    expect(at(steps, 2, "last step")).toBe(`${a}#a`);
+    expect(at(steps, 1, "second step")).toBe(`${b}#b`);
   });
 });

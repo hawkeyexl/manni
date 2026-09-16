@@ -90,9 +90,14 @@ describe("json reporter", () => {
     ]);
   });
 
-  it("uses exactly the file keys { file, success, errors }", () => {
+  it("uses exactly the file keys { file, success, errors, skipped }", () => {
     const first: object = JSON.parse(renderJson(run))[0];
-    expect(Object.keys(first)).toEqual(["file", "success", "errors"]);
+    expect(Object.keys(first)).toEqual([
+      "file",
+      "success",
+      "errors",
+      "skipped",
+    ]);
   });
 
   // The internal field is `findings`. The wire field is `errors`, and has to
@@ -137,13 +142,27 @@ describe("json reporter", () => {
     expect(error.position.end.offset).toBe(57);
   });
 
-  it("reports a skipped file with no errors, and keeps `reason` off the wire", () => {
+  // `{ success: false, errors: [] }` is what a skipped file and a failure
+  // whose finding vanished both look like, and a consumer that cannot tell
+  // them apart counts a file nothing read as a file that was read and found
+  // wanting. `skipped` is additive, so the docevals read path is untouched.
+  it("says a skipped file was skipped, and why in one word", () => {
     const skipped = JSON.parse(renderJson(run))[2];
     expect(skipped.file).toBe("guide.adoc");
     expect(skipped.success).toBe(false);
     expect(skipped.errors).toEqual([]);
+    expect(skipped.skipped).toBe("unsupported-format");
+    // The prose reason stays a diagnostic for the pretty and SARIF reports.
     expect(skipped).not.toHaveProperty("reason");
-    expect(skipped).not.toHaveProperty("skipped");
+  });
+
+  // Null rather than absent: a consumer reads `result.skipped` on every entry,
+  // and a key that comes and goes makes "not skipped" and "an older manni"
+  // the same observation.
+  it("says so explicitly when a file was not skipped", () => {
+    const parsed = JSON.parse(renderJson(run));
+    expect(parsed[0].skipped).toBeNull();
+    expect(parsed[1].skipped).toBeNull();
   });
 
   // Mirrors manni docevals src/graders/tools/doc-structure-lint.ts field for

@@ -126,6 +126,14 @@ export function renderJson(run: LintRun): string {
       message: finding.message,
       position: finding.position,
     })),
+    // Additive, and the one thing this shape could not say. A skipped file is
+    // `{success: false, errors: []}`, which is also what a failure whose
+    // finding vanished looks like - so a consumer counting failures counted a
+    // file nothing read as a file that was read and found wanting. Null rather
+    // than absent, because a key that comes and goes makes "not skipped" and
+    // "an older manni" the same observation. The prose `reason` stays off the
+    // wire; it is a diagnostic for the pretty and SARIF reports.
+    skipped: result.skipped ?? null,
   }));
   return JSON.stringify(results, null, 2);
 }

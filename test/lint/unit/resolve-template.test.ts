@@ -227,6 +227,117 @@ describe("a page that declares a doctype nothing serves", () => {
   });
 });
 
+/**
+ * The suggestion is the one place a distance function is user-visible, and the
+ * distance function is a two-row Levenshtein written for
+ * `noUncheckedIndexedAccess` rather than for legibility. So it is checked
+ * against a textbook full-matrix Levenshtein rather than against itself: a
+ * rewrite of the rows that is off by one on some pair fails here instead of
+ * quietly proposing the wrong doctype.
+ */
+describe("the distance behind a suggestion is Levenshtein", () => {
+  /** Full matrix, written for clarity. The oracle, not the implementation. */
+  function levenshtein(a: string, b: string): number {
+    const rows: number[][] = [];
+    for (let i = 0; i <= a.length; i++) {
+      const row: number[] = [i];
+      for (let j = 1; j <= b.length; j++) row.push(i === 0 ? j : 0);
+      rows.push(row);
+    }
+    for (let i = 1; i <= a.length; i++) {
+      for (let j = 1; j <= b.length; j++) {
+        const cost = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1;
+        const rowAbove = rows[i - 1] ?? [];
+        const row = rows[i] ?? [];
+        const deletion = (rowAbove[j] ?? 0) + 1;
+        const insertion = (row[j - 1] ?? 0) + 1;
+        const substitution = (rowAbove[j - 1] ?? 0) + cost;
+        row[j] = Math.min(deletion, insertion, substitution);
+      }
+    }
+    return rows[a.length]?.[b.length] ?? 0;
+  }
+
+  /** What `suggestTypes` owes for this input, computed from the oracle. */
+  function expected(unknownType: string, known: string[]): string[] {
+    const target = unknownType.toLowerCase();
+    const threshold = target.length <= 4 ? 1 : 3;
+    return known
+      .map((type) => ({ type, distance: levenshtein(target, type.toLowerCase()) }))
+      .filter((scored) => scored.distance <= threshold)
+      .sort((a, b) => a.distance - b.distance || a.type.localeCompare(b.type))
+      .slice(0, 3)
+      .map((scored) => scored.type);
+  }
+
+  /** Deterministic: a failing pair has to be reproducible from the log. */
+  function random(seed: number): () => number {
+    let state = seed >>> 0;
+    return () => {
+      state = (state * 1_664_525 + 1_013_904_223) >>> 0;
+      return state / 0x1_0000_0000;
+    };
+  }
+
+  it("agrees with a full-matrix Levenshtein over random doctype-shaped pairs", () => {
+    const next = random(20_260_916);
+    const alphabet = "abcdeo-";
+    const word = (length: number): string =>
+      Array.from({ length }, () =>
+        alphabet.charAt(Math.floor(next() * alphabet.length)),
+      ).join("");
+
+    const known = ["how-to", "reference", "tutorial", "concept", "readme", "abc"];
+    const typeIndex = index(
+      Object.fromEntries(
+        known.map((type): [string, TypeIndexEntry] => [
+          type,
+          { ref: `t:${type}`, source: "builtin" },
+        ]),
+      ),
+    );
+
+    for (let i = 0; i < 300; i++) {
+      const declared = word(1 + Math.floor(next() * 9));
+      const r = resolveTemplateRef({
+        filePath: "docs/a.md",
+        frontmatter: { type: declared },
+        typeIndex,
+      });
+      // A generated word that happens to name a known type routes instead of
+      // suggesting, which is the right answer and not this test's subject.
+      if (r.cause !== "unknown-type") continue;
+      expect(r.suggestions ?? [], `suggestions for "${declared}"`).toEqual(
+        expected(declared, known),
+      );
+    }
+  });
+
+  // The boundary the threshold is written against, pinned by hand so the
+  // random sweep is not the only thing standing between it and a change.
+  it("keeps the threshold at three for a type longer than four characters", () => {
+    const typeIndex = index({
+      reference: { ref: "t:reference", source: "builtin" },
+    });
+    // "refernce" -> "reference" is one insertion.
+    expect(
+      resolveTemplateRef({
+        filePath: "docs/a.md",
+        frontmatter: { type: "refernce" },
+        typeIndex,
+      }).suggestions,
+    ).toEqual(["reference"]);
+    // Further than three edits away, which is too far to be worth naming.
+    expect(
+      resolveTemplateRef({
+        filePath: "docs/a.md",
+        frontmatter: { type: "refxxxxx" },
+        typeIndex,
+      }).suggestions,
+    ).toEqual([]);
+  });
+});
+
 describe("the resolution record", () => {
   // "Why was this page linted with that template?" should never require
   // reading the source.

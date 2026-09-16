@@ -27,7 +27,7 @@ Key layers:
 - `src/lint/commands/` holds the command cores (`lint`, `templates`, `tools`), kept
   free of CLI/IO plumbing so they can be unit-tested directly. `lint` and
   `tools` settle which config governs a run through `core/config.ts`'s
-  `resolveLintRun`, as cite's cores do, and resolve their targets with the
+  `resolveLintRun`, as cite's cores do. They resolve their targets with the
   family's walker (`../meta/internal.js`) rather than one of their own.
 - `src/lint/cli.ts` is a thin commander wrapper over the command cores. The verbs
   are `check`, `structure`, `templates` and `tools`; there is no default
@@ -39,8 +39,8 @@ Key layers:
   `core/rule-id.ts` (proposal 0049).
 - `templates/lint/tgdp/` holds the built-in doctype templates and the manifest
   that registers them. They sit at the repository root, not under `src/`, because
-  they ship as package files rather than as bundled code — which is what
-  `npm run smoke:lint` exists to catch.
+  they ship as package files rather than as bundled code. Getting that wrong is
+  what `npm run smoke:lint` exists to catch.
 
 ## Working agreements
 
@@ -100,7 +100,7 @@ findings, **2** operational or usage error. A `LintError` always means 2.
 
 `manni docevals` parses `[{ file, success, errors: [...] }]` off stdout, and it
 *parses* rather than validates, so a renamed key yields zero findings instead of
-an error. Adding keys is safe; renaming or nesting is not — which is why
+an error. Adding keys is safe; renaming or nesting is not. That is why
 `ruleId` and `tool` joined an error object whose `type` stayed exactly as it was.
 `test/lint/unit/reporters.test.ts` pins it deliberately.
 
@@ -145,13 +145,13 @@ npm run check:tgdp-pin    # has upstream moved past the pinned TGDP release?
 ### Prose is linted too, by the repository's gate
 
 Vale runs from `.github/workflows/vale.yml` over the repository's own prose, at
-`fail_level: any` against a pinned rule package — the reasoning is in
+`fail_level: any` against a pinned rule package. The reasoning is in
 [01008](../../docs/proposals/lint/01008-gate-on-prose-lint-against-a-pinned-rule-set.md).
 There is no `npm run lint:prose` here; that script belonged to the standalone
 repository. `npm run lint` is ESLint.
 
 Everything under a `fixtures/` directory is exempt, `test/lint/fixtures/tgdp/`
-included, because those files are vendored verbatim from upstream and the rest
+included. Some of those files are vendored verbatim from upstream, and the rest
 are inputs chosen for what they parse to. Rewriting either to quiet an alert
 would break the test that reads it.
 

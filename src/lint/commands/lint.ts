@@ -10,7 +10,7 @@
  */
 import { readFile } from "node:fs/promises";
 import { extname, resolve } from "node:path";
-import { errorMessage } from "../../shared/errors.js";
+import { errorMessage, ToolError } from "../../shared/errors.js";
 import {
   LintError,
   type DocumentParser,
@@ -105,6 +105,29 @@ export interface LintOptions {
 
 /** Extensions that make a bare `--template` value a filename, not a name. */
 const TEMPLATE_FILE_EXTENSIONS = [".yaml", ".yml", ".json"];
+
+/**
+ * Run a family helper, rethrowing the error it raises as this tool's.
+ *
+ * The walker and its guards are meta's, and they throw `DocmetaError` - a
+ * sibling of `LintError`, not a parent of it. `runLint` is exported from
+ * `src/index.ts` and called in process by manni docevals, so a caller doing
+ * the documented thing, `catch (err) { if (err instanceof LintError) … }`,
+ * missed the two most ordinary operational failures there are: a mistyped path
+ * and a pattern matching nothing. The message is the walker's own, which is
+ * the part the user reads; only the class changes.
+ */
+async function asLintError<T>(run: () => T | Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (err) {
+    if (err instanceof LintError) throw err;
+    // A `ToolError` from any sibling is operational and already worded for a
+    // user. Anything else is a bug and keeps its class and its stack.
+    if (err instanceof ToolError) throw new LintError(err.message);
+    throw err;
+  }
+}
 
 /** `--templates` accepts one path or several; normalize to a list. */
 function templateFiles(value: string | string[] | undefined): string[] {
@@ -482,8 +505,14 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
   // the reader after the documents rather than the flag.
   const forcedParser = opts.as != null ? parserByName(opts.as) : undefined;
   if (opts.as != null && forcedParser?.implemented !== true) {
+    // Two different mistakes, so two different messages. A registered format
+    // is listed by `manni lint tools` as planned, and telling the reader that
+    // the name they read off that listing is unknown sends them hunting for a
+    // typo in a word they spelled right.
     throw new LintError(
-      `Unknown format "${opts.as}". Run "manni lint tools" to see the registered formats.`,
+      forcedParser
+        ? `Format "${opts.as}" is not implemented yet. Run "manni lint tools" to see which formats are implemented.`
+        : `Unknown format "${opts.as}". Run "manni lint tools" to see the registered formats.`,
     );
   }
 
@@ -561,28 +590,32 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
       ...(run.fromCollections ? run.collections.flatMap((c) => c.exclude) : []),
     ]),
   ];
-  const { files, gitignoreSkipped } = await resolveTargetSet({
-    inputs: fileInputs,
-    exts,
-    exclude,
-    cwd,
-    allowEmpty,
-    ...gitignoreOptions({
-      flag: opts.respectGitignore,
-      onNotice: opts.onNotice,
+  const { files, gitignoreSkipped } = await asLintError(() =>
+    resolveTargetSet({
+      inputs: fileInputs,
+      exts,
+      exclude,
+      cwd,
+      allowEmpty,
+      ...gitignoreOptions({
+        flag: opts.respectGitignore,
+        onNotice: opts.onNotice,
+      }),
     }),
-  });
+  );
   // Resolving zero files is an operational error, not a pass: with no files
   // there is no verdict, and exit 0 would read as a clean bill of health.
-  assertNonEmpty({
-    files,
-    inputs: fileInputs,
-    usingStdin,
-    allowEmpty,
-    exclude,
-    exts,
-    gitignoreSkipped,
-    action: "linted",
+  await asLintError(() => {
+    assertNonEmpty({
+      files,
+      inputs: fileInputs,
+      usingStdin,
+      allowEmpty,
+      exclude,
+      exts,
+      gitignoreSkipped,
+      action: "linted",
+    });
   });
 
   const results: LintFileResult[] = [];
@@ -615,7 +648,25 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
       );
       continue;
     }
-    const content = await readFile(resolve(cwd, file), "utf8");
+    let content: string;
+    try {
+      content = await readFile(resolve(cwd, file), "utf8");
+    } catch (err) {
+      // The read is the other thing that can fail per file, and it failed out
+      // of the loop: a denied permission, a symlink loop, or a page a doc
+      // build moved between `resolveTargetSet` and here threw straight through
+      // `runLint` to `fail()`. Exit 2, no report, and every result already
+      // gathered discarded - which is exactly what moving the parser lookup
+      // before the read was meant to prevent, one step further along.
+      //
+      // The OS message travels verbatim: "permission denied" and "no such
+      // file" send the reader to different places, and this code cannot tell
+      // which it was.
+      results.push(
+        skip(file, `could not be read: ${errorMessage(err)}`, "unreadable"),
+      );
+      continue;
+    }
     results.push(await lintOne(file, content, parser, ctx));
   }
 
@@ -642,6 +693,9 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
     const unsupported = results.filter(
       (r) => r.skipped === "unsupported-format",
     ).length;
+    const unreadable = results.filter(
+      (r) => r.skipped === "unreadable",
+    ).length;
     const advice = [
       unrouted > 0
         ? `${unrouted} had no template: give a page a "type:" that a template ` +
@@ -651,6 +705,10 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
         ? `${unsupported} had no parser for their format: pass --as <format> to ` +
           `force one, or target files in a format "manni lint tools" lists as ` +
           `implemented.`
+        : null,
+      unreadable > 0
+        ? `${unreadable} could not be read: check the permissions on those ` +
+          `paths, or drop them from the run with --exclude <glob>.`
         : null,
     ]
       .filter((line): line is string => line !== null)

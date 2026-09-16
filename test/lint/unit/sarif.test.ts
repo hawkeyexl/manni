@@ -495,6 +495,22 @@ describe("renderSarif URIs", () => {
     expect(uriOf("<stdin>").uri).toBe("%3Cstdin%3E");
   });
 
+  // A docs tree with a `[deprecated]/` or a Next.js-style `[slug]/` directory
+  // is the case where a URI-invalid character reaches the report through an
+  // ordinary directory name, and an invalid `artifactLocation.uri` is dropped
+  // by GitHub without a word. `encodeURI` does escape both brackets - they are
+  // not in ECMAScript's reserved set, which predates RFC 3986's gen-delims -
+  // so this is a pin on behaviour already correct rather than a fix, and it
+  // says so because review read the set the other way round.
+  it("percent-encodes the square brackets a path segment cannot carry", () => {
+    expect(uriOf("C:\\repo\\docs\\[deprecated]\\guide.md").uri).toBe(
+      "docs/%5Bdeprecated%5D/guide.md",
+    );
+    expect(uriOf("C:\\elsewhere\\[slug]\\page.md").uri).toBe(
+      "file:///C:/elsewhere/%5Bslug%5D/page.md",
+    );
+  });
+
   it("declares the run root as originalUriBaseIds, on both path flavours", () => {
     expect(theRun(sarif([file()])).originalUriBaseIds).toEqual({
       SRCROOT: { uri: "file:///C:/repo/" },
