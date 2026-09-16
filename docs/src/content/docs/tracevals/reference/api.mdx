@@ -54,7 +54,7 @@ The CLI's verbs, callable directly. Each pairs a runner with a renderer.
 | `parseTraceContent` | The same from a string. |
 | `detectFormat`, `detectContentFormat` | Format sniffing on its own. |
 | ★ `discoverTraces` | Scan the session store. Returns `TraceListing[]`, newest first. |
-| `homeDir` | Resolves `CLAUDE_CONFIG_DIR`, falling back to the OS home. |
+| `configDir` | Claude Code's config directory: `CLAUDE_CONFIG_DIR` when set, and `~/.claude` otherwise. |
 | `slugFor` | The project-slug rule, which turns every non-alphanumeric character into a hyphen. |
 | `pickTrace`, `PickerChoice`, `PromptFn` | The interactive picker. `PromptFn` makes it testable. |
 | `DiscoverOptions`, `TraceListing` | |

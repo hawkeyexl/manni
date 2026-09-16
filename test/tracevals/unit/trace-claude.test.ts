@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { detectContentFormat, detectFormat } from "../../../src/tracevals/trace/detect.js";
 import { parseTraceContent, parseTraceFile } from "../../../src/tracevals/trace/claude.js";
 import { TracevalsError } from "../../../src/tracevals/types.js";
+import { must } from "../helpers.js";
 
 const sessionFixture = fileURLToPath(
   new URL("../fixtures/traces/claude-session.jsonl", import.meta.url),
@@ -161,8 +162,8 @@ describe("parseTraceFile (session dialect)", () => {
     const skill = trace.skillInvocations.find((s) => s.name === "fix-bug");
     const bash = trace.toolCalls.filter((c) => c.name === "Bash");
     expect(bash).toHaveLength(2);
-    expect(bash[0]!.index).toBeLessThan(skill!.index);
-    expect(bash[1]!.index).toBeGreaterThan(skill!.index);
+    expect(must(bash[0], "the first Bash call").index).toBeLessThan(must(skill, "the Skill call").index);
+    expect(must(bash[1], "the second Bash call").index).toBeGreaterThan(must(skill, "the Skill call").index);
   });
 
   it("counts turns as non-sidechain user prompts (not tool results)", async () => {
@@ -256,11 +257,11 @@ describe("trace model position (ordinals)", () => {
   it("stamps skill invocations and agent spawns with their ordinal", async () => {
     const trace = await parseTraceFile(sessionFixture);
     const tool = trace.skillInvocations.find((s) => s.via === "skill-tool");
-    expect(trace.events[tool!.index]?.toolName).toBe("Skill");
+    expect(trace.events[must(tool, "the tool call").index]?.toolName).toBe("Skill");
     const injected = trace.skillInvocations.find(
       (s) => s.via === "command-injection",
     );
-    expect(trace.events[injected!.index]?.kind).toBe("user");
+    expect(trace.events[must(injected, "the injected command event").index]?.kind).toBe("user");
     for (const spawn of trace.agentSpawns) {
       expect(trace.events[spawn.index]?.toolName).toBe("Agent");
     }
@@ -382,12 +383,12 @@ describe("sidecar subagent transcripts", () => {
       (b) => b.branchId === "toolu_lead",
     );
     expect(spawn?.index).toBe(branch?.spawnIndex);
-    expect(branch?.startIndex).toBe(spawn!.index + 1);
+    expect(branch?.startIndex).toBe(must(spawn, "the agent spawn").index + 1);
     // The whole subtree is contiguous, so a window is a plain slice.
-    const span = trace.events.slice(branch!.startIndex, branch!.endIndex);
+    const span = trace.events.slice(must(branch, "the subagent branch").startIndex, must(branch, "the subagent branch").endIndex);
     expect(span.every((e) => e.sidechain === true)).toBe(true);
     // Main-chain work after the spawn resumes only once the branch closes.
-    expect(trace.events[branch!.endIndex]?.sidechain).toBe(false);
+    expect(trace.events[must(branch, "the subagent branch").endIndex]?.sidechain).toBe(false);
   });
 
   it("keeps index a gap-free ordinal over the merged event list", async () => {
@@ -426,11 +427,11 @@ describe("sidecar subagent transcripts", () => {
       (b) => b.branchId === "toolu_lead",
     );
     // The nested span sits wholly inside its parent's span.
-    expect(nested!.startIndex).toBeGreaterThan(lead!.startIndex);
-    expect(nested!.endIndex).toBeLessThan(lead!.endIndex);
+    expect(must(nested, "the nested branch").startIndex).toBeGreaterThan(must(lead, "the leading branch").startIndex);
+    expect(must(nested, "the nested branch").endIndex).toBeLessThan(must(lead, "the leading branch").endIndex);
     // The parent's own turns after the nested spawn stay the parent's: inside
     // a sidecar `isSidechain` is uniformly true and carries no attribution.
-    expect(trace.events[nested!.endIndex]?.branchId).toBe("toolu_lead");
+    expect(trace.events[must(nested, "the nested branch").endIndex]?.branchId).toBe("toolu_lead");
   });
 
   it("carries agentType, spawnDepth, and the sidecar path on each branch", async () => {
@@ -500,7 +501,7 @@ describe("sidecar subagent transcripts", () => {
     });
     expect(branch?.agentId).toBeUndefined();
     const spanned = trace.events
-      .slice(branch!.startIndex, branch!.endIndex)
+      .slice(must(branch, "the subagent branch").startIndex, must(branch, "the subagent branch").endIndex)
       .filter((e) => e.branchId === "toolu_002");
     expect(spanned.length).toBeGreaterThan(0);
   });

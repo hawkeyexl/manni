@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { parseTraceFile } from "../../../../src/tracevals/trace/claude.js";
 import { windowFor } from "../../../../src/tracevals/graders/util.js";
-import { makeArtifact, makePlan, makeTrace } from "../../helpers.js";
+import { makeArtifact, makePlan, makeTrace, must } from "../../helpers.js";
 
 const sidecarFixture = fileURLToPath(
   new URL("../../fixtures/traces/claude-session-sidecar.jsonl", import.meta.url),
@@ -268,7 +268,7 @@ describe("windowFor", () => {
     // Contiguous, as ADR 01014 promises, so the window really is a slice.
     const ordinals = window.events.map((e) => e.index);
     expect(ordinals).toEqual(
-      Array.from({ length: ordinals.length }, (_, i) => ordinals[0]! + i),
+      Array.from({ length: ordinals.length }, (_, i) => must(ordinals[0], "the first ordinal") + i),
     );
     // The nested agent's own brief is not one of Explore's turns.
     expect(window.userMessages).toEqual(["Survey the trace parser."]);

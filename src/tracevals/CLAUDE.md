@@ -46,7 +46,7 @@ Always use **red → green** test-driven development. For every behavior change:
 2. **Green.** Write the minimum code to make it pass, and run it to confirm.
 3. **Refactor.** Clean up while keeping the test green.
 
-The suite must stay **offline and hermetic**. Judge providers are mocked (the inference library's `MockProvider`), interactive prompts are injected functions, and trace/artifact fixtures live in `test/fixtures/`. A test that reaches the network or spawns a real agent CLI is a defect. The one exception is `test/integration/live.test.ts`, gated behind `MOOSE_TRACEVALS_LIVE=1` and skipped by default.
+The suite must stay **offline and hermetic**. Judge providers are mocked (the inference library's `MockProvider`), interactive prompts are injected functions, and trace/artifact fixtures live in `test/fixtures/`. A test that reaches the network or spawns a real agent CLI is a defect. The one exception is `test/integration/live.test.ts`, gated behind `MANNI_TRACEVALS_LIVE=1` and skipped by default.
 
 ## Architecture Decision Records (required)
 
@@ -127,7 +127,7 @@ mkdir -p .tmp && npm test > .tmp/output.txt 2>&1
 ## Commands
 
 - `npm test` runs vitest (unit + integration; no network, no API keys)
-- `MOOSE_TRACEVALS_LIVE=1 npm test` adds the live smoke test (real judge provider)
+- `MANNI_TRACEVALS_LIVE=1 npm test` adds the live smoke test (real judge provider)
 - `npm run typecheck` / `npm run build`
 - `node dist/cli.js run test/fixtures/traces/claude-session.jsonl --project test/fixtures/project --deterministic-only` is the dogfood run against the fixture corpus
 - `node dist/cli.js fill test/fixtures/project --provider mock --dry-run` dogfoods the authoring path. **Always `--dry-run` against the fixtures**; CI asserts `git diff --quiet` on the corpus.
@@ -173,7 +173,7 @@ Before drafting or editing any page under `docs/src/content/docs/**`:
 
 The pipeline runs **select trace → parse (adapter) → resolve artifacts → extract evals → plan evals → deterministic graders → AI judge → aggregate → report (+ history)**.
 
-- `src/trace/` holds trace adapters behind a normalized `Trace` model. `claude.ts` parses both Claude Code session files (`~/.claude/projects/<slug>/*.jsonl`) and legacy `claude -p` stream-json. `discover.ts` scans the session store (`MOOSE_TRACEVALS_HOME` overrides the home dir for tests). The `TraceSource` union is the seam for future adapters (Codex is deferred, not rejected; see ADR 01003).
+- `src/trace/` holds trace adapters behind a normalized `Trace` model. `claude.ts` parses both Claude Code session files (`~/.claude/projects/<slug>/*.jsonl`) and legacy `claude -p` stream-json. `discover.ts` scans the session store under `configDir()`, which reads Claude Code's own `CLAUDE_CONFIG_DIR` and falls back to `~/.claude`. The location is detected rather than switched, so a test or CI job points at a fixture tree with the same variable the agent reads; tracevals has no home-directory override of its own. The `TraceSource` union is the seam for future adapters (Codex is deferred, not rejected; see ADR 01003).
 - `src/artifacts/` resolves every skill, agent, slash-command, and project-rule artifact the trace used, deterministically. `Skill` tool calls resolve to `SKILL.md`, and `Agent` spawns (`subagent_type`) to agent definitions. `CLAUDE.md` and `AGENTS.md` are read at the trace cwd, in `.claude/`, and in parent dirs up to the git root. A `<command-name>` injection is a **slash command**. It resolves to `.claude/commands/*.md`, then to a `SKILL.md` (a skill typed in its slash form), then to a built-in. It is never reported as a missing skill, and never with a roster state (ADR 01023). Unresolved refs go to the report's coverage table, never crash the run.
 - `src/evals/` reads the `metadata.evals` block from artifacts through docmeta `extractFrontmatter`. It validates the **whole front matter** against `docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.4.json`, imported directly and inlined by the bundler (`src/evals/schema.ts`). The schema is document-rooted, and `metadata` stays open so other tools' members pass untouched. The schema cannot reject unknown members of an open bag, so `extract.ts` reserves the `eval-` prefix at run time, as `^eval-(?!skip$)`. An unrecognized `metadata.eval-*` key is an error, not an inert typo. Artifacts without declared evals get one implicit whole-artifact adherence eval (ADR 01002).
 - `src/graders/` is the deterministic `TraceGrader` registry: `tool-usage`, `skill-invoked`, `file-access`, `turn-count`, `cost`, `regex`, `json-output`. Each implements `validateOptions()` so options are ground-checked without a trace (ADR 01004). `util.ts` also owns `windowFor()`, the slice of the trace an artifact governed (ADR 01015); every grader that counts events reads the window, not the trace. `plugins.ts` imports the modules named by `tracevals.plugins` and `--require` before planning, so a consumer's `registerGrader` lands in time. Specifiers resolve against the **config file's** directory, and `--require` **appends** to the config list. A specifier that will not import is a `TracevalsError`, never a skip (ADR 01017).
@@ -207,7 +207,8 @@ moose.config.yaml  →  `tracevals:` section  →  Ajv validate (src/core/config
 **One file, many tools.** Settings live under a `tracevals:` key in `moose.config.yaml`, shared with the rest of the moose family (ADR 01009). Top-level keys beside `tracevals:` belong to other tools. Never validate or touch them. `config-schema.json` describes the **section**, not the file, and `parseConfig()` takes the section object.
 
 - `parseConfig()` in `src/core/config.ts` validates and fills **every** default; downstream code receives a fully-populated config.
-- `loadConfig()` owns the file. It unwraps `tracevals:` and tolerates sibling sections. It errors rather than silently defaulting when a config is un-nested, miscased (`Tracevals:`), unreadable, or left in the pre-centralization `moose-tracevals.config.yaml`.
+- `loadConfig()` owns the file. It unwraps `tracevals:` and tolerates sibling sections. It errors rather than silently defaulting when the section is unreadable or invalid.
+- **Two loader checks the standalone tool had are deliberately gone, and are not to be re-added.** It used to reject `tracevals` keys left at the file's top level, and a miscased `Tracevals:` section. Discovery is now the family's (`src/shared/config-file.ts`), and the family contract is that one `manni.config.yaml` holds one top-level key per tool and that keys beside `tracevals:` belong to other tools and are never touched. A tool that reads a sibling's keys to guess at a mistake in its own is reading someone else's config, and it would have to be taught every future tool's key names to stay right. `Tracevals:` is not this tool's section, by the same rule that makes `a11y:` not this tool's section. Both now read as "no tracevals config", which is what the contract says they are.
 - CLI options are overlaid at the read site with `??` (e.g. `options.runs ?? config.judge.ensembleRuns`).
 - Runtime code never reads `argv`.
 

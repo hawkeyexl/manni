@@ -330,7 +330,7 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
       written: gated.accepted,
       rejected: gated.rejected,
       capped: gated.capped,
-      needsSharpening: (raw.needsSharpening as SharpeningNote[]) ?? [],
+      needsSharpening: (raw.needsSharpening as SharpeningNote[] | undefined) ?? [],
       cached,
     };
 
@@ -356,7 +356,7 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
         // composed spelling would read as a different model every time. The
         // provider name is the fallback only when there is no model to name.
         {
-          generatedBy: identity.model ?? identity.provider,
+          generatedBy: identity.model || identity.provider,
           confidence: Object.fromEntries(
             gated.accepted.map((c) => [c.name, c.confidence]),
           ),

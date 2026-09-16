@@ -16,6 +16,7 @@ import {
 } from "../../../../src/tracevals/graders/registry.js";
 import type { TraceGrader } from "../../../../src/tracevals/graders/types.js";
 import { TracevalsError } from "../../../../src/tracevals/types.js";
+import { must } from "../../helpers.js";
 
 const pluginsDir = fileURLToPath(new URL("../../fixtures/plugins", import.meta.url));
 const repoRoot = fileURLToPath(new URL("../../../..", import.meta.url));
@@ -29,7 +30,7 @@ const fixture = (name: string) => join(pluginsDir, name);
 let builtins: Map<string, TraceGrader>;
 
 beforeEach(() => {
-  builtins = new Map(listGraderKinds().map((k) => [k, graderFor(k)!]));
+  builtins = new Map(listGraderKinds().map((k) => [k, must(graderFor(k), "a registered grader")]));
 });
 
 afterEach(() => {

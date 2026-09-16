@@ -10,8 +10,8 @@ export {
   offeredNames,
 } from "./trace/availability.js";
 export {
+  configDir,
   discoverTraces,
-  homeDir,
   slugFor,
   type DiscoverOptions,
   type TraceListing,

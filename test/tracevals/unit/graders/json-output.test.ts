@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { graderFor } from "../../../../src/tracevals/graders/registry.js";
-import { makePlan, makeTrace } from "../../helpers.js";
+import { graderOf, makePlan, makeTrace } from "../../helpers.js";
 
-const grader = graderFor("json-output")!;
+const grader = graderOf("json-output");
 
 describe("json-output grader", () => {
   it("validates the last assistant text against a schema", async () => {

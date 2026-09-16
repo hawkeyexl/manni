@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { graderFor } from "../../../../src/tracevals/graders/registry.js";
-import { makeArtifact, makePlan, makeTrace } from "../../helpers.js";
+import { graderOf, makeArtifact, makePlan, makeTrace } from "../../helpers.js";
 
-const grader = graderFor("cost")!;
+const grader = graderOf("cost");
 
 describe("cost grader", () => {
   it("passes under the budget", async () => {

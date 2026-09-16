@@ -87,7 +87,7 @@ export async function runEvals(options: EngineOptions): Promise<RunReport> {
     reportUnusedArtifacts: config.reportUnusedArtifacts,
     ...(found !== null ? { manifest: found.manifest } : {}),
   });
-  const plans = await planEvals(resolved.artifacts);
+  const plans = planEvals(resolved.artifacts);
 
   const results: EvalResult[] = [];
   const aiPlans: EvalPlan[] = [];

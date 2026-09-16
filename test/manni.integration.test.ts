@@ -132,7 +132,7 @@ describe("manni (built bin)", () => {
     // fixture store stands in for the user's home, so this needs no
     // credentials and no network.
     const r = run(manni, ["tracevals", "list", "--all-projects", "-f", "json"], {
-      MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home",
+      CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/home/.claude",
     });
     expect(r.status).toBe(0);
     const { traces } = JSON.parse(r.stdout) as { traces: unknown[] };

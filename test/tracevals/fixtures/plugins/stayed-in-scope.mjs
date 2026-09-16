@@ -2,11 +2,12 @@
  * A grader plugin in the callback form: manni tracevals imports this module and
  * calls `register({ registerGrader })`.
  *
- * It imports nothing, on purpose. Pulling `registerGrader` out of
- * `@hawkeyexl/manni/tracevals` also works (see side-effect-grader.mjs), but it binds to
- * whichever copy of the package the specifier resolves to — which is not the
- * copy this repo's own unit tests load out of `src/`. Taking the registrar as
- * an argument lets one committed file serve both.
+ * It imports nothing, on purpose. Pulling `registerGrader` out of the
+ * `tracevals` namespace of `@hawkeyexl/manni` also works (see
+ * side-effect-grader.mjs), but it binds to whichever copy of the package the
+ * specifier resolves to — which is not the copy this repo's own unit tests load
+ * out of `src/`. Taking the registrar as an argument lets one committed file
+ * serve both.
  */
 export function register({ registerGrader }) {
   registerGrader({

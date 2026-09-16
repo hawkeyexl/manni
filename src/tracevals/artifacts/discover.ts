@@ -205,7 +205,7 @@ async function readOne(
   };
 
   try {
-    const extracted = await extractEvals(artifact);
+    const extracted = extractEvals(artifact);
     if (extracted.errors.length > 0) {
       const first = extracted.errors[0];
       return {

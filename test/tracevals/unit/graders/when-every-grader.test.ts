@@ -9,8 +9,7 @@
  * and a malformed one errors.
  */
 import { describe, expect, it } from "vitest";
-import { graderFor } from "../../../../src/tracevals/graders/registry.js";
-import { makeRulesPlan, makeTrace } from "../../helpers.js";
+import { graderOf, makeRulesPlan, makeTrace } from "../../helpers.js";
 import type { Trace } from "../../../../src/tracevals/trace/types.js";
 
 /** A session that edited docs and ran Edit; no prompt mentions deploying. */
@@ -47,7 +46,7 @@ const CASES: Array<{ kind: string; options: Record<string, unknown> }> = [
 
 describe("`when` is honoured by every windowed grader", () => {
   it.each(CASES)("$kind skips on an unmet trigger", async ({ kind, options }) => {
-    const grader = graderFor(kind)!;
+    const grader = graderOf(kind);
     // Armed first: the options must actually be able to fail here, or a skip
     // would prove nothing.
     const armed = await grader.grade({
@@ -69,7 +68,7 @@ describe("`when` is honoured by every windowed grader", () => {
   });
 
   it.each(CASES)("$kind arms on a met trigger", async ({ kind, options }) => {
-    const grader = graderFor(kind)!;
+    const grader = graderOf(kind);
     const result = await grader.grade({
       trace: docsSession(),
       plan: makeRulesPlan({
@@ -84,7 +83,7 @@ describe("`when` is honoured by every windowed grader", () => {
   it.each(CASES)(
     "$kind rejects an unknown condition rather than ignoring it",
     ({ kind, options }) => {
-      const grader = graderFor(kind)!;
+      const grader = graderOf(kind);
       const message = grader.validateOptions?.({
         ...options,
         when: { "file-acess": "docs/**" },
@@ -99,7 +98,7 @@ describe("`when` is honoured by every windowed grader", () => {
     kind,
     options,
   }) => {
-    const grader = graderFor(kind)!;
+    const grader = graderOf(kind);
     const result = await grader.grade({
       trace: docsSession(),
       plan: makeRulesPlan({ grader: kind, options: { ...options, when: {} } }),

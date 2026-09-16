@@ -114,9 +114,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export async function extractEvals(
-  artifact: ResolvedArtifact,
-): Promise<ExtractedEvals> {
+export function extractEvals(artifact: ResolvedArtifact): ExtractedEvals {
   const extracted = extractFrontmatter(artifact.content, "markdown");
   const metadata = extracted.data.metadata;
   // The schema types `metadata` as an object. Anything else — a string, a

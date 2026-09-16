@@ -172,9 +172,9 @@ function execute(
       done({ code: null, stderr, timedOut: true });
     }, timeoutMs);
     // Never hold the process open on this grader's account.
-    timer.unref?.();
+    timer.unref();
 
-    child.stderr?.on("data", (chunk: Buffer) => {
+    child.stderr.on("data", (chunk: Buffer) => {
       // Slice on append, not merely before it: a single oversized chunk would
       // otherwise be retained whole just because the buffer was empty.
       if (stderr.length < STDERR_LIMIT) {

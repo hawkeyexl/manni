@@ -7,11 +7,10 @@
  * instruction.
  */
 import { describe, expect, it } from "vitest";
-import { graderFor } from "../../../../src/tracevals/graders/registry.js";
-import { makePlan, makeTrace } from "../../helpers.js";
+import { graderOf, makePlan, makeTrace } from "../../helpers.js";
 import type { ToolCall } from "../../../../src/tracevals/trace/types.js";
 
-const grader = graderFor("tool-order")!;
+const grader = graderOf("tool-order");
 
 /**
  * Tool calls numbered as consecutive `trace.events` ordinals.

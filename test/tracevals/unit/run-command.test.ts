@@ -32,7 +32,7 @@ function run(overrides: Record<string, unknown> = {}) {
     tracePath: sessionFixture,
     project: reviewOnly,
     deterministicOnly: true,
-    env: { MOOSE_TRACEVALS_HOME: reviewOnly },
+    env: { CLAUDE_CONFIG_DIR: join(reviewOnly, ".claude") },
     ...overrides,
   });
 }
@@ -63,7 +63,7 @@ describe("runRun grader plugins", () => {
       tracePath: sessionFixture,
       project: pluginProject,
       deterministicOnly: true,
-      env: { MOOSE_TRACEVALS_HOME: pluginProject },
+      env: { CLAUDE_CONFIG_DIR: join(pluginProject, ".claude") },
       ...overrides,
     });
   }
@@ -141,8 +141,8 @@ describe("runRun availability reporting", () => {
   const fixtureProject = fileURLToPath(
     new URL("../fixtures/project", import.meta.url),
   );
-  const fixtureHome = fileURLToPath(
-    new URL("../fixtures/home", import.meta.url),
+  const claudeDir = fileURLToPath(
+    new URL("../fixtures/home/.claude", import.meta.url),
   );
 
   function cover(overrides: Record<string, unknown> = {}) {
@@ -150,7 +150,7 @@ describe("runRun availability reporting", () => {
       tracePath: sessionFixture,
       project: fixtureProject,
       deterministicOnly: true,
-      env: { MOOSE_TRACEVALS_HOME: fixtureHome },
+      env: { CLAUDE_CONFIG_DIR: claudeDir },
       ...overrides,
     });
   }
@@ -217,7 +217,7 @@ describe("runRun command opt-out", () => {
   const fixtureProject = fileURLToPath(
     new URL("../fixtures/project", import.meta.url),
   );
-  const fixtureHome = fileURLToPath(new URL("../fixtures/home", import.meta.url));
+  const claudeDir = fileURLToPath(new URL("../fixtures/home/.claude", import.meta.url));
   // A config that disables commands, so the flagless path can be checked too.
   const noCommandsProject = fileURLToPath(
     new URL("../fixtures/no-commands", import.meta.url),
@@ -228,7 +228,7 @@ describe("runRun command opt-out", () => {
       tracePath: sessionFixture,
       project: fixtureProject,
       deterministicOnly: true,
-      env: { MOOSE_TRACEVALS_HOME: fixtureHome },
+      env: { CLAUDE_CONFIG_DIR: claudeDir },
       ...overrides,
     });
   }

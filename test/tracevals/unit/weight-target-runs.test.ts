@@ -17,11 +17,10 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, sep } from "node:path";
 import { MockProvider, mockVerdict } from "@hawkeyexl/inference";
-import { graderFor } from "../../../src/tracevals/graders/registry.js";
 import { makeTraceJudge } from "../../../src/tracevals/judge/trace-judge.js";
 import { readTarget } from "../../../src/tracevals/core/target.js";
 import { buildUserContent } from "../../../src/tracevals/judge/prompt.js";
-import { makeArtifact, makePlan, makeRulesPlan, makeTrace } from "../helpers.js";
+import { graderOf, makeArtifact, makePlan, makeRulesPlan, makeTrace } from "../helpers.js";
 
 describe("target", () => {
   const trace = makeTrace({
@@ -117,7 +116,7 @@ describe("target", () => {
 });
 
 describe("target composes with a grader's own narrowing options", () => {
-  const grader = graderFor("regex")!;
+  const grader = graderOf("regex");
   const trace = makeTrace({
     assistantTexts: ["I edited the config"],
     userMessages: ["edit the config"],

@@ -127,7 +127,15 @@ function registrarIn(
 }
 
 function snapshot(): Map<string, TraceGrader> {
-  return new Map(listGraderKinds().map((kind) => [kind, graderFor(kind)!]));
+  const registered = new Map<string, TraceGrader>();
+  for (const kind of listGraderKinds()) {
+    const grader = graderFor(kind);
+    // `listGraderKinds` reads the same registry, so the lookup always hits.
+    // Skipping rather than asserting keeps a future registry that can forget a
+    // kind mid-iteration from turning this into a crash during a run.
+    if (grader !== undefined) registered.set(kind, grader);
+  }
+  return registered;
 }
 
 /** What one plugin changed, phrased for the report's warnings list. */

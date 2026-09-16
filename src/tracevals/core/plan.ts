@@ -58,12 +58,10 @@ export interface EvalPlan {
 
 export const IMPLICIT_EVAL_NAME = "adheres-to-artifact";
 
-export async function planEvals(
-  artifacts: ResolvedArtifact[],
-): Promise<EvalPlan[]> {
+export function planEvals(artifacts: ResolvedArtifact[]): EvalPlan[] {
   const plans: EvalPlan[] = [];
   for (const artifact of artifacts) {
-    const extracted = await extractEvals(artifact);
+    const extracted = extractEvals(artifact);
 
     if (extracted.errors.length > 0) {
       const detail = extracted.errors

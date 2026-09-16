@@ -36,7 +36,10 @@ function checkPattern(options: Options): string | undefined {
   const required = requiredString(options, "pattern");
   if (required !== undefined) return required;
   try {
-    new RegExp(options.pattern as string, (options.flags as string) ?? "");
+    new RegExp(
+      options.pattern as string,
+      (options.flags as string | undefined) ?? "",
+    );
   } catch (err) {
     return `options.pattern is not a valid regular expression: ${(err as Error).message}`;
   }

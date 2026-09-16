@@ -11,9 +11,12 @@ const SUPPORTED =
 
 /** Detect the dialect from one JSONL line (typically the first parseable). */
 export function detectFormat(line: string): TraceFormat {
-  let rec: Record<string, unknown>;
+  // Parsed as `unknown`, not asserted to an object: `JSON.parse("5")` and
+  // `JSON.parse("null")` both succeed, and a cast here would make the guard
+  // below look dead while leaving the bug.
+  let rec: unknown;
   try {
-    rec = JSON.parse(line) as Record<string, unknown>;
+    rec = JSON.parse(line);
   } catch {
     throw new TracevalsError(`trace is not JSONL (${SUPPORTED})`);
   }

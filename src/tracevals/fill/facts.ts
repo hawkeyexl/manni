@@ -35,9 +35,9 @@ function toolList(value: unknown): string[] {
 export function artifactFacts(artifact: ResolvedArtifact): ArtifactFacts {
   try {
     const { data } = extractFrontmatter(artifact.content, "markdown");
-    const facts: ArtifactFacts = { declaredTools: toolList(data?.tools) };
-    if (typeof data?.name === "string") facts.name = data.name;
-    if (typeof data?.description === "string") {
+    const facts: ArtifactFacts = { declaredTools: toolList(data.tools) };
+    if (typeof data.name === "string") facts.name = data.name;
+    if (typeof data.description === "string") {
       facts.description = data.description;
     }
     return facts;

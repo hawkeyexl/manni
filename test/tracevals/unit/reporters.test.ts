@@ -8,6 +8,7 @@ import { turnBudgetSkipReason } from "../../../src/docevals/judge/budget.js";
 import { aggregate } from "../../../src/tracevals/aggregate.js";
 import type { BatchReport, RunReport } from "../../../src/tracevals/types.js";
 import type { CalibrationReport } from "../../../src/tracevals/calibrate/types.js";
+import { must } from "../helpers.js";
 
 const report: RunReport = {
   trace: {
@@ -155,8 +156,8 @@ describe("reporters", () => {
         ],
       };
       const out = render(piped, "markdown");
-      const header = out.split("\n").find((l) => l.startsWith("| Resolved"))!;
-      const row = out.split("\n").find((l) => l.includes("weird"))!;
+      const header = must(out.split("\n").find((l) => l.startsWith("| Resolved")), "the coverage table header");
+      const row = must(out.split("\n").find((l) => l.includes("weird")), "the row for the weird-named eval");
       const cells = (line: string) => line.split(/(?<!\\)\|/).length - 2;
       expect(cells(row)).toBe(cells(header));
     });
@@ -180,7 +181,7 @@ describe("reporters", () => {
     it("falls back to the note when one is present", () => {
       const withNote: RunReport = {
         ...aggregated,
-        coverage: [{ ...aggregated.coverage[0]!, note: "several files" }],
+        coverage: [{ ...must(aggregated.coverage[0], "the first coverage entry"), note: "several files" }],
       };
       expect(render(withNote, "markdown")).toContain(
         "| yes | project-rules | project rules |  | several files |",
@@ -288,12 +289,12 @@ describe("reporters", () => {
     it("markdown marks the row without breaking the table", () => {
       const out = render(stale, "markdown");
       expect(out).toContain("modified after the session ended");
-      const header = out.split("\n").find((l) => l.startsWith("| Resolved"))!;
+      const header = must(out.split("\n").find((l) => l.startsWith("| Resolved")), "the coverage table header");
       // By the note, not by the ref: `fix-bug` also names a row in the evals
       // table above, which has a different column count by design.
-      const row = out
+      const row = must(out
         .split("\n")
-        .find((l) => l.includes("modified after the session ended"))!;
+        .find((l) => l.includes("modified after the session ended")), "out .split(\"\\n\") .find((l) => l.includes(\"modified after ...");
       const cells = (line: string) => line.split(/(?<!\\)\|/).length - 2;
       expect(cells(row)).toBe(cells(header));
       expect(row).toContain("`C:\\work\\demo\\SKILL.md`");
@@ -375,10 +376,10 @@ describe("reporters", () => {
 
     it("markdown keeps its column count with a manifest verdict", () => {
       const out = render(changed, "markdown");
-      const header = out.split("\n").find((l) => l.startsWith("| Resolved"))!;
-      const row = out
+      const header = must(out.split("\n").find((l) => l.startsWith("| Resolved")), "the coverage table header");
+      const row = must(out
         .split("\n")
-        .find((l) => l.includes("changed since the session started"))!;
+        .find((l) => l.includes("changed since the session started")), "out .split(\"\\n\") .find((l) => l.includes(\"changed since t...");
       const cells = (line: string) => line.split(/(?<!\\)\|/).length - 2;
       expect(cells(row)).toBe(cells(header));
       expect(out).toContain("## Session manifest");
@@ -442,8 +443,8 @@ describe("batch reporters", () => {
     ...report,
     trace: { ...report.trace, file: "C:\\traces\\second.jsonl", sessionId: "def" },
     evalResults: [
-      { ...report.evalResults[0]!, outcome: "pass", findings: [] },
-      report.evalResults[1]!,
+      { ...must(report.evalResults[0], "the first eval result"), outcome: "pass", findings: [] },
+      must(report.evalResults[1], "the second eval result"),
     ],
     summary: { total: 2, pass: 2, fail: 0, error: 0, needsReview: 0, skipped: 0, passRate: 1 },
     exitCode: 0,
@@ -459,7 +460,7 @@ describe("batch reporters", () => {
   );
 
   it("computes rates with skipped results out of the denominator", () => {
-    const row = batch.evals.find((e) => e.evalName === "forbidden-tool")!;
+    const row = must(batch.evals.find((e) => e.evalName === "forbidden-tool"), "the forbidden-tool row");
     expect(row.passRate).toBe(0.5);
     expect(row.traces).toBe(2);
     // The outlier is named, not just counted.
@@ -515,7 +516,7 @@ describe("batch reporters", () => {
             ...report,
             evalResults: [
               {
-                ...report.evalResults[0]!,
+                ...must(report.evalResults[0], "the first eval result"),
                 outcome: "skipped",
                 findings: [],
                 skipReason: turnBudgetSkipReason(2),
@@ -564,7 +565,7 @@ describe("batch reporters", () => {
           report: {
             ...report,
             evalResults: [
-              { ...report.evalResults[0]!, outcome: "needs-review", findings: [] },
+              { ...must(report.evalResults[0], "the first eval result"), outcome: "needs-review", findings: [] },
             ],
             summary: {
               total: 1,
@@ -593,7 +594,7 @@ describe("batch reporters", () => {
             ...report,
             evalResults: [
               {
-                ...report.evalResults[0]!,
+                ...must(report.evalResults[0], "the first eval result"),
                 outcome: "skipped",
                 skipReason: "judge cost budget exhausted ($1)",
                 findings: [],
@@ -614,7 +615,7 @@ describe("batch reporters", () => {
       ],
       { durationMs: 1 },
     );
-    const row = skipped.evals[0]!;
+    const row = must(skipped.evals[0], "the skipped eval's row");
     expect(row.passRate).toBeNull();
     expect(row.skipReasons).toEqual(["judge cost budget exhausted ($1)"]);
     // An exhausted budget has to be visible in the report, not inferable from
@@ -631,7 +632,7 @@ describe("batch reporters", () => {
           report: {
             ...report,
             evalResults: [
-              { ...report.evalResults[0]!, evalName: "weird|name", findings: [] },
+              { ...must(report.evalResults[0], "the first eval result"), evalName: "weird|name", findings: [] },
             ],
           },
         },
@@ -639,8 +640,8 @@ describe("batch reporters", () => {
       { durationMs: 1 },
     );
     const out = renderBatch(piped, "markdown");
-    const header = out.split("\n").find((l) => l.startsWith("| Rate | Artifact"))!;
-    const row = out.split("\n").find((l) => l.includes("weird"))!;
+    const header = must(out.split("\n").find((l) => l.startsWith("| Rate | Artifact")), "the artifact table header");
+    const row = must(out.split("\n").find((l) => l.includes("weird")), "the row for the weird-named eval");
     const cells = (line: string) => line.split(/(?<!\\)\|/).length - 2;
     expect(cells(row)).toBe(cells(header));
   });
@@ -806,24 +807,24 @@ describe("calibration reporters", () => {
    */
   it("shows the denominator behind every sweep row, and what it could not score", () => {
     const text = renderCalibration(calibration, "pretty");
-    const header = lines(text).find(
+    const header = must(lines(text).find(
       (l) => l.includes("axis") && l.includes("false-pass"),
-    )!;
+    ), "lines(text).find( (l) => l.includes(\"axis\") && l.includes...");
     expect(header).toContain("scored");
     expect(header).toContain("insuff");
-    const baseline = lines(text).find((l) =>
+    const baseline = must(lines(text).find((l) =>
       l.trimStart().startsWith("baseline"),
-    )!;
+    ), "lines(text).find((l) => l.trimStart().startsWith(\"baselin...");
     // scored 5, agree 3 — the same pair the headline reports as 3/5.
     expect(baseline).toMatch(/\b5\b/);
   });
 
   it("markdown names the same two columns", () => {
     const md = renderCalibration(calibration, "markdown");
-    const header = lines(md).find((l) => l.startsWith("| Axis |"))!;
+    const header = must(lines(md).find((l) => l.startsWith("| Axis |")), "the sweep table header");
     expect(header).toContain("Scored");
     expect(header).toContain("Insufficient");
-    const row = lines(md).find((l) => l.startsWith("| baseline |"))!;
+    const row = must(lines(md).find((l) => l.startsWith("| baseline |")), "the baseline row");
     const cells = (line: string) => line.split(/(?<!\\)\|/).length - 2;
     expect(cells(row)).toBe(cells(header));
   });
@@ -861,10 +862,10 @@ describe("calibration reporters", () => {
 
   it("escapes pipes so a markdown row keeps its column count", () => {
     const md = renderCalibration(calibration, "markdown");
-    const header = md
+    const header = must(md
       .split("\n")
-      .find((l) => l.startsWith("| Kind | Trace"))!;
-    const row = md.split("\n").find((l) => l.startsWith("| FALSE-PASS"))!;
+      .find((l) => l.startsWith("| Kind | Trace")), "md .split(\"\\n\") .find((l) => l.startsWith(\"| Kind | Trace\"))");
+    const row = must(md.split("\n").find((l) => l.startsWith("| FALSE-PASS")), "the false-pass row");
     const cells = (line: string) => line.split(/(?<!\\)\|/).length - 2;
     expect(cells(row)).toBe(cells(header));
     expect(md).toContain("Sprawled across four \\| packages");

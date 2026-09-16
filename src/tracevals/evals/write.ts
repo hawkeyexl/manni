@@ -32,6 +32,9 @@ export interface NewEvalEntry {
   examples?: { pass?: string[]; fail?: string[] };
 }
 
+/** U+FEFF. A file that opens with it keeps it, byte for byte. */
+const BOM = "\uFEFF";
+
 interface Split {
   /** BOM plus the opening fence line, including its newline. */
   open: string;
@@ -44,7 +47,7 @@ interface Split {
 
 /** Frontmatter dialect an artifact opens with, or undefined when it has none. */
 function leadingFormat(content: string): "yaml" | "toml" | "json" | undefined {
-  const body = content.charCodeAt(0) === 0xfeff ? content.slice(1) : content;
+  const body = content.startsWith(BOM) ? content.slice(1) : content;
   if (/^---\r?\n/.test(body)) return "yaml";
   if (/^\+\+\+\r?\n/.test(body)) return "toml";
   if (/^;;;\r?\n/.test(body)) return "json";
@@ -52,26 +55,29 @@ function leadingFormat(content: string): "yaml" | "toml" | "json" | undefined {
 }
 
 function splitYamlFrontmatter(content: string, path: string): Split {
-  const bom = content.charCodeAt(0) === 0xfeff ? content[0]! : "";
+  const bom = content.startsWith(BOM) ? BOM : "";
   const body = bom ? content.slice(1) : content;
   const openMatch = /^---(\r?\n)/.exec(body);
   if (!openMatch) {
     throw new TracevalsError(`${path}: no YAML frontmatter block to edit`);
   }
   const eol: "\n" | "\r\n" = openMatch[1] === "\r\n" ? "\r\n" : "\n";
-  const lines = body.split(/(?<=\n)/); // split but keep line endings
-  let offset = lines[0]!.length;
-  for (let i = 1; i < lines.length; i += 1) {
-    const stripped = lines[i]!.replace(/\r?\n$/, "");
+  // Split but keep line endings. `body` opens with the `---` fence, so the
+  // first element is that line; the destructuring default only satisfies the
+  // type, which `noUncheckedIndexedAccess` widens to `string | undefined`.
+  const [fence = body, ...rest] = body.split(/(?<=\n)/);
+  let offset = fence.length;
+  for (const line of rest) {
+    const stripped = line.replace(/\r?\n$/, "");
     if (stripped === "---" || stripped === "...") {
       return {
-        open: bom + lines[0]!,
-        block: body.slice(lines[0]!.length, offset),
+        open: bom + fence,
+        block: body.slice(fence.length, offset),
         suffix: body.slice(offset),
         eol,
       };
     }
-    offset += lines[i]!.length;
+    offset += line.length;
   }
   throw new TracevalsError(`${path}: unterminated frontmatter block`);
 }
@@ -235,7 +241,7 @@ export function appendArtifactEvals(
     );
   }
 
-  const bom = content.charCodeAt(0) === 0xfeff ? content[0]! : "";
+  const bom = content.startsWith(BOM) ? BOM : "";
   const stripped = bom ? content.slice(1) : content;
 
   if (format === undefined) {

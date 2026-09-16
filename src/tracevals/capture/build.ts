@@ -191,10 +191,10 @@ function git(
       settle(value);
     };
     let out = "";
-    child.stdout?.on("data", (d: Buffer) => {
+    child.stdout.on("data", (d: Buffer) => {
       out += d.toString("utf-8");
     });
-    child.stderr?.resume();
+    child.stderr.resume();
     child.on("error", () => { finish(null); });
     child.on("close", (code) => { finish(code === 0 ? out.trim() : null); });
   });
