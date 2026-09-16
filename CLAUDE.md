@@ -65,7 +65,7 @@ Key layers:
   - `src/cite/cli.ts`: thin commander wrapper exported as `buildProgram()` and
     mounted by `src/cli.ts`. No entry point of its own.
 - `src/lint/`: the structure tool, `manni lint check` and `manni lint structure`,
-  plus `templates` and `tools` (proposal 0049). A verb names the **job** being
+  plus `templates` and `tools` (proposal 0050). A verb names the **job** being
   checked; the **tool** answering it is named in config, and lint's own engine
   is `manni`. `check` runs every configured job.
   - `src/lint/core/`: template resolution and routing, the structure rules, the

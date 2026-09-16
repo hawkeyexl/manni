@@ -63,8 +63,8 @@ These came out of a review of the shipped product against the intent recorded in
 | [0044](0044-citations-and-drift.md) | Citations and drift, which pin a claim to source lines so `manni cite` can check the pin | Devin · D4 / Theo · T1 / Maya · M2 / Sara · S1 | Implemented (#17) |
 | [0045](0045-family-encryption-key.md) | A family encryption key: `encryptionKey:`, `manni key`, and `x-manni-encrypt` for metadata that must not appear in plain text | Sara · S1 / Devin · D5 / Maya · M5 | Implemented (#17); superseded in part by 0047 |
 | [0046](0046-provenance-pins.md) | Provenance pins, where `provenance` records which machine wrote which body lines as a range and an integrity hash stamped by `manni meta derive`. Field attribution becomes one `meta-provenance` shape across the family | Maya · M8 / Sara · S1 / Devin · D4 | Implemented (#34) |
-| [0049](0049-lint-domain.md) | The `lint` domain: `manni lint check` runs every configured job and `manni lint structure` checks a page against its doctype template. Verbs name the job, config names the tool behind it | Maya · M9 / Devin · D8 / Theo · T4 | Proposed |
 | [0047](0047-field-location.md) | A field's preferred location, `x-manni-location` set to `page` or `external`, marked on every vocabulary field. `manni meta relocate` moves values between the pages and a collection's manifest, and every writer follows the manifest | Sara · S1 / Maya · M4 | Implemented (#37) |
+| [0050](0050-lint-domain.md) | The `lint` domain: `manni lint check` runs every configured job and `manni lint structure` checks a page against its doctype template. Verbs name the job, config names the tool behind it | Maya · M9 / Devin · D8 / Theo · T4 | Proposed |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -82,7 +82,7 @@ proposal above is what states how the tool works inside manni.
 
 | Tool | Log | Records |
 |---|---|---|
-| lint | [lint/](lint/README.md) | 01001–01008, imported with the tool. 01007 is superseded by [0049](0049-lint-domain.md) |
+| lint | [lint/](lint/README.md) | 01001–01008, imported with the tool. 01007 is superseded by [0050](0050-lint-domain.md) |
 
 ## Dependency order
 

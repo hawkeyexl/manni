@@ -36,7 +36,7 @@ Key layers:
 - `src/lint/reporters/` formats output (pretty / json / github / sarif / junit).
   Severity, color and the GitHub escapers come from `src/shared/`; junit rides
   meta's renderer. A finding's id is `manni:lint/structure/<rule>`, built in
-  `core/rule-id.ts` (proposal 0049).
+  `core/rule-id.ts` (proposal 0050).
 - `templates/lint/tgdp/` holds the built-in doctype templates and the manifest
   that registers them. They sit at the repository root, not under `src/`, because
   they ship as package files rather than as bundled code. Getting that wrong is
@@ -129,7 +129,7 @@ values in `extends` merges once already.
 lint's imported decision log lives at `docs/proposals/lint/` (records 01001
 through 01008) and stays as written. A decision made **inside manni** is a
 family proposal instead: `docs/proposals/NNNN-*.md`, following the root
-`CLAUDE.md` rule that a proposal is superseded, never amended. Proposal 0049 is
+`CLAUDE.md` rule that a proposal is superseded, never amended. Proposal 0050 is
 this domain's record.
 
 ## Commands

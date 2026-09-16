@@ -1,4 +1,4 @@
-# 0049: The `lint` domain: `manni lint check`, jobs, and the tools behind them
+# 0050: The `lint` domain: `manni lint check`, jobs, and the tools behind them
 
 - **Status:** Proposed
 - **Serves:** Three journeys, assigned the next free numbers on this branch.

@@ -11,7 +11,7 @@
  * tool possible without collisions: a prose job will report
  * `manni:lint/prose/Google.Passive`, keeping Vale's own rule name because that
  * is the name Vale's documentation uses, and nothing about it can be confused
- * with a structure rule. Proposal 0049 records the shape, and warns that
+ * with a structure rule. Proposal 0050 records the shape, and warns that
  * anything parsing family rule ids must not assume two segments.
  *
  * The rule half is derived from the finding's `type` rather than authored
