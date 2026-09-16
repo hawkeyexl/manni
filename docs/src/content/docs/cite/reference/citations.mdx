@@ -405,11 +405,11 @@ named in `severity:`, which takes the fourteen rule names below.
 
 | Rule | Meaning | Message | Default |
 |---|---|---|---|
-| `source-moved` | The pin does not hold at its range, and exactly one window of the same length elsewhere in the file hashes to it. `update` rewrites `source.lines`. A whole-file citation never moves. | `moved -> lib/limits.ts:4` | `warning` |
-| `source-moved-ambiguous` | Two or more windows hash to the pin; the tool will not guess which. Widen the range. | `moved, 2 candidates (lib/limits.ts:4, lib/limits.ts:11); widen the range` | `error` |
-| `source-changed` | No window hashes to the pin. With a commit and history: since when, and how many commits touched the path. With a commit git cannot show: `history unavailable`, plus one run notice about `fetch-depth: 0`. Where git is not available, a bare `changed`, plus one run warning. | `changed since 3f9c2a1, 2 commits` | `error` |
-| `source-never-true` | No window of the range's length anywhere in the file at the recorded commit hashes to the pin, or the path was absent there. Asserted only when git can show that commit. | `never true: the pin does not match at 3f9c2a1` | `error` |
-| `source-missing` | The path is not a tracked file under the root (without git, not a file under it), or an encrypted source cannot be decrypted. A rename is `missing`; `add` is the remedy. | `missing`, and for an encrypted source one of `missing (no encryption key is available to decrypt it)`, `missing (does not decrypt under the current key)` or `missing (no tracked file matches; wrong --root?)` | `error` |
+| <span id="source-moved">`source-moved`</span> | The pin does not hold at its range, and exactly one window of the same length elsewhere in the file hashes to it. `update` rewrites `source.lines`. A whole-file citation never moves. | `moved -> lib/limits.ts:4` | `warning` |
+| <span id="source-moved-ambiguous">`source-moved-ambiguous`</span> | Two or more windows hash to the pin; the tool will not guess which. Widen the range. | `moved, 2 candidates (lib/limits.ts:4, lib/limits.ts:11); widen the range` | `error` |
+| <span id="source-changed">`source-changed`</span> | No window hashes to the pin. With a commit and history: since when, and how many commits touched the path. With a commit git cannot show: `history unavailable`, plus one run notice about `fetch-depth: 0`. Where git is not available, a bare `changed`, plus one run warning. | `changed since 3f9c2a1, 2 commits` | `error` |
+| <span id="source-never-true">`source-never-true`</span> | No window of the range's length anywhere in the file at the recorded commit hashes to the pin, or the path was absent there. Asserted only when git can show that commit. | `never true: the pin does not match at 3f9c2a1` | `error` |
+| <span id="source-missing">`source-missing`</span> | The path is not a tracked file under the root (without git, not a file under it), or an encrypted source cannot be decrypted. A rename is `missing`; `add` is the remedy. | `missing`, and for an encrypted source one of `missing (no encryption key is available to decrypt it)`, `missing (does not decrypt under the current key)` or `missing (no tracked file matches; wrong --root?)` | `error` |
 
 The move search runs whenever the pin does not hold, and history decides only
 what a non-match is called. With the original text (git could show the
@@ -424,9 +424,9 @@ once. A range longer than 5,000 lines is `entry-invalid`.
 
 | Rule | Meaning | Message | Default |
 |---|---|---|---|
-| `claim-moved` | The pinned page text is found verbatim at other lines, so nothing drifted. `update` rewrites `claim.lines`. | `fetch-timeout: the claim moved from line 9 to line 11.` | `notice` |
-| `claim-moved-ambiguous` | The pinned text is found verbatim at several places. `update` skips it. | `fetch-timeout: the claim at line 9 now appears at lines 11 and 30.` | `warning` |
-| `claim-changed` | The pinned page text is gone, so the sentence was edited. `update --accept` re-pins it. | `fetch-timeout: the claim at line 9 has changed since it was pinned.` | `warning` |
+| <span id="claim-moved">`claim-moved`</span> | The pinned page text is found verbatim at other lines, so nothing drifted. `update` rewrites `claim.lines`. | `fetch-timeout: the claim moved from line 9 to line 11.` | `notice` |
+| <span id="claim-moved-ambiguous">`claim-moved-ambiguous`</span> | The pinned text is found verbatim at several places. `update` skips it. | `fetch-timeout: the claim at line 9 now appears at lines 11 and 30.` | `warning` |
+| <span id="claim-changed">`claim-changed`</span> | The pinned page text is gone, so the sentence was edited. `update --accept` re-pins it. | `fetch-timeout: the claim at line 9 has changed since it was pinned.` | `warning` |
 
 `claim-changed` defaults to a **warning**, not an error. It fires on any edit
 to a pinned paragraph, including a typo fix beside the cited sentence, and
@@ -441,12 +441,12 @@ copying it.
 
 | Rule | Meaning | Default |
 |---|---|---|
-| `marker-orphan` | A marker names an id no entry has. | `error` |
-| `marker-invalid` | A malformed marker, including a JSON payload, or more than 500 markers on a page. | `error` |
-| `marker-repeated` | Two markers name one id; the first anchors it. | `warning` |
-| `anchor-invalid` | The anchor cannot work. Three cases reach it. Claim lines and a marker together, `quote` with no claim and no marker, and a quote whose claim lines are no longer fenced. | `error` |
-| `entry-invalid` | A schema failure, a range that ends before it starts, or a duplicate id. Also a pin prefix that does not match `file`, a reserved `citation-*` page key, and a page `citations:` a manifest owns. | `error` |
-| `quote-drift` | The quoted block no longer reproduces the source, or no fenced block follows the marker. | `error` |
+| <span id="marker-orphan">`marker-orphan`</span> | A marker names an id no entry has. | `error` |
+| <span id="marker-invalid">`marker-invalid`</span> | A malformed marker, including a JSON payload, or more than 500 markers on a page. | `error` |
+| <span id="marker-repeated">`marker-repeated`</span> | Two markers name one id; the first anchors it. | `warning` |
+| <span id="anchor-invalid">`anchor-invalid`</span> | The anchor cannot work. Three cases reach it. Claim lines and a marker together, `quote` with no claim and no marker, and a quote whose claim lines are no longer fenced. | `error` |
+| <span id="entry-invalid">`entry-invalid`</span> | A schema failure, a range that ends before it starts, or a duplicate id. Also a pin prefix that does not match `file`, a reserved `citation-*` page key, and a page `citations:` a manifest owns. | `error` |
+| <span id="quote-drift">`quote-drift`</span> | The quoted block no longer reproduces the source, or no fenced block follows the marker. | `error` |
 
 A fourth `anchor-invalid` case was planned and cannot happen. Claim lines
 inside the frontmatter are unreachable, because body-relative lines never

@@ -81,9 +81,9 @@ manni cite check [paths...] [options]
 ```
 
 Findings ride the metadata tool's reporters and its baseline. `-f github`,
-`sarif` and `junit` produce the same shapes
+`sarif` and `junit` produce the same envelopes
 [`meta validate`](/manni/meta/reference/output-and-exit-codes/) does, under the
-rule id `manni:cite/<rule>`, and `--baseline` is the same ratchet with its own
+rule id `manni:cite/<rule>`. `--baseline` is the same ratchet with its own
 file. No model and no network are involved. A clean corpus costs one hash per
 citation, and git is consulted only when a pin does not hold.
 
@@ -171,11 +171,61 @@ of a ciphertext, the diff and the commit subjects are never in it.
 ::warning file=docs/limits.md,line=9,title=manni%3Acite/claim-changed::fetch-timeout: the claim at line 9 has changed since it was pinned.
 ```
 
-`sarif` and `junit` are the metadata tool's renderers over the same findings.
-They carry the rule id `manni:cite/<rule>` and `partialFingerprints` matching
-the baseline. A warning is SARIF level `warning` and a notice level `note`,
-and in JUnit neither is a failure. JUnit testcases carry the classname
-`manni.cite`.
+`sarif` builds on the metadata tool's renderer, so the envelope, the rule id
+`manni:cite/<rule>` and the `partialFingerprints` the baseline matches are
+the same. Each rule is described in plain words, and its `helpUri` links the
+rule's row in the [citations reference](/manni/cite/reference/citations/#source-end-rules).
+A result's message is the one the `github` annotation carries. A warning is
+level `warning` and a notice is level `note`. An excerpt of the rules and one
+result:
+
+```json
+"informationUri": "https://hawkeyexl.github.io/manni/cite/",
+"rules": [
+  {
+    "id": "manni:cite/source-changed",
+    "shortDescription": {
+      "text": "The cited source lines changed since the citation pinned them."
+    },
+    "helpUri": "https://hawkeyexl.github.io/manni/cite/reference/citations/#source-changed"
+  }
+]
+```
+
+```json
+{
+  "ruleId": "manni:cite/source-changed",
+  "level": "error",
+  "message": {
+    "text": "fetch-timeout (lib/limits.ts:2): changed since 3f9c2a1, 1 commit"
+  },
+  "locations": [
+    {
+      "physicalLocation": {
+        "artifactLocation": { "uri": "docs/limits.md" },
+        "region": { "startLine": 9 }
+      }
+    }
+  ],
+  "partialFingerprints": { "docmetaViolation/v1": "22c8ce68bee49224" }
+}
+```
+
+`junit` prints one testcase per page under the classname `manni.cite`, and a
+`failure` per error-severity finding. The failure's `type` is the rule id, and
+its message is the annotation's, followed by the line. An entry a manifest owns
+names that file instead. Warnings and notices are never failures:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="manni" tests="1" failures="1" errors="0">
+  <testsuite name="manni" tests="1" failures="1" errors="0">
+    <testcase name="docs/limits.md" classname="manni.cite">
+      <failure type="manni:cite/source-changed" message="fetch-timeout (lib/limits.ts:2): changed since 3f9c2a1, 1 commit (line 9)"/>
+    </testcase>
+  </testsuite>
+</testsuites>
+```
 
 ### Exit codes
 

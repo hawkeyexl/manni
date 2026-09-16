@@ -575,15 +575,24 @@ describe("manni cite check (the ladder)", () => {
   it("-f sarif carries the rule id", () => {
     const r = check(["-f", "sarif", "pages/source-changed.md"]);
     expect(r.status).toBe(1);
-    const sarif = JSON.parse(r.stdout) as { runs: { results: { ruleId: string }[] }[] };
+    const sarif = JSON.parse(r.stdout) as {
+      runs: {
+        tool: { driver: { rules: { shortDescription: { text: string }; helpUri?: string }[] } };
+        results: { ruleId: string; message: { text: string } }[];
+      }[];
+    };
     expect(sarif.runs[0]?.results[0]?.ruleId).toBe("manni:cite/source-changed");
+    expect(sarif.runs[0]?.results[0]?.message.text).toMatch(/^fetch-timeout \(src\/changed\.ts:2\): changed/);
+    const rule = sarif.runs[0]?.tool.driver.rules[0];
+    expect(rule?.shortDescription.text).not.toMatch(/schema|keyword/i);
+    expect(rule?.helpUri).toBe("https://hawkeyexl.github.io/manni/cite/reference/citations/#source-changed");
   });
 
   it("-f junit ships under the cite classname", () => {
     const r = check(["-f", "junit", "pages/source-changed.md"]);
     expect(r.status).toBe(1);
     expect(r.stdout).toContain('classname="manni.cite"');
-    expect(r.stdout).toContain('type="manni:cite/source-changed"');
+    expect(r.stdout).toContain('type="manni:cite/source-changed" message="fetch-timeout (src/changed.ts:2): changed');
   });
 
   it("says on stderr, once, that history is off when a citation carries a commit and git is not there", () => {
