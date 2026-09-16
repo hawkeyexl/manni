@@ -431,7 +431,9 @@ describe("formats", () => {
     expect(rows.some((r) => r.format === "markdown" && r.label === "page" && r.read)).toBe(true);
     expect(rows.find((r) => r.format === "vale")).toMatchObject({ label: "style", read: false, write: true });
     const pretty = renderFormatsPretty(rows);
-    expect(pretty).toMatch(/^markdown +page +read$/m);
+    expect(pretty).toMatch(/^markdown +page +read +write$/m);
+    // A dfn names a term without defining it, and is not written back.
+    expect(pretty).toMatch(/^html +dfn +read$/m);
     expect(pretty).toMatch(/^tbx +TBX v2 Core +write$/m);
     expect(pretty).toMatch(/^json +write$/m);
   });
