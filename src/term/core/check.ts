@@ -87,7 +87,7 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     if (group.length < 2) continue;
     for (const t of group) {
       const others = group.filter((other) => other !== t).map(where);
-      drafts.push(onEntry(t, "duplicate-id", `id "${t.id}" is also used by ${others.join(", ")}`));
+      drafts.push(onEntry(t, "duplicate-id", `id: "${t.id}" is also used by ${others.join(", ")}`));
     }
   }
 

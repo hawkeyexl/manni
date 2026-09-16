@@ -123,7 +123,7 @@ describe("checkTermSet", () => {
           rule: "duplicate-id",
           ruleId: "manni:term/duplicate-id",
           severity: "error",
-          message: 'id "bifocal" is also used by terms.yaml:3',
+          message: 'id: "bifocal" is also used by terms.yaml:3',
           file: "docs/terms/bifocal.md",
           line: 5,
           id: "bifocal",
@@ -132,11 +132,24 @@ describe("checkTermSet", () => {
           rule: "duplicate-id",
           ruleId: "manni:term/duplicate-id",
           severity: "error",
-          message: 'id "bifocal" is also used by docs/terms/bifocal.md:5',
+          message: 'id: "bifocal" is also used by docs/terms/bifocal.md:5',
           file: "terms.yaml",
           line: 3,
           id: "bifocal",
         },
+      ]);
+    });
+
+    it("names every other entry when more than two share an id", () => {
+      const terms = [
+        term({ id: "lens", label: "one", definition: "d", file: "a.md", line: 1 }),
+        term({ id: "lens", label: "two", definition: "d", file: "b.md", line: 2 }),
+        term({ id: "lens", label: "three", definition: "d", file: "c.md", line: 3 }),
+      ];
+      expect(only(checkTermSet(used(terms)), "duplicate-id").map((f) => f.message)).toEqual([
+        'id: "lens" is also used by b.md:2, c.md:3',
+        'id: "lens" is also used by a.md:1, c.md:3',
+        'id: "lens" is also used by a.md:1, b.md:2',
       ]);
     });
 
