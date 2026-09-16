@@ -1,7 +1,7 @@
 /**
  * Lexical entry (ADR 01019) — text query → ranked seed nodes.
  *
- * Loads the `search.json` artifact (produced by `manni kg export --format search`)
+ * Loads the `search.json` artifact (produced by `manni kg export search`)
  * and scores it with MiniSearch. The artifact carries body text, which the graph
  * deliberately does not (ADR 01008), so a query can match what a document *says*
  * and not merely what it is titled.

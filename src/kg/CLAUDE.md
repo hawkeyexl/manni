@@ -204,7 +204,7 @@ Changing the corpus fixture invalidates every byte-exact golden under `test/fixt
 That is `graph.ttl`, `graph.jsonld`, `metadata.rdf`, `traverse.json`, `localizations.json`, and one
 `search.<lang>.json` plus one `vectors.<lang>.bin` **per language in the corpus** (ADR 01038). It
 also invalidates the doc/triple counts asserted across `build`, `validate`, `query-stats` and
-`runtime-sparql`. All are regenerable from the built CLI. `export --format search` writes the
+`runtime-sparql`. All are regenerable from the built CLI. `export search` writes the
 indexes and the manifest into a directory. Then `dockg embed --model mock --no-cache` writes the
 sidecars and fills in the manifest's `vectors` blocks, so the optional
 `@huggingface/transformers` peer is not needed. Adding a *language* to the fixture therefore adds

@@ -9,7 +9,7 @@ import {
 } from "../../../src/kg/core/iirds-package.js";
 import type { Quad } from "../../../src/kg/core/derive.js";
 import { emitTurtle } from "../../../src/kg/core/emit.js";
-import { DockgError } from "../../../src/kg/types.js";
+import { KgError } from "../../../src/kg/types.js";
 import { NS, RDF_TYPE } from "../../../src/kg/core/vocab.js";
 import {
   IIRDS_HAS_TOPIC_TYPE,
@@ -142,10 +142,10 @@ describe("projectPackage", () => {
     ).toBe(false);
   });
 
-  it("throws DockgError when a Document's source file is missing", () => {
+  it("throws KgError when a Document's source file is missing", () => {
     const emptyCwd = mkdtempSync(join(tmpdir(), "dockg-pkg-empty-"));
     expect(() => projectPackage(storeOf(TTL), OPTS, emptyCwd)).toThrow(
-      DockgError,
+      KgError,
     );
   });
 

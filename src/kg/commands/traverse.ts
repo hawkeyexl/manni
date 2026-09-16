@@ -19,7 +19,7 @@ import {
 } from "../core/load.js";
 import { SOFTWARE_SUBJECT_IRIS } from "../core/iirds.js";
 import { NS, PREFIXES } from "../core/vocab.js";
-import { DockgError } from "../types.js";
+import { KgError } from "../types.js";
 import { GraphIndex } from "../runtime/graph.js";
 import {
   impact,
@@ -70,12 +70,12 @@ export function runTraverse(opts: TraverseOptions): TraverseReport {
 
   const node = expandTerm(opts.node);
   if (!graph.has(node)) {
-    throw new DockgError(
+    throw new KgError(
       `Node not found in the graph: ${opts.node} — check the IRI, or run \`manni kg build\` first.`,
     );
   }
   if (opts.variant && !resolveVariant(graph, opts.variant)) {
-    throw new DockgError(
+    throw new KgError(
       `Unknown product variant: ${opts.variant} — no iirds:ProductVariant matches that IRI, title, or slug.`,
     );
   }
@@ -83,7 +83,7 @@ export function runTraverse(opts: TraverseOptions): TraverseReport {
   // would hand back exactly the nodes the filter was meant to exclude. Fail
   // loudly instead — same contract as --variant above.
   if (opts.subject && !resolveSubject(graph, opts.subject)) {
-    throw new DockgError(
+    throw new KgError(
       `Unknown software subject: ${opts.subject} — expected one of ` +
         `${Object.keys(SOFTWARE_SUBJECT_IRIS).sort().join(", ")}, or a full IRI.`,
     );

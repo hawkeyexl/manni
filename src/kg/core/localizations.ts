@@ -9,7 +9,7 @@
  * — a browser fetches this one small file, learns which localizations exist and
  * what each costs, and downloads only the pair it needs.
  *
- * Written by `manni kg export --format search`; `manni kg embed` fills in the
+ * Written by `manni kg export search`; `manni kg embed` fills in the
  * `vectors` block as it produces each sidecar, so a manifest entry without one
  * means exactly "this language has no vectors yet".
  *

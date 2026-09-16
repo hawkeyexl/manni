@@ -20,8 +20,9 @@ import {
   type LocalizationEntry,
 } from "../core/localizations.js";
 import { VectorIndexError } from "../core/vector-index.js";
-import { DockgError } from "../types.js";
-import { programName } from "../../shared/program-name.js";
+import { errorMessage } from "../../shared/errors.js";
+import { KgError } from "../types.js";
+import { warn } from "../../shared/warn.js";
 import { findEntry } from "../runtime/entry.js";
 import { createLexicalIndex } from "../runtime/lexical.js";
 import {
@@ -36,6 +37,13 @@ import {
 import { createMockEmbedder } from "../embed/mock.js";
 import type { Embedder } from "../embed/types.js";
 import type { QueryTrace } from "../runtime/trace.js";
+
+/**
+ * Which legs `--mode` can ask for, in the order messages list them. Stated
+ * once so the union, the help text and the refusal sentence cannot drift.
+ */
+export const SEARCH_MODES = ["lexical", "hybrid", "vector"] as const;
+export type SearchMode = (typeof SEARCH_MODES)[number];
 
 export interface SearchOptions {
   config?: string;
@@ -58,7 +66,7 @@ export interface SearchOptions {
    * embedder and a sidecar. Default "hybrid" when both are present, else
    * "lexical" — additive, never a new failure mode.
    */
-  mode?: "lexical" | "vector" | "hybrid";
+  mode?: SearchMode;
   /** Injection seam for tests: bypasses the embedder factory. */
   embedder?: Embedder;
   cwd?: string;
@@ -75,7 +83,7 @@ export interface SearchHit {
 export interface SearchReport {
   query: string;
   /** Which legs actually ran. */
-  mode: "lexical" | "vector" | "hybrid";
+  mode: SearchMode;
   /** The fused ranking (or the single leg's, when only one ran). */
   results: SearchHit[];
   /** The lexical leg's own ranking. */
@@ -103,14 +111,14 @@ function loadSearchIndex(indexPath: string): {
   try {
     parsed = JSON.parse(raw);
   } catch (e) {
-    throw new DockgError(
-      `Failed to parse ${indexPath}: ${e instanceof Error ? e.message : "parse error"} — re-run \`manni kg export --format search\`.`,
+    throw new KgError(
+      `Failed to parse ${indexPath}: ${errorMessage(e)} — re-run \`manni kg export search\`.`,
     );
   }
   const entries = (parsed as SearchIndexDoc | null)?.entries;
   if (!Array.isArray(entries)) {
-    throw new DockgError(
-      `Not a dockg search index: ${indexPath} — expected an \`entries\` array; re-run \`manni kg export --format search\`.`,
+    throw new KgError(
+      `Not a dockg search index: ${indexPath} — expected an \`entries\` array; re-run \`manni kg export search\`.`,
     );
   }
   return {
@@ -134,21 +142,21 @@ function resolveLocalization(
 ): LocalizationEntry {
   const manifestPath = join(indexDir, LOCALIZATIONS_FILENAME);
   if (!existsSync(manifestPath)) {
-    throw new DockgError(
-      `Localization manifest not found: ${manifestPath} — run \`manni kg export --format search\` first.`,
+    throw new KgError(
+      `Localization manifest not found: ${manifestPath} — run \`manni kg export search\` first.`,
     );
   }
   const manifest = parseLocalizations(readFileSync(manifestPath, "utf8"));
   if (!manifest) {
-    throw new DockgError(
-      `Not a dockg localization manifest: ${manifestPath} — re-run \`manni kg export --format search\`.`,
+    throw new KgError(
+      `Not a dockg localization manifest: ${manifestPath} — re-run \`manni kg export search\`.`,
     );
   }
   const available = manifest.languages.map((l) => l.language);
   if (lang !== undefined) {
     const hit = manifest.languages.find((l) => l.language === lang);
     if (!hit) {
-      throw new DockgError(
+      throw new KgError(
         `No index for language "${lang}" — this corpus has ${available.join(", ") || "none"}.`,
       );
     }
@@ -156,12 +164,12 @@ function resolveLocalization(
   }
   const only = manifest.languages[0];
   if (!only) {
-    throw new DockgError(
-      `The localization manifest lists no languages: ${manifestPath} — re-run \`manni kg export --format search\`.`,
+    throw new KgError(
+      `The localization manifest lists no languages: ${manifestPath} — re-run \`manni kg export search\`.`,
     );
   }
   if (manifest.languages.length > 1) {
-    throw new DockgError(
+    throw new KgError(
       `This corpus has more than one localization (${available.join(", ")}) — pass --lang to choose one.`,
     );
   }
@@ -177,8 +185,8 @@ export async function runSearch(opts: SearchOptions): Promise<SearchReport> {
   const indexPath = join(indexDir, localization.search.path);
 
   if (!existsSync(indexPath)) {
-    throw new DockgError(
-      `Search index not found: ${indexPath} — the manifest names it; re-run \`manni kg export --format search\`.`,
+    throw new KgError(
+      `Search index not found: ${indexPath} — the manifest names it; re-run \`manni kg export search\`.`,
     );
   }
 
@@ -231,7 +239,7 @@ export async function runSearch(opts: SearchOptions): Promise<SearchReport> {
       // operational error (exit 2), exactly as for the search index above —
       // not a raw VectorIndexError stack trace out of an async action.
       if (e instanceof VectorIndexError) {
-        throw new DockgError(
+        throw new KgError(
           `${e.message} (${vectorsPath}) — re-run \`manni kg embed\`, or use \`--mode lexical\`.`,
         );
       }
@@ -248,11 +256,9 @@ export async function runSearch(opts: SearchOptions): Promise<SearchReport> {
     // forbids. Warned about rather than silently dropped, so a user who
     // expected semantic results learns why they did not get them.
     const stale = vectors.check({ source });
-    if (stale && wantsVector) throw new DockgError(stale.detail);
+    if (stale && wantsVector) throw new KgError(stale.detail);
     if (stale) {
-      process.stderr.write(
-        `${programName()}: ${stale.detail} Falling back to lexical.\n`,
-      );
+      warn(`${stale.detail} Falling back to lexical.`);
       vectors = undefined;
     }
   } else if (wantsVector) {
@@ -260,7 +266,7 @@ export async function runSearch(opts: SearchOptions): Promise<SearchReport> {
     // otherwise: "no sidecar for de" is actionable, an undefined path is not.
     const named =
       vectorsPath ?? `no sidecar recorded for "${localization.language}"`;
-    throw new DockgError(
+    throw new KgError(
       `Vector index not found: ${named} — run \`manni kg embed\` first, or use \`--mode lexical\`.`,
     );
   }
@@ -287,7 +293,7 @@ export async function runSearch(opts: SearchOptions): Promise<SearchReport> {
     // means a dimension disagreement the header did not predict — a real
     // operational error (exit 2), not a stack trace out of an async action.
     if (e instanceof VectorMismatchError) {
-      throw new DockgError(`${e.message} Re-run \`manni kg embed\`.`);
+      throw new KgError(`${e.message} Re-run \`manni kg embed\`.`);
     }
     throw e;
   });
@@ -363,20 +369,20 @@ async function resolveEmbedder(
       // changing its id would otherwise only surface deep inside search().
       ...(embedder.dims > 0 ? { dims: embedder.dims } : {}),
     });
-    if (mismatch) throw new DockgError(mismatch.detail);
+    if (mismatch) throw new KgError(mismatch.detail);
     return embedder;
   } catch (e) {
-    if (e instanceof DockgError) throw e;
+    if (e instanceof KgError) throw e;
     if (e instanceof EmbedderUnavailableError) {
       // Only fatal when the vector leg was asked for; otherwise degrade to
       // lexical rather than failing a search that can still be answered.
-      if (required) throw new DockgError(e.message);
+      if (required) throw new KgError(e.message);
       return undefined;
     }
     // A model that will not load (bad id, 404, corrupt weights) is fatal either
     // way — but as an operational error with a message, not a stack trace.
-    throw new DockgError(
-      `Failed to load embedding model ${model}: ${e instanceof Error ? e.message : String(e)}`,
+    throw new KgError(
+      `Failed to load embedding model ${model}: ${errorMessage(e)}`,
     );
   }
 }

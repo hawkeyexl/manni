@@ -27,7 +27,8 @@ import {
   type LocalizationEntry,
 } from "../core/localizations.js";
 import { encodeVectorIndex } from "../core/vector-index.js";
-import { DockgError } from "../types.js";
+import { errorMessage } from "../../shared/errors.js";
+import { KgError } from "../types.js";
 import {
   createLocalEmbedder,
   EmbedderUnavailableError,
@@ -136,12 +137,12 @@ async function makeEmbedder(
     return await createLocalEmbedder({ model, dtype, role: "passage" });
   } catch (e) {
     if (e instanceof EmbedderUnavailableError) {
-      throw new DockgError(e.message);
+      throw new KgError(e.message);
     }
     // Everything else the model stack can fail on — an unknown id, a 404 on the
     // hub, corrupt weights — is operational (exit 2), not a raw stack trace.
-    throw new DockgError(
-      `Failed to load embedding model ${model}: ${e instanceof Error ? e.message : String(e)}`,
+    throw new KgError(
+      `Failed to load embedding model ${model}: ${errorMessage(e)}`,
     );
   }
 }
@@ -150,21 +151,21 @@ export async function runEmbed(opts: EmbedOptions = {}): Promise<EmbedReport> {
   const cwd = opts.cwd ?? process.cwd();
   const config = loadConfig(opts.config, cwd);
   const graphPath = resolve(cwd, opts.graph ?? config.out);
-  // The manifest is the work list: `export --format search` wrote one index per
+  // The manifest is the work list: `export search` wrote one index per
   // language and named them all here, so embed never has to guess which files
   // exist or what language each holds (ADR 01038).
   const indexDir = opts.index ? resolve(cwd, opts.index) : dirname(graphPath);
   const manifestPath = join(indexDir, LOCALIZATIONS_FILENAME);
 
   if (!existsSync(manifestPath)) {
-    throw new DockgError(
-      `Localization manifest not found: ${manifestPath} — run \`manni kg export --format search\` first.`,
+    throw new KgError(
+      `Localization manifest not found: ${manifestPath} — run \`manni kg export search\` first.`,
     );
   }
   const manifest = parseLocalizations(readFileSync(manifestPath, "utf8"));
   if (!manifest) {
-    throw new DockgError(
-      `Not a dockg localization manifest: ${manifestPath} — re-run \`manni kg export --format search\`.`,
+    throw new KgError(
+      `Not a dockg localization manifest: ${manifestPath} — re-run \`manni kg export search\`.`,
     );
   }
 
@@ -197,8 +198,8 @@ export async function runEmbed(opts: EmbedOptions = {}): Promise<EmbedReport> {
   for (const entry of manifest.languages) {
     const indexPath = join(indexDir, entry.search.path);
     if (!existsSync(indexPath)) {
-      throw new DockgError(
-        `Search index not found: ${indexPath} — the manifest names it; re-run \`manni kg export --format search\`.`,
+      throw new KgError(
+        `Search index not found: ${indexPath} — the manifest names it; re-run \`manni kg export search\`.`,
       );
     }
     const raw = readFileSync(indexPath, "utf8");
@@ -207,8 +208,8 @@ export async function runEmbed(opts: EmbedOptions = {}): Promise<EmbedReport> {
     // the pair has drifted, and embedding it would produce a sidecar keyed to
     // bytes nobody has — the same refusal the runtime makes at query time.
     if (entry.search.digest !== source) {
-      throw new DockgError(
-        `Stale manifest: ${entry.search.path} does not match the digest recorded for "${entry.language}" — re-run \`manni kg export --format search\`.`,
+      throw new KgError(
+        `Stale manifest: ${entry.search.path} does not match the digest recorded for "${entry.language}" — re-run \`manni kg export search\`.`,
       );
     }
 
@@ -216,13 +217,13 @@ export async function runEmbed(opts: EmbedOptions = {}): Promise<EmbedReport> {
     try {
       parsed = JSON.parse(raw);
     } catch (e) {
-      throw new DockgError(
-        `Failed to parse ${indexPath}: ${e instanceof Error ? e.message : "parse error"} — re-run \`manni kg export --format search\`.`,
+      throw new KgError(
+        `Failed to parse ${indexPath}: ${errorMessage(e)} — re-run \`manni kg export search\`.`,
       );
     }
     const entries = (parsed as SearchIndexDoc | null)?.entries;
     if (!Array.isArray(entries)) {
-      throw new DockgError(
+      throw new KgError(
         `Not a dockg search index: ${indexPath} — expected an \`entries\` array.`,
       );
     }

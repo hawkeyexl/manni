@@ -14,7 +14,8 @@ import { toString as mdastToString } from "mdast-util-to-string";
 import GithubSlugger from "github-slugger";
 import { extractFrontmatter } from "../../meta/index.js";
 import type { Root, RootContent, Definition } from "mdast";
-import { DockgError } from "../types.js";
+import { errorMessage } from "../../shared/errors.js";
+import { KgError } from "../types.js";
 import type { DocImage, DocLink, DocModel, Section } from "../types.js";
 import {
   DEFAULT_INDEX_FILES,
@@ -384,11 +385,11 @@ export function analyzeDoc(
     // Parsing MDX makes parse *failures* possible where Markdown had none:
     // remark-parse accepts anything, the MDX extension does not. Left raw, the
     // micromark throw escapes cli.ts's `fail()` — which only converts
-    // DockgError — so the CLI dumps a stack trace, exits 1 (the code the
+    // KgError — so the CLI dumps a stack trace, exits 1 (the code the
     // contract reserves for findings), and never names the file. Convert it.
     if (!isMdx) throw error;
-    const reason = error instanceof Error ? error.message : String(error);
-    throw new DockgError(`Could not parse MDX in ${path}: ${reason}`);
+    const reason = errorMessage(error);
+    throw new KgError(`Could not parse MDX in ${path}: ${reason}`);
   }
 
   const sections: Section[] = [];

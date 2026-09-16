@@ -12,7 +12,8 @@ import {
   type ReportFormat,
   type ValidateRun,
 } from "../../meta/index.js";
-import { DockgError } from "../types.js";
+import { errorMessage } from "../../shared/errors.js";
+import { KgError } from "../types.js";
 import { loadConfig } from "../core/config.js";
 import { discoverFiles } from "../core/discover.js";
 import { bundledSchemaPath } from "../core/pkg.js";
@@ -42,7 +43,7 @@ export async function runValidate(
   // any docmeta.config.yaml, which would silently shrink the corpus).
   const files = discoverFiles(inputs, config.exclude, cwd);
   if (files.length === 0) {
-    throw new DockgError(
+    throw new KgError(
       `No input files matched: ${inputs.join(", ")} (cwd: ${cwd})`,
     );
   }
@@ -51,7 +52,7 @@ export async function runValidate(
     (f) => !supported.has(extname(f).toLowerCase()),
   );
   if (unsupported.length > 0) {
-    throw new DockgError(
+    throw new KgError(
       `manni kg build would ingest file types manni meta cannot validate: ${unsupported
         .slice(0, 5)
         .join(
@@ -77,7 +78,7 @@ export async function runValidate(
     });
   } catch (e) {
     // Surface docmeta operational errors as our own (exit 2).
-    throw new DockgError(e instanceof Error ? e.message : String(e));
+    throw new KgError(errorMessage(e));
   }
 
   return {

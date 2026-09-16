@@ -57,9 +57,10 @@ describe("manni kg traverse (integration)", () => {
         graph,
         "-d",
         "2",
+        // One occurrence, commas inside: a CURIE holds no comma, so the list
+        // needs no second spelling (0051 §2).
         "--predicates",
-        "dcterms:references",
-        "dcterms:hasPart",
+        "dcterms:references,dcterms:hasPart",
         "--variant",
         "SP-X100",
         "-f",

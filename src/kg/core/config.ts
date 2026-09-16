@@ -13,7 +13,8 @@ import {
   readConfigFileSync,
   type ConfigFileOptions,
 } from "../../shared/config-file.js";
-import { DockgError } from "../types.js";
+import { errorMessage } from "../../shared/errors.js";
+import { KgError } from "../types.js";
 import { resolveBaseIri } from "./iri.js";
 import { COVERAGE_FIELD_NAMES } from "./coverage.js";
 // Pure data module (no transformers import), so config stays Node-light.
@@ -279,8 +280,8 @@ export function parseConfig(text: string, configPath: string): DockgConfig {
   try {
     raw = parseYaml(text);
   } catch (e) {
-    throw new DockgError(
-      `Invalid YAML in ${configPath}: ${e instanceof Error ? e.message : "parse error"}`,
+    throw new KgError(
+      `Invalid YAML in ${configPath}: ${errorMessage(e)}`,
     );
   }
   return parseConfigSection(raw, configPath);
@@ -297,7 +298,7 @@ export function parseConfigSection(
   configPath: string,
 ): DockgConfig {
   if (raw == null || typeof raw !== "object" || Array.isArray(raw)) {
-    throw new DockgError(
+    throw new KgError(
       `Invalid config in ${configPath}: root must be an object`,
     );
   }
@@ -305,7 +306,7 @@ export function parseConfigSection(
     const details = (validateConfig.errors ?? [])
       .map((e) => `  ${e.instancePath || "/"}: ${e.message ?? ""}`)
       .join("\n");
-    throw new DockgError(`Invalid config in ${configPath}:\n${details}`);
+    throw new KgError(`Invalid config in ${configPath}:\n${details}`);
   }
 
   // Past this point Ajv has validated `raw` against config-schema.json, so the
@@ -387,7 +388,7 @@ export function parseConfigSection(
 const CONFIG_FILE: ConfigFileOptions = {
   section: CONFIG_SECTION,
   legacyNames: [LEGACY_CONFIG_FILENAME],
-  toError: (message) => new DockgError(message),
+  toError: (message) => new KgError(message),
 };
 
 /**

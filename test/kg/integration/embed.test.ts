@@ -46,7 +46,7 @@ function prepare(withVectors = true): {
     encoding: "utf8",
     cwd: corpus,
   });
-  execFileSync(process.execPath, [cli, "kg", "export", "-f", "search", "-g", graph], {
+  execFileSync(process.execPath, [cli, "kg", "export", "search", "-g", graph], {
     encoding: "utf8",
     cwd: corpus,
   });
@@ -221,7 +221,7 @@ describe("manni kg embed (integration)", () => {
       corpus,
     );
     expect(status).toBe(2);
-    expect(output).toContain("export --format search");
+    expect(output).toContain("export search");
   });
 
   it("exits 2 with an install hint when the optional peer is absent", () => {

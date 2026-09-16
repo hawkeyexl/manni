@@ -14,7 +14,7 @@ import {
   type ProviderSpec,
 } from "@hawkeyexl/inference";
 import type { DockgConfig, ProviderName } from "../core/config.js";
-import { DockgError } from "../types.js";
+import { KgError } from "../types.js";
 
 export interface ProviderOptions {
   provider?: string;
@@ -59,7 +59,7 @@ export function providerSpecFor(
   // concrete. Say that, instead of surfacing the library's message about a
   // selector the user never typed.
   if (name === "llama-cpp" && spec.model === undefined) {
-    throw new DockgError(
+    throw new KgError(
       "fill.provider is llama-cpp but no fill.model is set. A local model must be named " +
         'explicitly — try fill.model: "granite-4.1-3b-q2", a curated alias, an hf: URI, or a ' +
         ".gguf path. Selectors like `auto` are resolved against the machine and are not supported.",

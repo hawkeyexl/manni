@@ -50,7 +50,7 @@ function buildGraph(): { dir: string; graph: string } {
 function exportAs(format: string, graph: string, out: string): void {
   execFileSync(
     process.execPath,
-    [cli, "kg", "export", "-f", format, "-g", graph, "-o", out],
+    [cli, "kg", "export", format, "-g", graph, "-o", out],
     {
       encoding: "utf8",
       cwd: corpus,

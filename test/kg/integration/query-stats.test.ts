@@ -37,7 +37,7 @@ describe("manni kg query", () => {
   it("matches by predicate with a prefixed name", () => {
     const { stdout, status } = run([
       "query",
-      "-p",
+      "--p",
       "dcterms:references",
       "-g",
       graph,
@@ -50,7 +50,7 @@ describe("manni kg query", () => {
   it("matches by subject and returns JSON", () => {
     const { stdout, status } = run([
       "query",
-      "-s",
+      "--s",
       "https://example.com/kg/doc/docs/getting-started.md",
       "-f",
       "json",
@@ -63,14 +63,14 @@ describe("manni kg query", () => {
   });
 
   it("matches literal objects", () => {
-    const { stdout } = run(["query", "-o", "python", "-g", graph]);
+    const { stdout } = run(["query", "--o", "python", "-g", graph]);
     expect(stdout).toContain("dockg:codeLanguage");
   });
 
   it("reports no matches cleanly", () => {
     const { stdout, status } = run([
       "query",
-      "-p",
+      "--p",
       "dcterms:nonexistent",
       "-g",
       graph,

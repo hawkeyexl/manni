@@ -204,7 +204,7 @@ describe("the packaged tarball", () => {
     ] as const) {
       const target = join(out, file);
       const { stdout, status } = cli(
-        ["export", "-f", format, "-g", graph, "-o", target],
+        ["export", format, "-g", graph, "-o", target],
         corpus,
       );
       expect(status, `${format}: ${stdout}`).toBe(0);

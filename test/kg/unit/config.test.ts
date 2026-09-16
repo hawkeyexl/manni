@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadConfig, parseConfig } from "../../../src/kg/core/config.js";
-import { DockgError } from "../../../src/kg/types.js";
+import { KgError } from "../../../src/kg/types.js";
 
 describe("parseConfig", () => {
   it("applies defaults for a minimal config", () => {
@@ -111,7 +111,7 @@ describe("parseConfig", () => {
         "version: 1\nembed:\n  bogus: true\n",
         "/tmp/dockg.config.yaml",
       ),
-    ).toThrow(DockgError);
+    ).toThrow(KgError);
   });
 
   it("parses export.iirds overrides", () => {
@@ -132,13 +132,13 @@ describe("parseConfig", () => {
         "version: 1\nexport:\n  iirds:\n    version: '2.0'\n",
         "/tmp/dockg.config.yaml",
       ),
-    ).toThrow(DockgError);
+    ).toThrow(KgError);
     expect(() =>
       parseConfig(
         "version: 1\nexport:\n  iirds:\n    bogus: true\n",
         "/tmp/dockg.config.yaml",
       ),
-    ).toThrow(DockgError);
+    ).toThrow(KgError);
   });
 
   it("normalizes baseIri with a trailing slash", () => {
@@ -158,13 +158,13 @@ describe("parseConfig", () => {
         "version: 1\nfill:\n  fields: [prefLabel]\n",
         "/tmp/dockg.config.yaml",
       ),
-    ).toThrow(DockgError);
+    ).toThrow(KgError);
     expect(() =>
       parseConfig(
         "version: 1\nfill:\n  fields: [softwareSubject]\n",
         "/tmp/dockg.config.yaml",
       ),
-    ).toThrow(DockgError);
+    ).toThrow(KgError);
   });
 
   it("rejects a stale camelCase coverageThreshold key", () => {
@@ -173,25 +173,25 @@ describe("parseConfig", () => {
         "version: 1\nstats:\n  coverageThreshold:\n    prefLabel: 80\n",
         "/tmp/dockg.config.yaml",
       ),
-    ).toThrow(DockgError);
+    ).toThrow(KgError);
   });
 
   it("rejects unknown top-level keys", () => {
     expect(() =>
       parseConfig("version: 1\nbogus: true\n", "/tmp/dockg.config.yaml"),
-    ).toThrow(DockgError);
+    ).toThrow(KgError);
   });
 
   it("rejects a wrong version", () => {
     expect(() => parseConfig("version: 2\n", "/tmp/dockg.config.yaml")).toThrow(
-      DockgError,
+      KgError,
     );
   });
 
   it("rejects invalid YAML", () => {
     expect(() =>
       parseConfig("version: [1\n", "/tmp/dockg.config.yaml"),
-    ).toThrow(DockgError);
+    ).toThrow(KgError);
   });
 
   it("parses check.shapes and fill.validateGraph overrides", () => {
@@ -209,7 +209,7 @@ describe("parseConfig", () => {
         "version: 1\ncheck:\n  bogus: true\n",
         "/tmp/dockg.config.yaml",
       ),
-    ).toThrow(DockgError);
+    ).toThrow(KgError);
   });
 
   it("rejects an unknown fill provider", () => {
@@ -218,7 +218,7 @@ describe("parseConfig", () => {
         "version: 1\nfill:\n  provider: gemini\n",
         "/tmp/dockg.config.yaml",
       ),
-    ).toThrow(DockgError);
+    ).toThrow(KgError);
   });
 
   it("accepts the local llama-cpp provider", () => {
@@ -255,7 +255,7 @@ describe("parseConfig", () => {
         "version: 1\nfill:\n  sections: yes-please\n",
         "/tmp/dockg.config.yaml",
       ),
-    ).toThrow(DockgError);
+    ).toThrow(KgError);
   });
 
   it("parses route mappings with defaults and normalization", () => {
@@ -315,7 +315,7 @@ describe("parseConfig", () => {
     expect(parseConfig("version: 1\n", "/tmp/c.yaml").routes).toEqual([]);
     expect(() =>
       parseConfig("version: 1\nroutes:\n  - basePath: /docs\n", "/tmp/c.yaml"),
-    ).toThrow(DockgError);
+    ).toThrow(KgError);
   });
 
   it("parses fill.writeProvenance overrides", () => {
@@ -337,7 +337,7 @@ describe("parseConfig", () => {
         "version: 1\nprovenance:\n  gitTime: true\n",
         "/tmp/dockg.config.yaml",
       ),
-    ).toThrow(DockgError);
+    ).toThrow(KgError);
   });
 
   it("defaults stats.coverageThreshold to an empty (ungated) map", () => {
@@ -387,7 +387,7 @@ describe("parseConfig", () => {
     ]) {
       expect(() =>
         parseConfig(`version: 1\n${bad}`, "/tmp/dockg.config.yaml"),
-      ).toThrow(DockgError);
+      ).toThrow(KgError);
     }
   });
 
@@ -404,7 +404,7 @@ describe("parseConfig", () => {
         "version: 1\nprovenance:\n  git: maybe\n",
         "/tmp/dockg.config.yaml",
       ),
-    ).toThrow(DockgError);
+    ).toThrow(KgError);
   });
 
   it("rejects an unknown derive source", () => {
@@ -413,7 +413,7 @@ describe("parseConfig", () => {
         "version: 1\nbuild:\n  derive: [frontmatter, telepathy]\n",
         "/tmp/dockg.config.yaml",
       ),
-    ).toThrow(DockgError);
+    ).toThrow(KgError);
   });
 });
 
@@ -456,6 +456,6 @@ describe("loadConfig", () => {
   });
 
   it("throws for an explicit missing path", () => {
-    expect(() => loadConfig("Z:/nope/dockg.config.yaml")).toThrow(DockgError);
+    expect(() => loadConfig("Z:/nope/dockg.config.yaml")).toThrow(KgError);
   });
 });
