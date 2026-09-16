@@ -12,7 +12,7 @@ import { Aside } from '@astrojs/starlight/components';
 
 manni lint has four subcommands. Two of them lint:
 [`check`](#lint-check) runs every configured job, and
-[`structure`](#lint-structure) runs the one job that ships. Two of them answer
+[`structure`](#lint-structure) runs the structure job. Two of them answer
 questions about configuration: [`templates`](#lint-templates) lists what could
 route a page, and [`tools`](#lint-tools) lists what performs each job.
 
@@ -51,19 +51,14 @@ manni lint [options] <check|structure|templates|tools>
 
 A **job** is the kind of check. A **tool** is the implementation that answers
 it. `structure` is the job; `manni`, this package's own engine, is the tool that
-performs it today. Naming the verb after the job means swapping the tool
-underneath does not change the command anyone types. Proposal 0050 is the
-record.
-
-One job ships. `prose` and `format` are reserved and not implemented, so
-`manni lint prose` is an unknown command today.
+performs it. Naming the verb after the job keeps the command the same whichever
+tool performs it. Proposal 0050 is the record.
 
 ## `lint check`
 
 Run every configured lint job over the given files, directories, or globs.
-Today that is `structure` and nothing else, so `check` and `structure` report
-the same findings over the same inputs. `check` exists so that a CI step written
-once keeps running every job as jobs are added.
+The one job is `structure`, so `check` and `structure` report the same findings
+over the same inputs.
 
 ```sh
 manni lint check [paths...] [options]
@@ -134,7 +129,7 @@ the job itself.
 | `--no-config` | n/a | off | Ignore any discovered config file. |
 | `--allow-empty` | n/a | off | Treat zero matched files as success. Mirrors config `allowEmpty:`. |
 | `--no-gitignore` | n/a | off | Lint files `.gitignore` covers. |
-| `--tool` | `<name>` | `manni` | Which tool performs the job. `manni` is the only value today; anything else is an error naming the known set (exit 2). Mirrors config `structure.tool:`. |
+| `--tool` | `<name>` | `manni` | Which tool performs the job. `manni` is the only value; anything else is an error naming the known set (exit 2). Mirrors config `structure.tool:`. |
 | `-t, --template` | `<ref>` | | Apply one [template ref](/manni/lint/reference/templates/#template-refs) to every file, overriding type routing. The first rung of the [resolution chain](/manni/lint/reference/configuration/#how-a-template-is-chosen). |
 | `--templates` | `<path>` | | Template file to route by. Its templates' `types:` outrank the built-ins. Repeatable, one path per occurrence, never comma-separated. Mirrors config `templates:`. |
 | `--explain` | n/a | off | Print how each file's template was chosen and lint nothing. [Always exits 0](#explain), unrouted pages included. |
@@ -196,18 +191,19 @@ Jobs:
   structure  tool: manni 2.2.0  [configured, available]
     config: manni.config.yaml
     formats:
-      markdown  Markdown (.md, .markdown)  [implemented]
-      mdx  MDX (.mdx)  [implemented]
-      html  HTML (.html, .htm)  [implemented]
-      asciidoc  AsciiDoc (.adoc, .asciidoc)  [implemented]
-      rst  reStructuredText (.rst)  [implemented]
-      xml  XML (.xml, .dita)  [implemented]
+      markdown  Markdown (.md, .markdown)
+      mdx  MDX (.mdx)
+      html  HTML (.html, .htm)
+      asciidoc  AsciiDoc (.adoc, .asciidoc)
+      rst  reStructuredText (.rst)
+      xml  XML (.xml, .dita)
 ```
 
 `[configured]` means the repository's config declares the job; `[not
 configured]` means it is running on built-in defaults. `available` means the
 tool can run here. `config:` names the file the tool read, or
-`built-in defaults` when there was none.
+`built-in defaults` when there was none. `formats:` lists every input format the
+tool reads, and each name is one `--as` accepts.
 
 This is what to run when two machines disagree. A difference between a
 developer's laptop and CI is usually one of two things. It is a different
@@ -215,10 +211,8 @@ version of one tool, or a config file found in one place and not the other.
 Both are on this screen.
 
 <Aside type="note" title="It replaced `formats`">
-The imported tool spelled this verb `formats`. It was renamed because a
-`format` job is reserved, and a verb one letter from a job name is a verb
-people mistype. The format list it printed is still here, under each job's
-tool.
+The imported tool spelled this verb `formats`, and `manni lint formats` is an
+unknown command. The format list it printed is here, under each job's tool.
 </Aside>
 
 ### Options
@@ -227,7 +221,7 @@ tool.
 |---|---|---|---|
 | `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/lint/reference/configuration/). |
 | `--no-config` | n/a | off | Ignore any discovered config file, and report the built-in defaults. |
-| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints one array of job records, each with `job`, `tool`, `configured`, `available`, `version`, `config` and `formats[]`. An unknown value is an error (exit 2). |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints one array of job records, each with `job`, `tool`, `configured`, `available`, `version`, `config` and `formats[]`. Each format is an object with `name`, `label` and `extensions`. An unknown value is an error (exit 2). |
 
 ## Rule ids
 
@@ -237,10 +231,9 @@ Every finding carries an id of three segments:
 manni:lint/<job>/<rule>
 ```
 
-So a missing section is `manni:lint/structure/missing-section`, and a prose
-finding will one day read `manni:lint/prose/Google.Passive`, keeping the
-tool's own rule name. Three segments rather than the two `manni cite` uses.
-Anything that parses family rule ids must not assume two.
+So a missing section is `manni:lint/structure/missing-section`. That is three
+segments rather than the two `manni cite` uses. Anything that parses family
+rule ids must not assume two.
 
 The id is the durable name. It is the SARIF `ruleId`, the `type` attribute of a
 JUnit `<failure>`, the GitHub annotation `title`, and the `ruleId` the JSON
@@ -265,7 +258,7 @@ reporter carries beside `type`.
 
 Every structural finding is `error` on the [family severity
 scale](/manni/meta/reference/output-and-exit-codes/#severity-across-the-family).
-There is no severity map yet, and no rule can be turned down to a warning.
+There is no severity map, and no rule can be turned down to a warning.
 
 ## Output formats
 
@@ -428,7 +421,7 @@ ordinary run for the verdict.
 | Code | Meaning |
 |---|---|
 | `0` | Every linted file was clean. Also every `--explain` run, and every `templates` or `tools` listing. |
-| `1` | At least one `error`-level finding. Today every structural finding is an error, so this is "the run produced findings". It is defined on severity so that a later job's warnings cannot silently change what CI does. |
+| `1` | At least one `error`-level finding. Every structural finding is an error, so this is "the run produced findings". |
 | `2` | Usage or operational error. That covers an unknown flag value, an unknown `--tool`, an unresolvable template, or a config carrying a moved key. It also covers no inputs and no config, and a run in which every file was skipped. One line on stderr, prefixed `manni: `. |
 
 The `1`/`2` split is what lets a workflow tell "the docs are wrong" apart from
@@ -516,10 +509,7 @@ manni lint structure docs/notes.md
 # manni: Nothing was checked: all 1 file(s) were skipped. 1 had no template: give a page a "type:" that a template serves, pass -t/--template <ref>, or set "lint.template" as a default. Run "manni lint structure <paths> --explain" to see how each file resolved.
 
 manni lint structure docs/ --as notebook
-# manni: Format "notebook" is not implemented yet. Run "manni lint tools" to see which formats are implemented.
-
-manni lint structure docs/ --as nonsense
-# manni: Unknown format "nonsense". Run "manni lint tools" to see the registered formats.
+# manni: Unknown format "notebook". Run "manni lint tools" to see the formats manni lint reads.
 ```
 
 A file the run cannot open is that file's problem, not the run's. It is skipped

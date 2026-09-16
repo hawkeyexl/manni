@@ -129,14 +129,14 @@ export interface DocumentTree {
  * A parser for one input format.
  *
  * Shaped after docmeta's `MetadataExtractor` so the two registries read the
- * same way. Unimplemented formats are still registered, so `manni lint formats`
- * can report them and an `.rst` file gets "not implemented yet" rather than
- * being silently parsed as Markdown.
+ * same way. A format is registered only when its parser reads it, so every
+ * registered format is one the tool reads, and an extension no parser claims is
+ * skipped by name rather than parsed as Markdown.
  */
 export interface DocumentParser {
   /** Stable name, also used as `DocumentTree.format`. */
   name: string;
-  /** Human-readable label for `manni lint formats`. */
+  /** Human-readable label for `manni lint tools`. */
   label: string;
   /** Lowercase file extensions this parser handles, incl. dot (e.g. ".md"). */
   extensions: string[];
@@ -151,8 +151,6 @@ export interface DocumentParser {
    * clean run into a failure about files the user never asked to lint.
    */
   walkExtensions?: string[];
-  /** Whether this parser is wired up (false for roadmap stubs). */
-  implemented: boolean;
   /** Parse raw file content into the generic tree. */
   parse(content: string, filePath: string): DocumentTree;
 }
@@ -161,13 +159,11 @@ export interface DocumentParser {
  * How much a finding weighs, on the one scale every manni tool speaks
  * (`src/shared/severity.ts`): `notice | warning | error`.
  *
- * Every structural finding is an `error` today - a template either describes a
- * document or it does not - so the scale is here for the jobs to come rather
- * than for a choice this one makes. It is the family's and not this tool's
+ * Every structural finding is an `error`: a template either describes a
+ * document or it does not. The scale is the family's and not this tool's
  * private pair, because a flag or config key two domains both have carries the
- * same name *and* the same values, and a prose job's warnings have to mean
- * what cite's and a11y's do. Re-exported so `lint.Severity` names the same
- * type a caller already has.
+ * same name *and* the same values. Re-exported so `lint.Severity` names the
+ * same type a caller already has.
  */
 export type { Severity };
 

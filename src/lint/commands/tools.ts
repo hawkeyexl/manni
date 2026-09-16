@@ -3,18 +3,13 @@
  * this checkout can run it, what it read its settings from, and the input
  * formats it understands.
  *
- * It replaces `formats`, which reported the parser registry alone. The name had
- * to go: `format` is a job of its own once a formatter lands, and `manni lint
- * formats` would then have read as "run the format job" rather than "list the
- * input formats". The registry is still here, as one column of the job that
- * reads it - which is where it belongs, since a second tool performing the
- * structure job would bring its own set.
+ * It replaces `formats`, which reported the parser registry alone. Proposal
+ * 0050 records the rename. The registry is here as one column of the job that
+ * reads it, because the formats belong to the tool performing that job.
  *
- * Listing the unimplemented formats is the whole point of that column: the
- * pre-rewrite `inferFileType` defaulted every unrecognized extension to
- * Markdown, so an `.rst` file was quietly mis-parsed instead of being named as
- * a gap. A roadmap format that says "planned" here is a promise the tool can
- * keep.
+ * The column lists exactly the formats the tool reads, so a row carries no
+ * state: a listed format is one that is read, and `--as` accepts every name in
+ * it.
  *
  * Returns data; `src/lint/reporters/index.ts` renders it.
  */
@@ -33,7 +28,6 @@ export interface FormatInfo {
   name: string;
   label: string;
   extensions: string[];
-  implemented: boolean;
 }
 
 /** One job, and the tool that would perform it on this run. */
@@ -48,7 +42,7 @@ export interface ToolInfo {
   version: string;
   /** Where the tool read its settings: the config file, or the defaults. */
   config: string;
-  /** The input formats the tool reads, implemented or planned. */
+  /** The input formats the tool reads. */
   formats: FormatInfo[];
 }
 

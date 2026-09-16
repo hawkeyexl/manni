@@ -869,6 +869,5 @@ export const xmlParser: DocumentParser = {
    * otherwise clean tree. Naming an `.xml` file explicitly still parses it.
    */
   walkExtensions: [".dita"],
-  implemented: true,
   parse: (content, filePath) => parseXml(content, filePath),
 };

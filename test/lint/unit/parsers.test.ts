@@ -230,7 +230,7 @@ describe("mdx parser", () => {
 });
 
 describe("parser registry", () => {
-  it("resolves implemented parsers by extension, case-insensitively", () => {
+  it("resolves parsers by extension, case-insensitively", () => {
     expect(parserForExtension(".md")?.name).toBe("markdown");
     expect(parserForExtension(".MDX")?.name).toBe("mdx");
   });
@@ -240,41 +240,21 @@ describe("parser registry", () => {
     expect(parserByName("nope")).toBeUndefined();
   });
 
-  it("walks directories using only implemented formats", () => {
+  it("walks directories using only extensions a parser reads", () => {
     const exts = supportedExtensions();
     expect(exts).toEqual(expect.arrayContaining([".md", ".markdown", ".mdx"]));
-    // Every extension offered for a directory walk must belong to a parser that
-    // can actually parse it, or the walk collects files it will only skip.
+    // Every extension offered for a directory walk must belong to a parser, or
+    // the walk collects files it will only skip.
     for (const ext of exts) {
-      expect(parserForExtension(ext)?.implemented, ext).toBe(true);
+      expect(parserForExtension(ext), ext).toBeDefined();
     }
   });
 
-  // Registering an unimplemented format is what turns a silent mis-parse into a
-  // named gap: the old `inferFileType` defaulted every unknown extension to
-  // Markdown.
-  // Asserted against whatever is still on the roadmap, so it keeps meaning
-  // something as parsers land - and reports honestly when none are left.
-  it("registers roadmap formats and reports them as not implemented", () => {
-    const planned = listFormats().filter((f) => !f.implemented);
-    for (const format of planned) {
-      const ext = at(format.extensions, 0, `${format.name} extension`);
-      const parser = defined(parserForExtension(ext), `parser for "${ext}"`);
-      expect(parser.implemented).toBe(false);
-      expect(() => parser.parse("anything", `a${ext}`)).toThrow(
-        new RegExp(`${format.label} is not implemented yet`),
-      );
-    }
-    // Nothing to assert once every format ships; say so rather than pass mutely.
-    if (planned.length === 0) {
-      expect(supportedExtensions().length).toBeGreaterThan(0);
-    }
-  });
-
-  it("lists every format with its implementation status", () => {
+  // The list is exactly the formats the tool reads. A row carries a name, a
+  // label and extensions, and no state: a listed format is one that is read.
+  // Asserted exhaustively, so dropping a parser fails here.
+  it("lists every format it reads, and no state beside it", () => {
     const formats = listFormats();
-    // Order is presentational and shifts as parsers land; membership and the
-    // implemented/planned split are the contract `manni lint formats` reports.
     expect(formats.map((f) => f.name).sort()).toEqual([
       "asciidoc",
       "html",
@@ -283,23 +263,14 @@ describe("parser registry", () => {
       "rst",
       "xml",
     ]);
-    expect(formats.every((f) => f.extensions.length > 0)).toBe(true);
-    // The whole set, not just markdown: `implemented` is what `manni lint
-    // formats` prints and what turns an extension from "not supported yet"
-    // into a parse, so a regression that demotes one format is a silently
-    // narrower tool. Asserted exhaustively, demoting any of them fails here.
-    expect(
-      formats
-        .filter((f) => f.implemented)
-        .map((f) => f.name)
-        .sort(),
-    ).toEqual(["asciidoc", "html", "markdown", "mdx", "rst", "xml"]);
-  });
-
-  // Implemented parsers come first, so `manni lint formats` reads as "here is
-  // what works, and here is what is coming" rather than interleaving the two.
-  it("lists implemented formats before planned ones", () => {
-    const implemented = listFormats().map((f) => f.implemented);
-    expect(implemented).toEqual([...implemented].sort((a, b) => Number(b) - Number(a)));
+    for (const format of formats) {
+      expect(format.extensions.length, format.name).toBeGreaterThan(0);
+      expect(Object.keys(format).sort(), format.name).toEqual([
+        "extensions",
+        "label",
+        "name",
+      ]);
+      expect(parserByName(format.name)?.name).toBe(format.name);
+    }
   });
 });

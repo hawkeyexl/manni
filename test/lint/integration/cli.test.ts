@@ -179,7 +179,10 @@ describe("manni lint (built bin)", () => {
       expect(r.stdout).toContain("structure");
       expect(r.stdout).toContain("manni");
       expect(r.stdout).toContain("built-in defaults");
-      expect(r.stdout).toMatch(/markdown.*implemented/);
+      expect(r.stdout).toContain("markdown  Markdown (.md, .markdown)");
+      // A listed format is one the tool reads, so no row carries a state that
+      // would imply formats in some other state.
+      expect(r.stdout).not.toMatch(/implemented|planned/);
     });
 
     it("answers as JSON, one row per job", () => {
@@ -195,12 +198,15 @@ describe("manni lint (built bin)", () => {
         config: "built-in defaults",
       });
       expect(typeof rows[0].version).toBe("string");
-      // Every registered format, whether or not a parser backs it yet: a
-      // roadmap format that says "planned" here is a promise the tool can
-      // keep, and it is the column that says which ones `--as` accepts.
-      const formats = rows[0].formats as { name: string; implemented: boolean }[];
-      expect(formats.some((f) => f.name === "markdown" && f.implemented)).toBe(true);
+      // Every format the tool reads, which is exactly what `--as` accepts. A
+      // row is a name, a label and its extensions, and nothing that implies a
+      // format in some other state.
+      const formats = rows[0].formats as Record<string, unknown>[];
       expect(formats.length).toBeGreaterThan(1);
+      for (const format of formats) {
+        expect(Object.keys(format).sort()).toEqual(["extensions", "label", "name"]);
+      }
+      expect(formats.some((f) => f.name === "markdown")).toBe(true);
     });
 
     it("names the config it read, and calls the job configured", () => {
@@ -209,7 +215,7 @@ describe("manni lint (built bin)", () => {
       expect(rows[0]).toMatchObject({ configured: true, config: COLLECTIONS });
     });
 
-    // `formats` collided with the `format` job a formatter would bring.
+    // `tools` lists the formats; there is no `formats` verb.
     it("has replaced the formats verb", () => {
       const r = run(["formats"]);
       expect(r.status).toBe(2);

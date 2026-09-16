@@ -53,12 +53,12 @@ const run: LintRun = {
       template: "how-to",
     },
     {
-      file: "guide.adoc",
+      file: "guide.xyz",
       success: false,
       findings: [],
       template: null,
       skipped: "unsupported-format",
-      reason: "guide.adoc: AsciiDoc is not implemented yet.",
+      reason: `guide.xyz: no parser is registered for ".xyz".`,
     },
   ],
   summary: { checked: 2, passed: 1, failed: 1, skipped: 1 },
@@ -86,7 +86,7 @@ describe("json reporter", () => {
     expect(parsed.map((r: { file: string }) => r.file)).toEqual([
       "ok.md",
       "bad.md",
-      "guide.adoc",
+      "guide.xyz",
     ]);
   });
 
@@ -148,7 +148,7 @@ describe("json reporter", () => {
   // wanting. `skipped` is additive, so the docevals read path is untouched.
   it("says a skipped file was skipped, and why in one word", () => {
     const skipped = JSON.parse(renderJson(run))[2];
-    expect(skipped.file).toBe("guide.adoc");
+    expect(skipped.file).toBe("guide.xyz");
     expect(skipped.success).toBe(false);
     expect(skipped.errors).toEqual([]);
     expect(skipped.skipped).toBe("unsupported-format");
@@ -231,8 +231,8 @@ describe("pretty reporter", () => {
   // A skip that leaves no trace is indistinguishable from a pass.
   it("says which file was skipped and why", () => {
     const out = renderPretty(run, { color: false });
-    expect(out).toContain("- guide.adoc");
-    expect(out).toContain("skipped: guide.adoc: AsciiDoc is not implemented yet.");
+    expect(out).toContain("- guide.xyz");
+    expect(out).toContain(`skipped: guide.xyz: no parser is registered for ".xyz".`);
   });
 
   it("emits ANSI only when color is on", () => {
@@ -292,7 +292,7 @@ describe("github reporter", () => {
 
   it("annotates nothing for passing or skipped files", () => {
     expect(renderGithub(run)).not.toContain("ok.md");
-    expect(renderGithub(run)).not.toContain("guide.adoc");
+    expect(renderGithub(run)).not.toContain("guide.xyz");
     expect(renderGithub(cleanRun)).toBe("");
   });
 
@@ -406,7 +406,7 @@ describe("junit reporter", () => {
    */
   it("leaves a skipped file out rather than passing it", () => {
     const xml = renderJunit(run);
-    expect(xml).not.toContain("guide.adoc");
+    expect(xml).not.toContain("guide.xyz");
     // The counts are the run's own, not the length of the result list.
     expect(xml).toContain('tests="2"');
   });

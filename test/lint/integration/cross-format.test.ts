@@ -1,5 +1,5 @@
 /**
- * The same doctype template, over every implemented format.
+ * The same doctype template, over every format the tool reads.
  *
  * This is the proof that the parser registry is real rather than decorative.
  * Each format has a pair of fixtures under `test/lint/fixtures/formats/` saying the
@@ -9,7 +9,7 @@
  * on the generic tree" means in practice. If a template ever needs per-format
  * special-casing, the content model in ADR 01001 is wrong.
  *
- * The suite is driven by the registry, not by a list: an implemented format
+ * The suite is driven by the registry, not by a list: a registered format
  * without fixtures fails rather than being quietly skipped, so a new parser
  * cannot ship without demonstrating it works against a real template.
  */
@@ -25,8 +25,6 @@ import { defined } from "../helpers.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixtures = join(here, "..", "fixtures", "formats");
-
-const implemented = PARSERS.filter((p) => p.implemented);
 
 /**
  * A format's fixture, by any of its extensions — XML ships its conforming case
@@ -45,9 +43,9 @@ function lint(parser: DocumentParser, path: string, template: unknown): Finding[
   return validateDocument(tree, template as Parameters<typeof validateDocument>[1]);
 }
 
-describe("every implemented format", () => {
+describe("every format", () => {
   it("ships a conforming and a non-conforming fixture", () => {
-    for (const parser of implemented) {
+    for (const parser of PARSERS) {
       expect(fixtureFor(parser, "how-to"), `${parser.name} conforming`).not.toBeNull();
       expect(
         fixtureFor(parser, "how-to-broken"),
@@ -57,7 +55,7 @@ describe("every implemented format", () => {
   });
 });
 
-describe.each(implemented.map((p) => [p.name, p] as const))(
+describe.each(PARSERS.map((p) => [p.name, p] as const))(
   "%s against tgdp:how-to:1.6",
   (_name, parser) => {
     it("lints the conforming fixture clean", async () => {

@@ -111,7 +111,7 @@ refused. Name the collection for what it holds: `guides`, `site`, `pages`,
 |---|---|---|---|---|
 | `allowEmpty` | boolean | `false` | no | Treat a run that matched zero files as success rather than an operational error. For a shared CI template or a pre-commit hook whose file list may legitimately be empty. The same key, with the same meaning, as `cite.allowEmpty`. `--allow-empty` sets it for one run. |
 | `structure` | object | absent | no | The structure job. Declaring it with no keys is how a repository says the job applies. |
-| `structure.tool` | string, `manni` | `manni` | no | Which tool performs the job. `manni` is this package's own engine and the only value today. Anything else is refused by name. `--tool <name>` names the same thing for one run. |
+| `structure.tool` | string, `manni` | `manni` | no | Which tool performs the job. `manni` is this package's own engine and the only value. Anything else is refused by name. `--tool <name>` names the same thing for one run. |
 | `templates` | string[] | none | no | Template files to load. Their templates' `types:` join the doctype routing table and outrank the built-ins. Adopting a repository's own how-to shape is one entry here and no flag. Each entry is a [template ref](/manni/lint/reference/templates/#template-refs). `--templates <path>` adds more. |
 | `template` | string | none | no | Template ref applied to a page that declares no doctype and matches no override. The **last** rung of the chain, not an override. |
 | `types` | object | none | no | Explicit doctype → template ref map, for a doctype no template file claims with its own `types:`. Keys are the vocabulary your pages' `type:` frontmatter is written in, so they are your names rather than the tool's. |
@@ -125,7 +125,7 @@ silently does nothing.
 <Aside type="note" title="No `collection:` form in an override">
 An override is template policy over a glob, not a document set. A
 `collection:` key there would be a second way to spell membership, and
-`collections:` already owns that. Deferred deliberately in proposal 0050.
+`collections:` already owns that. Proposal 0050 records the decision.
 </Aside>
 
 ## How a template is chosen

@@ -7,12 +7,10 @@
  * adding a format is one file plus one line here - no change to matching,
  * rules, templates, or reporting.
  *
- * Every registered format is implemented today. `DocumentParser.implemented`
- * stays because the roadmap-stub pattern is what kept the pre-rewrite
- * `inferFileType` from quietly parsing an `.rst` file as Markdown: a format
- * that is coming should be registered with `implemented: false` and a `parse`
- * that throws a `LintError` naming it, so `manni lint formats` reports the
- * gap and a file of that type is skipped by name rather than mis-parsed.
+ * A format is registered here when, and only when, a parser reads it. That is
+ * what `manni lint tools` lists and what `--as` accepts, so neither can name a
+ * format the tool does not read. An extension no parser claims is skipped by
+ * name, never parsed as Markdown the way the pre-rewrite `inferFileType` did.
  */
 import type { DocumentParser } from "../types.js";
 import { markdownParser, mdxParser } from "./markdown.js";
@@ -37,38 +35,30 @@ for (const parser of PARSERS) {
   for (const ext of parser.extensions) byExtension.set(ext.toLowerCase(), parser);
 }
 
-/**
- * Resolve a parser for a file extension (including the dot). Returns a
- * registered but unimplemented parser too, so the caller can report the format
- * by name instead of treating the file as unknown.
- */
+/** Resolve a parser for a file extension (including the dot). */
 export function parserForExtension(ext: string): DocumentParser | undefined {
   return byExtension.get(ext.toLowerCase());
 }
 
-/** Resolve a parser by its `--as` name, implemented or not. */
+/** Resolve a parser by its `--as` name. */
 export function parserByName(name: string): DocumentParser | undefined {
   return byName.get(name.toLowerCase());
 }
 
-/** Extensions handled by implemented parsers. Used for directory walks. */
+/** Extensions collected from a directory walk. */
 export function supportedExtensions(): string[] {
-  return PARSERS.filter((p) => p.implemented).flatMap(
-    (p) => p.walkExtensions ?? p.extensions,
-  );
+  return PARSERS.flatMap((p) => p.walkExtensions ?? p.extensions);
 }
 
-/** Every registered format, for `manni lint formats`. */
+/** Every format the tool reads, for `manni lint tools`. */
 export function listFormats(): {
   name: string;
   label: string;
   extensions: string[];
-  implemented: boolean;
 }[] {
   return PARSERS.map((p) => ({
     name: p.name,
     label: p.label,
     extensions: p.extensions,
-    implemented: p.implemented,
   }));
 }

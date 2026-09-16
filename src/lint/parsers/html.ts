@@ -497,6 +497,5 @@ export const htmlParser: DocumentParser = {
   name: "html",
   label: "HTML",
   extensions: [".html", ".htm"],
-  implemented: true,
   parse: parseHtml,
 };

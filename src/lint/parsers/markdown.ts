@@ -79,7 +79,6 @@ export const markdownParser: DocumentParser = {
   name: "markdown",
   label: "Markdown",
   extensions: [".md", ".markdown"],
-  implemented: true,
   parse: (content, filePath) =>
     parseWith(markdownProcessor, "markdown", content, filePath),
 };
@@ -88,6 +87,5 @@ export const mdxParser: DocumentParser = {
   name: "mdx",
   label: "MDX",
   extensions: [".mdx"],
-  implemented: true,
   parse: (content, filePath) => parseWith(mdxProcessor, "mdx", content, filePath),
 };

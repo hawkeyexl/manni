@@ -165,9 +165,9 @@ Checked: structure.
 1 file checked, 1 passed, 0 failed, 0 skipped
 ```
 
-Today `structure` is the only job, so the two commands report the same thing.
-Use `check` in CI anyway. A step written once keeps running every job as jobs
-are added, and `check` is deliberately kept free of any one job's flags.
+`structure` is the only job, so the two commands report the same thing. `check`
+is the command for CI. It runs every job the configuration declares, and it
+carries no job's own flags.
 
 ## Ask why a page routed where it did
 
@@ -289,6 +289,6 @@ config. To make it a standing guarantee, run the check on every push.
 {/* step {"description":"The same page with the section present passes, and the summary says so.","runShell":{"command":"npx @hawkeyexl/manni lint structure --no-config test/lint/fixtures/formats/how-to.md","exitCodes":[0],"stdio":"1 file checked, 1 passed, 0 failed, 0 skipped"}} */}
 {/* step {"description":"`check` runs every configured job and names them before the report.","runShell":{"command":"npx @hawkeyexl/manni lint check --no-config test/lint/fixtures/formats/how-to.md","exitCodes":[0],"stdio":"Checked: structure."}} */}
 {/* step {"description":"--explain prints the routing table, shows the `type` rung deciding, and always exits 0.","runShell":{"command":"npx @hawkeyexl/manni lint structure --no-config --explain test/lint/fixtures/formats/how-to.md","exitCodes":[0],"stdio":"/type\\s+tgdp:how-to:1\\.6\\s+type: how-to -> builtin template/"}} */}
-{/* step {"description":"Every implemented format is held to the same template: the MDX, AsciiDoc, reStructuredText, HTML and XML spellings of the page all pass.","runShell":{"command":"npx @hawkeyexl/manni lint structure --no-config test/lint/fixtures/formats/how-to.mdx test/lint/fixtures/formats/how-to.adoc test/lint/fixtures/formats/how-to.rst test/lint/fixtures/formats/how-to.html test/lint/fixtures/formats/how-to.xml","exitCodes":[0],"stdio":"5 files checked, 5 passed, 0 failed, 0 skipped"}} */}
+{/* step {"description":"Every format is held to the same template: the MDX, AsciiDoc, reStructuredText, HTML and XML spellings of the page all pass.","runShell":{"command":"npx @hawkeyexl/manni lint structure --no-config test/lint/fixtures/formats/how-to.mdx test/lint/fixtures/formats/how-to.adoc test/lint/fixtures/formats/how-to.rst test/lint/fixtures/formats/how-to.html test/lint/fixtures/formats/how-to.xml","exitCodes":[0],"stdio":"5 files checked, 5 passed, 0 failed, 0 skipped"}} */}
 {/* step {"description":"A page read from stdin needs --as to pick a parser, and reports as <stdin>.","runShell":{"command":"cat test/lint/fixtures/formats/how-to-broken.md | npx @hawkeyexl/manni lint structure --no-config - --as markdown","exitCodes":[1],"stdio":"/<stdin>/"}} */}
 {/* test end */}

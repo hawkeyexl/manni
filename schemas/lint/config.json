@@ -33,12 +33,12 @@
       }
     },
     "structure": {
-      "description": "The structure job: what `manni lint structure` runs, and one of the jobs a bare `manni lint check` runs. Declaring it with no keys is how a repo says the job applies; the tool that performs it is the only setting it has.",
+      "description": "The structure job, which `manni lint structure` and `manni lint check` both run. Declaring it with no keys is how a repo says the job applies. Its one setting is the tool that performs it.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "tool": {
-          "description": "Which tool performs the job. `manni` is manni's own template-structure engine, and is the only value today; `--tool <name>` on the command line names the same thing.",
+          "description": "Which tool performs the job. The one value is `manni`, manni's own template-structure engine. `--tool <name>` on the command line names the same thing.",
           "type": "string",
           "enum": ["manni"]
         }

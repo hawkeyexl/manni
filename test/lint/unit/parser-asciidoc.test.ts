@@ -56,7 +56,6 @@ describe("asciidoc parser", () => {
     expect(asciidocParser).toMatchObject({
       name: "asciidoc",
       label: "AsciiDoc",
-      implemented: true,
     });
     expect(asciidocParser.extensions).toEqual([".adoc", ".asciidoc"]);
   });

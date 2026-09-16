@@ -33,9 +33,7 @@ opposite responses. That is the same split
 [`manni a11y check`](/manni/a11y/ci/#exit-codes) use.
 
 Exit `1` is defined as **at least one `error`-level finding**, not "any
-finding". Today every structural finding is an error, so the two are the same
-thing. It is written down now so that when a job arrives with warnings and
-suggestions, it cannot silently change what CI does.
+finding". Every structural finding is an error, so the two are the same thing.
 
 **`-f github` produces inline annotations.** One workflow command per finding,
 anchored to the file and the line, with the rule id as the title:
@@ -235,9 +233,8 @@ yet. Run `manni lint structure --explain` to see the routing, then either add
 
 ## Ramp it in
 
-There is no baseline file yet. `manni meta` and `manni cite` have one, and
-`manni lint` has never had one. Two things work in the meantime, and both are
-plain configuration rather than a mode.
+`manni lint` has no baseline file, unlike `manni meta` and `manni cite`. Two
+things ramp it in instead, and both are plain configuration rather than a mode.
 
 **Start with one collection.** Gate the docset that already declares doctypes,
 and leave the rest reporting nothing because its pages are skipped.

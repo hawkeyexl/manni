@@ -777,7 +777,6 @@ export const rstParser: DocumentParser = {
   name: "rst",
   label: "reStructuredText",
   extensions: [".rst"],
-  implemented: true,
   parse(content, filePath): DocumentTree {
     const src = indexLines(content);
     // Order is load-bearing: `readMetadata` must run before `scanRange`.

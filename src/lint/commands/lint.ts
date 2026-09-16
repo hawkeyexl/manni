@@ -294,24 +294,6 @@ async function lintOne(
   parser: DocumentParser,
   ctx: LintContext,
 ): Promise<LintFileResult> {
-  if (!parser.implemented) {
-    // Roadmap parsers are registered on purpose, and their `parse()` throws a
-    // LintError that already names the format. Harvesting that message
-    // keeps the wording in one place instead of restating it here.
-    let reason = `${parser.label} is not implemented yet.`;
-    try {
-      parser.parse(content, label);
-    } catch (err) {
-      // The parser prefixes its message with the file path. Every report names
-      // the file already, and these paths are long, so drop the duplicate.
-      const message = errorMessage(err);
-      reason = message.startsWith(`${label}: `)
-        ? message.slice(label.length + 2)
-        : message;
-    }
-    return skip(label, reason);
-  }
-
   let tree: DocumentTree;
   try {
     tree = parser.parse(content, label);
@@ -499,20 +481,12 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
   // Resolve `--as` before anything is read: a typo should fail immediately,
   // not after walking a tree of files it was going to mis-parse anyway.
   //
-  // `implemented`, not merely registered: `parserByName` hands back roadmap
-  // stubs too, so a planned format passed this guard and then skipped every
-  // file it was pointed at - reported as "Nothing was checked", which sends
-  // the reader after the documents rather than the flag.
+  // A name no parser answers to is unknown, whatever it is meant to name: the
+  // formats `manni lint tools` lists are exactly the ones `--as` accepts.
   const forcedParser = opts.as != null ? parserByName(opts.as) : undefined;
-  if (opts.as != null && forcedParser?.implemented !== true) {
-    // Two different mistakes, so two different messages. A registered format
-    // is listed by `manni lint tools` as planned, and telling the reader that
-    // the name they read off that listing is unknown sends them hunting for a
-    // typo in a word they spelled right.
+  if (opts.as != null && !forcedParser) {
     throw new LintError(
-      forcedParser
-        ? `Format "${opts.as}" is not implemented yet. Run "manni lint tools" to see which formats are implemented.`
-        : `Unknown format "${opts.as}". Run "manni lint tools" to see the registered formats.`,
+      `Unknown format "${opts.as}". Run "manni lint tools" to see the formats manni lint reads.`,
     );
   }
 
@@ -703,8 +677,7 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
         : null,
       unsupported > 0
         ? `${unsupported} had no parser for their format: pass --as <format> to ` +
-          `force one, or target files in a format "manni lint tools" lists as ` +
-          `implemented.`
+          `force one, or target files in a format "manni lint tools" lists.`
         : null,
       unreadable > 0
         ? `${unreadable} could not be read: check the permissions on those ` +

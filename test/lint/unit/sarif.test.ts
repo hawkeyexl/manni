@@ -307,7 +307,7 @@ describe("renderSarif skipped files", () => {
     findings: [],
     template: null,
     skipped: "unsupported-format",
-    reason: "AsciiDoc is not implemented yet.",
+    reason: 'no parser is registered for ".adoc".',
   });
 
   it("reports a skip as a tool notification, never as a result", () => {
@@ -316,7 +316,7 @@ describe("renderSarif skipped files", () => {
     const notes = run.invocations[0].toolExecutionNotifications;
     expect(notes).toHaveLength(1);
     expect(notes[0].level).toBe("note");
-    expect(notes[0].message.text).toBe("AsciiDoc is not implemented yet.");
+    expect(notes[0].message.text).toBe('no parser is registered for ".adoc".');
   });
 
   it("declares the notification descriptor and references it by id and index", () => {
@@ -540,7 +540,7 @@ describe("renderSarif URIs", () => {
           findings: [],
           template: null,
           skipped: "unsupported-format",
-          reason: "AsciiDoc is not implemented yet.",
+          reason: 'no parser is registered for ".adoc".',
         }),
       ],
       WIN_ROOT,

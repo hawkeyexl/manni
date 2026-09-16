@@ -581,6 +581,5 @@ export const asciidocParser: DocumentParser = {
   name: "asciidoc",
   label: "AsciiDoc",
   extensions: [".adoc", ".asciidoc"],
-  implemented: true,
   parse,
 };

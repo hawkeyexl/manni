@@ -44,11 +44,10 @@ const fixture = (name: string) =>
   readFile(fileURLToPath(new URL(`../fixtures/formats/${name}`, import.meta.url)), "utf8");
 
 describe("html parser", () => {
-  it("registers as an implemented format for .html and .htm", () => {
+  it("registers as the format for .html and .htm", () => {
     expect(htmlParser.name).toBe("html");
     expect(htmlParser.label).toBe("HTML");
     expect(htmlParser.extensions).toEqual([".html", ".htm"]);
-    expect(htmlParser.implemented).toBe(true);
     expect(parse(doc("<h1>A</h1>")).format).toBe("html");
   });
 

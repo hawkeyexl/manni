@@ -54,8 +54,10 @@ try {
 
   const formats = await cli(["tools"]);
   check(
-    "tools lists markdown as implemented",
-    formats.code === 0 && /markdown.*implemented/s.test(formats.stdout),
+    "tools lists markdown, with no state beside it",
+    formats.code === 0 &&
+      formats.stdout.includes("markdown  Markdown (.md, .markdown)") &&
+      !/implemented|planned/.test(formats.stdout),
     formats.stderr || formats.stdout,
   );
 
@@ -126,23 +128,23 @@ try {
     unknown.stderr || unknown.stdout,
   );
 
-  // Every implemented format, through the built package, against one built-in.
+  // Every format the tool reads, through the built package, against one built-in.
   // The vitest suite proves parity from `src/`; this proves the parsers and
   // their dependencies survive bundling.
   const formatsList = await cli(["tools", "-f", "json"]);
-  let implementedExts = [];
+  let formatExts = [];
   try {
     // One row per job; the structure job's `formats` is the parser registry.
-    implementedExts = (JSON.parse(formatsList.stdout)[0]?.formats ?? [])
-      .filter((f) => f.implemented)
-      .map((f) => f.extensions[0]);
+    formatExts = (JSON.parse(formatsList.stdout)[0]?.formats ?? []).map(
+      (f) => f.extensions[0],
+    );
   } catch {
-    implementedExts = [];
+    formatExts = [];
   }
-  const fixtures = implementedExts.map((ext) => `test/lint/fixtures/formats/how-to${ext}`);
+  const fixtures = formatExts.map((ext) => `test/lint/fixtures/formats/how-to${ext}`);
   const everyFormat = await cli(["structure", ...fixtures]);
   check(
-    `one template lints all ${fixtures.length} implemented formats clean`,
+    `one template lints all ${fixtures.length} formats clean`,
     fixtures.length > 0 &&
       everyFormat.code === 0 &&
       everyFormat.stdout.includes(`${fixtures.length} passed`),

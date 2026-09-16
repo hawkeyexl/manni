@@ -299,10 +299,9 @@ export function renderTemplates(
   return lines.join("\n");
 }
 
-/** One input format as `markdown (.md, .markdown) implemented`. */
+/** One input format as `markdown  Markdown (.md, .markdown)`. */
 function formatLine(c: Colors, entry: FormatInfo): string {
-  const state = entry.implemented ? c.green("implemented") : c.dim("planned");
-  return `      ${c.cyan(entry.name)}  ${entry.label} (${entry.extensions.join(", ")})  [${state}]`;
+  return `      ${c.cyan(entry.name)}  ${entry.label} (${entry.extensions.join(", ")})`;
 }
 
 /**

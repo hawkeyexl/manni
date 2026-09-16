@@ -502,10 +502,9 @@ describe("xml parser: failure modes", () => {
 });
 
 describe("xml parser: registry shape", () => {
-  it("declares itself as an implemented .xml parser", () => {
+  it("declares itself as the .xml parser", () => {
     expect(xmlParser.name).toBe("xml");
     expect(xmlParser.label).toBe("XML");
-    expect(xmlParser.implemented).toBe(true);
     // `.dita` too: that is what a DITA topic is called on disk, and a docset of
     // them would otherwise be walked past. `.ditamap` is deliberately absent —
     // a map has no titled section, so every map would report as unparseable.

@@ -15,7 +15,7 @@ hero:
       variant: minimal
 ---
 
-import { CardGrid, LinkCard, Aside } from '@astrojs/starlight/components';
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 `manni meta` checks what a page says it is. `manni lint` checks whether it is
 shaped like one. A page that declares `type: how-to` is supposed to carry an
@@ -50,20 +50,13 @@ that gates the pull request.
 | `manni lint tools` | Each job, the tool that performs it, and what it reads |
 
 A **job** is what is being checked. The **tool** that answers it is an
-implementation you can swap. `structure` is the job that ships; it is answered
-by this package's own engine, named `manni`. Naming the verbs after the jobs
+implementation you can swap. `structure` is the job, and this package's own
+engine, named `manni`, answers it. Naming the verbs after the jobs
 means swapping the tool underneath does not change the command anyone types.
 It also means running exactly one kind of check is one word rather than a flag.
 
 There is no default subcommand. `manni lint docs/` is a usage error that lists
 the verbs, because a domain with one verb still spells the verb.
-
-<Aside type="note" title="One job ships today">
-`prose` and `format` are reserved names, not shipped features. Proposal 0050
-records why: the verb and the rule-id segment are cheap to reserve and
-expensive to retrofit. Until one lands, `manni lint check` runs `structure` and
-says so.
-</Aside>
 
 ## What a template is
 

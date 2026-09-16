@@ -24,11 +24,7 @@ import { refRelativeTo } from "../../../src/lint/core/template-registry.js";
 import { fencedPosition } from "../../../src/lint/parsers/metadata.js";
 import type { Template } from "../../../src/lint/core/template.js";
 import { LintError } from "../../../src/lint/types.js";
-import type {
-  DocumentParser,
-  DocumentTree,
-  ListItemNode,
-} from "../../../src/lint/types.js";
+import type { DocumentTree, ListItemNode } from "../../../src/lint/types.js";
 import { at, defined } from "../helpers.js";
 
 let dir: string;
@@ -152,7 +148,10 @@ describe("a run that checks nothing", () => {
     );
 
     expect(message).toContain("Nothing was checked");
-    expect(message).toContain("--as");
+    expect(message).toContain(
+      '1 had no parser for their format: pass --as <format> to force one, or target files in a format "manni lint tools" lists.',
+    );
+    expect(message).not.toContain("implemented");
     expect(message).not.toContain('"type:"');
   });
 
@@ -822,79 +821,28 @@ describe("stdin is one more input, not a path", () => {
   });
 });
 
-describe("--as names a format the tool can actually parse", () => {
-  // `parserByName` returns roadmap stubs too, so `--as <planned>` passed the
-  // guard and then skipped every file it was given, surfacing as "Nothing was
-  // checked" (exit 2) instead of naming the flag that caused it.
-  //
-  // The stub is injected rather than staged: every registered parser is
-  // implemented today, so there is no real format that reproduces this, and
-  // registering one for the test would put a fake format in `manni lint tools`.
-  it("says a registered but unimplemented parser is not implemented yet", async () => {
-    await file("page.md", `---\ntype: how-to\n---\n\n${HOW_TO}`);
+describe("--as names a format the tool reads", () => {
+  // A format the tool does not read does not exist to the user, whatever name
+  // it goes by. One message, in the present tense, before any file is read, so
+  // the run never reaches "Nothing was checked" and blames the documents.
+  it.each(["notebook", "nosuchformat"])(
+    'calls "%s" an unknown format and points at the formats it reads',
+    async (name) => {
+      await file("page.md", `---\ntype: how-to\n---\n\n${HOW_TO}`);
 
-    const planned: DocumentParser = {
-      name: "planned",
-      label: "Planned Format",
-      extensions: [".planned"],
-      implemented: false,
-      parse: () => {
-        throw new LintError("Planned Format is not implemented yet.");
-      },
-    };
-
-    vi.resetModules();
-    vi.doMock("../../../src/lint/parsers/index.js", async () => {
-      const real =
-        await vi.importActual<typeof import("../../../src/lint/parsers/index.js")>(
-          "../../../src/lint/parsers/index.js",
-        );
-      return {
-        ...real,
-        parserByName: (name: string) =>
-          name === "planned" ? planned : real.parserByName(name),
-      };
-    });
-
-    try {
-      const { runLint: lintWithStub } = await import(
-        "../../../src/lint/commands/lint.js"
-      );
-      const message = await lintWithStub({
+      const message = await runLint({
         inputs: [dir],
-        as: "planned",
+        as: name,
         cwd: dir,
       }).then(
         () => "resolved",
         (err: unknown) => (err as Error).message,
       );
 
-      // Not "Unknown": `manni lint tools` lists the format, so a reader told
-      // it is unknown goes looking for their own typo in a name that is
-      // spelled right.
-      expect(message).toContain('Format "planned" is not implemented yet.');
-      expect(message).not.toContain("Unknown format");
+      expect(message).toBe(
+        `Unknown format "${name}". Run "manni lint tools" to see the formats manni lint reads.`,
+      );
       expect(message).not.toContain("Nothing was checked");
-    } finally {
-      vi.doUnmock("../../../src/lint/parsers/index.js");
-      vi.resetModules();
-    }
-  });
-
-  // The genuinely unknown case keeps its own wording: there is nothing to look
-  // up, and "not implemented yet" would promise a format that was never named.
-  it("still calls a name no parser answers to unknown", async () => {
-    await file("page.md", `---\ntype: how-to\n---\n\n${HOW_TO}`);
-
-    const message = await runLint({
-      inputs: [dir],
-      as: "nosuchformat",
-      cwd: dir,
-    }).then(
-      () => "resolved",
-      (err: unknown) => (err as Error).message,
-    );
-
-    expect(message).toContain('Unknown format "nosuchformat"');
-  });
+    },
+  );
 });

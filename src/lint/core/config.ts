@@ -87,11 +87,11 @@ export interface LintJobConfig {
   tool?: LintTool;
 }
 
-/** The tools that can perform a lint job. manni's own engine, so far. */
+/** The tools that can perform a lint job: manni's own engine. */
 export const LINT_TOOLS = ["manni"] as const;
 export type LintTool = (typeof LINT_TOOLS)[number];
 
-/** The jobs `lint check` runs. `structure` is the only one that exists yet. */
+/** The jobs `lint check` runs: `structure`. */
 export const LINT_JOBS = ["structure"] as const;
 export type LintJob = (typeof LINT_JOBS)[number];
 

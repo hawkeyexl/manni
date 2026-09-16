@@ -517,12 +517,11 @@ describe("rst parser: frontmatter", () => {
 });
 
 describe("rst parser: registration", () => {
-  it("declares itself as an implemented rst parser", () => {
+  it("declares itself as the rst parser", () => {
     expect(rstParser).toMatchObject({
       name: "rst",
       label: "reStructuredText",
       extensions: [".rst"],
-      implemented: true,
     });
     expect(parse("A\n=\n").format).toBe("rst");
     expect(rstParser.parse("A\n=\n", "docs/a.rst").filePath).toBe("docs/a.rst");
