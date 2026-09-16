@@ -39,6 +39,7 @@ providers:
 kg:
   baseIri: https://example.com/kg/
   out: kg/graph.ttl
+  schemas: []
 
   routes:
     - basePath: /
@@ -49,9 +50,6 @@ kg:
 
   build:
     derive: [frontmatter, sections, links, tags, images, code, provenance]
-
-  validate:
-    schemas: []
 
   check:
     shapes: []
@@ -108,7 +106,7 @@ for its full shape.
 | `url` | string | none | Where those pages are published. `manni a11y check` reads it; kg does not. |
 | `externalMetadata` | list | `[]` | Frontmatter kept outside the document. kg sees the merged result, so an external `kg` block derives exactly as an inline one does. |
 
-A `build`, `validate` or `fill` run with no positional paths reads every
+A `build` or `fill` run with no positional paths reads every
 declared collection. `--collection` narrows that to one, and cannot be combined
 with paths.
 
@@ -146,6 +144,7 @@ error.
 | `model` | string | unset | The model within the provider named beside it. Unset, the inference library's default for that provider is used; manni pins none, and every cache key names the model it resolved to. This is not `embed.model`. |
 | `baseIri` | string | `urn:manni:kg:` | The base every minted node IRI hangs off. A value not ending in `/` or `:` gets a trailing slash. Use an HTTP base when the graph is published, so its nodes dereference. |
 | `out` | string | `kg/graph.ttl` | Where `kg build` writes the Turtle, and where every graph reader looks for it. Resolved from the working directory. `-o` overrides it for one build, `-g` for one read. |
+| `schemas` | list of schema refs | `[]` | The schema set that judges a page's frontmatter. `kg build` reads `x-manni-kg-output` from it, to decide what a published graph may carry. Check these pages against the same set with `manni meta validate`. Empty means the page vocabulary bundled into manni, `manni:kg:1.0.0-proposal.3`. A ref here is anything `manni meta` resolves: a built-in id, a file path, or a URL. |
 
 ### `routes`
 
@@ -168,12 +167,6 @@ Routes are corpus-defining, so they are config-only. There is no flag.
 | Key | Type | Default | What it does |
 |---|---|---|---|
 | `derive` | list | all seven | Which sources become triples: `frontmatter`, `sections`, `links`, `tags`, `images`, `code`, `provenance`. Narrowing it makes a smaller graph, not a wrong one; a predicate nothing derives simply has no triples. |
-
-### `validate`
-
-| Key | Type | Default | What it does |
-|---|---|---|---|
-| `schemas` | list of schema refs | `[]` | The schema set that judges a page's frontmatter. `kg build` reads `x-manni-kg-output` from it, to decide what a published graph may carry. Check these pages against the same set with `manni meta validate`. Empty means the page vocabulary bundled into manni, `manni:kg:1.0.0-proposal.3`. A ref here is anything `manni meta` resolves: a built-in id, a file path, or a URL. |
 
 ### `check`
 

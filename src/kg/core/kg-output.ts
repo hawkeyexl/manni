@@ -30,7 +30,7 @@ import type { DocModel } from "../types.js";
 
 /**
  * The schema set a page is judged by, as kg spells it: the operator's
- * `validate.schemas` when they set one, else the bundled draft.
+ * `kg.schemas` when they set one, else the bundled draft.
  *
  * The draft is handed over as an object rather than by ref. 0023's ids are
  * unregistered on purpose while the vocabulary is under review, so
@@ -38,9 +38,7 @@ import type { DocModel } from "../types.js";
  * exactly what `LoadSchemaOptions.inlineSchemas` is for.
  */
 function schemaRefs(config: KgConfig): string[] {
-  return config.validate.schemas.length > 0
-    ? config.validate.schemas
-    : [FRONTMATTER_SCHEMA_ID];
+  return config.schemas.length > 0 ? config.schemas : [FRONTMATTER_SCHEMA_ID];
 }
 
 /**

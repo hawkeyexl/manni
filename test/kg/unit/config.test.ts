@@ -24,7 +24,7 @@ describe("parseConfig", () => {
       "provenance",
     ]);
     // empty = use the page vocabulary bundled with manni
-    expect(c.validate.schemas).toEqual([]);
+    expect(c.schemas).toEqual([]);
     // empty = use the shapes bundled with manni (shapes/kg/shapes-1.0.0.ttl)
     expect(c.check.shapes).toEqual([]);
     expect(c.fill.validateGraph).toBe(true);
@@ -72,6 +72,28 @@ describe("parseConfig", () => {
       creator: undefined,
       version: "1.3",
     });
+  });
+
+  it("reads schemas at the section's top level", () => {
+    const c = parseConfig(
+      'schemas: ["./house.schema.json"]\n',
+      "/tmp/manni.config.yaml",
+    );
+    expect(c.schemas).toEqual(["./house.schema.json"]);
+  });
+
+  it("refuses the old validate: wrapper by name", () => {
+    // The key was named for `kg validate`, which 0051 §8 removed. Nothing was
+    // published under it, so the old spelling is an unknown key rather than a
+    // migration (0048 §4) — and the message names it, as every other removed
+    // kg key's does.
+    const parse = (): unknown =>
+      parseConfig(
+        'validate:\n  schemas: ["./house.schema.json"]\n',
+        "/tmp/manni.config.yaml",
+      );
+    expect(parse).toThrow(KgError);
+    expect(parse).toThrow('/kg: unknown key "validate"');
   });
 
   it("parses embed overrides and accepts any model id", () => {

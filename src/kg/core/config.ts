@@ -122,9 +122,16 @@ export interface KgConfig {
   baseIri: string;
   /** Output path of the built Turtle file, relative to configDir. */
   out: string;
+  /**
+   * The schema set a page's frontmatter is judged by: where `manni kg build`
+   * reads `x-manni-kg-output` from, deciding which fields a published graph may
+   * carry. Empty = the `kg` page vocabulary bundled into manni
+   * (`src/kg/schema.ts`). Spelled as meta spells its own `schemas:`; it sat
+   * under a `validate:` wrapper while `manni kg validate` existed (0051 §8).
+   */
+  schemas: string[];
   routes: RouteMapping[];
   build: { derive: DeriveSource[] };
-  validate: { schemas: string[] };
   /** Graph-level SHACL validation (`manni kg check`). */
   check: {
     /** Shapes .ttl paths; empty = the shapes bundled with dockg. */
@@ -289,9 +296,9 @@ interface RawKgConfig {
   model?: string;
   baseIri?: string;
   out?: string;
+  schemas?: string[];
   routes?: RawRouteMapping[];
   build?: { derive?: DeriveSource[] };
-  validate?: { schemas?: string[] };
   check?: { shapes?: string[] };
   provenance?: { qualified?: boolean };
   stats?: { coverageThreshold?: number | Record<string, number> };
@@ -475,6 +482,9 @@ export function parseConfigSection(
     providers: file.providers ?? {},
     baseIri: resolveBaseIri(r.baseIri),
     out: r.out ?? "kg/graph.ttl",
+    // Empty means: use the `kg` page vocabulary built into manni (see
+    // src/kg/schema.ts).
+    schemas: r.schemas ?? [],
     routes: (r.routes ?? []).map((m) => ({
       basePath: normalizeBasePath(m.basePath ?? "/"),
       root: m.root
@@ -487,11 +497,6 @@ export function parseConfigSection(
     })),
     build: {
       derive: r.build?.derive ?? [...ALL_DERIVE_SOURCES],
-    },
-    validate: {
-      // Empty means: use the `kg` page vocabulary built into manni (see
-      // src/kg/schema.ts).
-      schemas: r.validate?.schemas ?? [],
     },
     check: {
       // Empty means: use the shapes bundled with dockg (see bundledShapesPath).
