@@ -40,6 +40,7 @@ const PAGES = new Map([
   ["key", "docs/src/content/docs/key/reference/cli.mdx"],
   ["lint", "docs/src/content/docs/lint/reference/cli.mdx"],
   ["term", "docs/src/content/docs/term/reference/cli.mdx"],
+  ["tracevals", "docs/src/content/docs/tracevals/reference/cli.mdx"],
 ]);
 
 const requested = process.argv.slice(2);
