@@ -22,7 +22,7 @@ import {
   type TermReadResult,
   type TermRecord,
 } from "../../types.js";
-import { recordOf, skipped, textOf, termOf } from "./normalize.js";
+import { ignoredFields, ignoredNotice, recordOf, skipped, textOf, termOf } from "./normalize.js";
 
 const LABEL = "manifest";
 const FIELDS: ReadonlySet<string> = new Set(TERM_FIELDS);
@@ -85,6 +85,9 @@ function read(input: TermInput): TermReadResult {
     if (record === undefined) {
       notices.push(skipped(input, line, LABEL));
       continue;
+    }
+    for (const { field, list } of ignoredFields(raw)) {
+      notices.push(ignoredNotice(input, lines[field] ?? line, record.label, field, list));
     }
     terms.push(termOf(input, { record, recordId: id, construct: "manifest", line, lines }));
   }

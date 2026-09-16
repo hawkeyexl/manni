@@ -63,6 +63,14 @@ empty ones, so `" bifocal "` and `bifocal` are the same label. A page with
 manni: no-label.md:1: skipped a page entry with no term.
 ```
 
+A one-value field (`definition`, `abstract`, `see`, `scope-note`) takes text.
+Given a list or a mapping, the reader leaves that field out, reads the rest of
+the entry, and says so on stderr:
+
+```
+manni: varifocal.md:5: ignored see on "varifocal": a see holds one value, not a list.
+```
+
 ## The kind of label is the status
 
 There is no status field. The field a name sits in says how it may be used:

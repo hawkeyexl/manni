@@ -18,7 +18,7 @@ import {
   type TermReader,
   type TermReadResult,
 } from "../../types.js";
-import { declares, nothing, recordOf, skipped, termOf } from "./normalize.js";
+import { declares, ignoredFields, ignoredNotice, nothing, recordOf, skipped, termOf } from "./normalize.js";
 import { sameFields } from "./splice.js";
 
 const LABEL = "page";
@@ -35,7 +35,9 @@ function read(input: TermInput): TermReadResult {
   if (record === undefined) return { terms: [], notices: [skipped(input, 1, LABEL)] };
   return {
     terms: [termOf(input, { record, recordId: input.metadata["id"], construct: "page", line: 1, lines })],
-    notices: [],
+    notices: ignoredFields(raw).map(({ field, list }) =>
+      ignoredNotice(input, lines[field] ?? 1, record.label, field, list),
+    ),
   };
 }
 

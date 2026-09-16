@@ -130,6 +130,17 @@ describe("page", () => {
       notices: ["page/no-label.md:1: skipped a page entry with no term."],
     });
   });
+
+  // A one-value field given a list or a mapping used to vanish with no word,
+  // so a `see: [x]` redirect never reached `see-not-empty` or a render.
+  it("reports a one-value field given a list or a mapping, and reads the rest", () => {
+    const { terms, notices } = reader("page").read(inputFor("page/see-list.md", "markdown"));
+    expect(terms.map((t) => t.record)).toEqual([{ label: "varifocal" }]);
+    expect(notices).toEqual([
+      'page/see-list.md:6: ignored abstract on "varifocal": an abstract holds text.',
+      'page/see-list.md:5: ignored see on "varifocal": a see holds one value, not a list.',
+    ]);
+  });
 });
 
 describe("manifest", () => {
@@ -166,6 +177,16 @@ describe("manifest", () => {
       ],
       notices: ["manifest/terms.yaml:9: skipped a manifest entry with no term."],
     });
+  });
+
+  it("reports a see given as a list, and reads the rest of the entry", () => {
+    const { terms, notices } = reader("manifest").read(manifestInput("manifest/see-list.yaml"));
+    expect(terms.map((t) => t.record)).toEqual([
+      { label: "varifocal", definition: "A lens whose power varies from top to bottom." },
+    ]);
+    expect(notices).toEqual([
+      'manifest/see-list.yaml:3: ignored see on "varifocal": a see holds one value, not a list.',
+    ]);
   });
 
   it("reads a .json manifest as JSON", () => {
