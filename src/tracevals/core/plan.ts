@@ -3,6 +3,7 @@
  * evals to run. Artifacts without declared evals get one implicit
  * whole-artifact adherence eval (ADR 01002).
  */
+import type { ExtractedMetadata } from "../../meta/index.js";
 import type { ResolvedArtifact } from "../artifacts/types.js";
 import {
   extractEvals,
@@ -58,10 +59,23 @@ export interface EvalPlan {
 
 export const IMPLICIT_EVAL_NAME = "adheres-to-artifact";
 
-export function planEvals(artifacts: ResolvedArtifact[]): EvalPlan[] {
+/**
+ * The artifact's front matter as the run reads it: its own, or its own with a
+ * manifest-supplied `metadata` block merged in (`evals/external.ts`). Absent
+ * when no collection declares a manifest that owns `metadata`, which is every
+ * run that has no `collections:` to read.
+ */
+export type ArtifactMetadataFor = (
+  artifact: ResolvedArtifact,
+) => ExtractedMetadata | undefined;
+
+export function planEvals(
+  artifacts: ResolvedArtifact[],
+  metadataFor?: ArtifactMetadataFor,
+): EvalPlan[] {
   const plans: EvalPlan[] = [];
   for (const artifact of artifacts) {
-    const extracted = extractEvals(artifact);
+    const extracted = extractEvals(artifact, metadataFor?.(artifact));
 
     if (extracted.errors.length > 0) {
       const detail = extracted.errors

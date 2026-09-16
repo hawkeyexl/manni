@@ -65,6 +65,13 @@ export type {
   SpliceManifestOptions,
   SplicedManifest,
 } from "./core/external-metadata-write.js";
+// The W1/W2 line a writer prints when its schema prefers external metadata and
+// no manifest owns the key (proposal 0047). `manni tracevals fill` writes the
+// same `metadata` key `meta fill` and `derive` do, so it says the same
+// sentence about a homeless one rather than inventing a second wording.
+export { externalWriteWarnings } from "./core/location-writes.js";
+export type { ExternalWrite } from "./core/location-writes.js";
+export type { ProposedHome } from "./core/relocation.js";
 // `manni key rotate` re-encrypts the values a manifest supplies as well as
 // the ones a page carries. `reencryptMetadata` reads a page; this is the same
 // rule over metadata that is already parsed, and it skips `citations` too.

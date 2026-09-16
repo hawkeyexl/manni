@@ -18,6 +18,7 @@ import {
 } from "yaml";
 import { mergeMetaProvenance } from "../../meta/internal.js";
 import { TracevalsError } from "../types.js";
+import { METADATA_KEY } from "./external.js";
 import type { Severity } from "./extract.js";
 
 /** An eval to add. Mirrors the artifact-evals object entry form. */
@@ -213,6 +214,83 @@ function mergeProvenance(
     ["metadata", META_PROVENANCE_KEY],
     doc.createNode(merged.list),
   );
+}
+
+/**
+ * The same append over a `metadata` block that is not in the page: the value an
+ * external-metadata manifest holds for this artifact (proposal 0047). Returns
+ * the new block, for `spliceManifestValue` to write.
+ *
+ * A plain value in and a plain value out, because a manifest entry is rewritten
+ * by meta's splice writer rather than re-serialized here — the comment and key
+ * order preservation `appendArtifactEvals` gets from editing YAML nodes is that
+ * writer's job on this path. The refusals are the page path's, for the page
+ * path's reasons: an id that already exists means the caller's dedupe missed
+ * something, and a single-assertion block is a human's sentence that must not
+ * be silently given a positional id.
+ */
+export function appendMetadataEvals(
+  held: unknown,
+  label: string,
+  entries: NewEvalEntry[],
+  provenance?: EvalProvenance,
+): Record<string, unknown> {
+  const block: Record<string, unknown> =
+    held === undefined || held === null
+      ? {}
+      : typeof held === "object" && !Array.isArray(held)
+        ? { ...(held as Record<string, unknown>) }
+        : (() => {
+            throw new TracevalsError(`${label}: metadata is not a mapping`);
+          })();
+
+  const existing = block.evals;
+  if (typeof existing === "string") {
+    throw new TracevalsError(
+      `${label}: metadata.evals is a single assertion string; expand it to a list before appending`,
+    );
+  }
+  if (existing !== undefined && existing !== null && !Array.isArray(existing)) {
+    throw new TracevalsError(`${label}: metadata.evals is not a list`);
+  }
+
+  const list: unknown[] = Array.isArray(existing)
+    ? [...(existing as unknown[])]
+    : [];
+  const taken = new Set<string>();
+  for (const item of list) {
+    if (item !== null && typeof item === "object" && !Array.isArray(item)) {
+      const id = (item as Record<string, unknown>).id;
+      if (typeof id === "string") taken.add(id);
+    }
+  }
+  for (const entry of entries) {
+    if (taken.has(entry.id)) {
+      throw new TracevalsError(
+        `${label}: eval "${entry.id}" already exists in ${METADATA_KEY}`,
+      );
+    }
+    taken.add(entry.id);
+    list.push(entryObject(entry));
+  }
+  block.evals = list;
+
+  if (provenance !== undefined && entries.length > 0) {
+    const merged = mergeMetaProvenance(
+      block[META_PROVENANCE_KEY],
+      provenance.generatedBy,
+      "evals",
+      entries.map((e) => ({
+        name: e.id,
+        confidence: provenance.confidence[e.id] ?? 0,
+      })),
+    );
+    if (!merged) {
+      throw new TracevalsError(`${label}: metadata.${META_PROVENANCE_KEY} is not a list`);
+    }
+    block[META_PROVENANCE_KEY] = merged.list;
+  }
+  return block;
 }
 
 /**

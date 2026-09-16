@@ -21,6 +21,7 @@ import {
 } from "node:path";
 import { stat } from "node:fs/promises";
 import picomatch from "picomatch";
+import type { ExtractedMetadata } from "../../meta/index.js";
 import { extractEvals } from "../evals/extract.js";
 import { TracevalsError } from "../types.js";
 import { listInTree, safeRead, segments } from "./fs.js";
@@ -65,6 +66,13 @@ export interface DiscoverOptions {
    * reached.
    */
   exclude?: string[];
+  /**
+   * The artifact's front matter as the run reads it: its own, or its own with a
+   * manifest-supplied `metadata` block merged in (`evals/external.ts`). Without
+   * it a relocated artifact looks empty here, and `fill` would propose evals it
+   * already declares. Absent when no collection declares such a manifest.
+   */
+  metadataFor?: (artifact: ResolvedArtifact) => ExtractedMetadata | undefined;
 }
 
 /**
@@ -193,6 +201,7 @@ function isRecognizedAgent(path: string, anchor: string): boolean {
 async function readOne(
   path: string,
   type: ArtifactType,
+  metadataFor?: DiscoverOptions["metadataFor"],
 ): Promise<DiscoveredArtifact | null> {
   const content = await safeRead(path);
   if (content === null) return null;
@@ -205,7 +214,7 @@ async function readOne(
   };
 
   try {
-    const extracted = extractEvals(artifact);
+    const extracted = extractEvals(artifact, metadataFor?.(artifact));
     if (extracted.errors.length > 0) {
       const first = extracted.errors[0];
       return {
@@ -291,7 +300,7 @@ export async function discoverArtifacts(
 
   const artifacts: DiscoveredArtifact[] = [];
   for (const [path, type] of files) {
-    const discovered = await readOne(path, type);
+    const discovered = await readOne(path, type, options.metadataFor);
     if (discovered === null) {
       warnings.push(`could not read ${path}`);
       continue;

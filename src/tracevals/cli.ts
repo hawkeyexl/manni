@@ -51,6 +51,7 @@ interface RunFlags extends ConfigFlags {
   provider?: string;
   model?: string;
   local?: boolean;
+  offline?: boolean;
   runs?: number;
   deterministicOnly?: boolean;
   cache?: boolean;
@@ -177,6 +178,9 @@ function sharedRunOptions(opts: RunFlags) {
     provider: opts.provider,
     model: opts.model,
     local: opts.local,
+    // `undefined` rather than `false` when absent, so a future config
+    // `offline:` still decides on a run where the flag was never typed.
+    offline: opts.offline ? true : undefined,
     runs: opts.runs,
     deterministicOnly: opts.deterministicOnly,
     noCache: opts.cache === false,
@@ -275,6 +279,10 @@ function addRunFlags(cmd: Command, options: { history?: boolean } = {}): Command
     // what Number keeps.
     .option("--runs <n>", "ensemble runs per eval", (v) => Number(v))
     .option("--deterministic-only", "skip LLM-judged evals")
+    .option(
+      "--offline",
+      "never fetch a remote manifest; read external metadata from local manifests",
+    )
     .option("--no-cache", "bypass the judge cache")
     .option(
       "--max-turns <n>",
@@ -455,6 +463,10 @@ addConfigFlags(
   )
   .option("--local", LOCAL_FLAG_HELP)
   .option(
+    "--offline",
+    "never fetch a remote manifest; read external metadata from local manifests",
+  )
+  .option(
     "--require <module>",
     "load a grader plugin; repeatable, and added to config plugins",
     collect,
@@ -477,6 +489,7 @@ addConfigFlags(
     provider?: string;
     model?: string;
     local?: boolean;
+    offline?: boolean;
     require?: string[];
     format?: SummaryFormat;
   }) => {
@@ -498,6 +511,7 @@ addConfigFlags(
         ...(opts.provider !== undefined ? { provider: opts.provider } : {}),
         ...(opts.model !== undefined ? { model: opts.model } : {}),
         ...(opts.local !== undefined ? { local: opts.local } : {}),
+        ...(opts.offline === true ? { offline: true } : {}),
         ...(opts.require !== undefined ? { require: opts.require } : {}),
       });
       console.log(

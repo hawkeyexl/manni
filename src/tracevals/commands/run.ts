@@ -9,6 +9,8 @@ import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { discoverConfig } from "../core/config.js";
 import { runEvals } from "../core/engine.js";
+import type { ArtifactMetadataFor } from "../core/plan.js";
+import { loadExternalEvals } from "../evals/external.js";
 import { loadGraderPlugins } from "../graders/plugins.js";
 import {
   appendHistory,
@@ -70,6 +72,13 @@ export interface RunSharedOptions {
   config?: string;
   /** `--no-config`: skip discovery and run on the built-in defaults. */
   noConfig?: boolean;
+  /**
+   * `--offline`: never fetch a remote external-metadata manifest; read the
+   * local ones only. A relocated artifact's evals may live in a manifest a
+   * collection declares (0047), and a `https://` one is refused rather than
+   * fetched.
+   */
+  offline?: boolean;
   env?: Record<string, string | undefined>;
   /** Test seam: overrides judge construction entirely. */
   judge?: TraceJudge;
@@ -102,12 +111,18 @@ export interface RunContext {
   /** Plugin-loading warnings, prepended to every report in the batch. */
   warnings: string[];
   judge?: TraceJudge;
+  /**
+   * Where each artifact's `metadata` block lives, loaded once per invocation
+   * rather than per trace: the manifests are the config's, not the trace's, and
+   * a URL one would otherwise be fetched once per trace in a corpus.
+   */
+  metadataFor?: ArtifactMetadataFor;
 }
 
 export async function prepareRun(
   options: RunSharedOptions,
 ): Promise<RunContext> {
-  const { config: loaded, dir: configDir } = await discoverConfig(
+  const { config: loaded, dir: configDir, collections } = await discoverConfig(
     options.configDir ?? process.cwd(),
     {
       ...(options.config === undefined ? {} : { configPath: options.config }),
@@ -210,11 +225,23 @@ export async function prepareRun(
     });
   }
 
+  // The evals an artifact no longer carries inline. Collections never selected
+  // this run's traces and never will; what they say here is where a relocated
+  // `metadata` block lives (proposals 0047 and 0049 §1).
+  const external = await loadExternalEvals({
+    collections,
+    configDir,
+    ...(options.offline === undefined ? {} : { offline: options.offline }),
+  });
+
   return {
     config,
     configDir,
     warnings: plugins.warnings,
     ...(judge !== undefined ? { judge } : {}),
+    ...(external === null
+      ? {}
+      : { metadataFor: (artifact) => external.forArtifact(artifact).extracted }),
   };
 }
 
@@ -238,6 +265,9 @@ export async function runOne(
       : {}),
     ...(options.manifest !== undefined ? { manifest: options.manifest } : {}),
     ...(context.warnings.length > 0 ? { warnings: context.warnings } : {}),
+    ...(context.metadataFor !== undefined
+      ? { metadataFor: context.metadataFor }
+      : {}),
   });
 
   let comparison: HistoryComparison | undefined;

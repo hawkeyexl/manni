@@ -7,11 +7,27 @@
  * rules are proposed but never written — evals inside a file the agent
  * reads before acting would be teaching to the test (ADR 01005).
  */
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { relative, resolve } from "node:path";
 import pc from "picocolors";
+import { memberOf } from "../../meta/index.js";
+import {
+  externalWriteWarnings,
+  spliceManifestValue,
+  type ExternalWrite,
+} from "../../meta/internal.js";
 import { discoverArtifacts, type DiscoveredArtifact } from "../artifacts/discover.js";
-import { appendArtifactEvals, type NewEvalEntry } from "../evals/write.js";
+import {
+  appendArtifactEvals,
+  appendMetadataEvals,
+  type NewEvalEntry,
+} from "../evals/write.js";
+import {
+  METADATA_KEY,
+  loadExternalEvals,
+  writableOwner,
+  type ArtifactMetadata,
+} from "../evals/external.js";
 import { discoverConfig } from "../core/config.js";
 import { loadGraderPlugins } from "../graders/plugins.js";
 import { TracevalsError } from "../types.js";
@@ -49,6 +65,11 @@ export interface FillOptions {
   config?: string;
   /** `--no-config`: skip discovery and run on the built-in defaults. */
   noConfig?: boolean;
+  /**
+   * `--offline`: never fetch a remote external-metadata manifest; read the
+   * local ones only. A relocated artifact's evals live in one (0047).
+   */
+  offline?: boolean;
   /**
    * `--exclude <glob>`, repeatable. Removes matching artifacts from whatever
    * the scan would otherwise have found, positional paths included.
@@ -94,6 +115,12 @@ export interface FillArtifactResult {
   status: FillStatus;
   /** Evals written, or that would be written in a dry run. */
   written: ProposedEval[];
+  /**
+   * The external-metadata manifest the evals were written to, when this
+   * artifact's `metadata` block lives in one (0047). Absent when they went to
+   * the artifact's own front matter.
+   */
+  manifest?: string;
   rejected: Rejection[];
   capped: ProposedEval[];
   /** Instructions the model judged untestable as written. */
@@ -137,7 +164,7 @@ function toEvalEntry(proposed: ProposedEval): NewEvalEntry {
 export async function runFill(options: FillOptions = {}): Promise<FillRun> {
   const cwd = options.cwd ?? process.cwd();
   const root = resolve(options.project ?? cwd);
-  const { config: loaded, dir: configDir } = await discoverConfig(
+  const { config: loaded, dir: configDir, collections } = await discoverConfig(
     options.configDir ?? cwd,
     {
       ...(options.config === undefined ? {} : { configPath: options.config }),
@@ -184,11 +211,29 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
     options.noCache !== true,
   );
 
+  // Where each artifact's `metadata` block lives. Collections do not choose
+  // what `fill` scans — that is still `--project` plus `[paths...]`, and there
+  // is no `--collection` (0049 §1). What they say is where a relocated block
+  // lives, both for reading what an artifact already declares and for writing
+  // what this run proposes.
+  const external = await loadExternalEvals({
+    collections,
+    configDir,
+    ...(options.offline === undefined ? {} : { offline: options.offline }),
+  });
+  const metadataOf = (artifact: {
+    path: string;
+    content: string;
+  }): ArtifactMetadata | undefined => external?.forArtifact(artifact);
+
   const discovery = await discoverArtifacts({
     root,
     cwd,
     ...(options.paths !== undefined ? { paths: options.paths } : {}),
     ...(options.exclude !== undefined ? { exclude: options.exclude } : {}),
+    ...(external === null
+      ? {}
+      : { metadataFor: (artifact) => external.forArtifact(artifact).extracted }),
   });
   const vocabulary = buildVocabulary(discovery.artifacts);
   const knownSkills = [...vocabulary.skills].sort();
@@ -219,6 +264,8 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
 
   let turns = 0;
   const results: FillArtifactResult[] = [];
+  /** Blocks that landed on a page whose schema would rather they did not. */
+  const homeless: ExternalWrite[] = [];
 
   for (const discovered of discovery.artifacts) {
     results.push(await fillOne(discovered));
@@ -228,7 +275,11 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
     results,
     threshold,
     dryRun: options.dryRun === true,
-    warnings: [...plugins.warnings, ...discovery.warnings],
+    warnings: [
+      ...plugins.warnings,
+      ...discovery.warnings,
+      ...externalWriteWarnings(homeless, options.dryRun === true),
+    ],
     exitCode: results.some((r) => r.status === "error") ? 1 : 0,
   };
   return { report, rendered: renderFill(report, { cwd }) };
@@ -340,38 +391,109 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
     if (artifact.type === "project-rules") {
       return { ...result, status: "propose-only" };
     }
-    if (options.dryRun === true) return { ...result, status: "proposed" };
+
+    // Where the block lives decides where it is written. A URL manifest is
+    // readable and not writable, and `writableOwner` refuses one — before the
+    // dry-run check would have, so `--dry-run` still reports against a hosted
+    // trail rather than refusing a run that writes nothing.
+    const metadata = metadataOf(artifact);
+    const target =
+      options.dryRun === true
+        ? metadata?.owner === undefined || metadata.entry === undefined
+          ? undefined
+          : { manifest: metadata.owner, entry: metadata.entry }
+        : writableOwner(artifact.path, metadata);
+    const landed: FillArtifactResult =
+      target === undefined
+        ? result
+        : { ...result, manifest: target.manifest.file };
+
+    if (options.dryRun === true) return { ...landed, status: "proposed" };
+
+    // Machines propose; humans retire the trail. Recording which model proposed
+    // what, at what confidence, is what lets a reviewer tell an unreviewed
+    // suggestion from an eval someone actually signed off on.
+    //
+    // The model's own name, not `provider:model`. The judge's self-preference
+    // check compares this against `modelName()`, so a composed spelling would
+    // read as a different model every time. The provider name is the fallback
+    // only when there is no model to name.
+    const provenance = {
+      generatedBy: identity.model || identity.provider,
+      confidence: Object.fromEntries(
+        gated.accepted.map((c) => [c.name, c.confidence]),
+      ),
+    };
 
     try {
-      const updated = appendArtifactEvals(
-        artifact.content,
-        artifact.path,
-        gated.accepted.map(toEvalEntry),
-        // Machines propose; humans retire the trail. Recording which model
-        // proposed what, at what confidence, is what lets a reviewer tell an
-        // unreviewed suggestion from an eval someone actually signed off on.
-        //
-        // The model's own name, not `provider:model`. The judge's
-        // self-preference check compares this against `modelName()`, so a
-        // composed spelling would read as a different model every time. The
-        // provider name is the fallback only when there is no model to name.
-        {
-          generatedBy: identity.model || identity.provider,
-          confidence: Object.fromEntries(
-            gated.accepted.map((c) => [c.name, c.confidence]),
+      if (target !== undefined) {
+        // Through meta's own splice writer: one value of one entry is replaced
+        // and no other byte of the manifest moves, comments included.
+        const text = await readFile(target.manifest.path, "utf-8");
+        const spliced = spliceManifestValue(text, {
+          entry: target.entry,
+          key: METADATA_KEY,
+          value: appendMetadataEvals(
+            metadata?.extracted.data[METADATA_KEY],
+            artifact.path,
+            gated.accepted.map(toEvalEntry),
+            provenance,
           ),
-        },
-      );
-      await writeFile(artifact.path, updated);
+          join: target.manifest.join,
+          file: target.manifest.file,
+        });
+        await writeFile(target.manifest.path, spliced.text);
+      } else {
+        const updated = appendArtifactEvals(
+          artifact.content,
+          artifact.path,
+          gated.accepted.map(toEvalEntry),
+          provenance,
+        );
+        await writeFile(artifact.path, updated);
+        noteHomeless(artifact.path);
+      }
     } catch (err) {
       return {
-        ...result,
+        ...landed,
         status: "error",
         written: [],
         error: err instanceof Error ? err.message : String(err),
       };
     }
-    return { ...result, status: "filled" };
+    return { ...landed, status: "filled" };
+  }
+
+  /**
+   * One W1/W2 line's worth of evidence: the schema marks `metadata`
+   * `x-manni-location: external` (0047), and this block went to the page
+   * anyway because no manifest owns it.
+   *
+   * Only when a collection is declared. With none there is nothing to relocate
+   * into and no 0047 story to tell, and a repository that has never heard of
+   * collections would otherwise be warned on every fill.
+   */
+  function noteHomeless(label: string): void {
+    if (collections.length === 0) return;
+    // Against every declared collection, not only the ones that own
+    // `metadata`: an artifact in a collection with no manifest is the W1 case,
+    // and one in no collection at all is W2.
+    const collection = memberOf(collections, configDir, configDir, label)[0];
+    homeless.push({
+      label,
+      key: METADATA_KEY,
+      home:
+        collection === undefined
+          ? { kind: "none", reason: "collections", collections: collections.length }
+          : {
+              kind: "collection",
+              collection,
+              // Read by `relocate`'s planner, never by the warning's wording.
+              manifest: "",
+              createsManifest: true,
+              createsCollection: false,
+            },
+    });
   }
 }
 
@@ -413,12 +535,17 @@ export function renderFill(
   for (const result of report.results) {
     const label = STATUS_LABEL[result.status].padEnd(9);
     const tag = result.cached ? dim(" [cached]") : "";
+    // Where it landed, when that is not the artifact: a relocated block is
+    // written to the manifest that owns it, and a report that did not say so
+    // would send the reviewer to a file this run never touched.
+    const where =
+      result.manifest === undefined ? "" : dim(` in ${result.manifest}`);
     switch (result.status) {
       case "filled":
-        lines.push(`${green(label)} ${show(result.artifact)}  +${result.written.length} (${names(result.written)})${tag}`);
+        lines.push(`${green(label)} ${show(result.artifact)}  +${result.written.length} (${names(result.written)})${where}${tag}`);
         break;
       case "proposed":
-        lines.push(`${cyan(label)} ${show(result.artifact)}  +${result.written.length} (${names(result.written)})${tag} — dry run, not written`);
+        lines.push(`${cyan(label)} ${show(result.artifact)}  +${result.written.length} (${names(result.written)})${where}${tag} — dry run, not written`);
         break;
       case "propose-only":
         lines.push(`${cyan(label)} ${show(result.artifact)}  +${result.written.length} (${names(result.written)})${tag} — project rules are never written; copy what you want`);

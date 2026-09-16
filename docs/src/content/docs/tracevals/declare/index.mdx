@@ -36,6 +36,11 @@ Evals live **in the artifact's own frontmatter**, next to the instruction they c
 separate suite or a config file, but in the same `SKILL.md` you edit when the instruction changes.
 The check and the rule then move together, so they cannot drift apart.
 
+A project that would rather keep them out of its artifacts can. `manni meta relocate` moves the
+whole `metadata` block into an [external-metadata
+manifest](/manni/tracevals/reference/evals-schema/#or-in-an-external-metadata-manifest), and
+tracevals reads it back from there.
+
 ## Declare your first eval
 
 Add a `metadata.evals` block to a skill, an agent definition, a slash command in

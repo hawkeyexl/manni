@@ -1,0 +1,24 @@
+# The whole `metadata` block of each artifact, moved out of the page by
+# `manni meta relocate` (proposal 0047). The artifacts themselves carry no
+# `metadata:` key at all.
+.claude/skills/fix-bug/SKILL.md:
+  metadata:
+    evals:
+      - id: used-read
+        assertion: The session read at least one source file before editing.
+        grader: tool-usage
+        options:
+          tool: Read
+          expect: used
+      - id: stayed-out-of-the-shell
+        assertion: The session never ran shell commands; this skill is edit-only.
+        grader: tool-usage
+        options:
+          tool: Bash
+          expect: not-used
+      - id: followed-the-skill
+        assertion: The session reproduced the bug with a failing test first.
+        grader: ai
+    meta-provenance:
+      - generated-by: claude-opus-4-5
+        evals: [followed-the-skill]

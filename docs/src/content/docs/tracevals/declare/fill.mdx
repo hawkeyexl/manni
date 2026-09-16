@@ -52,8 +52,11 @@ splits on commas, so repeat it:
 npx @hawkeyexl/manni tracevals fill --exclude '**/vendor/**' --exclude '**/archive/**' --dry-run
 ```
 
-There is no `--collection` and no `collections:` fallback here. A docs collection is a set of
+There is no `--collection`, and no `collections:` fallback for inputs. A docs collection is a set of
 documents, and these are the instruction files an agent runs on. The two are not the same set.
+
+A collection is still read, for one other thing. It says where a relocated `metadata` block lives,
+which decides where `fill` writes. See [Where `fill` writes](#where-fill-writes).
 
 `-c, --config <path>` points at a `manni.config.yaml` somewhere other than the discovered one, and
 `--no-config` ignores config entirely. `run`, `calibrate` and `capture` take the same pair.
@@ -242,6 +245,66 @@ Rewrite it in the shape above, one entry per model, or delete it outright. Delet
 answer once you have reviewed the evals it records.
 </Aside>
 
+## Where `fill` writes
+
+`fill` writes the block where the block already lives. The vocabulary marks the whole `metadata` key
+[`x-manni-location: external`](/manni/tracevals/reference/evals-schema/#or-in-an-external-metadata-manifest).
+So an artifact's evals may sit in its own front matter, or in the external-metadata manifest a
+collection declares. Four cases cover it.
+
+**A manifest owns the block.** The proposals go into that file, through the metadata tool's splice
+writer. Every other byte of the manifest is left alone, comments included, and the artifact itself
+is not touched. The report says where they landed:
+
+```console
+filled    .claude/skills/fix-bug/SKILL.md  +1 (no-shell 0.90) in artifact-evals.yaml
+```
+
+`-f json` carries the same answer as a `manifest` field on the result. A script can then point a
+reviewer at the file that actually changed.
+
+**Nothing owns the block.** The artifact's own front matter is written, exactly as before. A
+repository that declares no `collections:` at all is always this case, as is any run under
+`--no-config`, and neither is told anything extra.
+
+**A collection is declared, and no manifest owns `metadata`.** The page is still written, and the
+report adds a warning in the words `manni meta fill` already uses for a homeless key:
+
+```
+warning: wrote metadata to 1 page in collection agents; the schema prefers external metadata, and no manifest owns it. Run manni meta relocate to move it.
+```
+
+An artifact in none of the declared collections gets the other half of the same warning:
+
+```
+warning: wrote metadata to 1 page that is in none of the 2 collections; the schema prefers external metadata, and only a collection has a manifest.
+```
+
+Both are warnings, and neither changes the exit code. The write happened. The note says where the
+schema would rather it had gone, and `manni meta relocate` is what moves it.
+
+**A URL manifest owns the block.** `fill` refuses, exit `2`. `run` and `calibrate` read a hosted
+block happily, but there is nowhere to write one back:
+
+```
+manni: .claude/skills/fix-bug/SKILL.md: metadata is owned by https://example.com/artifact-evals.yaml, and a URL manifest cannot be written. Vendor it to a path, or run fill with --dry-run.
+```
+
+### Never fetch a manifest
+
+```bash
+npx @hawkeyexl/manni tracevals fill --offline --dry-run
+```
+
+`--offline` reads external metadata from local manifests only, and never fetches a remote one. A
+`https://` manifest is then refused rather than fetched, exit `2`. `run` and `calibrate` take the
+same flag.
+
+It has nothing to do with inference. `--local` is the flag that keeps content on this machine, and
+the two bound different boundaries. Pass both when neither the session content nor a manifest may
+cross the wire. The full rules are in the
+[configuration reference](/manni/tracevals/reference/configuration/#collections-and-a-relocated-block).
+
 ## Instructions that cannot be tested
 
 The `needs sharpening` notes are the most valuable thing on this page and the easiest to skim past.
@@ -283,7 +346,7 @@ frontmatter included, which is what makes them the exception.
   />
   <LinkCard
     title="Every fill flag"
-    description="--confidence, --max-evals, --max-turns, --exclude, --local, --no-cache, --provider, and the JSON report shape."
+    description="--confidence, --max-evals, --max-turns, --exclude, --local, --offline, --no-cache, --provider, and the JSON report shape."
     href="/manni/tracevals/reference/cli/"
   />
 </CardGrid>

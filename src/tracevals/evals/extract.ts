@@ -9,7 +9,11 @@
  * `schema.ts`. The schema is document-rooted, which is why validation is
  * handed the entire front matter object rather than the `evals` value alone.
  */
-import { extractFrontmatter, type FieldError } from "../../meta/index.js";
+import {
+  extractFrontmatter,
+  type ExtractedMetadata,
+  type FieldError,
+} from "../../meta/index.js";
 import { metaProvenanceEntries } from "../../meta/internal.js";
 import type { ResolvedArtifact } from "../artifacts/types.js";
 import type { TraceTarget } from "../core/target.js";
@@ -114,16 +118,34 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export function extractEvals(artifact: ResolvedArtifact): ExtractedEvals {
-  const extracted = extractFrontmatter(artifact.content, "markdown");
+/**
+ * `metadata` and everything under it, for one artifact.
+ *
+ * `supplied` is the seam for the external trail (`evals/external.ts`): the
+ * artifact's front matter with a manifest-supplied `metadata` block already
+ * merged in, by meta's own merge. It is the whole extraction rather than the
+ * block alone, because the schema is document-rooted and validates the entire
+ * front matter — handing it the block would validate the wrong document.
+ * Omitted, the artifact's own front matter is read, which is what every caller
+ * with no collections does.
+ */
+export function extractEvals(
+  artifact: ResolvedArtifact,
+  supplied?: ExtractedMetadata,
+): ExtractedEvals {
+  const extracted = supplied ?? extractFrontmatter(artifact.content, "markdown");
   const metadata = extracted.data.metadata;
   // The schema types `metadata` as an object. Anything else — a string, a
   // list, a number — is a fault the validator must report, so it is kept
   // distinct from "absent" rather than folded into it.
   const bag = isPlainObject(metadata) ? metadata : undefined;
-  const declared = extracted.present && bag !== undefined && bag.evals !== undefined;
+  const declared = bag !== undefined && bag.evals !== undefined;
 
-  if (!extracted.present) {
+  // `present` describes the *page*, and the merge leaves it alone. An artifact
+  // with no front matter at all whose block a manifest supplies therefore reads
+  // as absent unless the merged `metadata` is consulted too — the case a
+  // relocated `CLAUDE.md` is in, since project rules rarely carry front matter.
+  if (!extracted.present && metadata === undefined) {
     return { evals: [], errors: [], declared: false, skip: false, proposedBy: new Map() };
   }
 

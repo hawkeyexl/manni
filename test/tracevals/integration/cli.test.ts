@@ -957,6 +957,75 @@ describe.skipIf(!built)("built CLI", () => {
     });
   });
 
+  /**
+   * A relocated artifact (proposal 0047): the whole `metadata` block lives in
+   * the collection's manifest, and the skill's own front matter carries none.
+   * Before this it graded as declaring nothing — a clean gate over an artifact
+   * with three evals on it.
+   */
+  describe("the external trail", () => {
+    const trace = "test/tracevals/fixtures/traces/claude-session.jsonl";
+    const project = "test/tracevals/fixtures/relocated";
+
+    it("grades the evals the manifest holds", async () => {
+      const { code, stdout } = await runCli([
+        "run",
+        trace,
+        "--project",
+        project,
+        "-c",
+        `${project}/manni.config.yaml`,
+        "--deterministic-only",
+        "-f",
+        "json",
+      ]);
+      const report = JSON.parse(stdout) as {
+        evalResults: { evalName: string; outcome: string; artifactName: string }[];
+      };
+      // Scoped to the relocated artifact: the trace also uses a plugin skill,
+      // whose own evals depend on what is installed on the machine.
+      const outcome = (name: string) =>
+        report.evalResults.find(
+          (r) => r.artifactName === "fix-bug" && r.evalName === name,
+        )?.outcome;
+      expect(outcome("used-read")).toBe("pass");
+      expect(outcome("stayed-out-of-the-shell")).toBe("fail");
+      // The `ai` eval is planned and deferred, not missing.
+      expect(outcome("followed-the-skill")).toBe("skipped");
+      // Never the implicit fallback: that is what "declared nothing" looked like.
+      expect(outcome("adheres-to-artifact")).toBeUndefined();
+      expect(code).toBe(1);
+    });
+
+    it("reads no manifest under --no-config, so the artifact declares nothing", async () => {
+      const { stdout } = await runCli([
+        "run",
+        trace,
+        "--project",
+        project,
+        "--no-config",
+        "--deterministic-only",
+        "-f",
+        "json",
+      ]);
+      const report = JSON.parse(stdout) as {
+        evalResults: { evalName: string; artifactName: string }[];
+      };
+      const names = report.evalResults
+        .filter((r) => r.artifactName === "fix-bug")
+        .map((r) => r.evalName);
+      expect(names).toContain("adheres-to-artifact");
+      expect(names).not.toContain("used-read");
+    });
+
+    it("offers --offline on every verb that reads a manifest", async () => {
+      for (const verb of ["run", "calibrate", "fill"]) {
+        const { stdout } = await runCli([verb, "--help"]);
+        expect(stdout).toContain("--offline");
+      }
+    });
+  });
+
   it("legacy stream-json traces still parse", async () => {
     const { code, stdout } = await runCli(
       [
