@@ -65,8 +65,7 @@ provenance:
 # \`manni meta validate\`. Default: the \`kg\` page vocabulary,
 # manni:kg:1.0.0-proposal.3 — the proposal 0023 draft, built into manni, so no
 # schema file ships. Override with file paths, URLs, or manni meta built-in ids:
-# validate:
-#   schemas: ["./my-schema.json"]
+# schemas: ["./my-schema.json"]
 
 # SHACL shapes \`manni kg check\` validates the built graph against. Default:
 # the shapes contract bundled with manni (shapes/kg/shapes-1.0.0.ttl).
