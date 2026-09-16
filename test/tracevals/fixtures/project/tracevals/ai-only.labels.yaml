@@ -1,0 +1,17 @@
+# A labels file whose every entry names an `ai`-graded eval (ADR 01022).
+#
+# Its whole job is the vacuous case: under `--deterministic-only` every label
+# joins to a `skipped` result, so `scored` is 0, `agreement` is null, and each
+# `--max-*` threshold reads "0 of at most N, not exceeded". A calibration run
+# that measured nothing must not report a pass, and this is what proves it.
+version: 1
+labels:
+  - trace: ../../traces/claude-session.jsonl
+    artifact: AGENTS.md
+    eval: eval-1
+    expected: fail
+
+  - trace: ../../traces/claude-session-sidecar.jsonl
+    artifact: AGENTS.md
+    eval: eval-1
+    expected: pass

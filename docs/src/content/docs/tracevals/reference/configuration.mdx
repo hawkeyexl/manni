@@ -1,0 +1,522 @@
+---
+title: Configuration reference
+description: Every manni.config.yaml key under tracevals with its type, default, and CLI override, including the knobs that have no flag at all.
+sidebar:
+  order: 3
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Scope:** every configuration key. Source of truth: `src/tracevals/core/config-schema.json` and
+`src/tracevals/core/config.ts`. The schema's `$id` is `manni:tracevals:config`.
+
+Configuration lives under the **`tracevals:`** key of **`manni.config.yaml`**. One file serves the
+whole manni family, and each tool reads one top-level key out of it. Everything documented on this
+page is therefore nested one level deep:
+
+```yaml title="manni.config.yaml"
+meta:                 # another tool's section; never validated here
+  schemas: […]
+tracevals:            # ours; every key on this page lives under here
+  judge:
+    ensembleRuns: 3
+```
+
+Every key is optional. An absent file, or one carrying only other tools' sections, means every
+default applies.
+
+## Discovery
+
+With no `-c, --config`, manni tracevals looks for `manni.config.yaml` (then `manni.config.yml`) in
+the working directory and then in each parent directory in turn. The first file found wins and the
+search stops there. Configs are never merged, so a `manni.config.yaml` inside `docs/` shadows the
+one at the repository root for runs started inside `docs/`.
+
+`--no-config` skips discovery entirely and runs on defaults. `run`, `calibrate`, `fill`, and
+`capture` all take both flags. `list` reads no config and takes neither.
+
+<Aside type="caution" title="There is no per-tool config file">
+`manni.config.yaml` is the only file read, found by walking up from the working directory, with one
+top-level key per tool. A file named for the tool is not a config file however it is spelled, and
+nothing warns about one, because nothing looks for it. Settings go under `tracevals:` in the family
+file.
+</Aside>
+
+## Collections and a relocated block
+
+`collections:` is a **top-level** key of `manni.config.yaml`, beside `tracevals:` rather than inside
+it. It names document sets, and every tool in the family reads it. tracevals reads it for exactly
+one thing.
+
+**A collection never selects tracevals' inputs.** `run` and `calibrate` take traces, which are
+session transcripts rather than documents. `fill` detects artifacts under `--project` and takes
+`[paths...]` and `--exclude`. There is no `--collection` flag on any command, no `collections:`
+fallback for inputs, and no key of tracevals' own for either.
+
+**A collection does say where a relocated `metadata` block lives.** The
+[artifact-evals vocabulary](/manni/tracevals/reference/evals-schema/) marks the whole `metadata` key
+`x-manni-location: external`. So `manni meta relocate` can move an artifact's `evals`, `eval-skip`
+and `meta-provenance` out of its front matter, together, into the external-metadata manifest a
+collection declares:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: agents
+    paths: [".claude/skills/**/SKILL.md"]
+    externalMetadata:
+      - file: artifact-evals.yaml     # relative to this config file
+        keys: [metadata]
+tracevals:
+  judge:
+    ensembleRuns: 3
+```
+
+`run`, `calibrate` and `fill` load every manifest that owns `metadata` and merge it through the
+metadata tool's own external-metadata merge. A relocated artifact then grades exactly as an inline
+one, with the same evals, the same `eval-skip`, and the same self-preference criterion axis. The
+manifest shape, the join rules and the ownership rules are the metadata tool's, in
+[external metadata](/manni/meta/set-up/external-metadata/) and its
+[configuration reference](/manni/meta/reference/configuration/#collections).
+
+Three rules are worth knowing before you rely on this:
+
+- **Membership is computed against every declared collection**, never the subset a run selected. An
+  artifact you hand `fill` by path is still a member of the collection holding its manifest.
+- **`--no-config` means no manifests.** With no config there are no collections, so an artifact's
+  evals are whatever its own front matter carries.
+- **Two collections owning `metadata` for one artifact is refused**, exit `2`. Choosing between them
+  would be a tiebreak, so the message names both instead.
+
+Where `fill` writes the block it proposed, and what it refuses to write into, is on
+[Fill in evals across a project](/manni/tracevals/declare/fill/#where-fill-writes).
+
+### `--offline`
+
+| Flag | Commands | Default | Config key |
+|---|---|---|---|
+| `--offline` | `run`, `calibrate`, `fill` | off | none |
+
+A manifest may be a `https://` URL. `run` and `calibrate` fetch a hosted block and grade it happily.
+`--offline` refuses to fetch one instead, with the metadata tool's message and **exit 2**:
+
+```
+manni: Manifest https://example.com/artifact-evals.yaml is remote and the run is offline. Vendor it to a path, or drop --offline.
+```
+
+It bounds the manifest, and nothing else. Inference is `--local`'s boundary, and the two draw
+different lines. `--local` keeps session content on this machine; `--offline` keeps the run off a
+remote manifest. Pass both when neither may cross the wire.
+
+## How a value is resolved
+
+```
+manni.config.yaml  →  `tracevals:` section  →  schema validation  →  defaults applied  →  CLI override  →  runtime
+```
+
+Three properties follow from this, and you can rely on all three:
+
+- **CLI flags override the config; they do not bypass it.** The resolved config is fully populated
+  before anything reads it, so a flag replaces a known value instead of filling a hole.
+- **Unknown keys are hard errors, inside the section.** The schema forbids additional properties at
+  every level below `tracevals:`, so a misspelled key fails loudly with **exit 2**:
+
+  ```
+  manni: /repo/manni.config.yaml: unknown key "maxCostUsd"
+  ```
+
+  The section's own keys are camelCase, as every manni tool's are. A kebab-case spelling is an
+  unknown key, and the message names the key it meant:
+
+  ```
+  manni: /repo/manni.config.yaml: unknown key "ensemble-runs"; did you mean "ensembleRuns"?
+  ```
+
+  Top-level keys *beside* `tracevals:` are another tool's business and are never validated here.
+  An unparseable file fails the same way: `manni: could not parse /repo/manni.config.yaml: …`
+- **A section left un-nested or miscased is an error, not a shrug.** Writing `judge:` at the top
+  level, or spelling the wrapper `Tracevals:`, would otherwise discard your whole config silently,
+  so it is reported instead:
+
+  ```
+  manni: /repo/manni.config.yaml has no `tracevals:` section, but `judge` sits at the top level — nest it under `tracevals:`
+  ```
+
+## Complete example
+
+Every key below is shown with its default. You would never write all of this.
+
+```yaml title="manni.config.yaml"
+tracevals:
+  provider: anthropic            # optional; no default. Connection settings live in
+  model: <model-id>              # the top-level providers: map, not here
+  judge:
+    ensembleRuns: 3
+    temperature: 0
+    zones:
+      autoPass: 0.8
+      autoFail: 0.8
+    cacheDir: .manni/tracevals/cache
+    redact: []                   # extra patterns scrubbed from the digest
+    # maxTurns has no default; set it to impose a ceiling
+  graders:
+    command:
+      enabled: true              # false, or --no-commands, skips them instead
+                                 # (--commands forces them back on)
+  render:
+    maxBlockChars: 2000
+    maxTotalChars: 150000
+  history:
+    file: .manni/tracevals/history.jsonl
+  capture:
+    dir: .manni/tracevals/sessions   # where session manifests are written and read
+  fill:
+    confidenceThreshold: 0.7
+    maxEvalsPerArtifact: 8
+    temperature: 0
+    cacheDir: .manni/tracevals/cache/fill
+    # maxTurns has no default
+  calibrate:
+    labels: tracevals/labels.yaml
+    # maxFalsePass / maxFalseFail / maxReview have no default
+    sweep:
+      ensembleRuns: [1, 3, 5]
+      autoPass: [0.5, 0.6, 0.7, 0.8, 0.9, 0.95]
+      autoFail: [0.5, 0.6, 0.7, 0.8, 0.9, 0.95]
+  failOnNeedsReview: true
+  plugins: []                    # grader modules to import before evals are planned
+  reportUnusedArtifacts: false
+```
+
+Everything tracevals writes sits under **`.manni/tracevals/`**: the judge cache, the fill cache, the
+history file, and captured session manifests. One gitignored directory per repository, shared in
+shape with every other tool's `.manni/<tool>/`.
+
+## `provider` and `model`
+
+Two optional strings. They say **which** provider judges; they never say how to reach it.
+
+| Key | Type | Required | Default | CLI |
+|---|---|---|---|---|
+| `provider` | string | no | *(unset)* | `--provider` |
+| `model` | string | no | *(unset)* | `--model` |
+
+- **`provider`** is one of `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. Set, it
+  overrides the family's `providers.provider` for tracevals only. Unknown names are **exit 2**.
+- **`model`** is the model within `provider`, and needs a provider named at this level. manni pins
+  no model id anywhere: unset, the inference library's default for the winning provider is used.
+
+The connection settings are not `tracevals:` keys. An endpoint, a key's environment variable, the
+Claude CLI command and the local model's settings live in the family's top-level `providers:` map.
+`manni meta fill` and `manni docevals` read it too. The
+[configuration reference for providers](/manni/meta/reference/configuration/#providers) lists every
+key it takes, the full precedence, and the limits of detection:
+
+```yaml title="manni.config.yaml"
+providers:
+  provider: auto                     # auto | anthropic | openai | claude-cli | llama-cpp
+  model: <model-id>                  # optional; only with a provider named at this level
+  anthropic:
+    apiKeyEnv: ANTHROPIC_API_KEY
+  openai:
+    baseUrl: https://api.openai.com/v1
+    apiKeyEnv: OPENAI_API_KEY
+  claude-cli:
+    command: claude
+  llama-cpp:
+    modelsDir: models
+    thoughtTokens: 0
+
+tracevals:
+  provider: anthropic                # wins over providers.provider, for tracevals only
+```
+
+### Which provider judges
+
+The first of these that names one wins:
+
+1. `--local`, which always means `llama-cpp`.
+2. The `--provider` flag.
+3. An `ai` eval's own `provider:` key.
+4. `tracevals.provider`.
+5. `providers.provider`.
+6. Detection, as `auto`.
+
+**A model stays with its provider.** Each level's model goes only to the provider that same level
+names. A `--provider` that wins therefore takes that provider's default model, not the one
+`tracevals.model` pinned to a different provider. `--model` applies to whichever provider wins.
+
+`--local` runs inference on this machine, so no transcript leaves it. `--local` together with
+`--provider <name>` is a usage error, because the two name different providers.
+
+<Aside type="caution" title="The old `provider:` object is refused">
+`provider.default` and the per-provider sections under `provider:` are gone, along with `pricing:`.
+A config still carrying them fails with **exit 2**, naming the key:
+
+```text
+manni: /repo/manni.config.yaml: /tracevals/provider must be string; "provider" is now a provider name; per-provider settings moved to the top-level providers: map
+```
+
+Move the name to `provider:`, a model you want pinned to `model:`, and the connection settings to
+the top-level `providers:` map.
+</Aside>
+
+<Aside type="caution" title="`apiKeyEnv` is a variable name, never a key">
+In the `providers:` map it names the environment variable manni should read. Putting an actual key
+there commits a secret to your repository.
+</Aside>
+
+## `judge`
+
+| Key | Type | Required | Default | CLI |
+|---|---|---|---|---|
+| `ensembleRuns` | integer ≥ 1 | no | `3` | `--runs` |
+| `temperature` | number 0–2 | no | `0` | none |
+| `zones.autoPass` | number 0–1 | no | `0.8` | none |
+| `zones.autoFail` | number 0–1 | no | `0.8` | none |
+| `cacheDir` | string | no | `.manni/tracevals/cache` | `--no-cache` disables |
+| `redact` | array of strings | no | `[]` | none |
+| `maxTurns` | integer ≥ 1 | no | *(unset)* | `--max-turns` |
+
+- **`ensembleRuns`**: more runs spend proportionally more turns and make an auto-resolved verdict
+  harder to reach, since every run must agree.
+- **`temperature`**: leave at `0`. A nonzero value adds noise to verdicts and warns once per
+  process.
+- **`zones`**: the mean-confidence floor an ensemble must clear to auto-resolve. Unanimity is
+  required regardless; these thresholds are the *additional* bar. Lowering `autoPass` converts
+  reviews into passes.
+- **`maxTurns`**: stop after this many ensemble runs. One judged eval spends `ensembleRuns` turns; a
+  cached ensemble spends none. Unset means unbounded. Once the budget is exhausted, remaining evals
+  report `skipped` with the reason `turn budget`; it never aborts the run.
+- **`redact`**: extra regular expressions scrubbed from the session digest before it is sent.
+
+See [How the judge decides](/manni/tracevals/judge/) for what these do to an outcome.
+
+### `judge.redact`
+
+Patterns applied to the transcript before it leaves the machine. Each source is compiled with the
+`g` flag; a match becomes `[redacted]`.
+
+```yaml
+tracevals:
+  judge:
+    redact:
+      - "ACME-[0-9]{4}"           # an internal ticket id
+      - "https://internal\\.example\\.com/[^\\s\"]+"
+```
+
+Three things to know:
+
+- **These add to the built-in shapes; they never replace them.** Vendor API-key prefixes, bearer
+  tokens, private-key blocks, `AWS_*`, and secret-named assignments are always redacted, with the
+  list empty or not.
+- **A pattern that will not compile is an error at load**, not a silent skip. A dropped pattern
+  would be a silent leak.
+- **It is best-effort, not a guarantee.** `--deterministic-only` is the only setting under which
+  nothing leaves the machine at all, and `--local` is the one under which nothing leaves it over a
+  network.
+
+See [What leaves the machine](/manni/tracevals/judge/#what-leaves-the-machine) for the full list of
+what a judged run sends, redacted or not.
+
+## `graders`
+
+Per-grader settings. Only graders with a knob outside the eval that names them appear here.
+
+| Key | Type | Required | Default | CLI |
+|---|---|---|---|---|
+| `graders.command.enabled` | boolean | no | `true` | `--commands` / `--no-commands` |
+
+`command`-graded evals run a program named in an artifact, and artifacts come from the **trace's**
+project. Evaluating someone else's trace can therefore execute that repository's code. That is the
+documented default and it is not changing; this is the switch for when you do not want to take it.
+
+```yaml
+tracevals:
+  graders:
+    command:
+      enabled: false
+```
+
+Disabled, a command eval reports **`skipped`** with the reason stated, never `pass`. An unrun check
+has not been satisfied, so the report says so rather than quietly counting it as clean. Nothing else
+about the run changes, including the exit code. See
+[the `command` grader](/manni/tracevals/reference/graders/).
+
+```
+command execution is disabled (--no-commands / graders.command.enabled: false)
+```
+
+The flag is a **pair**, and both `run` and `calibrate` honour it. Pass neither and this setting
+decides; `--no-commands` turns execution off for one invocation; `--commands` turns it back on
+against a config that disabled it.
+
+## `render`
+
+Controls how much of the session transcript is given to the judge.
+
+| Key | Type | Required | Default | CLI |
+|---|---|---|---|---|
+| `maxBlockChars` | integer ≥ 100 | no | `2000` | none |
+| `maxTotalChars` | integer ≥ 1000 | no | `150000` | none |
+
+When a transcript exceeds `maxTotalChars`, a head-and-tail window is kept and the middle is replaced
+with a truncation marker. Raise it for long sessions where the relevant behavior sits in the middle,
+at the cost of a larger prompt.
+
+## `history`
+
+| Key | Type | Required | Default | CLI |
+|---|---|---|---|---|
+| `file` | string | no | `.manni/tracevals/history.jsonl` | none |
+
+Where `--history` appends. See
+[Reports & exit codes](/manni/tracevals/reference/report-and-exit-codes/#history).
+
+## `capture`
+
+| Key | Type | Required | Default | CLI |
+|---|---|---|---|---|
+| `dir` | string | no | `.manni/tracevals/sessions` | `capture --out` writes elsewhere; `run --manifest` reads elsewhere |
+
+Where [`capture`](/manni/tracevals/reference/cli/#tracevals-capture) writes a session manifest and where `run`
+looks for one, resolved against the **project root** rather than the working directory. It sits
+inside `.manni/tracevals/` on purpose. That directory is already where the judge cache lives, and it
+is already gitignored. Being inside the project is what makes a manifest travel with its trace in
+the [CI patterns](/manni/tracevals/ci/).
+
+Changing it changes both ends, so a project that relocates manifests keeps `capture` and `run`
+agreeing without a flag on either. It is also why `capture` takes `-c, --config` and `--no-config`
+like the other commands: it has to read this key to know where to write.
+
+## `fill`
+
+| Key | Type | Required | Default | CLI |
+|---|---|---|---|---|
+| `confidenceThreshold` | number 0–1 | no | `0.7` | `--confidence` |
+| `maxEvalsPerArtifact` | integer ≥ 1 | no | `8` | `--max-evals` |
+| `temperature` | number 0–2 | no | `0` | none |
+| `cacheDir` | string | no | `.manni/tracevals/cache/fill` | `--no-cache` disables |
+| `maxTurns` | integer ≥ 1 | no | *(unset)* | `--max-turns` |
+
+`maxEvalsPerArtifact` counts **existing** evals too, so an artifact already at the cap gets no
+new ones. The fill cache is separate from the judge cache: different key scheme, different value
+shape.
+
+`maxTurns` here counts inference calls rather than ensemble runs, one per artifact filled. A cached
+artifact spends none. Unset is unbounded, and an artifact past the budget is reported `skipped`
+rather than silently dropped.
+
+## `calibrate`
+
+Settings for [`calibrate`](/manni/tracevals/judge/calibrate/), which measures verdicts against a
+labels sidecar.
+
+| Key | Type | Required | Default | CLI |
+|---|---|---|---|---|
+| `labels` | string | no | `tracevals/labels.yaml` | `--labels` |
+| `maxFalsePass` | integer ≥ 0 | no | *(unset)* | `--max-false-pass` |
+| `maxFalseFail` | integer ≥ 0 | no | *(unset)* | `--max-false-fail` |
+| `maxReview` | integer ≥ 0 | no | *(unset)* | `--max-review` |
+| `sweep.ensembleRuns` | array of integers ≥ 1 | no | `[1, 3, 5]` | none |
+| `sweep.autoPass` | array of numbers 0–1 | no | `[0.5, 0.6, 0.7, 0.8, 0.9, 0.95]` | none |
+| `sweep.autoFail` | array of numbers 0–1 | no | `[0.5, 0.6, 0.7, 0.8, 0.9, 0.95]` | none |
+
+`labels` resolves against **this config file's directory**, exactly as `plugins` does. An explicit
+`--labels` is a working-directory path, like every other path argument on the CLI.
+
+The three `max*` keys are unset by default, and a calibration run is a measurement rather than a
+gate. Set one and disagreement above it becomes exit `1`. They are integers rather than rates
+because `0` has to be expressible. "No false pass at all" is the most common setting anyone wants,
+and it cannot double as "unset".
+
+`sweep` is the grid [`--sweep`](/manni/tracevals/judge/calibrate/) tries, **one axis at a time** with
+the other knobs held at their configured value. It lives here rather than behind flags because the
+useful range is a property of a corpus, and a corpus outlives an invocation. Widening
+`sweep.ensembleRuns` is the one calibration setting that spends turns: the corpus is judged once at
+the largest value in it.
+
+## `failOnNeedsReview`
+
+| Key | Type | Required | Default | CLI |
+|---|---|---|---|---|
+| `failOnNeedsReview` | boolean | no | `true` | `--fail-on-needs-review` / `--no-fail-on-needs-review` |
+
+Whether a `needs-review` outcome contributes to a non-zero exit code. Set it to `false` to surface
+ambiguous verdicts in the report without blocking on them.
+
+## `plugins`
+
+| Key | Type | Required | Default | CLI |
+|---|---|---|---|---|
+| `plugins` | array of strings | no | `[]` | `--require` **appends** |
+
+Modules imported before evals are planned, so one calling `registerGrader()` can add a grader kind
+the built-ins do not cover. Honoured by both `run` and `fill`. See
+[the API reference](/manni/tracevals/reference/api/).
+
+```yaml
+tracevals:
+  plugins:
+    - ./tracevals/graders.mjs      # relative to *this file*, not the cwd
+    - /opt/shared/graders.mjs      # absolute, as written
+    - "@acme/tracevals-graders"    # resolved from this file's directory
+```
+
+Four things to know, in the order they will bite:
+
+- **Specifiers resolve against this file's directory**, never the working directory. That is what
+  lets a committed relative path survive a CI step that runs the CLI from the repository root.
+- **Load order is significant.** Entries load in order, config before `--require`, and a later one
+  wins a kind an earlier one already claimed.
+- **`--require` adds; it does not replace.** A one-off flag would otherwise unregister every grader
+  the config names, and each eval declaring one would report `unknown grader kind`. That points at
+  an artifact that is not the problem.
+- **A specifier that will not import exits `2`.** Skipping it would leave a run that looks like it
+  ran. A module that imports but registers nothing warns instead, and one that takes over a built-in
+  kind is allowed and reported.
+
+<Aside type="caution" title="This imports code named in your config">
+A plugin runs with the CLI's full privileges; there is no sandbox. The list is empty unless you
+write one, and it lives in the repository doing the evaluating. The
+[`command` grader](/manni/tracevals/reference/graders/) differs, because it runs a program named by
+the artifacts of the project being evaluated. Evaluating someone else's trace cannot introduce a
+plugin.
+</Aside>
+
+## `reportUnusedArtifacts`
+
+| Key | Type | Required | Default | CLI |
+|---|---|---|---|---|
+| `reportUnusedArtifacts` | boolean | no | `false` | `--report-unused-artifacts` |
+
+Whether the coverage table lists every skill and agent the session was
+[offered and never used](/manni/tracevals/declare/coverage/), or only counts them. Off by default
+because a real roster runs to a couple of hundred skills and would bury the evals above it.
+
+This is an observation, not a gate. Turning it on changes what the report *shows* and nothing about
+what it *decides*. The summary counts and the exit code are identical either way.
+
+## Keys with no CLI flag
+
+Worth knowing, because they can only be changed in the config file:
+
+`judge.temperature` · `judge.zones.autoPass` · `judge.zones.autoFail` · `judge.cacheDir` ·
+`judge.redact` · `render.maxBlockChars` · `render.maxTotalChars` · `history.file` ·
+`capture.dir` · `fill.temperature` · `fill.cacheDir` · `calibrate.sweep.ensembleRuns` ·
+`calibrate.sweep.autoPass` · `calibrate.sweep.autoFail`
+
+Every key of the family's `providers:` map is in the same position, except the provider name and the
+model, which `--provider`, `--local`, and `--model` override.
+
+## Behavior with no key at all
+
+**Artifact staleness** has no knob. Every resolved artifact is stat'd and compared with the
+session's end time. One that is newer is flagged in the coverage table and named in a warning. It is
+always on because it costs one `stat` and can only ever add information. It never becomes an eval
+outcome and never changes the exit code. See
+[Artifact coverage](/manni/tracevals/declare/coverage/).
+
+**Reading a session manifest** has no knob either, beyond where to look. If one exists for the
+trace, `run` uses it; if not, every hash check reports `skipped` with the reason and the mtime
+heuristic above stands unchanged. There is nothing to turn on, because there is nothing to turn on
+*for* until someone runs [`capture`](/manni/tracevals/reference/cli/#tracevals-capture).

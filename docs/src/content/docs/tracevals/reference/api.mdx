@@ -1,0 +1,204 @@
+---
+title: API reference
+description: Everything the tracevals namespace exports, grouped by what it is for, with the intended entry points marked.
+sidebar:
+  order: 8
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Scope:** the export surface. How to *use* it is [Build on tracevals](/manni/tracevals/extend/).
+Source of truth: `src/tracevals/index.ts`.
+
+```ts
+import { tracevals } from "@hawkeyexl/manni";
+
+const trace = tracevals.parseTraceFile("session.jsonl");
+```
+
+The tool is a **namespace export** on the package root, beside `docevals`, `cite` and `key`. The
+metadata tool's names are the package's flat export. Every sibling tool sits under its own
+namespace, so two tools can both have a `loadConfig` without colliding. There is no subpath import
+for tracevals.
+
+ESM-only, Node.js 24 or newer, types shipped. **★ marks an intended entry point**. The rest is
+exported because the CLI is built from it and it is useful for tests. The starred ones are where to
+start.
+
+## Engine
+
+| Export | Notes |
+|---|---|
+| ★ `runEvals` | Runs the whole pipeline, returns `RunReport`. Needs a `judge` unless `deterministicOnly`. |
+| `EngineOptions` | `tracePath`, `projectDir?`, `env?`, `config`, `judge?`, `deterministicOnly?`. |
+
+## Commands
+
+The CLI's verbs, callable directly. Each pairs a runner with a renderer.
+
+| Export | Notes |
+|---|---|
+| `runRun`, `RunCommandOptions`, `RunCommandResult` | `run`, one trace. `RunCommandOptions.judge` injects a judge. |
+| `prepareRun`, `runOne`, `RunContext`, `RunSharedOptions` | The seams a batch reuses. Build the judge, config and plugins once, then evaluate one trace. |
+| `runBatch`, `resolveBatchTraces`, `parseSince`, `BatchCommandOptions`, `BatchCommandResult` | `run` over many traces. `BatchCommandResult.outcomes` pairs each file with its report, errors included. |
+| `runCalibrate`, `CalibrateCommandOptions`, `CalibrateCommandResult` | `calibrate`. Accepts the same judge injection through `RunSharedOptions`. |
+| `runFill`, `renderFill`, `FillOptions`, `FillReport`, `FillArtifactResult`, `FillRun`, `FillStatus`, `SharpeningNote` | `fill`. `FillOptions.providerInstance` injects a provider. |
+| `runCapture`, `renderCapture`, `CaptureCommandOptions`, `CaptureCommandResult` | `capture`. |
+| `runList`, `renderList`, `ListOptions`, `ListRun` | `list`. |
+
+## Traces
+
+| Export | Notes |
+|---|---|
+| ★ `parseTraceFile` | Detect the format and parse, returning `Trace`. |
+| `parseTraceContent` | The same from a string. |
+| `detectFormat`, `detectContentFormat` | Format sniffing on its own. |
+| ★ `discoverTraces` | Scan the session store. Returns `TraceListing[]`, newest first. |
+| `configDir` | Claude Code's config directory: `CLAUDE_CONFIG_DIR` when set, and `~/.claude` otherwise. |
+| `slugFor` | The project-slug rule, which turns every non-alphanumeric character into a hyphen. |
+| `pickTrace`, `PickerChoice`, `PromptFn` | The interactive picker. `PromptFn` makes it testable. |
+| `DiscoverOptions`, `TraceListing` | |
+| `availableAt` | Filter an availability list to the entries offered at that ordinal. |
+| `offeredNames` | Every distinct name that was offered at any point. |
+| `joinDescriptions` | Parse a listing's `- name: description` lines onto its names. Handles `plugin:skill` and wrapped descriptions. |
+| `newAvailability` | An empty roster, for a synthetic `Trace`. |
+| `Trace`, `TraceSource`, `TraceFormat`, `TraceEvent`, `TraceUsage`, `ToolCall`, `SkillInvocation`, `AgentSpawn`, `SubagentBranch`, `FileAccess` | The trace model. |
+| `TraceAvailability`, `AvailabilityEntry`, `AvailabilityKind`, `McpServerStatus` | The availability roster a trace records. |
+
+## Artifacts
+
+| Export | Notes |
+|---|---|
+| ★ `resolveArtifacts` | Trace-driven resolution. Returns artifacts, coverage and warnings. |
+| `discoverArtifacts` | Static, project-only scan. What `fill` uses. |
+| `PROJECT_RULES_FILENAMES` | `["CLAUDE.md", "AGENTS.md", "GEMINI.md"]`. |
+| `coverAvailability` | Classify coverage rows as offered-and-used, offered-not-used, or not-offered, and count the roster. |
+| `ResolveOptions`, `DiscoverArtifactsOptions`, `DiscoveredArtifact`, `DiscoveryResult`, `AvailabilityCoverage`, `AvailabilityOptions` | |
+| `findGitRoot`, `findInTree`, `listInTree`, `safeRead`, `safeMtime`, `PRUNED_DIRS` | Filesystem helpers the resolvers share. All degrade to `null` or empty rather than throwing. |
+| `ResolvedArtifact`, `ResolvedArtifacts`, `ArtifactType`, `ArtifactOrigin`, `CoverageEntry`, `ArtifactAvailability`, `AvailabilityReport`, `AvailabilityCounts` | The artifact model. |
+
+## Evals
+
+| Export | Notes |
+|---|---|
+| `extractEvals` | Read and validate an artifact's `metadata.evals` block. |
+| `appendArtifactEvals` | Append evals to frontmatter. The one write path. |
+| `ARTIFACT_EVALS_SCHEMA_ID` | `manni:artifact-evals:1.0.0-proposal.4`. |
+| `artifactEvalsSchemaPath` | Where the bundled draft of that vocabulary resolves on disk. |
+| `EvalEntry`, `EvalType`, `ExtractedEvals`, `Severity`, `NewEvalEntry`, `EvalProvenance` | `Severity` is the family scale, `error \| warning \| notice`. |
+
+## Planning and graders
+
+| Export | Notes |
+|---|---|
+| `planEvals` | Turn artifacts into `EvalPlan[]`. |
+| `IMPLICIT_EVAL_NAME` | `"adheres-to-artifact"`. |
+| ★ `registerGrader` | Add a kind at run time. See [Custom graders](/manni/tracevals/extend/custom-graders/). |
+| `graderFor`, `listGraderKinds` | |
+| `BUILTIN_GRADER_KINDS` | The kinds this tool ships, frozen before anything can register over them. |
+| `loadGraderPlugins` | Import grader plugins the way `run` and `fill` do, with the same resolution and the same warnings. Throws `TracevalsError` on a specifier that will not load. |
+| `GraderPluginApi`, `GraderPluginRegister`, `LoadGraderPluginsOptions`, `LoadedGraderPlugins` | |
+| `EvalPlan` | |
+| `TraceGrader`, `GradeResult`, `Finding`, `TraceGraderContext` | The grader contract. |
+| `windowFor` | The slice of the trace that plan's artifact governed. A custom grader that counts events should read this rather than the trace. |
+| `skippedWindow` | The `GradeResult` for an empty window, which is a skip carrying its reason, never a pass. |
+| `TraceWindow` | |
+| `validateWhen`, `evaluateWhen` | The [conditional trigger](/manni/tracevals/reference/graders/#conditional-triggers) contract, shared so a custom grader implements it identically. |
+| `matchesGlob`, `globToRegExp` | The path glob `when.file-access` uses. |
+| `WHEN_CONDITIONS`, `WhenCondition`, `TriggerResult` | |
+
+## Judge
+
+| Export | Notes |
+|---|---|
+| `makeTraceJudge` | Build the ensemble judge. |
+| `makeJudgeProvider`, `providerSpecFor` | Provider construction. `providerSpecFor` resolves identity without constructing, so a fully cached run needs no API key. |
+| `renderTrace` | The transcript as the judge sees it, redacted. With a plan, only that artifact's window. |
+| `makeRedactor` | The scrubber `renderTrace` applies. Built-in shapes plus any extra sources, which **add to** them. |
+| `REDACTION_PATTERNS`, `CUSTOM_PLACEHOLDER` | The built-in shapes with their labels, and the placeholder a configured pattern produces. |
+| `compileRedactPatterns` | Compile-check pattern sources up front. Throws `TracevalsError` on one that will not compile. |
+| `RedactionPattern`, `Redactor` | |
+| `JUDGE_SYSTEM_PROMPT`, `buildUserContent` | The prompts. |
+| `PROMPT_VERSION` | Cache-key component. Bump on any prompt change. |
+| `cacheKey`, `sha256` | |
+| `TraceJudge`, `JudgedEval`, `TraceJudgeOptions`, `RenderOptions` | |
+| `MockResponse` | The canned judge response this repository's own tests inject. It is a test seam, not a provider you configure. |
+
+<Aside type="caution" title="`TraceJudge` is the seam, not `makeTraceJudge`">
+Anything matching the `TraceJudge` function type works, which is what makes downstream suites
+offline-able. You rarely need `makeTraceJudge` unless you want the real ensemble.
+</Aside>
+
+## Configuration
+
+| Export | Notes |
+|---|---|
+| ★ `loadConfig` | Read `manni.config.yaml` from a directory, take its `tracevals` section, validate, and fully populate defaults. |
+| `parseConfig` | The same from an object. The argument is the **section**, not the whole file. Pass what sits under `tracevals:`. |
+| `DEFAULT_CONFIG_FILENAME` | `"manni.config.yaml"`, the one config file the family shares. |
+| `CONFIG_SECTION_KEY` | `"tracevals"`, the top-level key in that file holding this tool's settings. |
+| `TracevalsConfig` | |
+
+Downstream code always receives a fully-populated config, so there is no need to re-apply defaults.
+Connection settings for inference live elsewhere. They are in the family's top-level `providers:`
+map, shared with `manni meta fill` and `manni docevals`. See the
+[configuration reference](/manni/tracevals/reference/configuration/).
+
+## Reporting and history
+
+| Export | Notes |
+|---|---|
+| ★ `render` | One report as `"pretty"`, `"json"` or `"markdown"`. |
+| `renderBatch`, `renderBatchHuman`, `renderBatchMarkdown` | The aggregate shape. |
+| `renderCalibration`, `renderCalibrationHuman`, `renderCalibrationMarkdown` | The calibration shape. |
+| `aggregate`, `BatchOutcome` | Fold per-trace reports into rates. Pure. |
+| `ReportFormat` | |
+| `appendHistory`, `loadHistory`, `compareToLast`, `entryFor` | |
+| `HistoryEntry`, `HistoryEval`, `HistoryComparison` | |
+| `TracevalsError`, `RunReport`, `EvalResult`, `RunSummary`, `Outcome`, `BatchReport`, `AggregateRow`, `AggregateCounts`, `BatchTraceEntry`, `BatchSummary` | The report model. |
+| `CalibrationReport`, `CalibrationCounts`, `Disagreement`, `SweepCell`, `CalibrationGate`, `JudgeSetting`, `JoinKind`, `EvalLabel`, `LabelOutcome` | The calibration model. |
+| `loadLabels`, `parseLabels`, `labelKey`, `DEFAULT_LABELS_FILE` | The labels sidecar. `parseLabels` resolves trace paths against the file's own directory. |
+| `joinLabels`, `score`, `rescore`, `classify` | Pure calibration arithmetic. `rescore` re-applies zones and ensemble depth to a result's cached runs, with no provider involved. |
+| `JoinedLabel`, `AmbiguousLabel`, `JoinResult`, `Rescored`, `ScoreInput`, `ScoreResult` | |
+
+`TracevalsError` is the operational-failure type, and it extends the family's `ToolError`. The CLI
+maps it to exit `2`. Catch it when you want to tell "the tool could not run" apart from "a check
+failed".
+
+## Capture
+
+The session manifest `manni tracevals capture` writes, so staleness is a fact rather than a guess.
+
+| Export | Notes |
+|---|---|
+| `buildManifest`, `BuildManifestOptions` | Build a manifest from a finished session. |
+| `writeManifest`, `readManifest` | |
+| `findManifest`, `FindManifestOptions`, `FoundManifest`, `siblingManifestPath`, `manifestPathFor` | Locating the manifest for a trace. |
+| `checkContent`, `hashFile`, `sha256Hex` | Compare an artifact on disk against what the session read. |
+| `deviceId`, `readGit`, `redactDeep`, `relPosix`, `safeSessionId` | |
+| `parseHookPayload`, `readStdin`, `HookPayload` | The Claude Code hook contract `capture` reads on stdin. |
+| `SessionManifest`, `ManifestArtifact`, `ManifestGit`, `ManifestReport`, `ContentCheck`, `ContentCheckStatus` | |
+| `MANIFEST_VERSION`, `DEFAULT_CAPTURE_DIR` | `DEFAULT_CAPTURE_DIR` is `.manni/tracevals/sessions`. |
+
+## `fill` internals
+
+Exported so the authoring path is testable and extensible. Most consumers will not need these.
+
+| Export | Notes |
+|---|---|
+| `gateProposals`, `GateOptions`, `GateResult` | The gate, in order. |
+| `ALLOWED_GRADERS` | Per-artifact-type grader allowlist. |
+| `ProposedEval`, `Rejection`, `RejectionReason`, `Vocabulary` | |
+| `PROPOSAL_SCHEMA`, `isValidProposal` | The shape a proposal must match. |
+| `systemPromptFor`, `buildFillUser` | |
+| `FILL_PROMPT_VERSION`, `MAX_BODY_CHARS` | Cache-key components. |
+| `FillCache`, `fillCacheKey`, `FillCacheKeyParts` | Separate from the judge cache. |
+| `artifactFacts`, `ArtifactFacts` | Grounding inputs, not evals. |
+| `buildVocabulary`, `BUILTIN_TOOLS` | |
+| `mockFillProposal` | The canned proposal the test seam returns. |
+
+<Aside title="Stability">
+The package is versioned by semantic-release from Conventional Commits. The ★ entry points are the
+ones the CLI itself is built on, and the least likely to move. The `fill` internals exist mostly to
+serve this repository's own tests.
+</Aside>

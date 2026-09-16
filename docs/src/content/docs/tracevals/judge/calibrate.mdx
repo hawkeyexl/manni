@@ -1,0 +1,444 @@
+---
+title: Calibrate the judge
+description: Write down the verdicts you already know, run calibrate to count false passes, false fails, and review volume, then sweep zones and ensemble size for free against cached verdicts.
+sidebar:
+  order: 2
+---
+
+import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+{/* Doc Detective inline tests. The docs-as-tests workflow exposes the local
+    build as `manni` via `npm link` and points CLAUDE_CONFIG_DIR at
+    test/tracevals/fixtures/home/.claude, so trace discovery reads the fixture
+    session store instead of the runner's home. Steps that exercise a judged
+    path run with `--provider mock`: it is a test seam rather than a documented
+    provider, and it is what makes a judged verdict deterministic and offline on
+    a runner that has neither a key nor a local model. The prose above names
+    `--local`, which is the real offline answer for a reader.
+    Run with `npx doc-detective`. Config: .doc-detective.json. */}
+
+**Scope:** measuring whether the tool agrees with you, and turning the knobs once you know. It
+assumes [How the judge decides](/manni/tracevals/judge/). You cannot tune a zone threshold before
+you know what consensus is.
+
+The tool can always tell you what it decided. Calibration is how you find out whether it was
+**right**, and there is a command for it:
+
+```bash
+npx @hawkeyexl/manni tracevals calibrate <traces...> --labels tracevals/labels.yaml
+```
+
+It runs the corpus and joins the results against the answers you wrote down. Then it counts the
+three things that matter: [false passes, false fails, and review volume](#the-three-numbers).
+
+`calibrate` takes the same inputs and the same flags as `run`, minus `--history` and `--manifest`:
+`-c, --config <path>`, `--no-config`, `--provider`, `--model`, `--local`, `--offline`,
+`--max-turns`, `--deterministic-only`, `--no-cache`, and
+`-f, --format <pretty | json | markdown>`. History and a
+session manifest belong to a run you are recording, and a calibration corpus is neither.
+
+## Write down what you decided
+
+Ground truth lives in a **sidecar file**, not in the artifacts. A label belongs to a corpus and to
+the person who reviewed it. Two teams calibrating the same skill against different sessions hold
+different answers, and neither belongs in the `SKILL.md`.
+
+```yaml title="tracevals/labels.yaml"
+version: 1
+labels:
+  - trace: ../../traces/claude-session.jsonl
+    artifact: fix-bug
+    eval: forbidden-tool
+    expected: pass
+    note: The only in-window Bash call was a read-only `git status`.
+
+  - trace: ../../traces/claude-session.jsonl
+    artifact: reviewer
+    type: agent
+    eval: reviewer-is-read-only
+    expected: pass
+```
+
+| Field | Required | Meaning |
+|---|---|---|
+| `trace` | yes | Path to the trace, resolved **against this file's own directory**, not your working directory. A committed labels file therefore means the same thing from anywhere. |
+| `artifact` | yes | The name the report shows, which is a skill name, a `subagent_type`, a slash-command name, or a project-rules filename such as `CLAUDE.md`. |
+| `type` | no | `skill`, `agent`, `project-rules`, or `slash-command`. Needed only to disambiguate a name two artifact kinds share. That could be a skill and an agent, or a skill and the slash command that types it. |
+| `eval` | yes | The eval's `id`. |
+| `expected` | yes | `pass`, `fail`, or `needs-review`. |
+| `note` | no | Why you decided that. It travels into the disagreement report, where it is the thing that makes a disagreement actionable. |
+
+The file validates against `manni:tracevals:calibration-labels`.
+
+`expected: needs-review` is a real answer, not a hedge. Label the two or three sessions you found
+genuinely ambiguous and the report will tell you whether the review band caught them.
+
+<Aside type="caution" title="Label by `id`, and give your evals one">
+An eval declared with the [string shorthand](/manni/tracevals/reference/evals-schema/) has no `id`,
+so it gets a **positional** one, such as `eval-1` or `eval-2`. Reordering the block silently
+re-points every label at a different assertion. Declaring an explicit `id` costs one line and
+removes the problem.
+</Aside>
+
+### What the file refuses
+
+All four refusals are the same refusal. Each is a labels file that quietly means less than it says.
+
+| Refused | Why |
+|---|---|
+| An unknown member, such as `reason:` where you meant `note:` | The schema is closed, so a typo would silently drop the label |
+| An empty `labels` list | It measures nothing while looking like a measurement |
+| Two labels for one `(trace, artifact, eval)` | Whichever won would silently decide the number |
+| A `trace` outside the corpus you are running | Checked before anything is judged, so a misspelling costs no inference |
+
+A label that survives all four and still matches no eval result is **exit 2** as well. It is
+reported after the run with the ids that trace actually produced. It cannot be a warning. A typo'd
+id contributes to no count, so the report would come out looking like a cleaner corpus than it is.
+
+## The three numbers
+
+Point the command at the corpus. Every example on this page runs against this repository's own
+fixtures, judged on the machine running the command.
+
+{/* The docs-as-tests suite exposes the local build as `manni` with `npm link`, and sets
+    CLAUDE_CONFIG_DIR=test/tracevals/fixtures/home/.claude so trace discovery reads the fixture
+    session store rather than the machine's own. */}
+
+{/* test {"testId":"calibrate","description":"calibrate reports the three numbers, sweeps for free, and gates only when asked."} */}
+{/* step {"description":"Calibration measures the corpus and exits 0 even though it disagrees.","runShell":{"command":"manni tracevals calibrate test/tracevals/fixtures/traces/claude-session.jsonl test/tracevals/fixtures/traces/claude-session-sidecar.jsonl --project test/tracevals/fixtures/project --labels test/tracevals/fixtures/project/tracevals/labels.yaml --provider mock --no-cache","exitCodes":[0],"stdio":"false passes"}} */}
+
+```bash
+npx @hawkeyexl/manni tracevals calibrate \
+  test/tracevals/fixtures/traces/claude-session.jsonl \
+  test/tracevals/fixtures/traces/claude-session-sidecar.jsonl \
+  --project test/tracevals/fixtures/project \
+  --labels test/tracevals/fixtures/project/tracevals/labels.yaml \
+  --local
+```
+
+```
+manni tracevals calibrate — 2 trace(s), 10 label(s)
+runs 3 · autoPass 0.8 · autoFail 0.8 · labels test/tracevals/fixtures/project/tracevals/labels.yaml
+
+Agreement 5/8 (62.5%)
+     1  false passes   labelled fail, judged pass — the expensive error
+     1  false fails    labelled pass, judged fail — erodes trust fastest
+     1  needs-review   across the whole corpus — the review volume
+     0  deferred       labelled pass or fail, routed to a human instead
+     1  missed reviews labelled ambiguous, decided anyway
+     0  errors         the eval could not be graded at all
+     2  unscored       labelled, but the eval never armed
+```
+
+**False passes** are the expensive error: something you would have failed came back green.
+**False fails** erode trust fastest. The tool cried wolf, and the next person believes it less.
+**Review volume** is the operational cost of the band: too many and nobody reads them, too few and
+the band is not doing its job. It counts `needs-review` across *every* eval in the corpus, labelled
+or not, because "nobody reads them" is a question about volume rather than accuracy.
+
+Three more rows exist because the grid of (what you said × what it said) is bigger than three cells.
+Collapsing it hides the interesting parts:
+
+| Row | What happened |
+|---|---|
+| `deferred` | You said pass or fail; the tool routed to a human. It declined rather than being wrong, which is the behaviour zones exist to produce. |
+| `missed reviews` | You said ambiguous; the tool decided anyway. This is the row to watch while raising `autoPass`. |
+| `unscored` | The eval never armed, through an unmet [conditional trigger](/manni/tracevals/declare/coverage/), an empty window, or a `metadata.eval-skip`. |
+
+<Aside title="Unscored labels stay out of the denominator">
+`Agreement 5/8` above comes from ten labels minus two that produced no evidence. A check that never
+armed has not been satisfied, so folding it in would let a corpus nobody exercised report perfect
+agreement. That is the same reason a [batch pass rate](/manni/tracevals/reference/report-and-exit-codes/#batch-runs)
+excludes skips. An eval that **errored** is a disagreement, never an agreement, by the same rule
+that makes [an errored run count against consensus](/manni/tracevals/judge/#from-votes-to-consensus).
+</Aside>
+
+## Which eval disagreed
+
+A count with no route back to an assertion is a number nobody can act on. Every disagreement is
+therefore listed with the arithmetic behind it, and the note you wrote:
+
+```
+Disagreements
+  FALSE-FAIL     claude-session.jsonl  fix-bug › forbidden-tool (tool-usage)
+                 expected pass, got fail
+                 note: The only in-window Bash call was a read-only `git status`.
+  FALSE-PASS     claude-session.jsonl  AGENTS.md › eval-1 (ai)
+                 expected fail, got pass · 3p/0f/0?/0e over 3 run(s), confidence 0.95
+                 note: The change touched four packages; that is not small and reviewable.
+  MISSED-REVIEW  claude-session.jsonl  fix-bug › eval-5 (ai)
+                 expected needs-review, got pass · 3p/0f/0?/0e over 3 run(s), confidence 0.95
+                 note: One file got its test first, the other did not.
+
+Unscored (no evidence either way)
+  SKIPPED        claude-session-sidecar.jsonl  CLAUDE.md › source-edits-use-the-fix-bug-skill
+                 trigger not met (whole session): no file matching "src/**" was accessed
+```
+
+Read the two judged rows before touching a knob. Both are unanimous at confidence `0.95`, so **no
+zone threshold below `0.95` will move them**. The assertions are the problem, not the band. The
+first row is not a judge problem at all: `forbidden-tool` is a deterministic `tool-usage` eval that
+is simply too blunt. Deterministic and `human`-graded evals are calibrated exactly like judged ones,
+and a blunt option produces a false fail as readily as a hesitant model does.
+
+That is the diagnosis this page used to ask you to make by eye:
+
+- **Reviews clustered just under the threshold, unanimous.** The threshold is too high for your
+  model. Lower it and watch `false passes`.
+- **Reviews with split votes.** The *assertion* is ambiguous, and no threshold will fix it. Go
+  sharpen the eval.
+
+## Sweep the knobs for free
+
+`--sweep` re-scores the same corpus at every setting in the grid and reports what each one would
+have produced.
+
+{/* step {"description":"A sweep reports every axis and costs no further inference.","runShell":{"command":"manni tracevals calibrate test/tracevals/fixtures/traces/claude-session.jsonl test/tracevals/fixtures/traces/claude-session-sidecar.jsonl --project test/tracevals/fixtures/project --labels test/tracevals/fixtures/project/tracevals/labels.yaml --provider mock --sweep","exitCodes":[0],"stdio":"no further model calls"}} */}
+
+```bash
+npx @hawkeyexl/manni tracevals calibrate <traces...> --labels tracevals/labels.yaml --sweep
+```
+
+```
+Sweep
+  re-scored from the verdicts this run already produced — no further model calls
+  axis                 setting                                scored  agree  false-pass  false-fail  review  reviewVol  insuff
+  baseline             runs=3 autoPass=0.8 autoFail=0.8            8      5           1           1       0          1       0
+  ensembleRuns         runs=1 autoPass=0.8 autoFail=0.8            8      5           1           1       0          1       0
+  ensembleRuns         runs=3 autoPass=0.8 autoFail=0.8            8      5           1           1       0          1       0
+  ensembleRuns         runs=5 autoPass=0.8 autoFail=0.8            8      5           1           1       0          1       0
+  zones.autoPass       runs=3 autoPass=0.5 autoFail=0.8            8      5           1           1       0          1       0
+  zones.autoPass       runs=3 autoPass=0.6 autoFail=0.8            8      5           1           1       0          1       0
+  zones.autoPass       runs=3 autoPass=0.7 autoFail=0.8            8      5           1           1       0          1       0
+  zones.autoPass       runs=3 autoPass=0.8 autoFail=0.8            8      5           1           1       0          1       0
+  zones.autoPass       runs=3 autoPass=0.9 autoFail=0.8            8      5           1           1       0          1       0
+  zones.autoPass       runs=3 autoPass=0.95 autoFail=0.8           8      5           0           1       2          5       0
+  zones.autoFail       runs=3 autoPass=0.8 autoFail=0.5            8      5           1           1       0          1       0
+  zones.autoFail       runs=3 autoPass=0.8 autoFail=0.6            8      5           1           1       0          1       0
+  zones.autoFail       runs=3 autoPass=0.8 autoFail=0.7            8      5           1           1       0          1       0
+  zones.autoFail       runs=3 autoPass=0.8 autoFail=0.8            8      5           1           1       0          1       0
+  zones.autoFail       runs=3 autoPass=0.8 autoFail=0.9            8      5           1           1       0          1       0
+  zones.autoFail       runs=3 autoPass=0.8 autoFail=0.95           8      5           1           1       0          1       0
+```
+
+One row moves, and it is the whole answer: at `autoPass: 0.95` the false pass disappears and review
+volume rises. That is the trade stated in numbers instead of adjectives. You buy the removal of
+one wrong verdict with more deferrals, and you can make the call without running anything again.
+
+`scored` and `insuff` are the two columns that keep the rest honest. `scored` is the denominator:
+"zero false passes" over 8 scored labels is a finding, over 0 is a run that measured nothing.
+`insuff` counts cells whose cached ensemble was smaller than the setting asks for. Those are left at
+their reported outcome rather than guessed at, because a silently under-sampled cell is a wrong
+number.
+
+{/* step {"description":"Every sweep row states the denominator it was computed over.","runShell":{"command":"manni tracevals calibrate test/tracevals/fixtures/traces/claude-session.jsonl test/tracevals/fixtures/traces/claude-session-sidecar.jsonl --project test/tracevals/fixtures/project --labels test/tracevals/fixtures/project/tracevals/labels.yaml --provider mock --sweep","exitCodes":[0],"stdio":"scored"}} */}
+
+**One axis at a time**, every other knob held at its configured value, because that is what "move
+one knob and recount" has always meant. The full cross-product of the default grid is 108 rows and
+answers a question nobody asked. The grid itself lives in
+[`calibrate.sweep`](/manni/tracevals/reference/configuration/#calibrate).
+
+### Why it is free
+
+Verdicts are cached per-run, and a judged eval's report carries **every run** the ensemble made:
+the votes, the confidences, the errors. Zone thresholds were never part of the
+[cache key](#what-invalidates-a-cached-verdict): they are applied *after* consensus, not sent to the
+model. So a different `autoPass` is arithmetic over verdicts already on disk.
+
+`ensembleRuns` **is** in the key, so the sweep handles it differently. The corpus is judged once at
+the **largest** ensemble the grid asks for. Each smaller cell is scored from the first *k* of
+those runs.
+
+<Aside type="caution" title="Two consequences, and neither is hidden">
+A swept `ensembleRuns` row is a **sub-sample** of the ensemble that was drawn, not a fresh *k*-run
+ensemble. At temperature 0 the runs are independent samples of one prompt, so it is an honest
+estimate. It is an estimate all the same.
+
+And a sweep's **first** run spends `max(calibrate.sweep.ensembleRuns)` turns per judged eval instead
+of your configured count: 5 rather than 3 with the defaults. Every sweep after it is free, because
+the cache key depends on the grid rather than on the cell. Narrow the grid if that first run
+matters.
+</Aside>
+
+## The knobs themselves
+
+All live under `tracevals.judge` in `manni.config.yaml`; see the
+[configuration reference](/manni/tracevals/reference/configuration/) for types and defaults.
+
+| Knob | Default | Moving it up | Moving it down |
+|---|---|---|---|
+| `ensembleRuns` | `3` | Spends proportionally more turns. Makes auto-resolution *harder*, since every run must agree. More reviews, fewer confident mistakes. | Fewer turns and more decisive, with a higher chance a single unlucky sample decides an eval. |
+| `zones.autoPass` | `0.8` | Fewer auto-passes, more reviews. | Converts reviews into passes. Buys throughput with accuracy. |
+| `zones.autoFail` | `0.8` | Fewer auto-fails, more reviews. | Converts reviews into fails. |
+| `temperature` | `0` | Adds noise. Warns once per process. | Already at the floor. |
+
+Two things are worth internalising before you turn anything:
+
+**More runs make the gate stricter, not looser.** Auto-resolution requires unanimity, so a fourth
+run is a fourth chance for one dissent to send the eval to review. If reviews are drowning you,
+raising `ensembleRuns` will make it worse.
+
+**Zones are a floor on mean confidence, not a vote threshold.** Unanimity is required regardless.
+Lowering `autoPass` to `0.6` does not let a 2–1 split pass; it only lets a *unanimous but hesitant*
+ensemble through.
+
+<Aside type="caution" title="Leave temperature at 0">
+Nonzero temperature adds noise to verdicts, which is the opposite of what an ensemble is for. You
+want independent samples of the same judgement, not varied ones. manni tracevals warns once per
+process if you set it above zero. `--sweep` does not vary it for the same reason.
+</Aside>
+
+## Measurement, not a gate
+
+`calibrate` exits **0 even when it disagrees with you**. The first honest calibration of a real
+corpus finds disagreement, which is the point of running it. A command that fails on its own
+findings is one people stop running, or start running with `|| true`.
+
+Four things do turn it red. One is a threshold you set; the other three are kinds of incomplete
+measurement:
+
+<Steps>
+
+1. **A threshold you asked for, and missed.** What counts as too many false passes is your decision,
+   so state it:
+
+   {/* step {"description":"A threshold turns a measurement into a gate.","runShell":{"command":"manni tracevals calibrate test/tracevals/fixtures/traces/claude-session.jsonl test/tracevals/fixtures/traces/claude-session-sidecar.jsonl --project test/tracevals/fixtures/project --labels test/tracevals/fixtures/project/tracevals/labels.yaml --provider mock --max-false-pass 0","exitCodes":[1],"stdio":"exceeded"}} */}
+
+   ```bash
+   npx @hawkeyexl/manni tracevals calibrate <traces...> \
+     --labels tracevals/labels.yaml --max-false-pass 0
+   ```
+
+   ```
+   Thresholds
+     falsePass: 1 of at most 0 — exceeded
+
+   Exit 1: a threshold was exceeded, or the measurement is incomplete — a trace could not be evaluated, or the judge budget cut the corpus short.
+   ```
+
+   `--max-false-fail` and `--max-review` work the same way, and all three have
+   [config equivalents](/manni/tracevals/reference/configuration/#calibrate).
+
+2. **A trace in the corpus that could not be evaluated.** The measurement is then incomplete, and an
+   incomplete number presented as a clean one is worse than no number.
+
+3. **The shared judge budget ran out mid-corpus.** `--max-turns` spans the whole invocation, so it
+   can stop the run part way through. The remaining labels become `unscored` rows, and the counts
+   describe the corpus the run stopped measuring. Same reasoning as a lost trace, same exit code.
+
+4. **Nothing scored at all.** If every label joins to a `skipped` result, `scored` is `0` and
+   `agreement` is `null`. Every threshold then reads *"0 of at most N, not exceeded"*. That happens
+   under a `--deterministic-only` run over `ai`-graded labels, or a budget exhausted on the first
+   trace. The thresholds are honest; the denominator behind them is empty:
+
+   {/* step {"description":"A run that scored nothing is never green.","runShell":{"command":"manni tracevals calibrate test/tracevals/fixtures/traces/claude-session.jsonl test/tracevals/fixtures/traces/claude-session-sidecar.jsonl --project test/tracevals/fixtures/project --labels test/tracevals/fixtures/project/tracevals/ai-only.labels.yaml --deterministic-only","exitCodes":[1],"stdio":"nothing was scored"}} */}
+
+   ```
+   Agreement 0/0 (—)
+
+   Warnings
+     ! no labelled eval produced evidence: 2 label(s) all joined to a skipped result, so agreement and every --max-* threshold are computed over an empty denominator
+
+   Exit 1: nothing was scored — every label joined to a skipped result, so agreement and every threshold above rest on an empty denominator.
+   ```
+
+   A measurement that measured nothing must not report a pass. That is the same reasoning that makes
+   a [selector matching no trace](/manni/tracevals/reference/cli/#tracevals-run) exit `2` rather than `0`.
+
+</Steps>
+
+{/* test end */}
+
+Everything else is exit `2` and operational. That covers a missing or invalid labels file, a label
+naming a trace outside the corpus, and a label matching no eval. See the
+[CLI reference](/manni/tracevals/reference/cli/#tracevals-calibrate).
+
+## Bound what it runs
+
+```yaml title="manni.config.yaml"
+tracevals:
+  judge:
+    maxTurns: 60
+```
+
+A **turn** is one uncached ensemble run, and a cached ensemble costs none. The budget is checked
+**before each judged eval**, and it spans the whole invocation. Every trace in a batch or a
+calibration corpus draws on one total, not one each. Once it is spent, the remaining evals are
+reported as `skipped` with the reason naming the budget, rather than being dropped silently:
+
+```
+SKIP   CLAUDE.md › adheres-to-artifact (implicit)
+       judge turn budget exhausted (60)
+```
+
+Because it is claimed per eval and evaluated in order, a budget stops the run *somewhere in the
+middle*. The evals that got skipped are an artifact of ordering, not importance. Treat a
+budget-exhausted run as incomplete rather than as a result. In a calibration run those evals become
+`unscored` rows, so an exhausted budget can never inflate agreement. The run exits `1` rather than
+reporting a partial measurement as a clean one.
+
+The batch underneath says so too. A [batch cut short by its own
+budget](/manni/tracevals/ci/exit-codes-and-reports/#a-batch-that-ran-out-of-budget) exits `1` and
+names how many evals went unjudged.
+
+<Aside title="A turn count needs no price table">
+The budget used to be a dollar ceiling, and it carried a trap. Cost came from a bundled per-model
+price table. A model the table did not recognise was costed at zero, so the ceiling never tripped.
+There is no price table now, and no `judge.maxCostUsd`. A turn is a call the tool made. That is
+correct for a self-hosted endpoint, for `claude-cli`, and for `--local`, none of which report a
+price at all. The silent-failure mode went with the table.
+</Aside>
+
+## What invalidates a cached verdict
+
+Verdicts are cached under `judge.cacheDir` (default `.manni/tracevals/cache`), keyed on seven
+things:
+
+1. provider
+2. model
+3. **prompt version**
+4. ensemble run count
+5. temperature
+6. a hash of the rendered trace
+7. a hash of the eval plan: the assertion, evidence, examples, and the artifact's full content
+
+Change any one and you get a fresh judgement. Change none and you get an instant replay. That is
+what makes a sweep free: **zone thresholds are not in the key**. They are applied after
+consensus rather than sent to the model.
+
+<Aside type="caution" title="The silent one: a stale cache after a prompt change">
+Prompt version is in the key precisely so a prompt revision cannot replay verdicts produced by the
+old prompt. That protection only works if the version is bumped. If you fork this project and edit
+the judge prompts, bump `PROMPT_VERSION` in `src/tracevals/judge/prompt.ts` in the same change.
+Otherwise every cached eval silently keeps answering with a prompt that no longer exists.
+
+`PROMPT_VERSION` is `4`. A cache written before tracevals joined the manni family therefore misses
+once, and the next run judges fresh.
+
+To rule the cache out while debugging, run with `--no-cache`. Note that `--no-cache` and `--sweep`
+together still work, but the sweep then re-scores verdicts produced fresh in that run.
+</Aside>
+
+Note that the artifact's **content** is in the key, so editing a `SKILL.md` re-judges every eval on
+it. That is intended: the instruction changed, so the previous verdict is about a different
+question.
+
+## Where to go next
+
+<CardGrid>
+  <LinkCard
+    title="Evolve the evals standard"
+    description="Pin a schema version, separate probes from regression guards, and roll out a convention in stages."
+    href="/manni/tracevals/judge/schema-versioning/"
+  />
+  <LinkCard
+    title="Every calibrate flag"
+    description="--labels, --sweep, the three thresholds, and the exit-code contract."
+    href="/manni/tracevals/reference/cli/#tracevals-calibrate"
+  />
+  <LinkCard
+    title="Every judge key"
+    description="ensembleRuns, zones, temperature, cacheDir, and maxTurns."
+    href="/manni/tracevals/reference/configuration/"
+  />
+</CardGrid>

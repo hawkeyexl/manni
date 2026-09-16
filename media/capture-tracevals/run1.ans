@@ -1,0 +1,16 @@
+[1mmanni tracevals — C:\Users\hawkeyexl\demo\session-1.jsonl[22m
+[2mclaude-code · claude-opus-4-8 · 1 turn(s) · C:\Users\hawkeyexl\demo[22m
+
+  [32mPASS  [39m CLAUDE.md › read-before-edit
+  [31mFAIL  [39m CLAUDE.md › source-edits-use-the-skill
+         [2m[error][22m skill fix-bug was never invoked
+
+[1mArtifact coverage[22m
+  [32m✓[39m project-rules: project rules
+
+[1mAvailability[22m
+  [2m1 skill(s) offered, 0 used, 1 never used[22m
+  [2m0 agent(s) offered, 0 used, 0 never used[22m
+  [2mpass --report-unused-artifacts to list them[22m
+
+[1m2 eval(s): [32m1 pass[39m, [31m1 fail[39m, 0 error, 0 needs-review, 0 skipped[22m

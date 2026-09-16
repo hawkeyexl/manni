@@ -1,0 +1,428 @@
+---
+title: CLI reference
+description: Every manni tracevals command, argument, and flag, with the defaults they override and the exit code each produces.
+---
+
+{/* The command, argument, and option tables on this page are drift-checked
+    against src/tracevals/cli.ts by scripts/check-cli-reference.mjs (npm run
+    docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
+    sync with the code; descriptions are free-form. */}
+
+Five commands under one subcommand. Every flag below is verified against
+`src/tracevals/cli.ts`, and the exit codes are exercised by the inline tests at
+the foot of this page.
+
+```sh
+manni tracevals <command> [command options] [arguments]
+```
+
+There is no default subcommand. `manni tracevals` with no verb prints the
+command list and exits `2`, and a trace path with no verb is an unknown
+command. Every invocation names `run`, `calibrate`, `fill`, `capture`, or
+`list`.
+
+## Common conventions
+
+`run` and `calibrate` take **positional trace files**. `fill` takes positional
+artifact paths. `list` and `capture` take neither: they read the session store
+and a hook payload instead. tracevals declares no
+[collection](/manni/meta/reference/configuration/#collections) of its own, and
+a collection never chooses which traces a run covers. Declared collections are
+still read, so that evals
+[relocated into an external manifest](/manni/tracevals/reference/configuration/)
+are graded rather than silently missing.
+
+| Flag | Commands | Meaning |
+|---|---|---|
+| `-c, --config <path>` | `run`, `calibrate`, `fill`, `capture` | Path to `manni.config.yaml`. Without it, manni tracevals looks for that file from the working directory up to the repository root. It reads the file's `tracevals:` key, plus the top-level `providers:` and `collections:` keys. |
+| `--no-config` | same as above | Ignore any discovered config file and run on built-in defaults. `-c` and `--no-config` set the same option, so the one written later wins. With no config there are no collections, so every artifact's evals are its own front matter's. |
+| `--project <dir>` | `run`, `calibrate`, `fill`, `capture`, `list` | Where artifacts are looked up. `run` and `calibrate` override the cwd the trace recorded; `fill` and `list` default to the working directory; `capture` defaults to the hook payload's `cwd`. |
+| `--provider <name>` | `run`, `calibrate`, `fill` | `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. Selection runs through the family's shared provider layer: `--local`, then this flag, then the eval's own `provider:`, then `tracevals.provider`, then `providers.provider`, then `auto`. An unknown name is **exit 2**. |
+| `--model <model>` | same as above | The model within the provider. It needs a named provider, from this flag or from config, because a model name does not say which provider owns it. No model id is hardcoded anywhere in the tool. |
+| `--local` | same as above | Run inference on this machine with `llama-cpp`, over every configured or eval-level choice, with one notice per choice it replaced. `--local` next to a hosted `--provider` is a contradiction: **exit 2**. |
+| `-f, --format <format>` | all five | Output format. `run` and `calibrate` accept `pretty`, `json`, and `markdown`; `fill`, `capture`, and `list` accept `pretty` and `json`. Anything else is a usage error, with the allowed set in the message. |
+| `--require <module>` | `run`, `calibrate`, `fill` | Load a [grader plugin](/manni/tracevals/extend/custom-graders/). Repeatable, one module per occurrence, never comma-separated. It **adds to** `tracevals.plugins` rather than replacing it, and a specifier that will not import is an error rather than a skip. |
+
+Flags override config; they do not bypass it. An unset flag falls through to
+the resolved config value, so a config file and the command line reach the same
+code paths.
+
+Each command's table below lists every flag it accepts, the shared ones
+included. A table is the whole surface of its command.
+
+## Global options
+
+Global options are accepted before the subcommand.
+
+| Option | Description |
+|---|---|
+| `-V, --version` | Print the manni version and exit. |
+| `-h, --help` | Print help for the program or a subcommand. |
+
+## `tracevals`
+
+The session adherence tool. Every command on this page lives under it.
+`tracevals` accepts its own `-V, --version`, which reports the manni version,
+and `-h, --help`. It carries no flags of its own.
+
+```sh
+manni tracevals <command> [command options] [arguments]
+```
+
+## `tracevals run`
+
+Evaluates one or more traces against the skills, agents, slash commands, and
+project rules they used. Artifacts are resolved from the trace, evals are read
+from those artifacts, deterministic graders run first, then the judge.
+
+```sh
+manni tracevals run [traces...] [options]
+```
+
+```console
+$ manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl \
+    --project test/tracevals/fixtures/project --deterministic-only
+manni tracevals — test/tracevals/fixtures/traces/claude-session.jsonl
+claude-code · claude-opus-4-8 · 4 turn(s) · C:\work\demo-project
+
+  PASS   fix-bug › used-read
+  FAIL   fix-bug › forbidden-tool
+         [error] tool Bash was used 1 time(s) but must not be
+  REVIEW fix-bug › refactor-preserved-intent
+         awaiting human review
+  SKIP   fix-bug › eval-5
+         ai evals skipped (deterministic-only run)
+
+16 eval(s): 7 pass, 1 fail, 0 error, 1 needs-review, 7 skipped
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[traces...]` | Trace files to evaluate, space-separated. Optional. With none given and a TTY on both ends, an interactive picker opens. Without a TTY it is **exit 2**, because a scripted caller must name what it graded. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. See [Common conventions](#common-conventions). |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `--project` | `<dir>` | the trace's recorded cwd | Artifact-lookup root. Use it when the session ran somewhere this checkout is not. |
+| `--provider` | `<name>` | config `provider`, else `auto` | Judge provider: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
+| `--model` | `<model>` | config `model`, else the provider's default | Judge model. Needs a named provider. |
+| `--local` | n/a | off | Run inference on this machine with `llama-cpp`, over every configured or eval-level choice. |
+| `--runs` | `<n>` | config `judge.ensembleRuns`, which is `3` | Ensemble runs per judged eval. A whole number of at least 1; anything else is **exit 2**. |
+| `--deterministic-only` | n/a | off | Skip every LLM-judged eval, which then reports `skipped` with that reason. No provider is constructed, so this is the offline path. |
+| `--offline` | n/a | off | Never fetch a remote manifest. External metadata is read from local manifests only, so a hosted eval trail is skipped rather than requested. |
+| `--no-cache` | n/a | off | Bypass the judge cache under `judge.cacheDir`. |
+| `--max-turns` | `<n>` | config `judge.maxTurns`, unbounded | Stop after this many uncached ensemble runs. A cached ensemble costs none. Evals left unjudged report `skipped` with `reason: "turn budget"`. |
+| `-f, --format` | `<pretty\|json\|markdown>` | `pretty` | Output format. An unknown value is a usage error (exit 2), with the allowed set named. |
+| `-o, --output` | `<file>` | n/a | Also write the report to a file, in the chosen format. stdout still gets it. |
+| `--report-unused-artifacts` | n/a | off | List every skill and agent the session was offered and never used. Without it the counts are still reported, and only the names are withheld. |
+| `--fail-on-needs-review` | n/a | config `failOnNeedsReview`, which is `true` | Treat `needs-review` as a failure, so an eval the judge could not decide exits `1`. |
+| `--no-fail-on-needs-review` | n/a | off | Do not fail the run on `needs-review`. Declared as the pair to the flag above so that the config value stays reachable from the command line. |
+| `--commands` | n/a | config `graders.command.enabled`, which is `true` | Execute `command`-graded evals. |
+| `--no-commands` | n/a | off | Do not execute `command`-graded evals; they report `skipped`. |
+| `--require` | `<module>` | config `plugins`, else none | Load a grader plugin. Repeatable; appends to the configured list. |
+| `--all-projects` | n/a | off | Evaluate every project's traces in the session store rather than this project's. |
+| `--since` | `<duration>` | n/a | Only traces newer than a duration such as `30m`, `24h`, `7d`, or `2w`. Any other spelling is **exit 2**. |
+| `--limit` | `<n>` | n/a | Maximum traces to evaluate. A whole number of at least 1. |
+| `--history` | n/a | off | Append this run to `history.file` and compare it with the previous run, so a regression is a check that passed before and does not now. |
+| `--manifest` | `<file>` | looked for beside the trace and under the project | The [session manifest](#session-manifests) to compare artifacts against. One session's evidence, so it cannot be combined with a corpus. |
+
+### Which report you get
+
+What decides the report shape is **how traces were selected**, not how many
+came back:
+
+- One named trace is a single-run report. The pretty form is the per-eval list
+  above; `--format json` is the `RunReport` object.
+- Two or more named traces, or any discovery selector (`--all-projects`,
+  `--since`, `--limit`), is an aggregate report. It carries eval pass rates
+  across the corpus, the traces that failed, and the skip reasons that survived
+  aggregation.
+
+A selector that matches exactly one trace still produces the aggregate shape,
+so a script reading `--format json` gets one answer rather than two. Field by
+field, both shapes are in
+[Report and exit codes](/manni/tracevals/reference/report-and-exit-codes/).
+
+### Naming traces or selecting them
+
+Naming traces and selecting them are alternatives, not a filter applied to a
+list. Doing both is a usage error:
+
+```console
+$ manni tracevals run a.jsonl --since 7d --deterministic-only
+manni: name traces or select them with --all-projects/--since/--limit, not both
+```
+
+The selectors compose with each other. `--all-projects --since 30d --limit 20`
+reads the whole session store, keeps the last thirty days, and evaluates the
+twenty most recent of those.
+
+### Session manifests
+
+`run` looks for a session manifest beside the trace and under the project, and
+reports the one it used. Without a manifest, "was this artifact edited after
+the session?" is answered from mtime, which is a heuristic and says so in the
+warnings. With one, the answer is content identity. `--manifest` names a file
+outright, which only a single trace can mean:
+
+```console
+$ manni tracevals run a.jsonl b.jsonl --manifest m.json --deterministic-only
+manni: --manifest names one session's manifest, so it cannot be used with a corpus; drop it and each trace will find its own
+```
+
+[`capture`](#tracevals-capture) is what writes one.
+
+## `tracevals calibrate`
+
+Measures judged and graded verdicts against a labels file: false passes, false
+fails, and how much review volume the current settings produce. It is a `run`
+plus the labels it is measured against. It stays a separate command because the
+report answers a different question and carries a different shape.
+
+```sh
+manni tracevals calibrate [traces...] [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[traces...]` | Trace files to score, space-separated. Optional; the same discovery selectors apply. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--labels` | `<file>` | config `calibrate.labels`, which is `tracevals/labels.yaml` | The calibration labels sidecar: the human verdict each eval is scored against. |
+| `--sweep` | n/a | off | Re-score the corpus across the configured grid of zones and ensemble sizes, from cached verdicts. It makes no further model calls. |
+| `--max-false-pass` | `<n>` | n/a | Exit `1` above this many false passes. A whole number of at least 0. |
+| `--max-false-fail` | `<n>` | n/a | Exit `1` above this many false fails. |
+| `--max-review` | `<n>` | n/a | Exit `1` above this many `needs-review` outcomes. |
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. See [Common conventions](#common-conventions). |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `--project` | `<dir>` | the trace's recorded cwd | Artifact-lookup root. |
+| `--provider` | `<name>` | config `provider`, else `auto` | Judge provider. |
+| `--model` | `<model>` | config `model`, else the provider's default | Judge model. Needs a named provider. |
+| `--local` | n/a | off | Run inference on this machine with `llama-cpp`. |
+| `--runs` | `<n>` | config `judge.ensembleRuns`, which is `3` | Ensemble runs per judged eval. |
+| `--deterministic-only` | n/a | off | Skip LLM-judged evals. A calibration that scored nothing is never green. |
+| `--offline` | n/a | off | Never fetch a remote manifest. |
+| `--no-cache` | n/a | off | Bypass the judge cache. |
+| `--max-turns` | `<n>` | config `judge.maxTurns`, unbounded | Stop after this many uncached ensemble runs. |
+| `-f, --format` | `<pretty\|json\|markdown>` | `pretty` | Output format. |
+| `-o, --output` | `<file>` | n/a | Also write the report to a file. |
+| `--report-unused-artifacts` | n/a | off | List every skill and agent the session was offered and never used. |
+| `--fail-on-needs-review` | n/a | config `failOnNeedsReview`, which is `true` | Treat `needs-review` as a failure. |
+| `--no-fail-on-needs-review` | n/a | off | Do not fail on `needs-review`. |
+| `--commands` | n/a | config `graders.command.enabled`, which is `true` | Execute `command`-graded evals. |
+| `--no-commands` | n/a | off | Do not execute `command`-graded evals. |
+| `--require` | `<module>` | config `plugins`, else none | Load a grader plugin. Repeatable. |
+| `--all-projects` | n/a | off | Score every project's traces in the session store. |
+| `--since` | `<duration>` | n/a | Only traces newer than `30m`, `24h`, `7d`, `2w`, and so on. |
+| `--limit` | `<n>` | n/a | Maximum traces to score. |
+
+`calibrate` takes no `--history` and no `--manifest`. Calibration measures a
+corpus rather than a point in one session's timeline, and a manifest belongs to
+exactly one session.
+
+Disagreement on its own exits `0`, because a measurement is not a failure. The
+three thresholds are what turn the measurement into a gate. The journey is in
+[Calibrate](/manni/tracevals/judge/calibrate/).
+
+## `tracevals fill`
+
+Proposes evals for skills, agent definitions, and project rules, and writes
+those above the confidence threshold. This is the one write path that grades
+nothing, and `run` never calls it.
+
+```sh
+manni tracevals fill [paths...] [options]
+```
+
+```console
+$ manni tracevals fill test/tracevals/fixtures/project --provider mock --dry-run --no-cache
+proposed  test/tracevals/fixtures/project/.claude/skills/fix-bug/SKILL.md  +1 (reads-before-editing 0.90) — dry run, not written
+          below 0.7: explains-its-reasoning 0.30
+          needs sharpening: "Produce high-quality work." — "high-quality" has no measurable bar, so no session could fail it
+proposed  test/tracevals/fixtures/project/CLAUDE.md  +1 (reads-before-editing 0.90) — project rules are never written; copy what you want
+
+Threshold 0.7 · 6 evals proposed, none written (dry run)
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Artifact files or directories to scan, space-separated. Optional; without them, `--project`, which defaults to the working directory. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. See [Common conventions](#common-conventions). |
+| `--no-config` | n/a | off | Ignore any discovered config file. With no config there are no collections, so evals are read from and written to front matter. |
+| `--project` | `<dir>` | the working directory | Project root to scan for skills, agents, slash commands, and project rules. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable, one glob per occurrence, never comma-separated. |
+| `--dry-run` | n/a | off | Report proposals without writing them. Run this first: you see every proposal, and what the pass cost, before anything touches the repository. |
+| `--confidence` | `<n>` | config `fill.confidenceThreshold`, which is `0.7` | Minimum confidence to write, from 0 to 1. Outside that range is **exit 2**. |
+| `--max-evals` | `<n>` | config `fill.maxEvalsPerArtifact`, which is `8` | Maximum evals per artifact, counting the ones already declared. |
+| `--max-turns` | `<n>` | config `fill.maxTurns`, unbounded | Stop after this many inference calls. A cached artifact costs none. |
+| `--no-cache` | n/a | off | Bypass the proposal cache under `fill.cacheDir`. Proposals are cached before the confidence gate, so re-running at a different `--confidence` spends nothing. |
+| `--provider` | `<name>` | config `provider`, else `auto` | Provider that writes the proposals. |
+| `--model` | `<model>` | config `model`, else the provider's default | Model. Needs a named provider. |
+| `--local` | n/a | off | Run inference on this machine with `llama-cpp`. |
+| `--offline` | n/a | off | Never fetch a remote manifest. |
+| `--require` | `<module>` | config `plugins`, else none | Load a grader plugin, so its kinds are proposable. Repeatable. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
+
+There is no `--collection`. A documentation collection is not an artifact set,
+and `fill` finds artifacts under `--project` instead. Declared collections are
+still read. An artifact whose evals were relocated into a manifest is filled
+back into that manifest, not duplicated into its front matter. Two
+collections owning one artifact's `metadata` is **exit 2**.
+
+Project rules are proposed and never written. What `fill` does write is
+recorded in the artifact's `metadata.meta-provenance`, in the same edit. The
+journey is in [Propose evals with `fill`](/manni/tracevals/declare/fill/).
+
+## `tracevals capture`
+
+Records a session manifest: the sha256 of every instruction artifact plus the
+git SHA, read from a Claude Code hook payload on stdin. It is the second write
+path, and `run` never calls it either.
+
+```sh
+manni tracevals capture [options]
+```
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. See [Common conventions](#common-conventions). |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `--project` | `<dir>` | the payload's `cwd` | Project root to scan for instruction artifacts. |
+| `--session-id` | `<id>` | the payload's `session_id` | Session id the manifest is filed under. Required when no payload is piped in. |
+| `-o, --out` | `<file>` | `capture.dir`, which is `.manni/tracevals/sessions/<id>.json` | Write here instead of the configured directory. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
+
+### Wire it up
+
+`capture` takes its payload on stdin, which is what a `SessionStart` hook
+supplies:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [{ "type": "command", "command": "manni tracevals capture" }]
+      }
+    ]
+  }
+}
+```
+
+With a payload on stdin, **nothing goes to stdout**. A `SessionStart` hook's
+stdout is added to the model's context. A report printed there would be a side
+effect on the session being observed. In that mode the report goes to
+stderr instead, where an exit-0 hook's output is a debug channel:
+
+```console
+manni: Captured session 11111111-1111-1111-1111-111111111111
+  manifest   .manni/tracevals/sessions/11111111-1111-1111-1111-111111111111.json
+  artifacts  6 hashed
+  commit     fe7ea9b231ff683aa64eff48f28021f7764b4e45 (main)
+  device     e1dafb2151ca3cbc (win32)
+```
+
+Run by hand, with `--session-id` and no payload, the same report goes to
+stdout. Either way the manifest is the only file written. Why it is worth
+wiring up is in
+[Artifact coverage](/manni/tracevals/declare/coverage/).
+
+## `tracevals list`
+
+Lists discoverable traces, newest first, and runs nothing. Use it to find the
+path a `run` should name.
+
+```sh
+manni tracevals list [options]
+```
+
+```console
+$ manni tracevals list --all-projects --limit 5
+  1. 2026-07-02 00:00  Write a README for this repo.
+      C:\work\other-project · 22222222-2222-2222-2222-222222222222 · 1KB
+      ...\projects\C--work-other-project\22222222-2222-2222-2222-222222222222.jsonl
+  2. 2026-07-01 00:00  Fix the crash in src/app.ts.
+      C:\work\demo-project · 11111111-1111-1111-1111-111111111111 · 1KB
+      ...\projects\C--work-demo-project\11111111-1111-1111-1111-111111111111.jsonl
+```
+
+The session store is **detected, not configured**. `list` reads Claude Code's
+own `CLAUDE_CONFIG_DIR` and falls back to `~/.claude`, so a CI job points at a
+fixture tree with the same variable the agent reads. Nothing found is exit `0`
+with a line saying which flag would widen the search.
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--project` | `<dir>` | the working directory | Project directory to scope to. |
+| `--all-projects` | n/a | off | Scan every project in the session store. |
+| `--limit` | `<n>` | n/a | Maximum traces to list. A whole number of at least 1, because `--limit -1` would quietly list everything but the oldest. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
+
+`list` takes no `-c` and no `--no-config`. It enumerates the session store and
+reads no config at all, and an accepted flag that quietly does nothing is worse
+than an absent one. It takes the long spellings of `--project` and
+`--all-projects` only, matching `run`.
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Everything that ran passed. |
+| `1` | A failed or errored eval, or a calibration threshold that was exceeded. The author's problem. |
+| `2` | Operational or usage error: a bad flag, an unreadable trace, invalid config, a contradictory provider. Not the author's problem. |
+
+Every operational message leaves through the family's stderr writer, so it
+carries the `manni: ` prefix and nothing spells that prefix by hand. Full
+detail in
+[Report and exit codes](/manni/tracevals/reference/report-and-exit-codes/).
+
+{/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml),
+    against the committed fixture corpus and the repository's own manni.config.yaml.
+    Config: .doc-detective.json. */}
+
+{/* step {"description":"The CLI lists all five commands.","runShell":{"command":"manni tracevals --help","exitCodes":[0],"stdio":"/run[\\s\\S]*calibrate[\\s\\S]*fill[\\s\\S]*capture[\\s\\S]*list/"}} */}
+
+{/* step {"description":"A run with a failing eval exits 1.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"tool Bash was used 1 time(s) but must not be"}} */}
+
+{/* step {"description":"An unknown --format is a usage error, and the message names the allowed set.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --deterministic-only --format xml","exitCodes":[2],"stdio":"/must be one of pretty \\| json \\| markdown/"}} */}
+
+{/* step {"description":"--runs below 1 is refused before anything is judged.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --deterministic-only --runs 0","exitCodes":[2],"stdio":"--runs must be a whole number of at least 1"}} */}
+
+{/* step {"description":"--max-turns below 1 is refused the same way.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --deterministic-only --max-turns 0","exitCodes":[2],"stdio":"--max-turns must be a whole number of at least 1"}} */}
+
+{/* step {"description":"Naming traces and selecting them are alternatives, not a filter.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --since 7d --deterministic-only","exitCodes":[2],"stdio":"not both"}} */}
+
+{/* step {"description":"A --since that is not a duration names the shapes it accepts.","runShell":{"command":"manni tracevals run --all-projects --since 30x --deterministic-only","exitCodes":[2],"stdio":"/30m, 24h, 7d, or 2w/"}} */}
+
+{/* step {"description":"--manifest cannot be used with a corpus.","runShell":{"command":"manni tracevals run a.jsonl b.jsonl --manifest m.json --deterministic-only","exitCodes":[2],"stdio":"cannot be used with a corpus"}} */}
+
+{/* step {"description":"--local next to a hosted --provider is a contradiction, exit 2.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --deterministic-only --local --provider anthropic","exitCodes":[2],"stdio":"contradict each other"}} */}
+
+{/* step {"description":"fill refuses a confidence outside 0 to 1 before doing any work.","runShell":{"command":"manni tracevals fill test/tracevals/fixtures/project --provider mock --dry-run --confidence 5","exitCodes":[2],"stdio":"must be a number between 0 and 1"}} */}
+
+{/* step {"description":"A dry run writes nothing and reports the threshold.","runShell":{"command":"manni tracevals fill test/tracevals/fixtures/project --provider mock --dry-run --no-cache","exitCodes":[0],"stdio":"none written (dry run)"}} */}
+
+{/* step {"description":"list refuses a --limit below 1 rather than listing all but the oldest.","runShell":{"command":"manni tracevals list --limit -1","exitCodes":[2],"stdio":"--limit must be a whole number of at least 1"}} */}
+
+{/* step {"description":"capture run by hand writes one manifest and reports it on stdout.","runShell":{"command":"manni tracevals capture --session-id 11111111-1111-1111-1111-111111111111 --project test/tracevals/fixtures/project --out .tmp/docs-cli-capture.json","exitCodes":[0],"stdio":"hashed"}} */}

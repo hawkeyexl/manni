@@ -1,0 +1,6 @@
+# A config directory whose only job is to turn `command` execution off, so the
+# flagless path (config alone, no `--no-commands`) has something to prove.
+tracevals:
+  graders:
+    command:
+      enabled: false

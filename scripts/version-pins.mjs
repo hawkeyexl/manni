@@ -19,12 +19,19 @@
  *     (only in a YAML list item whose `repo:` names hawkeyexl/manni)
  *   <owner>/<action>@vN         highest major in  .github/workflows/*.yml
  *   node-version: N / 'N' / "N" major of          package.json engines.node
+ *   "version": "X.Y.Z"          <version>         package.json version
+ *     (only in a plugin/<name>/.claude-plugin/plugin.json manifest)
  *
  * `@hawkeyexl/manni@latest` and an unpinned `@hawkeyexl/manni` are always
  * right, so they are not pins. An action no workflow uses has nothing to be
  * compared with, so it is not checked either.
  *
- * Scanned: README.md, examples/**, docs/src/content/docs/**\/*.{md,mdx}.
+ * Scanned: README.md, examples/**, docs/src/content/docs/**\/*.{md,mdx}, and
+ * the Claude Code plugin manifests under plugin/**\/.claude-plugin/plugin.json.
+ * A plugin manifest ships inside this package and its hook runs
+ * `npx @hawkeyexl/manni`, so its `version` is this package's version by
+ * definition. It was hand-written once and then went stale unattended, which is
+ * what this module exists to stop.
  * Never: docs/proposals/** and CHANGELOG.md, which are records of what was
  * true when they were written.
  *
@@ -140,6 +147,7 @@ export function scannedFiles(root) {
   if (existsSync(path.join(root, "README.md"))) files.push("README.md");
   walk("examples", () => true);
   walk(path.join("docs", "src", "content", "docs"), (f) => /\.mdx?$/.test(f));
+  walk("plugin", (f) => PLUGIN_MANIFEST.test(f));
 
   return [...new Set(files)].sort();
 }
@@ -166,6 +174,10 @@ const ACTION = new RegExp(
 );
 const REV = /^([ \t]*(?:-[ \t]+)?)rev:[ \t]*(["']?)v(\d+(?:\.\d+\.\d+)?)\2(?=[ \t]*(?:#.*)?\r?$)/dgm;
 const NODE_VERSION = /(?<![\w-])node-version:[ \t]*(["']?)(\d+)\1(?![\w.])/dg;
+
+/** A Claude Code plugin manifest, by path, and the `"version"` inside one. */
+const PLUGIN_MANIFEST = /^plugin\/[^/]+\/\.claude-plugin\/plugin\.json$/;
+const PLUGIN_VERSION = /"version":([ \t]*)"(\d+\.\d+\.\d+)"/dg;
 
 const REPO_NAMES_MANNI = /(?:^|[/:])hawkeyexl\/manni(?:\.git)?\/?$/i;
 const FENCE = /^\s*(?:```|~~~)/;
@@ -215,8 +227,12 @@ function revIsManni(lines, at, keyColumn) {
 /**
  * Every pin in `text`, in source order. Each carries the offsets of its
  * version text only, the version it should be, and the words a message needs.
+ *
+ * `file` is the scanned file's relative posix path. It is what tells a plugin
+ * manifest's `"version"` apart from the same key in a JSON snippet on a docs
+ * page, so that rule is the one here keyed to the file rather than the text.
  */
-export function findPins(text, sources) {
+export function findPins(text, sources, file) {
   const pins = [];
   const lineStarts = [0];
   for (let i = 0; i < text.length; i++) if (text[i] === "\n") lineStarts.push(i + 1);
@@ -292,6 +308,19 @@ export function findPins(text, sources) {
     add(m, 3, sources.version, (v) => `rev: ${q}v${v}${q}`, `package.json is ${sources.version}`);
   }
 
+  if (file !== undefined && PLUGIN_MANIFEST.test(file)) {
+    for (const m of text.matchAll(PLUGIN_VERSION)) {
+      const gap = m[1];
+      add(
+        m,
+        2,
+        sources.version,
+        (v) => `"version":${gap}"${v}"`,
+        `package.json is ${sources.version}`,
+      );
+    }
+  }
+
   for (const m of text.matchAll(NODE_VERSION)) {
     const q = m[1];
     add(
@@ -324,7 +353,7 @@ export function scanVersions(root, options) {
   const sources = loadSources(root, options);
   return scannedFiles(root).map((file) => {
     const text = readFileSync(path.join(root, file), "utf8");
-    return { file, text, pins: findPins(text, sources) };
+    return { file, text, pins: findPins(text, sources, file) };
   });
 }
 

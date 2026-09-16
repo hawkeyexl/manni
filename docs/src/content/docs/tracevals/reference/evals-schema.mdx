@@ -1,0 +1,278 @@
+---
+title: Evals schema reference
+description: The metadata.evals frontmatter block field by field, the manni vocabulary it implements, and what capability and regression mean.
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Scope:** the exact shape of the `metadata.evals` block. How to decide what to put in it is
+[Declare what to check](/manni/tracevals/declare/). Source of truth:
+`docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.4.json`.
+
+## The vocabulary is the family's
+
+The block implements **`manni:artifact-evals:1.0.0-proposal.4`**, a common metadata vocabulary
+rather than a setting of this tool. It shares its entry shape with the page-side `manni:evals` that
+[manni docevals](/manni/docevals/) reads, so one eval spelling ports across both. tracevals
+implements the *behavior* against it, which is the graders, the judge and the reports. Any
+session-grading tool can implement the same vocabulary. The vocabulary itself, and the review it is
+open for, are written up under
+[metadata vocabularies](/manni/meta/proposals/artifact-evals/).
+
+<Aside type="caution" title="Still a proposal">
+The vocabulary is open for community review, which is what the `-proposal.4` suffix records. It is
+a semver **prerelease**, so it sorts below the `1.0.0` it will register as. If the review changes
+the shape, the next draft supersedes this one.
+</Aside>
+
+## Where the block goes
+
+In the YAML frontmatter of any instruction artifact: a `SKILL.md`, an agent definition, a slash
+command, or a project-rules file. An artifact's top-level frontmatter belongs to the tool that runs
+it, so everything here lives one level down under `metadata`, its sanctioned extension bag:
+
+```yaml
+---
+name: fix-bug
+description: Fix a reported bug, reproducing it with a failing test first.
+metadata:
+  evals:
+    - id: used-read
+      assertion: The session read at least one source file before editing.
+      grader: tool-usage
+      options:
+        tool: Read
+        expect: used
+    - Reproduce the bug with a failing test before applying the fix.
+---
+```
+
+`metadata` stays **open**, so other tools' members pass through untouched. Eval entries are closed,
+so a misspelled field inside one fails loudly instead of being ignored.
+
+### Or in an external-metadata manifest
+
+At `proposal.4` the whole top-level `metadata` key carries `x-manni-location: external`. The mark
+sits on the map, not on one field. So `evals`, `eval-skip` and `meta-provenance` move as one block,
+and they cannot be split across an artifact and a manifest.
+
+`manni meta relocate` moves that block into the external-metadata manifest a collection declares.
+The artifact then keeps only the front matter the tool running it reads. `run`, `calibrate` and
+`fill` read the block back from there, so a relocated artifact grades exactly as an inline one. The
+rules are in [Collections and a relocated
+block](/manni/tracevals/reference/configuration/#collections-and-a-relocated-block).
+
+## The three keys
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `metadata.evals` | string, or non-empty list | none | One assertion, or the list of them. |
+| `metadata.eval-skip` | boolean | `false` | Skip this artifact's evals entirely. Reported as `skipped`, never silently dropped. |
+| `metadata.meta-provenance` | list | none | Which model proposed which evals, at what confidence. Written by [`fill`](/manni/tracevals/declare/fill/). It relocates with the rest of `metadata`, never on its own. |
+
+Because `metadata` must stay open, the schema alone cannot catch a typo like `eval-skpi`. So the
+**`eval-` prefix is reserved**, as `^eval-(?!skip$)`. `eval-skip` is the one member this vocabulary
+claims under that prefix. Every other `eval-` key is an error rather than a key that quietly does
+nothing. `eval-provenance`, the name earlier drafts used, is among them.
+
+An empty list is not a declaration. An artifact with no evals omits the key.
+
+## One eval
+
+Each entry in `evals` is a string or an object.
+
+### String form
+
+```yaml
+- Reproduce the bug with a failing test before applying the fix.
+```
+
+Shorthand for an AI-judged assertion. It normalizes to:
+
+| Field | Value |
+|---|---|
+| `id` | `eval-<n>`, derived from position |
+| `assertion` | the string |
+| `grader` | `ai` |
+| `type` | `regression` |
+| `severity` | `error` |
+
+The whole block can also *be* one string, which is the same thing for an artifact with a single
+claim:
+
+```yaml
+metadata:
+  evals: Reproduce the bug with a failing test before applying the fix.
+```
+
+The string form is the legitimately id-less one, so its identity is positional and shifts if you
+reorder the list. Use the object form for anything you want to reference or track over time.
+
+### Object form
+
+`id` is required, and so is `assertion` on every grader that reads one.
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `id` | string | **required** | Stable identifier, unique per artifact. Must match `^[a-z0-9][a-z0-9-]*$`, lowercase kebab-case. |
+| `assertion` | string | **required** | What must have held in the session. A `command` eval may carry the command instead, under the generation contract. |
+| `grader` | string | `ai` | How the assertion is checked. See [graders](/manni/tracevals/reference/graders/). |
+| `options` | object | none | Grader-specific options, validated by the grader itself. |
+| `severity` | `error` \| `warning` \| `notice` | `error` | Only `error` findings fail the eval. The three levels are the family scale, so a finding reads the same in every manni tool. |
+| `type` | `capability` \| `regression` | `regression` | Reported, never enforced. See below. |
+| `skip` | boolean | `false` | Skip this one eval, reported as `skipped`. |
+| `evidence` | string | none | A hint telling the judge where in the session to look. Judged evals only. |
+| `examples` | object | none | `{ pass, fail }`, anchor examples for the judge. Each is one string or a list of them. |
+| `target` | string or object | `transcript` | Which bytes the grader receives. See below. |
+| `weight` | number > 0 | `1` | How much this eval moves a run's aggregate pass rate. Never changes its own outcome. |
+| `provider` | string | config default | Judge this eval with a named configured provider. |
+| `model` | string | config default | Judge this eval with a named model, within `provider`. |
+| `runs` | integer 1–50 | `judge.ensembleRuns` | Ensemble runs for this eval alone. |
+| `severity-map` | object | none | Maps a `tool:*` grader's own severities onto eval severities. Accepted for vocabulary parity; tracevals implements no `tool:*` graders, so it is ignored here. |
+
+`provider`, `model` and `runs` are legal only on an `ai` eval. Command-graded evals take four more
+fields, covered under [the command grader](/manni/tracevals/reference/graders/#command).
+
+**Ids are required on the object form** because a position-derived name breaks the history join
+whenever entries move. A rename reads as one eval removed and another added, and the trend line
+resets. If an eval is worth an object, it is worth a stable name.
+
+```yaml
+- id: reproduces-before-fixing
+  assertion: The session ran a failing test that reproduced the bug before editing any source file.
+  grader: ai
+  severity: error
+  type: regression
+  evidence: Look for a test command in the tool calls preceding the first Edit.
+  examples:
+    pass:
+      - "Ran `npm test -- crash.test.ts`, saw it fail, then edited src/app.ts."
+    fail: "Edited src/app.ts at turn 2 with no preceding test run."
+```
+
+`evidence` and `examples` are prompt surface. They are given to the judge and measurably improve
+verdict quality on assertions that are easy to misread. They have no effect on a deterministic
+grader.
+
+### `target`
+
+`target` selects the **subject** a grader is pointed at, which is a different question from
+`evidence`. `evidence` hints where to look *within* what is graded; `target` picks the bytes
+themselves, so deterministic graders honour it too.
+
+| Value | What the grader receives |
+|---|---|
+| `transcript` (default) | The whole session, as the judge would otherwise see it. |
+| `last-message` | The final assistant message. |
+| `files` | The list of files the session wrote. |
+| `artifact` | The instruction artifact itself. |
+| `{ source: file, path: <path> }` | One named file, resolved against the run's project root. |
+
+A target that cannot be served is an explicit failure rather than a quiet substitution. Grading the
+transcript when the author asked for a written file would report a verdict about the wrong bytes.
+
+### `weight`
+
+`weight` decides how much an eval's outcome moves the run's reported pass rate, and nothing else.
+The eval still passes or fails on its own terms, and the exit code still reads the binary verdict.
+Zero is excluded on purpose: a weightless eval is a silent disable, and `skip` already means that,
+loudly.
+
+## `capability` versus `regression`
+
+`type` separates two different reasons for an eval to exist:
+
+| Value | Meaning |
+|---|---|
+| `regression` | Protects behavior that already works. A failure is news. |
+| `capability` | Probes the boundary of what the agent can do. It is **expected to fail sometimes**. |
+
+Both are reported; **neither changes enforcement**. A failing `capability` eval still fails and
+still contributes to a non-zero exit code.
+
+That restraint is deliberate. A `capability` eval that could not fail the build would just be a
+comment. The value of the field is that reports and history can tell the two apart. A failing probe
+is never read as a regression. New evals, including everything `fill` writes, default to
+`regression`, the conservative choice.
+
+## Provenance
+
+`fill` records what it proposed, so a reviewer can tell an unreviewed suggestion from an eval a
+human signed off on. The record is `metadata.meta-provenance`, the family's attribution shape from
+[ai-context](/manni/meta/proposals/ai-context/), one level down:
+
+```yaml
+metadata:
+  meta-provenance:
+    - generated-by: anthropic:claude-opus-5
+      evals: [used-read, honored-tdd]
+      confidence:
+        used-read: 0.91
+        honored-tdd: 0.86
+```
+
+An entry names `evals` by kebab id, `fields` by JSON Pointer, or both, and at least one of the two
+is required. Entries merge by `generated-by`, so repeated fills by one model extend one entry.
+**You delete the entry once you have reviewed those evals.** That is what makes the trail mean
+something.
+
+The judge reads it back. Say the model about to grade an eval is named in a `meta-provenance`
+entry listing that eval's id. It wrote the question it is now answering, so the result records a
+self-preference note on the `criterion` axis. The other axis is `session`, where the judge model
+is the model that ran the trace. Both are reported, never fatal.
+
+## The implicit eval
+
+An artifact with **no** declared evals still gets one judged eval, named `adheres-to-artifact`:
+
+> The session adhered to the instructions in this `<type>` ("`<name>`"). Cite the specific
+> instructions followed or violated.
+
+The artifact's full text is given to the judge, capped at 8,000 characters. This is why a first run
+produces meaningful output before you have authored anything.
+
+Declaring any eval replaces the implicit one for that artifact. Once you start declaring, declare
+what matters: the general check no longer runs alongside.
+
+## Reading the schema yourself
+
+No schema copy ships in the published package, and there is no per-version URL to pin. The draft
+lives in this repository at `docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.4.json`, and
+is bundled into the build. The bytes tracevals validates against are the bytes you can read. You do
+not need to pin anything to author evals. Read the draft when *your own* tooling generates or
+consumes these blocks.
+
+## When the block is invalid
+
+A malformed block is **never silently ignored**. It produces an eval named `evals-block-valid` with
+an `error` outcome, a JSON Pointer to the offending field, and a source line number:
+
+```
+  ERROR  fix-bug › evals-block-valid
+         invalid metadata.evals block: /metadata/evals/1/grader (line 12): must be string
+```
+
+<Aside type="caution" title="Migrating from an earlier draft">
+Older spellings fail loudly rather than degrading, which is the point:
+
+- `metadata.eval-provenance` is now `metadata.meta-provenance`, in the family's attribution shape.
+  The old name still starts `eval-`, so it is a reserved-prefix error rather than an ignored key.
+- `severity: info` is now `severity: notice`. The scale is the family's three levels.
+- `metadata.evals.criteria:` is gone. The list is the value of `evals`.
+- `- name:` on an object entry is now `- id:`, and required.
+- `metadata.evals.skip` is now `metadata.eval-skip`, a sibling of `evals` rather than nested in it.
+- `grader: llm` is now `grader: ai`. It passes the schema, because the grader enum is open. The
+  grader registry rejects it at run time, with a message naming every kind it knows.
+
+One `proposal.4` change is not a migration. The whole `metadata` key is marked
+`x-manni-location: external`, and a block in front matter still validates. Relocating one moves
+every key under `metadata` at once, [as above](#or-in-an-external-metadata-manifest).
+</Aside>
+
+<Aside title="Only YAML frontmatter can be written">
+`fill` writes to YAML frontmatter only. TOML (`+++`) and JSON (`;;;`) frontmatter are refused:
+`only YAML frontmatter can be edited (found toml frontmatter)`. Reading and evaluating an existing
+block is unaffected.
+</Aside>

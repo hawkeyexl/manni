@@ -35,7 +35,8 @@
           "README.md",
           "examples/**",
           "docs/src/content/docs/**/*.md",
-          "docs/src/content/docs/**/*.mdx"
+          "docs/src/content/docs/**/*.mdx",
+          "plugin/**/.claude-plugin/plugin.json"
         ],
         "message": "chore(release): ${nextRelease.version}\n\n${nextRelease.notes}"
       }

@@ -1,0 +1,9 @@
+collections:
+  - name: agents
+    paths: [".claude/skills/**/SKILL.md"]
+    externalMetadata:
+      - file: ./artifact-evals.yaml
+        keys: [metadata]
+
+tracevals:
+  failOnNeedsReview: false

@@ -1,0 +1,303 @@
+---
+title: Run it in CI
+description: "Run manni tracevals as a gate in GitHub Actions, offline and with no API key, keyed off an exit code you can branch on."
+sidebar:
+  order: 1
+---
+
+import { Tabs, TabItem, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+**Scope:** getting a dependable gate into automation. Reading results downstream (JSON, history,
+regressions) is covered in [Exit codes & reports](/manni/tracevals/ci/exit-codes-and-reports/).
+Deciding what the evals assert is [Declare what to check](/manni/tracevals/declare/).
+
+**manni tracevals can run in a build with no network call and no API key.** That is
+`--deterministic-only`, and it is a complete mode in its own right.
+
+## First, where does the trace come from?
+
+This is the question that decides your whole setup, so it comes before the recipe.
+
+Agent sessions are written on the machine the agent ran on. A CI runner has no session store of its
+own, so a trace has to get there. Three patterns work:
+
+| Pattern | When it fits |
+|---|---|
+| **Evaluate in the same job that ran the agent** | An agent runs in CI and you evaluate its session immediately afterwards. Simplest, and the trace never leaves the runner. |
+| **Upload the trace, evaluate in a later job** | The agent runs in one job or workflow; the session file is uploaded as an artifact and downloaded by the evaluating job. |
+| **Evaluate a committed trace** | A small corpus of representative sessions lives in the repo and is re-evaluated whenever artifacts change, giving you a regression suite for your instructions. |
+
+The third is the one people underrate. Commit a handful of traces, and this gate answers a useful
+question on every pull request. *Does this edit to `CLAUDE.md` break a check that used to pass?*
+
+### A corpus is worth more than a trace
+
+Point `run` at the whole directory's worth of traces and it reports **rates** rather than verdicts:
+
+```bash
+npx @hawkeyexl/manni tracevals run traces/*.jsonl --deterministic-only
+```
+
+That changes the question from *did this session comply?* to *how often does this check hold?*
+That second question is the one a skill's author actually has. One session failing an eval is an
+anecdote. The same eval at `40%` across twenty sessions is a finding. The report names the traces
+that pulled it down, so you can open them.
+
+Everything about a batch is built to keep that number honest:
+
+- **The judge turn budget covers the whole invocation, not each trace.** A fifty-trace batch with
+  `--max-turns 50` stops after fifty ensemble runs, wherever in the corpus that falls. The evals
+  past it report `skipped` with the reason, never a pass. A cached ensemble costs no turns.
+- **A trace that will not parse becomes a report entry and the batch continues.** One corrupt file
+  does not cost you the other forty-nine.
+- **Skipped evals stay out of the rate.** An artifact the session never invoked reports `—`, not
+  `100%`.
+- **Rows are ordered deterministically**, so two runs over the same corpus are comparable.
+
+Exit `1` if any trace fails, exactly as for a single one. Naming exactly one trace still produces
+the familiar single-session report. See
+[which report you get](/manni/tracevals/reference/cli/#which-report-you-get).
+
+{/* Doc Detective inline tests: a batch really runs offline against the committed
+    fixture corpus, and really reports rates. The local build is exposed as
+    `manni` via `npm link`, and the workflow sets
+    CLAUDE_CONFIG_DIR=test/tracevals/fixtures/home/.claude so trace discovery
+    reads the fixture session store instead of the runner's. */}
+{/* test {"testId":"batch-corpus","description":"A multi-trace run reports rates and exits 1 when a trace fails."} */}
+{/* step {"description":"Two traces produce an aggregate report.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl test/tracevals/fixtures/traces/claude-session-sidecar.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"2 trace(s)"}} */}
+{/* step {"description":"The report leads with pass rates.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl test/tracevals/fixtures/traces/claude-session-sidecar.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"Eval pass rates"}} */}
+{/* step {"description":"Outlier traces are named, not just counted.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl test/tracevals/fixtures/traces/claude-session-sidecar.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"failing: claude-session.jsonl"}} */}
+{/* step {"description":"A discovery selector evaluates the session store without naming files.","runShell":{"command":"manni tracevals run --all-projects --since 520w --limit 5 --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[0],"stdio":"Eval pass rates"}} */}
+{/* test end */}
+
+### Or let the tool find the sessions
+
+When the agent ran on the same machine, three selectors pull traces out of the session store instead
+of naming files. They are the same `--all-projects` and `--limit` that
+[`list`](/manni/tracevals/reference/cli/#tracevals-list) uses, plus a time window:
+
+```bash
+npx @hawkeyexl/manni tracevals run --since 7d --limit 20 --deterministic-only
+```
+
+A selector always produces the aggregate report, even when it matches one trace. A script's parsing
+therefore does not depend on how busy the week was. A selector that matches **nothing** exits `2`
+rather than `0`. An empty corpus and a clean corpus look identical downstream, and a gate that
+stopped gating should say so.
+
+## Stay offline
+
+Three flags cover every offline case, and each draws a different boundary:
+
+- **`--deterministic-only`** makes no model call at all. Judged evals are reported as `skipped`
+  instead of failed, so an artifact with only judged evals does not turn your build red for
+  having been skipped.
+- **`--local`** runs inference with `llama-cpp` on the machine running the command, so the judged
+  path runs and nothing leaves the runner. It wins over `tracevals.provider`, the family's
+  `providers.provider`, and an eval's own `provider:`, naming each replaced choice once on stderr.
+  A `--provider` other than `llama-cpp` or `auto` beside it is a usage error, exit `2`.
+- **`--offline`** never fetches a remote manifest, and reads external metadata from local manifests
+  only. It governs where a relocated `metadata` block is read from, not inference, so a hosted
+  manifest is refused rather than fetched, exit `2`. See
+  [collections and a relocated block](/manni/tracevals/reference/configuration/#collections-and-a-relocated-block).
+
+Reach for `--deterministic-only` when the gate should be fast and free. Reach for `--local` when
+you want the judged verdicts too, but the session content may not be sent anywhere. Add `--offline`
+when the runner has no network at all.
+
+<Aside type="caution" title="If you do let a hosted judge run in CI">
+Set a ceiling with `judge.maxTurns` and provision the API key as a secret. The budget counts
+**turns**, meaning ensemble runs, not dollars, and a cached ensemble costs none. An eval that does
+not fit in what is left is skipped with its reason, rather than judged on a partial ensemble. See
+[configuration](/manni/tracevals/reference/configuration/).
+</Aside>
+
+## Control the environment
+
+Trace discovery reads a session store under the Claude configuration directory. On a shared runner,
+pin it explicitly instead of inheriting whatever the runner has:
+
+```bash
+CLAUDE_CONFIG_DIR=./session-store npx @hawkeyexl/manni tracevals run ./traces/session.jsonl
+```
+
+`CLAUDE_CONFIG_DIR` overrides that directory, `~/.claude` by default, for **both** trace discovery
+(`<dir>/projects/`) and user-level artifact lookup (`<dir>/skills/`, `<dir>/agents/`). A relative
+value resolves against the current working directory. This repository's own CI uses it to make runs
+reproducible on every machine.
+
+<Aside type="tip" title="Use relative paths in workflow steps">
+On Windows runners, an absolute POSIX path like `/tmp/x` resolves differently in a shell than in
+`node.exe`. If a step is touched by both, keep the paths relative.
+</Aside>
+
+## GitHub Actions
+
+A gate that evaluates a committed trace corpus on every pull request:
+
+```yaml title=".github/workflows/tracevals.yml"
+name: Agent adherence
+
+on:
+  pull_request:
+    paths:
+      - ".claude/**"
+      - "CLAUDE.md"
+      - "AGENTS.md"
+      - "traces/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  adherence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - run: npm ci
+
+      # No network call, no API key. Judged evals are skipped, not failed.
+      - name: Evaluate agent sessions
+        run: |
+          npx @hawkeyexl/manni tracevals run traces/refactor-session.jsonl \
+            --deterministic-only \
+            --format markdown \
+            --output tracevals-report.md
+
+      # Runs whether or not the gate passed — a failing report is the one you
+      # most want to keep.
+      - name: Publish the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tracevals-report
+          path: tracevals-report.md
+```
+
+The gate is the exit code. The step fails when `run` exits non-zero, which is exactly when an eval
+failed, errored, or needs review.
+
+Every action above is GitHub's own, referenced by tag. **Pin any third-party action to a full commit
+SHA**, not to a tag or a branch. A tag is a moving pointer. A workflow that evaluates agent
+sessions is not the place to run whatever it points at this week.
+
+### Judge without leaving the runner
+
+When you want the judged verdicts but the session content must stay on the machine, swap one flag:
+
+```yaml
+      - name: Evaluate agent sessions
+        run: |
+          npx @hawkeyexl/manni tracevals run traces/refactor-session.jsonl \
+            --local \
+            --format markdown \
+            --output tracevals-report.md
+```
+
+No secret, no API key, no request off the runner. The trade is runner time and a model download, so
+cache the model directory if the job runs often.
+
+### Evaluating a session the same job just produced
+
+An agent that runs earlier in the workflow writes its session under the runner's Claude
+configuration directory. You can discover it instead of naming a file:
+
+```yaml
+      - name: Evaluate the session that just ran
+        run: |
+          npx @hawkeyexl/manni tracevals list --all-projects --limit 1 -f json > traces.json
+          npx @hawkeyexl/manni tracevals run "$(node -p "require('./traces.json').traces[0].file")" \
+            --deterministic-only
+```
+
+`list -f json` emits `{ "traces": [...] }` sorted newest-first, so the first entry is the session
+that just finished.
+
+## Carry the manifest with the trace
+
+CI gets one thing badly wrong on its own, and it is worth fixing before you trust the report.
+**A checkout rewrites every file's mtime**, so the
+[staleness heuristic](/manni/tracevals/declare/coverage/#staleness) flags every artifact in your
+repository on every run. The warning is technically correct and completely useless.
+
+A [session manifest](/manni/tracevals/reference/cli/#tracevals-capture) fixes it, because it compares content
+rather than timestamps. The mechanics are the same three patterns above:
+
+| Pattern | Where the manifest is |
+|---|---|
+| **Evaluate in the same job** | `capture` wrote it to `.manni/tracevals/sessions/<id>.json` in the workspace, and `run` finds it there. Nothing to do. |
+| **Upload the trace** | Upload the manifest with it. Name it `<trace>.manifest.json` and `run` picks it up beside the trace with no flag. |
+| **Committed corpus** | `.manni/` is gitignored, so copy the manifest next to the trace when you commit it, as `traces/refactor-session.manifest.json`. |
+
+```yaml
+      - name: Upload the session and its manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-session
+          path: |
+            session.jsonl
+            session.manifest.json
+```
+
+The evaluating job downloads both into one directory, names the trace, and gets exact staleness for
+free.
+
+<Aside title="Nothing breaks without one">
+An absent manifest is the default and always will be. Every hash check reports `skipped` with the
+reason, the mtime heuristic stands, and no verdict, summary count, or exit code moves either way.
+A manifest is an observation about the artifacts, never an input to a verdict.
+</Aside>
+
+## Other CI platforms
+
+There is no platform-specific behavior to account for. The contract is a command, an exit code, and
+optionally a file. Any system that can run Node.js 24 and branch on an exit code works:
+
+<Tabs>
+  <TabItem label="GitLab CI">
+    ```yaml title=".gitlab-ci.yml"
+    agent-adherence:
+      image: node:24
+      script:
+        - npm ci
+        - npx @hawkeyexl/manni tracevals run traces/refactor-session.jsonl --deterministic-only
+      artifacts:
+        when: always
+        paths:
+          - tracevals-report.md
+    ```
+  </TabItem>
+  <TabItem label="pre-commit">
+    ```yaml title=".pre-commit-config.yaml"
+    repos:
+      - repo: local
+        hooks:
+          - id: tracevals
+            name: agent adherence
+            entry: npx @hawkeyexl/manni tracevals run traces/refactor-session.jsonl --deterministic-only
+            language: system
+            pass_filenames: false
+    ```
+  </TabItem>
+</Tabs>
+
+## Where to go next
+
+<CardGrid>
+  <LinkCard
+    title="The exit-code contract"
+    description="What 0, 1, and 2 mean, why needs-review counts as a failure by default, and how to change that."
+    href="/manni/tracevals/ci/exit-codes-and-reports/"
+  />
+  <LinkCard
+    title="Every configuration key"
+    description="Turn budgets, provider selection, cache locations, and the knobs that have no CLI flag."
+    href="/manni/tracevals/reference/configuration/"
+  />
+</CardGrid>

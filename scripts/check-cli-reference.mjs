@@ -35,6 +35,7 @@ const PAGES = new Map([
   ["cite", "docs/src/content/docs/cite/reference/cli.mdx"],
   ["docevals", "docs/src/content/docs/docevals/reference/cli.mdx"],
   ["key", "docs/src/content/docs/key/reference/cli.mdx"],
+  ["tracevals", "docs/src/content/docs/tracevals/reference/cli.mdx"],
 ]);
 
 const requested = process.argv.slice(2);

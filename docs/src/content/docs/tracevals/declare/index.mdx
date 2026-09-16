@@ -1,0 +1,207 @@
+---
+title: Declare what to check
+description: "Turn an instruction into a named, testable eval in an artifact's frontmatter, choosing between a deterministic grader and the judge and setting severity on purpose."
+sidebar:
+  order: 1
+---
+
+import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+**Scope:** authoring one eval by hand, deliberately. Proposing many at once is
+[Fill in evals](/manni/tracevals/declare/fill/); tuning how judged evals are decided is
+[Trust the judge](/manni/tracevals/judge/).
+
+## The implicit eval
+
+Before you declare anything, every artifact a session used already gets one eval:
+
+```console
+SKIP   CLAUDE.md › adheres-to-artifact (implicit)
+```
+
+The assertion is *"the session adhered to the instructions in this artifact"*, judged against the
+artifact's full text. That is why a first run says something with zero configuration, and also why
+you will quickly want more.
+
+## From implicit to declared
+
+The implicit eval is coarse on purpose. It answers *did the session follow this file?* as a single
+verdict. That is hard to act on when the file holds fifteen instructions and only one matters to
+you today.
+
+A declared eval is **named, scoped to one instruction, and stable across runs**. You can point at
+it when it fails, and watch it specifically over time.
+
+Evals live **in the artifact's own frontmatter**, next to the instruction they check. Not in a
+separate suite or a config file, but in the same `SKILL.md` you edit when the instruction changes.
+The check and the rule then move together, so they cannot drift apart.
+
+A project that would rather keep them out of its artifacts can. `manni meta relocate` moves the
+whole `metadata` block into an [external-metadata
+manifest](/manni/tracevals/reference/evals-schema/#or-in-an-external-metadata-manifest), and
+tracevals reads it back from there.
+
+## Declare your first eval
+
+Add a `metadata.evals` block to a skill, an agent definition, a slash command in
+`.claude/commands/`, or a project-rules file:
+
+```yaml title=".claude/skills/fix-bug/SKILL.md"
+---
+name: fix-bug
+description: Fix a reported bug, reproducing it with a failing test first.
+metadata:
+  evals:
+      # String shorthand: an LLM-judged assertion at error severity.
+      - Reproduce the bug with a failing test before applying the fix.
+
+      # Object form: a deterministic grader.
+      - id: forbidden-tool
+        assertion: The session never ran shell commands; this skill is edit-only.
+        grader: tool-usage
+        options:
+          tool: Bash
+          expect: not-used
+---
+
+# Fix a bug
+
+...the rest of the file is untouched.
+```
+
+Two forms, and the difference matters more than it looks:
+
+- **A string** is shorthand for a judged assertion at `error` severity. One line, no ceremony. It
+  gets an automatic id derived from its position, so the third entry is `eval-3`. That suits
+  anything you will not need to refer to by name.
+- **An object** gives you a stable `id`, a grader, and options. Use it for anything you want to
+  track, reference, or decide deterministically.
+
+The full block shape, including every optional field, is in the
+[evals schema reference](/manni/tracevals/reference/evals-schema/).
+
+### Where the block comes from
+
+`metadata.evals` is the family vocabulary
+[`manni:artifact-evals:1.0.0-proposal.4`](/manni/meta/proposals/artifact-evals/), shared with
+anything else that grades a session. The evals sit one level down, under `metadata`, because an
+artifact's top-level frontmatter belongs to the tool that runs it.
+
+Three keys are recognised inside `metadata`, and the prefix is guarded:
+
+| Key | What it holds |
+|---|---|
+| `metadata.evals` | One assertion, or the list above |
+| `metadata.eval-skip` | `true` takes this artifact out of evaluation, visibly |
+| `metadata.meta-provenance` | What a machine proposed, written by [`fill`](/manni/tracevals/declare/fill/) |
+
+Any other `eval-` key inside `metadata` is an error rather than a key nobody reads. A misspelled
+`eval-skpi` therefore fails loudly instead of quietly doing nothing.
+
+## Judged or deterministic?
+
+This is the decision the whole page exists for, and the one most likely to be made badly.
+
+**Ask first: can this be decided from the trace alone?** If yes, use a deterministic grader.
+Reaching for the judge when `tool-usage` would answer the same question is a downgrade. You trade
+a certain answer for a probabilistic one, and you spend a judge turn on it.
+
+| If the instruction is about… | Use | Grader |
+|---|---|---|
+| whether a tool was used, avoided, or used within bounds | deterministic | `tool-usage` |
+| whether a skill was invoked | deterministic | `skill-invoked` |
+| whether a file was read, written, or edited | deterministic | `file-access` |
+| how long the conversation ran | deterministic | `turn-count` |
+| what the session itself cost, in dollars or tokens | deterministic | `cost` |
+| whether specific text appeared | deterministic | `regex` |
+| whether the final output is valid JSON of a given shape | deterministic | `json-output` |
+| **reasoning, sequence, judgement, or intent** | judged | `ai` |
+
+`cost` reads the graded session's own usage out of the trace, through `maxUsd` and `maxTokens`. It
+says nothing about what tracevals spends. That budget is counted in turns, and
+[`--max-turns`](/manni/tracevals/reference/cli/) sets it.
+
+Every deterministic grader, its options, and its exact failure messages are in the
+[grader reference](/manni/tracevals/reference/graders/).
+
+### The third answer is not testable at all
+
+Some instructions are neither. *"Produce high-quality work"* has no measurable bar, so no session
+could fail it. Turning it into a judged assertion produces a check that is permanently green and
+tells you nothing.
+
+When that happens, **sharpen the instruction** instead of softening the eval. A rule no session
+could violate is a defect in the artifact. `fill` names these for you explicitly; see
+[instructions that cannot be tested](/manni/tracevals/declare/fill/#instructions-that-cannot-be-tested).
+
+<Aside type="tip" title="Write the assertion so a stranger could adjudicate it">
+A good judged assertion passes one test. Someone who has never seen your project could read it,
+read the session, and reach the same verdict you would. "Reproduce the bug with a failing test
+before applying the fix" passes that test. "Follow best practices" does not.
+</Aside>
+
+## Severity
+
+Every eval has a severity, and the default is `error`.
+
+| Severity | Effect |
+|---|---|
+| `error` | a finding **fails** the eval |
+| `warning` | reported, but the eval passes |
+| `notice` | reported, but the eval passes |
+
+Those three values are the family's scale. `manni docevals` and `manni a11y` spell them the same
+way, so one severity means one thing across every tool. See
+[severity and findings](/manni/docevals/evals/severity-and-findings/).
+
+This is the quietest trap in the system in both directions. Declare everything at `warning` and
+nothing will ever fail. Assume `warning` is the default, and a soft preference will go red on you.
+
+`warning` earns its place during rollout. Introduce a new convention at `warning`, drive coverage
+across your artifacts, and promote it to `error` once they are ready.
+
+## Confirm it fires
+
+An eval you have not seen fail is an eval you should not trust yet. Run against a session
+you know violated the rule:
+
+```bash
+npx @hawkeyexl/manni tracevals run <trace-file> --deterministic-only
+```
+
+```console
+  FAIL   fix-bug › forbidden-tool
+         [error] tool Bash was used 1 time(s) but must not be
+```
+
+The finding names the artifact, the eval, and what the session actually did.
+
+If your new eval shows `ERROR` instead, the check itself is broken and the session is fine.
+Most often that is a grader given options it rejects. Grader options are validated **before**
+grading so that a typo surfaces loudly:
+
+```console
+  ERROR  fix-bug › forbidden-tool
+         options.expect must be one of: used, not-used
+```
+
+<Aside type="caution" title="A malformed block is never ignored">
+If the `metadata.evals` block itself is invalid, you get an `evals-block-valid` eval with an
+`error` outcome and a source line number. The artifact is never silently skipped. See
+[Read a failing eval](/manni/tracevals/triage/#error-means-the-check-broke).
+</Aside>
+
+## Where to go next
+
+<CardGrid>
+  <LinkCard
+    title="Do this for every artifact at once"
+    description="fill proposes evals across a whole project, gates them mechanically, and writes only what survives into a diff you review."
+    href="/manni/tracevals/declare/fill/"
+  />
+  <LinkCard
+    title="Pick the right grader"
+    description="Every kind: the ai, human, and command families, and the deterministic ones with their options and failure messages."
+    href="/manni/tracevals/reference/graders/"
+  />
+</CardGrid>

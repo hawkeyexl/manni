@@ -1,6 +1,6 @@
 ---
 title: manni
-description: One command line for documentation that is meant to be checked. Today it validates document metadata against JSON Schema, checks that cited source lines still say what the page says, and runs evals over documentation pages; more tools join it as subcommands.
+description: One command line for documentation that is meant to be checked. Today it validates document metadata against JSON Schema, checks that cited source lines still say what the page says, runs evals over documentation pages, and grades an agent session against the instructions it ran on; more tools join it as subcommands.
 tableOfContents: false
 hero:
   tagline: One command line for documentation that is meant to be checked.
@@ -54,6 +54,11 @@ npx @hawkeyexl/manni docevals run docs/ --deterministic-only
     description="Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter. Code first, an AI judge second, a human last."
   />
   <LinkCard
+    title="tracevals"
+    href="/manni/tracevals/"
+    description="Adherence evals for AI agent session traces. You wrote the instructions; point it at a session that already happened and find out whether the agent followed them."
+  />
+  <LinkCard
     title="key"
     href="/manni/key/"
     description="Set and rotate the family encryption key, so a required field or a private source path is on the page without being readable there."
@@ -62,8 +67,9 @@ npx @hawkeyexl/manni docevals run docs/ --deterministic-only
 
 `meta` checks what a page says about itself; `cite` checks that what a page
 says about the code is still true. `docevals` checks that a page still meets
-the quality bar its team wrote down. `key` sets and rotates the one encryption
-key `meta` and `cite` encrypt values with. More tools are folded in as they become
+the quality bar its team wrote down, and `tracevals` checks that an agent
+session followed the instructions it ran on. `key` sets and rotates the one
+encryption key `meta` and `cite` encrypt values with. More tools are folded in as they become
 ready to ship. Until one lands, its subcommand does not exist, and
 `manni --help` lists exactly what does.
 
