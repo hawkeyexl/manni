@@ -61,9 +61,9 @@ provenance:
   qualified: true
 
 # Schemas \`manni kg validate\` checks via manni meta. Default: the \`kg\`
-# vocabulary bundled with manni
-# (schemas/kg/manni-kg-1.0.0-proposal.1.json). Override with file paths,
-# URLs, or manni meta built-in ids:
+# page vocabulary, manni:kg:1.0.0-proposal.3 — the proposal 0023 draft, built
+# into manni, so no schema file ships. Override with file paths, URLs, or
+# manni meta built-in ids:
 # validate:
 #   schemas: ["./my-schema.json"]
 
@@ -98,7 +98,7 @@ fill:
   # written. Fields scored below the threshold are reported, not written.
   confidenceThreshold: 0.7
   # fields: defaults to every fillable field — uncomment to restrict.
-  # Record kg.provenance (model + fields + confidence) on filled docs.
+  # Record meta-provenance (model + /kg/ pointers + confidence) on filled docs.
   writeProvenance: true
   # Reject proposals that would violate the SHACL shapes contract
   # (broader/narrower cycles, conflicting labels).

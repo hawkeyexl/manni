@@ -29,12 +29,14 @@ const PROPOSED_ROOT = "docs/proposals/0023/schemas";
 const DRAFT_V = "1.0.0-proposal.1";
 // Revisions are per family: evals, artifact-evals and core moved to
 // proposal.2 for the scoring, targeting and versioning fields, core to
-// proposal.3 for `locale`, and stewardship to proposal.2 for the document's
-// own dates and the widened anchor fields; the rest had no part in that and
-// stay where they are. One table so the next bump is still a one-line edit.
+// proposal.3 for `locale`, and stewardship to proposal.4 — proposal.2 for the
+// document's own dates and the widened anchor fields, proposal.3 for 0047's
+// `x-manni-location` marks, and proposal.4 for 0051's `x-manni-kg-output:
+// false` on the three fields that name people; the rest had no part in that
+// and stay where they are. One table so the next bump is still a one-line edit.
 const VERSIONS = {
   core: "1.0.0-proposal.3",
-  stewardship: "1.0.0-proposal.2",
+  stewardship: "1.0.0-proposal.4",
   evals: "1.0.0-proposal.2",
   "artifact-evals": "1.0.0-proposal.2",
 };

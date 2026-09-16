@@ -1,46 +1,45 @@
 /**
- * The `docmeta:kg` vocabulary ladder — dockg's copy of docmeta's review oracle
- * for proposal 0023 (`docs/proposals/0023/ladders/kg-examples.cjs`), ported
- * case for case.
+ * The `manni:kg` vocabulary ladder — the review oracle proposal 0023 publishes
+ * with its page vocabulary (`docs/proposals/0023/ladders/kg-examples.cjs`),
+ * ported case for case.
  *
- * dockg does not own this vocabulary any more (ADR 01023): docmeta publishes
- * the common metadata vocabularies, tools implement behavior against them. So
- * the schema ships here as vendored bytes, and these two suites are what make
- * the vendoring honest — the hash pin proves the bytes are upstream's, and the
- * ladder proves dockg reads them the way upstream says they read.
+ * kg does not own this vocabulary (ADR 01023): manni publishes the common
+ * metadata vocabularies and tools implement graph behavior against them. It is
+ * no longer copied here either. `src/kg/schema.ts` imports the draft under
+ * `docs/proposals/0023/schemas/kg/` and the build inlines it, so one file is
+ * both the draft under review and the schema the tool enforces — there is no
+ * second artifact, and nothing left for a hash pin to protect. What is still
+ * worth pinning is the other half of the old pair: that kg reads the draft the
+ * way the proposal says it reads.
  *
  * A negative case failing for the *wrong* reason is a silent pass, so each one
  * names the key its error must point at.
  */
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
-import { bundledSchemaPath } from "../../../src/kg/core/pkg.js";
+import {
+  frontmatterSchema,
+  FRONTMATTER_SCHEMA_ID,
+} from "../../../src/kg/schema.js";
 
-/**
- * sha256 of docmeta's `docs/proposals/0023/schemas/kg/1.0.0-proposal.1.json`
- * at the revision dockg vendored. Pinned as a hash rather than compared
- * against a sibling checkout: docmeta is an npm dependency in CI, not a
- * working tree. When docmeta publishes a new revision of the draft, this is
- * the test that says so.
- */
-const UPSTREAM_SHA256 =
-  "2c260ae4b94ebcc875a6e24aad8e2de20ed5bbdfe8486985159ea0fee94128d4";
+const ROOT = resolve(import.meta.dirname, "../../..");
+const DRAFT = "docs/proposals/0023/schemas/kg/1.0.0-proposal.3.json";
 
-const schemaBytes = readFileSync(bundledSchemaPath(import.meta.url));
-const schema: unknown = JSON.parse(schemaBytes.toString("utf8"));
+const schema: unknown = frontmatterSchema;
 
-describe("vendored docmeta:kg schema", () => {
-  it("is byte-identical to docmeta's published draft", () => {
-    expect(createHash("sha256").update(schemaBytes).digest("hex")).toBe(
-      UPSTREAM_SHA256,
+describe("the manni:kg page schema", () => {
+  it("is the kg draft, byte for byte", () => {
+    expect(frontmatterSchema).toEqual(
+      JSON.parse(readFileSync(resolve(ROOT, DRAFT), "utf8")),
     );
   });
 
-  it("declares the upstream $id, not a dockg one", () => {
-    expect(schema).toMatchObject({ $id: "manni:kg:1.0.0-proposal.1" });
+  it("declares the draft's $id, not one of kg's own", () => {
+    expect(FRONTMATTER_SCHEMA_ID).toBe("manni:kg:1.0.0-proposal.3");
+    expect(schema).toMatchObject({ $id: "manni:kg:1.0.0-proposal.3" });
   });
 });
 
@@ -107,16 +106,16 @@ description: Nothing graph-related here.`,
       not-about-product-aspect: [architecture]`,
   ],
   [
-    "8 provenance trail with fields and confidence",
+    "8 page-level meta-provenance with /kg/ pointers, beside a kg block",
     true,
-    `kg:
+    `title: API keys
+kg:
   label: API keys
-  provenance:
-    - generated-by: claude-opus-4-6
-      fields: [label, type]
-      confidence:
-        label: 0.92
-        type: 0.81`,
+meta-provenance:
+  - generated-by: claude-opus-4-6
+    fields: ["/kg/label"]
+    confidence:
+      "/kg/label": 0.92`,
   ],
   [
     "9 the 0.8 worked example, translated (capability-fidelity demo)",
@@ -162,7 +161,7 @@ kg:
     "generatedBy",
   ],
   [
-    "N4 the deprecated single-object provenance shape is dropped",
+    "N4 a single provenance object under kg — not a property of the block",
     false,
     `kg:
   label: API keys
@@ -178,14 +177,17 @@ kg:
     "type",
   ],
   [
-    "N6 a provenance fields entry using the old spelling",
+    "N6 a provenance entry with a fields list — the key is gone, not its shape",
     false,
     `kg:
   label: X
   provenance:
     - generated-by: m
       fields: [prefLabel]`,
-    "fields",
+    // Not `fields` any more. proposal.3 removed `kg.provenance` outright, so
+    // the block's closed property set rejects the container and never reaches
+    // what is inside it.
+    "provenance",
   ],
   [
     "N7 duplicate labels in a list",
@@ -205,7 +207,7 @@ kg:
     "subjects",
   ],
   [
-    "N9 empty provenance array",
+    "N9 an empty provenance array is still an unknown kg property",
     false,
     `kg:
   label: API keys
@@ -237,10 +239,32 @@ kg:
     install: {}`,
     "install",
   ],
+  [
+    "N13 kg.provenance is gone in proposal.3 — machine attribution is the page-level meta-provenance",
+    false,
+    `kg:
+  label: API keys
+  provenance:
+    - generated-by: claude-opus-4-6
+      fields: [label, type]
+      confidence:
+        label: 0.92
+        type: 0.81`,
+    "provenance",
+  ],
 ];
 
-describe("docmeta:kg ladder", () => {
-  const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true });
+describe("manni:kg ladder", () => {
+  // `strict: false` is the setting `manni meta` itself compiles with
+  // (src/meta/core/validator.ts), and the ladder has to compile the draft the
+  // way the tool does or it is grading a different schema. proposal.3 marks the
+  // `kg` block `x-manni-location: page` (proposal 0047), an annotation Ajv has
+  // no vocabulary for and refuses outright under strict mode.
+  const ajv = new Ajv2020({
+    allErrors: true,
+    allowUnionTypes: true,
+    strict: false,
+  });
   const validate = ajv.compile(schema as object);
 
   it.each(cases)("%s", (_name, expectValid, yamlText, mustMention) => {
@@ -260,9 +284,9 @@ describe("docmeta:kg ladder", () => {
     }
   });
 
-  it("covers docmeta's whole ladder", () => {
-    expect(cases).toHaveLength(21);
+  it("covers the draft's whole ladder", () => {
+    expect(cases).toHaveLength(22);
     expect(cases.filter(([, valid]) => valid)).toHaveLength(9);
-    expect(cases.filter(([, valid]) => !valid)).toHaveLength(12);
+    expect(cases.filter(([, valid]) => !valid)).toHaveLength(13);
   });
 });

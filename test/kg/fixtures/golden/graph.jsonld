@@ -507,7 +507,7 @@
       "prov:wasRevisionOf": {
         "@id": "https://example.com/kg/doc/docs/getting-started.md"
       },
-      "dockg:contentHash": "215c57cf8745e46a41b3c27fdbe76c92f665c67cdb972d6e394d3680fc00163d",
+      "dockg:contentHash": "d69d37d33f64a162e1bb9adc95b638e4025ab1d6e7ec3c6a6ecd17c0bb3636a0",
       "dockg:path": "docs/harvest.md"
     },
     {

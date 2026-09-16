@@ -278,6 +278,56 @@ function cycleFindings(store: Store): CheckFinding[] {
   }));
 }
 
+/**
+ * The three `kg` fields a machine may never be attributed for. The old
+ * `kg.provenance` schema enumerated the twelve *fillable* fields, which kept
+ * these out; a free JSON Pointer cannot express that, so proposal 0046 stress
+ * test 13 moved the guard into kg's harvest and, from there, to here.
+ */
+const CURATED_FIELDS = new Set(["sections", "revision-of", "derived-from"]);
+
+/** The fragment a `kg fill` activity's IRI carries, before its model slug. */
+const KG_FILL_FRAGMENT = "#prov.kg-fill.";
+
+/**
+ * A machine attribution on a hand-curated field. `check` reads only the built
+ * graph and `build` has no findings channel, so the store is where the fact is
+ * read: the harvest has already put `dockg:filledField "sections"` on a field
+ * node under a `#prov.kg-fill.` activity.
+ */
+function curatedFieldFindings(store: Store): CheckFinding[] {
+  const filledField = `${NS.dockg}filledField`;
+  const pathPred = namedNode(`${NS.dockg}path`);
+  const findings: CheckFinding[] = [];
+  for (const q of store.getQuads(null, namedNode(filledField), null, null)) {
+    if (q.object.termType !== "Literal") continue;
+    const field = q.object.value;
+    if (!CURATED_FIELDS.has(field)) continue;
+    const node = q.subject.value;
+    const at = node.indexOf(KG_FILL_FRAGMENT);
+    const fieldAt = node.lastIndexOf(".field.");
+    if (at === -1 || fieldAt <= at) continue;
+    const activity = node.slice(0, fieldAt);
+    // The model the activity is for, from its own fragment. Naming it beats
+    // repeating the activity IRI, which the reporter already prints as the
+    // focus node ahead of this message.
+    const model = node.slice(at + KG_FILL_FRAGMENT.length, fieldAt);
+    // These activities hang off no document edge, so `blameDocs` cannot walk
+    // back to one. The doc IRI is the activity's own, minus its fragment.
+    const docIri = activity.slice(0, activity.indexOf("#"));
+    const path = store.getQuads(namedNode(docIri), pathPred, null, null)[0]
+      ?.object.value;
+    findings.push({
+      severity: "violation",
+      message: `meta-provenance attributes /kg/${field} to ${model} — ${field} is curated by hand, never filled by a machine`,
+      focusNode: activity,
+      path: filledField,
+      docs: path === undefined ? blameDocs(store, activity) : [path],
+    });
+  }
+  return findings;
+}
+
 function severityOf(iri: string | undefined): CheckSeverity {
   if (iri === "http://www.w3.org/ns/shacl#Warning") return "warning";
   if (iri === "http://www.w3.org/ns/shacl#Info") return "info";
@@ -323,7 +373,11 @@ export async function validateGraph(
     });
   }
 
-  findings.push(...cycleFindings(store), ...relatedConflicts(store));
+  findings.push(
+    ...cycleFindings(store),
+    ...relatedConflicts(store),
+    ...curatedFieldFindings(store),
+  );
 
   findings.sort(
     (a, b) =>

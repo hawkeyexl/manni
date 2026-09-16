@@ -21,6 +21,7 @@ import {
   mintSectionIri,
   normalizeDocPath,
 } from "./iri.js";
+import { byCodeUnit } from "./sort.js";
 import { NS, RDF_TYPE, ROLE } from "./vocab.js";
 import {
   DOCKG_NOT_APPLICABLE_TO_VARIANT,
@@ -198,16 +199,29 @@ function resolveKg(
 }
 
 /**
- * kg.provenance entries — one per model. Array only: `docmeta:kg` dropped the
- * deprecated single-object shape (dockg's 0.2/0.3 form), so accepting it here
- * would let `manni kg build` derive from frontmatter `manni kg validate` rejects.
+ * The mapping entries of a `provenance` / `meta-provenance` list. Both are
+ * lists of entries keyed by `generated-by` (proposal 0046), and a list is all
+ * either of them may be — anything else names no machine, so it derives
+ * nothing rather than being guessed at.
+ *
+ * Not `metaProvenanceEntries` from meta's barrel: that reader narrows an entry
+ * to its model, `fields` and `evals`, and the harvest also needs `confidence`,
+ * which it drops.
  */
-function provenanceEntries(value: unknown): Array<Record<string, unknown>> {
+function recordEntries(value: unknown): Array<Record<string, unknown>> {
   if (!Array.isArray(value)) return [];
   return value.filter(
     (e): e is Record<string, unknown> =>
       !!e && typeof e === "object" && !Array.isArray(e),
   );
+}
+
+/** A JSON Pointer's reference tokens, each unescaped per RFC 6901. */
+function pointerSegments(pointer: string): string[] {
+  return pointer
+    .split("/")
+    .slice(1)
+    .map((s) => s.replace(/~1/g, "/").replace(/~0/g, "~"));
 }
 
 export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
@@ -599,29 +613,55 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
         }
       }
 
-      // Whole-page generation: the page-level `generated-by`
-      // (docmeta:ai-context). The `kg` block no longer carries a twin — page
-      // provenance is the page's fact, not the graph block's. Fragment uses a
-      // "." separator, which github-slugger can never produce — heading slugs
-      // cannot collide with provenance fragments.
-      const generatedBy = asString(fmValue(fm, ["generated-by"]));
-      if (generatedBy) {
+      // Whole-page generation. There is no page-level `generated-by` any more
+      // (proposal 0046): the machines that wrote a page are the DISTINCT
+      // `generated-by` values across its page-level `provenance` entries, each
+      // of which pins a line range. The activity stays one per page, so a
+      // single-model page emits exactly what it always did. Its fragment uses
+      // a "." separator, which github-slugger can never produce — heading
+      // slugs cannot collide with provenance fragments.
+      const machines = [
+        ...new Set(
+          recordEntries(fmValue(fm, ["provenance"])).flatMap((e) => {
+            const m = asString(e["generated-by"]);
+            return m === undefined ? [] : [m];
+          }),
+        ),
+      ].sort(byCodeUnit);
+      if (machines.length > 0) {
         const activity = `${docIri}#prov.generation`;
-        const model = agentNode(generatedBy, "SoftwareAgent");
         add(docIri, `${NS.prov}wasGeneratedBy`, iri(activity));
         add(activity, RDF_TYPE, iri(`${NS.prov}Activity`));
-        add(activity, `${NS.prov}wasAssociatedWith`, iri(model));
-        qualifyAssociation(activity, model, ROLE.generator);
+        for (const machine of machines) {
+          const model = agentNode(machine, "SoftwareAgent");
+          add(activity, `${NS.prov}wasAssociatedWith`, iri(model));
+          qualifyAssociation(activity, model, ROLE.generator);
+        }
       }
 
-      // kg.provenance (written by `manni kg fill`): one activity PER MODEL so
-      // multiple fills by different models keep truthful attribution. Only
-      // the doc's own topic concept is prov:generated — shared subject/tag
-      // concepts are never attributed, or one doc's LLM would taint every
-      // doc using the same tag.
-      for (const entry of provenanceEntries(kg?.["provenance"])) {
+      // Page-level `meta-provenance` (written by `manni kg fill`): one
+      // activity PER MODEL so multiple fills by different models keep truthful
+      // attribution. Only the doc's own topic concept is prov:generated —
+      // shared subject/tag concepts are never attributed, or one doc's LLM
+      // would taint every doc using the same tag.
+      for (const entry of recordEntries(fmValue(fm, ["meta-provenance"]))) {
         const model = asString(entry["generated-by"]);
         if (!model) continue;
+        // A pointer names a value anywhere on the page, so only the ones under
+        // `/kg/` are kg's business. The filled field is the first segment
+        // after it: `/kg/sections/install/type` attributes `sections`, the
+        // field a reviewer would look at. First pointer wins on confidence,
+        // which 0046 keys by the whole pointer rather than by the field.
+        const pointers = asStringArray(entry["fields"]);
+        const confidence = asRecord(entry["confidence"]);
+        const filled = new Map<string, string>();
+        for (const pointer of pointers) {
+          if (!pointer.startsWith("/kg/")) continue;
+          const field = pointerSegments(pointer)[1];
+          if (field === undefined || field === "") continue;
+          if (!filled.has(field)) filled.set(field, pointer);
+        }
+        if (filled.size === 0) continue;
         const activity = `${docIri}#prov.kg-fill.${conceptSlug(model)}`;
         const modelAgent = agentNode(model, "SoftwareAgent");
         add(activity, RDF_TYPE, iri(`${NS.prov}Activity`));
@@ -630,13 +670,11 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
         // Each filled field is reified as an entry node carrying its name and
         // (when fill recorded one) the model's confidence — a plain,
         // blank-node-free per-field audit edge (ADR 01015).
-        const filledFields = asStringArray(entry["fields"]);
-        const confidence = asRecord(entry["confidence"]);
-        for (const field of filledFields) {
+        for (const [field, pointer] of filled) {
           const fieldNode = `${activity}.field.${field}`;
           add(activity, `${NS.dockg}filledFieldEntry`, iri(fieldNode));
           add(fieldNode, `${NS.dockg}filledField`, lit(field));
-          const c = confidence[field];
+          const c = confidence[pointer];
           if (typeof c === "number") {
             add(
               fieldNode,
@@ -646,7 +684,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
           }
         }
         const label = kg ? asString(kg["label"]) : undefined;
-        if (label && filledFields.includes("label")) {
+        if (label && filled.has("label")) {
           add(
             activity,
             `${NS.prov}generated`,

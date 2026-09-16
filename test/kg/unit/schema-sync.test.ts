@@ -3,7 +3,11 @@ import { fileURLToPath } from "node:url";
 import { basename, dirname, join } from "node:path";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { describe, expect, it } from "vitest";
-import { bundledSchemaPath, bundledShapesPath } from "../../../src/kg/core/pkg.js";
+import { bundledShapesPath } from "../../../src/kg/core/pkg.js";
+import {
+  frontmatterSchema,
+  FRONTMATTER_SCHEMA_ID,
+} from "../../../src/kg/schema.js";
 import { LANGUAGE_TAG } from "../../../src/kg/core/localizations.js";
 import { FIELD_SCHEMAS } from "../../../src/kg/llm/prompt.js";
 import {
@@ -29,15 +33,8 @@ import {
  * frontmatter that `manni kg validate` rejects.
  */
 describe("prompt FIELD_SCHEMAS ↔ bundled schema", () => {
-  const schema = JSON.parse(
-    readFileSync(bundledSchemaPath(import.meta.url), "utf8"),
-  ) as {
+  const schema = frontmatterSchema as unknown as {
     properties: { kg: { properties: Record<string, unknown> } };
-    $defs?: {
-      provenanceEntry?: {
-        properties?: { fields?: { items?: { enum?: string[] } } };
-      };
-    };
   };
   const kgProperties = schema.properties.kg.properties;
 
@@ -71,20 +68,23 @@ describe("prompt FIELD_SCHEMAS ↔ bundled schema", () => {
       ]),
     );
 
+    // `strict: false`, as `manni meta` compiles (src/meta/core/validator.ts):
+    // proposal.3 marks the `kg` block `x-manni-location: page` (proposal 0047),
+    // which Ajv has no vocabulary for and refuses under strict mode.
     const validate = new Ajv2020({
       allErrors: true,
       allowUnionTypes: true,
+      strict: false,
     }).compile(schema);
     expect(validate({ kg }), JSON.stringify(validate.errors)).toBe(true);
   });
 
-  it("the provenance fields enum covers every fillable field", () => {
-    const allowed =
-      schema.$defs?.provenanceEntry?.properties?.fields?.items?.enum ?? [];
-    for (const field of Object.keys(FIELD_SCHEMAS)) {
-      expect(allowed, `provenance enum is missing "${field}"`).toContain(field);
-    }
-  });
+  // There is no "provenance fields enum ↔ FIELD_SCHEMAS" guard any more.
+  // `manni:kg:1.0.0-proposal.3` dropped `kg.provenance`, and with it the
+  // `$defs.provenanceEntry` whose closed `fields` enum this checked. Machine
+  // attribution is the page-level `meta-provenance` (proposal 0046), which
+  // names fields by JSON Pointer rather than by a per-vocabulary enum, so there
+  // is no second list left to drift from `FIELD_SCHEMAS`.
 });
 
 /**
@@ -144,9 +144,7 @@ describe("iiRDS enums ↔ bundled schema", () => {
     then?: { items?: { enum?: string[] } };
     else?: { enum?: string[] };
   };
-  const parsed = JSON.parse(
-    readFileSync(bundledSchemaPath(import.meta.url), "utf8"),
-  ) as {
+  const parsed = frontmatterSchema as unknown as {
     properties: { kg: { properties: Record<string, Node> } };
     $defs: Record<string, Node> & {
       sectionMetadata: { properties: Record<string, Node> };
@@ -259,11 +257,12 @@ const kgDocsPage = (...segments: string[]): string | null => {
 
 describe("documented bundled defaults ↔ pkg.ts", () => {
   const configPage = kgDocsPage("reference", "configuration.mdx");
-  const schemaFile = basename(bundledSchemaPath(import.meta.url));
   const shapesFile = basename(bundledShapesPath(import.meta.url));
 
-  it.skipIf(configPage === null)("names the current bundled schema file", () => {
-    expect(configPage).toContain(`schemas/kg/${schemaFile}`);
+  // No schema *file* to name any more: the page vocabulary is the 0023 draft,
+  // inlined into the build, so what the page has to get right is its id.
+  it.skipIf(configPage === null)("names the page vocabulary in force", () => {
+    expect(configPage).toContain(FRONTMATTER_SCHEMA_ID);
   });
 
   it.skipIf(configPage === null)("names the current bundled shapes file", () => {

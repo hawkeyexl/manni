@@ -28,7 +28,6 @@
   "files": [
     "dist",
     "ns",
-    "schemas",
     "shapes"
   ],
   "repository": {

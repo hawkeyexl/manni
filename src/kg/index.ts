@@ -82,10 +82,10 @@ export * from "./runtime/index.js";
 export {
   applyKgFields,
   existingKgFields,
-  existingProvenance,
+  existingMetaProvenance,
   frontmatterKind,
+  type KgApplyOptions,
   type KgApplyResult,
-  type ProvenanceEntry,
 } from "./core/frontmatter-edit.js";
 export { NS, PREFIXES } from "./core/vocab.js";
 export {
@@ -98,6 +98,7 @@ export {
   type ValidateOptions,
   type ValidateResult,
 } from "./commands/validate.js";
+export { frontmatterSchema, FRONTMATTER_SCHEMA_ID } from "./schema.js";
 export {
   runExport,
   type ExportOptions,

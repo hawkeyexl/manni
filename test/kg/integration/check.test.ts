@@ -13,9 +13,11 @@ const cli = join(root, "dist", "cli.js");
 // date. See test/kg/helpers/corpus.ts.
 const corpus = detachedCorpus();
 const violations = join(root, "test", "kg", "fixtures", "check-violations");
+const curated = join(root, "test", "kg", "fixtures", "curated-fields");
 
 let corpusGraph: string;
 let violationsGraph: string;
+let curatedGraph: string;
 
 function run(
   args: string[],
@@ -48,6 +50,11 @@ beforeAll(() => {
   execFileSync(process.execPath, [cli, "kg", "build", "--out", violationsGraph], {
     encoding: "utf8",
     cwd: violations,
+  });
+  curatedGraph = join(dir, "curated.ttl");
+  execFileSync(process.execPath, [cli, "kg", "build", "--out", curatedGraph], {
+    encoding: "utf8",
+    cwd: curated,
   });
 });
 
@@ -102,6 +109,51 @@ describe("manni kg check", () => {
       violations,
     );
     expect(first.stdout).toBe(second.stdout);
+  });
+
+  // Proposal 0046 stress test 13: `kg.provenance` enumerated the twelve
+  // fillable fields; a free JSON Pointer cannot, so the guard moved here.
+  it("reports a meta-provenance pointer under a hand-curated field", () => {
+    const { stdout, status } = run(
+      ["check", "-g", curatedGraph, "-f", "json"],
+      curated,
+    );
+    expect(status).toBe(1);
+    const parsed = JSON.parse(stdout) as {
+      findings: Array<{
+        severity: string;
+        message: string;
+        path?: string;
+        focusNode: string;
+        docs: string[];
+      }>;
+    };
+    const curatedFindings = parsed.findings.filter((f) =>
+      f.message.includes("curated by hand"),
+    );
+    expect(
+      curatedFindings.map((f) => [f.severity, f.docs.join(","), f.message]),
+    ).toEqual([
+      [
+        "violation",
+        "docs/lineage.md",
+        "meta-provenance attributes /kg/derived-from to m2 — derived-from is curated by hand, never filled by a machine",
+      ],
+      [
+        "violation",
+        "docs/lineage.md",
+        "meta-provenance attributes /kg/revision-of to m2 — revision-of is curated by hand, never filled by a machine",
+      ],
+      [
+        "violation",
+        "docs/sections.md",
+        "meta-provenance attributes /kg/sections to m1 — sections is curated by hand, never filled by a machine",
+      ],
+    ]);
+    // docs/clean.md names only fillable pointers, so nothing is said about it.
+    expect(
+      curatedFindings.some((f) => f.docs.includes("docs/clean.md")),
+    ).toBe(false);
   });
 
   it("fails with exit 2 for a missing shapes file", () => {

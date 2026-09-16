@@ -5,7 +5,10 @@ type: how-to
 applies-to: SP-X100
 concepts: [upgrade]
 supersedes: [getting-started.md]
-generated-by: claude-sonnet-4-5
+provenance:
+  - generated-by: claude-sonnet-4-5
+    lines: 2-8
+    integrity: sha256-1554b3de7a4ac725dbe895fcb0ace396617efd5f91be27bde70a2022538a5a8b
 ---
 
 # Upgrading

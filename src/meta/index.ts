@@ -37,6 +37,9 @@ export { Validator } from "./core/validator.js";
 // `Validator.locationPreferences` reports it.
 export { LOCATION_KEYWORD } from "./core/location.js";
 export type { FieldLocation, LocationPreference } from "./core/location.js";
+// Whether a top-level key belongs in a published graph (proposal 0051 §5), as
+// `Validator.kgOutputPreferences` reports it.
+export { KG_OUTPUT_KEYWORD } from "./core/kg-output.js";
 // Meta's half of `manni key rotate` (proposal 0045): re-encrypt one page's
 // metadata values, found by their ciphertext, under a new key.
 export { reencryptMetadata } from "./core/reencrypt.js";
