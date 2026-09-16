@@ -329,7 +329,7 @@ describe("validateGraph", () => {
         `${BASE}doc/docs/a.md#prov.kg-fill.m1`,
       );
       expect(curated[0]?.docs).toEqual(["docs/a.md"]);
-      expect(curated[0]?.message).toContain(`/kg/${field}`);
+      expect(curated[0]?.message).toContain(`/graph/${field}`);
     });
   }
 

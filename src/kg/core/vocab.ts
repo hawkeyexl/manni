@@ -13,12 +13,12 @@
  * — is why they moved rather than staying: `hawkeyexl.github.io/dockg` never
  * served anything and never will.
  *
- * `kg:` is also the frontmatter section key, and the two are still different
- * things: the key names a block an author writes, the prefix abbreviates an
- * IRI in emitted RDF. They no longer carry different *spellings*, because
- * under `…/manni/kg/ns#` any other spelling would be a third name for the
- * same tool. Nothing collides: no other prefix in this table is `kg`, and a
- * `kg:` CURIE typed at `--predicates` or `--s` expanded to nothing before.
+ * The block an author writes on a page is `graph:`, and the prefix is `kg:`.
+ * The names differ because the things differ: the key names frontmatter, the
+ * prefix abbreviates an IRI in emitted RDF, and the prefix keeps the tool's
+ * name because `…/manni/kg/ns#` is the tool's namespace. Nothing collides: no
+ * other prefix in this table is `kg`, and a `kg:` CURIE typed at
+ * `--predicates` or `--s` expanded to nothing before.
  */
 export const NS = {
   dcterms: "http://purl.org/dc/terms/",

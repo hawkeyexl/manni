@@ -48,7 +48,7 @@ export interface StatsReport {
   /** kg:path of docs with no in/out dcterms:references. */
   orphans: string[];
   brokenLinks: Array<{ doc: string; target: string }>;
-  /** kg.sections keys that matched no heading (kg:brokenSectionRef). */
+  /** graph.sections keys that matched no heading (kg:brokenSectionRef). */
   brokenSectionRefs: Array<{ doc: string; slug: string }>;
   mostConnected: Array<{ doc: string; degree: number }>;
   /** Per-field metadata coverage over documents, in report order. */

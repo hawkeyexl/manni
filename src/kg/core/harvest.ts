@@ -3,8 +3,8 @@
  * (ADR 01024, ADR 01028).
  *
  * Five page-level keys are graph inputs — `type`, `concepts`, `applies-to`,
- * `not-applicable-to`, `supersedes` — and unlike the `kg` block, nothing
- * validates them. The `kg` block is `additionalProperties: false`, so a typo
+ * `not-applicable-to`, `supersedes` — and unlike the `graph` block, nothing
+ * validates them. The `graph` block is `additionalProperties: false`, so a typo
  * inside it is a hard schema error; the same typo at the page level derives
  * silently nothing, because a page may legitimately carry any other key it
  * likes (a site generator's, a linter's, an author's).
@@ -139,7 +139,7 @@ export function harvestWarnings(docs: readonly DocModel[]): string[] {
       const meant = nearestKnown(type, mappedTypes);
       if (meant !== undefined) {
         out.push(
-          `${doc.path}: page type "${type}" maps to no iiRDS topic type and looks like "${meant}" — no kg.type was derived`,
+          `${doc.path}: page type "${type}" maps to no iiRDS topic type and looks like "${meant}" — no graph.type was derived`,
         );
       }
     }

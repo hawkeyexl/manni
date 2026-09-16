@@ -5,7 +5,7 @@ author: Jane Doe
 date: 2026-05-01
 updated: 2026-07-01
 tags: [setup, installation]
-kg:
+graph:
   type: task
   about-product-lifecycle: [deployment]
   sections:

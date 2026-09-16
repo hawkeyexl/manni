@@ -91,9 +91,9 @@ export async function runBuild(opts: BuildOptions = {}): Promise<BuildResult> {
   // places.
   const docs = await suppressKgOutput(read, config, cwd);
 
-  // Page-level keys that look like harvest inputs but are not. The kg block is
-  // schema-strict, so a typo there is a hard error; at the page level nothing
-  // validates, and a near miss derives silently nothing (ADR 01028).
+  // Page-level keys that look like harvest inputs but are not. The graph block
+  // is schema-strict, so a typo there is a hard error; at the page level
+  // nothing validates, and a near miss derives silently nothing (ADR 01028).
   const warnings: string[] = harvestWarnings(docs);
   // The git pass only feeds the provenance derive source, so the subprocess is
   // skipped entirely when that source is off. Otherwise git is *detected*

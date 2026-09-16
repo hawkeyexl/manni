@@ -336,7 +336,7 @@ function cycleFindings(store: Store): CheckFinding[] {
 }
 
 /**
- * The three `kg` fields a machine may never be attributed for. The old
+ * The three `graph` fields a machine may never be attributed for. The old
  * `kg.provenance` schema enumerated the twelve *fillable* fields, which kept
  * these out; a free JSON Pointer cannot express that, so proposal 0046 stress
  * test 13 moved the guard into kg's harvest and, from there, to here.
@@ -376,7 +376,7 @@ function curatedFieldFindings(store: Store): CheckFinding[] {
       ?.object.value;
     findings.push(
       finding("violation", {
-        message: `meta-provenance attributes /kg/${field} to ${model} — ${field} is curated by hand, never filled by a machine`,
+        message: `meta-provenance attributes /graph/${field} to ${model} — ${field} is curated by hand, never filled by a machine`,
         focusNode: activity,
         path: filledField,
         docs: path === undefined ? blameDocs(store, activity) : [path],

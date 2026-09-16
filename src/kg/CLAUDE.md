@@ -16,9 +16,10 @@ sources live under `src/kg/`, its tests under
 `test/kg/{unit,integration,real,fixtures,helpers}`, its SHACL shapes under
 `shapes/kg/`, its vocabulary document under `ns/kg/`, and its imported ADR log
 (closed at 01040) under `docs/proposals/kg/`. It ships no schema file: pages
-validate against the kg draft in `docs/proposals/0023/schemas/kg/`, bundled into
-the build by `src/kg/schema.ts`. The metadata tool is a sibling in this
-repository, imported by relative path (`../meta/index.js`), not a dependency.
+validate against the graph draft in `docs/proposals/0023/schemas/graph/`,
+bundled into the build by `src/kg/schema.ts`. The metadata tool is a sibling in
+this repository, imported by relative path (`../meta/index.js`), not a
+dependency.
 
 ## The data model, and the harvest rule
 
@@ -36,14 +37,14 @@ One graph, built from documents, with a deterministic IRI for every node.
 - `src/kg/core/git.ts` adds revision history and commit agents.
 
 **The harvest rule is: deeper wins, and the page level is the fallback, per
-fact rather than per page** (ADR 01024). A `kg` block that speaks to a fact owns it
-outright; where the block is silent, the page-level twin feeds the graph.
-`resolveKg` in `derive.ts` is the whole implementation, and the facts it
-resolves are the only ones with a page-level twin. Page-level `prerequisites`,
+fact rather than per page** (ADR 01024). A `graph` block that speaks to a fact
+owns it outright; where the block is silent, the page-level twin feeds the
+graph. `resolveGraph` in `derive.ts` is the whole implementation, and the facts
+it resolves are the only ones with a page-level twin. Page-level `prerequisites`,
 `next-steps` and `related-pages` belong to another vocabulary and are
 deliberately not harvested.
 
-The asymmetry that follows is why `src/kg/core/harvest.ts` exists. The `kg`
+The asymmetry that follows is why `src/kg/core/harvest.ts` exists. The `graph`
 block is `additionalProperties: false`, so a typo inside it is a schema error.
 The same typo at the page level derives nothing, silently, because a page may
 carry any other key it likes. Near-miss detection is the answer, and it warns.
@@ -55,16 +56,19 @@ A suspicion must never fail a build.
 (`src/kg/core/kg-output.ts`). Absent means `true`. The filter runs **once**,
 before `deriveGraph`. All four published outputs descend from what derivation
 produces, so dropping the field there keeps it out of every one of them.
-A mark nested inside `kg` is ignored, because the mark governs a top-level key
-and `kg` is the top-level key.
+A mark nested inside `graph` is ignored, because the mark governs a top-level
+key and `graph` is the top-level key.
 
 Encrypted values are harvested like any other. kg never decrypts, so the graph
 carries the `~…` token, which says a value exists and nothing about what it is.
 
 ## The namespace and the shapes
 
-The *frontmatter key* is `kg:`. The *RDF namespace prefix* is also `kg:`, and
-it resolves to `https://hawkeyexl.github.io/manni/kg/ns#`. Never conflate them.
+The page block an author writes is `graph:`. The RDF namespace prefix is `kg:`,
+and it resolves to `https://hawkeyexl.github.io/manni/kg/ns#`. The two names
+differ because the two things do: the block is frontmatter, and the prefix
+names the tool's namespace. The `kg:` section of `manni.config.yaml` is a third
+thing again, the tool's settings.
 The base IRI for minted nodes defaults to `urn:manni:kg:`.
 
 - `ns/kg/` holds the vocabulary document the namespace IRI dereferences to. The
@@ -192,13 +196,14 @@ Corpus-defining settings such as routes and derive sources may be config-only.
   needs the stronger contract expresses it as a shape over the built graph.
 - **Machine attribution is page-level `meta-provenance`**, with JSON Pointers,
   written through `mergeMetaProvenance` from `src/meta/internal.ts`, the merge
-  `manni meta fill` uses. Never grow a kg copy of it. There is no
-  `kg.provenance`; a page that still carries one is refused by name, with the
-  migration in the message.
-- **Three `kg` pointers are hand-curated and a machine may never claim them**:
-  `/kg/sections`, `/kg/revision-of` and `/kg/derived-from`. A `meta-provenance`
-  entry naming one is a `manni kg check` finding at `error`. This guard moved
-  here from the schema, which could not express it once pointers became free.
+  `manni meta fill` uses. Never grow a kg copy of it. The `graph` block has no
+  `provenance` key. A page still carrying a `kg:` block from before the rename
+  is not special-cased either: it is one more page key, and nothing reads it.
+- **Three `graph` pointers are hand-curated and a machine may never claim
+  them**: `/graph/sections`, `/graph/revision-of` and `/graph/derived-from`. A
+  `meta-provenance` entry naming one is a `manni kg check` finding at `error`.
+  This guard moved here from the schema, which could not express it once
+  pointers became free.
 - **`kg fill` is the one verb that reaches a model.** Providers come from the
   family's top-level `providers:` map through `src/shared/providers.ts`, with
   `kg.provider` and `kg.model` as the tool-level override and `--local` over
@@ -229,7 +234,7 @@ Corpus-defining settings such as routes and derive sources may be config-only.
 - **Section keys are camelCase; the vocabulary's own entries are kebab-case.**
   `baseIri`, `maxTurns` and `confidenceThreshold` in the config; `alt-labels`
   and `applies-to` on a page.
-- The page vocabulary is **`manni:kg:1.0.0-proposal.3`**, proposed by the
+- The page vocabulary is **`manni:graph:1.0.0-proposal.1`**, proposed by the
   metadata tool (proposal 0023) and implemented here. `src/kg/schema.ts`
   imports the draft and tsup bundles it, so `dist` never reads `docs/`. Never
   ship a copy or patch it in memory: the vendored copy this tool used to

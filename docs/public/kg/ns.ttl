@@ -215,7 +215,7 @@ kg:filledField
     a rdf:Property ;
     rdfs:label "filled field" ;
     rdfs:comment """The frontmatter field name a fill entry records, as written
-in the `kg` block.""" ;
+in the `graph` block.""" ;
     schema:rangeIncludes xsd:string ;
     skos:example "label" ;
     rdfs:isDefinedBy <https://hawkeyexl.github.io/manni/kg/ns> .

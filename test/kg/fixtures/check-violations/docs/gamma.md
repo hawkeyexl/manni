@@ -1,7 +1,7 @@
 ---
 title: Gamma
 tags: [Shared Term]
-kg:
+graph:
   label: Gamma
 ---
 

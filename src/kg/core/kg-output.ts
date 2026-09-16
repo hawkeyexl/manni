@@ -34,7 +34,7 @@ import type { DocModel } from "../types.js";
  *
  * The draft is handed over as an object rather than by ref. 0023's ids are
  * unregistered on purpose while the vocabulary is under review, so
- * `manni:kg:1.0.0-proposal.3` resolves to nothing a user could type — which is
+ * `manni:graph:1.0.0-proposal.1` resolves to nothing a user could type — which is
  * exactly what `LoadSchemaOptions.inlineSchemas` is for.
  */
 function schemaRefs(config: KgConfig): string[] {

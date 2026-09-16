@@ -100,7 +100,7 @@ describe("proposalSchema", () => {
   });
 
   it("offers section fields the document already has", () => {
-    // The blocking case: `kg.type` is set at the document level, so the
+    // The blocking case: `graph.type` is set at the document level, so the
     // doc-level missing set is empty — but section-level presence is
     // independent of it (ADR 01032). Deriving the section item's properties
     // from `missing` left a real provider under strict structured output

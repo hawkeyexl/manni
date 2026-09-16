@@ -1,8 +1,9 @@
 /**
- * The page vocabulary manni kg implements: `manni:kg:1.0.0-proposal.3`, the
- * knowledge-graph draft proposal 0023 publishes for review. Pages are validated
- * against the draft itself, imported from `docs/proposals/` and bundled into
- * the build, so the built CLI never reads `docs/` at runtime.
+ * The page vocabulary manni kg implements: `manni:graph:1.0.0-proposal.1`, the
+ * knowledge-graph draft proposal 0023 publishes for review. It defines the
+ * `graph:` block a page carries. Pages are validated against the draft itself,
+ * imported from `docs/proposals/` and bundled into the build, so the built CLI
+ * never reads `docs/` at runtime.
  *
  * kg ships no copy of the schema. One file is now both the draft under review
  * and the schema the tool enforces, which is what the vendored copy under
@@ -13,10 +14,10 @@
  * with `manni meta validate` copies the draft into their repository, or
  * validates programmatically against the object below.
  */
-import schema from "../../docs/proposals/0023/schemas/kg/1.0.0-proposal.3.json" with { type: "json" };
+import schema from "../../docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json" with { type: "json" };
 
-/** The kg draft, for validators that accept an inline schema. */
+/** The graph draft, for validators that accept an inline schema. */
 export const frontmatterSchema = schema as Record<string, unknown>;
 
-/** The draft's `$id`: `manni:kg:1.0.0-proposal.3`. */
+/** The draft's `$id`: `manni:graph:1.0.0-proposal.1`. */
 export const FRONTMATTER_SCHEMA_ID: string = schema.$id;

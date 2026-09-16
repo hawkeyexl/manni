@@ -14,7 +14,7 @@ export const IIRDS_RELATES_TO_PRODUCT_VARIANT = `${NS.iirds}relates-to-product-v
 export const IIRDS_RELATES_TO_LIFECYCLE_PHASE = `${NS.iirds}relates-to-product-lifecycle-phase`;
 export const IIRDS_HAS_SUBJECT = `${NS.iirds}has-subject`;
 
-/** Class minted for `kg.applies-to` nodes. */
+/** Class minted for `graph.applies-to` nodes. */
 export const IIRDS_PRODUCT_VARIANT = `${NS.iirds}ProductVariant`;
 
 /**
@@ -54,11 +54,11 @@ export const KG_NOT_APPLICABLE_TO_VARIANT = `${NS.kg}notApplicableToVariant`;
 export const KG_NOT_SOFTWARE_SUBJECT = `${NS.kg}notSoftwareSubject`;
 
 /**
- * Page-level `type` → `kg.type` (ADR 01024). The page's `type` is an open
- * vocabulary (docmeta:core); `kg.type` is the closed iiRDS enum. When the block
+ * Page-level `type` → `graph.type` (ADR 01024). The page's `type` is an open
+ * vocabulary (docmeta:core); `graph.type` is the closed iiRDS enum. When the block
  * is silent, the page's value derives one through this map — an unmapped page
  * type derives nothing rather than inventing a topic type. An explicit
- * `kg.type` always wins: deeper wins, the page level is the fallback.
+ * `graph.type` always wins: deeper wins, the page level is the fallback.
  */
 export const PAGE_TYPE_TO_TOPIC_TYPE: Readonly<Record<string, string>> = {
   "how-to": "task",
@@ -68,7 +68,7 @@ export const PAGE_TYPE_TO_TOPIC_TYPE: Readonly<Record<string, string>> = {
   troubleshooting: "troubleshooting",
 };
 
-/** `kg.type` value → `iirds:has-topic-type` object IRI. */
+/** `graph.type` value → `iirds:has-topic-type` object IRI. */
 export const TOPIC_TYPE_IRIS: Readonly<Record<string, string>> = {
   task: `${NS.iirds}GenericTask`,
   concept: `${NS.iirds}GenericConcept`,
@@ -79,7 +79,7 @@ export const TOPIC_TYPE_IRIS: Readonly<Record<string, string>> = {
 };
 
 /**
- * `kg.about-product-lifecycle` value → `iirds:relates-to-product-lifecycle-phase`
+ * `graph.about-product-lifecycle` value → `iirds:relates-to-product-lifecycle-phase`
  * object IRI (Software domain: iirds:Use/PuttingToUse/AfterUse instances).
  */
 export const SOFTWARE_LIFECYCLE_IRIS: Readonly<Record<string, string>> = {
@@ -92,7 +92,7 @@ export const SOFTWARE_LIFECYCLE_IRIS: Readonly<Record<string, string>> = {
 };
 
 /**
- * `kg.about-product-aspect` value → `iirds:has-subject` object IRI (Software domain:
+ * `graph.about-product-aspect` value → `iirds:has-subject` object IRI (Software domain:
  * iirds:TechnicalOverview/TechnicalData instances).
  */
 export const SOFTWARE_SUBJECT_IRIS: Readonly<Record<string, string>> = {

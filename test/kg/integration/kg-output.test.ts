@@ -9,7 +9,7 @@
  * exactly the claim a test should check rather than assume.
  *
  * Two neighbours share the fixture because they are the same question asked
- * from the other side: a mark nested inside `kg` is ignored (0047 rule 2), and
+ * from the other side: a mark nested inside `graph` is ignored (0047 rule 2), and
  * an encrypted value is harvested like any other value, so the `~…` token is
  * what lands in the graph (0051 stress test 4).
  */
@@ -94,8 +94,8 @@ describe("x-manni-kg-output", () => {
     expect(index).not.toContain("throttling");
   });
 
-  it("ignores a mark nested inside kg", () => {
-    // The house schema marks `kg.label` false. Only a top-level property's
+  it("ignores a mark nested inside graph", () => {
+    // The house schema marks `graph.label` false. Only a top-level property's
     // mark counts, so the label is harvested exactly as it would be without
     // the mark — `alt-labels` proves the block was read at all.
     expect(turtle).toContain("Rate limiting");

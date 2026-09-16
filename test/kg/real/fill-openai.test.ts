@@ -86,10 +86,10 @@ describe("manni kg fill against a real OpenAI-compatible server", () => {
     ).toContain(result.status);
 
     // The mechanism, not the content: whatever the model said had to survive
-    // the schema validator to get here, and anything it wrote is under `kg`.
+    // the schema validator to get here, and anything it wrote is under `graph`.
     if (result.status === "filled") {
       const written = readFileSync(join(dir, "a.md"), "utf8");
-      expect(written).toContain("kg:");
+      expect(written).toContain("graph:");
       for (const field of result.fields) {
         expect(["label", "concepts"]).toContain(field);
       }

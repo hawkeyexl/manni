@@ -154,10 +154,10 @@ describe("deriveGraph — provenance", () => {
     expect(has(off, DOC, `${NS.rdf}type`, iri(`${NS.prov}Entity`))).toBe(false);
   });
 
-  it("maps kg.derived-from to resolved docs, URLs, and broken links", () => {
+  it("maps graph.derived-from to resolved docs, URLs, and broken links", () => {
     const g = graph({
       "docs/a.md":
-        '---\nkg:\n  derived-from: [b.md, "https://example.org/spec", missing.md]\n---\n',
+        '---\ngraph:\n  derived-from: [b.md, "https://example.org/spec", missing.md]\n---\n',
       "docs/b.md": "# B\n",
     });
     expect(
@@ -258,10 +258,10 @@ describe("deriveGraph — provenance", () => {
     );
   });
 
-  it("maps meta-provenance /kg/ pointers to per-model fill activities, not shared subjects", () => {
+  it("maps meta-provenance /graph/ pointers to per-model fill activities, not shared subjects", () => {
     const g = graph({
       "docs/a.md":
-        "---\nmeta-provenance:\n  - generated-by: claude-sonnet-4-5\n    fields: [/kg/label]\n  - generated-by: gpt-4o\n    fields: [/kg/concepts]\nkg:\n  label: Config\n  concepts: [shared-tag]\n---\n",
+        "---\nmeta-provenance:\n  - generated-by: claude-sonnet-4-5\n    fields: [/graph/label]\n  - generated-by: gpt-4o\n    fields: [/graph/concepts]\ngraph:\n  label: Config\n  concepts: [shared-tag]\n---\n",
       "docs/b.md": "---\ntags: [shared-tag]\n---\n",
     });
     const claudeActivity = `${DOC}#prov.kg-fill.claude-sonnet-4-5`;
@@ -305,12 +305,12 @@ describe("deriveGraph — provenance", () => {
     ).toBe(false);
   });
 
-  it("ignores kg.provenance, which the vocabulary no longer has", () => {
+  it("ignores graph.provenance, which the vocabulary does not have", () => {
     const g = graph({
       "docs/a.md":
-        "---\nkg:\n  provenance:\n    - generated-by: claude-sonnet-4-5\n      fields: [concepts]\n---\n",
+        "---\ngraph:\n  provenance:\n    - generated-by: claude-sonnet-4-5\n      fields: [concepts]\n---\n",
     });
-    // Proposal 0046 closed the `kg` block on fifteen properties and none of
+    // The `graph` block is closed on fifteen properties and none of
     // them is `provenance`, so the page vocabulary rejects this page. Deriving
     // from it anyway would let `build` read frontmatter that
     // `manni meta validate` refuses — the two must agree.
@@ -322,7 +322,7 @@ describe("deriveGraph — provenance", () => {
   it("skips a meta-provenance pointer that is not kg's", () => {
     const g = graph({
       "docs/a.md":
-        "---\nmeta-provenance:\n  - generated-by: m1\n    fields: [/intent, /title, /kgx/label]\nkg:\n  label: Config\n---\n",
+        "---\nmeta-provenance:\n  - generated-by: m1\n    fields: [/intent, /title, /kgx/label]\ngraph:\n  label: Config\n---\n",
     });
     expect(g.some((q) => q.p === `${NS.kg}filledField`)).toBe(false);
     expect(g.some((q) => q.s === `${DOC}#prov.kg-fill.m1`)).toBe(false);
@@ -331,7 +331,7 @@ describe("deriveGraph — provenance", () => {
   it("reads a deep pointer's first segment as the filled field", () => {
     const g = graph({
       "docs/a.md":
-        "---\nmeta-provenance:\n  - generated-by: m1\n    fields: [/kg/sections/install/type, /kg/sections/setup/type]\nkg:\n  label: Config\n---\n",
+        "---\nmeta-provenance:\n  - generated-by: m1\n    fields: [/graph/sections/install/type, /graph/sections/setup/type]\ngraph:\n  label: Config\n---\n",
     });
     const entry = `${DOC}#prov.kg-fill.m1.field.sections`;
     expect(has(g, entry, `${NS.kg}filledField`, lit("sections"))).toBe(true);
@@ -342,7 +342,7 @@ describe("deriveGraph — provenance", () => {
   it("unescapes a pointer segment per RFC 6901", () => {
     const g = graph({
       "docs/a.md":
-        "---\nmeta-provenance:\n  - generated-by: m1\n    fields: [/kg/alt~1labels, /kg/a~0b]\nkg:\n  label: Config\n---\n",
+        "---\nmeta-provenance:\n  - generated-by: m1\n    fields: [/graph/alt~1labels, /graph/a~0b]\ngraph:\n  label: Config\n---\n",
     });
     const base = `${DOC}#prov.kg-fill.m1`;
     expect(
@@ -357,7 +357,7 @@ describe("deriveGraph — provenance", () => {
     // 0046 keys confidence by the pointer, not by the field name.
     const g = graph({
       "docs/a.md":
-        "---\nmeta-provenance:\n  - generated-by: m1\n    fields: [/kg/label]\n    confidence:\n      /kg/label: 0.9\nkg:\n  label: Config\n---\n",
+        "---\nmeta-provenance:\n  - generated-by: m1\n    fields: [/graph/label]\n    confidence:\n      /graph/label: 0.9\ngraph:\n  label: Config\n---\n",
     });
     const entry = `${DOC}#prov.kg-fill.m1.field.label`;
     expect(
@@ -405,10 +405,10 @@ describe("deriveGraph — provenance", () => {
     expect(without.some((q) => q.p === `${NS.prov}endedAtTime`)).toBe(false);
   });
 
-  it("maps declared kg.revision-of like derived-from: resolved, URL, or broken", () => {
+  it("maps declared graph.revision-of like derived-from: resolved, URL, or broken", () => {
     const g = graph({
       "docs/a.md":
-        "---\nkg:\n  revision-of: [old.md, https://example.org/v1, gone.md]\n---\n",
+        "---\ngraph:\n  revision-of: [old.md, https://example.org/v1, gone.md]\n---\n",
       "docs/old.md": "# Old\n",
     });
     expect(
@@ -666,11 +666,11 @@ describe("deriveGraph — links", () => {
   });
 });
 
-describe("deriveGraph — kg sub-key (SKOS fields)", () => {
+describe("deriveGraph — graph sub-key (SKOS fields)", () => {
   it("mints a primary topic concept with labels and relations", () => {
     const g = graph({
       "docs/a.md":
-        "---\nkg:\n  label: Configuration\n  alt-labels: [config]\n  broader: [Administration]\n  related-concepts: [Installation]\n  concepts: [reference]\n---\n",
+        "---\ngraph:\n  label: Configuration\n  alt-labels: [config]\n  broader: [Administration]\n  related-concepts: [Installation]\n  concepts: [reference]\n---\n",
     });
     const c = `${BASE}concept/configuration`;
     expect(has(g, DOC, `${NS.foaf}primaryTopic`, iri(c))).toBe(true);
@@ -698,7 +698,7 @@ describe("deriveGraph — kg sub-key (SKOS fields)", () => {
 
 describe("deriveGraph — iiRDS Core/Software typing (ADR 01012)", () => {
   it("references the published topic-type IRI", () => {
-    const g = graph({ "docs/a.md": "---\nkg:\n  type: task\n---\n" });
+    const g = graph({ "docs/a.md": "---\ngraph:\n  type: task\n---\n" });
     expect(
       has(g, DOC, `${NS.iirds}has-topic-type`, iri(`${NS.iirds}GenericTask`)),
     ).toBe(true);
@@ -706,7 +706,7 @@ describe("deriveGraph — iiRDS Core/Software typing (ADR 01012)", () => {
 
   it("mints a ProductVariant node per applies-to label", () => {
     const g = graph({
-      "docs/a.md": "---\nkg:\n  applies-to: [SP-X100, SP-X200]\n---\n",
+      "docs/a.md": "---\ngraph:\n  applies-to: [SP-X100, SP-X200]\n---\n",
     });
     for (const [slug, label] of [
       ["sp-x100", "SP-X100"],
@@ -726,7 +726,7 @@ describe("deriveGraph — iiRDS Core/Software typing (ADR 01012)", () => {
   it("splits software-domain values across their two predicates", () => {
     const g = graph({
       "docs/a.md":
-        "---\nkg:\n  about-product-lifecycle: [deployment, update]\n  about-product-aspect: [interface]\n---\n",
+        "---\ngraph:\n  about-product-lifecycle: [deployment, update]\n  about-product-aspect: [interface]\n---\n",
     });
     expect(
       has(
@@ -749,7 +749,7 @@ describe("deriveGraph — iiRDS Core/Software typing (ADR 01012)", () => {
     ).toBe(true);
   });
 
-  it("emits no iiRDS triples when neither the kg block nor the page types it", () => {
+  it("emits no iiRDS triples when neither the graph block nor the page types it", () => {
     const g = graph({ "docs/a.md": "# A\n" });
     expect(g.some((q) => q.p.startsWith(NS.iirds))).toBe(false);
     expect(
@@ -767,7 +767,7 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
   const TOPIC_TYPE = `${NS.iirds}has-topic-type`;
   const VARIANT = `${NS.iirds}relates-to-product-variant`;
 
-  it("derives kg.type from the page's type when the block is silent", () => {
+  it("derives graph.type from the page's type when the block is silent", () => {
     const g = graph({ "docs/a.md": "---\ntype: how-to\n---\n\n# A\n" });
     expect(has(g, DOC, TOPIC_TYPE, iri(`${NS.iirds}GenericTask`))).toBe(true);
   });
@@ -790,9 +790,9 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
     expect(g.some((q) => q.p === TOPIC_TYPE)).toBe(false);
   });
 
-  it("lets an explicit kg.type win over the page's type", () => {
+  it("lets an explicit graph.type win over the page's type", () => {
     const g = graph({
-      "docs/a.md": "---\ntype: how-to\nkg:\n  type: reference\n---\n\n# A\n",
+      "docs/a.md": "---\ntype: how-to\ngraph:\n  type: reference\n---\n\n# A\n",
     });
     expect(has(g, DOC, TOPIC_TYPE, iri(`${NS.iirds}GenericReference`))).toBe(
       true,
@@ -810,7 +810,7 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
 
     const deeper = graph({
       "docs/a.md":
-        "---\napplies-to: [SP-X100]\nkg:\n  applies-to: [SP-X200]\n---\n\n# A\n",
+        "---\napplies-to: [SP-X100]\ngraph:\n  applies-to: [SP-X200]\n---\n\n# A\n",
     });
     expect(has(deeper, DOC, VARIANT, iri(`${BASE}product/sp-x200`))).toBe(true);
     // Deeper wins outright: the page-level value is replaced, not merged in.
@@ -834,7 +834,7 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
 
     const deeper = graph({
       "docs/a.md":
-        "---\nnot-applicable-to: [SP-X300]\nkg:\n  not-applicable-to: [SP-X400]\n---\n\n# A\n",
+        "---\nnot-applicable-to: [SP-X300]\ngraph:\n  not-applicable-to: [SP-X400]\n---\n\n# A\n",
     });
     expect(
       has(
@@ -846,7 +846,7 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
     ).toBe(false);
   });
 
-  it("harvests page-level concepts, and lets kg.concepts override them", () => {
+  it("harvests page-level concepts, and lets graph.concepts override them", () => {
     const fallback = graph({
       "docs/a.md": "---\nconcepts: [caching]\n---\n\n# A\n",
     });
@@ -856,7 +856,7 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
 
     const deeper = graph({
       "docs/a.md":
-        "---\nconcepts: [caching]\nkg:\n  concepts: [indexing]\n---\n\n# A\n",
+        "---\nconcepts: [caching]\ngraph:\n  concepts: [indexing]\n---\n\n# A\n",
     });
     expect(
       has(deeper, DOC, `${NS.dcterms}subject`, iri(`${BASE}concept/indexing`)),
@@ -870,7 +870,7 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
     // `tags` is dockg's own derive source, a different fact from `concepts` —
     // deeper-wins governs the kg/page concepts pair, not this union.
     const g = graph({
-      "docs/a.md": "---\ntags: [setup]\nkg:\n  concepts: [indexing]\n---\n",
+      "docs/a.md": "---\ntags: [setup]\ngraph:\n  concepts: [indexing]\n---\n",
     });
     expect(
       has(g, DOC, `${NS.dcterms}subject`, iri(`${BASE}concept/setup`)),
@@ -890,10 +890,10 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
     ).toBe(true);
   });
 
-  it("lets kg.revision-of win over the page's supersedes", () => {
+  it("lets graph.revision-of win over the page's supersedes", () => {
     const g = graph({
       "docs/a.md":
-        "---\nsupersedes: [b.md]\nkg:\n  revision-of: [c.md]\n---\n\n# A\n",
+        "---\nsupersedes: [b.md]\ngraph:\n  revision-of: [c.md]\n---\n\n# A\n",
       "docs/b.md": "# B\n",
       "docs/c.md": "# C\n",
     });
@@ -920,7 +920,7 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
   it("normalizes the single-string shorthand on every list field", () => {
     const g = graph({
       "docs/a.md":
-        "---\nkg:\n  label: Config\n  alt-labels: config\n  broader: Admin\n  applies-to: SP-X100\n  about-product-aspect: interface\n---\n",
+        "---\ngraph:\n  label: Config\n  alt-labels: config\n  broader: Admin\n  applies-to: SP-X100\n  about-product-aspect: interface\n---\n",
     });
     const topic = `${BASE}concept/config`;
     expect(has(g, topic, `${NS.skos}altLabel`, lit("config"))).toBe(true);
@@ -936,7 +936,7 @@ describe("deriveGraph — the harvest rule (ADR 01024)", () => {
   it("never harvests into section typing — sections stay explicit-only", () => {
     const g = graph({
       "docs/a.md":
-        "---\ntype: how-to\napplies-to: [SP-X100]\nkg:\n  sections:\n    install:\n      type: reference\n---\n\n## Install\n",
+        "---\ntype: how-to\napplies-to: [SP-X100]\ngraph:\n  sections:\n    install:\n      type: reference\n---\n\n## Install\n",
     });
     const section = `${DOC}#install`;
     expect(
@@ -951,7 +951,7 @@ describe("deriveGraph — negative scope (ADR 01014)", () => {
   it("emits notApplicableToVariant + a ProductVariant node, and not-about-product-aspect", () => {
     const g = graph({
       "docs/a.md":
-        "---\nkg:\n  not-applicable-to: [SP-X300]\n  not-about-product-aspect: [architecture]\n---\n",
+        "---\ngraph:\n  not-applicable-to: [SP-X300]\n  not-about-product-aspect: [architecture]\n---\n",
     });
     const v = `${BASE}product/sp-x300`;
     expect(has(g, DOC, `${NS.kg}notApplicableToVariant`, iri(v))).toBe(true);
@@ -974,7 +974,7 @@ describe("deriveGraph — negative scope (ADR 01014)", () => {
     // still emits both edges to one shared ProductVariant node.)
     const g = graph({
       "docs/a.md":
-        "---\nkg:\n  applies-to: [SP-X1]\n  not-applicable-to: [SP-X1]\n---\n",
+        "---\ngraph:\n  applies-to: [SP-X1]\n  not-applicable-to: [SP-X1]\n---\n",
     });
     const v = `${BASE}product/sp-x1`;
     expect(has(g, DOC, `${NS.iirds}relates-to-product-variant`, iri(v))).toBe(
@@ -989,7 +989,7 @@ describe("deriveGraph — negative scope (ADR 01014)", () => {
   it("attaches negative scope to a section too", () => {
     const g = graph({
       "docs/a.md":
-        "---\nkg:\n  sections:\n    install:\n      not-applicable-to: [SP-X9]\n      not-about-product-aspect: [interface]\n---\n\n# A\n\n## Install\n",
+        "---\ngraph:\n  sections:\n    install:\n      not-applicable-to: [SP-X9]\n      not-about-product-aspect: [interface]\n---\n\n# A\n\n## Install\n",
     });
     const SEC = `${DOC}#install`;
     expect(
@@ -1011,7 +1011,7 @@ describe("deriveGraph — negative scope (ADR 01014)", () => {
   });
 
   it("emits no negative-scope triples when the fields are absent", () => {
-    const g = graph({ "docs/a.md": "---\nkg:\n  type: task\n---\n" });
+    const g = graph({ "docs/a.md": "---\ngraph:\n  type: task\n---\n" });
     expect(g.some((q) => q.p === `${NS.kg}notApplicableToVariant`)).toBe(
       false,
     );
@@ -1025,7 +1025,7 @@ describe("deriveGraph — section-level metadata (ADR 01013)", () => {
   it("attaches iiRDS typing and concepts to the matching section node", () => {
     const g = graph({
       "docs/a.md":
-        "---\nkg:\n  sections:\n    install:\n      type: reference\n      applies-to: [SP-X200]\n      about-product-aspect: [interface]\n      concepts: [setup]\n---\n\n# A\n\n## Install\n",
+        "---\ngraph:\n  sections:\n    install:\n      type: reference\n      applies-to: [SP-X200]\n      about-product-aspect: [interface]\n      concepts: [setup]\n---\n\n# A\n\n## Install\n",
     });
     expect(
       has(
@@ -1054,7 +1054,7 @@ describe("deriveGraph — section-level metadata (ADR 01013)", () => {
   it("emits kg:brokenSectionRef for a key naming no heading", () => {
     const g = graph({
       "docs/a.md":
-        "---\nkg:\n  sections:\n    nope:\n      type: task\n---\n\n# A\n\n## Install\n",
+        "---\ngraph:\n  sections:\n    nope:\n      type: task\n---\n\n# A\n\n## Install\n",
     });
     expect(has(g, DOC, `${NS.kg}brokenSectionRef`, lit("nope"))).toBe(true);
     // The unmatched key attaches nothing to any section node.
@@ -1063,7 +1063,7 @@ describe("deriveGraph — section-level metadata (ADR 01013)", () => {
 
   it("does not leak the document's typing onto sections (explicit-only)", () => {
     const g = graph({
-      "docs/a.md": "---\nkg:\n  type: task\n---\n\n# A\n\n## Install\n",
+      "docs/a.md": "---\ngraph:\n  type: task\n---\n\n# A\n\n## Install\n",
     });
     // The doc is typed; the section is not.
     expect(
@@ -1074,7 +1074,7 @@ describe("deriveGraph — section-level metadata (ADR 01013)", () => {
     ).toBe(false);
   });
 
-  it("emits no section metadata when kg.sections is absent", () => {
+  it("emits no section metadata when graph.sections is absent", () => {
     const g = graph({ "docs/a.md": "# A\n\n## Install\n" });
     expect(g.some((q) => q.p === `${NS.kg}brokenSectionRef`)).toBe(false);
     expect(g.some((q) => q.s === SEC && q.p.startsWith(NS.iirds))).toBe(false);
@@ -1084,7 +1084,7 @@ describe("deriveGraph — section-level metadata (ADR 01013)", () => {
     const g = graph(
       {
         "docs/a.md":
-          "---\nkg:\n  sections:\n    install:\n      type: task\n    nope:\n      type: task\n---\n\n# A\n\n## Install\n",
+          "---\ngraph:\n  sections:\n    install:\n      type: task\n    nope:\n      type: task\n---\n\n# A\n\n## Install\n",
       },
       ["frontmatter"],
     );
@@ -1101,7 +1101,7 @@ describe("deriveGraph — section-level metadata (ADR 01013)", () => {
     const g = graph(
       {
         "docs/a.md":
-          "---\nkg:\n  type: concept\n  sections:\n    install:\n      type: task\n---\n\n# A\n\n## Install\n",
+          "---\ngraph:\n  type: concept\n  sections:\n    install:\n      type: task\n---\n\n# A\n\n## Install\n",
       },
       ["sections"],
     );

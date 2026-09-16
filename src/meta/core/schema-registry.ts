@@ -1001,7 +1001,7 @@ export async function loadSchema(
   options: LoadSchemaOptions = {},
 ): Promise<Record<string, unknown>> {
   // Before `classifyRef`, deliberately. A caller-supplied schema is named by
-  // whatever ref its tool prints in findings — `manni:kg:1.0.0-proposal.3` is a
+  // whatever ref its tool prints in findings — `manni:graph:1.0.0-proposal.1` is a
   // `builtin`-shaped id this registry has never heard of — and classifying it
   // first would only decide which "not found" message to write.
   const inline = options.inlineSchemas?.get(ref);

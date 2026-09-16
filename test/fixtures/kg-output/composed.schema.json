@@ -12,7 +12,7 @@
   "then": { "properties": { "ticket": { "x-manni-kg-output": false } } },
   "properties": {
     "kind": { "type": "string" },
-    "kg": {
+    "graph": {
       "type": "object",
       "properties": {
         "label": { "type": "string", "x-manni-kg-output": false }

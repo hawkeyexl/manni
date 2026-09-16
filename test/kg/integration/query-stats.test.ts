@@ -171,7 +171,7 @@ describe("manni kg stats", () => {
       { doc: "docs/de/regional.md", target: "../missing.md" },
       { doc: "docs/no-frontmatter.md", target: "missing.md" },
     ]);
-    // getting-started.md carries a kg.sections key naming no heading.
+    // getting-started.md carries a graph.sections key naming no heading.
     expect(report.brokenSectionRefs).toEqual([
       { doc: "docs/getting-started.md", slug: "missing-heading" },
     ]);
@@ -199,7 +199,7 @@ describe("manni kg stats", () => {
     );
     writeFileSync(
       join(dir, "a.md"),
-      "---\nkg:\n  sections:\n    nope:\n      type: task\n---\n\n# A\n\n## Real\n",
+      "---\ngraph:\n  sections:\n    nope:\n      type: task\n---\n\n# A\n\n## Real\n",
     );
     execFileSync(
       process.execPath,
@@ -263,7 +263,7 @@ describe("manni kg stats — metadata coverage", () => {
     };
     // 8 docs: only getting-started.md carries creator/dates; it, harvest.md
     // and the two translated pages with descriptions carry a description;
-    // configuration.md alone has a kg.label. Order is the report order.
+    // configuration.md alone has a graph.label. Order is the report order.
     //
     // This is the blended number ADR 01037 calls out: the three localized docs
     // pull every English-only field down without saying which audience is
@@ -360,7 +360,7 @@ describe("manni kg stats — metadata coverage", () => {
   });
 
   it("never gates on section coverage, however low it is", () => {
-    // Sections start at zero on every corpus that has not adopted kg.sections.
+    // Sections start at zero on every corpus that has not adopted graph.sections.
     // Gating by default would fail all of them, so the block is reported only
     // (ADR 01009: reporting on does not imply gating on).
     //

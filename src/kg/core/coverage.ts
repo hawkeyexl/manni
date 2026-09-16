@@ -55,7 +55,7 @@ export const COVERAGE_FIELDS: readonly CoverageField[] = [
 ];
 
 /**
- * Section-level coverage: the fields a `kg.sections` block can attach
+ * Section-level coverage: the fields a `graph.sections` block can attach
  * (ADR 01013), measured over `kg:Section` nodes.
  *
  * Sections are explicit-only — a section gets exactly what its own block

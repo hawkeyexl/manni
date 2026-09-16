@@ -2,8 +2,8 @@
 title: Clean
 meta-provenance:
   - generated-by: m1
-    fields: [/kg/label, /kg/concepts]
-kg:
+    fields: [/graph/label, /graph/concepts]
+graph:
   label: Clean
   concepts: [tidy]
 ---

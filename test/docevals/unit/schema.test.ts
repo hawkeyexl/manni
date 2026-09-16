@@ -236,7 +236,7 @@ evals:
     `title: Configure the dashboard
 description: How to configure it.
 generated-by: claude-fable-5
-kg:
+graph:
   label: Dashboard
 evals:
   - The page names every required field.`,

@@ -67,8 +67,8 @@ describe("x-manni-kg-output: the keyword", () => {
     });
   });
 
-  it("accepts and ignores a mark nested inside kg", async () => {
-    const data = { kg: { label: "l" } };
+  it("accepts and ignores a mark nested inside graph", async () => {
+    const data = { graph: { label: "l" } };
     expect(await prefs(new Validator(), data, [COMPOSED])).toEqual({});
   });
 

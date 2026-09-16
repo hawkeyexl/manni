@@ -1,7 +1,7 @@
 ---
 title: Alpha
 tags: [shared term]
-kg:
+graph:
   label: Alpha
   broader: [Beta]
   related-concepts: [Gamma]

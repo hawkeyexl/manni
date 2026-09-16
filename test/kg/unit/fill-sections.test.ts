@@ -158,7 +158,7 @@ describe("fill --sections", () => {
       join(dir, "a.md"),
       PAGE.replace(
         "title: Widget SDK",
-        "title: Widget SDK\nkg:\n  sections:\n    install-the-sdk:\n      type: concept",
+        "title: Widget SDK\ngraph:\n  sections:\n    install-the-sdk:\n      type: concept",
       ),
     );
     const provider = new MockProvider([
@@ -256,7 +256,7 @@ describe("fill --sections", () => {
     expect(written).toContain("install-the-sdk:");
     // The section value is written; only its pointer is omitted.
     expect(written).not.toContain("sections.install-the-sdk.type");
-    expect(written).not.toContain("/kg/sections");
+    expect(written).not.toContain("/graph/sections");
 
     // What fill writes must still pass the page vocabulary. That is
     // `manni meta validate` against the kg draft (proposal 0051 §8), which is
@@ -277,6 +277,10 @@ describe("fill --sections", () => {
     expect(report.warnings.join(" ")).toContain(
       "NOT recorded in meta-provenance",
     );
+    expect(report.warnings.join(" ")).toContain(
+      "/graph/sections is one of the three hand-curated pointers kg refuses, " +
+        "with /graph/revision-of and /graph/derived-from",
+    );
   });
 
   it("still fills sections when the document's own fields are complete", async () => {
@@ -288,7 +292,7 @@ describe("fill --sections", () => {
       join(dir, "a.md"),
       PAGE.replace(
         "title: Widget SDK",
-        "title: Widget SDK\nkg:\n  type: reference",
+        "title: Widget SDK\ngraph:\n  type: reference",
       ),
     );
     const provider = new MockProvider([
@@ -331,7 +335,7 @@ describe("fill --sections", () => {
       join(dir, "a.md"),
       PAGE.replace(
         "title: Widget SDK",
-        "title: Widget SDK\nkg:\n  type: reference",
+        "title: Widget SDK\ngraph:\n  type: reference",
       ),
     );
 

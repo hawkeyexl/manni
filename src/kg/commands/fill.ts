@@ -1,6 +1,6 @@
 /**
- * `manni kg fill` — propose SKOS frontmatter fields (`kg:` sub-key) with an LLM
- * and write them back. Single-shot structured output per doc, content-hash
+ * `manni kg fill` — propose SKOS frontmatter fields (the `graph:` block) with an
+ * LLM and write them back. Single-shot structured output per doc, content-hash
  * cached, bounded by a turn budget. Human-set fields are never overwritten
  * without `--force`; `--dry-run` reports without writing. Any per-doc failure
  * is recorded as a result, never aborts the run.
@@ -20,7 +20,6 @@ import {
   applyKgFields,
   existingKgFields,
   existingMetaProvenance,
-  hasKgProvenance,
   frontmatterKind,
 } from "../core/frontmatter-edit.js";
 import { mergeMetaProvenance } from "../../meta/internal.js";
@@ -178,9 +177,9 @@ function round2(n: number): number {
 /** The page-level key `fill` records the fields it wrote in (proposal 0046). */
 const META_PROVENANCE_KEY = "meta-provenance";
 
-/** A `kg` field as an RFC 6901 JSON Pointer into the page's `kg` block. */
-function kgPointer(field: string): string {
-  return `/kg/${field.replace(/~/g, "~0").replace(/\//g, "~1")}`;
+/** A graph field as an RFC 6901 JSON Pointer into the page's `graph` block. */
+function graphPointer(field: string): string {
+  return `/graph/${field.replace(/~/g, "~0").replace(/\//g, "~1")}`;
 }
 
 export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
@@ -254,8 +253,8 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
   const withSections = opts.sections ?? config.fill.sections;
   // The section half of the schema is built from the FULL configured field
   // set, never from a document's missing set (ADR 01032): section presence is
-  // independent of document presence, so a page whose `kg.type` is already set
-  // must still be offered a section-level `type`. Narrowing this the way the
+  // independent of document presence, so a page whose `graph.type` is already
+  // set must still be offered a section-level `type`. Narrowing this the way the
   // document half is narrowed handed a strictly-constrained provider a section
   // item with no data properties on it at all.
   const sectionFields = withSections
@@ -351,9 +350,9 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
 
   if (sectionsUnrecorded.length > 0) {
     warnings.push(
-      "Section metadata was written but is NOT recorded in meta-provenance: /kg/sections is " +
-        "one of the three hand-curated pointers kg refuses, with /kg/revision-of and " +
-        "/kg/derived-from, so recording it would make `manni kg check` report an error. " +
+      "Section metadata was written but is NOT recorded in meta-provenance: /graph/sections is " +
+        "one of the three hand-curated pointers kg refuses, with /graph/revision-of and " +
+        "/graph/derived-from, so recording it would make `manni kg check` report an error. " +
         "Review section values by hand — the review queue will not list them.",
     );
   }
@@ -508,7 +507,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       }
     }
 
-    // docmeta:kg requires `label` alongside any alt-label/relation field
+    // manni:graph requires `label` alongside any alt-label/relation field
     // (dependentRequired) — never write output our own validate rejects.
     // Rechecked after the guardrail: rejecting `label` takes the relation
     // fields down with it.
@@ -589,20 +588,8 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     // `manni docevals fill` wrote — carried through untouched.
     let page: Record<string, unknown> | undefined;
     if (config.fill.writeProvenance) {
-      // `kg.provenance` is gone: proposal 0046 closed the `kg` block on
-      // fifteen properties and none of them is `provenance`. A page still
-      // holding one validates nowhere and is read by nothing, so filling
-      // beside it would leave an unreviewable record behind. Refuse the file
-      // and name the migration instead.
-      if (hasKgProvenance(content)) {
-        throw new KgError(
-          `${path}: kg.provenance was dropped by proposal 0046 and is read by nothing. ` +
-            `Its attribution belongs in the page-level meta-provenance, whose fields are ` +
-            `JSON Pointers ("/kg/label", not "label") — move it there first.`,
-        );
-      }
       // Document-level names only. `sections.<slug>.<field>` is a pointer
-      // under `/kg/sections`, and `sections` is one of the three fields
+      // under `/graph/sections`, and `sections` is one of the three fields
       // curated by hand — recording it is exactly what kg's harvest now
       // reports as a `manni kg check` error (0046 stress test 13). So the
       // rule stays, and the reason it stays is a different one.
@@ -626,7 +613,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
         : undefined;
       const priorConfidence = numberMap(priorEntry?.["confidence"]);
       const proposed = recordable.map((f) => {
-        const name = kgPointer(f);
+        const name = graphPointer(f);
         const c = confidence[f];
         return {
           name,
@@ -634,7 +621,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
         };
       });
       const unscored = recordable
-        .map((f) => [f, kgPointer(f)] as const)
+        .map((f) => [f, graphPointer(f)] as const)
         .filter(
           ([f, name]) =>
             confidence[f] === undefined && priorConfidence[name] === undefined,

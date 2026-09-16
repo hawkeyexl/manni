@@ -211,7 +211,7 @@ let kgOutputRecorder: Map<string, Set<boolean>> | undefined;
  * `x-manni-kg-output` (proposal 0051 §5), on every Ajv meta builds. Like
  * `x-manni-location`, it never fails a value; it says where it was evaluated,
  * so a mark counts wherever Ajv's resolution takes the validator. Only a mark
- * evaluated at a top-level property is recorded; one nested inside `kg` is
+ * evaluated at a top-level property is recorded; one nested inside `graph` is
  * accepted and ignored. The boolean meta-schema refuses any other value at
  * compile time, and `compileUncached` turns Ajv's wording into the plan's
  * message.
@@ -660,7 +660,7 @@ export class Validator {
    *
    * A first pass with the recording keyword, as `locationPreferences` runs, so
    * a mark counts exactly where validation would evaluate it, and a mark nested
-   * inside `kg` is ignored. Only present values are marked: Ajv applies a
+   * inside `graph` is ignored. Only present values are marked: Ajv applies a
    * property's subschema to a property that exists. `$schema` is stripped
    * first, as validation does.
    *

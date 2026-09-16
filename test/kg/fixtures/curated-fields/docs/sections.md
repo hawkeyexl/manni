@@ -2,15 +2,15 @@
 title: Sections
 meta-provenance:
   - generated-by: m1
-    fields: [/kg/label, /kg/sections/install/type]
+    fields: [/graph/label, /graph/sections/install/type]
     confidence:
-      /kg/label: 0.9
-kg:
+      /graph/label: 0.9
+graph:
   label: Sections
 ---
 
 # Sections
 
 A machine is attributed for a section's typing. `sections` is curated by hand,
-so the pointer under `/kg/sections` is a `manni kg check` violation — proposal
+so the pointer under `/graph/sections` is a `manni kg check` violation. Proposal
 0046 stress test 13 moved that guard out of the schema and into the harvest.

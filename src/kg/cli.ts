@@ -328,7 +328,7 @@ documentInputs(
   program
     .command("fill")
     .description(
-      "Propose `kg:` frontmatter fields with an LLM, gated by confidence, and write them back",
+      "Propose `graph:` frontmatter fields with an LLM, gated by confidence, and write them back",
     ),
   "fill",
 )
@@ -339,7 +339,7 @@ documentInputs(
     "pretty",
   )
   .option("--dry-run", "Report proposals without writing files")
-  .option("--force", "Overwrite human-set kg fields")
+  .option("--force", "Overwrite human-set graph fields")
   .option("--no-cache", "Bypass the proposal cache")
   .option("--no-validate-graph", "Skip the SHACL graph guardrail on proposals")
   .option("--sections", "Also propose per-section metadata")

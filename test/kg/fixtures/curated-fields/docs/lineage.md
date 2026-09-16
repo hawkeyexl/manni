@@ -2,8 +2,8 @@
 title: Lineage
 meta-provenance:
   - generated-by: m2
-    fields: [/kg/revision-of, /kg/derived-from]
-kg:
+    fields: [/graph/revision-of, /graph/derived-from]
+graph:
   label: Lineage
 ---
 
