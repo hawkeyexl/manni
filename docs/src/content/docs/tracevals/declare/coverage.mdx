@@ -1,0 +1,403 @@
+---
+title: Account for every artifact
+description: "Read the artifact coverage table, understand how skills, agents, slash commands, and project rules are resolved from a trace, and close the gaps it reports."
+sidebar:
+  order: 3
+---
+
+import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+**Scope:** the *denominator*, meaning every instruction file a session referenced, including the
+ones that could not be found. Deciding what to check on a resolved artifact is
+[Declare what to check](/manni/tracevals/declare/).
+
+Every report ends with a coverage section, and it answers a question the eval list cannot:
+**what did you not check?**
+
+```console
+Artifact coverage
+  ✓ skill: fix-bug           /work/demo-project/.claude/skills/fix-bug/SKILL.md
+  ○ agent: Explore           built-in agent (no definition file)
+  ○ skill: my-plugin:foo     not found (3 location(s) tried)
+  ✓ slash-command: ship-it   /work/demo-project/.claude/commands/ship-it.md
+  ○ slash-command: model     built-in slash command, or not installed here (no definition file)
+  ✓ agent: doc-writer [not offered]  /work/demo-project/.claude/agents/doc-writer.md
+  ✓ project-rules: project rules
+
+Availability
+  5 skill(s) offered, 2 used, 3 never used
+  3 agent(s) offered, 2 used, 1 never used
+  pass --report-unused-artifacts to list them
+```
+
+{/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config:
+    .doc-detective.json. The workflow builds this checkout and exposes it on PATH as `manni`
+    through `npm link`, and sets CLAUDE_CONFIG_DIR=test/tracevals/fixtures/home/.claude so trace
+    discovery reads the fixture session store rather than the runner's own. The coverage states
+    below come from the committed fixtures, so a change to resolution or to the coverage renderer
+    fails CI rather than drifting. */}
+{/* test {"testId":"coverage-states","description":"The documented coverage states appear against the fixture corpus."} */}
+{/* step {"description":"A built-in agent is reported as unresolved with an explanatory note.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"built-in agent (no definition file)"}} */}
+{/* step {"description":"A resolved skill is reported with the file it resolved to.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"skill: fix-bug"}} */}
+{/* step {"description":"A checked-out fixture is newer than the fixture trace, so staleness is reported.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"modified after the session ended"}} */}
+{/* step {"description":"A built-in slash command is reported as one, not as a missing skill.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"built-in slash command"}} */}
+{/* test end */}
+
+## The six states
+
+| What you see | Meaning | What to do |
+|---|---|---|
+| `✓` with a path | Resolved and evaluated. | Nothing. |
+| `✓` with no path | Resolved to **several** files. Only project rules do this. | Nothing; see [below](#project-rules-resolve-as-one-entry). |
+| `○ built-in agent (no definition file)` | A built-in agent, which has no file anywhere. | Nothing. Expected. |
+| `○ built-in slash command, or not installed here` | A `/name` with no command file and no skill file anywhere. | Usually nothing; see [below](#slash-commands-are-one-of-three-things). |
+| `○ not found (<n> location(s) tried)` | The trace referenced it; no file matched. | [Close the gap](#fix-an-unresolved-reference). |
+| Absent from the list entirely | The session never referenced it. | Nothing. |
+
+An unresolved reference is **not** a failing eval. It becomes a coverage row plus a warning, so a
+missing plugin never crashes a run or turns a build red on its own. That is deliberate: a skill file
+you do not have is not an adherence violation. It does mean that artifact went unchecked, which is
+exactly what the table is telling you.
+
+## Offered, used, and never on the menu
+
+The list above answers *what did the session reference*. The **Availability** block answers a
+different question, *what could it have referenced*, and keeps three states apart:
+
+| State | Meaning | What to do |
+|---|---|---|
+| **offered and used** | On the roster, and the session used it. | Nothing. |
+| **offered and not used** | On the roster, never invoked. | A judgement call. Read the description and decide whether it should have fired. |
+| **not offered** | The session referenced it, but it was never on the roster. | Fix the **configuration**. This is not an adherence failure. |
+
+That third state is the one that wastes an afternoon. A skill or agent someone expected but which
+was never on the menu produces evals that fail, or worse skip. The reason has nothing to do with
+the session's behaviour. It is labelled inline:
+
+```console
+  ✓ agent: doc-writer [not offered]  /work/demo-project/.claude/agents/doc-writer.md
+```
+
+The definition file exists on disk and resolved fine; it was simply never offered to that session.
+Look at plugin installation, agent scope, and whether the name was renamed after the session ran.
+
+**None of this is an eval outcome.** Availability never appears in the summary counts and never moves
+the exit code. It is an observation about the session's configuration, not a verdict on its
+behaviour.
+
+### Listing what went unused
+
+Offered-and-unused artifacts are **counted, not listed** by default. A real roster runs to a couple
+of hundred skills and would bury the evals above it. To see them with the descriptions that Claude
+Code itself uses to decide whether to invoke:
+
+```bash
+npx @hawkeyexl/manni tracevals run <trace> --deterministic-only --report-unused-artifacts
+```
+
+```console
+  · skill: deep-research [offered, unused] offered, never used — Fan-out web searches, fetch sources, verify claims, synthesise a cited report.
+  · skill: bare-listing [offered, unused] offered, never used
+  · agent: researcher [offered, unused] offered, never used — Gathers background before a change is designed. (Tools: Read, WebFetch)
+```
+
+{/* test {"testId":"availability-states","description":"The three availability states appear against the fixture corpus, whose roster deliberately omits doc-writer while the session spawns it anyway."} */}
+{/* step {"description":"A referenced artifact that was never on the roster is labelled.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"[not offered]"}} */}
+{/* step {"description":"Offered-but-unused artifacts are listed on request.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only --report-unused-artifacts","exitCodes":[1],"stdio":"offered, never used"}} */}
+{/* test end */}
+
+A row like `bare-listing` above shows nothing after the dash because the roster carried no
+description for it. Claude Code truncates its listing text, and past that cap it names skills alone.
+Absent means *not recorded*, never "has none".
+
+An unused row is marked `·` rather than `○`, and reports `n/a` under **Resolved** in markdown, because
+nothing was ever looked for on disk. Saying "not found" would be a claim about a search that never ran.
+
+<Aside title="Where the roster comes from">
+Not a filesystem scan, but the transcript itself. Claude Code records what it offered as structured
+attachment records, so the evidence travels inside the trace. The answer is therefore the same on
+any machine. Full detail in [the traces reference](/manni/tracevals/reference/traces/#the-availability-roster).
+
+A trace with **no** roster reports it as unknown rather than as zero. Older sessions and
+`claude-stream` transcripts carry no listing records at all.
+</Aside>
+
+To act on an unused artifact rather than just look at it, hang a
+[conditionally-triggered eval](/manni/tracevals/reference/graders/#conditional-triggers) on
+`CLAUDE.md`. That is the one artifact that resolves for every session.
+
+## How an artifact is resolved
+
+Resolution is **deterministic**, from trace content plus filesystem lookup, with no model involved.
+The trace records which skills were invoked and which agents were spawned. tracevals then looks for
+the matching files in a fixed order, and records every location it tried.
+
+`<config>` below is Claude Code's own configuration directory, `~/.claude` unless you moved it.
+`CLAUDE_CONFIG_DIR` is what moves it, and pointing that at another checkout is how you resolve
+against a different plugin store.
+
+### Skills
+
+For a plain reference like `fix-bug`, in order:
+
+1. `<project>/skills/fix-bug/SKILL.md`
+2. `<project>/src/skills/fix-bug/SKILL.md`
+3. `<project>/.claude/skills/fix-bug/SKILL.md`
+4. `<config>/skills/fix-bug/SKILL.md`
+5. `<config>/plugins/**/skills/fix-bug/SKILL.md`, searched recursively, because plugin store
+   layouts nest differently
+
+A `plugin:skill` reference **skips steps 1–4** and goes straight to the plugin store. It matches on
+the short name, with the plugin name required somewhere in the path.
+
+### Agents
+
+1. `<project>/.claude/agents/<name>.md`
+2. `<project>/agents/<name>.md`
+3. `<config>/agents/<name>.md`
+
+A `plugin:agent` reference looks up the short name.
+
+**Built-in agents are never resolved**, because they have no definition file: `general-purpose`,
+`claude`, `Explore`, `Plan`, `statusline-setup`, and `fork`. They appear as `○` with a note, and
+that is the finished state rather than a problem to fix.
+
+### Slash commands are one of three things
+
+When a session records `/name`, that reference can be any of three different things, and only the
+filesystem can say which. Resolution tries them in order:
+
+1. `<project>/.claude/commands/<name>.md`
+2. `<config>/commands/<name>.md`
+3. the same two directories searched recursively, since a subdirectory under `commands/` **organizes**
+   without renaming, so `commands/release/tag.md` is still `/tag`
+4. failing all of those, the [skill order](#skills) above, because a skill can be invoked by typing
+   its slash form
+5. failing that too, it is a **built-in**, one of Claude Code's own commands (`/model`, `/compact`,
+   `/clear`), which has no file anywhere by design
+
+A `plugin:command` reference **skips steps 1–3** and goes straight to
+`<config>/plugins/**/commands/<name>.md`. It matches on the short name, with the plugin name
+required somewhere in the path, exactly as plugin skills do.
+
+Step 5 is a note, not a warning, because a built-in is the expected outcome rather than a defect.
+The note says `built-in slash command, or not installed here`, and the row still carries every
+location tried. A command that genuinely *is* missing on this machine is still diagnosable from
+the `tried` list. Nothing here is checked against the availability roster. The transcript records no
+roster of slash commands, so calling one `not offered` would be a claim about evidence that was
+never collected.
+
+### Project rules
+
+Every directory from the session's working directory **up to the project root** (the git root by
+default, capped at 32 levels), then `<project-root>/.claude/`. In each one it checks `CLAUDE.md`,
+`AGENTS.md`, and `GEMINI.md`.
+
+**All matches are collected**, not just the first. A repository with a root `CLAUDE.md` and a nested
+`AGENTS.md` gets both evaluated.
+
+<Aside title="`--project` when the workspace has moved">
+Resolution starts from the session's recorded `cwd`. That directory may no longer exist, because the
+trace came from another machine or the checkout was moved. Point it somewhere else:
+
+```bash
+npx @hawkeyexl/manni tracevals run <trace> --project ./my-repo
+```
+</Aside>
+
+## Fix an unresolved reference
+
+The coverage entry records **every location it tried**, which is usually the whole diagnosis. In
+JSON output that is the `tried` array:
+
+```bash
+npx @hawkeyexl/manni tracevals run <trace> --deterministic-only --format json
+```
+
+```jsonc
+{
+  "ref": "my-plugin:foo",
+  "kind": "skill",
+  "resolved": false,
+  "tried": ["/home/you/.claude/plugins/**/skills/foo/SKILL.md"]
+}
+```
+
+Read the list and the cause is usually one of:
+
+- **The plugin is not installed** on the machine running tracevals. Install it, or point
+  `CLAUDE_CONFIG_DIR` at a configuration directory that has it.
+- **The artifact moved** relative to the project. A skill relocated from `skills/` to
+  `.claude/skills/` resolves fine, but one moved outside those roots will not.
+- **The project root is wrong**, so the walk started somewhere unexpected. Set `--project`.
+- **It was renamed** after the session ran. The trace holds the old name; nothing on disk matches.
+
+Each unresolved reference also emits a warning next to the table:
+
+```console
+Warnings
+  ! skill "my-plugin:foo" was invoked but no SKILL.md was found (1 location(s) tried)
+```
+
+## Staleness
+
+Evals are read from the artifact **as it is now**. The session followed it **as it was then**. Edit
+a `SKILL.md` after a session and you are grading that session against instructions it never saw.
+That means a `fail` on a rule that did not exist yet, or a `pass` on one whose wording has since
+changed.
+
+Every resolved artifact is compared against the session's end time, and one that is newer is marked:
+
+```console
+Artifact coverage
+  ✓ skill: fix-bug /work/demo/.claude/skills/fix-bug/SKILL.md ⚠ modified after the session ended (2026-08-29T17:14:19.176Z)
+
+Warnings
+  ! 1 artifact(s) were modified after the session ended (fix-bug) — their evals may not be the instructions this session followed. mtime is a heuristic, not content identity.
+```
+
+In JSON, the entry carries `stale: true` and `modifiedAt`.
+
+<Aside type="caution" title="It is a heuristic, and a noisy one in CI">
+The comparison is **mtime**, which is not content identity. In particular, `git clone` and
+`git checkout` rewrite every mtime to *now*. **A CI job that checks out the repository and then
+evaluates an older trace flags every artifact.** That is the heuristic working as designed, not a
+bug, and it is exactly why this is a warning.
+
+It **never becomes an eval outcome and never changes the exit code**. The artifact still resolves,
+its evals still run, and its verdicts are unaffected. All that changes is what the report says about
+how much to trust them
+([ADR 01021](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/tracevals/01021-warn-when-an-artifact-changed-after-the-session.md),
+in the decision log tracevals brought with it).
+</Aside>
+
+A trace with no recorded end time is never flagged. There is nothing to compare against, and
+inferring one would manufacture a warning out of no evidence.
+
+An unresolved **slash command** is the one exception to the warning. It gets its coverage row and
+its `tried` list but no note. The common case is a built-in, which is not a gap to close.
+
+## Make staleness exact with a session manifest
+
+Everything above is a guess, and the section below is how you stop guessing.
+
+Run [`manni tracevals capture`](/manni/tracevals/reference/cli/#capture) from a `SessionStart` hook.
+Before the session does any work it records the **sha256 of every instruction artifact in the
+project**, plus the **git SHA** it ran against. `run` finds that manifest and compares. The
+comparison is content identity, not a timestamp:
+
+```console
+Artifact coverage
+  ✓ skill: fix-bug /work/demo/.claude/skills/fix-bug/SKILL.md ⚠ changed since the session started (session manifest sha256)
+  ✓ agent: reviewer /work/demo/.claude/agents/reviewer.md
+
+Session manifest
+  .manni/tracevals/sessions/11111111-….json captured 2026-08-29T18:44:05.626Z at cbcd42ef424c
+  4 artifact(s) unchanged, 1 changed, 1 not recorded
+  artifacts the manifest did not record keep the mtime heuristic
+
+Warnings
+  ! 1 artifact(s) changed since the session started (fix-bug) — the session manifest recorded a different sha256, so their evals are not the instructions this session followed.
+```
+
+{/* test {"testId":"manifest-staleness","description":"A manifest turns the mtime guess into content identity."} */}
+{/* step {"description":"capture records the project's artifacts.","runShell":{"command":"manni tracevals capture --session-id 11111111-1111-1111-1111-111111111111 --project test/tracevals/fixtures/project --out .tmp/docs-coverage.json","exitCodes":[0],"stdio":"hashed"}} */}
+{/* step {"description":"run reports the manifest it consulted.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --manifest .tmp/docs-coverage.json --deterministic-only","exitCodes":[1],"stdio":"Session manifest"}} */}
+{/* step {"description":"Artifacts the manifest proved unchanged no longer carry the mtime warning.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --manifest .tmp/docs-coverage.json --deterministic-only","exitCodes":[1],"stdio":"0 changed"}} */}
+{/* test end */}
+
+Three states per row, and the JSON carries them as `contentCheck.status`:
+
+| State | Meaning | What happens to the mtime guess |
+|---|---|---|
+| `match` | The file hashes to what was recorded. **Exact.** | Not run. The row is clean even after a checkout moved its mtime. |
+| `mismatch` | It hashes to something else. **Exact.** | Not run. The row is flagged even if mtime says the file is *older*. |
+| `skipped` | No manifest, or none covering this artifact. | Runs, exactly as above. `reason` says which. |
+
+That first row is the point. A `git checkout` rewrites every mtime, so in CI the heuristic flags
+your whole repository. With a manifest, every artifact it recorded reads clean instead. The
+observation is not hidden: `modifiedAt` is still reported, only the conclusion drawn from it changes.
+
+`skipped` is not a quiet `match`. An artifact outside the project root was never recordable, because
+`capture` is project-scoped. A user-level or plugin skill is such an artifact; the report says so
+and keeps the guess.
+
+<Aside type="caution" title="A manifest is a claim, not proof">
+It is written by the machine the session ran on and travels with the repository, so it is evidence
+**about that device**. It never becomes an eval outcome, never changes the exit code, and cannot
+turn a `skipped` eval into a `pass`. It is not consulted anywhere a verdict is formed. A manifest
+that cannot be shown to belong to this trace is refused outright, and the run proceeds as if there
+were none. That holds whether it names a **different session**, or the trace records no session id
+to check it against at all
+([ADR 01024](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/tracevals/01024-capture-a-session-manifest-so-staleness-is-exact.md)).
+In the second case the run warns and names the file it ignored; pass
+[`--manifest`](/manni/tracevals/reference/cli/#run) to assert that it does belong.
+</Aside>
+
+A manifest only helps sessions recorded **after** you install the hook. Everything already on disk
+keeps the mtime heuristic, which is why that heuristic exists and stays.
+
+It also describes one moment, the session's **start**. The hook fires on `startup`, not `resume`.
+A session you come back to days later is still compared against the snapshot taken when it first
+began. That is the honest meaning of "changed since the session started", and a partial answer for
+the turns after the resume. See
+[wiring the hook](/manni/tracevals/reference/cli/#wire-it-up) if you would rather re-snapshot on
+every resume.
+
+### Fixing a flagged row
+
+Evaluate against the artifact as it was. Check out the commit the session ran on, and re-run with
+`--project` pointed at that working tree. With a manifest you do not have to guess which commit.
+It recorded the git SHA, and the report prints it.
+
+## Project rules resolve as one entry
+
+Project rules appear as a single row named `project rules` with **no path**, because the entry
+covers however many files matched. Its `tried` array holds every location checked, and each matched
+file is evaluated as its own artifact. That is why `CLAUDE.md` and `AGENTS.md` show up separately
+in the eval list above.
+
+If none matched, the row reads `○ project-rules: project rules  no CLAUDE.md or AGENTS.md found`.
+
+## What the implicit eval covers
+
+A resolved artifact that declares **no** evals is still evaluated, through one judged eval named
+`adheres-to-artifact`. So a `✓` row always means the artifact was checked, even when you have
+authored nothing for it.
+
+Silence in the eval list therefore means the artifact was never *referenced* by the session, not
+that it was skipped.
+
+## Skip an artifact deliberately
+
+To take an artifact out of evaluation without deleting its evals:
+
+```yaml
+metadata:
+  eval-skip: true
+```
+
+It is then reported as `skipped` with the reason `artifact skipped via metadata.eval-skip`, which
+keeps it visible rather than silently absent. Full field reference in the
+[evals schema](/manni/tracevals/reference/evals-schema/).
+
+## Duplicate references collapse
+
+A skill invoked six times produces **one** coverage row and one set of evals. Deduplication is by
+reference name for coverage, and by resolved path for artifacts. Two references that resolve to
+the same file are therefore evaluated once.
+
+## Where to go next
+
+<CardGrid>
+  <LinkCard
+    title="Trace formats and discovery"
+    description="Which trace formats are supported, how the session store is scanned, and what CLAUDE_CONFIG_DIR changes."
+    href="/manni/tracevals/reference/traces/"
+  />
+  <LinkCard
+    title="The full report structure"
+    description="Every field of a CoverageEntry, including tried and note, in the JSON report."
+    href="/manni/tracevals/reference/report-and-exit-codes/"
+  />
+</CardGrid>

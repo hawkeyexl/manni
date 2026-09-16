@@ -1,0 +1,289 @@
+---
+title: Fill in evals across a project
+description: "Use fill to propose evals for every skill, agent, slash command, and rules file in a project. Understand the gate that gets applied, and review the diff before anything is written."
+sidebar:
+  order: 2
+---
+
+import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+{/* Doc Detective inline tests. The docs-as-tests workflow exposes the local
+    build as `manni` via `npm link` and points CLAUDE_CONFIG_DIR at
+    test/tracevals/fixtures/home/.claude, so trace discovery reads the fixture
+    session store instead of the runner's home. Steps that exercise a judged
+    path run with `--provider mock`: it is a test seam rather than a documented
+    provider, and it is what makes a judged verdict deterministic and offline on
+    a runner that has neither a key nor a local model. The prose above names
+    `--local`, which is the real offline answer for a reader.
+    Run with `npx doc-detective`. Config: .doc-detective.json. */}
+
+**Scope:** bulk authoring with `fill`, the one command in tracevals that writes. This page assumes
+the vocabulary from [Declare what to check](/manni/tracevals/declare/) and is about volume and
+trust.
+
+## What `fill` does
+
+`fill` scans a project for instruction artifacts. It asks a model to extract the evals each
+artifact's own instructions already imply, then appends the ones that survive a gate. It needs no
+trace.
+
+This is the only command that touches your files, so here is exactly what it refuses to do:
+
+- **It never modifies an existing eval.** An id collision fails the run.
+- **It only rewrites the frontmatter block.** Everything from the closing `---` onward is
+  byte-identical, including CRLF line endings and a byte-order mark if you had one.
+- **It never writes project rules.** See [below](#project-rules-are-never-written).
+- **It is never called by `run`.** Evaluation is read-only. This is a separate authoring step you
+  invoke on purpose.
+
+## Choose what it reads
+
+With no paths, `fill` detects the project's agent artifacts under `--project`, which defaults to
+the current directory. Name paths to narrow it:
+
+```bash
+npx @hawkeyexl/manni tracevals fill .claude/skills/ .claude/agents/ --dry-run
+```
+
+`--exclude <glob>` drops what you do not want. It takes **one glob per occurrence** and never
+splits on commas, so repeat it:
+
+```bash
+npx @hawkeyexl/manni tracevals fill --exclude '**/vendor/**' --exclude '**/archive/**' --dry-run
+```
+
+There is no `--collection` and no `collections:` fallback here. A docs collection is a set of
+documents, and these are the instruction files an agent runs on. The two are not the same set.
+
+`-c, --config <path>` points at a `manni.config.yaml` somewhere other than the discovered one, and
+`--no-config` ignores config entirely. `run`, `calibrate` and `capture` take the same pair.
+
+## Dry-run first
+
+Always. This is the fastest way to see what the tool thinks of your artifacts with no consequence:
+
+```bash
+npx @hawkeyexl/manni tracevals fill --dry-run
+```
+
+```console
+proposed  .claude/agents/doc-writer.md  +1 (reads-before-editing 0.90) — dry run, not written
+          below 0.7: explains-its-reasoning 0.30
+          needs sharpening: "Produce high-quality work." — "high-quality" has no measurable bar, so no session could fail it
+proposed  .claude/commands/ship-it.md  +1 (reads-before-editing 0.90) — dry run, not written
+          below 0.7: explains-its-reasoning 0.30
+          needs sharpening: "Produce high-quality work." — "high-quality" has no measurable bar, so no session could fail it
+proposed  .claude/skills/fix-bug/SKILL.md  +1 (reads-before-editing 0.90) — dry run, not written
+          below 0.7: explains-its-reasoning 0.30
+          needs sharpening: "Produce high-quality work." — "high-quality" has no measurable bar, so no session could fail it
+proposed  AGENTS.md  +1 (reads-before-editing 0.90) — project rules are never written; copy what you want
+proposed  CLAUDE.md  +1 (reads-before-editing 0.90) — project rules are never written; copy what you want
+
+Threshold 0.7 · 6 evals proposed, none written (dry run)
+```
+
+{/* --dry-run is load-bearing in the steps below: CI separately asserts the fixture corpus is
+    byte-identical afterwards. See the header comment for how the suite is wired. */}
+{/* test {"testId":"fill-dry-run","description":"A dry-run fill proposes evals and writes nothing."} */}
+{/* step {"description":"The dry run succeeds and reports the confidence threshold.","runShell":{"command":"manni tracevals fill test/tracevals/fixtures/project --provider mock --dry-run --no-cache","exitCodes":[0],"stdio":"none written (dry run)"}} */}
+{/* step {"description":"Project rules are proposed but never written.","runShell":{"command":"manni tracevals fill test/tracevals/fixtures/project --provider mock --dry-run --no-cache","exitCodes":[0],"stdio":"project rules are never written"}} */}
+{/* step {"description":"A below-threshold proposal is reported rather than silently dropped.","runShell":{"command":"manni tracevals fill test/tracevals/fixtures/project --provider mock --dry-run --no-cache","exitCodes":[0],"stdio":"below 0.7"}} */}
+{/* test end */}
+
+## Read the proposals
+
+Each line is one artifact. Reading left to right:
+
+- **`proposed` / `filled` / `skipped` / `no-op` / `error`**: what happened to this artifact.
+  `proposed` means nothing was written, either because you passed `--dry-run` or because it is a
+  project-rules file.
+- **`+1 (reads-before-editing 0.90)`**: how many evals were accepted, with each id and the
+  model's self-reported confidence.
+- **`below 0.7: …`**: proposals rejected for confidence, named so you can see what you are missing.
+- **`needs sharpening: …`**: an instruction too vague to test. See
+  [below](#instructions-that-cannot-be-tested).
+
+`-f, --format json` gives you the same report as a structure to script against. The default is
+`pretty`.
+
+## Why a proposal was rejected
+
+Here is where intuition misleads. Confidence *feels* like the filter, so lowering the threshold
+feels like it should let more evals through. It does not. Confidence is the **last** of six
+gates, and **no confidence score overrides any of the five before it**.
+
+Proposals are checked in this order:
+
+<Steps>
+
+1. **`duplicate-name`**: an eval with that id already exists on the artifact.
+
+2. **`grader-not-allowed`**: the grader's scope does not fit this artifact type. Each type has an
+   allowlist:
+
+   | Artifact type | Graders it may use |
+   |---|---|
+   | skill | `ai`, `tool-usage`, `file-access`, `regex` |
+   | slash command | `ai`, `tool-usage`, `file-access`, `regex` |
+   | agent | `ai`, `tool-usage`, `file-access` |
+   | project rules | `ai`, `skill-invoked`, `tool-usage` |
+
+   A slash command carries the skill list unchanged, because it is the same shape of artifact: an
+   injected procedure graded over the span it governed.
+
+   Two exclusions are deliberate. `cost` and `json-output` are **whole-session** graders. Tokens
+   and the session's final message are not attributable to whichever artifact was governing.
+   A budget declared inside one skill would therefore silently constrain everything, so they are
+   never proposed. `turn-count` is windowed and no longer has that problem, but it stayed out of the
+   allowlist: widening it is a separate decision. And `skill-invoked` is excluded from skills, slash
+   commands, and agents, because an artifact asserting that it was itself invoked is permanently
+   green.
+
+3. **`invalid-options`**: the grader itself refused the options. Every grader validates its own
+   options, and a grader that cannot do so is rejected outright.
+
+4. **`ungrounded-target`**: the proposal names something that does not exist here. The target may
+   be a tool absent from the project's vocabulary, or a skill the scan never found. It may be an
+   absolute file path where a repository-relative suffix belongs.
+
+5. **`low-confidence`**: and only now, below `--confidence` (default `0.7`).
+
+6. **Cap.** Survivors are sorted by confidence and truncated to `--max-evals` (default `8`).
+   The cap counts **existing evals too**, so an artifact already carrying eight gets none. The
+   rest are reported as `over per-artifact cap`, so nothing disappears quietly.
+
+</Steps>
+
+That ordering is the point. A high-confidence proposal naming a tool your project does not have is
+still rejected. Confidence can only lose you an eval, never win you one.
+
+<Aside type="tip" title="Re-gating is free">
+The cache stores the raw, **pre-gating** proposal. Re-running with a different `--confidence` or
+`--max-evals` re-gates the cached proposals without another model call.
+</Aside>
+
+## Bound the work
+
+```bash
+npx @hawkeyexl/manni tracevals fill --max-turns 40 --dry-run
+```
+
+`--max-turns` (and `fill.maxTurns`) counts uncached inference calls, one per artifact filled.
+An artifact already in the cache costs none. An artifact the budget cannot cover is reported as
+`skipped` with `(turn budget exhausted)` rather than silently dropped. It is unbounded by default.
+
+The budget is turns, not money. The tool counts the calls it makes and reports that count. It is
+the one number that compares across runs on any provider.
+
+## Run it on this machine
+
+`--local` runs inference with `llama-cpp` on the machine you are sitting at, over
+`tracevals.provider`, the family's `providers.provider`, and an eval's own `provider:`:
+
+```bash
+npx @hawkeyexl/manni tracevals fill --local --dry-run
+```
+
+Use it to see what `fill` makes of a project before any of its content leaves the machine. Pairing
+it with a `--provider` other than `llama-cpp` or `auto` is a usage error, and exits 2.
+
+## Write and review
+
+Drop `--dry-run` to write:
+
+```bash
+npx @hawkeyexl/manni tracevals fill
+```
+
+Everything lands in a reviewable diff. Read it before you commit it. The confidence score is the
+model's opinion of its own proposal; you are the last gate.
+
+Useful knobs:
+
+```bash
+npx @hawkeyexl/manni tracevals fill --confidence 0.85 --max-evals 4 --dry-run
+```
+
+Newly written evals are always `type: regression`, the conservative default; see
+[capability vs regression](/manni/tracevals/reference/evals-schema/).
+
+### What lands beside the evals
+
+The rationale behind a proposal stays report-only. The confidence does not. `fill` records the
+whole machine trail in `metadata.meta-provenance`, in the shape the family's
+[`ai-context`](/manni/meta/proposals/ai-context/) vocabulary defines (proposal 0046):
+
+```yaml
+metadata:
+  evals:
+    - id: reads-before-editing
+      assertion: The session read a file before editing it.
+      grader: ai
+  meta-provenance:
+    - generated-by: <the model that proposed them>
+      evals: [reads-before-editing]
+      confidence: { reads-before-editing: 0.90 }
+```
+
+One entry per model, naming the eval ids it proposed and what it claimed for each. Delete an entry
+once you have reviewed its evals. A surviving entry therefore means unreviewed machine authorship,
+which is the whole point of writing it down.
+
+It is read as well as written. A `meta-provenance` entry naming the judge's own model for an eval's
+id is one of the two axes of the self-preference check. See
+[Trust the judge](/manni/tracevals/judge/).
+
+<Aside type="caution" title="`eval-provenance` is now an error">
+Earlier versions wrote `metadata.eval-provenance`. That key is gone. The `eval-` prefix guard inside
+`metadata` now excepts only `eval-skip`. An artifact still carrying `metadata.eval-provenance`
+therefore fails with a reserved-prefix error and a source line number.
+
+Rewrite it in the shape above, one entry per model, or delete it outright. Deleting is the right
+answer once you have reviewed the evals it records.
+</Aside>
+
+## Instructions that cannot be tested
+
+The `needs sharpening` notes are the most valuable thing on this page and the easiest to skim past.
+
+Sometimes an instruction is too vague to decide, such as *"Produce high-quality work."*. `fill`
+says so, rather than converting it into an assertion that can never fail. A soft eval inflates
+your pass rate and hides the fact that nothing is being checked.
+
+**Treat these as a to-do list for the artifact.** The fix is upstream: rewrite the instruction so a
+session could observably fail it. `"high-quality" has no measurable bar` is telling you the
+instruction does no work.
+
+## Project rules are never written
+
+`CLAUDE.md`, `AGENTS.md`, and `GEMINI.md` get proposals printed for you to copy by hand. They are
+never written automatically. That is a design decision, and here is the reasoning.
+
+Project rules are read by the agent **before it acts**. An eval written into that file would
+tell the agent exactly what it is about to be measured on, which is teaching to the test. The
+measurement stops meaning anything the moment the subject can read it.
+
+So the proposals are printed, and you decide which ones to carry over by hand. The reasoning is
+recorded in [ADR 01005](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/tracevals/01005-fill-proposes-criteria-at-authoring-time.md),
+in the decision log tracevals brought with it.
+
+**Slash commands are written**, like skills and agents. What matters is not whether the agent reads
+the file. What matters is whether it reads that file's frontmatter. Claude Code consumes a command's
+`description`, `argument-hint`, and `allowed-tools` itself, and injects only the body as the prompt.
+An eval block there never reaches the session under test. Project rules are injected verbatim,
+frontmatter included, which is what makes them the exception.
+
+## Where to go next
+
+<CardGrid>
+  <LinkCard
+    title="Check your new evals fire"
+    description="Run against a session you know violated the rule, and confirm the failure names what actually happened."
+    href="/manni/tracevals/get-started/"
+  />
+  <LinkCard
+    title="Every fill flag"
+    description="--confidence, --max-evals, --max-turns, --exclude, --local, --no-cache, --provider, and the JSON report shape."
+    href="/manni/tracevals/reference/cli/"
+  />
+</CardGrid>

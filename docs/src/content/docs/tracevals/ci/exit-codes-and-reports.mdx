@@ -1,0 +1,221 @@
+---
+title: Exit codes & reports
+description: "The 0/1/2 exit-code contract, why needs-review counts as a failure by default, and the three report formats you can keep from a run."
+sidebar:
+  order: 2
+---
+
+import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+**Scope:** the contract a pipeline depends on, meaning what the process returns and what it can
+leave behind. Installing the gate is [Run it in CI](/manni/tracevals/ci/); the full field-by-field
+report structure is in the
+[reference](/manni/tracevals/reference/report-and-exit-codes/).
+
+## The exit-code contract
+
+| Code | Meaning | What it tells you |
+|---|---|---|
+| `0` | every eval passed or was skipped | Nothing to do. |
+| `1` | some eval failed, errored, or needs review | **The agent session** did something worth looking at. In a batch, also a corpus the run stopped measuring. See [A batch that ran out of budget](#a-batch-that-ran-out-of-budget). |
+| `2` | tracevals could not run | **The tool** could not do its job, through bad usage, an unreadable trace, an unknown format, or a nonexistent path. |
+
+The `1` versus `2` distinction is the most useful thing on this page. `1` means the check worked and
+the answer was bad; `2` means you never got an answer. A pipeline that treats them identically will
+eventually report a broken trace path as an adherence violation.
+
+On `2`, the message is written to stderr and prefixed with the command you typed:
+
+```
+manni: no trace given; pass a trace file or run `manni tracevals list`
+```
+
+`fill` uses the same contract: `0` normally, `1` when any artifact result has status `error`, `2`
+for operational failures, including a numeric flag out of range.
+
+{/* Doc Detective inline tests: the exit codes below are the ones the local
+    build returns, exposed as `manni` via `npm link`, over this repository's
+    committed fixtures. */}
+{/* test {"testId":"exit-code-contract","description":"The documented exit codes hold against the fixture corpus."} */}
+{/* step {"description":"A run with a failing eval exits 1.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1]}} */}
+{/* step {"description":"A corpus with nothing to report exits 0.","runShell":{"command":"manni tracevals run --all-projects --since 520w --limit 5 --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[0]}} */}
+{/* step {"description":"An operational error exits 2 and names itself on stderr.","runShell":{"command":"manni tracevals run ./does-not-exist.jsonl --deterministic-only","exitCodes":[2],"stdio":"manni:"}} */}
+{/* test end */}
+
+## The third outcome
+
+An eval has five possible outcomes, not two:
+
+| Outcome | Meaning | Counts as failure? |
+|---|---|---|
+| `pass` | the eval held | no |
+| `fail` | the eval was violated | yes |
+| `error` | the check itself broke | yes |
+| `needs-review` | the judge did not reach confident agreement | **yes, by default** |
+| `skipped` | the check did not run | no |
+
+`needs-review` is the one that surprises pipelines. It is a **designed** outcome. When an ensemble
+of judge runs does not land confidently in the pass or fail zone, tracevals declines to decide.
+It routes the eval to a human instead. Errored judge runs count against consensus, which means they
+can push an eval into review. They can never push one into a silent pass.
+
+By default that counts as a failure, on the reasoning that an unreviewed ambiguous result should not
+merge quietly. If your pipeline has somewhere better to send those, change it:
+
+```yaml title="manni.config.yaml"
+tracevals:
+  failOnNeedsReview: false
+```
+
+Now `needs-review` no longer contributes to a non-zero exit. It still appears in the report and in
+the summary counts, so you can surface it without blocking on it.
+
+To decide per invocation instead, override it on the command line. That lets a strict pre-merge job
+and a lenient nightly one share one config:
+
+```bash
+npx @hawkeyexl/manni tracevals run <trace> --no-fail-on-needs-review
+```
+
+`--fail-on-needs-review` forces the opposite. Passing neither leaves the config value in force.
+
+<Aside type="tip" title="Decide this before you meet it">
+Pick a policy when you install the gate. Meeting `needs-review` for the first time as a red build
+nobody can explain is the avoidable version of this.
+</Aside>
+
+`skipped` never fails a run, and it has four unrelated causes:
+
+| Cause | What it looks like |
+|---|---|
+| a `--deterministic-only` run | every judged eval, with the reason naming the flag |
+| an exhausted turn budget | the reason names the budget, and the batch says so beside the headline |
+| a `cost` grader on a trace with no usage data | `no cost data (maxUsd not checkable)` |
+| an artifact that opted out | the eval's own `metadata.eval-skip` |
+
+Each is listed with its reason in the report. See
+[Read a failing eval](/manni/tracevals/triage/#why-something-was-skipped).
+
+## A batch that ran out of budget
+
+`--max-turns` (and [`judge.maxTurns`](/manni/tracevals/reference/configuration/#judge)) is a
+ceiling on the **whole invocation**, shared across every trace in a batch. That is deliberate: one
+judge, one budget, so fifty traces cannot spend fifty times the configured cap. A turn is one
+ensemble run, and a cached ensemble costs none.
+
+The consequence is that a budget can run out *part way through the corpus*. Every remaining judged
+eval is then `skipped`. Nothing failed and nothing errored, so scoring the batch on those two
+counts alone would exit `0` after judging four traces out of fifty. **It does not.** A batch cut
+short by its own budget exits `1`, says so beside the headline, and carries a `budget` block:
+
+```
+manni tracevals — 1 trace(s)
+1 passed · 0 failed · 0 unreadable
+BUDGET EXHAUSTED  1 eval(s) across 1 trace(s) were never judged — judge turn budget exhausted (0)
+```
+
+In `--format json`:
+
+```json
+"budget": {
+  "skippedEvals": 1,
+  "traces": 1,
+  "reason": "judge turn budget exhausted (0)"
+},
+"exitCode": 1
+```
+
+Exit `1` rather than `2`, because the report is real: the traces that were judged carry genuine
+verdicts and are worth keeping. The same reasoning makes a selector matching **no** trace
+exit `2`, since there is nothing to keep in that case. Neither may quietly exit `0`.
+
+<Aside type="tip" title="Raise the ceiling, or narrow the corpus">
+The warning names both remedies. A gate that keeps hitting this is budgeted for one trace and
+pointed at fifty. Or it is judging evals a `--deterministic-only` job could have answered for free.
+</Aside>
+
+## Keep the report
+
+`run` writes its report to stdout in one of three formats, and `--output` additionally writes it to
+a file.
+
+```bash
+npx @hawkeyexl/manni tracevals run <trace> --format markdown --output tracevals-report.md
+```
+
+| Format | Use it for |
+|---|---|
+| `pretty` (default) | reading in a terminal, colored, with vote splits on non-passing judged evals |
+| `json` | anything programmatic; the full report structure |
+| `markdown` | a build summary or a PR comment |
+
+The markdown format renders as tables:
+
+```markdown
+# manni tracevals report
+
+- **Trace**: `/path/to/session.jsonl`
+- **Source**: claude-code (claude-opus-4-8)
+- **Project**: `/work/demo-project`
+- **Turns**: 2
+
+## Evals
+
+| Outcome | Artifact | Eval | Grader | Detail |
+|---|---|---|---|---|
+| pass | fix-bug | used-read | tool-usage |  |
+| fail | fix-bug | forbidden-tool | tool-usage | tool Bash was used 1 time(s) but must not be |
+| pass | fix-bug | no-force-push | command |  |
+| needs-review | fix-bug | refactor-preserved-intent | human | awaiting human review |
+| skipped | CLAUDE.md | adheres-to-artifact (implicit) | ai | ai evals skipped (deterministic-only run) |
+
+## Artifact coverage
+
+| Resolved | Kind | Ref | Availability | Where |
+|---|---|---|---|---|
+| yes | skill | fix-bug | used | `/work/demo-project/.claude/skills/fix-bug/SKILL.md` |
+| no | agent | Explore | used | built-in agent (no definition file) |
+| yes | project-rules | project rules | used |  |
+
+## Availability
+
+- 3 skill(s) offered, 1 used, 2 never used
+- 1 agent(s) offered, 1 used, 0 never used
+
+## Warnings
+
+- 1 unparseable JSONL line(s) were skipped
+
+**9 eval(s)** — 2 pass, 1 fail, 0 error, 1 needs-review, 5 skipped.
+```
+
+The last coverage row has an empty location on purpose. Project rules resolve as one aggregated
+entry covering several files, so it is resolved with no single path. Every location it checked is in
+the entry's `tried` list. See
+[Reports & exit codes](/manni/tracevals/reference/report-and-exit-codes/#the-location-shown-for-an-entry).
+
+`--format json` emits the same run as a structured document. That document carries trace metadata,
+per-eval outcomes with findings and consensus, and the coverage list including every location that
+was tried. It also carries warnings, summary counts, turn telemetry, and duration. Every field is
+documented in [Reports & exit codes](/manni/tracevals/reference/report-and-exit-codes/).
+
+<Aside title="The commands are re-run, so the samples stay true">
+Every command that produces output on this page runs on every push. It runs against this
+repository's committed fixtures, through the Doc Detective steps in this file's source. A sample
+output nothing re-runs is a sample that will eventually be wrong.
+</Aside>
+
+## Where to go next
+
+<CardGrid>
+  <LinkCard
+    title="The full report structure"
+    description="Every field in the JSON report, the history file format, and what each outcome carries."
+    href="/manni/tracevals/reference/report-and-exit-codes/"
+  />
+  <LinkCard
+    title="Decide whether to trust the judge"
+    description="Why needs-review exists, how consensus is computed, and what an errored run does to a verdict."
+    href="/manni/tracevals/judge/"
+  />
+</CardGrid>

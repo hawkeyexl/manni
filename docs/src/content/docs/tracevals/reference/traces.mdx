@@ -1,0 +1,228 @@
+---
+title: Traces reference
+description: Supported trace formats, how the session store is found, the project-slug rule, and what CLAUDE_CONFIG_DIR changes.
+sidebar:
+  order: 7
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Scope:** where traces come from and what manni tracevals reads out of them. Source of truth:
+`src/tracevals/trace/`, in `detect.ts`, `claude.ts`, and `discover.ts`.
+
+## Supported formats
+
+Format is **sniffed from the content**, not the filename. tracevals scans lines until one identifies
+the format:
+
+| Format | Identified by | Produced by |
+|---|---|---|
+| `claude-session` | `parentUuid` or `sessionId` on a record | Claude Code session files, `~/.claude/projects/<slug>/*.jsonl` |
+| `claude-stream` | `session_id` on a record | `claude -p --output-format stream-json` |
+
+Both normalise into the same `Trace` model, so everything downstream is format-agnostic. The
+`TraceSource` union is currently just `claude-code`; it is the seam for future adapters.
+
+Lines that parse but identify nothing are skipped rather than treated as an error, so a leading
+metadata record does not defeat detection. `{"type":"summary"}` is one such line.
+
+### Detection errors
+
+All exit `2`, on stderr, prefixed `manni: `:
+
+| Message | Cause |
+|---|---|
+| `trace is not JSONL (supported formats: …)` | The file is not line-delimited JSON at all. |
+| `unrecognized trace format (supported formats: …)` | Parseable JSONL, but no record carried a recognised key. |
+| `empty or unparseable trace file (supported formats: …)` | Nothing in the file parsed. |
+
+## What is extracted
+
+| Field | Source |
+|---|---|
+| `skillInvocations` | `Skill` tool calls (`input.skill`, `via: "skill-tool"`) **and** `<command-name>` injections in user text (`via: "command-injection"`, leading `/` stripped, `<command-args>` captured). `via` is load-bearing: a `command-injection` entry names a **slash command**, which [resolution](/manni/tracevals/declare/coverage/) later decides is a command file, a skill, or a built-in |
+| `agentSpawns` | the `Agent` tool's `input.subagent_type`, plus its `description` |
+| `fileAccesses` | `Read` / `Write` / `Edit` `input.file_path`, mapped to op `read` / `write` / `edit` |
+| `toolCalls` | every tool call, with a sidechain flag |
+| `turnCount` | non-sidechain user prompts. The stream format overrides this with `result.num_turns` |
+| `usage` | **stream-json only**, from `result.total_cost_usd` and token counts |
+| `assistantTexts`, `userMessages` | message text, used by the `regex` and `json-output` graders |
+| `availability` | the roster the session was **offered**: skills, agents, tools, and MCP servers. See [The availability roster](#the-availability-roster) |
+
+<Aside type="caution" title="Session files carry no cost data">
+`usage.totalCostUsd` comes only from a stream-json `result` record. Claude Code session files do not
+have it, which is why a [`cost` grader](/manni/tracevals/reference/graders/) skips rather than passes
+against them. This is what the **graded session** spent, and it is unrelated to what tracevals
+spends, which is counted in turns.
+</Aside>
+
+Unparseable lines are tolerated and counted, surfacing as a warning rather than an error:
+
+```
+Warnings
+  ! 1 unparseable JSONL line(s) were skipped
+```
+
+Session bookkeeping records become `meta` events and contribute nothing to the conversation:
+`queue-operation`, `attachment`, `last-prompt`, `custom-title`, `summary`, `mode`, and `pr-link`.
+Three kinds of `attachment` are the exception. They are read for the availability roster below.
+
+## The availability roster
+
+Everything above describes what the session **used**. The roster describes what it was **offered**,
+which is the only way to notice the skill that should have fired and didn't.
+
+Claude Code records it as structured `attachment` records, so it is recoverable exactly and
+**retroactively, so every session already on your disk has it**:
+
+| `attachment.type` | Becomes |
+|---|---|
+| `skill_listing` | `availability.skills`, with names and descriptions parsed from the listing text |
+| `agent_listing_delta` | `availability.agents`, the `subagent_type`s, with descriptions and tool grants |
+| `deferred_tools_delta` | `availability.tools`, plus `availability.mcpServers` with a `pending`, `needs-auth`, or `failed` status |
+
+Each entry is one **stretch** of availability:
+
+```jsonc
+{
+  "kind": "skill",
+  "name": "writing-toolkit:technical-writer",
+  "description": "Use when creating clear, accurate, user-focused documentation.",
+  "offeredAt": 7,        // ordinal in trace.events where it appeared
+  "withdrawnAt": 412     // absent while still offered
+}
+```
+
+A name withdrawn and later re-offered produces **two** entries rather than one with a hole, so
+`availableAt(entries, index)` is a plain filter. Availability really is time-varying. A
+directory-scoped skill appears mid-session when work moves into its tree. The exported helper
+answers "what was on the menu at this point" rather than only "at some point".
+
+<Aside type="caution" title="No roster is *unknown*, not *empty*">
+`availability.recorded` is `false` for traces that carry no listing records, meaning older sessions
+and every `claude-stream` transcript. Reporting "0 skills offered" there would turn a missing answer
+into a wrong one, so the report says the roster is unknown instead.
+</Aside>
+
+### What the roster does not carry
+
+- **Descriptions are best-effort.** The listing text is budget-truncated near 30,000 characters; past
+  that, Claude Code lists skills by name alone. One real session offers 527 skills and describes 42
+  of them. An absent description means *not recorded*, never "has none".
+- **Tools have no descriptions at all.** The tool listing repeats each tool's own name.
+- **Artifact bodies and their hashes are not in the trace.** The roster settles what was *available*,
+  not what a `SKILL.md` said at the time. That is what a [session manifest](#the-session-manifest)
+  is for.
+
+### Subagents have their own roster
+
+A sidecar transcript carries its own listing records, and its set is usually a subset of the
+parent's. Only names the session never saw elsewhere are folded in, tagged with the branch that saw
+them. Replaying a sidecar's listing as the session's would withdraw the parent's whole roster
+mid-session. Dropping it would report a subagent-only skill as never offered.
+
+## Discovery
+
+`manni tracevals list` and the interactive picker scan the session store:
+
+```
+<claude-config-dir>/projects/<project-slug>/*.jsonl
+```
+
+Results are sorted by modification time, **newest first**, then truncated to `--limit`.
+
+`list` reads no configuration at all, so it takes neither `-c, --config` nor `--no-config`. Its
+selectors are spelled in full: `--project`, `--all-projects`, and `--limit` have no short forms, and
+`-f, --format` is `pretty` or `json`.
+
+```bash
+npx @hawkeyexl/manni tracevals list --all-projects --limit 20 -f json
+```
+
+### The project slug
+
+A project directory maps to a store directory by replacing every non-alphanumeric character with a
+hyphen:
+
+```
+/work/demo-project   →  -work-demo-project
+C:\work\demo-project →  C--work-demo-project
+```
+
+That is Claude Code's own rule, reproduced so `--project` can find the right directory. The helper
+is exported as `slugFor()`.
+
+### Listing entries
+
+| Field | Notes |
+|---|---|
+| `file` | Absolute path. Pass this to `run`. |
+| `mtimeMs` | Modification time; the sort key. |
+| `sizeBytes` | File size. |
+| `sessionId` | From the file, when present. |
+| `project` | The recorded working directory. |
+| `firstPrompt` | First non-sidechain user message that does not start with `<command-`, first line only, capped at 200 characters. |
+
+To keep listing fast, only the **first 256 KB** of each file is read for the summary. A session
+whose opening prompt sits past that window shows no `firstPrompt`; it is still fully parsed by `run`.
+
+## `CLAUDE_CONFIG_DIR`
+
+tracevals does not take a switch for where Claude Code keeps its files. It reads
+**`CLAUDE_CONFIG_DIR`**, which is Claude Code's own variable for its configuration directory, and
+looks for the session store in `<dir>/projects`. Unset, it falls back to `~/.claude`.
+
+```bash
+CLAUDE_CONFIG_DIR=./session-store npx @hawkeyexl/manni tracevals list --all-projects
+```
+
+- A **relative** value resolves against the current working directory.
+- The same directory supplies user-level artifacts, meaning `<dir>/skills/`, `<dir>/agents/`, and the
+  plugin store.
+
+Set it to make a run reproducible on a shared CI runner instead of inheriting whatever home the
+runner has. This repository's own docs-as-tests suite sets
+`CLAUDE_CONFIG_DIR=test/tracevals/fixtures/home/.claude` for exactly that reason, so the examples
+here read a fixture session store rather than yours.
+
+<Aside title="It does not affect project lookup">
+Project-level artifacts are found relative to the trace's recorded `cwd`, or to `--project` when you
+pass it. Those are `.claude/skills/`, `.claude/agents/`, and `CLAUDE.md`. `CLAUDE_CONFIG_DIR` only
+moves the *user* and *plugin* halves of the search.
+</Aside>
+
+## The session manifest
+
+A trace records what was *available*, never what an artifact *said*. `manni tracevals capture`
+records that separately, as a **session manifest**. It holds the sha256 of every instruction
+artifact in the project, plus the git SHA, at the moment a session starts. `run` reads it back and turns
+[staleness](/manni/tracevals/declare/coverage/) from an mtime guess into content identity.
+
+| Field | Notes |
+|---|---|
+| `version` | Manifest format version. |
+| `sessionId` | The key `run` joins on. |
+| `capturedAt` | When `capture` ran, ISO-8601. |
+| `hookEvent` | The hook that supplied the payload, or `manual` for a direct run. |
+| `root` | Project root every recorded artifact path is relative to. |
+| `git` | `{ sha, branch?, dirty }` for the commit the session ran against. |
+| `device` | `{ id, platform }`. An opaque digest rather than a hostname, because the question is "same machine or not". |
+| `tool` | `{ name: "manni-tracevals", version }`. |
+| `artifacts` | One entry per instruction artifact, with its digest. |
+| `config` | The resolved `tracevals:` section, redacted. Recorded, not consumed. |
+
+`capture` writes into [`capture.dir`](/manni/tracevals/reference/configuration/#capture), so it reads
+the config file like `run`, `calibrate`, and `fill` do: it takes `-c, --config <path>` and
+`--no-config`. Its `-f, --format` is `pretty` or `json`.
+
+## Naming a trace directly
+
+`run` takes any path; it does not have to live in the session store.
+
+```bash
+npx @hawkeyexl/manni tracevals run ./traces/refactor-session.jsonl --project ./my-repo
+```
+
+This is the pattern for committing a small corpus of representative sessions and re-evaluating them
+whenever instructions change. Pair it with `--project`, because the recorded `cwd` will not exist on
+the machine running the check.

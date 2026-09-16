@@ -1,0 +1,641 @@
+---
+title: Grader reference
+description: Every grader kind. The open enum, the deterministic ones with their options and messages, and the ai, human, and command families.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Scope:** every grader kind, its options, and what it emits. How the judged grader decides is
+[How the judge decides](/manni/tracevals/judge/). Source of truth: `src/tracevals/graders/`.
+
+A deterministic grader decides its question **from the trace alone**: no model call, no inference
+turn, and the same answer every time. Prefer one over the judge whenever it can answer the same
+question.
+
+## The grader vocabulary is an open enum
+
+`grader` accepts **any kebab-case name**. Nothing in the schema branches on the value, so the
+schema does not police it. The **grader registry does, at run time**. That is deliberate: adding a
+grader never needs a new schema version.
+
+The accepted cost is that a name the registry does not know passes validation. It fails during the
+run instead, naming every kind it does know:
+
+```
+  ERROR  fix-bug › no-shell
+         unknown grader kind "llm"; the grader registry knows command, cost, file-access,
+         json-output, regex, skill-invoked, tool-order, tool-usage, turn-count, "ai", and "human"
+```
+
+`llm` is the most likely one you will hit. It was the pre-1.0 spelling of `ai`.
+
+| Kind | Decided by | Inference |
+|---|---|---|
+| `ai` (default) | The ensemble judge | One call per run |
+| `human` | A person, per session | None |
+| `command` | An executable you name, over the trace | None of its own |
+| `tool-usage`, `tool-order`, `skill-invoked`, `file-access`, `turn-count`, `cost`, `regex`, `json-output` | The trace alone | None |
+
+## Shared behavior
+
+**Options are validated before grading.** Every option-configured grader validates its own options,
+so a malformed eval produces an `error` outcome that names the offending option:
+
+```
+  ERROR  fix-bug › forbidden-tool
+         tool-usage: options.expect must be one of: used, not-used
+```
+
+Validation happens twice, at run time and again when `fill` proposes an eval. That second pass is
+why a grader that cannot validate its options can never be proposed. That is exactly how `command`
+is kept out of `fill`.
+
+**Every eval grades the window its artifact governed.** A skill's eval is not a statement about the
+whole session. It is a statement about the turns that ran under that skill. The window is derived
+from the artifact's **type**; there is nothing to declare and no option to set.
+
+| Artifact type | Window |
+|---|---|
+| skill | From that skill's invocation until the next skill or slash command takes over, or to the end of the session |
+| slash command | The same rule, from each `/name` injection until the next injection takes over. A `Skill` tool call can close a command's window but never opens one |
+| agent | Only that `subagent_type`'s own branch, and anything it delegated inside it |
+| project rules | The whole session, since `CLAUDE.md` governs everything |
+
+So a `Bash` call that happened *before* a skill was invoked does not count against that skill's
+`expect: not-used`. An `Edit` the main session made does not count against an agent that only
+read. Nothing outside the window is evidence about the artifact.
+
+`tool-usage`, `file-access`, `skill-invoked`, `regex`, and `turn-count` are windowed, and so is the
+transcript sent to the judge for an `ai` eval. That also makes a judged skill eval markedly cheaper
+than judging the whole session. `tool-order`, `cost` and `json-output` are session-level by nature;
+see their sections.
+
+**An empty window is skipped, never passed.** A skill that resolved but was never invoked governed
+nothing, and so did an agent that was spawned but recorded no turns. There is no evidence either
+way, so every eval on it reports `skipped` with the reason spelled out:
+
+```
+  SKIP   doc-writer › doc-writer-wrote-docs
+         agent "doc-writer" was spawned but recorded no subagent turns (no inline
+         sidechain records and no sidecar transcript), so it governed no turns
+```
+
+That applies to judged and `human` evals too. An empty window never reaches the judge, because a
+judge shown the parent session would answer about work the artifact had no part in.
+
+| Skip reason | Cause |
+|---|---|
+| `skill "<name>" was never invoked in this trace, so it governed no turns` | the skill resolved but the session never invoked it |
+| `slash command "/<name>" was never invoked in this trace, so it governed no turns` | the command file resolved but the session never ran it |
+| `agent "<name>" was spawned but recorded no subagent turns (…), so it governed no turns` | the spawn is in the trace but its transcript is not |
+| `agent "<name>" was never spawned in this trace, so it governed no turns` | no spawn for that `subagent_type` |
+
+### Conditional triggers
+
+`when` makes an eval **arm only for the sessions it is about**. That is what lets you check the
+artifact that *should* have been used and wasn't.
+
+**Every windowed grader takes it**, meaning `tool-usage`, `skill-invoked`, `file-access`, `regex`,
+and `turn-count`. The predicate is evaluated over the artifact's window, and those are the graders
+that have one. `cost` and `json-output` grade the whole session by nature, so they **reject** `when`
+rather than accept an option they could not honour:
+
+```
+  ERROR  CLAUDE.md › budget
+         cost: options.when is not supported by the cost grader, which grades the
+         whole session rather than a window
+```
+
+You cannot hang an eval on a skill that never loaded, because nothing resolves it and so nothing
+plans it. That is the structural trick. But `CLAUDE.md` resolves for **every** session, and
+`skill-invoked` is allowed there. Declare the check on the rules file, and let `when` keep it quiet
+the rest of the time.
+
+```yaml
+# in CLAUDE.md
+metadata:
+  evals:
+    - id: docs-work-uses-the-writing-skill
+      assertion: A session that edits documentation invokes the writing skill.
+      grader: skill-invoked
+      options:
+        skill: writing-toolkit:technical-writer
+        expect: used
+        when:
+          file-access: "docs/**"
+```
+
+**Three outcomes, and the first one is the point.**
+
+| Trigger | Grader's own answer | Outcome |
+|---|---|---|
+| not matched | none | `skipped`, with the unmet condition named |
+| matched | assertion unmet | `fail` |
+| matched | assertion met | `pass` |
+
+An unmatched trigger is **never a pass**. A check that never armed has not been satisfied, and
+calling it one would manufacture green from an eval that did not run:
+
+```
+  SKIP   CLAUDE.md › docs-work-uses-the-writing-skill
+         trigger not met (whole session): no file matching "docs/**" was accessed
+```
+
+{/* Doc Detective inline test: the skip wording above is produced by running the
+    CLI against this repository's committed fixtures, whose CLAUDE.md declares
+    exactly this eval. The docs-as-tests run exposes the local build as `manni`
+    with `npm link`, and sets CLAUDE_CONFIG_DIR=test/tracevals/fixtures/home/.claude
+    so trace discovery reads the fixture session store. A regression that let an
+    unarmed trigger pass fails here. */}
+{/* test {"testId":"unarmed-trigger-skips","description":"An unmatched trigger reports skipped, never pass."} */}
+{/* step {"description":"An unmatched trigger is skipped with its reason.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"trigger not met"}} */}
+{/* test end */}
+
+**Conditions**
+
+Every one is a pure trace fact, evaluated over [the artifact's window](#shared-behavior). All listed
+conditions must hold.
+
+| Condition | Type | Matches when |
+|---|---|---|
+| `file-access` | glob | Any file the window touched matches the glob. |
+| `tool-used` | string | That tool was called in the window. |
+| `prompt-matches` | regex | Any user prompt in the window matches. |
+| `turn-count-above` | integer | The window's turn count is **strictly** greater. |
+
+The glob understands `**` (spans directories, and matches the directory itself), `*` (within one
+path segment), and `?` (one character). It anchors at a path-segment boundary, so `docs/**` matches
+`/anywhere/docs/guide.md` but not `/anywhere/docsite/guide.md`. You write the path as it reads in
+the repository, not as it reads on the machine that recorded the trace. It is the same matcher
+[`file-access`](#file-access) uses for its `path`, so a pattern means one thing everywhere.
+
+**An unknown condition is an error, not a typo you get away with.** A silently ignored `file-acess`
+would leave the eval armed on every session, which is the exact failure `when` exists to prevent:
+
+```
+  ERROR  CLAUDE.md › docs-work-uses-the-writing-skill
+         skill-invoked: options.when.file-acess is not a known condition; expected
+         one of: file-access, tool-used, prompt-matches, turn-count-above
+```
+
+A `when: {}` with no conditions is rejected for the same reason. It arms always while reading as a
+scoped check.
+
+<Aside title="An empty window still wins">
+If the artifact governed no turns at all, that reason is reported instead of the trigger's. No
+evidence outranks "the trigger did not fire".
+</Aside>
+
+**Only `error` severity fails an eval.** A finding at `warning` or `notice` is reported and the eval
+passes. Severity is set per eval; see the
+[evals schema](/manni/tracevals/reference/evals-schema/).
+
+### Shared validation messages
+
+| Message | Cause |
+|---|---|
+| `options.<key> is required` | a required option is absent |
+| `options.<key> must be one of: a, b` | an enum option has an unrecognized value |
+| `options.<key> must be a finite number` | a numeric option is not a number, or is `NaN`/infinite |
+| `options.<key> must be a whole number` | a numeric option needs an integer |
+| `options.<key> must be at least <n>` | a numeric option is below its floor |
+| `options.<key> must be a boolean` | a boolean option is not one |
+| `options.<max> must be greater than or equal to options.<min>` | inverted bounds |
+| `at least one of options.a or options.b is required` | a grader needs at least one bound and got none |
+
+---
+
+## `tool-usage`
+
+Whether a tool was used, avoided, or used within count bounds.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `tool` | string | **required** | Tool name, matched exactly: `Bash`, `Read`, `Write`, `Edit`, `Agent`, `Skill`, an `mcp__*` name. |
+| `expect` | `used` \| `not-used` | `used` | Direction of the assertion. |
+| `min` | integer ≥ 0 | none | Minimum call count. |
+| `max` | integer ≥ 0 | none | Maximum call count. |
+| `includeSidechains` | boolean | `false` | Count subagent calls that happened *inside* another artifact's window. Not needed on an agent definition. |
+| `when` | object | none | Arm the check only for sessions that match. See [Conditional triggers](#conditional-triggers). |
+
+```yaml
+- id: forbidden-tool
+  assertion: The session never ran shell commands; this skill is edit-only.
+  grader: tool-usage
+  options: { tool: Bash, expect: not-used }
+```
+
+**Sidechains.** Inside a skill's or a project-rules window, only main-chain calls count by default.
+Work the session handed to a subagent is that subagent's, not the skill's. `includeSidechains:
+true` opts into counting it anyway.
+
+**On an agent definition the option does not apply.** An agent's window *is* its branch, and every
+call inside a branch is a sidechain call. Excluding them would empty the window and make the eval
+structurally unable to fail. `{ tool: Edit, expect: not-used }` on `.claude/agents/reviewer.md`
+would have passed however much the reviewer edited. The branch's calls are the subject there, and
+they are counted whatever the option says. `fill` still sets it on agent proposals, which is
+harmless and remains valid.
+
+**Failure messages**
+
+| Message |
+|---|
+| `tool <tool> was used <n> time(s) but must not be` |
+| `tool <tool> was never used` |
+| `tool <tool> was used <n> time(s); at least <min> required` |
+| `tool <tool> was used <n> time(s); at most <max> allowed` |
+
+**Validation.** `tool` required; `expect` must be a valid enum value; `min` and `max` must be
+non-negative integers with `min ≤ max`. Two contradictions are caught up front, so you never get an
+unsatisfiable check:
+
+- `options.min is unsatisfiable with expect: not-used`
+- `options.max of 0 is unsatisfiable with expect: used`
+
+---
+
+## `tool-order`
+
+Whether one tool was used **before** another. `tool-usage` answers whether something happened and
+how often; a large share of what an instruction artifact asks for is about sequence. Read before you
+write. Run the tests after you edit. A suite built only on `tool-usage` would see that `Read` and
+`Write` both happened and miss a session that wrote first and read afterwards.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `before` | string | **required** | The tool that must come first. |
+| `after` | string | **required** | The tool that must follow it. |
+| `beforeInputMatch` | string | none | A regular expression the `before` call's input must match, so "read *this* file" is a different claim from "read anything". |
+| `afterInputMatch` | string | none | The same for the `after` call. |
+| `includeSidechains` | boolean | `false` | Count subagent calls as well as main-chain ones. |
+
+```yaml
+- id: reads-before-writing
+  assertion: The session read a source file before writing to src/.
+  grader: tool-order
+  options:
+    before: Read
+    after: Write
+    afterInputMatch: "src/"
+```
+
+**The semantics are the weakest useful ones.** *Some* occurrence of `before` must precede *some*
+occurrence of `after`. Requiring every `after` to be preceded by a `before` would fail an otherwise
+adherent session that did the right thing once and then repeated the second half.
+
+**Neither call happening is a pass.** An ordering claim has nothing to bite on when the tools were
+never used. A suite that wants the calls to happen at all says so with `tool-usage`, which is the
+grader for that question.
+
+**Failure messages**
+
+| Message |
+|---|
+| `<after> was never used, so it could not follow <before>` |
+| `<after> was used without <before> ever being used first` |
+| `<before> was only used after <after>` |
+
+An input match is named in the message, as `<tool> matching /<pattern>/`, so a failing eval says
+which call it was looking for.
+
+**Validation.** `before` and `after` are required strings; each input match must be a string and
+must compile. A pattern that will not compile is the eval's bug, not the session's:
+`options.beforeInputMatch is not a valid regular expression (<detail>)`.
+
+This grader reads the session's tool calls in event order, not one artifact's window. Ordering
+across a whole session is what it answers.
+
+---
+
+## `skill-invoked`
+
+Whether a named skill was invoked. Detects both `Skill` tool calls and `/command` injections.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `skill` | string | **required** | Skill name as it appears in the trace, including any `plugin:skill` prefix. |
+| `expect` | `used` \| `not-used` | `used` | Direction of the assertion. |
+| `when` | object | none | Arm the check only for sessions that match. See [Conditional triggers](#conditional-triggers). |
+
+**Failure messages**
+
+| Message |
+|---|
+| `skill <skill> was never invoked` |
+| `skill <skill> was invoked but must not be` |
+
+<Aside title="Not available on skills or agents">
+`fill` never proposes `skill-invoked` on a skill or an agent definition. A skill asserting it was
+itself invoked is permanently green. It is allowed on project rules, where "this workflow must go
+through the review skill" is a real assertion. Project rules are also the one artifact type whose
+window is the whole session, which is what makes the question answerable.
+</Aside>
+
+---
+
+## `file-access`
+
+Whether a file was read, written, or edited.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `path` | string | **required** | A repository-relative path, matched at a segment boundary. Not an absolute path. |
+| `op` | `read` \| `write` \| `edit` | any op | Restrict to one operation. |
+| `expect` | `accessed` \| `not-accessed` | `accessed` | Direction of the assertion. |
+| `when` | object | none | Arm the check only for sessions that match. See [Conditional triggers](#conditional-triggers). |
+
+**Matching is a trailing match anchored at a path segment, separator-normalized, and
+case-insensitive**, so an eval written on one platform works on another. `src/app.ts` matches
+`C:\work\demo\src\app.ts` and `/home/you/demo/src/app.ts` alike.
+
+**Anchored, not a bare suffix.** `db/migrations` matches `.../db/migrations` and does *not* match
+`.../legacydb/migrations`, which is a different directory. It is exactly the matcher
+[`when`](#conditional-triggers) uses, so `**`, `*`, and `?` work here too. A `path` of `src/**`
+covers the tree.
+
+```yaml
+- id: touches-migrations
+  assertion: The session must not edit database migrations.
+  grader: file-access
+  options: { path: db/migrations, op: edit, expect: not-accessed }
+```
+
+**Failure messages**
+
+| Message |
+|---|
+| `file <path> was never accessed (op: <op>)` |
+| `file <path> was accessed (op: <op>) but must not be` |
+
+**Validation.** `path` required; `op` and `expect` must be valid enum values. `fill` additionally
+rejects an absolute path: `options.path must be a repository-relative suffix, not "<path>"`.
+
+---
+
+## `turn-count`
+
+Whether the conversation stayed within bounds. A turn is a non-sidechain user prompt.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `min` | integer ≥ 0 | none | Minimum turns. |
+| `max` | integer ≥ 0 | none | Maximum turns. |
+| `when` | object | none | Arm the check only for sessions that match. See [Conditional triggers](#conditional-triggers). |
+
+At least one of `min` or `max` is required.
+
+**Failure messages**
+
+| Message |
+|---|
+| `<n> turn(s); at most <max> allowed` |
+| `<n> turn(s); at least <min> required` |
+
+`turn-count` is windowed like the other counting graders. A bound declared on a skill measures the
+prompts that arrived while that skill was governing. One declared on an agent measures that agent's
+own brief and follow-ups, rather than the nested subagents it spawned.
+
+<Aside title="Still not proposed by fill">
+`fill` proposes none of `turn-count`, `tool-order`, `cost`, or `json-output`. For `tool-order`,
+`cost` and `json-output` that is inherent: they measure the session as a whole (see their
+sections). `turn-count` is windowed and no
+longer constrains a whole session from inside one artifact. Widening the `fill` allowlist is a
+separate decision that has not been taken. Declare it by hand.
+</Aside>
+
+---
+
+## `cost`
+
+Whether the **graded session** stayed within a spending or token budget. This is about what the
+agent session cost, not about what tracevals spends running the check; tracevals' own budget is
+`--max-turns`, and it counts turns.
+
+**Session-level by nature, and deliberately not windowed.** Usage is reported per assistant message
+for the whole context. Charging a slice of it to whichever artifact happened to be governing would
+be an invented number. A `cost` eval therefore grades the session no matter which artifact declared
+it. That includes one whose window is empty, where a session that blew its budget still fails rather
+than skipping.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `maxUsd` | number ≥ 0 | none | Maximum session cost in USD. |
+| `maxTokens` | number ≥ 0 | none | Maximum input plus output tokens. |
+
+At least one is required. Each budget is evaluated **independently**, so an unavailable one does not
+suppress a checkable one.
+
+**Failure messages**
+
+| Message |
+|---|
+| `session cost $<cost>; at most $<maxUsd> allowed` |
+| `session used <n> tokens; at most <maxTokens> allowed` |
+
+**Skips when it cannot tell.** Claude Code session files do not carry cost data; only `claude -p`
+stream-json transcripts do. When no configured budget is checkable, the eval is skipped with the
+reason spelled out:
+
+```
+trace carries insufficient cost data: no cost data (maxUsd not checkable)
+```
+
+That is deliberate. A budget check that cannot see the numbers reports honestly instead of passing
+by default.
+
+---
+
+## `regex`
+
+Whether a pattern appears in the session's text.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `pattern` | string | **required** | A JavaScript regular expression source. |
+| `flags` | string | none | Regular expression flags, for example `i` or `m`. |
+| `on` | `assistant` \| `user` \| `all` | `assistant` | Which text to search. |
+| `expect` | `match` \| `no-match` | `match` | Direction of the assertion. |
+| `when` | object | none | Arm the check only for sessions that match. See [Conditional triggers](#conditional-triggers). |
+
+**Failure messages**
+
+| Message |
+|---|
+| `pattern /<pattern>/ never matched <on> text` |
+| `pattern /<pattern>/ matched <on> text but must not` |
+
+**Validation.** `flags` is checked on its own first, then the pattern is compiled **with** those
+flags. An invalid flag is therefore reported as a flag problem instead of a confusing pattern error:
+
+- `options.flags must be a string`
+- `options.flags is invalid: <detail>`
+- `options.pattern is not a valid regular expression: <detail>`
+
+---
+
+## `json-output`
+
+Whether the session's final assistant message is JSON matching a schema.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `schema` | object | **required** | A JSON Schema the output must validate against. |
+
+```yaml
+- id: emits-report
+  assertion: The session's final message is a report object.
+  grader: json-output
+  options:
+    schema:
+      type: object
+      required: [status, findings]
+      properties:
+        status: { enum: [ok, failed] }
+        findings: { type: array }
+```
+
+**Failure messages**
+
+| Message |
+|---|
+| `session produced no assistant text to validate` |
+| `final assistant output is not valid JSON` |
+| one finding per schema violation, from the validator |
+
+**Validation.** The option is shape-checked up front
+(`options.schema is required and must be a JSON Schema object`), and the schema is compiled at grade
+time. A schema that fails to compile becomes an options error instead of a crash.
+
+Also session-level, and not windowed. It looks at the last assistant message of the entire session.
+An eval declared on one of several artifacts still measures the same final output.
+
+---
+
+## `ai`
+
+The default. The assertion goes to the ensemble judge, which reads the rendered trace and votes. The
+transcript it reads is the artifact's **window**, not the whole session (see
+[Shared behavior](#shared-behavior)). The digest names the scope it was cut to, and an artifact that
+governed nothing is skipped before any request is made. Takes no `options`; it is steered by
+`assertion`, `evidence`, and `examples` instead. An eval may name `provider:`, `model:` or `runs:`
+to be judged by a specific configured provider, a specific model, or a deeper ensemble than the
+run's default. A provider name the run cannot construct is that eval's own `error`, never a silent
+fall back to the default model.
+
+Skipped entirely under `--deterministic-only`.
+
+## `human`
+
+Queues the eval for a person. It always reports `needs-review`, never `pass` or `fail`. The one
+exception is an artifact that governed no turn in this trace. There is nothing to review, so the
+eval is `skipped` with the reason given.
+
+Unlike the page-side vocabulary this shares its shape with, a `human` verdict is **judged per
+session and never cached**. Every trace is new, so there is nothing a previous verdict could still
+be true about. It needs no provider and no inference turn, so it reports in `--deterministic-only`
+runs too.
+
+Whether a `needs-review` outcome fails the run is a config decision. See `failOnNeedsReview` in the
+[configuration reference](/manni/tracevals/reference/configuration/).
+
+## `command`
+
+Runs an executable over the trace and grades by exit code.
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `command` | array of strings | none | argv. `{trace}` is replaced in every element with the trace's path. |
+| `success-exit-codes` | array of integers | `[0]` | Exit codes that count as a pass. |
+| `timeout-ms` | integer | `30000` | How long the command may run. |
+| `generated-assertion-hash` | string | none | sha256 of `assertion` when the command was generated. Never legal without `command`. |
+
+These live on the eval entry, not in `options`, and the schema enforces that they only appear
+alongside `grader: command`.
+
+```yaml
+- id: no-force-push
+  assertion: The session never force-pushed.
+  grader: command
+  command: ["node", "tracevals/no-force-push.mjs", "{trace}"]
+  timeout-ms: 15000
+```
+
+The command runs with its working directory set to the project root artifact resolution walked from.
+A repo-relative script path therefore resolves the way you wrote it.
+
+<Aside type="caution" title="This runs code from the artifact">
+A command eval executes a program named in an artifact's frontmatter, and artifacts are resolved
+from **the trace's own project tree**. Running an eval over someone else's trace can therefore run
+code that repository declares. This is on by default
+([ADR 01011](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/tracevals/01011-execute-command-graded-evals.md)).
+
+Two properties bound it. argv is spawned with **no shell**, so `;`, `&&`, and `$(...)` in an
+artifact reach the process as literal argument text. And `timeout-ms` always has a finite value, so
+a hung check fails its own eval rather than the run.
+
+**To evaluate a trace without running anything it declares**, pass `--no-commands`. See below.
+</Aside>
+
+Four states are an `error` rather than a verdict, because none of them can honestly be called a
+pass:
+
+| State | Message |
+|---|---|
+| `grader: command` with no `command` | `command-graded eval has no \`command\`…` |
+| `generated-assertion-hash` no longer matches the assertion | `assertion has changed since the command was generated…` |
+| The executable cannot be spawned | `could not run command: …` |
+| The command overruns its timeout | `command timed out after <n>ms: …` |
+
+The hash is the second half of a generation contract. A tool that writes a check script from an
+assertion also writes the hash, so a later edit to the assertion is detectable. tracevals does not
+generate check scripts. It reports the mismatch and leaves the regeneration to you.
+
+`fill` never proposes a command grader. Writing an executable into an artifact is a decision a human
+makes.
+
+### Turning execution off
+
+Pass `--no-commands`, or set the config key, to evaluate a trace without running anything its
+project declares:
+
+```yaml title="manni.config.yaml"
+tracevals:
+  graders:
+    command:
+      enabled: false
+```
+
+The eval reports **`skipped`**, with the reason stated, never `pass`:
+
+```
+  SKIP   fix-bug › no-force-push
+         command execution is disabled (--no-commands / graders.command.enabled: false)
+```
+
+An unrun check has not been satisfied, so it never counts as clean. Nothing else about the run
+changes. The verdicts and the exit code are the same as a run without the flag.
+
+The default stays **on**. An eval that declares a command is asking for that command to run. A tool
+that silently refused would make the vocabulary's own worked example look broken. What is new is the
+lever for the person taking the risk
+([ADR 01019](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/tracevals/01019-add-an-opt-out-for-command-execution.md),
+which amends 01011 rather than reversing it).
+
+For a run that both executes nothing *and* sends nothing, combine it with `--deterministic-only`:
+
+```bash
+npx @hawkeyexl/manni tracevals run session.jsonl --deterministic-only --no-commands
+```
+
+## Custom graders
+
+The registry accepts new kinds at run time via `registerGrader()`. A grader must implement both
+`grade()` and `validateOptions()`: one that cannot validate its own options can never be proposed by
+`fill`. The built-in graders above are the reference implementations.
+
+Load a grader plugin with `--require <module>` on `run` or `fill`, or name it in the `plugins` list
+in `manni.config.yaml`. `--require` takes **one module per occurrence** and is repeatable; it never
+splits on commas, and it **adds to** the configured list rather than replacing it. See
+[Custom graders](/manni/tracevals/extend/custom-graders/).

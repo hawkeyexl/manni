@@ -107,6 +107,7 @@ proposal above is what states how the tool works inside manni.
 |---|---|---|
 | docevals | [docevals/](docevals/README.md) | 00001–00004 and 01000–01045, imported from moose-docevals at 670e62b. Closed at 01045 by [0048](0048-docevals-domain.md); later docevals decisions are in this series |
 | lint | [lint/](lint/README.md) | 01001–01008, imported with the tool. 01007 is superseded by [0050](0050-lint-domain.md) |
+| tracevals | [tracevals/](tracevals/README.md) | 01000–01033, imported from moose-tracevals at fed983b. Closed at 01033 by [0049](0049-tracevals-domain.md); later tracevals decisions are in this series |
 
 ## Dependency order
 

@@ -1,0 +1,235 @@
+---
+title: Glossary
+description: Definitions of the terms manni tracevals uses, from trace and artifact to eval, grader, plan, finding, outcome, consensus, zone, and sidechain.
+sidebar:
+  order: 9
+---
+
+**Scope:** one authority for the vocabulary every other page assumes. Terms are grouped by where
+they appear in the pipeline rather than alphabetically, because most of them only make sense in
+order.
+
+## The pipeline, in one line
+
+**trace** → **artifacts** → **evals** → **plans** → **graders** / **judge** → **outcomes** →
+**report**
+
+---
+
+## Inputs
+
+**Trace**
+: A record of an agent session that already happened, stored as JSONL. tracevals reads traces; it
+never writes them. See [Traces reference](/manni/tracevals/reference/traces/).
+
+**Session store**
+: Where an agent CLI keeps its traces, such as `~/.claude/projects/<project-slug>/*.jsonl` for
+Claude Code. `CLAUDE_CONFIG_DIR` moves the root. Scanned by `manni tracevals list` and the
+interactive picker.
+
+**Project slug**
+: A project directory encoded as a store directory name, by replacing every non-alphanumeric
+character with a hyphen. `/work/demo` becomes `-work-demo`.
+
+**Sidechain**
+: A tool call made *inside a spawned subagent* rather than in the main conversation. Excluded from
+counts by default; `tool-usage` opts in with `includeSidechains: true`. The exception is an eval on
+an agent definition, whose window *is* a branch. There the branch's calls are the subject and are
+always counted. `turnCount` counts only non-sidechain user prompts.
+
+**Turn**
+: One non-sidechain user prompt. What `turn-count` measures.
+
+**Session manifest**
+: The record `manni tracevals capture` writes when a session ends, naming the artifacts it used and
+hashing their contents. It is what turns "this artifact may have changed since the session" into an
+exact answer.
+
+---
+
+## What gets evaluated
+
+**Artifact**
+: An instruction file a session used: a **skill** (`SKILL.md`), an **agent definition**, a **slash
+command** (`.claude/commands/*.md`), or a **project-rules** file (`CLAUDE.md`, `AGENTS.md`,
+`GEMINI.md`). The unit that evals attach to.
+
+**Slash command**
+: A frontmattered markdown file in `.claude/commands/` whose body Claude Code injects as a prompt
+when someone types `/name`. Graded over the span it governed, exactly like a skill.
+
+**Artifact resolution**
+: Mapping each reference in a trace to a file on disk, deterministically, from trace content plus
+filesystem lookup, never a model. See
+[Account for every artifact](/manni/tracevals/declare/coverage/).
+
+**Coverage**
+: The record of every artifact a session referenced and whether it resolved. Reported as a table by
+every reporter. An unresolved reference is a coverage row plus a warning, never a failing eval.
+
+**Built-in agent**
+: An agent that ships with the CLI and has no definition file: `general-purpose`, `claude`,
+`Explore`, `Plan`, `statusline-setup`, `fork`. Always shows as unresolved, by design.
+
+**Built-in slash command**
+: A `/name` that resolved to neither a command file nor a skill file anywhere, such as Claude Code's
+own `/model`, `/compact`, `/clear`. Inferred from the absence of a file rather than from a list of
+names, which would go stale every release. Shows as unresolved with a note and no warning.
+
+---
+
+## What is asserted
+
+**Eval**
+: One named check declared in an artifact's `metadata.evals` frontmatter. Either a string (shorthand
+for a judged assertion) or an object selecting a grader. See the
+[evals schema](/manni/tracevals/reference/evals-schema/).
+
+**Assertion**
+: The sentence an eval asserts held during the session. The thing a grader or the judge decides.
+
+**Implicit eval**
+: The single judged eval an artifact gets when it declares **no** evals, named
+`adheres-to-artifact`. Why a first run says something with zero configuration.
+
+**Severity**
+: `error`, `warning`, or `notice`, the family's three levels. **Only `error` findings fail an
+eval**; the other two report and pass. Defaults to `error`.
+
+**Type**
+: `regression` (protects behavior that already works) or `capability` (probes a boundary and is
+*expected* to fail sometimes). Reported, never enforced.
+
+**Target**
+: Which bytes a grader receives: the transcript, the final message, the files the session wrote, the
+artifact itself, or a named file. Distinct from *evidence*, which only hints where to look within
+what is graded.
+
+**Weight**
+: How much one eval's outcome moves a run's reported pass rate. It never changes that eval's own
+verdict, and the exit code still reads the verdict.
+
+**Eval plan**
+: The internal pairing of one eval with one artifact, ready to be graded. Its fingerprint covers
+assertion, evidence, examples, and artifact content, and is part of the judge cache key.
+
+---
+
+## How it is decided
+
+**Grader**
+: The mechanism that decides an eval. `ai` uses the ensemble judge, `human` queues it for a person,
+`command` runs an executable over the trace, and the rest are deterministic. The name is an open
+enum, validated against the grader registry at run time rather than by the schema. See the
+[grader reference](/manni/tracevals/reference/graders/).
+
+**Deterministic grader**
+: One that decides from the trace alone, with no model call, no inference turn, and the same answer
+every time. `tool-usage`, `tool-order`, `skill-invoked`, `file-access`, `turn-count`, `cost`,
+`regex`, `json-output`.
+
+**Eval window**
+: The slice of a trace an artifact was actually governing, and the only evidence its evals see.
+Derived from the artifact's type. A skill gets its invocation up to the next skill's, and an agent
+gets its own branch. Project rules get the whole session. An empty window is `skipped` with a
+reason, never passed. See the [grader reference](/manni/tracevals/reference/graders/).
+
+**Whole-session grader**
+: `tool-order`, `cost` and `json-output`, which measure the entire session rather than one artifact's
+window. Tokens are not attributable to whichever artifact was governing, ordering is a fact about
+the session, and the final output is the session's. None is proposed by `fill`, and neither is
+`turn-count`, which is windowed but stayed out of the allowlist.
+
+**Finding**
+: One problem a deterministic grader reports: an eval name, an artifact, a message, and a severity.
+
+**Judge**
+: The LLM-as-judge path. N independent runs at temperature 0, combined by consensus and routed
+through confidence zones. See [How the judge decides](/manni/tracevals/judge/).
+
+**Ensemble**
+: The N independent judge runs for one eval. Three by default (`judge.ensembleRuns`), and an eval
+may name its own `runs:`.
+
+**Verdict**
+: One run's structured answer: `claim`, `observed`, `match` (`pass` / `fail` / `partial`),
+`confidence`, and `reasoning`.
+
+**Errored run**
+: A judge run that produced no valid verdict. It counts against consensus and can push an eval to
+review, **never** to a silent pass.
+
+**Consensus**
+: The tally across an ensemble: vote counts, a majority `verdict`, `agreement`, and
+`meanConfidence`. `partial` counts as a failure for the binary outcome.
+
+**Zone**
+: What turns consensus into an outcome: `auto-pass`, `auto-fail`, or `human-review`. Requires
+**unanimity plus** a mean-confidence floor (`judge.zones`, default `0.8`). Note that `agreement` is
+reported but does not route the outcome.
+
+**Turn budget**
+: What bounds a run's inference. `--max-turns` (and `judge.maxTurns`, `fill.maxTurns`) stops after
+that many ensemble runs or proposal calls; a cached one costs none. Reaching it marks the remaining
+evals `skipped` with the reason `turn budget`, and never aborts the run. tracevals counts turns
+rather than money, and reports none.
+
+**Self-preference**
+: The judge grading something it produced. Two axes: `session`, where the judge model is the model
+that ran the trace, and `criterion`, where a `meta-provenance` entry records that model proposing
+this eval. Reported on the result, never fatal.
+
+---
+
+## What comes out
+
+**Outcome**
+: The result of one eval. One of five:
+
+| Outcome | Meaning | Fails the run? |
+|---|---|---|
+| `pass` | the eval held | no |
+| `fail` | violated by an `error`-severity finding | yes |
+| `error` | the check itself broke | yes |
+| `needs-review` | the judge did not reach confident agreement | yes, by default |
+| `skipped` | the check did not run; a reason is always given | no |
+
+**Report**
+: The output of a run, in `pretty`, `json`, or `markdown`. The JSON form is the documented contract.
+See [Reports and exit codes](/manni/tracevals/reference/report-and-exit-codes/).
+
+**History**
+: An append-only JSONL log of run summaries, written by `--history`, used to compare a run against
+the previous one for the same session.
+
+**Regression**
+: A defined event: an eval that was `pass` in the previous run and is now `fail` or `error`.
+
+---
+
+## Authoring and extending
+
+**`fill`**
+: The authoring command that proposes evals for a project's artifacts and writes those that survive
+the gate. **The only command that writes to your artifacts.** Never writes project rules.
+
+**Gate**
+: The ordered checks a proposal must survive: duplicate name → grader allowed for the artifact type
+→ valid options → grounded target → confidence → per-artifact cap. **Confidence is last**, and never
+overrides the checks before it.
+
+**Needs sharpening**
+: A `fill` report entry naming an instruction too vague to test. A to-do for the artifact, not a
+diagnostic to dismiss.
+
+**Vocabulary**
+: The set of tool and skill names that exist in a project, used to reject proposals naming things
+that are not there.
+
+**Provenance**
+: `metadata.meta-provenance`, the record of which model proposed which evals and at what confidence.
+A surviving entry means unreviewed machine metadata; a human deletes it once the evals are reviewed.
+
+**Grader contract**
+: What a custom grader must implement: `grade()` **and** `validateOptions()`. A grader missing the
+second can never be proposed by `fill`. See [Custom graders](/manni/tracevals/extend/custom-graders/).

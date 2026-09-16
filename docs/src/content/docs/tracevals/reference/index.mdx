@@ -1,0 +1,71 @@
+---
+title: Reference
+description: Complete lookup reference for the manni tracevals CLI, configuration keys, deterministic graders, evals schema, traces, report formats, and API.
+sidebar:
+  order: 1
+---
+
+import { LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+**Scope:** exhaustive lookup. These pages answer *what are the options?* They do not explain when
+to reach for one. For that, start from a journey: [Get started](/manni/tracevals/get-started/),
+[Declare what to check](/manni/tracevals/declare/), [Add tracevals to CI](/manni/tracevals/ci/), or
+[How the judge decides](/manni/tracevals/judge/).
+
+<CardGrid>
+  <LinkCard
+    title="CLI"
+    description="run, calibrate, fill, capture, and list: every argument, flag, and default."
+    href="/manni/tracevals/reference/cli/"
+  />
+  <LinkCard
+    title="Configuration"
+    description="Every manni.config.yaml key under tracevals, including the ones with no CLI flag."
+    href="/manni/tracevals/reference/configuration/"
+  />
+  <LinkCard
+    title="Graders"
+    description="Every kind: the ai, human, and command families, and the seven deterministic ones with their options and failure messages."
+    href="/manni/tracevals/reference/graders/"
+  />
+  <LinkCard
+    title="Evals schema"
+    description="The metadata.evals frontmatter block, field by field, across both published versions."
+    href="/manni/tracevals/reference/evals-schema/"
+  />
+  <LinkCard
+    title="Reports & exit codes"
+    description="The pretty, JSON, and markdown report shapes, the exit-code contract, and the history file."
+    href="/manni/tracevals/reference/report-and-exit-codes/"
+  />
+  <LinkCard
+    title="Traces"
+    description="Supported trace formats, what is read out of them, and how the session store is found."
+    href="/manni/tracevals/reference/traces/"
+  />
+  <LinkCard
+    title="API"
+    description="Everything the tracevals namespace exports, grouped by what it is for, with the intended entry points marked."
+    href="/manni/tracevals/reference/api/"
+  />
+  <LinkCard
+    title="Glossary"
+    description="Trace, artifact, eval, grader, plan, finding, outcome, consensus, zone, and sidechain."
+    href="/manni/tracevals/reference/glossary/"
+  />
+</CardGrid>
+
+## Reading these pages
+
+- **Defaults are the resolved values.** Every knob flows through the config file, which fills in
+  every default before anything reads it. A CLI flag **overrides** the resolved config instead of
+  bypassing it, so the default shown for a flag is the config default it would replace.
+- **Unknown configuration keys are errors.** The schema rejects additional properties at every level
+  below `tracevals:`, so a typo fails loudly instead of being ignored.
+- **Deterministic grader options are validated before grading.** A malformed eval produces an
+  `error` outcome naming the offending option, never a silent pass.
+- **Connection settings are not on these pages.** Which endpoint, key variable, or command reaches a
+  model is declared once for the whole family, in the top-level `providers:` map. It has its own
+  [reference](/manni/meta/reference/configuration/#providers), and
+  [`tracevals.provider`](/manni/tracevals/reference/configuration/#provider-and-model) only names
+  which entry in it to use.

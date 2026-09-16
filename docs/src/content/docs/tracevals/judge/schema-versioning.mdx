@@ -1,0 +1,217 @@
+---
+title: Evolve the eval standard
+description: Treat the metadata.evals block as a shared contract, separate capability probes from regression guards, and roll out a new convention across many repositories without breaking the build.
+sidebar:
+  order: 3
+---
+
+import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+**Scope:** the evals block as a shared contract, and changing it safely. The block's fields are in
+the [evals schema reference](/manni/tracevals/reference/evals-schema/); tuning how a judged eval is
+*decided* is [Calibrate the judge](/manni/tracevals/judge/calibrate/).
+
+## The block is a shared contract, not ours alone
+
+The shape of `metadata.evals` is not an implementation detail, and it is not this tool's to change.
+It implements **`manni:artifact-evals:1.0.0-proposal.4`**, a common vocabulary
+[published by manni meta](/manni/meta/proposals/artifact-evals/) that any session-grading tool can
+implement. manni tracevals implements behavior against it.
+
+Two consequences for you:
+
+- **A shape change is a vocabulary conversation.** If a field is missing, the place to argue for it
+  is the proposal, not this tool's issue tracker. What lands there lands for every implementer at
+  once, `manni docevals` and `manni meta fill` included.
+- **Your artifacts are portable.** An artifact carrying evals is not locked to this runner.
+
+The draft schema lives in this repository at
+[`docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.4.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.4.json),
+and is bundled into the build. The package ships no separate schema copy and exports no per-version
+schema URL. There is no second set of bytes to drift out of step with the first.
+
+<Aside title="Do I need to pin anything?">
+Not to author evals. manni tracevals validates against the vocabulary it was built with, and you
+write the block. Reading the schema matters when *your own tooling* generates or consumes these
+blocks and you need the shape to hold still. Read it from the path above, at a tag.
+</Aside>
+
+<Aside type="caution" title="`-proposal.4` is a prerelease, and the hyphen is load-bearing">
+The vocabulary is under community review. `1.0.0-proposal.4` is a semver **prerelease**. It sorts
+*below* the `1.0.0` it will register as, and standard range matching excludes it, so nobody depends
+on a draft by accident. Spelled `+proposal.4` it would be build metadata and compare **equal** to the
+release, which is the opposite of what a draft wants.
+</Aside>
+
+## What a version bump will mean
+
+manni meta versions these vocabularies with three-segment semver, and each segment is a claim about
+*validation behavior* rather than a mood:
+
+| Segment | Means | Example |
+|---|---|---|
+| MAJOR | a block that used to validate now fails | a new required field, a removed field, a narrowed enum |
+| MINOR | a block that used to fail may now pass; every old one still validates | a new optional field, a widened enum |
+| PATCH | **no** validation-behavior change at all | a corrected `description` |
+
+So a bump tells you directly whether your corpus is at risk: only MAJOR can break an artifact that
+validates today.
+
+### What changed at `proposal.3` and `proposal.4`
+
+Two renames landed at `proposal.3`, and both are the kind that fail loudly rather than
+quietly:
+
+| Was | Is | What to do |
+|---|---|---|
+| `metadata.eval-provenance` | `metadata.meta-provenance` | Rename the key. The old spelling is now a reserved-prefix error, not an ignored member. |
+| `severity: info` | `severity: notice` | Rename the value. Severity across the family is `error \| warning \| notice`. |
+
+`proposal.4` adds one thing, and it changes no artifact that validates today: `meta-provenance`
+carries `x-manni-location: external`. The mark says the field belongs outside the artifact itself,
+so `manni meta relocate` can move a trail into external storage and leave the instructions a person
+reads uncluttered. tracevals reads the field wherever it lives.
+
+The provenance rename is worth a second look, because the guard changed under it. The reserved
+prefix inside `metadata` is `^eval-(?!skip$)`: every `eval-*` member is rejected except
+`metadata.eval-skip`. `eval-provenance` used to be the one other exception, so an artifact still
+carrying it now fails validation with a pointer to the key.
+
+That is deliberate. A provenance trail silently ignored is worse than one that stops the build,
+because the [criterion axis of the self-preference
+check](/manni/tracevals/judge/#when-the-judge-graded-its-own-work) reads it. An artifact whose trail
+went unread would report no bias while the model graded its own assertion.
+
+<Aside title="The judge prompt moved with it">
+`PROMPT_VERSION` is `4`. Prompt version is part of the [cache
+key](/manni/tracevals/judge/calibrate/#what-invalidates-a-cached-verdict), so a cache written under
+the old vocabulary misses once and the next run judges fresh. Nothing to clear by hand.
+</Aside>
+
+<Aside title="Adding a grader is not a schema change">
+The `grader` field is an **open enum**. Any kebab-case name validates, and the
+[grader registry](/manni/tracevals/reference/graders/) is what rejects an unknown one at run time.
+A new grader therefore never needs a new schema version. The cost is that a misspelled or retired
+name (`llm`, the pre-1.0 spelling of `ai`) passes validation and fails during the run instead.
+</Aside>
+
+## Separate probes from guards
+
+`type` answers a question that otherwise makes a pass rate meaningless:
+
+| Value | Meaning | A failure means |
+|---|---|---|
+| `regression` | Protects behavior that already works. | Something broke. Act on it. |
+| `capability` | Probes the edge of what the agent can do. **Expected to fail sometimes.** | Information about where the boundary is. |
+
+```yaml
+- id: handles-nested-monorepo
+  assertion: The session located the correct package in a nested workspace without being told.
+  type: capability
+  grader: ai
+```
+
+**Neither changes enforcement.** A failing `capability` eval still fails and still contributes to a
+non-zero exit code. That restraint is deliberate: an eval that could not fail the build would just be
+a comment. The field instead lets you read a report or a history log and know that a red probe
+is not a regression.
+
+New evals default to `regression`, including everything `fill` writes. That is the conservative
+choice, since mislabelling a real guard as a probe is the more expensive mistake.
+
+<Aside type="caution" title="`capability` is reported, not excused">
+If you want probes to stop blocking a pipeline, that is a severity decision, not a `type` decision.
+Set `severity: warning` so the finding reports and the eval passes. Use `type` for what the eval
+*is*, and `severity` for what should happen when it fails.
+</Aside>
+
+## Roll out a convention in stages
+
+The transferable technique, whether you are adding a field, a grader convention, or a tightened
+assertion: **never flip a whole corpus to `error` at once.**
+
+<Steps>
+
+1. **Introduce it at `warning`.** The eval reports on every run and fails nothing:
+
+   ```yaml
+   - id: cites-a-test-run
+     assertion: The session ran the test suite before declaring the fix complete.
+     severity: warning
+   ```
+
+   `notice` is quieter still, for a convention you want recorded but not discussed yet.
+
+2. **Measure coverage.** Count how many artifacts carry it, and how often it actually fires:
+
+   ```bash
+   npx @hawkeyexl/manni tracevals run <trace> --format json \
+     | jq '[.evalResults[] | select(.evalName == "cites-a-test-run")]
+           | group_by(.outcome) | map({(.[0].outcome): length}) | add'
+   ```
+
+3. **Fix the artifacts, not the eval.** A rule failing everywhere usually means the instructions
+   never said it clearly. This is the step that does the work.
+
+4. **Promote to `error`** once the corpus is ready. Now it gates.
+
+</Steps>
+
+The same ratchet works in reverse for tightening an existing assertion. Add the sharper eval under a
+new id at `warning`, let both run, and remove the old one when the new one is clean.
+
+<Aside title="Why not just tighten in place?">
+Editing an assertion changes the eval plan, which changes the cache key. Every session is then
+re-judged against a rule that half your artifacts have never been written for. You get a wall of red
+that tells you nothing about whether behavior changed. Adding a second eval keeps the old signal
+intact while the new one settles.
+</Aside>
+
+## A malformed block fails loudly
+
+Rolling a change across many repositories is survivable mostly because breakage is precise. An
+invalid block is never silently ignored: it produces an eval named `evals-block-valid` with a JSON
+Pointer to the offending field and a source line number.
+
+```
+ERROR  fix-bug › evals-block-valid
+       invalid metadata.evals block: /metadata/evals/1/grader (line 12): must be string
+```
+
+Eval entries are closed, so a misspelled field inside one is an error rather than a key that quietly
+does nothing. `metadata` itself must stay open, because it is the host tool's extension bag. The
+`eval-` prefix is reserved inside it instead, so `eval-skpi` is rejected the same way, and so is the
+retired `eval-provenance`. When you roll out a convention and something breaks, you get the file,
+the pointer, and the line.
+
+## Keep ids stable
+
+Eval ids are the join key for history. A regression is defined as *this artifact and this eval id
+went from pass to fail*. Renaming an eval therefore reads as one eval `removed` and another `added`,
+and the trend line resets.
+
+This is exactly why `id` is **required** on the object form. The retired 0.2 shape let a name be
+derived from list position, so reordering entries silently reset every trend line that depended on
+them.
+
+Rename when the meaning genuinely changed. Otherwise leave the id alone and edit the assertion.
+
+## Where to go next
+
+<CardGrid>
+  <LinkCard
+    title="Every eval field"
+    description="The full metadata.evals block, the manni meta vocabulary behind it, and what each field does."
+    href="/manni/tracevals/reference/evals-schema/"
+  />
+  <LinkCard
+    title="The vocabulary itself"
+    description="artifact-evals as manni meta publishes it, with every key, the location marks, and the design decisions."
+    href="/manni/meta/proposals/artifact-evals/"
+  />
+  <LinkCard
+    title="Track it over time"
+    description="The history file, what counts as a regression, and how to compare two runs."
+    href="/manni/tracevals/ci/consume-results/"
+  />
+</CardGrid>

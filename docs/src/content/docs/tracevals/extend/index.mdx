@@ -1,0 +1,166 @@
+---
+title: Build on manni tracevals
+description: "The intended entry points of the programmatic API, the injection seams that keep your own test suite offline, and where the trace-adapter seam sits."
+sidebar:
+  order: 1
+---
+
+import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+**Scope:** consuming tracevals as a library rather than a CLI. It assumes the vocabulary from the
+journey pages, because a custom grader cannot be explained before the
+[built-in graders](/manni/tracevals/reference/graders/) are.
+
+```bash
+npm install -D @hawkeyexl/manni
+```
+
+ESM-only, Node.js 24 or newer, types shipped.
+
+## The front door
+
+Every tool in the family is a namespace export of the one package, so tracevals is reached as
+`tracevals`:
+
+```ts
+import { tracevals } from "@hawkeyexl/manni";
+```
+
+That namespace exports a lot. These are the entry points meant for consumers; everything else is
+reachable but is there to serve the CLI.
+
+| You want to… | Use |
+|---|---|
+| Run a full evaluation | `runEvals(options)` → `RunReport` |
+| Read a trace without evaluating | `parseTraceFile(path)` → `Trace` |
+| Find traces on disk | `discoverTraces(options)` → `TraceListing[]` |
+| Resolve which artifacts a trace used | `resolveArtifacts(trace, options)` |
+| Add a check the built-ins do not cover | `registerGrader(grader)` |
+| Import grader plugins the way the CLI does | `loadGraderPlugins({ plugins, configDir })` |
+| Render a report | `render(report, format)` |
+| Load configuration | `loadConfig()` / `parseConfig(raw)` |
+
+```ts
+import { tracevals } from "@hawkeyexl/manni";
+
+const { loadConfig, runEvals, render } = tracevals;
+
+const config = await loadConfig();
+const report = await runEvals({
+  tracePath: "./traces/session.jsonl",
+  projectDir: "./my-repo",
+  config,
+  deterministicOnly: true,
+});
+
+console.log(render(report, "markdown"));
+console.log(report.summary, report.exitCode);
+```
+
+`RunReport` is the same structure `--format json` prints, documented field by field in
+[Reports & exit codes](/manni/tracevals/reference/report-and-exit-codes/). The full export list is in
+the [API reference](/manni/tracevals/reference/api/).
+
+<Aside type="caution" title="`runEvals` needs a judge, or `deterministicOnly`">
+`EngineOptions.judge` is optional in the type but **required unless `deterministicOnly: true`**.
+Omit both and judged evals have nothing to run them.
+</Aside>
+
+<Aside title="`runEvals` does not load plugins; `runRun` does">
+`config.plugins` is imported by the `run` and `fill` commands, which know the directory the config
+came from. Calling `runEvals` directly you are already holding `registerGrader`. Call it yourself,
+or call `loadGraderPlugins({ plugins, configDir })` if you want the CLI's resolution and warnings.
+</Aside>
+
+## Injection seams
+
+Every place tracevals reaches outside the process is injectable. Anything you build on top can
+keep its own suite hermetic, through the same seams this project's tests use.
+
+| Seam | Where | Replaces |
+|---|---|---|
+| `EngineOptions.judge` | `runEvals` | The whole judged path. Pass your own `TraceJudge`, or set `deterministicOnly` and pass nothing. |
+| `EngineOptions.env` | `runEvals` | Environment lookup, including `CLAUDE_CONFIG_DIR`. Point artifact resolution at a fixture tree. |
+| `ResolveOptions.env` | `resolveArtifacts` | The same, when resolving directly. |
+| `DiscoverOptions.env` | `discoverTraces` | The session store root. |
+| `promptFn` | `pickTrace(options, promptFn)` | The interactive prompt, so the picker is testable without a TTY. |
+| `--local` | judge construction | The hosted provider. Inference runs on this machine with `llama-cpp`, so the judged path exercises end to end with no network call. |
+| `RunCommandOptions.require` / `FillOptions.require` | `runRun`, `runFill` | Grader plugins, appended to `config.plugins`. Point it at a fixture module instead of an installed package. |
+
+A `TraceJudge` is just a function, so a stub is one line:
+
+```ts
+import { tracevals } from "@hawkeyexl/manni";
+
+const { runEvals } = tracevals;
+
+const alwaysPasses: tracevals.TraceJudge = async (plans) =>
+  plans.map((plan) => ({
+    evalName: plan.evalName,
+    artifact: plan.artifact.path,
+    artifactName: plan.artifact.name,
+    grader: plan.grader,
+    implicit: plan.implicit,
+    outcome: "pass",
+    durationMs: 0,
+  }));
+
+const report = await runEvals({ tracePath, config, judge: alwaysPasses });
+```
+
+A stub judge is the fastest hermetic option. `--local` is the honest one, and the two answer
+different questions: a stub proves your wiring, and local inference proves the judged path.
+
+<Aside title="Pin the configuration directory in your tests too">
+Artifact resolution reads `~/.claude/skills/`, `~/.claude/agents/`, and the plugin store. Pass
+`env: { CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/home/.claude" }` so results do not depend on
+whose machine the suite runs on.
+</Aside>
+
+## Reading traces without evaluating
+
+`parseTraceFile` gives you the normalised model on its own, which is enough for analysis that has
+nothing to do with adherence:
+
+```ts
+import { tracevals } from "@hawkeyexl/manni";
+
+const trace = await tracevals.parseTraceFile("./traces/session.jsonl");
+console.log(trace.turnCount, trace.skillInvocations.map((s) => s.name));
+```
+
+Every field is described in [Traces reference](/manni/tracevals/reference/traces/). Note `usage` is
+absent for Claude Code session files. Only stream-json transcripts carry it, which is why the
+`cost` grader skips rather than passes on the others.
+
+## The trace-adapter seam
+
+`TraceSource` is a union with one member today, `claude-code`. Support for other formats is
+**deferred rather than rejected**, and the shape a new adapter has to conform to is the normalised
+`Trace`:
+
+- **Required for anything to work:** `source`, `file`, `cwd`, `events`, `turnCount`, and the derived
+  collections (`toolCalls`, `skillInvocations`, `agentSpawns`, `fileAccesses`, `userMessages`,
+  `assistantTexts`).
+- **Degrades gracefully when absent:** `usage` (the `cost` grader skips with a reason), `model`,
+  `gitBranch`, `sessionId`, `startedAt` / `endedAt`.
+- **Instruction semantics are the adapter's job.** What counts as a "skill" differs between agent
+  tools; the adapter decides, and everything downstream consumes the normalised result.
+
+Adding one is a change to this repository, not something you can register at runtime. The
+seam is a shape to conform to, not a plugin point.
+
+## Where to go next
+
+<CardGrid>
+  <LinkCard
+    title="Write a custom grader"
+    description="The two-part contract, why option validation is not optional, and how to register one."
+    href="/manni/tracevals/extend/custom-graders/"
+  />
+  <LinkCard
+    title="The export surface, mapped"
+    description="Everything the tracevals namespace exports, grouped, with what each group is for."
+    href="/manni/tracevals/reference/api/"
+  />
+</CardGrid>
