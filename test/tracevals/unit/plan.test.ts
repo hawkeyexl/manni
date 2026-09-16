@@ -11,8 +11,8 @@ function artifact(
 }
 
 describe("planEvals", () => {
-  it("plans one eval per declared entry", async () => {
-    const plans = await planEvals([
+  it("plans one eval per declared entry", () => {
+    const plans = planEvals([
       artifact(
         "fix-bug",
         [
@@ -43,8 +43,8 @@ describe("planEvals", () => {
     });
   });
 
-  it("carries the command family and provider onto the plan", async () => {
-    const plans = await planEvals([
+  it("carries the command family and provider onto the plan", () => {
+    const plans = planEvals([
       artifact(
         "fix-bug",
         [
@@ -74,8 +74,8 @@ describe("planEvals", () => {
     expect(plans[1]?.provider).toBe("claude-cli");
   });
 
-  it("plans one implicit whole-artifact eval when nothing is declared", async () => {
-    const plans = await planEvals([
+  it("plans one implicit whole-artifact eval when nothing is declared", () => {
+    const plans = planEvals([
       artifact("CLAUDE.md", "# Rules\n- Run tests.", "project-rules"),
     ]);
     expect(plans).toHaveLength(1);
@@ -87,8 +87,8 @@ describe("planEvals", () => {
     expect(plans[0]?.assertion).toContain("adhered to the instructions");
   });
 
-  it("plans an error eval for an invalid evals block", async () => {
-    const plans = await planEvals([
+  it("plans an error eval for an invalid evals block", () => {
+    const plans = planEvals([
       artifact(
         "broken",
         "---\nmetadata:\n  evals:\n    - grader: ai\n---\n",
@@ -99,10 +99,10 @@ describe("planEvals", () => {
     expect(plans[0]?.evalName).toBe("evals-block-valid");
   });
 
-  it("plans an error eval for the artifact-evals-0.2 criteria envelope", async () => {
+  it("plans an error eval for the artifact-evals-0.2 criteria envelope", () => {
     // The migration case: the old container must fail loudly, with a pointer,
     // rather than read as an artifact that declares nothing.
-    const plans = await planEvals([
+    const plans = planEvals([
       artifact(
         "stale",
         "---\nmetadata:\n  evals:\n    criteria:\n      - Something.\n---\n",
@@ -113,8 +113,8 @@ describe("planEvals", () => {
     expect(plans[0]?.error).toContain("invalid metadata.evals block");
   });
 
-  it("skips an artifact marked metadata.eval-skip", async () => {
-    const plans = await planEvals([
+  it("skips an artifact marked metadata.eval-skip", () => {
+    const plans = planEvals([
       artifact("skipped", "---\nmetadata:\n  eval-skip: true\n---\n"),
     ]);
     expect(plans).toHaveLength(1);
@@ -122,8 +122,8 @@ describe("planEvals", () => {
     expect(plans[0]?.skipReason).toContain("metadata.eval-skip");
   });
 
-  it("skips a single entry that opts out on its own", async () => {
-    const plans = await planEvals([
+  it("skips a single entry that opts out on its own", () => {
+    const plans = planEvals([
       artifact(
         "partly",
         [

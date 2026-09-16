@@ -2,17 +2,18 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { pickTrace } from "../../../src/tracevals/trace/picker.js";
 import { TracevalsError } from "../../../src/tracevals/types.js";
+import { must } from "../helpers.js";
 
-const fixtureHome = fileURLToPath(new URL("../fixtures/home", import.meta.url));
+const claudeDir = fileURLToPath(new URL("../fixtures/home/.claude", import.meta.url));
 
 describe("pickTrace", () => {
   it("prompts with discovered traces and returns the selection", async () => {
     let seenChoices: { name: string; value: string }[] = [];
     const picked = await pickTrace(
-      { allProjects: true, env: { MOOSE_TRACEVALS_HOME: fixtureHome } },
-      async ({ choices }) => {
+      { allProjects: true, env: { CLAUDE_CONFIG_DIR: claudeDir } },
+      ({ choices }) => {
         seenChoices = choices;
-        return choices[0]!.value;
+        return Promise.resolve(must(choices[0], "the first choice").value);
       },
     );
     expect(seenChoices.length).toBe(2);
@@ -23,9 +24,9 @@ describe("pickTrace", () => {
     const picked = await pickTrace(
       {
         project: "C:\\work\\nonexistent",
-        env: { MOOSE_TRACEVALS_HOME: fixtureHome },
+        env: { CLAUDE_CONFIG_DIR: claudeDir },
       },
-      async ({ choices }) => choices[0]!.value,
+      ({ choices }) => Promise.resolve(must(choices[0], "the first choice").value),
     );
     expect(picked.endsWith(".jsonl")).toBe(true);
   });
@@ -35,9 +36,9 @@ describe("pickTrace", () => {
       pickTrace(
         {
           allProjects: true,
-          env: { MOOSE_TRACEVALS_HOME: "C:\\definitely\\missing" },
+          env: { CLAUDE_CONFIG_DIR: "C:\\definitely\\missing/.claude" },
         },
-        async ({ choices }) => choices[0]!.value,
+        ({ choices }) => Promise.resolve(must(choices[0], "the first choice").value),
       ),
     ).rejects.toThrow(TracevalsError);
   });

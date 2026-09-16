@@ -87,7 +87,7 @@ export async function findInTree(
   }
   for (const entry of entries) {
     if (!entry.isFile()) continue;
-    const full = join(entry.parentPath ?? root, entry.name);
+    const full = join(entry.parentPath, entry.name);
     if (match(full)) return full;
   }
   return null;

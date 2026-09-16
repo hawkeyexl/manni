@@ -9,8 +9,8 @@ import type { SessionManifest } from "../../../src/tracevals/capture/types.js";
 import { parseTraceFile } from "../../../src/tracevals/trace/claude.js";
 import type { Trace } from "../../../src/tracevals/trace/types.js";
 
-const fixtureHome = fileURLToPath(
-  new URL("../fixtures/home", import.meta.url),
+const claudeDir = fileURLToPath(
+  new URL("../fixtures/home/.claude", import.meta.url),
 );
 const fixtureProject = fileURLToPath(
   new URL("../fixtures/project", import.meta.url),
@@ -52,7 +52,7 @@ async function resolveFixtureSession() {
   const trace = await parseTraceFile(sessionFixture);
   return resolveArtifacts(trace, {
     projectDir: fixtureProject,
-    env: { MOOSE_TRACEVALS_HOME: fixtureHome },
+    env: { CLAUDE_CONFIG_DIR: claudeDir },
   });
 }
 
@@ -63,7 +63,7 @@ describe("resolveArtifacts", () => {
       (a) => a.type === "skill" && a.name === "fix-bug",
     );
     expect(skill).toBeDefined();
-    expect(skill?.path?.endsWith("SKILL.md")).toBe(true);
+    expect(skill?.path.endsWith("SKILL.md")).toBe(true);
     expect(skill?.content).toContain("Reproduce the bug");
     expect(skill?.origin).toBe("project");
   });
@@ -143,7 +143,7 @@ describe("resolveArtifacts", () => {
           },
         ],
       }),
-      { env: { MOOSE_TRACEVALS_HOME: fixtureHome } },
+      { env: { CLAUDE_CONFIG_DIR: claudeDir } },
     );
     const command = artifacts.find(
       (a) => a.name === "writing-toolkit:polish-prose",
@@ -166,7 +166,7 @@ describe("resolveArtifacts", () => {
           },
         ],
       }),
-      { env: { MOOSE_TRACEVALS_HOME: fixtureHome } },
+      { env: { CLAUDE_CONFIG_DIR: claudeDir } },
     );
     const entry = coverage.find((c) => c.ref === "writing-toolkit:deep:nested");
     expect(entry?.resolved).toBe(false);
@@ -188,7 +188,7 @@ describe("resolveArtifacts", () => {
           { name: "toolkit:identify-ai-tells", via: "skill-tool", index: 0 },
         ],
       }),
-      { env: { MOOSE_TRACEVALS_HOME: fixtureHome } },
+      { env: { CLAUDE_CONFIG_DIR: claudeDir } },
     );
     expect(
       artifacts.some((a) => a.name === "toolkit:identify-ai-tells"),
@@ -206,7 +206,7 @@ describe("resolveArtifacts", () => {
           { name: "toolkit:polish-prose", via: "command-injection", index: 0 },
         ],
       }),
-      { env: { MOOSE_TRACEVALS_HOME: fixtureHome } },
+      { env: { CLAUDE_CONFIG_DIR: claudeDir } },
     );
     expect(artifacts.some((a) => a.name === "toolkit:polish-prose")).toBe(false);
   });
@@ -222,7 +222,7 @@ describe("resolveArtifacts", () => {
   it("finds project rules from a nested cwd by walking to the project root", async () => {
     const { artifacts } = await resolveArtifacts(emptyTrace({ cwd: nestedDir }), {
       projectRoot: fixtureProject,
-      env: { MOOSE_TRACEVALS_HOME: fixtureHome },
+      env: { CLAUDE_CONFIG_DIR: claudeDir },
     });
     const rules = artifacts.filter((a) => a.type === "project-rules");
     expect(rules.some((r) => r.name === "CLAUDE.md")).toBe(true);
@@ -235,7 +235,7 @@ describe("resolveArtifacts", () => {
           { name: "ghost-skill", via: "skill-tool", index: 0 },
         ],
       }),
-      { env: { MOOSE_TRACEVALS_HOME: fixtureHome } },
+      { env: { CLAUDE_CONFIG_DIR: claudeDir } },
     );
     expect(artifacts.some((a) => a.name === "ghost-skill")).toBe(false);
     const entry = coverage.find((c) => c.ref === "ghost-skill");
@@ -252,7 +252,7 @@ describe("resolveArtifacts", () => {
       ],
     });
     const { artifacts } = await resolveArtifacts(trace, {
-      env: { MOOSE_TRACEVALS_HOME: fixtureHome },
+      env: { CLAUDE_CONFIG_DIR: claudeDir },
     });
     expect(artifacts.filter((a) => a.name === "fix-bug")).toHaveLength(1);
   });

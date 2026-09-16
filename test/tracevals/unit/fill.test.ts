@@ -216,9 +216,9 @@ describe("runFill", () => {
     const counting = {
       provider: () => "mock",
       modelName: () => "mock-model",
-      completeJSON: async () => {
+      completeJSON: () => {
         calls += 1;
-        return { json: proposal().json };
+        return Promise.resolve({ json: proposal().json });
       },
     };
     const { report } = await run({
@@ -280,7 +280,7 @@ describe("runFill", () => {
     const path = join(project, ".claude", "skills", "fix-bug", "SKILL.md");
     const content = await readFile(path, "utf-8");
 
-    const extracted = await extractEvals({
+    const extracted = extractEvals({
       name: "fix-bug",
       type: "skill",
       path,
@@ -290,7 +290,7 @@ describe("runFill", () => {
     expect(extracted.errors).toEqual([]);
     expect(extracted.evals.map((e) => e.id)).toContain("no-shell");
 
-    const plans = await planEvals([
+    const plans = planEvals([
       { name: "fix-bug", type: "skill", path, content, origin: "project" },
     ]);
     expect(plans.some((p) => p.evalName === "no-shell")).toBe(true);
@@ -306,7 +306,7 @@ describe("runFill", () => {
     const path = join(project, ".claude", "skills", "fix-bug", "SKILL.md");
     const content = await readFile(path, "utf-8");
 
-    const extracted = await extractEvals({
+    const extracted = extractEvals({
       name: "fix-bug",
       type: "skill",
       path,
@@ -316,7 +316,7 @@ describe("runFill", () => {
     expect(extracted.errors).toEqual([]);
     expect(extracted.proposedBy.get("no-shell")).toEqual(["judge-5"]);
 
-    const plans = await planEvals([
+    const plans = planEvals([
       { name: "fix-bug", type: "skill", path, content, origin: "project" },
     ]);
     expect(

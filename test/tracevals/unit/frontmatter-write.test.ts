@@ -6,7 +6,7 @@ import {
 } from "../../../src/tracevals/evals/write.js";
 import { extractEvals } from "../../../src/tracevals/evals/extract.js";
 import { TracevalsError } from "../../../src/tracevals/types.js";
-import { makeArtifact } from "../helpers.js";
+import { makeArtifact, must } from "../helpers.js";
 
 const ONE: NewEvalEntry[] = [
   {
@@ -22,11 +22,11 @@ const ONE: NewEvalEntry[] = [
 function frontmatterOf(content: string): Record<string, unknown> {
   const match = /^---\r?\n([\s\S]*?)^(?:---|\.\.\.)\r?\n/m.exec(content);
   expect(match, "expected a YAML frontmatter block").not.toBeNull();
-  return parseYaml(match![1]!) as Record<string, unknown>;
+  return parseYaml(must(must(match, "a frontmatter block")[1], "match![1]")) as Record<string, unknown>;
 }
 
 describe("appendArtifactEvals", () => {
-  it("synthesizes a block for an artifact with no frontmatter", async () => {
+  it("synthesizes a block for an artifact with no frontmatter", () => {
     // The common case: 3 of 5 fixture artifacts carry no frontmatter at all.
     const body = "# Demo Project Rules\n\n- Run tests before declaring done.\n";
     const result = appendArtifactEvals(body, "CLAUDE.md", ONE);
@@ -159,11 +159,11 @@ describe("appendArtifactEvals", () => {
     expect(evals).toHaveLength(2);
   });
 
-  it("produces output the real reader accepts", async () => {
+  it("produces output the real reader accepts", () => {
     // The assertion that matters: round-trip through extractEvals, which
     // validates against the published schema.
     const result = appendArtifactEvals("# Rules\n", "CLAUDE.md", ONE);
-    const extracted = await extractEvals(makeArtifact({ content: result }));
+    const extracted = extractEvals(makeArtifact({ content: result }));
 
     expect(extracted.errors).toEqual([]);
     expect(extracted.declared).toBe(true);
@@ -318,10 +318,10 @@ describe("appendArtifactEvals", () => {
     ]);
 
     expect(result).not.toContain("assertion");
-    const entry = (
+    const entry = must((
       (frontmatterOf(result).metadata as Record<string, unknown>)
         .evals as Record<string, unknown>[]
-    )[0]!;
+    )[0], "a result for the eval");
     expect("assertion" in entry).toBe(false);
     // And it survives the round trip the schema ladder validates.
     expect(entry).toEqual({

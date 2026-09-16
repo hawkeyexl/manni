@@ -397,7 +397,9 @@ function handleUserMessage(
     // rare; only pure text turns count as prompts.
     let hasToolResult = false;
     const texts: string[] = [];
-    for (const block of content as Rec[]) {
+    // `Rec | null`, because a JSON array really can hold a null and the
+    // guards below are what handle it.
+    for (const block of content as (Rec | null)[]) {
       if (block?.type === "tool_result") hasToolResult = true;
       if (block?.type === "text" && typeof block.text === "string") {
         texts.push(block.text);
@@ -441,7 +443,7 @@ function handleAssistantMessage(
   }
   const content = message.content;
   if (Array.isArray(content)) {
-    for (const block of content as Rec[]) {
+    for (const block of content as (Rec | null)[]) {
       if (block?.type === "text" && typeof block.text === "string") {
         pushEvent(trace, {
           kind: "assistant",
@@ -474,7 +476,7 @@ function extractToolUse(
 ): void {
   const { sidechain, timestamp, branchId } = context;
   const name = block.name as string;
-  const input = (block.input as Rec) ?? {};
+  const input = (block.input as Rec | undefined) ?? {};
   const toolUseId = typeof block.id === "string" ? block.id : undefined;
   const index = pushEvent(trace, {
     kind: "tool_call",

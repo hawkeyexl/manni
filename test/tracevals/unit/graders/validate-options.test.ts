@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { graderFor, listGraderKinds } from "../../../../src/tracevals/graders/registry.js";
-import { makePlan, makeTrace } from "../../helpers.js";
+import { graderOf, makePlan, makeTrace, must, validatorOf } from "../../helpers.js";
 
 /**
  * Kinds whose whole configuration is the entry itself rather than `options`.
@@ -40,7 +40,7 @@ describe("grader option validation", () => {
       const options = VALID[kind];
       expect(options, `no VALID entry for ${kind}`).toBeDefined();
       expect(
-        graderFor(kind)?.validateOptions?.(options!),
+        graderFor(kind)?.validateOptions?.(must(options, "the case's options")),
         `${kind} rejected its own valid options`,
       ).toBeUndefined();
     }
@@ -58,7 +58,7 @@ describe("grader option validation", () => {
   });
 
   describe("tool-usage", () => {
-    const validate = graderFor("tool-usage")!.validateOptions!;
+    const validate = validatorOf("tool-usage");
 
     it("rejects a missing or empty tool", () => {
       expect(validate({})).toContain("tool");
@@ -87,7 +87,7 @@ describe("grader option validation", () => {
   });
 
   describe("skill-invoked", () => {
-    const validate = graderFor("skill-invoked")!.validateOptions!;
+    const validate = validatorOf("skill-invoked");
 
     it("requires a skill and a known expect", () => {
       expect(validate({})).toContain("skill");
@@ -97,7 +97,7 @@ describe("grader option validation", () => {
   });
 
   describe("file-access", () => {
-    const validate = graderFor("file-access")!.validateOptions!;
+    const validate = validatorOf("file-access");
 
     it("requires a path and constrains op and expect", () => {
       expect(validate({})).toContain("path");
@@ -109,7 +109,7 @@ describe("grader option validation", () => {
   });
 
   describe("turn-count", () => {
-    const validate = graderFor("turn-count")!.validateOptions!;
+    const validate = validatorOf("turn-count");
 
     it("requires at least one bound and rejects contradictions", () => {
       expect(validate({})).toContain("min");
@@ -120,7 +120,7 @@ describe("grader option validation", () => {
   });
 
   describe("cost", () => {
-    const validate = graderFor("cost")!.validateOptions!;
+    const validate = validatorOf("cost");
 
     it("requires at least one budget", () => {
       expect(validate({})).toContain("maxUsd");
@@ -131,7 +131,7 @@ describe("grader option validation", () => {
   });
 
   describe("regex", () => {
-    const validate = graderFor("regex")!.validateOptions!;
+    const validate = validatorOf("regex");
 
     it("requires a compilable pattern", () => {
       expect(validate({})).toContain("pattern");
@@ -148,7 +148,7 @@ describe("grader option validation", () => {
     });
 
     it("does not let a bad pattern escape grade() as an exception", async () => {
-      const result = await graderFor("regex")!.grade({
+      const result = await graderOf("regex").grade({
         trace: makeTrace({ assistantTexts: ["hello"] }),
         plan: makePlan({
           grader: "regex",
@@ -166,7 +166,7 @@ describe("grader option validation", () => {
   });
 
   describe("json-output", () => {
-    const validate = graderFor("json-output")!.validateOptions!;
+    const validate = validatorOf("json-output");
 
     it("requires an object schema", () => {
       expect(validate({})).toContain("schema");
@@ -189,7 +189,7 @@ describe("grader option validation", () => {
   });
 
   it("is enforced by grade(), not just callable on its own", async () => {
-    const result = await graderFor("tool-usage")!.grade({
+    const result = await graderOf("tool-usage").grade({
       trace: makeTrace({
         toolCalls: [{ name: "Bash", input: {}, sidechain: false, index: 0 }],
       }),

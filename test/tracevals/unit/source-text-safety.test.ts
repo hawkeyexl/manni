@@ -15,6 +15,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { must } from "../helpers.js";
 
 const repo = fileURLToPath(new URL("../../..", import.meta.url));
 
@@ -61,7 +62,7 @@ describe("tracked source files carry no control characters", () => {
       const text = readFileSync(path, "utf-8");
       for (const match of text.matchAll(CONTROL)) {
         const line = text.slice(0, match.index).split("\n").length;
-        const code = match[0].codePointAt(0)!.toString(16).padStart(4, "0");
+        const code = must(match[0].codePointAt(0), "a code point for the matched character").toString(16).padStart(4, "0");
         offenders.push(`${path.slice(repo.length)}:${line} U+${code}`);
       }
     }

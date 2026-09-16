@@ -23,7 +23,7 @@ const fixture = (rel: string) =>
 const traceA = fixture("traces/claude-session.jsonl");
 const traceB = fixture("traces/claude-session-sidecar.jsonl");
 const project = fixture("project");
-const home = fixture("home");
+const claudeDir = fixture("home/.claude");
 const labels = fixture("project/tracevals/labels.yaml");
 
 let tmpDir: string;
@@ -41,7 +41,7 @@ function calibrate(overrides: Record<string, unknown> = {}) {
     labels,
     provider: "mock",
     noCache: true,
-    env: { MOOSE_TRACEVALS_HOME: home },
+    env: { CLAUDE_CONFIG_DIR: claudeDir },
     ...overrides,
   });
 }

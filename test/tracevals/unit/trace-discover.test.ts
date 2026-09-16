@@ -1,14 +1,16 @@
 import { utimes } from "node:fs/promises";
+import { homedir } from "node:os";
+import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
+  configDir,
   discoverTraces,
-  homeDir,
   slugFor,
 } from "../../../src/tracevals/trace/discover.js";
 
-const fixtureHome = fileURLToPath(
-  new URL("../fixtures/home", import.meta.url),
+const claudeDir = fileURLToPath(
+  new URL("../fixtures/home/.claude", import.meta.url),
 );
 const demoTrace = fileURLToPath(
   new URL(
@@ -43,15 +45,20 @@ describe("slugFor", () => {
   });
 });
 
-describe("homeDir", () => {
-  it("prefers MOOSE_TRACEVALS_HOME when set", () => {
-    expect(homeDir({ MOOSE_TRACEVALS_HOME: fixtureHome })).toBe(fixtureHome);
+describe("configDir", () => {
+  it("prefers CLAUDE_CONFIG_DIR when set", () => {
+    expect(configDir({ CLAUDE_CONFIG_DIR: claudeDir })).toBe(claudeDir);
   });
 
-  it("resolves a relative MOOSE_TRACEVALS_HOME against the cwd", () => {
-    const resolved = homeDir({ MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home" });
-    expect(resolved.endsWith("home")).toBe(true);
-    expect(resolved).not.toBe("test/tracevals/fixtures/home");
+  it("resolves a relative CLAUDE_CONFIG_DIR against the cwd", () => {
+    const relative = "test/tracevals/fixtures/home/.claude";
+    const resolved = configDir({ CLAUDE_CONFIG_DIR: relative });
+    expect(isAbsolute(resolved)).toBe(true);
+    expect(resolved).toBe(resolve(relative));
+  });
+
+  it("falls back to .claude under the OS home when it is unset", () => {
+    expect(configDir({})).toBe(join(homedir(), ".claude"));
   });
 });
 
@@ -62,7 +69,7 @@ describe("discoverTraces", () => {
     await utimes(otherTrace, new Date("2026-07-02"), new Date("2026-07-02"));
     const traces = await discoverTraces({
       allProjects: true,
-      env: { MOOSE_TRACEVALS_HOME: fixtureHome },
+      env: { CLAUDE_CONFIG_DIR: claudeDir },
     });
     expect(traces).toHaveLength(2);
     expect(traces[0]?.sessionId).toBe("22222222-2222-2222-2222-222222222222");
@@ -72,7 +79,7 @@ describe("discoverTraces", () => {
   it("scopes to one project via its cwd", async () => {
     const traces = await discoverTraces({
       project: "C:\\work\\demo-project",
-      env: { MOOSE_TRACEVALS_HOME: fixtureHome },
+      env: { CLAUDE_CONFIG_DIR: claudeDir },
     });
     expect(traces).toHaveLength(1);
     expect(traces[0]?.project).toBe("C:\\work\\demo-project");
@@ -83,7 +90,7 @@ describe("discoverTraces", () => {
     const traces = await discoverTraces({
       allProjects: true,
       limit: 1,
-      env: { MOOSE_TRACEVALS_HOME: fixtureHome },
+      env: { CLAUDE_CONFIG_DIR: claudeDir },
     });
     expect(traces).toHaveLength(1);
   });
@@ -91,7 +98,7 @@ describe("discoverTraces", () => {
   it("returns an empty list for a project with no sessions", async () => {
     const traces = await discoverTraces({
       project: "C:\\work\\nonexistent",
-      env: { MOOSE_TRACEVALS_HOME: fixtureHome },
+      env: { CLAUDE_CONFIG_DIR: claudeDir },
     });
     expect(traces).toEqual([]);
   });

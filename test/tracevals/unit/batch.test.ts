@@ -24,7 +24,7 @@ const fixture = (rel: string) =>
 const traceA = fixture("traces/claude-session.jsonl");
 const traceB = fixture("traces/claude-session-sidecar.jsonl");
 const project = fixture("project");
-const home = fixture("home");
+const claudeDir = fixture("home/.claude");
 
 let tmpDir: string;
 beforeAll(async () => {
@@ -39,7 +39,7 @@ function batch(overrides: Record<string, unknown> = {}) {
     traces: [traceA, traceB],
     project,
     deterministicOnly: true,
-    env: { MOOSE_TRACEVALS_HOME: home },
+    env: { CLAUDE_CONFIG_DIR: claudeDir },
     ...overrides,
   });
 }
@@ -151,7 +151,7 @@ describe("runBatch", () => {
         allProjects: true,
         project,
         deterministicOnly: true,
-        env: { MOOSE_TRACEVALS_HOME: join(tmpDir, "empty-home") },
+        env: { CLAUDE_CONFIG_DIR: join(tmpDir, "empty-home/.claude") },
       }),
     ).rejects.toThrow(TracevalsError);
   });
@@ -168,7 +168,7 @@ describe("runBatch", () => {
       const { report } = await runBatch({
         traces: [traceA, traceB],
         project,
-        env: { MOOSE_TRACEVALS_HOME: home },
+        env: { CLAUDE_CONFIG_DIR: claudeDir },
         judge: makeTraceJudge({
           provider: new MockProvider(
             Array.from({ length: 40 }, () => mockVerdict("pass", 0.95)),
@@ -196,19 +196,21 @@ describe("runBatch", () => {
       await runBatch({
         traces: [traceA, traceB],
         project,
-        env: { MOOSE_TRACEVALS_HOME: home },
-        judge: async (plans) => {
+        env: { CLAUDE_CONFIG_DIR: claudeDir },
+        judge: (plans) => {
           calls.push(plans.length);
-          return plans.map((p) => ({
-            evalName: p.evalName,
-            artifact: p.artifact.path,
-            artifactName: p.artifact.name,
-            grader: p.grader,
-            implicit: p.implicit,
-            outcome: "pass" as const,
-            turns: 0,
-            durationMs: 0,
-          }));
+          return Promise.resolve(
+            plans.map((p) => ({
+              evalName: p.evalName,
+              artifact: p.artifact.path,
+              artifactName: p.artifact.name,
+              grader: p.grader,
+              implicit: p.implicit,
+              outcome: "pass" as const,
+              turns: 0,
+              durationMs: 0,
+            })),
+          );
         },
       });
       // Once per trace that had judged evals — one instance, many calls.
@@ -361,12 +363,12 @@ describe("runBatch", () => {
  * is not a pure recency floor — the sets diverge and this test is what says so.
  */
 describe("--limit combined with --since", () => {
-  let home: string;
+  let storeRoot: string;
   const DAY = 86_400_000;
 
   beforeAll(async () => {
-    home = await mkdtemp(join(tmpdir(), "manni-tracevals-limit-since-"));
-    const proj = join(home, ".claude", "projects", "C--work-demo");
+    storeRoot = await mkdtemp(join(tmpdir(), "manni-tracevals-limit-since-"));
+    const proj = join(storeRoot, ".claude", "projects", "C--work-demo");
     await mkdir(proj, { recursive: true });
     // Three inside a 7d window, two well outside it.
     for (const [i, days] of [1, 2, 3, 30, 60].entries()) {
@@ -384,7 +386,7 @@ describe("--limit combined with --since", () => {
   });
 
   afterAll(async () => {
-    await rm(home, { recursive: true, force: true });
+    await rm(storeRoot, { recursive: true, force: true });
   });
 
   const names = (paths: string[]) =>
@@ -395,7 +397,7 @@ describe("--limit combined with --since", () => {
       allProjects: true,
       since: "7d",
       limit: 5,
-      env: { MOOSE_TRACEVALS_HOME: home },
+      env: { CLAUDE_CONFIG_DIR: join(storeRoot, ".claude") },
     });
     expect(names(got)).toEqual(["s0.jsonl", "s1.jsonl", "s2.jsonl"]);
   });
@@ -405,7 +407,7 @@ describe("--limit combined with --since", () => {
       allProjects: true,
       since: "7d",
       limit: 2,
-      env: { MOOSE_TRACEVALS_HOME: home },
+      env: { CLAUDE_CONFIG_DIR: join(storeRoot, ".claude") },
     });
     expect(names(got)).toEqual(["s0.jsonl", "s1.jsonl"]);
   });

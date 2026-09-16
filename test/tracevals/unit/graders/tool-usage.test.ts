@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { graderFor } from "../../../../src/tracevals/graders/registry.js";
-import { makeArtifact, makePlan, makeTrace } from "../../helpers.js";
+import { graderOf, makeArtifact, makePlan, makeTrace } from "../../helpers.js";
 
-const grader = graderFor("tool-usage")!;
+const grader = graderOf("tool-usage");
 
 const trace = makeTrace({
   // The default plan's artifact is the skill `demo-skill`; invoking it at the

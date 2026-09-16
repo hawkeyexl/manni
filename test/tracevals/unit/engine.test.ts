@@ -19,6 +19,7 @@ import {
 } from "../../../src/tracevals/capture/manifest.js";
 import { TracevalsError } from "../../../src/tracevals/types.js";
 import type { TraceJudge } from "../../../src/tracevals/judge/trace-judge.js";
+import { must } from "../helpers.js";
 
 const sessionFixture = fileURLToPath(
   new URL("../fixtures/traces/claude-session.jsonl", import.meta.url),
@@ -29,29 +30,33 @@ const streamFixture = fileURLToPath(
 const fixtureProject = fileURLToPath(
   new URL("../fixtures/project", import.meta.url),
 );
-const fixtureHome = fileURLToPath(
-  new URL("../fixtures/home", import.meta.url),
+const claudeDir = fileURLToPath(
+  new URL("../fixtures/home/.claude", import.meta.url),
 );
 
 const config = parseConfig({});
 
-const passJudge: TraceJudge = async (plans) =>
-  plans.map((plan) => ({
-    evalName: plan.evalName,
-    artifact: plan.artifact.path,
-    artifactName: plan.artifact.name,
-    grader: plan.grader,
-    implicit: plan.implicit,
-    outcome: "pass" as const,
-    turns: 0,
-    durationMs: 1,
-  }));
+// `Promise.resolve` rather than `async`: a `TraceJudge` returns a promise by
+// contract, and a stub that awaits nothing should say so without pretending to.
+const passJudge: TraceJudge = (plans) =>
+  Promise.resolve(
+    plans.map((plan) => ({
+      evalName: plan.evalName,
+      artifact: plan.artifact.path,
+      artifactName: plan.artifact.name,
+      grader: plan.grader,
+      implicit: plan.implicit,
+      outcome: "pass" as const,
+      turns: 0,
+      durationMs: 1,
+    })),
+  );
 
 function run(overrides: Record<string, unknown> = {}) {
   return runEvals({
     tracePath: sessionFixture,
     projectDir: fixtureProject,
-    env: { MOOSE_TRACEVALS_HOME: fixtureHome },
+    env: { CLAUDE_CONFIG_DIR: claudeDir },
     config,
     judge: passJudge,
     ...overrides,
@@ -112,17 +117,19 @@ describe("runEvals", () => {
   });
 
   it("respects failOnNeedsReview", async () => {
-    const reviewJudge: TraceJudge = async (plans) =>
-      plans.map((plan) => ({
-        evalName: plan.evalName,
-        artifact: plan.artifact.path,
-        artifactName: plan.artifact.name,
-        grader: plan.grader,
-        implicit: plan.implicit,
-        outcome: "needs-review" as const,
-        turns: 0,
-        durationMs: 1,
-      }));
+    const reviewJudge: TraceJudge = (plans) =>
+      Promise.resolve(
+        plans.map((plan) => ({
+          evalName: plan.evalName,
+          artifact: plan.artifact.path,
+          artifactName: plan.artifact.name,
+          grader: plan.grader,
+          implicit: plan.implicit,
+          outcome: "needs-review" as const,
+          turns: 0,
+          durationMs: 1,
+        })),
+      );
     // Neutralize the deterministic failure by only judging ai evals: use a
     // config that fails on needs-review (default) vs one that does not.
     const strict = await run({ judge: reviewJudge });
@@ -501,19 +508,23 @@ describe("runEvals", () => {
 
 describe("weight in the run's pass rate", () => {
   /** A judge that fails exactly the evals named, and passes the rest. */
-  const failing = (names: string[]): TraceJudge => async (plans) =>
-    plans.map((plan) => ({
-      evalName: plan.evalName,
-      artifact: plan.artifact.path,
-      artifactName: plan.artifact.name,
-      grader: plan.grader,
-      implicit: plan.implicit,
-      outcome: names.includes(plan.evalName)
-        ? ("fail" as const)
-        : ("pass" as const),
-      turns: 0,
-      durationMs: 1,
-    }));
+  const failing =
+    (names: string[]): TraceJudge =>
+    (plans) =>
+      Promise.resolve(
+        plans.map((plan) => ({
+          evalName: plan.evalName,
+          artifact: plan.artifact.path,
+          artifactName: plan.artifact.name,
+          grader: plan.grader,
+          implicit: plan.implicit,
+          outcome: names.includes(plan.evalName)
+            ? ("fail" as const)
+            : ("pass" as const),
+          turns: 0,
+          durationMs: 1,
+        })),
+      );
 
   it("stamps a weight on every result, defaulting to 1", async () => {
     const report = await run();
@@ -554,7 +565,7 @@ describe("weight in the run's pass rate", () => {
       (r) => r.grader === "ai" && r.outcome === "pass",
     )?.evalName;
     expect(name, "fixture has a judged ai eval").toBeDefined();
-    const failed = await run({ judge: failing([name!]) });
+    const failed = await run({ judge: failing([must(name, "an eval to fail")]) });
     // The judge decides the outcome; weight only decides how much it moves the
     // rate. Counts stay unweighted for the same reason.
     expect(failed.evalResults.find((r) => r.evalName === name)?.outcome).toBe(

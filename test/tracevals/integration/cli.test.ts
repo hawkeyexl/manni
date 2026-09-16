@@ -11,6 +11,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
+import { must } from "../helpers.js";
 
 const exec = promisify(execFile);
 
@@ -50,7 +51,7 @@ describe.skipIf(!built)("built CLI", () => {
         "--format",
         "json",
       ],
-      { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home" },
+      { CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/home/.claude" },
     );
     expect(code).toBe(1);
     const report = JSON.parse(stdout);
@@ -81,7 +82,7 @@ describe.skipIf(!built)("built CLI", () => {
         "--format",
         "json",
       ],
-      { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home" },
+      { CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/home/.claude" },
     );
     expect(code).toBe(1); // the deterministic failure persists
     const report = JSON.parse(stdout);
@@ -94,7 +95,7 @@ describe.skipIf(!built)("built CLI", () => {
   it("list -f json enumerates the fixture session store", async () => {
     const { code, stdout } = await runCli(
       ["list", "--all-projects", "-f", "json", "--limit", "5"],
-      { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home" },
+      { CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/home/.claude" },
     );
     expect(code).toBe(0);
     const { traces } = JSON.parse(stdout);
@@ -208,7 +209,7 @@ describe.skipIf(!built)("built CLI", () => {
           "-f",
           "json",
         ],
-        { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home" },
+        { CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/home/.claude" },
       );
       expect(code).toBe(1);
       expect(JSON.parse(stdout).evalResults.length).toBeGreaterThan(0);
@@ -243,7 +244,7 @@ describe.skipIf(!built)("built CLI", () => {
         "--format",
         "json",
       ],
-      { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home" },
+      { CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/home/.claude" },
     );
     expect(code).toBe(0);
     const report = JSON.parse(stdout);
@@ -288,7 +289,7 @@ describe.skipIf(!built)("built CLI", () => {
       "json",
       ...extra,
     ];
-    const home = { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home" };
+    const home = { CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/home/.claude" };
     const paths = (stdout: string): string[] =>
       JSON.parse(stdout).results.map((r: { artifact: string }) =>
         r.artifact.replace(/\\/g, "/"),
@@ -317,7 +318,7 @@ describe.skipIf(!built)("built CLI", () => {
 
   // The plugin path only really exists once it survives bundling: `dist/cli.js`
   // and `dist/index.js` are separate entries, and a side-effect plugin that
-  // imports `@hawkeyexl/manni/tracevals` is registering into whichever copy of the
+  // imports `@hawkeyexl/manni` is registering into whichever copy of the
   // registry that specifier resolves to. Only the built CLI can prove it is the
   // same one (ADR 01017).
   describe("grader plugins", () => {
@@ -334,7 +335,7 @@ describe.skipIf(!built)("built CLI", () => {
 
     it("reports an unknown grader kind when no plugin is required", async () => {
       const { code, stdout } = await runCli(pluginRun([]), {
-        MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/plugin-project",
+        CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/plugin-project/.claude",
       });
       expect(code).toBe(1);
       const report = JSON.parse(stdout);
@@ -348,7 +349,7 @@ describe.skipIf(!built)("built CLI", () => {
     it("--require registers the kind and the same eval passes", async () => {
       const { code, stdout } = await runCli(
         pluginRun(["--require", "./test/tracevals/fixtures/plugins/stayed-in-scope.mjs"]),
-        { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/plugin-project" },
+        { CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/plugin-project/.claude" },
       );
       expect(code).toBe(0);
       const report = JSON.parse(stdout);
@@ -367,7 +368,7 @@ describe.skipIf(!built)("built CLI", () => {
           "--require",
           "./test/tracevals/fixtures/plugins/side-effect-grader.mjs",
         ]),
-        { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/plugin-project" },
+        { CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/plugin-project/.claude" },
       );
       const report = JSON.parse(stdout);
       expect(
@@ -378,7 +379,7 @@ describe.skipIf(!built)("built CLI", () => {
     it("exits 2 with a message that is not the grader-not-found one", async () => {
       const { code, stderr } = await runCli(
         pluginRun(["--require", "./test/tracevals/fixtures/plugins/does-not-exist.mjs"]),
-        { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/plugin-project" },
+        { CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/plugin-project/.claude" },
       );
       expect(code).toBe(2);
       expect(stderr).toContain("could not load grader plugin");
@@ -390,7 +391,7 @@ describe.skipIf(!built)("built CLI", () => {
   // selected, not by how many came back, so a script piping `--format json`
   // gets something stable.
   describe("batch runs", () => {
-    const home = { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home" };
+    const home = { CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/home/.claude" };
     const both = [
       "test/tracevals/fixtures/traces/claude-session.jsonl",
       "test/tracevals/fixtures/traces/claude-session-sidecar.jsonl",
@@ -400,7 +401,7 @@ describe.skipIf(!built)("built CLI", () => {
       const { stdout } = await runCli(
         [
           "run",
-          both[0]!,
+          must(both[0], "the first of the two traces"),
           "--project",
           "test/tracevals/fixtures/project",
           "--deterministic-only",
@@ -463,7 +464,7 @@ describe.skipIf(!built)("built CLI", () => {
     it("exits 2 rather than green when a selector matches nothing", async () => {
       const { code, stderr } = await runCli(
         ["run", "--all-projects", "--deterministic-only"],
-        { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/project" },
+        { CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/project/.claude" },
       );
       expect(code).toBe(2);
       expect(stderr).toMatch(/no traces matched/);
@@ -471,7 +472,7 @@ describe.skipIf(!built)("built CLI", () => {
 
     it("exits 2 when named traces are mixed with a selector", async () => {
       const { code, stderr } = await runCli(
-        ["run", both[0]!, "--limit", "1", "--deterministic-only"],
+        ["run", must(both[0], "the first of the two traces"), "--limit", "1", "--deterministic-only"],
         home,
       );
       expect(code).toBe(2);
@@ -491,7 +492,7 @@ describe.skipIf(!built)("built CLI", () => {
   // ADR 01022. The command surface, the report shape, and the exit-code
   // contract, through the built binary rather than the library.
   describe("calibrate", () => {
-    const home = { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home" };
+    const home = { CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/home/.claude" };
     const corpus = [
       "test/tracevals/fixtures/traces/claude-session.jsonl",
       "test/tracevals/fixtures/traces/claude-session-sidecar.jsonl",
@@ -567,7 +568,7 @@ describe.skipIf(!built)("built CLI", () => {
       const { code, stderr } = await runCli(
         [
           "calibrate",
-          corpus[0]!,
+          must(corpus[0], "the first trace of the corpus"),
           "--project",
           "test/tracevals/fixtures/project",
           "--labels",
@@ -669,7 +670,7 @@ describe.skipIf(!built)("built CLI", () => {
         join(root, "test/tracevals/fixtures/traces/claude-session.jsonl"),
         trace,
       );
-      const home = { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home" };
+      const home = { CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/home/.claude" };
       const runArgs = [
         "run",
         trace,
@@ -737,7 +738,7 @@ describe.skipIf(!built)("built CLI", () => {
   describe("command execution opt-out", () => {
     // A config directory whose only job is to turn command execution off.
     const noCommands = join(root, "test/tracevals/fixtures/no-commands");
-    const home = { MOOSE_TRACEVALS_HOME: join(root, "test/tracevals/fixtures/home") };
+    const home = { CLAUDE_CONFIG_DIR: join(root, "test/tracevals/fixtures/home/.claude") };
     const trace = join(root, "test/tracevals/fixtures/traces/claude-session.jsonl");
     const project = join(root, "test/tracevals/fixtures/project");
     const args = (extra: string[]) => [
@@ -820,7 +821,7 @@ describe.skipIf(!built)("built CLI", () => {
    * trace except the oldest.
    */
   describe("numeric flag validation", () => {
-    const home = { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home" };
+    const home = { CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/home/.claude" };
     const trace = "test/tracevals/fixtures/traces/claude-session.jsonl";
     const judged = ["--project", "test/tracevals/fixtures/project", "--provider", "mock"];
 
@@ -913,7 +914,7 @@ describe.skipIf(!built)("built CLI", () => {
    * names offered, and no model id of tracevals' own.
    */
   describe("provider selection", () => {
-    const home = { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home" };
+    const home = { CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/home/.claude" };
     const trace = "test/tracevals/fixtures/traces/claude-session.jsonl";
 
     it("refuses --local beside a hosted --provider, on every verb that takes both", async () => {
@@ -967,7 +968,7 @@ describe.skipIf(!built)("built CLI", () => {
         "--format",
         "json",
       ],
-      { MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home" },
+      { CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/home/.claude" },
     );
     const report = JSON.parse(stdout);
     expect(report.trace.source).toBe("claude-code");

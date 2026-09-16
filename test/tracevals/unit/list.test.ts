@@ -2,15 +2,15 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { renderList, runList } from "../../../src/tracevals/commands/list.js";
 
-const fixtureHome = fileURLToPath(
-  new URL("../fixtures/home", import.meta.url),
+const claudeDir = fileURLToPath(
+  new URL("../fixtures/home/.claude", import.meta.url),
 );
 
 describe("runList", () => {
   it("returns discovered traces for --all-projects", async () => {
     const run = await runList({
       allProjects: true,
-      env: { MOOSE_TRACEVALS_HOME: fixtureHome },
+      env: { CLAUDE_CONFIG_DIR: claudeDir },
     });
     expect(run.traces.length).toBe(2);
     const ids = run.traces.map((t) => t.sessionId);
@@ -23,7 +23,7 @@ describe("renderList", () => {
   it("renders one line per trace with prompt and project", async () => {
     const run = await runList({
       allProjects: true,
-      env: { MOOSE_TRACEVALS_HOME: fixtureHome },
+      env: { CLAUDE_CONFIG_DIR: claudeDir },
     });
     const out = renderList(run, { color: false });
     expect(out).toContain("Fix the crash in src/app.ts.");

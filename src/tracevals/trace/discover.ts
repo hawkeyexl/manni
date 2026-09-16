@@ -1,7 +1,11 @@
 /**
  * Session-store discovery: find Claude Code trace files for a project (or all
- * projects) under the user's home directory. MOOSE_TRACEVALS_HOME overrides the
- * home dir so tests and CI can point at a fixture tree.
+ * projects) in Claude Code's own config directory.
+ *
+ * The location is detected, not configured: `CLAUDE_CONFIG_DIR` is Claude
+ * Code's variable for that directory, so a session that has moved it is
+ * followed without tracevals adding a switch of its own, and a test or CI job
+ * points at a fixture tree with the same variable the agent itself reads.
  */
 import { open, readdir, stat } from "node:fs/promises";
 import { homedir } from "node:os";
@@ -34,19 +38,23 @@ export function slugFor(cwd: string): string {
   return cwd.replace(/[^a-zA-Z0-9]/g, "-");
 }
 
-export function homeDir(
+/**
+ * Claude Code's config directory: `CLAUDE_CONFIG_DIR` when it is set, and
+ * `~/.claude` otherwise. Everything the agent keeps per user — `projects/`,
+ * `skills/`, `agents/`, `commands/`, `plugins/` — hangs off it.
+ */
+export function configDir(
   env: Record<string, string | undefined> = process.env,
 ): string {
-  const override = env.MOOSE_TRACEVALS_HOME;
-  if (override) return resolve(override);
-  return homedir();
+  const configured = env.CLAUDE_CONFIG_DIR;
+  if (configured) return resolve(configured);
+  return join(homedir(), ".claude");
 }
 
 export async function discoverTraces(
   options: DiscoverOptions = {},
 ): Promise<TraceListing[]> {
-  const home = homeDir(options.env);
-  const store = join(home, ".claude", "projects");
+  const store = join(configDir(options.env), "projects");
 
   let projectDirs: string[];
   if (options.allProjects) {

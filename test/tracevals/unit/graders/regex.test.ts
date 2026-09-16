@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { graderFor } from "../../../../src/tracevals/graders/registry.js";
-import { makeArtifact, makePlan, makeRulesPlan, makeTrace } from "../../helpers.js";
+import { graderOf, makeArtifact, makePlan, makeRulesPlan, makeTrace } from "../../helpers.js";
 
-const grader = graderFor("regex")!;
+const grader = graderOf("regex");
 
 const trace = makeTrace({
   assistantTexts: ["Fixed the crash.", "All tests pass."],

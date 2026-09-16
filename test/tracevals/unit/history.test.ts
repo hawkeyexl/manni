@@ -102,7 +102,7 @@ describe("history", () => {
     expect(comparison?.removed).toEqual(["removed"]);
   });
 
-  it("returns null when no prior entry matches the trace", async () => {
+  it("returns null when no prior entry matches the trace", () => {
     expect(compareToLast([], report([result("a", "pass")]))).toBeNull();
   });
 });

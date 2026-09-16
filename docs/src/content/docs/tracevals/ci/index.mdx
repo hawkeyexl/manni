@@ -169,7 +169,7 @@ jobs:
       # most want to keep.
       - name: Publish the report
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: tracevals-report
           path: tracevals-report.md
@@ -232,7 +232,7 @@ rather than timestamps. The mechanics are the same three patterns above:
 
 ```yaml
       - name: Upload the session and its manifest
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: agent-session
           path: |

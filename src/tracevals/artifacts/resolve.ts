@@ -5,7 +5,7 @@
  * warnings, never a crash (ADR 01003).
  */
 import { basename, dirname, join, resolve } from "node:path";
-import { homeDir } from "../trace/discover.js";
+import { configDir } from "../trace/discover.js";
 import { coverAvailability } from "./availability.js";
 import { findGitRoot, findInTree, safeMtime, safeRead, segments } from "./fs.js";
 import { checkContent, hashFile, relPosix } from "../capture/manifest.js";
@@ -62,7 +62,7 @@ export async function resolveArtifacts(
   options: ResolveOptions = {},
 ): Promise<ResolvedArtifacts> {
   const projectDir = resolve(options.projectDir ?? trace.cwd);
-  const home = homeDir(options.env);
+  const userDir = configDir(options.env);
   const projectRoot = resolve(
     options.projectRoot ?? (await findGitRoot(projectDir)) ?? projectDir,
   );
@@ -112,7 +112,7 @@ export async function resolveArtifacts(
       const command = await resolveSlashCommand(
         invocation.name,
         projectDir,
-        home,
+        userDir,
       );
       if (command.artifact) {
         add(command.artifact);
@@ -126,7 +126,7 @@ export async function resolveArtifacts(
         continue;
       }
 
-      const skill = await resolveSkill(invocation.name, projectDir, home);
+      const skill = await resolveSkill(invocation.name, projectDir, userDir);
       if (skill.artifact) {
         addSkill(invocation.name, skill.artifact, skill.tried);
         // Resolved as a skill, so the slash-command lookup below must not
@@ -156,7 +156,7 @@ export async function resolveArtifacts(
     const { artifact, tried } = await resolveSkill(
       invocation.name,
       projectDir,
-      home,
+      userDir,
     );
     if (artifact) {
       addSkill(invocation.name, artifact, tried);
@@ -186,7 +186,7 @@ export async function resolveArtifacts(
     const { artifact, tried } = await resolveAgent(
       spawn.subagentType,
       projectDir,
-      home,
+      userDir,
     );
     if (artifact) {
       add(artifact);
@@ -464,7 +464,7 @@ function joinBase(
 async function resolveSkill(
   name: string,
   projectDir: string,
-  home: string,
+  userDir: string,
 ): Promise<{ artifact: ResolvedArtifact | null; tried: string[] }> {
   const tried: string[] = [];
   // `plugin:skill` refs look up the skill by its short name inside the
@@ -481,7 +481,7 @@ async function resolveSkill(
       });
     }
     candidates.push({
-      path: join(home, ".claude", "skills", shortName, "SKILL.md"),
+      path: join(userDir, "skills", shortName, "SKILL.md"),
       origin: "user",
     });
   }
@@ -505,7 +505,7 @@ async function resolveSkill(
 
   // Plugin store: ~/.claude/plugins/**/skills/<shortName>/SKILL.md. The store
   // layout varies (marketplace caches nest deeper), so search recursively.
-  const pluginRoot = join(home, ".claude", "plugins");
+  const pluginRoot = join(userDir, "plugins");
   tried.push(join(pluginRoot, "**", "skills", shortName, "SKILL.md"));
   const found = await findInTree(
     pluginRoot,
@@ -531,7 +531,7 @@ async function resolveSkill(
 
 /**
  * `.claude/commands/<name>.md`, in the three places Claude Code reads them:
- * the project, the user's home, and the plugin store.
+ * the project, the user's config directory, and the plugin store.
  *
  * Two shapes matter and neither is guessed at. Subdirectories under
  * `commands/` **organize** rather than namespace — `commands/release/tag.md`
@@ -544,7 +544,7 @@ async function resolveSkill(
 async function resolveSlashCommand(
   name: string,
   projectDir: string,
-  home: string,
+  userDir: string,
 ): Promise<{ artifact: ResolvedArtifact | null; tried: string[] }> {
   const tried: string[] = [];
   const [pluginName, shortName] = splitPluginRef(name);
@@ -561,7 +561,7 @@ async function resolveSlashCommand(
   if (pluginName === null) {
     const dirs: Array<{ dir: string; origin: ResolvedArtifact["origin"] }> = [
       { dir: join(projectDir, ".claude", "commands"), origin: "project" },
-      { dir: join(home, ".claude", "commands"), origin: "user" },
+      { dir: join(userDir, "commands"), origin: "user" },
     ];
     for (const { dir, origin } of dirs) {
       const path = join(dir, `${shortName}.md`);
@@ -582,7 +582,7 @@ async function resolveSlashCommand(
     return { artifact: null, tried };
   }
 
-  const pluginRoot = join(home, ".claude", "plugins");
+  const pluginRoot = join(userDir, "plugins");
   tried.push(join(pluginRoot, "**", "commands", `${shortName}.md`));
   const found = await findInTree(
     pluginRoot,
@@ -632,7 +632,7 @@ function hasPathSegment(path: string, pluginName: string): boolean {
 async function resolveAgent(
   subagentType: string,
   projectDir: string,
-  home: string,
+  userDir: string,
 ): Promise<{ artifact: ResolvedArtifact | null; tried: string[] }> {
   const tried: string[] = [];
   // Plugin agents are referenced as `plugin:agent`; the file is the short name.
@@ -641,7 +641,7 @@ async function resolveAgent(
   const candidates: Array<{ path: string; origin: ResolvedArtifact["origin"] }> = [
     { path: join(projectDir, ".claude", "agents", `${shortName}.md`), origin: "project" },
     { path: join(projectDir, "agents", `${shortName}.md`), origin: "project" },
-    { path: join(home, ".claude", "agents", `${shortName}.md`), origin: "user" },
+    { path: join(userDir, "agents", `${shortName}.md`), origin: "user" },
   ];
 
   for (const candidate of candidates) {

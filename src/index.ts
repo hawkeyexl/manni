@@ -11,3 +11,7 @@ export * as lint from "./lint/index.js";
 // The family encryption key's domain (proposal 0045): its command cores and
 // the encryption primitives. `import { key } from "@hawkeyexl/manni"`.
 export * as key from "./key/index.js";
+// The session-eval tool. A grader plugin registers through this namespace, so
+// it binds to the same registry the CLI reads:
+// `import { tracevals } from "@hawkeyexl/manni"`.
+export * as tracevals from "./tracevals/index.js";

@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { graderFor } from "../../../../src/tracevals/graders/registry.js";
 import { globToRegExp } from "../../../../src/tracevals/graders/glob.js";
-import { makeRulesPlan, makeTrace } from "../../helpers.js";
+import { graderOf, makeRulesPlan, makeTrace } from "../../helpers.js";
 import type { Trace } from "../../../../src/tracevals/trace/types.js";
 
-const grader = graderFor("skill-invoked")!;
+const grader = graderOf("skill-invoked");
 
 /** A session that edited docs, ran Edit, and never invoked the writing skill. */
 function docsSession(overrides: Partial<Trace> = {}): Trace {
