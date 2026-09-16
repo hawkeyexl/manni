@@ -16,9 +16,8 @@ import { shouldColor } from "../shared/color.js";
 import { fail } from "../shared/run.js";
 import { notice } from "../shared/warn.js";
 import { OMITTED_WHEN_CLEAN, STDIN_TOKEN } from "../meta/internal.js";
-import { render } from "../meta/index.js";
 import { runCheck } from "./commands/check.js";
-import { FINDING_FORMATS, JUNIT_CLASSNAME, type FindingFormat, type TermReport } from "./commands/findings.js";
+import { FINDING_FORMATS, type FindingFormat, type TermReport } from "./commands/findings.js";
 import { FORMATS_FORMATS, listFormats } from "./commands/formats.js";
 import { GET_FORMATS, runGet } from "./commands/get.js";
 import { runLint } from "./commands/lint.js";
@@ -28,6 +27,7 @@ import { runWrite, writeFormats } from "./commands/write.js";
 import { renderListCsv } from "./reporters/csv.js";
 import { renderFindingsGithub } from "./reporters/github.js";
 import { renderFindingsJson, renderFormatsJson, renderGetJson, renderListJson } from "./reporters/json.js";
+import { renderFindingsJunit } from "./reporters/junit.js";
 import {
   renderFindingsPretty,
   renderFormatsPretty,
@@ -36,6 +36,7 @@ import {
   renderValeWiring,
   renderWritePretty,
 } from "./reporters/pretty.js";
+import { renderFindingsSarif } from "./reporters/sarif.js";
 
 /** What commander hands every verb that reads terms. */
 interface InputCliOptions {
@@ -121,13 +122,10 @@ function renderFindings(report: TermReport, format: FindingFormat, options: Inpu
       text = renderFindingsGithub(report);
       break;
     case "sarif":
+      text = renderFindingsSarif(report, { onNotice: notice });
+      break;
     case "junit":
-      // Meta's renderers over the adapted results: same rule ids, same envelope.
-      text = render(format, report.results, report.summary, {
-        frame: report.frame,
-        classname: JUNIT_CLASSNAME,
-        onNotice: notice,
-      });
+      text = renderFindingsJunit(report);
       break;
   }
   if (text.length > 0 || !OMITTED_WHEN_CLEAN.has(format)) print(text);

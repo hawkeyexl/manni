@@ -30,6 +30,8 @@ import {
   renderWritePretty,
 } from "../../src/term/reporters/pretty.js";
 import { renderListCsv } from "../../src/term/reporters/csv.js";
+import { renderFindingsJunit } from "../../src/term/reporters/junit.js";
+import { renderFindingsSarif } from "../../src/term/reporters/sarif.js";
 import type { Term, TermReader } from "../../src/term/types.js";
 
 const PROGRESSIVE = [
@@ -323,6 +325,72 @@ describe("lint", () => {
     await expect(runLint({ cwd, inputs: [], runVale: () => Promise.resolve({}) })).rejects.toThrow(
       new TermError('manni.config.yaml: tools.vale.config "nowhere.ini" does not exist.'),
     );
+  });
+});
+
+interface SarifLog {
+  runs: {
+    tool: { driver: { informationUri: string; rules: { id: string; shortDescription: { text: string }; helpUri?: string }[] } };
+    results: { ruleId: string; message: { text: string } }[];
+  }[];
+}
+
+describe("sarif and junit", () => {
+  const RULES_PAGE = "https://hawkeyexl.github.io/manni/term/reference/rules/";
+
+  async function checkReport(): Promise<Awaited<ReturnType<typeof runCheck>>> {
+    return runCheck({ cwd: await lenses("PAL, progressive lens, corrective lens"), inputs: [] });
+  }
+
+  async function lintReport(): Promise<Awaited<ReturnType<typeof runLint>>> {
+    return runLint({
+      cwd: await lenses(),
+      inputs: [],
+      runVale: () =>
+        Promise.resolve({
+          "x/corrective-lens.definition.md": [
+            { Check: "Direct.Length", Message: "Too long.", Line: 1, Span: [1, 2], Severity: "error" },
+          ],
+        }),
+    });
+  }
+
+  it("describes a check rule, links its section of the rules page, and prints the finding's own message", async () => {
+    const sarif = JSON.parse(renderFindingsSarif(await checkReport())) as SarifLog;
+    const run = sarif.runs[0];
+    expect(run?.tool.driver.informationUri).toBe("https://hawkeyexl.github.io/manni/term/");
+    expect(run?.tool.driver.rules).toEqual([
+      {
+        id: "manni:term/undefined-term",
+        shortDescription: { text: "A page's concepts: names a label no entry claims as its preferred label." },
+        helpUri: `${RULES_PAGE}#undefined-term`,
+      },
+    ]);
+    expect(run?.results.map((r) => [r.ruleId, r.message.text])).toEqual([
+      ["manni:term/undefined-term", 'concepts: "PAL" names no entry. "progressive lens" lists it as an alt-label.'],
+    ]);
+  });
+
+  it("describes a lint rule by Vale's rule name, with no helpUri and no field prefix", async () => {
+    const sarif = JSON.parse(renderFindingsSarif(await lintReport())) as SarifLog;
+    const run = sarif.runs[0];
+    expect(run?.tool.driver.rules).toEqual([
+      {
+        id: "manni:term/prose/Direct.Length",
+        shortDescription: { text: "Vale's Direct.Length rule flagged the prose of an entry's field." },
+      },
+    ]);
+    expect(run?.results.map((r) => r.message.text)).toEqual(["Too long."]);
+  });
+
+  it("gives a JUnit failure the rule id and the finding's own message", async () => {
+    const check = renderFindingsJunit(await checkReport());
+    expect(check).toContain(
+      '<failure type="manni:term/undefined-term" message="concepts: &quot;PAL&quot; names no entry. &quot;progressive lens&quot; lists it as an alt-label. (line 3)"/>',
+    );
+    expect(check).toContain('classname="manni.term"');
+    const lint = renderFindingsJunit(await lintReport());
+    expect(lint).toContain('<failure type="manni:term/prose/Direct.Length" message="Too long. (line 6)"/>');
   });
 });
 

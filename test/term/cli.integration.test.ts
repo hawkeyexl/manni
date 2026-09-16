@@ -174,9 +174,22 @@ describe("manni term (the ladder)", () => {
     const cwd = join(work, "failing");
     const json = JSON.parse(term(["check", "-f", "json"], { cwd }).stdout) as { summary: { errors: number } };
     expect(json.summary.errors).toBe(1);
-    const sarif = JSON.parse(term(["check", "-f", "sarif"], { cwd }).stdout) as { runs: { results: { ruleId: string }[] }[] };
+    const sarif = JSON.parse(term(["check", "-f", "sarif"], { cwd }).stdout) as {
+      runs: {
+        tool: { driver: { rules: { shortDescription: { text: string }; helpUri?: string }[] } };
+        results: { ruleId: string; message: { text: string } }[];
+      }[];
+    };
     expect(sarif.runs[0]?.results[0]?.ruleId).toBe("manni:term/undefined-term");
-    expect(term(["check", "-f", "junit"], { cwd }).stdout).toContain('classname="manni.term"');
+    expect(sarif.runs[0]?.results[0]?.message.text).toBe(
+      'concepts: "PAL" names no entry. "progressive lens" lists it as an alt-label.',
+    );
+    expect(sarif.runs[0]?.tool.driver.rules[0]?.helpUri).toBe(
+      "https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term",
+    );
+    const junit = term(["check", "-f", "junit"], { cwd }).stdout;
+    expect(junit).toContain('classname="manni.term"');
+    expect(junit).toContain('message="concepts: &quot;PAL&quot; names no entry.');
   });
 
   it("7. ramps in with --baseline", () => {
