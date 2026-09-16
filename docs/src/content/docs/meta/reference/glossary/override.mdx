@@ -1,0 +1,26 @@
+---
+title: Override
+description: "The two related senses of override in manni meta: a config overrides entry, and the precedence chain of schema resolution."
+type: term
+id: override
+label: override
+related-terms: [schema set, $schema key]
+abstract: A source that outranks another in schema resolution.
+definition: >-
+  A source of schemas that outranks another in schema resolution, such as a
+  config overrides entry for the files matching its glob.
+---
+
+<p>{frontmatter.definition}</p>
+
+In manni meta, "override" has two related senses:
+
+- A config **`overrides`** entry assigns a
+  [schema set](/manni/meta/reference/glossary/schema-set/) to files matching a
+  glob, so different folders can use different schemas. See
+  [Apply different schemas to different folders](/manni/meta/set-up/different-schemas-per-folder/).
+- More broadly, schema resolution is a chain of overrides. A `--schema` flag
+  overrides a document's [`$schema`](/manni/meta/reference/glossary/schema-key/).
+  That overrides config `overrides`, which overrides config `schemas`, which
+  overrides the built-in default. The first source that yields a schema wins.
+  See [Precedence](/manni/meta/reference/schema-resolution/#precedence).
