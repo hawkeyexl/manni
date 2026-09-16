@@ -100,8 +100,9 @@ and the config flags and nothing else.
   info to notice — and the source value stays in `shaclSeverity`, the way a11y
   keeps axe's `impact` (0035, stress test 10). `check`'s counts become
   `errors`, `warnings`, `notices`.
-- **Formats** are validated, through the same `parseFormat` docevals uses. An
-  unknown `-f` is exit 2 and lists what the verb takes. `check` adds `github`,
+- **Formats** are validated. Each verb names its list, and an unknown `-f` is
+  exit 2 with the family's sentence, `Unknown --format "x". Use a | b.`, as
+  a11y and cite each spell it against their own list. `check` adds `github`,
   because it is a CI gate; everything else stays `pretty | json`, with `pretty`
   the default.
 - **`-f` means the output format everywhere.** `kg export` took its target

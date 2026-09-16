@@ -77,6 +77,20 @@ Key layers:
     and the output formats.
   - `src/docevals/cli.ts`: thin commander wrapper exported as `buildProgram()`
     and mounted by `src/cli.ts`. No entry point of its own.
+- `src/kg/`: the knowledge-graph tool, `manni kg build`, `check`, `fill`,
+  `query`, `stats`, `search`, `traverse`, `embed`, `export` and `init`
+  (proposal 0051). It derives RDF from frontmatter, links, headings, code
+  blocks and git history, and checks the result against SHACL shapes. Its own
+  `src/kg/CLAUDE.md` holds the tool's invariants.
+  - `src/kg/core/`: the harvest and derivation, the SHACL check, the graph
+    store, git history, and the `kg:` config loader.
+  - `src/kg/commands/`: the command cores, free of CLI/IO plumbing.
+  - `src/kg/runtime/` and `src/kg/embed/`: the two `platform: neutral` entry
+    points published as `@hawkeyexl/manni/kg/runtime` and `/kg/embed`. They run
+    in a browser, so a `node:` import reaching either is a bug the
+    bundle-purity test catches.
+  - `src/kg/cli.ts`: thin commander wrapper exported as `buildProgram()` and
+    mounted by `src/cli.ts`. No entry point of its own.
 - `src/key/`: the family key's domain, `manni key set` and `manni key rotate`
   (proposal 0045). It owns no cryptography. `rotate` orchestrates meta's and
   cite's re-encryption, and the one ciphertext format lives in
@@ -258,7 +272,9 @@ stdin/parse cases.
 Before any user-facing writing or docs task, consult `docs/content-strategy/`:
 
 1. Identify the **persona** the page serves: Maya (docs engineer), Devin (CI engineer), Sara (schema author), or Theo (contributor fixing a failure). See `personas.md`.
-2. Find the matching **CUJ** in `cujs.md` (M1–M13, D1–D9, S1–S9, T1–T4). Structure the content around reaching that outcome, not by document type or Diátaxis category.
+2. Find the matching **CUJ** in `cujs.md` (M1–M13 and M18–M20, D1–D9 and
+   D12–D13, S1–S9 and S12, T1–T4 and T6; the gaps are reserved for the tool
+   branches still in flight). Structure the content around reaching that outcome, not by document type or Diátaxis category.
 3. Link into the **Reference shelf** (`reference/`) for exhaustive detail (flag tables, config keys, precedence chain). Journey pages explain the path; they don't duplicate reference.
 4. Check `information-architecture.md` for the page's place in the content set and its ★ launch status.
 5. Every page in `docs/src/content/docs/**` needs `title` and `description` frontmatter.
