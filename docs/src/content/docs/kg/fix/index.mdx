@@ -72,7 +72,7 @@ error: <doc IRI> kg:notApplicableToVariant — Value node must not also be one o
 
 The page says it is about a product variant and also that it does not apply to
 it. Decide which is true and delete the other. The finding names the document,
-and both lists are in its `kg:` block.
+and both lists are in its `graph:` block.
 
 ### A predicate the shapes do not know
 
@@ -110,20 +110,20 @@ request added pages, add the field to them. If it did not, the floor moved
 under you. That is a conversation with whoever set it rather than something to
 fix in your diff. See [Coverage](/manni/kg/govern/coverage/).
 
-### A schema error inside the `kg:` block
+### A schema error inside the `graph:` block
 
 There is no `kg validate`. The block is checked by `manni meta validate`,
 against the page vocabulary:
 
 ```console
 ✗ docs/install.md
-    /kg  must NOT have additional property 'bogus'  (line 3)  [./schema/kg-1.0.0-proposal.3.json]
+    /graph  must NOT have additional property 'bogus'  (line 3)  [./schema/graph-1.0.0-proposal.1.json]
 ```
 
-A typo inside the `kg` block, with the line number. The block is closed, so an
+A typo inside the `graph` block, with the line number. The block is closed, so an
 unknown key is an error rather than an ignored one. Your repository puts the
 vocabulary in the schema set for these pages; see
-[Checking a `kg:` block](/manni/kg/reference/cli/#checking-a-kg-block).
+[Checking a `graph:` block](/manni/kg/reference/cli/#checking-a-graph-block).
 
 ### A warning about a page-level key
 
@@ -167,7 +167,7 @@ unknown flag value. None of those is about your page.
 
 {/* step {"description":"A broken internal link and a broken section ref are stats findings.","runShell":{"command":"manni kg stats -c test/kg/fixtures/dd/docs.config.yaml --check","exitCodes":[1],"stdio":"Broken section refs (1):"}} */}
 
-{/* step {"description":"A typo inside the kg block is a schema error with a line number.","runShell":{"command":"manni meta validate -c test/kg/fixtures/dd/invalid.config.yaml -s docs/proposals/0023/schemas/kg/1.0.0-proposal.3.json","exitCodes":[1],"stdio":"(line 3)"}} */}
+{/* step {"description":"A typo inside the graph block is a schema error with a line number.","runShell":{"command":"manni meta validate -c test/kg/fixtures/dd/invalid.config.yaml -s docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json","exitCodes":[1],"stdio":"(line 3)"}} */}
 
 {/* step {"description":"A near-miss page key warns and never fails the build.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/harvest.config.yaml","exitCodes":[0],"stdio":"is not read by manni kg and looks like"}} */}
 

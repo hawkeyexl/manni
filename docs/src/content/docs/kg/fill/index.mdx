@@ -1,6 +1,6 @@
 ---
 title: Fill the vocabulary
-description: Propose kg fields for pages that predate the vocabulary, and review what a model wrote rather than assuming it is right.
+description: Propose graph fields for pages that predate the vocabulary, and review what a model wrote rather than assuming it is right.
 ---
 
 Most of the graph comes out of pages for free: titles, links, headings, code
@@ -83,11 +83,11 @@ are also the ones a model is worst at.
 
 `--sections` also proposes per-section metadata. It is opt-in, because it is a
 great deal more output. One wrinkle is worth knowing before you use it.
-Section values are **not** recorded in `meta-provenance`, since `/kg/sections`
+Section values are **not** recorded in `meta-provenance`, since `/graph/sections`
 is one of the three hand-curated pointers. The run says so:
 
 ```console
-manni: Section metadata was written but is NOT recorded in meta-provenance: /kg/sections is one of the three hand-curated pointers kg refuses, with /kg/revision-of and /kg/derived-from, so recording it would make `manni kg check` report an error. Review section values by hand — the review queue will not list them.
+manni: Section metadata was written but is NOT recorded in meta-provenance: /graph/sections is one of the three hand-curated pointers kg refuses, with /graph/revision-of and /graph/derived-from, so recording it would make `manni kg check` report an error. Review section values by hand — the review queue will not list them.
 ```
 
 ## The budget is turns
@@ -162,12 +162,12 @@ edit, naming the model and the fields as JSON Pointers:
 ```yaml
 ---
 title: Installing
-kg:
+graph:
   label: Installation
   concepts: [onboarding]
 meta-provenance:
   - generated-by: claude-fable-5
-    fields: ["/kg/label", "/kg/concepts"]
+    fields: ["/graph/label", "/graph/concepts"]
 ---
 ```
 
@@ -177,14 +177,14 @@ thing you can measure and finish, rather than a thing you meant to do.
 
 `meta-provenance` is the metadata tool's record, shared rather than copied. A
 page filled by `manni kg fill` and by `manni docevals fill` carries one entry
-per model, and neither run disturbs the other's. There is no `kg.provenance`: a
-page still carrying one is refused by name, with the migration in the message.
+per model, and neither run disturbs the other's. The `graph` block has no
+provenance key of its own, so this record is the only one.
 
 Set `fill.writeProvenance: false` and the record is not written. Do not.
 
 ## A page's own fields win
 
-A `kg` field a human set is left alone. `--force` overwrites it, and it is
+A `graph` field a human set is left alone. `--force` overwrites it, and it is
 named that way because it is a deliberate act. The values a person wrote are
 the ones the corpus is actually built on.
 

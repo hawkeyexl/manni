@@ -157,15 +157,15 @@ until the shapes say so.
 | `--shapes` | `<path>` | config `check.shapes`, else bundled | A shapes `.ttl` file. Repeatable, one path per occurrence, never comma-separated. Given here or in config, these replace the bundled shapes rather than adding to them. Include the bundled file when you mean to extend it. |
 | `-f, --format` | `<pretty\|json\|github>` | `pretty` | Output format. `github` writes one workflow annotation per finding. |
 
-## Checking a `kg:` block
+## Checking a `graph:` block
 
-There is no `kg validate`. A `kg:` block is frontmatter, and frontmatter is
+There is no `kg validate`. A `graph:` block is frontmatter, and frontmatter is
 checked by `manni meta validate` against the page vocabulary. That is the
 command every vocabulary in this family is checked with.
 
-The draft is [open for review](/manni/meta/proposals/kg/), so no built-in id and
+The draft is [open for review](/manni/meta/proposals/graph/), so no built-in id and
 no published URL serves it yet. Copy
-[`1.0.0-proposal.3.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/kg/1.0.0-proposal.3.json)
+[`1.0.0-proposal.1.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json)
 into your repository and name it for the pages it governs:
 
 ```yaml title="manni.config.yaml"
@@ -173,13 +173,13 @@ meta:
   overrides:
     - collection: site
       schemas:
-        - ./schema/kg-1.0.0-proposal.3.json
+        - ./schema/graph-1.0.0-proposal.1.json
 ```
 
 ```console
 $ manni meta validate
 ✗ docs/install.md
-    /kg  must NOT have additional property 'bogus'  (line 3)  [./schema/kg-1.0.0-proposal.3.json]
+    /graph  must NOT have additional property 'bogus'  (line 3)  [./schema/graph-1.0.0-proposal.1.json]
 
 1 file checked, 0 passed, 1 failed, 1 error
 ```
@@ -191,7 +191,7 @@ carry.
 
 ## `kg fill`
 
-Proposes `kg:` frontmatter fields from each page's content and writes the ones
+Proposes `graph:` frontmatter fields from each page's content and writes the ones
 that clear a confidence gate. This is the one verb that reaches a model.
 
 ```sh
@@ -223,7 +223,7 @@ model and the fields. See
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
 | `--dry-run` | n/a | off | Report proposals without writing files. |
-| `--force` | n/a | off | Overwrite `kg` fields a human set. Without it, a field already present on the page is left alone. |
+| `--force` | n/a | off | Overwrite `graph` fields a human set. Without it, a field already present on the page is left alone. |
 | `--no-cache` | n/a | off | Bypass the proposal cache, so every page is asked again. |
 | `--no-validate-graph` | n/a | off | Skip the SHACL guardrail that vets each proposal against the derived graph before it is written. |
 | `--sections` | n/a | config `fill.sections`, else off | Also propose per-section metadata, not only page-level. |
@@ -490,9 +490,9 @@ An unknown target is **exit 2**, with the allowed set named.
 
 {/* step {"description":"An unknown --format is refused while the options are parsed.","runShell":{"command":"manni kg check -c test/kg/fixtures/dd/docs.config.yaml -f xml","exitCodes":[2],"stdio":"/Unknown --format \"xml\". Use pretty \\| json \\| github./"}} */}
 
-{/* step {"description":"manni meta validate passes a corpus whose kg blocks are legal.","runShell":{"command":"manni meta validate -c test/kg/fixtures/dd/docs.config.yaml -s docs/proposals/0023/schemas/kg/1.0.0-proposal.3.json","exitCodes":[0],"stdio":"3 files checked, 3 passed"}} */}
+{/* step {"description":"manni meta validate passes a corpus whose graph blocks are legal.","runShell":{"command":"manni meta validate -c test/kg/fixtures/dd/docs.config.yaml -s docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json","exitCodes":[0],"stdio":"3 files checked, 3 passed"}} */}
 
-{/* step {"description":"A typo inside the kg block is a schema error with a line number.","runShell":{"command":"manni meta validate -c test/kg/fixtures/dd/invalid.config.yaml -s docs/proposals/0023/schemas/kg/1.0.0-proposal.3.json","exitCodes":[1],"stdio":"must NOT have additional property 'bogus'"}} */}
+{/* step {"description":"A typo inside the graph block is a schema error with a line number.","runShell":{"command":"manni meta validate -c test/kg/fixtures/dd/invalid.config.yaml -s docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json","exitCodes":[1],"stdio":"must NOT have additional property 'bogus'"}} */}
 
 {/* step {"description":"kg validate is gone, and gets no softer treatment than any other unknown verb.","runShell":{"command":"manni kg validate docs/","exitCodes":[2],"stdio":"unknown command 'validate'"}} */}
 

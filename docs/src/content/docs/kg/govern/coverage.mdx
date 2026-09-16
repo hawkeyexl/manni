@@ -38,13 +38,13 @@ exactly that.
 | `creator` | `dcterms:creator` | `author` or `authors` frontmatter, or the git commit history. |
 | `created` | `dcterms:created` | `created` or `date` frontmatter, else the first git commit that touched the file. |
 | `modified` | `dcterms:modified` | `last-updated` or `modified` frontmatter, else the last git commit. |
-| `subject` | `dcterms:subject` | `kg.concepts`, page-level `tags`, or a `subject` key. Each value becomes a SKOS concept node. |
-| `label` | `foaf:primaryTopic` | `kg.label`, the page's preferred name for the concept it is about. |
+| `subject` | `dcterms:subject` | `graph.concepts`, page-level `tags`, or a `subject` key. Each value becomes a SKOS concept node. |
+| `label` | `foaf:primaryTopic` | `graph.label`, the page's preferred name for the concept it is about. |
 | `language` | `dcterms:language` | A page's own `lang` or `language`, else the nearest enclosing `routes` entry that declares one. A BCP-47 tag. |
-| `type` | `iirds:has-topic-type` | `kg.type`, or a page type the derivation maps onto an iiRDS topic type. |
-| `applies-to` | `iirds:relates-to-product-variant` | `kg.applies-to`: which product variants this page is about. |
-| `about-product-lifecycle` | `iirds:relates-to-product-lifecycle-phase` | `kg.about-product-lifecycle`. |
-| `about-product-aspect` | `iirds:has-subject` | `kg.about-product-aspect`. |
+| `type` | `iirds:has-topic-type` | `graph.type`, or a page type the derivation maps onto an iiRDS topic type. |
+| `applies-to` | `iirds:relates-to-product-variant` | `graph.applies-to`: which product variants this page is about. |
+| `about-product-lifecycle` | `iirds:relates-to-product-lifecycle-phase` | `graph.about-product-lifecycle`. |
+| `about-product-aspect` | `iirds:has-subject` | `graph.about-product-aspect`. |
 
 `language` was dropped once, as near-universally zero noise, and restored when
 it became a scope dimension. An unlabelled document in a translated corpus

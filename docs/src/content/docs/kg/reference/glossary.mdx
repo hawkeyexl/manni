@@ -35,9 +35,13 @@ document at that address defines every term the emitter can produce. The custom
 namespace stays deliberately small: a Dublin Core, SKOS, PROV, schema.org, FOAF
 or iiRDS term is preferred wherever one exists.
 
-**`kg:` the key, and `kg:` the prefix.** The frontmatter key a page writes and
-the RDF namespace prefix are spelled the same and are not the same thing. The
-key holds what a page says about itself; the prefix names terms in the graph.
+**`graph:`, the page block.** The frontmatter key a page writes to say what it
+is about. The page vocabulary `manni:graph:1.0.0-proposal.1` defines it, and a
+JSON Pointer into it starts `/graph/`, as in `/graph/label`.
+
+**`kg:`, the RDF prefix.** The namespace prefix for the terms the emitter mints
+in the graph. It is a different name from the page block. The two were both
+spelled `kg` until the block was renamed `graph`.
 
 ## What becomes a triple
 
@@ -45,7 +49,7 @@ key holds what a page says about itself; the prefix names terms in the graph.
 a triple exists because frontmatter, a link, a heading, an image, a code block
 or git history put it there. `build.derive` names which of those sources run.
 
-**Concept.** A SKOS node minted from a subject, a tag or a `kg` concept
+**Concept.** A SKOS node minted from a subject, a tag or a `graph` concept
 reference. Two pages that name a concept the same way land on the same node.
 That is what lets a graph answer questions no single page can.
 
@@ -61,13 +65,13 @@ from navigation is legitimately an orphan.
 listed.
 
 **Harvest, and the harvest rule.** Some facts can be stated twice: inside the
-`kg` block, and as a plain page-level key. **Deeper wins, and the page level is
-the fallback, per fact rather than per page.** A `kg` block that speaks to a
+`graph` block, and as a plain page-level key. **Deeper wins, and the page level is
+the fallback, per fact rather than per page.** A `graph` block that speaks to a
 fact owns it outright; where the block is silent, the page-level twin feeds the
 graph.
 
 **Near miss.** A page-level key that is not read and looks like one that is,
-such as `applies_to` beside `applies-to`. The `kg` block is closed, so a typo
+such as `applies_to` beside `applies-to`. The `graph` block is closed, so a typo
 inside it is a schema error; the same typo at the page level would derive nothing,
 silently. So it warns instead, and a suspicion never fails a build.
 
@@ -117,8 +121,8 @@ the model and the fields by JSON Pointer. It is the metadata tool's, shared
 rather than copied. A surviving entry means unreviewed machine metadata, and
 deleting it is how a reviewer signs off.
 
-**Curated pointers.** Three `kg` locations a machine may never claim:
-`/kg/sections`, `/kg/revision-of` and `/kg/derived-from`. A `meta-provenance`
+**Curated pointers.** Three `graph` locations a machine may never claim:
+`/graph/sections`, `/graph/revision-of` and `/graph/derived-from`. A `meta-provenance`
 entry naming one is a `kg check` finding at `error`.
 
 ## Publishing

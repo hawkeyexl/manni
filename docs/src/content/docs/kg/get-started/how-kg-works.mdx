@@ -28,7 +28,7 @@ with.
 |---|---|
 | Document | One per source file. Carries its path and a content hash. |
 | Section | One per heading, with its level, its order in the page, and its slug. |
-| Concept | A SKOS concept, one per distinct subject, tag or `kg` concept reference. |
+| Concept | A SKOS concept, one per distinct subject, tag or `graph` concept reference. |
 | Concept scheme | The set the concepts belong to. |
 | Product variant | Named by `applies-to`. |
 | Agent | A person, an organization, or a software agent, from frontmatter or git. |
@@ -48,7 +48,7 @@ section reference.
 
 | Source | What it contributes |
 |---|---|
-| `frontmatter` | Title, description, creator, dates, subjects, and the whole `kg:` block. |
+| `frontmatter` | Title, description, creator, dates, subjects, and the whole `graph:` block. |
 | `sections` | Headings, their nesting, and their order. |
 | `links` | Internal references, resolved the way the site resolves them. |
 | `tags` | Page-level tags, as concepts. |
@@ -64,7 +64,7 @@ and a published site path all resolve to the file that serves them, through the
 `routes` config. That is why a broken internal link means the target does not
 exist rather than that it was spelled unusually.
 
-## The `kg:` block
+## The `graph:` block
 
 A page says what it is about in one frontmatter key:
 
@@ -78,7 +78,7 @@ date: 2026-01-14
 updated: 2026-03-02
 tags:
   - onboarding
-kg:
+graph:
   label: Installation
   type: task
 ---
@@ -92,7 +92,7 @@ Three are structural and hand-curated: `sections`, `revision-of` and
 `derived-from`.
 
 The block is **closed**, so a key that is not one of those fifteen is a schema
-error with a line number. There is no `kg validate`. A `kg:` block is
+error with a line number. There is no `kg validate`. A `graph:` block is
 frontmatter, so `manni meta validate` checks it against the page vocabulary.
 That is the command every vocabulary in this family is checked with. Put the
 draft in the schema set for those pages, and a bare run finds it:
@@ -102,17 +102,17 @@ meta:
   overrides:
     - collection: site
       schemas:
-        - ./schema/kg-1.0.0-proposal.3.json
+        - ./schema/graph-1.0.0-proposal.1.json
 ```
 
 ```console
 $ manni meta validate
 ✗ docs/install.md
-    /kg  must NOT have additional property 'bogus'  (line 3)  [./schema/kg-1.0.0-proposal.3.json]
+    /graph  must NOT have additional property 'bogus'  (line 3)  [./schema/graph-1.0.0-proposal.1.json]
 ```
 
-The draft is [open for review](/manni/meta/proposals/kg/), so copy
-[`1.0.0-proposal.3.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/kg/1.0.0-proposal.3.json)
+The draft is [open for review](/manni/meta/proposals/graph/), so copy
+[`1.0.0-proposal.1.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json)
 into your repository rather than pointing at a published URL. The same set goes
 in `kg.schemas`, where `manni kg build` reads `x-manni-kg-output` from
 it.
@@ -123,18 +123,18 @@ Two spellings are deliberate and different. Config keys are camelCase
 
 ## The harvest rule
 
-Some facts can be stated twice: inside the `kg` block, and as a plain
+Some facts can be stated twice: inside the `graph` block, and as a plain
 page-level key your site already uses. The rule is:
 
 > **Deeper wins, and the page level is the fallback. Per fact, not per page.**
 
-A `kg` block that speaks to a fact owns it outright. Where the block is silent,
+A `graph` block that speaks to a fact owns it outright. Where the block is silent,
 the page-level twin feeds the graph. A page whose block sets `label` and
 nothing else still contributes its page-level `concepts`.
 
 Four facts have a page-level twin:
 
-| `kg` key | Page-level fallback |
+| `graph` key | Page-level fallback |
 |---|---|
 | `concepts` | `concepts` |
 | `applies-to` | `applies-to` |
@@ -142,7 +142,7 @@ Four facts have a page-level twin:
 | `revision-of` | `supersedes` |
 
 `type` is the one whose two altitudes speak different vocabularies. The page's
-`type` is open; `kg.type` is a closed iiRDS enum. A page type with a known
+`type` is open; `graph.type` is a closed iiRDS enum. A page type with a known
 counterpart is mapped; one without derives **nothing** rather than inventing a
 type that means something else.
 
@@ -151,7 +151,7 @@ vocabulary and are deliberately not harvested.
 
 ## Near misses warn
 
-The asymmetry in the rule above has a cost. Inside the `kg` block a typo is a
+The asymmetry in the rule above has a cost. Inside the `graph` block a typo is a
 schema error, because the block is closed. At the page level the same typo
 derives nothing, silently, because a page may carry any key it likes.
 
@@ -160,7 +160,7 @@ So a near miss warns:
 ```console
 $ manni kg build
 manni: docs/guide.md: page key "applies_to" is not read by manni kg and looks like "applies-to" — nothing was derived from it
-manni: docs/guide.md: page type "how to" maps to no iiRDS topic type and looks like "how-to" — no kg.type was derived
+manni: docs/guide.md: page type "how to" maps to no iiRDS topic type and looks like "how-to" — no graph.type was derived
 ```
 
 It is a warning and never a build failure. A suspicion must not fail a build.
@@ -206,18 +206,18 @@ therefore be checked without being published.
 |---|---|
 | Ask the graph questions | [Explore the graph](/manni/kg/explore/) |
 | Write the house rules the graph is checked against | [Govern the graph](/manni/kg/govern/) |
-| Look up a `kg:` key or a flag | [Reference](/manni/kg/reference/) |
+| Look up a `graph:` key or a flag | [Reference](/manni/kg/reference/) |
 
 {/* Verified by Doc Detective in docs-as-tests, against test/kg/fixtures/dd/. */}
 
-{/* step {"description":"A legal kg block validates against the page vocabulary.","runShell":{"command":"manni meta validate -c test/kg/fixtures/dd/docs.config.yaml -s docs/proposals/0023/schemas/kg/1.0.0-proposal.3.json","exitCodes":[0],"stdio":"3 files checked, 3 passed, 0 failed, 0 errors"}} */}
+{/* step {"description":"A legal graph block validates against the page vocabulary.","runShell":{"command":"manni meta validate -c test/kg/fixtures/dd/docs.config.yaml -s docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json","exitCodes":[0],"stdio":"3 files checked, 3 passed, 0 failed, 0 errors"}} */}
 
-{/* step {"description":"The kg block is closed, so an unknown key is a schema error.","runShell":{"command":"manni meta validate -c test/kg/fixtures/dd/invalid.config.yaml -s docs/proposals/0023/schemas/kg/1.0.0-proposal.3.json","exitCodes":[1],"stdio":"must NOT have additional property 'bogus'"}} */}
+{/* step {"description":"The graph block is closed, so an unknown key is a schema error.","runShell":{"command":"manni meta validate -c test/kg/fixtures/dd/invalid.config.yaml -s docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json","exitCodes":[1],"stdio":"must NOT have additional property 'bogus'"}} */}
 
-{/* step {"description":"The page vocabulary in force is named in the finding.","runShell":{"command":"manni meta validate -c test/kg/fixtures/dd/invalid.config.yaml -s docs/proposals/0023/schemas/kg/1.0.0-proposal.3.json","exitCodes":[1],"stdio":"1.0.0-proposal.3.json"}} */}
+{/* step {"description":"The page vocabulary in force is named in the finding.","runShell":{"command":"manni meta validate -c test/kg/fixtures/dd/invalid.config.yaml -s docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json","exitCodes":[1],"stdio":"1.0.0-proposal.1.json"}} */}
 
 {/* step {"description":"A near-miss page key warns and derives nothing.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/harvest.config.yaml","exitCodes":[0],"stdio":"nothing was derived from it"}} */}
 
-{/* step {"description":"A page type with no iiRDS counterpart derives no kg.type.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/harvest.config.yaml","exitCodes":[0],"stdio":"no kg.type was derived"}} */}
+{/* step {"description":"A page type with no iiRDS counterpart derives no graph.type.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/harvest.config.yaml","exitCodes":[0],"stdio":"no graph.type was derived"}} */}
 
 {/* step {"description":"A near miss is a warning: the build still succeeds.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/harvest.config.yaml","exitCodes":[0],"stdio":"1 docs, 34 triples"}} */}
