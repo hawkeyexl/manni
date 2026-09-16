@@ -367,27 +367,48 @@ documentInputs(
   )
   .option("--model <model>", "Model override; needs a named provider, from here or config")
   .option("--local", LOCAL_FLAG_HELP)
-  .action(async (paths: string[], opts: Record<string, unknown>) => {
+  // Typed inline, as every other action in this file is. The option parsers
+  // above (`numericOption`, `choiceOption`, `fieldsOption`) have already thrown
+  // on anything malformed by the time this runs, so a cast per field would be
+  // safe — but it would also be the one command with the most options and the
+  // least help from the compiler.
+  .action(async (paths: string[], opts: {
+    config?: string | boolean;
+    collection?: string[];
+    exclude?: string[];
+    dryRun?: boolean;
+    force?: boolean;
+    cache?: boolean;
+    validateGraph?: boolean;
+    sections?: boolean;
+    maxTurns?: number;
+    confidence?: number;
+    fields?: FillField[];
+    provider?: string;
+    model?: string;
+    local?: boolean;
+    format: KgFormat;
+  }) => {
     try {
       const report = await runFill({
         paths,
         ...documentOptions(opts),
-        dryRun: opts.dryRun as boolean | undefined,
-        force: opts.force as boolean | undefined,
+        dryRun: opts.dryRun,
+        force: opts.force,
         noCache: opts.cache === false,
         noValidateGraph: opts.validateGraph === false,
-        sections: opts.sections as boolean | undefined,
-        maxTurns: opts.maxTurns as number | undefined,
-        confidence: opts.confidence as number | undefined,
-        fields: opts.fields as FillField[] | undefined,
-        provider: opts.provider as string | undefined,
-        model: opts.model as string | undefined,
-        local: opts.local as boolean | undefined,
+        sections: opts.sections,
+        maxTurns: opts.maxTurns,
+        confidence: opts.confidence,
+        fields: opts.fields,
+        provider: opts.provider,
+        model: opts.model,
+        local: opts.local,
       });
       // Same channel discipline as build: warnings on stderr, so stdout stays
       // the report, and a warning never changes the exit code.
       for (const warning of report.warnings) warn(warning);
-      console.log(renderFill(report, opts.format as KgFormat));
+      console.log(renderFill(report, opts.format));
       process.exitCode = report.exitCode;
     } catch (e) {
       fail(e);

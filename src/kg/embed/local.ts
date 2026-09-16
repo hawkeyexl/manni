@@ -193,5 +193,3 @@ export async function createLocalEmbedder(
     },
   };
 }
-
- 
