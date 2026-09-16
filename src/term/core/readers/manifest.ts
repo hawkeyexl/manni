@@ -86,8 +86,8 @@ function read(input: TermInput): TermReadResult {
       notices.push(skipped(input, line, LABEL));
       continue;
     }
-    for (const { field, list } of ignoredFields(raw)) {
-      notices.push(ignoredNotice(input, lines[field] ?? line, record.label, field, list));
+    for (const ignored of ignoredFields(raw)) {
+      notices.push(ignoredNotice(input, lines[ignored.field] ?? line, record.label, ignored));
     }
     terms.push(termOf(input, { record, recordId: id, construct: "manifest", line, lines }));
   }

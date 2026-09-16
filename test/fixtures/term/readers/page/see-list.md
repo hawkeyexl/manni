@@ -5,4 +5,5 @@ label: varifocal
 see: [progressive lens]
 abstract:
   nested: true
+scope-note: true
 ---

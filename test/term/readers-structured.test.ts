@@ -137,8 +137,9 @@ describe("page", () => {
     const { terms, notices } = reader("page").read(inputFor("page/see-list.md", "markdown"));
     expect(terms.map((t) => t.record)).toEqual([{ label: "varifocal" }]);
     expect(notices).toEqual([
-      'page/see-list.md:6: ignored abstract on "varifocal": an abstract holds text.',
+      'page/see-list.md:6: ignored abstract on "varifocal": an abstract holds text, not a mapping.',
       'page/see-list.md:5: ignored see on "varifocal": a see holds one value, not a list.',
+      'page/see-list.md:8: ignored scope-note on "varifocal": a scope-note holds text.',
     ]);
   });
 });

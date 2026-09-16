@@ -35,8 +35,8 @@ function read(input: TermInput): TermReadResult {
   if (record === undefined) return { terms: [], notices: [skipped(input, 1, LABEL)] };
   return {
     terms: [termOf(input, { record, recordId: input.metadata["id"], construct: "page", line: 1, lines })],
-    notices: ignoredFields(raw).map(({ field, list }) =>
-      ignoredNotice(input, lines[field] ?? 1, record.label, field, list),
+    notices: ignoredFields(raw).map((ignored) =>
+      ignoredNotice(input, lines[ignored.field] ?? 1, record.label, ignored),
     ),
   };
 }

@@ -77,22 +77,34 @@ export function recordOf(raw: Partial<Record<TermField, unknown>>): TermRecord |
  * `see: [x]` is reported rather than lost. An empty string is text with
  * nothing in it and is simply absent, as `TermRecord` defines.
  */
-export function ignoredFields(raw: Partial<Record<TermField, unknown>>): { field: TermField; list: boolean }[] {
-  const ignored: { field: TermField; list: boolean }[] = [];
+export function ignoredFields(raw: Partial<Record<TermField, unknown>>): IgnoredField[] {
+  const ignored: IgnoredField[] = [];
   for (const field of TERM_FIELDS) {
     if (field === "label" || isListField(field)) continue;
     const value = raw[field];
     if (value === undefined || value === null || typeof value === "string") continue;
     if (textOf(value) !== undefined) continue;
-    ignored.push({ field, list: Array.isArray(value) });
+    const given = Array.isArray(value) ? "list" : typeof value === "object" ? "mapping" : "other";
+    ignored.push({ field, given });
   }
   return ignored;
 }
 
-/** The notice for a one-value field `ignoredFields` found. */
-export function ignoredNotice(input: TermInput, line: number, label: string, field: TermField, list: boolean): string {
+/** A one-value field left out of a record, and what it was given instead of text. */
+export interface IgnoredField {
+  field: TermField;
+  given: "list" | "mapping" | "other";
+}
+
+/**
+ * The notice for a one-value field `ignoredFields` found. It names what the
+ * field holds and, for a list or a mapping, what it was given.
+ */
+export function ignoredNotice(input: TermInput, line: number, label: string, ignored: IgnoredField): string {
+  const { field, given } = ignored;
   const article = /^[aeiou]/.test(field) ? "an" : "a";
-  const holds = list ? "holds one value, not a list" : "holds text";
+  const holds =
+    given === "list" ? "holds one value, not a list" : given === "mapping" ? "holds text, not a mapping" : "holds text";
   return `${input.file}:${line}: ignored ${field} on "${label}": ${article} ${field} ${holds}.`;
 }
 
