@@ -211,3 +211,13 @@ Theo's failure is usually a *missing* field rather than a malformed one, so `fil
 **Steps.** He reads the annotation, which names the rule, the element it fired on, and one sentence saying what to change. The fix page maps the rule to the change, and the help URL explains the rule itself. He edits the template or the page, rebuilds, and runs the same command locally until it exits `0`. There is no `--fix`, because no tool can know the words that belong in an alt attribute.
 
 **What success looks like.** A rule id he can act on, and a local run that proves it before he pushes.
+
+---
+
+### T4 · Fix a failing term check
+
+**Outcome.** Theo's PR carries one `manni:term/<rule>` annotation, or a `manni:term/prose/<Style.Rule>` one, on a page he may not have written. He gets the check green without learning how the termbase was built.
+
+**Steps.** He reads the one line: the file and line, the rule id, and a message that names the value. He finds the rule on the fix page, which links to its entry in the rules reference. An `undefined-term` that names an alt-label tells him which entry claims it, so he writes that entry's preferred label in `concepts:`. A value that names nothing is a typo, or a term the set does not define yet. A `dangling-reference` is the same mistake inside a term's `broader`, `narrower`, `related-terms` or `see`. He fixes the spelling, or adds the missing term. A `label-collision` or a `duplicate-id` means two entries claim one name, so he renames one or merges them into one. A `broader-cycle` spells out the chain, and he removes the `broader` value that closes it. A `see-not-empty` is a redirect that still carries a definition, and he deletes the definition. A `manni:term/prose/…` finding comes from `manni term lint`, and he rewrites the definition until Vale passes it. A failed `manni term write -f vale --check` names the style file that fell behind. He runs `manni term write -f vale` and commits what it wrote. He reproduces each locally with `npx @hawkeyexl/manni term check`, `term lint` or `term write -f vale --check`, from the repository root. There the config names the same files CI reads. He sees green, and pushes.
+
+**What success looks like.** One rule, one edit, one re-run. He never has to know what a term record is.

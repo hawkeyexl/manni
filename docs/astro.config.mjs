@@ -191,8 +191,7 @@ export default defineConfig({
           ],
         },
         // `term` is the terminology tool (proposal 0052). Same shape as
-        // `cite`, without a fix track: the rules reference carries each
-        // rule's fix. Its vocabulary lives on meta's proposals hub.
+        // `cite`. Its vocabulary lives on meta's proposals hub.
         {
           label: "term",
           collapsed: true,
@@ -212,6 +211,11 @@ export default defineConfig({
               label: "Run it in CI",
               collapsed: true,
               items: [{ autogenerate: { directory: "term/ci" } }],
+            },
+            {
+              label: "Fix a failing check",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "term/fix" } }],
             },
             {
               label: "Reference",

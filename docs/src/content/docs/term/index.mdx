@@ -13,6 +13,10 @@ hero:
       link: /manni/term/set-up/
       icon: pencil
       variant: minimal
+    - text: Fix a failing check
+      link: /manni/term/fix/
+      icon: error
+      variant: minimal
 ---
 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
@@ -98,6 +102,11 @@ the guide already names by its label, and the check passes:
     title="Run it in CI"
     href="/manni/term/ci/"
     description="Annotations, the baseline ramp, and a drift check that keeps the generated style current."
+  />
+  <LinkCard
+    title="Fix a failing check"
+    href="/manni/term/fix/"
+    description="Your PR's term check is red? Each rule, the edit that clears it, and the local run that proves it."
   />
 </CardGrid>
 
