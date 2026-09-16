@@ -66,6 +66,45 @@ describe("vale writer", () => {
     expect(deprecated.keys).toEqual(["\\bKubernates\\b"]);
   });
 
+  // `meta-schema URI` in Casing.yml fired on "Meta-schema URI is ..." at a
+  // sentence start. Casing.yml's message prints the value, so a `[Mm]` class
+  // there would leak into the message; the designation gets its own rule.
+  it("writes a lowercase-initial mixed-case designation to SentenceStart.yml", () => {
+    const files = byName(
+      render([
+        term("meta-schema-uri", { label: "meta-schema URI", "alt-labels": ["iPhone"] }),
+        term("kubernetes", { label: "Kubernetes" }),
+        term("dotnet", { label: ".Net" }),
+      ]),
+    );
+    expect(Object.keys(files)).toEqual(["Casing.yml", "SentenceStart.yml"]);
+    expect(swapsOf(files["Casing.yml"] ?? "").keys).toEqual(["\\bkubernetes\\b", "\\B\\.net\\b"]);
+    expect(files["SentenceStart.yml"]).toBe(
+      [
+        MARKER,
+        "extends: substitution",
+        `message: "Write '%[2]s' as the term list spells it, with a capital only to start a sentence."`,
+        "level: error",
+        "ignorecase: true",
+        "nonword: true",
+        "vocab: false",
+        "swap:",
+        '  \\bmeta-schema uri\\b: "[Mm]eta-schema URI"',
+        '  \\biphone\\b: "[Ii]Phone"',
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("never prints the first-letter class in SentenceStart.yml's message", () => {
+    const content = byName(render([term("iphone", { label: "iPhone" })]))["SentenceStart.yml"] ?? "";
+    const parsed: unknown = parseYaml(content);
+    const message = typeof parsed === "object" && parsed !== null && "message" in parsed ? String(parsed.message) : "";
+    expect(message).toContain("%[2]s");
+    expect(message).not.toContain("[Ii]");
+    expect(message).not.toMatch(/%s|%\[1\]s/);
+  });
+
   it("holds labels, alt-labels and hidden-labels", () => {
     expect(vale().holds("directory")).toEqual(["label", "alt-labels", "hidden-labels"]);
   });
@@ -149,6 +188,12 @@ describe("vale writer", () => {
     expect(result.removals).toEqual([stale]);
   });
 
+  it("removes a stale marked SentenceStart.yml", () => {
+    const stale = join(TERMS, "SentenceStart.yml");
+    const result = render(fixtureTerms(), { [stale]: `${MARKER}\nextends: substitution\n` });
+    expect(result.removals).toEqual([stale]);
+  });
+
   it("refuses a Terms directory holding a file manni did not write", () => {
     const foreign = join(TERMS, "Mine.yml");
     expect(() => render(fixtureTerms(), { [foreign]: "extends: existence\n" })).toThrow(
@@ -164,6 +209,12 @@ describe("vale writer", () => {
   it("refuses an acronym that would replace one of its own files", () => {
     expect(() => render([term("casing", { label: "letter casing", "alt-labels": ["CASING"] })])).toThrow(
       new TermError('the acronym "CASING" would replace Terms/Casing.yml. Rename the alt-label.'),
+    );
+  });
+
+  it("refuses an acronym that would replace SentenceStart.yml", () => {
+    expect(() => render([term("sentence-start", { label: "sentence start", "alt-labels": ["SENTENCESTART"] })])).toThrow(
+      new TermError('the acronym "SENTENCESTART" would replace Terms/SentenceStart.yml. Rename the alt-label.'),
     );
   });
 

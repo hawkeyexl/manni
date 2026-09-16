@@ -479,10 +479,10 @@ A Markdown or MDX definition list, an AsciiDoc `[glossary]` list, a
 `.. glossary::` and an HTML `<dl>` skip an entry with no definition, such as a
 `see` redirect.
 
-`-f vale` lists each style file and what it holds. `Casing.yml` and
-`Lowercase.yml` count the labels and alt-labels they swap. When no section of Vale's
-configuration uses the `Terms` style, a notice on stderr names the line to
-add:
+`-f vale` lists each style file and what it holds. `Casing.yml`,
+`Lowercase.yml` and `SentenceStart.yml` count the labels and alt-labels they
+swap. When no section of Vale's configuration uses the `Terms` style, a notice
+on stderr names the line to add:
 
 ```
 Wrote 3 terms to .vale/styles/Terms

@@ -190,6 +190,8 @@ function baseName(path: string): string {
   return path.split(/[\\/]/).pop() ?? path;
 }
 
+const CASING_RULES = new Set(["Casing.yml", "Lowercase.yml", "SentenceStart.yml"]);
+
 /** What each file of a Vale style holds: rule files by name, the acronym files together. */
 function valeLines(report: WriteReport): string[] {
   const rows: [string, string][] = [];
@@ -197,7 +199,7 @@ function valeLines(report: WriteReport): string[] {
   for (const file of report.files) {
     const name = baseName(file.path);
     // A casing rule swaps each label and alt-label, so what it counts is labels.
-    if (name === "Casing.yml" || name === "Lowercase.yml") rows.push([name, plural(swapCount(file.content), "label")]);
+    if (CASING_RULES.has(name)) rows.push([name, plural(swapCount(file.content), "label")]);
     else if (name === "Deprecated.yml") rows.push([name, plural(swapCount(file.content), "swap")]);
     else acronyms.push(name);
   }

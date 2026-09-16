@@ -354,8 +354,9 @@ names a different styles directory, and makes Vale unnecessary for the write.
 
 | File | Vale check | Built from | Level |
 |---|---|---|---|
-| `Terms/Casing.yml` | `substitution` | labels and alt-labels in title or mixed case | error |
+| `Terms/Casing.yml` | `substitution` | labels and alt-labels that start with a capital or a symbol | error |
 | `Terms/Lowercase.yml` | `substitution` | labels and alt-labels entirely in lowercase | error |
+| `Terms/SentenceStart.yml` | `substitution` | labels and alt-labels that start lowercase and hold a capital later | error |
 | `Terms/Deprecated.yml` | `substitution` | hidden-labels, each swapped for its label | warning |
 | `Terms/<ACRONYM>.yml` | `conditional` | each all-caps alt-label of a label that is not all-caps | warning |
 
@@ -401,8 +402,16 @@ a term, and nothing from the term set stops it.
 
 **Lowercase terms get their own rule and their own message.** The `%[2]s` verb
 prints what the writer wrote, so the message never shows a pattern. Only a
-label that is entirely lowercase goes there. `iPhone` starts lowercase but is not
-lowercase, so it goes to `Casing.yml` with its exact form.
+label that is entirely lowercase goes there. A label such as `iPhone` starts
+lowercase and holds a capital later, so it goes to `SentenceStart.yml`. Its key
+is the lowercased label and its value allows a capital first letter
+(`[Ii]Phone`). The message there prints `%[2]s` too. It cannot go to `Casing.yml`,
+whose `Use '%s' instead of '%s'.` would print the `[Ii]` class. Dogfooding found
+the gap. With `meta-schema URI` in `Casing.yml`, a sentence opening
+`Meta-schema URI is` raised an error, and the manni docs page for that term had
+to lowercase its own title. A real Vale 3.20.0 run with `SentenceStart.yml` left
+that sentence and `the meta-schema URI` alone, and flagged `Meta-Schema URI`
+and `meta-schema uri`.
 
 **Every key carries its own word boundaries.** Vale wraps a swap key in
 `\b…\b` unless the rule sets `nonword`, and a Go `\b` knows only ASCII word
@@ -505,8 +514,8 @@ into it, and reports what does not line up. It reads no prose, which is what
 | `abstract-too-long` | notice | `abstract` is longer than `abstractMaxLength` |
 | `unused-term` | notice | No page's `concepts:` names this entry |
 
-Collisions ignore case because the Vale style is keyed that way. `Casing.yml`
-and `Lowercase.yml` are `swap` maps keyed on the lowercased term, so `API` and
+Collisions ignore case because the Vale style is keyed that way. `Casing.yml`,
+`Lowercase.yml` and `SentenceStart.yml` are `swap` maps keyed on the lowercased term, so `API` and
 `api` in one set would silently collide there, the last one written winning.
 
 Rule ids are `manni:term/<rule>`, following cite's `RULE_ID_PREFIX`. Severities

@@ -539,6 +539,14 @@ describe("write -f", () => {
     expect(renderWritePretty(report)).toBe(["Wrote 1 term to styles/Terms", "  Casing.yml  2 labels"].join("\n"));
   });
 
+  it("counts SentenceStart.yml's swaps as labels, not as an acronym", async () => {
+    const cwd = await tree({
+      "terms/uri.md": ["---", "type: term", "label: meta-schema URI", "definition: A URI.", "---", ""].join("\n"),
+    });
+    const report = await runWrite({ cwd, inputs: ["terms"], format: "vale", out: "styles" });
+    expect(renderWritePretty(report)).toBe(["Wrote 1 term to styles/Terms", "  SentenceStart.yml  1 label"].join("\n"));
+  });
+
   it("relativizes the path in a writer's refusal", async () => {
     const cwd = await lenses(undefined, { "styles/Terms/Casing.yml": "extends: substitution\n" });
     await expect(runWrite({ cwd, inputs: [], format: "vale", out: "styles" })).rejects.toThrow(
