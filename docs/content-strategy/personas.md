@@ -28,7 +28,7 @@ She meets docevals in two situations that change the journey, not the person:
 
 The docevals strategy imported with the tool called these three situations Priya (the docs platform lead), Nate (the solo owner) and Iris (the retrofitter). They are the same job at different team sizes and corpus states, so they are Maya here.
 
-**What tracevals adds to her job.** The instructions she writes for agents accumulate the way documentation does. A `SKILL.md` here, a subagent definition there, a `CLAUDE.md` nobody rereads. Nothing checks whether any of it is still followed. tracevals grades a session that already happened against the artifacts it used, so "is this instruction decorative?" has an answer. The strategy imported with that tool named five audiences. Four were already these four people. The fifth was Rin, a toolsmith who wants the library rather than the binary, and he is Devin reading the JSON report and calling the namespace export, so he is folded into D11 and the API reference rather than added here.
+**What tracevals adds to her job.** The instructions she writes for agents accumulate the way documentation does. A `SKILL.md` here, a subagent definition there, a `CLAUDE.md` nobody rereads. Nothing checks whether any of it is still followed. tracevals grades a session that already happened against the artifacts it used, so "is this instruction decorative?" has an answer. The strategy imported with that tool named five audiences. Four were already these four people. The fifth was Rin, a toolsmith who wants the library rather than the binary. He is Devin reading the JSON report and calling the namespace export. So he is folded into D11 and the API reference rather than added here.
 
 **The one decision she is not equipped for.** `fill` is the only part of manni meta that sends her documents to a third party. Clearing the retrofit backlog (M4) therefore makes her choose a provider, or refuse hosted inference entirely and run it on her own hardware. She does not own her organization's data-egress policy, but she is the one who has to answer to it. And the default is detected from her environment rather than chosen.
 
@@ -49,7 +49,7 @@ Devin maintains CI/CD infrastructure for dozens of repos on a mix of GitHub Acti
 
 **How he uses manni meta.** He installs via a CI step, sets flags, and plugs the exit code into a pipeline gate. He can also pass JSON output to a dashboard. He returns when a new CI platform is added or the output format changes.
 
-**Which tools he owns work in.** He owns work in every tool, and the key rotation runbook is his, so one pipeline gates metadata, structure, citations, accessibility, page evals and session evals.
+**Which tools he owns work in.** He owns work in every tool, and the key rotation runbook is his. So one pipeline gates metadata, structure, citations, accessibility, page evals and session evals.
 
 **The two problems docevals gives him that no other tool does.** He installs and operates the eval gate and authors no evals.
 

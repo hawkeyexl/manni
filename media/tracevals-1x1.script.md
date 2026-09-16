@@ -1,15 +1,15 @@
-# `manni tracevals` — demo beat sheet
+# Demo beat sheet for `manni tracevals`
 
 - **Type:** feature demo, terminal session. No narration; captions only
   (LinkedIn autoplays muted).
-- **Audience:** the people who write a repository's agent instructions —
-  `CLAUDE.md`, skills, subagents, slash commands — and the CI engineers who
-  would like to gate on them. Phone-sized, muted.
+- **Audience:** the people who write a repository's agent instructions, and
+  the CI engineers who would like to gate on them. Those instructions are
+  `CLAUDE.md`, skills, subagents and slash commands. Phone-sized, muted.
 - **Target:** 34 s, three beats, one caption each.
 - **Objective:** the viewer sees that the instructions an agent session ran
-  under are now checkable: `manni tracevals run <trace>` grades a real Claude
-  Code session against the evals declared beside those instructions, names the
-  rule that was broken, and exits 1 so CI can stop there.
+  under are now checkable. `manni tracevals run <trace>` grades a real Claude
+  Code session against the evals declared beside those instructions. It names
+  the rule that was broken, and exits 1 so CI can stop there.
 - **Assets:** `media/tracevals-1x1.mp4` (not committed), `.gif`, `.thumb.png`,
   `.vtt`, `.transcript.txt`, this file, `media/capture-tracevals/`, and
   `media/remotion/src/tracevals/`.
@@ -22,9 +22,10 @@
   `test/tracevals/fixtures/traces/claude-session.jsonl`; the eval shapes are
   `test/tracevals/fixtures/project/CLAUDE.md`'s `skill-invoked` and
   `tool-usage` graders. `media/capture-tracevals/make-demo.mjs` subtracts what
-  the story has no use for — the plugin skill, the two subagents, the slash
-  commands, the deliberately-malformed line the fixture carries to exercise the
-  parser — re-chains `parentUuid`, and rewrites the recorded `cwd`. Nothing
+  the story has no use for, re-chains `parentUuid`, and rewrites the recorded
+  `cwd`. What it subtracts is the plugin skill, the two subagents, the slash
+  commands, and the deliberately-malformed line the fixture carries to exercise
+  the parser. Nothing
   adds output. Everything on screen is real execution of the built
   `dist/cli.js`.
 
@@ -38,9 +39,9 @@
 
 The feature is not "a linter for transcripts". It is that the instructions a
 team writes for its agents stop being unverifiable prose. Beat 1 puts the rule
-and the check in the same file, on the same screen, so the `FAIL` line in beat 2
+and the check in the same file, on the same screen. So the `FAIL` line in beat 2
 has a visible origin. Beat 3 exists because a red line on its own is a
-complaint; a gate is a red line that can go green, and the exit codes are what
+complaint. A gate is a red line that can go green, and the exit codes are what
 a CI job reads.
 
 The third beat runs a *second* session rather than editing the first, because a
@@ -49,8 +50,8 @@ traces is what the agent did, which is exactly what the tool grades. Both
 filenames are on screen, so nothing is hidden.
 
 `--deterministic-only` is typed rather than hidden in config. It is the honest
-reason no API key appears: `tool-usage` and `skill-invoked` are decided from
-the trace alone, and the one `ai` eval reports `SKIP` with its reason instead
+reason no API key appears. `tool-usage` and `skill-invoked` are decided from
+the trace alone. The one `ai` eval reports `SKIP` with its reason instead
 of quietly not running. A run with a judge would need a provider, a model and a
 network, none of which a 34-second demo can show truthfully.
 
@@ -60,16 +61,16 @@ network, none of which a 34-second demo can show truthfully.
   The longest real line is
   `      options: { skill: fix-bug, expect: used, when: { file-access: "src/**" } }`
   at 80 characters, and the longest unbreakable token is the staged skill's
-  absolute path at 57. 26 px gives 66 columns: every line either fits or breaks
+  absolute path at 57. 26 px gives 66 columns. Every line either fits or breaks
   at a space, the tallest beat is 828 px against 838 px of terminal, and no
   token is split. 28 px would have been legible but 897 px tall.
 - `options:` is written in YAML flow style in the staged `CLAUDE.md`. Block
   style is four more rows per eval, and the whole file has to fit one frame.
   The keys are identical either way.
 - **The demo repository is staged at `~/demo`, not under `media/`.**
-  `manni tracevals run` prints the resolved absolute path of the trace, so a
+  `manni tracevals run` prints the resolved absolute path of the trace. So a
   demo repo inside `.claude/worktrees/<branch>/media/` would put a
-  140-character unbreakable token in the first line of every report, and
+  140-character unbreakable token in the first line of every report. And
   design.md forbids splitting a token across a line break. `~/demo` makes that
   header 57 characters. The directory is disposable; `capture.sh` rebuilds it
   and refuses to touch a directory that is not one of its own.
@@ -124,11 +125,11 @@ them?
 
 Until now the only way to find out was to read the transcript yourself.
 `manni tracevals` grades a Claude Code session against the instructions it ran
-under, and the checks live in the instruction file itself — a few lines of
+under. The checks live in the instruction file itself, as a few lines of
 `evals:` in front matter, next to the rule they encode.
 
 Here, one session edited `src/` without going through the skill the house rules
-name. `FAIL`, with the reason, and exit 1 — so CI can stop there. The next
+name. `FAIL`, with the reason. Exit 1 lets CI stop there. The next
 session used it: exit 0.
 
 Two of the three graders in this run are deterministic, decided from the trace
