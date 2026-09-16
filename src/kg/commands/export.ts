@@ -8,7 +8,7 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { DockgError } from "../types.js";
+import { KgError } from "../types.js";
 import { loadConfig } from "../core/config.js";
 import { emitJsonLd } from "../core/emit-jsonld.js";
 import { emitRdfXml } from "../core/emit-rdfxml.js";
@@ -32,7 +32,14 @@ import { PREFIXES } from "../core/vocab.js";
 import { GraphIndex } from "../runtime/graph.js";
 import { writeZip, type ZipEntry } from "../core/zip.js";
 
-export type ExportFormat = "jsonld" | "iirds" | "search";
+/**
+ * What `manni kg export <target>` can write, in the order messages list them.
+ * The CLI names its positional against this list, and `runExport` holds a
+ * library caller to it too.
+ */
+export const EXPORT_TARGETS = ["jsonld", "iirds", "search"] as const;
+
+export type ExportFormat = (typeof EXPORT_TARGETS)[number];
 
 export interface ExportOptions {
   config?: string;
@@ -169,7 +176,7 @@ function runSearchIndex(
     // `writeFileSync` and crash with a raw stack trace (exit 1) instead of the
     // operational error this is (exit 2).
     if (!isLanguageTag(language)) {
-      throw new DockgError(
+      throw new KgError(
         `Cannot write an index for language "${language}": not a BCP-47 tag. ` +
           `Fix the \`lang\`/\`language\` frontmatter, or the route's \`language\`, ` +
           `and rebuild — \`manni kg check\` reports which document carries it.`,
@@ -203,13 +210,11 @@ function runSearchIndex(
   };
 }
 
-const FORMATS: ExportFormat[] = ["jsonld", "iirds", "search"];
-
 export async function runExport(opts: ExportOptions): Promise<ExportResult> {
   const cwd = opts.cwd ?? process.cwd();
-  if (!FORMATS.includes(opts.format)) {
-    throw new DockgError(
-      `Unknown export format: ${opts.format} (expected: ${FORMATS.join(" | ")}).`,
+  if (!(EXPORT_TARGETS as readonly string[]).includes(opts.format)) {
+    throw new KgError(
+      `Unknown export target "${opts.format}". Use ${EXPORT_TARGETS.join(" | ")}.`,
     );
   }
 

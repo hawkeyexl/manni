@@ -81,6 +81,26 @@ describe("manni (built bin)", () => {
     expect(r.stderr).toMatch(/^manni: Config file not found/);
   });
 
+  it("gives kg the family's usage contract: bare and unknown are exit 2", () => {
+    // 0034's grammar, and 0051 §2's plumbing: a domain with verbs has no
+    // default subcommand, and a usage error is operational (2), never a
+    // finding (1). Without the domain's own `exitOverride()` commander
+    // exits 1 here, which reads as "there were findings".
+    const bare = run(manni, ["kg"]);
+    expect(bare.status).toBe(2);
+    expect(bare.stdout).toBe("");
+    expect(bare.stderr).toMatch(/^Usage: manni kg /m);
+    expect(bare.stderr).toMatch(/^\s+build\b/m);
+
+    const unknown = run(manni, ["kg", "check", "--nope"]);
+    expect(unknown.status).toBe(2);
+    expect(unknown.stderr).toContain("unknown option");
+
+    const missing = run(manni, ["kg", "export"]);
+    expect(missing.status).toBe(2);
+    expect(missing.stderr).toContain("missing required argument");
+  });
+
   it("mounts the key domain under key, with no default command", () => {
     expect(run(manni, ["key", "rotate", "--help"]).stdout).toMatch(
       /^Usage: manni key rotate /m,

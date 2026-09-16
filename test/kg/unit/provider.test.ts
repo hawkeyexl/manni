@@ -11,7 +11,7 @@
 import { describe, expect, it } from "vitest";
 import { parseConfig } from "../../../src/kg/core/config.js";
 import { providerSpecFor } from "../../../src/kg/llm/provider.js";
-import { DockgError } from "../../../src/kg/types.js";
+import { KgError } from "../../../src/kg/types.js";
 
 function config(yaml: string) {
   return parseConfig(`version: 1\n${yaml}`, "/tmp/dockg.config.yaml");
@@ -50,7 +50,7 @@ describe("providerSpecFor", () => {
     // what to do instead.
     expect(() =>
       providerSpecFor(config("fill:\n  provider: llama-cpp\n")),
-    ).toThrow(DockgError);
+    ).toThrow(KgError);
     expect(() =>
       providerSpecFor(config("fill:\n  provider: llama-cpp\n")),
     ).toThrow(/no fill\.model is set/);

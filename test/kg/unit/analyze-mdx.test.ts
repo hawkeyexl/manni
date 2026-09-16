@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { analyzeDoc } from "../../../src/kg/core/analyze.js";
-import { DockgError } from "../../../src/kg/types.js";
+import { KgError } from "../../../src/kg/types.js";
 
 /**
  * MDX support (ADR 01022). A JSX element's `href` is a link on any element —
@@ -99,13 +99,13 @@ describe("analyzeDoc over .mdx", () => {
 describe("unparseable .mdx", () => {
   // Parsing MDX means parse *failures* are now possible where Markdown never
   // had any. A raw micromark throw escapes cli.ts's `fail()`, which only
-  // converts DockgError — so the CLI would dump a stack trace, exit 1 (which
+  // converts KgError — so the CLI would dump a stack trace, exit 1 (which
   // the contract reserves for findings), and never name the offending file.
   const bad = `# Bad\n\n<LinkCard href="x">\n`;
 
-  it("raises a DockgError rather than letting the parser throw", () => {
+  it("raises a KgError rather than letting the parser throw", () => {
     expect(() => analyzeDoc(bad, "docs/broken.mdx", corpus)).toThrow(
-      DockgError,
+      KgError,
     );
   });
 

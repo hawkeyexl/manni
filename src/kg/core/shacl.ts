@@ -7,7 +7,8 @@
 import { readFileSync } from "node:fs";
 import { DataFactory, Parser, Store } from "n3";
 import SHACLValidator from "rdf-validate-shacl";
-import { DockgError } from "../types.js";
+import { errorMessage } from "../../shared/errors.js";
+import { KgError } from "../types.js";
 import { compactIri } from "./load.js";
 import { byCodeUnit } from "./sort.js";
 import { NS } from "./vocab.js";
@@ -42,13 +43,13 @@ export function loadShapes(paths: string[]): Store {
     try {
       text = readFileSync(path, "utf8");
     } catch {
-      throw new DockgError(`Shapes file not found: ${path}`);
+      throw new KgError(`Shapes file not found: ${path}`);
     }
     try {
       store.addQuads(new Parser({ format: "text/turtle" }).parse(text));
     } catch (e) {
-      throw new DockgError(
-        `Failed to parse shapes ${path}: ${e instanceof Error ? e.message : "parse error"}`,
+      throw new KgError(
+        `Failed to parse shapes ${path}: ${errorMessage(e)}`,
       );
     }
   }
@@ -297,8 +298,8 @@ export async function validateGraph(
   try {
     report = await validator.validate(store);
   } catch (e) {
-    throw new DockgError(
-      `SHACL validation failed: ${e instanceof Error ? e.message : String(e)}`,
+    throw new KgError(
+      `SHACL validation failed: ${errorMessage(e)}`,
     );
   }
 

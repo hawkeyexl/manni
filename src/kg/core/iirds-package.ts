@@ -11,7 +11,7 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { DataFactory, type Store } from "n3";
-import { DockgError } from "../types.js";
+import { KgError } from "../types.js";
 import type { Quad, Term } from "./derive.js";
 import { byCodeUnit } from "./sort.js";
 import { NS, RDF_TYPE } from "./vocab.js";
@@ -130,7 +130,7 @@ export function projectPackage(
     if (path) {
       const absPath = resolve(cwd, path);
       if (!existsSync(absPath)) {
-        throw new DockgError(
+        throw new KgError(
           `Content file for ${path} not found at ${absPath} — re-run \`manni kg build\`, or the source moved.`,
         );
       }

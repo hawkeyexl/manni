@@ -1,24 +1,77 @@
 /**
  * The kg program. Named `kg` because that is where it is mounted
  * (`manni kg …`); `src/cli.ts` adds it to the umbrella and runs it.
+ *
+ * Grammar per proposals 0034 and 0051 §2: the domain owns verbs and has no
+ * default subcommand, `-f` means the output format everywhere and is checked
+ * against the verb's list, and a list reaches a flag by exactly one
+ * separator. The plumbing is the family's: `fail()` from `src/shared/run.ts`,
+ * `warn()` from `src/shared/warn.ts`, and `--no-color` from
+ * `src/shared/color.ts`.
  */
 import { Command } from "commander";
 import pkg from "../../package.json" with { type: "json" };
-import { programName } from "../shared/program-name.js";
-import pc from "picocolors";
-import { DockgError } from "./types.js";
+import { collect, splitList } from "../shared/cli-options.js";
+import { shouldColor } from "../shared/color.js";
+import { fail } from "../shared/run.js";
+import { warn } from "../shared/warn.js";
+import { KgError } from "./types.js";
 import { PROVIDER_NAMES } from "./core/config.js";
+import { KG_FORMATS, KG_FORMAT_LIST, type KgFormat } from "./reporters/index.js";
 import { runBuild } from "./commands/build.js";
 import { renderCheck, runCheck } from "./commands/check.js";
-import { runExport, type ExportFormat } from "./commands/export.js";
+import {
+  EXPORT_TARGETS,
+  runExport,
+  type ExportFormat,
+} from "./commands/export.js";
 import { renderQuery, runQuery } from "./commands/query.js";
 import { renderValidate, runValidate } from "./commands/validate.js";
 import { renderFill, runFill } from "./commands/fill.js";
 import { runInit } from "./commands/init.js";
 import { renderEmbed, runEmbed } from "./commands/embed.js";
-import { renderSearch, runSearch } from "./commands/search.js";
+import {
+  renderSearch,
+  runSearch,
+  SEARCH_MODES,
+  type SearchMode,
+} from "./commands/search.js";
 import { renderStats, runStats } from "./commands/stats.js";
 import { renderTraverse, runTraverse } from "./commands/traverse.js";
+
+/**
+ * Whether `command`'s output gets colour: this domain's `--no-color` and
+ * `NO_COLOR` turn it off, and otherwise only a TTY turns it on
+ * (`shouldColor`). `isTTY` is passed uncoerced: Node leaves it undefined off
+ * a terminal, never false, and `shouldColor` reads a missing one as "not a
+ * terminal".
+ *
+ * Exported because this is where the decision is testable — a spawned bin is
+ * never a TTY. kg's reporters print no colour yet; when one does, it takes
+ * the boolean from here rather than consulting the environment itself.
+ */
+export function colorFor(
+  command: Command,
+  isTTY: boolean | undefined,
+  env?: NodeJS.ProcessEnv,
+): boolean {
+  // commander maps --no-color to opts.color === false, on the command that
+  // declares it.
+  const noColor = colorOwner(command).opts().color === false;
+  return shouldColor({ noColor, isTTY, env });
+}
+
+/**
+ * The nearest command, this one or an ancestor, that declares `--no-color`:
+ * the `kg` program, wherever it is mounted. Not the root: under the umbrella
+ * that is `manni`, which has no `--no-color` of its own.
+ */
+function colorOwner(command: Command): Command {
+  for (let c: Command | null = command; c !== null; c = c.parent) {
+    if (c.options.some((o) => o.long === "--no-color")) return c;
+  }
+  return command;
+}
 
 export function buildProgram(): Command {
 const program = new Command();
@@ -28,7 +81,16 @@ program
   .description(
     "Deterministic knowledge graphs derived from documentation frontmatter and formatting.",
   )
-  .version(pkg.version);
+  .version(pkg.version)
+  .option("--no-color", "disable colored output")
+  // A pointer, not the whole help screen: the message that precedes it
+  // already names the offending flag.
+  .showHelpAfterError("(add --help for usage)")
+  // MUST come before the `.command()` calls below. `copyInheritedSettings`
+  // copies `_exitCallback` by value at subcommand-creation time, so an
+  // `exitOverride()` installed afterwards leaves every subcommand still
+  // calling `process.exit(1)` — which reports a usage error as a finding.
+  .exitOverride();
 
 /**
  * Parse a numeric CLI option, refusing what the config schema refuses.
@@ -46,14 +108,14 @@ function numericOption(
   return (raw: string): number => {
     const value = Number.parseFloat(raw);
     if (!Number.isFinite(value)) {
-      throw new DockgError(`${flag} expects a number, got "${raw}".`);
+      throw new KgError(`${flag} expects a number, got "${raw}".`);
     }
     if (integer && !Number.isInteger(value)) {
-      throw new DockgError(`${flag} expects a whole number, got ${value}.`);
+      throw new KgError(`${flag} expects a whole number, got ${value}.`);
     }
     if (value < min || (max !== undefined && value > max)) {
       const range = max === undefined ? `>= ${min}` : `${min}..${max}`;
-      throw new DockgError(`${flag} must be ${range}, got ${value}.`);
+      throw new KgError(`${flag} must be ${range}, got ${value}.`);
     }
     return value;
   };
@@ -74,7 +136,7 @@ function countOption(flag: string, min = 1) {
 function enumOption<T extends string>(flag: string, allowed: readonly T[]) {
   return (raw: string): T => {
     if (!(allowed as readonly string[]).includes(raw)) {
-      throw new DockgError(
+      throw new KgError(
         `${flag} must be one of ${allowed.join(" | ")}, got "${raw}".`,
       );
     }
@@ -82,20 +144,29 @@ function enumOption<T extends string>(flag: string, allowed: readonly T[]) {
   };
 }
 
-function fail(e: unknown): never {
-  if (e instanceof DockgError) {
-    console.error(pc.red(`${programName()}: ${e.message}`));
-    process.exit(2);
-  }
-  throw e;
+/**
+ * A flag whose value is one of a named set, refused in the family's words:
+ * `Unknown --format "xml". Use pretty | json.` The check runs while the
+ * options are parsed, so a typo costs a message rather than a graph load.
+ */
+function choiceOption<T extends string>(flag: string, allowed: readonly T[]) {
+  return (raw: string): T => {
+    if (!(allowed as readonly string[]).includes(raw)) {
+      throw new KgError(`Unknown ${flag} "${raw}". Use ${allowed.join(" | ")}.`);
+    }
+    return raw as T;
+  };
 }
+
+/** `-f, --format`: every verb's list is `pretty | json` (0051 §2). */
+const formatOption = choiceOption("--format", KG_FORMATS);
 
 program
   .command("init")
   .description("Add a starter `kg:` section to manni.config.yaml in the current directory")
-  .action(() => {
+  .action(async () => {
     try {
-      console.log(`Created ${runInit()}`);
+      console.log(`Created ${await runInit()}`);
     } catch (e) {
       fail(e);
     }
@@ -116,9 +187,7 @@ program
       });
       // Warnings go to stderr so stdout stays the machine-readable summary;
       // a degraded build is still a successful one, so the exit code is 0.
-      for (const warning of result.warnings) {
-        console.error(pc.yellow(`${programName()}: ${warning}`));
-      }
+      for (const warning of result.warnings) warn(warning);
       console.log(
         `Wrote ${result.outPath} (${result.docs} docs, ${result.quads} triples)`,
       );
@@ -134,21 +203,29 @@ program
   )
   .option("-c, --config <path>", "Path to manni.config.yaml")
   .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
+  // One path per occurrence, never split on commas: a path may hold one.
   .option(
-    "--shapes <paths...>",
-    "Shapes .ttl files (default: config check.shapes, then bundled)",
+    "--shapes <path>",
+    "Shapes .ttl file; repeatable (default: config check.shapes, then bundled)",
+    collect,
+    [],
   )
-  .option("-f, --format <format>", "Output format: pretty | json", "pretty")
+  .option(
+    "-f, --format <format>",
+    `Output: ${KG_FORMAT_LIST}`,
+    formatOption,
+    "pretty",
+  )
   .action(
     async (opts: {
       config?: string;
       graph?: string;
-      shapes?: string[];
-      format: string;
+      shapes: string[];
+      format: KgFormat;
     }) => {
       try {
         const report = await runCheck(opts);
-        console.log(renderCheck(report, opts.format as "pretty" | "json"));
+        console.log(renderCheck(report, opts.format));
         process.exitCode = report.exitCode;
       } catch (e) {
         fail(e);
@@ -161,12 +238,17 @@ program
   .description("Check docs are KG-ready (frontmatter validated via manni meta)")
   .argument("[globs...]", "Input globs (default: config inputs)")
   .option("-c, --config <path>", "Path to manni.config.yaml")
-  .option("-f, --format <format>", "Output format: pretty | json", "pretty")
+  .option(
+    "-f, --format <format>",
+    `Output: ${KG_FORMAT_LIST}`,
+    formatOption,
+    "pretty",
+  )
   .action(
-    async (globs: string[], opts: { config?: string; format: string }) => {
+    async (globs: string[], opts: { config?: string; format: KgFormat }) => {
       try {
         const result = await runValidate({ globs, config: opts.config });
-        console.log(renderValidate(result, opts.format as "pretty" | "json"));
+        console.log(renderValidate(result, opts.format));
         process.exitCode = result.exitCode;
       } catch (e) {
         fail(e);
@@ -181,7 +263,12 @@ program
   )
   .argument("[globs...]", "Input globs (default: config inputs)")
   .option("-c, --config <path>", "Path to manni.config.yaml")
-  .option("-f, --format <format>", "Output format: pretty | json", "pretty")
+  .option(
+    "-f, --format <format>",
+    `Output: ${KG_FORMAT_LIST}`,
+    formatOption,
+    "pretty",
+  )
   .option("--dry-run", "Report proposals without writing files")
   .option("--force", "Overwrite human-set kg fields")
   .option("--no-cache", "Bypass the proposal cache")
@@ -220,10 +307,8 @@ program
       });
       // Same channel discipline as build: warnings on stderr, so stdout stays
       // the report, and a warning never changes the exit code.
-      for (const warning of report.warnings) {
-        console.error(pc.yellow(`${programName()}: ${warning}`));
-      }
-      console.log(renderFill(report, opts.format as "pretty" | "json"));
+      for (const warning of report.warnings) warn(warning);
+      console.log(renderFill(report, opts.format as KgFormat));
       process.exitCode = report.exitCode;
     } catch (e) {
       fail(e);
@@ -235,12 +320,20 @@ program
   .description(
     "Match triple patterns against the built graph (omit a term for wildcard)",
   )
-  .option("-s, --s <term>", "Subject IRI or prefixed name")
-  .option("-p, --p <term>", "Predicate IRI or prefixed name")
-  .option("-o, --o <term>", "Object IRI, prefixed name, or literal value")
+  // Long-only. `-o` is `--out` on every other kg verb and `-s` is meta's
+  // schema flag; a one-letter spelling that means two things in one family
+  // costs more than three characters do.
+  .option("--s <term>", "Subject IRI or prefixed name")
+  .option("--p <term>", "Predicate IRI or prefixed name")
+  .option("--o <term>", "Object IRI, prefixed name, or literal value")
   .option("-c, --config <path>", "Path to manni.config.yaml")
   .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
-  .option("-f, --format <format>", "Output format: pretty | json", "pretty")
+  .option(
+    "-f, --format <format>",
+    `Output: ${KG_FORMAT_LIST}`,
+    formatOption,
+    "pretty",
+  )
   .action(
     (opts: {
       s?: string;
@@ -248,11 +341,11 @@ program
       o?: string;
       config?: string;
       graph?: string;
-      format: string;
+      format: KgFormat;
     }) => {
       try {
         const result = runQuery(opts);
-        console.log(renderQuery(result, opts.format as "pretty" | "json"));
+        console.log(renderQuery(result, opts.format));
       } catch (e) {
         fail(e);
       }
@@ -266,7 +359,12 @@ program
   )
   .option("-c, --config <path>", "Path to manni.config.yaml")
   .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
-  .option("-f, --format <format>", "Output format: pretty | json", "pretty")
+  .option(
+    "-f, --format <format>",
+    `Output: ${KG_FORMAT_LIST}`,
+    formatOption,
+    "pretty",
+  )
   .option(
     "--check",
     "Exit 1 when broken internal links exist or coverage is below threshold",
@@ -288,14 +386,14 @@ program
     (opts: {
       config?: string;
       graph?: string;
-      format: string;
+      format: KgFormat;
       check?: boolean;
       top?: number;
       coverageThreshold?: number;
     }) => {
       try {
         const report = runStats(opts);
-        console.log(renderStats(report, opts.format as "pretty" | "json"));
+        console.log(renderStats(report, opts.format));
         process.exitCode = report.exitCode;
       } catch (e) {
         fail(e);
@@ -305,9 +403,7 @@ program
 
 program
   .command("search")
-  .description(
-    "Rank graph nodes for a text query (needs `export --format search`)",
-  )
+  .description("Rank graph nodes for a text query (needs `export search`)")
   .argument("<query>", "Text query")
   .option("-c, --config <path>", "Path to manni.config.yaml")
   .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
@@ -326,9 +422,15 @@ program
   )
   .option(
     "--mode <mode>",
-    "Which legs to run: lexical | vector | hybrid (default: hybrid when vectors exist)",
+    `Which legs to run: ${SEARCH_MODES.join(" | ")} (default: hybrid when vectors exist)`,
+    choiceOption("--mode", SEARCH_MODES),
   )
-  .option("-f, --format <format>", "Output format: pretty | json", "pretty")
+  .option(
+    "-f, --format <format>",
+    `Output: ${KG_FORMAT_LIST}`,
+    formatOption,
+    "pretty",
+  )
   .action(
     async (
       query: string,
@@ -339,13 +441,13 @@ program
         lang?: string;
         limit?: number;
         vectors?: string;
-        mode?: "lexical" | "vector" | "hybrid";
-        format: string;
+        mode?: SearchMode;
+        format: KgFormat;
       },
     ) => {
       try {
         const report = await runSearch({ ...opts, query });
-        console.log(renderSearch(report, opts.format as "pretty" | "json"));
+        console.log(renderSearch(report, opts.format));
       } catch (e) {
         fail(e);
       }
@@ -366,7 +468,12 @@ program
     // Zero is allowed: it means the node itself, which is a real answer.
     countOption("--depth", 0),
   )
-  .option("--predicates <curies...>", "Only follow these predicates")
+  // Comma-separated and given once: a CURIE holds no comma, so one separator
+  // is enough, and a second spelling would be a second thing to document.
+  .option(
+    "--predicates <list>",
+    "Only follow these predicates (comma-separated)",
+  )
   .option("--reverse", "Follow inbound edges (who points at this node)")
   .option("--impact", "Transitive inbound reach: what a change here affects")
   .option(
@@ -376,7 +483,12 @@ program
   .option("--subject <subject>", "Scope filter: software subject")
   .option("--lang <tag>", "Scope filter: BCP-47 language tag, matched exactly")
   .option("--limit <n>", "Stop after this many nodes", countOption("--limit"))
-  .option("-f, --format <format>", "Output format: pretty | json", "pretty")
+  .option(
+    "-f, --format <format>",
+    `Output: ${KG_FORMAT_LIST}`,
+    formatOption,
+    "pretty",
+  )
   .action(
     (
       node: string,
@@ -384,19 +496,26 @@ program
         config?: string;
         graph?: string;
         depth?: number;
-        predicates?: string[];
+        predicates?: string;
         reverse?: boolean;
         impact?: boolean;
         variant?: string;
         subject?: string;
         lang?: string;
         limit?: number;
-        format: string;
+        format: KgFormat;
       },
     ) => {
       try {
-        const report = runTraverse({ ...opts, node });
-        console.log(renderTraverse(report, opts.format as "pretty" | "json"));
+        const report = runTraverse({
+          ...opts,
+          node,
+          predicates:
+            opts.predicates === undefined
+              ? undefined
+              : splitList(opts.predicates),
+        });
+        console.log(renderTraverse(report, opts.format));
       } catch (e) {
         fail(e);
       }
@@ -424,7 +543,12 @@ program
   )
   .option("--dtype <dtype>", "Weight quantization (default q8)")
   .option("--no-cache", "Ignore the vector cache")
-  .option("-f, --format <format>", "Output format: pretty | json", "pretty")
+  .option(
+    "-f, --format <format>",
+    `Output: ${KG_FORMAT_LIST}`,
+    formatOption,
+    "pretty",
+  )
   .action(
     async (opts: {
       config?: string;
@@ -434,14 +558,14 @@ program
       model?: string;
       dtype?: string;
       cache?: boolean;
-      format: string;
+      format: KgFormat;
     }) => {
       try {
         const report = await runEmbed({
           ...opts,
           noCache: opts.cache === false,
         });
-        console.log(renderEmbed(report, opts.format as "pretty" | "json"));
+        console.log(renderEmbed(report, opts.format));
       } catch (e) {
         fail(e);
       }
@@ -453,34 +577,33 @@ program
   .description(
     "Reserialize the built graph into a consumer format (jsonld file, iirds package, or search index)",
   )
+  // The target is a positional, not `-f`: `-f` is the output format in every
+  // other verb of the family (0051 §2), and one flag cannot mean two things.
+  .argument("<target>", `What to write: ${EXPORT_TARGETS.join(" | ")}`)
   .option("-c, --config <path>", "Path to manni.config.yaml")
   .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
   .option(
-    "-f, --format <format>",
-    "Export format: jsonld | iirds | search",
-    "jsonld",
-  )
-  .option(
     "-o, --out <path>",
-    "Output path (default: the graph path with the format's extension)",
+    "Output path (default: the graph path with the target's extension)",
   )
   .action(
-    async (opts: {
-      config?: string;
-      graph?: string;
-      format: string;
-      out?: string;
-    }) => {
+    async (
+      target: string,
+      opts: { config?: string; graph?: string; out?: string },
+    ) => {
       try {
+        if (!(EXPORT_TARGETS as readonly string[]).includes(target)) {
+          throw new KgError(
+            `Unknown export target "${target}". Use ${EXPORT_TARGETS.join(" | ")}.`,
+          );
+        }
         const result = await runExport({
           config: opts.config,
           graph: opts.graph,
-          format: opts.format as ExportFormat,
+          format: target as ExportFormat,
           out: opts.out,
         });
-        for (const warning of result.warnings) {
-          console.error(pc.yellow(`${programName()}: ${warning}`));
-        }
+        for (const warning of result.warnings) warn(warning);
         console.log(
           `Wrote ${result.nodes} node${result.nodes === 1 ? "" : "s"} to ${result.outPath}`,
         );

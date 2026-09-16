@@ -45,7 +45,7 @@ function buildIndexed(): {
     encoding: "utf8",
     cwd: corpus,
   });
-  execFileSync(process.execPath, [cli, "kg", "export", "-f", "search", "-g", graph], {
+  execFileSync(process.execPath, [cli, "kg", "export", "search", "-g", graph], {
     encoding: "utf8",
     cwd: corpus,
   });
@@ -66,7 +66,7 @@ function search(args: string[], cwd = corpus): SearchJson {
   return JSON.parse(run(args, cwd).stdout) as SearchJson;
 }
 
-describe("manni kg export --format search (integration)", () => {
+describe("manni kg export search (integration)", () => {
   it.each(["und", "de", "de-AT", "fr"])(
     "matches the %s search golden byte-for-byte",
     (language) => {
@@ -136,8 +136,8 @@ describe("manni kg export --format search (integration)", () => {
     const { graph, dir } = buildIndexed();
     const a = join(dir, "a");
     const b = join(dir, "b");
-    run(["export", "-f", "search", "-g", graph, "-o", a], corpus);
-    run(["export", "-f", "search", "-g", graph, "-o", b], corpus);
+    run(["export", "search", "-g", graph, "-o", a], corpus);
+    run(["export", "search", "-g", graph, "-o", b], corpus);
     for (const name of [
       "localizations.json",
       "search.und.json",
@@ -341,7 +341,7 @@ describe("manni kg search (integration)", () => {
       corpus,
     );
     expect(status).toBe(2);
-    expect(stdout).toContain("export --format search");
+    expect(stdout).toContain("export search");
   });
 });
 
@@ -418,7 +418,7 @@ describe("manni kg search — artifact resolution (review fixes)", () => {
       cwd: dir,
     });
     const { status, stdout } = run(
-      ["export", "-f", "search", "-g", "g.ttl", "-o", "kg"],
+      ["export", "search", "-g", "g.ttl", "-o", "kg"],
       dir,
     );
     expect(status).toBe(2);

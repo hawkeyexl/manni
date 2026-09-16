@@ -86,7 +86,7 @@ describe("manni kg export (integration)", () => {
     const { dir, graph } = buildGraph();
     const out = join(dir, "graph.jsonld");
     const { status } = run(
-      ["export", "--format", "jsonld", "--graph", graph, "--out", out],
+      ["export", "jsonld", "--graph", graph, "--out", out],
       corpus,
     );
     expect(status).toBe(0);
@@ -99,8 +99,8 @@ describe("manni kg export (integration)", () => {
     const { dir, graph } = buildGraph();
     const a = join(dir, "a.jsonld");
     const b = join(dir, "b.jsonld");
-    run(["export", "-f", "jsonld", "-g", graph, "-o", a], corpus);
-    run(["export", "-f", "jsonld", "-g", graph, "-o", b], corpus);
+    run(["export", "jsonld", "-g", graph, "-o", a], corpus);
+    run(["export", "jsonld", "-g", graph, "-o", b], corpus);
     expect(readFileSync(a, "utf8")).toBe(readFileSync(b, "utf8"));
   });
 
@@ -108,7 +108,7 @@ describe("manni kg export (integration)", () => {
     const { dir, graph } = buildGraph();
     const out = join(dir, "graph.jsonld");
     const { stdout } = run(
-      ["export", "-f", "jsonld", "-g", graph, "-o", out],
+      ["export", "jsonld", "-g", graph, "-o", out],
       corpus,
     );
     const doc = JSON.parse(readFileSync(out, "utf8"));
@@ -121,7 +121,7 @@ describe("manni kg export (integration)", () => {
 
   it("defaults the out path to the graph path with a .jsonld extension", () => {
     const { dir, graph } = buildGraph();
-    const { status } = run(["export", "-f", "jsonld", "-g", graph], corpus);
+    const { status } = run(["export", "jsonld", "-g", graph], corpus);
     expect(status).toBe(0);
     const defaulted = join(dir, "graph.jsonld");
     expect(() => readFileSync(defaulted, "utf8")).not.toThrow();
@@ -131,7 +131,7 @@ describe("manni kg export (integration)", () => {
     const { dir, graph } = buildGraph();
     const out = join(dir, "pkg.iirds");
     const { status } = run(
-      ["export", "-f", "iirds", "-g", graph, "-o", out],
+      ["export", "iirds", "-g", graph, "-o", out],
       corpus,
     );
     expect(status).toBe(0);
@@ -154,7 +154,7 @@ describe("manni kg export (integration)", () => {
   it("matches the metadata.rdf golden byte-for-byte", () => {
     const { dir, graph } = buildGraph();
     const out = join(dir, "pkg.iirds");
-    run(["export", "-f", "iirds", "-g", graph, "-o", out], corpus);
+    run(["export", "iirds", "-g", graph, "-o", out], corpus);
     const meta = readZip(readFileSync(out)).get("META-INF/metadata.rdf")!;
     expect(meta.toString("utf8")).toBe(readFileSync(rdfGolden, "utf8"));
   });
@@ -163,14 +163,14 @@ describe("manni kg export (integration)", () => {
     const { dir, graph } = buildGraph();
     const a = join(dir, "a.iirds");
     const b = join(dir, "b.iirds");
-    run(["export", "-f", "iirds", "-g", graph, "-o", a], corpus);
-    run(["export", "-f", "iirds", "-g", graph, "-o", b], corpus);
+    run(["export", "iirds", "-g", graph, "-o", a], corpus);
+    run(["export", "iirds", "-g", graph, "-o", b], corpus);
     expect(readFileSync(a).equals(readFileSync(b))).toBe(true);
   });
 
   it("defaults the iirds out path to the graph path with a .iirds extension", () => {
     const { dir, graph } = buildGraph();
-    const { status } = run(["export", "-f", "iirds", "-g", graph], corpus);
+    const { status } = run(["export", "iirds", "-g", graph], corpus);
     expect(status).toBe(0);
     expect(() => readFileSync(join(dir, "graph.iirds"))).not.toThrow();
   });
@@ -183,7 +183,7 @@ describe("manni kg export (integration)", () => {
       "version: 1\nbaseIri: https://example.com/kg/\nexport:\n  iirds:\n    creator: Acme Docs\n",
     );
     const out = join(dir, "pkg.iirds");
-    run(["export", "-f", "iirds", "-g", graph, "-c", cfg, "-o", out], corpus);
+    run(["export", "iirds", "-g", graph, "-c", cfg, "-o", out], corpus);
     const meta = readZip(readFileSync(out))
       .get("META-INF/metadata.rdf")!
       .toString("utf8");
@@ -203,7 +203,7 @@ describe("manni kg export (integration)", () => {
       "version: 1\nbaseIri: https://example.com/kg/\nexport:\n  iirds:\n    title: My Corpus\n",
     );
     const out = join(dir, "pkg.iirds");
-    run(["export", "-f", "iirds", "-g", graph, "-c", cfg, "-o", out], corpus);
+    run(["export", "iirds", "-g", graph, "-c", cfg, "-o", out], corpus);
     const meta = readZip(readFileSync(out))
       .get("META-INF/metadata.rdf")!
       .toString("utf8");
@@ -216,27 +216,26 @@ describe("manni kg export (integration)", () => {
     // dockg:path entries resolve to files that do not exist here → exit 2.
     const elsewhere = mkdtempSync(join(tmpdir(), "dockg-export-nosrc-"));
     const { status, stdout } = run(
-      ["export", "-f", "iirds", "-g", graph, "-o", join(elsewhere, "p.iirds")],
+      ["export", "iirds", "-g", graph, "-o", join(elsewhere, "p.iirds")],
       elsewhere,
     );
     expect(status).toBe(2);
     expect(stdout.toLowerCase()).toContain("not found");
   });
 
-  it("exits 2 for an unknown --format", () => {
+  it("exits 2 for an unknown target", () => {
     const { graph } = buildGraph();
-    const { status, stdout } = run(
-      ["export", "-f", "bogus", "-g", graph],
-      corpus,
-    );
+    const { status, stdout } = run(["export", "bogus", "-g", graph], corpus);
     expect(status).toBe(2);
-    expect(stdout.toLowerCase()).toContain("unknown export format");
+    expect(stdout).toContain(
+      'Unknown export target "bogus". Use jsonld | iirds | search.',
+    );
   });
 
   it("exits 2 when the graph is missing", () => {
     const dir = mkdtempSync(join(tmpdir(), "dockg-export-"));
     const { status, stdout } = run(
-      ["export", "-f", "jsonld", "-g", join(dir, "nope.ttl")],
+      ["export", "jsonld", "-g", join(dir, "nope.ttl")],
       dir,
     );
     expect(status).toBe(2);

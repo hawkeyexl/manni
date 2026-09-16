@@ -22,7 +22,8 @@ import {
 } from "../core/frontmatter-edit.js";
 import { FillGuard } from "../core/fill-guard.js";
 import { bundledShapesPath } from "../core/pkg.js";
-import { DockgError } from "../types.js";
+import { errorMessage } from "../../shared/errors.js";
+import { KgError } from "../types.js";
 import {
   completeValidatedJSON,
   costOfUsage,
@@ -203,7 +204,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
 
   const files = discoverFiles(inputs, config.exclude, cwd);
   if (files.length === 0) {
-    throw new DockgError(
+    throw new KgError(
       `No input files matched: ${inputs.join(", ")} (cwd: ${cwd})`,
     );
   }
@@ -324,8 +325,8 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     try {
       content = readFileSync(absPath, "utf8");
     } catch (e) {
-      throw new DockgError(
-        `cannot read ${path}: ${e instanceof Error ? e.message : String(e)}`,
+      throw new KgError(
+        `cannot read ${path}: ${errorMessage(e)}`,
       );
     }
     try {
@@ -337,7 +338,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
         fields: [],
         preserved: [],
         cached: false,
-        error: e instanceof Error ? e.message : String(e),
+        error: errorMessage(e),
       });
     }
   }
@@ -359,7 +360,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     content: string,
   ): Promise<FillDocResult> {
     if (frontmatterKind(content) === "unsupported") {
-      throw new DockgError(
+      throw new KgError(
         "only YAML frontmatter can be edited (found a TOML/JSON fence) — exclude this file or convert its frontmatter",
       );
     }
@@ -573,7 +574,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       // it would silently discard another model's outstanding review record.
       // Refuse the file and name the migration instead.
       if (hasLegacyProvenance(content)) {
-        throw new DockgError(
+        throw new KgError(
           `${path}: kg.provenance is the deprecated single-object form, which docmeta:kg dropped. ` +
             `Filling would overwrite it and lose its attribution — convert it to a one-entry list ` +
             `(a leading "- ", and generatedBy renamed to generated-by) first.`,

@@ -8,7 +8,7 @@
  * Author emails are deliberately not collected into the result (privacy):
  * names only, matching frontmatter author handling.
  */
-import { DockgError } from "../types.js";
+import { KgError } from "../types.js";
 import { realExec, type ExecFn } from "@hawkeyexl/inference";
 import { normalizeDocPath } from "./iri.js";
 
@@ -114,18 +114,18 @@ export async function collectGitHistory(
   // knows whether it was demanded (`provenance.git: true`) or inherited
   // (`"auto"`) and frames the failure as an error or a warning accordingly.
   if (result.spawnError) {
-    throw new DockgError(
+    throw new KgError(
       `git could not be run: ${result.spawnError} (is git installed and on PATH?)`,
     );
   }
   if (result.timedOut) {
-    throw new DockgError(
+    throw new KgError(
       "`git log` timed out after 60s — the repo history may be too large for whole-history provenance",
     );
   }
   if (result.code !== 0 || result.stdout.trim() === "") {
     const detail = result.stderr.trim().slice(-300);
-    throw new DockgError(
+    throw new KgError(
       `git history could not be read (is ${cwd} a git repo with at least one commit?)${detail ? ` — git said: ${detail}` : ""}`,
     );
   }

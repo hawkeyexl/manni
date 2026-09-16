@@ -6,10 +6,12 @@
  * siblings' keys and comments exactly as they were. A file that already has a
  * `kg:` key is refused.
  */
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
-import { DockgError } from "../types.js";
+import { errorMessage } from "../../shared/errors.js";
+import { writeTextAtomic } from "../../shared/write-file.js";
+import { KgError } from "../types.js";
 import { CONFIG_SECTION, DEFAULT_CONFIG_FILENAME } from "../core/config.js";
 
 const HEADER = `# manni.config.yaml — shared configuration for the manni family of tools.
@@ -109,7 +111,7 @@ fill:
 #   out: kg              # directory for the per-language vector sidecars
 #   cacheDir: .manni/kg/embed-cache
 
-# Optional enrichment for \`manni kg export --format iirds\` (the iiRDS package).
+# Optional enrichment for \`manni kg export iirds\` (the iiRDS package).
 # Absent, a minimal valid package is still produced.
 # export:
 #   iirds:
@@ -126,10 +128,10 @@ function starterSection(): string {
   return `${CONFIG_SECTION}:\n${body}`;
 }
 
-export function runInit(cwd = process.cwd()): string {
+export async function runInit(cwd = process.cwd()): Promise<string> {
   const path = resolve(cwd, DEFAULT_CONFIG_FILENAME);
   if (!existsSync(path)) {
-    writeFileSync(path, `${HEADER}${starterSection()}`, "utf8");
+    await writeTextAtomic(path, `${HEADER}${starterSection()}`);
     return path;
   }
 
@@ -140,17 +142,17 @@ export function runInit(cwd = process.cwd()): string {
   try {
     doc = parseYaml(text);
   } catch (e) {
-    throw new DockgError(
-      `Invalid YAML in ${DEFAULT_CONFIG_FILENAME}: ${e instanceof Error ? e.message : "parse error"}`,
+    throw new KgError(
+      `Invalid YAML in ${DEFAULT_CONFIG_FILENAME}: ${errorMessage(e)}`,
     );
   }
   if (doc != null && (typeof doc !== "object" || Array.isArray(doc))) {
-    throw new DockgError(
+    throw new KgError(
       `${DEFAULT_CONFIG_FILENAME}: top level must be a mapping — not adding a \`${CONFIG_SECTION}:\` section to it.`,
     );
   }
   if (doc != null && Object.hasOwn(doc, CONFIG_SECTION)) {
-    throw new DockgError(
+    throw new KgError(
       `${DEFAULT_CONFIG_FILENAME} already has a \`${CONFIG_SECTION}:\` section — not overwriting.`,
     );
   }
@@ -158,6 +160,9 @@ export function runInit(cwd = process.cwd()): string {
   // keys and comments come out byte-for-byte as they went in.
   const separator = text === "" || text.endsWith("\n") ? "" : "\n";
   const blank = text === "" ? "" : "\n";
-  writeFileSync(path, `${text}${separator}${blank}${starterSection()}`, "utf8");
+  await writeTextAtomic(
+    path,
+    `${text}${separator}${blank}${starterSection()}`,
+  );
   return path;
 }

@@ -1,7 +1,8 @@
 /** Load a built .ttl into an in-memory N3 store for query/stats. */
 import { existsSync, readFileSync } from "node:fs";
 import { Parser, Store } from "n3";
-import { DockgError } from "../types.js";
+import { errorMessage } from "../../shared/errors.js";
+import { KgError } from "../types.js";
 import type { Quad, Term } from "./derive.js";
 import { NS, PREFIXES } from "./vocab.js";
 
@@ -9,7 +10,7 @@ const XSD_STRING = `${NS.xsd}string`;
 
 export function loadGraph(ttlPath: string): Store {
   if (!existsSync(ttlPath)) {
-    throw new DockgError(
+    throw new KgError(
       `Graph not found: ${ttlPath} — run \`manni kg build\` first.`,
     );
   }
@@ -18,8 +19,8 @@ export function loadGraph(ttlPath: string): Store {
   try {
     quads = parser.parse(readFileSync(ttlPath, "utf8"));
   } catch (e) {
-    throw new DockgError(
-      `Failed to parse ${ttlPath}: ${e instanceof Error ? e.message : "parse error"}`,
+    throw new KgError(
+      `Failed to parse ${ttlPath}: ${errorMessage(e)}`,
     );
   }
   return new Store(quads);

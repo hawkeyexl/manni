@@ -2,10 +2,10 @@
 import { ToolError } from "../shared/errors.js";
 
 /** Operational error: expected failure reported to the user, exit code 2. */
-export class DockgError extends ToolError {
+export class KgError extends ToolError {
   constructor(message: string) {
     super(message);
-    this.name = "DockgError";
+    this.name = "KgError";
   }
 }
 

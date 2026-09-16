@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { collectGitHistory } from "../../../src/kg/core/git.js";
-import { DockgError } from "../../../src/kg/types.js";
+import { KgError } from "../../../src/kg/types.js";
 import type { ExecFn, ExecResult } from "@hawkeyexl/inference";
 
 function mockExec(stdout: string, code = 0): ExecFn {
@@ -69,7 +69,7 @@ describe("collectGitHistory", () => {
     expect(file.created).toBe("2026-01-01T00:00:00+00:00");
   });
 
-  it("throws DockgError outside a git repo, surfacing git's stderr", async () => {
+  it("throws KgError outside a git repo, surfacing git's stderr", async () => {
     const exec: ExecFn = () =>
       Promise.resolve<ExecResult>({
         code: 128,
@@ -78,9 +78,9 @@ describe("collectGitHistory", () => {
         timedOut: false,
       });
     // The type is the contract, not just the text: cli.ts fail() maps
-    // DockgError to exit 2 and rethrows anything else, so a plain Error here
+    // KgError to exit 2 and rethrows anything else, so a plain Error here
     // would change the CLI's exit code.
-    await expect(collectGitHistory("/repo", exec)).rejects.toThrow(DockgError);
+    await expect(collectGitHistory("/repo", exec)).rejects.toThrow(KgError);
     await expect(collectGitHistory("/repo", exec)).rejects.toThrow(
       /not a git repository/,
     );

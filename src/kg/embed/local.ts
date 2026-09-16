@@ -33,6 +33,7 @@
  * most dockg users never enable embeddings. Behind this subpath, a consumer who
  * never imports `dockg/embed` never resolves it.
  */
+import { errorMessage } from "../../shared/errors.js";
 import {
   profileFor,
   withPrefix,
@@ -101,7 +102,7 @@ async function loadTransformers(injected?: any): Promise<any> {
     return await import("@huggingface/transformers");
   } catch (e) {
     throw new EmbedderUnavailableError(
-      e instanceof Error ? e.message : "import failed",
+      errorMessage(e),
     );
   }
 }

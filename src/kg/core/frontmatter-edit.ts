@@ -6,7 +6,7 @@
  * YAML frontmatter only; TOML/JSON frontmatter cannot be edited in place.
  */
 import { Document, YAMLMap, YAMLSeq, isMap, parseDocument } from "yaml";
-import { DockgError } from "../types.js";
+import { KgError } from "../types.js";
 
 interface Split {
   /** The opening fence line including its newline (plus any BOM). */
@@ -54,7 +54,7 @@ function splitYamlFrontmatter(content: string, path: string): Split | null {
     }
     offset += lines[i]!.length;
   }
-  throw new DockgError(`${path}: unterminated frontmatter block`);
+  throw new KgError(`${path}: unterminated frontmatter block`);
 }
 
 export interface KgApplyResult {
@@ -105,7 +105,7 @@ export function applyKgFields(
   if (entries.length === 0) return { content, applied: [], skipped: [] };
 
   if (frontmatterKind(content) === "unsupported") {
-    throw new DockgError(
+    throw new KgError(
       `${path}: only YAML frontmatter can be edited (found a TOML/JSON fence)`,
     );
   }
@@ -140,14 +140,14 @@ export function applyKgFields(
 
   const doc = parseDocument(split.block);
   if (doc.errors.length > 0) {
-    throw new DockgError(
+    throw new KgError(
       `${path}: cannot edit frontmatter — ${doc.errors[0]?.message ?? "parse error"}`,
     );
   }
 
   let kg = doc.get("kg", true);
   if (kg !== undefined && !isMap(kg)) {
-    throw new DockgError(`${path}: frontmatter key "kg" is not a map`);
+    throw new KgError(`${path}: frontmatter key "kg" is not a map`);
   }
   if (kg === undefined) {
     kg = doc.createNode({});
