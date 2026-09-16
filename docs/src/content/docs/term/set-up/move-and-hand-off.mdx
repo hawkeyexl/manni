@@ -259,6 +259,127 @@ A directory target for a format that writes one file stops with exit `2`:
 manni: -f tbx writes one file, not a directory. Pass -o <file>.
 ```
 
+## What a round trip does not keep
+
+A render writes the record, and a read of the result builds a record again.
+Three things do not survive that trip.
+
+### A line break inside a paragraph
+
+This definition has a line break inside its first paragraph, and a paragraph
+break before its second:
+
+```console
+$ manni term get "progressive lens" docs/terms -f json
+{
+  "id": "progressive-lens",
+  "label": "progressive lens",
+  "definition": "Corrective lenses whose power increases\nfrom the top of the lens to the bottom.\n\nThey correct presbyopia without a visible line."
+}
+```
+
+A definition list writes the break, and reads it back as a space:
+
+```console
+$ manni term write docs/terms -f markdown -o build/glossary.md
+Wrote 1 term to build/glossary.md
+$ manni term get "progressive lens" build/glossary.md -f json
+{
+  "id": "progressive-lens",
+  "label": "progressive lens",
+  "definition": "Corrective lenses whose power increases from the top of the lens to the bottom.\n\nThey correct presbyopia without a visible line."
+}
+```
+
+The paragraph break survives. The same happens in every list construct. A
+Markdown or MDX definition list, an AsciiDoc `[glossary]` list and a
+`.. glossary::` read the break back as a space. An HTML `<dl>`, a DITA
+`<glossentry>` or `<glossgroup>`, and a DocBook `<glossary>` write each
+paragraph on one line:
+
+```xml title="build/glossary.xml"
+<glossdef>
+  <para>Corrective lenses whose power increases from the top of the lens to the bottom.</para>
+  <para>They correct presbyopia without a visible line.</para>
+</glossdef>
+```
+
+A term page, in Markdown or HTML, keeps the break. So do TBX, SKOS, CSV and
+JSON, which write the definition as it is. Where a break matters, keep the
+definition in pages, or make it a paragraph break.
+
+### An id in a construct with no identifier
+
+A Markdown or MDX definition list, an AsciiDoc `[glossary]` list and a
+`.. glossary::` have nowhere to store an id. An entry read back from one gets
+the slug of its label:
+
+```console
+$ manni term list docs/terms
+pal-lens   progressive lens
+1 term
+$ manni term write docs/terms -f markdown -o build/glossary.md
+Wrote 1 term to build/glossary.md
+$ manni term list build/glossary.md
+progressive-lens   progressive lens
+1 term
+```
+
+The run does not list `id` among the dropped fields. A page rendered from that
+list is `build/terms/progressive-lens.md`, with `id: progressive-lens`. So an
+id that is not the slug of its label changes, and so does the file named
+after it.
+
+Pages and manifests keep the id. So do an HTML `<dl>`, through `<dt id>`, a
+DITA topic `id`, and a DocBook `xml:id`:
+
+```console
+$ manni term write docs/terms -f html -o build/glossary.html
+Wrote 1 term to build/glossary.html
+$ manni term list build/glossary.html
+pal-lens   progressive lens
+1 term
+```
+
+### Markup the record has no field for
+
+A render writes only the record's fields. An attribute or element outside
+them is not carried into the output, even when the source and the target are
+the same format. This DocBook entry carries a `role`:
+
+```xml title="docs/glossary.xml"
+<glossentry xml:id="progressive-lens" role="clinical">
+  <glossterm>progressive lens</glossterm>
+  <glossdef>
+    <para>Corrective lenses whose power increases from the top of the lens to the bottom.</para>
+  </glossdef>
+</glossentry>
+```
+
+Rendered to DocBook, the `role` is gone:
+
+```console
+$ manni term write docs/glossary.xml -f docbook -o build/glossary.xml
+Wrote 1 term to build/glossary.xml
+$ cat build/glossary.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<glossary xmlns="http://docbook.org/ns/docbook" version="5.0">
+  <title>Glossary</title>
+  <glossentry xml:id="progressive-lens">
+    <glossterm>progressive lens</glossterm>
+    <glossdef>
+      <para>Corrective lenses whose power increases from the top of the lens to the bottom.</para>
+    </glossdef>
+  </glossentry>
+</glossary>
+```
+
+The run reports no dropped field, because `role` is not a field. The same
+goes for a DITA `outputclass`. The document around the glossary is not carried
+either. The source's `<article>` and its `Optics` title became a bare
+`<glossary>` titled `Glossary`. A render is a new file, so keep the source
+where that markup lives.
+
 ## Hand the set to a translation system
 
 <Steps>
