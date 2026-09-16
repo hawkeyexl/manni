@@ -350,10 +350,13 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
         // Machines propose; humans retire the trail. Recording which model
         // proposed what, at what confidence, is what lets a reviewer tell an
         // unreviewed suggestion from an eval someone actually signed off on.
+        //
+        // The model's own name, not `provider:model`. The judge's
+        // self-preference check compares this against `modelName()`, so a
+        // composed spelling would read as a different model every time. The
+        // provider name is the fallback only when there is no model to name.
         {
-          generatedBy: identity.model
-            ? `${identity.provider}:${identity.model}`
-            : identity.provider,
+          generatedBy: identity.model ?? identity.provider,
           confidence: Object.fromEntries(
             gated.accepted.map((c) => [c.name, c.confidence]),
           ),

@@ -1,41 +1,33 @@
 /**
- * Pins the vendored `manni:artifact-evals:1.0.0-proposal.2` vocabulary.
+ * Pins the `manni:artifact-evals:1.0.0-proposal.4` vocabulary this tool
+ * bundles.
  *
- * The cases are a port of docmeta's own verification ladder
- * (`docs/proposals/0023/ladders/artifact-evals-examples.cjs`), kept case-for-case
- * so a drift between our copy and docmeta's draft shows up here rather than in
- * the field. The migration negatives (N1–N3) are the ones that matter most in
- * this repo: they are the `artifact-evals-0.2` spellings this vocabulary
- * replaces, and they must fail loudly rather than quietly do nothing.
+ * The cases are a port of the repository's own verification ladder
+ * (`docs/proposals/0023/ladders/artifact-evals-examples.cjs`), kept
+ * case-for-case so a drift between the draft and what this tool accepts shows
+ * up here rather than in the field.
+ *
+ * There is no copy to pin any more. tracevals imports
+ * `docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.4.json` directly
+ * and the bundler inlines it, so the bytes under test *are* the draft's — the
+ * sha256 pin that used to guard a vendored copy has nothing left to guard.
  *
  * Cases are written as YAML because that is how artifacts are authored — a
  * JSON-literal port would not catch a shape that only YAML can express.
  */
-import { existsSync } from "node:fs";
-import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
-import { Ajv2020 } from "ajv/dist/2020.js";
 import { parse } from "yaml";
 import {
   ARTIFACT_EVALS_SCHEMA_ID,
-  artifactEvalsSchemaPath,
-} from "../../../src/tracevals/evals/extract.js";
+  artifactEvalsErrors,
+  artifactEvalsSchema,
+} from "../../../src/tracevals/evals/schema.js";
 
-async function loadSchema(): Promise<Record<string, unknown>> {
-  return JSON.parse(await readFile(artifactEvalsSchemaPath(), "utf-8")) as Record<
-    string,
-    unknown
-  >;
-}
-
-async function compile() {
-  const validate = new Ajv2020({
-    allErrors: true,
-    allowUnionTypes: true,
-  }).compile(await loadSchema());
-  return (yamlText: string) => validate(parse(yamlText));
-}
+const validate = (yamlText: string): boolean =>
+  artifactEvalsErrors(
+    parse(yamlText) as Record<string, unknown>,
+    () => undefined,
+  ).length === 0;
 
 /** [name, expected verdict, artifact front matter] */
 const CASES: Array<[string, boolean, string]> = [
@@ -123,10 +115,10 @@ metadata:
   ],
   ["8 artifact skipped", true, `metadata:\n  eval-skip: true`],
   [
-    "9 eval-provenance, the family pattern one level down",
+    "9 meta-provenance, the family pattern one level down",
     true,
     `metadata:
-  eval-provenance:
+  meta-provenance:
     - generated-by: claude-fable-5
       evals: [used-read, forbidden-tool]
       confidence:
@@ -211,6 +203,17 @@ metadata:
         tool: Read
         expect: used`,
   ],
+  [
+    // The family scale (`src/shared/severity.ts`). proposal.2 spelled the
+    // quietest level `info`; N10 below is the same artifact under the old name.
+    "15 the quietest level is notice",
+    true,
+    `metadata:
+  evals:
+    - id: worth-recording
+      assertion: The session left a note.
+      severity: notice`,
+  ],
 
   // Migration negatives: the artifact-evals-0.2 spellings this replaces.
   [
@@ -283,42 +286,58 @@ metadata:
       grader: command
       generated-assertion-hash: 07d185732a48ace07056e847b0fadd72fa35f830f7b793f2790db1a59182fd7a`,
   ],
+  [
+    "N10 severity: info, proposal.2's spelling of notice",
+    false,
+    `metadata:
+  evals:
+    - id: old-scale
+      assertion: Something.
+      severity: info`,
+  ],
+  [
+    // The guard narrowed to `^eval-(?!skip$)`, so the key proposal.2 excepted
+    // is now caught by the schema itself rather than silently ignored.
+    "N11 eval-provenance, the name proposal.2 used",
+    false,
+    `metadata:
+  eval-provenance:
+    - generated-by: claude-fable-5
+      evals: [used-read]`,
+  ],
 ];
 
-describe("manni:artifact-evals:1.0.0-proposal.2", () => {
-  it("carries docmeta's id, not one of ours", async () => {
-    const schema = await loadSchema();
-    expect(schema.$id).toBe(ARTIFACT_EVALS_SCHEMA_ID);
-    // A vocabulary docmeta publishes; this repo implements behavior against it
-    // (ADR 01010). The pre-1.0 URL `$id` said we owned the shape — we do not.
-    expect(schema.$id).toBe("manni:artifact-evals:1.0.0-proposal.2");
-  });
-
-  it("resolves the schema to a file that actually exists", () => {
-    // The path is probed rather than inferred from the directory name: keying
-    // off `src/evals` vs `dist` meant a rename returned a path that does not
-    // exist, and validation quietly stopped happening. Probing makes it loud.
-    const path = artifactEvalsSchemaPath();
-    expect(existsSync(path)).toBe(true);
-    // Memoized, and stable across calls.
-    expect(artifactEvalsSchemaPath()).toBe(path);
-  });
-
-  it("keeps the prerelease hyphen, which sorts below the 1.0.0 it registers as", async () => {
-    // `+proposal.2` would be build metadata and compare *equal* to the release.
-    expect(artifactEvalsSchemaPath()).toMatch(
-      /artifact-evals-1\.0\.0-proposal\.2\.json$/,
+describe("manni:artifact-evals:1.0.0-proposal.4", () => {
+  it("carries the repository's id, not one of ours", () => {
+    expect(artifactEvalsSchema.$id).toBe(ARTIFACT_EVALS_SCHEMA_ID);
+    // A vocabulary proposal 0023 publishes; this tool implements behavior
+    // against it (ADR 01010). The pre-1.0 URL `$id` said we owned the shape.
+    expect(ARTIFACT_EVALS_SCHEMA_ID).toBe(
+      "manni:artifact-evals:1.0.0-proposal.4",
     );
-    expect(String((await loadSchema()).$id)).toContain("-proposal.2");
   });
 
-  it.each(CASES)("%s", async (_name, expected, yamlText) => {
-    const validate = await compile();
+  it("keeps the prerelease hyphen, which sorts below the 1.0.0 it registers as", () => {
+    // `+proposal.4` would be build metadata and compare *equal* to the release.
+    expect(ARTIFACT_EVALS_SCHEMA_ID).toContain("-proposal.4");
+  });
+
+  it("marks metadata external, so a trail can live outside the artifact (0047)", () => {
+    // proposal.4's one addition. tracevals does not move it — `manni meta
+    // relocate` does — but the mark has to survive the bundling, or the two
+    // tools would disagree about where the block belongs.
+    const properties = artifactEvalsSchema.properties as Record<
+      string,
+      Record<string, unknown> | undefined
+    >;
+    expect(properties.metadata?.["x-manni-location"]).toBe("external");
+  });
+
+  it.each(CASES)("%s", (_name, expected, yamlText) => {
     expect(validate(yamlText)).toBe(expected);
   });
 
-  it("leaves the metadata bag open so other tools' keys pass through", async () => {
-    const validate = await compile();
+  it("leaves the metadata bag open so other tools' keys pass through", () => {
     expect(
       validate(`metadata:
   dockg:
@@ -326,32 +345,5 @@ describe("manni:artifact-evals:1.0.0-proposal.2", () => {
   evals:
     - Reproduce the bug first.`),
     ).toBe(true);
-  });
-});
-
-/**
- * The cases above pin the schema's *behavior*. They cannot notice a change that
- * leaves behavior intact — a reworded description, a reordered key, an added
- * `$comment` — yet CLAUDE.md requires this file stay byte-identical to
- * docmeta's draft, `$id` included, and re-synced rather than patched.
- *
- * docmeta does not ship the schema in its package (`exports` is `.` and
- * `./package.json` only), so there is nothing to diff against at test time.
- * Pinning the digest is the next best thing: any edit fails here, and updating
- * this constant is the deliberate act that records a re-sync.
- */
-describe("vendored schema identity", () => {
-  const EXPECTED_SHA256 =
-    "c1ad5f2a3cec9d52105a4ed22eccc4c70b5f92fef7e89bf3e751e5783c8b075f";
-
-  it("is byte-identical to the vendored copy this repo was verified against", async () => {
-    const bytes = await readFile(artifactEvalsSchemaPath());
-    const actual = createHash("sha256").update(bytes).digest("hex");
-    expect(
-      actual,
-      "schemas/tracevals/artifact-evals-1.0.0-proposal.2.json changed. If this is a " +
-        "deliberate re-sync from docs/proposals/0023, update EXPECTED_SHA256; if it is a " +
-        "local patch, revert it — the shape belongs upstream (ADR 01010).",
-    ).toBe(EXPECTED_SHA256);
   });
 });

@@ -48,7 +48,7 @@ export interface EvalResult {
    * `session` — the judge model is the model that ran the session. This is the
    * sharpest form of the bias in either manni tool: the judge is not being
    * asked about a document it happened to draft, it is being asked whether its
-   * own behavior followed the rules. `criterion` — `eval-provenance` records
+   * own behavior followed the rules. `criterion` — `meta-provenance` records
    * this model proposing this assertion, so the judge wrote the question.
    *
    * Reported, never fatal: bias skews a verdict, it does not stop one forming,

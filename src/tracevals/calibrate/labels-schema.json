@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "moose-tracevals:calibration-labels:1",
+  "$id": "manni:tracevals:calibration-labels",
   "title": "manni tracevals calibration labels",
   "description": "Ground truth for `manni tracevals calibrate`: what a human decided a given eval should have produced on a given trace. A sidecar rather than an eval field, because a label belongs to a corpus and a reviewer, not to the artifact — and because the eval vocabulary is docmeta's, vendored byte-identical, with `inlineEval` closed to additions (ADR 01010).",
   "type": "object",

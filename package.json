@@ -19,13 +19,10 @@
       "types": "./dist/tracevals.d.ts",
       "import": "./dist/tracevals.js"
     },
-    "./package.json": "./package.json",
-    "./schemas/tracevals/artifact-evals-1.0.0-proposal.2.json": "./schemas/tracevals/artifact-evals-1.0.0-proposal.2.json",
-    "./schemas/tracevals/artifact-evals-1.0.0-proposal.1.json": "./schemas/tracevals/artifact-evals-1.0.0-proposal.1.json"
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
-    "schemas",
     "plugin"
   ],
   "repository": {

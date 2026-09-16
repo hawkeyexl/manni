@@ -101,7 +101,7 @@ describe("runFill", () => {
       "utf-8",
     );
     expect(updated).toContain("no-shell");
-    expect(updated).toContain("eval-provenance");
+    expect(updated).toContain("meta-provenance");
     // Pre-existing evals are untouched.
     expect(updated).toContain("no-shell-during-release");
   });
@@ -295,5 +295,32 @@ describe("runFill", () => {
     ]);
     expect(plans.some((p) => p.evalName === "no-shell")).toBe(true);
     expect(plans.every((p) => p.error === undefined)).toBe(true);
+  });
+
+  it("attributes the trail to the judge's own name for the model", async () => {
+    // The criterion axis of the self-preference check compares
+    // `meta-provenance`'s `generated-by` against the judge's `modelName()`.
+    // `fill` used to write `<provider>:<model>`, so the comparison was between
+    // two strings that could never be equal and the axis could never fire.
+    await run({ providerInstance: new MockProvider([proposal()], "judge-5") });
+    const path = join(project, ".claude", "skills", "fix-bug", "SKILL.md");
+    const content = await readFile(path, "utf-8");
+
+    const extracted = await extractEvals({
+      name: "fix-bug",
+      type: "skill",
+      path,
+      content,
+      origin: "project",
+    });
+    expect(extracted.errors).toEqual([]);
+    expect(extracted.proposedBy.get("no-shell")).toEqual(["judge-5"]);
+
+    const plans = await planEvals([
+      { name: "fix-bug", type: "skill", path, content, origin: "project" },
+    ]);
+    expect(
+      plans.find((p) => p.evalName === "no-shell")?.proposedBy,
+    ).toEqual(["judge-5"]);
   });
 });

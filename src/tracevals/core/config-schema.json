@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "moose-tracevals:config:0.1",
+  "$id": "manni:tracevals:config",
   "title": "tracevals section of manni.config.yaml",
   "description": "Settings for manni tracevals, held under the `tracevals` key of the config file shared by the manni family of tools. Sibling keys belong to other tools and are not validated here.",
   "type": "object",

@@ -218,7 +218,7 @@ export async function runEvals(options: EngineOptions): Promise<RunReport> {
       continue;
     }
     // Deterministic evals fail only on error-severity findings; warning and
-    // info findings report but pass.
+    // notice findings report but pass.
     const failing = result.findings.some((f) => f.severity === "error");
     results.push({
       ...base,

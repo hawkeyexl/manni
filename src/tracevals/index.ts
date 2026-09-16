@@ -44,7 +44,6 @@ export {
 } from "./artifacts/fs.js";
 export {
   ARTIFACT_EVALS_SCHEMA_ID,
-  artifactEvalsSchemaPath,
   extractEvals,
   type EvalEntry,
   type EvalType,
