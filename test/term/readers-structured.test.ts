@@ -195,7 +195,7 @@ describe("manifest", () => {
 });
 
 describe("DITA glossentry", () => {
-  it("reads a glossentry topic: glossdef is the abstract", () => {
+  it("reads a glossentry topic: glossdef is the definition", () => {
     const input = inputFor("dita/glossentry.dita", "xml");
     expect(reader("dita-glossentry").read(input)).toEqual({
       terms: [
@@ -203,7 +203,7 @@ describe("DITA glossentry", () => {
           id: "progressive-lens",
           record: {
             label: "progressive lens",
-            abstract: "Lenses that correct presbyopia without a visible line.",
+            definition: "Lenses that correct presbyopia without a visible line.",
             "alt-labels": ["PAL", "graduated lens"],
             "scope-note": "Spectacles only.",
           },
@@ -212,7 +212,7 @@ describe("DITA glossentry", () => {
             path: input.path,
             construct: "dita-glossentry",
             line: 2,
-            fieldLines: { label: 3, abstract: 5, "scope-note": 7, "alt-labels": 9 },
+            fieldLines: { label: 3, definition: 5, "scope-note": 7, "alt-labels": 9 },
             span: spanOf(input.content, "<glossentry", "</glossentry>"),
           },
         },
@@ -242,8 +242,8 @@ describe("DITA glossgroup", () => {
       terms: [
         {
           id: "bifocal",
-          record: { label: "bifocal", abstract: "Lenses with two powers." },
-          location: location(4, 0, { label: 5, abstract: 6 }),
+          record: { label: "bifocal", definition: "Lenses with two powers." },
+          location: location(4, 0, { label: 5, definition: 6 }),
         },
         {
           id: "trifocal-lens",

@@ -3,9 +3,10 @@
  * is one holds one term; a `<glossgroup>` holds a term per glossentry inside
  * it. Both are self-declaring, so neither needs `type: term`.
  *
- * Only elements that survive in DITA 2.0 are read, and `<glossdef>` maps to
- * `abstract`, not `definition` (proposal 0052 § 4): a glossdef is the short
- * form a hover card wants.
+ * Only elements that survive in DITA 2.0 are read. `<glossdef>` is the
+ * definition: DITA specializes it from `<abstract>`, but it is where a DITA
+ * author writes what the term means, and mapping it anywhere else would drop
+ * every definition from a round trip through DITA (proposal 0052 § 4).
  */
 import type { Term, TermField, TermInput, TermReader, TermReadResult } from "../../types.js";
 import { nothing, recordOf, skipped, termOf } from "./normalize.js";
@@ -39,8 +40,8 @@ function readEntry(
   }
   const [glossdef] = childrenOf(entry, "glossdef");
   if (glossdef !== undefined) {
-    raw.abstract = textOfElement(glossdef);
-    lines.abstract = lineOfElement(glossdef);
+    raw.definition = textOfElement(glossdef);
+    lines.definition = lineOfElement(glossdef);
   }
   const alts: string[] = [];
   for (const body of childrenOf(entry, "glossbody")) {

@@ -259,7 +259,7 @@ allows several terms in one entry. DocBook allows `<glossterm>` beside
 | Construct | Reads |
 |---|---|
 | Page metadata | every field |
-| DITA `<glossentry>` topic | `label`, `abstract`, `alt-labels`, `scope-note`, `id` |
+| DITA `<glossentry>` topic | `label`, `definition`, `alt-labels`, `scope-note`, `id` |
 | DITA `<glossgroup>` | the same, per child |
 | DocBook `<glossary>` | `label`, `definition`, `alt-labels`, `see`, `related-terms`, `id` |
 | HTML `<dl>` | `label`, `definition`, `alt-labels`, `id` |
@@ -270,12 +270,14 @@ allows several terms in one entry. DocBook allows `<glossterm>` beside
 | YAML or JSON manifest | every field |
 
 DITA's element names are the only ones that do not match the record's, so its
-mapping is stated in full:
+mapping is stated in full. `<glossdef>` is the definition. DITA specializes it
+from `<abstract>`, but it is where a DITA author writes what a term means. Any
+other mapping would drop every definition from a round trip through DITA.
 
 | DITA | Record |
 |---|---|
 | `<glossterm>` | `label` |
-| `<glossdef>` | `abstract` |
+| `<glossdef>` | `definition` |
 | `<glossAlt><glossSynonym>` | `alt-labels` |
 | `<glossAlt><glossAcronym>` | `alt-labels` |
 | `<glossBody><glossUsage>` | `scope-note` |
