@@ -28,12 +28,16 @@ interface Run {
   status: number;
 }
 
-function run(bin: string, args: string[]): Run {
+function run(
+  bin: string,
+  args: string[],
+  env: Record<string, string> = {},
+): Run {
   try {
     const stdout = execFileSync("node", [bin, ...args], {
       cwd: root,
       encoding: "utf8",
-      env: { ...process.env, NO_COLOR: "1" },
+      env: { ...process.env, NO_COLOR: "1", ...env },
     });
     return { stdout, stderr: "", status: 0 };
   } catch (e) {
@@ -53,7 +57,7 @@ describe("manni (built bin)", () => {
     }
   }, 180000);
 
-  it("lists meta, cite, key and docevals as subcommands", () => {
+  it("lists meta, cite, key, docevals and tracevals as subcommands", () => {
     const r = run(manni, ["--help"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^Usage: manni /m);
@@ -61,6 +65,7 @@ describe("manni (built bin)", () => {
     expect(r.stdout).toMatch(/^\s+cite\b/m);
     expect(r.stdout).toMatch(/^\s+key\b/m);
     expect(r.stdout).toMatch(/^\s+docevals\b/m);
+    expect(r.stdout).toMatch(/^\s+tracevals\b/m);
   });
 
   it("mounts the key domain under key, with no default command", () => {
@@ -117,6 +122,33 @@ describe("manni (built bin)", () => {
     const r = run(manni, ["docevals", "run", "-c", "does-not-exist.yaml"]);
     expect(r.status).toBe(2);
     expect(r.stderr).toMatch(/^manni: Config file not found/);
+  });
+
+  it("runs tracevals under its name", () => {
+    expect(run(manni, ["tracevals", "--help"]).stdout).toMatch(
+      /^Usage: manni tracevals /m,
+    );
+    // `list` enumerates the session store without judging anything; the
+    // fixture store stands in for the user's home, so this needs no
+    // credentials and no network.
+    const r = run(manni, ["tracevals", "list", "--all-projects", "--json"], {
+      MOOSE_TRACEVALS_HOME: "test/tracevals/fixtures/home",
+    });
+    expect(r.status).toBe(0);
+    const { traces } = JSON.parse(r.stdout) as { traces: unknown[] };
+    expect(traces.length).toBeGreaterThan(0);
+  });
+
+  it("prefixes tracevals diagnostics with the bin that ran", () => {
+    const r = run(manni, [
+      "tracevals",
+      "run",
+      "--since",
+      "yesterday",
+      "--deterministic-only",
+    ]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/^manni: --since must be a duration/);
   });
 
   it("with no command is a usage error that points at the subcommands", () => {

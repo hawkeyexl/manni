@@ -16,6 +16,7 @@ import { buildProgram as buildCite } from "./cite/cli.js";
 import { buildProgram as buildDocevals } from "./docevals/cli.js";
 import { buildProgram as buildKey } from "./key/cli.js";
 import { buildProgram as buildMeta } from "./meta/cli.js";
+import { buildProgram as buildTracevals } from "./tracevals/cli.js";
 import { runIfMain } from "./shared/run.js";
 
 export function buildProgram(): Command {
@@ -73,6 +74,13 @@ export function buildProgram(): Command {
       .name("docevals")
       .description(
         "Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter",
+      ),
+  );
+  program.addCommand(
+    buildTracevals()
+      .name("tracevals")
+      .description(
+        "Deterministic and LLM-as-judge adherence evals for AI agent session traces",
       ),
   );
   // Not a tool but a family resource with verbs (proposal 0045).
