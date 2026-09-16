@@ -1,0 +1,289 @@
+---
+title: Consume results programmatically
+description: "Feed manni tracevals output into your own tooling with the JSON report, --output, the TypeScript API and the history file, and detect a regression between two runs of the same session."
+sidebar:
+  order: 3
+---
+
+import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+**Scope:** everything downstream of a passing gate, meaning structured output, run history, and
+regression detection. Installing the gate is [Run it in CI](/manni/tracevals/ci/); the field-by-field
+structure is in the [reference](/manni/tracevals/reference/report-and-exit-codes/).
+
+The gate answers *did it pass?* This page is about answering *is it getting worse?*
+
+## Emit machine-readable output
+
+```bash
+npx @hawkeyexl/manni tracevals run <trace> --deterministic-only --format json
+```
+
+`--output` additionally writes the rendered report to a file, in whichever format `--format`
+selected. Both together give you one artifact to keep and one stream to pipe:
+
+```bash
+npx @hawkeyexl/manni tracevals run <trace> --deterministic-only \
+  --format json --output tracevals-report.json
+```
+
+<Aside type="caution" title="JSON goes to stdout with everything else">
+`--format json` writes the report to stdout. If you are piping it, keep other output off that
+stream. Use `--output` and read the file when a step also prints diagnostics.
+</Aside>
+
+{/* Doc Detective inline tests: prove the JSON report really carries the keys the
+    queries below depend on. The local build is exposed as `manni` via
+    `npm link`, and the workflow sets
+    CLAUDE_CONFIG_DIR=test/tracevals/fixtures/home/.claude so trace discovery
+    reads the fixture session store instead of the runner's. */}
+{/* test {"testId":"json-report-keys","description":"The JSON report exposes the fields this page queries."} */}
+{/* step {"description":"The report carries a summary object.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only --format json","exitCodes":[1],"stdio":"\"summary\""}} */}
+{/* step {"description":"The report carries the coverage list.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only --format json","exitCodes":[1],"stdio":"\"coverage\""}} */}
+{/* step {"description":"Every location tried is recorded, which is what diagnoses an unresolved reference.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only --format json","exitCodes":[1],"stdio":"\"tried\""}} */}
+{/* test end */}
+
+{/* test {"testId":"batch-report-keys","description":"The aggregate JSON report exposes the rate fields the batch queries below depend on."} */}
+{/* step {"description":"The batch report carries per-eval rates.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl test/tracevals/fixtures/traces/claude-session-sidecar.jsonl --project test/tracevals/fixtures/project --deterministic-only --format json","exitCodes":[1],"stdio":"\"passRate\""}} */}
+{/* step {"description":"The outlier traces are named.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl test/tracevals/fixtures/traces/claude-session-sidecar.jsonl --project test/tracevals/fixtures/project --deterministic-only --format json","exitCodes":[1],"stdio":"\"failingTraces\""}} */}
+{/* step {"description":"Skip reasons survive aggregation, so a never-checked eval is distinguishable from a passing one.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl test/tracevals/fixtures/traces/claude-session-sidecar.jsonl --project test/tracevals/fixtures/project --deterministic-only --format json","exitCodes":[1],"stdio":"\"skipReasons\""}} */}
+{/* step {"description":"Per-trace tallies separate a failed trace from an unreadable one.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl test/tracevals/fixtures/traces/claude-session-sidecar.jsonl --project test/tracevals/fixtures/project --deterministic-only --format json","exitCodes":[1],"stdio":"\"tracesErrored\""}} */}
+{/* test end */}
+
+## Query it
+
+The report is one object, so `jq` gets you most things in a line. Every field is documented in
+[Reports & exit codes](/manni/tracevals/reference/report-and-exit-codes/).
+
+Which evals failed, and why:
+
+```bash
+jq -r '.evalResults[]
+       | select(.outcome == "fail")
+       | "\(.artifactName) › \(.evalName): \((.findings // [])[].message)"' \
+  tracevals-report.json
+```
+
+Only the findings that were meant to block. A finding's `severity` is `notice`, `warning`, or
+`error`, set by the eval's author:
+
+```bash
+jq -r '.evalResults[] | (.findings // [])[]
+       | select(.severity == "error") | .message' tracevals-report.json
+```
+
+Anything a human needs to look at:
+
+```bash
+jq -r '.evalResults[] | select(.outcome == "needs-review") | .evalName' tracevals-report.json
+```
+
+Artifacts the session referenced but could not be found:
+
+```bash
+jq -r '.coverage[] | select(.resolved == false) | "\(.kind) \(.ref)"' tracevals-report.json
+```
+
+Summary counts for a dashboard:
+
+```bash
+jq '.summary' tracevals-report.json
+```
+
+```json
+{ "total": 7, "pass": 1, "fail": 1, "error": 0, "needsReview": 0, "skipped": 5 }
+```
+
+<Aside title="Prefer the JSON report over parsing the rendered one">
+The `pretty` format is colored, wrapped, and tuned for a terminal; the `markdown` format is tuned
+for a PR comment. Neither is a contract. `--format json` is.
+</Aside>
+
+## Query a batch
+
+Evaluating more than one trace emits a different object. It is a
+[`BatchReport`](/manni/tracevals/reference/report-and-exit-codes/#batch-runs) whose `evals` and
+`artifacts` arrays carry **rates** instead of outcomes. The `summary` counts are the same fields,
+summed, plus four per-trace tallies.
+
+```bash
+npx @hawkeyexl/manni tracevals run traces/*.jsonl --deterministic-only \
+  --format json --output tracevals-batch.json
+```
+
+The evals that hold least often, worst first. This is the one query that makes a corpus worth keeping:
+
+```bash
+jq -r '.evals
+       | map(select(.passRate != null))
+       | sort_by(.passRate)[]
+       | "\(.passRate * 100 | floor)%  \(.artifactName) › \(.evalName)  (\(.traces) trace(s))"' \
+  tracevals-batch.json
+```
+
+The traces to open first, for one eval that is failing:
+
+```bash
+jq -r '.evals[] | select(.evalName == "forbidden-tool") | .failingTraces[]' \
+  tracevals-batch.json
+```
+
+Traces that could not be read at all. These do not appear in any rate, so they are easy to miss:
+
+```bash
+jq -r '.traces[] | select(.error) | "\(.file): \(.error)"' tracevals-batch.json
+```
+
+Anything that was never actually checked, with the reason. An exhausted turn budget shows up here,
+and it is the difference between "this held every time" and "this was never run":
+
+```bash
+jq -r '.evals[] | select(.passRate == null)
+       | "\(.artifactName) › \(.evalName): \(.skipReasons | join("; "))"' \
+  tracevals-batch.json
+```
+
+<Aside type="caution" title="`passRate` is null, not zero, when nothing was graded">
+Skipped evals are excluded from the denominator, so an artifact the sessions never invoked reports
+`null` rather than `100%` or `0%`. Filter on `select(.passRate != null)` before sorting or averaging,
+or a never-checked eval will quietly rank as your worst, or your best.
+</Aside>
+
+<Aside title="Telemetry counts turns">
+The report's own telemetry is turns, meaning uncached ensemble runs, and duration. There is no
+dollar figure for what the tool spent, and no price table behind one. A dollar amount *does* appear
+where an eval is about the graded session's own spend. A `cost` grader's finding reads like
+`session cost $0.1234; at most $0.10 allowed`. That is a statement about the session, not about
+this run.
+</Aside>
+
+## Track runs over time
+
+`--history` appends one line per run to a local JSONL log and compares this run against the previous
+one **for the same session**:
+
+```bash
+npx @hawkeyexl/manni tracevals run <trace> --deterministic-only --history
+```
+
+The file defaults to `.manni/tracevals/history.jsonl` and is configurable:
+
+```yaml title="manni.config.yaml"
+tracevals:
+  history:
+    file: .manni/tracevals/history.jsonl
+```
+
+Each line is a `HistoryEntry`. It carries timestamp, trace file, session id, project, the summary
+counts, exit code, the turns the run spent, and one `{ artifact, evalName, outcome }` per eval.
+**Outcomes only**; findings and consensus are not stored, which keeps the log small enough to commit
+if you want to.
+
+<Aside type="caution" title="History is local, and matched per session">
+The comparison looks for the most recent earlier entry with the same `sessionId`, falling back to
+the trace path. On an ephemeral CI runner the file starts empty every time, so there is nothing to
+compare against. To get trend data out of CI you have to persist the file yourself. Cache it,
+commit it, or ship each run's JSON somewhere central and diff there.
+</Aside>
+
+## Detect a regression
+
+A **regression** is a specific, defined event: an eval that was `pass` in the previous run and is
+now `fail` or `error`. That precision is what makes an alert worth wiring up.
+
+With `--history`, the comparison is appended to non-JSON output:
+
+```
+History vs 2026-07-01T09:14:22.104Z:
+  regression: fix-bug › used-read
+  added: fix-bug › reproduces-before-fixing
+```
+
+| Line | Meaning |
+|---|---|
+| `regression` | previously `pass`, now `fail` or `error` |
+| `improvement` | previously `fail` or `error`, now `pass` |
+| `added` | an eval that did not exist in the previous run |
+| `removed` | an eval that existed then and does not now |
+| `no changes` | the outcome set is identical |
+
+`added` and `removed` matter more than they look. They are how you notice that an eval was
+quietly deleted, or that an artifact stopped being referenced at all.
+
+### Comparing two runs yourself
+
+If you keep the JSON rather than the history file, the same rule is a few lines:
+
+```bash
+jq -n --slurpfile before before.json --slurpfile after after.json '
+  ($before[0].evalResults | map({key: "\(.artifact)›\(.evalName)", value: .outcome}) | from_entries) as $b
+  | $after[0].evalResults
+  | map(select($b["\(.artifact)›\(.evalName)"] == "pass"
+               and (.outcome == "fail" or .outcome == "error")))
+  | map("\(.artifactName) › \(.evalName)")'
+```
+
+## Publish a summary
+
+For a human-readable artifact next to the machine-readable one, run the markdown reporter:
+
+```yaml
+      - name: Evaluate and keep both formats
+        run: |
+          npx @hawkeyexl/manni tracevals run traces/session.jsonl --deterministic-only \
+            --format markdown --output tracevals-report.md
+          npx @hawkeyexl/manni tracevals run traces/session.jsonl --deterministic-only \
+            --format json --output tracevals-report.json
+
+      - name: Publish
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: tracevals-report
+          path: tracevals-report.*
+```
+
+The second run is free. Judged verdicts are cached, and under `--deterministic-only` there is no
+model call at all.
+
+## Or skip the CLI
+
+Are you building something that runs evaluations rather than reading their output? The library gives
+you the typed report directly, with no parsing step in between. The API is the `tracevals` namespace
+export of the package:
+
+```ts
+import { tracevals } from "@hawkeyexl/manni";
+
+const { loadConfig, runEvals, render } = tracevals;
+
+const report = await runEvals({
+  tracePath: "./traces/session.jsonl",
+  projectDir: "./my-repo",
+  config: await loadConfig(),
+  deterministicOnly: true,
+});
+
+console.log(report.summary, report.exitCode);
+console.log(render(report, "markdown"));
+```
+
+`report` is the same structure `--format json` prints, so everything on this page applies to it
+field for field. [Build on manni tracevals](/manni/tracevals/extend/) carries the entry points and
+the injection seams that keep your own suite offline. It also covers registering a grader the
+built-ins do not.
+
+## Where to go next
+
+<CardGrid>
+  <LinkCard
+    title="Every report field"
+    description="The full RunReport, EvalResult, consensus, and CoverageEntry shapes, and the history file format."
+    href="/manni/tracevals/reference/report-and-exit-codes/"
+  />
+  <LinkCard
+    title="Build on the library"
+    description="The export map, the injection seams, and how to register a grader the built-ins do not cover."
+    href="/manni/tracevals/extend/"
+  />
+</CardGrid>

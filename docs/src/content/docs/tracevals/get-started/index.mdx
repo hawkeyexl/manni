@@ -1,0 +1,213 @@
+---
+title: Get started
+description: Install manni tracevals, find a session that already happened, evaluate it offline, and read the report line by line.
+---
+
+import { Steps, Tabs, TabItem, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+**Scope:** installing manni tracevals and getting a real, readable result from a session that
+already happened. It stops once you trust the output. Making the checks say something specific is
+[Declare what to check](/manni/tracevals/declare/); putting this in a pipeline is
+[Run it in CI](/manni/tracevals/ci/).
+
+Everything on this page runs **offline**, with no API key.
+
+{/* Doc Detective inline tests: verify this page's documented behavior against the
+    local build, exposed as `manni` via `npm link` (see
+    .github/workflows/doc-detective.yml), over committed fixtures. The workflow
+    sets CLAUDE_CONFIG_DIR=test/tracevals/fixtures/home/.claude so trace discovery
+    reads the fixture session store instead of the runner's home.
+    Run with `npx doc-detective`. Config: .doc-detective.json. */}
+
+<Steps>
+
+1. ### Install
+
+   manni needs **Node.js 24 or newer**.
+
+   <Tabs>
+     <TabItem label="Project dependency">
+       ```bash
+       npm i -D @hawkeyexl/manni
+       ```
+
+       Then invoke it as `npx @hawkeyexl/manni tracevals`.
+     </TabItem>
+     <TabItem label="No install">
+       ```bash
+       npx @hawkeyexl/manni tracevals --version
+       ```
+
+       Nothing to add to your project first.
+     </TabItem>
+   </Tabs>
+
+   <Aside type="tip" title="One package, one binary">
+   The package is `@hawkeyexl/manni` and the binary it installs is `manni`. Every tool in the
+   family is a subcommand of it, so tracevals arrives with `manni meta` and the rest, reading the
+   same `manni.config.yaml`. `npx` resolves by package name, so `npx @hawkeyexl/manni tracevals`
+   reaches this CLI whether or not it is already a dependency. With a local dependency npm prefers
+   `node_modules/.bin`; without one it fetches the package.
+   </Aside>
+
+   {/* test {"testId":"get-started-install","description":"The CLI runs and reports a version."} */}
+   {/* step {"description":"The installed binary responds to --version.","runShell":{"command":"manni tracevals --version","exitCodes":[0]}} */}
+   {/* test end */}
+
+2. ### Find a session
+
+   tracevals evaluates a **trace**: a record of a session that already happened, sitting on disk.
+   You do not instrument anything and you do not re-run any work.
+
+   Claude Code writes one JSONL file per session under `~/.claude/projects/<project-slug>/`. To see
+   what is evaluable:
+
+   ```bash
+   npx @hawkeyexl/manni tracevals list --all-projects --limit 5
+   ```
+
+   ```
+     1. 2026-07-02 00:00  Write a README for this repo.
+        C:\work\other-project · 22222222-2222-2222-2222-222222222222 · 1KB
+        C:\...\.claude\projects\C--work-other-project\22222222-....jsonl
+     2. 2026-07-01 00:00  Fix the crash in src/app.ts.
+        C:\work\demo-project · 11111111-1111-1111-1111-111111111111 · 1KB
+        C:\...\.claude\projects\C--work-demo-project\11111111-....jsonl
+   ```
+
+   Each entry shows the timestamp and first prompt, then the project and session id, then the file
+   path you can pass to `run`. Drop `--all-projects` to scope to the current directory's project,
+   and add `-f json` where a script is reading.
+
+   {/* test {"testId":"get-started-list","description":"list discovers traces in the session store."} */}
+   {/* step {"description":"Listing every project finds the fixture sessions and exits 0.","runShell":{"command":"manni tracevals list --all-projects --limit 5","exitCodes":[0],"stdio":"demo-project"}} */}
+   {/* test end */}
+
+3. ### Run your first evaluation
+
+   Start with the mode that makes no model call at all:
+
+   ```bash
+   npx @hawkeyexl/manni tracevals run <trace-file> --deterministic-only
+   ```
+
+   `--deterministic-only` runs every check that needs no inference call. That is the seven
+   [deterministic graders](/manni/tracevals/reference/graders/) decidable from the trace alone, plus
+   `command` evals and the `human` review queue. It **skips** AI-judged evals instead of failing
+   them.
+
+   To exercise the whole pipeline, judge included, without anything leaving your machine:
+
+   ```bash
+   npx @hawkeyexl/manni tracevals run <trace-file> --local
+   ```
+
+   `--local` runs inference here with `llama-cpp`, over whatever provider the config names. Pairing
+   it with `--provider <name>` is a usage error.
+
+   <Aside title="Three other things worth knowing early">
+   - **Spell the verb.** Every manni command is `manni <domain> <verb>`, so a bare
+     `manni tracevals ./session.jsonl` is `error: unknown command './session.jsonl'` and exit `2`.
+   - Run `manni tracevals run` with no trace in a terminal and you get an interactive picker
+     instead of having to name a file.
+   - Which provider judges is the family's business, not this tool's. `providers.provider` defaults
+     to `auto`, which detects an Anthropic key, then an OpenAI key, then the Claude CLI, then a
+     local model. `tracevals.provider` narrows that for tracevals alone, and `--provider` or
+     `--local` wins over both. There is no key to provision before your first judged run if you
+     already use the Claude CLI.
+   </Aside>
+
+4. ### Read the report
+
+   A deterministic-only run against a project with one skill, one subagent, and two rules files
+   looks like this:
+
+   ```
+   manni tracevals — /path/to/session.jsonl
+   claude-code · claude-opus-4-8 · 2 turn(s) · /work/demo-project
+
+     SKIP   writing-toolkit:identify-ai-tells › adheres-to-artifact (implicit)
+            artifact skipped via metadata.eval-skip
+     PASS   fix-bug › used-read
+     FAIL   fix-bug › forbidden-tool
+            [error] tool Bash was used 1 time(s) but must not be
+     PASS   fix-bug › no-force-push
+     REVIEW fix-bug › refactor-preserved-intent
+            awaiting human review
+     SKIP   fix-bug › eval-5
+            ai evals skipped (deterministic-only run)
+     SKIP   doc-writer › adheres-to-artifact (implicit)
+            ai evals skipped (deterministic-only run)
+     SKIP   CLAUDE.md › adheres-to-artifact (implicit)
+            ai evals skipped (deterministic-only run)
+     SKIP   AGENTS.md › eval-1
+            ai evals skipped (deterministic-only run)
+
+   Artifact coverage
+     ✓ skill: writing-toolkit:identify-ai-tells /path/to/plugins/.../SKILL.md
+     ✓ skill: fix-bug                           /work/demo-project/.claude/skills/fix-bug/SKILL.md
+     ○ agent: Explore                           built-in agent (no definition file)
+     ✓ agent: doc-writer                        /work/demo-project/.claude/agents/doc-writer.md
+     ✓ project-rules: project rules
+
+   Warnings
+     ! 1 unparseable JSONL line(s) were skipped
+
+   9 eval(s): 2 pass, 1 fail, 0 error, 1 needs-review, 5 skipped
+   ```
+
+   Five things are worth naming, because the rest of the documentation assumes them:
+
+   - An **artifact** is an instruction file the session used: a skill, an agent definition, or a
+     project-rules file. Here: `fix-bug`, `doc-writer`, `CLAUDE.md`, `AGENTS.md`, and a plugin
+     skill.
+   - An **eval** is one named check declared on an artifact. `used-read` and `forbidden-tool`
+     were declared in `fix-bug`'s frontmatter.
+   - **The grader decides how a check is answered.** `used-read` reads the trace directly, and
+     `no-force-push` runs a script over it. `refactor-preserved-intent` is `REVIEW` because it asks
+     for a human, and the `SKIP`s are AI-judged evals, which `--deterministic-only` does not run.
+   - **`adheres-to-artifact (implicit)`** is what you get for free. An artifact that declares no
+     evals still gets one judged eval asking whether the session followed its instructions. A first
+     run therefore says something before you have authored anything.
+   - **Artifact coverage** is the honest answer to *what did you not check?* A `✓` resolved to a
+     real file; a `○` did not. `Explore` is a built-in agent with no definition file anywhere, which
+     is expected, and fine.
+
+   The one failure is the point of the exercise. `fix-bug` declares that it is edit-only; the
+   session ran a shell command; the finding names the tool and the count.
+
+   {/* test {"testId":"get-started-first-run","description":"A deterministic-only run produces the documented outcomes and exit code."} */}
+   {/* step {"description":"The run exits 1 because the fixture session violates a declared eval.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"tool Bash was used 1 time(s) but must not be"}} */}
+   {/* step {"description":"Judged evals are skipped, not failed, under --deterministic-only.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"ai evals skipped (deterministic-only run)"}} */}
+   {/* test end */}
+
+5. ### Check the exit code
+
+   | Code | Meaning |
+   |---|---|
+   | `0` | every eval passed or was skipped |
+   | `1` | something failed, errored, or needs review |
+   | `2` | tracevals itself could not run: bad usage, unreadable trace, unknown format |
+
+   The distinction between `1` and `2` is the one to hold on to: `1` means the agent did something,
+   `2` means the tool did. It is the same contract every manni command follows. Full detail in
+   [Exit codes and reports](/manni/tracevals/ci/exit-codes-and-reports/).
+
+</Steps>
+
+## Where to go next
+
+Two doors from here, depending on what you came for.
+
+<CardGrid>
+  <LinkCard
+    title="Make the checks specific"
+    description="The implicit eval is coarse. Declare an eval on the one instruction you actually care about — then let fill propose the rest."
+    href="/manni/tracevals/declare/"
+  />
+  <LinkCard
+    title="Put this in a pipeline"
+    description="A GitHub Actions recipe that runs offline, plus the exit-code contract and a policy for needs-review."
+    href="/manni/tracevals/ci/"
+  />
+</CardGrid>

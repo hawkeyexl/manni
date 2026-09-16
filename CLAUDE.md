@@ -77,6 +77,22 @@ Key layers:
     and the output formats.
   - `src/docevals/cli.ts`: thin commander wrapper exported as `buildProgram()`
     and mounted by `src/cli.ts`. No entry point of its own.
+- `src/tracevals/`: the session-adherence tool, `manni tracevals run`,
+  `calibrate`, `fill`, `capture` and `list` (proposal 0049). It grades a
+  Claude Code session against the artifacts that governed it — `CLAUDE.md`,
+  skills, subagents and slash commands — using the 0023 artifact-evals draft.
+  Its own `src/tracevals/CLAUDE.md` holds the tool's invariants.
+  - `src/tracevals/trace/` and `src/tracevals/artifacts/`: reading a session
+    transcript and finding the artifacts it ran under.
+  - `src/tracevals/graders/` and `src/tracevals/judge/`: the deterministic
+    graders and the LLM judge, which takes its providers from
+    `src/shared/providers.ts`, as docevals does.
+  - `src/tracevals/commands/` and `src/tracevals/reporters/`: the command
+    cores and the output formats.
+  - `src/tracevals/cli.ts`: thin commander wrapper exported as
+    `buildProgram()` and mounted by `src/cli.ts`. No entry point of its own.
+  - `plugin/tracevals/`: the Claude Code plugin whose SessionStart hook runs
+    `manni tracevals capture`.
 - `src/key/`: the family key's domain, `manni key set` and `manni key rotate`
   (proposal 0045). It owns no cryptography. `rotate` orchestrates meta's and
   cite's re-encryption, and the one ciphertext format lives in
@@ -258,7 +274,7 @@ stdin/parse cases.
 Before any user-facing writing or docs task, consult `docs/content-strategy/`:
 
 1. Identify the **persona** the page serves: Maya (docs engineer), Devin (CI engineer), Sara (schema author), or Theo (contributor fixing a failure). See `personas.md`.
-2. Find the matching **CUJ** in `cujs.md` (M1–M13, D1–D9, S1–S9, T1–T4). Structure the content around reaching that outcome, not by document type or Diátaxis category.
+2. Find the matching **CUJ** in `cujs.md` (M1–M17, D1–D11, S1–S11, T1–T5). Structure the content around reaching that outcome, not by document type or Diátaxis category.
 3. Link into the **Reference shelf** (`reference/`) for exhaustive detail (flag tables, config keys, precedence chain). Journey pages explain the path; they don't duplicate reference.
 4. Check `information-architecture.md` for the page's place in the content set and its ★ launch status.
 5. Every page in `docs/src/content/docs/**` needs `title` and `description` frontmatter.

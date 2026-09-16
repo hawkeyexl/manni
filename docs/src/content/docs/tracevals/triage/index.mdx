@@ -1,0 +1,207 @@
+---
+title: Read a failing eval
+description: Decode a FAIL, ERROR, REVIEW, or SKIP from a manni tracevals run in one page, then decide whether to fix the session, fix the eval, or escalate.
+sidebar:
+  order: 1
+---
+
+import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+**Scope:** you are looking at one result and you did not set this tool up. Everything you need is on
+this page. Nothing is installed, configured, or read first. Links are here if you want them; you
+should not need to follow any of them.
+
+## What you are looking at
+
+```
+  FAIL   fix-bug › forbidden-tool
+         [error] tool Bash was used 1 time(s) but must not be
+```
+
+Three words, in order:
+
+- **`FAIL`** is the **outcome**. One of `PASS`, `FAIL`, `ERROR`, `REVIEW`, or `SKIP`.
+- **`fix-bug`** is the **artifact**: an instruction file the agent session used, such as a skill, a
+  subagent definition, or a project-rules file like `CLAUDE.md`.
+- **`forbidden-tool`** is the **eval**: one named check declared in that artifact's
+  frontmatter, saying something the session was supposed to do or avoid.
+
+So: *the session used the `fix-bug` skill, that skill declares a rule called `forbidden-tool`, and
+the session broke it.*
+
+If the eval is called `adheres-to-artifact (implicit)`, nothing specific was declared. The
+check was the general question *"did the session follow this file's instructions?"*
+
+{/* Doc Detective inline tests: the outcomes described on this page are produced
+    by running the CLI, exposed as `manni` via `npm link`, against this
+    repository's committed fixtures. */}
+{/* test {"testId":"triage-fail-line","description":"A deterministic failure names the artifact, eval, and what the session did."} */}
+{/* step {"description":"The documented FAIL line appears verbatim.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"tool Bash was used 1 time(s) but must not be"}} */}
+{/* test end */}
+
+## A check failed
+
+`FAIL` means an eval was violated. The line underneath tells you what the session actually did:
+
+```
+         [error] tool Bash was used 1 time(s) but must not be
+```
+
+Deterministic checks are specific like this: a tool name and a count, a file path, a turn count, a
+pattern. No interpretation is involved. The session either did it or it did not.
+
+**`[error]` here is a severity, and severities are set by whoever wrote the eval.** Severity is
+`error`, `warning`, or `notice`, the same three values every manni tool uses. Only `error`-severity
+findings fail an eval; `warning` and `notice` findings are reported and pass. Seeing `[error]` means
+someone decided this check matters.
+
+## A judged verdict
+
+Some evals cannot be decided mechanically, so a model decides them. Those look like this:
+
+```
+  REVIEW fix-bug › eval-5
+         votes pass:1 fail:2 partial:0 error:0 · confidence 0.87
+         The session edited src/app.ts at turn 2 without a preceding test run.
+```
+
+Behind that verdict are several independent model runs, and you are shown how they split. That is
+your evidence. Weigh it:
+
+- **Unanimous, high confidence** → take it seriously.
+- **Split votes** → the assertion is probably ambiguous, or the session genuinely is a borderline
+  case. Both are worth saying out loud when you escalate.
+- **`error:` above zero** → one or more runs failed outright. Treat the result as unreliable, which
+  is a weaker claim than treating it as wrong.
+
+The last line is what the judge claims it saw. **Check it.** If it cites a turn or a file, go look.
+A verdict that cites something that did not happen is a bad verdict, and you are the person best
+placed to notice.
+
+## `REVIEW` is not a failure
+
+`REVIEW` means the judge did not reach confident agreement, so it declined to decide and handed the
+question to a human. Today that is you.
+
+The routing is intentional. A verdict only auto-resolves when **every** run agreed and the
+confidence was high; anything else lands here. By default it counts as a failure for exit-code
+purposes, on the reasoning that an unreviewed ambiguous result should not merge quietly. It says
+nothing about whether the session did something wrong.
+
+Read the vote split and the cited observation, then make the call yourself.
+
+## `ERROR` means the check broke
+
+`ERROR` points at the *check*. The agent may have behaved perfectly; something about the eval itself
+did not work.
+
+The two common causes:
+
+**A grader was given options it rejects.** Options are validated before grading, so a typo surfaces
+as a loud error instead of slipping through as a pass:
+
+```
+  ERROR  fix-bug › forbidden-tool
+         options.expect must be one of: used, not-used
+```
+
+**The evals block itself is malformed.** You get a check called `evals-block-valid` with a source
+line number:
+
+```
+  ERROR  fix-bug › evals-block-valid
+         invalid metadata.evals block: /evals/1/grader (line 12): must be equal to one of the allowed values
+```
+
+Either way the bug lives in the artifact's frontmatter, and it belongs to whoever owns that file.
+
+## Why something was skipped
+
+`SKIP` never affects the exit code. It has **four unrelated causes**, and the reason is always
+printed underneath. Read it, because each one means something different:
+
+| Reason shown | What happened | What to do |
+|---|---|---|
+| `ai evals skipped (deterministic-only run)` | The run used `--deterministic-only`, so judged checks did not run. | Nothing. This is the normal CI mode. |
+| `ai evals skipped (no judge provided)` | No judge was configured for this run. | Nothing, unless you expected judged checks; then check the provider config. |
+| `artifact skipped via metadata.eval-skip` | The artifact opted out. | Nothing. Someone chose this on purpose. |
+| `turn budget` | The run hit its ceiling on inference calls; the remaining judged evals did not run. | Raise `judge.maxTurns`, or accept partial coverage. |
+
+The turn budget is the ceiling on tracevals' own inference calls. Reaching it never aborts a run.
+It stops there and marks what is left as skipped, so a capped run still reports everything it did
+decide.
+
+A deterministic grader can also skip itself when the trace lacks the data it needs. Most often that
+is `cost`, since session files do not always carry usage data:
+
+```
+  SKIP   CLAUDE.md › under-budget
+         trace carries insufficient cost data: no cost data (maxUsd not checkable)
+```
+
+That is a check on what **the graded session** spent, which is a different number from the turn
+budget above. The check is telling you honestly that it could not see it. The alternative would be
+to pass by default, which would be worse.
+
+## Coverage rows are a separate section
+
+Below the eval list is a second section:
+
+```
+Artifact coverage
+  ✓ skill: fix-bug        /work/demo-project/.claude/skills/fix-bug/SKILL.md
+  ○ agent: Explore        built-in agent (no definition file)
+  ○ skill: my-plugin:foo  not found (3 location(s) tried)
+```
+
+These rows are inventory, not results. They list the instruction files the session **referenced**
+and whether each one was found.
+
+- **`✓`**: found and evaluated.
+- **`○ built-in agent (no definition file)`**: expected. Built-in agents have no file anywhere, so
+  this one is fine.
+- **`○` anything else**: the session referenced a skill or agent whose file could not be located,
+  usually a missing plugin or a path that changed. It does not fail the run, and it does mean that
+  artifact went unchecked.
+
+## What to do next
+
+Three options, and the third is the one people forget:
+
+1. **Fix the session's behavior.** The eval is right and the agent broke it. Change the
+   instructions, the prompt, or the workflow so it stops happening.
+
+2. **Fix the eval.** Sometimes the check is wrong. It asserts something no session could
+   reasonably satisfy, or it describes an old workflow, or the assertion is too vague for anyone to
+   adjudicate. **This is a real and common answer**, and you may be the first person to notice. An
+   eval nobody can satisfy is a defect in the artifact.
+
+3. **Escalate to whoever owns the artifact.** The coverage section printed the file path. That file
+   is in version control, so `git log` on it names the owner. Bring them the artifact name, the
+   eval name, and for a judged verdict the vote split and the cited observation. That is
+   enough for them to act without reproducing anything.
+
+<Aside title="You do not need to install anything">
+Everything above is readable from the output you already have. If you do want to reproduce the
+result, you can: evaluation is read-only and never modifies traces or artifacts.
+</Aside>
+
+## Where to go next
+
+<CardGrid>
+  <LinkCard
+    title="The questions this page did not answer"
+    description="Skipped checks, missing artifacts, judged verdicts you disagree with, and who owns the fix."
+    href="/manni/tracevals/triage/faq/"
+  />
+  <LinkCard
+    title="Why a judged verdict came out that way"
+    description="The consensus arithmetic behind pass, fail, and review, and why an errored run can never produce a silent pass."
+    href="/manni/tracevals/judge/"
+  />
+  <LinkCard
+    title="What the eval is actually asserting"
+    description="How evals are declared, what each grader checks, and what severity means."
+    href="/manni/tracevals/declare/"
+  />
+</CardGrid>

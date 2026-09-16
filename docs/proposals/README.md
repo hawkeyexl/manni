@@ -184,3 +184,4 @@ commit. The supersede-never-amend rule applies to them as it does here.
 | Directory | Source |
 |---|---|
 | [`docevals/`](docevals/) | moose-docevals at 670e62b (00001-00004 and 01000-01045). Closed at 01045 by [0048](0048-docevals-domain.md); later docevals decisions are in this series. |
+| [`tracevals/`](tracevals/) | moose-tracevals at fed983b (01000-01033). Closed at 01033 by [0049](0049-tracevals-domain.md); later tracevals decisions are in this series. |

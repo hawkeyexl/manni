@@ -1,0 +1,138 @@
+---
+title: manni tracevals
+description: Adherence evals for AI agent session traces. Did the session follow the skills and instructions it used?
+tableOfContents: false
+hero:
+  tagline: You wrote the instructions. Did the agent follow them? Point manni tracevals at a session that already happened and find out.
+  actions:
+    - text: Get started
+      link: /manni/tracevals/get-started/
+      icon: right-arrow
+      variant: primary
+    - text: Read a failing eval
+      link: /manni/tracevals/triage/
+      icon: error
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard, Aside } from '@astrojs/starlight/components';
+
+Agent instructions accumulate. A `SKILL.md` here, a subagent definition there, a `CLAUDE.md` that
+has grown past the point anyone rereads it. Nothing checks whether any of it is still being
+followed.
+
+**manni tracevals** closes that loop. Give it a session that already happened, and it
+deterministically looks up every skill, agent definition, slash command, and project-rules file the
+session used. Then it evaluates whether the session **adhered to the instructions in those
+artifacts**.
+
+## What you want to do
+
+<CardGrid>
+  <LinkCard
+    title="Evaluate my first session"
+    description="Install, find a session, and read a real result, offline and with no API key."
+    href="/manni/tracevals/get-started/"
+  />
+  <LinkCard
+    title="Check one specific instruction"
+    description="Declare an eval in an artifact's frontmatter and make it fail when it should."
+    href="/manni/tracevals/declare/"
+  />
+  <LinkCard
+    title="Gate agent work in CI"
+    description="One workflow, no network calls, an exit code you can branch on."
+    href="/manni/tracevals/ci/"
+  />
+  <LinkCard
+    title="Decide whether to trust the judge"
+    description="Ensembles, consensus, and why an errored run can never produce a silent pass."
+    href="/manni/tracevals/judge/"
+  />
+  <LinkCard
+    title="Understand why my build went red"
+    description="One page: what failed, whether the verdict holds, and what to do about it."
+    href="/manni/tracevals/triage/"
+  />
+  <LinkCard
+    title="Look something up"
+    description="Every flag, config key, grader option, and report field."
+    href="/manni/tracevals/reference/"
+  />
+</CardGrid>
+
+## The 30-second proof
+
+Everything below runs with no API key and no network call.
+
+```bash
+npm i -D @hawkeyexl/manni
+```
+
+```bash
+npx @hawkeyexl/manni tracevals run ./session.jsonl --deterministic-only
+```
+
+```
+  PASS   fix-bug › used-read
+  FAIL   fix-bug › forbidden-tool
+         [error] tool Bash was used 1 time(s) but must not be
+  SKIP   CLAUDE.md › adheres-to-artifact (implicit)
+         ai evals skipped (deterministic-only run)
+
+9 eval(s): 2 pass, 1 fail, 0 error, 1 needs-review, 5 skipped
+```
+
+The skill said *"this skill is edit-only"*. The session ran a shell command. Nobody had to notice.
+
+<Aside type="tip" title="One package, every tool">
+tracevals ships in `@hawkeyexl/manni` alongside `manni meta`, `manni docevals` and the rest of the
+family, and they share one `manni.config.yaml`. If a repo already runs another manni tool, there is
+nothing new to install.
+</Aside>
+
+## How it works
+
+```
+trace (~/.claude/projects/<project>/*.jsonl, or a file you name)
+  |
+  v
+parse ──> resolve artifacts used ──> extract evals ──> plan evals
+              (skills, agents,          (metadata.evals
+               CLAUDE.md/AGENTS.md)      frontmatter)
+  |
+  v
+deterministic graders ──> ensemble LLM judge (N runs, consensus, zones)
+  |
+  v
+report (pretty / json / markdown) + artifact coverage + history
+```
+
+<CardGrid>
+  <Card title="Nothing to instrument" icon="rocket">
+    Evaluation runs against sessions that already happened. No wrapper, no re-running work, and
+    `run` never modifies a trace or the artifacts it evaluates.
+  </Card>
+  <Card title="Deterministic lookup" icon="magnifier">
+    Which skills, agents, and rules a session used is read from the trace and the filesystem, never
+    guessed by a model. An artifact that cannot be found becomes a coverage note, never a crash.
+  </Card>
+  <Card title="Useful with zero configuration" icon="approve-check">
+    An artifact that declares no evals still gets one judged eval: *did the session adhere to
+    this?* Your first run says something before you have authored anything.
+  </Card>
+  <Card title="A judge you can audit" icon="seti:lock">
+    Independent runs at temperature 0, combined by consensus. An errored run can push an eval to
+    human review. It can never push one to a silent pass.
+  </Card>
+</CardGrid>
+
+## Requirements
+
+Node.js 24 or newer. No hosted service and no account. The judge provider comes from the family's
+`providers:` config, and `--local` runs inference on your own machine.
+
+```bash
+npm i -D @hawkeyexl/manni
+npx @hawkeyexl/manni tracevals list
+```

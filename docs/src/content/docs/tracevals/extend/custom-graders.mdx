@@ -1,0 +1,260 @@
+---
+title: Write a custom grader
+description: "Register a deterministic grader the built-ins do not cover, implement both halves of the contract, and load it from the CLI with --require or a plugins list."
+sidebar:
+  order: 2
+---
+
+import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+**Scope:** adding a deterministic grader kind. The deterministic built-ins and their options are in
+the [grader reference](/manni/tracevals/reference/graders/). Read one of those first, since they are
+the reference implementations. `cost` is a good one to start from: it is short, and it shows the
+skip-rather-than-pass rule below in working code.
+
+## The contract has two halves
+
+```ts
+interface TraceGrader {
+  kind: string;
+  validateOptions?(options: Record<string, unknown>): string | undefined;
+  grade(ctx: { trace: Trace; plan: EvalPlan }): GradeResult | Promise<GradeResult>;
+}
+```
+
+`grade()` is the obvious half. `validateOptions()` is the one people skip, and skipping it has a
+consequence that is invisible in the type signature.
+
+<Aside type="caution" title="A grader without `validateOptions` can never be proposed by `fill`">
+`validateOptions` is optional so that consumer-registered graders stay source-compatible. Even so,
+`fill` refuses to propose an eval it cannot ground-check. A grader missing it works fine when a
+human writes the eval by hand and is silently invisible to the authoring path.
+
+If you want `fill` to be able to suggest your grader, implement both.
+</Aside>
+
+It is called twice, by `grade()` before grading and by `fill` before proposing. Return `undefined`
+when the options are usable, or a message describing what is wrong.
+
+## A worked example
+
+A grader asserting the session touched no file outside an allowed directory:
+
+```ts
+import { tracevals } from "@hawkeyexl/manni";
+
+const { registerGrader, skippedWindow, windowFor } = tracevals;
+
+const stayedInScope: tracevals.TraceGrader = {
+  kind: "stayed-in-scope",
+
+  validateOptions(options) {
+    const root = options.root;
+    if (typeof root !== "string" || root.length === 0) {
+      return "options.root is required and must be a non-empty string";
+    }
+    if (root.startsWith("/") || /^[A-Za-z]:/.test(root)) {
+      return `options.root must be a repository-relative path, not "${root}"`;
+    }
+    return undefined;
+  },
+
+  grade({ trace, plan }): tracevals.GradeResult {
+    const root = String(plan.options?.root ?? "");
+    // Grade the window this artifact governed, not the whole session — and
+    // skip rather than pass when it governed nothing.
+    const window = windowFor(trace, plan);
+    if (window.empty) return skippedWindow(window);
+
+    const normalise = (p: string) => p.replace(/\\/g, "/").toLowerCase();
+    const strays = window.fileAccesses
+      .filter((a) => a.op !== "read")
+      .filter((a) => !normalise(a.path).includes(normalise(root)));
+
+    if (strays.length === 0) return { findings: [] };
+
+    return {
+      findings: strays.map((a) => ({
+        evalName: plan.evalName,
+        artifact: plan.artifact.path,
+        message: `wrote outside ${root}: ${a.path}`,
+        severity: plan.severity,
+      })),
+    };
+  },
+};
+
+registerGrader(stayedInScope);
+```
+
+`windowFor(trace, plan)` is the one thing a custom grader has to remember. Reading `trace` directly
+counts events from before the artifact was ever in force. That is how a skill's eval ends up failing
+on a command that ran before it loaded. `window` carries the same shapes as the trace:
+`toolCalls`, `fileAccesses`, `skillInvocations`, `events`, `userMessages`, `assistantTexts`, and
+`turnCount`. Switching is usually one word. And `skippedWindow(window)` is the required answer
+when the artifact governed nothing: a verdict there would be about somebody else's turns. See
+[Shared behavior](/manni/tracevals/reference/graders/#shared-behavior) for the window rules.
+
+Then declare it like any built-in:
+
+```yaml
+- id: stayed-in-scope
+  assertion: The session only modified files under packages/api.
+  grader: stayed-in-scope
+  options:
+    root: packages/api
+```
+
+## Loading it from the CLI
+
+Writing the grader is half of it. `registerGrader` mutates a module-level registry, so something has
+to call it before the run reads that registry. From `manni tracevals run`, that something is a
+**grader plugin**: a module named in the config or by `--require`, imported before evals are planned.
+
+Declare it in the config when the whole repository needs it, which is the case CI cares about:
+
+```yaml title="manni.config.yaml"
+tracevals:
+  plugins:
+    - ./tracevals/graders.mjs
+```
+
+Or name it per invocation while you are still iterating. The flag is repeatable, taking **one module
+per occurrence** and never splitting on commas, and it **adds to** the config list rather than
+replacing it:
+
+```bash
+npx @hawkeyexl/manni tracevals run session.jsonl \
+  --require ./tracevals/graders.mjs \
+  --require ./tracevals/extra-graders.mjs
+```
+
+Both work on `fill` too. Specifiers resolve against the **config file's directory**, never the
+working directory, so a committed `./tracevals/graders.mjs` means the same thing from anywhere in
+the repository. Bare package names resolve from that directory as well, so a plugin installed in the
+project being evaluated wins over one installed beside manni.
+
+### Two ways to register
+
+A plugin can take the registrar as an argument, which is the shape to prefer:
+
+```js title="tracevals/graders.mjs"
+export function register({ registerGrader }) {
+  registerGrader(stayedInScope);
+}
+```
+
+Or it can import `registerGrader` and call it while the module evaluates, exactly as the example
+above does. That also works. It binds to whichever copy of `@hawkeyexl/manni` the specifier
+resolves to. A plugin published as its own package with its own copy of the dependency registers
+into a registry nobody reads. The `register` export has no such failure mode, and it lets the same
+file be loaded from a test suite that imports the package differently.
+
+<Aside type="caution" title="A grader that replaces a built-in is allowed, and reported">
+Registering a `kind` that already exists replaces it. That is how you would override `file-access`
+with a stricter one. It also changes what *every* eval declaring that kind means, including evals in
+artifacts you do not own, so the run says so:
+
+```
+grader plugin "./tracevals/graders.mjs" replaced the built-in grader "file-access"; every eval declaring that kind now runs the plugin's implementation
+```
+</Aside>
+
+### When it does not load
+
+A plugin that cannot be imported is an **operational error**: exit `2`, nothing evaluated:
+
+```
+manni: could not load grader plugin "./tracevals/graders.mjs" (resolved to /work/demo/tracevals/graders.mjs): Cannot find module …
+```
+
+That message is deliberately nothing like the one a mistyped `grader:` produces
+(`unknown grader kind "stayd-in-scope"; the grader registry knows …`). The two symptoms look
+identical from the report and the fixes are in opposite files, so read the wording: *could not load*
+means the config, *unknown grader kind* means the artifact.
+
+A module that imports cleanly but registers nothing is the quiet one, so it warns rather than
+failing:
+
+```
+grader plugin "./tracevals/graders.mjs" registered no grader kinds — export a `register({ registerGrader })` function, or call registerGrader while the module is imported. Any eval naming a custom grader will report `unknown grader kind`.
+```
+
+<Aside title="Plugins load once per process">
+Naming the same module twice, in the config and again with `--require`, imports it once. A
+repeated `--require` is not a way to re-register.
+</Aside>
+
+## What to return
+
+`GradeResult` has four mutually meaningful shapes:
+
+| Return | Outcome | Use it when |
+|---|---|---|
+| `{ findings: [] }` | `pass` | The eval held. |
+| `{ findings: [ … ] }` | `fail`, if any finding is `error` severity | The eval was violated. |
+| `{ findings: [], skipped: "reason" }` | `skipped` | The trace lacks the data you need. |
+| `{ findings: [], error: "reason" }` | `error` | The options are unusable. |
+
+Four conventions worth copying from the built-ins:
+
+**Use `plan.severity` on findings, not a hard-coded one.** Severity is `notice`, `warning`, or
+`error`, and which one it is belongs to the eval's author. Hard-coding `error` takes that away from
+them.
+
+**Skip rather than pass when you cannot tell.** A check that silently passes because the data was
+missing is worse than no check. The `cost` grader is the model here: on a trace with no usage data
+it reports `no cost data (maxUsd not checkable)`, naming exactly which budget it could not evaluate.
+
+**Write failure messages that name what happened**, not what should have. `wrote outside
+packages/api: src/other.ts` is actionable; `scope violation` is not.
+
+**Normalise paths.** Specs are written on one machine and run on another, so compare with separators
+normalised and case folded, the way `file-access` does.
+
+## Throwing is contained
+
+A grader that throws fails **only its own eval**, which is reported as `error` with the message. It
+does not abort the run or affect other evals. You still want to return `{ error }` for bad options
+rather than throwing, because that path produces a cleaner message and runs during `fill` too.
+
+## Testing it
+
+`registerGrader` plus `runEvals` with `deterministicOnly` gives you a hermetic test with no provider
+at all:
+
+```ts
+import { tracevals } from "@hawkeyexl/manni";
+
+const { loadConfig, registerGrader, runEvals } = tracevals;
+
+registerGrader(stayedInScope);
+
+const report = await runEvals({
+  tracePath: "test/tracevals/fixtures/traces/claude-session.jsonl",
+  projectDir: "test/tracevals/fixtures/project",
+  config: await loadConfig(),
+  deterministicOnly: true,
+  env: { CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/home/.claude" },
+});
+
+const result = report.evalResults.find((r) => r.evalName === "stayed-in-scope");
+```
+
+Test `validateOptions` directly too. It is a pure function, and it is the half that decides whether
+`fill` can ever suggest your grader.
+
+## Where to go next
+
+<CardGrid>
+  <LinkCard
+    title="Study the built-ins"
+    description="Working implementations of this contract, with their options, validation rules, and exact failure messages."
+    href="/manni/tracevals/reference/graders/"
+  />
+  <LinkCard
+    title="How fill gates a proposal"
+    description="The order the checks run in, and why a grader that cannot validate its options is refused."
+    href="/manni/tracevals/declare/fill/"
+  />
+</CardGrid>

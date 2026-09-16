@@ -17,7 +17,7 @@ Maya owns a 2,000-page docs-as-code repo for a platform product. She is comforta
 
 **How she uses manni meta.** She installs it, writes or adopts a schema, adds a CI step, then mostly operates it hands-off. She returns when the standard needs tightening.
 
-**Which tools she owns work in.** She owns work in meta, cite, a11y and docevals. She stands up the metadata gate, pins claims on her pages and checks the published site. She also holds pages to the quality bar her team wrote down.
+**Which tools she owns work in.** She owns work in meta, cite, a11y, docevals and tracevals. She stands up the metadata gate, pins claims on her pages and checks the published site. She also holds pages to the quality bar her team wrote down, and holds the agent instructions her repo runs on to the same standard.
 
 **What docevals adds to her job.** The rules that matter most on her pages cannot be written as lint rules or schemas. Two examples are "this page promises nothing unshipped" and "it says why before how". docevals is where she encodes them, as named assertions in config that pages and suites reference. Her constraint there is explicability. She will be asked why a build is red, and "a model said so" ends the pilot. So she reaches for `command` and `tool:*` graders first and treats an `ai` eval as the last resort. She also wants the linters already in her pipeline (Vale, markdownlint, meta itself) reporting through one gate with one output format.
 
@@ -27,6 +27,8 @@ She meets docevals in two situations that change the journey, not the person:
 - **When she is handed a corpus she did not write.** The first honest run on thousands of unmeasured pages fails nearly everything. The instinct it produces is to weaken the assertions until the build is green, and that destroys the standard for good. The inversion she needs is to keep the assertions honest, turn them on at `error`, and record today's findings in a committed baseline. CI then fails only on new findings, and the backlog is a number that falls. `fill` proposes and she triages, one directory at a time, because nobody can review a 3,000-page pull request. The first pass is the largest spend she will ever see, and it arrives before any value has shown.
 
 The docevals strategy imported with the tool called these three situations Priya (the docs platform lead), Nate (the solo owner) and Iris (the retrofitter). They are the same job at different team sizes and corpus states, so they are Maya here.
+
+**What tracevals adds to her job.** The instructions she writes for agents accumulate the way documentation does. A `SKILL.md` here, a subagent definition there, a `CLAUDE.md` nobody rereads. Nothing checks whether any of it is still followed. tracevals grades a session that already happened against the artifacts it used, so "is this instruction decorative?" has an answer. The strategy imported with that tool named five audiences. Four were already these four people. The fifth was Rin, a toolsmith who wants the library rather than the binary, and he is Devin reading the JSON report and calling the namespace export, so he is folded into D11 and the API reference rather than added here.
 
 **The one decision she is not equipped for.** `fill` is the only part of manni meta that sends her documents to a third party. Clearing the retrofit backlog (M4) therefore makes her choose a provider, or refuse hosted inference entirely and run it on her own hardware. She does not own her organization's data-egress policy, but she is the one who has to answer to it. And the default is detected from her environment rather than chosen.
 
@@ -47,7 +49,7 @@ Devin maintains CI/CD infrastructure for dozens of repos on a mix of GitHub Acti
 
 **How he uses manni meta.** He installs via a CI step, sets flags, and plugs the exit code into a pipeline gate. He can also pass JSON output to a dashboard. He returns when a new CI platform is added or the output format changes.
 
-**Which tools he owns work in.** He owns work in all five tools, and the key rotation runbook is his, so one pipeline gates metadata, citations, accessibility and evals.
+**Which tools he owns work in.** He owns work in all six tools, and the key rotation runbook is his, so one pipeline gates metadata, citations, accessibility, page evals and session evals.
 
 **The two problems docevals gives him that no other tool does.** He installs and operates the eval gate and authors no evals.
 
@@ -73,7 +75,7 @@ Sara defines what the metadata *means*. That covers which fields are required an
 
 **How she uses manni meta.** She authors schemas, starting from the OKF built-in or from scratch. She wires them to directories via config overrides, tests resolution, and manages upgrades with versioned URLs.
 
-**Which tools she owns work in.** She owns work in meta and key, and in the citation standard and the eval library. The required field, its encrypted value, its citations and the assertions a page is judged against are hers.
+**Which tools she owns work in.** She owns work in meta and key, and in the citation standard, the eval library and the artifact-evals vocabulary. The required field, its encrypted value, its citations and the assertions a page is judged against are hers.
 
 **The same instinct, in prose.** In docevals she encodes a prose quality standard as assertions rather than a metadata standard as JSON Schema. Three problems are hers there:
 
@@ -98,7 +100,7 @@ Theo is a developer or technical writer who opened a PR. The manni meta check is
 
 **How he uses manni meta.** He follows the error link, or searches, to reach the fix-it page. He maps the error to a field and file location, then applies the fix. He runs `npx @hawkeyexl/manni meta validate <file>` locally to confirm green, and he is done.
 
-**Which tools he owns work in.** He owns work in none of them, and reaches meta, cite, a11y or docevals only to fix the check that turned his pull request red.
+**Which tools he owns work in.** He owns work in none of them, and reaches meta, cite, a11y, docevals or tracevals only to fix the check that turned his pull request red.
 
 **A red eval is harder to read than a red schema check.** docevals produces at least five failures that look alike in a CI log and have unrelated remedies. There is a deterministic finding pinned to a line, and an AI verdict with a rationale and no line. There is an eval parked in human review, which he has no standing to resolve. There is a generated script that no longer matches its assertion, and an operational exit `2` that is not his fault at all. Triage is the first screen. A rationale is not a remediation, so he reads the assertion and its `examples.fail` beside it to find the sentence. Being told to escalate, and to whom, is a correct outcome. His laptop has neither CI's key nor its warm cache, so the local check is `manni docevals run --deterministic-only` on one file.
 

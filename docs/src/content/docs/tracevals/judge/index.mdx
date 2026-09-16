@@ -1,0 +1,339 @@
+---
+title: How the judge decides
+description: Ensembles, consensus, and confidence zones. The arithmetic behind a judged verdict, why an errored run can never produce a silent pass, and what a judged run sends to the provider.
+sidebar:
+  order: 1
+---
+
+import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+**Scope:** how a judged eval becomes a `pass`, `fail`, or `needs-review`, with the arithmetic. What
+an eval should assert is [Declare what to check](/manni/tracevals/declare/); every configuration key
+mentioned here is in the [configuration reference](/manni/tracevals/reference/configuration/).
+
+If you are deciding whether to let a judged eval block a merge, this page is the argument. It is
+made with numbers, because numbers are the only form of this argument worth anything.
+
+## One sample is not a measurement
+
+Ask a model once whether a session followed an instruction and you have a sample. manni tracevals
+runs the question **N independent times**, three by default, each a fresh request with no shared
+context, at **temperature 0**.
+
+Each run returns a structured verdict:
+
+| Field | Meaning |
+|---|---|
+| `claim` | the assertion under evaluation |
+| `observed` | what actually happened in the session, citing specific messages, tool calls, or instructions |
+| `match` | `pass`, `fail`, or `partial` |
+| `confidence` | the model's own 0–1 confidence |
+| `reasoning` | why |
+
+A run that fails to produce a valid verdict is recorded as an **errored run**. That covers an API
+failure and malformed JSON after a retry. It does not disappear. That single fact is what the rest
+of this page is built on.
+
+## From votes to consensus
+
+The runs are tallied into four buckets: `pass`, `fail`, `partial`, and `error`.
+
+```
+failVotes = fail + partial            // partial counts as fail for the binary outcome,
+                                      // but stays visible in the vote counts
+verdict   = pass > failVotes ? "pass" : "fail"
+graded    = pass + fail + partial     // errored runs are not "graded"
+agreement = max(pass, failVotes) / graded
+meanConfidence = mean confidence across non-errored runs
+```
+
+Two choices here have consequences:
+
+- **`partial` counts as a failure** for the binary outcome. A session that partly followed an
+  instruction did not follow it. The partial votes stay visible in the report. You can still see
+  the difference between a clean three-nil fail and a genuinely ambiguous one.
+- **A tie goes to `fail`.** `pass > failVotes` is a strict comparison, so an evenly split ensemble
+  does not resolve as a pass. In practice such a split routes to review anyway (see below).
+
+## Confidence zones
+
+Consensus produces numbers. The **zone** turns them into an outcome, and the bar is high:
+
+| Zone | Requires | Outcome |
+|---|---|---|
+| `auto-pass` | **every** run voted `pass` (no fails, no partials, **no errors**) and mean confidence ≥ `judge.zones.autoPass` (default `0.8`) | `pass` |
+| `auto-fail` | **no** run voted `pass`, **no errors**, at least one `fail` or `partial`, and mean confidence ≥ `judge.zones.autoFail` (default `0.8`) | `fail` |
+| `human-review` | anything else | `needs-review` |
+
+Read that table for what it excludes. **Only a unanimous, confident ensemble auto-resolves.** One
+dissenting vote, or one low-confidence run dragging the mean below the threshold, sends the eval to
+a human.
+
+<Aside type="caution" title="An errored run can never produce a silent pass">
+Both auto-resolving zones require zero errored runs. So if a judge run fails, whether the API timed
+out or the model returned unparseable JSON, the eval cannot land in `auto-pass`. The worst it can do
+is push the result to `needs-review`.
+
+This is the invariant to check if you are deciding whether to trust this system. A failure of the
+measuring instrument surfaces as *"a human should look"*, never as *"everything is fine"*.
+</Aside>
+
+One subtlety to absorb before you tune anything: `agreement` is reported, but it does **not** route
+the outcome. Zones are decided by strict unanimity plus `meanConfidence`. An ensemble two-thirds in
+agreement has an `agreement` of `0.67` and goes to review however confident those two runs were.
+
+### A worked example
+
+Three runs on the assertion *"the session reproduced the bug with a failing test before fixing it"*:
+
+| Run | `match` | `confidence` |
+|---|---|---|
+| 1 | `fail` | 0.90 |
+| 2 | `fail` | 0.85 |
+| 3 | `partial` | 0.80 |
+
+```
+votes          = { pass: 0, fail: 2, partial: 1, error: 0 }
+failVotes      = 3
+verdict        = "fail"          (0 > 3 is false)
+graded         = 3
+agreement      = 3 / 3 = 1.0
+meanConfidence = (0.90 + 0.85 + 0.80) / 3 = 0.85
+```
+
+No run voted `pass`, there are no errors, and `0.85 ≥ 0.8`. That is `auto-fail`, reported as
+**`FAIL`**.
+
+Change run 3 to `pass` at 0.95 and nothing auto-resolves. The ensemble is split, so it routes to
+`human-review` and is reported as **`REVIEW`**, even though mean confidence went *up*.
+
+## What the judge cites
+
+For any non-passing judged eval, the report shows the vote split and the first `observed` field:
+
+```
+  REVIEW fix-bug › eval-5
+         votes pass:1 fail:2 partial:0 error:0 · confidence 0.87
+         The session edited src/app.ts at turn 2 without a preceding test run.
+```
+
+That `observed` line is the evidence, and it is what makes a judged verdict something you can check.
+A verdict citing a specific turn and file can be audited; one that says "the session did not comply"
+cannot.
+
+The prompt asks for exactly that. It wants cited messages, tool calls, and instructions followed
+or violated. It is also why an assertion written so a stranger could adjudicate it produces better
+verdicts than one written as a slogan.
+
+## Which model is the judge
+
+Connection settings live in the family's top-level `providers:` map, shared with `manni meta fill`
+and `manni docevals`. Which provider tracevals uses is a `tracevals:` key, so one repository can
+judge traces with one model and pages with another:
+
+```yaml title="manni.config.yaml"
+providers:
+  provider: auto                  # auto | anthropic | openai | claude-cli | llama-cpp
+  anthropic:
+    apiKeyEnv: ANTHROPIC_API_KEY
+  openai:
+    baseUrl: https://api.openai.com/v1
+    apiKeyEnv: OPENAI_API_KEY
+  claude-cli:
+    command: claude
+  llama-cpp:
+    modelsDir: models
+    thoughtTokens: 0
+
+tracevals:
+  provider: anthropic             # overrides providers.provider for tracevals alone
+  model: <model-id>               # legal only beside a named provider
+```
+
+The chain, first match wins:
+
+| Rank | Source |
+|---|---|
+| 1 | `--local` |
+| 2 | `--provider <name>` |
+| 3 | the eval's own `provider:` |
+| 4 | `tracevals.provider` |
+| 5 | `providers.provider` |
+| 6 | `auto` |
+
+`auto` takes the first thing this machine can use: an `ANTHROPIC_API_KEY`, then an
+`OPENAI_API_KEY`, then an installed Claude CLI, then a local model. That is convenient on a laptop
+and surprising in a gate, because what it finds depends on the runner. Name the provider in a
+committed config and every runner judges with the same one.
+
+**No model id is hardcoded.** Leave `model` unset and you get the provider's default, which is the
+inference library's choice and moves when the library does. A gate that blocks merges wants a model
+named in a commit, so a change of judge is a change someone reviewed. A `model` with no named
+provider is **exit 2**: a model name does not say which provider owns it.
+
+Every provider key is in the
+[configuration reference for providers](/manni/meta/reference/configuration/#providers).
+
+### Keep traces on the runner
+
+`--local` runs inference with `llama-cpp` on the machine running the command, whatever the config
+or an eval names. It is the answer to "our traces must not leave the runner", and it needs no
+secret:
+
+```bash
+npx @hawkeyexl/manni tracevals run <trace> --local --model balanced --format github
+```
+
+- **It overrides rather than refuses.** `tracevals.provider`, `providers.provider` and each eval's
+  own `provider:` are set aside, and each replaced choice is named once on stderr.
+- **Detection never runs.** A key left in the runner's environment cannot send a trace anywhere.
+- **`claude-cli` never qualifies.** Its binary runs on the machine; its inference does not.
+- **A contradicting `--provider` is a usage error**, exit 2. Beside `--local` the flag may name
+  `llama-cpp` or `auto` and nothing else.
+
+`--local` still judges, so this section's [What leaves the machine](#what-leaves-the-machine) table
+still describes what the prompt contains. It just never leaves.
+
+## What leaves the machine
+
+A judged eval sends one request per ensemble run to the configured provider. With
+`--deterministic-only`, **no provider is constructed and nothing is sent at all**. That is the only
+setting under which this section has no content. With `--local`, requests are built exactly as
+below and answered in-process.
+
+Otherwise, each request carries exactly this:
+
+| Part | Redacted? |
+|---|---|
+| The eval's `assertion`, `evidence`, and `examples` | No, this is text you authored |
+| The source artifact's body, capped at 8 000 characters | **No**, see below |
+| Session header, with source, model, `cwd`, git branch, turn count, skill and agent names | Yes |
+| User prompts and assistant text, **within the eval's window** | Yes |
+| Tool **names** and tool **call inputs** | Yes |
+| Tool **results**, file contents, command stdout/stderr | **Not sent at all** |
+
+Two things are worth reading twice. Tool *results* are never rendered, so a file this session read
+does not travel with it. And an eval is judged against
+[the window its artifact governed](/manni/tracevals/reference/graders/). A skill's request usually
+carries a fraction of the session rather than all of it.
+
+### Redaction
+
+Everything marked *Yes* above is filtered before it is sent. The built-in shapes are always on:
+
+- vendor API-key prefixes such as `sk-…`, `AKIA…`, `gh[pousr]_…`, `xox…`, `AIza…`, and JWTs
+- `Authorization` values behind `Bearer`, `Basic`, and `Token`
+- `-----BEGIN … PRIVATE KEY-----` blocks
+- secret-named assignments in shell (`DATABASE_PASSWORD=…`) and JSON (`"apiKey": "…"`) form, plus
+  every `AWS_*`
+
+Add your own with [`judge.redact`](/manni/tracevals/reference/configuration/#judgeredact); they are
+applied **on top of** the built-ins, never instead of them.
+
+Matches are **replaced, not deleted**, with a labelled placeholder. The labels are
+`[redacted:api-key]`, `[redacted:auth-token]`, and `[redacted:secret-value]`. The judge can still
+see that a credential was used, which is often the adherence question.
+`Bearer [redacted:auth-token]` keeps the scheme; `AWS_SECRET_ACCESS_KEY=[redacted:secret-value]`
+keeps the variable name.
+
+Redaction runs **before** the truncation caps, so a `maxBlockChars` boundary can never land
+mid-secret and ship the surviving prefix.
+
+<Aside type="caution" title="Best-effort, not a guarantee">
+Pattern matching recognizes *shapes*. A secret that looks like ordinary prose will not be caught,
+and no pattern list will catch it. That covers an internal hostname, a customer name, and a
+password with no surrounding assignment. **`--deterministic-only` is the only guarantee that
+nothing is judged at all, and `--local` is the guarantee that nothing leaves the machine.**
+
+The **artifact body is deliberately not redacted**: it is your own instruction file, and its exact
+text is part of the cache key. A secret in a `SKILL.md` is a problem to fix in the `SKILL.md`.
+</Aside>
+
+Redaction and the cache work together without a knob. The digest is hashed into the cache key, so a
+redacted run gets its own entry. It can never replay a verdict formed on unredacted text. A pattern
+that matches nothing leaves the digest byte-identical and still hits the existing entry, so adding a
+precautionary pattern costs nothing.
+
+## When the judge graded its own work
+
+A model that wrote the thing it is grading marks its own homework. Two arrangements produce that,
+and both are reported:
+
+| Axis | What holds | Why it skews |
+|---|---|---|
+| `session` | the trace's own model is the judge model | Bias about the behavior under test. The model is deciding whether it followed instructions. |
+| `criterion` | a `metadata.meta-provenance` entry for the judge's model lists this eval's id | Bias about the yardstick. The model is grading an assertion it proposed. |
+
+The session axis is reported first, because its remedy is the stronger one. For a criterion match,
+another model would still grade the same wording. So the fix is a person confirming the criterion,
+or deleting the eval's id from `meta-provenance` once they have.
+
+The comparison is against the model that actually judged *that* eval, not the run's default, so an
+eval naming its own `model:` is covered too. Each case warns once on stderr, and the result carries
+`selfPreference: {axis: "session" | "criterion", model}` in the JSON report.
+
+<Aside title="Why the criterion axis reads `meta-provenance`">
+`fill` writes its attribution trail as `metadata.meta-provenance`, in the family's proposal 0046
+shape. Aligning the check on the same key closes a mismatch that had been latent. `fill` wrote a
+`provider:model` pair while the check compared a bare model id, so a criterion match could never
+fire. It fires now. See [Evolve the eval standard](/manni/tracevals/judge/schema-versioning/) for
+what else moved with the vocabulary.
+</Aside>
+
+<Aside type="caution" title="A warning, never a failure">
+Bias skews a verdict. It does not stop one forming, so the verdict stands and the exit code is
+unchanged.
+</Aside>
+
+## What it costs
+
+manni tracevals reports turns and inference calls. **It never reports a dollar figure**, and there
+is nothing to configure for an unusual or self-hosted model. A bundled price table could not stay
+current, and `claude-cli` and self-hosted endpoints report no usage to price in the first place.
+
+- **Nothing, if you never invoke it.** `--deterministic-only` skips judged evals entirely.
+- **Nothing that leaves the building.** `--local` runs the ensemble in-process.
+- **Nothing extra on a repeat.** Verdicts are cached, keyed on the provider, model, prompt version,
+  run count, temperature, the rendered trace, and the eval plan. Change any of those and you get a
+  fresh judgement instead of a stale replay.
+- **Bounded, if you set a ceiling.** `judge.maxTurns`, or `--max-turns <n>`, counts uncached
+  ensemble runs. A cached ensemble costs none.
+
+```yaml title="manni.config.yaml"
+tracevals:
+  judge:
+    maxTurns: 60
+```
+
+A target's whole ensemble is claimed before anything is dispatched. An eval that does not fit in
+what is left is skipped outright, rather than judged on a partial ensemble. Two runs out of three is
+a different verdict, not a cheaper one. Reaching the budget never aborts the run:
+
+```
+SKIP   CLAUDE.md › adheres-to-artifact (implicit)
+       judge turn budget exhausted (60)
+```
+
+Because it is claimed per eval and evaluated in order, a budget stops the run *somewhere in the
+middle*. The evals that got skipped are an artifact of ordering, not importance. Treat a
+budget-exhausted run as incomplete rather than as a result.
+
+## Where to go next
+
+<CardGrid>
+  <LinkCard
+    title="Configure runs, zones, and budgets"
+    description="Every judge key — ensembleRuns, temperature, zones, cacheDir, redact, maxTurns — with its type and default."
+    href="/manni/tracevals/reference/configuration/"
+  />
+  <LinkCard
+    title="Measure whether it is right"
+    description="Write down the verdicts you already know, count false passes and false fails, and sweep the knobs for free."
+    href="/manni/tracevals/judge/calibrate/"
+  />
+  <LinkCard
+    title="Read a verdict you disagree with"
+    description="What to do when an eval comes back REVIEW or FAIL and you think it is wrong."
+    href="/manni/tracevals/triage/"
+  />
+</CardGrid>

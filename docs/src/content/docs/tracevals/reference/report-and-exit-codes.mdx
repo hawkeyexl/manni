@@ -1,0 +1,505 @@
+---
+title: Reports & exit codes
+description: The pretty, JSON, and markdown report formats field by field, the exit-code contract, and the append-only history file.
+sidebar:
+  order: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Scope:** everything `run` and `calibrate` emit. The policy discussion, meaning what to do about
+`needs-review` in a pipeline, is in [Add tracevals to CI](/manni/tracevals/ci/). Source of truth:
+`src/tracevals/types.ts`, `src/tracevals/calibrate/types.ts`, `src/tracevals/reporters/`, and
+`src/tracevals/history.ts`. The verdict schema's `$id` is `manni:tracevals:verdict`.
+
+`-f, --format` on `run` and `calibrate` is `pretty | json | markdown`, default `pretty`. On `fill`,
+`capture`, and `list` it is `pretty | json`, default `pretty`.
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | every eval passed or was skipped |
+| `1` | any `fail` or `error`, and `needs-review` unless `failOnNeedsReview: false` |
+| `2` | tracevals itself could not run, from bad usage, an unreadable trace, an unknown format, or a nonexistent path |
+
+`2` is written to stderr as `manni: <message>`; `0` and `1` write the report to stdout.
+
+[`calibrate`](/manni/tracevals/reference/cli/#calibrate) reads `0` and `1` differently, because it
+measures rather than gates. Disagreeing with your labels is exit `0`. Only a threshold you asked
+for, or a trace that could not be evaluated, makes it `1`.
+
+## Outcomes
+
+| Outcome | Meaning | Fails the run? |
+|---|---|---|
+| `pass` | the eval held | no |
+| `fail` | the eval was violated by an `error`-severity finding | yes |
+| `error` | the check itself broke, through invalid options, an invalid evals block, or an unknown grader kind | yes |
+| `needs-review` | the judge did not reach confident agreement | yes, by default |
+| `skipped` | the check did not run; the reason is always given | no |
+
+Finding severity is `notice | warning | error`, the same three values every manni tool reports. Only
+`error` turns an eval into a `fail`.
+
+Skip reasons stay distinct, because they mean different things about your coverage:
+
+| `skipReason` | Cause |
+|---|---|
+| `ai evals skipped (deterministic-only run)` | `--deterministic-only` |
+| `turn budget` | the judge budget was spent; see [`judge.maxTurns`](/manni/tracevals/reference/configuration/#judge) |
+| `no cost data (maxUsd not checkable)` | the trace carried no usage record for a `cost` grader to read |
+| `artifact skipped via metadata.eval-skip` | the artifact opted out |
+| `command execution is disabled (--no-commands / graders.command.enabled: false)` | command graders were turned off |
+
+## `--format json`
+
+The complete `RunReport`:
+
+```jsonc
+{
+  "trace": {
+    "file": "/path/to/session.jsonl",
+    "source": "claude-code",
+    "sessionId": "11111111-1111-1111-1111-111111111111",
+    "cwd": "/work/demo-project",
+    "model": "claude-opus-4-8",
+    "turnCount": 2
+  },
+  "warnings": ["1 unparseable JSONL line(s) were skipped"],
+  "coverage": [ /* CoverageEntry[] */ ],
+  "availability": {
+    "recorded": true,
+    "skills": { "offered": 5, "used": 2, "unused": 3 },
+    "agents": { "offered": 3, "used": 2, "unused": 1 },
+    "listed": false
+  },
+  "evalResults": [ /* EvalResult[] */ ],
+  "summary": {
+    "total": 12, "pass": 4, "fail": 1,
+    "error": 0, "needsReview": 1, "skipped": 6
+  },
+  "exitCode": 1,
+  "turns": 0,
+  "durationMs": 118
+}
+```
+
+`turns` is what this run **spent**, meaning uncached ensemble runs the judge dispatched. A fully
+cached or `--deterministic-only` run reports `0`. It is the same unit
+[`judge.maxTurns`](/manni/tracevals/reference/configuration/#judge) bounds, so a report can be read
+against the budget that produced it. tracevals counts turns and reports no spend of its own.
+
+### `trace`
+
+| Field | Type | Notes |
+|---|---|---|
+| `file` | string | Absolute path to the trace. |
+| `source` | string | Trace source. `claude-code` today. |
+| `sessionId` | string? | Present when the trace records one. |
+| `cwd` | string | The session's recorded working directory. |
+| `model` | string? | The model the session ran on. |
+| `turnCount` | number | Non-sidechain user prompts. This describes the **session**, not what tracevals spent. |
+
+### `EvalResult`
+
+| Field | Type | Notes |
+|---|---|---|
+| `evalName` | string | The eval's name, or `adheres-to-artifact` / `evals-block-valid`. |
+| `artifact` | string | Absolute path to the artifact file. |
+| `artifactName` | string | Its display name, such as `fix-bug` or `CLAUDE.md`. |
+| `artifactType` | string | `skill`, `agent`, `project-rules`, or `slash-command`. |
+| `grader` | string | The grader kind, `ai` for judged. |
+| `implicit` | boolean | `true` for the whole-artifact eval. |
+| `outcome` | string | One of the five outcomes above. |
+| `findings` | array? | Deterministic findings: `{ evalName, artifact, message, severity }`, severity one of `notice`, `warning`, `error`. |
+| `consensus` | object? | Judged evals only, see below. |
+| `error` | string? | Why the check broke, when `outcome` is `error`. |
+| `skipReason` | string? | Why it was skipped. |
+| `turns` | number? | Judged evals only. Uncached ensemble runs spent on this eval; `0` when the ensemble came from cache. |
+| `durationMs` | number | Time for this eval. |
+
+### `consensus`
+
+Present on every judged eval.
+
+| Field | Type | Notes |
+|---|---|---|
+| `runs` | array | Each run: `{ verdict?, error?, provider, model, cached, usage?, durationMs }`. `verdict` is absent when the run errored. |
+| `votes` | object | `{ pass, fail, partial, error }` counts. |
+| `verdict` | string | `pass`, `fail`, or `partial`. `partial` counts as fail for the binary outcome. |
+| `agreement` | number | Fraction of **non-errored** runs agreeing with the majority. Reported, but not what routes the outcome. |
+| `meanConfidence` | number | Mean confidence across non-errored runs. |
+| `zone` | string | `auto-pass`, `auto-fail`, or `human-review`. This is what maps to the outcome. |
+
+Each `verdict` carries `claim`, `observed`, `match`, `confidence`, and `reasoning`, and validates
+against `manni:tracevals:verdict`. See [How the judge decides](/manni/tracevals/judge/).
+
+### `CoverageEntry`
+
+One entry per artifact reference found in the trace, resolved or not.
+
+| Field | Type | Notes |
+|---|---|---|
+| `ref` | string | The reference as it appeared, e.g. `fix-bug`, `plugin:skill`. |
+| `kind` | string | `skill`, `agent`, `project-rules`, or `slash-command`. |
+| `resolved` | boolean | Whether a file was found. |
+| `path` | string? | The resolved file. Absent for an aggregated `project-rules` entry covering several files. |
+| `tried` | string[] | Every location searched, in order. Usually enough to diagnose a miss. |
+| `note` | string? | Why it will never resolve, e.g. `built-in agent (no definition file)`. |
+| `availability` | string? | `offered-and-used`, `offered-not-used`, `not-offered`, or `unknown`. Absent for `project-rules`, which is always in force. |
+| `stale` | boolean? | The file is newer than the session's end time. Absent when the trace records no end time. |
+| `modifiedAt` | string? | The file's mtime, ISO-8601. Present whenever `stale` is. |
+
+An unresolved reference is **not** a failing eval. It is a coverage note plus a warning, so a missing
+plugin never crashes a run or turns a build red on its own.
+
+`stale` is likewise **never** an eval outcome and never an exit code. It is a heuristic that says
+how much to trust the verdicts, not what they are. mtime is not content identity, and a checkout
+rewrites every mtime. See [Artifact coverage](/manni/tracevals/declare/coverage/).
+
+#### The location shown for an entry
+
+Both the pretty and markdown reporters derive the location cell the same way, in this order:
+
+1. `path`, when the entry resolved to a single file.
+2. `note`, when there is no single path.
+3. Empty, otherwise.
+
+The third case is real rather than theoretical: project rules resolve as **one aggregated entry**
+covering several files (`CLAUDE.md` *and* `AGENTS.md`), so the entry is `resolved: true` with no
+`path`. Its locations are all in `tried`. An unresolved entry falls back to
+`not found (<n> location(s) tried)`.
+
+### `availability`
+
+What the session was **offered**, next to what it used. `recorded: false` means the trace carried no
+availability roster at all. That is *unknown*, not *nothing offered*, and every `CoverageEntry`
+then reads `unknown`.
+
+| Field | Type | Notes |
+|---|---|---|
+| `recorded` | boolean | Whether the trace carried a roster. |
+| `skills`, `agents` | object | `{ offered, used, unused }` counts of distinct names. |
+| `listed` | boolean | Whether the offered-but-unused rows were included in `coverage` too. `--report-unused-artifacts` turns this on. |
+
+**It is never a verdict.** Availability contributes nothing to `summary` and nothing to `exitCode`;
+the report is identical both with and without `--report-unused-artifacts`. Reading the three
+states is covered in [Artifact coverage](/manni/tracevals/declare/coverage/).
+
+## `--format pretty`
+
+The default. Structure:
+
+```
+manni tracevals — /path/to/session.jsonl
+claude-code · claude-opus-4-8 · 2 turn(s) · /work/demo-project
+
+  PASS   fix-bug › used-read
+  FAIL   fix-bug › forbidden-tool
+         [error] tool Bash was used 1 time(s) but must not be
+  PASS   fix-bug › no-force-push
+  REVIEW fix-bug › refactor-preserved-intent
+         awaiting human review
+  PASS   reviewer › reviewer-is-read-only
+  SKIP   doc-writer › doc-writer-wrote-docs
+         agent "doc-writer" was spawned but recorded no subagent turns (no inline
+         sidechain records and no sidecar transcript), so it governed no turns
+  SKIP   CLAUDE.md › adheres-to-artifact (implicit)
+         ai evals skipped (deterministic-only run)
+
+Artifact coverage
+  ✓ skill: fix-bug   /work/demo-project/.claude/skills/fix-bug/SKILL.md
+  ○ agent: Explore   built-in agent (no definition file)
+  ✓ agent: reviewer  /work/demo-project/.claude/agents/reviewer.md
+
+Availability
+  5 skill(s) offered, 2 used, 3 never used
+  3 agent(s) offered, 2 used, 1 never used
+  pass --report-unused-artifacts to list them
+
+Warnings
+  ! 1 unparseable JSONL line(s) were skipped
+
+12 eval(s): 4 pass, 1 fail, 0 error, 1 needs-review, 6 skipped
+```
+
+`forbidden-tool` forbids `Bash`, and this session ran it twice. Only one of those came after the
+`fix-bug` skill was invoked, and only that one is the skill's business. `doc-writer` was spawned and
+recorded no turns, so its evals report `skipped` rather than a verdict about work it had no part in.
+Both are [eval windowing](/manni/tracevals/reference/graders/).
+
+Outcome labels are `PASS`, `FAIL`, `ERROR`, `REVIEW`, `SKIP`. For a **non-passing judged** eval, two
+extra lines appear: the vote split and the first `observed`.
+
+```
+  REVIEW fix-bug › eval-5
+         votes pass:1 fail:2 partial:0 error:0 · confidence 0.87
+         The session edited src/app.ts at turn 2 without a preceding test run.
+```
+
+Coverage marks: `✓` resolved, `○` referenced but not found, `·` offered and never used. The location
+follows the rule [above](#the-location-shown-for-an-entry). A `·` row is the exception. It reports
+`offered, never used` plus the roster's own description, because nothing was ever looked for on disk.
+A stale entry appends `⚠ modified after the session ended (<iso>)` after the location. In markdown
+that goes into the same **Where** cell, so the table keeps its column count.
+
+## `--format markdown`
+
+The same run as tables: `# manni tracevals report`, bullet metadata, then `## Evals`
+(`| Outcome | Artifact | Eval | Grader | Detail |`), `## Artifact coverage`
+(`| Resolved | Kind | Ref | Availability | Where |`), `## Availability`, `## Warnings`, and a bold
+summary sentence. An offered-but-unused row reads `n/a` under **Resolved**, never `no`. Pipe
+characters in messages are escaped. Suited to a build summary or a PR comment.
+
+## Batch runs
+
+Naming more than one trace emits a **`BatchReport`** instead, as does selecting them with
+`--all-projects`, `--since`, or `--limit`. It answers a different question: not *did this hold?* but
+*how often does it hold?*
+
+Naming exactly one trace still emits the `RunReport` above, byte for byte. What decides the shape is
+how the traces were selected, never how many came back; see
+[the CLI reference](/manni/tracevals/reference/cli/).
+
+```jsonc
+{
+  "traces": [ /* BatchTraceEntry[] */ ],
+  "artifacts": [ /* AggregateRow[] — one per artifact */ ],
+  "evals": [ /* AggregateRow[] — one per eval */ ],
+  "summary": {
+    "total": 14, "pass": 4, "fail": 1, "error": 0, "needsReview": 1, "skipped": 8,
+    "traces": 2, "tracesPassed": 1, "tracesFailed": 1, "tracesErrored": 0
+  },
+  "warnings": [],
+  "exitCode": 1,
+  "turns": 0,
+  "durationMs": 75
+}
+```
+
+`summary` is the single-run `RunSummary` counts **summed over every trace**, plus four per-trace
+tallies: `traces` selected, `tracesPassed`, `tracesFailed` (reported exit 1), and `tracesErrored`
+(could not be parsed at all).
+
+### `AggregateRow`
+
+One artifact, or one eval within it, summed across the batch.
+
+| Field | Type | Notes |
+|---|---|---|
+| `key` | string | `<type>:<name>`, plus `::<evalName>` on eval rows. The sort key. |
+| `artifactName` | string | `fix-bug`, `CLAUDE.md`. |
+| `artifactType` | string | `skill`, `agent`, `project-rules`, or `slash-command`. |
+| `artifacts` | string[] | Distinct paths this row aggregated from. More than one means the row spans projects. |
+| `evalName` | string? | Absent on artifact rows. |
+| `graders` | string[]? | Grader kinds seen, sorted. Eval rows only. |
+| `traces` | number | Traces that produced at least one result for this row. |
+| `total` | number | Eval results contributing. |
+| `counts` | object | `{ pass, fail, error, needsReview, skipped }`. |
+| `graded` | number | `total` minus `skipped`, the pass-rate denominator. |
+| `passRate` | number\|null | `pass / graded`, or `null` when nothing was graded. |
+| `failingTraces` | string[] | Traces where this row produced a `fail` or `error`, in batch order. |
+| `reviewTraces` | string[] | Traces where it produced a `needs-review`. |
+| `skipReasons` | string[] | Distinct skip reasons, sorted. |
+
+Two things about `passRate` are deliberate and worth knowing before you build on it:
+
+- **`skipped` is out of the denominator.** A check that never armed is not evidence in either
+  direction, so it is excluded rather than counted as a pass. An artifact that was resolved but
+  never invoked reports `null`, rendered as `—`, not `100%`.
+- **`needs-review` is in the denominator and not in the numerator.** It fails the run by default, so
+  counting it as a pass would contradict the [exit-code contract](#exit-codes). A row that is all
+  review therefore reads `0%`, with the traces named in `reviewTraces`.
+
+Rows are keyed by artifact **type and name**, not by path, so the same skill evaluated across
+several projects is one rate. Ordering is a byte comparison on `key`, so two runs over the same
+corpus produce comparable reports on any platform.
+
+### `BatchTraceEntry`
+
+| Field | Type | Notes |
+|---|---|---|
+| `file` | string | The trace, as it was named or discovered. |
+| `sessionId` | string? | When the trace records one. |
+| `error` | string? | Set when the trace could not be evaluated at all. `summary` is then absent. |
+| `summary` | object? | That trace's own `RunSummary`. |
+| `warnings` | string[] | That trace's warnings. |
+| `exitCode` | number | `0` or `1`. An errored trace is `1`. |
+| `turns` | number | Judge turns spent on that trace. |
+| `durationMs` | number | Time for that trace. |
+
+<Aside type="caution" title="The turn budget is shared, not per trace">
+`judge.maxTurns` applies to the whole invocation. Once it is exhausted the remaining evals report
+`skipped` with the reason `turn budget`. That applies on later traces as well as later evals, and
+the reason survives into the row's `skipReasons`. It is never a `pass`, and never a silently absent
+row.
+</Aside>
+
+### `--format pretty` and `--format markdown`
+
+The pretty batch report leads with the rate table, names the outlier traces beneath each row, then
+lists artifact rates and one line per trace. Rows are in `key` order, so a batch is comparable to
+the one before it. Run against this repository's own fixture corpus:
+
+```
+manni tracevals — 2 trace(s)
+1 passed · 1 failed · 0 unreadable
+
+Eval pass rates
+       —  doc-writer › doc-writer-followed-its-brief (1 trace(s))
+          0 pass, 0 fail, 0 error, 0 review, 1 skip
+          skipped: agent "doc-writer" was spawned but recorded no subagent turns (no inline sidechain records and no sidecar transcript), so it governed no turns
+       —  doc-writer › doc-writer-wrote-docs (1 trace(s))
+          0 pass, 0 fail, 0 error, 0 review, 1 skip
+          skipped: agent "doc-writer" was spawned but recorded no subagent turns (no inline sidechain records and no sidecar transcript), so it governed no turns
+    100%  reviewer › reviewer-is-read-only (1 trace(s))
+          1 pass, 0 fail, 0 error, 0 review, 0 skip
+    100%  reviewer › reviewer-read-something (1 trace(s))
+          1 pass, 0 fail, 0 error, 0 review, 0 skip
+       —  AGENTS.md › eval-1 (2 trace(s))
+          0 pass, 0 fail, 0 error, 0 review, 2 skip
+          skipped: ai evals skipped (deterministic-only run)
+       —  CLAUDE.md › adheres-to-artifact (2 trace(s))
+          0 pass, 0 fail, 0 error, 0 review, 2 skip
+          skipped: ai evals skipped (deterministic-only run)
+       —  fix-bug › eval-5 (1 trace(s))
+          0 pass, 0 fail, 0 error, 0 review, 1 skip
+          skipped: ai evals skipped (deterministic-only run)
+      0%  fix-bug › forbidden-tool (1 trace(s))
+          0 pass, 1 fail, 0 error, 0 review, 0 skip
+          failing: claude-session.jsonl
+    100%  fix-bug › no-force-push (1 trace(s))
+          1 pass, 0 fail, 0 error, 0 review, 0 skip
+      0%  fix-bug › refactor-preserved-intent (1 trace(s))
+          0 pass, 0 fail, 0 error, 1 review, 0 skip
+          review: claude-session.jsonl
+    100%  fix-bug › used-read (1 trace(s))
+          1 pass, 0 fail, 0 error, 0 review, 0 skip
+       —  writing-toolkit:identify-ai-tells › adheres-to-artifact (1 trace(s))
+          0 pass, 0 fail, 0 error, 0 review, 1 skip
+          skipped: artifact skipped via metadata.eval-skip
+
+Artifact pass rates
+       —  agent: doc-writer 0 pass, 0 fail, 0 error, 0 review, 2 skip
+    100%  agent: reviewer 2 pass, 0 fail, 0 error, 0 review, 0 skip
+       —  project-rules: AGENTS.md 0 pass, 0 fail, 0 error, 0 review, 2 skip
+       —  project-rules: CLAUDE.md 0 pass, 0 fail, 0 error, 0 review, 2 skip
+     50%  skill: fix-bug 2 pass, 1 fail, 0 error, 1 review, 1 skip
+       —  skill: writing-toolkit:identify-ai-tells 0 pass, 0 fail, 0 error, 0 review, 1 skip
+
+Traces
+  FAIL   claude-session.jsonl 4 pass, 1 fail, 0 error, 1 review, 6 skip
+  PASS   claude-session-sidecar.jsonl 0 pass, 0 fail, 0 error, 0 review, 2 skip
+
+14 eval(s) across 2 trace(s): 4 pass, 1 fail, 0 error, 1 needs-review, 8 skipped
+```
+
+Three rows worth reading closely. `forbidden-tool` is `0%` over the one trace that invoked the
+skill. The other trace never did, so it is not in the denominator. `refactor-preserved-intent` is
+`0%` for a different reason: it is awaiting human review, named under `review:` rather than
+`failing:`. And `doc-writer`'s rows are `—`, because that agent governed no turns in either trace;
+a `100%` there would be a rate computed from nothing.
+
+The markdown form is the same content as three tables: `## Eval pass rates`
+(`| Rate | Artifact | Eval | Grader | Traces | Outcomes | Outliers |`), `## Artifact pass rates`, and
+`## Traces`. It suits a build summary or a PR comment.
+
+## Calibration runs
+
+`calibrate` emits a **`CalibrationReport`**, a third shape alongside `RunReport` and `BatchReport`.
+It answers *was it right?*, so it leads with the two kinds of mistake rather than with a rate.
+
+```jsonc
+{
+  "labelsFile": "/repo/tracevals/labels.yaml",
+  "corpus": [ /* absolute trace paths, in batch order */ ],
+  "setting": { "ensembleRuns": 3, "zones": { "autoPass": 0.8, "autoFail": 0.8 } },
+  "counts": {
+    "labels": 10, "scored": 8, "agree": 5,
+    "falsePass": 1, "falseFail": 1, "review": 0, "missedReview": 1,
+    "errored": 0, "skipped": 2,
+    "reviewVolume": 1, "insufficient": 0, "agreement": 0.625
+  },
+  "disagreements": [ /* Disagreement[] */ ],
+  "unscored": [ /* Disagreement[] — labelled, but no evidence either way */ ],
+  "sweep": [ /* SweepCell[] — only with --sweep */ ],
+  "gates": [ /* CalibrationGate[] — only for thresholds you set */ ],
+  "batch": { /* the BatchReport the counts were computed from */ },
+  "warnings": [],
+  "exitCode": 0,
+  "turns": 0,
+  "durationMs": 240
+}
+```
+
+| Field | Type | Notes |
+|---|---|---|
+| `counts.labels` | number | Labels that joined to a result. A label matching nothing is exit `2`, never a missing row. |
+| `counts.scored` | number | `labels` minus `skipped`, the `agreement` denominator. |
+| `counts.falsePass` | number | Labelled `fail`, judged `pass`. |
+| `counts.falseFail` | number | Labelled `pass`, judged `fail`. |
+| `counts.review` | number | Labelled `pass` or `fail`, routed to a human instead. |
+| `counts.missedReview` | number | Labelled `needs-review`, decided anyway. |
+| `counts.reviewVolume` | number | `needs-review` across **every** eval in the corpus, labelled or not. |
+| `counts.insufficient` | number | Rows whose cached ensemble was too small to score at this setting. Non-zero also raises a warning. |
+| `counts.agreement` | number \| null | `agree / scored`; `null` when nothing was scored. |
+| `disagreements[].kind` | string | `false-pass`, `false-fail`, `review`, `missed-review`, or `error`. |
+| `disagreements[].consensus` | object? | Vote tally, agreement, mean confidence, and run count **at the setting scored**, not at the depth the corpus was judged. |
+| `disagreements[].note` | string? | Whatever you wrote in the labels file. |
+| `sweep[].axis` | string | `baseline`, `ensembleRuns`, `zones.autoPass`, or `zones.autoFail`. |
+| `sweep[].value` | number | The value of that axis on this row. |
+| `gates[].exceeded` | boolean | Any `true` makes `exitCode` `1`. |
+
+The pretty and markdown forms carry the same content. That is the headline counts, the disagreement
+list with its evidence and notes, and the unscored rows with their skip reasons. It also covers the
+sweep table and the thresholds. See [Calibrate the judge](/manni/tracevals/judge/calibrate/).
+
+## `--output`
+
+Writes the rendered report to a file **in addition to** stdout, in whichever format `--format`
+selected.
+
+```bash
+npx @hawkeyexl/manni tracevals run <trace> --format markdown --output tracevals-report.md
+```
+
+## History
+
+`--history` appends one line to `history.file` (default `.manni/tracevals/history.jsonl`) and
+compares this run against the most recent previous entry for the same session.
+
+Each line is a `HistoryEntry`:
+
+| Field | Type | Notes |
+|---|---|---|
+| `timestamp` | string | ISO 8601. |
+| `traceFile` | string | Path to the trace. |
+| `sessionId` | string? | When known. |
+| `project` | string | The trace's recorded `cwd`. |
+| `summary` | object | The same summary counts as the report. |
+| `exitCode` | number | `0` or `1`. |
+| `turns` | number | Judge turns spent on that run. |
+| `evals` | array | `{ artifact, evalName, outcome }` per eval, outcomes only, not findings. |
+
+The comparison matches on `sessionId` when present, falling back to `traceFile`, and is appended to
+non-JSON output:
+
+```
+History vs 2026-07-01T09:14:22.104Z:
+  regression: fix-bug › used-read
+  added: fix-bug › reproduces-before-fixing
+```
+
+| Line | Meaning |
+|---|---|
+| `regression` | previously `pass`, now `fail` or `error` |
+| `improvement` | previously `fail` or `error`, now `pass` |
+| `added` | an eval that did not exist in the previous run |
+| `removed` | an eval that existed then and does not now |
+| `no changes` | the outcome set is identical |
+
+<Aside title="History never aborts a run">
+A history write failure warns and continues. The evaluation result is the product; the log is a
+convenience.
+</Aside>

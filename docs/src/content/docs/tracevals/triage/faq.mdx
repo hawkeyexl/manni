@@ -1,0 +1,115 @@
+---
+title: Triage FAQ
+description: Short answers to the questions that come up after reading a failing manni tracevals result. Covers skipped checks, missing artifacts, judged verdicts you disagree with, and who owns the fix.
+sidebar:
+  order: 2
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Scope:** the follow-up questions that survive [Read a failing eval](/manni/tracevals/triage/). If
+you have not read that page yet, start there. It decodes a result in one pass.
+
+## About the result
+
+**The eval says `SKIP`. Did anything actually run?**
+Not that one. The reason is always printed underneath. There are four unrelated causes: a
+`--deterministic-only` run, no judge configured, an artifact that opted out, or an exhausted turn
+budget. A grader can also skip itself when the trace lacks the evidence it needs. None of them fail
+the build.
+
+**What is `adheres-to-artifact (implicit)`?**
+The eval an artifact gets when it declares no evals of its own: *did the session follow this
+file's instructions?* It is judged against the artifact's full text. Nobody wrote it; you get it for
+free.
+
+**Why are there more evals than evals I recognise?**
+Every artifact the session touched contributes, including project rules and any skill or subagent
+it used. Artifacts with no declared evals each add one implicit eval.
+
+**An artifact I expected is missing from the results.**
+Check the coverage table below the evals. It lists every artifact the session *referenced* and
+whether the file was found. If it is not there at all, the session never referenced it.
+
+**What does a `○` in the coverage table mean?**
+The reference could not be resolved to a file. It does not fail the run, and it does mean that
+artifact went unchecked. `built-in agent (no definition file)` is the expected case and needs no
+action.
+
+**What does `[warning]` or `[notice]` mean next to a finding?**
+It is the finding's severity, and only `error` fails an eval. The three values are the same across
+every manni tool. A `warning` or a `notice` is reported so someone can read it, and it is not what
+turned the build red.
+
+## About judged verdicts
+
+**The judge is wrong. What now?**
+Check its `observed` line first. It cites what the judge claims it saw. If that citation does not
+match the session, the verdict is unsound and worth saying so to whoever owns the artifact. If the
+citation is accurate but the conclusion is not, the assertion is probably ambiguous, which is an
+eval problem rather than a session problem.
+
+**Votes were split. Which one counts?**
+None of them auto-resolve. A verdict only lands as pass or fail when **every** run agreed and
+confidence cleared the threshold; anything else routes to `REVIEW` for a human. Split votes usually
+mean the assertion is ambiguous or the session genuinely is borderline.
+
+**`error:` is above zero in the votes. Is the result wrong?**
+It is unreliable rather than wrong. One or more runs failed to produce a verdict. Errored runs count
+against consensus and can only push a result toward review, never toward a silent pass.
+
+**Why did it pass when I would have failed it?**
+An auto-pass needs unanimity *and* mean confidence above the threshold, so a pass is not a weak
+signal. If you disagree, the assertion likely does not say what you meant. That is worth fixing at
+the eval, because it will keep passing otherwise.
+
+## About re-running
+
+**Can I reproduce this locally?**
+Yes, and it is read-only: `run` never modifies a trace or the artifacts it evaluates.
+
+```bash
+npx @hawkeyexl/manni tracevals run <trace-file> --deterministic-only
+```
+
+**I re-ran it and got the identical judged verdict. Is it cached?**
+Almost certainly. Verdicts are cached on provider, model, prompt version, run count, temperature,
+the trace, and the eval plan. Add `--no-cache` to force fresh judgements.
+
+**Can I re-run without calling a hosted provider?**
+`--deterministic-only` makes no model call at all. `--local` runs the judge here with `llama-cpp`,
+so the whole pipeline runs and nothing leaves the machine. Do not pass `--provider` beside
+`--local`; the two contradict each other and that is exit `2`.
+
+**The trace path in CI does not exist on my machine.**
+Point artifact lookup somewhere real:
+
+```bash
+npx @hawkeyexl/manni tracevals run <trace-file> --project ./my-repo --deterministic-only
+```
+
+**`manni tracevals <trace-file>` said `unknown command`.**
+Every manni command spells its verb. Put `run` in front of the trace path. A bare domain with no
+verb prints help and exits `2`.
+
+## About ownership
+
+**Who fixes this?**
+The coverage table printed the artifact's file path, and that file is in version control. `git log`
+on it names the owner. Bring them the artifact name, the eval name, and for a judged verdict
+the vote split plus the cited observation.
+
+**I think the eval is wrong, not the session.**
+That is a legitimate and common answer. An eval no session could satisfy is a defect in the
+artifact, and you may be the first person to notice. Raise it as an eval bug rather than
+changing your work to satisfy it.
+
+**The build is red and I cannot fix it right now.**
+`needs-review` counting as a failure is configurable (`failOnNeedsReview: false` under `tracevals:`
+in `manni.config.yaml`), and severity is per eval. Both are decisions for whoever owns the gate,
+though, not a workaround to apply under time pressure.
+
+<Aside title="Still stuck?">
+Open [How the judge decides](/manni/tracevals/judge/) next if the verdict is what puzzles you.
+Open [Declare what to check](/manni/tracevals/declare/) if the *eval* is.
+</Aside>
