@@ -29,3 +29,7 @@ media/scratch-*/
 
 # Vale styles are fetched by `vale sync`, not committed
 .vale/styles/
+
+# Two documented procedures write a report into .tmp/ when a reader follows
+# them, and so does the docs-as-tests run of those pages.
+.tmp/

@@ -18,6 +18,7 @@ on:
       - "docs/**"
       - "src/**"
       - "test/fixtures/**"
+      - "test/tracevals/fixtures/**"
       - ".doc-detective.json"
       - ".github/workflows/docs-as-tests.yml"
   workflow_dispatch:
@@ -105,7 +106,16 @@ jobs:
           --model granite-4.1-3b-q2
           --fields title --dry-run --no-cache
       # Third-party action pinned to a full commit SHA (supply-chain hardening).
+      #
+      # CLAUDE_CONFIG_DIR points trace discovery at the committed fixture
+      # session store, so the tracevals pages grade the same sessions on every
+      # runner. Without it they would read the runner's own ~/.claude, which is
+      # empty: `list` prints nothing, and a `run --all-projects` exits 2 with no
+      # traces matched. The tracevals pages say this is what the workflow does,
+      # so the two must stay in step.
       - uses: doc-detective/github-action@a2a4f5ceb1abfa55d567e4f6766223082ece2c18 # v1
+        env:
+          CLAUDE_CONFIG_DIR: test/tracevals/fixtures/home/.claude
         with:
           config: .doc-detective.json
           exit_on_fail: true
