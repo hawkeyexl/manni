@@ -710,8 +710,8 @@ whole by the message:
    `query`'s `UPDATE`, `DELETE`, `INSERT` and key rename write an owned key
    into the document's entry in its local manifest, and never into the page.
    When the manifest is private, writing the key into a public document would
-   leak the value. A URL manifest is fetched and cannot be written, so a write
-   to a key it owns is refused: `"owner" is owned by manifest
+   leak the value. A URL manifest is fetched and cannot be written. A write to
+   a key it owns is refused with `"owner" is owned by manifest
    https://example.com/owners.yaml, which is fetched and cannot be written; set
    it in that repository.` So is `ALTER TABLE … RENAME COLUMN` of an owned key,
    since `keys:` would need renaming too.
@@ -1071,6 +1071,50 @@ cannot match the entries, and refuses with exit 2:
 
 ```
 externalMetadata join field "owner" is encrypted on these pages, and no encryption key is available to match them.
+```
+
+## Tools
+
+`tools:` holds the settings of an outside tool that a manni domain runs. It
+sits at the top level beside `collections:` and `encryptionKey:`, because an
+outside tool belongs to no one domain. Each tool gets a key of its own under
+`tools:`, with its own keys beneath. Vale is the one tool read.
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+
+tools:
+  vale:
+    config: .vale.ini
+```
+
+| Key | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `tools.vale.config` | `string` | no | none | Vale's config file, relative to `manni.config.yaml`, or absolute. Passed to every Vale run as `--config`. Absent, Vale finds its own config, as it does when a person runs it. |
+
+- **Who reads it.** [`manni term lint`](/manni/term/reference/cli/#term-lint)
+  and [`manni term write -f vale`](/manni/term/set-up/) start Vale with it.
+  `manni meta` starts no outside tool, and never uses the value.
+- **The key counts for discovery.** A `manni.config.yaml` carrying `tools:` and
+  no `meta:` section is still this tool's config, and stops the
+  [search](#discovery).
+- **Every tool checks the shape.** A misspelled tool or key stops any command
+  with exit 2. A setting nothing reads would otherwise look configured and do
+  nothing:
+
+```
+manni: manni.config.yaml: tools has unknown key "prettier". Supported keys: vale.
+manni: manni.config.yaml: tools.vale has unknown key "ini". Supported keys: config.
+manni: manni.config.yaml: tools.vale.config must be a non-empty string.
+```
+
+- **The file must exist when Vale runs.** A path to a missing file is refused
+  by the command that would start Vale, not by every run:
+
+```
+manni: manni.config.yaml: tools.vale.config "nowhere.ini" does not exist.
 ```
 
 ## Keys
@@ -2024,11 +2068,11 @@ for these files, in order:
 
 1. `manni.config.yaml`, then `manni.config.yml`, read at their `meta:` key.
    A family file counts as the metadata tool's config when it carries `meta:`,
-   `collections:` or [`encryptionKey:`](#encryption-key). One with a family key
-   and no `meta:` still describes this repository. It stops the search and
-   hands the tool an empty section plus the collections and the key. A family
-   file with none of the three belongs to a sibling tool and is skipped, so the
-   search continues.
+   `collections:`, [`tools:`](#tools) or [`encryptionKey:`](#encryption-key).
+   One with a family key and no `meta:` still describes this repository. It
+   stops the search and hands the tool an empty section plus the family keys.
+   A family file with none of the four belongs to a sibling tool and is
+   skipped, so the search continues.
 2. `moose.config.yaml`, then `moose.config.yml`: the family file under its
    pre-rename name. Same shape, read the same way, with a warning on stderr to
    rename it.
@@ -2072,8 +2116,8 @@ defaults.
 
 When you pass `-c/--config <path>` explicitly, no search happens at all and that
 file must exist; a missing config file is an error (exit 2). The file is read by
-the same rule whatever it is named. If it has a `meta:`, `collections:` or
-`encryptionKey:` key it is read as a family file. If it has none of them, the
+the same rule whatever it is named. If it has a `meta:`, `collections:`,
+`tools:` or `encryptionKey:` key it is read as a family file. If it has none of them, the
 whole document is the `meta:` section. So `-c ./anything.yaml` works for
 both shapes without a flag, and an explicit path is never warned about.
 
@@ -2099,6 +2143,7 @@ not the directory you happened to run from. That applies to:
   that same directory;
 - `collections[].externalMetadata[].file`, and every document path inside the
   manifest it names;
+- `tools.vale.config`;
 - `overrides[].files`;
 - `baseline`, and any local `.json` schema file named in `schemas` or
   `overrides`.

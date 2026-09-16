@@ -1,0 +1,563 @@
+---
+title: CLI reference
+description: "Every manni term command, argument, and flag (list, get, check, lint, write and formats), with output shapes, exit codes, and every usage error."
+sidebar:
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+{/* The command, argument, and option tables on this page are drift-checked
+    against src/term/cli.ts by scripts/check-cli-reference.mjs (npm run
+    docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
+    sync with the code; descriptions are free-form. */}
+
+manni term exposes six verbs. [`list`](#term-list), [`get`](#term-get),
+[`check`](#term-check), [`lint`](#term-lint) and [`write`](#term-write) read a
+term set. [`formats`](#term-formats) reads nothing and lists what the others
+can read and write. There is no default. A bare `manni term` prints usage and
+exits `2`.
+
+```sh
+manni term [options] <command> [command options] [arguments]
+```
+
+## Global options
+
+Global options are accepted before the subcommand.
+
+| Option | Description |
+|---|---|
+| `-V, --version` | Print the manni version and exit. |
+| `-h, --help` | Print help for the program or a subcommand. |
+
+## `term`
+
+The terminology tool. Every command on this page lives under it. `term`
+accepts its own `-V, --version`, which reports the manni version, and
+`-h, --help`. Run with no subcommand, it prints its usage to stderr and exits
+`2`.
+
+```sh
+manni term [options] <command> [command options] [arguments]
+```
+
+## The shared input model
+
+`list`, `get`, `check`, `lint` and `write` read the set the same way, with the
+same flags. They are the flags `manni meta` and `manni cite` take for the same
+jobs.
+
+- **Paths are positional.** Files, directories and globs, space-separated.
+  Without them the run reads every configured
+  [collection](/manni/meta/reference/configuration/#collections), plus the
+  manifests [`term.manifests`](/manni/term/reference/configuration/#keys)
+  names.
+- **`-` reads stdin**, alongside any named paths. It needs `--as <format>`,
+  which names one of the metadata tool's
+  [extractors](/manni/meta/reference/formats/): `markdown`, `mdx`, `asciidoc`,
+  `rst`, `html` or `xml`.
+- **Every file contributes references.** A page's `concepts:` and its
+  `kg.concepts` are read whether or not the page holds a term.
+- **No terms is an error.** A run that reads files but finds no entry exits
+  `2`, unless `--allow-empty` or `term.allowEmpty` says an empty set is fine.
+
+A term is a page declaring `type: term`, or an entry in a file that holds a
+list of terms. The [terminology reference](/manni/term/reference/terminology/)
+has the record, and [Move and hand off a
+termbase](/manni/term/set-up/move-and-hand-off/#what-each-construct-holds) has
+every construct that is read.
+
+## `term list`
+
+List the resolved entries, one row per entry.
+
+```sh
+manni term list [paths...] [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to read. Use `-` to read from stdin, with `--as`. Optional. Without paths the run covers every configured collection. See [the shared input model](#the-shared-input-model). |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--as` | `<format>` | n/a | Input format for stdin. Required with `-`. |
+| `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. Given once. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable, one glob per occurrence. |
+| `--collection` | `<name>` | every collection | Read one configured collection rather than every declared one. Repeatable, one name per occurrence. Cannot be combined with positional paths (exit 2). |
+| `--allow-empty` | n/a | off | Treat a set with no terms as success. Wins over config `allowEmpty:`. |
+| `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. Wins over config `respectGitignore:`. |
+| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/term/reference/configuration/). The file must exist (exit 2). |
+| `--no-color` | n/a | off | Disable colored output. Color applies on a TTY only, and never under `NO_COLOR`. |
+| `-f, --format` | `<pretty\|json\|csv>` | `pretty` | Output format. An unknown value is an error (exit 2). |
+
+### Output
+
+`pretty` prints the id, the preferred label, and the alt-labels, then a count:
+
+```
+bifocal            bifocal
+corrective-lens    corrective lens
+progressive-lens   progressive lens   PAL, graduated lens
+3 terms
+```
+
+`csv` prints a header and one row per entry. A list field joins its values
+with `|`:
+
+```
+id,label,alt-labels,abstract
+corrective-lens,corrective lens,,
+progressive-lens,progressive lens,PAL|graduated lens,Lenses that correct presbyopia without a visible line.
+```
+
+`json` prints `{ "terms": [...] }`. Each entry carries `id`, `language` when
+the file declares one, and every field the record holds, spelled as the
+[vocabulary](/manni/term/reference/terminology/) spells it.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | The set was listed. |
+| `2` | Operational or usage error. See [usage errors](#usage-errors). |
+
+## `term get`
+
+Show one entry, with the file and line it was read from.
+
+```sh
+manni term get <term> [paths...] [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `<term>` | The entry's `id`, or its preferred `label` in any case. An alt-label does not find the entry. |
+| `[paths...]` | Files, directories, or globs to read, exactly as on [`list`](#term-list). |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--as` | `<format>` | n/a | Input format for stdin. Required with `-`. |
+| `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
+| `--collection` | `<name>` | every collection | Read one configured collection. Repeatable. |
+| `--allow-empty` | n/a | off | Treat a set with no terms as success. |
+| `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. |
+| `-c, --config` | `<path>` | discovered | Path to a config file. |
+| `--no-color` | n/a | off | Disable colored output. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints the entry's record, with `id`. |
+
+### Output
+
+```
+progressive lens                        docs/terms/progressive-lens.md:1
+  id             progressive-lens
+  alt-labels     PAL, graduated lens
+  hidden-labels  no-line bifocal
+  broader        corrective lens
+  abstract       Lenses that correct presbyopia without a visible line.
+  definition     Corrective lenses whose optical power increases continuously
+                 from the top of the lens to the bottom, correcting presbyopia
+                 without the visible boundary a bifocal carries.
+```
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | The entry was found and printed. |
+| `2` | No entry matched, or an operational or usage error. The message names the set's size and the nearest id. |
+
+## `term check`
+
+Check the set and every reference into it. `check` reads records, never prose.
+It resolves each `concepts:` value against the preferred labels, resolves
+`broader`, `narrower`, `related-terms` and `see` against labels and ids, and
+reports what does not line up. The ten rules, their default severities and
+their messages are on the [rules reference](/manni/term/reference/rules/).
+
+```sh
+manni term check [paths...] [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to read, exactly as on [`list`](#term-list). |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--as` | `<format>` | n/a | Input format for stdin. Required with `-`. |
+| `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
+| `--collection` | `<name>` | every collection | Read one configured collection. Repeatable. |
+| `--allow-empty` | n/a | off | Treat a set with no terms as success. |
+| `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. |
+| `-c, --config` | `<path>` | discovered | Path to a config file. |
+| `--no-color` | n/a | off | Disable colored output. |
+| `-f, --format` | `<pretty\|json\|github\|sarif\|junit>` | `pretty` | Output format. The shapes are below. |
+| `--baseline` | n/a | off | Compare against `.manni-term-baseline.json`, or the file config `baseline:` names. When the file does not exist yet, record this run's findings in it and exit `0`. After that, fail only on findings the file does not hold. Takes no value. |
+
+### Output
+
+`pretty` groups findings by file and line. Each row is the severity, the rule
+id and the message. The summary counts each severity:
+
+```
+docs/guides/fitting.md:3
+  error  manni:term/undefined-term        concepts: "PAL" names no entry.
+                                          "progressive lens" lists it as an alt-label.
+docs/terms/bifocal.md:1
+  notice manni:term/unused-term           no page's concepts: names this term
+docs/terms/corrective-lens.md:5
+  warning manni:term/asymmetric-hierarchy  narrower: omits "bifocal", which lists this entry as broader
+
+1 error, 1 warning, 1 notice in 3 terms
+```
+
+A clean run prints one line:
+
+```
+✓ 2 terms, 2 references, no findings
+```
+
+`json` prints `{ findings, summary }`. Each finding carries `rule`, `ruleId`,
+`severity`, `message`, `file` and `line`, plus the entry's `id` when the
+finding sits on an entry. `summary` holds `terms`, `references`, `errors`,
+`warnings` and `notices`, and `baseline` when one was read or written:
+
+```json
+{
+  "findings": [
+    {
+      "rule": "unused-term",
+      "ruleId": "manni:term/unused-term",
+      "severity": "notice",
+      "message": "no page's concepts: names this term",
+      "file": "docs/terms/bifocal.md",
+      "line": 1,
+      "id": "bifocal"
+    }
+  ],
+  "summary": {
+    "terms": 3,
+    "references": 2,
+    "errors": 0,
+    "warnings": 0,
+    "notices": 1
+  }
+}
+```
+
+`github` prints one workflow command per finding. The colon in the rule id is
+escaped, because a workflow command reads `:` as a separator:
+
+```
+::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "PAL" names no entry. "progressive lens" lists it as an alt-label.
+```
+
+`sarif` and `junit` are the metadata tool's
+[renderers](/manni/meta/reference/output-and-exit-codes/) over the same
+findings, under the rule id `manni:term/<rule>`. JUnit testcases carry the
+classname `manni.term`, one per file read.
+
+### Baselines
+
+`--baseline` is one flag for both halves of the ratchet.
+
+```console
+$ manni term check --baseline
+✓ 1 finding recorded in .manni-term-baseline.json
+$ manni term check --baseline
+✓ 2 terms, 3 references, no findings, 1 baselined
+```
+
+A configured [`baseline:`](/manni/term/reference/configuration/#keys) is
+compared on every run, without the flag. When that file does not exist and the
+flag is absent, the run stops with exit `2` and names the command that records
+one.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | No error-severity finding the baseline does not already hold. Warnings and notices never move the exit code. A run that records a baseline exits `0`. |
+| `1` | At least one unbaselined error-severity finding. |
+| `2` | Operational or usage error. See [usage errors](#usage-errors). |
+
+## `term lint`
+
+Run Vale over the definitions. Each entry's `definition`, `abstract` and
+`scope-note` is written to a temporary file named `<id>.<field>.md`, and Vale
+runs once over all of them. Vale reads its own configuration, or the file
+[`tools.vale.config`](/manni/meta/reference/configuration/#tools) names. A
+`[*.definition.md]` section in that configuration applies to definitions
+alone.
+
+```sh
+manni term lint [paths...] [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to read, exactly as on [`list`](#term-list). |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--as` | `<format>` | n/a | Input format for stdin. Required with `-`. |
+| `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
+| `--collection` | `<name>` | every collection | Read one configured collection. Repeatable. |
+| `--allow-empty` | n/a | off | Treat a set with no terms as success. |
+| `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. |
+| `-c, --config` | `<path>` | discovered | Path to a config file. |
+| `--no-color` | n/a | off | Disable colored output. |
+| `-f, --format` | `<pretty\|json\|github\|sarif\|junit>` | `pretty` | Output format. The same shapes as `check`. |
+
+### Output
+
+A finding sits on the source line of the field it came from. The rule id is
+`manni:term/prose/<Style.Rule>`, keeping Vale's own rule name. Vale's
+`suggestion` is reported as a notice:
+
+```
+docs/terms/kubernetes.md:7
+  warning manni:term/prose/House.Simply   Drop 'Simply'.
+docs/terms/kubernetes.md:11
+  warning manni:term/prose/House.Simply   Drop 'just'.
+docs/terms/progressive-lens.md:9
+  error  manni:term/prose/House.Length   Keep a sentence under 20 words.
+
+1 error, 2 warnings in 3 terms
+```
+
+A literal `|` block keeps its lines, so a finding on its second line lands on
+that source line. A folded `>-` block is one line once parsed, so its findings
+sit on the field's first line. In `json` a finding also carries `tool: "vale"`,
+`check` (Vale's rule name), `toolSeverity` (Vale's level) and `field`.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | No error-severity alert. |
+| `1` | At least one error-severity alert. |
+| `2` | Vale is not on PATH, Vale could not run, or an operational or usage error. |
+
+## `term write`
+
+Write the set back, or render it elsewhere.
+
+```sh
+manni term write [paths...] [options]
+```
+
+With no `-f`, each file's entries go back through the reader that read them.
+Only an entry whose record differs from its file is rewritten, so a set that
+has not changed leaves every file byte-identical and prints `Nothing to write`.
+
+With `-f <format>` and `-o <path>`, the whole set is rendered into the path.
+The path decides the shape. A trailing `/` or an existing directory gets one
+entry per file, and anything else gets every entry in one file. A field the
+target cannot hold is dropped, and the report says which fields, on how many
+entries. [Move and hand off a
+termbase](/manni/term/set-up/move-and-hand-off/#what-each-render-holds) has
+every shape and what each keeps.
+
+`-f vale` writes a Vale style named `Terms`. Without `-o` it asks Vale where
+its styles directory is. [Keep the terms and the docs in
+step](/manni/term/set-up/#the-generated-style) has the files it writes.
+
+<Aside type="caution" title="write writes by default">
+`write` changes files unless you pass `--check` or `--dry-run`. Run it on a
+clean working tree so the change is easy to review.
+</Aside>
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to read, exactly as on [`list`](#term-list). An entry read from stdin has nowhere to be written back to, so `-` needs `-f` and `-o`. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--as` | `<format>` | n/a | Input format for stdin. Required with `-`. |
+| `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
+| `--collection` | `<name>` | every collection | Read one configured collection. Repeatable. |
+| `--allow-empty` | n/a | off | Treat a set with no terms as success. |
+| `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. |
+| `-c, --config` | `<path>` | discovered | Path to a config file. |
+| `--no-color` | n/a | off | Disable colored output. |
+| `-f, --format` | `<markdown\|mdx\|asciidoc\|rst\|html\|dita\|docbook\|tbx\|skos\|csv\|json\|vale>` | each entry's own, in place | What to render. |
+| `-o, --out` | `<path>` | see below | The file or directory to render into. A trailing `/` means a directory. |
+| `--check` | n/a | off | Write nothing. Exit `1` when the target differs from the render. |
+| `--dry-run` | n/a | off | Write nothing. Print what would change, and exit `0`. |
+
+`-o` depends on `-f`:
+
+| `-f` | `-o` when omitted |
+|---|---|
+| none | each entry's own source, in place |
+| `markdown`, `mdx`, `asciidoc`, `rst`, `html`, `dita`, `docbook` | required |
+| `tbx`, `skos`, `csv`, `json` | required, and a file |
+| `vale` | the styles directory `vale ls-config` reports |
+
+### Output
+
+A render names the target and the number of entries. A render into one file
+per entry says so. Dropped fields follow on an indented line:
+
+```
+Wrote 3 terms to docs/terms/, one file each
+```
+
+```
+Wrote 3 terms to build/glossary.xml
+  dropped from a DocBook glossary: abstract on 1 term, hidden-labels on 1, scope-note on 1
+```
+
+`-f vale` lists each style file and what it holds. When no section of Vale's
+configuration uses the `Terms` style, a notice on stderr names the line to
+add:
+
+```
+Wrote 3 terms to .vale/styles/Terms
+  Casing.yml      2 terms
+  Lowercase.yml   3 terms
+  Deprecated.yml  2 swaps
+  PAL.yml         1 acronym
+notice: no section of .vale.ini uses the Terms style. Add it to BasedOnStyles:
+  [*.md]
+  BasedOnStyles = Vale, Terms
+```
+
+`--check` and `--dry-run` print each file that differs, with what would happen
+to it: `would change`, `would be created` or `would be removed`. When nothing
+differs they print that the target is up to date:
+
+```
+.vale/styles/Terms/Deprecated.yml would change
+```
+
+```
+.vale/styles/Terms is up to date
+```
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | The set was written, or `--dry-run` printed what would change, or `--check` found the target up to date. |
+| `1` | `--check` found a file that differs from the render. |
+| `2` | Operational or usage error. See [usage errors](#usage-errors). |
+
+### Examples
+
+```sh
+manni term write                                   # each entry back to its source
+manni term write docs/glossary.xml -f markdown -o docs/terms/
+manni term write docs/terms/ -f markdown -o glossary.md
+manni term write -f tbx -o build/terms.tbx
+manni term write -f vale                           # into Vale's styles directory
+manni term write -f vale --check                   # keep the style in step
+```
+
+## `term formats`
+
+List the constructs read and written, per format. The listing is built from
+the registered readers and writers.
+
+```sh
+manni term formats [options]
+```
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints `{ "formats": [...] }`, each row with `format`, `construct`, `label`, `read` and `write`. |
+
+### Output
+
+```
+markdown   page               read  write
+markdown   definition list    read  write
+mdx        page               read  write
+mdx        definition list    read  write
+asciidoc   page               read  write
+asciidoc   [glossary] list    read  write
+rst        page               read  write
+rst        .. glossary::      read  write
+html       page               read  write
+html       dl                 read  write
+html       dfn                read
+xml        page               read  write
+xml        DITA glossentry    read  write
+xml        DITA glossgroup    read  write
+xml        DocBook glossary   read  write
+manifest   manifest           read  write
+tbx        TBX v2 Core              write
+skos       JSON-LD                  write
+csv                                 write
+json                                write
+vale       style                    write
+```
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | The listing was printed. |
+| `2` | An unknown `--format`. |
+
+## Usage errors
+
+Every usage error goes to stderr, prefixed `manni:`, and exits `2`. Nothing is
+written.
+
+| Invocation | stderr |
+|---|---|
+| A run that finds no terms | `manni: no terms found. A term is a page declaring type: term, or an entry in a file declaring type: term-set.` |
+| No paths and no collections | ``manni: No files to read. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.`` |
+| `term check -` with no `--as` | `manni: reading stdin needs --as <format>.` |
+| `term check nowhere/` | `manni: File not found: "nowhere/".` |
+| `term check docs --collection site` | `manni: --collection selects a configured collection; it cannot be combined with paths.` |
+| `term check --collection nope` | `manni: no collection named "nope" in manni.config.yaml. Configured: site.` |
+| `term check -c missing.yaml` | `manni: Config file not found: "missing.yaml".` |
+| `term check -f xml` | `manni: unknown format "xml". Expected pretty \| json \| github \| sarif \| junit.` |
+| `term check`, config `baseline:` names a missing file | ``manni: Baseline "term-baseline.json" not found. Record one with `manni term check --baseline`.`` |
+| `term get missing` | `manni: no term "missing". 2 terms; did you mean "progressive-lens"?` |
+| `term write -f tmx -o x` | `manni: unknown format "tmx". Expected markdown \| mdx \| asciidoc \| rst \| html \| dita \| docbook \| tbx \| skos \| csv \| json \| vale.` |
+| `term write -f tbx` | `manni: -f tbx needs -o <path>.` |
+| `term write -f tbx -o build/tbx/` | `manni: -f tbx writes one file, not a directory. Pass -o <file>.` |
+| `term write -o out.md` | `manni: -o needs -f <format>.` |
+| `term write -f json -o x.json --check --dry-run` | `manni: --check and --dry-run cannot be combined.` |
+| `term write - --as markdown` | `manni: <stdin> has nowhere to write back to. Pass -f <format> -o <path>.` |
+| `term write` over a file holding `<dfn>` terms | `manni: glossary.html: a dfn cannot be written in place. Pass -f <format> -o <path>.` |
+| `term write -f vale`, no Vale on PATH | `manni: vale is not on PATH. Install Vale, or pass -o <styles directory>.` |
+| `term write -f vale`, Vale finds no config | `manni: Vale found no config file. Set tools.vale.config in manni.config.yaml, or pass -o <styles directory>.` |
+| `term write -f vale`, a file without the marker in `Terms/` | `manni: styles/Terms/Casing.yml was not written by manni. Move it, or pass -o <styles directory>.` |
+| `term write -f vale`, an acronym named like a rule file | `manni: the acronym "CASING" would replace Terms/Casing.yml. Rename the alt-label.` |
+| `term lint`, no Vale on PATH | `manni: vale is not on PATH. Install Vale to lint definitions.` |
+
+The config refusals are on the [configuration
+reference](/manni/term/reference/configuration/#refusals).

@@ -68,6 +68,16 @@ Maya's older pages predate the standard, so the fields her gate now requires are
 
 ---
 
+### M9 · Keep the terms and the docs in step
+
+**Outcome.** Maya's prose uses the names the termbase prefers. A deprecated spelling, a term in the wrong case, or an acronym used before its expansion is flagged where it was written. The definitions themselves read in the house voice.
+
+**Steps.** She names Vale's configuration once, under `tools.vale.config` in `manni.config.yaml`. She runs `manni term write -f vale`, which asks Vale where its styles live and writes a style named `Terms` there. The run prints the `BasedOnStyles` line to add when no section uses `Terms`, and she adds it to `.vale.ini` herself. From then on Vale flags a hidden-label as deprecated and enforces each label's casing. It also asks for an all-caps alt-label's expansion on first use. She runs `manni term lint`, which holds each definition, abstract and scope note to the same Vale configuration. Definitions are often one long noun phrase, so she adds a `[*.definition.md]` section that relaxes the sentence-length rule for them alone. She commits `Terms/`, and CI runs `manni term write -f vale --check`, which exits `1` when a term changed and the style did not.
+
+**What success looks like.** A writer who types a deprecated name sees the preferred one in the Vale alert. A term edited without regenerating the style fails CI and names the file that would change.
+
+---
+
 ## Devin, Platform / CI Engineer
 
 ### D1 · Add the gate to our CI platform
@@ -116,6 +126,16 @@ Per-file schema validation cannot see a dangling cross-reference, a duplicate sl
 
 ---
 
+### D8 · Hand the termbase to localization
+
+**Outcome.** Devin gives the translation team the termbase in a format their system imports. A glossary kept in one construct moves to another without hand work.
+
+**Steps.** He runs `manni term write -f tbx -o build/terms.tbx`, and the translation system imports TBX v2 Core. The kind of label becomes each term's status: the label preferred, an alt-label admitted, a hidden-label deprecated. Where a system or a spreadsheet maps columns by header, he writes `-f csv` instead, with the language in each per-language header. To move a glossary, he reads a DocBook `<glossary>` and writes `-f markdown -o docs/terms/`, one page per term, because the trailing `/` names a directory. The reverse, `-f docbook -o glossary.xml`, writes one file. Each render into a construct that cannot hold a field drops it, and the run says which fields, on how many terms.
+
+**What success looks like.** One command per handoff, in CI or locally. The report names every field a target could not hold, before anyone finds it missing.
+
+---
+
 ## Sara, Schema Author
 
 ### S1 · Define our metadata standard as a schema
@@ -130,7 +150,7 @@ Sara needs to understand how manni meta resolves which schema(s) apply to any gi
 
 ### S3 · Version and evolve the schema safely
 
-Sara needs to ship a stricter version of the schema without immediately breaking CI in every consuming repo. She needs to understand: JSON Schema dialects (2020-12 through draft-04), manni meta's dialect detection, the versioning policy, and a migration path for consumers.
+Sara needs to ship a stricter version of the schema without immediately breaking CI in every consuming repo. She needs to understand JSON Schema dialects, from 2020-12 through draft-04, and manni meta's dialect detection. She also needs the versioning policy and a migration path for consumers.
 
 ---
 
@@ -151,6 +171,16 @@ Sara needs to ship a stricter version of the schema without immediately breaking
 **Steps.** She composes the citations vocabulary into the house schema, so an entry's shape is validated wherever it lives. She requires `citations` on the class of pages that need it, through the same override she uses for any other rule. She sets `cite.severity` per rule, deciding whether an edited sentence blocks a merge or only reports. She chooses where entries live, on the page or in a manifest, and records that choice beside the schema.
 
 **What success looks like.** A page of that kind cannot merge without a citation, and every team reads one set of rules.
+
+---
+
+### S6 · Define our terminology and make `concepts:` mean something
+
+**Outcome.** Every value of a page's `concepts:` names a term Sara's set defines. A term has one preferred label, a definition, and its place among other terms.
+
+**Steps.** She writes one page per term, marked `type: term`, with the flat terminology fields at the root: `label`, `definition`, and where they apply `alt-labels`, `hidden-labels`, `broader`, `narrower`, `related-terms`, `see`, `abstract` and `scope-note`. A glossary already kept as a DITA `<glossgroup>`, a DocBook `<glossary>` or a definition list is read as it is. She runs `manni term list` to see the set, then `manni term check`. It resolves every `concepts:` value against the preferred labels and reports `undefined-term` at the line, naming the entry when the value is an alt-label. It also reports collisions, dangling references, cycles, and a `see` redirect that still carries a definition. `unused-term` is a notice for a term no page names yet, and she turns it off under `term.severity` while the set is ahead of the pages.
+
+**What success looks like.** A `concepts:` value that is not a defined term fails the check at its line. The set has no two entries claiming one name.
 
 ---
 

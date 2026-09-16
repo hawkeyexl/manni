@@ -1,0 +1,210 @@
+---
+title: Run it in CI
+description: "Gate a pull request on manni term check with inline annotations, ramp in with a baseline, keep the generated Vale style current with write --check, and lint definitions, all under the 0/1/2 exit-code contract."
+---
+
+import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+This page runs three term jobs on every pull request. `check` fails on a
+broken reference and annotates the line. `write -f vale --check` fails when
+the committed Vale style has fallen behind the set. `lint` holds the
+definitions to the house voice. All three read the same `manni.config.yaml`
+as a local run.
+
+The recipes run `npx`, which fetches the published package on demand. The
+runner needs Node.js 24 or newer, and the steps that run Vale need it on PATH.
+
+## How the gate works
+
+**Exit codes drive the gate.** They are the family's:
+
+| Code | Meaning |
+|---|---|
+| `0` | No error-severity finding, or `--check` found the style up to date. |
+| `1` | At least one error-severity finding the baseline does not hold, or `--check` found a file that differs. |
+| `2` | The job could not run. No terms, no Vale on PATH, a bad flag or a bad config key. The message goes to stderr, prefixed `manni:`. |
+
+**Warnings and notices never fail the job.** `asymmetric-hierarchy` is a
+warning, and `abstract-too-long` and `unused-term` are notices. Every other
+`check` rule is an error. `term.severity` moves any of them; see the
+[rules reference](/manni/term/reference/rules/).
+
+**`-f github` produces inline annotations.** One workflow command per
+finding, on the file and line, titled with the rule id:
+
+```console
+$ manni term check -f github
+::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "PAL" names no entry. "progressive lens" lists it as an alt-label.
+```
+
+`lint -f github` prints the same shape, under `manni:term/prose/<Style.Rule>`:
+
+```console
+$ manni term lint -f github
+::warning file=docs/terms/kubernetes.md,line=7,title=manni%3Aterm/prose/House.Simply::Drop 'Simply'.
+::warning file=docs/terms/kubernetes.md,line=11,title=manni%3Aterm/prose/House.Simply::Drop 'just'.
+::error file=docs/terms/progressive-lens.md,line=9,title=manni%3Aterm/prose/House.Length::Keep a sentence under 20 words.
+```
+
+`json`, `sarif` and `junit` are there for dashboards, code scanning and the
+test tab. The [CLI reference](/manni/term/reference/cli/#term-check) has each
+shape.
+
+<Aside type="caution" title="SARIF wants the repository root">
+  Code scanning resolves each result's path against the repository root. Run
+  the check from the root of the repository. Outside a git repository the tool
+  says so on stderr, and an upload may report nothing.
+</Aside>
+
+## The workflow
+
+<Steps>
+
+1. **Declare the docset and Vale's configuration** in `manni.config.yaml`, so
+   each job runs with no arguments:
+
+   ```yaml title="manni.config.yaml"
+   collections:
+     - name: site
+       paths:
+         - "docs/**/*.md"
+
+   tools:
+     vale:
+       config: .vale.ini
+   ```
+
+2. **Commit the generated style.** Run `manni term write -f vale` locally and
+   commit `Terms/` under your styles directory, beside `.vale.ini`.
+
+3. **Add the workflow.**
+
+   ```yaml title=".github/workflows/terms.yml"
+   name: Terms
+
+   on:
+     pull_request:
+
+   jobs:
+     check:
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v7
+         - uses: actions/setup-node@v6
+           with:
+             node-version: 24
+         # Every concepts: value names an entry, and the set is consistent.
+         - run: npx -y @hawkeyexl/manni term check -f github
+
+     vale:
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v7
+         - uses: actions/setup-node@v6
+           with:
+             node-version: 24
+         # The latest Vale release, onto PATH for both manni jobs below.
+         - name: Install Vale
+           env:
+             GH_TOKEN: ${{ github.token }}
+           run: |
+             gh release download --repo errata-ai/vale --pattern '*_Linux_64-bit.tar.gz' --output vale.tar.gz
+             tar -xzf vale.tar.gz -C "$RUNNER_TEMP" vale
+             echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+         - run: vale sync
+         # The committed Terms style matches the set.
+         - run: npx -y @hawkeyexl/manni term write -f vale --check
+         # The definitions hold to the house voice.
+         - run: npx -y @hawkeyexl/manni term lint -f github
+   ```
+
+4. **Open a pull request.** A `concepts:` value that names no entry fails the
+   `check` job and annotates the line. A term edited without regenerating the
+   style fails the `vale` job, and its log names each file that would change.
+
+</Steps>
+
+A failing `--check` prints what differs:
+
+```console
+$ manni term write -f vale --check
+.vale/styles/Terms/Deprecated.yml would change
+$ echo $?
+1
+```
+
+The fix is local. Run `manni term write -f vale`, and commit the result.
+
+<Aside type="note" title="Pin the version for reproducible runs">
+  `npx -y @hawkeyexl/manni` resolves the latest published version each run.
+  Pin the major, as in `npx -y @hawkeyexl/manni@2 term check`, and bump it
+  deliberately.
+</Aside>
+
+## Ramp in with a baseline
+
+A docset whose `concepts:` values were never checked fails its first run.
+The baseline lets the check go in without fixing that backlog first.
+
+<Steps>
+
+1. **Record the backlog once.** With no baseline file yet, `--baseline`
+   records every current finding and exits `0`:
+
+   ```console
+   $ manni term check --baseline
+   ✓ 1 finding recorded in .manni-term-baseline.json
+   ```
+
+   Commit `.manni-term-baseline.json`.
+
+2. **Run the job with the same flag.** A finding the file holds is counted as
+   baselined. Only a new one fails:
+
+   ```console
+   $ manni term check --baseline
+   ✓ 2 terms, 3 references, no findings, 1 baselined
+   ```
+
+   The job line becomes
+   `npx -y @hawkeyexl/manni term check -f github --baseline`.
+
+3. **Burn the backlog down.** Fix findings as pages are touched. Delete the
+   file and run `--baseline` again to record the smaller backlog.
+
+</Steps>
+
+To compare on every run without the flag, name the file under `term:`:
+
+```yaml title="manni.config.yaml"
+term:
+  baseline: .manni-term-baseline.json
+```
+
+With the key set and no file on disk, the run stops with exit `2`, and says
+how to record one.
+
+## Verify it works
+
+Open a pull request that adds an alt-label to a guide's `concepts:`. Then check
+that:
+
+- The `check` job is red, and the guide carries an annotation titled
+  `manni:term/undefined-term` that names the entry claiming the alt-label.
+- A pull request that adds a term nothing references stays green, with a
+  `manni:term/unused-term` notice.
+- A pull request that adds a hidden-label without running `write -f vale`
+  fails the `vale` job with `Terms/Deprecated.yml would change`.
+
+<CardGrid>
+  <LinkCard
+    title="Check rules"
+    href="/manni/term/reference/rules/"
+    description="Every rule the check job can report, with its severity and its fix."
+  />
+  <LinkCard
+    title="CLI reference"
+    href="/manni/term/reference/cli/"
+    description="Every flag, every output shape, and every usage error."
+  />
+</CardGrid>

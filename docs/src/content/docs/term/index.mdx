@@ -1,0 +1,131 @@
+---
+title: manni term
+description: "Define a docset's terms as records, check that every concepts: reference names one, turn the set into a Vale style, and move it between glossary formats, TBX and CSV."
+tableOfContents: false
+hero:
+  tagline: Define your terms once, check every reference to them, and carry the set into Vale and translation.
+  actions:
+    - text: Get started
+      link: /manni/term/get-started/
+      icon: right-arrow
+      variant: primary
+    - text: Keep terms and docs in step
+      link: /manni/term/set-up/
+      icon: pencil
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+A **term** is a record with an identity. It has one preferred `label`, a
+`definition`, the other names it goes by, and its place among other terms.
+Pages point at it by label through `concepts:`, and manni term checks that
+every one of those labels names an entry.
+
+A term reaches manni in one of two shapes.
+
+- **A page per term.** The record is the page's metadata, and the page
+  declares `type: term`. That works in every format manni meta reads.
+- **A file of many.** The entries live in the body, in the construct the
+  format has for a list of terms. A DITA `<glossgroup>`, a DocBook
+  `<glossary>`, an AsciiDoc `[glossary]` list and a `.. glossary::` directive
+  say what they are. A Markdown definition list and an HTML `<dl>` are read
+  where the file declares `type: term-set`.
+
+## Six commands
+
+| Command | Does |
+|---|---|
+| `manni term list [paths...]` | Lists every entry the set resolves to, with its id, label and alt-labels. |
+| `manni term get <term> [paths...]` | Shows one entry and the line it was read from. |
+| `manni term check [paths...]` | Checks the set and every `concepts:` reference into it, against ten rules. |
+| `manni term lint [paths...]` | Runs Vale over each definition, abstract and scope note. |
+| `manni term write [paths...]` | Writes the set back in place, or renders it as pages, a glossary file, TBX, SKOS, CSV, JSON or a Vale style. |
+| `manni term formats` | Lists the constructs read and written, per format. |
+
+## A 30-second proof
+
+You don't need to install anything. Two term pages define `corrective lens`
+and `progressive lens`, and `PAL` is an alt-label of the second. A guide
+names three concepts:
+
+```markdown title="docs/guides/fitting.md"
+---
+title: Fitting lenses
+concepts: [PAL, corrective lens, progressive lens]
+---
+```
+
+```sh
+npx @hawkeyexl/manni term check
+```
+
+```
+docs/guides/fitting.md:3
+  error  manni:term/undefined-term       concepts: "PAL" names no entry.
+                                         "progressive lens" lists it as an alt-label.
+
+1 error in 2 terms
+```
+
+The exit code is `1`. `PAL` is a name the set knows, and the finding says
+which entry claims it, so the fix is the preferred label. Drop `PAL`, which
+the guide already names by its label, and the check passes:
+
+```
+✓ 2 terms, 2 references, no findings
+```
+
+## What do you want to do?
+
+<CardGrid>
+  <LinkCard
+    title="Get started"
+    href="/manni/term/get-started/"
+    description="Write two term pages, reference them from a guide, run the check, and fix what it finds."
+  />
+  <LinkCard
+    title="Keep the terms and the docs in step"
+    href="/manni/term/set-up/"
+    description="Generate a Vale style that flags deprecated names, casing and unexpanded acronyms, and lint the definitions."
+  />
+  <LinkCard
+    title="Move and hand off a termbase"
+    href="/manni/term/set-up/move-and-hand-off/"
+    description="Read a glossary from DocBook, DITA, HTML, AsciiDoc, reST or Markdown, and write it as pages, TBX or CSV."
+  />
+  <LinkCard
+    title="Run it in CI"
+    href="/manni/term/ci/"
+    description="Annotations, the baseline ramp, and a drift check that keeps the generated style current."
+  />
+</CardGrid>
+
+The reference shelf holds the detail. The
+[CLI reference](/manni/term/reference/cli/) covers every flag and every usage
+error. The [configuration reference](/manni/term/reference/configuration/)
+covers the `term:` keys. The
+[terminology reference](/manni/term/reference/terminology/) covers the ten
+fields, and the [rules reference](/manni/term/reference/rules/) covers the ten
+checks.
+
+## What manni term checks, and what it doesn't
+
+<CardGrid>
+  <Card title="It checks" icon="approve-check">
+    That every `concepts:` value names an entry by its preferred label. That
+    ids and labels are unique, ignoring case. That `broader`, `narrower`,
+    `related-terms` and `see` resolve, and that the hierarchy has no cycle.
+    With Vale, it checks the prose of each definition against your house
+    voice.
+  </Card>
+  <Card title="It doesn't" icon="close">
+    Read the body of a page for how a term is used. That is what the Vale
+    style `write -f vale` generates is for, run by Vale over the docs. It
+    doesn't judge whether a definition is correct, either.
+  </Card>
+</CardGrid>
+
+Term entries are written in the `manni:terminology` vocabulary, whose draft is
+[under review](/manni/meta/proposals/terminology/). `manni meta validate`
+checks one page's shape against that draft; `manni term check` checks the set.
