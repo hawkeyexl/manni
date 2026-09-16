@@ -6,6 +6,7 @@
 import { Command } from "commander";
 import pkg from "../../package.json" with { type: "json" };
 import { collect, configOption } from "../shared/cli-options.js";
+import { LOCAL_FLAG_HELP } from "../shared/providers.js";
 import { fail } from "../shared/run.js";
 import { notice } from "../shared/warn.js";
 import { renderList, runList } from "./commands/list.js";
@@ -49,10 +50,11 @@ interface RunFlags extends ConfigFlags {
   project?: string;
   provider?: string;
   model?: string;
+  local?: boolean;
   runs?: number;
   deterministicOnly?: boolean;
   cache?: boolean;
-  maxCostUsd?: number;
+  maxTurns?: number;
   format?: ReportFormat;
   output?: string;
   history?: boolean;
@@ -167,17 +169,18 @@ function whole(
 function sharedRunOptions(opts: RunFlags) {
   whole("--runs", opts.runs, 1);
   whole("--limit", opts.limit, 1);
-  numeric("--max-cost-usd", opts.maxCostUsd, 0);
+  whole("--max-turns", opts.maxTurns, 1);
 
   return {
     ...configOptions(opts),
     project: opts.project,
     provider: opts.provider,
     model: opts.model,
+    local: opts.local,
     runs: opts.runs,
     deterministicOnly: opts.deterministicOnly,
     noCache: opts.cache === false,
-    maxCostUsd: opts.maxCostUsd,
+    maxTurns: opts.maxTurns,
     format: opts.format ?? "pretty",
     output: opts.output,
     // Undefined when neither spelling is passed, so the config still decides.
@@ -258,15 +261,26 @@ function addRunFlags(cmd: Command, options: { history?: boolean } = {}): Command
       "--project <dir>",
       "artifact-lookup root (overrides the trace's recorded cwd)",
     )
-    .option("--provider <name>", "judge provider: claude-cli, anthropic, openai, mock")
-    .option("--model <model>", "judge model override")
+    .option(
+      "--provider <name>",
+      "Judge provider: auto (default) | anthropic | openai | claude-cli | llama-cpp",
+    )
+    .option(
+      "--model <model>",
+      "Model override; needs a named provider, from here or config",
+    )
+    .option("--local", LOCAL_FLAG_HELP)
     // `Number`, not `parseInt`: parseInt truncates, so `--runs 1.5` would be
     // silently accepted as 1 and `--runs 1e3` as 1. `whole()` below refuses
     // what Number keeps.
     .option("--runs <n>", "ensemble runs per eval", (v) => Number(v))
     .option("--deterministic-only", "skip LLM-judged evals")
     .option("--no-cache", "bypass the judge cache")
-    .option("--max-cost-usd <usd>", "judge cost budget", (v) => parseFloat(v))
+    .option(
+      "--max-turns <n>",
+      "Stop after this many ensemble runs (a cached ensemble costs none)",
+      (v) => Number(v),
+    )
     .option(
       "-f, --format <format>",
       `Output format: ${REPORT_FORMATS.join(" | ")}`,
@@ -425,10 +439,21 @@ addConfigFlags(
     "maximum evals per artifact, including existing ones",
     (v) => Number(v),
   )
-  .option("--max-cost-usd <usd>", "proposal cost budget", (v) => parseFloat(v))
+  .option(
+    "--max-turns <n>",
+    "Stop after this many inference calls (a cached artifact costs none)",
+    (v) => Number(v),
+  )
   .option("--no-cache", "bypass the proposal cache")
-  .option("--provider <name>", "provider: claude-cli, anthropic, openai, mock")
-  .option("--model <model>", "model override")
+  .option(
+    "--provider <name>",
+    "Provider: auto (default) | anthropic | openai | claude-cli | llama-cpp",
+  )
+  .option(
+    "--model <model>",
+    "Model override; needs a named provider, from here or config",
+  )
+  .option("--local", LOCAL_FLAG_HELP)
   .option(
     "--require <module>",
     "load a grader plugin; repeatable, and added to config plugins",
@@ -447,17 +472,18 @@ addConfigFlags(
     dryRun?: boolean;
     confidence?: number;
     maxEvals?: number;
-    maxCostUsd?: number;
+    maxTurns?: number;
     cache?: boolean;
     provider?: string;
     model?: string;
+    local?: boolean;
     require?: string[];
     format?: SummaryFormat;
   }) => {
     try {
       numeric("--confidence", opts.confidence, 0, 1);
       whole("--max-evals", opts.maxEvals, 1);
-      numeric("--max-cost-usd", opts.maxCostUsd, 0);
+      whole("--max-turns", opts.maxTurns, 1);
 
       const { report, rendered } = await runFill({
         ...configOptions(opts),
@@ -467,10 +493,11 @@ addConfigFlags(
         ...(opts.dryRun !== undefined ? { dryRun: opts.dryRun } : {}),
         ...(opts.confidence !== undefined ? { confidence: opts.confidence } : {}),
         ...(opts.maxEvals !== undefined ? { maxEvals: opts.maxEvals } : {}),
-        ...(opts.maxCostUsd !== undefined ? { maxCostUsd: opts.maxCostUsd } : {}),
+        ...(opts.maxTurns !== undefined ? { maxTurns: opts.maxTurns } : {}),
         ...(opts.cache === false ? { noCache: true } : {}),
         ...(opts.provider !== undefined ? { provider: opts.provider } : {}),
         ...(opts.model !== undefined ? { model: opts.model } : {}),
+        ...(opts.local !== undefined ? { local: opts.local } : {}),
         ...(opts.require !== undefined ? { require: opts.require } : {}),
       });
       console.log(

@@ -279,7 +279,7 @@ export async function runEvals(options: EngineOptions): Promise<RunReport> {
           ...(j.consensus !== undefined ? { consensus: j.consensus } : {}),
           ...(j.skipReason !== undefined ? { skipReason: j.skipReason } : {}),
           ...(j.error !== undefined ? { error: j.error } : {}),
-          costUsd: j.costUsd,
+          turns: j.turns,
           durationMs: j.durationMs,
         });
       });
@@ -349,7 +349,7 @@ export async function runEvals(options: EngineOptions): Promise<RunReport> {
     evalResults: results,
     summary,
     exitCode: failing ? 1 : 0,
-    costUsd: results.reduce((sum, r) => sum + (r.costUsd ?? 0), 0),
+    turns: results.reduce((sum, r) => sum + (r.turns ?? 0), 0),
     durationMs: Date.now() - start,
   };
 }

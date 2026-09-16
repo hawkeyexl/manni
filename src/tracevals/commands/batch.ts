@@ -3,10 +3,10 @@
  * report rates rather than a single verdict (ADR 01018).
  *
  * `runRun` stays the single-trace path and is untouched; this wraps the seams
- * it exposes. The reason a wrapper is not enough on its own is money: the judge
- * carries the cost budget, so it is built **once** by `prepareRun` and shared
- * across every trace. Building one per trace would make `maxCostUsd` a cap on
- * the largest trace instead of on the run, and a fifty-trace batch would bill
+ * it exposes. The reason a wrapper is not enough on its own is the budget: the
+ * judge carries it, so it is built **once** by `prepareRun` and shared across
+ * every trace. Building one per trace would make `maxTurns` a cap on the
+ * largest trace instead of on the run, and a fifty-trace batch would spend
  * fifty times the configured ceiling while every report claimed to respect it.
  */
 import { writeFile } from "node:fs/promises";

@@ -94,7 +94,7 @@ export {
   PROMPT_VERSION,
   buildUserContent,
 } from "./judge/prompt.js";
-export { cacheKey, sha256 } from "./judge/cache.js";
+export { VerdictCache, cacheKey, sha256 } from "./judge/cache.js";
 export {
   makeTraceJudge,
   type JudgedEval,
@@ -102,18 +102,26 @@ export {
   type TraceJudgeOptions,
 } from "./judge/trace-judge.js";
 export {
+  announceSelection,
+  assertProviderSelection,
+  constructProvider,
   makeJudgeProvider,
   providerSpecFor,
+  resolveProviderIdentity,
+  selectProvider,
+  type JudgeProviderOptions,
   type MockResponse,
+  type ProviderChoice,
+  type ProviderFlags,
+  type ProviderSelection,
 } from "./judge/provider.js";
 export {
   CONFIG_SECTION_KEY,
   DEFAULT_CONFIG_FILENAME,
   loadConfig,
   parseConfig,
+  type ConfigFileContext,
   type TracevalsConfig,
-  type Pricing,
-  type ProviderConfig,
 } from "./core/config.js";
 export { runEvals, type EngineOptions } from "./core/engine.js";
 export {

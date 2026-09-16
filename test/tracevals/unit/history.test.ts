@@ -59,7 +59,7 @@ function report(results: EvalResult[]): RunReport {
     evalResults: results,
     summary,
     exitCode: summary.fail + summary.error > 0 ? 1 : 0,
-    costUsd: 0,
+    turns: 0,
     durationMs: 10,
   };
 }

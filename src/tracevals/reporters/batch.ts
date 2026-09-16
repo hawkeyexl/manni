@@ -162,8 +162,8 @@ export function renderBatchPretty(report: Report): string {
       }, ${s.error} error, ${s.needsReview} needs-review, ${s.skipped} skipped`,
     ),
   );
-  if (report.costUsd > 0) {
-    lines.push(pc.dim(`judge cost $${report.costUsd.toFixed(4)}`));
+  if (report.turns > 0) {
+    lines.push(pc.dim(`judge turns ${report.turns}`));
   }
   return lines.join("\n");
 }

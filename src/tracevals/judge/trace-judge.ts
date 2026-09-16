@@ -5,24 +5,20 @@
  *
  * The ensemble mechanics (retry-once, errored runs counting against consensus,
  * cache replay) now live in the inference library; what stays here is what is
- * manni tracevals-specific — the per-instance budget gate, the trace-worded
+ * manni tracevals-specific — the per-instance turn budget, the trace-worded
  * verdict schema, and the `JudgedEval` shape the reporters consume.
  */
 import {
-  JsonCache,
   computeConsensus,
-  costOfRuns,
-  pricingFor,
   runEnsemble,
   zoneFor,
   type ConsensusResult,
   type InferenceProvider,
-  type JudgeRun,
-  type Pricing,
 } from "@hawkeyexl/inference";
 import verdictSchemaJson from "./verdict-schema.json" with { type: "json" };
 import type { EvalPlan } from "../core/plan.js";
-import { cacheKey } from "./cache.js";
+import { VerdictCache, cacheKey } from "./cache.js";
+import { turnBudgetSkipReason } from "../../docevals/judge/budget.js";
 import { buildUserContent, JUDGE_SYSTEM_PROMPT } from "./prompt.js";
 import { readTarget, describeTarget } from "../core/target.js";
 import type { Trace } from "../trace/types.js";
@@ -38,21 +34,21 @@ const verdictSchema = verdictSchemaJson as Record<string, unknown>;
 export interface TraceJudgeOptions {
   provider: InferenceProvider;
   /**
-   * Construct the provider an eval names with `provider:`, plus its pricing.
-   * Without this hook such an eval errors rather than being judged silently by
-   * the default model — an eval that names a provider is asking for that one.
+   * The provider for an eval that names its own `provider:` or `model:`.
+   *
+   * The choice is passed through rather than resolved here: precedence across
+   * the flag, the eval, `tracevals.provider` and the family's `providers:` is
+   * one rule, in `judge/provider.ts`, and a second copy of it inside the judge
+   * is how a run and an eval come to disagree about which model answered.
+   * Without this hook an eval naming a provider errors rather than being
+   * judged silently by the default model — an eval that names a provider is
+   * asking for that one.
    */
-  providerFor?: (
-    name: string,
-    model?: string,
-  ) => { provider: InferenceProvider; pricing?: Pricing };
-  /**
-   * Model named by an explicit operator flag (`--model`), already applied to
-   * `provider`. Recorded so the judge can tell an operator override from the
-   * provider's own default: precedence is CLI > eval > default, so an eval's
-   * `model` must not quietly win over a flag someone just typed.
-   */
-  model?: string;
+  providerFor?: (choice: {
+    provider?: string;
+    model?: string;
+    origin?: string;
+  }) => Promise<InferenceProvider>;
   /** Ensemble size; default 3. */
   runs?: number;
   /** Default 0; nonzero adds verdict noise. */
@@ -60,13 +56,12 @@ export interface TraceJudgeOptions {
   zones?: { autoPass: number; autoFail: number };
   cacheDir?: string;
   noCache?: boolean;
-  maxCostUsd?: number;
   /**
-   * Price override for this model, from the selected provider's config
-   * section. Without it a model the library's table does not know costs 0,
-   * which silently disables `maxCostUsd`.
+   * Ensemble runs this judge may spend, over every call of it. `null` or
+   * absent is unbounded. A cached ensemble makes no inference call, so it
+   * spends none (docevals ADR 01019).
    */
-  pricing?: Pricing;
+  maxTurns?: number | null;
 }
 
 export interface JudgedEval {
@@ -82,7 +77,11 @@ export interface JudgedEval {
   error?: string;
   /** Set when the judge model also produced what it graded. See EvalResult. */
   selfPreference?: { axis: "session" | "criterion"; model: string };
-  costUsd: number;
+  /**
+   * Uncached ensemble runs this eval spent. `0` when the ensemble came from
+   * cache, when the budget stopped it, and when it never reached a provider.
+   */
+  turns: number;
   durationMs: number;
 }
 
@@ -105,7 +104,7 @@ export interface TraceJudgeContext {
  * window, which is why it reads the rendered result rather than the trace.
  *
  * The returned function is callable repeatedly — once per trace in a batch —
- * and `maxCostUsd` spans every call, because the budget lives on the instance
+ * and `maxTurns` spans every call, because the budget lives on the instance
  * rather than on the call (ADR 01018).
  */
 export type TraceJudge = (
@@ -122,20 +121,20 @@ export function makeTraceJudge(options: TraceJudgeOptions): TraceJudge {
   const runsFor = (plan: EvalPlan): number => options.runs ?? plan.runs ?? 3;
   const temperature = options.temperature ?? 0;
   const zones = options.zones ?? { autoPass: 0.8, autoFail: 0.8 };
-  const cache = new JsonCache<JudgeRun[]>(
+  const cache = new VerdictCache(
     options.cacheDir ?? ".manni/tracevals/cache",
     options.noCache !== true && options.cacheDir !== undefined,
     "manni-tracevals",
   );
-  const pricing = pricingFor(provider.modelName(), options.pricing);
+  const maxTurns = options.maxTurns ?? null;
 
   // Deliberately outside the returned function: the budget belongs to the
   // *judge instance*, not to one call of it. A batch calls the judge once per
-  // trace (ADR 01018), so a per-call counter would make `maxCostUsd` a cap on
-  // the largest trace rather than on the run — 50 traces would bill 50x the
+  // trace (ADR 01018), so a per-call counter would make `maxTurns` a cap on
+  // the largest trace rather than on the run — 50 traces would spend 50x the
   // configured ceiling and every report would look like it obeyed it. A
   // single-trace run calls the judge exactly once, so this is invisible there.
-  let spentUsd = 0;
+  let turnsSpent = 0;
 
   return async (plans, renderFor, context) => {
     const trace = context?.trace;
@@ -152,68 +151,29 @@ export function makeTraceJudge(options: TraceJudgeOptions): TraceJudge {
         implicit: plan.implicit,
       };
 
-      // An eval may name its own provider. Resolve it before the budget gate
-      // so a typo is reported as the eval's own error rather than hidden
-      // behind an exhausted budget.
+      // An eval may name its own provider or model. Resolve it before the
+      // budget gate so a typo is reported as the eval's own error rather than
+      // hidden behind an exhausted budget.
       //
-      // The comparison is on the provider *name*, which is the unit the
-      // schema's `provider` field names — not on instance identity. A match
-      // therefore reuses the run's already-constructed default, inheriting any
-      // `--model` override, which is what an eval naming only a provider
-      // should get. Two spellings of one provider would each construct their
-      // own instance, but the accepted set is closed (anthropic, openai,
-      // claude-cli, mock) and has no aliases, so that cannot arise today;
-      // adding an alias would be the change that makes it matter.
+      // Which provider the pair resolves to is `providerFor`'s to decide, not
+      // this loop's: the flag outranks the eval, the eval outranks the config,
+      // and that ladder is one rule in `judge/provider.ts`. An eval whose
+      // choice resolves to the run's own gets the run's already-constructed
+      // provider back.
       let evalProvider = provider;
-      let evalPricing = pricing;
-      // Either half is enough to need a different instance. `model` alone is
-      // the common case — "judge this one assertion with a bigger model" —
-      // and it names a model *within* the run's provider, so the provider
-      // falls back to the default rather than being required alongside it.
-      // CLI `--model` still wins: it is applied when `provider` is built, and
-      // an eval that pinned a model is an authoring preference, not an
-      // operator's explicit "right now".
-      const wantsProvider =
-        plan.provider !== undefined && plan.provider !== provider.provider();
-      const wantsModel =
-        options.model === undefined &&
-        plan.model !== undefined &&
-        plan.model !== provider.modelName();
-      if (wantsProvider || wantsModel) {
-        const resolved = resolveOverride(
-          plan.provider ?? provider.provider(),
-          options,
-          wantsModel ? plan.model : undefined,
-        );
+      if (plan.provider !== undefined || plan.model !== undefined) {
+        const resolved = await resolveOverride(plan, options);
         if ("error" in resolved) {
           results.push({
             ...base,
             outcome: "error",
             error: resolved.error,
-            costUsd: 0,
+            turns: 0,
             durationMs: Date.now() - start,
           });
           continue;
         }
         evalProvider = resolved.provider;
-        // Through pricingFor, exactly as the default provider's pricing is
-        // resolved above: the config override is a fallback for models the
-        // library's table does not know, not a replacement for it. Assigning
-        // the raw override would leave an unpriced override provider at
-        // pricing `undefined`, and costOfRuns returns 0 for that — silently
-        // exempting the eval from maxCostUsd.
-        evalPricing = pricingFor(evalProvider.modelName(), resolved.pricing);
-      }
-
-      if (options.maxCostUsd !== undefined && spentUsd >= options.maxCostUsd) {
-        results.push({
-          ...base,
-          outcome: "skipped",
-          skipReason: `judge cost budget exhausted ($${options.maxCostUsd})`,
-          costUsd: 0,
-          durationMs: 0,
-        });
-        continue;
       }
 
       // The window this artifact was governing (ADR 01015). `target` selects
@@ -254,13 +214,50 @@ export function makeTraceJudge(options: TraceJudgeOptions): TraceJudge {
           ...base,
           outcome: "error",
           error: selected.reason,
-          costUsd: 0,
+          turns: 0,
           durationMs: Date.now() - start,
         });
         continue;
       }
 
       const runsPerEval = runsFor(plan);
+      const key = cacheKey(
+        evalProvider.provider(),
+        evalProvider.modelName(),
+        runsPerEval,
+        temperature,
+        // The selected bytes, not always the transcript: two targets on one
+        // session are two different questions and must not share a verdict.
+        selected.text,
+        plan,
+      );
+      const cached = cache.get(key) !== undefined;
+
+      // A cached ensemble makes no inference call, so it never touches the
+      // budget — a committed cache replays under any cap. For an uncached one
+      // the turns are claimed *before* dispatching, which is the whole point
+      // of counting turns rather than dollars: the claim is synchronous, so
+      // nothing can clear an almost-exhausted budget and then overspend it
+      // (docevals ADR 01019).
+      if (maxTurns !== null && !cached) {
+        if (turnsSpent + runsPerEval > maxTurns) {
+          results.push({
+            ...base,
+            outcome: "skipped",
+            skipReason: turnBudgetSkipReason(maxTurns),
+            turns: 0,
+            durationMs: 0,
+          });
+          continue;
+        }
+        // One turn per ensemble run. A run can make a second provider call
+        // when the first response fails schema validation (the inference layer
+        // retries once), so this is a floor on calls, not an exact count — the
+        // cap is exact in *runs*, which is the unit the ensemble is
+        // configured in.
+        turnsSpent += runsPerEval;
+      }
+
       const runs = await runEnsemble({
         provider: evalProvider,
         system: JUDGE_SYSTEM_PROMPT,
@@ -269,24 +266,13 @@ export function makeTraceJudge(options: TraceJudgeOptions): TraceJudge {
         temperature,
         schema: verdictSchema,
         cache,
-        cacheKey: cacheKey(
-          evalProvider.provider(),
-          evalProvider.modelName(),
-          runsPerEval,
-          temperature,
-          // The selected bytes, not always the transcript: two targets on one
-          // session are two different questions and must not share a verdict.
-          selected.text,
-          plan,
-        ),
+        cacheKey: key,
         label: "manni-tracevals",
       });
 
       const consensusBase = computeConsensus(runs);
       const zone = zoneFor(consensusBase, zones);
       const consensus: ConsensusResult = { ...consensusBase, zone };
-      const costUsd = costOfRuns(runs, evalPricing);
-      spentUsd += costUsd;
 
       // Compared against the model that actually judged this eval, not the
       // run's default: an eval that names its own model is exactly the case a
@@ -313,7 +299,7 @@ export function makeTraceJudge(options: TraceJudgeOptions): TraceJudge {
               ? "fail"
               : "needs-review",
         consensus,
-        costUsd,
+        turns: cached ? 0 : runsPerEval,
         ...(selfPreference ? { selfPreference } : {}),
         durationMs: Date.now() - start,
       });
@@ -327,22 +313,37 @@ export function makeTraceJudge(options: TraceJudgeOptions): TraceJudge {
  * out of the loop so the failure is one shape: never a throw that costs the
  * report every other verdict, never a silent fall back to the default model.
  */
-function resolveOverride(
-  name: string,
+async function resolveOverride(
+  plan: EvalPlan,
   options: TraceJudgeOptions,
-  model?: string,
-): { provider: InferenceProvider; pricing?: Pricing } | { error: string } {
+): Promise<{ provider: InferenceProvider } | { error: string }> {
+  // Either half is enough to need a different instance, so the message names
+  // whichever the eval actually wrote.
+  const named =
+    plan.provider !== undefined
+      ? `provider "${plan.provider}"`
+      : `model "${plan.model ?? ""}"`;
   if (options.providerFor === undefined) {
     return {
-      error: `eval names provider "${name}", but this run cannot construct providers by name`,
+      error: `eval names ${named}, but this run cannot construct providers by name`,
     };
   }
   try {
-    return options.providerFor(name, model);
+    // The origin a `--local` notice names. The caller knows the artifact; the
+    // eval's own id is what tells one line of it from another.
+    return {
+      provider: await options.providerFor({
+        ...(plan.provider !== undefined ? { provider: plan.provider } : {}),
+        ...(plan.model !== undefined ? { model: plan.model } : {}),
+        origin: `eval "${plan.evalName}" in ${plan.artifact.path}`,
+      }),
+    };
   } catch (err) {
     return {
-      error: `could not construct provider "${name}"${
-        model === undefined ? "" : ` at model "${model}"`
+      error: `could not construct ${named}${
+        plan.provider === undefined || plan.model === undefined
+          ? ""
+          : ` at model "${plan.model}"`
       } for this eval: ${err instanceof Error ? err.message : String(err)}`,
     };
   }

@@ -7,54 +7,14 @@
   "additionalProperties": false,
   "properties": {
     "provider": {
-      "type": "object",
-      "additionalProperties": false,
-      "description": "Inference provider settings. Configure any number of sections and select one with `default` or --provider; only the selected section is mapped onto the inference library's ProviderSpec.",
-      "properties": {
-        "default": {
-          "enum": ["anthropic", "openai", "claude-cli", "mock"],
-          "description": "Which provider to use when --provider is not passed."
-        },
-        "anthropic": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "model": { "type": "string", "minLength": 1 },
-            "apiKeyEnv": {
-              "type": "string",
-              "minLength": 1,
-              "description": "Name of the environment variable holding the API key — never the key itself."
-            },
-            "pricing": { "$ref": "#/$defs/pricing" }
-          }
-        },
-        "openai": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "baseUrl": {
-              "type": "string",
-              "minLength": 1,
-              "description": "Any /chat/completions-compatible server (OpenAI, Azure, Ollama, Groq, Together)."
-            },
-            "model": { "type": "string", "minLength": 1 },
-            "apiKeyEnv": { "type": "string", "minLength": 1 },
-            "pricing": { "$ref": "#/$defs/pricing" }
-          }
-        },
-        "claude-cli": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "model": { "type": "string", "minLength": 1 },
-            "command": {
-              "type": "string",
-              "minLength": 1,
-              "description": "Executable to run. Uses the Claude CLI's own local auth, so no API key is needed."
-            }
-          }
-        }
-      }
+      "type": "string",
+      "minLength": 1,
+      "description": "Which provider judges: auto, anthropic, openai, claude-cli, or llama-cpp. Overrides the family's top-level `providers.provider` for tracevals only. Connection settings — an endpoint, an API key's environment variable, the Claude CLI command — live in that top-level `providers:` map, never here."
+    },
+    "model": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The model within `provider`, which must be named at this level. Unset, the inference library's default for the winning provider is used; manni pins no model id of its own."
     },
     "judge": {
       "type": "object",
@@ -71,7 +31,7 @@
           }
         },
         "cacheDir": { "type": "string" },
-        "maxCostUsd": { "type": "number", "minimum": 0 },
+        "maxTurns": { "type": "integer", "minimum": 1, "description": "Stop after this many ensemble runs. A cached ensemble spends none. Unset means unbounded; the remaining evals report `skipped` with the reason `turn budget` rather than aborting the run." },
         "redact": {
           "type": "array",
           "description": "Extra regular expressions scrubbed from the session digest before it is sent to a judge provider. Applied on top of the built-in secret shapes, never instead of them; each source is compiled with the `g` flag, and a match is replaced with `[redacted]`. Pattern matching is best-effort — --deterministic-only is the only setting that guarantees nothing leaves the machine.",
@@ -131,7 +91,7 @@
         "maxEvalsPerArtifact": { "type": "integer", "minimum": 1 },
         "temperature": { "type": "number", "minimum": 0, "maximum": 2 },
         "cacheDir": { "type": "string" },
-        "maxCostUsd": { "type": "number", "minimum": 0 }
+        "maxTurns": { "type": "integer", "minimum": 1, "description": "Stop after this many inference calls, one per artifact filled. A cached artifact spends none. Unset means unbounded." }
       }
     },
     "calibrate": {
@@ -192,18 +152,6 @@
     "reportUnusedArtifacts": {
       "type": "boolean",
       "description": "List every skill and agent the session was offered and never used, rather than only counting them. Off by default: a real roster runs to hundreds of skills."
-    }
-  },
-  "$defs": {
-    "pricing": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["inputPerMTok", "outputPerMTok"],
-      "description": "USD per million tokens. Overrides the inference library's built-in table for this model.",
-      "properties": {
-        "inputPerMTok": { "type": "number", "minimum": 0 },
-        "outputPerMTok": { "type": "number", "minimum": 0 }
-      }
     }
   }
 }

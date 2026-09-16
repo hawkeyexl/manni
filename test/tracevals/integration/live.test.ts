@@ -13,7 +13,7 @@ const live = process.env.MOOSE_TRACEVALS_LIVE === "1";
 
 describe.skipIf(!live)("live judge (claude-cli)", () => {
   it("judges one obvious criterion end to end", { timeout: 120_000 }, async () => {
-    const provider = makeJudgeProvider(parseConfig({}), {
+    const provider = await makeJudgeProvider(parseConfig({}), {
       provider: "claude-cli",
     });
     const judge = makeTraceJudge({ provider, runs: 1, noCache: true });

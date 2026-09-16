@@ -17,11 +17,14 @@ import {
   type HistoryComparison,
 } from "../history.js";
 import {
-  makeJudgeProvider,
-  pricingOverrideFor,
+  announceSelection,
+  assertProviderSelection,
+  constructProvider,
+  resolveProviderIdentity,
+  selectProvider,
 } from "../judge/provider.js";
 import { makeTraceJudge, type TraceJudge } from "../judge/trace-judge.js";
-import type { InferenceProvider, Pricing } from "@hawkeyexl/inference";
+import type { InferenceProvider } from "@hawkeyexl/inference";
 import { render, type ReportFormat } from "../reporters/index.js";
 import type { RunReport } from "../types.js";
 import type { TracevalsConfig } from "../core/config.js";
@@ -34,10 +37,13 @@ export interface RunSharedOptions {
   project?: string;
   provider?: string;
   model?: string;
+  /** `--local`: run inference on this machine, over every configured choice. */
+  local?: boolean;
   runs?: number;
   deterministicOnly?: boolean;
   noCache?: boolean;
-  maxCostUsd?: number;
+  /** `--max-turns`: ensemble runs for the whole invocation; overrides config. */
+  maxTurns?: number;
   format?: ReportFormat;
   output?: string;
   /** Append this run to history and compare against the previous run. */
@@ -84,8 +90,8 @@ export interface RunCommandResult {
  * plugin-loading warnings, and the judge.
  *
  * Split out for the batch path (ADR 01018), and the split is not cosmetic. The
- * judge carries the cost budget, so building one per trace would turn
- * `maxCostUsd` from a ceiling on the run into a ceiling on the largest trace.
+ * judge carries the turn budget, so building one per trace would turn
+ * `maxTurns` from a ceiling on the run into a ceiling on the largest trace.
  * Config and plugins are hoisted for a smaller reason: a plugin imports once
  * per process (ADR 01017), so re-running the loader would attach its warnings
  * to the first trace's report and to no other.
@@ -138,57 +144,69 @@ export async function prepareRun(
     configDir,
   });
 
+  // The command line's say over every configured level. Checked even on a
+  // `--deterministic-only` run, where no provider is built: `--provider gemini`
+  // is a usage error whatever the run then does with it.
+  const flags = {
+    ...(options.provider !== undefined ? { provider: options.provider } : {}),
+    ...(options.model !== undefined ? { model: options.model } : {}),
+    ...(options.local !== undefined ? { local: options.local } : {}),
+  };
+  const selection = selectProvider(config, flags);
+  assertProviderSelection(selection);
+
   let judge = options.judge;
   if (judge === undefined && options.deterministicOnly !== true) {
-    const provider = makeJudgeProvider(config, {
-      ...(options.provider !== undefined ? { provider: options.provider } : {}),
-      ...(options.model !== undefined ? { model: options.model } : {}),
-    });
-    const maxCostUsd = options.maxCostUsd ?? config.judge.maxCostUsd;
-    // Without the configured override, a model the library's built-in price
-    // table does not know costs 0, and maxCostUsd would never trip.
-    const pricing = pricingOverrideFor(config, {
-      ...(options.provider !== undefined ? { provider: options.provider } : {}),
-    });
-    const overrideProviders = new Map<
-      string,
-      { provider: InferenceProvider; pricing?: Pricing }
-    >();
+    const provider = constructProvider(
+      config,
+      await resolveProviderIdentity(config, flags),
+    );
+    // Memoized on the selection an eval *resolves to*, not on what it wrote:
+    // with `--provider mock` in force, an eval naming `openai` and one naming
+    // `anthropic` both resolve to the same provider, and keying on the authored
+    // value would build it twice. Memoized as a promise, so a selection that
+    // detects or fails does so once and every eval sharing it gets the same
+    // provider or the same error.
+    const overridden = new Map<string, Promise<InferenceProvider>>();
+    const keyOf = (s: { provider: string; model: string | undefined }): string =>
+      `${s.provider}:${s.model ?? ""}`;
+    const defaultKey = keyOf(selection);
     judge = makeTraceJudge({
       provider,
-      // An eval may name its own provider. Build it from the same config the
-      // default came from, so a per-eval override picks up that provider's
-      // model default, API-key env, and price override rather than a bare name.
-      // Memoized: the judge calls this once per eval, and twenty evals naming
-      // one provider should not build twenty of it.
-      providerFor: (name, model) => {
-        // Keyed on the pair: two evals naming one provider at two models are
-        // two instances, and caching on the name alone would hand the second
-        // the first's model.
-        const key = model === undefined ? name : `${name}\u0000${model}`;
-        const cached = overrideProviders.get(key);
-        if (cached) return cached;
-        const built = {
-          provider: makeJudgeProvider(config, {
-            provider: name,
-            ...(model !== undefined ? { model } : {}),
-          }),
-          ...(() => {
-            const p = pricingOverrideFor(config, { provider: name });
-            return p !== undefined ? { pricing: p } : {};
-          })(),
-        };
-        overrideProviders.set(key, built);
+      // An eval may name its own provider or model. It is selected by the same
+      // rule the run's own was — flag, then eval, then `tracevals.provider`,
+      // then the family's `providers:` — so an eval cannot quietly outrank a
+      // flag someone just typed.
+      providerFor: async (ev) => {
+        const chosen = selectProvider(config, flags, ev);
+        // Said before the short-circuit: under `--local` an eval naming a
+        // hosted provider resolves to the run's own selection, and is still
+        // replaced.
+        announceSelection(chosen);
+        const key = keyOf(chosen);
+        if (key === defaultKey) return provider;
+        let built = overridden.get(key);
+        if (built === undefined) {
+          // The eval's own choice follows the run's rules: an unknown name, or
+          // a model with no provider to own it, is refused before anything is
+          // built.
+          built = (async () => {
+            assertProviderSelection(chosen);
+            return constructProvider(
+              config,
+              await resolveProviderIdentity(config, flags, ev),
+            );
+          })();
+          overridden.set(key, built);
+        }
         return built;
       },
-      ...(options.model !== undefined ? { model: options.model } : {}),
       runs: options.runs ?? config.judge.ensembleRuns,
       temperature: config.judge.temperature,
       zones: config.judge.zones,
       cacheDir: resolve(configDir, config.judge.cacheDir),
       ...(options.noCache !== undefined ? { noCache: options.noCache } : {}),
-      ...(maxCostUsd !== undefined ? { maxCostUsd } : {}),
-      ...(pricing !== undefined ? { pricing } : {}),
+      maxTurns: options.maxTurns ?? config.judge.maxTurns,
     });
   }
 

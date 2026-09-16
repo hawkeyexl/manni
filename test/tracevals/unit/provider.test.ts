@@ -1,16 +1,23 @@
 /**
- * The config → ProviderSpec mapping. This replaced a YAML round-trip through
- * docevals' config parser, so these tests pin the shape the inference library
- * actually receives.
+ * Choosing the provider and model. The providers themselves are the shared
+ * inference library's; the names, the refusals, `--local`, detection and the
+ * level-bound precedence are `src/shared/providers.ts`, the same code
+ * `manni meta fill` and `manni docevals` run. What manni tracevals still owns
+ * is which levels it reads — a flag, an eval's own `provider:`/`model:`,
+ * `tracevals.provider`/`model`, then the family's `providers:` — and the
+ * judge-shaped options, so that is what these pin.
  */
-import { afterEach, describe, expect, it } from "vitest";
-import { pricingFor, resolveProviderIdentity } from "@hawkeyexl/inference";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { parseConfig } from "../../../src/tracevals/core/config.js";
 import {
+  assertProviderSelection,
   makeJudgeProvider,
-  pricingOverrideFor,
   providerSpecFor,
+  resolveProviderIdentity,
+  selectProvider,
 } from "../../../src/tracevals/judge/provider.js";
+import { PROVIDERS, type ProvidersConfig } from "../../../src/shared/providers.js";
+import { resetWarnings } from "../../../src/shared/warn.js";
 import { TracevalsError } from "../../../src/tracevals/types.js";
 
 const ORIGINAL_ENV = { ...process.env };
@@ -19,174 +26,242 @@ afterEach(() => {
   process.env = { ...ORIGINAL_ENV };
 });
 
-describe("providerSpecFor", () => {
-  it("maps the anthropic section", () => {
-    const config = parseConfig({
-      provider: {
-        default: "anthropic",
-        anthropic: { model: "claude-haiku-4-5", apiKeyEnv: "MY_KEY" },
-      },
+const NAMES = "anthropic, openai, claude-cli, llama-cpp";
+const LISTED = `${NAMES}, auto`;
+
+/** A parsed section, with the family's top-level `providers:` beside it. */
+function family(
+  providers: ProvidersConfig,
+  tracevals: Record<string, unknown> = {},
+) {
+  return parseConfig(tracevals, { source: "manni.config.yaml", providers });
+}
+
+describe("selectProvider", () => {
+  it("defaults to auto with no model", () => {
+    expect(selectProvider(parseConfig({}))).toEqual({
+      provider: "auto",
+      model: undefined,
     });
-    expect(providerSpecFor(config, "anthropic")).toEqual({
+  });
+
+  it("reads tracevals.provider and tracevals.model", () => {
+    const config = parseConfig({ provider: "openai", model: "some-model" });
+    expect(selectProvider(config)).toEqual({
+      provider: "openai",
+      model: "some-model",
+    });
+  });
+
+  it("lets a flag beat the config, carrying the config's model only to its own provider", () => {
+    const config = parseConfig({ provider: "openai", model: "some-model" });
+    expect(selectProvider(config, { provider: "anthropic" })).toEqual({
       provider: "anthropic",
-      model: "claude-haiku-4-5",
-      apiKeyEnv: "MY_KEY",
+      model: undefined,
+    });
+    expect(selectProvider(config, { provider: "openai" })).toEqual({
+      provider: "openai",
+      model: "some-model",
+    });
+    expect(selectProvider(config, { model: "other" })).toEqual({
+      provider: "openai",
+      model: "other",
     });
   });
 
-  it("maps the openai section including baseUrl", () => {
-    const config = parseConfig({
-      provider: { openai: { baseUrl: "http://localhost:11434/v1" } },
-    });
-    const spec = providerSpecFor(config, "openai");
-    expect(spec.baseUrl).toBe("http://localhost:11434/v1");
-    expect(spec.provider).toBe("openai");
-  });
-
-  it("maps the claude-cli section including the command", () => {
-    const config = parseConfig({
-      provider: { "claude-cli": { command: "claude-next" } },
-    });
-    expect(providerSpecFor(config, "claude-cli")).toEqual({
+  it("lets an eval beat the config, and a flag beat the eval", () => {
+    const config = parseConfig({ provider: "openai" });
+    expect(selectProvider(config, {}, { provider: "claude-cli", model: "m" })).toEqual({
       provider: "claude-cli",
-      model: "claude-sonnet-4-5",
-      command: "claude-next",
+      model: "m",
+    });
+    expect(
+      selectProvider(
+        config,
+        { provider: "anthropic", model: "f" },
+        { provider: "claude-cli", model: "m" },
+      ),
+    ).toEqual({ provider: "anthropic", model: "f" });
+  });
+
+  it("does not carry the config's model to a provider an eval names", () => {
+    const config = parseConfig({ provider: "anthropic", model: "a-model" });
+    expect(selectProvider(config, {}, { provider: "openai" })).toEqual({
+      provider: "openai",
+      model: undefined,
+    });
+    expect(selectProvider(config, {}, { provider: "anthropic" })).toEqual({
+      provider: "anthropic",
+      model: "a-model",
     });
   });
 
-  it("carries a pricing override through to the spec", () => {
-    const config = parseConfig({
-      provider: {
-        anthropic: { pricing: { inputPerMTok: 1, outputPerMTok: 2 } },
-      },
-    });
-    expect(providerSpecFor(config, "anthropic").pricing).toEqual({
-      inputPerMTok: 1,
-      outputPerMTok: 2,
+  it("falls back to the family's providers.provider and its model", () => {
+    const config = family({ provider: "openai", model: "family-model" });
+    expect(selectProvider(config)).toEqual({
+      provider: "openai",
+      model: "family-model",
     });
   });
 
-  it("omits pricing entirely when none is configured", () => {
-    const spec = providerSpecFor(parseConfig({}), "anthropic");
-    expect("pricing" in spec).toBe(false);
+  it("lets tracevals.provider beat the family's, without the family's model", () => {
+    const config = family(
+      { provider: "openai", model: "family-model" },
+      { provider: "anthropic" },
+    );
+    expect(selectProvider(config)).toEqual({
+      provider: "anthropic",
+      model: undefined,
+    });
   });
 
-  it("lets an explicit model override the configured one", () => {
-    const config = parseConfig({
-      provider: { anthropic: { model: "claude-sonnet-4-5" } },
+  it("gives tracevals.model to the family's provider when tracevals names none", () => {
+    const config = family(
+      { provider: "openai", model: "family-model" },
+      { model: "tool-model" },
+    );
+    expect(selectProvider(config)).toEqual({
+      provider: "openai",
+      model: "tool-model",
     });
-    expect(providerSpecFor(config, "anthropic", { model: "gpt-4o" }).model).toBe(
-      "gpt-4o",
+  });
+});
+
+describe("selectProvider under --local", () => {
+  it("overrides tracevals.provider, naming it as the source replaced", () => {
+    const config = parseConfig({ provider: "anthropic", model: "claude-x" });
+    expect(selectProvider(config, { local: true })).toEqual({
+      provider: "llama-cpp",
+      model: undefined,
+      replaced: { provider: "anthropic", source: "tracevals.provider" },
+    });
+  });
+
+  it("overrides the family's providers.provider, naming it", () => {
+    const config = family({ provider: "openai" });
+    expect(selectProvider(config, { local: true })).toEqual({
+      provider: "llama-cpp",
+      model: undefined,
+      replaced: { provider: "openai", source: "providers.provider" },
+    });
+  });
+
+  it("overrides an eval's own provider, naming the origin the caller gives", () => {
+    const config = parseConfig({ provider: "anthropic" });
+    expect(
+      selectProvider(
+        config,
+        { local: true },
+        { provider: "openai", origin: 'eval "used-read" in SKILL.md' },
+      ).replaced,
+    ).toEqual({ provider: "openai", source: 'eval "used-read" in SKILL.md' });
+  });
+
+  it("keeps tracevals.model when tracevals.provider is llama-cpp", () => {
+    const config = parseConfig({ provider: "llama-cpp", model: "granite-4.1-3b-q2" });
+    expect(selectProvider(config, { local: true })).toEqual({
+      provider: "llama-cpp",
+      model: "granite-4.1-3b-q2",
+    });
+  });
+
+  it("refuses --provider naming a hosted provider, as a TracevalsError", () => {
+    expect(() =>
+      selectProvider(parseConfig({}), { local: true, provider: "anthropic" }),
+    ).toThrow(
+      new TracevalsError(
+        "--local and --provider anthropic contradict each other: --local runs inference on " +
+          "this machine with llama-cpp. Drop one of them.",
+      ),
     );
   });
 
-  it("resolves a model for every provider, so no cache key carries an empty one", () => {
-    // The hand-rolled identity lookup this replaced fell back to "" when a
-    // section had no explicit model, so the cache key recorded an empty model
-    // while the request used the provider default — a cached proposal could
-    // then be replayed for a model that never produced it.
-    const config = parseConfig({});
-    for (const name of ["anthropic", "openai", "claude-cli", "mock"] as const) {
-      const { model } = resolveProviderIdentity(providerSpecFor(config, name));
-      expect(model).not.toBe("");
-      expect(model.length).toBeGreaterThan(0);
+  it("names the replaced choice once, and never detects", async () => {
+    const written: string[] = [];
+    resetWarnings();
+    const spy = vi
+      .spyOn(process.stderr, "write")
+      .mockImplementation((chunk: string | Uint8Array) => {
+        written.push(String(chunk));
+        return true;
+      });
+    try {
+      process.env["ANTHROPIC_API_KEY"] = "test-key";
+      const config = parseConfig({ provider: "anthropic" });
+      const flags = { local: true, model: "granite-4.1-3b-q2" };
+      await expect(resolveProviderIdentity(config, flags)).resolves.toEqual({
+        provider: "llama-cpp",
+        model: "granite-4.1-3b-q2",
+      });
+      await resolveProviderIdentity(config, flags);
+      expect(written).toEqual([
+        'manni: --local: using llama-cpp instead of "anthropic" from tracevals.provider.\n',
+      ]);
+    } finally {
+      spy.mockRestore();
+      resetWarnings();
     }
   });
 });
 
-describe("pricingOverrideFor", () => {
-  it("returns the override for the selected provider", () => {
-    const config = parseConfig({
-      provider: {
-        default: "anthropic",
-        anthropic: { pricing: { inputPerMTok: 7, outputPerMTok: 9 } },
-      },
-    });
-    expect(pricingOverrideFor(config)).toEqual({
-      inputPerMTok: 7,
-      outputPerMTok: 9,
-    });
+describe("assertProviderSelection", () => {
+  it("accepts every name the shared list offers", () => {
+    for (const provider of PROVIDERS) {
+      expect(() => {
+        assertProviderSelection({ provider, model: undefined });
+      }).not.toThrow();
+    }
   });
 
-  it("follows an explicit --provider rather than the configured default", () => {
-    const config = parseConfig({
-      provider: {
-        default: "anthropic",
-        anthropic: { pricing: { inputPerMTok: 7, outputPerMTok: 9 } },
-        openai: { pricing: { inputPerMTok: 1, outputPerMTok: 2 } },
-      },
-    });
-    expect(pricingOverrideFor(config, { provider: "openai" })).toEqual({
-      inputPerMTok: 1,
-      outputPerMTok: 2,
-    });
+  it("refuses an unknown provider, as a TracevalsError, without naming mock", () => {
+    const refuse = (): void => {
+      assertProviderSelection({ provider: "gemini", model: undefined });
+    };
+    expect(refuse).toThrow(TracevalsError);
+    expect(refuse).toThrow(`Unknown provider "gemini". Available: ${LISTED}.`);
   });
 
-  it("is undefined when nothing is configured, so the built-in table wins", () => {
-    expect(pricingOverrideFor(parseConfig({}))).toBeUndefined();
-  });
-
-  it("makes a budget enforceable for a model the built-in table does not know", () => {
-    // This is the whole point of the key. Without the override an unknown
-    // model prices at 0, every run costs nothing, and judge.maxCostUsd never
-    // trips — so the budget is silently disabled on exactly the models a user
-    // would need it for.
-    const config = parseConfig({
-      provider: {
-        default: "openai",
-        openai: {
-          baseUrl: "http://localhost:11434/v1",
-          model: "some-unlisted-model",
-          pricing: { inputPerMTok: 10, outputPerMTok: 30 },
-        },
-      },
-    });
-    const override = pricingOverrideFor(config);
-    expect(pricingFor("some-unlisted-model")).toBeUndefined();
-    expect(pricingFor("some-unlisted-model", override)).toEqual({
-      inputPerMTok: 10,
-      outputPerMTok: 30,
-    });
+  it("refuses a model under auto, naming tracevals.provider", () => {
+    const refuse = (): void => {
+      assertProviderSelection({ provider: "auto", model: "some-model" });
+    };
+    expect(refuse).toThrow(TracevalsError);
+    expect(refuse).toThrow(
+      `Model "some-model" was given without a provider: a model name does not say ` +
+        `which provider owns it. Set --provider or tracevals.provider to one of ${NAMES}, ` +
+        `or drop the model to take the detected provider's default.`,
+    );
   });
 });
 
-describe("makeJudgeProvider", () => {
-  it("builds the mock provider without touching the network or a key", () => {
-    delete process.env["ANTHROPIC_API_KEY"];
-    const provider = makeJudgeProvider(parseConfig({}), { provider: "mock" });
-    expect(provider.provider()).toBe("mock");
-  });
-
-  it("defaults to claude-cli when nothing selects a provider", () => {
-    const provider = makeJudgeProvider(parseConfig({}));
-    expect(provider.provider()).toBe("claude-cli");
-  });
-
-  it("honours the configured default", () => {
-    process.env["ANTHROPIC_API_KEY"] = "test-key";
-    const config = parseConfig({ provider: { default: "anthropic" } });
-    expect(makeJudgeProvider(config).provider()).toBe("anthropic");
-  });
-
-  it("wraps a construction failure as an operational error", () => {
-    delete process.env["ANTHROPIC_API_KEY"];
-    const config = parseConfig({ provider: { default: "anthropic" } });
-    expect(() => makeJudgeProvider(config)).toThrow(TracevalsError);
-    expect(() => makeJudgeProvider(config)).toThrow(/ANTHROPIC_API_KEY/);
-  });
-
-  it("rejects an unknown --provider value from the CLI", () => {
-    // Config is schema-constrained, but the CLI flag is free text.
-    expect(() =>
-      makeJudgeProvider(parseConfig({}), { provider: "gemini" }),
-    ).toThrow(TracevalsError);
-  });
-
-  it("seeds the mock with caller-supplied responses", async () => {
-    const provider = makeJudgeProvider(parseConfig({}), {
-      provider: "mock",
-      mockResponses: [{ json: { custom: true } }],
+describe("providerSpecFor", () => {
+  it("maps the family's connection settings, and keeps a verdict-shaped tool name", () => {
+    const config = family({ anthropic: { apiKeyEnv: "MY_KEY" } });
+    const spec = providerSpecFor(config, { provider: "anthropic", model: "m" });
+    expect(spec).toMatchObject({
+      provider: "anthropic",
+      model: "m",
+      apiKeyEnv: "MY_KEY",
+      anthropic: { toolName: "record_verdict" },
     });
+  });
+
+  it("pins no model of its own: an unnamed model stays null for the library to fill", () => {
+    const spec = providerSpecFor(parseConfig({}), {
+      provider: "claude-cli",
+      model: null,
+    });
+    expect(spec.model).toBeNull();
+    expect(spec).toMatchObject({ provider: "claude-cli", command: "claude" });
+  });
+
+  it("seeds the mock seam with caller-supplied responses", async () => {
+    const provider = await makeJudgeProvider(
+      parseConfig({}),
+      { provider: "mock" },
+      {},
+      { mockResponses: [{ json: { custom: true } }] },
+    );
     const response = await provider.completeJSON({
       system: "s",
       user: "u",
@@ -194,5 +269,25 @@ describe("makeJudgeProvider", () => {
       temperature: 0,
     });
     expect(response.json).toEqual({ custom: true });
+  });
+});
+
+describe("makeJudgeProvider", () => {
+  it("builds the mock seam without touching the network or a key", async () => {
+    delete process.env["ANTHROPIC_API_KEY"];
+    const provider = await makeJudgeProvider(parseConfig({}), { provider: "mock" });
+    expect(provider.provider()).toBe("mock");
+  });
+
+  it("wraps a construction failure as an operational error", async () => {
+    delete process.env["ANTHROPIC_API_KEY"];
+    const config = parseConfig({ provider: "anthropic" });
+    await expect(makeJudgeProvider(config)).rejects.toThrow(TracevalsError);
+  });
+
+  it("rejects an unknown --provider value from the CLI", async () => {
+    await expect(
+      makeJudgeProvider(parseConfig({}), { provider: "gemini" }),
+    ).rejects.toThrow(TracevalsError);
   });
 });

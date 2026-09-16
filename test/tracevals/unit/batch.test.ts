@@ -15,6 +15,7 @@ import { MockProvider, mockVerdict } from "@hawkeyexl/inference";
 import { runBatch, parseSince, resolveBatchTraces } from "../../../src/tracevals/commands/batch.js";
 import { aggregate, type BatchOutcome } from "../../../src/tracevals/aggregate.js";
 import { makeTraceJudge } from "../../../src/tracevals/judge/trace-judge.js";
+import { turnBudgetSkipReason } from "../../../src/docevals/judge/budget.js";
 import { TracevalsError } from "../../../src/tracevals/types.js";
 
 const fixture = (rel: string) =>
@@ -159,32 +160,28 @@ describe("runBatch", () => {
     await expect(batch({ limit: 1 })).rejects.toThrow(TracevalsError);
   });
 
-  describe("the judge cost budget", () => {
-    // The single most important thing in this phase. `maxCostUsd` was enforced
+  describe("the judge turn budget", () => {
+    // The single most important thing in this phase. The budget is enforced
     // inside one judge instance per run; a batch that built a fresh judge per
-    // trace would silently bill N times the configured cap.
-    const priced = () => ({
-      ...mockVerdict("pass", 0.95),
-      usage: { inputTokens: 1_000_000, outputTokens: 0 },
-    });
-
+    // trace would silently spend N times the configured cap.
     it("spans the whole batch, not each trace", async () => {
       const { report } = await runBatch({
         traces: [traceA, traceB],
         project,
         env: { MOOSE_TRACEVALS_HOME: home },
         judge: makeTraceJudge({
-          provider: new MockProvider(Array.from({ length: 40 }, priced)),
+          provider: new MockProvider(
+            Array.from({ length: 40 }, () => mockVerdict("pass", 0.95)),
+          ),
           runs: 1,
           noCache: true,
-          // Enough for exactly one judged eval at $1 apiece.
-          maxCostUsd: 1,
-          pricing: { inputPerMTok: 1, outputPerMTok: 0 },
+          // Enough for exactly one judged eval at one run apiece.
+          maxTurns: 1,
         }),
       });
 
-      const judged = report.traces.reduce((n, t) => n + t.costUsd, 0);
-      expect(judged).toBeCloseTo(1, 5);
+      const judged = report.traces.reduce((n, t) => n + t.turns, 0);
+      expect(judged).toBe(1);
 
       // And the exhausted budget is *reported*, with the reason naming it —
       // never a silent pass and never a silent absence.
@@ -209,7 +206,7 @@ describe("runBatch", () => {
             grader: p.grader,
             implicit: p.implicit,
             outcome: "pass" as const,
-            costUsd: 0,
+            turns: 0,
             durationMs: 0,
           }));
         },
@@ -228,7 +225,7 @@ describe("runBatch", () => {
    * `resolveBatchTraces` already refuses for an empty selector.
    */
   describe("a batch cut short by its own budget", () => {
-    const BUDGET_SKIP = "judge cost budget exhausted ($0.5)";
+    const BUDGET_SKIP = turnBudgetSkipReason(2);
 
     const evalResult = (
       evalName: string,
@@ -275,7 +272,7 @@ describe("runBatch", () => {
           passRate: 1,
         },
         exitCode: 0,
-        costUsd: judged ? 0.5 : 0,
+        turns: judged ? 1 : 0,
         durationMs: 1,
       },
     });

@@ -43,7 +43,7 @@ const passJudge: TraceJudge = async (plans) =>
     grader: plan.grader,
     implicit: plan.implicit,
     outcome: "pass" as const,
-    costUsd: 0,
+    turns: 0,
     durationMs: 1,
   }));
 
@@ -120,7 +120,7 @@ describe("runEvals", () => {
         grader: plan.grader,
         implicit: plan.implicit,
         outcome: "needs-review" as const,
-        costUsd: 0,
+        turns: 0,
         durationMs: 1,
       }));
     // Neutralize the deterministic failure by only judging ai evals: use a
@@ -511,7 +511,7 @@ describe("weight in the run's pass rate", () => {
       outcome: names.includes(plan.evalName)
         ? ("fail" as const)
         : ("pass" as const),
-      costUsd: 0,
+      turns: 0,
       durationMs: 1,
     }));
 

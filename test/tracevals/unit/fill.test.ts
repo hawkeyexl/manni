@@ -208,32 +208,30 @@ describe("runFill", () => {
     expect(report.exitCode).toBe(1);
   });
 
-  it("stops proposing once the cost budget is spent", async () => {
-    // A budget can only bind against a model with known pricing, so this
-    // stub names one. MockProvider reports no usage and an unpriced model.
+  it("stops proposing once the turn budget is spent", async () => {
+    // One turn per uncached artifact, claimed before the call. The corpus has
+    // more artifacts than the budget covers, so the rest are reported skipped
+    // rather than silently dropped.
     let calls = 0;
-    const pricey = {
-      provider: () => "anthropic",
-      modelName: () => "claude-opus-4-8",
+    const counting = {
+      provider: () => "mock",
+      modelName: () => "mock-model",
       completeJSON: async () => {
         calls += 1;
-        return {
-          json: proposal().json,
-          usage: { inputTokens: 400_000, outputTokens: 100_000 },
-        };
+        return { json: proposal().json };
       },
     };
     const { report } = await run({
-      providerInstance: pricey,
-      maxCostUsd: 0.01,
+      providerInstance: counting,
+      maxTurns: 1,
       noCache: true,
       dryRun: true,
     });
 
-    // The first artifact blows the budget; the rest are skipped, not proposed.
+    expect(calls).toBe(1);
     expect(calls).toBeLessThan(report.results.length);
     expect(
-      report.results.some((r) => r.error === "cost budget exhausted"),
+      report.results.some((r) => r.error === "turn budget exhausted"),
     ).toBe(true);
   });
 
