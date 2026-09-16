@@ -15,6 +15,7 @@ import { KgError } from "../types.js";
 import type { Quad, Term } from "./derive.js";
 import { byCodeUnit } from "./sort.js";
 import { NS, RDF_TYPE } from "./vocab.js";
+import { escapesArchiveRoot } from "./zip.js";
 import {
   IIRDS_CREATOR,
   IIRDS_HAS_PARTY_ROLE,
@@ -127,6 +128,22 @@ export function projectPackage(
 
     const path = firstObject(store, doc, `${NS.kg}path`);
     if (path) {
+      // `kg:path` is `relative(cwd, file)` as the build saw it, so a corpus
+      // above the working directory (`manni kg build ../external/*.md`, or a
+      // collection whose `paths:` climb past the config file) is labelled
+      // `../external/page.md`. Every other verb is happy with that — only a
+      // container minds, because a container has a root and that path names
+      // somewhere outside it. Refused here rather than in `resolveDocumentSet`
+      // for exactly that reason: `build`, `query` and the rest keep working on
+      // outside paths, and the one command that cannot represent them says so.
+      // Checked before the file exists, since the escape is the finding even
+      // when the file is also missing.
+      if (escapesArchiveRoot(path)) {
+        throw new KgError(
+          `Cannot package "${path}": an iiRDS package has one root, and a path that climbs above it has no place inside it. ` +
+            "Re-run `manni kg build` from a directory that contains every document, then export again.",
+        );
+      }
       const absPath = resolve(cwd, path);
       if (!existsSync(absPath)) {
         throw new KgError(

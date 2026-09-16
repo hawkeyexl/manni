@@ -142,6 +142,38 @@ describe("projectPackage", () => {
     ).toBe(false);
   });
 
+  // `kg build ../external/*.md` labels the document `../external/page.md`, and
+  // that literal reaches the projection as `kg:path`. `content/../external/…`
+  // is an entry many unzips follow out of the package.
+  it("refuses a kg:path that climbs above the package root", () => {
+    const outside = `${BASE}doc/../external/page.md`;
+    const ttl = `
+@prefix kg: <${NS.kg}> .
+@prefix dcterms: <${NS.dcterms}> .
+<${outside}> a kg:Document ;
+  dcterms:title "Outside" ;
+  kg:path "../external/page.md" .
+`;
+    const cwd = cwdWithDoc();
+    mkdirSync(join(cwd, "..", "external"), { recursive: true });
+    writeFileSync(join(cwd, "..", "external", "page.md"), "# Outside\n");
+    expect(() => projectPackage(storeOf(ttl), OPTS, cwd)).toThrow(KgError);
+    expect(() => projectPackage(storeOf(ttl), OPTS, cwd)).toThrow(
+      /Cannot package "\.\.\/external\/page\.md"/,
+    );
+  });
+
+  it("refuses an absolute kg:path", () => {
+    const ttl = `
+@prefix kg: <${NS.kg}> .
+<${BASE}doc/abs> a kg:Document ;
+  kg:path "/etc/passwd" .
+`;
+    expect(() => projectPackage(storeOf(ttl), OPTS, cwdWithDoc())).toThrow(
+      /Cannot package "\/etc\/passwd"/,
+    );
+  });
+
   it("throws KgError when a Document's source file is missing", () => {
     const emptyCwd = mkdtempSync(join(tmpdir(), "manni-kg-pkg-empty-"));
     expect(() => projectPackage(storeOf(TTL), OPTS, emptyCwd)).toThrow(

@@ -134,7 +134,7 @@ export interface KgConfig {
   build: { derive: DeriveSource[] };
   /** Graph-level SHACL validation (`manni kg check`). */
   check: {
-    /** Shapes .ttl paths; empty = the shapes bundled with dockg. */
+    /** Shapes .ttl paths; empty = the shapes bundled with manni. */
     shapes: string[];
   };
   provenance: {
@@ -186,7 +186,7 @@ export interface KgConfig {
     /**
      * Embedding model id (ADR 01020). An open string, not an enum: the
      * documented table is the *tested* set, not the permitted set, so a newer
-     * model works without a dockg release.
+     * model works without a manni release.
      */
     model: string;
     /** Weight quantization. `q8` keeps int32 accumulation, which is associative. */
@@ -499,7 +499,7 @@ export function parseConfigSection(
       derive: r.build?.derive ?? [...ALL_DERIVE_SOURCES],
     },
     check: {
-      // Empty means: use the shapes bundled with dockg (see bundledShapesPath).
+      // Empty means: use the shapes bundled with manni (see bundledShapesPath).
       shapes: r.check?.shapes ?? [],
     },
     provenance: {
@@ -539,8 +539,9 @@ export function parseConfigSection(
 
 const CONFIG_FILE: ConfigFileOptions = {
   section: CONFIG_SECTION,
-  // kg published nothing under `dockg.config.yaml`, so, like cite, a11y and
-  // docevals, it has no pre-family name to read (proposal 0051 §2).
+  // The tool was `dockg` before it joined the family (proposal 0051 §7), but
+  // it published no config file under that old name, so — like cite, a11y and
+  // docevals — there is no pre-family filename to read (proposal 0051 §2).
   legacyNames: [],
   toError: (message) => new KgError(message),
 };

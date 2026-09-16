@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -226,6 +226,44 @@ describe("manni kg export (integration)", () => {
     );
     expect(status).toBe(2);
     expect(stdout.toLowerCase()).toContain("not found");
+  });
+
+  // `resolveDocumentSet` labels a document with `relative(cwd, abs)`, so a
+  // corpus above the working directory is labelled `../external/page.md` and
+  // `derive` writes that verbatim as `kg:path`. Unchecked, the package carried
+  // an entry named `content/../external/page.md`, which many unzips follow out
+  // of `content/` — and the same literal reached `iirds:source` in the RDF.
+  it("exits 2 when a document sits above the working directory", () => {
+    const dir = mkdtempSync(join(tmpdir(), "manni-kg-export-escape-"));
+    const work = join(dir, "work");
+    mkdirSync(join(dir, "external"), { recursive: true });
+    mkdirSync(work, { recursive: true });
+    writeFileSync(
+      join(dir, "external", "page.md"),
+      "---\ntitle: Outside\n---\n\n# Outside\n",
+    );
+    const graph = join(work, "graph.ttl");
+    const built = run(
+      ["build", "../external/*.md", "--out", graph, "--no-config"],
+      work,
+    );
+    expect(built.status).toBe(0);
+    expect(readFileSync(graph, "utf8")).toContain(
+      'kg:path "../external/page.md"',
+    );
+
+    const out = join(work, "pkg.iirds");
+    const { status, stdout } = run(
+      ["export", "iirds", "-g", graph, "-o", out, "--no-config"],
+      work,
+    );
+    expect(status).toBe(2);
+    expect(stdout).toContain(
+      'Cannot package "../external/page.md": an iiRDS package has one root',
+    );
+    expect(stdout).toContain("Re-run `manni kg build`");
+    // Nothing was written, so there is no archive carrying the escaping entry.
+    expect(() => readFileSync(out)).toThrow();
   });
 
   it("exits 2 for an unknown target", () => {
