@@ -610,6 +610,7 @@ written.
 | `term write -f vale`, Vale finds no config | `manni: Vale found no config file. Set tools.vale.config in manni.config.yaml, or pass -o <styles directory>.` |
 | `term write -f vale`, a file without the marker in `Terms/` | `manni: styles/Terms/Casing.yml was not written by manni. Move it, or pass -o <styles directory>.` |
 | `term write -f vale`, an acronym named like a rule file | `manni: the acronym "CASING" would replace Terms/Casing.yml. Rename the alt-label.` |
+| `term write -f vale`, two acronyms that share a file name | `manni: the acronyms "R&D" and "R+D" would both write Terms/R-D.yml. Rename one.` |
 | `term lint`, no Vale on PATH | `manni: vale is not on PATH. Install Vale to lint definitions.` |
 
 The config refusals are on the [configuration

@@ -212,6 +212,33 @@ describe("vale writer", () => {
     );
   });
 
+  // Readers collapse whitespace, so a label with a line break is built inline.
+  // A raw break in a double-quoted scalar folds to a space, and the message
+  // spread over two lines of the rule file.
+  it("escapes a line break in a message, keeping it on one line", () => {
+    const content =
+      byName(render([term("progressive-lens", { label: "progressive\nlens", "alt-labels": ["PAL"] })]))["PAL.yml"] ?? "";
+    expect(content).toContain(`message: "Spell out 'PAL' on first use, as 'progressive\\nlens (PAL)'."\n`);
+    const parsed: unknown = parseYaml(content);
+    const message = typeof parsed === "object" && parsed !== null && "message" in parsed ? String(parsed.message) : "";
+    expect(message).toBe("Spell out 'PAL' on first use, as 'progressive\nlens (PAL)'.");
+  });
+
+  it("escapes a carriage return in a message", () => {
+    const content =
+      byName(render([term("progressive-lens", { label: "progressive\r\nlens", "alt-labels": ["PAL"] })]))["PAL.yml"] ?? "";
+    expect(content).toContain(`as 'progressive\\r\\nlens (PAL)'."\n`);
+  });
+
+  it("refuses two different acronyms that would write one file", () => {
+    expect(() =>
+      render([
+        term("research", { label: "research and development", "alt-labels": ["R&D"] }),
+        term("repair", { label: "repair and diagnosis", "alt-labels": ["R+D"] }),
+      ]),
+    ).toThrow(new TermError('the acronyms "R&D" and "R+D" would both write Terms/R-D.yml. Rename one.'));
+  });
+
   it("refuses an acronym that would replace SentenceStart.yml", () => {
     expect(() => render([term("sentence-start", { label: "sentence start", "alt-labels": ["SENTENCESTART"] })])).toThrow(
       new TermError('the acronym "SENTENCESTART" would replace Terms/SentenceStart.yml. Rename the alt-label.'),

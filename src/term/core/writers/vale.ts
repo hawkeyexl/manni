@@ -60,9 +60,14 @@ function scalar(value: string): string {
   return out.endsWith("\n") ? out.slice(0, -1) : out;
 }
 
-/** A YAML double-quoted scalar. */
+/** A YAML double-quoted scalar on one line: a raw line break would fold to a space. */
 function doubleQuoted(value: string): string {
-  return `"${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
+  const escaped = value
+    .replaceAll("\\", "\\\\")
+    .replaceAll('"', '\\"')
+    .replaceAll("\n", "\\n")
+    .replaceAll("\r", "\\r");
+  return `"${escaped}"`;
 }
 
 /** A YAML single-quoted scalar, which keeps backslashes literal for a regex. */
@@ -191,7 +196,7 @@ export const valeWriter: TermWriter = {
     const lowercase = new Swaps();
     const sentenceStart = new Swaps();
     const deprecated = new Swaps();
-    const acronyms: { name: string; content: string }[] = [];
+    const acronyms: { acronym: string; name: string; content: string }[] = [];
     const labels = new Set(terms.map((t) => t.record.label));
 
     for (const term of terms) {
@@ -210,8 +215,15 @@ export const valeWriter: TermWriter = {
         if (own !== undefined) {
           throw new TermError(`the acronym "${designation}" would replace Terms/${own}.yml. Rename the alt-label.`);
         }
-        if (acronyms.some((a) => a.name.toLowerCase() === name.toLowerCase())) continue;
-        acronyms.push({ name, content: acronymRule(designation, label) });
+        const taken = acronyms.find((a) => a.name.toLowerCase() === name.toLowerCase());
+        // The same acronym on a second term keeps the first term's rule.
+        if (taken?.acronym === designation) continue;
+        if (taken !== undefined) {
+          throw new TermError(
+            `the acronyms "${taken.acronym}" and "${designation}" would both write Terms/${taken.name}.yml. Rename one.`,
+          );
+        }
+        acronyms.push({ acronym: designation, name, content: acronymRule(designation, label) });
       }
       for (const hidden of term.record["hidden-labels"] ?? []) {
         deprecated.add(bounded(escapeRegex(hidden), hidden), swapValue(label));

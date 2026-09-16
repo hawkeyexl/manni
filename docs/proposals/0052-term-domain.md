@@ -962,6 +962,7 @@ what runs.
 | `term write -f vale`, no Vale config found | `manni: Vale found no config file. Set tools.vale.config in manni.config.yaml, or pass -o <styles directory>.` | 2 |
 | `term write -f vale`, an unmarked file in `Terms/` | `manni: .vale/styles/Terms/Casing.yml was not written by manni. Move it, or pass -o <styles directory>.` | 2 |
 | `term write -f vale`, an acronym named like a rule file | `manni: the acronym "CASING" would replace Terms/Casing.yml. Rename the alt-label.` | 2 |
+| `term write -f vale`, two acronyms that share a file name | `manni: the acronyms "R&D" and "R+D" would both write Terms/R-D.yml. Rename one.` | 2 |
 | `term lint` with no Vale on PATH | `manni: vale is not on PATH. Install Vale to lint definitions.` | 2 |
 | `tools.vale.config: nowhere.ini` | `manni: manni.config.yaml: tools.vale.config "nowhere.ini" does not exist.` | 2 |
 | `term.manifests: [terms/missing.yaml]` | `manni: manni.config.yaml: term.manifests "terms/missing.yaml" does not exist.` | 2 |
