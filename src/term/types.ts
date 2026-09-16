@@ -307,7 +307,12 @@ export interface TermFinding {
   check?: string;
   /** Set on a `lint` finding: the tool's own severity, before the fold. */
   toolSeverity?: ValeSeverity;
-  /** Set on a `lint` finding: which field the prose came from. */
+  /**
+   * The field the finding concerns: on a `lint` finding, the field the prose
+   * came from; on a `check` finding, the field that breaks the rule. Absent
+   * for a finding about a whole entry (`duplicate-id`, `unused-term`) or about
+   * a page (`undefined-term`).
+   */
   field?: TermField;
 }
 

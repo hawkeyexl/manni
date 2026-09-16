@@ -27,6 +27,7 @@ interface Draft {
   file: string;
   line?: number;
   id?: string;
+  field?: TermField;
 }
 
 export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): TermFinding[] {
@@ -43,6 +44,7 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     file: t.location.file,
     line: (field === undefined ? undefined : t.location.fieldLines[field]) ?? t.location.line,
     id: t.id,
+    ...(field === undefined ? {} : { field }),
   });
 
   // The first entry claiming each folded label, and each folded id.
@@ -214,6 +216,7 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
       file: draft.file,
       ...(draft.line === undefined ? {} : { line: draft.line }),
       ...(draft.id === undefined ? {} : { id: draft.id }),
+      ...(draft.field === undefined ? {} : { field: draft.field }),
     });
   }
   return findings.sort(compareFindings);

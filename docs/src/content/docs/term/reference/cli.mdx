@@ -235,7 +235,8 @@ A clean run prints one line:
 
 `json` prints `{ findings, summary }`. Each finding carries `rule`, `ruleId`,
 `severity`, `message`, `file` and `line`, plus the entry's `id` when the
-finding sits on an entry. `summary` holds `terms`, `references`, `errors`,
+finding sits on an entry, and the `field` that breaks the rule when one does.
+`summary` holds `terms`, `references`, `errors`,
 `warnings` and `notices`, and `baseline` when one was read or written:
 
 ```json

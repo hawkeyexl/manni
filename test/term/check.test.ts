@@ -178,6 +178,7 @@ describe("checkTermSet", () => {
           file: "docs/terms/glossary.md",
           line: 14,
           id: "b",
+          field: "label",
         },
       ]);
     });
@@ -211,6 +212,7 @@ describe("checkTermSet", () => {
           file: "docs/terms/multifocal.md",
           line: 4,
           id: "multifocal",
+          field: "alt-labels",
         },
       ]);
     });
@@ -282,6 +284,7 @@ describe("checkTermSet", () => {
           file: "docs/terms/corrective-lens.md",
           line: 2,
           id: "corrective-lens",
+          field: "broader",
         },
       ]);
     });
@@ -448,6 +451,40 @@ describe("checkTermSet", () => {
       const findings = checkTermSet(set(terms), { severity: { "unused-term": "error" } });
       expect(findings.map((f) => f.severity)).toEqual(["error"]);
     });
+  });
+
+  it("names the field a finding concerns, and none for a finding about a whole entry or a page", () => {
+    const terms = [
+      term({ id: "bifocal", label: "bifocal", definition: "d", abstract: "x".repeat(61), "related-terms": ["trifocal"] }),
+      term({ id: "bifocal", label: "Bifocal", definition: "d", "alt-labels": ["lens"] }),
+      term({ label: "lens", definition: "d", broader: ["corrective lens"], see: "bifocal" }),
+      term({ label: "corrective lens", definition: "d", broader: ["lens"] }),
+      term({ label: "monocle", definition: "d" }),
+    ];
+    const findings = checkTermSet(set(terms, [ref("PAL"), ...terms.slice(0, 4).map((t) => ref(t.record.label))]));
+    const fields = new Map<string, Set<string>>();
+    for (const f of findings) {
+      const seen = fields.get(f.rule ?? "") ?? new Set<string>();
+      seen.add(f.field ?? "(none)");
+      fields.set(f.rule ?? "", seen);
+    }
+    expect(Object.fromEntries([...fields].map(([rule, seen]) => [rule, [...seen].sort()]))).toEqual({
+      "undefined-term": ["(none)"],
+      "duplicate-id": ["(none)"],
+      "label-collision": ["label"],
+      "alt-label-collision": ["alt-labels"],
+      "dangling-reference": ["related-terms"],
+      "broader-cycle": ["broader"],
+      "see-not-empty": ["see"],
+      "asymmetric-hierarchy": ["narrower"],
+      "abstract-too-long": ["abstract"],
+      "unused-term": ["(none)"],
+    });
+  });
+
+  it("names broader when the missing half of a hierarchy is broader", () => {
+    const terms = [term({ label: "lens", definition: "d", narrower: ["bifocal"] }), term({ label: "bifocal", definition: "d" })];
+    expect(only(checkTermSet(used(terms)), "asymmetric-hierarchy").map((f) => f.field)).toEqual(["broader"]);
   });
 
   it("sorts by file, then line, then rule id, then message", () => {
