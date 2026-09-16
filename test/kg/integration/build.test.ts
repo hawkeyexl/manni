@@ -10,11 +10,27 @@ import { NS, RDF_TYPE } from "../../../src/kg/core/vocab.js";
 
 const { namedNode } = DataFactory;
 import { hermeticEnv } from "../helpers/git-env.js";
+import { detachedCorpus } from "../helpers/corpus.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const cli = join(root, "dist", "cli.js");
-const corpus = join(root, "test", "kg", "fixtures", "corpus");
+// A copy outside any repository: git is detected now (proposal 0051 §6), and a
+// corpus built inside this checkout would carry HEAD's committer date. See
+// test/kg/helpers/corpus.ts.
+const corpus = detachedCorpus();
 const golden = join(root, "test", "kg", "fixtures", "golden", "graph.ttl");
+
+/**
+ * What git detection owes a corpus that is not a repository: the consequence,
+ * then git's own reason for it. The reason names a temp directory, so the
+ * assertions match the consequence and the shape of the reason rather than a
+ * fixed string.
+ */
+const GIT_ABSENT =
+  /^manni: the graph has no revision history or commit agents: .+\n$/;
+/** The same consequence, for stderr that carries other warnings too. */
+const GIT_ABSENT_LINE =
+  "manni: the graph has no revision history or commit agents:";
 
 function build(outPath: string): string {
   return execFileSync(process.execPath, [cli, "kg", "build", "--out", outPath], {
@@ -113,11 +129,13 @@ describe("manni kg build (integration)", () => {
     expect(stdout).toMatch(/8 docs, \d+ triples/);
   });
 
-  it("provenance.git: an ambient GIT_DIR cannot redirect the build", () => {
+  it("an ambient GIT_DIR cannot redirect the build", () => {
     // Running the suite from the husky pre-push hook exposed this: git exports
-    // GIT_DIR to hook subprocesses, and dockg inherited it, so a build outside
-    // a repo silently succeeded against the *hook's* repo and emitted a
-    // different graph. Must still be exit 2 — not a repo is not a repo.
+    // GIT_DIR to hook subprocesses, and kg inherited it, so a build outside a
+    // repo silently succeeded against the *hook's* repo and emitted a
+    // different graph. Git is detected rather than switched now (0051 §6), so
+    // the tell is no longer exit 2: it is that the build degrades, says so,
+    // and carries none of the decoy's history.
     //
     // GIT_DIR points at a throwaway decoy rather than this repository: a
     // regression here must not be able to touch real history. The decoy needs
@@ -148,56 +166,45 @@ describe("manni kg build (integration)", () => {
     );
 
     const dir = mkdtempSync(join(tmpdir(), "dockg-gitenv-"));
-    writeFileSync(
-      join(dir, "manni.config.yaml"),
-      'kg:\n  version: 1\n  inputs: ["*.md"]\n  provenance:\n    git: true\n',
-    );
     writeFileSync(join(dir, "a.md"), "# A\n");
 
-    let status = 0;
-    try {
-      execFileSync(
-        process.execPath,
-        [cli, "kg", "build", "--out", join(dir, "g.ttl")],
-        {
-          encoding: "utf8",
-          cwd: dir,
-          env: { ...env, GIT_DIR: join(decoy, ".git") },
-        },
-      );
-    } catch (e) {
-      status = (e as { status?: number }).status ?? -1;
-    }
-    expect(status).toBe(2);
+    const out = join(dir, "g.ttl");
+    const r = spawnSync(
+      process.execPath,
+      [cli, "kg", "build", "a.md", "--out", out],
+      {
+        encoding: "utf8",
+        cwd: dir,
+        env: { ...env, GIT_DIR: join(decoy, ".git") },
+      },
+    );
+    expect(r.status).toBe(0);
+    expect(r.stderr).toMatch(GIT_ABSENT);
+    expect(readFileSync(out, "utf8")).not.toMatch(/prov:endedAtTime/);
   });
 
-  it("provenance.git: errors loudly outside a git repo, is byte-stable inside one", () => {
+  it("degrades outside a git repo, derives inside one, and stays byte-stable", () => {
+    // kg ADR 01010's degradation, with the tri-state gone (0051 §6): one
+    // command, one directory, and the only difference is whether git can run
+    // over a repository.
     const dir = mkdtempSync(join(tmpdir(), "dockg-gittime-"));
-    writeFileSync(
-      join(dir, "manni.config.yaml"),
-      'kg:\n  version: 1\n  inputs: ["*.md"]\n  provenance:\n    git: true\n',
-    );
     writeFileSync(join(dir, "a.md"), "# A\n");
 
-    // not a git repo -> operational error
-    let status = 0;
-    try {
-      execFileSync(
-        process.execPath,
-        [cli, "kg", "build", "--out", join(dir, "g.ttl")],
-        {
-          encoding: "utf8",
-          cwd: dir,
-        },
-      );
-    } catch (e) {
-      status = (e as { status?: number }).status ?? -1;
-    }
-    expect(status).toBe(2);
+    const before = spawnSync(
+      process.execPath,
+      [cli, "kg", "build", "a.md", "--out", join(dir, "g.ttl")],
+      { encoding: "utf8", cwd: dir, env: hermeticEnv() },
+    );
+    expect(before.status).toBe(0);
+    expect(before.stdout).toContain("Wrote");
+    expect(before.stderr).toMatch(GIT_ABSENT);
+    expect(readFileSync(join(dir, "g.ttl"), "utf8")).not.toMatch(
+      /prov:endedAtTime/,
+    );
 
     // with a commit: endedAtTime appears and rebuilds are identical
     // hermeticEnv: without it these inherit GIT_DIR when the suite runs from
-    // the pre-push hook, and operate on the dockg repo instead of `dir`.
+    // the pre-push hook, and operate on the manni repo instead of `dir`.
     const env = hermeticEnv();
     execFileSync("git", ["init", "-q"], { cwd: dir, env });
     execFileSync(
@@ -219,78 +226,32 @@ describe("manni kg build (integration)", () => {
       ],
       { cwd: dir, env },
     );
-    execFileSync(
+    const first = spawnSync(
       process.execPath,
-      [cli, "kg", "build", "--out", join(dir, "a.ttl")],
-      {
-        encoding: "utf8",
-        cwd: dir,
-      },
+      [cli, "kg", "build", "a.md", "--out", join(dir, "a.ttl")],
+      { encoding: "utf8", cwd: dir, env },
     );
+    expect(first.status).toBe(0);
+    // Inside a repository there is nothing to warn about.
+    expect(first.stderr).toBe("");
     execFileSync(
       process.execPath,
-      [cli, "kg", "build", "--out", join(dir, "b.ttl")],
-      {
-        encoding: "utf8",
-        cwd: dir,
-      },
+      [cli, "kg", "build", "a.md", "--out", join(dir, "b.ttl")],
+      { encoding: "utf8", cwd: dir, env },
     );
     const a = readFileSync(join(dir, "a.ttl"), "utf8");
     expect(a).toBe(readFileSync(join(dir, "b.ttl"), "utf8"));
     expect(a).toMatch(/prov:endedAtTime "[^"]+"\^\^xsd:dateTime/);
   });
 
-  it("provenance.git 'auto' (the default) degrades outside a git repo", () => {
-    const dir = mkdtempSync(join(tmpdir(), "dockg-gitauto-"));
-    // No provenance key at all: the default must apply.
-    writeFileSync(
-      join(dir, "manni.config.yaml"),
-      'kg:\n  version: 1\n  inputs: ["*.md"]\n',
-    );
-    writeFileSync(join(dir, "a.md"), "# A\n");
-
-    const out = join(dir, "g.ttl");
-    const r = spawnSync(process.execPath, [cli, "kg", "build", "--out", out], {
-      encoding: "utf8",
-      cwd: dir,
-      env: hermeticEnv(),
-    });
-
-    // Degrades: build succeeds, warns on stderr, and emits no git-derived time.
-    expect(r.status).toBe(0);
-    expect(r.stdout).toContain("Wrote");
-    expect(r.stderr).toMatch(/provenance\.git/);
-    expect(readFileSync(out, "utf8")).not.toMatch(/prov:endedAtTime/);
-
-    // Same directory, now a repo: the same default derives git provenance
-    // silently. hermeticEnv keeps an ambient GIT_DIR from redirecting this.
-    const env = hermeticEnv();
-    execFileSync("git", ["init", "-q"], { cwd: dir, env });
-    execFileSync(
-      "git",
-      ["-c", "user.email=t@t", "-c", "user.name=t", "add", "-A"],
-      { cwd: dir, env },
-    );
-    execFileSync(
-      "git",
-      ["-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "i"],
-      { cwd: dir, env },
-    );
-    const inRepo = spawnSync(process.execPath, [cli, "kg", "build", "--out", out], {
-      encoding: "utf8",
-      cwd: dir,
-      env,
-    });
-    expect(inRepo.status).toBe(0);
-    expect(inRepo.stderr).toBe("");
-    expect(readFileSync(out, "utf8")).toMatch(/prov:endedAtTime/);
-  });
-
-  it("provenance.git false stays silent and skips git entirely", () => {
+  it("skips git entirely, and silently, when provenance is not derived", () => {
+    // The switch is gone, and this is what is left of "skip the subprocess": a
+    // corpus that derives no provenance asks git nothing, so there is nothing
+    // to warn about.
     const dir = mkdtempSync(join(tmpdir(), "dockg-gitoff-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
-      'kg:\n  version: 1\n  inputs: ["*.md"]\n  provenance:\n    git: false\n',
+      'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n  build:\n    derive: [frontmatter, sections, links, tags, images, code]\n',
     );
     writeFileSync(join(dir, "a.md"), "# A\n");
 
@@ -311,7 +272,7 @@ describe("manni kg build (integration)", () => {
     const dir = mkdtempSync(join(tmpdir(), "dockg-harvest-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
-      'kg:\n  version: 1\n  baseIri: https://example.com/kg/\n  inputs: ["*.md"]\n  provenance:\n    git: false\n',
+      'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n  baseIri: https://example.com/kg/\n',
     );
     writeFileSync(
       join(dir, "a.md"),
@@ -336,6 +297,8 @@ describe("manni kg build (integration)", () => {
       expect(r.stderr).toContain(`looks like "${meant}"`);
     }
     expect(r.stderr).toContain('page type "how to"');
+    // Beside them, the one line a non-repository corpus owes (0051 §6).
+    expect(r.stderr).toContain(GIT_ABSENT_LINE);
 
     // A warning never gates and never changes the graph: the facts are still
     // absent, which is correct — dockg must not guess what the author meant.
@@ -348,7 +311,7 @@ describe("manni kg build (integration)", () => {
     const dir = mkdtempSync(join(tmpdir(), "dockg-harvest-ok-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
-      'kg:\n  version: 1\n  baseIri: https://example.com/kg/\n  inputs: ["*.md"]\n  provenance:\n    git: false\n',
+      'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n  baseIri: https://example.com/kg/\n',
     );
     writeFileSync(
       join(dir, "a.md"),
@@ -361,7 +324,7 @@ describe("manni kg build (integration)", () => {
       { encoding: "utf8", cwd: dir, env: hermeticEnv() },
     );
     expect(r.status).toBe(0);
-    expect(r.stderr).toBe("");
+    expect(r.stderr).toMatch(GIT_ABSENT);
   });
 
   it("exits 2 when no inputs match", () => {

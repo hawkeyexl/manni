@@ -221,19 +221,19 @@ docevals:
       target-pass-rate: 1.0
       evals: [no-future-promises, readable]
 
-# The kg tool, pointed at its own fixture corpus (the dogfood for
-# `manni kg validate` and `manni kg build`). Its own key, its own settings; the
-# metadata tool above never reads them. Carried over from moose-kg's
-# `dockg.docs.yaml`, which pointed at that repository's docs site; those pages
-# are not in this repository yet, so the corpus under test/kg/fixtures stands
-# in until they land. Paths are relative to the repo root, because input globs
-# resolve against the working directory rather than this file's location.
+# The kg tool. Its own key, its own settings; the metadata tool above never
+# reads them. Carried over from moose-kg's `dockg.docs.yaml`, which pointed at
+# that repository's docs site; those pages are not in this repository yet.
+#
+# It declares no document set. Document sets are the family's `collections:`
+# now (proposal 0041, 0051 §1), and every tool reads every collection — so a
+# `kg-fixtures` collection here would hand `manni meta validate` and
+# `manni cite check` a corpus of deliberately-broken fixtures (0048 known
+# limit 1, restated as 0051 known limit 1). The fixture corpus is named by
+# path instead, the way docevals names its own:
+# `manni kg build test/kg/fixtures/corpus/docs`.
 kg:
-  version: 1
   baseIri: https://example.com/kg/
-
-  inputs:
-    - "test/kg/fixtures/corpus/docs/**/*.md"
 
   # Under .manni/, which is gitignored: the graph is a gate, not an artifact
   # this repository ships.
@@ -248,9 +248,3 @@ kg:
     - root: test/kg/fixtures/corpus/docs/fr
       basePath: /fr
       language: fr
-
-  provenance:
-    # Deriving committer history for a fixture corpus on every run buys
-    # nothing here, and the corpus's own config pins it off for the same
-    # reason (kg ADR 01010).
-    git: false

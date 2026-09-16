@@ -5,13 +5,15 @@
  * info findings are reported but pass.
  */
 import { resolve } from "node:path";
-import { loadConfig } from "../core/config.js";
+import { loadRunConfig } from "../core/config.js";
 import { loadGraph, compactIri } from "../core/load.js";
 import { bundledShapesPath } from "../core/pkg.js";
 import { validateGraph, type CheckFinding } from "../core/shacl.js";
 
 export interface CheckOptions {
   config?: string;
+  /** `--no-config`: skip discovery and run on the built-in defaults. */
+  noConfig?: boolean;
   /** Graph .ttl path (default: config `out`). */
   graph?: string;
   /** Shapes .ttl paths (default: config `check.shapes`, then bundled). */
@@ -30,7 +32,13 @@ export interface CheckReport {
 
 export async function runCheck(opts: CheckOptions = {}): Promise<CheckReport> {
   const cwd = opts.cwd ?? process.cwd();
-  const config = loadConfig(opts.config, cwd);
+  const config = loadRunConfig(
+    {
+      ...(opts.config === undefined ? {} : { configPath: opts.config }),
+      ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+    },
+    cwd,
+  );
   const store = loadGraph(resolve(cwd, opts.graph ?? config.out));
 
   // CLI flag over config over the bundled contract — same precedence as

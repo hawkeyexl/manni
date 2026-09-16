@@ -67,12 +67,14 @@ describe("manni (built bin)", () => {
   it("runs kg under its name, reading its own key of the family config", () => {
     expect(run(manni, ["kg", "--help"]).stdout).toMatch(/^Usage: manni kg /m);
     expect(run(manni, ["kg", "--version"]).stdout.trim()).toBe(version);
-    // `validate` resolves its inputs from the repository's own manni.config.yaml
-    // (the `kg:` section, pointed at the tool's fixture corpus) and checks
-    // their frontmatter against the bundled vocabulary.
-    const r = run(manni, ["kg", "validate"]);
+    // The fixture corpus is named by path, not declared as a collection: every
+    // tool reads every collection, so a `kg-fixtures` collection would hand
+    // `manni meta validate` and `manni cite check` a corpus of deliberately
+    // broken fixtures (0051 known limit 1). Everything else — the base IRI,
+    // the routes — comes from the repository's own `kg:` section.
+    const r = run(manni, ["kg", "validate", "test/kg/fixtures/corpus/docs"]);
     expect(r.status).toBe(0);
-    expect(r.stdout).toMatch(/files checked/);
+    expect(r.stdout).toMatch(/8 files checked/);
   });
 
   it("prefixes kg diagnostics with the bin that ran", () => {

@@ -7,10 +7,12 @@ import { KgError } from "../../../src/kg/types.js";
 
 describe("parseConfig", () => {
   it("applies defaults for a minimal config", () => {
-    const c = parseConfig("version: 1\n", "/tmp/dockg.config.yaml");
+    const c = parseConfig("", "/tmp/manni.config.yaml");
     expect(c.baseIri).toBe("urn:dockg:");
-    expect(c.inputs).toEqual(["**/*.md"]);
-    expect(c.exclude).toEqual(["**/node_modules/**"]);
+    // No document set of its own: `inputs` and `exclude` are the family's
+    // `collections:` now (proposal 0041, 0051 §1), and a section on its own
+    // declares none.
+    expect(c.collections).toEqual([]);
     expect(c.out).toBe("kg/graph.ttl");
     expect(c.build.derive).toEqual([
       "frontmatter",
@@ -26,9 +28,10 @@ describe("parseConfig", () => {
     // empty = use the shapes bundled with dockg (shapes/dockg-0.2.ttl)
     expect(c.check.shapes).toEqual([]);
     expect(c.fill.validateGraph).toBe(true);
-    // Opinionated defaults (ADR 01009/01010): hermetic provenance ships on;
-    // "auto" runs git where it can and degrades with a warning where it can't.
-    expect(c.provenance).toEqual({ git: "auto", qualified: true });
+    // Opinionated defaults (ADR 01009/01010), minus the switch 0051 §6
+    // removed: git history is detected, so `qualified` is all that is left to
+    // configure.
+    expect(c.provenance).toEqual({ qualified: true });
     expect(c.fill.writeProvenance).toBe(true);
     expect(c.fill.provider).toBe("anthropic");
     expect(c.fill.temperature).toBe(0);
@@ -70,8 +73,8 @@ describe("parseConfig", () => {
     // `model` is an open string, not an enum: the documented table is the
     // tested set, not the permitted set, so a newer model needs no release.
     const c = parseConfig(
-      "version: 1\nembed:\n  model: some/brand-new-model\n  dtype: fp32\n  out: v\n  cacheDir: .c\n  byLanguage:\n    de:\n      model: some/german-model\n",
-      "/tmp/dockg.config.yaml",
+      "embed:\n  model: some/brand-new-model\n  dtype: fp32\n  out: v\n  cacheDir: .c\n  byLanguage:\n    de:\n      model: some/german-model\n",
+      "/tmp/manni.config.yaml",
     );
     expect(c.embed).toEqual({
       model: "some/brand-new-model",
@@ -87,8 +90,8 @@ describe("parseConfig", () => {
     // still fails loudly on a key nobody meant, like every other config object.
     expect(() =>
       parseConfig(
-        "version: 1\nembed:\n  byLanguage:\n    German:\n      model: x\n",
-        "/tmp/dockg.config.yaml",
+        "embed:\n  byLanguage:\n    German:\n      model: x\n",
+        "/tmp/manni.config.yaml",
       ),
     ).toThrow(/byLanguage/);
   });
@@ -97,8 +100,8 @@ describe("parseConfig", () => {
     expect(
       () =>
         parseConfig(
-          "version: 1\nembed:\n  byLanguage:\n    de:\n      bogus: 1\n",
-          "/tmp/dockg.config.yaml",
+          "embed:\n  byLanguage:\n    de:\n      bogus: 1\n",
+          "/tmp/manni.config.yaml",
         ),
       // The path, which is what Ajv names here — and the part that locates the
       // mistake: `de` is a legal key, `bogus` inside it is not.
@@ -108,16 +111,16 @@ describe("parseConfig", () => {
   it("rejects unknown embed keys", () => {
     expect(() =>
       parseConfig(
-        "version: 1\nembed:\n  bogus: true\n",
-        "/tmp/dockg.config.yaml",
+        "embed:\n  bogus: true\n",
+        "/tmp/manni.config.yaml",
       ),
     ).toThrow(KgError);
   });
 
   it("parses export.iirds overrides", () => {
     const c = parseConfig(
-      "version: 1\nexport:\n  iirds:\n    title: My Docs\n    creator: Acme\n    version: '1.2'\n",
-      "/tmp/dockg.config.yaml",
+      "export:\n  iirds:\n    title: My Docs\n    creator: Acme\n    version: '1.2'\n",
+      "/tmp/manni.config.yaml",
     );
     expect(c.export.iirds).toEqual({
       title: "My Docs",
@@ -129,22 +132,22 @@ describe("parseConfig", () => {
   it("rejects an unknown export.iirds version and unknown keys", () => {
     expect(() =>
       parseConfig(
-        "version: 1\nexport:\n  iirds:\n    version: '2.0'\n",
-        "/tmp/dockg.config.yaml",
+        "export:\n  iirds:\n    version: '2.0'\n",
+        "/tmp/manni.config.yaml",
       ),
     ).toThrow(KgError);
     expect(() =>
       parseConfig(
-        "version: 1\nexport:\n  iirds:\n    bogus: true\n",
-        "/tmp/dockg.config.yaml",
+        "export:\n  iirds:\n    bogus: true\n",
+        "/tmp/manni.config.yaml",
       ),
     ).toThrow(KgError);
   });
 
   it("normalizes baseIri with a trailing slash", () => {
     const c = parseConfig(
-      "version: 1\nbaseIri: https://example.com/kg\n",
-      "/tmp/dockg.config.yaml",
+      "baseIri: https://example.com/kg\n",
+      "/tmp/manni.config.yaml",
     );
     expect(c.baseIri).toBe("https://example.com/kg/");
   });
@@ -155,14 +158,14 @@ describe("parseConfig", () => {
   it("rejects a stale camelCase fill.fields value", () => {
     expect(() =>
       parseConfig(
-        "version: 1\nfill:\n  fields: [prefLabel]\n",
-        "/tmp/dockg.config.yaml",
+        "fill:\n  fields: [prefLabel]\n",
+        "/tmp/manni.config.yaml",
       ),
     ).toThrow(KgError);
     expect(() =>
       parseConfig(
-        "version: 1\nfill:\n  fields: [softwareSubject]\n",
-        "/tmp/dockg.config.yaml",
+        "fill:\n  fields: [softwareSubject]\n",
+        "/tmp/manni.config.yaml",
       ),
     ).toThrow(KgError);
   });
@@ -170,34 +173,34 @@ describe("parseConfig", () => {
   it("rejects a stale camelCase coverageThreshold key", () => {
     expect(() =>
       parseConfig(
-        "version: 1\nstats:\n  coverageThreshold:\n    prefLabel: 80\n",
-        "/tmp/dockg.config.yaml",
+        "stats:\n  coverageThreshold:\n    prefLabel: 80\n",
+        "/tmp/manni.config.yaml",
       ),
     ).toThrow(KgError);
   });
 
   it("rejects unknown top-level keys", () => {
     expect(() =>
-      parseConfig("version: 1\nbogus: true\n", "/tmp/dockg.config.yaml"),
+      parseConfig("bogus: true\n", "/tmp/manni.config.yaml"),
     ).toThrow(KgError);
   });
 
   it("rejects a wrong version", () => {
-    expect(() => parseConfig("version: 2\n", "/tmp/dockg.config.yaml")).toThrow(
+    expect(() => parseConfig("version: 2\n", "/tmp/manni.config.yaml")).toThrow(
       KgError,
     );
   });
 
   it("rejects invalid YAML", () => {
     expect(() =>
-      parseConfig("version: [1\n", "/tmp/dockg.config.yaml"),
+      parseConfig("version: [1\n", "/tmp/manni.config.yaml"),
     ).toThrow(KgError);
   });
 
   it("parses check.shapes and fill.validateGraph overrides", () => {
     const c = parseConfig(
-      "version: 1\ncheck:\n  shapes: [my-shapes.ttl]\nfill:\n  validateGraph: false\n",
-      "/tmp/dockg.config.yaml",
+      "check:\n  shapes: [my-shapes.ttl]\nfill:\n  validateGraph: false\n",
+      "/tmp/manni.config.yaml",
     );
     expect(c.check.shapes).toEqual(["my-shapes.ttl"]);
     expect(c.fill.validateGraph).toBe(false);
@@ -206,8 +209,8 @@ describe("parseConfig", () => {
   it("rejects unknown check keys", () => {
     expect(() =>
       parseConfig(
-        "version: 1\ncheck:\n  bogus: true\n",
-        "/tmp/dockg.config.yaml",
+        "check:\n  bogus: true\n",
+        "/tmp/manni.config.yaml",
       ),
     ).toThrow(KgError);
   });
@@ -215,16 +218,16 @@ describe("parseConfig", () => {
   it("rejects an unknown fill provider", () => {
     expect(() =>
       parseConfig(
-        "version: 1\nfill:\n  provider: gemini\n",
-        "/tmp/dockg.config.yaml",
+        "fill:\n  provider: gemini\n",
+        "/tmp/manni.config.yaml",
       ),
     ).toThrow(KgError);
   });
 
   it("accepts the local llama-cpp provider", () => {
     const c = parseConfig(
-      "version: 1\nfill:\n  provider: llama-cpp\n  model: granite-4.1-3b-q2\n",
-      "/tmp/dockg.config.yaml",
+      "fill:\n  provider: llama-cpp\n  model: granite-4.1-3b-q2\n",
+      "/tmp/manni.config.yaml",
     );
     expect(c.fill.provider).toBe("llama-cpp");
     expect(c.fill.model).toBe("granite-4.1-3b-q2");
@@ -235,14 +238,14 @@ describe("parseConfig", () => {
     // metadata carries the same review obligation as anything else a model
     // writes. ADR 01009's default-on rule covers hermetic features; this is
     // neither hermetic nor free.
-    const c = parseConfig("version: 1\n", "/tmp/dockg.config.yaml");
+    const c = parseConfig("", "/tmp/manni.config.yaml");
     expect(c.fill.sections).toBe(false);
   });
 
   it("accepts fill.sections: true", () => {
     const c = parseConfig(
-      "version: 1\nfill:\n  sections: true\n",
-      "/tmp/dockg.config.yaml",
+      "fill:\n  sections: true\n",
+      "/tmp/manni.config.yaml",
     );
     expect(c.fill.sections).toBe(true);
   });
@@ -252,16 +255,16 @@ describe("parseConfig", () => {
     // truthy-looking string must fail loudly rather than silently enable it.
     expect(() =>
       parseConfig(
-        "version: 1\nfill:\n  sections: yes-please\n",
-        "/tmp/dockg.config.yaml",
+        "fill:\n  sections: yes-please\n",
+        "/tmp/manni.config.yaml",
       ),
     ).toThrow(KgError);
   });
 
   it("parses route mappings with defaults and normalization", () => {
     const c = parseConfig(
-      "version: 1\nroutes:\n  - basePath: /docs/\n    root: docs/pages/\n",
-      "/tmp/dockg.config.yaml",
+      "routes:\n  - basePath: /docs/\n    root: docs/pages/\n",
+      "/tmp/manni.config.yaml",
     );
     expect(c.routes).toEqual([
       {
@@ -278,8 +281,8 @@ describe("parseConfig", () => {
     // key is not present at all, so `routeLanguage` on a DocModel means
     // something rather than being an undefined nobody set.
     const c = parseConfig(
-      "version: 1\nroutes:\n  - root: docs/de\n    basePath: /de\n    language: de-AT\n  - root: docs\n",
-      "/tmp/dockg.config.yaml",
+      "routes:\n  - root: docs/de\n    basePath: /de\n    language: de-AT\n  - root: docs\n",
+      "/tmp/manni.config.yaml",
     );
     expect(c.routes[0]?.language).toBe("de-AT");
     expect(c.routes[1]).not.toHaveProperty("language");
@@ -293,8 +296,8 @@ describe("parseConfig", () => {
       // long before it reaches the graph or becomes a filename.
       expect(() =>
         parseConfig(
-          `version: 1\nroutes:\n  - root: docs\n    language: ${language}\n`,
-          "/tmp/dockg.config.yaml",
+          `routes:\n  - root: docs\n    language: ${language}\n`,
+          "/tmp/manni.config.yaml",
         ),
       ).toThrow(/routes/);
     },
@@ -304,51 +307,55 @@ describe("parseConfig", () => {
     "accepts the route language %s",
     (language) => {
       const c = parseConfig(
-        `version: 1\nroutes:\n  - root: docs\n    language: ${language}\n`,
-        "/tmp/dockg.config.yaml",
+        `routes:\n  - root: docs\n    language: ${language}\n`,
+        "/tmp/manni.config.yaml",
       );
       expect(c.routes[0]?.language).toBe(language);
     },
   );
 
   it("defaults routes to an empty list and requires root per mapping", () => {
-    expect(parseConfig("version: 1\n", "/tmp/c.yaml").routes).toEqual([]);
+    expect(parseConfig("", "/tmp/c.yaml").routes).toEqual([]);
     expect(() =>
-      parseConfig("version: 1\nroutes:\n  - basePath: /docs\n", "/tmp/c.yaml"),
+      parseConfig("routes:\n  - basePath: /docs\n", "/tmp/c.yaml"),
     ).toThrow(KgError);
   });
 
   it("parses fill.writeProvenance overrides", () => {
     const c = parseConfig(
-      "version: 1\nfill:\n  writeProvenance: false\n",
-      "/tmp/dockg.config.yaml",
+      "fill:\n  writeProvenance: false\n",
+      "/tmp/manni.config.yaml",
     );
     expect(c.fill.writeProvenance).toBe(false);
   });
 
-  it("parses provenance flags and rejects the retired gitTime key", () => {
+  it("parses provenance.qualified and rejects the retired git and gitTime keys", () => {
     const c = parseConfig(
-      "version: 1\nprovenance:\n  git: true\n  qualified: true\n",
-      "/tmp/dockg.config.yaml",
+      "provenance:\n  qualified: false\n",
+      "/tmp/manni.config.yaml",
     );
-    expect(c.provenance).toEqual({ git: true, qualified: true });
-    expect(() =>
-      parseConfig(
-        "version: 1\nprovenance:\n  gitTime: true\n",
-        "/tmp/dockg.config.yaml",
-      ),
-    ).toThrow(KgError);
+    expect(c.provenance).toEqual({ qualified: false });
+    // `git` was tri-state until 0051 §6 detected it instead. Nothing was
+    // published under it, so it is an unknown key rather than a migration.
+    for (const key of ["git", "gitTime"]) {
+      expect(() =>
+        parseConfig(
+          `provenance:\n  ${key}: true\n`,
+          "/tmp/manni.config.yaml",
+        ),
+      ).toThrow(KgError);
+    }
   });
 
   it("defaults stats.coverageThreshold to an empty (ungated) map", () => {
-    const c = parseConfig("version: 1\n", "/tmp/dockg.config.yaml");
+    const c = parseConfig("", "/tmp/manni.config.yaml");
     expect(c.stats.coverageThreshold).toEqual({});
   });
 
   it("expands a uniform coverage threshold across every measured field", () => {
     const c = parseConfig(
-      "version: 1\nstats:\n  coverageThreshold: 80\n",
-      "/tmp/dockg.config.yaml",
+      "stats:\n  coverageThreshold: 80\n",
+      "/tmp/manni.config.yaml",
     );
     // Every measured field gated at the same value — including the iiRDS
     // typing added in Phases 2-4 (ADR 01029). Growing the fixed list means a
@@ -372,8 +379,8 @@ describe("parseConfig", () => {
 
   it("parses a per-field coverage threshold map and leaves others ungated", () => {
     const c = parseConfig(
-      "version: 1\nstats:\n  coverageThreshold:\n    title: 100\n    description: 50\n",
-      "/tmp/dockg.config.yaml",
+      "stats:\n  coverageThreshold:\n    title: 100\n    description: 50\n",
+      "/tmp/manni.config.yaml",
     );
     expect(c.stats.coverageThreshold).toEqual({ title: 100, description: 50 });
   });
@@ -385,33 +392,28 @@ describe("parseConfig", () => {
       "stats:\n  coverageThreshold:\n    bogus: 50\n",
       "stats:\n  coverageThreshold:\n    title: 101\n",
     ]) {
-      expect(() =>
-        parseConfig(`version: 1\n${bad}`, "/tmp/dockg.config.yaml"),
-      ).toThrow(KgError);
+      expect(() => parseConfig(bad, "/tmp/manni.config.yaml")).toThrow(KgError);
     }
   });
 
-  it("parses all three provenance.git modes and rejects other strings", () => {
+  it("refuses every spelling the tri-state provenance.git took", () => {
+    // kg ADR 01010's `"auto" | true | false`, removed by 0051 §6. None of the
+    // three is a key any more, so each is refused by Ajv rather than read.
     for (const mode of ["auto", true, false] as const) {
-      const c = parseConfig(
-        `version: 1\nprovenance:\n  git: ${JSON.stringify(mode)}\n`,
-        "/tmp/dockg.config.yaml",
-      );
-      expect(c.provenance.git).toBe(mode);
+      expect(() =>
+        parseConfig(
+          `provenance:\n  git: ${JSON.stringify(mode)}\n`,
+          "/tmp/manni.config.yaml",
+        ),
+      ).toThrow(KgError);
     }
-    expect(() =>
-      parseConfig(
-        "version: 1\nprovenance:\n  git: maybe\n",
-        "/tmp/dockg.config.yaml",
-      ),
-    ).toThrow(KgError);
   });
 
   it("rejects an unknown derive source", () => {
     expect(() =>
       parseConfig(
-        "version: 1\nbuild:\n  derive: [frontmatter, telepathy]\n",
-        "/tmp/dockg.config.yaml",
+        "build:\n  derive: [frontmatter, telepathy]\n",
+        "/tmp/manni.config.yaml",
       ),
     ).toThrow(KgError);
   });
@@ -428,10 +430,21 @@ describe("loadConfig", () => {
     const dir = mkdtempSync(join(tmpdir(), "dockg-config-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
-      "meta:\n  paths: [docs]\nkg:\n  version: 1\n  out: graph.ttl\n",
+      "meta:\n  paths: [docs]\nkg:\n  out: graph.ttl\n",
     );
     const c = loadConfig(undefined, dir);
     expect(c.out).toBe("graph.ttl");
+    expect(c.configSource).toBe("manni.config.yaml");
+  });
+
+  it("reads the family collections: beside its own section", () => {
+    const dir = mkdtempSync(join(tmpdir(), "dockg-config-"));
+    writeFileSync(
+      join(dir, "manni.config.yaml"),
+      'collections:\n  - name: site\n    paths: ["docs/**/*.md"]\nkg:\n  out: graph.ttl\n',
+    );
+    const c = loadConfig(undefined, dir);
+    expect(c.collections.map((x) => x.name)).toEqual(["site"]);
   });
 
   it("treats an empty kg: section as the defaults", () => {
@@ -440,17 +453,20 @@ describe("loadConfig", () => {
     expect(loadConfig(undefined, dir).baseIri).toBe("urn:dockg:");
   });
 
-  it("still reads the pre-family dockg.config.yaml whole", () => {
+  it("does not read the pre-family dockg.config.yaml", () => {
+    // Nothing was ever published under that name, so it gets no alias and no
+    // migration (0051 §2, copying 0048 §4). It is simply not a config file.
     const dir = mkdtempSync(join(tmpdir(), "dockg-config-"));
-    writeFileSync(join(dir, "dockg.config.yaml"), "version: 1\nout: graph.ttl\n");
+    writeFileSync(join(dir, "dockg.config.yaml"), "out: graph.ttl\n");
     const c = loadConfig(undefined, dir);
-    expect(c.out).toBe("graph.ttl");
+    expect(c.out).toBe("kg/graph.ttl");
+    expect(c.configSource).toBeNull();
   });
 
   it("reads an explicit path with or without the kg: wrapper", () => {
     const dir = mkdtempSync(join(tmpdir(), "dockg-config-"));
-    writeFileSync(join(dir, "wrapped.yaml"), "kg:\n  version: 1\n  out: a.ttl\n");
-    writeFileSync(join(dir, "bare.yaml"), "version: 1\nout: b.ttl\n");
+    writeFileSync(join(dir, "wrapped.yaml"), "kg:\n  out: a.ttl\n");
+    writeFileSync(join(dir, "bare.yaml"), "out: b.ttl\n");
     expect(loadConfig("wrapped.yaml", dir).out).toBe("a.ttl");
     expect(loadConfig("bare.yaml", dir).out).toBe("b.ttl");
   });

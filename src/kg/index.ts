@@ -1,12 +1,13 @@
 /** dockg public API. */
 export * from "./types.js";
 export {
+  defaultConfig,
   loadConfig,
+  loadRunConfig,
   parseConfig,
   type DockgConfig,
   type DeriveSource,
   type FillField,
-  type GitMode,
   type Pricing,
 } from "./core/config.js";
 export {
@@ -17,7 +18,12 @@ export {
   SECTION_COVERAGE_FIELDS,
   type CoverageField,
 } from "./core/coverage.js";
-export { discoverFiles } from "./core/discover.js";
+export {
+  discoverFiles,
+  resolveDocumentSet,
+  type DocumentInputOptions,
+  type DocumentSetOptions,
+} from "./core/discover.js";
 export {
   DOCKG_NOT_APPLICABLE_TO_VARIANT,
   DOCKG_NOT_SOFTWARE_SUBJECT,

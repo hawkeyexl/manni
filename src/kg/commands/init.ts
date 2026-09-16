@@ -18,17 +18,18 @@ const HEADER = `# manni.config.yaml — shared configuration for the manni famil
 # Each tool reads its own top-level key; manni kg reads "kg:".
 `;
 
-const STARTER = `version: 1
-
-# Base IRI for every minted node. Set this to a namespace you control;
+const STARTER = `# Base IRI for every minted node. Set this to a namespace you control;
 # without it, IRIs fall back to the urn:dockg: placeholder.
 # baseIri: https://example.com/kg/
 
-inputs:
-  - "docs/**/*.md"
-exclude:
-  - "**/node_modules/**"
-
+# There is no document set here. \`manni kg build\` and \`manni kg fill\` read the
+# paths you name, or the collections declared once for every tool at the TOP
+# level of this file, beside \`kg:\` rather than inside it:
+#
+#   collections:
+#     - name: site
+#       paths: ["docs/**/*.md"]
+#
 # Output of \`manni kg build\`.
 out: kg/graph.ttl
 
@@ -49,18 +50,14 @@ out: kg/graph.ttl
 build:
   derive: [frontmatter, sections, links, tags, images, code, provenance]
 
-# PROV-O settings.
-# git: derive per-file provenance from git history (creation/modification
-#   dates as fallbacks, author agents, rename -> prov:wasRevisionOf) and
-#   stamp the build activity with the HEAD committer date. Deterministic
-#   per commit; wall-clock time never enters the graph.
-#   "auto" (default) derives it wherever git can run and warns where it
-#   cannot; true requires git, so an unavailable one fails the build; false
-#   skips git entirely.
+# PROV-O settings. Git history is detected, not switched: per-file dates and
+# author agents, rename -> prov:wasRevisionOf, and the build activity's HEAD
+# committer date are derived wherever git can run over a repository, and a run
+# that cannot says so once and builds the rest. Deterministic per commit;
+# wall-clock time never enters the graph.
 # qualified: emit prov:qualifiedAttribution/qualifiedAssociation nodes
 #   with roles alongside the direct properties.
 provenance:
-  git: auto
   qualified: true
 
 # Schemas \`manni kg validate\` checks via manni meta. Default: the \`kg\`

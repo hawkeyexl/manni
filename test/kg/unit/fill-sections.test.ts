@@ -39,7 +39,7 @@ function setup(fields = "[type]"): string {
   const dir = mkdtempSync(join(tmpdir(), "dockg-fillsec-"));
   writeFileSync(
     join(dir, "manni.config.yaml"),
-    `kg:\n  version: 1\n  inputs: ["*.md"]\n  fill:\n    fields: ${fields}\n`,
+    `collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n  fill:\n    fields: ${fields}\n`,
   );
   writeFileSync(join(dir, "a.md"), PAGE);
   return dir;
@@ -252,7 +252,7 @@ describe("fill --sections", () => {
     // The section value is written; only its provenance entry is omitted.
     expect(written).not.toContain("sections.install-the-sdk.type");
 
-    const validated = await runValidate({ cwd: dir, globs: ["a.md"] });
+    const validated = await runValidate({ cwd: dir, paths: ["a.md"] });
     expect(validated.exitCode, JSON.stringify(validated.run)).toBe(0);
 
     // And the gap is loud rather than silent.

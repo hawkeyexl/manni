@@ -5,14 +5,15 @@
 #
 # Separate from dockg.config.yaml so this fill.* block does not perturb the
 # counts the get-started steps assert.
-version: 1
-baseIri: https://example.com/dd/
-inputs:
-  - "test/kg/fixtures/dd/unpriced/**/*.md"
-out: .tmp/dd/unpriced.ttl
-provenance:
-  git: false
-fill:
-  provider: mock
-  model: no-such-model-in-the-price-table
-  maxCostUsd: 5
+collections:
+  - name: unpriced
+    paths:
+      - "unpriced/**/*.md"
+
+kg:
+  baseIri: https://example.com/dd/
+  out: .tmp/dd/unpriced.ttl
+  fill:
+    provider: mock
+    model: no-such-model-in-the-price-table
+    maxCostUsd: 5

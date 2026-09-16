@@ -28,7 +28,7 @@ describe("manni kg init", () => {
     expect(first.status).toBe(0);
     expect(existsSync(join(dir, "manni.config.yaml"))).toBe(true);
     expect(readFileSync(join(dir, "manni.config.yaml"), "utf8")).toMatch(
-      /^kg:\n  version: 1\n/m,
+      /^kg:\n  # Base IRI/m,
     );
 
     // scaffolded config parses: build against it (with a doc present)
@@ -53,7 +53,7 @@ describe("manni kg init", () => {
     expect(r.status).toBe(0);
     const text = readFileSync(join(dir, "manni.config.yaml"), "utf8");
     expect(text.startsWith(sibling)).toBe(true);
-    expect(text).toMatch(/\nkg:\n  version: 1\n/);
+    expect(text).toMatch(/\nkg:\n  # Base IRI/);
 
     // And the appended section is what the tool then reads.
     writeFileSync(join(dir, "docs.md"), "# Hi\n");
@@ -66,7 +66,7 @@ describe("manni kg fill --provider mock (CLI smoke)", () => {
     const dir = mkdtempSync(join(tmpdir(), "dockg-fillcli-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
-      'kg:\n  version: 1\n  inputs: ["*.md"]\n',
+      'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n',
     );
     const doc = "---\ntitle: T\n---\n\n# T\n";
     writeFileSync(join(dir, "a.md"), doc);
@@ -87,7 +87,7 @@ describe("manni kg fill --provider mock (CLI smoke)", () => {
     const dir = mkdtempSync(join(tmpdir(), "dockg-fillconf-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
-      'kg:\n  version: 1\n  inputs: ["*.md"]\n',
+      'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n',
     );
     writeFileSync(join(dir, "a.md"), "---\ntitle: T\n---\n\n# T\n");
     const { status } = run(

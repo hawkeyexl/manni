@@ -17,7 +17,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
-import { loadConfig } from "../core/config.js";
+import { loadRunConfig } from "../core/config.js";
 import { type SearchEntry, type SearchIndexDoc } from "../core/search-index.js";
 import {
   emitLocalizations,
@@ -38,6 +38,8 @@ import type { Embedder } from "../embed/types.js";
 
 export interface EmbedOptions {
   config?: string;
+  /** `--no-config`: skip discovery and run on the built-in defaults. */
+  noConfig?: boolean;
   /** Graph .ttl path (default: config `out`) — locates the sibling index. */
   graph?: string;
   /** Directory holding the indexes and manifest (default: beside the graph). */
@@ -149,7 +151,13 @@ async function makeEmbedder(
 
 export async function runEmbed(opts: EmbedOptions = {}): Promise<EmbedReport> {
   const cwd = opts.cwd ?? process.cwd();
-  const config = loadConfig(opts.config, cwd);
+  const config = loadRunConfig(
+    {
+      ...(opts.config === undefined ? {} : { configPath: opts.config }),
+      ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+    },
+    cwd,
+  );
   const graphPath = resolve(cwd, opts.graph ?? config.out);
   // The manifest is the work list: `export search` wrote one index per
   // language and named them all here, so embed never has to guess which files

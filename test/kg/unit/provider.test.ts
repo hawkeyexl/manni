@@ -14,7 +14,7 @@ import { providerSpecFor } from "../../../src/kg/llm/provider.js";
 import { KgError } from "../../../src/kg/types.js";
 
 function config(yaml: string) {
-  return parseConfig(`version: 1\n${yaml}`, "/tmp/dockg.config.yaml");
+  return parseConfig(yaml, "/tmp/manni.config.yaml");
 }
 
 describe("providerSpecFor", () => {

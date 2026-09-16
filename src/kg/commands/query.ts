@@ -5,7 +5,7 @@
  */
 import { resolve } from "node:path";
 import { DataFactory } from "n3";
-import { loadConfig } from "../core/config.js";
+import { loadRunConfig } from "../core/config.js";
 import { compactIri, expandTerm, loadGraph } from "../core/load.js";
 import { byCodeUnit } from "../core/sort.js";
 
@@ -14,6 +14,8 @@ export interface QueryOptions {
   p?: string;
   o?: string;
   config?: string;
+  /** `--no-config`: skip discovery and run on the built-in defaults. */
+  noConfig?: boolean;
   /** Graph path override (default: config `out`). */
   graph?: string;
   cwd?: string;
@@ -31,7 +33,13 @@ export interface QueryResult {
 
 export function runQuery(opts: QueryOptions = {}): QueryResult {
   const cwd = opts.cwd ?? process.cwd();
-  const config = loadConfig(opts.config, cwd);
+  const config = loadRunConfig(
+    {
+      ...(opts.config === undefined ? {} : { configPath: opts.config }),
+      ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+    },
+    cwd,
+  );
   const store = loadGraph(resolve(cwd, opts.graph ?? config.out));
 
   const s = opts.s ? DataFactory.namedNode(expandTerm(opts.s)) : null;

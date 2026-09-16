@@ -193,6 +193,12 @@ detectable fact is one more way to be wrong, and the warnings channel ADR 01010
 built is what makes detection safe here. `provenance.qualified` stays: it
 switches what is written, not what is discovered.
 
+The warning carries git's own reason for the degradation, because detection
+took away the user's way of saying "I require this": `the graph has no revision
+history or commit agents: <why>`. "Not a repository", "git is not on PATH" and
+"`git log` timed out" want different fixes, and in CI the warning is now the
+only thing between a runner that lost git and a quietly thinner graph.
+
 ### 7. One identity
 
 The `dockg` spellings that reach a user or a consumer become `manni`:
@@ -252,7 +258,13 @@ this `00NN` series, and `docs/proposals/README.md` gains a row for the log.
    the provider selection, the confidence and turn vocabulary, and the
    `meta-provenance` writer. Folding the rest into one layer is a follow-up,
    as 0048 left the docevals judge and fill layers.
-4. **The browser build is a second platform contract.** `./kg/runtime` and
+4. **Nothing can demand git provenance any more.** ADR 01010's `true` existed
+   for a CI job that requires reproducible attribution and would rather fail
+   than emit a graph without it. Detection cannot serve that case: the run
+   warns and produces the thinner graph. If a job turns out to need the
+   stronger contract, it belongs in `check` as a shape over the built graph —
+   an assertion about output — rather than back in the config as a switch.
+5. **The browser build is a second platform contract.** `./kg/runtime` and
    `./kg/embed` are built `platform: neutral`, so a `node:` import reaching
    them is a released bug rather than a type error. The bundle-purity test is
    the only thing that catches it.

@@ -9,7 +9,7 @@ function setup(files: Record<string, string>, config = ""): string {
   const dir = mkdtempSync(join(tmpdir(), "dockg-fill-"));
   writeFileSync(
     join(dir, "manni.config.yaml"),
-    `kg:\n  version: 1\n  inputs: ["*.md"]\n${config.replace(/^(?=.)/gm, "  ")}`,
+    `collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n${config.replace(/^(?=.)/gm, "  ")}`,
   );
   for (const [name, content] of Object.entries(files)) {
     writeFileSync(join(dir, name), content);
@@ -319,7 +319,7 @@ describe("runFill", () => {
     const { writeFileSync: write } = await import("node:fs");
     write(
       join(dir, "manni.config.yaml"),
-      'kg:\n  version: 1\n  inputs: ["*.md"]\n  fill:\n    fields: [label, concepts]\n',
+      'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n  fill:\n    fields: [label, concepts]\n',
     );
     await runFill({
       cwd: dir,
@@ -744,7 +744,7 @@ describe("runFill graph guardrail (fill.validateGraph)", () => {
     // guard must still see a.md's hierarchy.
     const report = await runFill({
       cwd: dir,
-      globs: ["b.md"],
+      paths: ["b.md"],
       providerInstance: provider,
     });
     const result = report.results.find((r) => r.path === "b.md");

@@ -9,7 +9,7 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { KgError } from "../types.js";
-import { loadConfig } from "../core/config.js";
+import { loadRunConfig } from "../core/config.js";
 import { emitJsonLd } from "../core/emit-jsonld.js";
 import { emitRdfXml } from "../core/emit-rdfxml.js";
 import { projectPackage } from "../core/iirds-package.js";
@@ -43,6 +43,8 @@ export type ExportFormat = (typeof EXPORT_TARGETS)[number];
 
 export interface ExportOptions {
   config?: string;
+  /** `--no-config`: skip discovery and run on the built-in defaults. */
+  noConfig?: boolean;
   /** Graph .ttl path (default: config `out`). */
   graph?: string;
   format: ExportFormat;
@@ -218,7 +220,13 @@ export async function runExport(opts: ExportOptions): Promise<ExportResult> {
     );
   }
 
-  const config = loadConfig(opts.config, cwd);
+  const config = loadRunConfig(
+    {
+      ...(opts.config === undefined ? {} : { configPath: opts.config }),
+      ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+    },
+    cwd,
+  );
   const graphPath = resolve(cwd, opts.graph ?? config.out);
 
   if (opts.format === "jsonld") return runJsonLd(cwd, graphPath, opts.out);

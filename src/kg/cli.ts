@@ -11,7 +11,7 @@
  */
 import { Command } from "commander";
 import pkg from "../../package.json" with { type: "json" };
-import { collect, splitList } from "../shared/cli-options.js";
+import { collect, configOption, splitList } from "../shared/cli-options.js";
 import { shouldColor } from "../shared/color.js";
 import { fail } from "../shared/run.js";
 import { warn } from "../shared/warn.js";
@@ -161,6 +161,72 @@ function choiceOption<T extends string>(flag: string, allowed: readonly T[]) {
 /** `-f, --format`: every verb's list is `pretty | json` (0051 §2). */
 const formatOption = choiceOption("--format", KG_FORMATS);
 
+/**
+ * The document-set surface the verbs that read documents share (proposals
+ * 0041 and 0051 §1): positional `[paths...]`, `--collection` and `--exclude`
+ * (each one value per occurrence), and `-c`/`--no-config`. Declared once so
+ * the verbs cannot drift apart on a name or a description.
+ */
+function documentInputs(command: Command, verb: string): Command {
+  return command
+    .argument(
+      "[paths...]",
+      `Files, directories, or globs to ${verb} (default: the configured collections)`,
+    )
+    .option(
+      "--collection <name>",
+      "Configured collection to read (repeatable)",
+      collect,
+      [],
+    )
+    .option("--exclude <glob>", "Glob to exclude (repeatable)", collect, [])
+    .option("-c, --config <path>", "Path to manni.config.yaml")
+    .option("--no-config", "Ignore any discovered config file");
+}
+
+/**
+ * `-c`/`--no-config` for a verb that reads a built graph rather than a
+ * document set. They share one commander attribute, which `configOption`
+ * splits.
+ */
+function configInputs(command: Command): Command {
+  return command
+    .option("-c, --config <path>", "Path to manni.config.yaml")
+    .option("--no-config", "Ignore any discovered config file");
+}
+
+/**
+ * `opts` minus the one attribute `-c` and `--no-config` share. `documentOptions`
+ * restates it as the two fields a core reads, and spreading the raw value over
+ * them would put commander's `false` back where a path belongs.
+ */
+function rest<T extends { config?: string | boolean }>(
+  opts: T,
+): Omit<T, "config"> {
+  const { config, ...others } = opts;
+  return others;
+}
+
+/** The shared options as the command cores take them. */
+function documentOptions(opts: {
+  collection?: string[];
+  exclude?: string[];
+  config?: string | boolean;
+}): {
+  config?: string;
+  noConfig?: boolean;
+  collection?: string[];
+  exclude?: string[];
+} {
+  const { configPath, noConfig } = configOption(opts.config);
+  return {
+    ...(configPath === undefined ? {} : { config: configPath }),
+    ...(noConfig === true ? { noConfig } : {}),
+    ...(opts.collection === undefined ? {} : { collection: opts.collection }),
+    ...(opts.exclude === undefined ? {} : { exclude: opts.exclude }),
+  };
+}
+
 program
   .command("init")
   .description("Add a starter `kg:` section to manni.config.yaml in the current directory")
@@ -172,17 +238,23 @@ program
     }
   });
 
-program
-  .command("build")
-  .description("Derive the knowledge graph and write deterministic Turtle")
-  .argument("[globs...]", "Input globs (default: config inputs)")
-  .option("-c, --config <path>", "Path to manni.config.yaml")
+documentInputs(
+  program
+    .command("build")
+    .description("Derive the knowledge graph and write deterministic Turtle"),
+  "build",
+)
   .option("-o, --out <path>", "Output .ttl path (default: config out)")
-  .action(async (globs: string[], opts: { config?: string; out?: string }) => {
+  .action(async (paths: string[], opts: {
+    config?: string | boolean;
+    collection?: string[];
+    exclude?: string[];
+    out?: string;
+  }) => {
     try {
       const result = await runBuild({
-        globs,
-        config: opts.config,
+        paths,
+        ...documentOptions(opts),
         out: opts.out,
       });
       // Warnings go to stderr so stdout stays the machine-readable summary;
@@ -196,12 +268,13 @@ program
     }
   });
 
-program
-  .command("check")
-  .description(
-    "Validate the built graph against the bundled SHACL shapes (violations exit 1)",
-  )
-  .option("-c, --config <path>", "Path to manni.config.yaml")
+configInputs(
+  program
+    .command("check")
+    .description(
+      "Validate the built graph against the bundled SHACL shapes (violations exit 1)",
+    ),
+)
   .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
   // One path per occurrence, never split on commas: a path may hold one.
   .option(
@@ -218,13 +291,13 @@ program
   )
   .action(
     async (opts: {
-      config?: string;
+      config?: string | boolean;
       graph?: string;
       shapes: string[];
       format: KgFormat;
     }) => {
       try {
-        const report = await runCheck(opts);
+        const report = await runCheck({ ...rest(opts), ...documentOptions(opts) });
         console.log(renderCheck(report, opts.format));
         process.exitCode = report.exitCode;
       } catch (e) {
@@ -233,11 +306,14 @@ program
     },
   );
 
-program
-  .command("validate")
-  .description("Check docs are KG-ready (frontmatter validated via manni meta)")
-  .argument("[globs...]", "Input globs (default: config inputs)")
-  .option("-c, --config <path>", "Path to manni.config.yaml")
+documentInputs(
+  program
+    .command("validate")
+    .description(
+      "Check docs are KG-ready (frontmatter validated via manni meta)",
+    ),
+  "validate",
+)
   .option(
     "-f, --format <format>",
     `Output: ${KG_FORMAT_LIST}`,
@@ -245,9 +321,17 @@ program
     "pretty",
   )
   .action(
-    async (globs: string[], opts: { config?: string; format: KgFormat }) => {
+    async (
+      paths: string[],
+      opts: {
+        config?: string | boolean;
+        collection?: string[];
+        exclude?: string[];
+        format: KgFormat;
+      },
+    ) => {
       try {
-        const result = await runValidate({ globs, config: opts.config });
+        const result = await runValidate({ paths, ...documentOptions(opts) });
         console.log(renderValidate(result, opts.format));
         process.exitCode = result.exitCode;
       } catch (e) {
@@ -256,13 +340,14 @@ program
     },
   );
 
-program
-  .command("fill")
-  .description(
-    "Propose `kg:` frontmatter fields with an LLM, gated by confidence, and write them back",
-  )
-  .argument("[globs...]", "Input globs (default: config inputs)")
-  .option("-c, --config <path>", "Path to manni.config.yaml")
+documentInputs(
+  program
+    .command("fill")
+    .description(
+      "Propose `kg:` frontmatter fields with an LLM, gated by confidence, and write them back",
+    ),
+  "fill",
+)
   .option(
     "-f, --format <format>",
     `Output: ${KG_FORMAT_LIST}`,
@@ -290,11 +375,11 @@ program
     enumOption("--provider", PROVIDER_NAMES),
   )
   .option("--model <model>", "Model override")
-  .action(async (globs: string[], opts: Record<string, unknown>) => {
+  .action(async (paths: string[], opts: Record<string, unknown>) => {
     try {
       const report = await runFill({
-        globs,
-        config: opts.config as string | undefined,
+        paths,
+        ...documentOptions(opts),
         dryRun: opts.dryRun as boolean | undefined,
         force: opts.force as boolean | undefined,
         noCache: opts.cache === false,
@@ -327,6 +412,7 @@ program
   .option("--p <term>", "Predicate IRI or prefixed name")
   .option("--o <term>", "Object IRI, prefixed name, or literal value")
   .option("-c, --config <path>", "Path to manni.config.yaml")
+  .option("--no-config", "Ignore any discovered config file")
   .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
   .option(
     "-f, --format <format>",
@@ -339,12 +425,12 @@ program
       s?: string;
       p?: string;
       o?: string;
-      config?: string;
+      config?: string | boolean;
       graph?: string;
       format: KgFormat;
     }) => {
       try {
-        const result = runQuery(opts);
+        const result = runQuery({ ...rest(opts), ...documentOptions(opts) });
         console.log(renderQuery(result, opts.format));
       } catch (e) {
         fail(e);
@@ -358,6 +444,7 @@ program
     "Summarize the built graph: counts, orphans, broken links, hubs, metadata coverage",
   )
   .option("-c, --config <path>", "Path to manni.config.yaml")
+  .option("--no-config", "Ignore any discovered config file")
   .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
   .option(
     "-f, --format <format>",
@@ -384,7 +471,7 @@ program
   )
   .action(
     (opts: {
-      config?: string;
+      config?: string | boolean;
       graph?: string;
       format: KgFormat;
       check?: boolean;
@@ -392,7 +479,7 @@ program
       coverageThreshold?: number;
     }) => {
       try {
-        const report = runStats(opts);
+        const report = runStats({ ...rest(opts), ...documentOptions(opts) });
         console.log(renderStats(report, opts.format));
         process.exitCode = report.exitCode;
       } catch (e) {
@@ -406,6 +493,7 @@ program
   .description("Rank graph nodes for a text query (needs `export search`)")
   .argument("<query>", "Text query")
   .option("-c, --config <path>", "Path to manni.config.yaml")
+  .option("--no-config", "Ignore any discovered config file")
   .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
   .option(
     "-i, --index <dir>",
@@ -435,7 +523,7 @@ program
     async (
       query: string,
       opts: {
-        config?: string;
+        config?: string | boolean;
         graph?: string;
         index?: string;
         lang?: string;
@@ -446,7 +534,11 @@ program
       },
     ) => {
       try {
-        const report = await runSearch({ ...opts, query });
+        const report = await runSearch({
+          ...rest(opts),
+          ...documentOptions(opts),
+          query,
+        });
         console.log(renderSearch(report, opts.format));
       } catch (e) {
         fail(e);
@@ -461,6 +553,7 @@ program
   )
   .argument("<node>", "Starting node: a full IRI or a prefix:local CURIE")
   .option("-c, --config <path>", "Path to manni.config.yaml")
+  .option("--no-config", "Ignore any discovered config file")
   .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
   .option(
     "-d, --depth <n>",
@@ -493,7 +586,7 @@ program
     (
       node: string,
       opts: {
-        config?: string;
+        config?: string | boolean;
         graph?: string;
         depth?: number;
         predicates?: string;
@@ -508,7 +601,8 @@ program
     ) => {
       try {
         const report = runTraverse({
-          ...opts,
+          ...rest(opts),
+          ...documentOptions(opts),
           node,
           predicates:
             opts.predicates === undefined
@@ -528,6 +622,7 @@ program
     "Compute local embeddings for the search index (needs @huggingface/transformers)",
   )
   .option("-c, --config <path>", "Path to manni.config.yaml")
+  .option("--no-config", "Ignore any discovered config file")
   .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
   .option(
     "-i, --index <dir>",
@@ -551,7 +646,7 @@ program
   )
   .action(
     async (opts: {
-      config?: string;
+      config?: string | boolean;
       graph?: string;
       index?: string;
       out?: string;
@@ -562,7 +657,8 @@ program
     }) => {
       try {
         const report = await runEmbed({
-          ...opts,
+          ...rest(opts),
+          ...documentOptions(opts),
           noCache: opts.cache === false,
         });
         console.log(renderEmbed(report, opts.format));
@@ -581,6 +677,7 @@ program
   // other verb of the family (0051 §2), and one flag cannot mean two things.
   .argument("<target>", `What to write: ${EXPORT_TARGETS.join(" | ")}`)
   .option("-c, --config <path>", "Path to manni.config.yaml")
+  .option("--no-config", "Ignore any discovered config file")
   .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
   .option(
     "-o, --out <path>",
@@ -589,7 +686,7 @@ program
   .action(
     async (
       target: string,
-      opts: { config?: string; graph?: string; out?: string },
+      opts: { config?: string | boolean; graph?: string; out?: string },
     ) => {
       try {
         if (!(EXPORT_TARGETS as readonly string[]).includes(target)) {
@@ -598,7 +695,7 @@ program
           );
         }
         const result = await runExport({
-          config: opts.config,
+          ...documentOptions(opts),
           graph: opts.graph,
           format: target as ExportFormat,
           out: opts.out,

@@ -5,25 +5,43 @@
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { errorMessage } from "../../shared/errors.js";
 import { KgError } from "../types.js";
 import { analyzeDoc } from "../core/analyze.js";
-import { loadConfig } from "../core/config.js";
+import { loadRunConfig } from "../core/config.js";
 import { deriveGraph } from "../core/derive.js";
-import { discoverFiles } from "../core/discover.js";
+import {
+  documentSetPatterns,
+  resolveDocumentSet,
+  type DocumentInputOptions,
+} from "../core/discover.js";
 import { emitTurtle } from "../core/emit.js";
 import { harvestWarnings } from "../core/harvest.js";
 import { collectGitHistory } from "../core/git.js";
+import { errorMessage } from "../../shared/errors.js";
 import pkg from "../../../package.json" with { type: "json" };
 
-export interface BuildOptions {
-  /** Positional globs; override config `inputs` when non-empty. */
-  globs?: string[];
-  /** Explicit config file path. */
-  config?: string;
+export interface BuildOptions extends DocumentInputOptions {
   /** Output path override (default: config `out`). */
   out?: string;
   cwd?: string;
+}
+
+/**
+ * What a run that wanted git history and could not have it is told. Said once,
+ * through `warn()` at the CLI edge: git is detected now rather than switched
+ * (proposal 0051 §6), so the degradation kg ADR 01010 built the warnings
+ * channel for is all that is left of the tri-state.
+ *
+ * The reason travels with the sentence. Detection removed the user's way of
+ * saying "I require this", so the warning is the only thing standing between a
+ * CI runner that lost git and a quietly thinner graph — and "not a repository"
+ * wants a different fix from "git is not on PATH" or "`git log` timed out".
+ */
+export const GIT_ABSENT_WARNING =
+  "the graph has no revision history or commit agents";
+
+export function gitAbsentWarning(reason: string): string {
+  return `${GIT_ABSENT_WARNING}: ${reason}`;
 }
 
 export interface BuildResult {
@@ -40,14 +58,20 @@ export interface BuildResult {
 
 export async function runBuild(opts: BuildOptions = {}): Promise<BuildResult> {
   const cwd = opts.cwd ?? process.cwd();
-  const config = loadConfig(opts.config, cwd);
-  const inputs =
-    opts.globs && opts.globs.length > 0 ? opts.globs : config.inputs;
+  const config = loadRunConfig(
+    {
+      ...(opts.config === undefined ? {} : { configPath: opts.config }),
+      ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+      ...(opts.paths === undefined ? {} : { paths: opts.paths }),
+      ...(opts.collection === undefined ? {} : { collection: opts.collection }),
+    },
+    cwd,
+  );
 
-  const files = discoverFiles(inputs, config.exclude, cwd);
+  const files = resolveDocumentSet(config, opts, "build", cwd);
   if (files.length === 0) {
     throw new KgError(
-      `No input files matched: ${inputs.join(", ")} (cwd: ${cwd})`,
+      `No input files matched: ${documentSetPatterns(config, opts).join(", ")} (cwd: ${cwd})`,
     );
   }
 
@@ -62,25 +86,17 @@ export async function runBuild(opts: BuildOptions = {}): Promise<BuildResult> {
   // schema-strict, so a typo there is a hard error; at the page level nothing
   // validates, and a near miss derives silently nothing (ADR 01028).
   const warnings: string[] = harvestWarnings(docs);
-  // The git pass only feeds the provenance derive source — skip the subprocess
-  // entirely when that source, or provenance.git itself, is off. Under "auto"
-  // an unavailable git degrades to a warning; under `true` the user demanded
-  // it, so failing to honor that is an operational error (ADR 01010).
+  // The git pass only feeds the provenance derive source, so the subprocess is
+  // skipped entirely when that source is off. Otherwise git is *detected*
+  // (proposal 0051 §6): history is used wherever git can run over a
+  // repository, and a run that would have used it and cannot says so once and
+  // builds the rest — kg ADR 01010's degradation, without its switch.
   let gitHistory: Awaited<ReturnType<typeof collectGitHistory>> | undefined;
-  if (
-    config.provenance.git !== false &&
-    config.build.derive.includes("provenance")
-  ) {
+  if (config.build.derive.includes("provenance")) {
     try {
       gitHistory = await collectGitHistory(cwd);
     } catch (e) {
-      const detail = errorMessage(e);
-      if (config.provenance.git === true) {
-        throw new KgError(`provenance.git is true but ${detail}`);
-      }
-      warnings.push(
-        `provenance.git is "auto" and ${detail} — continuing without git-derived provenance`,
-      );
+      warnings.push(gitAbsentWarning(errorMessage(e)));
     }
   }
 
