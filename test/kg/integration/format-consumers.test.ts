@@ -25,6 +25,7 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { defined } from "../helpers/defined.js";
 import { Parser as N3Parser, Store } from "n3";
 import { RdfXmlParser } from "rdfxml-streaming-parser";
 import type { Quad } from "@rdfjs/types";
@@ -92,7 +93,9 @@ function readZipWithYauzl(path: string): Promise<{
         const names: string[] = [];
         const methods = new Map<string, number>();
         const bytes = new Map<string, Buffer>();
-        zip.on("entry", (entry) => {
+        // `EventEmitter.on` hands the listener `any`, so the entry is typed
+        // here — the payload yauzl documents for this event.
+        zip.on("entry", (entry: yauzl.Entry) => {
           names.push(entry.fileName);
           methods.set(entry.fileName, entry.compressionMethod);
           zip.openReadStream(entry, (e, stream) => {
@@ -135,11 +138,13 @@ describe("emitted formats, read by independent consumers", () => {
     const pkg = join(dir, "package.iirds");
     exportAs("iirds", graph, pkg);
     const { bytes } = await readZipWithYauzl(pkg);
-    const xml = bytes.get("META-INF/metadata.rdf");
-    expect(xml, "package is missing META-INF/metadata.rdf").toBeDefined();
+    const xml = defined(
+      bytes.get("META-INF/metadata.rdf"),
+      "package is missing META-INF/metadata.rdf",
+    );
 
     const quads = await parseRdfXml(
-      xml!.toString("utf8"),
+      xml.toString("utf8"),
       "https://example.com/kg/",
     );
     expect(quads.length).toBeGreaterThan(0);

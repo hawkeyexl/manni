@@ -1,10 +1,12 @@
 /**
  * The real embedder, against the real model (ADR 01025).
  *
- * **Not part of `npm test`.** This suite downloads model weights and is excluded
- * from the default config; it runs only in the `embed-real` CI job, via
- * `vitest.real.config.ts`. The repo's "no network in tests" invariant applies to
- * the default suite, which stays hermetic.
+ * **Not part of `npm test`.** This suite downloads model weights, so
+ * `vitest.config.ts` excludes it and no CI job runs it. `npm run test:kg:real`
+ * is how it is run deliberately, through `vitest.kg-real.config.ts`; it needs
+ * the optional `@huggingface/transformers` peer installed and network access to
+ * the Hugging Face CDN on a cold cache. The repo's "no network in tests"
+ * invariant applies to the default suite, which stays hermetic.
  *
  * It exists because mocks certified a `createLocalEmbedder` that threw on every
  * real call for an entire release. Every assertion here is one the mock could
@@ -71,7 +73,7 @@ describe(
       const a = await embedder.embed(`${head}TAILMARKER unique ending phrase`);
       const b = await embedder.embed(`${head}DIFFERENT unique closing words`);
       let dot = 0;
-      for (let i = 0; i < a.length; i++) dot += a[i]! * b[i]!;
+      for (let i = 0; i < a.length; i++) dot += (a[i] ?? 0) * (b[i] ?? 0);
       expect(dot).toBeLessThan(0.999);
     });
 
@@ -87,7 +89,7 @@ describe(
       );
       const cos = (a: Float32Array, b: Float32Array) => {
         let d = 0;
-        for (let i = 0; i < a.length; i++) d += a[i]! * b[i]!;
+        for (let i = 0; i < a.length; i++) d += (a[i] ?? 0) * (b[i] ?? 0);
         return d;
       };
       expect(cos(query, relevant)).toBeGreaterThan(cos(query, irrelevant));

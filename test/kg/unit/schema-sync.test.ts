@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { basename, dirname, join } from "node:path";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { describe, expect, it } from "vitest";
+import { defined } from "../helpers/defined.js";
 import { bundledShapesPath } from "../../../src/kg/core/pkg.js";
 import {
   frontmatterSchema,
@@ -124,8 +125,11 @@ describe("COVERAGE_FIELD_NAMES ↔ config schema", () => {
       configSchema.properties.stats.properties.coverageThreshold.anyOf.find(
         (s) => s.properties,
       );
-    expect(mapForm, "no object form in coverageThreshold anyOf").toBeDefined();
-    expect(Object.keys(mapForm!.properties!).sort()).toEqual(
+    const properties = defined(
+      defined(mapForm, "an object form in coverageThreshold anyOf").properties,
+      "its properties",
+    );
+    expect(Object.keys(properties).sort()).toEqual(
       [...COVERAGE_FIELD_NAMES].sort(),
     );
   });
@@ -436,7 +440,7 @@ describe("BCP-47 pattern ↔ config schema ↔ shapes", () => {
         // patternProperties keys are patterns too — that is how
         // embed.byLanguage constrains its language keys.
         if (key === "patternProperties" && value && typeof value === "object") {
-          for (const p of Object.keys(value)) found.add(p);
+          for (const p of Object.keys(value as object)) found.add(p);
         }
         walk(value);
       }
@@ -460,6 +464,6 @@ describe("BCP-47 pattern ↔ config schema ↔ shapes", () => {
     expect(match, "shapes declare no sh:pattern for dcterms:language").not.toBe(
       null,
     );
-    expect(match![1]).toBe(source);
+    expect(defined(match)[1]).toBe(source);
   });
 });

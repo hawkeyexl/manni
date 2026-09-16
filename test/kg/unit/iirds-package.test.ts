@@ -68,7 +68,7 @@ describe("projectPackage", () => {
       (q) => q.s === PKG && q.p === IIRDS_IIRDS_VERSION,
     );
     expect(versions).toHaveLength(1);
-    expect(versions[0]!.o.value).toBe("1.3");
+    expect(versions[0]?.o.value).toBe("1.3");
     expect(has(quads, PKG, IIRDS_TITLE, "manni kg export")).toBe(true);
   });
 

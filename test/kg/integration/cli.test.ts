@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { spawnText } from "../../helpers/spawn.js";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -19,10 +20,14 @@ const cli = join(root, "dist", "cli.js");
  * assertion has something to say.
  */
 export function runCli(args: string[], opts: { cwd?: string } = {}) {
-  const r = spawnSync(process.execPath, [cli, "kg", ...args], {
+  const raw = spawnSync(process.execPath, [cli, "kg", ...args], {
     encoding: "utf8",
     cwd: opts.cwd ?? root,
   });
+  // `spawnText` restores the `null` both streams really carry when the spawn
+  // itself failed; `@types/node` promises a string once `encoding` is set, so
+  // the guards below would otherwise read as dead code.
+  const r = spawnText(raw);
   const stdout = r.stdout ?? "";
   const stderr = r.stderr ?? "";
   return {
@@ -32,7 +37,7 @@ export function runCli(args: string[], opts: { cwd?: string } = {}) {
     // spawnSync gives a null status when the process died on a signal or could
     // not be spawned; r.error carries the reason in the latter case.
     status: r.status ?? -1,
-    error: r.error,
+    error: raw.error,
   };
 }
 

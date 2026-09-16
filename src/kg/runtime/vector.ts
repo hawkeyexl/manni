@@ -71,7 +71,15 @@ export class VectorMismatchError extends Error {
  * it on `globalThis`.
  */
 export async function searchIndexDigest(raw: string): Promise<string> {
-  const subtle = globalThis.crypto?.subtle;
+  // `lib.dom` and @types/node both declare `globalThis.crypto.subtle` as
+  // always present. A page served over plain HTTP gets `crypto` without
+  // `subtle`, which is the case this throw exists for: the declaration is the
+  // optimistic one, and reading through `Partial` is how the guard gets to say
+  // so instead of reading as a test that cannot fail.
+  const webCrypto = globalThis.crypto as
+    | Partial<typeof globalThis.crypto>
+    | undefined;
+  const subtle = webCrypto?.subtle;
   if (!subtle) {
     throw new Error(
       "searchIndexDigest needs Web Crypto (globalThis.crypto.subtle), which is unavailable here — a page served over plain HTTP does not get it.",
@@ -177,12 +185,19 @@ export function createVectorIndex(bytes: Uint8Array): VectorIndex {
       const q = normalize(Float32Array.from(query));
 
       const scored: EntryCandidate[] = [];
-      for (let row = 0; row < ids.length; row++) {
-        const base = row * dims;
+      // `entries()` pairs each row with its IRI, so the id is proven present
+      // by the iteration rather than asserted after an index.
+      for (const [row, iri] of ids.entries()) {
+        // The payload is `count × dims` floats, so this row is exactly these
+        // `dims` of them — and `q` was checked to be `dims` long above. Both
+        // walks are therefore in range; `?? 0` spells that a term outside the
+        // row contributes nothing, which is what out of range means for a dot
+        // product.
+        const stored = vectors.subarray(row * dims, (row + 1) * dims);
         let score = 0;
-        for (let i = 0; i < dims; i++) score += q[i]! * vectors[base + i]!;
+        for (const [i, value] of q.entries()) score += value * (stored[i] ?? 0);
         if (score >= minScore) {
-          scored.push({ iri: ids[row]!, score, via: "vector" });
+          scored.push({ iri, score, via: "vector" });
         }
       }
 

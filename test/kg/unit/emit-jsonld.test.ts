@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { defined } from "../helpers/defined.js";
 import { emitJsonLd } from "../../../src/kg/core/emit-jsonld.js";
 import type { Quad } from "../../../src/kg/core/derive.js";
 import { NS, RDF_TYPE } from "../../../src/kg/core/vocab.js";
@@ -42,14 +43,14 @@ describe("emitJsonLd", () => {
     const { graph } = parse(emitJsonLd(quads));
     expect(graph).toHaveLength(1);
     // Multiple types → sorted array of compacted class IRIs.
-    expect(graph[0]!["@type"]).toEqual(["kg:Document", "prov:Entity"]);
+    expect(defined(graph[0])["@type"]).toEqual(["kg:Document", "prov:Entity"]);
   });
 
   it("emits a single @type as a scalar, not an array", () => {
     const s = `${NS.kg}doc/a`;
     const quads: Quad[] = [{ s, p: RDF_TYPE, o: iri(`${NS.kg}Document`) }];
     const { graph } = parse(emitJsonLd(quads));
-    expect(graph[0]!["@type"]).toBe("kg:Document");
+    expect(defined(graph[0])["@type"]).toBe("kg:Document");
   });
 
   it("renders IRI objects as {@id}, plain literals as strings, typed as {@value,@type}", () => {
@@ -60,7 +61,7 @@ describe("emitJsonLd", () => {
       { s, p: `${NS.kg}wordCount`, o: lit("42", `${NS.xsd}integer`) },
     ];
     const { graph } = parse(emitJsonLd(quads));
-    const node = graph[0]!;
+    const node = defined(graph[0]);
     expect(node["dcterms:references"]).toEqual({ "@id": `${NS.kg}doc/b` });
     expect(node["dcterms:title"]).toBe("Hello");
     expect(node["kg:wordCount"]).toEqual({
@@ -75,7 +76,7 @@ describe("emitJsonLd", () => {
       { s, p: `${NS.dcterms}title`, o: lit("Hi", `${NS.xsd}string`) },
     ];
     const { graph } = parse(emitJsonLd(quads));
-    expect(graph[0]!["dcterms:title"]).toBe("Hi");
+    expect(defined(graph[0])["dcterms:title"]).toBe("Hi");
   });
 
   it("collapses a single value to a scalar and keeps multiples as a sorted array", () => {
@@ -86,8 +87,8 @@ describe("emitJsonLd", () => {
       { s, p: `${NS.dcterms}title`, o: lit("One") },
     ];
     const { graph } = parse(emitJsonLd(quads));
-    expect(graph[0]!["dcterms:title"]).toBe("One");
-    expect(graph[0]!["dcterms:references"]).toEqual([
+    expect(defined(graph[0])["dcterms:title"]).toBe("One");
+    expect(defined(graph[0])["dcterms:references"]).toEqual([
       { "@id": `${NS.kg}doc/b` },
       { "@id": `${NS.kg}doc/c` },
     ]);
@@ -105,7 +106,7 @@ describe("emitJsonLd", () => {
       `${NS.kg}doc/z`,
     ]);
     // Within the first node, @id leads, then predicate keys sorted.
-    const keys = Object.keys(graph[0]!);
+    const keys = Object.keys(defined(graph[0]));
     expect(keys[0]).toBe("@id");
     expect(keys.slice(1)).toEqual([...keys.slice(1)].sort());
   });

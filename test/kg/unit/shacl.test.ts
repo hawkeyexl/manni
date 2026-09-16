@@ -6,8 +6,6 @@ import { validateGraph } from "../../../src/kg/core/shacl.js";
 import { bundledShapesPath } from "../../../src/kg/core/pkg.js";
 import { NS, RDF_TYPE } from "../../../src/kg/core/vocab.js";
 
-const { namedNode, literal, quad } = DataFactory;
-
 const BASE = "https://example.com/kg/";
 const SHAPES = [bundledShapesPath(import.meta.url)];
 
@@ -24,12 +22,12 @@ function build(
   const store = new Store();
   for (const [s, p, o] of triples) {
     store.addQuad(
-      quad(
-        namedNode(s),
-        namedNode(p),
+      DataFactory.quad(
+        DataFactory.namedNode(s),
+        DataFactory.namedNode(p),
         typeof o === "string"
-          ? namedNode(o)
-          : literal(o.lit, o.dt ? namedNode(o.dt) : undefined),
+          ? DataFactory.namedNode(o)
+          : DataFactory.literal(o.lit, o.dt ? DataFactory.namedNode(o.dt) : undefined),
       ),
     );
   }
@@ -103,11 +101,11 @@ describe("validateGraph", () => {
       (f) => f.focusNode === c && f.path === `${NS.skos}inScheme`,
     );
     expect(hit).toBeDefined();
-    expect(hit!.severity).toBe("error");
+    expect(hit?.severity).toBe("error");
     // SHACL's own word survives beside the family's, as a11y keeps axe's
     // `impact` (proposal 0035, stress test 10).
-    expect(hit!.shaclSeverity).toBe("violation");
-    expect(hit!.docs).toEqual(["docs/a.md"]);
+    expect(hit?.shaclSeverity).toBe("violation");
+    expect(hit?.docs).toEqual(["docs/a.md"]);
   });
 
   it("flags a concept missing skos:prefLabel", async () => {
@@ -140,8 +138,8 @@ describe("validateGraph", () => {
       (f) => f.focusNode === c && f.path === `${NS.skos}prefLabel`,
     );
     expect(hit).toBeDefined();
-    expect(hit!.severity).toBe("warning");
-    expect(hit!.shaclSeverity).toBe("warning");
+    expect(hit?.severity).toBe("warning");
+    expect(hit?.shaclSeverity).toBe("warning");
   });
 
   it("closed Document shape rejects unexpected predicates", async () => {
@@ -155,8 +153,8 @@ describe("validateGraph", () => {
       (f) => f.focusNode === d && f.path === `${NS.kg}surprise`,
     );
     expect(hit).toBeDefined();
-    expect(hit!.severity).toBe("error");
-    expect(hit!.docs).toEqual(["docs/a.md"]);
+    expect(hit?.severity).toBe("error");
+    expect(hit?.docs).toEqual(["docs/a.md"]);
   });
 
   it("accepts a published iiRDS topic type and a ProductVariant node", async () => {
@@ -185,8 +183,8 @@ describe("validateGraph", () => {
       (f) => f.focusNode === d && f.path === `${NS.iirds}has-topic-type`,
     );
     expect(hit).toBeDefined();
-    expect(hit!.severity).toBe("error");
-    expect(hit!.docs).toEqual(["docs/a.md"]);
+    expect(hit?.severity).toBe("error");
+    expect(hit?.docs).toEqual(["docs/a.md"]);
   });
 
   it("accepts a section carrying iiRDS typing (ADR 01013)", async () => {
@@ -222,7 +220,7 @@ describe("validateGraph", () => {
       (f) => f.focusNode === s && f.path === `${NS.iirds}has-topic-type`,
     );
     expect(hit).toBeDefined();
-    expect(hit!.severity).toBe("error");
+    expect(hit?.severity).toBe("error");
   });
 
   it("accepts kg:brokenSectionRef on a document", async () => {
@@ -265,8 +263,8 @@ describe("validateGraph", () => {
         f.focusNode === d && f.path === `${NS.kg}notApplicableToVariant`,
     );
     expect(hit).toBeDefined();
-    expect(hit!.severity).toBe("error");
-    expect(hit!.docs).toEqual(["docs/a.md"]);
+    expect(hit?.severity).toBe("error");
+    expect(hit?.docs).toEqual(["docs/a.md"]);
   });
 
   it("rejects a subject asserted as both about and not-about (sh:disjoint)", async () => {
@@ -281,7 +279,7 @@ describe("validateGraph", () => {
       (f) => f.focusNode === d && f.path === `${NS.kg}notSoftwareSubject`,
     );
     expect(hit).toBeDefined();
-    expect(hit!.severity).toBe("error");
+    expect(hit?.severity).toBe("error");
   });
 
   it("accepts a reified fill-field entry with confidence (ADR 01015)", async () => {
@@ -354,9 +352,9 @@ describe("validateGraph", () => {
     const findings = await validateGraph(store, SHAPES);
     const hit = findings.find((f) => f.message.includes("cycle"));
     expect(hit).toBeDefined();
-    expect(hit!.severity).toBe("error");
-    expect(hit!.focusNode).toBe(concept("a"));
-    expect(hit!.message).toContain(concept("b"));
+    expect(hit?.severity).toBe("error");
+    expect(hit?.focusNode).toBe(concept("a"));
+    expect(hit?.message).toContain(concept("b"));
   });
 
   it("detects a self-loop and a narrower-implied cycle", async () => {
@@ -407,7 +405,7 @@ describe("validateGraph", () => {
       (f) => f.message.includes("related") && f.message.includes("broader"),
     );
     expect(hit).toBeDefined();
-    expect(hit!.severity).toBe("error");
+    expect(hit?.severity).toBe("error");
   });
 
   it("blames every doc that references a bad shared concept, sorted", async () => {
@@ -431,7 +429,7 @@ describe("validateGraph", () => {
       (f) => f.focusNode === c && f.path === `${NS.skos}inScheme`,
     );
     expect(hit).toBeDefined();
-    expect(hit!.docs).toEqual(["docs/b.md", "docs/z.md"]);
+    expect(hit?.docs).toEqual(["docs/b.md", "docs/z.md"]);
   });
 
   it("orders findings: errors before warnings, then by focus node", async () => {

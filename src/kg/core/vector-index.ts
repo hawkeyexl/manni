@@ -76,10 +76,14 @@ export class VectorIndexError extends Error {
  */
 export function normalize(vector: Float32Array): Float32Array {
   let sum = 0;
-  for (let i = 0; i < vector.length; i++) sum += vector[i]! * vector[i]!;
+  // Iterating rather than indexing: every element is an element, which is what
+  // the assertions here used to say.
+  for (const value of vector) sum += value * value;
   if (sum === 0) return vector;
   const inv = 1 / Math.sqrt(sum);
-  for (let i = 0; i < vector.length; i++) vector[i]! *= inv;
+  // `set(map(…))` scales every element in place with the same per-element
+  // float32 rounding the indexed loop had, and without an index to assert.
+  vector.set(vector.map((value) => value * inv));
   return vector;
 }
 
@@ -124,8 +128,10 @@ export function encodeVectorIndex(
   for (const entry of sorted) {
     // Normalize a copy: the caller's array is not ours to mutate.
     const vector = normalize(Float32Array.from(entry.vector));
-    for (let i = 0; i < dims; i++) {
-      view.setFloat32(offset, vector[i]!, true);
+    // Exactly `dims` elements: the loop above rejected any entry of another
+    // length, so iterating the vector is the same walk without the index.
+    for (const value of vector) {
+      view.setFloat32(offset, value, true);
       offset += 4;
     }
   }

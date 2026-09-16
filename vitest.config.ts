@@ -24,6 +24,11 @@ export default defineConfig({
     // one notch further out: a determinism gate builds the same corpus twice
     // by definition, which is two `dist/cli.js` spawns inside one test.
     testTimeout: 30_000,
+    // vitest defaults hookTimeout to 10s, which a `beforeAll` that spawns the
+    // built CLI to build a corpus can exceed on a loaded Windows runner. It
+    // flaked once under full parallel load. Same reasoning as the timeout
+    // above, applied to the hook that does the same kind of work.
+    hookTimeout: 30_000,
     env: {
       // The inference library installs node-llama-cpp on demand into
       // ~/.hawkeyexl-inference/runtime when a local provider is constructed

@@ -185,4 +185,4 @@ commit. The supersede-never-amend rule applies to them as it does here.
 | Directory | Source |
 |---|---|
 | [`docevals/`](docevals/) | moose-docevals at 670e62b (00001-00004 and 01000-01045). Closed at 01045 by [0048](0048-docevals-domain.md); later docevals decisions are in this series. |
-| [`kg/`](kg/) | moose-kg at 9f14ba6 (01000-01040). Closed at 01040 by [0051](0051-kg-domain.md); later kg decisions are in this series. |
+| [`kg/`](kg/) | moose-kg at 9f14ba6 (01000-01040). It also brings [`DESIGN.md`](kg/DESIGN.md), the phase roadmap those ADRs were taken under. Closed at 01040 by [0051](0051-kg-domain.md); later kg decisions are in this series. |

@@ -8,7 +8,6 @@ import { describe, expect, it } from "vitest";
 import { DataFactory, Parser, Store } from "n3";
 import { NS, RDF_TYPE } from "../../../src/kg/core/vocab.js";
 
-const { namedNode } = DataFactory;
 import { hermeticEnv } from "../helpers/git-env.js";
 import { detachedCorpus } from "../helpers/corpus.js";
 
@@ -135,7 +134,7 @@ describe("manni kg build (integration)", () => {
     const pathOf = new Map<string, string>();
     for (const q of store.getQuads(
       null,
-      namedNode(`${NS.kg}path`),
+      DataFactory.namedNode(`${NS.kg}path`),
       null,
       null,
     )) {
@@ -144,8 +143,8 @@ describe("manni kg build (integration)", () => {
 
     const docs = store.getQuads(
       null,
-      namedNode(RDF_TYPE),
-      namedNode(`${NS.kg}Document`),
+      DataFactory.namedNode(RDF_TYPE),
+      DataFactory.namedNode(`${NS.kg}Document`),
       null,
     );
     expect(docs.length).toBe(8);
@@ -153,7 +152,7 @@ describe("manni kg build (integration)", () => {
     for (const { subject } of docs) {
       const hashes = store.getQuads(
         subject,
-        namedNode(`${NS.kg}contentHash`),
+        DataFactory.namedNode(`${NS.kg}contentHash`),
         null,
         null,
       );
@@ -162,7 +161,7 @@ describe("manni kg build (integration)", () => {
       // Exactly one: the shape says maxCount 1, and a second would make the
       // join key ambiguous for a consumer.
       expect(hashes.length, `${path} carries ${hashes.length} hashes`).toBe(1);
-      expect(hashes[0]!.object.value).toBe(
+      expect(hashes[0]?.object.value).toBe(
         createHash("sha256")
           .update(readFileSync(join(corpus, path)))
           .digest("hex"),

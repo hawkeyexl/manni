@@ -43,6 +43,42 @@ import {
 } from "./types.js";
 import { DEFAULT_MODEL } from "./types.js";
 
+/**
+ * A built feature-extraction pipeline, as this module calls it.
+ *
+ * One text, mean-pooled and normalized (disciplines 2 and 3 above), returning
+ * something array-like of numbers. `Tensor` carries far more than that; naming
+ * only what is read keeps the peer's real type out of the build.
+ */
+export type FeatureExtractionPipeline = (
+  text: string,
+  options: { pooling: "mean"; normalize: boolean },
+) => Promise<{ data: ArrayLike<number> }>;
+
+/**
+ * The slice of `@huggingface/transformers` this module touches.
+ *
+ * The package is an **optional peer**, so importing its types would make it a
+ * hard dependency for everyone — the thing the dynamic import exists to avoid.
+ * Declaring the used surface here instead keeps the boundary narrow rather
+ * than untyped: three members, each one a line the code below actually runs.
+ * `env` is optional all the way down because the Node build's
+ * `backends.onnx.wasm` may be absent or a stub, which is the mistake ADR 01025
+ * documents.
+ */
+export interface TransformersModule {
+  env?: {
+    backends?: {
+      onnx?: { wasm?: { numThreads?: number } };
+    };
+  };
+  pipeline: (
+    task: "feature-extraction",
+    model: string,
+    options: { device?: string; dtype: string },
+  ) => Promise<FeatureExtractionPipeline>;
+}
+
 export interface LocalEmbedderOptions {
   /** Hugging Face model id. Any id is accepted; the tested set is documented. */
   model?: string;
@@ -65,7 +101,7 @@ export interface LocalEmbedderOptions {
    * Inject the transformers.js module (tests, or a host that already imported
    * it). Absent, it is imported dynamically.
    */
-  transformers?: any;
+  transformers?: TransformersModule;
 }
 
 /** Thrown when the optional peer is not installed, with the fix in the message. */
@@ -80,12 +116,9 @@ export class EmbedderUnavailableError extends Error {
   }
 }
 
-// transformers.js is an optional peer, so it is untyped at this boundary
-// (importing its types would make it a hard dependency). The surface used
-// here is small and pinned: `env`, `pipeline`, and the returned tensor. The
-// `any` this needs is allowed for src/kg in eslint.config.js.
-
-async function loadTransformers(injected?: any): Promise<any> {
+async function loadTransformers(
+  injected?: TransformersModule,
+): Promise<TransformersModule> {
   if (injected) return injected;
   try {
     // A literal specifier, so a consumer's bundler can resolve and chunk it
@@ -99,7 +132,7 @@ async function loadTransformers(injected?: any): Promise<any> {
     // moment someone follows the README and installs it — which is exactly
     // what the `embed-real` CI job does, and how this was caught.
     // @ts-ignore optional peer dependency, may or may not be installed
-    return await import("@huggingface/transformers");
+    return (await import("@huggingface/transformers")) as TransformersModule;
   } catch (e) {
     throw new EmbedderUnavailableError(
       errorMessage(e),
@@ -154,7 +187,7 @@ export async function createLocalEmbedder(
         pooling: "mean",
         normalize: true,
       });
-      const data = Float32Array.from(output.data as ArrayLike<number>);
+      const data = Float32Array.from(output.data);
       dims = data.length;
       return data;
     },

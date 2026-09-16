@@ -10,6 +10,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { defined } from "../helpers/defined.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const bundle = join(root, "dist", "kg", "runtime.js");
@@ -26,9 +27,11 @@ describe("@hawkeyexl/manni/kg/runtime package surface", () => {
     const pkg = JSON.parse(
       readFileSync(join(root, "package.json"), "utf8"),
     ) as { exports: Record<string, Record<string, string>> };
-    const entry = pkg.exports["./kg/runtime"];
-    expect(entry).toBeDefined();
-    for (const target of Object.values(entry!)) {
+    const entry = defined(
+      pkg.exports["./kg/runtime"],
+      'the "./kg/runtime" export',
+    );
+    for (const target of Object.values(entry)) {
       expect(existsSync(join(root, target)), `missing ${target}`).toBe(true);
     }
   });
@@ -132,9 +135,11 @@ describe("@hawkeyexl/manni/kg/embed package surface", () => {
     ) as {
       exports: Record<string, Record<string, string>>;
     };
-    const entry = pkg.exports["./kg/embed"];
-    expect(entry).toBeDefined();
-    for (const target of Object.values(entry!)) {
+    const entry = defined(
+      pkg.exports["./kg/embed"],
+      'the "./kg/embed" export',
+    );
+    for (const target of Object.values(entry)) {
       expect(existsSync(join(root, target)), `missing ${target}`).toBe(true);
     }
   });

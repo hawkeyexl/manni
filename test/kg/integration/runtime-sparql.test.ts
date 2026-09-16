@@ -85,8 +85,8 @@ describe("matchQuads", () => {
     const doc = "https://example.com/kg/doc/docs/windows-notes.md";
     const titles = matchQuads(graph, doc, `${NS.dcterms}title`);
     expect(titles).toHaveLength(1);
-    expect(titles[0]!.object.value).toBe("Windows Notes");
-    expect(titles[0]!.subject.termType).toBe("NamedNode");
+    expect(titles[0]?.object.value).toBe("Windows Notes");
+    expect(titles[0]?.subject.termType).toBe("NamedNode");
 
     const docs = matchQuads(graph, null, RDF_TYPE, `${NS.kg}Document`);
     expect(docs).toHaveLength(8);

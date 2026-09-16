@@ -10,6 +10,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { defined } from "../helpers/defined.js";
 import { renderFill, runFill } from "../../../src/kg/commands/fill.js";
 import { runValidate } from "../../../src/kg/commands/validate.js";
 import { runBuild } from "../../../src/kg/commands/build.js";
@@ -112,7 +113,7 @@ describe("fill --sections", () => {
       noCache: true,
     });
 
-    const result = report.results[0]!;
+    const result = defined(report.results[0]);
     expect(result.unknownSections).toEqual(["renamed-heading"]);
     expect(renderFill(report, "pretty")).toContain(
       "no such section: renamed-heading",
@@ -140,7 +141,7 @@ describe("fill --sections", () => {
       noCache: true,
     });
 
-    const result = report.results[0]!;
+    const result = defined(report.results[0]);
     expect(result.lowConfidence?.map((l) => l.field)).toContain(
       "sections.install-the-sdk.type",
     );
@@ -182,7 +183,7 @@ describe("fill --sections", () => {
     expect(written).toContain("type: concept");
     expect(written).not.toContain("type: task");
     expect(written).toContain("troubleshoot-a-failed-install:");
-    expect(report.results[0]!.preserved).toContain(
+    expect(report.results[0]?.preserved).toContain(
       "sections.install-the-sdk.type",
     );
   });
@@ -215,7 +216,7 @@ describe("fill --sections", () => {
       noCache: true,
     });
 
-    const result = report.results[0]!;
+    const result = defined(report.results[0]);
     // The negative side is dropped, and named by its SECTION — blaming the
     // bare `not-applicable-to` would drop a document-level value instead.
     expect(result.rejected).toEqual([
@@ -295,7 +296,7 @@ describe("fill --sections", () => {
       noCache: true,
     });
 
-    expect(report.results[0]!.status).not.toBe("complete");
+    expect(report.results[0]?.status).not.toBe("complete");
     const written = readFileSync(join(dir, "a.md"), "utf8");
     expect(written).toContain("install-the-sdk:");
     // The human's document-level value is untouched.
@@ -357,7 +358,7 @@ describe("fill --sections", () => {
       "slug",
       "type",
     ]);
-    expect(report.results[0]!.fields).toEqual([
+    expect(report.results[0]?.fields).toEqual([
       "sections.install-the-sdk.type",
     ]);
     expect(readFileSync(join(dir, "a.md"), "utf8")).toContain(
@@ -422,6 +423,6 @@ describe("fill --sections", () => {
     });
 
     expect(readFileSync(join(dir, "a.md"), "utf8")).not.toContain("sections:");
-    expect(report.results[0]!.unknownSections).toBeUndefined();
+    expect(report.results[0]?.unknownSections).toBeUndefined();
   });
 });

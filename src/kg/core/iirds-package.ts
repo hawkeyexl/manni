@@ -41,7 +41,6 @@ import {
   VCARD_ORGANIZATION_NAME,
 } from "./iirds.js";
 
-const { namedNode } = DataFactory;
 const KG_DOCUMENT = `${NS.kg}Document`;
 const XSD_STRING = `${NS.xsd}string`;
 
@@ -79,7 +78,7 @@ const lit = (value: string, datatype?: string): Term =>
   datatype ? { kind: "literal", value, datatype } : { kind: "literal", value };
 
 function firstObject(store: Store, s: string, p: string): string | undefined {
-  const q = store.getQuads(namedNode(s), namedNode(p), null, null)[0];
+  const q = store.getQuads(DataFactory.namedNode(s), DataFactory.namedNode(p), null, null)[0];
   return q?.object.value;
 }
 
@@ -112,7 +111,7 @@ export function projectPackage(
   }
 
   const docs = store
-    .getQuads(null, namedNode(RDF_TYPE), namedNode(KG_DOCUMENT), null)
+    .getQuads(null, DataFactory.namedNode(RDF_TYPE), DataFactory.namedNode(KG_DOCUMENT), null)
     .map((q) => q.subject.value)
     .sort(byCodeUnit);
 
@@ -149,8 +148,8 @@ export function projectPackage(
 
     for (const pred of CARRIED) {
       for (const q of store.getQuads(
-        namedNode(doc),
-        namedNode(pred),
+        DataFactory.namedNode(doc),
+        DataFactory.namedNode(pred),
         null,
         null,
       )) {

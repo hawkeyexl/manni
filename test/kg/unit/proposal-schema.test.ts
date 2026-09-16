@@ -4,6 +4,7 @@
  * makes call order observable, which determinism does not allow.
  */
 import { describe, expect, it } from "vitest";
+import { defined } from "../helpers/defined.js";
 import { proposalSchema } from "../../../src/kg/llm/prompt.js";
 import type { FillField } from "../../../src/kg/core/config.js";
 
@@ -74,7 +75,7 @@ describe("proposalSchema", () => {
       string,
       Record<string, unknown>
     >;
-    const confidence = props["confidence"]!["properties"] as Record<
+    const confidence = defined(props["confidence"])["properties"] as Record<
       string,
       unknown
     >;
@@ -88,7 +89,7 @@ describe("proposalSchema", () => {
     const props = proposalSchema(["label"], { lenient: true })[
       "properties"
     ] as Record<string, Record<string, unknown>>;
-    const confidence = props["confidence"]!["properties"] as Record<
+    const confidence = defined(props["confidence"])["properties"] as Record<
       string,
       unknown
     >;

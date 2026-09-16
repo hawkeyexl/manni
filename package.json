@@ -50,6 +50,7 @@
     "pretest": "npm run check:deps",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:kg:real": "vitest run --config vitest.kg-real.config.ts",
     "test:coverage": "vitest run --coverage",
     "pretypecheck": "npm run check:deps",
     "typecheck": "tsc --noEmit",

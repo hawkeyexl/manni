@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, renameSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { defined } from "../helpers/defined.js";
 import { collectGitHistory } from "../../../src/kg/core/git.js";
 import { hermeticEnv } from "../helpers/git-env.js";
 
@@ -51,7 +52,7 @@ describe("collectGitHistory (real repo)", () => {
     const history = await collectGitHistory(dir);
 
     expect(history.headTime).toContain("2026-02-01");
-    const file = history.files.get("new-name.md")!;
+    const file = defined(history.files.get("new-name.md"));
     expect(file).toBeDefined();
     expect(file.created).toContain("2026-01-01");
     expect(file.modified).toContain("2026-02-01");

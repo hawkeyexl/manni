@@ -113,31 +113,36 @@ export function emitTurtle(quads: Quad[]): string {
     terms.push(quad.o);
   }
 
-  const sortedSubjects = [...subjects.keys()].sort(byCodeUnit);
-  for (const subject of sortedSubjects) {
-    const preds = subjects.get(subject)!;
-    const sortedPreds = [...preds.keys()].sort((a, b) => {
+  // Sorting the *entries* rather than the keys: each predicate map comes out
+  // of the map with the subject it belongs to, and each term list with its
+  // predicate, so nothing is looked up again and nothing has to be asserted.
+  const sortedSubjects = [...subjects.entries()].sort(([a], [b]) =>
+    byCodeUnit(a, b),
+  );
+  for (const [subject, preds] of sortedSubjects) {
+    const sortedPreds = [...preds.entries()].sort(([a], [b]) => {
       if (a === RDF_TYPE) return b === RDF_TYPE ? 0 : -1;
       if (b === RDF_TYPE) return 1;
       return byCodeUnit(a, b);
     });
 
-    lines.push("");
-    const entries = sortedPreds.map((p, i) => {
-      const objects = [...preds.get(p)!]
-        .sort(compareTerms)
-        .map(renderTerm)
-        .join(", ");
+    const entries = sortedPreds.map(([p, terms], i) => {
+      const objects = [...terms].sort(compareTerms).map(renderTerm).join(", ");
       const pred = p === RDF_TYPE ? "a" : shorten(p);
       const terminator = i === sortedPreds.length - 1 ? " ." : " ;";
       return { pred, objects, terminator };
     });
 
-    const first = entries[0]!;
+    // A subject is in the map only because a quad put a predicate under it, so
+    // `entries` is never empty; the destructuring says so and leaves the rest
+    // of the block unreachable if it ever were.
+    const [first, ...rest] = entries;
+    if (first === undefined) continue;
+    lines.push("");
     lines.push(
       `${shorten(subject)} ${first.pred} ${first.objects}${first.terminator}`,
     );
-    for (const entry of entries.slice(1)) {
+    for (const entry of rest) {
       lines.push(`  ${entry.pred} ${entry.objects}${entry.terminator}`);
     }
   }

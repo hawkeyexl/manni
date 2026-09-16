@@ -224,7 +224,7 @@ describe("findEntry with a vector leg", () => {
     });
     expect(result.lexical.every((c) => c.via === "lexical")).toBe(true);
     expect(result.vector.every((c) => c.via === "vector")).toBe(true);
-    expect(result.vector[0]!.iri).toBe(A);
+    expect(result.vector[0]?.iri).toBe(A);
     expect(result.candidates.length).toBeGreaterThan(0);
   });
 
@@ -236,8 +236,8 @@ describe("findEntry with a vector leg", () => {
       vectors: vectors(),
       embedQuery: embedTo([1, 0]),
     });
-    expect(result.candidates[0]!.iri).toBe(A);
-    expect(result.candidates[0]!.via).toBe("hybrid");
+    expect(result.candidates[0]?.iri).toBe(A);
+    expect(result.candidates[0]?.via).toBe("hybrid");
   });
 
   it("surfaces a node only the vector leg found", async () => {

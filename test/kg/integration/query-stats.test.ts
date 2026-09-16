@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
+import { defined } from "../helpers/defined.js";
 import { hermeticEnv } from "../helpers/git-env.js";
 import { detachedCorpus } from "../helpers/corpus.js";
 
@@ -511,10 +512,10 @@ describe("manni kg stats — localization", () => {
 
   it("scores each language against its own documents, not the corpus", () => {
     const l = localization();
-    const de = l.languages.find((x) => x.language === "de")!;
-    const deAt = l.languages.find((x) => x.language === "de-AT")!;
+    const de = defined(l.languages.find((x) => x.language === "de"));
+    const deAt = defined(l.languages.find((x) => x.language === "de-AT"));
     const pct = (block: (typeof l.languages)[number], field: string) =>
-      block.coverage.find((c) => c.field === field)!.pct;
+      defined(block.coverage.find((c) => c.field === field)).pct;
     // The German page carries a description; the Austrian one does not. The
     // blended corpus number (50%) says neither.
     expect(pct(de, "description")).toBe(100);
@@ -526,7 +527,7 @@ describe("manni kg stats — localization", () => {
 
   it("lists sources with no translation into a language", () => {
     const l = localization();
-    const de = l.languages.find((x) => x.language === "de")!;
+    const de = defined(l.languages.find((x) => x.language === "de"));
     // getting-started.md has a German translation, so it is not in the list;
     // every other source document is.
     expect(de.untranslated).not.toContain("docs/getting-started.md");

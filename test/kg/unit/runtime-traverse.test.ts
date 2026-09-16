@@ -453,7 +453,9 @@ describe("scope filtering — the seed is a starting point, not a result", () =>
       predicates: [WORK_TRANSLATION],
       language: "de",
     });
-    expect(result.nodes.map((n) => n.iri)).toEqual([EN].filter(() => false));
+    // `[]`, and `EN` is what would be there without the language filter — the
+    // line below is the same call without it, and it finds `EN`.
+    expect(result.nodes.map((n) => n.iri)).toEqual([]);
     const reverse = impact(graph(), DE, { predicates: [WORK_TRANSLATION] });
     expect(reverse.nodes.map((n) => n.iri)).toEqual([EN]);
   });

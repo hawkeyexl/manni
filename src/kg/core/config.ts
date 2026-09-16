@@ -265,6 +265,58 @@ function normalizeBasePath(basePath: string): string {
 const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true });
 const validateConfig = ajv.compile(configSchema);
 
+/** One `routes:` entry as the file spells it; only `root` is required. */
+interface RawRouteMapping {
+  basePath?: string;
+  root: string;
+  extensions?: string[];
+  indexFiles?: string[];
+  language?: string;
+}
+
+/**
+ * The config file's own shape, in its own spelling.
+ *
+ * Ajv has already validated `raw` against `config-schema.json` by the time this
+ * is used, so the optionality here is the schema's, not a guess. Declaring it is
+ * what lets `parseConfigSection` read the file without an `any` — and an `any`
+ * here would be the worst place for one, since every default in the tool flows
+ * through this function. `RawDocevalsConfig` is the same declaration in the
+ * evals tool.
+ */
+interface RawKgConfig {
+  provider?: string;
+  model?: string;
+  baseIri?: string;
+  out?: string;
+  routes?: RawRouteMapping[];
+  build?: { derive?: DeriveSource[] };
+  validate?: { schemas?: string[] };
+  check?: { shapes?: string[] };
+  provenance?: { qualified?: boolean };
+  stats?: { coverageThreshold?: number | Record<string, number> };
+  fill?: {
+    temperature?: number;
+    maxTurns?: number | null;
+    cacheDir?: string;
+    confidenceThreshold?: number;
+    writeProvenance?: boolean;
+    validateGraph?: boolean;
+    fields?: FillField[];
+    sections?: boolean;
+  };
+  embed?: {
+    model?: string;
+    dtype?: string;
+    out?: string;
+    cacheDir?: string;
+    byLanguage?: Record<string, { model?: string; dtype?: string }>;
+  };
+  export?: {
+    iirds?: { title?: string; creator?: string; version?: "1.2" | "1.3" };
+  };
+}
+
 /**
  * One Ajv error, as a line a reader can act on.
  *
@@ -398,9 +450,10 @@ export function parseConfigSection(
   }
 
   // Past this point Ajv has validated `raw` against config-schema.json, so the
-  // shape is known-good and reading fields off it is safe. `unknown` would buy
-  // nothing here but a cast at every access.
-  const r = raw as Record<string, any>;
+  // shape is known-good and reading fields off it is safe. The cast is to that
+  // shape, spelled out once in `RawKgConfig`, rather than to `any`: the file's
+  // optionality is then the schema's and every default below is checked.
+  const r = raw as RawKgConfig;
   const abs = resolve(configPath);
   const dir = dirname(abs);
 
@@ -422,15 +475,15 @@ export function parseConfigSection(
     providers: file.providers ?? {},
     baseIri: resolveBaseIri(r.baseIri),
     out: r.out ?? "kg/graph.ttl",
-    routes: ((r.routes ?? []) as Array<Record<string, any>>).map((m) => ({
+    routes: (r.routes ?? []).map((m) => ({
       basePath: normalizeBasePath(m.basePath ?? "/"),
-      root: String(m.root)
+      root: m.root
         .replace(/\\/g, "/")
         .replace(/^\.\//, "")
         .replace(/\/+$/, ""),
       extensions: m.extensions ?? [...DEFAULT_LINK_EXTENSIONS],
       indexFiles: m.indexFiles ?? [...DEFAULT_INDEX_FILES],
-      ...(m.language === undefined ? {} : { language: String(m.language) }),
+      ...(m.language === undefined ? {} : { language: m.language }),
     })),
     build: {
       derive: r.build?.derive ?? [...ALL_DERIVE_SOURCES],

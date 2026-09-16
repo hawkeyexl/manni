@@ -34,25 +34,29 @@ export function frontmatterKind(
 }
 
 function splitYamlFrontmatter(content: string, path: string): Split | null {
-  const bom = content.charCodeAt(0) === 0xfeff ? content[0]! : "";
+  // `slice` rather than `content[0]`: it yields a string for an empty input
+  // too, which is the only case the index could have missed.
+  const bom = content.charCodeAt(0) === 0xfeff ? content.slice(0, 1) : "";
   const body = bom ? content.slice(1) : content;
   const openMatch = /^---(\r?\n)/.exec(body);
   if (!openMatch) return null;
   const eol: "\n" | "\r\n" = openMatch[1] === "\r\n" ? "\r\n" : "\n";
-  const lines = body.split(/(?<=\n)/); // keep line endings
-  let offset = lines[0]!.length;
-  for (let i = 1; i < lines.length; i++) {
-    const stripped = lines[i]!.replace(/\r?\n$/, "");
+  // `String.split` always yields at least one element, and the regex matched
+  // `---\n` at the start, so the first line is the opening fence.
+  const [openLine = "", ...rest] = body.split(/(?<=\n)/); // keep line endings
+  let offset = openLine.length;
+  for (const line of rest) {
+    const stripped = line.replace(/\r?\n$/, "");
     if (stripped === "---" || stripped === "...") {
       const blockEnd = offset;
       return {
-        open: bom + lines[0]!,
-        block: body.slice(lines[0]!.length, blockEnd),
+        open: bom + openLine,
+        block: body.slice(openLine.length, blockEnd),
         suffix: body.slice(blockEnd),
         eol,
       };
     }
-    offset += lines[i]!.length;
+    offset += line.length;
   }
   throw new KgError(`${path}: unterminated frontmatter block`);
 }
@@ -141,7 +145,9 @@ export function applyKgFields(
         target[segment] ??= {};
         target = target[segment] as Record<string, unknown>;
       }
-      target[segments[segments.length - 1]!] = value;
+      // An undotted field is its own leaf, so `field` is the right fallback
+      // rather than a stand-in: `split(".")` cannot return an empty list.
+      target[segments.at(-1) ?? field] = value;
     }
     const doc = new Document({
       ...Object.fromEntries(pageEntries),
@@ -183,7 +189,9 @@ export function applyKgFields(
     // *leaf*, so filling one section's type never disturbs a value a human set
     // on the section beside it.
     const segments = field.split(".");
-    const leaf = segments[segments.length - 1]!;
+    // An undotted field is its own leaf, so `field` is the right fallback
+    // rather than a stand-in: `split(".")` cannot return an empty list.
+    const leaf = segments.at(-1) ?? field;
     let target = kgMap;
     let missingParent = false;
     for (const segment of segments.slice(0, -1)) {

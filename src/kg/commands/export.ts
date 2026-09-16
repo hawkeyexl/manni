@@ -212,7 +212,22 @@ function runSearchIndex(
   };
 }
 
-export async function runExport(opts: ExportOptions): Promise<ExportResult> {
+/**
+ * Async by contract — every command core is, and the CLI awaits this one — but
+ * synchronous in fact: all three writers are `writeFileSync`. Spelled as a
+ * `Promise` the body never awaits, through the constructor rather than
+ * `Promise.resolve().then`, so the executor still runs eagerly and a usage
+ * error still *rejects* the returned promise instead of throwing before the
+ * caller holds one. That is what `async` did, said without claiming an `await`
+ * that is not there.
+ */
+export function runExport(opts: ExportOptions): Promise<ExportResult> {
+  return new Promise((ok) => {
+    ok(exportOnce(opts));
+  });
+}
+
+function exportOnce(opts: ExportOptions): ExportResult {
   const cwd = opts.cwd ?? process.cwd();
   if (!(EXPORT_TARGETS as readonly string[]).includes(opts.format)) {
     throw new KgError(

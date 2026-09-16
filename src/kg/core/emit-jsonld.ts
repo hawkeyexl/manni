@@ -88,24 +88,29 @@ export function emitJsonLd(quads: Quad[]): string {
     terms.push(quad.o);
   }
 
-  const graph = [...subjects.keys()].sort(byCodeUnit).map((subject) => {
-    const preds = subjects.get(subject)!;
-    const node: Record<string, unknown> = { "@id": subject };
+  // Sorting the entries rather than the keys: each predicate map arrives with
+  // the subject it belongs to, so there is no second lookup to assert on.
+  const graph = [...subjects.entries()]
+    .sort(([a], [b]) => byCodeUnit(a, b))
+    .map(([subject, preds]) => {
+      const node: Record<string, unknown> = { "@id": subject };
 
-    const types = preds.get(RDF_TYPE);
-    if (types) {
-      const compacted = types.map((t) => compactIri(t.value)).sort(byCodeUnit);
-      node["@type"] = compacted.length === 1 ? compacted[0] : compacted;
-    }
+      const types = preds.get(RDF_TYPE);
+      if (types) {
+        const compacted = types
+          .map((t) => compactIri(t.value))
+          .sort(byCodeUnit);
+        node["@type"] = compacted.length === 1 ? compacted[0] : compacted;
+      }
 
-    const predKeys = [...preds.keys()]
-      .filter((p) => p !== RDF_TYPE)
-      .sort(byCodeUnit);
-    for (const p of predKeys) {
-      node[compactIri(p)] = collapse(preds.get(p)!.map(renderValue));
-    }
-    return node;
-  });
+      const predEntries = [...preds.entries()]
+        .filter(([p]) => p !== RDF_TYPE)
+        .sort(([a], [b]) => byCodeUnit(a, b));
+      for (const [p, terms] of predEntries) {
+        node[compactIri(p)] = collapse(terms.map(renderValue));
+      }
+      return node;
+    });
 
   return `${JSON.stringify({ "@context": context, "@graph": graph }, null, 2)}\n`;
 }
