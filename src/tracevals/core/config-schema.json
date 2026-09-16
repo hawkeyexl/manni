@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "moose-tracevals:config:0.1",
+  "title": "tracevals section of manni.config.yaml",
+  "description": "Settings for manni tracevals, held under the `tracevals` key of the config file shared by the manni family of tools. Sibling keys belong to other tools and are not validated here.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Inference provider settings. Configure any number of sections and select one with `default` or --provider; only the selected section is mapped onto the inference library's ProviderSpec.",
+      "properties": {
+        "default": {
+          "enum": ["anthropic", "openai", "claude-cli", "mock"],
+          "description": "Which provider to use when --provider is not passed."
+        },
+        "anthropic": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "model": { "type": "string", "minLength": 1 },
+            "apiKeyEnv": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Name of the environment variable holding the API key — never the key itself."
+            },
+            "pricing": { "$ref": "#/$defs/pricing" }
+          }
+        },
+        "openai": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "baseUrl": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Any /chat/completions-compatible server (OpenAI, Azure, Ollama, Groq, Together)."
+            },
+            "model": { "type": "string", "minLength": 1 },
+            "apiKeyEnv": { "type": "string", "minLength": 1 },
+            "pricing": { "$ref": "#/$defs/pricing" }
+          }
+        },
+        "claude-cli": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "model": { "type": "string", "minLength": 1 },
+            "command": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Executable to run. Uses the Claude CLI's own local auth, so no API key is needed."
+            }
+          }
+        }
+      }
+    },
+    "judge": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ensembleRuns": { "type": "integer", "minimum": 1 },
+        "temperature": { "type": "number", "minimum": 0, "maximum": 2 },
+        "zones": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "autoPass": { "type": "number", "minimum": 0, "maximum": 1 },
+            "autoFail": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "cacheDir": { "type": "string" },
+        "maxCostUsd": { "type": "number", "minimum": 0 },
+        "redact": {
+          "type": "array",
+          "description": "Extra regular expressions scrubbed from the session digest before it is sent to a judge provider. Applied on top of the built-in secret shapes, never instead of them; each source is compiled with the `g` flag, and a match is replaced with `[redacted]`. Pattern matching is best-effort — --deterministic-only is the only setting that guarantees nothing leaves the machine.",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "graders": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Per-grader settings. Only graders with a knob of their own appear here; every other grader is configured entirely by the eval that names it.",
+      "properties": {
+        "command": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Run `command`-graded evals. On by default (ADR 01011). Set false — or pass --no-commands — to evaluate a trace without executing anything that trace's project declares; those evals then report `skipped` with a reason, never `pass`."
+            }
+          }
+        }
+      }
+    },
+    "render": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxBlockChars": { "type": "integer", "minimum": 100 },
+        "maxTotalChars": { "type": "integer", "minimum": 1000 }
+      }
+    },
+    "history": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": "string" }
+      }
+    },
+    "capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Session manifests — sha256 of every instruction artifact plus the git SHA, recorded at session start by `manni tracevals capture` and read back by `run` to make staleness exact instead of an mtime guess. See ADR 01024.",
+      "properties": {
+        "dir": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Directory manifests are written to and looked for, resolved against the project root. `run` also accepts one placed beside the trace as `<trace>.manifest.json`, and --manifest names one outright."
+        }
+      }
+    },
+    "fill": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "confidenceThreshold": { "type": "number", "minimum": 0, "maximum": 1 },
+        "maxEvalsPerArtifact": { "type": "integer", "minimum": 1 },
+        "temperature": { "type": "number", "minimum": 0, "maximum": 2 },
+        "cacheDir": { "type": "string" },
+        "maxCostUsd": { "type": "number", "minimum": 0 }
+      }
+    },
+    "calibrate": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Settings for `manni tracevals calibrate` — measuring the tool's verdicts against a human's answers. See ADR 01022.",
+      "properties": {
+        "labels": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Default labels sidecar, resolved against this config file's directory. Overridden by --labels."
+        },
+        "maxFalsePass": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Fail the calibration run (exit 1) above this many false passes — labelled fail, judged pass. Unset by default: a calibration run is a measurement, not a gate."
+        },
+        "maxFalseFail": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Fail the calibration run above this many false fails — labelled pass, judged fail."
+        },
+        "maxReview": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Fail the calibration run above this many needs-review outcomes across the whole corpus."
+        },
+        "sweep": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Values --sweep tries on each axis, one axis at a time with the others held at their configured value. The corpus is judged once at the largest ensembleRuns here and every cell is re-scored from those cached runs, so the grid costs nothing beyond that one run.",
+          "properties": {
+            "ensembleRuns": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "integer", "minimum": 1 }
+            },
+            "autoPass": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "number", "minimum": 0, "maximum": 1 }
+            },
+            "autoFail": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          }
+        }
+      }
+    },
+    "failOnNeedsReview": { "type": "boolean" },
+    "plugins": {
+      "type": "array",
+      "description": "Modules imported before evals are planned, so one calling registerGrader() can add a grader kind the built-ins do not cover. A relative or absolute path resolves against this file's directory, not the working directory; a bare package name resolves the way an import from this file's directory would. Load order is significant: a later entry wins a colliding kind.",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "reportUnusedArtifacts": {
+      "type": "boolean",
+      "description": "List every skill and agent the session was offered and never used, rather than only counting them. Off by default: a real roster runs to hundreds of skills."
+    }
+  },
+  "$defs": {
+    "pricing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inputPerMTok", "outputPerMTok"],
+      "description": "USD per million tokens. Overrides the inference library's built-in table for this model.",
+      "properties": {
+        "inputPerMTok": { "type": "number", "minimum": 0 },
+        "outputPerMTok": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}

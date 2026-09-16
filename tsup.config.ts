@@ -5,6 +5,10 @@ export default defineConfig({
     cli: "src/cli.ts",
     docmeta: "src/docmeta.ts",
     index: "src/index.ts",
+    // The tracevals programmatic API, reachable as `@hawkeyexl/manni/tracevals`.
+    // A grader plugin registers into the registry this entry shares with the
+    // CLI chunk, which is what makes a side-effect plugin work (ADR 01017).
+    tracevals: "src/tracevals/index.ts",
   },
   format: ["esm"],
   target: "node24",

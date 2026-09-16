@@ -1,0 +1,80 @@
+# Calibration ground truth for the fixture corpus (ADR 01022).
+#
+# Deliberately not all-agreeing, for the same reason the fixture project is not
+# all-passing: a calibration corpus that agrees with the tool everywhere proves
+# only that the join ran. This one carries one false pass, one false fail, one
+# missed review, and two labels whose evals never armed.
+#
+# Trace paths resolve against this file's own directory.
+version: 1
+labels:
+  # --- claude-session.jsonl ------------------------------------------------
+  - trace: ../../traces/claude-session.jsonl
+    artifact: fix-bug
+    eval: used-read
+    expected: pass
+    note: The session read src/app.ts before editing it.
+
+  # The tool fails this; a reviewer would not. The forbidden Bash call was a
+  # `git status`, so the eval is too blunt rather than the session non-adherent
+  # — which is exactly what a false fail is supposed to surface.
+  - trace: ../../traces/claude-session.jsonl
+    artifact: fix-bug
+    eval: forbidden-tool
+    expected: pass
+    note: The only in-window Bash call was a read-only `git status`.
+
+  - trace: ../../traces/claude-session.jsonl
+    artifact: fix-bug
+    eval: no-force-push
+    expected: pass
+
+  # A `human`-graded eval always routes to a person, and the label agrees.
+  - trace: ../../traces/claude-session.jsonl
+    artifact: fix-bug
+    eval: refactor-preserved-intent
+    expected: needs-review
+
+  # Genuinely ambiguous: the test was written before the fix in one file and
+  # after it in another. The judge decides anyway — a missed review.
+  - trace: ../../traces/claude-session.jsonl
+    artifact: fix-bug
+    eval: eval-5
+    expected: needs-review
+    note: One file got its test first, the other did not.
+
+  # The judge passes this; a reviewer reading the diff fails it. A false pass
+  # is the expensive error, so the corpus has to contain one.
+  - trace: ../../traces/claude-session.jsonl
+    artifact: AGENTS.md
+    eval: eval-1
+    expected: fail
+    note: The change touched four packages; that is not small and reviewable.
+
+  # `type` disambiguates only when a skill and an agent share a name. Stated
+  # here to keep the field exercised.
+  - trace: ../../traces/claude-session.jsonl
+    artifact: reviewer
+    type: agent
+    eval: reviewer-is-read-only
+    expected: pass
+
+  # Labelled, but the conditional trigger never armed. Neither agreement nor
+  # disagreement: it must stay out of the denominator.
+  - trace: ../../traces/claude-session.jsonl
+    artifact: CLAUDE.md
+    eval: docs-work-uses-the-writing-skill
+    expected: pass
+    note: Labelled before the docs/** trigger existed.
+
+  # --- claude-session-sidecar.jsonl ---------------------------------------
+  - trace: ../../traces/claude-session-sidecar.jsonl
+    artifact: AGENTS.md
+    eval: eval-1
+    expected: pass
+
+  - trace: ../../traces/claude-session-sidecar.jsonl
+    artifact: CLAUDE.md
+    eval: source-edits-use-the-fix-bug-skill
+    expected: pass
+    note: This session edited no source file, so the trigger never armed.

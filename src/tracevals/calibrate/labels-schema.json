@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "moose-tracevals:calibration-labels:1",
+  "title": "manni tracevals calibration labels",
+  "description": "Ground truth for `manni tracevals calibrate`: what a human decided a given eval should have produced on a given trace. A sidecar rather than an eval field, because a label belongs to a corpus and a reviewer, not to the artifact — and because the eval vocabulary is docmeta's, vendored byte-identical, with `inlineEval` closed to additions (ADR 01010).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "labels"],
+  "properties": {
+    "version": {
+      "const": 1,
+      "description": "Format version. Pinned so a future shape change is an explicit migration rather than a silently-reinterpreted file."
+    },
+    "labels": {
+      "type": "array",
+      "minItems": 1,
+      "description": "One entry per (trace, artifact, eval) you have judged by hand.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["trace", "artifact", "eval", "expected"],
+        "properties": {
+          "trace": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Path to the trace file, resolved against this file's own directory — not the working directory."
+          },
+          "artifact": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Artifact name as the report shows it: a skill name, a subagent_type, or a project-rules filename such as CLAUDE.md."
+          },
+          "type": {
+            "enum": ["skill", "agent", "project-rules", "slash-command"],
+            "description": "Optional disambiguator, needed when one name resolves to two kinds of artifact — a skill and an agent, or a skill and the slash command that types it. Every `ArtifactType` the resolver can produce belongs here: a label whose type this rejects has no way to name the artifact it means."
+          },
+          "eval": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The eval's id. Shorthand entries with no declared id get a positional one (eval-1, eval-2, ...), so labelling those is only as stable as the order they are written in."
+          },
+          "expected": {
+            "enum": ["pass", "fail", "needs-review"],
+            "description": "What you decided. `needs-review` means you found it genuinely ambiguous and want the tool to defer too."
+          },
+          "note": {
+            "type": "string",
+            "description": "Why you decided that. Carried into the disagreement report, where it is the whole reason a disagreement is actionable."
+          }
+        }
+      }
+    }
+  }
+}
