@@ -74,11 +74,13 @@ refused. `1.2` and `1.3` are the two accepted.
 ### Build from a directory that contains the corpus
 
 A package has one root, and every document has to sit under it. `manni kg
-build` labels each document by its path relative to where it ran, so a corpus
-above that directory — `manni kg build ../external/*.md`, or a collection whose
-`paths:` climb past the config file — is labelled `../external/page.md`. Only
-`export iirds` minds: `build`, `query` and the rest work on those paths as they
-always have, but a container cannot hold a path that points outside itself, so
+build` labels each document by its path relative to where it ran. A corpus
+above that directory is therefore labelled `../external/page.md`. That happens
+with `manni kg build ../external/*.md`, and with a collection whose `paths:`
+climb past the config file.
+
+Only `export iirds` minds. `build`, `query` and the rest work on those paths as
+they always have. A container cannot hold a path that points outside itself, so
 the export refuses rather than writing an entry that escapes on extraction:
 
 ```console
