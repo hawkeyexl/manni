@@ -1,0 +1,174 @@
+---
+title: Fix a failing check
+description: Read a manni kg finding, work out which page produced it, make the smallest correct change, and confirm locally.
+---
+
+Your pull request is red on `manni kg check` and you did not write the rule.
+This page gets you green. You do not need to know what a triple is, and you
+will not have to open a Turtle file.
+
+## Read the line
+
+```console
+error: https://example.com/kg/concept/installation skos:prefLabel — concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling [docs/install.md, docs/setup.md]
+```
+
+Four parts, in order:
+
+| Part | What it is |
+|---|---|
+| `error` | The severity. `error` fails the build; `warning` and `notice` report and exit `0`. |
+| `https://example.com/kg/concept/installation` | The **focus node**: the graph's name for the thing that failed. |
+| `skos:prefLabel` | The property the rule is about. |
+| `[docs/install.md, docs/setup.md]` | The documents the node came from. **This is where you edit.** |
+
+A graph finding is emergent by nature. Two pages spelling one concept
+differently collide on a single node, so the fix is usually in one of them and
+the report names both. Nobody broke it on their own, which is also why this one
+is not necessarily yours to fix alone.
+
+## Reproduce it locally
+
+No key, no network, no cache:
+
+```console
+$ npx @hawkeyexl/manni kg build
+$ npx @hawkeyexl/manni kg check
+```
+
+`build` writes the graph; `check` validates it. Run them in that order every
+time. `check` reads the file `build` wrote, so checking without building
+validates whatever was there before.
+
+If the CI job also ran `kg stats --check`, run that too.
+
+## The common findings
+
+### Concept carries multiple prefLabels
+
+Two pages named one concept with different spellings, such as `Installation`
+and `installing`, or `CLI` and `command line`. They slug to the same node. It
+then has two preferred labels, and a reader of the graph cannot tell which is
+right.
+
+Pick one spelling and use it in both pages. The report names both files, so
+this is a two-line change once you have decided which spelling wins. If the two
+really are different concepts, give them names that do not slug to the same
+thing.
+
+### `skos:broader` cycle
+
+Page A says its concept is narrower than B's, B says narrower than C's, and C
+says narrower than A's. A concept cannot be its own ancestor.
+
+The message lists the cycle in order. One of those three `broader` values is
+wrong; usually the one that was added last. Remove or repoint it.
+
+### A value that must not also be in another property
+
+```console
+error: <doc IRI> kg:notApplicableToVariant — Value node must not also be one of the values of <http://iirds.tekom.de/iirds#relates-to-product-variant>
+```
+
+The page says it is about a product variant and also that it does not apply to
+it. Decide which is true and delete the other. The finding names the document,
+and both lists are in its `kg:` block.
+
+### A predicate the shapes do not know
+
+A finding naming a predicate you have never typed, on a node you did not write.
+The shapes are closed, so an unexpected predicate fails rather than passing
+unnoticed. This one is almost never a content problem: it means a derive source
+started producing something the shapes have not learned. Hand it to whoever
+owns the shapes; it is a code change, in the same commit as the shapes update.
+
+### Broken internal link or section reference
+
+From `kg stats --check`, not from `check`:
+
+```console
+Broken internal links (1):
+  docs/troubleshooting.md -> missing.md
+
+Broken section refs (1):
+  docs/getting-started.md -> #renamed-heading
+```
+
+The first is a link to a page that does not exist, usually a rename or a path
+written relative to the wrong directory. The second is a link to an anchor that
+does not exist, which is what a renamed heading leaves behind. Both name the
+page holding the link.
+
+### Coverage below threshold
+
+```console
+  description              1/3  33.3%  ! below threshold
+```
+
+Your repository requires that share of pages to carry the field. If your pull
+request added pages, add the field to them. If it did not, the floor moved
+under you. That is a conversation with whoever set it rather than something to
+fix in your diff. See [Coverage](/manni/kg/govern/coverage/).
+
+### A schema error inside the `kg:` block
+
+There is no `kg validate`. The block is checked by `manni meta validate`,
+against the page vocabulary:
+
+```console
+✗ docs/install.md
+    /kg  must NOT have additional property 'bogus'  (line 3)  [./schema/kg-1.0.0-proposal.3.json]
+```
+
+A typo inside the `kg` block, with the line number. The block is closed, so an
+unknown key is an error rather than an ignored one. Your repository puts the
+vocabulary in the schema set for these pages; see
+[Checking a `kg:` block](/manni/kg/reference/cli/#checking-a-kg-block).
+
+### A warning about a page-level key
+
+```console
+manni: docs/guide.md: page key "applies_to" is not read by manni kg and looks like "applies-to" — nothing was derived from it
+```
+
+This is a **warning**. It never fails a build, and it is worth knowing about. A
+page-level key that is nearly right derives nothing, silently, because a page
+may carry any key it likes. Rename it to the spelling in the message.
+
+## Exit codes
+
+| Code | What it means |
+|---|---|
+| `0` | Clean. Warnings and notices still exit `0`. |
+| `1` | Findings. Yours to fix, or the page author's. |
+| `2` | Operational: manni kg could not run at all. Not your problem. Hand it to the platform team. |
+
+An exit `2` reads as `No input files matched`, `Invalid config in …`, or an
+unknown flag value. None of those is about your page.
+
+## Still stuck
+
+- Ask what the node is made of:
+  `npx @hawkeyexl/manni kg query --s <the focus node from the message>`
+- Ask what reaches the page you edited:
+  `npx @hawkeyexl/manni kg traverse <page IRI> --reverse`
+- Read what the rule is for in [Govern the graph](/manni/kg/govern/), and the
+  words in the [glossary](/manni/kg/reference/glossary/).
+
+{/* Verified by Doc Detective in docs-as-tests, against test/kg/fixtures/dd/. */}
+
+{/* step {"description":"Reproducing locally is build then check.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/violations.config.yaml","exitCodes":[0]}} */}
+
+{/* step {"description":"The finding names the focus node and the documents behind it.","runShell":{"command":"manni kg check -c test/kg/fixtures/dd/violations.config.yaml","exitCodes":[1],"stdio":"test/kg/fixtures/dd/violations/alpha.md"}} */}
+
+{/* step {"description":"Two spellings of one concept collide on a single node.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0]}} */}
+
+{/* step {"description":"The prefLabel finding names both pages.","runShell":{"command":"manni kg check -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"settle on one spelling"}} */}
+
+{/* step {"description":"A broken internal link and a broken section ref are stats findings.","runShell":{"command":"manni kg stats -c test/kg/fixtures/dd/docs.config.yaml --check","exitCodes":[1],"stdio":"Broken section refs (1):"}} */}
+
+{/* step {"description":"A typo inside the kg block is a schema error with a line number.","runShell":{"command":"manni meta validate -c test/kg/fixtures/dd/invalid.config.yaml -s docs/proposals/0023/schemas/kg/1.0.0-proposal.3.json","exitCodes":[1],"stdio":"(line 3)"}} */}
+
+{/* step {"description":"A near-miss page key warns and never fails the build.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/harvest.config.yaml","exitCodes":[0],"stdio":"is not read by manni kg and looks like"}} */}
+
+{/* step {"description":"An operational failure is exit 2, and is not the contributor's.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/nomatch.config.yaml","exitCodes":[2],"stdio":"No input files matched"}} */}

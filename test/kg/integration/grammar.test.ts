@@ -83,6 +83,20 @@ describe("kg usage errors exit 2", () => {
     expect(stderr).toContain("unknown command");
   });
 
+  it("`validate` is gone, and gets no softer treatment than any other unknown verb", () => {
+    // Proposal 0051 §8: `kg validate` was `manni meta validate` against the kg
+    // vocabulary under a second name, and the family does not carry a second
+    // surface for one command. Removing it cost nothing while dockg was
+    // unpublished; this is the guard that keeps it removed. No bespoke hint
+    // either — stress test 1 rules out the alias, and the docs carry the
+    // replacement.
+    const { stdout, stderr, status } = run(["validate", "docs/"]);
+    expect(status).toBe(2);
+    expect(stdout).toBe("");
+    expect(stderr).toContain("error: unknown command 'validate'");
+    expect(stderr).toContain("--help for usage");
+  });
+
   const missing: Array<[string, string[]]> = [
     ["search without its query", ["search"]],
     ["traverse without its node", ["traverse"]],
@@ -104,7 +118,6 @@ describe("kg -f is the output format, and it is checked", () => {
   // `check` is not here: it is the CI gate, so its list also carries
   // `github` (proposal 0051 §2) and it names its own refusal below.
   const verbs: Array<[string, string[]]> = [
-    ["validate", ["validate"]],
     ["query", ["query"]],
     ["stats", ["stats"]],
     ["search", ["search", "q"]],

@@ -58,7 +58,7 @@ const FAMILY_EXCLUDE = ["**/node_modules/**", "**/.git/**"];
 const SUPPORTED_EXTENSIONS = new Set([".md", ".markdown", ".mdx"]);
 
 /** The word the empty-input message uses for what the command would do. */
-export type DocumentVerb = "build" | "fill" | "validate";
+export type DocumentVerb = "build" | "fill";
 
 export interface DocumentSetOptions {
   /**

@@ -1,0 +1,278 @@
+---
+title: Configuration reference
+description: Every kg key of manni.config.yaml, with its type, default, and what it does.
+---
+
+manni kg reads one file, `manni.config.yaml`, and one key in it, `kg:`. Two
+top-level keys beside it belong to the family rather than to this tool.
+`collections:` says which documents every tool reads. `providers:` says how
+every tool reaches a model.
+
+Discovery walks from the working directory up to the repository root. `-c`
+names a file instead, `--no-config` ignores whatever discovery found, and with
+no file at all every value below is its built-in default.
+
+Inside `kg:` unknown keys are refused, so a typo is caught rather than
+silently ignored:
+
+```console
+$ manni kg build
+manni: Invalid config in manni.config.yaml:
+  /kg/fill: unknown key "maxCostUsd"
+```
+
+## The whole file
+
+```yaml
+# The family's document sets. Not a kg key: every tool reads these.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.{md,mdx}"
+    exclude:
+      - "docs/drafts/**"
+
+# The family's inference settings. Not a kg key either.
+providers:
+  provider: anthropic
+
+kg:
+  baseIri: https://example.com/kg/
+  out: kg/graph.ttl
+
+  routes:
+    - basePath: /
+      root: docs
+      extensions: [".md", ".mdx"]
+      indexFiles: ["index", "README"]
+      language: en
+
+  build:
+    derive: [frontmatter, sections, links, tags, images, code, provenance]
+
+  validate:
+    schemas: []
+
+  check:
+    shapes: []
+
+  provenance:
+    qualified: true
+
+  stats:
+    coverageThreshold: 80
+
+  fill:
+    temperature: 0
+    maxTurns: null
+    cacheDir: .manni/kg/cache
+    confidenceThreshold: 0.7
+    writeProvenance: true
+    validateGraph: true
+    sections: false
+    fields: [label, alt-labels, broader, narrower, related-concepts, concepts,
+             type, applies-to, about-product-lifecycle, about-product-aspect,
+             not-applicable-to, not-about-product-aspect]
+
+  embed:
+    model: onnx-community/granite-embedding-small-english-r2-ONNX
+    dtype: q8
+    out: kg
+    cacheDir: .manni/kg/embed-cache
+    byLanguage:
+      de:
+        model: Xenova/bge-small-en-v1.5
+
+  export:
+    iirds:
+      title: Product documentation
+      creator: Example Corp
+      version: "1.3"
+```
+
+Section keys are camelCase (`baseIri`, `maxTurns`, `confidenceThreshold`). The
+page vocabulary a document writes is kebab-case (`alt-labels`, `applies-to`).
+The two are different surfaces and spell things differently on purpose.
+
+## Where the documents come from
+
+`collections:` is the family's, declared once and read by every tool. See
+[the metadata tool's configuration reference](/manni/meta/reference/configuration/#collections)
+for its full shape.
+
+| Field | Type | Default | What it does |
+|---|---|---|---|
+| `name` | string | required | What `--collection <name>` selects. |
+| `paths` | list of globs | required | Members, resolved from the **config file's** directory rather than from where the command runs. |
+| `exclude` | list of globs | `[]` | Non-members. It decides membership, so an excluded file is not in the collection even when a positional path names it. |
+| `url` | string | none | Where those pages are published. `manni a11y check` reads it; kg does not. |
+| `externalMetadata` | list | `[]` | Frontmatter kept outside the document. kg sees the merged result, so an external `kg` block derives exactly as an inline one does. |
+
+A `build`, `validate` or `fill` run with no positional paths reads every
+declared collection. `--collection` narrows that to one, and cannot be combined
+with paths.
+
+Nothing matching is **exit 2**:
+
+```console
+$ manni kg build
+manni: No input files matched: docs/**/*.rst (cwd: /repo)
+```
+
+## Where the model comes from
+
+`providers:` is the family's too. `manni kg fill` is the one verb that reaches
+a model, and it resolves one in this order, later winning:
+
+1. `providers.provider`, the family default, with the connection settings for
+   each provider beside it.
+2. `kg.provider`, this tool's override.
+3. `--provider`, this run's.
+4. `--local`, over all three, running `llama-cpp` on this machine.
+
+Unset everywhere, the provider is `auto`: an Anthropic key, then an OpenAI key,
+then the Claude CLI, then a local model, detected exactly as `manni meta fill`
+detects. A model is carried only to the provider its own level names, because a
+model name does not say which provider owns it. Under `auto` a model is a usage
+error.
+
+## `kg` keys
+
+### Top level
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `provider` | string | unset | Which provider `kg fill` sends pages to: `auto`, `anthropic`, `openai`, `claude-cli`, `llama-cpp`. An unknown name is refused when the config is read, by every verb, not only the one that reaches a model. |
+| `model` | string | unset | The model within the provider named beside it. Unset, the inference library's default for that provider is used; manni pins none, and every cache key names the model it resolved to. This is not `embed.model`. |
+| `baseIri` | string | `urn:manni:kg:` | The base every minted node IRI hangs off. A value not ending in `/` or `:` gets a trailing slash. Use an HTTP base when the graph is published, so its nodes dereference. |
+| `out` | string | `kg/graph.ttl` | Where `kg build` writes the Turtle, and where every graph reader looks for it. Resolved from the working directory. `-o` overrides it for one build, `-g` for one read. |
+
+### `routes`
+
+Maps published site paths back to source files, so a link written as the reader
+sees it resolves to the page that serves it. Each entry is an object; only
+`root` is required.
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `basePath` | string | `/` | The site prefix this route serves. Normalized to a leading `/` and no trailing one; `/` means the site root. |
+| `root` | string | required | The repository directory that prefix resolves into. |
+| `extensions` | list of strings | `[".md", ".mdx"]` | Extensions to try when a route names a page without one. Each must start with a dot. |
+| `indexFiles` | list of strings | `["index", "README"]` | Basenames to try for a directory route such as `/guides/`. |
+| `language` | BCP-47 tag | unset | The language of every document under `root`. A page's own `lang` or `language` frontmatter wins; absent that, the nearest enclosing route that declares one applies. Unset, the route says nothing about language. |
+
+Routes are corpus-defining, so they are config-only. There is no flag.
+
+### `build`
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `derive` | list | all seven | Which sources become triples: `frontmatter`, `sections`, `links`, `tags`, `images`, `code`, `provenance`. Narrowing it makes a smaller graph, not a wrong one; a predicate nothing derives simply has no triples. |
+
+### `validate`
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `schemas` | list of schema refs | `[]` | The schema set that judges a page's frontmatter. `kg build` reads `x-manni-kg-output` from it, to decide what a published graph may carry. Check these pages against the same set with `manni meta validate`. Empty means the page vocabulary bundled into manni, `manni:kg:1.0.0-proposal.3`. A ref here is anything `manni meta` resolves: a built-in id, a file path, or a URL. |
+
+### `check`
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `shapes` | list of paths | `[]` | The SHACL shapes `kg check` validates the built graph against. Empty means the shapes shipped in the package, `shapes/kg/shapes-1.0.0.ttl`. Naming shapes here **replaces** the bundled set rather than adding to it, so list the bundled file too when you mean to extend it. `--shapes` overrides this for one run. |
+
+### `provenance`
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `qualified` | boolean | `true` | Emit qualified PROV attribution and association nodes, which carry a role, rather than the bare `prov:wasAttributedTo` edge alone. |
+
+Git itself is detected, never declared. History is used wherever git can run
+over a repository. A run that finds neither git nor a repository warns once
+with git's own reason and builds the rest. There is no switch, because a switch
+for a detectable fact is one more way to be wrong. A job that needs the
+stronger contract writes it as a shape over the built graph.
+
+### `stats`
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `coverageThreshold` | number 0–100, or a map | `{}` | The minimum share of documents that must carry each measured field. A single number applies to every measured field. A map sets them one at a time, keyed by field name. Empty gates nothing. Enforced only under `stats --check`; `--coverage-threshold` overrides it for one run. |
+
+There are twelve measured document-level fields, and the
+[Coverage](/manni/kg/govern/coverage/) page lists them with what fills each.
+
+```yaml
+kg:
+  stats:
+    coverageThreshold:
+      title: 100
+      description: 90
+      type: 60
+```
+
+### `fill`
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `temperature` | number 0–2 | `0` | Sampling temperature for the proposal call. Zero is the default because a reproducible proposal is worth more than a varied one. |
+| `maxTurns` | integer ≥ 1, or `null` | `null` | Stop after this many inference calls. One page is one turn; a cached page spends none. `null` is unbounded. A page the budget stopped at is reported `skipped`, reason `turn budget`. |
+| `cacheDir` | string | `.manni/kg/cache` | Where raw proposals are cached. Caching happens **before** the confidence gate, so re-running at a different `--confidence` spends nothing. |
+| `confidenceThreshold` | number 0–1 | `0.7` | The self-reported confidence a proposed value must clear to be written. Below it the value is reported and not written. |
+| `writeProvenance` | boolean | `true` | Record what was written in the page's `meta-provenance`, naming the model and the fields. Turning it off removes the review trail; leave it on. |
+| `validateGraph` | boolean | `true` | Vet each proposal against the SHACL shapes before writing it, simulating it in the derived graph. Accepted proposals fold into that state, so two pages in one run cannot jointly corrupt the graph. |
+| `sections` | boolean | `false` | Also propose per-section metadata, not only page-level. Opt-in, because it is a great deal more output to review. |
+| `fields` | list | every field | Which fields may be proposed at all: `label`, `alt-labels`, `broader`, `narrower`, `related-concepts`, `concepts`, `type`, `applies-to`, `about-product-lifecycle`, `about-product-aspect`, `not-applicable-to`, `not-about-product-aspect`. |
+
+### `embed`
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `model` | string | `onnx-community/granite-embedding-small-english-r2-ONNX` | The local embedding model. Any id is accepted: the documented table is the tested set, not the permitted one, so a newer model works without a manni release. |
+| `dtype` | string | `q8` | Weight quantization. `q8` keeps int32 accumulation, which is associative, and so keeps the sidecars reproducible. |
+| `out` | string | `kg` | Directory for the vector sidecars, one file per language. |
+| `cacheDir` | string | `.manni/kg/embed-cache` | Per-text vector cache, keyed on text, model and dtype. |
+| `byLanguage` | map, BCP-47 tag → `{model, dtype}` | `{}` | Per-language overrides. A German corpus embedded with an English-only model returns confident, meaningless vectors and fails nothing, which is why this key exists. Unlisted languages use the two settings above. |
+
+Tested models, with what each costs:
+
+| Model | Note |
+|---|---|
+| `onnx-community/granite-embedding-small-english-r2-ONNX` | Default. 384 dimensions, an 8192-token context, so a section is never truncated. No prefixes. |
+| `Xenova/gte-small` | Lighter, about 34 MB. 384 dimensions, 512-token context. |
+| `Xenova/bge-small-en-v1.5` | 384 dimensions. Needs a query prefix, applied automatically here, because omitting it degrades retrieval silently. |
+| `Xenova/all-MiniLM-L6-v2` | Smallest, about 23 MB, but truncates at 256 wordpieces, so a long section loses its tail. |
+
+### `export`
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `iirds.title` | string | the exporter's own | Package title written into the iiRDS container. |
+| `iirds.creator` | string | unset | Creator organization, written as an iiRDS Party and a vCard organization. |
+| `iirds.version` | `"1.2"` or `"1.3"` | `"1.3"` | The iiRDS version literal the package declares. Quote it: unquoted, YAML reads `1.3` as a number and the value is refused. |
+
+## Keys that moved or went
+
+Refused by name, with the replacement in the message, rather than aliased. An
+alias would be a second place to declare one thing.
+
+| Key | What to write instead |
+|---|---|
+| `kg.inputs` | A top-level `collections:` entry. Document sets are declared once for every tool. |
+| `kg.exclude` | The collection's own `exclude:`, or `--exclude` for one run. |
+| `kg.version` | Nothing. The tool's version is the package's. |
+| `kg.provenance.git` | Nothing. Git is detected; a job that requires history expresses it as a shape. |
+| `kg.fill.provider` | `kg.provider`, or the family's `providers.provider`. |
+| `kg.fill.maxCostUsd` | `kg.fill.maxTurns`. The budget is counted in inference calls, which every model makes and every model can be counted making. Converting turns to money is your provider's rate card. |
+| `kg.provenance` on a **page** | The page-level `meta-provenance`, with JSON Pointers. A page that still carries `kg.provenance` is refused by name, with the migration in the message. |
+
+## What a published graph carries
+
+Which fields reach an exported artifact is the schema's call, not this tool's.
+Mark a top-level property `x-manni-kg-output: false` in the schema that governs
+the page. It is then dropped before derivation, so it appears in none of the
+four outputs. Absent means `true`. The mark sits beside `x-manni-location` in the
+same schema, so what a page stores and what a delivered artifact says are two
+decisions in one place. See
+[Govern the graph](/manni/kg/govern/#what-the-published-graph-carries) and
+[how a schema reaches a file](/manni/meta/reference/schema-resolution/).

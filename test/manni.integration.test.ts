@@ -7,8 +7,9 @@
  * usage error that says where the command went.
  */
 import { execFileSync, execSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -72,9 +73,16 @@ describe("manni (built bin)", () => {
     // `manni meta validate` and `manni cite check` a corpus of deliberately
     // broken fixtures (0051 known limit 1). Everything else — the base IRI,
     // the routes — comes from the repository's own `kg:` section.
-    const r = run(manni, ["kg", "validate", "test/kg/fixtures/corpus/docs"]);
-    expect(r.status).toBe(0);
-    expect(r.stdout).toMatch(/8 files checked/);
+    const out = mkdtempSync(join(tmpdir(), "manni-umbrella-kg-"));
+    const r = run(manni, [
+      "kg",
+      "build",
+      "test/kg/fixtures/corpus/docs",
+      "--out",
+      join(out, "graph.ttl"),
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    expect(r.stdout).toMatch(/8 docs/);
   });
 
   it("prefixes kg diagnostics with the bin that ran", () => {

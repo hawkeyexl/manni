@@ -7,7 +7,7 @@
 # model can be counted making — so what this corpus now shows is a page the
 # budget skipped, and the reason printed beside it.
 #
-# Separate from dockg.config.yaml so this fill.* block does not perturb the
+# Separate from docs.config.yaml so this fill.* block does not perturb the
 # counts the get-started steps assert.
 collections:
   - name: unpriced

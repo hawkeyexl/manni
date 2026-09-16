@@ -290,3 +290,53 @@ describe("manni:kg ladder", () => {
     expect(cases.filter(([, valid]) => !valid)).toHaveLength(13);
   });
 });
+
+/**
+ * Two keys 0023's ladder does not reach, kept from the integration file that
+ * used to assert them through `manni kg validate` (removed in proposal 0051
+ * §8). They are properties of the draft rather than of any verb, so they are
+ * checked against the draft directly — the vocabulary keeps its coverage, the
+ * removed command takes only its own with it.
+ */
+describe("the draft beyond 0023's ladder", () => {
+  const ajv = new Ajv2020({
+    allErrors: true,
+    allowUnionTypes: true,
+    strict: false,
+  });
+  const validate = ajv.compile(schema as object);
+
+  const errorText = (): string =>
+    (validate.errors ?? [])
+      .map((e) => `${e.instancePath} ${e.message ?? ""}`)
+      .join(" | ");
+
+  it("takes revision-of as a list or a bare string", () => {
+    // The single-string shorthand manni:kg widened over dockg 0.8: one value is
+    // a string, many values are a list. This used to be a rejection.
+    expect(validate(parse(`kg:\n  revision-of: [old/guide.md]`))).toBe(true);
+    expect(validate(parse(`kg:\n  revision-of: old/guide.md`))).toBe(true);
+  });
+
+  it("rejects an empty revision-of list", () => {
+    // …but an empty list is not a declaration. `minItems: 1` closes the hole
+    // where `revision-of: []` read as "revised something" and named nothing.
+    expect(validate(parse(`kg:\n  revision-of: []`))).toBe(false);
+    expect(errorText()).toContain("revision-of");
+  });
+
+  it("rejects an out-of-enum not-about-product-aspect", () => {
+    expect(
+      validate(
+        parse(
+          `kg:\n  not-applicable-to: [SP-X300]\n  not-about-product-aspect: [architecture]`,
+        ),
+      ),
+    ).toBe(true);
+
+    expect(
+      validate(parse(`kg:\n  not-about-product-aspect: [nonsense]`)),
+    ).toBe(false);
+    expect(errorText()).toContain("not-about-product-aspect");
+  });
+});

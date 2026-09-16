@@ -131,3 +131,9 @@ jobs:
       # and what it deliberately leaves to docs-as-tests is in the file.
       - name: Check the docevals docs section (dogfood)
         run: npm run docs:check-docevals
+      # The graph tool over its own docs section, through an explicit -c: build
+      # the graph of those pages, then validate it against the bundled shapes.
+      # Deterministic and offline — no provider is involved. What it covers and
+      # why it is not the repo-root config is in docs/manni.kg.yaml.
+      - name: Check the kg docs section (dogfood)
+        run: npm run docs:check-kg

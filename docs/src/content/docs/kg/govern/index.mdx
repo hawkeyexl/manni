@@ -1,0 +1,179 @@
+---
+title: Govern the graph
+description: Extend the SHACL shapes with your own house rules, and decide what a published graph is allowed to carry.
+---
+
+Your standard about structure probably lives in review comments. A concept
+should have one label. A page should belong to a section. A how-to should say
+which product variant it is about. `manni kg check` is where those become
+checks, enforced across the corpus rather than page by page.
+
+This is Sara's page. The outcome is that your house rules hold in the graph,
+and that a delivered artifact carries what you decided it should.
+
+## Why the graph, and not another per-file lint
+
+A per-file check sees one file. The failures that matter most here exist only
+after N documents merge into shared nodes:
+
+- Two pages spell one concept differently, so one node ends up with two
+  preferred labels.
+- Three pages' `broader` links close a cycle, so a concept is its own ancestor.
+- A page declares a product variant it is also excluded from.
+- A link resolves to a page that no longer exists.
+
+None of those is visible in any single document. That is what `check` is for,
+and why it runs over the built graph rather than over the sources.
+
+## The bundled shapes are the floor
+
+`manni kg check` ships with a shapes file, `shapes/kg/shapes-1.0.0.ttl`, which
+is what it uses when you name none. It declares a node shape per class the
+emitter mints: `kg:Document`, `kg:Section`, `skos:Concept`,
+`skos:ConceptScheme`, `iirds:ProductVariant`, and the PROV agents, activities,
+attributions and associations. It adds two SKOS integrity checks core SHACL
+cannot express: `skos:broader` cycles, and `skos:related` conflicting with
+`skos:broaderTransitive`.
+
+Every one of them is **closed**. A predicate the shapes have not learned fails,
+the way `additionalProperties: false` fails an unknown key. That is the feature
+rather than a rough edge. A change to what the graph contains is not finished
+until the shapes say so, in the same commit.
+
+A published shapes file is immutable. Evolving them means a new three-segment
+version file beside the old one. MAJOR means a graph that used to pass now
+fails. MINOR means one that used to fail may now pass. PATCH means no change in
+validation behavior.
+
+## Adding your own
+
+Write a shapes file and point `kg.check.shapes` at it:
+
+```yaml
+kg:
+  check:
+    shapes:
+      - node_modules/@hawkeyexl/manni/shapes/kg/shapes-1.0.0.ttl
+      - shapes/house-rules.ttl
+```
+
+**Naming shapes replaces the bundled set rather than adding to it.** List the
+bundled file first when you mean to extend it, as above. Leave it out and you
+are running your rules alone, which is occasionally what you want and never
+what you meant by accident.
+
+`--shapes <path>` does the same for one run. It is repeatable, one path per
+occurrence, and never split on commas, because a path may hold one.
+
+A house rule looks like any other property shape. This one says every concept
+must sit in a scheme:
+
+```turtle
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix house: <https://example.com/shapes#> .
+
+house:ConceptInScheme
+  a sh:NodeShape ;
+  sh:targetClass skos:Concept ;
+  sh:property [
+    sh:path skos:inScheme ;
+    sh:minCount 1 ;
+    sh:severity sh:Warning ;
+    sh:message "Concept belongs to no scheme. Give it one, or drop it." ;
+  ] .
+```
+
+Two things to get right. Target a class the emitter actually mints, or the
+shape matches nothing and passes silently. And do not declare your own shape
+`sh:closed` over a class the bundled shapes already close. The two closures
+would each reject what the other allows.
+
+## Severity, in the family's words
+
+A shape's `sh:severity` maps onto the family scale, and the source value stays
+in `shaclSeverity` for anyone who needs it. The mapping is the same one a11y
+uses for axe's `impact`.
+
+| `sh:severity` | Family severity | Effect |
+|---|---|---|
+| `sh:Violation` | `error` | Exits `1`. |
+| `sh:Warning` | `warning` | Reported; exit stays `0`. |
+| `sh:Info` | `notice` | Reported; exit stays `0`. |
+
+A property shape that names no severity gets SHACL's default, `sh:Violation`,
+and therefore `error`. That is deliberate and worth knowing: a rule you meant
+as advisory blocks the build until you say `sh:Warning`.
+
+This is how a new rule lands without a wall of red. Enter it at `sh:Warning`,
+watch what it catches for a sprint, then promote it to `sh:Violation` when the
+corpus is clean. The alternative is to land it at `error` and then weaken the
+rule to get green, which destroys the standard for good.
+
+## What the published graph carries
+
+Which fields reach an exported artifact is the **schema's** call, not this
+tool's. Mark a top-level property in the schema that governs the page:
+
+```json
+{
+  "properties": {
+    "owner": {
+      "type": "string",
+      "x-manni-location": "external",
+      "x-manni-kg-output": false
+    }
+  }
+}
+```
+
+Absent means `true`. The filter runs **once**, before derivation. A dropped
+field is therefore absent from the Turtle, the JSON-LD, the iiRDS package and
+the search index alike. There is no post-processing step to forget.
+
+The mark sits beside
+[`x-manni-location`](/manni/meta/schemas/field-location/) in the same file on
+purpose. What a page stores and what a delivered artifact says are two
+decisions. They belong in one place, made by the person who owns the
+standard.
+
+A mark nested inside the `kg` block is ignored. The mark governs a top-level
+key, and `kg` is the top-level key.
+
+## Three pointers a machine may never claim
+
+`/kg/sections`, `/kg/revision-of` and `/kg/derived-from` are hand-curated. A
+`meta-provenance` entry naming one of them is a `kg check` finding at `error`.
+
+The guard lives here rather than in the schema. `meta-provenance` pointers
+became free-form, and a schema cannot express "this pointer, but not from a
+machine". What it protects is the part of the graph a reader may assume a
+person decided. Which sections a page declares, what it supersedes, and what it
+was derived from.
+
+## Encrypted values
+
+kg never decrypts. A value encrypted with the family key is harvested like any
+other and lands in the graph as its `~…` token. The token says a value exists
+and nothing about what it is. A shape can therefore require the field's
+presence without the graph publishing its content.
+
+## Related
+
+- [Coverage](/manni/kg/govern/coverage/), the other half of governing a
+  corpus: what share of it carries each field, and how to gate on that.
+- [Run it in CI](/manni/kg/ci/), where `check` becomes a gate.
+- [Configuration reference](/manni/kg/reference/configuration/#check), for the
+  `check.shapes` key.
+
+{/* Verified by Doc Detective in docs-as-tests, against test/kg/fixtures/dd/. */}
+
+{/* step {"description":"A corpus that violates the shapes builds fine; the graph is checked separately.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/violations.config.yaml","exitCodes":[0]}} */}
+
+{/* step {"description":"check catches the SKOS cycle core SHACL cannot express.","runShell":{"command":"manni kg check -c test/kg/fixtures/dd/violations.config.yaml","exitCodes":[1],"stdio":"a concept cannot be its own ancestor"}} */}
+
+{/* step {"description":"A variant a page is both about and excluded from is an error.","runShell":{"command":"manni kg check -c test/kg/fixtures/dd/violations.config.yaml","exitCodes":[1],"stdio":"kg:notApplicableToVariant"}} */}
+
+{/* step {"description":"A warning-level finding reports without failing the build.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0]}} */}
+
+{/* step {"description":"Two spellings of one concept collide on a single node, at warning.","runShell":{"command":"manni kg check -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"concept carries multiple prefLabels"}} */}

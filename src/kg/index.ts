@@ -93,11 +93,6 @@ export {
   type BuildOptions,
   type BuildResult,
 } from "./commands/build.js";
-export {
-  runValidate,
-  type ValidateOptions,
-  type ValidateResult,
-} from "./commands/validate.js";
 export { frontmatterSchema, FRONTMATTER_SCHEMA_ID } from "./schema.js";
 export {
   runExport,

@@ -1,0 +1,168 @@
+---
+title: Get started
+description: Build a graph of your docset in one command, then ask it what nothing links to.
+---
+
+Ten minutes, one command, and a question your docset could not answer before.
+Nothing here reaches a model or the network.
+
+This is the first half of Maya's M18. The second half is
+[Explore the graph](/manni/kg/explore/).
+
+## Before you start
+
+Node.js 24 or newer, and the package you may already have:
+
+```sh
+npm install -D @hawkeyexl/manni
+```
+
+Git is useful but not required. History is **detected**, not declared: where
+git can run over a repository, commit dates and authors become triples. Where
+it cannot, the run says so once and builds the rest.
+
+## 1. Build the graph
+
+Point it at your docs:
+
+```console
+$ npx @hawkeyexl/manni kg build docs/
+Wrote kg/graph.ttl (3 docs, 131 triples)
+```
+
+That is the whole first step. You now have a Turtle file: one node per
+document, one per heading, one per concept, plus the agents and activities that
+produced them.
+
+Two runs over unchanged inputs produce a byte-identical file. That is a product
+contract rather than a happy accident, and it is why the graph is safe to
+commit, diff, and cache.
+
+## 2. Ask what shape the docset is in
+
+```console
+$ npx @hawkeyexl/manni kg stats
+Triples:    131
+Documents:  3
+Sections:   8
+Concepts:   3
+References: 2
+
+Most connected:
+  test/kg/fixtures/dd/docs/configuration.md (2)
+  test/kg/fixtures/dd/docs/getting-started.md (2)
+
+Orphan docs (1):
+  test/kg/fixtures/dd/docs/troubleshooting.md
+
+Broken internal links (1):
+  test/kg/fixtures/dd/docs/troubleshooting.md -> missing.md
+
+Broken section refs (1):
+  test/kg/fixtures/dd/docs/getting-started.md -> #renamed-heading
+```
+
+The orphan is a page nothing links to. The broken section ref is a link to an
+anchor that no longer exists, which is what a renamed heading leaves behind.
+Neither is visible from any single file.
+
+`stats` on its own always exits `0`. `--check` makes it a gate.
+
+## 3. Ask a question
+
+```console
+$ npx @hawkeyexl/manni kg query --p dcterms:subject
+<https://example.com/dd/doc/test/kg/fixtures/dd/docs/configuration.md> dcterms:subject <https://example.com/dd/concept/reference>
+<https://example.com/dd/doc/test/kg/fixtures/dd/docs/getting-started.md> dcterms:subject <https://example.com/dd/concept/onboarding>
+
+2 match(es)
+```
+
+Omit a term and it is a wildcard, so that reads "everything the corpus says
+about subject". `--s` and `--o` narrow the other two positions.
+
+## 4. Check the graph
+
+```console
+$ npx @hawkeyexl/manni kg check
+warning: https://example.com/dd/concept/installation skos:prefLabel — concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling [test/kg/fixtures/dd/docs/configuration.md, test/kg/fixtures/dd/docs/getting-started.md]
+
+0 errors, 1 warning, 0 notices
+```
+
+Two pages named one concept with different spellings, so they collided on a
+single node. That finding does not exist in either file: it exists only in the
+graph. This is the class of failure `check` is for, and the reason a graph gate
+is not a second linter.
+
+A `warning` reports and exits `0`. An `error` exits `1`.
+
+## 5. Write the config down
+
+You can keep typing paths, but the point of a config is that CI and your
+laptop agree:
+
+```console
+$ npx @hawkeyexl/manni kg init
+Created manni.config.yaml
+```
+
+It writes a commented starter `kg:` section into `manni.config.yaml`, appending
+to the file if it already exists and leaving every sibling tool's keys alone. A
+file that already has a `kg:` key is refused rather than overwritten.
+
+Then declare the documents once, at the **top level**, where every tool reads
+them:
+
+```yaml
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.{md,mdx}"
+
+kg:
+  baseIri: https://docs.example.com/kg/
+  out: kg/graph.ttl
+```
+
+With that in place, `manni kg build` with no paths reads the collection. The
+same collection feeds `manni meta validate` and `manni cite check`, which is
+the point of declaring it once.
+
+Set `baseIri` to a namespace you control. Without it, node IRIs fall back to
+`urn:manni:kg:`, which identifies without promising to resolve. That is fine
+for a graph that stays in CI. It is unhelpful for one you hand to someone
+else.
+
+## What you have now
+
+- A deterministic graph of the docset, rebuildable in one command.
+- A list of orphans, broken links and broken anchors that no per-file check
+  produces.
+- A corpus-level contract, enforced by `check`.
+
+## Where next
+
+| Goal | Page |
+|---|---|
+| Ask the graph more questions | [Explore the graph](/manni/kg/explore/) |
+| Know what a change to one page affects | [See what a change affects](/manni/kg/explore/impact/) |
+| Understand what becomes a triple, and what never does | [How manni kg works](/manni/kg/get-started/how-kg-works/) |
+| Categorize a corpus nobody annotated | [Fill the vocabulary](/manni/kg/fill/) |
+| Make this a gate on every pull request | [Run it in CI](/manni/kg/ci/) |
+
+{/* Verified by Doc Detective in docs-as-tests, against test/kg/fixtures/dd/. */}
+
+{/* step {"description":"One command builds the graph and reports the counts.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"3 docs, 131 triples"}} */}
+
+{/* step {"description":"A second build over unchanged inputs produces the same file.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"3 docs, 131 triples"}} */}
+
+{/* step {"description":"stats reports the orphan nothing links to.","runShell":{"command":"manni kg stats -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Orphan docs (1):"}} */}
+
+{/* step {"description":"stats alone exits 0 even with findings in the report.","runShell":{"command":"manni kg stats -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0]}} */}
+
+{/* step {"description":"A wildcard query lists what the corpus says about a predicate.","runShell":{"command":"manni kg query -c test/kg/fixtures/dd/docs.config.yaml --p dcterms:subject","exitCodes":[0],"stdio":"2 match(es)"}} */}
+
+{/* step {"description":"check finds the collision that exists in neither file.","runShell":{"command":"manni kg check -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"concept carries multiple prefLabels"}} */}
+
+{/* step {"description":"A warning reports and still exits 0.","runShell":{"command":"manni kg check -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"0 errors, 1 warning, 0 notices"}} */}

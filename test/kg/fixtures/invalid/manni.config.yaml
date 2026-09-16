@@ -1,5 +1,0 @@
-# A collection and nothing else: a family file carrying a family key is this
-# tool's config even with no `kg:` section, so every kg setting stays default.
-collections:
-  - name: invalid
-    paths: ["*.md"]

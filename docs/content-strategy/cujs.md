@@ -126,7 +126,7 @@ The claim this journey carries is that docevals orchestrates and does not reimpl
 
 **Outcome.** Maya has a graph of her docset and can ask it questions prose cannot answer: which pages nothing links to, which concepts have no page, which page owns a term.
 
-**Steps.** She runs `manni kg build` over a collection she already declared for `meta validate`, and gets one Turtle file plus a count of documents and triples. `manni kg stats` tells her how much of the vocabulary the corpus actually fills, per field, and `--check` turns a coverage floor into an exit code. `manni kg query --p dct:subject` lists what the corpus says about a predicate, and `manni kg search` finds pages by words or, once she has run `manni kg embed`, by meaning. Nothing is inferred from prose: a triple exists because frontmatter, a link, a heading or a code block put it there.
+**Steps.** She runs `manni kg build` over a collection she already declared for `meta validate`, and gets one Turtle file plus a count of documents and triples. `manni kg stats` tells her how much of the vocabulary the corpus actually fills, per field, and `--check` turns a coverage floor into an exit code. `manni kg query --p dcterms:subject` lists what the corpus says about a predicate, and `manni kg search` finds pages by words or, once she has run `manni kg embed`, by meaning. Nothing is inferred from prose: a triple exists because frontmatter, a link, a heading or a code block put it there.
 
 **What success looks like.** A question that used to mean reading forty pages is a one-line command, and the answer is the same on her machine and in CI.
 

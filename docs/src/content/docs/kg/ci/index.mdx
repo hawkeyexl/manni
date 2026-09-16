@@ -1,0 +1,162 @@
+---
+title: Run it in CI
+description: Gate the docset's structure on every pull request with one build step and one check step.
+---
+
+A pull request that breaks the docset's structure should be red before review.
+Two commands do it, over the same collection the metadata gate already uses.
+There is no second tool to install and no second config to keep.
+
+This is Devin's page.
+
+## The job
+
+```yaml
+name: Docs graph
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - "manni.config.yaml"
+
+jobs:
+  kg:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Git history is detected, not declared: creator, created and
+          # modified come from commits. A shallow clone degrades those
+          # silently, so fetch the lot.
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npx @hawkeyexl/manni kg build
+      - run: npx @hawkeyexl/manni kg check -f github
+      - run: npx @hawkeyexl/manni kg stats --check
+```
+
+Nothing in that job reaches a model or the network. `build`, `check` and
+`stats` are deterministic and local, which is why the graph gate is cheap
+enough to run on every push. `fill` is the one verb that reaches a provider,
+and it is not a CI step.
+
+## The two steps do different jobs
+
+`check` validates the built graph against SHACL shapes. This is where the
+**emergent** failures live. A concept split across two spellings. A `broader`
+cycle closed by three pages. A variant a page is both about and excluded from.
+They exist only after the corpus merges into shared nodes, so no per-file check
+can see them. See [Govern the graph](/manni/kg/govern/).
+
+`stats --check` gates two different things: a broken internal link, and
+vocabulary coverage below its floor. See
+[Coverage](/manni/kg/govern/coverage/).
+
+Run both. Neither subsumes the other.
+
+## Annotations
+
+`-f github` writes one workflow annotation per finding, on the documents behind
+it:
+
+```console
+$ manni kg check -c test/kg/fixtures/dd/violations.config.yaml -f github
+::error file=test/kg/fixtures/dd/violations/alpha.md::skos:broader cycle through https://example.com/dd/concept/alpha, https://example.com/dd/concept/beta (https://example.com/dd/concept/alpha → https://example.com/dd/concept/beta) — a concept cannot be its own ancestor (https://example.com/dd/concept/alpha)
+```
+
+A graph finding has a focus node rather than a line, so the annotation lands on
+the file rather than inside it. Where a finding came from several documents,
+each is annotated. The fix is usually in one of them, and naming both is what
+lets a contributor work out which.
+
+`check` also accepts `-f json`, for a dashboard. Every other verb offers
+`pretty` and `json`; `github` is `check`'s alone, because `check` is the one
+that annotates a diff.
+
+## Exit codes
+
+The family's contract, with nothing added:
+
+| Code | Meaning | Whose problem |
+|---|---|---|
+| `0` | Clean. A `warning` or `notice` finding is still `0`. | Nobody's. |
+| `1` | Findings: a SHACL `error`, a broken link or coverage below floor under `stats --check`, a `validate` failure. | The author's. |
+| `2` | Operational: no input files matched, a bad config, an unknown flag value. | Yours. |
+
+A recipe that treats any non-zero exit as "the docs are bad" is wrong, and it
+routes your own failures to contributors. Split them:
+
+```yaml
+      - name: Graph check
+        run: |
+          npx @hawkeyexl/manni kg check -f github
+          code=$?
+          if [ $code -eq 2 ]; then
+            echo "::error::manni kg could not run — this is a pipeline problem"
+          fi
+          exit $code
+```
+
+## Ramping in on a corpus that is not clean yet
+
+A first honest run on an unmeasured corpus reports a great deal. The instinct
+that follows is to weaken the rules until the build is green, and that destroys
+the standard for good. Two better moves:
+
+**Enter new shapes at `sh:Warning`.** A finding at `warning` reports and exits
+`0`. Promote the rule to `sh:Violation` when the corpus is clean. See
+[Severity](/manni/kg/govern/#severity-in-the-familys-words).
+
+**Set coverage thresholds just below today's numbers, and ratchet.** Run
+`kg stats --check --coverage-threshold <n>` to find the honest line, write the
+per-field map, and raise it as the gaps close.
+
+There is no findings baseline file for `kg check`, deliberately. A graph
+finding's identity is a focus node, and a focus node moves when a concept is
+renamed. A recorded baseline would then forgive the rename as though it were
+the same finding. Severity is the ratchet here instead.
+
+## A slow build
+
+`build` reads every document and shells out to git. Two things keep it quick:
+
+- **Narrow the collection.** A `kg` gate over a docset rarely wants the
+  changelog or the generated API dump in it. `exclude:` on the collection
+  decides membership for every tool at once.
+- **Trim `build.derive`.** A corpus with no images and no code blocks to model
+  gains nothing from deriving them. Narrowing the list makes a smaller graph,
+  not a wrong one.
+
+## Publishing on the same run
+
+The artifact a retrieval system consumes should be the one that passed. Add the
+export to the job that already gated it:
+
+```yaml
+      - run: npx @hawkeyexl/manni kg export jsonld
+      - run: npx @hawkeyexl/manni kg export search
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kg
+          path: kg/
+```
+
+See [Publish the graph](/manni/kg/publish/).
+
+{/* Verified by Doc Detective in docs-as-tests, against test/kg/fixtures/dd/. */}
+
+{/* step {"description":"The gate is two commands: build, then check.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/violations.config.yaml","exitCodes":[0]}} */}
+
+{/* step {"description":"github format writes one annotation per finding.","runShell":{"command":"manni kg check -c test/kg/fixtures/dd/violations.config.yaml -f github","exitCodes":[1],"stdio":"::error file="}} */}
+
+{/* step {"description":"A warning-level finding does not fail the job.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0]}} */}
+
+{/* step {"description":"Exit 0 with a warning reported.","runShell":{"command":"manni kg check -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"0 errors, 1 warning, 0 notices"}} */}
+
+{/* step {"description":"stats --check fails on the broken internal link.","runShell":{"command":"manni kg stats -c test/kg/fixtures/dd/docs.config.yaml --check","exitCodes":[1],"stdio":"Broken internal links (1):"}} */}
+
+{/* step {"description":"An operational failure is exit 2, not a finding.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/nomatch.config.yaml","exitCodes":[2]}} */}

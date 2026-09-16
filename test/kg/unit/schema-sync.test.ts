@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { basename, dirname, join } from "node:path";
 import { Ajv2020 } from "ajv/dist/2020.js";
@@ -31,7 +31,7 @@ import {
 /**
  * Drift guard: fill's proposal field schemas must stay a subset of the
  * bundled frontmatter schema's kg properties, or `manni kg fill` writes
- * frontmatter that `manni kg validate` rejects.
+ * frontmatter the page vocabulary rejects.
  */
 describe("prompt FIELD_SCHEMAS ↔ bundled schema", () => {
   const schema = frontmatterSchema as unknown as {
@@ -238,10 +238,12 @@ describe("iiRDS enums ↔ bundled schema", () => {
 });
 
 /**
- * The kg tool's docs site section has not moved into this repository yet, so
- * the guards below that read its pages are skipped until it lands under
- * `docs/src/content/docs/kg/`. They are kept, not deleted: each one caught a
- * real drift once, and the pages are owed on this branch.
+ * The kg tool's docs section lives under `docs/src/content/docs/kg/`, so the
+ * guards below read its pages directly. Each one caught a real drift once: a
+ * bundled default renamed without the page following, a documented import that
+ * resolved to `undefined`, a field count spelled out in prose after the list
+ * grew. A missing page is now a failure rather than a skip, because a guard
+ * that opts itself out is a guard that stops guarding.
  */
 const KG_DOCS = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -254,10 +256,8 @@ const KG_DOCS = join(
   "docs",
   "kg",
 );
-const kgDocsPage = (...segments: string[]): string | null => {
-  const path = join(KG_DOCS, ...segments);
-  return existsSync(path) ? readFileSync(path, "utf8") : null;
-};
+const kgDocsPage = (...segments: string[]): string =>
+  readFileSync(join(KG_DOCS, ...segments), "utf8");
 
 describe("documented bundled defaults ↔ pkg.ts", () => {
   const configPage = kgDocsPage("reference", "configuration.mdx");
@@ -265,11 +265,11 @@ describe("documented bundled defaults ↔ pkg.ts", () => {
 
   // No schema *file* to name any more: the page vocabulary is the 0023 draft,
   // inlined into the build, so what the page has to get right is its id.
-  it.skipIf(configPage === null)("names the page vocabulary in force", () => {
+  it("names the page vocabulary in force", () => {
     expect(configPage).toContain(FRONTMATTER_SCHEMA_ID);
   });
 
-  it.skipIf(configPage === null)("names the current bundled shapes file", () => {
+  it("names the current bundled shapes file", () => {
     expect(configPage).toContain(`shapes/kg/${shapesFile}`);
   });
 });
@@ -303,7 +303,7 @@ describe("the library entry point ↔ what the docs promise", () => {
   // in src/core/coverage.ts, which is not a public entry point — so the
   // documented import resolved to undefined.
   const page = kgDocsPage("reference", "library-api.mdx");
-  it.skipIf(page === null)("re-exports every coverage symbol library-api.mdx names", async () => {
+  it("re-exports every coverage symbol library-api.mdx names", async () => {
     const index = (await import("../../../src/kg/index.js")) as Record<
       string,
       unknown
@@ -379,7 +379,7 @@ describe("documented coverage field count ↔ COVERAGE_FIELDS", () => {
     join("reference", "library-api.mdx"),
   ];
 
-  it.skipIf(!existsSync(KG_DOCS))("no page names a count other than the measured one", () => {
+  it("no page names a count other than the measured one", () => {
     const correct = WORDS[COVERAGE_FIELDS.length];
     expect(correct, "extend WORDS if the field list grew").toBeDefined();
     const wrong = WORDS.filter((w) => w !== correct && w !== "one");

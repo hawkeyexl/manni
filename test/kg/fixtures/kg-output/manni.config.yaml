@@ -1,6 +1,6 @@
 # The x-manni-kg-output fixture (proposal 0051 §5). The house schema beside
 # this file is what carries the marks; `validate.schemas` is how kg is told
-# which schema set judges these pages.
+# which schema set the marks are read from.
 collections:
   - name: kg-output
     paths:

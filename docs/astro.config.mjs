@@ -229,6 +229,55 @@ export default defineConfig({
             },
           ],
         },
+        // The knowledge-graph tool. Section order and labels follow its content
+        // set in docs/content-strategy/information-architecture.md (`kg/`).
+        {
+          label: "kg",
+          collapsed: true,
+          items: [
+            { label: "Overview", link: "/kg/" },
+            {
+              label: "Get started",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "kg/get-started" } }],
+            },
+            {
+              label: "Explore the graph",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "kg/explore" } }],
+            },
+            {
+              label: "Fill the vocabulary",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "kg/fill" } }],
+            },
+            {
+              label: "Run it in CI",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "kg/ci" } }],
+            },
+            {
+              label: "Publish the graph",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "kg/publish" } }],
+            },
+            {
+              label: "Govern the graph",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "kg/govern" } }],
+            },
+            {
+              label: "Fix a failing check",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "kg/fix" } }],
+            },
+            {
+              label: "Reference",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "kg/reference" } }],
+            },
+          ],
+        },
         // `key` manages a family resource rather than documents: the one
         // encryption key every tool encrypts values with (proposal 0045). Two
         // verbs, so the same two-page shape as `a11y`.

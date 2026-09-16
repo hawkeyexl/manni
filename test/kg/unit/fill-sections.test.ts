@@ -12,7 +12,11 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { defined } from "../helpers/defined.js";
 import { renderFill, runFill } from "../../../src/kg/commands/fill.js";
-import { runValidate } from "../../../src/kg/commands/validate.js";
+import { runValidate } from "../../../src/meta/index.js";
+import {
+  FRONTMATTER_SCHEMA_ID,
+  frontmatterSchema,
+} from "../../../src/kg/schema.js";
 import { runBuild } from "../../../src/kg/commands/build.js";
 import { runCheck } from "../../../src/kg/commands/check.js";
 import { MockProvider } from "@hawkeyexl/inference";
@@ -254,8 +258,20 @@ describe("fill --sections", () => {
     expect(written).not.toContain("sections.install-the-sdk.type");
     expect(written).not.toContain("/kg/sections");
 
-    const validated = await runValidate({ cwd: dir, paths: ["a.md"] });
-    expect(validated.exitCode, JSON.stringify(validated.run)).toBe(0);
+    // What fill writes must still pass the page vocabulary. That is
+    // `manni meta validate` against the kg draft (proposal 0051 §8), which is
+    // how every vocabulary in this family is checked; the draft is named by
+    // its `$id` and handed over inline, because 0023's ids stay unregistered
+    // while the vocabulary is under review.
+    const validated = await runValidate({
+      inputs: [join(dir, "a.md")],
+      cliSchemas: [FRONTMATTER_SCHEMA_ID],
+      inlineSchemas: new Map([[FRONTMATTER_SCHEMA_ID, frontmatterSchema]]),
+      noConfig: true,
+      cwd: dir,
+    });
+    expect(validated.summary.failed, JSON.stringify(validated.results)).toBe(0);
+    expect(validated.summary.errors, JSON.stringify(validated.results)).toBe(0);
 
     // And the gap is loud rather than silent.
     expect(report.warnings.join(" ")).toContain(

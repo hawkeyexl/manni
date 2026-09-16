@@ -34,7 +34,6 @@ import {
   type ExportFormat,
 } from "./commands/export.js";
 import { renderQuery, runQuery } from "./commands/query.js";
-import { renderValidate, runValidate } from "./commands/validate.js";
 import { renderFill, runFill } from "./commands/fill.js";
 import { runInit } from "./commands/init.js";
 import { renderEmbed, runEmbed } from "./commands/embed.js";
@@ -319,40 +318,6 @@ configInputs(
         const report = await runCheck({ ...rest(opts), ...documentOptions(opts) });
         console.log(renderCheck(report, opts.format));
         process.exitCode = report.exitCode;
-      } catch (e) {
-        fail(e);
-      }
-    },
-  );
-
-documentInputs(
-  program
-    .command("validate")
-    .description(
-      "Check docs are KG-ready (frontmatter validated via manni meta)",
-    ),
-  "validate",
-)
-  .option(
-    "-f, --format <format>",
-    `Output: ${KG_FORMAT_LIST}`,
-    formatOption,
-    "pretty",
-  )
-  .action(
-    async (
-      paths: string[],
-      opts: {
-        config?: string | boolean;
-        collection?: string[];
-        exclude?: string[];
-        format: KgFormat;
-      },
-    ) => {
-      try {
-        const result = await runValidate({ paths, ...documentOptions(opts) });
-        console.log(renderValidate(result, opts.format));
-        process.exitCode = result.exitCode;
       } catch (e) {
         fail(e);
       }
