@@ -21,13 +21,14 @@
 > | `dockg validate` | `manni meta validate`. The verb went, because that command already was this command (0051 §8) |
 > | `fill.minConfidence`, `--min-confidence` | `fill.confidenceThreshold`, `--confidence` (0051 §3) |
 > | `--max-cost`, `fill.maxCostUsd`, `fill.pricing` | `--max-turns`, `fill.maxTurns`. Turns are countable for every model; the dollar cap was not (0051 §3) |
-> | `kg.provenance` | Page-level `meta-provenance`, whose fields are JSON Pointers ([0046](../0046-provenance-pins.md)) |
+> | The `kg:` frontmatter block, `docmeta:kg` / `manni:kg` | The `graph:` block, defined by `manni:graph`. The tool, its config section and its RDF prefix keep `kg` (0051 §4) |
+> | `kg.provenance` | Page-level `meta-provenance`, whose fields are JSON Pointers such as `/graph/label` ([0046](../0046-provenance-pins.md)) |
 > | `provenance.git`, tri-state | Git is detected. A run that cannot read history warns once and builds the rest (0051 §6) |
 > | The `dockg:` namespace, `urn:dockg:` | `https://hawkeyexl.github.io/manni/kg/ns#` and `urn:manni:kg:` (0051 §7) |
 > | `sh:Violation` to exit 1, `sh:Warning` and `sh:Info` reported | The family scale, `notice \| warning \| error`, with SHACL's own word kept in `shaclSeverity` (0051 §2) |
 > | `dockg.config.yaml`, `version: 1` | `manni.config.yaml`, read at its `kg:` key. Document sets come from the top-level `collections:` (0051 §1) |
 > | `adrs/` | [`docs/proposals/kg/`](.), closed at 01040 |
-> | `test/`, `schemas/` | `test/kg/`, and no shipped schema: the page vocabulary is the 0023 draft, bundled at build (0051 §4) |
+> | `test/`, `schemas/` | `test/kg/`, and no shipped schema: the page vocabulary is `manni:graph`, bundled at build (0051 §4) |
 >
 > Added on 2026-09-16, when kg's imported files were conformed to this
 > repository.

@@ -1,6 +1,6 @@
 # 0023: the docmeta metadata vocabularies
 
-- **Status:** Proposed. Open for community review before anything registers
+- **Status:** Proposed. Open for community review before anything registers. Superseded in part by 0051
 - **Serves:** Sara · S1 "Define our metadata standard as a schema" · S2 "Wire schemas to the right documents"
 - **Relates to:** An earlier, unmerged house-vocabulary exploration whose
   briefing seeded this work. That exploration numbered its own drafts 0021 and
