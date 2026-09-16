@@ -496,6 +496,16 @@ npm run schemas:check-published  # ...and the live URLs still serve those bytes.
 # two schemas — the house rule (title + description) and the Starlight contract
 # this site runs on.
 node dist/cli.js meta validate
+
+# The glossary is a termbase, one `type: term` page per term under
+# meta/reference/glossary/. This checks it and the `concepts:` other pages
+# declare, and the Docs workflow gates on it. Notices never fail it.
+node dist/cli.js term check
+
+# After changing a term page, regenerate .vale/styles/Terms/ (drop --check) and
+# commit it. The Vale gate reads the committed style, and the Docs workflow
+# fails when it no longer matches the glossary.
+node dist/cli.js term write -f vale -o .vale/styles --check
 ```
 
 Command cores are tested directly in `test/*.test.ts`; the full CLI is exercised
