@@ -253,6 +253,24 @@ relaxation, 35 in `src/lint` and 337 in `test/lint`. docevals cleared the same
 backlog before merging rather than after. This does the same: the relaxation is
 deleted, not inherited.
 
+### 11. A template's patterns are regular expressions the user chose to run
+
+A template compiles its `patterns` with `new RegExp`, and a pattern written to
+backtrack can hang a run on a long heading. The review of #11 asked for a guard.
+
+The answer for now is that a template sits inside the trust boundary rather than
+outside it. A ref is named by the operator in their own config, exactly as a
+JSON Schema is for `manni meta`. A page may not name a URL. The surface is
+therefore a template the operator already chose to run.
+
+That is an argument for documenting the boundary, which the templates reference
+now does. It is not an argument against ever guarding it. Two options were
+weighed and neither belongs in a fold-in. A `safe-regex` style check adds a
+dependency and rejects patterns that are in fact fine. Gating the URL fetch
+behind a flag adds a CLI surface, and the same question is open for meta's
+remote schemas. Whichever lands should land for the family, in its own proposal,
+rather than for one domain here.
+
 ## Verification
 
 - `npm run typecheck`, `npm test`, `npm run build`, and `npm run lint` with

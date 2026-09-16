@@ -59,6 +59,19 @@ Everywhere a template is named, the value is a **ref**. That covers
 | File path | `./templates.yaml`, `docs/shapes.json` | Relative to the **config file's** directory when it comes from config, and to the **page** when it comes from a page's `$template`. |
 | URL | `https://example.com/templates.yaml` | Fetched once per run, 10-second timeout. Never allowed from a page's `$template`. |
 
+<Aside type="caution" title="A template is trusted input">
+A template is code your configuration chooses to run. Its `patterns` are
+compiled as regular expressions, and a pattern written to backtrack can hang a
+run on a long heading. That is the same trust you extend to a JSON Schema in
+`manni meta`, so treat a template ref the way you treat a dependency.
+
+The practical rule is about where the ref comes from. A path in your own
+repository is reviewed like any other file. A URL is someone else's file,
+fetched fresh on every run, so point one at a source you would take a pull
+request from. A page can never choose it: `$template` refuses a URL for exactly
+this reason.
+</Aside>
+
 A file or URL ref may carry a `#name` fragment naming one template inside it:
 `./templates.yaml#how-to`. Without a fragment, a file holding exactly one
 template resolves unambiguously; a file holding several is an error that lists
