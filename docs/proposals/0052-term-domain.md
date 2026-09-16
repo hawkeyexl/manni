@@ -633,10 +633,16 @@ baseline:
 | `[paths...]` | positional, space-separated | Files, directories and globs. Omitted, the set comes from every collection. |
 | `-` | positional | stdin, alongside named paths, never instead of them. Requires `--as`. |
 | `--as <format>` | one value | Forces an input format for stdin. |
+| `--ext <list>` | comma-separated, given once | The extensions a directory or glob walk keeps. |
 | `--exclude <glob>` | repeatable | One glob per occurrence; never comma-split. |
 | `--collection <name>` | repeatable | Narrows the run to named collections. |
+| `--allow-empty` | flag | An empty set is success. Wins over `term.allowEmpty`. |
+| `--no-gitignore` | flag | Reads files `.gitignore` covers. Wins over `term.respectGitignore`. |
 | `-c, --config <path>` | one value | The config file. |
 | `--no-color` | flag | As the family's. |
+
+These are the flags meta and cite take for the same jobs, spelled the same way.
+A command typed against one domain reads the same set under another.
 
 Per command:
 
@@ -652,6 +658,10 @@ Per command:
 | `write` | `--check` | none | off |
 | `write` | `--dry-run` | none | off |
 | `formats` | `-f, --format` | `pretty \| json` | `pretty` |
+
+`check --baseline` follows the family ratchet. With no baseline file it records
+the current findings and exits `0`. With one, only findings the file does not
+hold fail the run. A configured `term.baseline` is compared without the flag.
 
 `write -o` defaults differently by format, and the default is the only sensible
 target in each case.
@@ -713,7 +723,7 @@ progressive lens                        docs/terms/progressive-lens.md:1
 $ manni term check
 docs/guides/fitting.md:6
   error  manni:term/undefined-term       concepts: "PAL" names no entry.
-                                         "progressive lens" lists it as an alt-label
+                                         "progressive lens" lists it as an alt-label.
 docs/terms/glossary.md:14
   error  manni:term/label-collision      "Bifocal" is claimed by docs/terms/bifocal.md:5 as "bifocal"
 docs/terms/lens.md:4
@@ -733,22 +743,36 @@ have, under another name" is the whole finding.
 **5. The definitions, against the house voice.**
 
 ```console
-$ manni term lint
-docs/terms/kubernetes.md:9
+$ manni term lint terms
+terms/pod.md:6
+  error  manni:term/prose/Moose.EmDash   Em dash.
+                                         Split or restructure the sentence rather than swapping punctuation.
+terms/pod.md:7
   error  manni:term/prose/Direct.Length  Sentence runs to 33 words. Split it.
-  error  manni:term/prose/Moose.EmDash   Em dash. Split or restructure the sentence rather than swapping punctuation.
+terms/pod.md:13
+  error  manni:term/prose/Moose.EmDash   Em dash.
+                                         Split or restructure the sentence rather than swapping punctuation.
 
-2 errors in 34 terms
+3 errors in 1 term
 $ echo $?
 1
 ```
+
+The `abstract` sits on line 6. The folded `definition` starts on line 7, so its
+finding is there. The second line of a literal `scope-note` block is line 13,
+and its finding lands on it exactly. With `[*.definition.md]` setting
+`Direct.Length = NO`, the same run drops the line 7 finding and keeps the
+other two.
 
 **6. CI, annotated on the diff.**
 
 ```console
 $ manni term check -f github
-::error file=docs/guides/fitting.md,line=6,title=manni:term/undefined-term::concepts: "PAL" names no entry. "progressive lens" lists it as an alt-label
+::error file=docs/guides/fitting.md,line=6,title=manni%3Aterm/undefined-term::concepts: "PAL" names no entry. "progressive lens" lists it as an alt-label.
 ```
+
+The colon in the rule id is escaped, as it is in every domain's annotations,
+because a workflow command reads `:` as a separator.
 
 **7. Ramping in on a docset whose terms were never checked.**
 
@@ -786,10 +810,11 @@ Wrote 34 terms to build/terms.tbx
 ```console
 $ manni term write -f vale
 Wrote 34 terms to .vale/styles/Terms
-  Casing.yml        6 terms
-  Lowercase.yml     21 terms
-  Deprecated.yml    12 swaps
-  PAL.yml, ABS.yml  2 acronyms
+  Casing.yml      6 terms
+  Lowercase.yml   21 terms
+  Deprecated.yml  12 swaps
+  PAL.yml         1 acronym
+  ABS.yml         1 acronym
 notice: no section of .vale.ini uses the Terms style. Add it to BasedOnStyles:
   [*.md]
   BasedOnStyles = Voices, Direct, Moose, Terms
@@ -809,10 +834,23 @@ $ vale docs/guides/fitting.md
 
 ```console
 $ manni term write -f vale --check
-Terms/Deprecated.yml would change: 1 swap added
+.vale/styles/Terms is up to date
+$ echo $?
+0
+```
+
+After a hidden-label is added to a term:
+
+```console
+$ manni term write -f vale --check
+.vale/styles/Terms/Deprecated.yml would change
 $ echo $?
 1
 ```
+
+Each differing path is named with what would happen to it: `would change`,
+`would be created` or `would be removed`. `--dry-run` prints the same lines and
+writes nothing.
 
 **12. Scripting.**
 
@@ -836,26 +874,31 @@ $ manni term write docs/ - --as markdown \
 
 ```console
 $ manni term formats
-markdown   page                  read  write
-markdown   definition list       read  write
-mdx        page                  read  write
-asciidoc   page                  read  write
-asciidoc   [glossary] list       read  write
-rst        page                  read  write
-rst        .. glossary::         read  write
-html       page                  read  write
-html       dl                    read  write
-html       dfn                   read
-xml        DITA glossentry       read  write
-xml        DITA glossgroup       read  write
-xml        DocBook glossary      read  write
-manifest   yaml, json            read  write
-tbx        TBX v2 Core                 write
-skos       JSON-LD                     write
-vale       style                       write
-csv                                    write
-json                                   write
+markdown   page               read  write
+markdown   definition list    read  write
+mdx        page               read  write
+mdx        definition list    read  write
+asciidoc   page               read  write
+asciidoc   [glossary] list    read  write
+rst        page               read  write
+rst        .. glossary::      read  write
+html       page               read  write
+html       dl                 read  write
+html       dfn                read
+xml        page               read  write
+xml        DITA glossentry    read  write
+xml        DITA glossgroup    read  write
+xml        DocBook glossary   read  write
+manifest   manifest           read  write
+tbx        TBX v2 Core              write
+skos       JSON-LD                  write
+csv                                 write
+json                                write
+vale       style                    write
 ```
+
+The listing is built from the registered readers and writers, so it names only
+what runs.
 
 ### The usage errors
 
@@ -864,10 +907,15 @@ json                                   write
 | `term check` with no terms anywhere | `manni: no terms found. A term is a page declaring type: term, or an entry in a file declaring type: term-set.` | 2 |
 | `term.paths` in config | `manni: manni.config.yaml: term does not carry "paths". Name a collection under collections:.` | 2 |
 | `term check -` with no `--as` | `manni: reading stdin needs --as <format>.` | 2 |
-| `term check nowhere/` | `manni: no documents matched. Named paths: nowhere/.` | 2 |
+| `term check nowhere/` | `manni: File not found: "nowhere/".` | 2 |
 | `term get missing` | `manni: no term "missing". 34 terms; did you mean "missing-lens"?` | 2 |
 | `term write -f tmx` | `manni: unknown format "tmx". Expected markdown \| mdx \| asciidoc \| rst \| html \| dita \| docbook \| tbx \| skos \| csv \| json \| vale.` | 2 |
 | `term write -f tbx` with no `-o` | `manni: -f tbx needs -o <path>.` | 2 |
+| `term write -o out.md` with no `-f` | `manni: -o needs -f <format>.` | 2 |
+| `term write -f json -o x.json --check --dry-run` | `manni: --check and --dry-run cannot be combined.` | 2 |
+| `term write -` with no `-f` | `manni: <stdin> has nowhere to write back to. Pass -f <format> -o <path>.` | 2 |
+| `term write` over a page holding `<dfn>` terms | `manni: glossary.html: a dfn cannot be written in place. Pass -f <format> -o <path>.` | 2 |
+| `term write -f vale` with no Vale on PATH | `manni: vale is not on PATH. Install Vale, or pass -o <styles directory>.` | 2 |
 | `term write -f vale`, no Vale config found | `manni: Vale found no config file. Set tools.vale.config in manni.config.yaml, or pass -o <styles directory>.` | 2 |
 | `term write -f vale`, an unmarked file in `Terms/` | `manni: .vale/styles/Terms/Casing.yml was not written by manni. Move it, or pass -o <styles directory>.` | 2 |
 | `term write -f vale`, an acronym named like a rule file | `manni: the acronym "CASING" would replace Terms/Casing.yml. Rename the alt-label.` | 2 |
