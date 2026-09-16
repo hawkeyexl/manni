@@ -26,7 +26,7 @@
  *    is unaffected, so the body still indexes the original file. Both readings
  *    run, and the results merge.
  */
-import asciidoctorModule from "asciidoctor";
+import asciidoctor from "@asciidoctor/core";
 import { extractFrontmatter, extractorForExtension } from "../../meta/index.js";
 import type {
   ContentNode,
@@ -47,14 +47,20 @@ import {
 } from "./metadata.js";
 
 /**
- * `asciidoctor` is CommonJS whose `module.exports` *is* the factory function,
- * while its type definitions describe that function as a default export. Under
- * NodeNext a default import from CJS is `module.exports`, so the imported value
- * is already the factory and only its type is wrong - there is no `.default` on
- * it at runtime to reach for instead.
+ * `@asciidoctor/core`, not the `asciidoctor` meta-package.
+ *
+ * Only the parser is wanted here. The meta-package adds `@asciidoctor/cli`
+ * (and yargs) plus the ejs, nunjucks and pug template engines, none of which
+ * this file can reach - 63 lockfile entries that installed with manni so that
+ * one `.adoc` file could be read. The core is the same Asciidoctor at the same
+ * version, published as a real ESM module, so the default import is the
+ * factory with no CJS interop to undo.
+ *
+ * Stay on 3.x. `@asciidoctor/core@4` is a rewrite whose `load()` returns a
+ * promise, and `DocumentParser.parse` is synchronous for every format. Moving
+ * to it would also drop `@asciidoctor/opal-runtime` and with it the deprecated
+ * `glob`/`inflight` pair, which 3.x still brings in on its own.
  */
-const asciidoctor = asciidoctorModule as unknown as typeof asciidoctorModule.default;
-
 const processor = asciidoctor();
 
 /**
