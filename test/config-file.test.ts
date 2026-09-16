@@ -192,6 +192,44 @@ describe("family config discovery", () => {
     expect(found?.value).toBeNull();
   });
 
+  it("parses the top-level tools once, for every tool (0052)", async () => {
+    const root = await tree({
+      "manni.config.yaml": "tools:\n  vale:\n    config: .vale.ini\nmeta:\n  allowEmpty: true\n",
+    });
+    const found = await findConfigFile(root, META);
+    expect(found?.tools).toEqual({ vale: { config: ".vale.ini" } });
+    expect(found?.value).toEqual({ allowEmpty: true });
+  });
+
+  it("a family file with tools: and no section is still the tool's config (0052)", async () => {
+    const root = await tree({
+      "manni.config.yaml": "tools:\n  vale:\n    config: .vale.ini\n",
+      "docs/api/.keep": "",
+    });
+    const found = await findConfigFile(join(root, "docs", "api"), CITE);
+    expect(found?.kind).toBe("manni");
+    expect(found?.dir).toBe(root);
+    expect(found?.value).toBeNull();
+    expect(found?.tools).toEqual({ vale: { config: ".vale.ini" } });
+  });
+
+  it("a file with no tools carries none", async () => {
+    const root = await tree({ "manni.config.yaml": "meta:\n  allowEmpty: true\n" });
+    expect((await findConfigFile(root, META))?.tools).toEqual({});
+  });
+
+  it("a bad tools: is an error in the tool's own class", async () => {
+    const root = await tree({ "manni.config.yaml": "tools:\n  prettier: {}\n" });
+    await expect(findConfigFile(root, META)).rejects.toThrow(
+      'tools has unknown key "prettier". Supported keys: vale.',
+    );
+  });
+
+  it("a legacy per-tool file carries no tools", async () => {
+    const root = await tree({ "docmeta.config.yaml": "tools:\n  vale: {}\n" });
+    expect((await findConfigFile(root, META))?.tools).toEqual({});
+  });
+
   it("a file with no encryptionKey carries none", async () => {
     const root = await tree({ "manni.config.yaml": "meta:\n  allowEmpty: true\n" });
     expect((await findConfigFile(root, META))?.encryptionKey).toBeUndefined();
