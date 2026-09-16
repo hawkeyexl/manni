@@ -62,11 +62,16 @@ export interface WriteChange {
 export interface ValeWiring {
   /** The config file Vale resolved, relative to cwd. */
   rootIni: string;
-  /** The section glob to add the style to. */
+  /** The section glob to add the style to: the first Vale reports, or `*.md` when it reports none. */
   section: string;
-  /** The section's styles with `Terms` appended. */
+  /** The section's styles with `Terms` appended. `["Terms"]` when Vale reports no section. */
   styles: string[];
+  /** True when Vale reports no section with `BasedOnStyles`, so the notice says to add `section`. */
+  addSection: boolean;
 }
+
+/** The section glob the notice suggests when Vale's config has none. */
+const SUGGESTED_SECTION = "*.md";
 
 export interface WriteReport {
   mode: "in-place" | "render";
@@ -217,8 +222,14 @@ export async function runWrite(opts: WriteOptions): Promise<WriteReport> {
     }
     targetPath = resolve(cwd, resolved.stylesPath);
     if (!Object.values(resolved.baseStyles).some((styles) => styles.includes(STYLE))) {
-      const [section, styles] = Object.entries(resolved.baseStyles)[0] ?? ["*", []];
-      wiring = { rootIni: displayPath(resolve(cwd, resolved.rootIni), cwd), section, styles: [...styles, STYLE] };
+      const first = Object.entries(resolved.baseStyles)[0];
+      const [section, styles] = first ?? [SUGGESTED_SECTION, []];
+      wiring = {
+        rootIni: displayPath(resolve(cwd, resolved.rootIni), cwd),
+        section,
+        styles: [...styles, STYLE],
+        addSection: first === undefined,
+      };
     }
   } else {
     targetPath = resolve(cwd, opts.out);

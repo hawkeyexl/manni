@@ -258,10 +258,12 @@ export function renderWritePretty(report: WriteReport): string {
   return lines.join("\n");
 }
 
-/** The notice `write -f vale` prints when no section of Vale's config uses the style. */
+/** The notice `write -f vale` prints when no section of Vale's config uses the style, or there is no section. */
 export function renderValeWiring(wiring: ValeWiring): string {
   return [
-    `notice: no section of ${wiring.rootIni} uses the Terms style. Add it to BasedOnStyles:`,
+    wiring.addSection
+      ? `notice: ${wiring.rootIni} has no section with BasedOnStyles. Add one that uses the Terms style:`
+      : `notice: no section of ${wiring.rootIni} uses the Terms style. Add it to BasedOnStyles:`,
     `  [${wiring.section}]`,
     `  BasedOnStyles = ${wiring.styles.join(", ")}`,
   ].join("\n");

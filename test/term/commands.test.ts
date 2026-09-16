@@ -27,6 +27,7 @@ import {
   renderFormatsPretty,
   renderGetPretty,
   renderListPretty,
+  renderValeWiring,
   renderWritePretty,
 } from "../../src/term/reporters/pretty.js";
 import { renderListCsv } from "../../src/term/reporters/csv.js";
@@ -590,7 +591,38 @@ describe("write -f", () => {
         }),
     });
     expect(existsSync(join(cwd, ".vale/styles/Terms/Lowercase.yml"))).toBe(true);
-    expect(report.wiring).toEqual({ rootIni: ".vale.ini", section: "*.md", styles: ["Vale", "Direct", "Terms"] });
+    expect(report.wiring).toEqual({
+      rootIni: ".vale.ini",
+      section: "*.md",
+      styles: ["Vale", "Direct", "Terms"],
+      addSection: false,
+    });
+    expect(renderValeWiring(report.wiring ?? expect.fail("no wiring"))).toBe(
+      [
+        "notice: no section of .vale.ini uses the Terms style. Add it to BasedOnStyles:",
+        "  [*.md]",
+        "  BasedOnStyles = Vale, Direct, Terms",
+      ].join("\n"),
+    );
+  });
+
+  it("says to add a section when Vale reports none", async () => {
+    const cwd = await lenses();
+    const report = await runWrite({
+      cwd,
+      inputs: [],
+      format: "vale",
+      lsConfig: () =>
+        Promise.resolve({ stylesPath: join(cwd, ".vale", "styles"), rootIni: join(cwd, ".vale.ini"), baseStyles: {} }),
+    });
+    expect(report.wiring).toEqual({ rootIni: ".vale.ini", section: "*.md", styles: ["Terms"], addSection: true });
+    expect(renderValeWiring(report.wiring ?? expect.fail("no wiring"))).toBe(
+      [
+        "notice: .vale.ini has no section with BasedOnStyles. Add one that uses the Terms style:",
+        "  [*.md]",
+        "  BasedOnStyles = Terms",
+      ].join("\n"),
+    );
   });
 
   it("says Vale found no config when ls-config resolves none", async () => {
