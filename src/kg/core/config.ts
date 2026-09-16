@@ -159,7 +159,7 @@ export interface DockgConfig {
      * meta, docevals and tracevals name it (proposal 0051 §3).
      */
     confidenceThreshold: number;
-    /** Record kg.provenance on filled docs. */
+    /** Record the page-level meta-provenance on filled docs (proposal 0046). */
     writeProvenance: boolean;
     /** Reject proposals that would violate the SHACL shapes contract. */
     validateGraph: boolean;
@@ -436,7 +436,8 @@ export function parseConfigSection(
       derive: r.build?.derive ?? [...ALL_DERIVE_SOURCES],
     },
     validate: {
-      // Empty means: use the newest schema bundled with dockg (see bundledSchemaPath).
+      // Empty means: use the `kg` page vocabulary built into manni (see
+      // src/kg/schema.ts).
       schemas: r.validate?.schemas ?? [],
     },
     check: {

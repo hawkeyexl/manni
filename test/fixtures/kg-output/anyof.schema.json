@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "anyOf": [
+    { "properties": { "owner": { "type": "number", "x-manni-kg-output": true } } },
+    { "properties": { "owner": { "type": "string", "x-manni-kg-output": false } } }
+  ]
+}

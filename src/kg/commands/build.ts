@@ -17,6 +17,7 @@ import {
 import { emitTurtle } from "../core/emit.js";
 import { harvestWarnings } from "../core/harvest.js";
 import { collectGitHistory } from "../core/git.js";
+import { suppressKgOutput } from "../core/kg-output.js";
 import { errorMessage } from "../../shared/errors.js";
 import pkg from "../../../package.json" with { type: "json" };
 
@@ -76,11 +77,19 @@ export async function runBuild(opts: BuildOptions = {}): Promise<BuildResult> {
   }
 
   const allPaths = new Set(files);
-  const docs = files.map((path) =>
+  const read = files.map((path) =>
     analyzeDoc(readFileSync(resolve(cwd, path), "utf8"), path, allPaths, {
       routes: config.routes,
     }),
   );
+
+  // What the graph carries is the schema's call (proposal 0051 §5): a top-level
+  // field marked `x-manni-kg-output: false` is dropped here, before derivation,
+  // so it reaches none of Turtle, JSON-LD, iiRDS or the search index. All four
+  // read what `deriveGraph` produces, so one filter at the fan-in is the whole
+  // mechanism; suppressing a field downstream would be triple surgery in four
+  // places.
+  const docs = await suppressKgOutput(read, config, cwd);
 
   // Page-level keys that look like harvest inputs but are not. The kg block is
   // schema-strict, so a typo there is a hard error; at the page level nothing

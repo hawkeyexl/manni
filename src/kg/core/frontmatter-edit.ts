@@ -87,22 +87,39 @@ function setField(
   kg.set(field, node);
 }
 
+export interface KgApplyOptions {
+  /** Overwrite values a human already set. */
+  force?: boolean;
+  /**
+   * Keys to write at the TOP level of the frontmatter, beside `kg` rather
+   * than inside it — `meta-provenance` is the one caller (proposal 0046).
+   * They are always overwritten, because the caller computes each value
+   * whole, and they are written even when `values` is empty. Kept in this
+   * one function so a fill is still one parse and one serialization of the
+   * block, and the body stays byte-identical either way.
+   */
+  page?: Record<string, unknown>;
+}
+
 /**
- * Apply proposed values to the top-level `kg` map of a doc's frontmatter.
- * Existing field values win unless `force`. The body after the closing fence
- * is byte-identical to the input.
+ * Apply proposed values to the top-level `kg` map of a doc's frontmatter, plus
+ * any `options.page` keys beside it. Existing field values win unless `force`.
+ * The body after the closing fence is byte-identical to the input.
  */
 export function applyKgFields(
   content: string,
   path: string,
   values: Record<string, unknown>,
-  options: { force?: boolean; alwaysOverwrite?: string[] } = {},
+  options: KgApplyOptions = {},
 ): KgApplyResult {
   const entries = Object.entries(values).filter(
     ([, v]) =>
       v !== undefined && v !== null && !(Array.isArray(v) && v.length === 0),
   );
-  if (entries.length === 0) return { content, applied: [], skipped: [] };
+  const pageEntries = Object.entries(options.page ?? {});
+  if (entries.length === 0 && pageEntries.length === 0) {
+    return { content, applied: [], skipped: [] };
+  }
 
   if (frontmatterKind(content) === "unsupported") {
     throw new KgError(
@@ -126,7 +143,10 @@ export function applyKgFields(
       }
       target[segments[segments.length - 1]!] = value;
     }
-    const doc = new Document({ kg: nested });
+    const doc = new Document({
+      ...Object.fromEntries(pageEntries),
+      ...(entries.length > 0 ? { kg: nested } : {}),
+    });
     const kg = doc.get("kg", true);
     if (isMap(kg)) flowSeqs(kg);
     let block = doc.toString();
@@ -149,15 +169,14 @@ export function applyKgFields(
   if (kg !== undefined && !isMap(kg)) {
     throw new KgError(`${path}: frontmatter key "kg" is not a map`);
   }
-  if (kg === undefined) {
+  if (kg === undefined && entries.length > 0) {
     kg = doc.createNode({});
     doc.set("kg", kg);
   }
-  const kgMap = kg as YAMLMap;
+  const kgMap = (kg ?? doc.createNode({})) as YAMLMap;
 
   const applied: string[] = [];
   const skipped: string[] = [];
-  const alwaysOverwrite = new Set(options.alwaysOverwrite ?? []);
   for (const [field, value] of entries) {
     // A dotted name addresses a nested field — `sections.<slug>.type` writes
     // into kg.sections.<slug>.type (ADR 01032). Preservation is decided at the
@@ -186,7 +205,7 @@ export function applyKgFields(
       skipped.push(field);
       continue;
     }
-    if (target.has(leaf) && !options.force && !alwaysOverwrite.has(field)) {
+    if (target.has(leaf) && !options.force) {
       skipped.push(field);
       continue;
     }
@@ -194,7 +213,14 @@ export function applyKgFields(
     applied.push(field);
   }
 
-  if (applied.length === 0) {
+  // Top-level keys, after the kg map so a new `kg` sorts where it always did.
+  // Block style, not `flowSeqs`: this is a record a reviewer reads and edits
+  // by hand, one entry per line, not a value the graph derives from.
+  for (const [key, value] of pageEntries) {
+    doc.set(key, doc.createNode(value));
+  }
+
+  if (applied.length === 0 && pageEntries.length === 0) {
     return { content, applied, skipped };
   }
 
@@ -203,72 +229,46 @@ export function applyKgFields(
   return { content: split.open + newBlock + split.suffix, applied, skipped };
 }
 
-/**
- * One `kg.provenance` entry, spelled as it is serialized — these property names
- * go straight to YAML, so they are the vocabulary's kebab keys, not camelCase
- * twins that would have to be translated on the way out.
- */
-export interface ProvenanceEntry {
-  "generated-by": string;
-  fields: string[];
-  /** Per-field model confidence 0..1 for the fields it wrote (ADR 01015). */
-  confidence?: Record<string, number>;
+/** The doc's parsed frontmatter as plain data, `{}` when there is none. */
+function frontmatterData(content: string): Record<string, unknown> {
+  const split = splitYamlFrontmatter(content, "");
+  if (split === null) return {};
+  const doc = parseDocument(split.block);
+  if (doc.errors.length > 0) return {};
+  const plain = doc.toJS() as unknown;
+  return plain !== null && typeof plain === "object" && !Array.isArray(plain)
+    ? (plain as Record<string, unknown>)
+    : {};
 }
 
 /**
- * True when `kg.provenance` is the deprecated single-object shape that
- * `docmeta:kg` dropped (dockg 0.2/0.3 wrote it).
+ * True when the doc still carries a `kg.provenance` key, in any shape.
  *
- * `existingProvenance` cannot read that shape — `manni kg validate` rejects it, so
- * merging from it would let fill write frontmatter the tool's own validator
- * refuses (ADR 01023). But `provenance` is overwritten wholesale on every fill,
- * so reading nothing would *silently* delete another model's outstanding review
- * record. Callers use this to refuse the file instead.
+ * Proposal 0046 closed the `kg` block on fifteen properties and `provenance`
+ * is not one of them: field attribution is the page-level `meta-provenance`
+ * now. A page holding the old key validates nowhere and is read by nothing, so
+ * a fill that wrote beside it would leave an outstanding review record no
+ * review queue lists. Callers use this to refuse the file and name the
+ * migration instead.
  */
-export function hasLegacyProvenance(content: string): boolean {
-  const split = splitYamlFrontmatter(content, "");
-  if (split === null) return false;
-  const doc = parseDocument(split.block);
-  if (doc.errors.length > 0) return false;
-  const plain = (doc.toJS() as { kg?: { provenance?: unknown } } | null)?.kg
-    ?.provenance;
-  return !!plain && typeof plain === "object" && !Array.isArray(plain);
+export function hasKgProvenance(content: string): boolean {
+  const kg = frontmatterData(content)["kg"];
+  return (
+    kg !== null &&
+    typeof kg === "object" &&
+    !Array.isArray(kg) &&
+    (kg as Record<string, unknown>)["provenance"] !== undefined
+  );
 }
 
 /**
- * The doc's existing kg.provenance entries (for merging across runs).
- * `docmeta:kg` stores an array, one entry per model; the deprecated
- * single-object form is not read — see `hasLegacyProvenance` (ADR 01023).
+ * The doc's page-level `meta-provenance` value, exactly as held — `undefined`
+ * when the page has none. Uncoerced on purpose: `mergeMetaProvenance` decides
+ * what a non-list means, and every key of an entry it does not know is carried
+ * through, so a `docevals` entry survives a `kg fill`.
  */
-export function existingProvenance(content: string): ProvenanceEntry[] {
-  const split = splitYamlFrontmatter(content, "");
-  if (split === null) return [];
-  const doc = parseDocument(split.block);
-  if (doc.errors.length > 0) return [];
-  const plain = (doc.toJS() as { kg?: { provenance?: unknown } } | null)?.kg
-    ?.provenance;
-  const raw = Array.isArray(plain) ? plain : [];
-  const entries: ProvenanceEntry[] = [];
-  for (const item of raw) {
-    if (!item || typeof item !== "object" || Array.isArray(item)) continue;
-    const record = item as Record<string, unknown>;
-    if (typeof record["generated-by"] !== "string") continue;
-    const conf = record["confidence"];
-    const confidence: Record<string, number> = {};
-    if (conf && typeof conf === "object" && !Array.isArray(conf)) {
-      for (const [k, v] of Object.entries(conf as Record<string, unknown>)) {
-        if (typeof v === "number") confidence[k] = v;
-      }
-    }
-    entries.push({
-      "generated-by": record["generated-by"],
-      fields: Array.isArray(record["fields"])
-        ? record["fields"].filter((f): f is string => typeof f === "string")
-        : [],
-      ...(Object.keys(confidence).length > 0 ? { confidence } : {}),
-    });
-  }
-  return entries;
+export function existingMetaProvenance(content: string): unknown {
+  return frontmatterData(content)["meta-provenance"];
 }
 
 /** Fields already present on the doc's `kg` map ([] when none). */

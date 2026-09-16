@@ -169,12 +169,13 @@ describe("deriveGraph — provenance", () => {
     expect(has(g, DOC, `${NS.dockg}brokenLink`, lit("missing.md"))).toBe(true);
   });
 
-  it("maps the page-level generated-by to a generation activity", () => {
-    // The `kg` block no longer carries a `generated-by` twin: page provenance
-    // is the page's own fact (docmeta:ai-context), not the graph block's.
+  it("maps the machines of page-level provenance to a generation activity", () => {
+    // There is no page-level `generated-by` any more (proposal 0046): the
+    // machines that wrote a page are the distinct `generated-by` values across
+    // its `provenance` entries, and the harvest reads them there.
     const g = graph({
-      "docs/a.md": "---\ngenerated-by: claude-sonnet-4-5\n---\n",
-      "docs/b.md": "---\ngenerated-by: gpt-4o\n---\n",
+      "docs/a.md": `---\nprovenance:\n  - generated-by: claude-sonnet-4-5\n    lines: 1\n    integrity: sha256-${"a".repeat(64)}\n---\n`,
+      "docs/b.md": `---\nprovenance:\n  - generated-by: gpt-4o\n    lines: 1\n    integrity: sha256-${"b".repeat(64)}\n---\n`,
     });
     // fragment uses a "." separator so heading slugs can never collide
     const activity = `${DOC}#prov.generation`;
@@ -203,9 +204,43 @@ describe("deriveGraph — provenance", () => {
     ).toBe(true);
   });
 
+  it("emits one generation activity per page, associated with every machine", () => {
+    // One activity IRI, however many machines wrote the page: a single-model
+    // page emits exactly what a page-level `generated-by` used to.
+    const g = graph({
+      "docs/a.md": `---\nprovenance:\n  - generated-by: gpt-4o\n    lines: 1\n    integrity: sha256-${"a".repeat(64)}\n  - generated-by: claude-sonnet-4-5\n    lines: 3\n    integrity: sha256-${"b".repeat(64)}\n---\n`,
+    });
+    const activity = `${DOC}#prov.generation`;
+    const gpt = `${BASE}agent/software/gpt-4o`;
+    const claude = `${BASE}agent/software/claude-sonnet-4-5`;
+    expect(has(g, DOC, `${NS.prov}wasGeneratedBy`, iri(activity))).toBe(true);
+    expect(
+      g.filter((q) => q.s === activity && q.p === `${NS.rdf}type`),
+    ).toHaveLength(1);
+    expect(has(g, activity, `${NS.prov}wasAssociatedWith`, iri(gpt))).toBe(true);
+    expect(has(g, activity, `${NS.prov}wasAssociatedWith`, iri(claude))).toBe(
+      true,
+    );
+  });
+
+  it("collapses two provenance entries naming one machine into one association", () => {
+    const g = graph({
+      "docs/a.md": `---\nprovenance:\n  - generated-by: gpt-4o\n    lines: 1\n    integrity: sha256-${"a".repeat(64)}\n  - generated-by: gpt-4o\n    lines: "5-7"\n    integrity: sha256-${"b".repeat(64)}\n---\n`,
+    });
+    const activity = `${DOC}#prov.generation`;
+    expect(
+      g.filter(
+        (q) => q.s === activity && q.p === `${NS.prov}wasAssociatedWith`,
+      ),
+    ).toHaveLength(1);
+    expect(
+      g.filter((q) => q.s === activity && q.p === `${NS.rdf}type`),
+    ).toHaveLength(1);
+  });
+
   it("keeps a '## Generation' heading distinct from the generation activity", () => {
     const g = graph({
-      "docs/a.md": "---\ngenerated-by: gpt-4o\n---\n\n## Generation\n",
+      "docs/a.md": `---\nprovenance:\n  - generated-by: gpt-4o\n    lines: 1\n    integrity: sha256-${"a".repeat(64)}\n---\n\n## Generation\n`,
     });
     const section = `${DOC}#generation`;
     const activity = `${DOC}#prov.generation`;
@@ -223,10 +258,10 @@ describe("deriveGraph — provenance", () => {
     );
   });
 
-  it("maps kg.provenance entries to per-model fill activities, not shared subjects", () => {
+  it("maps meta-provenance /kg/ pointers to per-model fill activities, not shared subjects", () => {
     const g = graph({
       "docs/a.md":
-        "---\nkg:\n  label: Config\n  concepts: [shared-tag]\n  provenance:\n    - generated-by: claude-sonnet-4-5\n      fields: [label]\n    - generated-by: gpt-4o\n      fields: [concepts]\n---\n",
+        "---\nmeta-provenance:\n  - generated-by: claude-sonnet-4-5\n    fields: [/kg/label]\n  - generated-by: gpt-4o\n    fields: [/kg/concepts]\nkg:\n  label: Config\n  concepts: [shared-tag]\n---\n",
       "docs/b.md": "---\ntags: [shared-tag]\n---\n",
     });
     const claudeActivity = `${DOC}#prov.kg-fill.claude-sonnet-4-5`;
@@ -270,23 +305,59 @@ describe("deriveGraph — provenance", () => {
     ).toBe(false);
   });
 
-  it("ignores the dropped single-object kg.provenance form", () => {
+  it("ignores kg.provenance, which the vocabulary no longer has", () => {
     const g = graph({
       "docs/a.md":
-        "---\nkg:\n  provenance:\n    generated-by: claude-sonnet-4-5\n    fields: [concepts]\n---\n",
+        "---\nkg:\n  provenance:\n    - generated-by: claude-sonnet-4-5\n      fields: [concepts]\n---\n",
     });
-    // docmeta:kg made provenance array-only, so `manni kg validate` rejects this
-    // shape. Deriving from it anyway would let `build` read frontmatter that
-    // does not validate — the two commands must agree (ADR 01023).
+    // Proposal 0046 closed the `kg` block on fifteen properties and none of
+    // them is `provenance`, so `manni kg validate` rejects this page. Deriving
+    // from it anyway would let `build` read frontmatter that does not
+    // validate — the two commands must agree.
     const activity = `${DOC}#prov.kg-fill.claude-sonnet-4-5`;
     expect(g.some((q) => q.s === activity)).toBe(false);
     expect(g.some((q) => q.p === `${NS.dockg}filledField`)).toBe(false);
   });
 
-  it("emits per-field confidence as a decimal on the fill-field entry (ADR 01015)", () => {
+  it("skips a meta-provenance pointer that is not kg's", () => {
     const g = graph({
       "docs/a.md":
-        "---\nkg:\n  label: Config\n  provenance:\n    - generated-by: m1\n      fields: [label]\n      confidence:\n        label: 0.9\n---\n",
+        "---\nmeta-provenance:\n  - generated-by: m1\n    fields: [/intent, /title, /kgx/label]\nkg:\n  label: Config\n---\n",
+    });
+    expect(g.some((q) => q.p === `${NS.dockg}filledField`)).toBe(false);
+    expect(g.some((q) => q.s === `${DOC}#prov.kg-fill.m1`)).toBe(false);
+  });
+
+  it("reads a deep pointer's first segment as the filled field", () => {
+    const g = graph({
+      "docs/a.md":
+        "---\nmeta-provenance:\n  - generated-by: m1\n    fields: [/kg/sections/install/type, /kg/sections/setup/type]\nkg:\n  label: Config\n---\n",
+    });
+    const entry = `${DOC}#prov.kg-fill.m1.field.sections`;
+    expect(has(g, entry, `${NS.dockg}filledField`, lit("sections"))).toBe(true);
+    // One field, however many pointers reach into it.
+    expect(g.filter((q) => q.p === `${NS.dockg}filledField`)).toHaveLength(1);
+  });
+
+  it("unescapes a pointer segment per RFC 6901", () => {
+    const g = graph({
+      "docs/a.md":
+        "---\nmeta-provenance:\n  - generated-by: m1\n    fields: [/kg/alt~1labels, /kg/a~0b]\nkg:\n  label: Config\n---\n",
+    });
+    const base = `${DOC}#prov.kg-fill.m1`;
+    expect(
+      has(g, `${base}.field.alt/labels`, `${NS.dockg}filledField`, lit("alt/labels")),
+    ).toBe(true);
+    expect(
+      has(g, `${base}.field.a~b`, `${NS.dockg}filledField`, lit("a~b")),
+    ).toBe(true);
+  });
+
+  it("emits per-field confidence as a decimal on the fill-field entry (ADR 01015)", () => {
+    // 0046 keys confidence by the pointer, not by the field name.
+    const g = graph({
+      "docs/a.md":
+        "---\nmeta-provenance:\n  - generated-by: m1\n    fields: [/kg/label]\n    confidence:\n      /kg/label: 0.9\nkg:\n  label: Config\n---\n",
     });
     const entry = `${DOC}#prov.kg-fill.m1.field.label`;
     expect(
@@ -468,7 +539,9 @@ describe("deriveGraph — qualified provenance", () => {
 
   it("qualifies generation and build associations", () => {
     const g = graph(
-      { "docs/a.md": "---\ngenerated-by: model-x\n---\n" },
+      {
+        "docs/a.md": `---\nprovenance:\n  - generated-by: model-x\n    lines: 1\n    integrity: sha256-${"a".repeat(64)}\n---\n`,
+      },
       ALL_SOURCES,
       { qualified: true },
     );

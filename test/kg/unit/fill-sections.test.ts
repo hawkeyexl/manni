@@ -226,11 +226,11 @@ describe("fill --sections", () => {
     expect(written).not.toContain("not-applicable-to");
   });
 
-  it("writes provenance dockg validate accepts", async () => {
-    // Regression: dotted section names went straight into kg.provenance, whose
-    // `fields` and `confidence` keys the vendored docmeta:kg schema bounds to
-    // the twelve document-level names — so every default `--sections` run wrote
-    // frontmatter dockg's own validate rejected with 3 Ajv errors.
+  it("writes meta-provenance manni kg check accepts", async () => {
+    // Regression: dotted section names went straight into the machine record,
+    // and `sections` is one of the three fields curated by hand — recording it
+    // is what proposal 0046 stress test 13 moved into kg's harvest as a check
+    // finding. A default `--sections` run must not manufacture one.
     const dir = setup();
     const provider = new MockProvider([
       {
@@ -249,15 +249,16 @@ describe("fill --sections", () => {
 
     const written = readFileSync(join(dir, "a.md"), "utf8");
     expect(written).toContain("install-the-sdk:");
-    // The section value is written; only its provenance entry is omitted.
+    // The section value is written; only its pointer is omitted.
     expect(written).not.toContain("sections.install-the-sdk.type");
+    expect(written).not.toContain("/kg/sections");
 
     const validated = await runValidate({ cwd: dir, paths: ["a.md"] });
     expect(validated.exitCode, JSON.stringify(validated.run)).toBe(0);
 
     // And the gap is loud rather than silent.
     expect(report.warnings.join(" ")).toContain(
-      "NOT recorded in kg.provenance",
+      "NOT recorded in meta-provenance",
     );
   });
 

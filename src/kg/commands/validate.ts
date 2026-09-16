@@ -1,8 +1,9 @@
 /**
- * `manni kg validate` — KG-readiness check. Thin wrapper over docmeta's
- * programmatic API, validating discovered docs against the schemas in
- * config `validate.schemas` (default: the `docmeta:kg` vocabulary vendored
- * with this package at schemas/docmeta-kg-1.0.0-proposal.1.json).
+ * `manni kg validate` — KG-readiness check. Thin wrapper over the metadata
+ * tool's programmatic API, validating discovered docs against the schemas in
+ * config `validate.schemas` (default: the `kg` page vocabulary,
+ * `manni:kg:1.0.0-proposal.3`, imported from proposal 0023's draft and inlined
+ * by the build).
  */
 import { extname } from "node:path";
 import {
@@ -20,7 +21,7 @@ import {
   resolveDocumentSet,
   type DocumentInputOptions,
 } from "../core/discover.js";
-import { bundledSchemaPath } from "../core/pkg.js";
+import { frontmatterSchema, FRONTMATTER_SCHEMA_ID } from "../schema.js";
 
 export interface ValidateOptions extends DocumentInputOptions {
   cwd?: string;
@@ -69,19 +70,26 @@ export async function runValidate(
     );
   }
 
-  // dockg vendors docmeta's `kg` vocabulary rather than self-hosting a schema
-  // of its own (ADR 01023); with no explicit validate.schemas, hand docmeta
-  // back its own bytes by path — the draft id is not registered yet.
+  // kg implements the family's `kg` vocabulary rather than self-hosting one
+  // (ADR 01023); with no explicit validate.schemas, name the draft by its `$id`
+  // and hand the object over inline. Proposal 0023 is still under review, so
+  // the id is deliberately not registered as a built-in — `inlineSchemas` is
+  // the seam that lets findings say `manni:kg:1.0.0-proposal.3` anyway, instead
+  // of an absolute path to a copy this package no longer ships (0051 §4).
   const schemas =
     config.validate.schemas.length > 0
       ? config.validate.schemas
-      : [bundledSchemaPath(import.meta.url)];
+      : [FRONTMATTER_SCHEMA_ID];
 
   let run: ValidateRun;
   try {
     run = await docmetaValidate({
       inputs: files,
       cliSchemas: schemas,
+      // Passed unconditionally: an unused entry costs a map lookup that never
+      // hits, and the alternative is a branch that has to stay in step with the
+      // one above.
+      inlineSchemas: new Map([[FRONTMATTER_SCHEMA_ID, frontmatterSchema]]),
       cwd,
     });
   } catch (e) {

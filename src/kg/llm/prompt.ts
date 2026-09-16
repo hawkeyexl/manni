@@ -8,8 +8,16 @@
 import type { FillField } from "../core/config.js";
 import type { DocModel } from "../types.js";
 
-/** Bump when the prompt changes — invalidates the fill cache. */
-export const PROMPT_VERSION = 3;
+/**
+ * Bump when the prompt changes — invalidates the fill cache.
+ *
+ * 4 is the move to `manni:kg:1.0.0-proposal.3` (proposal 0051 §4). The fields
+ * a proposal may carry did not change, but what `fill` does with the answer
+ * did: the attribution it writes is now the page-level `meta-provenance`, by
+ * JSON Pointer. A cache entry written before that replays a proposal shaped
+ * for the old vocabulary, so every key misses once and is rewritten.
+ */
+export const PROMPT_VERSION = 4;
 
 const TOPIC_TYPES = [
   "task",

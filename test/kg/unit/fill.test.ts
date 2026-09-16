@@ -2,6 +2,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
+import { parse } from "yaml";
 import { renderFill, runFill } from "../../../src/kg/commands/fill.js";
 import { resetWarnings } from "../../../src/shared/warn.js";
 import { MockProvider } from "@hawkeyexl/inference";
@@ -31,6 +32,13 @@ const PROPOSAL = {
     concepts: 0.9,
   },
 };
+
+/** A written page's frontmatter, parsed — `meta-provenance` is a page-level key. */
+function pageData(dir: string, name = "a.md"): Record<string, unknown> {
+  const text = readFileSync(join(dir, name), "utf8");
+  const end = text.indexOf("\n---", 4);
+  return (parse(text.slice(4, end)) ?? {}) as Record<string, unknown>;
+}
 
 /** Restrict fill to the four SKOS fields the pre-confidence tests assumed. */
 const SKOS_FIELDS =
@@ -240,23 +248,39 @@ describe("runFill", () => {
     expect(report.exitCode).toBe(0);
   });
 
-  it("writes kg.provenance naming the model and filled fields, in the same write", async () => {
+  it("writes page-level meta-provenance naming the model and pointers, in the same write", async () => {
     const dir = setup({ "a.md": "---\ntitle: T\n---\n\n# T\n" });
     const provider = new MockProvider([{ json: PROPOSAL }], "test-model");
     const report = await runFill({ cwd: dir, providerInstance: provider });
     expect(report.results[0]).toMatchObject({ status: "filled" });
+    const data = pageData(dir);
+    // Top level, not under `kg` — the `kg` block has no `provenance` any more.
+    expect(data["kg"]).not.toHaveProperty("provenance");
+    expect(data["meta-provenance"]).toEqual([
+      {
+        "generated-by": "test-model",
+        fields: [
+          "/kg/alt-labels",
+          "/kg/concepts",
+          "/kg/label",
+          "/kg/related-concepts",
+        ],
+        confidence: {
+          "/kg/alt-labels": 0.9,
+          "/kg/concepts": 0.9,
+          "/kg/label": 0.95,
+          "/kg/related-concepts": 0.85,
+        },
+      },
+    ]);
     const written = readFileSync(join(dir, "a.md"), "utf8");
-    expect(written).toContain("provenance:");
-    expect(written).toContain("generated-by: test-model");
-    expect(written).toMatch(
-      /fields: \[ alt-labels, concepts, label, related-concepts \]/,
-    );
     expect(written.endsWith("# T\n")).toBe(true); // body still byte-preserved
-    // provenance is metadata, not a reported filled field
+    // meta-provenance is a page record, not a reported filled field
     expect(report.results[0]?.fields).not.toContain("provenance");
+    expect(report.results[0]?.fields).not.toContain("meta-provenance");
   });
 
-  it("keeps per-model provenance entries so a second model never claims the first's fields", async () => {
+  it("merges a second run into the same entry rather than duplicating it", async () => {
     const dir = setup(
       { "a.md": "---\ntitle: T\n---\n" },
       "fill:\n  fields: [label]\n",
@@ -265,7 +289,34 @@ describe("runFill", () => {
       cwd: dir,
       providerInstance: new MockProvider([conf({ label: "X" })], "m1"),
     });
-    // second run with a broader field set fills concepts too — different model
+    // second run with a broader field set fills concepts too — same model
+    const { writeFileSync: write } = await import("node:fs");
+    write(
+      join(dir, "manni.config.yaml"),
+      'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n  fill:\n    fields: [label, concepts]\n',
+    );
+    await runFill({
+      cwd: dir,
+      providerInstance: new MockProvider([conf({ concepts: ["s"] })], "m1"),
+    });
+    expect(pageData(dir)["meta-provenance"]).toEqual([
+      {
+        "generated-by": "m1",
+        fields: ["/kg/label", "/kg/concepts"],
+        confidence: { "/kg/label": 0.95, "/kg/concepts": 0.95 },
+      },
+    ]);
+  });
+
+  it("keeps per-model entries so a second model never claims the first's fields", async () => {
+    const dir = setup(
+      { "a.md": "---\ntitle: T\n---\n" },
+      "fill:\n  fields: [label]\n",
+    );
+    await runFill({
+      cwd: dir,
+      providerInstance: new MockProvider([conf({ label: "X" })], "m1"),
+    });
     const { writeFileSync: write } = await import("node:fs");
     write(
       join(dir, "manni.config.yaml"),
@@ -275,13 +326,54 @@ describe("runFill", () => {
       cwd: dir,
       providerInstance: new MockProvider([conf({ concepts: ["s"] })], "m2"),
     });
-    const written = readFileSync(join(dir, "a.md"), "utf8");
-    // one entry per model, each attributing only its own fields
-    expect(written).toMatch(/generated-by: m1[\s\S]*?fields: \[ label \]/);
-    expect(written).toMatch(/generated-by: m2[\s\S]*?fields: \[ concepts \]/);
+    expect(pageData(dir)["meta-provenance"]).toEqual([
+      {
+        "generated-by": "m1",
+        fields: ["/kg/label"],
+        confidence: { "/kg/label": 0.95 },
+      },
+      {
+        "generated-by": "m2",
+        fields: ["/kg/concepts"],
+        confidence: { "/kg/concepts": 0.95 },
+      },
+    ]);
   });
 
-  it("moves a field's attribution when --force re-fills it with another model", async () => {
+  it("preserves an entry another tool wrote for another model", async () => {
+    // `meta-provenance` is the whole family's record: docevals names evals in
+    // it, meta names its own pointers. A kg fill must not evict either.
+    const dir = setup(
+      {
+        "a.md":
+          "---\ntitle: T\nmeta-provenance:\n  - generated-by: other-model\n    fields: [/intent]\n    evals: [install-works]\n    confidence:\n      /intent: 0.8\n---\n",
+      },
+      "fill:\n  fields: [label]\n",
+    );
+    await runFill({
+      cwd: dir,
+      providerInstance: new MockProvider([conf({ label: "X" })], "m1"),
+    });
+    expect(pageData(dir)["meta-provenance"]).toEqual([
+      {
+        "generated-by": "other-model",
+        fields: ["/intent"],
+        evals: ["install-works"],
+        confidence: { "/intent": 0.8 },
+      },
+      {
+        "generated-by": "m1",
+        fields: ["/kg/label"],
+        confidence: { "/kg/label": 0.95 },
+      },
+    ]);
+  });
+
+  it("leaves the first model's pointer in place when --force re-fills it", async () => {
+    // meta's merge touches only the running model's entry (proposal 0046, "The
+    // merge"). kg's own record used to strip the overwritten field from every
+    // other entry; that rule was kg's and does not survive the move. Both
+    // entries now name /kg/label, and a reviewer deletes the stale one.
     const dir = setup(
       { "a.md": "---\ntitle: T\n---\n" },
       "fill:\n  fields: [label]\n",
@@ -295,55 +387,53 @@ describe("runFill", () => {
       force: true,
       providerInstance: new MockProvider([conf({ label: "Y" })], "m2"),
     });
-    const written = readFileSync(join(dir, "a.md"), "utf8");
-    expect(written).toContain("label: Y");
-    expect(written).toMatch(/generated-by: m2[\s\S]*?fields: \[ label \]/);
-    expect(written).not.toContain("m1"); // m1's emptied entry is dropped
+    expect(readFileSync(join(dir, "a.md"), "utf8")).toContain("label: Y");
+    expect(pageData(dir)["meta-provenance"]).toEqual([
+      {
+        "generated-by": "m1",
+        fields: ["/kg/label"],
+        confidence: { "/kg/label": 0.95 },
+      },
+      {
+        "generated-by": "m2",
+        fields: ["/kg/label"],
+        confidence: { "/kg/label": 0.95 },
+      },
+    ]);
   });
 
-  it("skips provenance write-back when writeProvenance is false", async () => {
+  it("skips the meta-provenance write-back when writeProvenance is false", async () => {
     const dir = setup(
       { "a.md": "---\ntitle: T\n---\n" },
       "fill:\n  writeProvenance: false\n",
     );
     const provider = new MockProvider([{ json: PROPOSAL }]);
     await runFill({ cwd: dir, providerInstance: provider });
-    expect(readFileSync(join(dir, "a.md"), "utf8")).not.toContain("provenance");
-  });
-
-  it("does not treat an existing provenance entry as a fillable field", async () => {
-    const dir = setup(
-      {
-        "a.md":
-          "---\nkg:\n  label: X\n  alt-labels: [y]\n  related-concepts: [z]\n  concepts: [s]\n  provenance:\n    - generated-by: old\n      fields: [label]\n---\n",
-      },
-      SKOS_FIELDS,
+    expect(readFileSync(join(dir, "a.md"), "utf8")).not.toContain(
+      "meta-provenance",
     );
-    const provider = new MockProvider([{ json: PROPOSAL }]);
-    const report = await runFill({ cwd: dir, providerInstance: provider });
-    expect(report.results[0]).toMatchObject({ status: "complete" });
-    expect(provider.requests).toHaveLength(0);
   });
 
-  it("refuses a doc whose provenance is the dropped single-object form", async () => {
-    // `provenance` is overwritten wholesale, and docmeta:kg made it array-only
-    // (ADR 01023) — so filling over the legacy shape would silently delete
-    // another model's outstanding review record. Refuse, don't overwrite.
+  it("refuses a doc that still carries kg.provenance", async () => {
+    // Proposal 0046 closed the `kg` block on fifteen properties and dropped
+    // `provenance` from it. Filling would leave an unreviewable record behind
+    // that nothing reads and `manni kg validate` rejects — name the migration.
     const legacy =
-      "---\ntitle: T\nkg:\n  provenance:\n    generated-by: old-model\n    fields: [label]\n---\n";
+      "---\ntitle: T\nkg:\n  provenance:\n    - generated-by: old-model\n      fields: [label]\n---\n";
     const dir = setup({ "a.md": legacy, "b.md": "---\ntitle: OK\n---\n" });
     const provider = new MockProvider([{ json: PROPOSAL }, { json: PROPOSAL }]);
     const report = await runFill({ cwd: dir, providerInstance: provider });
 
     const a = report.results.find((r) => r.path === "a.md");
     expect(a).toMatchObject({ status: "error" });
-    expect(a?.error).toMatch(/single-object/);
+    expect(a?.error).toMatch(/meta-provenance/);
     // Untouched: the old attribution is still there to migrate by hand.
     expect(readFileSync(join(dir, "a.md"), "utf8")).toBe(legacy);
     // One bad doc does not abort the run.
     expect(report.results.find((r) => r.path === "b.md")?.status).toBe(
       "filled",
     );
+    expect(report.exitCode).toBe(1);
   });
 
   it("reports TOML-frontmatter docs as per-doc errors without corrupting them", async () => {
@@ -580,16 +670,20 @@ describe("runFill confidence gate (ADR 01015)", () => {
     expect(written).not.toContain("concepts");
   });
 
-  it("records per-field confidence in kg.provenance", async () => {
+  it("records per-pointer confidence in meta-provenance", async () => {
     const dir = setup({ "a.md": "---\ntitle: T\n---\n" }, SKOS_FIELDS);
     const provider = new MockProvider(
       [{ json: { label: "Config", confidence: { label: 0.91 } } }],
       "m1",
     );
     await runFill({ cwd: dir, providerInstance: provider });
-    const written = readFileSync(join(dir, "a.md"), "utf8");
-    expect(written).toMatch(/generated-by: m1/);
-    expect(written).toMatch(/confidence:[\s\S]*?label: 0\.91/);
+    expect(pageData(dir)["meta-provenance"]).toEqual([
+      {
+        "generated-by": "m1",
+        fields: ["/kg/label"],
+        confidence: { "/kg/label": 0.91 },
+      },
+    ]);
   });
 
   it("a malformed score costs that field, not the whole proposal", async () => {

@@ -19,11 +19,11 @@ import {
 import {
   applyKgFields,
   existingKgFields,
-  existingProvenance,
-  hasLegacyProvenance,
+  existingMetaProvenance,
+  hasKgProvenance,
   frontmatterKind,
-  type ProvenanceEntry,
 } from "../core/frontmatter-edit.js";
+import { mergeMetaProvenance } from "../../meta/internal.js";
 import { FillGuard } from "../core/fill-guard.js";
 import { bundledShapesPath } from "../core/pkg.js";
 import { errorMessage } from "../../shared/errors.js";
@@ -175,23 +175,12 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
-/** Remove `fields` (and their confidence) from a provenance entry. */
-function dropFieldsFromEntry(
-  e: ProvenanceEntry,
-  fields: string[],
-): ProvenanceEntry {
-  const drop = new Set(fields);
-  const keptFields = e.fields.filter((f) => !drop.has(f));
-  const confidence = e.confidence
-    ? Object.fromEntries(
-        Object.entries(e.confidence).filter(([f]) => !drop.has(f)),
-      )
-    : undefined;
-  return {
-    "generated-by": e["generated-by"],
-    fields: keptFields,
-    ...(confidence ? { confidence } : {}),
-  };
+/** The page-level key `fill` records the fields it wrote in (proposal 0046). */
+const META_PROVENANCE_KEY = "meta-provenance";
+
+/** A `kg` field as an RFC 6901 JSON Pointer into the page's `kg` block. */
+function kgPointer(field: string): string {
+  return `/kg/${field.replace(/~/g, "~0").replace(/\//g, "~1")}`;
 }
 
 export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
@@ -356,9 +345,10 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
 
   if (sectionsUnrecorded) {
     warnings.push(
-      "Section metadata was written but is NOT recorded in kg.provenance: docmeta:kg bounds " +
-        "provenance to document-level field names. Review section values by hand — the review " +
-        "queue will not list them.",
+      "Section metadata was written but is NOT recorded in meta-provenance: /kg/sections is " +
+        "one of the three hand-curated pointers kg refuses, with /kg/revision-of and " +
+        "/kg/derived-from, so recording it would make `manni kg check` report a violation. " +
+        "Review section values by hand — the review queue will not list them.",
     );
   }
 
@@ -535,7 +525,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     for (const field of Object.keys(narrowed)) {
       // Unscored counts as 0, so `confidenceThreshold: 0` stays a working
       // opt-out from the gate. The related hazard — stamping a confidence the
-      // model never gave into kg.provenance — is fixed where provenance is
+      // model never gave into meta-provenance — is fixed where that record is
       // built, not here.
       const c = confidence[field] ?? 0;
       if (c < confidenceThreshold) {
@@ -587,71 +577,85 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     }
 
     // Record machine attribution alongside the fields, in the SAME write.
-    // One entry PER MODEL (schema 0.4): the current model's entry unions its
-    // own fields across runs, other models' entries are preserved — minus any
-    // field this run just overwrote (--force), so attribution never lies.
-    const values: Record<string, unknown> = { ...narrowed };
+    // It goes in the page-level `meta-provenance` now (proposal 0046), through
+    // meta's own merge: one entry per model, this model's entry gaining the
+    // pointers this run wrote, and every other entry — including the ones
+    // `manni docevals fill` wrote — carried through untouched.
+    let page: Record<string, unknown> | undefined;
     if (config.fill.writeProvenance) {
-      // `provenance` is overwritten wholesale below, and the deprecated
-      // single-object shape cannot be read back (ADR 01023) — so writing over
-      // it would silently discard another model's outstanding review record.
-      // Refuse the file and name the migration instead.
-      if (hasLegacyProvenance(content)) {
+      // `kg.provenance` is gone: proposal 0046 closed the `kg` block on
+      // fifteen properties and none of them is `provenance`. A page still
+      // holding one validates nowhere and is read by nothing, so filling
+      // beside it would leave an unreviewable record behind. Refuse the file
+      // and name the migration instead.
+      if (hasKgProvenance(content)) {
         throw new KgError(
-          `${path}: kg.provenance is the deprecated single-object form, which docmeta:kg dropped. ` +
-            `Filling would overwrite it and lose its attribution — convert it to a one-entry list ` +
-            `(a leading "- ", and generatedBy renamed to generated-by) first.`,
+          `${path}: kg.provenance was dropped by proposal 0046 and is read by nothing. ` +
+            `Its attribution belongs in the page-level meta-provenance, whose fields are ` +
+            `JSON Pointers ("/kg/label", not "label") — move it there first.`,
         );
       }
-      const prior = existingProvenance(content);
-      const mine = prior.find((e) => e["generated-by"] === identity.model);
-      const others = prior
-        .filter((e) => e["generated-by"] !== identity.model)
-        .map((e) => dropFieldsFromEntry(e, realFields))
-        .filter((e) => e.fields.length > 0);
-      // Confidence rides in the entry too (ADR 01015): this run's scores for the
-      // fields it wrote, merged over the model's prior scores.
-      const myConfidence: Record<string, number> = {
-        ...(mine?.confidence ?? {}),
-      };
-      // Document-level names only. `docmeta:kg` bounds provenanceEntry.fields
-      // and confidence.propertyNames to the twelve flat field names, and says
-      // why: "section typing and document lineage are curated by hand, not
-      // machine-proposed". Those bytes are immutable (ADR 01023), so writing a
-      // dotted name here emits frontmatter `manni kg validate` rejects — the one
-      // thing this whole guardrail exists to prevent (ADR 01032).
-      const recordable = realFields.filter((f) => !f.includes("."));
+      // Document-level names only. `sections.<slug>.<field>` is a pointer
+      // under `/kg/sections`, and `sections` is one of the three fields
+      // curated by hand — recording it is exactly what kg's harvest now
+      // reports as a `manni kg check` violation (0046 stress test 13). So the
+      // rule stays, and the reason it stays is a different one.
+      const recordable = realFields.filter((f) => !f.includes(".")).sort();
       // Loud, not silent: metadata a model wrote with no entry in the review
-      // queue is exactly the thing kg.provenance exists to prevent.
+      // queue is exactly the thing this record exists to prevent.
       if (recordable.length < realFields.length) sectionsUnrecorded = true;
       // Only record a score the model actually gave. `?? 0` stamped a
-      // confidence of 0.00 the model never asserted whenever it omitted one.
-      for (const f of recordable) {
+      // confidence of 0.00 the model never asserted whenever it omitted one,
+      // which `fill.confidenceThreshold: 0` makes reachable.
+      const held = existingMetaProvenance(content);
+      const priorEntry = Array.isArray(held)
+        ? (held as unknown[]).find(
+            (e): e is Record<string, unknown> =>
+              !!e &&
+              typeof e === "object" &&
+              !Array.isArray(e) &&
+              (e as Record<string, unknown>)["generated-by"] ===
+                identity.model,
+          )
+        : undefined;
+      const priorConfidence = numberMap(priorEntry?.["confidence"]);
+      const proposed = recordable.map((f) => {
+        const name = kgPointer(f);
         const c = confidence[f];
-        if (c !== undefined) myConfidence[f] = round2(c);
-      }
-      const fieldSet = [
-        ...new Set([...(mine?.fields ?? []), ...recordable]),
-      ].sort();
-      const entry = {
-        "generated-by": identity.model,
-        fields: fieldSet,
-        confidence: Object.fromEntries(
-          fieldSet
-            .filter((f) => f in myConfidence)
-            .map((f) => [f, myConfidence[f]]),
-        ),
-      };
-      values["provenance"] = [...others, entry].sort((a, b) =>
-        a["generated-by"] < b["generated-by"] ? -1 : 1,
+        return {
+          name,
+          confidence: c === undefined ? (priorConfidence[name] ?? 0) : round2(c),
+        };
+      });
+      const unscored = recordable
+        .map((f) => [f, kgPointer(f)] as const)
+        .filter(
+          ([f, name]) =>
+            confidence[f] === undefined && priorConfidence[name] === undefined,
+        )
+        .map(([, name]) => name);
+      const merged = mergeMetaProvenance(
+        held,
+        identity.model,
+        "fields",
+        proposed,
       );
+      // `undefined` is a page holding something other than a list under the
+      // key. Reported by `manni kg validate`, not worth failing the fill over:
+      // a side record that could block filling would be worse than none.
+      if (merged) {
+        // The merge sets a confidence for every name it is handed; a pointer
+        // nobody has ever scored keeps none.
+        for (const name of unscored) delete merged.entry.confidence[name];
+        page = { [META_PROVENANCE_KEY]: merged.list };
+      }
     }
 
-    const applied = applyKgFields(content, path, values, {
+    const applied = applyKgFields(content, path, narrowed, {
       force: opts.force,
-      alwaysOverwrite: ["provenance"],
+      ...(page ? { page } : {}),
     });
-    const reportedFields = applied.applied.filter((f) => f !== "provenance");
+    const reportedFields = applied.applied;
 
     if (reportedFields.length === 0) {
       return {

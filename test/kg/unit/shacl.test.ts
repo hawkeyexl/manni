@@ -294,6 +294,49 @@ describe("validateGraph", () => {
     expect(await validateGraph(store, SHAPES)).toEqual([]);
   });
 
+  /** A fill activity attributing `field` on docs/a.md to model `m1`. */
+  function filled(field: string): Array<[string, string, string | { lit: string }]> {
+    const activity = `${BASE}doc/docs/a.md#prov.kg-fill.m1`;
+    const entry = `${activity}.field.${field}`;
+    return [
+      [activity, RDF_TYPE, `${NS.prov}Activity`],
+      [activity, `${NS.prov}wasAssociatedWith`, `${BASE}agent/software/m1`],
+      [activity, `${NS.dockg}filledFieldEntry`, entry],
+      [entry, `${NS.dockg}filledField`, { lit: field }],
+      [`${BASE}agent/software/m1`, RDF_TYPE, `${NS.prov}SoftwareAgent`],
+      [`${BASE}agent/software/m1`, `${NS.foaf}name`, { lit: "m1" }],
+    ];
+  }
+
+  // Proposal 0046 stress test 13: `kg.provenance` enumerated the twelve
+  // fillable fields, which kept these three out. A free JSON Pointer cannot,
+  // so the guard lives here now.
+  for (const field of ["sections", "revision-of", "derived-from"]) {
+    it(`flags a machine attribution on the hand-curated ${field}`, async () => {
+      const store = build([...conformingTriples(), ...filled(field)]);
+      const findings = await validateGraph(store, SHAPES);
+      const curated = findings.filter((f) =>
+        f.message.includes("curated by hand"),
+      );
+      expect(curated).toHaveLength(1);
+      expect(curated[0]?.severity).toBe("violation");
+      expect(curated[0]?.path).toBe(`${NS.dockg}filledField`);
+      expect(curated[0]?.focusNode).toBe(
+        `${BASE}doc/docs/a.md#prov.kg-fill.m1`,
+      );
+      expect(curated[0]?.docs).toEqual(["docs/a.md"]);
+      expect(curated[0]?.message).toContain(`/kg/${field}`);
+    });
+  }
+
+  it("leaves a machine attribution on a fillable field alone", async () => {
+    const store = build([...conformingTriples(), ...filled("label")]);
+    const findings = await validateGraph(store, SHAPES);
+    expect(findings.filter((f) => f.message.includes("curated by hand"))).toEqual(
+      [],
+    );
+  });
+
   it("detects a two-node skos:broader cycle", async () => {
     const store = build([
       ...conformingTriples(),
