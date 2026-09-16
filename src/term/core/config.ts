@@ -260,7 +260,7 @@ export async function resolveTermRun(opts: TermRunOptions): Promise<TermRun> {
   const base = fromCollections && inputs.length > 0 && loaded ? loaded.dir : cwd;
 
   const manifests = loaded
-    ? (loaded.config.manifests ?? []).map((manifest) => resolve(loaded.dir, manifest))
+    ? (loaded.config.manifests ?? []).map((written) => ({ path: resolve(loaded.dir, written), written }))
     : [];
 
   return {

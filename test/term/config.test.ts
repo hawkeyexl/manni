@@ -135,7 +135,7 @@ describe("resolveTermRun", () => {
       "sub/.keep": "",
     });
     const run = await resolveTermRun({ cwd: join(root, "sub"), inputs: [] });
-    expect(run.manifests).toEqual([join(root, "terms", "glossary.yaml")]);
+    expect(run.manifests).toEqual([{ path: join(root, "terms", "glossary.yaml"), written: "terms/glossary.yaml" }]);
   });
 
   it("carries the family tools", async () => {

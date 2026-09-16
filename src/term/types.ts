@@ -334,6 +334,14 @@ export interface LoadedTermConfig {
   tools: ToolsConfig;
 }
 
+/** One `term.manifests` entry. */
+export interface TermManifest {
+  /** Absolute, resolved against the config directory. */
+  path: string;
+  /** As the config spells it, for messages. */
+  written: string;
+}
+
 /** What every command core resolves before touching a file. */
 export interface TermRun {
   config: TermConfig | null;
@@ -343,8 +351,8 @@ export interface TermRun {
   base: string;
   collections: CollectionConfig[];
   fromCollections: boolean;
-  /** Absolute manifest paths, resolved against the config directory. */
-  manifests: string[];
+  /** The `term.manifests` files, in the order the config lists them. */
+  manifests: TermManifest[];
   /** The family `tools:`. `{}` when no config governs the run. */
   tools: ToolsConfig;
   configDir?: string;

@@ -466,13 +466,21 @@ describe("write -f", () => {
     expect(renderWritePretty(report)).toBe(
       [
         "Wrote 2 terms to styles/Terms",
-        "  Lowercase.yml   3 terms",
+        "  Lowercase.yml   3 labels",
         "  Deprecated.yml  1 swap",
         "  PAL.yml         1 acronym",
       ].join("\n"),
     );
     expect(report.wiring).toBeUndefined();
     expect((await runWrite({ cwd, inputs: [], format: "vale", out: "styles", check: true })).changes).toEqual([]);
+  });
+
+  it("counts a casing rule's swaps as labels, since each is a label or an alt-label", async () => {
+    const cwd = await tree({
+      "terms/brille.md": ["---", "type: term", "label: Brille", "alt-labels: [Augengläser]", "definition: Gläser.", "---", ""].join("\n"),
+    });
+    const report = await runWrite({ cwd, inputs: ["terms"], format: "vale", out: "styles" });
+    expect(renderWritePretty(report)).toBe(["Wrote 1 term to styles/Terms", "  Casing.yml  2 labels"].join("\n"));
   });
 
   it("relativizes the path in a writer's refusal", async () => {

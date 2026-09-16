@@ -179,13 +179,13 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
     read(input, readers, set);
   }
 
-  for (const path of run.manifests) {
+  for (const { path, written } of run.manifests) {
     let content: string;
     try {
       content = await readFile(path, "utf8");
     } catch {
       const source = run.configSource ?? "manni.config.yaml";
-      throw new TermError(`${source}: term.manifests "${path}" does not exist.`);
+      throw new TermError(`${source}: term.manifests "${written}" does not exist.`);
     }
     const input: TermInput = {
       content,

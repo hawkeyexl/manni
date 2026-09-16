@@ -411,7 +411,7 @@ describe("loadTermSet with the registered readers", () => {
         base,
         collections: [],
         fromCollections: false,
-        manifests: [join(base, "terms.yaml")],
+        manifests: [{ path: join(base, "terms.yaml"), written: "terms.yaml" }],
         tools: {},
       },
       readers: TERM_READERS,

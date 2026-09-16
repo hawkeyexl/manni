@@ -214,7 +214,7 @@ describe("manni term (the ladder)", () => {
     const cwd = join(work, "clean");
     const r = term(["write", "-f", "vale", "-o", "styles/"]);
     expect(r.stdout).toBe(
-      ["Wrote 2 terms to styles/Terms", "  Lowercase.yml   3 terms", "  Deprecated.yml  1 swap", "  PAL.yml         1 acronym", ""].join("\n"),
+      ["Wrote 2 terms to styles/Terms", "  Lowercase.yml   3 labels", "  Deprecated.yml  1 swap", "  PAL.yml         1 acronym", ""].join("\n"),
     );
     expect(r.status).toBe(0);
 
@@ -368,6 +368,14 @@ describe("manni term (usage errors)", () => {
     writeFileSync(join(cwd, "manni.config.yaml"), `${readFileSync(join(cwd, "manni.config.yaml"), "utf8")}tools:\n  vale:\n    config: nowhere.ini\n`);
     const r = term(["lint"], { cwd });
     expect(r.stderr).toBe('manni: manni.config.yaml: tools.vale.config "nowhere.ini" does not exist.\n');
+    expect(r.status).toBe(2);
+  });
+
+  it("term.manifests that does not exist", () => {
+    const cwd = join(work, "clean");
+    writeFileSync(join(cwd, "manni.config.yaml"), `${readFileSync(join(cwd, "manni.config.yaml"), "utf8")}term:\n  manifests:\n    - terms/missing.yaml\n`);
+    const r = term(["list"], { cwd });
+    expect(r.stderr).toBe('manni: manni.config.yaml: term.manifests "terms/missing.yaml" does not exist.\n');
     expect(r.status).toBe(2);
   });
 

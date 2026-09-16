@@ -113,21 +113,21 @@ describe("loadTermSet", () => {
   it("offers each manifest as a manifest", async () => {
     const root = await tree({ "glossary.txt": "bifocal\ntrifocal\n" });
     const set = await loadTermSet({
-      run: runFor(root, [], { manifests: [join(root, "glossary.txt")] }),
+      run: runFor(root, [], { manifests: [{ path: join(root, "glossary.txt"), written: "glossary.txt" }] }),
       readers: [standIn],
     });
     expect(set.terms.map((t) => t.id)).toEqual(["bifocal", "trifocal"]);
   });
 
-  it("refuses a manifest that is not there, naming the config", async () => {
+  it("refuses a manifest that is not there, naming the config and the path as the config spells it", async () => {
     const root = await tree({});
-    const missing = join(root, "nope.yaml");
+    const missing = { path: join(root, "terms", "nope.yaml"), written: "terms/nope.yaml" };
     await expect(
       loadTermSet({
         run: runFor(root, [], { manifests: [missing], configSource: "manni.config.yaml" }),
         readers: [standIn],
       }),
-    ).rejects.toThrow(`manni.config.yaml: term.manifests "${missing}" does not exist.`);
+    ).rejects.toThrow(new TermError('manni.config.yaml: term.manifests "terms/nope.yaml" does not exist.'));
   });
 
   it("is an error when files hold no terms", async () => {

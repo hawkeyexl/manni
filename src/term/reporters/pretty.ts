@@ -196,7 +196,8 @@ function valeLines(report: WriteReport): string[] {
   const acronyms: string[] = [];
   for (const file of report.files) {
     const name = baseName(file.path);
-    if (name === "Casing.yml" || name === "Lowercase.yml") rows.push([name, plural(swapCount(file.content), "term")]);
+    // A casing rule swaps each label and alt-label, so what it counts is labels.
+    if (name === "Casing.yml" || name === "Lowercase.yml") rows.push([name, plural(swapCount(file.content), "label")]);
     else if (name === "Deprecated.yml") rows.push([name, plural(swapCount(file.content), "swap")]);
     else acronyms.push(name);
   }
