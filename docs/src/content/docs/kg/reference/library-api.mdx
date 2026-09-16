@@ -39,7 +39,7 @@ directly.
 | Export | Purpose |
 |---|---|
 | `runBuild` | Derive the graph and write Turtle. Returns `{ outPath, docs, quads, warnings }`. |
-| `runFill` | Propose and write `kg:` fields through a provider. |
+| `runFill` | Propose and write `graph:` fields through a provider. |
 | `runQuery` | Match a triple pattern against a built graph. |
 | `runStats` | Counts, orphans, broken links, hubs, and coverage. |
 | `runSearch` | Rank nodes for a text query, with `renderSearch` for the report. |
@@ -103,7 +103,7 @@ and why.
 | Export | Purpose |
 |---|---|
 | `NS`, `PREFIXES` | The namespace IRIs and their prefixes, including `kg:` itself. |
-| `frontmatterSchema`, `FRONTMATTER_SCHEMA_ID` | The page vocabulary a `kg:` block is validated against, bundled into the build. |
+| `frontmatterSchema`, `FRONTMATTER_SCHEMA_ID` | The page vocabulary a `graph:` block is validated against, bundled into the build. |
 | `TOPIC_TYPE_IRIS`, `SOFTWARE_LIFECYCLE_IRIS`, `SOFTWARE_SUBJECT_IRIS` | The iiRDS maps behind `type`, `about-product-lifecycle` and `about-product-aspect`. |
 | `KG_NOT_APPLICABLE_TO_VARIANT`, `KG_NOT_SOFTWARE_SUBJECT` | The two negative-scope predicates. |
 
@@ -116,7 +116,7 @@ set a verb reads.
 
 `applyKgFields`, `existingKgFields`, `existingMetaProvenance` and
 `frontmatterKind` are the frontmatter writer `fill` uses, if you need to write
-a `kg:` block yourself.
+a `graph:` block yourself.
 
 ### Inference
 

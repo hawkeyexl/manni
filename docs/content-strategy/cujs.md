@@ -144,7 +144,7 @@ The claim this journey carries is that docevals orchestrates and does not reimpl
 
 ### M20 · Fill the categorization nobody wrote, and review what a model proposed
 
-**Outcome.** Pages that predate the vocabulary carry a `kg` block, and every value a model proposed is attributed and reviewable rather than silently merged into the corpus.
+**Outcome.** Pages that predate the vocabulary carry a `graph` block, and every value a model proposed is attributed and reviewable rather than silently merged into the corpus.
 
 **Steps.** She runs `manni kg fill --dry-run` over one directory and reads the proposals. `--confidence` sets the bar a value must clear to be written, `--fields` narrows what is proposed at all, and `--max-turns` caps the inference calls before the first one. `--local` runs the pass on her machine. Every written value is recorded in `meta-provenance` naming the model and the field. A surviving entry therefore means unreviewed machine metadata, and deleting it is how she signs off. A field the schema marks `x-manni-kg-output: false` never reaches the published graph, whatever fills it.
 

@@ -57,8 +57,12 @@ export default defineConfig({
   //
   // Proposal 0041 renamed the sidecar vocabulary to external metadata. Release
   // notes and pull requests link to the old URL, so it must not 404.
+  //
+  // Proposal 0051 renamed the kg page vocabulary to manni:graph, so its
+  // proposal page moved from meta/proposals/kg to meta/proposals/graph.
   redirects: {
     "/meta/set-up/sidecar-metadata": "/manni/meta/set-up/external-metadata",
+    "/meta/proposals/kg": "/manni/meta/proposals/graph",
   },
   // MDX inherits this list, so `.md` and `.mdx` pages both get it.
   markdown: {
