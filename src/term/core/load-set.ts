@@ -78,7 +78,7 @@ function read(input: TermInput, readers: readonly TermReader[], set: TermSet): v
   }
 }
 
-function extractInput(
+export function extractInput(
   content: string,
   file: string,
   path: string | undefined,

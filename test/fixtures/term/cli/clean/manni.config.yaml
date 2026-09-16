@@ -1,0 +1,5 @@
+# A two-term set whose every reference resolves: `manni term check` exits 0.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
