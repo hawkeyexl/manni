@@ -13,6 +13,8 @@ import {
   readConfigFileSync,
   type ConfigFileOptions,
 } from "../../shared/config-file.js";
+import type { CollectionConfig } from "../../shared/collections.js";
+import { parseCollections } from "../../shared/collections.js";
 import { errorMessage } from "../../shared/errors.js";
 import { KgError } from "../types.js";
 import { resolveBaseIri } from "./iri.js";
@@ -51,12 +53,6 @@ export type DeriveSource =
   | "images"
   | "code"
   | "provenance";
-
-/**
- * How hard `provenance.git` insists: derive-where-possible (`"auto"`),
- * required (`true`), or off (`false`). See ADR 01010.
- */
-export type GitMode = boolean | "auto";
 
 export type FillField =
   // SKOS concept fields
@@ -115,11 +111,18 @@ export interface RouteMapping {
 }
 
 export interface DockgConfig {
-  version: 1;
+  /**
+   * The family's document sets, from the file's top-level `collections:`
+   * (proposal 0041). `[]` when the key is absent or no file governs the run.
+   */
+  collections: CollectionConfig[];
+  /**
+   * The config file as the user would name it, for messages; `null` when no
+   * file governs the run and every value is a built-in default.
+   */
+  configSource: string | null;
   /** Normalized base IRI (trailing slash for http(s); `urn:dockg:` default). */
   baseIri: string;
-  inputs: string[];
-  exclude: string[];
   /** Output path of the built Turtle file, relative to configDir. */
   out: string;
   routes: RouteMapping[];
@@ -132,16 +135,14 @@ export interface DockgConfig {
   };
   provenance: {
     /**
-     * Gate for ALL git-derived provenance: per-file dates/authors, rename →
-     * prov:wasRevisionOf edges, and the build activity's prov:endedAtTime
-     * (HEAD committer date). Deterministic per commit; never the wall clock.
+     * Emit qualified attribution/association nodes with roles.
      *
-     * `"auto"` (default) derives it wherever git can run and degrades with a
-     * warning where it cannot; `true` requires it, so an unavailable git is an
-     * operational error; `false` skips the subprocess entirely.
+     * The one provenance setting left. `git` was tri-state until proposal
+     * 0051 §6: git history is *detected* now, used wherever git can run over a
+     * repository and degraded to a warning where it cannot (kg ADR 01010's
+     * `"auto"`, minus the switch). `qualified` stays because it switches what
+     * is written, not what is discovered.
      */
-    git: GitMode;
-    /** Emit qualified attribution/association nodes with roles. */
     qualified: boolean;
   };
   fill: {
@@ -225,11 +226,24 @@ export interface DockgConfig {
 export const DEFAULT_CONFIG_FILENAME = "manni.config.yaml";
 /** The tool's key in the family file. */
 export const CONFIG_SECTION = "kg";
+/** The family's top-level key for document sets (proposal 0041). */
+const COLLECTIONS_KEY = "collections";
+
 /**
- * The tool's own config file from before the family file, whose whole
- * document is the `kg:` section. Still read, with a warning.
+ * Where the metadata tool's configuration reference documents `collections:`.
+ * The literal docevals', cite's and meta's config modules carry, repeated
+ * because those modules are theirs.
  */
-export const LEGACY_CONFIG_FILENAME = "dockg.config.yaml";
+const CONFIG_REF =
+  "https://hawkeyexl.github.io/manni/meta/reference/configuration/";
+
+/**
+ * The keys proposal 0041 moved out of `kg:` and up to the family level.
+ * Refused rather than aliased, as meta, cite and docevals refuse theirs: an
+ * alias would be a second place to declare a document set that is meant to be
+ * declared once. Checked before Ajv, which would call them unknown keys.
+ */
+const MOVED_KEYS = ["inputs", "exclude"] as const;
 
 export const ALL_DERIVE_SOURCES: DeriveSource[] = [
   "frontmatter",
@@ -257,6 +271,32 @@ const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true });
 const validateConfig = ajv.compile(configSchema);
 
 /**
+ * One Ajv error, as a line a reader can act on.
+ *
+ * Ajv reports an unknown key against the *parent* object, so the bare message
+ * ("must NOT have additional properties") leaves the reader to diff their file
+ * against the schema to find which key it meant. Name it, as docevals does
+ * (PR #10): the common case here is a key that was removed — `version:` and
+ * `provenance.git:` after proposal 0051 — and a message that makes you guess
+ * is one people work around.
+ */
+function configErrorLine(e: {
+  instancePath: string;
+  keyword: string;
+  params: unknown;
+  message?: string | undefined;
+}): string {
+  const extra =
+    e.keyword === "additionalProperties"
+      ? (e.params as { additionalProperty?: string }).additionalProperty
+      : undefined;
+  const where = e.instancePath || "/";
+  return extra === undefined
+    ? `  ${where}: ${e.message ?? "is invalid"}`
+    : `  ${where}: unknown key "${extra}"`;
+}
+
+/**
  * Normalize `stats.coverageThreshold` to a per-field map. Ajv has already
  * validated the input as a number, an object of known fields, or absent; a
  * uniform number expands across every measured field so the resolved shape is
@@ -271,9 +311,18 @@ function resolveCoverageThreshold(
   return { ...raw };
 }
 
+/** What the file the section came from carries beside it. */
+export interface ConfigFileContext {
+  /** The file as the user would name it, for messages. */
+  source: string;
+  /** The file's top-level `collections:`. */
+  collections: CollectionConfig[];
+}
+
 /**
- * Parse and validate config YAML text as the tool's whole section. `configPath`
- * is used for messages and path resolution.
+ * Parse and validate config YAML text. A document with a `kg:` key is a family
+ * file, so its top-level `collections:` is read too; anything else is the
+ * tool's section on its own.
  */
 export function parseConfig(text: string, configPath: string): DockgConfig {
   let raw: unknown;
@@ -284,27 +333,56 @@ export function parseConfig(text: string, configPath: string): DockgConfig {
       `Invalid YAML in ${configPath}: ${errorMessage(e)}`,
     );
   }
-  return parseConfigSection(raw, configPath);
+  if (raw == null) return parseConfigSection(null, configPath);
+  if (typeof raw !== "object" || Array.isArray(raw)) {
+    throw new KgError(`Invalid config in ${configPath}: root must be an object`);
+  }
+  const doc = raw as Record<string, unknown>;
+  const wrapped = Object.hasOwn(doc, CONFIG_SECTION);
+  const collections = Object.hasOwn(doc, COLLECTIONS_KEY)
+    ? parseCollections(
+        doc[COLLECTIONS_KEY],
+        configPath,
+        (message) => new KgError(message),
+      )
+    : [];
+  return parseConfigSection(wrapped ? doc[CONFIG_SECTION] : doc, configPath, {
+    source: configPath,
+    collections,
+  });
 }
 
 /**
  * Validate the tool's section. `raw` is what sat under `kg:` in a family
- * file, or the whole document of a legacy file or an explicit path with no
- * wrapper key. Messages name `configPath`; relative paths in the config
- * resolve against its directory.
+ * file, or the whole document of an explicit path with no wrapper key.
+ * Messages name `configPath`; relative paths in the config resolve against its
+ * directory. `file` carries the family keys; absent, the section is its own
+ * source and declares no collections.
+ *
+ * `null` is an empty section, which is every default: a `kg:` key somebody
+ * added while migrating and has not filled in yet is a config, not an error.
  */
 export function parseConfigSection(
   raw: unknown,
   configPath: string,
+  file: ConfigFileContext = { source: configPath, collections: [] },
 ): DockgConfig {
-  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) {
+  if (raw == null) raw = {};
+  if (typeof raw !== "object" || Array.isArray(raw)) {
     throw new KgError(
       `Invalid config in ${configPath}: root must be an object`,
     );
   }
+  for (const key of MOVED_KEYS) {
+    if (Object.hasOwn(raw as Record<string, unknown>, key)) {
+      throw new KgError(
+        `${file.source}: "${key}" is no longer a kg key. Document sets are declared once for every tool, under a top-level collections: list. See ${CONFIG_REF}#${COLLECTIONS_KEY}`,
+      );
+    }
+  }
   if (!validateConfig(raw)) {
     const details = (validateConfig.errors ?? [])
-      .map((e) => `  ${e.instancePath || "/"}: ${e.message ?? ""}`)
+      .map((e) => configErrorLine(e))
       .join("\n");
     throw new KgError(`Invalid config in ${configPath}:\n${details}`);
   }
@@ -317,10 +395,9 @@ export function parseConfigSection(
   const dir = dirname(abs);
 
   return {
-    version: 1,
+    collections: file.collections,
+    configSource: file.source,
     baseIri: resolveBaseIri(r.baseIri),
-    inputs: r.inputs ?? ["**/*.md"],
-    exclude: r.exclude ?? ["**/node_modules/**"],
     out: r.out ?? "kg/graph.ttl",
     routes: ((r.routes ?? []) as Array<Record<string, any>>).map((m) => ({
       basePath: normalizeBasePath(m.basePath ?? "/"),
@@ -344,7 +421,6 @@ export function parseConfigSection(
       shapes: r.check?.shapes ?? [],
     },
     provenance: {
-      git: r.provenance?.git ?? "auto",
       qualified: r.provenance?.qualified ?? true,
     },
     stats: {
@@ -387,29 +463,74 @@ export function parseConfigSection(
 
 const CONFIG_FILE: ConfigFileOptions = {
   section: CONFIG_SECTION,
-  legacyNames: [LEGACY_CONFIG_FILENAME],
+  // kg published nothing under `dockg.config.yaml`, so, like cite, a11y and
+  // docevals, it has no pre-family name to read (proposal 0051 §2).
+  legacyNames: [],
   toError: (message) => new KgError(message),
 };
 
 /**
  * Load config from an explicit path, or discover the family file from the
  * working directory upward (`src/shared/config-file.ts`: `manni.config.yaml`
- * read at its `kg:` key, the pre-rename `moose.config.yaml` and the tool's
- * own `dockg.config.yaml` with a warning). With no config file present,
- * built-in defaults apply.
- *
- * An empty section (`kg:` with nothing under it) is the defaults too, the
- * same as no file: a key someone added while migrating and has not filled in
- * yet is not a config with a missing `version`.
+ * read at its `kg:` key). With no config file present, built-in defaults
+ * apply.
  */
 export function loadConfig(path?: string, cwd = process.cwd()): DockgConfig {
   const file = path
     ? readConfigFileSync(path, cwd, CONFIG_FILE)
     : findConfigFileSync(cwd, CONFIG_FILE);
-  if (file === null) {
-    return parseConfig("version: 1\n", resolve(cwd, DEFAULT_CONFIG_FILENAME));
+  if (file === null) return defaultConfig(cwd);
+  return parseConfigSection(file.value, file.path, {
+    source: file.source,
+    collections: file.collections,
+  });
+}
+
+/**
+ * Every built-in default, with no file behind it: what a run gets when
+ * discovery finds nothing, or under `--no-config`. It declares no collections,
+ * so such a run reads only the paths it was given.
+ */
+export function defaultConfig(cwd = process.cwd()): DockgConfig {
+  return {
+    ...parseConfigSection(null, resolve(cwd, DEFAULT_CONFIG_FILENAME)),
+    configSource: null,
+  };
+}
+
+export interface RunConfigOptions {
+  /** `-c/--config`. */
+  configPath?: string;
+  /** `--no-config`: skip discovery and run on the built-in defaults. */
+  noConfig?: boolean;
+  /** Positional paths; checked here only for how they combine with `collection`. */
+  paths?: string[];
+  /** `--collection <name>`, repeatable. */
+  collection?: string[];
+}
+
+/**
+ * The config a command runs under. `--collection` names something only a
+ * config can define and selects a set the operator did not type, so pairing it
+ * with paths is refused before discovery, and the message is about the flags
+ * rather than about whatever the walk found.
+ */
+export function loadRunConfig(
+  opts: RunConfigOptions,
+  cwd = process.cwd(),
+): DockgConfig {
+  assertCollectionWithoutPaths(opts.collection, opts.paths);
+  return opts.noConfig ? defaultConfig(cwd) : loadConfig(opts.configPath, cwd);
+}
+
+/** The message meta, cite and docevals give, in kg's error class. */
+export function assertCollectionWithoutPaths(
+  collection: readonly string[] | undefined,
+  paths: readonly string[] | undefined,
+): void {
+  if ((collection ?? []).length > 0 && (paths ?? []).length > 0) {
+    throw new KgError(
+      "--collection selects a configured collection; it cannot be combined with paths.",
+    );
   }
-  const value =
-    file.wrapped && file.value === null ? { version: 1 } : file.value;
-  return parseConfigSection(value, file.path);
 }

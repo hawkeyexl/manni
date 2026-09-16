@@ -10,7 +10,7 @@
  * contract, not an opt-in (ADR 01018).
  */
 import { resolve } from "node:path";
-import { loadConfig } from "../core/config.js";
+import { loadRunConfig } from "../core/config.js";
 import {
   compactIri,
   expandTerm,
@@ -32,6 +32,8 @@ import {
 
 export interface TraverseOptions {
   config?: string;
+  /** `--no-config`: skip discovery and run on the built-in defaults. */
+  noConfig?: boolean;
   /** Graph .ttl path (default: config `out`). */
   graph?: string;
   /** Starting node: full IRI or a `prefix:local` CURIE. */
@@ -61,7 +63,13 @@ export interface TraverseReport {
 
 export function runTraverse(opts: TraverseOptions): TraverseReport {
   const cwd = opts.cwd ?? process.cwd();
-  const config = loadConfig(opts.config, cwd);
+  const config = loadRunConfig(
+    {
+      ...(opts.config === undefined ? {} : { configPath: opts.config }),
+      ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+    },
+    cwd,
+  );
   const store = loadGraph(resolve(cwd, opts.graph ?? config.out));
   const graph = GraphIndex.fromQuads(
     storeToQuads(store),

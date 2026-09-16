@@ -14,13 +14,15 @@ import {
 } from "../../meta/index.js";
 import { errorMessage } from "../../shared/errors.js";
 import { KgError } from "../types.js";
-import { loadConfig } from "../core/config.js";
-import { discoverFiles } from "../core/discover.js";
+import { loadRunConfig } from "../core/config.js";
+import {
+  documentSetPatterns,
+  resolveDocumentSet,
+  type DocumentInputOptions,
+} from "../core/discover.js";
 import { bundledSchemaPath } from "../core/pkg.js";
 
-export interface ValidateOptions {
-  globs?: string[];
-  config?: string;
+export interface ValidateOptions extends DocumentInputOptions {
   cwd?: string;
 }
 
@@ -33,18 +35,24 @@ export async function runValidate(
   opts: ValidateOptions = {},
 ): Promise<ValidateResult> {
   const cwd = opts.cwd ?? process.cwd();
-  const config = loadConfig(opts.config, cwd);
-  const inputs =
-    opts.globs && opts.globs.length > 0 ? opts.globs : config.inputs;
+  const config = loadRunConfig(
+    {
+      ...(opts.config === undefined ? {} : { configPath: opts.config }),
+      ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+      ...(opts.paths === undefined ? {} : { paths: opts.paths }),
+      ...(opts.collection === undefined ? {} : { collection: opts.collection }),
+    },
+    cwd,
+  );
 
   // Discover with the SAME mechanism as `manni kg build`, then hand docmeta the
   // explicit file list — validate must cover exactly the corpus build ingests
   // (docmeta's own glob expansion filters extensions and merges excludes from
   // any docmeta.config.yaml, which would silently shrink the corpus).
-  const files = discoverFiles(inputs, config.exclude, cwd);
+  const files = resolveDocumentSet(config, opts, "validate", cwd);
   if (files.length === 0) {
     throw new KgError(
-      `No input files matched: ${inputs.join(", ")} (cwd: ${cwd})`,
+      `No input files matched: ${documentSetPatterns(config, opts).join(", ")} (cwd: ${cwd})`,
     );
   }
   const supported = new Set(supportedExtensions());

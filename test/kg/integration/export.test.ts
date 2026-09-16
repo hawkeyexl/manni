@@ -5,10 +5,14 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { inflateRawSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
+import { detachedCorpus } from "../helpers/corpus.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const cli = join(root, "dist", "cli.js");
-const corpus = join(root, "test", "kg", "fixtures", "corpus");
+// A copy outside any repository: git is detected now (proposal 0051 §6),
+// and a corpus built inside this checkout would carry HEAD's committer
+// date. See test/kg/helpers/corpus.ts.
+const corpus = detachedCorpus();
 const golden = join(root, "test", "kg", "fixtures", "golden", "graph.jsonld");
 const rdfGolden = join(root, "test", "kg", "fixtures", "golden", "metadata.rdf");
 
@@ -180,7 +184,7 @@ describe("manni kg export (integration)", () => {
     const cfg = join(dir, "dockg.config.yaml");
     writeFileSync(
       cfg,
-      "version: 1\nbaseIri: https://example.com/kg/\nexport:\n  iirds:\n    creator: Acme Docs\n",
+      "baseIri: https://example.com/kg/\nexport:\n  iirds:\n    creator: Acme Docs\n",
     );
     const out = join(dir, "pkg.iirds");
     run(["export", "iirds", "-g", graph, "-c", cfg, "-o", out], corpus);
@@ -200,7 +204,7 @@ describe("manni kg export (integration)", () => {
     const cfg = join(dir, "dockg.config.yaml");
     writeFileSync(
       cfg,
-      "version: 1\nbaseIri: https://example.com/kg/\nexport:\n  iirds:\n    title: My Corpus\n",
+      "baseIri: https://example.com/kg/\nexport:\n  iirds:\n    title: My Corpus\n",
     );
     const out = join(dir, "pkg.iirds");
     run(["export", "iirds", "-g", graph, "-c", cfg, "-o", out], corpus);

@@ -6,7 +6,7 @@
  */
 import { resolve } from "node:path";
 import { DataFactory, type Store } from "n3";
-import { loadConfig } from "../core/config.js";
+import { loadRunConfig } from "../core/config.js";
 import { compactIri, loadGraph } from "../core/load.js";
 import { NS, RDF_TYPE } from "../core/vocab.js";
 import { COVERAGE_FIELDS, SECTION_COVERAGE_FIELDS } from "../core/coverage.js";
@@ -16,6 +16,8 @@ const { namedNode } = DataFactory;
 
 export interface StatsOptions {
   config?: string;
+  /** `--no-config`: skip discovery and run on the built-in defaults. */
+  noConfig?: boolean;
   graph?: string;
   cwd?: string;
   /** Exit 1 when broken links exist or a coverage threshold is unmet. */
@@ -117,7 +119,13 @@ function round1(pct: number): number {
 
 export function runStats(opts: StatsOptions = {}): StatsReport {
   const cwd = opts.cwd ?? process.cwd();
-  const config = loadConfig(opts.config, cwd);
+  const config = loadRunConfig(
+    {
+      ...(opts.config === undefined ? {} : { configPath: opts.config }),
+      ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+    },
+    cwd,
+  );
   const store = loadGraph(resolve(cwd, opts.graph ?? config.out));
   const top = opts.top ?? 5;
 

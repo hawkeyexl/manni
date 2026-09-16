@@ -11,7 +11,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { loadConfig } from "../core/config.js";
+import { loadRunConfig } from "../core/config.js";
 import { compactIri } from "../core/load.js";
 import { type SearchIndexDoc } from "../core/search-index.js";
 import {
@@ -47,6 +47,8 @@ export type SearchMode = (typeof SEARCH_MODES)[number];
 
 export interface SearchOptions {
   config?: string;
+  /** `--no-config`: skip discovery and run on the built-in defaults. */
+  noConfig?: boolean;
   /** Graph .ttl path (default: config `out`) — locates the sibling index. */
   graph?: string;
   /** Directory holding the indexes and manifest (default: beside the graph). */
@@ -178,7 +180,13 @@ function resolveLocalization(
 
 export async function runSearch(opts: SearchOptions): Promise<SearchReport> {
   const cwd = opts.cwd ?? process.cwd();
-  const config = loadConfig(opts.config, cwd);
+  const config = loadRunConfig(
+    {
+      ...(opts.config === undefined ? {} : { configPath: opts.config }),
+      ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+    },
+    cwd,
+  );
   const graphPath = resolve(cwd, opts.graph ?? config.out);
   const indexDir = opts.index ? resolve(cwd, opts.index) : dirname(graphPath);
   const localization = resolveLocalization(indexDir, opts.lang);

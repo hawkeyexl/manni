@@ -9,9 +9,13 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { analyzeDoc } from "../core/analyze.js";
-import { loadConfig, type FillField } from "../core/config.js";
+import { loadRunConfig, type FillField } from "../core/config.js";
 import type { DocModel } from "../types.js";
-import { discoverFiles } from "../core/discover.js";
+import {
+  documentSetPatterns,
+  resolveDocumentSet,
+  type DocumentInputOptions,
+} from "../core/discover.js";
 import {
   applyKgFields,
   existingKgFields,
@@ -40,9 +44,7 @@ import {
 } from "../llm/prompt.js";
 import { makeProvider, resolveProviderIdentity } from "../llm/provider.js";
 
-export interface FillOptions {
-  globs?: string[];
-  config?: string;
+export interface FillOptions extends DocumentInputOptions {
   cwd?: string;
   dryRun?: boolean;
   force?: boolean;
@@ -198,14 +200,20 @@ function dropFieldsFromEntry(
 
 export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
   const cwd = opts.cwd ?? process.cwd();
-  const config = loadConfig(opts.config, cwd);
-  const inputs =
-    opts.globs && opts.globs.length > 0 ? opts.globs : config.inputs;
+  const config = loadRunConfig(
+    {
+      ...(opts.config === undefined ? {} : { configPath: opts.config }),
+      ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+      ...(opts.paths === undefined ? {} : { paths: opts.paths }),
+      ...(opts.collection === undefined ? {} : { collection: opts.collection }),
+    },
+    cwd,
+  );
 
-  const files = discoverFiles(inputs, config.exclude, cwd);
+  const files = resolveDocumentSet(config, opts, "fill", cwd);
   if (files.length === 0) {
     throw new KgError(
-      `No input files matched: ${inputs.join(", ")} (cwd: ${cwd})`,
+      `No input files matched: ${documentSetPatterns(config, opts).join(", ")} (cwd: ${cwd})`,
     );
   }
 
@@ -294,15 +302,18 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
   // Graph guardrail: simulate each proposal against the SHACL shapes before
   // writing it. Off via fill.validateGraph: false or --no-validate-graph.
   // The guard's base state is the FULL configured corpus, not the positional
-  // glob subset — a proposal for one doc can cycle with hierarchy that lives
-  // in a doc outside the subset being filled.
+  // path subset — a proposal for one doc can cycle with hierarchy that lives
+  // in a doc outside the subset being filled. With no collections declared
+  // there is no wider corpus to know about, so the subset is the corpus.
   const shapesPaths =
     config.check.shapes.length > 0
       ? config.check.shapes.map((p) => resolve(cwd, p))
       : [bundledShapesPath(import.meta.url)];
   const guardFiles = [
     ...new Set([
-      ...discoverFiles(config.inputs, config.exclude, cwd),
+      ...(config.collections.length > 0
+        ? resolveDocumentSet(config, {}, "fill", cwd)
+        : []),
       ...files,
     ]),
   ];

@@ -13,10 +13,14 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { detachedCorpus } from "../helpers/corpus.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const cli = join(root, "dist", "cli.js");
-const corpus = join(root, "test", "kg", "fixtures", "corpus");
+// A copy outside any repository: git is detected now (proposal 0051 §6),
+// and a corpus built inside this checkout would carry HEAD's committer
+// date. See test/kg/helpers/corpus.ts.
+const corpus = detachedCorpus();
 const bundledShapes = join(root, "shapes", "kg", "dockg-1.0.0.ttl");
 
 const CONFIG_DOC = "https://example.com/kg/doc/docs/configuration.md";

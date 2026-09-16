@@ -4,10 +4,14 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { detachedCorpus } from "../helpers/corpus.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const cli = join(root, "dist", "cli.js");
-const corpus = join(root, "test", "kg", "fixtures", "corpus");
+// A copy outside any repository: git is detected now (proposal 0051 §6),
+// and a corpus built inside this checkout would carry HEAD's committer
+// date. See test/kg/helpers/corpus.ts.
+const corpus = detachedCorpus();
 const goldenDir = join(root, "test", "kg", "fixtures", "golden");
 
 /**
@@ -145,7 +149,7 @@ describe("manni kg embed (integration)", () => {
     const cfg = join(cacheHome, "dockg.config.yaml");
     writeFileSync(
       cfg,
-      `version: 1\nbaseIri: https://example.com/kg/\nembed:\n  cacheDir: ${JSON.stringify(join(cacheHome, "cache"))}\n`,
+      `baseIri: https://example.com/kg/\nembed:\n  cacheDir: ${JSON.stringify(join(cacheHome, "cache"))}\n`,
     );
     const args = [
       "embed",
@@ -401,7 +405,7 @@ describe("manni kg search with vectors (integration)", () => {
     const cfg = join(dirname(vectors), "dockg.config.yaml");
     writeFileSync(
       cfg,
-      `version: 1\nbaseIri: https://example.com/kg/\nembed:\n  out: ${JSON.stringify(dirname(vectors))}\n`,
+      `baseIri: https://example.com/kg/\nembed:\n  out: ${JSON.stringify(dirname(vectors))}\n`,
       "utf8",
     );
 
@@ -542,7 +546,7 @@ describe("manni kg search with vectors (integration)", () => {
     const cfg = join(dir, "dockg.config.yaml");
     writeFileSync(
       cfg,
-      "version: 1\nbaseIri: https://example.com/kg/\nembed:\n  model: some/other-model\n",
+      "baseIri: https://example.com/kg/\nembed:\n  model: some/other-model\n",
     );
     const { status, stdout } = run(
       [

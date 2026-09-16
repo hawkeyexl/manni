@@ -9,10 +9,14 @@ import { GraphIndex } from "../../../src/kg/runtime/graph.js";
 import { traverse } from "../../../src/kg/runtime/traverse.js";
 import { storeToQuads } from "../../../src/kg/core/load.js";
 import { NS } from "../../../src/kg/core/vocab.js";
+import { detachedCorpus } from "../helpers/corpus.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const cli = join(root, "dist", "cli.js");
-const corpus = join(root, "test", "kg", "fixtures", "corpus");
+// A copy outside any repository: git is detected now (proposal 0051 §6),
+// and a corpus built inside this checkout would carry HEAD's committer
+// date. See test/kg/helpers/corpus.ts.
+const corpus = detachedCorpus();
 const goldenDir = join(root, "test", "kg", "fixtures", "golden");
 const traverseGolden = join(goldenDir, "traverse.json");
 

@@ -5,10 +5,14 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import { hermeticEnv } from "../helpers/git-env.js";
+import { detachedCorpus } from "../helpers/corpus.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const cli = join(root, "dist", "cli.js");
-const corpus = join(root, "test", "kg", "fixtures", "corpus");
+// A copy outside any repository: git is detected now (proposal 0051 §6),
+// and a corpus built inside this checkout would carry HEAD's committer
+// date. See test/kg/helpers/corpus.ts.
+const corpus = detachedCorpus();
 
 let graph: string;
 
@@ -190,7 +194,7 @@ describe("manni kg stats", () => {
     const dir = mkdtempSync(join(tmpdir(), "dockg-secref-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
-      'kg:\n  version: 1\n  inputs: ["*.md"]\n  provenance:\n    git: false\n',
+      'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n',
     );
     writeFileSync(
       join(dir, "a.md"),
@@ -219,7 +223,7 @@ describe("manni kg stats — metadata coverage", () => {
     const dir = mkdtempSync(join(tmpdir(), "dockg-cov-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
-      `kg:\n  version: 1\n  inputs: ["*.md"]\n  provenance:\n    git: false\n${config.replace(/^(?=.)/gm, "  ")}`,
+      `collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n${config.replace(/^(?=.)/gm, "  ")}`,
     );
     writeFileSync(join(dir, "a.md"), `${frontmatter}# A\n\nBody.\n`);
     execFileSync(
@@ -415,12 +419,13 @@ describe("manni kg stats — metadata coverage", () => {
   it("counts git-derived dates as covered, with no frontmatter date", () => {
     // The ADR 01011 reason coverage measures the graph, not the frontmatter:
     // a doc with no `date`/`updated` still covers created/modified once git
-    // provenance supplies them. Needs a real repo and provenance.git: true.
+    // provenance supplies them. Needs a real repo: git is detected
+    // (0051 §6), not switched on.
     const env = hermeticEnv();
     const dir = mkdtempSync(join(tmpdir(), "dockg-cov-git-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
-      'kg:\n  version: 1\n  inputs: ["*.md"]\n  provenance:\n    git: true\n',
+      'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n',
     );
     writeFileSync(join(dir, "a.md"), "# A\n\nNo frontmatter, no dates.\n");
     execFileSync("git", ["init", "-q"], { cwd: dir, env });
@@ -546,7 +551,7 @@ describe("manni kg stats — localization", () => {
     const dir = mkdtempSync(join(tmpdir(), "dockg-l10n-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
-      'kg:\n  version: 1\n  inputs: ["*.md"]\n  provenance:\n    git: false\n',
+      'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n',
     );
     writeFileSync(join(dir, "a.md"), "---\ntitle: A\n---\n\n# A\n");
     const opts = { encoding: "utf8" as const, cwd: dir };

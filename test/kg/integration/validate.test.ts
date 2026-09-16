@@ -35,7 +35,7 @@ describe("manni kg validate", () => {
     const dir = mkdtempSync(join(tmpdir(), "dockg-revof-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
-      'kg:\n  version: 1\n  inputs: ["*.md"]\n',
+      'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n',
     );
     writeFileSync(
       join(dir, "list.md"),
@@ -74,7 +74,7 @@ describe("manni kg validate", () => {
     const dir = mkdtempSync(join(tmpdir(), "dockg-negscope-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),
-      'kg:\n  version: 1\n  inputs: ["*.md"]\n',
+      'collections:\n  - name: c\n    paths: ["*.md"]\nkg:\n',
     );
     writeFileSync(
       join(dir, "good.md"),
