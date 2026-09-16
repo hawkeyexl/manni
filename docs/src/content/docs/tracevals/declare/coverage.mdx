@@ -281,7 +281,7 @@ its `tried` list but no note. The common case is a built-in, which is not a gap 
 
 Everything above is a guess, and the section below is how you stop guessing.
 
-Run [`manni tracevals capture`](/manni/tracevals/reference/cli/#capture) from a `SessionStart` hook.
+Run [`manni tracevals capture`](/manni/tracevals/reference/cli/#tracevals-capture) from a `SessionStart` hook.
 Before the session does any work it records the **sha256 of every instruction artifact in the
 project**, plus the **git SHA** it ran against. `run` finds that manifest and compares. The
 comparison is content identity, not a timestamp:
@@ -331,7 +331,7 @@ were none. That holds whether it names a **different session**, or the trace rec
 to check it against at all
 ([ADR 01024](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/tracevals/01024-capture-a-session-manifest-so-staleness-is-exact.md)).
 In the second case the run warns and names the file it ignored; pass
-[`--manifest`](/manni/tracevals/reference/cli/#run) to assert that it does belong.
+[`--manifest`](/manni/tracevals/reference/cli/#tracevals-run) to assert that it does belong.
 </Aside>
 
 A manifest only helps sessions recorded **after** you install the hook. Everything already on disk

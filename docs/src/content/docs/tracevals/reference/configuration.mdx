@@ -378,7 +378,7 @@ Where `--history` appends. See
 |---|---|---|---|---|
 | `dir` | string | no | `.manni/tracevals/sessions` | `capture --out` writes elsewhere; `run --manifest` reads elsewhere |
 
-Where [`capture`](/manni/tracevals/reference/cli/#capture) writes a session manifest and where `run`
+Where [`capture`](/manni/tracevals/reference/cli/#tracevals-capture) writes a session manifest and where `run`
 looks for one, resolved against the **project root** rather than the working directory. It sits
 inside `.manni/tracevals/` on purpose. That directory is already where the judge cache lives, and it
 is already gitignored. Being inside the project is what makes a manifest travel with its trace in
@@ -519,4 +519,4 @@ outcome and never changes the exit code. See
 **Reading a session manifest** has no knob either, beyond where to look. If one exists for the
 trace, `run` uses it; if not, every hash check reports `skipped` with the reason and the mtime
 heuristic above stands unchanged. There is nothing to turn on, because there is nothing to turn on
-*for* until someone runs [`capture`](/manni/tracevals/reference/cli/#capture).
+*for* until someone runs [`capture`](/manni/tracevals/reference/cli/#tracevals-capture).

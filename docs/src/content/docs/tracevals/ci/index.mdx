@@ -74,7 +74,7 @@ the familiar single-session report. See
 
 When the agent ran on the same machine, three selectors pull traces out of the session store instead
 of naming files. They are the same `--all-projects` and `--limit` that
-[`list`](/manni/tracevals/reference/cli/#list) uses, plus a time window:
+[`list`](/manni/tracevals/reference/cli/#tracevals-list) uses, plus a time window:
 
 ```bash
 npx @hawkeyexl/manni tracevals run --since 7d --limit 20 --deterministic-only
@@ -226,7 +226,7 @@ CI gets one thing badly wrong on its own, and it is worth fixing before you trus
 [staleness heuristic](/manni/tracevals/declare/coverage/#staleness) flags every artifact in your
 repository on every run. The warning is technically correct and completely useless.
 
-A [session manifest](/manni/tracevals/reference/cli/#capture) fixes it, because it compares content
+A [session manifest](/manni/tracevals/reference/cli/#tracevals-capture) fixes it, because it compares content
 rather than timestamps. The mechanics are the same three patterns above:
 
 | Pattern | Where the manifest is |

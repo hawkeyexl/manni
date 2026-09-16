@@ -343,7 +343,7 @@ measurement:
    ```
 
    A measurement that measured nothing must not report a pass. That is the same reasoning that makes
-   a [selector matching no trace](/manni/tracevals/reference/cli/#run) exit `2` rather than `0`.
+   a [selector matching no trace](/manni/tracevals/reference/cli/#tracevals-run) exit `2` rather than `0`.
 
 </Steps>
 
@@ -351,7 +351,7 @@ measurement:
 
 Everything else is exit `2` and operational. That covers a missing or invalid labels file, a label
 naming a trace outside the corpus, and a label matching no eval. See the
-[CLI reference](/manni/tracevals/reference/cli/#calibrate).
+[CLI reference](/manni/tracevals/reference/cli/#tracevals-calibrate).
 
 ## Bound what it runs
 
@@ -434,7 +434,7 @@ question.
   <LinkCard
     title="Every calibrate flag"
     description="--labels, --sweep, the three thresholds, and the exit-code contract."
-    href="/manni/tracevals/reference/cli/#calibrate"
+    href="/manni/tracevals/reference/cli/#tracevals-calibrate"
   />
   <LinkCard
     title="Every judge key"

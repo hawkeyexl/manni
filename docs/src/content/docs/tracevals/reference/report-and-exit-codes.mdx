@@ -25,7 +25,7 @@ import { Aside } from '@astrojs/starlight/components';
 
 `2` is written to stderr as `manni: <message>`; `0` and `1` write the report to stdout.
 
-[`calibrate`](/manni/tracevals/reference/cli/#calibrate) reads `0` and `1` differently, because it
+[`calibrate`](/manni/tracevals/reference/cli/#tracevals-calibrate) reads `0` and `1` differently, because it
 measures rather than gates. Disagreeing with your labels is exit `0`. Only a threshold you asked
 for, or a trace that could not be evaluated, makes it `1`.
 

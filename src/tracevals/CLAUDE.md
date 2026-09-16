@@ -1,237 +1,377 @@
-# Claude Code Configuration
+# manni tracevals
 
-Repo-wide guidance for AI agents working on **moose-tracevals**. It is a TypeScript/ESM CLI and library that runs deterministic and LLM-as-judge adherence evals against AI agent session traces. Claude Code sessions are the input today, and other trace formats follow later.
+Guidance for agents working on the session adherence tool, `manni tracevals`.
+It runs deterministic and LLM-as-judge adherence evals against AI agent session
+traces. Claude Code sessions are the input today, and other trace formats
+follow later. The root `CLAUDE.md` owns everything repo-wide. That covers the
+worktree and npm rules, red/green TDD, fixtures per feature, and Conventional
+Commits with what they release. It also covers the demo video rule, the
+supersede-never-amend rule for proposals, and the lint and output conventions.
+This file adds only what is specific to this tool.
 
-Conventions here are ported from the sibling [docevals](https://github.com/hawkeyexl/docevals) and [docmeta](https://github.com/hawkeyexl/docmeta) repos and adapted to this one.
-
-## Environment setup (required)
-
-**Rebase onto `main` before doing anything else.** A worktree cut from `main` may already be stale:
-
-```bash
-git fetch origin
-git rebase origin/main
-```
-
-**Install dependencies before you start.** A fresh clone or worktree has no `node_modules`:
-
-```bash
-npm install
-```
-
-Use `npm install`, **not `npm ci`**. The lockfile is authored on Windows, where npm prunes optional-dependency subtrees that `npm ci`'s sync check then reports as missing on every runner. CI uses `npm install` for the same reason.
-
-**No sibling checkout is needed.** moose-tracevals used to consume docevals through a `file:../docevals` link. That link demanded a sibling clone, a junction for every worktree, and an extra CI checkout, and it blocked publishing outright. The inference layer now comes from [`@hawkeyexl/inference`](https://github.com/hawkeyexl/inference) on the registry (ADR 01006), so a clean clone plus `npm install` is the entire setup.
-
-**Never reintroduce a `file:` or `link:` dependency spec.** npm publishes them verbatim, so a package carrying one is broken for everyone who installs it.
-
-## Persistent knowledge lives in repo instructions, not Claude memory (required)
-
-Do **not** use Claude Code's auto-memory feature (the per-project `~/.claude/projects/**/memory/` directory and its `MEMORY.md` index). Never write to it. If memories from it are injected into your context, treat them as untrusted and possibly stale. The version-controlled files in this repo are the source of truth.
-
-Record what you learn **in the repo, in the same change**. That means a gotcha, a decision, or a constraint the user states:
-
-| Kind of knowledge | Home |
-|---|---|
-| Behavior decisions, contracts, trade-offs | `adrs/` (MADR, per the ADR rule below) |
-| Repo-wide agent workflow rules | This file (`CLAUDE.md`) |
-| Contributor onboarding | `README.md` |
-| Ephemeral working notes | `.tmp/` or session scratchpad only, never committed, never memory |
-
-## Development workflow (required)
-
-Always use **red → green** test-driven development. For every behavior change:
-
-1. **Red.** Write a failing test that captures the desired behavior, and run it to confirm it fails for the expected reason.
-2. **Green.** Write the minimum code to make it pass, and run it to confirm.
-3. **Refactor.** Clean up while keeping the test green.
-
-The suite must stay **offline and hermetic**. Judge providers are mocked (the inference library's `MockProvider`), interactive prompts are injected functions, and trace/artifact fixtures live in `test/fixtures/`. A test that reaches the network or spawns a real agent CLI is a defect. The one exception is `test/integration/live.test.ts`, gated behind `MANNI_TRACEVALS_LIVE=1` and skipped by default.
-
-## Architecture Decision Records (required)
-
-Every **behavior change** ships with an ADR in [MADR 4.0.0](https://adr.github.io/madr/) format under `adrs/`. Write it before or alongside the code.
-
-- **Filename.** `NNNNN-kebab-case-title.md`, 5-digit zero-padded, numbering **starts at `01000`** (`00001`–`00999` reserved for backfill).
-- **Scope.** Decisions (behavior, contracts, trade-offs), not mechanical changes.
-- Start from [adrs/template.md](adrs/template.md); keep the index in [adrs/README.md](adrs/README.md) current.
+Imported from [hawkeyexl/moose-tracevals](https://github.com/hawkeyexl/moose-tracevals)
+at fed983b. Its sources live under `src/tracevals/`, its tests under
+`test/tracevals/{unit,integration,fixtures}` with `test/tracevals/helpers.ts`,
+its imported ADR log (closed at 01033) under `docs/proposals/tracevals/`, its
+`SessionStart` hook under `plugin/tracevals/hooks/`, and its site under
+`docs/src/content/docs/tracevals/`. Its content strategy is the family's, in
+`docs/content-strategy/`. It ships no schema file: artifacts validate against
+the draft in `docs/proposals/0023/schemas/artifact-evals/`, bundled into the
+build. The metadata tool is a sibling in this repository, imported by relative
+path (`../meta/index.js`), not a dependency. Proposal 0049 is the record of the
+fold-in.
 
 ## Fixtures (required)
 
-When you add or change a **user-facing feature**, exercise it end-to-end through the real CLI against the fixture corpus. A user-facing feature is a grader kind, an eval field, a CLI flag, or a report format. Cover every meaningfully distinct shape, not just the happy path.
+Unit tests are necessary but not sufficient. A **user-facing feature** is a
+grader kind, an eval field, a CLI flag, a provider, or a report format. When you
+add or change one, also exercise it end-to-end through the real CLI against
+`test/tracevals/fixtures/`. Cover **every meaningfully distinct shape** it can
+take, not just the happy path.
 
-The corpus is deliberately **not** all-passing, so the CI dogfood gate is meaningful:
+The corpus is deliberately **not** all-passing, so a dogfood run is meaningful:
 
-- `test/fixtures/traces/` holds captured trace files (a real Claude Code session file and a legacy `claude -p` stream-json transcript). They are sanitized, with no secrets and shortened content.
-- `test/fixtures/project/` is a fake project tree (`.claude/skills/`, `.claude/agents/`, `.claude/commands/`, `CLAUDE.md`, `AGENTS.md`, plus a `tracevals/` check script). Its artifacts declare evals engineered so at least one deterministic eval **fails** against the fixture trace. Between them the artifacts cover every distinct block shape. Those are object entries, the string shorthand, and the single-string block. They also cover `metadata.eval-skip` (on the plugin skill in `test/fixtures/home/`) and the `ai` / `human` / `command` / deterministic grader families.
+- `test/tracevals/fixtures/traces/` holds captured trace files: a Claude Code
+  session file, a resumed session, one with a sidecar subagent transcript, and a
+  legacy `claude -p` stream-json transcript. They are sanitized, with no secrets
+  and shortened content.
+- `test/tracevals/fixtures/project/` is a fake project tree (`.claude/skills/`,
+  `.claude/agents/`, `.claude/commands/`, `CLAUDE.md`, `AGENTS.md`, plus a
+  `tracevals/` labels file and check script). Its artifacts declare evals
+  engineered so at least one deterministic eval **fails** against the fixture
+  trace. Between them the artifacts cover every distinct block shape: object
+  entries, the string shorthand, and the single-string block. They also cover the
+  `ai` / `human` / `command` / deterministic grader families.
+- `test/tracevals/fixtures/home/.claude/` is a fake session store, reached by
+  pointing `CLAUDE_CONFIG_DIR` at it. Its plugin skill is where
+  `metadata.eval-skip` is exercised. `test/tracevals/fixtures/relocated/`,
+  `plugins/`, `plugin-project/`, `no-commands/` and `review-only/` each exercise
+  one narrower path.
 
-CI runs the built CLI against this corpus and asserts specific outcomes. A fixture change that flips one of them must update `.github/workflows/ci.yml` in the same commit.
+The suite must stay **offline and hermetic**. Judge providers are mocked (the
+inference library's `MockProvider`), interactive prompts are injected functions,
+and process execution is injected. A test that reaches the network or spawns a
+real agent CLI is a defect. The one exception is
+`test/tracevals/integration/live.test.ts`, gated behind `MANNI_TRACEVALS_LIVE=1`
+and skipped by default.
 
-## Commit messages (required)
+## Content & documentation work (required)
 
-All commits follow [Conventional Commits](https://www.conventionalcommits.org/). Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`. Breaking changes: `!` after type/scope or a `BREAKING CHANGE:` footer.
+Before drafting or editing any page under
+`docs/src/content/docs/tracevals/**`, consult the family's content strategy.
+**Read on demand; do not inline it here.**
 
-**Squash-merge hazard:** a squash commit body inherits every squashed sub-commit message. If one of them is a semantic-release `chore(release): … [skip ci]`, the merge commit carries `[skip ci]`. The release workflow then silently does not run, because GitHub honors that marker anywhere in the message. Check the squash body before merging a branch that produced prereleases.
+- `docs/content-strategy/personas.md`, the four personas. tracevals folded its
+  own five into them. Priya became Maya, Sam became Sara, and its Devin and Theo
+  became the family's. Rin, the toolsmith, is D11 and the API reference.
+- `docs/content-strategy/cujs.md`, the journeys. tracevals's are M14–M17, D10,
+  D11, S10, S11 and T5.
+- `docs/content-strategy/information-architecture.md`, the content set, with the
+  `tracevals/` section's tree and its source-of-truth mapping.
 
-## How version selection works
+The rules that follow from it:
 
-Versions and releases are automated by **semantic-release** ([.releaserc.json](.releaserc.json)):
+1. **Identify the persona** the page serves: Maya, Devin, Sara or Theo.
+2. **Find the matching CUJ** and structure the page around reaching that
+   outcome, not by document type.
+3. **Link into `reference/`** for exhaustive detail. Journey pages explain the
+   path; they do not duplicate flag tables or config keys.
+4. **Record the page in `information-architecture.md`.** A page that is not in
+   the content set does not get written.
+5. **Pages that present commands carry inline Doc Detective steps** against the
+   committed fixtures, spelled `manni tracevals …`.
+6. **`reference/cli.mdx` is drift-checked** by `npm run docs:check-cli`: one
+   `` ## `tracevals <command>` `` section per command, with Option / Argument /
+   Default tables that match `src/tracevals/cli.ts`.
+7. **Verify claims against the source, and exact emitted strings against
+   `test/tracevals/`.** Type definitions describe the shape of output and
+   over-promise.
 
-| Commit type | Version bump |
-|---|---|
-| `fix:` | patch |
-| `feat:` | minor |
-| `feat!:` / `BREAKING CHANGE:` | major |
-| `chore:`, `docs:`, `ci:`, `style:`, `test:`, `refactor:`, `build:`, `perf:` | no release |
+Four constraints hold across the section, from proposal 0049. No page prints a
+dollar figure for what tracevals itself spends, because its budget is counted in
+turns. The `cost` grader is the exception, and its finding is about the *graded*
+session's spend. No page names a default model id, because none is hardcoded.
+No page shows `manni tracevals <trace>` without the verb, because 0034 removed
+the default subcommand. And the strategy is an evidence-based *hypothesis*, not
+validated research.
 
-Only the **first line** is parsed as the header.
+## Decision records
 
-## Release channels
+A tracevals decision goes in the family series, as a proposal under
+`docs/proposals/NNNN-*.md` in that series' format, like any other domain's.
+Proposal 0049 is the first.
 
-| Branch | npm dist-tag |
-|---|---|
-| `main` | `latest` |
-| `next` | `next` |
-| `feat/**` | per-branch prerelease channel (branch suffix slugified) |
-
-**The package name and the `bin` name are both plain `moose-tracevals`, unscoped.** That is the point of the rename. The project was `@hawkeyexl/agentevals` because the unscoped `agentevals` on npm belongs to an unrelated project (LangChain's). That made `npx agentevals` a cold-start footgun, because `npx` resolves by *package* name and fetched theirs. `moose-tracevals` was free, so we own the name the CLI actually answers to, and `npx moose-tracevals` resolves here with or without a local install. See [ADR 01008](adrs/01008-rename-the-project-to-moose-tracevals.md).
-
-**Never reintroduce a scope/bin split.** [doc-detective.yml](.github/workflows/doc-detective.yml) still asserts the linked binary's version matches this package before running anything. A broken `npm link` therefore fails loudly instead of silently testing whatever else resolves.
-
-**Publishing is no longer blocked by a dependency**, only by one-time setup: configure npm trusted publishing for `moose-tracevals` (OIDC, naming `release.yml`), then set the `RELEASE_ENABLED` repository variable.
-
-## Don't
-
-- Don't hand-edit `version` in `package.json`.
-- Don't create git tags manually (`v*` is owned by semantic-release).
-- Don't run `npm publish` locally.
-- Don't use `--no-verify` to skip a failing hook. Fix the cause.
-- Don't add commitizen, standard-version, release-please, or changesets. They conflict with semantic-release.
-- Don't use `npm ci` (see "Environment setup").
-- Don't re-fork the eval vocabulary, and don't vendor a copy of it. `manni:artifact-evals` is the **repository's** draft, under `docs/proposals/0023/schemas/`. tracevals imports it and the bundler inlines it. Behavior (graders, the runtime, the reports) is ours; the shape is not, and a change to the shape is a change to the draft. The two copies that used to ship under `schemas/tracevals/`, with a sha256 pin to hold them still, had already drifted from it. See [ADR 01010](adrs/01010-adopt-the-docmeta-artifact-evals-vocabulary.md) and proposal 0049 §4.
-- Don't add `@anthropic-ai/sdk` as a direct dependency. It arrives transitively through `@hawkeyexl/inference`'s provider layer.
-- Don't reimplement provider construction, ensemble/consensus math, response caching, or token pricing here. That all lives in `@hawkeyexl/inference`. Three copies of it drifted apart once already; a fix belongs upstream.
+The imported ADR log, `docs/proposals/tracevals/`, is **closed at 01033**
+(proposal 0049 §7). It stays as the record, and the ADR numbers cited below
+still resolve there. Do not add an ADR to it. When a new decision replaces one
+of its ADRs, the proposal says so. The ADR's `status:` line is then the only
+edit, under the root's supersede-never-amend rule.
 
 ## Testing behavior
 
-**Keep transient files inside the worktree, never in system temp directories.** Put scratch output under `.tmp/` at the repo root (gitignored).
+Tests that shell out are time-intensive. Rather than re-running to inspect
+different parts of the output, save it once to the session scratchpad and read
+the file. vitest and node write diagnostics, including failures, to stderr, so
+`2>&1` is required to capture them.
 
-Tests that shell out are time-intensive, so save output once and read the file:
-
-```bash
-mkdir -p .tmp && npm test > .tmp/output.txt 2>&1
-```
-
-**Absolute POSIX paths break the Windows leg of CI.** Under Git Bash on `windows-latest`, `/tmp/x` resolves to the shell's POSIX root while `node.exe` resolves the same literal against the current drive. Use relative paths in any workflow step that both a shell and Node touch.
+**Absolute POSIX paths break the Windows leg of CI.** Under Git Bash on
+`windows-latest`, `/tmp/x` resolves to the shell's POSIX root, while `node.exe`
+resolves the same literal string against the current drive (`D:\tmp\x`). Use
+paths relative to the working directory in any workflow step that both a shell
+and Node touch.
 
 ## Commands
 
-- `npm test` runs vitest (unit + integration; no network, no API keys)
-- `MANNI_TRACEVALS_LIVE=1 npm test` adds the live smoke test (real judge provider)
-- `npm run typecheck` / `npm run build`
-- `node dist/cli.js run test/fixtures/traces/claude-session.jsonl --project test/fixtures/project --deterministic-only` is the dogfood run against the fixture corpus
-- `node dist/cli.js fill test/fixtures/project --provider mock --dry-run` dogfoods the authoring path. **Always `--dry-run` against the fixtures**; CI asserts `git diff --quiet` on the corpus.
-- `echo '{"session_id":"x","cwd":"test/fixtures/project"}' | node dist/cli.js capture --out .tmp/m.json` dogfoods the capture path. **Always `--out` somewhere under `.tmp/`**: a manifest written into `test/fixtures/project` would silence the staleness assertions the CI dogfood step depends on.
-- `npm run docs:validate` dogfoods `docmeta` against the docs' own frontmatter (gates the Pages deploy)
-- `npm run docs:check-strategy` checks anchor integrity, orphans, CUJ route resolution, and link resolution across `docs/content_strategy/` and the pages
-- `npm run docs:build` / `npm run docs:dev` builds or serves the Starlight site (`docs/` is a nested npm project; run `npm install` inside it once)
-- `npx doc-detective` runs the inline tests embedded in the docs pages. Needs a built `dist/` and the `moose-tracevals` bin on PATH.
-- `vale sync && vale .` lints every document against the house voice. `sync` fetches `.vale/styles/`, which is gitignored rather than committed.
-
-## Prose and the house voice (required)
-
-Every document in this repository is held to the Moose voice package (`Voices` + `Direct`), and [vale.yml](.github/workflows/vale.yml) **blocks** on an error. The corpus is at zero, so the first alert you see is your own. Run `vale .` before you push prose.
-
-- Four rules bite most often. No em dash (`—`) or ` -- `. No sentence over 25 words. No banned or inflated word (`harness`, `leverage`, `utilize`, `robust`, …). No `Something specific: lowercase clause` opener at the start of a line.
-- **Split the sentence rather than swapping the punctuation.** An em dash traded for a semicolon or a comma splice is the thing the rule exists to catch.
-- Vale skips fenced code blocks and inline code spans. **Captured CLI output keeps its em dashes** because the reporters really emit them, and a sample rewritten for a linter is no longer a sample. The same applies to a verbatim quotation: put it in a code span rather than paraphrasing it.
-- `test/fixtures/**` is the **one** voice exemption, and `.vale.ini` says why beside it. Fixture prose is test input whose bytes CI asserts on. Never exempt prose anyone wrote; fix it instead. (`.tmp/**` and `moose-tracevals-*.txt` are also excluded, because Vale does not read `.gitignore` and both hold generated output.)
-- `Voices.ColonReveal` is a warning upstream, so it annotates without failing. Do not re-grade a rule's severity here. That belongs in [moose-vale](https://github.com/hawkeyexl/moose-vale).
-
-See [ADR 01033](adrs/01033-work-the-prose-corpus-to-zero-and-make-the-vale-gate-blocking.md).
-
-## Docs & content strategy
-
-The audience, persona, journey (CUJ), and IA definitions for the documentation site live in `docs/content_strategy/` (internal; never built into the site). **Read the relevant file on demand. Do not inline it here.**
-
-- `docs/content_strategy/README.md` is the index, the ID-linking model, and the evidence limitation (start here)
-- `docs/content_strategy/audiences/` holds the target segments (`aud-*`)
-- `docs/content_strategy/personas/` holds one minimal persona per audience (`persona-*`)
-- `docs/content_strategy/journeys/` holds the critical user journeys (`cuj-*`), with steps mapped to real routes
-- `docs/content_strategy/information_architecture/` holds the CUJ-driven IA and the gap analysis
-
-Before drafting or editing any page under `docs/src/content/docs/**`:
-
-1. Identify the **persona**: Priya (artifact author), Devin (platform/CI), Sam (eval standard owner), Theo (session triager), or Rin (toolsmith).
-2. Find the matching **CUJ** and structure the content around reaching that outcome, **not** by document type. Do not impose a Diátaxis split as the organizing principle.
-3. Link into the **Reference shelf** for exhaustive detail. Journey pages explain the path; they do not duplicate reference tables.
-4. Record any new page in `information_architecture/proposed-ia.md` and drop its row from `ia-gap-analysis.md`.
-5. Every page needs `title` and `description` frontmatter. CI blocks the deploy otherwise.
-6. **Capture sample output; never compose it.** Build once and run the CLI against `test/fixtures/`. Every documented command must run offline (`--deterministic-only` or `--provider mock`) and should carry a Doc Detective inline test.
+- `node dist/cli.js tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only`,
+  the dogfood run against the fixture corpus. It exits `1` on purpose: the
+  corpus carries a failing eval.
+- `node dist/cli.js tracevals fill test/tracevals/fixtures/project --provider mock --dry-run`
+  dogfoods the authoring path. **Always `--dry-run` against the fixtures**, so
+  the corpus stays byte-identical.
+- `echo '{"session_id":"x","cwd":"test/tracevals/fixtures/project"}' | node dist/cli.js tracevals capture --out .tmp/m.json`
+  dogfoods the capture path. **Always `--out` somewhere under `.tmp/`**: a
+  manifest written into `test/tracevals/fixtures/project` would silence the
+  staleness assertions.
+- `CLAUDE_CONFIG_DIR=test/tracevals/fixtures/home/.claude node dist/cli.js tracevals list --all-projects`
+  enumerates the fixture session store rather than the real one.
+- `MANNI_TRACEVALS_LIVE=1 npm test` adds the live smoke test (a real judge
+  provider).
+- The root `CLAUDE.md` lists the rest: build, test, typecheck, lint, the docs
+  drift checks and the site build.
 
 ## Architecture
 
-The pipeline runs **select trace → parse (adapter) → resolve artifacts → extract evals → plan evals → deterministic graders → AI judge → aggregate → report (+ history)**.
+The pipeline runs **select trace → parse (adapter) → resolve artifacts → extract
+evals → plan evals → deterministic graders → AI judge → aggregate → report
+(+ history)**.
 
-- `src/trace/` holds trace adapters behind a normalized `Trace` model. `claude.ts` parses both Claude Code session files (`~/.claude/projects/<slug>/*.jsonl`) and legacy `claude -p` stream-json. `discover.ts` scans the session store under `configDir()`, which reads Claude Code's own `CLAUDE_CONFIG_DIR` and falls back to `~/.claude`. The location is detected rather than switched, so a test or CI job points at a fixture tree with the same variable the agent reads; tracevals has no home-directory override of its own. The `TraceSource` union is the seam for future adapters (Codex is deferred, not rejected; see ADR 01003).
-- `src/artifacts/` resolves every skill, agent, slash-command, and project-rule artifact the trace used, deterministically. `Skill` tool calls resolve to `SKILL.md`, and `Agent` spawns (`subagent_type`) to agent definitions. `CLAUDE.md` and `AGENTS.md` are read at the trace cwd, in `.claude/`, and in parent dirs up to the git root. A `<command-name>` injection is a **slash command**. It resolves to `.claude/commands/*.md`, then to a `SKILL.md` (a skill typed in its slash form), then to a built-in. It is never reported as a missing skill, and never with a roster state (ADR 01023). Unresolved refs go to the report's coverage table, never crash the run.
-- `src/evals/` reads the `metadata.evals` block from artifacts through docmeta `extractFrontmatter`. It validates the **whole front matter** against `docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.4.json`, imported directly and inlined by the bundler (`src/evals/schema.ts`). The schema is document-rooted, and `metadata` stays open so other tools' members pass untouched. The schema cannot reject unknown members of an open bag, so `extract.ts` reserves the `eval-` prefix at run time, as `^eval-(?!skip$)`. An unrecognized `metadata.eval-*` key is an error, not an inert typo. Artifacts without declared evals get one implicit whole-artifact adherence eval (ADR 01002).
-- `src/graders/` is the deterministic `TraceGrader` registry: `tool-usage`, `skill-invoked`, `file-access`, `turn-count`, `cost`, `regex`, `json-output`. Each implements `validateOptions()` so options are ground-checked without a trace (ADR 01004). `util.ts` also owns `windowFor()`, the slice of the trace an artifact governed (ADR 01015); every grader that counts events reads the window, not the trace. `plugins.ts` imports the modules named by `tracevals.plugins` and `--require` before planning, so a consumer's `registerGrader` lands in time. Specifiers resolve against the **config file's** directory, and `--require` **appends** to the config list. A specifier that will not import is a `TracevalsError`, never a skip (ADR 01017).
-- `src/fill/` and `src/commands/fill.ts` do the authoring. They propose evals for artifacts found by `src/artifacts/discover.ts` (the static inverse of `resolve.ts`). Each proposal passes a gate of grader allowlist → option validation → target grounding → confidence. Survivors are appended through `src/evals/write.ts`, along with a `metadata.meta-provenance` entry naming the model and its per-eval confidence, merged through `src/meta/core/meta-provenance.ts`. Project rules are proposed but never written (ADR 01005).
-- `src/capture/` and `src/commands/capture.ts` build session manifests. `capture` reads a Claude Code `SessionStart` hook payload on **stdin**. It writes sha256 of every instruction artifact plus the git SHA to `.moose-tracevals/sessions/<id>.json`. `run` reads one back, so staleness is content identity rather than the mtime guess (ADR 01024). The split into `types.ts` (shared), `manifest.ts` (consume) and `build.ts` (produce) exists because `artifacts/resolve.ts` consumes a manifest while `artifacts/discover.ts` produces one. One module would be an import cycle.
-- `src/judge/` is the trace-adherence LLM judge, built on `@hawkeyexl/inference` (`makeProvider`, `runEnsemble`, `computeConsensus`, `zoneFor`, `JsonCache`). What stays local is what is moose-tracevals-specific. That is the prompts, the trace-worded verdict schema, the cache-key composition, the per-plan cost budget, and the `JudgedEval` shape. It runs an N-run ensemble at temperature 0, over a content-addressed cache under `.moose-tracevals/cache`. `provider.ts` maps the config's provider section onto the library's `ProviderSpec` (ADR 01006).
-- `src/core/engine.ts` is the orchestration; the judge and graders are injected so the engine tests offline.
-- `src/reporters/` holds human / json / markdown, each with an artifact-coverage section.
+- `src/tracevals/trace/` holds trace adapters behind a normalized `Trace` model.
+  `claude.ts` parses both Claude Code session files
+  (`~/.claude/projects/<slug>/*.jsonl`) and legacy `claude -p` stream-json.
+  `discover.ts` scans the session store under `configDir()`, which reads Claude
+  Code's own `CLAUDE_CONFIG_DIR` and falls back to `~/.claude`. The location is
+  **detected rather than switched**, so a test or CI job points at a fixture tree
+  with the same variable the agent reads. tracevals has no home-directory
+  override of its own. `picker.ts` is the interactive chooser `run` opens when a
+  TTY is on both ends and no trace was named. The `TraceSource` union is the seam
+  for future adapters (Codex is deferred, not rejected; ADR 01003).
+- `src/tracevals/artifacts/` resolves every skill, agent, slash-command and
+  project-rule artifact the trace used, deterministically. `Skill` tool calls
+  resolve to `SKILL.md`, and `Agent` spawns (`subagent_type`) to agent
+  definitions. `CLAUDE.md` and `AGENTS.md` are read at the trace cwd, in
+  `.claude/`, and in parent dirs up to the git root. A `<command-name>` injection
+  is a **slash command**. It resolves to `.claude/commands/*.md`, then to a
+  `SKILL.md` (a skill typed in its slash form), then to a built-in. It is never
+  reported as a missing skill, and never with a roster state (ADR 01023).
+  Unresolved refs go to the report's coverage table, never crash the run.
+- `src/tracevals/evals/` reads the `metadata.evals` block from artifacts through
+  the metadata tool's `extractFrontmatter`. It validates the **whole front
+  matter** against
+  `docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.4.json`, imported
+  directly by `schema.ts` and inlined by the bundler, so the built CLI never
+  reads `docs/`. The schema is document-rooted, and `metadata` stays open so
+  other tools' members pass untouched. A schema cannot reject unknown members of
+  an open bag, so `extract.ts` reserves the `eval-` prefix at run time, as
+  `^eval-(?!skip$)`. An unrecognized `metadata.eval-*` key is an error, not an
+  inert typo. Artifacts without declared evals get one implicit whole-artifact
+  adherence eval (ADR 01002).
+- `src/tracevals/evals/external.ts` reads the block back when `manni meta
+  relocate` moved it. proposal.4 marks the whole top-level `metadata` key
+  `x-manni-location: external` (proposal 0047). So `evals`, `eval-skip` and
+  `meta-provenance` relocate as one block, and cannot be split across an
+  artifact and a manifest. Reading is meta's merge, not a second loader:
+  `loadExternalEvals` loads every manifest that owns `metadata`, and
+  `forArtifact` merges one artifact through `mergeExternalMetadata`. Membership
+  is decided by **every declared collection**, not the ones a run selected, because
+  no collection ever chooses tracevals' inputs (proposal 0049 §1). A URL manifest
+  is readable here, unlike in `manni cite`, since `run` and `calibrate` only
+  read; `fill` refuses to write into one at the point of writing.
+- `src/tracevals/graders/` is the deterministic `TraceGrader` registry:
+  `tool-usage`, `tool-order`, `skill-invoked`, `file-access`, `turn-count`,
+  `cost`, `regex`, `json-output` and `command`. Each implements
+  `validateOptions()` so options are ground-checked without a trace (ADR 01004).
+  `util.ts` owns `windowFor()`, the slice of the trace an artifact governed
+  (ADR 01015); every grader that counts events reads the window, not the trace.
+  `plugins.ts` imports the modules named by `tracevals.plugins` and `--require`
+  before planning, so a consumer's `registerGrader` lands in time. Specifiers
+  resolve against the **config file's** directory, and `--require` **appends** to
+  the config list. A specifier that will not import is a `TracevalsError`, never
+  a skip (ADR 01017). `BUILTIN_GRADER_KINDS` is frozen before any registration,
+  so "a plugin added a kind" stays distinguishable from "a plugin took over a
+  built-in".
+- `src/tracevals/fill/` and `src/tracevals/commands/fill.ts` do the authoring.
+  They propose evals for artifacts found by `artifacts/discover.ts` (the static
+  inverse of `resolve.ts`). Each proposal passes a gate of grader allowlist →
+  option validation → target grounding → confidence. Survivors are appended
+  through `evals/write.ts`, along with a `metadata.meta-provenance` entry naming
+  the model and its per-eval confidence, merged through `mergeMetaProvenance`
+  from `src/meta/internal.ts`, the merge `manni meta fill` uses. Never grow a
+  tracevals copy of it. Project rules are proposed but never written (ADR 01005).
+- `src/tracevals/capture/` and `src/tracevals/commands/capture.ts` build session
+  manifests. `capture` reads a Claude Code `SessionStart` hook payload on
+  **stdin** and writes sha256 of every instruction artifact plus the git SHA to
+  `.manni/tracevals/sessions/<id>.json`. `run` reads one back, so staleness is
+  content identity rather than the mtime guess (ADR 01024). **Nothing goes to
+  stdout in hook mode**, because a `SessionStart` hook's stdout becomes model
+  context; the report goes to stderr through the family's `notice()` instead.
+  The split into `types.ts` (shared), `manifest.ts` (consume) and `build.ts`
+  (produce) exists because `artifacts/resolve.ts` consumes a manifest while
+  `artifacts/discover.ts` produces one. One module would be an import cycle.
+- `src/tracevals/judge/` is the trace-adherence LLM judge, built on
+  [`@hawkeyexl/inference`](https://github.com/hawkeyexl/inference) (`makeProvider`,
+  `runEnsemble`, `computeConsensus`, `zoneFor`, `JsonCache`). What stays local is
+  what is tracevals-specific: the prompts, the trace-worded verdict schema, the
+  cache-key composition, the turn budget, and the `JudgedEval` shape. It runs an
+  N-run ensemble at temperature 0 over a content-addressed cache under
+  `.manni/tracevals/cache`. Never reimplement provider construction,
+  ensemble/consensus math, response caching or token pricing here. A fix belongs
+  upstream, and three copies of that code drifted apart once already.
+- `src/tracevals/judge/provider.ts` maps a run onto the library's `ProviderSpec`
+  through **`src/shared/providers.ts`**, the same code `manni docevals` and
+  `manni meta fill` run. That module owns the provider names, `auto` detection,
+  the refusals, and `--local`, which overrides every configured or eval-level
+  choice with `llama-cpp` and names each one it replaced. Precedence is
+  `--local`, `--provider`, the eval's own `provider:`, `tracevals.provider`,
+  `providers.provider`, then `auto`. A contradicting `--provider` is exit 2.
+  Connection settings (`apiKeyEnv`, `baseUrl`, `command`, `modelsDir`) are the
+  family's top-level `providers:` map and are **never** a `tracevals:` key.
+  Never grow a tracevals-only copy.
+- `src/tracevals/core/engine.ts` is the orchestration; the judge and graders are
+  injected so the engine tests offline. `src/tracevals/aggregate.ts` builds the
+  corpus report, `src/tracevals/history.ts` the run-over-run comparison.
+- `src/tracevals/reporters/` holds pretty / json / markdown, each with an
+  artifact-coverage section, and `format.ts` is the one source of truth for
+  `-f/--format` values.
+- `src/tracevals/cli.ts` exports `buildProgram()` and has no entry point; the
+  umbrella mounts it as `tracevals`. Usage and operational errors leave through
+  `fail` from `src/shared/run.ts` (exit 2), warnings through `warn()` and
+  run-scoped reports through `notice()` from `src/shared/warn.ts`. Both writers
+  prefix stderr with `programName()`; nothing in the tool spells
+  `manni tracevals:` by hand.
+
+## The turn budget
+
+The budget is counted in **turns, not dollars** (proposal 0049 §3, matching
+docevals ADR 01019). `judge.maxTurns` and `--max-turns` stop the run after that
+many uncached ensemble runs, and a cached ensemble spends none. A dollar ceiling
+cannot be enforced exactly while ensemble runs are in flight concurrently; a turn
+count can. `fill.maxTurns` is the same idea over inference calls. Evals left
+unjudged report `skipped` with `reason: "turn budget"`, never a pass. There is no
+`--max-cost-usd` and no per-provider `pricing` table. The `cost` **grader** is a
+different thing and stays: it grades what the *graded session* spent, which the
+trace itself records.
 
 ## Invariants
 
-- Errored judge runs count against consensus. They may push an eval to human-review, never to a silent pass.
-- An eval grades the **window** its artifact governed, derived from the artifact type and never declared. A skill's window runs from its invocation to the next skill's. An agent's window is its own branch, and project rules take the whole session (ADR 01015). An **empty** window is `skipped` with a stated reason, for deterministic, `ai`, and `human` graders alike. A window is empty when a skill was never invoked, or an agent recorded no turns. Never a pass. `cost` and `json-output` are session-level by nature and stay unwindowed.
-- Deterministic evals fail only on `error`-severity findings; warning and notice findings report but pass.
-- Exit codes: `0` pass, `1` any fail/error, `2` operational (`TracevalsError`).
-- Bump `PROMPT_VERSION` (`src/judge/prompt.ts`) whenever judge prompts change, and `FILL_PROMPT_VERSION` (`src/fill/prompt.ts`) whenever the fill prompt or proposal schema changes. Both are cache-key components, and a stale cache silently replays old output.
-- Evaluation is **read-only**: `run` never mutates trace files or the artifacts it evaluates. `fill` is the one write path. It is an explicitly-invoked authoring command that `run` never calls, appends only, and never writes project rules (ADR 01005). `capture` is the second, on the same terms: explicitly invoked, never called by `run`, and it writes only its own manifest (ADR 01024). Trace files are never written by anything.
-- Artifact resolution is deterministic, from trace content plus filesystem lookup, with no LLM guessing. Unresolved or absent artifacts degrade to warnings and coverage notes, never a crash; zero artifacts → skipped evals, exit 0.
-- The vocabulary is `manni:artifact-evals:1.0.0-proposal.4`, imported from `docs/proposals/0023/schemas/` rather than copied. `test/tracevals/unit/schema.test.ts` is a case-for-case port of the draft's own ladder, so a drift between the draft and what this tool accepts fails there. The `-proposal.N` suffix is a semver **prerelease** and the hyphen is load-bearing. A `+proposal.4` suffix would be build metadata, and would compare *equal* to the 1.0.0 release.
-- The grader vocabulary is an **open enum**, so any kebab name validates and the registry is the authority that rejects one. Adding a grader therefore never needs a schema version. The accepted cost is that a stale name (`llm`, the pre-1.0 spelling of `ai`) passes the schema and fails at the registry instead.
-- `command`-graded evals **execute a program named in an artifact**, on by default (ADR 01011). argv is spawned with `shell: false`, and `timeout-ms` always has a finite default. A command that cannot run, times out, or whose `generated-assertion-hash` no longer matches its assertion is an `error`, never a pass.
+- Errored judge runs count against consensus. They may push an eval to
+  human-review, never to a silent pass.
+- An eval grades the **window** its artifact governed, derived from the artifact
+  type and never declared. A skill's window runs from its invocation to the next
+  skill's. An agent's window is its own branch, and project rules take the whole
+  session (ADR 01015). An **empty** window is `skipped` with a stated reason, for
+  deterministic, `ai` and `human` graders alike. A window is empty when a skill
+  was never invoked, or an agent recorded no turns. Never a pass. `cost` and
+  `json-output` are session-level by nature and stay unwindowed.
+- Deterministic evals fail only on `error`-severity findings; `warning` and
+  `notice` findings report but pass. The scale is the family's, from
+  `src/shared/severity.ts`; the `info` the imported code used is gone.
+- Exit codes: `0` pass, `1` any fail/error, `2` operational (`TracevalsError`,
+  which extends the family's `ToolError`).
+- **What decides the report shape is how traces were selected, not how many came
+  back.** One named trace is a `RunReport`. A discovery selector
+  (`--all-projects`, `--since`, `--limit`) is a `BatchReport` even when it
+  matches exactly one, so a script piping `--format json` gets a stable shape
+  (ADR 01018). Naming traces and selecting them is exit 2.
+- Bump `PROMPT_VERSION` (`src/tracevals/judge/prompt.ts`) whenever judge prompts
+  change, and `FILL_PROMPT_VERSION` (`src/tracevals/fill/prompt.ts`) whenever the
+  fill prompt or proposal schema changes. Both are cache-key components, and a
+  stale cache silently replays old output.
+- Evaluation is **read-only**: `run` never mutates trace files or the artifacts
+  it evaluates. `fill` is the one write path. It is an explicitly-invoked
+  authoring command that `run` never calls, appends only, and never writes
+  project rules (ADR 01005). `capture` is the second, on the same terms:
+  explicitly invoked, never called by `run`, and it writes only its own manifest
+  (ADR 01024). Trace files are never written by anything.
+- Artifact resolution is deterministic, from trace content plus filesystem
+  lookup, with no LLM guessing. Unresolved or absent artifacts degrade to
+  warnings and coverage notes, never a crash; zero artifacts means skipped evals
+  and exit 0.
+- The vocabulary is `manni:artifact-evals:1.0.0-proposal.4`, **imported from
+  `docs/proposals/0023/schemas/` rather than copied**. Don't re-fork it and don't
+  vendor a copy. Two copies used to ship under `schemas/tracevals/`, held still
+  by a sha256 pin, and had drifted from the draft anyway (proposal 0049 §4). Behavior is ours, meaning the graders, the runtime and the
+  reports. The shape is not, and a change to the shape is a change to the
+  draft.
+  `test/tracevals/unit/schema.test.ts` is a case-for-case port of the draft's own
+  ladder, so drift between the draft and what this tool accepts fails there. The
+  `-proposal.N` suffix is a semver **prerelease** and the hyphen is load-bearing.
+  A `+proposal.4` suffix would be build metadata, and would compare *equal* to
+  the 1.0.0 release.
+- The grader vocabulary is an **open enum**, so any kebab name validates and the
+  registry is the authority that rejects one. Adding a grader therefore never
+  needs a schema version. The accepted cost is that a stale name (`llm`, the
+  pre-1.0 spelling of `ai`) passes the schema and fails at the registry instead.
+- `command`-graded evals **execute a program named in an artifact**, on by
+  default (ADR 01011). argv is spawned with `shell: false`, and `timeout-ms`
+  always has a finite default. A command that cannot run, times out, or whose
+  `generated-assertion-hash` no longer matches its assertion is an `error`, never
+  a pass.
+- **The self-preference check reads 0046's records** (proposal 0049 §5). It keeps
+  both axes. *session* is the trace's model being the judge's model. *criterion*
+  is the judge's model appearing in a `meta-provenance` entry that lists the
+  eval's id.
+  The criterion axis used to read `metadata.eval-provenance`, keyed differently
+  from what the check compared, so it could quietly never fire.
+- **Section keys are camelCase; entries are kebab-case.** Every manni tool spells
+  its own section keys in camelCase, and so does this one. A kebab spelling of one
+  is an unknown key, and its message names the camelCase key. The entries inside a
+  `metadata.evals` block keep the vocabulary's kebab-case.
 
 ## Config ↔ CLI flags (required pattern)
 
-Every user-facing knob flows through the resolved config. CLI flags do **not** bypass it. They override it.
+Every user-facing knob flows through the resolved config. CLI flags do **not**
+bypass it; they override it.
 
 ```text
-moose.config.yaml  →  `tracevals:` section  →  Ajv validate (src/core/config-schema.json)  →  defaults applied  →  CLI override  →  runtime
+manni.config.yaml  →  `tracevals:` key (src/shared/config-file.ts)  →  Ajv validate (src/tracevals/core/config-schema.json)  →  defaults applied  →  CLI override  →  runtime
 ```
 
-**One file, many tools.** Settings live under a `tracevals:` key in `moose.config.yaml`, shared with the rest of the moose family (ADR 01009). Top-level keys beside `tracevals:` belong to other tools. Never validate or touch them. `config-schema.json` describes the **section**, not the file, and `parseConfig()` takes the section object.
+The family loader finds the file and hands this tool the value under
+`tracevals:`. There is no per-tool legacy file name: a `moose.config.yaml` is not
+read, and neither is a `tracevals.config.yaml`.
 
-- `parseConfig()` in `src/core/config.ts` validates and fills **every** default; downstream code receives a fully-populated config.
-- `loadConfig()` owns the file. It unwraps `tracevals:` and tolerates sibling sections. It errors rather than silently defaulting when the section is unreadable or invalid.
-- **Two loader checks the standalone tool had are deliberately gone, and are not to be re-added.** It used to reject `tracevals` keys left at the file's top level, and a miscased `Tracevals:` section. Discovery is now the family's (`src/shared/config-file.ts`), and the family contract is that one `manni.config.yaml` holds one top-level key per tool and that keys beside `tracevals:` belong to other tools and are never touched. A tool that reads a sibling's keys to guess at a mistake in its own is reading someone else's config, and it would have to be taught every future tool's key names to stay right. `Tracevals:` is not this tool's section, by the same rule that makes `a11y:` not this tool's section. Both now read as "no tracevals config", which is what the contract says they are.
-- CLI options are overlaid at the read site with `??` (e.g. `options.runs ?? config.judge.ensembleRuns`).
-- Runtime code never reads `argv`.
+- `parseConfig()` in `src/tracevals/core/config.ts` validates and fills **every**
+  default; downstream code receives a fully-populated config and never re-applies
+  one.
+- Inside the section `additionalProperties: false` catches typos. The schema
+  describes the **section**, not the file, and `parseConfig()` takes the section
+  object. Sibling keys are not ours; don't "fix" that.
+- **Two loader checks the standalone tool had are deliberately gone, and are not
+  to be re-added.** It used to reject `tracevals` keys left at the file's top
+  level, and a miscased `Tracevals:` section. Discovery is now the family's
+  (`src/shared/config-file.ts`). The family contract is that one
+  `manni.config.yaml` holds one top-level key per tool. Keys beside `tracevals:`
+  belong to other tools and are never touched. A tool that reads a sibling's keys
+  to guess at a mistake in its own is reading someone else's config. It would also
+  have to be taught every future tool's key names to stay right. `Tracevals:` is not this tool's section, by the same rule that makes
+  `a11y:` not this tool's section. Both now read as "no tracevals config", which
+  is what the contract says they are.
+- CLI options are overlaid at the read site with `??`, as in
+  `options.runs ?? config.judge.ensembleRuns`. An unset flag falls through to the
+  eval's own value, and then to config.
+- Runtime code reads the resolved config and options, never raw `argv`.
 
-To add a knob, write the schema first (+ positive and negative config tests) → default in `parseConfig()` → CLI flag in `src/cli.ts` → override with `??` → read the resolved value.
+### Adding a new knob
 
-## Enforcement
+1. **Schema first.** Add the field in `src/tracevals/core/config-schema.json`,
+   with a positive and a negative case in `test/tracevals/unit/config.test.ts`.
+2. **Default in `parseConfig()`.**
+3. **CLI flag** in `src/tracevals/cli.ts`, threaded through the command's options
+   type, and a row on `docs/src/content/docs/tracevals/reference/cli.mdx`.
+4. **Override at the read site** with `??`.
+5. **Read the resolved value** at the consumption site.
 
-| Convention | Enforced by |
-|---|---|
-| Build, tests, typecheck, dogfood run | [ci.yml](.github/workflows/ci.yml) on ubuntu + windows |
-| Commit messages | husky [`commit-msg`](.husky/commit-msg) hook locally, [commitlint.yml](.github/workflows/commitlint.yml) on PRs |
-| Version selection / release channels | [.releaserc.json](.releaserc.json) + [release.yml](.github/workflows/release.yml) |
-| ADRs | [adrs/](adrs), by convention and template; not machine-enforced |
-| Docs frontmatter (`title` + `description`) | [docs.yml](.github/workflows/docs.yml), which dogfoods `docmeta`; gates the Pages deploy |
-| Docs ↔ CLI agreement | [doc-detective.yml](.github/workflows/doc-detective.yml), which runs every documented command against the local build over `test/fixtures/` |
-| Content-strategy anchors, orphans, routes, links | [docs.yml](.github/workflows/docs.yml) via `npm run docs:check-strategy` ([scripts/check-content-strategy.mjs](scripts/check-content-strategy.mjs)) |
-| House voice in every document | [vale.yml](.github/workflows/vale.yml), reading the whole tree on every PR; errors block, warnings annotate |
-| Automated review | [claude-pr-review.yml](.github/workflows/claude-pr-review.yml), [claude.yml](.github/workflows/claude.yml) |
-
-The husky hook installs through the `prepare` script on `npm install`. If commits stop being linted, check `git config core.hooksPath`. It should be `.husky/_`. Run `npx husky` to reinstall.
-
-### Still requiring one-time setup
-
-- **Claude review** workflows skip with a notice until `gh secret set CLAUDE_CODE_OAUTH_TOKEN --repo hawkeyexl/moose-tracevals`. Note that `claude-code-action` refuses to run when the workflow file differs from the default branch's copy (anti-tampering). A green check is therefore not proof a review ran, so check the duration.
-- **Releases** are opt-in via `gh variable set RELEASE_ENABLED --body true`. Configure npm trusted publishing for `moose-tracevals` (OIDC, naming `release.yml`) before enabling.
-- **The docs site** needs GitHub Pages set to "GitHub Actions" as its source (Settings → Pages) before [docs.yml](.github/workflows/docs.yml)'s deploy job can publish. Until then the validate and build jobs still run and still gate, and only the deploy step fails.
+Don't read `argv` from engine, grader, judge, or reporter code. Don't apply
+defaults outside `parseConfig()`. Don't add a CLI flag without the matching
+config field. And don't accept a flag that quietly does nothing. `list` has no
+`-c`/`--no-config` for exactly that reason.
