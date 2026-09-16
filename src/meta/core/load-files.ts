@@ -8,6 +8,7 @@ import { stat } from "node:fs/promises";
 import { extname, relative, resolve } from "node:path";
 import fg from "fast-glob";
 import picomatch from "picomatch";
+import { matchesFileGlob } from "../../shared/globs.js";
 import { supportedExtensions } from "../extractors/index.js";
 import { DocmetaError } from "../types.js";
 import { GITIGNORE_UNAVAILABLE, gitIgnored } from "./gitignore.js";
@@ -37,8 +38,57 @@ async function statOrNull(p: string) {
 }
 
 /**
- * Walk a directory argument recursively, honouring the ignore globs, and
- * return each hit posix-style and relative to `cwd`.
+ * One `..` step, spelled as a segment a wildcard will cross.
+ *
+ * Every matcher the family could use refuses to let `**` match a literal `..`
+ * segment — picomatch does it deliberately, and so does the micromatch inside
+ * fast-glob. That is the whole reason an ignore glob went quiet the moment the
+ * walked tree sat outside cwd: the path the run reports is
+ * `../sibling/docs/a.md`, and a glob opening with `**` cannot see past the
+ * first segment of it - the node_modules and .git defaults included.
+ *
+ * Substituting a marker restores the one frame. It is one marker per step, not
+ * one for the run, so `../a/**` still fails to match `../../a/x.md`: those name
+ * two different directories and a pattern for one must not cover the other.
+ */
+const UP = "^^";
+
+/**
+ * A path or a pattern with its leading `../` steps in matchable form, so an
+ * ignore glob and the file it is tested against meet in the same frame — the
+ * run's cwd, whether or not the file is underneath it.
+ *
+ * Nothing else is touched. A path that does not escape cwd arrives at the
+ * matcher exactly as fast-glob's own `ignore` would have seen it, which is what
+ * keeps a target under cwd behaving as it always has.
+ */
+function cwdFrame(posix: string): string {
+  let rest = posix.startsWith("./") ? posix.slice(2) : posix;
+  const steps: string[] = [];
+  while (rest === ".." || rest.startsWith("../")) {
+    steps.push(UP);
+    rest = rest === ".." ? "" : rest.slice(3);
+  }
+  if (steps.length === 0) return rest;
+  return rest === "" ? steps.join("/") : `${steps.join("/")}/${rest}`;
+}
+
+/**
+ * Does any ignore glob cover this file? `file` is posix-style and relative to
+ * the run's cwd; `framed` is the ignore list run through {@link cwdFrame} once.
+ *
+ * This is the **authority** on what an exclude removes. fast-glob is still
+ * given an ignore list below, but only as a prune — a walk that never descends
+ * into `node_modules` is the difference between a fast run and a slow one, and
+ * anything it prunes this would remove anyway.
+ */
+function ignoredByGlobs(file: string, framed: string[]): boolean {
+  return matchesFileGlob(cwdFrame(file), framed);
+}
+
+/**
+ * Walk a directory argument recursively and return each hit posix-style and
+ * relative to `cwd`, with the ignore globs applied.
  *
  * A directory is a *path*, and the two things that go wrong come from feeding
  * one to a pattern matcher unchanged.
@@ -49,28 +99,42 @@ async function statOrNull(p: string) {
  * surfaces as "no files matched" and exit 2, pointing nowhere near the cause.
  * `fg.escapePath` settles that.
  *
- * And a directory whose cwd-relative form escapes cwd begins with `..`, a
- * segment a leading `**` will not cross - so every ignore glob, the
- * node_modules and .git defaults included, silently stops matching. The walk
- * is therefore anchored at the directory itself in that case, which keeps the
- * entries, and so the ignores, well formed.
+ * And a directory whose cwd-relative form escapes cwd begins with a `..`
+ * segment, which a leading `**` will not cross - so a pattern rooted at
+ * `../sibling/docs` hands fast-glob entries its own ignore list cannot match
+ * (see the marker above, which is what settles that). The walk is
+ * therefore anchored at the directory itself in that case, which keeps the
+ * entries well formed; what the ignore globs mean is then settled once, above,
+ * in the run's frame rather than in the walk's.
  */
 async function walkDirectory(
   cwd: string,
   abs: string,
   ignore: string[],
+  framed: string[],
 ): Promise<string[]> {
   const base = toPosix(relative(cwd, abs));
-  const anchorAtDir = base === "" || base.startsWith("..");
+  // A whole segment, not a prefix: `relative()` answers `..archive` for
+  // `<cwd>/..archive`, an ordinary directory inside cwd that escapes nothing.
+  const escapes = base === ".." || base.startsWith("../");
+  const anchorAtDir = base === "" || escapes;
+  const root = anchorAtDir ? abs : cwd;
   const found = await fg(anchorAtDir ? "**/*" : `${fg.escapePath(base)}/**/*`, {
-    cwd: anchorAtDir ? abs : cwd,
-    ignore,
+    cwd: root,
+    // Anchored at the directory, these entries are in *its* frame, and a user's
+    // exclude is not - so only the structural defaults go down, which mean the
+    // same thing in any frame. Where the two frames coincide the whole list
+    // prunes, exactly as it always did.
+    ignore: escapes ? DEFAULT_IGNORE : ignore,
     onlyFiles: true,
     dot: false,
   });
-  return found.map((file) =>
-    toPosix(relative(cwd, resolve(anchorAtDir ? abs : cwd, file))),
-  );
+  const files: string[] = [];
+  for (const file of found) {
+    const rel = toPosix(relative(cwd, resolve(root, file)));
+    if (!ignoredByGlobs(rel, framed)) files.push(rel);
+  }
+  return files;
 }
 
 export interface ResolveOptions {
@@ -162,6 +226,8 @@ export async function resolveTargetSet(
     e.toLowerCase().startsWith(".") ? e.toLowerCase() : `.${e.toLowerCase()}`,
   );
   const ignore = [...DEFAULT_IGNORE, ...(opts.exclude ?? [])];
+  // Framed once per run, not once per file: the matcher caches on the list.
+  const framed = ignore.map((pattern) => cwdFrame(toPosix(pattern)));
   // Kept apart until the end: `named` is what the user typed and is never
   // filtered, `walked` is what a directory or glob produced and is.
   const named = new Set<string>();
@@ -200,7 +266,7 @@ export async function resolveTargetSet(
     }
 
     if (st?.isDirectory()) {
-      for (const f of await walkDirectory(cwd, abs, ignore)) {
+      for (const f of await walkDirectory(cwd, abs, ignore, framed)) {
         if (keepByExt(f)) walked.add(f);
       }
       continue;
@@ -221,7 +287,13 @@ export async function resolveTargetSet(
       onlyFiles: true,
       dot: false,
     });
-    for (const f of found) if (keepByExt(f)) walked.add(f);
+    // Through the same authority as the directory walk. A glob can escape cwd
+    // too (`../sibling/docs/**`), and its entries then carry the `..` segments
+    // fast-glob's own ignore list cannot match past.
+    for (const f of found) {
+      if (ignoredByGlobs(toPosix(f), framed)) continue;
+      if (keepByExt(f)) walked.add(f);
+    }
   }
 
   if (missing.length > 0 && !opts.allowEmpty) {
