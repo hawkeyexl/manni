@@ -42,7 +42,7 @@ export interface EvalPlan {
   /** sha256 of `assertion` when the check script was generated. */
   generatedAssertionHash?: string;
   /**
-   * Models that proposed this assertion, from `metadata.eval-provenance`.
+   * Models that proposed this assertion, from `metadata.meta-provenance`.
    * A judge whose model appears here is grading a criterion it wrote.
    */
   proposedBy?: string[];

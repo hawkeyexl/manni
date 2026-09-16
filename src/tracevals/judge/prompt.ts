@@ -5,7 +5,13 @@
  */
 import type { EvalPlan } from "../core/plan.js";
 
-export const PROMPT_VERSION = 3;
+/**
+ * 4 — the verdict schema's `$id` became `manni:tracevals:verdict` and the
+ * vocabulary moved to artifact-evals proposal.4. The schema is prompt surface,
+ * so a cache written before the family rename misses once rather than
+ * replaying a verdict formed against the old wording.
+ */
+export const PROMPT_VERSION = 4;
 
 export const JUDGE_SYSTEM_PROMPT = `You are an adherence judge for AI agent sessions. You are given some evidence from an agent session and one assertion drawn from the instructions the session was operating under — a skill definition, an agent definition, or project rules.
 

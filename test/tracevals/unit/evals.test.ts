@@ -163,6 +163,28 @@ describe("extractEvals", () => {
     expect(result.evals).toEqual([]);
   });
 
+  it("reports eval-provenance as a reserved-prefix error", async () => {
+    // proposal.2 excepted it; proposal.4 narrowed the guard to
+    // `^eval-(?!skip$)` and moved the trail to `meta-provenance`. An artifact
+    // still carrying the old key stops the run rather than having its
+    // attribution silently ignored — the criterion axis of the
+    // self-preference check reads that block.
+    const result = await extractEvals(
+      artifact([
+        "---",
+        "metadata:",
+        "  eval-provenance:",
+        "    - generated-by: claude-fable-5",
+        "      evals: [used-read]",
+        "---",
+      ]),
+    );
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]?.instancePath).toBe("/metadata/eval-provenance");
+    expect(result.errors[0]?.subject).toBe("eval-provenance");
+    expect(result.errors[0]?.message).toContain("meta-provenance");
+  });
+
   it("normalizes a single anchor example to a list", async () => {
     const result = await extractEvals(
       artifact([
@@ -228,7 +250,7 @@ describe("extractEvals", () => {
     expect(result.evals).toEqual([]);
   });
 
-  it("validates an artifact carrying only eval-provenance", async () => {
+  it("validates an artifact carrying only meta-provenance", async () => {
     // No evals and no eval-skip, so the run has nothing to grade — but a
     // malformed provenance block is still a malformed block, and one of those
     // is never silently ignored.
@@ -236,7 +258,7 @@ describe("extractEvals", () => {
       artifact([
         "---",
         "metadata:",
-        "  eval-provenance:",
+        "  meta-provenance:",
         "    - generated-by: 5",
         "      bogus: yes",
         "---",
@@ -245,12 +267,12 @@ describe("extractEvals", () => {
     expect(result.errors.length).toBeGreaterThan(0);
   });
 
-  it("accepts a well-formed eval-provenance on its own", async () => {
+  it("accepts a well-formed meta-provenance on its own", async () => {
     const result = await extractEvals(
       artifact([
         "---",
         "metadata:",
-        "  eval-provenance:",
+        "  meta-provenance:",
         "    - generated-by: claude-fable-5",
         "      evals: [used-read]",
         "      confidence:",
@@ -278,7 +300,7 @@ describe("extractEvals", () => {
   });
 });
 
-describe("eval-provenance, read back", () => {
+describe("meta-provenance, read back", () => {
   // `fill` has always written this block; nothing read it until the judge
   // needed to know whether it was grading an assertion it wrote itself.
   const withProvenance = (provenance: string[]) =>
@@ -291,22 +313,23 @@ describe("eval-provenance, read back", () => {
       "      assertion: The session read a file.",
       "    - id: hand-written",
       "      assertion: A human wrote this one.",
-      "  eval-provenance:",
+      "  meta-provenance:",
       ...provenance,
       "---",
     ]);
 
   it("maps each eval id to the model that proposed it", async () => {
+    // A bare model name, which is what `fill` writes and what the judge's
+    // `modelName()` returns. proposal.2's `provider:model` spelling meant the
+    // criterion axis compared two things that could never be equal.
     const r = await extractEvals(
       withProvenance([
-        "    - generated-by: anthropic:claude-opus-4-5",
+        "    - generated-by: claude-opus-4-5",
         "      evals: [used-read]",
       ]),
     );
     expect(r.errors).toEqual([]);
-    expect(r.proposedBy.get("used-read")).toEqual([
-      "anthropic:claude-opus-4-5",
-    ]);
+    expect(r.proposedBy.get("used-read")).toEqual(["claude-opus-4-5"]);
     // Absent, not empty: a hand-written eval has no author on record.
     expect(r.proposedBy.get("hand-written")).toBeUndefined();
   });
@@ -316,17 +339,14 @@ describe("eval-provenance, read back", () => {
     // so one id can appear under two entries and both are self-preference.
     const r = await extractEvals(
       withProvenance([
-        "    - generated-by: anthropic:claude-opus-4-5",
+        "    - generated-by: claude-opus-4-5",
         "      evals: [used-read]",
-        "    - generated-by: openai:gpt-5",
+        "    - generated-by: gpt-5",
         "      evals: [used-read, hand-written]",
       ]),
     );
-    expect(r.proposedBy.get("used-read")).toEqual([
-      "anthropic:claude-opus-4-5",
-      "openai:gpt-5",
-    ]);
-    expect(r.proposedBy.get("hand-written")).toEqual(["openai:gpt-5"]);
+    expect(r.proposedBy.get("used-read")).toEqual(["claude-opus-4-5", "gpt-5"]);
+    expect(r.proposedBy.get("hand-written")).toEqual(["gpt-5"]);
   });
 
   it("is empty rather than throwing when the block is absent", async () => {
@@ -341,6 +361,24 @@ describe("eval-provenance, read back", () => {
         "---",
       ]),
     );
+    expect(r.proposedBy.size).toBe(0);
+  });
+
+  it("reads the artifact's own front matter, and only that (0047 limit)", async () => {
+    // proposal.4 marks `metadata` `x-manni-location: external`, so a trail —
+    // and with it the whole `metadata` block — may legally live in a
+    // collection's external-metadata manifest instead of the artifact.
+    // tracevals reads no `collections:` (0049 §2) and therefore no manifest,
+    // so a relocated block reads here as no block at all: no evals, no
+    // provenance, and a criterion axis that stays silent. That is the current
+    // behavior, recorded rather than claimed otherwise; reading a manifest is
+    // not implemented.
+    const r = await extractEvals(
+      artifact(["---", "name: demo", "---", "body"]),
+    );
+    expect(r.errors).toEqual([]);
+    expect(r.declared).toBe(false);
+    expect(r.evals).toEqual([]);
     expect(r.proposedBy.size).toBe(0);
   });
 });

@@ -207,17 +207,17 @@ describe("appendArtifactEvals", () => {
     expect(appendArtifactEvals(source, "x.md", [])).toBe(source);
   });
 
-  it("records provenance", () => {
+  it("records provenance as metadata.meta-provenance", () => {
     const result = appendArtifactEvals("# Rules\n", "CLAUDE.md", ONE, {
-      generatedBy: "mock:mock-model",
+      generatedBy: "mock-model",
       confidence: { "reads-before-editing": 0.9 },
     });
     const provenance = (frontmatterOf(result).metadata as {
-      "eval-provenance": Array<Record<string, unknown>>;
-    })["eval-provenance"];
+      "meta-provenance": Array<Record<string, unknown>>;
+    })["meta-provenance"];
     expect(provenance).toEqual([
       {
-        "generated-by": "mock:mock-model",
+        "generated-by": "mock-model",
         evals: ["reads-before-editing"],
         confidence: { "reads-before-editing": 0.9 },
       },
@@ -232,41 +232,72 @@ describe("appendArtifactEvals", () => {
       "---",
       "name: a",
       "metadata:",
-      "  eval-provenance:",
-      "    - generated-by: mock:mock-model",
+      "  meta-provenance:",
+      "    - generated-by: mock-model",
       "---",
       "body",
       "",
     ].join("\n");
     const result = appendArtifactEvals(source, "a.md", ONE, {
-      generatedBy: "mock:mock-model",
+      generatedBy: "mock-model",
       confidence: { "reads-before-editing": 0.9 },
     });
     const provenance = (frontmatterOf(result).metadata as {
-      "eval-provenance": Array<Record<string, unknown>>;
-    })["eval-provenance"];
+      "meta-provenance": Array<Record<string, unknown>>;
+    })["meta-provenance"];
     expect(provenance).toHaveLength(1);
     expect(provenance[0]).toEqual({
-      "generated-by": "mock:mock-model",
+      "generated-by": "mock-model",
       evals: ["reads-before-editing"],
       confidence: { "reads-before-editing": 0.9 },
     });
   });
 
-  it("refuses a provenance entry whose evals is not a list", () => {
+  it("keeps an entry's other members while repairing a malformed evals list", () => {
+    // The merge is `src/meta/core/meta-provenance.ts`, the one `manni meta
+    // fill` uses, so a shape it did not constrain reads as naming nothing and
+    // is rewritten as the list it should have been. Everything else the entry
+    // held survives.
     const source = [
       "---",
       "metadata:",
-      "  eval-provenance:",
-      "    - generated-by: mock:mock-model",
+      "  meta-provenance:",
+      "    - generated-by: mock-model",
       "      evals: not-a-list",
+      "      note: kept",
+      "---",
+      "body",
+      "",
+    ].join("\n");
+    const result = appendArtifactEvals(source, "a.md", ONE, {
+      generatedBy: "mock-model",
+      confidence: { "reads-before-editing": 0.9 },
+    });
+    const provenance = (frontmatterOf(result).metadata as {
+      "meta-provenance": Array<Record<string, unknown>>;
+    })["meta-provenance"];
+    expect(provenance).toEqual([
+      {
+        "generated-by": "mock-model",
+        evals: ["reads-before-editing"],
+        confidence: { "reads-before-editing": 0.9 },
+        note: "kept",
+      },
+    ]);
+  });
+
+  it("refuses a meta-provenance that is not a list", () => {
+    const source = [
+      "---",
+      "metadata:",
+      "  meta-provenance: reviewed",
       "---",
       "body",
       "",
     ].join("\n");
     expect(() =>
       appendArtifactEvals(source, "a.md", ONE, {
-        generatedBy: "mock:mock-model",
+        generatedBy: "mock-model",
         confidence: { "reads-before-editing": 0.9 },
       }),
     ).toThrow(TracevalsError);

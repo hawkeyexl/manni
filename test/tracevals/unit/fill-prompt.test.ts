@@ -41,8 +41,8 @@ describe("fill prompt", () => {
       .digest("hex")
       .slice(0, 12);
     expect({ version: FILL_PROMPT_VERSION, digest }).toEqual({
-      version: 3,
-      digest: "ed66ab9af846",
+      version: 4,
+      digest: "82c78b844ff8",
     });
   });
 

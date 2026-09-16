@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "moose-tracevals:verdict:0.1",
+  "$id": "manni:tracevals:verdict",
   "title": "manni tracevals judge verdict",
   "type": "object",
   "required": ["claim", "observed", "match", "confidence", "reasoning"],

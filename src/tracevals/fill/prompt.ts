@@ -8,6 +8,7 @@
  * the artifact, and naming it is more useful than papering over it.
  */
 import { Ajv2020 } from "ajv/dist/2020.js";
+import { SEVERITIES } from "../../shared/severity.js";
 import type { ArtifactType, ResolvedArtifact } from "../artifacts/types.js";
 import { ALLOWED_GRADERS } from "./gate.js";
 import type { ArtifactFacts } from "./facts.js";
@@ -21,8 +22,9 @@ import type { ArtifactFacts } from "./facts.js";
  * so the pair has to move together.
  *
  * 3 — added the `slash-command` type guidance (ADR 01023).
+ * 4 — the family severity scale: the quietest level is `notice`, not `info`.
  */
-export const FILL_PROMPT_VERSION = 3;
+export const FILL_PROMPT_VERSION = 4;
 
 export const MAX_BODY_CHARS = 6000;
 
@@ -133,7 +135,7 @@ export const PROPOSAL_SCHEMA = {
               fail: { type: "string" },
             },
           },
-          severity: { enum: ["error", "warning", "info"] },
+          severity: { enum: [...SEVERITIES] },
           confidence: { type: "number", minimum: 0, maximum: 1 },
           rationale: { type: "string" },
         },

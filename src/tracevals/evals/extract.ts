@@ -1,62 +1,29 @@
 /**
  * Eval extraction: read the `metadata.evals` block from an artifact via the
  * metadata library and validate the artifact's whole front matter against
- * `manni:artifact-evals:1.0.0-proposal.2`. Invalid blocks are reported as
+ * `manni:artifact-evals:1.0.0-proposal.4`. Invalid blocks are reported as
  * errors with source line numbers, never silently ignored (ADR 01002).
  *
- * The vocabulary is the metadata tool's; this tool implements behavior
- * against it (ADR 01010). The schema is document-rooted — `metadata` stays
- * open so other tools' members pass untouched — which is why validation is
+ * The vocabulary is the repository's draft; this tool implements behavior
+ * against it (ADR 01010) and bundles it rather than shipping a copy — see
+ * `schema.ts`. The schema is document-rooted, which is why validation is
  * handed the entire front matter object rather than the `evals` value alone.
  */
-import { existsSync } from "node:fs";
-import { join } from "node:path";
-import {
-  extractFrontmatter,
-  Validator,
-  type FieldError,
-} from "../../meta/index.js";
-import { packageRoot } from "../../shared/package-root.js";
+import { extractFrontmatter, type FieldError } from "../../meta/index.js";
+import { metaProvenanceEntries } from "../../meta/internal.js";
 import type { ResolvedArtifact } from "../artifacts/types.js";
-import { TracevalsError } from "../types.js";
 import type { TraceTarget } from "../core/target.js";
+import { ARTIFACT_EVALS_SCHEMA_ID, artifactEvalsErrors } from "./schema.js";
 
-export const ARTIFACT_EVALS_SCHEMA_ID = "manni:artifact-evals:1.0.0-proposal.2";
-
-const SCHEMA_FILE = "artifact-evals-1.0.0-proposal.2.json";
-
-let schemaPath: string | undefined;
+export { ARTIFACT_EVALS_SCHEMA_ID };
 
 /**
- * Absolute path of the packaged schema (works from src and dist).
- *
- * The schema ships beside the code at `schemas/tracevals/`, reached from the
- * package root rather than from this module's own directory: `src/tracevals/
- * evals/` sits three hops down and tsup flattens `dist/` to one, and keying
- * off the directory name would silently return a path that does not exist
- * after a rename, so schema validation would quietly stop happening. The path
- * is still probed, so a missing file is a loud failure. Memoized, so the stat
- * cost is paid once per process rather than once per artifact.
+ * The family scale (`src/shared/severity.ts`): `notice | warning | error`.
+ * proposal.2 spelled the quietest level `info`; proposal.4 spells it the way
+ * every other manni tool does, so a finding reads the same everywhere.
  */
-export function artifactEvalsSchemaPath(): string {
-  if (schemaPath !== undefined) return schemaPath;
-  const candidate = join(
-    packageRoot(import.meta.url),
-    "schemas",
-    "tracevals",
-    SCHEMA_FILE,
-  );
-  if (!existsSync(candidate)) {
-    throw new TracevalsError(
-      `cannot locate ${SCHEMA_FILE}; looked at ${candidate}. ` +
-        "The package ships it under schemas/tracevals/ — reinstall if it is missing.",
-    );
-  }
-  schemaPath = candidate;
-  return candidate;
-}
-
-export type Severity = "error" | "warning" | "info";
+export type { Severity } from "../../shared/severity.js";
+import type { Severity } from "../../shared/severity.js";
 
 /**
  * `capability` probes a boundary and is expected to fail sometimes;
@@ -112,9 +79,13 @@ export interface ExtractedEvals {
   skip: boolean;
   /**
    * Which model proposed each eval, by eval id, from
-   * `metadata.eval-provenance`. Written by `fill` and, until now, never read
-   * back: it is what lets the judge notice it is grading an assertion it
-   * wrote itself, which is bias on the *criterion* rather than on the session.
+   * `metadata.meta-provenance` — the family's attribution record (0046),
+   * written by `fill` through the same merge `manni meta fill` uses. Reading
+   * it is what lets the judge notice it is grading an assertion it wrote
+   * itself, which is bias on the *criterion* rather than on the session.
+   *
+   * Names are bare model names, the same spelling a provider's `modelName()`
+   * returns, so the two sides of that comparison can actually match.
    *
    * A list because one id may appear under several `generated-by` entries —
    * a re-fill by a second model extends the block rather than replacing it.
@@ -126,16 +97,22 @@ export interface ExtractedEvals {
  * Members of `metadata` this vocabulary claims. The schema cannot reject the
  * rest: `metadata` is the host tool's extension bag and must stay open, so a
  * misspelled `eval-skpi` would validate and quietly do nothing. Reserving the
- * `eval` prefix at run time restores the closed block's loud-typo property.
+ * `eval-` prefix at run time restores the closed block's loud-typo property.
  */
-const RESERVED_EVAL_KEYS = new Set(["evals", "eval-skip", "eval-provenance"]);
+const CLAIMED_KEYS = ["evals", "eval-skip", "meta-provenance"] as const;
+
+/**
+ * The one member under the reserved prefix this vocabulary keeps. proposal.4
+ * narrowed the guard to `^eval-(?!skip$)`, so `eval-provenance` — proposal.2's
+ * name for the attribution trail — is now an error rather than a member
+ * everything downstream would silently ignore.
+ */
+const PREFIX_EXCEPTION = "eval-skip";
 
 /** A YAML mapping, as opposed to a list, a scalar, or null. */
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-
-const validator = new Validator();
 
 export async function extractEvals(
   artifact: ResolvedArtifact,
@@ -160,13 +137,13 @@ export async function extractEvals(
   // Skip the validator only for an artifact this vocabulary has nothing to say
   // about: `metadata` absent, or a well-formed object claiming none of its
   // keys. A `metadata` that is not an object still has to be validated (the
-  // schema types it), and so does one carrying only `eval-provenance` — the
+  // schema types it), and so does one carrying only `meta-provenance` — the
   // block is malformed-or-not either way, and a malformed one is never
   // silently ignored.
   const wellFormed = metadata === undefined || bag !== undefined;
   const claimsNothing =
     bag === undefined ||
-    ![...RESERVED_EVAL_KEYS].some((key) => bag[key] !== undefined);
+    !CLAIMED_KEYS.some((key) => bag[key] !== undefined);
   if (wellFormed && claimsNothing) {
     return {
       evals: [],
@@ -177,11 +154,7 @@ export async function extractEvals(
     };
   }
 
-  const errors = await validator.validate(
-    extracted.data,
-    [artifactEvalsSchemaPath()],
-    extracted.lineFor,
-  );
+  const errors = artifactEvalsErrors(extracted.data, extracted.lineFor);
   if (errors.length > 0) {
     return { evals: [], errors, declared, skip: false, proposedBy: new Map() };
   }
@@ -194,29 +167,25 @@ export async function extractEvals(
     errors: [],
     declared,
     skip,
-    proposedBy: readProvenance(valid["eval-provenance"]),
+    proposedBy: readProvenance(valid["meta-provenance"]),
   };
 }
 
 /**
- * `metadata.eval-provenance` as eval id → the models that proposed it.
+ * `metadata.meta-provenance` as eval id → the models that proposed it.
  *
- * Tolerant by design: the block has already passed the schema, and a shape it
- * did not constrain is not worth failing a run over — the worst outcome of
- * ignoring a malformed entry is one missing bias warning, while the worst
- * outcome of throwing is a run that will not start.
+ * The entries come from `metaProvenanceEntries`, the family's reader (0046),
+ * so the block is read exactly the way `fill` wrote it and the way docevals
+ * reads its own. Tolerant by design: the block has already passed the schema,
+ * and a shape it did not constrain is not worth failing a run over — the worst
+ * outcome of ignoring a malformed entry is one missing bias warning, while the
+ * worst outcome of throwing is a run that will not start.
  */
 function readProvenance(raw: unknown): Map<string, string[]> {
   const out = new Map<string, string[]>();
-  if (!Array.isArray(raw)) return out;
-  for (const entry of raw) {
-    if (!isPlainObject(entry)) continue;
+  for (const entry of metaProvenanceEntries(raw)) {
     const by = entry["generated-by"];
-    if (typeof by !== "string" || by.length === 0) continue;
-    const ids = entry.evals;
-    if (!Array.isArray(ids)) continue;
-    for (const id of ids) {
-      if (typeof id !== "string") continue;
+    for (const id of entry.evals) {
       const list = out.get(id) ?? [];
       if (!list.includes(by)) list.push(by);
       out.set(id, list);
@@ -226,8 +195,12 @@ function readProvenance(raw: unknown): Map<string, string[]> {
 }
 
 /**
- * A key inside `metadata` that starts with `eval` but is not one this
- * vocabulary claims. Reported against the offending key so the fix is obvious.
+ * A key inside `metadata` under the reserved `eval-` prefix that is not the
+ * one member this vocabulary claims there. Reported against the offending key
+ * so the fix is obvious.
+ *
+ * proposal.4's guard is `^eval-(?!skip$)`: `eval-provenance`, which proposal.2
+ * excepted, now lands here rather than being read by nothing.
  */
 function reservedPrefixErrors(
   bag: Record<string, unknown> | undefined,
@@ -236,17 +209,20 @@ function reservedPrefixErrors(
   if (bag === undefined) return [];
   const errors: FieldError[] = [];
   for (const key of Object.keys(bag)) {
-    // Detection is case-insensitive while the allowlist is not, deliberately:
+    // Detection is case-insensitive while the exception is not, deliberately:
     // YAML keys are case-sensitive, so `Eval-skip` is never a valid spelling of
     // `eval-skip` and should be reported rather than accepted. Do not "fix" the
-    // asymmetry by making RESERVED_EVAL_KEYS case-insensitive — that would
+    // asymmetry by matching the exception case-insensitively — that would
     // silently accept exactly the misspellings this guard exists to catch.
-    if (!/^eval/i.test(key) || RESERVED_EVAL_KEYS.has(key)) continue;
+    if (!/^eval-/i.test(key) || key === PREFIX_EXCEPTION) continue;
     const line = lineFor(`/metadata/${key}`);
     errors.push({
       schema: ARTIFACT_EVALS_SCHEMA_ID,
       instancePath: `/metadata/${key}`,
-      message: `unrecognized "eval" key; this vocabulary claims ${[...RESERVED_EVAL_KEYS].join(", ")}`,
+      message:
+        `unrecognized "eval-" key; the only one this vocabulary claims under ` +
+        `that prefix is ${PREFIX_EXCEPTION} (its other members are ` +
+        `${CLAIMED_KEYS.filter((k) => k !== PREFIX_EXCEPTION).join(" and ")})`,
       keyword: "additionalProperties",
       subject: key,
       ...(line !== undefined ? { line } : {}),

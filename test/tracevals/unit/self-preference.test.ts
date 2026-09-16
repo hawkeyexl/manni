@@ -59,8 +59,10 @@ describe("self-preference (session axis)", () => {
 describe("self-preference (criterion axis)", () => {
   /**
    * The second axis: the judge wrote the *assertion*, not the session.
-   * `eval-provenance.generated-by` records it, `fill` writes it, and until the
-   * plan carried it back the axis was declared in the type and never set.
+   * `meta-provenance.generated-by` records it, `fill` writes it through the
+   * family's merge, and until the plan carried it back the axis was declared
+   * in the type and never set. Both sides now name the model the same way —
+   * see the round trip in `fill.test.ts`.
    */
   const judgeCriterion = async (judgeModel: string, proposedBy?: string[]) => {
     const judge = makeTraceJudge({

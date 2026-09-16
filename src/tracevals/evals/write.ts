@@ -10,12 +10,13 @@
 import {
   Document,
   isMap,
+  isNode,
   isScalar,
   isSeq,
   parseDocument,
-  type YAMLMap,
   type YAMLSeq,
 } from "yaml";
+import { mergeMetaProvenance } from "../../meta/internal.js";
 import { TracevalsError } from "../types.js";
 import type { Severity } from "./extract.js";
 
@@ -155,61 +156,29 @@ function evalsSeq(doc: Document, path: string): YAMLSeq {
  * evals are reviewed, which is what makes the trail useful rather than noise.
  */
 export interface EvalProvenance {
-  /** Model or agent that proposed the evals. */
+  /**
+   * Model that proposed the evals, by the name its provider reports. A bare
+   * model name, never `provider:model`: the criterion axis of the
+   * self-preference check compares this against the judge's `modelName()`, and
+   * a composed spelling made that comparison one it could never win.
+   */
   generatedBy: string;
   /** Per-eval confidence, 0..1, keyed by eval id. */
   confidence: Record<string, number>;
 }
 
-/**
- * A provenance entry's `evals` list, created when absent.
- *
- * Both this and `childMap` exist because `evals` and `confidence` are optional
- * on a provenance entry, so a hand-written `- generated-by: x` is a legal thing
- * to merge into. Skipping the write there would leave an entry claiming no
- * evals at all, which reads as an attribution already reviewed down to nothing.
- */
-function childSeq(
-  doc: Document,
-  entry: YAMLMap,
-  key: string,
-  generatedBy: string,
-): YAMLSeq {
-  const existing = entry.get(key, true);
-  if (isSeq(existing)) return existing;
-  if (!isEmptyNode(existing)) {
-    throw new TracevalsError(
-      `eval-provenance entry for "${generatedBy}" has a non-list ${key}`,
-    );
-  }
-  const seq = doc.createNode([]) as YAMLSeq;
-  entry.set(key, seq);
-  return seq;
-}
-
-/** A provenance entry's `confidence` mapping, created when absent. */
-function childMap(
-  doc: Document,
-  entry: YAMLMap,
-  key: string,
-  generatedBy: string,
-): YAMLMap {
-  const existing = entry.get(key, true);
-  if (isMap(existing)) return existing;
-  if (!isEmptyNode(existing)) {
-    throw new TracevalsError(
-      `eval-provenance entry for "${generatedBy}" has a non-mapping ${key}`,
-    );
-  }
-  const map = doc.createNode({}) as YAMLMap;
-  entry.set(key, map);
-  return map;
-}
+/** The key `fill` records machine-proposed evals under (proposal 0046). */
+const META_PROVENANCE_KEY = "meta-provenance";
 
 /**
- * Merge one provenance entry into `metadata.eval-provenance`, keyed by
+ * Merge one run's attribution into `metadata.meta-provenance`, keyed by
  * `generated-by`. A repeat fill by the same model extends its existing entry
  * rather than adding a second one the consumer would have to reconcile.
+ *
+ * The merge itself is `mergeMetaProvenance`, the one `manni meta fill` and
+ * `manni docevals fill` use, so all three tools record attribution one way and
+ * the shape has a single owner. What stays here is the splice: reading the
+ * held value out of the document and writing the merged list back.
  */
 function mergeProvenance(
   doc: Document,
@@ -217,45 +186,26 @@ function mergeProvenance(
   ids: string[],
 ): void {
   if (ids.length === 0) return;
-  const existing = doc.getIn(["metadata", "eval-provenance"], true);
-  let seq: YAMLSeq;
-  if (isSeq(existing)) {
-    seq = existing;
-  } else if (isEmptyNode(existing)) {
-    seq = doc.createNode([]);
-    doc.setIn(["metadata", "eval-provenance"], seq);
-  } else {
-    throw new TracevalsError("metadata.eval-provenance is not a list");
-  }
-
-  const mine = seq.items.find(
-    (item) => isMap(item) && item.get("generated-by") === provenance.generatedBy,
+  // `getIn` hands back a node for a collection, and the family merge reads a
+  // plain value, so the held block is converted before it crosses over.
+  const node: unknown = doc.getIn(["metadata", META_PROVENANCE_KEY], true);
+  const held = isEmptyNode(node)
+    ? undefined
+    : isNode(node)
+      ? (node.toJSON() as unknown)
+      : node;
+  const merged = mergeMetaProvenance(
+    held,
+    provenance.generatedBy,
+    "evals",
+    ids.map((id) => ({ name: id, confidence: provenance.confidence[id] ?? 0 })),
   );
-  if (mine && isMap(mine)) {
-    // `evals` and `confidence` are optional on a provenance entry, so a
-    // hand-written `- generated-by: x` is a legal thing to merge into. Create
-    // whichever is missing rather than skipping the write — an entry that
-    // claims no evals is worse than no entry at all, because it reads as an
-    // attribution that has already been reviewed down to nothing.
-    const evals = childSeq(doc, mine, "evals", provenance.generatedBy);
-    const confidence = childMap(doc, mine, "confidence", provenance.generatedBy);
-    for (const id of ids) {
-      if (!evals.items.some((n) => isScalar(n) && n.value === id)) {
-        evals.add(doc.createNode(id));
-      }
-      confidence.set(id, provenance.confidence[id]);
-    }
-    return;
+  if (!merged) {
+    throw new TracevalsError(`metadata.${META_PROVENANCE_KEY} is not a list`);
   }
-
-  seq.add(
-    doc.createNode({
-      "generated-by": provenance.generatedBy,
-      evals: ids,
-      confidence: Object.fromEntries(
-        ids.map((id) => [id, provenance.confidence[id]]),
-      ),
-    }),
+  doc.setIn(
+    ["metadata", META_PROVENANCE_KEY],
+    doc.createNode(merged.list),
   );
 }
 
@@ -266,7 +216,7 @@ function mergeProvenance(
  * silently overwriting a human-authored eval is never right.
  *
  * When `provenance` is given, the same splice also records the machine
- * attribution under `metadata.eval-provenance`.
+ * attribution under `metadata.meta-provenance`.
  */
 export function appendArtifactEvals(
   content: string,
