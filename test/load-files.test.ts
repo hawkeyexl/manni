@@ -1,6 +1,8 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { resolveTargetSet, resolveTargets } from "../src/meta/core/load-files.js";
 import { DocmetaError } from "../src/meta/types.js";
@@ -117,6 +119,55 @@ describe("resolveTargets: a named file that does not exist is an error", () => {
   it("ignores the stdin token when checking for missing files", async () => {
     const files = await resolveTargets({ inputs: ["-"], cwd: fixtures });
     expect(files).toEqual([]);
+  });
+});
+
+/**
+ * A directory argument is a path, not a pattern, and the two are not the same
+ * string. Both cases here were found by the lint tool against real trees and
+ * fixed in its own walker; the fixes moved here when it started sharing this
+ * one, because the failures are silent in the way that matters — a docset that
+ * is not checked, reported as "no files matched" or as a clean run.
+ */
+describe("resolveTargets: a directory is walked, not pattern-matched", () => {
+  let dir: string;
+
+  afterEach(async () => {
+    if (dir) await rm(dir, { recursive: true, force: true });
+  });
+
+  async function tree(...rel: string[]): Promise<void> {
+    dir = await mkdtemp(join(tmpdir(), "manni-walk-"));
+    for (const path of rel) {
+      const abs = join(dir, path);
+      await mkdir(dirname(abs), { recursive: true });
+      await writeFile(abs, "---\ntype: how-to\n---\n\n# T\n", "utf8");
+    }
+  }
+
+  // `docs (2024)` and `Program Files (x86)` are ordinary directories, and
+  // every one of `(`, `)`, `[`, `!`, `+`, `@` is a glob metacharacter.
+  // Interpolated raw, such a directory matches nothing and the run exits 2
+  // claiming it is empty.
+  it("escapes glob metacharacters in the directory's own name", async () => {
+    await tree("docs (2024)/a.md");
+    const files = await resolveTargets({ inputs: ["docs (2024)"], cwd: dir });
+    expect(files).toEqual(["docs (2024)/a.md"]);
+  });
+
+  // A directory outside cwd relativizes to a `../` chain, and a leading
+  // wildcard will not cross a segment beginning with a dot — so `..` leaves
+  // every ignore glob, the node_modules and .git defaults included, silently
+  // matching nothing.
+  it("still applies excludes when the directory is outside cwd", async () => {
+    await tree("docs/intro.md", "docs/drafts/wip.md");
+    const files = await resolveTargets({
+      inputs: [join(dir, "docs")],
+      exclude: ["**/drafts/**"],
+      cwd: here,
+    });
+    expect(files.some((f) => f.endsWith("/intro.md"))).toBe(true);
+    expect(files.some((f) => f.includes("/drafts/"))).toBe(false);
   });
 });
 

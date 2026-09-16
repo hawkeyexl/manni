@@ -36,6 +36,43 @@ async function statOrNull(p: string) {
   }
 }
 
+/**
+ * Walk a directory argument recursively, honouring the ignore globs, and
+ * return each hit posix-style and relative to `cwd`.
+ *
+ * A directory is a *path*, and the two things that go wrong come from feeding
+ * one to a pattern matcher unchanged.
+ *
+ * `(`, `)`, `[`, `!`, `+` and `@` are literal characters in a directory name
+ * and glob metacharacters in a pattern, so `docs (2024)` or
+ * `Program Files (x86)` interpolated raw matches nothing at all - which
+ * surfaces as "no files matched" and exit 2, pointing nowhere near the cause.
+ * `fg.escapePath` settles that.
+ *
+ * And a directory whose cwd-relative form escapes cwd begins with `..`, a
+ * segment a leading `**` will not cross - so every ignore glob, the
+ * node_modules and .git defaults included, silently stops matching. The walk
+ * is therefore anchored at the directory itself in that case, which keeps the
+ * entries, and so the ignores, well formed.
+ */
+async function walkDirectory(
+  cwd: string,
+  abs: string,
+  ignore: string[],
+): Promise<string[]> {
+  const base = toPosix(relative(cwd, abs));
+  const anchorAtDir = base === "" || base.startsWith("..");
+  const found = await fg(anchorAtDir ? "**/*" : `${fg.escapePath(base)}/**/*`, {
+    cwd: anchorAtDir ? abs : cwd,
+    ignore,
+    onlyFiles: true,
+    dot: false,
+  });
+  return found.map((file) =>
+    toPosix(relative(cwd, resolve(anchorAtDir ? abs : cwd, file))),
+  );
+}
+
 export interface ResolveOptions {
   /** Positional inputs: files, directories, or globs. `-` is ignored here. */
   inputs: string[];
@@ -163,13 +200,9 @@ export async function resolveTargetSet(
     }
 
     if (st?.isDirectory()) {
-      const found = await fg(`${posixInput}/**/*`, {
-        cwd,
-        ignore,
-        onlyFiles: true,
-        dot: false,
-      });
-      for (const f of found) if (keepByExt(f)) walked.add(f);
+      for (const f of await walkDirectory(cwd, abs, ignore)) {
+        if (keepByExt(f)) walked.add(f);
+      }
       continue;
     }
 
