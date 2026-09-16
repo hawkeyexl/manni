@@ -5,6 +5,12 @@
  * stdout, diagnostics to stderr, color only on a TTY (and never under
  * NO_COLOR/--no-color), meaningful exit codes.
  *
+ * Grammar per proposal 0034: the verbs are `check`, `structure`, `templates`
+ * and `tools`, and there is no default subcommand, so a bare `manni lint` is a
+ * usage error that lists them. `check` runs every configured job; `structure`
+ * runs one of them, and carries the options that belong to the tool performing
+ * it.
+ *
  * Exit codes are the contract CI reads:
  *   0  every file linted clean
  *   1  the run produced findings
@@ -16,43 +22,73 @@
  */
 import { Command } from "commander";
 import pkg from "../../package.json" with { type: "json" };
+import {
+  collect,
+  configOption,
+  explicitFalse,
+  readStdin,
+  reportConfig,
+  splitList,
+} from "../shared/cli-options.js";
 import { fail } from "../shared/run.js";
+import { notice } from "../shared/warn.js";
+import { STDIN_TOKEN } from "../meta/internal.js";
 import { MooseLintError } from "./types.js";
 import { runLint } from "./commands/lint.js";
 import { runTemplates } from "./commands/templates.js";
-import { dirname, isAbsolute, resolve as resolvePath } from "node:path";
-import { loadConfig, type LintConfig } from "./core/config.js";
-import { refRelativeTo } from "./core/template-registry.js";
-import { runFormats } from "./commands/formats.js";
+import { runTools } from "./commands/tools.js";
+import { LINT_JOBS, TOOLS_BY_JOB, loadConfig, rebaseConfig } from "./core/config.js";
 import {
   render,
-  renderFormats,
   renderTemplates,
+  renderTools,
   type ListFormat,
   type ReportFormat,
 } from "./reporters/index.js";
 import { shouldColor } from "./reporters/color.js";
 
-/** What commander parses for the default `lint` command. */
-interface LintCommandOptions {
-  template?: string;
-  templates?: string[];
-  config?: string;
-  explain?: boolean;
+/** The options `check` and `structure` share, in the family's spelling. */
+interface InputCliOptions {
+  /** `--collection <name>`, repeatable; commander's default value is `[]`. */
+  collection: string[];
+  /** `--ext <list>`; the command splits it. */
+  ext?: string;
+  /** `--exclude <glob>`, repeatable; commander's default value is `[]`. */
+  exclude: string[];
+  /** `--as <format>`: force a parser. */
   as?: string;
-  exclude?: string[];
+  /**
+   * `-c, --config <path>` and `--no-config` share one commander attribute:
+   * `undefined` with neither flag, the path with `-c`, `false` with
+   * `--no-config`. Split by `configOption`.
+   */
+  config?: string | boolean;
+  allowEmpty?: boolean;
+  /** `--no-gitignore`. */
+  gitignore: boolean;
+  /** `-f, --format <format>`. Always a string: the declaration has a default. */
   format: string;
+}
+
+/** `structure` adds the options of the tool that performs the job. */
+interface StructureCliOptions extends InputCliOptions {
+  tool?: string;
+  template?: string;
+  /** `--templates <path>`, repeatable; commander's default value is `[]`. */
+  templates: string[];
+  explain?: boolean;
 }
 
 /** What commander parses for `templates`. */
 interface TemplatesCommandOptions {
-  templates?: string[];
-  config?: string;
+  templates: string[];
+  config?: string | boolean;
   format: string;
 }
 
-/** What commander parses for `formats`. */
-interface FormatsCommandOptions {
+/** What commander parses for `tools`. */
+interface ToolsCommandOptions {
+  config?: string | boolean;
   format: string;
 }
 
@@ -62,11 +98,8 @@ interface FormatsCommandOptions {
 const REPORT_FORMATS = new Set<string>(["pretty", "json", "github", "sarif"]);
 const LIST_FORMATS = new Set<string>(["pretty", "json"]);
 
-async function readStdin(): Promise<string> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
-  return Buffer.concat(chunks).toString("utf8");
-}
+/** The heading the tool's own options print under, after the shared ones. */
+const TOOL_OPTIONS_GROUP = "Tool options:";
 
 function resolveColor(program: Command): boolean {
   // commander maps --no-color to opts.color === false.
@@ -95,59 +128,72 @@ function listFormat(value: unknown): ListFormat {
 }
 
 /**
- * Re-base everything a config declares against the config file's own directory.
- *
- * `loadConfig` returns the file's `path` precisely so this can happen, and
- * discarding it made the same config mean different things depending on where
- * the tool was invoked from. Running from a subdirectory turned `templates:`
- * into "file not found" and `paths:` into "nothing to lint" - and turned
- * `overrides:` into nothing at all, silently: the glob stopped matching, every
- * page fell through to its own `type`, and the run exited 0 having applied none
- * of the repo's policy.
- *
- * Refs go through `refRelativeTo`, which leaves built-in ids, URLs, and
- * absolute paths alone. Globs become absolute, which is what `runLint` matches
- * them against.
+ * `--tool <name>`: which tool performs a job. Refused by name rather than
+ * ignored, because falling through to manni's engine would lint with something
+ * other than what was asked for and say nothing.
  */
-function rebaseConfig(
-  found: { config: LintConfig; path: string } | null,
-): LintConfig {
-  if (!found) return {};
-  const dir = dirname(resolvePath(found.path));
-  const config = found.config;
+function assertTool(job: "structure", value: string | undefined): void {
+  const tools = TOOLS_BY_JOB[job];
+  if (value === undefined || (tools as readonly string[]).includes(value)) return;
+  throw new MooseLintError(
+    `Unknown --tool "${value}" for ${job}. Use ${tools.join(", ")}.`,
+  );
+}
 
-  const ref = (value: string): string => refRelativeTo(found.path, value);
-  // Every non-absolute glob is relative to the config, `**/*.md` included.
-  // Exempting a leading `**` left the original bug half-open: from a
-  // subdirectory that pattern expanded against the working directory, so a run
-  // checked a subset of the configured docset and still exited 0.
-  const glob = (value: string): string =>
-    isAbsolute(value) ? value : resolvePath(dir, value).replace(/\\/g, "/");
+/** The options every job verb takes, in one place so the two cannot drift. */
+function withInputOptions(command: Command): Command {
+  return command
+    .argument(
+      "[paths...]",
+      "files, directories, or globs to lint (use - for stdin)",
+    )
+    .option(
+      "--collection <name>",
+      "configured collection to run over; repeatable",
+      collect,
+      [],
+    )
+    .option("--ext <list>", "comma-separated extensions for directory walks")
+    .option("--exclude <glob>", "glob to exclude; repeatable", collect, [])
+    .option("--as <format>", "force an input format (e.g. markdown, mdx)")
+    .option(
+      "-f, --format <format>",
+      "output: pretty | json | github | sarif",
+      "pretty",
+    )
+    .option("-c, --config <path>", "path to a manni config file")
+    .option("--no-config", "ignore any discovered config file")
+    .option("--allow-empty", "treat zero matched files as success")
+    .option("--no-gitignore", "lint files .gitignore covers");
+}
 
+/** The lint options every job verb turns its shared flags into. */
+function inputOptions(
+  paths: string[],
+  options: InputCliOptions,
+): {
+  inputs: string[];
+  collection: string[];
+  exts?: string[];
+  exclude: string[];
+  as?: string;
+  configPath?: string;
+  noConfig?: boolean;
+  allowEmpty?: boolean;
+  respectGitignore?: boolean;
+  onNotice: (message: string) => void;
+} {
   return {
-    ...config,
-    ...(config.paths ? { paths: config.paths.map(glob) } : {}),
-    ...(config.exclude ? { exclude: config.exclude.map(glob) } : {}),
-    ...(config.templates ? { templates: config.templates.map(ref) } : {}),
-    ...(config.template ? { template: ref(config.template) } : {}),
-    ...(config.types
-      ? {
-          types: Object.fromEntries(
-            Object.entries(config.types).map(([type, value]) => [
-              type,
-              ref(value),
-            ]),
-          ),
-        }
-      : {}),
-    ...(config.overrides
-      ? {
-          overrides: config.overrides.map((o) => ({
-            files: glob(o.files),
-            template: ref(o.template),
-          })),
-        }
-      : {}),
+    inputs: paths,
+    collection: options.collection,
+    ...(options.ext ? { exts: splitList(options.ext) } : {}),
+    exclude: options.exclude,
+    ...(options.as === undefined ? {} : { as: options.as }),
+    ...configOption(options.config),
+    // `undefined` rather than `false` when absent, so config still wins.
+    ...(options.allowEmpty ? { allowEmpty: true } : {}),
+    respectGitignore: explicitFalse(options.gitignore),
+    onNotice: notice,
   };
 }
 
@@ -170,121 +216,155 @@ export function buildProgram(): Command {
     // copies the callback into each subcommand.
     .exitOverride();
 
-  program
-    .command("lint", { isDefault: true })
-    .description(
-      "Lint the given files/dirs/globs, routing each page by its `type` frontmatter",
+  /** Run one lint, render it, and settle the exit code. Both job verbs share it. */
+  const lint = async (
+    paths: string[],
+    options: StructureCliOptions | InputCliOptions,
+    command: Command,
+    job: { tool?: StructureCliOptions } = {},
+  ): Promise<void> => {
+    const tool = job.tool;
+    const format = reportFormat(options.format);
+    const explain = tool?.explain === true;
+    const stdinContent = paths.includes(STDIN_TOKEN) ? await readStdin() : undefined;
+    const cwd = process.cwd();
+
+    const run = await runLint({
+      ...inputOptions(paths, options),
+      ...(tool?.template === undefined ? {} : { template: tool.template }),
+      ...(tool && tool.templates.length > 0 ? { templates: tool.templates } : {}),
+      ...(explain ? { explain: true } : {}),
+      ...(stdinContent === undefined ? {} : { stdinContent }),
+      // Which config governed the run, said where a report cannot be parsed
+      // around: discovery walks up to the project boundary, so an unexpected
+      // ancestor config is the difference between a five-minute diagnosis and
+      // an hour of confusion.
+      onConfigLoaded: reportConfig(format === "pretty", cwd),
+    });
+
+    const color = resolveColor(command.parent ?? command);
+    const text = render(run, explain ? "explain" : format, { color });
+    if (text.length > 0) process.stdout.write(`${text}\n`);
+    // `--explain` answers a question about configuration, so its exit code
+    // reports whether it could answer it - not whether the docs are clean.
+    //
+    // That covers routing failures too: a page whose `type` matches no
+    // template is a answered question, not an unanswered one, so it exits 0
+    // like everything else here. Automation must not read this code as
+    // "everything routed" - the ordinary run is what reports that, with exit
+    // 1. Said in `--help` and the README, because the distinction is invisible
+    // from the exit code alone.
+    process.exitCode = explain ? 0 : run.summary.failed > 0 ? 1 : 0;
+  };
+
+  withInputOptions(
+    program
+      .command("check")
+      .description("Run every configured lint job over the given files/dirs/globs"),
+  )
+    .addHelpText(
+      "after",
+      [
+        "",
+        "Jobs: structure.",
+        "",
+        "Examples:",
+        "  manni lint check docs/                          # every configured job",
+        "  manni lint check                                # targets from collections:",
+        "  manni lint check --collection guides",
+        '  manni lint check "**/*.md" -f github            # CI annotations',
+        "  cat page.md | manni lint check - --as markdown",
+      ].join("\n"),
     )
-    .argument(
-      "[paths...]",
-      "files, directories, or globs to lint (use - for stdin)",
-    )
+    .action(async (paths: string[], options: InputCliOptions, command: Command) => {
+      try {
+        // Which jobs this run covered, said once, beside the config line. The
+        // full form also names the jobs that exist and are not configured;
+        // `structure` is the only job there is, so today it is one word.
+        if (options.format === "pretty") {
+          process.stderr.write(`Checked: ${LINT_JOBS.join(", ")}.\n`);
+        }
+        await lint(paths, options, command);
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  const structure = withInputOptions(
+    program
+      .command("structure")
+      .description(
+        "Lint document structure against doctype templates, routing each page by its `type`",
+      ),
+  );
+  structure
+    .optionsGroup(TOOL_OPTIONS_GROUP)
+    .option("--tool <name>", "tool that performs the job: manni")
     .option(
       "-t, --template <ref>",
       "apply this template to every file, overriding type routing",
     )
     .option(
-      "--templates <path...>",
-      "template files to route by: their `types:` win over built-ins; repeatable",
+      "--templates <path>",
+      "template file to route by: its `types:` win over built-ins; repeatable",
+      collect,
+      [],
     )
-    .option("-c, --config <path>", "path to manni.config.yaml")
     .option(
       "--explain",
       "print how each file's template was chosen, and lint nothing (always exits 0, unrouted pages included)",
-    )
-    .option("--as <format>", "force an input format (e.g. markdown, mdx)")
-    .option(
-      "--exclude <glob...>",
-      "globs to exclude from directory/glob expansion; repeatable",
-    )
-    .option(
-      "-f, --format <format>",
-      "output: pretty | json | github | sarif",
-      "pretty",
     )
     .addHelpText(
       "after",
       [
         "",
         "Examples:",
-        "  manni lint docs/                               # route each page by its `type`",
-        "  manni lint docs/ --templates ./templates.yaml  # add your own templates",
-        "  manni lint                                     # targets from manni.config.yaml",
-        "  manni lint docs/ --explain                     # show why each page routed where",
-        "  manni lint page.md -t tgdp:how-to:1.6          # force one template",
-        '  manni lint "**/*.md" -f github                 # CI annotations',
-        "  manni lint docs/ --exclude '**/drafts/**'",
-        "  cat page.md | manni lint - -t tgdp:how-to:1.6 --as markdown",
+        "  manni lint structure docs/                               # route each page by its `type`",
+        "  manni lint structure docs/ --templates ./templates.yaml  # add your own templates",
+        "  manni lint structure                                     # targets from collections:",
+        "  manni lint structure docs/ --explain                     # show why each page routed where",
+        "  manni lint structure page.md -t tgdp:how-to:1.6          # force one template",
+        '  manni lint structure "**/*.md" -f github                 # CI annotations',
+        "  manni lint structure docs/ --exclude '**/drafts/**'",
+        "  cat page.md | manni lint structure - -t tgdp:how-to:1.6 --as markdown",
       ].join("\n"),
     )
-    .action(async (paths: string[], options: LintCommandOptions, command: Command) => {
-      try {
-        const format = reportFormat(options.format);
-        const stdinContent = paths.includes("-")
-          ? await readStdin()
-          : undefined;
-
-        const explain = options.explain === true;
-        // Config is read here rather than inside the command core, so that
-        // `runLint` stays a pure function of the options it is handed and a
-        // library caller is never surprised by a file on disk.
-        const found = await loadConfig(options.config);
-        const config = rebaseConfig(found);
-
-        const run = await runLint({
-          // Positional paths win; `paths:` is the fallback that lets CI run a
-          // bare `manni lint`.
-          inputs: paths.length > 0 ? paths : (config.paths ?? []),
-          template: options.template,
-          templates: options.templates ?? config.templates,
-          as: options.as,
-          // Excludes accumulate rather than replace: a flag narrows a run
-          // further, it does not discard the repo's standing exclusions.
-          exclude: [...(config.exclude ?? []), ...(options.exclude ?? [])],
-          types: config.types,
-          overrides: config.overrides,
-          // `template:` in config is the default for a page that declares no
-          // type - the bottom of the chain, not the top. `--template` is the top.
-          defaultTemplate: config.template,
-          explain,
-          stdinContent,
-        });
-
-        const color = resolveColor(command.parent ?? command);
-        const text = render(run, explain ? "explain" : format, { color });
-        if (text.length > 0) process.stdout.write(`${text}\n`);
-        // `--explain` answers a question about configuration, so its exit code
-        // reports whether it could answer it - not whether the docs are clean.
-        //
-        // That covers routing failures too: a page whose `type` matches no
-        // template is a answered question, not an unanswered one, so it exits
-        // 0 like everything else here. Automation must not read this code as
-        // "everything routed" - the ordinary run is what reports that, with
-        // exit 1. Said in `--help` and the README, because the distinction is
-        // invisible from the exit code alone.
-        process.exitCode = explain ? 0 : run.summary.failed > 0 ? 1 : 0;
-      } catch (err) {
-        fail(err);
-      }
-    });
+    .action(
+      async (paths: string[], options: StructureCliOptions, command: Command) => {
+        try {
+          assertTool("structure", options.tool);
+          await lint(paths, options, command, { tool: options });
+        } catch (err) {
+          fail(err);
+        }
+      },
+    );
 
   program
     .command("templates")
     .description("List the templates that can be applied, and the types they serve")
-    .option("--templates <path...>", "also list the templates in these files")
-    .option("-c, --config <path>", "path to manni.config.yaml")
+    .option(
+      "--templates <path>",
+      "also list the templates in this file; repeatable",
+      collect,
+      [],
+    )
+    .option("-c, --config <path>", "path to a manni config file")
+    .option("--no-config", "ignore any discovered config file")
     .option("-f, --format <format>", "output: pretty | json", "pretty")
     .action(async (options: TemplatesCommandOptions, command: Command) => {
       try {
         const format = listFormat(options.format);
         // The listing answers "what could route a page?", so it has to see the
-        // same template files a lint would.
-        const found = await loadConfig(options.config);
+        // same template files a lint would - rebased the same way, or it would
+        // answer for a different set of files depending on where it was run.
+        const { configPath, noConfig } = configOption(options.config);
+        const found = noConfig ? null : await loadConfig(configPath);
         const info = await runTemplates({
-          // Rebased for the same reason the lint path is: this command answers
-          // "what could route a page?", so it must resolve the config's
-          // template paths exactly as a lint would.
-          templates: options.templates ?? rebaseConfig(found).templates,
+          templates:
+            options.templates.length > 0
+              ? options.templates
+              : rebaseConfig(found).templates,
         });
         const color = resolveColor(command.parent ?? command);
         process.stdout.write(`${renderTemplates(info, format, { color })}\n`);
@@ -294,16 +374,17 @@ export function buildProgram(): Command {
     });
 
   program
-    .command("formats")
-    .description("List the registered input formats, implemented or planned")
+    .command("tools")
+    .description("List the lint jobs, the tool that performs each, and what it reads")
+    .option("-c, --config <path>", "path to a manni config file")
+    .option("--no-config", "ignore any discovered config file")
     .option("-f, --format <format>", "output: pretty | json", "pretty")
-    .action((options: FormatsCommandOptions, command: Command) => {
+    .action(async (options: ToolsCommandOptions, command: Command) => {
       try {
         const format = listFormat(options.format);
+        const tools = await runTools(configOption(options.config));
         const color = resolveColor(command.parent ?? command);
-        process.stdout.write(
-          `${renderFormats(runFormats(), format, { color })}\n`,
-        );
+        process.stdout.write(`${renderTools(tools, format, { color })}\n`);
       } catch (err) {
         fail(err);
       }

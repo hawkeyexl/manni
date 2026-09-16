@@ -33,8 +33,26 @@ export type {
   TemplatesInfo,
   TemplatesOptions,
 } from "./commands/templates.js";
-export { runFormats } from "./commands/formats.js";
-export type { FormatInfo } from "./commands/formats.js";
+export { runTools, BUILT_IN_DEFAULTS } from "./commands/tools.js";
+export type { FormatInfo, ToolInfo, ToolsOptions } from "./commands/tools.js";
+export {
+  LINT_JOBS,
+  LINT_TOOLS,
+  TOOLS_BY_JOB,
+  isLintTool,
+  loadConfig,
+  parseConfig,
+  rebaseConfig,
+  resolveLintRun,
+} from "./core/config.js";
+export type {
+  LintConfig,
+  LintJob,
+  LintJobConfig,
+  LintRunOptions,
+  LintTool,
+  ResolvedLintRun,
+} from "./core/config.js";
 export { validateDocument, validateSections } from "./core/validator.js";
 export { matchSections } from "./core/match.js";
 export type { Match, MatchResult } from "./core/match.js";
@@ -57,8 +75,10 @@ export type {
   RefKind,
   TemplateResolver,
 } from "./core/template-registry.js";
-export { resolveTargets, STDIN_TOKEN } from "./core/load-files.js";
-export type { ResolveOptions } from "./core/load-files.js";
+// Targets resolve through the family's walker (`src/meta/internal.ts`), which
+// is what makes `--ext`, `--exclude`, `.gitignore` handling and `--allow-empty`
+// mean the same thing here as they do for `meta` and `cite`.
+export { STDIN_TOKEN } from "../meta/internal.js";
 export {
   listFormats,
   parserByName,
@@ -71,7 +91,7 @@ export {
   renderJson,
   renderGithub,
   renderTemplates,
-  renderFormats,
+  renderTools,
 } from "./reporters/index.js";
 export type {
   ReportFormat,

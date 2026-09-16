@@ -16,11 +16,17 @@ docmeta:
   schemas:
     - okf
 
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    exclude:
+      - "**/drafts/**"
+
 lint:
-  paths:
-    - "docs/**/*.md"
-  exclude:
-    - "**/drafts/**"
+  allowEmpty: false
+  structure:
+    tool: manni
   templates:
     - "./templates.yaml"
   template: tgdp:how-to:1.6

@@ -23,9 +23,15 @@ Key layers:
   header before touching it; the decisions are subtle and each has a test.
 - `src/core/resolve-template.ts` decides which template describes which page.
 - `src/rules/` holds the content rules over the generic content model.
-- `src/commands/` holds the command cores (`lint`, `templates`, `formats`), kept
-  free of CLI/IO plumbing so they can be unit-tested directly.
-- `src/cli.ts` is a thin commander wrapper over the command cores.
+- `src/commands/` holds the command cores (`lint`, `templates`, `tools`), kept
+  free of CLI/IO plumbing so they can be unit-tested directly. `lint` and
+  `tools` settle which config governs a run through `core/config.ts`'s
+  `resolveLintRun`, as cite's cores do, and resolve their targets with the
+  family's walker (`../meta/internal.js`) rather than one of their own.
+- `src/cli.ts` is a thin commander wrapper over the command cores. The verbs
+  are `check`, `structure`, `templates` and `tools`; there is no default
+  subcommand (proposal 0034), and the document set is the family's
+  `collections:` (proposal 0041), never a `lint.paths`.
 - `src/reporters/` formats output (pretty / json / github / sarif).
 - `src/templates/` holds the built-in doctype templates and the manifest that
   registers them.

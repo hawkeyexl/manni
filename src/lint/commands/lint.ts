@@ -41,14 +41,25 @@ import {
   type TypeIndexEntry,
 } from "../core/resolve-template.js";
 import { validateDocument } from "../core/validator.js";
-import { resolveTargets, STDIN_TOKEN } from "../core/load-files.js";
+import {
+  assertNonEmpty,
+  gitignoreOptions,
+  resolveTargetSet,
+  STDIN_TOKEN,
+} from "../../meta/internal.js";
+import { resolveLintRun, type LintConfig } from "../core/config.js";
 
 /** File label used for a document read from stdin. */
 export const STDIN_LABEL = "<stdin>";
 
 export interface LintOptions {
-  /** Positional inputs: files, directories, or globs. `-` reads stdin. */
+  /**
+   * Positional inputs: files, directories, or globs. `-` reads stdin. Empty
+   * falls back to the `collections:` the config declares (proposal 0041).
+   */
   inputs: string[];
+  /** `--collection <name>`, repeatable: the collections this run covers. */
+  collection?: string[];
   /** `--template`: a built-in id, a path, or a name inside `templates`. */
   template?: string;
   /**
@@ -62,6 +73,8 @@ export interface LintOptions {
   templates?: string | string[];
   /** `--as`: force an input format, by parser name. */
   as?: string;
+  /** `--ext`: extensions kept during directory and glob expansion. */
+  exts?: string[];
   /** `--exclude`: globs removed from directory/glob expansion. */
   exclude?: string[];
   cwd?: string;
@@ -69,12 +82,24 @@ export interface LintOptions {
   stdinContent?: string;
   /** `--explain`: record how each file's template was chosen. */
   explain?: boolean;
-  /** Repo policy from config: first matching glob wins. */
+  /** Repo policy: first matching glob wins. Overrides the config's own. */
   overrides?: TemplateOverride[];
-  /** Config default, applied when a page declares no doctype. */
+  /** Applied when a page declares no doctype. Overrides the config's own. */
   defaultTemplate?: string;
-  /** Config's explicit doctype -> template ref map. */
+  /** Explicit doctype -> template ref map. Overrides the config's own. */
   types?: Record<string, string>;
+  /** `--allow-empty`: zero matched files is a success, not an error. */
+  allowEmpty?: boolean;
+  /** `--no-gitignore`: only an explicit `false` travels, so config can decide. */
+  respectGitignore?: boolean;
+  /** `-c/--config`. */
+  configPath?: string;
+  /** `--no-config`: skip discovery and run on the built-in defaults. */
+  noConfig?: boolean;
+  /** Told which config governed the run, and where it came from. */
+  onConfigLoaded?: (info: { path: string; dir: string }) => void;
+  /** Told what the run had to say beside its findings. */
+  onNotice?: (message: string) => void;
 }
 
 /** Extensions that make a bare `--template` value a filename, not a name. */
@@ -427,21 +452,39 @@ async function lintOne(
 }
 
 export async function runLint(opts: LintOptions): Promise<LintRun> {
-  const cwd = opts.cwd ?? process.cwd();
+  // Which config governs the run, and what it covers: positional paths, or
+  // the `collections:` the family file declares. One base per run, so a
+  // collection's globs resolve beside the config that wrote them.
+  const run = await resolveLintRun({
+    cwd: opts.cwd ?? process.cwd(),
+    configPath: opts.configPath,
+    noConfig: opts.noConfig,
+    inputs: opts.inputs,
+    collection: opts.collection,
+    onConfigLoaded: opts.onConfigLoaded,
+  });
+  const config: LintConfig = run.config;
+  const cwd = run.base;
+
+  if (run.inputs.length === 0) {
+    throw new MooseLintError(
+      "No files to check. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.",
+    );
+  }
 
   // Resolve `--as` before anything is read: a typo should fail immediately,
   // not after walking a tree of files it was going to mis-parse anyway.
   const forcedParser = opts.as != null ? parserByName(opts.as) : undefined;
   if (opts.as != null && !forcedParser) {
     throw new MooseLintError(
-      `Unknown format "${opts.as}". Run "manni lint formats" to see the registered formats.`,
+      `Unknown format "${opts.as}". Run "manni lint tools" to see the registered formats.`,
     );
   }
 
   // The doctype -> template map. Built-ins go in first and user templates
   // overwrite them, so overriding `how-to` for a repo is one file with
   // `types: [how-to]` in it - no config entry, no flag.
-  const templatePaths = templateFiles(opts.templates);
+  const templatePaths = templateFiles(opts.templates ?? config.templates);
   const getTemplate = templateLoader();
 
   const userFiles: { ref: string; file: TemplateFile }[] = [];
@@ -462,7 +505,7 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
   const typeIndex = buildTypeIndex({
     builtins: listBuiltins(),
     userFiles,
-    explicitTypes: opts.types,
+    explicitTypes: opts.types ?? config.types,
   });
 
   const ctx: LintContext = {
@@ -470,8 +513,10 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
     absoluteOf: (file) => resolve(cwd, file).replace(/\\/g, "/"),
     typeIndex,
     cliTemplate: cliTemplateRef(opts.template, templatePaths),
-    overrides: opts.overrides,
-    defaultTemplate: opts.defaultTemplate,
+    overrides: opts.overrides ?? config.overrides,
+    // `template:` in config is the default for a page that declares no type -
+    // the bottom of the chain, not the top. `--template` is the top.
+    defaultTemplate: opts.defaultTemplate ?? config.template,
     explain: opts.explain === true,
   };
 
@@ -481,20 +526,42 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
   // 200 pages and exiting 1 - which reads to CI as "the docs are wrong".
   if (ctx.cliTemplate != null) await getTemplate(ctx.cliTemplate);
 
-  const usingStdin = opts.inputs.includes(STDIN_TOKEN);
-  const fileInputs = opts.inputs.filter((input) => input !== STDIN_TOKEN);
-
-  // With stdin and nothing else there is nothing to expand; otherwise let
-  // resolveTargets own the "you gave me nothing" error, so it is worded once.
-  const files =
-    usingStdin && fileInputs.length === 0
-      ? []
-      : await resolveTargets({
-          inputs: fileInputs,
-          exts: forcedParser?.extensions,
-          exclude: opts.exclude,
-          cwd,
-        });
+  const usingStdin = run.inputs.includes(STDIN_TOKEN);
+  const fileInputs = run.inputs.filter((input) => input !== STDIN_TOKEN);
+  const exts = opts.exts ?? forcedParser?.extensions;
+  const allowEmpty = opts.allowEmpty ?? config.allowEmpty;
+  // A collection's `exclude:` shapes the collection, so it applies when the
+  // inputs came from the collections and never to a path the operator typed.
+  // `--exclude` filters either way; the union is deduplicated.
+  const exclude = [
+    ...new Set([
+      ...(opts.exclude ?? []),
+      ...(run.fromCollections ? run.collections.flatMap((c) => c.exclude) : []),
+    ]),
+  ];
+  const { files, gitignoreSkipped } = await resolveTargetSet({
+    inputs: fileInputs,
+    exts,
+    exclude,
+    cwd,
+    allowEmpty,
+    ...gitignoreOptions({
+      flag: opts.respectGitignore,
+      onNotice: opts.onNotice,
+    }),
+  });
+  // Resolving zero files is an operational error, not a pass: with no files
+  // there is no verdict, and exit 0 would read as a clean bill of health.
+  assertNonEmpty({
+    files,
+    inputs: fileInputs,
+    usingStdin,
+    allowEmpty,
+    exclude,
+    exts,
+    gitignoreSkipped,
+    action: "linted",
+  });
 
   const results: LintFileResult[] = [];
 
@@ -532,14 +599,6 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
     results.push(await lintOne(file, content, parser, ctx));
   }
 
-  // A glob that matched nothing is a typo far more often than it is an empty
-  // directory, and an empty report reads as a clean bill of health.
-  if (results.length === 0) {
-    throw new MooseLintError(
-      `Nothing to lint: ${fileInputs.join(", ")} matched no files. Check the paths, --exclude, and "manni lint formats".`,
-    );
-  }
-
   const skipped = results.filter((r) => r.skipped != null).length;
   const failed = results.filter((r) => r.skipped == null && !r.success).length;
   const checked = results.length - skipped;
@@ -570,7 +629,7 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
         : null,
       unsupported > 0
         ? `${unsupported} had no parser for their format: pass --as <format> to ` +
-          `force one, or target files in a format "manni lint formats" lists as ` +
+          `force one, or target files in a format "manni lint tools" lists as ` +
           `implemented.`
         : null,
     ]
@@ -579,7 +638,7 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
 
     throw new MooseLintError(
       `Nothing was checked: all ${skipped} file(s) were skipped. ${advice} ` +
-        `Run "manni lint <paths> --explain" to see how each file resolved.`,
+        `Run "manni lint structure <paths> --explain" to see how each file resolved.`,
     );
   }
 

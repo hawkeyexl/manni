@@ -52,9 +52,9 @@ const dir = await mkdtemp(join(tmpdir(), "manni-lint-smoke-"));
 try {
   console.log(`smoke: ${CLI}`);
 
-  const formats = await cli(["formats"]);
+  const formats = await cli(["tools"]);
   check(
-    "formats lists markdown as implemented",
+    "tools lists markdown as implemented",
     formats.code === 0 && /markdown.*implemented/s.test(formats.stdout),
     formats.stderr || formats.stdout,
   );
@@ -69,6 +69,7 @@ try {
   );
 
   const upstream = await cli([
+    "structure",
     "test/lint/fixtures/tgdp/template_how-to.md",
     "-t",
     "tgdp:how-to:1.6",
@@ -84,7 +85,7 @@ try {
     typed,
     "---\ntype: how-to\n---\n\n# Do it\n\n## Overview\n\nWhy.\n\n## Step\n\nHow.\n\n## See also\n",
   );
-  const routed = await cli([typed]);
+  const routed = await cli(["structure", typed]);
   check(
     "a page routes by its type with no --template (exit 0)",
     routed.code === 0 && routed.stdout.includes("1 passed"),
@@ -93,7 +94,7 @@ try {
 
   const untyped = join(dir, "untyped.md");
   await writeFile(untyped, "# No type here\n");
-  const skipped = await cli([untyped, typed]);
+  const skipped = await cli(["structure", untyped, typed]);
   check(
     "an untyped page beside a typed one is skipped, not failed (exit 0)",
     skipped.code === 0 && skipped.stdout.includes("skipped"),
@@ -103,7 +104,7 @@ try {
   // The other half of the same contract: a run that finds files and checks none
   // of them must not exit 0, or a repo adopting the tool before backfilling
   // `type:` keys gets a permanently green CI job over an unchecked docset.
-  const nothingChecked = await cli([untyped]);
+  const nothingChecked = await cli(["structure", untyped]);
   check(
     "a run that checks nothing fails loudly (exit 2)",
     nothingChecked.code === 2 &&
@@ -113,7 +114,7 @@ try {
 
   const mistyped = join(dir, "mistyped.md");
   await writeFile(mistyped, "---\ntype: how-two\n---\n\n# Typo\n");
-  const unknown = await cli([mistyped]);
+  const unknown = await cli(["structure", mistyped]);
   check(
     // "how-to" alone matched too loosely: it appears in the known-doctypes
     // list, in template ids, and in any number of future outputs, so the check
@@ -128,17 +129,18 @@ try {
   // Every implemented format, through the built package, against one built-in.
   // The vitest suite proves parity from `src/`; this proves the parsers and
   // their dependencies survive bundling.
-  const formatsList = await cli(["formats", "-f", "json"]);
+  const formatsList = await cli(["tools", "-f", "json"]);
   let implementedExts = [];
   try {
-    implementedExts = JSON.parse(formatsList.stdout)
+    // One row per job; the structure job's `formats` is the parser registry.
+    implementedExts = (JSON.parse(formatsList.stdout)[0]?.formats ?? [])
       .filter((f) => f.implemented)
       .map((f) => f.extensions[0]);
   } catch {
     implementedExts = [];
   }
   const fixtures = implementedExts.map((ext) => `test/lint/fixtures/formats/how-to${ext}`);
-  const everyFormat = await cli(fixtures);
+  const everyFormat = await cli(["structure", ...fixtures]);
   check(
     `one template lints all ${fixtures.length} implemented formats clean`,
     fixtures.length > 0 &&
@@ -150,6 +152,7 @@ try {
   // SARIF is what a CI code-scanning upload consumes, so a malformed envelope
   // is only discovered by whoever configured the upload.
   const sarif = await cli([
+    "structure",
     "test/lint/fixtures/tgdp/template_how-to.md",
     "-t",
     "tgdp:how-to:1.6",
@@ -175,11 +178,16 @@ try {
   await writeFile(
     join(dir, "manni.config.yaml"),
     [
+      "collections:",
+      "  - name: site",
+      '    paths: ["docs/**/*.md"]',
+      "",
       "meta:",
       '  schemas: ["google:okf:0.1"]',
       "",
       "lint:",
-      '  paths: ["docs/**/*.md"]',
+      "  structure:",
+      "    tool: manni",
       "",
     ].join("\n"),
   );
@@ -203,25 +211,31 @@ try {
       "",
     ].join("\n"),
   );
-  const fromConfig = await cli([], { cwd: dir });
+  const fromConfig = await cli(["check"], { cwd: dir });
   check(
-    "a bare run takes its targets from manni.config.yaml, ignoring sibling keys",
+    "`check` with no paths takes its targets from collections:, ignoring sibling keys",
     fromConfig.code === 0 && fromConfig.stdout.includes("1 passed"),
     fromConfig.stderr || fromConfig.stdout,
   );
 
-  // `paths:` naming a directory rather than a glob, with an `exclude:`. The CLI
-  // makes every config glob absolute (so a config means the same thing from any
-  // working directory), while a directory input walks with a cwd-relative
-  // pattern - so this is an absolute ignore filtering relative entries. If that
-  // ever stops matching, `exclude:` silently covers nothing: the drafts get
-  // linted, and because they are drafts the run starts failing on documents the
-  // repo deliberately excluded.
+  // A collection whose `paths:` names a directory rather than a glob, with an
+  // `exclude:`. The run resolves a collection's paths from the config's own
+  // directory, and the directory walk is anchored there, so this is the
+  // collection's ignore filtering a real walk. If it ever stops matching,
+  // `exclude:` silently covers nothing: the drafts get linted, and because
+  // they are drafts the run starts failing on documents the repo deliberately
+  // excluded.
   const excluded = join(dir, "excluded");
   await mkdir(join(excluded, "docs", "drafts"), { recursive: true });
   await writeFile(
     join(excluded, "manni.config.yaml"),
-    ["lint:", '  paths: ["docs"]', '  exclude: ["**/drafts/**"]', ""].join("\n"),
+    [
+      "collections:",
+      "  - name: site",
+      '    paths: ["docs"]',
+      '    exclude: ["**/drafts/**"]',
+      "",
+    ].join("\n"),
   );
   await writeFile(
     join(excluded, "docs", "page.md"),
@@ -232,16 +246,16 @@ try {
     join(excluded, "docs", "drafts", "wip.md"),
     "---\ntype: how-to\ntitle: Half written\n---\n\n## Overview\n",
   );
-  const withExclude = await cli([], { cwd: excluded });
+  const withExclude = await cli(["check"], { cwd: excluded });
   check(
-    "a directory in paths: honors exclude: (exit 0, drafts not linted)",
+    "a collection whose paths: names a directory honors its exclude:",
     withExclude.code === 0 &&
       withExclude.stdout.includes("1 passed") &&
       !withExclude.stdout.includes("wip.md"),
     withExclude.stderr || withExclude.stdout,
   );
 
-  const missing = await cli(["no-such-file.md", "-t", "tgdp:how-to:1.6"]);
+  const missing = await cli(["structure", "no-such-file.md", "-t", "tgdp:how-to:1.6"]);
   check(
     "an operational error exits 2",
     missing.code === 2,

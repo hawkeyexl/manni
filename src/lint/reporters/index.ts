@@ -5,7 +5,7 @@
  */
 import type { Finding } from "../types.js";
 import type { LintRun } from "../commands/lint.js";
-import type { FormatInfo } from "../commands/formats.js";
+import type { FormatInfo, ToolInfo } from "../commands/tools.js";
 import type { TemplateInfo, TemplatesInfo } from "../commands/templates.js";
 import { palette, type Colors } from "./color.js";
 import { renderSarif } from "./sarif.js";
@@ -264,20 +264,37 @@ export function renderTemplates(
   return lines.join("\n");
 }
 
-export function renderFormats(
-  formats: FormatInfo[],
+/** One input format as `markdown (.md, .markdown) implemented`. */
+function formatLine(c: Colors, entry: FormatInfo): string {
+  const state = entry.implemented ? c.green("implemented") : c.dim("planned");
+  return `      ${c.cyan(entry.name)}  ${entry.label} (${entry.extensions.join(", ")})  [${state}]`;
+}
+
+/**
+ * `manni lint tools`: one block per job. Every column is printed for every
+ * job, the negatives included - "not configured" beside a job that still runs
+ * on defaults is the answer someone ran this command to get.
+ */
+export function renderTools(
+  tools: ToolInfo[],
   format: ListFormat,
   opts: ReportOptions = {},
 ): string {
-  if (format === "json") return JSON.stringify(formats, null, 2);
+  if (format === "json") return JSON.stringify(tools, null, 2);
 
   const c = palette(opts.color ?? false);
-  const lines: string[] = [c.bold("Input formats:")];
-  for (const entry of formats) {
-    const state = entry.implemented ? c.green("implemented") : c.dim("planned");
+  const lines: string[] = [c.bold("Jobs:")];
+  for (const entry of tools) {
+    const state = [
+      entry.configured ? "configured" : "not configured",
+      entry.available ? "available" : "unavailable",
+    ].join(", ");
     lines.push(
-      `  ${c.cyan(entry.name)}  ${entry.label} (${entry.extensions.join(", ")})  [${state}]`,
+      `  ${c.cyan(entry.job)}  tool: ${c.bold(entry.tool)} ${entry.version}  [${state}]`,
     );
+    lines.push(`    config: ${c.dim(entry.config)}`);
+    lines.push(`    ${c.dim("formats:")}`);
+    for (const info of entry.formats) lines.push(formatLine(c, info));
   }
   return lines.join("\n");
 }

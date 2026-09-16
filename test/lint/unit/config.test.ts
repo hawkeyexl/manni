@@ -17,6 +17,7 @@ import {
   SECTION_KEY,
   loadConfig,
   parseConfig,
+  resolveLintRun,
 } from "../../../src/lint/core/config.js";
 import configSchema from "../../../schemas/lint/config.json" with { type: "json" };
 import { MooseLintError } from "../../../src/lint/types.js";
@@ -85,8 +86,9 @@ describe("parseConfig", () => {
     const config = parseConfig(
       [
         "lint:",
-        '  paths: ["docs/**/*.md"]',
-        '  exclude: ["**/drafts/**"]',
+        "  allowEmpty: true",
+        "  structure:",
+        "    tool: manni",
         '  templates: ["./templates.yaml"]',
         "  template: tgdp:how-to:1.6",
         "  types:",
@@ -99,12 +101,56 @@ describe("parseConfig", () => {
     );
 
     expect(config).toEqual({
-      paths: ["docs/**/*.md"],
-      exclude: ["**/drafts/**"],
+      allowEmpty: true,
+      structure: { tool: "manni" },
       templates: ["./templates.yaml"],
       template: "tgdp:how-to:1.6",
       types: { "api-operation": "./templates.yaml#api-operation" },
       overrides: [{ files: "docs/api/**", template: "tgdp:reference:1.6" }],
+    });
+  });
+
+  // Proposal 0041 moved the document set out of every tool's section and up to
+  // the family-level `collections:`. Refused by name rather than aliased: an
+  // alias would be a second place to declare something meant to be declared
+  // once, and the refusal is the only thing that tells an upgrading repo the
+  // key stopped being read instead of silently linting nothing.
+  describe("the keys that moved to collections:", () => {
+    for (const key of ["paths", "exclude"]) {
+      it(`refuses "${key}" and points at collections:`, async () => {
+        const message = await messageOf(async () =>
+          parseConfig(`lint:\n  ${key}: ["docs/**/*.md"]\n`, "manni.config.yaml"),
+        );
+        expect(message).toBe(
+          `manni.config.yaml: "${key}" is no longer a lint key. Document sets are declared once for every tool, under a top-level collections: list. See https://hawkeyexl.github.io/manni/meta/reference/configuration/#collections`,
+        );
+      });
+    }
+  });
+
+  describe("the structure job", () => {
+    it("defaults its tool rather than writing one in", () => {
+      expect(parseConfig("lint:\n  structure: {}\n", "x")).toEqual({
+        structure: {},
+      });
+    });
+
+    it("rejects a tool nothing implements", async () => {
+      const message = await messageOf(async () =>
+        parseConfig("lint:\n  structure:\n    tool: vale\n", "manni.config.yaml"),
+      );
+      expect(message).toBe(
+        "manni.config.yaml: lint.structure.tool must be one of: manni.",
+      );
+    });
+
+    it("rejects an unknown key under it, naming the ones it takes", async () => {
+      const message = await messageOf(async () =>
+        parseConfig("lint:\n  structure:\n    tools: manni\n", "manni.config.yaml"),
+      );
+      expect(message).toBe(
+        'Unknown key "tools" under lint.structure: in manni.config.yaml. Supported keys: tool.',
+      );
     });
   });
 
@@ -122,12 +168,12 @@ describe("parseConfig", () => {
         '    - files: "**"',
         "      schemas: [okf]",
         "lint:",
-        '  paths: ["docs/**/*.md"]',
+        "  template: tgdp:how-to:1.6",
       ].join("\n"),
       "manni.config.yaml",
     );
 
-    expect(config).toEqual({ paths: ["docs/**/*.md"] });
+    expect(config).toEqual({ template: "tgdp:how-to:1.6" });
   });
 
   // Keeps one shared file usable by a project that has not adopted this tool.
@@ -174,14 +220,16 @@ describe("parseConfig", () => {
     expect(message).toContain("must be string");
   });
 
-  // additionalProperties: false at every level is what turns a typo into a
-  // loud failure rather than a key that quietly does nothing.
+  // A key the parser does not know is a typo, not a no-op: dropping it in
+  // silence would let `allowEmtpy: true` read as configured and be nothing.
+  // The message names every key the section takes, which is cite's wording.
   it("rejects an unknown key inside the section, and names it", async () => {
     const message = await messageOf(async () =>
       parseConfig('lint:\n  path: ["docs"]\n', "manni.config.yaml"),
     );
-    expect(message).toContain("must NOT have additional properties");
-    expect(message).toContain('"path"');
+    expect(message).toBe(
+      'Unknown key "path" under lint: in manni.config.yaml. Supported keys: allowEmpty, overrides, structure, template, templates, types.',
+    );
   });
 
   it("rejects an unknown key nested inside an override", async () => {
@@ -202,7 +250,7 @@ describe("parseConfig", () => {
       const message = await messageOf(async () =>
         parseConfig(
           [
-            'paths: ["docs/**/*.md"]',
+            'templates: ["./templates.yaml"]',
             "overrides:",
             '  - files: "docs/api/**"',
             "    template: tgdp:reference:1.6",
@@ -210,7 +258,7 @@ describe("parseConfig", () => {
           "manni.config.yaml",
         ),
       );
-      expect(message).toContain('"paths:"');
+      expect(message).toContain('"templates:"');
       expect(message).toContain('"overrides:"');
       expect(message).toContain('no "lint:" key');
       expect(message).toContain("Indent the file's contents one level");
@@ -238,7 +286,7 @@ describe("parseConfig", () => {
     // had not mentioned and went looking for the wrong one.
     it("names the file it read, not the conventional one", async () => {
       const message = await messageOf(async () =>
-        parseConfig('paths: ["docs/**/*.md"]\n', "my-custom.yaml"),
+        parseConfig('templates: ["./templates.yaml"]\n', "my-custom.yaml"),
       );
       expect(message).toContain("my-custom.yaml");
       expect(message).not.toContain("manni.config.yaml");
@@ -277,8 +325,8 @@ describe("loadConfig", () => {
     const found = await loadConfig(join(FIXTURES, "manni.config.yaml"));
     expect(found).not.toBeNull();
     expect(found?.config).toEqual({
-      paths: ["docs/**/*.md"],
-      exclude: ["**/drafts/**"],
+      allowEmpty: false,
+      structure: { tool: "manni" },
       templates: ["./templates.yaml"],
       template: "tgdp:how-to:1.6",
       types: { "api-operation": "./templates.yaml#api-operation" },
@@ -332,11 +380,11 @@ describe("loadConfig", () => {
     // People run the CLI from wherever they are. Looking only in cwd resolved
     // every one of those runs to defaults, with the config one directory up.
     it("walks up from a subdirectory to the repository root", async () => {
-      await write("manni.config.yaml", 'lint:\n  paths: ["docs/**/*.md"]\n');
+      await write("manni.config.yaml", "lint:\n  template: tgdp:how-to:1.6\n");
       await mkdir(join(dir, "docs", "api"), { recursive: true });
 
       const found = await loadConfig(undefined, join(dir, "docs", "api"));
-      expect(found?.config).toEqual({ paths: ["docs/**/*.md"] });
+      expect(found?.config).toEqual({ template: "tgdp:how-to:1.6" });
       expect(found?.path).toBe(join(dir, "manni.config.yaml"));
     });
 
@@ -370,89 +418,29 @@ describe("loadConfig", () => {
     });
   });
 
+  // `doc-structure-lint.config.yaml` was this tool's own file before it joined
+  // the family, and discovery no longer knows the name: the whole document of
+  // such a file is a `lint:` section written in `paths:` and `exclude:`, which
+  // the section no longer takes, so reading one could only produce the
+  // moved-key refusal from a file the author is not looking at. The family's
+  // own pre-rename name, `moose.config.yaml`, is a different thing and is
+  // still read with a warning - see the case above.
   describe("the pre-family config file", () => {
-    // `doc-structure-lint.config.yaml` predates the family file; its whole
-    // document is the `lint:` section. It is still read, so an upgrade does
-    // not silently run on defaults, and the warning says where to move it.
-    it("is read whole, with a warning naming the family file and the key", async () => {
-      await write("doc-structure-lint.config.yaml", 'paths: ["docs/**/*.md"]\n');
-      const stderr = captureStderr();
-      try {
-        const found = await loadConfig(undefined, dir);
-        expect(found?.config).toEqual({ paths: ["docs/**/*.md"] });
-        expect(found?.path).toBe(join(dir, "doc-structure-lint.config.yaml"));
-
-        expect(stderr.text()).toContain("doc-structure-lint.config.yaml");
-        expect(stderr.text()).toContain("manni.config.yaml");
-        expect(stderr.text()).toContain(`\`${SECTION_KEY}:\``);
-      } finally {
-        stderr.restore();
-      }
-    });
-
-    it("is read under the .yml spelling too", async () => {
-      await write("doc-structure-lint.config.yml", "template: tgdp:how-to:1.6\n");
-      const stderr = captureStderr();
-      try {
-        const found = await loadConfig(undefined, dir);
-        expect(found?.config).toEqual({ template: "tgdp:how-to:1.6" });
-        expect(stderr.text()).toContain("doc-structure-lint.config.yml");
-      } finally {
-        stderr.restore();
-      }
-    });
-
-    // A stale config two directories up is exactly as misleading as one in cwd.
-    it("is found from a subdirectory of the repo", async () => {
+    it("is not discovered at all", async () => {
       await write("doc-structure-lint.config.yaml", "template: tgdp:how-to:1.6\n");
-      await mkdir(join(dir, "docs", "api"), { recursive: true });
       const stderr = captureStderr();
       try {
-        const found = await loadConfig(undefined, join(dir, "docs", "api"));
-        expect(found?.config).toEqual({ template: "tgdp:how-to:1.6" });
-      } finally {
-        stderr.restore();
-      }
-    });
-
-    it("yields to a family file beside it, silently", async () => {
-      await write("doc-structure-lint.config.yaml", "template: old\n");
-      await write("manni.config.yaml", "lint:\n  template: tgdp:how-to:1.6\n");
-      const stderr = captureStderr();
-      try {
-        const found = await loadConfig(undefined, dir);
-        expect(found?.config).toEqual({ template: "tgdp:how-to:1.6" });
+        expect(await loadConfig(undefined, dir)).toBeNull();
         expect(stderr.text()).toBe("");
       } finally {
         stderr.restore();
       }
     });
 
-    it("is validated like any other section", async () => {
-      await write("doc-structure-lint.config.yaml", 'path: ["docs"]\n');
-      const stderr = captureStderr();
-      try {
-        const message = await messageOf(() => loadConfig(undefined, dir));
-        expect(message).toContain("doc-structure-lint.config.yaml");
-        expect(message).toContain('"path"');
-      } finally {
-        stderr.restore();
-      }
-    });
-
-    // --config gets no filename sniffing and no warning: a file passed by hand
-    // may be called anything, and its whole document is the section when it
-    // carries no `lint:` key.
-    it("is read without a warning behind an explicit --config", async () => {
-      await write("doc-structure-lint.config.yaml", 'paths: ["docs/**"]\n');
-      const stderr = captureStderr();
-      try {
-        const found = await loadConfig(join(dir, "doc-structure-lint.config.yaml"));
-        expect(found?.config).toEqual({ paths: ["docs/**"] });
-        expect(stderr.text()).toBe("");
-      } finally {
-        stderr.restore();
-      }
+    it("is still read when named explicitly, like any other file", async () => {
+      await write("custom.yaml", "template: tgdp:how-to:1.6\n");
+      const found = await loadConfig(join(dir, "custom.yaml"));
+      expect(found?.config).toEqual({ template: "tgdp:how-to:1.6" });
     });
   });
 
@@ -487,9 +475,9 @@ describe("loadConfig", () => {
     });
 
     it("takes the whole document as the section when there is no lint key", async () => {
-      await write("custom.yaml", 'paths: ["docs/**/*.md"]\n');
+      await write("custom.yaml", 'templates: ["./templates.yaml"]\n');
       const found = await loadConfig("custom.yaml", dir);
-      expect(found?.config).toEqual({ paths: ["docs/**/*.md"] });
+      expect(found?.config).toEqual({ templates: ["./templates.yaml"] });
     });
 
     // The one shape check that survives un-wrapping: nothing in the section's
@@ -508,5 +496,112 @@ describe("loadConfig", () => {
       const found = await loadConfig(join(dir, "elsewhere", "custom.yaml"), dir);
       expect(found?.config).toEqual({ template: "explicit" });
     });
+  });
+});
+
+/**
+ * What every lint command settles before it touches a file: which config
+ * governs the run, what it covers, and from where. The document set is the
+ * family's `collections:` (proposal 0041), selected exactly as cite and meta
+ * select it, so the refusals are worded once for all three.
+ */
+describe("resolveLintRun", () => {
+  const COLLECTIONS = [
+    "collections:",
+    "  - name: guides",
+    '    paths: ["docs/guides/**/*.md"]',
+    '    exclude: ["**/drafts/**"]',
+    "  - name: api",
+    '    paths: ["docs/api/**/*.md"]',
+    "lint:",
+    "  template: tgdp:how-to:1.6",
+    "",
+  ].join("\n");
+
+  it("falls back to every collection when no paths are given", async () => {
+    await write("manni.config.yaml", COLLECTIONS);
+    const run = await resolveLintRun({ cwd: dir, inputs: [] });
+    expect(run.inputs).toEqual(["docs/guides/**/*.md", "docs/api/**/*.md"]);
+    expect(run.fromCollections).toBe(true);
+    // A collection's globs were written beside the config, so they resolve
+    // there rather than from wherever the command was run.
+    expect(run.base).toBe(dir);
+  });
+
+  it("narrows to one named collection", async () => {
+    await write("manni.config.yaml", COLLECTIONS);
+    const run = await resolveLintRun({
+      cwd: dir,
+      inputs: [],
+      collection: ["api"],
+    });
+    expect(run.inputs).toEqual(["docs/api/**/*.md"]);
+    expect(run.collections.map((c) => c.name)).toEqual(["api"]);
+  });
+
+  it("resolves typed paths from the working directory, not the config's", async () => {
+    await write("manni.config.yaml", COLLECTIONS);
+    const run = await resolveLintRun({ cwd: join(dir, "docs"), inputs: ["a.md"] });
+    expect(run.inputs).toEqual(["a.md"]);
+    expect(run.fromCollections).toBe(false);
+    expect(run.base).toBe(join(dir, "docs"));
+  });
+
+  it("refuses --collection beside positional paths", async () => {
+    await write("manni.config.yaml", COLLECTIONS);
+    const message = await messageOf(() =>
+      resolveLintRun({ cwd: dir, inputs: ["docs"], collection: ["api"] }),
+    );
+    expect(message).toBe(
+      "--collection selects a configured collection; it cannot be combined with paths.",
+    );
+  });
+
+  it("refuses --collection with no config to select from", async () => {
+    const message = await messageOf(() =>
+      resolveLintRun({ cwd: dir, inputs: [], collection: ["api"], noConfig: true }),
+    );
+    expect(message).toBe("--collection needs a config file to select from.");
+  });
+
+  it("refuses a collection name nothing declares", async () => {
+    await write("manni.config.yaml", COLLECTIONS);
+    const message = await messageOf(() =>
+      resolveLintRun({ cwd: dir, inputs: [], collection: ["guids"] }),
+    );
+    expect(message).toContain('no collection named "guids"');
+    expect(message).toContain("Configured: guides, api.");
+  });
+
+  // The config means the same thing from any working directory: refs and
+  // globs it declares are relative to the file, not to the run.
+  it("rebases the keys that stayed against the config's directory", async () => {
+    await write(
+      "manni.config.yaml",
+      [
+        "lint:",
+        '  templates: ["./templates.yaml"]',
+        "  overrides:",
+        '    - files: "docs/api/**"',
+        "      template: ./templates.yaml#reference",
+        "",
+      ].join("\n"),
+    );
+    await mkdir(join(dir, "sub"), { recursive: true });
+    const run = await resolveLintRun({ cwd: join(dir, "sub"), inputs: ["x.md"] });
+    const posix = (value: string): string => value.split("\\").join("/");
+    expect(posix(run.config.templates?.[0] ?? "")).toBe(
+      `${posix(dir)}/templates.yaml`,
+    );
+    expect(posix(run.config.overrides?.[0]?.files ?? "")).toBe(
+      `${posix(dir)}/docs/api/**`,
+    );
+  });
+
+  it("ignores the discovered config under noConfig", async () => {
+    await write("manni.config.yaml", COLLECTIONS);
+    const run = await resolveLintRun({ cwd: dir, inputs: [], noConfig: true });
+    expect(run.config).toEqual({});
+    expect(run.inputs).toEqual([]);
   });
 });
