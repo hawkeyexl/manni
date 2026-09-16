@@ -428,6 +428,36 @@ describe("write -f", () => {
     expect(renderWritePretty(report)).toBe("terms.json would be created");
   });
 
+  const VARIFOCAL = ["---", "type: term", "id: varifocal", "label: varifocal", "see: progressive lens", "---", ""].join("\n");
+
+  it("skips an entry a definition list cannot read back, and says so after the dropped fields", async () => {
+    const cwd = await lenses(undefined, { "docs/terms/varifocal.md": VARIFOCAL });
+    const report = await runWrite({ cwd, inputs: [], format: "markdown", out: "out/glossary.md" });
+    expect(report.skipped).toEqual(["varifocal"]);
+    expect(renderWritePretty(report)).toBe(
+      [
+        "Wrote 2 terms to out/glossary.md",
+        "  dropped from a definition list: abstract on 1 term, hidden-labels on 1, broader on 1, narrower on 1",
+        "  skipped 1 term a definition list cannot read without a definition: varifocal",
+      ].join("\n"),
+    );
+    expect(await readFile(join(cwd, "out/glossary.md"), "utf8")).not.toContain("varifocal");
+    expect((await runList({ cwd, inputs: ["out/glossary.md"], onNotice: (m) => expect.fail(m) })).terms).toHaveLength(2);
+  });
+
+  it("prints the dropped and skipped lines under --dry-run too", async () => {
+    const cwd = await lenses(undefined, { "docs/terms/varifocal.md": VARIFOCAL });
+    const report = await runWrite({ cwd, inputs: [], format: "markdown", out: "out/glossary.md", dryRun: true });
+    expect(existsSync(join(cwd, "out/glossary.md"))).toBe(false);
+    expect(renderWritePretty(report)).toBe(
+      [
+        "out/glossary.md would be created",
+        "  dropped from a definition list: abstract on 1 term, hidden-labels on 1, broader on 1, narrower on 1",
+        "  skipped 1 term a definition list cannot read without a definition: varifocal",
+      ].join("\n"),
+    );
+  });
+
   it("writes a Vale style to -o, removes a stale marked file, and reports the style's files", async () => {
     const cwd = await lenses(undefined, { "styles/Terms/OLD.yml": `${VALE_MARKER}\nextends: conditional\n` });
     const report = await runWrite({ cwd, inputs: [], format: "vale", out: "styles" });

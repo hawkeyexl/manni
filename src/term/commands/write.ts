@@ -80,8 +80,10 @@ export interface WriteReport {
   /** The rendered files, relative to cwd, with their content. */
   files: RenderedFile[];
   dropped: DroppedField[];
-  /** What a dropped field was dropped from: `a definition list`, `tbx`. */
+  /** What a dropped field was dropped from, and a skipped term left out of: `a definition list`, `tbx`. */
   droppedFrom?: string;
+  /** Ids of the terms left out because the target construct cannot read them back, in set order. */
+  skipped: string[];
   check: boolean;
   dryRun: boolean;
   wiring?: ValeWiring;
@@ -236,6 +238,7 @@ export async function runWrite(opts: WriteOptions): Promise<WriteReport> {
     // A Vale style holds designations only, by design; its dropped definitions are not news.
     dropped: format === "vale" ? [] : render.dropped,
     droppedFrom: droppedFrom(format, shape, readers),
+    skipped: render.skipped,
     check,
     dryRun,
     ...(wiring === undefined ? {} : { wiring }),
@@ -311,6 +314,7 @@ async function writeInPlace(
     changes,
     files: files.map((f) => ({ path: displayPath(f.path, cwd), content: f.content })),
     dropped: [],
+    skipped: [],
     check,
     dryRun,
   };

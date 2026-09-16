@@ -97,6 +97,11 @@ export const skosWriter: TermWriter = {
       ],
     };
     const content = `${JSON.stringify(document, null, 2)}\n`;
-    return { files: [{ path: target.path, content }], removals: [], dropped: droppedFields(terms, HOLDS) };
+    return {
+      files: [{ path: target.path, content }],
+      removals: [],
+      dropped: droppedFields(terms, HOLDS),
+      skipped: [],
+    };
   },
 };

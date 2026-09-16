@@ -217,6 +217,23 @@ describe("document writers", () => {
     }
   });
 
+  /** The constructs whose reader skips an entry with no definition, or folds it into the next entry. */
+  const NEEDS_DEFINITION = new Set<string>(["markdown file", "mdx file", "asciidoc file", "rst file", "html file"]);
+
+  it.each(CASES)("$format $shape writes no entry its reader cannot read back", async ({ format, shape, id }) => {
+    const terms = [
+      term("apple", { label: "apple", definition: "A pomaceous fruit." }),
+      term("varifocal", { label: "varifocal", "alt-labels": ["VF"], see: "progressive lens" }),
+      term("pal", { label: "progressive lens", definition: "A lens with no visible line." }),
+    ];
+    const { render, read } = await renderAndRead(format, shape, terms);
+    const skipped = NEEDS_DEFINITION.has(`${format} ${shape}`) ? ["varifocal"] : [];
+    expect(render.skipped).toEqual(skipped);
+    const written = terms.filter((t) => !skipped.includes(t.id));
+    expect(read.map((t) => t.id).sort()).toEqual(written.map((t) => (id ? t.id : slugOf(t.record.label))).sort());
+    expect(render.dropped.map((d) => d.id)).not.toContain(skipped[0] ?? "none");
+  });
+
   it.each(CASES.filter((c) => c.shape === "file"))(
     "$format file states a language every term shares",
     async ({ format }) => {

@@ -232,6 +232,6 @@ export const valeWriter: TermWriter = {
     const produced = new Set(files.map((f) => relative(termsDir, f.path).toLowerCase()));
     const removals = marked.filter((path) => !produced.has(relative(termsDir, path).toLowerCase())).sort();
 
-    return { files, removals, dropped: droppedFields(terms, HOLDS) };
+    return { files, removals, dropped: droppedFields(terms, HOLDS), skipped: [] };
   },
 };

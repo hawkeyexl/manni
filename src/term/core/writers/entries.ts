@@ -25,7 +25,8 @@ function labelsOf(record: TermRecord): string[] {
  * A Markdown Extra definition list entry: the label and each alt-label on a
  * line, then `:   ` and the definition, continuation lines and later
  * paragraphs indented four spaces. A term with no definition gets a bare `:`,
- * which the reader reports rather than reading as prose.
+ * which the reader skips with a notice, so the file writer leaves such a term
+ * out.
  */
 export function markdownEntry(record: TermRecord): string {
   const lines = labelsOf(record);

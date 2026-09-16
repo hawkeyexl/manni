@@ -69,6 +69,11 @@ export const tbxWriter: TermWriter = {
       "</martif>",
     ];
     const content = lines.map((line) => `${line}\n`).join("");
-    return { files: [{ path: target.path, content }], removals: [], dropped: droppedFields(terms, HOLDS) };
+    return {
+      files: [{ path: target.path, content }],
+      removals: [],
+      dropped: droppedFields(terms, HOLDS),
+      skipped: [],
+    };
   },
 };

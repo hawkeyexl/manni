@@ -224,8 +224,14 @@ export interface TermRender {
   files: RenderedFile[];
   /** Absolute paths the render owns and no longer produces. */
   removals: string[];
-  /** Fields the target construct cannot hold, per term. */
+  /** Fields the target construct cannot hold, per term written. */
   dropped: DroppedField[];
+  /**
+   * Ids of the terms left out, in set order, because the target construct's
+   * reader could not read them back: a definition list entry with no
+   * definition. `[]` when every term was written.
+   */
+  skipped: string[];
 }
 
 /**

@@ -73,6 +73,11 @@ export const csvWriter: TermWriter = {
     });
 
     const content = [header, ...rows].map((row) => `${row.map(cell).join(",")}\n`).join("");
-    return { files: [{ path: target.path, content }], removals: [], dropped: droppedFields(terms, TERM_FIELDS) };
+    return {
+      files: [{ path: target.path, content }],
+      removals: [],
+      dropped: droppedFields(terms, TERM_FIELDS),
+      skipped: [],
+    };
   },
 };

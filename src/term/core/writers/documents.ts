@@ -37,7 +37,17 @@ const UNSAFE_NAME = /[/\\:*?"<>|]/;
 interface DocumentSpec {
   format: TermWriteFormat;
   extension: string;
-  file: { holds: readonly TermField[]; render: (terms: readonly Term[]) => string };
+  file: {
+    holds: readonly TermField[];
+    render: (terms: readonly Term[]) => string;
+    /**
+     * Whether the file's construct reads an entry only when it has a
+     * definition. A Markdown or AsciiDoc list and a `.. glossary::` skip one
+     * with none, and a `<dl>` folds its `<dt>`s into the next entry's, so a
+     * term with no definition is left out rather than written unreadable.
+     */
+    needsDefinition: boolean;
+  };
   directory?: { holds: readonly TermField[]; render: (term: Term) => string };
 }
 
@@ -68,13 +78,16 @@ function documentWriter(spec: DocumentSpec): TermWriter {
           files: terms.map((term, i) => ({ path: paths[i] ?? "", content: directory.render(term) })),
           removals: [],
           dropped: droppedFields(terms, directory.holds),
+          skipped: [],
         };
       }
       requireShape(spec.format, target, "file");
+      const written = spec.file.needsDefinition ? terms.filter((t) => t.record.definition !== undefined) : terms;
       return {
-        files: [{ path: target.path, content: spec.file.render(terms) }],
+        files: [{ path: target.path, content: spec.file.render(written) }],
         removals: [],
-        dropped: droppedFields(terms, spec.file.holds),
+        dropped: droppedFields(written, spec.file.holds),
+        skipped: terms.filter((t) => !written.includes(t)).map((t) => t.id),
       };
     },
   };
@@ -120,14 +133,14 @@ function langAttribute(language: string | undefined): string {
 export const markdownWriter = documentWriter({
   format: "markdown",
   extension: ".md",
-  file: { holds: LIST_HOLDS, render: markdownList },
+  file: { holds: LIST_HOLDS, render: markdownList, needsDefinition: true },
   directory: { holds: TERM_FIELDS, render: textPage("markdown") },
 });
 
 export const mdxWriter = documentWriter({
   format: "mdx",
   extension: ".mdx",
-  file: { holds: LIST_HOLDS, render: markdownList },
+  file: { holds: LIST_HOLDS, render: markdownList, needsDefinition: true },
   directory: { holds: TERM_FIELDS, render: textPage("mdx") },
 });
 
@@ -136,6 +149,7 @@ export const asciidocWriter = documentWriter({
   extension: ".adoc",
   file: {
     holds: LIST_HOLDS,
+    needsDefinition: true,
     render: (terms) =>
       fileOf([...listFrontmatter(terms, false), "[glossary]", ...entriesBlock(terms.map((t) => asciidocEntry(t.record)))]),
   },
@@ -147,6 +161,7 @@ export const rstWriter = documentWriter({
   extension: ".rst",
   file: {
     holds: LIST_HOLDS,
+    needsDefinition: true,
     render: (terms) =>
       fileOf([
         ...listFrontmatter(terms, false),
@@ -166,6 +181,7 @@ export const htmlWriter = documentWriter({
   extension: ".html",
   file: {
     holds: LIST_HOLDS,
+    needsDefinition: true,
     render: (terms) => {
       const language = sharedLanguage(terms);
       return fileOf([
@@ -193,6 +209,7 @@ export const ditaWriter = documentWriter({
   extension: ".dita",
   file: {
     holds: DITA_HOLDS,
+    needsDefinition: false,
     render: (terms) =>
       fileOf([
         XML_DECLARATION,
@@ -219,6 +236,7 @@ export const docbookWriter = documentWriter({
   extension: ".xml",
   file: {
     holds: DOCBOOK_HOLDS,
+    needsDefinition: false,
     render: (terms) =>
       fileOf([
         XML_DECLARATION,

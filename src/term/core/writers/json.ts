@@ -23,6 +23,11 @@ export const jsonWriter: TermWriter = {
       return entry;
     });
     const content = `${JSON.stringify({ terms: entries }, null, 2)}\n`;
-    return { files: [{ path: target.path, content }], removals: [], dropped: droppedFields(terms, TERM_FIELDS) };
+    return {
+      files: [{ path: target.path, content }],
+      removals: [],
+      dropped: droppedFields(terms, TERM_FIELDS),
+      skipped: [],
+    };
   },
 };

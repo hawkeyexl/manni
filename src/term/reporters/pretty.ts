@@ -221,19 +221,39 @@ function droppedLine(report: WriteReport): string | undefined {
   return `  dropped from ${report.droppedFrom ?? report.format ?? "the render"}: ${parts.join(", ")}`;
 }
 
+/** `  skipped 2 terms a definition list cannot read without a definition: varifocal, bifocal`. */
+function skippedLine(report: WriteReport): string | undefined {
+  if (report.skipped.length === 0) return undefined;
+  const construct = report.droppedFrom ?? report.format ?? "the render";
+  const count = plural(report.skipped.length, "term");
+  return `  skipped ${count} ${construct} cannot read without a definition: ${report.skipped.join(", ")}`;
+}
+
+/** The dropped and skipped lines, which a write and a dry run print alike. */
+function renderNotes(report: WriteReport): string[] {
+  return [droppedLine(report), skippedLine(report)].filter((line) => line !== undefined);
+}
+
+function unchangedLine(report: WriteReport): string {
+  return report.mode === "in-place" ? "Nothing to write" : `${report.target ?? ""} is up to date`;
+}
+
 export function renderWritePretty(report: WriteReport): string {
-  if (report.check || report.dryRun) {
-    if (report.changes.length > 0) return report.changes.map(changeLine).join("\n");
-    return report.mode === "in-place" ? "Nothing to write" : `${report.target ?? ""} is up to date`;
+  if (report.check) {
+    return report.changes.length > 0 ? report.changes.map(changeLine).join("\n") : unchangedLine(report);
+  }
+  if (report.dryRun) {
+    const changes = report.changes.length > 0 ? report.changes.map(changeLine) : [unchangedLine(report)];
+    return [...changes, ...renderNotes(report)].join("\n");
   }
   if (report.mode === "in-place") {
     return report.changes.length === 0 ? "Nothing to write" : `Wrote ${plural(report.changes.length, "file")}`;
   }
   const each = report.shape === "directory" && report.format !== "vale" ? ", one file each" : "";
-  const lines = [`Wrote ${plural(report.terms, "term")} to ${report.target ?? ""}${each}`];
+  const written = report.terms - report.skipped.length;
+  const lines = [`Wrote ${plural(written, "term")} to ${report.target ?? ""}${each}`];
   if (report.format === "vale") lines.push(...valeLines(report));
-  const dropped = droppedLine(report);
-  if (dropped !== undefined) lines.push(dropped);
+  lines.push(...renderNotes(report));
   return lines.join("\n");
 }
 
