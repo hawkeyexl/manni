@@ -1,0 +1,172 @@
+/**
+ * `manni kg init` — scaffold a starter `kg:` section in manni.config.yaml.
+ *
+ * The family file is shared with the other tools, so a file that already
+ * exists is not overwritten: the section is appended to it, leaving the
+ * siblings' keys and comments exactly as they were. A file that already has a
+ * `kg:` key is refused.
+ */
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { parse as parseYaml } from "yaml";
+import { errorMessage } from "../../shared/errors.js";
+import { writeTextAtomic } from "../../shared/write-file.js";
+import { KgError } from "../types.js";
+import { CONFIG_SECTION, DEFAULT_CONFIG_FILENAME } from "../core/config.js";
+
+const HEADER = `# manni.config.yaml — shared configuration for the manni family of tools.
+# Each tool reads its own top-level key; manni kg reads "kg:".
+`;
+
+const STARTER = `# Base IRI for every minted node. Set this to a namespace you control;
+# without it, IRIs fall back to the urn:manni:kg: placeholder.
+# baseIri: https://example.com/kg/
+
+# There is no document set here. \`manni kg build\` and \`manni kg fill\` read the
+# paths you name, or the collections declared once for every tool at the TOP
+# level of this file, beside \`kg:\` rather than inside it:
+#
+#   collections:
+#     - name: site
+#       paths: ["docs/**/*.md"]
+#
+# Output of \`manni kg build\`.
+out: kg/graph.ttl
+
+# Map published-site routes back to source files so route-style links
+# (/docs/actions/find) become graph edges. A route may also carry the BCP-47
+# \`language\` labelling every document under its root; a page's own \`lang\`
+# frontmatter wins. Uncomment and adjust:
+# routes:
+#   - basePath: /docs
+#     root: docs
+#     extensions: [.md, .mdx]
+#     indexFiles: [index, README]
+#   - basePath: /docs/de
+#     root: docs/de
+#     language: de
+
+# What to derive triples from. Remove entries to opt out.
+build:
+  derive: [frontmatter, sections, links, tags, images, code, provenance]
+
+# PROV-O settings. Git history is detected, not switched: per-file dates and
+# author agents, rename -> prov:wasRevisionOf, and the build activity's HEAD
+# committer date are derived wherever git can run over a repository, and a run
+# that cannot says so once and builds the rest. Deterministic per commit;
+# wall-clock time never enters the graph.
+# qualified: emit prov:qualifiedAttribution/qualifiedAssociation nodes
+#   with roles alongside the direct properties.
+provenance:
+  qualified: true
+
+# The schema set that judges a page's frontmatter: where \`manni kg build\`
+# reads x-manni-kg-output from, and what to check these pages against with
+# \`manni meta validate\`. Default: the \`graph\` page vocabulary,
+# manni:graph:1.0.0-proposal.1 — the proposal 0023 draft, built into manni, so no
+# schema file ships. Override with file paths, URLs, or manni meta built-in ids:
+# schemas: ["./my-schema.json"]
+
+# SHACL shapes \`manni kg check\` validates the built graph against. Default:
+# the shapes contract bundled with manni (shapes/kg/shapes-1.0.0.ttl).
+# check:
+#   shapes: ["./my-shapes.ttl"]
+
+# Metadata coverage gate for \`manni kg stats --check\`. A number applies to
+# every measured field; a map gates named fields only. Unset gates nothing.
+# stats:
+#   coverageThreshold:
+#     title: 100
+#     description: 50
+
+# Which provider \`manni kg fill\` sends pages to. Unset, the family's
+# top-level providers: map decides, and then \`auto\`, which detects one: an
+# Anthropic key, then an OpenAI key, then the Claude CLI, then a local model.
+# Connection settings (apiKeyEnv, baseUrl, command) live in that map, declared
+# once for every manni tool. \`--provider\` wins over this, \`--local\` over both.
+# provider: anthropic          # auto | anthropic | openai | claude-cli | llama-cpp
+# model: claude-sonnet-4-5     # the provider's default when omitted
+
+# LLM settings for \`manni kg fill\` (SKOS frontmatter proposals).
+fill:
+  temperature: 0
+  # Stop after this many inference calls. One page is one turn, and a cached
+  # page spends none. Unset is unbounded.
+  # maxTurns: 50
+  cacheDir: .manni/kg/cache
+  # fill proposes every field; confidence (0..1 per field) gates what is
+  # written. Fields scored below the threshold are reported, not written.
+  confidenceThreshold: 0.7
+  # fields: defaults to every fillable field — uncomment to restrict.
+  # Record meta-provenance (model + /graph/ pointers + confidence) on filled docs.
+  writeProvenance: true
+  # Reject proposals that would violate the SHACL shapes contract
+  # (broader/narrower cycles, conflicting labels).
+  validateGraph: true
+  # Also propose per-section metadata. Off by default: it costs more output per
+  # call, and section metadata is explicit-only, so review it as carefully.
+  sections: false
+
+# Local embeddings for semantic search (\`manni kg embed\`). Needs the optional
+# peer: npm install @huggingface/transformers
+# embed:
+#   model: onnx-community/granite-embedding-small-english-r2-ONNX
+#   dtype: q8            # q8 keeps embedding reproducible across platforms
+#   out: kg              # directory for the per-language vector sidecars
+#   cacheDir: .manni/kg/embed-cache
+
+# Optional enrichment for \`manni kg export iirds\` (the iiRDS package).
+# Absent, a minimal valid package is still produced.
+# export:
+#   iirds:
+#     title: My Docs        # package title (default: "manni kg export")
+#     creator: Acme Corp     # Creator iirds:Party + vcard:Organization
+#     version: "1.3"         # iiRDS version literal: "1.2" | "1.3"
+`;
+
+/** The starter as a `kg:` section: every line nested one level. */
+function starterSection(): string {
+  const body = STARTER.split("\n")
+    .map((line) => (line === "" ? "" : `  ${line}`))
+    .join("\n");
+  return `${CONFIG_SECTION}:\n${body}`;
+}
+
+export async function runInit(cwd = process.cwd()): Promise<string> {
+  const path = resolve(cwd, DEFAULT_CONFIG_FILENAME);
+  if (!existsSync(path)) {
+    await writeTextAtomic(path, `${HEADER}${starterSection()}`);
+    return path;
+  }
+
+  // A family file is already here. Parse it to make sure a `kg:` key can be
+  // appended: the document must be a mapping (or empty) without one.
+  const text = readFileSync(path, "utf8");
+  let doc: unknown;
+  try {
+    doc = parseYaml(text);
+  } catch (e) {
+    throw new KgError(
+      `Invalid YAML in ${DEFAULT_CONFIG_FILENAME}: ${errorMessage(e)}`,
+    );
+  }
+  if (doc != null && (typeof doc !== "object" || Array.isArray(doc))) {
+    throw new KgError(
+      `${DEFAULT_CONFIG_FILENAME}: top level must be a mapping — not adding a \`${CONFIG_SECTION}:\` section to it.`,
+    );
+  }
+  if (doc != null && Object.hasOwn(doc, CONFIG_SECTION)) {
+    throw new KgError(
+      `${DEFAULT_CONFIG_FILENAME} already has a \`${CONFIG_SECTION}:\` section — not overwriting.`,
+    );
+  }
+  // Append as text rather than re-serialising the document, so the siblings'
+  // keys and comments come out byte-for-byte as they went in.
+  const separator = text === "" || text.endsWith("\n") ? "" : "\n";
+  const blank = text === "" ? "" : "\n";
+  await writeTextAtomic(
+    path,
+    `${text}${separator}${blank}${starterSection()}`,
+  );
+  return path;
+}

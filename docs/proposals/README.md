@@ -41,7 +41,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0020](0020-element-metadata.md) | Element metadata in XML and HTML, and the DITA schema it unblocks | Sara · S1 / Maya · M1, M4 | Implemented |
 | [0021](0021-frontmatter-as-a-database.md) | The corpus is a database: `docmeta query` | Devin · D1, D3 / Maya · M2 | Implemented (#120) |
 | [0022](0022-sql-write-back.md) | Write-back: an UPDATE against the corpus edits the files | Maya · M2, M4 / Devin · D3 | Implemented (#122) |
-| [0023](0023-metadata-vocabularies.md) | The docmeta metadata vocabularies. Nine ids, drafts and worked examples under [0023/](0023/), reviewed publicly at the site's Proposals page | Sara · S1 / S2 | Proposed |
+| [0023](0023-metadata-vocabularies.md) | The docmeta metadata vocabularies. Nine ids, drafts and worked examples under [0023/](0023/), reviewed publicly at the site's Proposals page | Sara · S1 / S2 | Proposed; superseded in part by 0051 |
 | [0024](0024-standard-sql-vocabulary.md) | Standard SQL vocabulary: DML edits the files, DDL edits the schema | Maya · M2, M3 / Sara · S1, S3 / Devin · D3 | Implemented (#125, #126) |
 | [0025](0025-query-dry-run-polarity.md) | query writes by default, `--dry-run` previews | Devin · D4 / Maya · M2 | Implemented |
 | [0026](0026-corpus-checks-are-findings.md) | Corpus checks are findings, as named `checks:` in config, run by `validate` | Devin · D4 / Maya · M2 | Implemented (#132) |
@@ -63,9 +63,10 @@ These came out of a review of the shipped product against the intent recorded in
 | [0043](0043-resolved-reads.md) | Resolved reads, where a third read-only view `resolved` holds the asserted value or the derived one, with `_origin` naming which. `get` derives by default | Maya · M1, M2 / Devin · D4 / Theo · T1 | Implemented (#22) |
 | [0044](0044-citations-and-drift.md) | Citations and drift, which pin a claim to source lines so `manni cite` can check the pin | Devin · D4 / Theo · T1 / Maya · M2 / Sara · S1 | Implemented (#17) |
 | [0045](0045-family-encryption-key.md) | A family encryption key: `encryptionKey:`, `manni key`, and `x-manni-encrypt` for metadata that must not appear in plain text | Sara · S1 / Devin · D5 / Maya · M5 | Implemented (#17); superseded in part by 0047 |
-| [0046](0046-provenance-pins.md) | Provenance pins, where `provenance` records which machine wrote which body lines as a range and an integrity hash stamped by `manni meta derive`. Field attribution becomes one `meta-provenance` shape across the family | Maya · M8 / Sara · S1 / Devin · D4 | Implemented (#34) |
-| [0047](0047-field-location.md) | A field's preferred location, `x-manni-location` set to `page` or `external`, marked on every vocabulary field. `manni meta relocate` moves values between the pages and a collection's manifest, and every writer follows the manifest | Sara · S1 / Maya · M4 | Implemented (#37) |
+| [0046](0046-provenance-pins.md) | Provenance pins, where `provenance` records which machine wrote which body lines as a range and an integrity hash stamped by `manni meta derive`. Field attribution becomes one `meta-provenance` shape across the family | Maya · M8 / Sara · S1 / Devin · D4 | Implemented (#34); superseded in part by 0051 |
+| [0047](0047-field-location.md) | A field's preferred location, `x-manni-location` set to `page` or `external`, marked on every vocabulary field. `manni meta relocate` moves values between the pages and a collection's manifest, and every writer follows the manifest | Sara · S1 / Maya · M4 | Implemented (#37); superseded in part by 0051 |
 | [0048](0048-docevals-domain.md) | The `docevals` domain, where moose-docevals folds in as `manni docevals` and takes the family's collections, severity, formats, providers, the 0023 draft and 0046's records. Its content strategy joins the family's, and its ADR log closes at 01045 | Devin · D8, D9 / Sara · S6–S9 / Maya · M9–M13 / Theo · T4 | Proposed |
+| [0051](0051-kg-domain.md) | The `kg` domain, where moose-kg folds in as `manni kg`. It takes the family's collections, severity, formats, providers and turn budget, `meta-provenance`, and a page block renamed `graph:` under the vocabulary `manni:graph`. `x-manni-kg-output` says which fields a published graph carries, `kg validate` gives way to `manni meta validate`, the `dockg` identity becomes `manni`, and its ADR log closes at 01040 | Maya · M18–M20 / Devin · D12, D13 / Sara · S12 / Theo · T6 | Proposed |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -184,3 +185,4 @@ commit. The supersede-never-amend rule applies to them as it does here.
 | Directory | Source |
 |---|---|
 | [`docevals/`](docevals/) | moose-docevals at 670e62b (00001-00004 and 01000-01045). Closed at 01045 by [0048](0048-docevals-domain.md); later docevals decisions are in this series. |
+| [`kg/`](kg/) | moose-kg at 9f14ba6 (01000-01040). It also brings [`DESIGN.md`](kg/DESIGN.md), the phase roadmap those ADRs were taken under. Closed at 01040 by [0051](0051-kg-domain.md); later kg decisions are in this series. |

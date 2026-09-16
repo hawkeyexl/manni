@@ -529,6 +529,14 @@ export interface LoadSchemaOptions {
    * runs.
    */
   pins?: ReadonlyMap<string, SchemaPin>;
+  /**
+   * Schemas supplied by the caller as objects, keyed by the ref that names
+   * them. Consulted before anything else, so a tool that bundles a draft can
+   * hand it over without publishing a copy or registering a built-in id
+   * (proposals 0023, 0051 §4). A library seam only: nothing a user types
+   * reaches it, and an id here stays unknown to `manni meta validate -s`.
+   */
+  inlineSchemas?: ReadonlyMap<string, Record<string, unknown>>;
 }
 
 /**
@@ -915,6 +923,8 @@ export function schemaLoadOptions(args: {
   offline?: boolean;
   /** From `collectSchemaPins(config)`; omitted when the config pins nothing. */
   pins?: ReadonlyMap<string, SchemaPin>;
+  /** Caller-supplied schema objects; see {@link LoadSchemaOptions.inlineSchemas}. */
+  inlineSchemas?: ReadonlyMap<string, Record<string, unknown>>;
 }): LoadSchemaOptions {
   return {
     cacheDir: schemaCacheDir(args.root),
@@ -925,6 +935,11 @@ export function schemaLoadOptions(args: {
     // exactly the options object it produced before 0008.
     ...(args.pins !== undefined && args.pins.size > 0
       ? { pins: args.pins }
+      : {}),
+    // Dropped when empty for the same reason `pins` is: a caller that supplies
+    // no inline schemas gets exactly the options object it got before.
+    ...(args.inlineSchemas !== undefined && args.inlineSchemas.size > 0
+      ? { inlineSchemas: args.inlineSchemas }
       : {}),
   };
 }
@@ -985,6 +1000,13 @@ export async function loadSchema(
   ref: string,
   options: LoadSchemaOptions = {},
 ): Promise<Record<string, unknown>> {
+  // Before `classifyRef`, deliberately. A caller-supplied schema is named by
+  // whatever ref its tool prints in findings — `manni:graph:1.0.0-proposal.1` is a
+  // `builtin`-shaped id this registry has never heard of — and classifying it
+  // first would only decide which "not found" message to write.
+  const inline = options.inlineSchemas?.get(ref);
+  if (inline) return inline;
+
   const { kind } = classifyRef(ref);
   const pin = options.pins?.get(ref);
 

@@ -113,6 +113,15 @@ import { errorMessage } from "../../shared/errors.js";
 export interface ValidateOptions {
   inputs: string[];
   cliSchemas?: string[];
+  /**
+   * Schemas the caller already holds, keyed by the ref that names them —
+   * consulted before built-ins, files and URLs. A **library-only** seam: the
+   * CLI never populates it, so nothing a user types can reach it. It exists so
+   * a sibling tool that bundles a draft (`manni kg`, proposals 0023 and 0051
+   * §4) can name that draft by its `$id` in `cliSchemas` and hand over the
+   * object, instead of shipping a copy on disk to point at.
+   */
+  inlineSchemas?: ReadonlyMap<string, Record<string, unknown>>;
   exts?: string[];
   exclude?: string[];
   /** `--as` format override (extractor name). */
@@ -365,6 +374,10 @@ export async function runValidate(
       // Built from the rebased config, so a pinned local ref is keyed by the
       // same absolute spelling `resolveSchemaSet` will hand to `loadSchema`.
       pins: collectSchemaPins(config),
+      // Library callers only; `undefined` from every CLI path.
+      ...(opts.inlineSchemas !== undefined
+        ? { inlineSchemas: opts.inlineSchemas }
+        : {}),
     }),
   );
   // Where a misplaced value could go (proposal 0047), asked only to word a

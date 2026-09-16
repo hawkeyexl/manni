@@ -1,0 +1,223 @@
+---
+title: How manni kg works
+description: What becomes a triple, what never does, and the one rule for facts a page can state twice.
+---
+
+You have built a graph and asked it a question. This page is the model behind
+it: what the tool reads, what it refuses to guess, and how a page says what it
+is about.
+
+It sits after the quickstart on purpose. Concepts first loses the reader with
+ten minutes to spare; no concepts loses the one committing a team.
+
+## Nothing is inferred from prose
+
+This is the load-bearing sentence. A triple exists because frontmatter, a link,
+a heading, an image, a code block or git history put it there. No model reads
+your pages during `build`, and no heuristic decides that a paragraph is
+"probably about authentication".
+
+The graph is therefore exactly as good as what the pages declare, and a wrong
+answer is traceable to a line in a file. The cost is that categorization has to
+be written down, which is what [`kg fill`](/manni/kg/fill/) exists to help
+with.
+
+## What becomes a node
+
+| Node | Minted from |
+|---|---|
+| Document | One per source file. Carries its path and a content hash. |
+| Section | One per heading, with its level, its order in the page, and its slug. |
+| Concept | A SKOS concept, one per distinct subject, tag or `graph` concept reference. |
+| Concept scheme | The set the concepts belong to. |
+| Product variant | Named by `applies-to`. |
+| Agent | A person, an organization, or a software agent, from frontmatter or git. |
+| Activity and attribution | The PROV record of what produced the graph and who wrote what. |
+
+Every node gets a **deterministic IRI**, derived from its path or its slug.
+There are no blank nodes, which is what makes two graphs diffable and the build
+byte-identical over unchanged input.
+
+Sections being nodes is what lets a link to `page.md#heading` be checked rather
+than merely counted. It is also why a renamed heading shows up as a broken
+section reference.
+
+## What becomes an edge
+
+`build.derive` names the sources, and all seven are on by default:
+
+| Source | What it contributes |
+|---|---|
+| `frontmatter` | Title, description, creator, dates, subjects, and the whole `graph:` block. |
+| `sections` | Headings, their nesting, and their order. |
+| `links` | Internal references, resolved the way the site resolves them. |
+| `tags` | Page-level tags, as concepts. |
+| `images` | Images a page carries. |
+| `code` | Code blocks and their languages. |
+| `provenance` | Revision history and commit agents, from git. |
+
+Narrowing the list makes a smaller graph, not a wrong one. A predicate nothing
+derives simply has no triples, and `kg stats` will show the row at zero.
+
+**Links are resolved, not matched.** An extensionless link, a directory route,
+and a published site path all resolve to the file that serves them, through the
+`routes` config. That is why a broken internal link means the target does not
+exist rather than that it was spelled unusually.
+
+## The `graph:` block
+
+A page says what it is about in one frontmatter key:
+
+```yaml
+---
+title: Getting started
+description: Install the widget SDK and make your first call.
+authors:
+  - Priya Raman
+date: 2026-01-14
+updated: 2026-03-02
+tags:
+  - onboarding
+graph:
+  label: Installation
+  type: task
+---
+```
+
+The block holds fifteen keys. Six are SKOS: `label`, `alt-labels`, `broader`,
+`narrower`, `related-concepts` and `concepts`. Six are iiRDS typing and scope:
+`type`, `applies-to`, `about-product-lifecycle`, `about-product-aspect`, and
+the two negative ones, `not-applicable-to` and `not-about-product-aspect`.
+Three are structural and hand-curated: `sections`, `revision-of` and
+`derived-from`.
+
+The block is **closed**, so a key that is not one of those fifteen is a schema
+error with a line number. There is no `kg validate`. A `graph:` block is
+frontmatter, so `manni meta validate` checks it against the page vocabulary.
+That is the command every vocabulary in this family is checked with. Put the
+draft in the schema set for those pages, and a bare run finds it:
+
+```yaml title="manni.config.yaml"
+meta:
+  overrides:
+    - collection: site
+      schemas:
+        - ./schema/graph-1.0.0-proposal.1.json
+```
+
+```console
+$ manni meta validate
+✗ docs/install.md
+    /graph  must NOT have additional property 'bogus'  (line 3)  [./schema/graph-1.0.0-proposal.1.json]
+```
+
+The draft is [open for review](/manni/meta/proposals/graph/), so copy
+[`1.0.0-proposal.1.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json)
+into your repository rather than pointing at a published URL. The same set goes
+in `kg.schemas`, where `manni kg build` reads `x-manni-kg-output` from
+it.
+
+Two spellings are deliberate and different. Config keys are camelCase
+(`baseIri`, `maxTurns`); the page vocabulary is kebab-case (`alt-labels`,
+`applies-to`). They are different surfaces read by different people.
+
+## The harvest rule
+
+Some facts can be stated twice: inside the `graph` block, and as a plain
+page-level key your site already uses. The rule is:
+
+> **Deeper wins, and the page level is the fallback. Per fact, not per page.**
+
+A `graph` block that speaks to a fact owns it outright. Where the block is silent,
+the page-level twin feeds the graph. A page whose block sets `label` and
+nothing else still contributes its page-level `concepts`.
+
+Four facts have a page-level twin:
+
+| `graph` key | Page-level fallback |
+|---|---|
+| `concepts` | `concepts` |
+| `applies-to` | `applies-to` |
+| `not-applicable-to` | `not-applicable-to` |
+| `revision-of` | `supersedes` |
+
+`type` is the one whose two altitudes speak different vocabularies. The page's
+`type` is open; `graph.type` is a closed iiRDS enum. A page type with a known
+counterpart is mapped; one without derives **nothing** rather than inventing a
+type that means something else.
+
+Page-level `prerequisites`, `next-steps` and `related-pages` belong to another
+vocabulary and are deliberately not harvested.
+
+## Near misses warn
+
+The asymmetry in the rule above has a cost. Inside the `graph` block a typo is a
+schema error, because the block is closed. At the page level the same typo
+derives nothing, silently, because a page may carry any key it likes.
+
+So a near miss warns:
+
+```console
+$ manni kg build
+manni: docs/guide.md: page key "applies_to" is not read by manni kg and looks like "applies-to" — nothing was derived from it
+manni: docs/guide.md: page type "how to" maps to no iiRDS topic type and looks like "how-to" — no graph.type was derived
+```
+
+It is a warning and never a build failure. A suspicion must not fail a build.
+The detection is a heuristic, and a heuristic that can block a merge is a
+heuristic people work around.
+
+## Determinism
+
+`manni kg build` twice over unchanged inputs is byte-identical. Three rules
+hold that up:
+
+- **Canonically sorted output**, from a hand-written emitter rather than a
+  library's writer.
+- **No wall clock, anywhere.** Dates come from frontmatter first, then git
+  committer times. Never from now.
+- **No blank nodes.** Every node has a deterministic IRI, sanitized so the
+  output always parses.
+
+That is why the graph can be committed, cached between CI runs, and diffed in a
+pull request like any other generated file.
+
+## Git is detected, never declared
+
+History is used wherever git can run over a repository. A run that finds
+neither git nor a repository warns once, with git's own reason, and builds the
+rest.
+
+There is no config switch for it, and there will not be one. A switch for a
+detectable fact is one more way to be wrong. A job that requires history
+expresses that as a shape over the built graph, where it can actually be
+checked.
+
+## Encrypted values
+
+kg never decrypts. A value encrypted with the family key is harvested like any
+other and lands in the graph as its `~…` token. The graph records that a value
+exists and says nothing about what it is. A required private field can
+therefore be checked without being published.
+
+## Where next
+
+| Goal | Page |
+|---|---|
+| Ask the graph questions | [Explore the graph](/manni/kg/explore/) |
+| Write the house rules the graph is checked against | [Govern the graph](/manni/kg/govern/) |
+| Look up a `graph:` key or a flag | [Reference](/manni/kg/reference/) |
+
+{/* Verified by Doc Detective in docs-as-tests, against test/kg/fixtures/dd/. */}
+
+{/* step {"description":"A legal graph block validates against the page vocabulary.","runShell":{"command":"manni meta validate -c test/kg/fixtures/dd/docs.config.yaml -s docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json","exitCodes":[0],"stdio":"3 files checked, 3 passed, 0 failed, 0 errors"}} */}
+
+{/* step {"description":"The graph block is closed, so an unknown key is a schema error.","runShell":{"command":"manni meta validate -c test/kg/fixtures/dd/invalid.config.yaml -s docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json","exitCodes":[1],"stdio":"must NOT have additional property 'bogus'"}} */}
+
+{/* step {"description":"The page vocabulary in force is named in the finding.","runShell":{"command":"manni meta validate -c test/kg/fixtures/dd/invalid.config.yaml -s docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json","exitCodes":[1],"stdio":"1.0.0-proposal.1.json"}} */}
+
+{/* step {"description":"A near-miss page key warns and derives nothing.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/harvest.config.yaml","exitCodes":[0],"stdio":"nothing was derived from it"}} */}
+
+{/* step {"description":"A page type with no iiRDS counterpart derives no graph.type.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/harvest.config.yaml","exitCodes":[0],"stdio":"no graph.type was derived"}} */}
+
+{/* step {"description":"A near miss is a warning: the build still succeeds.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/harvest.config.yaml","exitCodes":[0],"stdio":"1 docs, 34 triples"}} */}

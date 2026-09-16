@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/kg-output/no-people-in-the-graph.json",
+  "title": "Keep the stewardship people and the tags out of a published graph",
+  "description": "A house schema for the x-manni-kg-output tests. `concepts` is marked false because it is the one harvested page-level field that reaches all four published outputs; `owner` stands for the stewardship fields proposal 0051 recommends marking. The mark nested under `graph` is there to be ignored, as 0047 rule 2 ignores a nested x-manni-location.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "concepts": {
+      "x-manni-kg-output": false
+    },
+    "owner": {
+      "type": "string",
+      "x-manni-location": "external",
+      "x-manni-kg-output": false
+    },
+    "graph": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "label": {
+          "x-manni-kg-output": false
+        }
+      }
+    }
+  }
+}

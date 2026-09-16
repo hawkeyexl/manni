@@ -1,0 +1,25 @@
+# The determinism corpus. Its document set is a collection now (proposal 0041,
+# 0051 §1): `inputs:` is no longer a kg key, and the `kg:` section carries
+# settings only.
+collections:
+  - name: corpus
+    paths:
+      - "docs/**/*.md"
+
+kg:
+  baseIri: https://example.com/kg/
+  out: graph.ttl
+  routes:
+    # Inert for link resolution — no corpus document writes a root-absolute
+    # link — and present for the one thing they now also carry: the language
+    # labelling every document under `root` (ADR 01037). The unlocalized `docs`
+    # route declares none, so the English pages stay unlabelled and the golden
+    # keeps covering the no-language path.
+    - root: docs
+      basePath: /
+    - root: docs/de
+      basePath: /de
+      language: de
+    - root: docs/fr
+      basePath: /fr
+      language: fr

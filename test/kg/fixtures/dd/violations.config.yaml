@@ -1,0 +1,10 @@
+# A corpus that deliberately violates the SHACL shapes, so the docs can show
+# what `manni kg check` catches and prove it exits 1.
+collections:
+  - name: violations
+    paths:
+      - "violations/**/*.md"
+
+kg:
+  baseIri: https://example.com/dd/
+  out: .tmp/dd/violations.ttl

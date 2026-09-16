@@ -1,0 +1,14 @@
+# Two declared collections, so `--collection` has a subset to select and a name
+# to refuse. Document sets are the family's now (proposal 0041, 0051 §1): the
+# `kg:` section carries settings only.
+collections:
+  - name: guides
+    paths:
+      - "guides/**/*.md"
+  - name: blog
+    paths:
+      - "blog/**/*.md"
+
+kg:
+  baseIri: https://example.com/collections/
+  out: kg/graph.ttl

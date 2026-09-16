@@ -122,6 +122,36 @@ The claim this journey carries is that docevals orchestrates and does not reimpl
 
 ---
 
+### M18 · See the docset as a graph, and find what nothing links to
+
+**Outcome.** Maya has a graph of her docset and can ask it questions prose cannot answer. Which pages nothing links to, which concepts have no page, which page owns a term.
+
+**Steps.** She runs `manni kg build` over a collection she already declared for `meta validate`, and gets one Turtle file plus a count of documents and triples. `manni kg stats` tells her how much of the vocabulary the corpus actually fills, per field, and `--check` turns a coverage floor into an exit code. `manni kg query --p dcterms:subject` lists what the corpus says about a predicate, and `manni kg search` finds pages by words or, once she has run `manni kg embed`, by meaning. Nothing is inferred from prose: a triple exists because frontmatter, a link, a heading or a code block put it there.
+
+**What success looks like.** A question that used to mean reading forty pages is a one-line command. The answer is the same on her machine and in CI.
+
+---
+
+### M19 · See what a change to one page affects before making it
+
+**Outcome.** Before editing a page, Maya knows what depends on it. The pages that link to it, the concepts it carries, and what a rename would orphan.
+
+**Steps.** `manni kg traverse <page> --impact` walks the graph outward from that node and reports what it reaches. `--reverse` gives what reaches it, `--depth` how far, and `--predicates` follows only the edges she cares about. The answer is a graph walk rather than a text search, so a page reached through a concept rather than a hyperlink still shows up.
+
+**What success looks like.** The review comment "this breaks the install tutorial" arrives before the change, from her own terminal.
+
+---
+
+### M20 · Fill the categorization nobody wrote, and review what a model proposed
+
+**Outcome.** Pages that predate the vocabulary carry a `graph` block, and every value a model proposed is attributed and reviewable rather than silently merged into the corpus.
+
+**Steps.** She runs `manni kg fill --dry-run` over one directory and reads the proposals. `--confidence` sets the bar a value must clear to be written, `--fields` narrows what is proposed at all, and `--max-turns` caps the inference calls before the first one. `--local` runs the pass on her machine. Every written value is recorded in `meta-provenance` naming the model and the field. A surviving entry therefore means unreviewed machine metadata, and deleting it is how she signs off. A field the schema marks `x-manni-kg-output: false` never reaches the published graph, whatever fills it.
+
+**What success looks like.** A directory categorized in an afternoon, a review step rather than a claim, and a record of which values a machine wrote.
+
+---
+
 ## Devin, Platform / CI Engineer
 
 ### D1 · Add the gate to our CI platform
@@ -189,6 +219,26 @@ Per-file schema validation cannot see a dangling cross-reference, a duplicate sl
 This is the highest-stakes journey in the section. It is the only one where a plausible wrong answer causes real harm. Any page presenting a grant as sufficient is worse than no page.
 
 **What success looks like.** A fork gets freshness, lint and frontmatter checks with nothing executed. A finance question gets answered with a call count.
+
+---
+
+### D12 · Gate the graph in CI
+
+**Outcome.** A pull request that breaks the docset's structure is red before review. A concept split across two spellings, a link to a page that does not exist, coverage falling below the floor.
+
+**Steps.** He adds one step that runs `manni kg build` and `manni kg check` over the same collection the metadata gate already uses. `check` validates the built graph against SHACL shapes, which is where the emergent failures live. They exist only after N documents merge into shared nodes, so no per-file check can see them. Findings come back on the family scale, `notice | warning | error`, and `-f github` annotates the diff. `manni kg stats --check --coverage-threshold` gates the vocabulary coverage. The exit codes are the family's: 0, 1 for findings, 2 for an operational error.
+
+**What success looks like.** A structural regression is caught by the same pipeline that already checks metadata, reported in the same words, with no second tool to install.
+
+---
+
+### D13 · Publish the graph for retrieval
+
+**Outcome.** The graph leaves CI as an artifact other systems consume. That is linked data for an ingester, iiRDS for a content delivery portal, or a search index the docs site loads in the browser.
+
+**Steps.** `manni kg export jsonld` writes linked data, `export iirds` writes a conformant package, and `export search` writes the index the `@hawkeyexl/manni/kg/runtime` bundle reads client-side. `manni kg embed` adds vector sidecars for semantic search, per language. He pins what the artifact carries by marking fields in the schema rather than post-processing the output. He publishes on the same run that gated it, so what ships is what passed.
+
+**What success looks like.** A RAG ingester and the docs site's own search read one artifact, produced by the build that already ran.
 
 ---
 
@@ -270,6 +320,16 @@ Sara needs to ship a stricter version of the schema without immediately breaking
 
 ---
 
+### S12 · Extend what the graph is checked against
+
+**Outcome.** Sara's house rules about structure hold in the graph, not only in review. A concept with two labels, a page with no owning section, a required relationship nobody filled.
+
+**Steps.** She writes SHACL shapes and points `kg.check.shapes` at them, or passes `--shapes` per run; the bundled shapes are the floor, not the ceiling. She marks the vocabulary fields the published graph should carry with `x-manni-kg-output`, in the same file where she already marks `x-manni-location`. What a page stores and what a delivered artifact says are therefore two decisions in one place. A shape's own `sh:severity` maps onto the family scale, and the source value stays in `shaclSeverity` for anyone who needs it.
+
+**What success looks like.** Her standard is enforced twice: per page by `meta validate`, and across the corpus by `kg check`, with no third vocabulary to learn.
+
+---
+
 ## Theo, Contributor
 
 ### T1 · Fix a failing metadata check fast
@@ -309,3 +369,13 @@ Theo's failure is usually a *missing* field rather than a malformed one, so `fil
 This is the highest-traffic journey in the section and the shallowest. The fix page has no subject dependencies, because it is reached cold from an annotation.
 
 **What success looks like.** Four minutes from annotation to green, and he never learns what a capability suite is.
+
+---
+
+### T6 · Fix a red `kg check`
+
+**Outcome.** Theo's pull request is red on a graph finding he did not cause directly. He works out which of his pages produced it, makes the smallest correct change, and confirms locally.
+
+**Steps.** He reads the finding's focus node, which is the graph's name for the thing that failed. He also reads the documents listed beside it, which is where it came from. A graph finding is emergent by nature: two pages spelling one concept differently collide on a single node. The fix is usually in one of them, and the report names both. He reproduces with `npx @hawkeyexl/manni kg build && npx @hawkeyexl/manni kg check`, which needs no key and no network. An exit 2 is operational and goes to the platform team.
+
+**What success looks like.** He fixes a corpus-level failure from a page-level edit, and never opens a Turtle file.

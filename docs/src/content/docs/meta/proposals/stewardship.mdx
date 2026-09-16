@@ -1,5 +1,5 @@
 ---
-title: "manni:stewardship:1.0.0-proposal.3"
+title: "manni:stewardship:1.0.0-proposal.4"
 description: "The proposed attribution, ownership, and review vocabulary: who wrote a page, who answers for it, when it was written and last changed, and what it was verified against."
 sidebar:
   order: 2
@@ -9,7 +9,7 @@ sidebar:
 :::caution[Proposal under review]
 Part of the [metadata vocabularies proposal](/manni/meta/proposals/frontmatter-vocabularies/),
 open for community review. Draft schema:
-[`docs/proposals/0023/schemas/stewardship/1.0.0-proposal.3.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/stewardship/1.0.0-proposal.3.json).
+[`docs/proposals/0023/schemas/stewardship/1.0.0-proposal.4.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/stewardship/1.0.0-proposal.4.json).
 :::
 
 **The question it answers: is this page cared for?** Every field here is a fact
@@ -44,7 +44,7 @@ so an anchor can be structured for a checker instead of written for a
 reader. Every form still refuses to be empty.
 
 The Location column is the `x-manni-location` mark each field carries in
-`manni:stewardship:1.0.0-proposal.3`. `page` means the value belongs in the
+`manni:stewardship:1.0.0-proposal.4`. `page` means the value belongs in the
 document's own metadata and is meant to reach delivered output. `external`
 means it belongs in the collection's external-metadata manifest. A field is
 `page` when a third-party or user-owned agent fetching the page would act on
@@ -52,6 +52,13 @@ it. `last-updated` is the one stewardship field an agent uses, to judge whether
 a page is fresh enough to trust. The rest name people and review cadence. See
 [field location](/manni/meta/schemas/field-location/) for how the marks are
 used.
+
+proposal.4 adds a second mark, `x-manni-kg-output: false`, on `owner`,
+`stakeholders` and `reviewed-by`. It says a published knowledge graph should
+not carry them. That is a different question from where they are written: a
+field can be `external` and still belong in a graph. `manni kg` is the one
+tool that reads the mark. Absent means the field is harvested, so every other
+field here is unaffected.
 
 ## Example
 

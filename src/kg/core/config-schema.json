@@ -1,0 +1,313 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manni:kg:config",
+  "title": "manni kg configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "provider": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Which provider `manni kg fill` sends pages to: auto | anthropic | openai | claude-cli | llama-cpp. Unset, the family's top-level providers.provider decides, then auto, detected exactly as manni meta fill detects: an Anthropic key, then an OpenAI key, then the Claude CLI, then a local model. --provider wins over it, and --local overrides both. Connection settings live in the family's top-level providers: map."
+    },
+    "model": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The model, within the provider named beside it. A model is carried only to the provider its own level names: a differing --provider or providers.provider takes its own default instead. With no provider here, it goes to whichever provider is in force, which must not be auto, because a model name does not say which provider owns it. Unset (the default) takes the provider's default model from the inference library; manni pins none. --model wins over it. This is not `embed.model`, which is a local embedding model id."
+    },
+    "baseIri": {
+      "type": "string",
+      "minLength": 1
+    },
+    "out": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schemas": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "The schema set that judges a page's frontmatter: where `manni kg build` reads x-manni-kg-output from, to decide which fields a published graph may carry. Check the same pages against the same set with `manni meta validate`. Empty (the default) means the graph page vocabulary bundled into manni, manni:graph:1.0.0-proposal.1. A ref is anything manni meta resolves: a built-in id, a file path, or a URL. Named `schemas` as meta names its own; it was `validate.schemas` while `manni kg validate` existed."
+    },
+    "routes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["root"],
+        "properties": {
+          "basePath": {
+            "type": "string"
+          },
+          "root": {
+            "type": "string"
+          },
+          "extensions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^\\."
+            }
+          },
+          "language": {
+            "type": "string",
+            "pattern": "^[A-Za-z]{2,3}(-[A-Za-z]{4})?(-([A-Za-z]{2}|[0-9]{3}))?(-([A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*$"
+          },
+          "indexFiles": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "build": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "derive": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "frontmatter",
+              "sections",
+              "links",
+              "tags",
+              "images",
+              "code",
+              "provenance"
+            ]
+          }
+        }
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "shapes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "qualified": {
+          "type": "boolean"
+        }
+      }
+    },
+    "stats": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "coverageThreshold": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "title": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "description": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "creator": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "created": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "modified": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "subject": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "label": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "language": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "type": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "applies-to": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "about-product-lifecycle": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "about-product-aspect": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "fill": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "maxTurns": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Stop after this many inference calls. One page is one turn, and a cached proposal spends none. Null (the default) is unbounded. Replaces the maxCostUsd ceiling, which read as zero for every model outside the library's price table — see kg ADR 01027 and docevals ADR 01019."
+        },
+        "cacheDir": {
+          "type": "string",
+          "minLength": 1
+        },
+        "confidenceThreshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Minimum model self-confidence (0..1) to write a proposed field; below it the field is reported and not written. Default 0.7. `--confidence` wins over it."
+        },
+        "writeProvenance": {
+          "type": "boolean"
+        },
+        "validateGraph": {
+          "type": "boolean"
+        },
+        "fields": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "label",
+              "alt-labels",
+              "broader",
+              "narrower",
+              "related-concepts",
+              "concepts",
+              "type",
+              "applies-to",
+              "about-product-lifecycle",
+              "about-product-aspect",
+              "not-applicable-to",
+              "not-about-product-aspect"
+            ]
+          }
+        },
+        "sections": {
+          "type": "boolean"
+        }
+      }
+    },
+    "embed": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dtype": {
+          "type": "string",
+          "minLength": 1
+        },
+        "out": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cacheDir": {
+          "type": "string",
+          "minLength": 1
+        },
+        "byLanguage": {
+          "type": "object",
+          "additionalProperties": false,
+          "patternProperties": {
+            "^[A-Za-z]{2,3}(-[A-Za-z]{4})?(-([A-Za-z]{2}|[0-9]{3}))?(-([A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*$": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "model": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "dtype": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "export": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "iirds": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "creator": {
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "enum": ["1.2", "1.3"]
+            }
+          }
+        }
+      }
+    }
+  }
+}

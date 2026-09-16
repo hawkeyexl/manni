@@ -1,0 +1,161 @@
+---
+title: Explore the graph
+description: Ask the docset questions prose cannot answer, such as what nothing links to and which page owns a term.
+---
+
+Once the graph is built, four commands answer questions that used to mean
+reading forty pages. None of them touches a model or the network, and each
+gives the same answer on your machine and in CI.
+
+This is Maya's page, M18, continued from
+[Get started](/manni/kg/get-started/).
+
+## What shape is the docset in
+
+`manni kg stats` is the overview:
+
+```console
+$ manni kg stats
+Triples:    131
+Documents:  3
+Sections:   8
+Concepts:   3
+References: 2
+
+Most connected:
+  test/kg/fixtures/dd/docs/configuration.md (2)
+  test/kg/fixtures/dd/docs/getting-started.md (2)
+
+Orphan docs (1):
+  test/kg/fixtures/dd/docs/troubleshooting.md
+
+Broken internal links (1):
+  test/kg/fixtures/dd/docs/troubleshooting.md -> missing.md
+
+Broken section refs (1):
+  test/kg/fixtures/dd/docs/getting-started.md -> #renamed-heading
+```
+
+Five things worth reading in order:
+
+**Concepts against documents.** Far more concepts than documents usually means
+the vocabulary is drifting: near-synonyms minted as separate nodes. Far fewer
+means most pages are uncategorized.
+
+**Most connected.** The hubs. These are the pages a change reverberates
+through, and `--top <n>` limits the list.
+
+**Orphans.** Documents nothing links to. Not automatically a defect, since a
+landing page reached only from navigation is legitimately an orphan. But a page
+that should be reachable and is not is exactly what nobody notices.
+
+**Broken internal links.** A link to a page that does not exist. This is
+resolution rather than string matching. An extensionless link, an index path,
+and a published route all resolve the way the site resolves them, through the
+`routes` config.
+
+**Broken section refs.** A link to an anchor that does not exist, which is what
+a renamed heading leaves behind. Almost nothing else catches these.
+
+Coverage is the second half of `stats`, and it has a page of its own:
+[Coverage](/manni/kg/govern/coverage/).
+
+## What does the corpus say about X
+
+`manni kg query` matches a triple pattern. Omit a term and it is a wildcard.
+
+What subjects does the corpus assign?
+
+```console
+$ manni kg query --p dcterms:subject
+<https://example.com/dd/doc/test/kg/fixtures/dd/docs/configuration.md> dcterms:subject <https://example.com/dd/concept/reference>
+<https://example.com/dd/doc/test/kg/fixtures/dd/docs/getting-started.md> dcterms:subject <https://example.com/dd/concept/onboarding>
+
+2 match(es)
+```
+
+What does the graph know about one concept?
+
+```console
+$ manni kg query --s https://example.com/dd/concept/installation
+<https://example.com/dd/concept/installation> rdf:type <http://www.w3.org/2004/02/skos/core#Concept>
+<https://example.com/dd/concept/installation> skos:inScheme <https://example.com/dd/scheme>
+<https://example.com/dd/concept/installation> skos:prefLabel "Installation"
+<https://example.com/dd/concept/installation> skos:prefLabel "installation"
+
+4 match(es)
+```
+
+Two preferred labels on one node, which is `kg check`'s warning about two
+spellings, seen from the other side.
+
+Which node carries a literal?
+
+```console
+$ manni kg query --o "Configuration"
+<https://example.com/dd/doc/test/kg/fixtures/dd/docs/configuration.md> dcterms:title "Configuration"
+<https://example.com/dd/doc/test/kg/fixtures/dd/docs/configuration.md#configuration> dcterms:title "Configuration"
+
+2 match(es)
+```
+
+A term can be a full IRI, a `prefix:local` CURIE, or, for `--o`, a literal
+value. No match is `No matches.` and exit `0`: a question with no answer has
+not failed.
+
+The three flags are long-only. `-o` is `--out` on every other verb, and `-s` is
+the metadata tool's schema flag. One letter meaning two things across one
+family costs more than three characters do.
+
+## Which page is about this
+
+`manni kg search` ranks nodes for a text query. It reads the index
+`manni kg export search` writes:
+
+```console
+$ manni kg export search
+$ manni kg search "installation"
+0.0164  https://example.com/dd/concept/installation [skos:Concept] — Installation
+
+1 result (lexical)
+```
+
+The trailing `(lexical)` is the mode. Run `manni kg embed` and the same query
+gains a vector leg, so a page that never uses your words can still be found.
+`--mode` forces one leg or the other, and `--lang` picks a localization when
+the corpus has more than one, which is required rather than guessed.
+
+## What depends on this
+
+`manni kg traverse` walks the graph outward from a node. It has a page of its
+own, because it is a different question from the four above:
+[See what a change affects](/manni/kg/explore/impact/).
+
+## Two habits worth forming
+
+**Ask before you assume.** "Does anything link to the old upgrade guide?" is a
+`--reverse` walk, not an afternoon. "Which pages claim to be about the CLI?" is
+a `--p dcterms:subject` query.
+
+**Put the answers in CI.** `stats --check` and `kg check` turn today's ad-hoc
+question into tomorrow's gate. See [Run it in CI](/manni/kg/ci/).
+
+{/* Verified by Doc Detective in docs-as-tests, against test/kg/fixtures/dd/. */}
+
+{/* step {"description":"Exploring needs a built graph.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0]}} */}
+
+{/* step {"description":"stats names the orphan and both broken-reference kinds.","runShell":{"command":"manni kg stats -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/Orphan docs \\(1\\)[\\s\\S]*Broken internal links \\(1\\)[\\s\\S]*Broken section refs \\(1\\)/"}} */}
+
+{/* step {"description":"--top limits the hub list.","runShell":{"command":"manni kg stats -c test/kg/fixtures/dd/docs.config.yaml --top 1","exitCodes":[0],"stdio":"Most connected:"}} */}
+
+{/* step {"description":"A predicate pattern lists what the corpus says.","runShell":{"command":"manni kg query -c test/kg/fixtures/dd/docs.config.yaml --p dcterms:subject","exitCodes":[0],"stdio":"2 match(es)"}} */}
+
+{/* step {"description":"A subject pattern shows everything known about one node.","runShell":{"command":"manni kg query -c test/kg/fixtures/dd/docs.config.yaml --s https://example.com/dd/concept/installation","exitCodes":[0],"stdio":"4 match(es)"}} */}
+
+{/* step {"description":"An object pattern matches a literal.","runShell":{"command":"manni kg query -c test/kg/fixtures/dd/docs.config.yaml --o Configuration","exitCodes":[0],"stdio":"2 match(es)"}} */}
+
+{/* step {"description":"No match is exit 0, not a finding.","runShell":{"command":"manni kg query -c test/kg/fixtures/dd/docs.config.yaml --p skos:notation","exitCodes":[0],"stdio":"No matches."}} */}
+
+{/* step {"description":"search reads the exported index and reports its mode.","runShell":{"command":"manni kg export search -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0]}} */}
+
+{/* step {"description":"A lexical search ranks nodes.","runShell":{"command":"manni kg search installation -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"1 result (lexical)"}} */}

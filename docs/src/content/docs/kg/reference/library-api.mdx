@@ -1,0 +1,190 @@
+---
+title: Library API reference
+description: The kg namespace of the manni package, and the dependency-free browser runtime published beside it.
+---
+
+manni kg is a CLI first, and everything it does is reachable as a library. The
+package publishes three entry points, and which one you want depends on where
+the code runs.
+
+| Import | Platform | What it carries |
+|---|---|---|
+| `@hawkeyexl/manni` | Node | The whole family. `kg` is one namespace on it. |
+| `@hawkeyexl/manni/kg/runtime` | Browser or Node | Retrieval over a built graph. No `node:` imports, no dependencies, one file. |
+| `@hawkeyexl/manni/kg/embed` | Node | The local embedders, behind the optional `@huggingface/transformers` peer. |
+
+The split is not cosmetic. A `node:` import reaching the runtime's module graph
+is a released bug rather than a type error. Nothing in `tsc` knows which half
+it is compiling. Anything the runtime needs from Node is taken as an argument
+instead.
+
+## The `kg` namespace
+
+```ts
+import { kg } from "@hawkeyexl/manni";
+
+const result = await kg.runBuild({ paths: ["docs"] });
+console.log(result.outPath, result.docs, result.quads);
+```
+
+Each namespace is one tool, so a name cannot collide with a sibling's and a
+reader can see which tool it belongs to.
+
+### Command cores
+
+Every verb is a function that takes options and returns a report. They do no
+CLI plumbing and read no argv, so they can be called directly and tested
+directly.
+
+| Export | Purpose |
+|---|---|
+| `runBuild` | Derive the graph and write Turtle. Returns `{ outPath, docs, quads, warnings }`. |
+| `runFill` | Propose and write `graph:` fields through a provider. |
+| `runQuery` | Match a triple pattern against a built graph. |
+| `runStats` | Counts, orphans, broken links, hubs, and coverage. |
+| `runSearch` | Rank nodes for a text query, with `renderSearch` for the report. |
+| `runTraverse` | Walk the graph from a node, with `renderTraverse` for the report. |
+| `runEmbed` | Compute vector sidecars, with `renderEmbed` and the lower-level `embedText`. |
+| `runExport` | Reserialize into `jsonld`, `iirds`, or `search`. |
+
+`KgError` is the operational failure the CLI maps to exit `2`. Catch it to tell
+"manni kg could not run" from "the graph did not pass".
+
+### The pipeline
+
+The stages `runBuild` composes, each usable on its own.
+
+| Export | Purpose |
+|---|---|
+| `analyzeDoc` | One document to a `DocModel`: frontmatter, headings with slugs and nesting, links with their resolution, images, code blocks. |
+| `deriveGraph` | `DocModel[]` to `Quad[]`. This is the vocabulary mapping, and the place a new predicate is decided. |
+| `collectGitHistory` | Revision history and commit agents, from git. |
+| `emitTurtle`, `emitJsonLd`, `emitRdfXml` | Serializers. The Turtle one is canonical and hand-written rather than a library's writer, because byte-identical output is the product contract. |
+| `loadGraph`, `storeToQuads`, `expandTerm`, `compactIri` | Read a built graph back, and move between full IRIs and prefixed names. |
+| `buildSearchIndex`, `emitSearchIndex`, `partitionByLanguage`, `documentsByLanguage` | The search artifacts. |
+| `projectPackage`, `writeZip` | The iiRDS container. |
+
+### IRIs
+
+Every node gets a deterministic IRI, so there are no blank nodes and two runs
+agree.
+
+`resolveBaseIri`, `normalizeDocPath`, `conceptSlug`, `encodeSegment`, and the
+minters `mintDocIri`, `mintSectionIri`, `mintConceptIri`, `mintSchemeIri`,
+`mintProductIri`, `mintAgentIri`, `mintBuildActivityIri`, `mintGraphIri`.
+
+### Coverage
+
+`manni kg stats` measures how much of the vocabulary a corpus actually fills.
+The lists it measures against are exported, so a dashboard reads the same
+definition the gate does rather than a copy of it.
+
+| Export | Purpose |
+|---|---|
+| `COVERAGE_FIELDS` | Every measured document-level field, each with the IRI whose presence counts as filled. |
+| `COVERAGE_FIELD_NAMES` | The same list, names only. These are the keys a per-field `stats.coverageThreshold` map accepts. |
+| `SECTION_COVERAGE_FIELDS` | The section-level rows, a subset of the above. Reported, never gated. |
+| `CoverageField` | The row type. |
+
+```ts
+import { kg } from "@hawkeyexl/manni";
+
+for (const field of kg.COVERAGE_FIELDS) {
+  console.log(field.field, field.iri);
+}
+```
+
+There are twelve measured document-level fields. Two predicates are left
+unmeasured on purpose, and [Coverage](/manni/kg/govern/coverage/) says which
+and why.
+
+### The vocabulary
+
+| Export | Purpose |
+|---|---|
+| `NS`, `PREFIXES` | The namespace IRIs and their prefixes, including `kg:` itself. |
+| `frontmatterSchema`, `FRONTMATTER_SCHEMA_ID` | The page vocabulary a `graph:` block is validated against, bundled into the build. |
+| `TOPIC_TYPE_IRIS`, `SOFTWARE_LIFECYCLE_IRIS`, `SOFTWARE_SUBJECT_IRIS` | The iiRDS maps behind `type`, `about-product-lifecycle` and `about-product-aspect`. |
+| `KG_NOT_APPLICABLE_TO_VARIANT`, `KG_NOT_SOFTWARE_SUBJECT` | The two negative-scope predicates. |
+
+### Config and documents
+
+`loadConfig`, `loadRunConfig`, `parseConfig` and `defaultConfig`, with the
+`KgConfig`, `DeriveSource` and `FillField` types. `discoverFiles` and
+`resolveDocumentSet` turn paths, collections and excludes into the document
+set a verb reads.
+
+`applyKgFields`, `existingKgFields`, `existingMetaProvenance` and
+`frontmatterKind` are the frontmatter writer `fill` uses, if you need to write
+a `graph:` block yourself.
+
+### Inference
+
+`selectProvider`, `constructProvider`, `makeProvider`, `providerSpecFor`,
+`resolveProviderIdentity` and `assertProviderSelection` resolve a provider the
+way `kg fill` does. `MockProvider` is re-exported from
+[`@hawkeyexl/inference`](https://github.com/hawkeyexl/inference) so a test can
+drive the offline seam without a second dependency. manni reimplements no
+provider, no inference cache, and no price table.
+
+## The browser runtime
+
+`@hawkeyexl/manni/kg/runtime` is the retrieval half, built `platform: neutral`
+and shipped as one file you can drop in with a script tag. It loads a
+`graph.jsonld`, walks it with scope rules honored, resolves node text, and
+assembles the bundle an inference engine consumes.
+
+**It never generates.** It returns `{ context, citations, trace }` and stops.
+Wiring a model is the host's job, and every result carries the trace that
+produced it.
+
+```js
+import { GraphIndex, traverse, createFetchResolver, assemble }
+  from "@hawkeyexl/manni/kg/runtime";
+
+const graph = GraphIndex.fromJsonLd(await (await fetch("/kg/graph.jsonld")).text());
+const { nodes, trace } = traverse(graph, {
+  seeds: ["https://example.com/kg/doc/docs/configuration.md"],
+  depth: 2,
+  variant: "SP-X100",
+});
+const resolver = createFetchResolver(graph, { baseUrl: "/raw/", trace });
+const bundle = await assemble(resolver, nodes, { trace, maxChars: 12000 });
+```
+
+| Area | Exports |
+|---|---|
+| The graph | `GraphIndex`, `GraphNode`, `Value` |
+| Walking | `traverse`, `impact`, `reverseReferences`, `resolveVariant`, `resolveSubject`, `scopeExclusion` |
+| Text | `createFetchResolver`, `sliceSection`, `sectionOwnText`, `documentPreamble`, `documentSectionOrder`, `sectionOccurrence`, `sectionOccurrences`, `splitFragment` |
+| Assembly | `assemble`, with `RetrievalBundle`, `Citation`, `ContextBlock`, `Refusal` |
+| Search | `createLexicalIndex`, `createVectorIndex`, `findEntry`, `rrfMerge`, `searchIndexDigest` |
+| Vectors | `encodeVectorIndex`, `decodeVectorIndex`, `normalize`, `VectorIndexError`, `VectorMismatchError` |
+| Localization | `parseLocalizations`, `emitLocalizations`, `searchIndexFilename`, `vectorIndexFilename`, `LOCALIZATIONS_FILENAME`, `UNDETERMINED` |
+| Tracing | `createTrace`, `reachedNodes`, `QueryTrace`, `Hop`, `ScopeExclusion` |
+| RDF/JS | `matchQuads`, `rdfjsQuads`, `namedNode`, `literal`, `defaultGraph` |
+
+`sliceSection` is worth one line of its own. Heading text is not unique, so
+slicing a specific section node needs its occurrence. Without one it silently
+returns the first same-titled heading's body.
+
+## The embedders
+
+`@hawkeyexl/manni/kg/embed` carries `createLocalEmbedder`,
+`createMockEmbedder`, `EmbedderUnavailableError`, `DEFAULT_MODEL`,
+`MODEL_PROFILES`, `profileFor` and `withPrefix`. The local embedder needs the
+optional `@huggingface/transformers` peer; the mock one runs offline and is
+what regenerates the committed fixtures.
+
+A mock is not coverage of the thing it stands in for. `createLocalEmbedder`
+once shipped a hardcoded device that threw on every real call, and the mocks
+certified it for a whole release. Anything that mocks an external library here
+ships the real-path test in the same change.
+
+## Stability
+
+These are the symbols the package entry point publishes today. The CLI is the
+supported surface, and the library follows it. A verb's options and report
+shape change when the flag surface does, under the same semantic-versioning
+rules. The browser runtime's neutrality is a guarantee rather than an
+accident, and a bundle-purity test enforces it on every build.

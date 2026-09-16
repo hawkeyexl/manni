@@ -1,6 +1,6 @@
 # 0046: provenance pins the lines a machine wrote; meta-provenance keeps the fields
 
-- **Status:** Implemented (#34)
+- **Status:** Implemented (#34); superseded in part by 0051
 - **Serves:** Maya · M8 · Sara · S1 · Devin · D4
 - **Depends on:** [0040](0040-derived-metadata.md), the derived channel this
   field rides. `manni meta derive` stamps it, and `validate` reports a stale

@@ -276,7 +276,19 @@ const BeatView: React.FC<BeatViewProps> = ({ beats, index, finals, fontPx, lineP
             lineHeight: "36px",
           }}
         >
-          {beat.caption}
+          {/*
+            One nowrap span per space-separated word. design.md's shipping check 2
+            forbids a token split across a line break, and CSS breaks after a
+            hyphen by default: an unguarded caption renders `--check` as `--` /
+            `check`, which reads as two flags. Breaking only at the real spaces
+            keeps every token whole.
+          */}
+          {beat.caption.split(" ").map((word, i) => (
+            <React.Fragment key={i}>
+              {i > 0 ? " " : null}
+              <span style={{ whiteSpace: "nowrap" }}>{word}</span>
+            </React.Fragment>
+          ))}
         </div>
       </div>
     </AbsoluteFill>

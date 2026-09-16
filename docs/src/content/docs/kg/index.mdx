@@ -1,0 +1,108 @@
+---
+title: manni kg
+description: Deterministic knowledge graphs derived from documentation frontmatter and formatting.
+tableOfContents: false
+hero:
+  tagline: Deterministic knowledge graphs derived from documentation frontmatter and formatting.
+  actions:
+    - text: Get started
+      link: /manni/kg/get-started/
+      icon: right-arrow
+      variant: primary
+    - text: Fix a failing check
+      link: /manni/kg/fix/
+      icon: error
+      variant: minimal
+---
+
+Your docset is already a graph. Pages link to pages, headings nest, tags repeat
+across sections, and git knows who wrote what. `manni kg` reads all of that and
+writes it down as one file you can query, check, and hand to a retrieval
+system.
+
+Nothing is inferred from prose. A triple exists because frontmatter, a link, a
+heading, a code block or git history put it there.
+
+## The 60-second version
+
+Build it:
+
+```console
+$ npx @hawkeyexl/manni kg build docs/
+Wrote kg/graph.ttl (3 docs, 131 triples)
+```
+
+Ask it what nothing links to:
+
+```console
+$ npx @hawkeyexl/manni kg stats
+Orphan docs (1):
+  test/kg/fixtures/dd/docs/troubleshooting.md
+
+Broken internal links (1):
+  test/kg/fixtures/dd/docs/troubleshooting.md -> missing.md
+
+Broken section refs (1):
+  test/kg/fixtures/dd/docs/getting-started.md -> #renamed-heading
+```
+
+Check it as a whole:
+
+```console
+$ npx @hawkeyexl/manni kg check
+warning: https://example.com/dd/concept/installation skos:prefLabel — concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling [test/kg/fixtures/dd/docs/configuration.md, test/kg/fixtures/dd/docs/getting-started.md]
+
+0 errors, 1 warning, 0 notices
+```
+
+Two pages named one concept differently, so they collided on a single node.
+That finding exists in neither file. No API key, no network, no model.
+
+## What are you trying to do?
+
+| Goal | Start here |
+|---|---|
+| See my docset as a graph and find what nothing links to | [Get started](/manni/kg/get-started/) |
+| Understand what becomes a triple before I commit to it | [How manni kg works](/manni/kg/get-started/how-kg-works/) |
+| Ask the corpus questions prose cannot answer | [Explore the graph](/manni/kg/explore/) |
+| Know what a change to one page affects | [See what a change affects](/manni/kg/explore/impact/) |
+| Categorize pages that predate the vocabulary | [Fill the vocabulary](/manni/kg/fill/) |
+| Gate the docset's structure on every pull request | [Run it in CI](/manni/kg/ci/) |
+| Ship the graph to a retrieval system or a portal | [Publish the graph](/manni/kg/publish/) |
+| Enforce my own house rules about structure | [Govern the graph](/manni/kg/govern/) |
+| Unblock a pull request that just went red | [Fix a failing check](/manni/kg/fix/) |
+| Look up a flag, a config key, or a word | [Reference](/manni/kg/reference/) |
+
+## What makes it different
+
+**It reads, it does not guess.** Frontmatter, links, headings, images, code
+blocks and git history become triples. Nothing else does. A wrong answer is
+always traceable to a line in a file.
+
+**It catches what no per-file check can.** A concept split across two
+spellings, a `broader` cycle closed by three pages, a link to a page that no
+longer exists. These failures exist only after the corpus merges into shared
+nodes, which is why `manni kg check` validates the graph rather than the files.
+
+**It is deterministic.** Two builds over unchanged inputs are byte-identical:
+canonically sorted output, no blank nodes, and no wall clock anywhere. The
+graph is safe to commit, diff and cache.
+
+**The output is somebody else's input.** JSON-LD for a linked-data ingester.
+A conformant iiRDS package for a content delivery portal. A search index a
+dependency-free browser runtime reads client-side. Publish on the run that
+gated it, so what ships is what passed.
+
+**One model call, clearly marked.** `manni kg fill` is the only verb that
+reaches a provider. The budget is counted in inference calls rather than
+dollars, and every value it writes is attributed for review.
+
+## Requirements
+
+Node.js 24 or newer. No hosted service, no account. Git is used where it is
+available and its absence is a warning, not a failure.
+
+```sh
+npm install -D @hawkeyexl/manni
+npx @hawkeyexl/manni kg init
+```

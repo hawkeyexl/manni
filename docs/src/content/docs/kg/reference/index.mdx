@@ -1,0 +1,47 @@
+---
+title: Reference
+description: The lookup shelf for manni kg. Commands, config keys, the library surface, and the vocabulary.
+---
+
+Four pages, for looking things up rather than reading through. The journey
+pages link into these; they do not restate them.
+
+| Page | What it answers |
+|---|---|
+| [CLI reference](/manni/kg/reference/cli/) | Every command, argument and flag, with the exit code each produces. Drift-checked against `src/kg/cli.ts` in CI, so it cannot fall behind the code. |
+| [Configuration reference](/manni/kg/reference/configuration/) | Every `kg:` key of `manni.config.yaml`, with type and default, plus how the family's `collections:` and `providers:` reach this tool. |
+| [Library API reference](/manni/kg/reference/library-api/) | The `kg` namespace of the package, and the dependency-free browser runtime published beside it. |
+| [Glossary](/manni/kg/reference/glossary/) | Triple, focus node, turn, harvest rule, and the rest. What each word means here. |
+
+## The three contracts
+
+Three files decide what manni kg accepts and produces, and each is versioned
+and immutable once published.
+
+**The page vocabulary**, `manni:graph:1.0.0-proposal.1`. What a `graph:` block
+may contain. There is no `kg validate`. A `graph:` block is frontmatter, so
+`manni meta validate` checks it against this vocabulary. See
+[Checking a `graph:` block](/manni/kg/reference/cli/#checking-a-graph-block). The
+vocabulary is bundled into the build, so the published package never reads a
+file from the repository it was built in.
+
+**The shapes**, `shapes/kg/shapes-1.0.0.ttl`. What the built graph must look
+like, validated by `manni kg check`. They ship in the npm package because
+`check` reads them at run time. They are closed, so a predicate they have not
+learned fails.
+
+**The namespace**, `https://hawkeyexl.github.io/manni/kg/ns#`. The terms the
+emitter mints that no standard vocabulary covers. The IRI dereferences to a
+document defining every one of them. That is why it is this IRI rather than a
+host serving a 404. The custom set stays deliberately small: a Dublin Core,
+SKOS, PROV, schema.org, FOAF or iiRDS term is preferred wherever one exists.
+
+## Elsewhere in the family
+
+| Page | Why you would go there |
+|---|---|
+| [Configuration reference (meta)](/manni/meta/reference/configuration/#collections) | `collections:` and `providers:`, the two top-level keys kg reads and does not own. |
+| [Schema resolution](/manni/meta/reference/schema-resolution/) | How a schema reaches a file, which is what decides where `x-manni-kg-output` is read from. |
+| [Field location](/manni/meta/schemas/field-location/) | `x-manni-location`, the mark that sits beside `x-manni-kg-output` in the same schema. |
+| [Output formats and exit codes](/manni/meta/reference/output-and-exit-codes/#severity-across-the-family) | The `notice \| warning \| error` scale every tool shares, and how SHACL's own severities map onto it. |
+| [TypeScript API (meta)](/manni/meta/reference/api/) | The whole package surface, of which `kg` is one namespace. |

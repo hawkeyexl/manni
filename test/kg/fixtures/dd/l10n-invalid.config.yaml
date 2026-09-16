@@ -1,0 +1,10 @@
+# One page whose language is written as free text rather than a BCP-47 tag, so
+# the localization page can show `manni kg check` rejecting it (ADR 01037).
+collections:
+  - name: l10n-invalid
+    paths:
+      - "l10n-invalid/**/*.md"
+
+kg:
+  baseIri: https://example.com/dd/
+  out: .tmp/dd/l10n-invalid.ttl

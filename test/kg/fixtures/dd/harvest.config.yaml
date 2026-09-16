@@ -1,0 +1,11 @@
+# Corpus for the near-miss warnings on fix/index.mdx (ADR 01028). Separate
+# from docs.config.yaml so its typo'd keys do not perturb the counts the
+# get-started steps assert.
+collections:
+  - name: harvest
+    paths:
+      - "harvest/**/*.md"
+
+kg:
+  baseIri: https://example.com/dd/
+  out: .tmp/dd/harvest.ttl

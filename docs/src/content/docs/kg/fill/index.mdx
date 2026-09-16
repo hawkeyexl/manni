@@ -1,0 +1,215 @@
+---
+title: Fill the vocabulary
+description: Propose graph fields for pages that predate the vocabulary, and review what a model wrote rather than assuming it is right.
+---
+
+Most of the graph comes out of pages for free: titles, links, headings, code
+blocks, git history. The categorization does not. Which concept a page owns,
+which product variant it is about, what it is narrower than. Nobody wrote any
+of that on a page older than the vocabulary.
+
+`manni kg fill` proposes those fields from each page's content and writes the
+ones that clear a confidence bar. Every written value is attributed, so what
+lands is a review queue rather than a claim that the corpus is now categorized.
+
+This is Maya's page.
+
+## Dry run first, always
+
+```console
+$ manni kg fill --dry-run docs/guides
+proposed  docs/guides/install.md (label, concepts, type) — dry run, not written
+no-op     docs/guides/changelog.md (model proposed nothing new)
+```
+
+The dry run is where the inference calls are spent. Proposals are cached
+**before** the confidence gate, so the write pass after it is a cache hit.
+Re-running at a different `--confidence` therefore costs nothing at all. Read
+the proposals, decide the bar, then run it again without `--dry-run`.
+
+## What each line means
+
+| Status | Meaning |
+|---|---|
+| `filled` | Fields were written to the page, and listed. |
+| `proposed` | The same, under `--dry-run`: nothing was written. |
+| `complete` | The page already carries everything in scope. Not asked. |
+| `no-op` | The model was asked and proposed nothing new. |
+| `skipped` | Not processed, with the reason. It reads `turn budget` when the budget ran out. |
+| `error` | The page could not be filled, with why. |
+
+A line can carry annotations after the fields:
+
+- `[cached]`, meaning no inference call was made for this page.
+- `[low confidence, not written: type 0.45]`, meaning proposed, below the bar,
+  reported rather than written.
+- `[graph check rejected: broader]`, meaning the guardrail refused it. See
+  below.
+- `[no such section: installing]`, meaning the model addressed a heading that
+  is not there. That usually means the page was edited after it was described.
+
+## The bar
+
+```console
+$ manni kg fill --confidence 0.85 docs/guides
+```
+
+A proposed value carries the model's own confidence, 0 to 1, and only values
+above the bar are written. The default is `0.7`, set in config as
+`fill.confidenceThreshold`.
+
+Raise it when you are filling a corpus nobody will review closely. Lower it
+when you are reviewing everything anyway and would rather see the marginal
+proposals than lose them. Re-gating is free, so this is cheap to experiment
+with.
+
+## Narrowing what is proposed
+
+`--fields` names what may be proposed at all, comma-separated and given once:
+
+```console
+$ manni kg fill --dry-run --fields label,concepts,type docs/guides
+```
+
+The full list is `label`, `alt-labels`, `broader`, `narrower`,
+`related-concepts`, `concepts`, `type`, `applies-to`,
+`about-product-lifecycle`, `about-product-aspect`, `not-applicable-to` and
+`not-about-product-aspect`. An unknown name is a usage error, with the allowed
+set in the message.
+
+Narrowing is usually the right first move. A pass that proposes only `label`
+and `concepts` produces a review you can actually do. The SKOS hierarchy keys
+are also the ones a model is worst at.
+
+`--sections` also proposes per-section metadata. It is opt-in, because it is a
+great deal more output. One wrinkle is worth knowing before you use it.
+Section values are **not** recorded in `meta-provenance`, since `/graph/sections`
+is one of the three hand-curated pointers. The run says so:
+
+```console
+manni: Section metadata was written but is NOT recorded in meta-provenance: /graph/sections is one of the three hand-curated pointers kg refuses, with /graph/revision-of and /graph/derived-from, so recording it would make `manni kg check` report an error. Review section values by hand — the review queue will not list them.
+```
+
+## The budget is turns
+
+```console
+$ manni kg fill --dry-run --max-turns 50 docs/
+```
+
+A **turn** is one inference call. One page is one turn, and a cached page
+spends none, so the page count of an uncached batch is its size. The cap is
+checked before the first call, which is what makes it a budget rather than a
+regret.
+
+A run that exhausts it stops asking and says so:
+
+```console
+skipped   docs/guides/upgrading.md (turn budget)
+
+--max-turns reached (50); some pages were not processed.
+```
+
+The tool reports no dollar figure, for one reason. Not every model is in a
+price table, and a cap that silently reads as zero for an unpriced model is
+worse than no cap. Converting turns to money is your provider's rate card.
+
+## Where the inference happens
+
+`fill` is the only verb that reaches a model. It resolves a provider in this
+order, later winning: the family's `providers.provider`, then `kg.provider`,
+then `--provider`, then `--local`.
+
+```console
+$ manni kg fill --dry-run --local docs/guides
+```
+
+`--local` runs `llama-cpp` on this machine, over everything else. It is the
+answer when the pages must not leave the runner, and it is the whole answer.
+There is no partial mode where some pages go out.
+
+Unset everywhere, the provider is `auto`, detected exactly as `manni meta fill`
+detects: an Anthropic key, then an OpenAI key, then the Claude CLI, then a
+local model. That default is a fact about the machine rather than a decision.
+Pin a provider in config for anything that runs more than once.
+
+What a call carries is the page's content and the schema for the fields in
+scope. If your organization has a data-egress policy, that sentence and
+`--local` are the two halves of the conversation.
+
+## The guardrail
+
+Before a proposal is written it is simulated in the derived graph and checked
+against the SHACL shapes. Anything that would violate them is dropped, and the
+line says which field:
+
+```console
+filled    docs/guides/install.md (label, concepts) [graph check rejected: broader]
+```
+
+Accepted proposals fold into the guard's state as the run goes, so two pages in
+one run cannot jointly corrupt the graph. The second page's `broader` is
+checked against a graph that already holds the first page's.
+
+Rejection sits **downstream of the cache**, so a later corpus change can
+re-admit a proposal without re-asking the model. `--no-validate-graph` turns
+the guard off, and there is very little reason to.
+
+## Reviewing what a machine wrote
+
+Every written value is recorded in the page's `meta-provenance`, in the same
+edit, naming the model and the fields as JSON Pointers:
+
+```yaml
+---
+title: Installing
+graph:
+  label: Installation
+  concepts: [onboarding]
+meta-provenance:
+  - generated-by: claude-fable-5
+    fields: ["/graph/label", "/graph/concepts"]
+---
+```
+
+The record is the point of the command. **A surviving entry means unreviewed
+machine metadata, and deleting it is how you sign off.** That makes review a
+thing you can measure and finish, rather than a thing you meant to do.
+
+`meta-provenance` is the metadata tool's record, shared rather than copied. A
+page filled by `manni kg fill` and by `manni docevals fill` carries one entry
+per model, and neither run disturbs the other's. The `graph` block has no
+provenance key of its own, so this record is the only one.
+
+Set `fill.writeProvenance: false` and the record is not written. Do not.
+
+## A page's own fields win
+
+A `graph` field a human set is left alone. `--force` overwrites it, and it is
+named that way because it is a deliberate act. The values a person wrote are
+the ones the corpus is actually built on.
+
+## A realistic pass
+
+```console
+$ manni kg fill --dry-run --fields label,concepts,type --max-turns 100 docs/guides
+$ manni kg fill --fields label,concepts,type --confidence 0.8 docs/guides
+$ git diff docs/guides
+$ manni kg build && manni kg check
+```
+
+One directory at a time. Nobody can review a three-thousand-page pull request,
+and a review nobody does is the same as no record at all.
+
+{/* Verified by Doc Detective in docs-as-tests, against test/kg/fixtures/dd/. */}
+
+{/* step {"description":"A dry run reports per page and writes nothing.","runShell":{"command":"manni kg fill --dry-run -c test/kg/fixtures/dd/unpriced.config.yaml","exitCodes":[0],"stdio":"test/kg/fixtures/dd/unpriced/guide.md"}} */}
+
+{/* step {"description":"--confidence is a probability, so above 1 is a usage error.","runShell":{"command":"manni kg fill --dry-run -c test/kg/fixtures/dd/unpriced.config.yaml --confidence 5","exitCodes":[2],"stdio":"--confidence must be 0..1"}} */}
+
+{/* step {"description":"--fields is comma-separated and held to the vocabulary.","runShell":{"command":"manni kg fill --dry-run -c test/kg/fixtures/dd/unpriced.config.yaml --fields label,concepts","exitCodes":[0]}} */}
+
+{/* step {"description":"An unknown field name names the allowed set.","runShell":{"command":"manni kg fill --dry-run -c test/kg/fixtures/dd/unpriced.config.yaml --fields no-such-field","exitCodes":[2],"stdio":"--fields must be one of"}} */}
+
+{/* step {"description":"--max-turns must be a whole number of calls.","runShell":{"command":"manni kg fill --dry-run -c test/kg/fixtures/dd/unpriced.config.yaml --max-turns 0.5","exitCodes":[2],"stdio":"--max-turns expects a whole number"}} */}
+
+{/* step {"description":"fill exposes the provider flags.","runShell":{"command":"manni kg fill --help","exitCodes":[0],"stdio":"/--provider[\\s\\S]*--model[\\s\\S]*--local/"}} */}

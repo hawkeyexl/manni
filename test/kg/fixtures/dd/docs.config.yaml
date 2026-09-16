@@ -1,0 +1,20 @@
+# Fixture corpus for the Doc Detective inline tests in docs/src/content/docs/.
+#
+# The corpus is a `collections:` entry now (proposal 0041, 0051 §1): `inputs:`
+# is no longer a kg key. A collection's paths resolve from THIS FILE'S
+# directory, not from the working directory, so the doc tests can still run
+# from the repo root with `-c`. That matters because doc-detective's runShell
+# does not honor a working directory, and a glob on the command line cannot be
+# used either — the sequence inside `**/*` closes the JSX comment the tests
+# live in.
+#
+# Kept separate from test/kg/fixtures/corpus/, which feeds the golden
+# determinism gate and must not gain files.
+collections:
+  - name: dd
+    paths:
+      - "docs/**/*.md"
+
+kg:
+  baseIri: https://example.com/dd/
+  out: .tmp/dd/graph.ttl

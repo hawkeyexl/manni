@@ -63,6 +63,11 @@ jobs:
       # and what it deliberately leaves to docs-as-tests is in the file.
       - name: Check the docevals docs section (dogfood)
         run: npm run docs:check-docevals
+      # The graph tool over its own docs section, through an explicit -c. Build
+      # then check, deterministic and offline. Kept identical to the step in
+      # ci.yml.
+      - name: Check the kg docs section (dogfood)
+        run: npm run docs:check-kg
 
   # Build the Astro/Starlight static site and upload it as a Pages artifact.
   #

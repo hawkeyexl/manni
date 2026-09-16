@@ -57,8 +57,12 @@ export default defineConfig({
   //
   // Proposal 0041 renamed the sidecar vocabulary to external metadata. Release
   // notes and pull requests link to the old URL, so it must not 404.
+  //
+  // Proposal 0051 renamed the kg page vocabulary to manni:graph, so its
+  // proposal page moved from meta/proposals/kg to meta/proposals/graph.
   redirects: {
     "/meta/set-up/sidecar-metadata": "/manni/meta/set-up/external-metadata",
+    "/meta/proposals/kg": "/manni/meta/proposals/graph",
   },
   // MDX inherits this list, so `.md` and `.mdx` pages both get it.
   markdown: {
@@ -226,6 +230,55 @@ export default defineConfig({
               label: "Reference",
               collapsed: true,
               items: [{ autogenerate: { directory: "docevals/reference" } }],
+            },
+          ],
+        },
+        // The knowledge-graph tool. Section order and labels follow its content
+        // set in docs/content-strategy/information-architecture.md (`kg/`).
+        {
+          label: "kg",
+          collapsed: true,
+          items: [
+            { label: "Overview", link: "/kg/" },
+            {
+              label: "Get started",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "kg/get-started" } }],
+            },
+            {
+              label: "Explore the graph",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "kg/explore" } }],
+            },
+            {
+              label: "Fill the vocabulary",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "kg/fill" } }],
+            },
+            {
+              label: "Run it in CI",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "kg/ci" } }],
+            },
+            {
+              label: "Publish the graph",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "kg/publish" } }],
+            },
+            {
+              label: "Govern the graph",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "kg/govern" } }],
+            },
+            {
+              label: "Fix a failing check",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "kg/fix" } }],
+            },
+            {
+              label: "Reference",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "kg/reference" } }],
             },
           ],
         },

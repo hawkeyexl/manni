@@ -1,0 +1,148 @@
+---
+title: See what a change affects
+description: Walk the graph outward from a page to find what depends on it, before you edit it.
+---
+
+Before editing a page, the question is what depends on it. Grep answers part of
+it: which pages link here by path. It misses the page that reaches this one
+through a shared concept. It also misses the page that links to a heading you
+are about to rename.
+
+`manni kg traverse` answers the whole question, because it walks edges rather
+than matching text.
+
+This is Maya's page, M19.
+
+## What reaches this page
+
+```console
+$ manni kg traverse https://example.com/dd/doc/test/kg/fixtures/dd/docs/configuration.md --reverse
+https://example.com/dd/doc/test/kg/fixtures/dd/docs/configuration.md — Configuration
+  https://example.com/dd/doc/test/kg/fixtures/dd/docs/getting-started.md — Getting started
+  https://example.com/dd/activity/build
+
+3 nodes, 2 hops, 0 excluded
+```
+
+`--reverse` follows inbound edges: who points at this node. One hop, which is
+the default depth, so this is the direct answer: the pages that link here or
+name the same concept.
+
+The build activity is in the list because the graph records what produced it.
+Narrow with `--predicates` when the provenance nodes are noise (below).
+
+## Transitive reach
+
+```console
+$ manni kg traverse <page IRI> --impact
+```
+
+`--impact` is transitive inbound reach: what a change here affects, not just
+what points at it directly. It raises the default depth from 1 to 3. The
+interesting answer is two or three hops out: the page that links to the page
+that shares your concept.
+
+Read the count line. `3 nodes, 5 hops, 0 excluded` says how much of the graph
+was reached and how many edges were walked to reach it. A page with a large
+impact set is a page to change carefully, and that is the sentence the command
+exists to produce.
+
+## Controlling the walk
+
+| Flag | What it does |
+|---|---|
+| `-d, --depth <n>` | Maximum hops. Default 1, or 3 under `--impact`. `0` is allowed and means the node itself, which is a real answer. |
+| `--reverse` | Follow inbound edges instead of outbound. |
+| `--impact` | Transitive inbound reach, with depth 3. |
+| `--predicates <list>` | Only follow these predicates, comma-separated and given once. |
+| `--limit <n>` | Stop after this many nodes. |
+
+Depth is the knob that matters. Depth 2 on a small corpus already reaches
+sections, concepts, agents and the scheme:
+
+```console
+$ manni kg traverse <page IRI> --depth 2
+...
+18 nodes, 25 hops, 0 excluded
+```
+
+That is the whole neighbourhood, which is rarely the question. Narrow it:
+
+```console
+$ manni kg traverse <page IRI> --predicates dcterms:subject
+https://example.com/dd/doc/test/kg/fixtures/dd/docs/configuration.md — Configuration
+  https://example.com/dd/concept/reference
+
+2 nodes, 1 hop, 0 excluded
+```
+
+A CURIE holds no comma, so `--predicates` is comma-separated and given once.
+Useful sets:
+
+- `dcterms:references`, hyperlinks only. The grep answer, but correct about
+  extensionless and index paths.
+- `dcterms:subject`, shared concepts. The edges grep cannot see.
+- `dcterms:hasPart`, the page's own sections.
+
+## Scoping
+
+Three filters narrow the walk to one slice of a multi-product, multi-locale
+corpus:
+
+| Flag | What it filters on |
+|---|---|
+| `--variant <variant>` | A product variant, by IRI, title, or slug. |
+| `--subject <subject>` | A software subject. |
+| `--lang <tag>` | A BCP-47 language tag, matched exactly. |
+
+The count line's `excluded` number is how many nodes the scope removed. A walk
+that reports `0 excluded` with a filter set means the filter matched nothing,
+which is usually a spelling rather than an empty answer.
+
+## Finding the node to start from
+
+`traverse` takes an IRI or a CURIE, not a file path. Two ways to get one:
+
+```console
+$ manni kg search "configuration" --limit 5
+$ manni kg query --o "Configuration"
+```
+
+Or read it off the pattern: a document node is the base IRI plus `doc/` plus
+the repository-relative path. With `kg.baseIri: https://example.com/dd/`, the
+page `docs/configuration.md` is
+`https://example.com/dd/doc/docs/configuration.md`.
+
+## In a review
+
+The value of this is that the comment "this breaks the install tutorial"
+arrives before the change, from your own terminal. Two habits:
+
+- Before a rename, `--reverse` on the page, and `kg stats` after it. A rename
+  that orphans a page shows up in the orphan list; one that breaks an anchor
+  shows up under broken section refs.
+- Before splitting a page, `--depth 2 --predicates dcterms:subject`, to see
+  which concepts the page currently owns and therefore what the split has to
+  keep owning.
+
+## Related
+
+- [Explore the graph](/manni/kg/explore/), for the other questions: orphans,
+  concepts, coverage.
+- [CLI reference](/manni/kg/reference/cli/#kg-traverse), for every flag.
+- [Run it in CI](/manni/kg/ci/), where the broken links this finds become a
+  gate.
+
+{/* Verified by Doc Detective in docs-as-tests, against test/kg/fixtures/dd/. */}
+
+{/* step {"description":"Traversal needs a built graph.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0]}} */}
+
+{/* step {"description":"--reverse reports what points at a page.","runShell":{"command":"manni kg traverse -c test/kg/fixtures/dd/docs.config.yaml https://example.com/dd/doc/test/kg/fixtures/dd/docs/configuration.md --reverse","exitCodes":[0],"stdio":"getting-started.md"}} */}
+
+{/* step {"description":"--impact walks transitive inbound reach.","runShell":{"command":"manni kg traverse -c test/kg/fixtures/dd/docs.config.yaml https://example.com/dd/doc/test/kg/fixtures/dd/docs/getting-started.md --impact","exitCodes":[0],"stdio":"excluded"}} */}
+
+{/* step {"description":"--depth 0 means the node itself.","runShell":{"command":"manni kg traverse -c test/kg/fixtures/dd/docs.config.yaml https://example.com/dd/doc/test/kg/fixtures/dd/docs/configuration.md --depth 0","exitCodes":[0],"stdio":"1 node, 0 hops"}} */}
+
+{/* step {"description":"--predicates narrows the walk to one edge kind.","runShell":{"command":"manni kg traverse -c test/kg/fixtures/dd/docs.config.yaml https://example.com/dd/doc/test/kg/fixtures/dd/docs/configuration.md --predicates dcterms:subject","exitCodes":[0],"stdio":"2 nodes, 1 hop, 0 excluded"}} */}
+
+{/* step {"description":"--limit stops the walk.","runShell":{"command":"manni kg traverse -c test/kg/fixtures/dd/docs.config.yaml https://example.com/dd/doc/test/kg/fixtures/dd/docs/configuration.md --depth 2 --limit 3","exitCodes":[0]}} */}

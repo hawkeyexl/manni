@@ -1,8 +1,13 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
     include: ["test/**/*.test.ts"],
+    // The kg tool's real-model tests need network and model weights, which
+    // this suite must never do (kg ADR 01025). Extend, not replace: a bare
+    // list drops vitest's defaults (node_modules, dist, .git), so anything
+    // vendored under test/ would start being collected.
+    exclude: [...configDefaults.exclude, "test/kg/real/**"],
     environment: "node",
     // vitest's default is 5000ms, and this suite does not fit inside it on a
     // Windows runner. Much of `cli.integration.test.ts` spawns the built bin
@@ -13,10 +18,25 @@ export default defineConfig({
     // at ~2.9s. The margin left at 5000ms was not enough, and what it produced
     // was not one stuck test but a rotating cast of them: two failures on one
     // run, a different one on the next, all of them passing everywhere else.
-    // 20s is chosen to sit well clear of that ceiling while still failing a
+    // 20s was chosen to sit well clear of that ceiling while still failing a
     // genuinely hung test in a bounded time, rather than holding a job open
-    // for the runner's own timeout.
-    testTimeout: 20_000,
+    // for the runner's own timeout. kg raises it to 30s for the same reason
+    // one notch further out: a determinism gate builds the same corpus twice
+    // by definition, which is two `dist/cli.js` spawns inside one test.
+    testTimeout: 30_000,
+    // vitest defaults hookTimeout to 10s, which a `beforeAll` that spawns the
+    // built CLI to build a corpus can exceed on a loaded Windows runner. It
+    // flaked once under full parallel load. Same reasoning as the timeout
+    // above, applied to the hook that does the same kind of work.
+    hookTimeout: 30_000,
+    env: {
+      // The inference library installs node-llama-cpp on demand into
+      // ~/.hawkeyexl-inference/runtime when a local provider is constructed
+      // without it. Any non-empty value refuses that. Without this, a test
+      // that reached the local provider by accident would download from the
+      // network — the one thing the default suite must never do.
+      INFERENCE_NO_AUTO_INSTALL: "1",
+    },
     coverage: {
       provider: "v8",
       // `text` for the CI log, `lcov` for anything that wants to ingest it.

@@ -49,6 +49,7 @@ import {
   type FieldLocation,
   type LocationPreference,
 } from "./location.js";
+import { KG_OUTPUT_KEYWORD } from "./kg-output.js";
 import { errorMessage } from "../../shared/errors.js";
 
 type Dialect = "2020" | "2019" | "draft7" | "draft4";
@@ -92,6 +93,7 @@ function buildAjv(dialect: Dialect): InstanceType<AjvCtor> {
   if (dialect === "draft7") ajv.addMetaSchema(draft06MetaSchema);
   registerEncryptKeyword(ajv);
   registerLocationKeyword(ajv);
+  registerKgOutputKeyword(ajv);
   registerBuiltins(ajv, dialect);
   return ajv;
 }
@@ -195,6 +197,52 @@ function registerLocationKeyword(ajv: InstanceType<AjvCtor>): void {
 /** Ajv's compile error for a mark outside the enum names the keyword. */
 function isLocationShapeError(err: unknown): boolean {
   return err instanceof Error && err.message.includes(`"${LOCATION_KEYWORD}"`);
+}
+
+/**
+ * Where `x-manni-kg-output` records what it says for each top-level key it is
+ * evaluated at, while `kgOutputPreferences` is running: key name to the set of
+ * values seen, so one schema saying both is detectable. `undefined` the rest of
+ * the time, for the same reason and with the same safety as `markRecorder`.
+ */
+let kgOutputRecorder: Map<string, Set<boolean>> | undefined;
+
+/**
+ * `x-manni-kg-output` (proposal 0051 §5), on every Ajv meta builds. Like
+ * `x-manni-location`, it never fails a value; it says where it was evaluated,
+ * so a mark counts wherever Ajv's resolution takes the validator. Only a mark
+ * evaluated at a top-level property is recorded; one nested inside `graph` is
+ * accepted and ignored. The boolean meta-schema refuses any other value at
+ * compile time, and `compileUncached` turns Ajv's wording into the plan's
+ * message.
+ */
+function registerKgOutputKeyword(ajv: InstanceType<AjvCtor>): void {
+  ajv.addKeyword({
+    keyword: KG_OUTPUT_KEYWORD,
+    metaSchema: { type: "boolean" },
+    errors: false,
+    validate: (
+      schema: unknown,
+      _data: unknown,
+      _parent?: unknown,
+      cxt?: { instancePath: string },
+    ): boolean => {
+      if (kgOutputRecorder !== undefined && typeof schema === "boolean") {
+        const key = topLevelKey(cxt?.instancePath ?? "");
+        if (key !== undefined) {
+          const seen = kgOutputRecorder.get(key);
+          if (seen) seen.add(schema);
+          else kgOutputRecorder.set(key, new Set([schema]));
+        }
+      }
+      return true;
+    },
+  });
+}
+
+/** Ajv's compile error for a non-boolean mark names the keyword. */
+function isKgOutputShapeError(err: unknown): boolean {
+  return err instanceof Error && err.message.includes(`"${KG_OUTPUT_KEYWORD}"`);
 }
 
 /** Does this schema mark its own top-level `$schema` property external? */
@@ -518,6 +566,11 @@ export class Validator {
           `${ref}: "${LOCATION_KEYWORD}" must be "page" or "external".`,
         );
       }
+      if (isKgOutputShapeError(err)) {
+        throw new DocmetaError(
+          `${ref}: "${KG_OUTPUT_KEYWORD}" must be true or false.`,
+        );
+      }
       throw new DocmetaError(
         `Schema "${ref}" failed to compile: ${errorMessage(err)}`,
       );
@@ -595,6 +648,48 @@ export class Validator {
         // is this ref's answer, and an earlier ref's stands.
         if (location === undefined || others.length > 0) continue;
         preferences.set(key, { location, schema: ref });
+      }
+    }
+    return preferences;
+  }
+
+  /**
+   * Whether each top-level key of `data` belongs in a published graph under
+   * `refs`, as its `x-manni-kg-output` mark says. A key no schema marks has no
+   * entry, which the caller reads as `true`: absent means harvested.
+   *
+   * A first pass with the recording keyword, as `locationPreferences` runs, so
+   * a mark counts exactly where validation would evaluate it, and a mark nested
+   * inside `graph` is ignored. Only present values are marked: Ajv applies a
+   * property's subschema to a property that exists. `$schema` is stripped
+   * first, as validation does.
+   *
+   * Refs are evaluated in order and a later ref's mark wins, so a house schema
+   * listed after a vocabulary refines it. A ref whose evaluated branches say
+   * both `true` and `false` gives that key no preference: with `allErrors`, Ajv
+   * evaluates failing branches too, so neither value is that ref's answer and
+   * an earlier ref's stands.
+   */
+  async kgOutputPreferences(
+    data: Record<string, unknown>,
+    refs: string[],
+  ): Promise<Map<string, boolean>> {
+    const { [FILE_SCHEMA_KEY]: _omit, ...subject } = data;
+    void _omit;
+    const preferences = new Map<string, boolean>();
+    for (const ref of refs) {
+      const fn = await this.compile(ref);
+      const seen = new Map<string, Set<boolean>>();
+      kgOutputRecorder = seen;
+      try {
+        fn(subject);
+      } finally {
+        kgOutputRecorder = undefined;
+      }
+      for (const [key, values] of seen) {
+        const [value, ...others] = [...values];
+        if (value === undefined || others.length > 0) continue;
+        preferences.set(key, value);
       }
     }
     return preferences;

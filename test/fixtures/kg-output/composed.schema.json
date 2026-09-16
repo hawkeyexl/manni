@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "$defs": {
+    "private": { "type": "string", "x-manni-kg-output": false }
+  },
+  "allOf": [
+    { "properties": { "owner": { "$ref": "#/$defs/private" } } },
+    { "properties": { "stakeholders": { "type": "string", "x-manni-kg-output": false } } }
+  ],
+  "if": { "properties": { "kind": { "const": "internal" } }, "required": ["kind"] },
+  "then": { "properties": { "ticket": { "x-manni-kg-output": false } } },
+  "properties": {
+    "kind": { "type": "string" },
+    "graph": {
+      "type": "object",
+      "properties": {
+        "label": { "type": "string", "x-manni-kg-output": false }
+      }
+    }
+  }
+}

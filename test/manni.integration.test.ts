@@ -7,8 +7,9 @@
  * usage error that says where the command went.
  */
 import { execFileSync, execSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -53,7 +54,7 @@ describe("manni (built bin)", () => {
     }
   }, 180000);
 
-  it("lists meta, cite, key and docevals as subcommands", () => {
+  it("lists meta, cite, key, docevals and kg as subcommands", () => {
     const r = run(manni, ["--help"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^Usage: manni /m);
@@ -61,6 +62,53 @@ describe("manni (built bin)", () => {
     expect(r.stdout).toMatch(/^\s+cite\b/m);
     expect(r.stdout).toMatch(/^\s+key\b/m);
     expect(r.stdout).toMatch(/^\s+docevals\b/m);
+    expect(r.stdout).toMatch(/^\s+kg\b/m);
+  });
+
+  it("runs kg under its name, reading its own key of the family config", () => {
+    expect(run(manni, ["kg", "--help"]).stdout).toMatch(/^Usage: manni kg /m);
+    expect(run(manni, ["kg", "--version"]).stdout.trim()).toBe(version);
+    // The fixture corpus is named by path, not declared as a collection: every
+    // tool reads every collection, so a `kg-fixtures` collection would hand
+    // `manni meta validate` and `manni cite check` a corpus of deliberately
+    // broken fixtures (0051 known limit 1). Everything else — the base IRI,
+    // the routes — comes from the repository's own `kg:` section.
+    const out = mkdtempSync(join(tmpdir(), "manni-umbrella-kg-"));
+    const r = run(manni, [
+      "kg",
+      "build",
+      "test/kg/fixtures/corpus/docs",
+      "--out",
+      join(out, "graph.ttl"),
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    expect(r.stdout).toMatch(/8 docs/);
+  });
+
+  it("prefixes kg diagnostics with the bin that ran", () => {
+    const r = run(manni, ["kg", "build", "-c", "does-not-exist.yaml"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/^manni: Config file not found/);
+  });
+
+  it("gives kg the family's usage contract: bare and unknown are exit 2", () => {
+    // 0034's grammar, and 0051 §2's plumbing: a domain with verbs has no
+    // default subcommand, and a usage error is operational (2), never a
+    // finding (1). Without the domain's own `exitOverride()` commander
+    // exits 1 here, which reads as "there were findings".
+    const bare = run(manni, ["kg"]);
+    expect(bare.status).toBe(2);
+    expect(bare.stdout).toBe("");
+    expect(bare.stderr).toMatch(/^Usage: manni kg /m);
+    expect(bare.stderr).toMatch(/^\s+build\b/m);
+
+    const unknown = run(manni, ["kg", "check", "--nope"]);
+    expect(unknown.status).toBe(2);
+    expect(unknown.stderr).toContain("unknown option");
+
+    const missing = run(manni, ["kg", "export"]);
+    expect(missing.status).toBe(2);
+    expect(missing.stderr).toContain("missing required argument");
   });
 
   it("mounts the key domain under key, with no default command", () => {
