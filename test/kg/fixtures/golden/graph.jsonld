@@ -586,7 +586,7 @@
         "@id": "https://example.com/kg/doc/docs/configuration.md"
       },
       "dcterms:title": "Windows Notes",
-      "kg:contentHash": "fd055b64091ce95eaaa5db80b19880422694c677dc23dd8084336237c5647272",
+      "kg:contentHash": "dc2e35b9d7d7dd98be827e186456f691a89c6022bd0d9f2b265786d7d3962fe3",
       "kg:path": "docs/windows-notes.md"
     },
     {

@@ -1,4 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
+import { spawnText } from "../../helpers/spawn.js";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -26,10 +27,14 @@ function run(
   args: string[],
   cwd: string,
 ): { stdout: string; stderr: string; output: string; status: number } {
-  const r = spawnSync(process.execPath, [cli, "kg", ...args], {
-    encoding: "utf8",
-    cwd,
-  });
+  // `spawnText` restores the `null` both streams really carry when the spawn
+  // itself failed; `@types/node` promises a string once `encoding` is set.
+  const r = spawnText(
+    spawnSync(process.execPath, [cli, "kg", ...args], {
+      encoding: "utf8",
+      cwd,
+    }),
+  );
   const stdout = r.stdout ?? "";
   const stderr = r.stderr ?? "";
   return { stdout, stderr, output: stdout + stderr, status: r.status ?? -1 };

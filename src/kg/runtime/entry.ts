@@ -152,9 +152,10 @@ export async function findEntry(
 
   const lexical = options.lexical.search(query, { limit });
 
-  const embed = options.embedder
-    ? (q: string) => options.embedder!.embed(q)
-    : options.embedQuery;
+  // Bound first: the closure then captures the embedder the test found, rather
+  // than re-reading a property the type cannot know is still the same one.
+  const embedder = options.embedder;
+  const embed = embedder ? (q: string) => embedder.embed(q) : options.embedQuery;
 
   let vector: EntryCandidate[] = [];
   if (options.vectors && embed && query.trim() !== "") {

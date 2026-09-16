@@ -46,7 +46,9 @@ export function unquoteGitPath(path: string): string {
   const inner = path.slice(1, -1);
   const bytes: number[] = [];
   for (let i = 0; i < inner.length; i++) {
-    const ch = inner[i]!;
+    // `?? ""` cannot fire under the loop's own bound; it is how that is said
+    // without an assertion, and an empty chunk contributes no bytes anyway.
+    const ch = inner[i] ?? "";
     if (ch !== "\\") {
       for (const byte of Buffer.from(ch, "utf8")) bytes.push(byte);
       continue;
@@ -168,9 +170,11 @@ export async function collectGitHistory(
       continue;
     }
     const match = STATUS_LINE.exec(line);
-    if (!match) continue;
-    const status = match[1]!;
-    const rest = match[2]!;
+    // Both groups are mandatory in the pattern, so a match carries both;
+    // requiring them subsumes the bare `if (!match) continue` this replaces.
+    const status = match?.[1];
+    const rest = match?.[2];
+    if (status === undefined || rest === undefined) continue;
     if (status === "R" || status === "C") {
       const [oldPath, newPath] = rest.split("\t");
       if (!oldPath || !newPath) continue;

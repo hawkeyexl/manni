@@ -281,8 +281,14 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
   const maxTurns = opts.maxTurns ?? config.fill.maxTurns;
 
   const warnings: string[] = [];
-  /** Set when section fields were written but could not be recorded. */
-  let sectionsUnrecorded = false;
+  /**
+   * Docs whose section fields were written but could not be recorded. A list
+   * rather than a flag because `fillOne` sets it and `runFill` reads it: a
+   * captured `let` assigned only inside a nested function stays narrowed to
+   * its initializer at the read, so the warning below would be unreachable
+   * code the compiler is entitled to assume never runs.
+   */
+  const sectionsUnrecorded: string[] = [];
 
   const allPaths = new Set(files);
   const results: FillDocResult[] = [];
@@ -343,7 +349,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     }
   }
 
-  if (sectionsUnrecorded) {
+  if (sectionsUnrecorded.length > 0) {
     warnings.push(
       "Section metadata was written but is NOT recorded in meta-provenance: /kg/sections is " +
         "one of the three hand-curated pointers kg refuses, with /kg/revision-of and " +
@@ -511,7 +517,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
         present.has("label") ||
         (typeof narrowed["label"] === "string" && narrowed["label"].length > 0);
       if (!hasLabel) {
-        for (const field of RELATION_FIELDS) delete narrowed[field];
+        for (const field of RELATION_FIELDS) Reflect.deleteProperty(narrowed, field);
       }
     };
     gateLabel();
@@ -534,7 +540,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
           confidence: c,
           ...(reasoning[field] ? { reasoning: reasoning[field] } : {}),
         });
-        delete narrowed[field];
+        Reflect.deleteProperty(narrowed, field);
       }
     }
     if (lowConfidence.length > 0) gateLabel();
@@ -550,7 +556,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       const vetted = await guard.vet(path, content, narrowed);
       if (vetted.rejected.length > 0) {
         rejected = vetted.rejected.map((r) => r.field);
-        for (const field of rejected) delete narrowed[field];
+        for (const field of rejected) Reflect.deleteProperty(narrowed, field);
         gateLabel();
       }
     }
@@ -603,7 +609,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       const recordable = realFields.filter((f) => !f.includes(".")).sort();
       // Loud, not silent: metadata a model wrote with no entry in the review
       // queue is exactly the thing this record exists to prevent.
-      if (recordable.length < realFields.length) sectionsUnrecorded = true;
+      if (recordable.length < realFields.length) sectionsUnrecorded.push(path);
       // Only record a score the model actually gave. `?? 0` stamped a
       // confidence of 0.00 the model never asserted whenever it omitted one,
       // which `fill.confidenceThreshold: 0` makes reachable.
@@ -646,7 +652,8 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       if (merged) {
         // The merge sets a confidence for every name it is handed; a pointer
         // nobody has ever scored keeps none.
-        for (const name of unscored) delete merged.entry.confidence[name];
+        for (const name of unscored)
+          Reflect.deleteProperty(merged.entry.confidence, name);
         page = { [META_PROVENANCE_KEY]: merged.list };
       }
     }

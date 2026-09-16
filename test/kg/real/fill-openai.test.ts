@@ -1,8 +1,10 @@
 /**
  * `manni kg fill` against a real OpenAI-compatible server (ADR 01031).
  *
- * **Not part of `npm test`.** It needs a server on `OLLAMA_BASE_URL`; the
- * `fill-live` CI job starts one. The default suite stays hermetic.
+ * **Not part of `npm test`.** It needs a server on `OLLAMA_BASE_URL`, so
+ * `vitest.config.ts` excludes it and no CI job runs it. `npm run test:kg:real`
+ * is how it is run deliberately, through `vitest.kg-real.config.ts`. The
+ * default suite stays hermetic.
  *
  * Why this one and not the Anthropic path: `OpenAICompatProvider` asks for
  * structured output with `response_format: {type: "json_schema", strict: true}`,
@@ -21,6 +23,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
+import { defined } from "../helpers/defined.js";
 import { runFill } from "../../../src/kg/commands/fill.js";
 
 const BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434/v1";
@@ -76,7 +79,7 @@ describe("manni kg fill against a real OpenAI-compatible server", () => {
 
     expect(report.exitCode, JSON.stringify(report.results)).toBe(0);
     expect(report.results).toHaveLength(1);
-    const result = report.results[0]!;
+    const result = defined(report.results[0]);
     expect(
       ["filled", "nothing-proposed"],
       `unexpected status: ${result.status} ${result.error ?? ""}`,
@@ -109,14 +112,14 @@ describe("manni kg fill against a real OpenAI-compatible server", () => {
     expect(report.turnsUsed).toBe(1);
     const skipped = report.results.filter((r) => r.status === "skipped");
     expect(skipped).toHaveLength(1);
-    expect(skipped[0]!.reason).toBe("turn budget");
+    expect(skipped[0]?.reason).toBe("turn budget");
   }, 300_000);
 
   it("caches, so a second identical run makes no HTTP call", async () => {
     const dir = corpus("---\ntitle: Caching\n---\n\n# Caching\n\nBody text.\n");
     const first = await runFill({ cwd: dir, dryRun: true });
     const second = await runFill({ cwd: dir, dryRun: true });
-    expect(first.results[0]!.cached).toBe(false);
-    expect(second.results[0]!.cached).toBe(true);
+    expect(first.results[0]?.cached).toBe(false);
+    expect(second.results[0]?.cached).toBe(true);
   }, 300_000);
 });

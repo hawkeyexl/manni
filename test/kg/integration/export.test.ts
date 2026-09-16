@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { inflateRawSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
+import { defined } from "../helpers/defined.js";
 import { detachedCorpus } from "../helpers/corpus.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -144,13 +145,13 @@ describe("manni kg export (integration)", () => {
     // The mimetype entry must come first (iiRDS/OCF container rule).
     expect(order[0]).toBe("mimetype");
     const entries = readZip(zip);
-    expect(entries.get("mimetype")!.toString()).toBe("application/iirds+zip");
+    expect(entries.get("mimetype")?.toString()).toBe("application/iirds+zip");
     expect(entries.has("META-INF/metadata.rdf")).toBe(true);
     // Every corpus doc ships as a content rendition.
     expect(order).toContain("content/docs/configuration.md");
     expect(order).toContain("content/docs/windows-notes.md");
     // Embedded content is the verbatim source (CRLF preserved for windows-notes).
-    expect(entries.get("content/docs/windows-notes.md")!).toEqual(
+    expect(entries.get("content/docs/windows-notes.md")).toEqual(
       readFileSync(join(corpus, "docs", "windows-notes.md")),
     );
   });
@@ -159,7 +160,7 @@ describe("manni kg export (integration)", () => {
     const { dir, graph } = buildGraph();
     const out = join(dir, "pkg.iirds");
     run(["export", "iirds", "-g", graph, "-o", out], corpus);
-    const meta = readZip(readFileSync(out)).get("META-INF/metadata.rdf")!;
+    const meta = defined(readZip(readFileSync(out)).get("META-INF/metadata.rdf"));
     expect(meta.toString("utf8")).toBe(readFileSync(rdfGolden, "utf8"));
   });
 
@@ -188,9 +189,9 @@ describe("manni kg export (integration)", () => {
     );
     const out = join(dir, "pkg.iirds");
     run(["export", "iirds", "-g", graph, "-c", cfg, "-o", out], corpus);
-    const meta = readZip(readFileSync(out))
-      .get("META-INF/metadata.rdf")!
-      .toString("utf8");
+    const meta = defined(
+      readZip(readFileSync(out)).get("META-INF/metadata.rdf"),
+    ).toString("utf8");
     expect(meta).toContain(
       "<vcard:organization-name>Acme Docs</vcard:organization-name>",
     );
@@ -208,9 +209,9 @@ describe("manni kg export (integration)", () => {
     );
     const out = join(dir, "pkg.iirds");
     run(["export", "iirds", "-g", graph, "-c", cfg, "-o", out], corpus);
-    const meta = readZip(readFileSync(out))
-      .get("META-INF/metadata.rdf")!
-      .toString("utf8");
+    const meta = defined(
+      readZip(readFileSync(out)).get("META-INF/metadata.rdf"),
+    ).toString("utf8");
     expect(meta).toContain("<iirds:title>My Corpus</iirds:title>");
   });
 

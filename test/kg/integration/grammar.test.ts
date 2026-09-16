@@ -8,6 +8,7 @@
  * is only real at the process boundary.
  */
 import { spawnSync } from "node:child_process";
+import { spawnText } from "../../helpers/spawn.js";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -29,10 +30,14 @@ function run(
   args: string[],
   cwd: string = corpus,
 ): { stdout: string; stderr: string; status: number } {
-  const r = spawnSync(process.execPath, [cli, "kg", ...args], {
-    encoding: "utf8",
-    cwd,
-  });
+  // `spawnText` restores the `null` both streams really carry when the spawn
+  // itself failed; `@types/node` promises a string once `encoding` is set.
+  const r = spawnText(
+    spawnSync(process.execPath, [cli, "kg", ...args], {
+      encoding: "utf8",
+      cwd,
+    }),
+  );
   return {
     stdout: r.stdout ?? "",
     stderr: r.stderr ?? "",

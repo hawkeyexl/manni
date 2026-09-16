@@ -1,5 +1,6 @@
 import { inflateRawSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
+import { defined } from "../helpers/defined.js";
 import { writeZip, type ZipEntry } from "../../../src/kg/core/zip.js";
 
 /** Minimal central-directory reader: returns entries in stored order with the
@@ -63,11 +64,11 @@ describe("writeZip", () => {
       { name: "content/a.md", data: Buffer.from("# Hello\n".repeat(20)) },
     ]);
     const entries = readEntries(zip);
-    expect(entries[0]!.name).toBe("mimetype");
-    expect(entries[0]!.method).toBe(0); // stored
-    expect(entries[0]!.compressedSize).toBe(entries[0]!.uncompressedSize);
+    expect(entries[0]?.name).toBe("mimetype");
+    expect(entries[0]?.method).toBe(0); // stored
+    expect(entries[0]?.compressedSize).toBe(entries[0]?.uncompressedSize);
     // The mimetype's stored bytes are exactly the payload.
-    expect(readData(zip, entries[0]!.localOffset).toString()).toBe(
+    expect(readData(zip, defined(entries[0]).localOffset).toString()).toBe(
       "application/iirds+zip",
     );
   });
@@ -76,7 +77,7 @@ describe("writeZip", () => {
     const payload = Buffer.from("# Hello\n".repeat(50));
     const zip = writeZip([mime, { name: "content/a.md", data: payload }]);
     const entries = readEntries(zip);
-    const a = entries.find((e) => e.name === "content/a.md")!;
+    const a = defined(entries.find((e) => e.name === "content/a.md"));
     expect(a.method).toBe(8); // deflate
     expect(inflateRawSync(readData(zip, a.localOffset)).equals(payload)).toBe(
       true,

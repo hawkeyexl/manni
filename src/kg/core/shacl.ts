@@ -7,14 +7,13 @@
 import { readFileSync } from "node:fs";
 import { DataFactory, Parser, Store } from "n3";
 import SHACLValidator from "rdf-validate-shacl";
+import type { Term } from "@rdfjs/types";
 import { errorMessage } from "../../shared/errors.js";
 import type { Severity } from "../../shared/severity.js";
 import { KgError } from "../types.js";
 import { compactIri } from "./load.js";
 import { byCodeUnit } from "./sort.js";
 import { NS } from "./vocab.js";
-
-const { namedNode } = DataFactory;
 
 /** SHACL's own scale, as `sh:severity` spells it. */
 export type ShaclSeverity = "violation" | "warning" | "info";
@@ -92,9 +91,9 @@ export function loadShapes(paths: string[]): Store {
  * point at it, up to two hops back. Sorted and deduplicated.
  */
 export function blameDocs(store: Store, focus: string): string[] {
-  const pathPred = namedNode(`${NS.kg}path`);
+  const pathPred = DataFactory.namedNode(`${NS.kg}path`);
   const pathOf = (iri: string): string | undefined =>
-    store.getQuads(namedNode(iri), pathPred, null, null)[0]?.object.value;
+    store.getQuads(DataFactory.namedNode(iri), pathPred, null, null)[0]?.object.value;
 
   const found = new Set<string>();
   const visited = new Set<string>();
@@ -117,7 +116,7 @@ export function blameDocs(store: Store, focus: string): string[] {
       }
     }
     if (depth === 0) return;
-    for (const quad of store.getQuads(null, null, namedNode(iri), null)) {
+    for (const quad of store.getQuads(null, null, DataFactory.namedNode(iri), null)) {
       if (quad.subject.termType === "NamedNode") {
         walk(quad.subject.value, depth - 1);
       }
@@ -138,7 +137,7 @@ function broaderEdges(store: Store): Edge[] {
   const edges: Edge[] = [];
   for (const q of store.getQuads(
     null,
-    namedNode(`${NS.skos}broader`),
+    DataFactory.namedNode(`${NS.skos}broader`),
     null,
     null,
   )) {
@@ -148,7 +147,7 @@ function broaderEdges(store: Store): Edge[] {
   }
   for (const q of store.getQuads(
     null,
-    namedNode(`${NS.skos}narrower`),
+    DataFactory.namedNode(`${NS.skos}narrower`),
     null,
     null,
   )) {
@@ -183,13 +182,30 @@ export function broaderCycles(store: Store): string[][] {
   const components: string[][] = [];
   let counter = 0;
 
+  /**
+   * A node's Tarjan number. Every node is stamped into both maps on the frame
+   * where `childIdx === 0`, before any edge out of it is followed, so a miss
+   * here is not a missing value but a broken traversal — which is worth
+   * saying rather than reading as `NaN` three lines later.
+   */
+  const numberOf = (map: Map<string, number>, node: string): number => {
+    const value = map.get(node);
+    if (value === undefined) {
+      throw new KgError(
+        `internal: ${node} was visited before it was numbered`,
+      );
+    }
+    return value;
+  };
+
   const nodes = [...adjacency.keys()].sort();
   for (const root of nodes) {
     if (index.has(root)) continue;
-    // Explicit work stack of [node, next-child-index] frames.
+    // Explicit work stack of [node, next-child-index] frames. The loop reads
+    // the top frame as its condition, so the frame is proven present by the
+    // same test that keeps the loop running.
     const frames: Array<[string, number]> = [[root, 0]];
-    while (frames.length > 0) {
-      const frame = frames[frames.length - 1]!;
+    for (let frame = frames.at(-1); frame !== undefined; frame = frames.at(-1)) {
       const [node, childIdx] = frame;
       if (childIdx === 0) {
         index.set(node, counter);
@@ -199,20 +215,26 @@ export function broaderCycles(store: Store): string[][] {
         onStack.add(node);
       }
       const children = adjacency.get(node) ?? [];
-      if (childIdx < children.length) {
+      // Reading the child *is* the bounds check: `adjacency` holds dense
+      // arrays of strings, so a hit is a child and a miss is the end of them.
+      const child = children[childIdx];
+      if (child !== undefined) {
         frame[1] += 1;
-        const child = children[childIdx]!;
         if (!index.has(child)) {
           frames.push([child, 0]);
         } else if (onStack.has(child)) {
-          lowlink.set(node, Math.min(lowlink.get(node)!, index.get(child)!));
+          lowlink.set(
+            node,
+            Math.min(numberOf(lowlink, node), numberOf(index, child)),
+          );
         }
       } else {
         if (lowlink.get(node) === index.get(node)) {
           const component: string[] = [];
-          let member: string;
+          let member: string | undefined;
           do {
-            member = stack.pop()!;
+            member = stack.pop();
+            if (member === undefined) break;
             onStack.delete(member);
             component.push(member);
           } while (member !== node);
@@ -221,17 +243,19 @@ export function broaderCycles(store: Store): string[][] {
           }
         }
         frames.pop();
-        const parent = frames[frames.length - 1];
+        const parent = frames.at(-1);
         if (parent) {
           lowlink.set(
             parent[0],
-            Math.min(lowlink.get(parent[0])!, lowlink.get(node)!),
+            Math.min(numberOf(lowlink, parent[0]), numberOf(lowlink, node)),
           );
         }
       }
     }
   }
-  return components.sort((a, b) => (a[0]! < b[0]! ? -1 : 1));
+  // A component always has a member — it is built by popping at least one —
+  // so `?? ""` is a spelling of that, not a fallback anyone can reach.
+  return components.sort((a, b) => ((a[0] ?? "") < (b[0] ?? "") ? -1 : 1));
 }
 
 /** Forward reachability over broader edges from each given start node. */
@@ -244,8 +268,8 @@ function broaderClosure(edges: Edge[], start: string): Set<string> {
   }
   const seen = new Set<string>();
   const queue = [...(adjacency.get(start) ?? [])];
-  while (queue.length > 0) {
-    const node = queue.shift()!;
+  // Shifting *is* the emptiness test, so the queue is never read past its end.
+  for (let node = queue.shift(); node !== undefined; node = queue.shift()) {
     if (seen.has(node)) continue;
     seen.add(node);
     queue.push(...(adjacency.get(node) ?? []));
@@ -271,7 +295,7 @@ function relatedConflicts(store: Store): CheckFinding[] {
   const findings: CheckFinding[] = [];
   for (const q of store.getQuads(
     null,
-    namedNode(`${NS.skos}related`),
+    DataFactory.namedNode(`${NS.skos}related`),
     null,
     null,
   )) {
@@ -302,7 +326,9 @@ function cycleFindings(store: Store): CheckFinding[] {
         .join(
           ", ",
         )} (${members.map((m) => m).join(" → ")}) — a concept cannot be its own ancestor`,
-      focusNode: members[0]!,
+      // `broaderCycles` returns only components of at least one member, so
+      // the first is there; `?? ""` says that without asserting it.
+      focusNode: members[0] ?? "",
       path: `${NS.skos}broader`,
       docs: [...new Set(members.flatMap((m) => blameDocs(store, m)))].sort(),
     }),
@@ -328,9 +354,9 @@ const KG_FILL_FRAGMENT = "#prov.kg-fill.";
  */
 function curatedFieldFindings(store: Store): CheckFinding[] {
   const filledField = `${NS.kg}filledField`;
-  const pathPred = namedNode(`${NS.kg}path`);
+  const pathPred = DataFactory.namedNode(`${NS.kg}path`);
   const findings: CheckFinding[] = [];
-  for (const q of store.getQuads(null, namedNode(filledField), null, null)) {
+  for (const q of store.getQuads(null, DataFactory.namedNode(filledField), null, null)) {
     if (q.object.termType !== "Literal") continue;
     const field = q.object.value;
     if (!CURATED_FIELDS.has(field)) continue;
@@ -346,7 +372,7 @@ function curatedFieldFindings(store: Store): CheckFinding[] {
     // These activities hang off no document edge, so `blameDocs` cannot walk
     // back to one. The doc IRI is the activity's own, minus its fragment.
     const docIri = activity.slice(0, activity.indexOf("#"));
-    const path = store.getQuads(namedNode(docIri), pathPred, null, null)[0]
+    const path = store.getQuads(DataFactory.namedNode(docIri), pathPred, null, null)[0]
       ?.object.value;
     findings.push(
       finding("violation", {
@@ -358,6 +384,24 @@ function curatedFieldFindings(store: Store): CheckFinding[] {
     );
   }
   return findings;
+}
+
+/**
+ * One validation result, with the nullability its library documents in code
+ * rather than in its `.d.ts`.
+ *
+ * `rdf-validate-shacl` declares `path`, `focusNode` and `severity` as `Term`,
+ * and every one of them is `…out(ns.sh.resultPath).term || null` at runtime. A
+ * result with no path is ordinary — a node-shape constraint has none — so the
+ * guards at the read site are the real contract and the declaration is the
+ * optimistic one. Saying so once here is what keeps them from reading as
+ * checks that cannot fail.
+ */
+interface ShaclResult {
+  message: Term[];
+  path: Term | null;
+  focusNode: Term | null;
+  severity: Term | null;
 }
 
 function severityOf(iri: string | undefined): ShaclSeverity {
@@ -386,7 +430,7 @@ export async function validateGraph(
   }
 
   const findings: CheckFinding[] = [];
-  for (const result of report.results) {
+  for (const result of report.results as ShaclResult[]) {
     const focus = result.focusNode?.value ?? "";
     const path = result.path?.value;
     const messages = result.message

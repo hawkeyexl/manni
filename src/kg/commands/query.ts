@@ -58,8 +58,8 @@ export function runQuery(opts: QueryOptions = {}): QueryResult {
           ? {
               kind: "literal",
               value: obj.value,
-              ...(obj.datatype &&
-              obj.datatype.value !== "http://www.w3.org/2001/XMLSchema#string"
+              ...(obj.datatype.value !==
+              "http://www.w3.org/2001/XMLSchema#string"
                 ? { datatype: obj.datatype.value }
                 : {}),
             }

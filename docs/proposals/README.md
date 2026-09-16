@@ -108,7 +108,7 @@ proposal above is what states how the tool works inside manni.
 |---|---|---|
 | docevals | [docevals/](docevals/README.md) | 00001–00004 and 01000–01045, imported from moose-docevals at 670e62b. Closed at 01045 by [0048](0048-docevals-domain.md); later docevals decisions are in this series |
 | lint | [lint/](lint/README.md) | 01001–01008, imported with the tool. 01007 is superseded by [0050](0050-lint-domain.md) |
-| kg | [kg/](kg/README.md) | 01000–01040, imported from moose-kg at 9f14ba6. Closed at 01040 by [0051](0051-kg-domain.md); later kg decisions are in this series |
+| kg | [kg/](kg/README.md) | 01000–01040, imported from moose-kg at 9f14ba6, with [`DESIGN.md`](kg/DESIGN.md), the phase roadmap those ADRs were taken under. Closed at 01040 by [0051](0051-kg-domain.md); later kg decisions are in this series |
 
 ## Dependency order
 

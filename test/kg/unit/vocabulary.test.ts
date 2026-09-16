@@ -18,7 +18,6 @@ import { describe, expect, it } from "vitest";
 import { Parser, Store, DataFactory } from "n3";
 import { NS, ROLE } from "../../../src/kg/core/vocab.js";
 
-const { namedNode } = DataFactory;
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 /**
  * The newest vocabulary version, resolved rather than named.
@@ -35,7 +34,7 @@ function newestVocabulary(): string {
     .filter((f) => /^ns-\d+\.\d+\.\d+\.ttl$/.test(f))
     .sort((x, y) => {
       const [a, b] = [parse(x), parse(y)];
-      for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i]! - b[i]!;
+      for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return (a[i] ?? 0) - (b[i] ?? 0);
       return 0;
     });
   const newest = files[files.length - 1];
@@ -77,7 +76,8 @@ function mintedTerms(): Set<string> {
         for (const m of readFileSync(path, "utf8").matchAll(
           /NS\.kg\}([A-Za-z][A-Za-z0-9]*)/g,
         )) {
-          out.add(m[1]!);
+          const term = m[1];
+          if (term !== undefined) out.add(term);
         }
       }
     }
@@ -110,9 +110,9 @@ describe("the kg vocabulary document", () => {
 
   it("gives every term a label, a comment, and a way home", () => {
     for (const term of definedTerms()) {
-      const s = namedNode(`${NS.kg}${term}`);
+      const s = DataFactory.namedNode(`${NS.kg}${term}`);
       const has = (p: string): boolean =>
-        store.countQuads(s, namedNode(p), null, null) > 0;
+        store.countQuads(s, DataFactory.namedNode(p), null, null) > 0;
       expect(has("http://www.w3.org/2000/01/rdf-schema#label"), term).toBe(
         true,
       );
@@ -127,7 +127,7 @@ describe("the kg vocabulary document", () => {
   });
 
   it("carries the ontology header a consumer needs to use it", () => {
-    const s = namedNode(ONTOLOGY);
+    const s = DataFactory.namedNode(ONTOLOGY);
     for (const p of [
       "http://purl.org/dc/terms/title",
       "http://purl.org/dc/terms/license",
@@ -138,13 +138,13 @@ describe("the kg vocabulary document", () => {
       "http://purl.org/vocab/vann/preferredNamespacePrefix",
       "http://purl.org/vocab/vann/preferredNamespaceUri",
     ]) {
-      expect(store.countQuads(s, namedNode(p), null, null), p).toBe(1);
+      expect(store.countQuads(s, DataFactory.namedNode(p), null, null), p).toBe(1);
     }
   });
 
   it("declares the prefix and namespace the emitter uses", () => {
     const objectOf = (p: string): string | undefined =>
-      store.getQuads(namedNode(ONTOLOGY), namedNode(p), null, null)[0]?.object
+      store.getQuads(DataFactory.namedNode(ONTOLOGY), DataFactory.namedNode(p), null, null)[0]?.object
         .value;
     expect(
       objectOf("http://purl.org/vocab/vann/preferredNamespacePrefix"),
@@ -163,12 +163,12 @@ describe("the kg vocabulary document", () => {
       "http://www.w3.org/2000/01/rdf-schema#domain",
       "http://www.w3.org/2000/01/rdf-schema#range",
     ]) {
-      expect(store.countQuads(null, namedNode(p), null, null), p).toBe(0);
+      expect(store.countQuads(null, DataFactory.namedNode(p), null, null), p).toBe(0);
     }
     expect(
       store.countQuads(
         null,
-        namedNode("https://schema.org/domainIncludes"),
+        DataFactory.namedNode("https://schema.org/domainIncludes"),
         null,
         null,
       ),

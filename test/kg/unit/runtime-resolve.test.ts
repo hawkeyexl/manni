@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { defined } from "../helpers/defined.js";
 import { GraphIndex } from "../../../src/kg/runtime/graph.js";
 import {
   createFetchResolver,
@@ -182,7 +183,7 @@ describe("sectionOwnText", () => {
   it("differs from sliceSection, which keeps the subtree", () => {
     // Retrieval wants the subtree; indexing wants own text, or a parent
     // matches everything its children match and outranks them.
-    const sliced = sliceSection(NESTED, "Top", 1)!;
+    const sliced = defined(sliceSection(NESTED, "Top", 1));
     expect(sliced).toContain("Grandchild prose.");
     expect(sectionOwnText(NESTED, "Top", 1)).not.toContain("Grandchild prose.");
   });

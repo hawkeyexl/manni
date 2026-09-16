@@ -86,7 +86,7 @@ export async function suppressKgOutput(
     }
 
     const frontmatter: Record<string, unknown> = { ...doc.frontmatter };
-    for (const key of suppressed) delete frontmatter[key];
+    for (const key of suppressed) Reflect.deleteProperty(frontmatter, key);
     out.push({ ...doc, frontmatter });
   }
   return out;

@@ -229,7 +229,13 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
   const sources = new Set(options.derive);
   const quads: Quad[] = [];
   const add = (s: string, p: string, o: Term) => quads.push({ s, p, o });
-  let mintedConcepts = false;
+  /**
+   * Concept IRIs minted while deriving. A set rather than a flag because
+   * `concept()` is a closure: a captured `let` assigned only inside one stays
+   * narrowed to its initializer at the read below, which would make the
+   * scheme node unreachable as far as the compiler is concerned.
+   */
+  const mintedConcepts = new Set<string>();
 
   /** Concept node + membership triples; returns the concept IRI. */
   const concept = (label: string): string => {
@@ -237,7 +243,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
     add(c, RDF_TYPE, iri(`${NS.skos}Concept`));
     add(c, `${NS.skos}prefLabel`, lit(label));
     add(c, `${NS.skos}inScheme`, iri(mintSchemeIri(baseIri)));
-    mintedConcepts = true;
+    mintedConcepts.add(c);
     return c;
   };
 
@@ -542,17 +548,19 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
         } else if (link.kind === "internal" && link.resolvedPath) {
           const targetIri = mintDocIri(baseIri, link.resolvedPath);
           const target = docByPath.get(link.resolvedPath);
+          // Bound first, so the anchor the test found is the anchor the IRI is
+          // minted from rather than a second read the type cannot connect to
+          // the first.
+          const anchor = link.anchor;
           const anchorResolves =
-            link.anchor !== undefined &&
+            anchor !== undefined &&
             target !== undefined &&
-            target.sections.some((s) => s.slug === link.anchor);
+            target.sections.some((s) => s.slug === anchor);
           add(
             docIri,
             `${NS.dcterms}references`,
             iri(
-              anchorResolves
-                ? mintSectionIri(targetIri, link.anchor!)
-                : targetIri,
+              anchorResolves ? mintSectionIri(targetIri, anchor) : targetIri,
             ),
           );
         } else if (link.kind === "broken") {
@@ -720,7 +728,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
     }
   }
 
-  if (mintedConcepts) {
+  if (mintedConcepts.size > 0) {
     const scheme = mintSchemeIri(baseIri);
     add(scheme, RDF_TYPE, iri(`${NS.skos}ConceptScheme`));
     add(scheme, `${NS.dcterms}title`, lit("manni kg concepts"));

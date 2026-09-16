@@ -420,11 +420,16 @@ export function analyzeDoc(
         const title = mdastToString(node);
         const slug = slugger.slug(title);
         if (level === 1 && firstH1 === undefined) firstH1 = title;
-        while (stack.length > 0 && stack[stack.length - 1]!.level >= level) {
+        // Reading the top frame *is* the emptiness test, so what the loop pops
+        // is what the loop looked at.
+        for (
+          let top = stack.at(-1);
+          top !== undefined && top.level >= level;
+          top = stack.at(-1)
+        ) {
           stack.pop();
         }
-        const parentSlug =
-          stack.length > 0 ? stack[stack.length - 1]!.slug : null;
+        const parentSlug = stack.at(-1)?.slug ?? null;
         const parentKey = parentSlug ?? "";
         const order = (childCount.get(parentKey) ?? 0) + 1;
         childCount.set(parentKey, order);

@@ -113,6 +113,11 @@ export function emitLocalizations(doc: LocalizationsDoc): string {
  * dereference `undefined` and surface as a raw TypeError with exit 1 rather
  * than the operational error (exit 2) an unreadable artifact owes.
  */
+/** A plain JSON object — not `null`, not an array. */
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
 export function parseLocalizations(text: string): LocalizationsDoc | undefined {
   let parsed: unknown;
   try {
@@ -120,43 +125,49 @@ export function parseLocalizations(text: string): LocalizationsDoc | undefined {
   } catch {
     return undefined;
   }
-  const doc = parsed as LocalizationsDoc | null;
-  if (!doc || doc.version !== 1 || !Array.isArray(doc.languages)) {
+  // Checked as `unknown`. Casting to `LocalizationsDoc` first would hand the
+  // compiler the answer to the question this function exists to ask, and every
+  // guard below would then read as a test that cannot fail.
+  if (!isRecord(parsed)) return undefined;
+  if (parsed["version"] !== 1 || !Array.isArray(parsed["languages"])) {
     return undefined;
   }
-  for (const entry of doc.languages) {
+  for (const entry of parsed["languages"] as unknown[]) {
+    if (!isRecord(entry)) return undefined;
+    const language = entry["language"];
+    const search = entry["search"];
     if (
-      !entry ||
-      typeof entry.language !== "string" ||
-      !isLanguageTag(entry.language) ||
-      typeof entry.documents !== "number" ||
-      !entry.search ||
-      typeof entry.search.path !== "string" ||
-      typeof entry.search.entries !== "number" ||
-      typeof entry.search.digest !== "string" ||
-      !ownsFilename(entry.search.path, searchIndexFilename(entry.language))
+      typeof language !== "string" ||
+      !isLanguageTag(language) ||
+      typeof entry["documents"] !== "number" ||
+      !isRecord(search) ||
+      typeof search["path"] !== "string" ||
+      typeof search["entries"] !== "number" ||
+      typeof search["digest"] !== "string" ||
+      !ownsFilename(search["path"], searchIndexFilename(language))
     ) {
       return undefined;
     }
-    if (entry.vectors !== undefined) {
-      const v = entry.vectors;
+    const v = entry["vectors"];
+    if (v !== undefined) {
       if (
-        typeof v.path !== "string" ||
-        typeof v.model !== "string" ||
-        typeof v.dtype !== "string" ||
-        typeof v.dims !== "number" ||
-        typeof v.count !== "number" ||
+        !isRecord(v) ||
+        typeof v["path"] !== "string" ||
+        typeof v["model"] !== "string" ||
+        typeof v["dtype"] !== "string" ||
+        typeof v["dims"] !== "number" ||
+        typeof v["count"] !== "number" ||
         // Same constraint `search.path` gets: the last segment must be the
         // filename this language's sidecar would be given. Without it,
         // `isSafeRelativePath` alone leaves `vectors.path` far more reachable
         // than `search.path` — and `search --mode vector` opens it.
-        !ownsFilename(v.path, vectorIndexFilename(entry.language))
+        !ownsFilename(v["path"], vectorIndexFilename(language))
       ) {
         return undefined;
       }
     }
   }
-  return doc;
+  return parsed as unknown as LocalizationsDoc;
 }
 
 /**

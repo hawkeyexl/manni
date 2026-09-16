@@ -23,8 +23,8 @@ describe("analyzeDoc over .mdx", () => {
       corpus,
     );
     expect(doc.links.map((l) => l.raw)).toContain("other.md");
-    expect(doc.links[0]!.kind).toBe("internal");
-    expect(doc.links[0]!.resolvedPath).toBe("docs/other.md");
+    expect(doc.links[0]?.kind).toBe("internal");
+    expect(doc.links[0]?.resolvedPath).toBe("docs/other.md");
   });
 
   it("derives an image from a src attribute on an image element", () => {
@@ -92,7 +92,7 @@ describe("analyzeDoc over .mdx", () => {
       "docs/guide.mdx",
       corpus,
     );
-    expect(doc.links[0]!.kind).toBe("external");
+    expect(doc.links[0]?.kind).toBe("external");
   });
 });
 

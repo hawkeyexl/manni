@@ -1,390 +1,262 @@
-# Claude Code Configuration
+# manni kg
 
-Repo-wide guidance for AI agents working on dockg. Conventions here are ported from
-[doc-detective](https://github.com/doc-detective/doc-detective)'s repo guidance, adapted to this
-codebase.
+Guidance for agents working on the knowledge-graph tool, `manni kg`. It derives
+an RDF graph from documentation. Frontmatter, links, headings, code blocks and
+git history become triples. It then validates that graph against SHACL shapes,
+and queries, traverses, searches and exports it.
+The root `CLAUDE.md` owns everything repo-wide. That
+covers the worktree and npm rules, red/green TDD, fixtures per feature, and
+Conventional Commits with what they release. It also covers the demo video
+rule, the supersede-never-amend rule for proposals, and the lint and output
+conventions. This file adds only what is specific to this tool.
 
-## Environment setup (required)
+Imported from [hawkeyexl/moose-kg](https://github.com/hawkeyexl/moose-kg) at
+9f14ba6, published as nothing: `@hawkeyexl/dockg` never reached npm. Its
+sources live under `src/kg/`, its tests under
+`test/kg/{unit,integration,real,fixtures,helpers}`, its SHACL shapes under
+`shapes/kg/`, its vocabulary document under `ns/kg/`, and its imported ADR log
+(closed at 01040) under `docs/proposals/kg/`. It ships no schema file: pages
+validate against the kg draft in `docs/proposals/0023/schemas/kg/`, bundled into
+the build by `src/kg/schema.ts`. The metadata tool is a sibling in this
+repository, imported by relative path (`../meta/index.js`), not a dependency.
 
-**Rebase onto `main` before doing anything else.** In a fresh worktree or stale checkout:
+## The data model, and the harvest rule
 
-```bash
-git fetch origin
-git rebase origin/main
+One graph, built from documents, with a deterministic IRI for every node.
+
+- `src/kg/core/analyze.ts` reads one document into a `DocModel`: frontmatter,
+  headings with slugs and nesting, links with their resolution, images, code
+  blocks.
+- `src/kg/core/derive.ts` is the vocabulary mapping: the rules that turn
+  `DocModel[]` into `Quad[]`. This is where a new predicate is decided, and the
+  file to read before adding one.
+- `src/kg/core/emit.ts`, `emit-jsonld.ts` and `emit-rdfxml.ts` serialize those
+  quads. `src/kg/core/search-index.ts` and `vector-index.ts` build the search
+  artifacts; `iirds-package.ts` and `zip.ts` build the iiRDS container.
+- `src/kg/core/git.ts` adds revision history and commit agents.
+
+**The harvest rule is: deeper wins, and the page level is the fallback, per
+fact rather than per page** (ADR 01024). A `kg` block that speaks to a fact owns it
+outright; where the block is silent, the page-level twin feeds the graph.
+`resolveKg` in `derive.ts` is the whole implementation, and the facts it
+resolves are the only ones with a page-level twin. Page-level `prerequisites`,
+`next-steps` and `related-pages` belong to another vocabulary and are
+deliberately not harvested.
+
+The asymmetry that follows is why `src/kg/core/harvest.ts` exists. The `kg`
+block is `additionalProperties: false`, so a typo inside it is a schema error.
+The same typo at the page level derives nothing, silently, because a page may
+carry any other key it likes. Near-miss detection is the answer, and it warns.
+A suspicion must never fail a build.
+
+**What a field publishes is the schema's call, not this tool's.**
+`x-manni-kg-output` is a boolean beside a top-level property, registered by
+`manni meta` and read back through `Validator.kgOutputPreferences`
+(`src/kg/core/kg-output.ts`). Absent means `true`. The filter runs **once**,
+before `deriveGraph`. All four published outputs descend from what derivation
+produces, so dropping the field there keeps it out of every one of them.
+A mark nested inside `kg` is ignored, because the mark governs a top-level key
+and `kg` is the top-level key.
+
+Encrypted values are harvested like any other. kg never decrypts, so the graph
+carries the `~…` token, which says a value exists and nothing about what it is.
+
+## The namespace and the shapes
+
+The *frontmatter key* is `kg:`. The *RDF namespace prefix* is also `kg:`, and
+it resolves to `https://hawkeyexl.github.io/manni/kg/ns#`. Never conflate them.
+The base IRI for minted nodes defaults to `urn:manni:kg:`.
+
+- `ns/kg/` holds the vocabulary document the namespace IRI dereferences to. The
+  rule that it must dereference is the reason the IRIs are the ones above and
+  not a host that serves 404.
+- `shapes/kg/` holds the SHACL contract `manni kg check` runs. It ships in the
+  npm package, because `check` reads it at runtime. `ns/kg/` does not: what has
+  to be reachable is the IRI, and that is served from `docs/public/kg/ns.ttl`
+  on the site.
+- **A published shapes or vocabulary file is immutable.** Evolve by adding a
+  new three-segment version file beside it. MAJOR means a graph that used to
+  pass now fails. MINOR means one that used to fail may now pass. PATCH means
+  no change in validation behavior.
+- The custom namespace stays minimal. Prefer a dcterms, skos, prov, schema.org,
+  foaf or iiRDS term wherever one exists.
+- The shapes are **closed** (`sh:closed`). A new derive predicate therefore
+  fails `manni kg check` until the shapes learn it. That failure is the
+  feature. A change that alters what the graph contains is not done until the
+  shapes say so, in the same commit.
+
+`src/kg/core/shacl.ts` also carries the two SKOS integrity checks core SHACL
+cannot express: `skos:broader` cycles, and `skos:related` conflicting with
+`skos:broaderTransitive`.
+
+## Two build platforms, and why the runtime stays browser-pure
+
+`tsup.config.ts` builds this tool twice.
+
+1. The Node side: the `manni` bin and the library, `platform: "node"`.
+2. `@hawkeyexl/manni/kg/runtime` and `@hawkeyexl/manni/kg/embed`,
+   `platform: "neutral"` (ADR 01018). `src/kg/runtime/**` must load in a
+   browser: no `node:` imports, no CommonJS interop, no bare specifiers a
+   browser cannot resolve. `minisearch` is inlined for that reason, and
+   `splitting` is off so `dist/kg/runtime.js` stays one file you can drop in
+   with a script tag.
+
+A `node:` import reaching the runtime's module graph is a **released bug**, not
+a type error, because nothing in `tsc` knows which half it is compiling. The
+bundle-purity test, `test/kg/integration/runtime-bundle.test.ts`, is the only
+thing that catches it. It scans the built bundle, so run `npm run build` before
+trusting it.
+
+Anything a runtime module needs from Node belongs on the Node side of the seam,
+with the runtime taking it as an argument. `src/kg/runtime/vector.ts` reads Web
+Crypto off `globalThis` for exactly this reason.
+
+## Determinism is the product contract
+
+`manni kg build` twice over unchanged inputs must be byte-identical.
+
+- Canonically sorted Turtle from the custom emitter, never a library's writer.
+- **No wall clock anywhere.** Dates come from frontmatter first, then git
+  committer times. Never `Date.now()`.
+- **No blank nodes.** Every node gets a deterministic IRI, sanitized so the
+  output always parses.
+- Compare field by field with `byCodeUnit` (`src/kg/core/sort.ts`) rather than
+  joining fields with a separator.
+- Keep NUL bytes out of source. They make git classify a file as binary, which
+  renders its diffs unreviewable.
+
+`test/kg/fixtures/golden/` is the regression gate, and the corpus it is built
+from is `test/kg/fixtures/corpus/`. **Changing the corpus invalidates every
+golden**, not one: `graph.ttl`, `graph.jsonld`, `metadata.rdf`,
+`traverse.json`, `localizations.json`, and one `search.<lang>.json` plus one
+`vectors.<lang>.bin` **per language in the corpus** (ADR 01038). Adding a
+language therefore adds two goldens. It also invalidates the document and
+triple counts asserted across the build, query, stats and runtime suites.
+
+All of them regenerate from the built CLI: `manni kg build`, then
+`manni kg export search` for the indexes and the manifest, then
+`manni kg embed --model mock --no-cache` for the sidecars and the manifest's
+`vectors` blocks. The mock embedder is why the optional
+`@huggingface/transformers` peer is not needed to regenerate them. Update a
+golden only deliberately, and read the diff line by line first. Golden
+comparison normalizes the tool version literal, so a release does not invalidate
+them.
+
+`manni kg stats --check` exits 1 on the fixture corpus **by design**: it carries
+a deliberate broken link and a deliberate broken section reference.
+
+## Config ↔ CLI flags (required pattern)
+
+Every user-facing knob flows through the resolved config. CLI flags do **not**
+bypass it; they override it.
+
+```text
+manni.config.yaml  →  `kg:` key (src/shared/config-file.ts)  →  Ajv validate (src/kg/core/config-schema.json)  →  defaults applied  →  CLI override  →  runtime
 ```
 
-**Install dependencies.** dockg consumes [docmeta](https://www.npmjs.com/package/docmeta)
-from the npm registry (`^1.3.0`), so a clean checkout needs nothing but:
+The family loader finds the file and hands this tool the value under `kg:`.
+There is no per-tool legacy file name: a `dockg.config.yaml` is not read.
+Inside the section `additionalProperties: false` catches typos; the schema's
+root stays permissive because sibling keys are not ours.
 
-```bash
-npm install
-```
+Adding a knob:
 
-CI runs `npm ci`, and so can you. This repo carried a "never `npm ci`, the lock is
-platform-skewed" rule for a while. The theory was that a Windows-generated lock omits the
-Linux-side optional dependencies of `@napi-rs/wasm-runtime` (rolldown's wasm binding).
-**That was a misdiagnosis**, twice over:
+1. **Schema first.** Add the field to `src/kg/core/config-schema.json`, with a
+   positive and a negative case in `test/kg/unit/config.test.ts`.
+2. **Type and default.** Extend `KgConfig` and `RawKgConfig` and apply the
+   default in `parseConfigSection` (`src/kg/core/config.ts`), so the resolved
+   shape is total and downstream code never re-applies one.
+3. **Commander option** in `src/kg/cli.ts`, with a thin `.action` delegating to
+   the `runX` core.
+4. **Override at the read site** with `??`, inside `src/kg/commands/*.ts`.
+5. **Read the resolved value** at the consumption site. Never read `argv` from
+   a core, an emitter or a reporter.
 
-- The lock records **all fourteen** `@rolldown/binding-*` packages, every Linux one included,
-  each with its `os`/`cpu`, `resolved`, and `integrity`. Nothing platform-specific is missing.
-- rolldown no longer ships a `wasm32-wasi` binding at all, so `@emnapi/core` and `@emnapi/runtime`
-  are not reachable in this tree and cannot be dropped from anywhere.
+Corpus-defining settings such as routes and derive sources may be config-only.
 
-The real variable was **npm's own version**, not the contributor's OS. docmeta recorded the same
-finding after hitting this through the identical dependency path. npm ≤ 11.6.2 drops those
-entries on Linux, macOS and Windows alike; 11.6.3 keeps them on all three.
+## Invariants
 
-That floor is enforced, not advisory. `engines.npm` is `>=11.6.3` and [.npmrc](.npmrc) sets
-`engine-strict=true`. A too-old npm fails at install with `EBADENGINE` instead of quietly
-writing a lockfile CI will reject. The reasoning is in
-[ADR 01040](adrs/01040-the-npm-floor-and-the-return-to-npm-ci.md). Do not assume the Node floor
-covers it. Node 24.11.0 satisfies `>=24` and bundles npm **11.6.1**. Above the floor, regenerate
-the lock normally.
+- **Exit codes:** `0` ok, `1` findings (SHACL errors, `stats --check` failures,
+  fill errors), `2` operational or usage (`KgError`, which extends the family's
+  `ToolError`).
+- **Severity is the family's**, `notice | warning | error` from
+  `src/shared/severity.ts`. SHACL's own `Violation | Warning | Info` maps onto
+  it, and the source word stays in `shaclSeverity`, the way a11y keeps axe's
+  `impact`. Findings are built through `finding()` in `src/kg/core/shacl.ts` so
+  the translation happens in one place and no caller re-derives it.
+- **Git is detected, never declared.** History is used wherever git can run over
+  a repository, and a run that finds neither warns once through `warn()` and
+  builds the rest. The warning carries git's own reason, because detection took
+  away the user's way of saying "I require this". Do not add a config switch
+  back: a switch for a detectable fact is one more way to be wrong. A job that
+  needs the stronger contract expresses it as a shape over the built graph.
+- **Machine attribution is page-level `meta-provenance`**, with JSON Pointers,
+  written through `mergeMetaProvenance` from `src/meta/internal.ts`, the merge
+  `manni meta fill` uses. Never grow a kg copy of it. There is no
+  `kg.provenance`; a page that still carries one is refused by name, with the
+  migration in the message.
+- **Three `kg` pointers are hand-curated and a machine may never claim them**:
+  `/kg/sections`, `/kg/revision-of` and `/kg/derived-from`. A `meta-provenance`
+  entry naming one is a `manni kg check` finding at `error`. This guard moved
+  here from the schema, which could not express it once pointers became free.
+- **`kg fill` is the one verb that reaches a model.** Providers come from the
+  family's top-level `providers:` map through `src/shared/providers.ts`, with
+  `kg.provider` and `kg.model` as the tool-level override and `--local` over
+  both. The default is `auto`. Never reimplement a provider, a cache or a price
+  table here. The inference layer is
+  [`@hawkeyexl/inference`](https://github.com/hawkeyexl/inference).
+  `src/kg/llm/` keeps only what is this tool's own: the prompt and proposal
+  schema, the cache-key composition, and the config-to-spec mapping.
+- **The budget is turns, not dollars.** A turn is one inference call, which
+  every model makes and every model can be counted making. A page left unfilled
+  by the budget is `skipped` with reason `turn budget`.
+- **The fill guardrail vets a proposal before it is written**
+  (`src/kg/core/fill-guard.ts`). It simulates each proposal in the derived graph
+  and drops any field that would violate the shapes. Accepted proposals fold
+  into the guard's state, so two documents in one run cannot jointly corrupt the
+  graph. Cached proposals are vetted too. Rejection sits downstream of the
+  cache, so a later corpus change can re-admit a proposal without re-asking the
+  model.
+- **A mock is not coverage of the thing it stands in for** (ADR 01025).
+  `createLocalEmbedder` once shipped a hardcoded `device: "wasm"` that threw on
+  every real Node call, and the mocks certified it for a whole release. Adding a
+  mock for an external library means adding the real-path test in the same
+  change; those live in `test/kg/real/`, excluded from `npm test` and run by
+  `npm run test:kg:real`.
+- **No network in the default suite.** `npm test` is hermetic: model calls go
+  through the inference library's `MockProvider`, and the git and CLI subprocess
+  seams are injectable.
+- **Section keys are camelCase; the vocabulary's own entries are kebab-case.**
+  `baseIri`, `maxTurns` and `confidenceThreshold` in the config; `alt-labels`
+  and `applies-to` on a page.
+- The page vocabulary is **`manni:kg:1.0.0-proposal.3`**, proposed by the
+  metadata tool (proposal 0023) and implemented here. `src/kg/schema.ts`
+  imports the draft and tsup bundles it, so `dist` never reads `docs/`. Never
+  ship a copy or patch it in memory: the vendored copy this tool used to
+  publish is exactly what that avoids.
 
-Still worth doing after any dependency change: **read the lockfile diff**. A change that adds
-packages you cannot name, or removes any, is worth stopping for.
+## Commands
 
-There is no sibling-checkout step. dockg depended on `file:../docmeta` while docmeta's
-`extractFrontmatter` export was unreleased, and that dependency is gone. Never
-reintroduce a `file:`/`link:` spec, since npm publishes them verbatim and
-`prepublishOnly` (scripts/check-publishable.mjs) now refuses to.
+- `node dist/cli.js kg build`, a dogfood build over the fixture corpus through
+  the repository's own `manni.config.yaml`. The corpus is named by path in the
+  `kg:` section rather than declared as a collection, because a bare
+  `manni meta validate` reads every collection.
+- `node dist/cli.js kg check`, the shapes gate over that graph.
+- `node dist/cli.js kg stats --check`, which exits 1 on this corpus by design.
+- `npm run test:kg:real`, the real-model suite. It needs the optional
+  `@huggingface/transformers` peer and, for the fill half, a server on
+  `OLLAMA_BASE_URL`. No CI job runs it.
+- The root `CLAUDE.md` lists the rest: build, test, typecheck, lint, the docs
+  drift checks and the site build.
 
-Don't reach for `--no-verify` when a husky hook fails. Install the missing deps or fix the
-message instead. It buys nothing anyway. CI re-runs every hook check, including commitlint
-across the PR's commit range, so a bypassed hook becomes a failed PR.
+## Decision records
 
-## Persistent knowledge lives in repo instructions, not Claude memory (required)
+A kg decision goes in the family series, as a proposal under
+`docs/proposals/NNNN-*.md` in that series' format, like any other domain's.
+Proposal 0051 is the first.
 
-Do **not** use Claude Code's auto-memory for dockg knowledge. When you learn something durable, be
-it a gotcha, a decision, or a convention, record it **in the repo, in the same change**:
-
-| Kind of knowledge | Home |
-|---|---|
-| Behavior decisions, contracts, trade-offs | [adrs/](adrs) (MADR, see below) |
-| Repo-wide agent workflow rules | This file |
-| User-facing behavior, config, commands | [docs/src/content/docs/](docs/src/content/docs) (the published site) |
-| Who the docs serve, and why they are shaped this way | [docs/content_strategy/](docs/content_strategy) |
-| Contributor mechanics | [CONTRIBUTING.md](CONTRIBUTING.md) |
-| Ephemeral working notes | `.tmp/` (gitignored), never committed |
-
-## Invariants of this codebase (required reading)
-
-- **Determinism is the product contract.** `dockg build` twice over unchanged inputs must be
-  byte-identical. That means canonically sorted Turtle from the custom emitter
-  (`src/core/emit.ts`) and no wall clock anywhere: dates come from frontmatter first, then git
-  committer times, never `Date.now()`. It also means no blank nodes ever, since every node gets a
-  deterministic IRI. IRIs are sanitized so output always parses.
-  `test/fixtures/golden/graph.ttl` is the corpus golden and the regression gate. Update it only
-  deliberately. Inspect the diff line by line first. Golden comparisons normalize the
-  `dockg:version` literal. The corpus fixture pins `provenance.git: false`
-  ([ADR 01010](adrs/01010-provenance-defaults-and-degradation.md)) so the golden captures
-  derivation, not this repo's HEAD committer date. The temp-repo tests cover git-derived output
-  instead.
-- **Naming:** the *frontmatter key* is `kg:`; the *RDF namespace prefix* is `dockg:`
-  (`https://hawkeyexl.github.io/dockg/ns#`, moved there by
-  [ADR 01030](adrs/01030-the-dockg-vocabulary-document.md), which is where it resolves).
-  Never conflate them. The custom namespace stays minimal, so prefer
-  dcterms/skos/prov/schema.org/foaf terms wherever one exists.
-- **The frontmatter schema is docmeta's; the shapes are dockg's.** docmeta publishes the common
-  metadata vocabularies and dockg implements graph behavior against them
-  ([ADR 01023](adrs/01023-adopt-docmetas-common-kg-vocabulary.md)). The `kg` block is
-  `docmeta:kg`, shipped as **byte-verbatim vendored bytes** at
-  `schemas/docmeta-kg-1.0.0-proposal.1.json`, `$id` and all. docmeta's proposal 0023 is
-  under review and forbids registering the id until it concludes. Never edit those bytes or
-  re-point the `$id` at `dockg.dev`. A sha256 pin in `test/unit/kg-vocabulary.test.ts` is what
-  notices an upstream revision, and it only works on an exact copy. The SHACL shapes contract in
-  [shapes/](shapes) stays self-hosted. Both ship in the npm package, and `dockg validate` /
-  `dockg check` default to the bundled file by path.
-- **Published schema and shapes files are immutable**; evolve by adding a new version file, and
-  make the new file's version **three-segment** (`1.0.0`, not `0.9`). Two segments force a
-  description-only fix to announce itself as a MINOR that adds fields it did not add. MAJOR = a
-  document that used to validate now fails · MINOR = one that used to fail may now pass · PATCH =
-  no validation-behavior change. The existing `frontmatter-0.N.json` / `dockg-0.N.ttl` files are
-  published and stay as they are; the convention binds the next version file.
-- **Exit codes:** `0` ok · `1` findings (validation failures, `check` violations, `stats --check`
-  broken links, fill errors) · `2` operational error (`DockgError`). `cli.ts fail()` rethrows
-  non-DockgError. SHACL severities map onto this: `sh:Violation` → 1, `sh:Warning`/`sh:Info` →
-  reported but 0.
-- **The inference layer is [`@hawkeyexl/inference`](https://github.com/hawkeyexl/inference), not
-  local code** (ADR 01021). Providers, the response cache, the price table, and the
-  schema-validated retry all live there. `src/llm/` keeps only what is dockg's own: the SKOS
-  prompt and proposal schema (`prompt.ts`), the cache-key composition (`cache.ts`), and the
-  config → `ProviderSpec` mapping (`provider.ts`). Never reimplement a provider here. Three
-  copies of this code drifted apart once already; a fix belongs upstream.
-- **No network in the default test suite.** `npm test` is hermetic. LLM code paths go through
-  the library's `MockProvider`, re-exported from [src/index.ts](src/index.ts) for downstream
-  use, and the exec seam is injectable for git/CLI subprocess tests. **A mock is not coverage
-  of the thing it stands in for.** `createLocalEmbedder` shipped a hardcoded `device: "wasm"`
-  that throws on every real Node call, and mocks certified it for a whole release
-  ([ADR 01025](adrs/01025-embedder-cross-platform-reality.md)). Where a mock stands in for a
-  third-party API, the real one must be exercised **somewhere**. `test/real/` holds those,
-  excluded from `npm test` (`vitest.config.ts`). The `embed-real` and `fill-live` CI jobs run
-  them (`test:real`, `test:real:cross`, `test:real:fill`). Adding a mock for an external library
-  means adding the real-path test in the same change. Where that is impossible, name the
-  exception in [ADR 01026](adrs/01026-exercise-every-third-party.md) with its reason.
-  `vitest.config.ts` sets `INFERENCE_NO_AUTO_INSTALL`, because the inference library installs
-  `node-llama-cpp` on demand. Without it, a test that reached the local provider by accident
-  would download from the network.
-- **A green run against a server that ignores the constraint proves nothing.** Ollama covers the
-  `openai` provider for real, compiling `response_format: json_schema` to a GBNF grammar. But it
-  accepts `tool_choice` and never reads it, which is the entire mechanism the `anthropic` provider
-  depends on. That path stays an exception rather than gaining a test that would be green, hollow,
-  and intermittently red ([ADR 01031](adrs/01031-exercising-the-llm-providers.md)).
-- **LF everywhere.** [.gitattributes](.gitattributes) declares `* text=auto eol=lf`, so the
-  object store and every working tree are LF on every platform regardless of a contributor's
-  global `core.autocrlf`. Exemptions use `-text` and **must stay below** the `*` rule. The last
-  matching line wins, so an override placed above it silently does nothing.
-- `test/fixtures/corpus/docs/windows-notes.md` is CRLF **on purpose**, pinned by
-  `.gitattributes`. Don't normalize it. (`-text` keeps its bytes verbatim, exempt from the LF
-  rule above.)
-- **No NUL bytes in source.** They make git classify a file as binary, which excludes it from
-  LF normalization and renders its diffs unreviewable. For ordering, compare field by field with
-  `byCodeUnit` ([src/core/sort.ts](src/core/sort.ts)) instead of joining fields with a separator.
-
-## Branches and pull requests (required)
-
-Changes land on `main` via a branch and a pull request, not direct pushes.
-Branch names follow the release channels (`feat/**` gets its own npm
-dist-tag; `fix/**`, `docs/**`, etc. for the rest). The PR body carries the
-docs-impact statement and links any ADRs. CI must be green before merge.
-
-## Development workflow (required)
-
-Always **red → green** TDD. Write the failing test first and run it to confirm it fails for the
-expected reason. Then write the minimum code, confirm green, and refactor. The verification loop
-is:
-
-```bash
-npm run format:check && npm run lint && npm run typecheck && npm run build && npm test
-```
-
-**Build before test.** Integration tests execute `dist/cli.js`, not `src/`.
-
-Enforcement is layered (see [adrs/01007](adrs/01007-quality-gate-enforcement.md)). `pre-commit`
-runs lint-staged (Prettier + ESLint over the **staged** blobs) then `typecheck`, and `pre-push`
-runs the full loop. CI re-runs everything plus commitlint across the PR's commit range. The CI copy is
-authoritative, and hooks are advisory by construction.
-
-Formatting is Prettier's job and linting is ESLint's; `eslint-config-prettier` keeps them from
-arguing. Prettier **must never** touch `test/fixtures/` or `schemas/`. Both are byte-sensitive,
-and `.prettierignore` encodes that. If you add a byte-exact fixture, add it there too.
-
-## Architecture Decision Records (required)
-
-Every **behavior change** ships with an ADR in [MADR](https://adr.github.io/madr/) format under
-[adrs/](adrs), written before or alongside the code:
-
-- **Format:** MADR 4.0.0, meaning YAML front matter (`status`, `date`, `decision-makers`) plus
-  *Context and Problem Statement*, *Decision Drivers*, *Considered Options*, *Decision Outcome*
-  (*Consequences*, *Confirmation*), *Pros and Cons of the Options*.
-- **Filename:** `NNNNN-kebab-case-title.md`, 5-digit zero-padded, numbering **starts at `01000`**.
-  `00001`–`00999` is reserved for backfilling pre-existing decisions.
-- **Scope:** decisions (behavior, contracts, trade-offs), not mechanical changes. Refactors,
-  dependency bumps, and doc/typo fixes don't need one.
-
-## Feature coverage (required)
-
-Unit tests are necessary but not sufficient. A **user-facing feature** (new derive source, config
-key, CLI flag, output shape) also needs:
-
-- **Corpus/fixture coverage of every meaningful permutation.** That is each value shape and each
-  toggle state, including the off/no-op form. It also covers precedence between config and CLI,
-  and the guard paths (missing git repo, unsupported frontmatter, broken targets).
-- **The determinism gates:** double-build byte comparison, golden comparison (version-normalized),
-  and an n3 parser round-trip of emitted Turtle.
-- Integration tests live in `test/integration/` and run the built CLI against
-  `test/fixtures/corpus/` or per-test `mkdtempSync` directories.
-- **A contract ships with a ladder.** An executable ladder of *named* cases covers a schema or a
-  shapes file. It carries positives and, just as importantly, negatives, each pinned to the reason
-  it holds. (`test/unit/kg-vocabulary.test.ts` is the model; it is docmeta's own review ladder,
-  ported case for case.) A negative that passes for the wrong reason is a silent hole, so assert
-  *which* key the rejection names, not merely that one happened.
-
-Changing the corpus fixture invalidates every byte-exact golden under `test/fixtures/golden/`.
-That is `graph.ttl`, `graph.jsonld`, `metadata.rdf`, `traverse.json`, `localizations.json`, and one
-`search.<lang>.json` plus one `vectors.<lang>.bin` **per language in the corpus** (ADR 01038). It
-also invalidates the doc/triple counts asserted across `build`, `validate`, `query-stats` and
-`runtime-sparql`. All are regenerable from the built CLI. `export search` writes the
-indexes and the manifest into a directory. Then `dockg embed --model mock --no-cache` writes the
-sidecars and fills in the manifest's `vectors` blocks, so the optional
-`@huggingface/transformers` peer is not needed. Adding a *language* to the fixture therefore adds
-two goldens, not one. Note `dockg stats --check` exits `1`
-on this fixture by design: it carries a deliberate broken link and a broken section ref.
-
-## Documentation impact (required)
-
-Behavior change → answer explicitly: does this add, change, or remove something a user can see,
-run, configure, or rely on? **If yes, the docs are part of the change's definition-of-done.** The
-affected page under [docs/src/content/docs/](docs/src/content/docs), the `dockg init` starter
-template, and command `--help` text all land in the same commit. If no (pure refactor,
-internal-only), say so in the commit body. Rule of thumb: a change that warrants an ADR has docs
-impact.
-
-The README is a router, not a manual. It carries the hook, a five-line quickstart, and a table
-of links into the site. Do not move reference material back into it.
-
-### Writing or changing a page
-
-Read [docs/content_strategy/README.md](docs/content_strategy/README.md) first. It is the entry
-point, and these are pointers into it, not a summary of it.
-
-1. **Name the persona.** [personas/_overview.md](docs/content_strategy/personas/_overview.md).
-   A page that serves everyone serves no one.
-2. **Find the CUJ.** [journeys/_overview.md](docs/content_strategy/journeys/_overview.md). The
-   page exists to move that persona along that journey.
-3. **Structure around the outcome, not the document type.** Do *not* impose a Diátaxis
-   tutorial/how-to/explanation/reference split as the organizing principle. The nav is
-   journey-voiced, and the Reference shelf supports navigation rather than driving it.
-4. **Link into Reference; do not restate it.** Journey pages explain the path.
-5. **Check the page's place and launch status** in
-   [proposed-ia.md](docs/content_strategy/information_architecture/proposed-ia.md). Every page
-   needs a CUJ. The three navigation-only pages named in the gap analysis are the exception.
-6. **Every page needs `title` and `description`.** That is a machine-enforced deploy gate.
-7. **Never hand-write command output.** Capture it by running the built binary against a
-   committed fixture under [test/fixtures/](test/fixtures). Determinism means what you capture is
-   what every reader sees, and a transcribed approximation is a claim nothing checks.
-
-Three gates run in [docs.yml](.github/workflows/docs.yml) and all of them block:
-`npm run docs:check-strategy` (anchor and coverage invariants), `npm run docs:check-cli`
-(reference/cli.mdx vs commander), and `npm run docs:check-links` (every `/dockg/…` target
-resolves). The docs workflow also builds a graph from the docs themselves and holds it to
-`dockg check` and `dockg stats --check`.
-
-Doc Detective is a **fourth gate with a narrower reach**. It lives in its own workflow
-([doc-detective.yml](.github/workflows/doc-detective.yml)) because its steps execute shell from
-the pull request's own content. So it is skipped on fork PRs, and a skipped job does not block.
-Treat fork contributions as unverified for command output.
-
-**Documented command output is executed, not trusted**
-([ADR 01035](adrs/01035-executing-documented-command-output.md)). Some pages carry trailing
-`{/* test … */}` / `{/* step … */}` blocks that run the built CLI against `test/fixtures/dd/` and
-assert on its output. `npm run docs:test` prints how many, and that is the only place the count
-belongs. Written here it goes stale the first time somebody adds a page, which has already
-happened once. The run needs the build linked as `dockg` (`npm link && npm link
-@hawkeyexl/dockg`). Three things about these blocks are load-bearing:
-
-- **Output is asserted with `stdio`**, a single field matching stdout *or* stderr. `stdout` and
-  `stderr` are not properties of the `runShell` schema, and a step using them is **dropped without
-  failing the run**. That is how 22 of 33 steps once vanished from a green run.
-- **`--exit-on-fail` is not optional.** The CLI exits 0 on a failing step without it.
-- **`scripts/check-doc-tests.mjs` is the backstop**, and it fails on both halves. One is a step
-  that declared but did not run, the other a step that ran but did not pass. `docs:test` runs it
-  after the suite; never run the suite without it.
-
-Fixtures for these tests live in `test/fixtures/dd/`, deliberately apart from
-`test/fixtures/corpus/`, which feeds the six byte-exact goldens and must not gain files.
-
-## SHACL shapes impact (required)
-
-Behavior change → answer explicitly: does this change what the emitted graph contains or means
-(new predicates, new node types, changed cardinalities)? **If yes, the SHACL shapes are part of
-the change's definition-of-done.** Update [shapes/](shapes), adding a new version file when the
-published contract must change, because shipped shapes are immutable. Keep the clean-corpus
-`dockg check` gate green (`test/integration/check.test.ts`), and note the shapes impact in the
-commit body. If no, say so in the commit body. The closed shapes (`sh:closed`) mean a new derive
-predicate **will** fail `dockg check` until the shapes learn it. That failure is the feature.
-
-## Commit messages (required)
-
-[Conventional Commits](https://www.conventionalcommits.org/), enforced by the husky `commit-msg`
-hook ([commitlint.config.cjs](commitlint.config.cjs)). Types from `@commitlint/config-conventional`.
-Breaking changes: `!` after type/scope or a `BREAKING CHANGE:` footer.
-
-**Subject must be lower-case.** The `subject-case` rule rejects `feat: PROV-O support`; write
-`feat: prov-o support`.
-
-## How version selection works
-
-Releases are fully automated by **semantic-release** ([.releaserc.json](.releaserc.json)):
-
-| Commit type | Version bump |
-|---|---|
-| `fix:` | patch |
-| `feat:` | minor |
-| `feat!:` / `BREAKING CHANGE:` | major |
-| `chore:`, `docs:`, `ci:`, `style:`, `test:`, `refactor:`, `build:`, `perf:` | no release |
-
-## Release channels
-
-| Branch | npm dist-tag |
-|---|---|
-| `main` | `latest` |
-| `next` | `next` |
-| `feat/**` | `<slug>` (lowercased branch suffix) |
-
-## Don't
-
-- Don't hand-edit `version` in `package.json`; semantic-release owns it.
-- Don't create `v*` git tags manually or run `npm publish` locally.
-- Don't use `--no-verify` to skip the commit-msg hook.
-- Don't add commitizen, standard-version, release-please, or changesets.
-- Don't ever emit wall-clock time, blank nodes, or unsorted output from the emitter.
-- Don't let Prettier near `test/fixtures/` or `schemas/`. They hold byte-exact baselines and
-  immutable published schemas. Keep `.prettierignore` covering them.
-- Don't disable an ESLint rule repo-wide to silence one call site; disable it inline, with the
-  reason (see the post-Ajv boundary in [src/core/config.ts](src/core/config.ts)).
-- Don't write dockg knowledge to Claude auto-memory; put it in this repo.
-
-## Testing behavior
-
-Keep transient files inside the worktree. Scratch output, saved command logs, and throwaway build
-targets go under `.tmp/` at the repo root (gitignored), not `%TEMP%`/`/tmp`. (Per-test isolation
-via `mkdtempSync(tmpdir(), ...)` inside tests is fine, since vitest cleans those paths' relevance
-up with the run.) To inspect long output, save it once and read the file:
-
-```bash
-mkdir -p .tmp && npm test > .tmp/test-output.txt 2>&1
-```
-
-## Config keys ↔ CLI flags (required pattern)
-
-Every user-facing knob lives in `dockg.config.yaml`, schema-first. Knobs that vary
-per invocation (output paths, dry-run, cost caps, provider overrides) also get CLI
-flags that override the resolved config. Corpus-defining settings (routes,
-provenance, derive sources) may be config-only. Command cores read the merged
-result, never raw argv. Adding a knob:
-
-1. **Schema first:** add the field to [src/core/config-schema.json](src/core/config-schema.json)
-   (`additionalProperties: false` everywhere, since unknown keys must fail loudly).
-2. **Type + default:** extend `DockgConfig` and apply the code-side default in `parseConfig`
-   ([src/core/config.ts](src/core/config.ts)) so the resolved shape is total.
-3. **Commander option** in [src/cli.ts](src/cli.ts), thin `.action` delegating to the `runX` core.
-4. **Override in the command core:** `opts.x ?? config.section.x` inside `src/commands/*.ts`.
-5. **Red→green test per step:** config default + rejection test in `test/unit/config.test.ts`,
-   behavior tests at the layer the knob affects.
-
-Precedence: `dockg.config.yaml` → Ajv validation → CLI override → runtime.
-
-## Automated review
-
-Every non-draft PR is reviewed by
-[.github/workflows/claude-pr-review.yml](.github/workflows/claude-pr-review.yml),
-which posts a single cohesive GitHub review. Its prompt is scoped to the
-invariants above, meaning determinism, IRI stability, golden regression, schema
-immutability, and exit codes. So the highest-value findings are contract
-violations, not style. Mentioning `@claude` on an issue, PR, or review comment
-triggers [claude.yml](.github/workflows/claude.yml) for ad-hoc work. Both use
-the repo's `CLAUDE_CODE_OAUTH_TOKEN` secret.
-
-## Related files
-
-- [.github/workflows/ci.yml](.github/workflows/ci.yml), the full loop and the determinism gate on
-  ubuntu × macos × windows, then a `cross-platform` job that compares the emitted artifacts'
-  digests *across* runners. Three per-OS golden checks prove three platforms each match one golden;
-  the join is what proves they match each other
-- [.github/workflows/docs.yml](.github/workflows/docs.yml), the strategy invariants, CLI drift,
-  page frontmatter, the graph gate over dockg's own docs, then the Pages deploy
-- [.github/workflows/vale.yml](.github/workflows/vale.yml), the prose gate. It is blocking and
-  reads the whole corpus, not only a pull request's added lines
-- [scripts/](scripts), holding `check-content-strategy.mjs`, `check-cli-reference.mjs`,
-  `check-docs-links.mjs`, `check-publishable.mjs`
-- [dockg.docs.yaml](dockg.docs.yaml), dockg pointed at its own documentation. Not named
-  `dockg.config.yaml` deliberately: that filename is discovered implicitly and would apply to
-  every bare invocation from the repo root, including the integration tests
-- [.releaserc.json](.releaserc.json) · [commitlint.config.cjs](commitlint.config.cjs)
-- [.husky/](.husky), holding `commit-msg` (commitlint), `pre-commit` (lint-staged + typecheck),
-  `pre-push` (full loop)
-- [eslint.config.js](eslint.config.js) · [.prettierrc.json](.prettierrc.json) ·
-  [.prettierignore](.prettierignore) · [.npmrc](.npmrc) (`engine-strict`) ·
-  [.gitattributes](.gitattributes) (LF policy)
-- [schemas/](schemas), the published frontmatter JSON Schemas (the validate default)
+The imported ADR log, `docs/proposals/kg/`, is **closed at 01040**. It stays as
+the record, and the ADR numbers cited above still resolve there. Do not add an
+ADR to it. When a new decision replaces one of its ADRs, the proposal says so.
+The ADR's status line is then the only edit, under the root's
+supersede-never-amend rule.

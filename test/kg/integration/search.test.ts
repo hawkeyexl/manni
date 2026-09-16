@@ -192,8 +192,8 @@ describe("manni kg search (integration)", () => {
       "json",
     ]);
     expect(out.results.length).toBeGreaterThan(0);
-    expect(out.results[0]!.iri).toContain("configuration");
-    expect(out.results[0]!.via).toBe("lexical");
+    expect(out.results[0]?.iri).toContain("configuration");
+    expect(out.results[0]?.via).toBe("lexical");
   });
 
   it("finds a section by body text the graph does not contain", () => {

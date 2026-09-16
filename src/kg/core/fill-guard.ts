@@ -22,8 +22,6 @@ import {
   KG_NOT_SOFTWARE_SUBJECT,
 } from "./iirds.js";
 
-const { namedNode, literal, quad } = DataFactory;
-
 /**
  * Proposal fields the guard simulates; others cannot break the shapes. The
  * SKOS relation fields can form cycles/collisions; the applicability fields can
@@ -61,14 +59,14 @@ function toStore(quads: Quad[]): Store {
   const store = new Store();
   for (const q of quads) {
     store.addQuad(
-      quad(
-        namedNode(q.s),
-        namedNode(q.p),
+      DataFactory.quad(
+        DataFactory.namedNode(q.s),
+        DataFactory.namedNode(q.p),
         q.o.kind === "iri"
-          ? namedNode(q.o.value)
-          : literal(
+          ? DataFactory.namedNode(q.o.value)
+          : DataFactory.literal(
               q.o.value,
-              q.o.datatype ? namedNode(q.o.datatype) : undefined,
+              q.o.datatype ? DataFactory.namedNode(q.o.datatype) : undefined,
             ),
       ),
     );
@@ -149,7 +147,7 @@ export class FillGuard {
   private async baseline(): Promise<Set<string>> {
     if (this.baselineKeys === null) {
       const findings = await validateGraph(this.buildStore(), this.shapesPaths);
-      this.baselineKeys = new Set(findings.map(FillGuard.key));
+      this.baselineKeys = new Set(findings.map((f) => FillGuard.key(f)));
     }
     return this.baselineKeys;
   }
@@ -254,16 +252,19 @@ export class FillGuard {
           if (!condemned.has(field)) condemned.set(field, f.message);
         }
       }
-      if (condemned.size === 0) {
+      const firstBad = bad[0];
+      if (condemned.size === 0 && firstBad !== undefined) {
         // Can't pin the new violation on a specific field — reject the
         // whole guarded proposal rather than write a graph that fails check.
+        // `bad` is non-empty (the loop broke out above when it was not), and
+        // reading its head is how that gets said instead of asserted.
         for (const field of guarded()) {
-          condemned.set(field, bad[0]!.message);
+          condemned.set(field, firstBad.message);
         }
       }
       for (const [field, reason] of condemned) {
         rejected.push({ field, reason });
-        delete current[field];
+        Reflect.deleteProperty(current, field);
       }
     }
 

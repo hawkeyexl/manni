@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { defined } from "../helpers/defined.js";
 import { encodeVectorIndex } from "../../../src/kg/core/vector-index.js";
 import {
   createVectorIndex,
@@ -34,13 +35,13 @@ describe("createVectorIndex — standalone search", () => {
   it("ranks by cosine similarity without any lexical index or graph", () => {
     // Pure semantic search: a query vector in, ranked IRIs out.
     const hits = INDEX().search(Float32Array.from([1, 0, 0]));
-    expect(hits[0]!.iri).toBe("urn:a");
-    expect(hits[0]!.score).toBeCloseTo(1, 5);
+    expect(hits[0]?.iri).toBe("urn:a");
+    expect(hits[0]?.score).toBeCloseTo(1, 5);
     // c is 45° from the query, b is orthogonal.
-    expect(hits[1]!.iri).toBe("urn:c");
-    expect(hits[1]!.score).toBeCloseTo(Math.SQRT1_2, 5);
-    expect(hits[2]!.iri).toBe("urn:b");
-    expect(hits[2]!.score).toBeCloseTo(0, 5);
+    expect(hits[1]?.iri).toBe("urn:c");
+    expect(hits[1]?.score).toBeCloseTo(Math.SQRT1_2, 5);
+    expect(hits[2]?.iri).toBe("urn:b");
+    expect(hits[2]?.score).toBeCloseTo(0, 5);
     expect(hits.every((h) => h.via === "vector")).toBe(true);
   });
 
@@ -48,7 +49,7 @@ describe("createVectorIndex — standalone search", () => {
     const unit = INDEX().search(Float32Array.from([1, 0, 0]));
     const scaled = INDEX().search(Float32Array.from([100, 0, 0]));
     expect(scaled.map((h) => h.iri)).toEqual(unit.map((h) => h.iri));
-    expect(scaled[0]!.score).toBeCloseTo(unit[0]!.score, 6);
+    expect(defined(scaled[0]).score).toBeCloseTo(defined(unit[0]).score, 6);
   });
 
   it("does not mutate the caller's query vector", () => {

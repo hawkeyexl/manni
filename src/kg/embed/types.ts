@@ -46,11 +46,17 @@ export type EmbedRole = "query" | "passage";
  * permitted set: `embed.model` accepts any id, and an unknown one is used
  * as-is with no prefixes.
  */
+/**
+ * The default, named rather than found at index 0: `DEFAULT_MODEL` below then
+ * reads it directly instead of asserting that the list has a first element.
+ */
+const DEFAULT_PROFILE: ModelProfile = {
+  id: "onnx-community/granite-embedding-small-english-r2-ONNX",
+  note: "Default. 384-d, 8192-token context so sections are never truncated; no prefixes.",
+};
+
 export const MODEL_PROFILES: readonly ModelProfile[] = [
-  {
-    id: "onnx-community/granite-embedding-small-english-r2-ONNX",
-    note: "Default. 384-d, 8192-token context so sections are never truncated; no prefixes.",
-  },
+  DEFAULT_PROFILE,
   {
     id: "Xenova/gte-small",
     note: "Lighter (~34 MB). 384-d, 512-token context; no prefixes.",
@@ -66,7 +72,7 @@ export const MODEL_PROFILES: readonly ModelProfile[] = [
   },
 ];
 
-export const DEFAULT_MODEL = MODEL_PROFILES[0]!.id;
+export const DEFAULT_MODEL = DEFAULT_PROFILE.id;
 
 /** The profile for a model id, or a bare profile when it is not a tested one. */
 export function profileFor(id: string): ModelProfile {

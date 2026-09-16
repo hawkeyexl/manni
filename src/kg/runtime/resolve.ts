@@ -72,21 +72,28 @@ export function splitFragment(iri: string): { doc: string; fragment?: string } {
 function fencedLines(lines: string[]): boolean[] {
   const mask = new Array<boolean>(lines.length).fill(false);
   let open: string | undefined;
-  for (let i = 0; i < lines.length; i++) {
-    const m = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(lines[i]!);
+  for (const [i, line] of lines.entries()) {
+    const m = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+    // Both groups are mandatory in the pattern, so a match carries both.
+    // Requiring them is the check that proves it, and it replaces the bare
+    // `m &&` the branches already tested — no condition is added, only
+    // sharpened.
+    const delimiter = m?.[1];
+    const info = m?.[2];
+    const isFence = delimiter !== undefined && info !== undefined;
     if (open === undefined) {
-      if (m && !(m[1]!.startsWith("`") && m[2]!.includes("`"))) {
-        open = m[1]!;
+      if (isFence && !(delimiter.startsWith("`") && info.includes("`"))) {
+        open = delimiter;
         mask[i] = true;
       }
       continue;
     }
     mask[i] = true;
     if (
-      m &&
-      m[1]![0] === open[0] &&
-      m[1]!.length >= open.length &&
-      m[2]!.trim() === ""
+      isFence &&
+      delimiter[0] === open[0] &&
+      delimiter.length >= open.length &&
+      info.trim() === ""
     ) {
       open = undefined;
     }
@@ -202,9 +209,9 @@ export function documentPreamble(markdown: string): string | undefined {
   const lines = markdown.split(/\r?\n/);
   const fenced = fencedLines(lines);
   let end = lines.length;
-  for (let i = 0; i < lines.length; i++) {
+  for (const [i, line] of lines.entries()) {
     if (fenced[i]) continue;
-    if (/^#{1,6}\s+/.test(lines[i]!)) {
+    if (/^#{1,6}\s+/.test(line)) {
       end = i;
       break;
     }
@@ -265,12 +272,17 @@ function slice(
   let startLevel = level ?? 0;
   let remaining = occurrence;
 
-  for (let i = 0; i < lines.length; i++) {
+  for (const [i, line] of lines.entries()) {
     if (fenced[i]) continue;
-    const m = /^(#{1,6})\s+(.*)$/.exec(lines[i]!);
-    if (!m) continue;
-    const hLevel = m[1]!.length;
-    if (m[2]!.trim().toLowerCase() !== wanted) continue;
+    const m = /^(#{1,6})\s+(.*)$/.exec(line);
+    // Both groups are mandatory, so a match carries both; requiring them is
+    // the check that proves it, and it subsumes the `if (!m) continue` this
+    // replaces.
+    const hashes = m?.[1];
+    const heading = m?.[2];
+    if (hashes === undefined || heading === undefined) continue;
+    const hLevel = hashes.length;
+    if (heading.trim().toLowerCase() !== wanted) continue;
     if (level !== undefined && hLevel !== level) continue;
     if (remaining > 0) {
       remaining -= 1;
@@ -285,8 +297,8 @@ function slice(
   let end = lines.length;
   for (let i = start + 1; i < lines.length; i++) {
     if (fenced[i]) continue;
-    const m = /^(#{1,6})\s+/.exec(lines[i]!);
-    if (m && (ownTextOnly || m[1]!.length <= startLevel)) {
+    const hashes = /^(#{1,6})\s+/.exec(lines[i] ?? "")?.[1];
+    if (hashes !== undefined && (ownTextOnly || hashes.length <= startLevel)) {
       end = i;
       break;
     }

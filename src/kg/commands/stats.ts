@@ -12,8 +12,6 @@ import { NS, RDF_TYPE } from "../core/vocab.js";
 import { COVERAGE_FIELDS, SECTION_COVERAGE_FIELDS } from "../core/coverage.js";
 import { byCodeUnit } from "../core/sort.js";
 
-const { namedNode } = DataFactory;
-
 export interface StatsOptions {
   config?: string;
   /** `--no-config`: skip discovery and run on the built-in defaults. */
@@ -101,7 +99,7 @@ export interface LocalizationReport {
 
 function subjectsOfType(store: Store, typeIri: string): string[] {
   return store
-    .getQuads(null, namedNode(RDF_TYPE), namedNode(typeIri), null)
+    .getQuads(null, DataFactory.namedNode(RDF_TYPE), DataFactory.namedNode(typeIri), null)
     .map((q) => q.subject.value)
     .sort();
 }
@@ -135,7 +133,7 @@ export function runStats(opts: StatsOptions = {}): StatsReport {
   const pathOf = new Map<string, string>(docIris.map((d) => [d, d]));
   for (const quad of store.getQuads(
     null,
-    namedNode(`${NS.kg}path`),
+    DataFactory.namedNode(`${NS.kg}path`),
     null,
     null,
   )) {
@@ -144,7 +142,7 @@ export function runStats(opts: StatsOptions = {}): StatsReport {
 
   const refQuads = store.getQuads(
     null,
-    namedNode(`${NS.dcterms}references`),
+    DataFactory.namedNode(`${NS.dcterms}references`),
     null,
     null,
   );
@@ -159,11 +157,11 @@ export function runStats(opts: StatsOptions = {}): StatsReport {
 
   const orphans = docIris
     .filter((d) => (degree.get(d) ?? 0) === 0)
-    .map((d) => pathOf.get(d)!)
+    .map((d) => pathOf.get(d) ?? d)
     .sort();
 
   const brokenLinks = store
-    .getQuads(null, namedNode(`${NS.kg}brokenLink`), null, null)
+    .getQuads(null, DataFactory.namedNode(`${NS.kg}brokenLink`), null, null)
     .map((q) => ({
       doc: pathOf.get(q.subject.value) ?? q.subject.value,
       target: q.object.value,
@@ -171,7 +169,7 @@ export function runStats(opts: StatsOptions = {}): StatsReport {
     .sort((a, b) => (a.doc + a.target < b.doc + b.target ? -1 : 1));
 
   const brokenSectionRefs = store
-    .getQuads(null, namedNode(`${NS.kg}brokenSectionRef`), null, null)
+    .getQuads(null, DataFactory.namedNode(`${NS.kg}brokenSectionRef`), null, null)
     .map((q) => ({
       doc: pathOf.get(q.subject.value) ?? q.subject.value,
       slug: q.object.value,
@@ -180,7 +178,7 @@ export function runStats(opts: StatsOptions = {}): StatsReport {
 
   const mostConnected = [...degree.entries()]
     .filter(([, deg]) => deg > 0)
-    .map(([doc, deg]) => ({ doc: pathOf.get(doc)!, degree: deg }))
+    .map(([doc, deg]) => ({ doc: pathOf.get(doc) ?? doc, degree: deg }))
     .sort((a, b) => b.degree - a.degree || (a.doc < b.doc ? -1 : 1))
     .slice(0, top);
 
@@ -196,7 +194,7 @@ export function runStats(opts: StatsOptions = {}): StatsReport {
     fields.map(({ field, iri }) => {
       let docs = 0;
       for (const s of subjects) {
-        if (store.countQuads(namedNode(s), namedNode(iri), null, null) > 0)
+        if (store.countQuads(DataFactory.namedNode(s), DataFactory.namedNode(iri), null, null) > 0)
           docs++;
       }
       const ratio =
@@ -216,7 +214,7 @@ export function runStats(opts: StatsOptions = {}): StatsReport {
   const languageOf = new Map<string, string>();
   for (const q of store.getQuads(
     null,
-    namedNode(`${NS.dcterms}language`),
+    DataFactory.namedNode(`${NS.dcterms}language`),
     null,
     null,
   )) {
@@ -241,8 +239,8 @@ export function runStats(opts: StatsOptions = {}): StatsReport {
   const sources = docIris.filter(
     (d) =>
       store.countQuads(
-        namedNode(d),
-        namedNode(`${NS.schema}translationOfWork`),
+        DataFactory.namedNode(d),
+        DataFactory.namedNode(`${NS.schema}translationOfWork`),
         null,
         null,
       ) === 0,
@@ -255,7 +253,7 @@ export function runStats(opts: StatsOptions = {}): StatsReport {
   const translatedInto = new Map<string, Set<string>>();
   for (const q of store.getQuads(
     null,
-    namedNode(`${NS.schema}workTranslation`),
+    DataFactory.namedNode(`${NS.schema}workTranslation`),
     null,
     null,
   )) {
@@ -268,20 +266,23 @@ export function runStats(opts: StatsOptions = {}): StatsReport {
 
   const localization: LocalizationReport = {
     unlabelled: docIris.length - languageOf.size,
-    languages: [...byLanguage.keys()].sort(byCodeUnit).map((language) => {
-      const docsIn = byLanguage.get(language)!;
+    // `entries()`, not `keys()` and a lookup: the docs come out of the map
+    // with the tag they are keyed by, so there is nothing left to assert.
+    languages: [...byLanguage.entries()]
+      .sort(([a], [b]) => byCodeUnit(a, b))
+      .map(([language, docsIn]) => {
       const untranslated = sources
         .filter((s) => languageOf.get(s) !== language)
         .filter((s) => !translatedInto.get(s)?.has(language))
-        .map((s) => pathOf.get(s)!)
+        .map((s) => pathOf.get(s) ?? s)
         .sort(byCodeUnit);
-      return {
-        language,
-        docs: docsIn.length,
-        coverage: coverageOver(docsIn, COVERAGE_FIELDS),
-        untranslated,
-      };
-    }),
+        return {
+          language,
+          docs: docsIn.length,
+          coverage: coverageOver(docsIn, COVERAGE_FIELDS),
+          untranslated,
+        };
+      }),
   };
 
   // A uniform --coverage-threshold overrides the resolved config map. Bind it
@@ -291,17 +292,15 @@ export function runStats(opts: StatsOptions = {}): StatsReport {
     uniform != null
       ? Object.fromEntries(coverage.map((c) => [c.field, uniform]))
       : config.stats.coverageThreshold;
-  const coverageFindings = coverage
-    .filter(
-      (c) =>
-        c.field in thresholds &&
-        (total === 0 ? 100 : (c.docs / total) * 100) < thresholds[c.field]!,
-    )
-    .map((c) => ({
-      field: c.field,
-      pct: c.pct,
-      threshold: thresholds[c.field]!,
-    }));
+  // One read of the threshold, which is both the "is this field gated" test
+  // and the value the finding reports — where `in` plus two lookups needed an
+  // assertion to say they were the same fact.
+  const coverageFindings = coverage.flatMap((c) => {
+    const threshold = thresholds[c.field];
+    if (threshold === undefined) return [];
+    const pct = total === 0 ? 100 : (c.docs / total) * 100;
+    return pct < threshold ? [{ field: c.field, pct: c.pct, threshold }] : [];
+  });
 
   const failed =
     !!opts.check &&
@@ -315,14 +314,14 @@ export function runStats(opts: StatsOptions = {}): StatsReport {
     // countQuads avoids materializing + sorting arrays used only for counting.
     sections: store.countQuads(
       null,
-      namedNode(RDF_TYPE),
-      namedNode(`${NS.kg}Section`),
+      DataFactory.namedNode(RDF_TYPE),
+      DataFactory.namedNode(`${NS.kg}Section`),
       null,
     ),
     concepts: store.countQuads(
       null,
-      namedNode(RDF_TYPE),
-      namedNode(`${NS.skos}Concept`),
+      DataFactory.namedNode(RDF_TYPE),
+      DataFactory.namedNode(`${NS.skos}Concept`),
       null,
     ),
     references: refQuads.length,

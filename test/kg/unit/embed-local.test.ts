@@ -12,6 +12,7 @@
  * catches every regression in the argument shape, for free and offline.
  */
 import { describe, expect, it } from "vitest";
+import { defined } from "../helpers/defined.js";
 import { createLocalEmbedder } from "../../../src/kg/embed/local.js";
 import { DEFAULT_MODEL } from "../../../src/kg/embed/types.js";
 
@@ -69,7 +70,7 @@ describe("createLocalEmbedder wiring", () => {
     const fake = fakeTransformers();
     await createLocalEmbedder({ transformers: fake.module });
     expect(fake.pipelineCalls).toHaveLength(1);
-    expect("device" in fake.pipelineCalls[0]!.options).toBe(false);
+    expect("device" in defined(fake.pipelineCalls[0]).options).toBe(false);
   });
 
   it("forwards an explicit device when the caller knows its platform", async () => {
@@ -78,7 +79,7 @@ describe("createLocalEmbedder wiring", () => {
       transformers: fake.module,
       device: "webgpu",
     });
-    expect(fake.pipelineCalls[0]!.options.device).toBe("webgpu");
+    expect(fake.pipelineCalls[0]?.options.device).toBe("webgpu");
   });
 
   it("pins numThreads when the env exposes a wasm backend", async () => {
@@ -99,9 +100,9 @@ describe("createLocalEmbedder wiring", () => {
   it("defaults to the documented model and q8 weights", async () => {
     const fake = fakeTransformers();
     const embedder = await createLocalEmbedder({ transformers: fake.module });
-    expect(fake.pipelineCalls[0]!.task).toBe("feature-extraction");
-    expect(fake.pipelineCalls[0]!.model).toBe(DEFAULT_MODEL);
-    expect(fake.pipelineCalls[0]!.options.dtype).toBe("q8");
+    expect(fake.pipelineCalls[0]?.task).toBe("feature-extraction");
+    expect(fake.pipelineCalls[0]?.model).toBe(DEFAULT_MODEL);
+    expect(fake.pipelineCalls[0]?.options.dtype).toBe("q8");
     expect(embedder.model).toBe(DEFAULT_MODEL);
     expect(embedder.dtype).toBe("q8");
   });
@@ -113,8 +114,8 @@ describe("createLocalEmbedder wiring", () => {
       model: "Xenova/gte-small",
       dtype: "fp32",
     });
-    expect(fake.pipelineCalls[0]!.model).toBe("Xenova/gte-small");
-    expect(fake.pipelineCalls[0]!.options.dtype).toBe("fp32");
+    expect(fake.pipelineCalls[0]?.model).toBe("Xenova/gte-small");
+    expect(fake.pipelineCalls[0]?.options.dtype).toBe("fp32");
     expect(embedder.dtype).toBe("fp32");
   });
 
@@ -124,7 +125,7 @@ describe("createLocalEmbedder wiring", () => {
     const fake = fakeTransformers();
     const embedder = await createLocalEmbedder({ transformers: fake.module });
     await embedder.embed("hello");
-    expect(fake.extractorCalls[0]!.options).toEqual({
+    expect(fake.extractorCalls[0]?.options).toEqual({
       pooling: "mean",
       normalize: true,
     });
@@ -153,8 +154,8 @@ describe("createLocalEmbedder wiring", () => {
       role: "query",
     });
     await query.embed("how do I install");
-    expect(fake.extractorCalls[0]!.text).not.toBe("how do I install");
-    expect(fake.extractorCalls[0]!.text).toContain("how do I install");
+    expect(fake.extractorCalls[0]?.text).not.toBe("how do I install");
+    expect(fake.extractorCalls[0]?.text).toContain("how do I install");
 
     const passage = await createLocalEmbedder({
       transformers: fake.module,
@@ -162,7 +163,7 @@ describe("createLocalEmbedder wiring", () => {
       role: "passage",
     });
     await passage.embed("how do I install");
-    expect(fake.extractorCalls[1]!.text).toBe("how do I install");
+    expect(fake.extractorCalls[1]?.text).toBe("how do I install");
   });
 
   it("passes granite's text through unprefixed", async () => {
@@ -172,7 +173,7 @@ describe("createLocalEmbedder wiring", () => {
       role: "query",
     });
     await embedder.embed("plain text");
-    expect(fake.extractorCalls[0]!.text).toBe("plain text");
+    expect(fake.extractorCalls[0]?.text).toBe("plain text");
   });
 
   it("reports dims from the model's output rather than a constant", async () => {

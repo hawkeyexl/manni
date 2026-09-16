@@ -15,6 +15,7 @@
  * still exercising exactly the files that would ship (ADR 01026).
  */
 import { execSync, spawnSync } from "node:child_process";
+import { spawnText } from "../../helpers/spawn.js";
 import {
   existsSync,
   mkdirSync,
@@ -65,7 +66,10 @@ function run(
   // command throws, so there is no success path on which to read it. Only
   // `tar` and `node` come through here — no `npm.cmd`, which would need a
   // shell on Windows.
-  const r = spawnSync(cmd, args, { encoding: "utf8", cwd });
+  const raw = spawnSync(cmd, args, { encoding: "utf8", cwd });
+  // `spawnText` restores the `null` both streams really carry when the spawn
+  // itself failed; `@types/node` promises a string once `encoding` is set.
+  const r = spawnText(raw);
   const stdout = r.stdout ?? "";
   // `r.error` is set when the executable itself could not be spawned (tar not
   // installed, say). Both streams are empty then, so without it the caller's
@@ -73,7 +77,7 @@ function run(
   // that could explain the failure.
   const stderr = [
     r.stderr ?? "",
-    r.error ? `spawn failed: ${r.error.message}` : "",
+    raw.error ? `spawn failed: ${raw.error.message}` : "",
   ]
     .filter(Boolean)
     .join("\n");

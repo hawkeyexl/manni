@@ -307,7 +307,5 @@ export function buildUserPrompt(
     "",
     "Body excerpt:",
     body.slice(0, EXCERPT_CHARS),
-  ]
-    .filter((line) => line !== undefined)
-    .join("\n");
+  ].join("\n");
 }

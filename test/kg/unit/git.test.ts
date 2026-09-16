@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { defined } from "../helpers/defined.js";
 import { collectGitHistory } from "../../../src/kg/core/git.js";
 import { KgError } from "../../../src/kg/types.js";
 import type { ExecFn, ExecResult } from "@hawkeyexl/inference";
@@ -32,7 +33,7 @@ describe("collectGitHistory", () => {
     const history = await collectGitHistory("/repo", mockExec(LOG));
     expect(history.headTime).toBe("2026-03-03T10:00:00+00:00");
 
-    const keep = history.files.get("docs/keep.md")!;
+    const keep = defined(history.files.get("docs/keep.md"));
     expect(keep.created).toBe("2026-01-01T10:00:00+00:00");
     expect(keep.modified).toBe("2026-01-01T10:00:00+00:00");
     expect(keep.authors).toEqual(["Jane Doe"]);
@@ -40,7 +41,7 @@ describe("collectGitHistory", () => {
 
   it("follows renames backward so history accrues to the current path", async () => {
     const history = await collectGitHistory("/repo", mockExec(LOG));
-    const b = history.files.get("b.md")!;
+    const b = defined(history.files.get("b.md"));
     expect(b.created).toBe("2026-01-01T10:00:00+00:00"); // a.md's birth
     expect(b.modified).toBe("2026-03-03T10:00:00+00:00");
     expect(b.authors).toEqual(["Casey Editor", "Jane Doe"]); // newest first, deduped
@@ -64,7 +65,7 @@ describe("collectGitHistory", () => {
       "",
     ].join("\n");
     const history = await collectGitHistory("/repo", mockExec(log));
-    const file = history.files.get("new.md")!;
+    const file = defined(history.files.get("new.md"));
     expect(file.renamedFrom).toEqual(["mid.md", "old.md"]);
     expect(file.created).toBe("2026-01-01T00:00:00+00:00");
   });
@@ -132,7 +133,7 @@ describe("collectGitHistory", () => {
       "",
     ].join("\n");
     const history = await collectGitHistory("/repo", mockExec(log));
-    expect(history.files.get("docs/café guide.md")!.authors).toEqual([
+    expect(history.files.get("docs/café guide.md")?.authors).toEqual([
       "René Müller",
     ]);
   });
@@ -163,11 +164,10 @@ describe("collectGitHistory", () => {
 
       // Present as keys with an undefined value — that is how the exec seam
       // signals "remove", as opposed to merely not overriding them.
-      expect(seen).toBeDefined();
-      expect(Object.keys(seen!)).toContain("GIT_DIR");
-      expect(Object.keys(seen!)).toContain("GIT_INDEX_FILE");
-      expect(seen!.GIT_DIR).toBeUndefined();
-      expect(seen!.GIT_INDEX_FILE).toBeUndefined();
+      expect(Object.keys(defined(seen, "the exec env"))).toContain("GIT_DIR");
+      expect(Object.keys(defined(seen, "the exec env"))).toContain("GIT_INDEX_FILE");
+      expect(seen?.GIT_DIR).toBeUndefined();
+      expect(seen?.GIT_INDEX_FILE).toBeUndefined();
     } finally {
       delete process.env.GIT_DIR;
       delete process.env.GIT_INDEX_FILE;

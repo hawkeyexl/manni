@@ -95,12 +95,20 @@ export function emitRdfXml(
     terms.push(quad.o);
   }
 
-  for (const subject of [...subjects.keys()].sort(byCodeUnit)) {
+  // Sorting the entries rather than the keys: each predicate map arrives with
+  // the subject it belongs to and each term list with its predicate, so there
+  // is no second lookup left to assert on.
+  const sortedSubjects = [...subjects.entries()].sort(([a], [b]) =>
+    byCodeUnit(a, b),
+  );
+  for (const [subject, preds] of sortedSubjects) {
     lines.push(`  <rdf:Description rdf:about="${escapeAttr(subject)}">`);
-    const preds = subjects.get(subject)!;
-    for (const p of [...preds.keys()].sort(byCodeUnit)) {
+    const sortedPreds = [...preds.entries()].sort(([a], [b]) =>
+      byCodeUnit(a, b),
+    );
+    for (const [p, terms] of sortedPreds) {
       const qname = toQName(p, sortedPrefixes);
-      for (const term of [...preds.get(p)!].sort(compareTerms)) {
+      for (const term of [...terms].sort(compareTerms)) {
         if (term.kind === "iri") {
           lines.push(
             `    <${qname} rdf:resource="${escapeAttr(term.value)}"/>`,

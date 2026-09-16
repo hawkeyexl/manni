@@ -2,6 +2,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
+import { defined } from "../helpers/defined.js";
 import { parse } from "yaml";
 import { renderFill, runFill } from "../../../src/kg/commands/fill.js";
 import { resetWarnings } from "../../../src/shared/warn.js";
@@ -486,7 +487,7 @@ describe("runFill", () => {
     // corrupt the cache entry on disk
     const cacheDir = join(dir, ".manni", "kg", "cache");
     const { readdirSync, writeFileSync: write } = await import("node:fs");
-    const entry = readdirSync(cacheDir)[0]!;
+    const entry = defined(readdirSync(cacheDir)[0]);
     write(join(cacheDir, entry), JSON.stringify({ label: 42 }));
     const second = new MockProvider([{ json: PROPOSAL }]);
     const report = await runFill({
@@ -539,8 +540,8 @@ describe("runFill", () => {
     const written = readFileSync(join(dir, "a.md"), "utf8");
     expect(written).toContain("label: Kept");
     // provider was only asked for the missing field
-    expect(provider.requests[0]!.user).toContain("concepts");
-    expect(provider.requests[0]!.user).not.toContain("label,");
+    expect(provider.requests[0]?.user).toContain("concepts");
+    expect(provider.requests[0]?.user).not.toContain("label,");
   });
 
   it("--fields overrides config fill.fields, as meta fill's does", async () => {
@@ -558,7 +559,7 @@ describe("runFill", () => {
       status: "filled",
       fields: ["concepts"],
     });
-    expect(provider.requests[0]!.user).toContain("concepts");
+    expect(provider.requests[0]?.user).toContain("concepts");
   });
 });
 
@@ -655,7 +656,7 @@ describe("runFill confidence gate (ADR 01015)", () => {
     const report = await runFill({ cwd: dir, providerInstance: provider });
     // Normal operation: low-confidence drops do not fail the run.
     expect(report.exitCode).toBe(0);
-    const r = report.results[0]!;
+    const r = defined(report.results[0]);
     expect(r.status).toBe("filled");
     expect(r.fields).toEqual(["label"]);
     expect(r.lowConfidence).toEqual([
@@ -704,7 +705,7 @@ describe("runFill confidence gate (ADR 01015)", () => {
     const report = await runFill({ cwd: dir, providerInstance: provider });
 
     expect(report.exitCode).toBe(0);
-    const r = report.results[0]!;
+    const r = defined(report.results[0]);
     expect(r.status).toBe("filled");
     // `label` goes unscored, so the gate drops it exactly as it would an
     // absent score. `concepts` is unaffected by its neighbour.
@@ -824,7 +825,7 @@ describe("runFill graph guardrail (fill.validateGraph)", () => {
     expect(report.exitCode).toBe(0);
     const result = report.results.find((r) => r.path === "b.md");
     expect(result).toMatchObject({ status: "filled", fields: ["label"] });
-    expect(result!.rejected).toContain("broader");
+    expect(result?.rejected).toContain("broader");
     const written = readFileSync(join(dir, "b.md"), "utf8");
     expect(written).toContain("label: Beta");
     expect(written).not.toContain("broader");
@@ -846,7 +847,7 @@ describe("runFill graph guardrail (fill.validateGraph)", () => {
     const first = report.results.find((r) => r.path === "c.md");
     const second = report.results.find((r) => r.path === "d.md");
     expect(first).toMatchObject({ fields: ["label", "broader"] });
-    expect(second!.rejected).toContain("broader");
+    expect(second?.rejected).toContain("broader");
     expect(readFileSync(join(dir, "d.md"), "utf8")).not.toContain("broader");
   });
 
@@ -863,7 +864,7 @@ describe("runFill graph guardrail (fill.validateGraph)", () => {
     const original = readFileSync(join(dir, "b.md"), "utf8");
     const report = await runFill({ cwd: dir, providerInstance: provider });
     const result = report.results.find((r) => r.path === "b.md");
-    expect(result!.rejected).toContain("label");
+    expect(result?.rejected).toContain("label");
     expect(result).toMatchObject({ status: "nothing-proposed" });
     expect(readFileSync(join(dir, "b.md"), "utf8")).toBe(original);
   });
@@ -904,7 +905,7 @@ describe("runFill graph guardrail (fill.validateGraph)", () => {
       providerInstance: provider,
     });
     const result = report.results.find((r) => r.path === "b.md");
-    expect(result!.rejected).toContain("broader");
+    expect(result?.rejected).toContain("broader");
     expect(readFileSync(join(dir, "b.md"), "utf8")).not.toContain("broader");
   });
 
@@ -947,7 +948,7 @@ describe("runFill graph guardrail (fill.validateGraph)", () => {
     });
     expect(readFileSync(join(dir, "b.md"), "utf8")).toContain("broader");
     expect(
-      report.results.find((r) => r.path === "b.md")!.rejected,
+      defined(report.results.find((r) => r.path === "b.md")).rejected,
     ).toBeUndefined();
   });
 });

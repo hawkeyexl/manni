@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { defined } from "../helpers/defined.js";
 import { analyzeDoc } from "../../../src/kg/core/analyze.js";
 
 const ALL = new Set(["docs/intro.md", "docs/config.md", "docs/sub/deep.md"]);
@@ -417,7 +418,7 @@ describe("analyzeDoc — route mapping", () => {
 
   it("resolves the bare basePath itself to the root index", () => {
     const doc = analyzeDoc("[home](/docs)\n", "docs/linker.md", paths, {
-      routes: [{ ...routes[0]!, root: "docs/pages/actions" }],
+      routes: [{ ...defined(routes[0]), root: "docs/pages/actions" }],
     });
     expect(doc.links).toEqual([
       {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { defined } from "../helpers/defined.js";
 import {
   buildSearchIndex,
   emitSearchIndex,
@@ -155,7 +156,7 @@ describe("buildSearchIndex", () => {
   });
 
   it("omits absent fields rather than emitting undefined", () => {
-    const concept = byId(build().entries, CONCEPT)!;
+    const concept = defined(byId(build().entries, CONCEPT));
     expect("text" in concept).toBe(false);
     expect("description" in concept).toBe(false);
   });
@@ -241,8 +242,8 @@ describe("partitionByLanguage", () => {
 
   it("puts a document and its sections in the same bucket", () => {
     const buckets = index(graph(false));
-    const de = buckets.get("de")!.entries.map((e) => e.id);
+    const de = defined(buckets.get("de")).entries.map((e) => e.id);
     expect(de).toContain(DE);
-    expect(buckets.get("und")!.entries.map((e) => e.id)).toContain(DOC);
+    expect(buckets.get("und")?.entries.map((e) => e.id)).toContain(DOC);
   });
 });
