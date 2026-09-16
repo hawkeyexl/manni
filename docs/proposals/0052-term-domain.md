@@ -637,7 +637,7 @@ baseline:
 
 | Flag | Shape | What it does |
 |---|---|---|
-| `[paths...]` | positional, space-separated | Files, directories and globs. Omitted, the set comes from every collection. |
+| `[paths...]` | positional, space-separated | Files, directories and globs. A named `.yaml`, `.yml` or `.json` file is read as a manifest, as a `term.manifests` entry is; a directory or glob walk never picks one up. Omitted, the set comes from every collection. |
 | `-` | positional | stdin, alongside named paths, never instead of them. Requires `--as`. |
 | `--as <format>` | one value | Forces an input format for stdin. |
 | `--ext <list>` | comma-separated, given once | The extensions a directory or glob walk keeps. |

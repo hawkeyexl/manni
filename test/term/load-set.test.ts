@@ -119,6 +119,45 @@ describe("loadTermSet", () => {
     expect(set.terms.map((t) => t.id)).toEqual(["bifocal", "trifocal"]);
   });
 
+  it("reads a .yaml file named on the command line as a manifest", async () => {
+    const root = await tree({ "terms.yaml": "bifocal\ntrifocal\n" });
+    const set = await loadTermSet({ run: runFor(root, ["terms.yaml"]), readers: [standIn] });
+    expect(set.terms.map((t) => t.id)).toEqual(["bifocal", "trifocal"]);
+    expect(set.terms[0]?.location.file).toBe("terms.yaml");
+  });
+
+  it("reads a .json file named on the command line as a manifest", async () => {
+    const root = await tree({ "glossary/terms.json": "bifocal\n" });
+    const set = await loadTermSet({ run: runFor(root, ["glossary/terms.json"]), readers: [standIn] });
+    expect(set.terms.map((t) => t.id)).toEqual(["bifocal"]);
+    expect(set.terms[0]?.location.file).toBe("glossary/terms.json");
+  });
+
+  it("reads a named manifest alongside a page", async () => {
+    const root = await tree({
+      "terms/pal.md": "---\ntype: term\nlabel: progressive lens\n---\n",
+      "terms.yml": "bifocal\n",
+    });
+    const set = await loadTermSet({ run: runFor(root, ["terms/pal.md", "terms.yml"]), readers: [standIn] });
+    expect(set.terms.map((t) => t.id).sort()).toEqual(["bifocal", "progressive lens"]);
+  });
+
+  it("never picks up a manifest a directory walk passes over", async () => {
+    const root = await tree({
+      "terms/pal.md": "---\ntype: term\nlabel: progressive lens\n---\n",
+      "terms/extra.yaml": "bifocal\n",
+    });
+    const set = await loadTermSet({ run: runFor(root, ["terms"]), readers: [standIn] });
+    expect(set.terms.map((t) => t.id)).toEqual(["progressive lens"]);
+  });
+
+  it("still refuses a named file with an extension nothing reads", async () => {
+    const root = await tree({ "notes.txt": "bifocal\n" });
+    await expect(loadTermSet({ run: runFor(root, ["notes.txt"]), readers: [standIn] })).rejects.toThrow(
+      new TermError("notes.txt: no reader for its extension. Pass --as <format> through stdin to read it."),
+    );
+  });
+
   it("refuses a manifest that is not there, naming the config and the path as the config spells it", async () => {
     const root = await tree({});
     const missing = { path: join(root, "terms", "nope.yaml"), written: "terms/nope.yaml" };

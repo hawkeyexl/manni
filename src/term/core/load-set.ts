@@ -30,6 +30,14 @@ import { TERM_READERS, readersForFormat } from "./readers/index.js";
 /** The `TermInput.format` a manifest is offered as. */
 export const MANIFEST_FORMAT = "manifest";
 
+/** The extensions a file named on the command line is read as a manifest by. */
+const MANIFEST_EXTENSIONS: ReadonlySet<string> = new Set([".yaml", ".yml", ".json"]);
+
+/** A manifest carries no page metadata; its reader parses the content itself. */
+function manifestInput(content: string, file: string, path: string): TermInput {
+  return { content, file, path, format: MANIFEST_FORMAT, metadata: {}, lineFor: () => undefined };
+}
+
 export interface LoadTermSetOptions {
   run: TermRun;
   /** Stdin's content, when `-` is among the run's inputs. */
@@ -128,7 +136,7 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
   const set: TermSet = { terms: [], references: [], notices: [] };
 
   if (inputs.length > 0) {
-    const { files, gitignoreSkipped } = await resolveTargetSet({
+    const { files, gitignoreSkipped, named } = await resolveTargetSet({
       inputs,
       cwd: run.base,
       exclude,
@@ -153,8 +161,21 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
       action: "read",
     });
 
+    const namedFiles = new Set(named);
     for (const file of files) {
       const path = resolve(run.base, file);
+      // A manifest is read when it is named, never when a walk passes it: a
+      // directory of pages can hold YAML and JSON that are not terms at all.
+      if (namedFiles.has(file) && MANIFEST_EXTENSIONS.has(extname(file).toLowerCase())) {
+        let content: string;
+        try {
+          content = await readFile(path, "utf8");
+        } catch (error) {
+          throw new TermError(`${file}: could not be read: ${errorMessage(error)}`);
+        }
+        read(manifestInput(content, file, path), readers, set);
+        continue;
+      }
       const extractor = extractorForExtension(extname(file));
       // A file the walk returned always has a known extension; a path typed
       // with another one is refused here rather than read as nothing.
@@ -187,15 +208,7 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
       const source = run.configSource ?? "manni.config.yaml";
       throw new TermError(`${source}: term.manifests "${written}" does not exist.`);
     }
-    const input: TermInput = {
-      content,
-      file: path,
-      path,
-      format: MANIFEST_FORMAT,
-      metadata: {},
-      lineFor: () => undefined,
-    };
-    read(input, readers, set);
+    read(manifestInput(content, path, path), readers, set);
   }
 
   if (set.terms.length === 0 && !allowEmpty) {

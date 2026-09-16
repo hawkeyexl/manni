@@ -253,6 +253,25 @@ describe("manni term (the ladder)", () => {
     expect(json.formats.length).toBeGreaterThan(0);
   });
 
+  it("lists a manifest named on the command line", () => {
+    const cwd = join(work, "clean");
+    writeFileSync(join(cwd, "terms.yaml"), "bifocal:\n  label: bifocal\n  definition: A lens with two powers.\n");
+    const r = term(["list", "terms.yaml"], { cwd });
+    expect(r.stderr).toBe("");
+    expect(r.stdout).toBe(["bifocal   bifocal", "1 term", ""].join("\n"));
+    expect(r.status).toBe(0);
+  });
+
+  it("checks a manifest named on the command line", () => {
+    const cwd = join(work, "clean");
+    writeFileSync(join(cwd, "terms.yaml"), "bifocal:\n  label: bifocal\n  definition: A lens with two powers.\n");
+    writeFileSync(join(cwd, "bifocals.md"), "---\ntitle: Bifocals\nconcepts: [bifocal]\n---\n");
+    const r = term(["check", "terms.yaml", "bifocals.md"], { cwd });
+    expect(r.stderr).toBe("");
+    expect(r.stdout).toBe("✓ 1 term, 1 reference, no findings\n");
+    expect(r.status).toBe(0);
+  });
+
   it("reads stdin alongside the named paths", () => {
     const r = term(["list", "-", "docs/terms/corrective-lens.md", "--as", "markdown"], {
       input: "---\ntype: term\nlabel: bifocal\ndefinition: Two powers.\n---\n",

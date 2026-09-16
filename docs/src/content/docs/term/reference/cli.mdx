@@ -53,6 +53,15 @@ jobs.
   [collection](/manni/meta/reference/configuration/#collections), plus the
   manifests [`term.manifests`](/manni/term/reference/configuration/#keys)
   names.
+- **A named `.yaml`, `.yml` or `.json` file is a manifest.** It's read exactly
+  as a `term.manifests` entry is. Only a path you type counts: a directory or
+  glob walk never picks those files up.
+
+  ```sh
+  $ manni term list terms.yaml
+  bifocal   bifocal
+  1 term
+  ```
 - **`-` reads stdin**, alongside any named paths. It needs `--as <format>`,
   which names one of the metadata tool's
   [extractors](/manni/meta/reference/formats/): `markdown`, `mdx`, `asciidoc`,
