@@ -8,7 +8,9 @@
  */
 import { parse, type DefaultTreeAdapterMap } from "parse5";
 import type { Term, TermField, TermInput, TermReader, TermReadResult } from "../../types.js";
+import { LIST_HOLDS, htmlDlEntry } from "../writers/entries.js";
 import { collapse, declares, nothing, recordOf, skipped, termOf, textOf } from "./normalize.js";
+import { applyEntries } from "./splice.js";
 
 type Element = DefaultTreeAdapterMap["element"];
 type ChildNode = DefaultTreeAdapterMap["childNode"];
@@ -214,6 +216,7 @@ export const htmlDlReader: TermReader = {
   label: DL_LABEL,
   formats: ["html"],
   read: readDl,
+  apply: (input, terms) => applyEntries(input, readDl, terms, { holds: LIST_HOLDS, id: true, serialize: htmlDlEntry }),
 };
 
 export const htmlDfnReader: TermReader = {

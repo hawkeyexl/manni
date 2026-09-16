@@ -9,7 +9,9 @@
  * every definition from a round trip through DITA (proposal 0052 § 4).
  */
 import type { Term, TermField, TermInput, TermReader, TermReadResult } from "../../types.js";
-import { nothing, recordOf, skipped, termOf } from "./normalize.js";
+import { DITA_HOLDS, ditaEntry } from "../writers/entries.js";
+import { nothing, recordOf, skipped, termOf, textOf } from "./normalize.js";
+import { applyEntries } from "./splice.js";
 import {
   childrenOf,
   descendantsOf,
@@ -104,25 +106,39 @@ function collect(
 const GLOSSENTRY_LABEL = "DITA glossentry";
 const GLOSSGROUP_LABEL = "DITA glossgroup";
 
+function readGlossentry(input: TermInput): TermReadResult {
+  const xml = parseXml(input);
+  if (xml === null || nameOf(xml.root) !== "glossentry") return nothing();
+  return collect(input, xml, [xml.root], "dita-glossentry", GLOSSENTRY_LABEL);
+}
+
+function readGlossgroup(input: TermInput): TermReadResult {
+  const xml = parseXml(input);
+  if (xml === null || nameOf(xml.root) !== "glossgroup") return nothing();
+  // A glossgroup may nest glossgroups; every glossentry inside is a term.
+  return collect(input, xml, descendantsOf(xml.root, "glossentry"), "dita-glossgroup", GLOSSGROUP_LABEL);
+}
+
 export const ditaGlossentryReader: TermReader = {
   construct: "dita-glossentry",
   label: GLOSSENTRY_LABEL,
   formats: ["xml"],
-  read(input) {
-    const xml = parseXml(input);
-    if (xml === null || nameOf(xml.root) !== "glossentry") return nothing();
-    return collect(input, xml, [xml.root], "dita-glossentry", GLOSSENTRY_LABEL);
-  },
+  read: readGlossentry,
+  // The glossentry is the file's root, so the file's `xml:lang` sits on it and
+  // is written again when the entry is.
+  apply: (input, terms) =>
+    applyEntries(input, readGlossentry, terms, {
+      holds: DITA_HOLDS,
+      id: true,
+      serialize: (term, file) => ditaEntry(term, textOf(file.metadata["xml:lang"]) === undefined ? undefined : term.language),
+    }),
 };
 
 export const ditaGlossgroupReader: TermReader = {
   construct: "dita-glossgroup",
   label: GLOSSGROUP_LABEL,
   formats: ["xml"],
-  read(input) {
-    const xml = parseXml(input);
-    if (xml === null || nameOf(xml.root) !== "glossgroup") return nothing();
-    // A glossgroup may nest glossgroups; every glossentry inside is a term.
-    return collect(input, xml, descendantsOf(xml.root, "glossentry"), "dita-glossgroup", GLOSSGROUP_LABEL);
-  },
+  read: readGlossgroup,
+  apply: (input, terms) =>
+    applyEntries(input, readGlossgroup, terms, { holds: DITA_HOLDS, id: true, serialize: (term) => ditaEntry(term) }),
 };

@@ -1,0 +1,15 @@
+= Glossary
+:page-type: reference
+
+// hand-formatted: indented definitions, extra spaces
+[glossary]
+.Terms
+mud::   wet, cold dirt
+jam::
+  sweet, sticky
+  mess
+
+command-line interface::
+CLI:: a program you drive
++
+It prints to a terminal.

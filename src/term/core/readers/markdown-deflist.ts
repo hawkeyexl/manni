@@ -16,6 +16,8 @@
  * after a blank line, is kept out of the record and said as a notice.
  */
 import type { Term, TermInput, TermReadResult, TermReader } from "../../types.js";
+import { LIST_HOLDS, markdownEntry } from "../writers/entries.js";
+import { applyEntries } from "./splice.js";
 import {
   bodyLines,
   definitionText,
@@ -162,4 +164,6 @@ export const markdownDeflistReader: TermReader = {
   label: LABEL,
   formats: ["markdown", "mdx"],
   read,
+  apply: (input, terms) =>
+    applyEntries(input, read, terms, { holds: LIST_HOLDS, id: false, serialize: (term) => markdownEntry(term.record) }),
 };

@@ -16,15 +16,20 @@ import {
   type TermWriteFormat,
   type TermWriter,
 } from "../../types.js";
-import { asciidocEntry, ditaEntry, docbookEntry, htmlDlEntry, markdownEntry, rstEntry } from "./entries.js";
+import {
+  DITA_HOLDS,
+  DOCBOOK_HOLDS,
+  LIST_HOLDS,
+  asciidocEntry,
+  ditaEntry,
+  docbookEntry,
+  htmlDlEntry,
+  markdownEntry,
+  rstEntry,
+} from "./entries.js";
 import { fileOf, reindent, sharedLanguage, xmlAttribute } from "./markup.js";
-import { htmlPage, pageMetadata, yamlFrontmatter } from "./page.js";
+import { htmlPage, metadataPage, yamlFrontmatter } from "./page.js";
 import { droppedFields, requireShape } from "./render-util.js";
-
-/** What a definition list, `[glossary]` list, `.. glossary::` or `<dl>` can say. */
-const LIST_HOLDS: readonly TermField[] = ["label", "definition", "alt-labels"];
-const DITA_HOLDS: readonly TermField[] = ["label", "definition", "alt-labels", "scope-note"];
-const DOCBOOK_HOLDS: readonly TermField[] = ["label", "definition", "alt-labels", "see", "related-terms"];
 
 /** Characters no file name may hold on any platform manni runs on. */
 const UNSAFE_NAME = /[/\\:*?"<>|]/;
@@ -88,8 +93,8 @@ function markupBlock(entries: readonly string[], indent: string): string[] {
   return entries.map((entry) => `${indent}${reindent(entry, indent, "\n")}`);
 }
 
-function textPage(term: Term): string {
-  return yamlFrontmatter(pageMetadata(term));
+function textPage(format: string): (term: Term) => string {
+  return (term) => metadataPage(format, term);
 }
 
 /** The frontmatter a many-per-file text document opens with, or none when it would be empty. */
@@ -116,14 +121,14 @@ export const markdownWriter = documentWriter({
   format: "markdown",
   extension: ".md",
   file: { holds: LIST_HOLDS, render: markdownList },
-  directory: { holds: TERM_FIELDS, render: textPage },
+  directory: { holds: TERM_FIELDS, render: textPage("markdown") },
 });
 
 export const mdxWriter = documentWriter({
   format: "mdx",
   extension: ".mdx",
   file: { holds: LIST_HOLDS, render: markdownList },
-  directory: { holds: TERM_FIELDS, render: textPage },
+  directory: { holds: TERM_FIELDS, render: textPage("mdx") },
 });
 
 export const asciidocWriter = documentWriter({
@@ -134,7 +139,7 @@ export const asciidocWriter = documentWriter({
     render: (terms) =>
       fileOf([...listFrontmatter(terms, false), "[glossary]", ...entriesBlock(terms.map((t) => asciidocEntry(t.record)))]),
   },
-  directory: { holds: TERM_FIELDS, render: textPage },
+  directory: { holds: TERM_FIELDS, render: textPage("asciidoc") },
 });
 
 export const rstWriter = documentWriter({
@@ -153,7 +158,7 @@ export const rstWriter = documentWriter({
         ),
       ]),
   },
-  directory: { holds: TERM_FIELDS, render: textPage },
+  directory: { holds: TERM_FIELDS, render: textPage("rst") },
 });
 
 export const htmlWriter = documentWriter({

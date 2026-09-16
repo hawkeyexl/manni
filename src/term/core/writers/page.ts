@@ -5,6 +5,8 @@
  * term has one), then the ten fields in the vocabulary's order.
  */
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
+import { extractorByName } from "../../../meta/internal.js";
+import { TermError } from "../../errors.js";
 import { TERM_FIELDS, type Term } from "../../types.js";
 import { fileOf, xmlAttribute, xmlText } from "./markup.js";
 
@@ -20,6 +22,18 @@ export function pageMetadata(term: Term): Record<string, unknown> {
     if (value !== undefined) metadata[field] = value;
   }
   return metadata;
+}
+
+/**
+ * A Markdown, MDX, AsciiDoc or reStructuredText term page: a fenced YAML block
+ * and no body. The block is written by the format's own extractor, the one an
+ * in-place write goes through, so a render and a write-back agree on how a
+ * value is spelled.
+ */
+export function metadataPage(format: string, term: Term): string {
+  const apply = extractorByName(format)?.apply;
+  if (apply === undefined) throw new TermError(`manni cannot write ${format} metadata.`);
+  return apply("---\n---\n", pageMetadata(term));
 }
 
 /** A fenced YAML block, which Markdown, MDX, AsciiDoc and reStructuredText all read. */

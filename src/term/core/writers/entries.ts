@@ -7,8 +7,15 @@
  * Each returns the entry's lines at indentation zero, `\n`-joined, with no
  * trailing newline. The caller indents and terminates.
  */
-import type { Term, TermRecord } from "../../types.js";
+import type { Term, TermField, TermRecord } from "../../types.js";
 import { isAcronym, paragraphText, paragraphsOf, xmlAttribute, xmlText } from "./markup.js";
+
+/** What a definition list, `[glossary]` list, `.. glossary::` or `<dl>` can say. */
+export const LIST_HOLDS: readonly TermField[] = ["label", "definition", "alt-labels"];
+/** What a DITA glossentry can say. */
+export const DITA_HOLDS: readonly TermField[] = ["label", "definition", "alt-labels", "scope-note"];
+/** What a DocBook glossentry can say. */
+export const DOCBOOK_HOLDS: readonly TermField[] = ["label", "definition", "alt-labels", "see", "related-terms"];
 
 function labelsOf(record: TermRecord): string[] {
   return [record.label, ...(record["alt-labels"] ?? [])];

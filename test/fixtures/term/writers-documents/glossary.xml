@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<article xmlns="http://docbook.org/ns/docbook" version="5.0">
+  <title>Optics</title>
+  <glossary>
+    <!-- hand-formatted: comments, extra attributes, one-line entries -->
+    <glossentry xml:id="pal" role="core">
+      <glossterm>progressive lens</glossterm>
+      <acronym>PAL</acronym>
+      <glossdef>
+        <para>Corrective lenses whose power
+          increases from top to bottom.</para>
+        <glossseealso otherterm="bifocal"/>
+      </glossdef>
+    </glossentry>
+    <glossentry xml:id="bifocal"><glossterm>bifocal</glossterm><glossdef><para>Two powers.</para></glossdef></glossentry>
+    <glossentry>
+      <glossterm>varifocal</glossterm>
+      <glosssee>progressive lens</glosssee>
+    </glossentry>
+  </glossary>
+</article>

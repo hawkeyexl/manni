@@ -23,6 +23,8 @@
  * ending in `::`, are never read.
  */
 import type { Term, TermInput, TermReadResult, TermReader } from "../../types.js";
+import { LIST_HOLDS, rstEntry } from "../writers/entries.js";
+import { applyEntries } from "./splice.js";
 import { bodyLines, definitionText, isBlank, skippedNotice, termOf, textStart, type BodyLine } from "./body.js";
 
 const LABEL = ".. glossary::";
@@ -181,4 +183,6 @@ export const rstGlossaryReader: TermReader = {
   label: LABEL,
   formats: ["rst"],
   read,
+  apply: (input, terms) =>
+    applyEntries(input, read, terms, { holds: LIST_HOLDS, id: false, serialize: (term) => rstEntry(term.record) }),
 };

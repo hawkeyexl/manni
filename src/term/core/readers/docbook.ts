@@ -7,7 +7,9 @@
  * a later one, or an `<acronym>`, is an alt-label (proposal 0052 § 4).
  */
 import type { TermField, TermInput, TermReader, TermReadResult } from "../../types.js";
+import { DOCBOOK_HOLDS, docbookEntry } from "../writers/entries.js";
 import { nothing, recordOf, skipped, termOf, textOf } from "./normalize.js";
+import { applyEntries } from "./splice.js";
 import {
   childrenOf,
   descendantsOf,
@@ -108,4 +110,5 @@ export const docbookGlossaryReader: TermReader = {
   label: LABEL,
   formats: ["xml"],
   read,
+  apply: (input, terms) => applyEntries(input, read, terms, { holds: DOCBOOK_HOLDS, id: true, serialize: docbookEntry }),
 };

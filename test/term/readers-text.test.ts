@@ -53,7 +53,7 @@ describe("markdown-deflist", () => {
     expect(markdownDeflistReader.construct).toBe("markdown-deflist");
     expect(markdownDeflistReader.label).toBe("definition list");
     expect(markdownDeflistReader.formats).toEqual(["markdown", "mdx"]);
-    expect(markdownDeflistReader.apply).toBeUndefined();
+    expect(markdownDeflistReader.apply).toBeTypeOf("function");
   });
 
   it("reads a simple entry after frontmatter, with its lines and span", () => {
@@ -151,7 +151,7 @@ describe("asciidoc-glossary", () => {
     expect(asciidocGlossaryReader.construct).toBe("asciidoc-glossary");
     expect(asciidocGlossaryReader.label).toBe("[glossary] list");
     expect(asciidocGlossaryReader.formats).toEqual(["asciidoc"]);
-    expect(asciidocGlossaryReader.apply).toBeUndefined();
+    expect(asciidocGlossaryReader.apply).toBeTypeOf("function");
   });
 
   it("reads a term with its definition on the same line", () => {
@@ -218,7 +218,7 @@ describe("rst-glossary", () => {
     expect(rstGlossaryReader.construct).toBe("rst-glossary");
     expect(rstGlossaryReader.label).toBe(".. glossary::");
     expect(rstGlossaryReader.formats).toEqual(["rst"]);
-    expect(rstGlossaryReader.apply).toBeUndefined();
+    expect(rstGlossaryReader.apply).toBeTypeOf("function");
   });
 
   it("skips options and reads a multi-line definition", () => {

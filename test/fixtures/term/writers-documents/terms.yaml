@@ -1,0 +1,13 @@
+# A hand-written manifest: comments, flow lists, quoting.
+progressive-lens:
+  label: progressive lens   # the preferred label
+  alt-labels: [PAL, graduated lens]
+  definition: >-
+    Corrective lenses whose power increases from top to bottom, written as a long folded scalar that runs past eighty columns.
+
+bifocal:
+  label: 'bifocal'
+  definition: Lenses with two powers.
+  x-owner: optics team
+
+trifocal: {label: trifocal, definition: Three powers.}
