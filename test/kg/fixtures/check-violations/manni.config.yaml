@@ -1,0 +1,5 @@
+kg:
+  version: 1
+  baseIri: https://example.com/kg/
+  inputs: ["docs/**/*.md"]
+  out: kg/graph.ttl

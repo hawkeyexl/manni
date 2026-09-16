@@ -1,0 +1,10 @@
+# A document that fails the frontmatter JSON Schema, so the fix page can show a
+# real `dockg validate` failure. Repo-root-relative inputs; see the note in
+# dockg.config.yaml beside this file.
+version: 1
+baseIri: https://example.com/dd/
+inputs:
+  - "test/kg/fixtures/dd/invalid/**/*.md"
+out: .tmp/dd/invalid.ttl
+provenance:
+  git: false

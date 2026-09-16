@@ -1,0 +1,4 @@
+kg:
+  version: 1
+  inputs:
+    - "*.md"

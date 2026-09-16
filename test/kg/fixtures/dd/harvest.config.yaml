@@ -1,0 +1,10 @@
+# Corpus for the near-miss warnings on fix/index.mdx (ADR 01028). Separate
+# from dockg.config.yaml so its typo'd keys do not perturb the counts the
+# get-started steps assert.
+version: 1
+baseIri: https://example.com/dd/
+inputs:
+  - "test/kg/fixtures/dd/harvest/**/*.md"
+out: .tmp/dd/harvest.ttl
+provenance:
+  git: false

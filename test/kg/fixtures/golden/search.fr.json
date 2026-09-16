@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "https://example.com/kg/concept/administration",
+      "type": "skos:Concept",
+      "title": "Administration",
+      "labels": "Administration"
+    },
+    {
+      "id": "https://example.com/kg/concept/configuration",
+      "type": "skos:Concept",
+      "title": "Configuration",
+      "labels": "Configuration config settings"
+    },
+    {
+      "id": "https://example.com/kg/concept/installation",
+      "type": "skos:Concept",
+      "title": "Installation",
+      "labels": "Installation"
+    },
+    {
+      "id": "https://example.com/kg/concept/reference",
+      "type": "skos:Concept",
+      "title": "reference",
+      "labels": "reference"
+    },
+    {
+      "id": "https://example.com/kg/concept/setup",
+      "type": "skos:Concept",
+      "title": "setup",
+      "labels": "setup"
+    },
+    {
+      "id": "https://example.com/kg/concept/upgrade",
+      "type": "skos:Concept",
+      "title": "upgrade",
+      "labels": "upgrade"
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/fr/getting-started.md",
+      "type": "dockg:Document",
+      "title": "Premiers pas",
+      "description": "Installer et construire le premier graphe."
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/fr/getting-started.md#premiers-pas",
+      "type": "dockg:Section",
+      "title": "Premiers pas",
+      "text": "# Premiers pas\n\nDeuxième traduction de la même source, déclarée par un chemin relatif au\ndépôt plutôt qu'au document. La source porte donc deux arêtes\n`schema:workTranslation`."
+    }
+  ]
+}

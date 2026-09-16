@@ -1,0 +1,18 @@
+# A two-locale corpus for the localization page's inline tests (ADR 01037): an
+# English tree, a German one that inherits its language from the route, and a
+# page that overrides the route with its own `lang`. Repo-root-relative inputs;
+# see the note in dockg.config.yaml beside this file.
+version: 1
+baseIri: https://example.com/dd/
+inputs:
+  - "test/kg/fixtures/dd/l10n/**/*.md"
+out: .tmp/dd/l10n.ttl
+routes:
+  - root: test/kg/fixtures/dd/l10n/en
+    basePath: /
+    language: en
+  - root: test/kg/fixtures/dd/l10n/de
+    basePath: /de
+    language: de
+provenance:
+  git: false

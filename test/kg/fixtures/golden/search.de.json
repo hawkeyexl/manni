@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "https://example.com/kg/concept/administration",
+      "type": "skos:Concept",
+      "title": "Administration",
+      "labels": "Administration"
+    },
+    {
+      "id": "https://example.com/kg/concept/configuration",
+      "type": "skos:Concept",
+      "title": "Configuration",
+      "labels": "Configuration config settings"
+    },
+    {
+      "id": "https://example.com/kg/concept/installation",
+      "type": "skos:Concept",
+      "title": "Installation",
+      "labels": "Installation"
+    },
+    {
+      "id": "https://example.com/kg/concept/reference",
+      "type": "skos:Concept",
+      "title": "reference",
+      "labels": "reference"
+    },
+    {
+      "id": "https://example.com/kg/concept/setup",
+      "type": "skos:Concept",
+      "title": "setup",
+      "labels": "setup"
+    },
+    {
+      "id": "https://example.com/kg/concept/upgrade",
+      "type": "skos:Concept",
+      "title": "upgrade",
+      "labels": "upgrade"
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/de/getting-started.md",
+      "type": "dockg:Document",
+      "title": "Erste Schritte",
+      "description": "Installieren und den ersten Graphen bauen."
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/de/getting-started.md#erste-schritte",
+      "type": "dockg:Section",
+      "title": "Erste Schritte",
+      "text": "# Erste Schritte\n\nDiese Seite deklariert keine Sprache. Sie erbt `de` von der Route, die\n`docs/de` bedient (ADR 01037), und verweist über `translation-of` auf das\nenglische Original."
+    },
+    {
+      "id": "https://example.com/kg/doc/docs/de/getting-started.md#install",
+      "type": "dockg:Section",
+      "title": "Install",
+      "text": "## Install\n\nEin Abschnitt, dessen Slug im englischen Original ebenfalls vorkommt."
+    }
+  ]
+}
