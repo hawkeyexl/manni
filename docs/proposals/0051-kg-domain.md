@@ -9,7 +9,7 @@
   whose `meta-provenance` replaces `kg.provenance` and whose stress test 13
   moves a guard into this tool. [0047](0047-field-location.md), the schema
   annotation this one is modelled on. [0023](0023-metadata-vocabularies.md),
-  whose kg draft is the page vocabulary
+  whose kg draft the page vocabulary `manni:graph` succeeds
 - **Relates to:** [0048](0048-docevals-domain.md), the domain folded in before
   this one. Its choices are copied here: `collections:`, `providers:`,
   `--local`, the turn budget, camelCase section keys and a closed ADR log.
@@ -26,14 +26,20 @@
   move to the site that will serve them. kg
   [ADR 01006](kg/01006-shacl-graph-validation.md), for `kg validate`, which
   `manni meta validate` does. Its `kg check` half stands. None of the four is
-  edited, as 0048 left the ADRs it superseded in part
+  edited, as 0048 left the ADRs it superseded in part.
+  [0023](0023-metadata-vocabularies.md), for `manni:kg` in its set of ids and
+  for `kg` among the companion keys no house id may claim. Both now read
+  `graph`. [0046](0046-provenance-pins.md), for its `/kg/label` examples.
+  [0047](0047-field-location.md), for its table row
+  `manni:kg:1.0.0-proposal.3 | kg`. The Status line is the only edit to each
 - **Touches:** `src/kg/**` (new), `src/cli.ts`, `src/index.ts`,
   `src/meta/core/validator.ts`, `src/meta/core/meta-provenance.ts`,
   `package.json`, `package-lock.json`, `manni.config.yaml`, `tsup.config.ts`,
   `vitest.config.ts`, `eslint.config.js`, `scripts/check-cli-reference.mjs`,
   `scripts/clean-dist.mjs` (new), `test/kg/**` (new),
   `docs/src/content/docs/kg/**` (new), `docs/public/kg/ns.ttl` (new),
-  `docs/manni.kg.yaml` (new), `docs/proposals/0023/schemas/**`,
+  `docs/manni.kg.yaml` (new), `docs/proposals/0023/schemas/graph/**` (new),
+  `docs/proposals/0023/ladders/**`, `docs/src/content/docs/meta/**`,
   `docs/content-strategy/{personas,audiences,cujs,information-architecture}.md`,
   `docs/proposals/kg/**` (new), `docs/astro.config.mjs`, `CLAUDE.md`
 - **Verdict:** Fold moose-kg in as `manni kg`, ten spelled verbs and no
@@ -41,8 +47,9 @@
   come from `collections:`, and severities from the `notice | warning | error`
   scale. Format names are validated, providers are declared once in
   `providers:` alongside `--local`, and a turn budget replaces the dollar cap.
-  Its page vocabulary is the 0023 draft at proposal.3, bundled
-  at build, with `meta-provenance` in place of `kg.provenance`. What a field
+  Its page block is `graph:`, defined by `manni:graph:1.0.0-proposal.1`, which
+  is the 0023 kg draft renamed and bundled at build. `meta-provenance` replaces
+  `kg.provenance`. What a field
   publishes is the schema's call, through a new `x-manni-kg-output`. `kg
   validate` goes, because `manni meta validate` is that command. The `dockg`
   identity goes with it. Its ADR log closes at 01040, and later kg decisions go
@@ -143,20 +150,45 @@ A page left unfilled by the budget is `skipped` with reason `turn budget`.
 `kg embed --model` is a local embedding model id, not a provider, and does not
 change.
 
-### 4. The vocabulary is the 0023 draft, at proposal.3
+### 4. The page vocabulary is `manni:graph`
+
+The page block is `graph:`, and the vocabulary that defines it is
+`manni:graph:1.0.0-proposal.1`. It is `manni:kg:1.0.0-proposal.3` with its root
+property renamed. Every field inside the block keeps its name, its type and the
+block's closed `additionalProperties: false`. `x-manni-location: page` moves
+onto `graph`.
+
+The tool keeps its name. `manni kg`, the `kg:` section of `manni.config.yaml`,
+the RDF prefix `kg:` and `x-manni-kg-output` all name the tool, not the page
+block. Until this change the page block and the RDF prefix were both spelled
+`kg:`. The tool's own guidance had to warn contributors not to conflate them.
+Now each concept has one name, and neither name serves two concepts.
+
+This is a new vocabulary family rather than a revision. A draft's id names the
+vocabulary, and renaming the vocabulary means a new id. The `kg` drafts,
+proposal.1 through proposal.3, stay byte for byte as the family's history.
+Nothing registered either id, so no page depends on the old one. A page still
+carrying `kg:` has an unknown page key, which validates and derives nothing.
 
 The shipped copy under `schemas/kg/` and its hash pin go. The draft is bundled
-at build from `docs/proposals/0023/schemas/kg/1.0.0-proposal.3.json`, the way
-docevals bundles the evals draft (0048 §5). One file is therefore both the
+at build from `docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json`, the
+way docevals bundles the evals draft (0048 §5). One file is therefore both the
 draft under review and the schema the tool enforces.
 
-proposal.3 is 0046's shape. `kg.provenance` is gone. A machine attribution is
-page-level `meta-provenance` with JSON Pointers, and `fill` writes it through
-`src/meta/core/meta-provenance.ts`, the merge `meta fill` uses. The schema
-guard that kept machines off `sections`, `revision-of` and `derived-from` could
-not survive free pointers, so 0046 stress test 13 moved it here. The harvest
-reports a `meta-provenance` pointer under `/kg/sections`, `/kg/revision-of` or
-`/kg/derived-from` as a `check` finding at `error`.
+The draft is 0046's shape. `kg.provenance` is gone. A machine attribution is
+page-level `meta-provenance` with JSON Pointers into the block, such as
+`/graph/label`, and `fill` writes it through `src/meta/core/meta-provenance.ts`,
+the merge `meta fill` uses. The schema guard that kept machines off `sections`,
+`revision-of` and `derived-from` could not survive free pointers, so 0046
+stress test 13 moved it here. The harvest reports a `meta-provenance` pointer
+under `/graph/sections`, `/graph/revision-of` or `/graph/derived-from` as a
+`check` finding at `error`.
+
+Four other drafts still name the old block in description prose. Ai-context
+proposal.3 and artifact-evals proposal.4 use `/kg/label` as an example. Core
+proposal.4 mentions `kg.type`, and structure proposal.1 mentions `kg` twins.
+Published drafts are immutable, and a new revision of each for example text is
+out of proportion. Each one's next revision carries the new name.
 
 ### 5. What the graph carries is the schema's call
 
@@ -177,8 +209,8 @@ defined:
 registered with `ajv.addKeyword` in `src/meta/core/validator.ts`, where
 `x-manni-location` is registered. kg's harvest reads it from the schema set
 meta already resolves for the page. Absent means `true`: every field is
-harvested. A mark nested inside `kg` is ignored, as 0047 rule 2 ignores one
-there.
+harvested. A mark nested inside `graph` is ignored, as 0047 rule 2 ignores one
+nested inside a block.
 
 Encrypted values (0045) are harvested like any other value. kg never decrypts,
 so what lands in the graph is the `~…` token, which says a value exists and
@@ -316,6 +348,25 @@ request. SHACL findings also do not carry line numbers, which is most of what
 SARIF and JUnit consumers key on. Adding them later is a reporter, not a
 redesign.
 
+### 6. Why rename the page block, and why take the vocabulary id with it?
+
+The first draft of this proposal kept `kg:` for the page block. It shared that
+spelling with the RDF prefix on purpose, since any other spelling looked like a
+third name for one tool. The tool's own guidance then had to tell contributors
+that the key and the prefix were different things.
+
+A name that needs a warning is the wrong name. `graph:` says what the block
+describes, and it leaves `kg` meaning the tool everywhere it appears.
+
+**Changed as a result:** the block is `graph:` and its pointers are
+`/graph/…`. Keeping the id `manni:kg` while the block became `graph` was
+possible, since `manni:artifact-evals` already claims `metadata`. It would have
+reintroduced the mismatch one level up, so the vocabulary is renamed too.
+
+The rename is a draft diff, not a migration, because nothing registered either
+id and the tool is unpublished. The one live URL it moves, the vocabulary's
+review page on the site, gets a redirect.
+
 ## Consequences
 
 - `manni kg` ships in the family package. A user installs one thing and runs
@@ -324,6 +375,8 @@ redesign.
   and the two are not mergeable without rewriting subjects.
 - Vocabulary drafts gain one keyword, which every schema author may set and
   only kg reads.
+- The page block is `graph:`. A page still carrying `kg:` validates and
+  contributes nothing to the graph.
 - `docs:check-cli` gains a `kg` row, `docs:check-kg` becomes a docs gate, and
   the site gains a `kg` section.
 - moose-kg is archived with a README pointing here. There is no npm
