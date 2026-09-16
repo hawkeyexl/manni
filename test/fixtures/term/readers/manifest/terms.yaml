@@ -1,0 +1,10 @@
+progressive-lens:
+  label: progressive lens
+  alt-labels: [PAL, graduated lens]
+  abstract: Lenses that correct presbyopia without a visible line.
+bifocal:
+  label: "  bifocal "
+  definition: ""
+  broader: corrective lens
+unnamed:
+  definition: Nothing names this.
