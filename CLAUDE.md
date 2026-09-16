@@ -64,6 +64,20 @@ Key layers:
   - `src/cite/reporters/`: output formatting (pretty / json / github).
   - `src/cite/cli.ts`: thin commander wrapper exported as `buildProgram()` and
     mounted by `src/cli.ts`. No entry point of its own.
+- `src/lint/`: the structure tool, `manni lint check` and `manni lint structure`,
+  plus `templates` and `tools` (proposal 0049). A verb names the **job** being
+  checked; the **tool** answering it is named in config, and lint's own engine
+  is `manni`. `check` runs every configured job.
+  - `src/lint/core/`: template resolution and routing, the structure rules, the
+    template registry, and the `lint:` config loader.
+  - `src/lint/parsers/`: per-format document trees behind `DocumentParser`
+    (markdown, mdx, html, asciidoc, rst, xml).
+  - `src/lint/commands/`: the command cores, free of CLI/IO plumbing.
+  - `src/lint/reporters/`: output formatting (pretty / json / github / sarif / junit).
+  - `src/lint/cli.ts`: thin commander wrapper exported as `buildProgram()` and
+    mounted by `src/cli.ts`. No entry point of its own.
+  - `templates/lint/tgdp/`: the built-in TGDP templates, pinned to a release and
+    watched by `npm run check:tgdp-pin`.
 - `src/key/`: the family key's domain, `manni key set` and `manni key rotate`
   (proposal 0045). It owns no cryptography. `rotate` orchestrates meta's and
   cite's re-encryption, and the one ciphertext format lives in
