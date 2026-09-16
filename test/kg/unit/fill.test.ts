@@ -1,8 +1,9 @@
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { renderFill, runFill } from "../../../src/kg/commands/fill.js";
+import { resetWarnings } from "../../../src/shared/warn.js";
 import { MockProvider } from "@hawkeyexl/inference";
 
 function setup(files: Record<string, string>, config = ""): string {
@@ -93,152 +94,101 @@ describe("runFill", () => {
     expect(provider.requests).toHaveLength(1);
   });
 
-  it("stops proposing when the cost budget is exhausted", async () => {
+  it("stops proposing when the turn budget is exhausted", async () => {
+    // Turns, not dollars (proposal 0051 §3): one inference call is one turn,
+    // countable for every model, where a price was known for six of them.
     const dir = setup({
       "a.md": "---\ntitle: A\n---\n",
       "b.md": "---\ntitle: B\n---\n",
     });
-    // huge usage so the first call exceeds any budget; model name must be
-    // priced in the cost table for the budget to accrue
-    const provider = new MockProvider(
-      [
-        {
-          json: PROPOSAL,
-          usage: { inputTokens: 10_000_000, outputTokens: 1_000_000 },
-        },
-      ],
-      "claude-sonnet-4-5",
-    );
+    const provider = new MockProvider([{ json: PROPOSAL }], "any-model");
     const report = await runFill({
       cwd: dir,
       providerInstance: provider,
       dryRun: true,
-      maxCost: 0.01,
+      maxTurns: 1,
       noCache: true,
     });
     expect(report.results.map((r) => r.status)).toEqual([
       "proposed",
-      "skipped-budget",
+      "skipped",
     ]);
+    expect(report.results[1]?.reason).toBe("turn budget");
     expect(provider.requests).toHaveLength(1);
+    expect(report.turnsUsed).toBe(1);
+    expect(report.maxTurns).toBe(1);
+    expect(renderFill(report, "pretty")).toContain("skipped   b.md (turn budget)");
   });
 
-  it("says so when the cost cap cannot be applied to the model", async () => {
-    // The bug this pins: pricingFor returns undefined for any model outside the
-    // six in the price table, costOfUsage then returns 0, and `costUsd >= cap`
-    // never fires. The cap defaults to 5 USD, so the silent case was the common
-    // one — every claude-cli model, every local model, every model newer than
-    // the table. A run reported "$0.0000" whether it was free or unmeasured.
+  it("reads fill.maxTurns from config when no flag is given", async () => {
+    const dir = setup(
+      {
+        "a.md": "---\ntitle: A\n---\n",
+        "b.md": "---\ntitle: B\n---\n",
+      },
+      "fill:\n  maxTurns: 1\n",
+    );
+    const provider = new MockProvider([{ json: PROPOSAL }], "any-model");
+    const report = await runFill({
+      cwd: dir,
+      providerInstance: provider,
+      dryRun: true,
+      noCache: true,
+    });
+    expect(report.results.map((r) => r.status)).toEqual([
+      "proposed",
+      "skipped",
+    ]);
+  });
+
+  it("is unbounded by default, and spends no turn on a cached page", async () => {
     const dir = setup({
       "a.md": "---\ntitle: A\n---\n",
       "b.md": "---\ntitle: B\n---\n",
     });
-    const provider = new MockProvider(
-      [
-        {
-          json: PROPOSAL,
-          usage: { inputTokens: 10_000_000, outputTokens: 1_000_000 },
-        },
-      ],
-      "some-unpriced-model",
-    );
+    const first = new MockProvider([{ json: PROPOSAL }], "any-model");
+    const warm = await runFill({
+      cwd: dir,
+      providerInstance: first,
+      dryRun: true,
+    });
+    expect(warm.results.map((r) => r.status)).toEqual(["proposed", "proposed"]);
+    expect(warm.maxTurns).toBeNull();
+    expect(warm.turnsUsed).toBe(2);
+
+    // Both pages are cached now, so a budget of one turn stops nothing: a
+    // cached proposal makes no inference call (docevals ADR 01019).
+    const second = new MockProvider([{ json: PROPOSAL }], "any-model");
     const report = await runFill({
       cwd: dir,
-      providerInstance: provider,
+      providerInstance: second,
       dryRun: true,
-      maxCost: 0.01,
-      noCache: true,
+      maxTurns: 1,
     });
-
-    expect(report.budget).toBe("unpriceable");
-    expect(report.warnings).toHaveLength(1);
-    expect(report.warnings[0]).toContain("cannot be enforced");
-    expect(report.warnings[0]).toContain("some-unpriced-model");
-
-    // Unchanged and deliberate: dockg cannot total an unpriceable run, so it
-    // cannot stop one either. Both documents are still processed — the fix is
-    // that the report no longer implies a cap was in force.
     expect(report.results.map((r) => r.status)).toEqual([
       "proposed",
       "proposed",
     ]);
-    expect(renderFill(report, "pretty")).toContain("LLM cost: unpriceable");
-    expect(renderFill(report, "pretty")).not.toContain("$0.0000");
+    expect(report.turnsUsed).toBe(0);
+    expect(second.requests).toHaveLength(0);
   });
 
-  it("enforces the cap when the model is priced", async () => {
+  it("reports no cost line at all", async () => {
+    // The dollar cap is gone with kg ADR 01027's subject matter: a total that
+    // read as "$0.0000" for every model outside the library's price table.
     const dir = setup({ "a.md": "---\ntitle: A\n---\n" });
-    const provider = new MockProvider([{ json: PROPOSAL }], "gpt-4o-mini");
-    const report = await runFill({
-      cwd: dir,
-      providerInstance: provider,
-      dryRun: true,
-      maxCost: 5,
-      noCache: true,
-    });
-    expect(report.budget).toBe("enforced");
-    expect(report.warnings).toEqual([]);
-    expect(renderFill(report, "pretty")).toContain("LLM cost: $");
-  });
-
-  it("reports no budget when the cap is switched off on a priced model", async () => {
-    const dir = setup(
-      { "a.md": "---\ntitle: A\n---\n" },
-      "fill:\n  maxCostUsd: null\n",
-    );
-    const provider = new MockProvider([{ json: PROPOSAL }], "gpt-4o-mini");
+    const provider = new MockProvider([{ json: PROPOSAL }], "any-model");
     const report = await runFill({
       cwd: dir,
       providerInstance: provider,
       dryRun: true,
       noCache: true,
     });
-    expect(report.budget).toBe("off");
-    expect(report.warnings).toEqual([]);
-    // Priced, so the total means something and is worth printing.
-    expect(renderFill(report, "pretty")).toContain("LLM cost: $");
-  });
-
-  it("still says unpriceable when no cap was set, without warning", async () => {
-    // `budget` answers two questions that are not the same: can the cap be
-    // applied, and is `costUsd` measurable at all. Keying the render on the cap
-    // let an uncapped run against an unpriced model print a confident
-    // "$0.0000" — the very output ADR 01027 exists to remove.
-    const dir = setup(
-      { "a.md": "---\ntitle: A\n---\n" },
-      "fill:\n  maxCostUsd: null\n",
-    );
-    const provider = new MockProvider([{ json: PROPOSAL }], "unpriced-too");
-    const report = await runFill({
-      cwd: dir,
-      providerInstance: provider,
-      dryRun: true,
-      noCache: true,
-    });
-    expect(report.budget).toBe("unpriceable");
-    // No cap was asked for, so there is nothing to warn about.
-    expect(report.warnings).toEqual([]);
-    expect(renderFill(report, "pretty")).not.toContain("$0.0000");
-  });
-
-  it("reports a local provider as free, and does not warn about a cap", async () => {
-    const dir = setup({ "a.md": "---\ntitle: A\n---\n" });
-    const provider = new MockProvider(
-      [{ json: PROPOSAL }],
-      "granite-4.1-3b-q2",
-    );
-    // The provider name is what makes it free; llama-cpp cannot spend, so the
-    // default 5 USD cap has nothing to enforce and must not warn.
-    Object.defineProperty(provider, "provider", { value: () => "llama-cpp" });
-    const report = await runFill({
-      cwd: dir,
-      providerInstance: provider,
-      dryRun: true,
-      noCache: true,
-    });
-    expect(report.budget).toBe("free");
-    expect(report.warnings).toEqual([]);
-    expect(renderFill(report, "pretty")).toContain("LLM cost: none");
+    const pretty = renderFill(report, "pretty");
+    expect(pretty).not.toContain("LLM cost");
+    expect(pretty).not.toContain("$0.0000");
+    expect(report).not.toHaveProperty("costUsd");
+    expect(report).not.toHaveProperty("budget");
   });
 
   it("reports schema-invalid proposals as errors with exit 1", async () => {
@@ -431,7 +381,7 @@ describe("runFill", () => {
   it("needs no provider credentials when every doc is complete", async () => {
     const dir = setup(
       { "a.md": "---\nkg:\n  label: X\n---\n" },
-      "fill:\n  provider: anthropic\n  fields: [label]\n",
+      "provider: anthropic\nfill:\n  fields: [label]\n",
     );
     delete process.env["ANTHROPIC_API_KEY"];
     // no providerInstance: the factory would throw if constructed eagerly
@@ -501,6 +451,101 @@ describe("runFill", () => {
     // provider was only asked for the missing field
     expect(provider.requests[0]!.user).toContain("concepts");
     expect(provider.requests[0]!.user).not.toContain("label,");
+  });
+
+  it("--fields overrides config fill.fields, as meta fill's does", async () => {
+    const dir = setup(
+      { "a.md": "---\ntitle: T\n---\n" },
+      "fill:\n  fields: [label]\n",
+    );
+    const provider = new MockProvider([conf({ concepts: ["search"] })]);
+    const report = await runFill({
+      cwd: dir,
+      providerInstance: provider,
+      fields: ["concepts"],
+    });
+    expect(report.results[0]).toMatchObject({
+      status: "filled",
+      fields: ["concepts"],
+    });
+    expect(provider.requests[0]!.user).toContain("concepts");
+  });
+});
+
+describe("runFill provider selection (proposal 0051 §3)", () => {
+  it("says what --local replaced, once, before it fills", async () => {
+    const dir = setup(
+      { "a.md": "---\ntitle: T\n---\n" },
+      "provider: anthropic\n",
+    );
+    const written: string[] = [];
+    resetWarnings();
+    const spy = vi
+      .spyOn(process.stderr, "write")
+      .mockImplementation((chunk: string | Uint8Array) => {
+        written.push(String(chunk));
+        return true;
+      });
+    try {
+      const provider = new MockProvider([{ json: PROPOSAL }]);
+      const report = await runFill({
+        cwd: dir,
+        providerInstance: provider,
+        local: true,
+        dryRun: true,
+        noCache: true,
+      });
+      expect(report.exitCode).toBe(0);
+      expect(written).toEqual([
+        'manni: --local: using llama-cpp instead of "anthropic" from kg.provider.\n',
+      ]);
+    } finally {
+      spy.mockRestore();
+      resetWarnings();
+    }
+  });
+
+  it("refuses --local beside a hosted --provider before reading a file", async () => {
+    const dir = setup({ "a.md": "---\ntitle: T\n---\n" });
+    await expect(
+      runFill({
+        cwd: dir,
+        providerInstance: new MockProvider([{ json: PROPOSAL }]),
+        local: true,
+        provider: "anthropic",
+      }),
+    ).rejects.toThrow(
+      "--local and --provider anthropic contradict each other: --local runs inference on " +
+        "this machine with llama-cpp. Drop one of them.",
+    );
+  });
+
+  it("refuses an unknown --provider even with a provider injected", async () => {
+    const dir = setup({ "a.md": "---\ntitle: T\n---\n" });
+    await expect(
+      runFill({
+        cwd: dir,
+        providerInstance: new MockProvider([{ json: PROPOSAL }]),
+        provider: "gemini",
+      }),
+    ).rejects.toThrow(
+      'Unknown provider "gemini". Available: anthropic, openai, claude-cli, llama-cpp, auto.',
+    );
+  });
+
+  it("refuses a model with no provider to own it", async () => {
+    const dir = setup({ "a.md": "---\ntitle: T\n---\n" });
+    await expect(
+      runFill({
+        cwd: dir,
+        providerInstance: new MockProvider([{ json: PROPOSAL }]),
+        model: "some-model",
+      }),
+    ).rejects.toThrow(
+      'Model "some-model" was given without a provider: a model name does not say which ' +
+        "provider owns it. Set --provider or kg.provider to one of anthropic, openai, " +
+        "claude-cli, llama-cpp, or drop the model to take the detected provider's default.",
+    );
   });
 });
 
@@ -599,8 +644,13 @@ describe("runFill confidence gate (ADR 01015)", () => {
     expect(report.results[0]?.lowConfidence?.[0]?.field).toBe("label");
   });
 
-  it("--min-confidence overrides the config threshold", async () => {
-    const dir = setup({ "a.md": "---\ntitle: T\n---\n" }, SKOS_FIELDS);
+  it("--confidence overrides the configured fill.confidenceThreshold", async () => {
+    // The names meta, docevals and tracevals all use (proposal 0051 §3): the
+    // flag is `--confidence` and the key is `fill.confidenceThreshold`.
+    const dir = setup(
+      { "a.md": "---\ntitle: T\n---\n" },
+      `${SKOS_FIELDS}  confidenceThreshold: 0.5\n`,
+    );
     const provider = new MockProvider([
       { json: { label: "Config", confidence: { label: 0.8 } } },
     ]);
@@ -608,10 +658,22 @@ describe("runFill confidence gate (ADR 01015)", () => {
     const report = await runFill({
       cwd: dir,
       providerInstance: provider,
-      minConfidence: 0.9,
+      confidence: 0.9,
     });
     expect(report.results[0]?.status).toBe("nothing-proposed");
     expect(readFileSync(join(dir, "a.md"), "utf8")).not.toContain("label");
+  });
+
+  it("fill.confidenceThreshold gates on its own when no flag is given", async () => {
+    const dir = setup(
+      { "a.md": "---\ntitle: T\n---\n" },
+      `${SKOS_FIELDS}  confidenceThreshold: 0.9\n`,
+    );
+    const provider = new MockProvider([
+      { json: { label: "Config", confidence: { label: 0.8 } } },
+    ]);
+    const report = await runFill({ cwd: dir, providerInstance: provider });
+    expect(report.results[0]?.status).toBe("nothing-proposed");
   });
 
   it("fills an iiRDS field (type) at high confidence", async () => {
@@ -630,7 +692,7 @@ describe("runFill confidence gate (ADR 01015)", () => {
   it("the guardrail rejects a variant proposed as both applicable and not-applicable", async () => {
     const dir = setup(
       { "a.md": "---\ntitle: T\nkg:\n  applies-to: [SP-X1]\n---\n\n# T\n" },
-      "fill:\n  fields: [not-applicable-to]\n  minConfidence: 0\n",
+      "fill:\n  fields: [not-applicable-to]\n  confidenceThreshold: 0\n",
     );
     // The model (over)proposes excluding the same variant the doc applies to.
     const provider = new MockProvider([
@@ -645,10 +707,10 @@ describe("runFill confidence gate (ADR 01015)", () => {
 });
 
 describe("runFill graph guardrail (fill.validateGraph)", () => {
-  // Confidence gate disabled here (minConfidence 0) so these tests exercise the
+  // Confidence gate disabled here (confidenceThreshold 0) so these tests exercise the
   // structural SHACL guardrail in isolation; the bare proposals carry no scores.
   const HIERARCHY_CONFIG =
-    "fill:\n  fields: [label, broader, related-concepts]\n  minConfidence: 0\n";
+    "fill:\n  fields: [label, broader, related-concepts]\n  confidenceThreshold: 0\n";
 
   it("rejects a broader proposal that would create a cycle", async () => {
     const dir = setup(
@@ -759,7 +821,7 @@ describe("runFill graph guardrail (fill.validateGraph)", () => {
           "---\ntitle: A\nkg:\n  label: Alpha\n  broader: [Beta]\n---\n\n# A\n",
         "b.md": "---\ntitle: B\n---\n\n# B\n",
       },
-      "fill:\n  fields: [label, broader, related-concepts]\n  validateGraph: false\n  minConfidence: 0\n",
+      "fill:\n  fields: [label, broader, related-concepts]\n  validateGraph: false\n  confidenceThreshold: 0\n",
     );
     const provider = new MockProvider([
       { json: { label: "Beta", broader: ["Alpha"] } },

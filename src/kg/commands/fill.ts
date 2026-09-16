@@ -1,9 +1,9 @@
 /**
  * `manni kg fill` — propose SKOS frontmatter fields (`kg:` sub-key) with an LLM
  * and write them back. Single-shot structured output per doc, content-hash
- * cached, cost-budgeted. Human-set fields are never overwritten without
- * `--force`; `--dry-run` reports without writing. Any per-doc failure is
- * recorded as a result, never aborts the run.
+ * cached, bounded by a turn budget. Human-set fields are never overwritten
+ * without `--force`; `--dry-run` reports without writing. Any per-doc failure
+ * is recorded as a result, never aborts the run.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -30,8 +30,6 @@ import { errorMessage } from "../../shared/errors.js";
 import { KgError } from "../types.js";
 import {
   completeValidatedJSON,
-  costOfUsage,
-  pricingFor,
   validatorFor,
   type InferenceProvider,
 } from "@hawkeyexl/inference";
@@ -42,18 +40,35 @@ import {
   buildUserPrompt,
   proposalSchema,
 } from "../llm/prompt.js";
-import { makeProvider, resolveProviderIdentity } from "../llm/provider.js";
+import {
+  announceSelection,
+  assertProviderSelection,
+  constructProvider,
+  resolveProviderIdentity,
+  selectProvider,
+} from "../llm/provider.js";
 
 export interface FillOptions extends DocumentInputOptions {
   cwd?: string;
   dryRun?: boolean;
   force?: boolean;
   noCache?: boolean;
-  maxCost?: number;
-  /** Minimum model confidence to write a field (overrides fill.minConfidence). */
-  minConfidence?: number;
+  /**
+   * Stop after this many inference calls; overrides `fill.maxTurns`. A cached
+   * proposal spends none (proposal 0051 §3).
+   */
+  maxTurns?: number;
+  /**
+   * Minimum model confidence to write a field; overrides
+   * `fill.confidenceThreshold`.
+   */
+  confidence?: number;
+  /** Fields to propose; overrides `fill.fields`. */
+  fields?: FillField[];
   provider?: string;
   model?: string;
+  /** Run inference on this machine with llama-cpp, over every configured choice. */
+  local?: boolean;
   /** Disable the graph guardrail (`--no-validate-graph`). */
   noValidateGraph?: boolean;
   /** Propose per-section metadata as well as document-level (ADR 01032). */
@@ -67,12 +82,20 @@ export type FillStatus =
   | "proposed" // dry run: would write
   | "complete" // nothing missing
   | "nothing-proposed"
-  | "skipped-budget"
+  | "skipped"
   | "error";
+
+/** Why a page was skipped. The only reason today is the turn budget. */
+export const TURN_BUDGET_REASON = "turn budget";
 
 export interface FillDocResult {
   path: string;
   status: FillStatus;
+  /**
+   * Why a `skipped` page was skipped, said rather than left to be inferred —
+   * the half of kg ADR 01027 that survives the dollar cap's removal.
+   */
+  reason?: string;
   /** Fields written (or that would be written under --dry-run). */
   fields: string[];
   /** Human-set fields the proposal was not allowed to touch. */
@@ -86,7 +109,7 @@ export interface FillDocResult {
    * (ADR 01032).
    */
   unknownSections?: string[];
-  /** Fields the model proposed but scored below fill.minConfidence (ADR 01015). */
+  /** Fields the model proposed but scored below the confidence threshold (ADR 01015). */
   lowConfidence?: Array<{
     field: string;
     confidence: number;
@@ -96,43 +119,16 @@ export interface FillDocResult {
   error?: string;
 }
 
-/**
- * Whether the cost cap could actually be applied to this run.
- *
- * - `off` — the model is priced and no cap was set (`fill.maxCostUsd: null`).
- * - `free` — the provider cannot spend, so there is nothing to cap.
- * - `enforced` — a cap was set and the model has a price, so `costUsd` is real
- *   and `skipped-budget` can fire.
- * - `unpriceable` — a cap was set and the model has no entry in the price
- *   table, so nothing can be totalled and the cap **cannot** be applied.
- *
- * The third case used to be indistinguishable from a run that cost nothing:
- * `pricingFor` returns undefined, `costOfUsage` then returns 0, and the gate
- * `costUsd >= maxCostUsd` never fires. Costing zero and being unpriceable are
- * not the same thing, and the default cap is 5 USD while the price table has
- * six models in it — so the silent case was the common one.
- */
-export type BudgetState = "off" | "free" | "enforced" | "unpriceable";
-
-/**
- * Providers that cannot spend money, whatever the cap says.
- *
- * `llama-cpp` runs in-process against local weights, and the config reference
- * documents it as "no key, no network, no spend" — so warning that a cap cannot
- * be enforced there answers a question nobody asked, and trains the reader to
- * ignore the warning that matters: an unpriced *hosted* model.
- *
- * `mock` is deliberately NOT here. It is a test double that stands in for a
- * real provider, priced ones included, so treating it as free would make the
- * enforcement path itself untestable.
- */
-const FREE_PROVIDERS = new Set(["llama-cpp"]);
-
 export interface FillReport {
   results: FillDocResult[];
-  costUsd: number;
-  /** Whether `costUsd` means anything, and whether the cap could be applied. */
-  budget: BudgetState;
+  /**
+   * Inference calls this run made. Turns are countable for every model, where
+   * a price was known for six of them — which is why the dollar cap went (kg
+   * ADR 01027, proposal 0051 §3).
+   */
+  turnsUsed: number;
+  /** The budget in force, or `null` for unbounded. */
+  maxTurns: number | null;
   /** Non-fatal diagnostics. Never affects the exit code. */
   warnings: string[];
   exitCode: 0 | 1;
@@ -210,6 +206,24 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     cwd,
   );
 
+  // The flag, then `kg.provider`/`kg.model`, then the family's `providers:`,
+  // then `auto`. `--local` is llama-cpp over both levels, so detection never
+  // runs under it; a `--provider` it contradicts is refused by name, and a
+  // configured one is set aside and said.
+  //
+  // Checked BEFORE the document set is resolved, and regardless of whether a
+  // provider was injected. A contradiction in the flags is a usage error, and
+  // a usage error must not be reported as whatever the file walk found first;
+  // construction is lazy besides, so a typo would otherwise exit 0 on any run
+  // where no page happened to need inference.
+  const flags = {
+    ...(opts.provider === undefined ? {} : { provider: opts.provider }),
+    ...(opts.model === undefined ? {} : { model: opts.model }),
+    ...(opts.local === undefined ? {} : { local: opts.local }),
+  };
+  const selection = selectProvider(config, flags);
+  assertProviderSelection(selection);
+
   const files = resolveDocumentSet(config, opts, "fill", cwd);
   if (files.length === 0) {
     throw new KgError(
@@ -217,26 +231,34 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     );
   }
 
-  // Identity (for cache keys and pricing) is resolvable without constructing
-  // the provider; construction — which may demand an API key — is deferred to
-  // the first actual LLM call, so complete/cached runs need no credentials.
-  const identity = opts.providerInstance
-    ? {
-        provider: opts.providerInstance.provider(),
-        model: opts.providerInstance.modelName(),
-      }
-    : resolveProviderIdentity(config, {
-        provider: opts.provider,
-        model: opts.model,
-      });
-  let provider: InferenceProvider | undefined = opts.providerInstance;
-  const getProvider = (): InferenceProvider =>
-    (provider ??= makeProvider(config, {
-      provider: opts.provider,
-      model: opts.model,
-    }));
+  // Identity (for cache keys) is resolvable without constructing the provider;
+  // construction — which may demand an API key — is deferred to the first
+  // actual LLM call, so complete/cached runs need no credentials.
+  //
+  // The two branches are kept apart rather than merged behind a cast: an
+  // injected provider's `provider()` is a free-form string, and only the
+  // resolved path yields a name `constructProvider` can be trusted with.
+  let identity: { provider: string; model: string };
+  let construct: () => InferenceProvider;
+  if (opts.providerInstance) {
+    const injected = opts.providerInstance;
+    identity = { provider: injected.provider(), model: injected.modelName() };
+    construct = () => injected;
+    // Still announce what `--local` replaced: the selection is what a real
+    // run would have used, and the seam is a test's business, not the user's.
+    announceSelection(selection);
+  } else {
+    const resolved = await resolveProviderIdentity(config, flags);
+    identity = resolved;
+    // Build from the RESOLVED identity, never the selection we started with:
+    // under `auto` that still says "auto", and the synchronous library
+    // constructor rightly refuses to guess.
+    construct = () => constructProvider(config, resolved);
+  }
+  let provider: InferenceProvider | undefined;
+  const getProvider = (): InferenceProvider => (provider ??= construct());
 
-  const fields = config.fill.fields;
+  const fields = opts.fields ?? config.fill.fields;
   // Compiled against the full configured field set, not any one doc's missing
   // subset: proposals are validated leniently and narrowed afterwards, so a
   // provider that volunteers a field this doc didn't ask for is fine.
@@ -262,42 +284,20 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     resolve(cwd, config.fill.cacheDir),
     !opts.noCache,
   );
-  const pricing = pricingFor(identity.model, config.fill.pricing);
-  const maxCostUsd = opts.maxCost ?? config.fill.maxCostUsd;
-  const minConfidence = opts.minConfidence ?? config.fill.minConfidence;
+  const confidenceThreshold = opts.confidence ?? config.fill.confidenceThreshold;
+  // Turns, not dollars. A turn is one inference call, which every model makes
+  // and every model can be counted making — where a price was known for six
+  // of them, so the cap it replaces read as zero for all the rest (kg ADR
+  // 01027, docevals ADR 01019). `null` is unbounded.
+  const maxTurns = opts.maxTurns ?? config.fill.maxTurns;
 
-  // A cap dockg cannot apply must say so. Silently not enforcing a spend limit
-  // the caller asked for is the one failure here that costs money.
-  // Two orthogonal questions, and conflating them is what produced the bug
-  // this state exists to fix:
-  //   1. Is `costUsd` measurable at all?  → pricing !== undefined
-  //   2. Was a cap asked for, and can it be applied?  → maxCostUsd, pricing
-  // `unpriceable` answers (1) whether or not a cap was set, so an uncapped run
-  // against an unpriced model no longer renders a confident "$0.0000".
-  const budget: BudgetState = FREE_PROVIDERS.has(identity.provider)
-    ? "free"
-    : pricing === undefined
-      ? "unpriceable"
-      : maxCostUsd === null
-        ? "off"
-        : "enforced";
-  // The warning is about (2): only fire it when a cap was actually requested.
-  const warnings: string[] =
-    budget === "unpriceable" && maxCostUsd !== null
-      ? [
-          `Cost cap of ${maxCostUsd} USD cannot be enforced: no price is known for model "${identity.model}", ` +
-            `so spend cannot be totalled. Set fill.pricing to enforce it, or fill.maxCostUsd: null if you meant no cap.`,
-        ]
-      : [];
+  const warnings: string[] = [];
   /** Set when section fields were written but could not be recorded. */
   let sectionsUnrecorded = false;
-  // Null unless the cap is both set and applicable, so the gate below needs
-  // no non-null assertion and cannot fire on an unpriceable run.
-  const enforcedCap = budget === "enforced" ? maxCostUsd : null;
 
   const allPaths = new Set(files);
   const results: FillDocResult[] = [];
-  let costUsd = 0;
+  let turnsUsed = 0;
 
   // Graph guardrail: simulate each proposal against the SHACL shapes before
   // writing it. Off via fill.validateGraph: false or --no-validate-graph.
@@ -363,7 +363,13 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
   }
 
   const hasErrors = results.some((r) => r.status === "error");
-  return { results, costUsd, budget, warnings, exitCode: hasErrors ? 1 : 0 };
+  return {
+    results,
+    turnsUsed,
+    maxTurns,
+    warnings,
+    exitCode: hasErrors ? 1 : 0,
+  };
 
   async function fillOne(
     path: string,
@@ -385,16 +391,6 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       return {
         path,
         status: "complete",
-        fields: [],
-        preserved: [],
-        cached: false,
-      };
-    }
-
-    if (enforcedCap !== null && costUsd >= enforcedCap) {
-      return {
-        path,
-        status: "skipped-budget",
         fields: [],
         preserved: [],
         cached: false,
@@ -426,6 +422,22 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       }));
 
     if (proposal === undefined) {
+      // The budget is claimed here rather than at the top of the page, so a
+      // cached proposal spends nothing: it makes no inference call, and a
+      // budget that stopped a free page would report a skip nobody paid for
+      // (docevals ADR 01019). Say why, which is the half of kg ADR 01027 that
+      // outlives the dollar.
+      if (maxTurns !== null && turnsUsed >= maxTurns) {
+        return {
+          path,
+          status: "skipped",
+          reason: TURN_BUDGET_REASON,
+          fields: [],
+          preserved: [],
+          cached: false,
+        };
+      }
+      turnsUsed++;
       // completeValidatedJSON validates and retries once before giving up.
       // fill previously aborted the document on a single malformed response;
       // one bad completion is not worth losing the work over.
@@ -444,7 +456,6 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
         validate: validateProposal,
         temperature: config.fill.temperature,
       });
-      costUsd += costOfUsage(run.usage, pricing);
       if (run.result === undefined) {
         throw new Error(run.error ?? "provider returned no proposal");
       }
@@ -515,18 +526,19 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     };
     gateLabel();
 
-    // Confidence gate (ADR 01015): drop any field the model scored below
-    // minConfidence (or did not score at all — no score means no write). This
+    // Confidence gate (ADR 01015): drop any field the model scored below the
+    // threshold (or did not score at all — no score means no write). This
     // runs before the structural guardrail; the two are orthogonal, and the
     // confidence gate covers every field, not just the guarded subset. A drop
     // here is normal operation, reported but never an error (exit stays 0).
     const lowConfidence: FillDocResult["lowConfidence"] = [];
     for (const field of Object.keys(narrowed)) {
-      // Unscored counts as 0, so minConfidence: 0 stays a working opt-out from
-      // the gate. The related hazard — stamping a confidence the model never
-      // gave into kg.provenance — is fixed where provenance is built, not here.
+      // Unscored counts as 0, so `confidenceThreshold: 0` stays a working
+      // opt-out from the gate. The related hazard — stamping a confidence the
+      // model never gave into kg.provenance — is fixed where provenance is
+      // built, not here.
       const c = confidence[field] ?? 0;
-      if (c < minConfidence) {
+      if (c < confidenceThreshold) {
         lowConfidence.push({
           field,
           confidence: c,
@@ -713,26 +725,25 @@ export function renderFill(
           `no-op     ${r.path} (model proposed nothing new)${dropped}${unknown}${lowConf}`,
         );
         break;
-      case "skipped-budget":
-        lines.push(`skipped   ${r.path} (cost budget exhausted)`);
+      case "skipped":
+        lines.push(`skipped   ${r.path} (${r.reason ?? "not processed"})`);
         break;
       case "error":
         lines.push(`error     ${r.path}: ${r.error ?? ""}`);
         break;
     }
   }
-  // "$0.0000" reads as "this run was free". Three different things can produce
-  // it, and only one of them is true — so say which. Keyed on whether the cost
-  // is *measurable*, not on whether a cap was set: `budget: "off"` over an
-  // unpriced model reached the misleading branch when this only checked
-  // "unpriceable".
-  lines.push(
-    "",
-    report.budget === "free"
-      ? "LLM cost: none — this provider does not spend"
-      : report.budget === "unpriceable"
-        ? "LLM cost: unpriceable — no price known for this model, so the cap was not applied"
-        : `LLM cost: $${report.costUsd.toFixed(4)}`,
-  );
+  // A run cut short covered less than it was asked to, and the per-page lines
+  // say which pages. Say once that the budget is why, so the number to raise
+  // is on screen next to them.
+  if (
+    report.maxTurns !== null &&
+    report.results.some((r) => r.status === "skipped")
+  ) {
+    lines.push(
+      "",
+      `--max-turns reached (${report.maxTurns}); some pages were not processed.`,
+    );
+  }
   return lines.join("\n");
 }

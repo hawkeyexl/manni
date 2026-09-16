@@ -29,20 +29,25 @@ const MODEL = process.env.OLLAMA_MODEL ?? "llama3.2:1b";
 function corpus(body: string): string {
   const dir = mkdtempSync(join(tmpdir(), "dockg-fill-live-"));
   writeFileSync(
-    join(dir, "dockg.config.yaml"),
+    join(dir, "manni.config.yaml"),
     [
-      "version: 1",
-      'inputs: ["*.md"]',
-      "fill:",
+      // Connection settings are the family's, declared once for every tool
+      // (proposal 0051 §3).
+      "providers:",
+      "  openai:",
+      `    baseUrl: ${BASE_URL}`,
+      "    apiKeyEnv: OLLAMA_API_KEY",
+      "collections:",
+      "  - name: c",
+      '    paths: ["*.md"]',
+      "kg:",
       "  provider: openai",
       `  model: ${MODEL}`,
-      `  baseUrl: ${BASE_URL}`,
-      "  apiKeyEnv: OLLAMA_API_KEY",
+      "  fill:",
       // Confidence is a self-report, and a 1B model's is not to be trusted.
       // Zero keeps the gate from being what this test measures.
-      "  minConfidence: 0",
-      "  maxCostUsd: null",
-      "  fields: [label, concepts]",
+      "    confidenceThreshold: 0",
+      "    fields: [label, concepts]",
       "",
     ].join("\n"),
   );
@@ -88,18 +93,23 @@ describe("manni kg fill against a real OpenAI-compatible server", () => {
     }
   }, 300_000);
 
-  it("reports the budget as unpriceable for a model with no price", async () => {
-    // The local model has no PRICE_TABLE entry, which is the case ADR 01027
-    // exists for — verified here against a real provider rather than a mock.
+  it("counts a turn against the budget, and says why a page was skipped", async () => {
+    // Turns replace the dollar cap kg ADR 01027 found unenforceable for this
+    // very model: a local one has no PRICE_TABLE entry, so nothing could be
+    // totalled. A turn is countable whatever the model is — verified here
+    // against a real provider rather than a mock.
     const dir = corpus("---\ntitle: T\n---\n\n# T\n\nShort body.\n");
+    writeFileSync(join(dir, "b.md"), "---\ntitle: B\n---\n\n# B\n\nMore.\n");
     const report = await runFill({
       cwd: dir,
       noCache: true,
       dryRun: true,
-      maxCost: 5,
+      maxTurns: 1,
     });
-    expect(report.budget).toBe("unpriceable");
-    expect(report.warnings[0]).toContain("cannot be enforced");
+    expect(report.turnsUsed).toBe(1);
+    const skipped = report.results.filter((r) => r.status === "skipped");
+    expect(skipped).toHaveLength(1);
+    expect(skipped[0]!.reason).toBe("turn budget");
   }, 300_000);
 
   it("caches, so a second identical run makes no HTTP call", async () => {

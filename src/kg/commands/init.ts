@@ -79,17 +79,24 @@ provenance:
 #     title: 100
 #     description: 50
 
+# Which provider \`manni kg fill\` sends pages to. Unset, the family's
+# top-level providers: map decides, and then \`auto\`, which detects one: an
+# Anthropic key, then an OpenAI key, then the Claude CLI, then a local model.
+# Connection settings (apiKeyEnv, baseUrl, command) live in that map, declared
+# once for every manni tool. \`--provider\` wins over this, \`--local\` over both.
+# provider: anthropic          # auto | anthropic | openai | claude-cli | llama-cpp
+# model: claude-sonnet-4-5     # the provider's default when omitted
+
 # LLM settings for \`manni kg fill\` (SKOS frontmatter proposals).
 fill:
-  provider: anthropic          # anthropic | openai | claude-cli | llama-cpp | mock
-  # model: claude-sonnet-4-5   # provider default when omitted
-  # apiKeyEnv: ANTHROPIC_API_KEY
   temperature: 0
-  maxCostUsd: 5
+  # Stop after this many inference calls. One page is one turn, and a cached
+  # page spends none. Unset is unbounded.
+  # maxTurns: 50
   cacheDir: .manni/kg/cache
   # fill proposes every field; confidence (0..1 per field) gates what is
-  # written. Fields scored below minConfidence are reported, not written.
-  minConfidence: 0.7
+  # written. Fields scored below the threshold are reported, not written.
+  confidenceThreshold: 0.7
   # fields: defaults to every fillable field — uncomment to restrict.
   # Record kg.provenance (model + fields + confidence) on filled docs.
   writeProvenance: true
