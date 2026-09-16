@@ -1,0 +1,210 @@
+---
+title: Publish the graph
+description: Export the built graph as linked data, an iiRDS package, or a browser search index, on the run that already gated it.
+---
+
+The graph is worth more outside CI than inside it. `manni kg export`
+reserializes what `build` produced into the shape a consumer reads. Linked data
+for an ingester. An iiRDS package for a content delivery portal. A search index
+the docs site loads in the browser.
+
+This is Devin's second page. The rule it carries: **publish on the run that
+gated it**, so what ships is what passed.
+
+## Three targets
+
+```sh
+manni kg export <target> [options]
+```
+
+| Target | Writes | Read by |
+|---|---|---|
+| `jsonld` | JSON-LD beside the graph | A linked-data ingester, a RAG pipeline, and the browser runtime. |
+| `iirds` | A conformant iiRDS package | A content delivery portal. RDF/XML is written inside the container. |
+| `search` | A lexical index per language, plus a localization manifest | `@hawkeyexl/manni/kg/runtime`, client-side. |
+
+```console
+$ manni kg export jsonld -c test/kg/fixtures/dd/docs.config.yaml
+Wrote 25 nodes to .tmp/dd/graph.jsonld
+```
+
+The target is a positional, not a `-f`. Every other verb of the family means
+"output format" by `-f`, and one flag cannot mean two things.
+
+`-o` writes somewhere else; the default is the graph's path with the target's
+extension. An unknown target is exit `2`, with the allowed set in the message.
+
+## Linked data
+
+`export jsonld` is the general-purpose artifact. Every node is a JSON object
+with its IRI, and every edge a property, so a consumer needs no RDF library to
+walk it.
+
+Give the corpus an HTTP `baseIri` before you publish it. The default,
+`urn:manni:kg:`, identifies without promising to resolve. That is honest for a
+graph that stays in CI, and unhelpful for one handed to someone else:
+
+```yaml
+kg:
+  baseIri: https://docs.example.com/kg/
+```
+
+The namespace the custom terms use, `kg:`, resolves to a vocabulary document
+that defines every term the emitter can produce. That is not decoration: a
+consumer that meets `kg:contentHash` can look it up.
+
+## iiRDS
+
+`export iirds` writes a package conformant with the tekom standard for
+intelligent information delivery. It carries package metadata you set in
+config:
+
+```yaml
+kg:
+  export:
+    iirds:
+      title: Product documentation
+      creator: Example Corp
+      version: "1.3"
+```
+
+Quote the version. Unquoted, YAML reads `1.3` as a number and the value is
+refused. `1.2` and `1.3` are the two accepted.
+
+## Search in the browser
+
+`export search` writes the lexical index and a **localization manifest**, which
+is how a browser learns which locales exist before fetching any of them:
+
+```json
+{
+  "version": 1,
+  "languages": [
+    {
+      "language": "und",
+      "documents": 3,
+      "search": {
+        "path": "search.und.json",
+        "entries": 14,
+        "digest": "sha256:50a4fd198f11f5782eca7852d7fff71f399c42b47cf8fc10147bcc2a8f420cde"
+      }
+    }
+  ]
+}
+```
+
+`und` is the undetermined language: this corpus declares none. Give the pages a
+`language`, or give the `routes` entries one, and the index fans out per
+locale. One file each, named from the tag. A corpus that ships several locales
+and one index serves the wrong one to most of its readers.
+
+The digest is what the runtime checks a sidecar against, so a stale vector file
+is refused rather than silently mismatched.
+
+## Semantic search
+
+`manni kg embed` adds a vector sidecar per language, which turns
+`manni kg search` and the browser runtime from lexical matching into hybrid
+retrieval:
+
+```sh
+manni kg export search
+manni kg embed
+manni kg search "how do I install this"
+```
+
+It needs the optional `@huggingface/transformers` peer, and it runs on your
+machine: no text leaves it. `--model mock` runs offline and produces
+deterministic fixtures.
+
+Embed **per language**. An English-only model over a German corpus returns
+confident, meaningless vectors and fails nothing, which is the failure mode
+`embed.byLanguage` exists to prevent:
+
+```yaml
+kg:
+  embed:
+    model: onnx-community/granite-embedding-small-english-r2-ONNX
+    byLanguage:
+      de:
+        model: Xenova/bge-small-en-v1.5
+```
+
+The [configuration reference](/manni/kg/reference/configuration/#embed) lists
+the tested models with what each costs in size and context.
+
+## Retrieval, in the page
+
+`@hawkeyexl/manni/kg/runtime` is the browser half: one file, no dependencies,
+no Node APIs. It loads the JSON-LD, walks it with scope rules honored, resolves
+node text, and assembles a bundle.
+
+```js
+import { GraphIndex, traverse, createFetchResolver, assemble }
+  from "@hawkeyexl/manni/kg/runtime";
+
+const graph = GraphIndex.fromJsonLd(await (await fetch("/kg/graph.jsonld")).text());
+const { nodes, trace } = traverse(graph, {
+  seeds: ["https://docs.example.com/kg/doc/docs/configuration.md"],
+  depth: 2,
+});
+const bundle = await assemble(createFetchResolver(graph, { baseUrl: "/raw/", trace }),
+                              nodes, { trace, maxChars: 12000 });
+```
+
+**The runtime never generates.** It returns context, citations and the trace
+that produced them, and stops. Wiring a model is the host's job, and the trace
+is what lets an answer be argued with. See the
+[library API reference](/manni/kg/reference/library-api/#the-browser-runtime).
+
+## Deciding what ships
+
+A published artifact should not carry every field a page holds. An `owner`, a
+review queue name, an internal ticket reference: each is useful to CI and none
+of it belongs in a graph you hand out.
+
+Mark the property in the schema, not in a post-processing step:
+
+```json
+{ "owner": { "type": "string", "x-manni-kg-output": false } }
+```
+
+The filter runs once, before derivation, so the field is absent from all three
+exports and from the Turtle. Absent means `true`. See
+[Govern the graph](/manni/kg/govern/#what-the-published-graph-carries).
+
+Encrypted values need no mark. kg never decrypts, so an encrypted value reaches
+the graph as its `~…` token. The graph records that a value exists and says
+nothing about what it is.
+
+## Publish what passed
+
+```yaml
+      - run: npx @hawkeyexl/manni kg build
+      - run: npx @hawkeyexl/manni kg check -f github
+      - run: npx @hawkeyexl/manni kg stats --check
+      - run: npx @hawkeyexl/manni kg export jsonld
+      - run: npx @hawkeyexl/manni kg export search
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kg
+          path: kg/
+```
+
+The export steps run after the gates, in the same job, from the same graph
+file. A separate publish job would rebuild, and a rebuild is a second chance to
+produce something nobody checked.
+
+{/* Verified by Doc Detective in docs-as-tests, against test/kg/fixtures/dd/. */}
+
+{/* step {"description":"Export needs a built graph.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0]}} */}
+
+{/* step {"description":"jsonld writes linked data and reports the node count.","runShell":{"command":"manni kg export jsonld -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Wrote 25 nodes"}} */}
+
+{/* step {"description":"iirds writes a conformant package.","runShell":{"command":"manni kg export iirds -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Wrote"}} */}
+
+{/* step {"description":"search writes the index and the localization manifest.","runShell":{"command":"manni kg export search -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"localizations.json"}} */}
+
+{/* step {"description":"An unknown target is refused with the allowed set named.","runShell":{"command":"manni kg export turtle -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"Use jsonld | iirds | search."}} */}
+
+{/* step {"description":"search ranks nodes from the exported index.","runShell":{"command":"manni kg search installation -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"(lexical)"}} */}

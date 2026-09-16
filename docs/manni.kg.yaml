@@ -1,0 +1,58 @@
+# manni kg checking its own docs section.
+#
+# Separate from the repo-root manni.config.yaml on purpose. The `kg:` section
+# there points at test/kg/fixtures/corpus/, which deliberately carries a broken
+# link and a broken section reference so the golden determinism gate and
+# `stats --check` are meaningful. This one runs against the kg pages of the
+# site, which must be all-green.
+#
+# The name is not one discovery reads. A `manni.config.yaml` in docs/ would be
+# found by any manni run started under docs/, and this file is one job's input,
+# not ambient policy for the directory. Reach it with `-c`:
+#
+#   npm run docs:check-kg
+#
+# An explicit path is read with the same rule as a discovered one: the `kg:`
+# key is unwrapped when present.
+#
+# The pages come from a collection, whose paths resolve from this file's
+# directory (docs/), not from where the command runs. This file is reached only
+# by `-c`, so the collection is invisible to a bare `manni meta validate`.
+collections:
+  - name: kg-pages
+    paths:
+      - "src/content/docs/kg/**/*.{md,mdx}"
+
+kg:
+  # An example.com base rather than the site's own. These pages are not
+  # published as linked data; the graph is a gate, and a base IRI that promised
+  # to dereference would be a promise nothing keeps.
+  baseIri: https://example.com/manni-docs/
+
+  # Under .tmp/, which .gitignore excludes: run output, not an artifact this
+  # repository ships.
+  out: .tmp/docs-kg/graph.ttl
+
+  # Published routes back to source files, so a link written the way a reader
+  # sees it (/manni/kg/reference/cli/) resolves to the page that serves it.
+  # Repo-root-relative, because routes are matched against the document paths
+  # the run produced, which are relative to the working directory.
+  routes:
+    - basePath: /manni
+      root: docs/src/content/docs
+      extensions: [".md", ".mdx"]
+      indexFiles: ["index"]
+      language: en
+
+  # No `provenance` source. These pages are written in the same commits as the
+  # code they document, so a per-page git history here measures the branch
+  # rather than the docs — and it would make the gate's output depend on how
+  # the work happened to be committed.
+  build:
+    derive: [frontmatter, sections, links, tags, images, code]
+
+  # The bundled shapes are the contract. Nothing is added: what this job
+  # checks is that the section a reader browses holds together as a graph,
+  # under exactly the rules a reader of these pages would get.
+  check:
+    shapes: []

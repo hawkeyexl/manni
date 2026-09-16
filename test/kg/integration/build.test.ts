@@ -313,8 +313,8 @@ describe("manni kg build (integration)", () => {
   it("warns on page keys that look like harvest inputs, and still exits 0", () => {
     // The reproducer from the scope review that produced ADR 01028: a page
     // whose author declared four facts, none of which reached the graph. It
-    // passed `manni kg validate` clean, because every one of those keys is a legal
-    // page-level key — just not one dockg reads.
+    // passed the page vocabulary clean, because every one of those keys is a
+    // legal page-level key — just not one kg reads.
     const dir = mkdtempSync(join(tmpdir(), "manni-kg-harvest-"));
     writeFileSync(
       join(dir, "manni.config.yaml"),

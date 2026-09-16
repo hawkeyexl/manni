@@ -418,7 +418,7 @@ describe("runFill", () => {
   it("refuses a doc that still carries kg.provenance", async () => {
     // Proposal 0046 closed the `kg` block on fifteen properties and dropped
     // `provenance` from it. Filling would leave an unreviewable record behind
-    // that nothing reads and `manni kg validate` rejects — name the migration.
+    // that nothing reads and the page vocabulary rejects — name the migration.
     const legacy =
       "---\ntitle: T\nkg:\n  provenance:\n    - generated-by: old-model\n      fields: [label]\n---\n";
     const dir = setup({ "a.md": legacy, "b.md": "---\ntitle: OK\n---\n" });

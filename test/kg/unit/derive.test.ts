@@ -311,9 +311,9 @@ describe("deriveGraph — provenance", () => {
         "---\nkg:\n  provenance:\n    - generated-by: claude-sonnet-4-5\n      fields: [concepts]\n---\n",
     });
     // Proposal 0046 closed the `kg` block on fifteen properties and none of
-    // them is `provenance`, so `manni kg validate` rejects this page. Deriving
-    // from it anyway would let `build` read frontmatter that does not
-    // validate — the two commands must agree.
+    // them is `provenance`, so the page vocabulary rejects this page. Deriving
+    // from it anyway would let `build` read frontmatter that
+    // `manni meta validate` refuses — the two must agree.
     const activity = `${DOC}#prov.kg-fill.claude-sonnet-4-5`;
     expect(g.some((q) => q.s === activity)).toBe(false);
     expect(g.some((q) => q.p === `${NS.kg}filledField`)).toBe(false);

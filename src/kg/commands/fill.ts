@@ -647,7 +647,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
         proposed,
       );
       // `undefined` is a page holding something other than a list under the
-      // key. Reported by `manni kg validate`, not worth failing the fill over:
+      // key. Reported by `manni meta validate`, not worth failing the fill over:
       // a side record that could block filling would be worse than none.
       if (merged) {
         // The merge sets a confidence for every name it is handed; a pointer

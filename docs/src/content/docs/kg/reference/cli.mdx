@@ -1,0 +1,519 @@
+---
+title: CLI reference
+description: Every manni kg command, argument, and flag, with the exit code each produces.
+---
+
+{/* The command, argument, and option tables on this page are drift-checked
+    against src/kg/cli.ts by scripts/check-cli-reference.mjs (npm run
+    docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
+    sync with the code; descriptions are free-form. */}
+
+Ten commands under one domain. Every flag below is verified against
+`src/kg/cli.ts`, and the exit codes are exercised by the inline tests at the
+foot of this page.
+
+```sh
+manni kg <command> [command options] [arguments]
+```
+
+There is no default subcommand. `manni kg docs/` is a usage error, because a
+domain owns verbs and `build` is the verb.
+
+## Common conventions
+
+Two verbs read **documents**: `build` and `fill`. They take positional paths,
+which are files, directories, or globs relative to the working directory. With
+none given they read every
+[collection](/manni/meta/reference/configuration/#collections) the config
+declares, or the ones `--collection` names. A collection's `paths` resolve from
+the config file's directory, wherever the command runs. Nothing matching is
+**exit 2**, not an empty successful build.
+
+The other verbs read the **built graph** rather than the documents: `check`,
+`query`, `stats`, `search`, `traverse`, `embed` and `export` all load the
+Turtle file at `kg.out`, or the one `-g` names. Build first, then ask.
+
+| Flag | Commands | Meaning |
+|---|---|---|
+| `-c, --config <path>` | all except `init` | Path to `manni.config.yaml`. Without it, manni kg looks for that file from the working directory up to the repository root. It reads the file's `kg:` key plus the top-level `collections:` and `providers:` keys. With no file at all, built-in defaults apply and no collections are declared. |
+| `--no-config` | same as above | Ignore any discovered config file and run on built-in defaults. It shares one option with `-c`, so the one written later wins. |
+| `--collection <name>` | `build`, `fill` | Read only this configured collection. Repeatable, one name per occurrence, never comma-separated. It cannot be combined with positional paths, and it needs a config file to select from. Each of those is **exit 2**. |
+| `--exclude <glob>` | same as above | Glob to exclude. Repeatable, one glob per occurrence. |
+| `-g, --graph <path>` | the graph readers | The built Turtle file. Defaults to the resolved `kg.out`. |
+| `-f, --format <format>` | every verb that reports | `pretty` or `json`; `check` adds `github`. An unknown value is refused while the options are parsed. A typo therefore costs a message rather than a graph load: **exit 2**, with the allowed set named. |
+
+Flags override config; they do not bypass it. An unset flag falls through to
+the resolved `kg:` value, so a config file and the command line reach the same
+code.
+
+One separator per list. A positional variadic is space-separated because argv
+is. `--fields` and `--predicates` are written `<list>`, comma-separated and
+given once. `--collection`, `--exclude` and `--shapes` are repeatable and never
+split on commas, because a path or a name may hold one.
+
+Each command's table below lists every flag it accepts, the shared ones
+included. A table is the whole surface of its command.
+
+## Global options
+
+Global options are accepted before the subcommand.
+
+| Option | Description |
+|---|---|
+| `-V, --version` | Print the manni version and exit. |
+| `-h, --help` | Print help for the program or a subcommand. |
+
+## `kg`
+
+The knowledge-graph tool. Every command on this page lives under it. `kg`
+accepts its own `-V, --version`, which reports the manni version, and
+`-h, --help`.
+
+```sh
+manni kg <command> [command options] [arguments]
+```
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--no-color` | n/a | color on a TTY | Turn colored output off. `NO_COLOR` in the environment does the same, and output that is not a terminal is never colored either way. |
+
+## `kg init`
+
+Writes a starter `kg:` section into `manni.config.yaml` in the working
+directory, and prints the path it wrote. Takes no arguments and no options.
+
+```sh
+manni kg init
+```
+
+## `kg build`
+
+Reads the documents, derives the graph, and writes canonically sorted Turtle.
+Two runs over unchanged inputs are byte-identical. Dates come from
+frontmatter and then from git committer times, never from the clock. Every
+node gets a deterministic IRI rather than a blank node.
+
+```sh
+manni kg build [paths...] [options]
+```
+
+```console
+$ manni kg build -c test/kg/fixtures/dd/docs.config.yaml
+Wrote .tmp/dd/graph.ttl (3 docs, 131 triples)
+```
+
+Warnings go to stderr, so stdout stays the one-line summary. A degraded build
+is still a successful one. A repository git cannot read warns once and builds
+the rest. A near-miss frontmatter key warns and derives nothing. Neither
+changes the exit code.
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to build from, relative to the working directory. Optional; without them, the configured collections. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. See [Common conventions](#common-conventions). |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
+| `-o, --out` | `<path>` | config `out`, else `kg/graph.ttl` | Where to write the Turtle. The directory is created if it does not exist. |
+
+## `kg check`
+
+Validates the built graph against SHACL shapes. This is where the emergent
+failures live: they exist only after N documents merge into shared nodes, so no
+per-file check can see them. Findings carry the family's
+`notice | warning | error` scale, and an `error` exits 1.
+
+```sh
+manni kg check [options]
+```
+
+```console
+$ manni kg check -c test/kg/fixtures/dd/violations.config.yaml
+error: https://example.com/dd/concept/alpha skos:broader — skos:broader cycle through https://example.com/dd/concept/alpha, https://example.com/dd/concept/beta (https://example.com/dd/concept/alpha → https://example.com/dd/concept/beta) — a concept cannot be its own ancestor [test/kg/fixtures/dd/violations/alpha.md, test/kg/fixtures/dd/violations/beta.md, test/kg/fixtures/dd/violations/gamma.md]
+
+2 errors, 0 warnings, 0 notices
+```
+
+The bundled shapes are **closed**, so a predicate the shapes have not learned
+fails here. That is deliberate: a change to what the graph contains is not done
+until the shapes say so.
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `-g, --graph` | `<path>` | config `out` | The built Turtle file to validate. |
+| `--shapes` | `<path>` | config `check.shapes`, else bundled | A shapes `.ttl` file. Repeatable, one path per occurrence, never comma-separated. Given here or in config, these replace the bundled shapes rather than adding to them. Include the bundled file when you mean to extend it. |
+| `-f, --format` | `<pretty\|json\|github>` | `pretty` | Output format. `github` writes one workflow annotation per finding. |
+
+## Checking a `kg:` block
+
+There is no `kg validate`. A `kg:` block is frontmatter, and frontmatter is
+checked by `manni meta validate` against the page vocabulary. That is the
+command every vocabulary in this family is checked with.
+
+The draft is [open for review](/manni/meta/proposals/kg/), so no built-in id and
+no published URL serves it yet. Copy
+[`1.0.0-proposal.3.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/kg/1.0.0-proposal.3.json)
+into your repository and name it for the pages it governs:
+
+```yaml title="manni.config.yaml"
+meta:
+  overrides:
+    - collection: site
+      schemas:
+        - ./schema/kg-1.0.0-proposal.3.json
+```
+
+```console
+$ manni meta validate
+✗ docs/install.md
+    /kg  must NOT have additional property 'bogus'  (line 3)  [./schema/kg-1.0.0-proposal.3.json]
+
+1 file checked, 0 passed, 1 failed, 1 error
+```
+
+A typo inside the block is a schema error with a line number, because the block
+is closed. `kg.validate.schemas` names the same schema set for `manni kg build`,
+which reads `x-manni-kg-output` from it to decide what a published graph may
+carry.
+
+## `kg fill`
+
+Proposes `kg:` frontmatter fields from each page's content and writes the ones
+that clear a confidence gate. This is the one verb that reaches a model.
+
+```sh
+manni kg fill [paths...] [options]
+```
+
+Run `--dry-run` first. The proposals are cached **before** the gate, so
+re-running at a different `--confidence` spends no turns. A turn is one
+inference call, one page is one turn, and a cached page costs none. A page the
+budget stopped at is reported `skipped` with the reason `turn budget`.
+
+Every written value is recorded in the page's `meta-provenance`, naming the
+model and the fields. See
+[Fill the vocabulary](/manni/kg/fill/).
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to fill, relative to the working directory. Optional; without them, the configured collections. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
+| `--dry-run` | n/a | off | Report proposals without writing files. |
+| `--force` | n/a | off | Overwrite `kg` fields a human set. Without it, a field already present on the page is left alone. |
+| `--no-cache` | n/a | off | Bypass the proposal cache, so every page is asked again. |
+| `--no-validate-graph` | n/a | off | Skip the SHACL guardrail that vets each proposal against the derived graph before it is written. |
+| `--sections` | n/a | config `fill.sections`, else off | Also propose per-section metadata, not only page-level. |
+| `--max-turns` | `<n>` | config `fill.maxTurns`, else unbounded | Stop after this many inference calls. A whole number, at least 1. |
+| `--confidence` | `<n>` | config `fill.confidenceThreshold`, else `0.7` | Minimum model confidence, 0 to 1, for a field to be written. Outside that range is a usage error. |
+| `--fields` | `<list>` | config `fill.fields`, else every field | Which fields to propose, comma-separated and given once. An unknown name is a usage error naming the allowed set. |
+| `--provider` | `<name>` | config `kg.provider`, then `providers.provider`, then `auto` | `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. An unknown name is **exit 2**. |
+| `--model` | `<model>` | config `kg.model`, else the provider's default | The model within the provider. It needs a named provider, from here or from config, because a model name does not say which provider owns it. |
+| `--local` | n/a | off | Run inference on this machine with `llama-cpp`, over `kg.provider` and the family's `providers.provider`. |
+
+## `kg query`
+
+Matches a triple pattern against the built graph. Omit a term and it is a
+wildcard, so all three omitted prints the whole graph.
+
+```sh
+manni kg query [options]
+```
+
+```console
+$ manni kg query -c test/kg/fixtures/dd/docs.config.yaml --p dcterms:subject
+<https://example.com/dd/doc/test/kg/fixtures/dd/docs/configuration.md> dcterms:subject <https://example.com/dd/concept/reference>
+<https://example.com/dd/doc/test/kg/fixtures/dd/docs/getting-started.md> dcterms:subject <https://example.com/dd/concept/onboarding>
+
+2 match(es)
+```
+
+The three pattern flags are long-only on purpose. `-o` is `--out` on every
+other verb, and `-s` is the metadata tool's schema flag. One letter meaning two
+things across one family costs more than three characters do.
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--s` | `<term>` | wildcard | Subject: a full IRI or a `prefix:local` name. |
+| `--p` | `<term>` | wildcard | Predicate: a full IRI or a `prefix:local` name. |
+| `--o` | `<term>` | wildcard | Object: a full IRI, a `prefix:local` name, or a literal value. |
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `-g, --graph` | `<path>` | config `out` | The built Turtle file to read. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
+
+No match is **exit 0** with `No matches.`, not a finding. A query that asks a
+question and gets no answer has not failed.
+
+## `kg stats`
+
+Summarizes the graph: node counts, the most connected documents, orphans,
+broken internal links and section references, and per-field metadata coverage.
+
+```sh
+manni kg stats [options]
+```
+
+```console
+$ manni kg stats -c test/kg/fixtures/dd/docs.config.yaml
+Triples:    131
+Documents:  3
+Sections:   8
+Concepts:   3
+References: 2
+
+Most connected:
+  test/kg/fixtures/dd/docs/configuration.md (2)
+  test/kg/fixtures/dd/docs/getting-started.md (2)
+
+Orphan docs (1):
+  test/kg/fixtures/dd/docs/troubleshooting.md
+
+Broken internal links (1):
+  test/kg/fixtures/dd/docs/troubleshooting.md -> missing.md
+```
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `-g, --graph` | `<path>` | config `out` | The built Turtle file to read. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
+| `--check` | n/a | off | Exit 1 when a broken internal link exists, or when coverage is below its threshold. This is the CI gate. |
+| `--top` | `<n>` | every hub | How many most-connected documents to list. A whole number, at least 1. |
+| `--coverage-threshold` | `<pct>` | config `stats.coverageThreshold`, else none | Minimum coverage percentage, 0 to 100, applied to every measured field for this run. Outside that range is a usage error. See [Coverage](/manni/kg/govern/coverage/). |
+
+## `kg search`
+
+Ranks graph nodes for a text query. It reads the search index that
+`manni kg export search` writes, and adds a vector leg when
+`manni kg embed` has written sidecars.
+
+```sh
+manni kg search <query> [options]
+```
+
+```console
+$ manni kg search "installation" -c test/kg/fixtures/dd/docs.config.yaml
+0.0164  https://example.com/dd/concept/installation [skos:Concept] — Installation
+
+1 result (lexical)
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `<query>` | The text to rank nodes against. Required. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `-g, --graph` | `<path>` | config `out` | The built Turtle file the index sits beside. |
+| `-i, --index` | `<dir>` | beside the graph | Directory holding the indexes and the manifest. |
+| `--lang` | `<tag>` | the only localization | Which localization to search. Required when the corpus has more than one. |
+| `--limit` | `<n>` | 10 | Maximum results. A whole number, at least 1. |
+| `--vectors` | `<path>` | from the manifest | Vector sidecar path. |
+| `--mode` | `<mode>` | `hybrid` when vectors exist, else lexical | Which legs to run. An unknown mode is a usage error naming the allowed set. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
+
+## `kg traverse`
+
+Walks the graph outward from a node and reports what it reaches, with the full
+trace of why each hop was taken. This is the impact question: what depends on
+this page, through a hyperlink or through a shared concept.
+
+```sh
+manni kg traverse <node> [options]
+```
+
+```console
+$ manni kg traverse -c test/kg/fixtures/dd/docs.config.yaml \
+    https://example.com/dd/doc/test/kg/fixtures/dd/docs/getting-started.md --impact
+  https://example.com/dd/doc/test/kg/fixtures/dd/docs/configuration.md — Configuration
+  https://example.com/dd/activity/build
+    https://example.com/dd/graph
+
+3 nodes, 5 hops, 0 excluded
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `<node>` | Where to start: a full IRI, or a `prefix:local` CURIE. Required. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `-g, --graph` | `<path>` | config `out` | The built Turtle file to read. |
+| `-d, --depth` | `<n>` | 1; 3 under `--impact` | Maximum hops from the node. A whole number, and `0` is allowed: it means the node itself, which is a real answer. |
+| `--predicates` | `<list>` | every predicate | Only follow these predicates, comma-separated and given once. A CURIE holds no comma, so one separator is enough. |
+| `--reverse` | n/a | off | Follow inbound edges: who points at this node. |
+| `--impact` | n/a | off | Transitive inbound reach: what a change here affects. |
+| `--variant` | `<variant>` | no filter | Scope filter: a product variant IRI, title, or slug. |
+| `--subject` | `<subject>` | no filter | Scope filter: a software subject. |
+| `--lang` | `<tag>` | no filter | Scope filter: a BCP-47 language tag, matched exactly. |
+| `--limit` | `<n>` | unbounded | Stop after this many nodes. A whole number, at least 1. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
+
+## `kg embed`
+
+Computes local embeddings for the search index, one sidecar per language. It
+needs the optional `@huggingface/transformers` peer; `--model mock` runs
+offline and is what regenerates the committed fixtures.
+
+```sh
+manni kg embed [options]
+```
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `-g, --graph` | `<path>` | config `out` | The built Turtle file the index sits beside. |
+| `-i, --index` | `<dir>` | beside the graph | Directory holding the indexes and the manifest. |
+| `-o, --out` | `<dir>` | config `embed.out`, else the index directory | Directory for the sidecars. |
+| `--model` | `<id>` | config `embed.model` | Embedding model id. Any id is accepted, because the documented table is the tested set rather than the permitted one. `mock` runs offline. |
+| `--dtype` | `<dtype>` | config `embed.dtype`, else `q8` | Weight quantization. |
+| `--no-cache` | n/a | off | Ignore the vector cache. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
+
+## `kg export`
+
+Reserializes the built graph into a consumer format. The target is a
+positional rather than a `-f`. Every other verb of the family means output
+format by `-f`, and one flag cannot mean two things.
+
+```sh
+manni kg export <target> [options]
+```
+
+```console
+$ manni kg export jsonld -c test/kg/fixtures/dd/docs.config.yaml
+Wrote 25 nodes to .tmp/dd/graph.jsonld
+```
+
+| Target | What it writes |
+|---|---|
+| `jsonld` | JSON-LD, for a linked-data ingester. |
+| `iirds` | A conformant iiRDS package, for a content delivery portal. RDF/XML is written inside it. |
+| `search` | The browser search index and its manifest, read client-side by `@hawkeyexl/manni/kg/runtime`. |
+
+An unknown target is **exit 2**, with the allowed set named.
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `<target>` | What to write: `jsonld`, `iirds`, or `search`. Required. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `-g, --graph` | `<path>` | config `out` | The built Turtle file to read. |
+| `-o, --out` | `<path>` | the graph path with the target's extension | Where to write. |
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Everything passed. A warning or a notice is still `0`. |
+| `1` | Findings. A SHACL `error`, a `stats --check` failure, or a `fill` error. The author's problem. |
+| `2` | Operational or usage error: no input files matched, a bad config, an unknown flag value, a missing provider. Not the author's problem. |
+
+{/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml),
+    against the committed fixture corpus under test/kg/fixtures/dd/.
+    Config: .doc-detective.json. */}
+
+{/* step {"description":"The CLI lists all ten commands.","runShell":{"command":"manni kg --help","exitCodes":[0],"stdio":"/init[\\s\\S]*build[\\s\\S]*check[\\s\\S]*fill[\\s\\S]*query[\\s\\S]*stats[\\s\\S]*search[\\s\\S]*traverse[\\s\\S]*embed[\\s\\S]*export/"}} */}
+
+{/* step {"description":"There is no default subcommand: the domain owns verbs.","runShell":{"command":"manni kg test/kg/fixtures/dd/docs","exitCodes":[2]}} */}
+
+{/* step {"description":"build writes deterministic Turtle and reports the counts.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"3 docs, 131 triples"}} */}
+
+{/* step {"description":"No input files matched is operational, not an empty successful build.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/nomatch.config.yaml","exitCodes":[2],"stdio":"No input files matched"}} */}
+
+{/* step {"description":"query matches a predicate pattern against the built graph.","runShell":{"command":"manni kg query -c test/kg/fixtures/dd/docs.config.yaml --p dcterms:subject","exitCodes":[0],"stdio":"2 match(es)"}} */}
+
+{/* step {"description":"A pattern nothing matches is exit 0, not a finding.","runShell":{"command":"manni kg query -c test/kg/fixtures/dd/docs.config.yaml --p skos:notation","exitCodes":[0],"stdio":"No matches."}} */}
+
+{/* step {"description":"stats reports the orphan and the broken link this corpus carries.","runShell":{"command":"manni kg stats -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/Orphan docs \\(1\\)[\\s\\S]*Broken internal links \\(1\\)/"}} */}
+
+{/* step {"description":"stats --check turns the broken link into exit 1.","runShell":{"command":"manni kg stats -c test/kg/fixtures/dd/docs.config.yaml --check","exitCodes":[1]}} */}
+
+{/* step {"description":"check on a clean corpus reports the warning and still exits 0.","runShell":{"command":"manni kg check -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"0 errors, 1 warning, 0 notices"}} */}
+
+{/* step {"description":"A SHACL error exits 1.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/violations.config.yaml","exitCodes":[0]}} */}
+
+{/* step {"description":"check names the focus node and the documents it came from.","runShell":{"command":"manni kg check -c test/kg/fixtures/dd/violations.config.yaml","exitCodes":[1],"stdio":"2 errors, 0 warnings, 0 notices"}} */}
+
+{/* step {"description":"-f github annotates the documents behind the finding.","runShell":{"command":"manni kg check -c test/kg/fixtures/dd/violations.config.yaml -f github","exitCodes":[1],"stdio":"::error file=test/kg/fixtures/dd/violations/alpha.md::"}} */}
+
+{/* step {"description":"An unknown --format is refused while the options are parsed.","runShell":{"command":"manni kg check -c test/kg/fixtures/dd/docs.config.yaml -f xml","exitCodes":[2],"stdio":"/Unknown --format \"xml\". Use pretty \\| json \\| github./"}} */}
+
+{/* step {"description":"manni meta validate passes a corpus whose kg blocks are legal.","runShell":{"command":"manni meta validate -c test/kg/fixtures/dd/docs.config.yaml -s docs/proposals/0023/schemas/kg/1.0.0-proposal.3.json","exitCodes":[0],"stdio":"3 files checked, 3 passed"}} */}
+
+{/* step {"description":"A typo inside the kg block is a schema error with a line number.","runShell":{"command":"manni meta validate -c test/kg/fixtures/dd/invalid.config.yaml -s docs/proposals/0023/schemas/kg/1.0.0-proposal.3.json","exitCodes":[1],"stdio":"must NOT have additional property 'bogus'"}} */}
+
+{/* step {"description":"kg validate is gone, and gets no softer treatment than any other unknown verb.","runShell":{"command":"manni kg validate docs/","exitCodes":[2],"stdio":"unknown command 'validate'"}} */}
+
+{/* step {"description":"traverse --impact walks inbound reach from a node.","runShell":{"command":"manni kg traverse -c test/kg/fixtures/dd/docs.config.yaml https://example.com/dd/doc/test/kg/fixtures/dd/docs/getting-started.md --impact","exitCodes":[0],"stdio":"nodes,"}} */}
+
+{/* step {"description":"--depth 0 is allowed and means the node itself.","runShell":{"command":"manni kg traverse -c test/kg/fixtures/dd/docs.config.yaml https://example.com/dd/doc/test/kg/fixtures/dd/docs/getting-started.md --depth 0","exitCodes":[0]}} */}
+
+{/* step {"description":"A non-numeric count is a usage error naming the flag.","runShell":{"command":"manni kg traverse -c test/kg/fixtures/dd/docs.config.yaml https://example.com/dd/doc/test/kg/fixtures/dd/docs/getting-started.md --limit abc","exitCodes":[2],"stdio":"--limit expects a number"}} */}
+
+{/* step {"description":"--coverage-threshold is a percentage, so 0..100.","runShell":{"command":"manni kg stats -c test/kg/fixtures/dd/docs.config.yaml --coverage-threshold 150","exitCodes":[2],"stdio":"--coverage-threshold must be 0..100"}} */}
+
+{/* step {"description":"--confidence is a probability, so 0..1.","runShell":{"command":"manni kg fill --dry-run -c test/kg/fixtures/dd/unpriced.config.yaml --confidence 5","exitCodes":[2],"stdio":"--confidence must be 0..1"}} */}
+
+{/* step {"description":"An unknown --fields name is refused, with the allowed set in the message.","runShell":{"command":"manni kg fill --dry-run -c test/kg/fixtures/dd/unpriced.config.yaml --fields no-such-field","exitCodes":[2],"stdio":"--fields must be one of"}} */}
+
+{/* step {"description":"export jsonld reserializes the built graph.","runShell":{"command":"manni kg export jsonld -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Wrote 25 nodes"}} */}
+
+{/* step {"description":"An unknown export target is exit 2, with the allowed set named.","runShell":{"command":"manni kg export turtle -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"Unknown export target \"turtle\""}} */}
+
+{/* step {"description":"export search writes the browser index and its manifest.","runShell":{"command":"manni kg export search -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Wrote"}} */}
+
+{/* step {"description":"search ranks nodes from that index.","runShell":{"command":"manni kg search installation -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"1 result (lexical)"}} */}
+
+{/* step {"description":"--collection cannot be combined with positional paths.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/docs.config.yaml --collection dd test/kg/fixtures/dd/docs","exitCodes":[2],"stdio":"cannot be combined with paths"}} */}

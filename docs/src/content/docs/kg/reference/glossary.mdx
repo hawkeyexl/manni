@@ -1,0 +1,153 @@
+---
+title: Glossary
+description: The words manni kg uses, and what each one means here rather than in general RDF literature.
+---
+
+Graph work brings a vocabulary with it, and most of these words have a broader
+meaning elsewhere. What follows is what each one means in manni kg.
+
+## The graph
+
+**Triple.** One statement: a subject, a predicate, and an object. `this page`
+`has subject` `this concept`. A graph is a set of them, and `manni kg build`
+reports how many it derived.
+
+**Quad.** A triple plus the graph it belongs to. The internal representation is
+quads; the Turtle output is a single default graph, so the fourth term is
+rarely visible.
+
+**IRI.** The identifier of a node. Every node manni kg mints gets a
+deterministic one, derived from its path or its slug, so two runs over
+unchanged input produce identical files. There are no blank nodes, which is
+what makes a diff of two graphs readable.
+
+**Base IRI.** The prefix minted IRIs hang off, `kg.baseIri`. It defaults to
+`urn:manni:kg:`, which identifies without promising to resolve. Set it to an
+HTTP base when the graph is published and its nodes should dereference.
+
+**CURIE.** A compact IRI, written `prefix:local`. `dcterms:subject` rather
+than `http://purl.org/dc/terms/subject`. Accepted anywhere a term is, on
+`kg query` and `kg traverse` alike.
+
+**Namespace.** A set of terms under one IRI prefix. manni kg's own is
+`kg:`, which resolves to `https://hawkeyexl.github.io/manni/kg/ns#`, and the
+document at that address defines every term the emitter can produce. The custom
+namespace stays deliberately small: a Dublin Core, SKOS, PROV, schema.org, FOAF
+or iiRDS term is preferred wherever one exists.
+
+**`kg:` the key, and `kg:` the prefix.** The frontmatter key a page writes and
+the RDF namespace prefix are spelled the same and are not the same thing. The
+key holds what a page says about itself; the prefix names terms in the graph.
+
+## What becomes a triple
+
+**Derivation.** Turning documents into triples. Nothing is inferred from prose:
+a triple exists because frontmatter, a link, a heading, an image, a code block
+or git history put it there. `build.derive` names which of those sources run.
+
+**Concept.** A SKOS node minted from a subject, a tag or a `kg` concept
+reference. Two pages that name a concept the same way land on the same node.
+That is what lets a graph answer questions no single page can.
+
+**Section.** A heading, as a node in its own right, carrying its level, its
+order within the page, and its slug. This is why a link to `page.md#heading`
+can be checked rather than merely counted.
+
+**Orphan.** A document no other document links to. `kg stats` lists them. An
+orphan is a finding about the docset, not an error: a landing page reached only
+from navigation is legitimately an orphan.
+
+**Hub.** A most-connected document, by edge count. `--top` limits how many are
+listed.
+
+**Harvest, and the harvest rule.** Some facts can be stated twice: inside the
+`kg` block, and as a plain page-level key. **Deeper wins, and the page level is
+the fallback, per fact rather than per page.** A `kg` block that speaks to a
+fact owns it outright; where the block is silent, the page-level twin feeds the
+graph.
+
+**Near miss.** A page-level key that is not read and looks like one that is,
+such as `applies_to` beside `applies-to`. The `kg` block is closed, so a typo
+inside it is a schema error; the same typo at the page level would derive nothing,
+silently. So it warns instead, and a suspicion never fails a build.
+
+## Checking
+
+**SHACL.** The shapes language `manni kg check` validates the built graph
+against. A shape says what a node of a given kind must look like.
+
+**Focus node.** The node a SHACL finding is about. It is the graph's name for
+the thing that failed, and the documents listed beside it are where it came
+from.
+
+**Closed shapes.** The bundled shapes declare `sh:closed`, so a predicate they
+have not learned is a violation. That failure is the feature: a change to what
+the graph contains is not finished until the shapes say so, in the same commit.
+
+**Emergent failure.** A finding that exists only after several documents merge
+into shared nodes. Two spellings of one concept, say, or a cycle through three
+pages' `broader` links. No per-file check can see one, which is why the graph
+is checked as a graph.
+
+**Severity.** The family's scale, `notice | warning | error`. An `error` exits
+`1`; the other two report. SHACL's own `Violation | Warning | Info` maps onto
+it, and the source word stays in `shaclSeverity` for anyone who needs it.
+
+**Coverage.** The share of documents that carry each measured field. Twelve
+document-level rows are measured, and [Coverage](/manni/kg/govern/coverage/)
+lists them. `stats --check` turns a floor into an exit code.
+
+## Filling
+
+**Turn.** One inference call. `fill.maxTurns` is counted in these rather than
+in money, because every model makes calls and every model can be counted making
+them. One page is one turn, and a cached page spends none. Converting turns to
+a figure is your provider's rate card.
+
+**Confidence.** The model's own self-reported score for a proposed value, 0 to
+1. `fill.confidenceThreshold` is the bar it must clear to be written. Raw
+proposals are cached before the gate, so re-gating costs nothing.
+
+**Guardrail.** The check that simulates each proposal in the derived graph and
+drops any that would violate the shapes. Accepted proposals fold into its
+state, so two pages in one run cannot jointly corrupt the graph.
+
+**`meta-provenance`.** The page-level record of what a machine wrote, naming
+the model and the fields by JSON Pointer. It is the metadata tool's, shared
+rather than copied. A surviving entry means unreviewed machine metadata, and
+deleting it is how a reviewer signs off.
+
+**Curated pointers.** Three `kg` locations a machine may never claim:
+`/kg/sections`, `/kg/revision-of` and `/kg/derived-from`. A `meta-provenance`
+entry naming one is a `kg check` finding at `error`.
+
+## Publishing
+
+**JSON-LD.** RDF as JSON, the export a linked-data ingester reads, and what the
+browser runtime loads.
+
+**iiRDS.** The tekom standard for intelligent information delivery. `export
+iirds` writes a conformant package a content delivery portal can consume.
+
+**Search index.** The lexical index `export search` writes, read client-side by
+`@hawkeyexl/manni/kg/runtime`.
+
+**Vector sidecar.** The embeddings `kg embed` computes, one file per language,
+which add a semantic leg to `kg search` and to the runtime.
+
+**Localization manifest.** The file that says which locales exist and which
+artifacts each has, so a browser learns what is available before fetching any
+of it.
+
+**`x-manni-kg-output`.** A boolean beside a top-level property in the schema
+that governs a page, saying whether a published graph may carry that field.
+Absent means `true`. The filter runs once, before derivation, so a dropped
+field is absent from every export.
+
+## Related reading
+
+- [CLI reference](/manni/kg/reference/cli/)
+- [Configuration reference](/manni/kg/reference/configuration/)
+- [Library API reference](/manni/kg/reference/library-api/)
+- [The metadata tool's glossary](/manni/meta/reference/glossary/), for
+  frontmatter, extractor, schema set and dialect.

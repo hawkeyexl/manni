@@ -194,10 +194,18 @@ describe("the packaged tarball", () => {
     expect(stdout).toMatch(/\d+ errors?, \d+ warnings?, \d+ notices?/);
   });
 
-  it("finds its bundled kg schema — the `validate` default resolves after packing", () => {
-    const { stdout, status } = cli(["validate"], corpus);
-    expect(status, stdout).toBe(0);
-    expect(stdout).toContain("files checked");
+  it("finds its bundled kg schema — the `build` default resolves after packing", () => {
+    // The page vocabulary is bundled by `src/kg/schema.ts` and read before
+    // anything is derived, to decide which fields `x-manni-kg-output` keeps out
+    // of the graph (proposal 0051 §5). `manni kg validate` used to be the verb
+    // that proved the import survived packing; it is gone (§8), and `build` is
+    // now the one that reaches the draft. A schema the packed bytes cannot
+    // reach is an operational error naming the page, not a silent pass.
+    const out = mkdtempSync(join(tmpdir(), "manni-kg-packaged-schema-"));
+    const graph = join(out, "graph.ttl");
+    const { stdout, stderr, status } = cli(["build", "--out", graph], corpus);
+    expect(status, stdout + stderr).toBe(0);
+    expect(stderr).not.toContain("cannot read which fields the graph may carry");
   });
 
   it("exports every format from the packaged bytes", () => {

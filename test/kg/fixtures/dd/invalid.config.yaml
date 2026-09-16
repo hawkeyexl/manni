@@ -1,6 +1,7 @@
 # A document that fails the frontmatter JSON Schema, so the fix page can show a
-# real `manni kg validate` failure. Collection paths resolve from this file's
-# directory; see the note in dockg.config.yaml beside it.
+# real `manni meta validate` failure against the kg page vocabulary. Collection
+# paths resolve from this file's directory; see the note in docs.config.yaml
+# beside it.
 collections:
   - name: invalid
     paths:

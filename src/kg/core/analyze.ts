@@ -1,6 +1,7 @@
 /**
  * Markdown analysis: one source file → a `DocModel`. Frontmatter data comes
- * from docmeta's extractor (single source of truth with `manni kg validate`);
+ * from the metadata tool's extractor (the same one `manni meta validate`
+ * reads a page with);
  * body structure (headings, links, images, code fences) comes from a
  * remark/mdast walk with positions in document order.
  */

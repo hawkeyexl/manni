@@ -60,10 +60,11 @@ build:
 provenance:
   qualified: true
 
-# Schemas \`manni kg validate\` checks via manni meta. Default: the \`kg\`
-# page vocabulary, manni:kg:1.0.0-proposal.3 — the proposal 0023 draft, built
-# into manni, so no schema file ships. Override with file paths, URLs, or
-# manni meta built-in ids:
+# The schema set that judges a page's frontmatter: where \`manni kg build\`
+# reads x-manni-kg-output from, and what to check these pages against with
+# \`manni meta validate\`. Default: the \`kg\` page vocabulary,
+# manni:kg:1.0.0-proposal.3 — the proposal 0023 draft, built into manni, so no
+# schema file ships. Override with file paths, URLs, or manni meta built-in ids:
 # validate:
 #   schemas: ["./my-schema.json"]
 

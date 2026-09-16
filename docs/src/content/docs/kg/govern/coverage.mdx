@@ -1,0 +1,165 @@
+---
+title: Coverage
+description: What manni kg stats measures, what fills each row, and how to turn a floor into an exit code.
+---
+
+Coverage answers one question: **what can a consumer of the graph actually
+see?** It counts the documents that carry each measured predicate and reports
+the share, so an under-annotated corpus is a number rather than an impression.
+
+```console
+$ manni kg stats -c test/kg/fixtures/dd/docs.config.yaml
+Coverage (documents):
+  title                    3/3  100.0%
+  description              1/3  33.3%
+  creator                  3/3  100.0%
+  created                  3/3  100.0%
+  modified                 3/3  100.0%
+  subject                  2/3  66.7%
+  label                    2/3  66.7%
+  language                 0/3  0.0%
+  type                     2/3  66.7%
+  applies-to               0/3  0.0%
+  about-product-lifecycle  0/3  0.0%
+  about-product-aspect     0/3  0.0%
+```
+
+The list is fixed and deliberate rather than a census of what the corpus
+happens to contain. A predicate absent from every document still shows as
+`0.0%`, which is the row that tells you something. A dynamic list would hide
+exactly that.
+
+## The measured rows
+
+| Row | Predicate | What fills it |
+|---|---|---|
+| `title` | `dcterms:title` | The page's `title` frontmatter, or its first heading. |
+| `description` | `dcterms:description` | The page's `description` frontmatter. |
+| `creator` | `dcterms:creator` | `author` or `authors` frontmatter, or the git commit history. |
+| `created` | `dcterms:created` | `created` or `date` frontmatter, else the first git commit that touched the file. |
+| `modified` | `dcterms:modified` | `last-updated` or `modified` frontmatter, else the last git commit. |
+| `subject` | `dcterms:subject` | `kg.concepts`, page-level `tags`, or a `subject` key. Each value becomes a SKOS concept node. |
+| `label` | `foaf:primaryTopic` | `kg.label`, the page's preferred name for the concept it is about. |
+| `language` | `dcterms:language` | A page's own `lang` or `language`, else the nearest enclosing `routes` entry that declares one. A BCP-47 tag. |
+| `type` | `iirds:has-topic-type` | `kg.type`, or a page type the derivation maps onto an iiRDS topic type. |
+| `applies-to` | `iirds:relates-to-product-variant` | `kg.applies-to`: which product variants this page is about. |
+| `about-product-lifecycle` | `iirds:relates-to-product-lifecycle-phase` | `kg.about-product-lifecycle`. |
+| `about-product-aspect` | `iirds:has-subject` | `kg.about-product-aspect`. |
+
+`language` was dropped once, as near-universally zero noise, and restored when
+it became a scope dimension. An unlabelled document in a translated corpus
+cannot be filtered, indexed per locale, or counted against the right audience.
+The row is the only warning you get.
+
+## Two predicates are not measured
+
+`not-applicable-to` and `not-about-product-aspect` are absent from the table on
+purpose.
+
+Coverage asks what a consumer can see that an author lifted. A document with no
+`not-applicable-to` is not under-annotated. Under open-world semantics its
+absence means *unknown*, which is the normal state for almost every page.
+Counting it as a gap would park every healthy corpus near zero on two rows. It
+would also teach readers to ignore the whole table.
+
+The two are exported as `UNMEASURED_BY_DESIGN` from the
+[library API](/manni/kg/reference/library-api/#coverage), so the decision is
+enforced rather than written down.
+
+## Section rows are reported, never gated
+
+Below the document table is a second one, over `kg:Section` nodes:
+
+```console
+Coverage (sections, not gated):
+  type                     0/8  0.0%
+  applies-to               0/8  0.0%
+  about-product-lifecycle  0/8  0.0%
+  about-product-aspect     0/8  0.0%
+  subject                  0/8  0.0%
+```
+
+Sections are explicit-only. A section gets exactly what its own block declares
+and inherits nothing from its document, so these numbers are low by
+construction on most corpora. That is what makes them useful. The granularity
+rule says content granularity must match node granularity. This is the number
+that says whether it does, and a corpus whose pages each cover several
+unrelated topics shows it here first.
+
+`label` is deliberately absent from this table. A preferred label at section
+level was judged meaningless, so it cannot be missing.
+
+## Turning a floor into an exit code
+
+`stats` alone always exits `0`. `--check` makes it a gate: it exits `1` when a
+broken internal link exists, or when any measured row is below its threshold.
+
+The threshold lives in config, so every machine and CI agree:
+
+```yaml
+kg:
+  stats:
+    coverageThreshold: 80
+```
+
+A single number applies to every measured row. A map sets them one at a time,
+which is what a real corpus needs, because `title` should be at 100 long before
+`about-product-aspect` is above nothing:
+
+```yaml
+kg:
+  stats:
+    coverageThreshold:
+      title: 100
+      description: 90
+      created: 100
+      modified: 100
+      subject: 60
+      type: 60
+```
+
+Only measured names are accepted; anything else is a config error naming the
+key. `--coverage-threshold <pct>` overrides the whole map for one run, which is
+how you find today's floor before committing to one.
+
+A row below its threshold is marked in the report:
+
+```console
+  about-product-aspect     0/3  0.0%  ! below threshold
+```
+
+## Ratchet it, don't set it
+
+The useful move is the one the metadata tool's rollout page describes. Measure
+today, set each threshold just below where the corpus already stands, and raise
+it as `kg fill` and human review close the gap. A threshold set at the number
+you wish were true fails every build from day one. The pressure that follows is
+to delete the gate rather than to fill the fields.
+
+```console
+$ manni kg stats --check --coverage-threshold 50
+```
+
+Run that with no config threshold to find the honest starting line, then write
+the map.
+
+## What fills the gaps
+
+- **Hand-written frontmatter**, for anything a person knows and a machine
+  cannot guess: which product variant a page is about, which concept it owns.
+- **[`manni kg fill`](/manni/kg/fill/)**, for a corpus nobody annotated, with
+  every written value recorded for review.
+- **Git**, for `creator`, `created` and `modified`, which are detected rather
+  than declared and therefore need no author at all.
+
+{/* Verified by Doc Detective in docs-as-tests, against test/kg/fixtures/dd/. */}
+
+{/* step {"description":"Coverage is reported per field over the built graph.","runShell":{"command":"manni kg build -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0]}} */}
+
+{/* step {"description":"The document table names every measured row.","runShell":{"command":"manni kg stats -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/title[\\s\\S]*description[\\s\\S]*creator[\\s\\S]*created[\\s\\S]*modified[\\s\\S]*subject[\\s\\S]*label[\\s\\S]*language[\\s\\S]*type[\\s\\S]*applies-to[\\s\\S]*about-product-lifecycle[\\s\\S]*about-product-aspect/"}} */}
+
+{/* step {"description":"The section table is reported and says it is not gated.","runShell":{"command":"manni kg stats -c test/kg/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Coverage (sections, not gated):"}} */}
+
+{/* step {"description":"A row below its threshold is marked.","runShell":{"command":"manni kg stats -c test/kg/fixtures/dd/docs.config.yaml --coverage-threshold 80","exitCodes":[0],"stdio":"! below threshold"}} */}
+
+{/* step {"description":"--check turns that into exit 1.","runShell":{"command":"manni kg stats -c test/kg/fixtures/dd/docs.config.yaml --check --coverage-threshold 80","exitCodes":[1]}} */}

@@ -11,7 +11,7 @@
  * The emitter's side is read from source rather than from a hand-kept list,
  * because a hand-kept list is the thing that drifts.
  */
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -187,12 +187,13 @@ describe("the kg vocabulary document", () => {
 
   // The guard above protects the copy that ships in the npm package. The one a
   // consumer actually reaches by dereferencing the namespace IRI is the docs
-  // site's `public/ns.ttl`, and a hand-kept second copy is exactly what this
-  // file's docstring warns drifts. The kg docs site section has not moved into
-  // this repository yet, so the published copy is not here to compare; this
-  // resumes when it lands.
+  // site's `public/kg/ns.ttl`, and a hand-kept second copy is exactly what this
+  // file's docstring warns drifts. The site now serves it, so the comparison
+  // runs unconditionally: a new `ns/kg/ns-<version>.ttl` that is not copied
+  // over fails here rather than after the namespace IRI has already 404'd its
+  // way through a consumer's pipeline.
   const published = join(root, "docs", "public", "kg", "ns.ttl");
-  it.skipIf(!existsSync(published))(
+  it(
     "is byte-identical to the copy the namespace IRI resolves to",
     () => {
       expect(
