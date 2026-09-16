@@ -12,6 +12,30 @@
  * iiRDS/OCF container rule).
  */
 import { crc32, deflateRawSync } from "node:zlib";
+import { KgError } from "../types.js";
+
+/**
+ * Does this name let an extractor write outside the archive root?
+ *
+ * A ZIP entry name is a path a consumer joins onto its extraction directory,
+ * and many implementations join without normalizing first. So `content/../x`
+ * lands beside `content/`, not inside it, and `/etc/passwd` or `C:/…` lands
+ * wherever it says. Absolute, drive-qualified, UNC and `..`-bearing names are
+ * all refused; backslashes count as separators because a Windows-authored path
+ * that reached here unconverted would otherwise smuggle `..` past a `/` split.
+ *
+ * Exported so the one predicate serves both ends: the iiRDS projection uses it
+ * to refuse by document name, `writeZip` to refuse whatever it is handed.
+ */
+export function escapesArchiveRoot(name: string): boolean {
+  const segments = name.split(/[/\\]/);
+  return (
+    name.startsWith("/") ||
+    name.startsWith("\\") ||
+    /^[A-Za-z]:/.test(name) ||
+    segments.includes("..")
+  );
+}
 
 export interface ZipEntry {
   /** In-archive path (forward slashes). */
@@ -33,6 +57,15 @@ export function writeZip(entries: ZipEntry[]): Buffer {
   let offset = 0;
 
   for (const entry of entries) {
+    // The backstop under the projection's own refusal, which names the
+    // document. This one names only the entry, because by here the document is
+    // out of scope — but it is the guard that holds for a caller the export
+    // command does not own yet.
+    if (escapesArchiveRoot(entry.name)) {
+      throw new KgError(
+        `Refusing ZIP entry "${entry.name}": an archive entry may not be absolute or climb above the archive root.`,
+      );
+    }
     const name = Buffer.from(entry.name, "utf8");
     // Flag bit 11 signals UTF-8 filenames; only needed for non-ASCII names.
     const flags = name.some((b) => b > 0x7f) ? 0x0800 : 0x0000;

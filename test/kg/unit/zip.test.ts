@@ -2,6 +2,7 @@ import { inflateRawSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { defined } from "../helpers/defined.js";
 import { writeZip, type ZipEntry } from "../../../src/kg/core/zip.js";
+import { KgError } from "../../../src/kg/types.js";
 
 /** Minimal central-directory reader: returns entries in stored order with the
  *  fields the tests assert on. Parses only what a deterministic writeZip emits. */
@@ -111,5 +112,30 @@ describe("writeZip", () => {
   it("starts with the local file header signature", () => {
     const zip = writeZip([mime]);
     expect(zip.readUInt32LE(0)).toBe(0x04034b50);
+  });
+
+  // The backstop under the iiRDS projection's own refusal: whatever a caller
+  // passes, the writer itself cannot emit a name an unzip can follow out of
+  // the extraction directory.
+  it.each([
+    "content/../../external/page.md",
+    "content/..\\..\\external\\page.md",
+    "..",
+    "/etc/passwd",
+    "\\\\server\\share\\x.md",
+    "C:/Windows/x.md",
+  ])("refuses the escaping entry name %j", (name) => {
+    expect(() => writeZip([mime, { name, data: Buffer.from("x") }])).toThrow(
+      KgError,
+    );
+    expect(() => writeZip([mime, { name, data: Buffer.from("x") }])).toThrow(
+      /may not be absolute or climb above the archive root/,
+    );
+  });
+
+  it("allows a name that merely contains dots", () => {
+    expect(() =>
+      writeZip([mime, { name: "content/a..b/..c.md", data: Buffer.from("x") }]),
+    ).not.toThrow();
   });
 });
