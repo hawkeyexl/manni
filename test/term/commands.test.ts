@@ -5,7 +5,7 @@
  * stand-in reader that has `apply`.
  */
 import { existsSync } from "node:fs";
-import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -15,7 +15,7 @@ import { closestName, findTerm, runGet } from "../../src/term/commands/get.js";
 import { runLint } from "../../src/term/commands/lint.js";
 import { runList } from "../../src/term/commands/list.js";
 import { formatChoice } from "../../src/term/commands/run.js";
-import { runWrite, writeFormats } from "../../src/term/commands/write.js";
+import { MAX_EXISTING_FILE_BYTES, runWrite, writeFormats } from "../../src/term/commands/write.js";
 import { MANIFEST_FORMAT } from "../../src/term/core/load-set.js";
 import { TERM_READERS } from "../../src/term/core/readers/index.js";
 import { VALE_MARKER } from "../../src/term/core/writers/vale.js";
@@ -488,6 +488,40 @@ describe("write -f", () => {
     await expect(runWrite({ cwd, inputs: [], format: "vale", out: "styles" })).rejects.toThrow(
       new TermError("styles/Terms/Casing.yml was not written by manni. Move it, or pass -o <styles directory>."),
     );
+  });
+
+  /** Over the 1 MiB a write reads of a file already under its target. */
+  const OVERSIZED = "x".repeat(MAX_EXISTING_FILE_BYTES + 1);
+
+  it("does not read an oversized file under the target, so Vale refuses it even behind the marker", async () => {
+    const cwd = await lenses(undefined, { "styles/Terms/Huge.yml": `${VALE_MARKER}\n# ${OVERSIZED}\n` });
+    await expect(runWrite({ cwd, inputs: [], format: "vale", out: "styles" })).rejects.toThrow(
+      new TermError("styles/Terms/Huge.yml was not written by manni. Move it, or pass -o <styles directory>."),
+    );
+    expect(existsSync(join(cwd, "styles/Terms/Huge.yml"))).toBe(true);
+  });
+
+  it("skips a symlink under the target rather than following it", async (ctx) => {
+    const cwd = await lenses(undefined, { "elsewhere.yml": "extends: substitution\n" });
+    await mkdir(join(cwd, "styles/Terms"), { recursive: true });
+    try {
+      await symlink(join(cwd, "elsewhere.yml"), join(cwd, "styles/Terms/Linked.yml"), "file");
+    } catch {
+      ctx.skip(); // Creating a symlink needs a privilege Windows does not grant by default.
+    }
+    const report = await runWrite({ cwd, inputs: [], format: "vale", out: "styles" });
+    expect(report.changes.map((c) => c.path)).not.toContain("styles/Terms/Linked.yml");
+    expect(await readFile(join(cwd, "elsewhere.yml"), "utf8")).toBe("extends: substitution\n");
+  });
+
+  it("reports an oversized file at a rendered path as a difference under --check", async () => {
+    const cwd = await lenses();
+    await runWrite({ cwd, inputs: [], format: "markdown", out: "build/" });
+    const [rendered] = (await runWrite({ cwd, inputs: [], format: "markdown", out: "build/", check: true })).files;
+    expect(rendered).toBeDefined();
+    await writeFile(join(cwd, rendered?.path ?? ""), OVERSIZED, "utf8");
+    const drift = await runWrite({ cwd, inputs: [], format: "markdown", out: "build/", check: true });
+    expect(drift.changes).toEqual([{ path: rendered?.path, action: "change" }]);
   });
 
   it("asks Vale for the styles directory with no -o, and says how to wire the style in", async () => {

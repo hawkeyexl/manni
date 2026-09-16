@@ -12,7 +12,7 @@
  * does and differ only in what happens to the result.
  */
 import { existsSync, statSync } from "node:fs";
-import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, extname, join, resolve } from "node:path";
 import { extractorForExtension } from "../../meta/internal.js";
 import { errorMessage } from "../../shared/errors.js";
@@ -104,6 +104,14 @@ function isDirectory(path: string): boolean {
   }
 }
 
+/**
+ * The largest file under a render target a write reads into the render context.
+ * A larger one is there as an empty string: a render never produces an empty
+ * file, so it still differs, and the Vale writer refuses it as not its own.
+ */
+export const MAX_EXISTING_FILE_BYTES = 1024 * 1024;
+
+/** Every regular file under `dir`. A symlink is skipped, never followed. */
 async function filesUnder(dir: string, into: Map<string, string>): Promise<void> {
   let entries;
   try {
@@ -113,8 +121,12 @@ async function filesUnder(dir: string, into: Map<string, string>): Promise<void>
   }
   for (const entry of entries) {
     const path = join(dir, entry.name);
+    // A Dirent describes the entry itself, so a symlink is neither of these.
     if (entry.isDirectory()) await filesUnder(path, into);
-    else if (entry.isFile()) into.set(path, await readFile(path, "utf8"));
+    else if (entry.isFile()) {
+      const { size } = await lstat(path);
+      into.set(path, size > MAX_EXISTING_FILE_BYTES ? "" : await readFile(path, "utf8"));
+    }
   }
 }
 
