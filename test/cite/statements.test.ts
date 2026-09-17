@@ -19,6 +19,7 @@ import {
   fencedBlocks,
   formatStatement,
   insideFence,
+  isMarkerLine,
   lineAt,
   offsetOfLine,
   paragraphAfter,
@@ -470,6 +471,21 @@ describe("anchoredLines", () => {
     expect(anchoredLines(beside, beside.indexOf("-->") + 3, "markdown")).toEqual({ start: 2, end: 2 });
   });
 
+  it("skips indented markers stacked in a list item, spaces or tabs", () => {
+    const content = [
+      "1. Step.",
+      "",
+      "   {/* cite a */}",
+      "   {/* cite b */}",
+      "   The claim, in the item.",
+      "",
+      "2. Next.",
+    ].join("\n");
+    expect(anchoredLines(content, content.indexOf("*/}") + 3, "mdx")).toEqual({ start: 5, end: 5 });
+    const tabbed = "\t<!-- cite a -->\n\t<!-- cite b -->\n\tThe claim.\n";
+    expect(anchoredLines(tabbed, tabbed.indexOf("-->") + 3, "markdown")).toEqual({ start: 3, end: 3 });
+  });
+
   it("takes the fenced block when one sits where the paragraph would", () => {
     const content = "<!-- cite x -->\n```ts\nconst a = 1;\n```\n";
     const after = content.indexOf("-->") + 3;
@@ -518,5 +534,21 @@ describe("formatStatement", () => {
     expect(() => formatStatement("nope", { kind: "ref", id: "x" })).toThrow(
       'No marker syntax for format "nope".',
     );
+  });
+});
+
+describe("isMarkerLine", () => {
+  it("is true for a marker alone on its line, whatever its indentation", () => {
+    for (const line of ["<!-- cite x -->", "   <!-- cite x -->", "\t<!-- cite x -->", "  <!-- cite x -->  "]) {
+      expect(isMarkerLine(line, "markdown")).toBe(true);
+    }
+    expect(isMarkerLine("     {/* cite x */}", "mdx")).toBe(true);
+    expect(isMarkerLine("  .. (cite x)", "rst")).toBe(true);
+  });
+
+  it("is false for text beside a marker, or a comment that is not a cite", () => {
+    expect(isMarkerLine("   <!-- cite x --> The claim.", "markdown")).toBe(false);
+    expect(isMarkerLine("   <!-- a note -->", "markdown")).toBe(false);
+    expect(isMarkerLine("   The claim.", "markdown")).toBe(false);
   });
 });
