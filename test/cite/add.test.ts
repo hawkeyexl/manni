@@ -465,6 +465,27 @@ describe("runAdd", () => {
       expect(await recheck(label)).toEqual(both);
     });
 
+    it("reports the lines the third stacked marker and its claim hold after the write", async () => {
+      const label = twoParagraphs("three.md");
+      for (const id of ["first", "second", "third"]) {
+        const at = lineOf(label, "not configurable.");
+        const result = await add({
+          page: label,
+          src: "src/limits.ts:2",
+          pageLines: { start: at, end: at },
+          marker: true,
+          id,
+        });
+        const lines = onDisk(label).split("\n");
+        const text = lineOf(label, WRAPPED);
+        expect(lines[(result.markerLine ?? 0) - 1]).toBe(`<!-- cite ${id} -->`);
+        expect(result.claimLines).toEqual({ start: text, end: text + 1 });
+        expect(addMessage(result)).toBe(
+          `${label}: added ${id} to frontmatter; marker at line ${String(text - 1)}, claim pinned at lines ${String(text)}-${String(text + 1)}`,
+        );
+      }
+    });
+
     it("puts the marker above the paragraph when the lines start inside it", async () => {
       const label = twoParagraphs("inside.md");
       const result = await add({
