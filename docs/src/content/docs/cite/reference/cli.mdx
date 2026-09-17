@@ -254,7 +254,8 @@ writes the entry to the page's frontmatter, or to the
 [sidecar manifest](/manni/cite/reference/citations/#the-sidecar) when a
 collection declares one. Where the entry goes follows the config, not a flag.
 It refuses to write a citation it can already see is broken. That is a line
-past the end of the page, or a line in the frontmatter. It is also a block
+past the end of the page, a line in the frontmatter, or a range longer than
+5,000 lines. It is also a block
 that does not reproduce the range, or an id the page already uses.
 
 ```sh
@@ -266,7 +267,7 @@ manni cite add <page>[:L|:L1-L2] <src> [options]
 | Argument | Description |
 |---|---|
 | `<page>[:L\|:L1-L2]` | The page to cite from, relative to the working directory, and the claim's lines as an editor numbers them. Only a trailing `:L` or `:L1-L2` is read as lines, so a path that carries a colon keeps it. Without lines, the entry is a bare pin. `-` reads the page from stdin and writes the rewritten page to stdout, with the report on stderr; that needs `--as`, and `-:L` carries lines. |
-| `<src>` | The source: `path`, `path:L` or `path:L1-L2`, relative to the [root](#where-sources-resolve-from), or an encrypted `~source` with the same line forms. A bare path pins the whole file. `L2` before `L1` and a line past the end of the file are refused (exit 2). So is a path that is not a tracked file under the root, and an encrypted source that the current key can't decrypt. |
+| `<src>` | The source: `path`, `path:L` or `path:L1-L2`, relative to the [root](#where-sources-resolve-from), or an encrypted `~source` with the same line forms. A bare path pins the whole file. `L2` before `L1`, a range longer than 5,000 lines and a line past the end of the file are refused (exit 2). So is a path that is not a tracked file under the root, and an encrypted source that the current key can't decrypt. |
 
 ### Options
 
@@ -330,6 +331,7 @@ Every refusal names what is wrong and writes nothing:
 
 ```
 manni: docs/limits.md:40 is past the end of the page (32 lines).
+manni: Invalid range "lib/limits.ts:1-5001": it spans 5001 lines, more than 5000.
 manni: docs/limits.md:2 is in the frontmatter. A claim is body text.
 manni: --marker needs the page lines to anchor: docs/limits.md:L.
 manni: --marker needs --id: the marker names the entry.

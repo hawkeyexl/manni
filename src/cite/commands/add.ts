@@ -23,7 +23,7 @@ import { GIT_UNAVAILABLE_COMMIT, gitClient } from "../core/git.js";
 import { sliceLines, splitLines } from "../core/hash.js";
 import { mintCitation } from "../core/mint.js";
 import { bodyLineOf, readPage } from "../core/page.js";
-import { lineSpec, parseLines, parseSrc, spellLines } from "../core/range.js";
+import { lineSpec, parseLines, parseSrc, spellLines, tooWide } from "../core/range.js";
 import { buildSourceIndex, readSource } from "../core/sources.js";
 import { ManifestSet } from "../core/manifest.js";
 import { sidecarsFor, type PageSidecar } from "../core/sidecar.js";
@@ -204,6 +204,8 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   if (marker && opts.id === undefined) {
     throw new CiteError("--marker needs --id: the marker names the entry.");
   }
+  const wide = pageLines === undefined ? undefined : tooWide(pageLines);
+  if (wide !== undefined) throw new CiteError(`Invalid range "${at}": it ${wide}.`);
   if (quote && pageLines === undefined) {
     throw new CiteError(`--quote needs the block's lines: ${label}:L1-L2.`);
   }

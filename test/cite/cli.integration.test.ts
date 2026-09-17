@@ -279,6 +279,13 @@ describe("manni cite (usage errors)", () => {
     );
   });
 
+  it("add with a source range longer than 5,000 lines", () => {
+    usage(
+      ["add", "pages/no-citations.md:6", "src/limits.ts:1-5001", "--root", "."],
+      'Invalid range "src/limits.ts:1-5001": it spans 5001 lines, more than 5000.',
+    );
+  });
+
   it("add past the end of the source file", () => {
     usage(
       ["add", "pages/no-citations.md:6", "src/limits.ts:99", "--root", "."],
