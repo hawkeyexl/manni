@@ -42,8 +42,10 @@ download one. [Get started](/manni/a11y/get-started/) has the one-time install.
 
 The crawl stays on the host of the URL you gave it. `docs.example.com` and
 `example.com` are different hosts, and so is `www.example.com`; `http://` and
-`https://` of one host are the same site. Give several seeds and every seed's
-host is in scope.
+`https://` of one host are the same site. Give several seeds and links are
+followed on every seed's host. Sitemap URLs stay on the first seed's host,
+because one sitemap is read per run, from the first seed, as
+[proposal 0035](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0035-a11y-domain.md#1-why-one-sitemap-from-the-first-seed) records.
 
 Pages come from two places, in this order:
 
