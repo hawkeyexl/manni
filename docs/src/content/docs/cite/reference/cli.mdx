@@ -63,7 +63,7 @@ Check every citation in the given pages against its source. Each end of an
 entry is hashed under the [one
 rule](/manni/cite/reference/citations/#the-hashing-rule) and compared with its
 pin. A source end is `current`, `skipped`, or one of the five `source-*`
-rules; a claim end is `current`, `skipped`, or one of the three `claim-*`
+rules; a claim end is `current`, `skipped`, or one of the four `claim-*`
 rules. The page-side rules run whether or not the sources are reachable. Those
 are the claim end, a marker that names no entry, a broken anchor, and an entry
 the schema refuses. Every status and rule, with its default severity, is on
@@ -83,6 +83,14 @@ rule id `manni:cite/<rule>`. `--baseline` is the same ratchet with its own
 file. No model and no network are involved. A clean corpus costs one hash per
 citation. With sources on, every run indexes them through `git ls-files`
 where git is available. History is read only when a pin does not hold.
+
+A claim whose pin no longer holds has the page's own history read as well. The
+newest commit whose page still held the pin is the claim's
+[baseline](/manni/cite/reference/citations/#the-claims-baseline). The walk
+reads at most 256 commits that touched the page, and nothing stores the
+baseline. A claim whose words are unchanged since the baseline reads
+`claim-reanchored`, a notice. A plain `update` re-pins it. One whose words
+were edited reads `claim-changed`, and says since when.
 
 ### Arguments
 
@@ -109,7 +117,7 @@ where git is available. History is read only when a pin does not hold.
 | `--no-baseline` | n/a | off | Ignore a baseline supplied by config `baseline:` for this run. |
 | `--no-check-sources` | n/a | on | Run the page-side rules only. Every source-side status is `skipped`, which is not a finding. For a public docs checkout that does not have the code beside it. Overrides config `checkSources:`. |
 | `--root` | `<dir>` | n/a | The directory `source.file` paths resolve from, relative to the working directory. It may point at another checkout. Without it: config `root:`, else the nearest git root above the working directory, else the working directory with a notice on stderr. See [where sources resolve from](#where-sources-resolve-from). |
-| `--show-diff` | n/a | off | In `pretty` output, print the commit subjects and the diff of the source since the pin's commit under each `source-changed` row. A `claim-changed` row gets the page lines it covers now. Both are capped, and the row says how many lines were left out. |
+| `--show-diff` | n/a | off | In `pretty` output, print the commit subjects and the diff since the baseline under each `source-changed`, `claim-changed` and `claim-reanchored` row. A source's baseline is its `commit-sha`, and a claim's is the newest commit whose page held the pin. A claim with no baseline gets the page lines it covers now. Every block is capped at 60 lines, and the row says how many were left out. |
 | `--reveal` | n/a | off | In `pretty` output, print the decrypted path beside an encrypted source. Nothing else ever prints it; see the [output rule](/manni/cite/reference/citations/#the-output-rule). |
 
 ### Output
@@ -122,20 +130,54 @@ exactly as the entry spelled it:
 
 ```
 ✗ docs/limits.md
-    ↕ fetch-timeout   :9 changed                lib/limits.ts:2 current                           docs-citations.yaml:6
-    ✓ max-files       :12 current               lib/limits.ts:1 current
-    ℹ retries         :14 moved -> :16          lib/limits.ts:3 current
-    ✗ page-size       :21 current               lib/limits.ts:5 changed since 3f9c2a1, 1 commit
-    ✓ timeouts        marker :30 current        ~AQm4…:8-12 current
-    ↕ host-scope      marker :44 -> :41 moved   lib/scope.ts:9 current
-    ✓                                           lib/limits.ts current
+    ↕ fetch-timeout   :9 changed since 3f9c2a1, 2 commits      lib/limits.ts:2 current            docs-citations.yaml:6
+    ✓ max-files       :12 current                              lib/limits.ts:1 current
+    ℹ retries         :14 moved -> :16                         lib/limits.ts:3 current
+    ✗ page-size       :21 current                              lib/limits.ts:5 changed since 3f9c2a1, 1 commit
+    ℹ page-order      :26 reanchored since 5d1e0b7 -> :26-28   lib/limits.ts:7 current
+    ✓ timeouts        marker :30 current                       ~AQm4…:8-12 current
+    ↕ host-scope      marker :44 -> :41 moved                  lib/scope.ts:9 current
+    ✓                                                          lib/limits.ts current
 
-1 file checked, 0 passed, 1 failed, 5 findings (2 warnings) (2 notices)
+1 file checked, 0 passed, 1 failed, 6 findings (2 warnings) (3 notices)
 ```
 
 A marker's claim column says where the marker is. When the marker is
 misplaced it says where it belongs too, as `marker :44 -> :41`, and the
 status that follows is the claim's.
+
+A changed or reanchored claim carries its baseline, as the source column does.
+A reanchored claim that stores its own lines names the run it moves onto, and
+one a marker anchors reads `marker :14 reanchored since 3f9c2a1`. Three more
+forms the claim column takes:
+
+| Claim column | When |
+|---|---|
+| `:9 changed since 3f9c2a1, uncommitted` | The working tree holds the change. It never reads `0 commits`. |
+| `:9 changed (history unavailable; fetch-depth: 0)` | A shallow checkout, or the 256-commit cap. |
+| `:9 changed` | No git, or no commit held the pin. |
+
+Two run notices go to stderr, once per run:
+
+```
+manni: git is not available here, so citations are checked without history: no never-true, no reanchored claims, no diffs, no commit subjects.
+manni: the page history ends before the pin held; use fetch-depth: 0 to tell reanchored claims from changed ones
+```
+
+Under `--show-diff`, a changed or reanchored claim row gains the subjects of
+the commits that touched the page since the baseline. A unified diff of the
+claim's own lines follows them. The labels name the page at the baseline and
+the page now, in file lines:
+
+```
+    ↕ fetch-timeout   :9 changed since 3f9c2a1, 2 commits      lib/limits.ts:2 current
+        docs(limits): the timeout is thirty seconds
+        docs: rewrap limits.md
+        --- docs/limits.md@3f9c2a1:9
+        +++ docs/limits.md:9
+        -The fetch timeout is 10 seconds.
+        +The fetch timeout is 30 seconds.
+```
 
 The rows read down the page, by the line each one anchors to. That is the
 marker's line where a marker anchors the claim, and the claim's first file line
@@ -168,11 +210,19 @@ citation looks like this:
   "id": "fetch-timeout",
   "origin": { "kind": "manifest", "file": "docs-citations.yaml", "line": 6 },
   "anchor": "claim",
-  "claim": { "lines": "3", "fileLines": "9", "status": "changed" },
+  "claim": { "lines": "3", "fileLines": "9", "status": "changed", "commitSha": "3f9c2a1e…", "historyAvailable": true },
   "source": { "src": "lib/limits.ts:2", "status": "current", "commitSha": "3f9c2a1e…", "historyAvailable": true }
 }
 ```
 
+A claim end carries the two members the source end has. `commitSha` is the
+baseline, as the full hash, and `historyAvailable` is `false` where the walk
+hit a shallow boundary or its cap. A claim `status` may read `reanchored`, and
+a reanchored claim with its own lines adds `newLines`, as a moved one does.
+The diff, the commit subjects and the page text are in no machine format.
+
+{/* cite json-finding-fields */}
+{/* cite json-never-private */}
 `origin.kind` is `frontmatter` or `manifest`. `anchor` is `claim`, `marker` or
 `null`. `claim.lines` is the entry's body lines and `fileLines` is where they
 are now, and `claim` itself is `null` for a bare pin. A moved end adds
@@ -212,7 +262,8 @@ of a ciphertext, the diff and the commit subjects are never in it.
 
 ```
 ::error file=docs/limits.md,line=9,title=manni%3Acite/source-changed::fetch-timeout (lib/limits.ts:2): changed since 3f9c2a1, 1 commit
-::warning file=docs/limits.md,line=9,title=manni%3Acite/claim-changed::fetch-timeout: the claim at line 9 has changed since it was pinned.
+::warning file=docs/limits.md,line=9,title=manni%3Acite/claim-changed::fetch-timeout: the claim at line 9 has changed since 3f9c2a1, 2 commits.
+::notice file=docs/limits.md,line=15,title=manni%3Acite/claim-reanchored::retries: the claim at lines 15-17 was reanchored since 3f9c2a1. Its words are unchanged.
 ::warning file=docs/limits.md,line=44,title=manni%3Acite/marker-misplaced::host-scope: the marker at line 44 splits the paragraph at lines 41-47. Its place is above line 41.
 ```
 
@@ -278,9 +329,13 @@ names that file instead. Warnings and notices are never failures:
 
 | Code | Meaning |
 |---|---|
-| `0` | No file holds an error-severity finding the baseline does not already record. Warnings never move the exit code, so a run of `source-moved` or `marker-misplaced` citations exits 0. |
+| `0` | No file holds an error-severity finding the baseline does not already record. A warning and a notice never move the exit code. So a run of `source-moved` or `marker-misplaced` citations exits 0, and so does one of `claim-reanchored` citations at its default. |
 | `1` | At least one file holds an unbaselined error-severity finding: a `source-changed`, `source-never-true`, `source-missing` or `source-moved-ambiguous` end, or a `marker-orphan`, `marker-invalid`, `anchor-invalid`, `entry-invalid` or `quote-drift` finding. Those are the rules whose default severity is `error`, and `severity:` can change the set. |
 | `2` | Operational or usage error. No inputs and no config, no files matched, an unknown `--format` or `--as`, or stdin without `--as`. Also a missing `-c` file, a missing `--baseline` file, a `--root` that does not exist, or a config key the tool does not know. So is a Markdown or MDX page whose opening frontmatter fence has no close, because its citations can't be read. |
+
+Only an `error` moves the exit code. So a job that fails on `claim-changed` at
+`error` fails on fewer claims than it did, and never on more. A rewrap or a
+hoisted marker reads `claim-reanchored` instead.
 
 ### Baselines
 
@@ -492,7 +547,9 @@ rule, because a quote is fences and content by design.
 {/* cite update-needs-sources */}
 Rewrite moved citations in place; with `--accept`, re-mint changed ones.
 `update` works on **both ends**. A moved source end has its `source.lines`
-spliced, and a moved claim end its `claim.lines`. The splice is textual, so
+spliced, and a moved claim end its `claim.lines`. A reanchored claim end is
+re-pinned, and its lines are rewritten where it has lines, both without
+`--accept`. The splice is textual, so
 the rest of the frontmatter, its comments and quoting included, is untouched.
 An entry in a sidecar manifest is spliced there, and each manifest is written
 once per run. An encrypted source stays encrypted. `update` needs the sources,
@@ -528,10 +585,10 @@ working tree so the rewrite is easy to review.
 | `--no-gitignore` | n/a | on | Update files `.gitignore` covers as well. Overrides config `respectGitignore:`. |
 | `--no-check-sources` | n/a | on | Refused. `update` needs the sources to know where an entry moved to. |
 | `--root` | `<dir>` | n/a | The directory `source.file` paths resolve from, exactly as on [`check`](#where-sources-resolve-from). |
-| `--accept` | n/a | off | Re-mint every changed and never-true end at `HEAD`: a new `integrity`, and a new `commit-sha` where the source had one. For a source the report prints the old and the new pin. For a claim it prints the text it re-pinned, so the acceptance is visible in the log as well as in the diff. |
+| `--accept` | n/a | off | Re-mint every changed and never-true end at `HEAD`: a new `integrity`, and a new `commit-sha` where the source had one. For a source the report prints the old and the new pin. For a claim it prints the text it re-pinned, so the acceptance is visible in the log as well as in the diff. A claim whose target line shares no sentence with the claim at its baseline is refused, reported, and exits 1. |
 | `--only` | `<id>` | n/a | Limit the rewrite to entries with this id. Repeatable. An entry without an id cannot be named, so give a bare pin an `--id` when you want to reach it this way. A marker's move still shifts the claim lines below it, whichever entries own them. |
 | `--dry-run` | n/a | off | Print the diffs and the report; write nothing. |
-| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints the run as `{ pages, rewritten, skipped, manifests, exitCode }`, where `manifests` lists each rewritten manifest's `file`, `diff` and `written`, and appears only when a manifest changed. Each page carries its `file`, its `rewritten` list, its `skipped` findings, its `diff`, and whether it was `written`. A rewrite has `id`, `index`, `line`, `end`, `reason`, `status`, `from` and `to`. `end` is `claim`, `source` or `marker`; `reason` is `moved`, `accepted`, `re-anchored` or `shifted`. Read the typed pairs rather than `from` and `to`: `fromLines` and `toLines` carry lines, `fromPin` and `toPin` carry pins. A re-anchored claim adds `lines`, the span that held, and `newLines`, the span now pinned. An accepted claim adds `at` and `text`, and an accepted source adds `src`, plus `commitSha` when the entry records one. An unknown value is an error (exit 2). |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints the run as `{ pages, rewritten, skipped, manifests, exitCode }`, where `manifests` lists each rewritten manifest's `file`, `diff` and `written`, and appears only when a manifest changed. Each page carries its `file`, its `rewritten` list, its `refused` list, its `skipped` findings, its `diff`, and whether it was `written`. A rewrite has `id`, `index`, `line`, `end`, `reason`, `status`, `from` and `to`. `end` is `claim`, `source` or `marker`; `reason` is `moved`, `accepted`, `re-anchored` or `shifted`. Read the typed pairs rather than `from` and `to`: `fromLines` and `toLines` carry lines, `fromPin` and `toPin` carry pins. A re-anchored claim adds `lines`, the span that held, and `newLines`, the span now pinned. A claim re-pinned because its words held reads `status: "reanchored"`, and carries `commitSha`, the baseline. An accepted claim adds `at` and `text`, and an accepted source adds `src`, plus `commitSha` when the entry records one. A claim `--accept` refused sits on the page's `refused` list, beside `rewritten`, with `reason: "replaced"`. An unknown value is an error (exit 2). |
 
 ### What is rewritten, and what is not
 
@@ -542,7 +599,8 @@ working tree so the rewrite is easy to review.
 | `source-moved-ambiguous` | Skipped. The tool will not guess which copy. Widen the range and re-add. | The same. |
 | `source-missing` | Skipped. A path that is gone cannot be rewritten. `add` is the remedy. | The same. |
 | `claim-moved` | `claim.lines` rewritten to the new body lines. | The same. |
-| `claim-changed` | Skipped, and reported. | `claim.integrity` re-minted over the paragraph or fenced block now at the claim's first line. |
+| `claim-reanchored` | `claim.integrity` re-minted over the text the anchor covers now. An entry with claim lines has them rewritten to the run its words sit on. | The same. |
+| `claim-changed` | Skipped, and reported. | `claim.integrity` re-minted over the paragraph or fenced block now at the claim's first line. A claim sharing no sentence with its baseline is refused. |
 | `claim-moved-ambiguous` | Skipped. The same text sits in more than one place. | The same. |
 | `current` | Left alone. | Left alone. |
 | `marker-misplaced`, the claim `current` or `moved` | The marker moves to where `cite add --marker` writes it, and `claim.integrity` is re-pinned over the paragraph it now anchors. | The same. |
@@ -582,6 +640,24 @@ lines, and says so. A sentence that was reworded **and** moved has left
 that line. `--accept` then re-pins whatever paragraph now starts there, so read
 the printed text. If it is not the sentence, `cite add` the sentence again.
 
+Two guards bound an accepted claim. The first refuses a line that was
+replaced rather than edited. Both texts, the claim at its baseline and what
+the stored first line holds now, are split into sentences, with whitespace
+collapsed and case dropped. An empty intersection refuses the claim, which is
+reported and exits 1. So `--accept` blesses an edit to a paragraph, and hands
+a wholly replaced line back to `cite add`. With no baseline available,
+`--accept` behaves as it did before. The second guard is the report's. A
+re-pin over a unit wider than the stored lines still happens, and the line
+names both spans:
+
+```
+docs/limits.md: fetch-timeout claim at line 9 skipped: that line now holds different text than the claim at 3f9c2a1. Re-add it with cite add.
+docs/limits.md: fetch-timeout claim lines 9 -> 9-12 re-pinned (changed; now "The fetch timeout is 30 seconds.")
+```
+
+A refused claim counts toward the run's skipped total. The quoted text covers
+the re-pinned lines, capped at 200 characters with an ellipsis.
+
 {/* cite anchor-findings-skipped */}
 An anchoring or entry finding (`marker-orphan`, `anchor-invalid`, an invalid
 entry) is never rewritten, and is reported as skipped.
@@ -591,7 +667,7 @@ entry) is never rewritten, and is reported as skipped.
 | Code | Meaning |
 |---|---|
 | `0` | Everything the run could rewrite was rewritten, or previewed under `--dry-run`, and nothing was skipped with an error-severity finding. |
-| `1` | Something was skipped with an error-severity finding: a `source-changed` end without `--accept`, a `source-moved-ambiguous` one, a `source-missing` one, or an anchoring or entry rule at `error`. A skipped warning or notice, such as `claim-changed` or `marker-misplaced` without `--accept`, leaves the exit code at `0`. Work is left undone, which is what `fill`'s exit 1 means too. |
+| `1` | Something was skipped with an error-severity finding: a `source-changed` end without `--accept`, a `source-moved-ambiguous` one, a `source-missing` one, or an anchoring or entry rule at `error`. Also a claim `--accept` refused, whose line was replaced rather than edited. A skipped warning or notice, such as `claim-changed` or `marker-misplaced` without `--accept`, leaves the exit code at `0`. Work is left undone, which is what `fill`'s exit 1 means too. |
 | `2` | Operational or usage error, including `--no-check-sources`, `checkSources: false`, an unknown `--format`, and everything `check` exits 2 for. Also a write that failed after another file in the run was already written. Every file the run wrote is restored first, pages and manifests alike, and the message names them. `manni: docs-citations.yaml could not be written (EACCES). docs/limits.md was restored.` A file that could not be restored is named too, and the message says it holds an intermediate state. |
 
 ### Examples
@@ -616,6 +692,14 @@ docs/limits.md: host-scope marker line 44 -> 41 (misplaced)
 docs/limits.md: host-scope claim re-pinned over lines 42-47 (moved; was lines 45-47, lines 42-44 newly pinned)
 docs/limits.md: page-order claim lines 41-42 -> 44-45 (shifted by a marker)
 7 citations rewritten in 1 file, 0 skipped
+```
+
+A claim whose words held names the baseline they held against, and a
+claim-lines entry names the run it moved onto:
+
+```
+docs/limits.md: retries claim at lines 15-17 re-pinned (reanchored; words unchanged since 3f9c2a1)
+docs/limits.md: page-size claim lines 21 -> 21-23 re-pinned (reanchored; words unchanged since 5d1e0b7)
 ```
 
 The summary counts citations, so an entry whose marker moved and whose claim

@@ -62,7 +62,26 @@ export {
   unitAt,
 } from "./core/claims.js";
 export type { ClaimUnit } from "./core/claims.js";
-export { GIT_UNAVAILABLE_COMMIT, GIT_UNAVAILABLE_HISTORY, gitClient, noGit } from "./core/git.js";
+export {
+  GIT_UNAVAILABLE_COMMIT,
+  GIT_UNAVAILABLE_HISTORY,
+  PAGE_HISTORY_UNAVAILABLE,
+  gitClient,
+  noGit,
+} from "./core/git.js";
+export {
+  MAX_PAGE_COMMITS,
+  claimDiff,
+  claimHistory,
+  claimWords,
+  holdsWords,
+  refineClaim,
+  runsHolding,
+  sentencesOf,
+  sharesSentence,
+  stripMarkers,
+} from "./core/history.js";
+export type { ClaimHistory, ClaimHistoryInput, RefineClaimInput } from "./core/history.js";
 export { MAX_RANGE_LINES, MOVE_BUDGET_BYTES, MOVE_WINDOW_LINES, classifyCitation, findWindows, historyOf } from "./core/classify.js";
 export type { ClassifyOptions, FindWindowsOptions, History } from "./core/classify.js";
 export {
@@ -125,6 +144,7 @@ export { runUpdate } from "./commands/update.js";
 export { reencryptCitationEntries, reencryptCitations } from "./core/reencrypt.js";
 export type { ReencryptEntriesResult, ReencryptOptions } from "./core/reencrypt.js";
 export {
+  refusalLine,
   removalLine,
   renderCheckPretty,
   renderRemovePretty,

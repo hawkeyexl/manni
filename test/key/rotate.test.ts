@@ -340,7 +340,7 @@ describe("runKeyRotate: a whole run", () => {
     const result = await rotate({ onNotice: (m) => notices.push(m) });
     expect(result.skipped).toBe(0);
     expect(notices.filter((m) => m.startsWith("git "))).toEqual([
-      "git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.",
+      "git is not available here, so citations are checked without history: no never-true, no reanchored claims, no diffs, no commit subjects.",
     ]);
   });
 

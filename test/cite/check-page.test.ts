@@ -51,7 +51,7 @@ function shallowGit(files: string[], available = true, shown?: ShownFile): GitCl
 const FIXTURE_FILES = ["src/a.txt", "src/limits.ts", "src/changed.ts", "src/moved.ts"];
 
 const NO_HISTORY =
-  "git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.";
+  "git is not available here, so citations are checked without history: no never-true, no reanchored claims, no diffs, no commit subjects.";
 const SHALLOW =
   "commit 0123456 not found in history; use fetch-depth: 0 to enable never-true and diffs";
 
