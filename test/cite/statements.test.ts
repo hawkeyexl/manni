@@ -449,6 +449,27 @@ describe("anchoredLines", () => {
     expect(anchoredLines(content, after, "markdown")).toEqual({ start: 2, end: 3 });
   });
 
+  it("skips markers stacked below it, in every form, and never pins them", () => {
+    const content = [
+      "<!-- cite a -->",
+      "{/* cite b */}",
+      "[comment]: # (cite c)",
+      "The claim. It is",
+      "not configurable.",
+      "<!-- cite d -->",
+      "Next.",
+    ].join("\n");
+    for (const format of ["markdown", "mdx"]) {
+      const after = content.indexOf("-->") + 3;
+      expect(anchoredLines(content, after, format)).toEqual({ start: 4, end: 5 });
+    }
+    const adoc = "// (cite a)\n// (cite b)\n----\ncode\n----\n";
+    expect(anchoredLines(adoc, adoc.indexOf(")") + 1, "asciidoc")).toEqual({ start: 3, end: 5 });
+    // A line with text beside the marker is not a marker-only line.
+    const beside = "<!-- cite a -->\n<!-- cite b --> The claim.\n";
+    expect(anchoredLines(beside, beside.indexOf("-->") + 3, "markdown")).toEqual({ start: 2, end: 2 });
+  });
+
   it("takes the fenced block when one sits where the paragraph would", () => {
     const content = "<!-- cite x -->\n```ts\nconst a = 1;\n```\n";
     const after = content.indexOf("-->") + 3;
