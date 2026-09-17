@@ -30,6 +30,7 @@ import type {
 import { claimLine } from "./claims.js";
 import { parseSrc } from "./range.js";
 import { RULE_ID_PREFIX, ruleId } from "./severity.js";
+import { listOf } from "./spell.js";
 
 /** The seven characters a person reads a commit by. */
 function short(commit: string): string {
@@ -38,12 +39,6 @@ function short(commit: string): string {
 
 function plural(n: number, noun: string): string {
   return `${String(n)} ${noun}${n === 1 ? "" : "s"}`;
-}
-
-/** `11 and 30`, `11, 20 and 30`: a list as a sentence reads it. */
-function listOf(values: readonly string[]): string {
-  if (values.length <= 1) return values.join("");
-  return `${values.slice(0, -1).join(", ")} and ${values[values.length - 1] ?? ""}`;
 }
 
 /** Whether the entry spelled this source encrypted. */

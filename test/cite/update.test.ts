@@ -997,6 +997,63 @@ describe("runUpdate: a marker inside a paragraph", () => {
     expect(bodyOf("stacked-run.mdx")[20]).toBe("{/* cite one-at-a-time */}");
   });
 
+  it("--only still shifts a claim-lines entry the named marker's move pushes down", async () => {
+    misplaced("shift.md");
+    const run = await update({ inputs: [label("shift.md")], only: ["timeouts"] });
+    // The shift is a consequence of the move, not a repair `--only` selects,
+    // so the page needs no second run.
+    expect(run.pages[0]?.rewritten.map((r) => [r.id, r.end, r.reason])).toEqual([
+      ["timeouts", "marker", "re-anchored"],
+      ["timeouts", "claim", "re-anchored"],
+      ["page-order", "claim", "shifted"],
+    ]);
+    expect(onDisk(label("shift.md"))).toContain("      lines: 4\n");
+    expect(await ends(label("shift.md"))).toEqual([
+      ["current", "current"],
+      ["current", "current"],
+    ]);
+  });
+
+  it("leaves a claim-lines entry whose text moved to the claim-moved repair", async () => {
+    // `retries` records body line 3, which the marker's move pushes to 4,
+    // but its pinned text sits at body 5. Shifting it to 4 would point its
+    // lines at a sentence it never cited, so only `claim-moved` may repair
+    // it, and that needs a run which names it.
+    const label = write("moved-below.md", [
+      "---",
+      "title: Limits",
+      "citations:",
+      "  - id: timeouts",
+      "    claim:",
+      `      integrity: ${CLAIM_RETRIES}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 3",
+      `      integrity: ${PIN_L3}`,
+      "  - id: retries",
+      "    claim:",
+      "      lines: 3",
+      `      integrity: ${hashLines("Retries default to 3.")}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 3",
+      `      integrity: ${PIN_L3}`,
+      "---",
+      "# Limits",
+      "",
+      "The fetch timeout is 10 seconds.",
+      "<!-- cite timeouts -->",
+      "Retries default to 3.",
+    ]);
+    const run = await update({ inputs: [label], only: ["timeouts"] });
+    expect(run.pages[0]?.rewritten.map((r) => [r.id, r.end, r.reason])).toEqual([
+      ["timeouts", "marker", "re-anchored"],
+      ["timeouts", "claim", "re-anchored"],
+    ]);
+    // Its own lines are untouched, waiting for a run that names it.
+    expect(onDisk(label)).toContain("      lines: 3\n");
+  });
+
   it("shifts a claim-lines entry the move pushes down, in the same write", async () => {
     misplaced("shift.md");
     const run = await update({ inputs: [label("shift.md")] });
@@ -1270,6 +1327,89 @@ describe("runUpdate: a write that fails halfway", () => {
     chmodSync(join(cwd, "meta"), 0o555);
     return { config: join(cwd, "manni.config.yaml"), manifest, dir: join(cwd, "meta") };
   }
+
+  /**
+   * Two collections, a manifest each, a misplaced-marker page each. Only the
+   * second manifest is locked, so the run writes the first one and then
+   * fails: the state a restore has to undo on both.
+   */
+  function twoCollections(): { config: string; manifest: string; dir: string } {
+    workspace();
+    const lines = [
+      "collections:",
+      ...["one", "two"].flatMap((name) => [
+        `  - name: ${name}`,
+        `    paths: ["${name}/**/*.md"]`,
+        "    externalMetadata:",
+        `      - file: ./meta-${name}/citations.yaml`,
+        "        keys: [citations]",
+      ]),
+      "",
+    ];
+    writeFileSync(join(cwd, "manni.config.yaml"), lines.join("\n"), "utf8");
+    for (const name of ["one", "two"]) {
+      mkdirSync(join(cwd, name));
+      mkdirSync(join(cwd, `meta-${name}`));
+      writeFileSync(
+        join(cwd, `meta-${name}`, "citations.yaml"),
+        [
+          `${name}/limits.md:`,
+          "  citations:",
+          "    - id: retries",
+          "      claim:",
+          `        integrity: ${hashLines("Retries default to 3.")}`,
+          "      source:",
+          "        file: src/limits.ts",
+          "        lines: 3",
+          `        integrity: ${PIN_L3}`,
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      // The marker splits the paragraph, so the run moves it and re-pins the
+      // claim over the whole paragraph, writing the page and the manifest.
+      writeFileSync(
+        join(cwd, name, "limits.md"),
+        [
+          "---",
+          "title: Limits",
+          "---",
+          "The fetch timeout is 10 seconds.",
+          "<!-- cite retries -->",
+          "Retries default to 3.",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+    }
+    const manifest = join(cwd, "meta-two", "citations.yaml");
+    chmodSync(manifest, 0o444);
+    chmodSync(join(cwd, "meta-two"), 0o555);
+    return { config: join(cwd, "manni.config.yaml"), manifest, dir: join(cwd, "meta-two") };
+  }
+
+  it("restores the manifest it already wrote, not only the pages", async () => {
+    const { config, manifest, dir } = twoCollections();
+    const before = {
+      one: onDisk("meta-one/citations.yaml"),
+      two: onDisk("meta-two/citations.yaml"),
+      pageOne: onDisk("one/limits.md"),
+      pageTwo: onDisk("two/limits.md"),
+    };
+    try {
+      const message = await refusal(update({ inputs: [], noConfig: false, configPath: config }));
+      expect(message).toContain("meta-two/citations.yaml could not be written");
+      expect(message).toContain("meta-one/citations.yaml");
+      // Nothing is left pinned to text no page holds any more.
+      expect(onDisk("meta-one/citations.yaml")).toBe(before.one);
+      expect(onDisk("meta-two/citations.yaml")).toBe(before.two);
+      expect(onDisk("one/limits.md")).toBe(before.pageOne);
+      expect(onDisk("two/limits.md")).toBe(before.pageTwo);
+    } finally {
+      chmodSync(dir, 0o755);
+      chmodSync(manifest, 0o644);
+    }
+  });
 
   it("restores the page it already wrote, and names the file that failed", async () => {
     const { config, manifest, dir } = locked();

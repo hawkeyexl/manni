@@ -13,7 +13,7 @@ import type { ValidationResult } from "../../meta/index.js";
 import { palette } from "../../shared/color.js";
 import { errorSite, messageFor } from "../core/adapt.js";
 import { parseSrc } from "../core/range.js";
-import { shortCommit, shortPin, shortSrc } from "../core/spell.js";
+import { shortCommit, shortPin, shortSrc, spellAt } from "../core/spell.js";
 import type {
   CheckRun,
   CitationFinding,
@@ -377,8 +377,9 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
 }
 
 /** `line 9`, or `lines 9-12`, from a line spec. */
-function spellAt(spec: string): string {
-  return spec.includes("-") ? `lines ${spec}` : `line ${spec}`;
+function spellAtSpec(spec: string): string {
+  const span = spanOf(spec);
+  return span === undefined ? `lines ${spec}` : spellAt(span);
 }
 
 /** A line spec as numbers, or undefined when it does not read as one. */
@@ -401,18 +402,13 @@ function widening(held: string, now: string): string {
   if (was === undefined || is === undefined) return "";
   const parts: string[] = [];
   if (is.start < was.start) {
-    parts.push(spellAt(spellSpan(is.start, Math.min(was.start - 1, is.end))));
+    parts.push(spellAt({ start: is.start, end: Math.min(was.start - 1, is.end) }));
   }
   if (is.end > was.end) {
-    parts.push(spellAt(spellSpan(Math.max(was.end + 1, is.start), is.end)));
+    parts.push(spellAt({ start: Math.max(was.end + 1, is.start), end: is.end }));
   }
   if (parts.length === 0) return ", which held a marker line";
   return `, ${parts.join(" and ")} newly pinned`;
-}
-
-/** `9`, or `9-12`: a span as a line spec. */
-function spellSpan(start: number, end: number): string {
-  return start === end ? String(start) : `${String(start)}-${String(end)}`;
 }
 
 /** What one rewritten end says it did. */
@@ -428,7 +424,7 @@ export function rewriteLine(rewrite: UpdateRewrite): string {
   if (rewrite.reason === "re-anchored") {
     const held = rewrite.lines ?? "";
     const now = rewrite.newLines ?? "";
-    return `claim re-pinned over ${spellAt(now)} (moved; was ${spellAt(held)}${widening(held, now)})`;
+    return `claim re-pinned over ${spellAtSpec(now)} (moved; was ${spellAtSpec(held)}${widening(held, now)})`;
   }
   if (rewrite.reason === "moved") {
     return rewrite.end === "claim"

@@ -280,7 +280,8 @@ export function markerClaimEnd(
   const current = anchoredLines(page.content, marker.end, page.format, quote);
   if (current === undefined) return { status: "changed" };
 
-  const at = (span: PageLines, status: ClaimEnd["status"], to?: PageLines): ClaimEnd => {
+  /** The claim end this span reads as, and where the move will take it. */
+  const claimAt = (span: PageLines, status: ClaimEnd["status"], to?: PageLines): ClaimEnd => {
     const end: ClaimEnd = { fileLines: spellLines(span), status };
     if (to !== undefined) {
       end.newLines = spellLines(to);
@@ -293,22 +294,22 @@ export function markerClaimEnd(
   // A quote marker's pin covers its block, which no move touches, and the
   // block reading never changed, so there is one span to read it against.
   if (quote) {
-    return at(current, pinOf(lines, current) === pin ? "current" : "changed");
+    return claimAt(current, pinOf(lines, current) === pin ? "current" : "changed");
   }
 
   if (misplaced !== undefined) {
     const to = movedUnit(misplaced);
-    if (hashLines(unitText(lines, misplaced).join("\n")) === pin) return at(to, "current");
-    if (pinOf(lines, current) === pin) return at(current, "moved", to);
+    if (hashLines(unitText(lines, misplaced).join("\n")) === pin) return claimAt(to, "current");
+    if (pinOf(lines, current) === pin) return claimAt(current, "moved", to);
     const pre43 = pre43Span(lines, marker.line);
-    if (pre43 !== undefined && pinOf(lines, pre43) === pin) return at(pre43, "moved", to);
-    return at(current, "changed");
+    if (pre43 !== undefined && pinOf(lines, pre43) === pin) return claimAt(pre43, "moved", to);
+    return claimAt(current, "changed");
   }
 
-  if (pinOf(lines, current) === pin) return at(current, "current");
+  if (pinOf(lines, current) === pin) return claimAt(current, "current");
   // Stacked markers written before PR #43 were pinned over a sibling marker
   // line and the paragraph. That renders fine, so only the pin is repaired.
   const pre43 = pre43Span(lines, marker.line);
-  if (pre43 !== undefined && pinOf(lines, pre43) === pin) return at(pre43, "moved", current);
-  return at(current, "changed");
+  if (pre43 !== undefined && pinOf(lines, pre43) === pin) return claimAt(pre43, "moved", current);
+  return claimAt(current, "changed");
 }

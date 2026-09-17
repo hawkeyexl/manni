@@ -38,7 +38,7 @@ import {
 } from "../core/range.js";
 import { misplacedMarkers } from "../core/reanchor.js";
 import { readSource, sourceIndexFor } from "../core/sources.js";
-import { shortSrc } from "../core/spell.js";
+import { shortSrc, spellAt } from "../core/spell.js";
 import { ManifestSet } from "../core/manifest.js";
 import { sidecarsFor, type PageSidecar } from "../core/sidecar.js";
 import {
@@ -102,13 +102,6 @@ async function citedText(
     throw new CiteError(`Source not readable: ${range.path} could not be read.`);
   }
   return sliceLines(splitLines(source.text), range, range.path);
-}
-
-/** `line 9`, or `lines 9-12` for a range. */
-function spellAt(lines: PageLines): string {
-  return lines.start === lines.end
-    ? `line ${String(lines.start)}`
-    : `lines ${String(lines.start)}-${String(lines.end)}`;
 }
 
 /** How a refusal names an entry: its id, or the pointer a report would use. */
@@ -370,7 +363,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     // where a misplaced one would make its entry wrong (proposal 0054).
     const split = misplacedMarkers(page, lines);
     const held = split.find(
-      (marker) => marker.line >= pageLines.start && marker.line <= pageLines.end,
+      (found) => found.line >= pageLines.start && found.line <= pageLines.end,
     );
     if (held !== undefined) {
       throw new CiteError(

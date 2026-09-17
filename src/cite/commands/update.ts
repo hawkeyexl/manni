@@ -43,6 +43,7 @@ import {
   type MisplacedMarker,
 } from "../core/reanchor.js";
 import { resolveSeverity } from "../core/severity.js";
+import { listOf, spellAt } from "../core/spell.js";
 import { anchoredLines, markerIndent, offsetOfLine } from "../core/statements.js";
 import { spliceEntryField, unifiedDiff } from "../core/write.js";
 import { CiteError } from "../errors.js";
@@ -99,6 +100,15 @@ type Plan =
       from: string;
       to: string;
     };
+
+/**
+ * Why one repair was declined, and the rule whose finding says so. One entry
+ * can carry findings about both ends, so the reason names which it is about.
+ */
+interface Declined {
+  rule: string;
+  why: string;
+}
 
 /** The rule a plan settles, so its finding is not also reported as skipped. */
 function settles(plan: Plan): string {
@@ -326,13 +336,6 @@ function rewriteOf(plan: Plan): UpdateRewrite {
   }
 }
 
-/** `line 9`, or `lines 9-12` for a range. */
-function spellAt(lines: PageLines): string {
-  return lines.start === lines.end
-    ? `line ${String(lines.start)}`
-    : `lines ${String(lines.start)}-${String(lines.end)}`;
-}
-
 /** `<id>: <text>`, or the text alone for an entry with no id. */
 function named(id: string | undefined, text: string): string {
   return id === undefined ? text : `${id}: ${text}`;
@@ -460,12 +463,6 @@ function anchoredNow(
   return pin === undefined ? undefined : { span, pin };
 }
 
-/** `a`, `a and b`, `a, b and c`: a list as a sentence reads it. */
-function listOf(values: readonly string[]): string {
-  if (values.length <= 1) return values.join("");
-  return `${values.slice(0, -1).join(", ")} and ${values[values.length - 1] ?? ""}`;
-}
-
 /** The errno a failed write carries, when it carries one. */
 function codeOf(error: unknown): string | undefined {
   if (typeof error !== "object" || error === null || !("code" in error)) return undefined;
@@ -475,8 +472,10 @@ function codeOf(error: unknown): string | undefined {
 
 /**
  * A run writes a page and the manifest that keys it, and a marker move needs
- * both to land. So every file this run wrote keeps its original text until the
- * run is done, and a failed write puts them back.
+ * both to land. So every file this run wrote, page and manifest alike, keeps
+ * its original text until the run is done, and a failed write puts them back.
+ * A manifest left pinned to text its page no longer holds would read as drift
+ * that never happened.
  */
 class WrittenFiles {
   private readonly before = new Map<string, string>();
@@ -514,7 +513,7 @@ class WrittenFiles {
     }
     if (failed.length > 0) {
       parts.push(
-        `${listOf(failed)} could not be restored, and ${failed.length === 1 ? "holds" : "hold"} the moved markers.`,
+        `${listOf(failed)} could not be restored, and ${failed.length === 1 ? "holds" : "hold"} an intermediate state.`,
       );
     }
     return new CiteError(parts.join(" "));
@@ -550,7 +549,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     page: PageCitations,
     lines: readonly string[],
     lineNow: (line: number) => number,
-    declined: Map<number, string>,
+    declined: Map<number, Declined>,
   ): Promise<Plan[]> => {
     const out: Plan[] = [];
     const claim = result.claim;
@@ -607,7 +606,10 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
       // A unit past the range limit would pin more than a citation may hold.
       const wide = unit === undefined ? undefined : tooWide(unit.lines);
       if (unit !== undefined && wide !== undefined) {
-        declined.set(result.origin.index, `Not re-pinned: the ${unit.kind} ${wide}.`);
+        declined.set(result.origin.index, {
+          rule: "claim-changed",
+          why: `Not re-pinned: the ${unit.kind} ${wide}.`,
+        });
       } else if (unit !== undefined && pin !== undefined && (!wantsBlock || unit.kind === "block")) {
         const plan: Plan = { kind: "claim-accepted", result, unit, pin };
         // A paragraph that grew or shrank moves the claim's last line too.
@@ -667,8 +669,12 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     const rewritten: UpdateRewrite[] = [];
     /** `<index>\0<rule>` of every finding a rewrite settled. */
     const settled = new Set<string>();
-    /** Why an accept was declined, by entry index, said with its skipped finding. */
-    const declined = new Map<number, string>();
+    /**
+     * Why a repair was declined, by entry index, said with the skipped
+     * finding it concerns. The rule is carried so the reason lands on that
+     * finding and not on another one about the same entry.
+     */
+    const declined = new Map<number, Declined>();
 
     // Misplaced markers first: the page is rewritten once, with every movable
     // marker relocated, and every pin below is taken against that page.
@@ -697,13 +703,18 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
         : (JSON.parse(JSON.stringify(setup.sidecar.citations.map((c) => c.entry))) as unknown[]);
     let manifestDirty = false;
     for (const result of report.citations) {
-      if (only !== undefined && (result.citation.id === undefined || !only.has(result.citation.id))) {
-        continue;
-      }
+      // `--only` selects the repairs to make. It does not select the shift a
+      // marker move forces on the entries below it, which is planned for
+      // every entry further down.
+      const selected =
+        only === undefined ||
+        (result.citation.id !== undefined && only.has(result.citation.id));
       const entry = page.citations.find((c) => c.origin.index === result.origin.index);
       const plans: Plan[] = [];
 
-      const move = markers.moves.find((m) => m.entry.origin.index === result.origin.index);
+      const move = selected
+        ? markers.moves.find((m) => m.entry.origin.index === result.origin.index)
+        : undefined;
       if (move !== undefined) {
         plans.push({
           kind: "marker-moved",
@@ -716,7 +727,13 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
       // the next check reads it as current however the run split.
       const marker = entry?.marker;
       const recorded = entry?.citation.claim?.integrity;
-      if (result.anchor === "marker" && marker !== undefined && recorded !== undefined && result.claim !== null) {
+      if (
+        selected &&
+        result.anchor === "marker" &&
+        marker !== undefined &&
+        recorded !== undefined &&
+        result.claim !== null
+      ) {
         const quote = entry?.citation.quote === true;
         const now = anchoredNow(after, format, afterLines, lineNow(marker.line), quote);
         const status = result.claim.status;
@@ -737,7 +754,10 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
             // to that, exactly as it does to a claim-lines re-pin.
             const wide = tooWide(now.span);
             if (wide !== undefined) {
-              declined.set(result.origin.index, `Not re-pinned: the ${kind} ${wide}.`);
+              declined.set(result.origin.index, {
+                rule: "claim-changed",
+                why: `Not re-pinned: the ${kind} ${wide}.`,
+              });
             } else {
               plans.push({
                 kind: "claim-accepted",
@@ -755,12 +775,25 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
         }
       }
 
-      plans.push(...(await plansFor(result, entry, page, lines, lineNow, declined)));
+      if (selected) {
+        plans.push(...(await plansFor(result, entry, page, lines, lineNow, declined)));
+      }
 
       // A claim-lines entry the moves pushed along keeps its pinned text, so
-      // its lines are rewritten in the same write.
+      // its lines are rewritten in the same write. This one runs outside
+      // `--only`: the page has already moved under the entry, so leaving its
+      // lines behind would need a second run to put right.
       const spec = entry?.citation.claim?.lines;
-      if (movedPage !== undefined && spec !== undefined && !plans.some((p) => p.kind === "claim-moved")) {
+      // A claim whose text moved is repaired by `claim-moved`, which finds
+      // where the text went. Shifting its lines by the marker's delta would
+      // point them somewhere else again, so the shift leaves it alone.
+      const wentElsewhere = result.claim?.status === "moved";
+      if (
+        movedPage !== undefined &&
+        spec !== undefined &&
+        !wentElsewhere &&
+        !plans.some((p) => p.kind === "claim-moved")
+      ) {
         const at = parseLines(spec);
         const file = at === undefined ? undefined : toFileLines(at, page.bodyLine);
         const to =
@@ -785,7 +818,18 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
         if (plan.kind === "marker-moved") {
           // The page already carries the move.
         } else if (result.origin.kind === "manifest") {
-          if (entries === undefined || !applyToEntry(entries[result.origin.index], plan)) continue;
+          // The manifest's entry list is shorter than the report's index, so
+          // there is nothing to splice. Said rather than dropped: a silent
+          // skip would report the check's own message and no reason.
+          const held = entries?.[result.origin.index];
+          if (held === undefined) {
+            declined.set(result.origin.index, {
+              rule: settles(plan),
+              why: `Not rewritten: ${owner?.file ?? "the manifest"} has no entry at index ${String(result.origin.index)}.`,
+            });
+            continue;
+          }
+          if (!applyToEntry(held, plan)) continue;
           manifestDirty = true;
         } else {
           after = apply(after, format, plan);
@@ -826,10 +870,8 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
             ...(level === "off" ? {} : { severity: level }),
           };
         }
-        const why =
-          finding.rule === "claim-changed" && finding.index !== undefined
-            ? declined.get(finding.index)
-            : undefined;
+        const turned = finding.index === undefined ? undefined : declined.get(finding.index);
+        const why = turned?.rule === finding.rule ? turned.why : undefined;
         return why === undefined ? finding : { ...finding, message: `${finding.message} ${why}` };
       });
     const diff = after === content ? "" : unifiedDiff(label, content, after);
@@ -867,6 +909,10 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
       } catch (error) {
         throw await writes.restore(changed.file, error);
       }
+      // A manifest joins the run's written files the moment it lands, so a
+      // later manifest's failure puts this one back with the pages. Without
+      // it the tree would keep pins no page content matches.
+      writes.record(changed.path, changed.file, changed.before);
     }
     rewrittenManifests.push({ file: changed.file, diff: changed.diff, written: write });
   }

@@ -529,7 +529,7 @@ working tree so the rewrite is easy to review.
 | `--no-check-sources` | n/a | on | Refused. `update` needs the sources to know where an entry moved to. |
 | `--root` | `<dir>` | n/a | The directory `source.file` paths resolve from, exactly as on [`check`](#where-sources-resolve-from). |
 | `--accept` | n/a | off | Re-mint every changed and never-true end at `HEAD`: a new `integrity`, and a new `commit-sha` where the source had one. For a source the report prints the old and the new pin. For a claim it prints the text it re-pinned, so the acceptance is visible in the log as well as in the diff. |
-| `--only` | `<id>` | n/a | Limit the rewrite to entries with this id. Repeatable. An entry without an id cannot be named, so give a bare pin an `--id` when you want to reach it this way. |
+| `--only` | `<id>` | n/a | Limit the rewrite to entries with this id. Repeatable. An entry without an id cannot be named, so give a bare pin an `--id` when you want to reach it this way. A marker's move still shifts the claim lines below it, whichever entries own them. |
 | `--dry-run` | n/a | off | Print the diffs and the report; write nothing. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints the run as `{ pages, rewritten, skipped, manifests, exitCode }`, where `manifests` lists each rewritten manifest's `file`, `diff` and `written`, and appears only when a manifest changed. Each page carries its `file`, its `rewritten` list, its `skipped` findings, its `diff`, and whether it was `written`. A rewrite has `id`, `index`, `line`, `end`, `reason`, `status`, `from` and `to`. `end` is `claim`, `source` or `marker`; `reason` is `moved`, `accepted`, `re-anchored` or `shifted`. Read the typed pairs rather than `from` and `to`: `fromLines` and `toLines` carry lines, `fromPin` and `toPin` carry pins. A re-anchored claim adds `lines`, the span that held, and `newLines`, the span now pinned. An accepted claim adds `at` and `text`, and an accepted source adds `src`, plus `commitSha` when the entry records one. An unknown value is an error (exit 2). |
 
@@ -570,7 +570,10 @@ skipped:
 | An `anchor-invalid` entry, which has claim lines and a marker both | `fetch-timeout: the marker at line 43 stays, because the entry also has claim lines. Keep one.` |
 
 A marker outside `--only` is not reported, as an entry outside `--only` is
-not.
+not. One thing crosses it. A marker that moves pushes every claim-lines
+entry below it along, and those lines are rewritten whether or not `--only`
+names the entry. The page has already moved under them. An entry whose
+pinned text moved elsewhere is left for a run that names it.
 
 {/* cite accept-skips-blank-claim */}
 `update --accept` skips a claim whose first line is now blank, or inside a
@@ -589,7 +592,7 @@ entry) is never rewritten, and is reported as skipped.
 |---|---|
 | `0` | Everything the run could rewrite was rewritten, or previewed under `--dry-run`, and nothing was skipped with an error-severity finding. |
 | `1` | Something was skipped with an error-severity finding: a `source-changed` end without `--accept`, a `source-moved-ambiguous` one, a `source-missing` one, or an anchoring or entry rule at `error`. A skipped warning or notice, such as `claim-changed` or `marker-misplaced` without `--accept`, leaves the exit code at `0`. Work is left undone, which is what `fill`'s exit 1 means too. |
-| `2` | Operational or usage error, including `--no-check-sources`, `checkSources: false`, an unknown `--format`, and everything `check` exits 2 for. Also a write that failed after another file in the run was already written. Every file the run wrote is restored first, and the message names it. `manni: docs-citations.yaml could not be written (EACCES). docs/limits.md was restored.` A file that could not be restored is named too, with what it now holds. |
+| `2` | Operational or usage error, including `--no-check-sources`, `checkSources: false`, an unknown `--format`, and everything `check` exits 2 for. Also a write that failed after another file in the run was already written. Every file the run wrote is restored first, pages and manifests alike, and the message names them. `manni: docs-citations.yaml could not be written (EACCES). docs/limits.md was restored.` A file that could not be restored is named too, and the message says it holds an intermediate state. |
 
 ### Examples
 
