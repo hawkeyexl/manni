@@ -275,7 +275,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
       );
     }
     // A marker pins everything it anchors, so the range limit applies to that.
-    const unitWide = tooWide(holding);
+    const unitWide = tooWide({ start: holding.start, end: holding.end });
     if (unitWide !== undefined) {
       throw new CiteError(
         `${at} is in a ${holding.kind} at ${spellAt(holding)} that ${unitWide}. A marker anchors the whole ${holding.kind}.`,
