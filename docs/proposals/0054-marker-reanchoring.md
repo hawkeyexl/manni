@@ -108,9 +108,14 @@ continues across it.
 
 | Format | Bound lines |
 |---|---|
-| markdown, mdx | An ATX heading, which is one to six `#` and then a space or the end of the line. |
+| markdown, mdx | An ATX heading, which is one to six `#` and then a space or the end of the line. Also a line that is nothing but one tag, opening or closing. |
+| html, xml | A line that is nothing but one tag, opening or closing. |
 | asciidoc | A section title, which is one to six `=` and then a space. |
 | every format | A line of one punctuation character repeated three or more times, spaces allowed. That covers a setext underline, a thematic break and an rst adornment. |
+
+The tag-line rows are decision 3 below. A tag line is bound in every format
+that reads one, so a marker under `<body>` anchors the element below it and
+never the whole document.
 
 Bound lines join the paragraph reading PR #43 introduced, in `check`, `add`
 and `update` alike. So `add --marker` on the line under a heading writes the
@@ -228,6 +233,13 @@ manifest. `update` writes both, each once per run, as it already writes
 manifests. A run that moves markers keeps every file's original text until
 all writes land. If one write fails, the files already written are restored,
 and the run exits 2. A file that cannot be restored is named.
+
+**Atomicity is per file.** A page is written once, whatever its markers do.
+A stacked run can split, with one marker moving and one staying. That one
+write then carries the movable markers relocated, and the rest where they
+were. Every pin the run takes is read against the page that write leaves. So
+the next `check` reads a re-pinned claim as `current`, however the run split.
+The write-or-restore guarantee above covers such a page like any other.
 
 **A page on stdin** is printed with its markers moved, as `update -` prints
 every rewrite today. A manifest it names is still written.
@@ -426,7 +438,9 @@ not today.
 | `end` | `"marker"`, beside `"claim"` and `"source"`. |
 | `reason` | `"re-anchored"` for a marker move or its re-pin. `"shifted"` for claim lines a move pushed. |
 | `status` | `"misplaced"` for a marker move. `"current"` for a shift. |
-| `from`, `to` | The file lines of a marker or a shifted claim. The pins of a re-anchored claim. |
+| `fromLines`, `toLines` | The file lines of a marker move or a shifted claim. |
+| `fromPin`, `toPin` | The pins of a re-anchored claim. |
+| `from`, `to` | What they carry today, unchanged, so no consumer breaks. On a new row they repeat the typed pair above, which is the one to read. |
 | `lines`, `newLines` | The span that held and the span now pinned, on a re-anchored claim only. |
 
 ```json
@@ -437,6 +451,8 @@ not today.
   "end": "claim",
   "reason": "re-anchored",
   "status": "moved",
+  "fromPin": "sha256-5f0e21c4…",
+  "toPin": "sha256-9a7d33b0…",
   "from": "sha256-5f0e21c4…",
   "to": "sha256-9a7d33b0…",
   "lines": "44-46",
@@ -595,8 +611,8 @@ removed.
 |---|---|---|
 | `cite.CiteRule` | type | Gains `"marker-misplaced"`. |
 | `cite.DEFAULT_SEVERITY` | const | Gains `"marker-misplaced": "warning"`. |
-| `cite.UpdateRewrite` | type | `end` gains `"marker"`. `reason` gains `"re-anchored"` and `"shifted"`. `status` gains `"misplaced"` and `"current"`. Gains optional `lines` and `newLines`. |
-| `cite.CitationResult` | type | Gains optional `marker`, with `line` and optional `misplaced: { unit, to }`. |
+| `cite.UpdateRewrite` | type | `end` gains `"marker"`. `reason` gains `"re-anchored"` and `"shifted"`. `status` gains `"misplaced"` and `"current"`. Gains optional `fromLines`, `toLines`, `fromPin`, `toPin`, `lines` and `newLines`. `from` and `to` stay, carrying the values they carry today. |
+| `cite.CitationResult` | type | Gains optional `marker`, with `line` and optional `misplaced: { unit, to }`. Its `claim` gains optional `fileLines` and `newLines`, both file-line strings, for a misplaced marker whose claim is `moved`. |
 | `cite.paragraphAfter`, `cite.anchoredLines` | function | Stop at a bound line, as Decision 1 says. |
 
 ## Stress test
@@ -660,7 +676,8 @@ claims back into the review queue they were never in. The head lines are what
 later edit to them visible, where before it was not.
 
 **Changed as a result:** the re-pin widens without `--accept`. The report
-names the newly pinned lines. Open question 1 asks whether that is right.
+names the newly pinned lines. The review agreed, and decision 1 below records
+it.
 
 ### 5. A stacked run where one pin holds and one does not
 
@@ -716,8 +733,8 @@ valid too. An indented marker under a list item keeps the indentation of the
 line it moves above.
 
 **Changed as a result:** leading whitespace follows the line below the new
-place. JSX gets no reading of its own. Open question 3 asks whether the tag
-line belongs in a pin.
+place. The review then made a tag line a bound line, decision 3 below. The
+place is inside the element, and the tag line is never pinned.
 
 ### 10. A sidecar entry, and a write that fails halfway
 
@@ -793,8 +810,8 @@ whose current span did not hold, so it is cheap. But it is a reading the tool
 carries for a history most repositories do not have.
 
 **Changed as a result:** it stays, with a test that names the PR it serves.
-Retiring it is a later decision, and it would change what `claim-changed`
-means for any page not yet updated. Open question 2.
+Retiring it would change what `claim-changed` means for any page not yet
+updated, and the review kept it for that reason. Decision 2 below.
 
 ### 17. A baselined finding
 
@@ -870,12 +887,19 @@ rendered whole.
 - T2's fix page gains `marker-misplaced`: one status, one command.
 - The set-up page for markers says where a marker goes and why, so a
   hand-written one lands in place.
-- Open questions for the review, in the order debate is expected:
-  1. Should a re-pin that widens the pin need `--accept`, given the widened
-     lines were never checked against the source?
-  2. Should the pre-#43 span expire, for example at the next major release?
-  3. Should a JSX tag line that opens a unit be excluded from a pin, or is
-     that a reading MDX alone needs?
-  4. Should `update` move a marker whose claim holds nowhere, leaving the
-     `claim-changed` for review? It fixes the rendering sooner. It also loses
-     the tail, the one span a later reviewer could compare.
+- The four questions this proposal put to review, and what the review
+  decided. Each is now part of the design above.
+  1. **A widening re-pin does not need `--accept`.** The report names both
+     spans, so the widening is in the log as well as in the diff. Requiring a
+     flag would put the re-anchored claims into a review queue they were
+     never in.
+  2. **The pre-#43 span stays.** It costs one hash, and only on a claim whose
+     current span did not hold. Retiring it would remove behaviour and give
+     nothing back.
+  3. **A JSX tag line counts as a bound line**, kept out of a pin like a
+     heading. A tag line is bound in every format that reads one, so a marker
+     under `<body>` anchors the element below it and never the whole
+     document.
+  4. **A marker whose claim holds nowhere is not moved.** It stays
+     `claim-changed` for `--accept`, which keeps the tail, the one span a
+     later reviewer can compare.
