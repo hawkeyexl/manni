@@ -214,6 +214,24 @@ describe("runRemove: an entry in the page's frontmatter", () => {
     expect(page?.diff).toContain("-  - id: retries");
     expect(onDisk("pages/marker.md")).toBe(before);
   });
+
+  it("hands the rewritten page back for the stdin input, which has no file", async () => {
+    workspace();
+    const content = readFileSync(join(PAGES, "current.md"), "utf8");
+    const run = await remove({
+      inputs: ["-"],
+      as: "markdown",
+      stdinContent: content,
+      only: ["fetch-timeout"],
+    });
+    expect(run.removed).toBe(1);
+    const [page] = run.pages;
+    expect(page?.file).toBe("<stdin>");
+    // Nowhere to write it, so the caller prints what the run made.
+    expect(page?.written).toBe(false);
+    expect(page?.content).toContain("title: Limits");
+    expect(page?.content).not.toContain("citations");
+  });
 });
 
 describe("runRemove: an entry in the manifest that owns it", () => {
