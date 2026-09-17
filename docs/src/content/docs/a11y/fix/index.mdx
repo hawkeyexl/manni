@@ -259,29 +259,11 @@ citations:
       commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
   - id: exit-zero-when-no-failed-pages
     claim:
-      integrity: sha256-0f891c6d9e754b1539dded09bccfaabf48701b82d74a14a3d5e3021cb29ba6f6
+      integrity: sha256-22967707c22302be55737e74def3bd242eb1a8172c4646926ec1f83356bc0f0d
     source:
       file: src/a11y/cli.ts
       lines: 258
       integrity: sha256-6723f5ed126275d756e401e73cbf27f5215b4f934f4af3336be07a8f51c18afa
-      commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
-  - id: github-silent-on-clean-run
-    claim:
-      lines: 124-126
-      integrity: sha256-0f891c6d9e754b1539dded09bccfaabf48701b82d74a14a3d5e3021cb29ba6f6
-    source:
-      file: src/a11y/cli.ts
-      lines: 253-257
-      integrity: sha256-d2f531bc441897e7c4291106a68e1eb5cf8bba609038312ccfce5beb1788004a
-      commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
-  - id: score-share-of-rules-passed
-    claim:
-      lines: 124-126
-      integrity: sha256-0f891c6d9e754b1539dded09bccfaabf48701b82d74a14a3d5e3021cb29ba6f6
-    source:
-      file: src/a11y/commands/check.ts
-      lines: 116-117
-      integrity: sha256-ed3bfa5ec056b37ee8066e37f50435641caf3554c8c334ff4cc681890c3bfee2
       commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
   - id: check-loads-rendered-url
     claim:
@@ -299,33 +281,68 @@ citations:
       lines: 100
       integrity: sha256-3450f6244a4e511c93b4c53b98e0827cd83cd73797c13d4ab31461e58047d983
       commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
-  - id: incomplete-counted
-    claim:
-      lines: 154-156
-      integrity: sha256-83805ae51ddd9615cc93bc01d1fbcea1742615617ec883d962612c47f3031bf2
-    source:
-      file: src/a11y/core/analyzer.ts
-      lines: 151
-      integrity: sha256-4b92f726f1d61da2762ae162caa2989ac531a7f0cd2ae7f9c5a5510b263578db
-      commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
-  - id: incomplete-never-fails
-    claim:
-      lines: 154-156
-      integrity: sha256-83805ae51ddd9615cc93bc01d1fbcea1742615617ec883d962612c47f3031bf2
-    source:
-      file: src/a11y/commands/check.ts
-      lines: 132
-      integrity: sha256-d9bf347fb2ed4cd734dd83ea96559d152816f6a56dc50c63da047ffae05f01ad
-      commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
   - id: loads-page-reads-once
     claim:
-      lines: 157-159
+      lines: 159-161
       integrity: sha256-816e4f4fffdbfd92f1996a8766d26dd763ddaf00f518382f9886c47e8a7a4d50
     source:
       file: src/a11y/core/analyzer.ts
       lines: 131-142
       integrity: sha256-0005d75228c2777603f234d9f7bc66f82e6fa5853fe14c4a6d97595f27175942
       commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+  - id: incomplete-counted
+    claim:
+      lines: 156-158
+      integrity: sha256-31e0389319635a6adb59289b4353dbc26b670772b3cd79df9170690569723be8
+    source:
+      file: src/a11y/core/analyzer.ts
+      lines: 151
+      integrity: sha256-4b92f726f1d61da2762ae162caa2989ac531a7f0cd2ae7f9c5a5510b263578db
+      commit-sha: 9d4cdd83bb865369a4d76950118ab21f2fe44124
+  - id: incomplete-never-fails
+    claim:
+      lines: 156-158
+      integrity: sha256-31e0389319635a6adb59289b4353dbc26b670772b3cd79df9170690569723be8
+    source:
+      file: src/a11y/commands/check.ts
+      lines: 132
+      integrity: sha256-d9bf347fb2ed4cd734dd83ea96559d152816f6a56dc50c63da047ffae05f01ad
+      commit-sha: 9d4cdd83bb865369a4d76950118ab21f2fe44124
+  - id: incomplete-json-only
+    claim:
+      lines: 157
+      integrity: sha256-b10dc4f2b98d240e55ddfc9a13c2893edfdc705cc5851f60d1cf74e061266b12
+    source:
+      file: src/a11y/reporters/json.ts
+      lines: 7-9
+      integrity: sha256-48ebcf5ac9c1feba26bea501d71cba010b582960a191bf491154b38fcbd71e50
+      commit-sha: 9d4cdd83bb865369a4d76950118ab21f2fe44124
+  - id: github-silent-on-clean-run
+    claim:
+      lines: 125
+      integrity: sha256-6373b361bcc6a8876787bb7695d36ac41fb9e5d5905f81d47f7aa29eb7c3e551
+    source:
+      file: src/a11y/cli.ts
+      lines: 253-257
+      integrity: sha256-d2f531bc441897e7c4291106a68e1eb5cf8bba609038312ccfce5beb1788004a
+      commit-sha: 9d4cdd83bb865369a4d76950118ab21f2fe44124
+  - id: score-share-of-rules-passed
+    claim:
+      lines: 125-126
+      integrity: sha256-5a41f364eb5b091998b586afbaac1e92ebea4fb3e14c1d6340215931a2212800
+    source:
+      file: src/a11y/commands/check.ts
+      lines: 116-117
+      integrity: sha256-ed3bfa5ec056b37ee8066e37f50435641caf3554c8c334ff4cc681890c3bfee2
+      commit-sha: 9d4cdd83bb865369a4d76950118ab21f2fe44124
+  - id: score-excludes-below-floor
+    claim:
+      integrity: sha256-22967707c22302be55737e74def3bd242eb1a8172c4646926ec1f83356bc0f0d
+    source:
+      file: src/a11y/commands/check.ts
+      lines: 113-117
+      integrity: sha256-30e2ee7a755c0558da729349b48f216c838788e63832b00ca96ecfefee5cd0db
+      commit-sha: 9d4cdd83bb865369a4d76950118ab21f2fe44124
 ---
 
 import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
@@ -450,6 +467,7 @@ Checked 1 of 1 pages (no crawl)
 ```
 
 {/* cite exit-zero-when-no-failed-pages */}
+{/* cite score-excludes-below-floor */}
 Exit `0`, and the annotation is gone on the next push. The score went from `94`
 to `100`, which is the share of applicable axe rules that passed. Violations
 below the severity floor do not count against it. Read the exit
