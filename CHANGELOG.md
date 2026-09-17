@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.3.4](https://github.com/hawkeyexl/manni/compare/v2.3.3...v2.3.4) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** refuse a missing --root on add ([#49](https://github.com/hawkeyexl/manni/issues/49)) ([9121f1f](https://github.com/hawkeyexl/manni/commit/9121f1fc144dd17faa495aa07446b94326c3d3f4))
+
 ## [2.3.3](https://github.com/hawkeyexl/manni/compare/v2.3.2...v2.3.3) (2026-09-17)
 
 
