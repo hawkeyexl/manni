@@ -153,12 +153,15 @@ describe("checkTermSet", () => {
       ]);
     });
 
-    it("compares ids exactly", () => {
+    it("compares ids ignoring case, naming each entry by its own id", () => {
       const terms = [
-        term({ id: "Bifocal", label: "one", definition: "d" }),
-        term({ id: "bifocal", label: "two", definition: "d" }),
+        term({ id: "Bifocal", label: "one", definition: "d", file: "a.md", line: 1 }),
+        term({ id: "bifocal", label: "two", definition: "d", file: "b.md", line: 2 }),
       ];
-      expect(only(checkTermSet(used(terms)), "duplicate-id")).toEqual([]);
+      expect(only(checkTermSet(used(terms)), "duplicate-id").map((f) => [f.id, f.message])).toEqual([
+        ["Bifocal", 'id: "Bifocal" is also used by b.md:2'],
+        ["bifocal", 'id: "bifocal" is also used by a.md:1'],
+      ]);
     });
   });
 

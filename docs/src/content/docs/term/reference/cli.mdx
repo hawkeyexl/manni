@@ -99,7 +99,7 @@ manni term list [paths...] [options]
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. Given once. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable, one glob per occurrence. |
 | `--collection` | `<name>` | every collection | Read one configured collection rather than every declared one. Repeatable, one name per occurrence. Cannot be combined with positional paths (exit 2). |
-| `--allow-empty` | n/a | off | Treat a set with no terms as success. Wins over config `allowEmpty:`. |
+| `--allow-empty` | n/a | off | Treat a missing path, no matched files or no terms as success rather than an error (exit 2). Wins over config `allowEmpty:`. |
 | `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. Wins over config `respectGitignore:`. |
 | `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/term/reference/configuration/). The file must exist (exit 2). |
 | `--no-color` | n/a | off | Disable colored output. Color applies on a TTY only, and never under `NO_COLOR`. |
@@ -159,7 +159,7 @@ manni term get <term> [paths...] [options]
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--collection` | `<name>` | every collection | Read one configured collection. Repeatable. |
-| `--allow-empty` | n/a | off | Treat a set with no terms as success. |
+| `--allow-empty` | n/a | off | Treat a missing path, no matched files or no terms as success. |
 | `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. |
 | `-c, --config` | `<path>` | discovered | Path to a config file. |
 | `--no-color` | n/a | off | Disable colored output. |
@@ -212,7 +212,7 @@ manni term check [paths...] [options]
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--collection` | `<name>` | every collection | Read one configured collection. Repeatable. |
-| `--allow-empty` | n/a | off | Treat a set with no terms as success. |
+| `--allow-empty` | n/a | off | Treat a missing path, no matched files or no terms as success. |
 | `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. |
 | `-c, --config` | `<path>` | discovered | Path to a config file. |
 | `--no-color` | n/a | off | Disable colored output. |
@@ -356,7 +356,7 @@ manni term lint [paths...] [options]
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--collection` | `<name>` | every collection | Read one configured collection. Repeatable. |
-| `--allow-empty` | n/a | off | Treat a set with no terms as success. |
+| `--allow-empty` | n/a | off | Treat a missing path, no matched files or no terms as success. |
 | `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. |
 | `-c, --config` | `<path>` | discovered | Path to a config file. |
 | `--no-color` | n/a | off | Disable colored output. |
@@ -435,7 +435,7 @@ clean working tree so the change is easy to review.
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--collection` | `<name>` | every collection | Read one configured collection. Repeatable. |
-| `--allow-empty` | n/a | off | Treat a set with no terms as success. |
+| `--allow-empty` | n/a | off | Treat a missing path, no matched files or no terms as success. |
 | `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. |
 | `-c, --config` | `<path>` | discovered | Path to a config file. |
 | `--no-color` | n/a | off | Disable colored output. |
