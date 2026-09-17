@@ -658,7 +658,7 @@ docs/src/content/docs/a11y/fix/index.mdx:
         integrity: sha256-87ac6614fa82bc3d9da0d70cefdd6091945a1ed113d1f652348d62bc3048e922
       source:
         file: src/a11y/types.ts
-        lines: 129-132
+        lines: 134-137
         integrity: sha256-de026a39771988e9b3fa256e57f8279ba7dda8884eb0904e5436b1de7757c679
         commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
     - id: json-node-html
