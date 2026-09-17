@@ -21,6 +21,8 @@ need the source.
 
 ## What an encrypted source is, and is not
 
+{/* cite add-encrypts-when-key */}
+{/* cite add-encrypts-source-path */}
 When a family encryption key is available, `add` encrypts every source it
 writes. The page carries `~` and a ciphertext instead of a path. A key in
 `MANNI_ENCRYPTION_KEY` counts as available, so nothing has to be remembered
@@ -39,6 +41,9 @@ citations:
       commit-sha: 9721b1b1ecd73447b91d7ff10b4c4f8e6639cbc0
 ```
 
+{/* cite same-token-format */}
+{/* cite ciphertext-shape */}
+{/* cite keyed-pin-hmac */}
 The real ciphertext is `~` and at least 82 base64url characters, shortened
 here and below. It is the path, encrypted under the key, in the same token
 format a `manni meta` value uses. `source.lines` sits beside it in plain text.
@@ -49,15 +54,18 @@ does not match.
 [Proposal 0045](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0045-family-encryption-key.md)
 states the construction.
 
+{/* cite key-env-wins */}
 The key belongs to the family, not to cite. It is a top-level `encryptionKey:`
 in `manni.config.yaml`, or `MANNI_ENCRYPTION_KEY`, and the environment wins.
 `manni meta` encrypts metadata values with the same key, and
 [`manni key`](/manni/key/) sets it and rotates it.
 
+{/* cite deterministic-ciphertext */}
 An encrypted source **is** a stable name for one path. The same key and the
 same path always give the same ciphertext, on every page. So `update` can
 recognise one file across pages.
 
+{/* cite decrypt-then-tracked */}
 An encrypted source **is** reversible, by anyone who has the key. A checkout
 with the key decrypts the path, then checks it against the tracked files.
 Without the key, nothing on the page or in the tool turns a ciphertext back
@@ -88,6 +96,8 @@ the entry, and the rest of the entry is plain text:
 | `source.file` | No | The ciphertext, and only the ciphertext. |
 | `source.integrity` | Keyed | A reader cannot hash a guess at the line and compare, because the pin is an HMAC under the key. |
 
+{/* cite key-prompt-warns-unignored */}
+{/* cite key-set-warns-unignored */}
 **Keep the key out of public files.** It belongs in a CI secret and in the
 environment of anyone minting citations. A key committed to the public
 repository is readable by anyone who can read the repository, and so is every
@@ -99,10 +109,15 @@ for this layout. Both warn when git does not ignore that file:
 manni: manni.config.yaml is not ignored by git: once committed, anyone who can read the repository can decrypt every encrypted value. Prefer MANNI_ENCRYPTION_KEY for a shared repository.
 ```
 
+{/* cite key-set-refuses-env */}
 Here, generate the value yourself and put it in the secret. `manni key set`
 refuses while `MANNI_ENCRYPTION_KEY` is set, because a key written to config
 would never be read.
 
+{/* cite hand-changed-key-undecryptable */}
+{/* cite rotate-pages-and-manifests */}
+{/* cite rotate-metadata-same-run */}
+{/* cite rotate-rekeys-from-cited-lines */}
 **Rotate it with the tool, never by hand.** A ciphertext or pin made under one
 key does not decrypt under another. A key changed by hand leaves every
 encrypted citation `missing (does not decrypt under the current key)`.
@@ -112,6 +127,8 @@ manifest alike. The same run re-encrypts every encrypted metadata value, so
 the whole family moves to the new key together. Run it from the docs checkout
 with the code beside it, because each pin is re-keyed from the cited lines.
 
+{/* cite rotate-env-needs-to */}
+{/* cite rotate-env-config-not-written */}
 Here the key comes from `MANNI_ENCRYPTION_KEY`, so it rotates through the
 environment. `--to` is required, and the config is never written, so the
 secret stays out of the public file. Pass the new value, then update the
@@ -128,6 +145,7 @@ Key not written: it comes from MANNI_ENCRYPTION_KEY. Update the secret to the va
 Update the secret and push the re-encrypted pages together. A private run that
 sees one without the other reads every encrypted citation as `missing`.
 
+{/* cite rotate-narrowed-needs-to */}
 A run over part of the family, with paths or `--collection`, also needs `--to`
 and never writes the key. Run each area under the same `--to`, then finish
 with a whole run under that `--to`.
@@ -146,6 +164,7 @@ with a whole run under that `--to`.
 
 ## The layout
 
+{/* cite root-any-directory */}
 The pages stay in the docs repository, where they are, so a SARIF upload's
 file URIs resolve against the repository they belong to. The sources are
 reached through `--root`, which may point at any directory, including another
@@ -275,6 +294,7 @@ and the check runs from the docs checkout.
 
 </Steps>
 
+{/* cite reveal-flag */}
 Locally, when you want to see which file an encrypted source is, `--reveal`
 prints the decrypted path beside it, in the pretty reporter only:
 
@@ -337,6 +357,7 @@ jobs:
           sarif_file: cite.sarif
 ```
 
+{/* cite shallow-history-unavailable */}
 The private checkout wants `fetch-depth: 0`. A shallow clone cannot show the
 file at the commit a pin was minted at, so `source-never-true` and the diff degrade
 to `changed (history unavailable)`. [Run it in CI](/manni/cite/ci/#full-history)
@@ -344,6 +365,7 @@ explains.
 
 ## When an encrypted source does not resolve
 
+{/* cite missing-says-why */}
 Run the private job without the key, with another key, or with the wrong
 `--root`, and every encrypted citation is `missing`. The message says which
 of the three it was:
@@ -362,6 +384,8 @@ of the three it was:
 | `missing (does not decrypt under the current key)` | The key is not the one the source was encrypted under, or the ciphertext was edited by hand. | Use the key the pages were encrypted under. After a rotation, update the secret to the new key. |
 | `missing (no tracked file matches; wrong --root?)` | The path decrypted, and no tracked file under the root has it. | Point `--root` at the code checkout. If the file was renamed, add the citation again. |
 
+{/* cite tracked-files-or-walk */}
+{/* cite realpath-containment */}
 Where git is available, a decrypted path resolves against **tracked files
 only**, through `git ls-files` under the root, with a real-path containment
 check. A file that is not committed, or is reached through a symlink out of
