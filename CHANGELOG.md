@@ -4,6 +4,14 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.3.3](https://github.com/hawkeyexl/manni/compare/v2.3.2...v2.3.3) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** enforce the 5,000-line range limit ([#50](https://github.com/hawkeyexl/manni/issues/50)) ([58fef71](https://github.com/hawkeyexl/manni/commit/58fef71afe5d80b53526f3bbee0544c853b5876a))
+* **cite:** indent add --marker to the paragraph it anchors ([#52](https://github.com/hawkeyexl/manni/issues/52)) ([93733e4](https://github.com/hawkeyexl/manni/commit/93733e4b697473b06c3223c3067101606c6432e0))
+
 ## [2.3.2](https://github.com/hawkeyexl/manni/compare/v2.3.1...v2.3.2) (2026-09-17)
 
 
