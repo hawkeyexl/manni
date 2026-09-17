@@ -435,6 +435,38 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
     expect(json.summary.skipped).toBe(0);
   }, 120_000);
 
+  it("takes the last of --max-pages and --no-max-pages, the way commander does", async () => {
+    // The pair behaves like --crawl/--no-crawl above, and for the same reason:
+    // both halves write the one `maxPages` option, so commander keeps whichever
+    // was written last. Pinned here because the two pairs are the only place
+    // the tool relies on that, and a regression would be silent.
+    const capped = await run([
+      "check",
+      `${server.url}/index.html`,
+      "--no-max-pages",
+      "--max-pages",
+      "1",
+      "-f",
+      "json",
+    ]);
+    const cappedJson = JSON.parse(capped.stdout) as JsonRun;
+    expect(cappedJson.summary.checked).toBe(1);
+    expect(cappedJson.summary.skipped).toBe(2);
+
+    const uncapped = await run([
+      "check",
+      `${server.url}/index.html`,
+      "--max-pages",
+      "1",
+      "--no-max-pages",
+      "-f",
+      "json",
+    ]);
+    const uncappedJson = JSON.parse(uncapped.stdout) as JsonRun;
+    expect(uncappedJson.summary.checked).toBe(3);
+    expect(uncappedJson.summary.skipped).toBe(0);
+  }, 120_000);
+
   it("takes the last of --crawl and --no-crawl, the way commander does", async () => {
     const off = await run([
       "check",
