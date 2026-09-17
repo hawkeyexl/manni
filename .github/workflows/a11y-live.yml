@@ -1,0 +1,80 @@
+name: Accessibility (live site)
+
+# The docs.yml `a11y` job checks the site a pull request *builds*, served from
+# `astro preview` on 127.0.0.1. This one checks the site GitHub Pages actually
+# *serves*. They are not the same check, and the gap is not theoretical:
+#
+#   - Discovery differs completely. A built sitemap lists the production URLs,
+#     which are off-host relative to 127.0.0.1, so the local crawl drops every
+#     one of them and reaches pages by following links instead. Against the live
+#     origin the sitemap is in scope and drives the crawl. Measured on this site:
+#     the local run reaches 100 of 101 pages as `link`, the live run reaches 100
+#     of 101 as `sitemap`. Sitemap-driven discovery has no CI coverage at all
+#     without this workflow.
+#   - Pages serves what the local preview does not: its own redirects, headers
+#     and 404 handling.
+#   - A schedule sees drift a pull request cannot. A page nobody has edited in a
+#     year is checked here and nowhere else.
+#
+# This is the second of the two shapes the a11y docs recommend running together:
+# https://hawkeyexl.github.io/manni/a11y/ci/
+on:
+  schedule:
+    # Weekly, Monday. 06:40 UTC: off the hour, because GitHub queues the top of
+    # the hour heavily, and forty past ci.yml's 06:00 so the two do not contend.
+    # Weekly rather than daily because this is a hundred page loads in a real
+    # browser, and the thing it watches for is content drift, which is slow.
+    - cron: "40 6 * * 1"
+  workflow_dispatch:
+  # Narrow on purpose, the same way published-schemas.yml is narrow. A change to
+  # *how* this check runs is exercised before it merges; a change to what the
+  # site contains is left to the schedule, by which time the deploy has
+  # happened. A contributor should not see red for a finding they did not
+  # introduce and cannot fix from their branch.
+  pull_request:
+    paths:
+      - .github/workflows/a11y-live.yml
+
+permissions:
+  contents: read
+
+# Back-to-back `workflow_dispatch` runs while someone is diagnosing a finding
+# are exactly when several browsers crawling the same host is least useful.
+concurrency:
+  group: a11y-live-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: live site
+    runs-on: ubuntu-latest
+    # A crawl is sequential, roughly a second or two per page, so a hundred
+    # pages is a few minutes. Twenty means a hung page fails the run instead of
+    # holding a runner for six hours.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # The CLI under test, from this checkout rather than npm — the same stance
+      # the docs.yml `a11y` job takes. It also means this workflow does not wait
+      # on a release to exercise a fix.
+      - run: npm run build
+
+      # The URL is positional, so it wins over the `site` collection's `url:`,
+      # which points at the local preview for the other job. Everything else
+      # still comes from the repo's own manni.config.yaml — in particular the
+      # `a11y.severity` floor, so both jobs gate at the same ratchet.
+      #
+      # Uncapped: the schedule has the time, and seeing the whole site is the
+      # point. `-f github` puts one annotation per rule per page on the run, and
+      # prints nothing when the site is clean. `--progress` narrates the crawl,
+      # which a log with no terminal otherwise shows as several silent minutes.
+      #
+      # GitHub-hosted ubuntu runners ship Chrome, so there is no browser install
+      # step; the analyzer finds it before falling back to Playwright's own.
+      - name: Check the published docs site
+        run: node dist/cli.js a11y check https://hawkeyexl.github.io/manni/ -f github --progress
