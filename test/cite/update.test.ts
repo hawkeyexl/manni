@@ -617,6 +617,14 @@ describe("runUpdate: both ends, and what is left", () => {
     );
   });
 
+  it("refuses a --root that does not exist, as check does", async () => {
+    workspace("moved.md");
+    const missing = join(cwd, "no-such-dir");
+    expect(await refusal(update({ inputs: ["pages/moved.md"], root: missing }))).toBe(
+      `Root directory not found: ${missing}.`,
+    );
+  });
+
   it("says once, under --accept, that a re-mint without git records no commit", async () => {
     workspace("source-changed.md");
     const notices: string[] = [];

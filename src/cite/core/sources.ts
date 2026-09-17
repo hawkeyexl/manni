@@ -16,6 +16,7 @@ import fg from "fast-glob";
 import { lstat, readFile, realpath } from "node:fs/promises";
 import { join, sep } from "node:path";
 import { decryptValue, encryptValue } from "../../shared/encryption.js";
+import { CiteError } from "../errors.js";
 import type { GitClient, MissingReason, SourceIndex, SourceRange } from "../types.js";
 import { SRC_PATTERN } from "./range.js";
 
@@ -97,6 +98,24 @@ export async function buildSourceIndex(root: string, opts?: BuildIndexOptions): 
     files: () => files,
     has: (path) => byPath.has(path),
   };
+}
+
+function isEnoent(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
+}
+
+/**
+ * The source index for a run, with a root that is not there refused as a
+ * `CiteError`. Every verb that reads sources builds its index here, so the
+ * refusal reads the same on each.
+ */
+export async function sourceIndexFor(root: string, client: GitClient): Promise<SourceIndex> {
+  try {
+    return await buildSourceIndex(root, { gitClient: client });
+  } catch (error) {
+    if (isEnoent(error)) throw new CiteError(`Root directory not found: ${root}.`);
+    throw error;
+  }
 }
 
 export type ReadSourceResult =

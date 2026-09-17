@@ -13,7 +13,7 @@
  * as the page's own lines: `add <page>[:L|:L1-L2] <src>`.
  */
 import { execSync, spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -927,6 +927,16 @@ describe("manni cite add", () => {
     expect(after.stdout).toContain(`${token.slice(0, 5)}…:2 current`);
   });
 
+  it("refuses a --root that does not exist with check's message, and writes nothing", () => {
+    const before = readFileSync(join(work, "pages", "no-citations.md"), "utf8");
+    const r = cite(["add", "pages/no-citations.md:6", "src/limits.ts:2", "--root", "no-such-dir"]);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    // On macOS the child's cwd is the temp dir's realpath (/private/var/...), not /var/....
+    expect(r.stderr.split(/\r?\n/)[0]).toBe(`manni: Root directory not found: ${join(realpathSync(work), "no-such-dir")}.`);
+    expect(readFileSync(join(work, "pages", "no-citations.md"), "utf8")).toBe(before);
+  });
+
   it("--encrypt with no key, off a terminal, refuses without a question and writes nothing", () => {
     const before = readFileSync(join(work, "pages", "no-citations.md"), "utf8");
     const r = cite(["add", "pages/no-citations.md:6", "src/limits.ts:2", "--encrypt", "--root", "."]);
@@ -964,6 +974,14 @@ describe("manni cite update", () => {
       "    claim:\n      lines: 5\n",
     );
     expect(cite(["check", "--root", ".", "pages/claim-moved.md"]).status).toBe(0);
+  });
+
+  it("refuses a --root that does not exist with check's message", () => {
+    const r = cite(["update", "--root", "no-such-dir", "pages/moved.md"]);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    // On macOS the child's cwd is the temp dir's realpath (/private/var/...), not /var/....
+    expect(r.stderr.split(/\r?\n/)[0]).toBe(`manni: Root directory not found: ${join(realpathSync(work), "no-such-dir")}.`);
   });
 
   it("--dry-run prints the diffs and leaves the page alone", () => {

@@ -24,7 +24,7 @@ import { sliceLines, splitLines } from "../core/hash.js";
 import { mintCitation } from "../core/mint.js";
 import { bodyLineOf, readPage } from "../core/page.js";
 import { lineSpec, parseLines, parseSrc, spellLines, tooWide } from "../core/range.js";
-import { buildSourceIndex, readSource } from "../core/sources.js";
+import { readSource, sourceIndexFor } from "../core/sources.js";
 import { ManifestSet } from "../core/manifest.js";
 import { sidecarsFor, type PageSidecar } from "../core/sidecar.js";
 import {
@@ -247,7 +247,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   // Git is used whenever it is there, as on check and update: the index is
   // `git ls-files` and the commit is HEAD. Where it is not, a walk and none.
   const client = opts.gitClient ?? gitClient(root);
-  const sourceIndex = await buildSourceIndex(root, { gitClient: client });
+  const sourceIndex = await sourceIndexFor(root, client);
 
   // The marker goes in before the claim is pinned, because what it anchors is
   // what the claim pins. Everything below counts lines in `body`, the page
