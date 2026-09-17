@@ -1,5 +1,5 @@
 ---
-title: "manni:kg:1.0.0-proposal.3"
+title: "manni:kg:1.0.0-proposal.4"
 description: "The proposed knowledge-graph vocabulary: SKOS concepts, iiRDS typing, and PROV provenance under one closed kg block."
 sidebar:
   order: 8
@@ -9,7 +9,7 @@ sidebar:
 :::caution[Proposal under review]
 Part of the [metadata vocabularies proposal](/manni/meta/proposals/frontmatter-vocabularies/),
 open for community review. Draft schema:
-[`docs/proposals/0023/schemas/kg/1.0.0-proposal.3.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/kg/1.0.0-proposal.3.json).
+[`docs/proposals/0023/schemas/kg/1.0.0-proposal.4.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/kg/1.0.0-proposal.4.json).
 :::
 
 **The question it answers: what does the knowledge graph know about this
@@ -23,6 +23,8 @@ a misspelled field fails loudly.
 |---|---|
 | `label` | The one canonical name of the concept this page is about (`skos:prefLabel`) |
 | `alt-labels` | Every other name; what search matches (`skos:altLabel`) |
+| `definition` | What the concept is (`skos:definition`). Requires `label`, the name it defines |
+| `abstract` | The one-sentence form of `definition`, for a hover card. Requires `definition` |
 | `broader` · `narrower` | Parent and child concepts. Each requires `label`, so there are no synonyms of nothing |
 | `related-concepts` | Associated concepts (`skos:related`). The page-level `related-pages` relates pages; this relates concepts |
 | `concepts` | What the page covers (`dcterms:subject`). The same fact as the page-level field, one level deeper |
@@ -37,7 +39,7 @@ Every label field takes one string or a non-empty list without duplicates. The
 three iiRDS enums stay closed because iiRDS publishes the lists. That is the
 kind of authority the family's no-invented-enums rule asks for.
 
-**Location.** `manni:kg:1.0.0-proposal.3` marks its one top-level key,
+**Location.** `manni:kg:1.0.0-proposal.4` marks its one top-level key,
 `kg`, with `"x-manni-location": "page"`. `page` means the value belongs in the
 document's own metadata and is meant to reach delivered output. `external`
 means it belongs in the collection's external-metadata manifest. A key is
@@ -107,3 +109,11 @@ under review. The block's closed field list
 kept `sections`, `revision-of` and `derived-from` out of the trail, and a
 pointer cannot. That guard would move to the graph layer, where the harvest
 reports a machine attribution on those fields.
+
+Proposal 0052 adds `definition` and `abstract`, in draft `1.0.0-proposal.4`.
+Until then a concept was a label with no body. The draft also names the
+[terminology](/manni/meta/proposals/terminology/) vocabulary's root fields as
+the harvest fallback for seven facts, on a page with no `kg` block. `label`,
+`alt-labels`, `broader`, `narrower`, `definition` and `abstract` map by name,
+and `related-terms` maps to `related-concepts`. A page that opens a `kg` block
+keeps the block's behaviour exactly.

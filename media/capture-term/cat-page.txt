@@ -1,0 +1,11 @@
+---
+title: progressive lens
+type: term
+id: progressive-lens
+label: progressive lens
+definition: A lens whose power rises with no line.
+alt-labels:
+  - PAL
+hidden-labels:
+  - no-line bifocal
+---

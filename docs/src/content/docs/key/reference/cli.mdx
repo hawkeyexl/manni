@@ -480,7 +480,7 @@ $ manni key rotate --to 0123456789abcdef0123456789abcdef --collection site --ext
 
 The ciphertexts above are shortened. In `pretty` output each one shows as `~`
 and its first four characters; `-f json` carries every one whole. A metadata
-value is named by its JSON pointer, `/owner`. A citation is named by its id,
+value is named by its JSON Pointer, `/owner`. A citation is named by its id,
 and keeps its `source.lines` after the ciphertext. A citation with no id is
 named by where it sits, `/citations/0`, and by the manifest when one owns it.
 In JSON a citation row carries `kind: "citation"`, its `id` or `index`, and
@@ -491,5 +491,5 @@ and `to`.
 collections declare them. A URL manifest is read-only and never appears. Each
 row names the manifest as the run reports it and the `collection` that
 declared it. A value in one is named by the document entry it belongs to and
-the JSON pointer inside that entry. So `docs/handbook.md/owner` reads as one
+the JSON Pointer inside that entry. So `docs/handbook.md/owner` reads as one
 name in `pretty`, and as two fields, `entry` and `pointer`, in JSON.

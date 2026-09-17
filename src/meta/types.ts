@@ -101,14 +101,6 @@ export interface MetadataExtractor {
   /** Lowercase file extensions this extractor handles, incl. dot (e.g. ".md"). */
   extensions: string[];
   /**
-   * Whether this extractor can *read* — false for a format that is registered
-   * but not yet wired up. Every registered extractor sets it true today; it is
-   * kept because it is a distinct capability from writability, which is the
-   * presence of `apply`. A format can read without writing, and one being
-   * added could be declared before it can do either.
-   */
-  implemented: boolean;
-  /**
    * Extract metadata from raw file content.
    *
    * `this: void` — as on `apply` below, and on `ExtractedMetadata`'s

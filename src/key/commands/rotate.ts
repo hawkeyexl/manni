@@ -425,7 +425,7 @@ export async function runKeyRotate(opts: KeyRotateOptions): Promise<KeyRotateRes
   const base = fromCollections && file !== null ? file.dir : cwd;
 
   const forced = opts.as === undefined ? undefined : extractorByName(opts.as);
-  if (opts.as !== undefined && forced?.implemented !== true) {
+  if (opts.as !== undefined && forced === undefined) {
     throw new KeyError(
       `Unknown format "${opts.as}". Supported extensions: ${supportedExtensions().join(", ")}.`,
     );

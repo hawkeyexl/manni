@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE glossgroup PUBLIC "-//OASIS//DTD DITA 2.0 Glossary Group//EN" "glossgroup.dtd">
+<glossgroup id="lenses" xml:lang="en">
+    <title>Lenses</title>
+    <!-- hand-formatted: four-space indents, extra attributes -->
+    <glossentry id="bifocal" outputclass="optics">
+        <glossterm   >bifocal</glossterm>
+        <glossdef>Lenses with
+            two powers.</glossdef>
+    </glossentry>
+    <glossentry id='pal'>
+        <glossterm>progressive lens</glossterm>
+        <glossdef><p>No visible line.</p><p>Spectacles.</p></glossdef>
+        <glossBody><glossUsage>Eyewear only.</glossUsage><glossAlt><glossAcronym>PAL</glossAcronym></glossAlt></glossBody>
+    </glossentry>
+    <glossentry id="trifocal"><glossterm>trifocal</glossterm><glossdef>Three powers.</glossdef></glossentry>
+</glossgroup>

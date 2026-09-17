@@ -1,0 +1,2 @@
+# Pseudo-terminal bytes, kept exactly as ttyd relayed them (CRLF included).
+*.raw binary

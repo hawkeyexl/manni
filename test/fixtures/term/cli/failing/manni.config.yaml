@@ -1,0 +1,6 @@
+# The clean set, with a guide that names a term by its alt-label:
+# `manni term check` exits 1 with one undefined-term error.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"

@@ -1,0 +1,21 @@
+---
+title: Extractor
+description: What an extractor is in manni meta, why there is one per input format, and how to force one.
+type: term
+id: extractor
+label: extractor
+related-terms: [metadata, extraction]
+abstract: The format-specific reader of a document's metadata.
+definition: >-
+  The format-specific component that reads metadata out of a document.
+---
+
+<p>{frontmatter.definition}</p>
+
+manni meta has one extractor per input format: Markdown, MDX, AsciiDoc,
+reStructuredText, XML, and HTML. The extractor is the only part of manni meta
+that knows about a file's format. Once it produces
+[metadata](/manni/meta/reference/glossary/metadata/), validation and reporting
+work the same for every format. You can force a specific extractor with `--as`,
+which is required when reading from stdin. See
+[Supported formats](/manni/meta/reference/formats/).

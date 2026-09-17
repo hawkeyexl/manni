@@ -26,7 +26,6 @@ import type { ExtractedMetadata, MetadataExtractor } from "../types.js";
 export const htmlExtractor: MetadataExtractor = {
   name: "html",
   extensions: [".html", ".htm"],
-  implemented: true,
   extract(content, _filePath, options): ExtractedMetadata {
     const { data, lineMap, colMap } = readHtml(content, options);
     return {

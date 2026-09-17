@@ -1,0 +1,5 @@
+[?9001h[?1004h[?25l[2J[m[2;1H[4m[1Cdocs\fitting.md]0;C:\Program Files\Git\usr\bin\bash.exe[?25h[?25l[24m
+ 3:27  [33mwarning  [mSpell out 'PAL' on first use, as 'progressive lens (PAL)'.          Terms.PAL        
+ 4:3   [33mwarning  [mUse 'progressive lens' instead of 'no-line bifocal'.                Terms.Deprecated 
+ 5:6   [31merror    [mWrite 'Progressive Lens' in lowercase, except to start a sentence.  Terms.Lowercase  [7;1H✖ [31m1 error[m, [33m2 warnings [mand [34m0 suggestions [min 1 file.
+[?25h

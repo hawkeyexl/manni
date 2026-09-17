@@ -23,7 +23,7 @@ How you express the version depends on which of the three reference kinds your c
 <Tabs>
 <TabItem label="Built-in">
 
-A built-in id already carries its version in the third segment of `vendor:name:version`. The bundled OKF schema is `google:okf:0.1`, and the `0.1` *is* the pin. A future revision ships as a new id, `google:okf:0.2`. A consumer naming `google:okf:0.1` keeps validating against exactly the schema they chose until they edit that reference themselves.
+A built-in id already carries its version in the third segment of `vendor:name:version`. The bundled OKF schema is `google:okf:0.1`, and the `0.1` *is* the pin. A revised built-in schema gets a new id, and an existing id never changes. A consumer naming `google:okf:0.1` keeps validating against exactly the schema they chose until they edit that reference themselves.
 
 ```yaml title="manni.config.yaml"
 meta:

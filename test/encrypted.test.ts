@@ -710,7 +710,6 @@ describe("reencryptMetadata", () => {
     const readOnly: MetadataExtractor = {
       name: "read-only",
       extensions: [".ro"],
-      implemented: true,
       extract: markdown.extract,
     };
     const content = doc({ owner: enc("platform"), done: enc("x", OTHER) });

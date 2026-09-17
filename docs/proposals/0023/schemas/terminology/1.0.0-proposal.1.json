@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manni:terminology:1.0.0-proposal.1",
+  "title": "manni terminology vocabulary (1.0.0-proposal.1)",
+  "description": "What a term entry says about its term: the names it goes by, what it means, and where it sits among other terms. The fields map onto SKOS, and each description names its SKOS term. They sit at the root of the page, flat, as every house vocabulary's do. `type`, `id` and `language` belong to manni:core:1.0.0-proposal.4 and are not declared here. `type: term` marks an entry, which then names its `label` and either defines the term or redirects with `see`. An entry carrying both is a finding for `manni term check`, not a schema error. `type: term-set` imposes nothing. The kind of label is the status: `label` is preferred, `alt-labels` are admitted, and `hidden-labels` are deprecated. On a page without a `kg` block, these fields are the harvest fallback of their kg twins (manni:kg:1.0.0-proposal.4). Files without the vocabulary's fields pass.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The one preferred name of the term (skos:prefLabel). Every other name goes in `alt-labels` or `hidden-labels`. Required on a `type: term` page.",
+      "x-manni-location": "page"
+    },
+    "definition": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What the term means, in full (skos:definition). This is the text a rendered entry shows. A `type: term` page carries it unless it redirects with `see`.",
+      "x-manni-location": "page"
+    },
+    "abstract": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The short form of the definition, one sentence long. A hover card or a tooltip shows it where the full `definition` would not fit. It has no SKOS term of its own and narrows skos:definition.",
+      "x-manni-location": "page"
+    },
+    "alt-labels": {
+      "$ref": "#/$defs/labelList",
+      "description": "Other admitted names for the term: synonyms, abbreviations and spelling variants (skos:altLabel). Search matches them, and writers may use them.",
+      "x-manni-location": "page"
+    },
+    "hidden-labels": {
+      "$ref": "#/$defs/labelList",
+      "description": "Names the term must not go by: deprecated spellings, obsolete forms and common misspellings (skos:hiddenLabel). Search still matches them, so a reader who types one finds the entry.",
+      "x-manni-location": "page"
+    },
+    "broader": {
+      "$ref": "#/$defs/labelList",
+      "description": "Labels of broader terms, the parents of this one (skos:broader).",
+      "x-manni-location": "page"
+    },
+    "narrower": {
+      "$ref": "#/$defs/labelList",
+      "description": "Labels of narrower terms, the children of this one (skos:narrower).",
+      "x-manni-location": "page"
+    },
+    "related-terms": {
+      "$ref": "#/$defs/labelList",
+      "description": "Labels of associatively related terms (skos:related). The `-terms` suffix says what it points at, as `related-pages` and `kg.related-concepts` do.",
+      "x-manni-location": "page"
+    },
+    "see": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The label of the entry this one redirects to. A redirect entry carries `see` in place of a definition, so a reader who looks up this name is sent to the preferred one. It has no SKOS term, and the relation it states is the one skos:altLabel states from the other side.",
+      "x-manni-location": "page"
+    },
+    "scope-note": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A note on how far the term reaches, and where it stops (skos:scopeNote). It says what the term covers in this set, not what it means.",
+      "x-manni-location": "page"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "term"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "required": [
+          "label"
+        ],
+        "anyOf": [
+          {
+            "required": [
+              "definition"
+            ]
+          },
+          {
+            "required": [
+              "see"
+            ]
+          }
+        ],
+        "description": "A term entry names its term, and either defines it or redirects to the entry that does. Carrying both is left to the check."
+      }
+    }
+  ],
+  "$defs": {
+    "labelList": {
+      "if": {
+        "type": "array"
+      },
+      "then": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "uniqueItems": true
+      },
+      "else": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "One non-empty label, or a non-empty unique list of them."
+    }
+  }
+}

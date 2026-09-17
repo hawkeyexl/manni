@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glossentry id="progressive-lens">
+  <glossterm>progressive
+    lens</glossterm>
+  <glossdef>Lenses that correct <b>presbyopia</b> without a visible line.</glossdef>
+  <glossBody>
+    <glossUsage>Spectacles only.</glossUsage>
+    <glossAlt>
+      <glossAcronym>PAL</glossAcronym>
+    </glossAlt>
+    <glossAlt>
+      <glossSynonym>graduated lens</glossSynonym>
+    </glossAlt>
+  </glossBody>
+</glossentry>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<article xmlns="http://docbook.org/ns/docbook" version="5.0">
+  <title>Optics</title>
+  <glossary>
+    <title>Glossary</title>
+    <glossentry xml:id="pal">
+      <glossterm>progressive lens</glossterm>
+      <acronym>PAL</acronym>
+      <glossdef>
+        <para>Corrective lenses whose power
+          increases from top to bottom.</para>
+        <para>They have no visible line.</para>
+        <glossseealso otherterm="bifocal"/>
+        <glossseealso>trifocal</glossseealso>
+      </glossdef>
+    </glossentry>
+    <glossdiv>
+      <title>V</title>
+      <glossentry>
+        <glossterm>varifocal</glossterm>
+        <glosssee otherterm="pal"/>
+      </glossentry>
+      <glossentry>
+        <glossterm>Graduated Lens</glossterm>
+        <glossterm>graded lens</glossterm>
+        <glosssee>progressive lens</glosssee>
+      </glossentry>
+    </glossdiv>
+    <glossentry>
+      <acronym>XX</acronym>
+      <glossdef><para>No term.</para></glossdef>
+    </glossentry>
+  </glossary>
+</article>

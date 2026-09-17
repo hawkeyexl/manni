@@ -1,0 +1,132 @@
+---
+title: Terminology fields
+description: "The ten fields of a term entry, their types and SKOS mappings, the type: term and type: term-set markers, how an entry gets its id, the see redirect, and why the kind of label is the status."
+sidebar:
+  order: 3
+---
+
+A term entry is a record with ten fields. A term page carries it in its
+metadata, and a manifest entry holds the same record. Every reader produces it
+from a body construct too. The fields sit at the root of the page, flat.
+They are drafted as the `manni:terminology:1.0.0-proposal.1` vocabulary, which
+is [under review](/manni/meta/proposals/terminology/).
+
+## Marking a file
+
+| `type:` | Means |
+|---|---|
+| `term` | The file is one entry. Its record is the file's metadata. |
+| `term-set` | The file holds many entries, in its body. Required for a Markdown or MDX definition list and an HTML `<dl>`, which do not say what they are. |
+
+A DITA `<glossentry>` or `<glossgroup>`, a DocBook `<glossary>`, an AsciiDoc
+`[glossary]` list and a `.. glossary::` directive are read without
+`type: term-set`, because each construct declares itself. `type`, `id` and
+`language` belong to the `manni:core` vocabulary, and a term page uses them as
+any page does.
+
+```markdown title="docs/terms/progressive-lens.md"
+---
+type: term
+id: progressive-lens
+label: progressive lens
+alt-labels: [PAL, graduated lens]
+hidden-labels: [no-line bifocal]
+broader: [corrective lens]
+abstract: Lenses that correct presbyopia without a visible line.
+definition: >-
+  Corrective lenses whose optical power increases continuously from the top of
+  the lens to the bottom, correcting presbyopia without the visible boundary a
+  bifocal carries.
+---
+```
+
+## The fields
+
+| Field | Type | Required | SKOS | What it holds |
+|---|---|---|---|---|
+| `label` | string | yes | `skos:prefLabel` | The one preferred name. |
+| `definition` | string | yes, unless `see` is set | `skos:definition` | What the term means, in full. |
+| `abstract` | string | no | none | The short form, one sentence, for a hover card or a tooltip. |
+| `alt-labels` | string or list | no | `skos:altLabel` | Other admitted names, such as synonyms, abbreviations and spelling variants. |
+| `hidden-labels` | string or list | no | `skos:hiddenLabel` | Names the term must not go by, such as deprecated spellings, obsolete forms and misspellings. |
+| `broader` | string or list | no | `skos:broader` | Labels or ids of the parent terms. |
+| `narrower` | string or list | no | `skos:narrower` | Labels or ids of the child terms. |
+| `related-terms` | string or list | no | `skos:related` | Labels or ids of associated terms. |
+| `see` | string | no | none | The label or id of the entry this one redirects to. |
+| `scope-note` | string | no | `skos:scopeNote` | How far the term reaches in this set, and where it stops. |
+
+A list field takes one string or a list. Readers trim each value and drop
+empty ones, so `" bifocal "` and `bifocal` are the same label. A page with
+`type: term` and no `label` is skipped, with a notice on stderr:
+
+```
+manni: no-label.md:1: skipped a page entry with no term.
+```
+
+A one-value field (`definition`, `abstract`, `see`, `scope-note`) takes text.
+Given a list or a mapping, the reader leaves that field out, reads the rest of
+the entry, and says so on stderr:
+
+```
+manni: varifocal.md:5: ignored see on "varifocal": a see holds one value, not a list.
+```
+
+## The kind of label is the status
+
+There is no status field. The field a name sits in says how it may be used:
+
+| Field | Status | Where the status shows |
+|---|---|---|
+| `label` | preferred | TBX `preferredTerm-admn-sts`. The casing rules of the Vale style. |
+| `alt-labels` | admitted | TBX `admittedTerm-admn-sts`. The casing rules, and the first-use rule for an all-caps acronym. |
+| `hidden-labels` | deprecated | TBX `deprecatedTerm-admn-sts`. `Terms.Deprecated` in the Vale style, which swaps the name for the label. |
+
+## The `see` redirect
+
+An entry with `see` points a reader at the entry that defines the term. It
+names the term, and carries no definition:
+
+```yaml
+type: term
+id: varifocal
+label: varifocal
+see: progressive-lens
+```
+
+`see` resolves against labels and ids. An entry with both `see` and a
+`definition` is the [`see-not-empty`](/manni/term/reference/rules/#see-not-empty)
+finding. A `see` that names nothing is
+[`dangling-reference`](/manni/term/reference/rules/#dangling-reference).
+
+## How an entry gets its id
+
+An entry's `id` is, in order:
+
+1. the record's own `id`;
+2. the construct's identifier: `<dt id>` in HTML, `xml:id` on a DocBook
+   `<glossentry>`, `@id` on a DITA topic;
+3. the slug of the preferred label, so `progressive lens` is
+   `progressive-lens`.
+
+The id is what `manni term get` and a manifest key name, and what a render
+into one file per entry names each file after.
+
+## Validating the shape
+
+`manni term check` checks the set. The shape of one page is a schema's job.
+The draft schema is at
+[`docs/proposals/0023/schemas/terminology/1.0.0-proposal.1.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/terminology/1.0.0-proposal.1.json),
+and `manni meta validate -s` takes a path to a copy of it. It requires
+`label` on a `type: term` page, and a `definition` or a `see`. `check` does
+not report a page that has neither, so the schema is what catches it:
+
+```console
+$ manni meta validate --no-config -s terminology/1.0.0-proposal.1.json term-without-definition-or-see.md
+✗ term-without-definition-or-see.md
+    (root)  must have required property 'definition'  (line 1)  [terminology/1.0.0-proposal.1.json]
+    (root)  must have required property 'see'  (line 1)  [terminology/1.0.0-proposal.1.json]
+    (root)  must match a schema in anyOf  (line 1)  [terminology/1.0.0-proposal.1.json]
+    (root)  must match "then" schema  (line 1)  [terminology/1.0.0-proposal.1.json]
+
+1 file checked, 0 passed, 1 failed, 4 errors
+```

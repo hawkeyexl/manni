@@ -780,7 +780,7 @@ describe("extractor registry", () => {
   // every extension anyone thought to assert was in it.
   // `test/pre-commit-hook.test.ts` derives the hook regex from this same call,
   // so an addition here has to reach the hook too.
-  it("lists supported (implemented) extensions, exactly", () => {
+  it("lists supported extensions, exactly", () => {
     expect([...supportedExtensions()].sort()).toEqual([
       ".adoc",
       ".asciidoc",
@@ -811,11 +811,12 @@ describe("extractor registry", () => {
     ).toBeUndefined();
   });
 
-  it("registers only implemented extractors, so the flag reads true", () => {
-    // `implemented` stays on the interface as a declaration a future
-    // read-only-pending format can set false; today nothing does, and the
-    // registry filters above depend on that staying visible.
-    expect(listFormats().every((f) => f.implemented)).toBe(true);
+  it("lists each format by name, extensions and writability only", () => {
+    // A registered extractor reads its format, so the list carries no
+    // separate readability flag.
+    for (const f of listFormats()) {
+      expect(Object.keys(f).sort()).toEqual(["extensions", "name", "writable"]);
+    }
   });
 });
 

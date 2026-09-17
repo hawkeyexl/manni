@@ -50,7 +50,6 @@ export interface SchemasInfo {
   formats: {
     name: string;
     extensions: string[];
-    implemented: boolean;
     /** Whether `manni meta fill` can write metadata back to this format. */
     writable: boolean;
   }[];

@@ -8,6 +8,9 @@
  *
  *   meta → docs/src/content/docs/meta/reference/cli.mdx
  *   a11y → docs/src/content/docs/a11y/reference/cli.mdx
+ *   cite → docs/src/content/docs/cite/reference/cli.mdx
+ *   key  → docs/src/content/docs/key/reference/cli.mdx
+ *   term → docs/src/content/docs/term/reference/cli.mdx
  *
  * Descriptions stay hand-authored; this only guards the machine-checkable
  * surface so a page cannot silently drift from the code. The umbrella's own
@@ -17,7 +20,7 @@
  * Usage:
  *   node scripts/check-cli-reference.mjs [domain...]
  * With no arguments every domain in the map is checked; with arguments each
- * is a domain name (`meta`, `a11y`).
+ * is a domain name (`meta`, `a11y`, `cite`, `key`, `term`).
  * Requires `npm run build` first (imports dist/cli.js).
  * Exit 0 = every page in sync, 1 = drift found on any page, 2 = setup error
  * (unknown domain, domain not mounted on the built program, page missing).
@@ -34,6 +37,7 @@ const PAGES = new Map([
   ["a11y", "docs/src/content/docs/a11y/reference/cli.mdx"],
   ["cite", "docs/src/content/docs/cite/reference/cli.mdx"],
   ["key", "docs/src/content/docs/key/reference/cli.mdx"],
+  ["term", "docs/src/content/docs/term/reference/cli.mdx"],
 ]);
 
 const requested = process.argv.slice(2);

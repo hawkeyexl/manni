@@ -1,9 +1,7 @@
 /**
  * Extractor registry. Maps file extensions to extractors and resolves an
- * extractor by name (for the `--as` override). Every registered extractor is
- * implemented today; the `implemented` filters below are what would keep a
- * declared-but-unwired format out of directory walks, so an unfinished format
- * can be registered without becoming "supported".
+ * extractor by name (for the `--as` override). A registered extractor reads
+ * its format, so registration is what makes an extension supported.
  */
 import type { MetadataExtractor } from "../types.js";
 import { markdownExtractor } from "./markdown.js";
@@ -29,35 +27,32 @@ for (const ex of EXTRACTORS) {
   for (const ext of ex.extensions) byExtension.set(ext.toLowerCase(), ex);
 }
 
-/** Resolve an implemented extractor for a file extension (incl. dot). */
+/** Resolve the extractor for a file extension (incl. dot). */
 export function extractorForExtension(
   ext: string,
 ): MetadataExtractor | undefined {
-  const ex = byExtension.get(ext.toLowerCase());
-  return ex?.implemented ? ex : undefined;
+  return byExtension.get(ext.toLowerCase());
 }
 
-/** Resolve an extractor by its `--as` name (implemented or not). */
+/** Resolve an extractor by its `--as` name. */
 export function extractorByName(name: string): MetadataExtractor | undefined {
   return byName.get(name.toLowerCase());
 }
 
-/** Extensions handled by implemented extractors (used for directory walks). */
+/** Extensions handled by registered extractors (used for directory walks). */
 export function supportedExtensions(): string[] {
-  return EXTRACTORS.filter((e) => e.implemented).flatMap((e) => e.extensions);
+  return EXTRACTORS.flatMap((e) => e.extensions);
 }
 
-/** All registered format names, with their implemented and writable status. */
+/** All registered format names, with their writable status. */
 export function listFormats(): {
   name: string;
   extensions: string[];
-  implemented: boolean;
   writable: boolean;
 }[] {
   return EXTRACTORS.map((e) => ({
     name: e.name,
     extensions: e.extensions,
-    implemented: e.implemented,
     // Writability is the presence of the optional `apply` method, so a format
     // never has to declare it twice and the two can't drift apart.
     writable: typeof e.apply === "function",
