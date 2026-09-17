@@ -120,6 +120,14 @@ export function joinHits(): JoinHits {
   };
 }
 
+/** What a command's sources mean to it, where that is not `check`'s answer. */
+export interface SourceNeeds {
+  /** The run cannot work without them: `--no-check-sources` is refused (`update`). */
+  require?: boolean;
+  /** The run resolves `src:` paths at all. `false` for `remove`, which edits the page. */
+  resolve?: boolean;
+}
+
 /**
  * The front half of a run: which config governs it, which files it covers,
  * and the clients every page shares. `action` is the past-tense verb the
@@ -129,8 +137,9 @@ export async function prepareRun(
   opts: CheckOptions,
   action: string,
   verb: string,
-  requireSources = false,
+  sources: SourceNeeds = {},
 ): Promise<PreparedRun> {
+  const requireSources = sources.require === true;
   const cwd = resolve(opts.cwd ?? process.cwd());
   const run = await resolveCiteRun({
     cwd,
@@ -142,6 +151,7 @@ export async function prepareRun(
     onConfigLoaded: opts.onConfigLoaded,
     onNotice: opts.onNotice,
     env: opts.env,
+    ...(sources.resolve === false ? { resolvesSources: false } : {}),
   });
   const { config, inputs, base } = run;
 
