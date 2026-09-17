@@ -39,7 +39,7 @@ import {
   type CitationSidecars,
   type PageSidecar,
 } from "../core/sidecar.js";
-import { buildSourceIndex } from "../core/sources.js";
+import { sourceIndexFor } from "../core/sources.js";
 import { CiteError } from "../errors.js";
 import type {
   CheckOptions,
@@ -48,7 +48,6 @@ import type {
   CiteRun,
   GitClient,
   PageCitationReport,
-  SourceIndex,
 } from "../types.js";
 
 /** What `check` and `update` settle before touching a page. */
@@ -119,24 +118,6 @@ export function joinHits(): JoinHits {
       }
     },
   };
-}
-
-function isEnoent(error: unknown): boolean {
-  return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
-}
-
-/**
- * The source index for a run, with a root that is not there refused as a
- * `CiteError`. Every verb that reads sources builds its index here, so the
- * refusal reads the same on each.
- */
-export async function sourceIndexFor(root: string, client: GitClient): Promise<SourceIndex> {
-  try {
-    return await buildSourceIndex(root, { gitClient: client });
-  } catch (error) {
-    if (isEnoent(error)) throw new CiteError(`Root directory not found: ${root}.`);
-    throw error;
-  }
 }
 
 /**

@@ -24,7 +24,7 @@ import { sliceLines, splitLines } from "../core/hash.js";
 import { mintCitation } from "../core/mint.js";
 import { bodyLineOf, readPage } from "../core/page.js";
 import { lineSpec, parseLines, parseSrc, spellLines } from "../core/range.js";
-import { readSource } from "../core/sources.js";
+import { readSource, sourceIndexFor } from "../core/sources.js";
 import { ManifestSet } from "../core/manifest.js";
 import { sidecarsFor, type PageSidecar } from "../core/sidecar.js";
 import {
@@ -42,7 +42,6 @@ import {
   unifiedDiff,
 } from "../core/write.js";
 import { CiteError } from "../errors.js";
-import { sourceIndexFor } from "./check.js";
 import type {
   AddOptions,
   AddResult,
