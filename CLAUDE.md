@@ -160,7 +160,10 @@ onto it and keeps the source's value in a field of its own. a11y does that
 with axe's `impact`, and proposal 0035's stress test 10 records why. The
 family encryption key is `encryptionKey:` at the top of `manni.config.yaml`,
 or `MANNI_ENCRYPTION_KEY`, and every tool reads it through
-`src/shared/encryption-key.ts`.
+`src/shared/encryption-key.ts`. An outside tool's settings live the same way,
+under `tools.<tool>` at the top level, read through `src/shared/tools.ts`. Each
+tool gets a namespace of its own keys, so Vale's config path is
+`tools.vale.config`, whichever domain runs Vale.
 
 ### Plans show the full interface
 
@@ -216,6 +219,32 @@ same rule applies to any interface a plan defines, CLI or not: pick one
 separator per list and name it. It is written down because a plan once mixed
 the two on one flag. The fix was cheaper before the flag existed than it would
 have been after.
+
+### Interfaces describe the present
+
+A user-facing interface says what the tool does. It never says what it will do,
+what is planned, what is deferred, or what has not been built yet.
+
+That covers `--help` text, every command and option description, and anything
+printed to stdout or stderr. It covers error messages. It covers the JSON Schema
+`description` strings that ship in `src/meta/schemas/`. It covers the published
+pages under `docs/src/content/docs/`, plus `README.md` and `action.yml`.
+
+A format that is not read is not listed. A flag that does nothing does not
+exist. A reference page documents the command as it runs today. Where a table
+would carry a row for something absent, the row is left out, not marked.
+
+Proposals are the exception. That means `docs/proposals/`, and the published RFC
+pages under `docs/src/content/docs/**/proposals/`. An ADR log exists to record
+what was decided and what comes next. A page soliciting review has to name its
+open questions to do its job. So both name future work freely, as do code
+comments and tests, which no user reads.
+
+The reason is ownership. A roadmap written into an interface has no owner and
+no expiry. It is read as a commitment by the person who hits the gap, and as
+documentation by the person who later implements something else. Both are worse
+off than if the line had never shipped. The version that does have an owner is
+an issue, a proposal, or a milestone, all of which a reader can watch.
 
 ### Use subagents liberally to preserve context
 
@@ -489,6 +518,16 @@ npm run schemas:check-published  # ...and the live URLs still serve those bytes.
 # two schemas — the house rule (title + description) and the Starlight contract
 # this site runs on.
 node dist/cli.js meta validate
+
+# The glossary is a termbase, one `type: term` page per term under
+# meta/reference/glossary/. This checks it and the `concepts:` other pages
+# declare, and the Docs workflow gates on it. Notices never fail it.
+node dist/cli.js term check
+
+# After changing a term page, regenerate .vale/styles/Terms/ (drop --check) and
+# commit it. The Vale gate reads the committed style, and the Docs workflow
+# fails when it no longer matches the glossary.
+node dist/cli.js term write -f vale -o .vale/styles --check
 ```
 
 Command cores are tested directly in `test/*.test.ts`; the full CLI is exercised

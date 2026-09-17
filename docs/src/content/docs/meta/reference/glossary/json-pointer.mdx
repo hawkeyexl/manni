@@ -1,0 +1,18 @@
+---
+title: JSON Pointer
+description: What a JSON Pointer is, how manni meta uses one to name the field an error is about, and what an empty one means.
+type: term
+id: json-pointer
+label: JSON Pointer
+abstract: The syntax that names the field an error is about.
+definition: >-
+  The standard syntax manni meta uses to name the field an error is about.
+---
+
+<p>{frontmatter.definition}</p>
+
+The standard is [RFC 6901](https://datatracker.ietf.org/doc/html/rfc6901). A
+pointer like `/tags/0` means "the first item of the `tags` array". An empty
+pointer, shown as `(root)` in pretty output, means the document as a whole.
+That is most often a required field that's missing entirely. Pointers appear in
+error output and in the `instancePath` field of JSON output.

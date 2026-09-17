@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<martif type="TBX" xml:lang="en">
+  <martifHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>manni term write</p>
+      </sourceDesc>
+    </fileDesc>
+  </martifHeader>
+  <text>
+    <body>
+      <termEntry id="progressive-lens">
+        <descrip type="definition">A spectacle lens whose power changes gradually, with no visible line.</descrip>
+        <langSet xml:lang="en">
+          <tig>
+            <term>progressive lens</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+          </tig>
+          <tig>
+            <term>PAL</term>
+            <termNote type="administrativeStatus">admittedTerm-admn-sts</termNote>
+          </tig>
+          <tig>
+            <term>graduated lens</term>
+            <termNote type="administrativeStatus">admittedTerm-admn-sts</termNote>
+          </tig>
+          <tig>
+            <term>no-line bifocal</term>
+            <termNote type="administrativeStatus">deprecatedTerm-admn-sts</termNote>
+          </tig>
+        </langSet>
+      </termEntry>
+      <termEntry id="spectacle-lens">
+        <descrip type="definition">A lens worn in front of the eye to correct vision.</descrip>
+        <langSet xml:lang="en">
+          <tig>
+            <term>spectacle lens</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+          </tig>
+        </langSet>
+      </termEntry>
+      <termEntry id="kubernetes">
+        <descrip type="definition">An orchestrator for "containers", services, and jobs.</descrip>
+        <langSet xml:lang="en">
+          <tig>
+            <term>Kubernetes</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+          </tig>
+          <tig>
+            <term>K8s</term>
+            <termNote type="administrativeStatus">admittedTerm-admn-sts</termNote>
+          </tig>
+          <tig>
+            <term>Kubernates</term>
+            <termNote type="administrativeStatus">deprecatedTerm-admn-sts</termNote>
+          </tig>
+        </langSet>
+      </termEntry>
+      <termEntry id="api">
+        <descrip type="definition">A contract &lt;between&gt; programs &amp; their callers.</descrip>
+        <langSet xml:lang="en">
+          <tig>
+            <term>API</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+          </tig>
+          <tig>
+            <term>application programming interface</term>
+            <termNote type="administrativeStatus">admittedTerm-admn-sts</termNote>
+          </tig>
+        </langSet>
+      </termEntry>
+      <termEntry id="cpp">
+        <descrip type="definition">A compiled programming language.</descrip>
+        <langSet xml:lang="en">
+          <tig>
+            <term>C++</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+          </tig>
+          <tig>
+            <term>CPP</term>
+            <termNote type="administrativeStatus">admittedTerm-admn-sts</termNote>
+          </tig>
+        </langSet>
+      </termEntry>
+      <termEntry id="gleitsichtglas">
+        <descrip type="definition">Ein Brillenglas, dessen Stärke stufenlos zunimmt.</descrip>
+        <langSet xml:lang="de">
+          <tig>
+            <term>Gleitsichtglas</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+          </tig>
+          <tig>
+            <term>Gleitsichtbrille</term>
+            <termNote type="administrativeStatus">admittedTerm-admn-sts</termNote>
+          </tig>
+        </langSet>
+      </termEntry>
+    </body>
+  </text>
+</martif>

@@ -1,0 +1,20 @@
+---
+title: Schema
+description: What a schema is in manni meta, and the three places one can come from.
+type: term
+id: schema
+label: schema
+related-terms: [schema reference, schema set]
+abstract: A JSON Schema declaring the metadata a file carries.
+definition: >-
+  A JSON Schema document that declares which metadata fields are required,
+  which are optional, and what shape each value must take.
+---
+
+<p>{frontmatter.definition}</p>
+
+manni meta validates a file's metadata against one or more schemas. A schema
+can be shipped with manni meta (a
+[builtin](/manni/meta/reference/glossary/schema-reference/)), a local file, or a
+remote URL. The JSON Schema specification is at
+[json-schema.org](https://json-schema.org/).

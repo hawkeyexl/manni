@@ -94,7 +94,6 @@ function extractHeader(content: string, lineOffset = 0): ExtractedMetadata {
 export const asciidocExtractor: MetadataExtractor = {
   name: "asciidoc",
   extensions: [".adoc", ".asciidoc"],
-  implemented: true,
   apply: (content, patch, options) =>
     applyFencedOnly(content, patch, options, "asciidoc"),
   extract(content) {

@@ -430,7 +430,7 @@ function metadataOf(
 ): { frontmatter: Record<string, unknown> | null; position: Position | null } {
   const fenced = extractFrontmatter(content, "html");
   const extractor = extractorForExtension(".html");
-  const headMeta = extractor?.implemented
+  const headMeta = extractor
     ? extractor.extract(content, filePath)
     : { present: false, data: {} as Record<string, unknown> };
 

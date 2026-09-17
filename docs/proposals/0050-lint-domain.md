@@ -1,17 +1,16 @@
 # 0050: The `lint` domain: `manni lint check`, jobs, and the tools behind them
 
 - **Status:** Proposed
-- **Serves:** Three journeys, assigned the next free numbers on this branch.
-  If [0048](0048-docevals-domain.md) lands first it takes ranges of its own, and
-  these three shift up by however many it claims. The numbers here are the ones
-  written in `docs/content-strategy/cujs.md`.
-  - Maya · M9, "Hold every page to the shape its doctype promises". Her how-tos
+- **Serves:** Three journeys. [0052](0052-term-domain.md) landed first and took
+  M9, D8 and T4, so these follow it. If [0048](0048-docevals-domain.md) lands
+  before this does, they shift up by however many it claims.
+  - Maya · M10, "Hold every page to the shape its doctype promises". Her how-tos
     are supposed to carry prerequisites and numbered steps. Nothing checks that
     but a reviewer's eye.
-  - Devin · D8, "Gate document structure in CI". He already runs
+  - Devin · D9, "Gate document structure in CI". He already runs
     `manni meta validate`. A second tool with its own config file, its own
     flags and its own exit codes is a second thing to learn and maintain.
-  - Theo · T4, "Read a structure failure and fix it". A finding has to name the
+  - Theo · T5, "Read a structure failure and fix it". A finding has to name the
     template, the section and the line.
 - **Depends on:** Four proposals.
   - [0033](0033-manni-monorepo.md) folds one tool in at a time, and orders
@@ -111,13 +110,13 @@ name would have sat one letter from the `format` job.
 manni's own settings stay directly under `lint:`, unchanged in meaning from the
 imported tool: `templates`, `template`, `types`, `overrides`.
 
-An outside tool's settings do **not** go under `lint:`. When the first one lands
-it gets a namespace of its own under a new top-level `tools:` key, beside
-`collections:` and `encryptionKey:`. Discovery follows the rule 0041 and 0045
-already established:
+An outside tool's settings do **not** go under `lint:`. Each one has a
+namespace of its own under the top-level `tools:` key, beside `collections:`
+and `encryptionKey:`. [0052](0052-term-domain.md) shipped that key for `term`,
+with `tools.vale.config` as its first member, so a lint job that runs Vale reads
+the same entry `term` does:
 
 ```yaml
-# Deferred. Not part of this proposal's implementation.
 tools:
   vale: { config: .vale.ini }
 ```
@@ -162,7 +161,8 @@ findings.
 
 ### Deferred, deliberately
 
-- **`prose` and `format` jobs**, and the `tools:` key they need.
+- **`prose` and `format` jobs.** The `tools:` key they read from already exists,
+  from 0052.
 - **A baseline** (`--baseline` / `--write-baseline`). meta and cite have one.
   lint has never had one, and adding it later is additive.
 - **A severity map** (`lint.severity.<rule>`, in cite's shape with `off`). It
@@ -294,12 +294,13 @@ migration note in the docs.
 
 ## Consequences
 
-- The family gains a fourth reporting domain, and the first one whose verbs
+- The family gains another reporting domain, and the first one whose verbs
   name jobs rather than objects. If tracevals or kg has the same shape, this is
   the precedent.
-- `manni:lint/<job>/<rule>` puts a third segment in a family rule id. Anything
-  parsing rule ids must not assume two.
-- A later `tools:` key is a fourth top-level family key. The discovery rule that
-  0041 and 0045 wrote once now has one more member.
+- `manni:lint/<job>/<rule>` puts a third segment in a family rule id, as
+  `manni:term/prose/<Style.Rule>` already does. Anything parsing rule ids must
+  not assume two.
+- lint reads outside tools from the `tools:` key 0052 introduced, rather than
+  adding a key of its own.
 - Exit 1 meaning "an error-level finding" is stated before any domain needs the
   distinction, which is cheaper than changing it afterwards.

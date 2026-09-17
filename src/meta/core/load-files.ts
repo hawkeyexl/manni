@@ -180,6 +180,12 @@ export interface ResolvedTargets {
    * are the caller's own instruction, not a surprise.
    */
   gitignoreSkipped: number;
+  /**
+   * The subset of `files` a positional input named directly rather than a
+   * directory or glob produced. A sibling tool reads a named file it would
+   * never walk (a term manifest, say) by telling the two apart here.
+   */
+  named: string[];
 }
 
 /**
@@ -324,6 +330,7 @@ export async function resolveTargetSet(
   return {
     files: [...new Set([...named, ...walked])].sort(),
     gitignoreSkipped,
+    named: [...named].sort(),
   };
 }
 

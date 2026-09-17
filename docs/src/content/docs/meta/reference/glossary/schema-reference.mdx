@@ -1,0 +1,25 @@
+---
+title: Schema reference
+description: What a schema reference is in manni meta, and the three kinds manni meta sorts one into by its shape.
+type: term
+id: schema-reference
+label: schema reference
+related-terms: [schema, $schema key]
+abstract: A pointer to a schema, as a builtin id, file, or URL.
+definition: >-
+  A pointer to a schema.
+---
+
+<p>{frontmatter.definition}</p>
+
+It is what appears in a `--schema` flag, a document's
+[`$schema`](/manni/meta/reference/glossary/schema-key/) key, or config. manni
+meta classifies each reference into one of three kinds by its shape:
+
+- **builtin**: a `vendor:name:version` id such as `google:okf:0.1`, resolved to
+  a schema shipped with manni meta.
+- **file**: a `.json` path or any path with a separator, such as
+  `./my.schema.json`, resolved from the local filesystem.
+- **url**: an `http://` or `https://` URL, fetched over the network.
+
+See [Reference kinds](/manni/meta/reference/schema-resolution/#reference-kinds).

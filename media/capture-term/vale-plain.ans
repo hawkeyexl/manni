@@ -1,0 +1,7 @@
+
+ docs\fitting.md
+ 3:27  warning  Spell out 'PAL' on first use, as 'progressive lens (PAL)'.          Terms.PAL        
+ 4:3   warning  Use 'progressive lens' instead of 'no-line bifocal'.                Terms.Deprecated 
+ 5:6   error    Write 'Progressive Lens' in lowercase, except to start a sentence.  Terms.Lowercase  
+
+✖ 1 error, 2 warnings and 0 suggestions in 1 file.

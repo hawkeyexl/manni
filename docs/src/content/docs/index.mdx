@@ -57,12 +57,19 @@ npx @hawkeyexl/manni meta validate docs/
     href="/manni/key/"
     description="Set and rotate the family encryption key, so a required field or a private source path is on the page without being readable there."
   />
+  <LinkCard
+    title="term"
+    href="/manni/term/"
+    description="Define a docset's terms, check every concepts: reference against them, generate a Vale style from them, and move the set between glossary formats, TBX and CSV."
+  />
 </CardGrid>
 
 `meta` checks what a page says about itself. `lint` checks whether it is shaped
 like what it says it is. `cite` checks that what a page says about the code is
-still true. `key` sets and rotates the one encryption key they encrypt values
-with. `manni --help` lists exactly the tools the package carries.
+still true. `term` checks that the terms a page names are defined, and carries
+those terms into Vale and translation. `key` sets and rotates the one encryption
+key that `meta` and `cite` encrypt values with. `manni --help` lists exactly the tools the package
+carries.
 
 ## Coming from docmeta?
 

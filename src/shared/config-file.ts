@@ -39,6 +39,7 @@ import { parse as parseYaml } from "yaml";
 import { parseCollections, type CollectionConfig } from "./collections.js";
 import { isValidEncryptionKey } from "./encryption.js";
 import { searchPath } from "./git-root.js";
+import { parseTools, type ToolsConfig } from "./tools.js";
 import { warn } from "./warn.js";
 import { errorMessage } from "./errors.js";
 
@@ -107,6 +108,12 @@ export interface ConfigFile {
    */
   collections: CollectionConfig[];
   /**
+   * The document's top-level `tools:` (proposal 0052), an outside tool's
+   * settings, parsed once here for the same reason as `collections`. `{}` when
+   * the key is absent, and always `{}` for a `legacy` file.
+   */
+  tools: ToolsConfig;
+  /**
    * The document's top-level `encryptionKey:` (proposal 0045), validated
    * here. Absent when the key is, and always absent for a `legacy` file, for
    * the same reason as `collections`. `MANNI_ENCRYPTION_KEY` wins over it;
@@ -169,8 +176,11 @@ function parseMapping(
 /** The top-level key holding the family's document sets. */
 const COLLECTIONS_KEY = "collections";
 
+/** The top-level key holding outside tools' settings (proposal 0052). */
+const TOOLS_KEY = "tools";
+
 /** The keys that belong to the family, not to any one tool. */
-const FAMILY_KEYS: readonly string[] = [COLLECTIONS_KEY, ENCRYPTION_KEY_FIELD];
+const FAMILY_KEYS: readonly string[] = [COLLECTIONS_KEY, TOOLS_KEY, ENCRYPTION_KEY_FIELD];
 
 function slice(
   document: Document,
@@ -204,6 +214,16 @@ function collectionsOf(
   const { doc } = document;
   if (doc === null || !Object.hasOwn(doc, COLLECTIONS_KEY)) return [];
   return parseCollections(doc[COLLECTIONS_KEY], source, toError);
+}
+
+/**
+ * The document's outside-tool settings. Parsed with the tool's own `toError`,
+ * as `collections:` is.
+ */
+function toolsOf(document: Document, source: string, toError: ToError): ToolsConfig {
+  const { doc } = document;
+  if (doc === null || !Object.hasOwn(doc, TOOLS_KEY)) return {};
+  return parseTools(doc[TOOLS_KEY], source, toError);
 }
 
 /**
@@ -302,6 +322,7 @@ export async function findConfigFile(
           text: document.text,
           kind,
           collections: collectionsOf(document, source, opts.toError),
+          tools: toolsOf(document, source, opts.toError),
           ...encryptionKeyOf(document, source, opts.toError),
           ...found,
         };
@@ -313,7 +334,7 @@ export async function findConfigFile(
       const document = await readDocument(path, source, opts.toError);
       if (document === null) continue;
       warn(
-        `"${name}" is a deprecated config file name and will stop being read in a future major version. Move its keys under \`${opts.section}:\` in "${FAMILY_CONFIG_NAMES[0] ?? "manni.config.yaml"}", and its paths, exclude and sidecars keys to a top-level collections: list, where sidecars becomes externalMetadata.`,
+        `"${name}" is a deprecated config file name. Move its keys under \`${opts.section}:\` in "${FAMILY_CONFIG_NAMES[0] ?? "manni.config.yaml"}", and its paths, exclude and sidecars keys to a top-level collections: list, where sidecars becomes externalMetadata.`,
       );
       return {
         path,
@@ -324,6 +345,7 @@ export async function findConfigFile(
         wrapped: false,
         kind: "legacy",
         collections: [],
+        tools: {},
       };
     }
   }
@@ -357,6 +379,7 @@ export async function readConfigFile(
     text: document.text,
     kind: "explicit",
     collections: collectionsOf(document, explicitPath, opts.toError),
+    tools: toolsOf(document, explicitPath, opts.toError),
     // An unwrapped document carries no family key (else it would be wrapped),
     // so this only ever reads a family file's key.
     ...encryptionKeyOf(document, explicitPath, opts.toError),
@@ -397,6 +420,7 @@ export async function findFamilyConfigFile(
           wrapped: true,
           kind,
           collections: collectionsOf(document, source, toError),
+          tools: toolsOf(document, source, toError),
           ...tolerantKeysOf(document),
         };
       }
@@ -440,6 +464,7 @@ export async function readFamilyConfigFile(
     wrapped: family,
     kind: "explicit",
     collections: collectionsOf(document, explicitPath, toError),
+    tools: toolsOf(document, explicitPath, toError),
     ...tolerantKeysOf(document),
   };
 }

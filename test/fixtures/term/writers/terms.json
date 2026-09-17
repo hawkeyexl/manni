@@ -1,0 +1,59 @@
+[
+  {
+    "id": "progressive-lens",
+    "record": {
+      "label": "progressive lens",
+      "definition": "A spectacle lens whose power changes gradually, with no visible line.",
+      "abstract": "A lens with no line.",
+      "alt-labels": ["PAL", "graduated lens"],
+      "hidden-labels": ["no-line bifocal"],
+      "broader": ["Spectacle lens"],
+      "related-terms": ["bifocal"],
+      "scope-note": "Eyewear only, not camera optics."
+    }
+  },
+  {
+    "id": "spectacle-lens",
+    "record": {
+      "label": "spectacle lens",
+      "definition": "A lens worn in front of the eye to correct vision.",
+      "narrower": ["progressive-lens"]
+    }
+  },
+  {
+    "id": "kubernetes",
+    "record": {
+      "label": "Kubernetes",
+      "definition": "An orchestrator for \"containers\", services, and jobs.",
+      "alt-labels": ["K8s"],
+      "hidden-labels": ["Kubernates"],
+      "see": "https://kubernetes.io/docs/"
+    }
+  },
+  {
+    "id": "api",
+    "record": {
+      "label": "API",
+      "definition": "A contract <between> programs & their callers.",
+      "alt-labels": ["application programming interface"]
+    }
+  },
+  {
+    "id": "cpp",
+    "record": {
+      "label": "C++",
+      "definition": "A compiled programming language.",
+      "alt-labels": ["CPP"],
+      "related-terms": ["API"]
+    }
+  },
+  {
+    "id": "gleitsichtglas",
+    "language": "de",
+    "record": {
+      "label": "Gleitsichtglas",
+      "definition": "Ein Brillenglas, dessen Stärke stufenlos zunimmt.",
+      "alt-labels": ["Gleitsichtbrille"]
+    }
+  }
+]

@@ -171,7 +171,7 @@ export async function prepareRun(
 
   const usingStdin = inputs.includes(STDIN_TOKEN);
   const forced = opts.as === undefined ? undefined : extractorByName(opts.as);
-  if (opts.as !== undefined && forced?.implemented !== true) {
+  if (opts.as !== undefined && forced === undefined) {
     throw new CiteError(
       `Unknown format "${opts.as}". Supported extensions: ${supportedExtensions().join(", ")}.`,
     );

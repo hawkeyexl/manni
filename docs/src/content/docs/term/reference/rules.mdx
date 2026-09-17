@@ -1,0 +1,124 @@
+---
+title: Check rules
+description: "The ten rules manni term check applies to a term set, with each one's default severity, the message it prints, where it is reported, and what fixes it."
+sidebar:
+  order: 4
+---
+
+`manni term check` reads records and reports what does not line up across the
+set. It reads no prose; `manni term lint` does that. Each rule id is
+`manni:term/<rule>`, and each rule's level can be moved or turned off under
+[`term.severity`](/manni/term/reference/configuration/#severity).
+
+## The rules
+
+| Rule | Default | Fires when |
+|---|---|---|
+| `undefined-term` | error | A page's `concepts:` names a label no entry claims as its preferred label. |
+| `duplicate-id` | error | Two entries share an `id`. |
+| `label-collision` | error | Two entries claim the same preferred label, ignoring case. |
+| `alt-label-collision` | error | An entry's alt-label is another entry's preferred label, ignoring case. |
+| `dangling-reference` | error | A value of `broader`, `narrower`, `related-terms` or `see` names no entry, by label or by id. |
+| `broader-cycle` | error | A chain of `broader` returns to where it started. |
+| `see-not-empty` | error | An entry with `see` also carries a `definition`. |
+| `asymmetric-hierarchy` | warning | A names B as `broader`, and B omits A from `narrower`, or the reverse. |
+| `abstract-too-long` | notice | An `abstract` is longer than [`abstractMaxLength`](/manni/term/reference/configuration/#keys), `60` by default. |
+| `unused-term` | notice | No page's `concepts:` names the entry's preferred label. |
+
+Every label comparison ignores case. The Vale style `write -f vale` renders is
+keyed on the lowercased term, so two labels that differ only in case would
+collide there without a word.
+
+## Every rule in one run
+
+This set breaks each rule once. Each finding sits on the line of the field
+that caused it, or on the entry's first line when no field did:
+
+```console
+$ manni term check docs
+docs/glossary/bifocals.md:1
+  error  manni:term/duplicate-id          id: "bifocal" is also used by docs/terms/bifocal.md:1
+docs/guides/fitting.md:3
+  error  manni:term/undefined-term        concepts: "PAL" names no entry.
+                                          "progressive lens" lists it as an alt-label.
+docs/terms/bifocal.md:1
+  error  manni:term/duplicate-id          id: "bifocal" is also used by docs/glossary/bifocals.md:1
+docs/terms/bifocal.md:4
+  error  manni:term/label-collision       "bifocal" is claimed by docs/glossary/bifocals.md:1 as "Bifocal"
+docs/terms/bifocal.md:5
+  error  manni:term/dangling-reference    related-terms: "trifocal" names no entry
+docs/terms/bifocal.md:6
+  notice manni:term/abstract-too-long     abstract: 85 characters is over the limit of 60, so shorten it
+docs/terms/corrective-lens.md:5
+  error  manni:term/broader-cycle         broader: corrective lens > lens > corrective lens
+docs/terms/lens.md:1
+  warning manni:term/asymmetric-hierarchy  narrower: omits "corrective lens", which lists this entry as broader
+docs/terms/progressive-lens.md:1
+  notice manni:term/unused-term           no page's concepts: names this term
+docs/terms/varifocal.md:5
+  error  manni:term/alt-label-collision   alt-labels: "Lens" is the label of docs/terms/lens.md:1
+docs/terms/varifocal.md:6
+  error  manni:term/see-not-empty         see: "progressive lens" redirects this entry, so remove its definition
+
+8 errors, 1 warning, 2 notices in 6 terms
+```
+
+## What each rule means
+
+### `undefined-term`
+
+`concepts:` resolves against preferred labels only. An id or an alt-label is
+not enough. When the value is some entry's alt-label, the message names that
+entry, because the fix is to write its preferred label instead. The finding
+sits on the page's `concepts:` line. `kg.concepts` is resolved the same way.
+
+### `duplicate-id`
+
+Reported on every entry that shares the id, each naming the others. An id
+comes from the record, else from the construct's own identifier, else from the
+slug of the label. So two entries can collide without either spelling out an
+`id`. A page and a manifest entry that share an id collide the same way, and
+neither is kept over the other.
+
+### `label-collision`
+
+Reported on each later entry, naming the first one read. Change one label, or
+make one entry an alt-label of the other.
+
+### `alt-label-collision`
+
+An alt-label that is another entry's preferred label makes one name mean two
+entries. Remove the alt-label, or merge the two entries.
+
+### `dangling-reference`
+
+One finding per value that resolves to nothing. `broader`, `narrower`,
+`related-terms` and `see` resolve against preferred labels and ids, ignoring
+case. Add the missing entry, or correct the value.
+
+### `broader-cycle`
+
+Each cycle is reported once, on the entry of the cycle read first. The message
+spells the chain. Remove the `broader` value that closes it.
+
+### `see-not-empty`
+
+An entry with `see` is a redirect to the entry that defines the term. Remove
+its `definition`, or remove `see` and keep it as an entry of its own.
+
+### `asymmetric-hierarchy`
+
+Reported on the entry that should carry the missing half, naming the entry
+that carries the other. Add the label to that field, or remove the one-sided
+value.
+
+### `abstract-too-long`
+
+An `abstract` is the short form a hover card shows. Shorten it, or raise
+`abstractMaxLength` for the set.
+
+### `unused-term`
+
+A notice, so it never fails a run. A termbase written before the pages that
+use it is entirely unused terms. Set `severity: {unused-term: off}` while that
+is the case.

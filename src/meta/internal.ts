@@ -56,7 +56,7 @@ export {
   formatList,
   isMachineFormat,
 } from "./reporters/index.js";
-export { extractorByName, listFormats } from "./extractors/index.js";
+export { extractorByName, extractorForExtension, listFormats } from "./extractors/index.js";
 // `manni cite` keeps its citations in an external-metadata manifest and is the
 // first writer of one. Text in, text out; meta's own commands never call it,
 // so `meta fill` and `meta query` stay read-only on manifests.
