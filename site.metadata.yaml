@@ -15726,14 +15726,6 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
         lines: 10-14
         integrity: sha256-0daa5a5cf951143de0f2c49297dfd810935165ae59e8ef46a92b4856c573e24e
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
-    - id: write-renders-documents-and-interchange
-      claim:
-        integrity: sha256-bd1d26e4c477d191f4b6dc7d6859dee49682baf700e0e09dc52306dfa251799d
-      source:
-        file: src/term/core/writers/index.ts
-        lines: 5
-        integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
     - id: construct-row-page
       claim:
         lines: 23
@@ -16041,15 +16033,6 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
         file: src/term/core/writers/entries.ts
         lines: 127-155
         integrity: sha256-1d7fdf58d28fe52558bbca98b609ce47b7ccfdc20c9881869b5bff1f9ed4fe4c
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
-    - id: skipped-report-line
-      claim:
-        lines: 210
-        integrity: sha256-18aa4a22fd929c53caa33078f2bd54a30bc8c24493746bcfdc1a1e5ebd258186
-      source:
-        file: src/term/reporters/pretty.ts
-        lines: 227-233
-        integrity: sha256-8a84022812754e632988d16366426755522a71cdd4d73d18fc088899374d5c1e
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
     - id: wrote-count-excludes-skipped
       claim:
@@ -16658,3 +16641,20 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
         lines: 240-242
         integrity: sha256-51d52ae50285c965832b9a85bbe48f4ac702490287a568e31395e8b4033f1947
         commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: write-renders-documents-and-interchange
+      claim:
+        integrity: sha256-bd1d26e4c477d191f4b6dc7d6859dee49682baf700e0e09dc52306dfa251799d
+      source:
+        file: src/term/core/writers/index.ts
+        lines: 6
+        integrity: sha256-56678e47cfcab7ed8afc063dbadfc00ebfb38409258dc0978489c1d78ab85e52
+        commit-sha: a791fe62c7319f8bb95c3d6d0ad228de8a17b759
+    - id: skipped-report-line
+      claim:
+        lines: 210
+        integrity: sha256-18aa4a22fd929c53caa33078f2bd54a30bc8c24493746bcfdc1a1e5ebd258186
+      source:
+        file: src/term/reporters/pretty.ts
+        lines: 227-233
+        integrity: sha256-8a84022812754e632988d16366426755522a71cdd4d73d18fc088899374d5c1e
+        commit-sha: a791fe62c7319f8bb95c3d6d0ad228de8a17b759
