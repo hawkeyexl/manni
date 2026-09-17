@@ -112,10 +112,15 @@ export interface CheckSummary {
   /** The sitemap URL that was found, or `null` if none was. Finding one is not using one: see `sitemapPages`. */
   sitemap: string | null;
   /**
-   * In-scope page URLs that sitemap contributed to the frontier. `0` when no
-   * sitemap was found, and `0` when one was found whose every `<loc>` was
-   * out of scope — a built sitemap listing production URLs, read on a local
-   * preview, is the ordinary way that happens.
+   * Same-host, in-scope page URLs the sitemap listed. `0` when no sitemap was
+   * found, and `0` when one was found whose every `<loc>` was out of scope — a
+   * built sitemap listing production URLs, read on a local preview, is the
+   * ordinary way that happens.
+   *
+   * This is the count the progress line reports, so it is taken before the
+   * crawl dedupes against the seeds. A seed that the sitemap also lists is
+   * counted here, which means the number can overstate what the sitemap alone
+   * contributed to the frontier.
    */
   sitemapPages: number;
   /**
