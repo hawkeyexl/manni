@@ -3149,7 +3149,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-b37fffcb518af0f35f34a6bd52dc0999ae05a40336bb38dc429d0821145ed379
       source:
         file: src/cite/reporters/sarif.ts
-        lines: 93-106
+        lines: 94-107
         integrity: sha256-3bc55c2d56ddce0616a7a0c803672bdf853905e63c2ea531eef413733df5b6a9
         commit-sha: d5b4a7d18f395db5bf0b751917e6ca268414690c
     - id: format-sarif-manifest-outside-repo
@@ -3184,7 +3184,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-a7e6826166cb8f98389c63733932626cae1ad09c36b721aec1fec321e49529ac
       source:
         file: src/cite/reporters/github.ts
-        lines: 45-63
+        lines: 46-64
         integrity: sha256-c629343f67f9869c8ea464e25f73fc621088a6d14fcf8a8dc9f96810197b35a9
         commit-sha: d5b4a7d18f395db5bf0b751917e6ca268414690c
     - id: github-annotation-sample
@@ -3193,7 +3193,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-59bf915ec7b51d17b9ef19f48ecf6458e4a96716549854b00f1595999bf86faa
       source:
         file: src/cite/reporters/github.ts
-        lines: 36-43
+        lines: 37-44
         integrity: sha256-cacbceef641b4488c81af49bd36e2d8ab0b890fc14debb0b116d83e81929ef74
         commit-sha: d5b4a7d18f395db5bf0b751917e6ca268414690c
     - id: github-source-finding-message
@@ -3201,7 +3201,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-ec037c6975035bafd5e922c81fc1d8e8a4e3e18472d803250edd087d7111ecd1
       source:
         file: src/cite/reporters/github.ts
-        lines: 36-43
+        lines: 37-44
         integrity: sha256-cacbceef641b4488c81af49bd36e2d8ab0b890fc14debb0b116d83e81929ef74
         commit-sha: d5b4a7d18f395db5bf0b751917e6ca268414690c
     - id: github-claim-finding-as-is
@@ -3210,14 +3210,14 @@ docs/src/content/docs/cite/ci/index.mdx:
       source:
         file: src/cite/reporters/github.ts
         lines: 21-29
-        integrity: sha256-20e988a5bbf73bc70ad00e4a5ab04477ef90598fbd54e64c85449260d0b47053
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        integrity: sha256-ec8932039261a951fa744ca6ea19f847b4889f63c34d8f3883a164d8a7c0d277
+        commit-sha: ac80a83a970ece9bc6fb8eca9365e93a572096f7
     - id: github-sidecar-on-manifest
       claim:
         integrity: sha256-ec037c6975035bafd5e922c81fc1d8e8a4e3e18472d803250edd087d7111ecd1
       source:
         file: src/cite/reporters/github.ts
-        lines: 51-55
+        lines: 52-56
         integrity: sha256-c22c6dbc5e7b6fe6c3dd4d0e5435b1aaf94e10be7eeb1a289ca09c4b43eba42d
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
     - id: format-github-row
@@ -3226,7 +3226,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-50c979b2f54ad6e8771b4e607e5ad912745f0d22968cb46bad439398cd5e9ed9
       source:
         file: src/cite/reporters/github.ts
-        lines: 53-60
+        lines: 54-61
         integrity: sha256-ccb752386cd652b2d97b079cf8626901bc4169aeefcca1070016f188beb9a017
         commit-sha: d5b4a7d18f395db5bf0b751917e6ca268414690c
     - id: update-formats-pretty-json
@@ -6791,7 +6791,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         integrity: sha256-6b8c1d8fc177569593d02c0cf9239f6061f0a473082af9bb72a34391a8269e6f
       source:
         file: src/cite/reporters/github.ts
-        lines: 45-60
+        lines: 46-61
         integrity: sha256-4a27f9a4b0c72061e2d5d205223eb9e0d5fe1e775c7b4cd2e4504b56836211b3
         commit-sha: d5b4a7d18f395db5bf0b751917e6ca268414690c
     - id: github-sample-source-changed
@@ -8112,7 +8112,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-b106b076e141f208eef8d8bc229bb773f3b5a03316755de2a01b86779d286f84
       source:
         file: src/cite/reporters/github.ts
-        lines: 57-59
+        lines: 58-60
         integrity: sha256-686d0cde379e522bbaded3d981463d0df90a30dfa86879cc8af378012e123283
         commit-sha: d5b4a7d18f395db5bf0b751917e6ca268414690c
     - id: render-sarif-level
@@ -8258,7 +8258,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-61a11c5018754b3f2d307d40b3fba67bf1fed5a1f69d6504c519485ee212ff81
       source:
         file: src/cite/reporters/github.ts
-        lines: 54-56
+        lines: 55-57
         integrity: sha256-ea941f345c72a9485287485a907048571967b5b19659fdfed3c0c3604726aeed
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
     - id: manifest-outside-repo-on-page

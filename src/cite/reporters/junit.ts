@@ -14,7 +14,7 @@ import { ENTRY_LABEL, withFindingMessages } from "./sarif.js";
 export const JUNIT_CLASSNAME = "manni.cite";
 
 /** A `message="` attribute's opening label. The value is escaped, so `message="` opens nothing else. */
-const MESSAGE_LABEL = new RegExp(`message="${ENTRY_LABEL.source.slice(1)}`, "g");
+const MESSAGE_LABEL = new RegExp(`message="${ENTRY_LABEL.source.replace(/^\^/, "")}`, "g");
 
 export function renderCheckJunit(run: CheckRun): string {
   return renderJunit(withFindingMessages(run), { frame: run.frame, classname: JUNIT_CLASSNAME }).replace(

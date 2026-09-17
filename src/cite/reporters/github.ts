@@ -16,9 +16,10 @@ import { resultFor, splitBaselined } from "./pretty.js";
 /**
  * The rules whose message already names what it is about: every claim,
  * marker and anchor message is written as a sentence about the entry, so
- * prefixing it with the subject again would say the name twice.
+ * prefixing it with the subject again would say the name twice. Exported so
+ * a test asserting the composed messages reads this set rather than a copy.
  */
-const NAMES_ITS_SUBJECT = new Set<CiteRule>([
+export const NAMES_ITS_SUBJECT = new Set<CiteRule>([
   "claim-moved",
   "claim-moved-ambiguous",
   "claim-changed",

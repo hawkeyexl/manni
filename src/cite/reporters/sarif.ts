@@ -46,16 +46,17 @@ const RULE_DESCRIPTIONS: Readonly<Record<CiteRule, string>> = {
  */
 export const ENTRY_LABEL = /^(?:\(root\)|\/citations\/\d+) /;
 
-interface SarifRule {
+export interface SarifRule {
   id: string;
   shortDescription: { text: string };
   helpUri?: string;
 }
 
-interface SarifLog {
+/** As much of meta's SARIF as this renderer and its tests read back. */
+export interface SarifLog {
   runs: {
     tool: { driver: { informationUri: string; rules: SarifRule[] } };
-    results: { message: { text: string } }[];
+    results: { ruleId: string; message: { text: string } }[];
   }[];
 }
 

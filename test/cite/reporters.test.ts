@@ -13,7 +13,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { renderCheckGithub } from "../../src/cite/reporters/github.js";
+import { NAMES_ITS_SUBJECT, renderCheckGithub } from "../../src/cite/reporters/github.js";
 import { renderCheckJson, renderUpdateJson } from "../../src/cite/reporters/json.js";
 import { renderCheckJunit } from "../../src/cite/reporters/junit.js";
 import {
@@ -23,7 +23,7 @@ import {
   rewriteLine,
   splitBaselined,
 } from "../../src/cite/reporters/pretty.js";
-import { renderCheckSarif } from "../../src/cite/reporters/sarif.js";
+import { renderCheckSarif, type SarifLog } from "../../src/cite/reporters/sarif.js";
 import type {
   CheckRun,
   CitationFinding,
@@ -1084,29 +1084,6 @@ describe("the output rule", () => {
   });
 });
 
-interface SarifLog {
-  runs: {
-    tool: {
-      driver: {
-        informationUri: string;
-        rules: { id: string; shortDescription: { text: string }; helpUri?: string }[];
-      };
-    };
-    results: { ruleId: string; message: { text: string } }[];
-  }[];
-}
-
-/** The rules whose message is already a sentence about its entry. */
-const NAMES_SUBJECT = new Set<CiteRule>([
-  "claim-moved",
-  "claim-moved-ambiguous",
-  "claim-changed",
-  "marker-orphan",
-  "marker-invalid",
-  "marker-repeated",
-  "anchor-invalid",
-]);
-
 describe("sarif and junit describe cite rules, not schema keywords", () => {
   /** One finding per rule, each about an entry, plus one about no entry. */
   const run = runOf([
@@ -1135,7 +1112,7 @@ describe("sarif and junit describe cite rules, not schema keywords", () => {
 
   /** A message the github annotation would carry: the subject first, unless the message already names it. */
   function expectedMessage(rule: CiteRule): string {
-    return NAMES_SUBJECT.has(rule) ? `${rule} message` : `fetch-timeout (lib/limits.ts:2): ${rule} message`;
+    return NAMES_ITS_SUBJECT.has(rule) ? `${rule} message` : `fetch-timeout (lib/limits.ts:2): ${rule} message`;
   }
 
   it("gives a SARIF result the github annotation's message, with no pointer prefix", () => {
