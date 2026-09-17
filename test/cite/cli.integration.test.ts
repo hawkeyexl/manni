@@ -304,6 +304,13 @@ describe("manni cite (usage errors)", () => {
     usage(["add", "pages/nope.md:6", "src/limits.ts:2", "--root", "."], 'File not found: "pages/nope.md".');
   });
 
+  it("add --marker over lines that run past one paragraph", () => {
+    usage(
+      ["add", "pages/no-citations.md:4-6", "src/limits.ts:2", "--id", "x", "--marker", "--root", "."],
+      "pages/no-citations.md:4-6 runs past the paragraph at line 4. A marker anchors one paragraph.",
+    );
+  });
+
   it("add page lines past the end of the page", () => {
     usage(
       ["add", "pages/no-citations.md:99", "src/limits.ts:2", "--root", "."],
