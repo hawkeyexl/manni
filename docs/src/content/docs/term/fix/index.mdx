@@ -28,6 +28,7 @@ This is what `manni term check -f github` leaves on a pull request:
 ::notice file=docs/terms/progressive-lens.md,line=1,title=manni%3Aterm/unused-term::no page's concepts: names this term
 ```
 
+{/* cite github-title-escaped */}
 The first line is the one that failed the job. The pull request shows its
 title as `manni:term/undefined-term`. The workflow command escapes the `:`,
 which is why the raw line reads `%3A`.
@@ -39,6 +40,9 @@ which is why the raw line reads `%3A`.
 | Rule | `undefined-term` | The row to read in the [table](#every-rule-at-a-glance). |
 | Message | `concepts: "PAL" names no entry.` | The field, and the value it could not resolve. A second sentence, when there is one, names the fix. |
 
+{/* cite two-rule-families */}
+{/* cite lint-rule-from-vale-check */}
+{/* cite write-check-no-annotation */}
 Two families of rule reach a pull request. `manni:term/<rule>` comes from
 `manni term check`, which reads the term records. `manni:term/prose/<Style.Rule>`
 comes from `manni term lint`, which runs Vale over each definition. A third job,
@@ -59,6 +63,8 @@ line naming a file.
 | [`prose/<Style.Rule>`](#a-definition-breaks-the-house-voice) | Vale flagged a definition, abstract or scope note. | Rewrite the sentence. |
 | [`--check` failed](#the-vale-style-is-out-of-date) | The committed `Terms` style no longer matches the set. | Run `manni term write -f vale`, and commit it. |
 
+{/* cite default-severities */}
+{/* cite severity-config-override */}
 Three `check` rules never fail a run by default. `asymmetric-hierarchy` is a
 warning, and `abstract-too-long` and `unused-term` are notices. The
 [rules reference](/manni/term/reference/rules/) has each one's level and
@@ -76,6 +82,8 @@ docs/terms/progressive-lens.md:1
 1 error, 1 notice in 3 terms
 ```
 
+{/* cite concepts-preferred-labels-only */}
+{/* cite concepts-names-claiming-entry */}
 `concepts:` resolves against preferred labels only. `PAL` is a name the set
 knows, and the second line names the entry that claims it. Write that entry's
 preferred label instead:
@@ -92,8 +100,10 @@ concepts: [progressive lens, corrective lens, bifocal]
 ✓ 3 terms, 3 references, no findings
 ```
 
+{/* cite unused-term-cleared */}
 The `unused-term` notice went too, because a page now names `progressive lens`.
 
+{/* cite undefined-term-no-synonym */}
 A message with no second line names nothing the set knows:
 
 ```
@@ -117,6 +127,8 @@ docs/terms/progressive-lens.md:8
 1 error in 3 terms
 ```
 
+{/* cite references-label-or-id-ignoring-case */}
+{/* cite reference-fields */}
 The same mistake, inside a term. `broader`, `narrower`, `related-terms` and
 `see` resolve against preferred labels and ids, ignoring case. The entry is
 `bifocal`, so correct the value:
@@ -144,6 +156,8 @@ docs/terms/bifocal.md:4
 1 error in 4 terms
 ```
 
+{/* cite labels-fold-case */}
+{/* cite duplicate-id-on-each */}
 Labels are compared ignoring case, so `Bifocal` and `bifocal` are one name.
 When both pages also carry `id: bifocal`, the run adds a `duplicate-id` on
 each:
@@ -179,6 +193,9 @@ Decide whether the two pages define one thing or two.
   1 notice in 4 terms
   ```
 
+{/* cite id-defaults-to-slug */}
+{/* cite id-slug-github-slugger */}
+{/* cite alt-label-collision-rule */}
 An id you never wrote can collide too. An entry without one takes its
 construct's own identifier, else the slug of its label. See [how an entry gets
 its id](/manni/term/reference/terminology/#how-an-entry-gets-its-id).
@@ -199,6 +216,7 @@ docs/terms/progressive-lens.md:1
 1 error, 1 warning in 3 terms
 ```
 
+{/* cite broader-cycle-chain */}
 The message spells the chain. `progressive lens` is narrower than
 `corrective lens`, and line 6 says the reverse as well. Remove the `broader`
 value that closes the loop:
@@ -218,6 +236,7 @@ definition: A lens worn to correct a refractive error of the eye.
 ✓ 3 terms, 3 references, no findings
 ```
 
+{/* cite asymmetric-from-broader-edge */}
 The warning goes with it, because it came from the same line. See
 [`broader-cycle`](/manni/term/reference/rules/#broader-cycle).
 
@@ -232,6 +251,7 @@ docs/terms/varifocal.md:5
 1 error, 1 notice in 4 terms
 ```
 
+{/* cite see-carries-no-definition */}
 An entry with `see` sends the reader to the entry that defines the term, so it
 defines nothing itself. Delete its `definition`:
 
@@ -252,12 +272,15 @@ docs/terms/varifocal.md:1
 1 notice in 4 terms
 ```
 
+{/* cite notice-exits-zero */}
 The notice stays, and the run exits `0`. If the entry should be a term of its
 own, remove `see` and keep the definition instead. See
 [`see-not-empty`](/manni/term/reference/rules/#see-not-empty).
 
 ## A definition breaks the house voice
 
+{/* cite prose-rule-is-vale-check */}
+{/* cite prose-rule-from-alert */}
 A `manni:term/prose/…` annotation comes from `manni term lint`. The part after
 `prose/` is a Vale rule from your repository's own styles:
 
@@ -282,6 +305,7 @@ definition: A lens worn to correct a refractive error, such as myopia or presbyo
 ✓ 3 terms, no findings
 ```
 
+{/* cite definition-file-per-field */}
 A `House.Length` finding on a definition that is one long noun phrase may be
 the rule's fault, not the sentence's. That is a question for whoever owns the
 Vale configuration. [Keep the terms and the docs in step](/manni/term/set-up/#a-voice-for-definitions-alone)
@@ -289,6 +313,7 @@ shows the section that relaxes a rule for definitions alone.
 
 ## The Vale style is out of date
 
+{/* cite vale-job-line-naming-file */}
 The `vale` job fails with a line naming a file, and no annotation:
 
 ```console
@@ -298,6 +323,7 @@ $ echo $?
 1
 ```
 
+{/* cite hidden-label-in-deprecated */}
 The `Terms` style is generated from the term set, and a term changed without
 regenerating it. Here a hidden-label was added to `progressive lens`.
 Regenerate the style:
@@ -312,6 +338,8 @@ $ manni term write -f vale --check
 .vale/styles/Terms is up to date
 ```
 
+{/* cite vale-generated-marker */}
+{/* cite vale-marker-first-line */}
 Commit the changed files under `Terms/` beside the term page. Don't edit them
 by hand. Each opens with a line saying it is generated, and the next render
 replaces it.

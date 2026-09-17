@@ -5,6 +5,7 @@ description: "Gate a pull request on manni term check with inline annotations, r
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
 
+{/* cite write-check-exit-one */}
 This page runs three term jobs on every pull request. `check` fails on a
 broken reference and annotates the line. `write -f vale --check` fails when
 the committed Vale style has fallen behind the set. `lint` holds the
@@ -24,11 +25,14 @@ runner needs Node.js 24 or newer, and the steps that run Vale need it on PATH.
 | `1` | At least one error-severity finding the baseline does not hold, or `--check` found a file that differs. |
 | `2` | The job could not run. No terms, no Vale on PATH, a bad flag or a bad config key. The message goes to stderr, prefixed `manni:`. |
 
+{/* cite default-severities */}
+{/* cite severity-config-override */}
 **Warnings and notices never fail the job.** `asymmetric-hierarchy` is a
 warning, and `abstract-too-long` and `unused-term` are notices. Every other
 `check` rule is an error. `term.severity` moves any of them; see the
 [rules reference](/manni/term/reference/rules/).
 
+{/* cite github-annotation-shape */}
 **`-f github` produces inline annotations.** One workflow command per
 finding, on the file and line, titled with the rule id:
 
@@ -37,6 +41,8 @@ $ manni term check -f github
 ::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "PAL" names no entry. "progressive lens" lists it as an alt-label.
 ```
 
+{/* cite lint-github-same-renderer */}
+{/* cite lint-prose-rule-id */}
 `lint -f github` prints the same shape, under `manni:term/prose/<Style.Rule>`:
 
 ```console
@@ -46,6 +52,7 @@ $ manni term lint -f github
 ::error file=docs/terms/progressive-lens.md,line=9,title=manni%3Aterm/prose/House.Length::Keep a sentence under 20 words.
 ```
 
+{/* cite finding-formats */}
 `json`, `sarif` and `junit` are there for dashboards, code scanning and the
 test tab. The [CLI reference](/manni/term/reference/cli/#term-check) has each
 shape.
@@ -124,6 +131,7 @@ shape.
 
 </Steps>
 
+{/* cite check-prints-differences */}
 A failing `--check` prints what differs:
 
 ```console
@@ -174,6 +182,8 @@ The baseline lets the check go in without fixing that backlog first.
 
 </Steps>
 
+{/* cite baseline-config-compares */}
+{/* cite baseline-config-key */}
 To compare on every run without the flag, name the file under `term:`:
 
 ```yaml title="manni.config.yaml"
@@ -181,6 +191,7 @@ term:
   baseline: .manni-term-baseline.json
 ```
 
+{/* cite baseline-config-missing-file */}
 With the key set and no file on disk, the run stops with exit `2`, and says
 how to record one.
 

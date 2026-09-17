@@ -20,10 +20,13 @@ Every transcript below is real output from the built tool.
 
 ## Put the vocabulary in the repository
 
+{/* cite vocabulary-id */}
 The entry shape is already specified, as `manni:citations:1.0.0-proposal.4`.
 Do not restate it in your own schema. Two definitions of one key is the drift
 this composition avoids.
 
+{/* cite vocabulary-not-built-in */}
+{/* cite vendor-takes-http-url */}
 The vocabulary is not one of the [built-in
 schemas](/manni/meta/reference/built-in-schemas/), and no published URL serves
 it. The draft is [open for review](/manni/meta/proposals/citations/). So
@@ -69,6 +72,11 @@ Your schema carries the house rule and nothing the vocabulary already says:
 }
 ```
 
+{/* cite vocabulary-non-empty-list */}
+{/* cite vocabulary-source-required */}
+{/* cite vocabulary-claim-hash-format */}
+{/* cite vocabulary-source-hash-format */}
+{/* cite vocabulary-rejects-citation-prefix */}
 `citations` is required, and nothing else about it is said here. The
 vocabulary already requires a non-empty list, requires `source` on every
 entry, pins the hash formats, and rejects a stray `citation-*` key at the page
@@ -77,6 +85,7 @@ field it constrains.
 
 ## Wire both schemas to the class of pages
 
+{/* cite schema-set-applies-each-member */}
 A schema **set** applies each member whole, and reports the union of what they
 find, each finding tagged with the schema that produced it. A page passes only
 when it satisfies every member. That is how the two halves compose:
@@ -94,6 +103,8 @@ meta:
         - ./schema/citations-1.0.0-proposal.4.json
 ```
 
+{/* cite override-one-of-collection-files */}
+{/* cite config-schema-paths-config-relative */}
 An override entry carries exactly one of `collection:` and `files:`. Use
 `files: "docs/reference/**"` where the class of pages is not a collection you
 already declared. Paths in config are relative to the config file. The
@@ -120,6 +131,9 @@ manni meta validate docs/reference/
 3 files checked, 1 passed, 2 failed, 2 errors, 2 warnings
 ```
 
+{/* cite finding-names-schema */}
+{/* cite location-finding-is-warning */}
+{/* cite vocabulary-prefers-external */}
 The page with no citation fails under your schema. The page with a malformed
 one fails under the vocabulary. Each finding names the file to open and the
 schema that objected, so a contributor knows which rule they met. The two
@@ -150,6 +164,10 @@ cite:
     marker-repeated: off      # not reported at all
 ```
 
+{/* cite claim-changed-any-edit */}
+{/* cite claim-changed-default-warning */}
+{/* cite warning-exits-0 */}
+{/* cite claim-changed-claim-lines */}
 The one worth deciding deliberately is `claim-changed`. It fires on **any**
 edit to the pinned text, a typo fix included. That is the claim lines, or the
 whole paragraph a marker anchors. At its default it is a warning, reported and green:
@@ -165,6 +183,8 @@ manni cite check docs/reference/limits.md
 1 file checked, 1 passed, 0 failed, 1 finding (1 warning)
 ```
 
+{/* cite severity-override-applies */}
+{/* cite error-exits-1 */}
 With `claim-changed: error` the same run blocks the branch, and the person who
 reworded the sentence has to confirm it still rests on the same line:
 
@@ -175,6 +195,7 @@ reworded the sentence has to confirm it still rests on the same line:
 1 file checked, 0 passed, 1 failed, 1 finding
 ```
 
+{/* cite baseline-only-new-fail */}
 Choose `error` where a cited sentence is a contract, as in a reference page a
 support team quotes. Choose the default where the same repository carries
 prose that gets copy-edited weekly. A red build on a typo fix teaches
@@ -189,7 +210,11 @@ so only new findings fail.
 | `notice` | yes | no |
 | `off` | no | no |
 
-All fourteen rules, their defaults and the reasoning behind each default are in
+{/* cite fourteen-rules */}
+{/* cite rule-defaults */}
+{/* cite unknown-level-refused */}
+{/* cite unknown-rule-refused */}
+All fifteen rules, their defaults and the reasoning behind each default are in
 the [configuration
 reference](/manni/cite/reference/configuration/#severity). A level the tool
 does not know, or a rule name it does not have, is an operational error naming

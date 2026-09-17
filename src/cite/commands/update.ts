@@ -72,7 +72,15 @@ import {
 type Plan =
   | { kind: "claim-moved"; result: CitationResult; lines: LineSpec; from: string; to: string }
   | { kind: "source-moved"; result: CitationResult; lines: LineSpec; to: string }
-  | { kind: "claim-accepted"; result: CitationResult; unit: ClaimUnit; pin: string; lines?: LineSpec }
+  | {
+      kind: "claim-accepted";
+      result: CitationResult;
+      unit: ClaimUnit;
+      pin: string;
+      lines?: LineSpec;
+      /** The marker's line on the page this run leaves, where one anchors. */
+      markerLine?: number;
+    }
   | { kind: "source-accepted"; result: CitationResult; minted: Citation }
   | { kind: "marker-moved"; result: CitationResult; from: number; to: number }
   | {
@@ -290,6 +298,12 @@ function rewriteOf(plan: Plan): UpdateRewrite {
         at: plan.unit.lines.start,
         text: normalizeWhitespace(plan.unit.text.join("\n")),
       };
+      // Where the report says the claim is: its marker, when one anchors it.
+      // A marker this run moved reads at the line it now sits on, so the row
+      // and the move above it name one line rather than two.
+      const markerLine =
+        plan.markerLine ?? (plan.result.anchor === "marker" ? plan.result.markerLine : undefined);
+      if (markerLine !== undefined) out.markerLine = markerLine;
       return out;
     }
     case "source-accepted": {
@@ -714,6 +728,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
               kind: "claim-accepted",
               result,
               pin: now.pin,
+              markerLine: lineNow(marker.line),
               unit: {
                 lines: now.span,
                 kind: quote ? "block" : "paragraph",

@@ -285,8 +285,55 @@ describe("renderCheckPretty: one citation, one row", () => {
       }),
     ]);
     expect(renderCheckPretty(run, NO_COLOR).split("\n").slice(1, 3)).toEqual([
-      "    ✓ fetch-timeout   :12 current   lib/limits.ts:2 current",
       "    ✓ a               :9 current    lib/a.ts:1 current",
+      "    ✓ fetch-timeout   :12 current   lib/limits.ts:2 current",
+    ]);
+  });
+
+  it("sorts the rows by anchor line, a marker by its marker line, a bare pin last", () => {
+    const run = runOf([
+      page({
+        citations: [
+          citation(),
+          citation({
+            citation: { source: { file: "lib/whole.ts", integrity: PIN } },
+            origin: { kind: "frontmatter", file: "docs/limits.md", index: 1, line: 9 },
+            anchor: null,
+            claim: null,
+            source: sourceEnd({ src: "lib/whole.ts" }),
+          }),
+          citation({
+            citation: {
+              id: "retries",
+              claim: { integrity: CLAIM_PIN },
+              source: { file: "lib/limits.ts", lines: 3, integrity: PIN },
+            },
+            origin: { kind: "frontmatter", file: "docs/limits.md", index: 2, line: 14 },
+            anchor: "marker",
+            markerLine: 30,
+            anchorLine: 31,
+            claim: { fileLines: "31", status: "current" },
+            source: sourceEnd({ src: "lib/limits.ts:3" }),
+          }),
+          citation({
+            citation: { id: "a", source: { file: "lib/a.ts", lines: 1, integrity: PIN } },
+            origin: { kind: "frontmatter", file: "docs/limits.md", index: 3, line: 19 },
+            claim: claim({ lines: "1", fileLines: "9" }),
+            source: sourceEnd({ src: "lib/a.ts:1" }),
+          }),
+        ],
+      }),
+    ]);
+    // The entries were written 12, bare, marker :30, 9. The rows read low to high.
+    const rows = renderCheckPretty(run, NO_COLOR)
+      .split("\n")
+      .slice(1, 5)
+      .map((row) => row.trim().replace(/\s{2,}/g, " | "));
+    expect(rows).toEqual([
+      "✓ a | :9 current | lib/a.ts:1 current",
+      "✓ fetch-timeout | :12 current | lib/limits.ts:2 current",
+      "✓ retries | marker :30 current | lib/limits.ts:3 current",
+      "✓ | lib/whole.ts current",
     ]);
   });
 });
@@ -839,6 +886,23 @@ describe("rewriteLine", () => {
     ).toBe('claim at line 9 re-pinned (changed; now "The fetch timeout is 30 seconds.")');
   });
 
+  it("says a marker-anchored accepted claim at its marker line", () => {
+    expect(
+      rewriteLine(
+        rewrite({
+          id: "retries",
+          reason: "accepted",
+          status: "changed",
+          from: CLAIM_PIN,
+          to: PIN,
+          at: 31,
+          markerLine: 30,
+          text: "Retries default to 5.",
+        }),
+      ),
+    ).toBe('claim at marker line 30 re-pinned (changed; now "Retries default to 5.")');
+  });
+
   it("says an accepted source by its src, its commit and its pins, and spells never-true", () => {
     expect(
       rewriteLine(
@@ -981,6 +1045,29 @@ describe("update reporters", () => {
 
   it("serializes the run as is", () => {
     expect(JSON.parse(renderUpdateJson(run))).toEqual(run);
+  });
+
+  it("leaves the marker line out of json, where `at` is the claim's first line", () => {
+    const accepted: UpdateRewrite = {
+      id: "retries",
+      index: 0,
+      line: 4,
+      end: "claim",
+      reason: "accepted",
+      status: "changed",
+      from: CLAIM_PIN,
+      to: PIN,
+      at: 31,
+      markerLine: 30,
+      text: "Retries default to 5.",
+    };
+    const marked: UpdateRun = {
+      ...run,
+      pages: [{ file: "docs/limits.md", rewritten: [accepted], skipped: [], diff: "", written: true }],
+    };
+    const parsed = JSON.parse(renderUpdateJson(marked)) as UpdateRun;
+    const { markerLine: _pretty, ...json } = accepted;
+    expect(parsed.pages[0]?.rewritten).toEqual([json]);
   });
 });
 

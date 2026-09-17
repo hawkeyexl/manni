@@ -192,7 +192,10 @@ export function addMessage(result: AddResult): string {
   if (result.markerLine !== undefined) {
     const at =
       claimLines === undefined ? "" : `, claim pinned at ${spellAt(claimLines)}`;
-    return `${head}; marker at line ${String(result.markerLine)}${at}`;
+    const marked = `${head}; marker at line ${String(result.markerLine)}${at}`;
+    if (claim === undefined) return marked;
+    if (citation.quote === true) return `${marked} (a block that reproduces ${src})`;
+    return `${marked} (${shortPin(claim.integrity)}; source ${pin})`;
   }
   if (claim === undefined || claimLines === undefined) {
     return `${head} (source ${pin})`;

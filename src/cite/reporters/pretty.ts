@@ -203,6 +203,35 @@ function claimLines(result: CitationResult, dim: (s: string) => string): string[
   return out;
 }
 
+/**
+ * The line a row sorts on: the marker's line for a marker-anchored entry,
+ * else the claim's first file line. That is the line the row opens with, so
+ * the claim column climbs down the page. A bare pin anchors nowhere and has
+ * none.
+ */
+function anchorSortLine(result: CitationResult): number | undefined {
+  if (result.anchor === "marker" && result.markerLine !== undefined) return result.markerLine;
+  const first = result.claim?.fileLines?.split("-")[0];
+  if (first === undefined) return undefined;
+  const line = Number.parseInt(first, 10);
+  return Number.isNaN(line) ? undefined : line;
+}
+
+/**
+ * A page's citations in the order their rows print: by anchor line, with the
+ * bare pins after them in the order the page keeps them. The entries
+ * themselves are left alone, so json and the findings keep frontmatter order.
+ */
+function rowOrder(citations: readonly CitationResult[]): CitationResult[] {
+  return [...citations].sort((a, b) => {
+    const left = anchorSortLine(a);
+    const right = anchorSortLine(b);
+    if (left === undefined) return right === undefined ? 0 : 1;
+    if (right === undefined) return -1;
+    return left - right;
+  });
+}
+
 /** One row of a page's citation table, before the columns are padded. */
 interface Row {
   mark: string;
@@ -253,7 +282,7 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
     const placed = new Set<CitationFinding>();
     const rows: Row[] = [];
 
-    for (const result of page.citations) {
+    for (const result of rowOrder(page.citations)) {
       const own = page.findings.filter((f) => belongsTo(f, result) && !placed.has(f));
       for (const finding of own) placed.add(finding);
       const live = own.filter((f) => !isBaselined.has(f));
@@ -407,7 +436,13 @@ export function rewriteLine(rewrite: UpdateRewrite): string {
       : `source ${shortSrc(rewrite.from)} -> ${shortSrc(rewrite.to)} (moved)`;
   }
   if (rewrite.end === "claim") {
-    return `claim at line ${String(rewrite.at ?? 0)} re-pinned (${status}; now "${rewrite.text ?? ""}")`;
+    // A marker anchors its claim, so the marker's line is where the entry is,
+    // as `check` reports it. A claim-lines entry reads at the claim.
+    const where =
+      rewrite.markerLine === undefined
+        ? `line ${String(rewrite.at ?? 0)}`
+        : `marker line ${String(rewrite.markerLine)}`;
+    return `claim at ${where} re-pinned (${status}; now "${rewrite.text ?? ""}")`;
   }
   const at = rewrite.commitSha === undefined ? "" : ` at ${shortCommit(rewrite.commitSha)}`;
   return `source ${shortSrc(rewrite.src ?? "")} re-pinned${at} (${status}; ${shortPin(rewrite.from)} -> ${shortPin(rewrite.to)})`;

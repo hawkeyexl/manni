@@ -186,6 +186,7 @@ describe("runUpdate: the claim end", () => {
         fromPin: CLAIM_RETRIES,
         toPin: pin,
         at: 15,
+        markerLine: 14,
         text: "Retries default to 5.",
       },
     ]);
@@ -908,6 +909,11 @@ describe("runUpdate: a marker inside a paragraph", () => {
       ["robots", "marker", "re-anchored", "misplaced"],
       ["robots", "claim", "accepted", "changed"],
     ]);
+    // The claim row reads at the line the move left the marker on, so the
+    // two rows about `robots` name one line rather than two.
+    const rows = run.pages[0]?.rewritten ?? [];
+    expect(rows.find((r) => r.id === "robots" && r.end === "marker")?.to).toBe("22");
+    expect(rows.find((r) => r.id === "robots" && r.end === "claim")?.markerLine).toBe(22);
     expect(bodyOf("stacked-run.mdx").slice(20, 24)).toEqual([
       "{/* cite one-at-a-time */}",
       "{/* cite robots */}",

@@ -147,6 +147,8 @@ Every transcript below is real output from the built tool.
 
 ## When nothing is declared and nothing is named
 
+{/* cite no-inputs-is-an-error */}
+{/* cite no-inputs-exits-2 */}
 A run with no positional paths and no config is an operational error, exit
 `2`, rather than a silently empty pass:
 
@@ -158,6 +160,7 @@ manni cite check --no-config
 manni: No files to check. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.
 ```
 
+{/* cite update-shares-input-model */}
 That is the metadata tool's [shared input
 model](/manni/meta/reference/cli/#shared-input-model), which `check` and
 `update` both follow. `add` is the exception, because it takes one page and
@@ -191,6 +194,7 @@ rule.
 
 ## Where entries are written
 
+{/* cite default-entry-in-frontmatter */}
 By default an entry goes into the page's own frontmatter, and nothing in the
 body repeats it. Two things change that, and each has a page of its own.
 

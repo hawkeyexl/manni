@@ -528,6 +528,8 @@ export interface UpdateRewrite {
   newLines?: string;
   /** An accepted claim: its first file line. */
   at?: number;
+  /** An accepted claim a marker anchors: the marker's file line. Pretty-only. */
+  markerLine?: number;
   /** An accepted claim: the text now pinned, whitespace collapsed. */
   text?: string;
   /** An accepted source: its `src`. */
