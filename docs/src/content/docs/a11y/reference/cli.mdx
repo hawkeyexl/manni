@@ -58,7 +58,7 @@ manni a11y check [urls...] [options]
 
 | Argument | Description |
 |---|---|
-| `[urls...]` | Seed URLs, space-separated, each `http:` or `https:`. Every seed's host is in crawl scope. Optional, and falls back to a collection's `url:` or config `a11y.urls`; none of the three is an error (exit 2). See [where seeds come from](#where-seeds-come-from). A seed that is not `http(s)` is rejected before any browser launches. |
+| `[urls...]` | Seed URLs, space-separated, each `http:` or `https:`. Links are followed on every seed's host, and sitemap URLs stay on the first seed's host. Optional, and falls back to a collection's `url:` or config `a11y.urls`; none of the three is an error (exit 2). See [where seeds come from](#where-seeds-come-from). A seed that is not `http(s)` is rejected before any browser launches. |
 
 ### Options
 
@@ -117,7 +117,8 @@ All four exit `2`.
 Scope is the host. Two URLs are on the same site when their hostnames match
 case-insensitively and their non-default ports match. `http://` and `https://`
 of one host are one site, and `www.example.com` is not `example.com`. Each seed
-adds its own host to the scope.
+adds its own host to the scope for links. Sitemap URLs stay on the first seed's
+host, as [proposal 0035](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0035-a11y-domain.md#1-why-one-sitemap-from-the-first-seed) records.
 
 The frontier is filled in this order:
 
@@ -331,7 +332,7 @@ three rungs, a bare crawl, `--no-crawl`, and the zero-argument config form.
 Continuing from there:
 
 ```bash
-# Several seeds: each seed's host is in scope; one sitemap lookup, from the first seed.
+# Several seeds: links on both hosts; sitemap URLs from the first seed's host only.
 manni a11y check https://docs.example.com/ https://blog.example.com/
 
 # One collection, seeded from its url: — the same name meta validates by.
