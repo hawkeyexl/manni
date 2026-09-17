@@ -20,7 +20,7 @@ import {
   supportedExtensions,
   type MetadataExtractor,
 } from "../../meta/index.js";
-import { extractorByName } from "../../meta/internal.js";
+import { extractorByName, hasFrontmatterFence } from "../../meta/internal.js";
 import { isEncryptedValue } from "../../shared/encryption.js";
 import { CiteError } from "../errors.js";
 import type {
@@ -41,6 +41,8 @@ export const MAX_MARKERS_PER_PAGE = 500;
 
 /** Formats whose leading fenced block is frontmatter meta would read. */
 const ELEMENT_BACKED = new Set(["html", "xml"]);
+/** Formats whose only metadata channel is a fenced block. */
+const FENCE_ONLY = new Set(["markdown", "mdx"]);
 
 /** What a marker with a JSON payload is told, since an entry never lives in the body. */
 export const MARKER_JSON =
@@ -198,6 +200,15 @@ export function readPage(
 ): PageCitations {
   const extractor = pickExtractor(file, opts?.format);
   const format = extractor.name;
+  // An opening fence with no close is not a block, so the extractor reads no
+  // metadata and every entry the page carries would silently vanish. rst and
+  // asciidoc read a stray fence as body on purpose, ahead of their native
+  // headers; the fence-only formats have no such reading.
+  if (FENCE_ONLY.has(format) && hasFrontmatterFence(content) && locateFrontmatter(content) === null) {
+    throw new CiteError(
+      `${file}: Unterminated front matter fence: the opening fence has no matching close, so the page's citations cannot be read. Add a closing fence.`,
+    );
+  }
   const extracted = extractor.extract(content, file);
   const data = extracted.data;
   const bodyOffset = ELEMENT_BACKED.has(format)
