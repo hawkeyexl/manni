@@ -400,12 +400,14 @@ citations sharing a marker carry the same `anchor`.
 claims under one marker are three annotations with the same `line=29` and three
 different `title=` rule ids and subjects.
 
-**sarif and junit.** Unchanged. cite renders both itself, with
-repository-relative uris and the fingerprints its baseline shares.
-0044's stress test
-19 fixed the fingerprint subject at `id ?? integrity`, so ids sharing a marker
-line stay distinct. A recorded baseline keeps matching after a stack is
-collapsed into one marker.
+**sarif and junit.** Unchanged. Meta's renderer builds the envelope, the
+repository-relative uris and the fingerprints the baseline shares. cite
+supplies the rule description, the help link into the citations reference, and
+the message the github annotation carries. JUnit is the same shape, under the
+`manni.cite` classname. A message is no part of a fingerprint, so 0044's stress
+test 19 still governs. It fixed the fingerprint subject at `id ?? integrity`,
+so ids sharing a marker line stay distinct. A recorded baseline keeps matching
+after a stack is collapsed into one marker.
 
 ### The ladder
 
