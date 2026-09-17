@@ -17,13 +17,14 @@ import { relative, resolve } from "node:path";
 import { locateFrontmatter, writeFileAtomic } from "../../meta/index.js";
 import { STDIN_LABEL, STDIN_TOKEN } from "../../meta/internal.js";
 import { ensureEncryptionKey } from "../../shared/prompt.js";
-import { blockMatches, pinOfLines, toBodyLines, toFileLines } from "../core/claims.js";
+import { blockMatches, pinOfLines, toBodyLines } from "../core/claims.js";
 import { resolveCiteRun } from "../core/config.js";
 import { GIT_UNAVAILABLE_COMMIT, gitClient } from "../core/git.js";
 import { sliceLines, splitLines } from "../core/hash.js";
 import { mintCitation } from "../core/mint.js";
 import { bodyLineOf, readPage } from "../core/page.js";
-import { lineSpec, parseLines, parseSrc, spellLines, tooWide } from "../core/range.js";
+import { lineSpec, parseSrc, spellLines, tooWide } from "../core/range.js";
+import { shiftedEntries, spellAt, withClaimLines, type Shifted } from "../core/shift.js";
 import { readSource, sourceIndexFor } from "../core/sources.js";
 import { ManifestSet } from "../core/manifest.js";
 import { sidecarsFor, type PageSidecar } from "../core/sidecar.js";
@@ -48,8 +49,6 @@ import type {
   AddResult,
   Citation,
   CitationClaim,
-  LineSpec,
-  PageCitation,
   PageLines,
   SourceIndex,
 } from "../types.js";
@@ -86,61 +85,6 @@ async function citedText(
     throw new CiteError(`Source not readable: ${range.path} could not be read.`);
   }
   return sliceLines(splitLines(source.text), range, range.path);
-}
-
-/** `line 9`, or `lines 9-12` for a range. */
-function spellAt(lines: PageLines): string {
-  return lines.start === lines.end
-    ? `line ${String(lines.start)}`
-    : `lines ${String(lines.start)}-${String(lines.end)}`;
-}
-
-/** The new `claim.lines` of each entry a marker pushes down, by where the entry lives. */
-interface Shifted {
-  frontmatter: { index: number; lines: LineSpec }[];
-  manifest: Map<number, LineSpec>;
-}
-
-/**
- * The entries whose claim lines start at or below `insertLine`, each moved
- * down one line. An entry whose claim starts above the marker and reaches it
- * would have a line inserted into its pin, so that is a refusal.
- */
-function shiftedEntries(
-  citations: readonly PageCitation[],
-  insertLine: number,
-  bodyLine: number,
-  label: string,
-): Shifted {
-  const out: Shifted = { frontmatter: [], manifest: new Map() };
-  for (const { citation, origin } of citations) {
-    const spec = citation.claim?.lines;
-    const recorded = spec === undefined ? undefined : parseLines(spec);
-    if (recorded === undefined) continue;
-    const file = toFileLines(recorded, bodyLine);
-    if (file.start < insertLine) {
-      if (file.end < insertLine) continue;
-      const whose =
-        citation.id === undefined
-          ? `the claim at ${spellAt(file)}`
-          : `the claim of ${citation.id} (${spellAt(file)})`;
-      throw new CiteError(
-        `${label}:${String(insertLine)} is inside ${whose}. A marker there would change its pin.`,
-      );
-    }
-    const moved = lineSpec({ start: recorded.start + 1, end: recorded.end + 1 });
-    if (origin.kind === "manifest") out.manifest.set(origin.index, moved);
-    else out.frontmatter.push({ index: origin.index, lines: moved });
-  }
-  return out;
-}
-
-/** A copy of a manifest entry with its `claim.lines` replaced. */
-function withClaimLines(entry: unknown, lines: LineSpec): unknown {
-  if (typeof entry !== "object" || entry === null || Array.isArray(entry)) return entry;
-  const claim: unknown = (entry as Record<string, unknown>).claim;
-  if (typeof claim !== "object" || claim === null || Array.isArray(claim)) return entry;
-  return { ...entry, claim: { ...claim, lines } };
 }
 
 export async function runAdd(opts: AddOptions): Promise<AddResult> {
@@ -274,7 +218,13 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
         `${at} runs past the ${holding.kind} at ${spellAt(holding)}. A marker anchors one paragraph.`,
       );
     }
-    shifted = shiftedEntries(page.citations, holding.start, page.bodyLine, label);
+    shifted = shiftedEntries({
+      citations: page.citations,
+      at: [holding.start],
+      delta: 1,
+      bodyLine: page.bodyLine,
+      label,
+    });
     const statement =
       markerIndent(content, holding.start, format, page.bodyLine) +
       formatStatement(format, { kind: "ref", id: opts.id ?? "" });

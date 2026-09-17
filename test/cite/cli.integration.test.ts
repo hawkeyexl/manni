@@ -113,13 +113,14 @@ afterEach(() => {
 });
 
 describe("manni cite (grammar)", () => {
-  it("lists check, add and update, and nothing else", () => {
+  it("lists check, add, update and remove, and nothing else", () => {
     const r = run(["cite", "--help"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^Usage: manni cite /m);
     expect(r.stdout).toMatch(/^\s+check\b/m);
     expect(r.stdout).toMatch(/^\s+add\b/m);
     expect(r.stdout).toMatch(/^\s+update\b/m);
+    expect(r.stdout).toMatch(/^\s+remove\b/m);
     // The key moved to the family: `manni key set|rotate`.
     expect(r.stdout).not.toMatch(/^\s+salt\b/m);
   });
@@ -142,6 +143,7 @@ describe("manni cite (grammar)", () => {
     expect(run(["cite", "check", "--help"]).stdout).toMatch(/^Usage: manni cite check /m);
     expect(run(["cite", "add", "--help"]).stdout).toMatch(/^Usage: manni cite add /m);
     expect(run(["cite", "update", "--help"]).stdout).toMatch(/^Usage: manni cite update /m);
+    expect(run(["cite", "remove", "--help"]).stdout).toMatch(/^Usage: manni cite remove /m);
   });
 
   it("spells add's arguments as <page> and <src>, with the page's lines on the page", () => {
@@ -406,6 +408,34 @@ describe("manni cite (usage errors)", () => {
     usage(
       ["update", "--no-check-sources", "pages/"],
       "update needs the sources: drop --no-check-sources (or `checkSources: false`).",
+    );
+  });
+
+  it("remove with no --only", () => {
+    usage(
+      ["remove", "pages/current.md"],
+      "remove needs --only <id>; it never removes every citation on a page.",
+    );
+  });
+
+  it("remove --only an id the page does not carry", () => {
+    usage(
+      ["remove", "pages/current.md", "--only", "retries"],
+      "pages/current.md has no entry or marker retries.",
+    );
+  });
+
+  it("remove --only a pointer past the last entry", () => {
+    usage(
+      ["remove", "pages/current.md", "--only", "/citations/9"],
+      '"/citations/9" is past the last entry of pages/current.md (1 entry).',
+    );
+  });
+
+  it("remove -f sarif", () => {
+    usage(
+      ["remove", "pages/", "--only", "fetch-timeout", "-f", "sarif"],
+      'Unknown --format "sarif". Use pretty or json.',
     );
   });
 
@@ -1118,6 +1148,72 @@ describe("manni cite update", () => {
     expect(named.status).toBe(0);
     expect(named.stdout).toContain("1 citation rewritten in 1 file, 0 skipped");
     expect(readFileSync(join(work, "pages", "moved.md"), "utf8")).toContain("      lines: 4\n");
+  });
+});
+
+describe("manni cite remove", () => {
+  it("removes a named entry and its marker, and the next check is clean", () => {
+    const r = cite(["remove", "pages/marker.md", "--only", "retries"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain(
+      "pages/marker.md: removed retries from frontmatter, and its marker at line 18",
+    );
+    expect(r.stdout).toContain("1 citation removed from 1 file");
+    const after = readFileSync(join(work, "pages", "marker.md"), "utf8");
+    expect(after).not.toContain("citations:");
+    expect(after).not.toContain("<!-- cite retries -->");
+    expect(cite(["check", "--root", ".", "pages/marker.md"]).status).toBe(0);
+  });
+
+  it("takes several ids across a directory under --dry-run", () => {
+    const before = readFileSync(join(work, "pages", "current.md"), "utf8");
+    const r = cite([
+      "remove",
+      "pages/current.md",
+      "pages/marker.md",
+      "--only",
+      "fetch-timeout",
+      "--only",
+      "retries",
+      "--dry-run",
+    ]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/^--- pages\/current\.md$/m);
+    expect(r.stdout).toContain("-  - id: fetch-timeout");
+    expect(r.stdout).toContain("2 citations would be removed from 2 files");
+    expect(readFileSync(join(work, "pages", "current.md"), "utf8")).toBe(before);
+  });
+
+  it("names a bare pin by its pointer, over a configured collection, as json", () => {
+    writeFileSync(
+      join(work, "manni.config.yaml"),
+      "collections:\n  - name: site\n    paths: ['pages/whole-file.md']\ncite:\n  root: .\n",
+      "utf8",
+    );
+    const r = cite(["remove", "--collection", "site", "--only", "/citations/0", "-f", "json"]);
+    expect(r.status).toBe(0);
+    const parsed = JSON.parse(r.stdout) as {
+      removed: number;
+      pages: { file: string; written: boolean; removed: { index?: number }[] }[];
+    };
+    expect(parsed.removed).toBe(1);
+    expect(parsed.pages[0]).toMatchObject({ file: "pages/whole-file.md", written: true });
+    expect(parsed.pages[0]?.removed[0]?.index).toBe(0);
+    expect(readFileSync(join(work, "pages", "whole-file.md"), "utf8")).not.toContain("src/limits.ts");
+  });
+
+  it("clears a marker-orphan by removing the marker alone", () => {
+    const before = cite(["check", "--root", ".", "pages/marker-orphan.md"]);
+    expect(before.status).toBe(1);
+    const r = cite(["remove", "pages/marker-orphan.md", "--only", "nope"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain(
+      "pages/marker-orphan.md: removed the marker nope at line 12, which named no entry",
+    );
+    expect(readFileSync(join(work, "pages", "marker-orphan.md"), "utf8")).toContain(
+      "id: fetch-timeout",
+    );
+    expect(cite(["check", "--root", ".", "pages/marker-orphan.md"]).status).toBe(0);
   });
 });
 

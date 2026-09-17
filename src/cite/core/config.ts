@@ -261,6 +261,12 @@ export interface CiteRunOptions {
   onConfigLoaded?: (info: { path: string; dir: string }) => void;
   /** Told once when the root fell back to cwd. */
   onNotice?: (message: string) => void;
+  /**
+   * Whether the run resolves `src:` paths at all. Default true. `false`
+   * silences the notice about where they would resolve from, which `remove`
+   * has no use for: it edits a page and never reads a source.
+   */
+  resolvesSources?: boolean;
   /** Defaults to `process.env`; a test hands in its own. */
   env?: NodeJS.ProcessEnv;
 }
@@ -323,7 +329,10 @@ export async function resolveCiteRun(opts: CiteRunOptions): Promise<CiteRun> {
       root = gitRoot;
     } else {
       root = cwd;
-      opts.onNotice?.(`No git root found; resolving src: paths from ${cwd}`);
+      // Said only to a run that will resolve a source against it.
+      if (opts.resolvesSources !== false) {
+        opts.onNotice?.(`No git root found; resolving src: paths from ${cwd}`);
+      }
     }
   }
 

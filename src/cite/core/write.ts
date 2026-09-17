@@ -68,6 +68,62 @@ export function appendFrontmatterCitation(
 }
 
 /**
+ * Take entries out of a page's `citations`, by their index in the list, and
+ * write what is left back through the format's extractor. An empty list
+ * removes the key: an entry deleted by hand once left a `citations:` with
+ * nothing under it, and a page that carries no citations should say so by
+ * carrying no key.
+ *
+ * The write is the inverse of `appendFrontmatterCitation` and goes the same
+ * way, so a page manni can add to is a page manni can remove from.
+ */
+export function removeFrontmatterCitations(
+  content: string,
+  format: string,
+  drop: ReadonlySet<number>,
+  filePath?: string,
+): string {
+  const label = filePath ?? "the page";
+  const extractor = extractorFor(format);
+  if (!extractor.apply || !readsFencedFrontmatter(extractor, label)) {
+    throw new CiteError(
+      `${label} has no frontmatter to write to; keep its citations in a manifest instead.`,
+    );
+  }
+  if (locateFrontmatter(content)?.flavor === "toml") {
+    throw new CiteError(
+      `${label} has TOML frontmatter; manni cannot rewrite a citations table without re-emitting the whole block, which would drop its comments. Remove the entry by hand.`,
+    );
+  }
+  const raw: unknown = extractor.extract(content, label).data.citations ?? [];
+  if (!Array.isArray(raw)) {
+    throw new CiteError(`${label}: \`citations\` is not a list; edit it by hand.`);
+  }
+  const existing: unknown[] = raw;
+  const kept = existing.filter((_entry, index) => !drop.has(index));
+  try {
+    return kept.length === 0
+      ? extractor.apply(content, {}, { deletions: ["citations"] })
+      : extractor.apply(content, { citations: kept });
+  } catch (e) {
+    if (e instanceof DocmetaError) throw new CiteError(`${label}: ${e.message}`);
+    throw e;
+  }
+}
+
+/** Delete the whole of 1-based `line`, its terminator included. */
+export function removeLine(content: string, line: number): string {
+  const start = offsetOfLine(content, line);
+  const nl = content.indexOf("\n", start);
+  // The last line of a page with no final newline takes the break above it.
+  if (nl === -1) {
+    const above = start > 0 ? content.lastIndexOf("\n", start - 1) : -1;
+    return content.slice(0, above === -1 ? 0 : above);
+  }
+  return content.slice(0, start) + content.slice(nl + 1);
+}
+
+/**
  * The entry as a plain object, in the order a reader scans it, with every
  * absent optional left out rather than written as `null`.
  */
