@@ -103,11 +103,14 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
 
     /** The entries one `--only` value names on this page. */
     const entriesFor = (value: string): number[] => {
-      const pointer = POINTER.exec(value);
-      if (pointer === null) {
+      // The digits of a pointer, or nothing for a value that is an id. Read
+      // as a capture rather than through `exec(...) !== null`, so the index
+      // is a string the compiler has seen narrowed.
+      const [, digits] = POINTER.exec(value) ?? [];
+      if (digits === undefined) {
         return inputs.flatMap((input, index) => (idOf(input.entry) === value ? [index] : []));
       }
-      const index = Number(pointer[1]);
+      const index = Number(digits);
       if (index < inputs.length) return [index];
       // A pointer is a position, so over several pages it means the entry at
       // that position wherever there is one. Against one page there is no
@@ -209,7 +212,11 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
         })
         .filter((_entry, index) => !indices.has(index));
       if (kept.length === 0) await manifests.remove(owner, setup.sidecar.entry);
-      else await manifests.write(owner, setup.sidecar.entry, kept, 0);
+      // The line a written entry sits on is what `add` reports; a removal
+      // reports the line the entry sat on before, from its origin. So the
+      // answer is dropped here, and the index it is measured from is any
+      // index at all.
+      else void (await manifests.write(owner, setup.sidecar.entry, kept, 0));
     }
 
     const out: RemovePage = {

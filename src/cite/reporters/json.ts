@@ -97,6 +97,9 @@ export function renderCheckJson(run: CheckRun): string {
 }
 
 export function renderRemoveJson(run: RemoveRun): string {
+  // The whole run, with nothing stripped: `RemoveRun` carries no
+  // pretty-only field, as `UpdateRewrite.markerLine` is below. A field added
+  // to it for the terminal alone is stripped here, as that one is.
   return JSON.stringify(run, null, 2);
 }
 

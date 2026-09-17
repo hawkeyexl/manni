@@ -57,6 +57,15 @@ function write(name: string, lines: string[]): string {
   writeFileSync(join(cwd, "pages", name), lines.join("\n") + "\n", "utf8");
   return `pages/${name}`;
 }
+/**
+ * A page written byte for byte, for the cases where the bytes are the point:
+ * CRLF terminators, and a last line with no terminator at all.
+ */
+function writeRaw(name: string, content: string): string {
+  if (cwd === "") workspace();
+  writeFileSync(join(cwd, "pages", name), content, "utf8");
+  return `pages/${name}`;
+}
 const onDisk = (label: string): string => readFileSync(join(cwd, label), "utf8");
 afterEach(() => {
   if (cwd !== "") rmSync(cwd, { recursive: true, force: true });
@@ -210,6 +219,22 @@ describe("runRemove: an entry in the page's frontmatter", () => {
     expect(run.pages[0]?.removed).toHaveLength(1);
   });
 
+  it("takes a pointer from the pages that have it and skips the ones that do not", async () => {
+    workspace("remove-shift.md", "current.md");
+    // remove-shift.md carries two entries; current.md carries one, so
+    // `/citations/1` names something on the first page only.
+    const run = await remove({ inputs: ["pages"], only: ["/citations/1"] });
+    expect(run.removed).toBe(1);
+    expect(run.pages.map((p) => [p.file, p.removed.length, p.written])).toEqual([
+      ["pages/current.md", 0, false],
+      ["pages/remove-shift.md", 1, true],
+    ]);
+    expect(onDisk("pages/current.md")).toContain("id: fetch-timeout");
+    expect(onDisk("pages/remove-shift.md")).not.toContain("id: fetch-timeout");
+    expect(await findings("pages/remove-shift.md")).toEqual([]);
+    expect(await findings("pages/current.md")).toEqual([]);
+  });
+
   it("--dry-run prints the diff and writes nothing", async () => {
     workspace("marker.md");
     const before = onDisk("pages/marker.md");
@@ -238,6 +263,52 @@ describe("runRemove: an entry in the page's frontmatter", () => {
     expect(page?.written).toBe(false);
     expect(page?.content).toContain("title: Limits");
     expect(page?.content).not.toContain("citations");
+  });
+});
+
+/**
+ * A marker line is deleted whole, terminator included, and a CRLF page has
+ * two bytes of terminator rather than one. The pages here are written byte
+ * for byte rather than from a fixture, because the bytes are what is under
+ * test: the three positions a marker can sit in, and a last line with no
+ * terminator after it.
+ */
+describe("runRemove: a marker line on a CRLF page", () => {
+  /** An orphan marker at the top, the middle and the end of one body. */
+  const lines = ["# Limits", "", "Retries default to 3.", "", "<!-- cite nope -->"];
+
+  it("takes the whole terminator above it when the marker is the last line", async () => {
+    const label = writeRaw("crlf-last.md", lines.join("\r\n"));
+    const run = await remove({ inputs: [label], only: ["nope"] });
+    expect(run.removed).toBe(1);
+    // A last line with no terminator of its own takes the terminator above
+    // it instead, both bytes of it. No orphaned CR is left behind, and the
+    // page reads as it did before the marker was ever added.
+    expect(onDisk(label)).toBe("# Limits\r\n\r\nRetries default to 3.\r\n");
+  });
+
+  it("does the same on an LF page, which is where the rule comes from", async () => {
+    const label = writeRaw("lf-last.md", lines.join("\n"));
+    const run = await remove({ inputs: [label], only: ["nope"] });
+    expect(run.removed).toBe(1);
+    expect(onDisk(label)).toBe("# Limits\n\nRetries default to 3.\n");
+  });
+
+  it("takes the terminator with it when the marker is the first line", async () => {
+    const label = writeRaw("crlf-first.md", ["<!-- cite nope -->", ...lines.slice(0, 3)].join("\r\n") + "\r\n");
+    const run = await remove({ inputs: [label], only: ["nope"] });
+    expect(run.removed).toBe(1);
+    expect(onDisk(label)).toBe("# Limits\r\n\r\nRetries default to 3.\r\n");
+  });
+
+  it("takes the terminator with it when the marker is in the middle", async () => {
+    const label = writeRaw(
+      "crlf-middle.md",
+      ["# Limits", "", "<!-- cite nope -->", "Retries default to 3.", ""].join("\r\n"),
+    );
+    const run = await remove({ inputs: [label], only: ["nope"] });
+    expect(run.removed).toBe(1);
+    expect(onDisk(label)).toBe("# Limits\r\n\r\nRetries default to 3.\r\n");
   });
 });
 

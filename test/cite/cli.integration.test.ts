@@ -1268,6 +1268,29 @@ describe("manni cite remove", () => {
     expect(readFileSync(join(work, "pages", "whole-file.md"), "utf8")).not.toContain("src/limits.ts");
   });
 
+  it("with - writes the rewritten page to stdout and the report to stderr", () => {
+    const input = readFileSync(join(FIXTURES, "pages", "marker.md"), "utf8");
+    const r = cite(["remove", "-", "--as", "markdown", "--only", "retries"], { input });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("title: Limits");
+    expect(r.stdout).not.toContain("citations:");
+    expect(r.stdout).not.toContain("<!-- cite retries -->");
+    expect(r.stdout).toContain("Retries default to 3. Really.");
+    expect(r.stdout).not.toContain("citation removed");
+    expect(r.stderr).toContain("<stdin>: removed retries from frontmatter, and its marker at line 18");
+    expect(r.stderr).toContain("1 citation removed from 1 file");
+  });
+
+  it("with - and --dry-run prints the diff and the report only", () => {
+    const input = readFileSync(join(FIXTURES, "pages", "marker.md"), "utf8");
+    const r = cite(["remove", "-", "--dry-run", "--as", "markdown", "--only", "retries"], { input });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/^--- <stdin>$/m);
+    expect(r.stdout).toContain("-<!-- cite retries -->");
+    expect(r.stdout).toContain("1 citation would be removed from 1 file");
+    expect(r.stderr).toBe("");
+  });
+
   it("clears a marker-orphan by removing the marker alone", () => {
     const before = cite(["check", "--root", ".", "pages/marker-orphan.md"]);
     expect(before.status).toBe(1);

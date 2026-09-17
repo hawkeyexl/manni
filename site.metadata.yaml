@@ -4723,7 +4723,7 @@ docs/src/content/docs/cite/get-started/index.mdx:
         integrity: sha256-e5103845bc868a34ea7697ff8150c1e8b6540f224123833f0079098f5d5d91c7
       source:
         file: src/cite/core/write.ts
-        lines: 246-254
+        lines: 250-258
         integrity: sha256-14a10eaae60d57741ae439e2ac97e1f11b3927f6d76c61600731e0b65a3564c7
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
     - id: move-keeps-commit-sha

@@ -433,6 +433,9 @@ export function renderUpdatePretty(run: UpdateRun, opts: PrettyOptions): string 
 
 /** `line 30`, or `lines 30 and 42` for several, as a sentence reads them. */
 function spellLineList(at: readonly number[], noun: string): string {
+  // No lines is the noun alone. Every caller has at least one, and a
+  // sentence reading "lines  and " would be the only sign that one did not.
+  if (at.length === 0) return noun;
   const spelled = at.map((line) => String(line));
   if (spelled.length === 1) return `${noun} ${spelled[0] ?? ""}`;
   const last = spelled[spelled.length - 1] ?? "";

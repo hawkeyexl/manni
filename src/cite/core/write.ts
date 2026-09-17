@@ -116,8 +116,12 @@ export function removeLine(content: string, line: number): string {
   const start = offsetOfLine(content, line);
   const nl = content.indexOf("\n", start);
   // The last line of a page with no final newline takes the break above it.
+  // On CRLF that break is two bytes, and stopping at the LF would leave the
+  // CR behind as the tail of a line that is gone; `spliceEntryField` pulls
+  // back over a CR for the same reason.
   if (nl === -1) {
-    const above = start > 0 ? content.lastIndexOf("\n", start - 1) : -1;
+    let above = start > 0 ? content.lastIndexOf("\n", start - 1) : -1;
+    if (above > 0 && content.charAt(above - 1) === "\r") above--;
     return content.slice(0, above === -1 ? 0 : above);
   }
   return content.slice(0, start) + content.slice(nl + 1);
