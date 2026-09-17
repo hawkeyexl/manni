@@ -13,10 +13,354 @@ hero:
       link: /manni/key/#where-the-key-lives
       icon: setting
       variant: minimal
+citations:
+  - id: ciphertext-shape
+    claim:
+      integrity: sha256-335ec81c64382fe6e677da27647a39ced417f377717b80583e3d52d8f09b24e3
+    source:
+      file: src/shared/encryption.ts
+      lines: 43-44
+      integrity: sha256-8a618a4696a6afdcef7401722e17337330b5daa44d6c6b3b208fb48ffa9c79e1
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: ciphertext-bound-to-key
+    claim:
+      integrity: sha256-335ec81c64382fe6e677da27647a39ced417f377717b80583e3d52d8f09b24e3
+    source:
+      file: src/shared/encryption.ts
+      lines: 205-211
+      integrity: sha256-aa27623411c8db1522cb788187472e2f2e03ee3151cba037f0a5423f6541262e
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: encrypted-plain-rule
+    claim:
+      integrity: sha256-341c2c8261af93f0f4a88013f7ec8d3d231356da2e7e1913e8f5428f67598142
+    source:
+      file: src/meta/reporters/rule-id.ts
+      lines: 40
+      integrity: sha256-c9f35b78d62c8770dc189cccb0478a2f2a6654c35f803d05d7b8a1dc95c89ed8
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: no-key-one-warning
+    claim:
+      integrity: sha256-341c2c8261af93f0f4a88013f7ec8d3d231356da2e7e1913e8f5428f67598142
+    source:
+      file: src/meta/commands/validate.ts
+      lines: 846-848
+      integrity: sha256-beeb884d4016a47d5cd408fecc74625687215f383f3e39ea7f02a956d976deb6
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: cite-add-encrypts-with-key
+    claim:
+      integrity: sha256-2dab680b74eb6573fae9f60cbdeecb8164eb1c72f70c22d8a49955da44cd04e2
+    source:
+      file: src/cite/cli.ts
+      lines: 372-373
+      integrity: sha256-16808a9273fc23ddb9b280ae2a9575d17bfc29ba6ec89909e8faba7fb17ffc42
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: keyed-pin-prefix
+    claim:
+      integrity: sha256-2dab680b74eb6573fae9f60cbdeecb8164eb1c72f70c22d8a49955da44cd04e2
+    source:
+      file: src/shared/encryption.ts
+      lines: 222
+      integrity: sha256-4e2163c98679320cc7781fdbd09a28e0a5603ee9190dd04ff1854f44f4a02e5d
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: set-row-writes-or-creates
+    claim:
+      lines: 59
+      integrity: sha256-630d8ebf274a261ea085b39a7fc4df1635b0d66c163c31691cd705de4e68b761
+    source:
+      file: src/shared/encryption-key.ts
+      lines: 229-240
+      integrity: sha256-e2820b422e0c5bc6a8aefba1ef4edc1cb3beb56b48222b093bf9f2ba88ae0103
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: set-row-generates-256-bits
+    claim:
+      lines: 59
+      integrity: sha256-630d8ebf274a261ea085b39a7fc4df1635b0d66c163c31691cd705de4e68b761
+    source:
+      file: src/shared/encryption.ts
+      lines: 58-60
+      integrity: sha256-fbcde933e4d8055ae0903f9a02fc040dbc77ca9fa333392aa786af3f37064a2b
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: set-row-never-prints-key
+    claim:
+      lines: 59
+      integrity: sha256-630d8ebf274a261ea085b39a7fc4df1635b0d66c163c31691cd705de4e68b761
+    source:
+      file: src/key/reporters/pretty.ts
+      lines: 26-31
+      integrity: sha256-cc09b5b5f0c6d5515acefe729c3c71cfd0b23cf5b6336002b19badadda1d1520
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: rotate-row-all-or-nothing
+    claim:
+      lines: 60
+      integrity: sha256-04c43c6fe4c5fbd1b200f529d459f3598eeaa813331db6b3ee081039283ae8f2
+    source:
+      file: src/key/commands/rotate.ts
+      lines: 573-577
+      integrity: sha256-31ec4c098ad2f4947315ebf3909d0a2b3b28edaebcf334b0a63495569ee1d7c7
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: rotate-row-rerun-finishes
+    claim:
+      lines: 60
+      integrity: sha256-04c43c6fe4c5fbd1b200f529d459f3598eeaa813331db6b3ee081039283ae8f2
+    source:
+      file: src/key/commands/rotate.ts
+      lines: 413-416
+      integrity: sha256-accf02ad8c23c08934cae27790209f275f5f91a35f9f07806d4eb28c00dc50e7
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: bare-key-exit-2
+    claim:
+      integrity: sha256-bb951c8008ea905da359cc39d06c1d382bcf53068e71f86a800996acc8a95b91
+    source:
+      file: src/shared/run.ts
+      lines: 75
+      integrity: sha256-5934f41ee032373fdf97335450085486690d8ee1f81822c4a380c24fceed9726
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: rotate-row-citation-manifests
+    claim:
+      lines: 60
+      integrity: sha256-04c43c6fe4c5fbd1b200f529d459f3598eeaa813331db6b3ee081039283ae8f2
+    source:
+      file: src/key/commands/rotate.ts
+      lines: 495-502
+      integrity: sha256-bf393724fc72a96278926e5765fe4483d041f060a851c2c93babb3a86ce973ac
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: proof-set-message
+    claim:
+      lines: 73
+      integrity: sha256-1b6117fc7b14fc6ad627c4b438f3e495708ba234072db6888848aa6f5fd9a3ea
+    source:
+      file: src/key/reporters/pretty.ts
+      lines: 26-31
+      integrity: sha256-cc09b5b5f0c6d5515acefe729c3c71cfd0b23cf5b6336002b19badadda1d1520
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: proof-rotate-row
+    claim:
+      lines: 102
+      integrity: sha256-c5910f0656f59ac6d9a062a16d677e30ed944593b580fc8afb3dc3e401dd413c
+    source:
+      file: src/key/reporters/pretty.ts
+      lines: 75-81
+      integrity: sha256-9d36a0b4622dcfe76a9ca3ab881bc271781ab2cc72efda0553d8d394e76d8dee
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: proof-rotate-counts
+    claim:
+      lines: 103
+      integrity: sha256-31bdaf9f3446d1adaaf1c5e045fc6e700907411e0b8672441306e5089e50d926
+    source:
+      file: src/key/reporters/pretty.ts
+      lines: 105-110
+      integrity: sha256-f7a5759fdd269f08ee36b07ac93dc6a061168650ae4785b0fc1260a13f37c4f2
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: proof-committed-warning
+    claim:
+      lines: 72
+      integrity: sha256-0a3b271d9e75f7582d4157bf3a7c6d6ee6556cd12be549ac685090b8b415e520
+    source:
+      file: src/shared/encryption-key.ts
+      lines: 260-262
+      integrity: sha256-24d7e5654c456855164c214ddf73c7e254c891845b755fd672eb809d6cc8b5c6
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: write-order-key-first
+    claim:
+      integrity: sha256-edee819facc090b259aff68c49ffc9cde876a19b6e63d2d2f7501c7cf909f81f
+    source:
+      file: src/key/commands/rotate.ts
+      lines: 581-586
+      integrity: sha256-5e9d429885c50bf125fcb5ec3ed862f7337ace9eeaef13d5642ad77027a9488f
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: write-order-old-key-last
+    claim:
+      integrity: sha256-edee819facc090b259aff68c49ffc9cde876a19b6e63d2d2f7501c7cf909f81f
+    source:
+      file: src/key/commands/rotate.ts
+      lines: 601-604
+      integrity: sha256-455c5aff5cd9c663beaf84c64579238a170b8adf6381637591e9ed9b4a41c0ad
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: rerun-finishes-rotation
+    claim:
+      integrity: sha256-edee819facc090b259aff68c49ffc9cde876a19b6e63d2d2f7501c7cf909f81f
+    source:
+      file: src/key/commands/rotate.ts
+      lines: 413-416
+      integrity: sha256-accf02ad8c23c08934cae27790209f275f5f91a35f9f07806d4eb28c00dc50e7
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: env-wins-empty-unset
+    claim:
+      lines: 132-134
+      integrity: sha256-cfe9e252f024ec592f6ae7eceb5bb121ea1d55150495e026a0ae12a020e5e4de
+    source:
+      file: src/shared/encryption-key.ts
+      lines: 58-70
+      integrity: sha256-af2bad28497a46d44e3fd25f32d68e5b73c21d6b7b14d63192ca1a7ff1ddaa1c
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: key-shape-config
+    claim:
+      lines: 135-136
+      integrity: sha256-b3bd38cc33d4be0a48dab9d1a7a82ad17a6b6d39f21cfd76092cb95e1384ba1a
+    source:
+      file: src/shared/config-file.ts
+      lines: 242-249
+      integrity: sha256-638ee344aaa62fb7b43eeb937589be88dac17f49d213a48e5eb37fe46fee679a
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: key-shape-env
+    claim:
+      lines: 135-136
+      integrity: sha256-b3bd38cc33d4be0a48dab9d1a7a82ad17a6b6d39f21cfd76092cb95e1384ba1a
+    source:
+      file: src/shared/encryption-key.ts
+      lines: 60-65
+      integrity: sha256-9b2b2f43f95570f2bca61377c00eb15134ecfd902b97e521fc7e12405e3b3899
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: key-shape-config-message
+    claim:
+      lines: 139
+      integrity: sha256-1d7ca7f09d867b4969a1d2772ce2f5939a88b263ef07ef9ea4f1fb85b00bf9f6
+    source:
+      file: src/shared/config-file.ts
+      lines: 244-247
+      integrity: sha256-4c64498f39288a7c9fb6e2e525da2101ac16dff316efd4c56ffbb2a0ecd99306
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: key-shape-env-message
+    claim:
+      lines: 140
+      integrity: sha256-0966b6ae5fa4497570d2fb53aab9c91eb57c2921ade329dad9a07bd66f78a7e9
+    source:
+      file: src/shared/encryption-key.ts
+      lines: 60-65
+      integrity: sha256-9b2b2f43f95570f2bca61377c00eb15134ecfd902b97e521fc7e12405e3b3899
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: key-only-file-is-config
+    claim:
+      lines: 143-146
+      integrity: sha256-be853dbe5e60d20ad33501090e9e3e5f0872b0aa8ba39f5a9efcb636ba0669d9
+    source:
+      file: src/shared/config-file.ts
+      lines: 193-201
+      integrity: sha256-441f60210b9652c5c6b4079a3ea115831cd07c924e44b806decec8703e8ca2b3
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: key-expanded-not-stretched
+    claim:
+      lines: 147-150
+      integrity: sha256-2571f411e80fb63896359ec7b7ac71dd5b42a8b21b910bb92084dc2f67b9be2e
+    source:
+      file: src/shared/encryption.ts
+      lines: 85-87
+      integrity: sha256-abfa4097736b1d42d51176a682e1b58bd90971501e6558102a1aad96d3977731
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: key-set-256-bits
+    claim:
+      lines: 147-150
+      integrity: sha256-2571f411e80fb63896359ec7b7ac71dd5b42a8b21b910bb92084dc2f67b9be2e
+    source:
+      file: src/shared/encryption.ts
+      lines: 58-60
+      integrity: sha256-fbcde933e4d8055ae0903f9a02fc040dbc77ca9fa333392aa786af3f37064a2b
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: set-warns-not-ignored
+    claim:
+      integrity: sha256-fdaa627b2376d5fecae2791a9e127b60e343f89602bddcf76388126ff5f19150
+    source:
+      file: src/key/commands/set.ts
+      lines: 77-79
+      integrity: sha256-875ab71f28efbbbc64086351f30c19ceb4706537588918bfa5ff96caa200fd28
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: prompt-warns-not-ignored
+    claim:
+      integrity: sha256-fdaa627b2376d5fecae2791a9e127b60e343f89602bddcf76388126ff5f19150
+    source:
+      file: src/shared/prompt.ts
+      lines: 123-125
+      integrity: sha256-8d8d17513a17106ade1fd6e6f579fd6bb693dfe9e744e0df668dadc04e41718e
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: set-refuses-env-set
+    claim:
+      lines: 178-180
+      integrity: sha256-5e5b88e64938ad86303987511491675a5278690a20b30ca949750e7ee125c311
+    source:
+      file: src/key/commands/set.ts
+      lines: 58-60
+      integrity: sha256-8e9333bd6f352ebfad682a0765795ceb2f9a5b94cf17cdd4660aa412e3863442
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: no-secret-validate-warns
+    claim:
+      integrity: sha256-fdb7c8726e42bc24878dbce8018e33becdabef72af42ce6a96a674b32da01df7
+    source:
+      file: src/meta/commands/validate.ts
+      lines: 846-848
+      integrity: sha256-beeb884d4016a47d5cd408fecc74625687215f383f3e39ea7f02a956d976deb6
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: env-rotate-needs-to
+    claim:
+      integrity: sha256-fdb7c8726e42bc24878dbce8018e33becdabef72af42ce6a96a674b32da01df7
+    source:
+      file: src/key/commands/rotate.ts
+      lines: 410
+      integrity: sha256-d5e1fc9f01fa9e06e6b5e3685957b987ba7770881d8333f822983a13cccd6dd5
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: write-prompts-on-terminal
+    claim:
+      integrity: sha256-13be564a7da41609a86e592ab28b1f414b36eac83f96bdd70dcaf8bea2b4767c
+    source:
+      file: src/shared/prompt.ts
+      lines: 107-129
+      integrity: sha256-9cef8e63c9f74359d56589390f6b71ccb24c8d98eefcb0fd0bb0f8b10a16df65
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: prompt-missing-notice
+    claim:
+      lines: 201
+      integrity: sha256-846bcaee7804a3abd4719fcb688a9963ed4faf0589dae9e264060b9602001886
+    source:
+      file: src/shared/prompt.ts
+      lines: 114-118
+      integrity: sha256-a05d88a492ee7f3a6549c71d3d5d2afd1dfb490d29897e4e95f615dfd6ed6356
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: prompt-question
+    claim:
+      lines: 203
+      integrity: sha256-3a9a17eeffbf1765db5fa8211534910150554feea8465e5573337d9a3e564680
+    source:
+      file: src/shared/prompt.ts
+      lines: 126
+      integrity: sha256-a1b160ef1128f6de7da850ff155e301f9f13f0ef098c43f0ce9d2ed92eed0bdd
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: prompt-no-answers-refuse
+    claim:
+      integrity: sha256-ed70ee766ae24366c07a7dfef5efef3de5f21ecdf763f7cb8550bc56fe44a9d6
+    source:
+      file: src/shared/prompt.ts
+      lines: 57-64
+      integrity: sha256-1f8570c70e1f3fb3ca86464ffa6e9f378db04be50c595b1ff5bdb86e179ac1d2
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: prompt-off-terminal-refuses
+    claim:
+      integrity: sha256-ed70ee766ae24366c07a7dfef5efef3de5f21ecdf763f7cb8550bc56fe44a9d6
+    source:
+      file: src/shared/prompt.ts
+      lines: 73-78
+      integrity: sha256-6633f765aa132843490bc1e8217570919006050d9897fb57d166def6c649099c
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: prompt-refusal-message
+    claim:
+      integrity: sha256-ed70ee766ae24366c07a7dfef5efef3de5f21ecdf763f7cb8550bc56fe44a9d6
+    source:
+      file: src/shared/prompt.ts
+      lines: 114-116
+      integrity: sha256-2b1dbb2de1cd7c2013f2d2a5b2bb19d316c327e5e260d34b10deee4143099103
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: rotate-never-asks
+    claim:
+      integrity: sha256-ed70ee766ae24366c07a7dfef5efef3de5f21ecdf763f7cb8550bc56fe44a9d6
+    source:
+      file: src/key/commands/rotate.ts
+      lines: 397
+      integrity: sha256-ea09b213d678bc8b0ce802b2d88944e023680d8f3cbdadcb7ea0700dbc61c239
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
 ---
 
 import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
+{/* cite ciphertext-shape */}
+{/* cite ciphertext-bound-to-key */}
 Some values have to be on every page and must never be readable there. manni
 encrypts them with one key, the family encryption key. `manni meta` encrypts a
 frontmatter value whose schema marks it `x-manni-encrypt`, and `manni cite`
@@ -44,6 +388,8 @@ are public and the organization is not. Mark the property in the schema:
 }
 ```
 
+{/* cite encrypted-plain-rule */}
+{/* cite no-key-one-warning */}
 A page that publishes a plain `owner` then fails `manni meta validate` with
 `encrypted:plain/encrypted`. Wherever the key is available, an encrypted
 `owner` is decrypted and validated against the property's whole schema, so
@@ -53,6 +399,8 @@ stderr says how many values went unverified. The
 [schema resolution reference](/manni/meta/reference/schema-resolution/) has the
 keyword's rules.
 
+{/* cite cite-add-encrypts-with-key */}
+{/* cite keyed-pin-prefix */}
 **Private source paths in public docs.** A sentence on a public page can cite a
 line in a private repository. With a key available, `manni cite add` encrypts
 `source.file`, so the entry carries a ciphertext where the path would be, and
@@ -69,6 +417,7 @@ and checks the cited lines. The
 | `manni key set [value]` | Writes `encryptionKey:` to `manni.config.yaml`, and creates the file when there is none. Without a value it generates 64 random hex characters, 256 bits. It never prints the key. |
 | `manni key rotate [paths...]` | Re-encrypts every encrypted value under a new key, in pages and in citation manifests alike, then writes the new key. Nothing is written unless every value re-encrypts, and a run cut off part of the way finishes when you run it again. |
 
+{/* cite bare-key-exit-2 */}
 There is no default subcommand. `manni key` alone prints usage and exits `2`.
 
 ## A 30-second proof
@@ -116,6 +465,9 @@ Encryption key written to manni.config.yaml.
 The page changed and the key changed, and `manni meta validate` still passes.
 An `owner: platform` typed in by hand fails it, exit `1`.
 
+{/* cite write-order-key-first */}
+{/* cite write-order-old-key-last */}
+{/* cite rerun-finishes-rotation */}
 The new key reaches the config before the first page does, with the old key
 beside it until the last page is written. A rotation cut off part of the way
 therefore loses no key and no value. Run `manni key rotate` again and it
@@ -166,6 +518,8 @@ committed beside the pages is readable by everyone who can read the
 repository, and so is every value it encrypts.
 </Aside>
 
+{/* cite set-warns-not-ignored */}
+{/* cite prompt-warns-not-ignored */}
 `manni key set` and the write prompt warn when the file they are about to write
 is not ignored by git. They warn rather than refuse, because a private
 repository may keep its key in its config. In a repository other people can
@@ -183,6 +537,8 @@ read, keep the key in the environment instead:
    while the variable is set, because a key written to config would never be
    read.
 
+{/* cite no-secret-validate-warns */}
+{/* cite env-rotate-needs-to */}
 A job without the secret still runs. `manni meta validate` drops findings on
 the encrypted values it cannot decrypt and says so once on stderr, and
 `manni cite check --no-check-sources` skips the encrypted sources. To rotate a key
@@ -192,6 +548,7 @@ secret to that value. See
 
 ## When a write needs a key
 
+{/* cite write-prompts-on-terminal */}
 `manni meta fill`, a `manni meta query` write, and `manni cite add` create
 encrypted values, so each needs the key before it writes. When none is
 available and the command runs on a terminal, it offers to make one and then
@@ -205,6 +562,10 @@ Generate a key and write it to manni.config.yaml? [y/N] y
 Encryption key written to manni.config.yaml.
 ```
 
+{/* cite prompt-no-answers-refuse */}
+{/* cite prompt-off-terminal-refuses */}
+{/* cite prompt-refusal-message */}
+{/* cite rotate-never-asks */}
 `N`, an empty answer, or the end of input stops the command with exit `2`, and
 so does any run off a terminal. The message says to run `manni key set` or set
 `MANNI_ENCRYPTION_KEY`. `manni meta validate`, `manni cite check`,

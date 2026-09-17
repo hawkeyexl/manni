@@ -1,6 +1,211 @@
 ---
 title: Keep citations out of the page
 description: "Declare a manifest that owns the citations key for a collection, move a page's entries into it, and keep checking the same way. The page carries no citation YAML, and a finding on an entry names the manifest and the entry's line."
+citations:
+  - id: manifest-file-relative-to-config
+    claim:
+      lines: 46
+      integrity: sha256-8d3b4c9b0dda52b09b751673bb83b0fbb531dfbf67303ba2c72b1c71f44e7b14
+    source:
+      file: src/meta/core/external-metadata.ts
+      lines: 265-267
+      integrity: sha256-55e40b5ece9b5bcb3bdd7db7bd7e794020e74c28c0090585286392b7d038d0fa
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: one-manifest-owns-a-key
+    claim:
+      lines: 48-49
+      integrity: sha256-aa69edb71ff4746641421bf998b773a14258f03d09502eedea2e8b4078aea942
+    source:
+      file: src/shared/collections.ts
+      lines: 329-334
+      integrity: sha256-d2ecc4463701f4f5806bdcc82f1339e5641f1c1ab53d8b0fcaca68787c954cb4
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: claim-lines-count-page-body
+    claim:
+      lines: 69-70
+      integrity: sha256-f4d330e75a55d9d27aff4dcf14f0c05c20dac17658adac9c0c475f4442dd7966
+    source:
+      file: src/cite/core/claims.ts
+      lines: 92-96
+      integrity: sha256-35f791f7b3b83c766322c56a2da3935059f36b3dbe604ba7b483d02b43f4fc9f
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: manifest-column
+    claim:
+      lines: 107-108
+      integrity: sha256-3d54b7e1c28dcc0336b4310720fe81d9ebe96dae6ffa2ca662271d96b3386236
+    source:
+      file: src/cite/reporters/pretty.ts
+      lines: 290-293
+      integrity: sha256-7e1e26c73213fe04eb2bb3e82518eaf4e0a2f6980900305cebcc89a57f11f4e0
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: manifest-column-empty-for-frontmatter
+    claim:
+      lines: 121-123
+      integrity: sha256-1771edeec959ef450d919d4842365d8cb08093e7faf456a07d01cba1db4b2daf
+    source:
+      file: src/cite/reporters/pretty.ts
+      lines: 290-293
+      integrity: sha256-7e1e26c73213fe04eb2bb3e82518eaf4e0a2f6980900305cebcc89a57f11f4e0
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: membership-every-collection
+    claim:
+      lines: 125-127
+      integrity: sha256-df8aa1a23de1a48818b6bb601ddbacc43696c61fc4192ba7c218a9fbf18cefc9
+    source:
+      file: src/cite/core/sidecar.ts
+      lines: 293-297
+      integrity: sha256-9f678f0a57521d703c2bd47694d52ac6e50aceed14ef33d79ed2f8d3fa43688e
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: no-config-frontmatter-only
+    claim:
+      lines: 127-128
+      integrity: sha256-86c39ef0899349402579df9aa7b63e25149a37d4093ed51579ec4f8cb84b8c07
+    source:
+      file: src/cite/core/sidecar.ts
+      lines: 293-294
+      integrity: sha256-dae4c906327d834b6eb32a2c2a313026a27656063640423ff509549c598aa7d3
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: entry-finding-on-manifest-line
+    claim:
+      integrity: sha256-ce3ca41f20885edc437fb252412f3526187520fcb91bed6f063594664bc80654
+    source:
+      file: src/cite/core/adapt.ts
+      lines: 163-168
+      integrity: sha256-3a5cf6ccc13912714cbdc82ac361679283dafd985e7d9b6a0920e28b5199f1a7
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: github-annotates-manifest
+    claim:
+      integrity: sha256-61a11c5018754b3f2d307d40b3fba67bf1fed5a1f69d6504c519485ee212ff81
+    source:
+      file: src/cite/reporters/github.ts
+      lines: 53-55
+      integrity: sha256-ea941f345c72a9485287485a907048571967b5b19659fdfed3c0c3604726aeed
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: manifest-outside-repo-on-page
+    claim:
+      integrity: sha256-3b3c3c3d3cf616d332e2e2b1bd97e774320547d6f877706190813c91f3712b39
+    source:
+      file: src/cite/core/adapt.ts
+      lines: 257
+      integrity: sha256-16c9304298a87e3fe04b2518f4a8d721fd1a1ef10bee2635b11c48c085a629da
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: pretty-row-ends-only
+    claim:
+      lines: 161-163
+      integrity: sha256-aedea18510f10d1080db00ba5ae415da9a0984267c668089c72f0a64a1ec9e85
+    source:
+      file: src/cite/reporters/pretty.ts
+      lines: 270-279
+      integrity: sha256-ccca9287392235b08cff16551a9113010d2c1c7dc78bafea728f9acdbac2aa1d
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: half-moved-entry-invalid
+    claim:
+      integrity: sha256-f90d3f4101561cdf11c4eb17ff96aaf0cb3acb931128d11021db5346d491d9a0
+    source:
+      file: src/cite/core/page.ts
+      lines: 235-240
+      integrity: sha256-da065ce67f2390268d84dc781987cace6b21280c5cdcbc7624c1042a4d38c8d5
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: half-moved-meta-external-owned
+    claim:
+      integrity: sha256-5f4cc11e7561e3276100645eaebc39195a189f35e0ed3700a52f795aa2b0250f
+    source:
+      file: src/meta/commands/validate.ts
+      lines: 811-820
+      integrity: sha256-14227a995cb09b16ba9d2f16f1a4cdd0089e1106899cd2ebe69239864da10893
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: manifest-splice-read-back
+    claim:
+      integrity: sha256-8762e8641470d3e0d63a81ee1850e31d1569acad2e1b2f01a0193f9b79cdf0c0
+    source:
+      file: src/meta/core/external-metadata-write.ts
+      lines: 209-215
+      integrity: sha256-7b6542d00cf5c48edd680bec8280e7952dcc9e584f950f7e0e16a3c5ef3d2995
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: manifest-writers-rotate
+    claim:
+      integrity: sha256-8762e8641470d3e0d63a81ee1850e31d1569acad2e1b2f01a0193f9b79cdf0c0
+    source:
+      file: src/key/commands/rotate.ts
+      lines: 587-595
+      integrity: sha256-fe2227915efe3c7c919dc89e93892674f7e50a3bde71341db677b811b6861f44
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: add-placement-follows-config
+    claim:
+      integrity: sha256-2d63a4da3009bf1f5e17b9a23d05e2b37eb277f97f10a1b67586bf22f8a72185
+    source:
+      file: src/cite/commands/add.ts
+      lines: 343-348
+      integrity: sha256-8466984e6980a796b81c27d2b8d9d5531cf4c01fab064690a1847ed35a0d0298
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: add-manifest-page-untouched
+    claim:
+      integrity: sha256-2977cf6675401bbcfea1fabe5d3ad2010064dfa709ec9b1639c746b214bcc7ff
+    source:
+      file: src/cite/commands/add.ts
+      lines: 370-375
+      integrity: sha256-a9f66060a0b6e07b3220f2b2e49f7c7140e3a1aa79c7962efb05b08c4808904e
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: update-writes-manifest-once
+    claim:
+      integrity: sha256-7d71b96f86296b130361168ab9c1b767db29471688a6687c270e431713685c18
+    source:
+      file: src/cite/commands/update.ts
+      lines: 377-382
+      integrity: sha256-f6a3be5fd4859de0fa817f7425fd0b3099b9546c1cb33d67dfb7c9233291d80d
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: join-field-key
+    claim:
+      integrity: sha256-1f472d3fbeb438cba35b11f8eae962e80d4b011dab546cf12675616995715fc0
+    source:
+      file: src/cite/core/sidecar.ts
+      lines: 218-223
+      integrity: sha256-cd2387904d070c102d68f5bb1872e6975f5e3ec2b16f75c33e8f77e84859d864
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: duplicate-join-refused
+    claim:
+      integrity: sha256-290e56f298c2b37338c9d647aca729b9426de925a8ba57540f9c7c9d6cee4f5e
+    source:
+      file: src/cite/commands/check.ts
+      lines: 112-118
+      integrity: sha256-506b89248ce5b18857a526760333cd21d7b58af58e2a191e623d565270d0b9d1
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: refusal-url-manifest
+    claim:
+      lines: 304
+      integrity: sha256-96fedd3a29137cb4484bcf6754a046db0e5e6f5b39a244beeaa1dae20d5fd6b2
+    source:
+      file: src/cite/core/sidecar.ts
+      lines: 130-132
+      integrity: sha256-8aa228d0b9756d7398b3298b92246502a0421ec4f7f60af0de60c0f358c76b67
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: refusal-two-manifests
+    claim:
+      lines: 305
+      integrity: sha256-16ff917be6bb0f247671195738ca63fdfccfa44b1da090b5c3307c18e78a0364
+    source:
+      file: src/cite/core/sidecar.ts
+      lines: 135-137
+      integrity: sha256-3d2d4aeaa0fa6d82490907ae98526eb59ce655b28ed26c3757b0d1bab5f06231
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: refusal-stdin-add
+    claim:
+      lines: 306
+      integrity: sha256-9e416e10a9615c13e4c4bc46464e230b4e497b128593de8b5bee5e7ac7b082d8
+    source:
+      file: src/cite/commands/add.ts
+      lines: 173-178
+      integrity: sha256-4adf11aca6f35daa21236bc43dec45cfc6ad4652ffeca3ef815a6293c6942ad4
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: orphan-whole-collection
+    claim:
+      lines: 320-321
+      integrity: sha256-de47c7eb5dfaf02a97d0eac017bf7fb8b20125ee7215597cae3644bab817370e
+    source:
+      file: src/cite/commands/check.ts
+      lines: 274-279
+      integrity: sha256-e35327185af00f053362c5e9c3b196384a6748e8b58ed6d2aa311aee508cfff5
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -135,6 +340,7 @@ Two collections, `site` and `guides`, and one manifest each. The pages under
 
 ## Where a finding lands
 
+{/* cite entry-finding-on-manifest-line */}
 A claim finding or a marker finding sits on the **page** line, where a
 reviewer reads the sentence. A finding about the entry itself sits on the
 **manifest**, on the entry's own first line:
@@ -146,6 +352,7 @@ reviewer reads the sentence. A finding about the entry itself sits on the
 1 file checked, 0 passed, 1 failed, 1 finding
 ```
 
+{/* cite github-annotates-manifest */}
 The file that failed is still the page, because the page is what stopped being
 checkable. The location is the manifest, because that is the file to open.
 `-f github` annotates it there, so the comment appears on the manifest's diff
@@ -155,6 +362,7 @@ in the pull request:
 ::error file=docs-citations.yaml,line=42,title=manni%3Acite/entry-invalid::bad-pin (lib/limits.ts): /source/integrity must match pattern "^(?:sha256|hmac-sha256)-[0-9a-f]{64}$"
 ```
 
+{/* cite manifest-outside-repo-on-page */}
 SARIF drops a location outside the repository, so a manifest kept outside it
 is reported on the page instead.
 
@@ -167,6 +375,7 @@ is reported on the page instead.
 
 ## Half-moved pages are caught
 
+{/* cite half-moved-entry-invalid */}
 If you declare the manifest and forget to delete a page's own `citations:`,
 the page has two owners for one key. That is an error under both tools, and
 the message names the manifest and the collection:
@@ -179,15 +388,19 @@ the message names the manifest and the collection:
 1 file checked, 0 passed, 1 failed, 1 finding
 ```
 
+{/* cite half-moved-meta-external-owned */}
 `meta validate` reports the same page as `external:owned`. So a half-finished
 migration cannot pass quietly, whichever gate runs first.
 
 ## Writing the manifest
 
+{/* cite manifest-splice-read-back */}
+{/* cite manifest-writers-rotate */}
 `add`, `update` and `manni key rotate` edit the manifest in place. They splice
 only that page's `citations` value, so comments, key order and every other
 byte survive, and they read the file back to confirm it.
 
+{/* cite add-placement-follows-config */}
 `add` needs no flag. Where the entry goes follows the config:
 
 ```sh
@@ -217,10 +430,12 @@ manni cite add docs/retries.md:6 lib/limits.ts:3 --id retries --dry-run
 docs/retries.md: added retries to docs-citations.yaml:59 (claim at line 6, sha256-d33051d7…; source lib/limits.ts:3, sha256-e9f5bdf9…, 9265563)
 ```
 
+{/* cite add-manifest-page-untouched */}
 The report says the claim is at line 6, which is the line you typed. On a
 frontmatter page the same `add` would have pushed the sentence ten lines down
 and reported line 16. The page was not touched here, so nothing moved.
 
+{/* cite update-writes-manifest-once */}
 `update` writes each manifest **once per run**, however many entries it
 repaired:
 
@@ -248,6 +463,7 @@ docs/moved.md: fetch-timeout source lib/moved.ts:2 -> lib/moved.ts:4 (moved)
 
 ## Keying by a page field instead of by path
 
+{/* cite join-field-key */}
 A manifest keyed by path is orphaned by a `git mv`. A `join:` key says to
 match on a page field instead, and the entry then travels with the page:
 
@@ -284,6 +500,7 @@ wherever the file moves to:
 1 file checked, 1 passed, 0 failed, 0 findings
 ```
 
+{/* cite duplicate-join-refused */}
 Two pages carrying one `join:` value is refused, because a write would land on
 whichever page the run reached last.
 

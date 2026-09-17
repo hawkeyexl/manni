@@ -3,10 +3,426 @@ title: Keep the terms and the docs in step
 description: "Generate a Vale style from the term set, wire it into Vale, and let Vale flag deprecated names, wrong casing and unexpanded acronyms. Then hold the definitions to the house voice with manni term lint."
 sidebar:
   order: 1
+citations:
+  - id: vale-style-named-terms
+    claim:
+      integrity: sha256-9425a1d6390df570c6b4fb8d8d83c07d550f9c462823f2d6dd6a8e233dcda24b
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 29
+      integrity: sha256-28fef8221c99f30e61644c7113107c354e062da2c7bbdf7640798438165cd226
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: lint-same-vale-config
+    claim:
+      integrity: sha256-9425a1d6390df570c6b4fb8d8d83c07d550f9c462823f2d6dd6a8e233dcda24b
+    source:
+      file: src/term/commands/lint.ts
+      lines: 17-22
+      integrity: sha256-58a45b0bf07ba415b23e6bbea6265a8aedd2085d3bd035c532f2f1f0da4b7fef
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: vale-started-as-process
+    claim:
+      lines: 18-19
+      integrity: sha256-b5860885b476d7e99d5ea52c8067d76cdc59fc953488cb86a808eb267403db93
+    source:
+      file: src/term/core/vale.ts
+      lines: 53-58
+      integrity: sha256-480607dfc6be439ee6ca7cd4691a173839fad792fabbb81759b7f6054ea87341
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: write-o-runs-without-vale
+    claim:
+      lines: 18-19
+      integrity: sha256-b5860885b476d7e99d5ea52c8067d76cdc59fc953488cb86a808eb267403db93
+    source:
+      file: src/term/commands/write.ts
+      lines: 214-236
+      integrity: sha256-de6669f5f9b5575aad577a0dbac0e42370462c52a1d9be37ad54c6c9ab365644
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: vale-config-needs-stylespath
+    claim:
+      lines: 20-21
+      integrity: sha256-e91a0583dc7ea721f478d2e8f626e6b30dae356826ae8da31a33e3ad0867b30e
+    source:
+      file: src/term/core/vale.ts
+      lines: 205-211
+      integrity: sha256-aa66f6d61ccebfcc41b2ccc80132fadddad331175f37f2abff47df2a095b5d40
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: tools-top-level-key
+    claim:
+      lines: 32-34
+      integrity: sha256-a3a6fe110a24469b15c1c320a475de94a333ea351ecdf5f2979c81f8a76bcf99
+    source:
+      file: src/shared/tools.ts
+      lines: 60-76
+      integrity: sha256-e8ddbe7617f14497088681654ea4d130e8b7752aca5ff121ee2742c611cae03e
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: no-tools-vale-config-vale-finds-own
+    claim:
+      lines: 55-56
+      integrity: sha256-6fd6e0343f14cf4c389fe0e6975610db2e14cca6d6b6b708a4f2649973352c8b
+    source:
+      file: src/shared/tools.ts
+      lines: 99-108
+      integrity: sha256-6aff5155a3feb38d23abf880bb71b1217811969f279e30e8827145c91bd18ba5
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: no-o-asks-vale-styles-path
+    claim:
+      lines: 58-59
+      integrity: sha256-6306cae03b4e24f95b952df46a0a50ae5a0cf5ba9460c22ba5c4d44af02d26e3
+    source:
+      file: src/term/commands/write.ts
+      lines: 214-223
+      integrity: sha256-4463779de919beb3e86757fa3e1944d491a629d01f944ece3b571e3587a192b5
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: write-vale-summary-lines
+    claim:
+      lines: 66-71
+      integrity: sha256-d03dd3a24badbe6ac9b2c3126d4e98ac5013313f7fe2d68ef5f4a1d957baa3bd
+    source:
+      file: src/term/reporters/pretty.ts
+      lines: 196-209
+      integrity: sha256-600cdceb1c2e1ae518362c1181c4fadd2811e018269092cb0dd0e242694b0c1f
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: vale-wiring-notice
+    claim:
+      lines: 71-73
+      integrity: sha256-b95220aecca978b8affba69435094a6e8fa41109441c5b2f284d18d9584dff6f
+    source:
+      file: src/term/reporters/pretty.ts
+      lines: 264-271
+      integrity: sha256-6608f5e0a955d157221f14d5b5772c699bc2c5d3a289cefd195e3a932925bbd8
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: wiring-notice-names-line-and-file
+    claim:
+      lines: 76-77
+      integrity: sha256-68970bf2fd53eec79100a8406318ed05703d940731287ffd9443d39d6c0eee10
+    source:
+      file: src/term/commands/write.ts
+      lines: 224-233
+      integrity: sha256-2a287b58dc6bbb089a314418e64d2b4eb7dd8d63c518f94ccc99df605c2219fd
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: notice-gone-once-wired
+    claim:
+      lines: 89
+      integrity: sha256-62f7c31d7cf671c8010bc420216651c854a2a5f454ec5451df8a48bf7b49fc91
+    source:
+      file: src/term/commands/write.ts
+      lines: 224
+      integrity: sha256-7ef3d5f218e412e0e657e676dc89ce05b71600973bca1c1d209632742ab2dd7d
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: acronym-expansion-satisfies-rule
+    claim:
+      lines: 122
+      integrity: sha256-136e18316d5bf39cce8c3ba3cc72acc04e88d482b36358795d1a15566af26935
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 151-164
+      integrity: sha256-e7e56f0b43369502de4254c45249a122f17d19172984d739bf97174fdf2053fd
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: style-files-open-with-marker
+    claim:
+      integrity: sha256-f969ba7e7de466a3907ff7064bb2bebcaa6a012d04dcc8c8c771f869e5e20e6b
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 135-149
+      integrity: sha256-052ccadd68bd655b85ef8f885894fa79ab7e22d8a879eddbb26406caf51cfc86
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: casing-row-built-from
+    claim:
+      lines: 133
+      integrity: sha256-c936149372a0d01e30cadd37a7de4a85cbf511160933bf309e826ab51095bdd4
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 211
+      integrity: sha256-040f7ddf261f8ed533ba78330eb81c6a8066290dee4e5943a323e35873d8e66b
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: casing-row-file-level
+    claim:
+      lines: 133
+      integrity: sha256-c936149372a0d01e30cadd37a7de4a85cbf511160933bf309e826ab51095bdd4
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 237-239
+      integrity: sha256-4347248bdca1ca1f13ec05c9abf1749ee2c0dd1021cb5702b4e9962899ec9609
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: lowercase-row
+    claim:
+      lines: 134
+      integrity: sha256-343026964c70283ba6bb88ba77ef57dee1752227e349b5f7a41d07a4e7cc84f2
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 240-245
+      integrity: sha256-06f78e1a3078f968a358f0e3dc59442eb99abee53874362de4542c144532d0a3
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: sentencestart-row
+    claim:
+      lines: 135
+      integrity: sha256-319725858fe0a96db884a7788de1c171756bf543ed00fc634f91d7fd3c77ee63
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 246-257
+      integrity: sha256-38aab036bb1a4883a36fc78c4063501782d1f70d2422eda56f248347c1238a3e
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: deprecated-row-built-from
+    claim:
+      lines: 136
+      integrity: sha256-d0cb35fc10126c121537225d8b365acc970c59d0a170645a3618afd75b1db93e
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 228-230
+      integrity: sha256-786a61b368ac6ed7d3b289735fd483969a0bb7d5add1f0098826d03b66251753
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: deprecated-row-file-level
+    claim:
+      lines: 136
+      integrity: sha256-d0cb35fc10126c121537225d8b365acc970c59d0a170645a3618afd75b1db93e
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 258-260
+      integrity: sha256-044e239af6ad3728653eafd100a40cd90f5388511b86b22923b46877a74da8ab
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: acronym-row-built-from
+    claim:
+      lines: 137
+      integrity: sha256-e1759297d5b0fa87565eb3234b045a3572b3483f9e2fb8a6a3a07935954bcb37
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 212
+      integrity: sha256-f7b2c2669142950d442753fb0cea72dafbcfad6272597a624ed893d2a0203a55
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: empty-style-file-not-written
+    claim:
+      integrity: sha256-febce2ad01c43807918670a26187f41ab38936f6b615a062be59924f424771a4
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 237-261
+      integrity: sha256-22bbd1b5926f44c97946f6e7e4818863339afa88a5e7c64896c413e47585b9f8
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: all-caps-label-no-rules
+    claim:
+      integrity: sha256-febce2ad01c43807918670a26187f41ab38936f6b615a062be59924f424771a4
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 85-94
+      integrity: sha256-30e2830228bcc3ba26a4c1edfdd136e04bf97c3b9a914df76d519334f73803c6
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: lowercase-sample-message-level
+    claim:
+      lines: 147-148
+      integrity: sha256-c899b3249e6fb0b05624d3eee77e56059405d65e931b012a5cd4c0ef0f0efef8
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 240-245
+      integrity: sha256-06f78e1a3078f968a358f0e3dc59442eb99abee53874362de4542c144532d0a3
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: sentence-start-capital-allowed
+    claim:
+      integrity: sha256-7c1791ede1a84110447efd3cbde68a625c4f5344e6174298f64c70dde20b431f
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 95-101
+      integrity: sha256-c1abad5893c726123ced792efe989086bcc60f3f87afc6710a293daf77027be9
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: sentence-start-messages-print-written
+    claim:
+      integrity: sha256-7c1791ede1a84110447efd3cbde68a625c4f5344e6174298f64c70dde20b431f
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 241-254
+      integrity: sha256-992ea0e4250f817d351984aed424f46c026723129f9803c90f17b64dc2d222fe
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: sentencestart-sample-message-level
+    claim:
+      lines: 168-169
+      integrity: sha256-ad68cfda28a1a4bd7b29d0b22dae57144730e308adfcb17c0d3b3a20c2724cd2
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 246-257
+      integrity: sha256-38aab036bb1a4883a36fc78c4063501782d1f70d2422eda56f248347c1238a3e
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: acronym-sample-rule
+    claim:
+      lines: 183-184
+      integrity: sha256-b2009dbb451a34567f02dccbcb31f7657324a0d5511020751acdbae803723031
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 151-164
+      integrity: sha256-e7e56f0b43369502de4254c45249a122f17d19172984d739bf97174fdf2053fd
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: foreign-file-in-terms-refused
+    claim:
+      lines: 189-190
+      integrity: sha256-7423dc92203c843f040bbb651f0a76a1cb8523fa7fc935620a28509fb76c4631
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 184-193
+      integrity: sha256-b99f2057e5c203c924a4e139676f42623e59e03bb06898c61316acd45d8e183b
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: stale-marked-file-removed
+    claim:
+      lines: 191-192
+      integrity: sha256-53d7596507190f0cea9626b85f7c571ff8faecf8bc16c64120435d3fa9d4d45d
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 263-266
+      integrity: sha256-c60bda01676920b496a195abf1bf1ce5b60842307266f4168a0c69aca60ba140
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: stale-marked-file-deleted-on-write
+    claim:
+      lines: 191-192
+      integrity: sha256-53d7596507190f0cea9626b85f7c571ff8faecf8bc16c64120435d3fa9d4d45d
+    source:
+      file: src/term/commands/write.ts
+      lines: 181-185
+      integrity: sha256-0801f0b86609b804be1bafe7bf28dee7d8d52a4ad77384e723b7564f0ec183f0
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: no-vocabulary-file
+    claim:
+      lines: 195-196
+      integrity: sha256-1b7c48baaead5d2e42bde9867e427aa9c7271236e1666b2969082ff1618dd81a
+    source:
+      file: src/term/core/writers/vale.ts
+      lines: 233-261
+      integrity: sha256-4ea27b63c9efea7d36879cdde83ff275898545523b5e95d15434af0155a778ff
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: o-form-does-not-start-vale
+    claim:
+      integrity: sha256-e0d376736a2fdfcae104c9476ed84d3439736e5067b766b74af2e82c45b7cbf9
+    source:
+      file: src/term/commands/write.ts
+      lines: 214-236
+      integrity: sha256-de6669f5f9b5575aad577a0dbac0e42370462c52a1d9be37ad54c6c9ab365644
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: lint-temp-file-per-field
+    claim:
+      integrity: sha256-13205fb830c5306b0ee9350bad6f5b7f1d76a2d1f995b3cd226a8abebccd53ce
+    source:
+      file: src/term/core/lint.ts
+      lines: 76-92
+      integrity: sha256-d5e6f45e0012e082cec67a53acba1822e88c85315f9f8c0e10468225e5ae8688
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: lint-vale-once-over-all
+    claim:
+      integrity: sha256-13205fb830c5306b0ee9350bad6f5b7f1d76a2d1f995b3cd226a8abebccd53ce
+    source:
+      file: src/term/core/lint.ts
+      lines: 96-100
+      integrity: sha256-1ba2fc1accef6d57ee00b379a6baee5be0f7dcae0749bd59eab1e3883c66b5b2
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: lint-finding-source-line
+    claim:
+      integrity: sha256-be7348a1e88a332ef1ef9c899d4e3f12a259009b0892771836fd33b71745498e
+    source:
+      file: src/term/core/lint.ts
+      lines: 50-57
+      integrity: sha256-17f01ebfb4eef369bd64750954818414c25550367c1fffd57934c9bfa03fc26f
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: definition-file-name-suffix
+    claim:
+      integrity: sha256-c2b4846ae5316d5fe6a8476d83f02f57659c00158c5580823d18f630e2a76262
+    source:
+      file: src/term/core/lint.ts
+      lines: 88
+      integrity: sha256-a1c4740aed9a05527018df1549bbf58fcd64aff1934f0dabc00ea87fa96be208
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: lint-exit-zero-without-errors
+    claim:
+      integrity: sha256-4c9c3a0949a83a2f9217f777f2316ba01270ff873bb562d269e37d03654b1042
+    source:
+      file: src/term/cli.ts
+      lines: 132
+      integrity: sha256-642aa7bc0402e0101838821cd5ed5ee06a261d3134bb836e1a23650376a401d2
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: abstract-scope-note-file-names
+    claim:
+      integrity: sha256-4c9c3a0949a83a2f9217f777f2316ba01270ff873bb562d269e37d03654b1042
+    source:
+      file: src/term/core/lint.ts
+      lines: 88
+      integrity: sha256-a1c4740aed9a05527018df1549bbf58fcd64aff1934f0dabc00ea87fa96be208
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: lint-output-shape
+    claim:
+      lines: 216-223
+      integrity: sha256-aea97f8941973097bbd26f86704e6eab9ff887212435ceff8d382a8e2b7304dd
+    source:
+      file: src/term/reporters/pretty.ts
+      lines: 144-163
+      integrity: sha256-8b9e3861c60801a6eb0b10fa67f27de14e14c1edc66103e99234c86921295f69
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: lint-prose-rule-id
+    claim:
+      lines: 216-223
+      integrity: sha256-aea97f8941973097bbd26f86704e6eab9ff887212435ceff8d382a8e2b7304dd
+    source:
+      file: src/term/core/severity.ts
+      lines: 29-31
+      integrity: sha256-3ccb0f4e5db1182b106610be75d2be447542a3028c8927e95507ea200d81228b
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: check-renders-without-writing
+    claim:
+      integrity: sha256-d93355ae93a6155231ece544dc3f0a82d659064a92d5265ca10ea32f695c40c3
+    source:
+      file: src/term/commands/write.ts
+      lines: 250
+      integrity: sha256-b75f418aa405e27517c60e61d1e512b6646533c8d1bf6b1d4c092e55bb4ffadd
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: check-exits-1-on-drift
+    claim:
+      integrity: sha256-d93355ae93a6155231ece544dc3f0a82d659064a92d5265ca10ea32f695c40c3
+    source:
+      file: src/term/cli.ts
+      lines: 283
+      integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: check-would-change-line
+    claim:
+      lines: 275
+      integrity: sha256-220c369e7d6d8cd86ad22e8f44da711ac6b9aa3e6e9160422e96cfc4f14b56de
+    source:
+      file: src/term/reporters/pretty.ts
+      lines: 170-179
+      integrity: sha256-4a46913a482241c5208c12db8e4c7d97048bce18ac2a671cd09593de1853404c
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: check-up-to-date-line
+    claim:
+      lines: 284
+      integrity: sha256-d62369d9663550232c28774a6a98274eb7cd407f62bed280b71bb27c22a83165
+    source:
+      file: src/term/reporters/pretty.ts
+      lines: 240-247
+      integrity: sha256-1be99bd689cd1209a5246886af4c3ccb3c6966caceb44657483c9bf4321e0af0
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: dry-run-prints-same-lines
+    claim:
+      integrity: sha256-780c230b95f1cd816b1ac02ed681acd2bb05a8f43afc74da88fc471c32d12a90
+    source:
+      file: src/term/reporters/pretty.ts
+      lines: 248-251
+      integrity: sha256-93e4ae30fabffdc25a5d28231ea6643dabf213a1f9e0d4754638c0f3acde8d9b
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: dry-run-exits-zero
+    claim:
+      integrity: sha256-780c230b95f1cd816b1ac02ed681acd2bb05a8f43afc74da88fc471c32d12a90
+    source:
+      file: src/term/cli.ts
+      lines: 283
+      integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: dry-run-names-removed-file
+    claim:
+      integrity: sha256-780c230b95f1cd816b1ac02ed681acd2bb05a8f43afc74da88fc471c32d12a90
+    source:
+      file: src/term/reporters/pretty.ts
+      lines: 176-177
+      integrity: sha256-4d2c1bdfefc72d8cd78c629a6ef53b3a27c81a40e6e7ff6c4da7cd8cf6e11961
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
 
+{/* cite vale-style-named-terms */}
+{/* cite lint-same-vale-config */}
 A term set says which names are preferred, which are admitted and which are
 deprecated. This page turns that into prose checks. `manni term write -f vale`
 renders the set as a Vale style named `Terms`. Vale then flags a deprecated
@@ -129,6 +545,7 @@ has neither.
 
 ## The generated style
 
+{/* cite style-files-open-with-marker */}
 Each file is built from one kind of label, and each opens with a marker line:
 
 | File | Vale check | Built from | Level |
@@ -139,6 +556,8 @@ Each file is built from one kind of label, and each opens with a marker line:
 | `Terms/Deprecated.yml` | `substitution` | hidden-labels, each swapped for its entry's label | warning |
 | `Terms/<ACRONYM>.yml` | `conditional` | each all-caps alt-label of a label that is not all caps | warning |
 
+{/* cite empty-style-file-not-written */}
+{/* cite all-caps-label-no-rules */}
 A file with nothing to hold is not written. A label that is all caps, such as
 `API`, gets no casing rule and no acronym rule, because it is the name itself.
 
@@ -156,6 +575,8 @@ swap:
   \bgraduated lens\b: "[Gg]raduated lens"
 ```
 
+{/* cite sentence-start-capital-allowed */}
+{/* cite sentence-start-messages-print-written */}
 A term that starts lowercase may still start a sentence. `Lowercase.yml` and
 `SentenceStart.yml` allow a capital first letter, and both messages print what
 the writer wrote rather than the pattern. manni's own glossary writes this one
@@ -194,11 +615,14 @@ Three rules keep the style safe to commit:
 - **manni writes no vocabulary file.** The casing rules above do that job, so
   `accept.txt` stays yours.
 
+{/* cite o-form-does-not-start-vale */}
 To write the style somewhere Vale does not report, pass `-o <styles
 directory>`. That form does not start Vale at all.
 
 ## Lint the definitions
 
+{/* cite lint-temp-file-per-field */}
+{/* cite lint-vale-once-over-all */}
 A definition is prose, and the house voice applies to it too. `manni term
 lint` writes each entry's `definition`, `abstract` and `scope-note` to a
 temporary file named `<id>.<field>.md`. Then it runs Vale once over all of
@@ -219,6 +643,7 @@ docs/terms/progressive-lens.md:9
 1 error, 2 warnings in 3 terms
 ```
 
+{/* cite lint-finding-source-line */}
 Each finding sits on the source line of its field. Line 7 is the `abstract`.
 Line 11 is the second line of a literal `scope-note: |` block, so the finding
 lands on that exact line. The `definition` of `progressive lens` is a folded
@@ -226,6 +651,7 @@ lands on that exact line. The `definition` of `progressive lens` is a folded
 
 ### A voice for definitions alone
 
+{/* cite definition-file-name-suffix */}
 A definition is often one long noun phrase, and a sentence-length rule written
 for guides fires on it. Vale matches a section by file name, so a
 `[*.definition.md]` section applies to definitions and nothing else:
@@ -250,12 +676,16 @@ docs/terms/kubernetes.md:11
 2 warnings in 3 terms
 ```
 
+{/* cite lint-exit-zero-without-errors */}
+{/* cite abstract-scope-note-file-names */}
 The length finding is gone, and the exit code is `0`. The `abstract` and
 `scope-note` files still get `House.Length`, because their names end
 `.abstract.md` and `.scope-note.md`.
 
 ## Keep the style current
 
+{/* cite check-renders-without-writing */}
+{/* cite check-exits-1-on-drift */}
 The style is rendered from the set, so it falls behind whenever a term
 changes. `--check` renders without writing, and exits `1` when a file
 differs. Add the hidden-label `Kubernets` to `Kubernetes`, and:
@@ -276,6 +706,9 @@ $ echo $?
 0
 ```
 
+{/* cite dry-run-prints-same-lines */}
+{/* cite dry-run-exits-zero */}
+{/* cite dry-run-names-removed-file */}
 `--dry-run` prints the same lines, writes nothing, and exits `0`. A file the
 set would drop is named too, as in
 `.vale/styles/Terms/PAL.yml would be removed`.

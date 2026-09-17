@@ -13,16 +13,236 @@ hero:
       link: /manni/cite/fix/
       icon: error
       variant: minimal
+citations:
+  - id: two-ends-claim
+    claim:
+      integrity: sha256-278c17058b2b02e15d4b9bff95037661c331d2295f6816870d0b8ea94fbe986b
+    source:
+      file: src/cite/commands/add.ts
+      lines: 288-295
+      integrity: sha256-0c3cb36930b4ac4fc9e1bdf5d911cf45a7ee913d1a25d8cd234a1399c3f3db26
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: two-ends-source
+    claim:
+      integrity: sha256-278c17058b2b02e15d4b9bff95037661c331d2295f6816870d0b8ea94fbe986b
+    source:
+      file: src/cite/core/mint.ts
+      lines: 85-93
+      integrity: sha256-389ebf9a2dd047f335321338c17b2712f4a025dc65a85102e075f6fdb9208360
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: checks-both-ends
+    claim:
+      integrity: sha256-278c17058b2b02e15d4b9bff95037661c331d2295f6816870d0b8ea94fbe986b
+    source:
+      file: src/cite/core/check-page.ts
+      lines: 226-231
+      integrity: sha256-cfd5bd21208ffda38141e4e602ebd97b2bea0ce9cee2ff58286c4329320b1aeb
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: clean-run-one-hash
+    claim:
+      integrity: sha256-f7a60feb43ee647577e1c31eba4ef4b212edfd4a490f2585531eb29d0991aa6c
+    source:
+      file: src/cite/core/classify.ts
+      lines: 124-135
+      integrity: sha256-ee34b1dbc30f1f8cc26de47fa72ab130965a3fe83f12667149d23a0546c51618
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: gained-neighbours-moved
+    claim:
+      integrity: sha256-f7a60feb43ee647577e1c31eba4ef4b212edfd4a490f2585531eb29d0991aa6c
+    source:
+      file: src/cite/core/classify.ts
+      lines: 143-159
+      integrity: sha256-094477c16e1dd94c306bd2f7b7a63518b0d8686286b8a7243a7abf6dc3f2f1e3
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: moved-one-command
+    claim:
+      integrity: sha256-f7a60feb43ee647577e1c31eba4ef4b212edfd4a490f2585531eb29d0991aa6c
+    source:
+      file: src/cite/commands/update.ts
+      lines: 244-249
+      integrity: sha256-5956c4e8cb3347e88b0f7728e82f431c6a3fec42bd5e9bf493033281d9758fb0
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: changed-with-commits
+    claim:
+      integrity: sha256-f7a60feb43ee647577e1c31eba4ef4b212edfd4a490f2585531eb29d0991aa6c
+    source:
+      file: src/cite/core/classify.ts
+      lines: 171-178
+      integrity: sha256-a6dbcf1bf55184040321e97a2063330005b1af013236425fe73f249400ae5f26
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: add-frontmatter-or-manifest
+    claim:
+      lines: 27
+      integrity: sha256-d80931c2bd65b98036903d77f9f1e9f89b88d645e5b0c1a3a2d763366f1e1777
+    source:
+      file: src/cite/commands/add.ts
+      lines: 370
+      integrity: sha256-2018bfcbdee1a809b08f071e6fa0e7a3e8d7c90078b5da437c99bd34a8ea3410
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: check-meta-formats
+    claim:
+      lines: 28
+      integrity: sha256-74c0294afd0da5d1be7cc4c71a3580e9d608b23098d62b5ab6a9d786128357b4
+    source:
+      file: src/cite/cli.ts
+      lines: 240-244
+      integrity: sha256-d9459f031fc83234358aaa2e641df4733c5699d2b056031ac59e5f00f9384e98
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: check-meta-renderers
+    claim:
+      lines: 28
+      integrity: sha256-74c0294afd0da5d1be7cc4c71a3580e9d608b23098d62b5ab6a9d786128357b4
+    source:
+      file: src/cite/cli.ts
+      lines: 335-342
+      integrity: sha256-d4a00848197b5d6acbf61ad03f324ce39afbaaab3cb2f4ee0cb666a8a6ea1d3f
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: update-rewrites-moved
+    claim:
+      lines: 29
+      integrity: sha256-c1e212a1545a8e67a6fc0af124f75e696e0f0de6f7e48ec8dbf60d2166034fee
+    source:
+      file: src/cite/commands/update.ts
+      lines: 232-249
+      integrity: sha256-7c90c68dc094251acb957d8a1f9a2386bc2459494c26d5d936e6f36154b69561
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: update-accept-repins
+    claim:
+      lines: 29
+      integrity: sha256-c1e212a1545a8e67a6fc0af124f75e696e0f0de6f7e48ec8dbf60d2166034fee
+    source:
+      file: src/cite/commands/update.ts
+      lines: 277-294
+      integrity: sha256-64bf255b8a4014ab8404f2629270cd0bace521225ea3d149fc55761dcbe1e287
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: stored-claim-body-lines
+    claim:
+      integrity: sha256-3eb8c6d7674c78611cc39fc4ef56db8ae2df750fd2d5e7df01d582cf16958f42
+    source:
+      file: src/cite/commands/add.ts
+      lines: 294
+      integrity: sha256-019c18c06304d1c8621a2fec67bb8c3cd156a317e177fa874d251d702516e87e
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: finding-on-sentence
+    claim:
+      integrity: sha256-371826a04c63831536d61424953d07c16edfdb841161e7c9cc6e0e3afff24dc8
+    source:
+      file: src/cite/core/adapt.ts
+      lines: 219-223
+      integrity: sha256-72f67bcaec85ea435014c37eade6221ca2b535af8e73563f94349dacf2297aa8
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: finding-on-sentence-anchor
+    claim:
+      integrity: sha256-371826a04c63831536d61424953d07c16edfdb841161e7c9cc6e0e3afff24dc8
+    source:
+      file: src/cite/core/check-page.ts
+      lines: 168-172
+      integrity: sha256-f06d4497b84aab6ded5bdfc22e8479d95b7516902a7de5c24d884fa6cd4f48d3
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: exit-one-on-error
+    claim:
+      integrity: sha256-371826a04c63831536d61424953d07c16edfdb841161e7c9cc6e0e3afff24dc8
+    source:
+      file: src/cite/cli.ts
+      lines: 349-351
+      integrity: sha256-42f037380b39026477e3aefbac0ae3d2c2c9313cf89892466286592059657b49
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: checks-source-bytes
+    claim:
+      lines: 113-114
+      integrity: sha256-28d0ed9219fee9fa477a450307e370591663ae34c37101dd16447577de722c16
+    source:
+      file: src/cite/core/classify.ts
+      lines: 124-135
+      integrity: sha256-ee34b1dbc30f1f8cc26de47fa72ab130965a3fe83f12667149d23a0546c51618
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: checks-claim-bytes
+    claim:
+      lines: 113-114
+      integrity: sha256-28d0ed9219fee9fa477a450307e370591663ae34c37101dd16447577de722c16
+    source:
+      file: src/cite/core/claims.ts
+      lines: 104
+      integrity: sha256-f4e3175d85549c8b666d7f7890f932156b84542feb3660a7c8e10166f0f64537
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: checks-source-moved
+    claim:
+      lines: 114-115
+      integrity: sha256-bc706721c660564b6ffcbcac71b40f894e470770cf9ce7b207bd7432f1fe731a
+    source:
+      file: src/cite/core/classify.ts
+      lines: 151-159
+      integrity: sha256-2164568f361424398c6b63c041951954b96f5d14139f4c15d555c2df2c3f2c95
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: checks-claim-moved
+    claim:
+      lines: 114-115
+      integrity: sha256-bc706721c660564b6ffcbcac71b40f894e470770cf9ce7b207bd7432f1fe731a
+    source:
+      file: src/cite/core/claims.ts
+      lines: 106-119
+      integrity: sha256-a4fba04fb601a37abbc27cbe3c4259e63086df5d88a7e0931b4963247a93085a
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: checks-what-changed
+    claim:
+      lines: 115-116
+      integrity: sha256-6813b89c5fd3ee6ad0d182422ac80d4d12d082cadf3a13fe534983323c896ba5
+    source:
+      file: src/cite/core/classify.ts
+      lines: 171-178
+      integrity: sha256-a6dbcf1bf55184040321e97a2063330005b1af013236425fe73f249400ae5f26
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: marker-names-real-entry
+    claim:
+      lines: 116
+      integrity: sha256-0552d50a4df039ffe1807375dd327c659d8dbf2b9353fb2574d7287679454bc6
+    source:
+      file: src/cite/core/page.ts
+      lines: 353-361
+      integrity: sha256-73c35bd466435dee8269567ccadeadc1ebf78cba77ca55da46f8a05014a05af0
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: entry-one-anchor
+    claim:
+      lines: 116-117
+      integrity: sha256-d7540fb52257774ad5708ef32724fdc1b9b87a5e398613946c65210fd22afc1b
+    source:
+      file: src/cite/core/page.ts
+      lines: 391-403
+      integrity: sha256-44e15517046895a8cacb23ce883f38f9b44106ce33befb919a46d63ef0305249
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: own-config-key
+    claim:
+      integrity: sha256-20f91bce45176a00181512be5acf4964dd0d4b4f518d4d7afe33ca353b39cea0
+    source:
+      file: src/cite/core/config.ts
+      lines: 36
+      integrity: sha256-bd7ff7bb827752a2109587504931542e655c8615320db122c0e4649ccb3b6400
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: one-config-file
+    claim:
+      integrity: sha256-20f91bce45176a00181512be5acf4964dd0d4b4f518d4d7afe33ca353b39cea0
+    source:
+      file: src/cite/core/config.ts
+      lines: 294-300
+      integrity: sha256-b150b31775d046124767d408d54b9051ecf245ea9eb430008e8ed8d2389b4ca9
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
 ---
 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
+{/* cite two-ends-claim */}
+{/* cite two-ends-source */}
+{/* cite checks-both-ends */}
 A citation has two ends, and both are pinned the same way. The **claim** is
 the page lines the sentence occupies, and a hash of them. The **source** is
 the file, the lines it rests on, a hash of those, and the commit they were
 read at. manni cite checks both ends and tells you which sentence stopped
 being true, not which page to re-read.
 
+{/* cite clean-run-one-hash */}
+{/* cite gained-neighbours-moved */}
+{/* cite moved-one-command */}
+{/* cite changed-with-commits */}
 It runs from git alone. No model, no network, one hash per end on a clean run.
 A line that gained neighbours above it is moved, and one command fixes that. A
 line whose bytes changed is changed, with the commits since, and a person
@@ -51,6 +271,7 @@ npx @hawkeyexl/manni cite add docs/limits.md:9 lib/limits.ts:2 --id fetch-timeou
 docs/limits.md: added fetch-timeout to frontmatter (claim at line 15, sha256-c41f09aa…; source lib/limits.ts:2, sha256-78af1d33…, 9265563)
 ```
 
+{/* cite stored-claim-body-lines */}
 The entry pushed the sentence down the file, and the stored claim line did not
 move: it counts the body, not the file. Check it:
 
@@ -75,6 +296,9 @@ changed, so metadata validation still passes. The citation check does not:
 1 file checked, 0 passed, 1 failed, 1 finding
 ```
 
+{/* cite finding-on-sentence */}
+{/* cite finding-on-sentence-anchor */}
+{/* cite exit-one-on-error */}
 The finding is annotated on line 15, the sentence. The exit code is `1`, so CI
 goes red on the line that needs a person, and nowhere else. That's the whole
 loop: pin, check, read the finding, fix the sentence, re-pin.
@@ -129,6 +353,8 @@ the file grammar, the hashing rule, markers and the sidecar manifest.
   </Card>
 </CardGrid>
 
+{/* cite own-config-key */}
+{/* cite one-config-file */}
 Citations are written in the `manni:citations` vocabulary, which manni meta
 publishes and manni cite implements. `manni meta validate` checks that an entry
 is well-formed; only `manni cite check` can say whether it still holds. Both

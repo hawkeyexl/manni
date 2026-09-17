@@ -1,6 +1,717 @@
 ---
 title: Get started
 description: Pin your first claim to a source line, watch each end move and change, and fix it with one command. Then anchor with a marker and pin a code block.
+citations:
+  - id: node-24-or-newer
+    claim:
+      lines: 14
+      integrity: sha256-70b11580b3b79d5a7044d2b616dcd08dfd6b81ff96941036950f9eac496b306e
+    source:
+      file: package.json
+      lines: 34-36
+      integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: shallow-clone-history-unavailable
+    claim:
+      lines: 17-18
+      integrity: sha256-387f00a8951cb393aa410a381b60e55a17366f42613b2efd88853778e623e936
+    source:
+      file: src/cite/core/classify.ts
+      lines: 69-73
+      integrity: sha256-c0e580312a1d0b01762d00d437c5280444a4bcc7d058cbfa3569c82ef501371d
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: shallow-clone-no-never-true-or-diff
+    claim:
+      lines: 17-18
+      integrity: sha256-387f00a8951cb393aa410a381b60e55a17366f42613b2efd88853778e623e936
+    source:
+      file: src/cite/core/classify.ts
+      lines: 167-178
+      integrity: sha256-5ad488b6a30a00c21e9ac7d2ad350abf2d50606edf64557bfc35a35071102419
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: no-git-warns-once
+    claim:
+      lines: 19
+      integrity: sha256-ebb876f939c27df3f6d82751d2fb89d27c065f610bee15f81baf79ce6d208694
+    source:
+      file: src/cite/commands/check.ts
+      lines: 299-310
+      integrity: sha256-f5d72b7b89c8460408018e6f8979dfcc7d57a25f66d11ccea8b17ac59a2d9be7
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: no-git-notice
+    claim:
+      lines: 19
+      integrity: sha256-ebb876f939c27df3f6d82751d2fb89d27c065f610bee15f81baf79ce6d208694
+    source:
+      file: src/cite/core/check-page.ts
+      lines: 263-266
+      integrity: sha256-4a972764f3cdf44c86ed44d5af880ebd80520a7d8940cb68aabd3e93a6582502
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: no-git-still-classifies
+    claim:
+      lines: 19-20
+      integrity: sha256-71cf5ae990531297e0f2583a5d356131b72e64d90d84773f257bf6a31cb710b3
+    source:
+      file: src/cite/core/classify.ts
+      lines: 137-140
+      integrity: sha256-dcd1263a119c28996475396809750b23fc1221171cdccc68d8c5b0a5288ee106
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: sources-through-ls-files
+    claim:
+      lines: 16
+      integrity: sha256-7ff31080f269caa6c839865d85472438c8d874c19eae48265e3fc709bf406948
+    source:
+      file: src/cite/core/sources.ts
+      lines: 73-77
+      integrity: sha256-e4efebe2b16abb8156015879a7470029e1c49b4a304b6bc62c025732307bcb7f
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: history-through-git-show
+    claim:
+      lines: 16-17
+      integrity: sha256-b9e0698182a1414230a74659b7dba1bc157326846ba33e3b40d5d313ea75d4ed
+    source:
+      file: src/cite/core/git.ts
+      lines: 98-101
+      integrity: sha256-fc8118e73daaea0e6b7a99080a3dfd9daf4ad6a8cc1311ed6c06180fecf776cc
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: untracked-is-missing
+    claim:
+      lines: 17
+      integrity: sha256-d9ed67b8396920ecc07246624093422478b0c143514c86bc0ec59256f6f17873
+    source:
+      file: src/cite/core/sources.ts
+      lines: 126
+      integrity: sha256-77702f30bfc199d991dacb9a334b9a6236b5f10b764fbe43ea57c82ff4ec3e4d
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: no-git-walks-directory
+    claim:
+      lines: 19
+      integrity: sha256-ebb876f939c27df3f6d82751d2fb89d27c065f610bee15f81baf79ce6d208694
+    source:
+      file: src/cite/core/sources.ts
+      lines: 73-84
+      integrity: sha256-e2d24bf14363813ee2fdfeeedbdf3b0b23128533ad85a57235a8a5a7df5632d3
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: nothing-copied-into-entry
+    claim:
+      integrity: sha256-ed17f6e0730fb186271ffc72a4ef1cfe2152b8bb94bf53a6ef62d913f490c54e
+    source:
+      file: src/cite/commands/add.ts
+      lines: 288-295
+      integrity: sha256-0c3cb36930b4ac4fc9e1bdf5d911cf45a7ee913d1a25d8cd234a1399c3f3db26
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: add-dry-run-prints-diff
+    claim:
+      lines: 75
+      integrity: sha256-0a983049f2ef33fe50fb803b60faaf67673d973649f50d58b87d857c747b2dbd
+    source:
+      file: src/cite/cli.ts
+      lines: 435-437
+      integrity: sha256-814d8f4b73ccbaf01a681ff3d14189ee0890cb1dabcf879fd84c84a96744e9d0
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: add-dry-run-writes-nothing
+    claim:
+      lines: 75
+      integrity: sha256-0a983049f2ef33fe50fb803b60faaf67673d973649f50d58b87d857c747b2dbd
+    source:
+      file: src/cite/commands/add.ts
+      lines: 393-394
+      integrity: sha256-70e326fb7c7de4521eb9fdfb8fc00f18bf9a27208b42847f9ee6f8a90048f525
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: add-message-sample
+    claim:
+      lines: 106
+      integrity: sha256-bacc0b155b495d232f68052d1195300964003423d80d19e5304103352f0c22a8
+    source:
+      file: src/cite/cli.ts
+      lines: 203
+      integrity: sha256-1ef9c6c14c258e8e8eff77bcc8dac4c447a60a9ec80b5330200ec3cf9c219c70
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: add-body-untouched
+    claim:
+      lines: 109-110
+      integrity: sha256-05e0c8cf3129a702961263107637336af2afebfabf5c87286aee876eaa66ff36
+    source:
+      file: src/cite/commands/add.ts
+      lines: 370-375
+      integrity: sha256-a9f66060a0b6e07b3220f2b2e49f7c7140e3a1aa79c7962efb05b08c4808904e
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: entry-claim-block
+    claim:
+      lines: 110-111
+      integrity: sha256-3e44aad42012b91ecee3872377ded428e669713f482ba55601934e4712b9ca40
+    source:
+      file: src/cite/commands/add.ts
+      lines: 294
+      integrity: sha256-019c18c06304d1c8621a2fec67bb8c3cd156a317e177fa874d251d702516e87e
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: entry-source-block
+    claim:
+      lines: 111-112
+      integrity: sha256-bdf50c66354537e14cddc2b0f9cf3bb32e5f8d869ce9dd3501d0974c7c2f955c
+    source:
+      file: src/cite/core/mint.ts
+      lines: 85-93
+      integrity: sha256-389ebf9a2dd047f335321338c17b2712f4a025dc65a85102e075f6fdb9208360
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: entry-counts-body
+    claim:
+      lines: 115-117
+      integrity: sha256-c8572b4e78fd7be862800ac764d40c19ef69abc7eb4405d90f40c714e62ab550
+    source:
+      file: src/cite/commands/add.ts
+      lines: 294
+      integrity: sha256-019c18c06304d1c8621a2fec67bb8c3cd156a317e177fa874d251d702516e87e
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: report-counts-file
+    claim:
+      lines: 117-118
+      integrity: sha256-e73eb45bdf3e869e5df355248e7b506e810e7b1ab6d5f0a2e6c9d693d02c57be
+    source:
+      file: src/cite/commands/add.ts
+      lines: 386-389
+      integrity: sha256-1d17abbf0c6590ebde9778435d7aa1e79a8e0a6e792930d3e2b82d372af9b872
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: key-encrypts-source-file
+    claim:
+      lines: 121-122
+      integrity: sha256-fa2ccb53fca8d5d3f161dbd79056ece46fa8ae35515b747546f95b91ea8a5d63
+    source:
+      file: src/cite/core/mint.ts
+      lines: 79-81
+      integrity: sha256-adf154ee2322e11c3aa5c1cab65e55121da2d4e5d9a0dd24045e0bd0b22a779f
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: key-encrypts-without-flag
+    claim:
+      lines: 121-122
+      integrity: sha256-fa2ccb53fca8d5d3f161dbd79056ece46fa8ae35515b747546f95b91ea8a5d63
+    source:
+      file: src/cite/commands/add.ts
+      lines: 316-317
+      integrity: sha256-f05edba3de967672071fa9a9dec5a9138e8bb7958b7b3fea68b90415d4c21f80
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: add-refuses-bad-claim
+    claim:
+      lines: 126-127
+      integrity: sha256-b7f0f166363e9a0a508112d8fcbdd870c22194da613eb06bbb9974e595afcd76
+    source:
+      file: src/cite/commands/add.ts
+      lines: 229-235
+      integrity: sha256-a1dc64336f891f4aa8d420ab1200ec23e02e0f4f9e96525fc1b3b1f19249b809
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: bare-check-uses-collections-paths
+    claim:
+      lines: 153-155
+      integrity: sha256-b7b0efde6dec3badb6eebbd57de35a21097d1fc6215167c7ed38597d6961e07c
+    source:
+      file: src/cite/core/config.ts
+      lines: 311-313
+      integrity: sha256-ae662566df266aab038220e0565b189825f060edbd15420aeb9d57005ab9d21f
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: one-row-per-citation
+    claim:
+      integrity: sha256-90702f030711b7eb8082ab66cedfaf540d13df1a13dc94bc18e5e27747f82816
+    source:
+      file: src/cite/reporters/pretty.ts
+      lines: 305-310
+      integrity: sha256-77bd4bbd5f264f775a823eab47e75b79ca8694852abc29f75d5b28a83f328665
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: mark-by-severity
+    claim:
+      lines: 178
+      integrity: sha256-42578a6d66c3a1ec727679bcecc936a9291e7279fd8f3a2a92dd1aad7c493a7d
+    source:
+      file: src/cite/reporters/pretty.ts
+      lines: 39-49
+      integrity: sha256-4b3e319b0382b747ad84dcf56977324657662ad8b86fe9e1498103a82d7d2b1c
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: mark-current-or-skipped
+    claim:
+      lines: 178
+      integrity: sha256-42578a6d66c3a1ec727679bcecc936a9291e7279fd8f3a2a92dd1aad7c493a7d
+    source:
+      file: src/cite/reporters/pretty.ts
+      lines: 260-267
+      integrity: sha256-262e6afb0d4c5ba60d3304d8b39325522959012c6666ee4c80561afe41f248a1
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: id-column
+    claim:
+      lines: 179
+      integrity: sha256-3994fa73f73580ce09588857627d718dd5f65f82a6939d8710b8e545d6210ddf
+    source:
+      file: src/cite/reporters/pretty.ts
+      lines: 110-113
+      integrity: sha256-51623c250a5398ebf404117076899a6c335f69b8d9c353707df424ce0cb953b2
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: claim-column
+    claim:
+      lines: 180
+      integrity: sha256-90741bdc148fb9d1569f2a13a8d8f45c1dae35163c737df9314d12ba44546560
+    source:
+      file: src/cite/reporters/pretty.ts
+      lines: 131-155
+      integrity: sha256-2055528501407eb0660df79faf692fd1f85974c4dc212759bc6eeb6e5b806164
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: source-column
+    claim:
+      lines: 181
+      integrity: sha256-59e565fed7099103acb9a72eed92448222f11030cb42abcfb946eed086fe556b
+    source:
+      file: src/cite/reporters/pretty.ts
+      lines: 162-174
+      integrity: sha256-01f61eedbd95763fdf33d4af777eaaeef42ed10b448d984a942bd7a791c1abef
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: source-changed-message
+    claim:
+      lines: 181
+      integrity: sha256-59e565fed7099103acb9a72eed92448222f11030cb42abcfb946eed086fe556b
+    source:
+      file: src/cite/core/adapt.ts
+      lines: 90-98
+      integrity: sha256-81d46b126fcfe3a43ad020f3175887ada0608298917d8be0c28129e4aeb4b42d
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: manifest-column
+    claim:
+      lines: 182
+      integrity: sha256-5701f44c566fd69a05f5f78a51efe78cafa5bf6a9d4e9cd47e38c526a565396a
+    source:
+      file: src/cite/reporters/pretty.ts
+      lines: 290-293
+      integrity: sha256-7e1e26c73213fe04eb2bb3e82518eaf4e0a2f6980900305cebcc89a57f11f4e0
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: summary-counts
+    claim:
+      integrity: sha256-f942e2881c8fda5b0037486aeb3d1e5e300fc723d778739fdf9561198a6d5b0b
+    source:
+      file: src/cite/reporters/pretty.ts
+      lines: 325-336
+      integrity: sha256-bdae7999c082105a413ea57899be7ba8fc1c76d0b0d3d6dea9878bfc28c44061
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: summary-green
+    claim:
+      integrity: sha256-f942e2881c8fda5b0037486aeb3d1e5e300fc723d778739fdf9561198a6d5b0b
+    source:
+      file: src/cite/reporters/pretty.ts
+      lines: 336
+      integrity: sha256-6af7cca4ed0eef3d97e87b031094ac897cf13f9f559fe880fc53452d24e8161a
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: check-exit-code
+    claim:
+      integrity: sha256-f942e2881c8fda5b0037486aeb3d1e5e300fc723d778739fdf9561198a6d5b0b
+    source:
+      file: src/cite/cli.ts
+      lines: 349-351
+      integrity: sha256-42f037380b39026477e3aefbac0ae3d2c2c9313cf89892466286592059657b49
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: exit-two-operational
+    claim:
+      integrity: sha256-f942e2881c8fda5b0037486aeb3d1e5e300fc723d778739fdf9561198a6d5b0b
+    source:
+      file: src/shared/run.ts
+      lines: 16-24
+      integrity: sha256-27bc7e2bdfc8680a08f79ad34ebfdc836283338afb4115b418cd3f853ab066c1
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: source-changed-error
+    claim:
+      integrity: sha256-5a3ea045a42fb46e28273fcec7baad7d4953ad89204fe16cec8c8ac43ffb0b1f
+    source:
+      file: src/cite/core/severity.ts
+      lines: 17
+      integrity: sha256-66d6e4426c93db0f44dbeacaabdb977b03cf049a846864edbd513e4a131e67fe
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: changed-names-commit-and-count
+    claim:
+      integrity: sha256-5a3ea045a42fb46e28273fcec7baad7d4953ad89204fe16cec8c8ac43ffb0b1f
+    source:
+      file: src/cite/core/adapt.ts
+      lines: 96-97
+      integrity: sha256-9d03cc664f74037f4b0cdc741cb683467168ed007d8f6106cbcf203c0f659934
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: changed-annotates-sentence
+    claim:
+      integrity: sha256-5a3ea045a42fb46e28273fcec7baad7d4953ad89204fe16cec8c8ac43ffb0b1f
+    source:
+      file: src/cite/core/adapt.ts
+      lines: 219-223
+      integrity: sha256-72f67bcaec85ea435014c37eade6221ca2b535af8e73563f94349dacf2297aa8
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: commits-touching-file
+    claim:
+      integrity: sha256-5a3ea045a42fb46e28273fcec7baad7d4953ad89204fe16cec8c8ac43ffb0b1f
+    source:
+      file: src/cite/core/git.ts
+      lines: 109-114
+      integrity: sha256-7af7325295f436dfdf1d7e21e6e451c13ed05adee7753b7bad843a83985cf713
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: show-diff-prints-diff
+    claim:
+      integrity: sha256-5a3ea045a42fb46e28273fcec7baad7d4953ad89204fe16cec8c8ac43ffb0b1f
+    source:
+      file: src/cite/reporters/pretty.ts
+      lines: 280-281
+      integrity: sha256-b7ca8ac5c37861d315a231ba256e97bafb0250e0387b683660f6794a9c5ed107
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: update-skipped-sample
+    claim:
+      lines: 250-251
+      integrity: sha256-268f16cc89cd98814a8a65e93b550e351a079a60daa0b4fc4f40109fa2554d2a
+    source:
+      file: src/cite/reporters/pretty.ts
+      lines: 374-379
+      integrity: sha256-3ef0ab7509fe2535719823345a9f1dea61109258fc6c256bbf99f86aefec4560
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: plain-update-skips-changed
+    claim:
+      integrity: sha256-11a457e8757129bfb540a40dbe01d3322d9b9fe95fc5f0f2857420efb46e8c40
+    source:
+      file: src/cite/commands/update.ts
+      lines: 250
+      integrity: sha256-de841594adab28bb83281b817a782fc6f17d7a5ac2ac28f58d44966ff4c3a887
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: plain-update-reports-skipped
+    claim:
+      integrity: sha256-11a457e8757129bfb540a40dbe01d3322d9b9fe95fc5f0f2857420efb46e8c40
+    source:
+      file: src/cite/commands/update.ts
+      lines: 355-359
+      integrity: sha256-5d81f92e5c7485b46bd4ecccf49ee2f8d0bb79e5f8e9a5beb73046adbe175417
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: update-exit-one-undone
+    claim:
+      integrity: sha256-11a457e8757129bfb540a40dbe01d3322d9b9fe95fc5f0f2857420efb46e8c40
+    source:
+      file: src/cite/commands/update.ts
+      lines: 394-400
+      integrity: sha256-50f57b48ff79651713dcc6b18e270c7e8b7429e08df308d57371cf19ea9a74e7
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: accept-repins-source-at-head
+    claim:
+      integrity: sha256-b451d14c8d062f2c2c150b6d4bfea6ca1107ae55a1f98d0666686646e9899d11
+    source:
+      file: src/cite/commands/update.ts
+      lines: 277-294
+      integrity: sha256-64bf255b8a4014ab8404f2629270cd0bace521225ea3d149fc55761dcbe1e287
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: accept-repins-claim
+    claim:
+      integrity: sha256-b451d14c8d062f2c2c150b6d4bfea6ca1107ae55a1f98d0666686646e9899d11
+    source:
+      file: src/cite/commands/update.ts
+      lines: 252-264
+      integrity: sha256-4187fe5ff70416da3c7726e2c7e1389483b6b54f27c3f7c8da4d15d40cb11388
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: accept-prints-pins-and-text
+    claim:
+      integrity: sha256-40e5de0a4490ea588dc539a1cfdf8873c686f52df568139c7d45eb991e091ad9
+    source:
+      file: src/cite/reporters/pretty.ts
+      lines: 352-356
+      integrity: sha256-4cb2947089d04e88ca94ae26f3159fd0ea34d1bbd4fcf128eef336f397817d8a
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: only-scopes-update
+    claim:
+      lines: 276
+      integrity: sha256-cfba02465aeefe1be8887a78247654fbb8c711eaa21d87925285e6a28756cca5
+    source:
+      file: src/cite/commands/update.ts
+      lines: 331-334
+      integrity: sha256-45f9f2ebb9825fe663481b9f648723198ffdffa726bebe85b2c9f85c10cb4f8f
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: source-move-search
+    claim:
+      integrity: sha256-d6fd996dba38d1ff8c6535decbfa8a2f16bd1328774a7207022cc496441320bf
+    source:
+      file: src/cite/core/classify.ts
+      lines: 143-159
+      integrity: sha256-094477c16e1dd94c306bd2f7b7a63518b0d8686286b8a7243a7abf6dc3f2f1e3
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: source-moved-warning
+    claim:
+      integrity: sha256-08be6da372104820ea78040fc4ae320632fbf7c4df5c52ac229f0ef53c431192
+    source:
+      file: src/cite/core/severity.ts
+      lines: 15
+      integrity: sha256-a3b44cfae722a2ddf537f64d919432b808f5b5a7480da487746a2c67fdfcb454
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: source-moved-exit-zero
+    claim:
+      integrity: sha256-08be6da372104820ea78040fc4ae320632fbf7c4df5c52ac229f0ef53c431192
+    source:
+      file: src/cite/cli.ts
+      lines: 349-351
+      integrity: sha256-42f037380b39026477e3aefbac0ae3d2c2c9313cf89892466286592059657b49
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: update-dry-run-shows-diff
+    claim:
+      integrity: sha256-08be6da372104820ea78040fc4ae320632fbf7c4df5c52ac229f0ef53c431192
+    source:
+      file: src/cite/cli.ts
+      lines: 530-535
+      integrity: sha256-d487535b0e40b331059b5d15a7db88fbf0089135791645f5d2683d629e72831a
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: update-splices-one-scalar
+    claim:
+      integrity: sha256-e5103845bc868a34ea7697ff8150c1e8b6540f224123833f0079098f5d5d91c7
+    source:
+      file: src/cite/core/write.ts
+      lines: 190-198
+      integrity: sha256-14a10eaae60d57741ae439e2ac97e1f11b3927f6d76c61600731e0b65a3564c7
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: move-keeps-commit-sha
+    claim:
+      lines: 334
+      integrity: sha256-0dce5df795299f9481d7324e135795330ba88698f0cae03ae8449799dfbb619c
+    source:
+      file: src/cite/commands/update.ts
+      lines: 88-89
+      integrity: sha256-8f8596ff98f9e1f599f3b19a378becd2fb66f80c14c1c0a932361cce9dc43668
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: move-then-change-found-at-commit
+    claim:
+      lines: 335-337
+      integrity: sha256-1e79f8b58d3cf811529011f66eef31349ac074ca5431d3d4b9921065f4b76e64
+    source:
+      file: src/cite/core/classify.ts
+      lines: 86-98
+      integrity: sha256-a730e763cea1b4832e33a26a4f3d26c571e95190208ffdfc9f7d30d3c09f8f56
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: never-true-matches-nowhere
+    claim:
+      lines: 337-338
+      integrity: sha256-c731ab862e6c3543b7241950289c0b0636d05030ef02d3503465a8e9fd4b19a1
+    source:
+      file: src/cite/core/classify.ts
+      lines: 99
+      integrity: sha256-9524c392b1cdd2a8ce0b2194509e326a682cd4d507bd15a888926449861b189a
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: never-true-status
+    claim:
+      lines: 337-338
+      integrity: sha256-c731ab862e6c3543b7241950289c0b0636d05030ef02d3503465a8e9fd4b19a1
+    source:
+      file: src/cite/core/classify.ts
+      lines: 167-170
+      integrity: sha256-a909c9a31155f4140101bedad6d76b632625f5cfe2100c940d5b2b5a991034ac
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: claim-classified-same-way
+    claim:
+      integrity: sha256-b33b192a1ae089a9c643206714996b39c8fe27f80ebdb8904c787e54489bcf69
+    source:
+      file: src/cite/core/claims.ts
+      lines: 104-128
+      integrity: sha256-e2cc7a44a77862357ac4d5ac657d2c9226ee10cbb5c4791b88d880e16c7938e3
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: claim-found-verbatim-moved
+    claim:
+      integrity: sha256-3985cac0bdb4481455b5dce7aea87814057f717411e4d34a67d7f1058449574b
+    source:
+      file: src/cite/core/claims.ts
+      lines: 106-119
+      integrity: sha256-a4fba04fb601a37abbc27cbe3c4259e63086df5d88a7e0931b4963247a93085a
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: claim-moved-notice
+    claim:
+      integrity: sha256-da1965f8df6c8d7c6778018222d18a83d8a12f8c33dc16abef9291b1080b3dea
+    source:
+      file: src/cite/core/severity.ts
+      lines: 20
+      integrity: sha256-df5bad5b605557a2fe8ae2c2a9608a1e1a1d3068ea3fd6ae6477f267eba96326
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: update-rewrites-claim-lines
+    claim:
+      integrity: sha256-da1965f8df6c8d7c6778018222d18a83d8a12f8c33dc16abef9291b1080b3dea
+    source:
+      file: src/cite/commands/update.ts
+      lines: 86-89
+      integrity: sha256-2922e448d3e54ebe7f53d23c3c6d6fce1f9923e096321600a436ea5a93e82168
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: claim-moved-rewrite-sample
+    claim:
+      lines: 364
+      integrity: sha256-53b91eed2f32e254b97df1e3f9015947aca7d126ce8dbe2d5ca766a766436782
+    source:
+      file: src/cite/reporters/pretty.ts
+      lines: 345-349
+      integrity: sha256-504915ce8eea28945bf621d01ff56ff1c8fa53248f3d07366358dc666600eca0
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: claim-changed-nowhere
+    claim:
+      integrity: sha256-8faf49b1cd4a255c2d6c9d9f6b8ac8ad4fdba87d0fd9123ea8c084e1b2b9d346
+    source:
+      file: src/cite/core/claims.ts
+      lines: 128
+      integrity: sha256-ec55fbe9a863ef102bb461de74d51d0898ce5b12eefdcb6a578bc7ded70b7d19
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: claim-changed-warning
+    claim:
+      integrity: sha256-d6a5c93c00d149432d1f647f206dbd8a2d6aca85d0463268e56c7c390d03e2ec
+    source:
+      file: src/cite/core/severity.ts
+      lines: 22
+      integrity: sha256-81cb1d32893abc7879a686ab064b9789ef4534a88155317d961421173f20f673
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: show-diff-claim-text
+    claim:
+      integrity: sha256-d6a5c93c00d149432d1f647f206dbd8a2d6aca85d0463268e56c7c390d03e2ec
+    source:
+      file: src/cite/reporters/pretty.ts
+      lines: 282
+      integrity: sha256-bc0dd4e50c8a8203153755ec41ad34a8a81a4de6e47e682da5b9a25e3f1f6fa7
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: accept-unit-at-first-line
+    claim:
+      integrity: sha256-b129aa32863f9c9ad87fac4cbb3ac155f836eb7ef5f067e5a9b09384254c88ce
+    source:
+      file: src/cite/core/claims.ts
+      lines: 161-176
+      integrity: sha256-41b1cd7cce3d17fe5151ae218f12491b2c99b36bab853f7a04d920e99d6e685a
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: accept-prints-claim-text
+    claim:
+      integrity: sha256-b129aa32863f9c9ad87fac4cbb3ac155f836eb7ef5f067e5a9b09384254c88ce
+    source:
+      file: src/cite/reporters/pretty.ts
+      lines: 352-353
+      integrity: sha256-6367e42b9f17cb1054b8840bb7a17d6fade52dbe5048ae8c5f4fe6a51acdeec9
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: severity-config-levels
+    claim:
+      integrity: sha256-2f979201bf62bfb0387acdddf103b33b39ad2339f1c4973e9fd183902b0d1377
+    source:
+      file: src/cite/core/config.ts
+      lines: 149-170
+      integrity: sha256-58777f271b7c85cceb3e434fabfdfb2c71b215c2658471b89974bfaf8d58223f
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: severity-overrides-defaults
+    claim:
+      integrity: sha256-2f979201bf62bfb0387acdddf103b33b39ad2339f1c4973e9fd183902b0d1377
+    source:
+      file: src/cite/core/severity.ts
+      lines: 43-47
+      integrity: sha256-8f6b24c19769768b9a0ef0396fdd6aba122f01af2c10add3151d6323719d8f70
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: marker-travels-with-text
+    claim:
+      integrity: sha256-08f7ab509f2a52b51173054f6177cb788be5b0a6c2c44e2a8fae876aa88f2593
+    source:
+      file: src/cite/core/claims.ts
+      lines: 131-137
+      integrity: sha256-ba51209beb4adf3fdd522e8aeeb9866116ae65ff38c4150f1d17201667cb667a
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: marker-writes-and-pins
+    claim:
+      integrity: sha256-08f7ab509f2a52b51173054f6177cb788be5b0a6c2c44e2a8fae876aa88f2593
+    source:
+      file: src/cite/commands/add.ts
+      lines: 274-287
+      integrity: sha256-6da42f25dbf9a3504e31ecb55e8cc8a6cbcddf220f5c9fff8b042c55d696c756
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: marker-add-message-sample
+    claim:
+      lines: 420
+      integrity: sha256-1b594fede6826b5ace9a80ad738ab72a75d73fd7465ed5d60d6c486852bd6914
+    source:
+      file: src/cite/cli.ts
+      lines: 192-196
+      integrity: sha256-0686b9fabe63ff3a4e4eb040c52e9640891df165a214e8a4568b58bcf41a5606
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: marker-claim-no-lines
+    claim:
+      integrity: sha256-404c0b4cc6b5cbdbf9da9fe5b3dfe099fb2d05b0b92fd7ded42e18ee6d6426ac
+    source:
+      file: src/cite/commands/add.ts
+      lines: 287
+      integrity: sha256-61b5e29aaebb4437681c2f70ee11186d0e3aa9595b7704cdd36ff1e78493bbb1
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: marker-claim-never-moves
+    claim:
+      integrity: sha256-404c0b4cc6b5cbdbf9da9fe5b3dfe099fb2d05b0b92fd7ded42e18ee6d6426ac
+    source:
+      file: src/cite/core/claims.ts
+      lines: 131-137
+      integrity: sha256-ba51209beb4adf3fdd522e8aeeb9866116ae65ff38c4150f1d17201667cb667a
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: marker-carries-id-only
+    claim:
+      integrity: sha256-7bcdb02e0c601430c46b1ad2548bec7046653e64811140114e15b89e228aa44d
+    source:
+      file: src/cite/core/statements.ts
+      lines: 116-122
+      integrity: sha256-bbac617de68cf773fe99888465fd6f83e962b062e6b9fb5289c0c303c0e08f09
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: marker-forms-per-format
+    claim:
+      lines: 453-456
+      integrity: sha256-984576f7889fe2fb136c9a3b50d9053300333470665d3361fddae93e6ebff6ba
+    source:
+      file: src/cite/core/statements.ts
+      lines: 35-42
+      integrity: sha256-b743b9d113b886d14e9ee0f01663073e8750229f1b3be5474d5dc74df0f9bb45
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: marker-json-invalid
+    claim:
+      integrity: sha256-284cc6de94cf60a0d4ec94096930bcf2d6d1f2c4a7441f488d43adbc10d47c4a
+    source:
+      file: src/cite/core/page.ts
+      lines: 343-350
+      integrity: sha256-7503424f64c5928d6e9106f78070a3c91afadda14af5784c43f5dd8dcd2d752c
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: marker-json-message
+    claim:
+      integrity: sha256-284cc6de94cf60a0d4ec94096930bcf2d6d1f2c4a7441f488d43adbc10d47c4a
+    source:
+      file: src/cite/core/page.ts
+      lines: 45-47
+      integrity: sha256-05146e954f0bf633bd14cc102bb64f0332a84f78beb4fe21c65ab7b4ca00b232
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: quote-needs-fenced-block
+    claim:
+      integrity: sha256-b805a21faaee387e59ffb9d278aa9c8b1e4bb20a3e34e9a6c5f5a629eca9bd26
+    source:
+      file: src/cite/commands/add.ts
+      lines: 236-241
+      integrity: sha256-7939d97effc2984238332cf6df4d50fc2f1e62e8cc60faf3fe6a4054871cc9ca
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: quote-add-checks-block
+    claim:
+      integrity: sha256-b805a21faaee387e59ffb9d278aa9c8b1e4bb20a3e34e9a6c5f5a629eca9bd26
+    source:
+      file: src/cite/commands/add.ts
+      lines: 319-326
+      integrity: sha256-833192c7f05b835d6e7355a09cb23f728bb0092d1749be4eda63f6535ca3081c
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: quote-compares-inside-fences
+    claim:
+      integrity: sha256-0adb322f274d46e40cc62c7e46b161ab3894c9abc1101a2c0e12c805c99382bd
+    source:
+      file: src/cite/core/check-page.ts
+      lines: 91-94
+      integrity: sha256-8a3098db9e9be78c3b73d9259db532c7aebee77a86d268c985ba776a23467d39
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: quote-drift-finding
+    claim:
+      integrity: sha256-0adb322f274d46e40cc62c7e46b161ab3894c9abc1101a2c0e12c805c99382bd
+    source:
+      file: src/cite/core/check-page.ts
+      lines: 142-153
+      integrity: sha256-a561d2233041cca34c4b6e2d7df7b5ce46e4eb149c3dcb735cf7f8d20c07cdea
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: quote-marker-next-fence
+    claim:
+      integrity: sha256-0adb322f274d46e40cc62c7e46b161ab3894c9abc1101a2c0e12c805c99382bd
+    source:
+      file: src/cite/core/check-page.ts
+      lines: 113-114
+      integrity: sha256-0f263cc98605d92b6baa42eef3838c3cdff5f86a965e29c2f841d002d33ebbb6
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: quote-pins-whole-block
+    claim:
+      integrity: sha256-0adb322f274d46e40cc62c7e46b161ab3894c9abc1101a2c0e12c805c99382bd
+    source:
+      file: src/cite/commands/add.ts
+      lines: 237-238
+      integrity: sha256-d4d03e62def31886bb211e526e1f4388650b57671577d03697cb4f2327bf5082
+      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
 ---
 
 import { Steps, Tabs, TabItem, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -68,6 +779,7 @@ not configurable.
 Retries default to 3.
 ```
 
+{/* cite nothing-copied-into-entry */}
 The sentence sits on lines 6 and 7, as an editor numbers them. That is what
 you give `add`, after the page, and it is the whole claim: nothing is copied
 into the entry.
@@ -169,6 +881,7 @@ into the entry.
 
 ## Read a result
 
+{/* cite one-row-per-citation */}
 Each citation gets one line under its page, with both ends on it:
 
 ```
@@ -183,6 +896,10 @@ Each citation gets one line under its page, with both ends on it:
 | `<source end>` | The source as the entry spelled it, then its status: `lib/limits.ts:2 current`, `~AQm4…:5 changed since 3f9c2a1, 1 commit`. |
 | `<manifest>` | Where the entry is kept, when a [sidecar](/manni/cite/reference/citations/#the-sidecar) owns it, as in `docs-citations.yaml:6`. Empty for a frontmatter entry. |
 
+{/* cite summary-counts */}
+{/* cite summary-green */}
+{/* cite check-exit-code */}
+{/* cite exit-two-operational */}
 The summary line ends every run. `findings` counts errors, warnings and
 notices together, and the parentheses say how many were each. A run is green
 only when nothing is an error. The exit code is `0` when every finding is a
@@ -205,6 +922,11 @@ manni cite check
 1 file checked, 0 passed, 1 failed, 1 finding
 ```
 
+{/* cite source-changed-error */}
+{/* cite changed-names-commit-and-count */}
+{/* cite changed-annotates-sentence */}
+{/* cite commits-touching-file */}
+{/* cite show-diff-prints-diff */}
 `source-changed` is an **error**, exit code `1`. The check has done its whole
 job. It annotated the sentence, named the commit the pin was minted at, and
 said how many commits have touched the file since. What the sentence should
@@ -233,6 +955,9 @@ manni cite check --show-diff
 1 file checked, 0 passed, 1 failed, 1 finding
 ```
 
+{/* cite plain-update-skips-changed */}
+{/* cite plain-update-reports-skipped */}
+{/* cite update-exit-one-undone */}
 A plain `update` won't touch it, and says so, with exit code `1` because work
 is left undone:
 
@@ -241,6 +966,8 @@ docs/limits.md: fetch-timeout  ✗ skipped: changed since 9265563, 1 commit
 0 citations rewritten in 0 files, 1 skipped
 ```
 
+{/* cite accept-repins-source-at-head */}
+{/* cite accept-repins-claim */}
 So fix the page. Change the sentence to say 30 seconds. Then re-pin both ends
 at HEAD with `--accept`:
 
@@ -254,6 +981,7 @@ docs/limits.md: fetch-timeout claim at line 16 re-pinned (changed; now "The fetc
 2 citations rewritten in 1 file, 0 skipped
 ```
 
+{/* cite accept-prints-pins-and-text */}
 Both pins are printed, and the accepted claim's text with them, so the change
 is on the record. The next check is `current` at both ends.
 
@@ -265,6 +993,7 @@ is on the record. The next check is `current` at both ends.
 
 ## When the source moves
 
+{/* cite source-move-search */}
 Now someone adds two comment lines at the top of `lib/limits.ts`. The cited
 line is line 4, and its bytes are unchanged. The check finds it:
 
@@ -279,6 +1008,9 @@ manni cite check
 1 file checked, 1 passed, 0 failed, 1 finding (1 warning)
 ```
 
+{/* cite source-moved-warning */}
+{/* cite source-moved-exit-zero */}
+{/* cite update-dry-run-shows-diff */}
 `source-moved` is a **warning**. The page still says something true, so the
 exit code is `0` and CI stays green. Rewrite the range with `update`;
 `--dry-run` shows the diff first:
@@ -308,6 +1040,7 @@ docs/limits.md: fetch-timeout source lib/limits.ts:2 -> lib/limits.ts:4 (moved)
 1 citation rewritten in 1 file, 0 skipped
 ```
 
+{/* cite update-splices-one-scalar */}
 `update` splices the one `lines:` scalar and touches nothing else: comments,
 quoting and the rest of the frontmatter stay as they were. The next check is
 `current` at `lib/limits.ts:4`.
@@ -323,8 +1056,10 @@ quoting and the rest of the frontmatter stay as they were. The next check is
 
 ## When the page changes
 
+{/* cite claim-classified-same-way */}
 The claim end moves and changes too, and it is classified the same way.
 
+{/* cite claim-found-verbatim-moved */}
 **Insert a paragraph above the sentence.** The pinned text is found verbatim
 two lines further down, so nothing drifted:
 
@@ -335,6 +1070,8 @@ two lines further down, so nothing drifted:
 1 file checked, 1 passed, 0 failed, 1 finding (1 notice)
 ```
 
+{/* cite claim-moved-notice */}
+{/* cite update-rewrites-claim-lines */}
 `claim-moved` is a **notice**, the quietest level there is, and `update`
 rewrites `claim.lines` exactly as it rewrites the source's:
 
@@ -343,6 +1080,7 @@ docs/limits.md: fetch-timeout claim lines 16-17 -> 18-19 (moved)
 1 citation rewritten in 1 file, 0 skipped
 ```
 
+{/* cite claim-changed-nowhere */}
 **Edit the sentence.** Now the pinned text is nowhere on the page:
 
 ```
@@ -352,6 +1090,8 @@ docs/limits.md: fetch-timeout claim lines 16-17 -> 18-19 (moved)
 1 file checked, 1 passed, 0 failed, 1 finding (1 warning)
 ```
 
+{/* cite claim-changed-warning */}
+{/* cite show-diff-claim-text */}
 `claim-changed` is a **warning**, not an error. It fires on any edit to the
 pinned paragraph, a typo fix beside the cited sentence included. A red build
 for that would block prose work for nothing. Read the new text with
@@ -366,17 +1106,23 @@ docs/limits.md: fetch-timeout claim at line 16 re-pinned (changed; now "The fetc
 1 citation rewritten in 1 file, 0 skipped
 ```
 
+{/* cite accept-unit-at-first-line */}
+{/* cite accept-prints-claim-text */}
 `--accept` re-pins over the paragraph or fenced block now at the claim's first
 line, and prints it. So the log says exactly what was accepted. A sentence
 that was reworded **and** moved cannot be re-pinned this way: `cite add` it
 again.
 
+{/* cite severity-config-levels */}
+{/* cite severity-overrides-defaults */}
 A team that wants every edit to a cited sentence reviewed sets
 `claim-changed: error` under `severity:` in the
 [config](/manni/cite/reference/configuration/#severity).
 
 ## Anchor with a marker
 
+{/* cite marker-travels-with-text */}
+{/* cite marker-writes-and-pins */}
 Claim lines are one anchor. A **marker** is the other, and it is the easier
 one to keep true, because it travels with its text. `--marker` writes the
 marker and pins what it anchors:
@@ -405,11 +1151,14 @@ Retries default to 3.
       commit-sha: d7a5cf43e7e81698327752ce75b01e4c17c66a41
 ```
 
+{/* cite marker-claim-no-lines */}
+{/* cite marker-claim-never-moves */}
 The entry has a `claim` with an `integrity` and no `lines`, because the marker
 says where it is. Insert as many paragraphs above it as you like and the claim
 never moves. Edit the sentence itself and it is `claim-changed`, exactly as a
 line-anchored claim would be.
 
+{/* cite marker-carries-id-only */}
 The marker carries an id and nothing else. Every format has its own comment
 syntax, and the [citations
 reference](/manni/cite/reference/citations/#markers) lists them all:
@@ -421,11 +1170,15 @@ reference](/manni/cite/reference/citations/#markers) lists them all:
 | AsciiDoc | `// (cite retries)` |
 | reStructuredText | `.. (cite retries)` |
 
+{/* cite marker-json-invalid */}
+{/* cite marker-json-message */}
 An entry is never written into the body. A marker that carries JSON is
 `marker-invalid`, and hears where the entry belongs.
 
 ## Pin a code block
 
+{/* cite quote-needs-fenced-block */}
+{/* cite quote-add-checks-block */}
 To pin a fenced block instead of a sentence, use `--quote`. The block on the
 page has to reproduce the cited lines, and `add` checks that before it writes:
 
@@ -445,6 +1198,10 @@ export const RETRIES = 3;
 ```
 ````
 
+{/* cite quote-compares-inside-fences */}
+{/* cite quote-drift-finding */}
+{/* cite quote-marker-next-fence */}
+{/* cite quote-pins-whole-block */}
 The claim pins the whole block, fences included, and the lines inside the
 fences are compared with the source. So a block that stops reproducing its
 source is `quote-drift`, even while the pin still holds. A quote can be
