@@ -109,8 +109,15 @@ export interface CheckSummary {
   violations: number;
   /** Violations by family severity, always all three keys, zero-filled. */
   bySeverity: Record<Severity, number>;
-  /** The sitemap URL that supplied pages, or `null` if none was used. */
+  /** The sitemap URL that was found, or `null` if none was. Finding one is not using one: see `sitemapPages`. */
   sitemap: string | null;
+  /**
+   * In-scope page URLs that sitemap contributed to the frontier. `0` when no
+   * sitemap was found, and `0` when one was found whose every `<loc>` was
+   * out of scope — a built sitemap listing production URLs, read on a local
+   * preview, is the ordinary way that happens.
+   */
+  sitemapPages: number;
   /**
    * Whether the run discovered pages beyond the seeds (sitemap and same-host
    * links). `false` under `--no-crawl`, where `sitemap` is always `null` and
@@ -133,7 +140,7 @@ export interface CheckRun {
 export type ProgressEvent =
   /** About to launch the browser, before the first page. */
   | { kind: "browser" }
-  /** Discovery finished: the sitemap that supplied pages (or none), and how many URLs it gave. */
+  /** Discovery finished: the sitemap that was found (or none), and how many in-scope URLs it gave. */
   | { kind: "sitemap"; source: string | null; urls: number }
   /** About to check page `index` (1-based); `queued` is every URL discovered so far. */
   | { kind: "page"; index: number; queued: number; url: string }

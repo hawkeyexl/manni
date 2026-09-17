@@ -212,8 +212,11 @@ Checked 3 of 3 pages (sitemap: http://localhost:8080/sitemap.xml)
 ```
 
 {/* cite pretty-header-where */}
-The header names the sitemap that supplied pages, or reads `(no sitemap;
-followed links)`. Under `--no-crawl` it reads `(no crawl)`. Each violation line
+The header names the sitemap that was found, or reads `(no sitemap;
+followed links)`. Under `--no-crawl` it reads `(no crawl)`. Finding a sitemap
+is not the same as using one. When it supplied some of the discovered pages,
+the header adds its count and `followed links for the rest`. When it supplied
+none, the header adds `0 pages; followed links`. Each violation line
 carries the severity, the rule id, and axe's own impact in parentheses. Then
 come the node count, axe's short help text, and the rule's Deque University
 URL. The severity is what the floor and the exit code use. The impact is there
@@ -295,7 +298,8 @@ And `summary`:
 | `failed` | integer | Pages with at least one remaining violation or an `error`. Drives exit `1`. |
 | `violations` | integer | Remaining violations across all pages, counted per rule rather than per node. |
 | `bySeverity` | object | Violation counts keyed `notice`, `warning`, `error`. All three keys are always present. |
-| `sitemap` | string \| `null` | The sitemap URL that supplied pages, or `null` when none was used. |
+| `sitemap` | string \| `null` | The sitemap URL that was found, or `null` when none was. Finding one is not the same as using one, which `sitemapPages` reports. |
+| `sitemapPages` | integer | In-scope page URLs that sitemap contributed to the frontier. `0` when no sitemap was found, and `0` when one was found whose entries were all out of scope. |
 | `crawl` | boolean | Whether crawling was on for the run, with a sitemap lookup and link following. `false` under `--no-crawl`. |
 
 {/* cite github-one-per-finding */}
