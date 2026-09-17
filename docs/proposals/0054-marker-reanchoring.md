@@ -1,6 +1,6 @@
 # 0054: re-anchoring misplaced cite markers
 
-- **Status:** Proposed
+- **Status:** Implemented (#68)
 - **Serves:** Three journeys.
   - Maya · M5, "Pin a claim and catch it going stale". She wrote her markers
     with `add --marker` before PR #43, and her pages render split.
