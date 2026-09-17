@@ -245,9 +245,10 @@ release](https://github.com/hawkeyexl/manni/releases/latest), and let
 <Aside type="note" title="It needs Node and git on the machine">
   The hook runs `npx @hawkeyexl/manni`, so contributors need Node.js 24 or
   newer on their `PATH`. pre-commit does not install Node for it. Without git
-  on the `PATH` the run still works. It gives up `source-never-true` and the
-  diffs, says so once on stderr, and still stops a commit on a changed
-  source. [Full history](#full-history) has the whole degradation.
+  the check still runs, but it cannot read history. So it gives up
+  `source-never-true` and the source diffs, and says so once on stderr. A
+  changed source still stops the commit. [Full history](#full-history) covers
+  the rest.
 </Aside>
 
 ## Ramp in with a baseline
