@@ -71,7 +71,10 @@ accepted key. Everything else about the loader is unchanged, including that an
 unknown key is a hard error and that a wrong type is too.
 
 - `manni.config.yaml: "a11y.exclude" must be a list of strings.`
-- `manni.config.yaml: "a11y.exclude[0]" must be a non-empty string.`
+- `manni.config.yaml: "a11y.exclude[2]" must be a non-empty string.`
+
+The index is the entry's position in the list, so the second message names
+whichever entry is wrong.
 
 Both are exit 2, like every other config error in the section.
 
@@ -91,9 +94,19 @@ So `/proposals/**` matches `https://example.com/proposals/0035/` and
 work against a local preview and against production, which is the case this
 repository is in.
 
-Matching uses `picomatch`, already a dependency, with the same options `meta`
-uses for file globs. A pattern that does not begin with `/` is an error rather
-than a silent near-miss:
+A trailing slash is not part of the comparison. The path is matched with any
+trailing slash removed, so `/proposals/` and `/proposals` are one thing. And a
+pattern ending `/**` matches the directory itself as well as everything under
+it, so `/proposals/**` covers the section index without a second pattern.
+
+Both rules exist because a crawl produces both spellings. A sitemap usually
+lists `/proposals/`, and a bare link usually points at `/proposals`. A pattern
+that caught one but not the other would fail silently, on whichever spelling
+the site happened to emit.
+
+Matching otherwise uses `picomatch`, already a dependency, with the same
+options `meta` uses for file globs. A pattern that does not begin with `/` is
+an error rather than a silent near-miss:
 
 ```
 manni: --exclude "proposals/**" must start with "/": it matches a URL path.
@@ -108,6 +121,14 @@ mistake worth naming rather than a preference worth guessing at.
 
 ```
 manni: --exclude "/proposals/**" excludes the seed https://example.com/proposals/.
+```
+
+Every excluded seed is named before the run exits, rather than the first one
+ending it. A user who typed two wrong patterns should not need one run per fix:
+
+```
+manni: --exclude "/proposals/**" excludes the seed https://example.com/proposals/.
+manni: --exclude "/blog/**" excludes the seed https://example.com/blog/.
 ```
 
 Exit 2, and nothing is checked. Stress test 3 covers why this differs from the
@@ -155,6 +176,23 @@ as the two clauses already there:
 `-f github` is unchanged. An excluded page produces no annotation, which is
 the point of excluding it.
 
+### 8. What `--progress` says
+
+No line per excluded URL. A pattern that removes four hundred pages would
+otherwise bury the pages that were checked, which is what the progress output
+is for.
+
+One line instead, written once discovery settles, and only when something was
+excluded:
+
+```
+manni: excluded 41 pages (2 patterns)
+```
+
+That is enough to see a pattern working, or to see one that matched far more
+than intended. Which URLs went is a question for `-f json`, where every
+checked page is listed and `summary.excluded` carries the count.
+
 ### The invocation ladder
 
 **Bare.** Every page the crawl reaches, no exclusions. Unchanged from today.
@@ -195,7 +233,13 @@ checks the proposals and skips the API reference instead.
 
 ```
 $ manni a11y check --exclude "/reference/api/**"
+Checked 92 of 92 pages (sitemap: https://example.com/sitemap.xml)
+...
+0 violations on 0 of 92 pages; 9 excluded
 ```
+
+The proposals are checked again, because the flag replaced the config's list
+rather than adding to it.
 
 **The CI shape.**
 
@@ -282,6 +326,10 @@ Note the base path is part of the path. On this site a pattern is
 relative to the seed is worse. It makes a pattern's meaning depend on which
 seed reached the page, so a page reached from two seeds has two answers.
 
+The trailing-slash rule in decision 4 exists to stop a second papercut joining
+it. Without it, `/proposals/**` would cover every page in the section and
+silently miss the section index, depending on which spelling the site emitted.
+
 ### 3. Why is an excluded seed an error, when a seed bypasses the asset filter?
 
 Because the two filters answer different questions.
@@ -354,10 +402,12 @@ two clauses in the footer are independent, and a run can carry both.
 
 - `test/a11y/exclude.test.ts` covers the matcher: a prefix pattern, a `**`, a
   pattern with no leading `/`, an empty list, and a pattern that matches
-  nothing.
+  nothing. Trailing slashes get their own cases, since they are the rule most
+  likely to be got wrong. `/proposals/**` matches `/proposals/`, `/proposals`
+  and `/proposals/0035/`. It does not match `/proposals-archive/`.
 - `test/a11y/crawl.test.ts` gains cases for a link excluded, a sitemap URL
-  excluded, a seed excluded, and exclusion interacting with the `--max-pages`
-  cap.
+  excluded, one seed excluded, two seeds excluded and both named, and
+  exclusion interacting with the `--max-pages` cap.
 - `test/a11y/config.test.ts` covers the key: a list, a wrong type, a non-string
   entry, and an explicit `[]`.
 - `test/a11y/cli.integration.test.ts` covers the flag against the built bin.
@@ -365,6 +415,9 @@ two clauses in the footer are independent, and a run can carry both.
   their exit codes, and a comma-containing value read as one pattern.
 - `test/a11y/reporters.test.ts` covers the footer clause at zero and non-zero,
   and that `-f github` emits nothing for an excluded page.
+- The progress line is covered both ways. It is absent when nothing was
+  excluded, and names the count and the pattern total when something was. No
+  per-URL line appears in either case.
 - `npm run docs:check-cli` covers the reference page against the commander
   program.
 - Fixtures go under `test/fixtures/a11y/`, per the repository's rule that a
