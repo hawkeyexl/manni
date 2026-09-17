@@ -4376,8 +4376,8 @@ docs/src/content/docs/cite/get-started/index.mdx:
       source:
         file: src/cite/commands/add.ts
         lines: 418-426
-        integrity: sha256-0c3cb36930b4ac4fc9e1bdf5d911cf45a7ee913d1a25d8cd234a1399c3f3db26
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        integrity: sha256-f95492a399ba089fe20301cad93bc018d57f9fdb33d9da13d9dc99fc94f5b1b6
+        commit-sha: efb2193473e395640feb8bc3f6d85300d54f8c47
     - id: add-dry-run-prints-diff
       claim:
         lines: 75
@@ -4913,8 +4913,8 @@ docs/src/content/docs/cite/get-started/index.mdx:
       source:
         file: src/cite/commands/add.ts
         lines: 349-353
-        integrity: sha256-7939d97effc2984238332cf6df4d50fc2f1e62e8cc60faf3fe6a4054871cc9ca
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        integrity: sha256-118d3c72e005cd25f5a3597b73643dee16472c741c4c1bf17995efbb352ec39c
+        commit-sha: efb2193473e395640feb8bc3f6d85300d54f8c47
     - id: quote-add-checks-block
       claim:
         integrity: sha256-b805a21faaee387e59ffb9d278aa9c8b1e4bb20a3e34e9a6c5f5a629eca9bd26
@@ -4998,8 +4998,8 @@ docs/src/content/docs/cite/index.mdx:
       source:
         file: src/cite/commands/add.ts
         lines: 418-426
-        integrity: sha256-0c3cb36930b4ac4fc9e1bdf5d911cf45a7ee913d1a25d8cd234a1399c3f3db26
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        integrity: sha256-f95492a399ba089fe20301cad93bc018d57f9fdb33d9da13d9dc99fc94f5b1b6
+        commit-sha: efb2193473e395640feb8bc3f6d85300d54f8c47
     - id: two-ends-source
       claim:
         integrity: sha256-278c17058b2b02e15d4b9bff95037661c331d2295f6816870d0b8ea94fbe986b
@@ -7030,8 +7030,8 @@ docs/src/content/docs/cite/reference/cli.mdx:
       source:
         file: src/cite/commands/add.ts
         lines: 516-531
-        integrity: sha256-99f5a6d5a509b0e94f8e0101bdd27fef8ada097487beb77f34b5b6e628116513
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        integrity: sha256-64752cad5e95a771bef2751ec8efeac3d24fe319d047478abfbdcae8274b0d9c
+        commit-sha: efb2193473e395640feb8bc3f6d85300d54f8c47
     - id: refuse-marker-needs
       claim:
         lines: 427-428
@@ -8602,8 +8602,8 @@ docs/src/content/docs/cite/set-up/index.mdx:
       source:
         file: src/cite/commands/add.ts
         lines: 516-531
-        integrity: sha256-99f5a6d5a509b0e94f8e0101bdd27fef8ada097487beb77f34b5b6e628116513
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        integrity: sha256-64752cad5e95a771bef2751ec8efeac3d24fe319d047478abfbdcae8274b0d9c
+        commit-sha: efb2193473e395640feb8bc3f6d85300d54f8c47
     - id: claim-stored-as-body-lines
       claim:
         lines: 109-111
