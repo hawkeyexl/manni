@@ -122,8 +122,10 @@ A defective marker anchors nothing, exactly as today. One marker raises one
 `marker-invalid`, so a marker with two bad words does not print twice. The fix
 is to rewrite the line, and one message is enough to make it.
 
-The messages are in § The rules and their messages. Two of the six cases are
-new, one message changes, and the other three are the strings 0044 shipped.
+The messages are in § The rules and their messages. Three of the six cases are
+new, one message changes, and the other two are the strings 0044 shipped. That
+table carries a fourth new case, the quote mix from § 3, which is not a scanner
+check.
 
 ### 3. Anchoring
 
