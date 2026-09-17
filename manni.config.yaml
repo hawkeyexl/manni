@@ -46,6 +46,9 @@ collections:
     # of documents lives, not a setting of the accessibility tool — the whole
     # reason a collection is declared once for every tool to read.
     url: http://127.0.0.1:4321/manni/
+    externalMetadata:
+      - file: ./site.metadata.yaml
+        keys: [citations]
 
 # Where Vale's configuration is, for the tools that run Vale. `manni term lint`
 # runs it over the glossary's definitions, and `manni term write -f vale` reads

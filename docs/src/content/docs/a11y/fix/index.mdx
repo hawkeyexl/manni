@@ -26,16 +26,19 @@ This is what the job left on the run:
 ::error title=a11y/image-alt::Images must have alternative text — 1 node on http://127.0.0.1:4173/orphan.html (https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright)
 ```
 
+{/* cite annotation-title-message-helpurl */}
 Three things are in that line. `image-alt` is the axe rule. `orphan.html` is the
 published page it fired on. The URL at the end is the rule's page on Deque
 University, which explains the rule itself rather than your page.
 
+{/* cite annotation-no-file-line */}
 There is no file and no line number, because the check saw a rendered URL rather
 than your source. Finding the source is the first thing you do, and the selector
 in the local run is what points at it.
 
 ## Reproduce it locally
 
+{/* cite no-crawl-no-link-following */}
 Serve your build, then check that one page. `--no-crawl` skips the sitemap and
 the link following, so the run takes a couple of seconds instead of a minute:
 
@@ -52,6 +55,7 @@ Checked 1 of 1 pages (no crawl)
 1 violation on 1 of 1 pages
 ```
 
+{/* cite no-browser-message */}
 If the command stops with `No browser found`, install one once with
 `npx playwright install chromium`. [Get started](/manni/a11y/get-started/) has
 the detail, including how to serve a build.
@@ -65,6 +69,7 @@ the detail, including how to serve a build.
 | Failure summary | `Element does not have an alt attribute; …` | axe's statement of what is wrong with this element. It lists every condition that would have satisfied the rule. |
 | Help URL | The Deque University link | Explains the rule, why it exists, and the accepted ways to satisfy it. Read it when the summary alone is not enough. |
 
+{/* cite pretty-max-three-nodes */}
 The pretty output prints the first three failing elements per rule, and
 `(+N more)` past three. When you need every element, or the outer HTML of each
 one, use `--format json`:
@@ -86,6 +91,7 @@ one, use `--format json`:
 }
 ```
 
+{/* cite json-results-violations */}
 That is one entry of `results[].violations`, with the `tags` array left out.
 `html` is usually the fastest way to find the source, because the attribute
 values in it are yours.
@@ -118,6 +124,8 @@ Checked 1 of 1 pages (no crawl)
 0 violations on 0 of 1 pages
 ```
 
+{/* cite exit-zero-when-no-failed-pages */}
+{/* cite score-excludes-below-floor */}
 Exit `0`, and the annotation is gone on the next push. The score went from `94`
 to `100`, which is the share of applicable axe rules that passed. Violations
 below the severity floor do not count against it. Read the exit
@@ -125,6 +133,7 @@ code as the verdict and the score as a trend.
 
 ## Why there is no `--fix`
 
+{/* cite check-loads-rendered-url */}
 `check` sees a rendered URL. It never sees the Markdown, the template, or the
 component tree that produced it. There is nothing at that level it could edit,
 and rewriting the served HTML would fix a build artifact that the next build
@@ -136,6 +145,7 @@ the name of what the button does. Both are content. A tool that invented them
 would produce a page that passes the check and still fails the reader, which is
 worse than a red build.
 
+{/* cite node-line-names-element-and-condition */}
 What the check does deterministically is name the element and the condition that
 failed. That is the node line, and it is where the machine's contribution ends.
 

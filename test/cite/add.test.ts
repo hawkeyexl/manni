@@ -30,6 +30,7 @@ import { runCheck } from "../../src/cite/commands/check.js";
 import { noGit } from "../../src/cite/core/git.js";
 import { hashRange } from "../../src/cite/core/hash.js";
 import { readPage } from "../../src/cite/core/page.js";
+import { shortPin, shortSrc } from "../../src/cite/core/spell.js";
 import { decryptSourcePath, encryptSourcePath } from "../../src/cite/core/sources.js";
 import { CiteError } from "../../src/cite/errors.js";
 import type { AddOptions, AddResult } from "../../src/cite/types.js";
@@ -483,7 +484,7 @@ describe("runAdd", () => {
         expect(lines[(result.markerLine ?? 0) - 1]).toBe(`<!-- cite ${id} -->`);
         expect(result.claimLines).toEqual({ start: text, end: text + 1 });
         expect(addMessage(result)).toBe(
-          `${label}: added ${id} to frontmatter; marker at line ${String(text - 1)}, claim pinned at lines ${String(text)}-${String(text + 1)}`,
+          `${label}: added ${id} to frontmatter; marker at line ${String(text - 1)}, claim pinned at lines ${String(text)}-${String(text + 1)} (sha256-93f59d1e…; source src/limits.ts:2 "${LINE_2}", sha256-78af1d33…, no commit)`,
         );
       }
     });
@@ -503,9 +504,45 @@ describe("runAdd", () => {
       expect(lines[13]).toBe("<!-- cite fetch-timeout -->");
       expect(lines[14]).toBe(WRAPPED);
       expect(addMessage(result)).toBe(
-        `${label}: added fetch-timeout to frontmatter; marker at line 14, claim pinned at lines 15-16`,
+        `${label}: added fetch-timeout to frontmatter; marker at line 14, claim pinned at lines 15-16 (sha256-93f59d1e…; source src/limits.ts:2 "${LINE_2}", sha256-78af1d33…, no commit)`,
       );
       expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("spells an encrypted source as its ciphertext, never as a path", async () => {
+      workspace("no-citations.md");
+      const config = tempConfig("", KEY);
+      const result = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        marker: true,
+        id: "timeouts",
+        noConfig: false,
+        configPath: config,
+      });
+      const token = encryptSourcePath("src/limits.ts", KEY);
+      const message = addMessage(result);
+      expect(message).toBe(
+        `pages/no-citations.md: added timeouts to frontmatter; marker at line 14, claim pinned at line 15 (${shortPin(CLAIM_PIN)}; source ${shortSrc(`${token}:2`)}, ${shortPin(hashRange(LINE_2, undefined, KEY))}, no commit)`,
+      );
+      expect(message).not.toContain("limits.ts");
+    });
+
+    it("says a marker over a quoted block reproduces its source", async () => {
+      const label = fenced("marker-quote.md", ["# Limits", ""], [LINE_2], ["", "After."]);
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 8 },
+        quote: true,
+        marker: true,
+        id: "block",
+      });
+      const lines = `${String(result.claimLines?.start ?? 0)}-${String(result.claimLines?.end ?? 0)}`;
+      expect(addMessage(result)).toBe(
+        `${label}: added block to frontmatter; marker at line ${String(result.markerLine ?? 0)}, claim pinned at lines ${lines} (a block that reproduces src/limits.ts:2)`,
+      );
     });
 
     it("refuses lines that run past the paragraph, and writes nothing", async () => {
