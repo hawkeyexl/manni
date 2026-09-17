@@ -59,6 +59,7 @@ async function check(fixture: string, cliSchemas: string[]) {
     inputs: [`test/fixtures/taxonomy/${fixture}`],
     cliSchemas,
     cwd: root,
+    noConfig: true,
   });
   const r = results[0];
   if (!r) throw new Error(`no result for ${fixture}`);
@@ -86,6 +87,7 @@ describe("diataxis:diataxis:1.0", () => {
         stdinContent: `---\ntype: ${type}\n---\n`,
         cliSchemas: [DIATAXIS],
         cwd: root,
+        noConfig: true,
       });
       expect(results[0]?.ok, `type: ${type}`).toBe(true);
     }
@@ -98,6 +100,7 @@ describe("diataxis:diataxis:1.0", () => {
       stdinContent: "---\ntitle: No type here\n---\n",
       cliSchemas: [DIATAXIS],
       cwd: root,
+      noConfig: true,
     });
     expect(results[0]?.ok).toBe(false);
     expect(results[0]?.errors[0]?.schema).toBe(DIATAXIS);
@@ -135,6 +138,7 @@ describe("passo-uno:seven-action:1.0", () => {
         stdinContent: `---\naction: ${action}\n---\n`,
         cliSchemas: [SEVEN_ACTION],
         cwd: root,
+        noConfig: true,
       });
       expect(results[0]?.ok, `action: ${action}`).toBe(true);
     }
@@ -161,6 +165,7 @@ describe("tgdp:templates:1.0", () => {
         stdinContent: `---\ntype: ${type}\n---\n`,
         cliSchemas: [TGDP],
         cwd: root,
+        noConfig: true,
       });
       expect(results[0]?.ok, `type: ${type}`).toBe(true);
     }
@@ -176,6 +181,7 @@ describe("tgdp:templates:1.0", () => {
       stdinContent: "---\ntitle: No type here\n---\n",
       cliSchemas: [TGDP],
       cwd: root,
+      noConfig: true,
     });
     expect(results[0]?.ok).toBe(false);
     expect(results[0]?.errors[0]?.schema).toBe(TGDP);
@@ -214,6 +220,7 @@ describe("tgdp:templates:1.0", () => {
       stdinContent: "---\ntype: explanation\n---\n",
       cliSchemas: [TGDP],
       cwd: root,
+      noConfig: true,
     });
     expect(explanation.results[0]?.ok).toBe(false);
 
@@ -231,6 +238,7 @@ describe("tgdp:templates:1.0", () => {
       stdinContent: "---\ntype: how-to\n---\n",
       cliSchemas: [DIATAXIS, TGDP],
       cwd: root,
+      noConfig: true,
     });
     expect(shared.results[0]?.ok).toBe(true);
     expect(shared.results[0]?.schemas).toEqual([DIATAXIS, TGDP]);
@@ -241,6 +249,7 @@ describe("tgdp:templates:1.0", () => {
       stdinContent: "---\ntype: concept\n---\n",
       cliSchemas: [DIATAXIS, TGDP],
       cwd: root,
+      noConfig: true,
     });
     expect(tgdpOnly.results[0]?.ok).toBe(false);
     expect(tgdpOnly.results[0]?.errors[0]?.schema).toBe(DIATAXIS);
@@ -256,6 +265,7 @@ describe("tgdp:templates:1.0", () => {
       stdinContent: "---\ntitle: No type here\n---\n",
       cliSchemas: [DIATAXIS, TGDP],
       cwd: root,
+      noConfig: true,
     });
     expect(results[0]?.ok).toBe(false);
     expect(results[0]?.errors.map((e) => e.schema).sort()).toEqual(
@@ -310,6 +320,7 @@ describe("the default schema set", () => {
     const { results } = await runValidate({
       inputs: ["test/fixtures/valid.md"],
       cwd: root,
+      noConfig: true,
     });
     expect(results[0]?.ok).toBe(true);
     expect(results[0]?.schemas).toEqual(["google:okf:0.1", SEVEN_ACTION]);
@@ -319,6 +330,7 @@ describe("the default schema set", () => {
     const { results } = await runValidate({
       inputs: ["test/fixtures/taxonomy/seven-action-bad-action.md"],
       cwd: root,
+      noConfig: true,
     });
     expect(results[0]?.ok).toBe(false);
     expect(results[0]?.errors[0]?.schema).toBe(SEVEN_ACTION);
