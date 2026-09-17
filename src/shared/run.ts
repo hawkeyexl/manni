@@ -96,8 +96,34 @@ export function isMainModule(moduleUrl: string): boolean {
   }
 }
 
+/**
+ * Treat a closed reader on stdout or stderr as the end of output.
+ *
+ * `manni cite check | head -1` closes the pipe while the command is still
+ * writing, and the next write fails with EPIPE. Node emits that as an `error`
+ * event on the stream, and with no listener it is thrown as an uncaught
+ * exception: a stack trace and exit 1 from a command that did nothing wrong.
+ *
+ * The listener swallows EPIPE and nothing else, so any other stream error
+ * still surfaces the way it did. The command then runs to completion and exits
+ * with its own code rather than a fixed 0: `set -o pipefail; manni meta
+ * validate | head` must still fail when validation does. Writes after the
+ * pipe closed go nowhere, which is what the reader asked for.
+ */
+export function endOutputOnClosedReader(
+  streams: readonly NodeJS.EventEmitter[] = [process.stdout, process.stderr],
+): void {
+  for (const stream of streams) {
+    stream.on("error", (err: NodeJS.ErrnoException) => {
+      if (err.code === "EPIPE") return;
+      throw err;
+    });
+  }
+}
+
 /** Run `build()` as a bin when `moduleUrl` is the entry, and not when imported. */
 export function runIfMain(moduleUrl: string, build: () => Command): void {
   if (!isMainModule(moduleUrl)) return;
+  endOutputOnClosedReader();
   runProgram(build()).catch(fail);
 }

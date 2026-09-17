@@ -4,6 +4,20 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.3.6](https://github.com/hawkeyexl/manni/compare/v2.3.5...v2.3.6) (2026-09-17)
+
+
+### Bug Fixes
+
+* **shared:** exit quietly when stdout's reader closes early ([#58](https://github.com/hawkeyexl/manni/issues/58)) ([289fcd4](https://github.com/hawkeyexl/manni/commit/289fcd45db96f50f91fedfaaa36378170186d520))
+
+## [2.3.5](https://github.com/hawkeyexl/manni/compare/v2.3.4...v2.3.5) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** refuse a page whose frontmatter fence never closes ([#56](https://github.com/hawkeyexl/manni/issues/56)) ([04ef174](https://github.com/hawkeyexl/manni/commit/04ef1747dd8eb3e0ac8afd636690641c31081f11))
+
 ## [2.3.4](https://github.com/hawkeyexl/manni/compare/v2.3.3...v2.3.4) (2026-09-17)
 
 
