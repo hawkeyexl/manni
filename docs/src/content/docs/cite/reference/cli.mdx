@@ -3,15 +3,6 @@ title: CLI reference
 description: Every manni cite command, argument, and flag (check, add, and update), with exit codes, the citation baseline, and the two-checkout layout for private sources.
 sidebar:
   order: 1
-citations:
-  - id: check
-    claim:
-      integrity: sha256-776a8054ee3052da505af45d8905664c8de096da21ccaba20e6292bd730012d8
-    source:
-      file: src/cite/cli.ts
-      lines: 225
-      integrity: sha256-4711ef1b0d273138be4647e20811c36bce97b3d228b0414a0616c200045a63d7
-      commit-sha: fc09aeff7891fcbedfe7d127393fc662fd3ddf7a
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -21,12 +12,13 @@ import { Aside } from '@astrojs/starlight/components';
     docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
     sync with the code; descriptions are free-form.
 
-    This page also carries one real citation of src/cite/cli.ts in its
-    frontmatter, checked by `manni cite check` from the repo root against the
-    repo's own manni.config.yaml. If it reads as changed, the description of
-    the check command moved under it: re-mint with `manni cite update
-    --accept --only check docs/src/content/docs/cite/reference/cli.mdx`. */}
+    Its claims are pinned to source by citations kept in site.metadata.yaml,
+    the site collection's sidecar, and checked by a bare `manni cite check`
+    from the repo root. A finding means the code or a sentence moved under a
+    pin: run `manni cite check --show-diff` on this page, then `cite update`,
+    with `--accept --only <id>` for a claim you have re-read against source. */}
 
+{/* cite bare-cite-exits-2 */}
 manni cite exposes three verbs, [`check`](#cite-check), [`add`](#cite-add)
 and [`update`](#cite-update). There is no default. A bare `manni cite` prints
 usage and exits `2`, because nothing here is safe to run by accident. `check`
@@ -50,6 +42,7 @@ Global options are accepted before the subcommand.
 
 ## `cite`
 
+{/* cite cite-version-flag */}
 The citation tool. Every command on this page lives under it. `cite` accepts
 its own `-V, --version`, which reports the manni version, and `-h, --help`.
 
@@ -80,6 +73,9 @@ the [citations reference](/manni/cite/reference/citations/#statuses-and-rules).
 manni cite check [paths...] [options]
 ```
 
+{/* cite rule-id-prefix */}
+{/* cite check-baseline-own-file */}
+{/* cite check-indexes-sources */}
 Findings ride the metadata tool's reporters and its baseline. `-f github`,
 `sarif` and `junit` produce the same envelopes
 [`meta validate`](/manni/meta/reference/output-and-exit-codes/) does, under the
@@ -118,6 +114,7 @@ where git is available. History is read only when a pin does not hold.
 
 ### Output
 
+{/* cite pretty-row-columns */}
 `pretty` prints one line per file and one per citation beneath it. A citation
 row is its id, then the claim end, then the source end, then the manifest when
 one owns the entry. Both ends read in file lines, and the source is spelled
@@ -135,6 +132,9 @@ exactly as the entry spelled it:
 1 file checked, 0 passed, 1 failed, 3 findings (1 warning, 1 notice)
 ```
 
+{/* cite pretty-file-marks */}
+{/* cite pretty-summary-notices */}
+{/* cite pretty-row-marks */}
 `✓` is a citation with no finding, `↕` a warning, `ℹ` a notice and `✗` an
 error. `·` is a bare pin whose source was `skipped`, or a citation whose every
 finding the baseline forgave. A skipped source beside a claim end still reads
@@ -144,6 +144,9 @@ is a bare pin: no id and no claim end, so both columns are empty. A file is
 warning, and `ℹ` when it holds notices only. The summary counts notices apart
 from warnings, as in `3 findings (1 warning, 1 notice)`.
 
+{/* cite json-envelope */}
+{/* cite json-summary-shape */}
+{/* cite json-page-fields */}
 `json` prints `{ summary, pages }`. `summary` has the metadata tool's shape
 (`files`, `passed`, `failed`, `errors`, and `warnings`, `notices`, `gitignoreSkipped`,
 `baseline` when non-zero). Each page carries its `file`, its `format`, its
@@ -160,6 +163,8 @@ citation looks like this:
 }
 ```
 
+{/* cite json-finding-fields */}
+{/* cite json-never-private */}
 `origin.kind` is `frontmatter` or `manifest`. `anchor` is `claim`, `marker` or
 `null`. `claim.lines` is the entry's body lines and `fileLines` is where they
 are now, and `claim` itself is `null` for a bare pin. A moved end adds
@@ -170,6 +175,7 @@ finding on a moved source adds `newSrc`, and one that sits on a manifest adds
 `file`. The resolved path
 of a ciphertext, the diff and the commit subjects are never in it.
 
+{/* cite github-one-per-finding */}
 `github` prints one annotation per finding, `::warning` for a warning and
 `::notice` for a notice:
 
@@ -178,6 +184,7 @@ of a ciphertext, the diff and the commit subjects are never in it.
 ::warning file=docs/limits.md,line=9,title=manni%3Acite/claim-changed::fetch-timeout: the claim at line 9 has changed since it was pinned.
 ```
 
+{/* cite sarif-note-level */}
 `sarif` builds on the metadata tool's renderer, so the envelope, the rule id
 `manni:cite/<rule>` and the `partialFingerprints` the baseline matches are
 the same. Each rule is described in plain words, and its `helpUri` links the
@@ -218,6 +225,7 @@ result:
 }
 ```
 
+{/* cite junit-classname */}
 `junit` prints one testcase per page under the classname `manni.cite`, and a
 `failure` per error-severity finding. The failure's `type` is the rule id, and
 its message is the annotation's, followed by the line. An entry a manifest owns
@@ -244,6 +252,7 @@ names that file instead. Warnings and notices are never failures:
 
 ### Baselines
 
+{/* cite baseline-default-file */}
 A baseline records the findings that exist today so that a run fails only on
 findings that are **new**. It is the metadata tool's
 [ratchet](/manni/meta/reference/cli/#baselines), with its own default file,
@@ -255,6 +264,8 @@ manni cite check --write-baseline   # record today's findings, then exit 0
 manni cite check --baseline         # from now on, fail only on new ones
 ```
 
+{/* cite baseline-fingerprint-subject */}
+{/* cite baseline-missing-remedy */}
 The fingerprint is stable across a **move** and across a **line shift**. Its
 subject is the entry's `id`, or its `source.integrity` when it has none, and
 neither changes when `update` rewrites `lines: 2` to `lines: 4`. It changes
@@ -266,6 +277,9 @@ the flag.
 
 ### Where sources resolve from
 
+{/* cite root-resolution-order */}
+{/* cite sources-tracked-only */}
+{/* cite sources-realpath-containment */}
 A `source.file` is a path relative to one **root**, and the root is settled
 once per run. It is `--root` if given, relative to the working directory. Else
 it is config `root:`, relative to the config file. Else it is the nearest git
@@ -297,6 +311,11 @@ cat page.md | manni cite check - --as markdown      # read from stdin
 
 ## `cite add`
 
+{/* cite add-records-head */}
+{/* cite add-placement-follows-config */}
+{/* cite add-refuses-broken */}
+{/* cite add-refuses-id-taken */}
+{/* cite add-refuses-too-wide */}
 Mint a citation for a source range and write it to a page. `add` reads both
 ends, hashes each under the rule, and records `HEAD` as `source.commit-sha`.
 The page's own lines are the claim, so nothing is copied into the entry. It
@@ -334,6 +353,7 @@ manni cite add <page>[:L|:L1-L2] <src> [options]
 | `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/cite/reference/configuration/), read for `root`, the encryption key, and the citations manifest each collection declares. |
 | `--no-config` | n/a | off | Ignore any discovered config file. The entry goes to frontmatter. |
 
+{/* cite bare-pin-no-marker-quote */}
 A page argument with no lines writes a **bare pin**: a `source` block and
 nothing anchoring it. That is `source-of-truth` at line granularity: this page
 rests on these lines, say so when they change. `--id` is allowed on a bare
@@ -362,6 +382,7 @@ MANNI_ENCRYPTION_KEY=$KEY manni cite add docs/limits.md:9 lib/limits.ts:2 --root
 cat page.md | manni cite add -:9 lib/limits.ts:2 --as markdown > out.md
 ```
 
+{/* cite add-short-pins */}
 The report line names both pins so a reviewer can read them off the terminal.
 A pin is abbreviated to eight hex digits, a commit to seven:
 
@@ -372,6 +393,7 @@ docs/limits.md: added timeouts to frontmatter; marker at line 30, claim pinned a
 docs/limits.md: added an entry to frontmatter (claim lines 14-18, a block that reproduces lib/limits.ts:1-3)
 ```
 
+{/* cite add-claim-line-after-write */}
 The claim's line in that first message is a file line, and it is where the
 sentence sits **after** the write. On a page whose entry went to the
 frontmatter, the new entry pushes the body down. So the number is larger than
@@ -395,6 +417,10 @@ manni: docs/limits.md already has an entry fetch-timeout.
 
 ## `cite update`
 
+{/* cite update-splice-textual */}
+{/* cite update-manifest-once */}
+{/* cite update-encrypted-stays */}
+{/* cite update-needs-sources */}
 Rewrite moved citations in place; with `--accept`, re-mint changed ones.
 `update` works on **both ends**. A moved source end has its `source.lines`
 spliced, and a moved claim end its `claim.lines`. The splice is textual, so
@@ -451,11 +477,13 @@ working tree so the rewrite is easy to review.
 | `claim-moved-ambiguous` | Skipped. The same text sits in more than one place. | The same. |
 | `current` | Left alone. | Left alone. |
 
+{/* cite accept-skips-blank-claim */}
 `update --accept` skips a claim whose first line is now blank, or inside a
 different kind of block. A sentence that was reworded **and** moved has left
 that line. `--accept` then re-pins whatever paragraph now starts there, so read
 the printed text. If it is not the sentence, `cite add` the sentence again.
 
+{/* cite anchor-findings-skipped */}
 An anchoring or entry finding (`marker-orphan`, `anchor-invalid`, an invalid
 entry) is never rewritten, and is reported as skipped.
 
