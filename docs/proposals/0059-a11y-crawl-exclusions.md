@@ -162,6 +162,11 @@ nothing else in the JSON moves.
 }
 ```
 
+`excluded` counts distinct URLs, not sightings. A page linked from thirty
+others and excluded by a pattern counts once. It is keyed the same way the
+frontier dedupes, which is the normalized URL with one trailing slash
+stripped, so the count is comparable with `discovered`.
+
 The existing identity `checked + skipped + duplicates === discovered` is
 unchanged. `excluded` sits outside it, because an excluded URL never entered
 the frontier. Stress test 4 argues that case.
@@ -245,8 +250,17 @@ rather than adding to it.
 
 ```
 $ manni a11y check --exclude "/proposals/**" -f github --progress
+manni: sitemap https://example.com/sitemap.xml (101 pages)
+manni: excluded 41 pages (1 pattern)
+manni: starting browser
+manni: [1/60] https://example.com/
+...
+manni: checked 60 pages, 0 skipped
 ::warning title=a11y/region::All page content should be contained by landmarks — 1 node on https://example.com/about/ (https://dequeuniversity.com/rules/axe/4.13/region?application=playwright)
 ```
+
+The `manni:` lines are stderr and the annotation is stdout, so a job that
+redirects one keeps the other. The exclusion line is the one decision 8 adds.
 
 **Everything at once.**
 
@@ -255,7 +269,31 @@ $ manni a11y check https://example.com/ \
     --exclude "/proposals/**" --exclude "/reference/api/**" \
     --max-pages 200 --tags wcag2a,wcag2aa,wcag21aa \
     --severity error --timeout 45000 -f json --progress
+manni: sitemap https://example.com/sitemap.xml (101 pages)
+manni: excluded 50 pages (2 patterns)
+manni: starting browser
+...
+manni: checked 51 pages, 0 skipped
+{
+  "results": [ ... ],
+  "summary": {
+    "discovered": 51,
+    "checked": 51,
+    "skipped": 0,
+    "duplicates": 0,
+    "excluded": 50,
+    "failed": 0,
+    "violations": 0,
+    "bySeverity": { "notice": 0, "warning": 0, "error": 0 },
+    "sitemap": "https://example.com/sitemap.xml",
+    "crawl": true
+  }
+}
 ```
+
+The cap never bites, because exclusion runs first and leaves 51 pages against
+a limit of 200. `bySeverity` is zero at every level because `--severity error`
+dropped anything below it before the count.
 
 **The usage errors.**
 
