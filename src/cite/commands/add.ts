@@ -31,6 +31,7 @@ import {
   anchoredLines,
   fenceSpanAt,
   formatStatement,
+  markerIndent,
   offsetOfLine,
   unitHolding,
 } from "../core/statements.js";
@@ -257,7 +258,8 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   let shifted: Shifted = { frontmatter: [], manifest: new Map() };
   if (marker && pageLines !== undefined) {
     // The marker goes above the paragraph or block holding the lines, below
-    // any markers already stacked there, and the lines must stay inside it.
+    // any markers already stacked there, at its indentation, and the lines
+    // must stay inside it.
     const holding = unitHolding(content, pageLines.start, format, {
       offset: page.bodyOffset,
       line: page.bodyLine,
@@ -271,7 +273,9 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
       );
     }
     shifted = shiftedEntries(page.citations, holding.start, page.bodyLine, label);
-    const statement = formatStatement(format, { kind: "ref", id: opts.id ?? "" });
+    const statement =
+      markerIndent(content, holding.start, format, page.bodyLine) +
+      formatStatement(format, { kind: "ref", id: opts.id ?? "" });
     const insertAt = offsetOfLine(content, holding.start);
     body = insertStatementBefore(content, insertAt, statement);
     markerAt = holding.start;
