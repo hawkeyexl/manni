@@ -13,7 +13,7 @@
  * as the page's own lines: `add <page>[:L|:L1-L2] <src>`.
  */
 import { execSync, spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -279,6 +279,13 @@ describe("manni cite (usage errors)", () => {
     );
   });
 
+  it("add with a source range longer than 5,000 lines", () => {
+    usage(
+      ["add", "pages/no-citations.md:6", "src/limits.ts:1-5001", "--root", "."],
+      'Invalid range "src/limits.ts:1-5001": it spans 5001 lines, more than 5000.',
+    );
+  });
+
   it("add past the end of the source file", () => {
     usage(
       ["add", "pages/no-citations.md:6", "src/limits.ts:99", "--root", "."],
@@ -295,6 +302,13 @@ describe("manni cite (usage errors)", () => {
 
   it("add a page that is not there", () => {
     usage(["add", "pages/nope.md:6", "src/limits.ts:2", "--root", "."], 'File not found: "pages/nope.md".');
+  });
+
+  it("add --marker over lines that run past one paragraph", () => {
+    usage(
+      ["add", "pages/no-citations.md:4-6", "src/limits.ts:2", "--id", "x", "--marker", "--root", "."],
+      "pages/no-citations.md:4-6 runs past the paragraph at line 4. A marker anchors one paragraph.",
+    );
   });
 
   it("add page lines past the end of the page", () => {
@@ -913,6 +927,16 @@ describe("manni cite add", () => {
     expect(after.stdout).toContain(`${token.slice(0, 5)}…:2 current`);
   });
 
+  it("refuses a --root that does not exist with check's message, and writes nothing", () => {
+    const before = readFileSync(join(work, "pages", "no-citations.md"), "utf8");
+    const r = cite(["add", "pages/no-citations.md:6", "src/limits.ts:2", "--root", "no-such-dir"]);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    // On macOS the child's cwd is the temp dir's realpath (/private/var/...), not /var/....
+    expect(r.stderr.split(/\r?\n/)[0]).toBe(`manni: Root directory not found: ${join(realpathSync(work), "no-such-dir")}.`);
+    expect(readFileSync(join(work, "pages", "no-citations.md"), "utf8")).toBe(before);
+  });
+
   it("--encrypt with no key, off a terminal, refuses without a question and writes nothing", () => {
     const before = readFileSync(join(work, "pages", "no-citations.md"), "utf8");
     const r = cite(["add", "pages/no-citations.md:6", "src/limits.ts:2", "--encrypt", "--root", "."]);
@@ -950,6 +974,14 @@ describe("manni cite update", () => {
       "    claim:\n      lines: 5\n",
     );
     expect(cite(["check", "--root", ".", "pages/claim-moved.md"]).status).toBe(0);
+  });
+
+  it("refuses a --root that does not exist with check's message", () => {
+    const r = cite(["update", "--root", "no-such-dir", "pages/moved.md"]);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    // On macOS the child's cwd is the temp dir's realpath (/private/var/...), not /var/....
+    expect(r.stderr.split(/\r?\n/)[0]).toBe(`manni: Root directory not found: ${join(realpathSync(work), "no-such-dir")}.`);
   });
 
   it("--dry-run prints the diffs and leaves the page alone", () => {

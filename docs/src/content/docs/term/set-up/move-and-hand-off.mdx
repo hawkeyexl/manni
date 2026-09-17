@@ -29,7 +29,7 @@ has nowhere to put a scope note, so no scope note is read from one.
 | DITA `<glossgroup>` | no | the same, per child `<glossentry>` |
 | DocBook `<glossary>` | no | `label`, `definition`, `alt-labels`, `see`, `related-terms`, `id` |
 | HTML `<dl>` | yes | `label`, `definition`, `alt-labels`, `id` |
-| HTML `<dfn>` | yes | `label`, `alt-labels` |
+| HTML `<dfn>` | yes | `label`, `alt-labels`, `id` |
 | Markdown or MDX definition list | yes | `label`, `definition`, `alt-labels` |
 | AsciiDoc `[glossary]` list | no | `label`, `definition`, `alt-labels` |
 | reStructuredText `.. glossary::` | no | `label`, `definition`, `alt-labels` |
@@ -223,8 +223,8 @@ PAL
 A definition list has no place for `see`, and an entry with no definition
 reads back as nothing. So `varifocal` is left out, and the run names it. The
 same goes for an AsciiDoc `[glossary]` list, a `.. glossary::` and an HTML
-`<dl>`. Keep redirects in pages, a manifest, DITA, DocBook, TBX, SKOS, CSV or
-JSON.
+`<dl>`. DITA, TBX and SKOS drop `see` too. Keep redirects in pages, a
+manifest, DocBook, CSV or JSON.
 </Aside>
 
 `--dry-run` prints the files a render would create or change, then the same
@@ -237,7 +237,8 @@ glossary.md would be created
   skipped 1 term a definition list cannot read without a definition: varifocal
 ```
 
-`--check` prints only the files, and exits `1` when one differs.
+`--check` prints only the files, and exits `1` when one differs. When none
+does, it prints that the target is up to date.
 
 ## What each render holds
 

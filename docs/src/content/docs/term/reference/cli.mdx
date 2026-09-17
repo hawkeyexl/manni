@@ -50,9 +50,9 @@ jobs.
 
 - **Paths are positional.** Files, directories and globs, space-separated.
   Without them the run reads every configured
-  [collection](/manni/meta/reference/configuration/#collections), plus the
-  manifests [`term.manifests`](/manni/term/reference/configuration/#keys)
-  names.
+  [collection](/manni/meta/reference/configuration/#collections). Every run
+  that loads a config also reads the manifests
+  [`term.manifests`](/manni/term/reference/configuration/#keys) names.
 - **A named `.yaml`, `.yml` or `.json` file is a manifest.** It's read exactly
   as a `term.manifests` entry is. Only a path you type counts: a directory or
   glob walk never picks those files up.
@@ -99,7 +99,7 @@ manni term list [paths...] [options]
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. Given once. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable, one glob per occurrence. |
 | `--collection` | `<name>` | every collection | Read one configured collection rather than every declared one. Repeatable, one name per occurrence. Cannot be combined with positional paths (exit 2). |
-| `--allow-empty` | n/a | off | Treat a set with no terms as success. Wins over config `allowEmpty:`. |
+| `--allow-empty` | n/a | off | Treat a missing path, no matched files or no terms as success rather than an error (exit 2). Wins over config `allowEmpty:`. |
 | `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. Wins over config `respectGitignore:`. |
 | `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/term/reference/configuration/). The file must exist (exit 2). |
 | `--no-color` | n/a | off | Disable colored output. Color applies on a TTY only, and never under `NO_COLOR`. |
@@ -159,7 +159,7 @@ manni term get <term> [paths...] [options]
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--collection` | `<name>` | every collection | Read one configured collection. Repeatable. |
-| `--allow-empty` | n/a | off | Treat a set with no terms as success. |
+| `--allow-empty` | n/a | off | Treat a missing path, no matched files or no terms as success. |
 | `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. |
 | `-c, --config` | `<path>` | discovered | Path to a config file. |
 | `--no-color` | n/a | off | Disable colored output. |
@@ -184,7 +184,7 @@ progressive lens                        docs/terms/progressive-lens.md:1
 | Code | Meaning |
 |---|---|
 | `0` | The entry was found and printed. |
-| `2` | No entry matched, or an operational or usage error. The message names the set's size and the nearest id. |
+| `2` | No entry matched, or an operational or usage error. The message names the set's size and the nearest id or label. |
 
 ## `term check`
 
@@ -212,7 +212,7 @@ manni term check [paths...] [options]
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--collection` | `<name>` | every collection | Read one configured collection. Repeatable. |
-| `--allow-empty` | n/a | off | Treat a set with no terms as success. |
+| `--allow-empty` | n/a | off | Treat a missing path, no matched files or no terms as success. |
 | `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. |
 | `-c, --config` | `<path>` | discovered | Path to a config file. |
 | `--no-color` | n/a | off | Disable colored output. |
@@ -356,7 +356,7 @@ manni term lint [paths...] [options]
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--collection` | `<name>` | every collection | Read one configured collection. Repeatable. |
-| `--allow-empty` | n/a | off | Treat a set with no terms as success. |
+| `--allow-empty` | n/a | off | Treat a missing path, no matched files or no terms as success. |
 | `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. |
 | `-c, --config` | `<path>` | discovered | Path to a config file. |
 | `--no-color` | n/a | off | Disable colored output. |
@@ -435,7 +435,7 @@ clean working tree so the change is easy to review.
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--collection` | `<name>` | every collection | Read one configured collection. Repeatable. |
-| `--allow-empty` | n/a | off | Treat a set with no terms as success. |
+| `--allow-empty` | n/a | off | Treat a missing path, no matched files or no terms as success. |
 | `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. |
 | `-c, --config` | `<path>` | discovered | Path to a config file. |
 | `--no-color` | n/a | off | Disable colored output. |
@@ -482,7 +482,8 @@ A Markdown or MDX definition list, an AsciiDoc `[glossary]` list, a
 `-f vale` lists each style file and what it holds. `Casing.yml`,
 `Lowercase.yml` and `SentenceStart.yml` count the labels and alt-labels they
 swap. When no section of Vale's configuration uses the `Terms` style, a notice
-on stderr names the line to add:
+on stderr names the line to add. When the file has no section with
+`BasedOnStyles`, the notice names a section to add instead:
 
 ```
 Wrote 3 terms to .vale/styles/Terms
@@ -495,9 +496,16 @@ notice: no section of .vale.ini uses the Terms style. Add it to BasedOnStyles:
   BasedOnStyles = Vale, Terms
 ```
 
+```
+notice: .vale.ini has no section with BasedOnStyles. Add one that uses the Terms style:
+  [*.md]
+  BasedOnStyles = Terms
+```
+
 `--check` and `--dry-run` print each file that differs, with what would happen
 to it: `would change`, `would be created` or `would be removed`. When nothing
-differs they print that the target is up to date. `--dry-run` then prints the
+differs a render prints that the target is up to date, and an in-place run
+prints `Nothing to write`. `--dry-run` then prints the
 dropped and skipped lines a write would:
 
 ```

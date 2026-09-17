@@ -139,7 +139,8 @@ collections:
   config's key is not read. An empty variable counts as unset, which is what a
   missing CI secret expands to.
 - **A key is at least 32 hex or base64url characters.** Anything else is
-  refused with exit `2`, and the error never repeats the value:
+  refused with exit `2`. `manni key set` is the exception: it writes a new key
+  over a malformed `encryptionKey:`. The error never repeats the value:
 
   ```
   manni: manni.config.yaml: "encryptionKey" must be at least 32 hex or base64url characters. Run `manni key set` to generate one.
@@ -148,8 +149,9 @@ collections:
 
 - **A file that holds only a key is still a config file.** Discovery stops at
   the first `manni.config.yaml` that carries the running tool's section,
-  `collections:`, or `encryptionKey:`. The next run finds a file the key prompt
-  created.
+  `collections:`, `tools:` or `encryptionKey:`. A `moose.config.yaml`, the
+  file's name before the rename, is found the same way, with a warning to
+  rename it. The next run finds a file the key prompt created.
 - **Strength is yours to provide.** The configured value is used as key
   material as it is. It is expanded, not stretched, so a value picked by hand is
   only as strong as it is random. `manni key set` generates 256 random bits, and

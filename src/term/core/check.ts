@@ -5,7 +5,8 @@
  *
  * Every label comparison ignores case, because the Vale style `write -f vale`
  * renders is a `swap` map keyed on the lowercased term. Two labels that differ
- * only in case collide there silently, so they collide here out loud.
+ * only in case collide there silently, so they collide here out loud. Ids
+ * compare ignoring case too, because references resolve them that way.
  */
 import { DEFAULT_ABSTRACT_MAX_LENGTH } from "./config.js";
 import { resolveSeverity, ruleId } from "./severity.js";
@@ -78,11 +79,13 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     });
   }
 
-  // duplicate-id: exact, on every entry sharing the id.
+  // duplicate-id: ignoring case, as references resolve ids, on every entry
+  // sharing the id.
   const sharing = new Map<string, Term[]>();
   for (const t of terms) {
-    const group = sharing.get(t.id);
-    if (group === undefined) sharing.set(t.id, [t]);
+    const id = fold(t.id);
+    const group = sharing.get(id);
+    if (group === undefined) sharing.set(id, [t]);
     else group.push(t);
   }
   for (const group of sharing.values()) {

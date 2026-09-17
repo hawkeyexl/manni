@@ -26,8 +26,7 @@ this composition avoids.
 
 The vocabulary is not one of the [built-in
 schemas](/manni/meta/reference/built-in-schemas/), and no published URL serves
-it yet, because the draft is
-[open for review](/manni/meta/proposals/citations/). So
+it. The draft is [open for review](/manni/meta/proposals/citations/). So
 `manni meta schemas vendor`, which downloads an http(s) URL, has nothing to
 download. Copy
 [`1.0.0-proposal.4.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0044/schemas/citations/1.0.0-proposal.4.json)
@@ -42,14 +41,14 @@ schema/reference-page.schema.json
   `$ref` resolves against the bundled built-ins and nothing else. No schema is
   fetched to satisfy a reference, and no relative file path is read for one.
   So `{ "$ref": "manni:citations:1.0.0-proposal.4" }` inside your schema is a
-  compile failure, exit `2`, before a single page is read:
+  compile failure, exit `2`, when the first page it governs is validated:
 
   ```
   manni: Schema "schema/reference-page.schema.json" failed to compile: can't resolve reference manni:citations:1.0.0-proposal.4 from id https://example.com/reference-page.schema.json
   ```
 
-  Compose it as a **set** instead, which is the next step. When the draft
-  becomes a built-in, `$ref` becomes available and the set still works.
+  Compose it as a **set** instead, which is the next step. A set needs no
+  `$ref`, so it works with the file you committed.
 </Aside>
 
 ## Require the key
@@ -152,8 +151,8 @@ cite:
 ```
 
 The one worth deciding deliberately is `claim-changed`. It fires on **any**
-edit to a pinned paragraph, a typo fix beside the cited sentence included. At
-its default it is a warning, reported and green:
+edit to the pinned text, a typo fix included. That is the claim lines, or the
+whole paragraph a marker anchors. At its default it is a warning, reported and green:
 
 ```sh
 manni cite check docs/reference/limits.md
@@ -207,7 +206,7 @@ way.
 | Where the YAML sits | In each page, above the prose | In one file per collection |
 | What an author opens | A page whose header is mostly hashes | A page with a title |
 | A `git mv` | Moves the entries with the page | Orphans the entry, unless the manifest uses `join:` |
-| Merge conflicts | On the page, between two people editing prose | On one file, between everyone adding citations |
+| Merge conflicts | In the page's frontmatter, between people adding citations to that page | On one file, between everyone adding citations |
 | Review | The pin sits beside the sentence it pins | The pin is a second file in the diff |
 | A public page citing private code | Publishes an entry, even when the path is encrypted | Publishes nothing on the page |
 

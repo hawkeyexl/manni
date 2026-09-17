@@ -52,7 +52,7 @@ line naming a file.
 | [`undefined-term`](#a-concepts-value-names-no-entry) | A page's `concepts:` names no preferred label. | Write the entry's preferred label, fix the spelling, or add the term. |
 | [`dangling-reference`](#a-term-points-at-nothing) | A `broader`, `narrower`, `related-terms` or `see` value names no entry. | Fix the spelling, or add the term. |
 | [`label-collision`](#two-entries-claim-one-name) | Two entries share a preferred label, ignoring case. | Rename one, or merge them. |
-| [`duplicate-id`](#two-entries-claim-one-name) | Two entries share an `id`. | Rename one, or merge them. |
+| [`duplicate-id`](#two-entries-claim-one-name) | Two entries share an `id`, ignoring case. | Rename one, or merge them. |
 | [`alt-label-collision`](#two-entries-claim-one-name) | An alt-label is another entry's preferred label. | Remove the alt-label, or merge the entries. |
 | [`broader-cycle`](#a-hierarchy-loops) | A chain of `broader` returns to where it started. | Remove the `broader` value that closes it. |
 | [`see-not-empty`](#a-redirect-carries-a-definition) | An entry with `see` also has a `definition`. | Remove the definition. |
@@ -150,9 +150,9 @@ each:
 
 ```
 docs/glossary/bifocals.md:1
-  error  manni:term/duplicate-id         id "bifocal" is also used by docs/terms/bifocal.md:1
+  error  manni:term/duplicate-id         id: "bifocal" is also used by docs/terms/bifocal.md:1
 docs/terms/bifocal.md:1
-  error  manni:term/duplicate-id         id "bifocal" is also used by docs/glossary/bifocals.md:1
+  error  manni:term/duplicate-id         id: "bifocal" is also used by docs/glossary/bifocals.md:1
 docs/terms/bifocal.md:4
   error  manni:term/label-collision      "bifocal" is claimed by docs/glossary/bifocals.md:1 as "Bifocal"
 
@@ -179,9 +179,11 @@ Decide whether the two pages define one thing or two.
   1 notice in 4 terms
   ```
 
-An id you never wrote can collide too, because an entry without one gets the
-slug of its label. `alt-label-collision` is the same problem between an
-alt-label and a preferred label: remove the alt-label, or merge the entries.
+An id you never wrote can collide too. An entry without one takes its
+construct's own identifier, else the slug of its label. See [how an entry gets
+its id](/manni/term/reference/terminology/#how-an-entry-gets-its-id).
+`alt-label-collision` is the same problem between an alt-label and a preferred
+label: remove the alt-label, or merge the entries.
 See [`label-collision`](/manni/term/reference/rules/#label-collision),
 [`duplicate-id`](/manni/term/reference/rules/#duplicate-id) and
 [`alt-label-collision`](/manni/term/reference/rules/#alt-label-collision).

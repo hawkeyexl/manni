@@ -39,7 +39,7 @@ import {
   type CitationSidecars,
   type PageSidecar,
 } from "../core/sidecar.js";
-import { buildSourceIndex } from "../core/sources.js";
+import { sourceIndexFor } from "../core/sources.js";
 import { CiteError } from "../errors.js";
 import type {
   CheckOptions,
@@ -48,7 +48,6 @@ import type {
   CiteRun,
   GitClient,
   PageCitationReport,
-  SourceIndex,
 } from "../types.js";
 
 /** What `check` and `update` settle before touching a page. */
@@ -119,19 +118,6 @@ export function joinHits(): JoinHits {
       }
     },
   };
-}
-
-function isEnoent(error: unknown): boolean {
-  return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
-}
-
-async function indexFor(root: string, client: GitClient): Promise<SourceIndex> {
-  try {
-    return await buildSourceIndex(root, { gitClient: client });
-  } catch (error) {
-    if (isEnoent(error)) throw new CiteError(`Root directory not found: ${root}.`);
-    throw error;
-  }
 }
 
 /**
@@ -217,7 +203,7 @@ export async function prepareRun(
     severity: config?.severity,
     gitClient: git,
   };
-  if (checkSources) pageOptions.sourceIndex = await indexFor(run.root, git);
+  if (checkSources) pageOptions.sourceIndex = await sourceIndexFor(run.root, git);
 
   // The sidecar manifests, read once per run. Membership is every declared
   // collection's, whatever this run selected, so a page given by path still

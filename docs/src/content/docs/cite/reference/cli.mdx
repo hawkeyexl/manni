@@ -85,7 +85,8 @@ Findings ride the metadata tool's reporters and its baseline. `-f github`,
 [`meta validate`](/manni/meta/reference/output-and-exit-codes/) does, under the
 rule id `manni:cite/<rule>`, and `--baseline` is the same ratchet with its own
 file. No model and no network are involved. A clean corpus costs one hash per
-citation, and git is consulted only when a pin does not hold.
+citation. With sources on, every run indexes them through `git ls-files`
+where git is available. History is read only when a pin does not hold.
 
 ### Arguments
 
@@ -134,8 +135,10 @@ exactly as the entry spelled it:
 1 file checked, 0 passed, 1 failed, 3 findings (1 warning, 1 notice)
 ```
 
-`✓` is current, `↕` a warning, `ℹ` a notice, `✗` an error, and `·` a
-citation that was `skipped` or a finding the baseline forgave. The last row
+`✓` is a citation with no finding, `↕` a warning, `ℹ` a notice and `✗` an
+error. `·` is a bare pin whose source was `skipped`, or a citation whose every
+finding the baseline forgave. A skipped source beside a claim end still reads
+`✓`. The last row
 is a bare pin: no id and no claim end, so both columns are empty. A file is
 `✗` when it holds an error-severity finding, `⚠` when its worst finding is a
 warning, and `ℹ` when it holds notices only. The summary counts notices apart
@@ -143,7 +146,9 @@ from warnings, as in `3 findings (1 warning, 1 notice)`.
 
 `json` prints `{ summary, pages }`. `summary` has the metadata tool's shape
 (`files`, `passed`, `failed`, `errors`, and `warnings`, `notices`, `gitignoreSkipped`,
-`baseline` when non-zero). Each page carries its `citations`:
+`baseline` when non-zero). Each page carries its `file`, its `format`, its
+`citations`, its `findings` and its `notices`, the run notices it raised. A
+citation looks like this:
 
 ```json
 {
@@ -158,9 +163,11 @@ from warnings, as in `3 findings (1 warning, 1 notice)`.
 `origin.kind` is `frontmatter` or `manifest`. `anchor` is `claim`, `marker` or
 `null`. `claim.lines` is the entry's body lines and `fileLines` is where they
 are now, and `claim` itself is `null` for a bare pin. A moved end adds
-`newLines`, and an ambiguous one `candidates`. Each page also carries its
-`findings`, each with `rule`, `ruleId`, `severity`, `message`, `line`, `id`
-and `src`, plus `file` when the finding sits on a manifest. The resolved path
+`newLines`, a moved source end `newSrc` too, and an ambiguous one
+`candidates`. Each finding has `rule`, `ruleId`, `severity`, `message`,
+`line`, `id`, `src` and `index`, the entry's position in `citations`. A
+finding on a moved source adds `newSrc`, and one that sits on a manifest adds
+`file`. The resolved path
 of a ciphertext, the diff and the commit subjects are never in it.
 
 `github` prints one annotation per finding, `::warning` for a warning and
@@ -182,8 +189,8 @@ and in JUnit neither is a failure. JUnit testcases carry the classname
 | Code | Meaning |
 |---|---|
 | `0` | No file holds an error-severity finding the baseline does not already record. Warnings never move the exit code, so a run of `source-moved` citations exits 0. |
-| `1` | At least one file holds an unbaselined error-severity finding: a `source-changed`, `source-never-true`, `source-missing` or `source-moved-ambiguous` end, or an anchoring or entry rule at its default severity. |
-| `2` | Operational or usage error. No inputs and no config, no files matched, an unknown `--format` or `--as`, or stdin without `--as`. Also a missing `-c` file, a missing `--baseline` file, a `--root` that does not exist, or a config key the tool does not know. |
+| `1` | At least one file holds an unbaselined error-severity finding: a `source-changed`, `source-never-true`, `source-missing` or `source-moved-ambiguous` end, or a `marker-orphan`, `marker-invalid`, `anchor-invalid`, `entry-invalid` or `quote-drift` finding. Those are the rules whose default severity is `error`, and `severity:` can change the set. |
+| `2` | Operational or usage error. No inputs and no config, no files matched, an unknown `--format` or `--as`, or stdin without `--as`. Also a missing `-c` file, a missing `--baseline` file, a `--root` that does not exist, or a config key the tool does not know. So is a Markdown or MDX page whose opening frontmatter fence has no close, because its citations can't be read. |
 
 ### Baselines
 
@@ -247,7 +254,8 @@ writes the entry to the page's frontmatter, or to the
 [sidecar manifest](/manni/cite/reference/citations/#the-sidecar) when a
 collection declares one. Where the entry goes follows the config, not a flag.
 It refuses to write a citation it can already see is broken. That is a line
-past the end of the page, or a line in the frontmatter. It is also a block
+past the end of the page, a line in the frontmatter, or a range longer than
+5,000 lines. It is also a block
 that does not reproduce the range, or an id the page already uses.
 
 ```sh
@@ -259,15 +267,15 @@ manni cite add <page>[:L|:L1-L2] <src> [options]
 | Argument | Description |
 |---|---|
 | `<page>[:L\|:L1-L2]` | The page to cite from, relative to the working directory, and the claim's lines as an editor numbers them. Only a trailing `:L` or `:L1-L2` is read as lines, so a path that carries a colon keeps it. Without lines, the entry is a bare pin. `-` reads the page from stdin and writes the rewritten page to stdout, with the report on stderr; that needs `--as`, and `-:L` carries lines. |
-| `<src>` | The source: `path`, `path:L` or `path:L1-L2`, relative to the [root](#where-sources-resolve-from), or an encrypted `~source` with the same line forms. A bare path pins the whole file. `L2` before `L1` and a line past the end of the file are refused (exit 2). So is a path that is not a tracked file under the root, and an encrypted source that the current key can't decrypt. |
+| `<src>` | The source: `path`, `path:L` or `path:L1-L2`, relative to the [root](#where-sources-resolve-from), or an encrypted `~source` with the same line forms. A bare path pins the whole file. `L2` before `L1`, a range longer than 5,000 lines and a line past the end of the file are refused (exit 2). So is a path that is not a tracked file under the root, and an encrypted source that the current key can't decrypt. |
 
 ### Options
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `--id` | `<id>` | n/a | A kebab-case name for the entry, unique within the page. What a marker names, and what `update --only` and every finding are reported under. Required with `--marker`; optional otherwise, including on a bare pin. An id the page already uses is refused. |
-| `--marker` | n/a | off | Write a `cite <id>` marker above the page lines instead of storing claim lines, and pin the text it anchors. The marker travels with its sentence, so a marker-anchored claim never moves. Needs the page lines and `--id`. |
-| `--quote` | n/a | off | The page lines are a fenced block, fences included, that reproduces the cited lines. The block is pinned whole, and its contents are compared with the source, so a quoted snippet that drifts is `quote-drift` even while the pin holds. Needs the page lines, and a format with a fence the tool can locate (not `html`, `xml` or `rst`). |
+| `--marker` | n/a | off | Write a `cite <id>` marker instead of storing claim lines, and pin the text it anchors. The marker goes directly above the paragraph or fenced block that holds the page lines, below any markers already there. It takes the indentation of the first line of that paragraph or block, so a marker in a list item stays in the item. In markdown and MDX, above a list item that follows another, it is indented to the item's text, which keeps the list whole. In asciidoc it stays at column 0, where a comment must start. The lines must all sit in that one paragraph or block. Entries whose claim lines sit below the marker have them moved down in the same write. The marker travels with its sentence, so a marker-anchored claim never moves. Needs the page lines and `--id`. |
+| `--quote` | n/a | off | The page lines are a fenced block, fences included, that reproduces the cited lines. The block is pinned whole, and its contents are compared with the source, so a quoted snippet that drifts is `quote-drift` even while the pin holds. Needs the page lines, and a format with a fence the tool can locate: `markdown`, `mdx` or `asciidoc`. |
 | `--encrypt` | n/a | off | Write `source.file` encrypted, with an `hmac-sha256-` pin, so the page carries neither the path nor a verifier for the line. An available encryption key, a top-level `encryptionKey:` or `MANNI_ENCRYPTION_KEY`, encrypts every `add` without the flag. With no key, on a terminal, `add` offers to generate one and write it to `manni.config.yaml`. Off a terminal, or on a no, it refuses (exit 2) and writes nothing. |
 | `--no-commit-sha` | n/a | on | Do not record `HEAD` as the entry's `commit-sha`. Without it, a later check can still say the lines changed, but not since when, nor whether the pin was ever true. Off a git checkout no commit is recorded either way. |
 | `--dry-run` | n/a | off | Print the unified diff of the page and write nothing. The report line goes to stderr. |
@@ -287,7 +295,7 @@ each needs page lines.
 | Code | Meaning |
 |---|---|
 | `0` | The citation was written, or printed under `--dry-run`. The report line says what was added, where, and which line each end is pinned at. |
-| `2` | A refusal. The page or the source cannot be read, or a range is invalid or out of range. Or the page lines are in the frontmatter, the source is not a tracked file under the root, or no block reproduces the range. Or the id is taken, or the flags do not compose on this page's format. Or `--encrypt` needs a key and none is available or created. Nothing is written. |
+| `2` | A refusal. The page or the source cannot be read, or a `--root` does not exist, or a range is invalid or out of range. Or the page lines are in the frontmatter, the source is not a tracked file under the root, or no block reproduces the range. Or the id is taken, or the flags do not compose on this page's format. Or `--encrypt` needs a key and none is available or created. Nothing is written. |
 
 There is no exit `1`. `add` either writes a citation it has verified, or it
 does not write.
@@ -310,7 +318,7 @@ A pin is abbreviated to eight hex digits, a commit to seven:
 ```
 docs/limits.md: added fetch-timeout to frontmatter (claim at line 9, sha256-c41f09aa…; source lib/limits.ts:2, sha256-78af1d33…, 3f9c2a1)
 docs/limits.md: added a bare pin to frontmatter (source lib/limits.ts, sha256-aebba92f…, 3f9c2a1)
-docs/limits.md: added timeouts to frontmatter; marker at line 30, claim pinned at line 31
+docs/limits.md: added timeouts to frontmatter; marker at line 30, claim pinned at lines 31-34
 docs/limits.md: added an entry to frontmatter (claim lines 14-18, a block that reproduces lib/limits.ts:1-3)
 ```
 
@@ -323,9 +331,12 @@ Every refusal names what is wrong and writes nothing:
 
 ```
 manni: docs/limits.md:40 is past the end of the page (32 lines).
+manni: Invalid range "lib/limits.ts:1-5001": it spans 5001 lines, more than 5000.
 manni: docs/limits.md:2 is in the frontmatter. A claim is body text.
 manni: --marker needs the page lines to anchor: docs/limits.md:L.
 manni: --marker needs --id: the marker names the entry.
+manni: docs/limits.md:30-40 runs past the paragraph at lines 31-34. A marker anchors one paragraph.
+manni: docs/limits.md:31 is inside the claim of fetch-timeout (lines 28-34). A marker there would change its pin.
 manni: --quote needs the block's lines: docs/limits.md:L1-L2.
 manni: docs/limits.md:9 is not a fenced block, so it cannot be a quote.
 manni: The block at docs/limits.md:14-18 does not reproduce lib/limits.ts:4-6.
@@ -375,14 +386,14 @@ working tree so the rewrite is easy to review.
 | `--accept` | n/a | off | Re-mint every changed and never-true end at `HEAD`: a new `integrity`, and a new `commit-sha` where the source had one. For a source the report prints the old and the new pin. For a claim it prints the text it re-pinned, so the acceptance is visible in the log as well as in the diff. |
 | `--only` | `<id>` | n/a | Limit the rewrite to entries with this id. Repeatable. An entry without an id cannot be named, so give a bare pin an `--id` when you want to reach it this way. |
 | `--dry-run` | n/a | off | Print the diffs and the report; write nothing. |
-| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints the run as `{ pages, rewritten, skipped, exitCode }`, with each page's `rewritten` list (`id`, `index`, `end`, `reason`, `status`, `from`, `to`), its `skipped` findings, and whether it was `written`. An unknown value is an error (exit 2). |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints the run as `{ pages, rewritten, skipped, manifests, exitCode }`, where `manifests` lists each rewritten manifest's `file`, `diff` and `written`, and appears only when a manifest changed. Each page carries its `file`, its `rewritten` list, its `skipped` findings, its `diff`, and whether it was `written`. A rewrite has `id`, `index`, `line`, `end`, `reason`, `status`, `from` and `to`. An accepted claim adds `at` and `text`, and an accepted source adds `src`, plus `commitSha` when the entry records one. An unknown value is an error (exit 2). |
 
 ### What is rewritten, and what is not
 
 | End and status | Without `--accept` | With `--accept` |
 |---|---|---|
 | `source-moved` | `source.lines` rewritten to the new range. | The same. |
-| `source-changed`, `source-never-true` | Skipped, and reported. | `source.integrity` and `source.commit-sha` re-minted at `HEAD`. |
+| `source-changed`, `source-never-true` | Skipped, and reported. | `source.integrity` re-minted, and `source.commit-sha` set to `HEAD` where the entry already has one. |
 | `source-moved-ambiguous` | Skipped. The tool will not guess which copy. Widen the range and re-add. | The same. |
 | `source-missing` | Skipped. A path that is gone cannot be rewritten. `add` is the remedy. | The same. |
 | `claim-moved` | `claim.lines` rewritten to the new body lines. | The same. |
@@ -391,8 +402,9 @@ working tree so the rewrite is easy to review.
 | `current` | Left alone. | Left alone. |
 
 `update --accept` skips a claim whose first line is now blank, or inside a
-different kind of block. A sentence that was reworded **and** moved cannot be
-re-pinned this way: `cite add` it again.
+different kind of block. A sentence that was reworded **and** moved has left
+that line. `--accept` then re-pins whatever paragraph now starts there, so read
+the printed text. If it is not the sentence, `cite add` the sentence again.
 
 An anchoring or entry finding (`marker-orphan`, `anchor-invalid`, an invalid
 entry) is never rewritten, and is reported as skipped.
@@ -402,7 +414,7 @@ entry) is never rewritten, and is reported as skipped.
 | Code | Meaning |
 |---|---|
 | `0` | Everything the run could rewrite was rewritten, or previewed under `--dry-run`, and nothing was skipped with an error-severity finding. |
-| `1` | Something was skipped with an error-severity finding: a `source-changed` end without `--accept`, a `source-moved-ambiguous` one, a `source-missing` one, an anchoring or entry rule. Work is left undone, which is what `fill`'s exit 1 means too. |
+| `1` | Something was skipped with an error-severity finding: a `source-changed` end without `--accept`, a `source-moved-ambiguous` one, a `source-missing` one, or an anchoring or entry rule at `error`. A skipped warning or notice, such as `claim-changed` without `--accept`, leaves the exit code at `0`. Work is left undone, which is what `fill`'s exit 1 means too. |
 | `2` | Operational or usage error, including `--no-check-sources`, `checkSources: false`, an unknown `--format`, and everything `check` exits 2 for. |
 
 ### Examples

@@ -275,6 +275,57 @@ describe("cite add, writing the manifest", () => {
     expect(read(cwd, "citations.yaml")).toBe(before);
   });
 
+  it("moves the claim lines of the manifest's entries below a new marker", async () => {
+    const cwd = copyFixture();
+    const result = await runAdd({
+      cwd,
+      page: "pages/limits.md",
+      pageLines: { start: 6, end: 6 },
+      src: "src/limits.ts:2",
+      id: "marked",
+      marker: true,
+      commitSha: false,
+      gitClient: noGit(),
+      env: {},
+    });
+    expect(result.markerLine).toBe(6);
+    const entries = (manifestOf(cwd)["pages/limits.md"]?.citations ?? []) as {
+      claim?: { lines?: unknown };
+    }[];
+    expect(entries.map((e) => e.claim?.lines)).toEqual([4, undefined]);
+    const run = await check(cwd, ["pages/limits.md"]);
+    expect(
+      pageOf(run, "pages/limits.md").citations.map((c) => [c.claim?.status, c.source.status]),
+    ).toEqual([
+      ["current", "current"],
+      ["current", "current"],
+    ]);
+  });
+
+  it("reports the lines a third stacked marker and its claim hold, with the page's body unmoved", async () => {
+    const cwd = copyFixture();
+    const CLAIM = "The fetch timeout is 10 seconds.";
+    const lineOf = (text: string): number =>
+      read(cwd, "pages/limits.md").split("\n").indexOf(text) + 1;
+    for (const id of ["first", "second", "third"]) {
+      const at = lineOf(CLAIM);
+      const result = await runAdd({
+        cwd,
+        page: "pages/limits.md",
+        pageLines: { start: at, end: at },
+        src: "src/limits.ts:2",
+        id,
+        marker: true,
+        commitSha: false,
+        gitClient: noGit(),
+        env: {},
+      });
+      const lines = read(cwd, "pages/limits.md").split("\n");
+      expect(lines[(result.markerLine ?? 0) - 1]).toBe(`<!-- cite ${id} -->`);
+      expect(result.claimLines).toEqual({ start: lineOf(CLAIM), end: lineOf(CLAIM) });
+    }
+  });
+
   it("writes a join-keyed manifest under the page's own value of the field", async () => {
     const cwd = copyFixture();
     const result = await runAdd({

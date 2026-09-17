@@ -27,7 +27,9 @@ It runs from git alone. No model, no network, one hash per end on a clean run.
 A line that gained neighbours above it is moved, and one command fixes that. A
 line whose bytes changed is changed, with the commits since, and a person
 decides whether the prose or the pin is wrong. Nothing on the page repeats the
-sentence, so a copy edit beside it is not a false alarm.
+sentence. Under claim lines, a copy edit on a line beside it raises nothing.
+Under a marker, an edit anywhere in the anchored paragraph is a
+`claim-changed` warning by default.
 
 ## Three commands
 
@@ -41,14 +43,14 @@ sentence, so a copy edit beside it is not a false alarm.
 
 You don't need to install anything. Say `docs/limits.md` says on line 9 that
 the fetch timeout is 10 seconds, and that sentence rests on line 2 of
-`lib/limits.ts`. Pin both ends:
+`lib/limits.ts`. The page already has frontmatter. Pin both ends:
 
 ```sh
 npx @hawkeyexl/manni cite add docs/limits.md:9 lib/limits.ts:2 --id fetch-timeout
 ```
 
 ```
-docs/limits.md: added fetch-timeout to frontmatter (claim at line 15, sha256-c41f09aa…; source lib/limits.ts:2, sha256-78af1d33…, 9265563)
+docs/limits.md: added fetch-timeout to frontmatter (claim at line 19, sha256-c41f09aa…; source lib/limits.ts:2, sha256-78af1d33…, 9265563)
 ```
 
 The entry pushed the sentence down the file, and the stored claim line did not
@@ -60,7 +62,7 @@ npx @hawkeyexl/manni cite check docs/limits.md
 
 ```
 ✓ docs/limits.md
-    ✓ fetch-timeout   :15 current   lib/limits.ts:2 current
+    ✓ fetch-timeout   :19 current   lib/limits.ts:2 current
 
 1 file checked, 1 passed, 0 failed, 0 findings
 ```
@@ -70,12 +72,12 @@ changed, so metadata validation still passes. The citation check does not:
 
 ```
 ✗ docs/limits.md
-    ✗ fetch-timeout   :15 current   lib/limits.ts:2 changed since 9265563, 1 commit
+    ✗ fetch-timeout   :19 current   lib/limits.ts:2 changed since 9265563, 1 commit
 
 1 file checked, 0 passed, 1 failed, 1 finding
 ```
 
-The finding is annotated on line 15, the sentence. The exit code is `1`, so CI
+The finding is annotated on line 19, the sentence. The exit code is `1`, so CI
 goes red on the line that needs a person, and nowhere else. That's the whole
 loop: pin, check, read the finding, fix the sentence, re-pin.
 
@@ -129,9 +131,10 @@ the file grammar, the hashing rule, markers and the sidecar manifest.
   </Card>
 </CardGrid>
 
-Citations are written in the `manni:citations` vocabulary, which manni meta
-publishes and manni cite implements. `manni meta validate` checks that an entry
-is well-formed; only `manni cite check` can say whether it still holds. Both
+Citations are written in the `manni:citations` vocabulary. Its draft is open
+for review with the family's other vocabularies, and manni cite
+bundles it. It is not a built-in schema of manni meta. With the schema file in
+its set, `manni meta validate` checks that an entry is well-formed; only `manni cite check` can say whether it still holds. Both
 tools ship in one package and read one `manni.config.yaml`, under their own
 keys.
 

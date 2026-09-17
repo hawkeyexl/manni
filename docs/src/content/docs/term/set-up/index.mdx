@@ -20,7 +20,8 @@ Every transcript below is real output from the built tool and Vale 3.20.0.
 - **A term set** that `manni term check` passes. [Get
   started](/manni/term/get-started/) builds one.
 - **Vale on PATH.** Both verbs start `vale` as a process. `write -f vale -o
-  <dir>` is the one form that runs without it.
+  <dir>` runs without it, and so does `lint` when no entry has a definition,
+  abstract or scope note.
 - **A Vale configuration** with a `StylesPath`. The example uses a house style
   named `House`, with a sentence-length rule and a rule against filler words.
 
@@ -133,11 +134,11 @@ Each file is built from one kind of label, and each opens with a marker line:
 
 | File | Vale check | Built from | Level |
 |---|---|---|---|
-| `Terms/Casing.yml` | `substitution` | labels and alt-labels that start with a capital or a symbol, such as `Kubernetes`, `K8s` or `C++` | error |
+| `Terms/Casing.yml` | `substitution` | labels and alt-labels that hold a capital and don't start with a lowercase letter, such as `Kubernetes`, `K8s` or `C++` | error |
 | `Terms/Lowercase.yml` | `substitution` | labels and alt-labels entirely in lowercase | error |
 | `Terms/SentenceStart.yml` | `substitution` | labels and alt-labels that start lowercase and hold a capital later, such as `iPhone` | error |
 | `Terms/Deprecated.yml` | `substitution` | hidden-labels, each swapped for its entry's label | warning |
-| `Terms/<ACRONYM>.yml` | `conditional` | each all-caps alt-label of a label that is not all caps | warning |
+| `Terms/<ACRONYM>.yml` | `conditional` | each all-caps alt-label of a label that is not all caps, unless the alt-label is another term's label | warning |
 
 A file with nothing to hold is not written. A label that is all caps, such as
 `API`, gets no casing rule and no acronym rule, because it is the name itself.
