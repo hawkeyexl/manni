@@ -679,7 +679,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: marker-forms-per-format
     claim:
-      lines: 454-457
+      lines: 458-461
       integrity: sha256-fc1368006b0428b1743f54765c1052e7e534bae297a4064125eb3f2037a9472d
     source:
       file: src/cite/core/statements.ts
@@ -1158,6 +1158,10 @@ The entry has a `claim` with an `integrity` and no `lines`, because the marker
 says where it is. Insert as many paragraphs above it as you like and the claim
 never moves. Edit the sentence itself and it is `claim-changed`, exactly as a
 line-anchored claim would be.
+
+The marker is a line in the body, though, and a merge of prose edits can
+conflict on it. [Choose an anchor](/manni/cite/set-up/#choose-an-anchor)
+weighs that against claim lines.
 
 {/* cite marker-carries-id-only */}
 The marker carries an id and nothing else. Every format has its own comment
