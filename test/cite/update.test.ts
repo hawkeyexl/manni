@@ -191,6 +191,67 @@ describe("runUpdate: the claim end", () => {
     expect(await ends("pages/marker-changed.md")).toEqual([["current", "current"]]);
   });
 
+  it("--accept skips a marker paragraph longer than 5,000 lines, and says why", async () => {
+    // Frontmatter is lines 1-11, the heading 12, the marker 14: the paragraph is 15-5015.
+    const label = write("long.md", [
+      "---",
+      "title: Limits",
+      "citations:",
+      "  - id: retries",
+      "    claim:",
+      `      integrity: ${CLAIM_RETRIES}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 3",
+      `      integrity: ${PIN_L3}`,
+      "---",
+      "# Limits",
+      "",
+      "<!-- cite retries -->",
+      ...Array.from({ length: 5001 }, (_, i) => `Line ${String(i + 1)} of a long paragraph.`),
+    ]);
+    const before = onDisk(label);
+    const run = await update({ inputs: [label], accept: true });
+    expect(run).toMatchObject({ rewritten: 0, skipped: 1, exitCode: 0 });
+    expect(run.pages[0]?.skipped.map((f) => [f.rule, f.message])).toEqual([
+      [
+        "claim-changed",
+        "retries: the claim at lines 15-5015 has changed since it was pinned. Not re-pinned: the paragraph spans 5001 lines, more than 5000.",
+      ],
+    ]);
+    expect(onDisk(label)).toBe(before);
+  });
+
+  it("--accept skips a claim-lines paragraph that has grown past 5,000 lines", async () => {
+    // No marker: the unit is the paragraph at the claim's own first line,
+    // body line 1, which is file line 13 under this frontmatter.
+    const label = write("grown.md", [
+      "---",
+      "title: Limits",
+      "citations:",
+      "  - id: grown",
+      "    claim:",
+      "      lines: 1",
+      `      integrity: ${hashLines("A sentence nobody kept.")}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 3",
+      `      integrity: ${PIN_L3}`,
+      "---",
+      ...Array.from({ length: 5001 }, (_, i) => `Line ${String(i + 1)} of a long paragraph.`),
+    ]);
+    const before = onDisk(label);
+    const run = await update({ inputs: [label], accept: true });
+    expect(run).toMatchObject({ rewritten: 0, skipped: 1, exitCode: 0 });
+    expect(run.pages[0]?.skipped.map((f) => [f.rule, f.message])).toEqual([
+      [
+        "claim-changed",
+        "grown: the claim at line 13 has changed since it was pinned. Not re-pinned: the paragraph spans 5001 lines, more than 5000.",
+      ],
+    ]);
+    expect(onDisk(label)).toBe(before);
+  });
+
   it("--accept re-pins stacked markers over the paragraph, never the marker lines", async () => {
     const entry = (id: string): string[] => [
       `  - id: ${id}`,

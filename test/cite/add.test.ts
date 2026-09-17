@@ -374,6 +374,65 @@ describe("runAdd", () => {
         ),
       ).toBe(`${label}:6 has no paragraph or block for a marker to anchor.`);
     });
+
+    /** `count` numbered lines of prose, one paragraph with no blank line inside. */
+    const prose = (count: number): string[] =>
+      Array.from({ length: count }, (_, i) => `Line ${String(i + 1)} of a long paragraph.`);
+
+    it("refuses a paragraph longer than 5,000 lines, and writes nothing", async () => {
+      // Lines 4-5 are the heading and a blank, so the paragraph is 6-5006.
+      const label = write("long.md", ["---", "title: Limits", "---", "# Limits", "", ...prose(5001)]);
+      const before = onDisk(label);
+      expect(
+        await refusal(
+          add({
+            page: label,
+            src: "src/limits.ts:2",
+            pageLines: { start: 9, end: 9 },
+            marker: true,
+            id: "x",
+          }),
+        ),
+      ).toBe(
+        `${label}:9 is in a paragraph at lines 6-5006 that spans 5001 lines, more than 5000. A marker anchors the whole paragraph.`,
+      );
+      expect(onDisk(label)).toBe(before);
+    });
+
+    it("anchors a paragraph of exactly 5,000 lines", async () => {
+      const label = write("limit.md", ["---", "title: Limits", "---", "# Limits", "", ...prose(5000)]);
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 9, end: 9 },
+        marker: true,
+        id: "x",
+      });
+      expect(result.written).toBe(true);
+      expect(result.markerLine).toBeDefined();
+      const span = result.claimLines;
+      expect(span === undefined ? 0 : span.end - span.start + 1).toBe(5000);
+    });
+
+    it("refuses a fenced block longer than 5,000 lines, naming it a block", async () => {
+      // The fences are lines 6 and 5007, so the block is 5002 lines with them.
+      const label = fenced("long-block.md", ["# Limits", ""], prose(5000));
+      const before = onDisk(label);
+      expect(
+        await refusal(
+          add({
+            page: label,
+            src: "src/limits.ts:2",
+            pageLines: { start: 7, end: 7 },
+            marker: true,
+            id: "x",
+          }),
+        ),
+      ).toBe(
+        `${label}:7 is in a block at lines 6-5007 that spans 5002 lines, more than 5000. A marker anchors the whole block.`,
+      );
+      expect(onDisk(label)).toBe(before);
+    });
   });
 
   describe("--marker placement", () => {
