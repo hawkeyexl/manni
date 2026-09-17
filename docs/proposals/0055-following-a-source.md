@@ -34,9 +34,10 @@
   `docs/src/content/docs/cite/fix/**`, `test/cite/**`,
   `test/fixtures/cite/**`
 - **Verdict:** Extend the move search in two directions, and add no rule, no
-  flag and no config key. When a pin holds nowhere in its own file and git can
-  show the recorded commit, search the files committed history changed since
-  that commit. One hit is `source-moved` with a new path, several are
+  flag and no config key. When a pin holds nowhere in its own file, the search
+  widens. It covers every file that changed in committed history since the
+  pin's commit, where git can show that commit. One hit is `source-moved` with
+  a new path, several are
   `source-moved-ambiguous`, and `update` rewrites `source.file` beside
   `source.lines`. When a source did change, look for the old first and last
   lines in the file as it stands. When each sits once and in order, the status
@@ -104,8 +105,9 @@ stale half of the record. Rewriting a stale path is what `update` is for.
 
 ## Summary
 
-- **Across files.** A pin that holds nowhere in its file is searched for in the
-  files committed history changed since the pin's commit. The candidate list is
+- **Across files.** A pin that holds nowhere in its file is searched for in
+  every file that changed in committed history since the pin's commit. The
+  candidate list is
   `git diff --name-only <commit> HEAD`, intersected with the run's tracked-file
   index. One hit is `source-moved` with a path in it, several are
   `source-moved-ambiguous`. Both rules already exist, at their current
