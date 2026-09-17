@@ -23,10 +23,10 @@ import { STDIN_LABEL } from "../../meta/internal.js";
 import { checkCitations } from "../core/check-page.js";
 import {
   claimLine,
-  markerUnit,
   normalizeWhitespace,
   pinOfLines,
   toBodyLines,
+  toFileLines,
   unitAt,
   type ClaimUnit,
 } from "../core/claims.js";
@@ -35,17 +35,26 @@ import { splitLines } from "../core/hash.js";
 import { mintCitation } from "../core/mint.js";
 import { ManifestSet } from "../core/manifest.js";
 import { readPage } from "../core/page.js";
-import { lineSpec, parseLines } from "../core/range.js";
+import { lineSpec, parseLines, spellLines } from "../core/range.js";
+import {
+  applyMarkerMoves,
+  misplacedMarkers,
+  type MisplacedMarker,
+} from "../core/reanchor.js";
+import { resolveSeverity } from "../core/severity.js";
+import { anchoredLines, markerIndent, offsetOfLine } from "../core/statements.js";
 import { spliceEntryField, unifiedDiff } from "../core/write.js";
 import { CiteError } from "../errors.js";
 import type {
   Citation,
   CitationResult,
+  CiteRule,
   LineSpec,
   ManifestChange,
   PageCitation,
   PageCitationReport,
   PageCitations,
+  PageLines,
   UpdateOptions,
   UpdatePage,
   UpdateRewrite,
@@ -64,7 +73,23 @@ type Plan =
   | { kind: "claim-moved"; result: CitationResult; lines: LineSpec; from: string; to: string }
   | { kind: "source-moved"; result: CitationResult; lines: LineSpec; to: string }
   | { kind: "claim-accepted"; result: CitationResult; unit: ClaimUnit; pin: string; lines?: LineSpec }
-  | { kind: "source-accepted"; result: CitationResult; minted: Citation };
+  | { kind: "source-accepted"; result: CitationResult; minted: Citation }
+  | { kind: "marker-moved"; result: CitationResult; from: number; to: number }
+  | {
+      kind: "claim-reanchored";
+      result: CitationResult;
+      pin: string;
+      /** The span that held, in file lines, and the span now pinned. */
+      held: string;
+      now: string;
+    }
+  | {
+      kind: "claim-shifted";
+      result: CitationResult;
+      lines: LineSpec;
+      from: string;
+      to: string;
+    };
 
 /** The rule a plan settles, so its finding is not also reported as skipped. */
 function settles(plan: Plan): string {
@@ -77,6 +102,13 @@ function settles(plan: Plan): string {
       return "claim-changed";
     case "source-accepted":
       return plan.result.source.status === "never-true" ? "source-never-true" : "source-changed";
+    case "marker-moved":
+      return "marker-misplaced";
+    case "claim-reanchored":
+      return "claim-moved";
+    // A shifted entry was `current`, so it had no finding to settle.
+    case "claim-shifted":
+      return "";
   }
 }
 
@@ -84,7 +116,13 @@ function apply(content: string, format: string, plan: Plan): string {
   const index = plan.result.origin.index;
   switch (plan.kind) {
     case "claim-moved":
+    case "claim-shifted":
       return spliceEntryField(content, format, index, ["claim", "lines"], plan.lines);
+    case "claim-reanchored":
+      return spliceEntryField(content, format, index, ["claim", "integrity"], plan.pin);
+    // The move is a page rewrite, applied to the whole page before any splice.
+    case "marker-moved":
+      return content;
     case "source-moved":
       return spliceEntryField(content, format, index, ["source", "lines"], plan.lines);
     case "claim-accepted": {
@@ -129,12 +167,22 @@ function applyToEntry(entry: unknown, plan: Plan): boolean {
   const end = (name: "claim" | "source"): Record<string, unknown> | undefined =>
     isRecord(entry[name]) ? entry[name] : undefined;
   switch (plan.kind) {
-    case "claim-moved": {
+    case "claim-moved":
+    case "claim-shifted": {
       const claim = end("claim");
       if (claim === undefined) return false;
       claim.lines = plan.lines;
       return true;
     }
+    case "claim-reanchored": {
+      const claim = end("claim");
+      if (claim === undefined) return false;
+      claim.integrity = plan.pin;
+      return true;
+    }
+    // The page holds the marker, so the manifest has nothing to change.
+    case "marker-moved":
+      return true;
     case "source-moved": {
       const source = end("source");
       if (source === undefined) return false;
@@ -169,7 +217,56 @@ function rewriteOf(plan: Plan): UpdateRewrite {
 
   switch (plan.kind) {
     case "claim-moved":
-      return { ...base, end: "claim", reason: "moved", status: "moved", from: plan.from, to: plan.to };
+      return {
+        ...base,
+        end: "claim",
+        reason: "moved",
+        status: "moved",
+        from: plan.from,
+        to: plan.to,
+        fromLines: plan.from,
+        toLines: plan.to,
+      };
+    case "marker-moved": {
+      const from = String(plan.from);
+      const to = String(plan.to);
+      return {
+        ...base,
+        end: "marker",
+        reason: "re-anchored",
+        status: "misplaced",
+        from,
+        to,
+        fromLines: from,
+        toLines: to,
+      };
+    }
+    case "claim-reanchored": {
+      const was = citation.claim?.integrity ?? "";
+      return {
+        ...base,
+        end: "claim",
+        reason: "re-anchored",
+        status: "moved",
+        from: was,
+        to: plan.pin,
+        fromPin: was,
+        toPin: plan.pin,
+        lines: plan.held,
+        newLines: plan.now,
+      };
+    }
+    case "claim-shifted":
+      return {
+        ...base,
+        end: "claim",
+        reason: "shifted",
+        status: "current",
+        from: plan.from,
+        to: plan.to,
+        fromLines: plan.from,
+        toLines: plan.to,
+      };
     case "source-moved":
       return {
         ...base,
@@ -180,13 +277,16 @@ function rewriteOf(plan: Plan): UpdateRewrite {
         to: plan.to,
       };
     case "claim-accepted": {
+      const was = citation.claim?.integrity ?? "";
       const out: UpdateRewrite = {
         ...base,
         end: "claim",
         reason: "accepted",
         status: "changed",
-        from: citation.claim?.integrity ?? "",
+        from: was,
         to: plan.pin,
+        fromPin: was,
+        toPin: plan.pin,
         at: plan.unit.lines.start,
         text: normalizeWhitespace(plan.unit.text.join("\n")),
       };
@@ -200,6 +300,8 @@ function rewriteOf(plan: Plan): UpdateRewrite {
         status: source.status === "never-true" ? "never-true" : "changed",
         from: citation.source.integrity,
         to: plan.minted.source.integrity,
+        fromPin: citation.source.integrity,
+        toPin: plan.minted.source.integrity,
         src: source.src,
       };
       const commit = plan.minted.source["commit-sha"];
@@ -207,6 +309,210 @@ function rewriteOf(plan: Plan): UpdateRewrite {
       return out;
     }
   }
+}
+
+/** `line 9`, or `lines 9-12` for a range. */
+function spellAt(lines: PageLines): string {
+  return lines.start === lines.end
+    ? `line ${String(lines.start)}`
+    : `lines ${String(lines.start)}-${String(lines.end)}`;
+}
+
+/** `<id>: <text>`, or the text alone for an entry with no id. */
+function named(id: string | undefined, text: string): string {
+  return id === undefined ? text : `${id}: ${text}`;
+}
+
+/** One misplaced marker `update` left where it is, and the rule its line reads at. */
+interface MarkerStay {
+  line: number;
+  rule: CiteRule;
+  message: string;
+}
+
+/** What `update` will do to a page's misplaced markers. */
+interface MarkerDecisions {
+  moves: { result: CitationResult; entry: PageCitation; misplaced: MisplacedMarker }[];
+  stays: MarkerStay[];
+}
+
+/**
+ * A claim-lines entry the move would change: one whose range holds the
+ * marker's line, or starts above the unit and reaches the place the marker
+ * goes. Moving the marker would rewrite that entry's pinned text.
+ */
+function crossing(
+  page: PageCitations,
+  misplaced: MisplacedMarker,
+): string | undefined {
+  for (const other of page.citations) {
+    const spec = other.citation.claim?.lines;
+    const recorded = spec === undefined ? undefined : parseLines(spec);
+    if (recorded === undefined) continue;
+    const file = toFileLines(recorded, page.bodyLine);
+    const holdsMarker = file.start <= misplaced.line && misplaced.line <= file.end;
+    const holdsPlace = file.start < misplaced.place && misplaced.place <= file.end;
+    if (!holdsMarker && !holdsPlace) continue;
+    return other.citation.id === undefined
+      ? `the claim at ${spellAt(file)}`
+      : `the claim of ${other.citation.id} (${spellAt(file)})`;
+  }
+  return undefined;
+}
+
+/**
+ * Which of a page's misplaced markers move, and why each of the rest stays.
+ * Every decision is taken against the page as it was read, before any write.
+ */
+function decideMarkers(input: {
+  page: PageCitations;
+  report: PageCitationReport;
+  lines: readonly string[];
+  accept: boolean;
+  only?: Set<string>;
+}): MarkerDecisions {
+  const { page, report, lines, accept, only } = input;
+  const out: MarkerDecisions = { moves: [], stays: [] };
+  for (const misplaced of misplacedMarkers(page, lines)) {
+    const entry = misplaced.entry;
+    const line = misplaced.line;
+    const stay = (rule: CiteRule, message: string): void => {
+      out.stays.push({ line, rule, message });
+    };
+    // An orphan, repeated or invalid marker names no entry that can be
+    // checked, and `--only` selects entries, so it selects their markers.
+    if (entry === undefined) {
+      if (only !== undefined) continue;
+      const own = report.findings.find(
+        (finding) => finding.line === line && finding.rule.startsWith("marker-") && finding.rule !== "marker-misplaced",
+      );
+      stay(
+        own?.rule ?? "marker-orphan",
+        `the marker at line ${String(line)} stays, because it names no entry update can check.`,
+      );
+      continue;
+    }
+    const id = entry.citation.id;
+    if (only !== undefined && (id === undefined || !only.has(id))) continue;
+    const result = report.citations.find((r) => r.origin.index === entry.origin.index);
+    if (result === undefined) continue;
+    // Claim lines and a marker both: neither anchor can be trusted.
+    if (entry.citation.claim?.lines !== undefined) {
+      stay(
+        "anchor-invalid",
+        named(id, `the marker at line ${String(line)} stays, because the entry also has claim lines. Keep one.`),
+      );
+      continue;
+    }
+    const across = crossing(page, misplaced);
+    if (across !== undefined) {
+      stay(
+        "marker-misplaced",
+        named(id, `the marker at line ${String(line)} stays, because moving it would change ${across}.`),
+      );
+      continue;
+    }
+    if (result.claim !== null && result.claim.status === "changed" && !accept) {
+      stay(
+        "marker-misplaced",
+        named(
+          id,
+          `the marker at line ${String(line)} stays, because its claim changed since it was pinned. update --accept moves it and re-pins.`,
+        ),
+      );
+      continue;
+    }
+    out.moves.push({ result, entry, misplaced });
+  }
+  return out;
+}
+
+/**
+ * The lines the span an entry's marker anchors covers on the page as it now
+ * stands, and the pin over them.
+ */
+function anchoredNow(
+  content: string,
+  format: string,
+  lines: readonly string[],
+  markerLine: number,
+  quote: boolean,
+): { span: PageLines; pin: string } | undefined {
+  const at = offsetOfLine(content, markerLine) + (lines[markerLine - 1]?.length ?? 0);
+  const span = anchoredLines(content, at, format, quote);
+  if (span === undefined) return undefined;
+  const pin = pinOfLines(lines, span);
+  return pin === undefined ? undefined : { span, pin };
+}
+
+/** `a`, `a and b`, `a, b and c`: a list as a sentence reads it. */
+function listOf(values: readonly string[]): string {
+  if (values.length <= 1) return values.join("");
+  return `${values.slice(0, -1).join(", ")} and ${values[values.length - 1] ?? ""}`;
+}
+
+/** The errno a failed write carries, when it carries one. */
+function codeOf(error: unknown): string | undefined {
+  if (typeof error !== "object" || error === null || !("code" in error)) return undefined;
+  const code: unknown = error.code;
+  return typeof code === "string" ? code : undefined;
+}
+
+/**
+ * A run writes a page and the manifest that keys it, and a marker move needs
+ * both to land. So every file this run wrote keeps its original text until the
+ * run is done, and a failed write puts them back.
+ */
+class WrittenFiles {
+  private readonly before = new Map<string, string>();
+  private readonly labels = new Map<string, string>();
+
+  /** Remember what `path` held before this run wrote it. */
+  record(path: string, label: string, content: string): void {
+    if (!this.before.has(path)) {
+      this.before.set(path, content);
+      this.labels.set(path, label);
+    }
+  }
+
+  /**
+   * Put every file back, and say what happened: `<file> could not be written
+   * (<code>). <pages> was restored.`
+   */
+  async restore(file: string, error: unknown): Promise<CiteError> {
+    const restored: string[] = [];
+    const failed: string[] = [];
+    for (const [path, content] of this.before) {
+      const label = this.labels.get(path) ?? path;
+      try {
+        await writeFileAtomic(path, content);
+        restored.push(label);
+      } catch {
+        failed.push(label);
+      }
+    }
+    const code = codeOf(error);
+    const why = code === undefined ? "" : ` (${code})`;
+    const parts = [`${file} could not be written${why}.`];
+    if (restored.length > 0) {
+      parts.push(`${listOf(restored)} ${restored.length === 1 ? "was" : "were"} restored.`);
+    }
+    if (failed.length > 0) {
+      parts.push(
+        `${listOf(failed)} could not be restored, and ${failed.length === 1 ? "holds" : "hold"} the moved markers.`,
+      );
+    }
+    return new CiteError(parts.join(" "));
+  }
+}
+
+/**
+ * Citations counted as a summary counts them: an entry whose marker moved and
+ * whose claim was re-pinned is one citation, not two.
+ */
+function citationsIn(rows: readonly UpdateRewrite[]): number {
+  const withMarker = new Set(rows.filter((row) => row.end === "marker").map((row) => row.index));
+  return withMarker.size + rows.filter((row) => !withMarker.has(row.index)).length;
 }
 
 export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
@@ -217,6 +523,8 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
   // Each manifest is read once and written once, however many of its pages
   // the run repairs.
   const manifests = new ManifestSet();
+  // What every file this run wrote held before, so a failed write is undone.
+  const writes = new WrittenFiles();
   const only = opts.only !== undefined && opts.only.length > 0 ? new Set(opts.only) : undefined;
   const accept = opts.accept === true;
 
@@ -226,18 +534,38 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     entry: PageCitation | undefined,
     page: PageCitations,
     lines: readonly string[],
+    lineNow: (line: number) => number,
   ): Promise<Plan[]> => {
     const out: Plan[] = [];
     const claim = result.claim;
-    if (claim !== null && claim.status === "moved" && claim.newLines !== undefined) {
+    // A marker-anchored claim has no `lines:` to splice; its repair is a
+    // re-pin over the span the marker anchors, planned by the caller.
+    if (
+      result.anchor !== "marker" &&
+      claim !== null &&
+      claim.status === "moved" &&
+      claim.newLines !== undefined
+    ) {
       const at = parseLines(claim.newLines);
-      if (at !== undefined) {
+      // A marker that moved shifted the page under the window the search
+      // found, so the lines it reported are read through the move.
+      const shifted =
+        at === undefined
+          ? undefined
+          : (() => {
+              const file = toFileLines(at, page.bodyLine);
+              const to = { start: lineNow(file.start), end: lineNow(file.end) };
+              return to.end - to.start === file.end - file.start
+                ? toBodyLines(to, page.bodyLine)
+                : undefined;
+            })();
+      if (at !== undefined && shifted !== undefined) {
         out.push({
           kind: "claim-moved",
           result,
-          lines: lineSpec(at),
+          lines: lineSpec(shifted),
           from: claim.fileLines ?? "",
-          to: claim.newFileLines ?? "",
+          to: spellLines(toFileLines(shifted, page.bodyLine)),
         });
       }
     }
@@ -249,16 +577,15 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     }
     if (!accept) return out;
 
-    if (claim !== null && claim.status === "changed" && entry !== undefined) {
-      // The paragraph or block now at the claim's first line, or what the
-      // marker anchors. Anything else is left for a fresh `cite add`.
-      const unit =
-        result.anchor === "marker"
-          ? markerUnit(page, entry, lines)
-          : ((): ClaimUnit | undefined => {
-              const at = claimLine(claim);
-              return at === undefined ? undefined : unitAt(page, at, lines);
-            })();
+    // A marker-anchored claim is re-pinned against the page the move left,
+    // so the caller plans that one.
+    if (claim !== null && claim.status === "changed" && entry !== undefined && result.anchor !== "marker") {
+      // The paragraph or block now at the claim's first line. Anything else
+      // is left for a fresh `cite add`.
+      const unit = ((): ClaimUnit | undefined => {
+        const at = claimLine(claim);
+        return at === undefined ? undefined : unitAt(page, at, lines);
+      })();
       const wantsBlock = entry.citation.quote === true;
       const pin = unit === undefined ? undefined : pinOfLines(lines, unit.lines);
       if (unit !== undefined && pin !== undefined && (!wantsBlock || unit.kind === "block")) {
@@ -310,6 +637,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     if (setup.sidecar !== undefined) hits.record(setup.sidecar, label);
     const report = await checkCitations({ file: label, content, format: forced?.name }, setup.options);
     const { format } = report;
+    const severity = resolveSeverity(setup.options.severity);
     const page = readPage(label, content, {
       ...(forced === undefined ? {} : { format: forced.name }),
       ...(setup.options.citations === undefined ? {} : { citations: setup.options.citations }),
@@ -319,7 +647,25 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     const rewritten: UpdateRewrite[] = [];
     /** `<index>\0<rule>` of every finding a rewrite settled. */
     const settled = new Set<string>();
-    let after = content;
+
+    // Misplaced markers first: the page is rewritten once, with every movable
+    // marker relocated, and every pin below is taken against that page.
+    const markers = decideMarkers({ page, report, lines, accept, only });
+    const movedPage =
+      markers.moves.length === 0
+        ? undefined
+        : applyMarkerMoves(
+            content,
+            markers.moves.map(({ misplaced }) => ({
+              from: misplaced.line,
+              place: misplaced.place,
+            })),
+            (line) => markerIndent(content, line, format, page.bodyLine),
+          );
+    let after = movedPage?.content ?? content;
+    const afterLines = movedPage === undefined ? lines : splitLines(after);
+    const movedIndexes = new Set(markers.moves.map(({ entry }) => entry.origin.index));
+    const lineNow = (line: number): number => movedPage?.line(line) ?? line;
     // The manifest's entries for this page, edited in memory and written
     // back as one value once the page is done.
     const owner = setup.sidecar?.owner;
@@ -333,8 +679,81 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
         continue;
       }
       const entry = page.citations.find((c) => c.origin.index === result.origin.index);
-      for (const plan of await plansFor(result, entry, page, lines)) {
-        if (result.origin.kind === "manifest") {
+      const plans: Plan[] = [];
+
+      const move = markers.moves.find((m) => m.entry.origin.index === result.origin.index);
+      if (move !== undefined) {
+        plans.push({
+          kind: "marker-moved",
+          result,
+          from: move.misplaced.line,
+          to: lineNow(move.misplaced.line),
+        });
+      }
+      // The pin a marker anchors is taken against the page the moves left, so
+      // the next check reads it as current however the run split.
+      const marker = entry?.marker;
+      const recorded = entry?.citation.claim?.integrity;
+      if (result.anchor === "marker" && marker !== undefined && recorded !== undefined && result.claim !== null) {
+        const quote = entry?.citation.quote === true;
+        const now = anchoredNow(after, format, afterLines, lineNow(marker.line), quote);
+        const status = result.claim.status;
+        if (now !== undefined && now.pin !== recorded) {
+          // A `current` claim already covers the unit the marker belongs to,
+          // so only a move that split its run can leave it needing a pin.
+          if (status === "moved" || (status === "current" && move !== undefined)) {
+            plans.push({
+              kind: "claim-reanchored",
+              result,
+              pin: now.pin,
+              held: result.claim.fileLines ?? "",
+              now: spellLines(now.span),
+            });
+          } else if (status === "changed" && accept) {
+            plans.push({
+              kind: "claim-accepted",
+              result,
+              pin: now.pin,
+              unit: {
+                lines: now.span,
+                kind: quote ? "block" : "paragraph",
+                text: afterLines.slice(now.span.start - 1, now.span.end),
+              },
+            });
+          }
+        }
+      }
+
+      plans.push(...(await plansFor(result, entry, page, lines, lineNow)));
+
+      // A claim-lines entry the moves pushed along keeps its pinned text, so
+      // its lines are rewritten in the same write.
+      const spec = entry?.citation.claim?.lines;
+      if (movedPage !== undefined && spec !== undefined && !plans.some((p) => p.kind === "claim-moved")) {
+        const at = parseLines(spec);
+        const file = at === undefined ? undefined : toFileLines(at, page.bodyLine);
+        const to =
+          file === undefined ? undefined : { start: lineNow(file.start), end: lineNow(file.end) };
+        if (
+          file !== undefined &&
+          to !== undefined &&
+          to.end - to.start === file.end - file.start &&
+          (to.start !== file.start || to.end !== file.end)
+        ) {
+          plans.push({
+            kind: "claim-shifted",
+            result,
+            lines: lineSpec(toBodyLines(to, page.bodyLine)),
+            from: spellLines(file),
+            to: spellLines(to),
+          });
+        }
+      }
+
+      for (const plan of plans) {
+        if (plan.kind === "marker-moved") {
+          // The page already carries the move.
+        } else if (result.origin.kind === "manifest") {
           if (entries === undefined || !applyToEntry(entries[result.origin.index], plan)) continue;
           manifestDirty = true;
         } else {
@@ -344,6 +763,9 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
         settled.add(`${String(result.origin.index)}\0${settles(plan)}`);
       }
     }
+    // A marker that moved settles its finding even where the entry is out of
+    // the loop's reach, and a stacked run that split keeps the rest reported.
+    for (const index of movedIndexes) settled.add(`${String(index)}\0marker-misplaced`);
     if (manifestDirty && owner !== undefined && entries !== undefined) {
       if (setup.sidecar?.entry === undefined) {
         throw new CiteError(
@@ -352,14 +774,36 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
       }
       await manifests.write(owner, setup.sidecar.entry, entries, 0);
     }
-    const skipped = report.findings.filter(
-      (finding) =>
-        (only === undefined || (finding.id !== undefined && only.has(finding.id))) &&
-        !settled.has(`${String(finding.index ?? -1)}\0${finding.rule}`),
-    );
+    // A marker that stays says so in place of the check's wording, at the
+    // severity of the rule that kept it there.
+    const stayAt = new Map(markers.stays.map((stay) => [stay.line, stay]));
+    const skipped = report.findings
+      .filter(
+        (finding) =>
+          (only === undefined || (finding.id !== undefined && only.has(finding.id))) &&
+          !settled.has(`${String(finding.index ?? -1)}\0${finding.rule}`),
+      )
+      .map((finding) => {
+        if (finding.rule !== "marker-misplaced") return finding;
+        const stay = stayAt.get(finding.line ?? -1);
+        if (stay === undefined) return finding;
+        const level = severity[stay.rule];
+        return {
+          ...finding,
+          message: stay.message,
+          ...(level === "off" ? {} : { severity: level }),
+        };
+      });
     const diff = after === content ? "" : unifiedDiff(label, content, after);
     const written = after !== content && path !== undefined && opts.dryRun !== true;
-    if (written) await writeFileAtomic(path, after);
+    if (written) {
+      try {
+        await writeFileAtomic(path, after);
+      } catch (error) {
+        throw await writes.restore(label, error);
+      }
+      writes.record(path, label, content);
+    }
     const out: UpdatePage = { file: label, rewritten, skipped, diff, written };
     // The stdin page has nowhere to be written; the caller prints it instead.
     if (path === undefined) out.content = after;
@@ -379,7 +823,13 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
   const rewrittenManifests: ManifestChange[] = [];
   for (const changed of changedManifests) {
     const write = opts.dryRun !== true;
-    if (write) await writeFileAtomic(changed.path, changed.text);
+    if (write) {
+      try {
+        await writeFileAtomic(changed.path, changed.text);
+      } catch (error) {
+        throw await writes.restore(changed.file, error);
+      }
+    }
     rewrittenManifests.push({ file: changed.file, diff: changed.diff, written: write });
   }
   // A re-mint records HEAD when git has one. Where git is not there the entry
@@ -389,7 +839,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
   );
   sayNotices(reports, opts.onNotice, reminted && !(await git.available()) ? [GIT_UNAVAILABLE_COMMIT] : []);
 
-  const rewritten = pages.reduce((n, page) => n + page.rewritten.length, 0);
+  const rewritten = pages.reduce((n, page) => n + citationsIn(page.rewritten), 0);
   const skipped = pages.reduce((n, page) => n + page.skipped.length, 0);
   const undone = pages.some((page) => page.skipped.some((finding) => finding.severity === "error"));
   return {

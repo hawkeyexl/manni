@@ -22,6 +22,18 @@ export { shortCommit, shortPin, shortSrc } from "./core/spell.js";
 export { buildSourceIndex, readSource } from "./core/sources.js";
 export type { BuildIndexOptions, ReadSourceResult } from "./core/sources.js";
 export {
+  isUnitText,
+  markerClaimEnd,
+  markerRunAt,
+  misplacedMarkerAt,
+  misplacedMarkers,
+  movedUnit,
+  pre43Span,
+  splitUnit,
+  unitText,
+} from "./core/reanchor.js";
+export type { MisplacedMarker } from "./core/reanchor.js";
+export {
   anchoredLines,
   detectEol,
   fenceSpanAt,
@@ -30,6 +42,7 @@ export {
   fencedBlocks,
   formatStatement,
   insideFence,
+  isBoundLine,
   lineAt,
   offsetOfLine,
   paragraphAfter,
@@ -80,7 +93,7 @@ export { ManifestSet, itemLine, splice } from "./core/manifest.js";
 export type { HeldManifest } from "./core/manifest.js";
 export type { ReadPageOptions } from "./core/page.js";
 export { checkCitations } from "./core/check-page.js";
-export { claimMessageFor, errorSite, findingsFor, messageFor, toValidationResult } from "./core/adapt.js";
+export { claimMessageFor, errorSite, findingsFor, messageFor, misplacedMessageFor, toValidationResult } from "./core/adapt.js";
 export { appendFrontmatterCitation, entryObject, insertStatementBefore, spliceEntryField, unifiedDiff } from "./core/write.js";
 export type { EntryPath } from "./core/write.js";
 export { mintCitation } from "./core/mint.js";

@@ -267,6 +267,50 @@ tool treats `.md` and `.mdx` as one format. The JSX comment is the one MDX
 itself accepts everywhere, so it is the safer choice on a page that renders.
 </Aside>
 
+### Where a marker goes
+
+A marker belongs **above** the paragraph or block it anchors, on a line of its
+own. `cite add --marker` writes it there. Markers stacked above one paragraph
+all anchor that paragraph, and no marker line is ever part of a pin.
+
+A marker line **inside** a paragraph is `marker-misplaced`. Deleting it would
+join the lines above and below into one paragraph, which is what the renderer
+would have shown. MDX and CommonMark both end a paragraph at a comment line,
+so such a page renders two paragraphs split mid-sentence:
+
+```
+fresh-context: the marker at line 16 splits the paragraph at lines 14-18. Its place is above line 14.
+```
+
+Each misplaced marker is one finding, so a run of three is three. A marker
+that names no entry is reported too, with no id. `cite update` moves them,
+with no flag.
+
+Three markers are never misplaced. One whose own line carries text after the
+close sits inside the line it anchors. One inside a fenced block or a
+backtick span is not a marker at all. And one whose line above is blank, a
+fence, the body's first line, or a **bound line** is already where `add`
+writes markers.
+
+A bound line is one the format makes a block on its own. No paragraph
+continues across it, and no pin covers it beside text.
+
+| Format | Bound lines |
+|---|---|
+| markdown, mdx | An ATX heading, which is one to six `#` and then a space or the end of the line. Also a line that is nothing but one tag, such as `<Aside>` or `</Aside>`. |
+| html, xml | A line that is nothing but one tag, such as `<body>`. |
+| asciidoc | A section title, which is one to six `=` and then a space. |
+| every format | An adornment, which is one of `-`, `=`, `~`, `^`, `"`, `'`, `*`, `+`, `#`, `_`, `:`, `<` or `>` repeated three times or more, spaces allowed. A setext underline, a thematic break and an rst adornment all qualify. |
+
+So a marker on the line under a heading is in place, and it anchors the text
+under the heading rather than the heading itself.
+
+```md title="In place under a heading"
+## Crawl scope
+<!-- cite host-scope -->
+Only the start URL's host is crawled.
+```
+
 ## Anchoring
 
 An entry has exactly one anchor, and that is the line a finding reports.
@@ -274,12 +318,12 @@ An entry has exactly one anchor, and that is the line a finding reports.
 | Anchor | How it works |
 |---|---|
 | Claim lines | `claim.lines` names the body lines, and `claim.integrity` pins them. The pinned text is searched for when it is not where it was, so the claim can be `claim-moved` or `claim-changed`. |
-| A marker | The entry has an `id`, a marker in the body names it, and `claim.lines` is absent. The marker anchors the rest of its own line when that carries text, else the paragraph after it. Markers stacked above one paragraph all anchor that paragraph. A line holding only a marker is never part of a pin. It moves with its text, so a marker-anchored claim is never `claim-moved`. |
+| A marker | The entry has an `id`, a marker in the body names it, and `claim.lines` is absent. The marker anchors the rest of its own line when that carries text, else the paragraph after it. Markers stacked above one paragraph all anchor that paragraph. A line holding only a marker is never part of a pin. The marker travels with its text, so the claim reads `claim-moved` only when the pin holds over a span the marker no longer anchors. |
 | Neither | A bare pin, checked source-side only. A finding on it reports the entry's own line. |
 
-Neither anchor always wins. A marker never moves, but it is a line in the
-body, so a concurrent prose edit can conflict with it. Claim lines leave the
-body untouched, and a moved claim needs `cite update`. [Choose an
+Neither anchor always wins. A marker travels with its text, but it is a line
+in the body, so a concurrent prose edit can conflict with it. Claim lines
+leave the body untouched, and a moved claim needs `cite update`. [Choose an
 anchor](/manni/cite/set-up/#choose-an-anchor) weighs the two.
 
 A `claim` under a marker is optional. With one, its `integrity` pins the text
@@ -431,7 +475,7 @@ once. A range longer than 5,000 lines, at either end, is `entry-invalid`.
 
 | Rule | Meaning | Message | Default |
 |---|---|---|---|
-| `claim-moved` | The pinned page text is found verbatim at other lines, so nothing drifted. `update` rewrites `claim.lines`. | `fetch-timeout: the claim moved from line 9 to line 11.` | `notice` |
+| `claim-moved` | The pinned page text is found verbatim at other lines, so nothing drifted. `update` rewrites `claim.lines`. For a marker, the pinned text is intact but the marker now anchors a different span, and `update` re-pins it there. | `fetch-timeout: the claim moved from line 9 to line 11.` | `notice` |
 | `claim-moved-ambiguous` | The pinned text is found verbatim at several places. `update` skips it. | `fetch-timeout: the claim at line 9 now appears at lines 11 and 30.` | `warning` |
 | `claim-changed` | The pinned page text is gone, so the sentence was edited. `update --accept` re-pins it. | `fetch-timeout: the claim at line 9 has changed since it was pinned.` | `warning` |
 
@@ -452,6 +496,7 @@ copying it.
 | `marker-orphan` | A marker names an id no entry has. | `error` |
 | `marker-invalid` | A malformed marker, including a JSON payload, or more than 500 markers on a page. | `error` |
 | `marker-repeated` | Two markers name one id; the first anchors it. | `warning` |
+| `marker-misplaced` | A marker line sits inside a paragraph, between two lines of text. It splits the paragraph for the renderer and for the tool. `update` moves it to where `cite add --marker` writes markers. | `warning` |
 | `anchor-invalid` | The anchor cannot work. Three cases reach it. Claim lines and a marker together, `quote` with no claim and no marker, and a quote whose claim lines are no longer fenced. | `error` |
 | `entry-invalid` | A schema failure, a range that ends before it starts or runs longer than 5,000 lines, or a duplicate id. Also a pin prefix that does not match `file`, a reserved `citation-*` page key, and a page `citations:` a manifest owns. | `error` |
 | `quote-drift` | The quoted block no longer reproduces the source, or no fenced block follows the marker. | `error` |

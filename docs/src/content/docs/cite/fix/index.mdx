@@ -60,6 +60,7 @@ the entry's own line, in the manifest when a sidecar owns it.
 | [`marker-orphan`](#marker-orphan) | error | A marker names an id no entry has. | Fix the id, or add the entry |
 | [`marker-invalid`](#marker-invalid) | error | A marker the tool cannot read, including one carrying JSON. | Write an id, and keep the entry out of the body |
 | [`marker-repeated`](#marker-repeated) | warning | Two markers name one id. | Delete one, or give the second entry its own id |
+| [`marker-misplaced`](#marker-misplaced) | warning | A marker line sits inside a paragraph and splits it. | `manni cite update` |
 | [`anchor-invalid`](#anchor-invalid) | error | The entry's anchor cannot work. | Keep one anchor |
 | [`entry-invalid`](#entry-invalid) | error | An entry is malformed, or an id is repeated. | Fix the entry, or let `add` write it |
 | [`quote-drift`](#quote-drift) | error | The fenced block does not reproduce the cited lines. | Paste the lines again |
@@ -343,6 +344,35 @@ nothing, so this is a **warning**.
 
 **Fix.** Delete the second marker, or give the paragraph its own entry and
 its own id.
+
+### marker-misplaced
+
+```
+⚠ docs/limits.md
+    ↕ host-scope   marker :44 -> :41 moved   lib/scope.ts:9 current
+```
+
+The marker sits inside a paragraph, between two lines of text. MDX and
+CommonMark both end a paragraph at a comment line, so the page renders two
+paragraphs split mid-sentence. The tool reads it the same way, which leaves
+the lines above the marker anchored by nothing. Its place is above the first
+line of the paragraph, where `cite add --marker` writes one.
+
+The claim beside it often reads `claim-moved`, a notice. The pinned text is
+still on the page, at a span the marker no longer anchors.
+
+**Fix.** `manni cite update`. The marker moves, and the claim is re-pinned
+over the whole paragraph. Every entry the move pushed along has its lines
+rewritten in the same write. No flag is needed.
+
+A marker whose claim holds nowhere stays put, and says so:
+
+```
+docs/limits.md: robots  ↕ skipped: robots: the marker at line 70 stays, because its claim changed since it was pinned. update --accept moves it and re-pins.
+```
+
+Read the sentence first with `cite check --show-diff`, then
+`update --accept --only <id>` moves it and re-pins it.
 
 ### anchor-invalid
 

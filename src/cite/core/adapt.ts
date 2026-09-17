@@ -146,6 +146,24 @@ export function claimMessageFor(result: CitationResult): string {
   }
 }
 
+/**
+ * The one place a `marker-misplaced` message is composed. A quote marker's
+ * place is above the block it anchors; every other marker's is the first line
+ * of the paragraph its run splits.
+ */
+export function misplacedMessageFor(
+  id: string | undefined,
+  marker: { line: number; unit: string; place: number; block: boolean },
+): string {
+  const place = marker.block
+    ? `above the block at line ${String(marker.place)}`
+    : `above line ${String(marker.place)}`;
+  return named(
+    id,
+    `the marker at line ${String(marker.line)} splits the paragraph at ${at(marker.unit)}. Its place is ${place}.`,
+  );
+}
+
 /** The rule a source status reports under, or undefined for one that is not a finding. */
 function sourceRuleOf(status: SourceStatus): CiteRule | undefined {
   if (status === "skipped" || status === "current") return undefined;

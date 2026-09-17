@@ -1240,3 +1240,116 @@ describe("runAdd", () => {
     });
   });
 });
+
+describe("runAdd: a paragraph a misplaced marker splits", () => {
+  /** A page whose marker sits inside its one paragraph, as the old `add --marker` left it. */
+  function split(): string {
+    return write("split.mdx", [
+      "---",
+      "title: Crawl",
+      "citations:",
+      "  - id: fresh-context",
+      "    claim:",
+      `      integrity: ${hashRange("Each URL is loaded fresh.\n", { start: 1, end: 1 })}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 3",
+      `      integrity: ${PIN_L3}`,
+      "---",
+      "Pages are checked one at a time.",
+      "{/* cite fresh-context */}",
+      "Each URL is loaded fresh.",
+    ]);
+  }
+
+  it("refuses --marker into it, and names the command that fixes it", async () => {
+    const label = split();
+    const before = readFileSync(join(cwd, label), "utf8");
+    expect(
+      await refusal(
+        add({
+          page: label,
+          pageLines: { start: 14, end: 14 },
+          src: "src/limits.ts:3",
+          id: "retry-once",
+          marker: true,
+        }),
+      ),
+    ).toBe(
+      `${label}:14 is in the paragraph at lines 12-14, which the marker at line 13 splits. Run manni cite update first.`,
+    );
+    expect(readFileSync(join(cwd, label), "utf8")).toBe(before);
+  });
+
+  it("refuses claim lines that hold the misplaced marker's line", async () => {
+    const label = split();
+    expect(
+      await refusal(
+        add({
+          page: label,
+          pageLines: { start: 12, end: 14 },
+          src: "src/limits.ts:3",
+          id: "retry-once",
+        }),
+      ),
+    ).toBe(
+      `${label}:12-14 holds the marker at line 13, which splits its paragraph. Run manni cite update first.`,
+    );
+  });
+
+  it("writes a marker under a heading, never above it", async () => {
+    const label = write("heading.md", [
+      "---",
+      "title: Limits",
+      "---",
+      "## Crawl scope",
+      "Only the start URL's host is crawled.",
+    ]);
+    const result = await add({
+      page: label,
+      pageLines: { start: 5, end: 5 },
+      src: "src/limits.ts:3",
+      id: "host-scope",
+      marker: true,
+    });
+    // The frontmatter gained a `citations:` block, so the body is read by
+    // what it says rather than by line number.
+    expect(result.content).toContain(
+      ["## Crawl scope", "<!-- cite host-scope -->", "Only the start URL's host is crawled.", ""].join("\n"),
+    );
+    // The pin covers the sentence, not the heading above it.
+    expect(result.citation.claim?.integrity).toBe(
+      hashRange("Only the start URL's host is crawled.\n", { start: 1, end: 1 }),
+    );
+  });
+
+  it("lets an add elsewhere on the page through", async () => {
+    const label = write("elsewhere.mdx", [
+      "---",
+      "title: Crawl",
+      "citations:",
+      "  - id: fresh-context",
+      "    claim:",
+      `      integrity: ${hashRange("Each URL is loaded fresh.\n", { start: 1, end: 1 })}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 3",
+      `      integrity: ${PIN_L3}`,
+      "---",
+      "Pages are checked one at a time.",
+      "{/* cite fresh-context */}",
+      "Each URL is loaded fresh.",
+      "",
+      "Retries default to 3.",
+    ]);
+    const result = await add({
+      page: label,
+      pageLines: { start: 16, end: 16 },
+      src: "src/limits.ts:3",
+      id: "retries",
+      marker: true,
+    });
+    expect(result.written).toBe(true);
+    expect(result.content).toContain(["{/* cite retries */}", "Retries default to 3.", ""].join("\n"));
+  });
+});

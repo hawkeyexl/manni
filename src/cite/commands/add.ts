@@ -24,6 +24,7 @@ import { sliceLines, splitLines } from "../core/hash.js";
 import { mintCitation } from "../core/mint.js";
 import { bodyLineOf, readPage } from "../core/page.js";
 import { lineSpec, parseLines, parseSrc, spellLines, tooWide } from "../core/range.js";
+import { misplacedMarkers } from "../core/reanchor.js";
 import { readSource, sourceIndexFor } from "../core/sources.js";
 import { ManifestSet } from "../core/manifest.js";
 import { sidecarsFor, type PageSidecar } from "../core/sidecar.js";
@@ -241,6 +242,27 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
       if (span === undefined || span.end !== pageLines.end) {
         throw new CiteError(`${at} is not a fenced block, so it cannot be a quote.`);
       }
+    }
+    // `add` does not move a marker it did not write, so it refuses to write
+    // where a misplaced one would make its entry wrong (proposal 0054).
+    const split = misplacedMarkers(page, lines);
+    const held = split.find(
+      (marker) => marker.line >= pageLines.start && marker.line <= pageLines.end,
+    );
+    if (held !== undefined) {
+      throw new CiteError(
+        `${at} holds the marker at line ${String(held.line)}, which splits its paragraph. Run manni cite update first.`,
+      );
+    }
+    const inside = marker
+      ? split.find(
+          (found) => pageLines.start >= found.unit.start && pageLines.start <= found.unit.end,
+        )
+      : undefined;
+    if (inside !== undefined) {
+      throw new CiteError(
+        `${at} is in the paragraph at ${spellAt(inside.unit)}, which the marker at line ${String(inside.line)} splits. Run manni cite update first.`,
+      );
     }
   }
 

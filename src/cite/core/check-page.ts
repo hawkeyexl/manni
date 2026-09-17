@@ -26,7 +26,9 @@ import type {
   SourceEnd,
   SourceIndex,
 } from "../types.js";
-import { findingsFor } from "./adapt.js";
+import { findingsFor, misplacedMessageFor } from "./adapt.js";
+import { misplacedMarkers, type MisplacedMarker } from "./reanchor.js";
+import { spellLines } from "../../shared/pin.js";
 import { classifyCitation, MOVE_BUDGET_BYTES } from "./classify.js";
 import { blockMatches, claimEnd, claimLineNow, claimLinesNow } from "./claims.js";
 import { GIT_UNAVAILABLE_HISTORY, gitClient } from "./git.js";
@@ -153,6 +155,22 @@ async function quoteFindings(
   ];
 }
 
+/** The marker end of a result: its line, plus its misplacement when it has one. */
+function markerEnd(
+  entry: PageCitation,
+  misplaced: MisplacedMarker | undefined,
+): Pick<CitationResult, "marker"> {
+  const { marker } = entry;
+  if (marker === undefined) return {};
+  if (misplaced === undefined) return { marker: { line: marker.line } };
+  return {
+    marker: {
+      line: marker.line,
+      misplaced: { unit: spellLines(misplaced.unit), to: misplaced.to },
+    },
+  };
+}
+
 /** How a citation is anchored, and the page line it anchors to. */
 function anchorOf(
   entry: PageCitation,
@@ -223,8 +241,14 @@ export async function checkCitations(
     ...(opts.key === undefined ? {} : { key: opts.key }),
   };
 
+  // Every marker line that splits a paragraph, read once for the page: its
+  // entry's claim is judged against it, and each one is its own finding.
+  const misplaced = misplacedMarkers(read, lines);
+  const misplacedAt = new Map(misplaced.map((found) => [found.line, found]));
+
   for (const entry of read.citations) {
-    const claim = claimEnd(read, entry, lines);
+    const split = entry.marker === undefined ? undefined : misplacedAt.get(entry.marker.line);
+    const claim = claimEnd(read, entry, lines, split);
     const source: SourceEnd =
       classifyOpts === undefined
         ? skippedSource(entry)
@@ -233,6 +257,7 @@ export async function checkCitations(
       citation: entry.citation,
       origin: entry.origin,
       ...anchorOf(entry, claim, read),
+      ...markerEnd(entry, split),
       claim,
       source,
     };
@@ -251,6 +276,33 @@ export async function checkCitations(
       };
       if (found.line !== undefined) finding.line = found.line;
       if (entry.citation.id !== undefined) finding.id = entry.citation.id;
+      findings.push(finding);
+    }
+  }
+
+  // One finding per misplaced marker, so a run of three is three. An orphan
+  // in a run is reported too, with no id, beside its `marker-orphan`.
+  const misplacedLevel = severity["marker-misplaced"];
+  if (misplacedLevel !== "off") {
+    for (const found of misplaced) {
+      const entry = found.entry;
+      const finding: CitationFinding = {
+        rule: "marker-misplaced",
+        ruleId: ruleId("marker-misplaced"),
+        severity: misplacedLevel,
+        message: misplacedMessageFor(entry?.citation.id, {
+          line: found.line,
+          unit: spellLines(found.unit),
+          place: found.place,
+          block: found.block,
+        }),
+        line: found.line,
+      };
+      if (entry !== undefined) {
+        finding.index = entry.origin.index;
+        finding.src = spellSource(entry.citation.source);
+        if (entry.citation.id !== undefined) finding.id = entry.citation.id;
+      }
       findings.push(finding);
     }
   }

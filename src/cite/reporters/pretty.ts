@@ -128,20 +128,25 @@ function citesEncrypted(src: string): boolean {
   }
 }
 
-/** The claim end column: where it is, in file lines, and how it reads. */
+/**
+ * The claim end column: where it is, in file lines, and how it reads. A marker
+ * says where it is and, when it is misplaced, where it belongs. Its claim
+ * status reads bare: the marker's own line is what a reader acts on.
+ */
 function claimColumn(result: CitationResult): string {
-  const { claim } = result;
-  const where =
-    result.anchor === "marker" && result.markerLine !== undefined
-      ? `marker :${String(result.markerLine)}`
-      : claim?.fileLines === undefined
-        ? ""
-        : `:${claim.fileLines}`;
+  const { claim, marker } = result;
+  const anchoredByMarker = result.anchor === "marker" && result.markerLine !== undefined;
+  const moves = marker?.misplaced === undefined ? "" : ` -> :${String(marker.misplaced.to)}`;
+  const where = anchoredByMarker
+    ? `marker :${String(result.markerLine ?? 0)}${moves}`
+    : claim?.fileLines === undefined
+      ? ""
+      : `:${claim.fileLines}`;
   if (claim === null) return where;
   let status: string;
   switch (claim.status) {
     case "moved":
-      status = `moved -> :${claim.newFileLines ?? "?"}`;
+      status = anchoredByMarker ? "moved" : `moved -> :${claim.newFileLines ?? "?"}`;
       break;
     case "moved-ambiguous": {
       const at = (claim.candidateFileLines ?? []).map((lines) => `:${lines}`);
@@ -266,8 +271,10 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
               ? c.dim("·")
               : c.green("✓");
 
-      // The ends are the row; anything else about the entry is a line under it.
-      const endRules = new Set(["claim-", "source-"]);
+      // The ends are the row; anything else about the entry is a line under
+      // it. A misplaced marker is part of the row too: it reads there as
+      // `marker :<line> -> :<place>`.
+      const endRules = new Set(["claim-", "source-", "marker-misplaced"]);
       const under: string[] = [];
       for (const finding of own) {
         const isEnd = [...endRules].some((prefix) => finding.rule.startsWith(prefix));
@@ -340,10 +347,60 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
   return lines.join("\n");
 }
 
+/** `line 9`, or `lines 9-12`, from a line spec. */
+function spellAt(spec: string): string {
+  return spec.includes("-") ? `lines ${spec}` : `line ${spec}`;
+}
+
+/** A line spec as numbers, or undefined when it does not read as one. */
+function spanOf(spec: string): { start: number; end: number } | undefined {
+  const [first, second] = spec.split("-");
+  const start = Number(first);
+  const end = second === undefined ? start : Number(second);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return undefined;
+  return { start, end };
+}
+
+/**
+ * What a re-pin over the unit newly covers, so the widening is in the log as
+ * well as in the diff. A span that only lost marker lines gains nothing, and
+ * says that instead.
+ */
+function widening(held: string, now: string): string {
+  const was = spanOf(held);
+  const is = spanOf(now);
+  if (was === undefined || is === undefined) return "";
+  const parts: string[] = [];
+  if (is.start < was.start) {
+    parts.push(spellAt(spellSpan(is.start, Math.min(was.start - 1, is.end))));
+  }
+  if (is.end > was.end) {
+    parts.push(spellAt(spellSpan(Math.max(was.end + 1, is.start), is.end)));
+  }
+  if (parts.length === 0) return ", which held a marker line";
+  return `, ${parts.join(" and ")} newly pinned`;
+}
+
+/** `9`, or `9-12`: a span as a line spec. */
+function spellSpan(start: number, end: number): string {
+  return start === end ? String(start) : `${String(start)}-${String(end)}`;
+}
+
 /** What one rewritten end says it did. */
 export function rewriteLine(rewrite: UpdateRewrite): string {
   const word = rewrite.from.includes("-") ? "lines" : "line";
   const status = rewrite.status === "never-true" ? "never true" : rewrite.status;
+  if (rewrite.end === "marker") {
+    return `marker line ${rewrite.from} -> ${rewrite.to} (misplaced)`;
+  }
+  if (rewrite.reason === "shifted") {
+    return `claim ${word} ${rewrite.from} -> ${rewrite.to} (shifted by a marker)`;
+  }
+  if (rewrite.reason === "re-anchored") {
+    const held = rewrite.lines ?? "";
+    const now = rewrite.newLines ?? "";
+    return `claim re-pinned over ${spellAt(now)} (moved; was ${spellAt(held)}${widening(held, now)})`;
+  }
   if (rewrite.reason === "moved") {
     return rewrite.end === "claim"
       ? `claim ${word} ${rewrite.from} -> ${rewrite.to} (moved)`

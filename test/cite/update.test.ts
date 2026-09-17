@@ -9,7 +9,7 @@
  * throwaway repository.
  */
 import { afterEach, describe, expect, it } from "vitest";
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -119,6 +119,8 @@ describe("runUpdate: the claim end", () => {
         status: "moved",
         from: "15",
         to: "17",
+        fromLines: "15",
+        toLines: "17",
       },
     ]);
     const after = onDisk("pages/claim-moved.md");
@@ -154,6 +156,8 @@ describe("runUpdate: the claim end", () => {
         status: "changed",
         from: CLAIM_10,
         to: pin,
+        fromPin: CLAIM_10,
+        toPin: pin,
         at: 15,
         text: "The fetch timeout is 30 seconds.",
       },
@@ -179,6 +183,8 @@ describe("runUpdate: the claim end", () => {
         status: "changed",
         from: CLAIM_RETRIES,
         to: pin,
+        fromPin: CLAIM_RETRIES,
+        toPin: pin,
         at: 15,
         text: "Retries default to 5.",
       },
@@ -293,6 +299,8 @@ describe("runUpdate: the claim end", () => {
         status: "changed",
         from: CLAIM_10,
         to: pin,
+        fromPin: CLAIM_10,
+        toPin: pin,
         at: 12,
         // The report collapses the whitespace, so a two-line claim reads as one.
         text: "The fetch timeout is 30 seconds. It is not configurable either.",
@@ -417,6 +425,8 @@ describe("runUpdate: the source end", () => {
         status: "changed",
         from: PIN_L2,
         to: CHANGED_L2,
+        fromPin: PIN_L2,
+        toPin: CHANGED_L2,
         src: "src/changed.ts:2",
       },
     ]);
@@ -486,6 +496,8 @@ describe("runUpdate: the source end", () => {
         status: "changed",
         from: before,
         to: reminted,
+        fromPin: before,
+        toPin: reminted,
         src: `${token}:2`,
       },
     ]);
@@ -765,6 +777,8 @@ describe("runUpdate: both ends, and what is left", () => {
           status: "changed",
           from: PIN_L2,
           to: CHANGED_L2,
+          fromPin: PIN_L2,
+          toPin: CHANGED_L2,
           src: "src/limits.ts:2",
           commitSha: second,
         },
@@ -777,6 +791,8 @@ describe("runUpdate: both ends, and what is left", () => {
           status: "changed",
           from: PIN_L2,
           to: CHANGED_L2,
+          fromPin: PIN_L2,
+          toPin: CHANGED_L2,
           src: "src/limits.ts:2",
         },
       ]);
@@ -788,5 +804,418 @@ describe("runUpdate: both ends, and what is left", () => {
       const check = await runCheck({ cwd: repo, inputs: ["docs/limits.md"], noConfig: true, env: {} });
       expect(check.pages[0]?.citations.map((c) => c.source.status)).toEqual(["current", "current"]);
     });
+  });
+});
+
+describe("runUpdate: a marker inside a paragraph", () => {
+  const MISPLACED = join(ROOT, "misplaced");
+  /** A workspace holding copies of the named `misplaced/` fixtures. */
+  function misplaced(...pages: string[]): void {
+    workspace();
+    mkdirSync(join(cwd, "misplaced"));
+    for (const name of pages) copyFileSync(join(MISPLACED, name), join(cwd, "misplaced", name));
+  }
+  const label = (name: string): string => `misplaced/${name}`;
+  const bodyOf = (name: string): string[] => onDisk(label(name)).split("\n");
+
+  const HEAD_ONE = "Pages are checked one at a time, in the order the crawl found them.";
+  const HEAD_TWO = "A page that fails to load is reported, and the crawl moves on.";
+  const TAIL_ONE = "Each URL is loaded in a fresh browser context, so no state carries over";
+  const TAIL_TWO = "from one page to the next.";
+  const ONE_LINE = "Each URL is loaded in a fresh browser context.";
+
+  it("moves a misplaced marker and re-pins its claim over the unit, with no flag", async () => {
+    misplaced("mid-paragraph.mdx");
+    const held = hashLines([TAIL_ONE, TAIL_TWO].join("\n"));
+    const whole = hashLines([HEAD_ONE, HEAD_TWO, TAIL_ONE, TAIL_TWO].join("\n"));
+    const run = await update({ inputs: [label("mid-paragraph.mdx")] });
+    expect(run).toMatchObject({ rewritten: 1, skipped: 0, exitCode: 0 });
+    expect(run.pages[0]?.rewritten).toEqual([
+      {
+        id: "fresh-context",
+        index: 0,
+        line: 4,
+        end: "marker",
+        reason: "re-anchored",
+        status: "misplaced",
+        from: "16",
+        to: "14",
+        fromLines: "16",
+        toLines: "14",
+      },
+      {
+        id: "fresh-context",
+        index: 0,
+        line: 4,
+        end: "claim",
+        reason: "re-anchored",
+        status: "moved",
+        from: held,
+        to: whole,
+        fromPin: held,
+        toPin: whole,
+        lines: "17-18",
+        newLines: "15-18",
+      },
+    ]);
+    // The marker now sits above the paragraph, which reads whole again.
+    expect(bodyOf("mid-paragraph.mdx").slice(13, 18)).toEqual([
+      "{/* cite fresh-context */}",
+      HEAD_ONE,
+      HEAD_TWO,
+      TAIL_ONE,
+      TAIL_TWO,
+    ]);
+    expect(onDisk(label("mid-paragraph.mdx"))).toContain(`      integrity: ${whole}\n`);
+    expect(await ends(label("mid-paragraph.mdx"))).toEqual([["current", "current"]]);
+  });
+
+  it("splits a stacked run, writing the page once, and says why the other marker stays", async () => {
+    misplaced("stacked-run.mdx");
+    const run = await update({ inputs: [label("stacked-run.mdx")] });
+    expect(run).toMatchObject({ rewritten: 1, skipped: 2, exitCode: 0 });
+    expect(run.pages[0]?.rewritten.map((r) => [r.end, r.from, r.to])).toEqual([
+      ["marker", "22", "21"],
+      ["claim", hashLines(ONE_LINE), hashLines([HEAD_ONE].join("\n"))],
+    ]);
+    expect(run.pages[0]?.skipped.map((f) => [f.rule, f.message])).toEqual([
+      [
+        "marker-misplaced",
+        "robots: the marker at line 23 stays, because its claim changed since it was pinned. update --accept moves it and re-pins.",
+      ],
+      ["claim-changed", "robots: the claim at line 24 has changed since it was pinned."],
+    ]);
+    // One write: the movable marker moved and the other did not, in one page.
+    expect(bodyOf("stacked-run.mdx").slice(20, 24)).toEqual([
+      "{/* cite one-at-a-time */}",
+      HEAD_ONE,
+      "{/* cite robots */}",
+      ONE_LINE,
+    ]);
+    expect(await ends(label("stacked-run.mdx"))).toEqual([
+      ["current", "current"],
+      ["changed", "current"],
+    ]);
+  });
+
+  it("--accept moves the marker whose claim holds nowhere and re-pins it", async () => {
+    misplaced("stacked-run.mdx");
+    const run = await update({ inputs: [label("stacked-run.mdx")], accept: true });
+    expect(run).toMatchObject({ rewritten: 2, skipped: 0, exitCode: 0 });
+    expect(run.pages[0]?.rewritten.map((r) => [r.id, r.end, r.reason, r.status])).toEqual([
+      ["one-at-a-time", "marker", "re-anchored", "misplaced"],
+      ["one-at-a-time", "claim", "re-anchored", "moved"],
+      ["robots", "marker", "re-anchored", "misplaced"],
+      ["robots", "claim", "accepted", "changed"],
+    ]);
+    expect(bodyOf("stacked-run.mdx").slice(20, 24)).toEqual([
+      "{/* cite one-at-a-time */}",
+      "{/* cite robots */}",
+      HEAD_ONE,
+      ONE_LINE,
+    ]);
+    expect(await ends(label("stacked-run.mdx"))).toEqual([
+      ["current", "current"],
+      ["current", "current"],
+    ]);
+  });
+
+  it("--only moves one marker of a run and reports nothing about the other", async () => {
+    misplaced("stacked-run.mdx");
+    const run = await update({
+      inputs: [label("stacked-run.mdx")],
+      only: ["one-at-a-time"],
+    });
+    expect(run).toMatchObject({ rewritten: 1, skipped: 0, exitCode: 0 });
+    expect(bodyOf("stacked-run.mdx")[20]).toBe("{/* cite one-at-a-time */}");
+  });
+
+  it("shifts a claim-lines entry the move pushes down, in the same write", async () => {
+    misplaced("shift.md");
+    const run = await update({ inputs: [label("shift.md")] });
+    expect(run).toMatchObject({ rewritten: 2, skipped: 0, exitCode: 0 });
+    expect(
+      run.pages[0]?.rewritten.map((r) => [r.id, r.end, r.reason, r.from, r.to]),
+    ).toEqual([
+      ["timeouts", "marker", "re-anchored", "23", "22"],
+      [
+        "timeouts",
+        "claim",
+        "re-anchored",
+        hashLines("Retries default to 3."),
+        hashLines("The fetch timeout is 10 seconds.\nRetries default to 3."),
+      ],
+      ["page-order", "claim", "shifted", "22", "23"],
+    ]);
+    expect(onDisk(label("shift.md"))).toContain("      lines: 4\n");
+    expect(await ends(label("shift.md"))).toEqual([
+      ["current", "current"],
+      ["current", "current"],
+    ]);
+  });
+
+  it("keeps a marker whose move would change another entry's claim", async () => {
+    misplaced("claim-across.md");
+    const before = onDisk(label("claim-across.md"));
+    const run = await update({ inputs: [label("claim-across.md")] });
+    expect(run).toMatchObject({ rewritten: 0, skipped: 1, exitCode: 0 });
+    expect(run.pages[0]?.skipped.map((f) => f.message)).toEqual([
+      "timeouts: the marker at line 23 stays, because moving it would change the claim of retries (lines 22-24).",
+    ]);
+    expect(onDisk(label("claim-across.md"))).toBe(before);
+  });
+
+  it("moves a quote marker down to its block and leaves its pin alone", async () => {
+    misplaced("quote-mid.md");
+    const before = onDisk(label("quote-mid.md"));
+    const run = await update({ inputs: [label("quote-mid.md")] });
+    expect(run).toMatchObject({ rewritten: 1, skipped: 0, exitCode: 0 });
+    expect(run.pages[0]?.rewritten.map((r) => [r.end, r.from, r.to])).toEqual([
+      ["marker", "16", "18"],
+    ]);
+    const lines = bodyOf("quote-mid.md");
+    expect(lines.slice(14, 19)).toEqual([
+      "Retries are configured once.",
+      "The value lives in the source.",
+      "",
+      "<!-- cite retries-block -->",
+      "```ts",
+    ]);
+    // The claim pin is the block's, and the block did not move.
+    expect(onDisk(label("quote-mid.md")).split("\n")[6]).toBe(before.split("\n")[6]);
+    expect(await ends(label("quote-mid.md"))).toEqual([["current", "current"]]);
+  });
+
+  it("re-pins a marker in place whose pin covered a sibling marker line", async () => {
+    misplaced("pre-43-sibling-pin.mdx");
+    const run = await update({ inputs: [label("pre-43-sibling-pin.mdx")] });
+    expect(run).toMatchObject({ rewritten: 1, skipped: 0, exitCode: 0 });
+    expect(run.pages[0]?.rewritten).toEqual([
+      {
+        id: "host-scope",
+        index: 0,
+        line: 4,
+        end: "claim",
+        reason: "re-anchored",
+        status: "moved",
+        from: hashLines("{/* cite host-list */}\nOnly the start URL's host is crawled."),
+        to: hashLines("Only the start URL's host is crawled."),
+        fromPin: hashLines("{/* cite host-list */}\nOnly the start URL's host is crawled."),
+        toPin: hashLines("Only the start URL's host is crawled."),
+        lines: "22-23",
+        newLines: "23",
+      },
+    ]);
+    // The markers stay where they are: they were never misplaced.
+    expect(bodyOf("pre-43-sibling-pin.mdx").slice(20, 23)).toEqual([
+      "{/* cite host-scope */}",
+      "{/* cite host-list */}",
+      "Only the start URL's host is crawled.",
+    ]);
+    expect(await ends(label("pre-43-sibling-pin.mdx"))).toEqual([
+      ["current", "current"],
+      ["current", "current"],
+    ]);
+  });
+
+  it("keeps an orphan marker in a run, and an anchor-invalid entry's marker", async () => {
+    const orphan = write("orphan-run.md", [
+      "---",
+      "title: Limits",
+      "---",
+      "The fetch timeout is 10 seconds.",
+      "<!-- cite nobody -->",
+      "Retries default to 3.",
+    ]);
+    const orphanRun = await update({ inputs: [orphan] });
+    expect(orphanRun.pages[0]?.skipped.map((f) => [f.rule, f.message])).toEqual([
+      ["marker-orphan", 'no entry has id "nobody"'],
+      [
+        "marker-misplaced",
+        "the marker at line 5 stays, because it names no entry update can check.",
+      ],
+    ]);
+    expect(orphanRun.exitCode).toBe(1);
+
+    const both = write("anchor-both-run.md", [
+      "---",
+      "citations:",
+      "  - id: fetch-timeout",
+      "    claim:",
+      "      lines: 1",
+      `      integrity: ${CLAIM_10}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 2",
+      `      integrity: ${PIN_L2}`,
+      "---",
+      "The fetch timeout is 10 seconds.",
+      "<!-- cite fetch-timeout -->",
+      "Retries default to 3.",
+    ]);
+    const bothRun = await update({ inputs: [both] });
+    expect(bothRun.pages[0]?.skipped.map((f) => [f.rule, f.message])).toEqual([
+      ["anchor-invalid", "fetch-timeout has claim lines and a marker. Keep one."],
+      [
+        "marker-misplaced",
+        "fetch-timeout: the marker at line 13 stays, because the entry also has claim lines. Keep one.",
+      ],
+    ]);
+  });
+
+  it("writes the page and the manifest that owns the entry, each once", async () => {
+    workspace();
+    mkdirSync(join(cwd, "docs"));
+    const held = hashLines("Retries default to 3.");
+    writeFileSync(
+      join(cwd, "manni.config.yaml"),
+      [
+        "collections:",
+        "  - name: site",
+        '    paths: ["docs/**/*.md"]',
+        "    externalMetadata:",
+        "      - file: ./citations.yaml",
+        "        keys: [citations]",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    writeFileSync(
+      join(cwd, "citations.yaml"),
+      [
+        "docs/limits.md:",
+        "  citations:",
+        "    - id: retries",
+        "      claim:",
+        `        integrity: ${held}`,
+        "      source:",
+        "        file: src/limits.ts",
+        "        lines: 3",
+        `        integrity: ${PIN_L3}`,
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    writeFileSync(
+      join(cwd, "docs", "limits.md"),
+      [
+        "---",
+        "title: Limits",
+        "---",
+        "The fetch timeout is 10 seconds.",
+        "<!-- cite retries -->",
+        "Retries default to 3.",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    const config = join(cwd, "manni.config.yaml");
+    const run = await update({ inputs: [], noConfig: false, configPath: config });
+    expect(run).toMatchObject({ rewritten: 1, skipped: 0, exitCode: 0 });
+    expect(run.manifests?.map((m) => [m.file, m.written])).toEqual([["citations.yaml", true]]);
+    expect(onDisk("docs/limits.md").split("\n").slice(3, 6)).toEqual([
+      "<!-- cite retries -->",
+      "The fetch timeout is 10 seconds.",
+      "Retries default to 3.",
+    ]);
+    expect(onDisk("citations.yaml")).toContain(
+      hashLines("The fetch timeout is 10 seconds.\nRetries default to 3."),
+    );
+    expect(await ends("docs/limits.md", config)).toEqual([["current", "current"]]);
+  });
+
+  it("prints a stdin page with its markers moved, and writes nothing", async () => {
+    workspace();
+    const run = await update({
+      inputs: ["-"],
+      as: "mdx",
+      stdinContent: readFileSync(join(MISPLACED, "mid-paragraph.mdx"), "utf8"),
+    });
+    expect(run.pages[0]).toMatchObject({ file: "<stdin>", written: false });
+    expect(run.pages[0]?.content?.split("\n")[13]).toBe("{/* cite fresh-context */}");
+  });
+
+  it("shows every move in the diff under --dry-run and writes nothing", async () => {
+    misplaced("mid-paragraph.mdx");
+    const before = onDisk(label("mid-paragraph.mdx"));
+    const run = await update({ inputs: [label("mid-paragraph.mdx")], dryRun: true });
+    expect(run.pages[0]?.written).toBe(false);
+    expect(run.pages[0]?.diff).toContain("+{/* cite fresh-context */}");
+    expect(run.pages[0]?.diff).toContain("-{/* cite fresh-context */}");
+    expect(onDisk(label("mid-paragraph.mdx"))).toBe(before);
+  });
+});
+
+describe("runUpdate: a write that fails halfway", () => {
+  /**
+   * A family whose manifest cannot be written: the file is read-only, which
+   * stops the rename on Windows, and its directory is too, which stops it on
+   * Linux and macOS.
+   */
+  function locked(): { config: string; manifest: string; dir: string } {
+    workspace();
+    mkdirSync(join(cwd, "docs"));
+    mkdirSync(join(cwd, "meta"));
+    writeFileSync(
+      join(cwd, "manni.config.yaml"),
+      [
+        "collections:",
+        "  - name: site",
+        '    paths: ["docs/**/*.md"]',
+        "    externalMetadata:",
+        "      - file: ./meta/citations.yaml",
+        "        keys: [citations]",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    const manifest = join(cwd, "meta", "citations.yaml");
+    writeFileSync(
+      manifest,
+      [
+        "docs/limits.md:",
+        "  citations:",
+        "    - id: retries",
+        "      claim:",
+        `        integrity: ${hashLines("Retries default to 3.")}`,
+        "      source:",
+        "        file: src/limits.ts",
+        "        lines: 3",
+        `        integrity: ${PIN_L3}`,
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    writeFileSync(
+      join(cwd, "docs", "limits.md"),
+      [
+        "---",
+        "title: Limits",
+        "---",
+        "The fetch timeout is 10 seconds.",
+        "<!-- cite retries -->",
+        "Retries default to 3.",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    chmodSync(manifest, 0o444);
+    chmodSync(join(cwd, "meta"), 0o555);
+    return { config: join(cwd, "manni.config.yaml"), manifest, dir: join(cwd, "meta") };
+  }
+
+  it("restores the page it already wrote, and names the file that failed", async () => {
+    const { config, manifest, dir } = locked();
+    const before = onDisk("docs/limits.md");
+    try {
+      const message = await refusal(update({ inputs: [], noConfig: false, configPath: config }));
+      expect(message).toContain("meta/citations.yaml could not be written");
+      expect(message).toContain("docs/limits.md was restored.");
+      // The marker is back where it was, so the pin in the manifest still holds.
+      expect(onDisk("docs/limits.md")).toBe(before);
+    } finally {
+      chmodSync(dir, 0o755);
+      chmodSync(manifest, 0o644);
+    }
   });
 });
