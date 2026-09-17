@@ -136,5 +136,7 @@ checks.
 </CardGrid>
 
 Term entries are written in the `manni:terminology` vocabulary, whose draft is
-[under review](/manni/meta/proposals/terminology/). `manni meta validate`
-checks one page's shape against that draft; `manni term check` checks the set.
+[under review](/manni/meta/proposals/terminology/). No built-in schema covers
+it. `manni meta validate` checks one page's shape against the draft when the
+page's schema set includes it, as `-s` with the draft's JSON file does. `manni
+term check` checks the set.

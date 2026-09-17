@@ -150,9 +150,9 @@ each:
 
 ```
 docs/glossary/bifocals.md:1
-  error  manni:term/duplicate-id         id "bifocal" is also used by docs/terms/bifocal.md:1
+  error  manni:term/duplicate-id         id: "bifocal" is also used by docs/terms/bifocal.md:1
 docs/terms/bifocal.md:1
-  error  manni:term/duplicate-id         id "bifocal" is also used by docs/glossary/bifocals.md:1
+  error  manni:term/duplicate-id         id: "bifocal" is also used by docs/glossary/bifocals.md:1
 docs/terms/bifocal.md:4
   error  manni:term/label-collision      "bifocal" is claimed by docs/glossary/bifocals.md:1 as "Bifocal"
 
@@ -179,9 +179,11 @@ Decide whether the two pages define one thing or two.
   1 notice in 4 terms
   ```
 
-An id you never wrote can collide too, because an entry without one gets the
-slug of its label. `alt-label-collision` is the same problem between an
-alt-label and a preferred label: remove the alt-label, or merge the entries.
+An id you never wrote can collide too. An entry without one takes its
+construct's own identifier, else the slug of its label. See [how an entry gets
+its id](/manni/term/reference/terminology/#how-an-entry-gets-its-id).
+`alt-label-collision` is the same problem between an alt-label and a preferred
+label: remove the alt-label, or merge the entries.
 See [`label-collision`](/manni/term/reference/rules/#label-collision),
 [`duplicate-id`](/manni/term/reference/rules/#duplicate-id) and
 [`alt-label-collision`](/manni/term/reference/rules/#alt-label-collision).
