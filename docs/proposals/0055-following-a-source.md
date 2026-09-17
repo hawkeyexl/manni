@@ -480,8 +480,8 @@ cannot fail a run.
 | `pretty` | The source column reads `moved -> <path>:<lines>` with the new path in it, and a changed row gains `; now at lines 200-215`. `--show-diff` diffs the span when one is known, under the same 60-line cap. `--reveal` prints the decrypted new path beside a moved encrypted source. |
 | `json` | No new field. A cross-file move sets `source.newSrc`, which already carries a path, and `source.newLines`. A changed end with a span sets `source.newLines`. `resolvedPath`, the diff and the commit subjects stay out, as the allowlist keeps them out. |
 | `github` | `::warning file=docs/limits.md,line=9,title=manni%3Acite/source-moved::fetch-timeout (lib/limits.ts:2): moved -> lib/config/limits.ts:112` |
-| `sarif` | Meta's renderer over the same findings. Rule id `manni:cite/source-moved`, level `warning`, `partialFingerprints` unchanged. The new path is in the message. |
-| `junit` | Meta's renderer, classname `manni.cite`. A `source-moved` stays a passing testcase, and a `source-changed` failure's text carries the span. |
+| `sarif` | cite renders it, over the same findings, with repository-relative uris and the fingerprints its baseline shares. Rule id `manni:cite/source-moved`, level `warning`, `partialFingerprints` unchanged. The new path is in the message the `github` annotation carries. |
+| `junit` | cite renders it, under the `manni.cite` classname, with each failure's message that same one. A `source-moved` stays a passing testcase, and a `source-changed` failure's text carries the span. |
 
 The output rule of 0044 is unchanged and now covers one more value. `newSrc` is
 spelled as the page spelled the source, so a private path reaches no format.
