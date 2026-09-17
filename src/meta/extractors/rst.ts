@@ -152,7 +152,6 @@ function extractDocinfo(content: string): ExtractedMetadata {
 export const rstExtractor: MetadataExtractor = {
   name: "rst",
   extensions: [".rst"],
-  implemented: true,
   apply: (content, patch, options) =>
     applyFencedOnly(content, patch, options, "rst"),
   extract(content) {

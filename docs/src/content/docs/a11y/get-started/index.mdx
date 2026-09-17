@@ -97,9 +97,10 @@ Checked 3 of 3 pages (sitemap: http://127.0.0.1:4173/sitemap.xml)
 5 violations on 2 of 3 pages
 ```
 
-Two pages carry findings, so the command exits `1`. While the crawl runs, a
-status line on stderr names the page it is on. It clears before the report
-prints, so `-f json` piped into another tool still gets clean stdout.
+Two pages carry findings, so the command exits `1`. On a terminal, a status
+line on stderr names the page the crawl is on and clears before the report
+prints. Progress never writes to stdout, so `-f json` piped into another tool
+still gets clean output.
 
 ## Read the report
 
@@ -112,7 +113,8 @@ Four things are on screen, from the top down.
 | The violation line | The severity, the axe rule id, and axe's own impact. Then the number of failing elements, axe's one-line description, and the rule's page on Deque University. |
 | The node line | One failing element, as a CSS selector and axe's statement of what is wrong with it. The first three elements per rule print. |
 
-The score is the share of axe rules that applied to the page and passed. Nothing
+The score is the share of axe rules that applied to the page and passed.
+Violations below the severity floor do not count against it. Nothing
 is weighted, so it is not a Lighthouse score. Read the score as a trend and the
 exit code as the verdict. A page with one error scores `94` and still fails the
 run.
@@ -148,7 +150,7 @@ Checked 3 of 3 pages (sitemap: http://127.0.0.1:4173/sitemap.xml)
 ```
 
 One rule is gone and the page score moved from `78` to `84`. The run still
-exits `1`, because four findings remain.
+exits `1`, because two pages still carry findings.
 
 ## Work one page at a time
 

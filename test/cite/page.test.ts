@@ -205,6 +205,28 @@ describe("readPage: entries", () => {
     expect(page.findings[0]?.id).toBeUndefined();
   });
 
+  it("reports a source range longer than 5,000 lines, and accepts one of exactly 5,000", () => {
+    const at = (lines: string) =>
+      readPage("p.md", pageWith(`  - id: x\n    source:\n      file: src/limits.ts\n      lines: "${lines}"\n      integrity: ${PIN}\n`));
+    expect(at("1-5000").findings).toEqual([]);
+    const long = at("2-5002");
+    expect(long.citations).toEqual([]);
+    expect(long.findings).toMatchObject([{ rule: "entry-invalid", line: 4, index: 0, id: "x" }]);
+    expect(long.findings[0]?.message).toBe('x: source.lines "2-5002" spans 5001 lines, more than 5000');
+  });
+
+  it("reports a claim range longer than 5,000 lines", () => {
+    const at = (lines: string) =>
+      readPage(
+        "p.md",
+        pageWith(`  - claim:\n      lines: "${lines}"\n      integrity: ${CLAIM_PIN}\n    source:\n      file: src/limits.ts\n      integrity: ${PIN}\n`),
+      );
+    expect(at("1-5000").findings).toEqual([]);
+    const long = at("1-5001");
+    expect(long.findings).toMatchObject([{ rule: "entry-invalid", line: 4, index: 0 }]);
+    expect(long.findings[0]?.message).toBe('claim.lines "1-5001" spans 5001 lines, more than 5000');
+  });
+
   it("accepts an encrypted source pinned with the keyed pin", () => {
     const page = fixture("encrypted.md");
     expect(page.findings).toEqual([]);

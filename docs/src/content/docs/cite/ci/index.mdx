@@ -85,7 +85,7 @@ why that matters.
 `actions/checkout` fetches one commit by default. A citation records the
 commit its pin was minted at, and two of the check's answers need the file as
 it was then. `source-never-true` is the finding that the pin never matched at
-that commit, and the diff under `--show-diff` runs from that commit to HEAD.
+that commit, and the diff under `--show-diff` runs from that commit to the working tree.
 On a shallow clone neither is possible, and the check degrades honestly rather
 than guessing:
 
@@ -221,12 +221,15 @@ tools cannot erase each other's backlog.
    that pin never lands on an unrelated pull request.
 
 4. **Burn the backlog down.** Each `update` or `update --accept` that resolves
-   a finding removes it from the picture. A fingerprint is made of the rule and
-   the entry's `id` (or its `source.integrity` when it has none). So a
-   baselined finding survives a move on either end, and accepting a changed
-   claim never reopens one. It disappears only when the source pin is
-   re-minted, which is the act that resolves it. Regenerate the file with
-   `--write-baseline` whenever it is convenient; it only ever shrinks.
+   a finding removes it from the picture. A fingerprint is made of the schema, the
+   rule, the entry's position in `citations` and its `id` (or its
+   `source.integrity` when it has none). So a baselined finding survives a
+   move on either end, and accepting a changed claim never reopens one.
+   Reordering the entries, or inserting one above it, does reopen it. It
+   disappears when the source pin is re-minted, which is the act that
+   resolves it. Regenerate the file with `--write-baseline` whenever it is
+   convenient. It records every finding the run sees, so it grows when new
+   findings have appeared since the last one.
    One exception: `manni key rotate` re-keys the pin of every encrypted
    citation, so an id-less one returns as new. Re-record the baseline after
    a rotation.

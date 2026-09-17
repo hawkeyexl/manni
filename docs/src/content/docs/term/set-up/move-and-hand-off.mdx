@@ -1,0 +1,478 @@
+---
+title: Move and hand off a termbase
+description: "Read a glossary from any construct manni reads, render it as term pages, a single glossary file, TBX, SKOS, CSV or JSON, see which fields each target keeps, and hand the set to a translation system."
+sidebar:
+  order: 2
+---
+
+import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+A glossary kept in one construct is not stuck there. `manni term` reads a
+term set from pages, from body constructs in six formats, and from manifests.
+`manni term write` renders the same set into another shape, or into an
+interchange format a translation system imports. This page moves a DocBook
+glossary to one Markdown page per term and back. Then it hands the set off as
+TBX and CSV.
+
+Every transcript below is real output from the built tool.
+
+## What each construct holds
+
+A construct is read for what it can say, and no further. A definition list
+has nowhere to put a scope note, so no scope note is read from one.
+
+| Construct | Needs `type: term-set` | Reads |
+|---|---|---|
+| Page metadata, `type: term`, in any format | n/a | every field |
+| YAML or JSON manifest under [`term.manifests`](/manni/term/reference/configuration/#a-manifest) | n/a | every field |
+| DITA `<glossentry>` topic | no | `label`, `definition`, `alt-labels`, `scope-note`, `id` |
+| DITA `<glossgroup>` | no | the same, per child `<glossentry>` |
+| DocBook `<glossary>` | no | `label`, `definition`, `alt-labels`, `see`, `related-terms`, `id` |
+| HTML `<dl>` | yes | `label`, `definition`, `alt-labels`, `id` |
+| HTML `<dfn>` | yes | `label`, `alt-labels`, `id` |
+| Markdown or MDX definition list | yes | `label`, `definition`, `alt-labels` |
+| AsciiDoc `[glossary]` list | no | `label`, `definition`, `alt-labels` |
+| reStructuredText `.. glossary::` | no | `label`, `definition`, `alt-labels` |
+
+Where a construct allows several terms against one definition, the first is
+the label and the rest are alt-labels. That covers several `<dt>` before one
+`<dd>`, several terms in one `.. glossary::` entry, and a DocBook `<glossterm>`
+beside an `<acronym>`.
+
+DITA's element names are the only ones that differ from the record's:
+
+| DITA | Field |
+|---|---|
+| `<glossterm>` | `label` |
+| `<glossdef>` | `definition` |
+| `<glossAlt><glossSynonym>` | `alt-labels` |
+| `<glossAlt><glossAcronym>` | `alt-labels` |
+| `<glossBody><glossUsage>` | `scope-note` |
+| topic `@id` | `id` |
+
+`manni term formats` prints what the build reads and writes, per format. The
+[CLI reference](/manni/term/reference/cli/#term-formats) shows its output.
+
+## Move a DocBook glossary to pages
+
+The starting point is one DocBook file holding three entries. `varifocal` is a
+redirect to `progressive-lens`:
+
+```xml title="docs/glossary.xml"
+<?xml version="1.0" encoding="UTF-8"?>
+<article xmlns="http://docbook.org/ns/docbook" version="5.0">
+  <title>Optics</title>
+  <glossary>
+    <title>Glossary</title>
+    <glossentry xml:id="bifocal">
+      <glossterm>bifocal</glossterm>
+      <glossdef>
+        <para>Lenses with two distinct optical powers, divided by a visible line.</para>
+      </glossdef>
+    </glossentry>
+    <glossentry xml:id="progressive-lens">
+      <glossterm>progressive lens</glossterm>
+      <acronym>PAL</acronym>
+      <glossdef>
+        <para>Corrective lenses whose optical power increases continuously from the top of the lens to the bottom.</para>
+        <glossseealso otherterm="bifocal"/>
+      </glossdef>
+    </glossentry>
+    <glossentry xml:id="varifocal">
+      <glossterm>varifocal</glossterm>
+      <glosssee otherterm="progressive-lens"/>
+    </glossentry>
+  </glossary>
+</article>
+```
+
+<Steps>
+
+1. **See what is read.**
+
+   ```sh
+   manni term list docs/glossary.xml
+   ```
+
+   ```
+   bifocal            bifocal
+   progressive-lens   progressive lens   PAL
+   varifocal          varifocal
+   3 terms
+   ```
+
+2. **Render one page per term.** The trailing `/` makes `-o` a directory, so
+   each entry gets a file named after its id:
+
+   ```sh
+   manni term write docs/glossary.xml -f markdown -o docs/terms/
+   ```
+
+   ```
+   Wrote 3 terms to docs/terms/, one file each
+   ```
+
+   ```markdown title="docs/terms/progressive-lens.md"
+   ---
+   title: progressive lens
+   type: term
+   id: progressive-lens
+   label: progressive lens
+   definition: Corrective lenses whose optical power increases continuously from the top of the lens to the bottom.
+   alt-labels:
+     - PAL
+   related-terms:
+     - bifocal
+   ---
+   ```
+
+   A page holds every field, so nothing was dropped. `<glossseealso>` became
+   `related-terms`, and `<glosssee>` became `see` on `varifocal`.
+
+3. **Grow the pages.** A page can now carry what DocBook could not. This one
+   gains a language, an abstract, a hidden-label and a scope note:
+
+   ```markdown title="docs/terms/progressive-lens.md"
+   ---
+   title: progressive lens
+   type: term
+   id: progressive-lens
+   language: en
+   label: progressive lens
+   definition: Corrective lenses whose optical power increases continuously from the top of the lens to the bottom.
+   abstract: Lenses that correct presbyopia without a visible line.
+   alt-labels:
+     - PAL
+   hidden-labels:
+     - no-line bifocal
+   related-terms:
+     - bifocal
+   scope-note: Spectacle lenses only. Contact lenses are out of scope.
+   ---
+   ```
+
+</Steps>
+
+## Render back into one file
+
+A path without a trailing `/`, naming no existing directory, gets every entry
+in one file. The format's list construct cannot hold every field, and the
+report says what was dropped:
+
+```sh
+manni term write docs/terms/ -f docbook -o build/glossary.xml
+```
+
+```
+Wrote 3 terms to build/glossary.xml
+  dropped from a DocBook glossary: abstract on 1 term, hidden-labels on 1, scope-note on 1
+```
+
+```xml title="build/glossary.xml"
+<?xml version="1.0" encoding="UTF-8"?>
+<glossary xmlns="http://docbook.org/ns/docbook" version="5.0">
+  <title>Glossary</title>
+  <glossentry xml:id="bifocal">
+    <glossterm>bifocal</glossterm>
+    <glossdef>
+      <para>Lenses with two distinct optical powers, divided by a visible line.</para>
+    </glossdef>
+  </glossentry>
+  <glossentry xml:id="progressive-lens">
+    <glossterm>progressive lens</glossterm>
+    <acronym>PAL</acronym>
+    <glossdef>
+      <para>Corrective lenses whose optical power increases continuously from the top of the lens to the bottom.</para>
+      <glossseealso>bifocal</glossseealso>
+    </glossdef>
+  </glossentry>
+  <glossentry xml:id="varifocal">
+    <glossterm>varifocal</glossterm>
+    <glosssee>progressive-lens</glosssee>
+  </glossentry>
+</glossary>
+```
+
+A Markdown definition list holds less again. It keeps the label, the
+definition and the alt-labels:
+
+```sh
+manni term write docs/terms/ -f markdown -o glossary.md
+```
+
+```
+Wrote 2 terms to glossary.md
+  dropped from a definition list: abstract on 1 term, hidden-labels on 1, related-terms on 1, scope-note on 1
+  skipped 1 term a definition list cannot read without a definition: varifocal
+```
+
+```markdown title="glossary.md"
+---
+type: term-set
+---
+
+bifocal
+:   Lenses with two distinct optical powers, divided by a visible line.
+
+progressive lens
+PAL
+:   Corrective lenses whose optical power increases continuously from the top of the lens to the bottom.
+```
+
+<Aside type="caution" title="A redirect needs a target that holds see">
+A definition list has no place for `see`, and an entry with no definition
+reads back as nothing. So `varifocal` is left out, and the run names it. The
+same goes for an AsciiDoc `[glossary]` list, a `.. glossary::` and an HTML
+`<dl>`. DITA, TBX and SKOS drop `see` too. Keep redirects in pages, a
+manifest, DocBook, CSV or JSON.
+</Aside>
+
+`--dry-run` prints the files a render would create or change, then the same
+dropped and skipped lines a write prints, and writes nothing:
+
+```console
+$ manni term write docs/terms/ -f markdown -o glossary.md --dry-run
+glossary.md would be created
+  dropped from a definition list: abstract on 1 term, hidden-labels on 1, related-terms on 1, scope-note on 1
+  skipped 1 term a definition list cannot read without a definition: varifocal
+```
+
+`--check` prints only the files, and exits `1` when one differs. When none
+does, it prints that the target is up to date.
+
+## What each render holds
+
+| `-f` | `-o` a directory | `-o` a file | Holds |
+|---|---|---|---|
+| `markdown`, `mdx`, `asciidoc`, `rst` | one term page per entry | a definition list, a `[glossary]` list, or a `.. glossary::` | a page holds every field. A list holds `label`, `definition` and `alt-labels` |
+| `html` | one term page per entry, fields in `<meta>` | a `<dl>` | a page holds every field. A `<dl>` holds `label`, `definition`, `alt-labels` and `id` |
+| `dita` | one `<glossentry>` topic per entry | a `<glossgroup>` | `label`, `definition`, `alt-labels`, `scope-note`, `id` |
+| `docbook` | refused | a `<glossary>` | `label`, `definition`, `alt-labels`, `see`, `related-terms`, `id` |
+| `tbx` | refused | TBX v2 Core | `label`, `definition`, `alt-labels`, `hidden-labels`, `id`, `language` |
+| `skos` | refused | a SKOS concept scheme in JSON-LD | every field except `abstract` and `see` |
+| `csv` | refused | one row per entry | every field |
+| `json` | refused | `{ "terms": [...] }` | every field |
+| `vale` | the `Terms` style | n/a | see [the generated style](/manni/term/set-up/#the-generated-style) |
+
+A directory target for a format that writes one file stops with exit `2`:
+
+```
+manni: -f tbx writes one file, not a directory. Pass -o <file>.
+```
+
+## What a round trip does not keep
+
+A render writes the record, and a read of the result builds a record again.
+Three things do not survive that trip.
+
+### A line break inside a paragraph
+
+This definition has a line break inside its first paragraph, and a paragraph
+break before its second:
+
+```console
+$ manni term get "progressive lens" docs/terms -f json
+{
+  "id": "progressive-lens",
+  "label": "progressive lens",
+  "definition": "Corrective lenses whose power increases\nfrom the top of the lens to the bottom.\n\nThey correct presbyopia without a visible line."
+}
+```
+
+A definition list writes the break, and reads it back as a space:
+
+```console
+$ manni term write docs/terms -f markdown -o build/glossary.md
+Wrote 1 term to build/glossary.md
+$ manni term get "progressive lens" build/glossary.md -f json
+{
+  "id": "progressive-lens",
+  "label": "progressive lens",
+  "definition": "Corrective lenses whose power increases from the top of the lens to the bottom.\n\nThey correct presbyopia without a visible line."
+}
+```
+
+The paragraph break survives. The same happens in every list construct. A
+Markdown or MDX definition list, an AsciiDoc `[glossary]` list and a
+`.. glossary::` read the break back as a space. An HTML `<dl>`, a DITA
+`<glossentry>` or `<glossgroup>`, and a DocBook `<glossary>` write each
+paragraph on one line:
+
+```xml title="build/glossary.xml"
+<glossdef>
+  <para>Corrective lenses whose power increases from the top of the lens to the bottom.</para>
+  <para>They correct presbyopia without a visible line.</para>
+</glossdef>
+```
+
+A term page, in Markdown or HTML, keeps the break. So do TBX, SKOS, CSV and
+JSON, which write the definition as it is. Where a break matters, keep the
+definition in pages, or make it a paragraph break.
+
+### An id in a construct with no identifier
+
+A Markdown or MDX definition list, an AsciiDoc `[glossary]` list and a
+`.. glossary::` have nowhere to store an id. An entry read back from one gets
+the slug of its label:
+
+```console
+$ manni term list docs/terms
+pal-lens   progressive lens
+1 term
+$ manni term write docs/terms -f markdown -o build/glossary.md
+Wrote 1 term to build/glossary.md
+$ manni term list build/glossary.md
+progressive-lens   progressive lens
+1 term
+```
+
+The run does not list `id` among the dropped fields. A page rendered from that
+list is `build/terms/progressive-lens.md`, with `id: progressive-lens`. So an
+id that is not the slug of its label changes, and so does the file named
+after it.
+
+Pages and manifests keep the id. So do an HTML `<dl>`, through `<dt id>`, a
+DITA topic `id`, and a DocBook `xml:id`:
+
+```console
+$ manni term write docs/terms -f html -o build/glossary.html
+Wrote 1 term to build/glossary.html
+$ manni term list build/glossary.html
+pal-lens   progressive lens
+1 term
+```
+
+### Markup the record has no field for
+
+A render writes only the record's fields. An attribute or element outside
+them is not carried into the output, even when the source and the target are
+the same format. This DocBook entry carries a `role`:
+
+```xml title="docs/glossary.xml"
+<glossentry xml:id="progressive-lens" role="clinical">
+  <glossterm>progressive lens</glossterm>
+  <glossdef>
+    <para>Corrective lenses whose power increases from the top of the lens to the bottom.</para>
+  </glossdef>
+</glossentry>
+```
+
+Rendered to DocBook, the `role` is gone:
+
+```console
+$ manni term write docs/glossary.xml -f docbook -o build/glossary.xml
+Wrote 1 term to build/glossary.xml
+$ cat build/glossary.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<glossary xmlns="http://docbook.org/ns/docbook" version="5.0">
+  <title>Glossary</title>
+  <glossentry xml:id="progressive-lens">
+    <glossterm>progressive lens</glossterm>
+    <glossdef>
+      <para>Corrective lenses whose power increases from the top of the lens to the bottom.</para>
+    </glossdef>
+  </glossentry>
+</glossary>
+```
+
+The run reports no dropped field, because `role` is not a field. The same
+goes for a DITA `outputclass`. The document around the glossary is not carried
+either. The source's `<article>` and its `Optics` title became a bare
+`<glossary>` titled `Glossary`. A render is a new file, so keep the source
+where that markup lives.
+
+## Hand the set to a translation system
+
+<Steps>
+
+1. **Write TBX.** TBX v2 Core is the termbase exchange format translation
+   systems import. The kind of label becomes each designation's status:
+
+   ```sh
+   manni term write docs/terms/ -f tbx -o build/terms.tbx
+   ```
+
+   ```
+   Wrote 3 terms to build/terms.tbx
+     dropped from tbx: abstract on 1 term, related-terms on 1, see on 1, scope-note on 1
+   ```
+
+   ```xml title="build/terms.tbx"
+   <?xml version="1.0" encoding="UTF-8"?>
+   <martif type="TBX" xml:lang="en">
+     ...
+         <termEntry id="progressive-lens">
+           <descrip type="definition">Corrective lenses whose optical power increases continuously from the top of the lens to the bottom.</descrip>
+           <langSet xml:lang="en">
+             <tig>
+               <term>progressive lens</term>
+               <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+             </tig>
+             <tig>
+               <term>PAL</term>
+               <termNote type="administrativeStatus">admittedTerm-admn-sts</termNote>
+             </tig>
+             <tig>
+               <term>no-line bifocal</term>
+               <termNote type="administrativeStatus">deprecatedTerm-admn-sts</termNote>
+             </tig>
+           </langSet>
+         </termEntry>
+     ...
+   </martif>
+   ```
+
+   Each `<langSet>` takes the entry's `language`. An entry that declares none
+   is written as `en`.
+
+2. **Or write CSV.** A spreadsheet or a system that maps columns by header
+   gets one row per entry. The per-language columns carry the language in
+   their header, and a list field joins its values with ` | `:
+
+   ```sh
+   manni term write docs/terms/ -f csv -o build/terms.csv
+   ```
+
+   ```
+   ID,Term [en],Definition [en],Abstract [en],Alt labels [en],Hidden labels [en],Scope note [en],Broader,Narrower,Related terms,See
+   bifocal,bifocal,"Lenses with two distinct optical powers, divided by a visible line.",,,,,,,,
+   progressive-lens,progressive lens,Corrective lenses whose optical power increases continuously from the top of the lens to the bottom.,Lenses that correct presbyopia without a visible line.,PAL,no-line bifocal,Spectacle lenses only. Contact lenses are out of scope.,,,bifocal,
+   varifocal,varifocal,,,,,,,,,progressive-lens
+   ```
+
+   A set whose entries declare two languages gets six columns per language,
+   and each row fills the columns of its own.
+
+</Steps>
+
+## Write back in place
+
+With no `-f`, `manni term write` sends each entry back through the reader that
+read it. Only an entry whose record differs from its file is rewritten. A set
+read and written unchanged leaves every file byte-identical:
+
+```console
+$ manni term write docs/
+Nothing to write
+```
+
+A body construct is spliced in place, and a page is rewritten through the
+extractor that read it. An HTML `<dfn>` is the one construct that cannot be
+written back:
+
+```
+manni: glossary.html: a dfn cannot be written in place. Pass -f <format> -o <path>.
+```
+
+<CardGrid>
+  <LinkCard
+    title="Terminology fields"
+    href="/manni/term/reference/terminology/"
+    description="The ten fields, how an entry gets its id, and why the kind of label is the status."
+  />
+  <LinkCard
+    title="CLI reference"
+    href="/manni/term/reference/cli/#term-write"
+    description="Every flag of write, the default for -o per format, and every refusal."
+  />
+</CardGrid>

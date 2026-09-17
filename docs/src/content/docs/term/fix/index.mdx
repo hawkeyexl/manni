@@ -1,0 +1,391 @@
+---
+title: Fix a failing check
+description: "Read a manni term annotation, find the rule, make the one edit it asks for in the term pages or the Vale style, and confirm green locally before you push."
+---
+
+import { Steps, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+Your pull request's term check is red, and the annotation is on a page you
+may not have written. This page takes the annotation to a green local run.
+You don't need to know how the termbase was built. You need the rule id and
+the value the message names.
+
+<Aside type="tip" title="The fastest path">
+  Find the rule in the [table](#every-rule-at-a-glance), make the edit in its
+  row, then [run the check locally](#reproduce-and-confirm-locally). Done.
+</Aside>
+
+Every transcript below is real output from the built tool and Vale 3.20.0.
+The example repository has three term pages under `docs/terms/` and one guide,
+`docs/guides/fitting.md`, whose `concepts:` names them.
+
+## Decode the annotation
+
+This is what `manni term check -f github` leaves on a pull request:
+
+```
+::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "PAL" names no entry. "progressive lens" lists it as an alt-label.
+::notice file=docs/terms/progressive-lens.md,line=1,title=manni%3Aterm/unused-term::no page's concepts: names this term
+```
+
+The first line is the one that failed the job. The pull request shows its
+title as `manni:term/undefined-term`. The workflow command escapes the `:`,
+which is why the raw line reads `%3A`.
+
+| Part | In this annotation | What it tells you |
+|---|---|---|
+| Level | `error` | An error fails the job. A `warning` or a `notice` never does. |
+| File and line | `docs/guides/fitting.md`, line `3` | The field that caused the finding. For a finding about a whole entry, the entry's first line. |
+| Rule | `undefined-term` | The row to read in the [table](#every-rule-at-a-glance). |
+| Message | `concepts: "PAL" names no entry.` | The field, and the value it could not resolve. A second sentence, when there is one, names the fix. |
+
+Two families of rule reach a pull request. `manni:term/<rule>` comes from
+`manni term check`, which reads the term records. `manni:term/prose/<Style.Rule>`
+comes from `manni term lint`, which runs Vale over each definition. A third job,
+`manni term write -f vale --check`, prints no annotation. It fails with a log
+line naming a file.
+
+## Every rule at a glance
+
+| Rule | It means | Do this |
+|---|---|---|
+| [`undefined-term`](#a-concepts-value-names-no-entry) | A page's `concepts:` names no preferred label. | Write the entry's preferred label, fix the spelling, or add the term. |
+| [`dangling-reference`](#a-term-points-at-nothing) | A `broader`, `narrower`, `related-terms` or `see` value names no entry. | Fix the spelling, or add the term. |
+| [`label-collision`](#two-entries-claim-one-name) | Two entries share a preferred label, ignoring case. | Rename one, or merge them. |
+| [`duplicate-id`](#two-entries-claim-one-name) | Two entries share an `id`, ignoring case. | Rename one, or merge them. |
+| [`alt-label-collision`](#two-entries-claim-one-name) | An alt-label is another entry's preferred label. | Remove the alt-label, or merge the entries. |
+| [`broader-cycle`](#a-hierarchy-loops) | A chain of `broader` returns to where it started. | Remove the `broader` value that closes it. |
+| [`see-not-empty`](#a-redirect-carries-a-definition) | An entry with `see` also has a `definition`. | Remove the definition. |
+| [`prose/<Style.Rule>`](#a-definition-breaks-the-house-voice) | Vale flagged a definition, abstract or scope note. | Rewrite the sentence. |
+| [`--check` failed](#the-vale-style-is-out-of-date) | The committed `Terms` style no longer matches the set. | Run `manni term write -f vale`, and commit it. |
+
+Three `check` rules never fail a run by default. `asymmetric-hierarchy` is a
+warning, and `abstract-too-long` and `unused-term` are notices. The
+[rules reference](/manni/term/reference/rules/) has each one's level and
+meaning, and a repository can move any level under `term.severity`.
+
+## A concepts value names no entry
+
+```
+docs/guides/fitting.md:3
+  error  manni:term/undefined-term       concepts: "PAL" names no entry.
+                                         "progressive lens" lists it as an alt-label.
+docs/terms/progressive-lens.md:1
+  notice manni:term/unused-term          no page's concepts: names this term
+
+1 error, 1 notice in 3 terms
+```
+
+`concepts:` resolves against preferred labels only. `PAL` is a name the set
+knows, and the second line names the entry that claims it. Write that entry's
+preferred label instead:
+
+```markdown title="docs/guides/fitting.md" del={3} ins={4}
+---
+title: Fitting lenses
+concepts: [PAL, corrective lens, bifocal]
+concepts: [progressive lens, corrective lens, bifocal]
+---
+```
+
+```
+✓ 3 terms, 3 references, no findings
+```
+
+The `unused-term` notice went too, because a page now names `progressive lens`.
+
+A message with no second line names nothing the set knows:
+
+```
+docs/guides/fitting.md:3
+  error  manni:term/undefined-term       concepts: "corective lens" names no entry.
+docs/terms/corrective-lens.md:1
+  notice manni:term/unused-term          no page's concepts: names this term
+
+1 error, 1 notice in 3 terms
+```
+
+Fix the spelling. If the value is right and the term is new, add a term page
+for it. See [`undefined-term`](/manni/term/reference/rules/#undefined-term).
+
+## A term points at nothing
+
+```
+docs/terms/progressive-lens.md:8
+  error  manni:term/dangling-reference   related-terms: "bifocals" names no entry
+
+1 error in 3 terms
+```
+
+The same mistake, inside a term. `broader`, `narrower`, `related-terms` and
+`see` resolve against preferred labels and ids, ignoring case. The entry is
+`bifocal`, so correct the value:
+
+```markdown title="docs/terms/progressive-lens.md" del={1} ins={2}
+related-terms: [bifocals]
+related-terms: [bifocal]
+```
+
+```
+✓ 3 terms, 3 references, no findings
+```
+
+When the spelling is right and no entry exists, add the term instead. See
+[`dangling-reference`](/manni/term/reference/rules/#dangling-reference).
+
+## Two entries claim one name
+
+A second glossary page, `docs/glossary/bifocals.md`, defines `Bifocal` again:
+
+```
+docs/terms/bifocal.md:4
+  error  manni:term/label-collision      "bifocal" is claimed by docs/glossary/bifocals.md:1 as "Bifocal"
+
+1 error in 4 terms
+```
+
+Labels are compared ignoring case, so `Bifocal` and `bifocal` are one name.
+When both pages also carry `id: bifocal`, the run adds a `duplicate-id` on
+each:
+
+```
+docs/glossary/bifocals.md:1
+  error  manni:term/duplicate-id         id: "bifocal" is also used by docs/terms/bifocal.md:1
+docs/terms/bifocal.md:1
+  error  manni:term/duplicate-id         id: "bifocal" is also used by docs/glossary/bifocals.md:1
+docs/terms/bifocal.md:4
+  error  manni:term/label-collision      "bifocal" is claimed by docs/glossary/bifocals.md:1 as "Bifocal"
+
+3 errors in 4 terms
+```
+
+Decide whether the two pages define one thing or two.
+
+- **One thing.** Merge them. Keep one page, move anything worth keeping into
+  it, and delete the other. With `docs/glossary/bifocals.md` gone:
+
+  ```
+  ✓ 3 terms, 3 references, no findings
+  ```
+
+- **Two things.** Rename one. Give it a label and an id of its own, such as
+  `bifocal spectacles` and `bifocals`. A term no page names yet is a notice,
+  and the run exits `0`:
+
+  ```
+  docs/glossary/bifocals.md:1
+    notice manni:term/unused-term          no page's concepts: names this term
+
+  1 notice in 4 terms
+  ```
+
+An id you never wrote can collide too. An entry without one takes its
+construct's own identifier, else the slug of its label. See [how an entry gets
+its id](/manni/term/reference/terminology/#how-an-entry-gets-its-id).
+`alt-label-collision` is the same problem between an alt-label and a preferred
+label: remove the alt-label, or merge the entries.
+See [`label-collision`](/manni/term/reference/rules/#label-collision),
+[`duplicate-id`](/manni/term/reference/rules/#duplicate-id) and
+[`alt-label-collision`](/manni/term/reference/rules/#alt-label-collision).
+
+## A hierarchy loops
+
+```
+docs/terms/corrective-lens.md:6
+  error  manni:term/broader-cycle         broader: corrective lens > progressive lens > corrective lens
+docs/terms/progressive-lens.md:1
+  warning manni:term/asymmetric-hierarchy  narrower: omits "corrective lens", which lists this entry as broader
+
+1 error, 1 warning in 3 terms
+```
+
+The message spells the chain. `progressive lens` is narrower than
+`corrective lens`, and line 6 says the reverse as well. Remove the `broader`
+value that closes the loop:
+
+```markdown title="docs/terms/corrective-lens.md" del={6}
+---
+type: term
+id: corrective-lens
+label: corrective lens
+narrower: [progressive lens]
+broader: [progressive lens]
+definition: A lens worn to correct a refractive error of the eye.
+---
+```
+
+```
+✓ 3 terms, 3 references, no findings
+```
+
+The warning goes with it, because it came from the same line. See
+[`broader-cycle`](/manni/term/reference/rules/#broader-cycle).
+
+## A redirect carries a definition
+
+```
+docs/terms/varifocal.md:1
+  notice manni:term/unused-term          no page's concepts: names this term
+docs/terms/varifocal.md:5
+  error  manni:term/see-not-empty        see: "progressive lens" redirects this entry, so remove its definition
+
+1 error, 1 notice in 4 terms
+```
+
+An entry with `see` sends the reader to the entry that defines the term, so it
+defines nothing itself. Delete its `definition`:
+
+```markdown title="docs/terms/varifocal.md" del={6}
+---
+type: term
+id: varifocal
+label: varifocal
+see: progressive lens
+definition: Another name for a progressive lens.
+---
+```
+
+```
+docs/terms/varifocal.md:1
+  notice manni:term/unused-term          no page's concepts: names this term
+
+1 notice in 4 terms
+```
+
+The notice stays, and the run exits `0`. If the entry should be a term of its
+own, remove `see` and keep the definition instead. See
+[`see-not-empty`](/manni/term/reference/rules/#see-not-empty).
+
+## A definition breaks the house voice
+
+A `manni:term/prose/…` annotation comes from `manni term lint`. The part after
+`prose/` is a Vale rule from your repository's own styles:
+
+```
+::error file=docs/terms/corrective-lens.md,line=6,title=manni%3Aterm/prose/House.Length::Keep a sentence under 20 words.
+::warning file=docs/terms/corrective-lens.md,line=6,title=manni%3Aterm/prose/House.Simply::Drop 'simply'.
+```
+
+Line 6 is the `definition`:
+
+```markdown title="docs/terms/corrective-lens.md"
+definition: A lens that is simply worn in front of the eye, or on it, to correct a refractive error such as myopia, hyperopia, astigmatism or presbyopia.
+```
+
+Rewrite it until the rule passes:
+
+```markdown title="docs/terms/corrective-lens.md"
+definition: A lens worn to correct a refractive error, such as myopia or presbyopia.
+```
+
+```
+✓ 3 terms, no findings
+```
+
+A `House.Length` finding on a definition that is one long noun phrase may be
+the rule's fault, not the sentence's. That is a question for whoever owns the
+Vale configuration. [Keep the terms and the docs in step](/manni/term/set-up/#a-voice-for-definitions-alone)
+shows the section that relaxes a rule for definitions alone.
+
+## The Vale style is out of date
+
+The `vale` job fails with a line naming a file, and no annotation:
+
+```console
+$ manni term write -f vale --check
+.vale/styles/Terms/Deprecated.yml would change
+$ echo $?
+1
+```
+
+The `Terms` style is generated from the term set, and a term changed without
+regenerating it. Here a hidden-label was added to `progressive lens`.
+Regenerate the style:
+
+```console
+$ manni term write -f vale
+Wrote 3 terms to .vale/styles/Terms
+  Lowercase.yml   3 labels
+  Deprecated.yml  2 swaps
+  PAL.yml         1 acronym
+$ manni term write -f vale --check
+.vale/styles/Terms is up to date
+```
+
+Commit the changed files under `Terms/` beside the term page. Don't edit them
+by hand. Each opens with a line saying it is generated, and the next render
+replaces it.
+
+## Reproduce and confirm locally
+
+Don't guess and re-push. Run the job that failed, on your machine.
+
+<Steps>
+
+1. **Run it from the repository root.** No install needed:
+
+   ```sh
+   npx @hawkeyexl/manni term check
+   ```
+
+   With no path, the run reads every collection `manni.config.yaml` declares.
+   Those are the files CI reads. Swap in `term lint` or
+   `term write -f vale --check` for the other two jobs.
+
+2. **Make the edit** from the matching section above.
+
+3. **Run it again** and confirm the green line:
+
+   ```
+   ✓ 3 terms, 3 references, no findings
+   ```
+
+4. **Push.** Commit the page, and after `write -f vale` the style too.
+
+</Steps>
+
+<Aside type="caution" title="Name the terms, not only your page">
+  `check` judges a page against the whole set. A path that holds your page
+  but no terms stops with exit `2`:
+
+  ```
+  manni: no terms found. A term is a page declaring type: term, or an entry in a file declaring type: term-set.
+  ```
+
+  A path that holds some of the terms reports the rest as undefined. Pass the
+  directory that holds both, such as `docs`, or pass no path at all.
+</Aside>
+
+## What the exit code means
+
+| Code | Meaning |
+|---|---|
+| `0` | No error-severity finding, or `--check` found the style up to date. The job is green. |
+| `1` | At least one error-severity finding the baseline does not hold, or `--check` found a file that differs. This is the red check you came here to fix. |
+| `2` | The job could not run. No terms, no Vale on PATH, a bad flag or a bad config key. The message is on stderr, prefixed `manni:`. |
+
+A `1` means fix the page. A `2` means fix the setup, or ask whoever configured
+the check.
+
+<CardGrid>
+  <LinkCard
+    title="Check rules"
+    href="/manni/term/reference/rules/"
+    description="All ten rules, with each one's default level, message and fix, and one run that breaks every rule."
+  />
+  <LinkCard
+    title="Run it in CI"
+    href="/manni/term/ci/"
+    description="The three jobs that can turn a pull request red, and the baseline that ramps them in."
+  />
+  <LinkCard
+    title="CLI reference"
+    href="/manni/term/reference/cli/"
+    description="Every flag of check, lint and write, each output shape, and every usage error."
+  />
+  <LinkCard
+    title="Fix a citation check"
+    href="/manni/cite/fix/"
+    description="The same job on another tool. Decode a manni cite finding, and re-pin what it says drifted."
+  />
+</CardGrid>

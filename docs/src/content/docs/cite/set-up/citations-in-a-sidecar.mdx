@@ -53,11 +53,12 @@ Two collections, `site` and `guides`, and one manifest each. The pages under
    manifest, as long as only one of them owns `citations`.
 
 2. **Move each page's entries into it.** The manifest is a mapping from page
-   path, relative to the manifest, to that page's keys. Cut the `citations:`
-   block out of the page's frontmatter and paste it under the page's path:
+   path, relative to the config file, to that page's keys. That holds wherever
+   the manifest sits. Cut the `citations:` block out of the page's frontmatter
+   and paste it under the page's path:
 
    ```yaml title="docs-citations.yaml"
-   # The site collection's citations, keyed by page path relative to this file.
+   # The site collection's citations, keyed by page path relative to the config file.
    docs/limits.md:
      citations:
        - id: fetch-timeout
@@ -289,7 +290,9 @@ whichever page the run reached last.
 
 ## The three refusals
 
-Each is an operational error, exit `2`, raised before any page is read.
+Each is an operational error, exit `2`. The first is raised when the config is
+read, before any page is. The second is raised on a page both collections
+match. The third is raised after `add` reads the page from stdin.
 
 | You wrote | You hear |
 | --- | --- |

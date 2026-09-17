@@ -66,8 +66,9 @@ the entry's own line, in the manifest when a sidecar owns it.
 
 The first five are about the **source** end, the next three about the
 **claim** end, and the rest about the entry and its anchor. `update` handles
-the mechanical ones and refuses the rest, printing each as `skipped` and
-exiting `1` so you know work is left.
+the mechanical ones and refuses the rest, printing each as `skipped`. It exits
+`1` when a skipped finding is an error, so you know work is left. Skipped
+warnings and notices leave the exit code at `0`.
 
 Two words in the output are not rules. `current` says an end matches its pin,
 and `skipped` says it was not read, which is what `--no-check-sources` does to
@@ -273,8 +274,9 @@ manni cite add docs/limits.md:21 src/limits.ts:3 --id retries --marker
 ```
 
 The pinned page text is gone, so the sentence was edited. This is a **warning**,
-not an error, because it fires on any edit to the pinned paragraph, a typo fix
-beside the cited sentence included.
+not an error, because it fires on any edit to the pinned text, a typo fix included. Under
+claim lines that is an edit on those lines. Under a marker it is an edit
+anywhere in the paragraph or block the marker anchors.
 
 **Fix.** Read the text as it is now, then re-pin it:
 
@@ -291,8 +293,9 @@ docs/limits.md: fetch-timeout claim at line 13 re-pinned (changed; now "The fetc
 `--accept` re-pins over the paragraph or fenced block now at the claim's first
 line, and prints it. So the log says exactly what was accepted. It skips the
 claim when that line is blank, or inside a different kind of block. A sentence
-that was reworded **and** moved cannot be re-pinned this way: `cite add` it
-again.
+that was reworded **and** moved has left that line. `--accept` then re-pins
+whatever paragraph now starts there, so read the printed text. If it is not
+the sentence, `cite add` the sentence again.
 
 A team that wants every edit to a cited sentence reviewed sets
 `claim-changed: error` under
@@ -373,8 +376,8 @@ manni: docs/limits.md:2 is in the frontmatter. A claim is body text.
 ```
 
 An entry does not fit the citation shape. A required field is missing,
-`source.file` does not match the grammar, a range runs backwards, or two
-entries share an `id`. The line is the entry's own line, in the manifest when
+`source.file` does not match the grammar, or two entries share an `id`. A
+range that runs backwards or spans more than 5,000 lines is one too. The line is the entry's own line, in the manifest when
 a sidecar owns it.
 
 Two more cases land here. A pin whose prefix does not match its source is one:

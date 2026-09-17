@@ -1725,16 +1725,8 @@ export function buildProgram(): Command {
         }
         lines.push("", c.bold("Input formats:"));
         for (const f of info.formats) {
-          const tags = [
-            f.implemented ? c.green("implemented") : c.dim("planned"),
-          ];
-          // Only worth surfacing on formats that can actually be read.
-          if (f.implemented) {
-            tags.push(f.writable ? c.green("writable") : c.dim("read-only"));
-          }
-          lines.push(
-            `  ${f.name} (${f.extensions.join(", ")})  [${tags.join(", ")}]`,
-          );
+          const tag = f.writable ? c.green("writable") : c.dim("read-only");
+          lines.push(`  ${f.name} (${f.extensions.join(", ")})  [${tag}]`);
         }
         process.stdout.write(`${lines.join("\n")}\n`);
       } catch (err) {

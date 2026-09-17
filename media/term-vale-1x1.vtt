@@ -1,0 +1,20 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:08.333
+One glossary, one guide: The glossary defines progressive lens, its acronym and a retired name. The guide gets all three wrong.
+
+2
+00:00:08.333 --> 00:00:18.033
+Glossary to Vale style: manni term write -f vale turns the terms into Vale rules, one per kind of mistake.
+
+3
+00:00:18.033 --> 00:00:28.867
+Vale catches all three: Add Terms to .vale.ini as the notice says. Vale flags the acronym, the old name and the casing: exit 1.
+
+4
+00:00:28.867 --> 00:00:38.733
+Same terms, new format: The same glossary, rendered as Markdown: one page per term, every field kept.
+

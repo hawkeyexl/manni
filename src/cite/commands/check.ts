@@ -39,7 +39,7 @@ import {
   type CitationSidecars,
   type PageSidecar,
 } from "../core/sidecar.js";
-import { buildSourceIndex } from "../core/sources.js";
+import { sourceIndexFor } from "../core/sources.js";
 import { CiteError } from "../errors.js";
 import type {
   CheckOptions,
@@ -48,7 +48,6 @@ import type {
   CiteRun,
   GitClient,
   PageCitationReport,
-  SourceIndex,
 } from "../types.js";
 
 /** What `check` and `update` settle before touching a page. */
@@ -121,19 +120,6 @@ export function joinHits(): JoinHits {
   };
 }
 
-function isEnoent(error: unknown): boolean {
-  return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
-}
-
-async function indexFor(root: string, client: GitClient): Promise<SourceIndex> {
-  try {
-    return await buildSourceIndex(root, { gitClient: client });
-  } catch (error) {
-    if (isEnoent(error)) throw new CiteError(`Root directory not found: ${root}.`);
-    throw error;
-  }
-}
-
 /**
  * The front half of a run: which config governs it, which files it covers,
  * and the clients every page shares. `action` is the past-tense verb the
@@ -171,7 +157,7 @@ export async function prepareRun(
 
   const usingStdin = inputs.includes(STDIN_TOKEN);
   const forced = opts.as === undefined ? undefined : extractorByName(opts.as);
-  if (opts.as !== undefined && forced?.implemented !== true) {
+  if (opts.as !== undefined && forced === undefined) {
     throw new CiteError(
       `Unknown format "${opts.as}". Supported extensions: ${supportedExtensions().join(", ")}.`,
     );
@@ -217,7 +203,7 @@ export async function prepareRun(
     severity: config?.severity,
     gitClient: git,
   };
-  if (checkSources) pageOptions.sourceIndex = await indexFor(run.root, git);
+  if (checkSources) pageOptions.sourceIndex = await sourceIndexFor(run.root, git);
 
   // The sidecar manifests, read once per run. Membership is every declared
   // collection's, whatever this run selected, so a page given by path still

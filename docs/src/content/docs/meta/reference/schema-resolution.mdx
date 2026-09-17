@@ -1,6 +1,7 @@
 ---
 title: Schema resolution reference
 description: How manni meta picks the schema set for each file, covering the precedence chain, the three reference kinds, and the supported JSON Schema dialects.
+concepts: [schema set, schema reference, $schema key, dialect, override]
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -12,8 +13,8 @@ which JSON Schema dialects are supported.
 
 ## Precedence
 
-manni meta determines the schema set for a file by checking these sources in order
-and using the **first** one that yields a non-empty set:
+manni meta checks these sources, in order, for the schema set of a file.
+The **first** one that yields a non-empty set is the one it uses.
 
 | Level | Source | Scope |
 |---|---|---|

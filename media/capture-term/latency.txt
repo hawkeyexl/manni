@@ -1,0 +1,6 @@
+write-vale 0 548ms
+vale-plain 1 125ms
+write-md 0 512ms
+timing1 write-vale 548ms vale 120ms write-md 485ms
+timing2 write-vale 541ms vale 126ms write-md 492ms
+timing3 write-vale 533ms vale 124ms write-md 481ms

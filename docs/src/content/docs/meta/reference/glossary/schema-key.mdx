@@ -1,0 +1,24 @@
+---
+title: $schema key
+description: What the $schema key in a document does, why it is stripped before validation, and where it sits in precedence.
+type: term
+id: schema-key
+label: $schema key
+alt-labels: [$schema]
+related-terms: [schema reference, override, meta-schema URI]
+abstract: The key a document uses to name its own schemas.
+definition: >-
+  A reserved key a document can put in its own metadata, to name the schema or
+  schemas it should be validated against.
+---
+
+<p>{frontmatter.definition}</p>
+
+It takes a single reference or a list. Because it's a manni meta directive
+rather than real metadata, `$schema` is **stripped before validation**, so a
+schema with `additionalProperties: false` won't flag it. In the
+[precedence chain](/manni/meta/reference/glossary/override/) it sits above
+config but below a `--schema` flag. A schema carries a different value under the
+same key, its [meta-schema URI](/manni/meta/reference/glossary/meta-schema-uri/).
+See
+[The `$schema` key in a file](/manni/meta/reference/schema-resolution/#the-schema-key-in-a-file).

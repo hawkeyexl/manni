@@ -1,0 +1,8 @@
+{
+  "progressive-lens": {
+    "label": "progressive lens",
+    "alt-labels": ["PAL"],
+    "x-owner": "optics"
+  },
+  "bifocal": {"label": "bifocal", "definition": "Lenses with two powers."}
+}

@@ -1,0 +1,117 @@
+---
+title: "manni:terminology:1.0.0-proposal.1"
+description: "The proposed terminology vocabulary gives a term entry its names, its definition and its place among other terms, flat at the page root and mapped onto SKOS."
+sidebar:
+  order: 11
+  label: "terminology"
+---
+
+:::caution[Proposal under review]
+Part of the [metadata vocabularies proposal](/manni/meta/proposals/frontmatter-vocabularies/),
+open for community review. Draft schema:
+[`docs/proposals/0023/schemas/terminology/1.0.0-proposal.1.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/terminology/1.0.0-proposal.1.json).
+This vocabulary arrived with
+[proposal 0052](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0052-term-domain.md),
+after the ten, and is the family's eleventh id. Its draft sits beside 0023's
+because it joins that family. The [terminology
+reference](/manni/term/reference/terminology/) documents the vocabulary as
+`manni term` implements it.
+:::
+
+**The question it answers: what does this term mean, and what else is it
+called?** `manni:structure` gives a page `concepts:`, a list of terms from a
+glossary. This vocabulary is the glossary. A term entry names its term,
+defines it, lists the other names it goes by, and places it among other terms.
+Any glossary tool, graph builder or style checker can implement it.
+
+## Fields
+
+The fields sit at the root of the page, flat, as every house vocabulary's do.
+`type`, `id` and `language` belong to
+[`manni:core`](/manni/meta/proposals/core/) and are not redeclared.
+
+| Field | Type | Required | Location | SKOS |
+|---|---|---|---|---|
+| `label` | string | on `type: term` | `page` | `skos:prefLabel` |
+| `definition` | string | on `type: term`, unless `see` is set | `page` | `skos:definition` |
+| `abstract` | string | no | `page` | none; a narrower `skos:definition` |
+| `alt-labels` | string or unique list | no | `page` | `skos:altLabel` |
+| `hidden-labels` | string or unique list | no | `page` | `skos:hiddenLabel` |
+| `broader` | string or unique list | no | `page` | `skos:broader` |
+| `narrower` | string or unique list | no | `page` | `skos:narrower` |
+| `related-terms` | string or unique list | no | `page` | `skos:related` |
+| `see` | string | no | `page` | none; the inverse of `skos:altLabel` |
+| `scope-note` | string | no | `page` | `skos:scopeNote` |
+
+The Location column is the `x-manni-location` mark each field carries. `page`
+means the value belongs in the document's own metadata and is meant to reach
+delivered output. A term's names and meaning are what a reader or an agent
+fetching the page acts on. See [field
+location](/manni/meta/schemas/field-location/) for how the marks are used.
+
+`type: term` marks an entry, and turns on the `label` and definition
+requirements. `type: term-set` marks a file whose body holds many entries, and
+imposes nothing on the file's own metadata. Files without the vocabulary's
+fields pass.
+
+## Example
+
+```yaml
+title: Progressive lens
+description: What a progressive lens is, and when a prescription calls for one.
+type: term
+id: progressive-lens
+label: progressive lens
+alt-labels: [PAL, graduated lens]
+hidden-labels: [no-line bifocal]
+broader: [corrective lens]
+related-terms: [bifocal]
+abstract: Lenses that correct presbyopia without a visible line.
+definition: >-
+  Corrective lenses whose optical power increases continuously from the top of
+  the lens to the bottom, correcting presbyopia without the visible boundary a
+  bifocal carries.
+```
+
+## Design decisions
+
+- **Flat at the root, not inside `kg`.** The `kg` block is the family's one
+  exception to flat keys. A second exception would make it a pattern. A
+  record that exists only inside another tool's envelope would also make that
+  tool a dependency of writing a definition.
+- **No status field.** The kind of label is the status. `label` is preferred,
+  `alt-labels` are admitted, and `hidden-labels` are deprecated, which is what
+  SKOS documents `hiddenLabel` for. DITA 2.0 removed `<glossStatus>` along
+  with most of its other glossary metadata.
+- **Two lengths of definition.** A rendered entry wants the full text, and a
+  hover card wants a sentence. Kubernetes, mdbook-termlink and GitLab each
+  split the definition independently, so `abstract` is its own field.
+- **`see` is a redirect, not a relation.** An entry with `see` names a term
+  and sends the reader elsewhere. Carrying a definition as well is a
+  contradiction, and the schema leaves it to `manni term check` to report
+  rather than refusing it.
+- **The id survives a rename.** `id` comes from `manni:core`. A concept
+  identified by its preferred label changes identity when the label is
+  respelled, and cannot hold synonyms without picking a winner.
+- **`abstract` is not `description`.** `description` says what the page is
+  about. `abstract` says what the term is. They coincide on a well-written
+  term page and diverge on a manifest entry or a definition-list entry, which
+  have no page.
+
+## The `kg` harvest
+
+Proposal 0052 pairs this vocabulary with `manni:kg:1.0.0-proposal.4`, which
+adds `kg.definition` and `kg.abstract`. On a page with no `kg` block, the
+graph would harvest the root fields as the fallback of their `kg` twins.
+`label`, `alt-labels`, `broader`, `narrower`, `definition` and `abstract` map
+by name, and `related-terms` maps to `kg.related-concepts`. A page that opens
+a `kg` block keeps kg's behaviour exactly. The concept's IRI would be minted
+from `id` where the page has one.
+
+## What reviewers should poke at
+
+Three questions. Is ten fields the right stopping point, with status carried
+by the kind of label rather than a field? Does `type: term` collide with a
+closed `type` taxonomy you already compose, such as a list that holds
+`glossary` but not `term`? And is one language per record enough, with a
+multi-language termbase kept as one set per language joined on `id`?

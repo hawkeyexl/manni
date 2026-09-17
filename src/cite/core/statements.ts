@@ -15,18 +15,16 @@
  * `indexOf` for the delimiters, never a regex over the whole page, and is
  * handed the body only, so a `cite` inside frontmatter is never matched.
  *
- * It does not read code. An opener inside a fenced block (``` or ~~~ in
- * markdown and mdx, indented or not; `----` in asciidoc; an unclosed fence
- * runs to the end, as a renderer reads it) or inside a backtick span (a run of
- * backticks closed by a run of the same length on the same line) is skipped,
- * so a page that documents the syntax carries no statements. html and xml
- * have neither; a `<pre>` is not code to this scanner.
+ * It does not read code. An opener inside a fenced block or a backtick span,
+ * as `src/shared/code-regions.ts` finds them, is skipped, so a page that
+ * documents the syntax carries no statements.
  *
  * Every form parses in both markdown and mdx. The first form is what
  * `formatStatement` writes: the html comment for markdown, the jsx comment
  * for mdx, which rejects an html comment.
  */
 import type { InlineStatement } from "../types.js";
+import { codeEndAt, codeRegions } from "../../shared/code-regions.js";
 import { CiteError } from "../errors.js";
 
 export interface StatementForm {
@@ -50,22 +48,12 @@ const ID = /^[a-z0-9][a-z0-9-]*$/;
  * (`claims.ts`) have no format parameter, so they treat every family's opener
  * as a fence; the per-format locators below are what `quote` anchoring uses.
  * A markdown fence keeps its meaning when indented, as inside a list item, so
- * it is read there too, matching the code skip (`SKIP_MARKDOWN_FENCE`); the
+ * it is read there too, matching the code skip in `src/shared/code-regions.ts`; the
  * asciidoc `----` stays at column 0.
  */
 export const ANY_FENCE = /^(?:[ \t]*(?:`{3,}|~{3,})|-{4,})/;
 const MARKDOWN_FENCE = /^(`{3,}|~{3,})/;
 const ASCIIDOC_FENCE = /^(-{4,})/;
-/**
- * The fence openers the code skip recognises. A markdown fence keeps its
- * meaning when indented, as it is inside a list item, so the skip reads it
- * there too; the locators above stay at column 0 for `quote` anchoring.
- */
-const SKIP_MARKDOWN_FENCE = /^[ \t]*(`{3,}|~{3,})/;
-const SKIP_ASCIIDOC_FENCE = ASCIIDOC_FENCE;
-/** Formats where a backtick span is inline code. */
-const SPAN_FORMATS = new Set(["markdown", "mdx", "asciidoc", "rst"]);
-
 /** The forms per extractor name. Unknown formats have none. */
 export function statementForms(format: string): readonly StatementForm[] {
   switch (format) {
@@ -96,116 +84,6 @@ function fenceFor(format: string): RegExp | undefined {
     default:
       return undefined;
   }
-}
-
-/** The fence-opener pattern the code skip uses for a format, or undefined when it has no fences. */
-function skipFenceFor(format: string): RegExp | undefined {
-  switch (format) {
-    case "markdown":
-    case "mdx":
-      return SKIP_MARKDOWN_FENCE;
-    case "asciidoc":
-      return SKIP_ASCIIDOC_FENCE;
-    default:
-      return undefined;
-  }
-}
-
-/** A stretch of the body the scanner does not read, as body offsets. */
-interface CodeRegion {
-  start: number;
-  end: number;
-}
-
-const BACKTICK = 96;
-
-/** Length of the run of backticks starting at `i` in `text` (0 when none). */
-function backtickRun(text: string, i: number): number {
-  let n = 0;
-  while (text.charCodeAt(i + n) === BACKTICK) n++;
-  return n;
-}
-
-/**
- * The backtick spans on one line, appended to `out` as body offsets. A run
- * of N backticks opens a span that the next run of exactly N closes; a run
- * with no closer is literal text.
- */
-function spanRegions(text: string, lineStart: number, out: CodeRegion[]): void {
-  let i = 0;
-  while (i < text.length) {
-    const n = backtickRun(text, i);
-    if (n === 0) {
-      i++;
-      continue;
-    }
-    let j = i + n;
-    let closer = -1;
-    while (j < text.length) {
-      const m = backtickRun(text, j);
-      if (m === 0) {
-        j++;
-        continue;
-      }
-      if (m === n) {
-        closer = j;
-        break;
-      }
-      j += m;
-    }
-    if (closer === -1) {
-      i += n;
-      continue;
-    }
-    out.push({ start: lineStart + i, end: lineStart + closer + n });
-    i = closer + n;
-  }
-}
-
-/**
- * Whether a line closes the fence `open`: the same character, at least as
- * many of it, nothing else on the line. Indentation is allowed as on the
- * opener; a longer run does not close a shorter one's block, which is how a
- * ```` block carries a ``` block inside it.
- */
-function closesFence(text: string, open: { char: string; length: number }): boolean {
-  const trimmed = text.trim();
-  let n = 0;
-  while (trimmed.charAt(n) === open.char) n++;
-  return n >= open.length && n === trimmed.length;
-}
-
-/**
- * Every fenced block and backtick span in the body, in order, for a format
- * that has them. An unclosed fence runs to the end of the body.
- */
-function codeRegions(body: string, format: string): CodeRegion[] {
-  const fence = skipFenceFor(format);
-  const spans = SPAN_FORMATS.has(format);
-  const out: CodeRegion[] = [];
-  if (fence === undefined && !spans) return out;
-  let open: { char: string; length: number; start: number } | undefined;
-  let pos = 0;
-  while (pos < body.length) {
-    const end = lineEnd(body, pos);
-    const text = lineText(body, pos, end);
-    if (open !== undefined) {
-      if (closesFence(text, open)) {
-        out.push({ start: open.start, end });
-        open = undefined;
-      }
-    } else {
-      const opener = fence?.exec(text)?.[1];
-      if (opener !== undefined) {
-        open = { char: opener.charAt(0), length: opener.length, start: pos };
-      } else if (spans) {
-        spanRegions(text, pos, out);
-      }
-    }
-    pos = end + 1;
-  }
-  if (open !== undefined) out.push({ start: open.start, end: body.length });
-  return out;
 }
 
 /** Offset of the terminator of the line containing `pos` (or the text length). */
@@ -243,6 +121,28 @@ function payloadOf(payload: string): InlineStatement["payload"] {
   return { kind: "bad", reason: "payload is not an id" };
 }
 
+/** Whether the text between a form's delimiters is a cite statement. */
+function isCite(inner: string): boolean {
+  return inner === "cite" || (inner.startsWith("cite") && /\s/.test(inner.charAt(4)));
+}
+
+/**
+ * Whether a line holds one marker and nothing else, in any of the format's
+ * forms. Such a line is never text a marker anchors: markers stacked above a
+ * paragraph all anchor the paragraph, and none of them is part of its pin.
+ */
+export function isMarkerLine(line: string, format: string): boolean {
+  const text = line.trim();
+  return statementForms(format).some((form) => {
+    if (text.length < form.open.length + form.close.length) return false;
+    if (!text.startsWith(form.open)) return false;
+    // The first close is the last thing on the line, so there is one marker.
+    const closeAt = text.indexOf(form.close, form.open.length);
+    if (closeAt !== text.length - form.close.length) return false;
+    return isCite(text.slice(form.open.length, closeAt).trim());
+  });
+}
+
 /** Scan a body for statements. `from` maps body offsets/lines to file offsets/lines. */
 export function parseStatements(
   body: string,
@@ -253,16 +153,13 @@ export function parseStatements(
   const fileLine = (bodyOffset: number): number =>
     from.line + lineAt(body, bodyOffset) - 1;
   const code = codeRegions(body, format);
-  /** The end of the code region `at` falls in, or undefined when it is prose. */
-  const codeEndAt = (at: number): number | undefined =>
-    code.find((r) => at >= r.start && at < r.end)?.end;
 
   for (const form of statementForms(format)) {
     let cursor = 0;
     for (;;) {
       const at = body.indexOf(form.open, cursor);
       if (at === -1) break;
-      const codeEnd = codeEndAt(at);
+      const codeEnd = codeEndAt(code, at);
       if (codeEnd !== undefined) {
         cursor = codeEnd;
         continue;
@@ -272,9 +169,7 @@ export function parseStatements(
       const end = closeAt + form.close.length;
       cursor = end;
       const inner = body.slice(at + form.open.length, closeAt).trim();
-      if (!(inner === "cite" || (inner.startsWith("cite") && /\s/.test(inner.charAt(4))))) {
-        continue;
-      }
+      if (!isCite(inner)) continue;
       const payload = inner.slice(4).trim();
 
       // Anchor: the rest of the close delimiter's line when it carries text,
@@ -305,12 +200,15 @@ export function detectEol(text: string): "\n" | "\r\n" {
 /**
  * The paragraph starting at or after `offset` (skipping blank lines), as
  * `{ start, end, line }` file offsets and the file line it starts on. A fence
- * opener ends the search with no paragraph.
+ * opener ends the search with no paragraph. Given a `format`, a marker-only
+ * line is skipped like a blank one before the paragraph, and ends it after.
  */
 export function paragraphAfter(
   content: string,
   offset: number,
+  format?: string,
 ): { start: number; end: number; line: number } | undefined {
+  const marker = (text: string): boolean => format !== undefined && isMarkerLine(text, format);
   let pos = offset;
   // The rest of the line `offset` sits in counts when it carries text; when
   // it is blank the paragraph can only start on a later line.
@@ -320,7 +218,7 @@ export function paragraphAfter(
   while (pos < content.length) {
     const end = lineEnd(content, pos);
     const text = lineText(content, pos, end);
-    if (text.trim() === "") {
+    if (text.trim() === "" || marker(text)) {
       pos = end + 1;
       continue;
     }
@@ -331,7 +229,7 @@ export function paragraphAfter(
     while (cursor < content.length) {
       const e = lineEnd(content, cursor);
       const t = lineText(content, cursor, e);
-      if (t.trim() === "" || ANY_FENCE.test(t)) break;
+      if (t.trim() === "" || ANY_FENCE.test(t) || marker(t)) break;
       last = e;
       cursor = e + 1;
     }
@@ -462,12 +360,16 @@ export function formatStatement(format: string, payload: { kind: "ref"; id: stri
   return `${form.open}${pad}cite ${payload.id}${pad}${form.close}`;
 }
 
-/** The first non-blank line at or after `offset`, as a 1-based line of `text`. */
-function nextNonBlankLine(text: string, offset: number): number | undefined {
+/**
+ * The first line at or after `offset` that is neither blank nor a marker on
+ * its own, as a 1-based line of `text`.
+ */
+function nextTextLine(text: string, offset: number, format: string): number | undefined {
   let pos = nextLineStart(text, offset);
   while (pos < text.length) {
     const end = lineEnd(text, pos);
-    if (lineText(text, pos, end).trim() !== "") return lineAt(text, pos);
+    const line = lineText(text, pos, end);
+    if (line.trim() !== "" && !isMarkerLine(line, format)) return lineAt(text, pos);
     pos = end + 1;
   }
   return undefined;
@@ -503,10 +405,134 @@ export function insideFence(
 }
 
 /**
+ * The paragraph or fenced block that holds `line`, as the lines it spans,
+ * fences included: what a marker written above it anchors. A paragraph runs
+ * up to a blank line, a fence, a marker-only line or the body's start, and
+ * down as `paragraphAfter` reads it. Undefined for a blank line, a marker-only
+ * line, or a line nothing can anchor.
+ */
+export function unitHolding(
+  text: string,
+  line: number,
+  format: string,
+  body: { offset: number; line: number },
+): { start: number; end: number; kind: "paragraph" | "block" } | undefined {
+  const textOf = (n: number): string => lineText(text, offsetOfLine(text, n), lineEnd(text, offsetOfLine(text, n)));
+  const own = textOf(line);
+  if (own.trim() === "" || isMarkerLine(own, format)) return undefined;
+  const block = fencedBlocks(text, body.offset, format).find(
+    (b) => line >= b.line && line <= lineAt(text, b.end),
+  );
+  if (block !== undefined) {
+    return { start: block.line, end: lineAt(text, block.end), kind: "block" };
+  }
+  if (ANY_FENCE.test(own)) return undefined;
+  let start = line;
+  while (start - 1 >= body.line) {
+    const above = textOf(start - 1);
+    if (above.trim() === "" || ANY_FENCE.test(above) || isMarkerLine(above, format)) break;
+    start--;
+  }
+  const paragraph = paragraphAfter(text, offsetOfLine(text, start), format);
+  if (paragraph?.line !== start) return undefined;
+  return { start, end: lineAt(text, paragraph.end), kind: "paragraph" };
+}
+
+/** A markdown list item's opening line: its indentation, its bullet or number, and the gap after. */
+const LIST_ITEM = /^([ \t]*)([-*+]|\d{1,9}[.)])([ \t]+|$)/;
+/** A thematic break, which a list item's pattern would otherwise read as `* * *`. */
+const THEMATIC_BREAK = /^[ \t]*([-*_])(?:[ \t]*\1){2,}[ \t]*$/;
+
+/** The text of 1-based line `n` of `text`. */
+function textOfLine(text: string, n: number): string {
+  const pos = offsetOfLine(text, n);
+  return lineText(text, pos, lineEnd(text, pos));
+}
+
+/** The leading spaces and tabs of a line. */
+function indentOf(line: string): string {
+  return /^[ \t]*/.exec(line)?.[0] ?? "";
+}
+
+/** The column a run of spaces and tabs reaches, with tab stops every 4 columns. */
+function columnOf(indent: string): number {
+  let column = 0;
+  for (const ch of indent) column = ch === "\t" ? column + 4 - (column % 4) : column + 1;
+  return column;
+}
+
+/** The list item a markdown line opens, or undefined. */
+function listItemOf(line: string): { lead: string; bullet: string; gap: string } | undefined {
+  if (THEMATIC_BREAK.test(line)) return undefined;
+  const match = LIST_ITEM.exec(line);
+  if (match === null) return undefined;
+  const [, lead = "", bullet = "", gap = ""] = match;
+  return { lead, bullet, gap };
+}
+
+/**
+ * Whether the list item on `line` follows an earlier item of its list: the
+ * nearest text above it, past blank and marker-only lines, is indented deeper
+ * than the item, or sits in a paragraph holding an item at the same column.
+ */
+function continuesList(
+  text: string,
+  line: number,
+  format: string,
+  bodyLine: number,
+  column: number,
+): boolean {
+  let n = line - 1;
+  while (n >= bodyLine) {
+    const above = textOfLine(text, n);
+    if (above.trim() !== "" && !isMarkerLine(above, format)) break;
+    n--;
+  }
+  if (n < bodyLine) return false;
+  if (columnOf(indentOf(textOfLine(text, n))) > column) return true;
+  for (; n >= bodyLine; n--) {
+    const above = textOfLine(text, n);
+    if (above.trim() === "" || ANY_FENCE.test(above) || isMarkerLine(above, format)) break;
+    const item = listItemOf(above);
+    if (item !== undefined && columnOf(item.lead) === column) return true;
+  }
+  return false;
+}
+
+/**
+ * The indentation a marker written above `line` carries, so it stays in the
+ * container the line is in. A paragraph's own leading spaces and tabs, copied
+ * as they are. Above a markdown list item that follows an earlier item, the
+ * column of the item's text, which keeps the marker inside the list: at the
+ * item's own column it would end the list. asciidoc never indents one, since
+ * a comment there starts at column 0.
+ */
+export function markerIndent(
+  text: string,
+  line: number,
+  format: string,
+  bodyLine: number,
+): string {
+  if (format === "asciidoc") return "";
+  const own = textOfLine(text, line);
+  const indent = indentOf(own);
+  if (format !== "markdown" && format !== "mdx") return indent;
+  const item = listItemOf(own);
+  if (item === undefined || !continuesList(text, line, format, bodyLine, columnOf(item.lead))) {
+    return indent;
+  }
+  // A gap of five spaces or more is one space and indented code, so the text starts after one.
+  const gap = item.gap === "" || columnOf(item.gap) > 4 ? " " : item.gap;
+  return item.lead + " ".repeat(item.bullet.length) + gap;
+}
+
+/**
  * The lines a marker anchors, as 1-based lines of `text`: the rest of its own
  * line when that carries text, else the paragraph or fenced block that
- * follows. With `quote`, the next fenced block after it, wherever that is.
- * Undefined when nothing follows to anchor.
+ * follows. Marker-only lines below it are skipped, so markers stacked above
+ * one paragraph all anchor it, and none is part of the pin. With `quote`, the
+ * next fenced block after it, wherever that is. Undefined when nothing
+ * follows to anchor.
  */
 export function anchoredLines(
   text: string,
@@ -523,12 +549,12 @@ export function anchoredLines(
     const line = lineAt(text, after);
     return { start: line, end: line };
   }
-  const paragraph = paragraphAfter(text, after);
+  const paragraph = paragraphAfter(text, after, format);
   if (paragraph !== undefined) {
     return { start: paragraph.line, end: lineAt(text, paragraph.end) };
   }
   // A fence where a paragraph would be: the block is what the marker anchors.
-  const line = nextNonBlankLine(text, after);
+  const line = nextTextLine(text, after, format);
   return line === undefined ? undefined : fenceSpanAt(text, line, format);
 }
 

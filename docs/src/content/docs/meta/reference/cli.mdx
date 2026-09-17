@@ -1,6 +1,7 @@
 ---
 title: CLI reference
 description: Every manni meta command, argument, and flag (validate, get, query, fill, derive, relocate, and schemas), with the shared input model and default ignores.
+concepts: [validation, extraction]
 ---
 
 import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
@@ -35,8 +36,8 @@ Global options are accepted before the subcommand.
 
 ## `meta`
 
-The metadata tool. Every command on this page lives under it, and it is the
-same program the package's `docmeta` bin runs, so `docmeta validate …` and
+The metadata tool. Every command on this page lives under it. It is the same
+program the package's `docmeta` bin runs, so `docmeta validate …` and
 `manni meta validate …` are one command with two spellings. `meta` accepts
 its own `-V, --version` (the same version) and `-h, --help`.
 
@@ -999,9 +1000,9 @@ docs/faq.md  current
 ```
 
 Exit `0` means the run applied, or had nothing to do. Exit `1` means a file
-could not be read or written (an unparseable document, a read-only format, or
-`provenance` on a page whose metadata is not fenced), with or without
-`--check`. Under `--check` alone, it also means the run filed a finding, for a
+could not be read or written, with or without `--check`. That covers an
+unparseable document, a read-only format, and `provenance` on a page whose
+metadata is not fenced. Under `--check` alone, it also means the run filed a finding, for a
 managed field that is stale or unset. For `provenance` that is a range that
 changed, is stale or is unset. A range that only moved passes. Exit `2` is usage or operational, including every
 source that could not answer.
@@ -1188,11 +1189,11 @@ manni meta schemas [options]
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. Anything else is a usage error (exit `2`), including `github`, `sarif`, and `junit`. See [which command produces which format](/manni/meta/ci/exit-codes-and-annotations/#output-formats). |
 
 In `pretty` format, `schemas` lists each built-in schema by id and title. It
-then lists each input format with its extensions, whether it is implemented, and
-whether [`fill`](#meta-fill) can write to it. In `json` format it prints
+then lists each input format with its extensions and whether
+[`fill`](#meta-fill) can write to it. In `json` format it prints
 `{ builtins, formats }`, where `builtins` is an array of
 `{ id, title, description }` and `formats` is an array of
-`{ name, extensions, implemented, writable }`.
+`{ name, extensions, writable }`.
 
 ```sh
 manni meta schemas
@@ -1353,7 +1354,7 @@ their inputs the same way.
 
 - **Positional paths** are files, directories, or globs. A named file is always
   read. A directory or glob is expanded and filtered to the extensions in
-  `--ext`. By default that is the extensions of the [implemented
+  `--ext`. By default that is the extensions of the [supported
   formats](/manni/meta/reference/formats/). It is then filtered to what your
   repository does not [ignore](#gitignore).
 - **`-` reads stdin.** Stdin requires `--as <format>` to choose an extractor,

@@ -190,7 +190,7 @@ export function addMessage(result: AddResult): string {
 
   if (result.markerLine !== undefined) {
     const at =
-      claimLines === undefined ? "" : `, claim pinned at line ${String(claimLines.start)}`;
+      claimLines === undefined ? "" : `, claim pinned at ${spellAt(claimLines)}`;
     return `${head}; marker at line ${String(result.markerLine)}${at}`;
   }
   if (claim === undefined || claimLines === undefined) {
@@ -363,7 +363,7 @@ export function buildProgram(): Command {
       "path, path:L or path:L1-L2 relative to --root, or an encrypted ~source with the same line forms",
     )
     .option("--id <id>", "kebab-case id, unique on the page; required with --marker")
-    .option("--marker", "write a cite <id> marker above the page lines and pin the text it anchors")
+    .option("--marker", "write a cite <id> marker above the paragraph holding the page lines and pin the text it anchors")
     .option("--quote", "the page lines are a fenced block that reproduces the source")
     .option(
       "--encrypt",

@@ -10,7 +10,6 @@ import { applyFrontmatter } from "./frontmatter-write.js";
 export const markdownExtractor: MetadataExtractor = {
   name: "markdown",
   extensions: [".md", ".markdown"],
-  implemented: true,
   extract: (content) => extractFrontmatter(content, "markdown"),
   apply: (content, patch, options) =>
     applyFrontmatter(content, patch, options),

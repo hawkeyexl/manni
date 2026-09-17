@@ -36,8 +36,8 @@ Every transcript below is real output from the built tool.
 <Steps>
 
 1. **Check that the repository is green under the current key.** A rotation
-   cannot fix a value that was already wrong, and it will not start beside one
-   it cannot decrypt.
+   cannot fix a value that was already wrong. A run that meets a value it
+   cannot decrypt reports it, exits `1`, and writes nothing.
 
    ```console
    $ manni meta validate
@@ -88,7 +88,7 @@ Every transcript below is real output from the built tool.
    # exit 0
    ```
 
-   The metadata values are named by their JSON pointer, `/owner`. The citation
+   The metadata values are named by their JSON Pointer, `/owner`. The citation
    is named by its id, and keeps its source lines after the ciphertext.
 
 4. **Update the CI secret, if the job reads one.** Nothing to do when the key

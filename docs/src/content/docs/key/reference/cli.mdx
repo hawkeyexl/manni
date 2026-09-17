@@ -53,14 +53,15 @@ Write `encryptionKey:` at the top level of a manni config file. The file is the
 one `-c` names, else the nearest `manni.config.yaml`, whatever sections it
 carries. When there is none, `manni.config.yaml` is created at the git root, or
 in the working directory outside git. An existing file is edited in place, and
-every other key in it survives. With no `[value]`, 64 random hex characters
-are generated. The key is never printed. The report names the file it went to,
-and nothing else.
+every other key in it survives. Discovery also finds `moose.config.yaml`, the
+file's name before the rename, and warns to rename it. With no `[value]`, 64
+random hex characters are generated. The key is never printed. The report
+names the file it went to, and nothing else.
 
 A file `-c` names must exist. It is read as a family file when it is named
-`manni.config.yaml`, carries a top-level `encryptionKey:` or `collections:`,
-or is empty. Any other file, such as a `docmeta.config.yaml`, is one tool's
-whole section. `set` refuses it, because a top-level key would turn its whole
+`manni.config.yaml` or `moose.config.yaml`, carries a top-level
+`encryptionKey:`, `collections:` or `tools:`, or is empty. Any other file,
+such as a `docmeta.config.yaml`, is one tool's whole section. `set` refuses it, because a top-level key would turn its whole
 document into a family file.
 
 When the file is not ignored by git, a warning on stderr says so before the
@@ -225,8 +226,8 @@ A whole run whose key lives in the config writes in three steps:
 3. The config again, without `encryptionKeyPrevious:`.
 
 The key goes first so that it is never lost. A key the command generated for
-itself reaches the config before any value is encrypted under it. The old key
-stays beside it until nothing needs it.
+itself reaches the config before any value encrypted under it is written. The
+old key stays beside it until nothing needs it.
 
 ### An interrupted rotation
 
@@ -240,7 +241,7 @@ encryptionKeyPrevious: <the old key>
 
 | Key | Type | Meaning |
 |---|---|---|
-| `encryptionKeyPrevious` | string of at least 32 hex or base64url characters | The key an unfinished rotation is replacing. Present only while a rotation is unfinished. `manni key rotate` writes it and removes it, and no other command reads it. A value of the wrong shape is refused, and the error never repeats it. |
+| `encryptionKeyPrevious` | string of at least 32 hex or base64url characters | The key an unfinished rotation is replacing. Present only while a rotation is unfinished. `manni key rotate` writes it and removes it. `manni key set` refuses while it holds a valid key, and ignores one of the wrong shape. Every other command reads it through its config loader and refuses a value of the wrong shape. The error never repeats it. |
 
 Every value decrypts under one of the two keys. Run `manni key rotate` with no
 `--to` and it finishes the job. It re-encrypts from the previous key to the
@@ -390,8 +391,10 @@ manni: Unknown --format "sarif". Use pretty or json.
 
 `set` refuses a configured key because replacing it in place would leave every
 encrypted value unreadable. `rotate` is the command that replaces it. Every
-command refuses a key of the wrong shape, in the config or the environment. The
-error never repeats the value:
+other command refuses a key of the wrong shape, in the config or the
+environment. `set` writes a new key over a malformed `encryptionKey:` in the
+config, and refuses any `MANNI_ENCRYPTION_KEY`. The error never repeats the
+value:
 
 ```
 manni: manni.config.yaml: "encryptionKey" must be at least 32 hex or base64url characters. Run `manni key set` to generate one.
@@ -480,16 +483,16 @@ $ manni key rotate --to 0123456789abcdef0123456789abcdef --collection site --ext
 
 The ciphertexts above are shortened. In `pretty` output each one shows as `~`
 and its first four characters; `-f json` carries every one whole. A metadata
-value is named by its JSON pointer, `/owner`. A citation is named by its id,
+value is named by its JSON Pointer, `/owner`. A citation is named by its id,
 and keeps its `source.lines` after the ciphertext. A citation with no id is
 named by where it sits, `/citations/0`, and by the manifest when one owns it.
-In JSON a citation row carries `kind: "citation"`, its `id` or `index`, and
-`from` and `to`; a skipped row carries `kind` and `message` in place of `from`
-and `to`.
+In JSON a citation row carries `kind: "citation"`, its `index`, its `id` when
+it has one, the `line` the entry sits on when known, and `from` and `to`. A
+skipped row carries `kind` and `message` in place of `from` and `to`.
 
-`manifests` lists the local manifests, one row each, in the order the selected
-collections declare them. A URL manifest is read-only and never appears. Each
-row names the manifest as the run reports it and the `collection` that
-declared it. A value in one is named by the document entry it belongs to and
-the JSON pointer inside that entry. So `docs/handbook.md/owner` reads as one
+`manifests` lists each local manifest with a value rewritten or skipped, one
+row each, in the order the selected collections declare them. A URL manifest
+is read-only and never appears. Each row names the manifest as the run
+reports it and the `collection` that declared it. A value in one is named by the document entry it belongs to and
+the JSON Pointer inside that entry. So `docs/handbook.md/owner` reads as one
 name in `pretty`, and as two fields, `entry` and `pointer`, in JSON.

@@ -1,0 +1,20 @@
+---
+title: Metadata
+description: What metadata means in manni meta, where it comes from, and what manni meta checks about it.
+type: term
+id: metadata
+label: metadata
+related-terms: [extractor, frontmatter]
+abstract: The key/value pairs manni meta validates.
+definition: >-
+  The key/value pairs manni meta validates.
+---
+
+<p>{frontmatter.definition}</p>
+
+They are fields such as `type`, `title`, and `timestamp`. Metadata is what an
+[extractor](/manni/meta/reference/glossary/extractor/) pulls out of a
+document's [frontmatter](/manni/meta/reference/glossary/frontmatter/).
+Everything in manni meta after extraction operates on this generic key/value
+shape, regardless of the original format. manni meta checks the **presence and
+format** of metadata, never the document's prose.

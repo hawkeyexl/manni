@@ -58,6 +58,16 @@ jobs:
       # rather than stepping around it. Kept identical to the step in ci.yml.
       - name: Validate docs frontmatter (dogfood)
         run: node dist/cli.js meta validate --format github
+      # The glossary is a termbase: one `type: term` page per term, and pages
+      # that name the terms they explain in `concepts:`. Bare, like the step
+      # above, so the pages come from the `site` collection.
+      - name: Check the docs' terms
+        run: node dist/cli.js term check --format github
+      # .vale/styles/Terms/ is generated from the glossary and committed, since
+      # the Vale workflow runs no Node build to generate it. `-o` names the
+      # styles directory, so this job needs no Vale binary to find it.
+      - name: The generated Vale style matches the glossary
+        run: node dist/cli.js term write -f vale -o .vale/styles --check
 
   # Build the Astro/Starlight static site and upload it as a Pages artifact.
   #

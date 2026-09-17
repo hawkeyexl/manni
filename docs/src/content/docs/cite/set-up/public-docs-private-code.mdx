@@ -138,9 +138,10 @@ with a whole run under that `--to`.
   never `lib/limits.ts`. The decrypted path exists only in memory. It reaches
   output only through the pretty reporter, and only under `--reveal`. So the
   private job's `github`, `json`, `sarif` and `junit` outputs are safe on a
-  public pull request and in code scanning. A test in the repository runs
-  every reporter against a private path and a sentinel key, and asserts
-  neither string appears.
+  public pull request and in code scanning. A test in the repository renders
+  `json`, `github` and `pretty` against a private path and a sentinel key, and
+  asserts neither string appears. Another asserts the same of the findings
+  that `sarif` and `junit` are rendered from.
 </Aside>
 
 ## The layout

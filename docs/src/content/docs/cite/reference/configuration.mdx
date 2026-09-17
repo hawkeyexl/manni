@@ -1,6 +1,6 @@
 ---
 title: Configuration reference
-description: "Every key of the cite section in manni.config.yaml (root, baseline, checkSources, severity), with types, defaults, where the document set is declared, when git is used, discovery rules, the refused salt key, and the severity table."
+description: "Every key of the cite section in manni.config.yaml (allowEmpty, respectGitignore, root, baseline, checkSources, severity), with types, defaults, where the document set is declared, when git is used, discovery rules, the refused salt key, and the severity table."
 sidebar:
   order: 2
 ---
@@ -34,7 +34,8 @@ one are on the metadata tool's
 [configuration reference](/manni/meta/reference/configuration/#collections).
 A family file that declares `collections:` and no `cite:` section is still
 this tool's config: the documents are declared, and every cite key takes its
-default.
+default. The same holds for a file whose only family key is `tools:` or
+`encryptionKey:`.
 
 ### The citations manifest
 
@@ -130,12 +131,18 @@ is not a secret, so `eror` is quoted back as the typo it is.
 
 ## Discovery
 
-The tool looks for `manni.config.yaml` (then `manni.config.yml`) in the
-working directory and each ancestor, stopping at the nearest `.git` boundary.
-The first file found wins; ancestor files are never merged. A family file with
-neither a `cite:` key nor a `collections:` list belongs to a sibling tool, and
-discovery keeps looking up the tree. There is no pre-family filename for this
-tool, so nothing else is read.
+The tool looks in the working directory and each ancestor, stopping at the
+nearest `.git` boundary. With no `.git` above the working directory, it looks
+in the working directory only. In each directory it tries
+`manni.config.yaml`, then `manni.config.yml`. Then it tries
+`moose.config.yaml` and `moose.config.yml`, the family file's pre-rename
+names. It reads them the same way, with a warning on stderr to rename the file.
+
+The first file found wins; ancestor files are never merged. A family file
+counts when it carries `cite:`, `collections:`, `tools:` or `encryptionKey:`.
+One with none of these belongs to a sibling tool, and discovery keeps looking
+up the tree. The tool has no config file of its own from before the family
+file.
 
 `-c <path>` names the file outright and must exist. `--no-config` skips
 discovery and runs on the defaults alone. When a config governs the run,
@@ -222,7 +229,7 @@ statuses, per end, and neither is a rule, so neither can be named here.
 | `source-missing` | `error` | The path is not a tracked file under the root, or the ciphertext resolves to nothing. |
 | `claim-moved` | `notice` | The pinned page text is found verbatim elsewhere, so nothing drifted. `update` rewrites the lines. |
 | `claim-moved-ambiguous` | `warning` | The pinned text sits in more than one place, and the tool will not guess. |
-| `claim-changed` | `warning` | It fires on any edit to a pinned paragraph, a typo fix beside the cited sentence included. Set it to `error` to have every such edit reviewed. |
+| `claim-changed` | `warning` | It fires on any edit to the pinned text, a typo fix included: the claim lines, or the whole paragraph or block a marker anchors. Set it to `error` to have every such edit reviewed. |
 | `marker-orphan` | `error` | A marker names an id no entry has. |
 | `marker-invalid` | `error` | A marker the tool cannot read, including one carrying JSON. |
 | `marker-repeated` | `warning` | Two markers name one id; the first anchors it. |
