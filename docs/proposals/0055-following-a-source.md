@@ -192,6 +192,14 @@ The list is then narrowed three ways, all of them already in the tool:
 Candidates are visited in the order git prints them, which is sorted by path.
 So a search that stops early stops at the same place twice.
 
+**There is no fallback to the whole index.** A diff that names nothing, or
+whose named files hold no window, ends the search. The tracked-file list is not
+searched in its place. A pin whose commit predates a repository import is the
+case that tempts one. It fails the preconditions anyway, since git cannot show
+that commit. Searching every tracked file would also mean searching blind,
+without the first-line filter, which is the cost stress test 9 declined to
+bound.
+
 **What is compared.** The candidate list comes from committed history, and the
 bytes come from the working tree, as every other source read does. Each
 candidate is read once, normalized and split under the hashing rule of 0044,
@@ -265,6 +273,17 @@ over `changed`, `never-true` and `missing` alike. That is the rule 0044 already
 applies inside one file. A pin whose bytes sit somewhere a commit touched
 moved, whatever else is true of its old range.
 
+**A cross-file move stays a warning**, at 0044's severity for
+`source-moved`. The case for an error is that `source.file` is the one field a
+reader of the page can check by eye. Four things answer it. The pin holds byte
+for byte, so the evidence the sentence rests on is intact, and only the path
+is stale. `update` repairs it with no judgement to make, which is what a
+warning with a one-command fix is for. A team that wants sign-off on a path
+rewrite sets `severity: { source-moved: error }`, which is the documented
+path. And an error by default would block CI on any rename in a cited
+repository, until someone ran `update`. That is the D5 journey this proposal
+serves.
+
 ### 3. Inside a changed range
 
 A source end that reaches step 5 as `changed` has an original text, and the
@@ -272,7 +291,8 @@ question left is which lines the old range now covers. The search for it is the
 narrowest one that answers the two dogfood cases:
 
 - Take the original range's first line and its last line, as text.
-- Find each in the file as it stands.
+- Find each in the **working-tree** file, read from disk as decision 2 reads a
+  candidate.
 - Each must occur **exactly once**, the last must sit at or after the first,
   and the span must be no wider than `MAX_RANGE_LINES`, 5,000 lines.
 
@@ -286,8 +306,15 @@ did change, and calling it anything softer would be a lie about the pin. What
 the span buys is the next two actions. The finding names it, `--show-diff`
 diffs it rather than the stale range, and `update --accept` re-mints there.
 
-This search costs no git call. It reuses the text `git show` already fetched
-for step 3, which is memoized per commit and path.
+This search costs no git call. History supplies the two lines it looks for, and
+the working tree supplies the file it looks in. The old text is the one
+`git show` already fetched for step 3, memoized per commit and path, so nothing
+is read from history twice.
+
+**No span on `source-never-true`.** A never-true end has no canonical first and
+last line to look for. The pin did not hold at the recorded commit, so the
+lines git can show there are not the lines the citation was minted over.
+Bracketing by them would search for text the pin never covered.
 
 ### 4. An encrypted source
 
@@ -945,21 +972,20 @@ visible in the diff `--dry-run` prints, and both are named in the report line.
   ``changed; run `manni cite update --accept` before rotating``. A moved source
   now re-keys cleanly, so that skip is reached less often. The message is
   unchanged.
-- One `feat:` commit or one `fix:` commit is the open question below, and the
+- One `feat:` commit or one `fix:` commit is the last question below, and the
   house rule ties the demo video to the answer. The demo is the #49 transcript.
   A red check shows a deletion and no destination, then the same check names
   the function's new home, then one `update` fixes it.
-- Open questions for the review, in the order debate is expected:
-  1. Is `source-moved` at warning the right severity for a **cross-file** move,
-     or should a path rewrite be an error a person signs off on? The argument
-     for error is that `source.file` is the one field a reader of the page can
-     check by eye.
-  2. Should the in-range span be offered on `source-never-true` as well, using
-     the pinned range's neighbours rather than its own first and last lines?
-  3. Is `fix:` right, given that the verdict for a renamed file changes? The
-     alternative reading is `feat:`, since following a source across files is
-     new behaviour with a demo attached.
-  4. Should the candidate list fall back to the whole tracked-file index when
-     the diff names nothing? A pin whose commit predates a repository import
-     is the case. The cost is a blind search over every tracked file, which is
-     the thing stress test 9 declined to bound with a timeout.
+- Three questions the review raised are decided, and each is a decision in the
+  section it belongs to. A cross-file `source-moved` stays a **warning**, in
+  decision 2, and that record carries the four grounds. The span is not
+  offered on `source-never-true`, in decision 3. A never-true end has no
+  canonical first and last line to look for. The candidate list does not fall
+  back to the whole tracked-file index, in decision 2. That search is blind,
+  and stress test 9 declined to bound it.
+- One question is left, and it is a release decision rather than a design one.
+  Is `fix:` right, given that the verdict for a renamed file changes? The
+  alternative reading is `feat:`, since following a source across files is new
+  behaviour with a demo attached. "Not breaking" above states the `fix(cite):`
+  reading, and the commit type is what semantic-release acts on, so the
+  maintainer settles it.
