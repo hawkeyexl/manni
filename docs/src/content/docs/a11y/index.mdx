@@ -52,8 +52,9 @@ Pages come from two places, in this order:
    [Sitemaps](#sitemaps) for when it is read, how it is found, and what
    happens without one.
 2. **Links.** Every page that loads contributes the same-host `<a href>` links
-   in its rendered DOM. Anchors, `mailto:`, `tel:`, and links to assets such as
-   PDFs, images, and stylesheets are skipped.
+   in its rendered DOM. `mailto:`, `tel:`, and links to assets such as PDFs,
+   images, and stylesheets are skipped. A link's fragment is dropped, so an
+   in-page anchor resolves to the page it sits on, which is already queued.
 
 Pages are checked one at a time, in the order they were discovered. Each URL is
 checked once regardless of fragment, host casing, or a trailing slash. A page
@@ -131,7 +132,8 @@ read the exit code as the verdict. A page that did not load, or where no rule
 applied, has no score.
 
 Rules axe could not decide (its `incomplete` results, such as contrast over a
-background image) are counted and reported but never treated as failures.
+background image) are counted but never treated as failures. Only `-f json`
+reports the count, as `incomplete` on each page.
 
 ## Configuration
 

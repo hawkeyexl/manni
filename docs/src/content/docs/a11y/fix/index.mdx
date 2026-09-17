@@ -119,7 +119,8 @@ Checked 1 of 1 pages (no crawl)
 ```
 
 Exit `0`, and the annotation is gone on the next push. The score went from `94`
-to `100`, which is the share of applicable axe rules that passed. Read the exit
+to `100`, which is the share of applicable axe rules that passed. Violations
+below the severity floor do not count against it. Read the exit
 code as the verdict and the score as a trend.
 
 ## Why there is no `--fix`
@@ -147,8 +148,8 @@ of problem are outside what a rendered page can settle.
   `<button>Click here</button>` satisfies `button-name`. Both pass, and neither
   helps anyone.
 - **Rules axe could not decide.** Contrast over a background image is the common
-  one. These are counted and reported as `incomplete`, and they never fail the
-  run. A person has to look.
+  one. These are counted as `incomplete` in `-f json` output, and they never
+  fail the run. A person has to look.
 - **Anything that needs interaction.** Keyboard order, focus traps, a menu that
   opens on hover, a dialog that does not return focus. The check loads a page
   and reads it once.
