@@ -93,8 +93,8 @@ label: varifocal
 see: progressive-lens
 ```
 
-`see` resolves against labels and ids. An entry with both `see` and a
-`definition` is the [`see-not-empty`](/manni/term/reference/rules/#see-not-empty)
+`see` resolves against labels and ids, ignoring case. An entry with both `see`
+and a `definition` is the [`see-not-empty`](/manni/term/reference/rules/#see-not-empty)
 finding. A `see` that names nothing is
 [`dangling-reference`](/manni/term/reference/rules/#dangling-reference).
 
@@ -103,8 +103,8 @@ finding. A `see` that names nothing is
 An entry's `id` is, in order:
 
 1. the record's own `id`;
-2. the construct's identifier: `<dt id>` in HTML, `xml:id` on a DocBook
-   `<glossentry>`, `@id` on a DITA topic;
+2. the construct's identifier: `<dt id>` or `<dfn id>` in HTML, `xml:id` on a
+   DocBook `<glossentry>`, `@id` on a DITA topic;
 3. the slug of the preferred label, so `progressive lens` is
    `progressive-lens`.
 

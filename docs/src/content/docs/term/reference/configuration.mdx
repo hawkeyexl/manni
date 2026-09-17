@@ -8,8 +8,10 @@ sidebar:
 The terminology tool reads three parts of the family's one config file,
 `manni.config.yaml`. The top-level `collections:` list says which files
 exist. The top-level `tools:` key says where Vale's configuration is. The
-`term:` section holds the tool's own settings. Every one of them has a
-default, so most repositories need no `term:` section at all.
+`term:` section holds the tool's own settings. Every `term:` key has a
+default, so most repositories need no `term:` section at all. `collections:`
+has none. A run with no paths, no collection and no manifest stops with `No
+files to read`.
 
 ```yaml title="manni.config.yaml"
 collections:
@@ -55,7 +57,7 @@ it.
 | Key | Type | Default | Mirrors | Description |
 |---|---|---|---|---|
 | `manifests` | list of paths | `[]` | none | YAML or JSON files holding entries outside any document, relative to the config file. Read on every run that loads the config. |
-| `abstractMaxLength` | non-negative integer | `60` | none | The length, in characters, past which `abstract-too-long` fires. |
+| `abstractMaxLength` | non-negative integer | `60` | none | The length, in UTF-16 code units, past which `abstract-too-long` fires. |
 | `baseline` | path | none | `--baseline` | A [baseline](/manni/term/reference/cli/#baselines) file, relative to the config file. Setting it compares every `check` run against the file, without the flag. With `--baseline` and no key, the file is `.manni-term-baseline.json`. |
 | `severity` | mapping | the [defaults](/manni/term/reference/rules/) | none | Per-rule level: `error`, `warning`, `notice` or `off`. Only the rules named change. |
 | `allowEmpty` | boolean | `false` | `--allow-empty` | Treat a set with no terms as success. The flag wins. |
@@ -102,8 +104,9 @@ configuration.
 
 ## Refusals
 
-A config the tool cannot use stops the run with exit `2` before any file is
-read. A key that belongs to the family is refused by name, with where it went:
+A config the tool cannot use stops the run with exit `2`. A malformed config
+stops it before any file is read. A key that belongs to the family is refused
+by name, with where it went:
 
 ```
 manni: manni.config.yaml: term does not carry "paths". Name a collection under collections:.
@@ -120,15 +123,16 @@ manni: term.abstractMaxLength in manni.config.yaml must be a non-negative intege
 ```
 
 A type error names the key and the type it wanted, and never repeats the
-value. A `tools.vale.config` that names a missing file stops `lint` and
-`write -f vale`, the two verbs that run Vale:
+value. Two refusals come after the documents load. A `tools.vale.config` that
+names a missing file stops `lint` and `write -f vale` without `-o`, the two
+forms that run Vale:
 
 ```
 manni: manni.config.yaml: tools.vale.config "nowhere.ini" does not exist.
 ```
 
-A `term.manifests` file that is not there stops every verb, named as the
-config spells it:
+A `term.manifests` file that is not there stops every verb once the other
+files are read, named as the config spells it:
 
 ```
 manni: manni.config.yaml: term.manifests "terms/missing.yaml" does not exist.
