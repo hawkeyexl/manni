@@ -530,7 +530,7 @@ function citationsIn(rows: readonly UpdateRewrite[]): number {
 }
 
 export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
-  const prepared = await prepareRun(opts, "updated", "update", true);
+  const prepared = await prepareRun(opts, "updated", "update", { require: true });
   const { run, files, usingStdin, forced, pageOptions, git } = prepared;
   assertNoOrphans(prepared);
   const hits = joinHits();

@@ -1,6 +1,6 @@
 ---
 title: CLI reference
-description: Every manni cite command, argument, and flag (check, add, and update), with exit codes, the citation baseline, and the two-checkout layout for private sources.
+description: Every manni cite command, argument, and flag (check, add, update, and remove), with exit codes, the citation baseline, and the two-checkout layout for private sources.
 sidebar:
   order: 1
 ---
@@ -19,11 +19,11 @@ import { Aside } from '@astrojs/starlight/components';
     with `--accept --only <id>` for a claim you have re-read against source. */}
 
 {/* cite bare-cite-exits-2 */}
-manni cite exposes three verbs, [`check`](#cite-check), [`add`](#cite-add)
-and [`update`](#cite-update). There is no default. A bare `manni cite` prints
-usage and exits `2`, because nothing here is safe to run by accident. `check`
-can fail a build, and `add` and `update` write to pages. `check` and `update`
-take paths and share the metadata tool's [input
+manni cite exposes four verbs, [`check`](#cite-check), [`add`](#cite-add),
+[`update`](#cite-update) and [`remove`](#cite-remove). There is no default. A
+bare `manni cite` prints usage and exits `2`, because nothing here is safe to
+run by accident. `check` can fail a build, and the other three write to pages.
+`check`, `update` and `remove` take paths and share the metadata tool's [input
 model](/manni/meta/reference/cli/#shared-input-model); `add` takes one page and
 one source.
 
@@ -309,9 +309,9 @@ the flag.
 
 ### Where sources resolve from
 
-{/* cite root-resolution-order */}
 {/* cite sources-tracked-only */}
 {/* cite sources-realpath-containment */}
+{/* cite root-resolution-order */}
 A `source.file` is a path relative to one **root**, and the root is settled
 once per run. It is `--root` if given, relative to the working directory. Else
 it is config `root:`, relative to the config file. Else it is the nearest git
@@ -631,3 +631,109 @@ A claim a marker anchors reads at the marker's line, as `check` reports it.
 One that stores its own lines reads at the claim. Under `-f json` the `at`
 field of an accepted claim is the first file line of the claim's text, whichever
 anchors it.
+
+## `cite remove`
+
+Remove the citations you name, markers and all. The entry goes out of the
+page's frontmatter, or out of the
+[sidecar manifest](/manni/cite/reference/citations/#the-sidecar) that owns the
+page's citations, wherever `add` put it. Every marker naming it goes out of
+the body, and the claims below each removed marker line move up with the text
+they pin. That is the inverse of the shift `add --marker` performs, and it
+happens in the same write, so a removal leaves no finding of its own behind.
+
+`--only` is required. `remove` never takes every citation off a page.
+
+```sh
+manni cite remove [paths...] --only <id> [options]
+```
+
+<Aside type="caution" title="remove writes by default">
+`remove` **writes to your pages by default**, as `update` does. Pass
+`--dry-run` to see the diffs first, and run it on a clean working tree so the
+removal is easy to review.
+</Aside>
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to remove from. Use `-` to read a page from stdin, with `--as`; the rewritten page goes to stdout and the report to stderr. Optional. Without paths the run covers every configured [collection](/manni/meta/reference/configuration/#collections), or the ones `--collection` names. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--only` | `<id>` | none, required | The entry to remove, named by its `id`, or by its pointer `/citations/N` when it has none. Repeatable, one id per occurrence, never comma-separated. A run with no `--only` is a refusal (exit 2). |
+| `--collection` | `<name>` | every collection | Run over a configured [collection](/manni/meta/reference/configuration/#collections), exactly as on [`check`](#cite-check). Repeatable, one name per occurrence, never comma-separated. |
+| `--ext` | `<list>` | supported extensions | Comma-separated extensions used when expanding directories and globs. |
+| `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable. When the run reads from collections, their `exclude:` globs apply as well. |
+| `--as` | `<format>` | n/a | Force an input [format](/manni/meta/reference/formats/) for every input. Required when reading from stdin. |
+| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/cite/reference/configuration/), read for the collections and the manifest each one declares. |
+| `--no-config` | n/a | off | Ignore any discovered config file. Entries are then the page's own frontmatter. |
+| `--allow-empty` | n/a | off | Treat zero matched files as success instead of an error (exit 2). |
+| `--no-gitignore` | n/a | on | Remove from files `.gitignore` covers as well. Overrides config `respectGitignore:`. |
+| `--dry-run` | n/a | off | Print the diffs and the report; write nothing. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints the run as `{ pages, removed, manifests }`, where `removed` is the total and `manifests` lists each rewritten manifest's `file`, `diff` and `written`. Each page carries its `file`, its `removed` list, its `diff`, and whether it was `written`. A removal has `id`, `index`, `origin` and `markerLines`; a marker that named no entry carries `id` and `markerLines` alone. An unknown value is an error (exit 2). |
+
+### What goes, and what stays
+
+| What | What happens to it |
+|---|---|
+| The entry | Removed from the page's frontmatter, or from the manifest that owns the page's citations. An empty list takes the `citations` key with it, so no page keeps a key with nothing under it. |
+| Its markers | Every marker line naming the id is deleted, the whole line. |
+| The claims below | Their `claim.lines` move up one line per removed marker above them, in the same write. |
+| Every other entry | Untouched, comments and quoting included: the entries that stay are re-emitted as they were written. |
+| An id with a marker and no entry | The marker alone is removed, which is how a [`marker-orphan`](/manni/cite/fix/#marker-orphan) is cleared. |
+| A broken entry | Removed like any other. `remove` reads the entries as they are written, so an entry the schema refuses is still reachable by its id or its pointer. |
+
+Each page and each manifest is written once per run, and nothing is written
+until every `--only` has been found. So a run either removes what you named
+or it leaves the tree alone.
+
+An id names one entry per page, so it does the same thing over a corpus as
+over one page. A pointer names a position instead, so
+`--only /citations/0` over a collection removes the first entry of every page
+that has one. Prefer an id where the entries have one.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Everything you named was removed, or previewed under `--dry-run`. The report names each removal and the markers that went with it. |
+| `2` | A refusal. No `--only`, or an id and a pointer that name nothing, or a pointer past the last entry of a page. Or a marker sharing its line with text, or a marker line inside another entry's claim. Plus everything `check` exits 2 for, including no inputs and no config, and a missing `-c` file. Nothing is written. |
+
+There is no exit `1`. Like `add`, `remove` either does what you named or it
+does not write.
+
+### Examples
+
+```sh
+manni cite remove docs/limits.md --only fetch-timeout
+manni cite remove docs/ --only fetch-timeout --only retries --dry-run
+manni cite remove --collection site --only /citations/3 -f json
+manni cite remove docs/ --only fetch-timeout --ext md,mdx --exclude "**/drafts/**"
+cat page.md | manni cite remove - --as markdown --only fetch-timeout > out.md
+```
+
+The report names each removal, where the entry was kept, and the markers that
+went with it:
+
+```
+docs/limits.md: removed fetch-timeout from frontmatter, and its marker at line 30
+docs/limits.md: removed /citations/3 from site.metadata.yaml:412
+docs/limits.md: removed the marker fetch-timeout at line 30, which named no entry
+1 citation removed from 1 file
+```
+
+Under `--dry-run` the footer says what the run would have done, and the diffs
+come first. Every refusal names what is wrong and writes nothing:
+
+```
+manni: remove needs --only <id>; it never removes every citation on a page.
+manni: docs/limits.md has no entry or marker fetch-timeout.
+manni: none of 12 pages has an entry or marker fetch-timeout.
+manni: "/citations/9" is past the last entry of docs/limits.md (4 entries).
+manni: the marker fetch-timeout at docs/limits.md:12 shares its line with text; remove it by hand.
+manni: docs/limits.md:30 is inside the claim of retries (lines 29-33). Removing the marker there would change its pin.
+```

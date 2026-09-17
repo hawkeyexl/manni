@@ -37,6 +37,7 @@ import {
   tooWide,
 } from "../core/range.js";
 import { misplacedMarkers } from "../core/reanchor.js";
+import { shiftedEntries, withClaimLines, type Shifted } from "../core/shift.js";
 import { readSource, sourceIndexFor } from "../core/sources.js";
 import { shortSrc, spellAt } from "../core/spell.js";
 import { ManifestSet } from "../core/manifest.js";
@@ -63,7 +64,6 @@ import type {
   AddResult,
   Citation,
   CitationClaim,
-  LineSpec,
   PageCitation,
   PageCitations,
   PageLines,
@@ -194,54 +194,6 @@ function spellElsewhere(spans: readonly PageLines[]): string {
   if (rest > 0) return `${noun} ${named.join(", ")} and ${String(rest)} more`;
   const last = named.pop() ?? "";
   return named.length === 0 ? `${noun} ${last}` : `${noun} ${named.join(", ")} and ${last}`;
-}
-
-/** The new `claim.lines` of each entry a marker pushes down, by where the entry lives. */
-interface Shifted {
-  frontmatter: { index: number; lines: LineSpec }[];
-  manifest: Map<number, LineSpec>;
-}
-
-/**
- * The entries whose claim lines start at or below `insertLine`, each moved
- * down one line. An entry whose claim starts above the marker and reaches it
- * would have a line inserted into its pin, so that is a refusal.
- */
-function shiftedEntries(
-  citations: readonly PageCitation[],
-  insertLine: number,
-  bodyLine: number,
-  label: string,
-): Shifted {
-  const out: Shifted = { frontmatter: [], manifest: new Map() };
-  for (const { citation, origin } of citations) {
-    const spec = citation.claim?.lines;
-    const recorded = spec === undefined ? undefined : parseLines(spec);
-    if (recorded === undefined) continue;
-    const file = toFileLines(recorded, bodyLine);
-    if (file.start < insertLine) {
-      if (file.end < insertLine) continue;
-      const whose =
-        citation.id === undefined
-          ? `the claim at ${spellAt(file)}`
-          : `the claim of ${citation.id} (${spellAt(file)})`;
-      throw new CiteError(
-        `${label}:${String(insertLine)} is inside ${whose}. A marker there would change its pin.`,
-      );
-    }
-    const moved = lineSpec({ start: recorded.start + 1, end: recorded.end + 1 });
-    if (origin.kind === "manifest") out.manifest.set(origin.index, moved);
-    else out.frontmatter.push({ index: origin.index, lines: moved });
-  }
-  return out;
-}
-
-/** A copy of a manifest entry with its `claim.lines` replaced. */
-function withClaimLines(entry: unknown, lines: LineSpec): unknown {
-  if (typeof entry !== "object" || entry === null || Array.isArray(entry)) return entry;
-  const claim: unknown = (entry as Record<string, unknown>).claim;
-  if (typeof claim !== "object" || claim === null || Array.isArray(claim)) return entry;
-  return { ...entry, claim: { ...claim, lines } };
 }
 
 export async function runAdd(opts: AddOptions): Promise<AddResult> {
@@ -421,7 +373,13 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
         `${at} is in a ${holding.kind} at ${spellAt(holding)} that ${unitWide}. A marker anchors the whole ${holding.kind}.`,
       );
     }
-    shifted = shiftedEntries(page.citations, holding.start, page.bodyLine, label);
+    shifted = shiftedEntries({
+      citations: page.citations,
+      at: [holding.start],
+      delta: 1,
+      bodyLine: page.bodyLine,
+      label,
+    });
     const statement =
       markerIndent(content, holding.start, format, page.bodyLine) +
       formatStatement(format, { kind: "ref", id: opts.id ?? "" });

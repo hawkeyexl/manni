@@ -220,6 +220,7 @@ history would be a guess. Where git is available, sources resolve through
 **Fix.** Remove the entry and add it again against the new path:
 
 ```sh
+manni cite remove docs/limits.md --only fetch-timeout
 manni cite add docs/limits.md:11 lib/config/limits.ts:2 --id fetch-timeout
 ```
 
@@ -350,7 +351,11 @@ marker, or an entry that was deleted.
 
 {/* cite cite-true-names-id-true */}
 **Fix.** Correct the id in the marker, or add the entry it refers to. Note
-that `cite true` names the id `true`.
+that `cite true` names the id `true`. To delete the stray marker instead:
+
+```sh
+manni cite remove docs/limits.md --only nope
+```
 
 ### marker-invalid
 
@@ -465,9 +470,16 @@ fetch-timeout: a plain source is pinned with sha256-, not hmac-sha256-.
 And a page that still carries its own `citations:` while a manifest owns the
 key is the other. Move those entries into the manifest.
 
-**Fix.** Correct the entry, or delete it and let `add` write a well-formed
-one. The [citations reference](/manni/cite/reference/citations/) has the full
-shape and the file grammar.
+**Fix.** Correct the entry, or remove it and let `add` write a well-formed
+one. `remove` reads the entries as they are written. A broken one is still
+reachable by its id, or by its pointer when it has none:
+
+```sh
+manni cite remove docs/limits.md --only /citations/3
+```
+
+The [citations reference](/manni/cite/reference/citations/) has the full shape
+and the file grammar.
 
 ### quote-drift
 

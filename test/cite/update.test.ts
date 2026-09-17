@@ -56,6 +56,12 @@ function write(name: string, lines: string[]): string {
   return `pages/${name}`;
 }
 const onDisk = (label: string): string => readFileSync(join(cwd, label), "utf8");
+/** A page written byte for byte, when the terminators are what is under test. */
+function writeRaw(name: string, content: string): string {
+  if (cwd === "") workspace();
+  writeFileSync(join(cwd, "pages", name), content, "utf8");
+  return `pages/${name}`;
+}
 afterEach(() => {
   if (cwd !== "") rmSync(cwd, { recursive: true, force: true });
   cwd = "";
@@ -1012,6 +1018,95 @@ describe("runUpdate: a marker inside a paragraph", () => {
       ["current", "current"],
       ["current", "current"],
     ]);
+  });
+
+  /**
+   * A move permutes the page's lines and assigns each position the terminator
+   * that position already had. On a CRLF page every line must still end
+   * `\r\n` afterwards, and a page that ended without a terminator must still
+   * end without one, whichever line the move left last.
+   */
+  it("keeps every CRLF terminator, and the missing one at the end", async () => {
+    const body = [
+      "# Limits",
+      "",
+      "The fetch timeout is 10 seconds.",
+      "<!-- cite timeouts -->",
+      "Retries default to 3.",
+    ];
+    const label = writeRaw(
+      "crlf-move.md",
+      [
+        "---",
+        "title: Limits",
+        "citations:",
+        "  - id: timeouts",
+        "    claim:",
+        `      integrity: ${CLAIM_RETRIES}`,
+        "    source:",
+        "      file: src/limits.ts",
+        "      lines: 3",
+        `      integrity: ${PIN_L3}`,
+        "---",
+        ...body,
+      ].join("\r\n"),
+    );
+    const run = await update({ inputs: [label] });
+    expect(run).toMatchObject({ skipped: 0, exitCode: 0 });
+    const after = onDisk(label);
+    // The marker moved above the paragraph it anchors.
+    expect(after.split("\r\n").slice(11, 15)).toEqual([
+      "# Limits",
+      "",
+      "<!-- cite timeouts -->",
+      "The fetch timeout is 10 seconds.",
+    ]);
+    // No bare LF survived the permutation, and no terminator was invented.
+    expect(after.replace(/\r\n/g, "")).not.toContain("\n");
+    expect(after.endsWith("Retries default to 3.")).toBe(true);
+    expect(await ends(label)).toEqual([["current", "current"]]);
+  });
+
+  /**
+   * A page mixing terminators has the endings of the two swapped positions
+   * trade places, because content travels and terminators do not. What must
+   * hold either way is asserted here: no terminator is gained, lost or
+   * invented, and the page still ends as it began.
+   */
+  it("gains and loses no terminator on a page that mixes them", async () => {
+    const label = writeRaw(
+      "mixed-move.md",
+      [
+        "---",
+        "title: Limits",
+        "citations:",
+        "  - id: timeouts",
+        "    claim:",
+        `      integrity: ${CLAIM_RETRIES}`,
+        "    source:",
+        "      file: src/limits.ts",
+        "      lines: 3",
+        `      integrity: ${PIN_L3}`,
+        "---",
+        "# Limits",
+        "",
+      ].join("\r\n") +
+        // The paragraph the marker splits ends its lines with a bare LF.
+        "\r\n" +
+        ["The fetch timeout is 10 seconds.", "<!-- cite timeouts -->", "Retries default to 3."].join(
+          "\n",
+        ),
+    );
+    const before = onDisk(label);
+    const count = (text: string, re: RegExp): number => (text.match(re) ?? []).length;
+    const run = await update({ inputs: [label] });
+    expect(run.pages[0]?.written).toBe(true);
+    const after = onDisk(label);
+    expect(count(after, /\r\n/g)).toBe(count(before, /\r\n/g));
+    expect(count(after.replace(/\r\n/g, ""), /\n/g)).toBe(count(before.replace(/\r\n/g, ""), /\n/g));
+    // No terminator was invented at the end, and none was left dangling.
+    expect(after.endsWith("Retries default to 3.")).toBe(true);
+    expect(after).not.toContain("\r\r");
   });
 
   it("leaves a claim-lines entry whose text moved to the claim-moved repair", async () => {

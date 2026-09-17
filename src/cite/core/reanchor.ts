@@ -222,6 +222,18 @@ function splitKeepingEol(content: string): { texts: string[]; eols: string[] } {
  * in the order the moves are given, so a run that was stacked stays stacked.
  * A moved marker takes the indentation `add` would write it at, and the file's
  * terminators stay where they are: the lines are permuted, never re-joined.
+ *
+ * Read the join carefully. A line's text comes from where it was, and its
+ * terminator from where it now sits. That asymmetry is deliberate: the last
+ * position of a page with no final newline carries no terminator, and it has
+ * to stay the last position. Were terminators to travel with their lines, a
+ * move that lifted that last line would carry the missing terminator into the
+ * middle of the page and glue two lines together.
+ *
+ * The cost is that a page mixing `\r\n` and `\n` has the endings of the two
+ * swapped positions trade places. No byte is gained or lost, and the file
+ * still ends as it began. A uniform page, which is what a checkout gives,
+ * cannot tell the difference.
  */
 export function applyMarkerMoves(
   content: string,
