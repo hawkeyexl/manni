@@ -162,6 +162,32 @@ model](/manni/meta/reference/cli/#shared-input-model), which `check` and
 `update` both follow. `add` is the exception, because it takes one page and
 one source rather than a set.
 
+## Choose an anchor
+
+An entry anchors its sentence in one of two ways. **Claim lines** name the
+sentence by its body lines. A **marker** is a comment in the body that names
+the entry. Either way the entry itself stays in frontmatter or a sidecar. The
+choice is per entry, so one page can use both.
+
+Neither anchor always wins. They differ in what a prose edit costs:
+
+| When the prose changes | Claim lines | A marker |
+| --- | --- | --- |
+| Text above the sentence is added or cut | `claim-moved`, a notice. `manni cite update` rewrites the lines. | Nothing to do. The marker moves with its sentence. |
+| The sentence is reworded | `claim-changed`. `update --accept` re-pins the text at the recorded line. | `claim-changed`. `update --accept` re-pins what the marker anchors. |
+| The sentence is reworded and moved | `claim-changed`, and the recorded line holds other text. `cite add` it again. | `claim-changed`. `update --accept` re-pins it. |
+| Two branches edit prose near the sentence | The body holds no citation, so the merge sees only prose. | The marker line sits among the edits, so the merge can conflict on it. |
+
+A marker also adds a line to the page source for every citation. On a page
+many people edit at once, those lines are where merges collide. Claim lines
+leave the body untouched. In a [sidecar](/manni/cite/set-up/citations-in-a-sidecar/),
+they leave the frontmatter untouched too.
+
+So markers suit a page whose sentences move and get reworded. Claim lines
+suit a page many people edit at once, with `manni cite update` after each
+merge. [Anchoring](/manni/cite/reference/citations/#anchoring) has the full
+rule.
+
 ## Where entries are written
 
 By default an entry goes into the page's own frontmatter, and nothing in the
