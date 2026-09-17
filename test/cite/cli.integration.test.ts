@@ -1066,6 +1066,15 @@ describe("manni cite add", () => {
     const after = cite(["check", "--root", ".", "pages/no-citations.md"]);
     expect(after.status).toBe(0);
     expect(after.stdout).toContain(`${token.slice(0, 5)}…:2 current`);
+
+    // And a second add of the same claim on the same source is written, not
+    // refused: the duplicate check compares the two spellings as each end
+    // writes them, and a ciphertext never equals a plain path. `duplicateOf`
+    // in src/cite/commands/add.ts comments on the boundary.
+    const again = cite(["add", "pages/no-citations.md:14", "src/limits.ts:2", "--root", "."]);
+    expect(again.status).toBe(0);
+    const page = readFileSync(join(work, "pages", "no-citations.md"), "utf8");
+    expect(page.match(/^ {6}integrity: hmac-sha256-[0-9a-f]{64}$/gm)).toHaveLength(2);
   });
 
   it("refuses a --root that does not exist with check's message, and writes nothing", () => {

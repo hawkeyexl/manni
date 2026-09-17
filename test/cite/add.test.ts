@@ -1280,6 +1280,31 @@ describe("runAdd", () => {
       ]);
     });
 
+    it("spells a repeated two-line claim as the range it is", async () => {
+      const wrapped = ["The fetch timeout is 10 seconds. It is", "not configurable."];
+      const label = write("wrapped-twice.md", [
+        "---",
+        "title: Limits",
+        "---",
+        "# Limits",
+        "",
+        ...wrapped,
+        "",
+        ...wrapped,
+      ]);
+      const notices: string[] = [];
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 7 },
+        onNotice: (m) => notices.push(m),
+      });
+      expect(result.citation.claim?.lines).toBe("3-4");
+      expect(notices).toEqual([
+        "the claim's text also appears at lines 17-18, so a move would be ambiguous. Use --marker, or pin more lines.",
+      ]);
+    });
+
     it("says nothing when the claim's text appears once", async () => {
       workspace("no-citations.md");
       const notices: string[] = [];
@@ -1317,6 +1342,17 @@ describe("runAdd", () => {
       );
       const long = `  ${"x".repeat(80)}`;
       expect(addMessage({ ...result, sourceLine: long })).toContain(`"${"x".repeat(60)}…"`);
+    });
+
+    it("quotes no line for a blank source line, as a whole-file pin does", async () => {
+      // src/limits.ts:4 is the blank line between the constants and the
+      // function. It collapses to nothing, so the report shows no quote.
+      workspace("no-citations.md");
+      const result = await add({ page: "pages/no-citations.md", src: "src/limits.ts:4" });
+      expect(result.sourceLine).toBe("");
+      expect(addMessage(result)).toBe(
+        "pages/no-citations.md: added a bare pin to frontmatter (source src/limits.ts:4, sha256-e3b0c442…, no commit)",
+      );
     });
 
     it("names no line for a whole-file bare pin", async () => {
@@ -1462,6 +1498,61 @@ describe("runAdd", () => {
       expect(await refusal(add({ page: "pages/whole-file.md", src: "src/limits.ts" }))).toBe(
         "pages/whole-file.md already has a bare pin for src/limits.ts (/citations/0).",
       );
+    });
+
+    it("does not refuse a duplicate when the existing entry is encrypted, because the plain path never matches a ciphertext", async () => {
+      // The boundary `duplicateOf` in src/cite/commands/add.ts comments on:
+      // the caller's `src` is a plain path, an encrypted entry spells its
+      // source as a ciphertext, and the check compares the two as written.
+      workspace("no-citations.md");
+      const config = tempConfig("", KEY);
+      const keyed = { noConfig: false, configPath: config } as const;
+      const first = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        ...keyed,
+      });
+      // The entry pushed the claim down, so this names the same sentence and
+      // stores the same body line: an exact duplicate but for the ciphertext.
+      const second = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 14, end: 14 },
+        ...keyed,
+      });
+      expect(second.written).toBe(true);
+      const entries = readPage(second.file, second.content).citations;
+      expect(entries).toHaveLength(2);
+      expect(entries.map((c) => c.citation.claim?.lines)).toEqual([3, 3]);
+      for (const { citation } of entries) {
+        expect(decryptSourcePath(citation.source.file, KEY)).toBe("src/limits.ts");
+        expect(citation.source.integrity.startsWith("hmac-sha256-")).toBe(true);
+      }
+      // And the same sequence with no key in sight is refused, so this case
+      // goes red the day the comparison starts decrypting.
+      workspace("no-citations.md");
+      await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+      });
+      expect(
+        await refusal(
+          add({
+            page: "pages/no-citations.md",
+            src: "src/limits.ts:2",
+            pageLines: { start: 14, end: 14 },
+          }),
+        ),
+      ).toBe(
+        "pages/no-citations.md already has an entry for line 14 and src/limits.ts:2 (/citations/0).",
+      );
+      // The two entries spell their source identically, because encrypting a
+      // path under a key is deterministic. So the miss is about which string
+      // the check compares, not about the ciphertexts differing.
+      expect(second.citation.source.file).toBe(first.citation.source.file);
+      expect(first.citation.source.file).toBe(encryptSourcePath("src/limits.ts", KEY));
     });
 
     it("allows a second entry for the same lines when the source differs", async () => {
