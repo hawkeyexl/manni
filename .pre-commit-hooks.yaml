@@ -40,3 +40,23 @@
   entry: npx --yes @hawkeyexl/manni@latest meta derive
   language: system
   files: '(?i)\.(adoc|asciidoc|dita|ditamap|htm|html|markdown|md|mdx|rst|xml)$'
+
+# Checks the citations on the pages about to be committed (proposal 0044).
+# pre-commit appends the staged paths, so the run covers those pages and no
+# others, while the sources resolve from the git root as they always do.
+#
+# Both ends therefore come out of one working tree, and that is what makes the
+# hook worth running locally. A commit that edits a cited source is judged
+# against the edit, so the page that quotes it goes red in the commit that
+# broke it rather than on the pull request. `--no-check-sources` would throw
+# away exactly that half, so this hook does not pass it. Where the sources are
+# a second checkout, a consumer sets `root:` under `cite:` instead.
+#
+# Findings below `error` never stop a commit, so a line that only moved is
+# reported and the commit lands. `manni cite update` rewrites those.
+- id: manni-cite
+  name: manni cite check
+  description: Check the staged pages' citations against their sources
+  entry: npx --yes @hawkeyexl/manni@latest cite check
+  language: system
+  files: '(?i)\.(adoc|asciidoc|dita|ditamap|htm|html|markdown|md|mdx|rst|xml)$'
