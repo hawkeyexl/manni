@@ -278,7 +278,7 @@ citations:
       integrity: sha256-9818f7fb87e2fc9af44a54e97b1f07514445a6fd72848624dc83250edf3ac433
     source:
       file: src/cite/core/mint.ts
-      lines: 65-66
+      lines: 71-72
       integrity: sha256-5bb2fcfb5338f48cae511e9b13c686f0f9b3798f9ebf23cd9d63e3e0be8d8fdc
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: rotate-never-asks
@@ -447,7 +447,7 @@ stays in the private one.
 
 ## What each tool does with no key
 
-Nothing refuses to start. Reads degrade, and writes stop.
+Only `manni key rotate` refuses to start. Reads degrade, and writes stop.
 
 | Command | With no key available |
 |---|---|

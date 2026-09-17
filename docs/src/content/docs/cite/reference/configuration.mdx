@@ -1,6 +1,6 @@
 ---
 title: Configuration reference
-description: "Every key of the cite section in manni.config.yaml (root, baseline, checkSources, severity), with types, defaults, where the document set is declared, when git is used, discovery rules, the refused salt key, and the severity table."
+description: "Every key of the cite section in manni.config.yaml (allowEmpty, respectGitignore, root, baseline, checkSources, severity), with types, defaults, where the document set is declared, when git is used, discovery rules, the refused salt key, and the severity table."
 sidebar:
   order: 2
 citations:
@@ -70,7 +70,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: moved-keys-message
     claim:
-      lines: 68-69
+      lines: 69-70
       integrity: sha256-6818bdaec3f234bfb273b911ed02d2dae5dd678eeca60e971db7a2da86d293da
     source:
       file: src/cite/core/config.ts
@@ -79,16 +79,16 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: key-allow-empty
     claim:
-      lines: 76
+      lines: 77
       integrity: sha256-08051f896d3aa510046e700c912d3c044f33de8c32299f22cc7d1f0d6734d8d2
     source:
       file: src/cite/commands/check.ts
-      lines: 185
+      lines: 171
       integrity: sha256-aeb65dc1134acf9d0fd86659c5db6a88017066d8d6a4c77e22b2db7872bd6b00
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: key-respect-gitignore
     claim:
-      lines: 77
+      lines: 78
       integrity: sha256-8a1342cea055c1f71a82188e18255157e106eec03fd24a03c0fa5a9952854f9b
     source:
       file: src/meta/core/load-files.ts
@@ -97,7 +97,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: key-root
     claim:
-      lines: 78
+      lines: 79
       integrity: sha256-cd2cf30dc7647cd761718e7127d0fc54f83e049c5607909da2d1f0e678a8679a
     source:
       file: src/cite/core/config.ts
@@ -106,7 +106,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: key-baseline
     claim:
-      lines: 79
+      lines: 80
       integrity: sha256-7b0eeb1464575d3e90779aff04256cb8cc9a372d91038f7161afe8bdf06b0dba
     source:
       file: src/meta/core/baseline.ts
@@ -115,7 +115,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: key-baseline-flags
     claim:
-      lines: 79
+      lines: 80
       integrity: sha256-7b0eeb1464575d3e90779aff04256cb8cc9a372d91038f7161afe8bdf06b0dba
     source:
       file: src/meta/core/baseline.ts
@@ -124,16 +124,16 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: key-check-sources
     claim:
-      lines: 80
+      lines: 81
       integrity: sha256-d31b9fe4c51ef69850638b7ebb055a82bfa12253c482f9c9f600794fa85a0a7f
     source:
       file: src/cite/commands/check.ts
-      lines: 162-165
+      lines: 148-151
       integrity: sha256-a31fd77eee37084a48640b7b2a2d20b298efd613710229c1c9f246dc16a7c5ca
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: key-check-sources-skipped
     claim:
-      lines: 80
+      lines: 81
       integrity: sha256-d31b9fe4c51ef69850638b7ebb055a82bfa12253c482f9c9f600794fa85a0a7f
     source:
       file: src/cite/core/check-page.ts
@@ -142,7 +142,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: key-severity
     claim:
-      lines: 81
+      lines: 82
       integrity: sha256-05cede8a3617c4b205539adf6c87f09481b3b6bf800ee6ff6220dba1ca8e487e
     source:
       file: src/cite/core/severity.ts
@@ -170,7 +170,7 @@ citations:
       integrity: sha256-a751c5fb51a46476d37c9d0f2d554edcb3dc7f7f0a0bbd7720baa5f311630447
     source:
       file: src/cite/core/sources.ts
-      lines: 73-85
+      lines: 74-86
       integrity: sha256-b960a34be4d9a85928499280cb124a5134df47c5bd8ea8fd21b5534b3b5f215b
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: git-available-work-tree
@@ -186,7 +186,7 @@ citations:
       integrity: sha256-a751c5fb51a46476d37c9d0f2d554edcb3dc7f7f0a0bbd7720baa5f311630447
     source:
       file: src/cite/core/sources.ts
-      lines: 126
+      lines: 145
       integrity: sha256-77702f30bfc199d991dacb9a334b9a6236b5f10b764fbe43ea57c82ff4ec3e4d
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: add-records-head
@@ -194,7 +194,7 @@ citations:
       integrity: sha256-a751c5fb51a46476d37c9d0f2d554edcb3dc7f7f0a0bbd7720baa5f311630447
     source:
       file: src/cite/core/mint.ts
-      lines: 21-34
+      lines: 22-35
       integrity: sha256-7f71cfcac58fb14fd7a576c2a4488878c1ff48b5b565b4fcb3943951de655e4e
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: history-never-true
@@ -207,7 +207,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: git-unavailable-messages
     claim:
-      lines: 104-105
+      lines: 105-106
       integrity: sha256-4466a2160ef44b5d29484f2dafffcaa21233dfd9ecff1038fb4c5c5f41c21674
     source:
       file: src/cite/core/git.ts
@@ -227,7 +227,7 @@ citations:
       integrity: sha256-dd2401e4f1ec44fdf81124fbc93860df854eca154e6d36dcbb0fc8a00852dbd2
     source:
       file: src/cite/commands/check.ts
-      lines: 327-330
+      lines: 313-316
       integrity: sha256-df9e2099e2cacae4348d2fafecabf6ffe16e6f7a0c74f462c0d0edd44d388b2a
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: history-notice-key-rotate
@@ -243,7 +243,7 @@ citations:
       integrity: sha256-dd2401e4f1ec44fdf81124fbc93860df854eca154e6d36dcbb0fc8a00852dbd2
     source:
       file: src/cite/commands/add.ts
-      lines: 399-403
+      lines: 405-409
       integrity: sha256-4f0a1db07f3a9e3200d0bc75024211fcaac96bf009f3be07e4c917bce78d0589
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: commit-notice-update
@@ -288,7 +288,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: salt-message
     claim:
-      lines: 139
+      lines: 140
       integrity: sha256-ee385e31b1f0c8bce0152934b0719200513e6a4e4a305cd98e524b8143a30b00
     source:
       file: src/cite/core/config.ts
@@ -297,7 +297,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: values-never-echoed
     claim:
-      lines: 143-144
+      lines: 144-145
       integrity: sha256-83e927b3a1189d65b138760010fc541b19ff4aed0c0b87018ede2bf440f6e40a
     source:
       file: src/cite/core/config.ts
@@ -306,7 +306,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: severity-level-quoted
     claim:
-      lines: 146
+      lines: 147
       integrity: sha256-a9f96a007bc6c6e6d2fe6b5c55bac314d3ee9218b8051b5231e3b6b558c03b27
     source:
       file: src/cite/core/config.ts
@@ -371,7 +371,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: rel-collection-paths
     claim:
-      lines: 173
+      lines: 180
       integrity: sha256-8c1d19f2af3d0319ad86dd5ffc2e9d5d1e3b154b15f3492f4ef40f9aac2b0020
     source:
       file: src/cite/core/config.ts
@@ -380,7 +380,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: rel-root-config
     claim:
-      lines: 174
+      lines: 181
       integrity: sha256-ad1ea713828531a524d01d4f1078fd3d48b4a1f0a725a666ffc1973a547bcf10
     source:
       file: src/cite/core/config.ts
@@ -389,7 +389,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: rel-baseline-config
     claim:
-      lines: 174
+      lines: 181
       integrity: sha256-ad1ea713828531a524d01d4f1078fd3d48b4a1f0a725a666ffc1973a547bcf10
     source:
       file: src/meta/core/baseline.ts
@@ -398,7 +398,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: rel-positional-cwd
     claim:
-      lines: 175
+      lines: 182
       integrity: sha256-a6ff001cb94ff5525674b8c7f922b921f5c417e99fdcebefa7bdae19885bac59
     source:
       file: src/cite/core/config.ts
@@ -407,7 +407,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: rel-root-flag-cwd
     claim:
-      lines: 176
+      lines: 183
       integrity: sha256-4a0d0b09de4c24fd5e9bc27f7d835c4556d81e77317f81aa53e30551ba2e43a2
     source:
       file: src/cite/core/config.ts
@@ -416,7 +416,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: rel-baseline-flag-cwd
     claim:
-      lines: 176
+      lines: 183
       integrity: sha256-4a0d0b09de4c24fd5e9bc27f7d835c4556d81e77317f81aa53e30551ba2e43a2
     source:
       file: src/meta/core/baseline.ts
@@ -428,7 +428,7 @@ citations:
       integrity: sha256-9924707f21479f4ffb6babb0142f92f6c4cbe2342dd31205f61a7ad4aac0a9a5
     source:
       file: src/cite/commands/check.ts
-      lines: 333-335
+      lines: 319-321
       integrity: sha256-8aaab865086d96a731433becc46559e3e1299ac52160f7d74765554664ace732
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: env-key-wins
@@ -444,7 +444,7 @@ citations:
       integrity: sha256-8a44e634704e00d6e35a37b49441f79c1912905e7d55e2b5012677a067c8cab8
     source:
       file: src/cite/commands/add.ts
-      lines: 311-317
+      lines: 317-323
       integrity: sha256-38e382c7d00ac5ed995437d77ccd64b63eef323ddaef18f95486cd4537a6ef31
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: check-decrypts
@@ -452,7 +452,7 @@ citations:
       integrity: sha256-8a44e634704e00d6e35a37b49441f79c1912905e7d55e2b5012677a067c8cab8
     source:
       file: src/cite/core/sources.ts
-      lines: 118-122
+      lines: 137-141
       integrity: sha256-3d302c9f301a4fcdef84f9dad165d602fcb033982cdb3463573771ab14db92b8
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: rotate-frontmatter
@@ -497,7 +497,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: default-source-moved
     claim:
-      lines: 252
+      lines: 259
       integrity: sha256-8124e80360bf47324ac98dcc549182607c80c0638bba0967cac8bfcc5c58cd27
     source:
       file: src/cite/core/severity.ts
@@ -506,7 +506,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: default-source-moved-ambiguous
     claim:
-      lines: 253
+      lines: 260
       integrity: sha256-8cf861d715db4d30caa733439b1ea296183c2fca96e9f37463c0d3b31037660f
     source:
       file: src/cite/core/severity.ts
@@ -515,7 +515,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: default-source-changed
     claim:
-      lines: 254
+      lines: 261
       integrity: sha256-168fdbe08669d3b097382e21d6818b8851791cc1d64489954f12df7e73dd0c17
     source:
       file: src/cite/core/severity.ts
@@ -524,7 +524,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: default-source-never-true
     claim:
-      lines: 255
+      lines: 262
       integrity: sha256-181a54bae4c0aa18ca6b6caf84a4b2d56744a2d631448d14963cc44240bb24c5
     source:
       file: src/cite/core/severity.ts
@@ -533,7 +533,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: default-source-missing
     claim:
-      lines: 256
+      lines: 263
       integrity: sha256-e7eadc492b7c44c9f688b0a3a733b559f4c73658e7f34a2410b04c92a2f73ea2
     source:
       file: src/cite/core/severity.ts
@@ -542,7 +542,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: default-claim-moved
     claim:
-      lines: 257
+      lines: 264
       integrity: sha256-ad390617b2e44f240fe038e54a3d4d9e898244dfd32c03a4eb2ec20f1d14c27b
     source:
       file: src/cite/core/severity.ts
@@ -551,7 +551,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: default-claim-moved-ambiguous
     claim:
-      lines: 258
+      lines: 265
       integrity: sha256-c835ce83b665f74a354e46b7ba13d4933e461557bf0befc0c1e1e96d9d413105
     source:
       file: src/cite/core/severity.ts
@@ -569,7 +569,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: default-marker-orphan
     claim:
-      lines: 260
+      lines: 267
       integrity: sha256-ceb8f6b19b3c150b5cd395802faeb40287ff2be298379ed605f1512cefdfb83c
     source:
       file: src/cite/core/severity.ts
@@ -578,7 +578,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: default-marker-invalid
     claim:
-      lines: 261
+      lines: 268
       integrity: sha256-99df0a09e88f6746c6441675c12baaf6fac2c508b3acc7891d6c26b2349f0cdb
     source:
       file: src/cite/core/severity.ts
@@ -587,7 +587,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: default-marker-repeated
     claim:
-      lines: 262
+      lines: 269
       integrity: sha256-0b06a1412c7e9c9913c50ee6298bfdb99d6200f8fc61c0ba464016417c949caf
     source:
       file: src/cite/core/severity.ts
@@ -596,7 +596,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: default-anchor-invalid
     claim:
-      lines: 263
+      lines: 270
       integrity: sha256-29ba32cfb8b9d48921fb3f6c9a3db4dbb516332aa936e8ccb30e810dc7d2d0ba
     source:
       file: src/cite/core/severity.ts
@@ -605,7 +605,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: default-entry-invalid
     claim:
-      lines: 264
+      lines: 271
       integrity: sha256-7b442a51280ce153dc75a8abe4ebb3a4eb36ebf3b7910f3076bf269c6cc5c6ce
     source:
       file: src/cite/core/severity.ts
@@ -614,7 +614,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: default-quote-drift
     claim:
-      lines: 265
+      lines: 272
       integrity: sha256-515cb8bb16e82019b68bb64c0ff8f65a3c9bbe41a0f7676f521d3774c9d83896
     source:
       file: src/cite/core/severity.ts
@@ -696,7 +696,8 @@ one are on the metadata tool's
 [configuration reference](/manni/meta/reference/configuration/#collections).
 A family file that declares `collections:` and no `cite:` section is still
 this tool's config: the documents are declared, and every cite key takes its
-default.
+default. The same holds for a file whose only family key is `tools:` or
+`encryptionKey:`.
 
 ### The citations manifest
 
@@ -815,12 +816,18 @@ is not a secret, so `eror` is quoted back as the typo it is.
 {/* cite discovery-filenames */}
 {/* cite discovery-git-boundary */}
 {/* cite discovery-sibling-file-skipped */}
-The tool looks for `manni.config.yaml` (then `manni.config.yml`) in the
-working directory and each ancestor, stopping at the nearest `.git` boundary.
-The first file found wins; ancestor files are never merged. A family file with
-neither a `cite:` key nor a `collections:` list belongs to a sibling tool, and
-discovery keeps looking up the tree. There is no pre-family filename for this
-tool, so nothing else is read.
+The tool looks in the working directory and each ancestor, stopping at the
+nearest `.git` boundary. With no `.git` above the working directory, it looks
+in the working directory only. In each directory it tries
+`manni.config.yaml`, then `manni.config.yml`. Then it tries
+`moose.config.yaml` and `moose.config.yml`, the family file's pre-rename
+names. It reads them the same way, with a warning on stderr to rename the file.
+
+The first file found wins; ancestor files are never merged. A family file
+counts when it carries `cite:`, `collections:`, `tools:` or `encryptionKey:`.
+One with none of these belongs to a sibling tool, and discovery keeps looking
+up the tree. The tool has no config file of its own from before the family
+file.
 
 {/* cite explicit-config-must-exist */}
 {/* cite no-config-skips-discovery */}
@@ -920,7 +927,7 @@ statuses, per end, and neither is a rule, so neither can be named here.
 | `source-missing` | `error` | The path is not a tracked file under the root, or the ciphertext resolves to nothing. |
 | `claim-moved` | `notice` | The pinned page text is found verbatim elsewhere, so nothing drifted. `update` rewrites the lines. |
 | `claim-moved-ambiguous` | `warning` | The pinned text sits in more than one place, and the tool will not guess. |
-| `claim-changed` | `warning` | It fires on any edit to a pinned paragraph, a typo fix beside the cited sentence included. Set it to `error` to have every such edit reviewed. |
+| `claim-changed` | `warning` | It fires on any edit to the pinned text, a typo fix included: the claim lines, or the whole paragraph or block a marker anchors. Set it to `error` to have every such edit reviewed. |
 | `marker-orphan` | `error` | A marker names an id no entry has. |
 | `marker-invalid` | `error` | A marker the tool cannot read, including one carrying JSON. |
 | `marker-repeated` | `warning` | Two markers name one id; the first anchors it. |

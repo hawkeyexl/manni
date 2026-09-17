@@ -4,6 +4,35 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.3.4](https://github.com/hawkeyexl/manni/compare/v2.3.3...v2.3.4) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** refuse a missing --root on add ([#49](https://github.com/hawkeyexl/manni/issues/49)) ([9121f1f](https://github.com/hawkeyexl/manni/commit/9121f1fc144dd17faa495aa07446b94326c3d3f4))
+
+## [2.3.3](https://github.com/hawkeyexl/manni/compare/v2.3.2...v2.3.3) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** enforce the 5,000-line range limit ([#50](https://github.com/hawkeyexl/manni/issues/50)) ([58fef71](https://github.com/hawkeyexl/manni/commit/58fef71afe5d80b53526f3bbee0544c853b5876a))
+* **cite:** indent add --marker to the paragraph it anchors ([#52](https://github.com/hawkeyexl/manni/issues/52)) ([93733e4](https://github.com/hawkeyexl/manni/commit/93733e4b697473b06c3223c3067101606c6432e0))
+
+## [2.3.2](https://github.com/hawkeyexl/manni/compare/v2.3.1...v2.3.2) (2026-09-17)
+
+
+### Bug Fixes
+
+* **term:** compare ids ignoring case, and describe --allow-empty ([#48](https://github.com/hawkeyexl/manni/issues/48)) ([b70661b](https://github.com/hawkeyexl/manni/commit/b70661bcd479b1a4b2cf1af07e894a84d2baa70c))
+
+## [2.3.1](https://github.com/hawkeyexl/manni/compare/v2.3.0...v2.3.1) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** anchor stacked markers, and place add --marker above its paragraph ([#43](https://github.com/hawkeyexl/manni/issues/43)) ([6f3df3c](https://github.com/hawkeyexl/manni/commit/6f3df3cfc43742bd0a6cd67edfb444253a89267d))
+
 # [2.3.0](https://github.com/hawkeyexl/manni/compare/v2.2.0...v2.3.0) (2026-09-17)
 
 

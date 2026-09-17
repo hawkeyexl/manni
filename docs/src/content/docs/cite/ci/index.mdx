@@ -92,7 +92,7 @@ citations:
       integrity: sha256-c55fbb1fe519fc5fb5d48ebe6a8c486b2ec68a9db3b5d8c2b517a7062d625d6f
     source:
       file: src/cite/commands/check.ts
-      lines: 346-348
+      lines: 332-334
       integrity: sha256-d51b978f9fa088753d24578d22c1dbbd55f75f157ec76b756d82b78ad164740e
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: exit-two-no-inputs
@@ -101,7 +101,7 @@ citations:
       integrity: sha256-7e96fbbc32f1af5b6e5f4c8ce93c492565b18a8831ae48274fad1d6842056854
     source:
       file: src/cite/commands/check.ts
-      lines: 166-170
+      lines: 152-156
       integrity: sha256-dd1fd746781a236fa50aca4af4a370c3d18e06a6eb84ceda7b7eb3eb133f10cb
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: format-pretty-default
@@ -330,7 +330,7 @@ citations:
       integrity: sha256-efc7bb92610fe5242cb59b03561d4d690a31ddfb91be2ae2627838c722a10f11
     source:
       file: src/cite/core/sources.ts
-      lines: 73-85
+      lines: 74-86
       integrity: sha256-b960a34be4d9a85928499280cb124a5134df47c5bd8ea8fd21b5534b3b5f215b
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: no-git-notice
@@ -355,7 +355,7 @@ citations:
       integrity: sha256-e65fea832a3e2fe3a5a00d2f1b2aea62c897d1cf7020a071e2e822bbc0109392
     source:
       file: src/cite/commands/check.ts
-      lines: 327-330
+      lines: 313-316
       integrity: sha256-df9e2099e2cacae4348d2fafecabf6ffe16e6f7a0c74f462c0d0edd44d388b2a
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: collections-fallback-no-args
@@ -417,7 +417,7 @@ citations:
       integrity: sha256-381a44b0cd4b1692ac26d6e1407fa0009060cbc8d7bda2f4ebe0eb6f56c9a3d7
     source:
       file: src/cite/commands/check.ts
-      lines: 346-348
+      lines: 332-334
       integrity: sha256-d51b978f9fa088753d24578d22c1dbbd55f75f157ec76b756d82b78ad164740e
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: fingerprint-rule-and-id
@@ -440,7 +440,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: baseline-optional-path
     claim:
-      lines: 256
+      lines: 259
       integrity: sha256-1bfe8ea208f29221e6885309343e4cfab31863e978fb566076f7cf7f7e9b4788
     source:
       file: src/cite/cli.ts
@@ -449,7 +449,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: baseline-config-key
     claim:
-      lines: 260
+      lines: 263
       integrity: sha256-0854c2a66753cac81502988e4db9559ed557eaca505946c67174dd18ee99aba0
     source:
       file: src/cite/core/config.ts
@@ -571,7 +571,7 @@ why that matters.
 `actions/checkout` fetches one commit by default. A citation records the
 commit its pin was minted at, and two of the check's answers need the file as
 it was then. `source-never-true` is the finding that the pin never matched at
-that commit, and the diff under `--show-diff` runs from that commit to HEAD.
+that commit, and the diff under `--show-diff` runs from that commit to the working tree.
 On a shallow clone neither is possible, and the check degrades honestly rather
 than guessing:
 
@@ -715,12 +715,15 @@ tools cannot erase each other's backlog.
    that pin never lands on an unrelated pull request.
 
 4. **Burn the backlog down.** Each `update` or `update --accept` that resolves
-   a finding removes it from the picture. A fingerprint is made of the rule and
-   the entry's `id` (or its `source.integrity` when it has none). So a
-   baselined finding survives a move on either end, and accepting a changed
-   claim never reopens one. It disappears only when the source pin is
-   re-minted, which is the act that resolves it. Regenerate the file with
-   `--write-baseline` whenever it is convenient; it only ever shrinks.
+   a finding removes it from the picture. A fingerprint is made of the schema, the
+   rule, the entry's position in `citations` and its `id` (or its
+   `source.integrity` when it has none). So a baselined finding survives a
+   move on either end, and accepting a changed claim never reopens one.
+   Reordering the entries, or inserting one above it, does reopen it. It
+   disappears when the source pin is re-minted, which is the act that
+   resolves it. Regenerate the file with `--write-baseline` whenever it is
+   convenient. It records every finding the run sees, so it grows when new
+   findings have appeared since the last one.
    One exception: `manni key rotate` re-keys the pin of every encrypted
    citation, so an id-less one returns as new. Re-record the baseline after
    a rotation.

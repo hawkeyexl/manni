@@ -23,7 +23,7 @@ citations:
       integrity: sha256-8eaf928fa69b8abbeb9e1db43d6afa52a06d2515bac29efe1504083aab7d1a8d
     source:
       file: src/term/core/check.ts
-      lines: 62-79
+      lines: 63-80
       integrity: sha256-17a764445ff56b6819f08226799ce7e19998d16719158f97c7d26aecf54a5593
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: concepts-read-from-metadata
@@ -165,7 +165,7 @@ citations:
       integrity: sha256-cb33af084d5ecff16a771daa9bd8125f0ddaa98648027b3b9389e1960b1f8356
     source:
       file: src/term/core/check.ts
-      lines: 68-72
+      lines: 69-73
       integrity: sha256-4299d6bf2633bda6a508a9c61cb174217dc218f32a398ac982d10e4127b34e5a
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: proof-findings-layout
@@ -207,7 +207,7 @@ citations:
       integrity: sha256-6ab07958952c7663c92b11a4026562d1dccc140dd5ce6cabb85f4f9e6b64c2f3
     source:
       file: src/term/core/check.ts
-      lines: 69-72
+      lines: 70-73
       integrity: sha256-af74a6c2bb2f75df7561ef6c83abfa2506cf202638c81d00ad39dd5a05f18d54
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: shelf-ten-fields
@@ -232,7 +232,7 @@ citations:
       integrity: sha256-0ef641c35788ff31425574435fc93f5928de545a222d03e1ef7e1f375d0828e1
     source:
       file: src/term/core/check.ts
-      lines: 62-67
+      lines: 63-68
       integrity: sha256-6c3d8227cbf5b7176df9d97ade84b42b7743e703cfccf49fc3f9d07f59ec6813
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: checks-references-resolve
@@ -241,7 +241,7 @@ citations:
       integrity: sha256-a22f0013e41d13dc1c259a0bea9f6d58e21033c775dbc19b94bc87fa0e6eae77
     source:
       file: src/term/core/check.ts
-      lines: 121-128
+      lines: 124-131
       integrity: sha256-a83856e184b5fd20094202db589b0043994b7b1d580c800150287b50d5331136
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: checks-no-broader-cycle
@@ -250,7 +250,7 @@ citations:
       integrity: sha256-9b68871ded6862eed26f61277f23ef77b1202379839270d2596d56d629a75ae2
     source:
       file: src/term/core/check.ts
-      lines: 199-205
+      lines: 202-208
       integrity: sha256-4080f474213086ff98b7e6332a4695a7ef7c2df21e684368dc4ae0a592831909
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: checks-definition-prose-with-vale
@@ -398,5 +398,7 @@ checks.
 </CardGrid>
 
 Term entries are written in the `manni:terminology` vocabulary, whose draft is
-[under review](/manni/meta/proposals/terminology/). `manni meta validate`
-checks one page's shape against that draft; `manni term check` checks the set.
+[under review](/manni/meta/proposals/terminology/). No built-in schema covers
+it. `manni meta validate` checks one page's shape against the draft when the
+page's schema set includes it, as `-s` with the draft's JSON file does. `manni
+term check` checks the set.

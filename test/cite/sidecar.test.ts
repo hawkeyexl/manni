@@ -302,6 +302,30 @@ describe("cite add, writing the manifest", () => {
     ]);
   });
 
+  it("reports the lines a third stacked marker and its claim hold, with the page's body unmoved", async () => {
+    const cwd = copyFixture();
+    const CLAIM = "The fetch timeout is 10 seconds.";
+    const lineOf = (text: string): number =>
+      read(cwd, "pages/limits.md").split("\n").indexOf(text) + 1;
+    for (const id of ["first", "second", "third"]) {
+      const at = lineOf(CLAIM);
+      const result = await runAdd({
+        cwd,
+        page: "pages/limits.md",
+        pageLines: { start: at, end: at },
+        src: "src/limits.ts:2",
+        id,
+        marker: true,
+        commitSha: false,
+        gitClient: noGit(),
+        env: {},
+      });
+      const lines = read(cwd, "pages/limits.md").split("\n");
+      expect(lines[(result.markerLine ?? 0) - 1]).toBe(`<!-- cite ${id} -->`);
+      expect(result.claimLines).toEqual({ start: lineOf(CLAIM), end: lineOf(CLAIM) });
+    }
+  });
+
   it("writes a join-keyed manifest under the page's own value of the field", async () => {
     const cwd = copyFixture();
     const result = await runAdd({

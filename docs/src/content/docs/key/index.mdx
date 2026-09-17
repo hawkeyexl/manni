@@ -213,7 +213,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: key-shape-config-message
     claim:
-      lines: 139
+      lines: 140
       integrity: sha256-1d7ca7f09d867b4969a1d2772ce2f5939a88b263ef07ef9ea4f1fb85b00bf9f6
     source:
       file: src/shared/config-file.ts
@@ -222,7 +222,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: key-shape-env-message
     claim:
-      lines: 140
+      lines: 141
       integrity: sha256-0966b6ae5fa4497570d2fb53aab9c91eb57c2921ade329dad9a07bd66f78a7e9
     source:
       file: src/shared/encryption-key.ts
@@ -240,7 +240,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: key-expanded-not-stretched
     claim:
-      lines: 147-150
+      lines: 149-152
       integrity: sha256-2571f411e80fb63896359ec7b7ac71dd5b42a8b21b910bb92084dc2f67b9be2e
     source:
       file: src/shared/encryption.ts
@@ -249,7 +249,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: key-set-256-bits
     claim:
-      lines: 147-150
+      lines: 149-152
       integrity: sha256-2571f411e80fb63896359ec7b7ac71dd5b42a8b21b910bb92084dc2f67b9be2e
     source:
       file: src/shared/encryption.ts
@@ -274,7 +274,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: set-refuses-env-set
     claim:
-      lines: 178-180
+      lines: 180-182
       integrity: sha256-5e5b88e64938ad86303987511491675a5278690a20b30ca949750e7ee125c311
     source:
       file: src/key/commands/set.ts
@@ -307,7 +307,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: prompt-missing-notice
     claim:
-      lines: 201
+      lines: 203
       integrity: sha256-846bcaee7804a3abd4719fcb688a9963ed4faf0589dae9e264060b9602001886
     source:
       file: src/shared/prompt.ts
@@ -316,7 +316,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: prompt-question
     claim:
-      lines: 203
+      lines: 205
       integrity: sha256-3a9a17eeffbf1765db5fa8211534910150554feea8465e5573337d9a3e564680
     source:
       file: src/shared/prompt.ts
@@ -491,7 +491,8 @@ collections:
   config's key is not read. An empty variable counts as unset, which is what a
   missing CI secret expands to.
 - **A key is at least 32 hex or base64url characters.** Anything else is
-  refused with exit `2`, and the error never repeats the value:
+  refused with exit `2`. `manni key set` is the exception: it writes a new key
+  over a malformed `encryptionKey:`. The error never repeats the value:
 
   ```
   manni: manni.config.yaml: "encryptionKey" must be at least 32 hex or base64url characters. Run `manni key set` to generate one.
@@ -500,8 +501,9 @@ collections:
 
 - **A file that holds only a key is still a config file.** Discovery stops at
   the first `manni.config.yaml` that carries the running tool's section,
-  `collections:`, or `encryptionKey:`. The next run finds a file the key prompt
-  created.
+  `collections:`, `tools:` or `encryptionKey:`. A `moose.config.yaml`, the
+  file's name before the rename, is found the same way, with a warning to
+  rename it. The next run finds a file the key prompt created.
 - **Strength is yours to provide.** The configured value is used as key
   material as it is. It is expanded, not stretched, so a value picked by hand is
   only as strong as it is random. `manni key set` generates 256 random bits, and

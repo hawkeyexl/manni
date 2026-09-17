@@ -99,7 +99,7 @@ function withInputs(command: Command): Command {
     .option("--ext <list>", "comma-separated extensions for directory walks")
     .option("--exclude <glob>", "glob to exclude; repeatable", collect, [])
     .option("--collection <name>", "configured collection to read; repeatable", collect, [])
-    .option("--allow-empty", "treat zero matched files as success")
+    .option("--allow-empty", "treat a missing path, no matched files or no terms as success")
     .option("--no-gitignore", "read files .gitignore covers")
     .option("-c, --config <path>", "path to a manni config file")
     .option("--no-color", "disable colored output");

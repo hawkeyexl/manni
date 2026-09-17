@@ -435,8 +435,8 @@ Every transcript below is real output from the built tool.
 <Steps>
 
 1. **Check that the repository is green under the current key.** A rotation
-   cannot fix a value that was already wrong, and it will not start beside one
-   it cannot decrypt.
+   cannot fix a value that was already wrong. A run that meets a value it
+   cannot decrypt reports it, exits `1`, and writes nothing.
 
    ```console
    $ manni meta validate

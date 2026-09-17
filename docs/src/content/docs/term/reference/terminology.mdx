@@ -339,7 +339,7 @@ citations:
       integrity: sha256-5b753fbebbe976abf57df76e2ceccbf8ccb7ecb5b764edd09c575017176252ba
     source:
       file: src/term/core/check.ts
-      lines: 130-135
+      lines: 133-138
       integrity: sha256-0ec82aba94f07a6b593ef06114f291020439e0ce8fae368c78c029312ffb80f3
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: see-resolves-labels-ids
@@ -347,7 +347,7 @@ citations:
       integrity: sha256-a0539753773c06df4beec4fbd71cd9a0c23d0c2d9277b9f9da66370fae77ce42
     source:
       file: src/term/core/check.ts
-      lines: 50-60
+      lines: 51-61
       integrity: sha256-73f5e4336f46962c5c6ab1d3b6ac316e7a0e6765d7db007285f6271b059bc58c
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: see-is-reference-field
@@ -355,7 +355,7 @@ citations:
       integrity: sha256-a0539753773c06df4beec4fbd71cd9a0c23d0c2d9277b9f9da66370fae77ce42
     source:
       file: src/term/core/check.ts
-      lines: 20-21
+      lines: 21-22
       integrity: sha256-82b44bf4a9d3d1365825d85263c5fb3861ea389411d70dddde562e4784bce4ff
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: see-not-empty-finding
@@ -363,7 +363,7 @@ citations:
       integrity: sha256-a0539753773c06df4beec4fbd71cd9a0c23d0c2d9277b9f9da66370fae77ce42
     source:
       file: src/term/core/check.ts
-      lines: 130-135
+      lines: 133-138
       integrity: sha256-0ec82aba94f07a6b593ef06114f291020439e0ce8fae368c78c029312ffb80f3
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: see-dangling-reference
@@ -371,7 +371,7 @@ citations:
       integrity: sha256-a0539753773c06df4beec4fbd71cd9a0c23d0c2d9277b9f9da66370fae77ce42
     source:
       file: src/term/core/check.ts
-      lines: 121-128
+      lines: 124-131
       integrity: sha256-a83856e184b5fd20094202db589b0043994b7b1d580c800150287b50d5331136
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: id-order
@@ -583,8 +583,8 @@ see: progressive-lens
 {/* cite see-is-reference-field */}
 {/* cite see-not-empty-finding */}
 {/* cite see-dangling-reference */}
-`see` resolves against labels and ids. An entry with both `see` and a
-`definition` is the [`see-not-empty`](/manni/term/reference/rules/#see-not-empty)
+`see` resolves against labels and ids, ignoring case. An entry with both `see`
+and a `definition` is the [`see-not-empty`](/manni/term/reference/rules/#see-not-empty)
 finding. A `see` that names nothing is
 [`dangling-reference`](/manni/term/reference/rules/#dangling-reference).
 
@@ -594,8 +594,8 @@ finding. A `see` that names nothing is
 An entry's `id` is, in order:
 
 1. the record's own `id`;
-2. the construct's identifier: `<dt id>` in HTML, `xml:id` on a DocBook
-   `<glossentry>`, `@id` on a DITA topic;
+2. the construct's identifier: `<dt id>` or `<dfn id>` in HTML, `xml:id` on a
+   DocBook `<glossentry>`, `@id` on a DITA topic;
 3. the slug of the preferred label, so `progressive lens` is
    `progressive-lens`.
 

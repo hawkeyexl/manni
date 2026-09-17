@@ -23,14 +23,15 @@ import { GIT_UNAVAILABLE_COMMIT, gitClient } from "../core/git.js";
 import { sliceLines, splitLines } from "../core/hash.js";
 import { mintCitation } from "../core/mint.js";
 import { bodyLineOf, readPage } from "../core/page.js";
-import { lineSpec, parseLines, parseSrc, spellLines } from "../core/range.js";
-import { buildSourceIndex, readSource } from "../core/sources.js";
+import { lineSpec, parseLines, parseSrc, spellLines, tooWide } from "../core/range.js";
+import { readSource, sourceIndexFor } from "../core/sources.js";
 import { ManifestSet } from "../core/manifest.js";
 import { sidecarsFor, type PageSidecar } from "../core/sidecar.js";
 import {
   anchoredLines,
   fenceSpanAt,
   formatStatement,
+  markerIndent,
   offsetOfLine,
   unitHolding,
 } from "../core/statements.js";
@@ -203,6 +204,8 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   if (marker && opts.id === undefined) {
     throw new CiteError("--marker needs --id: the marker names the entry.");
   }
+  const wide = pageLines === undefined ? undefined : tooWide(pageLines);
+  if (wide !== undefined) throw new CiteError(`Invalid range "${at}": it ${wide}.`);
   if (quote && pageLines === undefined) {
     throw new CiteError(`--quote needs the block's lines: ${label}:L1-L2.`);
   }
@@ -244,7 +247,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   // Git is used whenever it is there, as on check and update: the index is
   // `git ls-files` and the commit is HEAD. Where it is not, a walk and none.
   const client = opts.gitClient ?? gitClient(root);
-  const sourceIndex = await buildSourceIndex(root, { gitClient: client });
+  const sourceIndex = await sourceIndexFor(root, client);
 
   // The marker goes in before the claim is pinned, because what it anchors is
   // what the claim pins. Everything below counts lines in `body`, the page
@@ -257,7 +260,8 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   let shifted: Shifted = { frontmatter: [], manifest: new Map() };
   if (marker && pageLines !== undefined) {
     // The marker goes above the paragraph or block holding the lines, below
-    // any markers already stacked there, and the lines must stay inside it.
+    // any markers already stacked there, at its indentation, and the lines
+    // must stay inside it.
     const holding = unitHolding(content, pageLines.start, format, {
       offset: page.bodyOffset,
       line: page.bodyLine,
@@ -271,7 +275,9 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
       );
     }
     shifted = shiftedEntries(page.citations, holding.start, page.bodyLine, label);
-    const statement = formatStatement(format, { kind: "ref", id: opts.id ?? "" });
+    const statement =
+      markerIndent(content, holding.start, format, page.bodyLine) +
+      formatStatement(format, { kind: "ref", id: opts.id ?? "" });
     const insertAt = offsetOfLine(content, holding.start);
     body = insertStatementBefore(content, insertAt, statement);
     markerAt = holding.start;

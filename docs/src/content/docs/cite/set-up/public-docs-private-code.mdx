@@ -7,7 +7,7 @@ citations:
       integrity: sha256-4b05619ee1dad6b4e245c704a98cb494c3ca4ecdf8f9c30bd746ca020c8bb867
     source:
       file: src/cite/commands/add.ts
-      lines: 316-317
+      lines: 322-323
       integrity: sha256-f05edba3de967672071fa9a9dec5a9138e8bb7958b7b3fea68b90415d4c21f80
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: add-encrypts-source-path
@@ -15,7 +15,7 @@ citations:
       integrity: sha256-4b05619ee1dad6b4e245c704a98cb494c3ca4ecdf8f9c30bd746ca020c8bb867
     source:
       file: src/cite/core/mint.ts
-      lines: 79-81
+      lines: 85-87
       integrity: sha256-adf154ee2322e11c3aa5c1cab65e55121da2d4e5d9a0dd24045e0bd0b22a779f
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: same-token-format
@@ -23,7 +23,7 @@ citations:
       integrity: sha256-2d4f1fa23a1722112d1f9c4e0a869fd8df8ca7767457e507b158934b667779f3
     source:
       file: src/cite/core/sources.ts
-      lines: 22-28
+      lines: 23-29
       integrity: sha256-9e543461c0724cf1775d73700d957c3efa4a5f0fd6986fc7ba38b33ff9dc63c3
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: key-env-wins
@@ -39,7 +39,7 @@ citations:
       integrity: sha256-a584cb8f38343bb9035516da440060c85f945385029785a8166bf29d6ad9076a
     source:
       file: src/cite/core/sources.ts
-      lines: 118-126
+      lines: 137-145
       integrity: sha256-84da247b98a01c7edbd7a050c7e15ff5d7c662d7c796bbc196e8f7ab0715ce03
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: ciphertext-shape
@@ -113,7 +113,7 @@ citations:
       integrity: sha256-31c2cdd1286ba74f030e9e665f3075981d548829ff2bccad6eb610c7dc970438
     source:
       file: src/cite/core/sources.ts
-      lines: 118-121
+      lines: 137-140
       integrity: sha256-3d5c4b3ce2dda070bda785213024d79073a36c63b18dfdce00bc9c93590a013e
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: rotate-pages-and-manifests
@@ -201,16 +201,16 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: env-key-turns-encryption-on
     claim:
-      lines: 175
+      lines: 176
       integrity: sha256-98683190447bbec49e72ff1a8d77f60e3078121ce9ee362f990138b5dcd2d721
     source:
       file: src/cite/commands/add.ts
-      lines: 316-317
+      lines: 322-323
       integrity: sha256-f05edba3de967672071fa9a9dec5a9138e8bb7958b7b3fea68b90415d4c21f80
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: manifest-splice-citations
     claim:
-      lines: 188-189
+      lines: 189-190
       integrity: sha256-faf026456f3fcee2d46dda16c951f9b0f0d920c44f5f5e96f99275e4bb6a95b7
     source:
       file: src/cite/core/manifest.ts
@@ -219,7 +219,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: url-manifest-refused
     claim:
-      lines: 189
+      lines: 190
       integrity: sha256-f1cfea2e6f24bdc432e0171c2be07edddff6d118c039afafa5175dd3df5626af
     source:
       file: src/cite/core/sidecar.ts
@@ -228,7 +228,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: key-set-256-bits
     claim:
-      lines: 194
+      lines: 195
       integrity: sha256-7906b63add3bc068abdd52293124190dbe16eea2cc3b25decfa9c3fd1e3eb181
     source:
       file: src/shared/encryption.ts
@@ -237,7 +237,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: same-file-same-ciphertext
     claim:
-      lines: 226
+      lines: 227
       integrity: sha256-c04a3d968cabd0ec367ac298c2919932dda7ca0c6248a6a6627f6cc3dafe7829
     source:
       file: src/shared/encryption.ts
@@ -246,25 +246,25 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: add-manifest-page-untouched
     claim:
-      lines: 227
+      lines: 228
       integrity: sha256-ffb213af7c16d3ea22998c1f8a03fd725ffa38dddc7fe2a83caf96e3a3a84c07
     source:
       file: src/cite/commands/add.ts
-      lines: 370-375
+      lines: 376-381
       integrity: sha256-a9f66060a0b6e07b3220f2b2e49f7c7140e3a1aa79c7962efb05b08c4808904e
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: encrypt-flag-only-without-key
     claim:
-      lines: 230-232
+      lines: 231-233
       integrity: sha256-523ab16462b05dbd0d34058105ce80b3a4354fc4104d1cbb3e5ba6ddcb706aa5
     source:
       file: src/cite/commands/add.ts
-      lines: 311-316
+      lines: 317-322
       integrity: sha256-aa0015743b6ff2b1869185451f440ff74af4031f806a31d1b441c24fdc37c30a
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: encrypt-refusal-message
     claim:
-      lines: 235
+      lines: 236
       integrity: sha256-ed83d0ec16a27b315ff18db07d69d8d2328bdcbebe610be5f00e46892680b088
     source:
       file: src/shared/prompt.ts
@@ -273,7 +273,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: terminal-offers-key
     claim:
-      lines: 238
+      lines: 239
       integrity: sha256-0a2aa3b8e63816c85457e4c1ce82a6f5a32478050217e9eaa3eb0742ba379d53
     source:
       file: src/shared/prompt.ts
@@ -282,7 +282,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: no-check-sources-claims-judged
     claim:
-      lines: 244-245
+      lines: 245-246
       integrity: sha256-3cf1aabb1881e5b742de39489576a364437316055db8b7ab362d22598de53dbf
     source:
       file: src/cite/core/check-page.ts
@@ -291,7 +291,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: skipped-not-a-finding
     claim:
-      lines: 244-245
+      lines: 245-246
       integrity: sha256-3cf1aabb1881e5b742de39489576a364437316055db8b7ab362d22598de53dbf
     source:
       file: src/cite/core/adapt.ts
@@ -324,7 +324,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: missing-no-key
     claim:
-      lines: 378
+      lines: 379
       integrity: sha256-3f1f8ee9ef734146c9e2c20672e0816dc6e4409f8200d44c9f46c96de60d722b
     source:
       file: src/cite/core/adapt.ts
@@ -333,7 +333,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: missing-undecryptable
     claim:
-      lines: 379
+      lines: 380
       integrity: sha256-908a4e01a9b05aba4366e6a0b14d5213b6cbf0a1f8273d22bff4c34b9d803b14
     source:
       file: src/cite/core/adapt.ts
@@ -342,7 +342,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: missing-untracked
     claim:
-      lines: 380
+      lines: 381
       integrity: sha256-ea59c529b75b2bde3bcebb5d4861a38f89740e0df28c3ce61b7b57212447c5bb
     source:
       file: src/cite/core/adapt.ts
@@ -354,7 +354,7 @@ citations:
       integrity: sha256-8d2f2ba100a12932e5cb3b46b096e12ea671bff47ce150e84f1518b9dbcc53e3
     source:
       file: src/cite/core/sources.ts
-      lines: 73-85
+      lines: 74-86
       integrity: sha256-b960a34be4d9a85928499280cb124a5134df47c5bd8ea8fd21b5534b3b5f215b
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: realpath-containment
@@ -362,12 +362,12 @@ citations:
       integrity: sha256-8d2f2ba100a12932e5cb3b46b096e12ea671bff47ce150e84f1518b9dbcc53e3
     source:
       file: src/cite/core/sources.ts
-      lines: 61-71
+      lines: 62-72
       integrity: sha256-a5a497574dde56bb912c6b50b76cc6ccbde1b56bd7545000ddb405e96f2312bd
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: claim-current-row-mark
     claim:
-      lines: 260-261
+      lines: 261-262
       integrity: sha256-67d452a939980549a1c22e37457215ae7429de652262e830f489278cd0c48775
     source:
       file: src/cite/reporters/pretty.ts
@@ -376,16 +376,16 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: no-key-reports-missing
     claim:
-      lines: 266-267
+      lines: 267-268
       integrity: sha256-33660fa5ccd0df575dc1fbb63241945036da493fec5df20f3d77422fb2a74f2c
     source:
       file: src/cite/core/sources.ts
-      lines: 118-119
+      lines: 137-138
       integrity: sha256-bce552162d2fe37b1620a4d5c9bb35e437d5b73fd24dbd47760f2f3d6a774391
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: source-missing-is-error
     claim:
-      lines: 266-267
+      lines: 267-268
       integrity: sha256-33660fa5ccd0df575dc1fbb63241945036da493fec5df20f3d77422fb2a74f2c
     source:
       file: src/cite/core/severity.ts
@@ -394,11 +394,11 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: check-sources-config
     claim:
-      lines: 267-268
+      lines: 268-269
       integrity: sha256-cc726f2799ec65b1b55d5667a42946f097107a27b89040bf5628ea573d75c0c4
     source:
       file: src/cite/commands/check.ts
-      lines: 162
+      lines: 148
       integrity: sha256-967888f703b7f5b60bd0f842e101bb63b94d885534dcf2c70481f47e9d95c274
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
 ---
@@ -556,9 +556,10 @@ with a whole run under that `--to`.
   never `lib/limits.ts`. The decrypted path exists only in memory. It reaches
   output only through the pretty reporter, and only under `--reveal`. So the
   private job's `github`, `json`, `sarif` and `junit` outputs are safe on a
-  public pull request and in code scanning. A test in the repository runs
-  every reporter against a private path and a sentinel key, and asserts
-  neither string appears.
+  public pull request and in code scanning. A test in the repository renders
+  `json`, `github` and `pretty` against a private path and a sentinel key, and
+  asserts neither string appears. Another asserts the same of the findings
+  that `sarif` and `junit` are rendered from.
 </Aside>
 
 ## The layout

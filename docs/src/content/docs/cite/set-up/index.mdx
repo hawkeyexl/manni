@@ -28,7 +28,7 @@ citations:
       integrity: sha256-01ac0c6ae336cc9228561aa3cac460f74a037dd0280f6b646aa520df3136dc04
     source:
       file: src/cite/commands/add.ts
-      lines: 370
+      lines: 376
       integrity: sha256-2018bfcbdee1a809b08f071e6fa0e7a3e8d7c90078b5da437c99bd34a8ea3410
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: default-severities
@@ -73,7 +73,7 @@ citations:
       integrity: sha256-4ec87c8ea55fa4ce990393f81dd8477fed6b871248a097882ab85f71f3c281b9
     source:
       file: src/cite/commands/check.ts
-      lines: 189-199
+      lines: 175-185
       integrity: sha256-473fa9dbc7c8c57a21c0c516bd0ec06830610bd48cfe73fd0da009d5208702ca
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: bare-check-covers-collections
@@ -136,7 +136,7 @@ citations:
       integrity: sha256-72c423d00a0d369fc76aec4bd8bf192b1b9427d4517c744ef29016968b8024b2
     source:
       file: src/cite/core/sources.ts
-      lines: 126
+      lines: 145
       integrity: sha256-77702f30bfc199d991dacb9a334b9a6236b5f10b764fbe43ea57c82ff4ec3e4d
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: sources-tracked-files-only
@@ -145,7 +145,7 @@ citations:
       integrity: sha256-9316a24f0efa88f5e71a3f4d299a2a5497437e3da26c8569dd0c5dbcf9242c59
     source:
       file: src/cite/core/sources.ts
-      lines: 73-77
+      lines: 74-78
       integrity: sha256-e4efebe2b16abb8156015879a7470029e1c49b4a304b6bc62c025732307bcb7f
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: sources-realpath-contained
@@ -154,7 +154,7 @@ citations:
       integrity: sha256-9316a24f0efa88f5e71a3f4d299a2a5497437e3da26c8569dd0c5dbcf9242c59
     source:
       file: src/cite/core/sources.ts
-      lines: 61-71
+      lines: 62-72
       integrity: sha256-a5a497574dde56bb912c6b50b76cc6ccbde1b56bd7545000ddb405e96f2312bd
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: uncommitted-source-missing
@@ -163,12 +163,12 @@ citations:
       integrity: sha256-c698362da06ce9597d6cce9d87c4e8402962ac199df0e767b56289f51a281283
     source:
       file: src/cite/core/sources.ts
-      lines: 126
+      lines: 145
       integrity: sha256-77702f30bfc199d991dacb9a334b9a6236b5f10b764fbe43ea57c82ff4ec3e4d
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: root-flag-reaches-checkout
     claim:
-      lines: 73
+      lines: 74
       integrity: sha256-f2f51e01d0b2e84331d08ea60c2b86add7460e77cd04dec560e0f7a8427e4517
     source:
       file: src/cite/core/config.ts
@@ -177,7 +177,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: add-page-then-source
     claim:
-      lines: 75-76
+      lines: 76-77
       integrity: sha256-80151343b5cbf3a9aedad361bb81934b2e3cb0a672a90bf68088b71e5ac2860d
     source:
       file: src/cite/cli.ts
@@ -186,7 +186,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: add-dry-run-prints-diff
     claim:
-      lines: 76
+      lines: 77
       integrity: sha256-0a983049f2ef33fe50fb803b60faaf67673d973649f50d58b87d857c747b2dbd
     source:
       file: src/cite/cli.ts
@@ -195,16 +195,16 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: add-dry-run-writes-nothing
     claim:
-      lines: 76
+      lines: 77
       integrity: sha256-0a983049f2ef33fe50fb803b60faaf67673d973649f50d58b87d857c747b2dbd
     source:
       file: src/cite/commands/add.ts
-      lines: 386
+      lines: 392
       integrity: sha256-02b9081f935fd087efc17ae5f3b2627313d9c17cf1b26aed3aced25c5db1edae
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: add-report-names-both-pins
     claim:
-      lines: 100-101
+      lines: 101-102
       integrity: sha256-da3e0d8b235e4e7e26910b9facf1dfafa097b8ea97fb82cfaf1c0cbbc17e4fad
     source:
       file: src/cite/cli.ts
@@ -213,25 +213,25 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: add-report-file-line-after-write
     claim:
-      lines: 107-108
+      lines: 108-109
       integrity: sha256-a6825d1cfb9a16569f817ce6d493d6a7800b0d67f79341019effe1e6f7a2749b
     source:
       file: src/cite/commands/add.ts
-      lines: 375-389
+      lines: 381-395
       integrity: sha256-99f5a6d5a509b0e94f8e0101bdd27fef8ada097487beb77f34b5b6e628116513
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: claim-stored-as-body-lines
     claim:
-      lines: 108-110
+      lines: 109-111
       integrity: sha256-b17f436fa57fd67eb5133ffd23e377d0385d1d1edf64d24603edc4e7f34fc46a
     source:
       file: src/cite/commands/add.ts
-      lines: 294
+      lines: 300
       integrity: sha256-019c18c06304d1c8621a2fec67bb8c3cd156a317e177fa874d251d702516e87e
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: check-rows-read-file-lines
     claim:
-      lines: 128
+      lines: 129
       integrity: sha256-26f78a8f47b6cbad6e76e2315cefda95c14d521ec755498142d30c735bf032ab
     source:
       file: src/cite/reporters/pretty.ts
@@ -240,7 +240,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: quiet-hides-clean-files
     claim:
-      lines: 128-129
+      lines: 129-130
       integrity: sha256-2f0a6aaec0a05f4e02f67ea6506ac359a444b04e94d94fc48d13d77e5c8f5255
     source:
       file: src/cite/reporters/pretty.ts
@@ -252,7 +252,7 @@ citations:
       integrity: sha256-622dccd00088a07c45e856fc590b1d9b59c7df0e85b90e35f06dcc305d171bf2
     source:
       file: src/cite/commands/check.ts
-      lines: 166-170
+      lines: 152-156
       integrity: sha256-dd1fd746781a236fa50aca4af4a370c3d18e06a6eb84ceda7b7eb3eb133f10cb
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: no-inputs-exits-2
@@ -276,7 +276,7 @@ citations:
       integrity: sha256-8b133590d3d3304ede7ee0c9566716a6cb6bd1447daf8503dcd973de8e03e052
     source:
       file: src/cite/commands/add.ts
-      lines: 370
+      lines: 376
       integrity: sha256-2018bfcbdee1a809b08f071e6fa0e7a3e8d7c90078b5da437c99bd34a8ea3410
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
 ---
@@ -349,9 +349,10 @@ Every transcript below is real output from the built tool.
    1 file checked, 0 passed, 1 failed, 1 finding
    ```
 
-   Sources resolve through tracked files only, from `git ls-files`, under a
-   realpath containment check. So a file you have not committed is `missing`
-   too. [Where sources resolve from](/manni/cite/reference/cli/#where-sources-resolve-from)
+   Where git is available, sources resolve through tracked files only, from
+   `git ls-files`, under a realpath containment check. So a file you have not
+   committed is `missing` too. Without git, a directory walk stands in, and an
+   uncommitted file resolves. [Where sources resolve from](/manni/cite/reference/cli/#where-sources-resolve-from)
    has the full order, and `--root` is how a second checkout is reached.
 
 3. **Mint the first citation.** `add` takes the page with its lines, then the
