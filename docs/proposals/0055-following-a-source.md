@@ -139,7 +139,7 @@ one file. Two steps are added, and one return is deferred:
 | 2 | The pinned range hashes to the pin, so `current`. | Unchanged. |
 | 3 | With a commit and git, read history for the original text. | Unchanged. |
 | 4 | Search the rest of the file for a window that hashes to the pin. | Unchanged. |
-| 5 | Settle `never-true` or `changed`. | The cross-file search runs first, then the in-range search, then this. |
+| 5 | Settle `never-true` or `changed`. | The cross-file search runs first (both branches), then the in-range search (a resolved path only), then this. |
 
 A path that does not resolve skips steps 2 and 4, since there is no file to
 hash or to search. Step 3 still runs, because `git show` reads the file at the
@@ -213,18 +213,49 @@ window. 0044 stress test 4 stands as written: a whole-file pin has nowhere to
 move to **inside** its file, and it never reports `moved` there. It can move to
 another path, and a `git mv` with no edit is the case the pin settles outright.
 
-**The budget.** The one hashing budget is `MOVE_BUDGET_BYTES`, 64 MiB, in
-`src/shared/pin.ts`. `findWindows` spends it on its blind path only, since the
-filtered path hashes almost nothing. The cross-file search therefore accounts
-its own bytes, and the unit it counts is the bytes of each candidate it reads.
-The budget is the cap on the search, and there is no separate file count or
-timeout. When it runs out the search stops. The end keeps the verdict it would
-have had without it, and `truncatedSearch` is set. The run then says so once,
-with the notice it says today:
+**The budget.** `MOVE_BUDGET_BYTES` is 64 MiB, in `src/shared/pin.ts`, and it
+is **one counter per citation**, spent in ladder order by every search that
+classifies that end. It is not one budget per search. So 64 MiB is the whole
+cost of settling one citation, whichever search does the reading. The cap on a
+run is that, times the citations whose pins do not hold. There is no separate
+file count and no timeout.
+
+Two searches can spend it, and they count different units.
+`findWindows` spends it on its blind path, where the unit is the bytes of each
+window it hashes. The cross-file search accounts its own bytes, where the unit
+is the bytes of each candidate file it reads. Its call into `findWindows`
+passes `original`, which takes the filtered path and hashes almost nothing, so
+it spends nothing there.
+
+**What the reader should expect when the first search spends it all.** The
+counter is what is left, so the cross-file search never starts, and the in-range
+search never runs either. The end keeps the verdict it would have had without
+any of this work. That is `source-changed` for a file that is there, and
+`source-missing` for a path that is gone. `truncatedSearch` is set and the run
+says so once. The citation is not reported as `moved` on partial evidence, and
+the notice is what says the evidence was partial.
+
+That contention is narrow, because the blind path and the cross-file search
+have nearly opposite preconditions. A blind `findWindows` runs when the
+original text is unknown, and the cross-file search needs it known. The one
+overlap is `historyOf`'s own blind scan over the file as it was at the commit.
+It runs when the recorded lines there do not hash to the pin. That scan can
+spend the counter and still end up knowing the original text.
+
+**The notice** takes one of two forms, because "the file" is the wrong noun for
+a scan across candidate files. The first is today's, unchanged, for a search
+that ran out inside one file. The second is new, for one that ran out across
+the files a commit touched:
 
 ```
 a move search hit its 64 MiB budget before covering the file; a citation may read changed rather than moved
+a move search hit its 64 MiB budget before covering the files changed since the pin's commit; a citation may read changed or missing rather than moved
 ```
+
+A run raises each form at most once, and raises both when it hit both. Which
+form a truncation takes is decided where the search stopped, and it is not
+recorded on the citation. `truncatedSearch` stays the boolean it is today in
+`json`, so no output field is added.
 
 **The verdicts.** Exactly one start line across all candidates is
 `source-moved`, a warning, with `newSrc` naming the new path and range.
@@ -305,6 +336,9 @@ A path that is gone is now asked one more question before it is called missing.
 | the content moved into an **untracked** file | `source-missing` | error | 1 |
 | the content moved, and the budget ran out first | `source-missing` | error | 1 |
 
+The budget row carries the rest of decision 2 with it. `truncatedSearch` is
+set, and the run raises the cross-file form of the notice once.
+
 The untracked row is the honest limit, and it matches what `add` already
 refuses. Sources resolve through `git ls-files` under a realpath containment
 check. So an untracked destination is not a file this tool reads. That holds
@@ -330,7 +364,7 @@ says `missing`.
 | End and status | Without `--accept` | With `--accept` |
 |---|---|---|
 | `source-moved`, same file | `source.lines` rewritten. | The same. |
-| `source-moved`, new path | `source.file` **and** `source.lines` rewritten. `commit-sha` is left alone. | The same. |
+| `source-moved`, new path | `source.file` **and** `source.lines` rewritten. `commit-sha` is left alone (the pin was minted at that commit and still holds, so `HEAD` would record a mint that never happened). | The same. |
 | `source-moved`, new path, whole-file pin | `source.file` rewritten; the entry has no `lines`. | The same. |
 | `source-changed` with a span | Skipped, and reported. | `source.integrity` re-minted **at the span**, `source.lines` rewritten to it, and `commit-sha` set to `HEAD` where the entry has one. |
 | `source-changed` with no span | Skipped, and reported. | Re-minted at the recorded range, as today. |
@@ -637,7 +671,7 @@ internal, and listed because two of them are shared:
 |---|---|---|
 | `GitClient.changedSince(commit)` | method | New, on the family-private client. `git diff --name-only <commit> HEAD`, memoized per commit. |
 | `findWindows` | function | Unchanged. The cross-file search calls it once per candidate with `original` set. |
-| `MOVE_BUDGET_BYTES` | const | Unchanged, 64 MiB, and now bounds the candidate bytes a cross-file search reads. |
+| `MOVE_BUDGET_BYTES` | const | Unchanged, 64 MiB. It is one counter per citation, and it now also bounds the candidate bytes a cross-file search reads. |
 | `SourceEnd.newSrc` | field | Unchanged shape. It may now name another file, and carries a ciphertext for an encrypted source. |
 | `SourceEnd.newLines` | field | Unchanged shape. It is now set on a `changed` end that found its span. |
 | `UpdateRewrite` | interface | Unchanged. |
@@ -656,7 +690,7 @@ refused. The added work, per entry whose pin holds nowhere in its own file:
 | Work | Cost |
 |---|---|
 | `git diff --name-only <commit> HEAD` | One call per distinct `commit-sha`, memoized for the run. Twenty stale pins minted in one sitting cost one call. |
-| Reading candidates | One read per candidate that the tracked-file index holds and the diff names, bounded by the 64 MiB budget. |
+| Reading candidates | One read per candidate the index holds and the diff names, bounded by what is left of that citation's counter. |
 | Hashing candidates | One hash per start line whose text equals the pinned range's old first line. Usually zero per file. |
 | The in-range search | No git call and no hash. Two line scans of a text `git show` already fetched. |
 | `git show <commit>:./<path>` | Unchanged. It already runs on a non-match, memoized per commit and path. |
@@ -792,8 +826,8 @@ files are cheaper than one vendored bundle. A timeout makes a check's verdict
 depend on the machine, so CI and a laptop would disagree about whether a pin
 moved. The budget is in bytes, the candidates are visited in git's sorted
 order, and a truncated search is therefore the same on both. When it truncates,
-the end keeps its old verdict, `truncatedSearch` is set, and the existing notice
-says a citation may read changed rather than moved.
+the end keeps its old verdict, `truncatedSearch` is set, and the run raises the
+cross-file form of the notice from decision 2.
 
 ### 10. The old last line occurred twice
 
