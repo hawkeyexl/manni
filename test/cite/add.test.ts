@@ -1137,6 +1137,23 @@ describe("runAdd", () => {
       ).toBe("pages/no-citations.md:40 is past the end of the page (6 lines).");
     });
 
+    it("refuses a source or page range longer than 5,000 lines, and not one of 5,000", async () => {
+      workspace("no-citations.md");
+      const page = "pages/no-citations.md";
+      expect(await refusal(add({ page, src: "src/limits.ts:2-5002" }))).toBe(
+        'Invalid range "src/limits.ts:2-5002": it spans 5001 lines, more than 5000.',
+      );
+      expect(await refusal(add({ page, src: "src/limits.ts:1-5000" }))).toBe(
+        "src/limits.ts has 7 lines; line 5000 is out of range.",
+      );
+      expect(
+        await refusal(add({ page, src: "src/limits.ts:2", pageLines: { start: 1, end: 5001 } })),
+      ).toBe('Invalid range "pages/no-citations.md:1-5001": it spans 5001 lines, more than 5000.');
+      expect(
+        await refusal(add({ page, src: "src/limits.ts:2", pageLines: { start: 1, end: 5000 } })),
+      ).toBe("pages/no-citations.md:1-5000 is past the end of the page (6 lines).");
+    });
+
     it("refuses page lines that sit in the frontmatter", async () => {
       workspace("claim-range.md");
       expect(
