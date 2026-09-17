@@ -13,6 +13,9 @@
  *   npm run check:tgdp-pin              report; exit 0 even when behind
  *   npm run check:tgdp-pin -- --strict  exit 1 when behind, for a nagging CI job
  *
+ * `--strict` fails on one thing only, which is upstream having moved past the
+ * pin. An upstream that cannot be reached is not that, and exits 0 either way.
+ *
  * Exit status is set via `process.exitCode`, never `process.exit()`: calling the
  * latter while `fetch`'s handles are still unwinding aborts the process on
  * Windows with a libuv assertion and reports 127, which reads as a failure of
@@ -86,7 +89,13 @@ const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 const latest = await latestRelease(manifest.upstream);
 
 if (latest === null) {
-  if (strict) process.exitCode = 1;
+  // Not even under `--strict`. The question this check asks is whether the pin
+  // has fallen behind, and an upstream that will not answer has not said that
+  // it has. GitLab returns 403 to an unauthenticated call often enough that
+  // failing on it would make the job red on days nobody chose, which is the
+  // reading 01008 rejected for the prose gate. The reason is on stderr, and a
+  // run that reaches upstream reports what it found.
+  console.error("check:tgdp-pin: the pin was not checked this run.");
 } else {
   console.log(`pinned:  ${manifest.pin}`);
   console.log(`latest:  ${latest}`);
