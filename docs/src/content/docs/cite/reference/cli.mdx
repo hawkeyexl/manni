@@ -122,15 +122,20 @@ exactly as the entry spelled it:
 
 ```
 ✗ docs/limits.md
+    ↕ fetch-timeout   :9 changed           lib/limits.ts:2 current            docs-citations.yaml:6
     ✓ max-files       :12 current          lib/limits.ts:1 current
     ℹ retries         :14 moved -> :16     lib/limits.ts:3 current
-    ↕ fetch-timeout   :9 changed           lib/limits.ts:2 current            docs-citations.yaml:6
     ✗ page-size       :21 current          lib/limits.ts:5 changed since 3f9c2a1, 1 commit
     ✓ timeouts        marker :30 current   ~AQm4…:8-12 current
     ✓                                      lib/limits.ts current
 
 1 file checked, 0 passed, 1 failed, 3 findings (1 warning, 1 notice)
 ```
+
+The rows read down the page, by the line each one anchors to. That is the
+marker's line where a marker anchors the claim, and the claim's first file line
+otherwise. The order of the entries in the frontmatter or the manifest does not
+show. `json` keeps that order instead, and so do the findings.
 
 {/* cite pretty-file-marks */}
 {/* cite pretty-summary-notices */}
@@ -339,7 +344,7 @@ A pin is abbreviated to eight hex digits, a commit to seven:
 ```
 docs/limits.md: added fetch-timeout to frontmatter (claim at line 9, sha256-c41f09aa…; source lib/limits.ts:2, sha256-78af1d33…, 3f9c2a1)
 docs/limits.md: added a bare pin to frontmatter (source lib/limits.ts, sha256-aebba92f…, 3f9c2a1)
-docs/limits.md: added timeouts to frontmatter; marker at line 30, claim pinned at lines 31-34
+docs/limits.md: added timeouts to frontmatter; marker at line 30, claim pinned at lines 31-34 (sha256-c41f09aa…; source lib/limits.ts:8-12, sha256-78af1d33…, 3f9c2a1)
 docs/limits.md: added an entry to frontmatter (claim lines 14-18, a block that reproduces lib/limits.ts:1-3)
 ```
 
@@ -464,5 +469,11 @@ docs/limits.md: retries claim line 14 -> 16 (moved)
 docs/limits.md: fetch-timeout source lib/limits.ts:2 -> lib/limits.ts:4 (moved)
 docs/limits.md: page-size source lib/limits.ts:5 re-pinned at 9b1e04c (changed; sha256-11aa… -> sha256-22bb…)
 docs/limits.md: fetch-timeout claim at line 9 re-pinned (changed; now "The fetch timeout is 30 seconds.")
-4 citations rewritten in 1 file, 0 skipped
+docs/limits.md: timeouts claim at marker line 30 re-pinned (changed; now "Timeouts are per request.")
+5 citations rewritten in 1 file, 0 skipped
 ```
+
+A claim a marker anchors reads at the marker's line, as `check` reports it.
+One that stores its own lines reads at the claim. Under `-f json` the `at`
+field of an accepted claim is the first file line of the claim's text, whichever
+anchors it.
