@@ -113,6 +113,11 @@ The checks run in a stated order, and the first defect is the finding:
 5. A word that is not an id, leftmost first.
 6. An id named twice, leftmost repeat first.
 
+Checks 3 and 5 overlap on purpose. A word starting with `{` is also a word
+that is not an id, and 3 runs first so the more actionable message fires. A
+person who pasted an entry into the body needs to hear where the entry belongs,
+rather than that the paste is not an id.
+
 A defective marker anchors nothing, exactly as today. One marker raises one
 `marker-invalid`, so a marker with two bad words does not print twice. The fix
 is to rewrite the line, and one message is enough to make it.
@@ -320,7 +325,7 @@ not hold exits `1`. A warning or a notice exits `0`.
 | Case | Rule | Message | Severity | Exit |
 |---|---|---|---|---|
 | `cite` with nothing after it | `marker-invalid` | `invalid marker: empty payload` | error | 1 |
-| a line break in the payload | `marker-invalid` | `invalid marker: a marker is one line. Split the list into two markers.` | error | 1 |
+| a line break in the payload | `marker-invalid` | `invalid marker: a marker is one line; write two markers` | error | 1 |
 | a word starting with `{` | `marker-invalid` | `A marker names an entry by id. Write the entry in frontmatter or the sidecar.` | error | 1 |
 | more than 25 ids | `marker-invalid` | `invalid marker: more than 25 ids in one marker (31); write a second marker` | error | 1 |
 | a word that is not an id | `marker-invalid` | `invalid marker: "fetch-timeout,retries" is not an id` | error | 1 |
@@ -335,6 +340,12 @@ string. It read `invalid marker: payload is not an id`, and it now names the
 word that failed, because a list has several words and only one of them is
 wrong. Naming it costs nothing when there is only one word either way. Rows
 one, three, seven, eight and ten are the strings 0044 shipped, unchanged.
+
+Row two follows the `invalid marker: <phrase>` shape the rest of the table
+uses, with a semicolon before the advice, as row four does. Row three keeps
+0044's unprefixed pair of sentences. It is the one row that says where an entry
+belongs rather than what is wrong with a word. Rewording it would move a string
+this proposal has no reason to touch.
 
 A marker finding sits on the marker's line, whichever file the entry lives in.
 
@@ -424,10 +435,7 @@ $ echo $?
 $ manni cite add docs/limits.md:30 lib/limits.ts:9 --id backoff --marker --dry-run
 --- docs/limits.md
 +++ docs/limits.md
-@@ -29,1 +29,1 @@
--{/* cite fetch-timeout retries */}
-+{/* cite fetch-timeout retries backoff */}
-@@ -12,0 +12,4 @@
+@@ -12,0 +13,8 @@
 +  - id: backoff
 +    claim:
 +      integrity: sha256-0b7e…
@@ -436,6 +444,9 @@ $ manni cite add docs/limits.md:30 lib/limits.ts:9 --id backoff --marker --dry-r
 +      lines: 9
 +      integrity: sha256-a41c…
 +      commit-sha: 3f9c2a1e7b0d4c5a6f8e9d0b1a2c3d4e5f607182
+@@ -29 +37 @@
+-{/* cite fetch-timeout retries */}
++{/* cite fetch-timeout retries backoff */}
 docs/limits.md: added backoff to frontmatter; joined the marker at line 29, claim pinned at lines 30-31
 $ echo $?
 0
@@ -511,13 +522,27 @@ $ manni cite add docs/limits.md:30 lib/limits.ts:9 --id backoff --marker \
     -c manni.config.yaml
 --- docs/limits.md
 +++ docs/limits.md
-@@ -29,1 +29,1 @@
+@@ -12,0 +13,7 @@
++  - id: backoff
++    claim:
++      integrity: sha256-0b7e…
++    source:
++      file: ~AQx7Vb2…
++      lines: 9
++      integrity: hmac-sha256-5e0c…
+@@ -29 +36 @@
 -{/* cite fetch-timeout retries */}
 +{/* cite fetch-timeout retries backoff */}
 docs/limits.md: added backoff to frontmatter; joined the marker at line 29, claim pinned at lines 30-31
 $ echo $?
 0
 ```
+
+The entry hunk is rung 3's hunk, one line shorter and with two values changed.
+`--encrypt` writes `source.file` as a ciphertext and pins it with
+`hmac-sha256-`, and `--no-commit-sha` drops the `commit-sha` line. Neither flag
+suppresses a hunk. A `--dry-run` join always prints two, one for the entry and
+one for the marker's line.
 
 ### The usage errors
 
@@ -529,7 +554,7 @@ $ echo $?
 | `cite add docs/limits.md:30 lib/limits.ts:9 --id retries --marker`, where `retries` is already an entry | `manni: docs/limits.md already has an entry retries.` | 2 |
 | `cite add docs/limits.md:30 lib/limits.ts:9 --id Backoff --marker` | `manni: Invalid id "Backoff": use lowercase letters, digits and hyphens, starting with a letter or digit.` | 2 |
 | `cite add docs/limits.md:40 lib/limits.ts:9 --id backoff --marker`, over a blank line | `manni: docs/limits.md:40 has no paragraph or block for a marker to anchor.` | 2 |
-| `cite add docs/limits.md:29 lib/limits.ts:9 --id backoff --marker`, over the marker's own line | `manni: docs/limits.md:29 is inside the marker for fetch-timeout. A marker there would change its pin.` | 2 |
+| `cite add docs/limits.md:29 lib/limits.ts:9 --id backoff --marker`, over the marker's own line | `manni: docs/limits.md:29 is a marker line. A marker there would change its pin.` | 2 |
 | `cite check -f yaml` | `manni: Unknown --format "yaml". Use pretty, json, github, sarif, or junit.` | 2 |
 | `cite check -` with no `--as` | ``manni: Reading from stdin (`-`) requires --as <format> to choose an extractor.`` | 2 |
 
@@ -704,9 +729,12 @@ the entry's shape. No draft moves, and
 **No config key changes**, and no flag is added or removed. One `add` refusal
 becomes a success, which is the only exit-code change on any invocation.
 
-Two strings move, and both ship in the same commit as the docs-as-tests that
-match them. `invalid marker: payload is not an id` gains the offending word,
-and the `--marker` report line gains a `joined the marker` variant.
+Three strings move, and all three ship in the same commit as the docs-as-tests
+that match them. `invalid marker: payload is not an id` gains the offending
+word. The `--marker` report line gains a `joined the marker` variant. And the
+refusal over a marker's own line loses its id clause. A marker there may name
+several ids, and the refusal is keyed to the line. It reads
+`docs/limits.md:29 is a marker line. A marker there would change its pin.`
 
 ## Consequences
 
