@@ -55,6 +55,21 @@ const QUOTABLE = [
   "",
 ].join("\n");
 
+/** Three paragraphs and no citations yet, for the row-order rung. */
+const ORDERED = [
+  "---",
+  "title: Limits",
+  "---",
+  "# Limits",
+  "",
+  "The fetch timeout is 10 seconds.",
+  "",
+  "Retries default to 3.",
+  "",
+  "Max files is 10000.",
+  "",
+].join("\n");
+
 interface Run {
   stdout: string;
   stderr: string;
@@ -465,6 +480,41 @@ describe("manni cite check (the ladder)", () => {
   const check = (args: string[], opts?: { input?: string; env?: Record<string, string> }): Run =>
     cite(["check", "--root", ".", ...args], opts);
 
+  it("prints a page's rows in anchor order, not in frontmatter order", () => {
+    writeFileSync(join(work, "pages", "order.md"), ORDERED, "utf8");
+    const lineOf = (text: string): string => {
+      const lines = readFileSync(join(work, "pages", "order.md"), "utf8").split("\n");
+      return String(lines.findIndex((line) => line.includes(text)) + 1);
+    };
+    // Written bottom of the page first, so the frontmatter order is the reverse.
+    // Each add appends to the frontmatter, so the lines are read again each time.
+    const added: string[][] = [
+      ["max-files", "Max files", "src/limits.ts:1"],
+      ["retries", "Retries", "src/limits.ts:3", "--marker"],
+      ["fetch-timeout", "fetch timeout", "src/limits.ts:2"],
+    ];
+    for (const [id, text, src, ...rest] of added) {
+      const args = ["add", `pages/order.md:${lineOf(text ?? "")}`, src ?? "", "--id", id ?? ""];
+      expect(cite([...args, ...rest, "--root", "."]).status).toBe(0);
+    }
+    expect(cite(["add", "pages/order.md", "src/limits.ts", "--root", "."]).status).toBe(0);
+
+    const r = check(["pages/order.md"]);
+    expect(r.status).toBe(0);
+    const rows = r.stdout.split("\n").slice(1, 5).map((row) => row.trim().split(/\s{2,}/));
+    expect(rows.map((row) => row[0])).toEqual([
+      "✓ fetch-timeout",
+      "✓ retries",
+      "✓ max-files",
+      "✓",
+    ]);
+    // The claim column climbs: the bare pin has none, and comes last.
+    const at = rows.map((row) => Number(/:(\d+)/.exec(row[1] ?? "")?.[1] ?? 0));
+    expect(at[3]).toBe(0);
+    expect(at.slice(0, 3)).toEqual([...at.slice(0, 3)].sort((a, b) => a - b));
+    expect(new Set(at.slice(0, 3)).size).toBe(3);
+  });
+
   it("--collection runs over the named collection", () => {
     writeFileSync(
       join(work, "manni.config.yaml"),
@@ -796,7 +846,7 @@ describe("manni cite add", () => {
     ]);
     expect(r.status).toBe(0);
     expect(r.stdout.trim()).toBe(
-      "pages/no-citations.md: added timeouts to frontmatter; marker at line 14, claim pinned at line 15",
+      "pages/no-citations.md: added timeouts to frontmatter; marker at line 14, claim pinned at line 15 (sha256-921b21cc…; source src/limits.ts:2, sha256-78af1d33…, no commit)",
     );
     const page = readFileSync(join(work, "pages", "no-citations.md"), "utf8");
     expect(page).toContain("<!-- cite timeouts -->\nThe fetch timeout is 10 seconds.");
@@ -1026,6 +1076,14 @@ describe("manni cite update", () => {
       status: "changed",
     });
     expect(cite(["check", "--root", ".", "pages/source-changed.md"]).status).toBe(0);
+  });
+
+  it("--accept reports a marker-anchored claim at its marker line", () => {
+    const r = cite(["update", "--accept", "--root", ".", "pages/marker-changed.md"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain(
+      'pages/marker-changed.md: retries claim at marker line 14 re-pinned (changed; now "Retries default to 5.")',
+    );
   });
 
   it("--accept says which pin it replaced", () => {

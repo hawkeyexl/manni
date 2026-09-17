@@ -95,5 +95,11 @@ export function renderCheckJson(run: CheckRun): string {
 }
 
 export function renderUpdateJson(run: UpdateRun): string {
-  return JSON.stringify(run, null, 2);
+  // `markerLine` is the pretty report's line for a marker-anchored claim.
+  // `at` is the claim's own first file line, which is what data says.
+  const pages = run.pages.map((page) => ({
+    ...page,
+    rewritten: page.rewritten.map(({ markerLine: _pretty, ...rewrite }) => rewrite),
+  }));
+  return JSON.stringify({ ...run, pages }, null, 2);
 }

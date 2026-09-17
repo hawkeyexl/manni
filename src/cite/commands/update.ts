@@ -190,6 +190,10 @@ function rewriteOf(plan: Plan): UpdateRewrite {
         at: plan.unit.lines.start,
         text: normalizeWhitespace(plan.unit.text.join("\n")),
       };
+      // Where the report says the claim is: its marker, when one anchors it.
+      if (plan.result.anchor === "marker" && plan.result.markerLine !== undefined) {
+        out.markerLine = plan.result.markerLine;
+      }
       return out;
     }
     case "source-accepted": {
