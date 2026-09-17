@@ -58,6 +58,10 @@ jobs:
         with:
           node-version: 24
           cache: npm
+          # Pinned, because this job installs the root tree only. Left to its
+          # default, `cache: npm` keys on every `**/package-lock.json`, so a
+          # docs-only commit would evict a cache whose contents did not change.
+          cache-dependency-path: package-lock.json
       - run: npm ci
       # The CLI under test, from this checkout rather than npm — the same stance
       # the docs.yml `a11y` job takes. It also means this workflow does not wait
