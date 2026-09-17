@@ -2,7 +2,8 @@
  * Mint a citation's source end: read the range through the source index, hash
  * it under the rule (the keyed pin when the source is encrypted), record HEAD
  * unless told not to. Refuses (CiteError) a source the index does not hold, an
- * encrypted source the key cannot open, or a range past EOF. No refusal names
+ * encrypted source the key cannot open, a range wider than
+ * `MAX_RANGE_LINES`, or a range past EOF. No refusal names
  * the path an encrypted source holds.
  *
  * The claim end is minted by the caller, over the page lines it was given,
@@ -12,7 +13,7 @@ import { ENCRYPTION_KEY_ENV } from "../../shared/encryption-key.js";
 import { CiteError } from "../errors.js";
 import type { Citation, CitationSource, MintOptions, MissingReason } from "../types.js";
 import { hashLines, sliceLines, splitLines } from "./hash.js";
-import { parseSrc, rangeLines } from "./range.js";
+import { parseSrc, rangeLines, tooWide } from "./range.js";
 import { buildSourceIndex, encryptSourcePath, readSource } from "./sources.js";
 
 /** The schema's `commit-sha` pattern: seven to sixty-four lowercase hex digits. */
@@ -56,6 +57,11 @@ function refusalFor(reason: MissingReason, path: string, encrypted: boolean): Ci
 
 export async function mintCitation(opts: MintOptions): Promise<Citation> {
   const range = parseSrc(opts.src);
+  const wide =
+    range.start === undefined || range.end === undefined
+      ? undefined
+      : tooWide({ start: range.start, end: range.end });
+  if (wide !== undefined) throw new CiteError(`Invalid range "${opts.src}": it ${wide}.`);
   const { key } = opts;
   // A source that is already encrypted stays encrypted whatever `encrypt`
   // says: the check side keys every pin whose file is encrypted, so a plain
