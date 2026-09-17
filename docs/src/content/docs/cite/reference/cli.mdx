@@ -348,7 +348,7 @@ manni cite add <page>[:L|:L1-L2] <src> [options]
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `--id` | `<id>` | n/a | A kebab-case name for the entry, unique within the page. What a marker names, and what `update --only` and every finding are reported under. Required with `--marker`; optional otherwise, including on a bare pin. An id the page already uses is refused. |
-| `--marker` | n/a | off | Write a `cite <id>` marker instead of storing claim lines, and pin the text it anchors. The marker goes directly above the paragraph or fenced block that holds the page lines, below any markers already there. It takes the indentation of the first line of that paragraph or block, so a marker in a list item stays in the item. In markdown and MDX, above a list item that follows another, it is indented to the item's text, which keeps the list whole. In asciidoc it stays at column 0, where a comment must start. The lines must all sit in that one paragraph or block. Entries whose claim lines sit below the marker have them moved down in the same write. The marker travels with its sentence, so a marker-anchored claim never moves. Needs the page lines and `--id`. |
+| `--marker` | n/a | off | Write a `cite <id>` marker instead of storing claim lines, and pin the text it anchors. The marker goes directly above the paragraph or fenced block that holds the page lines, below any markers already there. It takes the indentation of the first line of that paragraph or block, so a marker in a list item stays in the item. In markdown and MDX, above a list item that follows another, it is indented to the item's text, which keeps the list whole. In asciidoc it stays at column 0, where a comment must start. The lines must all sit in that one paragraph or block, of at most 5,000 lines. Entries whose claim lines sit below the marker have them moved down in the same write. The marker travels with its sentence, so a marker-anchored claim never moves. Needs the page lines and `--id`. |
 | `--quote` | n/a | off | The page lines are a fenced block, fences included, that reproduces the cited lines. The block is pinned whole, and its contents are compared with the source, so a quoted snippet that drifts is `quote-drift` even while the pin holds. Needs the page lines, and a format with a fence the tool can locate: `markdown`, `mdx` or `asciidoc`. |
 | `--encrypt` | n/a | off | Write `source.file` encrypted, with an `hmac-sha256-` pin, so the page carries neither the path nor a verifier for the line. An available encryption key, a top-level `encryptionKey:` or `MANNI_ENCRYPTION_KEY`, encrypts every `add` without the flag. With no key, on a terminal, `add` offers to generate one and write it to `manni.config.yaml`. Off a terminal, or on a no, it refuses (exit 2) and writes nothing. |
 | `--no-commit-sha` | n/a | on | Do not record `HEAD` as the entry's `commit-sha`. Without it, a later check can still say the lines changed, but not since when, nor whether the pin was ever true. Off a git checkout no commit is recorded either way. |
@@ -413,6 +413,7 @@ manni: docs/limits.md:2 is in the frontmatter. A claim is body text.
 manni: --marker needs the page lines to anchor: docs/limits.md:L.
 manni: --marker needs --id: the marker names the entry.
 manni: docs/limits.md:30-40 runs past the paragraph at lines 31-34. A marker anchors one paragraph.
+manni: docs/limits.md:31 is in a paragraph at lines 31-5032 that spans 5002 lines, more than 5000. A marker anchors the whole paragraph.
 manni: docs/limits.md:31 is inside the claim of fetch-timeout (lines 28-34). A marker there would change its pin.
 manni: --quote needs the block's lines: docs/limits.md:L1-L2.
 manni: docs/limits.md:9 is not a fenced block, so it cannot be a quote.
@@ -484,7 +485,8 @@ working tree so the rewrite is easy to review.
 
 {/* cite accept-skips-blank-claim */}
 `update --accept` skips a claim whose first line is now blank, or inside a
-different kind of block. A sentence that was reworded **and** moved has left
+different kind of block. It also skips a paragraph or block longer than 5,000
+lines, and says so. A sentence that was reworded **and** moved has left
 that line. `--accept` then re-pins whatever paragraph now starts there, so read
 the printed text. If it is not the sentence, `cite add` the sentence again.
 
