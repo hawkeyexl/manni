@@ -121,6 +121,8 @@ function duplicateOf(
   src: string,
   pageLines: PageLines | undefined,
 ): PageCitation | undefined {
+  // opts.src is the caller's plain-path spelling; an existing entry encrypted
+  // under a key compares as its ciphertext and will never match here.
   const wanted = formatSrc(parseSrc(src));
   return page.citations.find((entry) => {
     const { citation } = entry;
