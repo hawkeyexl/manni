@@ -81,11 +81,15 @@ jobs:
       - run: npx @hawkeyexl/manni a11y check http://127.0.0.1:4173/ -f github --progress
 ```
 
+{/* cite unready-seed-exit-2 */}
+{/* cite unready-seed-exit-2-fail */}
 The wait step is the one people leave out. A server started with `&` returns
 immediately, and the crawl then fails on a seed that is not listening yet. That
 is exit `2`, not a violation, so the job fails loudly rather than reporting a
 clean site.
 
+{/* cite offhost-sitemap-urls-dropped */}
+{/* cite crawl-follows-links */}
 A build's sitemap usually lists the production URLs rather than `127.0.0.1`.
 Those are on another host, so the crawl drops them and follows links instead.
 That reaches every page the navigation links to, which on a docs site is every
@@ -114,6 +118,7 @@ check.
 
 ## Annotations
 
+{/* cite annotations-per-rule-per-page */}
 `-f github` emits one workflow command per rule per page. GitHub renders each as
 an annotation on the workflow run:
 
@@ -125,10 +130,15 @@ an annotation on the workflow run:
 ::error title=a11y/image-alt::Images must have alternative text — 1 node on http://127.0.0.1:4173/orphan.html (https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright)
 ```
 
+{/* cite clean-run-silent-exit-0 */}
+{/* cite load-failure-annotation */}
 A crawled page that fails to load gets one `::error title=a11y/load::`
 annotation instead, naming the URL and the reason. A clean run prints nothing at
 all and exits `0`.
 
+{/* cite annotation-no-file-property */}
+{/* cite annotation-level-is-severity */}
+{/* cite axe-impact-folded-on-read */}
 There is no file or line to anchor an annotation to, because the finding is
 about a URL rather than a source file. The annotation names the page and the
 rule, and the reader follows the help URL from there. The command level is the
@@ -136,6 +146,8 @@ finding's severity, so `::error`, `::warning`, and `::notice` are the three you
 will see. axe's four impact levels are folded onto that scale when the page is
 read, and the [map is in the reference](/manni/a11y/reference/cli/#output-formats).
 
+{/* cite json-is-whole-run */}
+{/* cite json-summary-counts */}
 For a dashboard rather than annotations, use `-f json`. The
 [JSON shape](/manni/a11y/reference/cli/#output-formats) carries every finding,
 every failing element, and a `summary` object with the counts.
@@ -153,16 +165,21 @@ Wire `1` to the gate and `2` to a loud failure. That is the same split
 them apart, because `2` means nothing was checked. A job that treats every
 non-zero code as "violations found" reports a broken runner as a red site.
 
+{/* cite crawled-page-failure-recorded */}
+{/* cite failed-page-exit-1 */}
 A seed that will not load is exit `2`, because the run never started. A page
 found during the crawl that will not load is recorded against that page, the
 crawl continues, and the page counts as failed. That is exit `1`.
 
 ## When the crawl runs long
 
+{/* cite pages-checked-sequentially */}
 Pages are checked one at a time, in a real browser, so the wall clock is roughly
 a second or two per page. A few hundred pages is a coffee break. Four things
 shorten it, in the order worth trying.
 
+{/* cite max-pages-cap */}
+{/* cite max-pages-skipped */}
 **Bound the run.** `--max-pages <n>` stops once that many pages have been
 checked. Whatever is still queued is reported as skipped rather than failed, so
 the exit code still reflects what was actually looked at:
@@ -185,27 +202,36 @@ Checked 2 of 3 pages (sitemap: http://127.0.0.1:4173/sitemap.xml)
 The cap is on the pull request job, where the wait matters. The scheduled run
 has all night, so leave it uncapped there and let it see the whole site.
 
+{/* cite collection-url-seeds */}
+{/* cite crawl-scope-same-host */}
 **Narrow the seeds.** A repository that declares its documents as
 [collections](/manni/meta/reference/configuration/#collections) can give each
 one a `url:`, then check one at a time with `--collection guides`. Crawl scope
 is still the host, so this changes where the crawl starts rather than where it
 may go.
 
+{/* cite no-crawl-skips-sitemap */}
+{/* cite no-crawl-skips-links */}
 **Check exactly what changed.** `--no-crawl` skips the sitemap lookup and the
 link following, and checks only the URLs you name. A job that maps changed files
 to published URLs can hand them straight to the command.
 
+{/* cite tags-restrict-axe-rules */}
+{/* cite tags-comma-list */}
 **Narrow the rule set.** `--tags wcag2a,wcag2aa,wcag21aa` restricts axe to rules
 carrying any of those tags, so the gate is "WCAG 2.1 AA and nothing else". It
 saves less time than the other three, and it makes the gate mean something
 specific, which is the better reason to reach for it.
 
+{/* cite timeout-per-page-navigation */}
+{/* cite timeout-default-30000 */}
 `--timeout <ms>` is the one that does not shorten a run. It raises the per-page
 navigation limit, and the default is 30 seconds. Raise it when a page is slow to
 render rather than when the crawl as a whole is long.
 
 ## Move the settings into config
 
+{/* cite config-keys-exclude-format-progress-collection */}
 Every flag above has a config key except `-f`, `--progress`, and
 `--collection`. So the workflow step stays one line while the settings live in
 the repository beside `meta:`:
@@ -223,6 +249,8 @@ a11y:
       - run: npx @hawkeyexl/manni a11y check -f github --progress
 ```
 
+{/* cite flag-over-config-over-default */}
+{/* cite precedence-per-option */}
 A flag on the command line wins over the same key in config, and config wins
 over the default. The full table of keys, types and defaults is in the
 [CLI reference](/manni/a11y/reference/cli/#configuration).

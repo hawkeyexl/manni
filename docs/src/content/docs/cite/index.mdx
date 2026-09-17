@@ -17,12 +17,21 @@ hero:
 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
+{/* cite two-ends-claim */}
+{/* cite two-ends-source */}
+{/* cite checks-both-ends */}
 A citation has two ends, and both are pinned the same way. The **claim** is
 the page lines the sentence occupies, and a hash of them. The **source** is
 the file, the lines it rests on, a hash of those, and the commit they were
 read at. manni cite checks both ends and tells you which sentence stopped
 being true, not which page to re-read.
 
+{/* cite clean-run-one-hash */}
+{/* cite gained-neighbours-moved */}
+{/* cite moved-one-command */}
+{/* cite changed-with-commits */}
+{/* cite marker-edit-claim-changed */}
+{/* cite claim-lines-edit-beside */}
 It runs from git alone. No model, no network, one hash per end on a clean run.
 A line that gained neighbours above it is moved, and one command fixes that. A
 line whose bytes changed is changed, with the commits since, and a person
@@ -53,6 +62,7 @@ npx @hawkeyexl/manni cite add docs/limits.md:9 lib/limits.ts:2 --id fetch-timeou
 docs/limits.md: added fetch-timeout to frontmatter (claim at line 19, sha256-c41f09aa…; source lib/limits.ts:2, sha256-78af1d33…, 9265563)
 ```
 
+{/* cite stored-claim-body-lines */}
 The entry pushed the sentence down the file, and the stored claim line did not
 move: it counts the body, not the file. Check it:
 
@@ -77,6 +87,9 @@ changed, so metadata validation still passes. The citation check does not:
 1 file checked, 0 passed, 1 failed, 1 finding
 ```
 
+{/* cite finding-on-sentence */}
+{/* cite finding-on-sentence-anchor */}
+{/* cite exit-one-on-error */}
 The finding is annotated on line 19, the sentence. The exit code is `1`, so CI
 goes red on the line that needs a person, and nowhere else. That's the whole
 loop: pin, check, read the finding, fix the sentence, re-pin.
@@ -131,6 +144,9 @@ the file grammar, the hashing rule, markers and the sidecar manifest.
   </Card>
 </CardGrid>
 
+{/* cite own-config-key */}
+{/* cite one-config-file */}
+{/* cite bundles-citations-schema */}
 Citations are written in the `manni:citations` vocabulary. Its draft is open
 for review with the family's other vocabularies, and manni cite
 bundles it. It is not a built-in schema of manni meta. With the schema file in

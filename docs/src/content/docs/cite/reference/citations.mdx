@@ -7,6 +7,8 @@ sidebar:
 
 import { Aside } from '@astrojs/starlight/components';
 
+{/* cite schema-id */}
+{/* cite schema-bundled-validates */}
 A citation pins a sentence on a page to the source lines it was written from.
 Both ends are pinned the same way, by a line range and a hash. This page is
 the vocabulary as the tool ships it. The schema it implements is
@@ -61,6 +63,8 @@ at different grains.
 |---|---|---|
 | `citations` | non-empty list of entries | One entry per pinned range. A page with no citations omits the key; an empty list is not a declaration. Ids are unique within the page, and a duplicate is `entry-invalid`. |
 
+{/* cite reserved-citation-prefix-schema */}
+{/* cite reserved-citation-prefix-check */}
 Any other key at the page root that starts with `citation-` is rejected by the
 schema. So a misspelled `citation-comit` fails the way a closed container
 would make it. The root stays open for sibling vocabularies. The page-level
@@ -69,6 +73,7 @@ would make it. The root stays open for sibling vocabularies. The page-level
 
 ## The two ends
 
+{/* cite entry-closed-source-required */}
 An entry is a closed object with one required block, `source`. The `claim`
 block is the other end, and both carry a line range and a hash.
 
@@ -95,10 +100,13 @@ and that is what `manni cite check` adds.
 
 ## Body lines and file lines
 
+{/* cite body-lines-start */}
+{/* cite body-lines-to-file */}
 `claim.lines` counts the page **body**. The body starts on the first line
 after the closing frontmatter fence, and on line 1 for a page with no
 frontmatter. So editing the frontmatter never moves a claim.
 
+{/* cite reports-file-lines */}
 **What people see stays file lines.** The command line takes
 `cite add docs/limits.md:9`, every `(line N)` is a file line, and every
 report translates. Only someone reading the YAML sees the difference.
@@ -123,6 +131,7 @@ path/to/file.ts
 ~CIPHERTEXT
 ```
 
+{/* cite file-grammar-schema */}
 A path is relative to the
 [root](/manni/cite/reference/cli/#where-sources-resolve-from), posix-separated,
 and free of `.` and `..` segments. Segments may hold spaces and dots, so
@@ -138,16 +147,21 @@ The pattern, as the schema spells it:
 ^(?:~[A-Za-z0-9_-]{82,}|(?!~)(?:(?!\.\.?(?:/|$))[^/\\:\r\n\t]+)(?:/(?:(?!\.\.?(?:/|$))[^/\\:\r\n\t]+))*)$
 ```
 
+{/* cite lines-end-before-start */}
+{/* cite lines-end-before-start-add */}
 Lines are 1-based and inclusive, in both blocks. That the end line is not
 before the start line is the tool's rule, since a pattern cannot compare two
 numbers. `lines: "9-3"` is refused by `add` and is `entry-invalid` on a page.
 
+{/* cite src-one-string */}
 On the command line and in every report, a source is still spelled as one
 string: `lib/limits.ts`, `lib/limits.ts:2` or `lib/limits.ts:1-3`. That is a
 spelling of the two fields, not a third field.
 
 ### Encrypted sources
 
+{/* cite encrypted-source-shape */}
+{/* cite encryption-key-env-wins */}
 `~` followed by at least 82 base64url characters is an **encrypted** source.
 It is the path, encrypted under the family encryption key, in the same token
 format a `manni meta` value uses. `source.lines` sits beside it in plain
@@ -156,6 +170,8 @@ text, and stays readable. Examples on these pages shorten the token to
 `encryptionKey:` in `manni.config.yaml`, or `MANNI_ENCRYPTION_KEY`, which
 wins. [`manni key`](/manni/key/) sets it and rotates it.
 
+{/* cite deterministic-aes-gcm */}
+{/* cite cite-src-own-context */}
 The encryption is deterministic AES-256-GCM, so one path under one key always
 gives one ciphertext.
 [Proposal 0045](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0045-family-encryption-key.md)
@@ -164,10 +180,13 @@ only internally. A citation source carries its own encryption context, so a
 metadata tool cannot re-encrypt a source without also re-keying its pin. That
 would break every encrypted citation after a rotation.
 
+{/* cite no-encrypt-mark */}
 `source.file` never carries the `x-manni-encrypt` mark a schema puts on an
 encrypted metadata value. A plain path is the ordinary case, and a mark would
 fail every one of them under `meta validate`.
 
+{/* cite decrypt-then-tracked */}
+{/* cite keyed-pin-hmac */}
 A checkout that has the key decrypts the path, then checks it against the
 tracked files as it would a plain one. So a public docs repository can cite a
 private code repository without publishing its paths. The pin over an
@@ -175,6 +194,7 @@ encrypted source reads `hmac-sha256-`, as [the hashing
 rule](#the-hashing-rule) says. So the page also publishes no verifier a
 reader could run against a guessed line.
 
+{/* cite path-padded */}
 Two things follow from the encryption being deterministic. A ciphertext is
 stable across pages, so a public site does reveal how often one private file
 is cited and when it moves. That is recorded as accepted. And `update` can
@@ -182,15 +202,22 @@ recognise one file across pages, because its ciphertext does not change. The
 path is padded before encryption, so a ciphertext's length reveals only a
 size class.
 
+{/* cite no-key-missing */}
+{/* cite no-key-missing-error */}
+{/* cite no-check-sources-skipped */}
 Without the key, `check` reports an encrypted citation `missing`, an error,
 unless `--no-check-sources` skips it. Under another key it is `missing` too,
 because the ciphertext does not decrypt.
 
 ## The hashing rule
 
+{/* cite hashing-rule-schema */}
 Stated once, in the schema's `source.integrity` description, and implemented
 once for both ends:
 
+{/* cite hashing-rule-normalize */}
+{/* cite hashing-rule-slice */}
+{/* cite hashing-rule-keyed */}
 > Decode as UTF-8. Drop one leading byte-order mark. Turn CRLF into LF. Split
 > on LF and discard the empty element a trailing LF leaves. Take lines L1 to
 > L2 inclusive, or every line for a whole file. Join with LF and no trailing
@@ -198,6 +225,8 @@ once for both ends:
 > text. An encrypted `file` is pinned `hmac-sha256-`: the HMAC-SHA256 of that
 > text under a key derived from the encryption key.
 
+{/* cite claim-pin-plain */}
+{/* cite pin-prefix-mismatch */}
 A claim is always pinned `sha256-`, because the page is public and there is
 nothing to hide. The prefix follows `source.file`, and any other pairing is
 `entry-invalid`:
@@ -207,6 +236,8 @@ fetch-timeout: an encrypted source is pinned with hmac-sha256-, not sha256-.
 fetch-timeout: a plain source is pinned with sha256-, not hmac-sha256-.
 ```
 
+{/* cite trailing-lf-not-a-line */}
+{/* cite crlf-bom-not-changes */}
 Two consequences are worth knowing. A file's trailing newline is not a line,
 so `lines: "1-7"` and a whole-file pin over a seven-line file are one pin. And
 CRLF and a byte-order mark are not changes, so a Windows checkout under
@@ -226,6 +257,7 @@ easier one to keep true, because it travels with its text.
 | asciidoc | `// (cite ID)` |
 | rst | `.. (cite ID)` |
 
+{/* cite marker-payload-id */}
 The payload is an id and nothing else. `cite true` names the id `true`. A
 payload that is not an id is `marker-invalid`, and a JSON payload hears what
 replaced it:
@@ -234,10 +266,14 @@ replaced it:
 A marker names an entry by id. Write the entry in frontmatter or the sidecar.
 ```
 
+{/* cite marker-json-removed */}
 Earlier drafts let a marker carry a whole entry as JSON. That is removed. An
 entry lives in frontmatter or the sidecar, so a source is never written into
 the body. A public page never carries a private path twice.
 
+{/* cite marker-scan-body-only */}
+{/* cite marker-skips-code */}
+{/* cite marker-limit-500 */}
 The scanner looks for the open and close delimiters over the **body only**,
 so a `cite` inside the frontmatter is never a marker. It also reads code as
 code. An opener inside a fenced block or a backtick span is text, which is
@@ -282,11 +318,13 @@ body, so a concurrent prose edit can conflict with it. Claim lines leave the
 body untouched, and a moved claim needs `cite update`. [Choose an
 anchor](/manni/cite/set-up/#choose-an-anchor) weighs the two.
 
+{/* cite marker-claim-optional */}
 A `claim` under a marker is optional. With one, its `integrity` pins the text
 the marker anchors, and an edit there is `claim-changed`. Without one, the
 marker still anchors the entry. There is then no drift check on the
 sentence.
 
+{/* cite anchor-invalid-both */}
 Claim lines and a marker together are `anchor-invalid`, because neither
 anchor can be trusted:
 
@@ -299,11 +337,14 @@ hand-written marker over an entry with no `claim` is legal.
 
 ### Quotes
 
+{/* cite quote-compare */}
 `quote: true` says the claim is a fenced block that reproduces the source.
 The pin covers the whole block, fences included, and the lines inside the
 fences are compared with the source. So a quoted snippet that drifts from its
 source is `quote-drift` even while the pin still holds.
 
+{/* cite quote-needs-anchor */}
+{/* cite quote-needs-anchor-page */}
 A quote needs an anchor. Under claim lines, those lines must still be a fenced
 block. Under a marker, the block is the next fence after the marker. Neither
 is `anchor-invalid`:
@@ -313,6 +354,7 @@ fetch-timeout: quote needs a claim or a marker.
 fetch-timeout: the quote's claim lines 14-18 are no longer a fenced block.
 ```
 
+{/* cite quote-fence-per-format */}
 The fence is ```` ``` ```` or `~~~` in markdown and MDX, and `----` in
 asciidoc. `html`, `xml` and `rst` have no fence the tool can locate.
 
@@ -342,18 +384,24 @@ docs/limits.md:
       source: { file: lib/limits.ts, lines: 2, integrity: sha256-78af1d33…, commit-sha: 3f9c2a1e… }
 ```
 
+{/* cite sidecar-reading-every-collection */}
+{/* cite sidecar-reading-merge */}
 **Reading.** `check`, `update`, `add` and `manni key rotate` read a page's
 citations from the manifest that owns them, through the metadata tool's merge.
 Which manifest owns a page is decided by every collection in the config,
 whatever `--collection` or the positional paths select. So a page checked by
 path still finds its sidecar. `--no-config` reads frontmatter only.
 
+{/* cite sidecar-writing-splice */}
+{/* cite sidecar-update-writes-once */}
 **Writing.** `add`, `update` and `manni key rotate` edit the manifest in
 place. They splice only that page's `citations` value, so every other byte of
 the file is unchanged, and they read the file back to confirm it. `update`
 writes each manifest once per run. These are the first writers of a manifest.
 `meta fill` and `meta query` stay read-only.
 
+{/* cite sidecar-findings-site */}
+{/* cite sidecar-outside-repo */}
 **Where findings sit.** A claim finding or a marker finding sits on the page
 line, where a reviewer reads it. A finding about the entry itself sits on the
 manifest and the entry's own line, which is `entry-invalid` or a bare pin
@@ -369,6 +417,7 @@ Refusals follow the metadata tool's rules, and each is exit 2:
 | Two pages sharing one `join:` value. | The metadata tool's duplicate rule. |
 | A manifest entry naming a page that is gone. | The metadata tool's orphan rule, on a whole-collection run. A `git mv` is the usual cause. |
 
+{/* cite owned-entry-invalid */}
 A page that still carries its own `citations:` while a manifest owns the key
 is `external:owned` in `meta validate`, and `entry-invalid` in `cite check`.
 
@@ -385,10 +434,12 @@ code](/manni/cite/set-up/public-docs-private-code/).
 
 ## Statuses and rules
 
+{/* cite rule-severity-off */}
 `check` classifies **each end** of a citation, then applies the severity
 table. A status is a finding when its rule's severity is not `off`; the
 anchoring rules are findings in their own right.
 
+{/* cite severity-levels-off */}
 A severity is one of the family's three levels, or `off`. The defaults are in
 the tables below, and
 [`severity:`](/manni/cite/reference/configuration/#severity) in config moves
@@ -403,6 +454,9 @@ any of them.
 
 ### Two statuses that are not rules
 
+{/* cite current-skipped-not-rules */}
+{/* cite skipped-under-no-check-sources */}
+{/* cite severity-fourteen-rules */}
 `current` and `skipped` are statuses, per end, and neither is a finding.
 `current` says the end hashes to its pin. `skipped` says the end was not read,
 which happens to every source end under `--no-check-sources`. Neither can be
@@ -418,6 +472,13 @@ named in `severity:`, which takes the fourteen rule names below.
 | `source-never-true` | No window of the range's length anywhere in the file at the recorded commit hashes to the pin, or the path was absent there. Asserted only when git can show that commit. | `never true: the pin does not match at 3f9c2a1` | `error` |
 | `source-missing` | The path is not a tracked file under the root (without git, not a file under it), or an encrypted source cannot be decrypted. A rename is `missing`; `add` is the remedy. | `missing`, and for an encrypted source one of `missing (no encryption key is available to decrypt it)`, `missing (does not decrypt under the current key)` or `missing (no tracked file matches; wrong --root?)` | `error` |
 
+{/* cite move-search-order */}
+{/* cite move-search-first-line */}
+{/* cite move-window-2000 */}
+{/* cite move-search-band */}
+{/* cite move-budget-64mib */}
+{/* cite move-budget-truncated */}
+{/* cite range-limit-either-end */}
 The move search runs whenever the pin does not hold, and history decides only
 what a non-match is called. With the original text (git could show the
 commit), candidates are the lines where the first line matches. Each
@@ -435,12 +496,16 @@ once. A range longer than 5,000 lines, at either end, is `entry-invalid`.
 | `claim-moved-ambiguous` | The pinned text is found verbatim at several places. `update` skips it. | `fetch-timeout: the claim at line 9 now appears at lines 11 and 30.` | `warning` |
 | `claim-changed` | The pinned page text is gone, so the sentence was edited. `update --accept` re-pins it. | `fetch-timeout: the claim at line 9 has changed since it was pinned.` | `warning` |
 
+{/* cite claim-changed-warning */}
+{/* cite claim-changed-scope-lines */}
+{/* cite claim-changed-scope-marker */}
 `claim-changed` defaults to a **warning**, not an error. It fires on any edit
 to the pinned text, and a typo fix counts. Under claim lines that is an edit on
 those lines. Under a marker it is an edit anywhere in the paragraph or block
 the marker anchors. A red build for that would block prose work for nothing. A team that wants every edit to a
 cited sentence reviewed sets it to `error`.
 
+{/* cite no-claim-ambiguous */}
 There is no `claim-ambiguous`. A pinned range cannot be ambiguous on the page
 it was taken from. That is the whole gain of pinning the claim rather than
 copying it.
@@ -456,10 +521,13 @@ copying it.
 | `entry-invalid` | A schema failure, a range that ends before it starts or runs longer than 5,000 lines, or a duplicate id. Also a pin prefix that does not match `file`, a reserved `citation-*` page key, and a page `citations:` a manifest owns. | `error` |
 | `quote-drift` | The quoted block no longer reproduces the source, or no fenced block follows the marker. | `error` |
 
+{/* cite frontmatter-claim-add-refusal */}
 A fourth `anchor-invalid` case cannot arise. Claim lines
 inside the frontmatter are unreachable, because body-relative lines never
 point there. That case survives only as an `add` refusal.
 
+{/* cite rule-id-prefix */}
+{/* cite fingerprint-subject */}
 Every rule reports under the id `manni:cite/<rule>`, which is the SARIF rule
 id and the JUnit failure type. A baseline fingerprint is built from that
 schema, the rule, the entry's position and a subject. The position is
@@ -473,6 +541,10 @@ the baseline after a rotation.
 
 ## The output rule
 
+{/* cite output-rule-json-allowlist */}
+{/* cite output-rule-reveal */}
+{/* cite output-rule-sentinel */}
+{/* cite output-rule-sentinel-fielderror */}
 **Output never says more than the page did.** A finding, in every format,
 spells a source exactly as the entry spelled it: `~AQm4…:4`, never the path
 it decrypts to. The decrypted path, the diff since the commit and the commit
