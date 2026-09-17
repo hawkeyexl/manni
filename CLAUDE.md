@@ -502,6 +502,14 @@ node dist/cli.js meta validate
 # declare, and the Docs workflow gates on it. Notices never fail it.
 node dist/cli.js term check
 
+# The docs pin sentences to this repo's own sources, so a commit that moves a
+# cited line drifts them. The Docs workflow gates on this, so it is no longer
+# advisory. It fails on an error-severity finding alone, which means
+# `source-changed` and the marker, anchor and entry rules. A `source-moved`
+# warning or a `claim-moved` notice annotates and passes. `manni cite update`
+# rewrites those, and `--accept` re-mints a changed end.
+node dist/cli.js cite check
+
 # After changing a term page, regenerate .vale/styles/Terms/ (drop --check) and
 # commit it. The Vale gate reads the committed style, and the Docs workflow
 # fails when it no longer matches the glossary.

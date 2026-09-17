@@ -45,6 +45,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        # The citation step below reads each source file as it was at the
+        # commit its pin was minted at. That is how a source that changed
+        # since is told apart from a pin that never matched, and how a finding
+        # names the commits between. One commit is not enough for either, and
+        # a shallow clone makes the check say so instead of guessing.
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -68,6 +75,18 @@ jobs:
       # styles directory, so this job needs no Vale binary to find it.
       - name: The generated Vale style matches the glossary
         run: node dist/cli.js term write -f vale -o .vale/styles --check
+      # The docs cite this repository's own sources, so one checkout answers
+      # both ends of every pin. Bare, like the steps above, so the pages come
+      # from the `site` collection and the entries from its sidecar.
+      #
+      # This gate exists because the check only ever ran when someone asked
+      # for it. #61 shifted the lines of 25 citations and nothing looked. It
+      # fails on an error-severity finding alone: `source-moved` and
+      # `claim-changed` are warnings and `claim-moved` is a notice, so a line
+      # that merely moved annotates and the job stays green. `manni cite
+      # update` rewrites those.
+      - name: The docs' citations still reach their sources
+        run: node dist/cli.js cite check --format github
 
   # Build the Astro/Starlight static site and upload it as a Pages artifact.
   #
