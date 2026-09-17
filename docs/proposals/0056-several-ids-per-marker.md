@@ -401,7 +401,7 @@ claims under one marker are three annotations with the same `line=29` and three
 different `title=` rule ids and subjects.
 
 **sarif and junit.** Unchanged. Meta's renderer builds the envelope, the
-repository-relative uris and the fingerprints the baseline shares. cite
+repository-relative URIs and the fingerprints the baseline shares. cite
 supplies the rule description, the help link into the citations reference, and
 the message the github annotation carries. JUnit is the same shape, under the
 `manni.cite` classname. A message is no part of a fingerprint, so 0044's stress
@@ -573,20 +573,24 @@ operational or usage.
 
 ### The programmatic API
 
-`src/index.ts` is unchanged, and so is the `src/cite/index.ts` barrel's list of
-exports. One exported type widens:
+`src/index.ts` is unchanged. The `src/cite/index.ts` barrel gains one name and
+loses none. One exported type renames a field, and one gains a field:
 
 | Export | Change |
 |---|---|
 | `InlineStatement["payload"]` | the `ref` variant carries `ids: string[]` in place of `id: string` |
 | `formatStatement` | takes `{ kind: "ref"; ids: string[] }` |
+| `AddResult` | gains `markerJoined?: boolean`, so a caller can tell a written marker from a joined one |
+| `MAX_IDS_PER_MARKER` | new const, beside `MAX_MARKERS_PER_PAGE` |
 | `CITE_RULES` | unchanged, all fourteen |
 | `CiteError` | unchanged |
 | `buildProgram()` | unchanged |
 
-`InlineStatement` is exported for the seam the a11y and term domains use, and
-no published example constructs one. The widening lands in the same minor
-release as the grammar.
+`InlineStatement` and `AddResult` reach the package through the barrel's
+`export * from "./types.js"`, so both are published. Two exported shapes carry
+the widened payload with it, `PageCitation.marker` and `PageCitations.statements`.
+Neither needs an edit of its own. The whole set lands in the same minor release
+as the grammar.
 
 ## Stress test
 
@@ -740,6 +744,13 @@ word. The `--marker` report line gains a `joined the marker` variant. And the
 refusal over a marker's own line loses its id clause. A marker there may name
 several ids, and the refusal is keyed to the line. It reads
 `docs/limits.md:29 is a marker line. A marker there would change its pin.`
+
+**One exported type renames a field.** `InlineStatement["payload"]`'s `ref`
+variant carries `ids: string[]` in place of `id: string`, and `formatStatement`
+takes the new shape. No published example constructs an `InlineStatement`, and
+the rename lands in the same minor release as the grammar. Beside it sit two
+additions, which break nothing. `AddResult` gains `markerJoined?: boolean`, and
+`MAX_IDS_PER_MARKER` joins `MAX_MARKERS_PER_PAGE`.
 
 ## Consequences
 
