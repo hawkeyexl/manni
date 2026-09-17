@@ -438,6 +438,94 @@ export function unitHolding(
   return { start, end: lineAt(text, paragraph.end), kind: "paragraph" };
 }
 
+/** A markdown list item's opening line: its indentation, its bullet or number, and the gap after. */
+const LIST_ITEM = /^([ \t]*)([-*+]|\d{1,9}[.)])([ \t]+|$)/;
+/** A thematic break, which a list item's pattern would otherwise read as `* * *`. */
+const THEMATIC_BREAK = /^[ \t]*([-*_])(?:[ \t]*\1){2,}[ \t]*$/;
+
+/** The text of 1-based line `n` of `text`. */
+function textOfLine(text: string, n: number): string {
+  const pos = offsetOfLine(text, n);
+  return lineText(text, pos, lineEnd(text, pos));
+}
+
+/** The leading spaces and tabs of a line. */
+function indentOf(line: string): string {
+  return /^[ \t]*/.exec(line)?.[0] ?? "";
+}
+
+/** The column a run of spaces and tabs reaches, with tab stops every 4 columns. */
+function columnOf(indent: string): number {
+  let column = 0;
+  for (const ch of indent) column = ch === "\t" ? column + 4 - (column % 4) : column + 1;
+  return column;
+}
+
+/** The list item a markdown line opens, or undefined. */
+function listItemOf(line: string): { lead: string; bullet: string; gap: string } | undefined {
+  if (THEMATIC_BREAK.test(line)) return undefined;
+  const match = LIST_ITEM.exec(line);
+  if (match === null) return undefined;
+  const [, lead = "", bullet = "", gap = ""] = match;
+  return { lead, bullet, gap };
+}
+
+/**
+ * Whether the list item on `line` follows an earlier item of its list: the
+ * nearest text above it, past blank and marker-only lines, is indented deeper
+ * than the item, or sits in a paragraph holding an item at the same column.
+ */
+function continuesList(
+  text: string,
+  line: number,
+  format: string,
+  bodyLine: number,
+  column: number,
+): boolean {
+  let n = line - 1;
+  while (n >= bodyLine) {
+    const above = textOfLine(text, n);
+    if (above.trim() !== "" && !isMarkerLine(above, format)) break;
+    n--;
+  }
+  if (n < bodyLine) return false;
+  if (columnOf(indentOf(textOfLine(text, n))) > column) return true;
+  for (; n >= bodyLine; n--) {
+    const above = textOfLine(text, n);
+    if (above.trim() === "" || ANY_FENCE.test(above) || isMarkerLine(above, format)) break;
+    const item = listItemOf(above);
+    if (item !== undefined && columnOf(item.lead) === column) return true;
+  }
+  return false;
+}
+
+/**
+ * The indentation a marker written above `line` carries, so it stays in the
+ * container the line is in. A paragraph's own leading spaces and tabs, copied
+ * as they are. Above a markdown list item that follows an earlier item, the
+ * column of the item's text, which keeps the marker inside the list: at the
+ * item's own column it would end the list. asciidoc never indents one, since
+ * a comment there starts at column 0.
+ */
+export function markerIndent(
+  text: string,
+  line: number,
+  format: string,
+  bodyLine: number,
+): string {
+  if (format === "asciidoc") return "";
+  const own = textOfLine(text, line);
+  const indent = indentOf(own);
+  if (format !== "markdown" && format !== "mdx") return indent;
+  const item = listItemOf(own);
+  if (item === undefined || !continuesList(text, line, format, bodyLine, columnOf(item.lead))) {
+    return indent;
+  }
+  // A gap of five spaces or more is one space and indented code, so the text starts after one.
+  const gap = item.gap === "" || columnOf(item.gap) > 4 ? " " : item.gap;
+  return item.lead + " ".repeat(item.bullet.length) + gap;
+}
+
 /**
  * The lines a marker anchors, as 1-based lines of `text`: the rest of its own
  * line when that carries text, else the paragraph or fenced block that
