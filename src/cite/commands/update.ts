@@ -9,7 +9,8 @@
  * `--accept` re-pins a changed end. A claim is re-pinned over the paragraph or
  * fenced block now at its first line, and the report prints that text, so the
  * log shows exactly what was accepted; a claim whose line is blank, or now a
- * different kind of block, is skipped, and a sentence that was reworded *and*
+ * different kind of block, or longer than the 5,000-line range limit, is
+ * skipped, and a sentence that was reworded *and*
  * moved is an `add` again. A source is re-minted at HEAD, with a new
  * `commit-sha` where the entry records one.
  *
@@ -35,7 +36,7 @@ import { splitLines } from "../core/hash.js";
 import { mintCitation } from "../core/mint.js";
 import { ManifestSet } from "../core/manifest.js";
 import { readPage } from "../core/page.js";
-import { lineSpec, parseLines, spellLines } from "../core/range.js";
+import { lineSpec, parseLines, spellLines, tooWide } from "../core/range.js";
 import {
   applyMarkerMoves,
   misplacedMarkers,
@@ -549,6 +550,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     page: PageCitations,
     lines: readonly string[],
     lineNow: (line: number) => number,
+    declined: Map<number, string>,
   ): Promise<Plan[]> => {
     const out: Plan[] = [];
     const claim = result.claim;
@@ -602,7 +604,11 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
       })();
       const wantsBlock = entry.citation.quote === true;
       const pin = unit === undefined ? undefined : pinOfLines(lines, unit.lines);
-      if (unit !== undefined && pin !== undefined && (!wantsBlock || unit.kind === "block")) {
+      // A unit past the range limit would pin more than a citation may hold.
+      const wide = unit === undefined ? undefined : tooWide(unit.lines);
+      if (unit !== undefined && wide !== undefined) {
+        declined.set(result.origin.index, `Not re-pinned: the ${unit.kind} ${wide}.`);
+      } else if (unit !== undefined && pin !== undefined && (!wantsBlock || unit.kind === "block")) {
         const plan: Plan = { kind: "claim-accepted", result, unit, pin };
         // A paragraph that grew or shrank moves the claim's last line too.
         if (entry.citation.claim?.lines !== undefined) {
@@ -661,6 +667,8 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     const rewritten: UpdateRewrite[] = [];
     /** `<index>\0<rule>` of every finding a rewrite settled. */
     const settled = new Set<string>();
+    /** Why an accept was declined, by entry index, said with its skipped finding. */
+    const declined = new Map<number, string>();
 
     // Misplaced markers first: the page is rewritten once, with every movable
     // marker relocated, and every pin below is taken against that page.
@@ -724,22 +732,30 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
               now: spellLines(now.span),
             });
           } else if (status === "changed" && accept) {
-            plans.push({
-              kind: "claim-accepted",
-              result,
-              pin: now.pin,
-              markerLine: lineNow(marker.line),
-              unit: {
-                lines: now.span,
-                kind: quote ? "block" : "paragraph",
-                text: afterLines.slice(now.span.start - 1, now.span.end),
-              },
-            });
+            const kind = quote ? "block" : "paragraph";
+            // A marker pins everything it anchors, so the range limit applies
+            // to that, exactly as it does to a claim-lines re-pin.
+            const wide = tooWide(now.span);
+            if (wide !== undefined) {
+              declined.set(result.origin.index, `Not re-pinned: the ${kind} ${wide}.`);
+            } else {
+              plans.push({
+                kind: "claim-accepted",
+                result,
+                pin: now.pin,
+                markerLine: lineNow(marker.line),
+                unit: {
+                  lines: now.span,
+                  kind,
+                  text: afterLines.slice(now.span.start - 1, now.span.end),
+                },
+              });
+            }
           }
         }
       }
 
-      plans.push(...(await plansFor(result, entry, page, lines, lineNow)));
+      plans.push(...(await plansFor(result, entry, page, lines, lineNow, declined)));
 
       // A claim-lines entry the moves pushed along keeps its pinned text, so
       // its lines are rewritten in the same write.
@@ -790,7 +806,8 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
       await manifests.write(owner, setup.sidecar.entry, entries, 0);
     }
     // A marker that stays says so in place of the check's wording, at the
-    // severity of the rule that kept it there.
+    // severity of the rule that kept it there. An accept this run declined
+    // says why beside the finding that kept its work undone.
     const stayAt = new Map(markers.stays.map((stay) => [stay.line, stay]));
     const skipped = report.findings
       .filter(
@@ -799,15 +816,21 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
           !settled.has(`${String(finding.index ?? -1)}\0${finding.rule}`),
       )
       .map((finding) => {
-        if (finding.rule !== "marker-misplaced") return finding;
-        const stay = stayAt.get(finding.line ?? -1);
-        if (stay === undefined) return finding;
-        const level = severity[stay.rule];
-        return {
-          ...finding,
-          message: stay.message,
-          ...(level === "off" ? {} : { severity: level }),
-        };
+        if (finding.rule === "marker-misplaced") {
+          const stay = stayAt.get(finding.line ?? -1);
+          if (stay === undefined) return finding;
+          const level = severity[stay.rule];
+          return {
+            ...finding,
+            message: stay.message,
+            ...(level === "off" ? {} : { severity: level }),
+          };
+        }
+        const why =
+          finding.rule === "claim-changed" && finding.index !== undefined
+            ? declined.get(finding.index)
+            : undefined;
+        return why === undefined ? finding : { ...finding, message: `${finding.message} ${why}` };
       });
     const diff = after === content ? "" : unifiedDiff(label, content, after);
     const written = after !== content && path !== undefined && opts.dryRun !== true;

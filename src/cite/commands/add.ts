@@ -296,6 +296,13 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
         `${at} runs past the ${holding.kind} at ${spellAt(holding)}. A marker anchors one paragraph.`,
       );
     }
+    // A marker pins everything it anchors, so the range limit applies to that.
+    const unitWide = tooWide({ start: holding.start, end: holding.end });
+    if (unitWide !== undefined) {
+      throw new CiteError(
+        `${at} is in a ${holding.kind} at ${spellAt(holding)} that ${unitWide}. A marker anchors the whole ${holding.kind}.`,
+      );
+    }
     shifted = shiftedEntries(page.citations, holding.start, page.bodyLine, label);
     const statement =
       markerIndent(content, holding.start, format, page.bodyLine) +
