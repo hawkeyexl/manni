@@ -823,7 +823,10 @@ describe("the repository's own manni.config.yaml", () => {
         name: "site",
         paths: ["docs/src/content/docs/**/*.{md,mdx}"],
         exclude: [],
-        externalMetadata: [],
+        // The docs' citations live in this manifest rather than in page
+        // frontmatter: the house schema marks `citations` as
+        // `x-manni-location: external`, and `manni meta relocate` moved them.
+        externalMetadata: [{ file: "./site.metadata.yaml", keys: ["citations"] }],
         // Where the site is published, so `manni a11y check` needs no `urls:`
         // of its own (0041 rule 12). The local preview, not the deployed site.
         url: "http://127.0.0.1:4321/manni/",
@@ -1303,16 +1306,36 @@ describe("resolveRunConfig: collections (0041)", () => {
   // Stdin is not a path, so it says nothing about which collections the run
   // covers: it is the one input allowed beside the flag, and the collections
   // are still selected so their manifests are available to the merge.
-  it("allows stdin beside --collection", async () => {
+  //
+  // The flag is a request, and a run has to honour it. Counting `-` as a path
+  // made `validate - --as markdown --collection guides` check stdin, open no
+  // file of the collection, and exit 0 — a green run that checked nothing the
+  // flag named.
+  it("keeps the collections fallback when stdin is the only input", async () => {
     const root = await repo();
     const run = await resolveRunConfig({
       cwd: root,
       inputs: ["-"],
       collections: ["guides"],
     });
-    expect(run.inputs).toEqual(["-"]);
+    expect(run.inputs).toEqual(["-", "docs/guides/**/*.md"]);
     expect(run.collections.map((c) => c.name)).toEqual(["guides"]);
+    expect(run.fromCollections).toBe(true);
+    // The collection's globs were written next to the config, so they resolve
+    // from there; stdin is not a path and needs no base at all.
+    expect(run.base).toBe(root);
+  });
+
+  // No flag, so there is no request to honour, and a bare `-` cancels the
+  // *implicit* fallback like any other input. A piped document is a run of its
+  // own: it has no history to derive from and is a member of nothing, so
+  // nothing of the configured corpus joins it.
+  it("cancels the implicit fallback for stdin with no --collection", async () => {
+    const root = await repo();
+    const run = await resolveRunConfig({ cwd: root, inputs: ["-"] });
+    expect(run.inputs).toEqual(["-"]);
     expect(run.fromCollections).toBe(false);
+    expect(run.base).toBe(root);
   });
 
   // 0014, one level up from an empty glob: a config that declares no documents

@@ -30,6 +30,7 @@ import { runCheck } from "../../src/cite/commands/check.js";
 import { noGit } from "../../src/cite/core/git.js";
 import { hashRange } from "../../src/cite/core/hash.js";
 import { readPage } from "../../src/cite/core/page.js";
+import { shortPin, shortSrc } from "../../src/cite/core/spell.js";
 import { decryptSourcePath, encryptSourcePath } from "../../src/cite/core/sources.js";
 import { CiteError } from "../../src/cite/errors.js";
 import type { AddOptions, AddResult } from "../../src/cite/types.js";
@@ -373,6 +374,65 @@ describe("runAdd", () => {
         ),
       ).toBe(`${label}:6 has no paragraph or block for a marker to anchor.`);
     });
+
+    /** `count` numbered lines of prose, one paragraph with no blank line inside. */
+    const prose = (count: number): string[] =>
+      Array.from({ length: count }, (_, i) => `Line ${String(i + 1)} of a long paragraph.`);
+
+    it("refuses a paragraph longer than 5,000 lines, and writes nothing", async () => {
+      // Lines 4-5 are the heading and a blank, so the paragraph is 6-5006.
+      const label = write("long.md", ["---", "title: Limits", "---", "# Limits", "", ...prose(5001)]);
+      const before = onDisk(label);
+      expect(
+        await refusal(
+          add({
+            page: label,
+            src: "src/limits.ts:2",
+            pageLines: { start: 9, end: 9 },
+            marker: true,
+            id: "x",
+          }),
+        ),
+      ).toBe(
+        `${label}:9 is in a paragraph at lines 6-5006 that spans 5001 lines, more than 5000. A marker anchors the whole paragraph.`,
+      );
+      expect(onDisk(label)).toBe(before);
+    });
+
+    it("anchors a paragraph of exactly 5,000 lines", async () => {
+      const label = write("limit.md", ["---", "title: Limits", "---", "# Limits", "", ...prose(5000)]);
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 9, end: 9 },
+        marker: true,
+        id: "x",
+      });
+      expect(result.written).toBe(true);
+      expect(result.markerLine).toBeDefined();
+      const span = result.claimLines;
+      expect(span === undefined ? 0 : span.end - span.start + 1).toBe(5000);
+    });
+
+    it("refuses a fenced block longer than 5,000 lines, naming it a block", async () => {
+      // The fences are lines 6 and 5007, so the block is 5002 lines with them.
+      const label = fenced("long-block.md", ["# Limits", ""], prose(5000));
+      const before = onDisk(label);
+      expect(
+        await refusal(
+          add({
+            page: label,
+            src: "src/limits.ts:2",
+            pageLines: { start: 7, end: 7 },
+            marker: true,
+            id: "x",
+          }),
+        ),
+      ).toBe(
+        `${label}:7 is in a block at lines 6-5007 that spans 5002 lines, more than 5000. A marker anchors the whole block.`,
+      );
+      expect(onDisk(label)).toBe(before);
+    });
   });
 
   describe("--marker placement", () => {
@@ -481,7 +541,7 @@ describe("runAdd", () => {
         expect(lines[(result.markerLine ?? 0) - 1]).toBe(`<!-- cite ${id} -->`);
         expect(result.claimLines).toEqual({ start: text, end: text + 1 });
         expect(addMessage(result)).toBe(
-          `${label}: added ${id} to frontmatter; marker at line ${String(text - 1)}, claim pinned at lines ${String(text)}-${String(text + 1)}`,
+          `${label}: added ${id} to frontmatter; marker at line ${String(text - 1)}, claim pinned at lines ${String(text)}-${String(text + 1)} (sha256-93f59d1e…; source src/limits.ts:2, sha256-78af1d33…, no commit)`,
         );
       }
     });
@@ -501,9 +561,45 @@ describe("runAdd", () => {
       expect(lines[13]).toBe("<!-- cite fetch-timeout -->");
       expect(lines[14]).toBe(WRAPPED);
       expect(addMessage(result)).toBe(
-        `${label}: added fetch-timeout to frontmatter; marker at line 14, claim pinned at lines 15-16`,
+        `${label}: added fetch-timeout to frontmatter; marker at line 14, claim pinned at lines 15-16 (sha256-93f59d1e…; source src/limits.ts:2, sha256-78af1d33…, no commit)`,
       );
       expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("spells an encrypted source as its ciphertext, never as a path", async () => {
+      workspace("no-citations.md");
+      const config = tempConfig("", KEY);
+      const result = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        marker: true,
+        id: "timeouts",
+        noConfig: false,
+        configPath: config,
+      });
+      const token = encryptSourcePath("src/limits.ts", KEY);
+      const message = addMessage(result);
+      expect(message).toBe(
+        `pages/no-citations.md: added timeouts to frontmatter; marker at line 14, claim pinned at line 15 (${shortPin(CLAIM_PIN)}; source ${shortSrc(`${token}:2`)}, ${shortPin(hashRange(LINE_2, undefined, KEY))}, no commit)`,
+      );
+      expect(message).not.toContain("limits.ts");
+    });
+
+    it("says a marker over a quoted block reproduces its source", async () => {
+      const label = fenced("marker-quote.md", ["# Limits", ""], [LINE_2], ["", "After."]);
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 8 },
+        quote: true,
+        marker: true,
+        id: "block",
+      });
+      const lines = `${String(result.claimLines?.start ?? 0)}-${String(result.claimLines?.end ?? 0)}`;
+      expect(addMessage(result)).toBe(
+        `${label}: added block to frontmatter; marker at line ${String(result.markerLine ?? 0)}, claim pinned at lines ${lines} (a block that reproduces src/limits.ts:2)`,
+      );
     });
 
     it("refuses lines that run past the paragraph, and writes nothing", async () => {

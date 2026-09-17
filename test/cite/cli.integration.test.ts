@@ -55,6 +55,21 @@ const QUOTABLE = [
   "",
 ].join("\n");
 
+/** Three paragraphs and no citations yet, for the row-order rung. */
+const ORDERED = [
+  "---",
+  "title: Limits",
+  "---",
+  "# Limits",
+  "",
+  "The fetch timeout is 10 seconds.",
+  "",
+  "Retries default to 3.",
+  "",
+  "Max files is 10000.",
+  "",
+].join("\n");
+
 interface Run {
   stdout: string;
   stderr: string;
@@ -465,6 +480,41 @@ describe("manni cite check (the ladder)", () => {
   const check = (args: string[], opts?: { input?: string; env?: Record<string, string> }): Run =>
     cite(["check", "--root", ".", ...args], opts);
 
+  it("prints a page's rows in anchor order, not in frontmatter order", () => {
+    writeFileSync(join(work, "pages", "order.md"), ORDERED, "utf8");
+    const lineOf = (text: string): string => {
+      const lines = readFileSync(join(work, "pages", "order.md"), "utf8").split("\n");
+      return String(lines.findIndex((line) => line.includes(text)) + 1);
+    };
+    // Written bottom of the page first, so the frontmatter order is the reverse.
+    // Each add appends to the frontmatter, so the lines are read again each time.
+    const added: string[][] = [
+      ["max-files", "Max files", "src/limits.ts:1"],
+      ["retries", "Retries", "src/limits.ts:3", "--marker"],
+      ["fetch-timeout", "fetch timeout", "src/limits.ts:2"],
+    ];
+    for (const [id, text, src, ...rest] of added) {
+      const args = ["add", `pages/order.md:${lineOf(text ?? "")}`, src ?? "", "--id", id ?? ""];
+      expect(cite([...args, ...rest, "--root", "."]).status).toBe(0);
+    }
+    expect(cite(["add", "pages/order.md", "src/limits.ts", "--root", "."]).status).toBe(0);
+
+    const r = check(["pages/order.md"]);
+    expect(r.status).toBe(0);
+    const rows = r.stdout.split("\n").slice(1, 5).map((row) => row.trim().split(/\s{2,}/));
+    expect(rows.map((row) => row[0])).toEqual([
+      "✓ fetch-timeout",
+      "✓ retries",
+      "✓ max-files",
+      "✓",
+    ]);
+    // The claim column climbs: the bare pin has none, and comes last.
+    const at = rows.map((row) => Number(/:(\d+)/.exec(row[1] ?? "")?.[1] ?? 0));
+    expect(at[3]).toBe(0);
+    expect(at.slice(0, 3)).toEqual([...at.slice(0, 3)].sort((a, b) => a - b));
+    expect(new Set(at.slice(0, 3)).size).toBe(3);
+  });
+
   it("--collection runs over the named collection", () => {
     writeFileSync(
       join(work, "manni.config.yaml"),
@@ -475,6 +525,43 @@ describe("manni cite check (the ladder)", () => {
     expect(r.status).toBe(0);
     expect(r.stdout).toContain("pages/current.md");
     expect(r.stdout).not.toContain("moved.md");
+  });
+
+  // Stdin rides beside the flag, being one more input rather than a path, and
+  // the flag is a request the run has to honour. Counting `-` as a path made
+  // this run check stdin, open no page of the named collection, print no
+  // finding, and exit 0: a green run that checked nothing the flag named.
+  it("--collection still opens the collection with - beside it", () => {
+    writeFileSync(
+      join(work, "manni.config.yaml"),
+      "collections:\n  - name: pages\n    paths: ['pages/current.md']\n  - name: rest\n    paths: ['pages/moved.md']\n",
+      "utf8",
+    );
+    const r = cite(["check", "-", "--as", "markdown", "--collection", "pages", "--root", "."], {
+      input: "---\ntitle: piped\n---\n\n# piped\n",
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("<stdin>");
+    expect(r.stdout).toContain("pages/current.md");
+    expect(r.stdout).toContain("2 files checked");
+    expect(r.stdout).not.toContain("moved.md");
+  });
+
+  it("a bare - with no flag is a run of its own", () => {
+    // The implicit fallback is no request, so a bare `-` cancels it: only the
+    // piped page is checked.
+    writeFileSync(
+      join(work, "manni.config.yaml"),
+      "collections:\n  - name: pages\n    paths: ['pages/current.md']\n",
+      "utf8",
+    );
+    const r = cite(["check", "-", "--as", "markdown", "--root", "."], {
+      input: "---\ntitle: piped\n---\n\n# piped\n",
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("<stdin>");
+    expect(r.stdout).not.toContain("pages/current.md");
+    expect(r.stdout).toContain("1 file checked");
   });
 
   it("passes a current citation, spelling both ends", () => {
@@ -589,15 +676,24 @@ describe("manni cite check (the ladder)", () => {
   it("-f sarif carries the rule id", () => {
     const r = check(["-f", "sarif", "pages/source-changed.md"]);
     expect(r.status).toBe(1);
-    const sarif = JSON.parse(r.stdout) as { runs: { results: { ruleId: string }[] }[] };
+    const sarif = JSON.parse(r.stdout) as {
+      runs: {
+        tool: { driver: { rules: { shortDescription: { text: string }; helpUri?: string }[] } };
+        results: { ruleId: string; message: { text: string } }[];
+      }[];
+    };
     expect(sarif.runs[0]?.results[0]?.ruleId).toBe("manni:cite/source-changed");
+    expect(sarif.runs[0]?.results[0]?.message.text).toMatch(/^fetch-timeout \(src\/changed\.ts:2\): changed/);
+    const rule = sarif.runs[0]?.tool.driver.rules[0];
+    expect(rule?.shortDescription.text).not.toMatch(/schema|keyword/i);
+    expect(rule?.helpUri).toBe("https://hawkeyexl.github.io/manni/cite/reference/citations/#source-changed");
   });
 
   it("-f junit ships under the cite classname", () => {
     const r = check(["-f", "junit", "pages/source-changed.md"]);
     expect(r.status).toBe(1);
     expect(r.stdout).toContain('classname="manni.cite"');
-    expect(r.stdout).toContain('type="manni:cite/source-changed"');
+    expect(r.stdout).toContain('type="manni:cite/source-changed" message="fetch-timeout (src/changed.ts:2): changed');
   });
 
   it("says on stderr, once, that history is off when a citation carries a commit and git is not there", () => {
@@ -787,7 +883,7 @@ describe("manni cite add", () => {
     ]);
     expect(r.status).toBe(0);
     expect(r.stdout.trim()).toBe(
-      "pages/no-citations.md: added timeouts to frontmatter; marker at line 14, claim pinned at line 15",
+      "pages/no-citations.md: added timeouts to frontmatter; marker at line 14, claim pinned at line 15 (sha256-921b21cc…; source src/limits.ts:2, sha256-78af1d33…, no commit)",
     );
     const page = readFileSync(join(work, "pages", "no-citations.md"), "utf8");
     expect(page).toContain("<!-- cite timeouts -->\nThe fetch timeout is 10 seconds.");
@@ -984,6 +1080,26 @@ describe("manni cite update", () => {
     expect(r.stderr.split(/\r?\n/)[0]).toBe(`manni: Root directory not found: ${join(realpathSync(work), "no-such-dir")}.`);
   });
 
+  it("--collection still opens the collection with - beside it", () => {
+    // `update` shares `prepareRun` with `check`, so it carried the same
+    // silent skip: stdin was rewritten and the named collection never opened.
+    writeFileSync(
+      join(work, "manni.config.yaml"),
+      "collections:\n  - name: moved\n    paths: ['pages/moved.md']\n",
+      "utf8",
+    );
+    const r = cite(["update", "-", "--as", "markdown", "--collection", "moved", "--dry-run", "--root", "."], {
+      input: "---\ntitle: piped\n---\n\n# piped\n",
+    });
+    expect(r.status).toBe(0);
+    // A dry run prints its report to stdout; only a real stdin rewrite
+    // hands stdout to the page and moves the report to stderr.
+    expect(r.stdout).toContain(
+      "pages/moved.md: fetch-timeout source src/moved.ts:2 -> src/moved.ts:4 (moved)",
+    );
+    expect(r.stdout).toContain("1 citation rewritten in 1 file, 0 skipped");
+  });
+
   it("--dry-run prints the diffs and leaves the page alone", () => {
     const before = readFileSync(join(work, "pages", "moved.md"), "utf8");
     const r = cite(["update", "--dry-run", "--root", ".", "pages/moved.md"]);
@@ -1017,6 +1133,14 @@ describe("manni cite update", () => {
       status: "changed",
     });
     expect(cite(["check", "--root", ".", "pages/source-changed.md"]).status).toBe(0);
+  });
+
+  it("--accept reports a marker-anchored claim at its marker line", () => {
+    const r = cite(["update", "--accept", "--root", ".", "pages/marker-changed.md"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain(
+      'pages/marker-changed.md: retries claim at marker line 14 re-pinned (changed; now "Retries default to 5.")',
+    );
   });
 
   it("--accept says which pin it replaced", () => {
