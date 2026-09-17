@@ -4975,7 +4975,7 @@ docs/src/content/docs/cite/get-started/index.mdx:
     - id: add-message-sample
       claim:
         lines: 104-108
-        integrity: sha256-c9b77587673baa12e46d4c2bdf1a67dc784c9e1dca5905d7b83635cd0f86b369
+        integrity: sha256-0eeb184631906cacdafe4964ee4fb1facf4a19cc06f40cdf98a095ea26e49c21
       source:
         file: src/cite/cli.ts
         lines: 206
@@ -4984,7 +4984,7 @@ docs/src/content/docs/cite/get-started/index.mdx:
     - id: marker-add-message-sample
       claim:
         lines: 421
-        integrity: sha256-7db00f702d0ea2a09018806cd79fa584b2c7ba7e182b189eeaa5b302b512a1e9
+        integrity: sha256-868ba9c6328fa6532b9916c5cd1ff5da7cc59de27bca54413b2b84c3f22473d8
       source:
         file: src/cite/cli.ts
         lines: 192-199
@@ -7474,7 +7474,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
     - id: add-report-sample
       claim:
         lines: 339-342
-        integrity: sha256-5f21cd36004df0dd491fe4588b2fd92faf99a58d623738afc64e449c71deb3fb
+        integrity: sha256-c1cc72af5a2a49e332e90a4d1ad3305ee191828d5f4c664423b1404b32042fef
       source:
         file: src/cite/cli.ts
         lines: 192-206
