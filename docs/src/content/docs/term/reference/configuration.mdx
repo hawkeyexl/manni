@@ -58,7 +58,7 @@ it.
 | `abstractMaxLength` | non-negative integer | `60` | none | The length, in characters, past which `abstract-too-long` fires. |
 | `baseline` | path | none | `--baseline` | A [baseline](/manni/term/reference/cli/#baselines) file, relative to the config file. Setting it compares every `check` run against the file, without the flag. With `--baseline` and no key, the file is `.manni-term-baseline.json`. |
 | `severity` | mapping | the [defaults](/manni/term/reference/rules/) | none | Per-rule level: `error`, `warning`, `notice` or `off`. Only the rules named change. |
-| `allowEmpty` | boolean | `false` | `--allow-empty` | Treat a set with no terms as success. The flag wins. |
+| `allowEmpty` | boolean | `false` | `--allow-empty` | Treat a missing path, no matched files or no terms as success. The flag wins. |
 | `respectGitignore` | boolean | `true` | `--no-gitignore` | Skip files `.gitignore` covers when expanding directories and globs. The flag wins for one run. |
 
 ## A manifest
