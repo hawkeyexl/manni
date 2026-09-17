@@ -29,20 +29,19 @@ import {
   STDIN_TOKEN,
   isMachineFormat,
 } from "../meta/internal.js";
-import { REPORT_FORMATS, isReportFormat, render } from "../meta/index.js";
+import { REPORT_FORMATS, isReportFormat } from "../meta/index.js";
 import { runAdd } from "./commands/add.js";
 import { runCheck } from "./commands/check.js";
 import { runUpdate } from "./commands/update.js";
 import { CiteError, asCiteError } from "./errors.js";
 import { spellSource } from "./core/range.js";
-import { shortCommit, shortPin, shortSrc } from "./core/spell.js";
+import { shortCommit, shortLine, shortPin, shortSrc } from "./core/spell.js";
 import { renderCheckGithub } from "./reporters/github.js";
 import { renderCheckJson, renderUpdateJson } from "./reporters/json.js";
+import { renderCheckJunit } from "./reporters/junit.js";
 import { renderCheckPretty, renderUpdatePretty } from "./reporters/pretty.js";
+import { renderCheckSarif } from "./reporters/sarif.js";
 import type { AddResult, PageLines } from "./types.js";
-
-/** JUnit `classname` for the citation tool's findings. */
-const JUNIT_CLASSNAME = "manni.cite";
 
 const UPDATE_FORMATS = ["pretty", "json"] as const;
 type UpdateFormat = (typeof UPDATE_FORMATS)[number];
@@ -172,7 +171,8 @@ function spellAt(lines: PageLines, noun = "line"): string {
  * What `add` says on success. One sentence composed from the result: what was
  * added, where it went, and what each end is pinned to. Lines are the page's
  * own, after the write. The source is spelled as it was written to the page,
- * abbreviated when it is a ciphertext.
+ * abbreviated when it is a ciphertext, and quoted with its first pinned line
+ * where the result carries one.
  */
 export function addMessage(result: AddResult): string {
   const { citation, claimLines } = result;
@@ -180,7 +180,9 @@ export function addMessage(result: AddResult): string {
   const name = citation.id ?? (claim === undefined ? "a bare pin" : "an entry");
   const src = shortSrc(spellSource(citation.source));
   const commit = citation.source["commit-sha"];
-  const pin = `${src}, ${shortPin(citation.source.integrity)}, ${commit === undefined ? "no commit" : shortCommit(commit)}`;
+  const quoted = result.sourceLine === undefined ? "" : shortLine(result.sourceLine);
+  const line = quoted === "" ? "" : ` "${quoted}"`;
+  const pin = `${src}${line}, ${shortPin(citation.source.integrity)}, ${commit === undefined ? "no commit" : shortCommit(commit)}`;
   // Where it went: the page's own frontmatter, or the manifest that owns the
   // page's citations, at the line the entry now sits on.
   const where =
@@ -335,14 +337,12 @@ export function buildProgram(): Command {
           case "github":
             text = renderCheckGithub(run);
             break;
-          default:
-            // sarif and junit ride meta's renderers over the adapted results:
-            // same rule ids, same fingerprints, same envelope.
-            text = render(format, run.results, run.summary, {
-              frame: run.frame,
-              classname: JUNIT_CLASSNAME,
-              onNotice: notice,
-            });
+          case "sarif":
+            text = renderCheckSarif(run, { onNotice: notice });
+            break;
+          case "junit":
+            text = renderCheckJunit(run);
+            break;
         }
         // Only `github` may say nothing on a clean run; every other format
         // owes its envelope even when empty.

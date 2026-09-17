@@ -480,6 +480,12 @@ export interface AddResult {
   claimLines?: PageLines;
   /** File line of the marker written above the claim, under `marker`. */
   markerLine?: number;
+  /**
+   * The first pinned source line, as the file holds it, so a mis-typed range
+   * is visible at write time. Absent for a whole file, which has no first
+   * line worth naming, and for an encrypted source, which no output reveals.
+   */
+  sourceLine?: string;
   /** The rewritten page. */
   content: string;
   diff: string;
