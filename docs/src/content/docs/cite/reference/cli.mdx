@@ -190,7 +190,7 @@ and in JUnit neither is a failure. JUnit testcases carry the classname
 |---|---|
 | `0` | No file holds an error-severity finding the baseline does not already record. Warnings never move the exit code, so a run of `source-moved` citations exits 0. |
 | `1` | At least one file holds an unbaselined error-severity finding: a `source-changed`, `source-never-true`, `source-missing` or `source-moved-ambiguous` end, or a `marker-orphan`, `marker-invalid`, `anchor-invalid`, `entry-invalid` or `quote-drift` finding. Those are the rules whose default severity is `error`, and `severity:` can change the set. |
-| `2` | Operational or usage error. No inputs and no config, no files matched, an unknown `--format` or `--as`, or stdin without `--as`. Also a missing `-c` file, a missing `--baseline` file, a `--root` that does not exist, or a config key the tool does not know. |
+| `2` | Operational or usage error. No inputs and no config, no files matched, an unknown `--format` or `--as`, or stdin without `--as`. Also a missing `-c` file, a missing `--baseline` file, a `--root` that does not exist, or a config key the tool does not know. So is a Markdown or MDX page whose opening frontmatter fence has no close, because its citations can't be read. |
 
 ### Baselines
 

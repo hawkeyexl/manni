@@ -78,6 +78,9 @@ async function ends(label: string, configPath?: string): Promise<(string | null)
   return (run.pages[0]?.citations ?? []).map((c) => [c.claim?.status ?? null, c.source.status]);
 }
 
+const UNTERMINATED = (label: string): string =>
+  `${label}: Unterminated front matter fence: the opening fence has no matching close, so the page's citations cannot be read. Add a closing fence.`;
+
 async function refusal(promise: Promise<unknown>): Promise<string> {
   try {
     await promise;
@@ -615,6 +618,24 @@ describe("runUpdate: both ends, and what is left", () => {
     expect(await refusal(update({ inputs: [] }))).toBe(
       "No files to update. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.",
     );
+  });
+
+  it("refuses a page whose frontmatter fence never closes, as check does, and writes nothing", async () => {
+    workspace();
+    mkdirSync(join(cwd, "broken"));
+    copyFileSync(
+      join(ROOT, "broken", "unterminated-fence.mdx"),
+      join(cwd, "broken", "unterminated-fence.mdx"),
+    );
+    const label = "broken/unterminated-fence.mdx";
+    const before = onDisk(label);
+    expect(await refusal(update({ inputs: [label] }))).toBe(UNTERMINATED(label));
+    expect(onDisk(label)).toBe(before);
+
+    // A markdown page with a moved entry would otherwise report nothing at all.
+    const moved = readFileSync(join(PAGES, "moved.md"), "utf8").split("\n");
+    const md = write("unterminated.md", moved.filter((line, i) => !(line === "---" && i > 0)));
+    expect(await refusal(update({ inputs: [md] }))).toBe(UNTERMINATED(md));
   });
 
   it("refuses a --root that does not exist, as check does", async () => {
