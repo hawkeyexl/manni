@@ -4,6 +4,14 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.3.9](https://github.com/hawkeyexl/manni/compare/v2.3.8...v2.3.9) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** sarif and junit describe cite rules, not schema keywords ([#60](https://github.com/hawkeyexl/manni/issues/60)) ([f026967](https://github.com/hawkeyexl/manni/commit/f02696717b8553587b1f01fa2e6c4cd59d075b6f))
+* **collections:** honour --collection with stdin beside it ([#61](https://github.com/hawkeyexl/manni/issues/61)) ([541b63e](https://github.com/hawkeyexl/manni/commit/541b63e5caae981cc8278f8557a60990633e1d9e))
+
 ## [2.3.8](https://github.com/hawkeyexl/manni/compare/v2.3.7...v2.3.8) (2026-09-17)
 
 
