@@ -458,10 +458,29 @@ describe("resolveCiteRun", () => {
     await expect(
       resolveCiteRun({ cwd: root, inputs: [], collection: ["pages"], noConfig: true, env: {} }),
     ).rejects.toThrow("--collection needs a config file to select from.");
-    // Stdin is one more input, not a path, so it rides beside the flag.
+    // Stdin is one more input, not a path, so it rides beside the flag — and
+    // the flag is a request the run has to honour. Counting `-` as a path
+    // made `cite check - --as markdown --collection pages` check stdin, open
+    // no page of the collection, and exit 0.
     const run = await resolveCiteRun({ cwd: root, inputs: ["-"], collection: ["pages"], env: {} });
-    expect(run.inputs).toEqual(["-"]);
+    expect(run.inputs).toEqual(["-", "pages"]);
     expect(run.collections.map((c) => c.name)).toEqual(["pages"]);
+    expect(run.fromCollections).toBe(true);
+    expect(run.base).toBe(root);
+  });
+
+  // No flag, so there is no request to honour: a bare `-` cancels the
+  // *implicit* fallback like any other input, and a piped page is a run of
+  // its own.
+  it("cancels the implicit fallback for stdin with no --collection", async () => {
+    const root = await tree({
+      ".git/HEAD": "ref: refs/heads/main\n",
+      "manni.config.yaml": TWO_COLLECTIONS,
+    });
+    const run = await resolveCiteRun({ cwd: root, inputs: ["-"], env: {} });
+    expect(run.inputs).toEqual(["-"]);
+    expect(run.fromCollections).toBe(false);
+    expect(run.base).toBe(root);
   });
 
   it("positional inputs resolve from cwd even when a config governs", async () => {
