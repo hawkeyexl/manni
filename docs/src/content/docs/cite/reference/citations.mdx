@@ -277,6 +277,11 @@ An entry has exactly one anchor, and that is the line a finding reports.
 | A marker | The entry has an `id`, a marker in the body names it, and `claim.lines` is absent. The marker anchors the rest of its own line when that carries text, else the paragraph after it. Markers stacked above one paragraph all anchor that paragraph. A line holding only a marker is never part of a pin. It moves with its text, so a marker-anchored claim is never `claim-moved`. |
 | Neither | A bare pin, checked source-side only. A finding on it reports the entry's own line. |
 
+Neither anchor always wins. A marker never moves, but it is a line in the
+body, so a concurrent prose edit can conflict with it. Claim lines leave the
+body untouched, and a moved claim needs `cite update`. [Choose an
+anchor](/manni/cite/set-up/#choose-an-anchor) weighs the two.
+
 A `claim` under a marker is optional. With one, its `integrity` pins the text
 the marker anchors, and an edit there is `claim-changed`. Without one, the
 marker still anchors the entry. There is then no drift check on the
