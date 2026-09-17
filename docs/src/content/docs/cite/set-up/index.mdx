@@ -73,9 +73,10 @@ Every transcript below is real output from the built tool.
    1 file checked, 0 passed, 1 failed, 1 finding
    ```
 
-   Sources resolve through tracked files only, from `git ls-files`, under a
-   realpath containment check. So a file you have not committed is `missing`
-   too. [Where sources resolve from](/manni/cite/reference/cli/#where-sources-resolve-from)
+   Where git is available, sources resolve through tracked files only, from
+   `git ls-files`, under a realpath containment check. So a file you have not
+   committed is `missing` too. Without git, a directory walk stands in, and an
+   uncommitted file resolves. [Where sources resolve from](/manni/cite/reference/cli/#where-sources-resolve-from)
    has the full order, and `--root` is how a second checkout is reached.
 
 3. **Mint the first citation.** `add` takes the page with its lines, then the
