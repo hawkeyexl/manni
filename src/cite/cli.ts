@@ -29,7 +29,7 @@ import {
   STDIN_TOKEN,
   isMachineFormat,
 } from "../meta/internal.js";
-import { REPORT_FORMATS, isReportFormat, render } from "../meta/index.js";
+import { REPORT_FORMATS, isReportFormat } from "../meta/index.js";
 import { runAdd } from "./commands/add.js";
 import { runCheck } from "./commands/check.js";
 import { runRemove } from "./commands/remove.js";
@@ -39,11 +39,10 @@ import { spellSource } from "./core/range.js";
 import { shortCommit, shortPin, shortSrc } from "./core/spell.js";
 import { renderCheckGithub } from "./reporters/github.js";
 import { renderCheckJson, renderRemoveJson, renderUpdateJson } from "./reporters/json.js";
+import { renderCheckJunit } from "./reporters/junit.js";
 import { renderCheckPretty, renderRemovePretty, renderUpdatePretty } from "./reporters/pretty.js";
+import { renderCheckSarif } from "./reporters/sarif.js";
 import type { AddResult, PageLines } from "./types.js";
-
-/** JUnit `classname` for the citation tool's findings. */
-const JUNIT_CLASSNAME = "manni.cite";
 
 const UPDATE_FORMATS = ["pretty", "json"] as const;
 type UpdateFormat = (typeof UPDATE_FORMATS)[number];
@@ -350,14 +349,12 @@ export function buildProgram(): Command {
           case "github":
             text = renderCheckGithub(run);
             break;
-          default:
-            // sarif and junit ride meta's renderers over the adapted results:
-            // same rule ids, same fingerprints, same envelope.
-            text = render(format, run.results, run.summary, {
-              frame: run.frame,
-              classname: JUNIT_CLASSNAME,
-              onNotice: notice,
-            });
+          case "sarif":
+            text = renderCheckSarif(run, { onNotice: notice });
+            break;
+          case "junit":
+            text = renderCheckJunit(run);
+            break;
         }
         // Only `github` may say nothing on a clean run; every other format
         // owes its envelope even when empty.

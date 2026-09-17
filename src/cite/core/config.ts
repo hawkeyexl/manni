@@ -248,7 +248,12 @@ export interface CiteRunOptions {
   configPath?: string;
   /** `--no-config`: skip discovery and run on the built-in defaults. */
   noConfig?: boolean;
-  /** Positional inputs; empty means fall back to the selected collections' `paths:`. */
+  /**
+   * Positional inputs; empty means fall back to the selected collections'
+   * `paths:`. The stdin token `-` cancels that implicit fallback like any
+   * other input, but never an explicit `--collection`: stdin is no path, so
+   * it rides beside the flag and the named collection is still resolved.
+   */
   inputs: string[];
   /**
    * `--collection <name>`, repeatable: the collections this run covers. Empty
@@ -288,7 +293,10 @@ export async function resolveCiteRun(opts: CiteRunOptions): Promise<CiteRun> {
   // paths nor `--no-config`. The same two sentences meta and a11y use.
   // Stdin is one more input rather than a path, so it rides beside the flag.
   const wanted = opts.collection ?? [];
-  if (wanted.length > 0 && opts.inputs.some((input) => input !== STDIN)) {
+  // The paths the operator actually typed. Stdin is not one of them, which is
+  // what lets a `-` ride beside the flag instead of being refused as a path.
+  const typedInputs = opts.inputs.filter((input) => input !== STDIN);
+  if (wanted.length > 0 && typedInputs.length > 0) {
     throw new CiteError(
       "--collection selects a configured collection; it cannot be combined with paths.",
     );
@@ -314,9 +322,19 @@ export async function resolveCiteRun(opts: CiteRunOptions): Promise<CiteRun> {
   // One base per run: positional paths are typed from a shell and stay
   // cwd-relative; a collection's `paths:` was written next to the config and
   // resolves there.
-  const fromCollections = opts.inputs.length === 0;
-  const inputs = fromCollections ? collections.flatMap((c) => c.paths) : opts.inputs;
-  const base = fromCollections && inputs.length > 0 && loaded ? loaded.dir : cwd;
+  // `--collection` is a request the run has to honour, as in meta: the named
+  // collection's pages are resolved even when stdin rides beside the flag.
+  // Counting `-` as a path made `cite check - --as markdown --collection
+  // pages` check stdin, open no page of the collection, print no finding and
+  // exit 0. The implicit fallback is not a request, and a lone `-` cancels it
+  // as before: a piped page is a run of its own.
+  const fromCollections = wanted.length > 0 || opts.inputs.length === 0;
+  const collectionPaths = fromCollections ? collections.flatMap((c) => c.paths) : [];
+  // Stdin keeps its typed position; the globs follow it in declaration order.
+  const inputs = fromCollections ? [...opts.inputs, ...collectionPaths] : opts.inputs;
+  // Only a path needs a base, so it follows the globs when they contributed
+  // and stays at the working directory otherwise — stdin included.
+  const base = collectionPaths.length > 0 && loaded ? loaded.dir : cwd;
 
   let root: string;
   if (opts.root !== undefined) {
