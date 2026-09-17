@@ -214,7 +214,7 @@ two the [metadata tool publishes](/manni/meta/ci/recipes/#pre-commit):
 ```yaml title=".pre-commit-config.yaml"
 repos:
   - repo: https://github.com/hawkeyexl/manni
-    rev: v2.3.9
+    rev: v2.3.10
     hooks:
       - id: manni-cite
 ```
@@ -245,7 +245,9 @@ release](https://github.com/hawkeyexl/manni/releases/latest), and let
 <Aside type="note" title="It needs Node and git on the machine">
   The hook runs `npx @hawkeyexl/manni`, so contributors need Node.js 24 or
   newer on their `PATH`. pre-commit does not install Node for it. Without git
-  on the `PATH` the run still works, and gives up history as described above.
+  on the `PATH` the run still works. It gives up `source-never-true` and the
+  diffs, says so once on stderr, and still stops a commit on a changed
+  source. [Full history](#full-history) has the whole degradation.
 </Aside>
 
 ## Ramp in with a baseline
