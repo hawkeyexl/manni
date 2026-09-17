@@ -7,6 +7,9 @@ sidebar:
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
 
+{/* cite reads-pages-manifests-structured */}
+{/* cite reads-body-text-constructs */}
+{/* cite write-renders-documents-and-interchange */}
 A glossary kept in one construct is not stuck there. `manni term` reads a
 term set from pages, from body constructs in six formats, and from manifests.
 `manni term write` renders the same set into another shape, or into an
@@ -29,11 +32,14 @@ has nowhere to put a scope note, so no scope note is read from one.
 | DITA `<glossgroup>` | no | the same, per child `<glossentry>` |
 | DocBook `<glossary>` | no | `label`, `definition`, `alt-labels`, `see`, `related-terms`, `id` |
 | HTML `<dl>` | yes | `label`, `definition`, `alt-labels`, `id` |
-| HTML `<dfn>` | yes | `label`, `alt-labels` |
+| HTML `<dfn>` | yes | `label`, `alt-labels`, `id` |
 | Markdown or MDX definition list | yes | `label`, `definition`, `alt-labels` |
 | AsciiDoc `[glossary]` list | no | `label`, `definition`, `alt-labels` |
 | reStructuredText `.. glossary::` | no | `label`, `definition`, `alt-labels` |
 
+{/* cite several-terms-docbook */}
+{/* cite several-terms-html-dl */}
+{/* cite several-terms-body-lists */}
 Where a construct allows several terms against one definition, the first is
 the label and the rest are alt-labels. That covers several `<dt>` before one
 `<dd>`, several terms in one `.. glossary::` entry, and a DocBook `<glossterm>`
@@ -50,6 +56,7 @@ DITA's element names are the only ones that differ from the record's:
 | `<glossBody><glossUsage>` | `scope-note` |
 | topic `@id` | `id` |
 
+{/* cite formats-lists-read-write */}
 `manni term formats` prints what the build reads and writes, per format. The
 [CLI reference](/manni/term/reference/cli/#term-formats) shows its output.
 
@@ -155,6 +162,8 @@ redirect to `progressive-lens`:
 
 ## Render back into one file
 
+{/* cite file-shape-one-file */}
+{/* cite dropped-report-line */}
 A path without a trailing `/`, naming no existing directory, gets every entry
 in one file. The format's list construct cannot hold every field, and the
 report says what was dropped:
@@ -193,6 +202,7 @@ Wrote 3 terms to build/glossary.xml
 </glossary>
 ```
 
+{/* cite deflist-holds-label-definition-alts */}
 A Markdown definition list holds less again. It keeps the label, the
 definition and the alt-labels:
 
@@ -223,10 +233,12 @@ PAL
 A definition list has no place for `see`, and an entry with no definition
 reads back as nothing. So `varifocal` is left out, and the run names it. The
 same goes for an AsciiDoc `[glossary]` list, a `.. glossary::` and an HTML
-`<dl>`. Keep redirects in pages, a manifest, DITA, DocBook, TBX, SKOS, CSV or
-JSON.
+`<dl>`. DITA, TBX and SKOS drop `see` too. Keep redirects in pages, a
+manifest, DocBook, CSV or JSON.
 </Aside>
 
+{/* cite dry-run-files-then-notes */}
+{/* cite dry-run-writes-nothing */}
 `--dry-run` prints the files a render would create or change, then the same
 dropped and skipped lines a write prints, and writes nothing:
 
@@ -237,7 +249,11 @@ glossary.md would be created
   skipped 1 term a definition list cannot read without a definition: varifocal
 ```
 
-`--check` prints only the files, and exits `1` when one differs.
+{/* cite check-prints-only-files */}
+{/* cite check-exit-1-when-differs */}
+{/* cite check-clean-up-to-date */}
+`--check` prints only the files, and exits `1` when one differs. When none
+does, it prints that the target is up to date.
 
 ## What each render holds
 
@@ -253,6 +269,7 @@ glossary.md would be created
 | `json` | refused | `{ "terms": [...] }` | every field |
 | `vale` | the `Terms` style | n/a | see [the generated style](/manni/term/set-up/#the-generated-style) |
 
+{/* cite directory-target-refused */}
 A directory target for a format that writes one file stops with exit `2`:
 
 ```
@@ -278,6 +295,8 @@ $ manni term get "progressive lens" docs/terms -f json
 }
 ```
 
+{/* cite deflist-writes-line-break */}
+{/* cite deflist-reads-break-as-space */}
 A definition list writes the break, and reads it back as a space:
 
 ```console
@@ -291,6 +310,9 @@ $ manni term get "progressive lens" build/glossary.md -f json
 }
 ```
 
+{/* cite list-constructs-read-break-as-space */}
+{/* cite markup-lists-one-line-per-paragraph */}
+{/* cite docbook-one-line-per-paragraph */}
 The paragraph break survives. The same happens in every list construct. A
 Markdown or MDX definition list, an AsciiDoc `[glossary]` list and a
 `.. glossary::` read the break back as a space. An HTML `<dl>`, a DITA
@@ -304,12 +326,15 @@ paragraph on one line:
 </glossdef>
 ```
 
+{/* cite tbx-definition-as-is */}
+{/* cite csv-definition-as-is */}
 A term page, in Markdown or HTML, keeps the break. So do TBX, SKOS, CSV and
 JSON, which write the definition as it is. Where a break matters, keep the
 definition in pages, or make it a paragraph break.
 
 ### An id in a construct with no identifier
 
+{/* cite list-entry-id-is-label-slug */}
 A Markdown or MDX definition list, an AsciiDoc `[glossary]` list and a
 `.. glossary::` have nowhere to store an id. An entry read back from one gets
 the slug of its label:
@@ -325,11 +350,18 @@ progressive-lens   progressive lens
 1 term
 ```
 
+{/* cite id-not-a-dropped-field */}
+{/* cite page-file-named-after-id-changes */}
 The run does not list `id` among the dropped fields. A page rendered from that
 list is `build/terms/progressive-lens.md`, with `id: progressive-lens`. So an
 id that is not the slug of its label changes, and so does the file named
 after it.
 
+{/* cite page-keeps-id */}
+{/* cite html-dl-reads-dt-id */}
+{/* cite html-dl-writes-dt-id */}
+{/* cite dita-keeps-topic-id */}
+{/* cite docbook-keeps-xml-id */}
 Pages and manifests keep the id. So do an HTML `<dl>`, through `<dt id>`, a
 DITA topic `id`, and a DocBook `xml:id`:
 
@@ -343,6 +375,7 @@ pal-lens   progressive lens
 
 ### Markup the record has no field for
 
+{/* cite render-writes-only-record-fields-docbook */}
 A render writes only the record's fields. An attribute or element outside
 them is not carried into the output, even when the source and the target are
 the same format. This DocBook entry carries a `role`:
@@ -374,6 +407,9 @@ $ cat build/glossary.xml
 </glossary>
 ```
 
+{/* cite unknown-markup-not-dropped-field */}
+{/* cite dita-outputclass-not-written */}
+{/* cite docbook-bare-glossary-titled-glossary */}
 The run reports no dropped field, because `role` is not a field. The same
 goes for a DITA `outputclass`. The document around the glossary is not carried
 either. The source's `<article>` and its `Optics` title became a bare
@@ -446,6 +482,10 @@ where that markup lives.
 
 ## Write back in place
 
+{/* cite no-f-writes-in-place */}
+{/* cite in-place-reader-per-construct */}
+{/* cite only-differing-entry-rewritten */}
+{/* cite unchanged-page-byte-identical */}
 With no `-f`, `manni term write` sends each entry back through the reader that
 read it. Only an entry whose record differs from its file is rewritten. A set
 read and written unchanged leaves every file byte-identical:
@@ -455,6 +495,9 @@ $ manni term write docs/
 Nothing to write
 ```
 
+{/* cite body-construct-spliced */}
+{/* cite page-rewritten-through-extractor */}
+{/* cite dfn-has-no-writer */}
 A body construct is spliced in place, and a page is rewritten through the
 extractor that read it. An HTML `<dfn>` is the one construct that cannot be
 written back:

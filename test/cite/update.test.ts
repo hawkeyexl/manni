@@ -78,6 +78,9 @@ async function ends(label: string, configPath?: string): Promise<(string | null)
   return (run.pages[0]?.citations ?? []).map((c) => [c.claim?.status ?? null, c.source.status]);
 }
 
+const UNTERMINATED = (label: string): string =>
+  `${label}: Unterminated front matter fence: the opening fence has no matching close, so the page's citations cannot be read. Add a closing fence.`;
+
 async function refusal(promise: Promise<unknown>): Promise<string> {
   try {
     await promise;
@@ -177,6 +180,7 @@ describe("runUpdate: the claim end", () => {
         from: CLAIM_RETRIES,
         to: pin,
         at: 15,
+        markerLine: 14,
         text: "Retries default to 5.",
       },
     ]);
@@ -185,6 +189,141 @@ describe("runUpdate: the claim end", () => {
     expect(after).not.toContain("lines:\n");
     expect(after).toContain("<!-- cite retries -->\n");
     expect(await ends("pages/marker-changed.md")).toEqual([["current", "current"]]);
+  });
+
+  it("--accept skips a marker paragraph longer than 5,000 lines, and says why", async () => {
+    // Frontmatter is lines 1-11, the heading 12, the marker 14: the paragraph is 15-5015.
+    const label = write("long.md", [
+      "---",
+      "title: Limits",
+      "citations:",
+      "  - id: retries",
+      "    claim:",
+      `      integrity: ${CLAIM_RETRIES}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 3",
+      `      integrity: ${PIN_L3}`,
+      "---",
+      "# Limits",
+      "",
+      "<!-- cite retries -->",
+      ...Array.from({ length: 5001 }, (_, i) => `Line ${String(i + 1)} of a long paragraph.`),
+    ]);
+    const before = onDisk(label);
+    const run = await update({ inputs: [label], accept: true });
+    expect(run).toMatchObject({ rewritten: 0, skipped: 1, exitCode: 0 });
+    expect(run.pages[0]?.skipped.map((f) => [f.rule, f.message])).toEqual([
+      [
+        "claim-changed",
+        "retries: the claim at lines 15-5015 has changed since it was pinned. Not re-pinned: the paragraph spans 5001 lines, more than 5000.",
+      ],
+    ]);
+    expect(onDisk(label)).toBe(before);
+  });
+
+  it("--accept skips a claim-lines paragraph that has grown past 5,000 lines", async () => {
+    // No marker: the unit is the paragraph at the claim's own first line,
+    // body line 1, which is file line 13 under this frontmatter.
+    const label = write("grown.md", [
+      "---",
+      "title: Limits",
+      "citations:",
+      "  - id: grown",
+      "    claim:",
+      "      lines: 1",
+      `      integrity: ${hashLines("A sentence nobody kept.")}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 3",
+      `      integrity: ${PIN_L3}`,
+      "---",
+      ...Array.from({ length: 5001 }, (_, i) => `Line ${String(i + 1)} of a long paragraph.`),
+    ]);
+    const before = onDisk(label);
+    const run = await update({ inputs: [label], accept: true });
+    expect(run).toMatchObject({ rewritten: 0, skipped: 1, exitCode: 0 });
+    expect(run.pages[0]?.skipped.map((f) => [f.rule, f.message])).toEqual([
+      [
+        "claim-changed",
+        "grown: the claim at line 13 has changed since it was pinned. Not re-pinned: the paragraph spans 5001 lines, more than 5000.",
+      ],
+    ]);
+    expect(onDisk(label)).toBe(before);
+  });
+
+  it("--accept re-pins stacked markers over the paragraph, never the marker lines", async () => {
+    const entry = (id: string): string[] => [
+      `  - id: ${id}`,
+      "    claim:",
+      `      integrity: ${CLAIM_RETRIES}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 3",
+      `      integrity: ${PIN_L3}`,
+    ];
+    const label = write("stacked.md", [
+      "---",
+      "title: Limits",
+      "citations:",
+      ...entry("first"),
+      ...entry("second"),
+      "---",
+      "# Limits",
+      "",
+      "<!-- cite first -->",
+      "<!-- cite second -->",
+      "Retries default to 5.",
+    ]);
+    const pin = hashLines("Retries default to 5.");
+    const run = await update({ inputs: [label], accept: true });
+    expect(run.pages[0]?.rewritten.map((r) => [r.id, r.at, r.text, r.to])).toEqual([
+      ["first", 23, "Retries default to 5.", pin],
+      ["second", 23, "Retries default to 5.", pin],
+    ]);
+    expect(await ends(label)).toEqual([
+      ["current", "current"],
+      ["current", "current"],
+    ]);
+  });
+
+  it("--accept re-pins indented markers stacked in a list item", async () => {
+    const entry = (id: string): string[] => [
+      `  - id: ${id}`,
+      "    claim:",
+      `      integrity: ${CLAIM_RETRIES}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 3",
+      `      integrity: ${PIN_L3}`,
+    ];
+    const label = write("stacked-item.md", [
+      "---",
+      "title: Limits",
+      "citations:",
+      ...entry("first"),
+      ...entry("second"),
+      "---",
+      "# Limits",
+      "",
+      "1. Set the retries.",
+      "",
+      "   <!-- cite first -->",
+      "   <!-- cite second -->",
+      "   Retries default to 5.",
+      "",
+      "2. Run it.",
+    ]);
+    const pin = hashLines("   Retries default to 5.");
+    const run = await update({ inputs: [label], accept: true });
+    expect(run.pages[0]?.rewritten.map((r) => [r.id, r.at, r.text, r.to])).toEqual([
+      ["first", 25, "Retries default to 5.", pin],
+      ["second", 25, "Retries default to 5.", pin],
+    ]);
+    expect(await ends(label)).toEqual([
+      ["current", "current"],
+      ["current", "current"],
+    ]);
   });
 
   it("--accept re-pins a paragraph that grew, moving the claim's last line with it", async () => {
@@ -540,6 +679,32 @@ describe("runUpdate: both ends, and what is left", () => {
     ).toBe(message);
     expect(await refusal(update({ inputs: [] }))).toBe(
       "No files to update. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.",
+    );
+  });
+
+  it("refuses a page whose frontmatter fence never closes, as check does, and writes nothing", async () => {
+    workspace();
+    mkdirSync(join(cwd, "broken"));
+    copyFileSync(
+      join(ROOT, "broken", "unterminated-fence.mdx"),
+      join(cwd, "broken", "unterminated-fence.mdx"),
+    );
+    const label = "broken/unterminated-fence.mdx";
+    const before = onDisk(label);
+    expect(await refusal(update({ inputs: [label] }))).toBe(UNTERMINATED(label));
+    expect(onDisk(label)).toBe(before);
+
+    // A markdown page with a moved entry would otherwise report nothing at all.
+    const moved = readFileSync(join(PAGES, "moved.md"), "utf8").split("\n");
+    const md = write("unterminated.md", moved.filter((line, i) => !(line === "---" && i > 0)));
+    expect(await refusal(update({ inputs: [md] }))).toBe(UNTERMINATED(md));
+  });
+
+  it("refuses a --root that does not exist, as check does", async () => {
+    workspace("moved.md");
+    const missing = join(cwd, "no-such-dir");
+    expect(await refusal(update({ inputs: ["pages/moved.md"], root: missing }))).toBe(
+      `Root directory not found: ${missing}.`,
     );
   });
 

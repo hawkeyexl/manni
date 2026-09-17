@@ -36,8 +36,8 @@ Every transcript below is real output from the built tool.
 <Steps>
 
 1. **Check that the repository is green under the current key.** A rotation
-   cannot fix a value that was already wrong, and it will not start beside one
-   it cannot decrypt.
+   cannot fix a value that was already wrong. A run that meets a value it
+   cannot decrypt reports it, exits `1`, and writes nothing.
 
    ```console
    $ manni meta validate
@@ -155,6 +155,7 @@ manni: The key comes from MANNI_ENCRYPTION_KEY; pass --to <value>, re-encrypt wi
 # exit 2
 ```
 
+{/* cite env-config-never-touched */}
 Generate the new value, pass it as `--to`, and let the run rewrite the pages.
 The config is never touched:
 
@@ -200,11 +201,14 @@ Using manni.config.yaml (.)
 
 ## Rotate one area at a time
 
+{/* cite narrowed-definition */}
+{/* cite narrowed-never-writes-key */}
 A repository too large to rewrite in one commit can be rotated area by area.
 Positional paths and `--collection` both narrow a run, and a narrowed run never
 writes the key. Writing it would leave everything outside the run encrypted
 under a key the config no longer holds.
 
+{/* cite narrowed-needs-to */}
 That is why a narrowed run needs `--to`:
 
 ```console
@@ -232,6 +236,9 @@ The citation baseline fingerprints id-less encrypted citations by their pin; re-
 # exit 0
 ```
 
+{/* cite already-under-new-key-done */}
+{/* cite whole-run-after-narrowed */}
+{/* cite already-under-new-key-done-cite */}
 The whole run re-encrypted only what the first run had not reached. A value
 already under the new key counts as done, which is the one rule that makes
 narrowed runs compose.
@@ -256,6 +263,7 @@ rules for what a narrowed run selects.
 
 ## Resume an interrupted rotation
 
+{/* cite stopped-run-both-keys */}
 A run stopped between its first write and its last leaves the config holding
 both keys:
 
@@ -264,6 +272,7 @@ encryptionKey: <the new key>
 encryptionKeyPrevious: <the old key>
 ```
 
+{/* cite nothing-lost-write-order */}
 Nothing is lost. The new key reached the config before the first page, and the
 old one stays beside it until the last page is written. Every value still
 decrypts under one of the two.
@@ -283,6 +292,8 @@ Using manni.config.yaml (.)
 # exit 1
 ```
 
+{/* cite unfinished-refuses-set */}
+{/* cite unfinished-refuses-rotate-to */}
 Until it finishes, the two commands that would replace the key again are
 refused with one line each:
 
@@ -296,6 +307,9 @@ manni: A rotation is unfinished in manni.config.yaml. Run `manni key rotate` wit
 # exit 2
 ```
 
+{/* cite finish-from-previous */}
+{/* cite finish-report-above-counts */}
+{/* cite finish-removes-previous */}
 Run `manni key rotate` with no `--to`, and it finishes the job it started. The
 report says so above the counts, and `encryptionKeyPrevious:` is removed:
 
@@ -333,6 +347,8 @@ manni: No encryption key is available, so nothing can be re-encrypted. Run `mann
 # exit 2
 ```
 
+{/* cite skip-exits-1 */}
+{/* cite skip-stops-write */}
 A value that will not re-encrypt is the one failure that exits `1` rather than
 `2`, and it stops the whole write. The
 [CLI reference](/manni/key/reference/cli/#refusals) lists every refusal.

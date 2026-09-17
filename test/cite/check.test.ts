@@ -55,6 +55,9 @@ function check(over: Partial<CheckOptions> & { inputs: string[] }): Promise<Chec
   return runCheck({ cwd: ROOT, root: ROOT, noConfig: true, gitClient: noGit(), env: {}, ...over });
 }
 
+const UNTERMINATED = (label: string): string =>
+  `${label}: Unterminated front matter fence: the opening fence has no matching close, so the page's citations cannot be read. Add a closing fence.`;
+
 async function refusal(promise: Promise<unknown>): Promise<string> {
   try {
     await promise;
@@ -499,6 +502,11 @@ describe("runCheck: the run", () => {
     expect(await refusal(check({ inputs: [] }))).toBe(
       "No files to check. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.",
     );
+  });
+
+  it("refuses a page whose frontmatter fence never closes, rather than reading no citations", async () => {
+    const message = await refusal(check({ inputs: ["broken/unterminated-fence.mdx"] }));
+    expect(message).toBe(UNTERMINATED("broken/unterminated-fence.mdx"));
   });
 
   it("refuses an unknown --as format, naming the supported extensions", async () => {

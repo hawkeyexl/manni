@@ -20,6 +20,7 @@ way the `manni meta` examples are. Long axe failure summaries are cut with `…`
 
 ## Before you start
 
+{/* cite node-24-or-newer */}
 `manni a11y check` runs on [Node.js](https://nodejs.org/) 24 or newer. Check
 your version:
 
@@ -31,6 +32,7 @@ You also need a browser and a served site. The next two sections cover both.
 
 ## Install a browser
 
+{/* cite browser-not-bundled */}
 axe runs inside a real browser. Installing `@hawkeyexl/manni` does not download
 one, so that the metadata tool stays a small install. `manni a11y check` looks
 for Google Chrome, then Microsoft Edge, then Playwright's own Chromium. If you
@@ -40,18 +42,21 @@ have neither Chrome nor Edge, install the Chromium once:
 npx playwright install chromium
 ```
 
+{/* cite no-browser-message */}
 Without any of the three the command stops before it loads a page:
 
 ```
 manni: No browser found. Install one with `npx playwright install chromium`, or install Google Chrome or Microsoft Edge.
 ```
 
+{/* cite no-browser-exit-2 */}
 That is exit `2`, an operational error rather than a failed check. You do this
 once per machine. GitHub-hosted runners already ship Chrome, so the CI step
 usually needs nothing beyond the package.
 
 ## Serve the build
 
+{/* cite url-not-directory */}
 The check reads a URL, never a directory. Build the site, then serve the output
 on a port of your choice:
 
@@ -71,6 +76,7 @@ reader meets it.
 
 ## Run the first crawl
 
+{/* cite bare-run-defaults */}
 Give the command the front page of the served site. With no other flags it
 looks for a sitemap, follows same-host links, and checks every page it finds:
 
@@ -97,9 +103,11 @@ Checked 3 of 3 pages (sitemap: http://127.0.0.1:4173/sitemap.xml)
 5 violations on 2 of 3 pages
 ```
 
-Two pages carry findings, so the command exits `1`. While the crawl runs, a
-status line on stderr names the page it is on. It clears before the report
-prints, so `-f json` piped into another tool still gets clean stdout.
+{/* cite findings-exit-1 */}
+Two pages carry findings, so the command exits `1`. On a terminal, a status
+line on stderr names the page the crawl is on and clears before the report
+prints. Progress never writes to stdout, so `-f json` piped into another tool
+still gets clean output.
 
 ## Read the report
 
@@ -112,7 +120,9 @@ Four things are on screen, from the top down.
 | The violation line | The severity, the axe rule id, and axe's own impact. Then the number of failing elements, axe's one-line description, and the rule's page on Deque University. |
 | The node line | One failing element, as a CSS selector and axe's statement of what is wrong with it. The first three elements per rule print. |
 
-The score is the share of axe rules that applied to the page and passed. Nothing
+{/* cite score-share-of-rules */}
+The score is the share of axe rules that applied to the page and passed.
+Violations below the severity floor do not count against it. Nothing
 is weighted, so it is not a Lighthouse score. Read the score as a trend and the
 exit code as the verdict. A page with one error scores `94` and still fails the
 run.
@@ -147,8 +157,10 @@ Checked 3 of 3 pages (sitemap: http://127.0.0.1:4173/sitemap.xml)
 4 violations on 2 of 3 pages
 ```
 
+{/* cite rerun-still-exit-1 */}
+{/* cite rerun-exit-1-counts-failed-pages */}
 One rule is gone and the page score moved from `78` to `84`. The run still
-exits `1`, because four findings remain.
+exits `1`, because two pages still carry findings.
 
 ## Work one page at a time
 
@@ -159,6 +171,7 @@ against. While you are fixing one page, check that page alone:
 npx @hawkeyexl/manni a11y check http://127.0.0.1:4173/orphan.html --no-crawl
 ```
 
+{/* cite no-crawl-skips-sitemap */}
 `--no-crawl` skips the sitemap lookup and the link following, and checks exactly
 the URLs you name. After alt text is added to the image on that page:
 
@@ -169,6 +182,7 @@ Checked 1 of 1 pages (no crawl)
 0 violations on 0 of 1 pages
 ```
 
+{/* cite single-page-exit-0 */}
 Exit `0`. [Fix a failing check](/manni/a11y/fix/) walks one violation end to
 end, including how to choose the words in an alt attribute.
 
@@ -186,10 +200,12 @@ Checked 3 of 3 pages (sitemap: http://127.0.0.1:4173/sitemap.xml)
 0 violations on 0 of 3 pages
 ```
 
+{/* cite clean-crawl-exit-0 */}
 That is exit `0`, and it is what a CI gate waits for.
 
 ## Put the seeds in config
 
+{/* cite config-urls-no-args */}
 Once the URL lives in `manni.config.yaml`, the command takes no arguments. That
 is the form a CI step runs, and the file is the one `manni meta` already reads:
 
@@ -203,6 +219,7 @@ a11y:
 npx @hawkeyexl/manni a11y check
 ```
 
+{/* cite severity-floor */}
 `severity` is the floor. At `error` the warnings and notices are dropped before
 the score and the exit code are decided. The
 [configuration keys](/manni/a11y/reference/cli/#configuration) table has the

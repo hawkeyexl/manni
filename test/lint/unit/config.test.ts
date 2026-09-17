@@ -546,7 +546,7 @@ describe("resolveLintRun", () => {
   // beside `--collection`. Counting it as a path made that pairing lint the
   // stdin document and nothing else: not one file of the collection was
   // opened, and the run exited 0 - a silent green over a docset nothing read.
-  it("still falls back to the collections when the only input is stdin", async () => {
+  it("honours --collection when stdin rides beside it", async () => {
     await write("manni.config.yaml", COLLECTIONS);
     const run = await resolveLintRun({
       cwd: dir,
@@ -557,6 +557,18 @@ describe("resolveLintRun", () => {
     expect(run.fromCollections).toBe(true);
     // The collection's globs were written beside the config, so the base has
     // to follow them there even though stdin was typed from somewhere else.
+    expect(run.base).toBe(dir);
+  });
+
+  // The other half of the same rule, and the half cite settled in #61: a
+  // request is honoured, a fallback is not a request. A lone `-` cancels it,
+  // so a piped page is a run of its own rather than a run over the whole
+  // docset that happens to have started at a pipe.
+  it("does not fall back to the collections for a lone stdin", async () => {
+    await write("manni.config.yaml", COLLECTIONS);
+    const run = await resolveLintRun({ cwd: dir, inputs: ["-"] });
+    expect(run.inputs).toEqual(["-"]);
+    expect(run.fromCollections).toBe(false);
     expect(run.base).toBe(dir);
   });
 

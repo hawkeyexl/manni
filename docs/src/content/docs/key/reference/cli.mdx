@@ -10,6 +10,9 @@ import { Aside } from '@astrojs/starlight/components';
     docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
     sync with the code; descriptions are free-form. */}
 
+{/* cite intro-env-wins */}
+{/* cite intro-bare-key-exit-2 */}
+{/* cite intro-never-prints-key */}
 manni key exposes two verbs, [`set`](#key-set) and [`rotate`](#key-rotate).
 Both act on one thing, the family encryption key. That is the top-level
 `encryptionKey:` of `manni.config.yaml`, or `MANNI_ENCRYPTION_KEY`, which wins
@@ -32,6 +35,7 @@ Global options are accepted before the subcommand.
 
 ## `key`
 
+{/* cite key-no-subcommand-exit-2 */}
 The family encryption key, as a domain with two verbs. Every command on this
 page lives under it. `key` accepts its own `-V, --version`, which reports the
 manni version, and `-h, --help`. Run with no subcommand it prints usage, exit
@@ -49,20 +53,32 @@ manni key [options] <command> [command options] [arguments]
 
 ## `key set`
 
+{/* cite set-target-file */}
+{/* cite set-created-at-git-root */}
+{/* cite set-edits-in-place */}
+{/* cite set-other-keys-survive */}
+{/* cite set-generates-64-hex */}
+{/* cite set-report-names-file */}
+{/* cite set-discovers-moose */}
 Write `encryptionKey:` at the top level of a manni config file. The file is the
 one `-c` names, else the nearest `manni.config.yaml`, whatever sections it
 carries. When there is none, `manni.config.yaml` is created at the git root, or
 in the working directory outside git. An existing file is edited in place, and
-every other key in it survives. With no `[value]`, 64 random hex characters
-are generated. The key is never printed. The report names the file it went to,
-and nothing else.
+every other key in it survives. Discovery also finds `moose.config.yaml`, the
+file's name before the rename, and warns to rename it. With no `[value]`, 64
+random hex characters are generated. The key is never printed. The report
+names the file it went to, and nothing else.
 
+{/* cite set-c-must-exist */}
+{/* cite set-c-family-file */}
+{/* cite set-c-single-tool-refused */}
 A file `-c` names must exist. It is read as a family file when it is named
-`manni.config.yaml`, carries a top-level `encryptionKey:` or `collections:`,
-or is empty. Any other file, such as a `docmeta.config.yaml`, is one tool's
-whole section. `set` refuses it, because a top-level key would turn its whole
+`manni.config.yaml` or `moose.config.yaml`, carries a top-level
+`encryptionKey:`, `collections:` or `tools:`, or is empty. Any other file,
+such as a `docmeta.config.yaml`, is one tool's whole section. `set` refuses it, because a top-level key would turn its whole
 document into a family file.
 
+{/* cite set-git-warning-before-write */}
 When the file is not ignored by git, a warning on stderr says so before the
 write. It is a warning, not a refusal: a private repository may keep its key
 in its config. See
@@ -85,6 +101,9 @@ manni key set [value] [options]
 | `-c, --config` | `<path>` | the nearest `manni.config.yaml`, whatever it carries | The config file to write. Created at the git root (else the working directory) when none is found. |
 | `--dry-run` | n/a | off | Say what would be written; write nothing. |
 
+{/* cite set-refusals */}
+{/* cite set-refuses-beside-legacy */}
+{/* cite legacy-config-names */}
 `set` refuses, exit `2`, when a key is already configured, when the value has
 the wrong shape, when `MANNI_ENCRYPTION_KEY` is set, and while a rotation is
 [unfinished](#an-interrupted-rotation). It also refuses to create
@@ -95,6 +114,12 @@ from `manni meta`, and every option in it would stop being read. See
 
 ## `key rotate`
 
+{/* cite rotate-finds-by-ciphertext */}
+{/* cite rotate-reencrypts-current-key */}
+{/* cite rotate-citation-source-and-pin */}
+{/* cite rotate-citation-manifest-per-page */}
+{/* cite rotate-external-manifests */}
+{/* cite rotate-all-or-nothing */}
 Re-encrypt every encrypted value in the given pages, else the selected
 collections, under a new key. It finds values by their ciphertext, not through
 schema marks. Every string in a page's metadata that has the ciphertext shape
@@ -108,11 +133,17 @@ as well. Everything is re-encrypted in memory first, and nothing is written
 unless every
 value could be. See [how rotation finds values](#how-rotation-finds-values).
 
+{/* cite rotate-key-before-pages */}
+{/* cite rotate-old-key-removed-last */}
+{/* cite rotate-rerun-finishes */}
 A whole run writes the new key to the config, beside the old one, before the
 first page. It removes the old one after the last. An interruption at any
 point loses nothing: run `manni key rotate` again and it finishes the job. See
 [an interrupted rotation](#an-interrupted-rotation).
 
+{/* cite narrowed-is-paths-or-collection */}
+{/* cite narrowed-requires-to */}
+{/* cite narrowed-never-writes-key */}
 A narrowed run (positional paths or `--collection`) can cover only part of the
 family, so it requires `--to` and never writes the key. Run it per area, then
 finish with a whole run under the same `--to`. See
@@ -151,6 +182,8 @@ are reachable.
 | `--dry-run` | n/a | off | Print what would change; write nothing. |
 | `-f, --format` | `<format>` | `pretty` | `pretty` or `json`. The JSON shape is in the [examples](#examples). Any other value is refused (exit 2). |
 
+{/* cite rotate-no-no-config */}
+{/* cite rotate-refuses-stdin */}
 There is no `--no-config`. The current key comes from the config or the
 environment, and the new one is written to the config. `rotate` reads no
 stdin, because it writes the files it reads; `-` is refused.
@@ -167,6 +200,11 @@ stdin, because it writes the files it reads; `-` is refused.
 
 ### By ciphertext, not by schema
 
+{/* cite by-ciphertext-walk */}
+{/* cite by-ciphertext-shape */}
+{/* cite by-ciphertext-decrypts */}
+{/* cite by-ciphertext-citation-pin */}
+{/* cite by-ciphertext-citation-manifest */}
 `rotate` resolves no schema. It reads each page's metadata and takes every
 string with the ciphertext shape, `~` and at least 82 base64url characters.
 Each one that decrypts under the current key is re-encrypted under the new one.
@@ -174,6 +212,8 @@ So is every encrypted citation's `source.file`, and the `hmac-sha256-` pin
 over its cited lines is re-keyed with it. Entries a citations manifest owns
 are found the same way, through the collection that declares it.
 
+{/* cite auth-tag-decides */}
+{/* cite no-schema-resolved */}
 The authentication tag proves a value was encrypted under the current key, so
 no schema has to say where the values are. A mark that lives in a `-s` schema,
 or behind a remote `$ref` the run cannot reach, cannot hide a value from
@@ -181,12 +221,16 @@ rotation.
 
 ### In manifests as well as pages
 
+{/* cite manifests-with-pages */}
 A value does not have to sit in a page. An
 [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata)
 holds the private half of a document, which is where an encrypted value most
 often lives. So `rotate` re-encrypts the local manifests of every collection
 it covers, alongside the pages.
 
+{/* cite manifest-same-rule */}
+{/* cite manifest-any-depth */}
+{/* cite manifest-splice-keeps-bytes */}
 The rule inside a manifest is the rule inside a page. Every string with the
 ciphertext shape, at any depth of an owned value, is a candidate, and the
 authentication tag decides. Only the value's own text is replaced: the
@@ -202,12 +246,16 @@ Two things are left alone.
   break the pin, so rotation does not touch that key in a manifest or on a
   page.
 
+{/* cite narrowed-manifest-collections */}
 A narrowed run covers the manifests of the collections it selected.
 `--collection` names them. Positional paths select the collections those files
 belong to, so a page and its private half move together.
 
 ### Every value, or none
 
+{/* cite skip-under-neither-key */}
+{/* cite single-skip-nothing-written */}
+{/* cite single-skip-exit-1 */}
 Every page and every manifest is re-encrypted in memory first. A value with the
 ciphertext shape that decrypts under neither the current key nor the new one is
 skipped. A single skip means nothing is written, not a page, not a manifest and
@@ -217,6 +265,7 @@ decrypt.
 
 ### The order of the writes
 
+{/* cite order-whole-config-run */}
 A whole run whose key lives in the config writes in three steps:
 
 1. The config: `encryptionKey:` becomes the new key, and
@@ -224,12 +273,14 @@ A whole run whose key lives in the config writes in three steps:
 2. The pages, then the manifests.
 3. The config again, without `encryptionKeyPrevious:`.
 
+{/* cite order-generated-key-first */}
 The key goes first so that it is never lost. A key the command generated for
-itself reaches the config before any value is encrypted under it. The old key
-stays beside it until nothing needs it.
+itself reaches the config before any value encrypted under it is written. The
+old key stays beside it until nothing needs it.
 
 ### An interrupted rotation
 
+{/* cite interrupted-both-keys */}
 A run stopped between the first write and the last leaves the config holding
 both keys:
 
@@ -240,8 +291,12 @@ encryptionKeyPrevious: <the old key>
 
 | Key | Type | Meaning |
 |---|---|---|
-| `encryptionKeyPrevious` | string of at least 32 hex or base64url characters | The key an unfinished rotation is replacing. Present only while a rotation is unfinished. `manni key rotate` writes it and removes it, and no other command reads it. A value of the wrong shape is refused, and the error never repeats it. |
+| `encryptionKeyPrevious` | string of at least 32 hex or base64url characters | The key an unfinished rotation is replacing. Present only while a rotation is unfinished. `manni key rotate` writes it and removes it. `manni key set` refuses while it holds a valid key, and ignores one of the wrong shape. Every other command reads it through its config loader and refuses a value of the wrong shape. The error never repeats it. |
 
+{/* cite interrupted-finish-direction */}
+{/* cite interrupted-done-values */}
+{/* cite interrupted-removes-previous */}
+{/* cite interrupted-report-before-counts */}
 Every value decrypts under one of the two keys. Run `manni key rotate` with no
 `--to` and it finishes the job. It re-encrypts from the previous key to the
 current one, counts the values already under the current key as done, and
@@ -255,6 +310,9 @@ Finished the interrupted rotation in manni.config.yaml.
 # exit 0
 ```
 
+{/* cite unfinished-unreadable-rule */}
+{/* cite unfinished-refuses-other-to */}
+{/* cite unfinished-refuses-set */}
 Until then, the pages the stopped run did not reach are under the old key, and
 `manni meta validate` reports each of their values as
 `encrypted:unreadable/encrypted`. `--to` is accepted only when it names the key
@@ -267,11 +325,15 @@ manni: A rotation is unfinished in manni.config.yaml. Run `manni key rotate` wit
 
 ### Running it again
 
+{/* cite running-again-done */}
+{/* cite running-again-done-cite */}
 A value that already decrypts under the new key counts as done. That one rule
 lets a narrowed run compose with a whole run, and lets a stopped run finish.
 
 ### A narrowed run
 
+{/* cite narrowed-section-requires-to */}
+{/* cite narrowed-section-no-key */}
 Positional paths or `--collection` cover part of the family, pages and
 manifests alike. Writing the key after such a run would leave everything
 outside it encrypted under a key the config no longer holds. So a narrowed run
@@ -282,6 +344,7 @@ finish:
 Key not written: this run covered part of the family. Finish with a whole run under the same key: `manni key rotate --to <the same value>`.
 ```
 
+{/* cite area-runs-compose */}
 Run it area by area with the same `--to`, then finish with a whole run under
 that `--to`. Every value already under the new key counts as done, and the key
 is written in the [order above](#the-order-of-the-writes):
@@ -294,6 +357,10 @@ manni key rotate --to "$NEW_KEY"
 
 ### A key from the environment
 
+{/* cite env-requires-to */}
+{/* cite env-config-untouched */}
+{/* cite env-last-line */}
+{/* cite env-old-secret-unreadable */}
 When the current key comes from `MANNI_ENCRYPTION_KEY`, the tool cannot update
 the secret. `--to` is required, the pages are re-encrypted under it, and the
 config is never touched. The last line of the report says the secret is yours
@@ -304,6 +371,9 @@ rotated pages merge.
 
 ### A dry run
 
+{/* cite dry-run-section-writes-nothing */}
+{/* cite dry-run-section-last-line */}
+{/* cite dry-run-skip-exits-1 */}
 `--dry-run` re-encrypts every page and manifest in memory and reports what
 would change. It writes nothing at all, not a page, not a manifest and not the
 config. Its last line is `Dry run: nothing written.` A value it would skip
@@ -311,6 +381,8 @@ still exits `1`.
 
 ### The citation baseline
 
+{/* cite baseline-notice-when-wrote */}
+{/* cite baseline-notice-exists */}
 A citation baseline fingerprints a citation that has no id by its
 `source.integrity`, and a new key changes every keyed pin. When a baseline exists, a run that wrote pages ends
 with this line:
@@ -319,12 +391,16 @@ with this line:
 The citation baseline fingerprints id-less encrypted citations by their pin; re-record it with `manni cite check --write-baseline`.
 ```
 
+{/* cite baseline-file-default */}
+{/* cite baseline-json-stderr */}
 The baseline is the file `cite.baseline` names, else
 `.manni-cite-baseline.json` beside the config. Under `-f json` the line goes to
 stderr, prefixed `manni: `, so the JSON stays parseable.
 
 ## Refusals
 
+{/* cite refusal-one-line-prefix */}
+{/* cite refusals-skip-exit-1 */}
 Each refusal is one line on stderr, prefixed `manni: `, and nothing is written.
 All of them exit `2` except the skipped value, which exits `1`.
 
@@ -388,10 +464,15 @@ manni: Unknown --format "sarif". Use pretty or json.
 # exit 2
 ```
 
+{/* cite set-refuses-configured-key */}
+{/* cite set-writes-over-malformed */}
+{/* cite set-refuses-env-key */}
 `set` refuses a configured key because replacing it in place would leave every
 encrypted value unreadable. `rotate` is the command that replaces it. Every
-command refuses a key of the wrong shape, in the config or the environment. The
-error never repeats the value:
+other command refuses a key of the wrong shape, in the config or the
+environment. `set` writes a new key over a malformed `encryptionKey:` in the
+config, and refuses any `MANNI_ENCRYPTION_KEY`. The error never repeats the
+value:
 
 ```
 manni: manni.config.yaml: "encryptionKey" must be at least 32 hex or base64url characters. Run `manni key set` to generate one.
@@ -478,18 +559,27 @@ $ manni key rotate --to 0123456789abcdef0123456789abcdef --collection site --ext
 # exit 0
 ```
 
+{/* cite pretty-short-ciphertext */}
+{/* cite json-full-ciphertext */}
+{/* cite row-names */}
+{/* cite json-citation-row-fields */}
+{/* cite json-citation-row-index */}
 The ciphertexts above are shortened. In `pretty` output each one shows as `~`
 and its first four characters; `-f json` carries every one whole. A metadata
 value is named by its JSON Pointer, `/owner`. A citation is named by its id,
 and keeps its `source.lines` after the ciphertext. A citation with no id is
 named by where it sits, `/citations/0`, and by the manifest when one owns it.
-In JSON a citation row carries `kind: "citation"`, its `id` or `index`, and
-`from` and `to`; a skipped row carries `kind` and `message` in place of `from`
-and `to`.
+In JSON a citation row carries `kind: "citation"`, its `index`, its `id` when
+it has one, the `line` the entry sits on when known, and `from` and `to`. A
+skipped row carries `kind` and `message` in place of `from` and `to`.
 
-`manifests` lists the local manifests, one row each, in the order the selected
-collections declare them. A URL manifest is read-only and never appears. Each
-row names the manifest as the run reports it and the `collection` that
-declared it. A value in one is named by the document entry it belongs to and
+{/* cite manifest-entry-pointer-name */}
+{/* cite manifest-entry-pointer-fields */}
+{/* cite manifests-no-url */}
+{/* cite manifests-rewritten-or-skipped */}
+`manifests` lists each local manifest with a value rewritten or skipped, one
+row each, in the order the selected collections declare them. A URL manifest
+is read-only and never appears. Each row names the manifest as the run
+reports it and the `collection` that declared it. A value in one is named by the document entry it belongs to and
 the JSON Pointer inside that entry. So `docs/handbook.md/owner` reads as one
 name in `pretty`, and as two fields, `entry` and `pointer`, in JSON.

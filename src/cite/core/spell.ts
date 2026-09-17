@@ -29,3 +29,16 @@ export function shortSrc(src: string): string {
   const lines = colon === -1 ? "" : src.slice(colon);
   return token.length <= 5 ? src : `${token.slice(0, 5)}…${lines}`;
 }
+
+/** The widest a quoted line of a file is printed at. */
+const LINE_WIDTH = 60;
+
+/**
+ * A line of a file as a report quotes it: whitespace collapsed to single
+ * spaces, then sixty characters and an ellipsis. The report is one line, so
+ * neither an indented source line nor a long one decides how it reads.
+ */
+export function shortLine(text: string): string {
+  const one = text.replace(/\s+/g, " ").trim();
+  return one.length <= LINE_WIDTH ? one : `${one.slice(0, LINE_WIDTH)}…`;
+}

@@ -19,8 +19,16 @@ hero:
       variant: minimal
 ---
 
-import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import { Aside, Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
+<Aside type="note" title="Beta">
+`manni term` is in beta. Its commands, config keys and output can change in
+any release, without notice.
+</Aside>
+
+{/* cite concepts-label-names-entry */}
+{/* cite concepts-read-from-metadata */}
+{/* cite term-record-fields */}
 A **term** is a record with an identity. It has one preferred `label`, a
 `definition`, the other names it goes by, and its place among other terms.
 Pages point at it by label through `concepts:`, and manni term checks that
@@ -72,6 +80,9 @@ docs/guides/fitting.md:3
 1 error in 2 terms
 ```
 
+{/* cite proof-exit-one */}
+{/* cite proof-exit-one-error-fails */}
+{/* cite proof-names-claiming-entry */}
 The exit code is `1`. `PAL` is a name the set knows, and the finding says
 which entry claims it, so the fix is the preferred label. Drop `PAL`, which
 the guide already names by its label, and the check passes:
@@ -110,6 +121,8 @@ the guide already names by its label, and the check passes:
   />
 </CardGrid>
 
+{/* cite shelf-ten-fields */}
+{/* cite shelf-ten-rules */}
 The reference shelf holds the detail. The
 [CLI reference](/manni/term/reference/cli/) covers every flag and every usage
 error. The [configuration reference](/manni/term/reference/configuration/)
@@ -136,5 +149,7 @@ checks.
 </CardGrid>
 
 Term entries are written in the `manni:terminology` vocabulary, whose draft is
-[under review](/manni/meta/proposals/terminology/). `manni meta validate`
-checks one page's shape against that draft; `manni term check` checks the set.
+[under review](/manni/meta/proposals/terminology/). No built-in schema covers
+it. `manni meta validate` checks one page's shape against the draft when the
+page's schema set includes it, as `-s` with the draft's JSON file does. `manni
+term check` checks the set.

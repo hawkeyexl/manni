@@ -15,7 +15,12 @@ hero:
       variant: minimal
 ---
 
-import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Beta">
+`manni lint` is in beta. Its commands, config keys and output can change in
+any release, without notice.
+</Aside>
 
 `manni meta` checks what a page says it is. `manni lint` checks whether it is
 shaped like one. A page that declares `type: how-to` is supposed to carry an

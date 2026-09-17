@@ -19,6 +19,8 @@ import type {
   CitationFinding,
   CitationResult,
   PageCitationReport,
+  Removal,
+  RemoveRun,
   UpdateRewrite,
   UpdateRun,
 } from "../types.js";
@@ -28,6 +30,8 @@ export interface PrettyOptions {
   quiet?: boolean;
   showDiff?: boolean;
   reveal?: boolean;
+  /** `remove --dry-run`: the footer says what the run would have removed. */
+  dryRun?: boolean;
 }
 
 /** Diff lines printed under a `changed` row before the rest is elided. */
@@ -198,6 +202,35 @@ function claimLines(result: CitationResult, dim: (s: string) => string): string[
   return out;
 }
 
+/**
+ * The line a row sorts on: the marker's line for a marker-anchored entry,
+ * else the claim's first file line. That is the line the row opens with, so
+ * the claim column climbs down the page. A bare pin anchors nowhere and has
+ * none.
+ */
+function anchorSortLine(result: CitationResult): number | undefined {
+  if (result.anchor === "marker" && result.markerLine !== undefined) return result.markerLine;
+  const first = result.claim?.fileLines?.split("-")[0];
+  if (first === undefined) return undefined;
+  const line = Number.parseInt(first, 10);
+  return Number.isNaN(line) ? undefined : line;
+}
+
+/**
+ * A page's citations in the order their rows print: by anchor line, with the
+ * bare pins after them in the order the page keeps them. The entries
+ * themselves are left alone, so json and the findings keep frontmatter order.
+ */
+function rowOrder(citations: readonly CitationResult[]): CitationResult[] {
+  return [...citations].sort((a, b) => {
+    const left = anchorSortLine(a);
+    const right = anchorSortLine(b);
+    if (left === undefined) return right === undefined ? 0 : 1;
+    if (right === undefined) return -1;
+    return left - right;
+  });
+}
+
 /** One row of a page's citation table, before the columns are padded. */
 interface Row {
   mark: string;
@@ -248,7 +281,7 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
     const placed = new Set<CitationFinding>();
     const rows: Row[] = [];
 
-    for (const result of page.citations) {
+    for (const result of rowOrder(page.citations)) {
       const own = page.findings.filter((f) => belongsTo(f, result) && !placed.has(f));
       for (const finding of own) placed.add(finding);
       const live = own.filter((f) => !isBaselined.has(f));
@@ -350,7 +383,13 @@ export function rewriteLine(rewrite: UpdateRewrite): string {
       : `source ${shortSrc(rewrite.from)} -> ${shortSrc(rewrite.to)} (moved)`;
   }
   if (rewrite.end === "claim") {
-    return `claim at line ${String(rewrite.at ?? 0)} re-pinned (${status}; now "${rewrite.text ?? ""}")`;
+    // A marker anchors its claim, so the marker's line is where the entry is,
+    // as `check` reports it. A claim-lines entry reads at the claim.
+    const where =
+      rewrite.markerLine === undefined
+        ? `line ${String(rewrite.at ?? 0)}`
+        : `marker line ${String(rewrite.markerLine)}`;
+    return `claim at ${where} re-pinned (${status}; now "${rewrite.text ?? ""}")`;
   }
   const at = rewrite.commitSha === undefined ? "" : ` at ${shortCommit(rewrite.commitSha)}`;
   return `source ${shortSrc(rewrite.src ?? "")} re-pinned${at} (${status}; ${shortPin(rewrite.from)} -> ${shortPin(rewrite.to)})`;
@@ -389,5 +428,64 @@ export function renderUpdatePretty(run: UpdateRun, opts: PrettyOptions): string 
   }
   const summary = `${plural(run.rewritten, "citation")} rewritten in ${plural(files, "file")}, ${String(run.skipped)} skipped`;
   lines.push(run.exitCode === 0 ? c.green(summary) : c.red(summary));
+  return lines.join("\n");
+}
+
+/** `line 30`, or `lines 30 and 42` for several, as a sentence reads them. */
+function spellLineList(at: readonly number[], noun: string): string {
+  // No lines is the noun alone. Every caller has at least one, and a
+  // sentence reading "lines  and " would be the only sign that one did not.
+  if (at.length === 0) return noun;
+  const spelled = at.map((line) => String(line));
+  if (spelled.length === 1) return `${noun} ${spelled[0] ?? ""}`;
+  const last = spelled[spelled.length - 1] ?? "";
+  return `${noun}s ${spelled.slice(0, -1).join(", ")} and ${last}`;
+}
+
+/** What one removal says it did: the entry, where it was kept, and its markers. */
+export function removalLine(removal: Removal, c: ReturnType<typeof palette>): string {
+  const markers = spellLineList(removal.markerLines, "line");
+  if (removal.origin === undefined) {
+    // A marker naming no entry: there is nothing else to report about it.
+    const named = removal.markerLines.length === 1 ? "the marker" : "the markers";
+    return `removed ${named} ${c.cyan(removal.id ?? "")} at ${markers}, which named no entry`;
+  }
+  const name = removal.id ?? `/citations/${String(removal.index ?? 0)}`;
+  const where =
+    removal.origin.kind === "manifest"
+      ? `${removal.origin.file}${removal.origin.line === undefined ? "" : `:${String(removal.origin.line)}`}`
+      : "frontmatter";
+  const also =
+    removal.markerLines.length === 0
+      ? ""
+      : `, and ${removal.markerLines.length === 1 ? "its marker" : "its markers"} at ${markers}`;
+  return `removed ${c.cyan(name)} from ${where}${also}`;
+}
+
+export function renderRemovePretty(run: RemoveRun, opts: PrettyOptions): string {
+  const c = palette(opts.color);
+  const lines: string[] = [];
+  let files = 0;
+  for (const page of run.pages) {
+    if (page.removed.length > 0) files += 1;
+    if (opts.showDiff && page.diff !== "") {
+      for (const line of page.diff.split(/\r?\n/)) {
+        if (line !== "") lines.push(c.dim(line));
+      }
+    }
+    for (const removal of page.removed) {
+      lines.push(`${page.file}: ${removalLine(removal, c)}`);
+    }
+  }
+  // The manifests, after the pages, as `update` prints them.
+  if (opts.showDiff) {
+    for (const manifest of run.manifests ?? []) {
+      for (const line of manifest.diff.split(/\r?\n/)) {
+        if (line !== "") lines.push(c.dim(line));
+      }
+    }
+  }
+  const verb = opts.dryRun === true ? "would be removed" : "removed";
+  lines.push(c.green(`${plural(run.removed, "citation")} ${verb} from ${plural(files, "file")}`));
   return lines.join("\n");
 }

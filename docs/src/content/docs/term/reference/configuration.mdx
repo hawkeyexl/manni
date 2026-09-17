@@ -5,11 +5,17 @@ sidebar:
   order: 2
 ---
 
+{/* cite collections-list-the-files */}
+{/* cite vale-config-from-tools */}
+{/* cite empty-term-section-no-keys */}
+{/* cite no-inputs-no-files-to-read */}
 The terminology tool reads three parts of the family's one config file,
 `manni.config.yaml`. The top-level `collections:` list says which files
 exist. The top-level `tools:` key says where Vale's configuration is. The
-`term:` section holds the tool's own settings. Every one of them has a
-default, so most repositories need no `term:` section at all.
+`term:` section holds the tool's own settings. Every `term:` key has a
+default, so most repositories need no `term:` section at all. `collections:`
+has none. A run with no paths, no collection and no manifest stops with `No
+files to read`.
 
 ```yaml title="manni.config.yaml"
 collections:
@@ -31,17 +37,25 @@ term:
 
 ## Document sets
 
+{/* cite bare-run-reads-every-collection */}
+{/* cite collection-flag-narrows */}
+{/* cite term-is-type-term-page */}
 A bare `manni term check` reads every file the top-level `collections:` list
 declares, and `--collection` narrows a run to one of them. A term is a page
 declaring `type: term`, so no key says where the terms are. They are found
 among the documents. The keys of a collection are on the metadata tool's
 [configuration reference](/manni/meta/reference/configuration/#collections).
 
+{/* cite family-file-without-term-section */}
 A family file that declares `collections:` and no `term:` section is still
 this tool's config. Every `term:` key takes its default.
 
 ## Vale's configuration
 
+{/* cite lint-runs-vale */}
+{/* cite write-vale-runs-vale */}
+{/* cite vale-config-family-key */}
+{/* cite vale-finds-own-config */}
 `manni term lint` and `manni term write -f vale` run Vale. The path to Vale's
 configuration is a family setting, `tools.vale.config`, and it sits beside
 `collections:` rather than under `term:`. It is documented with the other
@@ -55,14 +69,16 @@ it.
 | Key | Type | Default | Mirrors | Description |
 |---|---|---|---|---|
 | `manifests` | list of paths | `[]` | none | YAML or JSON files holding entries outside any document, relative to the config file. Read on every run that loads the config. |
-| `abstractMaxLength` | non-negative integer | `60` | none | The length, in characters, past which `abstract-too-long` fires. |
+| `abstractMaxLength` | non-negative integer | `60` | none | The length, in UTF-16 code units, past which `abstract-too-long` fires. |
 | `baseline` | path | none | `--baseline` | A [baseline](/manni/term/reference/cli/#baselines) file, relative to the config file. Setting it compares every `check` run against the file, without the flag. With `--baseline` and no key, the file is `.manni-term-baseline.json`. |
 | `severity` | mapping | the [defaults](/manni/term/reference/rules/) | none | Per-rule level: `error`, `warning`, `notice` or `off`. Only the rules named change. |
-| `allowEmpty` | boolean | `false` | `--allow-empty` | Treat a set with no terms as success. The flag wins. |
+| `allowEmpty` | boolean | `false` | `--allow-empty` | Treat a missing path, no matched files or no terms as success. The flag wins. |
 | `respectGitignore` | boolean | `true` | `--no-gitignore` | Skip files `.gitignore` covers when expanding directories and globs. The flag wins for one run. |
 
 ## A manifest
 
+{/* cite manifest-key-is-id */}
+{/* cite manifest-fields-by-name */}
 A manifest holds entries that live in no document. The top-level key is the
 entry's `id`, and each entry carries the
 [terminology fields](/manni/term/reference/terminology/) by name:
@@ -77,12 +93,17 @@ bifocal:
   abstract: Lenses with two distinct optical powers, divided by a visible line.
 ```
 
+{/* cite manifest-entry-own-line */}
+{/* cite finding-names-entry-file-line */}
+{/* cite duplicate-id-on-every-entry */}
 A finding about an entry names the manifest and the entry's own line. When a
 manifest and a page use one id, both get a `duplicate-id` finding, and neither
 value wins.
 
 ## Severity
 
+{/* cite ten-rules */}
+{/* cite severity-off-drops-rule */}
 `severity:` moves any of the ten rules to another level, or turns it off. The
 defaults and each rule's message are on the
 [rules reference](/manni/term/reference/rules/).
@@ -94,6 +115,10 @@ term:
     asymmetric-hierarchy: error   # hold both halves of every hierarchy
 ```
 
+{/* cite severity-family-levels-plus-off */}
+{/* cite only-error-fails-file */}
+{/* cite exit-code-from-failed-files */}
+{/* cite lint-levels-from-vale */}
 The levels are the family's three, `notice`, `warning` and `error`, plus
 `off`. Only an `error` moves the exit code. See [severity across the
 family](/manni/meta/reference/output-and-exit-codes/#severity-across-the-family).
@@ -102,14 +127,19 @@ configuration.
 
 ## Refusals
 
-A config the tool cannot use stops the run with exit `2` before any file is
-read. A key that belongs to the family is refused by name, with where it went:
+{/* cite config-error-exit-2 */}
+{/* cite config-resolved-before-files */}
+{/* cite family-keys-refused-by-name */}
+A config the tool cannot use stops the run with exit `2`. A malformed config
+stops it before any file is read. A key that belongs to the family is refused
+by name, with where it went:
 
 ```
 manni: manni.config.yaml: term does not carry "paths". Name a collection under collections:.
 manni: manni.config.yaml: term does not carry "vale". Vale's settings live under tools.vale.
 ```
 
+{/* cite exclude-refused-like-paths */}
 `term.exclude` is refused with the same message as `term.paths`. Every other
 refusal names the key and what it expected:
 
@@ -119,16 +149,21 @@ manni: manni.config.yaml: term.severity.undefined-term "fatal" is not a level. E
 manni: term.abstractMaxLength in manni.config.yaml must be a non-negative integer.
 ```
 
+{/* cite type-error-never-repeats-value */}
+{/* cite missing-vale-config-stops-lint */}
+{/* cite missing-vale-config-stops-write */}
 A type error names the key and the type it wanted, and never repeats the
-value. A `tools.vale.config` that names a missing file stops `lint` and
-`write -f vale`, the two verbs that run Vale:
+value. Two refusals come after the documents load. A `tools.vale.config` that
+names a missing file stops `lint` and `write -f vale` without `-o`, the two
+forms that run Vale:
 
 ```
 manni: manni.config.yaml: tools.vale.config "nowhere.ini" does not exist.
 ```
 
-A `term.manifests` file that is not there stops every verb, named as the
-config spells it:
+{/* cite missing-manifest-stops-every-verb */}
+A `term.manifests` file that is not there stops every verb once the other
+files are read, named as the config spells it:
 
 ```
 manni: manni.config.yaml: term.manifests "terms/missing.yaml" does not exist.

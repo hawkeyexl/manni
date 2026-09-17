@@ -7,6 +7,8 @@ sidebar:
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
 
+{/* cite vale-style-named-terms */}
+{/* cite lint-same-vale-config */}
 A term set says which names are preferred, which are admitted and which are
 deprecated. This page turns that into prose checks. `manni term write -f vale`
 renders the set as a Vale style named `Terms`. Vale then flags a deprecated
@@ -20,7 +22,8 @@ Every transcript below is real output from the built tool and Vale 3.20.0.
 - **A term set** that `manni term check` passes. [Get
   started](/manni/term/get-started/) builds one.
 - **Vale on PATH.** Both verbs start `vale` as a process. `write -f vale -o
-  <dir>` is the one form that runs without it.
+  <dir>` runs without it, and so does `lint` when no entry has a definition,
+  abstract or scope note.
 - **A Vale configuration** with a `StylesPath`. The example uses a house style
   named `House`, with a sentence-length rule and a rule against filler words.
 
@@ -129,16 +132,19 @@ has neither.
 
 ## The generated style
 
+{/* cite style-files-open-with-marker */}
 Each file is built from one kind of label, and each opens with a marker line:
 
 | File | Vale check | Built from | Level |
 |---|---|---|---|
-| `Terms/Casing.yml` | `substitution` | labels and alt-labels that start with a capital or a symbol, such as `Kubernetes`, `K8s` or `C++` | error |
+| `Terms/Casing.yml` | `substitution` | labels and alt-labels that hold a capital and don't start with a lowercase letter, such as `Kubernetes`, `K8s` or `C++` | error |
 | `Terms/Lowercase.yml` | `substitution` | labels and alt-labels entirely in lowercase | error |
 | `Terms/SentenceStart.yml` | `substitution` | labels and alt-labels that start lowercase and hold a capital later, such as `iPhone` | error |
 | `Terms/Deprecated.yml` | `substitution` | hidden-labels, each swapped for its entry's label | warning |
-| `Terms/<ACRONYM>.yml` | `conditional` | each all-caps alt-label of a label that is not all caps | warning |
+| `Terms/<ACRONYM>.yml` | `conditional` | each all-caps alt-label of a label that is not all caps, unless the alt-label is another term's label | warning |
 
+{/* cite empty-style-file-not-written */}
+{/* cite all-caps-label-no-rules */}
 A file with nothing to hold is not written. A label that is all caps, such as
 `API`, gets no casing rule and no acronym rule, because it is the name itself.
 
@@ -156,6 +162,8 @@ swap:
   \bgraduated lens\b: "[Gg]raduated lens"
 ```
 
+{/* cite sentence-start-capital-allowed */}
+{/* cite sentence-start-messages-print-written */}
 A term that starts lowercase may still start a sentence. `Lowercase.yml` and
 `SentenceStart.yml` allow a capital first letter, and both messages print what
 the writer wrote rather than the pattern. manni's own glossary writes this one
@@ -194,11 +202,14 @@ Three rules keep the style safe to commit:
 - **manni writes no vocabulary file.** The casing rules above do that job, so
   `accept.txt` stays yours.
 
+{/* cite o-form-does-not-start-vale */}
 To write the style somewhere Vale does not report, pass `-o <styles
 directory>`. That form does not start Vale at all.
 
 ## Lint the definitions
 
+{/* cite lint-temp-file-per-field */}
+{/* cite lint-vale-once-over-all */}
 A definition is prose, and the house voice applies to it too. `manni term
 lint` writes each entry's `definition`, `abstract` and `scope-note` to a
 temporary file named `<id>.<field>.md`. Then it runs Vale once over all of
@@ -219,6 +230,7 @@ docs/terms/progressive-lens.md:9
 1 error, 2 warnings in 3 terms
 ```
 
+{/* cite lint-finding-source-line */}
 Each finding sits on the source line of its field. Line 7 is the `abstract`.
 Line 11 is the second line of a literal `scope-note: |` block, so the finding
 lands on that exact line. The `definition` of `progressive lens` is a folded
@@ -226,6 +238,7 @@ lands on that exact line. The `definition` of `progressive lens` is a folded
 
 ### A voice for definitions alone
 
+{/* cite definition-file-name-suffix */}
 A definition is often one long noun phrase, and a sentence-length rule written
 for guides fires on it. Vale matches a section by file name, so a
 `[*.definition.md]` section applies to definitions and nothing else:
@@ -250,12 +263,16 @@ docs/terms/kubernetes.md:11
 2 warnings in 3 terms
 ```
 
+{/* cite lint-exit-zero-without-errors */}
+{/* cite abstract-scope-note-file-names */}
 The length finding is gone, and the exit code is `0`. The `abstract` and
 `scope-note` files still get `House.Length`, because their names end
 `.abstract.md` and `.scope-note.md`.
 
 ## Keep the style current
 
+{/* cite check-renders-without-writing */}
+{/* cite check-exits-1-on-drift */}
 The style is rendered from the set, so it falls behind whenever a term
 changes. `--check` renders without writing, and exits `1` when a file
 differs. Add the hidden-label `Kubernets` to `Kubernetes`, and:
@@ -276,6 +293,9 @@ $ echo $?
 0
 ```
 
+{/* cite dry-run-prints-same-lines */}
+{/* cite dry-run-exits-zero */}
+{/* cite dry-run-names-removed-file */}
 `--dry-run` prints the same lines, writes nothing, and exits `0`. A file the
 set would drop is named too, as in
 `.vale/styles/Terms/PAL.yml would be removed`.

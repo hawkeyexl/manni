@@ -60,7 +60,10 @@ export { extractorByName, extractorForExtension, listFormats } from "./extractor
 // `manni cite` keeps its citations in an external-metadata manifest and is the
 // first writer of one. Text in, text out; meta's own commands never call it,
 // so `meta fill` and `meta query` stay read-only on manifests.
-export { spliceManifestValue } from "./core/external-metadata-write.js";
+// `removeManifestKey` is the other half: `manni cite remove` takes a page's
+// last citation out, and an entry left with `citations:` and nothing under it
+// would be a key nobody wrote.
+export { removeManifestKey, spliceManifestValue } from "./core/external-metadata-write.js";
 export type {
   SpliceManifestOptions,
   SplicedManifest,
@@ -73,3 +76,6 @@ export type { ReencryptDataResult } from "./core/reencrypt.js";
 // `manni key set` refuses to create a family file beside one of these, which
 // the new file would hide from the metadata tool's discovery.
 export { LEGACY_CONFIG_NAMES } from "./core/config.js";
+// `manni cite` refuses a page whose opening fence never closes. The locator
+// reads that page as having no block, which would read as no citations.
+export { hasFrontmatterFence } from "./extractors/frontmatter.js";

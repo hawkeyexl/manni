@@ -10,28 +10,43 @@
  * pin: this page rests on these lines, say so when they change.
  *
  * Every refusal is a `CiteError` (exit 2) with the page and the source
- * spelled as the caller spelled them, and nothing is written.
+ * spelled as the caller spelled them, and nothing is written. Among them are
+ * the pins the command can already see are wrong: a duplicate of an entry the
+ * page has, and a claim whose lines hold no text at all.
  */
 import { readFile } from "node:fs/promises";
 import { relative, resolve } from "node:path";
 import { locateFrontmatter, writeFileAtomic } from "../../meta/index.js";
 import { STDIN_LABEL, STDIN_TOKEN } from "../../meta/internal.js";
 import { ensureEncryptionKey } from "../../shared/prompt.js";
-import { blockMatches, pinOfLines, toBodyLines } from "../core/claims.js";
+import { findWindows } from "../../shared/pin.js";
+import { isEncryptedValue } from "../../shared/encryption.js";
+import { blockMatches, pinOfLines, toBodyLines, toFileLines } from "../core/claims.js";
 import { resolveCiteRun } from "../core/config.js";
 import { GIT_UNAVAILABLE_COMMIT, gitClient } from "../core/git.js";
 import { sliceLines, splitLines } from "../core/hash.js";
 import { mintCitation } from "../core/mint.js";
 import { bodyLineOf, readPage } from "../core/page.js";
-import { lineSpec, parseSrc, spellLines } from "../core/range.js";
-import { buildSourceIndex, readSource } from "../core/sources.js";
+import { formatSrc, lineSpec, parseLines, parseSrc, spellLines, spellSource, tooWide } from "../core/range.js";
+import { shiftedEntries, spellAt, withClaimLines, type Shifted } from "../core/shift.js";
+import { readSource, sourceIndexFor } from "../core/sources.js";
+import { shortSrc } from "../core/spell.js";
 import { ManifestSet } from "../core/manifest.js";
 import { sidecarsFor, type PageSidecar } from "../core/sidecar.js";
-import { anchoredLines, fenceSpanAt, formatStatement, offsetOfLine } from "../core/statements.js";
+import {
+  ANY_FENCE,
+  anchoredLines,
+  fenceSpanAt,
+  formatStatement,
+  markerIndent,
+  offsetOfLine,
+  unitHolding,
+} from "../core/statements.js";
 import {
   appendFrontmatterCitation,
   entryObject,
   insertStatementBefore,
+  spliceEntryField,
   unifiedDiff,
 } from "../core/write.js";
 import { CiteError } from "../errors.js";
@@ -40,6 +55,8 @@ import type {
   AddResult,
   Citation,
   CitationClaim,
+  PageCitation,
+  PageCitations,
   PageLines,
   SourceIndex,
 } from "../types.js";
@@ -76,6 +93,98 @@ async function citedText(
     throw new CiteError(`Source not readable: ${range.path} could not be read.`);
   }
   return sliceLines(splitLines(source.text), range, range.path);
+}
+
+/** How a refusal names an entry: its id, or the pointer a report would use. */
+function entryName(entry: PageCitation): string {
+  return entry.citation.id ?? `/citations/${String(entry.origin.index)}`;
+}
+
+/**
+ * The entry that already pins these very page lines to this very source, in
+ * the frontmatter or in the manifest that owns the page's citations. A bare
+ * pin matches another bare pin over the same source.
+ *
+ * The source is compared as each end spells it, so an encrypted one compares
+ * as its ciphertext and no path is decrypted to say so. A marker add is not
+ * asked: it stores no claim lines, and its own id and anchor checks cover it.
+ */
+function duplicateOf(
+  page: PageCitations,
+  src: string,
+  pageLines: PageLines | undefined,
+): PageCitation | undefined {
+  // opts.src is the caller's plain-path spelling; an existing entry encrypted
+  // under a key compares as its ciphertext and will never match here.
+  const wanted = formatSrc(parseSrc(src));
+  return page.citations.find((entry) => {
+    const { citation } = entry;
+    if (spellSource(citation.source) !== wanted) return false;
+    if (pageLines === undefined) return citation.claim === undefined;
+    const spec = citation.claim?.lines;
+    if (spec === undefined) return false;
+    const recorded = parseLines(spec);
+    if (recorded === undefined) return false;
+    const file = toFileLines(recorded, page.bodyLine);
+    return file.start === pageLines.start && file.end === pageLines.end;
+  });
+}
+
+/** Whether a page line can hold no claim at all: it is blank, or it is a fence. */
+function holdsNoText(text: string): boolean {
+  return text.trim() === "" || ANY_FENCE.test(text);
+}
+
+/**
+ * The refusal for a claim whose lines hold no text, `at` being the page and
+ * the lines as the caller spelled them. Undefined when at least one line
+ * carries text. `--quote` never asks, because a quote is fences and content
+ * by design.
+ */
+function emptyClaimRefusal(
+  lines: readonly string[],
+  pageLines: PageLines,
+  at: string,
+): string | undefined {
+  const span = lines.slice(pageLines.start - 1, pageLines.end);
+  if (span.some((text) => !holdsNoText(text))) return undefined;
+  if (pageLines.start !== pageLines.end) return `${at} holds no claim text.`;
+  const only = span[0] ?? "";
+  return only.trim() === "" ? `${at} is blank.` : `${at} is a fence line, not claim text.`;
+}
+
+/**
+ * Where else in the body the claim's text sits, as file lines. A claim whose
+ * text repeats is `moved-ambiguous` the moment it moves, so `add` says so
+ * while the pin is still being written. The search is the classifier's own.
+ */
+function otherClaimSpans(
+  lines: readonly string[],
+  pageLines: PageLines,
+  pin: string,
+  bodyLine: number,
+): PageLines[] {
+  const width = pageLines.end - pageLines.start + 1;
+  const found = findWindows(lines.slice(bodyLine - 1), width, pin, undefined, {
+    around: toBodyLines(pageLines, bodyLine).start,
+  });
+  return found.starts
+    .map((start) => toFileLines({ start, end: start + width - 1 }, bodyLine))
+    .filter((span) => span.start !== pageLines.start);
+}
+
+/** How many other locations a notice names before it starts counting them. */
+const NAMED_SPANS = 3;
+
+/** `line 17`, `lines 16 and 18`, `lines 16, 18, 20 and 2 more`. */
+function spellElsewhere(spans: readonly PageLines[]): string {
+  const first = spans[0];
+  const noun = spans.length === 1 && first !== undefined && first.start === first.end ? "line" : "lines";
+  const named = spans.slice(0, NAMED_SPANS).map((span) => spellLines(span));
+  const rest = spans.length - named.length;
+  if (rest > 0) return `${noun} ${named.join(", ")} and ${String(rest)} more`;
+  const last = named.pop() ?? "";
+  return named.length === 0 ? `${noun} ${last}` : `${noun} ${named.join(", ")} and ${last}`;
 }
 
 export async function runAdd(opts: AddOptions): Promise<AddResult> {
@@ -139,6 +248,8 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   if (marker && opts.id === undefined) {
     throw new CiteError("--marker needs --id: the marker names the entry.");
   }
+  const wide = pageLines === undefined ? undefined : tooWide(pageLines);
+  if (wide !== undefined) throw new CiteError(`Invalid range "${at}": it ${wide}.`);
   if (quote && pageLines === undefined) {
     throw new CiteError(`--quote needs the block's lines: ${label}:L1-L2.`);
   }
@@ -160,6 +271,17 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
       );
     }
   }
+  // The same claim on the same source twice is one citation reported twice,
+  // and the second is what a re-run of a script writes.
+  const duplicate = marker ? undefined : duplicateOf(page, opts.src, pageLines);
+  if (duplicate !== undefined) {
+    const src = shortSrc(spellSource(duplicate.citation.source));
+    const what =
+      pageLines === undefined
+        ? `a bare pin for ${src}`
+        : `an entry for ${spellAt(pageLines)} and ${src}`;
+    throw new CiteError(`${label} already has ${what} (${entryName(duplicate)}).`);
+  }
 
   const lines = splitLines(content);
   if (pageLines !== undefined) {
@@ -174,13 +296,18 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
       if (span === undefined || span.end !== pageLines.end) {
         throw new CiteError(`${at} is not a fenced block, so it cannot be a quote.`);
       }
+    } else if (!marker) {
+      // A pin over a fence or a blank line holds for as long as the page has
+      // one, so a check would call it `current` whatever the prose does.
+      const empty = emptyClaimRefusal(lines, pageLines, at);
+      if (empty !== undefined) throw new CiteError(empty);
     }
   }
 
   // Git is used whenever it is there, as on check and update: the index is
   // `git ls-files` and the commit is HEAD. Where it is not, a walk and none.
   const client = opts.gitClient ?? gitClient(root);
-  const sourceIndex = await buildSourceIndex(root, { gitClient: client });
+  const sourceIndex = await sourceIndexFor(root, client);
 
   // The marker goes in before the claim is pinned, because what it anchors is
   // what the claim pins. Everything below counts lines in `body`, the page
@@ -189,15 +316,53 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   let markerAt: number | undefined;
   let claimSpan: PageLines | undefined;
   let claim: CitationClaim | undefined;
+  // Where else the claim's text sits, for the notice at the end of the run.
+  let elsewhere: PageLines[] = [];
+  // Entries whose claim lines sit below a marker move down with the text.
+  let shifted: Shifted = { frontmatter: [], manifest: new Map() };
   if (marker && pageLines !== undefined) {
-    const statement = formatStatement(format, { kind: "ref", id: opts.id ?? "" });
-    const insertAt = offsetOfLine(content, pageLines.start);
+    // The marker goes above the paragraph or block holding the lines, below
+    // any markers already stacked there, at its indentation, and the lines
+    // must stay inside it.
+    const holding = unitHolding(content, pageLines.start, format, {
+      offset: page.bodyOffset,
+      line: page.bodyLine,
+    });
+    if (holding === undefined) {
+      throw new CiteError(`${at} has no paragraph or block for a marker to anchor.`);
+    }
+    if (pageLines.end > holding.end) {
+      throw new CiteError(
+        `${at} runs past the ${holding.kind} at ${spellAt(holding)}. A marker anchors one paragraph.`,
+      );
+    }
+    // A marker pins everything it anchors, so the range limit applies to that.
+    const unitWide = tooWide({ start: holding.start, end: holding.end });
+    if (unitWide !== undefined) {
+      throw new CiteError(
+        `${at} is in a ${holding.kind} at ${spellAt(holding)} that ${unitWide}. A marker anchors the whole ${holding.kind}.`,
+      );
+    }
+    shifted = shiftedEntries({
+      citations: page.citations,
+      at: [holding.start],
+      delta: 1,
+      bodyLine: page.bodyLine,
+      label,
+    });
+    const statement =
+      markerIndent(content, holding.start, format, page.bodyLine) +
+      formatStatement(format, { kind: "ref", id: opts.id ?? "" });
+    const insertAt = offsetOfLine(content, holding.start);
     body = insertStatementBefore(content, insertAt, statement);
-    markerAt = pageLines.start;
+    markerAt = holding.start;
     const unit = anchoredLines(body, insertAt + statement.length, format, quote);
     const pin = unit === undefined ? undefined : pinOfLines(splitLines(body), unit);
     if (unit === undefined || pin === undefined) {
       throw new CiteError(`${at} has no paragraph or block for a marker to anchor.`);
+    }
+    for (const { index, lines: moved } of shifted.frontmatter) {
+      body = spliceEntryField(body, format, index, ["claim", "lines"], moved);
     }
     claimSpan = unit;
     claim = { integrity: pin };
@@ -208,6 +373,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     }
     claimSpan = pageLines;
     claim = { lines: lineSpec(toBodyLines(pageLines, page.bodyLine)), integrity: pin };
+    elsewhere = otherClaimSpans(lines, pageLines, pin, page.bodyLine);
   }
 
   const mint = (key: string | undefined, encrypt: boolean): Promise<Citation> =>
@@ -256,6 +422,16 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     citation = await mint(key, true);
   }
 
+  // The first pinned source line, so the report shows what the range caught
+  // and a mis-typed one is visible at write time. A whole file has no first
+  // line worth naming, and an encrypted source is never spelled in the open.
+  const srcRange = parseSrc(opts.src);
+  let sourceLine: string | undefined;
+  if (srcRange.start !== undefined && !isEncryptedValue(citation.source.file)) {
+    const read = await readSource(root, sourceIndex, srcRange, undefined);
+    if (read.kind === "ok") sourceLine = splitLines(read.text)[srcRange.start - 1];
+  }
+
   // Where the entry goes follows the config, not a flag: a collection whose
   // manifest owns `citations` keeps them there, and the page is left alone
   // but for a marker.
@@ -267,7 +443,10 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
         `${label} carries no ${owner.join}: value, so its citations cannot be keyed in ${owner.file}.`,
       );
     }
-    const existing = (sidecar.citations ?? []).map((input) => input.entry);
+    const existing = (sidecar.citations ?? []).map((input, index) => {
+      const moved = shifted.manifest.get(index);
+      return moved === undefined ? input.entry : withClaimLines(input.entry, moved);
+    });
     const list = [...existing, entryObject(citation)];
     const at = await manifests.write(owner, sidecar.entry, list, list.length - 1);
     const [changed] = manifests.changed();
@@ -294,6 +473,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     content: after,
     diff: unifiedDiff(label, content, after),
     written: false,
+    ...(sourceLine === undefined ? {} : { sourceLine }),
     ...(placed === undefined ? {} : { manifest: placed }),
   };
   if (markerAt !== undefined) result.markerLine = markerAt + shift;
@@ -308,6 +488,16 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   if (result.manifest !== undefined && opts.dryRun !== true) {
     for (const changed of manifests.changed()) await writeFileAtomic(changed.path, changed.text);
     result.manifest.written = true;
+  }
+  // The claim's text repeats, so a later move of it could not be told apart
+  // from its copies. Said once the entry is written: it is not a refusal, and
+  // the lines it names are the page's own after the write.
+  if (elsewhere.length > 0) {
+    const named = elsewhere.map((span) => ({ start: span.start + shift, end: span.end + shift }));
+    const who = citation.id === undefined ? "" : `${citation.id}: `;
+    opts.onNotice?.(
+      `${who}the claim's text also appears at ${spellElsewhere(named)}, so a move would be ambiguous. Use --marker, or pin more lines.`,
+    );
   }
   // A commit was wanted (no --no-commit-sha) and git had none to give. Said
   // once the add has succeeded, so a refused add says nothing about git.

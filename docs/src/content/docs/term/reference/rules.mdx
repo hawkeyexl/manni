@@ -5,6 +5,10 @@ sidebar:
   order: 4
 ---
 
+{/* cite rule-id-prefix */}
+{/* cite severity-override */}
+{/* cite severity-off */}
+{/* cite severity-levels */}
 `manni term check` reads records and reports what does not line up across the
 set. It reads no prose; `manni term lint` does that. Each rule id is
 `manni:term/<rule>`, and each rule's level can be moved or turned off under
@@ -15,7 +19,7 @@ set. It reads no prose; `manni term lint` does that. Each rule id is
 | Rule | Default | Fires when |
 |---|---|---|
 | `undefined-term` | error | A page's `concepts:` names a label no entry claims as its preferred label. |
-| `duplicate-id` | error | Two entries share an `id`. |
+| `duplicate-id` | error | Two entries share an `id`, ignoring case. |
 | `label-collision` | error | Two entries claim the same preferred label, ignoring case. |
 | `alt-label-collision` | error | An entry's alt-label is another entry's preferred label, ignoring case. |
 | `dangling-reference` | error | A value of `broader`, `narrower`, `related-terms` or `see` names no entry, by label or by id. |
@@ -25,12 +29,15 @@ set. It reads no prose; `manni term lint` does that. Each rule id is
 | `abstract-too-long` | notice | An `abstract` is longer than [`abstractMaxLength`](/manni/term/reference/configuration/#keys), `60` by default. |
 | `unused-term` | notice | No page's `concepts:` names the entry's preferred label. |
 
+{/* cite labels-ignore-case */}
+{/* cite vale-keys-lowercased */}
 Every label comparison ignores case. The Vale style `write -f vale` renders is
 keyed on the lowercased term, so two labels that differ only in case would
 collide there without a word.
 
 ## Every rule in one run
 
+{/* cite finding-line */}
 This set breaks each rule once. Each finding sits on the line of the field
 that caused it, or on the entry's first line when no field did:
 
@@ -67,6 +74,10 @@ docs/terms/varifocal.md:6
 
 ### `undefined-term`
 
+{/* cite concepts-preferred-labels-only */}
+{/* cite undefined-term-names-synonym */}
+{/* cite undefined-term-concepts-line */}
+{/* cite kg-concepts-resolved */}
 `concepts:` resolves against preferred labels only. An id or an alt-label is
 not enough. When the value is some entry's alt-label, the message names that
 entry, because the fix is to write its preferred label instead. The finding
@@ -74,14 +85,22 @@ sits on the page's `concepts:` line. `kg.concepts` is resolved the same way.
 
 ### `duplicate-id`
 
-Reported on every entry that shares the id, each naming the others. An id
-comes from the record, else from the construct's own identifier, else from the
+{/* cite duplicate-id-every-entry */}
+{/* cite id-derivation */}
+{/* cite id-slug */}
+{/* cite duplicate-id-page-and-manifest */}
+{/* cite duplicate-id-ignores-case */}
+{/* cite id-references-ignore-case */}
+Reported on every entry that shares the id, each naming the others. Ids
+compare ignoring case, as a reference to an id resolves. So `Bifocal` and
+`bifocal` collide. An id comes from the record, else from the construct's own identifier, else from the
 slug of the label. So two entries can collide without either spelling out an
 `id`. A page and a manifest entry that share an id collide the same way, and
 neither is kept over the other.
 
 ### `label-collision`
 
+{/* cite label-collision-later-entry */}
 Reported on each later entry, naming the first one read. Change one label, or
 make one entry an alt-label of the other.
 
@@ -92,12 +111,16 @@ entries. Remove the alt-label, or merge the two entries.
 
 ### `dangling-reference`
 
+{/* cite dangling-one-per-value */}
+{/* cite references-resolve-labels-and-ids */}
 One finding per value that resolves to nothing. `broader`, `narrower`,
 `related-terms` and `see` resolve against preferred labels and ids, ignoring
 case. Add the missing entry, or correct the value.
 
 ### `broader-cycle`
 
+{/* cite broader-cycle-once */}
+{/* cite broader-cycle-message */}
 Each cycle is reported once, on the entry of the cycle read first. The message
 spells the chain. Remove the `broader` value that closes it.
 
@@ -108,17 +131,23 @@ its `definition`, or remove `see` and keep it as an entry of its own.
 
 ### `asymmetric-hierarchy`
 
+{/* cite asymmetric-on-missing-half */}
 Reported on the entry that should carry the missing half, naming the entry
 that carries the other. Add the label to that field, or remove the one-sided
 value.
 
 ### `abstract-too-long`
 
+{/* cite abstract-max-length-config */}
 An `abstract` is the short form a hover card shows. Shorten it, or raise
 `abstractMaxLength` for the set.
 
 ### `unused-term`
 
+{/* cite notice-never-fails */}
+{/* cite error-severity-only-fails */}
+{/* cite unused-term-off */}
+{/* cite check-exit-code */}
 A notice, so it never fails a run. A termbase written before the pages that
 use it is entirely unused terms. Set `severity: {unused-term: off}` while that
 is the case.

@@ -4,6 +4,85 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.3.10](https://github.com/hawkeyexl/manni/compare/v2.3.9...v2.3.10) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** refuse a duplicate or empty claim, and name the pinned source line ([#67](https://github.com/hawkeyexl/manni/issues/67)) ([4774b48](https://github.com/hawkeyexl/manni/commit/4774b4894c88117de6cd7bcdfc52568491a6faf3)), closes [#65](https://github.com/hawkeyexl/manni/issues/65) [#61](https://github.com/hawkeyexl/manni/issues/61) [#61](https://github.com/hawkeyexl/manni/issues/61) [#61](https://github.com/hawkeyexl/manni/issues/61)
+
+## [2.3.9](https://github.com/hawkeyexl/manni/compare/v2.3.8...v2.3.9) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** sarif and junit describe cite rules, not schema keywords ([#60](https://github.com/hawkeyexl/manni/issues/60)) ([f026967](https://github.com/hawkeyexl/manni/commit/f02696717b8553587b1f01fa2e6c4cd59d075b6f))
+* **collections:** honour --collection with stdin beside it ([#61](https://github.com/hawkeyexl/manni/issues/61)) ([541b63e](https://github.com/hawkeyexl/manni/commit/541b63e5caae981cc8278f8557a60990633e1d9e))
+
+## [2.3.8](https://github.com/hawkeyexl/manni/compare/v2.3.7...v2.3.8) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** refuse a marker paragraph over the 5,000-line limit ([#62](https://github.com/hawkeyexl/manni/issues/62)) ([4a4cdb2](https://github.com/hawkeyexl/manni/commit/4a4cdb200b41cc6949b9e39725744475cf6ac9fe))
+
+## [2.3.7](https://github.com/hawkeyexl/manni/compare/v2.3.6...v2.3.7) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** read the reports in one order ([#65](https://github.com/hawkeyexl/manni/issues/65)) ([3ba88fb](https://github.com/hawkeyexl/manni/commit/3ba88fb5bc65fca47b8ae4ac77094eb4979ea508))
+
+## [2.3.6](https://github.com/hawkeyexl/manni/compare/v2.3.5...v2.3.6) (2026-09-17)
+
+
+### Bug Fixes
+
+* **shared:** exit quietly when stdout's reader closes early ([#58](https://github.com/hawkeyexl/manni/issues/58)) ([289fcd4](https://github.com/hawkeyexl/manni/commit/289fcd45db96f50f91fedfaaa36378170186d520))
+
+## [2.3.5](https://github.com/hawkeyexl/manni/compare/v2.3.4...v2.3.5) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** refuse a page whose frontmatter fence never closes ([#56](https://github.com/hawkeyexl/manni/issues/56)) ([04ef174](https://github.com/hawkeyexl/manni/commit/04ef1747dd8eb3e0ac8afd636690641c31081f11))
+
+## [2.3.4](https://github.com/hawkeyexl/manni/compare/v2.3.3...v2.3.4) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** refuse a missing --root on add ([#49](https://github.com/hawkeyexl/manni/issues/49)) ([9121f1f](https://github.com/hawkeyexl/manni/commit/9121f1fc144dd17faa495aa07446b94326c3d3f4))
+
+## [2.3.3](https://github.com/hawkeyexl/manni/compare/v2.3.2...v2.3.3) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** enforce the 5,000-line range limit ([#50](https://github.com/hawkeyexl/manni/issues/50)) ([58fef71](https://github.com/hawkeyexl/manni/commit/58fef71afe5d80b53526f3bbee0544c853b5876a))
+* **cite:** indent add --marker to the paragraph it anchors ([#52](https://github.com/hawkeyexl/manni/issues/52)) ([93733e4](https://github.com/hawkeyexl/manni/commit/93733e4b697473b06c3223c3067101606c6432e0))
+
+## [2.3.2](https://github.com/hawkeyexl/manni/compare/v2.3.1...v2.3.2) (2026-09-17)
+
+
+### Bug Fixes
+
+* **term:** compare ids ignoring case, and describe --allow-empty ([#48](https://github.com/hawkeyexl/manni/issues/48)) ([b70661b](https://github.com/hawkeyexl/manni/commit/b70661bcd479b1a4b2cf1af07e894a84d2baa70c))
+
+## [2.3.1](https://github.com/hawkeyexl/manni/compare/v2.3.0...v2.3.1) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** anchor stacked markers, and place add --marker above its paragraph ([#43](https://github.com/hawkeyexl/manni/issues/43)) ([6f3df3c](https://github.com/hawkeyexl/manni/commit/6f3df3cfc43742bd0a6cd67edfb444253a89267d))
+
+# [2.3.0](https://github.com/hawkeyexl/manni/compare/v2.2.0...v2.3.0) (2026-09-17)
+
+
+### Features
+
+* **term:** the manni term domain, for terms held in any format ([#40](https://github.com/hawkeyexl/manni/issues/40)) ([a73a7da](https://github.com/hawkeyexl/manni/commit/a73a7daea122b9ad2178187909363166f1ca61d1))
+
 # [2.2.0](https://github.com/hawkeyexl/manni/compare/v2.1.0...v2.2.0) (2026-09-15)
 
 

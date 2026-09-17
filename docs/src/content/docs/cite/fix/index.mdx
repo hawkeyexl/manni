@@ -40,6 +40,7 @@ it carries **both ends**:
 | `<source end>` | The source as the entry spells it (`lib/limits.ts:2`, `lib/limits.ts:1-3`, a bare path for a whole file, or a ciphertext such as `~AQm4…:5`), then its status. |
 | `<manifest>` | The sidecar that owns the entry, and the entry's line in it. Empty when the entry lives in the page's frontmatter. |
 
+{/* cite annotation-site */}
 In a pull request the same finding is an annotation, titled
 `manni:cite/source-changed`. A claim or marker finding is annotated on the
 page line a reviewer reads. A finding about the entry itself is annotated on
@@ -64,11 +65,16 @@ the entry's own line, in the manifest when a sidecar owns it.
 | [`entry-invalid`](#entry-invalid) | error | An entry is malformed, or an id is repeated. | Fix the entry, or let `add` write it |
 | [`quote-drift`](#quote-drift) | error | The fenced block does not reproduce the cited lines. | Paste the lines again |
 
+{/* cite update-reports-skipped */}
+{/* cite update-skipped-exit-one */}
 The first five are about the **source** end, the next three about the
 **claim** end, and the rest about the entry and its anchor. `update` handles
-the mechanical ones and refuses the rest, printing each as `skipped` and
-exiting `1` so you know work is left.
+the mechanical ones and refuses the rest, printing each as `skipped`. It exits
+`1` when a skipped finding is an error, so you know work is left. Skipped
+warnings and notices leave the exit code at `0`.
 
+{/* cite current-skipped-not-findings */}
+{/* cite severity-rejects-non-rules */}
 Two words in the output are not rules. `current` says an end matches its pin,
 and `skipped` says it was not read, which is what `--no-check-sources` does to
 every source end. Neither is a finding, and neither can be named in
@@ -83,11 +89,14 @@ every source end. Neither is a finding, and neither can be named in
     ↕ fetch-timeout   :13 current   lib/limits.ts:2 moved -> lib/limits.ts:4
 ```
 
+{/* cite source-moved-found-elsewhere */}
+{/* cite source-moved-warning */}
 The lines the citation pins are still in the file, byte for byte, but they
 are at a different line number. Something was added or removed above them.
 The page still says something true, so this is a **warning** and the exit
 code stays `0`.
 
+{/* cite update-rewrites-source-lines */}
 **Fix.** `update` rewrites `source.lines` in place and changes nothing else:
 
 ```sh
@@ -106,6 +115,8 @@ docs/limits.md: fetch-timeout source lib/limits.ts:2 -> lib/limits.ts:4 (moved)
     ✗ retries   :22 current   lib/dup.ts:2 moved, 2 candidates (lib/dup.ts:3, lib/dup.ts:5); widen the range
 ```
 
+{/* cite source-moved-ambiguous-candidates */}
+{/* cite update-skips-ambiguous-source */}
 The pinned lines left their line number and now occur at two or more places
 in the file. Picking one would be a guess, so `update` skips it. This is common
 for a one-line pin over a line a file repeats, such as `export const RETRIES = 3;`.
@@ -124,11 +135,15 @@ manni cite update --accept --only retries docs/limits.md
     ✗ fetch-timeout   :13 current   lib/limits.ts:2 changed since 9265563, 1 commit
 ```
 
+{/* cite source-changed-classify */}
+{/* cite show-diff-subjects-diff */}
 The bytes at the cited range are not the bytes the pin was minted over, and
 they are nowhere else in the file. The sentence on line 13 may no longer be
 true. The status names the commit the pin was minted at and how many commits
 have touched the file since; `--show-diff` prints their subjects and the diff.
 
+{/* cite source-changed-variants */}
+{/* cite no-git-warns-once */}
 Three variants carry the same meaning with less history. An entry with no
 `commit-sha` is a bare `changed`. On a shallow clone it is
 `changed (history unavailable: commit 9265563 not found; fetch-depth: 0)`.
@@ -159,6 +174,7 @@ docs/limits.md: fetch-timeout claim at line 13 re-pinned (changed; now "The fetc
 2 citations rewritten in 1 file, 0 skipped
 ```
 
+{/* cite accept-settles-both-ends */}
 One `--accept` settles both ends, because editing the sentence made the claim
 end `claim-changed` at the same time. If the sentence was still right and only
 the code's shape changed, the same command re-pins the source alone.
@@ -170,6 +186,8 @@ the code's shape changed, the same command re-pins the source alone.
     ✗ fetch-timeout   :13 current   lib/limits.ts:4 never true: the pin does not match at 835098c
 ```
 
+{/* cite never-true-searches-file */}
+{/* cite never-true-not-move */}
 The tool went back to the commit the entry records and searched the whole
 file there. No range of the cited length hashed to the pin. So the pin was
 never a record of that file at that commit. The usual cause is an entry
@@ -178,6 +196,8 @@ that does not belong with the others. A move is not a cause. After `update`
 rewrites a moved range, a later edit to the line reads `source-changed`,
 because the pinned bytes were in the file at that commit.
 
+{/* cite never-true-remint-head */}
+{/* cite never-true-both-pins */}
 **Fix.** Treat it as `source-changed`: check the sentence against the source,
 then re-mint at HEAD with `update --accept --only <id>`. Both pins are
 printed.
@@ -189,6 +209,8 @@ printed.
     ✗ fetch-timeout   :11 current   src/gone.ts:2 missing
 ```
 
+{/* cite source-missing-not-in-index */}
+{/* cite source-missing-git-ls-files */}
 No tracked file exists at that path under the root. A renamed file is
 `missing`, deliberately: a pin names a path, and following renames through
 history would be a guess. Where git is available, sources resolve through
@@ -197,15 +219,18 @@ history would be a guess. Where git is available, sources resolve through
 **Fix.** Remove the entry and add it again against the new path:
 
 ```sh
+manni cite remove docs/limits.md --only fetch-timeout
 manni cite add docs/limits.md:11 lib/config/limits.ts:2 --id fetch-timeout
 ```
 
+{/* cite encrypted-missing-never-names-path */}
 An encrypted source says why it is missing, and never names the path:
 
 ```
     ✗ retries   :22 current   ~AQm4…:5 missing (no encryption key is available to decrypt it)
 ```
 
+{/* cite ciphertext-82-chars */}
 The real ciphertext is 82 characters or more, shortened here. The part in
 parentheses names the cause:
 
@@ -229,10 +254,13 @@ parentheses names the cause:
     ℹ fetch-timeout   :13 moved -> :15   lib/limits.ts:2 current
 ```
 
+{/* cite claim-moved-found-verbatim */}
+{/* cite claim-moved-notice */}
 The pinned page text is found verbatim at another line. Someone inserted a
 paragraph above it, and nothing drifted. This is a **notice**, the quietest
 level there is, and the exit code stays `0`.
 
+{/* cite update-rewrites-claim-lines */}
 **Fix.** `update` rewrites `claim.lines`:
 
 ```sh
@@ -244,6 +272,7 @@ docs/limits.md: fetch-timeout claim line 13 -> 15 (moved)
 1 citation rewritten in 1 file, 0 skipped
 ```
 
+{/* cite marker-claim-never-moves */}
 A marker-anchored claim never reaches this rule. The marker travels with its
 text, so there is nothing to rewrite.
 
@@ -254,10 +283,12 @@ text, so there is nothing to rewrite.
     ↕ retries   :15 moved, 2 candidates (:17, :21)   src/limits.ts:3 current
 ```
 
+{/* cite update-skips-ambiguous-claim */}
 The pinned text is now at two or more places on the page, and `update` will
 not guess which one the citation supports. A one-line claim over a sentence
 the page repeats is the usual cause.
 
+{/* cite marker-cannot-be-ambiguous */}
 **Fix.** Pin a range that occurs once, or anchor with a marker, which cannot
 be ambiguous:
 
@@ -272,9 +303,12 @@ manni cite add docs/limits.md:21 src/limits.ts:3 --id retries --marker
     ↕ fetch-timeout   :13 changed   lib/limits.ts:2 current
 ```
 
+{/* cite claim-changed-warning */}
+{/* cite claim-changed-marker-scope */}
 The pinned page text is gone, so the sentence was edited. This is a **warning**,
-not an error, because it fires on any edit to the pinned paragraph, a typo fix
-beside the cited sentence included.
+not an error, because it fires on any edit to the pinned text, a typo fix included. Under
+claim lines that is an edit on those lines. Under a marker it is an edit
+anywhere in the paragraph or block the marker anchors.
 
 **Fix.** Read the text as it is now, then re-pin it:
 
@@ -288,12 +322,15 @@ docs/limits.md: fetch-timeout claim at line 13 re-pinned (changed; now "The fetc
 1 citation rewritten in 1 file, 0 skipped
 ```
 
+{/* cite accept-repins-unit-at-first-line */}
 `--accept` re-pins over the paragraph or fenced block now at the claim's first
 line, and prints it. So the log says exactly what was accepted. It skips the
 claim when that line is blank, or inside a different kind of block. A sentence
-that was reworded **and** moved cannot be re-pinned this way: `cite add` it
-again.
+that was reworded **and** moved has left that line. `--accept` then re-pins
+whatever paragraph now starts there, so read the printed text. If it is not
+the sentence, `cite add` the sentence again.
 
+{/* cite claim-changed-configurable */}
 A team that wants every edit to a cited sentence reviewed sets
 `claim-changed: error` under
 [`severity:`](/manni/cite/reference/configuration/#severity).
@@ -310,8 +347,13 @@ A team that wants every edit to a cited sentence reviewed sets
 A marker, `<!-- cite nope -->`, names an id and no entry has it. A typo in the
 marker, or an entry that was deleted.
 
+{/* cite cite-true-names-id-true */}
 **Fix.** Correct the id in the marker, or add the entry it refers to. Note
-that `cite true` names the id `true`.
+that `cite true` names the id `true`. To delete the stray marker instead:
+
+```sh
+manni cite remove docs/limits.md --only nope
+```
 
 ### marker-invalid
 
@@ -320,11 +362,14 @@ that `cite true` names the id `true`.
     ✗ page   A marker names an entry by id. Write the entry in frontmatter or the sidecar.   (line 12)
 ```
 
+{/* cite marker-invalid-json-payload */}
+{/* cite marker-invalid-over-500 */}
 A marker's payload is not an id. The commonest case is JSON. Earlier drafts
 let a marker carry a whole entry, and that is removed. An entry lives in
 frontmatter or a sidecar manifest, so a source is never written into the body.
 A page with more than 500 markers reports this rule once as well.
 
+{/* cite add-marker-writes-both */}
 **Fix.** Move the entry into the frontmatter or the manifest, and leave an id
 in the body. `cite add --marker --id <id>` writes both halves.
 
@@ -335,6 +380,7 @@ in the body. `cite add --marker --id <id>` writes both halves.
     ↕ retries   retries is named by markers at lines 8 and 20; the first anchors it.   (line 20)
 ```
 
+{/* cite marker-repeated-warning */}
 Two markers name one entry. The first one anchors it, and the second does
 nothing, so this is a **warning**.
 
@@ -348,6 +394,7 @@ its own id.
     ✗ fetch-timeout   fetch-timeout has claim lines and a marker. Keep one.   (line 15)
 ```
 
+{/* cite anchor-invalid-claim-not-judged */}
 The entry's anchor cannot work, so neither end is judged. Three cases reach
 this rule:
 
@@ -357,6 +404,7 @@ this rule:
 | `fetch-timeout: quote needs a claim or a marker.` | `quote: true` with nothing anchoring the block. | Add `claim.lines` over the block, or a marker above it. |
 | `fetch-timeout: the quote's claim lines 14-18 are no longer a fenced block.` | The lines a quote pins are not fenced any more. | Restore the fences, or re-add the citation over the block. |
 
+{/* cite add-refuses-frontmatter */}
 Claim lines inside the frontmatter cannot happen. `claim.lines` counts the
 body, so it never points there. `add` refuses such a line outright:
 
@@ -372,11 +420,14 @@ manni: docs/limits.md:2 is in the frontmatter. A claim is body text.
     ✗ fetch-timeout   duplicate id "fetch-timeout"   (line 13)
 ```
 
+{/* cite entry-invalid-shape */}
+{/* cite entry-invalid-too-wide */}
 An entry does not fit the citation shape. A required field is missing,
-`source.file` does not match the grammar, a range runs backwards, or two
-entries share an `id`. The line is the entry's own line, in the manifest when
+`source.file` does not match the grammar, or two entries share an `id`. A
+range that runs backwards or spans more than 5,000 lines is one too. The line is the entry's own line, in the manifest when
 a sidecar owns it.
 
+{/* cite entry-invalid-pin-prefix-prose */}
 Two more cases land here. A pin whose prefix does not match its source is one:
 
 ```
@@ -384,12 +435,20 @@ fetch-timeout: an encrypted source is pinned with hmac-sha256-, not sha256-.
 fetch-timeout: a plain source is pinned with sha256-, not hmac-sha256-.
 ```
 
+{/* cite entry-invalid-manifest-owns */}
 And a page that still carries its own `citations:` while a manifest owns the
 key is the other. Move those entries into the manifest.
 
-**Fix.** Correct the entry, or delete it and let `add` write a well-formed
-one. The [citations reference](/manni/cite/reference/citations/) has the full
-shape and the file grammar.
+**Fix.** Correct the entry, or remove it and let `add` write a well-formed
+one. `remove` reads the entries as they are written. A broken one is still
+reachable by its id, or by its pointer when it has none:
+
+```sh
+manni cite remove docs/limits.md --only /citations/3
+```
+
+The [citations reference](/manni/cite/reference/citations/) has the full shape
+and the file grammar.
 
 ### quote-drift
 
@@ -399,6 +458,7 @@ shape and the file grammar.
     ✗ limits-block   quote: true, but the fenced block does not reproduce the cited lines   (line 19)
 ```
 
+{/* cite quote-drift-faithful */}
 The citation has `quote: true`, both pins hold, and the fenced block on the
 page is not a copy of the cited lines. This often follows an
 `update --accept` on a quoted range. The pin now matches the new source, and

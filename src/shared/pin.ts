@@ -105,7 +105,7 @@ export function pinOfLines(lines: readonly string[], range: PageLines): string |
 export const MOVE_WINDOW_LINES = 2000;
 /** Default hashing budget for the blind move search, in bytes. */
 export const MOVE_BUDGET_BYTES = 64 * 1024 * 1024;
-/** The widest range a move search is attempted for. */
+/** The widest range an entry may name, at either end: a wider one is refused. */
 export const MAX_RANGE_LINES = 5000;
 
 export interface FindWindowsOptions {

@@ -518,20 +518,19 @@ export async function resolveLintRun(
           (message) => new LintError(message),
         );
 
-  // Stdin is not a path, so it cannot be what makes the collection fallback
-  // stand down: counting it made `- --collection guides` lint the piped
-  // document and open not one file of `guides`, exiting 0 over a docset
-  // nothing read. It is filtered out for the emptiness test and put back, so
-  // the run still knows it was asked to read stdin.
-  const paths = opts.inputs.filter((input) => input !== STDIN);
-  const usingStdin = paths.length !== opts.inputs.length;
-  const fromCollections = paths.length === 0;
-  const resolved = fromCollections ? collections.flatMap((c) => c.paths) : paths;
-  const inputs = usingStdin ? [STDIN, ...resolved] : resolved;
-  // The collections' globs were written beside the config, so they resolve
-  // there. `resolved`, not `inputs`: stdin must not move the base of a run
-  // whose collections contributed no paths at all.
-  const base = fromCollections && resolved.length > 0 && file ? file.dir : cwd;
+  // `--collection` is a request the run has to honour, as in cite and meta:
+  // the named collection's pages are resolved even when stdin rides beside the
+  // flag. Counting `-` as a path made `lint check - --as markdown --collection
+  // guides` lint the piped document, open not one file of `guides`, and exit 0
+  // over a docset nothing read. The implicit fallback is not a request, and a
+  // lone `-` cancels it: a piped page is a run of its own.
+  const fromCollections = wanted.length > 0 || opts.inputs.length === 0;
+  const collectionPaths = fromCollections ? collections.flatMap((c) => c.paths) : [];
+  // Stdin keeps its typed position; the globs follow it in declaration order.
+  const inputs = fromCollections ? [...opts.inputs, ...collectionPaths] : opts.inputs;
+  // Only a path needs a base, so it follows the globs when they contributed
+  // and stays at the working directory otherwise, stdin included.
+  const base = collectionPaths.length > 0 && file ? file.dir : cwd;
 
   return {
     config,

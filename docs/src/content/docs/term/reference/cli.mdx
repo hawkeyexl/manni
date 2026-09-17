@@ -12,6 +12,7 @@ import { Aside } from '@astrojs/starlight/components';
     docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
     sync with the code; descriptions are free-form. */}
 
+{/* cite bare-term-exits-2 */}
 manni term exposes six verbs. [`list`](#term-list), [`get`](#term-get),
 [`check`](#term-check), [`lint`](#term-lint) and [`write`](#term-write) read a
 term set. [`formats`](#term-formats) reads nothing and lists what the others
@@ -33,6 +34,8 @@ Global options are accepted before the subcommand.
 
 ## `term`
 
+{/* cite term-version-flag */}
+{/* cite term-no-subcommand-exits-2 */}
 The terminology tool. Every command on this page lives under it. `term`
 accepts its own `-V, --version`, which reports the manni version, and
 `-h, --help`. Run with no subcommand, it prints its usage to stderr and exits
@@ -50,9 +53,9 @@ jobs.
 
 - **Paths are positional.** Files, directories and globs, space-separated.
   Without them the run reads every configured
-  [collection](/manni/meta/reference/configuration/#collections), plus the
-  manifests [`term.manifests`](/manni/term/reference/configuration/#keys)
-  names.
+  [collection](/manni/meta/reference/configuration/#collections). Every run
+  that loads a config also reads the manifests
+  [`term.manifests`](/manni/term/reference/configuration/#keys) names.
 - **A named `.yaml`, `.yml` or `.json` file is a manifest.** It's read exactly
   as a `term.manifests` entry is. Only a path you type counts: a directory or
   glob walk never picks those files up.
@@ -99,7 +102,7 @@ manni term list [paths...] [options]
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. Given once. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude from directory and glob walks. Repeatable, one glob per occurrence. |
 | `--collection` | `<name>` | every collection | Read one configured collection rather than every declared one. Repeatable, one name per occurrence. Cannot be combined with positional paths (exit 2). |
-| `--allow-empty` | n/a | off | Treat a set with no terms as success. Wins over config `allowEmpty:`. |
+| `--allow-empty` | n/a | off | Treat a missing path, no matched files or no terms as success rather than an error (exit 2). Wins over config `allowEmpty:`. |
 | `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. Wins over config `respectGitignore:`. |
 | `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/term/reference/configuration/). The file must exist (exit 2). |
 | `--no-color` | n/a | off | Disable colored output. Color applies on a TTY only, and never under `NO_COLOR`. |
@@ -107,6 +110,7 @@ manni term list [paths...] [options]
 
 ### Output
 
+{/* cite list-pretty-shape */}
 `pretty` prints the id, the preferred label, and the alt-labels, then a count:
 
 ```
@@ -116,6 +120,7 @@ progressive-lens   progressive lens   PAL, graduated lens
 3 terms
 ```
 
+{/* cite list-csv-shape */}
 `csv` prints a header and one row per entry. A list field joins its values
 with `|`:
 
@@ -125,6 +130,7 @@ corrective-lens,corrective lens,,
 progressive-lens,progressive lens,PAL|graduated lens,Lenses that correct presbyopia without a visible line.
 ```
 
+{/* cite list-json-shape */}
 `json` prints `{ "terms": [...] }`. Each entry carries `id`, `language` when
 the file declares one, and every field the record holds, spelled as the
 [vocabulary](/manni/term/reference/terminology/) spells it.
@@ -138,6 +144,7 @@ the file declares one, and every field the record holds, spelled as the
 
 ## `term get`
 
+{/* cite get-shows-file-line */}
 Show one entry, with the file and line it was read from.
 
 ```sh
@@ -159,7 +166,7 @@ manni term get <term> [paths...] [options]
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--collection` | `<name>` | every collection | Read one configured collection. Repeatable. |
-| `--allow-empty` | n/a | off | Treat a set with no terms as success. |
+| `--allow-empty` | n/a | off | Treat a missing path, no matched files or no terms as success. |
 | `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. |
 | `-c, --config` | `<path>` | discovered | Path to a config file. |
 | `--no-color` | n/a | off | Disable colored output. |
@@ -184,10 +191,12 @@ progressive lens                        docs/terms/progressive-lens.md:1
 | Code | Meaning |
 |---|---|
 | `0` | The entry was found and printed. |
-| `2` | No entry matched, or an operational or usage error. The message names the set's size and the nearest id. |
+| `2` | No entry matched, or an operational or usage error. The message names the set's size and the nearest id or label. |
 
 ## `term check`
 
+{/* cite check-concepts-against-labels */}
+{/* cite check-reference-fields-label-or-id */}
 Check the set and every reference into it. `check` reads records, never prose.
 It resolves each `concepts:` value against the preferred labels, resolves
 `broader`, `narrower`, `related-terms` and `see` against labels and ids, and
@@ -212,7 +221,7 @@ manni term check [paths...] [options]
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--collection` | `<name>` | every collection | Read one configured collection. Repeatable. |
-| `--allow-empty` | n/a | off | Treat a set with no terms as success. |
+| `--allow-empty` | n/a | off | Treat a missing path, no matched files or no terms as success. |
 | `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. |
 | `-c, --config` | `<path>` | discovered | Path to a config file. |
 | `--no-color` | n/a | off | Disable colored output. |
@@ -221,6 +230,7 @@ manni term check [paths...] [options]
 
 ### Output
 
+{/* cite check-pretty-shape */}
 `pretty` groups findings by file and line. Each row is the severity, the rule
 id and the message. The summary counts each severity:
 
@@ -236,12 +246,14 @@ docs/terms/corrective-lens.md:5
 1 error, 1 warning, 1 notice in 3 terms
 ```
 
+{/* cite check-clean-line */}
 A clean run prints one line:
 
 ```
 ✓ 2 terms, 2 references, no findings
 ```
 
+{/* cite check-json-shape */}
 `json` prints `{ findings, summary }`. Each finding carries `rule`, `ruleId`,
 `severity`, `message`, `file` and `line`, plus the entry's `id` when the
 finding sits on an entry, and the `field` that breaks the rule when one does.
@@ -271,6 +283,7 @@ finding sits on an entry, and the `field` that breaks the rule when one does.
 }
 ```
 
+{/* cite github-escape-rule-id */}
 `github` prints one workflow command per finding. The colon in the rule id is
 escaped, because a workflow command reads `:` as a separator:
 
@@ -278,6 +291,7 @@ escaped, because a workflow command reads `:` as a separator:
 ::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "PAL" names no entry. "progressive lens" lists it as an alt-label.
 ```
 
+{/* cite sarif-rule-description */}
 `sarif` and `junit` carry the same findings under the rule id
 `manni:term/<rule>`, in the envelope, paths and fingerprints of the metadata
 tool's [renderers](/manni/meta/reference/output-and-exit-codes/). Each message
@@ -301,6 +315,9 @@ rule's section of that page:
 </testcase>
 ```
 
+{/* cite junit-one-testcase-per-file */}
+{/* cite junit-classname */}
+{/* cite sarif-vale-rule-no-helpuri */}
 JUnit testcases carry the classname `manni.term`, one per file read. A `lint`
 rule, `manni:term/prose/<Style.Rule>`, is Vale's, so its SARIF description
 names the Vale rule and it has no `helpUri`.
@@ -316,6 +333,7 @@ $ manni term check --baseline
 ✓ 2 terms, 3 references, no findings, 1 baselined
 ```
 
+{/* cite configured-baseline-missing */}
 A configured [`baseline:`](/manni/term/reference/configuration/#keys) is
 compared on every run, without the flag. When that file does not exist and the
 flag is absent, the run stops with exit `2` and names the command that records
@@ -331,6 +349,8 @@ one.
 
 ## `term lint`
 
+{/* cite lint-temp-file-per-field */}
+{/* cite lint-vale-config */}
 Run Vale over the definitions. Each entry's `definition`, `abstract` and
 `scope-note` is written to a temporary file named `<id>.<field>.md`, and Vale
 runs once over all of them. Vale reads its own configuration, or the file
@@ -356,7 +376,7 @@ manni term lint [paths...] [options]
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--collection` | `<name>` | every collection | Read one configured collection. Repeatable. |
-| `--allow-empty` | n/a | off | Treat a set with no terms as success. |
+| `--allow-empty` | n/a | off | Treat a missing path, no matched files or no terms as success. |
 | `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. |
 | `-c, --config` | `<path>` | discovered | Path to a config file. |
 | `--no-color` | n/a | off | Disable colored output. |
@@ -364,6 +384,8 @@ manni term lint [paths...] [options]
 
 ### Output
 
+{/* cite lint-prose-rule-id */}
+{/* cite lint-suggestion-is-notice */}
 A finding sits on the source line of the field it came from. The rule id is
 `manni:term/prose/<Style.Rule>`, keeping Vale's own rule name. Vale's
 `suggestion` is reported as a notice:
@@ -379,6 +401,8 @@ docs/terms/progressive-lens.md:9
 1 error, 2 warnings in 3 terms
 ```
 
+{/* cite lint-block-source-lines */}
+{/* cite lint-json-vale-fields */}
 A literal `|` block keeps its lines, so a finding on its second line lands on
 that source line. A folded `>-` block is one line once parsed, so its findings
 sit on the field's first line. In `json` a finding also carries `tool: "vale"`,
@@ -400,10 +424,14 @@ Write the set back, or render it elsewhere.
 manni term write [paths...] [options]
 ```
 
+{/* cite write-only-differing-files */}
+{/* cite write-nothing-to-write */}
 With no `-f`, each file's entries go back through the reader that read them.
 Only an entry whose record differs from its file is rewritten, so a set that
 has not changed leaves every file byte-identical and prints `Nothing to write`.
 
+{/* cite write-shape-from-path */}
+{/* cite write-dropped-fields-report */}
 With `-f <format>` and `-o <path>`, the whole set is rendered into the path.
 The path decides the shape. A trailing `/` or an existing directory gets one
 entry per file, and anything else gets every entry in one file. A field the
@@ -412,6 +440,7 @@ entries. [Move and hand off a
 termbase](/manni/term/set-up/move-and-hand-off/#what-each-render-holds) has
 every shape and what each keeps.
 
+{/* cite write-vale-asks-ls-config */}
 `-f vale` writes a Vale style named `Terms`. Without `-o` it asks Vale where
 its styles directory is. [Keep the terms and the docs in
 step](/manni/term/set-up/#the-generated-style) has the files it writes.
@@ -435,7 +464,7 @@ clean working tree so the change is easy to review.
 | `--ext` | `<list>` | supported extensions | Comma-separated extensions kept when expanding directories and globs. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--collection` | `<name>` | every collection | Read one configured collection. Repeatable. |
-| `--allow-empty` | n/a | off | Treat a set with no terms as success. |
+| `--allow-empty` | n/a | off | Treat a missing path, no matched files or no terms as success. |
 | `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. |
 | `-c, --config` | `<path>` | discovered | Path to a config file. |
 | `--no-color` | n/a | off | Disable colored output. |
@@ -455,6 +484,8 @@ clean working tree so the change is easy to review.
 
 ### Output
 
+{/* cite write-render-summary */}
+{/* cite write-skipped-line */}
 A render names the target and the number of entries written. A render into
 one file per entry says so. Dropped fields follow on an indented line. An entry
 the target construct could not read back is left out, and named on the line
@@ -479,10 +510,13 @@ A Markdown or MDX definition list, an AsciiDoc `[glossary]` list, a
 `.. glossary::` and an HTML `<dl>` skip an entry with no definition, such as a
 `see` redirect.
 
+{/* cite vale-style-file-counts */}
+{/* cite vale-wiring-notice */}
 `-f vale` lists each style file and what it holds. `Casing.yml`,
 `Lowercase.yml` and `SentenceStart.yml` count the labels and alt-labels they
 swap. When no section of Vale's configuration uses the `Terms` style, a notice
-on stderr names the line to add:
+on stderr names the line to add. When the file has no section with
+`BasedOnStyles`, the notice names a section to add instead:
 
 ```
 Wrote 3 terms to .vale/styles/Terms
@@ -495,9 +529,18 @@ notice: no section of .vale.ini uses the Terms style. Add it to BasedOnStyles:
   BasedOnStyles = Vale, Terms
 ```
 
+```
+notice: .vale.ini has no section with BasedOnStyles. Add one that uses the Terms style:
+  [*.md]
+  BasedOnStyles = Terms
+```
+
+{/* cite write-change-lines */}
+{/* cite write-up-to-date-line */}
 `--check` and `--dry-run` print each file that differs, with what would happen
 to it: `would change`, `would be created` or `would be removed`. When nothing
-differs they print that the target is up to date. `--dry-run` then prints the
+differs a render prints that the target is up to date, and an in-place run
+prints `Nothing to write`. `--dry-run` then prints the
 dropped and skipped lines a write would:
 
 ```
@@ -535,6 +578,7 @@ manni term write -f vale --check                   # keep the style in step
 
 ## `term formats`
 
+{/* cite formats-from-registries */}
 List the constructs read and written, per format. The listing is built from
 the registered readers and writers.
 
@@ -583,6 +627,7 @@ vale       style                    write
 
 ## Usage errors
 
+{/* cite usage-errors-stderr-exit-2 */}
 Every usage error goes to stderr, prefixed `manni:`, and exits `2`. Nothing is
 written.
 

@@ -182,7 +182,10 @@ manni: --collection needs a config file to select from.
 ```
 
 `-` (stdin) is allowed beside `--collection`, because stdin is one more input
-rather than a reshaping of the configured corpus.
+rather than a reshaping of the configured corpus. The named collection is still
+covered: the run reads the piped document and walks the collection's files. A
+bare `-` with no flag is a run of its own, because the fallback below is a
+default rather than a request.
 
 A run narrowed by `--collection` is a **scoped** run, so it skips the
 [corpus checks](#when-checks-run) with a notice naming the collections. It does
@@ -2176,7 +2179,7 @@ corresponding config value; others merge with it.
 
 | Setting | CLI flag | Config key | How they combine |
 |---|---|---|---|
-| Inputs | `[paths...]` | `collections[].paths` | CLI positional paths **override** the collections entirely. The collections supply the inputs only when no positional paths are given. |
+| Inputs | `[paths...]` | `collections[].paths` | CLI positional paths **override** the collections entirely. The collections supply the inputs only when no positional inputs are given, `-` included. [`--collection`](#selecting-collections-on-the-command-line) is a request rather than a fallback, so it is honoured even with `-` beside it. |
 | Collections | `--collection` | `collections[].name` | The flag **narrows** which collections supply the inputs, in declaration order. Omitted, every declared collection does. It needs a config to select from, and refuses beside positional paths. |
 | Excludes | `--exclude` | `collections[].exclude` | **Neither overrides nor merges, because they do different jobs.** `--exclude` removes files from the run. A collection's `exclude` removes files from that [collection](#membership). The effective run-level exclude set is every `--exclude` glob plus the [default ignores](/manni/meta/reference/cli/#default-ignores). |
 | Schemas | `-s/--schema` | `schemas` / `overrides` | CLI `--schema` **overrides** both `schemas` and `overrides` for every file. See [precedence](/manni/meta/reference/schema-resolution/#precedence). |

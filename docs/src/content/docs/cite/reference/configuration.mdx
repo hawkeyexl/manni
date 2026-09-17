@@ -1,12 +1,14 @@
 ---
 title: Configuration reference
-description: "Every key of the cite section in manni.config.yaml (root, baseline, checkSources, severity), with types, defaults, where the document set is declared, when git is used, discovery rules, the refused salt key, and the severity table."
+description: "Every key of the cite section in manni.config.yaml (allowEmpty, respectGitignore, root, baseline, checkSources, severity), with types, defaults, where the document set is declared, when git is used, discovery rules, the refused salt key, and the severity table."
 sidebar:
   order: 2
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
+{/* cite config-optional */}
+{/* cite root-defaults-without-config */}
 The citation tool reads two keys of the family's one config file,
 `manni.config.yaml`. The top-level `collections:` list says which pages exist,
 and the `cite:` section holds the tool's own settings. Together they let CI
@@ -26,6 +28,9 @@ cite:
 
 ## Document sets
 
+{/* cite collection-paths-config-relative */}
+{/* cite collections-alone-is-cite-config */}
+{/* cite collections-alone-family-keys */}
 The pages a bare `manni cite check` or `manni cite update` covers come from
 the top-level `collections:` list, declared once for every tool. Each
 collection names its `paths` and `exclude` globs, relative to the config
@@ -34,7 +39,8 @@ one are on the metadata tool's
 [configuration reference](/manni/meta/reference/configuration/#collections).
 A family file that declares `collections:` and no `cite:` section is still
 this tool's config: the documents are declared, and every cite key takes its
-default.
+default. The same holds for a file whose only family key is `tools:` or
+`encryptionKey:`.
 
 ### The citations manifest
 
@@ -52,6 +58,9 @@ collections:
         keys: [citations]
 ```
 
+{/* cite manifest-membership-every-collection */}
+{/* cite no-config-frontmatter-only */}
+{/* cite url-manifest-refused */}
 Which manifest owns a page is decided by every collection in the file,
 whatever `--collection` or the positional paths select. So a page checked by
 path still finds its sidecar, and `--no-config` reads frontmatter only. A URL
@@ -59,6 +68,7 @@ manifest that owns `citations` is refused (exit 2), because cite writes them.
 [The sidecar](/manni/cite/reference/citations/#the-sidecar) has the manifest
 shape and every refusal.
 
+{/* cite moved-keys-refused */}
 `paths` and `exclude` are not `cite:` keys. Each is refused with an error
 that says where it went (exit 2):
 
@@ -78,6 +88,8 @@ manni.config.yaml: "exclude" is no longer a cite key. Document sets are declared
 | `checkSources` | `boolean` | `true` | `--no-check-sources` | Check citations against their sources. `false` runs the page-side rules only, including every claim end, and reports every source status as `skipped`, which is not a finding. `update` refuses it. `--no-check-sources` turns it off for one run. |
 | `severity` | mapping | the [defaults](#severity) | none | Per-rule severity: `error`, `warning`, `notice` or `off`. Only the rules named are changed. |
 
+{/* cite section-mapping-empty */}
+{/* cite booleans-type-error */}
 The section must be a YAML mapping; an empty `cite:` is the same as no keys.
 The booleans must be booleans, so a quoted `"false"` is rejected rather than
 read as on. A type error names the key and the type it wanted, and nothing
@@ -85,6 +97,11 @@ else.
 
 ### Git is used when it is available
 
+{/* cite git-ls-files-else-walk */}
+{/* cite git-available-work-tree */}
+{/* cite only-tracked-files-cited */}
+{/* cite add-records-head */}
+{/* cite history-never-true */}
 No key turns git on or off. The tool uses it whenever git is on `PATH` and the
 root is inside a work tree. Sources are then indexed by `git ls-files`, so
 only tracked files can be cited. `add` records `HEAD`, and history tells
@@ -96,12 +113,20 @@ manni: git is not available here, so citations are checked without history: no n
 manni: git is not available here, so the citation records no commit.
 ```
 
+{/* cite history-notice-when-commit */}
+{/* cite history-notice-show-diff */}
+{/* cite history-notice-key-rotate */}
+{/* cite commit-notice-add */}
+{/* cite commit-notice-update */}
 `check`, `update` and `manni key rotate` print the first, when a citation
 carries a commit or `--show-diff` was given. `add` and `update --accept` print
 the second, when a commit would have been recorded.
 
 ### Unknown keys are errors
 
+{/* cite unknown-keys-error */}
+{/* cite severity-unknown-rule-level */}
+{/* cite severity-levels-set */}
 Any key outside the table above is an operational error (exit 2) naming the
 key it did not recognize and listing the ones it accepts. The same rule holds
 inside `severity`: a rule the tool does not have, or a level other than
@@ -112,6 +137,7 @@ configured and is not. The rule also means a config written for a newer manni
 is rejected outright when it carries a key this version does not know. So pin
 the version wherever the gate runs.
 
+{/* cite salt-refused-before-unknown */}
 One former key is refused by name rather than as a typo. `salt` keyed cited
 sources before they were encrypted with the family's encryption key, a
 top-level `encryptionKey:` that every tool reads. A config that still carries
@@ -130,13 +156,29 @@ is not a secret, so `eror` is quoted back as the typo it is.
 
 ## Discovery
 
-The tool looks for `manni.config.yaml` (then `manni.config.yml`) in the
-working directory and each ancestor, stopping at the nearest `.git` boundary.
-The first file found wins; ancestor files are never merged. A family file with
-neither a `cite:` key nor a `collections:` list belongs to a sibling tool, and
-discovery keeps looking up the tree. There is no pre-family filename for this
-tool, so nothing else is read.
+{/* cite discovery-filenames */}
+{/* cite discovery-git-boundary */}
+{/* cite discovery-moose-names */}
+{/* cite discovery-moose-warning */}
+The tool looks in the working directory and each ancestor, stopping at the
+nearest `.git` boundary. With no `.git` above the working directory, it looks
+in the working directory only. In each directory it tries
+`manni.config.yaml`, then `manni.config.yml`. Then it tries
+`moose.config.yaml` and `moose.config.yml`, the family file's pre-rename
+names. It reads them the same way, with a warning on stderr to rename the file.
 
+{/* cite discovery-sibling-file-skipped */}
+{/* cite discovery-family-keys-count */}
+The first file found wins; ancestor files are never merged. A family file
+counts when it carries `cite:`, `collections:`, `tools:` or `encryptionKey:`.
+One with none of these belongs to a sibling tool, and discovery keeps looking
+up the tree. The tool has no config file of its own from before the family
+file.
+
+{/* cite explicit-config-must-exist */}
+{/* cite no-config-skips-discovery */}
+{/* cite config-reported-pretty-only */}
+{/* cite machine-formats */}
 `-c <path>` names the file outright and must exist. `--no-config` skips
 discovery and runs on the defaults alone. When a config governs the run,
 `pretty` output says so on stderr; the machine formats stay clean.
@@ -150,12 +192,18 @@ discovery and runs on the defaults alone. When a config governs the run,
 | positional `[paths...]` | the working directory |
 | `--root` and `--baseline <path>` | the working directory |
 
+{/* cite fingerprints-config-dir */}
 So `cd docs && manni cite check` reaches the same files, the same root and the
 same baseline as a run from the repository root. Baseline fingerprints match
 whichever directory the command ran from.
 
 ## The encryption key
 
+{/* cite env-key-wins */}
+{/* cite add-encrypts-with-key */}
+{/* cite check-decrypts */}
+{/* cite rotate-frontmatter */}
+{/* cite rotate-manifest */}
 Encrypted sources and their keyed pins use the family encryption key, which is
 not a `cite:` key. It is the top-level `encryptionKey:` of `manni.config.yaml`,
 or `MANNI_ENCRYPTION_KEY`, which wins over it. With a key available, `add`
@@ -205,11 +253,14 @@ cite:
 
 ## Severity
 
+{/* cite exit-code-errors-only */}
+{/* cite severity-off-dropped */}
 Every rule has a default severity, and `severity:` moves any of them. `error`
 counts toward exit 1. `warning` and `notice` are reported and never move the
 exit code. `off` is not reported at all. The rules themselves are defined on the
 [citations reference](/manni/cite/reference/citations/#statuses-and-rules).
 
+{/* cite fourteen-rules */}
 `severity:` takes exactly these fourteen names. `current` and `skipped` are
 statuses, per end, and neither is a rule, so neither can be named here.
 
@@ -222,7 +273,7 @@ statuses, per end, and neither is a rule, so neither can be named here.
 | `source-missing` | `error` | The path is not a tracked file under the root, or the ciphertext resolves to nothing. |
 | `claim-moved` | `notice` | The pinned page text is found verbatim elsewhere, so nothing drifted. `update` rewrites the lines. |
 | `claim-moved-ambiguous` | `warning` | The pinned text sits in more than one place, and the tool will not guess. |
-| `claim-changed` | `warning` | It fires on any edit to a pinned paragraph, a typo fix beside the cited sentence included. Set it to `error` to have every such edit reviewed. |
+| `claim-changed` | `warning` | It fires on any edit to the pinned text, a typo fix included: the claim lines, or the whole paragraph or block a marker anchors. Set it to `error` to have every such edit reviewed. |
 | `marker-orphan` | `error` | A marker names an id no entry has. |
 | `marker-invalid` | `error` | A marker the tool cannot read, including one carrying JSON. |
 | `marker-repeated` | `warning` | Two markers name one id; the first anchors it. |
@@ -238,6 +289,11 @@ cite:
     marker-repeated: off      # not reported at all
 ```
 
+{/* cite off-never-reported */}
+{/* cite render-pretty-marks */}
+{/* cite render-github-level */}
+{/* cite render-sarif-level */}
+{/* cite render-junit-errors-only */}
 A rule set to `off` produces no finding in any format and never enters a
 baseline. A rule set to `warning` renders as `↕` in `pretty`, `::warning` in
 `github`, `level: warning` in SARIF, and a passing testcase in JUnit, exactly
