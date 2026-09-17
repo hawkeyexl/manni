@@ -529,6 +529,43 @@ describe("manni cite check (the ladder)", () => {
     expect(r.stdout).not.toContain("moved.md");
   });
 
+  // Stdin rides beside the flag, being one more input rather than a path, and
+  // the flag is a request the run has to honour. Counting `-` as a path made
+  // this run check stdin, open no page of the named collection, print no
+  // finding, and exit 0: a green run that checked nothing the flag named.
+  it("--collection still opens the collection with - beside it", () => {
+    writeFileSync(
+      join(work, "manni.config.yaml"),
+      "collections:\n  - name: pages\n    paths: ['pages/current.md']\n  - name: rest\n    paths: ['pages/moved.md']\n",
+      "utf8",
+    );
+    const r = cite(["check", "-", "--as", "markdown", "--collection", "pages", "--root", "."], {
+      input: "---\ntitle: piped\n---\n\n# piped\n",
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("<stdin>");
+    expect(r.stdout).toContain("pages/current.md");
+    expect(r.stdout).toContain("2 files checked");
+    expect(r.stdout).not.toContain("moved.md");
+  });
+
+  it("a bare - with no flag is a run of its own", () => {
+    // The implicit fallback is no request, so a bare `-` cancels it: only the
+    // piped page is checked.
+    writeFileSync(
+      join(work, "manni.config.yaml"),
+      "collections:\n  - name: pages\n    paths: ['pages/current.md']\n",
+      "utf8",
+    );
+    const r = cite(["check", "-", "--as", "markdown", "--root", "."], {
+      input: "---\ntitle: piped\n---\n\n# piped\n",
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("<stdin>");
+    expect(r.stdout).not.toContain("pages/current.md");
+    expect(r.stdout).toContain("1 file checked");
+  });
+
   it("passes a current citation, spelling both ends", () => {
     const r = check(["pages/current.md"]);
     expect(r.status).toBe(0);
@@ -1086,6 +1123,26 @@ describe("manni cite update", () => {
     expect(r.stdout).toBe("");
     // On macOS the child's cwd is the temp dir's realpath (/private/var/...), not /var/....
     expect(r.stderr.split(/\r?\n/)[0]).toBe(`manni: Root directory not found: ${join(realpathSync(work), "no-such-dir")}.`);
+  });
+
+  it("--collection still opens the collection with - beside it", () => {
+    // `update` shares `prepareRun` with `check`, so it carried the same
+    // silent skip: stdin was rewritten and the named collection never opened.
+    writeFileSync(
+      join(work, "manni.config.yaml"),
+      "collections:\n  - name: moved\n    paths: ['pages/moved.md']\n",
+      "utf8",
+    );
+    const r = cite(["update", "-", "--as", "markdown", "--collection", "moved", "--dry-run", "--root", "."], {
+      input: "---\ntitle: piped\n---\n\n# piped\n",
+    });
+    expect(r.status).toBe(0);
+    // A dry run prints its report to stdout; only a real stdin rewrite
+    // hands stdout to the page and moves the report to stderr.
+    expect(r.stdout).toContain(
+      "pages/moved.md: fetch-timeout source src/moved.ts:2 -> src/moved.ts:4 (moved)",
+    );
+    expect(r.stdout).toContain("1 citation rewritten in 1 file, 0 skipped");
   });
 
   it("--dry-run prints the diffs and leaves the page alone", () => {
