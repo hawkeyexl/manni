@@ -581,8 +581,11 @@ export interface UpdateRewrite {
    * those apart. `replaced` is a claim `--accept` refused to re-pin.
    */
   reason: "moved" | "accepted" | "re-anchored" | "shifted" | "replaced";
-  /** The status that was repaired. */
-  status: "moved" | "changed" | "reanchored" | "never-true" | "misplaced" | "current";
+  /**
+   * The status that was repaired. `replaced` is a claim whose line held
+   * wholly other text, accepted because `--only` named it.
+   */
+  status: "moved" | "changed" | "reanchored" | "replaced" | "never-true" | "misplaced" | "current";
   /**
    * Before and after. A moved or shifted claim, and a moved marker: file
    * lines. A moved source: its `src`. An accepted or re-anchored end: its pin.

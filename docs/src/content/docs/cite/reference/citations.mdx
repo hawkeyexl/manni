@@ -539,7 +539,7 @@ once. A range longer than 5,000 lines, at either end, is `entry-invalid`.
 | `claim-moved` | The pinned page text is found verbatim at other lines, so nothing drifted. `update` rewrites `claim.lines`. For a marker, the pinned text is intact but the marker now anchors a different span, and `update` re-pins it there. | `fetch-timeout: the claim moved from line 9 to line 11.` | `notice` |
 | `claim-moved-ambiguous` | The pinned text is found verbatim at several places. `update` skips it. | `fetch-timeout: the claim at line 9 now appears at lines 11 and 30.` | `warning` |
 | `claim-reanchored` | The words the pin covered are unchanged since the claim's [baseline](#the-claims-baseline), and only the layout moved. Three changes reach it. A rewrapped paragraph, a hoisted marker, and a marker line the anchor rule stopped counting. A plain `update` re-pins it, with no `--accept`. | `retries: the claim at lines 15-17 was reanchored since 3f9c2a1. Its words are unchanged.` | `notice` |
-| `claim-changed` | The words the pin covered were edited. The message says since when, where the claim has a [baseline](#the-claims-baseline). `update --accept` re-pins it. | `fetch-timeout: the claim at line 9 has changed since 3f9c2a1, 2 commits.` | `warning` |
+| `claim-changed` | The words the pin covered were edited. The message says since when, where the claim has a [baseline](#the-claims-baseline). `update --accept` re-pins it, and a blanket accept refuses a line that shares no sentence with the claim at its baseline. Naming the id with `--only` accepts that line too. | `fetch-timeout: the claim at line 9 has changed since 3f9c2a1, 2 commits.` | `warning` |
 
 {/* cite claim-changed-warning */}
 {/* cite claim-changed-scope-lines */}

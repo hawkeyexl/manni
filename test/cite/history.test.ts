@@ -691,6 +691,109 @@ describe.skipIf(!HAS_GIT)("update over the page's history", () => {
     }
   });
 
+  it("accepts a replaced line when --only names it, and says so", async () => {
+    const body = ["# Limits", "", "The fetch timeout is 10 seconds.", ""].join("\n");
+    const pageText = makePage({ body, claim: { start: 15 } });
+    const repo = repoWith(pageText);
+    try {
+      commit(repo.dir, "docs: add limits");
+      const replaced = pageText.replace(
+        "The fetch timeout is 10 seconds.\n",
+        "Retries are capped at three.\n",
+      );
+      writeFileSync(join(repo.dir, "docs", "limits.md"), replaced, "utf8");
+      commit(repo.dir, "docs: swap the paragraph out");
+      const out = await run(repo.dir, { accept: true, only: ["fetch-timeout"] });
+      expect(out.exitCode).toBe(0);
+      expect(out.rewritten).toBe(1);
+      expect(out.pages[0]?.refused).toEqual([]);
+      expect(out.pages[0]?.rewritten[0]?.reason).toBe("accepted");
+      expect(out.pages[0]?.rewritten[0]?.status).toBe("replaced");
+      expect(renderUpdatePretty(out, { color: false }).split("\n")[0]).toBe(
+        'docs/limits.md: fetch-timeout claim at line 15 re-pinned (replaced; now "Retries are capped at three.")',
+      );
+      const report = await repo.report(onDisk(repo.dir));
+      expect(claimOf(report)?.status).toBe("current");
+    } finally {
+      removeTempRepo(repo.dir);
+    }
+  });
+
+  it("names each id, so several --only entries each bypass the guard", async () => {
+    const body = [
+      "# Limits",
+      "",
+      "The fetch timeout is 10 seconds.",
+      "",
+      "Retries default to three.",
+      "",
+    ].join("\n");
+    // Two claim-lines entries on one page, each pinning its own paragraph.
+    // Nineteen frontmatter lines, so the body opens at 21.
+    const src = hashLines("export const TIMEOUT = 10;");
+    const entry = (id: string, lines: number): string[] => [
+      `  - id: ${id}`,
+      "    claim:",
+      `      lines: ${String(lines)}`,
+      `      integrity: ${PLACEHOLDER}`,
+      "    source:",
+      "      file: lib/limits.ts",
+      "      lines: 1",
+      `      integrity: ${src}`,
+    ];
+    const draft =
+      ["---", "title: Limits", "citations:", ...entry("fetch-timeout", 3), ...entry("retries", 5), "---", ""].join("\n") +
+      body;
+    expect(readPage("page.md", draft).bodyLine).toBe(21);
+    const twoEntries = draft
+      .replace(PLACEHOLDER, pinAt(draft, 23))
+      .replace(PLACEHOLDER, pinAt(draft, 25));
+    const repo = repoWith(twoEntries);
+    try {
+      commit(repo.dir, "docs: add limits");
+      const replaced = twoEntries
+        .replace("The fetch timeout is 10 seconds.\n", "Something else entirely.\n")
+        .replace("Retries default to three.\n", "Another unrelated line.\n");
+      writeFileSync(join(repo.dir, "docs", "limits.md"), replaced, "utf8");
+      commit(repo.dir, "docs: swap both paragraphs out");
+      const out = await run(repo.dir, {
+        accept: true,
+        only: ["fetch-timeout", "retries"],
+      });
+      expect(out.exitCode).toBe(0);
+      expect(out.pages[0]?.refused).toEqual([]);
+      expect(out.pages[0]?.rewritten.map((r) => [r.id, r.status])).toEqual([
+        ["fetch-timeout", "replaced"],
+        ["retries", "replaced"],
+      ]);
+    } finally {
+      removeTempRepo(repo.dir);
+    }
+  });
+
+  it("leaves a named claim that still shares a sentence reading changed", async () => {
+    const body = [
+      "# Limits",
+      "",
+      "The fetch timeout is 10 seconds. It is not configurable.",
+      "",
+    ].join("\n");
+    const pageText = makePage({ body, claim: { start: 15 } });
+    const repo = repoWith(pageText);
+    try {
+      commit(repo.dir, "docs: add limits");
+      const edited = pageText.replace("is 10 seconds", "is 30 seconds");
+      writeFileSync(join(repo.dir, "docs", "limits.md"), edited, "utf8");
+      commit(repo.dir, "docs(limits): the timeout is thirty seconds");
+      const out = await run(repo.dir, { accept: true, only: ["fetch-timeout"] });
+      expect(out.exitCode).toBe(0);
+      expect(out.pages[0]?.rewritten[0]?.status).toBe("changed");
+      expect(renderUpdatePretty(out, { color: false }).split("\n")[0]).toContain("(changed; now ");
+    } finally {
+      removeTempRepo(repo.dir);
+    }
+  });
+
   it("accepts an edit that still shares a sentence, and names both spans", async () => {
     const body = [
       "# Limits",

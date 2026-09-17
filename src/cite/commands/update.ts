@@ -82,6 +82,11 @@ type Plan =
       unit: ClaimUnit;
       pin: string;
       lines?: LineSpec;
+      /**
+       * The line held wholly other text and `--only` named the entry, so the
+       * accept stands. The report says so rather than reading as an edit.
+       */
+      replaced?: true;
       /** The marker's line on the page this run leaves, where one anchors. */
       markerLine?: number;
     }
@@ -388,7 +393,9 @@ function rewriteOf(plan: Plan): UpdateRewrite {
         ...base,
         end: "claim",
         reason: "accepted",
-        status: "changed",
+        // A bypassed guard reads `replaced`, so the log shows that the line
+        // held other text and a named accept took it anyway.
+        status: plan.replaced === true ? "replaced" : "changed",
         from: was,
         to: plan.pin,
         fromPin: was,
@@ -438,7 +445,14 @@ function rewriteOf(plan: Plan): UpdateRewrite {
  *
  * The test is sentence intersection. A claim whose paragraph was edited still
  * shares a sentence with what it said at the baseline; one whose line was
- * replaced shares none, and that is an `add` again rather than an accept.
+ * replaced shares none.
+ *
+ * The guard only asks about an entry the run did not name. Naming an id with
+ * `--only` is the human judgement the guard exists to demand, so a reviewer
+ * who has read the claim and its source re-pins a reworded sentence without a
+ * remove and an add. What the guard is for is a blanket `--accept` quietly
+ * re-pinning a hundred claims, one of which now holds a neighbouring table
+ * row. A bypass is reported rather than hidden.
  */
 function replacementAt(
   claim: ClaimEnd,
@@ -772,7 +786,10 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
         });
       } else if (unit !== undefined && pin !== undefined && (!wantsBlock || unit.kind === "block")) {
         const replaced = replacementAt(claim, unit.text, page.format);
-        if (replaced !== undefined) {
+        // `plansFor` runs only for a selected entry, so a run with `only` set
+        // has named this one. `selected` says which repairs run; the bypass
+        // says which entries `--accept` may re-pin, and both hold here.
+        if (replaced !== undefined && only === undefined) {
           out.push({
             kind: "claim-replaced",
             result,
@@ -783,6 +800,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
           });
         } else {
           const plan: Plan = { kind: "claim-accepted", result, unit, pin };
+          if (replaced !== undefined) plan.replaced = true;
           // A paragraph that grew or shrank moves the claim's last line too.
           if (entry.citation.claim?.lines !== undefined) {
             const body = toBodyLines(unit.lines, page.bodyLine);
@@ -950,14 +968,17 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
               });
             } else {
               const replaced = replacementAt(result.claim, unitText, format);
+              // `--only` naming the entry is the judgement the guard demands,
+              // so a named accept stands and says `replaced` in the log.
               plans.push(
-                replaced === undefined
+                replaced === undefined || only !== undefined
                   ? {
                       kind: "claim-accepted",
                       result,
                       pin: now.pin,
                       markerLine: lineNow(marker.line),
                       unit: { lines: now.span, kind, text: unitText },
+                      ...(replaced === undefined ? {} : { replaced: true as const }),
                     }
                   : {
                       kind: "claim-replaced",

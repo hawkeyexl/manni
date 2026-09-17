@@ -294,7 +294,7 @@ No claim reads `claim-reanchored` without a baseline. The words test needs
 
 ### 7. What `update --accept` refuses
 
-Three decisions bound the re-pin.
+Four decisions bound the re-pin.
 
 - **The `reason` value keeps one spelling.** A rewrite row's `reason` stays
   `re-anchored`, proposal 0054's spelling, for both kinds of re-pin. `status`
@@ -308,6 +308,17 @@ Three decisions bound the re-pin.
   reported, and the run exits 1. A word-overlap threshold was rejected,
   because a threshold is a number nobody can defend. With no baseline
   available, the accept behaves as it does today.
+- **`--only` naming an id bypasses the guard.** The guard asks only about an
+  entry the run did not name. Naming an id is the human judgement the guard
+  exists to demand. A reviewer who has read the claim and its source re-pins
+  a reworded sentence without a remove and an add. What the guard is for is a
+  blanket `--accept` quietly re-pinning a hundred claims. One of those may now
+  hold a neighbouring table row, or a block that landed under a marker.
+  A bypass is reported rather than hidden, as
+  `claim at line 9 re-pinned (replaced; now "…")`, where `replaced` is what
+  tells it from an edit. Several ids name several entries, and each bypasses.
+  This was decided after the first implementation pass. Refusing every
+  reworded sentence left `--accept --only` with nothing left to accept.
 - **A re-pin over a wider unit still happens.** The report names both spans,
   as `claim lines 9 -> 9-12 re-pinned`. The widening is then in the log as
   well as in the diff.
@@ -375,7 +386,7 @@ No command, argument or option is added or removed. Two behave differently.
 | `check` | none | A `claim-changed` claim reads its history when git is available. It is reported `claim-changed` with a baseline, or `claim-reanchored`. |
 | `check` | `--show-diff` | Under a `claim-changed` or `claim-reanchored` row, prints the commit subjects that touched the page since the baseline. Then a unified diff of the claim's lines, from the baseline to now. Replaces printing the current lines alone. |
 | `update` | none | Re-pins a `claim-reanchored` claim, and rewrites its lines when it has lines. |
-| `update` | `--accept` | Re-pins as today, except a claim that shares no sentence with its baseline, which it refuses. A re-pin over a wider unit names both spans. |
+| `update` | `--accept` | Re-pins as today. A claim that shares no sentence with its baseline is refused, unless `--only` names it. A re-pin over a wider unit names both spans. |
 
 The option rows for `--show-diff` on the CLI reference change to this.
 
@@ -423,12 +434,14 @@ also said when a claim reads changed, not only when a source carries a commit.
 | A lines claim rewritten and re-pinned | `docs/limits.md: page-size claim lines 21-22 -> 21-23 re-pinned (reanchored; words unchanged since 5d1e0b7)` | 0 |
 | A changed claim accepted | `docs/limits.md: fetch-timeout claim at line 9 re-pinned (changed; now "The fetch timeout is 30 seconds.")` (unchanged) | 0 |
 | A changed claim skipped | `docs/limits.md: fetch-timeout  ↕ skipped: fetch-timeout: the claim at line 9 has changed since 3f9c2a1, 2 commits.` | 0 at warning, 1 at error |
-| A changed claim `--accept` refused | ``docs/limits.md: fetch-timeout claim at line 9 skipped: that line now holds different text than the claim at 3f9c2a1. Re-add it with cite add.`` | 1 |
+| A blanket `--accept` refused a replaced claim | ``docs/limits.md: fetch-timeout claim at line 9 skipped: that line now holds different text than the claim at 3f9c2a1. Re-add it with cite add.`` | 1 |
+| `--accept --only` accepted a replaced claim | ``docs/limits.md: fetch-timeout claim at line 9 re-pinned (replaced; now "Retries are capped at three.")`` | 0 |
 | A changed claim accepted over a wider unit | ``docs/limits.md: fetch-timeout claim lines 9 -> 9-12 re-pinned (changed; now "The fetch timeout is 30 seconds.")`` | 0 |
 
 The `now "…"` quote covers the re-pinned lines only, capped at 200 characters
 with `…`. A refused claim carries `reason: "replaced"` in the update JSON, on
-a new `refused` list beside `rewritten`.
+a new `refused` list beside `rewritten`. A bypassed one is an ordinary
+rewrite, with `reason: "accepted"` and `status: "replaced"`.
 
 ### Output shapes
 
@@ -600,24 +613,27 @@ $ manni cite check --show-diff docs/src/content/docs/a11y/index.mdx
 # exit 0
 ```
 
-**5. Accept one, after reading it.** The paragraph was edited, and it still
-says one of the things it said at the baseline, so the accept stands.
+**5. Accept one, after reading it.** Naming the id is the judgement section 7
+asks for, so the sentence the merge rewrote is re-pinned. The row says
+`replaced`, because the line shares no sentence with what the claim said at
+`9d4cdd8`.
 
 ```console
-$ manni cite update --accept --only fetch-timeout docs/limits.md
-docs/limits.md: fetch-timeout claim lines 9 -> 9-12 re-pinned (changed; now "The fetch timeout is 30 seconds. It is not configurable.")
+$ manni cite update --accept --only anchor-links docs/src/content/docs/a11y/index.mdx
+docs/src/content/docs/a11y/index.mdx: anchor-links claim at line 53 re-pinned (replaced; now "A link's fragment is dropped, and the link is checked as its page.")
 1 citation rewritten in 1 file, 0 skipped
 # exit 0
 ```
 
-**5b. The one it refuses.** `anchor-links` was not edited, it was replaced. Its
-line now shares no sentence with what the claim said at `9d4cdd8`, so section 7
-sends it back to `add`.
+**5b. The blanket accept it refuses.** With no id named, nobody has read the
+24. A claim whose line now holds wholly other text is sent back to `add`, and
+the rest are accepted.
 
 ```console
-$ manni cite update --accept --only anchor-links docs/src/content/docs/a11y/index.mdx
+$ manni cite update --accept docs/src/content/docs/a11y/index.mdx
+docs/src/content/docs/a11y/index.mdx: page-order claim at line 41 re-pinned (changed; now "Pages are crawled one at a time.")
 docs/src/content/docs/a11y/index.mdx: anchor-links claim at line 53 skipped: that line now holds different text than the claim at 9d4cdd8. Re-add it with cite add.
-0 citations rewritten in 0 files, 1 skipped
+1 citation rewritten in 1 file, 1 skipped
 # exit 1
 ```
 
@@ -906,8 +922,9 @@ Four things change behaviour, and each is a `feat(cite):`.
   failed on `claim-changed` at `error` fails on fewer claims, never more.
 - A baseline recorded before the upgrade goes stale for those claims, as
   stress test 7 says.
-- `update --accept` refuses a claim that shares no sentence with its baseline,
-  and exits 1 where it exited 0. Section 7 records why.
+- A blanket `update --accept` refuses a claim that shares no sentence with its
+  baseline, and exits 1 where it exited 0. Naming the id with `--only` keeps
+  today's behaviour. Section 7 records why.
 - `GitClient` gains an optional member, so a hand-written client still
   compiles. A `switch` over `ClaimStatus` or `CiteRule` that is exhaustive
   gains a case, which TypeScript reports.

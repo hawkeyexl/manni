@@ -585,10 +585,10 @@ working tree so the rewrite is easy to review.
 | `--no-gitignore` | n/a | on | Update files `.gitignore` covers as well. Overrides config `respectGitignore:`. |
 | `--no-check-sources` | n/a | on | Refused. `update` needs the sources to know where an entry moved to. |
 | `--root` | `<dir>` | n/a | The directory `source.file` paths resolve from, exactly as on [`check`](#where-sources-resolve-from). |
-| `--accept` | n/a | off | Re-mint every changed and never-true end at `HEAD`: a new `integrity`, and a new `commit-sha` where the source had one. For a source the report prints the old and the new pin. For a claim it prints the text it re-pinned, so the acceptance is visible in the log as well as in the diff. A claim whose target line shares no sentence with the claim at its baseline is refused, reported, and exits 1. |
+| `--accept` | n/a | off | Re-mint every changed and never-true end at `HEAD`: a new `integrity`, and a new `commit-sha` where the source had one. For a source the report prints the old and the new pin. For a claim it prints the text it re-pinned, so the acceptance is visible in the log as well as in the diff. A claim whose target line shares no sentence with the claim at its baseline is refused, reported, and exits 1, unless `--only` names it. |
 | `--only` | `<id>` | n/a | Limit the rewrite to entries with this id. Repeatable. An entry without an id cannot be named, so give a bare pin an `--id` when you want to reach it this way. A marker's move still shifts the claim lines below it, whichever entries own them. |
 | `--dry-run` | n/a | off | Print the diffs and the report; write nothing. |
-| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints the run as `{ pages, rewritten, skipped, manifests, exitCode }`, where `manifests` lists each rewritten manifest's `file`, `diff` and `written`, and appears only when a manifest changed. Each page carries its `file`, its `rewritten` list, its `refused` list, its `skipped` findings, its `diff`, and whether it was `written`. A rewrite has `id`, `index`, `line`, `end`, `reason`, `status`, `from` and `to`. `end` is `claim`, `source` or `marker`; `reason` is `moved`, `accepted`, `re-anchored` or `shifted`. Read the typed pairs rather than `from` and `to`: `fromLines` and `toLines` carry lines, `fromPin` and `toPin` carry pins. A re-anchored claim adds `lines`, the span that held, and `newLines`, the span now pinned. A claim re-pinned because its words held reads `status: "reanchored"`, and carries `commitSha`, the baseline. An accepted claim adds `at` and `text`, and an accepted source adds `src`, plus `commitSha` when the entry records one. A claim `--accept` refused sits on the page's `refused` list, beside `rewritten`, with `reason: "replaced"`. An unknown value is an error (exit 2). |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints the run as `{ pages, rewritten, skipped, manifests, exitCode }`, where `manifests` lists each rewritten manifest's `file`, `diff` and `written`, and appears only when a manifest changed. Each page carries its `file`, its `rewritten` list, its `refused` list, its `skipped` findings, its `diff`, and whether it was `written`. A rewrite has `id`, `index`, `line`, `end`, `reason`, `status`, `from` and `to`. `end` is `claim`, `source` or `marker`; `reason` is `moved`, `accepted`, `re-anchored` or `shifted`. Read the typed pairs rather than `from` and `to`: `fromLines` and `toLines` carry lines, `fromPin` and `toPin` carry pins. A re-anchored claim adds `lines`, the span that held, and `newLines`, the span now pinned. A claim re-pinned because its words held reads `status: "reanchored"`, and carries `commitSha`, the baseline. An accepted claim adds `at` and `text`, and an accepted source adds `src`, plus `commitSha` when the entry records one. A claim a blanket `--accept` refused sits on the page's `refused` list, beside `rewritten`, with `reason: "replaced"`. One `--only` named instead reads `status: "replaced"` on an ordinary `accepted` rewrite. An unknown value is an error (exit 2). |
 
 ### What is rewritten, and what is not
 
@@ -644,11 +644,11 @@ Two guards bound an accepted claim. The first refuses a line that was
 replaced rather than edited. Both texts, the claim at its baseline and what
 the stored first line holds now, are split into sentences, with whitespace
 collapsed and case dropped. An empty intersection refuses the claim, which is
-reported and exits 1. So `--accept` blesses an edit to a paragraph, and hands
-a wholly replaced line back to `cite add`. With no baseline available,
-`--accept` behaves as it did before. The second guard is the report's. A
-re-pin over a unit wider than the stored lines still happens, and the line
-names both spans:
+reported and exits 1. So a blanket `--accept` blesses an edit to a paragraph,
+and hands a wholly replaced line back to `cite add`. With no baseline
+available, `--accept` behaves as it did before. The second guard is the
+report's. A re-pin over a unit wider than the stored lines still happens, and
+the line names both spans:
 
 ```
 docs/limits.md: fetch-timeout claim at line 9 skipped: that line now holds different text than the claim at 3f9c2a1. Re-add it with cite add.
@@ -657,6 +657,16 @@ docs/limits.md: fetch-timeout claim lines 9 -> 9-12 re-pinned (changed; now "The
 
 A refused claim counts toward the run's skipped total. The quoted text covers
 the re-pinned lines, capped at 200 characters with an ellipsis.
+
+**`--only` naming the entry bypasses the first guard.** Naming an id is the
+judgement the guard asks for. A reviewer who has read the claim and its source
+re-pins a reworded sentence without a remove and an add. Each id in `--only`
+names its own entry, so each bypasses. The line says `replaced` rather than
+`changed`, which is how the log tells a bypass from an edit:
+
+```
+docs/limits.md: fetch-timeout claim at line 9 re-pinned (replaced; now "Retries are capped at three.")
+```
 
 {/* cite anchor-findings-skipped */}
 An anchoring or entry finding (`marker-orphan`, `anchor-invalid`, an invalid
@@ -667,7 +677,7 @@ entry) is never rewritten, and is reported as skipped.
 | Code | Meaning |
 |---|---|
 | `0` | Everything the run could rewrite was rewritten, or previewed under `--dry-run`, and nothing was skipped with an error-severity finding. |
-| `1` | Something was skipped with an error-severity finding: a `source-changed` end without `--accept`, a `source-moved-ambiguous` one, a `source-missing` one, or an anchoring or entry rule at `error`. Also a claim `--accept` refused, whose line was replaced rather than edited. A skipped warning or notice, such as `claim-changed` or `marker-misplaced` without `--accept`, leaves the exit code at `0`. Work is left undone, which is what `fill`'s exit 1 means too. |
+| `1` | Something was skipped with an error-severity finding: a `source-changed` end without `--accept`, a `source-moved-ambiguous` one, a `source-missing` one, or an anchoring or entry rule at `error`. Also a claim a blanket `--accept` refused, whose line was replaced rather than edited; `--only` naming it accepts it instead. A skipped warning or notice, such as `claim-changed` or `marker-misplaced` without `--accept`, leaves the exit code at `0`. Work is left undone, which is what `fill`'s exit 1 means too. |
 | `2` | Operational or usage error, including `--no-check-sources`, `checkSources: false`, an unknown `--format`, and everything `check` exits 2 for. Also a write that failed after another file in the run was already written. Every file the run wrote is restored first, pages and manifests alike, and the message names them. `manni: docs-citations.yaml could not be written (EACCES). docs/limits.md was restored.` A file that could not be restored is named too, and the message says it holds an intermediate state. |
 
 ### Examples
