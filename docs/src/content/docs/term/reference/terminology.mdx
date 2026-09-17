@@ -5,6 +5,8 @@ sidebar:
   order: 3
 ---
 
+{/* cite ten-fields */}
+{/* cite fields-flat-at-root */}
 A term entry is a record with ten fields. A term page carries it in its
 metadata, and a manifest entry holds the same record. Every reader produces it
 from a body construct too. The fields sit at the root of the page, flat.
@@ -18,6 +20,10 @@ is [under review](/manni/meta/proposals/terminology/).
 | `term` | The file is one entry. Its record is the file's metadata. |
 | `term-set` | The file holds many entries, in its body. Required for a Markdown or MDX definition list and an HTML `<dl>`, which do not say what they are. |
 
+{/* cite self-declaring-dita */}
+{/* cite self-declaring-docbook */}
+{/* cite self-declaring-asciidoc */}
+{/* cite self-declaring-rst */}
 A DITA `<glossentry>` or `<glossgroup>`, a DocBook `<glossary>`, an AsciiDoc
 `[glossary]` list and a `.. glossary::` directive are read without
 `type: term-set`, because each construct declares itself. `type`, `id` and
@@ -55,6 +61,9 @@ definition: >-
 | `see` | string | no | none | The label or id of the entry this one redirects to. |
 | `scope-note` | string | no | `skos:scopeNote` | How far the term reaches in this set, and where it stops. |
 
+{/* cite label-list-string-or-list */}
+{/* cite list-trim-drop-empty */}
+{/* cite no-label-skipped */}
 A list field takes one string or a list. Readers trim each value and drop
 empty ones, so `" bifocal "` and `bifocal` are the same label. A page with
 `type: term` and no `label` is skipped, with a notice on stderr:
@@ -63,6 +72,8 @@ empty ones, so `" bifocal "` and `bifocal` are the same label. A page with
 manni: no-label.md:1: skipped a page entry with no term.
 ```
 
+{/* cite one-value-field-ignored */}
+{/* cite one-value-field-rest-read */}
 A one-value field (`definition`, `abstract`, `see`, `scope-note`) takes text.
 Given a list or a mapping, the reader leaves that field out, reads the rest of
 the entry, and says so on stderr:
@@ -73,6 +84,7 @@ manni: varifocal.md:5: ignored see on "varifocal": a see holds one value, not a 
 
 ## The kind of label is the status
 
+{/* cite no-status-field */}
 There is no status field. The field a name sits in says how it may be used:
 
 | Field | Status | Where the status shows |
@@ -83,6 +95,7 @@ There is no status field. The field a name sits in says how it may be used:
 
 ## The `see` redirect
 
+{/* cite see-redirect-no-definition */}
 An entry with `see` points a reader at the entry that defines the term. It
 names the term, and carries no definition:
 
@@ -93,6 +106,10 @@ label: varifocal
 see: progressive-lens
 ```
 
+{/* cite see-resolves-labels-ids */}
+{/* cite see-is-reference-field */}
+{/* cite see-not-empty-finding */}
+{/* cite see-dangling-reference */}
 `see` resolves against labels and ids, ignoring case. An entry with both `see`
 and a `definition` is the [`see-not-empty`](/manni/term/reference/rules/#see-not-empty)
 finding. A `see` that names nothing is
@@ -100,6 +117,7 @@ finding. A `see` that names nothing is
 
 ## How an entry gets its id
 
+{/* cite id-order */}
 An entry's `id` is, in order:
 
 1. the record's own `id`;
@@ -108,11 +126,16 @@ An entry's `id` is, in order:
 3. the slug of the preferred label, so `progressive lens` is
    `progressive-lens`.
 
+{/* cite id-names-get */}
+{/* cite id-names-manifest-key */}
+{/* cite id-names-directory-file */}
 The id is what `manni term get` and a manifest key name, and what a render
 into one file per entry names each file after.
 
 ## Validating the shape
 
+{/* cite schema-requires-label-definition-or-see */}
+{/* cite check-has-no-neither-rule */}
 `manni term check` checks the set. The shape of one page is a schema's job.
 The draft schema is at
 [`docs/proposals/0023/schemas/terminology/1.0.0-proposal.1.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/terminology/1.0.0-proposal.1.json),

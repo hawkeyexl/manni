@@ -10,6 +10,8 @@ whose every value names a defined term. You'll write two term pages, list
 them, and reference them from a guide. Then you'll run the check, read the
 finding, and fix it.
 
+{/* cite transcripts-from-fixtures */}
+{/* cite transcripts-from-fixtures-clean */}
 Every transcript below is real output from the built tool, run over the
 fixtures in `test/fixtures/term/cli/`.
 
@@ -19,6 +21,7 @@ fixtures in `test/fixtures/term/cli/`.
 - **A docset with frontmatter.** The pages here are Markdown. A term page
   works the same way in every format manni meta reads.
 
+{/* cite ships-with-meta */}
 manni term ships in the same package as manni meta.
 
 <Tabs>
@@ -107,6 +110,8 @@ manni term ships in the same package as manni meta.
 
 ## Reference a term from a guide
 
+{/* cite concepts-on-any-page */}
+{/* cite concepts-values-are-preferred-labels */}
 `concepts:` on any page says which terms the page is about. Its values are
 preferred labels:
 
@@ -182,6 +187,10 @@ docs/terms/corrective-lens.md:5
 1 warning, 1 notice in 3 terms
 ```
 
+{/* cite neither-fails-default-levels */}
+{/* cite neither-fails-only-errors-fail */}
+{/* cite warning-names-field-line */}
+{/* cite narrower-fix-clears-warning */}
 Neither finding fails the run, and the exit code is `0`. The warning names the
 line to change. Add `bifocal` to the `narrower` list of `corrective lens`, and
 the warning goes:
@@ -193,6 +202,9 @@ docs/terms/bifocal.md:1
 1 notice in 3 terms
 ```
 
+{/* cite notice-stays-until-named */}
+{/* cite severity-off-config */}
+{/* cite severity-off-drops-findings */}
 The notice stays until a page names `bifocal` in its `concepts:`. A set written
 ahead of its pages can turn it off with `severity: {unused-term: off}` under
 `term:`.

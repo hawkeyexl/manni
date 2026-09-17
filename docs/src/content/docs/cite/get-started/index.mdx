@@ -68,6 +68,7 @@ not configurable.
 Retries default to 3.
 ```
 
+{/* cite nothing-copied-into-entry */}
 The sentence sits on lines 6 and 7, as an editor numbers them. That is what
 you give `add`, after the page, and it is the whole claim: nothing is copied
 into the entry.
@@ -171,6 +172,7 @@ into the entry.
 
 ## Read a result
 
+{/* cite one-row-per-citation */}
 Each citation gets one line under its page, with both ends on it:
 
 ```
@@ -185,6 +187,10 @@ Each citation gets one line under its page, with both ends on it:
 | `<source end>` | The source as the entry spelled it, then its status: `lib/limits.ts:2 current`, `~AQm4…:5 changed since 3f9c2a1, 1 commit`. |
 | `<manifest>` | Where the entry is kept, when a [sidecar](/manni/cite/reference/citations/#the-sidecar) owns it, as in `docs-citations.yaml:6`. Empty for a frontmatter entry. |
 
+{/* cite summary-counts */}
+{/* cite summary-green */}
+{/* cite check-exit-code */}
+{/* cite exit-two-operational */}
 The summary line ends every run. `findings` counts errors, warnings and
 notices together, and the parentheses say how many were each. A run is green
 only when nothing is an error. The exit code is `0` when every finding is a
@@ -207,6 +213,11 @@ manni cite check
 1 file checked, 0 passed, 1 failed, 1 finding
 ```
 
+{/* cite source-changed-error */}
+{/* cite changed-names-commit-and-count */}
+{/* cite changed-annotates-sentence */}
+{/* cite commits-touching-file */}
+{/* cite show-diff-prints-diff */}
 `source-changed` is an **error**, exit code `1`. The check has done its whole
 job. It annotated the sentence, named the commit the pin was minted at, and
 said how many commits have touched the file since. What the sentence should
@@ -233,6 +244,9 @@ manni cite check --show-diff
 1 file checked, 0 passed, 1 failed, 1 finding
 ```
 
+{/* cite plain-update-skips-changed */}
+{/* cite plain-update-reports-skipped */}
+{/* cite update-exit-one-undone */}
 A plain `update` won't touch it, and says so, with exit code `1` because work
 is left undone:
 
@@ -241,6 +255,8 @@ docs/limits.md: fetch-timeout  ✗ skipped: changed since 9265563, 1 commit
 0 citations rewritten in 0 files, 1 skipped
 ```
 
+{/* cite accept-repins-source-at-head */}
+{/* cite accept-repins-claim */}
 So fix the page. Change the sentence to say 30 seconds. Then re-pin both ends
 at HEAD with `--accept`:
 
@@ -254,6 +270,7 @@ docs/limits.md: fetch-timeout source lib/limits.ts:2 re-pinned at 9b1e04c (chang
 2 citations rewritten in 1 file, 0 skipped
 ```
 
+{/* cite accept-prints-pins-and-text */}
 Both pins are printed, and the accepted claim's text with them, so the change
 is on the record. The next check is `current` at both ends.
 
@@ -265,6 +282,7 @@ is on the record. The next check is `current` at both ends.
 
 ## When the source moves
 
+{/* cite source-move-search */}
 Now someone adds two comment lines at the top of `lib/limits.ts`. The cited
 line is line 4, and its bytes are unchanged. The check finds it:
 
@@ -279,6 +297,9 @@ manni cite check
 1 file checked, 1 passed, 0 failed, 1 finding (1 warning)
 ```
 
+{/* cite source-moved-warning */}
+{/* cite source-moved-exit-zero */}
+{/* cite update-dry-run-shows-diff */}
 `source-moved` is a **warning**. The page still says something true, so the
 exit code is `0` and CI stays green. Rewrite the range with `update`;
 `--dry-run` shows the diff first:
@@ -308,6 +329,7 @@ docs/limits.md: fetch-timeout source lib/limits.ts:2 -> lib/limits.ts:4 (moved)
 1 citation rewritten in 1 file, 0 skipped
 ```
 
+{/* cite update-splices-one-scalar */}
 `update` splices the one `lines:` scalar and touches nothing else: comments,
 quoting and the rest of the frontmatter stay as they were. The next check is
 `current` at `lib/limits.ts:4`.
@@ -323,8 +345,10 @@ quoting and the rest of the frontmatter stay as they were. The next check is
 
 ## When the page changes
 
+{/* cite claim-classified-same-way */}
 The claim end moves and changes too, and it is classified the same way.
 
+{/* cite claim-found-verbatim-moved */}
 **Insert a paragraph above the sentence.** The pinned text is found verbatim
 two lines further down, so nothing drifted:
 
@@ -335,6 +359,8 @@ two lines further down, so nothing drifted:
 1 file checked, 1 passed, 0 failed, 1 finding (1 notice)
 ```
 
+{/* cite claim-moved-notice */}
+{/* cite update-rewrites-claim-lines */}
 `claim-moved` is a **notice**, the quietest level there is, and `update`
 rewrites `claim.lines` exactly as it rewrites the source's:
 
@@ -343,6 +369,7 @@ docs/limits.md: fetch-timeout claim lines 16-17 -> 18-19 (moved)
 1 citation rewritten in 1 file, 0 skipped
 ```
 
+{/* cite claim-changed-nowhere */}
 **Edit the sentence.** Now the pinned text is nowhere on the page:
 
 ```
@@ -352,6 +379,8 @@ docs/limits.md: fetch-timeout claim lines 16-17 -> 18-19 (moved)
 1 file checked, 1 passed, 0 failed, 1 finding (1 warning)
 ```
 
+{/* cite claim-changed-warning */}
+{/* cite show-diff-claim-text */}
 `claim-changed` is a **warning**, not an error. It fires on any edit to the
 pinned lines, a typo fix included. A red build
 for that would block prose work for nothing. Read the new text with
@@ -366,18 +395,24 @@ docs/limits.md: fetch-timeout claim at line 18 re-pinned (changed; now "The fetc
 1 citation rewritten in 1 file, 0 skipped
 ```
 
+{/* cite accept-unit-at-first-line */}
+{/* cite accept-prints-claim-text */}
 `--accept` re-pins over the paragraph or fenced block now at the claim's first
 line, and prints it. So the log says exactly what was accepted. A sentence
 that was reworded **and** moved has left that line. `--accept` then re-pins
 whatever paragraph now starts there, so read the printed text. If it is not
 the sentence, `cite add` the sentence again.
 
+{/* cite severity-config-levels */}
+{/* cite severity-overrides-defaults */}
 A team that wants every edit to a cited sentence reviewed sets
 `claim-changed: error` under `severity:` in the
 [config](/manni/cite/reference/configuration/#severity).
 
 ## Anchor with a marker
 
+{/* cite marker-travels-with-text */}
+{/* cite marker-writes-and-pins */}
 Claim lines are one anchor. A **marker** is the other, and it is the easier
 one to keep true, because it travels with its text. `--marker` writes the
 marker and pins what it anchors:
@@ -387,7 +422,7 @@ manni cite add docs/limits.md:21 lib/limits.ts:5 --id retries --marker
 ```
 
 ```
-docs/limits.md: added retries to frontmatter; marker at line 29, claim pinned at line 30
+docs/limits.md: added retries to frontmatter; marker at line 29, claim pinned at line 30 (sha256-3049e93e…; source lib/limits.ts:5, sha256-e9f5bdf9…, d7a5cf4)
 ```
 
 ```md title="docs/limits.md"
@@ -406,6 +441,8 @@ Retries default to 3.
       commit-sha: d7a5cf43e7e81698327752ce75b01e4c17c66a41
 ```
 
+{/* cite marker-claim-no-lines */}
+{/* cite marker-claim-never-moves */}
 The entry has a `claim` with an `integrity` and no `lines`, because the marker
 says where it is. Insert as many paragraphs above it as you like and the claim
 never moves. Edit the sentence itself and it is `claim-changed`, exactly as a
@@ -415,6 +452,7 @@ The marker is a line in the body, though, and a merge of prose edits can
 conflict on it. [Choose an anchor](/manni/cite/set-up/#choose-an-anchor)
 weighs that against claim lines.
 
+{/* cite marker-carries-id-only */}
 The marker carries an id and nothing else. Every format has its own comment
 syntax, and the [citations
 reference](/manni/cite/reference/citations/#markers) lists them all:
@@ -426,11 +464,15 @@ reference](/manni/cite/reference/citations/#markers) lists them all:
 | AsciiDoc | `// (cite retries)` |
 | reStructuredText | `.. (cite retries)` |
 
+{/* cite marker-json-invalid */}
+{/* cite marker-json-message */}
 An entry is never written into the body. A marker that carries JSON is
 `marker-invalid`, and hears where the entry belongs.
 
 ## Pin a code block
 
+{/* cite quote-needs-fenced-block */}
+{/* cite quote-add-checks-block */}
 To pin a fenced block instead of a sentence, use `--quote`. The block on the
 page has to reproduce the cited lines, and `add` checks that before it writes:
 
@@ -450,6 +492,10 @@ export const RETRIES = 3;
 ```
 ````
 
+{/* cite quote-compares-inside-fences */}
+{/* cite quote-drift-finding */}
+{/* cite quote-marker-next-fence */}
+{/* cite quote-pins-whole-block */}
 The claim pins the whole block, fences included, and the lines inside the
 fences are compared with the source. So a block that stops reproducing its
 source is `quote-drift`, even while the pin still holds. A quote can be
