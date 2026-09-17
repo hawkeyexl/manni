@@ -9,7 +9,8 @@
  * `--accept` re-pins a changed end. A claim is re-pinned over the paragraph or
  * fenced block now at its first line, and the report prints that text, so the
  * log shows exactly what was accepted; a claim whose line is blank, or now a
- * different kind of block, is skipped, and a sentence that was reworded *and*
+ * different kind of block, or longer than the 5,000-line range limit, is
+ * skipped, and a sentence that was reworded *and*
  * moved is an `add` again. A source is re-minted at HEAD, with a new
  * `commit-sha` where the entry records one.
  *
@@ -35,7 +36,7 @@ import { splitLines } from "../core/hash.js";
 import { mintCitation } from "../core/mint.js";
 import { ManifestSet } from "../core/manifest.js";
 import { readPage } from "../core/page.js";
-import { lineSpec, parseLines } from "../core/range.js";
+import { lineSpec, parseLines, tooWide } from "../core/range.js";
 import { spliceEntryField, unifiedDiff } from "../core/write.js";
 import { CiteError } from "../errors.js";
 import type {
@@ -230,6 +231,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     entry: PageCitation | undefined,
     page: PageCitations,
     lines: readonly string[],
+    declined: Map<number, string>,
   ): Promise<Plan[]> => {
     const out: Plan[] = [];
     const claim = result.claim;
@@ -265,7 +267,11 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
             })();
       const wantsBlock = entry.citation.quote === true;
       const pin = unit === undefined ? undefined : pinOfLines(lines, unit.lines);
-      if (unit !== undefined && pin !== undefined && (!wantsBlock || unit.kind === "block")) {
+      // A unit past the range limit would pin more than a citation may hold.
+      const wide = unit === undefined ? undefined : tooWide(unit.lines);
+      if (unit !== undefined && wide !== undefined) {
+        declined.set(result.origin.index, `Not re-pinned: the ${unit.kind} ${wide}.`);
+      } else if (unit !== undefined && pin !== undefined && (!wantsBlock || unit.kind === "block")) {
         const plan: Plan = { kind: "claim-accepted", result, unit, pin };
         // A paragraph that grew or shrank moves the claim's last line too.
         if (entry.citation.claim?.lines !== undefined) {
@@ -323,6 +329,8 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     const rewritten: UpdateRewrite[] = [];
     /** `<index>\0<rule>` of every finding a rewrite settled. */
     const settled = new Set<string>();
+    /** Why an accept was declined, by entry index, said with its skipped finding. */
+    const declined = new Map<number, string>();
     let after = content;
     // The manifest's entries for this page, edited in memory and written
     // back as one value once the page is done.
@@ -337,7 +345,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
         continue;
       }
       const entry = page.citations.find((c) => c.origin.index === result.origin.index);
-      for (const plan of await plansFor(result, entry, page, lines)) {
+      for (const plan of await plansFor(result, entry, page, lines, declined)) {
         if (result.origin.kind === "manifest") {
           if (entries === undefined || !applyToEntry(entries[result.origin.index], plan)) continue;
           manifestDirty = true;
@@ -360,7 +368,13 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
       (finding) =>
         (only === undefined || (finding.id !== undefined && only.has(finding.id))) &&
         !settled.has(`${String(finding.index ?? -1)}\0${finding.rule}`),
-    );
+    ).map((finding) => {
+      const why =
+        finding.rule === "claim-changed" && finding.index !== undefined
+          ? declined.get(finding.index)
+          : undefined;
+      return why === undefined ? finding : { ...finding, message: `${finding.message} ${why}` };
+    });
     const diff = after === content ? "" : unifiedDiff(label, content, after);
     const written = after !== content && path !== undefined && opts.dryRun !== true;
     if (written) await writeFileAtomic(path, after);
