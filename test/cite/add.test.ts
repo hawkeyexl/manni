@@ -823,6 +823,15 @@ describe("runAdd", () => {
       );
     });
 
+    it("refuses a --root that does not exist, as check does", async () => {
+      workspace("no-citations.md");
+      const missing = join(cwd, "no-such-dir");
+      expect(
+        await refusal(add({ page: "pages/no-citations.md", pageLines: { start: 6, end: 6 }, src: "src/limits.ts:2", root: missing })),
+      ).toBe(`Root directory not found: ${missing}.`);
+      expect(onDisk("pages/no-citations.md")).toBe(readFileSync(join(PAGES, "no-citations.md"), "utf8"));
+    });
+
     it("refuses an id that is not kebab-case", async () => {
       workspace("no-citations.md");
       expect(

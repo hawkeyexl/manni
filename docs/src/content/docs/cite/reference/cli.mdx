@@ -287,7 +287,7 @@ each needs page lines.
 | Code | Meaning |
 |---|---|
 | `0` | The citation was written, or printed under `--dry-run`. The report line says what was added, where, and which line each end is pinned at. |
-| `2` | A refusal. The page or the source cannot be read, or a range is invalid or out of range. Or the page lines are in the frontmatter, the source is not a tracked file under the root, or no block reproduces the range. Or the id is taken, or the flags do not compose on this page's format. Or `--encrypt` needs a key and none is available or created. Nothing is written. |
+| `2` | A refusal. The page or the source cannot be read, or a `--root` does not exist, or a range is invalid or out of range. Or the page lines are in the frontmatter, the source is not a tracked file under the root, or no block reproduces the range. Or the id is taken, or the flags do not compose on this page's format. Or `--encrypt` needs a key and none is available or created. Nothing is written. |
 
 There is no exit `1`. `add` either writes a citation it has verified, or it
 does not write.

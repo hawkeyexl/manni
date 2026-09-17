@@ -125,7 +125,12 @@ function isEnoent(error: unknown): boolean {
   return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
 }
 
-async function indexFor(root: string, client: GitClient): Promise<SourceIndex> {
+/**
+ * The source index for a run, with a root that is not there refused as a
+ * `CiteError`. Every verb that reads sources builds its index here, so the
+ * refusal reads the same on each.
+ */
+export async function sourceIndexFor(root: string, client: GitClient): Promise<SourceIndex> {
   try {
     return await buildSourceIndex(root, { gitClient: client });
   } catch (error) {
@@ -217,7 +222,7 @@ export async function prepareRun(
     severity: config?.severity,
     gitClient: git,
   };
-  if (checkSources) pageOptions.sourceIndex = await indexFor(run.root, git);
+  if (checkSources) pageOptions.sourceIndex = await sourceIndexFor(run.root, git);
 
   // The sidecar manifests, read once per run. Membership is every declared
   // collection's, whatever this run selected, so a page given by path still

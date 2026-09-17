@@ -913,6 +913,15 @@ describe("manni cite add", () => {
     expect(after.stdout).toContain(`${token.slice(0, 5)}…:2 current`);
   });
 
+  it("refuses a --root that does not exist with check's message, and writes nothing", () => {
+    const before = readFileSync(join(work, "pages", "no-citations.md"), "utf8");
+    const r = cite(["add", "pages/no-citations.md:6", "src/limits.ts:2", "--root", "no-such-dir"]);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(r.stderr.split(/\r?\n/)[0]).toBe(`manni: Root directory not found: ${join(work, "no-such-dir")}.`);
+    expect(readFileSync(join(work, "pages", "no-citations.md"), "utf8")).toBe(before);
+  });
+
   it("--encrypt with no key, off a terminal, refuses without a question and writes nothing", () => {
     const before = readFileSync(join(work, "pages", "no-citations.md"), "utf8");
     const r = cite(["add", "pages/no-citations.md:6", "src/limits.ts:2", "--encrypt", "--root", "."]);
@@ -950,6 +959,13 @@ describe("manni cite update", () => {
       "    claim:\n      lines: 5\n",
     );
     expect(cite(["check", "--root", ".", "pages/claim-moved.md"]).status).toBe(0);
+  });
+
+  it("refuses a --root that does not exist with check's message", () => {
+    const r = cite(["update", "--root", "no-such-dir", "pages/moved.md"]);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(r.stderr.split(/\r?\n/)[0]).toBe(`manni: Root directory not found: ${join(work, "no-such-dir")}.`);
   });
 
   it("--dry-run prints the diffs and leaves the page alone", () => {
