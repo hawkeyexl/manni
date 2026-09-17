@@ -29,6 +29,18 @@ const focusableCodeBlocks = {
   },
 };
 
+/**
+ * The sidebar badge a beta domain's group carries. It rides the group, so it
+ * renders on every page in that section rather than being repeated in every
+ * page's frontmatter.
+ *
+ * `default` rather than `caution`, which is orange. content-strategy/design.md
+ * reserves red, green, yellow and cyan, because manni's own output already
+ * gives those colours a meaning, and a page here shows that output in a code
+ * block a few lines from the sidebar. `default` follows --sl-color-accent.
+ */
+const BETA = { text: "Beta", variant: "default" };
+
 export default defineConfig({
   site: "https://hawkeyexl.github.io",
   base: "/manni",
@@ -140,6 +152,7 @@ export default defineConfig({
         {
           label: "cite",
           collapsed: true,
+          badge: BETA,
           items: [
             { label: "Overview", link: "/cite/" },
             {
@@ -175,6 +188,7 @@ export default defineConfig({
         {
           label: "key",
           collapsed: true,
+          badge: BETA,
           items: [
             { label: "Overview", link: "/key/" },
             {
@@ -199,6 +213,7 @@ export default defineConfig({
         {
           label: "term",
           collapsed: true,
+          badge: BETA,
           items: [
             { label: "Overview", link: "/term/" },
             {
