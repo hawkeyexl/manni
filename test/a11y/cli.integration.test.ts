@@ -24,6 +24,11 @@ const manni = resolve(root, "dist", "cli.js");
 const site = resolve(root, "test", "fixtures", "a11y", "site");
 /** A site whose sitemap parses and names only another host's pages (#77). */
 const offhostSite = resolve(root, "test", "fixtures", "a11y", "offhost-sitemap");
+const a11yConfig = resolve(root, "test", "fixtures", "a11y", "config");
+/** `a11y.crawl: false`, so only `--crawl` can crawl a run that reads it. */
+const crawlFalse = resolve(a11yConfig, "crawl-false.yaml");
+/** `a11y.maxPages: 1`, so only `--no-max-pages` can uncap a run that reads it. */
+const maxPagesOne = resolve(a11yConfig, "max-pages-1.yaml");
 
 const browser = await findBrowser();
 
@@ -284,6 +289,21 @@ describe("manni a11y check (usage errors, no browser needed)", () => {
     expect(r.stdout).not.toMatch(/--max-pages[^\n]*\n?[^\n]*default: "?\d/);
   });
 
+  it("documents --crawl and --no-max-pages beside the flags they undo", async () => {
+    const r = await run(["check", "--help"]);
+    expect(r.status).toBe(0);
+    // commander wraps a long description at a width it picks from the
+    // stream, so every gap here is `\s+` rather than a literal space.
+    expect(r.stdout).toMatch(
+      /--crawl\s+crawl\s+from\s+the\s+given\s+URLs:\s+sitemap\s+and\s+link\s+following\s+\(default\)/,
+    );
+    expect(r.stdout).toMatch(
+      /--no-max-pages\s+check\s+every\s+page\s+found,\s+ignoring\s+a\s+configured\s+maxPages/,
+    );
+    // Both halves of each pair are on the screen, not just the negation.
+    expect(r.stdout).toMatch(/--no-crawl\s+check\s+exactly\s+the\s+given\s+URLs/);
+  });
+
   it("a11y alone is a usage error with no default subcommand", async () => {
     const r = await run([]);
     expect(r.status).toBe(2);
@@ -359,6 +379,82 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
     expect(json.summary.checked).toBe(1);
     expect(json.summary.skipped).toBeGreaterThanOrEqual(1);
     expect(r.stdout).not.toContain("about.html");
+  }, 120_000);
+
+  it("--crawl turns a configured crawl: false back on for one run", async () => {
+    const off = await run(["check", `${server.url}/index.html`, "-c", crawlFalse, "-f", "json"]);
+    const capped = JSON.parse(off.stdout) as JsonRun;
+    expect(capped.summary.checked).toBe(1);
+
+    const on = await run([
+      "check",
+      `${server.url}/index.html`,
+      "-c",
+      crawlFalse,
+      "--crawl",
+      "-f",
+      "json",
+    ]);
+    const json = JSON.parse(on.stdout) as JsonRun;
+    expect(json.summary.checked).toBe(3);
+    expect(json.results.map((p) => p.url)).toContain(`${server.url}/about.html`);
+  }, 120_000);
+
+  it("--no-max-pages removes a configured maxPages for one run", async () => {
+    const off = await run(["check", `${server.url}/index.html`, "-c", maxPagesOne, "-f", "json"]);
+    const capped = JSON.parse(off.stdout) as JsonRun;
+    expect(capped.summary.checked).toBe(1);
+    expect(capped.summary.skipped).toBeGreaterThanOrEqual(1);
+
+    const on = await run([
+      "check",
+      `${server.url}/index.html`,
+      "-c",
+      maxPagesOne,
+      "--no-max-pages",
+      "-f",
+      "json",
+    ]);
+    const json = JSON.parse(on.stdout) as JsonRun;
+    expect(json.summary.checked).toBe(3);
+    expect(json.summary.skipped).toBe(0);
+  }, 120_000);
+
+  it("--crawl and --no-max-pages change nothing when config sets neither key", async () => {
+    const r = await run([
+      "check",
+      `${server.url}/index.html`,
+      "--crawl",
+      "--no-max-pages",
+      "-f",
+      "json",
+    ]);
+    const json = JSON.parse(r.stdout) as JsonRun;
+    expect(json.summary.checked).toBe(3);
+    expect(json.summary.discovered).toBe(3);
+    expect(json.summary.skipped).toBe(0);
+  }, 120_000);
+
+  it("takes the last of --crawl and --no-crawl, the way commander does", async () => {
+    const off = await run([
+      "check",
+      `${server.url}/index.html`,
+      "--crawl",
+      "--no-crawl",
+      "-f",
+      "json",
+    ]);
+    expect((JSON.parse(off.stdout) as JsonRun).summary.checked).toBe(1);
+
+    const on = await run([
+      "check",
+      `${server.url}/index.html`,
+      "--no-crawl",
+      "--crawl",
+      "-f",
+      "json",
+    ]);
+    expect((JSON.parse(on.stdout) as JsonRun).summary.checked).toBe(3);
   }, 120_000);
 
   it("--severity error keeps every finding on the about page, and each carries axe's impact", async () => {

@@ -1,0 +1,4 @@
+# Caps every run that reads it at a single page. `--no-max-pages` is what
+# removes the cap for one run.
+a11y:
+  maxPages: 1
