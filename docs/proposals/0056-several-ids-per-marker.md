@@ -400,8 +400,9 @@ citations sharing a marker carry the same `anchor`.
 claims under one marker are three annotations with the same `line=29` and three
 different `title=` rule ids and subjects.
 
-**sarif and junit.** Unchanged. They ride meta's renderers over the adapted
-results, with the same rule ids and the same fingerprints. 0044's stress test
+**sarif and junit.** Unchanged. cite renders both itself, with
+repository-relative uris and the fingerprints its baseline shares.
+0044's stress test
 19 fixed the fingerprint subject at `id ?? integrity`, so ids sharing a marker
 line stay distinct. A recorded baseline keeps matching after a stack is
 collapsed into one marker.
