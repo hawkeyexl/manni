@@ -181,9 +181,11 @@ describe("runAdd", () => {
 
     it("writes a range for a claim that spans lines", async () => {
       workspace("claim-range.md");
+      // Another source than the entry already there: the same lines on the
+      // same source would be a duplicate, and refused.
       const result = await add({
         page: "pages/claim-range.md",
-        src: "src/limits.ts:2",
+        src: "src/limits.ts:3",
         pageLines: { start: 15, end: 16 },
       });
       expect(result.citation.claim).toEqual({ lines: "3-4", integrity: WRAPPED_PIN });
@@ -1130,6 +1132,121 @@ describe("runAdd", () => {
     });
   });
 
+  describe("the claim's text elsewhere on the page", () => {
+    /** A page whose one sentence is repeated `copies` times, two lines apart. */
+    function repeated(name: string, copies: number): string {
+      const body: string[] = [];
+      for (let i = 0; i < copies; i++) body.push("", CLAIM);
+      return write(name, ["---", "title: Limits", "---", "# Limits", ...body]);
+    }
+
+    it("warns, names the other copy, and still writes the entry", async () => {
+      const label = repeated("twice.md", 2);
+      const notices: string[] = [];
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        id: "fetch-timeout",
+        onNotice: (m) => notices.push(m),
+      });
+      expect(result.written).toBe(true);
+      expect(notices).toEqual([
+        "fetch-timeout: the claim's text also appears at line 17, so a move would be ambiguous. Use --marker, or pin more lines.",
+      ]);
+    });
+
+    it("drops the id prefix when the entry has none", async () => {
+      const label = repeated("unnamed-twice.md", 2);
+      const notices: string[] = [];
+      await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        onNotice: (m) => notices.push(m),
+      });
+      expect(notices).toEqual([
+        "the claim's text also appears at line 16, so a move would be ambiguous. Use --marker, or pin more lines.",
+      ]);
+    });
+
+    it("names three copies and counts the rest", async () => {
+      const label = repeated("many.md", 6);
+      const notices: string[] = [];
+      await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        onNotice: (m) => notices.push(m),
+      });
+      expect(notices).toEqual([
+        "the claim's text also appears at lines 16, 18, 20 and 2 more, so a move would be ambiguous. Use --marker, or pin more lines.",
+      ]);
+    });
+
+    it("says nothing when the claim's text appears once", async () => {
+      workspace("no-citations.md");
+      const notices: string[] = [];
+      await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        onNotice: (m) => notices.push(m),
+      });
+      expect(notices).toEqual([]);
+    });
+  });
+
+  describe("the pinned source line in the report", () => {
+    it("quotes the first pinned line beside the source", async () => {
+      workspace("no-citations.md");
+      const result = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        id: "fetch-timeout",
+      });
+      expect(result.sourceLine).toBe(LINE_2);
+      expect(addMessage(result)).toBe(
+        `pages/no-citations.md: added fetch-timeout to frontmatter (claim at line 15, sha256-921b21cc…; source src/limits.ts:2 "${LINE_2}", sha256-78af1d33…, no commit)`,
+      );
+    });
+
+    it("collapses the line's whitespace and trims a long one to sixty characters", async () => {
+      workspace("no-citations.md");
+      const result = await add({ page: "pages/no-citations.md", src: "src/limits.ts:6" });
+      expect(result.sourceLine).toBe("  return { MAX_FILES, FETCH_TIMEOUT_MS, RETRIES };");
+      expect(addMessage(result)).toContain(
+        'source src/limits.ts:6 "return { MAX_FILES, FETCH_TIMEOUT_MS, RETRIES };",',
+      );
+      const long = `  ${"x".repeat(80)}`;
+      expect(addMessage({ ...result, sourceLine: long })).toContain(`"${"x".repeat(60)}…"`);
+    });
+
+    it("names no line for a whole-file bare pin", async () => {
+      workspace("no-citations.md");
+      const result = await add({ page: "pages/no-citations.md", src: "src/limits.ts" });
+      expect(result.sourceLine).toBeUndefined();
+      expect(addMessage(result)).toBe(
+        "pages/no-citations.md: added a bare pin to frontmatter (source src/limits.ts, sha256-aebba92f…, no commit)",
+      );
+    });
+
+    it("names no line for an encrypted source", async () => {
+      workspace("no-citations.md");
+      const config = tempConfig("", KEY);
+      const result = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        noConfig: false,
+        configPath: config,
+      });
+      expect(result.sourceLine).toBeUndefined();
+      expect(addMessage(result)).not.toContain(LINE_2);
+    });
+  });
+
   describe("refusals", () => {
     it("names the bad range, the short file, and the untracked source", async () => {
       workspace("no-citations.md");
@@ -1200,6 +1317,108 @@ describe("runAdd", () => {
           }),
         ),
       ).toBe("pages/current.md already has an entry fetch-timeout.");
+    });
+
+    it("refuses an entry the page already has for these lines and this source", async () => {
+      workspace("current.md");
+      const before = onDisk("pages/current.md");
+      expect(
+        await refusal(
+          add({
+            page: "pages/current.md",
+            src: "src/limits.ts:2",
+            pageLines: { start: 15, end: 15 },
+          }),
+        ),
+      ).toBe(
+        "pages/current.md already has an entry for line 15 and src/limits.ts:2 (fetch-timeout).",
+      );
+      expect(onDisk("pages/current.md")).toBe(before);
+    });
+
+    it("names an entry with no id by its pointer, and a range by its range", async () => {
+      const label = write("unnamed.md", [
+        "---",
+        "title: Limits",
+        "citations:",
+        "  - claim:",
+        `      lines: "3-4"`,
+        `      integrity: ${WRAPPED_PIN}`,
+        "    source:",
+        "      file: src/limits.ts",
+        "      lines: 2",
+        `      integrity: ${PIN_L2}`,
+        "---",
+        "# Limits",
+        "",
+        "The fetch timeout is 10 seconds. It is",
+        "not configurable.",
+      ]);
+      expect(
+        await refusal(
+          add({ page: label, src: "src/limits.ts:2", pageLines: { start: 14, end: 15 } }),
+        ),
+      ).toBe(`${label} already has an entry for lines 14-15 and src/limits.ts:2 (/citations/0).`);
+    });
+
+    it("refuses a second bare pin over the same source", async () => {
+      workspace("whole-file.md");
+      expect(await refusal(add({ page: "pages/whole-file.md", src: "src/limits.ts" }))).toBe(
+        "pages/whole-file.md already has a bare pin for src/limits.ts (/citations/0).",
+      );
+    });
+
+    it("allows a second entry for the same lines when the source differs", async () => {
+      workspace("current.md");
+      const result = await add({
+        page: "pages/current.md",
+        src: "src/limits.ts:3",
+        pageLines: { start: 15, end: 15 },
+      });
+      expect(result.written).toBe(true);
+    });
+
+    it("refuses a claim that is one blank line, or one fence line", async () => {
+      workspace("no-citations.md");
+      expect(
+        await refusal(
+          add({
+            page: "pages/no-citations.md",
+            src: "src/limits.ts:2",
+            pageLines: { start: 5, end: 5 },
+          }),
+        ),
+      ).toBe("pages/no-citations.md:5 is blank.");
+      const label = fenced("fence.md", ["# Limits", ""], LINES_1_3);
+      expect(
+        await refusal(add({ page: label, src: "src/limits.ts:1", pageLines: { start: 6, end: 6 } })),
+      ).toBe(`${label}:6 is a fence line, not claim text.`);
+      expect(
+        await refusal(
+          add({ page: label, src: "src/limits.ts:1", pageLines: { start: 10, end: 10 } }),
+        ),
+      ).toBe(`${label}:10 is a fence line, not claim text.`);
+    });
+
+    it("refuses a range of nothing but blank and fence lines", async () => {
+      const label = fenced("empty-range.md", ["# Limits", ""], LINES_1_3);
+      expect(
+        await refusal(
+          add({ page: label, src: "src/limits.ts:1", pageLines: { start: 5, end: 6 } }),
+        ),
+      ).toBe(`${label}:5-6 holds no claim text.`);
+    });
+
+    it("takes the same fence lines as a quote, because a quote is fences and content", async () => {
+      const label = fenced("still-quotable.md", ["# Limits", ""], LINES_1_3);
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:1-3",
+        pageLines: { start: 6, end: 10 },
+        quote: true,
+      });
+      expect(result.citation.quote).toBe(true);
+      expect(result.claimLines).toEqual({ start: 15, end: 19 });
     });
 
     it("refuses a page that has no frontmatter to write to", async () => {
