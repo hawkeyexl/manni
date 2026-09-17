@@ -1237,8 +1237,8 @@ Global options are accepted before the subcommand.
 ## `a11y`
 
 The accessibility tool. `a11y` accepts its own `-V, --version` (the same
-version) and `-h, --help`. Run with no subcommand it prints a usage error and
-`(add --help for usage)`, exit `2`.
+version) and `-h, --help`. Run with no subcommand it prints its help on
+stderr and exits `2`.
 
 ```sh
 manni a11y [options] check [urls...] [command options]
@@ -1385,8 +1385,8 @@ whatever its score says. The score is `null` when the page did not load
 or when no rule applied.
 
 {/* cite incomplete-not-failures */}
-Rules axe could not decide are reported as `incomplete` and never counted as
-failures.
+Rules axe could not decide are reported as `incomplete` in `json` output only,
+and never counted as failures.
 
 ### Output formats
 
@@ -1495,7 +1495,7 @@ And `summary`:
 | `violations` | integer | Remaining violations across all pages, counted per rule rather than per node. |
 | `bySeverity` | object | Violation counts keyed `notice`, `warning`, `error`. All three keys are always present. |
 | `sitemap` | string \| `null` | The sitemap URL that supplied pages, or `null` when none was used. |
-| `crawl` | boolean | Whether pages beyond the seeds were discovered. `false` under `--no-crawl`. |
+| `crawl` | boolean | Whether crawling was on for the run, with a sitemap lookup and link following. `false` under `--no-crawl`. |
 
 {/* cite github-one-per-finding */}
 **`github`** prints one workflow command per finding, and nothing when the run
@@ -1544,7 +1544,7 @@ to silence it. Either way stdout carries the report alone, so
 |---|---|
 | `0` | Every page loaded and none has a violation at or above the severity floor. |
 | `1` | At least one page has a remaining violation, or a crawled page failed to load. `summary.failed` is greater than zero. |
-| `2` | Usage or operational error. The causes are an unknown flag value, a non-`http(s)` URL, or no URLs and no config. They also include a seed that could not be loaded, or no browser found. One line on stderr prefixed `manni: `. |
+| `2` | Usage or operational error. The causes are an unknown flag value, a non-`http(s)` URL, or no URLs and no config. They also include a seed that could not be loaded, or no browser found. Most print one line on stderr prefixed `manni: `. A missing or unknown subcommand prints the help or commander's own message instead. |
 
 ### Examples
 
@@ -1586,11 +1586,17 @@ manni a11y check https://docs.example.com/ https://www.example.com/ \
   --no-color
 ```
 
-Usage errors are one line on stderr, prefixed `manni: `, exit `2`:
+Usage errors exit `2` and write to stderr. A missing or unknown subcommand gets
+the help or commander's message. Every other error is one line prefixed
+`manni: `:
 
 ```bash
 manni a11y
-# usage error: no subcommand given; commander prints the problem and "(add --help for usage)"
+# (prints the a11y help)
+
+manni a11y https://x.example/
+# error: unknown command 'https://x.example/'
+# (add --help for usage)
 
 manni a11y check not-a-url
 # manni: Not an http(s) URL: "not-a-url".

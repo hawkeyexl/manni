@@ -506,7 +506,8 @@ page.
 
 - `-f github` writes one annotation per rule per page, and prints nothing when
   the site is clean.
-- `--progress` prints one line per page on stderr. A CI log has no terminal, so
+- `--progress` narrates the run on stderr, with a line as each page starts and
+  another as it finishes. A CI log has no terminal, so
   without it the run is silent until the report.
 - Exit `1` fails the job on a remaining violation, and exit `2` fails it on a
   setup problem. See [exit codes](#exit-codes).
@@ -537,7 +538,9 @@ an annotation on the workflow run:
 ```
 
 {/* cite clean-run-silent-exit-0 */}
-A clean run prints nothing at all and exits `0`.
+A crawled page that fails to load gets one `::error title=a11y/load::`
+annotation instead, naming the URL and the reason. A clean run prints nothing at
+all and exits `0`.
 
 {/* cite annotation-no-file-property */}
 {/* cite annotation-level-is-severity */}
@@ -634,8 +637,9 @@ render rather than when the crawl as a whole is long.
 
 ## Move the settings into config
 
-Every flag above has a config key, so the workflow step stays one line while the
-settings live in the repository beside `meta:`:
+Every flag above has a config key except `-f`, `--progress`, and
+`--collection`. So the workflow step stays one line while the settings live in
+the repository beside `meta:`:
 
 ```yaml title="manni.config.yaml"
 a11y:
