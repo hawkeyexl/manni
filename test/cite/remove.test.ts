@@ -203,6 +203,13 @@ describe("runRemove: an entry in the page's frontmatter", () => {
     ]);
   });
 
+  it("collapses a repeated --only, so one entry is one removal", async () => {
+    workspace("marker.md");
+    const run = await remove({ inputs: ["pages/marker.md"], only: ["retries", "retries"] });
+    expect(run.removed).toBe(1);
+    expect(run.pages[0]?.removed).toHaveLength(1);
+  });
+
   it("--dry-run prints the diff and writes nothing", async () => {
     workspace("marker.md");
     const before = onDisk("pages/marker.md");

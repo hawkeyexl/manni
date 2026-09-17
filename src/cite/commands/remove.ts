@@ -61,7 +61,9 @@ interface Planned {
 }
 
 export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
-  const only = opts.only;
+  // Repeats collapse, as they do on `--collection`: naming one entry twice
+  // asks for one removal, and would otherwise be counted twice.
+  const only = [...new Set(opts.only)];
   // Asked before the config is read: it is a usage error, and the answer does
   // not depend on anything on disk.
   if (only.length === 0) {
