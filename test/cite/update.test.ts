@@ -180,6 +180,7 @@ describe("runUpdate: the claim end", () => {
         from: CLAIM_RETRIES,
         to: pin,
         at: 15,
+        markerLine: 14,
         text: "Retries default to 5.",
       },
     ]);
