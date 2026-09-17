@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.3.10](https://github.com/hawkeyexl/manni/compare/v2.3.9...v2.3.10) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** refuse a duplicate or empty claim, and name the pinned source line ([#67](https://github.com/hawkeyexl/manni/issues/67)) ([4774b48](https://github.com/hawkeyexl/manni/commit/4774b4894c88117de6cd7bcdfc52568491a6faf3)), closes [#65](https://github.com/hawkeyexl/manni/issues/65) [#61](https://github.com/hawkeyexl/manni/issues/61) [#61](https://github.com/hawkeyexl/manni/issues/61) [#61](https://github.com/hawkeyexl/manni/issues/61)
+
 ## [2.3.9](https://github.com/hawkeyexl/manni/compare/v2.3.8...v2.3.9) (2026-09-17)
 
 
