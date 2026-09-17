@@ -17,21 +17,28 @@ import { relative, resolve } from "node:path";
 import { locateFrontmatter, writeFileAtomic } from "../../meta/index.js";
 import { STDIN_LABEL, STDIN_TOKEN } from "../../meta/internal.js";
 import { ensureEncryptionKey } from "../../shared/prompt.js";
-import { blockMatches, pinOfLines, toBodyLines } from "../core/claims.js";
+import { blockMatches, pinOfLines, toBodyLines, toFileLines } from "../core/claims.js";
 import { resolveCiteRun } from "../core/config.js";
 import { GIT_UNAVAILABLE_COMMIT, gitClient } from "../core/git.js";
 import { sliceLines, splitLines } from "../core/hash.js";
 import { mintCitation } from "../core/mint.js";
 import { bodyLineOf, readPage } from "../core/page.js";
-import { lineSpec, parseSrc, spellLines } from "../core/range.js";
+import { lineSpec, parseLines, parseSrc, spellLines } from "../core/range.js";
 import { readSource } from "../core/sources.js";
 import { ManifestSet } from "../core/manifest.js";
 import { sidecarsFor, type PageSidecar } from "../core/sidecar.js";
-import { anchoredLines, fenceSpanAt, formatStatement, offsetOfLine } from "../core/statements.js";
+import {
+  anchoredLines,
+  fenceSpanAt,
+  formatStatement,
+  offsetOfLine,
+  unitHolding,
+} from "../core/statements.js";
 import {
   appendFrontmatterCitation,
   entryObject,
   insertStatementBefore,
+  spliceEntryField,
   unifiedDiff,
 } from "../core/write.js";
 import { CiteError } from "../errors.js";
@@ -41,6 +48,8 @@ import type {
   AddResult,
   Citation,
   CitationClaim,
+  LineSpec,
+  PageCitation,
   PageLines,
   SourceIndex,
 } from "../types.js";
@@ -77,6 +86,61 @@ async function citedText(
     throw new CiteError(`Source not readable: ${range.path} could not be read.`);
   }
   return sliceLines(splitLines(source.text), range, range.path);
+}
+
+/** `line 9`, or `lines 9-12` for a range. */
+function spellAt(lines: PageLines): string {
+  return lines.start === lines.end
+    ? `line ${String(lines.start)}`
+    : `lines ${String(lines.start)}-${String(lines.end)}`;
+}
+
+/** The new `claim.lines` of each entry a marker pushes down, by where the entry lives. */
+interface Shifted {
+  frontmatter: { index: number; lines: LineSpec }[];
+  manifest: Map<number, LineSpec>;
+}
+
+/**
+ * The entries whose claim lines start at or below `insertLine`, each moved
+ * down one line. An entry whose claim starts above the marker and reaches it
+ * would have a line inserted into its pin, so that is a refusal.
+ */
+function shiftedEntries(
+  citations: readonly PageCitation[],
+  insertLine: number,
+  bodyLine: number,
+  label: string,
+): Shifted {
+  const out: Shifted = { frontmatter: [], manifest: new Map() };
+  for (const { citation, origin } of citations) {
+    const spec = citation.claim?.lines;
+    const recorded = spec === undefined ? undefined : parseLines(spec);
+    if (recorded === undefined) continue;
+    const file = toFileLines(recorded, bodyLine);
+    if (file.start < insertLine) {
+      if (file.end < insertLine) continue;
+      const whose =
+        citation.id === undefined
+          ? `the claim at ${spellAt(file)}`
+          : `the claim of ${citation.id} (${spellAt(file)})`;
+      throw new CiteError(
+        `${label}:${String(insertLine)} is inside ${whose}. A marker there would change its pin.`,
+      );
+    }
+    const moved = lineSpec({ start: recorded.start + 1, end: recorded.end + 1 });
+    if (origin.kind === "manifest") out.manifest.set(origin.index, moved);
+    else out.frontmatter.push({ index: origin.index, lines: moved });
+  }
+  return out;
+}
+
+/** A copy of a manifest entry with its `claim.lines` replaced. */
+function withClaimLines(entry: unknown, lines: LineSpec): unknown {
+  if (typeof entry !== "object" || entry === null || Array.isArray(entry)) return entry;
+  const claim: unknown = (entry as Record<string, unknown>).claim;
+  if (typeof claim !== "object" || claim === null || Array.isArray(claim)) return entry;
+  return { ...entry, claim: { ...claim, lines } };
 }
 
 export async function runAdd(opts: AddOptions): Promise<AddResult> {
@@ -190,15 +254,35 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   let markerAt: number | undefined;
   let claimSpan: PageLines | undefined;
   let claim: CitationClaim | undefined;
+  // Entries whose claim lines sit below a marker move down with the text.
+  let shifted: Shifted = { frontmatter: [], manifest: new Map() };
   if (marker && pageLines !== undefined) {
+    // The marker goes above the paragraph or block holding the lines, below
+    // any markers already stacked there, and the lines must stay inside it.
+    const holding = unitHolding(content, pageLines.start, format, {
+      offset: page.bodyOffset,
+      line: page.bodyLine,
+    });
+    if (holding === undefined) {
+      throw new CiteError(`${at} has no paragraph or block for a marker to anchor.`);
+    }
+    if (pageLines.end > holding.end) {
+      throw new CiteError(
+        `${at} runs past the ${holding.kind} at ${spellAt(holding)}. A marker anchors one paragraph.`,
+      );
+    }
+    shifted = shiftedEntries(page.citations, holding.start, page.bodyLine, label);
     const statement = formatStatement(format, { kind: "ref", id: opts.id ?? "" });
-    const insertAt = offsetOfLine(content, pageLines.start);
+    const insertAt = offsetOfLine(content, holding.start);
     body = insertStatementBefore(content, insertAt, statement);
-    markerAt = pageLines.start;
+    markerAt = holding.start;
     const unit = anchoredLines(body, insertAt + statement.length, format, quote);
     const pin = unit === undefined ? undefined : pinOfLines(splitLines(body), unit);
     if (unit === undefined || pin === undefined) {
       throw new CiteError(`${at} has no paragraph or block for a marker to anchor.`);
+    }
+    for (const { index, lines: moved } of shifted.frontmatter) {
+      body = spliceEntryField(body, format, index, ["claim", "lines"], moved);
     }
     claimSpan = unit;
     claim = { integrity: pin };
@@ -268,7 +352,10 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
         `${label} carries no ${owner.join}: value, so its citations cannot be keyed in ${owner.file}.`,
       );
     }
-    const existing = (sidecar.citations ?? []).map((input) => input.entry);
+    const existing = (sidecar.citations ?? []).map((input, index) => {
+      const moved = shifted.manifest.get(index);
+      return moved === undefined ? input.entry : withClaimLines(input.entry, moved);
+    });
     const list = [...existing, entryObject(citation)];
     const at = await manifests.write(owner, sidecar.entry, list, list.length - 1);
     const [changed] = manifests.changed();

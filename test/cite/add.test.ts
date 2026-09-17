@@ -24,6 +24,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
+import { addMessage } from "../../src/cite/cli.js";
 import { runAdd } from "../../src/cite/commands/add.js";
 import { runCheck } from "../../src/cite/commands/check.js";
 import { noGit } from "../../src/cite/core/git.js";
@@ -371,6 +372,223 @@ describe("runAdd", () => {
           }),
         ),
       ).toBe(`${label}:6 has no paragraph or block for a marker to anchor.`);
+    });
+  });
+
+  describe("--marker placement", () => {
+    /** Two paragraphs: a wrapped one at lines 6-7 and one line at 9. */
+    const twoParagraphs = (name: string): string =>
+      write(name, [
+        "---",
+        "title: Limits",
+        "---",
+        "# Limits",
+        "",
+        "The fetch timeout is 10 seconds. It is",
+        "not configurable.",
+        "",
+        "Retries default to 3.",
+      ]);
+    const WRAPPED = "The fetch timeout is 10 seconds. It is";
+    /** The 1-based line of the first line of a page that reads `text`. */
+    const lineOf = (label: string, text: string): number =>
+      onDisk(label).split("\n").indexOf(text) + 1;
+    const both = { ends: ["current/current", "current/current"], findings: [] };
+
+    it("stacks a second marker below the first, and both anchor the paragraph", async () => {
+      const label = twoParagraphs("stacked.md");
+      const first = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        marker: true,
+        id: "first",
+      });
+      const at = lineOf(label, WRAPPED);
+      await add({
+        page: label,
+        src: "src/limits.ts:3",
+        pageLines: { start: at, end: at },
+        marker: true,
+        id: "second",
+      });
+      const text = lineOf(label, WRAPPED);
+      expect(onDisk(label).split("\n").slice(text - 3, text)).toEqual([
+        "<!-- cite first -->",
+        "<!-- cite second -->",
+        WRAPPED,
+      ]);
+      expect(first.citation.claim).toEqual({ integrity: WRAPPED_PIN });
+      expect(await recheck(label)).toEqual(both);
+    });
+
+    it("stacks mdx markers the same way", async () => {
+      const label = write("stacked.mdx", ["---", "title: t", "---", "", "# Limits", "", CLAIM]);
+      await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 7, end: 7 },
+        marker: true,
+        id: "first",
+      });
+      const at = lineOf(label, CLAIM);
+      await add({
+        page: label,
+        src: "src/limits.ts:3",
+        pageLines: { start: at, end: at },
+        marker: true,
+        id: "second",
+      });
+      expect(onDisk(label)).toContain(`{/* cite first */}\n{/* cite second */}\n${CLAIM}`);
+      expect(await recheck(label)).toEqual(both);
+    });
+
+    it("stacks markers above a quoted block", async () => {
+      const label = fenced("stacked-quote.md", ["# Limits", ""], [LINE_2], ["", "After."]);
+      const first = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 8 },
+        quote: true,
+        marker: true,
+        id: "first",
+      });
+      await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: first.claimLines ?? { start: 0, end: 0 },
+        quote: true,
+        marker: true,
+        id: "second",
+      });
+      expect(onDisk(label)).toContain(`<!-- cite first -->\n<!-- cite second -->\n${OPEN}`);
+      expect(await recheck(label)).toEqual(both);
+    });
+
+    it("puts the marker above the paragraph when the lines start inside it", async () => {
+      const label = twoParagraphs("inside.md");
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 7, end: 7 },
+        marker: true,
+        id: "fetch-timeout",
+      });
+      expect(result.markerLine).toBe(14);
+      expect(result.claimLines).toEqual({ start: 15, end: 16 });
+      const lines = result.content.split("\n");
+      expect(lines[13]).toBe("<!-- cite fetch-timeout -->");
+      expect(lines[14]).toBe(WRAPPED);
+      expect(addMessage(result)).toBe(
+        `${label}: added fetch-timeout to frontmatter; marker at line 14, claim pinned at lines 15-16`,
+      );
+      expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("refuses lines that run past the paragraph, and writes nothing", async () => {
+      const label = twoParagraphs("past.md");
+      const before = onDisk(label);
+      expect(
+        await refusal(
+          add({
+            page: label,
+            src: "src/limits.ts:2",
+            pageLines: { start: 7, end: 9 },
+            marker: true,
+            id: "x",
+          }),
+        ),
+      ).toBe(`${label}:7-9 runs past the paragraph at lines 6-7. A marker anchors one paragraph.`);
+      expect(onDisk(label)).toBe(before);
+    });
+
+    it("refuses lines that run past a fenced block, naming the block", async () => {
+      const label = fenced("past-block.md", ["# Limits", ""], [LINE_2], ["", "After."]);
+      expect(
+        await refusal(
+          add({
+            page: label,
+            src: "src/limits.ts:2",
+            pageLines: { start: 6, end: 10 },
+            marker: true,
+            id: "x",
+          }),
+        ),
+      ).toBe(`${label}:6-10 runs past the block at lines 6-8. A marker anchors one paragraph.`);
+    });
+
+    it("moves the claim lines of every entry below the marker, in the same write", async () => {
+      const label = twoParagraphs("shift.md");
+      await add({ page: label, src: "src/limits.ts:2", pageLines: { start: 4, end: 4 }, id: "heading" });
+      const row = lineOf(label, "Retries default to 3.");
+      await add({ page: label, src: "src/limits.ts:3", pageLines: { start: row, end: row }, id: "row" });
+      const para = lineOf(label, WRAPPED);
+      const claimLines = (): unknown[] => {
+        const doc = parseYaml(onDisk(label).split("---\n")[1] ?? "") as {
+          citations: { claim: { lines?: unknown } }[];
+        };
+        return doc.citations.map((c) => c.claim.lines);
+      };
+      expect(claimLines()).toEqual([1, 6]);
+      await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: para, end: para },
+        marker: true,
+        id: "para",
+      });
+      expect(claimLines()).toEqual([1, 7, undefined]);
+      expect(await recheck(label)).toEqual({
+        ends: ["current/current", "current/current", "current/current"],
+        findings: [],
+      });
+    });
+
+    it("refuses a marker inside another entry's claim, and writes nothing", async () => {
+      const label = twoParagraphs("inside-claim.md");
+      const held = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 4, end: 7 },
+        id: "fetch-timeout",
+      });
+      const span = held.claimLines ?? { start: 0, end: 0 };
+      const para = lineOf(label, WRAPPED);
+      const before = onDisk(label);
+      expect(
+        await refusal(
+          add({
+            page: label,
+            src: "src/limits.ts:2",
+            pageLines: { start: para, end: para },
+            marker: true,
+            id: "x",
+          }),
+        ),
+      ).toBe(
+        `${label}:${String(para)} is inside the claim of fetch-timeout (lines ${String(span.start)}-${String(span.end)}). A marker there would change its pin.`,
+      );
+      expect(onDisk(label)).toBe(before);
+    });
+
+    it("names an entry with no id by its lines", async () => {
+      const label = twoParagraphs("inside-anon.md");
+      const held = await add({ page: label, src: "src/limits.ts:2", pageLines: { start: 5, end: 6 } });
+      const span = held.claimLines ?? { start: 0, end: 0 };
+      const para = lineOf(label, WRAPPED);
+      expect(
+        await refusal(
+          add({
+            page: label,
+            src: "src/limits.ts:2",
+            pageLines: { start: para, end: para },
+            marker: true,
+            id: "x",
+          }),
+        ),
+      ).toBe(
+        `${label}:${String(para)} is inside the claim at lines ${String(span.start)}-${String(span.end)}. A marker there would change its pin.`,
+      );
     });
   });
 

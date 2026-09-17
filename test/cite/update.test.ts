@@ -187,6 +187,41 @@ describe("runUpdate: the claim end", () => {
     expect(await ends("pages/marker-changed.md")).toEqual([["current", "current"]]);
   });
 
+  it("--accept re-pins stacked markers over the paragraph, never the marker lines", async () => {
+    const entry = (id: string): string[] => [
+      `  - id: ${id}`,
+      "    claim:",
+      `      integrity: ${CLAIM_RETRIES}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 3",
+      `      integrity: ${PIN_L3}`,
+    ];
+    const label = write("stacked.md", [
+      "---",
+      "title: Limits",
+      "citations:",
+      ...entry("first"),
+      ...entry("second"),
+      "---",
+      "# Limits",
+      "",
+      "<!-- cite first -->",
+      "<!-- cite second -->",
+      "Retries default to 5.",
+    ]);
+    const pin = hashLines("Retries default to 5.");
+    const run = await update({ inputs: [label], accept: true });
+    expect(run.pages[0]?.rewritten.map((r) => [r.id, r.at, r.text, r.to])).toEqual([
+      ["first", 23, "Retries default to 5.", pin],
+      ["second", 23, "Retries default to 5.", pin],
+    ]);
+    expect(await ends(label)).toEqual([
+      ["current", "current"],
+      ["current", "current"],
+    ]);
+  });
+
   it("--accept re-pins a paragraph that grew, moving the claim's last line with it", async () => {
     workspace();
     const label = write("grown.md", [
