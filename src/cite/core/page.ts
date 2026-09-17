@@ -33,7 +33,7 @@ import type {
   PageCitations,
 } from "../types.js";
 import { isKeyedPin } from "./hash.js";
-import { parseLines, spellSource } from "./range.js";
+import { parseLines, spellSource, tooWide } from "./range.js";
 import { DEFAULT_SEVERITY, ruleId } from "./severity.js";
 import { lineAt, parseStatements } from "./statements.js";
 
@@ -288,6 +288,20 @@ export function readPage(
           subject,
         ),
       );
+      return;
+    }
+
+    // A range wider than the cap is refused at either end (proposal 0044).
+    const wide = (["claim", "source"] as const)
+      .map((end) => {
+        const lines = end === "claim" ? citation.claim?.lines : citation.source.lines;
+        const parsed = lines === undefined ? undefined : parseLines(lines);
+        const reason = parsed === undefined ? undefined : tooWide(parsed);
+        return reason === undefined ? undefined : `${end}.lines "${String(lines)}" ${reason}`;
+      })
+      .find((message) => message !== undefined);
+    if (wide !== undefined) {
+      findings.push(finding("entry-invalid", named(citation.id, wide), subject));
       return;
     }
 

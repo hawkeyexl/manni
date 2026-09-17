@@ -114,6 +114,17 @@ describe("manni term (flags shared with meta and cite)", () => {
     expect(term(["check", "page.md"], { cwd: join(work, "empty") }).status).toBe(2);
     expect(term(["check", "page.md", "--allow-empty"], { cwd: join(work, "empty") }).status).toBe(0);
   });
+
+  it("--allow-empty also turns a missing path into success, and its help says so", () => {
+    mkdirSync(join(work, "missing"));
+    const cwd = join(work, "missing");
+    const refused = term(["check", "nope.md"], { cwd });
+    expect(refused.status).toBe(2);
+    expect(refused.stderr).toContain('File not found: "nope.md".');
+    expect(term(["check", "nope.md", "--allow-empty"], { cwd }).status).toBe(0);
+    const help = term(["check", "--help"]).stdout.replace(/\s+/g, " ");
+    expect(help).toContain("--allow-empty treat a missing path, no matched files or no terms as success");
+  });
 });
 
 describe("manni term (the ladder)", () => {

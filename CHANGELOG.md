@@ -4,6 +4,20 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.3.2](https://github.com/hawkeyexl/manni/compare/v2.3.1...v2.3.2) (2026-09-17)
+
+
+### Bug Fixes
+
+* **term:** compare ids ignoring case, and describe --allow-empty ([#48](https://github.com/hawkeyexl/manni/issues/48)) ([b70661b](https://github.com/hawkeyexl/manni/commit/b70661bcd479b1a4b2cf1af07e894a84d2baa70c))
+
+## [2.3.1](https://github.com/hawkeyexl/manni/compare/v2.3.0...v2.3.1) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** anchor stacked markers, and place add --marker above its paragraph ([#43](https://github.com/hawkeyexl/manni/issues/43)) ([6f3df3c](https://github.com/hawkeyexl/manni/commit/6f3df3cfc43742bd0a6cd67edfb444253a89267d))
+
 # [2.3.0](https://github.com/hawkeyexl/manni/compare/v2.2.0...v2.3.0) (2026-09-17)
 
 

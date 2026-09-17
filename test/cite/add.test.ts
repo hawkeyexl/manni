@@ -592,6 +592,146 @@ describe("runAdd", () => {
     });
   });
 
+  describe("--marker indentation", () => {
+    /** A page with a title and the given body lines. */
+    const page = (name: string, body: string[]): string =>
+      write(name, ["---", "title: Steps", "---", ...body]);
+    /** The 1-based line of the first line of a page that reads `text`. */
+    const lineOf = (label: string, text: string): number =>
+      onDisk(label).split("\n").indexOf(text) + 1;
+    /** Add a marker for the line reading `text`, and return the page's lines after. */
+    async function mark(label: string, text: string, id: string): Promise<string[]> {
+      const at = lineOf(label, text);
+      expect(at).toBeGreaterThan(0);
+      await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: at, end: at },
+        marker: true,
+        id,
+      });
+      return onDisk(label).split("\n");
+    }
+    /** The line above the one reading `text`. */
+    const above = (lines: string[], text: string): string | undefined =>
+      lines[lines.indexOf(text) - 1];
+    const STEP = "   Paragraph belonging to step 1,";
+    const steps = (open: string, close: string): string[] => [
+      "# Steps",
+      "",
+      open,
+      "",
+      "1. First step.",
+      "",
+      STEP,
+      "   wrapped.",
+      "",
+      "2. Second step.",
+      "",
+      close,
+    ];
+
+    it("indents an mdx marker to the paragraph in a list item", async () => {
+      const label = page("steps.mdx", steps("<Steps>", "</Steps>"));
+      const lines = await mark(label, "   wrapped.", "step-one");
+      expect(above(lines, STEP)).toBe("   {/* cite step-one */}");
+      expect(above(lines, "   {/* cite step-one */}")).toBe("");
+      expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("indents a markdown marker the same way", async () => {
+      const label = page("steps.md", steps("<ol>", "</ol>"));
+      const lines = await mark(label, STEP, "step-one");
+      expect(above(lines, STEP)).toBe("   <!-- cite step-one -->");
+      expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("copies tabs as they are", async () => {
+      const label = page("tabbed.md", ["- First.", "", "\tIndented with a tab.", "", "- Second."]);
+      const lines = await mark(label, "\tIndented with a tab.", "tabbed");
+      expect(above(lines, "\tIndented with a tab.")).toBe("\t<!-- cite tabbed -->");
+      expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("stacks a second marker under an indented one, at the same indentation", async () => {
+      const label = page("stacked-steps.mdx", steps("<Steps>", "</Steps>"));
+      await mark(label, STEP, "first");
+      const lines = await mark(label, STEP, "second");
+      const at = lines.indexOf(STEP);
+      expect(lines.slice(at - 3, at + 1)).toEqual([
+        "",
+        "   {/* cite first */}",
+        "   {/* cite second */}",
+        STEP,
+      ]);
+      expect(await recheck(label)).toEqual({
+        ends: ["current/current", "current/current"],
+        findings: [],
+      });
+    });
+
+    it("indents a marker above a later list item to the item's text, inside the list", async () => {
+      const label = page("later-item.mdx", ["1. First step.", "", "2. Second step."]);
+      const lines = await mark(label, "2. Second step.", "second");
+      expect(above(lines, "2. Second step.")).toBe("   {/* cite second */}");
+      expect(above(lines, "   {/* cite second */}")).toBe("");
+      expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("uses the item's own marker width and its tabs for a later item", async () => {
+      const label = page("later-bullet.md", ["- a", "", "-\tb", "", "10. c", "", "11. d"]);
+      const b = await mark(label, "-\tb", "b");
+      expect(above(b, "-\tb")).toBe(" \t<!-- cite b -->");
+      const d = await mark(label, "11. d", "d");
+      expect(above(d, "11. d")).toBe("    <!-- cite d -->");
+      expect(await recheck(label)).toEqual({
+        ends: ["current/current", "current/current"],
+        findings: [],
+      });
+    });
+
+    it("keeps a later item in a nested list inside its list", async () => {
+      const label = page("nested.md", ["1. Step", "", "   - a", "", "   - b"]);
+      const lines = await mark(label, "   - b", "nested");
+      expect(above(lines, "   - b")).toBe("     <!-- cite nested -->");
+      expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("treats an item after a lazy continuation line as a later item", async () => {
+      const label = page("lazy.md", ["1. First step,", "continued lazily.", "", "2. Second step."]);
+      const lines = await mark(label, "2. Second step.", "lazy");
+      expect(above(lines, "2. Second step.")).toBe("   <!-- cite lazy -->");
+    });
+
+    it("puts the marker before a list at the first item's indentation", async () => {
+      const label = page("list-start.md", ["Intro.", "", "10. a", "11. b"]);
+      const lines = await mark(label, "11. b", "list");
+      expect(above(lines, "10. a")).toBe("<!-- cite list -->");
+      expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("puts the marker before a nested list at that list's indentation", async () => {
+      const label = page("nested-start.mdx", ["1. Step", "", "   - a", "   - b"]);
+      const lines = await mark(label, "   - b", "nested");
+      expect(above(lines, "   - a")).toBe("   {/* cite nested */}");
+      expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("anchors a blockquote as one paragraph, with the marker above it", async () => {
+      const label = page("quote.md", ["Intro.", "", "> One.", ">", "> Two."]);
+      const lines = await mark(label, "> Two.", "quoted");
+      expect(above(lines, "> One.")).toBe("<!-- cite quoted -->");
+      expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("writes an asciidoc marker at column 0, where a comment has to start", async () => {
+      const label = page("literal.adoc", ["= Limits", "", "  An indented literal paragraph."]);
+      const lines = await mark(label, "  An indented literal paragraph.", "literal");
+      expect(above(lines, "  An indented literal paragraph.")).toBe("// (cite literal)");
+      expect(await recheck(label)).toEqual(CURRENT);
+    });
+  });
+
   describe("--quote", () => {
     it("pins a fenced block that reproduces the source", async () => {
       const label = fenced("quoted.md", ["# Limits", ""], LINES_1_3);
@@ -995,6 +1135,23 @@ describe("runAdd", () => {
           }),
         ),
       ).toBe("pages/no-citations.md:40 is past the end of the page (6 lines).");
+    });
+
+    it("refuses a source or page range longer than 5,000 lines, and not one of 5,000", async () => {
+      workspace("no-citations.md");
+      const page = "pages/no-citations.md";
+      expect(await refusal(add({ page, src: "src/limits.ts:2-5002" }))).toBe(
+        'Invalid range "src/limits.ts:2-5002": it spans 5001 lines, more than 5000.',
+      );
+      expect(await refusal(add({ page, src: "src/limits.ts:1-5000" }))).toBe(
+        "src/limits.ts has 7 lines; line 5000 is out of range.",
+      );
+      expect(
+        await refusal(add({ page, src: "src/limits.ts:2", pageLines: { start: 1, end: 5001 } })),
+      ).toBe('Invalid range "pages/no-citations.md:1-5001": it spans 5001 lines, more than 5000.');
+      expect(
+        await refusal(add({ page, src: "src/limits.ts:2", pageLines: { start: 1, end: 5000 } })),
+      ).toBe("pages/no-citations.md:1-5000 is past the end of the page (6 lines).");
     });
 
     it("refuses page lines that sit in the frontmatter", async () => {

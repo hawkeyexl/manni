@@ -15,7 +15,7 @@ set. It reads no prose; `manni term lint` does that. Each rule id is
 | Rule | Default | Fires when |
 |---|---|---|
 | `undefined-term` | error | A page's `concepts:` names a label no entry claims as its preferred label. |
-| `duplicate-id` | error | Two entries share an `id`. |
+| `duplicate-id` | error | Two entries share an `id`, ignoring case. |
 | `label-collision` | error | Two entries claim the same preferred label, ignoring case. |
 | `alt-label-collision` | error | An entry's alt-label is another entry's preferred label, ignoring case. |
 | `dangling-reference` | error | A value of `broader`, `narrower`, `related-terms` or `see` names no entry, by label or by id. |
@@ -74,8 +74,9 @@ sits on the page's `concepts:` line. `kg.concepts` is resolved the same way.
 
 ### `duplicate-id`
 
-Reported on every entry that shares the id, each naming the others. An id
-comes from the record, else from the construct's own identifier, else from the
+Reported on every entry that shares the id, each naming the others. Ids
+compare ignoring case, as a reference to an id resolves. So `Bifocal` and
+`bifocal` collide. An id comes from the record, else from the construct's own identifier, else from the
 slug of the label. So two entries can collide without either spelling out an
 `id`. A page and a manifest entry that share an id collide the same way, and
 neither is kept over the other.

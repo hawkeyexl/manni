@@ -11,9 +11,9 @@
  * `path:L1-L2` (`SRC_PATTERN`), and reports spell it that way too.
  */
 import { isEncryptedValue } from "../../shared/encryption.js";
-import { lineSpec, parseLines } from "../../shared/pin.js";
+import { MAX_RANGE_LINES, lineSpec, parseLines } from "../../shared/pin.js";
 import { CiteError } from "../errors.js";
-import type { CitationSource, LineSpec, SourceRange } from "../types.js";
+import type { CitationSource, LineSpec, PageLines, SourceRange } from "../types.js";
 
 // The line grammar is the shared pin engine's; this path keeps cite's imports working.
 export { lineSpec, parseLines, spellLines } from "../../shared/pin.js";
@@ -53,6 +53,17 @@ export function parseSrc(src: string): SourceRange {
   range.start = start;
   range.end = end;
   return range;
+}
+
+/**
+ * How a range too wide to cite is refused: `spans N lines, more than 5000`.
+ * Undefined for a range of at most `MAX_RANGE_LINES` lines.
+ */
+export function tooWide(lines: PageLines): string | undefined {
+  const width = lines.end - lines.start + 1;
+  return width > MAX_RANGE_LINES
+    ? `spans ${String(width)} lines, more than ${String(MAX_RANGE_LINES)}`
+    : undefined;
 }
 
 /** The canonical spelling: `path:L` for one line, `path:L1-L2` otherwise. */
