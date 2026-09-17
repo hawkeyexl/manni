@@ -35,7 +35,7 @@ import { runCheck } from "./commands/check.js";
 import { runUpdate } from "./commands/update.js";
 import { CiteError, asCiteError } from "./errors.js";
 import { spellSource } from "./core/range.js";
-import { shortCommit, shortPin, shortSrc } from "./core/spell.js";
+import { shortCommit, shortLine, shortPin, shortSrc } from "./core/spell.js";
 import { renderCheckGithub } from "./reporters/github.js";
 import { renderCheckJson, renderUpdateJson } from "./reporters/json.js";
 import { renderCheckJunit } from "./reporters/junit.js";
@@ -171,7 +171,8 @@ function spellAt(lines: PageLines, noun = "line"): string {
  * What `add` says on success. One sentence composed from the result: what was
  * added, where it went, and what each end is pinned to. Lines are the page's
  * own, after the write. The source is spelled as it was written to the page,
- * abbreviated when it is a ciphertext.
+ * abbreviated when it is a ciphertext, and quoted with its first pinned line
+ * where the result carries one.
  */
 export function addMessage(result: AddResult): string {
   const { citation, claimLines } = result;
@@ -179,7 +180,9 @@ export function addMessage(result: AddResult): string {
   const name = citation.id ?? (claim === undefined ? "a bare pin" : "an entry");
   const src = shortSrc(spellSource(citation.source));
   const commit = citation.source["commit-sha"];
-  const pin = `${src}, ${shortPin(citation.source.integrity)}, ${commit === undefined ? "no commit" : shortCommit(commit)}`;
+  const quoted = result.sourceLine === undefined ? "" : shortLine(result.sourceLine);
+  const line = quoted === "" ? "" : ` "${quoted}"`;
+  const pin = `${src}${line}, ${shortPin(citation.source.integrity)}, ${commit === undefined ? "no commit" : shortCommit(commit)}`;
   // Where it went: the page's own frontmatter, or the manifest that owns the
   // page's citations, at the line the entry now sits on.
   const where =

@@ -39,6 +39,8 @@ const CLI_KEY = "cli-key-0123456789abcdef0123456789abc";
 const NO_HISTORY =
   "git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.";
 const NO_COMMIT = "git is not available here, so the citation records no commit.";
+/** The pinned source line `add` quotes for `src/limits.ts:2`, as the report prints it. */
+const SRC_LINE_2 = '"export const FETCH_TIMEOUT_MS = 10_000;"';
 
 /** A page with a fenced block and no citations yet, for the `--quote` rungs. */
 const QUOTABLE = [
@@ -849,7 +851,7 @@ describe("manni cite add", () => {
     const r = cite(["add", "pages/no-citations.md:6", "src/limits.ts:2", "--id", "fetch-timeout", "--root", "."]);
     expect(r.status).toBe(0);
     expect(r.stdout.trim()).toBe(
-      "pages/no-citations.md: added fetch-timeout to frontmatter (claim at line 15, sha256-921b21cc…; source src/limits.ts:2, sha256-78af1d33…, no commit)",
+      `pages/no-citations.md: added fetch-timeout to frontmatter (claim at line 15, sha256-921b21cc…; source src/limits.ts:2 ${SRC_LINE_2}, sha256-78af1d33…, no commit)`,
     );
     const page = readFileSync(join(work, "pages", "no-citations.md"), "utf8");
     // What it writes is byte for byte the current.md fixture's entry.
@@ -883,7 +885,7 @@ describe("manni cite add", () => {
     ]);
     expect(r.status).toBe(0);
     expect(r.stdout.trim()).toBe(
-      "pages/no-citations.md: added timeouts to frontmatter; marker at line 14, claim pinned at line 15 (sha256-921b21cc…; source src/limits.ts:2, sha256-78af1d33…, no commit)",
+      `pages/no-citations.md: added timeouts to frontmatter; marker at line 14, claim pinned at line 15 (sha256-921b21cc…; source src/limits.ts:2 ${SRC_LINE_2}, sha256-78af1d33…, no commit)`,
     );
     const page = readFileSync(join(work, "pages", "no-citations.md"), "utf8");
     expect(page).toContain("<!-- cite timeouts -->\nThe fetch timeout is 10 seconds.");
@@ -924,7 +926,7 @@ describe("manni cite add", () => {
     expect(r.stdout).toContain("integrity: sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f");
     // The copy is no work tree, so the notice comes first, then the report.
     expect(r.stderr).toBe(
-      `manni: ${NO_COMMIT}\n<stdin>: added a bare pin to frontmatter (source src/limits.ts:2, sha256-78af1d33…, no commit)\n`,
+      `manni: ${NO_COMMIT}\n<stdin>: added a bare pin to frontmatter (source src/limits.ts:2 ${SRC_LINE_2}, sha256-78af1d33…, no commit)\n`,
     );
   });
 
@@ -940,7 +942,7 @@ describe("manni cite add", () => {
     expect(r.status).toBe(0);
     expect(r.stdout).toContain("  - id: fetch-timeout\n    claim:\n      lines: 3\n");
     expect(r.stderr).toContain(
-      "<stdin>: added fetch-timeout to frontmatter (claim at line 15, sha256-921b21cc…; source src/limits.ts:2, sha256-78af1d33…, no commit)",
+      `<stdin>: added fetch-timeout to frontmatter (claim at line 15, sha256-921b21cc…; source src/limits.ts:2 ${SRC_LINE_2}, sha256-78af1d33…, no commit)`,
     );
   });
 
@@ -952,6 +954,43 @@ describe("manni cite add", () => {
     );
     expect(r.status).toBe(0);
     expect(r.stdout).toContain("  - id: fetch-timeout\n    claim:\n      lines: 3\n");
+  });
+
+  it("refuses a second add of the same lines and the same source", () => {
+    const first = cite(["add", "pages/no-citations.md:6", "src/limits.ts:2", "--root", "."]);
+    expect(first.status).toBe(0);
+    const again = cite(["add", "pages/no-citations.md:14", "src/limits.ts:2", "--root", "."]);
+    expect(again.status).toBe(2);
+    expect(again.stdout).toBe("");
+    expect(again.stderr).toContain(
+      "manni: pages/no-citations.md already has an entry for line 14 and src/limits.ts:2 (/citations/0).",
+    );
+  });
+
+  it("refuses a claim line that holds no text", () => {
+    const blank = cite(["add", "pages/no-citations.md:5", "src/limits.ts:2", "--root", "."]);
+    expect(blank.status).toBe(2);
+    expect(blank.stderr).toContain("manni: pages/no-citations.md:5 is blank.");
+    writeFileSync(join(work, "pages", "plain-quote.md"), QUOTABLE, "utf8");
+    const fence = cite(["add", "pages/plain-quote.md:6", "src/limits.ts:2", "--root", "."]);
+    expect(fence.status).toBe(2);
+    expect(fence.stderr).toContain(
+      "manni: pages/plain-quote.md:6 is a fence line, not claim text.",
+    );
+  });
+
+  it("warns on stderr when the claim's text repeats, and still writes", () => {
+    writeFileSync(
+      join(work, "pages", "twice.md"),
+      ["---", "title: Limits", "---", "# Limits", "", "Retries default to 3.", "", "Retries default to 3.", ""].join("\n"),
+      "utf8",
+    );
+    const r = cite(["add", "pages/twice.md:6", "src/limits.ts:3", "--id", "retries", "--root", "."]);
+    expect(r.status).toBe(0);
+    expect(r.stderr).toContain(
+      "manni: retries: the claim's text also appears at line 17, so a move would be ambiguous. Use --marker, or pin more lines.",
+    );
+    expect(readFileSync(join(work, "pages", "twice.md"), "utf8")).toContain("  - id: retries\n");
   });
 
   it("still refuses an unknown option that starts with a dash", () => {
@@ -969,14 +1008,18 @@ describe("manni cite add", () => {
     expect(r.stdout).toContain("file: src/limits.ts");
     expect(r.stderr).toMatch(/^--- <stdin>$/m);
     expect(r.stderr).toContain("+citations:");
-    expect(r.stderr.trim()).toMatch(/<stdin>: added a bare pin to frontmatter \(source src\/limits\.ts:2, /);
+    expect(r.stderr.trim()).toContain(
+      `<stdin>: added a bare pin to frontmatter (source src/limits.ts:2 ${SRC_LINE_2}, `,
+    );
   });
 
   it.skipIf(!gitAvailable())("records HEAD where the root is in a work tree, and says so where it is not", () => {
     // The fixture tree inside this repository as the root, so HEAD exists there.
     const withHead = cite(["add", "pages/no-citations.md:6", "src/limits.ts:2", "--root", FIXTURES]);
     expect(withHead.status).toBe(0);
-    expect(withHead.stdout).toMatch(/source src\/limits\.ts:2, sha256-78af1d33…, [0-9a-f]{7}\)$/m);
+    expect(withHead.stdout).toMatch(
+      /source src\/limits\.ts:2 "export const FETCH_TIMEOUT_MS = 10_000;", sha256-78af1d33…, [0-9a-f]{7}\)$/m,
+    );
     expect(withHead.stderr).toBe("");
     expect(readFileSync(join(work, "pages", "no-citations.md"), "utf8")).toMatch(
       /^ {6}commit-sha: [0-9a-f]{40}$/m,
@@ -987,7 +1030,9 @@ describe("manni cite add", () => {
     // The copy is no work tree, so there is no HEAD to record.
     const without = cite(["add", "pages/no-citations.md:6", "src/limits.ts:3", "--root", "."]);
     expect(without.status).toBe(0);
-    expect(without.stdout).toContain("source src/limits.ts:3, sha256-e9f5bdf9…, no commit)");
+    expect(without.stdout).toContain(
+      'source src/limits.ts:3 "export const RETRIES = 3;", sha256-e9f5bdf9…, no commit)',
+    );
     expect(without.stderr).toBe(`manni: ${NO_COMMIT}\n`);
     // Under --no-commit-sha nothing was wanted from git, so nothing is said.
     // A different page, because the add above shifted this one's body down.
@@ -1021,6 +1066,15 @@ describe("manni cite add", () => {
     const after = cite(["check", "--root", ".", "pages/no-citations.md"]);
     expect(after.status).toBe(0);
     expect(after.stdout).toContain(`${token.slice(0, 5)}…:2 current`);
+
+    // And a second add of the same claim on the same source is written, not
+    // refused: the duplicate check compares the two spellings as each end
+    // writes them, and a ciphertext never equals a plain path. `duplicateOf`
+    // in src/cite/commands/add.ts comments on the boundary.
+    const again = cite(["add", "pages/no-citations.md:14", "src/limits.ts:2", "--root", "."]);
+    expect(again.status).toBe(0);
+    const page = readFileSync(join(work, "pages", "no-citations.md"), "utf8");
+    expect(page.match(/^ {6}integrity: hmac-sha256-[0-9a-f]{64}$/gm)).toHaveLength(2);
   });
 
   it("refuses a --root that does not exist with check's message, and writes nothing", () => {
