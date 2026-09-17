@@ -18,6 +18,7 @@ import {
   extractorForExtension,
   locateFrontmatter,
   supportedExtensions,
+  type ExtractedMetadata,
   type MetadataExtractor,
 } from "../../meta/index.js";
 import { extractorByName, hasFrontmatterFence } from "../../meta/internal.js";
@@ -193,6 +194,28 @@ export function bodyLineOf(content: string, bodyOffset: number): number {
   return content.charCodeAt(bodyOffset - 1) === 10 ? line : line + 1;
 }
 
+/**
+ * A page's citation entries as they are written, each with where it sits: the
+ * manifest's when one owns them, else the page's own frontmatter. The entries
+ * are raw, so one the schema refuses is still in the list at its own index,
+ * which is how `remove` reaches an entry `check` can only report.
+ */
+export function citationInputs(
+  file: string,
+  extracted: ExtractedMetadata,
+  injected?: readonly CitationInput[],
+): CitationInput[] {
+  if (injected !== undefined) return [...injected];
+  const raw: unknown = extracted.data.citations;
+  const list: unknown[] = Array.isArray(raw) ? (raw as unknown[]) : [];
+  return list.map((entry, index) => {
+    const origin: CitationInput["origin"] = { kind: "frontmatter", file };
+    const line = extracted.lineFor(`/citations/${String(index)}`);
+    if (line !== undefined) origin.line = line;
+    return { entry, origin };
+  });
+}
+
 export function readPage(
   file: string,
   content: string,
@@ -257,15 +280,7 @@ export function readPage(
       }),
     );
   }
-  const inputs: CitationInput[] =
-    injected !== undefined
-      ? [...injected]
-      : (Array.isArray(rawCitations) ? (rawCitations as unknown[]) : []).map((entry, index) => {
-          const origin: CitationInput["origin"] = { kind: "frontmatter", file };
-          const line = extracted.lineFor(`/citations/${String(index)}`);
-          if (line !== undefined) origin.line = line;
-          return { entry, origin };
-        });
+  const inputs = citationInputs(file, extracted, injected);
 
   inputs.forEach((input, index) => {
     const origin: CitationOrigin = { ...input.origin, index };

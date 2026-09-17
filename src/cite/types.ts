@@ -535,6 +535,45 @@ export interface UpdateRun {
   exitCode: 0 | 1;
 }
 
+export interface RemoveOptions
+  extends Omit<CheckOptions, "baseline" | "writeBaseline" | "checkSources" | "showDiff"> {
+  /**
+   * `--only <id>`, repeatable: the entries to remove, each named by its id or
+   * by its pointer (`/citations/N`). Required, and an empty list is a
+   * refusal: `remove` never takes every citation off a page.
+   */
+  only: string[];
+  dryRun?: boolean;
+}
+
+/** One entry `remove` took out, and the markers that went with it. */
+export interface Removal {
+  id?: string;
+  /** Index in the page's `citations`. Absent for a marker that named no entry. */
+  index?: number;
+  /** Where the entry was kept. Absent for a marker that named no entry. */
+  origin?: { kind: OriginKind; file: string; line?: number };
+  /** File lines of the markers removed with it, in the page as it was. */
+  markerLines: number[];
+}
+
+export interface RemovePage {
+  file: string;
+  removed: Removal[];
+  diff: string;
+  written: boolean;
+  /** The rewritten page, for the stdin input only: it has no file to be written to. */
+  content?: string;
+}
+
+export interface RemoveRun {
+  pages: RemovePage[];
+  /** Entries removed, counting a marker that named no entry as one. */
+  removed: number;
+  /** The manifests this run rewrote, each written once however many pages it holds. */
+  manifests?: ManifestChange[];
+}
+
 /** One citation `reencryptCitations` rewrote: where it sits, and its source before and after. */
 export interface ReencryptedCitation {
   id?: string;
