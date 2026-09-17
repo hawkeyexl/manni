@@ -195,8 +195,8 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: key-shape-config
     claim:
-      lines: 135-136
-      integrity: sha256-b3bd38cc33d4be0a48dab9d1a7a82ad17a6b6d39f21cfd76092cb95e1384ba1a
+      lines: 135-137
+      integrity: sha256-64c7c6e98b34c581ffb7e0b6b1f47d5024dda26d1308795df5cbcab63b6da352
     source:
       file: src/shared/config-file.ts
       lines: 242-249
@@ -204,8 +204,8 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: key-shape-env
     claim:
-      lines: 135-136
-      integrity: sha256-b3bd38cc33d4be0a48dab9d1a7a82ad17a6b6d39f21cfd76092cb95e1384ba1a
+      lines: 135-137
+      integrity: sha256-64c7c6e98b34c581ffb7e0b6b1f47d5024dda26d1308795df5cbcab63b6da352
     source:
       file: src/shared/encryption-key.ts
       lines: 60-65
@@ -228,15 +228,6 @@ citations:
       file: src/shared/encryption-key.ts
       lines: 60-65
       integrity: sha256-9b2b2f43f95570f2bca61377c00eb15134ecfd902b97e521fc7e12405e3b3899
-      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
-  - id: key-only-file-is-config
-    claim:
-      lines: 143-146
-      integrity: sha256-be853dbe5e60d20ad33501090e9e3e5f0872b0aa8ba39f5a9efcb636ba0669d9
-    source:
-      file: src/shared/config-file.ts
-      lines: 193-201
-      integrity: sha256-441f60210b9652c5c6b4079a3ea115831cd07c924e44b806decec8703e8ca2b3
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: key-expanded-not-stretched
     claim:
@@ -355,6 +346,33 @@ citations:
       lines: 397
       integrity: sha256-ea09b213d678bc8b0ce802b2d88944e023680d8f3cbdadcb7ea0700dbc61c239
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: key-only-file-is-config
+    claim:
+      lines: 144-146
+      integrity: sha256-51af0ee94e1d9af3ed314bf3b4363da95d3078339969f4038d446f8adf9e4712
+    source:
+      file: src/shared/config-file.ts
+      lines: 182-201
+      integrity: sha256-d24495f6682aa15acd4cd4c004d3dd8d74710e83aa39ad9478dce7c96805beb4
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+  - id: key-moose-found-with-warning
+    claim:
+      lines: 146-148
+      integrity: sha256-a946ebfea33b8a147deaa44fc20671224d242ebe032bb075ac161d06a3fdb2ea
+    source:
+      file: src/shared/config-file.ts
+      lines: 286-317
+      integrity: sha256-7a42b96b60e821d1a26c29bf5b497dbf470220a7ee79843f6b7dc5ad6247788e
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+  - id: key-set-exception
+    claim:
+      lines: 136-137
+      integrity: sha256-2ddbbbe772521f5ae4a7ae0dc6f798a65214d0066eafe83d5ebc9954b911ff39
+    source:
+      file: src/shared/config-file.ts
+      lines: 266-280
+      integrity: sha256-2c6970bb7b86e4eef02c6c906bdafdcfe1aff8931d4f0d78760320620c622f50
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
 ---
 
 import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';

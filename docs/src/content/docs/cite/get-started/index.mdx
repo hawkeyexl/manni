@@ -118,15 +118,6 @@ citations:
       lines: 399-400
       integrity: sha256-70e326fb7c7de4521eb9fdfb8fc00f18bf9a27208b42847f9ee6f8a90048f525
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
-  - id: add-message-sample
-    claim:
-      lines: 106
-      integrity: sha256-bacc0b155b495d232f68052d1195300964003423d80d19e5304103352f0c22a8
-    source:
-      file: src/cite/cli.ts
-      lines: 203
-      integrity: sha256-1ef9c6c14c258e8e8eff77bcc8dac4c447a60a9ec80b5330200ec3cf9c219c70
-      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: add-body-untouched
     claim:
       lines: 111-112
@@ -544,7 +535,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: claim-changed-warning
     claim:
-      integrity: sha256-d6a5c93c00d149432d1f647f206dbd8a2d6aca85d0463268e56c7c390d03e2ec
+      integrity: sha256-d299ad76965ffae9daf2043de36dcd079832c5717d81e51978be961c44f3906c
     source:
       file: src/cite/core/severity.ts
       lines: 22
@@ -552,7 +543,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: show-diff-claim-text
     claim:
-      integrity: sha256-d6a5c93c00d149432d1f647f206dbd8a2d6aca85d0463268e56c7c390d03e2ec
+      integrity: sha256-d299ad76965ffae9daf2043de36dcd079832c5717d81e51978be961c44f3906c
     source:
       file: src/cite/reporters/pretty.ts
       lines: 282
@@ -560,7 +551,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: accept-unit-at-first-line
     claim:
-      integrity: sha256-b129aa32863f9c9ad87fac4cbb3ac155f836eb7ef5f067e5a9b09384254c88ce
+      integrity: sha256-c57be5036b271e925498cd6bc88633d49e1587aafd4cfbb8d3ecc910892e8ed0
     source:
       file: src/cite/core/claims.ts
       lines: 161-176
@@ -568,7 +559,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: accept-prints-claim-text
     claim:
-      integrity: sha256-b129aa32863f9c9ad87fac4cbb3ac155f836eb7ef5f067e5a9b09384254c88ce
+      integrity: sha256-c57be5036b271e925498cd6bc88633d49e1587aafd4cfbb8d3ecc910892e8ed0
     source:
       file: src/cite/reporters/pretty.ts
       lines: 352-353
@@ -598,23 +589,6 @@ citations:
       lines: 131-137
       integrity: sha256-ba51209beb4adf3fdd522e8aeeb9866116ae65ff38c4150f1d17201667cb667a
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
-  - id: marker-writes-and-pins
-    claim:
-      integrity: sha256-08f7ab509f2a52b51173054f6177cb788be5b0a6c2c44e2a8fae876aa88f2593
-    source:
-      file: src/cite/commands/add.ts
-      lines: 274-287
-      integrity: sha256-6da42f25dbf9a3504e31ecb55e8cc8a6cbcddf220f5c9fff8b042c55d696c756
-      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
-  - id: marker-add-message-sample
-    claim:
-      lines: 420
-      integrity: sha256-1b594fede6826b5ace9a80ad738ab72a75d73fd7465ed5d60d6c486852bd6914
-    source:
-      file: src/cite/cli.ts
-      lines: 192-196
-      integrity: sha256-0686b9fabe63ff3a4e4eb040c52e9640891df165a214e8a4568b58bcf41a5606
-      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: marker-claim-no-lines
     claim:
       integrity: sha256-404c0b4cc6b5cbdbf9da9fe5b3dfe099fb2d05b0b92fd7ded42e18ee6d6426ac
@@ -638,15 +612,6 @@ citations:
       file: src/cite/core/statements.ts
       lines: 116-122
       integrity: sha256-bbac617de68cf773fe99888465fd6f83e962b062e6b9fb5289c0c303c0e08f09
-      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
-  - id: marker-forms-per-format
-    claim:
-      lines: 453-456
-      integrity: sha256-984576f7889fe2fb136c9a3b50d9053300333470665d3361fddae93e6ebff6ba
-    source:
-      file: src/cite/core/statements.ts
-      lines: 35-42
-      integrity: sha256-b743b9d113b886d14e9ee0f01663073e8750229f1b3be5474d5dc74df0f9bb45
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: marker-json-invalid
     claim:
@@ -712,6 +677,41 @@ citations:
       lines: 240-241
       integrity: sha256-d4d03e62def31886bb211e526e1f4388650b57671577d03697cb4f2327bf5082
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: marker-forms-per-format
+    claim:
+      lines: 454-457
+      integrity: sha256-fc1368006b0428b1743f54765c1052e7e534bae297a4064125eb3f2037a9472d
+    source:
+      file: src/cite/core/statements.ts
+      lines: 35-42
+      integrity: sha256-b743b9d113b886d14e9ee0f01663073e8750229f1b3be5474d5dc74df0f9bb45
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+  - id: marker-add-message-sample
+    claim:
+      lines: 421
+      integrity: sha256-8ba91953d351b962736c262c9b22bd31e94402f9f6c88aeda2ba7f407207e13e
+    source:
+      file: src/cite/cli.ts
+      lines: 192-196
+      integrity: sha256-0686b9fabe63ff3a4e4eb040c52e9640891df165a214e8a4568b58bcf41a5606
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+  - id: marker-writes-and-pins
+    claim:
+      integrity: sha256-08f7ab509f2a52b51173054f6177cb788be5b0a6c2c44e2a8fae876aa88f2593
+    source:
+      file: src/cite/commands/add.ts
+      lines: 277-293
+      integrity: sha256-c3f15a0fcded1527fdb388332061b1ee21a6076dc3d4e7584b6f91c680633d3e
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+  - id: add-message-sample
+    claim:
+      lines: 104-108
+      integrity: sha256-c9b77587673baa12e46d4c2bdf1a67dc784c9e1dca5905d7b83635cd0f86b369
+    source:
+      file: src/cite/cli.ts
+      lines: 203
+      integrity: sha256-1ef9c6c14c258e8e8eff77bcc8dac4c447a60a9ec80b5330200ec3cf9c219c70
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
 ---
 
 import { Steps, Tabs, TabItem, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

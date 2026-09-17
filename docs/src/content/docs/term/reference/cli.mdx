@@ -37,15 +37,6 @@ citations:
       lines: 258-260
       integrity: sha256-ae662566df266aab038220e0565b189825f060edbd15420aeb9d57005ab9d21f
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
-  - id: manifests-read
-    claim:
-      lines: 51-52
-      integrity: sha256-f268ee152bf190d41c61e324a7a40ae2e42e1bfbd831cfc026da4a95ea173f58
-    source:
-      file: src/term/core/load-set.ts
-      lines: 203-212
-      integrity: sha256-b6b439c449c4cac919a2d924254ea1734d569e0e7fb7331bb52e5edd7e753d35
-      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: named-file-is-manifest
     claim:
       lines: 53-55
@@ -93,8 +84,8 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: allow-empty-flag-wins
     claim:
-      lines: 99
-      integrity: sha256-ee444c4d5190770ee37e65a0fc8ddd1f72b317c25349fbd19b59eb6e8ea7e092
+      lines: 99-103
+      integrity: sha256-76d3c8637062bba4a8c74bf20fc56fe3057ec43c44e5fa16660695448d2f80fb
     source:
       file: src/term/core/load-set.ts
       lines: 123
@@ -180,7 +171,7 @@ citations:
   - id: get-miss-message
     claim:
       lines: 188
-      integrity: sha256-e35ee4aa602857cc0cd7b443c72af101da656a37acb8726ae1f9440c96e2e99b
+      integrity: sha256-5f70ea56d9de6c0c3a4189b4261c86ac06e7408412adf01c906f0db932793f51
     source:
       file: src/term/commands/get.ts
       lines: 67-77
@@ -506,7 +497,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: vale-style-file-counts
     claim:
-      integrity: sha256-c4797296ff40dadbc2411f424d99d188d9a33c503833630d00b5abbbdc2f1a39
+      integrity: sha256-169073400004e0beb366b9e5f876ba995a5122d7d9b37f569fef737d583b541e
     source:
       file: src/term/reporters/pretty.ts
       lines: 193-209
@@ -514,27 +505,11 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: vale-wiring-notice
     claim:
-      integrity: sha256-c4797296ff40dadbc2411f424d99d188d9a33c503833630d00b5abbbdc2f1a39
+      integrity: sha256-169073400004e0beb366b9e5f876ba995a5122d7d9b37f569fef737d583b541e
     source:
       file: src/term/reporters/pretty.ts
       lines: 264-272
       integrity: sha256-9100d896dcef5adafcd1343ab6834c6eca05e4a0508decda17abe4784069e6ec
-      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
-  - id: write-change-lines
-    claim:
-      integrity: sha256-a4f986c4eec0d6ad0779061880441f9b7eadcc44599f55e8275b2e421f485be7
-    source:
-      file: src/term/reporters/pretty.ts
-      lines: 170-179
-      integrity: sha256-4a46913a482241c5208c12db8e4c7d97048bce18ac2a671cd09593de1853404c
-      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
-  - id: write-up-to-date-line
-    claim:
-      integrity: sha256-a4f986c4eec0d6ad0779061880441f9b7eadcc44599f55e8275b2e421f485be7
-    source:
-      file: src/term/reporters/pretty.ts
-      lines: 240-251
-      integrity: sha256-970117ae307a413b4bbc871ee7e5639ecb56c45c7943b145b50e9594c66237ca
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: write-check-exit-drift
     claim:
@@ -795,6 +770,49 @@ citations:
       lines: 162
       integrity: sha256-113c628c540865488a4235a1bf16e7a9e9920822d6b3342ea72c80b449bf307c
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: manifests-read
+    claim:
+      lines: 50-52
+      integrity: sha256-47a867bf4a8ee3ea0c4b5956871ff1642980db6038dd047622eb45e89e7a422f
+    source:
+      file: src/term/core/load-set.ts
+      lines: 203-212
+      integrity: sha256-b6b439c449c4cac919a2d924254ea1734d569e0e7fb7331bb52e5edd7e753d35
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+  - id: allow-empty-missing-path
+    claim:
+      lines: 99
+      integrity: sha256-74fa46af823202103651db56fef4dc331fcfb1be9c6cff0886a1b554826baee9
+    source:
+      file: src/meta/core/load-files.ts
+      lines: 200
+      integrity: sha256-e875231ef845ad664fc8dde395cd7cae437ab1a0eda11a486fcd2cbd153fabc5
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+  - id: allow-empty-no-matched-files
+    claim:
+      lines: 99
+      integrity: sha256-74fa46af823202103651db56fef4dc331fcfb1be9c6cff0886a1b554826baee9
+    source:
+      file: src/meta/core/load-files.ts
+      lines: 258
+      integrity: sha256-da70dbb9bcc1db6c1d1532237399e11fa14a9f72563d7fca972d0bb400e2e69f
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+  - id: write-change-lines
+    claim:
+      integrity: sha256-c1bf52ffa807562bfa7500e9c177620ee8179ac4b56e044c89307ff72422442c
+    source:
+      file: src/term/reporters/pretty.ts
+      lines: 170-179
+      integrity: sha256-4a46913a482241c5208c12db8e4c7d97048bce18ac2a671cd09593de1853404c
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+  - id: write-up-to-date-line
+    claim:
+      integrity: sha256-c1bf52ffa807562bfa7500e9c177620ee8179ac4b56e044c89307ff72422442c
+    source:
+      file: src/term/reporters/pretty.ts
+      lines: 240-251
+      integrity: sha256-970117ae307a413b4bbc871ee7e5639ecb56c45c7943b145b50e9594c66237ca
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -1321,14 +1339,14 @@ notice: no section of .vale.ini uses the Terms style. Add it to BasedOnStyles:
   BasedOnStyles = Vale, Terms
 ```
 
-{/* cite write-change-lines */}
-{/* cite write-up-to-date-line */}
 ```
 notice: .vale.ini has no section with BasedOnStyles. Add one that uses the Terms style:
   [*.md]
   BasedOnStyles = Terms
 ```
 
+{/* cite write-change-lines */}
+{/* cite write-up-to-date-line */}
 `--check` and `--dry-run` print each file that differs, with what would happen
 to it: `would change`, `would be created` or `would be removed`. When nothing
 differs a render prints that the target is up to date, and an in-place run

@@ -141,8 +141,8 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: sources-tracked-files-only
     claim:
-      lines: 70-71
-      integrity: sha256-9316a24f0efa88f5e71a3f4d299a2a5497437e3da26c8569dd0c5dbcf9242c59
+      lines: 70-74
+      integrity: sha256-c70350f64a77c2d6b1b2d8c02d9e8573186c1bc6571f35a536b3274b3983a344
     source:
       file: src/cite/core/sources.ts
       lines: 74-78
@@ -150,8 +150,8 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: sources-realpath-contained
     claim:
-      lines: 70-71
-      integrity: sha256-9316a24f0efa88f5e71a3f4d299a2a5497437e3da26c8569dd0c5dbcf9242c59
+      lines: 70-74
+      integrity: sha256-c70350f64a77c2d6b1b2d8c02d9e8573186c1bc6571f35a536b3274b3983a344
     source:
       file: src/cite/core/sources.ts
       lines: 62-72
@@ -159,8 +159,8 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: uncommitted-source-missing
     claim:
-      lines: 71-72
-      integrity: sha256-c698362da06ce9597d6cce9d87c4e8402962ac199df0e767b56289f51a281283
+      lines: 71-74
+      integrity: sha256-83bb1a63c0b89e388204c2d09de6c34f8e57a06105a9df2a1de4934b37ec90b3
     source:
       file: src/cite/core/sources.ts
       lines: 145
@@ -279,6 +279,15 @@ citations:
       lines: 376
       integrity: sha256-2018bfcbdee1a809b08f071e6fa0e7a3e8d7c90078b5da437c99bd34a8ea3410
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: sources-walk-without-git
+    claim:
+      lines: 72-73
+      integrity: sha256-851aad13b102af6ef5209e4fa05330baf9e03268fa7d7cfa4ccbbc170484f834
+    source:
+      file: src/cite/core/sources.ts
+      lines: 74-86
+      integrity: sha256-b960a34be4d9a85928499280cb124a5134df47c5bd8ea8fd21b5534b3b5f215b
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

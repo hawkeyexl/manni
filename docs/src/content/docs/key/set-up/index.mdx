@@ -176,7 +176,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: no-key-validate-row
     claim:
-      lines: 146
+      lines: 147
       integrity: sha256-458eddbe3a56cb469cba12206aa9f0c92a454f818fee184c8c048a77a3860901
     source:
       file: src/meta/commands/validate.ts
@@ -185,7 +185,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: no-key-write-row-terminal
     claim:
-      lines: 148
+      lines: 149
       integrity: sha256-a450c80a7054f85863ceeebe000bea0545d27fffcc997e90ec7f73ad0fd6bfe5
     source:
       file: src/shared/prompt.ts
@@ -194,7 +194,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: no-key-write-row-refusal
     claim:
-      lines: 148
+      lines: 149
       integrity: sha256-a450c80a7054f85863ceeebe000bea0545d27fffcc997e90ec7f73ad0fd6bfe5
     source:
       file: src/shared/prompt.ts
@@ -203,7 +203,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: no-key-cite-check-row
     claim:
-      lines: 149
+      lines: 150
       integrity: sha256-89c39b8a6e53c0d82da49502577c776499284b268c34967c95ed10a259f4a2cb
     source:
       file: src/cite/core/adapt.ts
@@ -212,7 +212,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: no-key-rotate-row
     claim:
-      lines: 150
+      lines: 151
       integrity: sha256-1e4d5dc51de09f4c9af3b85874ec53c736205ae21eff8c328fc4047f0926ee1d
     source:
       file: src/key/commands/rotate.ts
@@ -221,7 +221,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: no-key-rotate-row-check
     claim:
-      lines: 150
+      lines: 151
       integrity: sha256-1e4d5dc51de09f4c9af3b85874ec53c736205ae21eff8c328fc4047f0926ee1d
     source:
       file: src/key/commands/rotate.ts
@@ -238,7 +238,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: unverified-warning-message
     claim:
-      lines: 159
+      lines: 160
       integrity: sha256-992dcfe33a6699c316eb9e3730da965a08d421632b26e1c96e81561dd0d2e646
     source:
       file: src/meta/core/encrypted.ts
@@ -247,7 +247,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: unreadable-message
     claim:
-      lines: 174
+      lines: 175
       integrity: sha256-cc87160d2f5a9cb2b75f4038563046443db76d39c480653c6b11c200672ff685
     source:
       file: src/meta/core/encrypted.ts
@@ -256,7 +256,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: cite-no-key-missing-message
     claim:
-      lines: 194
+      lines: 195
       integrity: sha256-6ec47af4d60676c67c0f0c15b1158d0190a3e084b43283d6de9bb319c10746c4
     source:
       file: src/cite/core/adapt.ts
@@ -265,7 +265,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: query-refusal-message
     claim:
-      lines: 226
+      lines: 227
       integrity: sha256-e4ae30277bf7ae278060dc536ea89469741c0f1ae348c63e77713b678058fa30
     source:
       file: src/shared/prompt.ts
@@ -274,7 +274,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: cite-add-refusal-message
     claim:
-      lines: 230
+      lines: 231
       integrity: sha256-9818f7fb87e2fc9af44a54e97b1f07514445a6fd72848624dc83250edf3ac433
     source:
       file: src/cite/core/mint.ts
@@ -305,6 +305,14 @@ citations:
       lines: 114-116
       integrity: sha256-2b1dbb2de1cd7c2013f2d2a5b2bb19d316c327e5e260d34b10deee4143099103
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: only-rotate-refuses-to-start
+    claim:
+      integrity: sha256-2163aff8d9d07248d59fa7a519cab79b4e9950a7f12e26dc58442ef67ecd7c30
+    source:
+      file: src/key/commands/rotate.ts
+      lines: 397
+      integrity: sha256-ea09b213d678bc8b0ce802b2d88944e023680d8f3cbdadcb7ea0700dbc61c239
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -447,6 +455,7 @@ stays in the private one.
 
 ## What each tool does with no key
 
+{/* cite only-rotate-refuses-to-start */}
 Only `manni key rotate` refuses to start. Reads degrade, and writes stop.
 
 | Command | With no key available |

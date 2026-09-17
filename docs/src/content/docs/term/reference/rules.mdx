@@ -39,7 +39,7 @@ citations:
   - id: default-severities
     claim:
       lines: 15-24
-      integrity: sha256-bf1fff72bdf8fccae44f6ccc29925cf762f3d71402fd693647baaf87526bbec2
+      integrity: sha256-03ddaed0de7dc9ceffa2bb2f3889d9fa9bf78699526321a1cfb64402d8bd73f6
     source:
       file: src/term/core/severity.ts
       lines: 12-23
@@ -53,15 +53,6 @@ citations:
       file: src/term/core/check.ts
       lines: 63-80
       integrity: sha256-17a764445ff56b6819f08226799ce7e19998d16719158f97c7d26aecf54a5593
-      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
-  - id: duplicate-id-fires
-    claim:
-      lines: 16
-      integrity: sha256-63bd6e0a1feb11170c6e049b60d345d51684b19fdf8a94facff71a752eb087c6
-    source:
-      file: src/term/core/check.ts
-      lines: 81-94
-      integrity: sha256-a88fa1d361751b9c00dd974629468a23c9ad621e36b223028d764c5331989b38
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: label-collision-fires
     claim:
@@ -220,7 +211,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: duplicate-id-every-entry
     claim:
-      integrity: sha256-07f98d9f7ea0b6a4ac8fc01b28a3319b3c4a6945233e486faa5b3d1cb74fba87
+      integrity: sha256-470aa6d7fb47654c24e305d3d4d0bfa11f0285ed5bc1a2e37e0d64a41005a0e8
     source:
       file: src/term/core/check.ts
       lines: 91-96
@@ -228,7 +219,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: id-derivation
     claim:
-      integrity: sha256-07f98d9f7ea0b6a4ac8fc01b28a3319b3c4a6945233e486faa5b3d1cb74fba87
+      integrity: sha256-470aa6d7fb47654c24e305d3d4d0bfa11f0285ed5bc1a2e37e0d64a41005a0e8
     source:
       file: src/term/core/readers/normalize.ts
       lines: 124-127
@@ -236,7 +227,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: id-slug
     claim:
-      integrity: sha256-07f98d9f7ea0b6a4ac8fc01b28a3319b3c4a6945233e486faa5b3d1cb74fba87
+      integrity: sha256-470aa6d7fb47654c24e305d3d4d0bfa11f0285ed5bc1a2e37e0d64a41005a0e8
     source:
       file: src/term/core/id.ts
       lines: 9-12
@@ -244,7 +235,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: duplicate-id-page-and-manifest
     claim:
-      integrity: sha256-07f98d9f7ea0b6a4ac8fc01b28a3319b3c4a6945233e486faa5b3d1cb74fba87
+      integrity: sha256-470aa6d7fb47654c24e305d3d4d0bfa11f0285ed5bc1a2e37e0d64a41005a0e8
     source:
       file: test/term/check.test.ts
       lines: 107-130
@@ -338,6 +329,31 @@ citations:
       lines: 132
       integrity: sha256-642aa7bc0402e0101838821cd5ed5ee06a261d3134bb836e1a23650376a401d2
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: duplicate-id-fires
+    claim:
+      lines: 16
+      integrity: sha256-ccc952197bb26f597d7e00b2b22229e623d3c9024f2f073aa51a78ab4dd2662a
+    source:
+      file: src/term/core/check.ts
+      lines: 82-97
+      integrity: sha256-dfc4251401a202c3679d4ab3332765d9c11d7bc6ca46863b43382e90f1454bdc
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+  - id: duplicate-id-ignores-case
+    claim:
+      integrity: sha256-470aa6d7fb47654c24e305d3d4d0bfa11f0285ed5bc1a2e37e0d64a41005a0e8
+    source:
+      file: src/term/core/check.ts
+      lines: 84-90
+      integrity: sha256-121c8f834fe30757fea1a986cd0bb9aa8cc497b0172c30529ea4cedfa5348d57
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+  - id: id-references-ignore-case
+    claim:
+      integrity: sha256-470aa6d7fb47654c24e305d3d4d0bfa11f0285ed5bc1a2e37e0d64a41005a0e8
+    source:
+      file: src/term/core/check.ts
+      lines: 57-61
+      integrity: sha256-e4bc7eaff3d5ac52320596df329622d7bf6dc33cdfc12f4afbad37ab70c2b55c
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
 ---
 
 {/* cite rule-id-prefix */}
@@ -424,6 +440,8 @@ sits on the page's `concepts:` line. `kg.concepts` is resolved the same way.
 {/* cite id-derivation */}
 {/* cite id-slug */}
 {/* cite duplicate-id-page-and-manifest */}
+{/* cite duplicate-id-ignores-case */}
+{/* cite id-references-ignore-case */}
 Reported on every entry that shares the id, each naming the others. Ids
 compare ignoring case, as a reference to an id resolves. So `Bifocal` and
 `bifocal` collide. An id comes from the record, else from the construct's own identifier, else from the

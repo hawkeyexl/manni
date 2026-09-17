@@ -31,15 +31,6 @@ citations:
       lines: 410
       integrity: sha256-d5e1fc9f01fa9e06e6b5e3685957b987ba7770881d8333f822983a13cccd6dd5
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
-  - id: no-write-beside-undecryptable
-    claim:
-      lines: 33-34
-      integrity: sha256-752133af314b4344857315c45c2586e0e4189e7271f6f8142ca44413505d5dcc
-    source:
-      file: src/key/commands/rotate.ts
-      lines: 573-577
-      integrity: sha256-31ec4c098ad2f4947315ebf3909d0a2b3b28edaebcf334b0a63495569ee1d7c7
-      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: dry-run-writes-nothing
     claim:
       lines: 55-56
@@ -402,6 +393,24 @@ citations:
       lines: 573-577
       integrity: sha256-31ec4c098ad2f4947315ebf3909d0a2b3b28edaebcf334b0a63495569ee1d7c7
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: no-write-beside-undecryptable
+    claim:
+      lines: 32-34
+      integrity: sha256-71998decc9813a14a12f6ec2df94483512732ea8eddd171abbf1ca5b7e45febd
+    source:
+      file: src/key/commands/rotate.ts
+      lines: 573-577
+      integrity: sha256-31ec4c098ad2f4947315ebf3909d0a2b3b28edaebcf334b0a63495569ee1d7c7
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+  - id: undecryptable-exits-1
+    claim:
+      lines: 33-34
+      integrity: sha256-5cdf50c4ed6690965f693aca86e7e8fd5543beac58bfd2d42fcd0079de19b10a
+    source:
+      file: src/key/commands/rotate.ts
+      lines: 625
+      integrity: sha256-c2a15612a4779c17c232a85a2711e6fe5cc3727a1f3af5d5f0471f4212b3ccbe
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

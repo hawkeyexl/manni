@@ -253,7 +253,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: never-true-needs-commit
     claim:
-      integrity: sha256-4187fff489a38b29da4784204078479ec73d3d27ded8f4de36fc8b30c33c8849
+      integrity: sha256-9055fd61ec88b6da68589469c0332bf4954d9af905a595d38f2a2921bdbbf01e
     source:
       file: src/cite/core/classify.ts
       lines: 167-170
@@ -261,7 +261,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: show-diff-from-commit
     claim:
-      integrity: sha256-4187fff489a38b29da4784204078479ec73d3d27ded8f4de36fc8b30c33c8849
+      integrity: sha256-9055fd61ec88b6da68589469c0332bf4954d9af905a595d38f2a2921bdbbf01e
     source:
       file: src/cite/core/git.ts
       lines: 116-121
@@ -269,7 +269,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: shallow-clone-degrades
     claim:
-      integrity: sha256-4187fff489a38b29da4784204078479ec73d3d27ded8f4de36fc8b30c33c8849
+      integrity: sha256-9055fd61ec88b6da68589469c0332bf4954d9af905a595d38f2a2921bdbbf01e
     source:
       file: src/cite/core/classify.ts
       lines: 171-172
@@ -420,24 +420,6 @@ citations:
       lines: 332-334
       integrity: sha256-d51b978f9fa088753d24578d22c1dbbd55f75f157ec76b756d82b78ad164740e
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
-  - id: fingerprint-rule-and-id
-    claim:
-      lines: 243-244
-      integrity: sha256-fb393cba2b9dffaaed99f3bab8aa0d5176d5eb60a580501dd118dd0e44e8f6ca
-    source:
-      file: src/cite/core/adapt.ts
-      lines: 264-274
-      integrity: sha256-7fed8c31c85ca5c6ae1da897cb2f0c52614abfb60cc290245b04c211c9c47d44
-      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
-  - id: fingerprint-source-pin-not-claim
-    claim:
-      lines: 246
-      integrity: sha256-3e6cbd21152ebe3fd54bf3232e2c033b915bac8b7758611bfa3ce7ccc8edf148
-    source:
-      file: src/cite/core/adapt.ts
-      lines: 228-239
-      integrity: sha256-1c7c3dff8d8eaa520c3ca00f4e3613527751791dec39a42396e1b82cb82ef25f
-      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: baseline-optional-path
     claim:
       lines: 259
@@ -472,6 +454,42 @@ citations:
       lines: 34
       integrity: sha256-9b7acb2b1501361f96248373f12a91598a29e1e2985fc255aeb65287130ad879
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: fingerprint-rule-and-id
+    claim:
+      lines: 243-245
+      integrity: sha256-3584497ee86db01e2f08f296bf43e875860ca418e9f1eec351eb295ec3461664
+    source:
+      file: src/cite/core/adapt.ts
+      lines: 264-274
+      integrity: sha256-7fed8c31c85ca5c6ae1da897cb2f0c52614abfb60cc290245b04c211c9c47d44
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+  - id: fingerprint-source-pin-not-claim
+    claim:
+      lines: 246
+      integrity: sha256-7ce2985880c3318531b297b0282f9f54773655f4ff3bb9c52e665c97d533cf80
+    source:
+      file: src/cite/core/adapt.ts
+      lines: 228-239
+      integrity: sha256-1c7c3dff8d8eaa520c3ca00f4e3613527751791dec39a42396e1b82cb82ef25f
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+  - id: fingerprint-position-reopens
+    claim:
+      lines: 247
+      integrity: sha256-bb1856603e188c942376fafb64d9b8988067e7934976d2d02c088624046a3975
+    source:
+      file: src/cite/core/adapt.ts
+      lines: 268
+      integrity: sha256-a741216f08d1a31006594579c286beb3d95e19759f0bd32c0b84f19bbfe31713
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+  - id: write-baseline-grows
+    claim:
+      lines: 250-251
+      integrity: sha256-fa525c86f41fe0acc0c766353de7e0934a9383f25010b14e145536f9958bd3a9
+    source:
+      file: src/meta/core/baseline.ts
+      lines: 546-552
+      integrity: sha256-9bd2fc45d80ca86284dfbbf0d4811799bd6d19467d3d823e5edd9d2b2d576e73
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
 ---
 
 import { Steps, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';

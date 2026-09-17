@@ -79,15 +79,6 @@ citations:
       lines: 100-112
       integrity: sha256-f357ade3de47522e5444e9f45a8433c5ff70ab424370779590d76691291ff091
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
-  - id: row-duplicate-id
-    claim:
-      lines: 55
-      integrity: sha256-69022b35f45ab0bc84fcfc6e241085002dbad85a504f9cc0f1ae07c91a86e5af
-    source:
-      file: src/term/core/check.ts
-      lines: 81-94
-      integrity: sha256-a88fa1d361751b9c00dd974629468a23c9ad621e36b223028d764c5331989b38
-      commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: row-alt-label-collision
     claim:
       lines: 56
@@ -242,7 +233,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: id-defaults-to-slug
     claim:
-      integrity: sha256-01c52f96f83c17a54b42ff944f4482cd8857904cb512fe5a66a45a1ef4cb6b31
+      integrity: sha256-2f6a606d5e4846adb26f50b81ef5be1ebcfb6685f94cfb7362a1d5bd5ac3366d
     source:
       file: src/term/core/readers/normalize.ts
       lines: 126
@@ -250,7 +241,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: id-slug-github-slugger
     claim:
-      integrity: sha256-01c52f96f83c17a54b42ff944f4482cd8857904cb512fe5a66a45a1ef4cb6b31
+      integrity: sha256-2f6a606d5e4846adb26f50b81ef5be1ebcfb6685f94cfb7362a1d5bd5ac3366d
     source:
       file: src/term/core/id.ts
       lines: 10-12
@@ -258,7 +249,7 @@ citations:
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
   - id: alt-label-collision-rule
     claim:
-      integrity: sha256-01c52f96f83c17a54b42ff944f4482cd8857904cb512fe5a66a45a1ef4cb6b31
+      integrity: sha256-2f6a606d5e4846adb26f50b81ef5be1ebcfb6685f94cfb7362a1d5bd5ac3366d
     source:
       file: src/term/core/check.ts
       lines: 114-122
@@ -487,6 +478,15 @@ citations:
       lines: 67-76
       integrity: sha256-0b1adcea878f72a48497137fff1e405ac1b9c8b8b5906e17eb740806b00ca825
       commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+  - id: row-duplicate-id
+    claim:
+      lines: 55
+      integrity: sha256-69022b35f45ab0bc84fcfc6e241085002dbad85a504f9cc0f1ae07c91a86e5af
+    source:
+      file: src/term/core/check.ts
+      lines: 82-97
+      integrity: sha256-dfc4251401a202c3679d4ab3332765d9c11d7bc6ca46863b43382e90f1454bdc
+      commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
 ---
 
 import { Steps, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
