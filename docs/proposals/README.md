@@ -65,6 +65,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0046](0046-provenance-pins.md) | Provenance pins, where `provenance` records which machine wrote which body lines as a range and an integrity hash stamped by `manni meta derive`. Field attribution becomes one `meta-provenance` shape across the family | Maya · M8 / Sara · S1 / Devin · D4 | Implemented (#34) |
 | [0047](0047-field-location.md) | A field's preferred location, `x-manni-location` set to `page` or `external`, marked on every vocabulary field. `manni meta relocate` moves values between the pages and a collection's manifest, and every writer follows the manifest | Sara · S1 / Maya · M4 | Implemented (#37) |
 | [0052](0052-term-domain.md) | The `term` domain. A term is a flat record with `type: term`, read from every format in one-per-file and many-per-file shapes. `manni term` checks the set, lints definitions and writes a Vale style. It renders the set to any format | Sara · S6 / Maya · M9 / Devin · D8 | Accepted |
+| [0058](0058-a-manifest-per-page.md) | A manifest per page. `externalMetadata[].file` takes one placeholder, `{page}`, so a collection keeps each page's external metadata in a file named after that page. A concrete `file` keeps today's meaning | Maya · M6 / Devin · D5 | Proposed |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
