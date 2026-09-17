@@ -18,7 +18,7 @@ export {
   spellSource,
 } from "./core/range.js";
 export { hashLines, hashRange, isKeyedPin, normalizeText, sliceLines, splitLines } from "./core/hash.js";
-export { shortCommit, shortPin, shortSrc } from "./core/spell.js";
+export { shortCommit, shortLine, shortPin, shortSrc } from "./core/spell.js";
 export { buildSourceIndex, readSource } from "./core/sources.js";
 export type { BuildIndexOptions, ReadSourceResult } from "./core/sources.js";
 export {

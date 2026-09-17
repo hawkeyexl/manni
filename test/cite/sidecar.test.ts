@@ -255,6 +255,25 @@ describe("cite add, writing the manifest", () => {
     ).toBe("pages/limits.md already has an entry fetch-timeout.");
   });
 
+  it("refuses a duplicate of an entry the manifest already holds", async () => {
+    const cwd = copyFixture();
+    const before = read(cwd, "citations.yaml");
+    expect(
+      await refusal(
+        runAdd({
+          cwd,
+          page: "pages/limits.md",
+          pageLines: { start: 6, end: 6 },
+          src: "src/limits.ts:2",
+          commitSha: false,
+          gitClient: noGit(),
+          env: {},
+        }),
+      ),
+    ).toBe("pages/limits.md already has an entry for line 6 and src/limits.ts:2 (fetch-timeout).");
+    expect(read(cwd, "citations.yaml")).toBe(before);
+  });
+
   it("prints the manifest's diff under --dry-run and writes nothing", async () => {
     const cwd = copyFixture();
     const before = read(cwd, "citations.yaml");

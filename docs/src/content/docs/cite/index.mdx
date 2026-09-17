@@ -15,7 +15,12 @@ hero:
       variant: minimal
 ---
 
-import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import { Aside, Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Beta">
+`manni cite` is in beta. Its commands, config keys and output can change in
+any release, without notice.
+</Aside>
 
 {/* cite two-ends-claim */}
 {/* cite two-ends-source */}
@@ -60,7 +65,7 @@ npx @hawkeyexl/manni cite add docs/limits.md:9 lib/limits.ts:2 --id fetch-timeou
 ```
 
 ```
-docs/limits.md: added fetch-timeout to frontmatter (claim at line 19, sha256-c41f09aa…; source lib/limits.ts:2, sha256-78af1d33…, 9265563)
+docs/limits.md: added fetch-timeout to frontmatter (claim at line 19, sha256-c41f09aa…; source lib/limits.ts:2 "export const FETCH_TIMEOUT_MS = 10_000;", sha256-78af1d33…, 9265563)
 ```
 
 {/* cite stored-claim-body-lines */}
