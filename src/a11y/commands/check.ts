@@ -102,7 +102,7 @@ export async function runCheck(opts: CheckOptions, deps: CheckDeps): Promise<Che
     const results = outcome.pages.map((page) => finishPage(page, opts.severity));
     return {
       results,
-      summary: summarize(results, outcome, sitemap.source, opts.crawl),
+      summary: summarize(results, outcome, sitemap, opts.crawl),
     };
   } finally {
     await analyzer.close();
@@ -121,7 +121,7 @@ function finishPage(page: Omit<PageResult, "score">, floor: Severity): PageResul
 function summarize(
   results: PageResult[],
   { discovered, skipped, duplicates }: CrawlOutcome,
-  sitemap: string | null,
+  sitemap: SitemapDiscovery,
   crawl: boolean,
 ): CheckSummary {
   // Spelled out so the compiler, not a test, says when the family scale moves.
@@ -143,7 +143,10 @@ function summarize(
     failed,
     violations,
     bySeverity,
-    sitemap,
+    sitemap: sitemap.source,
+    // The count the progress line already reported as `(N pages)`, so the
+    // report cannot disagree with the narration that preceded it.
+    sitemapPages: sitemap.urls.length,
     crawl,
   };
 }

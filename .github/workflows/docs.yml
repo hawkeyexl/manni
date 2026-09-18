@@ -171,26 +171,24 @@ jobs:
             sleep 1
           done
 
-      # Two steps, one crawl each, because the report and the gate want
-      # different floors. The first runs at `notice`, the bottom of the family
-      # scale, so every finding the site carries lands as an annotation at
-      # GitHub's matching level: `error`, `warning` or `notice`, one-to-one,
-      # since the scale was chosen to match GitHub's. The step is allowed to
-      # fail, because any finding at all exits 1 and the verdict is the next
-      # step's.
+      # One crawl, annotating and deciding in the same pass. This was two steps
+      # — a report at `--severity notice` allowed to fail, then a gate at the
+      # configured floor — from when those floors could differ. They cannot any
+      # more. `notice` is the bottom of the family scale, `manni.config.yaml`
+      # is at `notice`, and that file documents `severity:` as a ratchet that is
+      # lowered as findings are fixed and never raised. So the second crawl
+      # re-derived, page for page, the answer the first one already had, at
+      # roughly three minutes of real browser a time.
       #
-      # On localhost the built sitemap lists the production URLs, which are on
-      # another host, so the crawl drops them and reaches every page through
-      # the sidebar links instead. `--progress` names each page in the log,
-      # which has no terminal to draw the status line on.
-      - name: Report accessibility findings
-        run: node dist/cli.js a11y check --severity notice -f github --progress
-        continue-on-error: true
-
-      # The gate names no floor, so it inherits `severity:` from the repo's
-      # manni.config.yaml, and fails on any finding at that level. The floor
-      # is `notice` now, so the gate and the report see the same findings.
-      # Two rules used to keep it higher, and both are fixed in the site.
+      # The step names no floor, so it inherits `severity:` from the repo's own
+      # manni.config.yaml, which is the point: the job exercises config
+      # discovery the way `validate-docs` does for the metadata tool. `-f
+      # github` puts one annotation per rule per page on the run, at GitHub's
+      # matching level — `error`, `warning` or `notice`, one-to-one, since the
+      # family scale was chosen to match GitHub's — and prints nothing at all
+      # when the site is clean.
+      #
+      # Two rules used to keep the floor higher, and both are fixed in the site.
       # `scrollable-region-focusable`, axe's `serious` and so an `error`, by
       # the Expressive Code plugin in docs/astro.config.mjs that gives every
       # code block a tabindex. `landmark-unique`, axe's `moderate` and so a
@@ -198,9 +196,14 @@ jobs:
       # Starlight uses the title as the aside's `aria-label`, and two untitled
       # asides of one type on a page share the default label. Proposal 0035
       # defers a baseline like 0001's; until one exists, the config's floor is
-      # the ratchet. Lower it as findings are fixed, never raise it.
-      - name: Gate on findings at the configured floor
-        run: node dist/cli.js a11y check --progress -q
+      # the ratchet.
+      #
+      # On localhost the built sitemap lists the production URLs, which are on
+      # another host, so the crawl drops them and reaches every page through
+      # the sidebar links instead. `--progress` names each page in the log,
+      # which has no terminal to draw the status line on.
+      - name: Check the built site
+        run: node dist/cli.js a11y check -f github --progress
 
   # Deploy the uploaded artifact to GitHub Pages. Never from a pull request —
   # a PR build is a check, not a release, and `pages: write` on PR-triggered
