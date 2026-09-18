@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [2.8.0](https://github.com/hawkeyexl/manni/compare/v2.7.1...v2.8.0) (2026-09-18)
+
+
+### Features
+
+* **a11y:** --exclude keeps the crawl out of part of a site ([#91](https://github.com/hawkeyexl/manni/issues/91)) ([cac43a4](https://github.com/hawkeyexl/manni/commit/cac43a4a3190b4eb7d0a110e9c20ca427839104b)), closes [#80](https://github.com/hawkeyexl/manni/issues/80) [#58a6ff](https://github.com/hawkeyexl/manni/issues/58a6ff)
+
 ## [2.7.1](https://github.com/hawkeyexl/manni/compare/v2.7.0...v2.7.1) (2026-09-18)
 
 
