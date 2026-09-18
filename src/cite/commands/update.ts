@@ -6,13 +6,14 @@
  * the page, `source.lines` for a source found elsewhere in its file. A marker
  * never moves, because it travels with its own text.
  *
- * `--accept` re-pins a changed end. A claim is re-pinned over the paragraph or
- * fenced block now at its first line, and the report prints that text, so the
- * log shows exactly what was accepted; a claim whose line is blank, or now a
- * different kind of block, or longer than the 5,000-line range limit, is
- * skipped, and a sentence that was reworded *and*
- * moved is an `add` again. A source is re-minted at HEAD, with a new
- * `commit-sha` where the entry records one.
+ * `--accept` re-pins a changed end. A claim is re-pinned over the paragraph,
+ * fenced block or table rows now at its first line, and the report prints that
+ * text, so the log shows exactly what was accepted. A paragraph grows with the
+ * sentence it gained; a table keeps the number of rows the claim was minted
+ * over, because a row is a statement of its own. A claim it cannot re-pin is
+ * skipped with the reason named, and a sentence that was reworded *and* moved
+ * is an `add` again. A source is re-minted at HEAD, with a new `commit-sha`
+ * where the entry records one.
  *
  * Every finding the run did not resolve is reported as skipped, and an
  * error-severity one is work left undone: exit 1, as `fill` has it. Writes by
@@ -23,7 +24,6 @@ import { writeFileAtomic } from "../../meta/index.js";
 import { STDIN_LABEL } from "../../meta/internal.js";
 import { checkCitations } from "../core/check-page.js";
 import {
-  claimLine,
   noUnitAt,
   normalizeWhitespace,
   pinOfLines,
@@ -795,10 +795,11 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     if (claim !== null && claim.status === "changed" && entry !== undefined && result.anchor !== "marker") {
       // The paragraph, block or row now at the claim's first line. Anything
       // else is left for a fresh `cite add`, and says why.
-      const at = claimLine(claim);
-      // The span the claim holds now. A table keeps it: the author chose how
-      // many rows the claim covers, and `--accept` re-mints, never redesigns.
+      // The span the claim holds now, and the line it starts on. A table keeps
+      // the span: the author chose how many rows the claim covers, and
+      // `--accept` re-mints, never redesigns.
       const held = claim.fileLines === undefined ? undefined : parseLines(claim.fileLines);
+      const at = held?.start;
       const unit: ClaimUnit | undefined =
         at === undefined ? undefined : unitAt(page, at, lines, held);
       const wantsBlock = entry.citation.quote === true;
