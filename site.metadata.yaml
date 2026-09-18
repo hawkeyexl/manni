@@ -7437,8 +7437,8 @@ docs/src/content/docs/cite/reference/cli.mdx:
         commit-sha: 012f6c4e65cb1bce53d640a150721dc9244f6bb3
     - id: update-only-ids
       claim:
-        lines: 581
-        integrity: sha256-687c49012842ec4f2e2f9b4da238d29939956ea496da36e4d952a4909a161cae
+        lines: 579-583
+        integrity: sha256-a48ead2626727acb466b028a536a3b2cd239b3fa6829f854427e2137b977687e
       source:
         file: src/cite/commands/update.ts
         lines: 904-906
@@ -7473,8 +7473,8 @@ docs/src/content/docs/cite/reference/cli.mdx:
         commit-sha: 61a9f7b18cff478ec26e7ca7afd5548f08ac8f53
     - id: update-dry-run
       claim:
-        lines: 581-582
-        integrity: sha256-1a3a545dabf60040d4c28e5a5687d1ac270b7828e4e85e6d760b416fd25e7463
+        lines: 579-583
+        integrity: sha256-a48ead2626727acb466b028a536a3b2cd239b3fa6829f854427e2137b977687e
       source:
         file: src/cite/commands/update.ts
         lines: 1103-1105
