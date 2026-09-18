@@ -69,6 +69,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0054](0054-marker-reanchoring.md) | Re-anchoring misplaced cite markers. A marker line inside a paragraph is `marker-misplaced`, a warning. `update` moves it where `add --marker` writes markers, and re-pins when the old pin still holds | Maya · M5 / Theo · T2 / Devin · D5 | Implemented (#68) |
 | [0055](0055-following-a-source.md) | Following a source across files, and inside a changed range. A pin that holds nowhere in its file is searched for in the files a commit touched, so a rename reads `source-moved` rather than `source-missing`. A changed source carries the span its pinned lines now cover, and `update --accept` re-mints there | Maya · M5 / Devin · D5 / Theo · T2 | Proposed |
 | [0056](0056-several-ids-per-marker.md) | Several ids per marker. A marker's payload becomes one or more ids separated by spaces, so a paragraph that supports several claims carries one comment instead of six. `add --marker` joins the marker that is already there | Maya · M5, M6 / Theo · T2 | Proposed |
+| [0057](0057-uncovered-claims.md) | Uncovered claims, judged once and recorded. `manni cite claims` asks a model whether each uncovered run of body lines asserts behaviour, and writes every verdict to a committed file. `check` reports `claim-uncovered` from that file alone, so it still calls no model and opens no socket | Maya · M5 / Devin · D5 | Proposed |
 | [0059](0059-a11y-crawl-exclusions.md) | Keeping the a11y crawl out of part of a site: `--exclude <glob>` repeatable, an `a11y.exclude:` key, globs matched against the URL path, and `summary.excluded` | Devin · D1, D3 | Proposed |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
@@ -157,6 +158,11 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
 0044 ──┬─> 0056          (the marker, the anchor rule and the marker rules, whose
        │                  payload stress test 11 narrowed to a single id)
 0034 ──┘                 (one separator per list, which is what picks the space)
+
+0044 ──┬─> 0057          (the hashing rule, the claim search, and the rule table a
+       │                  new rule joins; its no-model promise narrows to `check`)
+0017 ──┤                 (the egress analysis, and fill's provider flags reused as they are)
+0036 ──┘                 (the fill-shaped proposal it asked for, with the model outside the gate)
 ```
 
 The four `Proposed` SQL items (0026–0029) are independent of each other, with one exception. 0026 and 0029 both grow `query`'s `-f` value list. Each specifies the combined six-value surface, and whichever is implemented second merges into the one const. Recommended implementation order is 0026 → 0029 → 0027 → 0028, which is impact-first. The two config-touching ones (0026, 0027) land apart, so the second rebases trivially.
