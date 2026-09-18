@@ -668,6 +668,14 @@ names its own entry, so each bypasses. The line says `replaced` rather than
 docs/limits.md: fetch-timeout claim at line 9 re-pinned (replaced; now "Retries are capped at three.")
 ```
 
+#### How far the first guard reaches
+
+The guard refuses a claim whose line shares no sentence with the claim at its
+baseline. It needs a baseline to judge at all. A pin `update` minted has none
+until a commit holds it, so an accept run straight after an update is
+unguarded. `--dry-run` shows every claim a run would re-pin, with its text,
+before anything is written.
+
 {/* cite anchor-findings-skipped */}
 An anchoring or entry finding (`marker-orphan`, `anchor-invalid`, an invalid
 entry) is never rewritten, and is reported as skipped.

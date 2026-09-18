@@ -945,6 +945,31 @@ clearing 68, and `--show-diff` on one of the 24.
   mid-paragraph markers still need hoisting by hand, and then plain `update`
   finishes the job.
 
+### What the guard actually caught
+
+The `--accept` guard was measured on this repository's own corpus, after the
+merge that brought 0054 in. A blanket `--accept` would have re-pinned 33
+claims. The guard refused 2. It judged 8 more against their baseline and
+allowed them. For the remaining 23 it had no baseline, so it stood aside, and
+reading those by hand found 4 that were wrong.
+
+So the guard catches a replaced line where a baseline exists and the two texts
+are wholly unalike. It is blind to a pin `update` minted rather than a commit,
+which is most pins in the run right after an `update`. The reference says so
+in those words, because a reader deciding whether to trust a blanket accept
+needs the precondition and not only the rule.
+
+This is recorded as a finding rather than a promise. It is one corpus at one
+moment, and the number will move. What will not move is the shape: the guard's
+reach is bounded by whether the walk found a baseline.
+
+Six of the ten real cases the 0054 merge turned up were a different fault.
+The pin's stored line had drifted onto a marker comment, a fence, or a table
+separator, which is text no claim can be. Refusing to re-pin over those needs
+neither a baseline nor a threshold, and it would have caught all six. That is
+its own change, on `update` and arguably on `add`, and it is logged rather
+than folded in here.
+
 The review's decisions, in the order they were debated.
 
 1. **A widened anchor counts as reanchored.** Condition 1 lets the anchor now
