@@ -27,10 +27,19 @@ import { GIT_UNAVAILABLE_COMMIT, gitClient } from "../core/git.js";
 import { sliceLines, splitLines } from "../core/hash.js";
 import { mintCitation } from "../core/mint.js";
 import { bodyLineOf, readPage } from "../core/page.js";
-import { formatSrc, lineSpec, parseLines, parseSrc, spellLines, spellSource, tooWide } from "../core/range.js";
-import { shiftedEntries, spellAt, withClaimLines, type Shifted } from "../core/shift.js";
+import {
+  formatSrc,
+  lineSpec,
+  parseLines,
+  parseSrc,
+  spellLines,
+  spellSource,
+  tooWide,
+} from "../core/range.js";
+import { misplacedMarkers } from "../core/reanchor.js";
+import { shiftedEntries, withClaimLines, type Shifted } from "../core/shift.js";
 import { readSource, sourceIndexFor } from "../core/sources.js";
-import { shortSrc } from "../core/spell.js";
+import { shortSrc, spellAt } from "../core/spell.js";
 import { ManifestSet } from "../core/manifest.js";
 import { sidecarsFor, type PageSidecar } from "../core/sidecar.js";
 import {
@@ -301,6 +310,27 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
       // one, so a check would call it `current` whatever the prose does.
       const empty = emptyClaimRefusal(lines, pageLines, at);
       if (empty !== undefined) throw new CiteError(empty);
+    }
+    // `add` does not move a marker it did not write, so it refuses to write
+    // where a misplaced one would make its entry wrong (proposal 0054).
+    const split = misplacedMarkers(page, lines);
+    const held = split.find(
+      (found) => found.line >= pageLines.start && found.line <= pageLines.end,
+    );
+    if (held !== undefined) {
+      throw new CiteError(
+        `${at} holds the marker at line ${String(held.line)}, which splits its paragraph. Run manni cite update first.`,
+      );
+    }
+    const inside = marker
+      ? split.find(
+          (found) => pageLines.start >= found.unit.start && pageLines.start <= found.unit.end,
+        )
+      : undefined;
+    if (inside !== undefined) {
+      throw new CiteError(
+        `${at} is in the paragraph at ${spellAt(inside.unit)}, which the marker at line ${String(inside.line)} splits. Run manni cite update first.`,
+      );
     }
   }
 

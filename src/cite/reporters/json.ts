@@ -12,6 +12,7 @@ import type {
   CheckRun,
   CitationAnchor,
   CitationResult,
+  MarkerEnd,
   OriginKind,
   PageCitationReport,
   RemoveRun,
@@ -41,6 +42,8 @@ export interface PublicCitationResult {
   id?: string;
   origin: { kind: OriginKind; file: string; line?: number };
   anchor: CitationAnchor;
+  /** The marker that names the entry: its line, and its misplacement when it has one. */
+  marker?: MarkerEnd;
   claim: PublicClaimEnd | null;
   source: PublicSourceEnd;
 }
@@ -79,6 +82,7 @@ export function publicCitation(result: CitationResult): PublicCitationResult {
     ...(result.citation.id === undefined ? {} : { id: result.citation.id }),
     origin,
     anchor: result.anchor,
+    ...(result.marker === undefined ? {} : { marker: result.marker }),
     claim,
     source,
   };

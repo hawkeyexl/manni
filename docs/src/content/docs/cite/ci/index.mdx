@@ -43,7 +43,7 @@ line. Nor for a typo fixed beside the sentence. The summary counts each apart:
 {/* cite fourteen-rules */}
 {/* cite severity-levels-off */}
 Every other rule is an error by default. The `severity:` map under `cite:` in
-`manni.config.yaml` can move any of the fourteen rules to `error`, `warning`,
+`manni.config.yaml` can move any of the fifteen rules to `error`, `warning`,
 `notice` or `off`. See the
 [configuration reference](/manni/cite/reference/configuration/#severity).
 
@@ -73,7 +73,7 @@ annotated on the manifest.
 | --- | --- | --- |
 | `pretty` | People, and local runs. The default. | One line per citation under its page; a summary line. `-q` hides current citations and clean pages. |
 | `github` | GitHub Actions annotations. | `::error` / `::warning` / `::notice` workflow commands, one per finding, `title=manni:cite/<rule>`. |
-| `json` | Scripts and dashboards. | `summary` plus `pages[]`, each with every citation's `claim` and `source` ends, its `origin` and `anchor`, and every finding's `rule`, `ruleId`, `severity`, `message` and `line`. Under `--no-check-sources`, source statuses are `skipped` and appear here only. |
+| `json` | Scripts and dashboards. | `summary` plus `pages[]`, each with every citation's `claim` and `source` ends, its `origin` and `anchor`, its `marker` where one anchors it, and every finding's `rule`, `ruleId`, `severity`, `message` and `line`. Under `--no-check-sources`, source statuses are `skipped` and appear here only. |
 | `sarif` | GitHub code scanning and any SARIF consumer. | One result per finding with `ruleId: manni:cite/<rule>`, `level`, the annotation's message, the page as `artifactLocation.uri`, `region.startLine`, and a fingerprint stable across a move. Each rule has a plain description and a `helpUri` to its row in the [citations reference](/manni/cite/reference/citations/#source-end-rules). Code scanning drops a location outside the repository, so a manifest that sits outside it is reported on the page. |
 | `junit` | The CI "Tests" tab. | One `testcase` per page, classname `manni.cite`, a `failure` per error with `type` set to the rule id and the annotation's message. |
 

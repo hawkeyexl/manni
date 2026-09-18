@@ -493,7 +493,7 @@ describe("manni cite (usage errors)", () => {
     const r = cite(["check", "--root", ".", "pages/current.md"]);
     expect(r.status).toBe(2);
     expect(r.stderr.split(/\r?\n/)[0]).toBe(
-      'manni: Unknown key "changed" under cite.severity: in manni.config.yaml. Supported keys: source-moved, source-moved-ambiguous, source-changed, source-never-true, source-missing, claim-moved, claim-moved-ambiguous, claim-changed, marker-orphan, marker-invalid, marker-repeated, anchor-invalid, entry-invalid, quote-drift.',
+      'manni: Unknown key "changed" under cite.severity: in manni.config.yaml. Supported keys: source-moved, source-moved-ambiguous, source-changed, source-never-true, source-missing, claim-moved, claim-moved-ambiguous, claim-changed, marker-orphan, marker-invalid, marker-repeated, marker-misplaced, anchor-invalid, entry-invalid, quote-drift.',
     );
   });
 

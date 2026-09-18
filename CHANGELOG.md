@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [2.4.0](https://github.com/hawkeyexl/manni/compare/v2.3.10...v2.4.0) (2026-09-17)
+
+
+### Features
+
+* **cite:** manni cite remove ([#71](https://github.com/hawkeyexl/manni/issues/71)) ([e14f4ab](https://github.com/hawkeyexl/manni/commit/e14f4abe8bc08f6c06c407aa30a5dbd516ea4cfd))
+
 ## [2.3.10](https://github.com/hawkeyexl/manni/compare/v2.3.9...v2.3.10) (2026-09-17)
 
 
