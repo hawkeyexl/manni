@@ -14,6 +14,7 @@ import {
   type ConfigFileOptions,
 } from "../../shared/config-file.js";
 import { A11yError, SEVERITIES, isSeverity, type Severity } from "../types.js";
+import { MUST_START_WITH_SLASH, isUrlPathGlob } from "./exclude.js";
 import { isHttpUrl } from "./url.js";
 
 export interface A11yConfig {
@@ -24,6 +25,8 @@ export interface A11yConfig {
   tags?: string[];
   severity?: Severity;
   timeout?: number;
+  /** Globs matched against a URL's path; a match keeps the page out of the crawl. */
+  exclude?: string[];
 }
 
 export interface LoadedA11yConfig {
@@ -46,7 +49,7 @@ const SECTION = "a11y";
  * The keys the section may carry. Adding a key to `A11yConfig` means adding
  * it here too, or a config using it is rejected; that coupling is the point.
  */
-const CONFIG_KEYS = ["urls", "crawl", "maxPages", "tags", "severity", "timeout"] as const;
+const CONFIG_KEYS = ["urls", "crawl", "maxPages", "tags", "severity", "timeout", "exclude"] as const;
 
 const CONFIG_FILE: ConfigFileOptions = {
   section: SECTION,
@@ -105,7 +108,33 @@ export function parseA11yConfig(value: unknown, source: string): A11yConfig {
   if (obj.timeout !== undefined) {
     config.timeout = asPositiveInteger(obj.timeout, "timeout", source);
   }
+  if (obj.exclude !== undefined) config.exclude = asExcludes(obj.exclude, source);
   return config;
+}
+
+/**
+ * How a message names one entry of `a11y.exclude:`: the file it came from and
+ * the entry's position in the list. Both the parse errors below and the
+ * excluded-seed refusal in the check core name an entry this way, so a run
+ * whose patterns came from config never mentions a flag the user did not type.
+ */
+export function excludeEntryLabel(source: string, index: number): string {
+  return `${source}: "${SECTION}.exclude[${String(index)}]"`;
+}
+
+/**
+ * Each entry has to be able to match a path, which always starts with `/`. A
+ * pattern that cannot is a silent near-miss rather than a filter, so it is
+ * refused here, naming whichever entry is wrong by its position in the list.
+ */
+function asExcludes(value: unknown, source: string): string[] {
+  const globs = asStringList(value, "exclude", source);
+  globs.forEach((glob, i) => {
+    const at = excludeEntryLabel(source, i);
+    if (glob === "") throw new A11yError(`${at} must be a non-empty string.`);
+    if (!isUrlPathGlob(glob)) throw new A11yError(`${at} ${MUST_START_WITH_SLASH}`);
+  });
+  return globs;
 }
 
 function asStringList(value: unknown, field: string, source: string): string[] {

@@ -23,6 +23,7 @@ describe("parseA11yConfig", () => {
           tags: ["wcag2a", "wcag2aa"],
           severity: "error",
           timeout: 45000,
+          exclude: ["/proposals/**"],
         },
         FILE,
       ),
@@ -33,7 +34,18 @@ describe("parseA11yConfig", () => {
       tags: ["wcag2a", "wcag2aa"],
       severity: "error",
       timeout: 45000,
+      exclude: ["/proposals/**"],
     });
+  });
+
+  it("reads a list of exclusion globs", () => {
+    expect(parseA11yConfig({ exclude: ["/proposals/**", "/reference/api/**"] }, FILE)).toEqual({
+      exclude: ["/proposals/**", "/reference/api/**"],
+    });
+  });
+
+  it("accepts an explicit empty exclude list, which excludes nothing", () => {
+    expect(parseA11yConfig({ exclude: [] }, FILE)).toEqual({ exclude: [] });
   });
 
   it("reads an empty section as {}", () => {
@@ -53,7 +65,7 @@ describe("parseA11yConfig", () => {
 
   it("rejects an unknown key, naming the file, the key and the supported ones", () => {
     expect(() => parseA11yConfig({ url: ["https://x.example/"] }, FILE)).toThrow(
-      /^manni\.config\.yaml: `a11y:` has unknown key "url"\. Supported keys: urls, crawl, maxPages, tags, severity, timeout\.$/,
+      /^manni\.config\.yaml: `a11y:` has unknown key "url"\. Supported keys: urls, crawl, maxPages, tags, severity, timeout, exclude\.$/,
     );
   });
 
@@ -74,6 +86,13 @@ describe("parseA11yConfig", () => {
     [{ severity: 2 }, /"a11y\.severity" must be one of notice, warning, error/],
     [{ timeout: 0 }, /"a11y\.timeout" must be an integer >= 1/],
     [{ timeout: -5 }, /"a11y\.timeout" must be an integer >= 1/],
+    [{ exclude: "/proposals/**" }, /"a11y\.exclude" must be a list of strings/],
+    [{ exclude: ["/a/**", 3] }, /"a11y\.exclude" must be a list of strings/],
+    [{ exclude: ["/a/**", ""] }, /"a11y\.exclude\[1\]" must be a non-empty string/],
+    [
+      { exclude: ["/a/**", "proposals/**"] },
+      /"a11y\.exclude\[1\]" must start with "\/": it matches a URL path\./,
+    ],
   ])("rejects %j", (value, pattern) => {
     expect(() => parseA11yConfig(value, FILE)).toThrow(A11yError);
     expect(() => parseA11yConfig(value, FILE)).toThrow(pattern);

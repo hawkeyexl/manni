@@ -56,7 +56,8 @@ export function renderPretty(run: CheckRun, opts: RenderOptions): string {
     (summary.skipped > 0 ? `; ${summary.skipped} skipped (--max-pages)` : "") +
     (summary.duplicates > 0
       ? `; ${summary.duplicates} duplicate${summary.duplicates === 1 ? "" : "s"} dropped`
-      : "");
+      : "") +
+    (summary.excluded > 0 ? `; ${summary.excluded} excluded` : "");
   lines.push("");
   lines.push(failed > 0 ? c.red(footer) : c.green(footer));
   return lines.join("\n");

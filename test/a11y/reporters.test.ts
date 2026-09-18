@@ -54,6 +54,7 @@ function summarize(
     checked: results.length,
     skipped: 0,
     duplicates: 0,
+    excluded: 0,
     failed,
     violations,
     bySeverity,
@@ -288,6 +289,41 @@ describe("render pretty", () => {
     expect(one.split("\n").at(-1)).toBe(
       "0 violations on 0 of 2 pages; 2 skipped (--max-pages); 1 duplicate dropped",
     );
+  });
+
+  it("names what a pattern excluded, only when the count is not zero", () => {
+    const pages = [page({ url: `${S}/` }), page({ url: `${S}/a` })];
+    const none = render("pretty", checkRun(pages, { excluded: 0 }), off);
+    expect(none).not.toContain("excluded");
+    expect(none.split("\n").at(-1)).toBe("0 violations on 0 of 2 pages");
+    const some = render("pretty", checkRun(pages, { excluded: 41 }), off);
+    expect(some.split("\n").at(-1)).toBe("0 violations on 0 of 2 pages; 41 excluded");
+  });
+
+  it("carries the excluded clause beside the skipped one", () => {
+    const pages = [page({ url: `${S}/` }), page({ url: `${S}/a` })];
+    const run = checkRun(pages, { discovered: 4, skipped: 2, excluded: 3 });
+    expect(render("pretty", run, off).split("\n").at(-1)).toBe(
+      "0 violations on 0 of 2 pages; 2 skipped (--max-pages); 3 excluded",
+    );
+  });
+
+  it("carries excluded in the json summary, outside the discovered identity", () => {
+    const pages = [page({ url: `${S}/` }), page({ url: `${S}/a` })];
+    const run = checkRun(pages, { discovered: 2, excluded: 41 });
+    const parsed = JSON.parse(render("json", run, off)) as {
+      summary: { discovered: number; checked: number; skipped: number; duplicates: number; excluded: number };
+    };
+    expect(parsed.summary.excluded).toBe(41);
+    const { checked, skipped, duplicates, discovered } = parsed.summary;
+    expect(checked + skipped + duplicates).toBe(discovered);
+  });
+
+  it("emits no github annotation for a page a pattern excluded", () => {
+    // An excluded page is never analyzed, so it is in no `results[]` entry and
+    // the only thing `excluded` can do to this format is nothing.
+    const run = checkRun([page({ url: `${S}/` })], { excluded: 41 });
+    expect(render("github", run, off)).toBe("");
   });
 
   it("uses the singular when there is one violation", () => {
