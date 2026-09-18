@@ -355,8 +355,8 @@ source. It takes no `-` either, because a page from stdin has no path and a
 verdict is keyed by one.
 
 Exit `0` when every run in scope was judged and the record was written. Exit `1`
-when work was left undone, which is `update`'s contract. Exit `2` for a
-`CiteError`.
+for partial success, meaning work was left undone, matching `update`'s exit
+contract. Exit `2` for a `CiteError`.
 
 ### `manni cite check`, the two additions
 
@@ -404,7 +404,7 @@ silence when it does not.
 | `version` | number | The record format. This build writes and reads `1`. |
 | `file` | path | The page, repository-root relative, as the baseline spells a path. |
 | `integrity` | `^sha256-[0-9a-f]{64}$` | The judged text under 0044's hashing rule. Always plain, because the page is public. |
-| `lines` | `L` or `"L1-L2"` | Body lines when the verdict was taken. Advisory, refreshed by `claims`, and never used for lookup. |
+| `lines` | string | Body lines, in `"L"` or `"L1-L2"` form. Advisory, and never used for lookup. See the refresh rule below. |
 | `claim` | boolean | The verdict. `true` asserts behaviour. |
 | `prompt` | string | The judging prompt's version. A bump makes `claims` re-ask and leaves `check` reading the entry. |
 | `provider` | string | The provider that answered. |
@@ -415,6 +415,19 @@ Entries are sorted by `file` then `integrity`, so two people judging different
 pages produce a diff that merges by line. Lookup is by `file` and `integrity`
 together. An entry whose `version` this build does not know is an error rather
 than a silent skip.
+
+**The refresh rule.** Text can sit at new lines with its hash unchanged, when a
+paragraph above it grew. `claims` then reuses the verdict and rewrites `lines`
+to where the text sits now. Nothing else on a reused entry is rewritten, so
+`judged`, `provider`, `model` and `prompt` keep saying when and what answered.
+A timestamp that moved without a model being asked would be a lie about the
+record.
+
+The scope is what the run read. `claims` refreshes `lines` for every page it
+read, and leaves an entry for a page outside the scope exactly as it found it.
+Segmentation is deterministic, so the same command on one commit computes the
+same lines every time. `check` never reads `lines` at all, which is why a
+refresh cannot change a finding.
 
 ### Messages and exit codes
 
@@ -430,9 +443,13 @@ than a silent skip.
 | `--verdicts nowhere.json` on `check` | `manni: File not found: "nowhere.json".` | 2 |
 | Some runs were left unjudged | `manni: 3 of 41 runs were not judged. The record holds the other 38; run manni cite claims again.` | 1 |
 | git is unavailable and `--since` was given | `manni: --since needs git, and git is not available here.` | 2 |
+| `--no-config` on a page carrying no `citations:`, said once per run | `manni: --no-config reads frontmatter only, and citations may live in a manifest a collection declares. docs/limits.md was judged as though it had none.` | unchanged |
+| `--local` with no weights on disk | The library's own warning before it fetches, verbatim. | unchanged |
 
 Every message names a file and an action. None of them echoes a run's text,
-because a diagnostic that quotes prose would put it in CI logs.
+because a diagnostic that quotes prose would put it in CI logs. The two
+`unchanged` rows are warnings rather than refusals, so the run continues and
+decides its own exit code.
 
 ### What `claim-uncovered` prints
 
@@ -498,6 +515,65 @@ The baseline takes it like any rule. Under 0044's identity, `schema` is
 is no entry, and `subject` is the run's integrity. So a paragraph reworded after
 being baselined comes back as new, and one that merely moved down the page does
 not.
+
+### What `claims` prints as JSON
+
+`-f json` on `claims` is a first-class interface, because the scripting rung
+below pipes it. Its shape:
+
+```json
+{
+  "pages": [
+    {
+      "file": "docs/src/content/docs/cite/index.mdx",
+      "runs": [
+        {
+          "lines": "26",
+          "integrity": "sha256-c41f09aa7d2b4e6f8a0c1d3e5f708192a3b4c5d6e7f8091a2b3c4d5e6f708192",
+          "claim": true,
+          "reused": false,
+          "judged": "2026-09-17T11:02:08Z",
+          "judgedBy": "anthropic/claude-sonnet-4-6"
+        }
+      ]
+    }
+  ],
+  "verdicts": { "file": ".verdicts.json", "written": 2, "reused": 0, "pruned": 1, "entries": 2141 },
+  "egress": { "prompts": 2, "bytes": 3114, "dryRun": false },
+  "provider": "anthropic",
+  "model": "claude-sonnet-4-6",
+  "exitCode": 0
+}
+```
+
+| Field | Type | Always | Meaning |
+|---|---|---|---|
+| `pages` | array | yes | One object per page read, in input order. Empty on a run that matched nothing under `--allow-empty`. |
+| `pages[].file` | string | yes | The page, repository-root relative, as the record spells it. |
+| `pages[].runs` | array | yes | Every uncovered run in scope on that page, in body order. Empty when the page has none. |
+| `pages[].runs[].lines` | string | yes | Body lines, in `"L"` or `"L1-L2"` form. |
+| `pages[].runs[].integrity` | string | yes | The run's hash, which is its key in the record. A hash carries no prose, so it is safe in a log. |
+| `pages[].runs[].claim` | boolean or null | yes | The verdict. `null` when the run was not judged, which is every run under `--dry-run` and the leftover runs at exit 1. |
+| `pages[].runs[].reused` | boolean | yes | Whether the verdict came from the record rather than from a model. |
+| `pages[].runs[].judged` | timestamp or null | yes | When a model answered, from the record for a reused verdict. `null` when `claim` is `null`. |
+| `pages[].runs[].judgedBy` | string or null | yes | `provider/model` that answered. `null` when `claim` is `null`. |
+| `verdicts.file` | string | yes | The record's path, as it was given. |
+| `verdicts.written` | number | yes | Entries written. `0` under `--dry-run`. |
+| `verdicts.reused` | number | yes | Entries whose verdict was reused. |
+| `verdicts.pruned` | number | yes | Entries dropped. `0` without `--prune`. |
+| `verdicts.entries` | number | yes | Entries in the record after the run, which is how stress test 2's growth stays visible. |
+| `egress.prompts` | number | yes | Prompts sent, or under `--dry-run` prompts that would be sent. |
+| `egress.bytes` | number | yes | UTF-8 bytes of those prompts. |
+| `egress.dryRun` | boolean | yes | Which of the two readings the two numbers carry. |
+| `provider` | string | yes | The resolved provider, never `auto`. Under `--dry-run` it is the requested value, `auto` included, because no detection runs. |
+| `model` | string or null | yes | The resolved model, or the requested one under `--dry-run`. `null` when neither was set. |
+| `exitCode` | number | yes | `0`, `1` or `2`. |
+
+`egress` is always present, on a real run as well as under `--dry-run`. A
+pipeline recording what left the machine should not have to run the command
+twice to learn it. A run that reused every verdict says so as
+`{"prompts": 0, "bytes": 0, "dryRun": false}`. `dryRun` is what separates bytes
+that left from bytes that would have.
 
 ### The ladder
 
@@ -609,13 +685,27 @@ $ manni cite claims docs/ --as mdx --since origin/main --verdicts .verdicts.json
     {
       "file": "docs/src/content/docs/cite/index.mdx",
       "runs": [
-        { "lines": "26", "claim": true, "reused": false },
-        { "lines": "19", "claim": false, "reused": false }
+        {
+          "lines": "26",
+          "integrity": "sha256-c41f09aa…",
+          "claim": true,
+          "reused": false,
+          "judged": "2026-09-17T11:02:08Z",
+          "judgedBy": "anthropic/claude-sonnet-4-6"
+        },
+        {
+          "lines": "19",
+          "integrity": "sha256-0b7e5c9a…",
+          "claim": false,
+          "reused": false,
+          "judged": "2026-09-17T11:02:08Z",
+          "judgedBy": "anthropic/claude-sonnet-4-6"
+        }
       ]
     }
   ],
-  "verdicts": { "file": ".verdicts.json", "written": 2, "reused": 0, "pruned": 1 },
-  "egress": { "prompts": 2, "bytes": 3114 },
+  "verdicts": { "file": ".verdicts.json", "written": 2, "reused": 0, "pruned": 1, "entries": 2141 },
+  "egress": { "prompts": 2, "bytes": 3114, "dryRun": false },
   "provider": "anthropic",
   "model": "claude-sonnet-4-6",
   "exitCode": 0
@@ -623,8 +713,8 @@ $ manni cite claims docs/ --as mdx --since origin/main --verdicts .verdicts.json
 # exit 0
 ```
 
-`egress` is in the JSON on a real run as well as under `--dry-run`, so a
-pipeline can record what left the machine without a second invocation.
+The two `integrity` values are abbreviated here for the page. The real output
+carries the full sixty-four hex characters, as the record does.
 
 ### The usage errors
 
@@ -729,9 +819,9 @@ only, and on a sidecar repository that would judge already-cited sentences as
 uncovered.
 
 **Changed as a result:** `claims` under `--no-config` warns once when the page
-carries no `citations:` of its own. The wording says that citations may live in
-a manifest the config declares. The record is still written, because the
-verdicts are correct about the text and only the coverage was narrow.
+carries no `citations:` of its own. Its wording is the row for it in the
+messages table above. The record is still written, because the verdicts are
+correct about the text and only the coverage was narrow.
 
 ### 5. A run with no provider available
 
