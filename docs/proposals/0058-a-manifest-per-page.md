@@ -112,6 +112,20 @@ removed and with posix separators. For
 The value needs quoting in YAML, because `{` opens a flow mapping. That is a
 feature. A reader who has to quote it knows the string is not a plain path.
 
+**One normalization, used everywhere a path or a pattern is compared.** Strip
+a leading `./`, write every separator as a forward slash, then compare. It runs
+on `{page}` before the substitution, so a Windows walk's backslashes never
+reach the template and `./meta/{page}.citations.yaml` yields
+`meta/docs/src/content/docs/cite/index.citations.yaml` on every platform. It
+runs on the whole `file` pattern too, which is what makes `"{page}.yaml"` and
+`"./{page}.yaml"` one pattern rather than two. The rule is deliberately this
+small. It is not `path.resolve`, so `./a/../{page}.yaml` stays its own
+pattern, and it does not fold case, so `Meta/{page}.yaml` and
+`meta/{page}.yaml` stay two. Both of those are a config author writing two
+spellings of one directory, which a reader can see. Neither is worth a platform
+dependent comparison at parse time. Stress tests 8 and 10 are this one rule
+applied to a path and to a pattern.
+
 **No second token.** `{collection}`, `{dir}`, `{name}`, `{ext}` and anything
 else are refused by name. A second token makes `file` a template, and a
 template needs three more decisions nobody has asked for. It needs an escape
@@ -202,6 +216,28 @@ entry into an empty string, and `relocate` already hands it one for a manifest
 it created (`src/meta/core/relocation.ts:1102`). So this is an existing write
 path reached by a second caller, not a new one.
 
+**A page read from stdin owns nothing.** `{page}` is a path, and a piped
+document has none. Its label is `<stdin>`, so a placeholder would resolve
+`<stdin>.citations.yaml`, a file named after a token. So a writer refuses
+rather than creating it.
+
+Only one of the five writers needs a new refusal, and the other four were
+checked rather than assumed.
+
+| Writer | Stdin today | Needs a row |
+|---|---|---|
+| `cite add -` | Reaches the manifest. | Yes, and the table already has it. |
+| `meta fill -` | Reaches `keyHome` for every page, `<stdin>` included (`src/meta/commands/fill.ts:751`). No guard. | **Yes.** |
+| `meta query -` | A stdin row returns unowned before any manifest is considered (`src/meta/commands/query.ts:3090`), and is skipped by every write path (`:3148`, `:3324`, `:3601`). | No. There is no write to refuse. |
+| `meta derive -` | Already refused, before this proposal: `cannot derive <stdin>: no history behind it` (`src/meta/commands/derive.ts:296-303`). | No. |
+| `meta relocate -` | Already refused: "relocate moves values between documents and a collection's manifest, and stdin is not a document on disk" (`src/meta/commands/relocate.ts:75-78`). | No. |
+
+`fill` is the gap because `entryFor` builds a path joined entry key from the
+label with no stdin case (`src/meta/core/relocation.ts:601-609`). It reaches a
+manifest only when `<stdin>` matches a collection glob, which a narrow
+`paths:` never does and a `paths: ["**/*"]` might. Resting on that accident is
+what the refusal replaces.
+
 **The directory is created, recursively.** Nothing in the family creates a
 directory today. `writeFileAtomic` puts its temp file in `dirname(path)` and
 renames (`src/meta/core/write-file.ts:50-53`), so a path whose directory is
@@ -240,26 +276,40 @@ one manifest in a collection, and a second entry claiming `citations` is a
 config refusal (`src/shared/collections.ts:325-335`).
 
 So the migration is two config edits and two `relocate` runs, in one working
-tree:
+tree. The two runs are the same command, and the config edits between them are
+what make the second one do something different. Both edits are shown.
 
 ```console
-# 1. Remove `citations` from the shared manifest's keys:, leaving the entry.
+# 1. Edit manni.config.yaml. Empty the shared entry's keys, keeping the entry.
+#      externalMetadata:
+#        - file: ./site.metadata.yaml
+#    -     keys: [citations]
+#    +     keys: []
+
+# 2. Move every value back into its page.
 $ manni meta relocate --fields citations
 Removing citations from site.metadata.yaml's keys moves it into every page in collection site.
 site.metadata.yaml no longer owns any keys and is no longer declared; delete it when you are ready.
 30 files, 1941 values moved into pages
 
-# 2. Replace the entry's file with "{page}.citations.yaml" and keys: [citations].
+# 3. Edit manni.config.yaml again. Point the entry at a file per page.
+#      externalMetadata:
+#    -     - file: ./site.metadata.yaml
+#    -       keys: []
+#    +     - file: "{page}.citations.yaml"
+#    +       keys: [citations]
+
+# 4. Move every value out into its own manifest.
 $ manni meta relocate --fields citations
 30 files, 1941 values moved to 30 manifests
 
-# 3. Delete the shared file and commit.
+# 5. Delete the shared file and commit.
 $ rm site.metadata.yaml
 $ manni cite check
 ✓ 1941 citations, no findings
 ```
 
-The halfway state is verifiable. After step 1 every citation is in its page's
+The halfway state is verifiable. After step 2 every citation is in its page's
 frontmatter, and `manni cite check` passes there, which is the channel 0044
 shipped first. The state is never committed, because both runs happen before
 the commit.
@@ -303,10 +353,20 @@ today. `orphanError` throws a `DocmetaError`, and cite re-wraps it as a
 `CiteError` in `orphanRefusal` (`src/cite/core/sidecar.ts:261-266`). Neither
 carries a rule id or a severity, so neither reaches a baseline.
 
-**Finding a stray without walking the tree.** Substituting `*` for `{page}`
-turns the entry into one glob. `"{page}.citations.yaml"` gives
+**Finding a stray without walking the tree.** One glob comes from the entry,
+by splitting the pattern at `{page}`, inserting `**/*`, and keeping the prefix
+and the suffix around it. So `"{page}.citations.yaml"` gives
 `**/*.citations.yaml`, and `"./meta/{page}.citations.yaml"` gives
-`meta/**/*.citations.yaml`. That glob is walked under the corpus invariant
+`meta/**/*.citations.yaml`. The `**/*` is what matches a manifest at any depth
+under the prefix. A bare `*` would match only the prefix's own directory, and
+the check would then find no stray in a nested tree at all.
+
+No page path reaches that glob, which is why a page named `docs/[draft]/x.mdx`
+needs no escaping. `{page}` becomes `**/*` rather than the path. Only the
+prefix and the suffix carry through, and both are the config author's own
+literal text.
+
+That glob is walked under the corpus invariant
 `orphanEntries` already uses, recorded in its own comment at
 `src/meta/core/external-metadata.ts:628-634`. The check runs only when the run
 is the config corpus, because a positional path means the operator chose part
@@ -621,6 +681,7 @@ $ echo $?
 | `cite check` with a stray manifest | `manni: Manifest docs/src/content/docs/cite/old.citations.yaml:1 names "docs/src/content/docs/cite/old.mdx", which this run did not load. Fix the entry, or remove the file.` | 2 |
 | `cite check` with a copied manifest | `manni: Manifest docs/src/content/docs/cite/index.citations.yaml:1 names "docs/src/content/docs/cite/other.mdx", but {page} resolved this file for "docs/src/content/docs/cite/index.mdx". A per-page manifest holds one entry, for its own page.` | 2 |
 | `cite add -` with a placeholder entry | `manni: A page read from stdin has no path, and its citations live in a manifest {page} resolves by path.` | 2 |
+| `meta fill -` with a placeholder entry | `manni: A page read from stdin has no path, and its "owner" lives in a manifest {page} resolves by path.` | 2 |
 | A manifest that cannot be read | `manni: Manifest docs/src/content/docs/cite/index.citations.yaml could not be read: EACCES: permission denied` | 2 |
 
 Exit codes are the family's. `0` is clean, `1` is an error severity finding or
@@ -660,8 +721,15 @@ Nothing is orphaned, because an orphan is a file whose page is gone.
 
 The sibling file does not move with it. A full `cite check` walks the
 `**/*.citations.yaml` glob. It finds a file whose only entry names a page the
-run did not load, and refuses with the § 5 message. The fix is a second
-`git mv`.
+run did not load, and refuses with the § 5 message.
+
+The fix is three steps, not two. Move the page, move the manifest, then change
+the entry's key to the new path. A second `git mv` alone leaves
+`new.citations.yaml` holding an entry keyed to `old.mdx`, which is § 5's
+second message, the copied manifest. That is the right report for that state,
+and it names both paths, so the third step is the one the message asks for.
+`manni cite update` rewrites the key in place, and deleting the entry and
+re-running `manni cite add` on the renamed page is the longer way round.
 
 This is the cost of a path join, which 0039 recorded. Per page makes it
 better in one way that matters. The stale file sits in the directory the moved
@@ -706,10 +774,12 @@ a manifest CI cannot see is the failure D5 exists to prevent.
 
 ### 8. A case-only path difference on Windows
 
-`{page}` comes from the page's path as the walk produced it, and the file is
-resolved from that. On a case-insensitive filesystem `Cite/Index.mdx` and
-`cite/index.mdx` name one file, so one manifest holds one entry under one
-spelling.
+`{page}` comes from the page's path as the walk produced it, through § 1's
+normalization, and the file is resolved from that. The normalization is what
+turns a Windows walk's backslashes into forward slashes, and it runs before the
+substitution rather than after. It does not fold case. On a case-insensitive
+filesystem `Cite/Index.mdx` and `cite/index.mdx` name one file, so one manifest
+holds one entry under one spelling.
 
 The § 5 "named after its own page" check therefore compares resolved absolute
 paths, not the entry key's text. Resolution is the platform's job. So a case
@@ -734,8 +804,13 @@ page run is the local loop, where the whole cost was the file.
 
 `file: "{page}.yaml"` and `file: "./{page}.yaml"` are two strings and one
 manifest for every page. A reader of the config sees two entries and expects
-two files. So the patterns are normalized and compared at config parse, before
-any page is known, and a collision refuses.
+two files. So the two patterns are put through § 1's normalization and compared
+as strings, at config parse, and a collision refuses.
+
+The comparison is on the patterns, with `{page}` still in them, because no page
+is known yet. That costs nothing. Two patterns that normalize alike resolve to
+one file for every page, so comparing them once answers the question for the
+whole corpus.
 
 Two **concrete** entries naming one file stay legal, as they are today. The
 config then shows one path written twice, which is visible, and refusing it
